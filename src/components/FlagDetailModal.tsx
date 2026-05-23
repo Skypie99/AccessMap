@@ -13,6 +13,7 @@ import {
   View,
 } from 'react-native';
 import { useAuth } from '@/lib/auth';
+import { openDirections } from '@/lib/directions';
 import { errorMessage } from '@/lib/errors';
 import {
   CATEGORY_LABELS,
@@ -288,6 +289,23 @@ export default function FlagDetailModal({
                 <Text style={styles.viewMapBtnText}>View on Map</Text>
               </Pressable>
               <Pressable
+                onPress={() =>
+                  openDirections(
+                    shownFlag.lat,
+                    shownFlag.lng,
+                    `AccessMap: ${CATEGORY_LABELS[shownFlag.category]}`,
+                  )
+                }
+                disabled={busy}
+                style={[styles.actionBtn, styles.directionsBtn]}
+                accessibilityRole="button"
+                accessibilityLabel="Get walking directions"
+                accessibilityHint="Opens your maps app with walking directions to this flag"
+                accessibilityState={{ disabled: busy }}
+              >
+                <Text style={styles.directionsBtnText}>Directions</Text>
+              </Pressable>
+              <Pressable
                 onPress={handleShare}
                 disabled={busy}
                 style={[styles.actionBtn, styles.shareBtn]}
@@ -490,4 +508,10 @@ const styles = StyleSheet.create({
     borderColor: '#2f80ed',
   },
   shareBtnText: { color: '#2f80ed', fontWeight: '700', fontSize: 14 },
+  // Directions sits between View on Map and Share in the secondary row.
+  // Filled brand-blue (not outlined) so it reads as the primary action of
+  // the trio — getting somewhere is usually what the user wants more than
+  // re-centering the map or sharing.
+  directionsBtn: { backgroundColor: '#2f80ed' },
+  directionsBtnText: { color: '#fff', fontWeight: '700', fontSize: 14 },
 });
