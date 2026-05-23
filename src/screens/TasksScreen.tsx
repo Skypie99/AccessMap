@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -29,10 +29,22 @@ export default function TasksScreen() {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [flash, setFlash] = useState<string | null>(null);
 
+  // Track the flash-banner timer in a ref so we can cancel it on unmount or
+  // when a new flash arrives — otherwise leaving the tab mid-flash triggers
+  // a "setState on unmounted component" warning.
+  const flashTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const showFlash = useCallback((msg: string) => {
+    if (flashTimer.current) clearTimeout(flashTimer.current);
     setFlash(msg);
-    setTimeout(() => setFlash(null), 2200);
+    flashTimer.current = setTimeout(() => setFlash(null), 2200);
   }, []);
+
+  useEffect(
+    () => () => {
+      if (flashTimer.current) clearTimeout(flashTimer.current);
+    },
+    [],
+  );
 
   const refresh = useCallback(async () => {
     setLoading(true);
