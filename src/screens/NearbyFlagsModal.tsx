@@ -10,45 +10,20 @@ import {
   View,
 } from 'react-native';
 import { CATEGORY_LABELS, severityColor } from '@/lib/flags';
+import {
+  formatDistance,
+  haversineKm,
+  speakDistance,
+  type LatLng,
+} from '@/lib/distance';
 import type { FlagRow } from '@/types/database';
-
-interface Coords {
-  lat: number;
-  lng: number;
-}
 
 interface Props {
   visible: boolean;
-  location: Coords | null;
+  location: LatLng | null;
   flags: FlagRow[];
   onClose: () => void;
   onSelectFlag: (flag: FlagRow) => void;
-}
-
-// Great-circle distance in meters between two lat/lng points (haversine).
-// Plenty accurate at the scales AccessMap cares about (street-level).
-function haversineMeters(a: Coords, b: Coords): number {
-  const R = 6371e3;
-  const toRad = (d: number) => (d * Math.PI) / 180;
-  const dLat = toRad(b.lat - a.lat);
-  const dLng = toRad(b.lng - a.lng);
-  const lat1 = toRad(a.lat);
-  const lat2 = toRad(b.lat);
-  const h =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
-  return 2 * R * Math.asin(Math.sqrt(h));
-}
-
-function formatDistance(meters: number): string {
-  if (meters < 1000) return `${Math.round(meters)} m`;
-  return `${(meters / 1000).toFixed(1)} km`;
-}
-
-// What a screen reader hears for the distance — full words, no abbreviation.
-function speakDistance(meters: number): string {
-  if (meters < 1000) return `${Math.round(meters)} meters away`;
-  return `${(meters / 1000).toFixed(1)} kilometers away`;
 }
 
 export default function NearbyFlagsModal({
@@ -65,7 +40,7 @@ export default function NearbyFlagsModal({
     return [...flags]
       .map((f) => ({
         f,
-        d: haversineMeters(location, { lat: f.lat, lng: f.lng }),
+        d: haversineKm(location, { lat: f.lat, lng: f.lng }),
       }))
       .sort((a, b) => a.d - b.d)
       .map(({ f }) => f);
@@ -118,7 +93,7 @@ export default function NearbyFlagsModal({
           }
           renderItem={({ item }) => {
             const distance = location
-              ? haversineMeters(location, { lat: item.lat, lng: item.lng })
+              ? haversineKm(location, { lat: item.lat, lng: item.lng })
               : null;
             const distanceText =
               distance != null ? formatDistance(distance) : null;
