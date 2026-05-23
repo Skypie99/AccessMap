@@ -48,12 +48,18 @@ export interface CreateFlagInput {
   photo_url?: string | null;
 }
 
+/**
+ * Fetch flags matching the given statuses. Capped at 500 rows so a runaway
+ * table can't lock up the Map/Tasks screens. Real cursor-paginated fetching
+ * is tracked as a proposal in qa-reports/qa-2026-05-22.md (P1).
+ */
 export async function listFlags(statuses: FlagStatus[] = ['open', 'verified']) {
   const { data, error } = await supabase
     .from('flags')
     .select('*')
     .in('status', statuses)
-    .order('created_at', { ascending: false });
+    .order('created_at', { ascending: false })
+    .limit(500);
   if (error) throw error;
   return (data ?? []) as FlagRow[];
 }
