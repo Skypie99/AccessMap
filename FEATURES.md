@@ -36,6 +36,11 @@ they land on `main`.
   test file yet (Loop 5 didn't add one). Add one when Jest is in.
 - **Address search / jump-to.** Geocoded address bar at the top of
   Map; tapping a result animates the map there.
+- **Wire `accessmap://flag/{id}` deep-link handler.** Share button
+  (shipped 2026-05-23 fastloop) emits this URL; the in-app handler
+  isn't there yet. Add an `expo-linking` listener that maps the URL
+  to the Map tab with `{focusFlag: { id, lat, lng }}` — reuses the
+  existing route param.
 
 ## Later (sequence after the above)
 
@@ -82,6 +87,22 @@ broke.
   `FlagsProvider` subscription + `flagsRealtime.ts` merge helper +
   proposed data-layer hardening migrations. No-op until
   `supabase/realtime.sql` is applied (see Now tier).
+- **Map empty-state card** (fastloop 2026-05-23). Floating card on
+  the Map when active filters return zero results, with a one-tap
+  "Reset filters" button. iOS-announces appearance on transition.
+- **Collapsible filter panel** (fastloop 2026-05-23). Chevron in the
+  filter-panel header collapses Saved/Categories/Severity/Status into
+  just the title row. Collapsed state persists across launches via
+  `src/lib/filterPanelPrefs.ts` (device-wide key).
+- **Severity quick-cycle button** (fastloop 2026-05-23). New
+  "{n}+" button in the top icon row cycles `1+ → 2+ → 3+ → 4+ → 5+`
+  on tap; background tints to that severity's color when active.
+  Announces the new threshold to screen readers on each tap.
+- **Share-a-flag** (fastloop 2026-05-23). Share button on the Flag
+  Detail modal opens the OS share sheet (iOS/Android) or uses
+  navigator.share / clipboard fallback (web). Message is self-contained
+  (category, severity, coords) + an `accessmap://flag/{id}` link
+  (handler is a follow-up in Next tier).
 
 ## Conventions
 

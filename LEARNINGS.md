@@ -6,6 +6,72 @@ entries; the file is the project's accumulated wisdom.
 
 ---
 
+## 2026-05-23 — Announce-on-transition, not announce-on-every-render
+
+For derived UI state that appears as a result of upstream filtering
+(vs. a setState call you control), the iOS
+`AccessibilityInfo.announceForAccessibility` pattern needs an
+edge-detector — otherwise it re-speaks on every render while the
+condition stays true.
+
+Recipe (used for the Map empty-state card in `MapScreen`):
+
+```ts
+const showX = derivedCondition;
+const prevRef = useRef(false);
+useEffect(() => {
+  if (showX && !prevRef.current) {
+    AccessibilityInfo.announceForAccessibility('…');
+  }
+  prevRef.current = showX;
+}, [showX]);
+```
+
+The ref+useEffect pair makes the announce fire exactly once per
+false→true transition. Combine with `accessibilityLiveRegion="polite"`
+on the rendered View so Android picks it up via the live region while
+iOS gets the one-shot announce.
+
+## 2026-05-23 — Jest must ignore `.claude/worktrees/` or it crashes
+
+When the orchestrator (or any process) has live worktrees under
+`.claude/worktrees/`, plain `npx jest` traverses them and tries to
+re-run every test file inside. The worktree node_modules have a stale
+Platform.ios native-module path that throws "Invariant Violation:
+requireNativeModule", so 20+ suites fail with confusing native-module
+errors while the real tests pass cleanly.
+
+Two fixes:
+
+- **Quick:** `npx jest --testPathIgnorePatterns='/.claude/'` for
+  one-off runs.
+- **Durable (TODO):** add `'/.claude/'` to `testPathIgnorePatterns` in
+  `jest.config.js`. Until that lands, `npm test` may be noisy in
+  worktree-active sessions.
+
+## 2026-05-23 — Cross-platform Share with three-tier web fallback
+
+For "share a thing" from a modal/screen, the cleanest cross-platform
+pattern (used in `FlagDetailModal.handleShare`):
+
+```ts
+if (Platform.OS === 'web') {
+  if (navigator?.share) await navigator.share({title, text, url});
+  else if (navigator?.clipboard?.writeText) {
+    await navigator.clipboard.writeText(text);
+    Alert.alert('Link copied', '…');
+  } else Alert.alert('Share', text);  // last-resort: show the text
+} else {
+  await Share.share({ message, title, url });  // RN built-in
+}
+```
+
+The three-tier web fallback covers Firefox desktop (no `navigator.share`)
+and very old browsers (no `navigator.clipboard`). User-cancel on the
+share sheet throws — match `/cancel|dismiss/i` in the catch and return
+silently, otherwise the user sees a "Couldn't share" alert every time
+they back out.
+
 ## 2026-05-23 — Realtime merge logic belongs in a pure helper
 
 `FlagsProvider`'s Supabase realtime effect stays a thin adapter: it
