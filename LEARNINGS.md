@@ -6,6 +6,85 @@ entries; the file is the project's accumulated wisdom.
 
 ---
 
+## 2026-05-23 — Merge-on-done > stacking branches
+
+After landing four stacked fastloop branches in one painful merge, the
+new operating rule is: integrate each branch into `main` AS SOON AS it's
+finished and green, never let multiple feature branches stack up.
+
+Auto-land checklist (every condition must hold):
+1. `git merge --no-ff <feature>` produces no conflict.
+2. `npx tsc --noEmit` is green.
+3. `npx jest` is green (no `--testPathIgnorePatterns` flag needed since
+   v4 added `/.claude/` to jest.config.js).
+4. The branch touches no protected path (Supabase migrations,
+   credentials, `app.json` scheme, etc.).
+
+If ANY check fails, STOP, leave the branch un-merged, and surface to
+Sky with a clear note. The eve-of-2026-05-23 loop hit all-green on three
+back-to-back features (changelog, Tasks polish, address search) using
+this pattern — three clean merges, zero conflicts, ~15 minutes between
+each landing.
+
+Why this beats stacking:
+- Each branch sees an up-to-date `main` as its base. No "merge v1 then
+  v2 then v3" cascade where v2 conflicts because v1 moved its target.
+- Each landing is a small atomic review surface for Sky.
+- Rolling back is `git revert <single-merge-commit>`, not a rebase.
+
+## 2026-05-23 — Nominatim geocoder needs a User-Agent (or fails silently)
+
+Nominatim's free tier requires a meaningful `User-Agent` header per
+their usage policy
+(https://operations.osmfoundation.org/policies/nominatim/). Skipping it
+can get the app's IP rate-limited or banned without any obvious error
+on the client side — the API silently returns errors or empty arrays.
+
+The pattern in `src/lib/geocode.ts`:
+
+```ts
+const USER_AGENT = 'AccessMap/1.0 (skylerhalisky@gmail.com)';
+fetch(url, { headers: { 'User-Agent': USER_AGENT }, signal });
+```
+
+Other policy rules baked into the helper:
+- Debounce calls in the UI (350ms in `AddressSearchModal`) to stay
+  under the 1-req/sec cap with room to spare.
+- Cap results at 5 in the URL (`&limit=5`).
+- Return `[]` on every failure path so the UI degrades to "no matches"
+  rather than surfacing an alarming error.
+
+## 2026-05-23 — SectionList > FlatList when statuses are visually distinct
+
+`TasksScreen` used to flatten Open + Verified flags into one
+`FlatList`. Visually the distinction got lost — a verified flag was a
+white card right after an open flag's white card. Swap to
+`SectionList`:
+
+```tsx
+const sections = useMemo(() => {
+  const open = flags.filter((f) => f.status === 'open');
+  const verified = flags.filter((f) => f.status === 'verified');
+  const out = [];
+  if (open.length > 0) out.push({ title: 'Open', data: open });
+  if (verified.length > 0) out.push({ title: 'Verified', data: verified });
+  return out;
+}, [flags]);
+
+<SectionList
+  sections={sections}
+  renderSectionHeader={({ section }) => <Header ... />}
+  ...
+/>
+```
+
+Three things to remember:
+- Skip empty sections in the `useMemo` (don't render orphaned headers).
+- Set `stickySectionHeadersEnabled={false}` unless you specifically want
+  sticky behavior — the default is platform-dependent and surprising.
+- The section count pill (brand-soft + brandOnSoft) reuses the
+  theme tokens that already pass AA contrast.
+
 ## 2026-05-23 — Two-key persistence > rewriting a v1 blob
 
 When a feature wants a single new pointer / field next to an
