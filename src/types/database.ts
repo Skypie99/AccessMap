@@ -36,6 +36,23 @@ export type UserRow = {
   created_at: string;
 };
 
+// Mirrors the `category` enum in supabase/migrations/2026-05-23_feedback_table.sql.
+// Kept aligned with FEEDBACK_CATEGORIES in src/lib/feedback.ts.
+export type FeedbackCategoryRow = 'bug' | 'idea' | 'love' | 'other';
+
+export type FeedbackRow = {
+  id: string;
+  // Nullable so a sign-out-then-feedback flow can still record an
+  // anonymous message — the table's RLS only blocks SELECT, not INSERT
+  // for null user_id. See migration for details.
+  user_id: string | null;
+  category: FeedbackCategoryRow;
+  body: string;
+  contact_email: string | null;
+  platform: string | null;
+  created_at: string;
+};
+
 type EmptyRelationships = {
   foreignKeyName: string;
   columns: string[];
@@ -64,6 +81,20 @@ export type Database = {
           points?: number;
         };
         Update: Partial<UserRow>;
+        Relationships: EmptyRelationships;
+      };
+      // Optional until supabase/migrations/2026-05-23_feedback_table.sql is
+      // applied. Until then, any submitFeedback() call will fail at the
+      // postgrest layer ("relation does not exist") — the dual-write
+      // pattern in FeedbackModal catches that and silently degrades to
+      // mailto-only so the user never sees the error.
+      feedback: {
+        Row: FeedbackRow;
+        Insert: Omit<FeedbackRow, 'id' | 'created_at'> & {
+          id?: string;
+          created_at?: string;
+        };
+        Update: Partial<FeedbackRow>;
         Relationships: EmptyRelationships;
       };
     };

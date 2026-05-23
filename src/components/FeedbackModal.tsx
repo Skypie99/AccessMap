@@ -20,6 +20,7 @@ import {
   sendFeedback,
   type FeedbackCategory,
 } from '@/lib/feedback';
+import { submitFeedback } from '@/lib/feedbackStore';
 
 interface Props {
   visible: boolean;
@@ -74,11 +75,32 @@ export default function FeedbackModal({ visible, onClose }: Props) {
   const handleSend = async () => {
     if (!canSend) return;
     setSending(true);
+
+    // Dual-write: fire the Supabase insert in parallel with opening the
+    // mail composer. The insert is best-effort — its result NEVER blocks
+    // the mailto path. If the table doesn't exist yet (migration not
+    // applied) submitFeedback returns {status:'skipped'} and we move on.
+    const insertPromise = submitFeedback({
+      body,
+      category,
+      contactEmail: contact.trim() || undefined,
+      userId: user?.id,
+    });
+
     const result = await sendFeedback({
       body,
       contactEmail: contact.trim() || undefined,
       category,
     });
+
+    // Resolve (don't await for UI gating, but log if it threw so we can
+    // see this in dev). Intentionally fire-and-forget.
+    insertPromise.then((r) => {
+      if (r.status === 'skipped') {
+        console.warn('[feedback] server insert skipped:', r.reason);
+      }
+    });
+
     if (!mountedRef.current) return;
     setSending(false);
 
