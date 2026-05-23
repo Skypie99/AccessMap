@@ -156,7 +156,9 @@ export default function TasksScreen() {
           <Pressable
             onPress={goToOnMap}
             style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
+            accessibilityRole="button"
             accessibilityLabel={`Show ${CATEGORY_LABELS[item.category]} on the map`}
+            accessibilityHint="Opens the Map tab focused on this flag"
           >
             <View style={styles.cardHeader}>
               <View
@@ -173,6 +175,8 @@ export default function TasksScreen() {
                 <Image
                   source={{ uri: item.photo_url }}
                   style={styles.cardThumb}
+                  accessible
+                  accessibilityLabel={`Photo of the reported ${CATEGORY_LABELS[item.category]}`}
                 />
               ) : null}
               <View style={styles.cardBodyText}>
@@ -191,6 +195,9 @@ export default function TasksScreen() {
                   disabled={isBusy}
                   onPress={() => setStatus(item.id, 'verified', isOwn)}
                   style={[styles.actionBtn, styles.verifyBtn]}
+                  accessibilityRole="button"
+                  accessibilityLabel="Verify this flag"
+                  accessibilityState={{ disabled: isBusy }}
                 >
                   <Text style={styles.verifyText}>Verify</Text>
                 </Pressable>
@@ -199,6 +206,9 @@ export default function TasksScreen() {
                 disabled={isBusy}
                 onPress={() => setStatus(item.id, 'resolved', isOwn)}
                 style={[styles.actionBtn, styles.resolveBtn]}
+                accessibilityRole="button"
+                accessibilityLabel="Mark this flag resolved"
+                accessibilityState={{ disabled: isBusy }}
               >
                 <Text style={styles.resolveText}>Resolved</Text>
               </Pressable>
@@ -206,6 +216,9 @@ export default function TasksScreen() {
                 disabled={isBusy}
                 onPress={() => setStatus(item.id, 'rejected', isOwn)}
                 style={[styles.actionBtn, styles.rejectBtn]}
+                accessibilityRole="button"
+                accessibilityLabel="Reject this flag"
+                accessibilityState={{ disabled: isBusy }}
               >
                 <Text style={styles.rejectText}>Reject</Text>
               </Pressable>

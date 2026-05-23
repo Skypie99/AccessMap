@@ -143,6 +143,9 @@ export default function ReportFlagModal({
                   key={c}
                   onPress={() => setCategory(c)}
                   style={[styles.pill, active && styles.pillActive]}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Category: ${CATEGORY_LABELS[c]}`}
+                  accessibilityState={{ selected: active }}
                 >
                   <Text style={[styles.pillText, active && styles.pillTextActive]}>
                     {CATEGORY_LABELS[c]}
@@ -165,6 +168,9 @@ export default function ReportFlagModal({
                     active && styles.sevBtnActive,
                     active && { backgroundColor: severityColor(s) },
                   ]}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Severity ${s}`}
+                  accessibilityState={{ selected: active }}
                 >
                   <Text style={[styles.sevText, active && styles.sevTextActive]}>
                     {s}
@@ -186,10 +192,16 @@ export default function ReportFlagModal({
           <Text style={styles.label}>Photo (optional)</Text>
           {photoUri ? (
             <View style={styles.photoPreviewWrap}>
-              <Image source={{ uri: photoUri }} style={styles.photoPreview} />
+              <Image
+                source={{ uri: photoUri }}
+                style={styles.photoPreview}
+                accessible
+                accessibilityLabel="Selected photo of the accessibility issue"
+              />
               <Pressable
                 onPress={() => setPhotoUri(null)}
                 style={styles.photoClear}
+                accessibilityRole="button"
                 accessibilityLabel="Remove photo"
               >
                 <Text style={styles.photoClearText}>✕</Text>
@@ -200,12 +212,16 @@ export default function ReportFlagModal({
               <Pressable
                 onPress={() => pickPhoto('camera')}
                 style={[styles.photoBtn]}
+                accessibilityRole="button"
+                accessibilityLabel="Take a photo with the camera"
               >
                 <Text style={styles.photoBtnText}>📷 Take photo</Text>
               </Pressable>
               <Pressable
                 onPress={() => pickPhoto('library')}
                 style={[styles.photoBtn]}
+                accessibilityRole="button"
+                accessibilityLabel="Choose a photo from the library"
               >
                 <Text style={styles.photoBtnText}>🖼 Choose from library</Text>
               </Pressable>
@@ -217,6 +233,9 @@ export default function ReportFlagModal({
               onPress={onClose}
               disabled={submitting}
               style={[styles.actionBtn, styles.cancelBtn]}
+              accessibilityRole="button"
+              accessibilityLabel="Cancel and close"
+              accessibilityState={{ disabled: submitting }}
             >
               <Text style={styles.cancelText}>Cancel</Text>
             </Pressable>
@@ -228,6 +247,9 @@ export default function ReportFlagModal({
                 styles.submitBtn,
                 (submitting || !location) && styles.submitBtnDisabled,
               ]}
+              accessibilityRole="button"
+              accessibilityLabel="Submit flag report"
+              accessibilityState={{ disabled: submitting || !location, busy: submitting }}
             >
               {submitting ? (
                 <ActivityIndicator color="#fff" />

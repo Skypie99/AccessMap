@@ -110,7 +110,12 @@ export default function ProfileScreen() {
         <Stat label="Resolved" value={stats.resolved} />
       </View>
 
-      <Pressable style={styles.signOutBtn} onPress={() => signOut()}>
+      <Pressable
+        style={styles.signOutBtn}
+        onPress={() => signOut()}
+        accessibilityRole="button"
+        accessibilityLabel="Sign out of your account"
+      >
         <Text style={styles.signOutText}>Sign out</Text>
       </Pressable>
     </ScrollView>

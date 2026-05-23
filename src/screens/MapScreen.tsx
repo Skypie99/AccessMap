@@ -191,7 +191,9 @@ export default function MapScreen() {
               styles.iconBtn,
               (filtersOpen || filtersActive) && styles.iconBtnActive,
             ]}
+            accessibilityRole="button"
             accessibilityLabel="Toggle filters"
+            accessibilityState={{ expanded: filtersOpen }}
           >
             <Text
               style={[
@@ -205,6 +207,7 @@ export default function MapScreen() {
           <Pressable
             onPress={refreshFlags}
             style={styles.iconBtn}
+            accessibilityRole="button"
             accessibilityLabel="Refresh flags"
           >
             <Text style={styles.iconText}>⟳</Text>
@@ -212,6 +215,7 @@ export default function MapScreen() {
           <Pressable
             onPress={requestLocation}
             style={styles.iconBtn}
+            accessibilityRole="button"
             accessibilityLabel="Recenter on me"
           >
             <Text style={styles.iconText}>◎</Text>
@@ -223,7 +227,11 @@ export default function MapScreen() {
             <View style={styles.filterHeaderRow}>
               <Text style={styles.filterTitle}>Filter flags</Text>
               {filtersActive && (
-                <Pressable onPress={clearFilters}>
+                <Pressable
+                  onPress={clearFilters}
+                  accessibilityRole="button"
+                  accessibilityLabel="Clear all filters"
+                >
                   <Text style={styles.clearLink}>Clear</Text>
                 </Pressable>
               )}
@@ -242,6 +250,9 @@ export default function MapScreen() {
                     key={c}
                     onPress={() => toggleCategory(c)}
                     style={[styles.filterPill, active && styles.filterPillActive]}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Filter by ${CATEGORY_LABELS[c]}`}
+                    accessibilityState={{ selected: active }}
                   >
                     <Text
                       style={[
@@ -268,6 +279,9 @@ export default function MapScreen() {
                       styles.sevPill,
                       active && { backgroundColor: severityColor(s) },
                     ]}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Minimum severity ${s}`}
+                    accessibilityState={{ selected: active }}
                   >
                     <Text
                       style={[
@@ -307,7 +321,10 @@ export default function MapScreen() {
           ]}
           onPress={() => setReportOpen(true)}
           disabled={!location}
+          accessibilityRole="button"
           accessibilityLabel="Report a flag here"
+          accessibilityHint="Opens a form to report an accessibility issue at your current location"
+          accessibilityState={{ disabled: !location }}
         >
           <Text style={styles.fabText}>＋ Report</Text>
         </Pressable>
