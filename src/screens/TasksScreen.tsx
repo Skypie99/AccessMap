@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
+import { useAuth } from '@/lib/auth';
 import {
   CATEGORY_LABELS,
   listFlags,
@@ -24,6 +25,7 @@ import { severityColor } from './ReportFlagModal';
 export default function TasksScreen() {
   const navigation =
     useNavigation<BottomTabNavigationProp<RootTabParamList, 'Tasks'>>();
+  const { user } = useAuth();
   const [flags, setFlags] = useState<FlagRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -62,7 +64,12 @@ export default function TasksScreen() {
     refresh();
   }, [refresh]);
 
-  const setStatus = async (id: string, status: FlagStatus) => {
+  // Trigger lives in supabase/schema.sql (handle_flag_status_change, ~line 75).
+  // Reporter ALWAYS gets the reporter bonus (5 verify / 10 resolve).
+  // Actor gets the actor bonus (2 verify / 5 resolve) ONLY when actor != reporter.
+  // So if you triage your own flag, you earn the reporter bonus only — keep this
+  // mapping in sync with the trigger if the values ever change.
+  const setStatus = async (id: string, status: FlagStatus, isOwn: boolean) => {
     setBusyId(id);
     try {
       await updateFlagStatus(id, status);
@@ -72,8 +79,11 @@ export default function TasksScreen() {
           ? prev.map((f) => (f.id === id ? { ...f, status } : f))
           : prev.filter((f) => f.id !== id),
       );
-      if (status === 'verified') showFlash('Verified! +2 points');
-      else if (status === 'resolved') showFlash('Resolved! +5 points');
+      if (status === 'verified') {
+        showFlash(isOwn ? 'Verified! +5 points' : 'Verified! +2 points');
+      } else if (status === 'resolved') {
+        showFlash(isOwn ? 'Resolved! +10 points' : 'Resolved! +5 points');
+      }
       // Re-fetch in the background to reconcile with whatever the server
       // actually committed (concurrent triage, points trigger failures, etc.).
       // Fire-and-forget — the optimistic update already handled the instant
@@ -121,6 +131,7 @@ export default function TasksScreen() {
       }
       renderItem={({ item }) => {
         const isBusy = busyId === item.id;
+        const isOwn = item.user_id === user?.id;
         const goToOnMap = () => {
           navigation.navigate('Map', {
             focusFlag: { id: item.id, lat: item.lat, lng: item.lng },
@@ -164,7 +175,7 @@ export default function TasksScreen() {
               {item.status === 'open' && (
                 <Pressable
                   disabled={isBusy}
-                  onPress={() => setStatus(item.id, 'verified')}
+                  onPress={() => setStatus(item.id, 'verified', isOwn)}
                   style={[styles.actionBtn, styles.verifyBtn]}
                 >
                   <Text style={styles.verifyText}>Verify</Text>
@@ -172,14 +183,14 @@ export default function TasksScreen() {
               )}
               <Pressable
                 disabled={isBusy}
-                onPress={() => setStatus(item.id, 'resolved')}
+                onPress={() => setStatus(item.id, 'resolved', isOwn)}
                 style={[styles.actionBtn, styles.resolveBtn]}
               >
                 <Text style={styles.resolveText}>Resolved</Text>
               </Pressable>
               <Pressable
                 disabled={isBusy}
-                onPress={() => setStatus(item.id, 'rejected')}
+                onPress={() => setStatus(item.id, 'rejected', isOwn)}
                 style={[styles.actionBtn, styles.rejectBtn]}
               >
                 <Text style={styles.rejectText}>Reject</Text>
