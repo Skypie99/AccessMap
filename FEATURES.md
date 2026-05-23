@@ -10,6 +10,31 @@ they land on `main`.
 
 ---
 
+## Shipped 2026-05-23 evening (merge-on-done loop)
+
+- **What's New / Changelog modal.** New "What's New" row in Profile
+  opens a slide-up modal listing shipped features grouped by date,
+  each release with a date badge + headline + bulleted user-visible
+  changes. Inline RELEASES array in
+  `src/components/ChangelogModal.tsx` — adding a release is a single
+  array prepend.
+- **Tasks screen polish.** Screen wash (#f7f9fc), `SectionList`
+  with Open / Verified sections (count pill per header, empty
+  sections omitted), and a friendlier "All caught up ✨"
+  empty-state card. No behavior changes to the card actions.
+- **Address search via Nominatim.** New 🔍 button at the front of
+  the Map's top action bar opens a slide-up search sheet. 350ms
+  debounced calls to OpenStreetMap's Nominatim geocoder, results
+  list (up to 5), tap to animate the map to the chosen location at
+  neighborhood-scale zoom. Pure parser exported for testing (8 new
+  geocode tests + 7 search tests = 15 total in
+  `src/lib/__tests__/geocode.test.ts`).
+
+**Process change applied this loop:** merge-on-done — each branch
+landed to main as soon as it hit green (no conflict, typecheck OK,
+jest OK, no protected paths). Three back-to-back clean merges, no
+manual conflict resolution.
+
 ## Shipped 2026-05-23 (fastloop v3 — feedback focus)
 
 - **Feedback categories.** FeedbackModal grew a 4-chip radio group
