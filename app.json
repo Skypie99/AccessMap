@@ -1,0 +1,43 @@
+{
+  "expo": {
+    "name": "AccessMap",
+    "slug": "accessmap",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "accessmap",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.accessmap.app",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "AccessMap uses your location to show nearby accessibility flags and to attach your location when you report a new flag."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#ffffff"
+      },
+      "package": "com.accessmap.app",
+      "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION"
+      ]
+    },
+    "web": {
+      "bundler": "metro"
+    },
+    "plugins": [
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "AccessMap uses your location to show nearby accessibility flags and to attach your location when you report a new flag."
+        }
+      ]
+    ],
+    "extra": {
+      "supabaseUrl": "",
+      "supabaseAnonKey": ""
+    }
+  }
+}

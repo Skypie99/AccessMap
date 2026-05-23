@@ -1,0 +1,144 @@
+import 'leaflet/dist/leaflet.css';
+import React, { forwardRef, useImperativeHandle, useRef } from 'react';
+import { MapContainer, Marker, Popup, TileLayer } from 'react-leaflet';
+import L, { Map as LeafletMap, Marker as LeafletMarker } from 'leaflet';
+import { CATEGORY_LABELS } from '@/lib/flags';
+import type { FlagRow } from '@/types/database';
+import { severityColor } from '@/screens/ReportFlagModal';
+
+export interface PlatformMapRegion {
+  latitude: number;
+  longitude: number;
+  latitudeDelta: number;
+  longitudeDelta: number;
+}
+
+export interface PlatformMapHandle {
+  animateTo: (region: {
+    latitude: number;
+    longitude: number;
+    latitudeDelta?: number;
+    longitudeDelta?: number;
+  }) => void;
+  showCallout: (flagId: string) => void;
+}
+
+export interface PlatformMapProps {
+  initialRegion: PlatformMapRegion;
+  flags: FlagRow[];
+  focusedFlagId: string | null;
+  showsUserLocation?: boolean;
+}
+
+function pinIcon(color: string, dim: boolean): L.DivIcon {
+  return L.divIcon({
+    className: 'accessmap-pin',
+    html: `<div style="
+      width:22px;height:22px;border-radius:50%;
+      background:${color};
+      border:2px solid white;
+      box-shadow:0 1px 4px rgba(0,0,0,0.4);
+      opacity:${dim ? 0.55 : 1};
+    "></div>`,
+    iconSize: [22, 22],
+    iconAnchor: [11, 11],
+    popupAnchor: [0, -12],
+  });
+}
+
+function deltaToZoom(latitudeDelta: number): number {
+  return Math.max(2, Math.min(18, Math.round(Math.log2(360 / latitudeDelta))));
+}
+
+const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(
+  function PlatformMap({ initialRegion, flags, focusedFlagId }, ref) {
+    const mapInstance = useRef<LeafletMap | null>(null);
+    const markerRefs = useRef<Record<string, LeafletMarker | null>>({});
+
+    useImperativeHandle(
+      ref,
+      () => ({
+        animateTo: (r) => {
+          const zoom = deltaToZoom(r.latitudeDelta ?? 0.005);
+          mapInstance.current?.flyTo([r.latitude, r.longitude], zoom, {
+            duration: 0.6,
+          });
+        },
+        showCallout: (id) => {
+          markerRefs.current[id]?.openPopup();
+        },
+      }),
+      [],
+    );
+
+    return (
+      <div style={{ position: 'absolute', inset: 0 }}>
+        <MapContainer
+          center={[initialRegion.latitude, initialRegion.longitude]}
+          zoom={deltaToZoom(initialRegion.latitudeDelta)}
+          style={{ height: '100%', width: '100%' }}
+          ref={(m) => {
+            mapInstance.current = m;
+          }}
+        >
+          <TileLayer
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          />
+          {flags.map((f) => (
+            <Marker
+              key={f.id}
+              position={[f.lat, f.lng]}
+              icon={pinIcon(
+                severityColor(f.severity),
+                focusedFlagId !== null && focusedFlagId !== f.id,
+              )}
+              ref={(m) => {
+                markerRefs.current[f.id] = m;
+              }}
+            >
+              <Popup>
+                <div style={{ minWidth: 200 }}>
+                  <div style={{ fontWeight: 700, fontSize: 14 }}>
+                    {CATEGORY_LABELS[f.category]}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: 11,
+                      color: '#666',
+                      textTransform: 'uppercase',
+                      letterSpacing: 0.5,
+                      marginTop: 2,
+                    }}
+                  >
+                    Severity {f.severity} · {f.status}
+                  </div>
+                  {f.photo_url ? (
+                    <img
+                      src={f.photo_url}
+                      alt=""
+                      style={{
+                        width: '100%',
+                        maxHeight: 160,
+                        objectFit: 'cover',
+                        borderRadius: 8,
+                        marginTop: 6,
+                      }}
+                    />
+                  ) : null}
+                  {f.description ? (
+                    <div style={{ marginTop: 6, fontSize: 12 }}>
+                      {f.description}
+                    </div>
+                  ) : null}
+                </div>
+              </Popup>
+            </Marker>
+          ))}
+        </MapContainer>
+      </div>
+    );
+  },
+);
+
+export default PlatformMap;
