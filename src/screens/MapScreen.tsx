@@ -18,6 +18,7 @@ import {
   CATEGORY_LABELS,
   CATEGORY_ORDER,
   DEFAULT_STATUSES,
+  SEVERITY_LABELS,
   severityColor,
   SEVERITY_ORDER,
   STATUS_LABELS,
@@ -170,6 +171,22 @@ export default function MapScreen() {
     setActiveCategories(new Set());
     setMinSeverity(1);
     setActiveStatuses(new Set(DEFAULT_STATUSES));
+  }, []);
+
+  // Quick-toggle severity from the top icon row without opening the full
+  // filter panel. Cycles 1 → 2 → 3 → 4 → 5 → 1; 1 is the "no severity
+  // filter" state (every flag is severity >= 1). Announces the new state
+  // on each tap so screen-reader users hear the change.
+  const cycleSeverity = useCallback(() => {
+    setMinSeverity((prev) => {
+      const next = (prev === 5 ? 1 : prev + 1) as FlagSeverity;
+      AccessibilityInfo.announceForAccessibility(
+        next === 1
+          ? 'Minimum severity: all'
+          : `Minimum severity: ${SEVERITY_LABELS[next]} and above`,
+      );
+      return next;
+    });
   }, []);
 
   // Whether the status filter differs from the default — used to glow the
@@ -472,6 +489,31 @@ export default function MapScreen() {
               ]}
             >
               ⌕
+            </Text>
+          </Pressable>
+          <Pressable
+            onPress={cycleSeverity}
+            style={[
+              styles.iconBtn,
+              styles.sevQuickBtn,
+              minSeverity > 1 && { backgroundColor: severityColor(minSeverity) },
+            ]}
+            accessibilityRole="button"
+            accessibilityLabel={
+              minSeverity === 1
+                ? 'Minimum severity: all'
+                : `Minimum severity: ${SEVERITY_LABELS[minSeverity]} and above`
+            }
+            accessibilityHint="Tap to cycle through minimum severity filters"
+          >
+            <Text
+              style={[
+                styles.iconText,
+                styles.sevQuickText,
+                minSeverity > 1 && styles.iconTextActive,
+              ]}
+            >
+              {minSeverity}+
             </Text>
           </Pressable>
           <Pressable
@@ -956,6 +998,10 @@ const styles = StyleSheet.create({
   iconText: { fontSize: 18, color: '#2f80ed', fontWeight: '700' },
   iconBtnActive: { backgroundColor: '#2f80ed' },
   iconTextActive: { color: '#fff' },
+  // Quick-cycle severity button — slightly wider than the round icon buttons
+  // to fit the "{n}+" label without crowding the glyph against the edges.
+  sevQuickBtn: { width: 44 },
+  sevQuickText: { fontSize: 14 },
   filterPanel: {
     marginTop: 8,
     backgroundColor: 'rgba(255,255,255,0.97)',
