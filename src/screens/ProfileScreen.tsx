@@ -33,6 +33,7 @@ import FlagDetailModal, {
 import AboutModal from '@/components/AboutModal';
 import MyFeedbackModal from '@/components/MyFeedbackModal';
 import HelpModal from '@/components/HelpModal';
+import ChangelogModal from '@/components/ChangelogModal';
 
 interface Stats {
   reported: number;
@@ -101,6 +102,10 @@ export default function ProfileScreen() {
   // content, no fetch, no state beyond per-item expand/collapse
   // managed inside the modal.
   const [helpOpen, setHelpOpen] = useState(false);
+
+  // What's New / Changelog modal — opened from the "What's New" row.
+  // Inline RELEASES list inside the modal, no fetch.
+  const [changelogOpen, setChangelogOpen] = useState(false);
 
   // Edit-name state. nameDraft is what the user is typing; profile?.display_name
   // is the persisted value. A Save button fires only when they actually differ.
@@ -523,6 +528,27 @@ export default function ProfileScreen() {
             styles.aboutRow,
             pressed && styles.aboutRowPressed,
           ]}
+          onPress={() => setChangelogOpen(true)}
+          accessibilityRole="button"
+          accessibilityLabel="What's New"
+          accessibilityHint="Opens a dated list of recent shipped features"
+        >
+          <View style={styles.aboutTextWrap}>
+            <Text style={styles.aboutTitle}>What's New</Text>
+            <Text style={styles.aboutSubtitle}>
+              Recent features added to AccessMap.
+            </Text>
+          </View>
+          <Text style={styles.aboutChevron} accessibilityElementsHidden>
+            ›
+          </Text>
+        </Pressable>
+
+        <Pressable
+          style={({ pressed }) => [
+            styles.aboutRow,
+            pressed && styles.aboutRowPressed,
+          ]}
           onPress={() => setAboutOpen(true)}
           accessibilityRole="button"
           accessibilityLabel="About AccessMap"
@@ -578,6 +604,11 @@ export default function ProfileScreen() {
       <HelpModal
         visible={helpOpen}
         onClose={() => setHelpOpen(false)}
+      />
+
+      <ChangelogModal
+        visible={changelogOpen}
+        onClose={() => setChangelogOpen(false)}
       />
     </>
   );
