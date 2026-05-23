@@ -1,0 +1,339 @@
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  ActivityIndicator,
+  FlatList,
+  Image,
+  Modal,
+  Pressable,
+  RefreshControl,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
+import { useAuth } from '@/lib/auth';
+import { CATEGORY_LABELS, listFlagsByUser } from '@/lib/flags';
+import type { FlagRow, FlagStatus } from '@/types/database';
+import { severityColor } from '@/screens/ReportFlagModal';
+
+interface Props {
+  visible: boolean;
+  onClose: () => void;
+  onSelectFlag: (flag: FlagRow) => void;
+  // Bumping this value triggers a refetch — Profile uses it after a flag
+  // is changed or deleted in FlagDetailModal so the list stays in sync.
+  refreshKey?: number;
+}
+
+const STATUS_LABEL: Record<FlagStatus, string> = {
+  open: 'Open',
+  verified: 'Verified',
+  resolved: 'Resolved',
+  rejected: 'Rejected',
+};
+
+// Same palette as FlagDetailModal — tinted backgrounds with darker
+// foreground text keep contrast above WCAG AA 4.5:1.
+const STATUS_COLORS: Record<FlagStatus, { bg: string; fg: string }> = {
+  open: { bg: '#fdebd0', fg: '#8a4b00' },
+  verified: { bg: '#d6e6f9', fg: '#1c4f99' },
+  resolved: { bg: '#d4ecdb', fg: '#1b6b34' },
+  rejected: { bg: '#e5e5e5', fg: '#3a3a3a' },
+};
+
+export default function MyReportsModal({
+  visible,
+  onClose,
+  onSelectFlag,
+  refreshKey = 0,
+}: Props) {
+  const { user } = useAuth();
+  const [flags, setFlags] = useState<FlagRow[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  // Guard setState after async calls so a slow fetch can't update a
+  // torn-down modal.
+  const mountedRef = useRef(true);
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
+
+  const load = useCallback(async () => {
+    if (!user) return;
+    if (mountedRef.current) {
+      setLoading(true);
+      setLoadError(null);
+    }
+    try {
+      const rows = await listFlagsByUser(user.id);
+      if (mountedRef.current) setFlags(rows);
+    } catch (e: any) {
+      if (mountedRef.current) {
+        setLoadError(e?.message ?? 'Could not load your reports.');
+      }
+    } finally {
+      if (mountedRef.current) setLoading(false);
+    }
+  }, [user]);
+
+  // Fetch fresh data every time the modal opens (and when the parent bumps
+  // refreshKey after a triage/delete completes).
+  useEffect(() => {
+    if (visible) load();
+  }, [visible, refreshKey, load]);
+
+  const renderItem = ({ item }: { item: FlagRow }) => {
+    const statusPalette = STATUS_COLORS[item.status];
+    const dateLabel = new Date(item.created_at).toLocaleDateString(undefined, {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    });
+    const a11yLabel =
+      `${CATEGORY_LABELS[item.category]}, severity ${item.severity} of 5, ` +
+      `status ${STATUS_LABEL[item.status]}, reported ${dateLabel}` +
+      (item.description ? `. Note: ${item.description}` : '');
+
+    return (
+      <Pressable
+        onPress={() => onSelectFlag(item)}
+        style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
+        accessibilityRole="button"
+        accessibilityLabel={a11yLabel}
+        accessibilityHint="Opens the full report with options to verify, resolve, reject, or delete"
+      >
+        <View style={styles.rowHeader}>
+          <View
+            style={[
+              styles.sevDot,
+              { backgroundColor: severityColor(item.severity) },
+            ]}
+            // Severity is also surfaced as a number + text in the badges
+            // below; this dot is purely visual reinforcement.
+            accessibilityElementsHidden
+            importantForAccessibility="no"
+          />
+          <Text style={styles.rowTitle} numberOfLines={1}>
+            {CATEGORY_LABELS[item.category]}
+          </Text>
+          <View
+            style={[styles.statusBadge, { backgroundColor: statusPalette.bg }]}
+          >
+            <Text style={[styles.statusBadgeText, { color: statusPalette.fg }]}>
+              {STATUS_LABEL[item.status]}
+            </Text>
+          </View>
+        </View>
+        <View style={styles.rowBody}>
+          {item.photo_url ? (
+            <Image
+              source={{ uri: item.photo_url }}
+              style={styles.thumb}
+              accessibilityElementsHidden
+              importantForAccessibility="no"
+            />
+          ) : null}
+          <View style={styles.rowBodyText}>
+            {item.description ? (
+              <Text style={styles.rowDesc} numberOfLines={2}>
+                {item.description}
+              </Text>
+            ) : (
+              <Text style={styles.rowDescMuted}>No description.</Text>
+            )}
+            <Text style={styles.rowMeta}>
+              Severity {item.severity} • {dateLabel}
+            </Text>
+          </View>
+        </View>
+      </Pressable>
+    );
+  };
+
+  return (
+    <Modal
+      visible={visible}
+      animationType="slide"
+      transparent
+      onRequestClose={onClose}
+    >
+      <View style={styles.backdrop}>
+        <View
+          style={styles.card}
+          accessibilityViewIsModal
+        >
+          <View style={styles.headerRow}>
+            <Text style={styles.title} accessibilityRole="header">
+              My Reports
+            </Text>
+            <Pressable
+              onPress={onClose}
+              hitSlop={12}
+              style={styles.closeBtn}
+              accessibilityRole="button"
+              accessibilityLabel="Close My Reports"
+              accessibilityHint="Returns to your Profile"
+            >
+              <Text style={styles.closeBtnText}>✕</Text>
+            </Pressable>
+          </View>
+
+          {loadError ? (
+            <View style={styles.errorBanner}>
+              <Text style={styles.errorText}>{loadError}</Text>
+              <Pressable
+                onPress={load}
+                style={styles.retryBtn}
+                accessibilityRole="button"
+                accessibilityLabel="Retry loading your reports"
+              >
+                <Text style={styles.retryText}>Retry</Text>
+              </Pressable>
+            </View>
+          ) : null}
+
+          {loading && flags.length === 0 && !loadError ? (
+            <View style={styles.center}>
+              <ActivityIndicator />
+              <Text style={styles.subtitle}>Loading your reports…</Text>
+            </View>
+          ) : (
+            <FlatList
+              data={flags}
+              keyExtractor={(f) => f.id}
+              renderItem={renderItem}
+              contentContainerStyle={
+                flags.length === 0 ? styles.center : styles.list
+              }
+              refreshControl={
+                <RefreshControl refreshing={loading} onRefresh={load} />
+              }
+              accessibilityLabel={
+                flags.length === 0
+                  ? 'Your reports list, empty'
+                  : `Your reports list, ${flags.length} ${flags.length === 1 ? 'report' : 'reports'}`
+              }
+              ListEmptyComponent={
+                loadError ? null : (
+                  <View style={styles.emptyWrap}>
+                    <Text style={styles.emptyTitle}>No reports yet</Text>
+                    <Text style={styles.emptyBody}>
+                      You haven't reported any accessibility flags. Tap the
+                      Map tab and use the Report button to drop your first
+                      pin.
+                    </Text>
+                  </View>
+                )
+              }
+            />
+          )}
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+const styles = StyleSheet.create({
+  backdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'flex-end',
+  },
+  card: {
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 20,
+    gap: 12,
+    height: '85%',
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  title: { fontSize: 20, fontWeight: '700', flex: 1, color: '#222' },
+  closeBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#eef1f5',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  closeBtnText: { fontSize: 18, color: '#333', fontWeight: '700' },
+  errorBanner: {
+    backgroundColor: '#fdecea',
+    borderRadius: 10,
+    padding: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  errorText: { color: '#8a1f1f', flex: 1, fontSize: 13 },
+  retryBtn: {
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 8,
+    backgroundColor: '#c0392b',
+    minHeight: 44,
+    justifyContent: 'center',
+  },
+  retryText: { color: '#fff', fontWeight: '700', fontSize: 13 },
+  center: {
+    flexGrow: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 24,
+    gap: 8,
+  },
+  subtitle: { fontSize: 13, color: '#666', textAlign: 'center' },
+  list: { paddingTop: 4, paddingBottom: 12, gap: 10 },
+  row: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 14,
+    gap: 8,
+    borderWidth: 1,
+    borderColor: '#eef1f5',
+    minHeight: 44,
+  },
+  rowPressed: { opacity: 0.85, backgroundColor: '#f7f9fc' },
+  rowHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  sevDot: { width: 12, height: 12, borderRadius: 6 },
+  rowTitle: { fontSize: 16, fontWeight: '600', flex: 1, color: '#222' },
+  statusBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 999,
+  },
+  statusBadgeText: { fontWeight: '700', fontSize: 11 },
+  rowBody: { flexDirection: 'row', gap: 12 },
+  thumb: {
+    width: 64,
+    height: 64,
+    borderRadius: 8,
+    backgroundColor: '#eef1f5',
+  },
+  rowBodyText: { flex: 1, gap: 4 },
+  rowDesc: { fontSize: 14, color: '#222' },
+  rowDescMuted: { fontSize: 14, color: '#999', fontStyle: 'italic' },
+  rowMeta: { fontSize: 12, color: '#666' },
+  emptyWrap: {
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 24,
+  },
+  emptyTitle: { fontSize: 18, fontWeight: '600', color: '#222' },
+  emptyBody: {
+    fontSize: 14,
+    color: '#555',
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+});
