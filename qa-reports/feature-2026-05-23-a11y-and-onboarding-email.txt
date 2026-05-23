@@ -1,0 +1,76 @@
+To:      skylerhalisky@gmail.com
+Subject: Feature push AccessMap — 2026-05-23 — Auto-open list (a11y Phase 2) + Onboarding cards
+
+Hi Sky,
+
+Per your follow-up ask, I shipped both of the suggested next features.
+Each is on its own branch.
+
+1) Auto-open accessible list when a screen reader is on (Phase 2)
+   Branch: feat/auto-open-list-a11y-2026-05-23
+           (stacked on feat/nearby-flags-list-2026-05-23 — merge that first)
+   Commit: 5bf753b  Auto-open NearbyFlagsModal when a screen reader is on
+   Files:  +57 against the nearby-flags branch (new src/lib/accessibility.ts
+           + ~16 lines added to MapScreen.tsx)
+
+   A tiny useScreenReader() hook reads AccessibilityInfo.isScreenReaderEnabled()
+   and subscribes to screenReaderChanged for live updates. MapScreen uses
+   it to auto-open NearbyFlagsModal once per mount when VoiceOver/TalkBack
+   is detected — so blind/low-vision users land directly in the navigable
+   linear view instead of the visual map. If they explicitly close it,
+   we leave them on the Map; the "📋 List" FAB remains as manual re-entry.
+
+2) First-run Onboarding cards
+   Branch: feat/onboarding-cards-2026-05-23  (independent, off main)
+   Commit: 95e7059  Add first-run OnboardingModal (3 swipeable cards)
+   Files:  +315 / -2 (new src/lib/onboarding.ts + src/screens/OnboardingModal.tsx
+           + App.tsx tweak)
+
+   Three swipeable cards shown on first sign-in: 📍 Welcome / what flags
+   are, 🎯 Severity 1-5 (with note that meaning is carried by color AND
+   number), ⭐ Earn points. Pagination dots, Next button, "Get started"
+   on the last card, Skip top-right. Persisted per-user via AsyncStorage
+   (already installed for Supabase auth — no new dependency). Each card
+   reads as one composed sentence to a screen reader.
+
+Verification (both branches):
+  - Typecheck green throughout (npm run typecheck)
+  - Reachable: Feature 3 = Map mount with VoiceOver/TalkBack on auto-
+    opens NearbyFlagsModal. Feature 4 = first sign-in shows modal.
+  - Born accessible: composed accessibilityLabels, decorative children
+    hidden, ≥44pt targets, no color-only meaning, onRequestClose for
+    back-button, screen-reader-aware step context on Next.
+  - No schema, no new dep, no auth, no map-library changes.
+  - Types still use `type` not `interface`.
+
+How to try (Feature 3):
+  cd ~/AccessMap
+  git checkout feat/auto-open-list-a11y-2026-05-23
+  npm start                              # iOS sim
+  # Sign in → Cmd+F5 in sim → modal auto-opens after a moment
+  # Cmd+F5 again to turn VoiceOver off
+
+How to try (Feature 4):
+  git checkout feat/onboarding-cards-2026-05-23
+  npm run web                            # or npm start
+  # Sign in with a new or fresh account → 3-card modal appears
+  # Tap Next twice → Get started → dismissed
+  # Sign out + back in → does NOT reappear
+
+How to review/merge (suggested order — Feature 3 depends on nearby-flags):
+  git checkout main
+  git merge feat/nearby-flags-list-2026-05-23     # if not already in
+  git merge feat/auto-open-list-a11y-2026-05-23
+  git merge feat/onboarding-cards-2026-05-23      # independent — any order
+
+Two forward-looking suggestions in the full report:
+  1. Profile editing (Next list) — could include a "show intro again"
+     button that wipes the AsyncStorage key from this run.
+  2. Reporter-side points confirmation toasts (Later list).
+
+Full report is at:
+  ~/AccessMap/qa-reports/feature-2026-05-23-a11y-and-onboarding.md
+  ~/Documents/Claude/Projects/Access Map App/Access Map Summarys/
+    2026-05-23_Feature_Development_Report_A11y_And_Onboarding.md
+
+— Shamus

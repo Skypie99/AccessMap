@@ -23,10 +23,18 @@ const tabIcon = (emoji: string) => ({ color }: { color: string }) => (
   <Text style={{ fontSize: 20, color }}>{emoji}</Text>
 );
 
-export default function RootNavigator() {
+interface Props {
+  // Which tab to open on first render. Used by App.tsx to honor the user's
+  // saved default-tab preference. Defaults to 'Map' to preserve the original
+  // behavior when no preference has been set.
+  initialRouteName?: keyof RootTabParamList;
+}
+
+export default function RootNavigator({ initialRouteName = 'Map' }: Props) {
   return (
     <NavigationContainer>
       <Tab.Navigator
+        initialRouteName={initialRouteName}
         screenOptions={{
           tabBarActiveTintColor: '#2f80ed',
           tabBarInactiveTintColor: '#8a8a8a',
