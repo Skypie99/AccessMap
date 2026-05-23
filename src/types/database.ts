@@ -21,6 +21,10 @@ export type FlagRow = {
   photo_url: string | null;
   status: FlagStatus;
   created_at: string;
+  // Optional until supabase/migrations/2026-05-23_data_layer_hardening.sql
+  // is applied. After that migration runs, every row has updated_at set
+  // (default now() on insert, BEFORE UPDATE trigger on edit).
+  updated_at?: string;
 };
 
 export type UserRow = {
