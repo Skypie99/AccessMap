@@ -12,7 +12,14 @@ import {
 } from 'react-native';
 import { color, font, radius, shadow, spacing } from '@/theme';
 import { useAuth } from '@/lib/auth';
-import { FEEDBACK_EMAIL, sendFeedback } from '@/lib/feedback';
+import {
+  FEEDBACK_CATEGORIES,
+  FEEDBACK_CATEGORY_GLYPHS,
+  FEEDBACK_CATEGORY_LABELS,
+  FEEDBACK_EMAIL,
+  sendFeedback,
+  type FeedbackCategory,
+} from '@/lib/feedback';
 
 interface Props {
   visible: boolean;
@@ -39,11 +46,15 @@ export default function FeedbackModal({ visible, onClose }: Props) {
   const { user } = useAuth();
   const [body, setBody] = useState('');
   const [contact, setContact] = useState('');
+  // 'idea' is the lowest-friction default — most users have an idea
+  // before they've isolated a bug, and "Idea" doesn't suggest the message
+  // is going into a tracker.
+  const [category, setCategory] = useState<FeedbackCategory>('idea');
   const [sending, setSending] = useState(false);
 
   // Re-prefill contact whenever the modal opens — covers sign-out/sign-in
-  // edge case. Body is preserved so the user doesn't lose what they typed
-  // if they close and reopen.
+  // edge case. Body and category are preserved so the user doesn't lose
+  // what they typed/picked if they close and reopen.
   useEffect(() => {
     if (visible) {
       setContact(user?.email ?? '');
@@ -66,6 +77,7 @@ export default function FeedbackModal({ visible, onClose }: Props) {
     const result = await sendFeedback({
       body,
       contactEmail: contact.trim() || undefined,
+      category,
     });
     if (!mountedRef.current) return;
     setSending(false);
@@ -121,6 +133,49 @@ export default function FeedbackModal({ visible, onClose }: Props) {
             Tell us what's working, what isn't, or what you wish AccessMap did.
             Tapping Send opens your email app with the message prefilled.
           </Text>
+
+          <Text style={styles.label}>Category</Text>
+          <View
+            style={styles.categoryRow}
+            accessibilityRole="radiogroup"
+            accessibilityLabel="Feedback category"
+          >
+            {FEEDBACK_CATEGORIES.map((c) => {
+              const selected = c === category;
+              return (
+                <Pressable
+                  key={c}
+                  onPress={() => setCategory(c)}
+                  disabled={sending}
+                  style={[
+                    styles.categoryChip,
+                    selected && styles.categoryChipSelected,
+                  ]}
+                  accessibilityRole="radio"
+                  accessibilityLabel={FEEDBACK_CATEGORY_LABELS[c]}
+                  accessibilityState={{
+                    selected,
+                    disabled: sending,
+                  }}
+                >
+                  <Text
+                    style={styles.categoryChipGlyph}
+                    accessibilityElementsHidden
+                  >
+                    {FEEDBACK_CATEGORY_GLYPHS[c]}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.categoryChipText,
+                      selected && styles.categoryChipTextSelected,
+                    ]}
+                  >
+                    {FEEDBACK_CATEGORY_LABELS[c]}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
 
           <Text style={styles.label}>Your feedback</Text>
           <TextInput
@@ -245,6 +300,34 @@ const styles = StyleSheet.create({
     fontWeight: font.weight.semibold,
     marginTop: spacing.sm,
   },
+  categoryRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    flexWrap: 'wrap',
+  },
+  categoryChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.full,
+    backgroundColor: color.surfaceNeutral,
+    borderWidth: 1,
+    borderColor: 'transparent',
+    minHeight: 36,
+  },
+  categoryChipSelected: {
+    backgroundColor: color.brandSoft,
+    borderColor: color.brand,
+  },
+  categoryChipGlyph: { fontSize: font.size.base },
+  categoryChipText: {
+    color: color.text,
+    fontWeight: font.weight.semibold,
+    fontSize: font.size.sm,
+  },
+  categoryChipTextSelected: { color: color.brandOnSoft },
   bodyInput: {
     borderWidth: 1,
     borderColor: color.borderSubtle,

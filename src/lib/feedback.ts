@@ -7,7 +7,32 @@ import { errorMessage } from './errors';
  */
 export const FEEDBACK_EMAIL = 'skylerhalisky@gmail.com';
 
-const SUBJECT = 'AccessMap feedback';
+/**
+ * Feedback categories. The user picks one in the modal; we tag the
+ * subject line with it so the maintainer's inbox can triage at a glance
+ * ("AccessMap feedback: Bug" vs ". Idea" vs ". Love"). Default is
+ * 'idea' — the lowest-friction starting point.
+ */
+export const FEEDBACK_CATEGORIES = ['bug', 'idea', 'love', 'other'] as const;
+export type FeedbackCategory = (typeof FEEDBACK_CATEGORIES)[number];
+
+export const FEEDBACK_CATEGORY_LABELS: Record<FeedbackCategory, string> = {
+  bug: 'Bug',
+  idea: 'Idea',
+  love: 'Love',
+  other: 'Other',
+};
+
+// Emoji glyphs that pair with the labels in the UI. Decorative only —
+// the label is always read aloud, never the emoji.
+export const FEEDBACK_CATEGORY_GLYPHS: Record<FeedbackCategory, string> = {
+  bug: '🐛',
+  idea: '💡',
+  love: '❤️',
+  other: '💬',
+};
+
+const SUBJECT_BASE = 'AccessMap feedback';
 
 // Mailto URLs have practical length limits (~2000 chars in many clients,
 // older Outlook chokes around 1000). Trim early so we never hand the OS
@@ -17,6 +42,7 @@ const MAX_BODY_CHARS = 1800;
 interface ComposeOptions {
   body: string;
   contactEmail?: string;
+  category?: FeedbackCategory;
 }
 
 /**
@@ -25,17 +51,32 @@ interface ComposeOptions {
  * owner can reply even when the platform's mail client strips the
  * From address. Exported for testing.
  */
-export function buildMailtoUrl({ body, contactEmail }: ComposeOptions): string {
+export function buildMailtoUrl({
+  body,
+  contactEmail,
+  category,
+}: ComposeOptions): string {
   const trimmed = body.trim().slice(0, MAX_BODY_CHARS);
-  const prefix = contactEmail
-    ? `Reply to: ${contactEmail}\n\n`
-    : '';
+  const categoryLabel = category
+    ? FEEDBACK_CATEGORY_LABELS[category]
+    : null;
+  // Subject gets the category appended after a colon so the maintainer's
+  // inbox can sort by it. Falls back to the plain subject when the caller
+  // doesn't pass a category (programmatic uses like About → "Send feedback"
+  // skip the category prompt).
+  const subjectText = categoryLabel
+    ? `${SUBJECT_BASE}: ${categoryLabel}`
+    : SUBJECT_BASE;
+  const replyPrefix = contactEmail ? `Reply to: ${contactEmail}\n` : '';
+  const categoryPrefix = categoryLabel ? `Category: ${categoryLabel}\n` : '';
+  const prefix =
+    replyPrefix || categoryPrefix ? `${replyPrefix}${categoryPrefix}\n` : '';
   const footer = `\n\n---\nSent from AccessMap on ${Platform.OS}`;
   const fullBody = `${prefix}${trimmed}${footer}`;
   // encodeURIComponent escapes everything mailto cares about; the OS / mail
   // client will decode it back. Use %20 for spaces in subject — some
   // clients are picky about the "+" form.
-  const subject = encodeURIComponent(SUBJECT);
+  const subject = encodeURIComponent(subjectText);
   const bodyParam = encodeURIComponent(fullBody);
   return `mailto:${FEEDBACK_EMAIL}?subject=${subject}&body=${bodyParam}`;
 }
