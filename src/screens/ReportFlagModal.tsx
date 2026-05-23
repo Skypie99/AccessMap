@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '@/lib/auth';
+import { errorMessage } from '@/lib/errors';
 import {
   CATEGORY_LABELS,
   CATEGORY_ORDER,
@@ -76,8 +77,8 @@ export default function ReportFlagModal({
       if (!result.canceled && result.assets[0]?.uri) {
         setPhotoUri(result.assets[0].uri);
       }
-    } catch (e: any) {
-      Alert.alert('Could not pick photo', e?.message ?? 'Unknown error.');
+    } catch (e) {
+      Alert.alert('Could not pick photo', errorMessage(e));
     }
   };
 
@@ -107,8 +108,8 @@ export default function ReportFlagModal({
       reset();
       onCreated();
       onClose();
-    } catch (e: any) {
-      Alert.alert('Could not report flag', e?.message ?? 'Unknown error.');
+    } catch (e) {
+      Alert.alert('Could not report flag', errorMessage(e));
     } finally {
       setSubmitting(false);
     }

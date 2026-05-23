@@ -14,6 +14,7 @@ import {
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { useAuth } from '@/lib/auth';
+import { errorMessage } from '@/lib/errors';
 import { signOut, supabase } from '@/lib/supabase';
 import { updateUserProfile } from '@/lib/users';
 import {
@@ -98,9 +99,9 @@ export default function ProfileScreen() {
         reported: reported.count ?? 0,
         resolved: resolved.count ?? 0,
       });
-    } catch (e: any) {
+    } catch (e) {
       if (mountedRef.current) {
-        Alert.alert('Could not load profile', e?.message ?? 'Unknown error.');
+        Alert.alert('Could not load profile', errorMessage(e));
       }
     } finally {
       if (mountedRef.current) setLoading(false);
@@ -141,8 +142,8 @@ export default function ProfileScreen() {
         setNameDraft(updated.display_name ?? '');
         AccessibilityInfo.announceForAccessibility('Display name saved.');
       }
-    } catch (e: any) {
-      Alert.alert('Could not save name', e?.message ?? 'Unknown error.');
+    } catch (e) {
+      Alert.alert('Could not save name', errorMessage(e));
     } finally {
       if (mountedRef.current) setSavingName(false);
     }

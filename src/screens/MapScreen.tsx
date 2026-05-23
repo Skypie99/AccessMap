@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import * as Location from 'expo-location';
 import { useRoute, type RouteProp } from '@react-navigation/native';
+import { errorMessage } from '@/lib/errors';
 import {
   CATEGORY_LABELS,
   CATEGORY_ORDER,
@@ -49,6 +50,16 @@ const DEFAULT_REGION: PlatformMapRegion = {
   latitudeDelta: 0.05,
   longitudeDelta: 0.05,
 };
+
+// Build the tap-to-retry banner copy from a thrown value. Single helper so
+// both the shared-provider error path and the local-fetch error path produce
+// the same string.
+function formatLoadError(e: unknown): string {
+  const msg = errorMessage(e, '');
+  return msg
+    ? `Couldn't load flags: ${msg}. Tap to retry.`
+    : "Couldn't load flags. Tap to retry.";
+}
 
 export default function MapScreen() {
   const mapRef = useRef<PlatformMapHandle | null>(null);
@@ -194,9 +205,9 @@ export default function MapScreen() {
         latitudeDelta: 0.01,
         longitudeDelta: 0.01,
       });
-    } catch (e: any) {
+    } catch (e) {
       if (mountedRef.current) {
-        Alert.alert('Could not get location', e?.message ?? 'Unknown error.');
+        Alert.alert('Could not get location', errorMessage(e));
       }
     } finally {
       if (mountedRef.current) setLocating(false);
@@ -209,11 +220,9 @@ export default function MapScreen() {
       try {
         await sharedRefresh();
         if (mountedRef.current) setLoadError(null);
-      } catch (e: any) {
+      } catch (e) {
         if (!mountedRef.current) return;
-        const message = e?.message
-          ? `Couldn't load flags: ${e.message}. Tap to retry.`
-          : "Couldn't load flags. Tap to retry.";
+        const message = formatLoadError(e);
         setLoadError(message);
         AccessibilityInfo.announceForAccessibility(message);
       }
@@ -236,11 +245,9 @@ export default function MapScreen() {
       if (!mountedRef.current) return;
       setCustomFlags(rows);
       setLoadError(null);
-    } catch (e: any) {
+    } catch (e) {
       if (!mountedRef.current) return;
-      const message = e?.message
-        ? `Couldn't load flags: ${e.message}. Tap to retry.`
-        : "Couldn't load flags. Tap to retry.";
+      const message = formatLoadError(e);
       setLoadError(message);
       // Announce to screen readers — the banner is rendered but a sighted
       // user sees it instantly; for VoiceOver/TalkBack we ask the OS to read

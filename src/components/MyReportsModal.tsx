@@ -11,6 +11,7 @@ import {
   View,
 } from 'react-native';
 import { useAuth } from '@/lib/auth';
+import { errorMessage } from '@/lib/errors';
 import {
   CATEGORY_LABELS,
   listFlagsByUser,
@@ -59,9 +60,9 @@ export default function MyReportsModal({
     try {
       const rows = await listFlagsByUser(user.id);
       if (mountedRef.current) setFlags(rows);
-    } catch (e: any) {
+    } catch (e) {
       if (mountedRef.current) {
-        setLoadError(e?.message ?? 'Could not load your reports.');
+        setLoadError(errorMessage(e, 'Could not load your reports.'));
       }
     } finally {
       if (mountedRef.current) setLoading(false);

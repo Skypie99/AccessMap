@@ -11,6 +11,7 @@ import {
   View,
 } from 'react-native';
 import { useAuth } from '@/lib/auth';
+import { errorMessage } from '@/lib/errors';
 import {
   CATEGORY_LABELS,
   deleteFlag,
@@ -79,8 +80,8 @@ export default function FlagDetailModal({
       const updated = await updateFlagStatus(shownFlag.id, next);
       onChanged(updated, action, isOwn);
       onClose();
-    } catch (e: any) {
-      Alert.alert('Could not update flag', e?.message ?? 'Unknown error.');
+    } catch (e) {
+      Alert.alert('Could not update flag', errorMessage(e));
     } finally {
       setBusy(false);
     }
@@ -102,8 +103,8 @@ export default function FlagDetailModal({
               await deleteFlag(shownFlag.id);
               onDeleted(shownFlag.id);
               onClose();
-            } catch (e: any) {
-              Alert.alert('Could not delete flag', e?.message ?? 'Unknown error.');
+            } catch (e) {
+              Alert.alert('Could not delete flag', errorMessage(e));
             } finally {
               setBusy(false);
             }

@@ -5,6 +5,7 @@ import React, {
   useEffect,
   useState,
 } from 'react';
+import { errorMessage } from './errors';
 import { listFlags } from './flags';
 import type { FlagRow } from '@/types/database';
 
@@ -35,8 +36,8 @@ export function FlagsProvider({ children }: { children: React.ReactNode }) {
       const rows = await listFlags(['open', 'verified']);
       setFlags(rows);
       setError(null);
-    } catch (e: any) {
-      setError(e?.message ?? 'Unknown error');
+    } catch (e) {
+      setError(errorMessage(e, 'Unknown error'));
       throw e;
     } finally {
       setLoading(false);

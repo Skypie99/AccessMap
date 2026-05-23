@@ -13,6 +13,7 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { useAuth } from '@/lib/auth';
+import { errorMessage } from '@/lib/errors';
 import { CATEGORY_LABELS, severityColor, updateFlagStatus } from '@/lib/flags';
 import { useFlags } from '@/lib/flagsStore';
 import type { FlagRow, FlagStatus } from '@/types/database';
@@ -99,8 +100,8 @@ export default function TasksScreen() {
               ? 'resolve'
               : 'reject';
         applyStatusChange(updated, action, isOwn);
-      } catch (e: any) {
-        Alert.alert('Could not update flag', e?.message ?? 'Unknown error.');
+      } catch (e) {
+        Alert.alert('Could not update flag', errorMessage(e));
       } finally {
         setBusyId(null);
       }
