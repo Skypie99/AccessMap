@@ -2,10 +2,10 @@ import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from '
 import {
   ActivityIndicator,
   Alert,
-  FlatList,
   Image,
   Pressable,
   RefreshControl,
+  SectionList,
   StyleSheet,
   Text,
   View,
@@ -51,6 +51,19 @@ export default function TasksScreen() {
     () => providerFlags.filter((f) => TRIAGE_STATUSES.includes(f.status)),
     [providerFlags],
   );
+
+  // Group the visible flags by status so the SectionList can show "Open"
+  // and "Verified" as distinct sections. Sections with zero rows are
+  // omitted entirely (no orphaned headers). Order: Open first because
+  // it's the higher-attention triage state.
+  const sections = useMemo(() => {
+    const open = flags.filter((f) => f.status === 'open');
+    const verified = flags.filter((f) => f.status === 'verified');
+    const out: Array<{ title: string; data: FlagRow[] }> = [];
+    if (open.length > 0) out.push({ title: 'Open', data: open });
+    if (verified.length > 0) out.push({ title: 'Verified', data: verified });
+    return out;
+  }, [flags]);
   // One-shot location fetch so each card can show "0.3 km · 4 min walk".
   // Graceful degrade: if the user denies permission (or we error) we just
   // render the card without distance — see FlagCard below.
@@ -203,21 +216,36 @@ export default function TasksScreen() {
           </Text>
         </Pressable>
       )}
-      <FlatList
-        data={flags}
+      <SectionList
+        sections={sections}
         keyExtractor={(f) => f.id}
-        contentContainerStyle={flags.length === 0 ? styles.center : styles.list}
+        contentContainerStyle={
+          sections.length === 0 ? styles.emptyContainer : styles.list
+        }
+        stickySectionHeadersEnabled={false}
         refreshControl={
           <RefreshControl
             refreshing={loading}
             onRefresh={() => { refresh().catch(() => {}); }}
           />
         }
+        renderSectionHeader={({ section: { title, data } }) => (
+          <View style={styles.sectionHeader} accessible accessibilityRole="header">
+            <Text style={styles.sectionTitle}>{title}</Text>
+            <View style={styles.sectionCountPill}>
+              <Text style={styles.sectionCountText}>{data.length}</Text>
+            </View>
+          </View>
+        )}
         ListEmptyComponent={
-          <View style={styles.center}>
-            <Text style={styles.title}>No flags to triage</Text>
-            <Text style={styles.subtitle}>
-              New reports will appear here as the community adds them.
+          <View style={styles.emptyCard} accessible accessibilityRole="text">
+            <Text style={styles.emptyIcon} accessibilityElementsHidden>
+              ✨
+            </Text>
+            <Text style={styles.emptyTitle}>All caught up</Text>
+            <Text style={styles.emptyBody}>
+              No flags to triage right now. New community reports will
+              land here as they're added — pull to refresh anytime.
             </Text>
           </View>
         }
@@ -371,7 +399,9 @@ const FlagCard = memo(function FlagCard({
 });
 
 const styles = StyleSheet.create({
-  screen: { flex: 1 },
+  // Screen wash — same #f7f9fc the Profile screen uses, so the white
+  // cards inside read as cards instead of blending into a white page.
+  screen: { flex: 1, backgroundColor: '#f7f9fc' },
   flashWrap: {
     position: 'absolute',
     top: 12,
@@ -420,7 +450,62 @@ const styles = StyleSheet.create({
     padding: 24,
     gap: 8,
   },
-  list: { padding: 16, gap: 12 },
+  list: { padding: 16 },
+  emptyContainer: {
+    flexGrow: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 24,
+  },
+  emptyCard: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    paddingHorizontal: 24,
+    paddingVertical: 28,
+    alignItems: 'center',
+    gap: 8,
+    maxWidth: 340,
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 1 },
+    elevation: 1,
+  },
+  emptyIcon: { fontSize: 36 },
+  emptyTitle: { fontSize: 18, fontWeight: '700', color: '#222' },
+  emptyBody: {
+    fontSize: 13,
+    color: '#666',
+    textAlign: 'center',
+    lineHeight: 18,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingTop: 8,
+    paddingBottom: 8,
+  },
+  sectionTitle: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#666',
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+  },
+  sectionCountPill: {
+    backgroundColor: '#d6e6f9',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 999,
+    minWidth: 22,
+    alignItems: 'center',
+  },
+  sectionCountText: {
+    color: '#1c4f99',
+    fontSize: 11,
+    fontWeight: '700',
+  },
   title: { fontSize: 18, fontWeight: '600' },
   subtitle: { fontSize: 13, color: '#666', textAlign: 'center' },
   card: {
