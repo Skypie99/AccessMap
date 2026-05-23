@@ -85,3 +85,10 @@ broke.
   `interface`).
 - Schema / RLS / new-dependency / auth changes are **propose-only** —
   never apply them silently.
+
+## Process notes
+
+- **Parallel-agent worktree paths.** When the orchestrator spawns
+  multiple agents at once, each one MUST stay in its own worktree —
+  see [`qa-reports/parallel-agent-worktree-rules.md`](qa-reports/parallel-agent-worktree-rules.md)
+  for the rule, the footgun, and the pre-write verify step.
