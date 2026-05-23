@@ -74,6 +74,11 @@ export default function TasksScreen() {
       );
       if (status === 'verified') showFlash('Verified! +2 points');
       else if (status === 'resolved') showFlash('Resolved! +5 points');
+      // Re-fetch in the background to reconcile with whatever the server
+      // actually committed (concurrent triage, points trigger failures, etc.).
+      // Fire-and-forget — the optimistic update already handled the instant
+      // feedback.
+      refresh();
     } catch (e: any) {
       Alert.alert('Could not update flag', e?.message ?? 'Unknown error.');
     } finally {
