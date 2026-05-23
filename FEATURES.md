@@ -18,18 +18,14 @@ they land on `main`.
   `supercluster` (react-leaflet has no native primitive). Adds two
   runtime deps — DECISIONS FOR SKY. Detailed plan in
   `qa-reports/qa-2026-05-22.md` P4.
-- **Install Jest so the existing `src/lib/__tests__/` tests can run.**
-  9 test files now ship with main (errors, flags, onboarding, points,
-  preferences, severityColor, mapFilters, filterSets, distance/location
-  pending Loop 5 follow-up) but there's no `jest` devDep or `test`
-  script in `package.json`. See `qa-reports/proposal-jest-setup-2026-05-23.md`
-  for the install steps. DECISIONS FOR SKY (devDep + standardizes a
-  dev workflow).
 - **Realtime flag updates.** Subscribe to Supabase realtime channel for
   `public.flags` so a flag created/triaged on one device appears on
-  others without a manual refresh. Requires the realtime publication
-  SQL (DECISIONS FOR SKY) and a small extension to `FlagsProvider` to
-  merge incoming row deltas.
+  others without a manual refresh. The publication SQL is committed
+  as [`supabase/realtime.sql`](supabase/realtime.sql) with the team's
+  privacy + RLS analysis + rollback inline. **Sky: run that file in
+  the Supabase dashboard SQL editor when ready** (one button-press,
+  idempotent). Then a small extension to `FlagsProvider` merges
+  incoming row deltas.
 
 ## Next (this month)
 
@@ -76,7 +72,10 @@ broke.
 - **Saved named filter sets** (Loop 4). `src/lib/filterSets.ts` + UI
   row in the Map filter panel. Cap of 5 sets, tap to apply, long-press
   to delete.
-- 9 unit test files in `src/lib/__tests__/` (Jest install pending).
+- **Jest + jest-expo test runner.** 108 tests across 8 suites pass on
+  `npm test` (errors, flags, onboarding, points, preferences,
+  severityColor, mapFilters, filterSets). `tsconfig.json` no longer
+  excludes the `__tests__/` tree so tests type-check too.
 
 ## Conventions
 
