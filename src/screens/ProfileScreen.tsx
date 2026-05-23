@@ -30,6 +30,7 @@ import MyReportsModal from '@/components/MyReportsModal';
 import FlagDetailModal, {
   type DetailAction,
 } from '@/components/FlagDetailModal';
+import AboutModal from '@/components/AboutModal';
 
 interface Stats {
   reported: number;
@@ -51,6 +52,11 @@ export default function ProfileScreen() {
   const [reportsOpen, setReportsOpen] = useState(false);
   const [reportsRefreshKey, setReportsRefreshKey] = useState(0);
   const [selectedFlag, setSelectedFlag] = useState<FlagRow | null>(null);
+
+  // About modal — opened from the "About AccessMap" row near the bottom.
+  // Self-contained: it links straight to the mail composer for the
+  // "Send feedback" CTA so we don't have to coordinate two open modals.
+  const [aboutOpen, setAboutOpen] = useState(false);
 
   // Edit-name state. nameDraft is what the user is typing; profile?.display_name
   // is the persisted value. A Save button fires only when they actually differ.
@@ -390,6 +396,27 @@ export default function ProfileScreen() {
         </View>
 
         <Pressable
+          style={({ pressed }) => [
+            styles.aboutRow,
+            pressed && styles.aboutRowPressed,
+          ]}
+          onPress={() => setAboutOpen(true)}
+          accessibilityRole="button"
+          accessibilityLabel="About AccessMap"
+          accessibilityHint="Opens information about the app, version, and how to send feedback"
+        >
+          <View style={styles.aboutTextWrap}>
+            <Text style={styles.aboutTitle}>About AccessMap</Text>
+            <Text style={styles.aboutSubtitle}>
+              What it is, who built it, and how to get in touch.
+            </Text>
+          </View>
+          <Text style={styles.aboutChevron} accessibilityElementsHidden>
+            ›
+          </Text>
+        </Pressable>
+
+        <Pressable
           style={styles.signOutBtn}
           onPress={() => signOut()}
           accessibilityRole="button"
@@ -413,6 +440,11 @@ export default function ProfileScreen() {
         onChanged={handleDetailChanged}
         onDeleted={handleDetailDeleted}
         onViewOnMap={handleViewOnMap}
+      />
+
+      <AboutModal
+        visible={aboutOpen}
+        onClose={() => setAboutOpen(false)}
       />
     </>
   );
@@ -531,6 +563,26 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   linkBtnText: { color: '#2f80ed', fontWeight: '600', fontSize: 14 },
+  aboutRow: {
+    marginTop: 16,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 1 },
+    elevation: 1,
+    minHeight: 64,
+  },
+  aboutRowPressed: { opacity: 0.85, backgroundColor: '#f7f9fc' },
+  aboutTextWrap: { flex: 1, gap: 2 },
+  aboutTitle: { fontSize: 16, fontWeight: '700', color: '#222' },
+  aboutSubtitle: { fontSize: 13, color: '#666' },
+  aboutChevron: { fontSize: 28, color: '#999', fontWeight: '300' },
   signOutBtn: {
     marginTop: 16,
     alignSelf: 'center',
