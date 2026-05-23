@@ -2,10 +2,12 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   ActivityIndicator,
   Alert,
+  Modal,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from 'react-native';
 import * as Location from 'expo-location';
@@ -22,6 +24,14 @@ import {
 } from '@/lib/flags';
 import { useFlags } from '@/lib/flagsStore';
 import { loadMapFilters, saveMapFilters } from '@/lib/mapFilters';
+import {
+  deleteSet,
+  FilterSetError,
+  listSets,
+  MAX_FILTER_SETS,
+  saveSet,
+  type FilterSet,
+} from '@/lib/filterSets';
 import type {
   FlagCategory,
   FlagSeverity,
@@ -104,6 +114,18 @@ export default function MapScreen() {
   // before we've had a chance to hydrate from disk.
   const [filtersHydrated, setFiltersHydrated] = useState(false);
 
+  // Saved named filter sets — separate persistence (see src/lib/filterSets).
+  // Hydrated alongside the last-used filter values; an empty array is the
+  // valid "first launch" state, so we don't need a hydrated flag here.
+  const [savedSets, setSavedSets] = useState<FilterSet[]>([]);
+
+  // Save-name modal state. nameDraft is the in-flight TextInput value;
+  // savingSet guards against double-submit while the AsyncStorage write
+  // is in flight.
+  const [nameModalOpen, setNameModalOpen] = useState(false);
+  const [nameDraft, setNameDraft] = useState('');
+  const [savingSet, setSavingSet] = useState(false);
+
   // True while this screen is on screen — checked before any setState that
   // runs after an `await` so a slow request can't update a torn-down screen.
   const mountedRef = useRef(true);
@@ -158,22 +180,98 @@ export default function MapScreen() {
   // had a chance to read disk. A second Supabase fetch may happen here
   // when the saved statuses differ from DEFAULT_STATUSES — the provider's
   // fetchSeqRef discards the stale result, so there's no race.
+  //
+  // We also hydrate the saved-sets list in the same effect — two parallel
+  // AsyncStorage reads, one mount.
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const saved = await loadMapFilters();
+      const [saved, sets] = await Promise.all([
+        loadMapFilters(),
+        listSets(),
+      ]);
       if (cancelled) return;
       if (saved) {
         setActiveCategories(new Set(saved.categories));
         setMinSeverity(saved.minSeverity);
         setActiveStatuses(new Set(saved.statuses));
       }
+      setSavedSets(sets);
       setFiltersHydrated(true);
     })();
     return () => {
       cancelled = true;
     };
   }, []);
+
+  // Apply a saved set: copy its filter triple over the active filters.
+  // The existing save-effect below pushes the new values through to
+  // mapFilters.ts storage, so the saved set is reflected next launch
+  // even if the user doesn't change anything else after applying it.
+  const applySet = useCallback((set: FilterSet) => {
+    setActiveCategories(new Set(set.categories));
+    setMinSeverity(set.minSeverity);
+    setActiveStatuses(new Set(set.statuses));
+  }, []);
+
+  // Long-press a saved chip → native confirm. The Alert.alert pattern is
+  // already used elsewhere in the app, so iOS and Android both get a
+  // familiar destructive-action dialog.
+  const confirmDeleteSet = useCallback((set: FilterSet) => {
+    Alert.alert(
+      'Delete saved filter?',
+      `"${set.name}" will be removed.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            await deleteSet(set.id);
+            if (!mountedRef.current) return;
+            setSavedSets((prev) => prev.filter((s) => s.id !== set.id));
+          },
+        },
+      ],
+    );
+  }, []);
+
+  // Open the save-name modal with an empty draft.
+  const openSaveModal = useCallback(() => {
+    setNameDraft('');
+    setNameModalOpen(true);
+  }, []);
+
+  // Commit the draft name. saveSet does the cap + duplicate checks; we
+  // map its typed error onto a single user-facing Alert. On success the
+  // new set is pushed to local state and the modal closes.
+  const submitSaveSet = useCallback(async () => {
+    if (savingSet) return;
+    setSavingSet(true);
+    try {
+      const created = await saveSet(nameDraft, {
+        categories: Array.from(activeCategories),
+        minSeverity,
+        statuses: Array.from(activeStatuses),
+      });
+      if (!mountedRef.current) return;
+      setSavedSets((prev) => [...prev, created]);
+      setNameModalOpen(false);
+      setNameDraft('');
+    } catch (e) {
+      const msg =
+        e instanceof FilterSetError ? e.message : errorMessage(e);
+      Alert.alert("Couldn't save filter", msg);
+    } finally {
+      if (mountedRef.current) setSavingSet(false);
+    }
+  }, [
+    activeCategories,
+    activeStatuses,
+    minSeverity,
+    nameDraft,
+    savingSet,
+  ]);
 
   // Persist filter changes. Gated on filtersHydrated so we don't clobber a
   // saved view with the initial default state during the brief window
@@ -191,6 +289,24 @@ export default function MapScreen() {
 
   const filtersActive =
     activeCategories.size > 0 || minSeverity > 1 || statusFilterActive;
+
+  // Which saved set, if any, exactly matches the live filter triple.
+  // Used to mark the matching chip `selected` so the user can see at a
+  // glance which view they're in. Categories + statuses are compared as
+  // sets (order-insensitive) so reordering doesn't break the match.
+  const activeSetId = useMemo(() => {
+    for (const set of savedSets) {
+      if (set.minSeverity !== minSeverity) continue;
+      if (set.categories.length !== activeCategories.size) continue;
+      if (set.statuses.length !== activeStatuses.size) continue;
+      if (!set.categories.every((c) => activeCategories.has(c))) continue;
+      if (!set.statuses.every((s) => activeStatuses.has(s))) continue;
+      return set.id;
+    }
+    return null;
+  }, [savedSets, activeCategories, activeStatuses, minSeverity]);
+
+  const canSaveMore = savedSets.length < MAX_FILTER_SETS;
 
   const filteredFlags = useMemo(() => {
     if (!filtersActive) return flags;
@@ -351,6 +467,74 @@ export default function MapScreen() {
                 </Pressable>
               )}
             </View>
+
+            <Text style={styles.filterSubLabel}>Saved</Text>
+            {savedSets.length === 0 ? (
+              <View style={styles.savedEmpty}>
+                <Text style={styles.savedEmptyText}>
+                  Save your current filter as a named set to quickly
+                  switch later.
+                </Text>
+                <Pressable
+                  onPress={openSaveModal}
+                  style={styles.savedSaveBtn}
+                  accessibilityRole="button"
+                  accessibilityLabel="Save current filter as a named set"
+                  accessibilityHint="Opens a prompt to name the current filter combination"
+                >
+                  <Text style={styles.savedSaveBtnText}>
+                    Save current filter
+                  </Text>
+                </Pressable>
+              </View>
+            ) : (
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.filterRow}
+              >
+                {savedSets.map((set) => {
+                  const isSelected = set.id === activeSetId;
+                  return (
+                    <Pressable
+                      key={set.id}
+                      onPress={() => applySet(set)}
+                      onLongPress={() => confirmDeleteSet(set)}
+                      style={[
+                        styles.filterPill,
+                        isSelected && styles.filterPillActive,
+                      ]}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Apply "${set.name}" filter`}
+                      accessibilityHint="Sets the map filter to this saved combination. Long press to delete."
+                      accessibilityState={{ selected: isSelected }}
+                    >
+                      <Text
+                        style={[
+                          styles.filterPillText,
+                          isSelected && styles.filterPillTextActive,
+                        ]}
+                      >
+                        {set.name}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+                {canSaveMore && (
+                  <Pressable
+                    onPress={openSaveModal}
+                    style={[styles.filterPill, styles.savedAddPill]}
+                    accessibilityRole="button"
+                    accessibilityLabel="Save current filter as a named set"
+                    accessibilityHint="Opens a prompt to name the current filter combination"
+                  >
+                    <Text style={styles.savedAddPillText}>
+                      + Save current
+                    </Text>
+                  </Pressable>
+                )}
+              </ScrollView>
+            )}
 
             <Text style={styles.filterSubLabel}>Categories</Text>
             <ScrollView
@@ -553,6 +737,78 @@ export default function MapScreen() {
           setTimeout(() => mapRef.current?.showCallout(flag.id), 350);
         }}
       />
+
+      {/*
+        Cross-platform save-name prompt. We use a Modal + TextInput instead
+        of Alert.prompt because Alert.prompt is iOS-only and the app runs
+        on Android + web too. The modal mirrors ReportFlagModal's bottom-
+        sheet pattern so the screen feels consistent.
+      */}
+      <Modal
+        visible={nameModalOpen}
+        animationType="fade"
+        transparent
+        onRequestClose={() => {
+          if (!savingSet) setNameModalOpen(false);
+        }}
+      >
+        <View style={styles.nameBackdrop}>
+          <View style={styles.nameCard}>
+            <Text style={styles.nameTitle}>Name this filter</Text>
+            <Text style={styles.nameHint}>
+              You can save up to {MAX_FILTER_SETS} filter sets.
+            </Text>
+            <TextInput
+              value={nameDraft}
+              onChangeText={setNameDraft}
+              placeholder="e.g. Downtown commute"
+              autoFocus
+              autoCapitalize="sentences"
+              maxLength={40}
+              returnKeyType="done"
+              onSubmitEditing={submitSaveSet}
+              style={styles.nameInput}
+              accessibilityLabel="Filter set name"
+            />
+            <View style={styles.nameActions}>
+              <Pressable
+                onPress={() => {
+                  if (savingSet) return;
+                  setNameModalOpen(false);
+                }}
+                disabled={savingSet}
+                style={[styles.nameBtn, styles.nameBtnCancel]}
+                accessibilityRole="button"
+                accessibilityLabel="Cancel"
+              >
+                <Text style={styles.nameBtnCancelText}>Cancel</Text>
+              </Pressable>
+              <Pressable
+                onPress={submitSaveSet}
+                disabled={savingSet || nameDraft.trim().length === 0}
+                style={[
+                  styles.nameBtn,
+                  styles.nameBtnSave,
+                  (savingSet || nameDraft.trim().length === 0) &&
+                    styles.nameBtnSaveDisabled,
+                ]}
+                accessibilityRole="button"
+                accessibilityLabel="Save filter set"
+                accessibilityState={{
+                  busy: savingSet,
+                  disabled: savingSet || nameDraft.trim().length === 0,
+                }}
+              >
+                {savingSet ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={styles.nameBtnSaveText}>Save</Text>
+                )}
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -695,4 +951,60 @@ const styles = StyleSheet.create({
   fabDisabled: { opacity: 0.5 },
   fabPressed: { opacity: 0.8 },
   fabText: { color: '#fff', fontWeight: '700', fontSize: 15 },
+  savedEmpty: { gap: 8, marginTop: 4 },
+  savedEmptyText: { fontSize: 12, color: '#666', lineHeight: 16 },
+  savedSaveBtn: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 999,
+    backgroundColor: '#2f80ed',
+    minHeight: 32,
+    justifyContent: 'center',
+  },
+  savedSaveBtnText: { color: '#fff', fontSize: 12, fontWeight: '700' },
+  savedAddPill: {
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#2f80ed',
+    borderStyle: 'dashed',
+  },
+  savedAddPillText: { color: '#2f80ed', fontSize: 12, fontWeight: '700' },
+  nameBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'center',
+    padding: 20,
+  },
+  nameCard: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 20,
+    gap: 12,
+  },
+  nameTitle: { fontSize: 18, fontWeight: '700', color: '#222' },
+  nameHint: { fontSize: 12, color: '#666' },
+  nameInput: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 15,
+    minHeight: 44,
+  },
+  nameActions: { flexDirection: 'row', gap: 12, marginTop: 4 },
+  nameBtn: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 44,
+  },
+  nameBtnCancel: { backgroundColor: '#eef1f5' },
+  nameBtnCancelText: { color: '#333', fontWeight: '600', fontSize: 14 },
+  nameBtnSave: { backgroundColor: '#2f80ed' },
+  nameBtnSaveDisabled: { opacity: 0.5 },
+  nameBtnSaveText: { color: '#fff', fontWeight: '700', fontSize: 14 },
 });
