@@ -156,6 +156,17 @@ All of these shipped together; if something seems wrong, this is recent code:
   Tasks card thumbnails.
 - **Web build** works via react-leaflet + OpenStreetMap tiles.
 
+## Recent QA pass (2026-05-22)
+
+The repo was first committed to git on 2026-05-22, immediately followed by an
+overnight QA pass on branch `qa/auto-2026-05-22` (10 fix commits + this note).
+Full breakdown — including 9 propose-only items (RLS tightening, pagination,
+clustering, lint/CI setup, etc.) — in `qa-reports/qa-2026-05-22.md`.
+
+Flash-banner points in TasksScreen are now coupled to the trigger in
+`supabase/schema.sql` (handle_flag_status_change). If the trigger values
+ever change, update the +5/+10/+2/+5 strings in `setStatus` to match.
+
 ---
 
 ## When the user asks for changes
