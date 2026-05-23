@@ -1,4 +1,4 @@
-import React, { forwardRef, useImperativeHandle, useRef } from 'react';
+import React, { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
 import { Image, StyleSheet, Text, View } from 'react-native';
 import MapView, {
   Callout,
@@ -40,6 +40,17 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(
   ) {
     const mapRef = useRef<MapView | null>(null);
     const markerRefs = useRef<Record<string, InstanceType<typeof Marker> | null>>({});
+
+    // When a flag is resolved/rejected it drops out of the list. React's ref
+    // callback is called with null on unmount, but the key stays in this dict
+    // — so over a long session that triages thousands of flags, the dict
+    // would keep growing. Prune to current ids whenever the list changes.
+    useEffect(() => {
+      const valid = new Set(flags.map((f) => f.id));
+      for (const id of Object.keys(markerRefs.current)) {
+        if (!valid.has(id)) delete markerRefs.current[id];
+      }
+    }, [flags]);
 
     useImperativeHandle(
       ref,

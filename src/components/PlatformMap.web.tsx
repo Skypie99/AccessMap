@@ -1,5 +1,5 @@
 import 'leaflet/dist/leaflet.css';
-import React, { forwardRef, useImperativeHandle, useRef } from 'react';
+import React, { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
 import { MapContainer, Marker, Popup, TileLayer } from 'react-leaflet';
 import L, { Map as LeafletMap, Marker as LeafletMarker } from 'leaflet';
 import { CATEGORY_LABELS } from '@/lib/flags';
@@ -30,8 +30,17 @@ export interface PlatformMapProps {
   showsUserLocation?: boolean;
 }
 
+// Cache pin icons by (color + dim). There are only 6 possible combinations
+// (5 severity colors + the gray fallback × 2 dim states), so this dictionary
+// caps at ~12 entries for the life of the page. Without the cache every
+// render builds a brand-new L.DivIcon for every flag, and Leaflet treats a
+// new icon as a marker change → unnecessary re-renders at hundreds of pins.
+const pinIconCache = new Map<string, L.DivIcon>();
 function pinIcon(color: string, dim: boolean): L.DivIcon {
-  return L.divIcon({
+  const key = `${color}|${dim ? 1 : 0}`;
+  const cached = pinIconCache.get(key);
+  if (cached) return cached;
+  const icon = L.divIcon({
     className: 'accessmap-pin',
     html: `<div style="
       width:22px;height:22px;border-radius:50%;
@@ -44,6 +53,8 @@ function pinIcon(color: string, dim: boolean): L.DivIcon {
     iconAnchor: [11, 11],
     popupAnchor: [0, -12],
   });
+  pinIconCache.set(key, icon);
+  return icon;
 }
 
 function deltaToZoom(latitudeDelta: number): number {
@@ -54,6 +65,15 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(
   function PlatformMap({ initialRegion, flags, focusedFlagId }, ref) {
     const mapInstance = useRef<LeafletMap | null>(null);
     const markerRefs = useRef<Record<string, LeafletMarker | null>>({});
+
+    // See PlatformMap.tsx for why we prune: ref callbacks leave null entries
+    // behind when markers unmount; without pruning, the dict grows forever.
+    useEffect(() => {
+      const valid = new Set(flags.map((f) => f.id));
+      for (const id of Object.keys(markerRefs.current)) {
+        if (!valid.has(id)) delete markerRefs.current[id];
+      }
+    }, [flags]);
 
     useImperativeHandle(
       ref,

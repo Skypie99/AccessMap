@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { memo, useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -109,35 +109,50 @@ export default function TasksScreen() {
     [refresh, showFlash],
   );
 
-  const setStatus = async (id: string, status: FlagStatus, isOwn: boolean) => {
-    setBusyId(id);
-    try {
-      const updated = await updateFlagStatus(id, status);
-      const action: DetailAction =
-        status === 'verified'
-          ? 'verify'
-          : status === 'resolved'
-            ? 'resolve'
-            : 'reject';
-      applyStatusChange(updated, action, isOwn);
-    } catch (e: any) {
-      Alert.alert('Could not update flag', e?.message ?? 'Unknown error.');
-    } finally {
-      setBusyId(null);
-    }
-  };
+  const setStatus = useCallback(
+    async (id: string, status: FlagStatus, isOwn: boolean) => {
+      setBusyId(id);
+      try {
+        const updated = await updateFlagStatus(id, status);
+        const action: DetailAction =
+          status === 'verified'
+            ? 'verify'
+            : status === 'resolved'
+              ? 'resolve'
+              : 'reject';
+        applyStatusChange(updated, action, isOwn);
+      } catch (e: any) {
+        Alert.alert('Could not update flag', e?.message ?? 'Unknown error.');
+      } finally {
+        setBusyId(null);
+      }
+    },
+    [applyStatusChange],
+  );
 
-  const handleViewOnMap = (target: FlagRow) => {
-    navigation.navigate('Map', {
-      focusFlag: { id: target.id, lat: target.lat, lng: target.lng },
-      ts: Date.now(),
-    });
-  };
+  const handleViewOnMap = useCallback(
+    (target: FlagRow) => {
+      navigation.navigate('Map', {
+        focusFlag: { id: target.id, lat: target.lat, lng: target.lng },
+        ts: Date.now(),
+      });
+    },
+    [navigation],
+  );
 
-  const handleDeleted = (deletedId: string) => {
-    setFlags((prev) => prev.filter((f) => f.id !== deletedId));
-    showFlash('Flag deleted');
-  };
+  const handleDeleted = useCallback(
+    (deletedId: string) => {
+      setFlags((prev) => prev.filter((f) => f.id !== deletedId));
+      showFlash('Flag deleted');
+    },
+    [showFlash],
+  );
+
+  const showDetails = useCallback((flag: FlagRow) => {
+    setSelectedFlag(flag);
+  }, []);
+
+  const userId = user?.id;
 
   if (loading && flags.length === 0) {
     return (
@@ -158,108 +173,30 @@ export default function TasksScreen() {
         </View>
       )}
       <FlatList
-      data={flags}
-      keyExtractor={(f) => f.id}
-      contentContainerStyle={flags.length === 0 ? styles.center : styles.list}
-      refreshControl={
-        <RefreshControl refreshing={loading} onRefresh={refresh} />
-      }
-      ListEmptyComponent={
-        <View style={styles.center}>
-          <Text style={styles.title}>No flags to triage</Text>
-          <Text style={styles.subtitle}>
-            New reports will appear here as the community adds them.
-          </Text>
-        </View>
-      }
-      renderItem={({ item }) => {
-        const isBusy = busyId === item.id;
-        const isOwn = item.user_id === user?.id;
-        return (
-          <Pressable
-            onPress={() => handleViewOnMap(item)}
-            style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
-            accessibilityRole="button"
-            accessibilityLabel={`Show ${CATEGORY_LABELS[item.category]} on the map`}
-            accessibilityHint="Opens the Map tab focused on this flag"
-          >
-            <View style={styles.cardHeader}>
-              <View
-                style={[
-                  styles.sevDot,
-                  { backgroundColor: severityColor(item.severity) },
-                ]}
-              />
-              <Text style={styles.cardTitle}>{CATEGORY_LABELS[item.category]}</Text>
-              <Text style={styles.statusTag}>{item.status}</Text>
-            </View>
-            <View style={styles.cardBody}>
-              {item.photo_url ? (
-                <Image
-                  source={{ uri: item.photo_url }}
-                  style={styles.cardThumb}
-                  accessible
-                  accessibilityLabel={`Photo of the reported ${CATEGORY_LABELS[item.category]}`}
-                />
-              ) : null}
-              <View style={styles.cardBodyText}>
-                {item.description ? (
-                  <Text style={styles.cardDesc}>{item.description}</Text>
-                ) : null}
-                <Text style={styles.cardMeta}>
-                  Severity {item.severity} • {item.lat.toFixed(4)}, {item.lng.toFixed(4)}
-                </Text>
-                <Text style={styles.cardHint}>tap to view on map</Text>
-              </View>
-            </View>
-            <View style={styles.cardActions}>
-              {item.status === 'open' && (
-                <Pressable
-                  disabled={isBusy}
-                  onPress={() => setStatus(item.id, 'verified', isOwn)}
-                  style={[styles.actionBtn, styles.verifyBtn]}
-                  accessibilityRole="button"
-                  accessibilityLabel="Verify this flag"
-                  accessibilityState={{ disabled: isBusy }}
-                >
-                  <Text style={styles.verifyText}>Verify</Text>
-                </Pressable>
-              )}
-              <Pressable
-                disabled={isBusy}
-                onPress={() => setStatus(item.id, 'resolved', isOwn)}
-                style={[styles.actionBtn, styles.resolveBtn]}
-                accessibilityRole="button"
-                accessibilityLabel="Mark this flag resolved"
-                accessibilityState={{ disabled: isBusy }}
-              >
-                <Text style={styles.resolveText}>Resolved</Text>
-              </Pressable>
-              <Pressable
-                disabled={isBusy}
-                onPress={() => setStatus(item.id, 'rejected', isOwn)}
-                style={[styles.actionBtn, styles.rejectBtn]}
-                accessibilityRole="button"
-                accessibilityLabel="Reject this flag"
-                accessibilityState={{ disabled: isBusy }}
-              >
-                <Text style={styles.rejectText}>Reject</Text>
-              </Pressable>
-              <Pressable
-                disabled={isBusy}
-                onPress={() => setSelectedFlag(item)}
-                style={[styles.actionBtn, styles.detailsBtn]}
-                accessibilityRole="button"
-                accessibilityLabel="View flag details"
-                accessibilityHint="Opens a screen with the full report, photo, and more actions"
-                accessibilityState={{ disabled: isBusy }}
-              >
-                <Text style={styles.detailsText}>Details</Text>
-              </Pressable>
-            </View>
-          </Pressable>
-        );
-      }}
+        data={flags}
+        keyExtractor={(f) => f.id}
+        contentContainerStyle={flags.length === 0 ? styles.center : styles.list}
+        refreshControl={
+          <RefreshControl refreshing={loading} onRefresh={refresh} />
+        }
+        ListEmptyComponent={
+          <View style={styles.center}>
+            <Text style={styles.title}>No flags to triage</Text>
+            <Text style={styles.subtitle}>
+              New reports will appear here as the community adds them.
+            </Text>
+          </View>
+        }
+        renderItem={({ item }) => (
+          <FlagCard
+            flag={item}
+            isBusy={busyId === item.id}
+            isOwn={item.user_id === userId}
+            onPress={handleViewOnMap}
+            onSetStatus={setStatus}
+            onShowDetails={showDetails}
+          />
+        )}
       />
       <FlagDetailModal
         visible={selectedFlag !== null}
@@ -272,6 +209,112 @@ export default function TasksScreen() {
     </View>
   );
 }
+
+interface FlagCardProps {
+  flag: FlagRow;
+  isBusy: boolean;
+  isOwn: boolean;
+  onPress: (flag: FlagRow) => void;
+  onSetStatus: (id: string, status: FlagStatus, isOwn: boolean) => void;
+  onShowDetails: (flag: FlagRow) => void;
+}
+
+// React.memo so a single triage action (which flips busyId on the parent)
+// only re-renders the card that's actually busy — not every visible card.
+// At hundreds of rows this is the difference between snappy and laggy.
+const FlagCard = memo(function FlagCard({
+  flag,
+  isBusy,
+  isOwn,
+  onPress,
+  onSetStatus,
+  onShowDetails,
+}: FlagCardProps) {
+  return (
+    <Pressable
+      onPress={() => onPress(flag)}
+      style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
+      accessibilityRole="button"
+      accessibilityLabel={`Show ${CATEGORY_LABELS[flag.category]} on the map`}
+      accessibilityHint="Opens the Map tab focused on this flag"
+    >
+      <View style={styles.cardHeader}>
+        <View
+          style={[
+            styles.sevDot,
+            { backgroundColor: severityColor(flag.severity) },
+          ]}
+        />
+        <Text style={styles.cardTitle}>{CATEGORY_LABELS[flag.category]}</Text>
+        <Text style={styles.statusTag}>{flag.status}</Text>
+      </View>
+      <View style={styles.cardBody}>
+        {flag.photo_url ? (
+          <Image
+            source={{ uri: flag.photo_url }}
+            style={styles.cardThumb}
+            accessible
+            accessibilityLabel={`Photo of the reported ${CATEGORY_LABELS[flag.category]}`}
+          />
+        ) : null}
+        <View style={styles.cardBodyText}>
+          {flag.description ? (
+            <Text style={styles.cardDesc}>{flag.description}</Text>
+          ) : null}
+          <Text style={styles.cardMeta}>
+            Severity {flag.severity} • {flag.lat.toFixed(4)}, {flag.lng.toFixed(4)}
+          </Text>
+          <Text style={styles.cardHint}>tap to view on map</Text>
+        </View>
+      </View>
+      <View style={styles.cardActions}>
+        {flag.status === 'open' && (
+          <Pressable
+            disabled={isBusy}
+            onPress={() => onSetStatus(flag.id, 'verified', isOwn)}
+            style={[styles.actionBtn, styles.verifyBtn]}
+            accessibilityRole="button"
+            accessibilityLabel="Verify this flag"
+            accessibilityState={{ disabled: isBusy }}
+          >
+            <Text style={styles.verifyText}>Verify</Text>
+          </Pressable>
+        )}
+        <Pressable
+          disabled={isBusy}
+          onPress={() => onSetStatus(flag.id, 'resolved', isOwn)}
+          style={[styles.actionBtn, styles.resolveBtn]}
+          accessibilityRole="button"
+          accessibilityLabel="Mark this flag resolved"
+          accessibilityState={{ disabled: isBusy }}
+        >
+          <Text style={styles.resolveText}>Resolved</Text>
+        </Pressable>
+        <Pressable
+          disabled={isBusy}
+          onPress={() => onSetStatus(flag.id, 'rejected', isOwn)}
+          style={[styles.actionBtn, styles.rejectBtn]}
+          accessibilityRole="button"
+          accessibilityLabel="Reject this flag"
+          accessibilityState={{ disabled: isBusy }}
+        >
+          <Text style={styles.rejectText}>Reject</Text>
+        </Pressable>
+        <Pressable
+          disabled={isBusy}
+          onPress={() => onShowDetails(flag)}
+          style={[styles.actionBtn, styles.detailsBtn]}
+          accessibilityRole="button"
+          accessibilityLabel="View flag details"
+          accessibilityHint="Opens a screen with the full report, photo, and more actions"
+          accessibilityState={{ disabled: isBusy }}
+        >
+          <Text style={styles.detailsText}>Details</Text>
+        </Pressable>
+      </View>
+    </Pressable>
+  );
+});
 
 const styles = StyleSheet.create({
   screen: { flex: 1 },
