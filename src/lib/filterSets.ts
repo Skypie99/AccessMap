@@ -34,6 +34,11 @@ import type {
 
 const STORAGE_KEY = '@accessmap/filter_sets_v1';
 
+// Separate key for the "default set" pointer. Kept apart from the sets
+// blob so toggling default doesn't have to rewrite the whole array, and so
+// the existing _v1 sets blob keeps the shape its tests already assert.
+const DEFAULT_KEY = '@accessmap/default_filter_set_v1';
+
 // Hard upper bound on how many sets the user can save. Picked small on
 // purpose — five named contexts is plenty for the city-walker use case,
 // and the cap keeps the chip row scannable without horizontal scroll
@@ -222,6 +227,10 @@ export async function saveSet(
  * Remove a saved set by id. No-op if the id isn't found (the UI is the
  * only caller and it always passes a known id, so a missing id is a
  * harmless race rather than something to surface).
+ *
+ * Also clears the default-set pointer if it referenced the deleted set,
+ * so a stale pointer can't outlive its target. Done as a best-effort
+ * second write — the sets-blob delete is the load-bearing change.
  */
 export async function deleteSet(id: string): Promise<void> {
   try {
@@ -231,9 +240,65 @@ export async function deleteSet(id: string): Promise<void> {
     // round-trip when the id is already gone.
     if (next.length === existing.length) return;
     await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+    const currentDefault = await getDefaultSetId();
+    if (currentDefault === id) {
+      await setDefaultSetId(null);
+    }
   } catch (e) {
     console.warn(
       '[filterSets] deleteSet failed:',
+      errorMessage(e, 'AsyncStorage error.'),
+    );
+  }
+}
+
+/**
+ * Read the "default set" pointer. The id is a free-form string — callers
+ * still have to look it up in the sets list and ignore-if-missing, since
+ * a deleted set's pointer is cleared on a best-effort basis only.
+ *
+ * Defensive: returns null on any storage failure so a transient error
+ * never blocks the Map from rendering.
+ */
+export async function getDefaultSetId(): Promise<string | null> {
+  try {
+    const raw = await AsyncStorage.getItem(DEFAULT_KEY);
+    if (raw === null) return null;
+    // Stored as a bare JSON string ("abc123"). Treat any non-string
+    // payload as "no default" rather than throwing.
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(raw);
+    } catch {
+      return null;
+    }
+    if (typeof parsed !== 'string' || parsed.length === 0) return null;
+    return parsed;
+  } catch (e) {
+    console.warn(
+      '[filterSets] getDefaultSetId failed:',
+      errorMessage(e, 'AsyncStorage error.'),
+    );
+    return null;
+  }
+}
+
+/**
+ * Set (or clear with null) the "default set" pointer. Fire-and-forget
+ * from the UI; storage failures are logged but not surfaced — the worst
+ * case is the user's pick doesn't persist across launches, which is
+ * recoverable.
+ */
+export async function setDefaultSetId(id: string | null): Promise<void> {
+  try {
+    if (id === null) {
+      await AsyncStorage.removeItem(DEFAULT_KEY);
+      return;
+    }
+    await AsyncStorage.setItem(DEFAULT_KEY, JSON.stringify(id));
+  } catch (e) {
+    console.warn(
+      '[filterSets] setDefaultSetId failed:',
       errorMessage(e, 'AsyncStorage error.'),
     );
   }
