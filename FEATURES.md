@@ -10,6 +10,35 @@ they land on `main`.
 
 ---
 
+## Shipped 2026-05-23 (fastloop v2 — visual polish + pages)
+
+- **Branded tab headers + global Feedback flow.** Default white
+  header strip replaced with a brand-blue bar showing the tab name +
+  a "Feedback" pill in headerRight on every tab. Tap opens a
+  `FeedbackModal` (`src/components/FeedbackModal.tsx`); Send hands
+  off to the OS mail composer via mailto: (no backend). On platforms
+  with no mail client, the address is surfaced inline.
+  Helper: `src/lib/feedback.ts` (`buildMailtoUrl`, `sendFeedback`,
+  `openFeedbackComposer`) with 7 unit tests.
+- **About AccessMap modal.** New "More about the app" surface,
+  accessed from a row near the bottom of Profile. Sections: what it
+  is, accessibility statement, community guidelines, maker note.
+  Auto-pulls app version from `expo-constants`. "Send feedback"
+  button hands straight to the OS mail composer. Sets up the
+  "more pages" pattern — future Privacy/Help/Credits drop in as
+  additional Profile rows + modals, no nav refactor.
+- **Profile hero card + screen wash.** Replaced the small flat
+  points pill with a brand-blue hero card: 56pt numeric, 🏅 icon,
+  drop shadow that lifts it off the page, and a progress bar to the
+  next milestone (25 → 50 → 100 → 250 → 500 → 1000 points, each tied
+  to a notional badge name). Screen background changed from white to
+  `#f7f9fc` so the inner white cards actually read as cards.
+- **Map top-row grouped action bar.** The four floating icon buttons
+  (legend / filters / refresh / recenter) are now wrapped in one
+  elevated white actionBar with internal dividers. Reads as a single
+  tool tray rather than four free-floating circles. No behavior
+  changes — every existing tap and label is preserved.
+
 ## Now (next 1–2 runs)
 
 - **Marker clustering on the Map.** Cluster pins when more than ~50 are

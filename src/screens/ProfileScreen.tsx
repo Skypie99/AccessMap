@@ -30,10 +30,43 @@ import MyReportsModal from '@/components/MyReportsModal';
 import FlagDetailModal, {
   type DetailAction,
 } from '@/components/FlagDetailModal';
+import AboutModal from '@/components/AboutModal';
 
 interface Stats {
   reported: number;
   resolved: number;
+}
+
+// Notional point milestones — each one is a small "you reached X" badge
+// inline in the hero card. Tuned to feel rewarding early (25, 50) and
+// then pace out at typical engagement levels. If we ever ship real
+// badges/achievements these labels become their names.
+const MILESTONES: Array<{ at: number; label: string }> = [
+  { at: 25, label: 'First Mile badge' },
+  { at: 50, label: 'Bronze Reviewer badge' },
+  { at: 100, label: 'Silver Reviewer badge' },
+  { at: 250, label: 'Gold Reviewer badge' },
+  { at: 500, label: 'Community Hero badge' },
+  { at: 1000, label: 'Legend status' },
+];
+
+function milestoneProgress(points: number): {
+  next: number | null;
+  label: string;
+  progress: number;
+} {
+  // Find the lowest milestone strictly above the user's current points.
+  // Once they pass the top milestone we return null and let the hero
+  // card show a "you've reached the top" line instead of a bar.
+  const next = MILESTONES.find((m) => m.at > points);
+  if (!next) return { next: null, label: '', progress: 1 };
+  // Previous milestone defines the start of the current bar segment so
+  // a user at 60 sees the 50→100 bar half-full, not a tiny sliver.
+  const prevAt =
+    [...MILESTONES].reverse().find((m) => m.at <= points)?.at ?? 0;
+  const span = next.at - prevAt;
+  const progress = span === 0 ? 0 : (points - prevAt) / span;
+  return { next: next.at, label: next.label, progress };
 }
 
 export default function ProfileScreen() {
@@ -51,6 +84,11 @@ export default function ProfileScreen() {
   const [reportsOpen, setReportsOpen] = useState(false);
   const [reportsRefreshKey, setReportsRefreshKey] = useState(0);
   const [selectedFlag, setSelectedFlag] = useState<FlagRow | null>(null);
+
+  // About modal — opened from the "About AccessMap" row near the bottom.
+  // Self-contained: it links straight to the mail composer for the
+  // "Send feedback" CTA so we don't have to coordinate two open modals.
+  const [aboutOpen, setAboutOpen] = useState(false);
 
   // Edit-name state. nameDraft is what the user is typing; profile?.display_name
   // is the persisted value. A Save button fires only when they actually differ.
@@ -248,18 +286,55 @@ export default function ProfileScreen() {
     );
   }
 
+  const points = profile?.points ?? 0;
+  const { next: nextMilestone, label: milestoneLabel, progress } =
+    milestoneProgress(points);
+  // Width-style for the progress bar. Use a fixed numeric (not %) string so
+  // the StyleSheet types stay happy on web's CSS engine.
+  const progressBarWidth = `${Math.round(progress * 100)}%` as `${number}%`;
+
   return (
     <>
       <ScrollView
+        style={styles.screen}
         contentContainerStyle={styles.container}
         refreshControl={<RefreshControl refreshing={loading} onRefresh={load} />}
       >
-        <Text style={styles.title}>Profile</Text>
-        <Text style={styles.email}>{user.email}</Text>
+        <Text style={styles.email}>Signed in as {user.email}</Text>
 
-        <View style={styles.pointsCard}>
-          <Text style={styles.pointsLabel}>POINTS</Text>
-          <Text style={styles.pointsValue}>{profile?.points ?? 0}</Text>
+        <View
+          style={styles.heroCard}
+          accessible
+          accessibilityLabel={`${points} points. ${
+            nextMilestone === null
+              ? 'You have reached the top milestone.'
+              : `${nextMilestone - points} points to ${milestoneLabel}.`
+          }`}
+        >
+          <Text style={styles.heroIcon} accessibilityElementsHidden>
+            🏅
+          </Text>
+          <Text style={styles.heroLabel}>POINTS</Text>
+          <Text style={styles.heroValue}>{points}</Text>
+          {nextMilestone !== null ? (
+            <>
+              <View
+                style={styles.progressTrack}
+                accessibilityElementsHidden
+              >
+                <View
+                  style={[styles.progressFill, { width: progressBarWidth }]}
+                />
+              </View>
+              <Text style={styles.heroSubtitle}>
+                {nextMilestone - points} points to {milestoneLabel}
+              </Text>
+            </>
+          ) : (
+            <Text style={styles.heroSubtitle}>
+              ⭐ You've reached the top milestone — legend status.
+            </Text>
+          )}
         </View>
 
         <View style={styles.statsRow}>
@@ -390,6 +465,27 @@ export default function ProfileScreen() {
         </View>
 
         <Pressable
+          style={({ pressed }) => [
+            styles.aboutRow,
+            pressed && styles.aboutRowPressed,
+          ]}
+          onPress={() => setAboutOpen(true)}
+          accessibilityRole="button"
+          accessibilityLabel="About AccessMap"
+          accessibilityHint="Opens information about the app, version, and how to send feedback"
+        >
+          <View style={styles.aboutTextWrap}>
+            <Text style={styles.aboutTitle}>About AccessMap</Text>
+            <Text style={styles.aboutSubtitle}>
+              What it is, who built it, and how to get in touch.
+            </Text>
+          </View>
+          <Text style={styles.aboutChevron} accessibilityElementsHidden>
+            ›
+          </Text>
+        </Pressable>
+
+        <Pressable
           style={styles.signOutBtn}
           onPress={() => signOut()}
           accessibilityRole="button"
@@ -414,6 +510,11 @@ export default function ProfileScreen() {
         onDeleted={handleDetailDeleted}
         onViewOnMap={handleViewOnMap}
       />
+
+      <AboutModal
+        visible={aboutOpen}
+        onClose={() => setAboutOpen(false)}
+      />
     </>
   );
 }
@@ -428,20 +529,73 @@ function Stat({ label, value }: { label: string; value: number }) {
 }
 
 const styles = StyleSheet.create({
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  container: { padding: 24, gap: 16, alignItems: 'stretch' },
-  title: { fontSize: 24, fontWeight: '700', textAlign: 'center' },
-  email: { fontSize: 14, color: '#555', textAlign: 'center' },
-  subtitle: { fontSize: 14, color: '#555' },
-  pointsCard: {
-    backgroundColor: '#2f80ed',
-    borderRadius: 12,
-    padding: 20,
+  // Screen wash — replaces the default white background so the white
+  // cards inside (stats, My Reports, About row) actually read as cards
+  // rather than blending into the surface they sit on.
+  screen: { flex: 1, backgroundColor: '#f7f9fc' },
+  center: {
+    flex: 1,
     alignItems: 'center',
-    marginTop: 8,
+    justifyContent: 'center',
+    backgroundColor: '#f7f9fc',
   },
-  pointsLabel: { color: '#dbe7fb', fontSize: 12, letterSpacing: 1.5 },
-  pointsValue: { color: '#fff', fontSize: 48, fontWeight: '800' },
+  container: { padding: 24, gap: 16, alignItems: 'stretch' },
+  email: {
+    fontSize: 13,
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 4,
+  },
+  subtitle: { fontSize: 14, color: '#555' },
+  heroCard: {
+    backgroundColor: '#2f80ed',
+    borderRadius: 20,
+    paddingHorizontal: 24,
+    paddingTop: 20,
+    paddingBottom: 22,
+    alignItems: 'center',
+    gap: 4,
+    // Heavier drop shadow than the surrounding cards so the hero sits
+    // forward and reads as the page's anchor.
+    shadowColor: '#000',
+    shadowOpacity: 0.18,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 6,
+  },
+  heroIcon: { fontSize: 32, marginBottom: 4 },
+  heroLabel: {
+    color: '#dbe7fb',
+    fontSize: 11,
+    letterSpacing: 2,
+    fontWeight: '700',
+  },
+  heroValue: {
+    color: '#fff',
+    fontSize: 56,
+    fontWeight: '800',
+    lineHeight: 60,
+  },
+  heroSubtitle: {
+    color: '#dbe7fb',
+    fontSize: 13,
+    fontWeight: '600',
+    textAlign: 'center',
+    marginTop: 4,
+  },
+  progressTrack: {
+    width: '100%',
+    height: 8,
+    backgroundColor: 'rgba(255,255,255,0.25)',
+    borderRadius: 999,
+    marginTop: 10,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    backgroundColor: '#fff',
+    borderRadius: 999,
+  },
   statsRow: { flexDirection: 'row', gap: 12 },
   statCard: {
     flex: 1,
@@ -531,6 +685,26 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   linkBtnText: { color: '#2f80ed', fontWeight: '600', fontSize: 14 },
+  aboutRow: {
+    marginTop: 16,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 1 },
+    elevation: 1,
+    minHeight: 64,
+  },
+  aboutRowPressed: { opacity: 0.85, backgroundColor: '#f7f9fc' },
+  aboutTextWrap: { flex: 1, gap: 2 },
+  aboutTitle: { fontSize: 16, fontWeight: '700', color: '#222' },
+  aboutSubtitle: { fontSize: 13, color: '#666' },
+  aboutChevron: { fontSize: 28, color: '#999', fontWeight: '300' },
   signOutBtn: {
     marginTop: 16,
     alignSelf: 'center',

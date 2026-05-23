@@ -102,6 +102,73 @@ share sheet throws — match `/cancel|dismiss/i` in the catch and return
 silently, otherwise the user sees a "Couldn't share" alert every time
 they back out.
 
+## 2026-05-23 — Brand the default React Navigation header in `screenOptions`
+
+Pasting the brand color into `Tab.Navigator.screenOptions` (not on each
+`Tab.Screen`) turns the entire app's header from a cheap white strip
+into a single branded surface in one place:
+
+```ts
+<Tab.Navigator
+  screenOptions={{
+    headerStyle: { backgroundColor: color.brand, borderBottomWidth: 0,
+                   ...shadow.e2 },
+    headerTitleStyle: { color: color.textOnBrand, fontWeight: 'bold' },
+    headerTintColor: color.textOnBrand,
+    headerRight: renderHeaderRight,
+  }}
+>
+```
+
+`headerRight` accepts a function-as-prop and can capture parent state via
+closure — exactly how the global Feedback button opens a root-level modal
+(see next entry).
+
+## 2026-05-23 — Root-level modal hoisted out of the navigator
+
+When a modal needs to be opened from *any* screen's header (Feedback,
+in our case), hoist its state to `RootNavigator` and render the modal as
+a sibling of `Tab.Navigator` inside the shared provider tree
+(`FlagsProvider` in our case):
+
+```tsx
+export default function RootNavigator() {
+  const [open, setOpen] = useState(false);
+  const headerRight = () => <Pressable onPress={() => setOpen(true)} />;
+  return (
+    <NavigationContainer>
+      <FlagsProvider>
+        <Tab.Navigator screenOptions={{ headerRight }}>…</Tab.Navigator>
+        <FooModal visible={open} onClose={() => setOpen(false)} />
+      </FlagsProvider>
+    </NavigationContainer>
+  );
+}
+```
+
+The `headerRight` closure sees `setOpen` even though it renders inside a
+deeper Tab.Screen. The modal floats above all tab content because RN
+`<Modal>` is a top-layer presentation.
+
+## 2026-05-23 — Cross-platform `mailto:` with a three-tier fallback
+
+For a zero-backend feedback flow, `mailto:` works on iOS / Android /
+modern web — but only if the OS has a mail client configured. The safe
+shape (see `src/lib/feedback.ts` → `sendFeedback`):
+
+1. Build the mailto URL with `encodeURIComponent` on body + subject, cap
+   the body at ~1800 chars (Outlook / older clients silently truncate
+   longer URLs).
+2. On native: `Linking.canOpenURL` first; if false, return
+   `{status: 'unavailable'}` so the caller can show the address.
+3. On web: skip `canOpenURL` (Safari sometimes returns false even when
+   the browser would handle it). Just `openURL` and catch.
+4. Caller surfaces `unavailable` with an inline copy of the address.
+
+Result: the user always either lands in their mail composer with
+prefilled content, OR sees the address spelled out so they can copy it.
+No silent failures, no "did anything happen?" moments.
+
 ## 2026-05-23 — Realtime merge logic belongs in a pure helper
 
 `FlagsProvider`'s Supabase realtime effect stays a thin adapter: it
