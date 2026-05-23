@@ -1,0 +1,102 @@
+To:      skylerhalisky@gmail.com
+Subject: Feature push AccessMap — 2026-05-23 — Profile editing + Reporter points toast
+
+Hi Sky,
+
+Per your follow-up ask, I shipped both of the suggested next features.
+Each is on its own branch.
+
+1) Profile editing — display name + default tab + show intro again
+   Branch: feat/profile-edit-2026-05-23
+           (stacked on feat/onboarding-cards-2026-05-23 — merge that first)
+   Commit: a849a56  ProfileScreen: editable display name, default tab,
+                    show intro again
+   Files:  +370 / -9 against the onboarding-cards base
+           (new src/lib/preferences.ts, src/lib/users.ts; updates to
+           onboarding.ts, RootNavigator.tsx, App.tsx, ProfileScreen.tsx)
+
+   Three new sections in Profile:
+     - Display name: TextInput + Save. Writes display_name on
+       public.users (existing column — no schema change). Empty
+       persists as NULL.
+     - Default landing tab: 3 segmented pills (Map / Tasks /
+       Profile), per-user AsyncStorage. Drives RootNavigator's new
+       initialRouteName prop. App.tsx holds first render until the
+       preference is in hand, so there's no Map→Tasks flash.
+     - Show me the intro again: link + confirm dialog → clears the
+       onboarding seen key → next sign-in re-shows the 3-card intro.
+   Each section header uses accessibilityRole="header" so screen-
+   reader users can jump straight to a control. Success actions
+   announce via AccessibilityInfo.announceForAccessibility.
+
+2) Reporter-side points toast
+   Branch: feat/reporter-points-toast-2026-05-23  (off main, independent)
+   Commit: a93091a  Reporter points toast — "+N points while you were away"
+   Files:  +234 / -2 (new src/lib/points.ts, src/components/FlashBanner.tsx
+           + App.tsx)
+
+   When the app launches signed in, fetches current public.users.points
+   and compares with a per-user AsyncStorage watermark. If higher,
+   raises a green floating banner: "You earned +N points while you
+   were away!" — auto-dismiss after 4s, tap-to-dismiss, announced via
+   accessibilityLiveRegion + announceForAccessibility. First-ever
+   observation is silent so we don't celebrate pre-existing points.
+   Singular/plural copy ("+1 point" vs "+N points") for natural
+   screen-reader reads. The FlashBanner component is generic
+   (message/onDismiss/tone/durationMs) so future confirmation toasts
+   reuse it.
+
+   Deliberately a launch-time check, not Supabase Realtime — opening
+   the supabase_realtime publication on a new table is a schema/
+   dashboard change (propose-only per the skill). Realtime upgrade
+   plan included in the full report; the toast surface stays the same.
+
+Verification (both branches):
+  - Typecheck green throughout (npm run typecheck)
+  - Reachable: Feature 5 = Profile tab → three new sections.
+    Feature 6 = sign-in / app launch when remote points changed.
+  - Born accessible: composed labels, success announcements,
+    accessibilityRole="header" on each section, ≥44pt targets,
+    no color-only meaning, screen-reader live region on the banner.
+  - No schema (display_name already on users; no Realtime publication
+    change), no new dep, no auth, no map-library changes.
+  - Types still use `type` not `interface`.
+
+How to try (Feature 5):
+  cd ~/AccessMap
+  git checkout feat/profile-edit-2026-05-23
+  npm run web                              # or npm start
+  # Profile tab → set display name → change default tab to Tasks
+  # → sign out + back in → app lands on Tasks
+  # Tap "Show me the intro again" → confirm → sign out + back in
+  # → 3-card onboarding reappears.
+
+How to try (Feature 6):
+  git checkout feat/reporter-points-toast-2026-05-23
+  npm run web
+  # Sign in. Use the Supabase SQL editor:
+  #   update users set points = points + 5 where id = auth.uid();
+  # Force-quit + reopen (or sign out + sign in).
+  # Green banner appears at the top: "You earned +5 points!"
+  # First-ever launch on a fresh user: NO banner (silent baseline).
+
+How to review/merge (suggested order — Feature 5 depends on onboarding):
+  git checkout main
+  git merge feat/onboarding-cards-2026-05-23     # if not already in
+  git merge feat/profile-edit-2026-05-23
+  git merge feat/reporter-points-toast-2026-05-23
+
+  Light conflict possible in App.tsx (both add to SignedInArea — see
+  full report for a sample resolution).
+
+Two forward-looking suggestions in the full report:
+  1. Marker clustering on the Map (already in Later — Proposal P4).
+  2. Shared FlagsProvider (Proposal P5) — unifies the duplicate
+     listFlags fetches and is the right foundation for Realtime later.
+
+Full report is at:
+  ~/AccessMap/qa-reports/feature-2026-05-23-profile-edit-and-points-toast.md
+  ~/Documents/Claude/Projects/Access Map App/Access Map Summarys/
+    2026-05-23_Feature_Development_Report_Profile_Edit_And_Points_Toast.md
+
+— Shamus
