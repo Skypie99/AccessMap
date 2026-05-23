@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -25,9 +25,19 @@ export default function ProfileScreen() {
   const [stats, setStats] = useState<Stats>({ reported: 0, resolved: 0 });
   const [loading, setLoading] = useState(true);
 
+  // True while this screen is on screen — checked before any setState that
+  // runs after an `await` so a slow request can't update a torn-down screen.
+  const mountedRef = useRef(true);
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
+
   const load = useCallback(async () => {
     if (!user) return;
-    setLoading(true);
+    if (mountedRef.current) setLoading(true);
     try {
       const [{ data: profileRow, error: profileErr }, reported, resolved] =
         await Promise.all([
@@ -44,15 +54,18 @@ export default function ProfileScreen() {
         ]);
 
       if (profileErr) throw profileErr;
+      if (!mountedRef.current) return;
       setProfile((profileRow as UserRow | null) ?? null);
       setStats({
         reported: reported.count ?? 0,
         resolved: resolved.count ?? 0,
       });
     } catch (e: any) {
-      Alert.alert('Could not load profile', e?.message ?? 'Unknown error.');
+      if (mountedRef.current) {
+        Alert.alert('Could not load profile', e?.message ?? 'Unknown error.');
+      }
     } finally {
-      setLoading(false);
+      if (mountedRef.current) setLoading(false);
     }
   }, [user]);
 

@@ -49,6 +49,16 @@ export default function MapScreen() {
   );
   const [minSeverity, setMinSeverity] = useState<FlagSeverity>(1);
 
+  // True while this screen is on screen — checked before any setState that
+  // runs after an `await` so a slow request can't update a torn-down screen.
+  const mountedRef = useRef(true);
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
+
   const toggleCategory = useCallback((c: FlagCategory) => {
     setActiveCategories((prev) => {
       const next = new Set(prev);
@@ -75,14 +85,14 @@ export default function MapScreen() {
   }, [flags, activeCategories, minSeverity, filtersActive]);
 
   const requestLocation = useCallback(async () => {
-    setLocating(true);
+    if (mountedRef.current) setLocating(true);
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
-        setPermissionDenied(true);
+        if (mountedRef.current) setPermissionDenied(true);
         return;
       }
-      setPermissionDenied(false);
+      if (mountedRef.current) setPermissionDenied(false);
       const pos = await Location.getCurrentPositionAsync({
         accuracy: Location.Accuracy.Balanced,
       });
@@ -90,6 +100,7 @@ export default function MapScreen() {
         lat: pos.coords.latitude,
         lng: pos.coords.longitude,
       };
+      if (!mountedRef.current) return;
       setLocation(coords);
       mapRef.current?.animateTo({
         latitude: coords.lat,
@@ -98,21 +109,25 @@ export default function MapScreen() {
         longitudeDelta: 0.01,
       });
     } catch (e: any) {
-      Alert.alert('Could not get location', e?.message ?? 'Unknown error.');
+      if (mountedRef.current) {
+        Alert.alert('Could not get location', e?.message ?? 'Unknown error.');
+      }
     } finally {
-      setLocating(false);
+      if (mountedRef.current) setLocating(false);
     }
   }, []);
 
   const refreshFlags = useCallback(async () => {
-    setLoadingFlags(true);
+    if (mountedRef.current) setLoadingFlags(true);
     try {
       const rows = await listFlags(['open', 'verified']);
-      setFlags(rows);
+      if (mountedRef.current) setFlags(rows);
     } catch (e: any) {
-      Alert.alert('Could not load flags', e?.message ?? 'Unknown error.');
+      if (mountedRef.current) {
+        Alert.alert('Could not load flags', e?.message ?? 'Unknown error.');
+      }
     } finally {
-      setLoadingFlags(false);
+      if (mountedRef.current) setLoadingFlags(false);
     }
   }, []);
 

@@ -48,15 +48,29 @@ export default function TasksScreen() {
     [],
   );
 
+  // mountedRef stays true while this screen is on screen. We check it before
+  // any setState that happens after an `await`, so that a request which
+  // resolves after the user has navigated away doesn't spam updates into
+  // a torn-down component.
+  const mountedRef = useRef(true);
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
+
   const refresh = useCallback(async () => {
-    setLoading(true);
+    if (mountedRef.current) setLoading(true);
     try {
       const rows = await listFlags(['open', 'verified']);
-      setFlags(rows);
+      if (mountedRef.current) setFlags(rows);
     } catch (e: any) {
-      Alert.alert('Could not load flags', e?.message ?? 'Unknown error.');
+      if (mountedRef.current) {
+        Alert.alert('Could not load flags', e?.message ?? 'Unknown error.');
+      }
     } finally {
-      setLoading(false);
+      if (mountedRef.current) setLoading(false);
     }
   }, []);
 
