@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
+  AccessibilityInfo,
   ActivityIndicator,
   Alert,
   Modal,
@@ -316,6 +317,22 @@ export default function MapScreen() {
         f.severity >= minSeverity,
     );
   }, [flags, activeCategories, minSeverity, filtersActive]);
+
+  // Announce the empty-results state to iOS screen readers when it appears
+  // (Android picks it up via the alert's accessibilityLiveRegion). Only
+  // fires on transitions into "0 results" — not on every re-render while
+  // empty — so a user who's already heard it doesn't get re-spoken.
+  const showEmptyCard =
+    filtersActive && !loadingFlags && !loadError && filteredFlags.length === 0;
+  const previouslyEmptyRef = useRef(false);
+  useEffect(() => {
+    if (showEmptyCard && !previouslyEmptyRef.current) {
+      AccessibilityInfo.announceForAccessibility(
+        'No flags match your filters. Try broadening them.',
+      );
+    }
+    previouslyEmptyRef.current = showEmptyCard;
+  }, [showEmptyCard]);
 
   const requestLocation = useCallback(async () => {
     if (mountedRef.current) setLocating(true);
@@ -659,6 +676,45 @@ export default function MapScreen() {
           </Pressable>
         )}
 
+        {/*
+          Empty-state card for the "filters hide every flag" case. Only shown
+          when the user has narrowed the view to zero results — not for the
+          "no flags exist anywhere" case, which the status pill already
+          communicates. Lives in the overlay so it floats above the map but
+          below the FABs (which keep their column on the right).
+        */}
+        {showEmptyCard && (
+            <View
+              style={styles.emptyCard}
+              accessible
+              accessibilityRole="alert"
+              accessibilityLabel="No flags match your filters. Try broadening them or reset filters."
+              accessibilityLiveRegion="polite"
+            >
+              <Text style={styles.emptyCardIcon} accessibilityElementsHidden>
+                🔍
+              </Text>
+              <Text style={styles.emptyCardTitle}>
+                No flags match your filters
+              </Text>
+              <Text style={styles.emptyCardBody}>
+                Try broadening your filters, or reset to see all nearby flags.
+              </Text>
+              <Pressable
+                onPress={clearFilters}
+                style={({ pressed }) => [
+                  styles.emptyCardBtn,
+                  pressed && styles.emptyCardBtnPressed,
+                ]}
+                accessibilityRole="button"
+                accessibilityLabel="Reset filters"
+                accessibilityHint="Clears categories, severity, and status filters"
+              >
+                <Text style={styles.emptyCardBtnText}>Reset filters</Text>
+              </Pressable>
+            </View>
+          )}
+
         {locating && !location && (
           <View style={styles.banner}>
             <ActivityIndicator />
@@ -928,6 +984,46 @@ const styles = StyleSheet.create({
   errorBannerPressed: { opacity: 0.7 },
   errorBannerIcon: { color: '#fff', fontSize: 18, fontWeight: '700' },
   errorBannerText: { color: '#fff', fontSize: 13, fontWeight: '600', flex: 1 },
+  emptyCard: {
+    alignSelf: 'center',
+    marginTop: 16,
+    maxWidth: 320,
+    backgroundColor: 'rgba(255,255,255,0.98)',
+    paddingHorizontal: 20,
+    paddingVertical: 18,
+    borderRadius: 14,
+    gap: 8,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 4,
+  },
+  emptyCardIcon: { fontSize: 28 },
+  emptyCardTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#222',
+    textAlign: 'center',
+  },
+  emptyCardBody: {
+    fontSize: 13,
+    color: '#666',
+    textAlign: 'center',
+    lineHeight: 18,
+  },
+  emptyCardBtn: {
+    marginTop: 4,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 999,
+    backgroundColor: '#2f80ed',
+    minHeight: 44,
+    justifyContent: 'center',
+  },
+  emptyCardBtnPressed: { opacity: 0.8 },
+  emptyCardBtnText: { color: '#fff', fontSize: 14, fontWeight: '700' },
   fabColumn: {
     alignSelf: 'flex-end',
     alignItems: 'flex-end',
