@@ -38,3 +38,16 @@ export async function markOnboardingSeen(userId: string): Promise<void> {
     // Ignore — see jsdoc above.
   }
 }
+
+/**
+ * Wipes the "seen" flag for this user, so the next sign-in re-shows the
+ * onboarding cards. Used by the "Show me the intro again" button in
+ * ProfileScreen. Same fire-and-forget posture as the setter.
+ */
+export async function clearOnboardingSeen(userId: string): Promise<void> {
+  try {
+    await AsyncStorage.removeItem(storageKey(userId));
+  } catch {
+    // Ignore — see jsdoc above.
+  }
+}

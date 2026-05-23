@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
+  AccessibilityInfo,
   ActivityIndicator,
   Alert,
   Pressable,
@@ -7,11 +8,20 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { useAuth } from '@/lib/auth';
 import { signOut, supabase } from '@/lib/supabase';
+import { updateUserProfile } from '@/lib/users';
+import {
+  DEFAULT_TABS,
+  getDefaultTab,
+  setDefaultTab,
+  type DefaultTab,
+} from '@/lib/preferences';
+import { clearOnboardingSeen } from '@/lib/onboarding';
 import type { UserRow } from '@/types/database';
 
 interface Stats {
@@ -24,6 +34,16 @@ export default function ProfileScreen() {
   const [profile, setProfile] = useState<UserRow | null>(null);
   const [stats, setStats] = useState<Stats>({ reported: 0, resolved: 0 });
   const [loading, setLoading] = useState(true);
+
+  // Edit-name state. `nameDraft` is what the user is typing; profile?.display_name
+  // is the persisted value. A Save button fires only when they actually differ.
+  const [nameDraft, setNameDraft] = useState('');
+  const [savingName, setSavingName] = useState(false);
+
+  // Default-tab state. null until we've read the preference, so the segmented
+  // control doesn't paint a wrong "selected" pill momentarily.
+  const [defaultTab, setDefaultTabValue] = useState<DefaultTab | null>(null);
+  const [savingTab, setSavingTab] = useState(false);
 
   // True while this screen is on screen — checked before any setState that
   // runs after an `await` so a slow request can't update a torn-down screen.
@@ -55,7 +75,9 @@ export default function ProfileScreen() {
 
       if (profileErr) throw profileErr;
       if (!mountedRef.current) return;
-      setProfile((profileRow as UserRow | null) ?? null);
+      const row = (profileRow as UserRow | null) ?? null;
+      setProfile(row);
+      setNameDraft(row?.display_name ?? '');
       setStats({
         reported: reported.count ?? 0,
         resolved: resolved.count ?? 0,
@@ -75,6 +97,84 @@ export default function ProfileScreen() {
       load();
     }, [load]),
   );
+
+  // Load the default-tab preference once when the user is known.
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    getDefaultTab(user.id).then((tab) => {
+      if (!cancelled) setDefaultTabValue(tab);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
+
+  const trimmedDraft = nameDraft.trim();
+  const nameChanged =
+    trimmedDraft !== (profile?.display_name ?? '').trim() && !savingName;
+
+  const handleSaveName = useCallback(async () => {
+    if (!user) return;
+    setSavingName(true);
+    try {
+      const next = trimmedDraft.length > 0 ? trimmedDraft : null;
+      const updated = await updateUserProfile(user.id, { display_name: next });
+      if (mountedRef.current) {
+        setProfile(updated);
+        setNameDraft(updated.display_name ?? '');
+        AccessibilityInfo.announceForAccessibility('Display name saved.');
+      }
+    } catch (e: any) {
+      Alert.alert('Could not save name', e?.message ?? 'Unknown error.');
+    } finally {
+      if (mountedRef.current) setSavingName(false);
+    }
+  }, [user, trimmedDraft]);
+
+  const handlePickTab = useCallback(
+    async (tab: DefaultTab) => {
+      if (!user || tab === defaultTab) return;
+      setSavingTab(true);
+      // Optimistic — show the new selection immediately, write to storage,
+      // and rollback only if the write throws (it shouldn't, but defensive).
+      setDefaultTabValue(tab);
+      try {
+        await setDefaultTab(user.id, tab);
+        AccessibilityInfo.announceForAccessibility(
+          `Default tab set to ${tab}.`,
+        );
+      } catch {
+        if (mountedRef.current) {
+          setDefaultTabValue(defaultTab);
+          Alert.alert('Could not save preference');
+        }
+      } finally {
+        if (mountedRef.current) setSavingTab(false);
+      }
+    },
+    [user, defaultTab],
+  );
+
+  const handleShowIntroAgain = useCallback(() => {
+    if (!user) return;
+    Alert.alert(
+      'Show intro again?',
+      'The 3-card introduction will appear the next time you sign in on this device.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Reset',
+          onPress: async () => {
+            await clearOnboardingSeen(user.id);
+            AccessibilityInfo.announceForAccessibility(
+              'Intro reset. You will see it again on next sign in.',
+            );
+          },
+        },
+      ],
+    );
+  }, [user]);
 
   if (authLoading) {
     return (
@@ -101,13 +201,108 @@ export default function ProfileScreen() {
       <Text style={styles.email}>{user.email}</Text>
 
       <View style={styles.pointsCard}>
-        <Text style={styles.pointsLabel}>Points</Text>
+        <Text style={styles.pointsLabel}>POINTS</Text>
         <Text style={styles.pointsValue}>{profile?.points ?? 0}</Text>
       </View>
 
       <View style={styles.statsRow}>
         <Stat label="Reported" value={stats.reported} />
         <Stat label="Resolved" value={stats.resolved} />
+      </View>
+
+      <View style={styles.section}>
+        <Text style={styles.sectionLabel} accessibilityRole="header">
+          Display name
+        </Text>
+        <View style={styles.nameRow}>
+          <TextInput
+            value={nameDraft}
+            onChangeText={setNameDraft}
+            placeholder="Add a display name"
+            style={styles.nameInput}
+            editable={!savingName}
+            accessibilityLabel="Display name"
+            accessibilityHint="The name shown next to your flags. Leave empty to use your email."
+            maxLength={60}
+            autoCapitalize="words"
+            autoCorrect={false}
+          />
+          <Pressable
+            onPress={handleSaveName}
+            disabled={!nameChanged}
+            style={[
+              styles.saveBtn,
+              !nameChanged && styles.saveBtnDisabled,
+            ]}
+            accessibilityRole="button"
+            accessibilityLabel="Save display name"
+            accessibilityState={{ disabled: !nameChanged, busy: savingName }}
+          >
+            {savingName ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.saveBtnText}>Save</Text>
+            )}
+          </Pressable>
+        </View>
+        <Text style={styles.hint}>
+          The name shown next to your reports. Leave empty to use your email.
+        </Text>
+      </View>
+
+      <View style={styles.section}>
+        <Text style={styles.sectionLabel} accessibilityRole="header">
+          Default landing tab
+        </Text>
+        <View style={styles.tabRow}>
+          {DEFAULT_TABS.map((tab) => {
+            const selected = tab === defaultTab;
+            return (
+              <Pressable
+                key={tab}
+                onPress={() => handlePickTab(tab)}
+                disabled={savingTab || defaultTab === null}
+                style={[
+                  styles.tabPill,
+                  selected && styles.tabPillSelected,
+                ]}
+                accessibilityRole="button"
+                accessibilityLabel={`Set default tab to ${tab}`}
+                accessibilityState={{
+                  selected,
+                  disabled: savingTab || defaultTab === null,
+                }}
+              >
+                <Text
+                  style={[
+                    styles.tabPillText,
+                    selected && styles.tabPillTextSelected,
+                  ]}
+                >
+                  {tab}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
+        <Text style={styles.hint}>
+          The app opens to this tab when you sign in.
+        </Text>
+      </View>
+
+      <View style={styles.section}>
+        <Text style={styles.sectionLabel} accessibilityRole="header">
+          Onboarding
+        </Text>
+        <Pressable
+          onPress={handleShowIntroAgain}
+          style={styles.linkBtn}
+          accessibilityRole="button"
+          accessibilityLabel="Show me the intro again"
+          accessibilityHint="Resets the first-run cards so they appear at the next sign in"
+        >
+          <Text style={styles.linkBtnText}>Show me the intro again</Text>
+        </Pressable>
       </View>
 
       <Pressable
@@ -161,6 +356,61 @@ const styles = StyleSheet.create({
   },
   statValue: { fontSize: 28, fontWeight: '700', color: '#222' },
   statLabel: { fontSize: 12, color: '#666', textTransform: 'uppercase' },
+  section: { gap: 8, marginTop: 8 },
+  sectionLabel: {
+    fontSize: 12,
+    color: '#666',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    fontWeight: '700',
+  },
+  nameRow: { flexDirection: 'row', gap: 8 },
+  nameInput: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: '#dde2ea',
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 15,
+    minHeight: 44,
+  },
+  saveBtn: {
+    backgroundColor: '#2f80ed',
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: 72,
+    minHeight: 44,
+  },
+  saveBtnDisabled: { opacity: 0.4 },
+  saveBtnText: { color: '#fff', fontWeight: '700', fontSize: 14 },
+  hint: { fontSize: 12, color: '#666' },
+  tabRow: { flexDirection: 'row', gap: 8 },
+  tabPill: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 8,
+    backgroundColor: '#eef1f5',
+    alignItems: 'center',
+    minHeight: 44,
+    justifyContent: 'center',
+  },
+  tabPillSelected: { backgroundColor: '#2f80ed' },
+  tabPillText: { color: '#333', fontWeight: '600', fontSize: 14 },
+  tabPillTextSelected: { color: '#fff' },
+  linkBtn: {
+    backgroundColor: '#eef1f5',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    minHeight: 44,
+    justifyContent: 'center',
+  },
+  linkBtnText: { color: '#2f80ed', fontWeight: '600', fontSize: 14 },
   signOutBtn: {
     marginTop: 16,
     alignSelf: 'center',
@@ -168,6 +418,8 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 999,
     backgroundColor: '#eef1f5',
+    minHeight: 44,
+    justifyContent: 'center',
   },
   signOutText: { color: '#333', fontWeight: '600' },
 });

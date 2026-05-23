@@ -4,6 +4,7 @@ import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider, useAuth } from '@/lib/auth';
 import { hasSeenOnboarding, markOnboardingSeen } from '@/lib/onboarding';
+import { getDefaultTab, type DefaultTab } from '@/lib/preferences';
 import RootNavigator from '@/navigation/RootNavigator';
 import SignInScreen from '@/screens/SignInScreen';
 import OnboardingModal from '@/screens/OnboardingModal';
@@ -11,15 +12,22 @@ import OnboardingModal from '@/screens/OnboardingModal';
 function SignedInArea() {
   const { user } = useAuth();
   const [showOnboarding, setShowOnboarding] = useState(false);
+  // We need the default tab BEFORE rendering RootNavigator, because the
+  // tab navigator uses initialRouteName once. Hold render until we've read
+  // the user's preference (or fallen back to 'Map').
+  const [defaultTab, setDefaultTabState] = useState<DefaultTab | null>(null);
 
-  // After the user is available, check whether they've seen the intro yet.
-  // If not, show the modal — first-run only, gated per-user via AsyncStorage.
   useEffect(() => {
     if (!user) return;
     let cancelled = false;
-    hasSeenOnboarding(user.id).then((seen) => {
-      if (!cancelled && !seen) setShowOnboarding(true);
-    });
+    // Read onboarding + preferred-tab in parallel; both gate first render.
+    Promise.all([hasSeenOnboarding(user.id), getDefaultTab(user.id)]).then(
+      ([seen, tab]) => {
+        if (cancelled) return;
+        if (!seen) setShowOnboarding(true);
+        setDefaultTabState(tab);
+      },
+    );
     return () => {
       cancelled = true;
     };
@@ -34,9 +42,11 @@ function SignedInArea() {
     setShowOnboarding(false);
   }, [user]);
 
+  if (defaultTab === null) return null;
+
   return (
     <>
-      <RootNavigator />
+      <RootNavigator initialRouteName={defaultTab} />
       <OnboardingModal visible={showOnboarding} onDone={handleDone} />
     </>
   );
