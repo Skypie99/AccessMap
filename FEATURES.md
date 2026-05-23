@@ -29,9 +29,14 @@ they land on `main`.
 
 ## Next (this month)
 
-- **Default-filter-set on launch.** With saved sets in place, let the
-  user mark one as the default so the app opens to that view instead of
-  the last-toggled state.
+- **Default-filter-set on launch — shipped on
+  `feat/default-filter-set-2026-05-23` (unmerged).** Long-press a saved
+  chip → action sheet with Make/Remove default, Delete, Cancel. The
+  default chip shows a ★ prefix and its accessibilityLabel announces
+  "default on launch". On mount the default's filters override the
+  last-toggled mapFilters; a dangling pointer falls back silently and
+  `deleteSet` cascades the pointer clear. 8 new unit tests cover the
+  pointer + cascade.
 - **Distance test coverage.** `src/lib/distance.ts` doesn't have a
   test file yet (Loop 5 didn't add one). Add one when Jest is in.
 - **Address search / jump-to.** Geocoded address bar at the top of
