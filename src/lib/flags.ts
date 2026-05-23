@@ -64,6 +64,23 @@ export async function listFlags(statuses: FlagStatus[] = ['open', 'verified']) {
   return (data ?? []) as FlagRow[];
 }
 
+/**
+ * Fetch every flag a single user has submitted, newest first. Used by the
+ * "My Reports" view on Profile. Capped at 200 — same reasoning as listFlags:
+ * a runaway user shouldn't lock up the screen. If someone hits the cap we'll
+ * add cursor pagination here too (tracked alongside listFlags in P1).
+ */
+export async function listFlagsByUser(userId: string) {
+  const { data, error } = await supabase
+    .from('flags')
+    .select('*')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false })
+    .limit(200);
+  if (error) throw error;
+  return (data ?? []) as FlagRow[];
+}
+
 export async function createFlag(userId: string, input: CreateFlagInput) {
   const { data, error } = await supabase
     .from('flags')
