@@ -41,6 +41,44 @@ describe('buildMailtoUrl', () => {
     expect(url).toContain(`subject=${encodeURIComponent('AccessMap feedback')}`);
   });
 
+  it('appends the category label to the subject when one is given', () => {
+    const url = buildMailtoUrl({ body: 'x', category: 'bug' });
+    expect(url).toContain(
+      `subject=${encodeURIComponent('AccessMap feedback: Bug')}`,
+    );
+  });
+
+  it('prefixes the body with a Category line when one is given', () => {
+    const url = buildMailtoUrl({ body: 'something cool', category: 'love' });
+    const bodyParam = url.split('&body=')[1] ?? '';
+    const decoded = decodeURIComponent(bodyParam);
+    expect(decoded).toContain('Category: Love');
+    expect(decoded).toContain('something cool');
+  });
+
+  it('omits the Category prefix when no category is given (About flow)', () => {
+    const url = buildMailtoUrl({ body: 'general thoughts' });
+    const bodyParam = url.split('&body=')[1] ?? '';
+    const decoded = decodeURIComponent(bodyParam);
+    expect(decoded).not.toContain('Category:');
+    expect(decoded.startsWith('general thoughts')).toBe(true);
+  });
+
+  it('combines reply-to + category prefixes when both are given', () => {
+    const url = buildMailtoUrl({
+      body: 'both',
+      contactEmail: 'me@example.com',
+      category: 'idea',
+    });
+    const bodyParam = url.split('&body=')[1] ?? '';
+    const decoded = decodeURIComponent(bodyParam);
+    // Reply-to should come before the Category line.
+    const replyIdx = decoded.indexOf('Reply to:');
+    const catIdx = decoded.indexOf('Category:');
+    expect(replyIdx).toBeGreaterThanOrEqual(0);
+    expect(catIdx).toBeGreaterThan(replyIdx);
+  });
+
   it('URL-encodes the body so newlines and specials survive', () => {
     const url = buildMailtoUrl({ body: 'line 1\nline & 2\n? line 3' });
     // The encoded body section should contain percent-escaped versions

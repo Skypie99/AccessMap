@@ -31,6 +31,8 @@ import FlagDetailModal, {
   type DetailAction,
 } from '@/components/FlagDetailModal';
 import AboutModal from '@/components/AboutModal';
+import MyFeedbackModal from '@/components/MyFeedbackModal';
+import HelpModal from '@/components/HelpModal';
 
 interface Stats {
   reported: number;
@@ -89,6 +91,16 @@ export default function ProfileScreen() {
   // Self-contained: it links straight to the mail composer for the
   // "Send feedback" CTA so we don't have to coordinate two open modals.
   const [aboutOpen, setAboutOpen] = useState(false);
+
+  // My Feedback modal — opened from the "My Feedback" row. Renders an
+  // empty state when the migration hasn't been applied or the user
+  // hasn't sent anything yet, so it's safe to open in any state.
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
+
+  // Help / FAQ modal — opened from the "Help & FAQ" row. Static
+  // content, no fetch, no state beyond per-item expand/collapse
+  // managed inside the modal.
+  const [helpOpen, setHelpOpen] = useState(false);
 
   // Edit-name state. nameDraft is what the user is typing; profile?.display_name
   // is the persisted value. A Save button fires only when they actually differ.
@@ -369,6 +381,27 @@ export default function ProfileScreen() {
           </Text>
         </Pressable>
 
+        <Pressable
+          style={({ pressed }) => [
+            styles.myReportsBtn,
+            pressed && styles.myReportsBtnPressed,
+          ]}
+          onPress={() => setFeedbackOpen(true)}
+          accessibilityRole="button"
+          accessibilityLabel="My Feedback"
+          accessibilityHint="Opens the list of feedback you've sent to the maintainer"
+        >
+          <View style={styles.myReportsTextWrap}>
+            <Text style={styles.myReportsTitle}>My Feedback</Text>
+            <Text style={styles.myReportsSubtitle}>
+              View the feedback messages you've sent.
+            </Text>
+          </View>
+          <Text style={styles.myReportsChevron} accessibilityElementsHidden>
+            ›
+          </Text>
+        </Pressable>
+
         <View style={styles.section}>
           <Text style={styles.sectionLabel} accessibilityRole="header">
             Display name
@@ -469,6 +502,27 @@ export default function ProfileScreen() {
             styles.aboutRow,
             pressed && styles.aboutRowPressed,
           ]}
+          onPress={() => setHelpOpen(true)}
+          accessibilityRole="button"
+          accessibilityLabel="Help and frequently asked questions"
+          accessibilityHint="Opens collapsible answers to common questions about the app"
+        >
+          <View style={styles.aboutTextWrap}>
+            <Text style={styles.aboutTitle}>Help & FAQ</Text>
+            <Text style={styles.aboutSubtitle}>
+              Common questions about reports, points, and accessibility.
+            </Text>
+          </View>
+          <Text style={styles.aboutChevron} accessibilityElementsHidden>
+            ›
+          </Text>
+        </Pressable>
+
+        <Pressable
+          style={({ pressed }) => [
+            styles.aboutRow,
+            pressed && styles.aboutRowPressed,
+          ]}
           onPress={() => setAboutOpen(true)}
           accessibilityRole="button"
           accessibilityLabel="About AccessMap"
@@ -514,6 +568,16 @@ export default function ProfileScreen() {
       <AboutModal
         visible={aboutOpen}
         onClose={() => setAboutOpen(false)}
+      />
+
+      <MyFeedbackModal
+        visible={feedbackOpen}
+        onClose={() => setFeedbackOpen(false)}
+      />
+
+      <HelpModal
+        visible={helpOpen}
+        onClose={() => setHelpOpen(false)}
       />
     </>
   );
