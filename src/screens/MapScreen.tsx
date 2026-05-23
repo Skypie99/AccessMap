@@ -30,6 +30,7 @@ import PlatformMap, {
   type PlatformMapHandle,
   type PlatformMapRegion,
 } from '@/components/PlatformMap';
+import { useScreenReader } from '@/lib/accessibility';
 import ReportFlagModal, { severityColor } from './ReportFlagModal';
 import LegendModal from './LegendModal';
 import NearbyFlagsModal from './NearbyFlagsModal';
@@ -64,6 +65,21 @@ export default function MapScreen() {
   const [legendOpen, setLegendOpen] = useState(false);
   const [nearbyOpen, setNearbyOpen] = useState(false);
   const [focusedFlagId, setFocusedFlagId] = useState<string | null>(null);
+
+  // Phase 2 of the accessible list view: auto-open the linear list when a
+  // screen reader is on, so blind/low-vision users land directly in the
+  // navigable view instead of the (visual-by-nature) map. Fires once per
+  // mount; if the user explicitly closes the modal, we leave them on the
+  // Map and don't re-auto-open. The "📋 List" FAB remains as the manual
+  // re-entry.
+  const screenReaderOn = useScreenReader();
+  const hasAutoOpenedListRef = useRef(false);
+  useEffect(() => {
+    if (screenReaderOn && !hasAutoOpenedListRef.current) {
+      hasAutoOpenedListRef.current = true;
+      setNearbyOpen(true);
+    }
+  }, [screenReaderOn]);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [activeCategories, setActiveCategories] = useState<Set<FlagCategory>>(
     new Set(),
