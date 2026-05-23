@@ -4,8 +4,10 @@ import {
   Alert,
   Image,
   Modal,
+  Platform,
   Pressable,
   ScrollView,
+  Share,
   StyleSheet,
   Text,
   View,
@@ -15,6 +17,7 @@ import { errorMessage } from '@/lib/errors';
 import {
   CATEGORY_LABELS,
   deleteFlag,
+  SEVERITY_LABELS,
   severityColor,
   STATUS_COLORS,
   STATUS_LABELS,
@@ -84,6 +87,55 @@ export default function FlagDetailModal({
       Alert.alert('Could not update flag', errorMessage(e));
     } finally {
       setBusy(false);
+    }
+  };
+
+  // Share the flag via the OS share sheet (native) or the Web Share API
+  // / clipboard (web). Message is self-contained — recipient sees the
+  // category, severity, and location even if they don't have AccessMap
+  // installed. The accessmap://flag/{id} link matches the scheme in
+  // app.json; in-app deep-link handling for it is not wired yet, so a
+  // tap on the link today just opens the app to its last screen.
+  const handleShare = async () => {
+    if (busy) return;
+    const url = `accessmap://flag/${shownFlag.id}`;
+    const severityLabel = SEVERITY_LABELS[shownFlag.severity];
+    const message =
+      `${CATEGORY_LABELS[shownFlag.category]} flag on AccessMap\n` +
+      `Severity ${shownFlag.severity}/5 (${severityLabel}) at ${formattedCoords}\n\n` +
+      url;
+
+    try {
+      if (Platform.OS === 'web') {
+        const nav =
+          typeof navigator !== 'undefined' ? navigator : undefined;
+        // navigator.share isn't on every browser (Firefox desktop, older
+        // Safari). Fall back to writing to the clipboard so the user
+        // always has SOMETHING they can paste.
+        if (nav && typeof (nav as Navigator).share === 'function') {
+          await (nav as Navigator).share({
+            title: 'AccessMap flag',
+            text: message,
+            url,
+          });
+        } else if (nav?.clipboard?.writeText) {
+          await nav.clipboard.writeText(message);
+          Alert.alert(
+            'Link copied',
+            'Flag details copied to your clipboard.',
+          );
+        } else {
+          Alert.alert('Share', message);
+        }
+      } else {
+        await Share.share({ message, title: 'AccessMap flag', url });
+      }
+    } catch (e) {
+      // A user-cancel on the share sheet throws; treat as a no-op rather
+      // than surfacing a "couldn't share" alert.
+      const msg = errorMessage(e);
+      if (/cancel|dismiss/i.test(msg)) return;
+      Alert.alert("Couldn't share flag", msg);
     }
   };
 
@@ -220,20 +272,33 @@ export default function FlagDetailModal({
               {formattedCoords}
             </Text>
 
-            <Pressable
-              onPress={() => {
-                onViewOnMap(shownFlag);
-                onClose();
-              }}
-              disabled={busy}
-              style={[styles.actionBtn, styles.viewMapBtn]}
-              accessibilityRole="button"
-              accessibilityLabel="View this flag on the map"
-              accessibilityHint="Switches to the Map tab and centers on this flag"
-              accessibilityState={{ disabled: busy }}
-            >
-              <Text style={styles.viewMapBtnText}>View on Map</Text>
-            </Pressable>
+            <View style={styles.secondaryRow}>
+              <Pressable
+                onPress={() => {
+                  onViewOnMap(shownFlag);
+                  onClose();
+                }}
+                disabled={busy}
+                style={[styles.actionBtn, styles.viewMapBtn]}
+                accessibilityRole="button"
+                accessibilityLabel="View this flag on the map"
+                accessibilityHint="Switches to the Map tab and centers on this flag"
+                accessibilityState={{ disabled: busy }}
+              >
+                <Text style={styles.viewMapBtnText}>View on Map</Text>
+              </Pressable>
+              <Pressable
+                onPress={handleShare}
+                disabled={busy}
+                style={[styles.actionBtn, styles.shareBtn]}
+                accessibilityRole="button"
+                accessibilityLabel="Share this flag"
+                accessibilityHint="Opens the share sheet to send a link to this flag"
+                accessibilityState={{ disabled: busy }}
+              >
+                <Text style={styles.shareBtnText}>Share</Text>
+              </Pressable>
+            </View>
           </ScrollView>
 
           <View style={styles.actionRow}>
@@ -412,7 +477,17 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
     borderWidth: 1,
     borderColor: '#2f80ed',
-    marginTop: 8,
   },
   viewMapBtnText: { color: '#2f80ed', fontWeight: '700', fontSize: 14 },
+  secondaryRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 8,
+  },
+  shareBtn: {
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: '#2f80ed',
+  },
+  shareBtnText: { color: '#2f80ed', fontWeight: '700', fontSize: 14 },
 });
