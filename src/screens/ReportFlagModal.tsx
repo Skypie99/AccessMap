@@ -187,6 +187,12 @@ export default function ReportFlagModal({
             onChangeText={setDescription}
             placeholder="What's going on here?"
             multiline
+            // Mirror the DB check constraint
+            // (flags_description_length_chk in
+            // supabase/migrations/2026-05-23_data_layer_hardening.sql).
+            // Cap the input here too so the user can't paste a wall of
+            // text only to get a Postgres error after upload+insert.
+            maxLength={2000}
             style={styles.input}
           />
 
