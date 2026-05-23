@@ -249,6 +249,10 @@ export function severityColor(s: FlagSeverity): string {
     case 3: return '#f1c40f';
     case 4: return '#e67e22';
     case 5: return '#e74c3c';
+    // Defensive: if a future row carries an unexpected severity (dirty data,
+    // schema widening), return a neutral gray instead of `undefined` so the
+    // marker/severity bar still renders.
+    default: return '#999';
   }
 }
 
