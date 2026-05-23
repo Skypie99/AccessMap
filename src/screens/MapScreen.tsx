@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
+  AccessibilityInfo,
   ActivityIndicator,
   Alert,
   Pressable,
@@ -41,6 +42,10 @@ export default function MapScreen() {
   const [permissionDenied, setPermissionDenied] = useState(false);
   const [flags, setFlags] = useState<FlagRow[]>([]);
   const [loadingFlags, setLoadingFlags] = useState(false);
+  // Set when listFlags() rejects. Shown as a persistent tap-to-retry banner
+  // so the user can tell "0 flags here" from "the fetch failed". Cleared on
+  // a successful refresh.
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [reportOpen, setReportOpen] = useState(false);
   const [focusedFlagId, setFocusedFlagId] = useState<string | null>(null);
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -121,11 +126,19 @@ export default function MapScreen() {
     if (mountedRef.current) setLoadingFlags(true);
     try {
       const rows = await listFlags(['open', 'verified']);
-      if (mountedRef.current) setFlags(rows);
+      if (!mountedRef.current) return;
+      setFlags(rows);
+      setLoadError(null);
     } catch (e: any) {
-      if (mountedRef.current) {
-        Alert.alert('Could not load flags', e?.message ?? 'Unknown error.');
-      }
+      if (!mountedRef.current) return;
+      const message = e?.message
+        ? `Couldn't load flags: ${e.message}. Tap to retry.`
+        : "Couldn't load flags. Tap to retry.";
+      setLoadError(message);
+      // Announce to screen readers — the banner is rendered but a sighted
+      // user sees it instantly; for VoiceOver/TalkBack we ask the OS to read
+      // it out loud so the failure isn't silent.
+      AccessibilityInfo.announceForAccessibility(message);
     } finally {
       if (mountedRef.current) setLoadingFlags(false);
     }
@@ -298,6 +311,34 @@ export default function MapScreen() {
           </View>
         )}
 
+        {loadError && (
+          <Pressable
+            onPress={refreshFlags}
+            disabled={loadingFlags}
+            style={({ pressed }) => [
+              styles.errorBanner,
+              loadingFlags && styles.errorBannerBusy,
+              pressed && styles.errorBannerPressed,
+            ]}
+            accessibilityRole="button"
+            accessibilityLabel={loadError}
+            accessibilityHint="Tries to load flags again"
+            accessibilityState={{ busy: loadingFlags }}
+            // Announces re-renders of this region on Android too; iOS uses
+            // the explicit announceForAccessibility above.
+            accessibilityLiveRegion="polite"
+          >
+            {loadingFlags ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.errorBannerIcon}>⚠</Text>
+            )}
+            <Text style={styles.errorBannerText} numberOfLines={2}>
+              {loadingFlags ? 'Retrying…' : loadError}
+            </Text>
+          </Pressable>
+        )}
+
         {locating && !location && (
           <View style={styles.banner}>
             <ActivityIndicator />
@@ -434,6 +475,26 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   bannerText: { fontSize: 13, color: '#333' },
+  errorBanner: {
+    marginTop: 8,
+    backgroundColor: '#c0392b',
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderRadius: 10,
+    flexDirection: 'row',
+    gap: 10,
+    alignItems: 'center',
+    minHeight: 44,
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 3,
+  },
+  errorBannerBusy: { opacity: 0.85 },
+  errorBannerPressed: { opacity: 0.7 },
+  errorBannerIcon: { color: '#fff', fontSize: 18, fontWeight: '700' },
+  errorBannerText: { color: '#fff', fontSize: 13, fontWeight: '600', flex: 1 },
   fab: {
     alignSelf: 'flex-end',
     backgroundColor: '#2f80ed',
