@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
+  AccessibilityInfo,
   ActivityIndicator,
   Alert,
   Modal,
@@ -17,6 +18,7 @@ import {
   CATEGORY_LABELS,
   CATEGORY_ORDER,
   DEFAULT_STATUSES,
+  SEVERITY_LABELS,
   severityColor,
   SEVERITY_ORDER,
   STATUS_LABELS,
@@ -24,6 +26,10 @@ import {
 } from '@/lib/flags';
 import { useFlags } from '@/lib/flagsStore';
 import { loadMapFilters, saveMapFilters } from '@/lib/mapFilters';
+import {
+  loadFilterPanelCollapsed,
+  saveFilterPanelCollapsed,
+} from '@/lib/filterPanelPrefs';
 import {
   deleteSet,
   FilterSetError,
@@ -100,6 +106,13 @@ export default function MapScreen() {
     }
   }, [screenReaderOn]);
   const [filtersOpen, setFiltersOpen] = useState(false);
+  // Whether the filter panel (when open) shows just its header row or all
+  // sections. Persists across launches via filterPanelPrefs. Hydrated
+  // alongside the filter values; the save-effect below is gated on
+  // filterPanelHydrated so we don't clobber the stored value with the
+  // initial default during the brief mount→load window.
+  const [panelCollapsed, setPanelCollapsed] = useState(false);
+  const [panelCollapsedHydrated, setPanelCollapsedHydrated] = useState(false);
   const [activeCategories, setActiveCategories] = useState<Set<FlagCategory>>(
     new Set(),
   );
@@ -167,6 +180,22 @@ export default function MapScreen() {
     setActiveStatuses(new Set(DEFAULT_STATUSES));
   }, []);
 
+  // Quick-toggle severity from the top icon row without opening the full
+  // filter panel. Cycles 1 → 2 → 3 → 4 → 5 → 1; 1 is the "no severity
+  // filter" state (every flag is severity >= 1). Announces the new state
+  // on each tap so screen-reader users hear the change.
+  const cycleSeverity = useCallback(() => {
+    setMinSeverity((prev) => {
+      const next = (prev === 5 ? 1 : prev + 1) as FlagSeverity;
+      AccessibilityInfo.announceForAccessibility(
+        next === 1
+          ? 'Minimum severity: all'
+          : `Minimum severity: ${SEVERITY_LABELS[next]} and above`,
+      );
+      return next;
+    });
+  }, []);
+
   // Whether the status filter differs from the default — used to glow the
   // filter button and show the Clear link.
   const statusFilterActive = useMemo(() => {
@@ -199,10 +228,11 @@ export default function MapScreen() {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const [saved, sets, storedDefault] = await Promise.all([
+      const [saved, sets, storedDefault, collapsed] = await Promise.all([
         loadMapFilters(),
         listSets(),
         getDefaultSetId(),
+        loadFilterPanelCollapsed(),
       ]);
       if (cancelled) return;
       const defaultSet =
@@ -220,12 +250,22 @@ export default function MapScreen() {
       }
       setSavedSets(sets);
       setDefaultIdState(defaultSet ? defaultSet.id : null);
+      setPanelCollapsed(collapsed);
       setFiltersHydrated(true);
+      setPanelCollapsedHydrated(true);
     })();
     return () => {
       cancelled = true;
     };
   }, []);
+
+  // Persist the panel collapsed/expanded toggle. Same fire-and-forget
+  // pattern as mapFilters — the worst case on a storage failure is the
+  // user's next session opens with the default (expanded) state.
+  useEffect(() => {
+    if (!panelCollapsedHydrated) return;
+    saveFilterPanelCollapsed(panelCollapsed);
+  }, [panelCollapsed, panelCollapsedHydrated]);
 
   // Apply a saved set: copy its filter triple over the active filters.
   // The existing save-effect below pushes the new values through to
@@ -360,6 +400,22 @@ export default function MapScreen() {
     );
   }, [flags, activeCategories, minSeverity, filtersActive]);
 
+  // Announce the empty-results state to iOS screen readers when it appears
+  // (Android picks it up via the alert's accessibilityLiveRegion). Only
+  // fires on transitions into "0 results" — not on every re-render while
+  // empty — so a user who's already heard it doesn't get re-spoken.
+  const showEmptyCard =
+    filtersActive && !loadingFlags && !loadError && filteredFlags.length === 0;
+  const previouslyEmptyRef = useRef(false);
+  useEffect(() => {
+    if (showEmptyCard && !previouslyEmptyRef.current) {
+      AccessibilityInfo.announceForAccessibility(
+        'No flags match your filters. Try broadening them.',
+      );
+    }
+    previouslyEmptyRef.current = showEmptyCard;
+  }, [showEmptyCard]);
+
   const requestLocation = useCallback(async () => {
     if (mountedRef.current) setLocating(true);
     try {
@@ -479,6 +535,31 @@ export default function MapScreen() {
             </Text>
           </Pressable>
           <Pressable
+            onPress={cycleSeverity}
+            style={[
+              styles.iconBtn,
+              styles.sevQuickBtn,
+              minSeverity > 1 && { backgroundColor: severityColor(minSeverity) },
+            ]}
+            accessibilityRole="button"
+            accessibilityLabel={
+              minSeverity === 1
+                ? 'Minimum severity: all'
+                : `Minimum severity: ${SEVERITY_LABELS[minSeverity]} and above`
+            }
+            accessibilityHint="Tap to cycle through minimum severity filters"
+          >
+            <Text
+              style={[
+                styles.iconText,
+                styles.sevQuickText,
+                minSeverity > 1 && styles.iconTextActive,
+              ]}
+            >
+              {minSeverity}+
+            </Text>
+          </Pressable>
+          <Pressable
             onPress={refreshFlags}
             style={styles.iconBtn}
             accessibilityRole="button"
@@ -499,7 +580,31 @@ export default function MapScreen() {
         {filtersOpen && (
           <View style={styles.filterPanel}>
             <View style={styles.filterHeaderRow}>
-              <Text style={styles.filterTitle}>Filter flags</Text>
+              <Pressable
+                onPress={() => setPanelCollapsed((v) => !v)}
+                hitSlop={8}
+                style={styles.filterTitleRow}
+                accessibilityRole="button"
+                accessibilityLabel={
+                  panelCollapsed
+                    ? 'Expand filter panel'
+                    : 'Collapse filter panel'
+                }
+                accessibilityHint={
+                  panelCollapsed
+                    ? 'Shows saved filters, categories, severity, and status'
+                    : 'Hides the filter sections, leaving just the header'
+                }
+                accessibilityState={{ expanded: !panelCollapsed }}
+              >
+                <Text style={styles.filterTitle}>Filter flags</Text>
+                <Text
+                  style={styles.filterChevron}
+                  accessibilityElementsHidden
+                >
+                  {panelCollapsed ? '▸' : '▾'}
+                </Text>
+              </Pressable>
               {filtersActive && (
                 <Pressable
                   onPress={clearFilters}
@@ -511,6 +616,8 @@ export default function MapScreen() {
               )}
             </View>
 
+            {!panelCollapsed && (
+              <>
             <Text style={styles.filterSubLabel}>Saved</Text>
             {savedSets.length === 0 ? (
               <View style={styles.savedEmpty}>
@@ -680,6 +787,8 @@ export default function MapScreen() {
                 Pick at least one status to see flags.
               </Text>
             )}
+              </>
+            )}
           </View>
         )}
 
@@ -710,6 +819,45 @@ export default function MapScreen() {
             </Text>
           </Pressable>
         )}
+
+        {/*
+          Empty-state card for the "filters hide every flag" case. Only shown
+          when the user has narrowed the view to zero results — not for the
+          "no flags exist anywhere" case, which the status pill already
+          communicates. Lives in the overlay so it floats above the map but
+          below the FABs (which keep their column on the right).
+        */}
+        {showEmptyCard && (
+            <View
+              style={styles.emptyCard}
+              accessible
+              accessibilityRole="alert"
+              accessibilityLabel="No flags match your filters. Try broadening them or reset filters."
+              accessibilityLiveRegion="polite"
+            >
+              <Text style={styles.emptyCardIcon} accessibilityElementsHidden>
+                🔍
+              </Text>
+              <Text style={styles.emptyCardTitle}>
+                No flags match your filters
+              </Text>
+              <Text style={styles.emptyCardBody}>
+                Try broadening your filters, or reset to see all nearby flags.
+              </Text>
+              <Pressable
+                onPress={clearFilters}
+                style={({ pressed }) => [
+                  styles.emptyCardBtn,
+                  pressed && styles.emptyCardBtnPressed,
+                ]}
+                accessibilityRole="button"
+                accessibilityLabel="Reset filters"
+                accessibilityHint="Clears categories, severity, and status filters"
+              >
+                <Text style={styles.emptyCardBtnText}>Reset filters</Text>
+              </Pressable>
+            </View>
+          )}
 
         {locating && !location && (
           <View style={styles.banner}>
@@ -902,6 +1050,10 @@ const styles = StyleSheet.create({
   iconText: { fontSize: 18, color: '#2f80ed', fontWeight: '700' },
   iconBtnActive: { backgroundColor: '#2f80ed' },
   iconTextActive: { color: '#fff' },
+  // Quick-cycle severity button — slightly wider than the round icon buttons
+  // to fit the "{n}+" label without crowding the glyph against the edges.
+  sevQuickBtn: { width: 44 },
+  sevQuickText: { fontSize: 14 },
   filterPanel: {
     marginTop: 8,
     backgroundColor: 'rgba(255,255,255,0.97)',
@@ -920,6 +1072,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   filterTitle: { fontSize: 14, fontWeight: '700', color: '#222' },
+  filterTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 4,
+    // The header row itself is the tap target; combined with the parent
+    // panel padding this gives a comfortable 44pt area despite the small
+    // visible glyph.
+    minHeight: 32,
+  },
+  filterChevron: { fontSize: 12, color: '#2f80ed', fontWeight: '700' },
   clearLink: { fontSize: 12, color: '#2f80ed', fontWeight: '600' },
   filterSubLabel: {
     fontSize: 11,
@@ -980,6 +1143,46 @@ const styles = StyleSheet.create({
   errorBannerPressed: { opacity: 0.7 },
   errorBannerIcon: { color: '#fff', fontSize: 18, fontWeight: '700' },
   errorBannerText: { color: '#fff', fontSize: 13, fontWeight: '600', flex: 1 },
+  emptyCard: {
+    alignSelf: 'center',
+    marginTop: 16,
+    maxWidth: 320,
+    backgroundColor: 'rgba(255,255,255,0.98)',
+    paddingHorizontal: 20,
+    paddingVertical: 18,
+    borderRadius: 14,
+    gap: 8,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 4,
+  },
+  emptyCardIcon: { fontSize: 28 },
+  emptyCardTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#222',
+    textAlign: 'center',
+  },
+  emptyCardBody: {
+    fontSize: 13,
+    color: '#666',
+    textAlign: 'center',
+    lineHeight: 18,
+  },
+  emptyCardBtn: {
+    marginTop: 4,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 999,
+    backgroundColor: '#2f80ed',
+    minHeight: 44,
+    justifyContent: 'center',
+  },
+  emptyCardBtnPressed: { opacity: 0.8 },
+  emptyCardBtnText: { color: '#fff', fontSize: 14, fontWeight: '700' },
   fabColumn: {
     alignSelf: 'flex-end',
     alignItems: 'flex-end',
