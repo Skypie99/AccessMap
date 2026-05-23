@@ -18,6 +18,7 @@ import PlatformMap, {
   type PlatformMapRegion,
 } from '@/components/PlatformMap';
 import ReportFlagModal, { severityColor } from './ReportFlagModal';
+import NearbyFlagsModal from './NearbyFlagsModal';
 
 const SEVERITY_LEVELS: FlagSeverity[] = [1, 2, 3, 4, 5];
 
@@ -42,6 +43,7 @@ export default function MapScreen() {
   const [flags, setFlags] = useState<FlagRow[]>([]);
   const [loadingFlags, setLoadingFlags] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
+  const [nearbyOpen, setNearbyOpen] = useState(false);
   const [focusedFlagId, setFocusedFlagId] = useState<string | null>(null);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [activeCategories, setActiveCategories] = useState<Set<FlagCategory>>(
@@ -313,21 +315,36 @@ export default function MapScreen() {
           </View>
         )}
 
-        <Pressable
-          style={({ pressed }) => [
-            styles.fab,
-            !location && styles.fabDisabled,
-            pressed && styles.fabPressed,
-          ]}
-          onPress={() => setReportOpen(true)}
-          disabled={!location}
-          accessibilityRole="button"
-          accessibilityLabel="Report a flag here"
-          accessibilityHint="Opens a form to report an accessibility issue at your current location"
-          accessibilityState={{ disabled: !location }}
-        >
-          <Text style={styles.fabText}>＋ Report</Text>
-        </Pressable>
+        <View style={styles.fabColumn}>
+          <Pressable
+            style={({ pressed }) => [
+              styles.fab,
+              styles.fabSecondary,
+              pressed && styles.fabPressed,
+            ]}
+            onPress={() => setNearbyOpen(true)}
+            accessibilityRole="button"
+            accessibilityLabel="Open nearby flags list"
+            accessibilityHint="Opens an accessible list of flags sorted by distance"
+          >
+            <Text style={styles.fabSecondaryText}>📋 List</Text>
+          </Pressable>
+          <Pressable
+            style={({ pressed }) => [
+              styles.fab,
+              !location && styles.fabDisabled,
+              pressed && styles.fabPressed,
+            ]}
+            onPress={() => setReportOpen(true)}
+            disabled={!location}
+            accessibilityRole="button"
+            accessibilityLabel="Report a flag here"
+            accessibilityHint="Opens a form to report an accessibility issue at your current location"
+            accessibilityState={{ disabled: !location }}
+          >
+            <Text style={styles.fabText}>＋ Report</Text>
+          </Pressable>
+        </View>
       </View>
 
       <ReportFlagModal
@@ -335,6 +352,26 @@ export default function MapScreen() {
         location={location}
         onClose={() => setReportOpen(false)}
         onCreated={refreshFlags}
+      />
+
+      <NearbyFlagsModal
+        visible={nearbyOpen}
+        location={location}
+        flags={flags}
+        onClose={() => setNearbyOpen(false)}
+        onSelectFlag={(flag) => {
+          setNearbyOpen(false);
+          setFocusedFlagId(flag.id);
+          mapRef.current?.animateTo({
+            latitude: flag.lat,
+            longitude: flag.lng,
+            latitudeDelta: 0.005,
+            longitudeDelta: 0.005,
+          });
+          // Give the close animation a beat before opening the callout, so
+          // the marker is visible by the time the bubble appears.
+          setTimeout(() => mapRef.current?.showCallout(flag.id), 350);
+        }}
       />
     </View>
   );
@@ -434,8 +471,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   bannerText: { fontSize: 13, color: '#333' },
-  fab: {
+  fabColumn: {
     alignSelf: 'flex-end',
+    alignItems: 'flex-end',
+    gap: 10,
+  },
+  fab: {
     backgroundColor: '#2f80ed',
     paddingHorizontal: 18,
     paddingVertical: 14,
@@ -445,7 +486,11 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     shadowOffset: { width: 0, height: 2 },
     elevation: 4,
+    minHeight: 44,
+    justifyContent: 'center',
   },
+  fabSecondary: { backgroundColor: 'rgba(255,255,255,0.97)' },
+  fabSecondaryText: { color: '#2f80ed', fontWeight: '700', fontSize: 15 },
   fabDisabled: { opacity: 0.5 },
   fabPressed: { opacity: 0.8 },
   fabText: { color: '#fff', fontWeight: '700', fontSize: 15 },
