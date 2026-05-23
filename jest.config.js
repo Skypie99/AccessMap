@@ -9,7 +9,12 @@
 module.exports = {
   preset: 'jest-expo',
   setupFiles: ['./jest.setup.js'],
-  testPathIgnorePatterns: ['/node_modules/', '/.expo/'],
+  // /.claude/ holds orchestrator worktrees that mirror the repo with their
+  // own (sometimes stale) node_modules. Without this ignore, `npx jest`
+  // tries to traverse those mirrors and crashes the worker with
+  // "Invariant Violation: requireNativeModule" on a stale Platform.ios path.
+  // See LEARNINGS.md → "Jest must ignore .claude/worktrees/".
+  testPathIgnorePatterns: ['/node_modules/', '/.expo/', '/.claude/'],
   moduleNameMapper: {
     // Path alias from tsconfig.json — `@/foo` → `src/foo`. The preset's own
     // moduleNameMapper (for vector icons) is preserved via Jest config merging.

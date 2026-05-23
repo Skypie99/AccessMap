@@ -18,6 +18,7 @@ import {
   CATEGORY_LABELS,
   CATEGORY_ORDER,
   DEFAULT_STATUSES,
+  fetchFlagById,
   SEVERITY_LABELS,
   severityColor,
   SEVERITY_ORDER,
@@ -475,6 +476,44 @@ export default function MapScreen() {
     refreshFlags();
     return () => clearTimeout(t);
   }, [route.params?.focusFlag, route.params?.ts, refreshFlags]);
+
+  // Deep-link arrival: accessmap://flag/{id} → React Navigation parses the
+  // id into route.params.flagId. Fetch the flag's lat/lng on the fly, then
+  // animate + pop the callout using the same machinery as the Tasks → Map
+  // path above.
+  //
+  // Gracefully no-ops on:
+  //   - bad / unknown id → fetchFlagById returns null and we just leave
+  //     the map on its default region.
+  //   - network or auth issues → caught in the try/catch; user sees the
+  //     Map normally rather than an alert.
+  useEffect(() => {
+    const flagId = route.params?.flagId;
+    if (!flagId) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const flag = await fetchFlagById(flagId);
+        if (cancelled || !flag) return;
+        setFocusedFlagId(flag.id);
+        mapRef.current?.animateTo({
+          latitude: flag.lat,
+          longitude: flag.lng,
+          latitudeDelta: 0.005,
+          longitudeDelta: 0.005,
+        });
+        setTimeout(() => {
+          if (!cancelled) mapRef.current?.showCallout(flag.id);
+        }, 700);
+      } catch {
+        // Swallow — deep-link arrivals shouldn't ever surface an error
+        // dialog. The user just sees the Map open as usual.
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [route.params?.flagId]);
 
   const initialRegion: PlatformMapRegion = location
     ? {
