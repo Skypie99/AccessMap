@@ -14,10 +14,31 @@ export type RootTabParamList = {
     | {
         focusFlag?: { id: string; lat: number; lng: number };
         ts?: number;
+        // Deep-link path parameter: when the OS hands us an
+        // accessmap://flag/{id} URL, React Navigation parses {id} into
+        // this field. MapScreen fetches the flag's lat/lng on the fly
+        // and animates to it — different from `focusFlag` which is
+        // passed in-app (Tasks → Map) and already has the coordinates.
+        flagId?: string;
       }
     | undefined;
   Tasks: undefined;
   Profile: undefined;
+};
+
+// Deep-link config. Registers accessmap://flag/{id} (matches the URL the
+// Share-flag button on FlagDetailModal emits, and the scheme is already
+// declared in app.json). React Navigation's built-in `linking` uses RN's
+// own Linking API, so no expo-linking dependency needed.
+const linking = {
+  prefixes: ['accessmap://'],
+  config: {
+    screens: {
+      // The :flagId path segment maps to params.flagId on the Map screen.
+      // MapScreen reads it and runs fetchFlagById + animateTo + showCallout.
+      Map: 'flag/:flagId',
+    },
+  },
 };
 
 const Tab = createBottomTabNavigator<RootTabParamList>();
@@ -57,7 +78,7 @@ export default function RootNavigator({ initialRouteName = 'Map' }: Props) {
   );
 
   return (
-    <NavigationContainer>
+    <NavigationContainer linking={linking}>
       <FlagsProvider>
         <Tab.Navigator
           initialRouteName={initialRouteName}

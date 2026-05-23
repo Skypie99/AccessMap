@@ -117,6 +117,25 @@ export async function deleteFlag(flagId: string) {
   if (error) throw error;
 }
 
+/**
+ * Fetch a single flag by id. Used when arriving via a deep link
+ * (`accessmap://flag/{id}`) where the URL only carries the id — we need
+ * the lat/lng to animate the map and pop the callout.
+ *
+ * Returns null on not-found instead of throwing, so a stale share link
+ * doesn't surface an alarming error to the user — the Map just opens
+ * normally without focusing on anything.
+ */
+export async function fetchFlagById(flagId: string): Promise<FlagRow | null> {
+  const { data, error } = await supabase
+    .from('flags')
+    .select('*')
+    .eq('id', flagId)
+    .maybeSingle();
+  if (error) throw error;
+  return (data as FlagRow | null) ?? null;
+}
+
 export const CATEGORY_LABELS: Record<FlagCategory, string> = {
   no_ramp: 'No ramp',
   broken_sidewalk: 'Broken sidewalk',
