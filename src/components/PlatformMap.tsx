@@ -5,9 +5,8 @@ import MapView, {
   Marker,
   PROVIDER_DEFAULT,
 } from 'react-native-maps';
-import { CATEGORY_LABELS } from '@/lib/flags';
+import { CATEGORY_LABELS, severityColor } from '@/lib/flags';
 import type { FlagRow } from '@/types/database';
-import { severityColor } from '@/screens/ReportFlagModal';
 
 export interface PlatformMapRegion {
   latitude: number;

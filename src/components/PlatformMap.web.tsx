@@ -2,9 +2,8 @@ import 'leaflet/dist/leaflet.css';
 import React, { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
 import { MapContainer, Marker, Popup, TileLayer } from 'react-leaflet';
 import L, { Map as LeafletMap, Marker as LeafletMarker } from 'leaflet';
-import { CATEGORY_LABELS } from '@/lib/flags';
+import { CATEGORY_LABELS, severityColor } from '@/lib/flags';
 import type { FlagRow } from '@/types/database';
-import { severityColor } from '@/screens/ReportFlagModal';
 
 export interface PlatformMapRegion {
   latitude: number;

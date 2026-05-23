@@ -1,5 +1,5 @@
 /**
- * Tests for the pure `severityColor` helper exported from ReportFlagModal.
+ * Tests for the pure `severityColor` helper in src/lib/flags.ts.
  *
  * Pinning these values matters because two other pieces of UI depend on them:
  *   - the marker tint on the map
@@ -12,7 +12,7 @@
  * installed these run alongside the existing flags.test.ts tests.
  */
 
-import { severityColor } from '../ReportFlagModal';
+import { severityColor } from '../flags';
 import type { FlagSeverity } from '@/types/database';
 
 describe('severityColor', () => {

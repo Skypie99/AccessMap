@@ -11,9 +11,8 @@ import {
   View,
 } from 'react-native';
 import { useAuth } from '@/lib/auth';
-import { CATEGORY_LABELS, listFlagsByUser } from '@/lib/flags';
+import { CATEGORY_LABELS, listFlagsByUser, severityColor } from '@/lib/flags';
 import type { FlagRow, FlagStatus } from '@/types/database';
-import { severityColor } from '@/screens/ReportFlagModal';
 
 interface Props {
   visible: boolean;

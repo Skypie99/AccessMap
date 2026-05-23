@@ -13,11 +13,10 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { useAuth } from '@/lib/auth';
-import { CATEGORY_LABELS, updateFlagStatus } from '@/lib/flags';
+import { CATEGORY_LABELS, severityColor, updateFlagStatus } from '@/lib/flags';
 import { useFlags } from '@/lib/flagsStore';
 import type { FlagRow, FlagStatus } from '@/types/database';
 import type { RootTabParamList } from '@/navigation/RootNavigator';
-import { severityColor } from './ReportFlagModal';
 import FlagDetailModal, {
   type DetailAction,
 } from '@/components/FlagDetailModal';

@@ -9,9 +9,8 @@ import {
   Text,
   View,
 } from 'react-native';
-import { CATEGORY_LABELS } from '@/lib/flags';
+import { CATEGORY_LABELS, severityColor } from '@/lib/flags';
 import type { FlagRow } from '@/types/database';
-import { severityColor } from './ReportFlagModal';
 
 interface Coords {
   lat: number;

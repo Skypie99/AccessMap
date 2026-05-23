@@ -12,12 +12,12 @@ import {
   CATEGORY_ICONS,
   CATEGORY_LABELS,
   CATEGORY_ORDER,
+  severityColor,
   SEVERITY_COLOR_NAMES,
   SEVERITY_DESCRIPTIONS,
   SEVERITY_LABELS,
   SEVERITY_ORDER,
 } from '@/lib/flags';
-import { severityColor } from './ReportFlagModal';
 
 interface Props {
   visible: boolean;

@@ -15,9 +15,11 @@ import {
   CATEGORY_LABELS,
   CATEGORY_ORDER,
   DEFAULT_STATUSES,
+  listFlags,
+  severityColor,
+  SEVERITY_ORDER,
   STATUS_LABELS,
   STATUS_ORDER,
-  listFlags,
 } from '@/lib/flags';
 import { useFlags } from '@/lib/flagsStore';
 import type {
@@ -32,11 +34,9 @@ import PlatformMap, {
   type PlatformMapRegion,
 } from '@/components/PlatformMap';
 import { useScreenReader } from '@/lib/accessibility';
-import ReportFlagModal, { severityColor } from './ReportFlagModal';
+import ReportFlagModal from './ReportFlagModal';
 import LegendModal from './LegendModal';
 import NearbyFlagsModal from './NearbyFlagsModal';
-
-const SEVERITY_LEVELS: FlagSeverity[] = [1, 2, 3, 4, 5];
 
 interface Coords {
   lat: number;
@@ -432,7 +432,7 @@ export default function MapScreen() {
 
             <Text style={styles.filterSubLabel}>Minimum severity</Text>
             <View style={styles.filterRow}>
-              {SEVERITY_LEVELS.map((s) => {
+              {SEVERITY_ORDER.map((s) => {
                 const active = s === minSeverity;
                 return (
                   <Pressable

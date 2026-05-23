@@ -159,6 +159,26 @@ export const CATEGORY_ICONS: Record<FlagCategory, string> = {
 
 export const SEVERITY_ORDER: FlagSeverity[] = [1, 2, 3, 4, 5];
 
+// Marker / severity-bar hex tints. Used everywhere a severity needs to show
+// up visually: the map pin, the Tasks card dot, the LegendModal swatch, etc.
+// Kept here (not in a screen file) so it's the single source of truth — every
+// surface tints from the same palette. Pair with SEVERITY_COLOR_NAMES below
+// so screen readers can name the color out loud.
+//
+// The `default` branch is defensive: if a future row carries an unexpected
+// severity (dirty data, schema widening), return a neutral gray instead of
+// `undefined` so the marker/severity bar still renders something.
+export function severityColor(s: FlagSeverity): string {
+  switch (s) {
+    case 1: return '#27ae60';
+    case 2: return '#7fb800';
+    case 3: return '#f1c40f';
+    case 4: return '#e67e22';
+    case 5: return '#e74c3c';
+    default: return '#999';
+  }
+}
+
 // Short human label and color name for each severity. The color name is read
 // aloud so meaning isn't carried by color alone.
 export const SEVERITY_LABELS: Record<FlagSeverity, string> = {

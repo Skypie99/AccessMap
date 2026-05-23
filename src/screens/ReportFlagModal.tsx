@@ -17,6 +17,8 @@ import {
   CATEGORY_LABELS,
   CATEGORY_ORDER,
   createFlag,
+  severityColor,
+  SEVERITY_ORDER,
   uploadFlagPhoto,
 } from '@/lib/flags';
 import type { FlagCategory, FlagSeverity } from '@/types/database';
@@ -27,8 +29,6 @@ interface Props {
   onClose: () => void;
   onCreated: () => void;
 }
-
-const SEVERITY_VALUES: FlagSeverity[] = [1, 2, 3, 4, 5];
 
 export default function ReportFlagModal({
   visible,
@@ -157,7 +157,7 @@ export default function ReportFlagModal({
 
           <Text style={styles.label}>Severity</Text>
           <View style={styles.row}>
-            {SEVERITY_VALUES.map((s) => {
+            {SEVERITY_ORDER.map((s) => {
               const active = s === severity;
               return (
                 <Pressable
@@ -262,20 +262,6 @@ export default function ReportFlagModal({
       </View>
     </Modal>
   );
-}
-
-export function severityColor(s: FlagSeverity): string {
-  switch (s) {
-    case 1: return '#27ae60';
-    case 2: return '#7fb800';
-    case 3: return '#f1c40f';
-    case 4: return '#e67e22';
-    case 5: return '#e74c3c';
-    // Defensive: if a future row carries an unexpected severity (dirty data,
-    // schema widening), return a neutral gray instead of `undefined` so the
-    // marker/severity bar still renders.
-    default: return '#999';
-  }
 }
 
 const styles = StyleSheet.create({
