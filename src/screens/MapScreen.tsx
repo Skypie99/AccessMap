@@ -10,8 +10,20 @@ import {
 } from 'react-native';
 import * as Location from 'expo-location';
 import { useRoute, type RouteProp } from '@react-navigation/native';
-import { CATEGORY_LABELS, CATEGORY_ORDER, listFlags } from '@/lib/flags';
-import type { FlagCategory, FlagRow, FlagSeverity } from '@/types/database';
+import {
+  CATEGORY_LABELS,
+  CATEGORY_ORDER,
+  DEFAULT_STATUSES,
+  STATUS_LABELS,
+  STATUS_ORDER,
+  listFlags,
+} from '@/lib/flags';
+import type {
+  FlagCategory,
+  FlagRow,
+  FlagSeverity,
+  FlagStatus,
+} from '@/types/database';
 import type { RootTabParamList } from '@/navigation/RootNavigator';
 import PlatformMap, {
   type PlatformMapHandle,
@@ -48,6 +60,12 @@ export default function MapScreen() {
     new Set(),
   );
   const [minSeverity, setMinSeverity] = useState<FlagSeverity>(1);
+  // Which statuses to fetch from the server. Default matches the original
+  // hardcoded listFlags(['open','verified']) call, so the Map looks the same
+  // until the user explicitly opts into a wider view (e.g. Resolved).
+  const [activeStatuses, setActiveStatuses] = useState<Set<FlagStatus>>(
+    () => new Set(DEFAULT_STATUSES),
+  );
 
   // True while this screen is on screen — checked before any setState that
   // runs after an `await` so a slow request can't update a torn-down screen.
@@ -68,12 +86,30 @@ export default function MapScreen() {
     });
   }, []);
 
+  const toggleStatus = useCallback((s: FlagStatus) => {
+    setActiveStatuses((prev) => {
+      const next = new Set(prev);
+      if (next.has(s)) next.delete(s);
+      else next.add(s);
+      return next;
+    });
+  }, []);
+
   const clearFilters = useCallback(() => {
     setActiveCategories(new Set());
     setMinSeverity(1);
+    setActiveStatuses(new Set(DEFAULT_STATUSES));
   }, []);
 
-  const filtersActive = activeCategories.size > 0 || minSeverity > 1;
+  // Whether the status set differs from the default (open + verified). Used
+  // to decide if the filter button should glow + the Clear link should appear.
+  const statusFilterActive = useMemo(() => {
+    if (activeStatuses.size !== DEFAULT_STATUSES.length) return true;
+    return !DEFAULT_STATUSES.every((s) => activeStatuses.has(s));
+  }, [activeStatuses]);
+
+  const filtersActive =
+    activeCategories.size > 0 || minSeverity > 1 || statusFilterActive;
 
   const filteredFlags = useMemo(() => {
     if (!filtersActive) return flags;
@@ -118,9 +154,18 @@ export default function MapScreen() {
   }, []);
 
   const refreshFlags = useCallback(async () => {
+    const statuses = Array.from(activeStatuses);
+    // Empty selection = nothing to show. Skip the round-trip and clear state.
+    if (statuses.length === 0) {
+      if (mountedRef.current) {
+        setFlags([]);
+        setLoadingFlags(false);
+      }
+      return;
+    }
     if (mountedRef.current) setLoadingFlags(true);
     try {
-      const rows = await listFlags(['open', 'verified']);
+      const rows = await listFlags(statuses);
       if (mountedRef.current) setFlags(rows);
     } catch (e: any) {
       if (mountedRef.current) {
@@ -129,12 +174,18 @@ export default function MapScreen() {
     } finally {
       if (mountedRef.current) setLoadingFlags(false);
     }
-  }, []);
+  }, [activeStatuses]);
 
+  // Initial location fetch; runs once.
   useEffect(() => {
     requestLocation();
+  }, [requestLocation]);
+
+  // Re-fetch flags whenever the status filter changes (which also fires on
+  // first mount via the default DEFAULT_STATUSES set).
+  useEffect(() => {
     refreshFlags();
-  }, [requestLocation, refreshFlags]);
+  }, [refreshFlags]);
 
   // When Tasks tab navigates here with a focusFlag, animate to it and pop the
   // callout. `ts` makes re-tapping the same flag re-fire.
@@ -295,6 +346,40 @@ export default function MapScreen() {
                 );
               })}
             </View>
+
+            <Text style={styles.filterSubLabel}>Status</Text>
+            <View style={styles.filterRow}>
+              {STATUS_ORDER.map((s) => {
+                const active = activeStatuses.has(s);
+                return (
+                  <Pressable
+                    key={s}
+                    onPress={() => toggleStatus(s)}
+                    style={[
+                      styles.filterPill,
+                      active && styles.filterPillActive,
+                    ]}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Filter by ${STATUS_LABELS[s]}`}
+                    accessibilityState={{ selected: active }}
+                  >
+                    <Text
+                      style={[
+                        styles.filterPillText,
+                        active && styles.filterPillTextActive,
+                      ]}
+                    >
+                      {STATUS_LABELS[s]}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+            {activeStatuses.size === 0 && (
+              <Text style={styles.statusHint}>
+                Pick at least one status to see flags.
+              </Text>
+            )}
           </View>
         )}
 
@@ -423,6 +508,7 @@ const styles = StyleSheet.create({
   },
   sevPillText: { fontSize: 13, color: '#333', fontWeight: '700' },
   sevPillTextActive: { color: '#fff' },
+  statusHint: { fontSize: 11, color: '#a04040', marginTop: 4 },
   banner: {
     alignSelf: 'center',
     backgroundColor: 'rgba(255,255,255,0.95)',

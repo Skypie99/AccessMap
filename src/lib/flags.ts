@@ -110,3 +110,23 @@ export const CATEGORY_ORDER: FlagCategory[] = [
   'steep_grade',
   'other',
 ];
+
+export const STATUS_LABELS: Record<FlagStatus, string> = {
+  open: 'Open',
+  verified: 'Verified',
+  resolved: 'Resolved',
+  rejected: 'Rejected',
+};
+
+// Order shown in the Map filter and elsewhere — chronological lifecycle.
+export const STATUS_ORDER: FlagStatus[] = [
+  'open',
+  'verified',
+  'resolved',
+  'rejected',
+];
+
+// What listFlags() falls back to when no statuses are passed — also the
+// default set the Map's status filter starts with, so a default-state
+// filter row matches the historical fetch behavior.
+export const DEFAULT_STATUSES: FlagStatus[] = ['open', 'verified'];
