@@ -127,6 +127,8 @@ alter table public.users enable row level security;
 alter table public.flags enable row level security;
 
 -- users: anyone authenticated can read profiles; users can update their own.
+-- The (select auth.uid()) wrapper lets Postgres evaluate auth.uid() once
+-- per statement (initPlan) instead of per row — same semantics, faster.
 drop policy if exists "users readable by authenticated" on public.users;
 create policy "users readable by authenticated"
   on public.users for select
@@ -137,11 +139,12 @@ drop policy if exists "users update own row" on public.users;
 create policy "users update own row"
   on public.users for update
   to authenticated
-  using (auth.uid() = id)
-  with check (auth.uid() = id);
+  using ((select auth.uid()) = id)
+  with check ((select auth.uid()) = id);
 
 -- flags: anyone authenticated can read; users can insert their own;
--- users can update/delete their own flags.
+-- owners can edit/delete their own flags AND any authenticated user can
+-- change ONLY the status column on someone else's flag (the triage flow).
 drop policy if exists "flags readable by authenticated" on public.flags;
 create policy "flags readable by authenticated"
   on public.flags for select
@@ -152,20 +155,41 @@ drop policy if exists "flags insert own" on public.flags;
 create policy "flags insert own"
   on public.flags for insert
   to authenticated
-  with check (auth.uid() = user_id);
+  with check ((select auth.uid()) = user_id);
 
 drop policy if exists "flags update own" on public.flags;
 create policy "flags update own"
   on public.flags for update
   to authenticated
-  using (auth.uid() = user_id)
-  with check (auth.uid() = user_id);
+  using ((select auth.uid()) = user_id)
+  with check ((select auth.uid()) = user_id);
+
+-- The triage policy. Postgres ORs the two UPDATE policies — owners pass
+-- via "flags update own"; non-owners pass via this one but only if they
+-- change ONLY the status column. The WITH CHECK uses correlated subselects
+-- to compare every non-status column on the NEW row against the OLD row
+-- (visible under READ COMMITTED because the UPDATE has not yet committed).
+drop policy if exists "flags status update by any authenticated" on public.flags;
+create policy "flags status update by any authenticated"
+  on public.flags for update
+  to authenticated
+  using (true)
+  with check (
+    user_id     = (select user_id     from public.flags where id = flags.id)
+    and lat         = (select lat         from public.flags where id = flags.id)
+    and lng         = (select lng         from public.flags where id = flags.id)
+    and category    = (select category    from public.flags where id = flags.id)
+    and severity    = (select severity    from public.flags where id = flags.id)
+    and description is not distinct from (select description from public.flags where id = flags.id)
+    and photo_url   is not distinct from (select photo_url   from public.flags where id = flags.id)
+    and created_at  = (select created_at  from public.flags where id = flags.id)
+  );
 
 drop policy if exists "flags delete own" on public.flags;
 create policy "flags delete own"
   on public.flags for delete
   to authenticated
-  using (auth.uid() = user_id);
+  using ((select auth.uid()) = user_id);
 
 -- ---------------------------------------------------------------------------
 -- Storage: bucket for flag photos. Public read so everyone sees the thumbnail;
@@ -186,7 +210,7 @@ create policy "flag-photos auth upload"
   to authenticated
   with check (
     bucket_id = 'flag-photos'
-    and (storage.foldername(name))[1] = auth.uid()::text
+    and (storage.foldername(name))[1] = (select auth.uid()::text)
   );
 
 drop policy if exists "flag-photos owner delete" on storage.objects;
@@ -195,5 +219,5 @@ create policy "flag-photos owner delete"
   to authenticated
   using (
     bucket_id = 'flag-photos'
-    and (storage.foldername(name))[1] = auth.uid()::text
+    and (storage.foldername(name))[1] = (select auth.uid()::text)
   );
