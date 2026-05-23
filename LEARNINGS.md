@@ -6,6 +6,27 @@ entries; the file is the project's accumulated wisdom.
 
 ---
 
+## 2026-05-23 — Realtime merge logic belongs in a pure helper
+
+`FlagsProvider`'s Supabase realtime effect stays a thin adapter: it
+converts the channel payload to a typed shape and calls
+`mergeFlagRealtimePayload(prev, evt, statusesRef.current)`. The helper
+is exported from `src/lib/flagsRealtime.ts` and unit-tested in
+`__tests__/flagsRealtime.test.ts` — no channel mocking, no React Testing
+Library, no `act()` wrappers. Each new event type or filter edge case
+becomes a one-line `it(...)` against a pure function.
+
+Two payload subtleties this codified:
+- DELETE events arrive with `new = {}`; identify the row by `old.id`.
+- UPDATE events that move a row's status *out of* the active filter
+  must remove it client-side (the server doesn't know what's in the
+  local list). Same in reverse: an UPDATE that moves a row *into* the
+  filter from outside has to be inserted, not just patched.
+
+The pattern (channel → typed payload → pure merge → setState) is the
+recommended shape for any future realtime table subscription in
+`flagsStore.tsx` / new providers.
+
 ## 2026-05-23 — Cross-platform "announce" for newly-appearing UI
 
 For a banner/notice that appears in response to async state, pair two
