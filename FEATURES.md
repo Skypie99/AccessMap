@@ -10,6 +10,37 @@ they land on `main`.
 
 ---
 
+## Shipped 2026-05-23 (fastloop v3 — feedback focus)
+
+- **Feedback categories.** FeedbackModal grew a 4-chip radio group
+  (Bug / Idea / Love / Other, default 'Idea'). Pick lands in the
+  email subject ("AccessMap feedback: Bug") and as a "Category: …"
+  prefix in the body so the maintainer's inbox can triage at a glance.
+- **Supabase feedback table + dual-write** (migration propose-only).
+  `supabase/migrations/2026-05-23_feedback_table.sql` adds
+  `public.feedback` with category enum, body length check,
+  contact_email regex, indexes, and 4 RLS policies
+  (insert-self-or-anon, select-own, select-maintainer, delete-own).
+  FeedbackModal fires the insert in parallel with the mailto: — the
+  insert is best-effort and silently degrades to `'skipped'` until
+  the migration runs. After the migration, server-side tracking
+  lights up with zero client change.
+- **My Feedback page.** New `MyFeedbackModal` accessed from a Profile
+  row (sibling to My Reports + About). Lists the user's past feedback
+  rows from the new table, newest first, with category pill + date +
+  body preview. Gracefully shows an empty state when the migration
+  hasn't been applied or the user hasn't sent anything.
+- **Help & FAQ page.** New `HelpModal` with 7 collapsible Q&A items
+  (reporting, points, verified vs resolved, photo privacy, screen
+  readers, deleting a report, filter-hiding). Footer brand-soft card
+  links straight to the mail composer. Adding more questions is a
+  one-line append to the FAQS array.
+
+**Migration order for this loop:** `2026-05-23_feedback_table.sql`
+(Sky-applied; required for My Feedback to show content and for
+server-side feedback tracking — until then, dual-write silently
+skips and mailto: handles delivery).
+
 ## Shipped 2026-05-23 (fastloop v2 — visual polish + pages)
 
 - **Branded tab headers + global Feedback flow.** Default white

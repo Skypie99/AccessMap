@@ -6,6 +6,78 @@ entries; the file is the project's accumulated wisdom.
 
 ---
 
+## 2026-05-23 — Dual-write pattern for additive server features
+
+When adding a server-backed enhancement to an existing user-facing flow
+(here: the mailto: feedback path got a Supabase-table companion), don't
+gate the existing flow on the new one. Fire both in parallel and let the
+old path remain the authoritative delivery:
+
+```ts
+// kick off the new path — best-effort, fire-and-forget for UI
+const insertPromise = submitFeedback({…});
+
+// run the existing path with the user-visible result
+const result = await sendFeedback({…});
+
+// log the new path's outcome but don't surface failure to the user
+insertPromise.then((r) => {
+  if (r.status === 'skipped') {
+    console.warn('[feedback] server insert skipped:', r.reason);
+  }
+});
+```
+
+Why it matters:
+- Until Sky applies the new table's migration, the insert returns
+  `{status:'skipped'}`. User sees nothing — mailto still works.
+- After the migration runs, server-side tracking lights up with zero
+  client change.
+- A transient network blip on the new path can't break the flow.
+
+`submitFeedback` and `listFeedbackByUser` both wrap supabase calls in
+try/catch and return discriminated unions (`'skipped'` / `[]`) rather
+than throwing. The UI never has to handle "table doesn't exist" — it
+treats every failure as "no data yet."
+
+## 2026-05-23 — Jest mock factory variables must start with `mock`
+
+When mocking a module with `jest.mock('foo', () => ({ bar: someVar }))`,
+the `someVar` MUST be named starting with `mock` (case-insensitive)
+— `mockBar`, `MockBar`. A name like `barMock` fails with:
+
+```
+ReferenceError: The module factory of `jest.mock()` is not allowed to
+reference any out-of-scope variables. Invalid variable access: barMock
+```
+
+This is because jest hoists `jest.mock()` calls to the top of the file
+(before imports), so any referenced variables would be `undefined` at
+mock-eval time. The `mock` prefix is whitelisted as a precaution that
+the variable will be lazily required.
+
+Same applies to test helper functions, not just jest.fn() returns. If
+you see this error, just rename `fooMock` → `mockFoo`.
+
+## 2026-05-23 — Propose-only migrations under `supabase/migrations/`
+
+For DB changes per Constitution Art. 5.3, the pattern is: agent writes
+the migration FILE, never applies it to the live DB. The file must:
+
+1. Be idempotent — `CREATE TABLE IF NOT EXISTS`, `DROP POLICY IF EXISTS`
+   before re-creating, DO block for `CREATE TYPE` since that has no
+   IF NOT EXISTS form.
+2. Have a "HOW TO APPLY" header block (Sky pastes into Supabase
+   dashboard SQL editor), a cost estimate, post-apply verification
+   steps, and an inline rollback.
+3. Be paired with client-side code that gracefully degrades when the
+   migration hasn't run (the dual-write pattern above is one form).
+
+The client types in `src/types/database.ts` get updated in the SAME
+commit so TypeScript queries compile against the future schema. The
+postgrest layer is the only thing that knows the table doesn't exist
+yet, and it surfaces it as an error the client code already handles.
+
 ## 2026-05-23 — Brand the default React Navigation header in `screenOptions`
 
 Pasting the brand color into `Tab.Navigator.screenOptions` (not on each
