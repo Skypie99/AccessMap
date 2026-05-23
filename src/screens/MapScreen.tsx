@@ -26,6 +26,10 @@ import {
 import { useFlags } from '@/lib/flagsStore';
 import { loadMapFilters, saveMapFilters } from '@/lib/mapFilters';
 import {
+  loadFilterPanelCollapsed,
+  saveFilterPanelCollapsed,
+} from '@/lib/filterPanelPrefs';
+import {
   deleteSet,
   FilterSetError,
   listSets,
@@ -99,6 +103,13 @@ export default function MapScreen() {
     }
   }, [screenReaderOn]);
   const [filtersOpen, setFiltersOpen] = useState(false);
+  // Whether the filter panel (when open) shows just its header row or all
+  // sections. Persists across launches via filterPanelPrefs. Hydrated
+  // alongside the filter values; the save-effect below is gated on
+  // filterPanelHydrated so we don't clobber the stored value with the
+  // initial default during the brief mount→load window.
+  const [panelCollapsed, setPanelCollapsed] = useState(false);
+  const [panelCollapsedHydrated, setPanelCollapsedHydrated] = useState(false);
   const [activeCategories, setActiveCategories] = useState<Set<FlagCategory>>(
     new Set(),
   );
@@ -187,9 +198,10 @@ export default function MapScreen() {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const [saved, sets] = await Promise.all([
+      const [saved, sets, collapsed] = await Promise.all([
         loadMapFilters(),
         listSets(),
+        loadFilterPanelCollapsed(),
       ]);
       if (cancelled) return;
       if (saved) {
@@ -198,12 +210,22 @@ export default function MapScreen() {
         setActiveStatuses(new Set(saved.statuses));
       }
       setSavedSets(sets);
+      setPanelCollapsed(collapsed);
       setFiltersHydrated(true);
+      setPanelCollapsedHydrated(true);
     })();
     return () => {
       cancelled = true;
     };
   }, []);
+
+  // Persist the panel collapsed/expanded toggle. Same fire-and-forget
+  // pattern as mapFilters — the worst case on a storage failure is the
+  // user's next session opens with the default (expanded) state.
+  useEffect(() => {
+    if (!panelCollapsedHydrated) return;
+    saveFilterPanelCollapsed(panelCollapsed);
+  }, [panelCollapsed, panelCollapsedHydrated]);
 
   // Apply a saved set: copy its filter triple over the active filters.
   // The existing save-effect below pushes the new values through to
@@ -473,7 +495,31 @@ export default function MapScreen() {
         {filtersOpen && (
           <View style={styles.filterPanel}>
             <View style={styles.filterHeaderRow}>
-              <Text style={styles.filterTitle}>Filter flags</Text>
+              <Pressable
+                onPress={() => setPanelCollapsed((v) => !v)}
+                hitSlop={8}
+                style={styles.filterTitleRow}
+                accessibilityRole="button"
+                accessibilityLabel={
+                  panelCollapsed
+                    ? 'Expand filter panel'
+                    : 'Collapse filter panel'
+                }
+                accessibilityHint={
+                  panelCollapsed
+                    ? 'Shows saved filters, categories, severity, and status'
+                    : 'Hides the filter sections, leaving just the header'
+                }
+                accessibilityState={{ expanded: !panelCollapsed }}
+              >
+                <Text style={styles.filterTitle}>Filter flags</Text>
+                <Text
+                  style={styles.filterChevron}
+                  accessibilityElementsHidden
+                >
+                  {panelCollapsed ? '▸' : '▾'}
+                </Text>
+              </Pressable>
               {filtersActive && (
                 <Pressable
                   onPress={clearFilters}
@@ -485,6 +531,8 @@ export default function MapScreen() {
               )}
             </View>
 
+            {!panelCollapsed && (
+              <>
             <Text style={styles.filterSubLabel}>Saved</Text>
             {savedSets.length === 0 ? (
               <View style={styles.savedEmpty}>
@@ -644,6 +692,8 @@ export default function MapScreen() {
               <Text style={styles.statusHint}>
                 Pick at least one status to see flags.
               </Text>
+            )}
+              </>
             )}
           </View>
         )}
@@ -924,6 +974,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   filterTitle: { fontSize: 14, fontWeight: '700', color: '#222' },
+  filterTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 4,
+    // The header row itself is the tap target; combined with the parent
+    // panel padding this gives a comfortable 44pt area despite the small
+    // visible glyph.
+    minHeight: 32,
+  },
+  filterChevron: { fontSize: 12, color: '#2f80ed', fontWeight: '700' },
   clearLink: { fontSize: 12, color: '#2f80ed', fontWeight: '600' },
   filterSubLabel: {
     fontSize: 11,
