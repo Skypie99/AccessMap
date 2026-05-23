@@ -1,4 +1,4 @@
-import React, { memo, useCallback, useEffect, useRef, useState } from 'react';
+import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -22,12 +22,28 @@ import FlagDetailModal, {
   type DetailAction,
 } from '@/components/FlagDetailModal';
 
+// Statuses Tasks shows. Even if the provider's `statuses` is widened by the
+// Map's filter, Tasks restricts the visible set to the actionable lifecycle
+// states (open → verified).
+const TRIAGE_STATUSES: FlagStatus[] = ['open', 'verified'];
+
 export default function TasksScreen() {
   const navigation =
     useNavigation<BottomTabNavigationProp<RootTabParamList, 'Tasks'>>();
   const { user } = useAuth();
-  const { flags, loading, error: flagsError, refresh, patchFlag, removeFlag } =
-    useFlags();
+  const {
+    flags: providerFlags,
+    loading,
+    error: flagsError,
+    refresh,
+    patchFlag,
+    removeFlag,
+  } = useFlags();
+  // Triage view = only open + verified, no matter what the provider holds.
+  const flags = useMemo(
+    () => providerFlags.filter((f) => TRIAGE_STATUSES.includes(f.status)),
+    [providerFlags],
+  );
   const [busyId, setBusyId] = useState<string | null>(null);
   const [flash, setFlash] = useState<string | null>(null);
   const [selectedFlag, setSelectedFlag] = useState<FlagRow | null>(null);
@@ -49,14 +65,14 @@ export default function TasksScreen() {
     [],
   );
 
-  // Show an alert when the shared fetch fails (initial load or pull-to-refresh).
-  // Track the last seen error so we don't re-fire the alert on unrelated renders.
-  const prevFlagsErrorRef = useRef<string | null>(null);
-  useEffect(() => {
-    if (flagsError && flagsError !== prevFlagsErrorRef.current) {
-      Alert.alert('Could not load flags', flagsError);
-    }
-    prevFlagsErrorRef.current = flagsError;
+  // Build the tap-to-retry banner copy from the provider's error string.
+  // The provider already includes the leading "Couldn't load flags:" prefix
+  // when relevant; we just append the retry hint if it isn't there.
+  const errorBannerText = useMemo(() => {
+    if (!flagsError) return null;
+    return flagsError.toLowerCase().includes('tap to retry')
+      ? flagsError
+      : `${flagsError}. Tap to retry.`;
   }, [flagsError]);
 
   // Trigger lives in supabase/schema.sql (handle_flag_status_change, ~line 75).
@@ -150,6 +166,31 @@ export default function TasksScreen() {
             <Text style={styles.flashText}>{flash}</Text>
           </View>
         </View>
+      )}
+      {errorBannerText && (
+        <Pressable
+          onPress={() => { refresh().catch(() => {}); }}
+          disabled={loading}
+          style={({ pressed }) => [
+            styles.errorBanner,
+            loading && styles.errorBannerBusy,
+            pressed && styles.errorBannerPressed,
+          ]}
+          accessibilityRole="button"
+          accessibilityLabel={errorBannerText}
+          accessibilityHint="Tries to load flags again"
+          accessibilityState={{ busy: loading }}
+          accessibilityLiveRegion="polite"
+        >
+          {loading ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.errorBannerIcon}>⚠</Text>
+          )}
+          <Text style={styles.errorBannerText} numberOfLines={2}>
+            {loading ? 'Retrying…' : errorBannerText}
+          </Text>
+        </Pressable>
       )}
       <FlatList
         data={flags}
@@ -320,6 +361,27 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   flashText: { color: '#fff', fontWeight: '700', fontSize: 13 },
+  errorBanner: {
+    marginHorizontal: 16,
+    marginTop: 12,
+    backgroundColor: '#c0392b',
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderRadius: 10,
+    flexDirection: 'row',
+    gap: 10,
+    alignItems: 'center',
+    minHeight: 44,
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 3,
+  },
+  errorBannerBusy: { opacity: 0.85 },
+  errorBannerPressed: { opacity: 0.7 },
+  errorBannerIcon: { color: '#fff', fontSize: 18, fontWeight: '700' },
+  errorBannerText: { color: '#fff', fontSize: 13, fontWeight: '600', flex: 1 },
   center: {
     flexGrow: 1,
     alignItems: 'center',
