@@ -6,36 +6,36 @@
  *  - A regression in `parseMapFilters` that lets through an out-of-vocab
  *    category or status, which would silently filter all flags out on
  *    relaunch and look like a load bug.
- *  - A change to the storage key prefix that would silently reset every
+ *  - A change to the mockStorage key prefix that would silently reset every
  *    user's saved filter to defaults on next launch.
- *  - The "defaults on corrupt blob / storage error" path that keeps the
+ *  - The "defaults on corrupt blob / mockStorage error" path that keeps the
  *    Map usable when AsyncStorage hiccups or someone hand-edits the value.
  */
 
-const storage: Record<string, string> = {};
-let throwOnGet = false;
-let throwOnSet = false;
+const mockStorage: Record<string, string> = {};
+let mockThrowOnGet = false;
+let mockThrowOnSet = false;
 
 jest.mock('@react-native-async-storage/async-storage', () => ({
   __esModule: true,
   default: {
     getItem: jest.fn((key: string) => {
-      if (throwOnGet) {
-        throwOnGet = false;
+      if (mockThrowOnGet) {
+        mockThrowOnGet = false;
         return Promise.reject(new Error('boom'));
       }
-      return Promise.resolve(key in storage ? storage[key] : null);
+      return Promise.resolve(key in mockStorage ? mockStorage[key] : null);
     }),
     setItem: jest.fn((key: string, value: string) => {
-      if (throwOnSet) {
-        throwOnSet = false;
+      if (mockThrowOnSet) {
+        mockThrowOnSet = false;
         return Promise.reject(new Error('boom'));
       }
-      storage[key] = value;
+      mockStorage[key] = value;
       return Promise.resolve();
     }),
     removeItem: jest.fn((key: string) => {
-      delete storage[key];
+      delete mockStorage[key];
       return Promise.resolve();
     }),
   },
@@ -51,9 +51,9 @@ import {
 const KEY = '@accessmap/map_filters_v1';
 
 beforeEach(() => {
-  for (const k of Object.keys(storage)) delete storage[k];
-  throwOnGet = false;
-  throwOnSet = false;
+  for (const k of Object.keys(mockStorage)) delete mockStorage[k];
+  mockThrowOnGet = false;
+  mockThrowOnSet = false;
   // Silence the helpful "loadMapFilters failed" / "saveMapFilters failed"
   // logs while we're intentionally exercising the error paths.
   jest.spyOn(console, 'warn').mockImplementation(() => {});
@@ -90,17 +90,17 @@ describe('loadMapFilters', () => {
   });
 
   it('returns null on garbage JSON (corrupt blob)', async () => {
-    storage[KEY] = 'not json {{';
+    mockStorage[KEY] = 'not json {{';
     expect(await loadMapFilters()).toBeNull();
   });
 
   it('returns null on a JSON value that is not an object', async () => {
-    storage[KEY] = '[]';
+    mockStorage[KEY] = '[]';
     expect(await loadMapFilters()).toBeNull();
   });
 
   it('returns null when a required field is missing or wrong type', async () => {
-    storage[KEY] = JSON.stringify({
+    mockStorage[KEY] = JSON.stringify({
       categories: 'broken_sidewalk', // wrong type — should be array
       minSeverity: 2,
       statuses: ['open'],
@@ -109,7 +109,7 @@ describe('loadMapFilters', () => {
   });
 
   it('returns null when minSeverity is out of range', async () => {
-    storage[KEY] = JSON.stringify({
+    mockStorage[KEY] = JSON.stringify({
       categories: [],
       minSeverity: 9, // not a FlagSeverity
       statuses: ['open'],
@@ -120,7 +120,7 @@ describe('loadMapFilters', () => {
   it('filters unknown enum values out of arrays rather than failing the load', async () => {
     // An old category we've since renamed shouldn't lock the user out of
     // their saved view — drop it from the array, keep the rest.
-    storage[KEY] = JSON.stringify({
+    mockStorage[KEY] = JSON.stringify({
       categories: ['broken_sidewalk', 'old_legacy_category'],
       minSeverity: 2,
       statuses: ['open', 'unknown_status'],
@@ -134,7 +134,7 @@ describe('loadMapFilters', () => {
   });
 
   it('returns null when AsyncStorage.getItem rejects', async () => {
-    throwOnGet = true;
+    mockThrowOnGet = true;
     expect(await loadMapFilters()).toBeNull();
   });
 });
@@ -146,16 +146,18 @@ describe('saveMapFilters', () => {
       minSeverity: 4,
       statuses: ['open', 'verified'],
     });
-    expect(storage[KEY]).toBeDefined();
-    expect(JSON.parse(storage[KEY])).toEqual({
+    expect(mockStorage[KEY]).toBeDefined();
+    // Asserted defined on the line above; the `!` satisfies
+    // tsconfig's noUncheckedIndexedAccess.
+    expect(JSON.parse(mockStorage[KEY]!)).toEqual({
       categories: ['no_ramp'],
       minSeverity: 4,
       statuses: ['open', 'verified'],
     });
   });
 
-  it('swallows storage errors (UI never throws)', async () => {
-    throwOnSet = true;
+  it('swallows mockStorage errors (UI never throws)', async () => {
+    mockThrowOnSet = true;
     await expect(
       saveMapFilters({
         categories: [],

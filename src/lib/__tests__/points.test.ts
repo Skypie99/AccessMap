@@ -1,7 +1,7 @@
 /**
  * Tests for the pure / storage-only helpers in src/lib/points.ts:
- *   - getLastSeenPoints (storage read + parse)
- *   - setLastSeenPoints (storage write + non-negative clamp)
+ *   - getLastSeenPoints (mockStorage read + parse)
+ *   - setLastSeenPoints (mockStorage write + non-negative clamp)
  *
  * `fetchCurrentPoints` is left out of this file because it talks to Supabase;
  * see qa-reports/proposal-testing-2026-05-23.md for the Supabase-mock strategy
@@ -10,36 +10,36 @@
  * Behaviour locked in:
  *  - null when never recorded (NOT 0 — the caller treats those differently:
  *    "first-ever observation" should NOT raise a "+N earned while away" toast).
- *  - null when storage holds garbage that can't be parsed.
+ *  - null when mockStorage holds garbage that can't be parsed.
  *  - Negative writes clamp to 0 — toast logic uses absolute deltas so a
  *    negative stored value would invert the comparison.
  *  - Storage errors are swallowed (UI never throws).
  */
 
-const storage: Record<string, string> = {};
-let throwOnGet = false;
-let throwOnSet = false;
+const mockStorage: Record<string, string> = {};
+let mockThrowOnGet = false;
+let mockThrowOnSet = false;
 
 jest.mock('@react-native-async-storage/async-storage', () => ({
   __esModule: true,
   default: {
     getItem: jest.fn((key: string) => {
-      if (throwOnGet) {
-        throwOnGet = false;
+      if (mockThrowOnGet) {
+        mockThrowOnGet = false;
         return Promise.reject(new Error('boom'));
       }
-      return Promise.resolve(key in storage ? storage[key] : null);
+      return Promise.resolve(key in mockStorage ? mockStorage[key] : null);
     }),
     setItem: jest.fn((key: string, value: string) => {
-      if (throwOnSet) {
-        throwOnSet = false;
+      if (mockThrowOnSet) {
+        mockThrowOnSet = false;
         return Promise.reject(new Error('boom'));
       }
-      storage[key] = value;
+      mockStorage[key] = value;
       return Promise.resolve();
     }),
     removeItem: jest.fn((key: string) => {
-      delete storage[key];
+      delete mockStorage[key];
       return Promise.resolve();
     }),
   },
@@ -55,9 +55,9 @@ const userId = 'u1';
 const KEY = `@accessmap/points_last_seen_v1:${userId}`;
 
 beforeEach(() => {
-  for (const k of Object.keys(storage)) delete storage[k];
-  throwOnGet = false;
-  throwOnSet = false;
+  for (const k of Object.keys(mockStorage)) delete mockStorage[k];
+  mockThrowOnGet = false;
+  mockThrowOnSet = false;
 });
 
 describe('getLastSeenPoints', () => {
@@ -66,18 +66,18 @@ describe('getLastSeenPoints', () => {
   });
 
   it('returns the stored integer when present', async () => {
-    storage[KEY] = '42';
+    mockStorage[KEY] = '42';
     expect(await getLastSeenPoints(userId)).toBe(42);
   });
 
   it('returns null for a stored value that is not a finite number', async () => {
-    storage[KEY] = 'not-a-number';
+    mockStorage[KEY] = 'not-a-number';
     expect(await getLastSeenPoints(userId)).toBeNull();
   });
 
-  it('returns null when storage rejects', async () => {
-    storage[KEY] = '7';
-    throwOnGet = true;
+  it('returns null when mockStorage rejects', async () => {
+    mockStorage[KEY] = '7';
+    mockThrowOnGet = true;
     expect(await getLastSeenPoints(userId)).toBeNull();
   });
 });
@@ -85,12 +85,12 @@ describe('getLastSeenPoints', () => {
 describe('setLastSeenPoints', () => {
   it('writes the value as a string', async () => {
     await setLastSeenPoints(userId, 17);
-    expect(storage[KEY]).toBe('17');
+    expect(mockStorage[KEY]).toBe('17');
   });
 
   it('clamps negative values to 0 (no inverted deltas next launch)', async () => {
     await setLastSeenPoints(userId, -5);
-    expect(storage[KEY]).toBe('0');
+    expect(mockStorage[KEY]).toBe('0');
   });
 
   it('round-trips through get correctly', async () => {
@@ -98,8 +98,8 @@ describe('setLastSeenPoints', () => {
     expect(await getLastSeenPoints(userId)).toBe(123);
   });
 
-  it('swallows storage errors silently (UI never throws)', async () => {
-    throwOnSet = true;
+  it('swallows mockStorage errors silently (UI never throws)', async () => {
+    mockThrowOnSet = true;
     await expect(setLastSeenPoints(userId, 5)).resolves.toBeUndefined();
   });
 });

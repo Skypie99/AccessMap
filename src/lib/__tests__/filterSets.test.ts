@@ -8,41 +8,41 @@
  *
  * What this protects against:
  *  - A regression that lets a 6th set save and silently breaks the
- *    chip-row layout assumption (or storage's small-payload assumption).
+ *    chip-row layout assumption (or mockStorage's small-payload assumption).
  *  - A duplicate-name check that's case-sensitive or doesn't trim,
  *    which would let users save "downtown" and "Downtown" side by side.
- *  - A change to the storage key prefix that would silently wipe every
+ *  - A change to the mockStorage key prefix that would silently wipe every
  *    user's saved sets on next launch.
  *  - The "drop corrupt entries" behavior that keeps a partially-bad
  *    blob from locking the user out of their *good* saved sets.
- *  - saveSet leaving storage in an inconsistent state if listSets
+ *  - saveSet leaving mockStorage in an inconsistent state if listSets
  *    misreads a blob (cap calc has to come from the validated count).
  */
 
-const storage: Record<string, string> = {};
-let throwOnGet = false;
-let throwOnSet = false;
+const mockStorage: Record<string, string> = {};
+let mockThrowOnGet = false;
+let mockThrowOnSet = false;
 
 jest.mock('@react-native-async-storage/async-storage', () => ({
   __esModule: true,
   default: {
     getItem: jest.fn((key: string) => {
-      if (throwOnGet) {
-        throwOnGet = false;
+      if (mockThrowOnGet) {
+        mockThrowOnGet = false;
         return Promise.reject(new Error('boom'));
       }
-      return Promise.resolve(key in storage ? storage[key] : null);
+      return Promise.resolve(key in mockStorage ? mockStorage[key] : null);
     }),
     setItem: jest.fn((key: string, value: string) => {
-      if (throwOnSet) {
-        throwOnSet = false;
+      if (mockThrowOnSet) {
+        mockThrowOnSet = false;
         return Promise.reject(new Error('boom'));
       }
-      storage[key] = value;
+      mockStorage[key] = value;
       return Promise.resolve();
     }),
     removeItem: jest.fn((key: string) => {
-      delete storage[key];
+      delete mockStorage[key];
       return Promise.resolve();
     }),
   },
@@ -67,9 +67,9 @@ const SAMPLE = {
 };
 
 beforeEach(() => {
-  for (const k of Object.keys(storage)) delete storage[k];
-  throwOnGet = false;
-  throwOnSet = false;
+  for (const k of Object.keys(mockStorage)) delete mockStorage[k];
+  mockThrowOnGet = false;
+  mockThrowOnSet = false;
   // Silence the helpful "listSets/deleteSet failed" warnings while we
   // intentionally exercise the error paths.
   jest.spyOn(console, 'warn').mockImplementation(() => {});
@@ -103,18 +103,18 @@ describe('listSets', () => {
   });
 
   it('returns an empty array on garbage JSON', async () => {
-    storage[KEY] = 'not json {{';
+    mockStorage[KEY] = 'not json {{';
     expect(await listSets()).toEqual([]);
   });
 
   it('returns an empty array on a non-array top-level shape', async () => {
-    storage[KEY] = JSON.stringify({ not: 'an array' });
+    mockStorage[KEY] = JSON.stringify({ not: 'an array' });
     expect(await listSets()).toEqual([]);
   });
 
   it('drops invalid entries but keeps the good ones', async () => {
     // Mixed array: one valid set + several invalid shapes.
-    storage[KEY] = JSON.stringify([
+    mockStorage[KEY] = JSON.stringify([
       {
         id: 'good',
         name: 'Park paths',
@@ -151,7 +151,7 @@ describe('listSets', () => {
   });
 
   it('returns an empty array when AsyncStorage rejects', async () => {
-    throwOnGet = true;
+    mockThrowOnGet = true;
     expect(await listSets()).toEqual([]);
   });
 });
@@ -216,14 +216,14 @@ describe('deleteSet', () => {
 
   it('is a no-op for an unknown id (no throw, no write)', async () => {
     await saveSet('A', SAMPLE);
-    const before = storage[KEY];
+    const before = mockStorage[KEY];
     await deleteSet('does-not-exist');
-    expect(storage[KEY]).toBe(before);
+    expect(mockStorage[KEY]).toBe(before);
   });
 
-  it('swallows storage errors (UI never throws)', async () => {
+  it('swallows mockStorage errors (UI never throws)', async () => {
     await saveSet('A', SAMPLE);
-    throwOnSet = true;
+    mockThrowOnSet = true;
     await expect(deleteSet('A')).resolves.toBeUndefined();
   });
 });
