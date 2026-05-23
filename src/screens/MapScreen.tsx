@@ -55,6 +55,8 @@ import { useScreenReader } from '@/lib/accessibility';
 import ReportFlagModal from './ReportFlagModal';
 import LegendModal from './LegendModal';
 import NearbyFlagsModal from './NearbyFlagsModal';
+import AddressSearchModal from '@/components/AddressSearchModal';
+import type { GeocodeResult } from '@/lib/geocode';
 
 interface Coords {
   lat: number;
@@ -90,6 +92,7 @@ export default function MapScreen() {
   const [reportOpen, setReportOpen] = useState(false);
   const [legendOpen, setLegendOpen] = useState(false);
   const [nearbyOpen, setNearbyOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
   const [focusedFlagId, setFocusedFlagId] = useState<string | null>(null);
 
   // Phase 2 of the accessible list view: auto-open the linear list when a
@@ -554,6 +557,16 @@ export default function MapScreen() {
           */}
           <View style={styles.actionBar}>
             <Pressable
+              onPress={() => setSearchOpen(true)}
+              style={styles.actionBtn}
+              accessibilityRole="button"
+              accessibilityLabel="Search by address"
+              accessibilityHint="Opens a search box to jump the map to an address or place"
+            >
+              <Text style={styles.iconText}>🔍</Text>
+            </Pressable>
+            <View style={styles.actionDivider} accessibilityElementsHidden />
+            <Pressable
               onPress={() => setLegendOpen(true)}
               style={styles.actionBtn}
               accessibilityRole="button"
@@ -968,6 +981,23 @@ export default function MapScreen() {
       <LegendModal
         visible={legendOpen}
         onClose={() => setLegendOpen(false)}
+      />
+
+      <AddressSearchModal
+        visible={searchOpen}
+        onClose={() => setSearchOpen(false)}
+        onSelect={(result: GeocodeResult) => {
+          // Animate the map to the picked location. Zoom is generous
+          // (delta 0.02) since geocoded results often point at a
+          // neighborhood centroid, not a precise pin — too tight and
+          // the user lands "next to" their target.
+          mapRef.current?.animateTo({
+            latitude: result.lat,
+            longitude: result.lng,
+            latitudeDelta: 0.02,
+            longitudeDelta: 0.02,
+          });
+        }}
       />
 
       <NearbyFlagsModal
