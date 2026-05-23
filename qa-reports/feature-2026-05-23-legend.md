@@ -13,6 +13,12 @@ and the close target is a full-width 44pt+ button.
 Typecheck green before and after. Feature is complete (not phase-1),
 reachable from the Map.
 
+**Note:** A parallel agent ran tonight and built the **second** backlog
+item ("Persistent flag-load error banner on the Map") on its own
+branch `feat/flag-load-error-banner-2026-05-23`. Both branches sit
+on top of `main`, both are clean, and they don't touch the same lines
+in conflicting ways — they can be merged independently.
+
 ## Feature spec (as built)
 
 - **What it does:** Lets a user open a "Map legend" sheet that explains
@@ -158,16 +164,21 @@ In the running app:
 
 ## Suggested next features (1–2)
 
-1. **Persistent flag-load error banner on the Map** (next item in the
-   backlog, proposal P-NEW-2 from the 2026-05-23 QA pass). Replaces the
-   one-shot `Alert` in `refreshFlags()` with an in-screen banner the
-   user can tap to retry. Smallest possible delta with a real UX win:
-   when the network blips, an `Alert` disappears and the user is
-   stranded; a banner stays put and is recoverable.
-2. **Filter flags on the Map by status.** Adding a status-row to the
+(The banner item, originally #2 in the "Now" section of the backlog,
+was built in parallel tonight on `feat/flag-load-error-banner-2026-05-23`,
+so it's no longer the next thing.)
+
+1. **Filter flags on the Map by status.** Adding a status-row to the
    existing filter panel (open / verified / resolved / rejected;
    default open+verified to match `listFlags`). Maps cleanly onto the
-   existing chip pattern — no new component types needed.
+   existing chip pattern — no new component types needed. This is now
+   the next item in the "Now" section.
+2. **Accessible list view of nearby flags.** The screen-reader-first
+   alternative to the map (auto-shown when the screen reader is on,
+   or reachable from a Map FAB). Would directly reuse the legend
+   constants added in this push (`CATEGORY_DESCRIPTIONS`,
+   `SEVERITY_LABELS`, `SEVERITY_COLOR_NAMES`) — the legend already
+   put the right vocabulary in `lib/flags.ts`.
 
 ## Verification
 
