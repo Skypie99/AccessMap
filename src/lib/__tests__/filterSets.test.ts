@@ -51,13 +51,16 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
 import {
   deleteSet,
   FilterSetError,
+  getDefaultSetId,
   listSets,
   MAX_FILTER_SETS,
   saveSet,
+  setDefaultSetId,
   type FilterSet,
 } from '../filterSets';
 
 const KEY = '@accessmap/filter_sets_v1';
+const DEFAULT_KEY = '@accessmap/default_filter_set_v1';
 
 // Reusable "current filter snapshot" — the UI passes this in on save.
 const SAMPLE = {
@@ -225,5 +228,67 @@ describe('deleteSet', () => {
     await saveSet('A', SAMPLE);
     mockThrowOnSet = true;
     await expect(deleteSet('A')).resolves.toBeUndefined();
+  });
+
+  it('clears the default pointer when deleting the referenced set', async () => {
+    const a = await saveSet('A', SAMPLE);
+    const b = await saveSet('B', SAMPLE);
+    await setDefaultSetId(a.id);
+    expect(await getDefaultSetId()).toBe(a.id);
+    await deleteSet(a.id);
+    // Default cleared — deleting the referenced set must not leave a
+    // dangling pointer that survives across launches.
+    expect(await getDefaultSetId()).toBeNull();
+    // ...but the unrelated set is still saved.
+    expect((await listSets()).map((s) => s.id)).toEqual([b.id]);
+  });
+
+  it('leaves the default pointer alone when deleting an unrelated set', async () => {
+    const a = await saveSet('A', SAMPLE);
+    const b = await saveSet('B', SAMPLE);
+    await setDefaultSetId(a.id);
+    await deleteSet(b.id);
+    expect(await getDefaultSetId()).toBe(a.id);
+  });
+});
+
+describe('default set pointer', () => {
+  it('returns null when nothing is stored', async () => {
+    expect(await getDefaultSetId()).toBeNull();
+  });
+
+  it('round-trips a set id', async () => {
+    await setDefaultSetId('abc123');
+    expect(await getDefaultSetId()).toBe('abc123');
+  });
+
+  it('clears the pointer with null', async () => {
+    await setDefaultSetId('abc123');
+    await setDefaultSetId(null);
+    expect(await getDefaultSetId()).toBeNull();
+    // Stored key removed, not just replaced with "null", so the next
+    // launch reads it as "nothing stored" via the null branch in
+    // getDefaultSetId.
+    expect(DEFAULT_KEY in mockStorage).toBe(false);
+  });
+
+  it('switches pointer when set to a new id', async () => {
+    await setDefaultSetId('first');
+    await setDefaultSetId('second');
+    expect(await getDefaultSetId()).toBe('second');
+  });
+
+  it('treats garbage / wrong-shape blobs as no default', async () => {
+    mockStorage[DEFAULT_KEY] = 'not json {{';
+    expect(await getDefaultSetId()).toBeNull();
+    mockStorage[DEFAULT_KEY] = JSON.stringify(42);
+    expect(await getDefaultSetId()).toBeNull();
+    mockStorage[DEFAULT_KEY] = JSON.stringify('');
+    expect(await getDefaultSetId()).toBeNull();
+  });
+
+  it('returns null when AsyncStorage rejects', async () => {
+    mockThrowOnGet = true;
+    expect(await getDefaultSetId()).toBeNull();
   });
 });

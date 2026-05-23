@@ -27,9 +27,11 @@ import { loadMapFilters, saveMapFilters } from '@/lib/mapFilters';
 import {
   deleteSet,
   FilterSetError,
+  getDefaultSetId,
   listSets,
   MAX_FILTER_SETS,
   saveSet,
+  setDefaultSetId,
   type FilterSet,
 } from '@/lib/filterSets';
 import type {
@@ -119,6 +121,11 @@ export default function MapScreen() {
   // valid "first launch" state, so we don't need a hydrated flag here.
   const [savedSets, setSavedSets] = useState<FilterSet[]>([]);
 
+  // Id of the user-marked "default" saved set, or null. When set on
+  // launch, the matching set's filters override the last-toggled
+  // mapFilters so the Map opens to the user's preferred view.
+  const [defaultId, setDefaultIdState] = useState<string | null>(null);
+
   // Save-name modal state. nameDraft is the in-flight TextInput value;
   // savingSet guards against double-submit while the AsyncStorage write
   // is in flight.
@@ -181,22 +188,38 @@ export default function MapScreen() {
   // when the saved statuses differ from DEFAULT_STATUSES — the provider's
   // fetchSeqRef discards the stale result, so there's no race.
   //
-  // We also hydrate the saved-sets list in the same effect — two parallel
-  // AsyncStorage reads, one mount.
+  // We also hydrate the saved-sets list + the "default set" pointer in
+  // the same effect — three parallel AsyncStorage reads, one mount. If a
+  // valid default exists and its referenced set is still in the saved
+  // list, it overrides the last-toggled mapFilters so the Map opens to
+  // the user's preferred view instead of whatever they touched last.
+  // A dangling pointer (the set was deleted) silently falls back to the
+  // last-toggled view; the pointer is cleared on the next saved-sets
+  // mutation.
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const [saved, sets] = await Promise.all([
+      const [saved, sets, storedDefault] = await Promise.all([
         loadMapFilters(),
         listSets(),
+        getDefaultSetId(),
       ]);
       if (cancelled) return;
-      if (saved) {
+      const defaultSet =
+        storedDefault !== null
+          ? sets.find((s) => s.id === storedDefault) ?? null
+          : null;
+      if (defaultSet) {
+        setActiveCategories(new Set(defaultSet.categories));
+        setMinSeverity(defaultSet.minSeverity);
+        setActiveStatuses(new Set(defaultSet.statuses));
+      } else if (saved) {
         setActiveCategories(new Set(saved.categories));
         setMinSeverity(saved.minSeverity);
         setActiveStatuses(new Set(saved.statuses));
       }
       setSavedSets(sets);
+      setDefaultIdState(defaultSet ? defaultSet.id : null);
       setFiltersHydrated(true);
     })();
     return () => {
@@ -214,27 +237,47 @@ export default function MapScreen() {
     setActiveStatuses(new Set(set.statuses));
   }, []);
 
-  // Long-press a saved chip → native confirm. The Alert.alert pattern is
-  // already used elsewhere in the app, so iOS and Android both get a
-  // familiar destructive-action dialog.
-  const confirmDeleteSet = useCallback((set: FilterSet) => {
-    Alert.alert(
-      'Delete saved filter?',
-      `"${set.name}" will be removed.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            await deleteSet(set.id);
-            if (!mountedRef.current) return;
-            setSavedSets((prev) => prev.filter((s) => s.id !== set.id));
+  // Long-press a saved chip → native action sheet with Make/Remove default
+  // + Delete + Cancel. Alert.alert is already the in-app pattern for
+  // destructive confirmation, so it gets the familiar OS-native treatment
+  // on iOS and Android. (Web falls back to a vertical list — acceptable
+  // because the feature gracefully degrades there.)
+  const openSetMenu = useCallback(
+    (set: FilterSet) => {
+      const isDefault = defaultId === set.id;
+      Alert.alert(
+        set.name,
+        isDefault
+          ? 'This filter opens by default on launch.'
+          : 'Choose an action for this saved filter.',
+        [
+          {
+            text: isDefault ? 'Remove default' : 'Make default',
+            onPress: async () => {
+              const nextId = isDefault ? null : set.id;
+              await setDefaultSetId(nextId);
+              if (!mountedRef.current) return;
+              setDefaultIdState(nextId);
+            },
           },
-        },
-      ],
-    );
-  }, []);
+          {
+            text: 'Delete',
+            style: 'destructive',
+            onPress: async () => {
+              await deleteSet(set.id);
+              if (!mountedRef.current) return;
+              setSavedSets((prev) => prev.filter((s) => s.id !== set.id));
+              // deleteSet cascades the storage clear; mirror it in local
+              // state so the star disappears immediately.
+              if (defaultId === set.id) setDefaultIdState(null);
+            },
+          },
+          { text: 'Cancel', style: 'cancel' },
+        ],
+      );
+    },
+    [defaultId],
+  );
 
   // Open the save-name modal with an empty draft.
   const openSaveModal = useCallback(() => {
@@ -495,18 +538,23 @@ export default function MapScreen() {
               >
                 {savedSets.map((set) => {
                   const isSelected = set.id === activeSetId;
+                  const isDefault = set.id === defaultId;
                   return (
                     <Pressable
                       key={set.id}
                       onPress={() => applySet(set)}
-                      onLongPress={() => confirmDeleteSet(set)}
+                      onLongPress={() => openSetMenu(set)}
                       style={[
                         styles.filterPill,
                         isSelected && styles.filterPillActive,
                       ]}
                       accessibilityRole="button"
-                      accessibilityLabel={`Apply "${set.name}" filter`}
-                      accessibilityHint="Sets the map filter to this saved combination. Long press to delete."
+                      accessibilityLabel={
+                        isDefault
+                          ? `Apply "${set.name}" filter (default on launch)`
+                          : `Apply "${set.name}" filter`
+                      }
+                      accessibilityHint="Sets the map filter to this saved combination. Long press for options including make default and delete."
                       accessibilityState={{ selected: isSelected }}
                     >
                       <Text
@@ -515,6 +563,10 @@ export default function MapScreen() {
                           isSelected && styles.filterPillTextActive,
                         ]}
                       >
+                        {/* Star is decorative — the "default on launch"
+                            wording is carried by accessibilityLabel above
+                            so screen readers don't read out a glyph. */}
+                        {isDefault ? '★ ' : ''}
                         {set.name}
                       </Text>
                     </Pressable>

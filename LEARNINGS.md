@@ -6,6 +6,36 @@ entries; the file is the project's accumulated wisdom.
 
 ---
 
+## 2026-05-23 — Two-key persistence > rewriting a v1 blob
+
+When a feature wants a single new pointer / field next to an
+already-versioned AsyncStorage payload (e.g. the `_v1` named-sets array),
+store it under its own namespaced key (`@accessmap/<thing>_v1`) instead
+of bumping the existing blob's schema. Benefits:
+
+- Existing parser tests still pass unchanged — the v1 shape isn't
+  touched, so old corruption + cap + duplicate cases keep their meaning.
+- Toggling the pointer doesn't have to rewrite the entire sets array on
+  AsyncStorage (cheaper write + smaller failure surface).
+- Cleanup is a two-line cascade in the load-bearing mutation (the
+  bigger blob's delete writes a `removeItem` for the pointer key) — no
+  cross-blob "current row pointer" sentinel.
+
+Used for the default-saved-filter pointer
+(`@accessmap/default_filter_set_v1` alongside
+`@accessmap/filter_sets_v1`). The same pattern fits any future "currently
+selected X" pointer that lives over an existing collection.
+
+## 2026-05-23 — Decorative glyphs need an `accessibilityLabel` partner
+
+A leading "★" character in a saved-filter chip is visually clear but a
+screen reader will read it as "black star" (or worse). The chip's
+`accessibilityLabel` now carries the meaning explicitly — "Apply 'X'
+filter (default on launch)" — and the glyph stays purely visual. Rule
+of thumb for the codebase: if a glyph denotes state, the
+`accessibilityLabel` on the surrounding pressable must spell that state
+out in words. Don't rely on the screen reader announcing the glyph.
+
 ## 2026-05-23 — Realtime merge logic belongs in a pure helper
 
 `FlagsProvider`'s Supabase realtime effect stays a thin adapter: it
