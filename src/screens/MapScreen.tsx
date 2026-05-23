@@ -19,6 +19,7 @@ import {
   STATUS_ORDER,
   listFlags,
 } from '@/lib/flags';
+import { useFlags } from '@/lib/flagsStore';
 import type {
   FlagCategory,
   FlagRow,
@@ -55,12 +56,26 @@ export default function MapScreen() {
   const [location, setLocation] = useState<Coords | null>(null);
   const [locating, setLocating] = useState(true);
   const [permissionDenied, setPermissionDenied] = useState(false);
-  const [flags, setFlags] = useState<FlagRow[]>([]);
-  const [loadingFlags, setLoadingFlags] = useState(false);
   // Set when listFlags() rejects. Shown as a persistent tap-to-retry banner
   // so the user can tell "0 flags here" from "the fetch failed". Cleared on
   // a successful refresh.
   const [loadError, setLoadError] = useState<string | null>(null);
+
+  // Shared open+verified flag list from FlagsProvider. Used when the status
+  // filter is at its default (open + verified) — avoids a duplicate fetch
+  // since the provider auto-fetches on mount and stays in sync after triage
+  // actions in the Tasks tab.
+  const {
+    flags: sharedFlags,
+    loading: sharedLoading,
+    error: sharedError,
+    refresh: sharedRefresh,
+  } = useFlags();
+
+  // Local override: used only when the status filter includes statuses outside
+  // the shared set (open+verified). Null when on default statuses.
+  const [customFlags, setCustomFlags] = useState<FlagRow[] | null>(null);
+  const [customLoading, setCustomLoading] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
   const [legendOpen, setLegendOpen] = useState(false);
   const [nearbyOpen, setNearbyOpen] = useState(false);
@@ -126,12 +141,22 @@ export default function MapScreen() {
     setActiveStatuses(new Set(DEFAULT_STATUSES));
   }, []);
 
-  // Whether the status set differs from the default (open + verified). Used
-  // to decide if the filter button should glow + the Clear link should appear.
-  const statusFilterActive = useMemo(() => {
-    if (activeStatuses.size !== DEFAULT_STATUSES.length) return true;
-    return !DEFAULT_STATUSES.every((s) => activeStatuses.has(s));
-  }, [activeStatuses]);
+  // True when the status filter exactly matches the shared set (open+verified).
+  // In this state we read from the FlagsProvider; otherwise we run a local fetch.
+  const isDefaultStatuses = useMemo(
+    () =>
+      activeStatuses.size === DEFAULT_STATUSES.length &&
+      DEFAULT_STATUSES.every((s) => activeStatuses.has(s)),
+    [activeStatuses],
+  );
+
+  // Which flags to display and the corresponding loading indicator.
+  const flags = isDefaultStatuses ? sharedFlags : (customFlags ?? sharedFlags);
+  const loadingFlags = isDefaultStatuses ? sharedLoading : customLoading;
+
+  // Whether the status set differs from the default — used to glow the filter
+  // button and show the Clear link.
+  const statusFilterActive = !isDefaultStatuses;
 
   const filtersActive =
     activeCategories.size > 0 || minSeverity > 1 || statusFilterActive;
@@ -179,20 +204,37 @@ export default function MapScreen() {
   }, []);
 
   const refreshFlags = useCallback(async () => {
-    const statuses = Array.from(activeStatuses);
-    // Empty selection = nothing to show. Skip the round-trip and clear state.
-    if (statuses.length === 0) {
-      if (mountedRef.current) {
-        setFlags([]);
-        setLoadingFlags(false);
+    if (isDefaultStatuses) {
+      // Delegate to the shared provider — no local fetch needed.
+      try {
+        await sharedRefresh();
+        if (mountedRef.current) setLoadError(null);
+      } catch (e: any) {
+        if (!mountedRef.current) return;
+        const message = e?.message
+          ? `Couldn't load flags: ${e.message}. Tap to retry.`
+          : "Couldn't load flags. Tap to retry.";
+        setLoadError(message);
+        AccessibilityInfo.announceForAccessibility(message);
       }
       return;
     }
-    if (mountedRef.current) setLoadingFlags(true);
+
+    // Non-default statuses: fetch locally.
+    const statuses = Array.from(activeStatuses);
+    if (statuses.length === 0) {
+      if (mountedRef.current) {
+        setCustomFlags([]);
+        setCustomLoading(false);
+        setLoadError(null);
+      }
+      return;
+    }
+    if (mountedRef.current) setCustomLoading(true);
     try {
       const rows = await listFlags(statuses);
       if (!mountedRef.current) return;
-      setFlags(rows);
+      setCustomFlags(rows);
       setLoadError(null);
     } catch (e: any) {
       if (!mountedRef.current) return;
@@ -205,20 +247,48 @@ export default function MapScreen() {
       // it out loud so the failure isn't silent.
       AccessibilityInfo.announceForAccessibility(message);
     } finally {
-      if (mountedRef.current) setLoadingFlags(false);
+      if (mountedRef.current) setCustomLoading(false);
     }
-  }, [activeStatuses]);
+  }, [isDefaultStatuses, activeStatuses, sharedRefresh]);
 
   // Initial location fetch; runs once.
   useEffect(() => {
     requestLocation();
   }, [requestLocation]);
 
-  // Re-fetch flags whenever the status filter changes (which also fires on
-  // first mount via the default DEFAULT_STATUSES set).
+  // Re-fetch flags when the status filter changes. On first mount we skip the
+  // fetch when on default statuses because the FlagsProvider handles that
+  // request automatically — no need for a duplicate round-trip.
+  const skipFirstDefaultFetchRef = useRef(true);
   useEffect(() => {
+    if (skipFirstDefaultFetchRef.current) {
+      skipFirstDefaultFetchRef.current = false;
+      if (isDefaultStatuses) return;
+    }
     refreshFlags();
-  }, [refreshFlags]);
+  }, [refreshFlags, isDefaultStatuses]);
+
+  // Mirror the provider's error into the local error banner whenever we're
+  // on default statuses (the provider owns the fetch in that mode).
+  useEffect(() => {
+    if (!isDefaultStatuses) return;
+    if (sharedError) {
+      const message = "Couldn't load flags. Tap to retry.";
+      setLoadError(message);
+      AccessibilityInfo.announceForAccessibility(message);
+    } else {
+      setLoadError(null);
+    }
+  }, [sharedError, isDefaultStatuses]);
+
+  // Clear custom-fetch data when the status filter returns to default so we
+  // don't briefly show stale custom flags if the user toggles back quickly.
+  useEffect(() => {
+    if (isDefaultStatuses) {
+      setCustomFlags(null);
+      setCustomLoading(false);
+    }
+  }, [isDefaultStatuses]);
 
   // When Tasks tab navigates here with a focusFlag, animate to it and pop the
   // callout. `ts` makes re-tapping the same flag re-fire.

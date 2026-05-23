@@ -13,11 +13,8 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { useAuth } from '@/lib/auth';
-import {
-  CATEGORY_LABELS,
-  listFlags,
-  updateFlagStatus,
-} from '@/lib/flags';
+import { CATEGORY_LABELS, updateFlagStatus } from '@/lib/flags';
+import { useFlags } from '@/lib/flagsStore';
 import type { FlagRow, FlagStatus } from '@/types/database';
 import type { RootTabParamList } from '@/navigation/RootNavigator';
 import { severityColor } from './ReportFlagModal';
@@ -29,8 +26,8 @@ export default function TasksScreen() {
   const navigation =
     useNavigation<BottomTabNavigationProp<RootTabParamList, 'Tasks'>>();
   const { user } = useAuth();
-  const [flags, setFlags] = useState<FlagRow[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { flags, loading, error: flagsError, refresh, patchFlag, removeFlag } =
+    useFlags();
   const [busyId, setBusyId] = useState<string | null>(null);
   const [flash, setFlash] = useState<string | null>(null);
   const [selectedFlag, setSelectedFlag] = useState<FlagRow | null>(null);
@@ -52,35 +49,15 @@ export default function TasksScreen() {
     [],
   );
 
-  // mountedRef stays true while this screen is on screen. We check it before
-  // any setState that happens after an `await`, so that a request which
-  // resolves after the user has navigated away doesn't spam updates into
-  // a torn-down component.
-  const mountedRef = useRef(true);
+  // Show an alert when the shared fetch fails (initial load or pull-to-refresh).
+  // Track the last seen error so we don't re-fire the alert on unrelated renders.
+  const prevFlagsErrorRef = useRef<string | null>(null);
   useEffect(() => {
-    mountedRef.current = true;
-    return () => {
-      mountedRef.current = false;
-    };
-  }, []);
-
-  const refresh = useCallback(async () => {
-    if (mountedRef.current) setLoading(true);
-    try {
-      const rows = await listFlags(['open', 'verified']);
-      if (mountedRef.current) setFlags(rows);
-    } catch (e: any) {
-      if (mountedRef.current) {
-        Alert.alert('Could not load flags', e?.message ?? 'Unknown error.');
-      }
-    } finally {
-      if (mountedRef.current) setLoading(false);
+    if (flagsError && flagsError !== prevFlagsErrorRef.current) {
+      Alert.alert('Could not load flags', flagsError);
     }
-  }, []);
-
-  useEffect(() => {
-    refresh();
-  }, [refresh]);
+    prevFlagsErrorRef.current = flagsError;
+  }, [flagsError]);
 
   // Trigger lives in supabase/schema.sql (handle_flag_status_change, ~line 75).
   // Reporter ALWAYS gets the reporter bonus (5 verify / 10 resolve).
@@ -89,24 +66,26 @@ export default function TasksScreen() {
   // mapping in sync with the trigger if the values ever change.
   const applyStatusChange = useCallback(
     (updated: FlagRow, action: DetailAction, isOwn: boolean) => {
-      // Drop resolved/rejected from the list locally; keep verified visible.
-      setFlags((prev) =>
-        action === 'verify'
-          ? prev.map((f) => (f.id === updated.id ? updated : f))
-          : prev.filter((f) => f.id !== updated.id),
-      );
+      // Optimistic update via the shared store: replace the row in-place for
+      // verify (status changes but flag stays visible), remove it for
+      // resolve/reject (it leaves the triage queue).
+      if (action === 'verify') {
+        patchFlag(updated.id, { ...updated });
+      } else {
+        removeFlag(updated.id);
+      }
       if (action === 'verify') {
         showFlash(isOwn ? 'Verified! +5 points' : 'Verified! +2 points');
       } else if (action === 'resolve') {
         showFlash(isOwn ? 'Resolved! +10 points' : 'Resolved! +5 points');
       }
-      // Re-fetch in the background to reconcile with whatever the server
-      // actually committed (concurrent triage, points trigger failures, etc.).
-      // Fire-and-forget — the optimistic update already handled the instant
-      // feedback.
-      refresh();
+      // Re-fetch via the shared store to reconcile with what the server
+      // actually committed. Fire-and-forget — the optimistic update already
+      // handled instant feedback. The refresh also updates the Map tab's pin
+      // count through the shared context.
+      refresh().catch(() => {});
     },
-    [refresh, showFlash],
+    [refresh, patchFlag, removeFlag, showFlash],
   );
 
   const setStatus = useCallback(
@@ -142,10 +121,10 @@ export default function TasksScreen() {
 
   const handleDeleted = useCallback(
     (deletedId: string) => {
-      setFlags((prev) => prev.filter((f) => f.id !== deletedId));
+      removeFlag(deletedId);
       showFlash('Flag deleted');
     },
-    [showFlash],
+    [removeFlag, showFlash],
   );
 
   const showDetails = useCallback((flag: FlagRow) => {
@@ -177,7 +156,10 @@ export default function TasksScreen() {
         keyExtractor={(f) => f.id}
         contentContainerStyle={flags.length === 0 ? styles.center : styles.list}
         refreshControl={
-          <RefreshControl refreshing={loading} onRefresh={refresh} />
+          <RefreshControl
+            refreshing={loading}
+            onRefresh={() => { refresh().catch(() => {}); }}
+          />
         }
         ListEmptyComponent={
           <View style={styles.center}>

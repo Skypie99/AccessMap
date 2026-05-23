@@ -2,6 +2,7 @@ import React from 'react';
 import { Text } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { FlagsProvider } from '@/lib/flagsStore';
 import MapScreen from '@/screens/MapScreen';
 import TasksScreen from '@/screens/TasksScreen';
 import ProfileScreen from '@/screens/ProfileScreen';
@@ -33,30 +34,32 @@ interface Props {
 export default function RootNavigator({ initialRouteName = 'Map' }: Props) {
   return (
     <NavigationContainer>
-      <Tab.Navigator
-        initialRouteName={initialRouteName}
-        screenOptions={{
-          tabBarActiveTintColor: '#2f80ed',
-          tabBarInactiveTintColor: '#8a8a8a',
-          headerTitleAlign: 'center',
-        }}
-      >
-        <Tab.Screen
-          name="Map"
-          component={MapScreen}
-          options={{ tabBarIcon: tabIcon('🗺️') }}
-        />
-        <Tab.Screen
-          name="Tasks"
-          component={TasksScreen}
-          options={{ tabBarIcon: tabIcon('✅') }}
-        />
-        <Tab.Screen
-          name="Profile"
-          component={ProfileScreen}
-          options={{ tabBarIcon: tabIcon('👤') }}
-        />
-      </Tab.Navigator>
+      <FlagsProvider>
+        <Tab.Navigator
+          initialRouteName={initialRouteName}
+          screenOptions={{
+            tabBarActiveTintColor: '#2f80ed',
+            tabBarInactiveTintColor: '#8a8a8a',
+            headerTitleAlign: 'center',
+          }}
+        >
+          <Tab.Screen
+            name="Map"
+            component={MapScreen}
+            options={{ tabBarIcon: tabIcon('🗺️') }}
+          />
+          <Tab.Screen
+            name="Tasks"
+            component={TasksScreen}
+            options={{ tabBarIcon: tabIcon('✅') }}
+          />
+          <Tab.Screen
+            name="Profile"
+            component={ProfileScreen}
+            options={{ tabBarIcon: tabIcon('👤') }}
+          />
+        </Tab.Navigator>
+      </FlagsProvider>
     </NavigationContainer>
   );
 }
