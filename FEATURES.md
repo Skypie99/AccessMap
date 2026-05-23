@@ -18,13 +18,13 @@ they land on `main`.
   `supercluster` (react-leaflet has no native primitive). Adds two
   runtime deps — DECISIONS FOR SKY. Detailed plan in
   `qa-reports/qa-2026-05-22.md` P4.
-- **Realtime flag updates — client side shipped on
-  `feat/realtime-flag-updates-2026-05-23` (unmerged).** `FlagsProvider`
-  subscribes to `public.flags` and merges incoming INSERT/UPDATE/DELETE
-  deltas through a pure helper (`src/lib/flagsRealtime.ts`, 11 unit
-  tests). Stays quiet until **Sky runs
+- **Realtime flag updates — client merged to main, awaiting one SQL run.**
+  `FlagsProvider` subscribes to `public.flags` and merges incoming
+  INSERT/UPDATE/DELETE deltas through a pure helper
+  (`src/lib/flagsRealtime.ts`, 11 unit tests). Currently a no-op —
+  becomes live the moment **Sky runs
   [`supabase/realtime.sql`](supabase/realtime.sql)** in the Supabase
-  dashboard SQL editor — one button-press, idempotent. Once that lands,
+  dashboard SQL editor (one button-press, idempotent). After that,
   flags created/triaged on one device appear on others without a refresh.
 
 ## Next (this month)
@@ -72,10 +72,16 @@ broke.
 - **Saved named filter sets** (Loop 4). `src/lib/filterSets.ts` + UI
   row in the Map filter panel. Cap of 5 sets, tap to apply, long-press
   to delete.
-- **Jest + jest-expo test runner.** 108 tests across 8 suites pass on
+- **Jest + jest-expo test runner.** 119 tests across 9 suites pass on
   `npm test` (errors, flags, onboarding, points, preferences,
-  severityColor, mapFilters, filterSets). `tsconfig.json` no longer
-  excludes the `__tests__/` tree so tests type-check too.
+  severityColor, mapFilters, filterSets, flagsRealtime).
+  `tsconfig.json` no longer excludes the `__tests__/` tree so tests
+  type-check too.
+- **Realtime flag updates — client merged to main.** Dana scheduled
+  agent's `feat/realtime-flag-updates-2026-05-23` lands the
+  `FlagsProvider` subscription + `flagsRealtime.ts` merge helper +
+  proposed data-layer hardening migrations. No-op until
+  `supabase/realtime.sql` is applied (see Now tier).
 
 ## Conventions
 
