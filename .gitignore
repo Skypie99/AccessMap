@@ -12,3 +12,8 @@ web-build/
 .env
 .env.local
 .DS_Store
+
+# Claude plugin/skill bundles — sometimes left at the project root by
+# external tooling; not part of the AccessMap source tree.
+*.skill
+*.plugin
