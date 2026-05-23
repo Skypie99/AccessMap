@@ -10,6 +10,7 @@ import {
   getLastSeenPoints,
   setLastSeenPoints,
 } from '@/lib/points';
+import ErrorBoundary from '@/components/ErrorBoundary';
 import FlashBanner from '@/components/FlashBanner';
 import RootNavigator from '@/navigation/RootNavigator';
 import SignInScreen from '@/screens/SignInScreen';
@@ -108,11 +109,13 @@ function Gate() {
 
 export default function App() {
   return (
-    <SafeAreaProvider>
-      <AuthProvider>
-        <Gate />
-        <StatusBar style="auto" />
-      </AuthProvider>
-    </SafeAreaProvider>
+    <ErrorBoundary>
+      <SafeAreaProvider>
+        <AuthProvider>
+          <Gate />
+          <StatusBar style="auto" />
+        </AuthProvider>
+      </SafeAreaProvider>
+    </ErrorBoundary>
   );
 }
