@@ -21,6 +21,7 @@ import {
   STATUS_ORDER,
 } from '@/lib/flags';
 import { useFlags } from '@/lib/flagsStore';
+import { loadMapFilters, saveMapFilters } from '@/lib/mapFilters';
 import type {
   FlagCategory,
   FlagSeverity,
@@ -97,6 +98,11 @@ export default function MapScreen() {
   const [activeStatuses, setActiveStatuses] = useState<Set<FlagStatus>>(
     () => new Set(DEFAULT_STATUSES),
   );
+  // Tracks whether we've finished reading saved filters from AsyncStorage.
+  // The save-effect below is gated on this so the very first render
+  // doesn't overwrite stored state with the (still-default) starting set
+  // before we've had a chance to hydrate from disk.
+  const [filtersHydrated, setFiltersHydrated] = useState(false);
 
   // True while this screen is on screen — checked before any setState that
   // runs after an `await` so a slow request can't update a torn-down screen.
@@ -144,6 +150,44 @@ export default function MapScreen() {
   useEffect(() => {
     setStatuses(Array.from(activeStatuses));
   }, [activeStatuses, setStatuses]);
+
+  // Hydrate the three filter knobs from AsyncStorage on mount. If a saved
+  // payload is present and valid we seed each state piece from it; if not
+  // (first launch or corrupt blob) the defaults stand. Flip
+  // filtersHydrated last so the save-effect below doesn't fire until we've
+  // had a chance to read disk. A second Supabase fetch may happen here
+  // when the saved statuses differ from DEFAULT_STATUSES — the provider's
+  // fetchSeqRef discards the stale result, so there's no race.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const saved = await loadMapFilters();
+      if (cancelled) return;
+      if (saved) {
+        setActiveCategories(new Set(saved.categories));
+        setMinSeverity(saved.minSeverity);
+        setActiveStatuses(new Set(saved.statuses));
+      }
+      setFiltersHydrated(true);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Persist filter changes. Gated on filtersHydrated so we don't clobber a
+  // saved view with the initial default state during the brief window
+  // between mount and the async load resolving. Fire-and-forget — the
+  // worst case on a storage failure is the user's next pick doesn't
+  // survive a relaunch.
+  useEffect(() => {
+    if (!filtersHydrated) return;
+    saveMapFilters({
+      categories: Array.from(activeCategories),
+      minSeverity,
+      statuses: Array.from(activeStatuses),
+    });
+  }, [activeCategories, minSeverity, activeStatuses, filtersHydrated]);
 
   const filtersActive =
     activeCategories.size > 0 || minSeverity > 1 || statusFilterActive;
