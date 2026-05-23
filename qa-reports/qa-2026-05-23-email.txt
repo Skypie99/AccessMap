@@ -1,0 +1,129 @@
+Subject: AccessMap — 2026-05-23 Safety & Robustness Report (qa/auto-2026-05-23)
+
+Hi Sky,
+
+Tonight's safety & robustness pass on AccessMap is done. Branch
+qa/auto-2026-05-23 is sitting unmerged with 3 commits (+40 / -9) and
+typecheck stayed green throughout. The full report is saved at:
+
+  /Users/skypie/Documents/Claude/Agent Summarys /Access Map Summarys/
+    2026-05-23_Safety_And_Robustness_Report.md
+
+In-repo copy: ~/AccessMap/qa-reports/qa-2026-05-23.md
+
+================================================================
+THE ONE THING TO ACT ON
+================================================================
+
+There is a HIGH-severity hidden bug in the moderation flow:
+
+  - supabase/schema.sql:157-162 says "only the flag owner can update
+    a flag" (the RLS policy "flags update own").
+  - But supabase/schema.sql:103-108 (the points trigger) and the
+    Tasks-screen UI both assume any authenticated user can triage
+    any flag.
+
+Net effect: triaging your OWN flag works. Triaging anyone ELSE's
+flag will silently fail with an RLS error. You don't see this in
+single-account dev testing; you'll see it the second a second user
+signs up.
+
+Fix is propose-only (RLS is high-blast-radius). Two paths:
+
+  P-NEW-1 (faster band-aid): add a second UPDATE policy that lets
+          any authenticated user update ONLY the status column.
+          ~15 lines of SQL, fully reversible.
+
+  P-NEW-3 (better long-term): replace the trigger with a
+          SECURITY DEFINER RPC `set_flag_status(...)` that does
+          its own auth check and returns the awarded points.
+          Touches schema + 2 client files; save for a dedicated
+          session.
+
+Apply one of them BEFORE letting anyone other than you sign up.
+Exact SQL + smoke-test steps are in the full report.
+
+================================================================
+WHAT GOT FIXED (qa/auto-2026-05-23, on top of main)
+================================================================
+
+1. fix: handle getSession() rejection so loading always resolves
+   - 69078ec - src/lib/auth.tsx
+   - Previously: if Supabase getSession() rejected (offline, JWT
+     decode error, etc.), the AuthProvider sat on a blank loading
+     screen forever. Now wrapped in try/catch/finally so `loading`
+     always becomes false; session stays null on failure and the
+     gate falls through to SignInScreen.
+
+2. docs: README - components layer, web build, and the 500-row
+        listFlags cap
+   - 349ee98 - README.md
+   - Added src/components/, ReportFlagModal, src/lib/flags.ts to
+     the file map; added a Web build section; noted the 500-row
+     listFlags cap with a pointer to P1 in 2026-05-22 report.
+
+3. chore: enable noUncheckedIndexedAccess
+   - e9a9f36 - tsconfig.json
+   - This was P7 in the 2026-05-22 pass with an expectation of 3-5
+     follow-up fixes. Running it produced ZERO errors - the codebase
+     already guards index access defensively. One-line zero-cost
+     win. P7 is now done.
+
+================================================================
+ALSO PROPOSED (lower priority)
+================================================================
+
+P-NEW-2 - Persistent flag-load error UI on the Map.
+          MapScreen currently shows a one-shot Alert on fetch
+          failure, then renders an empty map. The user can't tell
+          "0 flags here" from "fetch failed". Add a persistent
+          banner. UI-only. Low risk.
+
+P-NEW-3 - updateFlagStatus should return the awarded points (see
+          above - this also fixes the moderation bug if you take
+          this route instead of P-NEW-1).
+
+The 9 propose-only items from qa-2026-05-22 are still open and not
+re-flagged here. See qa-reports/qa-2026-05-22.md for those. P7 from
+that list is now applied (this pass's commit 3).
+
+================================================================
+VERIFICATION
+================================================================
+
+  npm run typecheck             PASS (baseline + after each commit)
+  .env in diff                  none (empty + not tracked)
+  Secret-pattern scan           clean
+  Database type gotcha          no `interface Row` additions
+  react-native-maps gotcha      no rogue imports
+  Manual smoke tests            see report for the four checks
+
+================================================================
+HOW TO REVIEW
+================================================================
+
+  cd ~/AccessMap
+  git log --oneline main..qa/auto-2026-05-23
+  git show 69078ec    # the auth.tsx fix
+  git show 349ee98    # README
+  git show e9a9f36    # tsconfig flag
+
+  npm start
+  # (run the four smoke tests in the report)
+
+  # When happy:
+  git checkout main && git merge qa/auto-2026-05-23
+
+  # Or discard:
+  git branch -D qa/auto-2026-05-23
+
+Two QA branches are now open in parallel - qa/auto-2026-05-22
+(prior pass, 11 commits, 9 propose-only) and qa/auto-2026-05-23
+(this pass, 3 commits, 3 propose-only). They touch different files
+and can be merged in either order. Recommended order: 2026-05-22
+first (bigger, older), then 2026-05-23.
+
+Sleep well - the RLS bug is the only thing that genuinely needs
+attention. Everything else is hygiene.
+
+— Steve
