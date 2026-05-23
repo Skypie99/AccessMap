@@ -134,3 +134,53 @@ export const CATEGORY_ORDER: FlagCategory[] = [
   'steep_grade',
   'other',
 ];
+
+// Plain-language descriptions for the in-app legend. Kept short enough to
+// render in a single bottom-sheet row without truncation at large dynamic type.
+export const CATEGORY_DESCRIPTIONS: Record<FlagCategory, string> = {
+  no_ramp: 'A curb, step, or entrance with no ramp or accessible alternative.',
+  broken_sidewalk: 'Cracked, heaved, or uneven pavement that blocks wheels.',
+  blocked_path: 'A path obstructed by debris, vehicles, scaffolding, or other obstacles.',
+  missing_signal: 'A crossing missing audible or visual pedestrian signals.',
+  steep_grade: 'A slope too steep to roll up safely.',
+  other: 'Anything else that blocks or limits accessibility.',
+};
+
+// A small glyph for each category. Used as a visual aid alongside the label;
+// labels still carry the meaning (screen readers skip these decorative chars).
+export const CATEGORY_ICONS: Record<FlagCategory, string> = {
+  no_ramp: '↥',
+  broken_sidewalk: '▦',
+  blocked_path: '⛔',
+  missing_signal: '🚦',
+  steep_grade: '⛰',
+  other: '•',
+};
+
+export const SEVERITY_ORDER: FlagSeverity[] = [1, 2, 3, 4, 5];
+
+// Short human label and color name for each severity. The color name is read
+// aloud so meaning isn't carried by color alone.
+export const SEVERITY_LABELS: Record<FlagSeverity, string> = {
+  1: 'Minor',
+  2: 'Mild',
+  3: 'Moderate',
+  4: 'Significant',
+  5: 'Severe',
+};
+
+export const SEVERITY_COLOR_NAMES: Record<FlagSeverity, string> = {
+  1: 'green',
+  2: 'light green',
+  3: 'yellow',
+  4: 'orange',
+  5: 'red',
+};
+
+export const SEVERITY_DESCRIPTIONS: Record<FlagSeverity, string> = {
+  1: 'Inconvenient but usable.',
+  2: 'Doable with effort or help.',
+  3: 'Hard for many users.',
+  4: 'Hard or unsafe for most users.',
+  5: 'Impassable. Needs a detour.',
+};

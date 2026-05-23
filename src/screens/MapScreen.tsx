@@ -19,6 +19,7 @@ import PlatformMap, {
   type PlatformMapRegion,
 } from '@/components/PlatformMap';
 import ReportFlagModal, { severityColor } from './ReportFlagModal';
+import LegendModal from './LegendModal';
 
 const SEVERITY_LEVELS: FlagSeverity[] = [1, 2, 3, 4, 5];
 
@@ -47,6 +48,7 @@ export default function MapScreen() {
   // a successful refresh.
   const [loadError, setLoadError] = useState<string | null>(null);
   const [reportOpen, setReportOpen] = useState(false);
+  const [legendOpen, setLegendOpen] = useState(false);
   const [focusedFlagId, setFocusedFlagId] = useState<string | null>(null);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [activeCategories, setActiveCategories] = useState<Set<FlagCategory>>(
@@ -198,6 +200,15 @@ export default function MapScreen() {
                   : `${flags.length} flag${flags.length === 1 ? '' : 's'} nearby`}
             </Text>
           </View>
+          <Pressable
+            onPress={() => setLegendOpen(true)}
+            style={styles.iconBtn}
+            accessibilityRole="button"
+            accessibilityLabel="Map legend"
+            accessibilityHint="Opens a guide explaining flag categories and severity"
+          >
+            <Text style={styles.iconText}>?</Text>
+          </Pressable>
           <Pressable
             onPress={() => setFiltersOpen((v) => !v)}
             style={[
@@ -376,6 +387,11 @@ export default function MapScreen() {
         location={location}
         onClose={() => setReportOpen(false)}
         onCreated={refreshFlags}
+      />
+
+      <LegendModal
+        visible={legendOpen}
+        onClose={() => setLegendOpen(false)}
       />
     </View>
   );
