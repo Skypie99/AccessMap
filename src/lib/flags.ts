@@ -93,6 +93,13 @@ export async function updateFlagStatus(flagId: string, status: FlagStatus) {
   return data as FlagRow;
 }
 
+// RLS allows delete only when user_id = auth.uid(), so the caller does not
+// need to re-check ownership — Supabase will reject any other user's row.
+export async function deleteFlag(flagId: string) {
+  const { error } = await supabase.from('flags').delete().eq('id', flagId);
+  if (error) throw error;
+}
+
 export const CATEGORY_LABELS: Record<FlagCategory, string> = {
   no_ramp: 'No ramp',
   broken_sidewalk: 'Broken sidewalk',

@@ -21,6 +21,9 @@ import {
 import type { FlagRow, FlagStatus } from '@/types/database';
 import type { RootTabParamList } from '@/navigation/RootNavigator';
 import { severityColor } from './ReportFlagModal';
+import FlagDetailModal, {
+  type DetailAction,
+} from '@/components/FlagDetailModal';
 
 export default function TasksScreen() {
   const navigation =
@@ -30,6 +33,7 @@ export default function TasksScreen() {
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [flash, setFlash] = useState<string | null>(null);
+  const [selectedFlag, setSelectedFlag] = useState<FlagRow | null>(null);
 
   // Track the flash-banner timer in a ref so we can cancel it on unmount or
   // when a new flash arrives — otherwise leaving the tab mid-flash triggers
@@ -83,19 +87,17 @@ export default function TasksScreen() {
   // Actor gets the actor bonus (2 verify / 5 resolve) ONLY when actor != reporter.
   // So if you triage your own flag, you earn the reporter bonus only — keep this
   // mapping in sync with the trigger if the values ever change.
-  const setStatus = async (id: string, status: FlagStatus, isOwn: boolean) => {
-    setBusyId(id);
-    try {
-      await updateFlagStatus(id, status);
+  const applyStatusChange = useCallback(
+    (updated: FlagRow, action: DetailAction, isOwn: boolean) => {
       // Drop resolved/rejected from the list locally; keep verified visible.
       setFlags((prev) =>
-        status === 'verified'
-          ? prev.map((f) => (f.id === id ? { ...f, status } : f))
-          : prev.filter((f) => f.id !== id),
+        action === 'verify'
+          ? prev.map((f) => (f.id === updated.id ? updated : f))
+          : prev.filter((f) => f.id !== updated.id),
       );
-      if (status === 'verified') {
+      if (action === 'verify') {
         showFlash(isOwn ? 'Verified! +5 points' : 'Verified! +2 points');
-      } else if (status === 'resolved') {
+      } else if (action === 'resolve') {
         showFlash(isOwn ? 'Resolved! +10 points' : 'Resolved! +5 points');
       }
       // Re-fetch in the background to reconcile with whatever the server
@@ -103,11 +105,38 @@ export default function TasksScreen() {
       // Fire-and-forget — the optimistic update already handled the instant
       // feedback.
       refresh();
+    },
+    [refresh, showFlash],
+  );
+
+  const setStatus = async (id: string, status: FlagStatus, isOwn: boolean) => {
+    setBusyId(id);
+    try {
+      const updated = await updateFlagStatus(id, status);
+      const action: DetailAction =
+        status === 'verified'
+          ? 'verify'
+          : status === 'resolved'
+            ? 'resolve'
+            : 'reject';
+      applyStatusChange(updated, action, isOwn);
     } catch (e: any) {
       Alert.alert('Could not update flag', e?.message ?? 'Unknown error.');
     } finally {
       setBusyId(null);
     }
+  };
+
+  const handleViewOnMap = (target: FlagRow) => {
+    navigation.navigate('Map', {
+      focusFlag: { id: target.id, lat: target.lat, lng: target.lng },
+      ts: Date.now(),
+    });
+  };
+
+  const handleDeleted = (deletedId: string) => {
+    setFlags((prev) => prev.filter((f) => f.id !== deletedId));
+    showFlash('Flag deleted');
   };
 
   if (loading && flags.length === 0) {
@@ -146,15 +175,9 @@ export default function TasksScreen() {
       renderItem={({ item }) => {
         const isBusy = busyId === item.id;
         const isOwn = item.user_id === user?.id;
-        const goToOnMap = () => {
-          navigation.navigate('Map', {
-            focusFlag: { id: item.id, lat: item.lat, lng: item.lng },
-            ts: Date.now(),
-          });
-        };
         return (
           <Pressable
-            onPress={goToOnMap}
+            onPress={() => handleViewOnMap(item)}
             style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
             accessibilityRole="button"
             accessibilityLabel={`Show ${CATEGORY_LABELS[item.category]} on the map`}
@@ -222,10 +245,29 @@ export default function TasksScreen() {
               >
                 <Text style={styles.rejectText}>Reject</Text>
               </Pressable>
+              <Pressable
+                disabled={isBusy}
+                onPress={() => setSelectedFlag(item)}
+                style={[styles.actionBtn, styles.detailsBtn]}
+                accessibilityRole="button"
+                accessibilityLabel="View flag details"
+                accessibilityHint="Opens a screen with the full report, photo, and more actions"
+                accessibilityState={{ disabled: isBusy }}
+              >
+                <Text style={styles.detailsText}>Details</Text>
+              </Pressable>
             </View>
           </Pressable>
         );
       }}
+      />
+      <FlagDetailModal
+        visible={selectedFlag !== null}
+        flag={selectedFlag}
+        onClose={() => setSelectedFlag(null)}
+        onChanged={applyStatusChange}
+        onDeleted={handleDeleted}
+        onViewOnMap={handleViewOnMap}
       />
     </View>
   );
@@ -296,7 +338,7 @@ const styles = StyleSheet.create({
   cardDesc: { fontSize: 14, color: '#222' },
   cardMeta: { fontSize: 12, color: '#666' },
   cardHint: { fontSize: 11, color: '#999', fontStyle: 'italic' },
-  cardActions: { flexDirection: 'row', gap: 8, marginTop: 4 },
+  cardActions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 4 },
   actionBtn: {
     paddingHorizontal: 12,
     paddingVertical: 8,
@@ -308,4 +350,10 @@ const styles = StyleSheet.create({
   resolveText: { color: '#fff', fontWeight: '600', fontSize: 13 },
   rejectBtn: { backgroundColor: '#eef1f5' },
   rejectText: { color: '#333', fontWeight: '600', fontSize: 13 },
+  detailsBtn: {
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: '#2f80ed',
+  },
+  detailsText: { color: '#2f80ed', fontWeight: '600', fontSize: 13 },
 });
