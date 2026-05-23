@@ -10,6 +10,11 @@ import React, {
 import { AccessibilityInfo } from 'react-native';
 import { errorMessage } from './errors';
 import { DEFAULT_STATUSES, listFlags } from './flags';
+import {
+  type FlagRealtimePayload,
+  mergeFlagRealtimePayload,
+} from './flagsRealtime';
+import { supabase } from './supabase';
 import type { FlagRow, FlagStatus } from '@/types/database';
 
 type FlagsContextValue = {
@@ -90,6 +95,34 @@ export function FlagsProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (error) AccessibilityInfo.announceForAccessibility(error);
   }, [error]);
+
+  // Realtime: stays quiet until `supabase/realtime.sql` is applied (adds
+  // public.flags to the supabase_realtime publication). Subscribing ahead
+  // of time is safe — no events fire, no errors. Merges deltas through
+  // the pure helper so it stays in lockstep with the active statuses
+  // filter (a row whose status moves out of the filter is removed).
+  useEffect(() => {
+    const channel = supabase
+      .channel('public-flags')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'flags' },
+        (raw) => {
+          const evt = {
+            eventType: raw.eventType,
+            new: raw.new,
+            old: raw.old,
+          } as FlagRealtimePayload;
+          setFlags((prev) =>
+            mergeFlagRealtimePayload(prev, evt, statusesRef.current),
+          );
+        },
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
 
   const patchFlag = useCallback((id: string, patch: Partial<FlagRow>) => {
     setFlags((prev) => prev.map((f) => (f.id === id ? { ...f, ...patch } : f)));
