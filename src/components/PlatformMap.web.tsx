@@ -1,5 +1,5 @@
 import 'leaflet/dist/leaflet.css';
-import React, { forwardRef, useImperativeHandle, useRef } from 'react';
+import React, { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
 import { MapContainer, Marker, Popup, TileLayer } from 'react-leaflet';
 import L, { Map as LeafletMap, Marker as LeafletMarker } from 'leaflet';
 import { CATEGORY_LABELS } from '@/lib/flags';
@@ -65,6 +65,15 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(
   function PlatformMap({ initialRegion, flags, focusedFlagId }, ref) {
     const mapInstance = useRef<LeafletMap | null>(null);
     const markerRefs = useRef<Record<string, LeafletMarker | null>>({});
+
+    // See PlatformMap.tsx for why we prune: ref callbacks leave null entries
+    // behind when markers unmount; without pruning, the dict grows forever.
+    useEffect(() => {
+      const valid = new Set(flags.map((f) => f.id));
+      for (const id of Object.keys(markerRefs.current)) {
+        if (!valid.has(id)) delete markerRefs.current[id];
+      }
+    }, [flags]);
 
     useImperativeHandle(
       ref,
