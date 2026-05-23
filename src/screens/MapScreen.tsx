@@ -407,50 +407,62 @@ export default function MapScreen() {
                   : `${flags.length} flag${flags.length === 1 ? '' : 's'} nearby`}
             </Text>
           </View>
-          <Pressable
-            onPress={() => setLegendOpen(true)}
-            style={styles.iconBtn}
-            accessibilityRole="button"
-            accessibilityLabel="Map legend"
-            accessibilityHint="Opens a guide explaining flag categories and severity"
-          >
-            <Text style={styles.iconText}>?</Text>
-          </Pressable>
-          <Pressable
-            onPress={() => setFiltersOpen((v) => !v)}
-            style={[
-              styles.iconBtn,
-              (filtersOpen || filtersActive) && styles.iconBtnActive,
-            ]}
-            accessibilityRole="button"
-            accessibilityLabel="Toggle filters"
-            accessibilityState={{ expanded: filtersOpen }}
-          >
-            <Text
-              style={[
-                styles.iconText,
-                (filtersOpen || filtersActive) && styles.iconTextActive,
-              ]}
+          {/*
+            actionBar groups the icon buttons into one connected surface so
+            they feel like a single tool tray instead of four free-floating
+            circles. The container carries the shadow + background; each
+            inner button drops its own shadow so the row reads as one
+            object with internal segments.
+          */}
+          <View style={styles.actionBar}>
+            <Pressable
+              onPress={() => setLegendOpen(true)}
+              style={styles.actionBtn}
+              accessibilityRole="button"
+              accessibilityLabel="Map legend"
+              accessibilityHint="Opens a guide explaining flag categories and severity"
             >
-              ⌕
-            </Text>
-          </Pressable>
-          <Pressable
-            onPress={refreshFlags}
-            style={styles.iconBtn}
-            accessibilityRole="button"
-            accessibilityLabel="Refresh flags"
-          >
-            <Text style={styles.iconText}>⟳</Text>
-          </Pressable>
-          <Pressable
-            onPress={requestLocation}
-            style={styles.iconBtn}
-            accessibilityRole="button"
-            accessibilityLabel="Recenter on me"
-          >
-            <Text style={styles.iconText}>◎</Text>
-          </Pressable>
+              <Text style={styles.iconText}>?</Text>
+            </Pressable>
+            <View style={styles.actionDivider} accessibilityElementsHidden />
+            <Pressable
+              onPress={() => setFiltersOpen((v) => !v)}
+              style={[
+                styles.actionBtn,
+                (filtersOpen || filtersActive) && styles.actionBtnActive,
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel="Toggle filters"
+              accessibilityState={{ expanded: filtersOpen }}
+            >
+              <Text
+                style={[
+                  styles.iconText,
+                  (filtersOpen || filtersActive) && styles.iconTextActive,
+                ]}
+              >
+                ⌕
+              </Text>
+            </Pressable>
+            <View style={styles.actionDivider} accessibilityElementsHidden />
+            <Pressable
+              onPress={refreshFlags}
+              style={styles.actionBtn}
+              accessibilityRole="button"
+              accessibilityLabel="Refresh flags"
+            >
+              <Text style={styles.iconText}>⟳</Text>
+            </Pressable>
+            <View style={styles.actionDivider} accessibilityElementsHidden />
+            <Pressable
+              onPress={requestLocation}
+              style={styles.actionBtn}
+              accessibilityRole="button"
+              accessibilityLabel="Recenter on me"
+            >
+              <Text style={styles.iconText}>◎</Text>
+            </Pressable>
+          </View>
         </View>
 
         {filtersOpen && (
@@ -850,6 +862,38 @@ const styles = StyleSheet.create({
   iconText: { fontSize: 18, color: '#2f80ed', fontWeight: '700' },
   iconBtnActive: { backgroundColor: '#2f80ed' },
   iconTextActive: { color: '#fff' },
+  // Grouped action bar — wraps the icon buttons in one elevated white
+  // surface with thin internal dividers so they read as a single
+  // connected tool tray instead of four free-floating circles. Replaces
+  // the cheap "scattered buttons" look the user called out.
+  actionBar: {
+    flexDirection: 'row',
+    backgroundColor: 'rgba(255,255,255,0.97)',
+    borderRadius: 999,
+    paddingHorizontal: 4,
+    paddingVertical: 2,
+    alignItems: 'center',
+    // Slightly deeper shadow than the individual iconBtns it replaced,
+    // so the merged surface still feels lifted.
+    shadowColor: '#000',
+    shadowOpacity: 0.14,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 4,
+  },
+  actionBtn: {
+    width: 36,
+    height: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 18,
+  },
+  actionBtnActive: { backgroundColor: '#2f80ed' },
+  actionDivider: {
+    width: 1,
+    height: 18,
+    backgroundColor: '#e5e5e5',
+  },
   filterPanel: {
     marginTop: 8,
     backgroundColor: 'rgba(255,255,255,0.97)',
