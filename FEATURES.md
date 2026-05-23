@@ -18,14 +18,14 @@ they land on `main`.
   `supercluster` (react-leaflet has no native primitive). Adds two
   runtime deps — DECISIONS FOR SKY. Detailed plan in
   `qa-reports/qa-2026-05-22.md` P4.
-- **Realtime flag updates.** Subscribe to Supabase realtime channel for
-  `public.flags` so a flag created/triaged on one device appears on
-  others without a manual refresh. The publication SQL is committed
-  as [`supabase/realtime.sql`](supabase/realtime.sql) with the team's
-  privacy + RLS analysis + rollback inline. **Sky: run that file in
-  the Supabase dashboard SQL editor when ready** (one button-press,
-  idempotent). Then a small extension to `FlagsProvider` merges
-  incoming row deltas.
+- **Realtime flag updates — client side shipped on
+  `feat/realtime-flag-updates-2026-05-23` (unmerged).** `FlagsProvider`
+  subscribes to `public.flags` and merges incoming INSERT/UPDATE/DELETE
+  deltas through a pure helper (`src/lib/flagsRealtime.ts`, 11 unit
+  tests). Stays quiet until **Sky runs
+  [`supabase/realtime.sql`](supabase/realtime.sql)** in the Supabase
+  dashboard SQL editor — one button-press, idempotent. Once that lands,
+  flags created/triaged on one device appear on others without a refresh.
 
 ## Next (this month)
 
