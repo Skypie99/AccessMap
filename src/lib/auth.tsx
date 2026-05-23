@@ -19,10 +19,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session);
-      setLoading(false);
-    });
+    // Always flip `loading` off — even if getSession rejects (offline at
+    // launch, Supabase unreachable, JWT decode error). Otherwise the auth
+    // gate sits on a blank screen forever. Session stays null on failure,
+    // so the gate falls through to SignInScreen.
+    (async () => {
+      try {
+        const { data } = await supabase.auth.getSession();
+        setSession(data.session);
+      } catch (err) {
+        console.warn('[auth] getSession failed:', err);
+      } finally {
+        setLoading(false);
+      }
+    })();
 
     const { data: subscription } = supabase.auth.onAuthStateChange((_event, next) => {
       setSession(next);
