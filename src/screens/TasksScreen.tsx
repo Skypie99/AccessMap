@@ -13,9 +13,16 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { useAuth } from '@/lib/auth';
+import {
+  formatDistance,
+  formatWalkingEta,
+  haversineKm,
+  type LatLng,
+} from '@/lib/distance';
 import { errorMessage } from '@/lib/errors';
 import { CATEGORY_LABELS, severityColor, updateFlagStatus } from '@/lib/flags';
 import { useFlags } from '@/lib/flagsStore';
+import { useUserLocation } from '@/lib/location';
 import type { FlagRow, FlagStatus } from '@/types/database';
 import type { RootTabParamList } from '@/navigation/RootNavigator';
 import FlagDetailModal, {
@@ -44,6 +51,10 @@ export default function TasksScreen() {
     () => providerFlags.filter((f) => TRIAGE_STATUSES.includes(f.status)),
     [providerFlags],
   );
+  // One-shot location fetch so each card can show "0.3 km · 4 min walk".
+  // Graceful degrade: if the user denies permission (or we error) we just
+  // render the card without distance — see FlagCard below.
+  const { location: userLocation } = useUserLocation();
   const [busyId, setBusyId] = useState<string | null>(null);
   const [flash, setFlash] = useState<string | null>(null);
   const [selectedFlag, setSelectedFlag] = useState<FlagRow | null>(null);
@@ -215,6 +226,7 @@ export default function TasksScreen() {
             flag={item}
             isBusy={busyId === item.id}
             isOwn={item.user_id === userId}
+            userLocation={userLocation}
             onPress={handleViewOnMap}
             onSetStatus={setStatus}
             onShowDetails={showDetails}
@@ -237,6 +249,8 @@ interface FlagCardProps {
   flag: FlagRow;
   isBusy: boolean;
   isOwn: boolean;
+  /** Current user position, or null when unknown / permission denied. */
+  userLocation: LatLng | null;
   onPress: (flag: FlagRow) => void;
   onSetStatus: (id: string, status: FlagStatus, isOwn: boolean) => void;
   onShowDetails: (flag: FlagRow) => void;
@@ -245,14 +259,27 @@ interface FlagCardProps {
 // React.memo so a single triage action (which flips busyId on the parent)
 // only re-renders the card that's actually busy — not every visible card.
 // At hundreds of rows this is the difference between snappy and laggy.
+// The userLocation prop is stable across renders (one-shot fetch), so it
+// doesn't disturb memoization in practice.
 const FlagCard = memo(function FlagCard({
   flag,
   isBusy,
   isOwn,
+  userLocation,
   onPress,
   onSetStatus,
   onShowDetails,
 }: FlagCardProps) {
+  // Compute distance + ETA once per card per location change. Without the
+  // memo this would recompute on every parent state flip (busyId, flash).
+  const distanceInfo = useMemo(() => {
+    if (!userLocation) return null;
+    const km = haversineKm(userLocation, { lat: flag.lat, lng: flag.lng });
+    return {
+      label: formatDistance(km),
+      eta: formatWalkingEta(km),
+    };
+  }, [userLocation, flag.lat, flag.lng]);
   return (
     <Pressable
       onPress={() => onPress(flag)}
@@ -285,7 +312,11 @@ const FlagCard = memo(function FlagCard({
             <Text style={styles.cardDesc}>{flag.description}</Text>
           ) : null}
           <Text style={styles.cardMeta}>
-            Severity {flag.severity} • {flag.lat.toFixed(4)}, {flag.lng.toFixed(4)}
+            {`Severity ${flag.severity}` +
+              (distanceInfo
+                ? ` • ${distanceInfo.label} · ${distanceInfo.eta}`
+                : '') +
+              ` • ${flag.lat.toFixed(4)}, ${flag.lng.toFixed(4)}`}
           </Text>
           <Text style={styles.cardHint}>tap to view on map</Text>
         </View>

@@ -21,6 +21,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import * as Location from 'expo-location';
 import type { LatLng } from './distance';
+import { errorMessage } from './errors';
 
 export interface UserLocationState {
   location: LatLng | null;
@@ -68,9 +69,9 @@ export function useUserLocation(): UserLocationState {
       });
       if (!mountedRef.current) return;
       setLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
-    } catch (e: any) {
+    } catch (e: unknown) {
       if (mountedRef.current) {
-        setError(e?.message ?? 'Could not get location.');
+        setError(errorMessage(e, 'Could not get location.'));
         setLocation(null);
       }
     } finally {
