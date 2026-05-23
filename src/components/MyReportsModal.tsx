@@ -11,8 +11,14 @@ import {
   View,
 } from 'react-native';
 import { useAuth } from '@/lib/auth';
-import { CATEGORY_LABELS, listFlagsByUser, severityColor } from '@/lib/flags';
-import type { FlagRow, FlagStatus } from '@/types/database';
+import {
+  CATEGORY_LABELS,
+  listFlagsByUser,
+  severityColor,
+  STATUS_COLORS,
+  STATUS_LABELS,
+} from '@/lib/flags';
+import type { FlagRow } from '@/types/database';
 
 interface Props {
   visible: boolean;
@@ -22,22 +28,6 @@ interface Props {
   // is changed or deleted in FlagDetailModal so the list stays in sync.
   refreshKey?: number;
 }
-
-const STATUS_LABEL: Record<FlagStatus, string> = {
-  open: 'Open',
-  verified: 'Verified',
-  resolved: 'Resolved',
-  rejected: 'Rejected',
-};
-
-// Same palette as FlagDetailModal — tinted backgrounds with darker
-// foreground text keep contrast above WCAG AA 4.5:1.
-const STATUS_COLORS: Record<FlagStatus, { bg: string; fg: string }> = {
-  open: { bg: '#fdebd0', fg: '#8a4b00' },
-  verified: { bg: '#d6e6f9', fg: '#1c4f99' },
-  resolved: { bg: '#d4ecdb', fg: '#1b6b34' },
-  rejected: { bg: '#e5e5e5', fg: '#3a3a3a' },
-};
 
 export default function MyReportsModal({
   visible,
@@ -93,7 +83,7 @@ export default function MyReportsModal({
     });
     const a11yLabel =
       `${CATEGORY_LABELS[item.category]}, severity ${item.severity} of 5, ` +
-      `status ${STATUS_LABEL[item.status]}, reported ${dateLabel}` +
+      `status ${STATUS_LABELS[item.status]}, reported ${dateLabel}` +
       (item.description ? `. Note: ${item.description}` : '');
 
     return (
@@ -122,7 +112,7 @@ export default function MyReportsModal({
             style={[styles.statusBadge, { backgroundColor: statusPalette.bg }]}
           >
             <Text style={[styles.statusBadgeText, { color: statusPalette.fg }]}>
-              {STATUS_LABEL[item.status]}
+              {STATUS_LABELS[item.status]}
             </Text>
           </View>
         </View>

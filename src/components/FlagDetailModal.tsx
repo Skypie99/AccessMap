@@ -15,6 +15,8 @@ import {
   CATEGORY_LABELS,
   deleteFlag,
   severityColor,
+  STATUS_COLORS,
+  STATUS_LABELS,
   updateFlagStatus,
 } from '@/lib/flags';
 import type { FlagRow, FlagStatus } from '@/types/database';
@@ -31,22 +33,6 @@ interface Props {
   onDeleted: (deletedId: string) => void;
   onViewOnMap: (flag: FlagRow) => void;
 }
-
-const STATUS_LABEL: Record<FlagStatus, string> = {
-  open: 'Open',
-  verified: 'Verified',
-  resolved: 'Resolved',
-  rejected: 'Rejected',
-};
-
-// Badge palettes are tinted backgrounds with darker foreground text so the
-// foreground/background contrast stays above WCAG AA 4.5:1.
-const STATUS_COLORS: Record<FlagStatus, { bg: string; fg: string }> = {
-  open: { bg: '#fdebd0', fg: '#8a4b00' },
-  verified: { bg: '#d6e6f9', fg: '#1c4f99' },
-  resolved: { bg: '#d4ecdb', fg: '#1b6b34' },
-  rejected: { bg: '#e5e5e5', fg: '#3a3a3a' },
-};
 
 export default function FlagDetailModal({
   visible,
@@ -200,10 +186,10 @@ export default function FlagDetailModal({
                   { backgroundColor: statusPalette.bg },
                 ]}
                 accessible
-                accessibilityLabel={`Status: ${STATUS_LABEL[status]}`}
+                accessibilityLabel={`Status: ${STATUS_LABELS[status]}`}
               >
                 <Text style={[styles.statusBadgeText, { color: statusPalette.fg }]}>
-                  {STATUS_LABEL[status]}
+                  {STATUS_LABELS[status]}
                 </Text>
               </View>
             </View>

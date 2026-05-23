@@ -212,6 +212,17 @@ export const STATUS_LABELS: Record<FlagStatus, string> = {
   rejected: 'Rejected',
 };
 
+// Tinted-background + darker-foreground palette for the status badges.
+// Kept here so the badge looks identical wherever it appears (FlagDetailModal,
+// MyReportsModal, future surfaces). Each pair clears WCAG AA 4.5:1 between
+// `fg` and `bg`, so they're safe to drop into any badge component.
+export const STATUS_COLORS: Record<FlagStatus, { bg: string; fg: string }> = {
+  open: { bg: '#fdebd0', fg: '#8a4b00' },
+  verified: { bg: '#d6e6f9', fg: '#1c4f99' },
+  resolved: { bg: '#d4ecdb', fg: '#1b6b34' },
+  rejected: { bg: '#e5e5e5', fg: '#3a3a3a' },
+};
+
 // Order shown in the Map filter and elsewhere — chronological lifecycle.
 export const STATUS_ORDER: FlagStatus[] = [
   'open',
