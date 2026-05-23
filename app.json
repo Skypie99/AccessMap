@@ -34,10 +34,6 @@
           "locationAlwaysAndWhenInUsePermission": "AccessMap uses your location to show nearby accessibility flags and to attach your location when you report a new flag."
         }
       ]
-    ],
-    "extra": {
-      "supabaseUrl": "",
-      "supabaseAnonKey": ""
-    }
+    ]
   }
 }
