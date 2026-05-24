@@ -20,6 +20,7 @@ import {
   Text,
   TextInput,
   View,
+  type ViewStyle,
 } from 'react-native';
 import { decorativeProps } from '@/lib/accessibility';
 import { color, font, radius, spacing } from '@/theme';
@@ -31,6 +32,8 @@ export interface SearchInputRowProps {
   placeholder?: string;
   autoFocus?: boolean;
   accessibilityLabel?: string;
+  /** Override styles on the outer wrapper (e.g. margin, width). */
+  wrapStyle?: ViewStyle;
 }
 
 export default function SearchInputRow({
@@ -40,9 +43,10 @@ export default function SearchInputRow({
   placeholder = 'Search…',
   autoFocus = false,
   accessibilityLabel = 'Search',
+  wrapStyle,
 }: SearchInputRowProps) {
   return (
-    <View style={styles.searchWrap}>
+    <View style={[styles.searchWrap, wrapStyle]}>
       {/* Decorative magnifier — hidden from screen readers */}
       <Text style={styles.searchGlyph} {...decorativeProps}>
         🔎
@@ -88,7 +92,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
-    marginHorizontal: spacing.xl,
+    // No outer horizontal margin here — callers supply via wrapStyle.
+    // HelpModal needs spacing.xl; NearbyFlagsModal wants 0 (full-bleed row).
     marginBottom: spacing.sm,
     paddingHorizontal: spacing.md,
     backgroundColor: color.surfaceSoft,

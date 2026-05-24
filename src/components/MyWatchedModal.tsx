@@ -184,7 +184,7 @@ export default function MyWatchedModal({
           <View
             style={styles.resolvedAccent}
             accessibilityElementsHidden
-            importantForAccessibility="no"
+            importantForAccessibility="no-hide-descendants"
           />
         )}
 

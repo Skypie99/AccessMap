@@ -87,10 +87,17 @@ export default function TasksScreen() {
   // flags. Persisted device-wide via AsyncStorage so the preference survives
   // app restarts. Hydrated from disk in an effect (same pattern as sortMode).
   const [mineOnly, setMineOnly] = useState(false);
+  // Guard: chips are disabled until the stored value has loaded. Without this,
+  // a tap before hydration completes would be overwritten by the effect's
+  // setMineOnly(saved) call, silently reverting the user's choice.
+  const [mineOnlyHydrated, setMineOnlyHydrated] = useState(false);
   useEffect(() => {
     let cancelled = false;
     void loadScope().then((saved) => {
-      if (!cancelled) setMineOnly(saved);
+      if (!cancelled) {
+        setMineOnly(saved);
+        setMineOnlyHydrated(true);
+      }
     });
     return () => {
       cancelled = true;
@@ -505,10 +512,11 @@ export default function TasksScreen() {
         <View style={styles.mineToggleRow}>
           <Pressable
             onPress={() => handleScopeChange(false)}
+            disabled={!mineOnlyHydrated}
             style={[styles.mineChip, !mineOnly && styles.mineChipActive]}
             accessibilityRole="button"
             accessibilityLabel="Show all flags"
-            accessibilityState={{ selected: !mineOnly }}
+            accessibilityState={{ selected: !mineOnly, disabled: !mineOnlyHydrated }}
           >
             <Text style={[styles.mineChipText, !mineOnly && styles.mineChipTextActive]}>
               All
@@ -516,10 +524,11 @@ export default function TasksScreen() {
           </Pressable>
           <Pressable
             onPress={() => handleScopeChange(true)}
+            disabled={!mineOnlyHydrated}
             style={[styles.mineChip, mineOnly && styles.mineChipActive]}
             accessibilityRole="button"
             accessibilityLabel="Show only my flags"
-            accessibilityState={{ selected: mineOnly }}
+            accessibilityState={{ selected: mineOnly, disabled: !mineOnlyHydrated }}
           >
             <Text style={[styles.mineChipText, mineOnly && styles.mineChipTextActive]}>
               Mine

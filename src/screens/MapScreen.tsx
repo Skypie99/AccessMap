@@ -1105,6 +1105,7 @@ export default function MapScreen() {
                           <Text
                             accessible={false}
                             importantForAccessibility="no-hide-descendants"
+                            accessibilityElementsHidden
                           >
                             {'★ '}
                           </Text>

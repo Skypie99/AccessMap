@@ -142,6 +142,7 @@ export default function HelpModal({ visible, onClose }: Props) {
             onClear={() => setQuery('')}
             placeholder="Search…"
             accessibilityLabel="Search FAQ"
+            wrapStyle={{ marginHorizontal: 20 }}
           />
 
           <ScrollView
