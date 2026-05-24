@@ -45,7 +45,7 @@ import ActivityFeedModal from '@/components/ActivityFeedModal';
 import UpdateBanner from '@/components/UpdateBanner';
 import { diffUpdates, loadLastSeen, markAllSeen } from '@/lib/flagUpdates';
 import { loadWatched } from '@/lib/watchedFlags';
-import { EMPTY_STREAK, tickVisit, type StreakState } from '@/lib/streak';
+import { EMPTY_STREAK, loadStreak, tickVisit, type StreakState } from '@/lib/streak';
 import {
   computeAchievements,
   countEarned,
@@ -132,6 +132,12 @@ export default function ProfileScreen() {
   // Visit streak — ticked once per focus per local day. Display in the
   // hero next to points. Gracefully shows nothing until the first tick
   // resolves so we don't briefly flash a "0 day streak" on launch.
+  //
+  // QA E6: seeded from disk via a separate loadStreak() effect BEFORE
+  // tickVisit completes, so the achievements derivation has a real
+  // longestStreak on first paint instead of EMPTY_STREAK's 0. Without
+  // this, the Achievements count would flash "3/13" then pop to "5/13"
+  // once tickVisit's longer await chain resolved.
   const [streak, setStreak] = useState<StreakState>(EMPTY_STREAK);
   // Tracks which list modal was the "parent" of the currently-open
   // FlagDetailModal so handleDetailClose can reopen the right one.
@@ -275,6 +281,24 @@ export default function ProfileScreen() {
     }
   }, [user]);
 
+  // Seed the streak from disk as soon as the user is known. Runs once
+  // per user-id change. Cheap (single AsyncStorage read), and the result
+  // becomes the baseline for the achievements derivation so we don't
+  // flash "0 day streak" on first render.
+  useEffect(() => {
+    if (!user) {
+      setStreak(EMPTY_STREAK);
+      return;
+    }
+    let cancelled = false;
+    void loadStreak(user.id).then((seed) => {
+      if (!cancelled && mountedRef.current) setStreak(seed);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
+
   const refreshStreak = useCallback(async () => {
     if (!user) {
       setStreak(EMPTY_STREAK);
@@ -285,8 +309,7 @@ export default function ProfileScreen() {
       if (mountedRef.current) setStreak(next);
     } catch {
       // Best-effort. Streak is decorative — silently fall through to
-      // EMPTY_STREAK so the hero doesn't show stale numbers.
-      if (mountedRef.current) setStreak(EMPTY_STREAK);
+      // the last seeded value (or EMPTY_STREAK if we never loaded).
     }
   }, [user]);
 
