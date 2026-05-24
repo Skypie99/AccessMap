@@ -98,20 +98,26 @@ export default function NotificationPrefsModal({
   }, [visible, load]);
 
   const handleToggle = useCallback(
-    async (prefKey: keyof NotificationPrefs, value: boolean) => {
+    (prefKey: keyof NotificationPrefs, value: boolean) => {
       if (!user) return;
-      // Optimistic UI — set state immediately, persist in the background.
-      const next: NotificationPrefs = { ...prefs, [prefKey]: value };
-      setPrefs(next);
-      try {
-        await savePrefs(user.id, next);
-        onPrefsChanged?.();
-      } catch {
-        // Best-effort. The UI shows the intended state; on next focus
-        // the persisted value will reconcile (or remain the default).
-      }
+      // Functional update — read `prev` from React's queue, not the
+      // closure's `prefs` snapshot. Without this, two Switch taps fired
+      // sub-frame both see the same stale `prefs`, and the second write
+      // silently clobbers the first key on disk. QA Pass-1 #1 / Pass-3 #2.
+      setPrefs((prev) => {
+        const next: NotificationPrefs = { ...prev, [prefKey]: value };
+        // Fire-and-forget persist. Optimistic UI already shows `next`.
+        // On error the helper logs a warn; next focus reconciles.
+        void savePrefs(user.id, next).then(
+          () => onPrefsChanged?.(),
+          () => {
+            /* swallowed — savePrefs already warned */
+          },
+        );
+        return next;
+      });
     },
-    [user, prefs, onPrefsChanged],
+    [user, onPrefsChanged],
   );
 
   return (
@@ -165,12 +171,14 @@ export default function NotificationPrefsModal({
                 const palette = STATUS_COLORS[status];
                 const value = prefs[prefKey];
                 return (
-                  <View
-                    key={prefKey}
-                    style={styles.row}
-                    accessible={true}
-                    accessibilityLabel={`${STATUS_LABELS[status]} updates: ${value ? 'on' : 'off'}. ${description}`}
-                  >
+                  // NOTE: do NOT add `accessible={true}` here. The row
+                  // contains an interactive <Switch>; collapsing children
+                  // with a parent label would steal focus from the Switch
+                  // and make it unreachable to screen readers. QA Pass-2 #4.
+                  // Instead, the Switch carries its own rich label + state,
+                  // and the two Text rows above remain individually
+                  // discoverable for users who scan the row.
+                  <View key={prefKey} style={styles.row}>
                     <View
                       style={[styles.statusBadge, { backgroundColor: palette.bg }]}
                       accessibilityElementsHidden
@@ -189,7 +197,13 @@ export default function NotificationPrefsModal({
                     <Switch
                       value={value}
                       onValueChange={(v) => handleToggle(prefKey, v)}
-                      accessibilityLabel={`Toggle ${STATUS_LABELS[status]} notifications`}
+                      accessibilityRole="switch"
+                      accessibilityLabel={`Notify on ${STATUS_LABELS[status]}`}
+                      accessibilityHint={description}
+                      // Explicit state — RN's Switch usually reports its
+                      // own value, but pairing it with accessibilityState
+                      // is the documented contract (QA Pass-2 #5).
+                      accessibilityState={{ checked: value }}
                     />
                   </View>
                 );
