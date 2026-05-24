@@ -432,3 +432,63 @@ const item = ([...prev] as T[])[0] ?? null;
 // Option B: Array.from + destructure with fallback
 const [item = null] = [...prev];
 ```
+
+## 2026-05-23 — useMemo for client-side sort/filter over the same state slice
+
+When a list needs multiple sort/filter modes (sort by newest/oldest/severity,
+filter by category) and the data is already loaded in state, compute the
+derived list with useMemo rather than a second setState. This avoids a
+re-render cycle (setX → re-render → reads sortedX) and keeps the code
+path flat: one render computes the final array, FlatList receives it
+directly. The source state stays clean and untouched.
+
+Pattern used in MyReportsModal (sort by newest/oldest/severity),
+NearbyFlagsModal (filter by category), and TasksScreen (mine/all toggle).
+
+## 2026-05-23 — Absolute-positioned accent bars inside Pressable rows
+
+A colored left-edge accent bar on a list row is a clean "status" signal
+without needing extra layout children. Recipe:
+
+```tsx
+// In renderItem:
+{isResolved && (
+  <View style={styles.accentBar}
+    accessibilityElementsHidden importantForAccessibility="no" />
+)}
+
+// Style:
+accentBar: {
+  position: 'absolute', left: 0, top: 0, bottom: 0,
+  width: 3, backgroundColor: '#27ae60',
+  borderTopLeftRadius: 2, borderBottomLeftRadius: 2,
+},
+```
+
+The bar is hidden from the accessibility tree (the a11yLabel already conveys
+the status). No `overflow: 'hidden'` needed on the parent row — the bar
+sits at position 0 and stays within the row bounds naturally.
+
+## 2026-05-23 — accessibilityLiveRegion="polite" for inline selection feedback
+
+When a UI control updates a text hint in the same view (e.g. a severity
+picker that shows the description of the selected level), add
+`accessibilityLiveRegion="polite"` to the hint Text. This causes VoiceOver /
+TalkBack to announce the new value after the user taps the control, without
+interrupting any ongoing speech. Used in ReportFlagModal's severity hint.
+
+## 2026-05-23 — Category filter chips: show only categories present in data
+
+In NearbyFlagsModal, category filter chips are computed from the actual flag
+data rather than the full CATEGORY_ORDER. This avoids showing chips for
+categories with zero results, which is confusing. Pattern:
+
+```ts
+const presentCategories = useMemo<FlagCategory[]>(() => {
+  const seen = new Set(flags.map((f) => f.category));
+  return CATEGORY_ORDER.filter((c) => seen.has(c));
+}, [flags]);
+```
+
+Chips only appear when `presentCategories.length > 1` — no point filtering
+a list that already has only one category.
