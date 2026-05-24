@@ -120,7 +120,11 @@ function parsePreset(raw: unknown): FilterPreset | null {
  * other 19.
  *
  * Also enforces FILTER_PRESETS_MAX on read so a hand-edited / over-cap
- * storage payload can't leak into the UI larger than the cap.
+ * storage payload can't leak into the UI larger than the cap. When the
+ * stored payload is over cap, the OLDEST entries (front of the list, since
+ * addPreset always appends) are dropped — matches addPreset's cap behavior
+ * so the add and load paths are symmetric. Quinn flagged the previous
+ * asymmetry (load kept oldest, add dropped oldest) as a consistency bug.
  */
 function parsePresetsBlob(raw: string): FilterPreset[] {
   let parsed: unknown;
@@ -135,8 +139,11 @@ function parsePresetsBlob(raw: string): FilterPreset[] {
     const parsedEntry = parsePreset(entry);
     if (parsedEntry) {
       out.push(parsedEntry);
-      if (out.length >= FILTER_PRESETS_MAX) break;
     }
+  }
+  if (out.length > FILTER_PRESETS_MAX) {
+    // Drop from the front — oldest first, mirroring addPreset.
+    return out.slice(out.length - FILTER_PRESETS_MAX);
   }
   return out;
 }

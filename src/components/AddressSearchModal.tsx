@@ -41,7 +41,7 @@ const DEBOUNCE_MS = 350;
  *  - The Map's overlay doesn't compete with the search input for vertical
  *    real estate when the user isn't searching.
  *  - Mirrors the existing modal patterns (ReportFlagModal, FeedbackModal,
- *    AboutModal) so the app feels consistent.
+ *    AboutScreen) so the app feels consistent.
  */
 export default function AddressSearchModal({
   visible,

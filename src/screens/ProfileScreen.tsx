@@ -15,6 +15,7 @@ import {
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { useAuth } from '@/lib/auth';
+import { confirm } from '@/lib/confirm';
 import { errorMessage } from '@/lib/errors';
 import { signOut, supabase } from '@/lib/supabase';
 import { updateUserProfile } from '@/lib/users';
@@ -43,7 +44,7 @@ import MyWatchedModal from '@/components/MyWatchedModal';
 import FlagDetailModal, {
   type DetailAction,
 } from '@/components/FlagDetailModal';
-import AboutModal from '@/components/AboutModal';
+import AboutScreen from '@/screens/AboutScreen';
 import MyFeedbackModal from '@/components/MyFeedbackModal';
 import HelpModal from '@/components/HelpModal';
 import ChangelogModal from '@/components/ChangelogModal';
@@ -469,23 +470,20 @@ export default function ProfileScreen() {
     [user, defaultTab],
   );
 
-  const handleShowIntroAgain = useCallback(() => {
+  const handleShowIntroAgain = useCallback(async () => {
     if (!user) return;
-    Alert.alert(
+    // confirm() works on web (Alert.alert is a no-op there). Not strictly
+    // destructive — no data loss — but it IS a confirm flow and would
+    // silently do nothing on web without the helper.
+    const ok = await confirm(
       'Show intro again?',
       'The 3-card introduction will appear the next time you sign in on this device.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Reset',
-          onPress: async () => {
-            await clearOnboardingSeen(user.id);
-            AccessibilityInfo.announceForAccessibility(
-              'Intro reset. You will see it again on next sign in.',
-            );
-          },
-        },
-      ],
+      'Reset',
+    );
+    if (!ok) return;
+    await clearOnboardingSeen(user.id);
+    AccessibilityInfo.announceForAccessibility(
+      'Intro reset. You will see it again on next sign in.',
     );
   }, [user]);
 
@@ -1181,7 +1179,7 @@ export default function ProfileScreen() {
         onViewOnMap={handleViewOnMap}
       />
 
-      <AboutModal
+      <AboutScreen
         visible={aboutOpen}
         onClose={() => setAboutOpen(false)}
       />
@@ -1227,7 +1225,7 @@ export default function ProfileScreen() {
 
       {/* T4: Reputation-tier explainer. Inline (not a separate file)
           because it's tiny — header + 4 tier rows + a one-line "X to
-          next tier" copy. Matches the visual pattern of AboutModal:
+          next tier" copy. Matches the visual pattern of AboutScreen:
           full-screen Modal with translucent backdrop and a rounded
           card. `accessibilityViewIsModal` on iOS hides the underlying
           screen from SR while open. */}
@@ -1450,7 +1448,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#1b4373',
   },
-  // T4: Tier-explainer modal. Mirrors AboutModal's translucent backdrop
+  // T4: Tier-explainer modal. Mirrors AboutScreen's translucent backdrop
   // and rounded card; lives inline here because it's small and
   // tightly coupled to the pill above.
   tierBackdrop: {

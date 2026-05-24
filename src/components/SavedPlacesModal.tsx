@@ -25,6 +25,7 @@ import {
   View,
 } from 'react-native';
 import { useAuth } from '@/lib/auth';
+import { confirm } from '@/lib/confirm';
 import { errorMessage } from '@/lib/errors';
 import {
   addPlace,
@@ -136,29 +137,25 @@ export default function SavedPlacesModal({
   }, [user, currentLocation, nameInput, onListChanged]);
 
   const handleRemove = useCallback(
-    (place: SavedPlace) => {
+    async (place: SavedPlace) => {
       if (!user) return;
-      Alert.alert(
+      // confirm() falls back to window.confirm on web — Alert.alert is a
+      // no-op there and would silently swallow the destructive prompt.
+      const ok = await confirm(
         'Remove this place?',
         `"${place.name}" will be removed from your saved places.`,
-        [
-          { text: 'Cancel', style: 'cancel' },
-          {
-            text: 'Remove',
-            style: 'destructive',
-            onPress: async () => {
-              // Optimistic: drop from state immediately.
-              setPlaces((prev) => prev.filter((p) => p.id !== place.id));
-              try {
-                await removePlace(user.id, place.id);
-                onListChanged?.();
-              } catch {
-                // Best-effort. UI already updated.
-              }
-            },
-          },
-        ],
+        'Remove',
+        true,
       );
+      if (!ok) return;
+      // Optimistic: drop from state immediately.
+      setPlaces((prev) => prev.filter((p) => p.id !== place.id));
+      try {
+        await removePlace(user.id, place.id);
+        onListChanged?.();
+      } catch {
+        // Best-effort. UI already updated.
+      }
     },
     [user, onListChanged],
   );

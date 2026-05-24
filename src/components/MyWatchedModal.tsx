@@ -16,7 +16,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   FlatList,
   Modal,
   Pressable,
@@ -25,6 +24,7 @@ import {
   View,
 } from 'react-native';
 import { useAuth } from '@/lib/auth';
+import { confirm } from '@/lib/confirm';
 import { errorMessage } from '@/lib/errors';
 import {
   CATEGORY_LABELS,
@@ -130,31 +130,27 @@ export default function MyWatchedModal({
     [user],
   );
 
-  const handleClearAll = useCallback(() => {
+  const handleClearAll = useCallback(async () => {
     if (!user || flags.length === 0) return;
-    Alert.alert(
+    // confirm() falls back to window.confirm on web — Alert.alert is a
+    // no-op there and would silently swallow the destructive prompt.
+    const ok = await confirm(
       'Clear all watched flags?',
       `You're watching ${flags.length} ${flags.length === 1 ? 'flag' : 'flags'}. This will remove them all from your watched list.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Clear all',
-          style: 'destructive',
-          onPress: async () => {
-            // Optimistic: clear local state immediately so the list empties
-            // without waiting for the AsyncStorage write.
-            setFlags([]);
-            setWatchedIds([]);
-            try {
-              await clearWatched(user.id);
-            } catch {
-              // Rare AsyncStorage failure — the UI already reflects the
-              // cleared state; a reload will re-sync if needed.
-            }
-          },
-        },
-      ],
+      'Clear all',
+      true,
     );
+    if (!ok) return;
+    // Optimistic: clear local state immediately so the list empties
+    // without waiting for the AsyncStorage write.
+    setFlags([]);
+    setWatchedIds([]);
+    try {
+      await clearWatched(user.id);
+    } catch {
+      // Rare AsyncStorage failure — the UI already reflects the
+      // cleared state; a reload will re-sync if needed.
+    }
   }, [user, flags.length]);
 
   const missingCount = watchedIds.length - flags.length;
