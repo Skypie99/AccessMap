@@ -1,9 +1,11 @@
 import 'react-native-gesture-handler';
 import React, { useCallback, useEffect, useState } from 'react';
+import { View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider, useAuth } from '@/lib/auth';
 import { hasSeenOnboarding, markOnboardingSeen } from '@/lib/onboarding';
+import { loadOnboarded, setOnboarded } from '@/lib/onboardingState';
 import { getDefaultTab, type DefaultTab } from '@/lib/preferences';
 import {
   fetchCurrentPoints,
@@ -11,6 +13,7 @@ import {
   setLastSeenPoints,
 } from '@/lib/points';
 import FlashBanner from '@/components/FlashBanner';
+import OnboardingCards from '@/components/OnboardingCards';
 import RootNavigator from '@/navigation/RootNavigator';
 import SignInScreen from '@/screens/SignInScreen';
 import OnboardingModal from '@/screens/OnboardingModal';
@@ -106,11 +109,57 @@ function Gate() {
   return session ? <SignedInArea /> : <SignInScreen />;
 }
 
+/**
+ * Device-wide first-launch gate. Runs OUTSIDE the auth flow so a user
+ * who hasn't signed up yet still gets a quick pitch for what the app
+ * does. Uses src/lib/onboardingState.ts (key `@accessmap/onboarded_v1`).
+ *
+ * While we're reading AsyncStorage we render an empty surface — typical
+ * read time is ~50ms, so this almost always flashes by. If onboarded is
+ * `null` we render nothing rather than blink the real app for one frame.
+ *
+ * Distinct from per-user `OnboardingModal` inside `SignedInArea`, which
+ * stays exactly as it was.
+ */
+function FirstLaunchGate({ children }: { children: React.ReactNode }) {
+  // null = still loading, true = onboarded, false = needs the intro
+  const [onboarded, setOnboardedState] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    loadOnboarded().then((seen) => {
+      if (!cancelled) setOnboardedState(seen);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const handleDone = useCallback(() => {
+    // Fire-and-forget; the worst case on storage error is one extra showing.
+    setOnboarded();
+    setOnboardedState(true);
+  }, []);
+
+  if (onboarded === null) {
+    // Loading — neutral surface so we don't flash the sign-in screen.
+    return <View style={{ flex: 1, backgroundColor: '#fff' }} />;
+  }
+
+  if (!onboarded) {
+    return <OnboardingCards onDone={handleDone} />;
+  }
+
+  return <>{children}</>;
+}
+
 export default function App() {
   return (
     <SafeAreaProvider>
       <AuthProvider>
-        <Gate />
+        <FirstLaunchGate>
+          <Gate />
+        </FirstLaunchGate>
         <StatusBar style="auto" />
       </AuthProvider>
     </SafeAreaProvider>
