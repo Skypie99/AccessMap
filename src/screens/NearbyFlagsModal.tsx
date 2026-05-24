@@ -8,6 +8,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from 'react-native';
 import { CATEGORY_LABELS, CATEGORY_ORDER, severityColor } from '@/lib/flags';
@@ -18,6 +19,7 @@ import {
   speakDistance,
   type LatLng,
 } from '@/lib/distance';
+import { searchFlags } from '@/lib/flagSearch';
 import type { FlagCategory, FlagRow } from '@/types/database';
 
 interface Props {
@@ -37,6 +39,10 @@ export default function NearbyFlagsModal({
 }: Props) {
   // null = show all categories; set to a FlagCategory to narrow the list.
   const [filterCat, setFilterCat] = useState<FlagCategory | null>(null);
+  // Free-text search across description / category label / status label.
+  // Empty = pass-through. Applied after the category filter so the chip
+  // counts still reflect category totals (not search-narrowed counts).
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Sort by distance ascending when we have a location; otherwise keep the
   // existing order (which is most-recent-first from listFlags).
@@ -59,10 +65,17 @@ export default function NearbyFlagsModal({
   }, [flags]);
 
   // Apply the active category filter on top of the distance-sorted list.
-  const displayFlags = useMemo(() => {
+  const categoryFiltered = useMemo(() => {
     if (filterCat === null) return sortedFlags;
     return sortedFlags.filter((f) => f.category === filterCat);
   }, [sortedFlags, filterCat]);
+
+  // Apply the search query on top of the category-filtered list. Pure
+  // function — no extra fetch.
+  const displayFlags = useMemo(
+    () => searchFlags(categoryFiltered, searchQuery),
+    [categoryFiltered, searchQuery],
+  );
 
   return (
     <Modal
@@ -91,6 +104,53 @@ export default function NearbyFlagsModal({
               Allow location access to sort flags by distance. Showing the
               most recent first.
             </Text>
+          </View>
+        )}
+
+        {/* Search bar — shown only when the list has at least two flags
+            (one-flag lists don't benefit from search). Pure client-side
+            filter via searchFlags(). */}
+        {flags.length >= 2 && (
+          <View style={styles.searchWrap}>
+            <Text
+              style={styles.searchGlyph}
+              accessibilityElementsHidden
+              importantForAccessibility="no-hide-descendants"
+            >
+              🔎
+            </Text>
+            <TextInput
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              placeholder="Search descriptions, categories, status…"
+              placeholderTextColor="#999"
+              style={styles.searchInput}
+              autoCorrect={false}
+              autoCapitalize="none"
+              returnKeyType="search"
+              accessibilityLabel="Search flags"
+              accessibilityHint="Filters the list to flags whose description, category, or status contains your search words"
+            />
+            {searchQuery.length > 0 && (
+              <Pressable
+                onPress={() => setSearchQuery('')}
+                hitSlop={10}
+                style={({ pressed }) => [
+                  styles.searchClear,
+                  pressed && styles.searchClearPressed,
+                ]}
+                accessibilityRole="button"
+                accessibilityLabel="Clear search"
+              >
+                <Text
+                  style={styles.searchClearText}
+                  accessibilityElementsHidden
+                  importantForAccessibility="no-hide-descendants"
+                >
+                  ✕
+                </Text>
+              </Pressable>
+            )}
           </View>
         )}
 
@@ -146,12 +206,18 @@ export default function NearbyFlagsModal({
           ListEmptyComponent={
             <View style={styles.emptyInner}>
               <Text style={styles.emptyTitle}>
-                {filterCat !== null ? 'No matching flags' : 'No flags to show'}
+                {searchQuery.trim().length > 0
+                  ? 'No matches'
+                  : filterCat !== null
+                    ? 'No matching flags'
+                    : 'No flags to show'}
               </Text>
               <Text style={styles.emptySub}>
-                {filterCat !== null
-                  ? `No ${CATEGORY_LABELS[filterCat]} reports in this area. Try a different category.`
-                  : "When community members report accessibility issues, they'll appear here sorted by distance."}
+                {searchQuery.trim().length > 0
+                  ? `No flags match "${searchQuery.trim()}". Try a shorter or different query.`
+                  : filterCat !== null
+                    ? `No ${CATEGORY_LABELS[filterCat]} reports in this area. Try a different category.`
+                    : "When community members report accessibility issues, they'll appear here sorted by distance."}
               </Text>
             </View>
           }
@@ -302,6 +368,36 @@ const styles = StyleSheet.create({
   cardBodyText: { flex: 1, gap: 4, justifyContent: 'center' },
   cardDesc: { fontSize: 14, color: '#222' },
   cardMeta: { fontSize: 12, color: '#666' },
+  // Search bar — sits between the location notice and the category
+  // chip row. Magnifier glyph + free-text input + optional clear ✕.
+  searchWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#eef1f5',
+  },
+  searchGlyph: { fontSize: 16 },
+  searchInput: {
+    flex: 1,
+    fontSize: 15,
+    color: '#222',
+    paddingVertical: 8,
+    minHeight: 44,
+  },
+  searchClear: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#eef1f5',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  searchClearPressed: { backgroundColor: '#dde3eb', opacity: 0.85 },
+  searchClearText: { fontSize: 13, color: '#555', fontWeight: '700' },
   chipBar: {
     flexDirection: 'row',
     gap: 8,
