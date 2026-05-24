@@ -10,6 +10,30 @@ they land on `main`.
 
 ---
 
+## Parked on branches (2026-05-23) — awaiting Sky merge
+
+These are committed on independent branches off `main`, all gates
+green. See `qa-reports/cycle-r7-r9-handoff-2026-05-23.md` for details.
+
+- **R7 — Tasks screen sort options** (`feat/tasks-sort-2026-05-23` ·
+  `e4e7cb6`). Segmented control above the SectionList: Newest / Oldest
+  / Severity. Sort applies WITHIN each section so the Open-first
+  grouping stays intact. Persisted device-wide via
+  `@accessmap/tasks_sort_v1`. +18 tests.
+- **R8 — Map long-press to drop a flag**
+  (`feat/map-longpress-drop-2026-05-23` · `0bc2b81`). Long-press anywhere
+  on the map → confirm prompt → ReportFlagModal opens with that coord
+  pre-filled. Native: `MapView.onLongPress`. Web: Leaflet `contextmenu`
+  (right-click on desktop, long-touch on mobile browsers). Existing
+  GPS-FAB flow untouched.
+- **R9 — Profile nearest-unresolved jump**
+  (`feat/profile-nearest-flag-jump-2026-05-23` · `1f31d06`). New
+  pale-blue card on Profile (between streak hero + status breakdown)
+  showing the nearest open/verified flag with category + severity +
+  distance. Tap → Map tab centered on that flag, callout open. Hidden
+  when no location or no open flags. New `src/lib/nearestFlag.ts` pure
+  derivation + 9 tests.
+
 ## Shipped 2026-05-23 evening (merge-on-done loop)
 
 - **What's New / Changelog modal.** New "What's New" row in Profile
