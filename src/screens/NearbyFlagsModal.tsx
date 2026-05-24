@@ -1,15 +1,16 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   FlatList,
   Image,
   Modal,
   Pressable,
   SafeAreaView,
+  ScrollView,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
-import { CATEGORY_LABELS, severityColor } from '@/lib/flags';
+import { CATEGORY_LABELS, CATEGORY_ORDER, severityColor } from '@/lib/flags';
 import { relativeTime } from '@/lib/relativeTime';
 import {
   formatDistance,
@@ -17,7 +18,7 @@ import {
   speakDistance,
   type LatLng,
 } from '@/lib/distance';
-import type { FlagRow } from '@/types/database';
+import type { FlagCategory, FlagRow } from '@/types/database';
 
 interface Props {
   visible: boolean;
@@ -34,6 +35,9 @@ export default function NearbyFlagsModal({
   onClose,
   onSelectFlag,
 }: Props) {
+  // null = show all categories; set to a FlagCategory to narrow the list.
+  const [filterCat, setFilterCat] = useState<FlagCategory | null>(null);
+
   // Sort by distance ascending when we have a location; otherwise keep the
   // existing order (which is most-recent-first from listFlags).
   const sortedFlags = useMemo(() => {
@@ -46,6 +50,19 @@ export default function NearbyFlagsModal({
       .sort((a, b) => a.d - b.d)
       .map(({ f }) => f);
   }, [flags, location]);
+
+  // Categories that actually appear in this list (preserves CATEGORY_ORDER
+  // ordering rather than insertion order).
+  const presentCategories = useMemo<FlagCategory[]>(() => {
+    const seen = new Set(flags.map((f) => f.category));
+    return CATEGORY_ORDER.filter((c) => seen.has(c));
+  }, [flags]);
+
+  // Apply the active category filter on top of the distance-sorted list.
+  const displayFlags = useMemo(() => {
+    if (filterCat === null) return sortedFlags;
+    return sortedFlags.filter((f) => f.category === filterCat);
+  }, [sortedFlags, filterCat]);
 
   return (
     <Modal
@@ -77,18 +94,64 @@ export default function NearbyFlagsModal({
           </View>
         )}
 
+        {/* Category filter chips — only shown when the list has flags in
+            more than one category, so there's something to filter. */}
+        {presentCategories.length > 1 && (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.chipBar}
+            accessibilityLabel="Filter by category"
+            accessibilityRole="tablist"
+          >
+            {/* "All" chip */}
+            <Pressable
+              onPress={() => setFilterCat(null)}
+              style={[styles.chip, filterCat === null && styles.chipActive]}
+              accessibilityRole="tab"
+              accessibilityLabel="Show all categories"
+              accessibilityState={{ selected: filterCat === null }}
+            >
+              <Text style={[styles.chipText, filterCat === null && styles.chipTextActive]}>
+                All ({flags.length})
+              </Text>
+            </Pressable>
+            {presentCategories.map((cat) => {
+              const active = filterCat === cat;
+              const count = flags.filter((f) => f.category === cat).length;
+              return (
+                <Pressable
+                  key={cat}
+                  onPress={() => setFilterCat(active ? null : cat)}
+                  style={[styles.chip, active && styles.chipActive]}
+                  accessibilityRole="tab"
+                  accessibilityLabel={`Filter by ${CATEGORY_LABELS[cat]}, ${count} ${count === 1 ? 'flag' : 'flags'}`}
+                  accessibilityState={{ selected: active }}
+                >
+                  <Text style={[styles.chipText, active && styles.chipTextActive]}>
+                    {CATEGORY_LABELS[cat]} ({count})
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+        )}
+
         <FlatList
-          data={sortedFlags}
+          data={displayFlags}
           keyExtractor={(f) => f.id}
           contentContainerStyle={
-            sortedFlags.length === 0 ? styles.emptyWrap : styles.list
+            displayFlags.length === 0 ? styles.emptyWrap : styles.list
           }
           ListEmptyComponent={
             <View style={styles.emptyInner}>
-              <Text style={styles.emptyTitle}>No flags to show</Text>
+              <Text style={styles.emptyTitle}>
+                {filterCat !== null ? 'No matching flags' : 'No flags to show'}
+              </Text>
               <Text style={styles.emptySub}>
-                When community members report accessibility issues, they'll
-                appear here sorted by distance.
+                {filterCat !== null
+                  ? `No ${CATEGORY_LABELS[filterCat]} reports in this area. Try a different category.`
+                  : "When community members report accessibility issues, they'll appear here sorted by distance."}
               </Text>
             </View>
           }
@@ -239,4 +302,25 @@ const styles = StyleSheet.create({
   cardBodyText: { flex: 1, gap: 4, justifyContent: 'center' },
   cardDesc: { fontSize: 14, color: '#222' },
   cardMeta: { fontSize: 12, color: '#666' },
+  chipBar: {
+    flexDirection: 'row',
+    gap: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#eef1f5',
+  },
+  chip: {
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 999,
+    backgroundColor: '#eef1f5',
+    minHeight: 34,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  chipActive: { backgroundColor: '#2f80ed' },
+  chipText: { fontSize: 13, fontWeight: '600', color: '#555' },
+  chipTextActive: { color: '#fff' },
 });
