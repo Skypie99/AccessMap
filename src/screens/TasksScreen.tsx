@@ -44,6 +44,7 @@ import {
   toggleId,
   type TaskSelectionState,
 } from '@/lib/taskSelection';
+import { loadScope, saveScope } from '@/lib/tasksScope';
 import type { FlagRow, FlagStatus } from '@/types/database';
 import type { RootTabParamList } from '@/navigation/RootNavigator';
 import FlagDetailModal, {
@@ -83,8 +84,23 @@ export default function TasksScreen() {
   );
 
   // "Mine only" toggle — when true, shows only the current user's submitted
-  // flags. Local session state — not persisted. Hidden when not signed in.
+  // flags. Persisted device-wide via AsyncStorage so the preference survives
+  // app restarts. Hydrated from disk in an effect (same pattern as sortMode).
   const [mineOnly, setMineOnly] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    void loadScope().then((saved) => {
+      if (!cancelled) setMineOnly(saved);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+  const handleScopeChange = useCallback((next: boolean) => {
+    setMineOnly(next);
+    // Fire-and-forget — saveScope fails-soft with a console.warn.
+    void saveScope(next);
+  }, []);
 
   // Min-severity threshold. 0 means "show all" (no filter applied); 2..5
   // means "show flags with severity >= N". Lets coordinators focus on the
@@ -488,7 +504,7 @@ export default function TasksScreen() {
       {userId && (
         <View style={styles.mineToggleRow}>
           <Pressable
-            onPress={() => setMineOnly(false)}
+            onPress={() => handleScopeChange(false)}
             style={[styles.mineChip, !mineOnly && styles.mineChipActive]}
             accessibilityRole="button"
             accessibilityLabel="Show all flags"
@@ -499,7 +515,7 @@ export default function TasksScreen() {
             </Text>
           </Pressable>
           <Pressable
-            onPress={() => setMineOnly(true)}
+            onPress={() => handleScopeChange(true)}
             style={[styles.mineChip, mineOnly && styles.mineChipActive]}
             accessibilityRole="button"
             accessibilityLabel="Show only my flags"
