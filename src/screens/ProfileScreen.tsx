@@ -328,6 +328,7 @@ export default function ProfileScreen() {
   const handleViewOnMap = (flag: FlagRow) => {
     setSelectedFlag(null);
     setReportsOpen(false);
+    setWatchedOpen(false);
     navigation.navigate('Map', {
       focusFlag: { id: flag.id, lat: flag.lat, lng: flag.lng },
       ts: Date.now(),
@@ -693,6 +694,7 @@ export default function ProfileScreen() {
         visible={reportsOpen}
         onClose={() => setReportsOpen(false)}
         onSelectFlag={handleReportsSelectFlag}
+        onViewOnMap={handleViewOnMap}
         refreshKey={reportsRefreshKey}
       />
 
@@ -700,6 +702,7 @@ export default function ProfileScreen() {
         visible={watchedOpen}
         onClose={() => setWatchedOpen(false)}
         onSelectFlag={handleWatchedSelectFlag}
+        onViewOnMap={handleViewOnMap}
         refreshKey={watchedRefreshKey}
       />
 
