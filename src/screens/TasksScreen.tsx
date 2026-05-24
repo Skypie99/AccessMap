@@ -11,7 +11,7 @@ import {
   Text,
   View,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { useAuth } from '@/lib/auth';
 import {
@@ -193,6 +193,19 @@ export default function TasksScreen() {
   const exitSelection = useCallback(() => {
     setSelection((s) => clearSelection(s));
   }, []);
+
+  // Clear selection on tab blur — without this, leaving Tasks mid-selection
+  // and coming back leaves the user staring at a stale selection bar with
+  // old ids (some of which may have been resolved/deleted in the meantime).
+  // Empty dep array on the inner callback because `setSelection` is stable
+  // and we only need it to fire once per focus cycle.
+  useFocusEffect(
+    useCallback(() => {
+      return () => {
+        setSelection((s) => clearSelection(s));
+      };
+    }, []),
+  );
 
   // Long-press anywhere on a card enters selection mode with that card
   // already picked. If we're already in selection mode, long-press just
@@ -589,9 +602,13 @@ export default function TasksScreen() {
       <SectionList
         sections={sections}
         keyExtractor={(f) => f.id}
-        contentContainerStyle={
-          sections.length === 0 ? styles.emptyContainer : styles.list
-        }
+        contentContainerStyle={[
+          sections.length === 0 ? styles.emptyContainer : styles.list,
+          // Reserve room for the floating bar so the last card doesn't sit
+          // under it. Using paddingBottom (cross-platform) instead of
+          // contentInset (iOS-only) — Android otherwise hides the last card.
+          selection.active && { paddingBottom: BULK_BAR_HEIGHT },
+        ]}
         stickySectionHeadersEnabled={false}
         refreshControl={
           <RefreshControl
@@ -642,83 +659,87 @@ export default function TasksScreen() {
             onShowDetails={showDetails}
           />
         )}
-        // Reserve room for the floating bar so the last card doesn't sit
-        // under it. Only padded when the bar is actually visible.
-        contentInset={selection.active ? { bottom: BULK_BAR_HEIGHT } : undefined}
       />
       {/* Floating bulk-action bar — appears at the bottom in selection
           mode. Positioned absolute so it overlays the SectionList rather
-          than reflowing it. Wrapped in a polite live region so the SR
-          treats label changes (count) as updates, not new pages. */}
+          than reflowing it. NOT wrapped in a live region — the count lives
+          in its own live-region Text above the buttons so SR re-announces
+          the count only (not every button label) when cards toggle. */}
       {selection.active && (
-        <View
-          style={styles.bulkBar}
-          accessibilityLiveRegion="polite"
-        >
-          <Pressable
-            onPress={() => { void runBulkAction('verify'); }}
-            disabled={bulkBusy || selectedOpenCount === 0}
-            style={({ pressed }) => [
-              styles.bulkBtn,
-              styles.bulkVerifyBtn,
-              (bulkBusy || selectedOpenCount === 0) && styles.bulkBtnDisabled,
-              pressed && !bulkBusy && selectedOpenCount > 0 && styles.bulkBtnPressed,
-            ]}
-            accessibilityRole="button"
-            accessibilityLabel={
-              selectedOpenCount === 0
-                ? 'Verify selected. No open flags selected.'
-                : `Verify ${selectedOpenCount} selected flag${selectedOpenCount === 1 ? '' : 's'}`
-            }
-            accessibilityState={{
-              disabled: bulkBusy || selectedOpenCount === 0,
-              busy: bulkBusy,
-            }}
+        <View style={styles.bulkBar}>
+          {/* The single source of truth for "how many are picked", spoken
+              by SR on every change. Buttons below are static labels so
+              they don't double-announce. */}
+          <Text
+            style={styles.bulkCountText}
+            accessibilityLiveRegion="polite"
           >
-            <Text style={styles.bulkBtnText}>
-              Verify ({selectedOpenCount})
-            </Text>
-          </Pressable>
-          <Pressable
-            onPress={() => { void runBulkAction('resolve'); }}
-            disabled={bulkBusy || selectionCount(selection) === 0}
-            style={({ pressed }) => [
-              styles.bulkBtn,
-              styles.bulkResolveBtn,
-              (bulkBusy || selectionCount(selection) === 0) && styles.bulkBtnDisabled,
-              pressed && !bulkBusy && selectionCount(selection) > 0 && styles.bulkBtnPressed,
-            ]}
-            accessibilityRole="button"
-            accessibilityLabel={
-              selectionCount(selection) === 0
-                ? 'Resolve selected. No flags selected.'
-                : `Resolve ${selectionCount(selection)} selected flag${selectionCount(selection) === 1 ? '' : 's'}`
-            }
-            accessibilityState={{
-              disabled: bulkBusy || selectionCount(selection) === 0,
-              busy: bulkBusy,
-            }}
-          >
-            <Text style={styles.bulkBtnText}>
-              Resolve ({selectionCount(selection)})
-            </Text>
-          </Pressable>
-          <Pressable
-            onPress={exitSelection}
-            disabled={bulkBusy}
-            style={({ pressed }) => [
-              styles.bulkBtn,
-              styles.bulkCancelBtn,
-              bulkBusy && styles.bulkBtnDisabled,
-              pressed && !bulkBusy && styles.bulkBtnPressed,
-            ]}
-            accessibilityRole="button"
-            accessibilityLabel="Cancel selection"
-            accessibilityHint="Exits selection mode without changing any flags"
-            accessibilityState={{ disabled: bulkBusy }}
-          >
-            <Text style={styles.bulkCancelText}>Cancel</Text>
-          </Pressable>
+            {`${selectionCount(selection)} selected`}
+          </Text>
+          <View style={styles.bulkButtonRow}>
+            <Pressable
+              onPress={() => { void runBulkAction('verify'); }}
+              disabled={bulkBusy || selectedOpenCount === 0}
+              style={({ pressed }) => [
+                styles.bulkBtn,
+                styles.bulkVerifyBtn,
+                (bulkBusy || selectedOpenCount === 0) && styles.bulkBtnDisabled,
+                pressed && !bulkBusy && selectedOpenCount > 0 && styles.bulkBtnPressed,
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel="Verify"
+              accessibilityHint={
+                selectedOpenCount === 0
+                  ? 'No open flags selected'
+                  : 'Marks each selected open flag as verified'
+              }
+              accessibilityState={{
+                disabled: bulkBusy || selectedOpenCount === 0,
+                busy: bulkBusy,
+              }}
+            >
+              <Text style={styles.bulkBtnText}>Verify</Text>
+            </Pressable>
+            <Pressable
+              onPress={() => { void runBulkAction('resolve'); }}
+              disabled={bulkBusy || selectionCount(selection) === 0}
+              style={({ pressed }) => [
+                styles.bulkBtn,
+                styles.bulkResolveBtn,
+                (bulkBusy || selectionCount(selection) === 0) && styles.bulkBtnDisabled,
+                pressed && !bulkBusy && selectionCount(selection) > 0 && styles.bulkBtnPressed,
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel="Resolve"
+              accessibilityHint={
+                selectionCount(selection) === 0
+                  ? 'No flags selected'
+                  : 'Marks each selected flag as resolved'
+              }
+              accessibilityState={{
+                disabled: bulkBusy || selectionCount(selection) === 0,
+                busy: bulkBusy,
+              }}
+            >
+              <Text style={styles.bulkBtnText}>Resolve</Text>
+            </Pressable>
+            <Pressable
+              onPress={exitSelection}
+              disabled={bulkBusy}
+              style={({ pressed }) => [
+                styles.bulkBtn,
+                styles.bulkCancelBtn,
+                bulkBusy && styles.bulkBtnDisabled,
+                pressed && !bulkBusy && styles.bulkBtnPressed,
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel="Cancel selection"
+              accessibilityHint="Exits selection mode without changing any flags"
+              accessibilityState={{ disabled: bulkBusy }}
+            >
+              <Text style={styles.bulkCancelText}>Cancel</Text>
+            </Pressable>
+          </View>
         </View>
       )}
       <FlagDetailModal
@@ -1168,7 +1189,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   selectEntryBtnPressed: { opacity: 0.7 },
-  selectEntryText: { color: '#2f80ed', fontWeight: '700', fontSize: 13 },
+  // 14pt + bold on white-tinted chip background — meets WCAG 1.4.3 AA for
+  // body text. Bumped from 13pt to clear the AA threshold against #eef1f5.
+  selectEntryText: { color: '#2f80ed', fontWeight: '700', fontSize: 14 },
   // Card selection visuals — a subtle tinted background + a 2px accent
   // border so a selected card pops without needing to recolor the photo
   // thumbnail or muddle the severity dot. Pairs with the checkmark in
@@ -1198,18 +1221,19 @@ const styles = StyleSheet.create({
     lineHeight: 16,
   },
   // Floating bulk-action bar — pinned to the bottom of the screen on top
-  // of the SectionList. paddingBottom includes a generous inset so it
-  // clears the iOS home indicator and Android nav bar without depending
-  // on react-native-safe-area-context (not in this project yet).
+  // of the SectionList. Column-laid so the live-region count Text sits
+  // above the row of action buttons. paddingBottom includes a generous
+  // inset so it clears the iOS home indicator and Android nav bar without
+  // depending on react-native-safe-area-context (not in this project yet).
   bulkBar: {
     position: 'absolute',
     left: 0,
     right: 0,
     bottom: 0,
-    flexDirection: 'row',
+    flexDirection: 'column',
     gap: 8,
     paddingHorizontal: 12,
-    paddingTop: 12,
+    paddingTop: 10,
     paddingBottom: 24,
     backgroundColor: '#fff',
     borderTopWidth: 1,
@@ -1220,6 +1244,16 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: -2 },
     elevation: 8,
   },
+  // The single SR live region for the bar — re-announces "N selected"
+  // when the count changes, without re-reading every button label.
+  // #2c3e50 on #fff ≈ 12.6:1.
+  bulkCountText: {
+    color: '#2c3e50',
+    fontSize: 14,
+    fontWeight: '700',
+    paddingHorizontal: 4,
+  },
+  bulkButtonRow: { flexDirection: 'row', gap: 8 },
   bulkBtn: {
     flexGrow: 1,
     flexBasis: 0,
@@ -1233,7 +1267,9 @@ const styles = StyleSheet.create({
   bulkBtnDisabled: { opacity: 0.45 },
   bulkBtnPressed: { opacity: 0.85 },
   bulkVerifyBtn: { backgroundColor: '#2f80ed' },
-  bulkResolveBtn: { backgroundColor: '#27ae60' },
+  // #1e8449 on white-text ≈ 7.0:1 — meets AAA for 14pt bold. Bumped from
+  // #27ae60 (~2.83:1, AA fail) to clear WCAG 1.4.3 AA + 1.4.11 non-text 3:1.
+  bulkResolveBtn: { backgroundColor: '#1e8449' },
   // Cancel uses the neutral chip palette so it doesn't compete for
   // attention with the primary actions.
   bulkCancelBtn: {
@@ -1241,7 +1277,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#cfd5de',
   },
-  bulkBtnText: { color: '#fff', fontWeight: '700', fontSize: 13 },
-  // #2c3e50 on #eef1f5 ≈ 11.0:1 — comfortably above AA.
-  bulkCancelText: { color: '#2c3e50', fontWeight: '700', fontSize: 13 },
+  // 14pt bold on the dark button fills — meets WCAG 1.4.3 AA for body text.
+  // Bumped from 13pt with the resolve-btn color change to clear AA.
+  bulkBtnText: { color: '#fff', fontWeight: '700', fontSize: 14 },
+  // #2c3e50 on #eef1f5 ≈ 11.0:1 — comfortably above AA. 14pt for parity.
+  bulkCancelText: { color: '#2c3e50', fontWeight: '700', fontSize: 14 },
 });
