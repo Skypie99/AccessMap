@@ -144,4 +144,37 @@ describe('filterMyReports', () => {
     // Flag c has null description but status="resolved" — still found.
     expect(filterMyReports(flags, 'resolved', labelOf).map((f) => f.id)).toEqual(['c']);
   });
+
+  // Negative test — pins the haystack down to exactly
+  // description + category label + status. Future field additions to FlagRow
+  // (or careless edits to filterMyReports) that leak id / user_id / lat / lng
+  // / severity into the searched text would let "search by lat" silently
+  // succeed — confusing for users and a privacy smell (user_id should never
+  // be searchable). This guards that contract.
+  it('does not match against severity, id, user_id, lat, or lng — only description+category+status', () => {
+    const singleFlag = [
+      makeFlag('unique-flag-uuid-12345', {
+        user_id: 'user-uuid-67890',
+        lat: 47.6062,
+        lng: -122.3321,
+        severity: 3,
+        category: 'no_ramp',
+        description: 'description-here',
+        status: 'open',
+      }),
+    ];
+
+    // Fields in the row but NOT in the searchable haystack must NOT match.
+    expect(filterMyReports(singleFlag, 'unique-flag-uuid', labelOf)).toEqual([]);
+    expect(filterMyReports(singleFlag, 'user-uuid', labelOf)).toEqual([]);
+    expect(filterMyReports(singleFlag, '47.6062', labelOf)).toEqual([]);
+    expect(filterMyReports(singleFlag, '-122', labelOf)).toEqual([]);
+    expect(filterMyReports(singleFlag, '3', labelOf)).toEqual([]); // severity
+
+    // Fields that ARE in the haystack must still match — proves the test
+    // isn't broken by stricter filtering.
+    expect(filterMyReports(singleFlag, 'description-here', labelOf)).toHaveLength(1);
+    expect(filterMyReports(singleFlag, 'no ramp', labelOf)).toHaveLength(1); // category label
+    expect(filterMyReports(singleFlag, 'open', labelOf)).toHaveLength(1); // status
+  });
 });

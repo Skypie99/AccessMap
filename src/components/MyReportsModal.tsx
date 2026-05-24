@@ -285,7 +285,10 @@ export default function MyReportsModal({
                 value={searchQuery}
                 onChangeText={setSearchQuery}
                 placeholder="Search your reports…"
-                placeholderTextColor="#999"
+                // WCAG AA: placeholder needs ≥ 4.5:1 against the tinted
+                // searchWrap background (#f7f9fc). #999 fails at 2.7:1.
+                // #5b6470 lands at ~5.8:1 — comfortably above the threshold.
+                placeholderTextColor="#5b6470"
                 style={styles.searchInput}
                 autoCorrect={false}
                 autoCapitalize="none"
@@ -441,7 +444,17 @@ export default function MyReportsModal({
               }
               ListEmptyComponent={
                 loadError ? null : flags.length > 0 && hasQuery ? (
-                  <View style={styles.emptyWrap}>
+                  // accessibilityLiveRegion="polite" on the wrapper makes
+                  // TalkBack announce "No matches. No reports match that
+                  // search." when the user types into the search field and
+                  // the list collapses to empty — otherwise the change is
+                  // silent and SR users have no feedback their query missed.
+                  // (iOS VoiceOver doesn't honor the prop but loses nothing
+                  // — it's a no-op there.)
+                  <View
+                    style={styles.emptyWrap}
+                    accessibilityLiveRegion="polite"
+                  >
                     <Text style={styles.emptyTitle}>No matches</Text>
                     <Text style={styles.emptyBody}>
                       No reports match that search.
