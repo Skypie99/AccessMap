@@ -146,8 +146,10 @@ export default function ActivityFeedModal({
               styles.sevDot,
               { backgroundColor: severityColor(item.severity) },
             ]}
+            // Severity is already in the row's a11yLabel; this badge is
+            // purely visual reinforcement. Hide on both platforms.
             accessibilityElementsHidden
-            importantForAccessibility="no"
+            importantForAccessibility="no-hide-descendants"
           >
             <Text style={styles.sevDotText}>{item.severity}</Text>
           </View>
@@ -366,10 +368,12 @@ const styles = StyleSheet.create({
   },
   filterChip: {
     paddingHorizontal: 14,
-    paddingVertical: 7,
+    paddingVertical: 10,
     borderRadius: 999,
     backgroundColor: '#eef1f5',
-    minHeight: 34,
+    // 44pt is the AccessMap touch-target baseline (Apple HIG / Android
+    // accessibility minimum) — critical for users with motor impairments.
+    minHeight: 44,
     alignItems: 'center',
     justifyContent: 'center',
   },
