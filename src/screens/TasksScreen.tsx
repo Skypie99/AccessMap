@@ -1,5 +1,6 @@
 import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
+  AccessibilityInfo,
   ActivityIndicator,
   Alert,
   Image,
@@ -19,6 +20,7 @@ import {
   haversineKm,
   type LatLng,
 } from '@/lib/distance';
+import { confirm } from '@/lib/confirm';
 import { errorMessage } from '@/lib/errors';
 import { CATEGORY_LABELS, severityColor, updateFlagStatus } from '@/lib/flags';
 import { relativeTime } from '@/lib/relativeTime';
@@ -33,6 +35,15 @@ import {
   sortFlags,
   type TasksSort,
 } from '@/lib/tasksSort';
+import {
+  EMPTY_SELECTION,
+  clearSelection,
+  count as selectionCount,
+  enterSelectionWith,
+  isSelected,
+  toggleId,
+  type TaskSelectionState,
+} from '@/lib/taskSelection';
 import type { FlagRow, FlagStatus } from '@/types/database';
 import type { RootTabParamList } from '@/navigation/RootNavigator';
 import FlagDetailModal, {
@@ -43,6 +54,11 @@ import FlagDetailModal, {
 // Map's filter, Tasks restricts the visible set to the actionable lifecycle
 // states (open → verified).
 const TRIAGE_STATUSES: FlagStatus[] = ['open', 'verified'];
+
+// Approximate height of the floating bulk-action bar including its safe-area
+// padding. Used to reserve list-bottom space so the last card isn't hidden
+// behind the bar in selection mode.
+const BULK_BAR_HEIGHT = 88;
 
 export default function TasksScreen() {
   const navigation =
@@ -134,6 +150,70 @@ export default function TasksScreen() {
   const [flash, setFlash] = useState<string | null>(null);
   const [selectedFlag, setSelectedFlag] = useState<FlagRow | null>(null);
 
+  // Bulk-select state — component-local on purpose. Switching tabs unmounts
+  // TasksScreen which resets the selection (matches the brief: "resets on
+  // tab change"). Pure helpers live in src/lib/taskSelection.ts.
+  const [selection, setSelection] = useState<TaskSelectionState>(
+    EMPTY_SELECTION,
+  );
+  // Tracks whether a bulk action is currently running so we can disable
+  // the floating bar's buttons and avoid double-submits.
+  const [bulkBusy, setBulkBusy] = useState(false);
+
+  // How many of the currently selected ids are still 'open'? Drives whether
+  // the "Verify N" button is enabled — verifying a flag that's already
+  // verified is a no-op and would just spend RTTs. Recomputed from the
+  // current displayFlags so a stale id (deleted, filtered) doesn't count.
+  const selectedOpenCount = useMemo(() => {
+    if (!selection.active || selection.selectedIds.length === 0) return 0;
+    let n = 0;
+    for (const id of selection.selectedIds) {
+      const flag = flags.find((f) => f.id === id);
+      if (flag && flag.status === 'open') n += 1;
+    }
+    return n;
+  }, [selection, flags]);
+
+  // Announce the selection bar's appearance once, when it first becomes
+  // visible. Skipping the announcement on every count change keeps SR
+  // chatter down — each card already announces its own checked/unchecked
+  // state via accessibilityState.
+  const announcedBarRef = useRef(false);
+  useEffect(() => {
+    if (selection.active && !announcedBarRef.current) {
+      announcedBarRef.current = true;
+      AccessibilityInfo.announceForAccessibility(
+        `Selection mode. ${selectionCount(selection)} selected.`,
+      );
+    } else if (!selection.active) {
+      announcedBarRef.current = false;
+    }
+  }, [selection]);
+
+  const exitSelection = useCallback(() => {
+    setSelection((s) => clearSelection(s));
+  }, []);
+
+  // Long-press anywhere on a card enters selection mode with that card
+  // already picked. If we're already in selection mode, long-press just
+  // toggles (mirrors the tap behavior so muscle memory works either way).
+  const handleCardLongPress = useCallback((flag: FlagRow) => {
+    setSelection((s) =>
+      s.active ? toggleId(s, flag.id) : enterSelectionWith(flag.id),
+    );
+  }, []);
+
+  // SR-accessible entry into selection mode — a button at the top of the
+  // screen because long-press is hard to discover (and hard to perform)
+  // with a screen reader. Starts the selection empty so SR users can pick
+  // cards via the checkbox role we wire up below.
+  const enterSelectionEmpty = useCallback(() => {
+    setSelection({ active: true, selectedIds: [] });
+    AccessibilityInfo.announceForAccessibility(
+      'Selection mode. Tap cards to select.',
+    );
+  }, []);
+
   // Track the flash-banner timer in a ref so we can cancel it on unmount or
   // when a new flash arrives — otherwise leaving the tab mid-flash triggers
   // a "setState on unmounted component" warning.
@@ -143,6 +223,83 @@ export default function TasksScreen() {
     setFlash(msg);
     flashTimer.current = setTimeout(() => setFlash(null), 2200);
   }, []);
+
+  // Run a bulk action (verify or resolve) across the current selection.
+  // Iterates and calls updateFlagStatus per id — keeps the code simple and
+  // matches the existing single-card flow's optimistic-then-refresh shape.
+  // Errors on individual rows surface as an Alert at the end with a count.
+  // Declared AFTER showFlash so the closure binds to its real value.
+  const runBulkAction = useCallback(
+    async (action: 'verify' | 'resolve') => {
+      const targetStatus: FlagStatus =
+        action === 'verify' ? 'verified' : 'resolved';
+      const ids = selection.selectedIds.slice();
+      // For 'verify' we skip anything not in 'open' (already-verified
+      // flags would be a no-op). For 'resolve' we accept both open + verified.
+      const targetIds = ids.filter((id) => {
+        const flag = flags.find((f) => f.id === id);
+        if (!flag) return false;
+        if (action === 'verify') return flag.status === 'open';
+        return flag.status === 'open' || flag.status === 'verified';
+      });
+      if (targetIds.length === 0) {
+        exitSelection();
+        return;
+      }
+      const verb = action === 'verify' ? 'Verify' : 'Resolve';
+      const ok = await confirm(
+        `${verb} ${targetIds.length} flag${targetIds.length === 1 ? '' : 's'}?`,
+        action === 'verify'
+          ? 'Marks each selected flag as verified.'
+          : 'Marks each selected flag as resolved.',
+        verb,
+        action === 'resolve',
+      );
+      if (!ok) return;
+
+      setBulkBusy(true);
+      let succeeded = 0;
+      const failures: string[] = [];
+      for (const id of targetIds) {
+        try {
+          const updated = await updateFlagStatus(id, targetStatus);
+          if (action === 'verify') {
+            // Verify keeps the flag visible (status becomes 'verified'),
+            // so patch the store with the new row.
+            patchFlag(id, { ...updated });
+          } else {
+            // Resolve removes it from the triage queue.
+            removeFlag(id);
+          }
+          succeeded += 1;
+        } catch (e) {
+          failures.push(errorMessage(e));
+        }
+      }
+      setBulkBusy(false);
+      // Reconcile with the server — covers the gap between our optimistic
+      // updates and the actual committed state (e.g. another user resolved
+      // one of the same flags). Fire-and-forget; the optimistic updates
+      // already handled instant feedback.
+      refresh().catch(() => {});
+
+      const past = action === 'verify' ? 'Verified' : 'Resolved';
+      if (succeeded > 0) {
+        showFlash(`${past} ${succeeded} flag${succeeded === 1 ? '' : 's'}`);
+        AccessibilityInfo.announceForAccessibility(
+          `${past} ${succeeded} flag${succeeded === 1 ? '' : 's'}.`,
+        );
+      }
+      if (failures.length > 0) {
+        Alert.alert(
+          `Could not ${action} ${failures.length} flag${failures.length === 1 ? '' : 's'}`,
+          failures[0] ?? 'Unknown error',
+        );
+      }
+      exitSelection();
+    },
+    [selection, flags, patchFlag, removeFlag, refresh, exitSelection, showFlash],
+  );
 
   useEffect(
     () => () => {
@@ -287,6 +444,28 @@ export default function TasksScreen() {
             {loading ? 'Retrying…' : errorBannerText}
           </Text>
         </Pressable>
+      )}
+      {/* Select-multiple entry — visible only when there's something to
+          select and we're not already in selection mode. Long-press on a
+          card does the same thing, but screen-reader users (and anyone
+          who doesn't know about long-press) need a discoverable button.
+          Renders above the other filter rows so it's the first focusable
+          control on the screen after the error banner. */}
+      {!selection.active && flags.length > 0 && (
+        <View style={styles.selectEntryRow}>
+          <Pressable
+            onPress={enterSelectionEmpty}
+            style={({ pressed }) => [
+              styles.selectEntryBtn,
+              pressed && styles.selectEntryBtnPressed,
+            ]}
+            accessibilityRole="button"
+            accessibilityLabel="Select multiple"
+            accessibilityHint="Enter selection mode to verify or resolve multiple flags at once"
+          >
+            <Text style={styles.selectEntryText}>Select multiple</Text>
+          </Pressable>
+        </View>
       )}
       {/* Mine-only toggle — shown only when signed in. A chip row that
           switches between "All flags" and "My flags" without opening the
@@ -446,12 +625,102 @@ export default function TasksScreen() {
             isBusy={busyId === item.id}
             isOwn={item.user_id === userId}
             userLocation={userLocation}
-            onPress={handleViewOnMap}
+            selectionActive={selection.active}
+            selected={isSelected(selection, item.id)}
+            onPress={(flag) => {
+              // In selection mode, a tap toggles membership instead of
+              // navigating away — matches the standard mobile pattern
+              // (mail apps, photo grids).
+              if (selection.active) {
+                setSelection((s) => toggleId(s, flag.id));
+              } else {
+                handleViewOnMap(flag);
+              }
+            }}
+            onLongPress={handleCardLongPress}
             onSetStatus={setStatus}
             onShowDetails={showDetails}
           />
         )}
+        // Reserve room for the floating bar so the last card doesn't sit
+        // under it. Only padded when the bar is actually visible.
+        contentInset={selection.active ? { bottom: BULK_BAR_HEIGHT } : undefined}
       />
+      {/* Floating bulk-action bar — appears at the bottom in selection
+          mode. Positioned absolute so it overlays the SectionList rather
+          than reflowing it. Wrapped in a polite live region so the SR
+          treats label changes (count) as updates, not new pages. */}
+      {selection.active && (
+        <View
+          style={styles.bulkBar}
+          accessibilityLiveRegion="polite"
+        >
+          <Pressable
+            onPress={() => { void runBulkAction('verify'); }}
+            disabled={bulkBusy || selectedOpenCount === 0}
+            style={({ pressed }) => [
+              styles.bulkBtn,
+              styles.bulkVerifyBtn,
+              (bulkBusy || selectedOpenCount === 0) && styles.bulkBtnDisabled,
+              pressed && !bulkBusy && selectedOpenCount > 0 && styles.bulkBtnPressed,
+            ]}
+            accessibilityRole="button"
+            accessibilityLabel={
+              selectedOpenCount === 0
+                ? 'Verify selected. No open flags selected.'
+                : `Verify ${selectedOpenCount} selected flag${selectedOpenCount === 1 ? '' : 's'}`
+            }
+            accessibilityState={{
+              disabled: bulkBusy || selectedOpenCount === 0,
+              busy: bulkBusy,
+            }}
+          >
+            <Text style={styles.bulkBtnText}>
+              Verify ({selectedOpenCount})
+            </Text>
+          </Pressable>
+          <Pressable
+            onPress={() => { void runBulkAction('resolve'); }}
+            disabled={bulkBusy || selectionCount(selection) === 0}
+            style={({ pressed }) => [
+              styles.bulkBtn,
+              styles.bulkResolveBtn,
+              (bulkBusy || selectionCount(selection) === 0) && styles.bulkBtnDisabled,
+              pressed && !bulkBusy && selectionCount(selection) > 0 && styles.bulkBtnPressed,
+            ]}
+            accessibilityRole="button"
+            accessibilityLabel={
+              selectionCount(selection) === 0
+                ? 'Resolve selected. No flags selected.'
+                : `Resolve ${selectionCount(selection)} selected flag${selectionCount(selection) === 1 ? '' : 's'}`
+            }
+            accessibilityState={{
+              disabled: bulkBusy || selectionCount(selection) === 0,
+              busy: bulkBusy,
+            }}
+          >
+            <Text style={styles.bulkBtnText}>
+              Resolve ({selectionCount(selection)})
+            </Text>
+          </Pressable>
+          <Pressable
+            onPress={exitSelection}
+            disabled={bulkBusy}
+            style={({ pressed }) => [
+              styles.bulkBtn,
+              styles.bulkCancelBtn,
+              bulkBusy && styles.bulkBtnDisabled,
+              pressed && !bulkBusy && styles.bulkBtnPressed,
+            ]}
+            accessibilityRole="button"
+            accessibilityLabel="Cancel selection"
+            accessibilityHint="Exits selection mode without changing any flags"
+            accessibilityState={{ disabled: bulkBusy }}
+          >
+            <Text style={styles.bulkCancelText}>Cancel</Text>
+          </Pressable>
+        </View>
+      )}
       <FlagDetailModal
         visible={selectedFlag !== null}
         flag={selectedFlag}
@@ -470,7 +739,13 @@ interface FlagCardProps {
   isOwn: boolean;
   /** Current user position, or null when unknown / permission denied. */
   userLocation: LatLng | null;
+  /** True when the screen is in bulk-select mode. Changes tap semantics. */
+  selectionActive: boolean;
+  /** True when this card is part of the current selection. */
+  selected: boolean;
   onPress: (flag: FlagRow) => void;
+  /** Long-press enters / extends selection. */
+  onLongPress: (flag: FlagRow) => void;
   onSetStatus: (id: string, status: FlagStatus, isOwn: boolean) => void;
   onShowDetails: (flag: FlagRow) => void;
 }
@@ -485,7 +760,10 @@ const FlagCard = memo(function FlagCard({
   isBusy,
   isOwn,
   userLocation,
+  selectionActive,
+  selected,
   onPress,
+  onLongPress,
   onSetStatus,
   onShowDetails,
 }: FlagCardProps) {
@@ -499,13 +777,35 @@ const FlagCard = memo(function FlagCard({
       eta: formatWalkingEta(km),
     };
   }, [userLocation, flag.lat, flag.lng]);
+  // In selection mode, switch the card's a11y role to "checkbox" so SR
+  // users hear "checked / not checked" instead of a generic button hint.
+  // Append the selection state to the existing label so the SR reads the
+  // category first (the meaningful bit) and the state at the end.
+  const baseLabel = `Show ${CATEGORY_LABELS[flag.category]} on the map`;
+  const a11yLabel = selectionActive
+    ? `${CATEGORY_LABELS[flag.category]}. ${selected ? 'Selected.' : 'Not selected.'}`
+    : baseLabel;
   return (
     <Pressable
       onPress={() => onPress(flag)}
-      style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
-      accessibilityRole="button"
-      accessibilityLabel={`Show ${CATEGORY_LABELS[flag.category]} on the map`}
-      accessibilityHint="Opens the Map tab focused on this flag"
+      onLongPress={() => onLongPress(flag)}
+      style={({ pressed }) => [
+        styles.card,
+        selected && styles.cardSelected,
+        pressed && styles.cardPressed,
+      ]}
+      accessibilityRole={selectionActive ? 'checkbox' : 'button'}
+      accessibilityState={
+        selectionActive
+          ? { checked: selected, disabled: isBusy }
+          : { disabled: isBusy }
+      }
+      accessibilityLabel={a11yLabel}
+      accessibilityHint={
+        selectionActive
+          ? 'Toggles this flag in the selection'
+          : 'Opens the Map tab focused on this flag. Long-press to select multiple.'
+      }
     >
       <View style={styles.cardHeader}>
         <View
@@ -516,6 +816,24 @@ const FlagCard = memo(function FlagCard({
         />
         <Text style={styles.cardTitle}>{CATEGORY_LABELS[flag.category]}</Text>
         <Text style={styles.statusTag}>{flag.status}</Text>
+        {/* Checkmark indicator in the top-right corner. Hidden from SR
+            because the accessibilityState above already conveys the
+            checked/unchecked state — duplicating it would just read
+            "checked" twice. */}
+        {selectionActive && (
+          <View
+            style={[
+              styles.selectCheck,
+              selected && styles.selectCheckOn,
+            ]}
+            accessibilityElementsHidden
+            importantForAccessibility="no-hide-descendants"
+          >
+            {selected ? (
+              <Text style={styles.selectCheckMark}>✓</Text>
+            ) : null}
+          </View>
+        )}
       </View>
       <View style={styles.cardBody}>
         {flag.photo_url ? (
@@ -538,54 +856,66 @@ const FlagCard = memo(function FlagCard({
               ` • ${flag.lat.toFixed(4)}, ${flag.lng.toFixed(4)}` +
               ` • ${relativeTime(flag.created_at)}`}
           </Text>
-          <Text style={styles.cardHint}>tap to view on map</Text>
+          <Text style={styles.cardHint}>
+            {selectionActive
+              ? selected
+                ? 'tap to deselect'
+                : 'tap to select'
+              : 'tap to view on map'}
+          </Text>
         </View>
       </View>
-      <View style={styles.cardActions}>
-        {flag.status === 'open' && (
+      {/* Hide per-card action buttons during selection mode — the
+          floating bar handles bulk actions, and showing both would be
+          confusing (a tap on Verify here would still fire the single-
+          item flow, not the bulk one). */}
+      {!selectionActive && (
+        <View style={styles.cardActions}>
+          {flag.status === 'open' && (
+            <Pressable
+              disabled={isBusy}
+              onPress={() => onSetStatus(flag.id, 'verified', isOwn)}
+              style={[styles.actionBtn, styles.verifyBtn]}
+              accessibilityRole="button"
+              accessibilityLabel="Verify this flag"
+              accessibilityState={{ disabled: isBusy }}
+            >
+              <Text style={styles.verifyText}>Verify</Text>
+            </Pressable>
+          )}
           <Pressable
             disabled={isBusy}
-            onPress={() => onSetStatus(flag.id, 'verified', isOwn)}
-            style={[styles.actionBtn, styles.verifyBtn]}
+            onPress={() => onSetStatus(flag.id, 'resolved', isOwn)}
+            style={[styles.actionBtn, styles.resolveBtn]}
             accessibilityRole="button"
-            accessibilityLabel="Verify this flag"
+            accessibilityLabel="Mark this flag resolved"
             accessibilityState={{ disabled: isBusy }}
           >
-            <Text style={styles.verifyText}>Verify</Text>
+            <Text style={styles.resolveText}>Resolved</Text>
           </Pressable>
-        )}
-        <Pressable
-          disabled={isBusy}
-          onPress={() => onSetStatus(flag.id, 'resolved', isOwn)}
-          style={[styles.actionBtn, styles.resolveBtn]}
-          accessibilityRole="button"
-          accessibilityLabel="Mark this flag resolved"
-          accessibilityState={{ disabled: isBusy }}
-        >
-          <Text style={styles.resolveText}>Resolved</Text>
-        </Pressable>
-        <Pressable
-          disabled={isBusy}
-          onPress={() => onSetStatus(flag.id, 'rejected', isOwn)}
-          style={[styles.actionBtn, styles.rejectBtn]}
-          accessibilityRole="button"
-          accessibilityLabel="Reject this flag"
-          accessibilityState={{ disabled: isBusy }}
-        >
-          <Text style={styles.rejectText}>Reject</Text>
-        </Pressable>
-        <Pressable
-          disabled={isBusy}
-          onPress={() => onShowDetails(flag)}
-          style={[styles.actionBtn, styles.detailsBtn]}
-          accessibilityRole="button"
-          accessibilityLabel="View flag details"
-          accessibilityHint="Opens a screen with the full report, photo, and more actions"
-          accessibilityState={{ disabled: isBusy }}
-        >
-          <Text style={styles.detailsText}>Details</Text>
-        </Pressable>
-      </View>
+          <Pressable
+            disabled={isBusy}
+            onPress={() => onSetStatus(flag.id, 'rejected', isOwn)}
+            style={[styles.actionBtn, styles.rejectBtn]}
+            accessibilityRole="button"
+            accessibilityLabel="Reject this flag"
+            accessibilityState={{ disabled: isBusy }}
+          >
+            <Text style={styles.rejectText}>Reject</Text>
+          </Pressable>
+          <Pressable
+            disabled={isBusy}
+            onPress={() => onShowDetails(flag)}
+            style={[styles.actionBtn, styles.detailsBtn]}
+            accessibilityRole="button"
+            accessibilityLabel="View flag details"
+            accessibilityHint="Opens a screen with the full report, photo, and more actions"
+            accessibilityState={{ disabled: isBusy }}
+          >
+            <Text style={styles.detailsText}>Details</Text>
+          </Pressable>
+        </View>
+      )}
     </Pressable>
   );
 });
@@ -819,4 +1149,99 @@ const styles = StyleSheet.create({
   sortChipActive: { backgroundColor: '#2f80ed' },
   sortChipText: { fontSize: 13, fontWeight: '700', color: '#555' },
   sortChipTextActive: { color: '#fff' },
+  // Bulk-select entry row — a single full-width button sitting at the top
+  // of the screen so SR users and anyone unfamiliar with long-press can
+  // discover the feature. Tinted to match the sort chip's accent.
+  selectEntryRow: {
+    paddingHorizontal: 16,
+    paddingBottom: 8,
+  },
+  selectEntryBtn: {
+    minHeight: 44,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 999,
+    backgroundColor: '#eef1f5',
+    borderWidth: 1,
+    borderColor: '#2f80ed',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  selectEntryBtnPressed: { opacity: 0.7 },
+  selectEntryText: { color: '#2f80ed', fontWeight: '700', fontSize: 13 },
+  // Card selection visuals — a subtle tinted background + a 2px accent
+  // border so a selected card pops without needing to recolor the photo
+  // thumbnail or muddle the severity dot. Pairs with the checkmark in
+  // the card header for an unambiguous "yes this one's picked" signal.
+  cardSelected: {
+    backgroundColor: '#eaf3ff',
+    borderWidth: 2,
+    borderColor: '#2f80ed',
+    // Compensate for the 2px border so the card doesn't jump on toggle.
+    padding: 12,
+  },
+  selectCheck: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: 2,
+    borderColor: '#2f80ed',
+    backgroundColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  selectCheckOn: { backgroundColor: '#2f80ed' },
+  selectCheckMark: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '900',
+    lineHeight: 16,
+  },
+  // Floating bulk-action bar — pinned to the bottom of the screen on top
+  // of the SectionList. paddingBottom includes a generous inset so it
+  // clears the iOS home indicator and Android nav bar without depending
+  // on react-native-safe-area-context (not in this project yet).
+  bulkBar: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    flexDirection: 'row',
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingTop: 12,
+    paddingBottom: 24,
+    backgroundColor: '#fff',
+    borderTopWidth: 1,
+    borderTopColor: '#e1e6ee',
+    shadowColor: '#000',
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: -2 },
+    elevation: 8,
+  },
+  bulkBtn: {
+    flexGrow: 1,
+    flexBasis: 0,
+    minHeight: 44,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  bulkBtnDisabled: { opacity: 0.45 },
+  bulkBtnPressed: { opacity: 0.85 },
+  bulkVerifyBtn: { backgroundColor: '#2f80ed' },
+  bulkResolveBtn: { backgroundColor: '#27ae60' },
+  // Cancel uses the neutral chip palette so it doesn't compete for
+  // attention with the primary actions.
+  bulkCancelBtn: {
+    backgroundColor: '#eef1f5',
+    borderWidth: 1,
+    borderColor: '#cfd5de',
+  },
+  bulkBtnText: { color: '#fff', fontWeight: '700', fontSize: 13 },
+  // #2c3e50 on #eef1f5 ≈ 11.0:1 — comfortably above AA.
+  bulkCancelText: { color: '#2c3e50', fontWeight: '700', fontSize: 13 },
 });
