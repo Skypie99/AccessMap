@@ -1,10 +1,11 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
   Modal,
   Pressable,
   RefreshControl,
+  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -16,6 +17,12 @@ import {
   FEEDBACK_CATEGORY_LABELS,
 } from '@/lib/feedback';
 import { listFeedbackByUser } from '@/lib/feedbackStore';
+import {
+  FEEDBACK_CATEGORY_FILTERS,
+  FEEDBACK_CATEGORY_FILTER_LABELS,
+  filterFeedback,
+  type FeedbackCategoryFilter,
+} from '@/lib/feedbackFilter';
 import type { FeedbackRow } from '@/types/database';
 
 interface Props {
@@ -46,6 +53,9 @@ export default function MyFeedbackModal({
   const { user } = useAuth();
   const [rows, setRows] = useState<FeedbackRow[]>([]);
   const [loading, setLoading] = useState(false);
+  // Category filter for the chip row. Per-modal-open state — resets to
+  // 'all' every time the modal closes so reopens always show everything.
+  const [filter, setFilter] = useState<FeedbackCategoryFilter>('all');
 
   const mountedRef = useRef(true);
   useEffect(() => {
@@ -68,6 +78,20 @@ export default function MyFeedbackModal({
   useEffect(() => {
     if (visible) load();
   }, [visible, refreshKey, load]);
+
+  // Reset the filter to 'all' on close so the next open starts clean.
+  // (We do it on close, not on open, so the value is correct before the
+  // first frame of the next render.)
+  useEffect(() => {
+    if (!visible) setFilter('all');
+  }, [visible]);
+
+  // The list the FlatList renders — derived from rows + filter. Memoized
+  // so FlatList doesn't think the data array changed on every render.
+  const filteredRows = useMemo(
+    () => filterFeedback(rows, filter),
+    [rows, filter],
+  );
 
   return (
     <Modal
@@ -93,14 +117,54 @@ export default function MyFeedbackModal({
             </Pressable>
           </View>
 
+          {/* Category filter chips — only shown when there's more than
+              one row to filter (otherwise the chips are noise). Style
+              mirrors the NearbyFlagsModal chip row so the two feel like
+              the same control. */}
+          {rows.length > 1 && (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.chipBar}
+              accessibilityLabel="Filter feedback by category"
+            >
+              {FEEDBACK_CATEGORY_FILTERS.map((opt) => {
+                const isActive = filter === opt;
+                const label = FEEDBACK_CATEGORY_FILTER_LABELS[opt];
+                // Active chip shows the count for clarity ("Bug (3)");
+                // inactive chips stay clean ("Bug") to reduce visual noise.
+                const activeCount = isActive ? filteredRows.length : null;
+                return (
+                  <Pressable
+                    key={opt}
+                    onPress={() => setFilter(opt)}
+                    style={[styles.chip, isActive && styles.chipActive]}
+                    accessibilityRole="radio"
+                    accessibilityState={{ selected: isActive }}
+                    accessibilityLabel={`Filter to ${label}`}
+                  >
+                    <Text
+                      style={[
+                        styles.chipText,
+                        isActive && styles.chipTextActive,
+                      ]}
+                    >
+                      {activeCount !== null ? `${label} (${activeCount})` : label}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+          )}
+
           <FlatList
-            data={rows}
+            data={filteredRows}
             keyExtractor={(r) => r.id}
             refreshControl={
               <RefreshControl refreshing={loading} onRefresh={load} />
             }
             contentContainerStyle={
-              rows.length === 0
+              filteredRows.length === 0
                 ? styles.emptyContainer
                 : styles.listContainer
             }
@@ -109,6 +173,22 @@ export default function MyFeedbackModal({
               <View style={styles.emptyCard} accessible accessibilityRole="text">
                 {loading ? (
                   <ActivityIndicator />
+                ) : rows.length > 0 ? (
+                  // Have feedback, but the active filter hides all of it.
+                  <>
+                    <Text
+                      style={styles.emptyIcon}
+                      accessibilityElementsHidden
+                    >
+                      🔍
+                    </Text>
+                    <Text style={styles.emptyTitle}>
+                      No {FEEDBACK_CATEGORY_FILTER_LABELS[filter].toLowerCase()} feedback
+                    </Text>
+                    <Text style={styles.emptyBody}>
+                      Tap "All" above to see every message you've sent.
+                    </Text>
+                  </>
                 ) : (
                   <>
                     <Text
@@ -207,6 +287,33 @@ const styles = StyleSheet.create({
     color: color.text,
     fontWeight: font.weight.bold,
   },
+  // Chip row sits below the header and above the list. Layout mirrors
+  // the NearbyFlagsModal chip bar so the two share a visual language —
+  // same height, same pill radius, same active fill colour.
+  chipBar: {
+    flexDirection: 'row',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.sm,
+  },
+  chip: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: radius.full,
+    backgroundColor: color.surfaceNeutral,
+    // Touch-target floor — WCAG 2.5.5 wants ≥ 44pt. minHeight on the
+    // Pressable + the padding above gets us there comfortably.
+    minHeight: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  chipActive: { backgroundColor: color.brand },
+  chipText: {
+    fontSize: font.size.sm,
+    fontWeight: font.weight.bold,
+    color: color.textMuted,
+  },
+  chipTextActive: { color: color.textOnBrand },
   listContainer: {
     paddingHorizontal: spacing.xl,
     paddingBottom: spacing.lg,
