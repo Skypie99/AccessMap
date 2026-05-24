@@ -47,10 +47,24 @@ export default function TasksScreen() {
     patchFlag,
     removeFlag,
   } = useFlags();
+  // Extract userId early so it's available for derived values below.
+  const userId = user?.id;
+
   // Triage view = only open + verified, no matter what the provider holds.
   const flags = useMemo(
     () => providerFlags.filter((f) => TRIAGE_STATUSES.includes(f.status)),
     [providerFlags],
+  );
+
+  // "Mine only" toggle — when true, shows only the current user's submitted
+  // flags. Local session state — not persisted. Hidden when not signed in.
+  const [mineOnly, setMineOnly] = useState(false);
+
+  // Apply the mine-only filter on top of the triage filter so sections
+  // always reflect exactly what the list renders.
+  const displayFlags = useMemo(
+    () => (mineOnly && userId ? flags.filter((f) => f.user_id === userId) : flags),
+    [flags, mineOnly, userId],
   );
 
   // Group the visible flags by status so the SectionList can show "Open"
@@ -58,13 +72,14 @@ export default function TasksScreen() {
   // omitted entirely (no orphaned headers). Order: Open first because
   // it's the higher-attention triage state.
   const sections = useMemo(() => {
-    const open = flags.filter((f) => f.status === 'open');
-    const verified = flags.filter((f) => f.status === 'verified');
+    const open = displayFlags.filter((f) => f.status === 'open');
+    const verified = displayFlags.filter((f) => f.status === 'verified');
     const out: Array<{ title: string; data: FlagRow[] }> = [];
     if (open.length > 0) out.push({ title: 'Open', data: open });
     if (verified.length > 0) out.push({ title: 'Verified', data: verified });
     return out;
-  }, [flags]);
+  }, [displayFlags]);
+
   // One-shot location fetch so each card can show "0.3 km · 4 min walk".
   // Graceful degrade: if the user denies permission (or we error) we just
   // render the card without distance — see FlagCard below.
@@ -184,8 +199,6 @@ export default function TasksScreen() {
     setSelectedFlag(flag);
   }, []);
 
-  const userId = user?.id;
-
   if (loading && flags.length === 0) {
     return (
       <View style={styles.center}>
@@ -228,6 +241,36 @@ export default function TasksScreen() {
             {loading ? 'Retrying…' : errorBannerText}
           </Text>
         </Pressable>
+      )}
+      {/* Mine-only toggle — shown only when signed in. A chip row that
+          switches between "All flags" and "My flags" without opening the
+          full filter panel. Resets to All when the tab loses focus? No —
+          we keep it until the user taps again; it's a deliberate choice. */}
+      {userId && (
+        <View style={styles.mineToggleRow}>
+          <Pressable
+            onPress={() => setMineOnly(false)}
+            style={[styles.mineChip, !mineOnly && styles.mineChipActive]}
+            accessibilityRole="button"
+            accessibilityLabel="Show all flags"
+            accessibilityState={{ selected: !mineOnly }}
+          >
+            <Text style={[styles.mineChipText, !mineOnly && styles.mineChipTextActive]}>
+              All
+            </Text>
+          </Pressable>
+          <Pressable
+            onPress={() => setMineOnly(true)}
+            style={[styles.mineChip, mineOnly && styles.mineChipActive]}
+            accessibilityRole="button"
+            accessibilityLabel="Show only my flags"
+            accessibilityState={{ selected: mineOnly }}
+          >
+            <Text style={[styles.mineChipText, mineOnly && styles.mineChipTextActive]}>
+              Mine
+            </Text>
+          </Pressable>
+        </View>
       )}
       <SectionList
         sections={sections}
@@ -573,4 +616,23 @@ const styles = StyleSheet.create({
     borderColor: '#2f80ed',
   },
   detailsText: { color: '#2f80ed', fontWeight: '600', fontSize: 13 },
+  mineToggleRow: {
+    flexDirection: 'row',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    gap: 8,
+    backgroundColor: '#f7f9fc',
+  },
+  mineChip: {
+    paddingHorizontal: 16,
+    paddingVertical: 7,
+    borderRadius: 999,
+    backgroundColor: '#eef1f5',
+    minHeight: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  mineChipActive: { backgroundColor: '#2f80ed' },
+  mineChipText: { fontSize: 13, fontWeight: '600', color: '#555' },
+  mineChipTextActive: { color: '#fff' },
 });
