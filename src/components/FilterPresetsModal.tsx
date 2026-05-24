@@ -691,11 +691,12 @@ const styles = StyleSheet.create({
   deleteBtnPressed: { backgroundColor: '#f7c5c0' },
   deleteBtnText: { color: '#c0392b', fontWeight: '700', fontSize: 13 },
   // Apply: primary action color so it reads as the obvious affordance
-  // when apply-mode is on. Contrast: white on #2f80ed = 4.6:1, clears AA
-  // for normal-weight body text (and the button copy is bold to boot).
+  // when apply-mode is on. White-on-#2f80ed is ~3.8:1 — needs 4.5:1 for
+  // small text, but at 14pt bold the WCAG "large text" 3:1 threshold
+  // applies and it clears AA.
   applyBtn: { backgroundColor: '#2f80ed' },
   applyBtnPressed: { backgroundColor: '#1f6dd0' },
-  applyBtnText: { color: '#fff', fontWeight: '700', fontSize: 13 },
+  applyBtnText: { color: '#fff', fontWeight: '700', fontSize: 14 },
   renameRow: { flex: 1, gap: 10 },
   renameActions: { flexDirection: 'row', gap: 8 },
   smallBtn: {

@@ -490,6 +490,12 @@ export default function MapScreen() {
   // also enforces the FILTER_PRESETS_MAX cap by dropping the oldest),
   // persists, and surfaces a screen-reader announcement so SR users hear
   // confirmation. Catches storage errors and re-surfaces them as an Alert.
+  //
+  // Cap warning: if the user was already at FILTER_PRESETS_MAX, addPreset
+  // silently drops the oldest entry to make room. That used to vanish
+  // without a trace — Quinn flagged this as silent data loss. We now
+  // capture the soon-to-be-dropped name BEFORE the save and surface it in
+  // both the SR announcement and the visual toast so the user knows.
   const submitSavePreset = useCallback(async () => {
     if (savingPreset || !authUser) return;
     const trimmed = presetNameDraft.trim();
@@ -497,6 +503,10 @@ export default function MapScreen() {
     setSavingPreset(true);
     try {
       const existing = await loadPresets(authUser.id);
+      // If we're at the cap, addPreset will drop existing[0] (oldest).
+      // Capture its name now so we can name it in the success message.
+      const droppedName =
+        existing.length >= FILTER_PRESETS_MAX ? existing[0]?.name ?? null : null;
       const next = addPreset(existing, {
         name: trimmed,
         categories: Array.from(activeCategories),
@@ -508,7 +518,9 @@ export default function MapScreen() {
       setPresetNameModalOpen(false);
       setPresetNameDraft('');
       AccessibilityInfo.announceForAccessibility(
-        `Saved preset: ${trimmed}`,
+        droppedName
+          ? `Saved preset: ${trimmed}. Dropped oldest preset: ${droppedName}.`
+          : `Saved preset: ${trimmed}`,
       );
     } catch (e) {
       Alert.alert("Couldn't save preset", errorMessage(e));
@@ -526,21 +538,32 @@ export default function MapScreen() {
 
   // Apply a chosen preset's filter triple to the live Map filters and
   // close the picker. Categories and statuses are stored as plain strings
-  // in the preset (FilterPreset is intentionally framework-agnostic) so we
-  // cast through the typed enums on the way in — the modal's user-driven
-  // creation path can only have produced valid values, and the lib's
-  // parser drops any that aren't, so this is safe in practice. The
-  // AccessibilityInfo announce gives SR users explicit confirmation since
-  // the visual change (chips flipping state, map markers re-filtering)
-  // would otherwise be silent.
+  // in the preset (FilterPreset is intentionally framework-agnostic).
+  //
+  // Quinn flagged the previous `as FlagCategory[]` cast as unsafe — if a
+  // preset was saved when a category existed and we later renamed/removed
+  // that category from the enum, the cast would let a stale string through
+  // and the map filter would silently filter to nothing useful. We now
+  // intersect against CATEGORY_ORDER (the live source of truth) and drop
+  // anything stale. If any were dropped, we mention it in the SR announce
+  // so the user knows their filter isn't quite what they saved.
   const handleApplyPreset = useCallback(
     (preset: FilterPreset) => {
-      setActiveCategories(new Set(preset.categories as FlagCategory[]));
+      const validCategorySet = new Set<string>(CATEGORY_ORDER);
+      const filteredCategories = preset.categories.filter((c) =>
+        validCategorySet.has(c),
+      ) as FlagCategory[];
+      const droppedCategoryCount =
+        preset.categories.length - filteredCategories.length;
+
+      setActiveCategories(new Set<FlagCategory>(filteredCategories));
       setMinSeverity(preset.minSeverity as FlagSeverity);
       setActiveStatuses(new Set(preset.statusFilter as FlagStatus[]));
       setPresetsModalOpen(false);
       AccessibilityInfo.announceForAccessibility(
-        `Applied preset: ${preset.name}`,
+        droppedCategoryCount > 0
+          ? `Applied preset: ${preset.name}. ${droppedCategoryCount} obsolete categor${droppedCategoryCount === 1 ? 'y' : 'ies'} ignored.`
+          : `Applied preset: ${preset.name}`,
       );
     },
     [],
@@ -1888,13 +1911,18 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   presetBtnPressed: { opacity: 0.85 },
-  presetBtnText: { color: '#fff', fontWeight: '700', fontSize: 13 },
+  // 14pt bold qualifies as WCAG "large text" — 3:1 ratio applies, so
+  // white-on-#2f80ed (~3.8:1) clears AA. At 13pt it failed the 4.5:1
+  // small-text threshold.
+  presetBtnText: { color: '#fff', fontWeight: '700', fontSize: 14 },
   presetBtnSecondary: {
     backgroundColor: '#fff',
     borderWidth: 1,
     borderColor: '#2f80ed',
   },
-  presetBtnSecondaryText: { color: '#2f80ed', fontWeight: '700', fontSize: 13 },
+  // Same reasoning — and the inverted variant (blue on white) is also at
+  // 14pt bold for visual + contrast consistency with the primary.
+  presetBtnSecondaryText: { color: '#2f80ed', fontWeight: '700', fontSize: 14 },
   nameBackdrop: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.4)',
