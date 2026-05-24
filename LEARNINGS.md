@@ -492,3 +492,40 @@ const presentCategories = useMemo<FlagCategory[]>(() => {
 
 Chips only appear when `presentCategories.length > 1` — no point filtering
 a list that already has only one category.
+
+## 2026-05-23 — Single SELECT for status counts beats N count(*) queries
+
+For per-status breakdowns of a small user-scoped table (e.g. "your reports"),
+fetching the `status` column once and counting client-side is cheaper than
+running N separate `select('id', { count: 'exact', head: true }).eq('status', s)`
+queries. PostgREST count(*) round-trips one query per status; the unified
+SELECT is one round-trip total and you get the full breakdown for free.
+
+Pattern used in ProfileScreen.load():
+
+```ts
+const { data: statusRows } = await supabase.from('flags')
+  .select('status').eq('user_id', userId);
+const counts = { open: 0, verified: 0, resolved: 0, rejected: 0 };
+for (const r of statusRows ?? []) counts[r.status]++;
+```
+
+Only switch to count(*) once row payloads start crossing tens of KB.
+
+## 2026-05-23 — Optional callback props enable shortcut UI without forking modals
+
+When you want a "shortcut" affordance on rows (e.g. a 📍 pin button that
+bypasses the detail modal and jumps straight to the map), expose it as an
+**optional** prop on the list modal:
+
+```ts
+interface Props {
+  onSelectFlag: (flag: FlagRow) => void;
+  // Optional — when provided, each row gets the extra 📍 button.
+  onViewOnMap?: (flag: FlagRow) => void;
+}
+```
+
+Callers that want the shortcut pass it; callers that don't get the original
+"tap row → detail modal" flow with no change. Avoids a parallel
+`MyReportsModalWithMapJump` component — the same modal handles both.
