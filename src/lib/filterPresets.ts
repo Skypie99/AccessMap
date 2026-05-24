@@ -211,6 +211,27 @@ export function removePreset(
   return next.length === list.length ? list : next;
 }
 
+/**
+ * One-line human description of a preset's filter triple. Used by the
+ * manager modal's row subtitle and by any future toast / banner that
+ * needs to confirm what a preset contains. Kept pure so the JSX layer
+ * doesn't repeat the pluralization rules — the modal previously had
+ * this inline as `summarize()` and now both callers share it.
+ *
+ * Format: "<N> categor{y|ies} · severity ≥<M>" — or "All categories ·
+ * severity ≥<M>" when no category filter is set (empty array). Status
+ * count intentionally omitted so the string fits a single line in
+ * narrow row widths; callers that need the full triple can read the
+ * fields directly.
+ */
+export function presetSummary(preset: FilterPreset): string {
+  const catPart =
+    preset.categories.length === 0
+      ? 'All categories'
+      : `${preset.categories.length} categor${preset.categories.length === 1 ? 'y' : 'ies'}`;
+  return `${catPart} · severity ≥${preset.minSeverity}`;
+}
+
 // ---------------------------------------------------------------------------
 // IO helpers — per-user, fail-soft on every read/write.
 // ---------------------------------------------------------------------------

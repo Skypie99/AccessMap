@@ -43,6 +43,13 @@ import {
   setDefaultSetId,
   type FilterSet,
 } from '@/lib/filterSets';
+import {
+  addPreset,
+  FILTER_PRESETS_MAX,
+  loadPresets,
+  savePresets,
+  type FilterPreset,
+} from '@/lib/filterPresets';
 import type {
   FlagCategory,
   FlagSeverity,
@@ -59,6 +66,7 @@ import LegendModal from './LegendModal';
 import NearbyFlagsModal from './NearbyFlagsModal';
 import AddressSearchModal from '@/components/AddressSearchModal';
 import SavedPlacesModal from '@/components/SavedPlacesModal';
+import FilterPresetsModal from '@/components/FilterPresetsModal';
 import { loadPlaces, type SavedPlace } from '@/lib/savedPlaces';
 import { useAuth } from '@/lib/auth';
 import type { GeocodeResult } from '@/lib/geocode';
@@ -211,6 +219,17 @@ export default function MapScreen() {
   const [nameModalOpen, setNameModalOpen] = useState(false);
   const [nameDraft, setNameDraft] = useState('');
   const [savingSet, setSavingSet] = useState(false);
+
+  // Per-user filter presets (parallel to the device-wide `filterSets`
+  // chips above). The presets list itself lives inside FilterPresetsModal;
+  // MapScreen only needs to (a) open the modal in apply-mode for "Load
+  // preset" and (b) write a new preset from the "Save as preset" name
+  // prompt below. The write happens here (not in the modal) because the
+  // current filter triple is MapScreen state — the modal has no view of it.
+  const [presetsModalOpen, setPresetsModalOpen] = useState(false);
+  const [presetNameModalOpen, setPresetNameModalOpen] = useState(false);
+  const [presetNameDraft, setPresetNameDraft] = useState('');
+  const [savingPreset, setSavingPreset] = useState(false);
 
   // True while this screen is on screen — checked before any setState that
   // runs after an `await` so a slow request can't update a torn-down screen.
@@ -459,6 +478,73 @@ export default function MapScreen() {
     nameDraft,
     savingSet,
   ]);
+
+  // Open the per-user preset save-name prompt with an empty draft.
+  const openPresetSaveModal = useCallback(() => {
+    setPresetNameDraft('');
+    setPresetNameModalOpen(true);
+  }, []);
+
+  // Snapshot the current filter triple as a new named preset for the
+  // signed-in user. Loads the existing list, appends via addPreset (which
+  // also enforces the FILTER_PRESETS_MAX cap by dropping the oldest),
+  // persists, and surfaces a screen-reader announcement so SR users hear
+  // confirmation. Catches storage errors and re-surfaces them as an Alert.
+  const submitSavePreset = useCallback(async () => {
+    if (savingPreset || !authUser) return;
+    const trimmed = presetNameDraft.trim();
+    if (trimmed.length === 0) return;
+    setSavingPreset(true);
+    try {
+      const existing = await loadPresets(authUser.id);
+      const next = addPreset(existing, {
+        name: trimmed,
+        categories: Array.from(activeCategories),
+        minSeverity,
+        statusFilter: Array.from(activeStatuses),
+      });
+      await savePresets(authUser.id, next);
+      if (!mountedRef.current) return;
+      setPresetNameModalOpen(false);
+      setPresetNameDraft('');
+      AccessibilityInfo.announceForAccessibility(
+        `Saved preset: ${trimmed}`,
+      );
+    } catch (e) {
+      Alert.alert("Couldn't save preset", errorMessage(e));
+    } finally {
+      if (mountedRef.current) setSavingPreset(false);
+    }
+  }, [
+    activeCategories,
+    activeStatuses,
+    authUser,
+    minSeverity,
+    presetNameDraft,
+    savingPreset,
+  ]);
+
+  // Apply a chosen preset's filter triple to the live Map filters and
+  // close the picker. Categories and statuses are stored as plain strings
+  // in the preset (FilterPreset is intentionally framework-agnostic) so we
+  // cast through the typed enums on the way in — the modal's user-driven
+  // creation path can only have produced valid values, and the lib's
+  // parser drops any that aren't, so this is safe in practice. The
+  // AccessibilityInfo announce gives SR users explicit confirmation since
+  // the visual change (chips flipping state, map markers re-filtering)
+  // would otherwise be silent.
+  const handleApplyPreset = useCallback(
+    (preset: FilterPreset) => {
+      setActiveCategories(new Set(preset.categories as FlagCategory[]));
+      setMinSeverity(preset.minSeverity as FlagSeverity);
+      setActiveStatuses(new Set(preset.statusFilter as FlagStatus[]));
+      setPresetsModalOpen(false);
+      AccessibilityInfo.announceForAccessibility(
+        `Applied preset: ${preset.name}`,
+      );
+    },
+    [],
+  );
 
   // Persist filter changes. Gated on filtersHydrated so we don't clobber a
   // saved view with the initial default state during the brief window
@@ -1100,6 +1186,44 @@ export default function MapScreen() {
                 Pick at least one status to see flags.
               </Text>
             )}
+
+            {/* Per-user presets — distinct from the device-wide Saved
+                chips above. Hidden when signed-out because presets are
+                keyed by user. */}
+            {authUser && (
+              <>
+                <Text style={styles.filterSubLabel}>Presets</Text>
+                <View style={styles.presetRow}>
+                  <Pressable
+                    onPress={openPresetSaveModal}
+                    style={({ pressed }) => [
+                      styles.presetBtn,
+                      pressed && styles.presetBtnPressed,
+                    ]}
+                    accessibilityRole="button"
+                    accessibilityLabel="Save current filters as a preset"
+                    accessibilityHint={`Names and saves your current category, severity, and status filters. Stored per account, up to ${FILTER_PRESETS_MAX} presets.`}
+                  >
+                    <Text style={styles.presetBtnText}>＋ Save as preset</Text>
+                  </Pressable>
+                  <Pressable
+                    onPress={() => setPresetsModalOpen(true)}
+                    style={({ pressed }) => [
+                      styles.presetBtn,
+                      styles.presetBtnSecondary,
+                      pressed && styles.presetBtnPressed,
+                    ]}
+                    accessibilityRole="button"
+                    accessibilityLabel="Load a saved preset"
+                    accessibilityHint="Opens your saved filter presets so you can apply one"
+                  >
+                    <Text style={styles.presetBtnSecondaryText}>
+                      Load preset…
+                    </Text>
+                  </Pressable>
+                </View>
+              </>
+            )}
               </>
             )}
           </View>
@@ -1305,6 +1429,89 @@ export default function MapScreen() {
           setTimeout(() => mapRef.current?.showCallout(flag.id), 350);
         }}
       />
+
+      <FilterPresetsModal
+        visible={presetsModalOpen}
+        onClose={() => setPresetsModalOpen(false)}
+        onApply={handleApplyPreset}
+      />
+
+      {/*
+        Per-user "Save as preset" prompt. Mirrors the device-wide
+        save-filter-set prompt below — same TextInput-in-a-Modal pattern
+        for cross-platform parity (Alert.prompt is iOS-only).
+      */}
+      <Modal
+        visible={presetNameModalOpen}
+        animationType="fade"
+        transparent
+        onRequestClose={() => {
+          if (!savingPreset) setPresetNameModalOpen(false);
+        }}
+      >
+        <View style={styles.nameBackdrop}>
+          <View style={styles.nameCard}>
+            <Text style={styles.nameTitle} accessibilityRole="header">
+              Name this preset
+            </Text>
+            <Text style={styles.nameHint}>
+              Saves your current filters. Up to {FILTER_PRESETS_MAX} presets
+              per account.
+            </Text>
+            <TextInput
+              value={presetNameDraft}
+              onChangeText={setPresetNameDraft}
+              placeholder="e.g. Morning commute"
+              autoFocus
+              autoCapitalize="sentences"
+              maxLength={60}
+              returnKeyType="done"
+              onSubmitEditing={submitSavePreset}
+              style={styles.nameInput}
+              accessibilityLabel="Preset name"
+              accessibilityHint="Required. Up to 60 characters."
+            />
+            <View style={styles.nameActions}>
+              <Pressable
+                onPress={() => {
+                  if (savingPreset) return;
+                  setPresetNameModalOpen(false);
+                }}
+                disabled={savingPreset}
+                style={[styles.nameBtn, styles.nameBtnCancel]}
+                accessibilityRole="button"
+                accessibilityLabel="Cancel"
+                accessibilityState={{ disabled: savingPreset }}
+              >
+                <Text style={styles.nameBtnCancelText}>Cancel</Text>
+              </Pressable>
+              <Pressable
+                onPress={submitSavePreset}
+                disabled={savingPreset || presetNameDraft.trim().length === 0}
+                style={[
+                  styles.nameBtn,
+                  styles.nameBtnSave,
+                  (savingPreset || presetNameDraft.trim().length === 0) &&
+                    styles.nameBtnSaveDisabled,
+                ]}
+                accessibilityRole="button"
+                accessibilityLabel="Save preset"
+                accessibilityState={{
+                  busy: savingPreset,
+                  disabled:
+                    savingPreset || presetNameDraft.trim().length === 0,
+                }}
+              >
+                {savingPreset ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={styles.nameBtnSaveText}>Save</Text>
+                )}
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
 
       {/*
         Cross-platform save-name prompt. We use a Modal + TextInput instead
@@ -1661,6 +1868,33 @@ const styles = StyleSheet.create({
     borderStyle: 'dashed',
   },
   savedAddPillText: { color: '#2f80ed', fontSize: 12, fontWeight: '700' },
+  // Per-user preset buttons — side-by-side pair beneath the Status row.
+  // Primary (Save) is filled blue; secondary (Load) is outlined to keep
+  // the primary action visually distinct without two competing fills.
+  // Both clear 44pt to satisfy WCAG 2.5.5 / Apple HIG touch targets.
+  presetRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 4,
+  },
+  presetBtn: {
+    flex: 1,
+    minHeight: 44,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 10,
+    backgroundColor: '#2f80ed',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  presetBtnPressed: { opacity: 0.85 },
+  presetBtnText: { color: '#fff', fontWeight: '700', fontSize: 13 },
+  presetBtnSecondary: {
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#2f80ed',
+  },
+  presetBtnSecondaryText: { color: '#2f80ed', fontWeight: '700', fontSize: 13 },
   nameBackdrop: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.4)',
