@@ -27,12 +27,16 @@ export interface NotificationPrefs {
   notifyOnRejected: boolean;
 }
 
-export const DEFAULT_PREFS: NotificationPrefs = {
+// Frozen so accidental mutation throws in dev (silently no-ops in
+// non-strict prod, but the immutability contract is what matters).
+// Callers needing a writable copy should use `{ ...DEFAULT_PREFS }`.
+// QA Pass-1 #3.
+export const DEFAULT_PREFS: Readonly<NotificationPrefs> = Object.freeze({
   notifyOnOpen: true,
   notifyOnVerified: true,
   notifyOnResolved: true,
   notifyOnRejected: true,
-};
+});
 
 function storageKey(userId: string): string {
   return STORAGE_KEY_PREFIX + userId;
@@ -45,7 +49,7 @@ function storageKey(userId: string): string {
  */
 function parsePrefs(raw: unknown): NotificationPrefs {
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
-    return DEFAULT_PREFS;
+    return { ...DEFAULT_PREFS };
   }
   const obj = raw as Record<string, unknown>;
   return {
@@ -63,14 +67,14 @@ function parsePrefs(raw: unknown): NotificationPrefs {
 export async function loadPrefs(userId: string): Promise<NotificationPrefs> {
   try {
     const raw = await AsyncStorage.getItem(storageKey(userId));
-    if (!raw) return DEFAULT_PREFS;
+    if (!raw) return { ...DEFAULT_PREFS };
     return parsePrefs(JSON.parse(raw));
   } catch (e) {
     console.warn(
       '[notificationPrefs] load failed:',
       errorMessage(e, 'AsyncStorage error.'),
     );
-    return DEFAULT_PREFS;
+    return { ...DEFAULT_PREFS };
   }
 }
 

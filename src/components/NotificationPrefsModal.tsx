@@ -31,6 +31,14 @@ import type { FlagStatus } from '@/types/database';
 interface Props {
   visible: boolean;
   onClose: () => void;
+  /**
+   * Optional initial-paint prefs from the parent. If provided, the modal
+   * uses these as the starting state and still kicks off its own load()
+   * (which reconciles when AsyncStorage resolves). Without this, the
+   * first paint after opening the modal would flash DEFAULT_PREFS for
+   * a few frames before the load completed.
+   */
+  initialPrefs?: NotificationPrefs;
   /** Fired after a toggle persists so the parent can refresh the banner count. */
   onPrefsChanged?: () => void;
 }
@@ -65,10 +73,16 @@ const TOGGLES: Array<{
 export default function NotificationPrefsModal({
   visible,
   onClose,
+  initialPrefs,
   onPrefsChanged,
 }: Props) {
   const { user } = useAuth();
-  const [prefs, setPrefs] = useState<NotificationPrefs>(DEFAULT_PREFS);
+  // Use the parent-provided initialPrefs if any — they're already up to
+  // date from the screen's most recent refreshUpdateCount. Otherwise
+  // start at DEFAULT_PREFS (cloned because DEFAULT_PREFS is frozen).
+  const [prefs, setPrefs] = useState<NotificationPrefs>(
+    () => initialPrefs ?? { ...DEFAULT_PREFS },
+  );
   const [loading, setLoading] = useState(false);
 
   const mountedRef = useRef(true);
@@ -81,7 +95,7 @@ export default function NotificationPrefsModal({
 
   const load = useCallback(async () => {
     if (!user) {
-      setPrefs(DEFAULT_PREFS);
+      setPrefs({ ...DEFAULT_PREFS });
       return;
     }
     if (mountedRef.current) setLoading(true);

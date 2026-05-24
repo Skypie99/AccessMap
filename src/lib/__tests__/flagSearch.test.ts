@@ -142,4 +142,19 @@ describe('searchFlags', () => {
       flags.filter((f) => all.includes(f)).map((f) => f.id),
     );
   });
+
+  it('matches across Unicode NFC vs NFD normalizations', () => {
+    // QA Pass-3 #6 — "café" can be encoded as NFC ('café' single code-point)
+    // or NFD ('cafe' + combining ´). Without .normalize('NFC') on both sides,
+    // .includes() compares code units and these strings would never match.
+    const nfd = makeFlag('nfd', {
+      // 'cafe' + U+0301 COMBINING ACUTE ACCENT → "café" (NFD)
+      description: 'café entrance has steps, no ramp.',
+    });
+    const flagsNfd = [...flags, nfd];
+
+    // NFC query (typed naturally on most keyboards) — should still hit.
+    const result = searchFlags(flagsNfd, 'café');
+    expect(result.map((f) => f.id)).toContain('nfd');
+  });
 });
