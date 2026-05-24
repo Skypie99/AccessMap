@@ -45,6 +45,12 @@ import ActivityFeedModal from '@/components/ActivityFeedModal';
 import UpdateBanner from '@/components/UpdateBanner';
 import { diffUpdates, loadLastSeen, markAllSeen } from '@/lib/flagUpdates';
 import { loadWatched } from '@/lib/watchedFlags';
+import NotificationPrefsModal from '@/components/NotificationPrefsModal';
+import {
+  DEFAULT_PREFS,
+  loadPrefs,
+  type NotificationPrefs,
+} from '@/lib/notificationPrefs';
 import { EMPTY_STREAK, loadStreak, tickVisit, type StreakState } from '@/lib/streak';
 import {
   computeAchievements,
@@ -129,6 +135,12 @@ export default function ProfileScreen() {
   // Holds the flag list used for the most recent diff so dismiss/view
   // can mark them as seen without re-fetching.
   const trackedFlagsRef = useRef<FlagRow[]>([]);
+  // Notification prefs — refreshed whenever Profile focuses, AND right
+  // after the user toggles one in NotificationPrefsModal. Drives the
+  // diffUpdates filter so the banner respects opt-outs.
+  const [notificationPrefs, setNotificationPrefs] =
+    useState<NotificationPrefs>(DEFAULT_PREFS);
+  const [notifPrefsOpen, setNotifPrefsOpen] = useState(false);
   // Visit streak — ticked once per focus per local day. Display in the
   // hero next to points. Gracefully shows nothing until the first tick
   // resolves so we don't briefly flash a "0 day streak" on launch.
@@ -258,10 +270,11 @@ export default function ProfileScreen() {
       return;
     }
     try {
-      const [ownFlags, watchedIds, lastSeen] = await Promise.all([
+      const [ownFlags, watchedIds, lastSeen, prefs] = await Promise.all([
         listFlagsByUser(user.id),
         loadWatched(user.id),
         loadLastSeen(user.id),
+        loadPrefs(user.id),
       ]);
       const ownIds = new Set(ownFlags.map((f) => f.id));
       const watchedOnly = watchedIds.filter((id) => !ownIds.has(id));
@@ -271,7 +284,10 @@ export default function ProfileScreen() {
       const tracked = [...ownFlags, ...watchedFlags];
       if (!isCurrent()) return;
       trackedFlagsRef.current = tracked;
-      const updates = diffUpdates(tracked, lastSeen);
+      // Stash the fresh prefs so the next NotificationPrefsModal open
+      // doesn't have to wait for its own load.
+      setNotificationPrefs(prefs);
+      const updates = diffUpdates(tracked, lastSeen, prefs);
       // If lastSeen is empty (brand-new user / first run after upgrade),
       // silently seed the baseline so we don't fire a banner for every
       // existing flag on the next visit.
@@ -777,6 +793,27 @@ export default function ProfileScreen() {
             styles.myReportsBtn,
             pressed && styles.myReportsBtnPressed,
           ]}
+          onPress={() => setNotifPrefsOpen(true)}
+          accessibilityRole="button"
+          accessibilityLabel="Notification settings"
+          accessibilityHint="Opens settings for which flag status updates surface in your update banner"
+        >
+          <View style={styles.myReportsTextWrap}>
+            <Text style={styles.myReportsTitle}>Notifications</Text>
+            <Text style={styles.myReportsSubtitle}>
+              Choose which flag status changes surface as updates.
+            </Text>
+          </View>
+          <Text style={styles.myReportsChevron} accessibilityElementsHidden>
+            ›
+          </Text>
+        </Pressable>
+
+        <Pressable
+          style={({ pressed }) => [
+            styles.myReportsBtn,
+            pressed && styles.myReportsBtnPressed,
+          ]}
           onPress={() => setFeedbackOpen(true)}
           accessibilityRole="button"
           accessibilityLabel="My Feedback"
@@ -1017,6 +1054,16 @@ export default function ProfileScreen() {
         visible={achievementsOpen}
         onClose={() => setAchievementsOpen(false)}
         achievements={achievements}
+      />
+
+      <NotificationPrefsModal
+        visible={notifPrefsOpen}
+        onClose={() => setNotifPrefsOpen(false)}
+        onPrefsChanged={() => {
+          // After a toggle persists, recompute the banner count using
+          // the fresh prefs so muted statuses disappear immediately.
+          void refreshUpdateCount();
+        }}
       />
     </>
   );

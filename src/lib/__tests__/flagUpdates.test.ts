@@ -129,6 +129,35 @@ describe('flagUpdates', () => {
       expect(updates).toHaveLength(1);
       expect(updates[0]!.flag.id).toBe('changed');
     });
+
+    it('filters by notification prefs when provided (Round 5)', () => {
+      const flags = [
+        makeFlag('a', 'resolved'),
+        makeFlag('b', 'rejected'),
+        makeFlag('c', 'verified'),
+      ];
+      const seen = {
+        a: 'open' as const,
+        b: 'verified' as const,
+        c: 'open' as const,
+      };
+      // User muted rejections — flag b should be dropped from updates.
+      const prefs = {
+        notifyOnOpen: true,
+        notifyOnVerified: true,
+        notifyOnResolved: true,
+        notifyOnRejected: false,
+      };
+      const updates = diffUpdates(flags, seen, prefs);
+      expect(updates.map((u) => u.flag.id).sort()).toEqual(['a', 'c']);
+    });
+
+    it('omitted prefs argument keeps legacy behavior (all changes)', () => {
+      const flags = [makeFlag('a', 'rejected')];
+      const seen = { a: 'open' as const };
+      // No prefs passed — still surfaces the rejection.
+      expect(diffUpdates(flags, seen)).toHaveLength(1);
+    });
   });
 
   describe('nextLastSeen', () => {

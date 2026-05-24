@@ -15,6 +15,7 @@
  */
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { errorMessage } from './errors';
+import { isNotifiable, type NotificationPrefs } from './notificationPrefs';
 import type { FlagRow, FlagStatus } from '@/types/database';
 
 const STORAGE_KEY_PREFIX = '@accessmap/flag_last_seen_v1:';
@@ -89,18 +90,23 @@ async function persist(userId: string, map: LastSeenMap): Promise<void> {
 /**
  * Pure: returns the list of flags whose current status differs from the
  * recorded last-seen status. New (un-recorded) flags are skipped.
+ *
+ * Optional `prefs` filters by toStatus — when provided, updates landing
+ * on a status the user has muted (e.g. notifyOnRejected = false) are
+ * dropped. Undefined prefs = include all changes (legacy behavior).
  */
 export function diffUpdates(
   flags: FlagRow[],
   lastSeen: LastSeenMap,
+  prefs?: NotificationPrefs,
 ): FlagUpdate[] {
   const updates: FlagUpdate[] = [];
   for (const f of flags) {
     const prev = lastSeen[f.id];
     if (prev === undefined) continue; // first-time-seen — silent baseline
-    if (prev !== f.status) {
-      updates.push({ flag: f, fromStatus: prev, toStatus: f.status });
-    }
+    if (prev === f.status) continue;
+    if (prefs && !isNotifiable(f.status, prefs)) continue;
+    updates.push({ flag: f, fromStatus: prev, toStatus: f.status });
   }
   return updates;
 }
