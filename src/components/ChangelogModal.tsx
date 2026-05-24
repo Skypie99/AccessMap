@@ -7,6 +7,7 @@ import {
   Text,
   View,
 } from 'react-native';
+import { initialExpanded } from '@/lib/changelogExpanded';
 import { color, font, radius, shadow, spacing } from '@/theme';
 
 interface Props {
@@ -47,20 +48,6 @@ const RELEASES: ReleaseNote[] = [
     ],
   },
 ];
-
-/**
- * Build the initial expanded-map for the release list: the first (most
- * recent) release is open, every older release starts collapsed. Keyed by
- * the same `${date}-${i}` we use for the React list key so headers stay
- * stable if a release ever shares a date with another (unlikely but cheap).
- */
-function initialExpanded(releases: ReleaseNote[]): Record<string, boolean> {
-  const map: Record<string, boolean> = {};
-  releases.forEach((release, i) => {
-    map[`${release.date}-${i}`] = i === 0;
-  });
-  return map;
-}
 
 /**
  * What's New / Changelog modal — accessed from a Profile row. A user-
