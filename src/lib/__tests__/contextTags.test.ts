@@ -15,6 +15,7 @@
 import {
   CONTEXT_TAGS,
   CONTEXT_TAG_LABELS,
+  MAX_CONTEXT_TAGS,
   isValidTag,
   sanitizeTagList,
   toggleTag,
@@ -223,5 +224,52 @@ describe('sanitizeTagList', () => {
     const snapshot = [...input];
     sanitizeTagList(input);
     expect(input).toEqual(snapshot);
+  });
+});
+
+describe('MAX_CONTEXT_TAGS cap', () => {
+  it('exposes a sane positive cap less than the full vocabulary', () => {
+    // The cap should be a positive integer and strictly less than the
+    // vocabulary so the limit is reachable. (If we ever set it >= the
+    // vocabulary, the cap stops being a real check.)
+    expect(Number.isInteger(MAX_CONTEXT_TAGS)).toBe(true);
+    expect(MAX_CONTEXT_TAGS).toBeGreaterThan(0);
+    expect(MAX_CONTEXT_TAGS).toBeLessThan(CONTEXT_TAGS.length);
+  });
+
+  it('toggleTag refuses to add beyond MAX_CONTEXT_TAGS', () => {
+    // Build a list at exactly the cap, then try to add one more.
+    const atCap = CONTEXT_TAGS.slice(0, MAX_CONTEXT_TAGS) as ContextTag[];
+    // Find a tag that isn't in atCap (guaranteed to exist because the cap
+    // is strictly less than the vocabulary size).
+    const overflow = CONTEXT_TAGS.find((t) => !atCap.includes(t)) as ContextTag;
+    const result = toggleTag(atCap, overflow);
+    expect(result).toHaveLength(MAX_CONTEXT_TAGS);
+    expect(result).not.toContain(overflow);
+  });
+
+  it('toggleTag still removes an existing tag when at cap', () => {
+    // The cap is an add-side restriction only — toggling a tag that's
+    // already present must still remove it (otherwise users could get
+    // "stuck" with chips they can't deselect).
+    const atCap = CONTEXT_TAGS.slice(0, MAX_CONTEXT_TAGS) as ContextTag[];
+    const first = atCap[0];
+    if (!first) throw new Error('atCap should be non-empty');
+    const result = toggleTag(atCap, first);
+    expect(result).toHaveLength(MAX_CONTEXT_TAGS - 1);
+    expect(result).not.toContain(first);
+  });
+
+  it('sanitizeTagList truncates at MAX_CONTEXT_TAGS for dirty DB rows', () => {
+    // Simulate a row that somehow stored more tags than the cap allows
+    // (older client, manual SQL, schema widening). The UI must NEVER
+    // render an unbounded chip strip — truncate defensively.
+    const overflowing = [...CONTEXT_TAGS]; // 9 valid tags
+    expect(overflowing.length).toBeGreaterThan(MAX_CONTEXT_TAGS);
+    const result = sanitizeTagList(overflowing);
+    expect(result).toHaveLength(MAX_CONTEXT_TAGS);
+    // Truncation keeps the first-seen tags so the user's intent order
+    // is preserved.
+    expect(result).toEqual(overflowing.slice(0, MAX_CONTEXT_TAGS));
   });
 });

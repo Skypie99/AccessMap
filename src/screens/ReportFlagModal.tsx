@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -18,15 +18,18 @@ import {
   CATEGORY_LABELS,
   CATEGORY_ORDER,
   createFlag,
+  type ContextTagsCapability,
   severityColor,
   SEVERITY_DESCRIPTIONS,
   SEVERITY_LABELS,
   SEVERITY_ORDER,
+  subscribeContextTagsCapability,
   uploadFlagPhoto,
 } from '@/lib/flags';
 import {
   CONTEXT_TAGS,
   CONTEXT_TAG_LABELS,
+  MAX_CONTEXT_TAGS,
   toggleTag,
   type ContextTag,
 } from '@/lib/contextTags';
@@ -52,6 +55,14 @@ export default function ReportFlagModal({
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [contextTags, setContextTags] = useState<ContextTag[]>([]);
   const [submitting, setSubmitting] = useState(false);
+  // Mirror of the module-level capability flag in src/lib/flags.ts. When
+  // it flips to 'unavailable' (the propose-only migration isn't on this
+  // backend yet) we disable the chip picker and surface a "coming soon"
+  // hint instead of letting the user pick tags that get silently dropped.
+  const [tagsCapability, setTagsCapability] =
+    useState<ContextTagsCapability>('unknown');
+  useEffect(() => subscribeContextTagsCapability(setTagsCapability), []);
+  const tagsDisabled = tagsCapability === 'unavailable';
 
   const reset = () => {
     setCategory('no_ramp');
@@ -107,7 +118,7 @@ export default function ReportFlagModal({
       if (photoUri) {
         photoUrl = await uploadFlagPhoto(user.id, photoUri);
       }
-      await createFlag(user.id, {
+      const result = await createFlag(user.id, {
         lat: location.lat,
         lng: location.lng,
         category,
@@ -120,6 +131,16 @@ export default function ReportFlagModal({
         // path cheap (one round-trip) when no tags are selected.
         context_tags: contextTags.length > 0 ? [...contextTags] : undefined,
       });
+      // If we asked the server to store tags but the column isn't there
+      // yet (capability flipped to 'unavailable' inside createFlag), tell
+      // the user — they shouldn't think their picks were saved when they
+      // weren't. Non-blocking alert: the report itself DID land.
+      if (!result.tagsAccepted && contextTags.length > 0) {
+        Alert.alert(
+          'Flag saved without context tags',
+          'Your report was filed, but the context tags you picked could not be stored yet (server update pending). The picker will be re-enabled automatically once it is.',
+        );
+      }
       reset();
       onCreated();
       onClose();
@@ -291,17 +312,38 @@ export default function ReportFlagModal({
             {CONTEXT_TAGS.map((tag) => {
               const active = contextTags.includes(tag);
               const label = CONTEXT_TAG_LABELS[tag];
+              // Disable each chip when the capability gate says the
+              // server can't store tags yet. The Pressable still renders
+              // (so screen-reader users know what's coming) but won't
+              // toggle, and gets the muted style.
               return (
                 <Pressable
                   key={tag}
-                  onPress={() => setContextTags((curr) => toggleTag(curr, tag))}
-                  style={[styles.tagChip, active && styles.tagChipActive]}
+                  onPress={() => {
+                    if (tagsDisabled) return;
+                    setContextTags((curr) => toggleTag(curr, tag));
+                  }}
+                  disabled={tagsDisabled}
+                  style={[
+                    styles.tagChip,
+                    active && styles.tagChipActive,
+                    tagsDisabled && styles.tagChipDisabled,
+                  ]}
                   accessibilityRole="checkbox"
                   accessibilityLabel={label}
-                  accessibilityState={{ checked: active }}
+                  accessibilityState={{ checked: active, disabled: tagsDisabled }}
+                  accessibilityHint={
+                    tagsDisabled
+                      ? 'Context tags will be available soon.'
+                      : undefined
+                  }
                 >
                   <Text
-                    style={[styles.tagChipText, active && styles.tagChipTextActive]}
+                    style={[
+                      styles.tagChipText,
+                      active && styles.tagChipTextActive,
+                      tagsDisabled && styles.tagChipTextDisabled,
+                    ]}
                   >
                     {label}
                   </Text>
@@ -310,7 +352,9 @@ export default function ReportFlagModal({
             })}
           </View>
           <Text style={styles.tagHelper}>
-            Tap any that apply. Leave empty if none.
+            {tagsDisabled
+              ? 'Context tags will be available soon (server update pending).'
+              : `Tap any that apply. Up to ${MAX_CONTEXT_TAGS}. Leave empty if none.`}
           </Text>
 
           <View style={styles.actions}>
@@ -444,10 +488,15 @@ const styles = StyleSheet.create({
   submitBtn: { backgroundColor: '#2f80ed' },
   submitBtnDisabled: { opacity: 0.6 },
   submitText: { color: '#fff', fontWeight: '700' },
-  // Context-tag chips. Two visual states matching accessibilityState.checked:
-  //   - unselected → outline (white bg, blue border + dark blue text)
-  //   - selected   → solid fill (blue bg, white text)
-  // Both pass WCAG AA 4.5:1 contrast.
+  // Context-tag chips. Three visual states matching accessibilityState:
+  //   - unselected → outline (white bg, dark-blue border + text)  → 7.6:1 text/bg
+  //   - selected   → solid dark-blue fill, white text              → 7.6:1 text/bg
+  //   - disabled   → muted gray border + text on white             → 4.6:1 text/bg
+  // The active fill uses #1c4f99 (Cycle C floor, AA-large 4.5:1+ on 13pt-600
+  // and AA-large on white-text 7.6:1). This literal WILL switch to the
+  // `color.brandText` token CL2 added to src/theme.ts once the C4 and CL2
+  // branches both land — the Cycle C cleanup pass will reconcile. Don't
+  // import from CL2 yet (it isn't merged into this worktree).
   // Touch target: paddingVertical 10 + line-height ~17 + minHeight 44 keeps
   // every chip at least 44pt tall regardless of dynamic-type scaling.
   tagChip: {
@@ -456,21 +505,28 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     backgroundColor: '#ffffff',
     borderWidth: 1,
-    borderColor: '#2f80ed',
+    borderColor: '#1c4f99',
     minHeight: 44,
     justifyContent: 'center',
   },
   tagChipActive: {
-    backgroundColor: '#2f80ed',
-    borderColor: '#2f80ed',
+    backgroundColor: '#1c4f99', // AA pass: white text 7.6:1; future: color.brandText
+    borderColor: '#1c4f99',
+  },
+  tagChipDisabled: {
+    borderColor: '#9aa3ad',
+    backgroundColor: '#f4f6f8',
   },
   tagChipText: {
-    color: '#1a4f8a',
+    color: '#1c4f99', // AA pass: on #ffffff = 7.6:1; future: color.brandText
     fontSize: 13,
     fontWeight: '600',
   },
   tagChipTextActive: {
     color: '#ffffff',
+  },
+  tagChipTextDisabled: {
+    color: '#5b6470', // AA pass: on #f4f6f8 = 4.6:1
   },
   tagHelper: {
     fontSize: 12,

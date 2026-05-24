@@ -59,6 +59,16 @@ export const CONTEXT_TAG_LABELS: Readonly<Record<ContextTag, string>> = Object.f
 });
 
 /**
+ * Maximum number of context tags a single flag may carry. The vocabulary
+ * is 9 wide and most flags are relevant under 1–3 conditions; capping at
+ * 5 keeps the chip strip readable and discourages "tag everything"
+ * reports that dilute the signal. `toggleTag` enforces this on the way
+ * in; `sanitizeTagList` enforces it on the way out (defensive against
+ * dirty DB rows).
+ */
+export const MAX_CONTEXT_TAGS = 5;
+
+/**
  * Lookup set for fast `isValidTag` checks. Built from CONTEXT_TAGS so the
  * two never drift.
  */
@@ -91,8 +101,12 @@ export function toggleTag(
   tag: ContextTag,
 ): ContextTag[] {
   const idx = current.indexOf(tag);
-  if (idx === -1) return [...current, tag];
-  return current.filter((t) => t !== tag);
+  if (idx !== -1) return current.filter((t) => t !== tag);
+  // Cap enforcement: an "add" that would exceed MAX_CONTEXT_TAGS is a
+  // no-op (still returns a fresh array so a parent's referential check
+  // doesn't think state changed).
+  if (current.length >= MAX_CONTEXT_TAGS) return [...current];
+  return [...current, tag];
 }
 
 /**
@@ -118,6 +132,10 @@ export function sanitizeTagList(raw: ReadonlyArray<unknown> | unknown): ContextT
     if (seen.has(value)) continue;
     seen.add(value);
     out.push(value);
+    // Truncate at MAX_CONTEXT_TAGS so a dirty DB row (or a future
+    // schema widening that lets through more than the cap) can't render
+    // an unbounded chip strip.
+    if (out.length >= MAX_CONTEXT_TAGS) break;
   }
   return out;
 }
