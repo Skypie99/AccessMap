@@ -44,6 +44,12 @@ interface Props {
   currentLocation: LatLng | null;
   /** Parent animates the Map to this place's coords. */
   onJumpToPlace: (place: SavedPlace) => void;
+  /**
+   * Optional — fired after a successful add or remove so the parent
+   * (MapScreen) can refresh its chip row immediately without waiting
+   * for the modal to close. (QA E12)
+   */
+  onListChanged?: () => void;
 }
 
 export default function SavedPlacesModal({
@@ -51,6 +57,7 @@ export default function SavedPlacesModal({
   onClose,
   currentLocation,
   onJumpToPlace,
+  onListChanged,
 }: Props) {
   const { user } = useAuth();
   const [places, setPlaces] = useState<SavedPlace[]>([]);
@@ -114,6 +121,7 @@ export default function SavedPlacesModal({
       setPlaces((prev) => [...prev, created]);
       setNameInput('');
       setAdding(false);
+      onListChanged?.();
     } catch (e) {
       // Show friendly copy keyed on the error code, falling back to the
       // generic errorMessage formatter otherwise.
@@ -125,7 +133,7 @@ export default function SavedPlacesModal({
     } finally {
       if (mountedRef.current) setSaving(false);
     }
-  }, [user, currentLocation, nameInput]);
+  }, [user, currentLocation, nameInput, onListChanged]);
 
   const handleRemove = useCallback(
     (place: SavedPlace) => {
@@ -143,6 +151,7 @@ export default function SavedPlacesModal({
               setPlaces((prev) => prev.filter((p) => p.id !== place.id));
               try {
                 await removePlace(user.id, place.id);
+                onListChanged?.();
               } catch {
                 // Best-effort. UI already updated.
               }
@@ -151,7 +160,7 @@ export default function SavedPlacesModal({
         ],
       );
     },
-    [user],
+    [user, onListChanged],
   );
 
   const handleJump = useCallback(

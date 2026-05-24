@@ -1202,8 +1202,16 @@ export default function MapScreen() {
         currentLocation={location}
         onClose={() => {
           setPlacesOpen(false);
-          // Refresh the chip-row list so newly-added / removed places
-          // show up immediately without waiting for re-mount.
+          // Belt-and-suspenders refresh on close in case any change
+          // happened that didn't fire onListChanged (e.g., add failed
+          // mid-flight). The cheaper case (immediate refresh on every
+          // add/remove) is handled below via onListChanged.
+          void refreshSavedPlaces();
+        }}
+        // QA E12: refresh the chip row the moment a place is added or
+        // removed, so the row visible behind the modal backdrop reflects
+        // reality without waiting for the modal to close.
+        onListChanged={() => {
           void refreshSavedPlaces();
         }}
         onJumpToPlace={(place) => {
