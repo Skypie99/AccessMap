@@ -45,6 +45,7 @@ import ActivityFeedModal from '@/components/ActivityFeedModal';
 import UpdateBanner from '@/components/UpdateBanner';
 import { diffUpdates, loadLastSeen, markAllSeen } from '@/lib/flagUpdates';
 import { loadWatched } from '@/lib/watchedFlags';
+import { EMPTY_STREAK, tickVisit, type StreakState } from '@/lib/streak';
 
 interface Stats {
   reported: number;
@@ -122,6 +123,10 @@ export default function ProfileScreen() {
   // Holds the flag list used for the most recent diff so dismiss/view
   // can mark them as seen without re-fetching.
   const trackedFlagsRef = useRef<FlagRow[]>([]);
+  // Visit streak — ticked once per focus per local day. Display in the
+  // hero next to points. Gracefully shows nothing until the first tick
+  // resolves so we don't briefly flash a "0 day streak" on launch.
+  const [streak, setStreak] = useState<StreakState>(EMPTY_STREAK);
   // Tracks which list modal was the "parent" of the currently-open
   // FlagDetailModal so handleDetailClose can reopen the right one.
   const [flagDetailSource, setFlagDetailSource] = useState<
@@ -263,14 +268,28 @@ export default function ProfileScreen() {
     }
   }, [user]);
 
-  // Single focus effect for both stats + updates so we don't fire two
-  // concurrent fetch chains on every tab change. (QA #7) Both run in
-  // parallel via Promise.all to keep the focus-to-paint latency as low
-  // as before.
+  const refreshStreak = useCallback(async () => {
+    if (!user) {
+      setStreak(EMPTY_STREAK);
+      return;
+    }
+    try {
+      const next = await tickVisit(user.id);
+      if (mountedRef.current) setStreak(next);
+    } catch {
+      // Best-effort. Streak is decorative — silently fall through to
+      // EMPTY_STREAK so the hero doesn't show stale numbers.
+      if (mountedRef.current) setStreak(EMPTY_STREAK);
+    }
+  }, [user]);
+
+  // Single focus effect for stats + updates + streak so we don't fire
+  // three concurrent fetch chains on every tab change. All run in
+  // parallel via Promise.all to keep the focus-to-paint latency low.
   useFocusEffect(
     useCallback(() => {
-      void Promise.all([load(), refreshUpdateCount()]);
-    }, [load, refreshUpdateCount]),
+      void Promise.all([load(), refreshUpdateCount(), refreshStreak()]);
+    }, [load, refreshUpdateCount, refreshStreak]),
   );
 
   const acknowledgeUpdates = useCallback(async () => {
@@ -520,6 +539,34 @@ export default function ProfileScreen() {
           <Stat label="Reported" value={stats.reported} />
           <Stat label="Resolved" value={stats.resolved} />
         </View>
+
+        {/* Streak card — only renders once we have a real value (≥1)
+            so we don't briefly flash a "0 day" card on first launch. */}
+        {streak.current > 0 && (
+          <View
+            style={styles.streakCard}
+            accessibilityRole="summary"
+            accessibilityLabel={
+              streak.current === 1
+                ? `1 day streak — welcome${streak.longest > 1 ? `. Best ever: ${streak.longest} days.` : ''}`
+                : `${streak.current} day streak${streak.longest > streak.current ? `. Best ever: ${streak.longest} days.` : '. New personal best!'}`
+            }
+          >
+            <Text style={styles.streakIcon} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+              🔥
+            </Text>
+            <View style={styles.streakTextWrap}>
+              <Text style={styles.streakValue}>
+                {streak.current} day{streak.current === 1 ? '' : 's'} in a row
+              </Text>
+              <Text style={styles.streakSubtitle}>
+                {streak.longest > streak.current
+                  ? `Best ever: ${streak.longest} days`
+                  : 'New personal best!'}
+              </Text>
+            </View>
+          </View>
+        )}
 
         {/* Per-status breakdown — small palette-tinted chips. Only shown
             when the user has at least one report so first-launch profiles
@@ -958,6 +1005,24 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderRadius: 999,
   },
+  // Visit-streak card — amber-tinted pill row between the stat tiles and
+  // the status breakdown. Reads as a "you're on a roll" pat-on-the-back
+  // without competing with the headline points/milestones above.
+  streakCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: '#fff7e6',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderLeftWidth: 3,
+    borderLeftColor: '#f1a520',
+  },
+  streakIcon: { fontSize: 24 },
+  streakTextWrap: { flex: 1, gap: 2 },
+  streakValue: { fontSize: 15, fontWeight: '700', color: '#7a5500' },
+  streakSubtitle: { fontSize: 12, color: '#8c6510' },
   statsRow: { flexDirection: 'row', gap: 12 },
   statCard: {
     flex: 1,
