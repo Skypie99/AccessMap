@@ -1014,7 +1014,7 @@ export default function ProfileScreen() {
               accessibilityState={{ disabled: !nameChanged, busy: savingName }}
             >
               {savingName ? (
-                <ActivityIndicator color="#fff" />
+                <ActivityIndicator color={color.textOnBrand} />
               ) : (
                 <Text style={styles.saveBtnText}>Save</Text>
               )}
@@ -1145,7 +1145,15 @@ export default function ProfileScreen() {
 
         <Pressable
           style={styles.signOutBtn}
-          onPress={() => signOut()}
+          onPress={async () => {
+            const ok = await confirm(
+              'Sign out',
+              'Are you sure you want to sign out?',
+              'Sign out',
+              true,
+            );
+            if (ok) signOut();
+          }}
           accessibilityRole="button"
           accessibilityLabel="Sign out of your account"
         >
@@ -1338,12 +1346,12 @@ const styles = StyleSheet.create({
   // Screen wash — replaces the default white background so the white
   // cards inside (stats, My Reports, About row) actually read as cards
   // rather than blending into the surface they sit on.
-  screen: { flex: 1, backgroundColor: '#f7f9fc' },
+  screen: { flex: 1, backgroundColor: color.surfaceMuted },
   center: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#f7f9fc',
+    backgroundColor: color.surfaceMuted,
   },
   container: { padding: 24, gap: 16, alignItems: 'stretch' },
   email: {
@@ -1354,7 +1362,7 @@ const styles = StyleSheet.create({
   },
   subtitle: { fontSize: 14, color: '#555' },
   heroCard: {
-    backgroundColor: '#2f80ed',
+    backgroundColor: color.brand,
     borderRadius: 20,
     paddingHorizontal: 24,
     paddingTop: 20,
@@ -1377,7 +1385,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   heroValue: {
-    color: '#fff',
+    color: color.textOnBrand,
     fontSize: 56,
     fontWeight: '800',
     lineHeight: 60,
@@ -1422,7 +1430,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     paddingHorizontal: 12,
     borderRadius: 999,
-    backgroundColor: '#fff',
+    backgroundColor: color.surface,
     minHeight: 32,
     minWidth: 44,
     justifyContent: 'center',
@@ -1454,7 +1462,7 @@ const styles = StyleSheet.create({
     padding: 24,
   },
   tierSheet: {
-    backgroundColor: '#fff',
+    backgroundColor: color.surface,
     borderRadius: 16,
     padding: 20,
     gap: 12,
@@ -1474,7 +1482,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: '#eef1f5',
+    backgroundColor: color.surfaceNeutral,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1488,7 +1496,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 12,
     borderRadius: 10,
-    backgroundColor: '#f7f9fc',
+    backgroundColor: color.surfaceMuted,
     minHeight: 48,
   },
   // Highlights the user's current tier — pale blue tint + left accent
@@ -1562,7 +1570,7 @@ const styles = StyleSheet.create({
   statsRow: { flexDirection: 'row', gap: 12 },
   statCard: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: color.surface,
     borderRadius: 12,
     padding: 16,
     alignItems: 'center',
@@ -1596,7 +1604,7 @@ const styles = StyleSheet.create({
   statusPillCount: { fontSize: 18, fontWeight: '700' },
   statusPillLabel: { fontSize: 10, fontWeight: '700', textTransform: 'uppercase' },
   myReportsBtn: {
-    backgroundColor: '#fff',
+    backgroundColor: color.surface,
     borderRadius: 12,
     padding: 16,
     flexDirection: 'row',
@@ -1638,7 +1646,7 @@ const styles = StyleSheet.create({
     minHeight: 44,
   },
   saveBtn: {
-    backgroundColor: '#2f80ed',
+    backgroundColor: color.brand,
     paddingHorizontal: 16,
     borderRadius: 8,
     alignItems: 'center',
@@ -1647,23 +1655,23 @@ const styles = StyleSheet.create({
     minHeight: 44,
   },
   saveBtnDisabled: { opacity: 0.4 },
-  saveBtnText: { color: '#fff', fontWeight: '700', fontSize: 14 },
+  saveBtnText: { color: color.textOnBrand, fontWeight: '700', fontSize: 14 },
   hint: { fontSize: 12, color: '#666' },
   tabRow: { flexDirection: 'row', gap: 8 },
   tabPill: {
     flex: 1,
     paddingVertical: 12,
     borderRadius: 8,
-    backgroundColor: '#eef1f5',
+    backgroundColor: color.surfaceNeutral,
     alignItems: 'center',
     minHeight: 44,
     justifyContent: 'center',
   },
-  tabPillSelected: { backgroundColor: '#2f80ed' },
+  tabPillSelected: { backgroundColor: color.brand },
   tabPillText: { color: '#333', fontWeight: '600', fontSize: 14 },
-  tabPillTextSelected: { color: '#fff' },
+  tabPillTextSelected: { color: color.textOnBrand },
   linkBtn: {
-    backgroundColor: '#eef1f5',
+    backgroundColor: color.surfaceNeutral,
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderRadius: 8,
@@ -1671,10 +1679,10 @@ const styles = StyleSheet.create({
     minHeight: 44,
     justifyContent: 'center',
   },
-  linkBtnText: { color: '#2f80ed', fontWeight: '600', fontSize: 14 },
+  linkBtnText: { color: color.brand, fontWeight: '600', fontSize: 14 },
   aboutRow: {
     marginTop: 16,
-    backgroundColor: '#fff',
+    backgroundColor: color.surface,
     borderRadius: 12,
     padding: 16,
     flexDirection: 'row',
@@ -1698,7 +1706,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 999,
-    backgroundColor: '#eef1f5',
+    backgroundColor: color.surfaceNeutral,
     minHeight: 44,
     justifyContent: 'center',
   },

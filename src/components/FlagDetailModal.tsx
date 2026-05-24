@@ -618,7 +618,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   card: {
-    backgroundColor: '#fff',
+    backgroundColor: color.surface,
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,
     paddingHorizontal: 20,
@@ -637,7 +637,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: '#eef1f5',
+    backgroundColor: color.surfaceNeutral,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -699,7 +699,7 @@ const styles = StyleSheet.create({
   },
   coordsCopyBtnPressed: { opacity: 0.4 },
   // Overlapping-squares glyph — universally understood as "copy"
-  coordsCopyGlyph: { fontSize: 16, color: '#2f80ed' },
+  coordsCopyGlyph: { fontSize: 16, color: color.brand },
   actionRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -716,8 +716,8 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     minWidth: 100,
   },
-  verifyBtn: { backgroundColor: '#2f80ed' },
-  verifyText: { color: '#fff', fontWeight: '700', fontSize: 14 },
+  verifyBtn: { backgroundColor: color.brand },
+  verifyText: { color: color.textOnBrand, fontWeight: '700', fontSize: 14 },
   resolveBtn: { backgroundColor: '#27ae60' },
   resolveText: { color: '#fff', fontWeight: '700', fontSize: 14 },
   rejectBtn: { backgroundColor: '#eef1f5' },
@@ -727,7 +727,7 @@ const styles = StyleSheet.create({
   viewMapBtn: {
     backgroundColor: 'transparent',
     borderWidth: 1,
-    borderColor: '#2f80ed',
+    borderColor: color.brand,
   },
   // Outlined button: blue text on white card. Uses color.brandText
   // (#1c4f99 ≈ 7.6:1) instead of color.brand (#2f80ed ≈ 3.3:1) so it
@@ -744,7 +744,7 @@ const styles = StyleSheet.create({
   shareBtn: {
     backgroundColor: 'transparent',
     borderWidth: 1,
-    borderColor: '#2f80ed',
+    borderColor: color.brand,
   },
   // Outlined Share button: blue text on white card. Uses color.brandText
   // for AA-safe contrast at any size (see viewMapBtnText note above).
@@ -754,15 +754,15 @@ const styles = StyleSheet.create({
   historyBtn: {
     backgroundColor: 'transparent',
     borderWidth: 1,
-    borderColor: '#2f80ed',
+    borderColor: color.brand,
   },
   historyBtnText: { color: color.brandText, fontWeight: '700', fontSize: 14 },
   // Directions sits between View on Map and Share in the secondary row.
   // Filled brand-blue (not outlined) so it reads as the primary action of
   // the trio — getting somewhere is usually what the user wants more than
   // re-centering the map or sharing.
-  directionsBtn: { backgroundColor: '#2f80ed' },
-  directionsBtnText: { color: '#fff', fontWeight: '700', fontSize: 14 },
+  directionsBtn: { backgroundColor: color.brand },
+  directionsBtnText: { color: color.textOnBrand, fontWeight: '700', fontSize: 14 },
   // Watch button — star pill between the location section and secondaryRow.
   // Neutral outline when unset; filled amber when actively watching so the
   // state is unambiguous without relying on the star glyph alone.

@@ -486,7 +486,7 @@ export default function FilterPresetsModal({
                   }}
                 >
                   {saving ? (
-                    <ActivityIndicator color="#fff" />
+                    <ActivityIndicator color={color.textOnBrand} />
                   ) : (
                     <Text style={styles.saveBtnText}>Save</Text>
                   )}
@@ -532,7 +532,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   card: {
-    backgroundColor: '#fff',
+    backgroundColor: color.surface,
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,
     paddingHorizontal: 20,
@@ -565,7 +565,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: '#eef1f5',
+    backgroundColor: color.surfaceNeutral,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -592,11 +592,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 10,
     borderRadius: 8,
-    backgroundColor: '#c0392b',
+    backgroundColor: color.error,
     minHeight: 44,
     justifyContent: 'center',
   },
-  retryText: { color: '#fff', fontWeight: '700', fontSize: 13 },
+  retryText: { color: color.textOnBrand, fontWeight: '700', fontSize: 13 },
   addForm: {
     backgroundColor: '#f7f9fc',
     borderRadius: 10,
@@ -628,11 +628,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  cancelBtn: { backgroundColor: '#eef1f5' },
+  cancelBtn: { backgroundColor: color.surfaceNeutral },
   cancelBtnText: { color: '#333', fontWeight: '600' },
-  saveBtn: { backgroundColor: '#2f80ed' },
+  saveBtn: { backgroundColor: color.brand },
   saveBtnDisabled: { opacity: 0.6 },
-  saveBtnText: { color: '#fff', fontWeight: '700' },
+  saveBtnText: { color: color.textOnBrand, fontWeight: '700' },
   center: { alignItems: 'center', padding: 24, gap: 8 },
   subtitle: { fontSize: 13, color: '#666' },
   emptyWrap: {
@@ -658,7 +658,7 @@ const styles = StyleSheet.create({
     gap: 10,
     paddingHorizontal: 12,
     paddingVertical: 12,
-    backgroundColor: '#fff',
+    backgroundColor: color.surface,
     borderRadius: 10,
     borderWidth: 1,
     borderColor: '#eef1f5',
@@ -682,19 +682,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  renameBtn: { backgroundColor: '#eef1f5' },
+  renameBtn: { backgroundColor: color.surfaceNeutral },
   renameBtnPressed: { backgroundColor: '#e2e6ec' },
   renameBtnText: { color: '#333', fontWeight: '600', fontSize: 13 },
   deleteBtn: { backgroundColor: '#fdecea' },
   deleteBtnPressed: { backgroundColor: '#f7c5c0' },
-  deleteBtnText: { color: '#c0392b', fontWeight: '700', fontSize: 13 },
+  deleteBtnText: { color: color.error, fontWeight: '700', fontSize: 13 },
   // Apply: primary action color so it reads as the obvious affordance
   // when apply-mode is on. White-on-#2f80ed is ~3.8:1 — needs 4.5:1 for
   // small text, but at 14pt bold the WCAG "large text" 3:1 threshold
   // applies and it clears AA.
-  applyBtn: { backgroundColor: '#2f80ed' },
+  applyBtn: { backgroundColor: color.brand },
   applyBtnPressed: { backgroundColor: '#1f6dd0' },
-  applyBtnText: { color: '#fff', fontWeight: '700', fontSize: 14 },
+  applyBtnText: { color: color.textOnBrand, fontWeight: '700', fontSize: 14 },
   renameRow: { flex: 1, gap: 10 },
   renameActions: { flexDirection: 'row', gap: 8 },
   smallBtn: {

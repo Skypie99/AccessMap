@@ -315,7 +315,7 @@ export default function SavedPlacesModal({
                   }}
                 >
                   {saving ? (
-                    <ActivityIndicator color="#fff" />
+                    <ActivityIndicator color={color.textOnBrand} />
                   ) : (
                     <Text style={styles.saveBtnText}>Save</Text>
                   )}
@@ -411,7 +411,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   card: {
-    backgroundColor: '#fff',
+    backgroundColor: color.surface,
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,
     paddingHorizontal: 20,
@@ -426,7 +426,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: '#eef1f5',
+    backgroundColor: color.surfaceNeutral,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -453,11 +453,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 10,
     borderRadius: 8,
-    backgroundColor: '#c0392b',
+    backgroundColor: color.error,
     minHeight: 44,
     justifyContent: 'center',
   },
-  retryText: { color: '#fff', fontWeight: '700', fontSize: 13 },
+  retryText: { color: color.textOnBrand, fontWeight: '700', fontSize: 13 },
   addBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -496,11 +496,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  cancelBtn: { backgroundColor: '#eef1f5' },
+  cancelBtn: { backgroundColor: color.surfaceNeutral },
   cancelBtnText: { color: '#333', fontWeight: '600' },
-  saveBtn: { backgroundColor: '#2f80ed' },
+  saveBtn: { backgroundColor: color.brand },
   saveBtnDisabled: { opacity: 0.6 },
-  saveBtnText: { color: '#fff', fontWeight: '700' },
+  saveBtnText: { color: color.textOnBrand, fontWeight: '700' },
   center: { alignItems: 'center', padding: 24, gap: 8 },
   subtitle: { fontSize: 13, color: '#666' },
   emptyWrap: { alignItems: 'center', gap: 8, paddingHorizontal: 24, paddingVertical: 16 },
@@ -535,5 +535,5 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   removeBtnPressed: { backgroundColor: '#f7c5c0' },
-  removeBtnText: { fontSize: 16, color: '#c0392b', fontWeight: '700' },
+  removeBtnText: { fontSize: 16, color: color.error, fontWeight: '700' },
 });
