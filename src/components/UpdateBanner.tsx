@@ -53,7 +53,10 @@ export default function UpdateBanner({ count, onView, onDismiss }: Props) {
   return (
     <View
       style={styles.banner}
-      accessibilityRole="alert"
+      // Use a polite live region on Android (announces non-intrusively)
+      // and the explicit announceForAccessibility above on iOS. Dropped
+      // accessibilityRole="alert" because alerts are semantically
+      // assertive — combining with polite was contradictory (QA #8).
       accessibilityLiveRegion="polite"
     >
       <Text style={styles.icon} accessibilityElementsHidden importantForAccessibility="no">

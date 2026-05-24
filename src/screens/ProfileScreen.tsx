@@ -212,13 +212,6 @@ export default function ProfileScreen() {
     }
   }, [user]);
 
-  // Refresh whenever Profile tab gains focus so freshly-earned points show up.
-  useFocusEffect(
-    useCallback(() => {
-      load();
-    }, [load]),
-  );
-
   // Compute "since your last visit" updates on focus. Tracked set = own
   // reports + watched flags. Diff against the baseline stored from the
   // previous markAllSeen call. First-time-seen flags don't count (the
@@ -270,10 +263,14 @@ export default function ProfileScreen() {
     }
   }, [user]);
 
+  // Single focus effect for both stats + updates so we don't fire two
+  // concurrent fetch chains on every tab change. (QA #7) Both run in
+  // parallel via Promise.all to keep the focus-to-paint latency as low
+  // as before.
   useFocusEffect(
     useCallback(() => {
-      refreshUpdateCount();
-    }, [refreshUpdateCount]),
+      void Promise.all([load(), refreshUpdateCount()]);
+    }, [load, refreshUpdateCount]),
   );
 
   const acknowledgeUpdates = useCallback(async () => {
