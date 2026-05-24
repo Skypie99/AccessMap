@@ -15,6 +15,7 @@ import * as Location from 'expo-location';
 import { useRoute, type RouteProp } from '@react-navigation/native';
 import { errorMessage } from '@/lib/errors';
 import {
+  CATEGORY_ICONS,
   CATEGORY_LABELS,
   CATEGORY_ORDER,
   DEFAULT_STATUSES,
@@ -69,6 +70,11 @@ const DEFAULT_REGION: PlatformMapRegion = {
   latitudeDelta: 0.05,
   longitudeDelta: 0.05,
 };
+
+// Cycle sequence for the category quick-cycle button: null = "All categories"
+// (empty Set), followed by each category in display order. Defined here
+// (module-level) so the useCallback below can reference it without a dep.
+const CATEGORY_CYCLE: Array<FlagCategory | null> = [null, ...CATEGORY_ORDER];
 
 export default function MapScreen() {
   const mapRef = useRef<PlatformMapHandle | null>(null);
@@ -199,6 +205,44 @@ export default function MapScreen() {
       return next;
     });
   }, []);
+
+  // Category quick-cycle — cycles the category filter through a fixed
+  // sequence: All → no_ramp → broken_sidewalk → blocked_path →
+  // missing_signal → steep_grade → other → All. Each press scopes the
+  // map to exactly one category, making it easy to scan for a specific
+  // barrier type without opening the full filter panel.
+  //
+  // Behaviour when multiple categories are active (user set them via the
+  // full panel): pressing this button treats the state as "All" so the
+  // next tap moves to no_ramp (the first single-category view).
+  const cycleCategory = useCallback(() => {
+    setActiveCategories((prev) => {
+      // Determine the current position in the cycle sequence.
+      // Default: 0 = "All categories" (empty Set).
+      let currentIdx = 0;
+      if (prev.size === 1) {
+        // prev.size === 1 guarantees the spread has exactly one element.
+        const singleCat = ([...prev] as FlagCategory[])[0];
+        const pos = CATEGORY_CYCLE.indexOf(singleCat ?? null);
+        if (pos !== -1) currentIdx = pos;
+      }
+      // Advance one step, wrapping from the last category back to All.
+      const nextIdx = (currentIdx + 1) % CATEGORY_CYCLE.length;
+      // CATEGORY_CYCLE.length is always 7 (1 null + 6 categories) so
+      // nextIdx is always in range — cast away the `| undefined`.
+      const nextCat = (CATEGORY_CYCLE[nextIdx] ?? null) as FlagCategory | null;
+      const nextSet =
+        nextCat === null
+          ? new Set<FlagCategory>()
+          : new Set<FlagCategory>([nextCat]);
+      AccessibilityInfo.announceForAccessibility(
+        nextCat === null
+          ? 'Category filter: all categories'
+          : `Category filter: ${CATEGORY_LABELS[nextCat]} only`,
+      );
+      return nextSet;
+    });
+  }, []); // CATEGORY_CYCLE + CATEGORY_LABELS are module-level constants; no closure deps
 
   // Whether the status filter differs from the default — used to glow the
   // filter button and show the Clear link.
@@ -376,6 +420,18 @@ export default function MapScreen() {
 
   const filtersActive =
     activeCategories.size > 0 || minSeverity > 1 || statusFilterActive;
+
+  // Category quick-cycle button derived state — computed once per render
+  // so the JSX stays readable. catCycleActive drives the filled-blue style;
+  // catCycleLabel is what the button face shows.
+  const catCycleActiveCat: FlagCategory | null =
+    activeCategories.size === 1
+      ? (([...activeCategories] as FlagCategory[])[0] ?? null)
+      : null;
+  const catCycleActive = catCycleActiveCat !== null;
+  const catCycleLabel = catCycleActive && catCycleActiveCat !== null
+    ? CATEGORY_ICONS[catCycleActiveCat]
+    : '⊕'; // "all categories" glyph — circled plus suggests "expand/all"
 
   // Which saved set, if any, exactly matches the live filter triple.
   // Used to mark the matching chip `selected` so the user can see at a
@@ -619,6 +675,32 @@ export default function MapScreen() {
                 ]}
               >
                 {minSeverity}+
+              </Text>
+            </Pressable>
+            <View style={styles.actionDivider} accessibilityElementsHidden />
+            <Pressable
+              onPress={cycleCategory}
+              style={[
+                styles.actionBtn,
+                styles.catQuickBtn,
+                catCycleActive && styles.actionBtnActive,
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel={
+                catCycleActive && catCycleActiveCat !== null
+                  ? `Category filter: ${CATEGORY_LABELS[catCycleActiveCat]} only`
+                  : 'Category filter: all categories'
+              }
+              accessibilityHint="Tap to cycle through category filters"
+            >
+              <Text
+                style={[
+                  styles.iconText,
+                  styles.catQuickText,
+                  catCycleActive && styles.iconTextActive,
+                ]}
+              >
+                {catCycleLabel}
               </Text>
             </Pressable>
             <View style={styles.actionDivider} accessibilityElementsHidden />
@@ -1136,6 +1218,10 @@ const styles = StyleSheet.create({
   // to fit the "{n}+" label without crowding the glyph against the edges.
   sevQuickBtn: { width: 44 },
   sevQuickText: { fontSize: 14 },
+  // Quick-cycle category button — same sizing/treatment as the severity
+  // button; shows the category icon glyph or "⊕" for "all categories."
+  catQuickBtn: { width: 44 },
+  catQuickText: { fontSize: 15 },
   // Grouped action bar — wraps the icon buttons in one elevated white
   // surface with thin internal dividers so they read as a single
   // connected tool tray instead of four free-floating circles. Replaces
