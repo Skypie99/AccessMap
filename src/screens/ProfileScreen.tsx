@@ -3,6 +3,7 @@ import {
   AccessibilityInfo,
   ActivityIndicator,
   Alert,
+  Modal,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -63,6 +64,11 @@ import {
   type AchievementStats,
 } from '@/lib/achievements';
 import AchievementsModal from '@/components/AchievementsModal';
+import {
+  REPUTATION_TIERS,
+  getTier,
+  pointsToNextTier,
+} from '@/lib/reputationTier';
 
 interface Stats {
   reported: number;
@@ -206,6 +212,11 @@ export default function ProfileScreen() {
   // Inline RELEASES list inside the modal, no fetch.
   const [changelogOpen, setChangelogOpen] = useState(false);
   const [achievementsOpen, setAchievementsOpen] = useState(false);
+
+  // T4: Reputation-tier explainer sheet. Opens when the user taps the
+  // tier pill in the hero card. Inline (not a separate component file)
+  // since it's <40 LOC of JSX and reads cleanly here next to the pill.
+  const [tierExplainerOpen, setTierExplainerOpen] = useState(false);
 
   // Edit-name state. nameDraft is what the user is typing; profile?.display_name
   // is the persisted value. A Save button fires only when they actually differ.
@@ -575,6 +586,19 @@ export default function ProfileScreen() {
   const points = profile?.points ?? 0;
   const { next: nextMilestone, label: milestoneLabel, progress } =
     milestoneProgress(points);
+  // T4: Reputation tier — pure derivation from `points`. Drives the
+  // small pill beside the points number AND the explainer sheet.
+  // `gap` is 0 at Platinum; UI uses that to swap the copy.
+  const tier = getTier(points);
+  const tierGap = pointsToNextTier(points);
+  // Find the next tier (one above current) for the explainer copy. Null
+  // at Platinum — same signal as tier.nextThreshold === null.
+  const nextTierIdx =
+    REPUTATION_TIERS.findIndex((t) => t.name === tier.name) + 1;
+  const nextTier =
+    nextTierIdx < REPUTATION_TIERS.length
+      ? REPUTATION_TIERS[nextTierIdx]
+      : null;
 
   // Derive achievements from the four sources of truth already loaded
   // for the rest of the hero. Pure computation, so re-deriving on every
@@ -606,25 +630,61 @@ export default function ProfileScreen() {
           onDismiss={handleDismissUpdates}
         />
 
-        <View
-          style={styles.heroCard}
-          accessible
-          accessibilityLabel={`${points} points. ${
-            nextMilestone === null
-              ? 'You have reached the top milestone.'
-              : `${nextMilestone - points} points to ${milestoneLabel}.`
-          }`}
-        >
-          <Text style={styles.heroIcon} accessibilityElementsHidden>
+        <View style={styles.heroCard}>
+          {/* T4: previously this View was `accessible={true}` with a
+              combined summary label. Removed so the new tier pill can be
+              its own independently-focusable Pressable — children of an
+              `accessible` View aren't focusable by SR on its own. The
+              Texts below provide the same info in announcement order. */}
+          <Text
+            style={styles.heroIcon}
+            accessibilityElementsHidden
+            importantForAccessibility="no-hide-descendants"
+          >
             🏅
           </Text>
           <Text style={styles.heroLabel}>POINTS</Text>
-          <Text style={styles.heroValue}>{points}</Text>
+          {/* Value + tier pill on the same row so the pill sits BESIDE
+              the points number (per T4 spec). The pill is a Pressable
+              with its own a11y label, focusable independently. */}
+          <View style={styles.heroValueRow}>
+            <Text style={styles.heroValue} accessibilityLabel={`${points} points`}>
+              {points}
+            </Text>
+            <Pressable
+              onPress={() => setTierExplainerOpen(true)}
+              style={({ pressed }) => [
+                styles.tierPill,
+                pressed && styles.tierPillPressed,
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel={
+                `${tier.label} tier. ${points} ${points === 1 ? 'point' : 'points'}. ` +
+                `Tap to see all tiers.`
+              }
+              accessibilityHint={
+                nextTier
+                  ? `Opens a sheet with the full tier ladder and how many points to ${nextTier.label}.`
+                  : 'Opens a sheet with the full tier ladder.'
+              }
+              hitSlop={8}
+            >
+              <Text
+                style={styles.tierPillEmoji}
+                accessibilityElementsHidden
+                importantForAccessibility="no-hide-descendants"
+              >
+                {tier.emoji}
+              </Text>
+              <Text style={styles.tierPillLabel}>{tier.label}</Text>
+            </Pressable>
+          </View>
           {nextMilestone !== null ? (
             <>
               <View
                 style={styles.progressTrack}
                 accessibilityElementsHidden
+                importantForAccessibility="no-hide-descendants"
               >
                 <View
                   style={[styles.progressFill, { width: progressBarWidth }]}
@@ -1161,6 +1221,109 @@ export default function ProfileScreen() {
           void refreshUpdateCount();
         }}
       />
+
+      {/* T4: Reputation-tier explainer. Inline (not a separate file)
+          because it's tiny — header + 4 tier rows + a one-line "X to
+          next tier" copy. Matches the visual pattern of AboutModal:
+          full-screen Modal with translucent backdrop and a rounded
+          card. `accessibilityViewIsModal` on iOS hides the underlying
+          screen from SR while open. */}
+      <Modal
+        visible={tierExplainerOpen}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setTierExplainerOpen(false)}
+      >
+        <View style={styles.tierBackdrop}>
+          <View
+            style={styles.tierSheet}
+            accessibilityViewIsModal
+          >
+            <View style={styles.tierHeaderRow}>
+              <Text style={styles.tierHeaderTitle} accessibilityRole="header">
+                Reputation tiers
+              </Text>
+              <Pressable
+                onPress={() => setTierExplainerOpen(false)}
+                hitSlop={12}
+                style={styles.tierCloseBtn}
+                accessibilityRole="button"
+                accessibilityLabel="Close reputation tiers"
+              >
+                <Text style={styles.tierCloseBtnText}>✕</Text>
+              </Pressable>
+            </View>
+
+            <Text style={styles.tierIntro}>
+              Earn points by reporting flags and helping verify or
+              resolve them. Each tier reflects how much you've contributed.
+            </Text>
+
+            <View style={styles.tierList}>
+              {REPUTATION_TIERS.map((t) => {
+                const isCurrent = t.name === tier.name;
+                return (
+                  <View
+                    key={t.name}
+                    style={[
+                      styles.tierRow,
+                      isCurrent && styles.tierRowCurrent,
+                    ]}
+                    // selected={true} on the current row lets SR
+                    // announce "selected" so users know which tier
+                    // they're in without scanning visually.
+                    accessibilityRole="text"
+                    accessibilityState={{ selected: isCurrent }}
+                    accessibilityLabel={
+                      `${t.label} tier, ${t.threshold}${
+                        t.nextThreshold === null
+                          ? '+'
+                          : ` to ${t.nextThreshold - 1}`
+                      } points` +
+                      (isCurrent ? '. Your current tier.' : '')
+                    }
+                  >
+                    <Text
+                      style={styles.tierRowEmoji}
+                      accessibilityElementsHidden
+                      importantForAccessibility="no-hide-descendants"
+                    >
+                      {t.emoji}
+                    </Text>
+                    <View style={styles.tierRowTextWrap}>
+                      <Text
+                        style={[
+                          styles.tierRowLabel,
+                          isCurrent && styles.tierRowLabelCurrent,
+                        ]}
+                      >
+                        {t.label}
+                        {isCurrent && (
+                          <Text style={styles.tierRowCurrentTag}>
+                            {' '}
+                            · you are here
+                          </Text>
+                        )}
+                      </Text>
+                      <Text style={styles.tierRowRange}>
+                        {t.nextThreshold === null
+                          ? `${t.threshold}+ points`
+                          : `${t.threshold} – ${t.nextThreshold - 1} points`}
+                      </Text>
+                    </View>
+                  </View>
+                );
+              })}
+            </View>
+
+            <Text style={styles.tierFooter}>
+              {nextTier
+                ? `You're ${tierGap} ${tierGap === 1 ? 'point' : 'points'} away from ${nextTier.label} ${nextTier.emoji}`
+                : `You've reached the top tier — keep contributing!`}
+            </Text>
+          </View>
+        </View>
+      </Modal>
     </>
   );
 }
@@ -1241,6 +1404,115 @@ const styles = StyleSheet.create({
     height: '100%',
     backgroundColor: '#fff',
     borderRadius: 999,
+  },
+  // T4: Hero value row — wraps the large points number + the small
+  // tier pill side-by-side. centerY keeps the pill optically aligned
+  // with the digit baseline; gap gives the pill breathing room.
+  heroValueRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  // T4: Tier pill. White background on the blue hero gives a high
+  // contrast surface for the label (#1b4373 ≈ 10:1 on #fff, well
+  // above WCAG AA). 44pt min height keeps the tap target compliant
+  // even though the visual pill is shorter — the hitSlop on the
+  // Pressable closes the rest of the gap.
+  tierPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 999,
+    backgroundColor: '#fff',
+    minHeight: 32,
+    minWidth: 44,
+    justifyContent: 'center',
+    // Subtle shadow so the pill reads as a separate affordance, not a
+    // flat label baked into the hero.
+    shadowColor: '#000',
+    shadowOpacity: 0.12,
+    shadowRadius: 3,
+    shadowOffset: { width: 0, height: 1 },
+    elevation: 2,
+  },
+  tierPillPressed: {
+    backgroundColor: '#eaf3ff',
+    opacity: 0.95,
+  },
+  tierPillEmoji: { fontSize: 14 },
+  tierPillLabel: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#1b4373',
+  },
+  // T4: Tier-explainer modal. Mirrors AboutModal's translucent backdrop
+  // and rounded card; lives inline here because it's small and
+  // tightly coupled to the pill above.
+  tierBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    justifyContent: 'center',
+    padding: 24,
+  },
+  tierSheet: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 20,
+    gap: 12,
+    shadowColor: '#000',
+    shadowOpacity: 0.25,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 10,
+  },
+  tierHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  tierHeaderTitle: { fontSize: 18, fontWeight: '700', color: '#222' },
+  tierCloseBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#eef1f5',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  tierCloseBtnText: { fontSize: 16, color: '#555', fontWeight: '600' },
+  tierIntro: { fontSize: 13, color: '#555', lineHeight: 18 },
+  tierList: { gap: 8, marginTop: 4 },
+  tierRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    backgroundColor: '#f7f9fc',
+    minHeight: 48,
+  },
+  // Highlights the user's current tier — pale blue tint + left accent
+  // bar so it's recognizable at a glance.
+  tierRowCurrent: {
+    backgroundColor: '#eaf3ff',
+    borderLeftWidth: 3,
+    borderLeftColor: '#2f80ed',
+  },
+  tierRowEmoji: { fontSize: 22 },
+  tierRowTextWrap: { flex: 1, gap: 2 },
+  tierRowLabel: { fontSize: 15, fontWeight: '700', color: '#333' },
+  tierRowLabelCurrent: { color: '#1b4373' },
+  tierRowCurrentTag: { fontSize: 12, fontWeight: '600', color: '#345e8e' },
+  tierRowRange: { fontSize: 12, color: '#666' },
+  tierFooter: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#345e8e',
+    textAlign: 'center',
+    marginTop: 4,
   },
   // Visit-streak card — amber-tinted pill row between the stat tiles and
   // the status breakdown. Reads as a "you're on a roll" pat-on-the-back
