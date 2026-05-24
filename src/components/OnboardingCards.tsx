@@ -1,5 +1,6 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
+  AccessibilityInfo,
   Modal,
   Pressable,
   ScrollView,
@@ -25,9 +26,19 @@ import { color, font, radius, shadow, spacing } from '@/theme';
  * a user who hasn't even signed up yet still gets the pitch.
  *
  * Accessibility notes:
- *  - The card heading uses accessibilityRole="header".
- *  - The card container carries a "Card N of 3" label so SR users know
- *    where they are in the sequence.
+ *  - The root surface sets accessibilityViewIsModal so VoiceOver focus
+ *    stays contained inside the onboarding overlay and can't escape to
+ *    the underlying auth screen.
+ *  - The card heading uses accessibilityRole="header" as a STANDALONE
+ *    element — the card container does NOT set `accessible`, so children
+ *    (heading, body, position text) are individually focusable and the
+ *    heading rotor works.
+ *  - "Card N of 3" is announced two ways: (a) a small visible position
+ *    label above the heading that screen readers pick up, and (b) an
+ *    AccessibilityInfo.announceForAccessibility() when the active card
+ *    changes via Back/Next/swipe.
+ *  - Respects the OS "Reduce Motion" setting: when on, the swipe paging
+ *    animation is skipped (cards still navigable via Back/Next).
  *  - Decorative emoji is hidden from assistive tech (text describes the
  *    same thing without it).
  *  - Skip / Back / Next buttons are all ≥44pt high with explicit labels
@@ -69,10 +80,40 @@ export default function OnboardingCards({ onDone }: Props) {
   const { width } = useWindowDimensions();
   const scrollRef = useRef<ScrollView | null>(null);
   const [index, setIndex] = useState(0);
+  const [reduceMotion, setReduceMotion] = useState(false);
+
+  // Track the OS "Reduce Motion" preference so the swipe animation can
+  // be skipped when the user has asked the system to minimize motion.
+  useEffect(() => {
+    let cancelled = false;
+    AccessibilityInfo.isReduceMotionEnabled().then((on) => {
+      if (!cancelled) setReduceMotion(on);
+    });
+    const sub = AccessibilityInfo.addEventListener(
+      'reduceMotionChanged',
+      setReduceMotion,
+    );
+    return () => {
+      cancelled = true;
+      sub.remove();
+    };
+  }, []);
+
+  // When the active card changes (Back/Next/swipe), announce the new
+  // position so screen reader users get the "Card N of 3" context even
+  // though the card container is no longer a single accessible element.
+  useEffect(() => {
+    AccessibilityInfo.announceForAccessibility(
+      `Card ${index + 1} of ${CARDS.length}`,
+    );
+  }, [index]);
 
   const goTo = (next: number) => {
     const clamped = Math.max(0, Math.min(CARDS.length - 1, next));
-    scrollRef.current?.scrollTo({ x: clamped * width, animated: true });
+    scrollRef.current?.scrollTo({
+      x: clamped * width,
+      animated: !reduceMotion,
+    });
     setIndex(clamped);
   };
 
@@ -93,7 +134,11 @@ export default function OnboardingCards({ onDone }: Props) {
       onRequestClose={onDone}
       presentationStyle="fullScreen"
     >
-      <View style={styles.screen}>
+      <View
+        style={styles.screen}
+        accessibilityViewIsModal
+        importantForAccessibility="yes"
+      >
         {/* Top row: Skip always visible top-right. */}
         <View style={styles.topBar}>
           <Pressable
@@ -119,12 +164,10 @@ export default function OnboardingCards({ onDone }: Props) {
           style={styles.scroll}
         >
           {CARDS.map((card, i) => (
-            <View
-              key={card.title}
-              style={[styles.card, { width }]}
-              accessible
-              accessibilityLabel={`Card ${i + 1} of ${CARDS.length}. ${card.title}. ${card.body}`}
-            >
+            // No `accessible` here — keeping each child individually
+            // focusable preserves the heading role for the VoiceOver
+            // rotor (otherwise the whole card collapses to one label).
+            <View key={card.title} style={[styles.card, { width }]}>
               <Text
                 style={styles.emoji}
                 accessibilityElementsHidden
@@ -132,6 +175,7 @@ export default function OnboardingCards({ onDone }: Props) {
               >
                 {card.emoji}
               </Text>
+              <Text style={styles.position}>{`Card ${i + 1} of ${CARDS.length}`}</Text>
               <Text style={styles.title} accessibilityRole="header">
                 {card.title}
               </Text>
@@ -252,6 +296,15 @@ const styles = StyleSheet.create({
     gap: spacing.xl,
   },
   emoji: { fontSize: font.size.displayLg, textAlign: 'center' },
+  // Small position label above the heading — visible AND screen-reader
+  // friendly. textMuted (#666) is 5.7:1 on white, AA pass.
+  position: {
+    fontSize: font.size.sm,
+    color: color.textMuted,
+    fontWeight: font.weight.semibold,
+    textAlign: 'center',
+    letterSpacing: 0.5,
+  },
   title: {
     fontSize: font.size.h2,
     fontWeight: font.weight.bold,
