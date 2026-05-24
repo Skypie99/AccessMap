@@ -779,7 +779,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   watchBtnActive: {
-    borderColor: '#f1a520',
+    borderColor: color.accentOrange,
     backgroundColor: '#fff8e7',
   },
   watchBtnPressed: {

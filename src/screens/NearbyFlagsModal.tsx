@@ -21,6 +21,7 @@ import {
 } from '@/lib/distance';
 import { searchFlags } from '@/lib/flagSearch';
 import type { FlagCategory, FlagRow } from '@/types/database';
+import { color } from '@/theme';
 
 interface Props {
   visible: boolean;
@@ -410,7 +411,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  searchClearPressed: { backgroundColor: '#dde3eb', opacity: 0.85 },
+  searchClearPressed: { backgroundColor: color.borderPressed, opacity: 0.85 },
   searchClearText: { fontSize: 13, color: '#555', fontWeight: '700' },
   chipBar: {
     flexDirection: 'row',

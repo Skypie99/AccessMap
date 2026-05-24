@@ -49,6 +49,7 @@ import type { RootTabParamList } from '@/navigation/RootNavigator';
 import FlagDetailModal, {
   type DetailAction,
 } from '@/components/FlagDetailModal';
+import { color } from '@/theme';
 
 // Statuses Tasks shows. Even if the provider's `statuses` is widened by the
 // Map's filter, Tasks restricts the visible set to the actionable lifecycle
@@ -1153,8 +1154,8 @@ const styles = StyleSheet.create({
   sortLabel: {
     fontSize: 12,
     fontWeight: '600',
-    // #5b6470 on screen wash (#f7f9fc) ≈ 7.0:1 — comfortably above AA.
-    color: '#5b6470',
+    // color.textMutedAlt (#5b6470) on screen wash (#f7f9fc) ≈ 7.0:1 — comfortably above AA.
+    color: color.textMutedAlt,
     marginRight: 2,
   },
   sortChip: {
@@ -1197,9 +1198,9 @@ const styles = StyleSheet.create({
   // thumbnail or muddle the severity dot. Pairs with the checkmark in
   // the card header for an unambiguous "yes this one's picked" signal.
   cardSelected: {
-    backgroundColor: '#eaf3ff',
+    backgroundColor: color.brandSofter,
     borderWidth: 2,
-    borderColor: '#2f80ed',
+    borderColor: color.brand,
     // Compensate for the 2px border so the card doesn't jump on toggle.
     padding: 12,
   },

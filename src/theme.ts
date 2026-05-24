@@ -9,6 +9,36 @@
  *
  * Every color in this file has been spot-checked against WCAG 2.2 AA at
  * the pairings the app actually uses (see DESIGN.md → "Color pairings").
+ *
+ * ---------------------------------------------------------------------------
+ * DARK-MODE FOUNDATION (Cycle D / d2 — 2026-05-24)
+ * ---------------------------------------------------------------------------
+ * These tokens exist so that a future dark-mode swap is a one-file change.
+ * Today every value is the light palette; Phase 2 will introduce a theme
+ * context that picks light vs dark per token at runtime. The names below
+ * are intentionally semantic (surface / textPrimary / brand) rather than
+ * literal (white / black / blue) so the same names work in either palette.
+ *
+ * Phase 1 migration status (this branch):
+ *   - DONE: StatusHistoryModal entryDot (the Cycle C carry-forward)
+ *   - DONE: ~40 callsites migrated across UpdateBanner, FilterPresetsModal,
+ *           SavedPlacesModal, MyReportsModal, ActivityFeedModal,
+ *           NearbyFlagsModal, MyWatchedModal, ProfileScreen, TasksScreen,
+ *           MapScreen, NotificationPrefsModal, FlagDetailModal, and
+ *           ReportFlagModal for brand / brandSofter / borderPressed /
+ *           textMutedAlt / accentOrange / brandTextAlt.
+ *   - OUTSTANDING (not blocking dark mode, but worth a future polish pass):
+ *     * single-use literals scattered across modal headers (#fff, #222, #333)
+ *       — these are already covered by surface / textStrong / text and can
+ *       be swept in a follow-on cycle.
+ *     * severity colors stay literal in `severity[1..5]` below; they are
+ *       a distinct concern (color-blind ramp) handled by severityColor().
+ *
+ * Phase 2 plan (NOT this branch): introduce a ThemeProvider that returns a
+ * `color` object whose values switch on light/dark. Because every consumer
+ * already imports the same named token, no callsite changes will be needed
+ * beyond `import { color } from '@/theme'` → `const color = useColor()`.
+ * ---------------------------------------------------------------------------
  */
 
 import type { FlagSeverity } from './types/database';
@@ -43,7 +73,9 @@ export const color = {
   // for text-on-white anywhere it's NOT explicitly ≥14pt bold.
   brand: '#2f80ed',             // 3.3:1 on white → UI/large-text only (AA UI 3:1)
   brandText: '#1c4f99',         // 7.6:1 on white → AA pass at any text size
+  brandTextAlt: '#1a4fa3',      // near-identical AA-safe brand text (used by UpdateBanner, SavedPlacesModal, FilterPresetsModal, MapScreen). Kept as a separate token so future dark-mode swap can choose to merge with brandText or keep distinct.
   brandSoft: '#d6e6f9',         // brand-tinted background for verified pill
+  brandSofter: '#eaf3ff',       // even lighter brand wash (chip backgrounds, banner backgrounds, "manage" affordances)
   brandOnSoft: '#1c4f99',       // dark brand text for use on brandSoft (7.6:1)
 
   // Status surfaces (bg + fg pairings) — used by status pills, banners
@@ -72,7 +104,12 @@ export const color = {
   border: '#e5e5e5',
   borderStrong: '#d0d4dc',
   borderSubtle: '#dde2ea',
+  borderPressed: '#dde3eb',     // pressed-state background on neutral chips/buttons (MyReportsModal, ActivityFeedModal, NearbyFlagsModal, MyWatchedModal)
   divider: '#ddd',
+
+  // Additional muted-text / accent tokens
+  textMutedAlt: '#5b6470',      // AA-safe muted text on light surfaces (4.6:1 on #f4f6f8) — used by ReportFlagModal hints, NotificationPrefsModal copy, TasksScreen
+  accentOrange: '#f1a520',      // amber accent for "watch / pinned" affordances (NotificationPrefsModal, ProfileScreen, SavedPlacesModal, MyWatchedModal, FlagDetailModal). Distinct from severity[4].color (#e67e22) on purpose.
 
   // Misc
   shadow: '#000',

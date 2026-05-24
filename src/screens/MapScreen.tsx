@@ -1649,9 +1649,9 @@ const styles = StyleSheet.create({
   placeChipPressed: { backgroundColor: '#eef1f5', opacity: 0.9 },
   // The trailing manage chip uses a tinted background so the affordance
   // reads visually distinct from the place chips.
-  placeChipManage: { backgroundColor: '#eaf3ff' },
-  placeChipGlyph: { fontSize: 14, color: '#2f80ed' },
-  placeChipText: { fontSize: 13, fontWeight: '600', color: '#1a4fa3' },
+  placeChipManage: { backgroundColor: color.brandSofter },
+  placeChipGlyph: { fontSize: 14, color: color.brand },
+  placeChipText: { fontSize: 13, fontWeight: '600', color: color.brandTextAlt },
   statusPill: {
     flex: 1,
     backgroundColor: 'rgba(255,255,255,0.95)',

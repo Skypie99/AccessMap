@@ -28,6 +28,7 @@ import {
 } from 'react-native';
 import { STATUS_LABELS } from '@/lib/flags';
 import { relativeTime } from '@/lib/relativeTime';
+import { color } from '@/theme';
 import {
   formatHistoryEntry,
   listStatusHistory,
@@ -129,7 +130,7 @@ export default function StatusHistoryModal({
           >
             {loading ? (
               <View style={styles.center} accessibilityLiveRegion="polite">
-                <ActivityIndicator color="#1c4f99" />
+                <ActivityIndicator color={color.brandText} />
                 <Text style={styles.loadingText}>Loading history…</Text>
               </View>
             ) : formatted.length === 0 ? (
@@ -233,14 +234,14 @@ const styles = StyleSheet.create({
     gap: 12,
     paddingVertical: 4,
   },
-  // Brand-blue bullet. Literal hex for now — CL2 (color tokens) hasn't
-  // landed in this branch yet (we're off main 40d7dd2). When CL2 merges
-  // upstream, swap to `color.brandText`. Polish cleanup will catch this.
+  // Brand-blue bullet — uses color.brandText (the AA-safe small-text brand
+  // hex). Cycle D / d2 cleared the Cycle C carry-forward: was previously
+  // a literal '#1c4f99' awaiting CL2 to land in this branch.
   entryDot: {
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#1c4f99',
+    backgroundColor: color.brandText,
     marginTop: 6,
   },
   entryTextWrap: { flex: 1, gap: 2 },

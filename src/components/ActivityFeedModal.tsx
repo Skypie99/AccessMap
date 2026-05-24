@@ -40,6 +40,7 @@ import { groupByDay } from '@/lib/dayGroup';
 import { relativeTime } from '@/lib/relativeTime';
 import { loadWatched } from '@/lib/watchedFlags';
 import type { FlagRow } from '@/types/database';
+import { color } from '@/theme';
 
 type FeedFilter = 'all' | 'mine' | 'watched';
 
@@ -470,7 +471,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  viewOnMapBtnPressed: { opacity: 0.6, backgroundColor: '#dde3eb' },
+  viewOnMapBtnPressed: { opacity: 0.6, backgroundColor: color.borderPressed },
   viewOnMapGlyph: { fontSize: 14 },
   rowBody: { flexDirection: 'row', gap: 12 },
   thumb: {

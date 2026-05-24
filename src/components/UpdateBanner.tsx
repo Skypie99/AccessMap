@@ -20,6 +20,7 @@ import {
   Text,
   View,
 } from 'react-native';
+import { color } from '@/theme';
 
 interface Props {
   count: number;
@@ -91,7 +92,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    backgroundColor: '#eaf3ff',
+    backgroundColor: color.brandSofter,
     borderRadius: 10,
     paddingHorizontal: 14,
     paddingVertical: 12,
@@ -100,7 +101,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   icon: { fontSize: 18 },
-  text: { flex: 1, fontSize: 14, color: '#1a4fa3', fontWeight: '600' },
+  text: { flex: 1, fontSize: 14, color: color.brandTextAlt, fontWeight: '600' },
   viewBtn: {
     paddingHorizontal: 14,
     paddingVertical: 8,
@@ -120,5 +121,5 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   dismissBtnPressed: { backgroundColor: '#d3e3f5' },
-  dismissText: { fontSize: 14, color: '#1a4fa3', fontWeight: '700' },
+  dismissText: { fontSize: 14, color: color.brandTextAlt, fontWeight: '700' },
 });

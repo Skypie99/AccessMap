@@ -91,3 +91,81 @@ describe('color.brandText', () => {
     expect(color.statusVerifiedFg).toBe(color.brandText);
   });
 });
+
+// -------------------------------------------------------------------------
+// Cycle D / d2 — Theme token foundation lock
+//
+// These tests pin the exact hex values of the new tokens added to support
+// a future dark-mode swap. If any of these drift, every callsite that
+// migrated off the raw literal would silently change shade — so we lock
+// them here.
+// -------------------------------------------------------------------------
+
+describe('theme token foundation (Cycle D / d2)', () => {
+  it('color.brand is the documented primary action blue (#2f80ed)', () => {
+    expect(color.brand).toBe('#2f80ed');
+  });
+
+  it('color.brandTextAlt is the documented near-brandText hex (#1a4fa3)', () => {
+    expect(color.brandTextAlt).toBe('#1a4fa3');
+  });
+
+  it('color.brandTextAlt passes WCAG 2.2 AA small-text contrast on white', () => {
+    // UpdateBanner text, SavedPlacesModal addBtnText, FilterPresetsModal
+    // newBtnText, MapScreen placeChipText all use this for small bold
+    // text on near-white surfaces. Must pass 4.5:1.
+    const ratio = contrastRatio(color.brandTextAlt, color.surface);
+    expect(ratio).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it('color.surface is white (#fff)', () => {
+    expect(color.surface).toBe('#fff');
+  });
+
+  it('color.surfaceMuted is the screen wash (#f7f9fc)', () => {
+    expect(color.surfaceMuted).toBe('#f7f9fc');
+  });
+
+  it('color.brandSofter is the documented brand wash (#eaf3ff)', () => {
+    // Used by tier pill, nearestBtn, UpdateBanner background, place chip
+    // manage, FilterPresetsModal newBtn, SavedPlacesModal addBtn, and
+    // TasksScreen cardSelected. If this drifts, the whole brand-tinted
+    // background family drifts in lockstep — which is fine for dark mode
+    // (intentional) but should NEVER happen as a typo.
+    expect(color.brandSofter).toBe('#eaf3ff');
+  });
+
+  it('color.borderPressed is the documented pressed-chip background (#dde3eb)', () => {
+    // Pressed state on MyReportsModal/ActivityFeedModal/NearbyFlagsModal/
+    // MyWatchedModal "view on map" + search-clear buttons.
+    expect(color.borderPressed).toBe('#dde3eb');
+  });
+
+  it('color.textMutedAlt is the documented AA-safe muted body (#5b6470)', () => {
+    expect(color.textMutedAlt).toBe('#5b6470');
+  });
+
+  it('color.textMutedAlt passes WCAG 2.2 AA small-text contrast on white', () => {
+    // ReportFlagModal tagChipTextDisabled / tagHelper, NotificationPrefsModal
+    // footer, TasksScreen sortLabel all depend on this for AA on the screen
+    // wash / white. Documented as 4.6:1 on #f4f6f8; on pure white it's
+    // even better (~6.5:1), so this test asserts the floor.
+    const ratio = contrastRatio(color.textMutedAlt, color.surface);
+    expect(ratio).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it('color.accentOrange is the documented amber accent (#f1a520)', () => {
+    // Watched-flag accent. Distinct from severity[4] (#e67e22) on purpose
+    // — different semantic (user state vs hazard level).
+    expect(color.accentOrange).toBe('#f1a520');
+    expect(color.accentOrange).not.toBe(severity4Color());
+  });
+});
+
+// Re-import severity locally so the test above can compare without
+// importing the whole module twice at the top.
+function severity4Color(): string {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const { severity } = require('../../theme');
+  return severity[4].color;
+}
