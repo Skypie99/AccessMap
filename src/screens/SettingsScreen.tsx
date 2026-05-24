@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import {
+  ActivityIndicator,
   Alert,
   Platform,
   Pressable,
@@ -16,7 +17,6 @@ import { useAuth } from '@/lib/auth';
 import { CATEGORY_LABELS, listFlagsByUser } from '@/lib/flags';
 import { listFeedbackByUser } from '@/lib/feedbackStore';
 import { formatDataExport } from '@/lib/dataExport';
-import { errorMessage } from '@/lib/errors';
 import type { UserRow } from '@/types/database';
 import NotificationPrefsModal from '@/components/NotificationPrefsModal';
 import HelpModal from '@/components/HelpModal';
@@ -36,6 +36,7 @@ function SettingsRow({
   destructive,
   icon,
   disabled,
+  busy,
 }: {
   title: string;
   subtitle: string;
@@ -51,6 +52,11 @@ function SettingsRow({
   // and block re-entrancy (the handler also no-ops if it's busy, but the
   // visual cue helps sighted users).
   disabled?: boolean;
+  // When true, swap the trailing chevron for an ActivityIndicator so sighted
+  // users see that the row's handler is mid-flight (the 2-5s data-export
+  // fetch otherwise looks frozen). Also bumps accessibilityState.busy so
+  // screen readers announce the activity rather than a silent dead row.
+  busy?: boolean;
 }) {
   return (
     <Pressable
@@ -64,7 +70,7 @@ function SettingsRow({
       accessibilityRole="button"
       accessibilityLabel={title}
       accessibilityHint={accessibilityHint}
-      accessibilityState={{ disabled: !!disabled }}
+      accessibilityState={{ disabled: !!disabled, busy: !!busy }}
     >
       {icon ? (
         <Text
@@ -81,16 +87,28 @@ function SettingsRow({
         </Text>
         <Text style={styles.rowSubtitle}>{subtitle}</Text>
       </View>
-      {/* Chevron is decorative — the row's accessibilityLabel already
-          communicates the action. Hiding it from AT avoids "greater than"
-          announcements after every row title. */}
-      <Text
-        style={styles.rowChevron}
-        accessibilityElementsHidden
-        importantForAccessibility="no-hide-descendants"
-      >
-        ›
-      </Text>
+      {/* Trailing affordance: a spinner while the row's handler runs, a
+          decorative chevron otherwise. Both are hidden from AT (the row's
+          accessibilityLabel + busy state carry the meaning). */}
+      {busy ? (
+        <ActivityIndicator
+          // accessibilityElementsHidden + importantForAccessibility hide the
+          // spinner from VoiceOver/TalkBack — the busy state on the parent
+          // Pressable already announces "in progress".
+          accessibilityElementsHidden
+          importantForAccessibility="no-hide-descendants"
+          style={styles.rowSpinner}
+          color={color.textSubtle}
+        />
+      ) : (
+        <Text
+          style={styles.rowChevron}
+          accessibilityElementsHidden
+          importantForAccessibility="no-hide-descendants"
+        >
+          ›
+        </Text>
+      )}
     </Pressable>
   );
 }
@@ -220,19 +238,25 @@ export default function SettingsScreen() {
         // Native: hand the text to the OS share sheet. The share sheet
         // has a "Copy" action on iOS and Android — that's the clipboard
         // path the spec calls for, plus Mail / Notes / Files / etc.
-        await Share.share({ message: text });
+        const result = await Share.share({ message: text });
+        // On iOS, dismissing the sheet (tapping outside / Cancel) resolves
+        // the promise with `{ action: Share.dismissedAction }` — it does
+        // NOT throw. Without this guard the user would see a misleading
+        // "Data exported" Alert even though they cancelled. Short-circuit
+        // here so the success Alert only fires when they actually picked
+        // an activity (Copy / Mail / Notes / etc.).
+        if (result.action === Share.dismissedAction) {
+          return;
+        }
         // Confirm after the sheet closes so the screen-reader announcement
         // includes the count info.
         Alert.alert('Data exported', successMsg);
       }
-    } catch (e) {
-      const msg = errorMessage(e);
-      // User-cancel on iOS Share throws — swallow it so it doesn't look
-      // like a real failure.
-      if (/cancel|dismiss/i.test(msg)) {
-        setExporting(false);
-        return;
-      }
+    } catch {
+      // Real failures only — the iOS dismiss path is handled above and
+      // never reaches this catch. Keep the message generic; PIPEDA-style
+      // retries are fine, we don't want to leak Supabase/network internals
+      // to the user.
       Alert.alert('Could not export data', 'Try again.');
     } finally {
       setExporting(false);
@@ -330,6 +354,7 @@ export default function SettingsScreen() {
           accessibilityHint="Copies your flags and feedback to your clipboard as plain text"
           onPress={handleExportPress}
           disabled={exporting}
+          busy={exporting}
         />
 
         <Text style={styles.sectionLabel} accessibilityRole="header">
@@ -428,5 +453,11 @@ const styles = StyleSheet.create({
     fontSize: 28,
     color: color.textSubtle,
     fontWeight: font.weight.regular,
+  },
+  // Spinner sits where the chevron usually does so the row width doesn't
+  // jump when toggling busy/idle. Width roughly matches the chevron's
+  // glyph width — keeps the layout calm.
+  rowSpinner: {
+    width: 28,
   },
 });

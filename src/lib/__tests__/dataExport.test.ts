@@ -390,4 +390,68 @@ describe('formatDataExport', () => {
     // And the rest of the export still renders.
     expect(out).toContain('(End of export)');
   });
+
+  // -----------------------------------------------------------------
+  // Defensive guards for non-finite points and undefined category labels
+  // -----------------------------------------------------------------
+  //
+  // These pin the "no garbage in the export" behavior. `??` is not enough
+  // for points (it lets NaN/Infinity through), and the callback for the
+  // category label may return undefined for an unknown enum value down the
+  // road. Both used to render literal "NaN" / "Infinity" / "undefined"
+  // into the PIPEDA right-of-access output — these tests would catch a
+  // regression to that state.
+
+  it('renders Points: 0 when user.points is NaN', () => {
+    const out = formatDataExport({
+      user: { points: NaN },
+      flags: [],
+      categoryLabel: label,
+      generatedAt: FIXED_DATE,
+    });
+    expect(out).toContain('Points: 0');
+    expect(out).not.toContain('NaN');
+  });
+
+  it('renders Points: 0 when user.points is Infinity', () => {
+    const out = formatDataExport({
+      user: { points: Infinity },
+      flags: [],
+      categoryLabel: label,
+      generatedAt: FIXED_DATE,
+    });
+    expect(out).toContain('Points: 0');
+    expect(out).not.toContain('Infinity');
+  });
+
+  it('falls back to raw category when categoryLabel returns undefined', () => {
+    const out = formatDataExport({
+      user: { email: 'a@b.c' },
+      // Cast to bypass the union — we're simulating an unknown enum value
+      // that the labeller hasn't been taught about.
+      flags: [makeFlag({ category: 'mystery' as unknown as FlagRow['category'] })],
+      // Returning undefined here forces the formatter's `?? f.category`
+      // fallback path.
+      categoryLabel: () => undefined as unknown as string,
+      generatedAt: FIXED_DATE,
+    });
+    // The raw category string survives so the user still sees what type
+    // of flag it was, even if the friendly label is missing.
+    expect(out).toContain('mystery');
+    expect(out).not.toContain('undefined');
+  });
+
+  it('preserves newlines in multi-line descriptions (does not strip or escape)', () => {
+    // Multi-line descriptions are intentionally kept as-is. They render a
+    // touch less neat (the continuation lines aren't re-indented), but the
+    // user's words land in the export verbatim — losing characters would
+    // be a bigger PIPEDA violation than slightly off indentation.
+    const out = formatDataExport({
+      user: { email: 'a@b.c' },
+      flags: [makeFlag({ description: 'first line\nsecond line' })],
+      categoryLabel: label,
+      generatedAt: FIXED_DATE,
+    });
+    expect(out).toContain('first line\nsecond line');
+  });
 });

@@ -87,7 +87,12 @@ export function formatDataExport(input: ExportInput): string {
 
   const emailLine = input.user.email ?? '(no email on file)';
   const displayName = input.user.display_name ?? '(not set)';
-  const points = input.user.points ?? 0;
+  // `??` only catches null/undefined — NaN and Infinity slip through and
+  // would render as literal "NaN" / "Infinity" in the export. Number.isFinite
+  // rejects NaN, +Infinity, -Infinity, and non-numbers, so 0 is the safe
+  // fallback. Keeps PIPEDA "right of access" output honest (never shows the
+  // user garbage where their point total should be).
+  const points = Number.isFinite(input.user.points) ? input.user.points : 0;
 
   const lines: string[] = [];
   lines.push(`AccessMap data export for ${emailLine}`);
@@ -111,7 +116,11 @@ export function formatDataExport(input: ExportInput): string {
   } else {
     for (const f of sortedFlags) {
       const date = formatDate(f.created_at);
-      const category = input.categoryLabel(f.category);
+      // Defensive: if the caller's categoryLabel returns undefined for a
+      // future/unknown category, fall back to the raw enum string. Without
+      // this guard the export would print literal "undefined" — confusing,
+      // and worse, it would hide what the actual category was.
+      const category = input.categoryLabel(f.category) ?? f.category;
       lines.push(
         `  - ${date} · ${category} · severity ${f.severity}/5 · ${f.status}`,
       );
