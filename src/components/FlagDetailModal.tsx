@@ -14,6 +14,7 @@ import {
   View,
 } from 'react-native';
 import { useAuth } from '@/lib/auth';
+import { confirm } from '@/lib/confirm';
 import { getDirectionsUrl } from '@/lib/directionsLink';
 import { errorMessage } from '@/lib/errors';
 import { formatFlagShareText } from '@/lib/shareFlag';
@@ -221,31 +222,28 @@ export default function FlagDetailModal({
     }
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (busy) return;
-    Alert.alert(
+    // confirm() is platform-aware: on web, Alert.alert is a no-op, so we use
+    // window.confirm there. On native, it renders the OS alert with a
+    // destructive-style confirm button.
+    const ok = await confirm(
       'Delete this flag?',
       'This permanently removes your report. This cannot be undone.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            setBusy(true);
-            try {
-              await deleteFlag(shownFlag.id);
-              onDeleted(shownFlag.id);
-              onClose();
-            } catch (e) {
-              Alert.alert('Could not delete flag', errorMessage(e));
-            } finally {
-              setBusy(false);
-            }
-          },
-        },
-      ],
+      'Delete',
+      true,
     );
+    if (!ok) return;
+    setBusy(true);
+    try {
+      await deleteFlag(shownFlag.id);
+      onDeleted(shownFlag.id);
+      onClose();
+    } catch (e) {
+      Alert.alert('Could not delete flag', errorMessage(e));
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (

@@ -222,7 +222,7 @@ describe('loadPresets / savePresets IO', () => {
     expect(await loadPresets(USER)).toEqual([]);
   });
 
-  it('trims an over-cap stored array down to FILTER_PRESETS_MAX on load', async () => {
+  it('trims an over-cap stored array down to FILTER_PRESETS_MAX on load by dropping OLDEST', async () => {
     const over: FilterPreset[] = Array.from(
       { length: FILTER_PRESETS_MAX + 5 },
       (_, i) => makePreset({ id: `id-${i}`, name: `P${i}` }),
@@ -230,11 +230,13 @@ describe('loadPresets / savePresets IO', () => {
     mockStorage.__setRaw(KEY, JSON.stringify(over));
     const loaded = await loadPresets(USER);
     expect(loaded).toHaveLength(FILTER_PRESETS_MAX);
-    // The trim walks oldest → newest and stops at the cap, so the FIRST
-    // FILTER_PRESETS_MAX entries survive (this matches the spec: load is
-    // a defensive cap, not a recency filter — addPreset handles "newest
-    // wins" at write time).
-    expect(loaded[0]!.id).toBe('id-0');
+    // The trim drops from the FRONT (oldest), keeping the most-recent
+    // entries — symmetric with addPreset, which also drops oldest at cap.
+    // Quinn flagged the previous asymmetry as a consistency bug; both
+    // paths now agree that "newest wins" at the cap boundary.
+    expect(loaded[0]!.id).toBe('id-5');
+    expect(loaded[loaded.length - 1]!.id).toBe(`id-${FILTER_PRESETS_MAX + 4}`);
+    expect(loaded.some((p) => p.id === 'id-0')).toBe(false);
   });
 
   it('drops malformed entries silently', async () => {

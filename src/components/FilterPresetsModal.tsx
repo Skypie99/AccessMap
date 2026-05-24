@@ -40,6 +40,7 @@ import {
   View,
 } from 'react-native';
 import { useAuth } from '@/lib/auth';
+import { confirm } from '@/lib/confirm';
 import { errorMessage } from '@/lib/errors';
 import {
   addPreset,
@@ -200,34 +201,30 @@ export default function FilterPresetsModal({
   );
 
   const handleDelete = useCallback(
-    (preset: FilterPreset) => {
+    async (preset: FilterPreset) => {
       if (!user) return;
-      Alert.alert(
+      // confirm() falls back to window.confirm on web — Alert.alert is a
+      // no-op there and would silently swallow the destructive prompt.
+      const ok = await confirm(
         'Delete this preset?',
         `"${preset.name}" will be removed from your saved filter presets.`,
-        [
-          { text: 'Cancel', style: 'cancel' },
-          {
-            text: 'Delete',
-            style: 'destructive',
-            onPress: async () => {
-              // Optimistic: drop from state immediately.
-              const next = removePreset(presets, preset.id);
-              setPresets(next);
-              try {
-                await savePresets(user.id, next);
-              } catch (e) {
-                // Roll back on disk failure.
-                setPresets(presets);
-                Alert.alert(
-                  'Could not delete preset',
-                  errorMessage(e, 'Storage error.'),
-                );
-              }
-            },
-          },
-        ],
+        'Delete',
+        true,
       );
+      if (!ok) return;
+      // Optimistic: drop from state immediately.
+      const next = removePreset(presets, preset.id);
+      setPresets(next);
+      try {
+        await savePresets(user.id, next);
+      } catch (e) {
+        // Roll back on disk failure.
+        setPresets(presets);
+        Alert.alert(
+          'Could not delete preset',
+          errorMessage(e, 'Storage error.'),
+        );
+      }
     },
     [user, presets],
   );
