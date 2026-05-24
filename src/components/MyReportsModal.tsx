@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -40,6 +40,20 @@ export default function MyReportsModal({
   const [flags, setFlags] = useState<FlagRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
+  // Sort options: newest (default, matches server order), oldest, or highest
+  // severity first. Applied client-side so no extra fetch is needed.
+  const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'severity'>('newest');
+
+  const sortedFlags = useMemo(() => {
+    const copy = [...flags];
+    if (sortBy === 'oldest') {
+      copy.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+    } else if (sortBy === 'severity') {
+      copy.sort((a, b) => b.severity - a.severity);
+    }
+    // 'newest' keeps the server order (created_at DESC from listFlagsByUser)
+    return copy;
+  }, [flags, sortBy]);
 
   // Guard setState after async calls so a slow fetch can't update a
   // torn-down modal.
@@ -171,6 +185,30 @@ export default function MyReportsModal({
             </Pressable>
           </View>
 
+          {/* Sort chips — only shown when there's something to sort */}
+          {flags.length > 1 && (
+            <View style={styles.sortRow}>
+              {(['newest', 'oldest', 'severity'] as const).map((opt) => {
+                const labels = { newest: 'Newest', oldest: 'Oldest', severity: 'Severity' };
+                const active = sortBy === opt;
+                return (
+                  <Pressable
+                    key={opt}
+                    onPress={() => setSortBy(opt)}
+                    style={[styles.sortChip, active && styles.sortChipActive]}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Sort by ${labels[opt]}`}
+                    accessibilityState={{ selected: active }}
+                  >
+                    <Text style={[styles.sortChipText, active && styles.sortChipTextActive]}>
+                      {labels[opt]}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          )}
+
           {loadError ? (
             <View style={styles.errorBanner}>
               <Text style={styles.errorText}>{loadError}</Text>
@@ -192,7 +230,7 @@ export default function MyReportsModal({
             </View>
           ) : (
             <FlatList
-              data={flags}
+              data={sortedFlags}
               keyExtractor={(f) => f.id}
               renderItem={renderItem}
               contentContainerStyle={
@@ -326,4 +364,21 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 20,
   },
+  sortRow: {
+    flexDirection: 'row',
+    gap: 8,
+    paddingBottom: 10,
+  },
+  sortChip: {
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 999,
+    backgroundColor: '#eef1f5',
+    minHeight: 34,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sortChipActive: { backgroundColor: '#2f80ed' },
+  sortChipText: { fontSize: 13, fontWeight: '600', color: '#555' },
+  sortChipTextActive: { color: '#fff' },
 });
