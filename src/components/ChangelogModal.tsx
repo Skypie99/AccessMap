@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   Modal,
   Pressable,
@@ -49,15 +49,41 @@ const RELEASES: ReleaseNote[] = [
 ];
 
 /**
+ * Build the initial expanded-map for the release list: the first (most
+ * recent) release is open, every older release starts collapsed. Keyed by
+ * the same `${date}-${i}` we use for the React list key so headers stay
+ * stable if a release ever shares a date with another (unlikely but cheap).
+ */
+function initialExpanded(releases: ReleaseNote[]): Record<string, boolean> {
+  const map: Record<string, boolean> = {};
+  releases.forEach((release, i) => {
+    map[`${release.date}-${i}`] = i === 0;
+  });
+  return map;
+}
+
+/**
  * What's New / Changelog modal — accessed from a Profile row. A user-
  * facing complement to LEARNINGS.md (which is dev-facing). Each release
  * is a dated section with a one-line headline + a bulleted list of
- * concrete user-visible changes.
+ * concrete user-visible changes. Sections are collapsible: the newest
+ * release opens by default, the rest start collapsed. State is reset on
+ * each modal open (no persistence — keeps the storage surface tiny).
  *
  * Adding a new release: prepend a new object to RELEASES. Newest at the
  * top is the convention — the modal renders them in array order.
  */
 export default function ChangelogModal({ visible, onClose }: Props) {
+  // Local UI state — not persisted. Each time the modal opens we reset so
+  // the newest release is expanded and the rest collapsed. That keeps the
+  // modal scannable on every open without a storage layer.
+  const initial = useMemo(() => initialExpanded(RELEASES), []);
+  const [expanded, setExpanded] = useState<Record<string, boolean>>(initial);
+
+  useEffect(() => {
+    if (visible) setExpanded(initialExpanded(RELEASES));
+  }, [visible]);
+
   return (
     <Modal
       visible={visible}
@@ -87,28 +113,53 @@ export default function ChangelogModal({ visible, onClose }: Props) {
             contentContainerStyle={styles.bodyContent}
             showsVerticalScrollIndicator={false}
           >
-            {RELEASES.map((release, i) => (
-              <View key={`${release.date}-${i}`} style={styles.releaseCard}>
-                <Text style={styles.dateBadge}>{release.date}</Text>
-                <Text
-                  style={styles.releaseTitle}
-                  accessibilityRole="header"
-                >
-                  {release.title}
-                </Text>
-                {release.items.map((item, j) => (
-                  <View key={j} style={styles.bulletRow}>
+            {RELEASES.map((release, i) => {
+              const key = `${release.date}-${i}`;
+              const isOpen = expanded[key] ?? false;
+              const itemCount = release.items.length;
+              return (
+                <View key={key} style={styles.releaseCard}>
+                  <Pressable
+                    onPress={() =>
+                      setExpanded((prev) => ({ ...prev, [key]: !isOpen }))
+                    }
+                    style={styles.releaseHeader}
+                    accessibilityRole="button"
+                    accessibilityState={{ expanded: isOpen }}
+                    accessibilityLabel={`${release.title}, ${itemCount} item${
+                      itemCount === 1 ? '' : 's'
+                    }`}
+                    accessibilityHint={
+                      isOpen ? 'Tap to collapse' : 'Tap to expand'
+                    }
+                  >
+                    <View style={styles.releaseHeaderText}>
+                      <Text style={styles.dateBadge}>{release.date}</Text>
+                      <Text style={styles.releaseTitle}>{release.title}</Text>
+                    </View>
                     <Text
-                      style={styles.bulletGlyph}
+                      style={styles.chevron}
                       accessibilityElementsHidden
+                      importantForAccessibility="no-hide-descendants"
                     >
-                      •
+                      {isOpen ? '▼' : '▶'}
                     </Text>
-                    <Text style={styles.bulletText}>{item}</Text>
-                  </View>
-                ))}
-              </View>
-            ))}
+                  </Pressable>
+                  {isOpen &&
+                    release.items.map((item, j) => (
+                      <View key={j} style={styles.bulletRow}>
+                        <Text
+                          style={styles.bulletGlyph}
+                          accessibilityElementsHidden
+                        >
+                          •
+                        </Text>
+                        <Text style={styles.bulletText}>{item}</Text>
+                      </View>
+                    ))}
+                </View>
+              );
+            })}
           </ScrollView>
         </View>
       </View>
@@ -170,6 +221,16 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
     ...shadow.e1,
   },
+  releaseHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    minHeight: 44,
+  },
+  releaseHeaderText: {
+    flex: 1,
+    gap: spacing.xs,
+  },
   dateBadge: {
     alignSelf: 'flex-start',
     backgroundColor: color.brandSoft,
@@ -186,8 +247,11 @@ const styles = StyleSheet.create({
     fontSize: font.size.md,
     fontWeight: font.weight.bold,
     color: color.textStrong,
-    marginTop: spacing.xs,
-    marginBottom: spacing.xs,
+  },
+  chevron: {
+    fontSize: font.size.sm,
+    color: color.brand,
+    fontWeight: font.weight.bold,
   },
   bulletRow: {
     flexDirection: 'row',
