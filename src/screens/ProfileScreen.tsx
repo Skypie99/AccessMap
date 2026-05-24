@@ -659,8 +659,11 @@ export default function ProfileScreen() {
               ]}
               accessibilityRole="button"
               accessibilityLabel={
-                `${tier.label} tier. ${points} ${points === 1 ? 'point' : 'points'}. ` +
-                `Tap to see all tiers.`
+                // QA polish: omit the points number here — the hero's
+                // own `heroValue` Text already announces `${points} points`
+                // immediately before this pill, and including it again
+                // caused SR to read the number twice in a row.
+                `${tier.label} tier. Tap to see all tiers.`
               }
               accessibilityHint={
                 nextTier
