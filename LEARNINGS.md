@@ -529,3 +529,85 @@ interface Props {
 Callers that want the shortcut pass it; callers that don't get the original
 "tap row → detail modal" flow with no change. Avoids a parallel
 `MyReportsModalWithMapJump` component — the same modal handles both.
+
+## 2026-05-23 — withWriteLock pattern for AsyncStorage load-modify-save
+
+Any compound AsyncStorage operation that reads → mutates in memory →
+writes back has a window where a concurrent call can clobber the
+result. (Two `addPlace` taps both load N items, both write N+1,
+second wins — net result is N+1, not N+2.) The fix is a per-key
+write queue:
+
+```ts
+const writeQueues = new Map<string, Promise<unknown>>();
+
+function withWriteLock<T>(key: string, task: () => Promise<T>): Promise<T> {
+  const prev = writeQueues.get(key) ?? Promise.resolve();
+  const next = prev.catch(() => undefined).then(task);
+  writeQueues.set(key, next);
+  // CRITICAL: observe both settle paths so the side-effect attachment
+  // doesn't create an unhandled rejection in the test runner.
+  const cleanup = () => {
+    if (writeQueues.get(key) === next) writeQueues.delete(key);
+  };
+  next.then(cleanup, cleanup);
+  return next;
+}
+```
+
+Used by `savedPlaces.ts`. The two gotchas worth remembering: (1) the
+`.catch(() => undefined)` on `prev` is essential — without it, one
+task's rejection blocks every queued task forever; (2) attaching
+cleanup via `next.then(cleanup, cleanup)` instead of `next.finally`
+is what observes both settle outcomes without creating a second
+unhandled rejection branch.
+
+## 2026-05-23 — `accessibilityLabel` on a View needs `accessible={true}` to work
+
+A plain `<View accessibilityLabel="...">` (no `accessible` prop) does
+NOT group its children into a single accessibility node on either iOS
+or Android. VoiceOver/TalkBack walks the children individually and the
+carefully-composed label is silently ignored.
+
+Fix: add `accessible={true}` alongside the label whenever you want a
+View to read as one element. Don't rely on `accessibilityRole="summary"`
+to do this for you — the role doesn't imply the accessibility flag.
+
+This is a frequent surprise — flagged in two consecutive QA passes
+across `AchievementsModal.AchievementRow`, the Profile `streakCard`,
+the `statusBreakdownRow`, and the Map's `placesRow`. Touchables
+(Pressable, TouchableOpacity) ARE accessible by default — only plain
+Views need the explicit flag.
+
+## 2026-05-23 — First-paint state hydration order matters
+
+When multiple async sources hydrate independent state slices that one
+derived render depends on, the order of resolution shows up as visual
+flickers. ProfileScreen's Achievements count flashed "3/13" → "5/13"
+on every focus because the achievements derivation ran on first paint
+with `streak.longest === 0` (initial state) while `tickVisit` was
+still in flight.
+
+Fix: seed each independent slice from disk in its own dedicated
+useEffect (keyed on the smallest possible dep — usually `user.id`),
+separate from the per-focus refresh that does the wider work. The
+seed runs once and gives the first paint real values; the per-focus
+refresh updates them.
+
+```ts
+// Dedicated seed effect — fires on user-id change only.
+useEffect(() => {
+  if (!user) { setStreak(EMPTY_STREAK); return; }
+  let cancelled = false;
+  void loadStreak(user.id).then((seed) => {
+    if (!cancelled && mountedRef.current) setStreak(seed);
+  });
+  return () => { cancelled = true; };
+}, [user]);
+
+// Separate per-focus tick that also updates state.
+useFocusEffect(useCallback(() => { void refreshStreak(); }, [refreshStreak]));
+```
+
+Don't combine the two — the per-focus refresh's await chain is longer
+than a bare load, and the flash is the visible difference between them.
