@@ -46,6 +46,12 @@ import UpdateBanner from '@/components/UpdateBanner';
 import { diffUpdates, loadLastSeen, markAllSeen } from '@/lib/flagUpdates';
 import { loadWatched } from '@/lib/watchedFlags';
 import { EMPTY_STREAK, tickVisit, type StreakState } from '@/lib/streak';
+import {
+  computeAchievements,
+  countEarned,
+  type AchievementStats,
+} from '@/lib/achievements';
+import AchievementsModal from '@/components/AchievementsModal';
 
 interface Stats {
   reported: number;
@@ -152,6 +158,7 @@ export default function ProfileScreen() {
   // What's New / Changelog modal — opened from the "What's New" row.
   // Inline RELEASES list inside the modal, no fetch.
   const [changelogOpen, setChangelogOpen] = useState(false);
+  const [achievementsOpen, setAchievementsOpen] = useState(false);
 
   // Edit-name state. nameDraft is what the user is typing; profile?.display_name
   // is the persisted value. A Save button fires only when they actually differ.
@@ -481,6 +488,18 @@ export default function ProfileScreen() {
   const points = profile?.points ?? 0;
   const { next: nextMilestone, label: milestoneLabel, progress } =
     milestoneProgress(points);
+
+  // Derive achievements from the four sources of truth already loaded
+  // for the rest of the hero. Pure computation, so re-deriving on every
+  // render is cheap (under 20 entries in the catalog).
+  const achievementStats: AchievementStats = {
+    reported: stats.reported,
+    resolved: stats.resolved,
+    points,
+    longestStreak: streak.longest,
+  };
+  const achievements = computeAchievements(achievementStats);
+  const achievementCount = countEarned(achievementStats);
   // Width-style for the progress bar. Use a fixed numeric (not %) string so
   // the StyleSheet types stay happy on web's CSS engine.
   const progressBarWidth = `${Math.round(progress * 100)}%` as `${number}%`;
@@ -677,6 +696,36 @@ export default function ProfileScreen() {
             <Text style={styles.myReportsSubtitle}>
               See what's been reported and triaged across the community,
               newest first.
+            </Text>
+          </View>
+          <Text style={styles.myReportsChevron} accessibilityElementsHidden>
+            ›
+          </Text>
+        </Pressable>
+
+        <Pressable
+          style={({ pressed }) => [
+            styles.myReportsBtn,
+            pressed && styles.myReportsBtnPressed,
+          ]}
+          onPress={() => setAchievementsOpen(true)}
+          accessibilityRole="button"
+          accessibilityLabel={`Achievements, ${achievementCount.earned} of ${achievementCount.total} earned`}
+          accessibilityHint="Opens the full achievement catalog with your progress on each badge"
+        >
+          <View style={styles.myReportsTextWrap}>
+            <Text style={styles.myReportsTitle}>
+              Achievements{' '}
+              <Text style={styles.achievementsCount}>
+                · {achievementCount.earned} / {achievementCount.total}
+              </Text>
+            </Text>
+            <Text style={styles.myReportsSubtitle}>
+              {achievementCount.earned === 0
+                ? 'Earn badges by reporting, triaging, and showing up.'
+                : achievementCount.earned === achievementCount.total
+                  ? "You've earned every badge — legend status."
+                  : `${achievementCount.total - achievementCount.earned} more to go. Tap to see what's next.`}
             </Text>
           </View>
           <Text style={styles.myReportsChevron} accessibilityElementsHidden>
@@ -924,6 +973,12 @@ export default function ProfileScreen() {
         visible={changelogOpen}
         onClose={() => setChangelogOpen(false)}
       />
+
+      <AchievementsModal
+        visible={achievementsOpen}
+        onClose={() => setAchievementsOpen(false)}
+        achievements={achievements}
+      />
     </>
   );
 }
@@ -1076,6 +1131,9 @@ const styles = StyleSheet.create({
   myReportsBtnPressed: { opacity: 0.85, backgroundColor: '#f7f9fc' },
   myReportsTextWrap: { flex: 1, gap: 2 },
   myReportsTitle: { fontSize: 16, fontWeight: '700', color: '#222' },
+  // Inline "· X / N" count next to the Achievements title — muted so the
+  // main title still reads as the link affordance.
+  achievementsCount: { fontWeight: '600', color: '#888', fontSize: 14 },
   myReportsSubtitle: { fontSize: 13, color: '#666' },
   myReportsChevron: { fontSize: 28, color: '#999', fontWeight: '300' },
   section: { gap: 8, marginTop: 8 },
