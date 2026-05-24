@@ -209,3 +209,23 @@ broke.
   multiple agents at once, each one MUST stay in its own worktree —
   see [`qa-reports/parallel-agent-worktree-rules.md`](qa-reports/parallel-agent-worktree-rules.md)
   for the rule, the footgun, and the pre-write verify step.
+
+## Fastloop v4 (evening, 2026-05-23) — F5 + F6
+
+- **Watched Flags** (F5, fastloop 2026-05-23). Users can now watch any
+  flag from its detail modal. A star pill (`☆ Watch` / `★ Watching`) sits
+  above the secondaryRow; tapping it toggles via AsyncStorage per-user
+  keyed store. Profile → Watched Flags list shows all watched flags sorted
+  by status (open/verified first), each with its current status badge so
+  changes are visible at a glance. Tapping a row reopens FlagDetailModal.
+  Amber ★ button on each row unwatches instantly (optimistic). Max 200
+  watched flags; oldest is dropped FIFO on overflow. 17 new tests in
+  `src/lib/__tests__/watchedFlags.test.ts`.
+
+- **Category quick-cycle button** (F6, fastloop 2026-05-23). New ⊕ /
+  category-icon button between the severity (N+) and refresh (⟳) buttons
+  in the Map top action bar. Pressing it cycles the category filter through
+  the full sequence: All → No ramp → Broken sidewalk → Blocked path →
+  Missing signal → Steep grade → Other → All. Shows the matching
+  CATEGORY_ICONS glyph and fills brand-blue when a solo category is active.
+  Announces the new filter to screen readers on each tap.
