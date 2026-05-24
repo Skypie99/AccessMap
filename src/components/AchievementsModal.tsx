@@ -90,7 +90,13 @@ export default function AchievementsModal({
               accessibilityRole="button"
               accessibilityLabel="Close achievements"
             >
-              <Text style={styles.closeBtnText}>✕</Text>
+              <Text
+                style={styles.closeBtnText}
+                accessibilityElementsHidden
+                importantForAccessibility="no-hide-descendants"
+              >
+                ✕
+              </Text>
             </Pressable>
           </View>
 
@@ -125,6 +131,11 @@ function AchievementRow({ achievement: a }: { achievement: Achievement }) {
   return (
     <View
       style={[styles.row, !a.earned && styles.rowDimmed]}
+      // QA A2: accessibilityLabel alone on a non-touchable View doesn't
+      // collapse children into one node — VoiceOver reads each Text
+      // separately and the carefully-composed label is dropped. Setting
+      // accessible={true} groups them into a single announcement.
+      accessible={true}
       accessibilityLabel={a11yLabel}
     >
       <View style={[styles.iconCircle, a.earned ? styles.iconCircleEarned : styles.iconCircleLocked]}>
