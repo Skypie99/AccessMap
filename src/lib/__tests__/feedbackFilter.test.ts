@@ -124,6 +124,19 @@ describe('filterFeedback', () => {
     expect(original.map((r) => r.id)).toEqual(snapshot);
   });
 
+  it("filterFeedback with 'all' returns the SAME array reference (identity)", () => {
+    // FlatList's reconciliation hinges on referential identity of the
+    // `data` prop (and `extraData`). If 'all' ever started cloning the
+    // input (e.g. `items.slice()`), every chip toggle to 'all' would
+    // re-render the full list and lose scroll position. Pin it.
+    const items: FeedbackRow[] = [
+      makeRow('r1', 'bug'),
+      makeRow('r2', 'idea'),
+    ];
+    const result = filterFeedback(items, 'all');
+    expect(result).toBe(items); // referential identity, not just deep equal
+  });
+
   it('works with any object that has a matching category field (generic)', () => {
     type LiteRow = { id: string; category: FeedbackRow['category'] };
     const lite: LiteRow[] = [
