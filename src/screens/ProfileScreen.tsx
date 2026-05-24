@@ -216,8 +216,15 @@ export default function ProfileScreen() {
       for (const r of statusRows) {
         if (r.status in byStatus) byStatus[r.status]++;
       }
+      // QA E9: clamp reported >= sum(byStatus) to defend against the
+      // (impossible-in-theory but defensible) case where a backend bug
+      // or trigger race produces inconsistent counts. Without the
+      // clamp, the breakdown chips could show "5 resolved" while
+      // "3 reported" sits above them — confusing.
+      const statusSum =
+        byStatus.open + byStatus.verified + byStatus.resolved + byStatus.rejected;
       setStats({
-        reported: statusRows.length,
+        reported: Math.max(statusRows.length, statusSum),
         resolved: byStatus.resolved,
         byStatus,
       });
