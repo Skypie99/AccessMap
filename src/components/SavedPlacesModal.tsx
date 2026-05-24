@@ -37,6 +37,7 @@ import {
   type SavedPlace,
 } from '@/lib/savedPlaces';
 import type { LatLng } from '@/lib/distance';
+import { color } from '@/theme';
 
 interface Props {
   visible: boolean;
@@ -436,7 +437,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 10,
     borderLeftWidth: 3,
-    borderLeftColor: '#f1a520',
+    borderLeftColor: color.accentOrange,
   },
   noticeText: { color: '#714b00', fontSize: 13 },
   errorBanner: {
@@ -463,7 +464,7 @@ const styles = StyleSheet.create({
     gap: 10,
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: '#eaf3ff',
+    backgroundColor: color.brandSofter,
     borderRadius: 10,
     minHeight: 48,
     borderWidth: 1,
@@ -471,7 +472,7 @@ const styles = StyleSheet.create({
   },
   addBtnDisabled: { opacity: 0.55 },
   addBtnGlyph: { fontSize: 18 },
-  addBtnText: { fontSize: 14, color: '#1a4fa3', fontWeight: '700' },
+  addBtnText: { fontSize: 14, color: color.brandTextAlt, fontWeight: '700' },
   addForm: {
     backgroundColor: '#f7f9fc',
     borderRadius: 10,

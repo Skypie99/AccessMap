@@ -52,6 +52,7 @@ import {
   savePresets,
   type FilterPreset,
 } from '@/lib/filterPresets';
+import { color } from '@/theme';
 
 interface Props {
   visible: boolean;
@@ -550,7 +551,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 10,
     borderRadius: 8,
-    backgroundColor: '#eaf3ff',
+    backgroundColor: color.brandSofter,
     minHeight: 44,
     minWidth: 44,
     justifyContent: 'center',
@@ -559,7 +560,7 @@ const styles = StyleSheet.create({
   },
   newBtnDisabled: { opacity: 0.5 },
   newBtnPressed: { opacity: 0.85 },
-  newBtnText: { color: '#1a4fa3', fontWeight: '700', fontSize: 14 },
+  newBtnText: { color: color.brandTextAlt, fontWeight: '700', fontSize: 14 },
   closeBtn: {
     width: 44,
     height: 44,

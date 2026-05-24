@@ -81,6 +81,7 @@ import {
   getTier,
   pointsToNextTier,
 } from '@/lib/reputationTier';
+import { color } from '@/theme';
 
 interface Stats {
   reported: number;
@@ -1434,7 +1435,7 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   tierPillPressed: {
-    backgroundColor: '#eaf3ff',
+    backgroundColor: color.brandSofter,
     opacity: 0.95,
   },
   tierPillEmoji: { fontSize: 14 },
@@ -1493,9 +1494,9 @@ const styles = StyleSheet.create({
   // Highlights the user's current tier — pale blue tint + left accent
   // bar so it's recognizable at a glance.
   tierRowCurrent: {
-    backgroundColor: '#eaf3ff',
+    backgroundColor: color.brandSofter,
     borderLeftWidth: 3,
-    borderLeftColor: '#2f80ed',
+    borderLeftColor: color.brand,
   },
   tierRowEmoji: { fontSize: 22 },
   tierRowTextWrap: { flex: 1, gap: 2 },
@@ -1522,7 +1523,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderLeftWidth: 3,
-    borderLeftColor: '#f1a520',
+    borderLeftColor: color.accentOrange,
   },
   streakIcon: { fontSize: 24 },
   streakTextWrap: { flex: 1, gap: 2 },
@@ -1535,13 +1536,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    backgroundColor: '#eaf3ff',
+    backgroundColor: color.brandSofter,
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 12,
     minHeight: 56,
     borderLeftWidth: 3,
-    borderLeftColor: '#2f80ed',
+    borderLeftColor: color.brand,
   },
   nearestBtnPressed: {
     backgroundColor: '#d8e8fb',

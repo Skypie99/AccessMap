@@ -35,6 +35,7 @@ import {
 } from '@/lib/flags';
 import { clearWatched, loadWatched, removeWatched } from '@/lib/watchedFlags';
 import type { FlagRow } from '@/types/database';
+import { color } from '@/theme';
 
 interface Props {
   visible: boolean;
@@ -394,7 +395,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     marginBottom: 8,
     borderLeftWidth: 3,
-    borderLeftColor: '#f1a520',
+    borderLeftColor: color.accentOrange,
   },
   missingText: { fontSize: 13, color: '#7a5500' },
   center: {
@@ -453,7 +454,7 @@ const styles = StyleSheet.create({
   },
   unwatchBtnPressed: { opacity: 0.5 },
   // Filled amber star — visually signals "tap to unwatch."
-  unwatchGlyph: { fontSize: 18, color: '#f1a520' },
+  unwatchGlyph: { fontSize: 18, color: color.accentOrange },
   viewOnMapBtn: {
     width: 32,
     height: 32,
@@ -462,7 +463,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  viewOnMapBtnPressed: { opacity: 0.6, backgroundColor: '#dde3eb' },
+  viewOnMapBtnPressed: { opacity: 0.6, backgroundColor: color.borderPressed },
   viewOnMapGlyph: { fontSize: 14 },
   // Resolved-row treatments: light green wash + a left-edge accent bar.
   rowResolved: { backgroundColor: '#f0faf4' },

@@ -22,6 +22,7 @@ import {
 } from '@/lib/flags';
 import { filterMyReports } from '@/lib/myReportsFilter';
 import type { FlagRow, FlagStatus } from '@/types/database';
+import { color } from '@/theme';
 
 const STATUS_FILTER_ORDER: FlagStatus[] = [
   'open',
@@ -635,7 +636,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  viewOnMapBtnPressed: { opacity: 0.6, backgroundColor: '#dde3eb' },
+  viewOnMapBtnPressed: { opacity: 0.6, backgroundColor: color.borderPressed },
   viewOnMapGlyph: { fontSize: 16 },
   // Search bar — sits between the header and the sort/status chip rows.
   // Magnifier glyph + free-text input + optional clear ✕. Visual style
@@ -668,6 +669,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  searchClearPressed: { backgroundColor: '#dde3eb', opacity: 0.85 },
+  searchClearPressed: { backgroundColor: color.borderPressed, opacity: 0.85 },
   searchClearText: { fontSize: 14, color: '#333', fontWeight: '700' },
 });

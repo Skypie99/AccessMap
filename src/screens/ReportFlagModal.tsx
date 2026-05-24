@@ -34,6 +34,7 @@ import {
   type ContextTag,
 } from '@/lib/contextTags';
 import type { FlagCategory, FlagSeverity } from '@/types/database';
+import { color } from '@/theme';
 
 interface Props {
   visible: boolean;
@@ -526,11 +527,11 @@ const styles = StyleSheet.create({
     color: '#ffffff',
   },
   tagChipTextDisabled: {
-    color: '#5b6470', // AA pass: on #f4f6f8 = 4.6:1
+    color: color.textMutedAlt, // AA pass: on #f4f6f8 = 4.6:1
   },
   tagHelper: {
     fontSize: 12,
-    color: '#5b6470',
+    color: color.textMutedAlt,
     marginTop: -4,
   },
 });

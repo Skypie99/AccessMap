@@ -27,6 +27,7 @@ import {
   type NotificationPrefs,
 } from '@/lib/notificationPrefs';
 import type { FlagStatus } from '@/types/database';
+import { color } from '@/theme';
 
 interface Props {
   visible: boolean;
@@ -273,7 +274,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 10,
     borderLeftWidth: 3,
-    borderLeftColor: '#f1a520',
+    borderLeftColor: color.accentOrange,
   },
   noticeText: { color: '#714b00', fontSize: 13 },
   center: { alignItems: 'center', paddingVertical: 32 },
@@ -300,9 +301,9 @@ const styles = StyleSheet.create({
   rowDesc: { fontSize: 12, color: '#666', lineHeight: 16 },
   footer: {
     fontSize: 12,
-    // #5b6470 on #fff = 4.6:1 — passes WCAG AA for body text. The
-    // previous #888 was 3.5:1, which fails AA. QA Pass-2 #7.
-    color: '#5b6470',
+    // color.textMutedAlt (#5b6470) on #fff = 4.6:1 — passes WCAG AA for
+    // body text. The previous #888 was 3.5:1, which fails AA. QA Pass-2 #7.
+    color: color.textMutedAlt,
     fontStyle: 'italic',
     marginTop: 4,
     paddingHorizontal: 4,
