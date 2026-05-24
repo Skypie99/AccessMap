@@ -135,10 +135,13 @@ export default function MyWatchedModal({
       year: 'numeric',
     });
 
+    const isResolved = item.status === 'resolved';
+
     return (
       <Pressable
         style={({ pressed }) => [
           styles.row,
+          isResolved && styles.rowResolved,
           pressed && styles.rowPressed,
         ]}
         onPress={() => onSelectFlag(item)}
@@ -146,6 +149,15 @@ export default function MyWatchedModal({
         accessibilityLabel={`${CATEGORY_LABELS[item.category]}, severity ${item.severity}, status ${STATUS_LABELS[item.status]}, reported ${date}`}
         accessibilityHint="Opens the full details for this flag"
       >
+        {/* Green left-edge accent bar for resolved flags — decorative only */}
+        {isResolved && (
+          <View
+            style={styles.resolvedAccent}
+            accessibilityElementsHidden
+            importantForAccessibility="no"
+          />
+        )}
+
         {/* Left: severity dot */}
         <View
           style={[
@@ -157,8 +169,11 @@ export default function MyWatchedModal({
 
         {/* Middle: category + date */}
         <View style={styles.rowMid}>
-          <Text style={styles.rowCategory} numberOfLines={1}>
-            {CATEGORY_LABELS[item.category]}
+          <Text
+            style={[styles.rowCategory, isResolved && styles.rowCategoryResolved]}
+            numberOfLines={1}
+          >
+            {isResolved ? '✓ ' : ''}{CATEGORY_LABELS[item.category]}
           </Text>
           <Text style={styles.rowDate}>{date}</Text>
         </View>
@@ -350,6 +365,7 @@ const styles = StyleSheet.create({
   },
   rowMid: { flex: 1, gap: 2 },
   rowCategory: { fontSize: 15, fontWeight: '600', color: '#222' },
+  rowCategoryResolved: { color: '#1a7a44' },
   rowDate: { fontSize: 12, color: '#888' },
   rowRight: {
     flexDirection: 'row',
@@ -371,4 +387,16 @@ const styles = StyleSheet.create({
   unwatchBtnPressed: { opacity: 0.5 },
   // Filled amber star — visually signals "tap to unwatch."
   unwatchGlyph: { fontSize: 18, color: '#f1a520' },
+  // Resolved-row treatments: light green wash + a left-edge accent bar.
+  rowResolved: { backgroundColor: '#f0faf4' },
+  resolvedAccent: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: 3,
+    backgroundColor: '#27ae60',
+    borderTopLeftRadius: 2,
+    borderBottomLeftRadius: 2,
+  },
 });
