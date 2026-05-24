@@ -32,11 +32,7 @@ import {
   STATUS_COLORS,
   STATUS_LABELS,
 } from '@/lib/flags';
-import {
-  loadWatched,
-  removeWatched,
-  setWatched,
-} from '@/lib/watchedFlags';
+import { loadWatched, removeWatched } from '@/lib/watchedFlags';
 import type { FlagRow } from '@/types/database';
 
 interface Props {
