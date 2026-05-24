@@ -164,6 +164,25 @@ describe('flagUpdates', () => {
       // The freshly-merged "new" entry must survive the trim.
       expect(merged.new).toBe('verified');
     });
+
+    it('moves an updated existing key to the end of insertion order (LRU)', () => {
+      // Regression for QA #5: re-assigning an existing key used to leave
+      // it at its original insertion position, so a long-tracked flag
+      // whose status just changed could still be trimmed.
+      const existing: Record<string, FlagStatus> = {};
+      // Fill to exactly MAX_TRACKED so the next merge will trim one out.
+      for (let i = 0; i < MAX_TRACKED; i++) {
+        existing[`flag-${i}`] = 'open';
+      }
+      // 'flag-0' is the oldest by insertion order. Touch it via the
+      // update path. After merge, 'flag-0' should be the LAST entry,
+      // and one of the never-touched middle entries should be evicted.
+      const merged = nextLastSeen([makeFlag('flag-0', 'verified')], existing);
+      expect(merged['flag-0']).toBe('verified');
+      const keys = Object.keys(merged);
+      expect(keys[keys.length - 1]).toBe('flag-0');
+      expect(keys.length).toBe(MAX_TRACKED);
+    });
   });
 
   describe('markAllSeen', () => {

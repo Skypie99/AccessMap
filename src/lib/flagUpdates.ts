@@ -107,7 +107,11 @@ export function diffUpdates(
 
 /**
  * Pure: returns the next LastSeenMap with every flag's current status as
- * the baseline. New flags are added; existing entries are overwritten.
+ * the baseline. New flags are added; existing entries are re-inserted at
+ * the end of the object so the LRU trim below treats them as freshly
+ * touched. (QA #5 — without the delete-then-set, re-assignment kept the
+ * original insertion position and could be trimmed despite being recent.)
+ *
  * Caller passes the result to `persist` (or use `markAllSeen` for the
  * common load-merge-save pattern).
  */
@@ -117,11 +121,14 @@ export function nextLastSeen(
 ): LastSeenMap {
   const merged: LastSeenMap = { ...lastSeen };
   for (const f of flags) {
+    // Delete first so JS object iteration order treats this as a fresh
+    // insertion. Without this, an existing entry keeps its old position
+    // and a long-tracked flag whose status just changed could still be
+    // dropped by the slice() below.
+    if (f.id in merged) delete merged[f.id];
     merged[f.id] = f.status;
   }
-  // Trim to MAX_TRACKED entries (most-recently-touched wins). We can't
-  // perfectly LRU without timestamps, but freshly-merged keys are at the
-  // end of insertion order in JS objects — keep those.
+  // Trim to MAX_TRACKED entries — keep the most-recently-inserted N.
   const entries = Object.entries(merged);
   if (entries.length <= MAX_TRACKED) return merged;
   const kept = entries.slice(entries.length - MAX_TRACKED);
