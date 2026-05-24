@@ -10,7 +10,8 @@ import {
   Text,
   View,
 } from 'react-native';
-import { color, font, radius, shadow, spacing } from '@/theme';
+import { font, radius, shadow, spacing } from '@/theme';
+import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { signOut, supabase } from '@/lib/supabase';
 import { confirm } from '@/lib/confirm';
 import { useAuth } from '@/lib/auth';
@@ -62,6 +63,8 @@ function SettingsRow({
   // screen readers announce the activity rather than a silent dead row.
   busy?: boolean;
 }) {
+  const color = useColor();
+  const styles = makeStyles(color);
   return (
     <Pressable
       style={({ pressed }) => [
@@ -132,6 +135,8 @@ function SettingsRow({
  * `src/theme.ts` so future style edits propagate.
  */
 export default function SettingsScreen() {
+  const color = useColor();
+  const styles = makeStyles(color);
   // Help, Changelog, Feedback, and MyFeedback are all mounted ONCE at
   // the navigator level via <SharedModalsHost /> (see RootNavigator.tsx +
   // src/lib/sharedModalsContext.tsx). Settings just sets the shared
@@ -390,7 +395,7 @@ export default function SettingsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (color: ColorTheme) => StyleSheet.create({
   screen: { flex: 1, backgroundColor: color.surfaceMuted },
   container: {
     padding: spacing.xxl,

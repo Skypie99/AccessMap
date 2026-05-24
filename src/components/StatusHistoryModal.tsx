@@ -28,7 +28,7 @@ import {
 } from 'react-native';
 import { STATUS_LABELS } from '@/lib/flags';
 import { relativeTime } from '@/lib/relativeTime';
-import { color } from '@/theme';
+import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import {
   formatHistoryEntry,
   listStatusHistory,
@@ -58,6 +58,8 @@ export default function StatusHistoryModal({
   flagId,
   onClose,
 }: Props) {
+  const color = useColor();
+  const styles = makeStyles(color);
   const [entries, setEntries] = useState<StatusHistoryEntry[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -170,7 +172,7 @@ export default function StatusHistoryModal({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (color: ColorTheme) => StyleSheet.create({
   backdrop: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.4)',

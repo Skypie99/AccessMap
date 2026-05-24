@@ -37,7 +37,7 @@ import {
   type SavedPlace,
 } from '@/lib/savedPlaces';
 import type { LatLng } from '@/lib/distance';
-import { color } from '@/theme';
+import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 
 interface Props {
   visible: boolean;
@@ -61,6 +61,8 @@ export default function SavedPlacesModal({
   onJumpToPlace,
   onListChanged,
 }: Props) {
+  const color = useColor();
+  const styles = makeStyles(color);
   const { user } = useAuth();
   const [places, setPlaces] = useState<SavedPlace[]>([]);
   const [loading, setLoading] = useState(false);
@@ -404,7 +406,7 @@ export default function SavedPlacesModal({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (color: ColorTheme) => StyleSheet.create({
   backdrop: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.4)',

@@ -40,7 +40,7 @@ import { groupByDay } from '@/lib/dayGroup';
 import { relativeTime } from '@/lib/relativeTime';
 import { loadWatched } from '@/lib/watchedFlags';
 import type { FlagRow } from '@/types/database';
-import { color } from '@/theme';
+import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 
 type FeedFilter = 'all' | 'mine' | 'watched';
 
@@ -57,6 +57,8 @@ export default function ActivityFeedModal({
   onSelectFlag,
   onViewOnMap,
 }: Props) {
+  const color = useColor();
+  const styles = makeStyles(color);
   const { user } = useAuth();
   const [flags, setFlags] = useState<FlagRow[]>([]);
   const [watchedIds, setWatchedIds] = useState<Set<string>>(new Set());
@@ -342,7 +344,7 @@ export default function ActivityFeedModal({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (color: ColorTheme) => StyleSheet.create({
   backdrop: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.4)',

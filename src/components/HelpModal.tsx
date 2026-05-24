@@ -7,7 +7,8 @@ import {
   Text,
   View,
 } from 'react-native';
-import { color, font, radius, shadow, spacing } from '@/theme';
+import { font, radius, shadow, spacing } from '@/theme';
+import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { openFeedbackComposer } from '@/lib/feedback';
 import { filterFaqs } from '@/lib/helpSearch';
 import SearchInputRow from '@/components/SearchInputRow';
@@ -76,6 +77,8 @@ const FAQS: FaqItem[] = [
  * Accessed from a "Help & FAQ" row in Profile, sibling to About.
  */
 export default function HelpModal({ visible, onClose }: Props) {
+  const color = useColor();
+  const styles = makeStyles(color);
   // Tracks which FAQ is expanded by question text (not index) — using
   // text means the "expanded" state survives filtering. If we keyed on
   // array index instead, filtering the list down would shift items and
@@ -218,7 +221,7 @@ export default function HelpModal({ visible, onClose }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (color: ColorTheme) => StyleSheet.create({
   backdrop: {
     flex: 1,
     backgroundColor: color.scrim,

@@ -14,7 +14,7 @@ import {
 } from 'react-native';
 import * as Location from 'expo-location';
 import { useRoute, type RouteProp } from '@react-navigation/native';
-import { color } from '@/theme';
+import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { errorMessage } from '@/lib/errors';
 import {
   CATEGORY_ICONS,
@@ -90,6 +90,8 @@ const DEFAULT_REGION: PlatformMapRegion = {
 const CATEGORY_CYCLE: Array<FlagCategory | null> = [null, ...CATEGORY_ORDER];
 
 export default function MapScreen() {
+  const color = useColor();
+  const styles = makeStyles(color);
   const mapRef = useRef<PlatformMapHandle | null>(null);
   const route = useRoute<RouteProp<RootTabParamList, 'Map'>>();
   const [location, setLocation] = useState<Coords | null>(null);
@@ -1625,7 +1627,7 @@ export default function MapScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (color: ColorTheme) => StyleSheet.create({
   container: { flex: 1 },
   overlay: {
     ...StyleSheet.absoluteFillObject,

@@ -9,7 +9,8 @@ import {
   useWindowDimensions,
   View,
 } from 'react-native';
-import { color, font, radius, shadow, spacing } from '@/theme';
+import { font, radius, shadow, spacing } from '@/theme';
+import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 
 /**
  * First-launch tutorial — three cards introducing the core loop:
@@ -77,6 +78,8 @@ const CARDS: Card[] = [
 ];
 
 export default function OnboardingCards({ onDone }: Props) {
+  const color = useColor();
+  const styles = makeStyles(color);
   const { width } = useWindowDimensions();
   const scrollRef = useRef<ScrollView | null>(null);
   const [index, setIndex] = useState(0);
@@ -258,7 +261,7 @@ export default function OnboardingCards({ onDone }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (color: ColorTheme) => StyleSheet.create({
   screen: {
     flex: 1,
     backgroundColor: color.surface,

@@ -50,7 +50,7 @@ import type { RootTabParamList } from '@/navigation/RootNavigator';
 import FlagDetailModal, {
   type DetailAction,
 } from '@/components/FlagDetailModal';
-import { color } from '@/theme';
+import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 
 // Statuses Tasks shows. Even if the provider's `statuses` is widened by the
 // Map's filter, Tasks restricts the visible set to the actionable lifecycle
@@ -63,6 +63,8 @@ const TRIAGE_STATUSES: FlagStatus[] = ['open', 'verified'];
 const BULK_BAR_HEIGHT = 88;
 
 export default function TasksScreen() {
+  const color = useColor();
+  const styles = makeStyles(color);
   const navigation =
     useNavigation<BottomTabNavigationProp<RootTabParamList, 'Tasks'>>();
   const { user } = useAuth();
@@ -814,6 +816,8 @@ const FlagCard = memo(function FlagCard({
   onSetStatus,
   onShowDetails,
 }: FlagCardProps) {
+  const color = useColor();
+  const styles = makeStyles(color);
   // Compute distance + ETA once per card per location change. Without the
   // memo this would recompute on every parent state flip (busyId, flash).
   const distanceInfo = useMemo(() => {
@@ -967,7 +971,7 @@ const FlagCard = memo(function FlagCard({
   );
 });
 
-const styles = StyleSheet.create({
+const makeStyles = (color: ColorTheme) => StyleSheet.create({
   // Screen wash — same #f7f9fc the Profile screen uses, so the white
   // cards inside read as cards instead of blending into a white page.
   screen: { flex: 1, backgroundColor: color.surfaceMuted },

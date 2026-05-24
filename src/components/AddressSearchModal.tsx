@@ -9,7 +9,8 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { color, font, radius, shadow, spacing } from '@/theme';
+import { font, radius, shadow, spacing } from '@/theme';
+import { useColor } from '@/theme/ThemeContext';
 import { searchAddress, type GeocodeResult } from '@/lib/geocode';
 import {
   addRecent,
@@ -48,6 +49,7 @@ export default function AddressSearchModal({
   onClose,
   onSelect,
 }: Props) {
+  const color = useColor();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<GeocodeResult[]>([]);
   const [loading, setLoading] = useState(false);

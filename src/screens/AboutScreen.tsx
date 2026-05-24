@@ -10,7 +10,8 @@ import {
 // Expo Constants gives us the bundled app.json version at runtime so we
 // don't have to hard-code (and forget to bump) a string here.
 import Constants from 'expo-constants';
-import { color, font, radius, shadow, spacing } from '@/theme';
+import { font, radius, shadow, spacing } from '@/theme';
+import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 
 interface Props {
   visible: boolean;
@@ -36,6 +37,8 @@ const APP_VERSION =
  * sheet.
  */
 export default function AboutScreen({ visible, onClose }: Props) {
+  const color = useColor();
+  const styles = makeStyles(color);
   return (
     <Modal
       visible={visible}
@@ -138,7 +141,7 @@ export default function AboutScreen({ visible, onClose }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (color: ColorTheme) => StyleSheet.create({
   backdrop: {
     flex: 1,
     backgroundColor: color.scrim,

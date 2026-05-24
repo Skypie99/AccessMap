@@ -10,7 +10,8 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { color, font, radius, shadow, spacing } from '@/theme';
+import { font, radius, shadow, spacing } from '@/theme';
+import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { useAuth } from '@/lib/auth';
 import {
   FEEDBACK_CATEGORIES,
@@ -44,6 +45,8 @@ interface Props {
  * surface the email address inline so the user can copy it manually.
  */
 export default function FeedbackModal({ visible, onClose }: Props) {
+  const color = useColor();
+  const styles = makeStyles(color);
   const { user } = useAuth();
   const [body, setBody] = useState('');
   const [contact, setContact] = useState('');
@@ -276,7 +279,7 @@ export default function FeedbackModal({ visible, onClose }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (color: ColorTheme) => StyleSheet.create({
   backdrop: {
     flex: 1,
     backgroundColor: color.scrim,

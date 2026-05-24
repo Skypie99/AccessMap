@@ -8,7 +8,8 @@ import {
   View,
 } from 'react-native';
 import { initialExpanded } from '@/lib/changelogExpanded';
-import { color, font, radius, shadow, spacing } from '@/theme';
+import { font, radius, shadow, spacing } from '@/theme';
+import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 
 interface Props {
   visible: boolean;
@@ -61,6 +62,8 @@ const RELEASES: ReleaseNote[] = [
  * top is the convention — the modal renders them in array order.
  */
 export default function ChangelogModal({ visible, onClose }: Props) {
+  const color = useColor();
+  const styles = makeStyles(color);
   // Local UI state — not persisted. Each time the modal opens we reset so
   // the newest release is expanded and the rest collapsed. That keeps the
   // modal scannable on every open without a storage layer.
@@ -161,7 +164,7 @@ export default function ChangelogModal({ visible, onClose }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (color: ColorTheme) => StyleSheet.create({
   backdrop: {
     flex: 1,
     backgroundColor: color.scrim,

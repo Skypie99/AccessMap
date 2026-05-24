@@ -3,6 +3,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { ThemeProvider } from '@/theme/ThemeContext';
 import { AuthProvider, useAuth } from '@/lib/auth';
 import { hasSeenOnboarding, markOnboardingSeen } from '@/lib/onboarding';
 import { loadOnboarded, setOnboarded } from '@/lib/onboardingState';
@@ -156,12 +157,14 @@ function FirstLaunchGate({ children }: { children: React.ReactNode }) {
 export default function App() {
   return (
     <SafeAreaProvider>
-      <AuthProvider>
-        <FirstLaunchGate>
-          <Gate />
-        </FirstLaunchGate>
-        <StatusBar style="auto" />
-      </AuthProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <FirstLaunchGate>
+            <Gate />
+          </FirstLaunchGate>
+          <StatusBar style="auto" />
+        </AuthProvider>
+      </ThemeProvider>
     </SafeAreaProvider>
   );
 }

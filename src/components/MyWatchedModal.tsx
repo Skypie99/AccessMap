@@ -36,7 +36,7 @@ import {
 import { clearWatched, loadWatched, removeWatched } from '@/lib/watchedFlags';
 import { decorativeProps } from '@/lib/accessibility';
 import type { FlagRow } from '@/types/database';
-import { color } from '@/theme';
+import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 
 interface Props {
   visible: boolean;
@@ -65,6 +65,8 @@ export default function MyWatchedModal({
   onViewOnMap,
   refreshKey = 0,
 }: Props) {
+  const color = useColor();
+  const styles = makeStyles(color);
   const { user } = useAuth();
   const [flags, setFlags] = useState<FlagRow[]>([]);
   const [watchedIds, setWatchedIds] = useState<string[]>([]);
@@ -347,7 +349,7 @@ export default function MyWatchedModal({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (color: ColorTheme) => StyleSheet.create({
   backdrop: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.35)',

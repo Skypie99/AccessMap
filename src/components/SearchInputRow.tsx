@@ -23,7 +23,8 @@ import {
   type ViewStyle,
 } from 'react-native';
 import { decorativeProps } from '@/lib/accessibility';
-import { color, font, radius, spacing } from '@/theme';
+import { font, radius, spacing } from '@/theme';
+import { useColor } from '@/theme/ThemeContext';
 
 export interface SearchInputRowProps {
   value: string;
@@ -45,8 +46,9 @@ export default function SearchInputRow({
   accessibilityLabel = 'Search',
   wrapStyle,
 }: SearchInputRowProps) {
+  const color = useColor();
   return (
-    <View style={[styles.searchWrap, wrapStyle]}>
+    <View style={[styles.searchWrap, { backgroundColor: color.surfaceSoft, borderColor: color.borderSubtle }, wrapStyle]}>
       {/* Decorative magnifier — hidden from screen readers */}
       <Text style={styles.searchGlyph} {...decorativeProps}>
         🔎
@@ -57,7 +59,7 @@ export default function SearchInputRow({
         onChangeText={onChangeText}
         placeholder={placeholder}
         placeholderTextColor={color.placeholderText}
-        style={styles.searchInput}
+        style={[styles.searchInput, { color: color.textStrong }]}
         autoFocus={autoFocus}
         autoCorrect={false}
         autoCapitalize="none"
@@ -78,7 +80,7 @@ export default function SearchInputRow({
           accessibilityLabel="Clear search"
         >
           {/* Decorative ✕ — the Pressable's accessibilityLabel already describes the action */}
-          <Text style={styles.searchClearText} {...decorativeProps}>
+          <Text style={[styles.searchClearText, { color: color.textMuted }]} {...decorativeProps}>
             ✕
           </Text>
         </Pressable>
@@ -96,10 +98,9 @@ const styles = StyleSheet.create({
     // HelpModal needs spacing.xl; NearbyFlagsModal wants 0 (full-bleed row).
     marginBottom: spacing.sm,
     paddingHorizontal: spacing.md,
-    backgroundColor: color.surfaceSoft,
+    // backgroundColor + borderColor provided as inline styles (useColor())
     borderRadius: radius.md,
     borderWidth: 1,
-    borderColor: color.borderSubtle,
   },
   searchGlyph: {
     fontSize: font.size.lg,
@@ -107,7 +108,7 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     fontSize: font.size.md,
-    color: color.textStrong,
+    // color provided as inline style (useColor())
     paddingVertical: spacing.sm,
     // 44pt minimum touch / tap target (WCAG 2.5.5, Apple HIG).
     minHeight: 44,
@@ -124,7 +125,7 @@ const styles = StyleSheet.create({
   searchClearPressed: { opacity: 0.6 },
   searchClearText: {
     fontSize: font.size.sm,
-    color: color.textMuted,
+    // color provided as inline style (useColor())
     fontWeight: font.weight.bold,
   },
 });

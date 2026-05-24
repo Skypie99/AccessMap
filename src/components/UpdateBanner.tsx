@@ -20,7 +20,7 @@ import {
   Text,
   View,
 } from 'react-native';
-import { color } from '@/theme';
+import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 
 interface Props {
   count: number;
@@ -31,6 +31,8 @@ interface Props {
 }
 
 export default function UpdateBanner({ count, onView, onDismiss }: Props) {
+  const color = useColor();
+  const styles = makeStyles(color);
   // Announce the count once when the banner mounts so screen-reader users
   // hear it even if they aren't focused on the top of the screen.
   React.useEffect(() => {
@@ -87,7 +89,7 @@ export default function UpdateBanner({ count, onView, onDismiss }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (color: ColorTheme) => StyleSheet.create({
   banner: {
     flexDirection: 'row',
     alignItems: 'center',

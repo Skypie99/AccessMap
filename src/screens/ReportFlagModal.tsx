@@ -34,7 +34,7 @@ import {
   type ContextTag,
 } from '@/lib/contextTags';
 import type { FlagCategory, FlagSeverity } from '@/types/database';
-import { color } from '@/theme';
+import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 
 interface Props {
   visible: boolean;
@@ -49,6 +49,8 @@ export default function ReportFlagModal({
   onClose,
   onCreated,
 }: Props) {
+  const color = useColor();
+  const styles = makeStyles(color);
   const { user } = useAuth();
   const [category, setCategory] = useState<FlagCategory>('no_ramp');
   const [severity, setSeverity] = useState<FlagSeverity>(3);
@@ -394,7 +396,7 @@ export default function ReportFlagModal({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (color: ColorTheme) => StyleSheet.create({
   backdrop: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.4)',

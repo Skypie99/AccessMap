@@ -81,7 +81,7 @@ import {
   getTier,
   pointsToNextTier,
 } from '@/lib/reputationTier';
-import { color } from '@/theme';
+import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 
 interface Stats {
   reported: number;
@@ -132,6 +132,8 @@ function milestoneProgress(points: number): {
 }
 
 export default function ProfileScreen() {
+  const color = useColor();
+  const styles = makeStyles(color);
   const navigation =
     useNavigation<BottomTabNavigationProp<RootTabParamList, 'Profile'>>();
   const { user, loading: authLoading } = useAuth();
@@ -1334,6 +1336,8 @@ export default function ProfileScreen() {
 }
 
 function Stat({ label, value }: { label: string; value: number }) {
+  const color = useColor();
+  const styles = makeStyles(color);
   return (
     <View style={styles.statCard}>
       <Text style={styles.statValue}>{value}</Text>
@@ -1342,7 +1346,7 @@ function Stat({ label, value }: { label: string; value: number }) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (color: ColorTheme) => StyleSheet.create({
   // Screen wash — replaces the default white background so the white
   // cards inside (stats, My Reports, About row) actually read as cards
   // rather than blending into the surface they sit on.

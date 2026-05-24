@@ -11,7 +11,8 @@ import {
   View,
 } from 'react-native';
 import { useAuth } from '@/lib/auth';
-import { color, font, radius, shadow, spacing } from '@/theme';
+import { font, radius, shadow, spacing } from '@/theme';
+import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import {
   FEEDBACK_CATEGORY_GLYPHS,
   FEEDBACK_CATEGORY_LABELS,
@@ -50,6 +51,8 @@ export default function MyFeedbackModal({
   onClose,
   refreshKey = 0,
 }: Props) {
+  const color = useColor();
+  const styles = makeStyles(color);
   const { user } = useAuth();
   const [rows, setRows] = useState<FeedbackRow[]>([]);
   const [loading, setLoading] = useState(false);
@@ -222,6 +225,8 @@ export default function MyFeedbackModal({
 }
 
 function FeedbackRowCard({ row }: { row: FeedbackRow }) {
+  const color = useColor();
+  const styles = makeStyles(color);
   const formattedDate = new Date(row.created_at).toLocaleString(undefined, {
     dateStyle: 'medium',
     timeStyle: 'short',
@@ -253,7 +258,7 @@ function FeedbackRowCard({ row }: { row: FeedbackRow }) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (color: ColorTheme) => StyleSheet.create({
   backdrop: {
     flex: 1,
     backgroundColor: color.scrim,

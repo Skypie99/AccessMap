@@ -7,7 +7,8 @@ import {
   SharedModalsProvider,
   useSharedModals,
 } from '@/lib/sharedModalsContext';
-import { color, font, radius, spacing } from '@/theme';
+import { font, radius, spacing } from '@/theme';
+import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import FeedbackModal from '@/components/FeedbackModal';
 import HelpModal from '@/components/HelpModal';
 import ChangelogModal from '@/components/ChangelogModal';
@@ -104,6 +105,8 @@ function NavInner({
   // because the header lives outside the screens; now the context
   // pulls double duty.
   const { setOpen } = useSharedModals();
+  const color = useColor();
+  const styles = makeStyles(color);
 
   const renderHeaderRight = () => (
     <Pressable
@@ -198,7 +201,7 @@ function SharedModalsHost() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (color: ColorTheme) => StyleSheet.create({
   feedbackBtn: {
     marginRight: spacing.md,
     paddingHorizontal: spacing.md,

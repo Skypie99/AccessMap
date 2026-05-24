@@ -13,7 +13,7 @@ import {
   Text,
   View,
 } from 'react-native';
-import { color } from '@/theme';
+import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { useAuth } from '@/lib/auth';
 import { confirm } from '@/lib/confirm';
 import { getDirectionsUrl } from '@/lib/directionsLink';
@@ -57,6 +57,8 @@ export default function FlagDetailModal({
   onDeleted,
   onViewOnMap,
 }: Props) {
+  const color = useColor();
+  const styles = makeStyles(color);
   const { user } = useAuth();
   const [busy, setBusy] = useState(false);
   // Watched state — null while we're loading the per-user list, true/false
@@ -611,7 +613,7 @@ export default function FlagDetailModal({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (color: ColorTheme) => StyleSheet.create({
   backdrop: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.4)',

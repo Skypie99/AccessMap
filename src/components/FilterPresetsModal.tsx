@@ -52,7 +52,7 @@ import {
   savePresets,
   type FilterPreset,
 } from '@/lib/filterPresets';
-import { color } from '@/theme';
+import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 
 interface Props {
   visible: boolean;
@@ -91,6 +91,8 @@ export default function FilterPresetsModal({
   onClose,
   onApply,
 }: Props) {
+  const color = useColor();
+  const styles = makeStyles(color);
   const { user } = useAuth();
 
   const [presets, setPresets] = useState<FilterPreset[]>([]);
@@ -525,7 +527,7 @@ export default function FilterPresetsModal({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (color: ColorTheme) => StyleSheet.create({
   backdrop: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.4)',

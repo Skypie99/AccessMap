@@ -22,7 +22,7 @@ import {
 } from '@/lib/flags';
 import { filterMyReports } from '@/lib/myReportsFilter';
 import type { FlagRow, FlagStatus } from '@/types/database';
-import { color } from '@/theme';
+import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 
 const STATUS_FILTER_ORDER: FlagStatus[] = [
   'open',
@@ -50,6 +50,8 @@ export default function MyReportsModal({
   onViewOnMap,
   refreshKey = 0,
 }: Props) {
+  const color = useColor();
+  const styles = makeStyles(color);
   const { user } = useAuth();
   const [flags, setFlags] = useState<FlagRow[]>([]);
   const [loading, setLoading] = useState(false);
@@ -490,7 +492,7 @@ export default function MyReportsModal({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (color: ColorTheme) => StyleSheet.create({
   backdrop: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.4)',

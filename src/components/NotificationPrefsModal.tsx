@@ -27,7 +27,7 @@ import {
   type NotificationPrefs,
 } from '@/lib/notificationPrefs';
 import type { FlagStatus } from '@/types/database';
-import { color } from '@/theme';
+import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 
 interface Props {
   visible: boolean;
@@ -81,6 +81,8 @@ export default function NotificationPrefsModal({
   initialPrefs,
   onPrefsChanged,
 }: Props) {
+  const color = useColor();
+  const styles = makeStyles(color);
   const { user } = useAuth();
   // Use the parent-provided initialPrefs if any — they're already up to
   // date from the screen's most recent refreshUpdateCount. Otherwise
@@ -239,7 +241,7 @@ export default function NotificationPrefsModal({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (color: ColorTheme) => StyleSheet.create({
   backdrop: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.4)',
