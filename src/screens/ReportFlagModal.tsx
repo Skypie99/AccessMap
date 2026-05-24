@@ -187,8 +187,28 @@ export default function ReportFlagModal({
             onChangeText={setDescription}
             placeholder="What's going on here?"
             multiline
+            maxLength={500}
             style={styles.input}
+            accessibilityLabel="Description of the accessibility issue"
+            accessibilityHint="Optional. Up to 500 characters."
           />
+          {/* Character counter — visible once the user starts typing.
+              Turns amber at 400 chars (20% left) and red at 480 (4% left)
+              so they have clear warning before the hard limit cuts them off. */}
+          {description.length > 0 && (
+            <Text
+              style={[
+                styles.charCounter,
+                description.length >= 480 && styles.charCounterRed,
+                description.length >= 400 &&
+                  description.length < 480 &&
+                  styles.charCounterAmber,
+              ]}
+              accessibilityLabel={`${description.length} of 500 characters used`}
+            >
+              {description.length} / 500
+            </Text>
+          )}
 
           <Text style={styles.label}>Photo (optional)</Text>
           {photoUri ? (
@@ -310,6 +330,14 @@ const styles = StyleSheet.create({
     minHeight: 70,
     textAlignVertical: 'top',
   },
+  charCounter: {
+    fontSize: 12,
+    color: '#888',
+    textAlign: 'right',
+    marginTop: 2,
+  },
+  charCounterAmber: { color: '#c07a00' },
+  charCounterRed: { color: '#c0392b', fontWeight: '700' },
   photoBtn: {
     flexGrow: 1,
     paddingHorizontal: 12,
