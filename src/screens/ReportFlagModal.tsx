@@ -19,6 +19,8 @@ import {
   CATEGORY_ORDER,
   createFlag,
   severityColor,
+  SEVERITY_DESCRIPTIONS,
+  SEVERITY_LABELS,
   SEVERITY_ORDER,
   uploadFlagPhoto,
 } from '@/lib/flags';
@@ -181,6 +183,18 @@ export default function ReportFlagModal({
             })}
           </View>
 
+          {/* Inline hint: updates as the user taps a severity level so
+              they know what each number means before submitting. */}
+          <Text
+            style={styles.sevHint}
+            accessibilityLabel={`Severity ${severity}: ${SEVERITY_DESCRIPTIONS[severity]}`}
+            accessibilityLiveRegion="polite"
+          >
+            <Text style={styles.sevHintLabel}>{SEVERITY_LABELS[severity]}</Text>
+            {'  '}
+            {SEVERITY_DESCRIPTIONS[severity]}
+          </Text>
+
           <Text style={styles.label}>Description (optional)</Text>
           <TextInput
             value={description}
@@ -330,6 +344,13 @@ const styles = StyleSheet.create({
     minHeight: 70,
     textAlignVertical: 'top',
   },
+  sevHint: {
+    fontSize: 13,
+    color: '#555',
+    lineHeight: 18,
+    marginTop: -4,
+  },
+  sevHintLabel: { fontWeight: '700', color: '#333' },
   charCounter: {
     fontSize: 12,
     color: '#888',
