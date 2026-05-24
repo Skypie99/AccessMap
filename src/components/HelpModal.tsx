@@ -1,14 +1,16 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   Modal,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from 'react-native';
 import { color, font, radius, shadow, spacing } from '@/theme';
 import { openFeedbackComposer } from '@/lib/feedback';
+import { filterFaqs } from '@/lib/helpSearch';
 
 interface Props {
   visible: boolean;
@@ -74,7 +76,28 @@ const FAQS: FaqItem[] = [
  * Accessed from a "Help & FAQ" row in Profile, sibling to About.
  */
 export default function HelpModal({ visible, onClose }: Props) {
-  const [openIndex, setOpenIndex] = useState<number | null>(null);
+  // Tracks which FAQ is expanded by question text (not index) — using
+  // text means the "expanded" state survives filtering. If we keyed on
+  // array index instead, filtering the list down would shift items and
+  // a previously-open answer would either close or, worse, leak to the
+  // wrong question.
+  const [openQuestion, setOpenQuestion] = useState<string | null>(null);
+  const [query, setQuery] = useState('');
+
+  // Reset both search query and expanded-state whenever the modal closes
+  // so it always reopens to a clean view. Cheap to run; only fires on
+  // visibility changes, not every keystroke.
+  useEffect(() => {
+    if (!visible) {
+      setQuery('');
+      setOpenQuestion(null);
+    }
+  }, [visible]);
+
+  // Memoize the filtered FAQ list so we don't re-walk FAQS on unrelated
+  // re-renders (e.g. when only openQuestion changes).
+  const filteredFaqs = useMemo(() => filterFaqs(FAQS, query), [query]);
+  const showEmpty = query.trim().length > 0 && filteredFaqs.length === 0;
 
   return (
     <Modal
@@ -100,17 +123,75 @@ export default function HelpModal({ visible, onClose }: Props) {
             </Pressable>
           </View>
 
+          {/* Search row — sits between the header and the scrollable FAQ
+              list. The clear (✕) button only renders when there's text
+              to clear, so it doesn't take up touch real-estate when
+              unused. Touch target is 44pt (Apple HIG / WCAG 2.5.5). */}
+          <View style={styles.searchWrap}>
+            <Text
+              style={styles.searchGlyph}
+              accessibilityElementsHidden
+              importantForAccessibility="no-hide-descendants"
+            >
+              🔎
+            </Text>
+            <TextInput
+              value={query}
+              onChangeText={setQuery}
+              placeholder="Search…"
+              placeholderTextColor={color.textSubtle}
+              style={styles.searchInput}
+              autoCorrect={false}
+              autoCapitalize="none"
+              returnKeyType="search"
+              // 200 chars is more than any sensible FAQ search; the cap
+              // protects against accidental huge paste re-filtering on
+              // every keystroke. Same value used in NearbyFlagsModal.
+              maxLength={200}
+              accessibilityLabel="Search FAQ"
+              accessibilityHint="Filters the FAQ list to entries that contain your search words"
+            />
+            {query.length > 0 && (
+              <Pressable
+                onPress={() => setQuery('')}
+                hitSlop={8}
+                style={({ pressed }) => [
+                  styles.searchClear,
+                  pressed && styles.searchClearPressed,
+                ]}
+                accessibilityRole="button"
+                accessibilityLabel="Clear search"
+              >
+                <Text
+                  style={styles.searchClearText}
+                  accessibilityElementsHidden
+                  importantForAccessibility="no-hide-descendants"
+                >
+                  ✕
+                </Text>
+              </Pressable>
+            )}
+          </View>
+
           <ScrollView
             style={styles.body}
             contentContainerStyle={styles.bodyContent}
             showsVerticalScrollIndicator={false}
           >
-            {FAQS.map((item, i) => {
-              const expanded = openIndex === i;
+            {showEmpty && (
+              <Text style={styles.emptyResults} accessibilityLiveRegion="polite">
+                No FAQ matches that search. Try a different term.
+              </Text>
+            )}
+
+            {filteredFaqs.map((item) => {
+              const expanded = openQuestion === item.q;
               return (
-                <View key={i} style={styles.faqCard}>
+                <View key={item.q} style={styles.faqCard}>
                   <Pressable
-                    onPress={() => setOpenIndex(expanded ? null : i)}
+                    onPress={() =>
+                      setOpenQuestion(expanded ? null : item.q)
+                    }
                     style={styles.faqHeader}
                     accessibilityRole="button"
                     accessibilityLabel={item.q}
@@ -211,6 +292,63 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     paddingHorizontal: spacing.xl,
     paddingBottom: spacing.lg,
+  },
+
+  // Search row — magnifier glyph + free-text input + optional clear ✕.
+  // Echoes the pattern used in NearbyFlagsModal (the other search-in-a-
+  // modal flow) for consistent muscle memory between the two surfaces.
+  searchWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginHorizontal: spacing.xl,
+    marginBottom: spacing.sm,
+    paddingHorizontal: spacing.md,
+    backgroundColor: color.surfaceSoft,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: color.borderSubtle,
+  },
+  searchGlyph: {
+    fontSize: font.size.lg,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: font.size.md,
+    color: color.textStrong,
+    paddingVertical: spacing.sm,
+    // 44pt minimum touch / tap target (WCAG 2.5.5, Apple HIG).
+    minHeight: 44,
+  },
+  searchClear: {
+    // 44pt square touch target so the clear (✕) button never falls
+    // below the WCAG 2.5.5 / Apple HIG recommendation, even though
+    // the visible chip is smaller — the bigger hit area is invisible
+    // but tappable. hitSlop on the Pressable extends it further.
+    width: 44,
+    height: 44,
+    borderRadius: radius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  searchClearPressed: { opacity: 0.6 },
+  searchClearText: {
+    fontSize: font.size.sm,
+    color: color.textMuted,
+    fontWeight: font.weight.bold,
+  },
+  emptyResults: {
+    // color.textMuted (#666) → 5.7:1 on white, comfortably above the
+    // 4.5:1 AA body floor and the #5b6470 (~5.6:1) target called out
+    // in the feature spec. The padding + italics differentiate this
+    // helper text from a real FAQ card without needing a heavier
+    // border or background.
+    color: color.textMuted,
+    fontSize: font.size.sm,
+    fontStyle: 'italic',
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.sm,
+    lineHeight: 20,
   },
   faqCard: {
     backgroundColor: color.surface,
