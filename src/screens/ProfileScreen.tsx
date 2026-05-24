@@ -1059,6 +1059,14 @@ export default function ProfileScreen() {
       <NotificationPrefsModal
         visible={notifPrefsOpen}
         onClose={() => setNotifPrefsOpen(false)}
+        // The screen's `notificationPrefs` state is kept fresh by
+        // refreshUpdateCount on every Profile focus — passing it here
+        // lets the modal render the right toggle values on first paint
+        // instead of momentarily flashing DEFAULT_PREFS while its own
+        // AsyncStorage read resolves. (QA Pass-3 #4 — was previously
+        // dead state.) The modal still does its own load() as a safety
+        // net, but the initial paint matches reality.
+        initialPrefs={notificationPrefs}
         onPrefsChanged={() => {
           // After a toggle persists, recompute the banner count using
           // the fresh prefs so muted statuses disappear immediately.

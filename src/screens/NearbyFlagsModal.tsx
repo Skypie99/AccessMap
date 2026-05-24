@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   FlatList,
   Image,
@@ -43,6 +43,16 @@ export default function NearbyFlagsModal({
   // Empty = pass-through. Applied after the category filter so the chip
   // counts still reflect category totals (not search-narrowed counts).
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Reset filter + search whenever the modal closes — re-opening shows
+  // a clean list. Without this, the previous filter sticks around
+  // invisibly until the user thinks to clear it. QA Pass-1 #4.
+  useEffect(() => {
+    if (!visible) {
+      setFilterCat(null);
+      setSearchQuery('');
+    }
+  }, [visible]);
 
   // Sort by distance ascending when we have a location; otherwise keep the
   // existing order (which is most-recent-first from listFlags).
@@ -128,6 +138,10 @@ export default function NearbyFlagsModal({
               autoCorrect={false}
               autoCapitalize="none"
               returnKeyType="search"
+              // 200 is plenty for any natural-language query; caps a
+              // paste of an enormous string that would re-scan the
+              // whole flag list on every keystroke. QA Pass-3 #7.
+              maxLength={200}
               accessibilityLabel="Search flags"
               accessibilityHint="Filters the list to flags whose description, category, or status contains your search words"
             />
