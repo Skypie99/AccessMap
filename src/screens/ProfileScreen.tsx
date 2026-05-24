@@ -167,7 +167,15 @@ export default function ProfileScreen() {
   // handle Profile already uses, and rendering inline keeps the streak
   // hero card → jump button → status breakdown stack readable in one place.
   const { flags: providerFlags } = useFlags();
-  const { location: userLocation } = useUserLocation();
+  // R9 polish (Const. Art. 9.6 — privacy gate): only use location if
+  // the user has ALREADY granted foreground permission elsewhere (Map
+  // tab / Tasks tab). Never triggers an OS prompt on Profile tab focus
+  // — that would surface a privacy-sensitive permission ask in an
+  // unexpected place. When ungranted, the card hides itself (nearest
+  // → null), same as if no flags match.
+  const { location: userLocation } = useUserLocation({
+    requireExistingPermission: true,
+  });
   const nearestUnresolved = useMemo(
     () => findNearestUnresolved(providerFlags, userLocation),
     [providerFlags, userLocation],
