@@ -36,6 +36,7 @@ import AboutModal from '@/components/AboutModal';
 import MyFeedbackModal from '@/components/MyFeedbackModal';
 import HelpModal from '@/components/HelpModal';
 import ChangelogModal from '@/components/ChangelogModal';
+import ActivityFeedModal from '@/components/ActivityFeedModal';
 
 interface Stats {
   reported: number;
@@ -105,10 +106,11 @@ export default function ProfileScreen() {
   const [reportsRefreshKey, setReportsRefreshKey] = useState(0);
   const [watchedOpen, setWatchedOpen] = useState(false);
   const [watchedRefreshKey, setWatchedRefreshKey] = useState(0);
+  const [activityOpen, setActivityOpen] = useState(false);
   // Tracks which list modal was the "parent" of the currently-open
   // FlagDetailModal so handleDetailClose can reopen the right one.
   const [flagDetailSource, setFlagDetailSource] = useState<
-    'reports' | 'watched' | null
+    'reports' | 'watched' | 'activity' | null
   >(null);
   const [selectedFlag, setSelectedFlag] = useState<FlagRow | null>(null);
 
@@ -294,6 +296,13 @@ export default function ProfileScreen() {
     setSelectedFlag(flag);
   };
 
+  // Opens the detail modal from the Activity Feed list.
+  const handleActivitySelectFlag = (flag: FlagRow) => {
+    setActivityOpen(false);
+    setFlagDetailSource('activity');
+    setSelectedFlag(flag);
+  };
+
   const handleDetailClose = () => {
     const src = flagDetailSource;
     setSelectedFlag(null);
@@ -302,6 +311,9 @@ export default function ProfileScreen() {
     if (src === 'watched') {
       setWatchedRefreshKey((k) => k + 1);
       setWatchedOpen(true);
+    } else if (src === 'activity') {
+      // Activity feed doesn't need a refreshKey — it reloads on next open.
+      setActivityOpen(true);
     } else {
       // Default back to reports if source is unknown.
       setReportsRefreshKey((k) => k + 1);
@@ -329,6 +341,7 @@ export default function ProfileScreen() {
     setSelectedFlag(null);
     setReportsOpen(false);
     setWatchedOpen(false);
+    setActivityOpen(false);
     navigation.navigate('Map', {
       focusFlag: { id: flag.id, lat: flag.lat, lng: flag.lng },
       ts: Date.now(),
@@ -494,6 +507,28 @@ export default function ProfileScreen() {
             <Text style={styles.myReportsTitle}>Watched Flags</Text>
             <Text style={styles.myReportsSubtitle}>
               Track flags you care about and see when their status changes.
+            </Text>
+          </View>
+          <Text style={styles.myReportsChevron} accessibilityElementsHidden>
+            ›
+          </Text>
+        </Pressable>
+
+        <Pressable
+          style={({ pressed }) => [
+            styles.myReportsBtn,
+            pressed && styles.myReportsBtnPressed,
+          ]}
+          onPress={() => setActivityOpen(true)}
+          accessibilityRole="button"
+          accessibilityLabel="Recent Activity"
+          accessibilityHint="Opens a chronological feed of recent flag activity, grouped by day"
+        >
+          <View style={styles.myReportsTextWrap}>
+            <Text style={styles.myReportsTitle}>Recent Activity</Text>
+            <Text style={styles.myReportsSubtitle}>
+              See what's been reported and triaged across the community,
+              newest first.
             </Text>
           </View>
           <Text style={styles.myReportsChevron} accessibilityElementsHidden>
@@ -704,6 +739,13 @@ export default function ProfileScreen() {
         onSelectFlag={handleWatchedSelectFlag}
         onViewOnMap={handleViewOnMap}
         refreshKey={watchedRefreshKey}
+      />
+
+      <ActivityFeedModal
+        visible={activityOpen}
+        onClose={() => setActivityOpen(false)}
+        onSelectFlag={handleActivitySelectFlag}
+        onViewOnMap={handleViewOnMap}
       />
 
       <FlagDetailModal
