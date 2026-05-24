@@ -33,6 +33,7 @@ import {
 } from '@/lib/flags';
 import type { FlagRow, FlagStatus } from '@/types/database';
 import PhotoLightboxModal from './PhotoLightboxModal';
+import StatusHistoryModal from './StatusHistoryModal';
 
 export type DetailAction = 'verify' | 'resolve' | 'reject';
 
@@ -63,6 +64,10 @@ export default function FlagDetailModal({
   const [watched, setWatched] = useState<boolean | null>(null);
   const [watchSaving, setWatchSaving] = useState(false);
   const [lightboxOpen, setLightboxOpen] = useState(false);
+  // Status-history modal — opens on top of this modal. Same sibling-Modal
+  // pattern as PhotoLightboxModal. Closed when this modal closes or the
+  // shown flag swaps, so it never lingers over the wrong flag.
+  const [historyOpen, setHistoryOpen] = useState(false);
 
   // Cache the last flag so the slide-out animation still has content to render
   // after the parent clears `flag` on close. Without this the card briefly
@@ -82,6 +87,16 @@ export default function FlagDetailModal({
   }, [visible]);
   useEffect(() => {
     setLightboxOpen(false);
+  }, [flag?.id]);
+
+  // Same close-on-parent-close / close-on-flag-swap protection as the
+  // lightbox. Prevents the history modal from showing entries for the
+  // previous flag after the user navigates to another one.
+  useEffect(() => {
+    if (!visible) setHistoryOpen(false);
+  }, [visible]);
+  useEffect(() => {
+    setHistoryOpen(false);
   }, [flag?.id]);
 
   // Read the user's watched list to know whether THIS flag is being
@@ -489,6 +504,17 @@ export default function FlagDetailModal({
               >
                 <Text style={styles.shareBtnText}>Share</Text>
               </Pressable>
+              <Pressable
+                onPress={() => setHistoryOpen(true)}
+                disabled={busy}
+                style={[styles.actionBtn, styles.historyBtn]}
+                accessibilityRole="button"
+                accessibilityLabel="View status history"
+                accessibilityHint="Shows who changed the status of this flag and when"
+                accessibilityState={{ disabled: busy }}
+              >
+                <Text style={styles.historyBtnText}>History</Text>
+              </Pressable>
             </View>
           </ScrollView>
 
@@ -574,6 +600,11 @@ export default function FlagDetailModal({
           : undefined
       }
       onClose={() => setLightboxOpen(false)}
+    />
+    <StatusHistoryModal
+      visible={historyOpen}
+      flagId={shownFlag?.id ?? null}
+      onClose={() => setHistoryOpen(false)}
     />
     </>
   );
@@ -700,6 +731,9 @@ const styles = StyleSheet.create({
   viewMapBtnText: { color: '#2f80ed', fontWeight: '700', fontSize: 14 },
   secondaryRow: {
     flexDirection: 'row',
+    // 4 buttons now (View on Map, Directions, Share, History) — wrap so
+    // the row stays usable on narrow screens / large text sizes.
+    flexWrap: 'wrap',
     gap: 8,
     marginTop: 8,
   },
@@ -709,6 +743,15 @@ const styles = StyleSheet.create({
     borderColor: '#2f80ed',
   },
   shareBtnText: { color: '#2f80ed', fontWeight: '700', fontSize: 14 },
+  // History sits next to Share — same outlined-blue treatment for visual
+  // consistency. The literal hex matches View on Map / Share for now; CL2
+  // (color tokens) will normalize all three in the next polish cleanup.
+  historyBtn: {
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: '#2f80ed',
+  },
+  historyBtnText: { color: '#2f80ed', fontWeight: '700', fontSize: 14 },
   // Directions sits between View on Map and Share in the secondary row.
   // Filled brand-blue (not outlined) so it reads as the primary action of
   // the trio — getting somewhere is usually what the user wants more than
