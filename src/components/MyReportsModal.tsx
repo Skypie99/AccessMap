@@ -8,6 +8,7 @@ import {
   RefreshControl,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from 'react-native';
 import { useAuth } from '@/lib/auth';
@@ -19,6 +20,7 @@ import {
   STATUS_COLORS,
   STATUS_LABELS,
 } from '@/lib/flags';
+import { filterMyReports } from '@/lib/myReportsFilter';
 import type { FlagRow, FlagStatus } from '@/types/database';
 
 const STATUS_FILTER_ORDER: FlagStatus[] = [
@@ -56,6 +58,15 @@ export default function MyReportsModal({
   const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'severity'>('newest');
   // 'all' = no status filter; otherwise restrict to that status only.
   const [statusFilter, setStatusFilter] = useState<FlagStatus | 'all'>('all');
+  // Free-text search across description / category label / status. Pure
+  // client-side filter via filterMyReports() — no extra fetch.
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Reset the search query when the modal closes, so reopening starts
+  // fresh instead of restoring whatever was typed last time.
+  useEffect(() => {
+    if (!visible) setSearchQuery('');
+  }, [visible]);
 
   // Count flags per status — drives the chip badges. Computed once per
   // `flags` change so it stays cheap.
@@ -91,10 +102,23 @@ export default function MyReportsModal({
   }, [flags, sortBy]);
 
   // Apply status filter on top of the sort. Empty filter = pass-through.
-  const displayFlags = useMemo(() => {
+  const statusFiltered = useMemo(() => {
     if (statusFilter === 'all') return sortedFlags;
     return sortedFlags.filter((f) => f.status === statusFilter);
   }, [sortedFlags, statusFilter]);
+
+  // Apply the free-text search on top of the status filter. The lib is
+  // decoupled from the labels table — pass CATEGORY_LABELS in as a
+  // lookup callback. Empty / whitespace-only query is a no-op (returns
+  // the same array reference, so the FlatList doesn't re-render its
+  // rows for no reason).
+  const displayFlags = useMemo(() => {
+    return filterMyReports(statusFiltered, searchQuery, (cat) => CATEGORY_LABELS[cat]);
+  }, [statusFiltered, searchQuery]);
+
+  // True when the user has typed something searchable (after trimming).
+  // Used to swap the empty state copy and to show the clear (✕) button.
+  const hasQuery = searchQuery.trim().length > 0;
 
   // Guard setState after async calls so a slow fetch can't update a
   // torn-down modal.
@@ -244,6 +268,61 @@ export default function MyReportsModal({
             </Pressable>
           </View>
 
+          {/* Free-text search — only useful once the user has more than one
+              report. Filters across description, category label, and status
+              via filterMyReports. Multi-token AND, NFC-normalized, case-
+              insensitive. Reset on modal close (useEffect above). */}
+          {flags.length > 1 && (
+            <View style={styles.searchWrap}>
+              <Text
+                style={styles.searchGlyph}
+                accessibilityElementsHidden
+                importantForAccessibility="no-hide-descendants"
+              >
+                🔎
+              </Text>
+              <TextInput
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                placeholder="Search your reports…"
+                // WCAG AA: placeholder needs ≥ 4.5:1 against the tinted
+                // searchWrap background (#f7f9fc). #999 fails at 2.7:1.
+                // #5b6470 lands at ~5.8:1 — comfortably above the threshold.
+                placeholderTextColor="#5b6470"
+                style={styles.searchInput}
+                autoCorrect={false}
+                autoCapitalize="none"
+                returnKeyType="search"
+                // 200 is plenty for any natural-language query; caps a
+                // paste of an enormous string that would re-scan the
+                // whole list on every keystroke (mirrors NearbyFlagsModal).
+                maxLength={200}
+                accessibilityLabel="Search your reports"
+                accessibilityHint="Filters your reports list to those whose description, category, or status contains your search words"
+              />
+              {hasQuery && (
+                <Pressable
+                  onPress={() => setSearchQuery('')}
+                  hitSlop={10}
+                  style={({ pressed }) => [
+                    styles.searchClear,
+                    pressed && styles.searchClearPressed,
+                  ]}
+                  accessibilityRole="button"
+                  accessibilityLabel="Clear search"
+                >
+                  <Text
+                    style={styles.searchClearText}
+                    accessibilityElementsHidden
+                    importantForAccessibility="no-hide-descendants"
+                  >
+                    ✕
+                  </Text>
+                </Pressable>
+              )}
+            </View>
+          )}
+
           {/* Sort chips — only shown when there's something to sort */}
           {flags.length > 1 && (
             <View style={styles.sortRow}>
@@ -364,7 +443,24 @@ export default function MyReportsModal({
                   : `Your reports list, showing ${displayFlags.length} of ${flags.length} ${flags.length === 1 ? 'report' : 'reports'}`
               }
               ListEmptyComponent={
-                loadError ? null : flags.length > 0 && statusFilter !== 'all' ? (
+                loadError ? null : flags.length > 0 && hasQuery ? (
+                  // accessibilityLiveRegion="polite" on the wrapper makes
+                  // TalkBack announce "No matches. No reports match that
+                  // search." when the user types into the search field and
+                  // the list collapses to empty — otherwise the change is
+                  // silent and SR users have no feedback their query missed.
+                  // (iOS VoiceOver doesn't honor the prop but loses nothing
+                  // — it's a no-op there.)
+                  <View
+                    style={styles.emptyWrap}
+                    accessibilityLiveRegion="polite"
+                  >
+                    <Text style={styles.emptyTitle}>No matches</Text>
+                    <Text style={styles.emptyBody}>
+                      No reports match that search.
+                    </Text>
+                  </View>
+                ) : flags.length > 0 && statusFilter !== 'all' ? (
                   <View style={styles.emptyWrap}>
                     <Text style={styles.emptyTitle}>
                       No {STATUS_LABELS[statusFilter as FlagStatus].toLowerCase()} reports
@@ -541,4 +637,37 @@ const styles = StyleSheet.create({
   },
   viewOnMapBtnPressed: { opacity: 0.6, backgroundColor: '#dde3eb' },
   viewOnMapGlyph: { fontSize: 16 },
+  // Search bar — sits between the header and the sort/status chip rows.
+  // Magnifier glyph + free-text input + optional clear ✕. Visual style
+  // mirrors NearbyFlagsModal so the two search affordances feel like
+  // the same control. Clear button is 44pt for the WCAG 2.5.5 target.
+  searchWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    backgroundColor: '#f7f9fc',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#eef1f5',
+  },
+  searchGlyph: { fontSize: 16 },
+  searchInput: {
+    flex: 1,
+    fontSize: 15,
+    color: '#222',
+    paddingVertical: 8,
+    minHeight: 44,
+  },
+  searchClear: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#eef1f5',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  searchClearPressed: { backgroundColor: '#dde3eb', opacity: 0.85 },
+  searchClearText: { fontSize: 14, color: '#333', fontWeight: '700' },
 });
