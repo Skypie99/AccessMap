@@ -24,7 +24,8 @@ import {
   type DefaultTab,
 } from '@/lib/preferences';
 import { clearOnboardingSeen } from '@/lib/onboarding';
-import type { FlagRow, UserRow } from '@/types/database';
+import { STATUS_COLORS, STATUS_LABELS } from '@/lib/flags';
+import type { FlagRow, FlagStatus, UserRow } from '@/types/database';
 import type { RootTabParamList } from '@/navigation/RootNavigator';
 import MyReportsModal from '@/components/MyReportsModal';
 import MyWatchedModal from '@/components/MyWatchedModal';
@@ -39,7 +40,18 @@ import ChangelogModal from '@/components/ChangelogModal';
 interface Stats {
   reported: number;
   resolved: number;
+  // Per-status breakdown of the user's own reports. Lets the Profile hero
+  // show "5 open · 3 verified · 2 resolved" so people can see what's still
+  // pending vs. what's been triaged.
+  byStatus: Record<FlagStatus, number>;
 }
+
+const EMPTY_BY_STATUS: Record<FlagStatus, number> = {
+  open: 0,
+  verified: 0,
+  resolved: 0,
+  rejected: 0,
+};
 
 // Notional point milestones — each one is a small "you reached X" badge
 // inline in the hero card. Tuned to feel rewarding early (25, 50) and
@@ -78,7 +90,11 @@ export default function ProfileScreen() {
     useNavigation<BottomTabNavigationProp<RootTabParamList, 'Profile'>>();
   const { user, loading: authLoading } = useAuth();
   const [profile, setProfile] = useState<UserRow | null>(null);
-  const [stats, setStats] = useState<Stats>({ reported: 0, resolved: 0 });
+  const [stats, setStats] = useState<Stats>({
+    reported: 0,
+    resolved: 0,
+    byStatus: EMPTY_BY_STATUS,
+  });
   const [loading, setLoading] = useState(true);
 
   // My Reports modal lives at this level so its FlagDetailModal sibling can
@@ -139,28 +155,36 @@ export default function ProfileScreen() {
     if (!user) return;
     if (mountedRef.current) setLoading(true);
     try {
-      const [{ data: profileRow, error: profileErr }, reported, resolved] =
+      // One query for all status counts (and the total). Cheaper than
+      // running a separate count(*) per status; row count caps at the
+      // user's own report count so payload stays tiny.
+      const [{ data: profileRow, error: profileErr }, statusRowsRes] =
         await Promise.all([
           supabase.from('users').select('*').eq('id', user.id).maybeSingle(),
           supabase
             .from('flags')
-            .select('id', { count: 'exact', head: true })
+            .select('status')
             .eq('user_id', user.id),
-          supabase
-            .from('flags')
-            .select('id', { count: 'exact', head: true })
-            .eq('user_id', user.id)
-            .eq('status', 'resolved'),
         ]);
 
       if (profileErr) throw profileErr;
+      if (statusRowsRes.error) throw statusRowsRes.error;
       if (!mountedRef.current) return;
       const row = (profileRow as UserRow | null) ?? null;
       setProfile(row);
       setNameDraft(row?.display_name ?? '');
+
+      const byStatus: Record<FlagStatus, number> = { ...EMPTY_BY_STATUS };
+      const statusRows = (statusRowsRes.data ?? []) as Array<{
+        status: FlagStatus;
+      }>;
+      for (const r of statusRows) {
+        if (r.status in byStatus) byStatus[r.status]++;
+      }
       setStats({
-        reported: reported.count ?? 0,
-        resolved: resolved.count ?? 0,
+        reported: statusRows.length,
+        resolved: byStatus.resolved,
+        byStatus,
       });
     } catch (e) {
       if (mountedRef.current) {
@@ -381,6 +405,52 @@ export default function ProfileScreen() {
           <Stat label="Reported" value={stats.reported} />
           <Stat label="Resolved" value={stats.resolved} />
         </View>
+
+        {/* Per-status breakdown — small palette-tinted chips. Only shown
+            when the user has at least one report so first-launch profiles
+            stay uncluttered. */}
+        {stats.reported > 0 && (
+          <View
+            style={styles.statusBreakdownRow}
+            accessibilityRole="summary"
+            accessibilityLabel={
+              `Your reports by status: ` +
+              (['open', 'verified', 'resolved', 'rejected'] as FlagStatus[])
+                .map((s) => `${stats.byStatus[s]} ${STATUS_LABELS[s].toLowerCase()}`)
+                .join(', ')
+            }
+          >
+            {(['open', 'verified', 'resolved', 'rejected'] as FlagStatus[]).map(
+              (status) => {
+                const palette = STATUS_COLORS[status];
+                const count = stats.byStatus[status];
+                return (
+                  <View
+                    key={status}
+                    style={[
+                      styles.statusPill,
+                      { backgroundColor: palette.bg },
+                      count === 0 && styles.statusPillDimmed,
+                    ]}
+                    accessibilityElementsHidden
+                    importantForAccessibility="no"
+                  >
+                    <Text
+                      style={[styles.statusPillCount, { color: palette.fg }]}
+                    >
+                      {count}
+                    </Text>
+                    <Text
+                      style={[styles.statusPillLabel, { color: palette.fg }]}
+                    >
+                      {STATUS_LABELS[status]}
+                    </Text>
+                  </View>
+                );
+              },
+            )}
+          </View>
+        )}
 
         <Pressable
           style={({ pressed }) => [
@@ -757,6 +827,27 @@ const styles = StyleSheet.create({
   },
   statValue: { fontSize: 28, fontWeight: '700', color: '#222' },
   statLabel: { fontSize: 12, color: '#666', textTransform: 'uppercase' },
+  // Per-status pill row (open / verified / resolved / rejected). Uses
+  // STATUS_COLORS for visual continuity with the badges in detail modals.
+  statusBreakdownRow: {
+    flexDirection: 'row',
+    gap: 8,
+    flexWrap: 'wrap',
+  },
+  statusPill: {
+    flexGrow: 1,
+    flexBasis: 0,
+    minWidth: 70,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    borderRadius: 10,
+    alignItems: 'center',
+    gap: 2,
+  },
+  // Zero-count pills fade so the eye lands on what's actually there.
+  statusPillDimmed: { opacity: 0.55 },
+  statusPillCount: { fontSize: 18, fontWeight: '700' },
+  statusPillLabel: { fontSize: 10, fontWeight: '700', textTransform: 'uppercase' },
   myReportsBtn: {
     backgroundColor: '#fff',
     borderRadius: 12,
