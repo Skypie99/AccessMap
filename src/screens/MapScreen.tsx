@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import * as Location from 'expo-location';
 import { useRoute, type RouteProp } from '@react-navigation/native';
+import { color } from '@/theme';
 import { errorMessage } from '@/lib/errors';
 import {
   CATEGORY_ICONS,
@@ -1920,9 +1921,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#2f80ed',
   },
-  // Same reasoning — and the inverted variant (blue on white) is also at
-  // 14pt bold for visual + contrast consistency with the primary.
-  presetBtnSecondaryText: { color: '#2f80ed', fontWeight: '700', fontSize: 14 },
+  // Inverted variant (blue on white). Uses color.brandText (#1c4f99 ≈ 7.6:1)
+  // instead of color.brand (#2f80ed ≈ 3.3:1) so it stays AA-safe even if the
+  // font size ever drops below the 14pt-bold large-text threshold.
+  presetBtnSecondaryText: { color: color.brandText, fontWeight: '700', fontSize: 14 },
   nameBackdrop: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.4)',

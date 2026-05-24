@@ -35,7 +35,14 @@ export const color = {
   textOnBrand: '#fff',          // text drawn on brand-blue or severity colors
 
   // Brand — primary action color
+  // brand:     UI surfaces / button backgrounds / ≥14pt bold text on white
+  // brandText: small bold text on white (passes WCAG 1.4.3 AA at any size)
+  //
+  // Migration note: existing color.brand usages on small text should
+  // gradually move to color.brandText. New code should use brandText
+  // for text-on-white anywhere it's NOT explicitly ≥14pt bold.
   brand: '#2f80ed',             // 3.3:1 on white → UI/large-text only (AA UI 3:1)
+  brandText: '#1c4f99',         // 7.6:1 on white → AA pass at any text size
   brandSoft: '#d6e6f9',         // brand-tinted background for verified pill
   brandOnSoft: '#1c4f99',       // dark brand text for use on brandSoft (7.6:1)
 
