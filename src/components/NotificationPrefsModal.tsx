@@ -51,7 +51,11 @@ const TOGGLES: Array<{
   {
     status: 'open',
     prefKey: 'notifyOnOpen',
-    description: 'A previously-triaged flag reverted to Open.',
+    // Reworded for plainness — the prior copy was technically correct
+    // (diffUpdates skips first-time-seen flags so this only fires on a
+    // status REVERSION), but the phrasing required context to parse.
+    description:
+      'A flag returns to Open status — e.g., a previous resolve was rolled back.',
   },
   {
     status: 'verified',
@@ -296,7 +300,9 @@ const styles = StyleSheet.create({
   rowDesc: { fontSize: 12, color: '#666', lineHeight: 16 },
   footer: {
     fontSize: 12,
-    color: '#888',
+    // #5b6470 on #fff = 4.6:1 — passes WCAG AA for body text. The
+    // previous #888 was 3.5:1, which fails AA. QA Pass-2 #7.
+    color: '#5b6470',
     fontStyle: 'italic',
     marginTop: 4,
     paddingHorizontal: 4,
