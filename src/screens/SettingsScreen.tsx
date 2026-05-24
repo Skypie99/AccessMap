@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import {
-  Alert,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -9,6 +8,7 @@ import {
 } from 'react-native';
 import { color, font, radius, shadow, spacing } from '@/theme';
 import { signOut } from '@/lib/supabase';
+import { confirm } from '@/lib/confirm';
 import NotificationPrefsModal from '@/components/NotificationPrefsModal';
 import HelpModal from '@/components/HelpModal';
 import ChangelogModal from '@/components/ChangelogModal';
@@ -89,25 +89,23 @@ export default function SettingsScreen() {
   const [myFeedbackOpen, setMyFeedbackOpen] = useState(false);
   const [aboutOpen, setAboutOpen] = useState(false);
 
-  const handleSignOutPress = () => {
-    Alert.alert(
+  const handleSignOutPress = async () => {
+    // Use the platform-aware confirm helper (src/lib/confirm.ts) — Alert.alert
+    // is a no-op on react-native-web, so going straight to Alert.alert here
+    // would silently break sign-out on the web build. The helper routes to
+    // window.confirm on web and Alert.alert everywhere else.
+    const ok = await confirm(
       'Sign out?',
       'Are you sure you want to sign out?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Sign out',
-          style: 'destructive',
-          // Fire-and-forget — signOut returns an AuthResponse but the
-          // AuthProvider listener takes care of routing back to the
-          // SignInScreen, so we don't need to await or surface errors
-          // here. (If sign-out fails, the user simply stays signed in.)
-          onPress: () => {
-            void signOut();
-          },
-        },
-      ],
+      'Sign out',
+      true,
     );
+    if (!ok) return;
+    // Fire-and-forget — signOut returns an AuthResponse but the
+    // AuthProvider listener takes care of routing back to the
+    // SignInScreen, so we don't need to await or surface errors
+    // here. (If sign-out fails, the user simply stays signed in.)
+    void signOut();
   };
 
   return (
@@ -178,7 +176,9 @@ export default function SettingsScreen() {
         <SettingsRow
           title="Sign out"
           subtitle="End your session on this device."
-          accessibilityHint="Asks for confirmation before signing you out"
+          // Signal destructive intent via the hint as well as the red color —
+          // screen-reader users don't see the color cue.
+          accessibilityHint="Destructive. Confirms before signing out."
           onPress={handleSignOutPress}
           destructive
         />

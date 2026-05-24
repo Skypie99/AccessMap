@@ -44,7 +44,11 @@ export default function AboutScreen({ visible, onClose }: Props) {
       onRequestClose={onClose}
     >
       <View style={styles.backdrop}>
-        <View style={styles.card}>
+        {/* accessibilityViewIsModal traps VoiceOver focus inside this card so
+            it can't escape back to the underlying Settings screen while the
+            sheet is open. Belt-and-suspenders with the Modal itself, which
+            on iOS sometimes leaks focus to the parent. */}
+        <View style={styles.card} accessibilityViewIsModal>
           <View style={styles.headerRow}>
             <Text style={styles.title} accessibilityRole="header">
               About AccessMap
@@ -67,7 +71,15 @@ export default function AboutScreen({ visible, onClose }: Props) {
             contentInsetAdjustmentBehavior="automatic"
           >
             <View style={styles.heroBadge}>
-              <Text style={styles.heroBadgeIcon} accessibilityElementsHidden>
+              {/* Decorative emoji — accessibilityElementsHidden hides it from
+                  VoiceOver (iOS) and importantForAccessibility hides it from
+                  TalkBack (Android). Both are needed; one alone leaks the
+                  glyph on the other platform. */}
+              <Text
+                style={styles.heroBadgeIcon}
+                accessibilityElementsHidden
+                importantForAccessibility="no-hide-descendants"
+              >
                 🗺️
               </Text>
               <Text style={styles.heroBadgeText}>v{APP_VERSION}</Text>
