@@ -564,6 +564,10 @@ export default function ProfileScreen() {
         {streak.current > 0 && (
           <View
             style={styles.streakCard}
+            // QA A3: accessible={true} groups the icon + value + subtitle
+            // into a single SR announcement. Role 'summary' alone wasn't
+            // enough — RN needs the explicit accessible flag for Views.
+            accessible={true}
             accessibilityRole="summary"
             accessibilityLabel={
               streak.current === 1
@@ -593,6 +597,11 @@ export default function ProfileScreen() {
         {stats.reported > 0 && (
           <View
             style={styles.statusBreakdownRow}
+            // QA A3: same root cause as the streak card — without
+            // accessible={true}, the per-status pills are read as four
+            // separate elements ("5 OPEN", "3 VERIFIED", …) instead of
+            // the combined summary label.
+            accessible={true}
             accessibilityRole="summary"
             accessibilityLabel={
               `Your reports by status: ` +

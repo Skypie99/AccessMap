@@ -776,10 +776,10 @@ export default function MapScreen() {
             chip that opens the manage modal (and acts as the first-add
             affordance for users with no places yet). */}
         {authUser && (
-          <View
-            style={styles.placesRow}
-            accessibilityLabel="Saved places quick-jump"
-          >
+          // QA A4: dropped the wrapping accessibilityLabel — without
+          // accessible={true} it was being ignored anyway, and each
+          // chip's own a11yLabel already describes what tapping does.
+          <View style={styles.placesRow}>
             {savedPlaces.map((place) => (
               <Pressable
                 key={place.id}
@@ -798,7 +798,13 @@ export default function MapScreen() {
                 accessibilityRole="button"
                 accessibilityLabel={`Jump map to ${place.name}`}
               >
-                <Text style={styles.placeChipGlyph}>📍</Text>
+                <Text
+                  style={styles.placeChipGlyph}
+                  accessibilityElementsHidden
+                  importantForAccessibility="no-hide-descendants"
+                >
+                  📍
+                </Text>
                 <Text style={styles.placeChipText} numberOfLines={1}>
                   {place.name}
                 </Text>
@@ -819,7 +825,13 @@ export default function MapScreen() {
               }
               accessibilityHint="Opens the saved places list to add, rename, or remove"
             >
-              <Text style={styles.placeChipGlyph}>★</Text>
+              <Text
+                style={styles.placeChipGlyph}
+                accessibilityElementsHidden
+                importantForAccessibility="no-hide-descendants"
+              >
+                ★
+              </Text>
               <Text style={styles.placeChipText}>
                 {savedPlaces.length === 0 ? 'Save a place' : 'Manage'}
               </Text>
@@ -1321,12 +1333,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
     backgroundColor: 'rgba(255,255,255,0.95)',
     borderRadius: 999,
-    minHeight: 36,
-    maxWidth: 160,
+    // 44pt is the AccessMap baseline touch target (Apple HIG + Android
+    // a11y minimum + WCAG 2.5.5). Bumped from 36 per QA A1.
+    minHeight: 44,
+    maxWidth: 180,
     shadowColor: '#000',
     shadowOpacity: 0.1,
     shadowRadius: 3,

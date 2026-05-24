@@ -185,7 +185,13 @@ export default function SavedPlacesModal({
               accessibilityRole="button"
               accessibilityLabel="Close saved places"
             >
-              <Text style={styles.closeBtnText}>✕</Text>
+              <Text
+                style={styles.closeBtnText}
+                accessibilityElementsHidden
+                importantForAccessibility="no-hide-descendants"
+              >
+                ✕
+              </Text>
             </Pressable>
           </View>
 
@@ -245,7 +251,13 @@ export default function SavedPlacesModal({
               }
               accessibilityState={{ disabled: !canShowAddForm }}
             >
-              <Text style={styles.addBtnGlyph}>📍</Text>
+              <Text
+                style={styles.addBtnGlyph}
+                accessibilityElementsHidden
+                importantForAccessibility="no-hide-descendants"
+              >
+                📍
+              </Text>
               <Text style={styles.addBtnText}>Save my current location</Text>
             </Pressable>
           )}
@@ -332,12 +344,26 @@ export default function SavedPlacesModal({
                     accessibilityLabel={`Jump map to ${place.name}`}
                     accessibilityHint="Closes this list and centers the Map on this place"
                   >
-                    <Text style={styles.rowGlyph}>📍</Text>
+                    <Text
+                      style={styles.rowGlyph}
+                      accessibilityElementsHidden
+                      importantForAccessibility="no-hide-descendants"
+                    >
+                      📍
+                    </Text>
                     <View style={styles.rowText}>
                       <Text style={styles.rowName} numberOfLines={1}>
                         {place.name}
                       </Text>
-                      <Text style={styles.rowCoords}>
+                      <Text
+                        style={styles.rowCoords}
+                        // QA A5: the Pressable's a11yLabel already covers
+                        // "Jump map to {name}"; the raw decimals would be
+                        // read as "47 point 6 0 6 2 negative 122 point…"
+                        // which adds no value for SR users.
+                        accessibilityElementsHidden
+                        importantForAccessibility="no-hide-descendants"
+                      >
                         {place.lat.toFixed(4)}, {place.lng.toFixed(4)}
                       </Text>
                     </View>
@@ -353,7 +379,13 @@ export default function SavedPlacesModal({
                     accessibilityLabel={`Remove ${place.name}`}
                     accessibilityHint="Asks you to confirm before removing this saved place"
                   >
-                    <Text style={styles.removeBtnText}>✕</Text>
+                    <Text
+                      style={styles.removeBtnText}
+                      accessibilityElementsHidden
+                      importantForAccessibility="no-hide-descendants"
+                    >
+                      ✕
+                    </Text>
                   </Pressable>
                 </View>
               ))}
