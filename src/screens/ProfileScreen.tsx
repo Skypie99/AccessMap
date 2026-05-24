@@ -24,7 +24,12 @@ import {
   type DefaultTab,
 } from '@/lib/preferences';
 import { clearOnboardingSeen } from '@/lib/onboarding';
-import { STATUS_COLORS, STATUS_LABELS } from '@/lib/flags';
+import {
+  fetchFlagsByIds,
+  listFlagsByUser,
+  STATUS_COLORS,
+  STATUS_LABELS,
+} from '@/lib/flags';
 import type { FlagRow, FlagStatus, UserRow } from '@/types/database';
 import type { RootTabParamList } from '@/navigation/RootNavigator';
 import MyReportsModal from '@/components/MyReportsModal';
@@ -37,6 +42,9 @@ import MyFeedbackModal from '@/components/MyFeedbackModal';
 import HelpModal from '@/components/HelpModal';
 import ChangelogModal from '@/components/ChangelogModal';
 import ActivityFeedModal from '@/components/ActivityFeedModal';
+import UpdateBanner from '@/components/UpdateBanner';
+import { diffUpdates, loadLastSeen, markAllSeen } from '@/lib/flagUpdates';
+import { loadWatched } from '@/lib/watchedFlags';
 
 interface Stats {
   reported: number;
@@ -107,6 +115,13 @@ export default function ProfileScreen() {
   const [watchedOpen, setWatchedOpen] = useState(false);
   const [watchedRefreshKey, setWatchedRefreshKey] = useState(0);
   const [activityOpen, setActivityOpen] = useState(false);
+  // "Since your last visit" — count of tracked flags whose status changed
+  // since the user last saw them. Tracked set = own reports + watched.
+  // Recomputed on Profile focus; cleared when the user views or dismisses.
+  const [updateCount, setUpdateCount] = useState(0);
+  // Holds the flag list used for the most recent diff so dismiss/view
+  // can mark them as seen without re-fetching.
+  const trackedFlagsRef = useRef<FlagRow[]>([]);
   // Tracks which list modal was the "parent" of the currently-open
   // FlagDetailModal so handleDetailClose can reopen the right one.
   const [flagDetailSource, setFlagDetailSource] = useState<
@@ -203,6 +218,75 @@ export default function ProfileScreen() {
       load();
     }, [load]),
   );
+
+  // Compute "since your last visit" updates on focus. Tracked set = own
+  // reports + watched flags. Diff against the baseline stored from the
+  // previous markAllSeen call. First-time-seen flags don't count (the
+  // baseline absorbs them silently).
+  const refreshUpdateCount = useCallback(async () => {
+    if (!user) {
+      trackedFlagsRef.current = [];
+      setUpdateCount(0);
+      return;
+    }
+    try {
+      const [ownFlags, watchedIds, lastSeen] = await Promise.all([
+        listFlagsByUser(user.id),
+        loadWatched(user.id),
+        loadLastSeen(user.id),
+      ]);
+      const ownIds = new Set(ownFlags.map((f) => f.id));
+      const watchedOnly = watchedIds.filter((id) => !ownIds.has(id));
+      const watchedFlags = watchedOnly.length
+        ? await fetchFlagsByIds(watchedOnly)
+        : [];
+      const tracked = [...ownFlags, ...watchedFlags];
+      if (!mountedRef.current) return;
+      trackedFlagsRef.current = tracked;
+      const updates = diffUpdates(tracked, lastSeen);
+      // If lastSeen is empty (brand-new user / first run after upgrade),
+      // silently seed the baseline so we don't fire a banner for every
+      // existing flag on the next visit.
+      if (Object.keys(lastSeen).length === 0 && tracked.length > 0) {
+        await markAllSeen(user.id, tracked);
+        if (mountedRef.current) setUpdateCount(0);
+        return;
+      }
+      if (mountedRef.current) setUpdateCount(updates.length);
+    } catch {
+      // Updates are non-critical — silently skip on error. Profile load
+      // itself surfaces its own errors via Alert.
+      if (mountedRef.current) setUpdateCount(0);
+    }
+  }, [user]);
+
+  useFocusEffect(
+    useCallback(() => {
+      refreshUpdateCount();
+    }, [refreshUpdateCount]),
+  );
+
+  const acknowledgeUpdates = useCallback(async () => {
+    if (!user) return;
+    const tracked = trackedFlagsRef.current;
+    setUpdateCount(0);
+    try {
+      await markAllSeen(user.id, tracked);
+    } catch {
+      // Best-effort. UI already cleared the banner; a transient
+      // AsyncStorage failure means the banner might reappear next focus,
+      // which is acceptable degradation.
+    }
+  }, [user]);
+
+  const handleViewUpdates = useCallback(() => {
+    setActivityOpen(true);
+    void acknowledgeUpdates();
+  }, [acknowledgeUpdates]);
+
+  const handleDismissUpdates = useCallback(() => {
+    void acknowledgeUpdates();
+  }, [acknowledgeUpdates]);
 
   // Load the default-tab preference once when the user is known.
   useEffect(() => {
@@ -379,6 +463,12 @@ export default function ProfileScreen() {
         refreshControl={<RefreshControl refreshing={loading} onRefresh={load} />}
       >
         <Text style={styles.email}>Signed in as {user.email}</Text>
+
+        <UpdateBanner
+          count={updateCount}
+          onView={handleViewUpdates}
+          onDismiss={handleDismissUpdates}
+        />
 
         <View
           style={styles.heroCard}
