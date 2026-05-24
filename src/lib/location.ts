@@ -33,7 +33,28 @@ export interface UserLocationState {
   refresh: () => void;
 }
 
-export function useUserLocation(): UserLocationState {
+export interface UseUserLocationOptions {
+  /**
+   * When true, only fetch the location if foreground permission has
+   * already been granted — NEVER triggers the OS permission prompt.
+   *
+   * Used by Profile's Nearest-Unresolved card (Constitution Art. 9.6 —
+   * Sky's directive: privacy-sensitive prompts must be user-initiated,
+   * not surfaced on tab focus). When permission isn't already granted,
+   * `permissionDenied` stays true and `location` stays null — the
+   * caller renders nothing.
+   *
+   * Default false → preserves the existing prompt-on-mount behavior
+   * used by Tasks (where the user's clear intent to triage nearby
+   * flags justifies the prompt).
+   */
+  requireExistingPermission?: boolean;
+}
+
+export function useUserLocation(
+  options: UseUserLocationOptions = {},
+): UserLocationState {
+  const { requireExistingPermission = false } = options;
   const [location, setLocation] = useState<LatLng | null>(null);
   const [loading, setLoading] = useState(true);
   const [permissionDenied, setPermissionDenied] = useState(false);
@@ -55,7 +76,12 @@ export function useUserLocation(): UserLocationState {
       setError(null);
     }
     try {
-      const { status } = await Location.requestForegroundPermissionsAsync();
+      // Privacy gate (Const. Art. 9.6): if requireExistingPermission is on,
+      // use the no-prompt status check. Otherwise (default) request, which
+      // will surface the OS prompt the first time.
+      const { status } = requireExistingPermission
+        ? await Location.getForegroundPermissionsAsync()
+        : await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
         if (mountedRef.current) {
           setPermissionDenied(true);
@@ -77,7 +103,7 @@ export function useUserLocation(): UserLocationState {
     } finally {
       if (mountedRef.current) setLoading(false);
     }
-  }, []);
+  }, [requireExistingPermission]);
 
   useEffect(() => {
     fetchLocation();
