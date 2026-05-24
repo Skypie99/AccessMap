@@ -169,6 +169,28 @@ ever change, update the +5/+10/+2/+5 strings in `setStatus` to match.
 
 ---
 
+## Error Handling Tiers
+
+All `try/catch` blocks should follow this policy. The goal is predictable UX:
+user-visible data loss surfaces as an error; convenience-feature failures
+degrade silently.
+
+| Error source | Policy | Example |
+|---|---|---|
+| AsyncStorage **READ** | `console.warn` + return fallback value | `loadPlaces()` returns `[]` on parse failure |
+| AsyncStorage **WRITE** (user data) | **throw** — caller must surface to user | `savedPlaces.persist()`, `filterPresets.savePresets()` |
+| AsyncStorage **WRITE** (ephemera) | `console.warn` + ignore | `addressRecents`, `mapFilters` last-used state |
+| Supabase query error in a screen | `Alert.alert('Title', errorMessage(e))` | `updateFlagStatus()` catch block |
+| **Destructive confirmation** | Always use `confirm()` from `src/lib/confirm.ts` | Delete, Sign out, Reset — web-safe binary dialog |
+| **Informational only** | `Alert.alert` is fine — no-op on web is acceptable | "Could not load profile" retry-able error |
+
+`confirm()` is the platform-aware wrapper (`window.confirm` on web, `Alert.alert`
+on native). Any confirmation that has a Cancel + Confirm button pair should use
+it. Pure information dialogs (errors, "Your flag was submitted") can stay as
+`Alert.alert` — they're acceptable as a silent no-op on web.
+
+---
+
 ## When the user asks for changes
 
 - The user is learning. Explain what you're doing at key moments — terse, but

@@ -14,6 +14,16 @@ import type {
 /**
  * Saved named filter sets — on-device only.
  *
+ * ⚠️  DEPRECATION NOTE (2026-05-24):
+ *   `filterSets` is the OLDER device-wide preset system (max 5 sets,
+ *   key: @accessmap/filter_sets_v1, shared across all accounts on the
+ *   device). It is superseded by `filterPresets.ts` which is per-user
+ *   (max 20, keyed by userId) and fully wired into the Map filter Apply
+ *   path as of Cycle B. The two modules co-exist during a transition
+ *   window. Once MapScreen is fully migrated to `filterPresets`,
+ *   `filterSets` and its corresponding UI chip row in MapScreen will be
+ *   removed. Do not add new features here; add them to `filterPresets.ts`.
+ *
  * Builds on `mapFilters.ts`: where that module persists the *last-used*
  * filter combination, this module persists a small library of *named*
  * combinations the user can switch between with a single tap. So a user
