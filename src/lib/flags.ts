@@ -46,6 +46,13 @@ export interface CreateFlagInput {
   severity: FlagSeverity;
   description?: string | null;
   photo_url?: string | null;
+  // Optional context tags — see src/lib/contextTags.ts for the vocabulary.
+  // Sent to the `context_tags` column added by
+  // supabase/migrations/2026-05-24_flag_context_tags.sql. Until that
+  // migration is applied, the insert below detects the unknown-column
+  // error and retries without this field (tags are silently dropped
+  // server-side; the chip UI still works).
+  context_tags?: string[];
 }
 
 /**
@@ -81,22 +88,136 @@ export async function listFlagsByUser(userId: string) {
   return (data ?? []) as FlagRow[];
 }
 
-export async function createFlag(userId: string, input: CreateFlagInput) {
+// Heuristic: did this PostgREST error come from sending a column the schema
+// cache doesn't know about? PostgREST returns code 'PGRST204' for
+// "column 'X' of relation 'Y' does not exist" (schema-cache miss). On older
+// Supabase deployments the message-only path is the fallback. Used by
+// createFlag to gracefully degrade when the context_tags migration hasn't
+// been applied yet.
+function isUnknownColumnError(err: unknown, columnName: string): boolean {
+  if (!err || typeof err !== 'object') return false;
+  const code = (err as { code?: string }).code;
+  const message = (err as { message?: string }).message;
+  if (code === 'PGRST204') return true;
+  if (typeof message === 'string' && message.includes(columnName)) {
+    // "could not find the 'context_tags' column" or "column ... does not exist".
+    return /not (find|exist)/i.test(message);
+  }
+  return false;
+}
+
+// Capability gate for the `flags.context_tags` column. Starts 'unknown' on
+// app launch. Each successful insert WITH tags flips it to 'available'.
+// Each PGRST204-style failure flips it to 'unavailable' — the UI watches
+// this so the chip picker can disable itself + show a "coming soon" hint
+// instead of letting the user pick tags that will be silently dropped.
+//
+// Why module-level state and not React state: createFlag is a pure helper
+// called from a screen, and we want the capability cached for the lifetime
+// of the JS bundle (re-probing every submit would be wasteful). The
+// `__resetContextTagsCapabilityForTests` export below lets test files
+// reset between cases.
+export type ContextTagsCapability = 'unknown' | 'available' | 'unavailable';
+let contextTagsCapability: ContextTagsCapability = 'unknown';
+const capabilityListeners = new Set<(cap: ContextTagsCapability) => void>();
+
+export function getContextTagsCapability(): ContextTagsCapability {
+  return contextTagsCapability;
+}
+
+/**
+ * Subscribe to capability changes. Returns an unsubscribe function. The
+ * listener fires once immediately with the current value so a freshly-
+ * mounted UI doesn't have to read + subscribe separately.
+ */
+export function subscribeContextTagsCapability(
+  listener: (cap: ContextTagsCapability) => void,
+): () => void {
+  capabilityListeners.add(listener);
+  listener(contextTagsCapability);
+  return () => {
+    capabilityListeners.delete(listener);
+  };
+}
+
+function setContextTagsCapability(next: ContextTagsCapability) {
+  if (next === contextTagsCapability) return;
+  contextTagsCapability = next;
+  for (const l of capabilityListeners) l(next);
+}
+
+// Test-only: reset module state between cases. Not part of the public API.
+export function __resetContextTagsCapabilityForTests() {
+  contextTagsCapability = 'unknown';
+  capabilityListeners.clear();
+}
+
+/**
+ * Returned by createFlag so the caller can tell the user when tags they
+ * picked were dropped server-side. `tagsAccepted=false` means we fell back
+ * to the legacy no-tags insert because the column isn't there yet.
+ */
+export interface CreateFlagResult {
+  row: FlagRow;
+  tagsAccepted: boolean;
+}
+
+export async function createFlag(
+  userId: string,
+  input: CreateFlagInput,
+): Promise<CreateFlagResult> {
+  const basePayload = {
+    user_id: userId,
+    lat: input.lat,
+    lng: input.lng,
+    category: input.category,
+    severity: input.severity,
+    description: input.description ?? null,
+    photo_url: input.photo_url ?? null,
+  };
+  // Try the insert WITH context_tags first. If the column isn't there yet
+  // (migration 2026-05-24_flag_context_tags.sql hasn't been applied), retry
+  // without it so the report still lands. Tags are silently dropped in that
+  // case — the chip UI keeps working, the user just doesn't get a
+  // server-side record of which contexts they picked until the migration
+  // runs. Once the column exists, this single round-trip succeeds.
+  const tagsToSend = input.context_tags;
+  // Only attempt the tagged insert when (a) the caller actually has tags
+  // AND (b) we haven't already learned the column is missing on this
+  // backend. This avoids the wasted round-trip + the silent drop.
+  const shouldTryTagged =
+    tagsToSend !== undefined && contextTagsCapability !== 'unavailable';
+  if (shouldTryTagged) {
+    // The Database type in src/types/database.ts doesn't list context_tags
+    // yet (we're keeping the migration propose-only), so cast the payload
+    // to escape the typed Insert shape. Once the migration lands and the
+    // type is updated, this cast can come off.
+    const withTags = { ...basePayload, context_tags: tagsToSend } as Record<string, unknown>;
+    const { data, error } = await supabase
+      .from('flags')
+      .insert(withTags as never)
+      .select()
+      .single();
+    if (!error) {
+      setContextTagsCapability('available');
+      return { row: data as FlagRow, tagsAccepted: true };
+    }
+    if (!isUnknownColumnError(error, 'context_tags')) throw error;
+    // Mark capability unavailable so future submits skip the doomed
+    // tagged path AND so the UI can disable the picker.
+    setContextTagsCapability('unavailable');
+    // Fall through to the legacy-shape insert below.
+  }
   const { data, error } = await supabase
     .from('flags')
-    .insert({
-      user_id: userId,
-      lat: input.lat,
-      lng: input.lng,
-      category: input.category,
-      severity: input.severity,
-      description: input.description ?? null,
-      photo_url: input.photo_url ?? null,
-    })
+    .insert(basePayload)
     .select()
     .single();
   if (error) throw error;
-  return data as FlagRow;
+  // tagsAccepted is true only when the user didn't try to send any in the
+  // first place. If they tried and we fell back, surface that to the caller.
+  const tagsAccepted = tagsToSend === undefined || tagsToSend.length === 0;
+  return { row: data as FlagRow, tagsAccepted };
 }
 
 export async function updateFlagStatus(flagId: string, status: FlagStatus) {
