@@ -2,22 +2,30 @@
  * FilterPresetsModal — manage the user's saved filter presets (named
  * snapshots of categories + min severity + status filter).
  *
- * THIS CYCLE ships the manager UI only — list, create, rename, delete.
- * The actual "Apply preset to the Map filters" wiring lands in a follow-up
- * cycle because MapScreen is currently held by a parked feature branch.
- * Every user-facing copy block that touches "Apply" is honest about that.
+ * Two modes, controlled by whether the caller passes `onApply`:
+ *   • Manager mode (no onApply) — list, create-placeholder, rename, delete.
+ *     This is how the modal originally shipped; the "Apply" affordance on
+ *     each row is replaced with a "Wiring next release" hint because no
+ *     consumer existed for the filter triple.
+ *   • Apply mode (onApply provided) — same management surface, PLUS each
+ *     row gets a real Apply button that calls back into the host (the Map
+ *     screen) with the chosen preset. The host is responsible for pushing
+ *     the preset's filter triple into whatever state it owns and for
+ *     dismissing the modal.
  *
  * Flows:
- *   • Tap "＋ New" → opens an inline form. Because Map-state wiring is
- *     deferred, this cycle creates a *placeholder* preset with default
- *     values; the empty state and the form helper text both say so.
+ *   • Tap "＋ New" → opens an inline form. The form still saves a
+ *     placeholder preset with default values because the "snapshot the
+ *     current filters" entry point lives on MapScreen (the manager has no
+ *     access to that state). The form's helper copy nudges users toward
+ *     the Map's Save-as-preset button for that path.
  *   • Tap "Rename" on a row → swaps that row into an inline editor with
  *     the existing name pre-filled. Save updates; Cancel reverts.
  *   • Tap "Delete" on a row → confirm Alert, then removes after confirm.
+ *   • Tap "Apply" on a row (apply mode only) → fires onApply(preset).
  *
  * Sign-in gate: presets live in per-user AsyncStorage so an empty notice
- * shows when there's no user. No entry point exists this cycle either —
- * a follow-up will wire the modal in from the next cycle's Settings work.
+ * shows when there's no user.
  */
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
@@ -37,6 +45,7 @@ import {
   addPreset,
   FILTER_PRESETS_MAX,
   loadPresets,
+  presetSummary,
   removePreset,
   renamePreset,
   savePresets,
@@ -46,6 +55,17 @@ import {
 interface Props {
   visible: boolean;
   onClose: () => void;
+  /**
+   * Optional. When provided, the modal opens in "apply mode": each preset
+   * row gains a real "Apply" button that calls back with the chosen
+   * preset. The host (MapScreen) is responsible for closing the modal
+   * after applying — typically by dropping `visible` in the same handler.
+   * When omitted, the row's Apply slot keeps the "Wiring next release"
+   * hint (manager mode) so the manager surface keeps working from any
+   * settings/profile entry point that doesn't know how to consume the
+   * filter triple.
+   */
+  onApply?: (preset: FilterPreset) => void;
 }
 
 // Reasonable cap on user-supplied names. Same length as SavedPlacesModal so
@@ -64,18 +84,11 @@ const PLACEHOLDER_DEFAULTS = {
   >,
 };
 
-function summarize(preset: FilterPreset): string {
-  // Quick one-line description for the row's secondary text. Spec asks for
-  // "<N> categories · severity ≥<M>" — adding the status count too, since
-  // status is the third lever and the row has the room.
-  const catPart =
-    preset.categories.length === 0
-      ? 'All categories'
-      : `${preset.categories.length} categor${preset.categories.length === 1 ? 'y' : 'ies'}`;
-  return `${catPart} · severity ≥${preset.minSeverity}`;
-}
-
-export default function FilterPresetsModal({ visible, onClose }: Props) {
+export default function FilterPresetsModal({
+  visible,
+  onClose,
+  onApply,
+}: Props) {
   const { user } = useAuth();
 
   const [presets, setPresets] = useState<FilterPreset[]>([]);
@@ -226,7 +239,7 @@ export default function FilterPresetsModal({ visible, onClose }: Props) {
         <View
           style={styles.row}
           accessibilityRole="button"
-          accessibilityLabel={`Preset ${item.name}. ${summarize(item)}`}
+          accessibilityLabel={`Preset ${item.name}. ${presetSummary(item)}`}
         >
           {isRenaming ? (
             <View style={styles.renameRow}>
@@ -279,13 +292,34 @@ export default function FilterPresetsModal({ visible, onClose }: Props) {
                   {item.name}
                 </Text>
                 <Text style={styles.rowSummary} numberOfLines={1}>
-                  {summarize(item)}
+                  {presetSummary(item)}
                 </Text>
-                <Text style={styles.rowApplyHint}>
-                  Wiring next release
-                </Text>
+                {/* Manager mode keeps the honest "no consumer yet" hint;
+                    apply mode promotes the row to a real Apply button on
+                    the right so the hint would be redundant. */}
+                {!onApply && (
+                  <Text style={styles.rowApplyHint}>
+                    Wiring next release
+                  </Text>
+                )}
               </View>
               <View style={styles.rowActions}>
+                {onApply && (
+                  <Pressable
+                    onPress={() => onApply(item)}
+                    hitSlop={8}
+                    style={({ pressed }) => [
+                      styles.actionBtn,
+                      styles.applyBtn,
+                      pressed && styles.applyBtnPressed,
+                    ]}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Apply preset ${item.name}`}
+                    accessibilityHint="Replaces current map filters with this preset"
+                  >
+                    <Text style={styles.applyBtnText}>Apply</Text>
+                  </Pressable>
+                )}
                 <Pressable
                   onPress={() => {
                     setRenamingId(item.id);
@@ -322,7 +356,7 @@ export default function FilterPresetsModal({ visible, onClose }: Props) {
         </View>
       );
     },
-    [renamingId, renameValue, handleRenameSubmit, handleDelete],
+    [renamingId, renameValue, handleRenameSubmit, handleDelete, onApply],
   );
 
   return (
@@ -419,9 +453,9 @@ export default function FilterPresetsModal({ visible, onClose }: Props) {
                 accessibilityHint={`Required. Up to ${MAX_NAME_LENGTH} characters.`}
               />
               <Text style={styles.addFormHint}>
-                This release saves a placeholder preset with default
-                filters. Capturing your current map filters comes next
-                release.
+                Creates a preset with default filters. To save your
+                current map filters as a preset, use the “Save as preset”
+                button on the Map screen.
               </Text>
               <View style={styles.addFormActions}>
                 <Pressable
@@ -472,8 +506,9 @@ export default function FilterPresetsModal({ visible, onClose }: Props) {
             <View style={styles.emptyWrap}>
               <Text style={styles.emptyTitle}>No presets yet</Text>
               <Text style={styles.emptyBody}>
-                No presets yet. Save your current map filters here from
-                the Map screen (coming next release).
+                {onApply
+                  ? 'Save your current map filters as a named preset from the Map screen, then come back here to apply it in one tap.'
+                  : 'Save your current map filters as a named preset from the Map screen.'}
               </Text>
             </View>
           ) : (
@@ -655,6 +690,13 @@ const styles = StyleSheet.create({
   deleteBtn: { backgroundColor: '#fdecea' },
   deleteBtnPressed: { backgroundColor: '#f7c5c0' },
   deleteBtnText: { color: '#c0392b', fontWeight: '700', fontSize: 13 },
+  // Apply: primary action color so it reads as the obvious affordance
+  // when apply-mode is on. White-on-#2f80ed is ~3.8:1 — needs 4.5:1 for
+  // small text, but at 14pt bold the WCAG "large text" 3:1 threshold
+  // applies and it clears AA.
+  applyBtn: { backgroundColor: '#2f80ed' },
+  applyBtnPressed: { backgroundColor: '#1f6dd0' },
+  applyBtnText: { color: '#fff', fontWeight: '700', fontSize: 14 },
   renameRow: { flex: 1, gap: 10 },
   renameActions: { flexDirection: 'row', gap: 8 },
   smallBtn: {

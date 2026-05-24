@@ -42,6 +42,7 @@ import {
   FILTER_PRESETS_KEY_PREFIX,
   FILTER_PRESETS_MAX,
   loadPresets,
+  presetSummary,
   removePreset,
   renamePreset,
   savePresets,
@@ -286,5 +287,39 @@ describe('clearPresets', () => {
     expect((await loadPresets(USER)).length).toBe(1);
     await clearPresets(USER);
     expect(await loadPresets(USER)).toEqual([]);
+  });
+});
+
+describe('presetSummary', () => {
+  it('returns "All categories" when no categories are selected', () => {
+    const preset = makePreset({ categories: [], minSeverity: 1 });
+    expect(presetSummary(preset)).toBe('All categories · severity ≥1');
+  });
+
+  it('uses singular "category" for exactly one selected category', () => {
+    const preset = makePreset({ categories: ['no_ramp'], minSeverity: 3 });
+    expect(presetSummary(preset)).toBe('1 category · severity ≥3');
+  });
+
+  it('uses plural "categories" for two or more', () => {
+    const preset = makePreset({
+      categories: ['no_ramp', 'broken_sidewalk', 'blocked_path'],
+      minSeverity: 4,
+    });
+    expect(presetSummary(preset)).toBe('3 categories · severity ≥4');
+  });
+
+  it('does not depend on statusFilter (status count is intentionally omitted from the line)', () => {
+    const withStatuses = makePreset({
+      categories: [],
+      minSeverity: 2,
+      statusFilter: ['open', 'verified', 'resolved'],
+    });
+    const withoutStatuses = makePreset({
+      categories: [],
+      minSeverity: 2,
+      statusFilter: [],
+    });
+    expect(presetSummary(withStatuses)).toBe(presetSummary(withoutStatuses));
   });
 });
