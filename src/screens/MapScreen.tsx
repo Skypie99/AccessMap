@@ -4,6 +4,7 @@ import {
   ActivityIndicator,
   Alert,
   Modal,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -99,6 +100,14 @@ export default function MapScreen() {
   } = useFlags();
 
   const [reportOpen, setReportOpen] = useState(false);
+  // Long-press drop location — set when the user long-presses the map.
+  // Pre-fills ReportFlagModal with this coord (overriding the user's
+  // current GPS location). Cleared on modal close so subsequent
+  // FAB-tap reports use GPS again.
+  const [dropLocation, setDropLocation] = useState<{
+    lat: number;
+    lng: number;
+  } | null>(null);
   const [legendOpen, setLegendOpen] = useState(false);
   const [nearbyOpen, setNearbyOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -630,6 +639,47 @@ export default function MapScreen() {
       }
     : DEFAULT_REGION;
 
+  // Long-press anywhere on the map → confirm prompt → open the report
+  // modal with that coord pre-filled. The confirm step matters: a
+  // long-press is easy to trigger accidentally while panning, and we
+  // don't want a modal popping over the user mid-scroll. Pinned to lat/lng
+  // rounded to 5 decimals (~1 m precision) so the prompt copy fits in the
+  // alert title without scrolling.
+  //
+  // Web caveat: Alert.alert is a no-op shim on react-native-web (see
+  // node_modules/react-native-web/src/exports/Alert/index.js), so on the
+  // web build the confirm prompt would never appear and the feature would
+  // silently do nothing. On web we skip the confirm and drop the pin
+  // directly — right-click intent on desktop is unambiguous, and the
+  // accidental-trigger concern (panning) doesn't apply since web uses
+  // right-click rather than a long-press gesture.
+  const handleMapLongPress = useCallback(
+    (coord: { lat: number; lng: number }) => {
+      if (Platform.OS === 'web') {
+        setDropLocation(coord);
+        setReportOpen(true);
+        return;
+      }
+      const latStr = coord.lat.toFixed(5);
+      const lngStr = coord.lng.toFixed(5);
+      Alert.alert(
+        'Report a flag here?',
+        `Drop a new accessibility report at ${latStr}, ${lngStr}.`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Report here',
+            onPress: () => {
+              setDropLocation(coord);
+              setReportOpen(true);
+            },
+          },
+        ],
+      );
+    },
+    [],
+  );
+
   return (
     <View style={styles.container}>
       <PlatformMap
@@ -638,6 +688,7 @@ export default function MapScreen() {
         flags={filteredFlags}
         focusedFlagId={focusedFlagId}
         showsUserLocation
+        onLongPressMap={handleMapLongPress}
       />
 
       <View pointerEvents="box-none" style={styles.overlay}>
@@ -1170,8 +1221,17 @@ export default function MapScreen() {
 
       <ReportFlagModal
         visible={reportOpen}
-        location={location}
-        onClose={() => setReportOpen(false)}
+        // Prefer the long-press drop location if the user dropped one;
+        // otherwise fall back to the user's current GPS location for the
+        // FAB-triggered "report at my location" flow.
+        location={dropLocation ?? location}
+        onClose={() => {
+          setReportOpen(false);
+          // Clear the drop pin on close so the next FAB-tap defaults back
+          // to GPS. Without this, a long-press once would stick as the
+          // implicit location forever.
+          setDropLocation(null);
+        }}
         onCreated={refreshFlags}
       />
 

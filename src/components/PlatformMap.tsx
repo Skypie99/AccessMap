@@ -30,11 +30,23 @@ export interface PlatformMapProps {
   flags: FlagRow[];
   focusedFlagId: string | null;
   showsUserLocation?: boolean;
+  /**
+   * Long-press anywhere on the map to drop a flag at that location.
+   * Fires with the geographic coordinate of the press. Web variant
+   * implements the same callback via a `contextmenu` listener.
+   */
+  onLongPressMap?: (coord: { lat: number; lng: number }) => void;
 }
 
 const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(
   function PlatformMap(
-    { initialRegion, flags, focusedFlagId, showsUserLocation },
+    {
+      initialRegion,
+      flags,
+      focusedFlagId,
+      showsUserLocation,
+      onLongPressMap,
+    },
     ref,
   ) {
     const mapRef = useRef<MapView | null>(null);
@@ -80,6 +92,18 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(
         initialRegion={initialRegion}
         showsUserLocation={showsUserLocation}
         showsMyLocationButton={false}
+        // Long-press a spot on the map → fire the parent's drop handler
+        // with the press coordinates. iOS/Android only — web variant
+        // handles the same intent via a contextmenu listener. The
+        // 500ms default duration is fine; we don't override it.
+        onLongPress={
+          onLongPressMap
+            ? (e) => {
+                const { latitude, longitude } = e.nativeEvent.coordinate;
+                onLongPressMap({ lat: latitude, lng: longitude });
+              }
+            : undefined
+        }
       >
         {flags.map((f) => (
           <Marker
