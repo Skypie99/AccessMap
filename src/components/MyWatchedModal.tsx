@@ -34,6 +34,7 @@ import {
   STATUS_LABELS,
 } from '@/lib/flags';
 import { clearWatched, loadWatched, removeWatched } from '@/lib/watchedFlags';
+import { decorativeProps } from '@/lib/accessibility';
 import type { FlagRow } from '@/types/database';
 import { color } from '@/theme';
 
@@ -193,7 +194,7 @@ export default function MyWatchedModal({
             styles.severityDot,
             { backgroundColor: severityColor(item.severity) },
           ]}
-          accessible={false}
+          {...decorativeProps}
         />
 
         {/* Middle: category + date */}
