@@ -70,6 +70,18 @@ export default function FlagDetailModal({
     if (flag) setShownFlag(flag);
   }, [flag]);
 
+  // Reset the lightbox whenever the parent modal closes OR the flag swaps.
+  // Without this, the sibling lightbox stays mounted with the cached photo
+  // and can pop back over the next flag's details (QA Pass-3 #1) — or stick
+  // on screen after Verify/Resolve/Delete fired `onClose` while the lightbox
+  // was open (QA Pass-1 #2).
+  useEffect(() => {
+    if (!visible) setLightboxOpen(false);
+  }, [visible]);
+  useEffect(() => {
+    setLightboxOpen(false);
+  }, [flag?.id]);
+
   // Read the user's watched list to know whether THIS flag is being
   // tracked. Re-runs whenever the modal opens or the shown flag changes,
   // so opening one flag then another shows the right state immediately.
@@ -227,7 +239,12 @@ export default function FlagDetailModal({
       onRequestClose={onClose}
     >
       <View style={styles.backdrop}>
-        <View style={styles.card}>
+        {/* accessibilityViewIsModal: tells iOS VoiceOver that everything
+            outside this card is non-interactive — important because we
+            render the lightbox as a sibling Modal (Android-stable pattern),
+            and without this prop the focus could leak to Verify/Resolve
+            buttons that are visually obscured. QA Pass-2 #2. */}
+        <View style={styles.card} accessibilityViewIsModal>
           <View style={styles.headerRow}>
             <Text
               style={styles.title}

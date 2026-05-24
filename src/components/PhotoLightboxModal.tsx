@@ -53,16 +53,15 @@ export default function PhotoLightboxModal({
         backgroundColor="rgba(0,0,0,0.95)"
       />
       <View style={styles.backdrop} accessibilityViewIsModal>
-        {/* Tap-anywhere-to-dismiss pressable layer. Sits BENEATH the
-            image + close button via pointerEvents box-only on the inner
-            stack — we want the image itself to swallow taps so users
-            don't accidentally close while reaching to look closer. */}
+        {/* Tap-anywhere-to-dismiss pressable layer. Hidden from the a11y
+            tree so screen-reader users land on the photo first (the actual
+            content) instead of a generic "Dismiss photo" hit-target. The
+            labeled close button below is their dismiss path. QA Pass-2 #1. */}
         <Pressable
           style={StyleSheet.absoluteFill}
           onPress={onClose}
-          accessibilityRole="button"
-          accessibilityLabel="Dismiss photo"
-          accessibilityHint="Closes the full-screen photo view"
+          accessibilityElementsHidden
+          importantForAccessibility="no-hide-descendants"
         />
 
         {photoUrl ? (
