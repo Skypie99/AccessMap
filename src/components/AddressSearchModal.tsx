@@ -11,6 +11,13 @@ import {
 } from 'react-native';
 import { color, font, radius, shadow, spacing } from '@/theme';
 import { searchAddress, type GeocodeResult } from '@/lib/geocode';
+import {
+  addRecent,
+  type AddressRecent,
+  clearRecents,
+  loadRecents,
+  saveRecents,
+} from '@/lib/addressRecents';
 
 interface Props {
   visible: boolean;
@@ -45,6 +52,10 @@ export default function AddressSearchModal({
   const [results, setResults] = useState<GeocodeResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
+  // Last few addresses the user picked, newest first. Hydrated from
+  // AsyncStorage on every modal open so other tabs/devices that wrote
+  // recents in the meantime don't show stale state.
+  const [recents, setRecents] = useState<AddressRecent[]>([]);
 
   // AbortController for the in-flight Nominatim request, so a fast
   // typist's stale fetch is cancelled the moment they keep typing. The
@@ -92,10 +103,66 @@ export default function AddressSearchModal({
     }
   }, [visible]);
 
+  // Hydrate recents every time the modal opens. Cheap (AsyncStorage
+  // read on a 5-entry list) and ensures the Recent section reflects
+  // anything written by an earlier session.
+  useEffect(() => {
+    if (!visible) return;
+    let cancelled = false;
+    (async () => {
+      const loaded = await loadRecents();
+      if (!cancelled) setRecents(loaded);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [visible]);
+
   const handlePick = (result: GeocodeResult) => {
+    // Persist the pick into recents. Fire-and-forget — saveRecents
+    // swallows write errors internally, so a disk hiccup doesn't break
+    // the map-jump flow.
+    const next = addRecent(recents, {
+      id: result.id,
+      displayName: result.displayName,
+      lat: result.lat,
+      lng: result.lng,
+    });
+    setRecents(next);
+    void saveRecents(next);
     onSelect(result);
     onClose();
   };
+
+  // Tapping a recent re-applies the same shape onSelect expects from a
+  // live result. id is required by GeocodeResult; if a legacy recent
+  // somehow has no id we synthesize one from coords (same fallback the
+  // Nominatim parser uses).
+  const handlePickRecent = (entry: AddressRecent) => {
+    const id = entry.id ?? `${entry.lat},${entry.lng}`;
+    // Re-save to bump this entry to the front (move-to-front semantics
+    // mean the most-recently-used stays nearest the top).
+    const next = addRecent(recents, entry);
+    setRecents(next);
+    void saveRecents(next);
+    onSelect({
+      id,
+      displayName: entry.displayName,
+      lat: entry.lat,
+      lng: entry.lng,
+    });
+    onClose();
+  };
+
+  const handleClearRecents = async () => {
+    setRecents([]);
+    await clearRecents();
+  };
+
+  // The "Recent" section only shows when the user hasn't started typing
+  // yet — once they type, the live results (or loading spinner) take
+  // over the area below the input.
+  const showRecents = visible && query.trim().length === 0 && recents.length > 0;
 
   return (
     <Modal
@@ -138,6 +205,62 @@ export default function AddressSearchModal({
             accessibilityLabel="Address search"
             accessibilityHint="Type a street address, place name, or landmark to find it on the map."
           />
+
+          {showRecents && (
+            <View style={styles.recentSection}>
+              <View style={styles.recentHeaderRow}>
+                <Text
+                  style={styles.recentHeader}
+                  accessibilityRole="header"
+                >
+                  Recent
+                </Text>
+                <Pressable
+                  onPress={handleClearRecents}
+                  hitSlop={12}
+                  style={styles.clearRecentBtn}
+                  accessibilityRole="button"
+                  accessibilityLabel="Clear recent searches"
+                >
+                  <Text style={styles.clearRecentText}>Clear</Text>
+                </Pressable>
+              </View>
+              {recents.map((entry, idx) => (
+                <Pressable
+                  // displayName + index is stable enough for a list capped
+                  // at 5 entries; id may be absent on legacy payloads.
+                  key={`${entry.displayName}-${idx}`}
+                  onPress={() => handlePickRecent(entry)}
+                  style={({ pressed }) => [
+                    styles.recentRow,
+                    pressed && styles.recentRowPressed,
+                  ]}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Recent search: ${entry.displayName}`}
+                  accessibilityHint="Centers the map on this location and closes search"
+                >
+                  <Text
+                    style={styles.recentGlyph}
+                    accessibilityElementsHidden
+                  >
+                    🕘
+                  </Text>
+                  <Text
+                    style={styles.recentText}
+                    numberOfLines={2}
+                  >
+                    {entry.displayName}
+                  </Text>
+                  <Text
+                    style={styles.recentChevron}
+                    accessibilityElementsHidden
+                  >
+                    ›
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+          )}
 
           {loading && (
             <View style={styles.loadingRow} accessible accessibilityLabel="Searching">
@@ -331,6 +454,66 @@ const styles = StyleSheet.create({
     color: color.textMuted,
   },
   resultChevron: {
+    fontSize: font.size.xl,
+    color: color.textSubtle,
+    fontWeight: font.weight.regular,
+  },
+  // Recent section — mirrors the live-results visual rhythm (same card
+  // shadow, same row height/padding) so the modal feels of-a-piece. The
+  // 🕘 glyph differentiates "history" from the 📍 "live pin" glyph.
+  recentSection: {
+    gap: spacing.sm,
+  },
+  recentHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingTop: spacing.xs,
+  },
+  recentHeader: {
+    // textMuted (#666) is 5.7:1 on white — clears AA at body size and
+    // beats the "≥ #5b6470" minimum from the spec.
+    fontSize: font.size.sm,
+    fontWeight: font.weight.semibold,
+    color: color.textMuted,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  clearRecentBtn: {
+    // Tap target ≥ 44pt — hitSlop on the Pressable bumps the
+    // effective touch area beyond this rendered box.
+    minHeight: 44,
+    minWidth: 44,
+    paddingHorizontal: spacing.sm,
+    alignItems: 'flex-end',
+    justifyContent: 'center',
+  },
+  clearRecentText: {
+    fontSize: font.size.sm,
+    fontWeight: font.weight.semibold,
+    color: color.brand,
+  },
+  recentRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    backgroundColor: color.surface,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+    borderRadius: radius.lg,
+    minHeight: 56, // ≥ 44pt with breathing room
+    ...shadow.e1,
+  },
+  recentRowPressed: { opacity: 0.85, backgroundColor: color.surfaceSoft },
+  recentGlyph: { fontSize: font.size.lg },
+  recentText: {
+    flex: 1,
+    fontSize: font.size.sm,
+    color: color.textStrong,
+    fontWeight: font.weight.semibold,
+    lineHeight: 18,
+  },
+  recentChevron: {
     fontSize: font.size.xl,
     color: color.textSubtle,
     fontWeight: font.weight.regular,
