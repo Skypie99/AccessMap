@@ -13,6 +13,7 @@ import {
   Text,
   View,
 } from 'react-native';
+import { color } from '@/theme';
 import { useAuth } from '@/lib/auth';
 import { confirm } from '@/lib/confirm';
 import { getDirectionsUrl } from '@/lib/directionsLink';
@@ -700,7 +701,7 @@ const styles = StyleSheet.create({
   // Outlined button: blue text on white card. Uses color.brandText
   // (#1c4f99 ≈ 7.6:1) instead of color.brand (#2f80ed ≈ 3.3:1) so it
   // stays AA-safe even if the font size drops below 14pt-bold.
-  viewMapBtnText: { color: '#1c4f99', fontWeight: '700', fontSize: 14 },
+  viewMapBtnText: { color: color.brandText, fontWeight: '700', fontSize: 14 },
   secondaryRow: {
     flexDirection: 'row',
     gap: 8,
@@ -713,7 +714,7 @@ const styles = StyleSheet.create({
   },
   // Outlined Share button: blue text on white card. Uses color.brandText
   // for AA-safe contrast at any size (see viewMapBtnText note above).
-  shareBtnText: { color: '#1c4f99', fontWeight: '700', fontSize: 14 },
+  shareBtnText: { color: color.brandText, fontWeight: '700', fontSize: 14 },
   // Directions sits between View on Map and Share in the secondary row.
   // Filled brand-blue (not outlined) so it reads as the primary action of
   // the trio — getting somewhere is usually what the user wants more than
