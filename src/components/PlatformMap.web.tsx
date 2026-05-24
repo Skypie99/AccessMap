@@ -27,6 +27,13 @@ export interface PlatformMapProps {
   flags: FlagRow[];
   focusedFlagId: string | null;
   showsUserLocation?: boolean;
+  /**
+   * Drop-flag intent: native fires this on long-press; web fires it on
+   * the map's `contextmenu` event (right-click, or long-press on
+   * touchscreens which the browser surfaces as contextmenu). Coordinate
+   * is the geographic point under the press.
+   */
+  onLongPressMap?: (coord: { lat: number; lng: number }) => void;
 }
 
 // Cache pin icons by (color + dim). There are only 6 possible combinations
@@ -61,7 +68,10 @@ function deltaToZoom(latitudeDelta: number): number {
 }
 
 const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(
-  function PlatformMap({ initialRegion, flags, focusedFlagId }, ref) {
+  function PlatformMap(
+    { initialRegion, flags, focusedFlagId, onLongPressMap },
+    ref,
+  ) {
     const mapInstance = useRef<LeafletMap | null>(null);
     const markerRefs = useRef<Record<string, LeafletMarker | null>>({});
 
@@ -73,6 +83,27 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(
         if (!valid.has(id)) delete markerRefs.current[id];
       }
     }, [flags]);
+
+    // Wire `contextmenu` to the drop-flag intent on web. Leaflet fires
+    // this on right-click on desktop and on a long-touch on mobile
+    // browsers (the OS surfaces the press as a context menu request).
+    // We re-bind on every change to `onLongPressMap` so the latest
+    // closure is used.
+    useEffect(() => {
+      const map = mapInstance.current;
+      if (!map || !onLongPressMap) return;
+      const handler = (e: L.LeafletMouseEvent) => {
+        // Prevent the browser's default right-click menu from showing
+        // over the map.
+        const oe = e.originalEvent;
+        if (oe && 'preventDefault' in oe) oe.preventDefault();
+        onLongPressMap({ lat: e.latlng.lat, lng: e.latlng.lng });
+      };
+      map.on('contextmenu', handler);
+      return () => {
+        map.off('contextmenu', handler);
+      };
+    }, [onLongPressMap]);
 
     useImperativeHandle(
       ref,
