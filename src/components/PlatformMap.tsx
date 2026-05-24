@@ -1,5 +1,6 @@
 import React, { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
 import { Image, StyleSheet, Text, View } from 'react-native';
+import ClusteredMapView from 'react-native-map-clustering';
 import MapView, {
   Callout,
   Marker,

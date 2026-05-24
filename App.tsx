@@ -1,6 +1,7 @@
 import 'react-native-gesture-handler';
 import React, { useCallback, useEffect, useState } from 'react';
 import { View } from 'react-native';
+import { ThemeProvider } from '@/theme/ThemeContext';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider, useAuth } from '@/lib/auth';
@@ -156,12 +157,14 @@ function FirstLaunchGate({ children }: { children: React.ReactNode }) {
 export default function App() {
   return (
     <SafeAreaProvider>
-      <AuthProvider>
-        <FirstLaunchGate>
-          <Gate />
-        </FirstLaunchGate>
-        <StatusBar style="auto" />
-      </AuthProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <FirstLaunchGate>
+            <Gate />
+          </FirstLaunchGate>
+          <StatusBar style="auto" />
+        </AuthProvider>
+      </ThemeProvider>
     </SafeAreaProvider>
   );
 }

@@ -8,9 +8,9 @@ import {
   RefreshControl,
   StyleSheet,
   Text,
-  TextInput,
   View,
 } from 'react-native';
+import SearchInputRow from '@/components/SearchInputRow';
 import { useAuth } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
 import {
@@ -282,22 +282,10 @@ export default function MyReportsModal({
               >
                 🔎
               </Text>
-              <TextInput
+              <SearchInputRow
                 value={searchQuery}
                 onChangeText={setSearchQuery}
                 placeholder="Search your reports…"
-                // WCAG AA: placeholder needs ≥ 4.5:1 against the tinted
-                // searchWrap background (#f7f9fc). #999 fails at 2.7:1.
-                // #5b6470 lands at ~5.8:1 — comfortably above the threshold.
-                placeholderTextColor="#5b6470"
-                style={styles.searchInput}
-                autoCorrect={false}
-                autoCapitalize="none"
-                returnKeyType="search"
-                // 200 is plenty for any natural-language query; caps a
-                // paste of an enormous string that would re-scan the
-                // whole list on every keystroke (mirrors NearbyFlagsModal).
-                maxLength={200}
                 accessibilityLabel="Search your reports"
                 accessibilityHint="Filters your reports list to those whose description, category, or status contains your search words"
               />
@@ -639,28 +627,15 @@ const styles = StyleSheet.create({
   viewOnMapBtnPressed: { opacity: 0.6, backgroundColor: color.borderPressed },
   viewOnMapGlyph: { fontSize: 16 },
   // Search bar — sits between the header and the sort/status chip rows.
-  // Magnifier glyph + free-text input + optional clear ✕. Visual style
-  // mirrors NearbyFlagsModal so the two search affordances feel like
-  // the same control. Clear button is 44pt for the WCAG 2.5.5 target.
+  // Magnifier glyph + SearchInputRow + optional clear ✕ in a flex row.
+  // The visual card (border, background) is owned by SearchInputRow so
+  // the row wrapper is now a plain alignment container with no decoration.
   searchWrap: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    backgroundColor: '#f7f9fc',
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: '#eef1f5',
   },
   searchGlyph: { fontSize: 16 },
-  searchInput: {
-    flex: 1,
-    fontSize: 15,
-    color: '#222',
-    paddingVertical: 8,
-    minHeight: 44,
-  },
   searchClear: {
     width: 44,
     height: 44,

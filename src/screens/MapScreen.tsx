@@ -1486,6 +1486,7 @@ export default function MapScreen() {
               value={presetNameDraft}
               onChangeText={setPresetNameDraft}
               placeholder="e.g. Morning commute"
+              placeholderTextColor={color.textMuted}
               autoFocus
               autoCapitalize="sentences"
               maxLength={60}
@@ -1561,6 +1562,7 @@ export default function MapScreen() {
               value={nameDraft}
               onChangeText={setNameDraft}
               placeholder="e.g. Downtown commute"
+              placeholderTextColor={color.textMuted}
               autoFocus
               autoCapitalize="sentences"
               maxLength={40}
