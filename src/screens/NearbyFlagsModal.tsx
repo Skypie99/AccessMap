@@ -8,7 +8,6 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   View,
 } from 'react-native';
 import { CATEGORY_LABELS, CATEGORY_ORDER, severityColor } from '@/lib/flags';
@@ -21,7 +20,7 @@ import {
 } from '@/lib/distance';
 import { searchFlags } from '@/lib/flagSearch';
 import type { FlagCategory, FlagRow } from '@/types/database';
-import { color } from '@/theme';
+import SearchInputRow from '@/components/SearchInputRow';
 
 interface Props {
   visible: boolean;
@@ -120,53 +119,15 @@ export default function NearbyFlagsModal({
 
         {/* Search bar — shown only when the list has at least two flags
             (one-flag lists don't benefit from search). Pure client-side
-            filter via searchFlags(). */}
+            filter via searchFlags(). Extracted to SearchInputRow. */}
         {flags.length >= 2 && (
-          <View style={styles.searchWrap}>
-            <Text
-              style={styles.searchGlyph}
-              accessibilityElementsHidden
-              importantForAccessibility="no-hide-descendants"
-            >
-              🔎
-            </Text>
-            <TextInput
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              placeholder="Search descriptions, categories, status…"
-              placeholderTextColor={color.placeholderText}
-              style={styles.searchInput}
-              autoCorrect={false}
-              autoCapitalize="none"
-              returnKeyType="search"
-              // 200 is plenty for any natural-language query; caps a
-              // paste of an enormous string that would re-scan the
-              // whole flag list on every keystroke. QA Pass-3 #7.
-              maxLength={200}
-              accessibilityLabel="Search flags"
-              accessibilityHint="Filters the list to flags whose description, category, or status contains your search words"
-            />
-            {searchQuery.length > 0 && (
-              <Pressable
-                onPress={() => setSearchQuery('')}
-                hitSlop={10}
-                style={({ pressed }) => [
-                  styles.searchClear,
-                  pressed && styles.searchClearPressed,
-                ]}
-                accessibilityRole="button"
-                accessibilityLabel="Clear search"
-              >
-                <Text
-                  style={styles.searchClearText}
-                  accessibilityElementsHidden
-                  importantForAccessibility="no-hide-descendants"
-                >
-                  ✕
-                </Text>
-              </Pressable>
-            )}
-          </View>
+          <SearchInputRow
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            onClear={() => setSearchQuery('')}
+            placeholder="Search descriptions, categories, status…"
+            accessibilityLabel="Search flags"
+          />
         )}
 
         {/* Category filter chips — only shown when the list has flags in
@@ -383,36 +344,7 @@ const styles = StyleSheet.create({
   cardBodyText: { flex: 1, gap: 4, justifyContent: 'center' },
   cardDesc: { fontSize: 14, color: '#222' },
   cardMeta: { fontSize: 12, color: '#666' },
-  // Search bar — sits between the location notice and the category
-  // chip row. Magnifier glyph + free-text input + optional clear ✕.
-  searchWrap: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#eef1f5',
-  },
-  searchGlyph: { fontSize: 16 },
-  searchInput: {
-    flex: 1,
-    fontSize: 15,
-    color: '#222',
-    paddingVertical: 8,
-    minHeight: 44,
-  },
-  searchClear: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#eef1f5',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  searchClearPressed: { backgroundColor: color.borderPressed, opacity: 0.85 },
-  searchClearText: { fontSize: 13, color: '#555', fontWeight: '700' },
+  // (Search row extracted to SearchInputRow component.)
   chipBar: {
     flexDirection: 'row',
     gap: 8,

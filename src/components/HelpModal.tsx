@@ -5,12 +5,12 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   View,
 } from 'react-native';
 import { color, font, radius, shadow, spacing } from '@/theme';
 import { openFeedbackComposer } from '@/lib/feedback';
 import { filterFaqs } from '@/lib/helpSearch';
+import SearchInputRow from '@/components/SearchInputRow';
 
 interface Props {
   visible: boolean;
@@ -135,54 +135,14 @@ export default function HelpModal({ visible, onClose }: Props) {
           </View>
 
           {/* Search row — sits between the header and the scrollable FAQ
-              list. The clear (✕) button only renders when there's text
-              to clear, so it doesn't take up touch real-estate when
-              unused. Touch target is 44pt (Apple HIG / WCAG 2.5.5). */}
-          <View style={styles.searchWrap}>
-            <Text
-              style={styles.searchGlyph}
-              accessibilityElementsHidden
-              importantForAccessibility="no-hide-descendants"
-            >
-              🔎
-            </Text>
-            <TextInput
-              value={query}
-              onChangeText={setQuery}
-              placeholder="Search…"
-              placeholderTextColor={color.placeholderText}
-              style={styles.searchInput}
-              autoCorrect={false}
-              autoCapitalize="none"
-              returnKeyType="search"
-              // 200 chars is more than any sensible FAQ search; the cap
-              // protects against accidental huge paste re-filtering on
-              // every keystroke. Same value used in NearbyFlagsModal.
-              maxLength={200}
-              accessibilityLabel="Search FAQ"
-              accessibilityHint="Filters the FAQ list to entries that contain your search words"
-            />
-            {query.length > 0 && (
-              <Pressable
-                onPress={() => setQuery('')}
-                hitSlop={8}
-                style={({ pressed }) => [
-                  styles.searchClear,
-                  pressed && styles.searchClearPressed,
-                ]}
-                accessibilityRole="button"
-                accessibilityLabel="Clear search"
-              >
-                <Text
-                  style={styles.searchClearText}
-                  accessibilityElementsHidden
-                  importantForAccessibility="no-hide-descendants"
-                >
-                  ✕
-                </Text>
-              </Pressable>
-            )}
-          </View>
+              list. Extracted to SearchInputRow for reuse across modals. */}
+          <SearchInputRow
+            value={query}
+            onChangeText={setQuery}
+            onClear={() => setQuery('')}
+            placeholder="Search…"
+            accessibilityLabel="Search FAQ"
+          />
 
           <ScrollView
             style={styles.body}
@@ -305,49 +265,6 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.lg,
   },
 
-  // Search row — magnifier glyph + free-text input + optional clear ✕.
-  // Echoes the pattern used in NearbyFlagsModal (the other search-in-a-
-  // modal flow) for consistent muscle memory between the two surfaces.
-  searchWrap: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    marginHorizontal: spacing.xl,
-    marginBottom: spacing.sm,
-    paddingHorizontal: spacing.md,
-    backgroundColor: color.surfaceSoft,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: color.borderSubtle,
-  },
-  searchGlyph: {
-    fontSize: font.size.lg,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: font.size.md,
-    color: color.textStrong,
-    paddingVertical: spacing.sm,
-    // 44pt minimum touch / tap target (WCAG 2.5.5, Apple HIG).
-    minHeight: 44,
-  },
-  searchClear: {
-    // 44pt square touch target so the clear (✕) button never falls
-    // below the WCAG 2.5.5 / Apple HIG recommendation, even though
-    // the visible chip is smaller — the bigger hit area is invisible
-    // but tappable. hitSlop on the Pressable extends it further.
-    width: 44,
-    height: 44,
-    borderRadius: radius.full,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  searchClearPressed: { opacity: 0.6 },
-  searchClearText: {
-    fontSize: font.size.sm,
-    color: color.textMuted,
-    fontWeight: font.weight.bold,
-  },
   emptyResults: {
     // color.textMuted (#666) → 5.7:1 on white, comfortably above the
     // 4.5:1 AA body floor and the #5b6470 (~5.6:1) target called out
