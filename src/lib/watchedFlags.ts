@@ -133,4 +133,12 @@ async function persist(userId: string, ids: string[]): Promise<void> {
   }
 }
 
+/**
+ * Clears the entire watched list for a user. Equivalent to setWatched([], …)
+ * but with a more descriptive name for use in "Clear all" confirmation flows.
+ */
+export async function clearWatched(userId: string): Promise<void> {
+  await persist(userId, []);
+}
+
 export { MAX_WATCHED };

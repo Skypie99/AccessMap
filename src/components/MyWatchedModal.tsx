@@ -16,6 +16,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   FlatList,
   Modal,
   Pressable,
@@ -32,7 +33,7 @@ import {
   STATUS_COLORS,
   STATUS_LABELS,
 } from '@/lib/flags';
-import { loadWatched, removeWatched } from '@/lib/watchedFlags';
+import { clearWatched, loadWatched, removeWatched } from '@/lib/watchedFlags';
 import type { FlagRow } from '@/types/database';
 
 interface Props {
@@ -124,6 +125,33 @@ export default function MyWatchedModal({
     },
     [user],
   );
+
+  const handleClearAll = useCallback(() => {
+    if (!user || flags.length === 0) return;
+    Alert.alert(
+      'Clear all watched flags?',
+      `You're watching ${flags.length} ${flags.length === 1 ? 'flag' : 'flags'}. This will remove them all from your watched list.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Clear all',
+          style: 'destructive',
+          onPress: async () => {
+            // Optimistic: clear local state immediately so the list empties
+            // without waiting for the AsyncStorage write.
+            setFlags([]);
+            setWatchedIds([]);
+            try {
+              await clearWatched(user.id);
+            } catch {
+              // Rare AsyncStorage failure — the UI already reflects the
+              // cleared state; a reload will re-sync if needed.
+            }
+          },
+        },
+      ],
+    );
+  }, [user, flags.length]);
 
   const missingCount = watchedIds.length - flags.length;
 
@@ -224,6 +252,19 @@ export default function MyWatchedModal({
             <Text style={styles.title} accessibilityRole="header">
               Watched Flags
             </Text>
+            {/* Clear all — shown only when there's something to clear */}
+            {flags.length > 0 && (
+              <Pressable
+                onPress={handleClearAll}
+                hitSlop={10}
+                style={styles.clearBtn}
+                accessibilityRole="button"
+                accessibilityLabel={`Clear all ${flags.length} watched flags`}
+                accessibilityHint="Asks you to confirm before removing all watched flags"
+              >
+                <Text style={styles.clearBtnText}>Clear all</Text>
+              </Pressable>
+            )}
             <Pressable
               onPress={onClose}
               hitSlop={12}
@@ -320,6 +361,17 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   closeBtnText: { fontSize: 16, color: '#333', fontWeight: '700' },
+  clearBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    backgroundColor: '#fdecea',
+    minHeight: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 6,
+  },
+  clearBtnText: { fontSize: 13, fontWeight: '700', color: '#c0392b' },
   missingBanner: {
     backgroundColor: '#fff8e7',
     borderRadius: 8,
