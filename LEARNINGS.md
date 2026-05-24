@@ -611,3 +611,199 @@ useFocusEffect(useCallback(() => { void refreshStreak(); }, [refreshStreak]));
 
 Don't combine the two — the per-focus refresh's await chain is longer
 than a bare load, and the flash is the visible difference between them.
+
+## 2026-05-23 — Optional-arg backward-compat in pure lib functions
+
+When extending a pure function used by callers, add new behavior as an
+**optional parameter with a default** so existing callers don't break.
+`diffUpdates(flags, lastSeen)` → `diffUpdates(flags, lastSeen, prefs?)`.
+Inside, the new param's absence preserves legacy behavior:
+
+```ts
+if (prev === f.status) continue;
+if (prefs && !isNotifiable(f.status, prefs)) continue;  // gated on prefs
+updates.push(...);
+```
+
+Tests should cover BOTH "prefs omitted = legacy" and "prefs filters
+specific statuses" cases. Same pattern works for adding sort options,
+limit caps, etc. — don't break the existing contract.
+
+## 2026-05-23 — Sibling-modal pattern for nested modal flakiness
+
+Rendering `<Modal>` directly inside another `<Modal>` is flaky on Android
+(transparent-over-transparent especially). The fix is to return a Fragment
+with both Modals as siblings of the function's return root:
+
+```tsx
+return (
+  <>
+    <Modal visible={mainOpen} ...>...</Modal>
+    <Modal visible={lightboxOpen} ...>...</Modal>
+  </>
+);
+```
+
+React mounts both at the host's render-tree root, so they end up as
+sibling native modals — each gets its own modal frame. Works for
+FlagDetailModal + PhotoLightboxModal, and the same pattern is used
+for MyReports/Watched + Detail. The previous QA pattern (lift to a
+parent screen) is only necessary when the modals genuinely need to
+share state with each other.
+
+## 2026-05-23 — `accessibilityRole="imagebutton"` for tap-to-zoom photos
+
+When a photo thumbnail becomes interactive (tap to open lightbox),
+use `accessibilityRole="imagebutton"` on the Pressable wrapping the
+Image. Hide the inner Image from the SR tree (`accessibilityElementsHidden`
++ `importantForAccessibility="no-hide-descendants"`) so the Pressable's
+combined label/hint reads once instead of "photo of broken sidewalk,
+photo, button":
+
+```tsx
+<Pressable
+  onPress={() => setLightboxOpen(true)}
+  accessibilityRole="imagebutton"
+  accessibilityLabel={`Photo of ${CATEGORY_LABELS[flag.category]}`}
+  accessibilityHint="Tap to view full screen"
+>
+  <Image source={...}
+    accessibilityElementsHidden
+    importantForAccessibility="no-hide-descendants" />
+</Pressable>
+```
+
+## 2026-05-23 — Tap-to-dismiss layer pattern for full-screen modals
+
+A common UX for lightboxes / overlays: tap anywhere on the backdrop to
+dismiss, BUT taps on the content (image, dialog) should NOT dismiss.
+The pattern:
+
+```tsx
+<View style={styles.backdrop}>
+  {/* Backdrop-wide Pressable BEHIND the content */}
+  <Pressable style={StyleSheet.absoluteFill} onPress={onClose}
+    accessibilityRole="button" accessibilityLabel="Dismiss" />
+  {/* Content stack — rendered above so it captures taps natively */}
+  <Image style={styles.image} ... />
+  <Pressable style={styles.closeBtn} onPress={onClose} ... />
+</View>
+```
+
+The image swallows taps on itself (no onPress handler = native tap is
+not forwarded to the parent Pressable on RN). The close button has its
+own onPress that calls the same onClose. Net behavior: tap empty space
+→ dismiss; tap image → nothing; tap × → dismiss.
+
+**Follow-up (QA Pass-2 #1):** the tap-to-dismiss backdrop must ALSO be
+hidden from the a11y tree (`accessibilityElementsHidden` +
+`importantForAccessibility="no-hide-descendants"`). Otherwise the
+screen-reader focus order leads with the generic dismiss button before
+the actual photo content. Sighted users still get the pointer affordance;
+SR users get the labeled close button instead.
+
+## 2026-05-23 — Functional setState for rapid-toggle Switch rows
+
+A row of `<Switch>` components persisting to AsyncStorage on every
+change has a subtle multi-toggle race. The naive form:
+
+```tsx
+const handleToggle = useCallback(
+  async (key, value) => {
+    const next = { ...prefs, [key]: value };  // ← reads stale closure
+    setPrefs(next);
+    await save(next);
+  },
+  [prefs],  // ← but `prefs` only updates after a commit
+);
+```
+
+Two sub-frame Switch taps both see the same `prefs`, and the second's
+save overwrites the first key's change on disk. The UI looks right
+because both handlers were called with the right value, but disk has
+silently dropped one.
+
+Fix: use the functional updater form, which reads from React's queued
+state, not the closure snapshot:
+
+```tsx
+const handleToggle = useCallback(
+  (key, value) => {
+    setPrefs((prev) => {
+      const next = { ...prev, [key]: value };
+      void save(next);  // fire and forget — UI is already correct
+      return next;
+    });
+  },
+  [],  // ← no `prefs` dep needed; setter handles freshness
+);
+```
+
+The save becomes fire-and-forget but that's fine here — the helper
+warns on errors and the next focus reconciles via load(). For an
+async save you DO want to await for, surface the result via a separate
+effect that watches the state.
+
+## 2026-05-23 — Reset transient modal state on parent close + prop change
+
+A modal that owns its own transient state (lightbox open?) and is
+rendered as a sibling of the parent modal needs TWO resets — one
+when the parent closes, one when the parent's `flag`/`item` prop
+changes. Otherwise the sibling can pop back over the NEXT item's view:
+
+```tsx
+// Reset on parent close — handles user pressing Android back, swipe-down, etc.
+useEffect(() => { if (!visible) setLightboxOpen(false); }, [visible]);
+
+// Reset on item change — handles parent staying open and swapping content.
+useEffect(() => { setLightboxOpen(false); }, [item?.id]);
+```
+
+The visible-flag effect alone misses the case where the parent stays
+mounted (visible=true) but receives a new item. The id-change effect
+alone misses the case where the parent closes while the lightbox is
+open and the cached `shownFlag` keeps its value (the next open would
+inherit the lightboxOpen=true).
+
+## 2026-05-23 — Object.freeze module-level defaults
+
+Module-level `DEFAULT_X` constants returned from getters are tempting
+mutation footguns: every caller has the same reference. A reckless
+mutation corrupts the shared default for the whole app. Two layers:
+
+```ts
+export const DEFAULT_PREFS = Object.freeze({ ... });  // throws on mutation in dev
+export async function loadPrefs(): Promise<Prefs> {
+  // ... fall-through paths
+  return { ...DEFAULT_PREFS };  // hand out a fresh copy
+}
+```
+
+The frozen constant is the contract; the spread copy in the loader is
+defense-in-depth so the caller never gets the shared ref even if they
+ignore the type signature. Same pattern works for DEFAULT_STREAK,
+DEFAULT_FILTERS, etc.
+
+## 2026-05-23 — Unicode NFC normalize before substring search
+
+`String.prototype.includes` is code-unit comparison. `café` written as
+the NFC precomposed single code-point (U+00E9) is a different code-unit
+sequence from `café` written as NFD `e` + combining acute (U+0065
+U+0301). Visually identical, never matches.
+
+Fix: normalize both sides before lowercasing:
+
+```ts
+function normalize(s: string): string {
+  return s.normalize('NFC').toLowerCase();
+}
+```
+
+NFC is the right target for substring search — most editors and OS
+input methods produce NFC by default, so we're normalizing the
+occasional NFD outlier to match the common case. NFD would be a
+larger surgery (every existing description would need a one-time
+re-normalize).
+
+Tests are easy to write: construct an NFD string from
+`'cafe' + '́'` and ensure the NFC query matches.
