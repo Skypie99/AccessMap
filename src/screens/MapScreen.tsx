@@ -110,13 +110,34 @@ export default function MapScreen() {
   // the modal lifecycle.
   const { user: authUser } = useAuth();
   const [savedPlaces, setSavedPlaces] = useState<SavedPlace[]>([]);
+  // QA E1/C2: track which user-id the current `savedPlaces` belongs to.
+  // When authUser flips (sign-out → sign-in, or user A → user B on the
+  // same device), we (a) clear the list synchronously to avoid a flash
+  // of the previous user's data and (b) discard any in-flight load whose
+  // user no longer matches.
+  const loadedForUserIdRef = useRef<string | null>(null);
+  const placesMountedRef = useRef(true);
+  useEffect(() => {
+    placesMountedRef.current = true;
+    return () => {
+      placesMountedRef.current = false;
+    };
+  }, []);
   const refreshSavedPlaces = useCallback(async () => {
-    if (!authUser) {
+    const targetId = authUser?.id ?? null;
+    // Synchronous: clear if user changed (or is now null) BEFORE awaiting,
+    // so the chip row never paints with the previous user's data.
+    if (loadedForUserIdRef.current !== targetId) {
       setSavedPlaces([]);
-      return;
+      loadedForUserIdRef.current = targetId;
     }
+    if (!targetId) return;
     try {
-      const list = await loadPlaces(authUser.id);
+      const list = await loadPlaces(targetId);
+      // Guard the late resolution: if another user signed in mid-flight,
+      // discard this result.
+      if (!placesMountedRef.current) return;
+      if (loadedForUserIdRef.current !== targetId) return;
       setSavedPlaces(list);
     } catch {
       // Best-effort — chip row degrades to empty silently.
