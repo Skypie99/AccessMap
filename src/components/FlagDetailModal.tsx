@@ -4,6 +4,7 @@ import {
   Alert,
   Image,
   Modal,
+  Platform,
   Pressable,
   ScrollView,
   Share,
@@ -153,19 +154,63 @@ export default function FlagDetailModal({
     }
   };
 
-  // Share the flag via the OS share sheet. The message is built by the
-  // pure `formatFlagShareText` helper (src/lib/shareFlag.ts) so the exact
-  // shape is unit-tested and reusable from anywhere else we want a
-  // human-readable summary of a flag (Tasks list, notifications, etc.).
+  // Share the flag. The message is built by the pure `formatFlagShareText`
+  // helper (src/lib/shareFlag.ts) so the exact shape is unit-tested and
+  // reusable from anywhere else we want a human-readable summary of a flag
+  // (Tasks list, notifications, etc.).
   //
-  // A user-cancel on the share sheet throws (RN convention); we swallow
-  // it so the action feels silent. Real errors still surface as an alert.
+  // Platform branch — RN Web's Share.share rejects on Firefox desktop and
+  // older Safari, so on web we go through navigator.share (mobile + Safari),
+  // then navigator.clipboard.writeText, then a final window.alert so the
+  // user always has SOMETHING they can act on. On native we use the OS
+  // share sheet via Share.share.
+  //
+  // A user-cancel throws (RN + Web Share API convention); we swallow it so
+  // the action feels silent. Real errors still surface as an alert.
   const handleShare = async () => {
     if (busy) return;
     const message = formatFlagShareText(
       shownFlag,
       (cat) => CATEGORY_LABELS[cat],
     );
+
+    if (Platform.OS === 'web') {
+      try {
+        const nav =
+          typeof navigator !== 'undefined' ? navigator : undefined;
+        // navigator.share isn't on every browser (Firefox desktop, older
+        // Safari). Fall back to writing to the clipboard so the user
+        // always has SOMETHING they can paste.
+        if (nav && typeof (nav as Navigator).share === 'function') {
+          await (nav as Navigator).share({ text: message });
+          return;
+        }
+        if (nav?.clipboard?.writeText) {
+          await nav.clipboard.writeText(message);
+          // Alert.alert is a no-op on web — use window.alert so the user
+          // actually sees the confirmation.
+          if (typeof window !== 'undefined' && typeof window.alert === 'function') {
+            window.alert('Flag details copied to your clipboard.');
+          }
+          return;
+        }
+        // No share API and no clipboard — last-ditch: show the text so
+        // the user can copy it manually.
+        if (typeof window !== 'undefined' && typeof window.alert === 'function') {
+          window.alert(message);
+        }
+      } catch (e) {
+        const msg = errorMessage(e);
+        if (/cancel|dismiss|abort/i.test(msg)) return;
+        // Surface real errors via window.alert (Alert.alert is no-op on web).
+        if (typeof window !== 'undefined' && typeof window.alert === 'function') {
+          window.alert(`Couldn't share flag: ${msg}`);
+        }
+      }
+      return;
+    }
+
+    // Native: OS share sheet
     try {
       await Share.share({ message });
     } catch (e) {
