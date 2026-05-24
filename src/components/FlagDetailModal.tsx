@@ -3,6 +3,7 @@ import {
   ActivityIndicator,
   Alert,
   Image,
+  Linking,
   Modal,
   Platform,
   Pressable,
@@ -13,7 +14,7 @@ import {
   View,
 } from 'react-native';
 import { useAuth } from '@/lib/auth';
-import { openDirections } from '@/lib/directions';
+import { getDirectionsUrl } from '@/lib/directionsLink';
 import { errorMessage } from '@/lib/errors';
 import { formatFlagShareText } from '@/lib/shareFlag';
 import {
@@ -455,18 +456,26 @@ export default function FlagDetailModal({
                 <Text style={styles.viewMapBtnText}>View on Map</Text>
               </Pressable>
               <Pressable
-                onPress={() =>
-                  openDirections(
-                    shownFlag.lat,
-                    shownFlag.lng,
-                    `AccessMap: ${CATEGORY_LABELS[shownFlag.category]}`,
-                  )
-                }
+                onPress={async () => {
+                  // Pure handoff to the user's preferred maps app via
+                  // platform deep link — no on-platform routing. The URL
+                  // shape is built by `getDirectionsUrl` (pure, unit-
+                  // tested). openURL can reject only in the extremely
+                  // rare case where the OS finds no app to handle the
+                  // scheme; surface a brief alert so the user isn't
+                  // left wondering why nothing happened.
+                  const url = getDirectionsUrl(shownFlag.lat, shownFlag.lng);
+                  try {
+                    await Linking.openURL(url);
+                  } catch {
+                    Alert.alert('Could not open maps app.');
+                  }
+                }}
                 disabled={busy}
                 style={[styles.actionBtn, styles.directionsBtn]}
                 accessibilityRole="button"
-                accessibilityLabel="Get walking directions"
-                accessibilityHint="Opens your maps app with walking directions to this flag"
+                accessibilityLabel="Get directions to this flag"
+                accessibilityHint="Opens your maps app with directions"
                 accessibilityState={{ disabled: busy }}
               >
                 <Text style={styles.directionsBtnText}>Directions</Text>
