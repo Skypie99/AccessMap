@@ -27,6 +27,7 @@ import { clearOnboardingSeen } from '@/lib/onboarding';
 import type { FlagRow, UserRow } from '@/types/database';
 import type { RootTabParamList } from '@/navigation/RootNavigator';
 import MyReportsModal from '@/components/MyReportsModal';
+import MyWatchedModal from '@/components/MyWatchedModal';
 import FlagDetailModal, {
   type DetailAction,
 } from '@/components/FlagDetailModal';
@@ -86,6 +87,13 @@ export default function ProfileScreen() {
   // list modal, open the detail modal, and re-show the list on close.
   const [reportsOpen, setReportsOpen] = useState(false);
   const [reportsRefreshKey, setReportsRefreshKey] = useState(0);
+  const [watchedOpen, setWatchedOpen] = useState(false);
+  const [watchedRefreshKey, setWatchedRefreshKey] = useState(0);
+  // Tracks which list modal was the "parent" of the currently-open
+  // FlagDetailModal so handleDetailClose can reopen the right one.
+  const [flagDetailSource, setFlagDetailSource] = useState<
+    'reports' | 'watched' | null
+  >(null);
   const [selectedFlag, setSelectedFlag] = useState<FlagRow | null>(null);
 
   // About modal — opened from the "About AccessMap" row near the bottom.
@@ -248,18 +256,33 @@ export default function ProfileScreen() {
     );
   }, [user]);
 
-  const handleSelectFlag = (flag: FlagRow) => {
-    // Hide the list modal first, then open the detail modal as a sibling.
+  // Opens the detail modal from the My Reports list.
+  const handleReportsSelectFlag = (flag: FlagRow) => {
     setReportsOpen(false);
+    setFlagDetailSource('reports');
+    setSelectedFlag(flag);
+  };
+
+  // Opens the detail modal from the Watched Flags list.
+  const handleWatchedSelectFlag = (flag: FlagRow) => {
+    setWatchedOpen(false);
+    setFlagDetailSource('watched');
     setSelectedFlag(flag);
   };
 
   const handleDetailClose = () => {
+    const src = flagDetailSource;
     setSelectedFlag(null);
-    // Re-open the list and bump its refresh key so it refetches — the
-    // user may have changed status or deleted the flag.
-    setReportsRefreshKey((k) => k + 1);
-    setReportsOpen(true);
+    setFlagDetailSource(null);
+    // Re-open the originating list and bump its refresh key so it re-fetches.
+    if (src === 'watched') {
+      setWatchedRefreshKey((k) => k + 1);
+      setWatchedOpen(true);
+    } else {
+      // Default back to reports if source is unknown.
+      setReportsRefreshKey((k) => k + 1);
+      setReportsOpen(true);
+    }
   };
 
   const handleDetailChanged = (
@@ -267,7 +290,7 @@ export default function ProfileScreen() {
     _action: DetailAction,
     _isOwn: boolean,
   ) => {
-    // Triage from My Reports might bump the user's own points (reporter
+    // Triage from My Reports/Watched might bump the user's own points (reporter
     // bonus on verify/resolve). Refresh the profile stats too.
     load();
     handleDetailClose();
@@ -379,6 +402,27 @@ export default function ProfileScreen() {
               {stats.reported === 0
                 ? 'See your reports here once you submit one.'
                 : 'View every flag you’ve submitted.'}
+            </Text>
+          </View>
+          <Text style={styles.myReportsChevron} accessibilityElementsHidden>
+            ›
+          </Text>
+        </Pressable>
+
+        <Pressable
+          style={({ pressed }) => [
+            styles.myReportsBtn,
+            pressed && styles.myReportsBtnPressed,
+          ]}
+          onPress={() => setWatchedOpen(true)}
+          accessibilityRole="button"
+          accessibilityLabel="Watched Flags"
+          accessibilityHint="Opens the list of flags you are tracking for status changes"
+        >
+          <View style={styles.myReportsTextWrap}>
+            <Text style={styles.myReportsTitle}>Watched Flags</Text>
+            <Text style={styles.myReportsSubtitle}>
+              Track flags you care about and see when their status changes.
             </Text>
           </View>
           <Text style={styles.myReportsChevron} accessibilityElementsHidden>
@@ -578,8 +622,15 @@ export default function ProfileScreen() {
       <MyReportsModal
         visible={reportsOpen}
         onClose={() => setReportsOpen(false)}
-        onSelectFlag={handleSelectFlag}
+        onSelectFlag={handleReportsSelectFlag}
         refreshKey={reportsRefreshKey}
+      />
+
+      <MyWatchedModal
+        visible={watchedOpen}
+        onClose={() => setWatchedOpen(false)}
+        onSelectFlag={handleWatchedSelectFlag}
+        refreshKey={watchedRefreshKey}
       />
 
       <FlagDetailModal
