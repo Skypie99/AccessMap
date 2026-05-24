@@ -162,6 +162,41 @@ describe('theme token foundation (Cycle D / d2)', () => {
   });
 });
 
+// -------------------------------------------------------------------------
+// Item 1 (E1 carry): color.placeholderText AA token
+//
+// TextInput placeholder text must pass WCAG 2.2 AA (≥ 4.5:1) on the
+// surfaces it appears on. The old color.textSubtle (#999) only hit 2.7:1
+// on #f7f9fc — a clear failure. color.placeholderText (#5b6470) is the
+// dedicated AA-safe replacement for all placeholderTextColor props.
+// -------------------------------------------------------------------------
+
+describe('color.placeholderText (E1 carry)', () => {
+  it('exists and is a string', () => {
+    expect(typeof color.placeholderText).toBe('string');
+  });
+
+  it('is the expected hex (#5b6470)', () => {
+    expect(color.placeholderText).toBe('#5b6470');
+  });
+
+  it('passes WCAG 2.2 AA small-text contrast on white (>= 4.5:1)', () => {
+    const ratio = contrastRatio(color.placeholderText, color.surface);
+    expect(ratio).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it('passes WCAG 2.2 AA small-text contrast on surfaceMuted (#f7f9fc)', () => {
+    // NearbyFlagsModal, HelpModal, MyReportsModal search inputs sit on #f7f9fc.
+    const ratio = contrastRatio(color.placeholderText, color.surfaceMuted);
+    expect(ratio).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it('color.textSubtle does NOT pass small-text AA on white — confirming why placeholderText exists', () => {
+    const ratio = contrastRatio(color.textSubtle, color.surface);
+    expect(ratio).toBeLessThan(4.5);
+  });
+});
+
 // Re-import severity locally so the test above can compare without
 // importing the whole module twice at the top.
 function severity4Color(): string {

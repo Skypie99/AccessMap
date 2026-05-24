@@ -150,7 +150,7 @@ export default function HelpModal({ visible, onClose }: Props) {
               value={query}
               onChangeText={setQuery}
               placeholder="Search…"
-              placeholderTextColor={color.textSubtle}
+              placeholderTextColor={color.placeholderText}
               style={styles.searchInput}
               autoCorrect={false}
               autoCapitalize="none"

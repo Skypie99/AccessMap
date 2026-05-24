@@ -213,7 +213,7 @@ export default function FeedbackModal({ visible, onClose }: Props) {
             multiline
             numberOfLines={6}
             placeholder="What's on your mind?"
-            placeholderTextColor={color.textSubtle}
+            placeholderTextColor={color.placeholderText}
             style={styles.bodyInput}
             editable={!sending}
             textAlignVertical="top"
@@ -226,7 +226,7 @@ export default function FeedbackModal({ visible, onClose }: Props) {
             value={contact}
             onChangeText={setContact}
             placeholder="you@example.com"
-            placeholderTextColor={color.textSubtle}
+            placeholderTextColor={color.placeholderText}
             style={styles.contactInput}
             editable={!sending}
             autoCapitalize="none"

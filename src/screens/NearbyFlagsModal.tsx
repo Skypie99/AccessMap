@@ -134,7 +134,7 @@ export default function NearbyFlagsModal({
               value={searchQuery}
               onChangeText={setSearchQuery}
               placeholder="Search descriptions, categories, status…"
-              placeholderTextColor="#999"
+              placeholderTextColor={color.placeholderText}
               style={styles.searchInput}
               autoCorrect={false}
               autoCapitalize="none"

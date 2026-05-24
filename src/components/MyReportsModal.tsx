@@ -287,9 +287,9 @@ export default function MyReportsModal({
                 onChangeText={setSearchQuery}
                 placeholder="Search your reports…"
                 // WCAG AA: placeholder needs ≥ 4.5:1 against the tinted
-                // searchWrap background (#f7f9fc). #999 fails at 2.7:1.
-                // #5b6470 lands at ~5.8:1 — comfortably above the threshold.
-                placeholderTextColor="#5b6470"
+                // searchWrap background (#f7f9fc). color.placeholderText
+                // (#5b6470) lands at ~5.8:1 — comfortably above the threshold.
+                placeholderTextColor={color.placeholderText}
                 style={styles.searchInput}
                 autoCorrect={false}
                 autoCapitalize="none"
