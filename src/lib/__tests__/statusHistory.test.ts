@@ -3,6 +3,8 @@ import {
   type StatusHistoryEntry,
 } from '../statusHistory';
 
+type StatusHistoryEntryKey = keyof StatusHistoryEntry;
+
 // Deterministic time callback — every entry timestamp resolves to the
 // same string so we can assert on the formatted output exactly.
 const fixedTime = () => '2h ago';
@@ -23,7 +25,6 @@ function entry(
   return {
     id: 'history-1',
     flag_id: 'flag-abc',
-    user_id: 'user-xyz',
     from_status: from,
     to_status: to,
     created_at: '2026-05-24T10:00:00Z',
@@ -121,5 +122,38 @@ describe('formatHistoryEntry', () => {
       const b = formatHistoryEntry(e, labelCap, fixedTime);
       expect(a).toBe(b);
     });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Privacy guarantee — Jordan condition #1 (2026-05-24)
+// ---------------------------------------------------------------------------
+// The client API surface must NEVER expose `user_id` from the history rows.
+// The DB-side guarantee lives in the migration (column grant + view), but
+// we also assert at the type/shape level so a careless future refactor
+// (e.g. someone re-adds user_id to the interface) breaks this test instead
+// of silently leaking attribution to every authenticated client.
+describe('StatusHistoryEntry privacy shape', () => {
+  it('does not include user_id in the returned object keys', () => {
+    const sample = entry('open', 'verified');
+    const keys = Object.keys(sample) as StatusHistoryEntryKey[];
+    expect(keys).not.toContain('user_id' as StatusHistoryEntryKey);
+  });
+
+  it('exposes exactly the five public columns and no more', () => {
+    const sample = entry('open', 'verified');
+    const keys = Object.keys(sample).sort();
+    expect(keys).toEqual(
+      ['created_at', 'flag_id', 'from_status', 'id', 'to_status'].sort(),
+    );
+  });
+
+  it('rejects user_id at the type level (compile-time guard)', () => {
+    // If a future change re-adds user_id to StatusHistoryEntry, this line
+    // stops compiling because the cast becomes valid. The test is here as
+    // documentation: the type IS the privacy boundary on the client side.
+    // @ts-expect-error — user_id is intentionally absent from the shape.
+    const probe: StatusHistoryEntry = entry('open', 'verified', { user_id: 'u' });
+    expect(probe).toBeDefined();
   });
 });

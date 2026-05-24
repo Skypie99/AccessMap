@@ -80,18 +80,16 @@ export default function StatusHistoryModal({
 
   // Pre-format each entry once so the render is just a Text per row.
   // useMemo so we don't redo the work on every re-render of the parent.
+  //
+  // Privacy (Jordan condition #1, 2026-05-24): the client reads through
+  // `flag_status_history_public`, which does NOT include user_id. So we
+  // can't show "who" — only "what changed, when". Each entry is rendered
+  // as a single line; no attribution suffix.
   const formatted = useMemo(
     () =>
       entries.map((e) => ({
         key: e.id,
         line: formatHistoryEntry(e, statusLabel, (iso) => relativeTime(iso)),
-        // "by you / anonymous" suffix — kept simple in v1. The trigger
-        // records auth.uid() (or null for the initial creation entry if
-        // it ever fires unauthenticated, which shouldn't happen in
-        // practice). We don't have a username here so we render the
-        // most honest thing: "by you" if user_id matches anyone we can
-        // identify in a future iteration, "anonymous" otherwise.
-        attribution: e.user_id ? 'by a community member' : 'by anonymous',
       })),
     [entries],
   );
@@ -154,17 +152,12 @@ export default function StatusHistoryModal({
                   key={item.key}
                   style={styles.entryRow}
                   accessible
-                  // Read the line + attribution together so SR users get
-                  // the full picture in one sweep.
-                  accessibilityLabel={`${item.line}, ${item.attribution}`}
+                  accessibilityLabel={item.line}
                   accessibilityRole="text"
                 >
                   <View style={styles.entryDot} />
                   <View style={styles.entryTextWrap}>
                     <Text style={styles.entryLine}>{item.line}</Text>
-                    <Text style={styles.entryAttribution}>
-                      {item.attribution}
-                    </Text>
                   </View>
                 </View>
               ))
@@ -255,10 +248,5 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '600',
     color: '#222',
-  },
-  // #666 on white = 5.7:1 — clears AA 4.5:1.
-  entryAttribution: {
-    fontSize: 13,
-    color: '#666',
   },
 });

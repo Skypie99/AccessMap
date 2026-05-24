@@ -5,22 +5,24 @@ import { supabase } from './supabase';
  * `handle_flag_status_change` and `handle_flag_insert_history` triggers
  * defined in `supabase/migrations/2026-05-24_status_history_table.sql`.
  *
+ * The client reads through the `flag_status_history_public` view, which
+ * EXCLUDES `user_id` (Jordan privacy condition #1, 2026-05-24). So the
+ * shape here intentionally has no `user_id` field — the community can
+ * see the history of a flag without learning who made each change.
+ *
  *  - `from_status === null` means this is the INITIAL creation entry
  *    (the flag was reported and entered 'open' for the first time).
  *    `to_status` is then always `'open'`.
- *  - `user_id === null` means the user has since been deleted (we keep
- *    the audit row but drop the attribution — right-to-be-forgotten).
  *
- * Mirrors the database row shape exactly. We don't type from_status /
- * to_status as `FlagStatus` because the DB is `text` (so a future status
- * value rolled out before the client knows about it doesn't crash the
- * parser). The UI labels-callback resolves the string to a friendly
- * label and falls back to the raw value if it's unknown.
+ * We don't type from_status / to_status as `FlagStatus` because the DB
+ * is `text` (so a future status value rolled out before the client knows
+ * about it doesn't crash the parser). The UI labels-callback resolves
+ * the string to a friendly label and falls back to the raw value if it's
+ * unknown.
  */
 export interface StatusHistoryEntry {
   id: string;
   flag_id: string;
-  user_id: string | null;
   from_status: string | null;
   to_status: string;
   created_at: string;
@@ -29,7 +31,11 @@ export interface StatusHistoryEntry {
 /**
  * Fetch the full status history for a single flag, oldest first.
  *
- * DEFENSIVE: if the table doesn't exist (migration not yet applied) or
+ * Queries the SECURITY INVOKER view `flag_status_history_public`, which
+ * omits `user_id` so the client never sees who made each change. The raw
+ * `flag_status_history` table is maintainer-only for direct SELECT.
+ *
+ * DEFENSIVE: if the view doesn't exist (migration not yet applied) or
  * the query errors for any other reason, returns `[]` — the caller
  * renders an empty-state placeholder either way, so the distinction
  * doesn't matter for UX. Same pattern as `feedbackStore.listFeedbackByUser`.
@@ -42,14 +48,14 @@ export async function listStatusHistory(
   flagId: string,
 ): Promise<StatusHistoryEntry[]> {
   try {
-    // Cast through `any` on purpose: the `flag_status_history` table is
-    // intentionally NOT in src/types/database.ts yet because the
-    // migration is propose-only (Sky applies it; until then the table
-    // doesn't exist on the server). We don't want to claim a type for
-    // a table that may not exist. The fetch is fully defensive — any
-    // error or wrong-shape data falls through to the [] return. When
-    // the migration is applied and Sky regenerates types, this cast
-    // can be removed in a follow-up.
+    // Cast through `any` on purpose: the `flag_status_history_public`
+    // view is intentionally NOT in src/types/database.ts yet because
+    // the migration is propose-only (Sky applies it; until then the
+    // view doesn't exist on the server). We don't want to claim a type
+    // for an object that may not exist. The fetch is fully defensive —
+    // any error or wrong-shape data falls through to the [] return.
+    // When the migration is applied and Sky regenerates types, this
+    // cast can be removed in a follow-up.
     const client = supabase as unknown as {
       from: (table: string) => {
         select: (cols: string) => {
@@ -63,12 +69,12 @@ export async function listStatusHistory(
       };
     };
     const { data, error } = await client
-      .from('flag_status_history')
-      .select('*')
+      .from('flag_status_history_public')
+      .select('id,flag_id,from_status,to_status,created_at')
       .eq('flag_id', flagId)
       .order('created_at', { ascending: true });
     if (error) {
-      // Table might not exist yet (migration not applied) or RLS rejected
+      // View might not exist yet (migration not applied) or RLS rejected
       // — either way, the UI shows the "not yet enabled" placeholder.
       return [];
     }

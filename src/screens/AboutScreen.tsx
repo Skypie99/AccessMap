@@ -126,6 +126,11 @@ export default function AboutScreen({ visible, onClose }: Props) {
               We store flag reports and your profile. Location is requested
               only when you use the map. No tracking, no ads.
             </Text>
+            <Text style={styles.bodyText}>
+              Status changes (open → verified → resolved) are logged so the
+              community can see the history of a flag. The log is visible to
+              other users without identifying who made each change.
+            </Text>
           </ScrollView>
         </View>
       </View>

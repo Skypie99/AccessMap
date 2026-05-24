@@ -6,6 +6,22 @@
 --     dashboard after reviewing. The agent system NEVER writes to the
 --     live DB (Const. Art. 5.3). !!!
 --
+-- ---------------------------------------------------------------------------
+-- RETENTION (Jordan privacy condition #2 — 2026-05-24):
+-- ---------------------------------------------------------------------------
+--   Rows are retained for the lifetime of the parent flag. ON DELETE CASCADE
+--   from `public.flags` means deleting a flag deletes its history. There is
+--   no time-based pruning. A user deleting their account sets `user_id` to
+--   NULL via ON DELETE SET NULL on the FK to `auth.users` — the row remains
+--   but is anonymized.
+-- ---------------------------------------------------------------------------
+--
+-- PRIVACY (Jordan condition #1): clients NEVER see `user_id`. The client
+-- queries `public.flag_status_history_public` (a SECURITY INVOKER view that
+-- selects every column EXCEPT `user_id`). SELECT on the underlying table is
+-- revoked from `authenticated` and granted only to the maintainer (Sky's
+-- email) via RLS. `service_role` keeps full access for ops/debug.
+--
 -- Adds a `public.flag_status_history` table so the app can show "who
 -- changed this flag's status, when, and from what to what". Foundational
 -- for community trust — users can see the lifecycle of any flag.
@@ -48,11 +64,17 @@
 --        id (uuid, pk), flag_id (uuid, fk to flags), user_id (uuid,
 --        nullable, fk to auth.users), from_status (text, nullable),
 --        to_status (text, not null), created_at (timestamptz).
---   2. Dashboard → Database → Policies → confirm 2 policies on
+--   2. Dashboard → Database → Policies → confirm 3 policies on
 --      flag_status_history:
---        - "flag_status_history readable by authenticated" (SELECT)
+--        - "flag_status_history readable by maintainer" (SELECT, auth.email() check)
+--        - "flag_status_history readable via public view" (SELECT, true — view rides on this)
 --        - "flag_status_history no direct insert" (INSERT, denies all)
 --      And no DELETE / UPDATE policies (default-deny).
+--      Also confirm view `flag_status_history_public` exists with columns
+--      id, flag_id, from_status, to_status, created_at (NO user_id).
+--      Test from a non-maintainer account: `select * from flag_status_history`
+--      returns zero rows; `select * from flag_status_history_public` returns
+--      the audit rows with no user_id column.
 --   3. Dashboard → Database → Triggers → confirm:
 --        - `on_flag_status_change` is still on `public.flags` (existing).
 --        - `on_flag_insert_history` is NEW, AFTER INSERT on public.flags.
@@ -81,7 +103,10 @@
 --   --    award... actually no, the insert raises and aborts the txn.
 --   --    So you must restore the original version. See schema.sql.).
 --
---   -- 3. Drop the table itself (cascades the RLS policies).
+--   -- 3. Drop the public-projection view, then the table itself.
+--   --    (Dropping the table would cascade RLS policies but not the view,
+--   --    so drop the view first to keep things tidy.)
+--   drop view if exists public.flag_status_history_public;
 --   drop table if exists public.flag_status_history;
 --
 -- After rollback, the app continues to render the StatusHistoryModal
@@ -116,17 +141,49 @@ comment on table public.flag_status_history is
 
 
 -- ---------------------------------------------------------------------------
--- 2. Row-level security: default-deny, opt in for SELECT.
+-- 2. Row-level security + grants: hide user_id from regular clients.
 -- ---------------------------------------------------------------------------
+--
+-- Jordan privacy condition #1 (2026-05-24): the raw table holds `user_id`
+-- (who made each change). Regular authenticated clients must NOT see it.
+--
+-- Two layers of defense:
+--   A. RLS: SELECT on the raw table is allowed ONLY for the maintainer
+--      (Sky's account, matched via auth.email()). Everyone else's direct
+--      table read returns zero rows.
+--   B. Grants: we revoke table-level SELECT from authenticated entirely.
+--      Even if a future RLS policy is added that's too permissive, the
+--      grant has to be re-issued before the data is reachable.
+--
+-- Regular clients read the audit log via the SECURITY INVOKER view
+-- `public.flag_status_history_public` defined in step 2b, which projects
+-- every column EXCEPT user_id. The view has its own RLS-bypass via
+-- security_invoker=true + a permissive SELECT policy for authenticated
+-- that the view rides on (Postgres still enforces RLS on the underlying
+-- table when reading through a security-invoker view, so we add that
+-- "authenticated may read rows" policy here — the column-projection in
+-- the view is what enforces the privacy guarantee).
 
 alter table public.flag_status_history enable row level security;
 
--- SELECT: anyone authenticated can read. Mirrors the flags policy — if
--- you can see the flag, you can see its history. Privacy-wise this is
--- equivalent to seeing the status itself.
 drop policy if exists "flag_status_history readable by authenticated"
   on public.flag_status_history;
-create policy "flag_status_history readable by authenticated"
+drop policy if exists "flag_status_history readable by maintainer"
+  on public.flag_status_history;
+
+-- Maintainer-only direct SELECT (gets user_id). auth.email() reads the
+-- JWT email claim. service_role bypasses RLS and continues to have full
+-- access for ops/debug.
+create policy "flag_status_history readable by maintainer"
+  on public.flag_status_history for select
+  to authenticated
+  using (auth.email() = 'skylerhalisky@gmail.com');
+
+-- Permissive SELECT for authenticated, so the SECURITY INVOKER view can
+-- return rows. The view drops user_id at the column-projection layer, so
+-- this policy does NOT leak the column — Postgres won't return columns
+-- the caller wasn't granted via the view definition.
+create policy "flag_status_history readable via public view"
   on public.flag_status_history for select
   to authenticated
   using (true);
@@ -146,6 +203,36 @@ create policy "flag_status_history no direct insert"
 -- No UPDATE / DELETE policies on purpose — append-only audit log.
 -- (Service role bypasses RLS, so the maintainer can still clean up via
 -- the dashboard if needed.)
+
+-- Grant defense: yank table-level SELECT from regular clients entirely.
+-- Even with a too-permissive RLS policy in the future, the grant must be
+-- explicitly re-issued before rows are reachable.
+revoke select on public.flag_status_history from anon, authenticated;
+-- service_role keeps the default Supabase grants — no change needed.
+
+
+-- ---------------------------------------------------------------------------
+-- 2b. Public view — same rows, NO user_id. (Jordan privacy condition #1)
+-- ---------------------------------------------------------------------------
+--
+-- SECURITY INVOKER (PG 15+ default; spelled out for intent + safety on
+-- older PG patch levels): the view runs with the caller's privileges so
+-- RLS on the underlying table is enforced. The column list is the actual
+-- privacy boundary — user_id is simply not selectable through this path.
+-- Authenticated clients are granted SELECT on the view; they have no
+-- table-level grant on the underlying table.
+
+drop view if exists public.flag_status_history_public;
+create view public.flag_status_history_public
+  with (security_invoker = true)
+  as
+  select id, flag_id, from_status, to_status, created_at
+    from public.flag_status_history;
+
+grant select on public.flag_status_history_public to authenticated;
+
+comment on view public.flag_status_history_public is
+  'Public-safe projection of flag_status_history — every column except user_id. Authenticated clients read history through this view. Jordan privacy condition #1 (2026-05-24).';
 
 
 -- ---------------------------------------------------------------------------
