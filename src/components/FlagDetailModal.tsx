@@ -4,7 +4,6 @@ import {
   Alert,
   Image,
   Modal,
-  Platform,
   Pressable,
   ScrollView,
   Share,
@@ -15,6 +14,7 @@ import {
 import { useAuth } from '@/lib/auth';
 import { openDirections } from '@/lib/directions';
 import { errorMessage } from '@/lib/errors';
+import { formatFlagShareText } from '@/lib/shareFlag';
 import {
   addWatched,
   loadWatched,
@@ -23,7 +23,6 @@ import {
 import {
   CATEGORY_LABELS,
   deleteFlag,
-  SEVERITY_LABELS,
   severityColor,
   STATUS_COLORS,
   STATUS_LABELS,
@@ -154,49 +153,22 @@ export default function FlagDetailModal({
     }
   };
 
-  // Share the flag via the OS share sheet (native) or the Web Share API
-  // / clipboard (web). Message is self-contained — recipient sees the
-  // category, severity, and location even if they don't have AccessMap
-  // installed. The accessmap://flag/{id} link matches the scheme in
-  // app.json; in-app deep-link handling for it is not wired yet, so a
-  // tap on the link today just opens the app to its last screen.
+  // Share the flag via the OS share sheet. The message is built by the
+  // pure `formatFlagShareText` helper (src/lib/shareFlag.ts) so the exact
+  // shape is unit-tested and reusable from anywhere else we want a
+  // human-readable summary of a flag (Tasks list, notifications, etc.).
+  //
+  // A user-cancel on the share sheet throws (RN convention); we swallow
+  // it so the action feels silent. Real errors still surface as an alert.
   const handleShare = async () => {
     if (busy) return;
-    const url = `accessmap://flag/${shownFlag.id}`;
-    const severityLabel = SEVERITY_LABELS[shownFlag.severity];
-    const message =
-      `${CATEGORY_LABELS[shownFlag.category]} flag on AccessMap\n` +
-      `Severity ${shownFlag.severity}/5 (${severityLabel}) at ${formattedCoords}\n\n` +
-      url;
-
+    const message = formatFlagShareText(
+      shownFlag,
+      (cat) => CATEGORY_LABELS[cat],
+    );
     try {
-      if (Platform.OS === 'web') {
-        const nav =
-          typeof navigator !== 'undefined' ? navigator : undefined;
-        // navigator.share isn't on every browser (Firefox desktop, older
-        // Safari). Fall back to writing to the clipboard so the user
-        // always has SOMETHING they can paste.
-        if (nav && typeof (nav as Navigator).share === 'function') {
-          await (nav as Navigator).share({
-            title: 'AccessMap flag',
-            text: message,
-            url,
-          });
-        } else if (nav?.clipboard?.writeText) {
-          await nav.clipboard.writeText(message);
-          Alert.alert(
-            'Link copied',
-            'Flag details copied to your clipboard.',
-          );
-        } else {
-          Alert.alert('Share', message);
-        }
-      } else {
-        await Share.share({ message, title: 'AccessMap flag', url });
-      }
+      await Share.share({ message });
     } catch (e) {
-      // A user-cancel on the share sheet throws; treat as a no-op rather
-      // than surfacing a "couldn't share" alert.
       const msg = errorMessage(e);
       if (/cancel|dismiss/i.test(msg)) return;
       Alert.alert("Couldn't share flag", msg);
@@ -460,7 +432,7 @@ export default function FlagDetailModal({
                 style={[styles.actionBtn, styles.shareBtn]}
                 accessibilityRole="button"
                 accessibilityLabel="Share this flag"
-                accessibilityHint="Opens the share sheet to send a link to this flag"
+                accessibilityHint="Opens the system share sheet"
                 accessibilityState={{ disabled: busy }}
               >
                 <Text style={styles.shareBtnText}>Share</Text>
