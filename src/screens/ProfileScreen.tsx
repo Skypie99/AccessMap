@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   AccessibilityInfo,
   ActivityIndicator,
@@ -25,11 +25,16 @@ import {
 } from '@/lib/preferences';
 import { clearOnboardingSeen } from '@/lib/onboarding';
 import {
+  CATEGORY_LABELS,
   fetchFlagsByIds,
   listFlagsByUser,
   STATUS_COLORS,
   STATUS_LABELS,
 } from '@/lib/flags';
+import { useFlags } from '@/lib/flagsStore';
+import { useUserLocation } from '@/lib/location';
+import { formatDistance } from '@/lib/distance';
+import { findNearestUnresolved } from '@/lib/nearestFlag';
 import type { FlagRow, FlagStatus, UserRow } from '@/types/database';
 import type { RootTabParamList } from '@/navigation/RootNavigator';
 import MyReportsModal from '@/components/MyReportsModal';
@@ -151,6 +156,22 @@ export default function ProfileScreen() {
   // this, the Achievements count would flash "3/13" then pop to "5/13"
   // once tickVisit's longer await chain resolved.
   const [streak, setStreak] = useState<StreakState>(EMPTY_STREAK);
+
+  // R9: Nearest-unresolved jump button. Reads the shared FlagsProvider
+  // and the user's current location (one-shot fetch via useUserLocation,
+  // gracefully null if permission denied). Pure derivation — no AsyncStorage,
+  // no separate fetch. Hidden when nearest === null OR no location, so the
+  // button never appears as a no-op.
+  //
+  // Why hooks-here vs. a sub-component: the button shares the same nav
+  // handle Profile already uses, and rendering inline keeps the streak
+  // hero card → jump button → status breakdown stack readable in one place.
+  const { flags: providerFlags } = useFlags();
+  const { location: userLocation } = useUserLocation();
+  const nearestUnresolved = useMemo(
+    () => findNearestUnresolved(providerFlags, userLocation),
+    [providerFlags, userLocation],
+  );
   // Tracks which list modal was the "parent" of the currently-open
   // FlagDetailModal so handleDetailClose can reopen the right one.
   const [flagDetailSource, setFlagDetailSource] = useState<
@@ -515,6 +536,18 @@ export default function ProfileScreen() {
     });
   };
 
+  // R9: Jump to the nearest unresolved flag on the Map. Reuses the
+  // existing Map { focusFlag, ts } route — same path My Reports + Watched
+  // use — so the marker is centered and its callout opens.
+  const handleJumpToNearest = useCallback(() => {
+    if (!nearestUnresolved) return;
+    const { flag } = nearestUnresolved;
+    navigation.navigate('Map', {
+      focusFlag: { id: flag.id, lat: flag.lat, lng: flag.lng },
+      ts: Date.now(),
+    });
+  }, [nearestUnresolved, navigation]);
+
   if (authLoading) {
     return (
       <View style={styles.center}>
@@ -635,6 +668,53 @@ export default function ProfileScreen() {
               </Text>
             </View>
           </View>
+        )}
+
+        {/* R9: Nearest-unresolved jump. Shown only when we have a
+            location AND there's an open/verified flag nearby — otherwise
+            the button is a no-op so we hide it. Reuses the same Map
+            `focusFlag` route the lists already use, so the marker is
+            centered + its callout opens. */}
+        {nearestUnresolved && (
+          <Pressable
+            onPress={handleJumpToNearest}
+            style={({ pressed }) => [
+              styles.nearestBtn,
+              pressed && styles.nearestBtnPressed,
+            ]}
+            accessibilityRole="button"
+            accessibilityLabel={
+              `Jump to the nearest unresolved flag: ` +
+              `${CATEGORY_LABELS[nearestUnresolved.flag.category]}, ` +
+              `severity ${nearestUnresolved.flag.severity}, ` +
+              `${formatDistance(nearestUnresolved.km)} away.`
+            }
+            accessibilityHint="Opens the Map tab centered on this flag"
+          >
+            <Text
+              style={styles.nearestBtnIcon}
+              accessibilityElementsHidden
+              importantForAccessibility="no-hide-descendants"
+            >
+              📍
+            </Text>
+            <View style={styles.nearestBtnTextWrap}>
+              <Text style={styles.nearestBtnTitle}>
+                Nearest unresolved · {formatDistance(nearestUnresolved.km)}
+              </Text>
+              <Text style={styles.nearestBtnSubtitle} numberOfLines={1}>
+                {CATEGORY_LABELS[nearestUnresolved.flag.category]} · severity{' '}
+                {nearestUnresolved.flag.severity}
+              </Text>
+            </View>
+            <Text
+              style={styles.nearestBtnChevron}
+              accessibilityElementsHidden
+              importantForAccessibility="no-hide-descendants"
+            >
+              ›
+            </Text>
+          </Pressable>
         )}
 
         {/* Per-status breakdown — small palette-tinted chips. Only shown
@@ -1172,6 +1252,36 @@ const styles = StyleSheet.create({
   streakTextWrap: { flex: 1, gap: 2 },
   streakValue: { fontSize: 15, fontWeight: '700', color: '#7a5500' },
   streakSubtitle: { fontSize: 12, color: '#8c6510' },
+  // R9: Nearest-unresolved jump button. Pale-blue card to set it apart
+  // from the orange streak card directly above; chevron hints at the
+  // navigation action.
+  nearestBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: '#eaf3ff',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    minHeight: 56,
+    borderLeftWidth: 3,
+    borderLeftColor: '#2f80ed',
+  },
+  nearestBtnPressed: {
+    backgroundColor: '#d8e8fb',
+    opacity: 0.9,
+  },
+  nearestBtnIcon: { fontSize: 22 },
+  nearestBtnTextWrap: { flex: 1, gap: 2 },
+  // #1b4373 on #eaf3ff ≈ 9.5:1 — comfortably above AA.
+  nearestBtnTitle: { fontSize: 15, fontWeight: '700', color: '#1b4373' },
+  nearestBtnSubtitle: { fontSize: 12, color: '#345e8e' },
+  nearestBtnChevron: {
+    fontSize: 22,
+    color: '#2f80ed',
+    paddingHorizontal: 4,
+    fontWeight: '700',
+  },
   statsRow: { flexDirection: 'row', gap: 12 },
   statCard: {
     flex: 1,
