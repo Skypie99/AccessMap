@@ -19,7 +19,14 @@ import {
   STATUS_COLORS,
   STATUS_LABELS,
 } from '@/lib/flags';
-import type { FlagRow } from '@/types/database';
+import type { FlagRow, FlagStatus } from '@/types/database';
+
+const STATUS_FILTER_ORDER: FlagStatus[] = [
+  'open',
+  'verified',
+  'resolved',
+  'rejected',
+];
 
 interface Props {
   visible: boolean;
@@ -43,6 +50,30 @@ export default function MyReportsModal({
   // Sort options: newest (default, matches server order), oldest, or highest
   // severity first. Applied client-side so no extra fetch is needed.
   const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'severity'>('newest');
+  // 'all' = no status filter; otherwise restrict to that status only.
+  const [statusFilter, setStatusFilter] = useState<FlagStatus | 'all'>('all');
+
+  // Count flags per status — drives the chip badges. Computed once per
+  // `flags` change so it stays cheap.
+  const statusCounts = useMemo<Record<FlagStatus, number>>(() => {
+    const counts: Record<FlagStatus, number> = {
+      open: 0,
+      verified: 0,
+      resolved: 0,
+      rejected: 0,
+    };
+    for (const f of flags) {
+      if (f.status in counts) counts[f.status]++;
+    }
+    return counts;
+  }, [flags]);
+
+  // Categories present in this user's reports — used to decide whether to
+  // even show the status filter chips (don't bother if everything is in
+  // the same status).
+  const presentStatuses = useMemo<FlagStatus[]>(() => {
+    return STATUS_FILTER_ORDER.filter((s) => statusCounts[s] > 0);
+  }, [statusCounts]);
 
   const sortedFlags = useMemo(() => {
     const copy = [...flags];
@@ -54,6 +85,12 @@ export default function MyReportsModal({
     // 'newest' keeps the server order (created_at DESC from listFlagsByUser)
     return copy;
   }, [flags, sortBy]);
+
+  // Apply status filter on top of the sort. Empty filter = pass-through.
+  const displayFlags = useMemo(() => {
+    if (statusFilter === 'all') return sortedFlags;
+    return sortedFlags.filter((f) => f.status === statusFilter);
+  }, [sortedFlags, statusFilter]);
 
   // Guard setState after async calls so a slow fetch can't update a
   // torn-down modal.
@@ -209,6 +246,66 @@ export default function MyReportsModal({
             </View>
           )}
 
+          {/* Status filter chips — only shown when the list contains more
+              than one distinct status. The chips use STATUS_COLORS for the
+              active state, so each status tints with its palette color. */}
+          {presentStatuses.length > 1 && (
+            <View
+              style={styles.statusFilterRow}
+              accessibilityLabel="Filter by status"
+            >
+              <Pressable
+                onPress={() => setStatusFilter('all')}
+                style={[
+                  styles.statusFilterChip,
+                  statusFilter === 'all' && styles.statusFilterChipAllActive,
+                ]}
+                accessibilityRole="button"
+                accessibilityLabel="Show all statuses"
+                accessibilityState={{ selected: statusFilter === 'all' }}
+              >
+                <Text
+                  style={[
+                    styles.statusFilterText,
+                    statusFilter === 'all' && styles.statusFilterTextActive,
+                  ]}
+                >
+                  All ({flags.length})
+                </Text>
+              </Pressable>
+              {presentStatuses.map((status) => {
+                const active = statusFilter === status;
+                const palette = STATUS_COLORS[status];
+                return (
+                  <Pressable
+                    key={status}
+                    onPress={() =>
+                      setStatusFilter(active ? 'all' : status)
+                    }
+                    style={[
+                      styles.statusFilterChip,
+                      active && { backgroundColor: palette.fg },
+                    ]}
+                    accessibilityRole="button"
+                    accessibilityLabel={
+                      `Show only ${STATUS_LABELS[status]} reports, ${statusCounts[status]} ${statusCounts[status] === 1 ? 'item' : 'items'}`
+                    }
+                    accessibilityState={{ selected: active }}
+                  >
+                    <Text
+                      style={[
+                        styles.statusFilterText,
+                        active && styles.statusFilterTextActive,
+                      ]}
+                    >
+                      {STATUS_LABELS[status]} ({statusCounts[status]})
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          )}
+
           {loadError ? (
             <View style={styles.errorBanner}>
               <Text style={styles.errorText}>{loadError}</Text>
@@ -230,22 +327,32 @@ export default function MyReportsModal({
             </View>
           ) : (
             <FlatList
-              data={sortedFlags}
+              data={displayFlags}
               keyExtractor={(f) => f.id}
               renderItem={renderItem}
               contentContainerStyle={
-                flags.length === 0 ? styles.center : styles.list
+                displayFlags.length === 0 ? styles.center : styles.list
               }
               refreshControl={
                 <RefreshControl refreshing={loading} onRefresh={load} />
               }
               accessibilityLabel={
-                flags.length === 0
+                displayFlags.length === 0
                   ? 'Your reports list, empty'
-                  : `Your reports list, ${flags.length} ${flags.length === 1 ? 'report' : 'reports'}`
+                  : `Your reports list, showing ${displayFlags.length} of ${flags.length} ${flags.length === 1 ? 'report' : 'reports'}`
               }
               ListEmptyComponent={
-                loadError ? null : (
+                loadError ? null : flags.length > 0 && statusFilter !== 'all' ? (
+                  <View style={styles.emptyWrap}>
+                    <Text style={styles.emptyTitle}>
+                      No {STATUS_LABELS[statusFilter as FlagStatus].toLowerCase()} reports
+                    </Text>
+                    <Text style={styles.emptyBody}>
+                      You don't have any reports in this status. Tap "All" to
+                      see everything.
+                    </Text>
+                  </View>
+                ) : (
                   <View style={styles.emptyWrap}>
                     <Text style={styles.emptyTitle}>No reports yet</Text>
                     <Text style={styles.emptyBody}>
@@ -381,4 +488,25 @@ const styles = StyleSheet.create({
   sortChipActive: { backgroundColor: '#2f80ed' },
   sortChipText: { fontSize: 13, fontWeight: '600', color: '#555' },
   sortChipTextActive: { color: '#fff' },
+  // Status filter chip row — sits beneath the sort chips and uses the
+  // STATUS_COLORS foreground tint as the active background so each status
+  // tints with its palette.
+  statusFilterRow: {
+    flexDirection: 'row',
+    gap: 6,
+    paddingBottom: 8,
+    flexWrap: 'wrap',
+  },
+  statusFilterChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 999,
+    backgroundColor: '#eef1f5',
+    minHeight: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  statusFilterChipAllActive: { backgroundColor: '#2f80ed' },
+  statusFilterText: { fontSize: 12, fontWeight: '700', color: '#555' },
+  statusFilterTextActive: { color: '#fff' },
 });
