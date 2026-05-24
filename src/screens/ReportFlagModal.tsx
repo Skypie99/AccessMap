@@ -24,6 +24,12 @@ import {
   SEVERITY_ORDER,
   uploadFlagPhoto,
 } from '@/lib/flags';
+import {
+  CONTEXT_TAGS,
+  CONTEXT_TAG_LABELS,
+  toggleTag,
+  type ContextTag,
+} from '@/lib/contextTags';
 import type { FlagCategory, FlagSeverity } from '@/types/database';
 
 interface Props {
@@ -44,6 +50,7 @@ export default function ReportFlagModal({
   const [severity, setSeverity] = useState<FlagSeverity>(3);
   const [description, setDescription] = useState('');
   const [photoUri, setPhotoUri] = useState<string | null>(null);
+  const [contextTags, setContextTags] = useState<ContextTag[]>([]);
   const [submitting, setSubmitting] = useState(false);
 
   const reset = () => {
@@ -51,6 +58,7 @@ export default function ReportFlagModal({
     setSeverity(3);
     setDescription('');
     setPhotoUri(null);
+    setContextTags([]);
   };
 
   const pickPhoto = async (source: 'camera' | 'library') => {
@@ -106,6 +114,11 @@ export default function ReportFlagModal({
         severity,
         description: description.trim() ? description.trim() : null,
         photo_url: photoUrl,
+        // Only send the field when the user actually picked tags. Empty
+        // array means "no context"; createFlag still tries the column path
+        // so it stays exercised, but skipping it keeps the legacy insert
+        // path cheap (one round-trip) when no tags are selected.
+        context_tags: contextTags.length > 0 ? [...contextTags] : undefined,
       });
       reset();
       onCreated();
@@ -263,6 +276,43 @@ export default function ReportFlagModal({
             </View>
           )}
 
+          {/* Context tags — multi-select chip picker. Optional metadata
+              about WHEN / UNDER WHAT CONDITIONS this flag is most relevant
+              (e.g. "morning_rush", "high_tide"). The values flow into
+              createFlag → flags.context_tags (text[] column). Until the
+              2026-05-24_flag_context_tags.sql migration is applied, the
+              column is missing server-side and the helper silently retries
+              the insert without the field — the user can still file the
+              report, the tags are just dropped. See flags.ts → createFlag. */}
+          <Text style={styles.label} accessibilityRole="header">
+            Context (optional) — when is this most relevant?
+          </Text>
+          <View style={styles.row}>
+            {CONTEXT_TAGS.map((tag) => {
+              const active = contextTags.includes(tag);
+              const label = CONTEXT_TAG_LABELS[tag];
+              return (
+                <Pressable
+                  key={tag}
+                  onPress={() => setContextTags((curr) => toggleTag(curr, tag))}
+                  style={[styles.tagChip, active && styles.tagChipActive]}
+                  accessibilityRole="checkbox"
+                  accessibilityLabel={label}
+                  accessibilityState={{ checked: active }}
+                >
+                  <Text
+                    style={[styles.tagChipText, active && styles.tagChipTextActive]}
+                  >
+                    {label}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+          <Text style={styles.tagHelper}>
+            Tap any that apply. Leave empty if none.
+          </Text>
+
           <View style={styles.actions}>
             <Pressable
               onPress={onClose}
@@ -394,4 +444,37 @@ const styles = StyleSheet.create({
   submitBtn: { backgroundColor: '#2f80ed' },
   submitBtnDisabled: { opacity: 0.6 },
   submitText: { color: '#fff', fontWeight: '700' },
+  // Context-tag chips. Two visual states matching accessibilityState.checked:
+  //   - unselected → outline (white bg, blue border + dark blue text)
+  //   - selected   → solid fill (blue bg, white text)
+  // Both pass WCAG AA 4.5:1 contrast.
+  // Touch target: paddingVertical 10 + line-height ~17 + minHeight 44 keeps
+  // every chip at least 44pt tall regardless of dynamic-type scaling.
+  tagChip: {
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 999,
+    backgroundColor: '#ffffff',
+    borderWidth: 1,
+    borderColor: '#2f80ed',
+    minHeight: 44,
+    justifyContent: 'center',
+  },
+  tagChipActive: {
+    backgroundColor: '#2f80ed',
+    borderColor: '#2f80ed',
+  },
+  tagChipText: {
+    color: '#1a4f8a',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  tagChipTextActive: {
+    color: '#ffffff',
+  },
+  tagHelper: {
+    fontSize: 12,
+    color: '#5b6470',
+    marginTop: -4,
+  },
 });

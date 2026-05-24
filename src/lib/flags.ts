@@ -46,6 +46,13 @@ export interface CreateFlagInput {
   severity: FlagSeverity;
   description?: string | null;
   photo_url?: string | null;
+  // Optional context tags — see src/lib/contextTags.ts for the vocabulary.
+  // Sent to the `context_tags` column added by
+  // supabase/migrations/2026-05-24_flag_context_tags.sql. Until that
+  // migration is applied, the insert below detects the unknown-column
+  // error and retries without this field (tags are silently dropped
+  // server-side; the chip UI still works).
+  context_tags?: string[];
 }
 
 /**
@@ -81,18 +88,59 @@ export async function listFlagsByUser(userId: string) {
   return (data ?? []) as FlagRow[];
 }
 
+// Heuristic: did this PostgREST error come from sending a column the schema
+// cache doesn't know about? PostgREST returns code 'PGRST204' for
+// "column 'X' of relation 'Y' does not exist" (schema-cache miss). On older
+// Supabase deployments the message-only path is the fallback. Used by
+// createFlag to gracefully degrade when the context_tags migration hasn't
+// been applied yet.
+function isUnknownColumnError(err: unknown, columnName: string): boolean {
+  if (!err || typeof err !== 'object') return false;
+  const code = (err as { code?: string }).code;
+  const message = (err as { message?: string }).message;
+  if (code === 'PGRST204') return true;
+  if (typeof message === 'string' && message.includes(columnName)) {
+    // "could not find the 'context_tags' column" or "column ... does not exist".
+    return /not (find|exist)/i.test(message);
+  }
+  return false;
+}
+
 export async function createFlag(userId: string, input: CreateFlagInput) {
+  const basePayload = {
+    user_id: userId,
+    lat: input.lat,
+    lng: input.lng,
+    category: input.category,
+    severity: input.severity,
+    description: input.description ?? null,
+    photo_url: input.photo_url ?? null,
+  };
+  // Try the insert WITH context_tags first. If the column isn't there yet
+  // (migration 2026-05-24_flag_context_tags.sql hasn't been applied), retry
+  // without it so the report still lands. Tags are silently dropped in that
+  // case — the chip UI keeps working, the user just doesn't get a
+  // server-side record of which contexts they picked until the migration
+  // runs. Once the column exists, this single round-trip succeeds.
+  const tagsToSend = input.context_tags;
+  if (tagsToSend !== undefined) {
+    // The Database type in src/types/database.ts doesn't list context_tags
+    // yet (we're keeping the migration propose-only), so cast the payload
+    // to escape the typed Insert shape. Once the migration lands and the
+    // type is updated, this cast can come off.
+    const withTags = { ...basePayload, context_tags: tagsToSend } as Record<string, unknown>;
+    const { data, error } = await supabase
+      .from('flags')
+      .insert(withTags as never)
+      .select()
+      .single();
+    if (!error) return data as FlagRow;
+    if (!isUnknownColumnError(error, 'context_tags')) throw error;
+    // Fall through to the legacy-shape insert below.
+  }
   const { data, error } = await supabase
     .from('flags')
-    .insert({
-      user_id: userId,
-      lat: input.lat,
-      lng: input.lng,
-      category: input.category,
-      severity: input.severity,
-      description: input.description ?? null,
-      photo_url: input.photo_url ?? null,
-    })
+    .insert(basePayload)
     .select()
     .single();
   if (error) throw error;
