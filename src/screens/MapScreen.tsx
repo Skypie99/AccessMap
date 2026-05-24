@@ -4,6 +4,7 @@ import {
   ActivityIndicator,
   Alert,
   Modal,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -644,8 +645,21 @@ export default function MapScreen() {
   // don't want a modal popping over the user mid-scroll. Pinned to lat/lng
   // rounded to 5 decimals (~1 m precision) so the prompt copy fits in the
   // alert title without scrolling.
+  //
+  // Web caveat: Alert.alert is a no-op shim on react-native-web (see
+  // node_modules/react-native-web/src/exports/Alert/index.js), so on the
+  // web build the confirm prompt would never appear and the feature would
+  // silently do nothing. On web we skip the confirm and drop the pin
+  // directly — right-click intent on desktop is unambiguous, and the
+  // accidental-trigger concern (panning) doesn't apply since web uses
+  // right-click rather than a long-press gesture.
   const handleMapLongPress = useCallback(
     (coord: { lat: number; lng: number }) => {
+      if (Platform.OS === 'web') {
+        setDropLocation(coord);
+        setReportOpen(true);
+        return;
+      }
       const latStr = coord.lat.toFixed(5);
       const lngStr = coord.lng.toFixed(5);
       Alert.alert(
