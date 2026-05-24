@@ -32,6 +32,9 @@ interface Props {
   visible: boolean;
   onClose: () => void;
   onSelectFlag: (flag: FlagRow) => void;
+  // Optional shortcut — when provided, each row gets a 📍 button that
+  // closes the list and jumps the Map tab straight to that flag.
+  onViewOnMap?: (flag: FlagRow) => void;
   // Bumping this value triggers a refetch — Profile uses it after a flag
   // is changed or deleted in FlagDetailModal so the list stays in sync.
   refreshKey?: number;
@@ -41,6 +44,7 @@ export default function MyReportsModal({
   visible,
   onClose,
   onSelectFlag,
+  onViewOnMap,
   refreshKey = 0,
 }: Props) {
   const { user } = useAuth();
@@ -167,6 +171,24 @@ export default function MyReportsModal({
               {STATUS_LABELS[item.status]}
             </Text>
           </View>
+          {/* Pin shortcut — bypasses the detail modal and jumps straight
+              to the Map tab with the pin focused. Only shown when the
+              parent passes onViewOnMap. */}
+          {onViewOnMap && (
+            <Pressable
+              onPress={() => onViewOnMap(item)}
+              hitSlop={8}
+              style={({ pressed }) => [
+                styles.viewOnMapBtn,
+                pressed && styles.viewOnMapBtnPressed,
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel={`Show ${CATEGORY_LABELS[item.category]} on the map`}
+              accessibilityHint="Closes this list and centers the Map tab on the flag"
+            >
+              <Text style={styles.viewOnMapGlyph}>📍</Text>
+            </Pressable>
+          )}
         </View>
         <View style={styles.rowBody}>
           {item.photo_url ? (
@@ -509,4 +531,14 @@ const styles = StyleSheet.create({
   statusFilterChipAllActive: { backgroundColor: '#2f80ed' },
   statusFilterText: { fontSize: 12, fontWeight: '700', color: '#555' },
   statusFilterTextActive: { color: '#fff' },
+  viewOnMapBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#eef1f5',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  viewOnMapBtnPressed: { opacity: 0.6, backgroundColor: '#dde3eb' },
+  viewOnMapGlyph: { fontSize: 16 },
 });

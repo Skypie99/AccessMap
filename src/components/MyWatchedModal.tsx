@@ -40,6 +40,9 @@ interface Props {
   visible: boolean;
   onClose: () => void;
   onSelectFlag: (flag: FlagRow) => void;
+  // Optional shortcut — when provided, each row gets a 📍 button that
+  // closes the list and jumps the Map tab straight to that flag.
+  onViewOnMap?: (flag: FlagRow) => void;
   // Bumped by the parent after a flag status changes in FlagDetailModal.
   refreshKey?: number;
 }
@@ -57,6 +60,7 @@ export default function MyWatchedModal({
   visible,
   onClose,
   onSelectFlag,
+  onViewOnMap,
   refreshKey = 0,
 }: Props) {
   const { user } = useAuth();
@@ -220,6 +224,21 @@ export default function MyWatchedModal({
               {STATUS_LABELS[item.status]}
             </Text>
           </View>
+          {onViewOnMap && (
+            <Pressable
+              onPress={() => onViewOnMap(item)}
+              hitSlop={8}
+              style={({ pressed }) => [
+                styles.viewOnMapBtn,
+                pressed && styles.viewOnMapBtnPressed,
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel={`Show ${CATEGORY_LABELS[item.category]} on the map`}
+              accessibilityHint="Closes this list and centers the Map tab on the flag"
+            >
+              <Text style={styles.viewOnMapGlyph}>📍</Text>
+            </Pressable>
+          )}
           <Pressable
             onPress={() => handleUnwatch(item.id)}
             hitSlop={10}
@@ -439,6 +458,16 @@ const styles = StyleSheet.create({
   unwatchBtnPressed: { opacity: 0.5 },
   // Filled amber star — visually signals "tap to unwatch."
   unwatchGlyph: { fontSize: 18, color: '#f1a520' },
+  viewOnMapBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#eef1f5',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  viewOnMapBtnPressed: { opacity: 0.6, backgroundColor: '#dde3eb' },
+  viewOnMapGlyph: { fontSize: 14 },
   // Resolved-row treatments: light green wash + a left-edge accent bar.
   rowResolved: { backgroundColor: '#f0faf4' },
   resolvedAccent: {
