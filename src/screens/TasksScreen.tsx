@@ -24,6 +24,15 @@ import { CATEGORY_LABELS, severityColor, updateFlagStatus } from '@/lib/flags';
 import { relativeTime } from '@/lib/relativeTime';
 import { useFlags } from '@/lib/flagsStore';
 import { useUserLocation } from '@/lib/location';
+import {
+  DEFAULT_TASKS_SORT,
+  TASKS_SORT_LABELS,
+  TASKS_SORT_ORDER,
+  loadTasksSort,
+  saveTasksSort,
+  sortFlags,
+  type TasksSort,
+} from '@/lib/tasksSort';
 import type { FlagRow, FlagStatus } from '@/types/database';
 import type { RootTabParamList } from '@/navigation/RootNavigator';
 import FlagDetailModal, {
@@ -65,6 +74,26 @@ export default function TasksScreen() {
   // most-urgent issues without leaving the triage screen.
   const [minSeverity, setMinSeverity] = useState<0 | 2 | 3 | 4 | 5>(0);
 
+  // Sort mode — applied within each section. Persisted device-wide via
+  // AsyncStorage so a refresh / app-restart keeps the user's last choice.
+  // Hydrated from disk in an effect so first paint matches the default
+  // (otherwise we'd flash 'newest' and snap to the saved value).
+  const [sortMode, setSortMode] = useState<TasksSort>(DEFAULT_TASKS_SORT);
+  useEffect(() => {
+    let cancelled = false;
+    void loadTasksSort().then((saved) => {
+      if (!cancelled) setSortMode(saved);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+  const handleSortChange = useCallback((next: TasksSort) => {
+    setSortMode(next);
+    // Fire-and-forget — saveTasksSort fails-soft with a console.warn.
+    void saveTasksSort(next);
+  }, []);
+
   // Apply the mine-only and min-severity filters on top of the triage filter
   // so sections always reflect exactly what the list renders.
   const displayFlags = useMemo(() => {
@@ -78,14 +107,24 @@ export default function TasksScreen() {
   // and "Verified" as distinct sections. Sections with zero rows are
   // omitted entirely (no orphaned headers). Order: Open first because
   // it's the higher-attention triage state.
+  //
+  // `sortMode` re-orders WITHIN each section so the Open-first layout is
+  // preserved — sorting across the whole list would let an old, severity-5
+  // Verified flag jump above a fresh Open report.
   const sections = useMemo(() => {
-    const open = displayFlags.filter((f) => f.status === 'open');
-    const verified = displayFlags.filter((f) => f.status === 'verified');
+    const open = sortFlags(
+      displayFlags.filter((f) => f.status === 'open'),
+      sortMode,
+    );
+    const verified = sortFlags(
+      displayFlags.filter((f) => f.status === 'verified'),
+      sortMode,
+    );
     const out: Array<{ title: string; data: FlagRow[] }> = [];
     if (open.length > 0) out.push({ title: 'Open', data: open });
     if (verified.length > 0) out.push({ title: 'Verified', data: verified });
     return out;
-  }, [displayFlags]);
+  }, [displayFlags, sortMode]);
 
   // One-shot location fetch so each card can show "0.3 km · 4 min walk".
   // Graceful degrade: if the user denies permission (or we error) we just
@@ -321,6 +360,47 @@ export default function TasksScreen() {
                   style={[styles.sevChipText, active && styles.sevChipTextActive]}
                 >
                   {label}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      )}
+      {/* Sort segmented control — sits below the filter rows so the
+          user reads "what shows up" → "in what order" top to bottom.
+          Hidden when there's nothing to sort (no flags after filtering)
+          to keep the chrome tight. */}
+      {displayFlags.length >= 2 && (
+        <View
+          style={styles.sortRow}
+          accessibilityRole="tablist"
+          accessibilityLabel="Sort order"
+        >
+          <Text
+            style={styles.sortLabel}
+            accessibilityElementsHidden
+            importantForAccessibility="no-hide-descendants"
+          >
+            Sort:
+          </Text>
+          {TASKS_SORT_ORDER.map((mode) => {
+            const active = sortMode === mode;
+            return (
+              <Pressable
+                key={mode}
+                onPress={() => handleSortChange(mode)}
+                style={[styles.sortChip, active && styles.sortChipActive]}
+                accessibilityRole="tab"
+                accessibilityLabel={`Sort by ${TASKS_SORT_LABELS[mode]}`}
+                accessibilityState={{ selected: active }}
+              >
+                <Text
+                  style={[
+                    styles.sortChipText,
+                    active && styles.sortChipTextActive,
+                  ]}
+                >
+                  {TASKS_SORT_LABELS[mode]}
                 </Text>
               </Pressable>
             );
@@ -708,4 +788,35 @@ const styles = StyleSheet.create({
   },
   sevChipText: { fontSize: 13, fontWeight: '700', color: '#555' },
   sevChipTextActive: { color: '#fff' },
+  // Sort row — mirrors sevFilterRow's look, with an explicit "Sort:" label
+  // before the chips so sighted users get a hint distinguishing it from
+  // the severity row above. The label is a11y-hidden because the chip
+  // labels already say "Sort by …".
+  sortRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 16,
+    paddingBottom: 8,
+  },
+  sortLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    // #5b6470 on screen wash (#f7f9fc) ≈ 7.0:1 — comfortably above AA.
+    color: '#5b6470',
+    marginRight: 2,
+  },
+  sortChip: {
+    flexGrow: 1,
+    flexBasis: 0,
+    minHeight: 44,
+    paddingVertical: 8,
+    borderRadius: 999,
+    backgroundColor: '#eef1f5',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sortChipActive: { backgroundColor: '#2f80ed' },
+  sortChipText: { fontSize: 13, fontWeight: '700', color: '#555' },
+  sortChipTextActive: { color: '#fff' },
 });
