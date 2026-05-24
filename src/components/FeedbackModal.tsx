@@ -129,7 +129,14 @@ export default function FeedbackModal({ visible, onClose }: Props) {
         if (!sending) onClose();
       }}
     >
-      <View style={styles.backdrop}>
+      {/* accessibilityViewIsModal — VoiceOver treats everything behind
+          this view as inert while the modal is up. Same pattern as
+          HelpModal; see that file for the longer comment. Alex P5. */}
+      <View
+        style={styles.backdrop}
+        accessibilityViewIsModal
+        testID="feedbackModal-backdrop"
+      >
         <View style={styles.card}>
           <View style={styles.headerRow}>
             <Text

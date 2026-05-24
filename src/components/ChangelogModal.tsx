@@ -78,7 +78,14 @@ export default function ChangelogModal({ visible, onClose }: Props) {
       transparent
       onRequestClose={onClose}
     >
-      <View style={styles.backdrop}>
+      {/* accessibilityViewIsModal — VoiceOver treats everything behind
+          this view as inert while the modal is up. Same pattern as
+          HelpModal; see that file for the longer comment. Alex P5. */}
+      <View
+        style={styles.backdrop}
+        accessibilityViewIsModal
+        testID="changelogModal-backdrop"
+      >
         <View style={styles.card}>
           <View style={styles.headerRow}>
             <Text style={styles.title} accessibilityRole="header">
