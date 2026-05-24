@@ -136,6 +136,26 @@ export async function fetchFlagById(flagId: string): Promise<FlagRow | null> {
   return (data as FlagRow | null) ?? null;
 }
 
+/**
+ * Fetch many flags by ids in a single round-trip. Used by the Watched
+ * Flags view to re-read each watched flag's current state (status may
+ * have changed since the user last saw it).
+ *
+ * Returns [] for empty input (skips the round-trip). Missing ids
+ * (e.g. a flag the user watched then someone deleted) are silently
+ * dropped — the caller decides whether to prune them from the
+ * watched list.
+ */
+export async function fetchFlagsByIds(flagIds: string[]): Promise<FlagRow[]> {
+  if (flagIds.length === 0) return [];
+  const { data, error } = await supabase
+    .from('flags')
+    .select('*')
+    .in('id', flagIds);
+  if (error) throw error;
+  return (data ?? []) as FlagRow[];
+}
+
 export const CATEGORY_LABELS: Record<FlagCategory, string> = {
   no_ramp: 'No ramp',
   broken_sidewalk: 'Broken sidewalk',

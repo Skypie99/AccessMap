@@ -16,6 +16,11 @@ import { useAuth } from '@/lib/auth';
 import { openDirections } from '@/lib/directions';
 import { errorMessage } from '@/lib/errors';
 import {
+  addWatched,
+  loadWatched,
+  removeWatched,
+} from '@/lib/watchedFlags';
+import {
   CATEGORY_LABELS,
   deleteFlag,
   SEVERITY_LABELS,
@@ -49,6 +54,11 @@ export default function FlagDetailModal({
 }: Props) {
   const { user } = useAuth();
   const [busy, setBusy] = useState(false);
+  // Watched state — null while we're loading the per-user list, true/false
+  // once known. Hidden button until we know, so we never render a stale
+  // "Watch" that flips to "Unwatch" 100ms after the modal opens.
+  const [watched, setWatched] = useState<boolean | null>(null);
+  const [watchSaving, setWatchSaving] = useState(false);
 
   // Cache the last flag so the slide-out animation still has content to render
   // after the parent clears `flag` on close. Without this the card briefly
@@ -57,6 +67,45 @@ export default function FlagDetailModal({
   useEffect(() => {
     if (flag) setShownFlag(flag);
   }, [flag]);
+
+  // Read the user's watched list to know whether THIS flag is being
+  // tracked. Re-runs whenever the modal opens or the shown flag changes,
+  // so opening one flag then another shows the right state immediately.
+  // Fire-and-forget — a slow read just delays the button render.
+  useEffect(() => {
+    let cancelled = false;
+    if (!visible || !shownFlag || !user) {
+      setWatched(null);
+      return;
+    }
+    (async () => {
+      const list = await loadWatched(user.id);
+      if (cancelled) return;
+      setWatched(list.includes(shownFlag.id));
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [visible, shownFlag, user]);
+
+  const handleToggleWatch = async () => {
+    if (!user || !shownFlag || watched === null || watchSaving) return;
+    setWatchSaving(true);
+    try {
+      if (watched) {
+        await removeWatched(user.id, shownFlag.id);
+        setWatched(false);
+      } else {
+        await addWatched(user.id, shownFlag.id);
+        setWatched(true);
+      }
+    } catch {
+      // Storage hiccups already get a console.warn from the helpers.
+      // Nothing to surface to the user — they can retry.
+    } finally {
+      setWatchSaving(false);
+    }
+  };
 
   if (!shownFlag) {
     return (
@@ -272,6 +321,47 @@ export default function FlagDetailModal({
             <Text style={styles.metaValue} accessibilityLabel={coordsA11y}>
               {formattedCoords}
             </Text>
+
+            {watched !== null && (
+              <Pressable
+                onPress={handleToggleWatch}
+                disabled={busy || watchSaving}
+                style={({ pressed }) => [
+                  styles.watchBtn,
+                  watched && styles.watchBtnActive,
+                  pressed && styles.watchBtnPressed,
+                ]}
+                accessibilityRole="button"
+                accessibilityLabel={
+                  watched ? 'Stop watching this flag' : 'Watch this flag'
+                }
+                accessibilityHint={
+                  watched
+                    ? 'Removes this flag from your Watched list in Profile'
+                    : 'Adds this flag to your Watched list in Profile so you can track its status'
+                }
+                accessibilityState={{
+                  selected: watched,
+                  busy: watchSaving,
+                  disabled: busy || watchSaving,
+                }}
+              >
+                <Text
+                  style={styles.watchBtnGlyph}
+                  accessibilityElementsHidden
+                >
+                  {watched ? '★' : '☆'}
+                </Text>
+                <Text
+                  style={[
+                    styles.watchBtnText,
+                    watched && styles.watchBtnTextActive,
+                  ]}
+                >
+                  {watched ? 'Watching' : 'Watch'}
+                </Text>
+              </Pressable>
+            )}
 
             <View style={styles.secondaryRow}>
               <Pressable
@@ -514,4 +604,38 @@ const styles = StyleSheet.create({
   // re-centering the map or sharing.
   directionsBtn: { backgroundColor: '#2f80ed' },
   directionsBtnText: { color: '#fff', fontWeight: '700', fontSize: 14 },
+  // Watch button — star pill between the location section and secondaryRow.
+  // Neutral outline when unset; filled amber when actively watching so the
+  // state is unambiguous without relying on the star glyph alone.
+  watchBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    gap: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    borderRadius: 999,
+    borderWidth: 1.5,
+    borderColor: '#bbb',
+    marginTop: 10,
+  },
+  watchBtnActive: {
+    borderColor: '#f1a520',
+    backgroundColor: '#fff8e7',
+  },
+  watchBtnPressed: {
+    opacity: 0.7,
+  },
+  watchBtnGlyph: {
+    fontSize: 16,
+    color: '#888',
+  },
+  watchBtnText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#555',
+  },
+  watchBtnTextActive: {
+    color: '#b07800',
+  },
 });
