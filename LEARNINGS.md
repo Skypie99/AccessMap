@@ -365,3 +365,70 @@ Recipe for accessible status/error banners that fits the existing style:
   overlay layout.
 
 See `styles.errorBanner` in `MapScreen.tsx` for the canonical example.
+
+## 2026-05-23 — Per-user AsyncStorage with versioned namespace keys
+
+For client-side per-user state (watch lists, preferences) that doesn't need
+to live on the server, key AsyncStorage per user with a versioned prefix:
+
+```
+const KEY = `@accessmap/watched_flags_v1:${userId}`;
+```
+
+Two-key style: separate keys per user_id so sign-out + sign-in as a different
+account on the same device exposes neither user's data to the other.
+Versioned prefix (_v1) means a future schema change can bump to _v2 and
+fall back to empty (the v1 key just looks like a cache miss for v2 readers).
+Defensive parse: always validate the JSON before using it — reject non-array
+values, filter out non-string entries, return [] on any parse failure.
+
+See `src/lib/watchedFlags.ts` for the full pattern including MAX cap + FIFO
+overflow drop.
+
+## 2026-05-23 — Nested Modal sibling pattern for list → detail flows
+
+When a list modal taps through to a detail modal (e.g. MyReportsModal →
+FlagDetailModal), do NOT nest the detail modal inside the list modal.
+Nested transparent Modals are platform-flaky on Android — they can appear
+behind the outer modal or fail to animate correctly.
+
+Instead, lift both modals as siblings inside the parent screen:
+
+```tsx
+// ProfileScreen return:
+<>
+  <ScrollView>...</ScrollView>
+  <MyReportsModal visible={reportsOpen} onSelectFlag={handleReportsSelectFlag} />
+  <MyWatchedModal visible={watchedOpen} onSelectFlag={handleWatchedSelectFlag} />
+  <FlagDetailModal visible={selectedFlag !== null} flag={selectedFlag} ... />
+</>
+```
+
+Track which modal is the "source" of a FlagDetailModal open with a
+`flagDetailSource: 'reports' | 'watched' | null` state so the detail modal
+close handler can reopen the right list.
+
+## 2026-05-23 — cycleCategory: CATEGORY_CYCLE must be module-level for useCallback
+
+When cycling through a fixed sequence of values in a useCallback, define the
+sequence array at module level (outside the component function) so the callback
+dep array can legitimately be empty []. An array defined inside the function
+body is re-created on every render — if you include it in deps the callback
+recreates too; if you omit it from deps, ESLint warns and the behavior is
+subtly wrong on mutable closures.
+
+See CATEGORY_CYCLE in `src/screens/MapScreen.tsx`.
+
+## 2026-05-23 — TypeScript: spreading a Set with size === 1 still gives T | undefined
+
+Even after a `prev.size === 1` guard, `[...prev][0]` has type `T | undefined`
+in TypeScript strict mode because array indexing always allows undefined.
+Two safe patterns:
+
+```ts
+// Option A: explicit cast with assertion comment
+const item = ([...prev] as T[])[0] ?? null;
+
+// Option B: Array.from + destructure with fallback
+const [item = null] = [...prev];
+```
