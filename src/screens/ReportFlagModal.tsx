@@ -382,7 +382,7 @@ export default function ReportFlagModal({
               accessibilityState={{ disabled: submitting || !location, busy: submitting }}
             >
               {submitting ? (
-                <ActivityIndicator color="#fff" />
+                <ActivityIndicator color={color.textOnBrand} />
               ) : (
                 <Text style={styles.submitText}>Report</Text>
               )}
@@ -401,7 +401,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   card: {
-    backgroundColor: '#fff',
+    backgroundColor: color.surface,
     padding: 20,
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,
@@ -415,22 +415,22 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 999,
-    backgroundColor: '#eef1f5',
+    backgroundColor: color.surfaceNeutral,
   },
-  pillActive: { backgroundColor: '#2f80ed' },
+  pillActive: { backgroundColor: color.brand },
   pillText: { color: '#333', fontSize: 13 },
-  pillTextActive: { color: '#fff', fontWeight: '600' },
+  pillTextActive: { color: color.textOnBrand, fontWeight: '600' },
   sevBtn: {
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: '#eef1f5',
+    backgroundColor: color.surfaceNeutral,
     alignItems: 'center',
     justifyContent: 'center',
   },
   sevBtnActive: {},
   sevText: { fontSize: 16, color: '#333', fontWeight: '600' },
-  sevTextActive: { color: '#fff' },
+  sevTextActive: { color: color.textOnBrand },
   input: {
     borderWidth: 1,
     borderColor: '#ddd',
@@ -453,13 +453,13 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   charCounterAmber: { color: '#c07a00' },
-  charCounterRed: { color: '#c0392b', fontWeight: '700' },
+  charCounterRed: { color: color.error, fontWeight: '700' },
   photoBtn: {
     flexGrow: 1,
     paddingHorizontal: 12,
     paddingVertical: 10,
     borderRadius: 8,
-    backgroundColor: '#eef1f5',
+    backgroundColor: color.surfaceNeutral,
     alignItems: 'center',
   },
   photoBtnText: { color: '#333', fontWeight: '600', fontSize: 13 },
@@ -484,11 +484,11 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: 'center',
   },
-  cancelBtn: { backgroundColor: '#eef1f5' },
+  cancelBtn: { backgroundColor: color.surfaceNeutral },
   cancelText: { color: '#333', fontWeight: '600' },
-  submitBtn: { backgroundColor: '#2f80ed' },
+  submitBtn: { backgroundColor: color.brand },
   submitBtnDisabled: { opacity: 0.6 },
-  submitText: { color: '#fff', fontWeight: '700' },
+  submitText: { color: color.textOnBrand, fontWeight: '700' },
   // Context-tag chips. Three visual states matching accessibilityState:
   //   - unselected → outline (white bg, dark-blue border + text)  → 7.6:1 text/bg
   //   - selected   → solid dark-blue fill, white text              → 7.6:1 text/bg
@@ -504,27 +504,27 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 10,
     borderRadius: 999,
-    backgroundColor: '#ffffff',
+    backgroundColor: color.surface,
     borderWidth: 1,
-    borderColor: '#1c4f99',
+    borderColor: color.brandText,
     minHeight: 44,
     justifyContent: 'center',
   },
   tagChipActive: {
-    backgroundColor: '#1c4f99', // AA pass: white text 7.6:1; future: color.brandText
-    borderColor: '#1c4f99',
+    backgroundColor: color.brandText,
+    borderColor: color.brandText,
   },
   tagChipDisabled: {
     borderColor: '#9aa3ad',
     backgroundColor: '#f4f6f8',
   },
   tagChipText: {
-    color: '#1c4f99', // AA pass: on #ffffff = 7.6:1; future: color.brandText
+    color: color.brandText,
     fontSize: 13,
     fontWeight: '600',
   },
   tagChipTextActive: {
-    color: '#ffffff',
+    color: color.textOnBrand,
   },
   tagChipTextDisabled: {
     color: color.textMutedAlt, // AA pass: on #f4f6f8 = 4.6:1

@@ -450,7 +450,7 @@ export default function TasksScreen() {
           accessibilityLiveRegion="polite"
         >
           {loading ? (
-            <ActivityIndicator color="#fff" />
+            <ActivityIndicator color={color.textOnBrand} />
           ) : (
             <Text style={styles.errorBannerIcon}>⚠</Text>
           )}
@@ -945,7 +945,7 @@ const FlagCard = memo(function FlagCard({
 const styles = StyleSheet.create({
   // Screen wash — same #f7f9fc the Profile screen uses, so the white
   // cards inside read as cards instead of blending into a white page.
-  screen: { flex: 1, backgroundColor: '#f7f9fc' },
+  screen: { flex: 1, backgroundColor: color.surfaceMuted },
   flashWrap: {
     position: 'absolute',
     top: 12,
@@ -969,7 +969,7 @@ const styles = StyleSheet.create({
   errorBanner: {
     marginHorizontal: 16,
     marginTop: 12,
-    backgroundColor: '#c0392b',
+    backgroundColor: color.error,
     paddingHorizontal: 14,
     paddingVertical: 12,
     borderRadius: 10,
@@ -985,8 +985,8 @@ const styles = StyleSheet.create({
   },
   errorBannerBusy: { opacity: 0.85 },
   errorBannerPressed: { opacity: 0.7 },
-  errorBannerIcon: { color: '#fff', fontSize: 18, fontWeight: '700' },
-  errorBannerText: { color: '#fff', fontSize: 13, fontWeight: '600', flex: 1 },
+  errorBannerIcon: { color: color.textOnBrand, fontSize: 18, fontWeight: '700' },
+  errorBannerText: { color: color.textOnBrand, fontSize: 13, fontWeight: '600', flex: 1 },
   center: {
     flexGrow: 1,
     alignItems: 'center',
@@ -1002,7 +1002,7 @@ const styles = StyleSheet.create({
     padding: 24,
   },
   emptyCard: {
-    backgroundColor: '#fff',
+    backgroundColor: color.surface,
     borderRadius: 16,
     paddingHorizontal: 24,
     paddingVertical: 28,
@@ -1046,14 +1046,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   sectionCountText: {
-    color: '#1c4f99',
+    color: color.brandText,
     fontSize: 11,
     fontWeight: '700',
   },
   title: { fontSize: 18, fontWeight: '600' },
   subtitle: { fontSize: 13, color: '#666', textAlign: 'center' },
   card: {
-    backgroundColor: '#fff',
+    backgroundColor: color.surface,
     borderRadius: 12,
     padding: 14,
     gap: 8,
@@ -1079,7 +1079,7 @@ const styles = StyleSheet.create({
     width: 72,
     height: 72,
     borderRadius: 8,
-    backgroundColor: '#eef1f5',
+    backgroundColor: color.surfaceNeutral,
   },
   cardBodyText: { flex: 1, gap: 4 },
   cardDesc: { fontSize: 14, color: '#222' },
@@ -1091,37 +1091,37 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 8,
   },
-  verifyBtn: { backgroundColor: '#2f80ed' },
-  verifyText: { color: '#fff', fontWeight: '600', fontSize: 13 },
+  verifyBtn: { backgroundColor: color.brand },
+  verifyText: { color: color.textOnBrand, fontWeight: '600', fontSize: 13 },
   resolveBtn: { backgroundColor: '#27ae60' },
   resolveText: { color: '#fff', fontWeight: '600', fontSize: 13 },
-  rejectBtn: { backgroundColor: '#eef1f5' },
+  rejectBtn: { backgroundColor: color.surfaceNeutral },
   rejectText: { color: '#333', fontWeight: '600', fontSize: 13 },
   detailsBtn: {
     backgroundColor: 'transparent',
     borderWidth: 1,
-    borderColor: '#2f80ed',
+    borderColor: color.brand,
   },
-  detailsText: { color: '#2f80ed', fontWeight: '600', fontSize: 13 },
+  detailsText: { color: color.brand, fontWeight: '600', fontSize: 13 },
   mineToggleRow: {
     flexDirection: 'row',
     paddingHorizontal: 16,
     paddingVertical: 8,
     gap: 8,
-    backgroundColor: '#f7f9fc',
+    backgroundColor: color.surfaceMuted,
   },
   mineChip: {
     paddingHorizontal: 16,
     paddingVertical: 7,
     borderRadius: 999,
-    backgroundColor: '#eef1f5',
+    backgroundColor: color.surfaceNeutral,
     minHeight: 36,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  mineChipActive: { backgroundColor: '#2f80ed' },
+  mineChipActive: { backgroundColor: color.brand },
   mineChipText: { fontSize: 13, fontWeight: '600', color: '#555' },
-  mineChipTextActive: { color: '#fff' },
+  mineChipTextActive: { color: color.textOnBrand },
   sevFilterRow: {
     flexDirection: 'row',
     gap: 6,
@@ -1134,12 +1134,12 @@ const styles = StyleSheet.create({
     minHeight: 36,
     paddingVertical: 8,
     borderRadius: 999,
-    backgroundColor: '#eef1f5',
+    backgroundColor: color.surfaceNeutral,
     alignItems: 'center',
     justifyContent: 'center',
   },
   sevChipText: { fontSize: 13, fontWeight: '700', color: '#555' },
-  sevChipTextActive: { color: '#fff' },
+  sevChipTextActive: { color: color.textOnBrand },
   // Sort row — mirrors sevFilterRow's look, with an explicit "Sort:" label
   // before the chips so sighted users get a hint distinguishing it from
   // the severity row above. The label is a11y-hidden because the chip
@@ -1164,13 +1164,13 @@ const styles = StyleSheet.create({
     minHeight: 44,
     paddingVertical: 8,
     borderRadius: 999,
-    backgroundColor: '#eef1f5',
+    backgroundColor: color.surfaceNeutral,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  sortChipActive: { backgroundColor: '#2f80ed' },
+  sortChipActive: { backgroundColor: color.brand },
   sortChipText: { fontSize: 13, fontWeight: '700', color: '#555' },
-  sortChipTextActive: { color: '#fff' },
+  sortChipTextActive: { color: color.textOnBrand },
   // Bulk-select entry row — a single full-width button sitting at the top
   // of the screen so SR users and anyone unfamiliar with long-press can
   // discover the feature. Tinted to match the sort chip's accent.
@@ -1183,16 +1183,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 10,
     borderRadius: 999,
-    backgroundColor: '#eef1f5',
+    backgroundColor: color.surfaceNeutral,
     borderWidth: 1,
-    borderColor: '#2f80ed',
+    borderColor: color.brand,
     alignItems: 'center',
     justifyContent: 'center',
   },
   selectEntryBtnPressed: { opacity: 0.7 },
   // 14pt + bold on white-tinted chip background — meets WCAG 1.4.3 AA for
   // body text. Bumped from 13pt to clear the AA threshold against #eef1f5.
-  selectEntryText: { color: '#2f80ed', fontWeight: '700', fontSize: 14 },
+  selectEntryText: { color: color.brand, fontWeight: '700', fontSize: 14 },
   // Card selection visuals — a subtle tinted background + a 2px accent
   // border so a selected card pops without needing to recolor the photo
   // thumbnail or muddle the severity dot. Pairs with the checkmark in
@@ -1209,14 +1209,14 @@ const styles = StyleSheet.create({
     height: 22,
     borderRadius: 11,
     borderWidth: 2,
-    borderColor: '#2f80ed',
-    backgroundColor: '#fff',
+    borderColor: color.brand,
+    backgroundColor: color.surface,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  selectCheckOn: { backgroundColor: '#2f80ed' },
+  selectCheckOn: { backgroundColor: color.brand },
   selectCheckMark: {
-    color: '#fff',
+    color: color.textOnBrand,
     fontSize: 14,
     fontWeight: '900',
     lineHeight: 16,
@@ -1236,7 +1236,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingTop: 10,
     paddingBottom: 24,
-    backgroundColor: '#fff',
+    backgroundColor: color.surface,
     borderTopWidth: 1,
     borderTopColor: '#e1e6ee',
     shadowColor: '#000',
@@ -1267,20 +1267,20 @@ const styles = StyleSheet.create({
   },
   bulkBtnDisabled: { opacity: 0.45 },
   bulkBtnPressed: { opacity: 0.85 },
-  bulkVerifyBtn: { backgroundColor: '#2f80ed' },
+  bulkVerifyBtn: { backgroundColor: color.brand },
   // #1e8449 on white-text ≈ 7.0:1 — meets AAA for 14pt bold. Bumped from
   // #27ae60 (~2.83:1, AA fail) to clear WCAG 1.4.3 AA + 1.4.11 non-text 3:1.
   bulkResolveBtn: { backgroundColor: '#1e8449' },
   // Cancel uses the neutral chip palette so it doesn't compete for
   // attention with the primary actions.
   bulkCancelBtn: {
-    backgroundColor: '#eef1f5',
+    backgroundColor: color.surfaceNeutral,
     borderWidth: 1,
     borderColor: '#cfd5de',
   },
   // 14pt bold on the dark button fills — meets WCAG 1.4.3 AA for body text.
   // Bumped from 13pt with the resolve-btn color change to clear AA.
-  bulkBtnText: { color: '#fff', fontWeight: '700', fontSize: 14 },
+  bulkBtnText: { color: color.textOnBrand, fontWeight: '700', fontSize: 14 },
   // #2c3e50 on #eef1f5 ≈ 11.0:1 — comfortably above AA. 14pt for parity.
   bulkCancelText: { color: '#2c3e50', fontWeight: '700', fontSize: 14 },
 });

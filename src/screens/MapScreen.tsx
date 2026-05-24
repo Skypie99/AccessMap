@@ -1271,7 +1271,7 @@ export default function MapScreen() {
             accessibilityLiveRegion="polite"
           >
             {loadingFlags ? (
-              <ActivityIndicator color="#fff" />
+              <ActivityIndicator color={color.textOnBrand} />
             ) : (
               <Text style={styles.errorBannerIcon}>⚠</Text>
             )}
@@ -1527,7 +1527,7 @@ export default function MapScreen() {
                 }}
               >
                 {savingPreset ? (
-                  <ActivityIndicator color="#fff" />
+                  <ActivityIndicator color={color.textOnBrand} />
                 ) : (
                   <Text style={styles.nameBtnSaveText}>Save</Text>
                 )}
@@ -1599,7 +1599,7 @@ export default function MapScreen() {
                 }}
               >
                 {savingSet ? (
-                  <ActivityIndicator color="#fff" />
+                  <ActivityIndicator color={color.textOnBrand} />
                 ) : (
                   <Text style={styles.nameBtnSaveText}>Save</Text>
                 )}
@@ -1646,7 +1646,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 1 },
     elevation: 1,
   },
-  placeChipPressed: { backgroundColor: '#eef1f5', opacity: 0.9 },
+  placeChipPressed: { backgroundColor: color.surfaceNeutral, opacity: 0.9 },
   // The trailing manage chip uses a tinted background so the affordance
   // reads visually distinct from the place chips.
   placeChipManage: { backgroundColor: color.brandSofter },
@@ -1678,9 +1678,9 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 1 },
     elevation: 2,
   },
-  iconText: { fontSize: 18, color: '#2f80ed', fontWeight: '700' },
-  iconBtnActive: { backgroundColor: '#2f80ed' },
-  iconTextActive: { color: '#fff' },
+  iconText: { fontSize: 18, color: color.brand, fontWeight: '700' },
+  iconBtnActive: { backgroundColor: color.brand },
+  iconTextActive: { color: color.textOnBrand },
   // Quick-cycle severity button — slightly wider than the round icon buttons
   // to fit the "{n}+" label without crowding the glyph against the edges.
   sevQuickBtn: { width: 44 },
@@ -1715,7 +1715,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderRadius: 18,
   },
-  actionBtnActive: { backgroundColor: '#2f80ed' },
+  actionBtnActive: { backgroundColor: color.brand },
   actionDivider: {
     width: 1,
     height: 18,
@@ -1749,8 +1749,8 @@ const styles = StyleSheet.create({
     // visible glyph.
     minHeight: 32,
   },
-  filterChevron: { fontSize: 12, color: '#2f80ed', fontWeight: '700' },
-  clearLink: { fontSize: 12, color: '#2f80ed', fontWeight: '600' },
+  filterChevron: { fontSize: 12, color: color.brand, fontWeight: '700' },
+  clearLink: { fontSize: 12, color: color.brand, fontWeight: '600' },
   filterSubLabel: {
     fontSize: 11,
     color: '#666',
@@ -1763,21 +1763,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 999,
-    backgroundColor: '#eef1f5',
+    backgroundColor: color.surfaceNeutral,
   },
-  filterPillActive: { backgroundColor: '#2f80ed' },
+  filterPillActive: { backgroundColor: color.brand },
   filterPillText: { fontSize: 12, color: '#333', fontWeight: '600' },
-  filterPillTextActive: { color: '#fff' },
+  filterPillTextActive: { color: color.textOnBrand },
   sevPill: {
     width: 44,
     height: 32,
     borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#eef1f5',
+    backgroundColor: color.surfaceNeutral,
   },
   sevPillText: { fontSize: 13, color: '#333', fontWeight: '700' },
-  sevPillTextActive: { color: '#fff' },
+  sevPillTextActive: { color: color.textOnBrand },
   statusHint: { fontSize: 11, color: '#a04040', marginTop: 4 },
   banner: {
     alignSelf: 'center',
@@ -1792,7 +1792,7 @@ const styles = StyleSheet.create({
   bannerText: { fontSize: 13, color: '#333' },
   errorBanner: {
     marginTop: 8,
-    backgroundColor: '#c0392b',
+    backgroundColor: color.error,
     paddingHorizontal: 14,
     paddingVertical: 12,
     borderRadius: 10,
@@ -1808,8 +1808,8 @@ const styles = StyleSheet.create({
   },
   errorBannerBusy: { opacity: 0.85 },
   errorBannerPressed: { opacity: 0.7 },
-  errorBannerIcon: { color: '#fff', fontSize: 18, fontWeight: '700' },
-  errorBannerText: { color: '#fff', fontSize: 13, fontWeight: '600', flex: 1 },
+  errorBannerIcon: { color: color.textOnBrand, fontSize: 18, fontWeight: '700' },
+  errorBannerText: { color: color.textOnBrand, fontSize: 13, fontWeight: '600', flex: 1 },
   emptyCard: {
     alignSelf: 'center',
     marginTop: 16,
@@ -1844,19 +1844,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 999,
-    backgroundColor: '#2f80ed',
+    backgroundColor: color.brand,
     minHeight: 44,
     justifyContent: 'center',
   },
   emptyCardBtnPressed: { opacity: 0.8 },
-  emptyCardBtnText: { color: '#fff', fontSize: 14, fontWeight: '700' },
+  emptyCardBtnText: { color: color.textOnBrand, fontSize: 14, fontWeight: '700' },
   fabColumn: {
     alignSelf: 'flex-end',
     alignItems: 'flex-end',
     gap: 10,
   },
   fab: {
-    backgroundColor: '#2f80ed',
+    backgroundColor: color.brand,
     paddingHorizontal: 18,
     paddingVertical: 14,
     borderRadius: 999,
@@ -1869,10 +1869,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   fabSecondary: { backgroundColor: 'rgba(255,255,255,0.97)' },
-  fabSecondaryText: { color: '#2f80ed', fontWeight: '700', fontSize: 15 },
+  fabSecondaryText: { color: color.brand, fontWeight: '700', fontSize: 15 },
   fabDisabled: { opacity: 0.5 },
   fabPressed: { opacity: 0.8 },
-  fabText: { color: '#fff', fontWeight: '700', fontSize: 15 },
+  fabText: { color: color.textOnBrand, fontWeight: '700', fontSize: 15 },
   savedEmpty: { gap: 8, marginTop: 4 },
   savedEmptyText: { fontSize: 12, color: '#666', lineHeight: 16 },
   savedSaveBtn: {
@@ -1880,18 +1880,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 999,
-    backgroundColor: '#2f80ed',
+    backgroundColor: color.brand,
     minHeight: 32,
     justifyContent: 'center',
   },
-  savedSaveBtnText: { color: '#fff', fontSize: 12, fontWeight: '700' },
+  savedSaveBtnText: { color: color.textOnBrand, fontSize: 12, fontWeight: '700' },
   savedAddPill: {
-    backgroundColor: '#fff',
+    backgroundColor: color.surface,
     borderWidth: 1,
-    borderColor: '#2f80ed',
+    borderColor: color.brand,
     borderStyle: 'dashed',
   },
-  savedAddPillText: { color: '#2f80ed', fontSize: 12, fontWeight: '700' },
+  savedAddPillText: { color: color.brand, fontSize: 12, fontWeight: '700' },
   // Per-user preset buttons — side-by-side pair beneath the Status row.
   // Primary (Save) is filled blue; secondary (Load) is outlined to keep
   // the primary action visually distinct without two competing fills.
@@ -1907,7 +1907,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 10,
     borderRadius: 10,
-    backgroundColor: '#2f80ed',
+    backgroundColor: color.brand,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1915,11 +1915,11 @@ const styles = StyleSheet.create({
   // 14pt bold qualifies as WCAG "large text" — 3:1 ratio applies, so
   // white-on-#2f80ed (~3.8:1) clears AA. At 13pt it failed the 4.5:1
   // small-text threshold.
-  presetBtnText: { color: '#fff', fontWeight: '700', fontSize: 14 },
+  presetBtnText: { color: color.textOnBrand, fontWeight: '700', fontSize: 14 },
   presetBtnSecondary: {
-    backgroundColor: '#fff',
+    backgroundColor: color.surface,
     borderWidth: 1,
-    borderColor: '#2f80ed',
+    borderColor: color.brand,
   },
   // Inverted variant (blue on white). Uses color.brandText (#1c4f99 ≈ 7.6:1)
   // instead of color.brand (#2f80ed ≈ 3.3:1) so it stays AA-safe even if the
@@ -1932,7 +1932,7 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   nameCard: {
-    backgroundColor: '#fff',
+    backgroundColor: color.surface,
     borderRadius: 16,
     padding: 20,
     gap: 12,
@@ -1957,9 +1957,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     minHeight: 44,
   },
-  nameBtnCancel: { backgroundColor: '#eef1f5' },
+  nameBtnCancel: { backgroundColor: color.surfaceNeutral },
   nameBtnCancelText: { color: '#333', fontWeight: '600', fontSize: 14 },
-  nameBtnSave: { backgroundColor: '#2f80ed' },
+  nameBtnSave: { backgroundColor: color.brand },
   nameBtnSaveDisabled: { opacity: 0.5 },
-  nameBtnSaveText: { color: '#fff', fontWeight: '700', fontSize: 14 },
+  nameBtnSaveText: { color: color.textOnBrand, fontWeight: '700', fontSize: 14 },
 });
