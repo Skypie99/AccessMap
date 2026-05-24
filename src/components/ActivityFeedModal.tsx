@@ -77,9 +77,19 @@ export default function ActivityFeedModal({
       setLoadError(null);
     }
     try {
+      // Skip the fetch entirely when not signed in — RLS would return an
+      // empty list anyway (SELECT policy is authenticated-only), no point
+      // burning a round-trip. (QA #6)
+      if (!user) {
+        if (mountedRef.current) {
+          setFlags([]);
+          setWatchedIds(new Set());
+        }
+        return;
+      }
       const [rows, watched] = await Promise.all([
         listRecentFlags(100),
-        user ? loadWatched(user.id) : Promise.resolve<string[]>([]),
+        loadWatched(user.id),
       ]);
       if (!mountedRef.current) return;
       setFlags(rows);
