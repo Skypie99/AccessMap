@@ -61,6 +61,62 @@ describe('haversineKm', () => {
     expect(km).toBeGreaterThan(200);
     expect(km).toBeLessThan(250);
   });
+
+  it('treats lng=180 and lng=-180 as the same point on the date line', () => {
+    // Same physical location, opposite sign conventions. Haversine
+    // should yield ~0 km (within floating-point noise).
+    const km = haversineKm(
+      { lat: 0, lng: 180 },
+      { lat: 0, lng: -180 },
+    );
+    expect(km).toBeLessThan(0.001);
+  });
+
+  it('handles the north pole (lat=90) without NaN', () => {
+    // From the north pole to the equator at lng=0 is a quarter of
+    // Earth's circumference, ~10,007 km. Critically, the result must
+    // be a finite number — a naive haversine that doesn't clamp the
+    // asin input can produce NaN at the poles.
+    const km = haversineKm(
+      { lat: 90, lng: 0 },
+      { lat: 0, lng: 0 },
+    );
+    expect(Number.isFinite(km)).toBe(true);
+    expect(km).toBeGreaterThan(9900);
+    expect(km).toBeLessThan(10100);
+  });
+
+  it('handles the south pole (lat=-90) without NaN', () => {
+    // Symmetric to the north-pole case.
+    const km = haversineKm(
+      { lat: -90, lng: 0 },
+      { lat: 0, lng: 0 },
+    );
+    expect(Number.isFinite(km)).toBe(true);
+    expect(km).toBeGreaterThan(9900);
+    expect(km).toBeLessThan(10100);
+  });
+
+  it('pole-to-pole is half Earth circumference (~20,015 km)', () => {
+    const km = haversineKm(
+      { lat: 90, lng: 0 },
+      { lat: -90, lng: 0 },
+    );
+    expect(Number.isFinite(km)).toBe(true);
+    expect(km).toBeGreaterThan(20000);
+    expect(km).toBeLessThan(20050);
+  });
+
+  it('works in the southern + western hemisphere (sign-agnostic)', () => {
+    // Buenos Aires (-34.6037, -58.3816) to Santiago (-33.4489, -70.6693).
+    // Real-world great-circle: ~1140 km.
+    const km = haversineKm(
+      { lat: -34.6037, lng: -58.3816 },
+      { lat: -33.4489, lng: -70.6693 },
+    );
+    expect(km).toBeGreaterThan(1100);
+    expect(km).toBeLessThan(1200);
+  });
 });
 
 describe('walkingMinutes', () => {
