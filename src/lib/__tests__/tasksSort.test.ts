@@ -105,6 +105,34 @@ describe('sortFlags', () => {
     ]);
   });
 
+  it('sortFlags by newest puts equal-timestamp flags in input order (stable)', () => {
+    // Two flags with identical created_at — must keep input order under 'newest'.
+    const same1 = makeFlag('n1', 4, '2026-05-22T08:00:00Z');
+    const same2 = makeFlag('n2', 2, '2026-05-22T08:00:00Z');
+    expect(sortFlags([same1, same2], 'newest').map((f) => f.id)).toEqual([
+      'n1',
+      'n2',
+    ]);
+    expect(sortFlags([same2, same1], 'newest').map((f) => f.id)).toEqual([
+      'n2',
+      'n1',
+    ]);
+  });
+
+  it('sortFlags by oldest puts equal-timestamp flags in input order (stable)', () => {
+    // Same setup, opposite sort — input order must still be preserved.
+    const same1 = makeFlag('o1', 4, '2026-05-22T08:00:00Z');
+    const same2 = makeFlag('o2', 2, '2026-05-22T08:00:00Z');
+    expect(sortFlags([same1, same2], 'oldest').map((f) => f.id)).toEqual([
+      'o1',
+      'o2',
+    ]);
+    expect(sortFlags([same2, same1], 'oldest').map((f) => f.id)).toEqual([
+      'o2',
+      'o1',
+    ]);
+  });
+
   it('returns a new array even for empty input', () => {
     const empty: FlagRow[] = [];
     const out = sortFlags(empty, 'newest');

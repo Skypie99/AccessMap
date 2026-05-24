@@ -809,7 +809,7 @@ const styles = StyleSheet.create({
   sortChip: {
     flexGrow: 1,
     flexBasis: 0,
-    minHeight: 36,
+    minHeight: 44,
     paddingVertical: 8,
     borderRadius: 999,
     backgroundColor: '#eef1f5',
