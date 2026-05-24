@@ -21,6 +21,7 @@ import {
 } from '@/lib/distance';
 import { errorMessage } from '@/lib/errors';
 import { CATEGORY_LABELS, severityColor, updateFlagStatus } from '@/lib/flags';
+import { relativeTime } from '@/lib/relativeTime';
 import { useFlags } from '@/lib/flagsStore';
 import { useUserLocation } from '@/lib/location';
 import type { FlagRow, FlagStatus } from '@/types/database';
@@ -356,7 +357,8 @@ const FlagCard = memo(function FlagCard({
               (distanceInfo
                 ? ` • ${distanceInfo.label} · ${distanceInfo.eta}`
                 : '') +
-              ` • ${flag.lat.toFixed(4)}, ${flag.lng.toFixed(4)}`}
+              ` • ${flag.lat.toFixed(4)}, ${flag.lng.toFixed(4)}` +
+              ` • ${relativeTime(flag.created_at)}`}
           </Text>
           <Text style={styles.cardHint}>tap to view on map</Text>
         </View>

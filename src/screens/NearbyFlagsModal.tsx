@@ -10,6 +10,7 @@ import {
   View,
 } from 'react-native';
 import { CATEGORY_LABELS, severityColor } from '@/lib/flags';
+import { relativeTime } from '@/lib/relativeTime';
 import {
   formatDistance,
   haversineKm,
@@ -148,7 +149,7 @@ export default function NearbyFlagsModal({
                       </Text>
                     ) : null}
                     <Text style={styles.cardMeta}>
-                      Severity {item.severity} · {item.status}
+                      Severity {item.severity} · {item.status} · {relativeTime(item.created_at)}
                     </Text>
                   </View>
                 </View>
