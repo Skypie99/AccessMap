@@ -156,6 +156,25 @@ export async function fetchFlagsByIds(flagIds: string[]): Promise<FlagRow[]> {
   return (data ?? []) as FlagRow[];
 }
 
+/**
+ * Fetch the most recent flags across ALL statuses, newest first. Powers the
+ * Activity Feed, which wants a chronological "what's been happening
+ * community-wide" view (not filtered down to triage like listFlags).
+ *
+ * Limit defaults to 100 — enough for ~a week of activity at typical density,
+ * small enough to render without virtualization headaches. Bump if needed
+ * once usage tells us more.
+ */
+export async function listRecentFlags(limit = 100): Promise<FlagRow[]> {
+  const { data, error } = await supabase
+    .from('flags')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(limit);
+  if (error) throw error;
+  return (data ?? []) as FlagRow[];
+}
+
 export const CATEGORY_LABELS: Record<FlagCategory, string> = {
   no_ramp: 'No ramp',
   broken_sidewalk: 'Broken sidewalk',
