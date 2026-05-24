@@ -8,6 +8,7 @@ import FeedbackModal from '@/components/FeedbackModal';
 import MapScreen from '@/screens/MapScreen';
 import TasksScreen from '@/screens/TasksScreen';
 import ProfileScreen from '@/screens/ProfileScreen';
+import SettingsScreen from '@/screens/SettingsScreen';
 
 export type RootTabParamList = {
   Map:
@@ -24,6 +25,11 @@ export type RootTabParamList = {
     | undefined;
   Tasks: undefined;
   Profile: undefined;
+  // Settings is the 4th tab — a hub for app-level meta (notifications,
+  // help, what's new, feedback, about, sign out). Adding it to the param
+  // list keeps DefaultTab (in lib/preferences) type-safe; existing stored
+  // values for Map / Tasks / Profile continue to round-trip unchanged.
+  Settings: undefined;
 };
 
 // Deep-link config. Registers accessmap://flag/{id} (matches the URL the
@@ -125,6 +131,11 @@ export default function RootNavigator({ initialRouteName = 'Map' }: Props) {
             name="Profile"
             component={ProfileScreen}
             options={{ tabBarIcon: tabIcon('👤') }}
+          />
+          <Tab.Screen
+            name="Settings"
+            component={SettingsScreen}
+            options={{ tabBarIcon: tabIcon('⚙️') }}
           />
         </Tab.Navigator>
         <FeedbackModal
