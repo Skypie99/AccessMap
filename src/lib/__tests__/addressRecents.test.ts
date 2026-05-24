@@ -158,6 +158,18 @@ describe('addressRecents', () => {
       expect(result).toEqual([CUPERTINO]);
       expect(result).toHaveLength(1);
     });
+
+    it('addRecent treats empty-displayName entries as collidable (dedupe by empty key)', () => {
+      // Edge case: empty-string `.toLowerCase()` is '' and would collide
+      // with any future empty-name entry on dedupe. Pinning behavior so a
+      // future refactor doesn't silently let duplicates through.
+      const first: AddressRecent = { id: 'a', displayName: '', lat: 0, lng: 0 };
+      const second: AddressRecent = { id: 'b', displayName: '', lat: 1, lng: 1 };
+      let list = addRecent([], first);
+      list = addRecent(list, second);
+      expect(list).toHaveLength(1); // dedupe collapses them
+      expect(list[0]).toEqual(second); // newest wins (moved to front)
+    });
   });
 
   describe('loadRecents', () => {

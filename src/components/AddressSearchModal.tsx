@@ -489,7 +489,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   clearRecentText: {
-    fontSize: font.size.sm,
+    // 14pt + semibold qualifies as "large text" under WCAG 2.2, so the
+    // brand blue (#2f80ed → 3.3:1 on white) clears the 3:1 large-text
+    // floor. At sm (13pt) it would be small text and fail the 4.5:1 floor.
+    fontSize: font.size.base,
     fontWeight: font.weight.semibold,
     color: color.brand,
   },
