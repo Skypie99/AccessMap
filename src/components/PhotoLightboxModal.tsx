@@ -79,7 +79,17 @@ export default function PhotoLightboxModal({
         )}
 
         {caption ? (
-          <View style={styles.captionBar} pointerEvents="none">
+          // pointerEvents=none so it doesn't intercept the backdrop tap.
+          // Hidden from a11y because the Image above already announces
+          // the same caption via accessibilityLabel — a screen reader
+          // would otherwise read it twice. The visual caption is for
+          // sighted users who don't get the SR label. QA Pass-2 #6.
+          <View
+            style={styles.captionBar}
+            pointerEvents="none"
+            accessibilityElementsHidden
+            importantForAccessibility="no-hide-descendants"
+          >
             <Text style={styles.captionText} numberOfLines={2}>
               {caption}
             </Text>
