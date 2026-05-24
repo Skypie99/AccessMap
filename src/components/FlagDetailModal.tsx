@@ -30,6 +30,7 @@ import {
   updateFlagStatus,
 } from '@/lib/flags';
 import type { FlagRow, FlagStatus } from '@/types/database';
+import PhotoLightboxModal from './PhotoLightboxModal';
 
 export type DetailAction = 'verify' | 'resolve' | 'reject';
 
@@ -59,6 +60,7 @@ export default function FlagDetailModal({
   // "Watch" that flips to "Unwatch" 100ms after the modal opens.
   const [watched, setWatched] = useState<boolean | null>(null);
   const [watchSaving, setWatchSaving] = useState(false);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
 
   // Cache the last flag so the slide-out animation still has content to render
   // after the parent clears `flag` on close. Without this the card briefly
@@ -217,6 +219,7 @@ export default function FlagDetailModal({
   };
 
   return (
+    <>
     <Modal
       visible={visible}
       animationType="slide"
@@ -253,13 +256,24 @@ export default function FlagDetailModal({
             showsVerticalScrollIndicator={false}
           >
             {shownFlag.photo_url ? (
-              <Image
-                source={{ uri: shownFlag.photo_url }}
-                style={styles.photo}
-                resizeMode="cover"
-                accessible
+              <Pressable
+                onPress={() => setLightboxOpen(true)}
+                style={({ pressed }) => [
+                  styles.photo,
+                  pressed && styles.photoPressed,
+                ]}
+                accessibilityRole="imagebutton"
                 accessibilityLabel={`Photo of the reported ${CATEGORY_LABELS[shownFlag.category]}`}
-              />
+                accessibilityHint="Tap to view full screen"
+              >
+                <Image
+                  source={{ uri: shownFlag.photo_url }}
+                  style={styles.photoInner}
+                  resizeMode="cover"
+                  accessibilityElementsHidden
+                  importantForAccessibility="no-hide-descendants"
+                />
+              </Pressable>
             ) : (
               <View
                 style={[styles.photo, styles.photoPlaceholder]}
@@ -510,6 +524,17 @@ export default function FlagDetailModal({
         </View>
       </View>
     </Modal>
+    <PhotoLightboxModal
+      visible={lightboxOpen}
+      photoUrl={shownFlag?.photo_url ?? null}
+      caption={
+        shownFlag
+          ? `${CATEGORY_LABELS[shownFlag.category]} · ${STATUS_LABELS[shownFlag.status]}`
+          : undefined
+      }
+      onClose={() => setLightboxOpen(false)}
+    />
+    </>
   );
 }
 
@@ -551,7 +576,10 @@ const styles = StyleSheet.create({
     aspectRatio: 4 / 3,
     borderRadius: 12,
     backgroundColor: '#eef1f5',
+    overflow: 'hidden',
   },
+  photoInner: { width: '100%', height: '100%' },
+  photoPressed: { opacity: 0.85 },
   photoPlaceholder: {
     alignItems: 'center',
     justifyContent: 'center',
