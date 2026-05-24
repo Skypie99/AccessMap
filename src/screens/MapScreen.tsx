@@ -422,6 +422,9 @@ export default function MapScreen() {
               await setDefaultSetId(nextId);
               if (!mountedRef.current) return;
               setDefaultIdState(nextId);
+              AccessibilityInfo.announceForAccessibility(
+                isDefault ? 'Default filter cleared' : 'Set as default filter',
+              );
             },
           },
           {
@@ -1081,8 +1084,8 @@ export default function MapScreen() {
                       accessibilityRole="button"
                       accessibilityLabel={
                         isDefault
-                          ? `Apply "${set.name}" filter (default on launch)`
-                          : `Apply "${set.name}" filter`
+                          ? `${set.name}, default filter set, tap to apply`
+                          : `${set.name}, tap to apply, long press for options`
                       }
                       accessibilityHint="Sets the map filter to this saved combination. Long press for options including make default and delete."
                       accessibilityState={{ selected: isSelected }}
@@ -1095,8 +1098,17 @@ export default function MapScreen() {
                       >
                         {/* Star is decorative — the "default on launch"
                             wording is carried by accessibilityLabel above
-                            so screen readers don't read out a glyph. */}
-                        {isDefault ? '★ ' : ''}
+                            so screen readers don't read out a glyph.
+                            Wrapped in its own Text so accessible={false}
+                            hides it from the AT node tree entirely. */}
+                        {isDefault && (
+                          <Text
+                            accessible={false}
+                            importantForAccessibility="no-hide-descendants"
+                          >
+                            {'★ '}
+                          </Text>
+                        )}
                         {set.name}
                       </Text>
                     </Pressable>
