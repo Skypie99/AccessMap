@@ -57,6 +57,9 @@ import ReportFlagModal from './ReportFlagModal';
 import LegendModal from './LegendModal';
 import NearbyFlagsModal from './NearbyFlagsModal';
 import AddressSearchModal from '@/components/AddressSearchModal';
+import SavedPlacesModal from '@/components/SavedPlacesModal';
+import { loadPlaces, type SavedPlace } from '@/lib/savedPlaces';
+import { useAuth } from '@/lib/auth';
 import type { GeocodeResult } from '@/lib/geocode';
 
 interface Coords {
@@ -99,6 +102,29 @@ export default function MapScreen() {
   const [legendOpen, setLegendOpen] = useState(false);
   const [nearbyOpen, setNearbyOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [placesOpen, setPlacesOpen] = useState(false);
+  // Saved Places list for the quick-jump chip row above the action bar.
+  // Loaded when the user is known and refreshed every time the modal
+  // closes (so newly-added / removed places appear without a screen
+  // change). Kept here (not in the modal) because the chip row outlives
+  // the modal lifecycle.
+  const { user: authUser } = useAuth();
+  const [savedPlaces, setSavedPlaces] = useState<SavedPlace[]>([]);
+  const refreshSavedPlaces = useCallback(async () => {
+    if (!authUser) {
+      setSavedPlaces([]);
+      return;
+    }
+    try {
+      const list = await loadPlaces(authUser.id);
+      setSavedPlaces(list);
+    } catch {
+      // Best-effort — chip row degrades to empty silently.
+    }
+  }, [authUser]);
+  useEffect(() => {
+    void refreshSavedPlaces();
+  }, [refreshSavedPlaces]);
   const [focusedFlagId, setFocusedFlagId] = useState<string | null>(null);
 
   // Phase 2 of the accessible list view: auto-open the linear list when a
@@ -724,6 +750,62 @@ export default function MapScreen() {
           </View>
         </View>
 
+        {/* Saved Places chip row — shown only when signed in. Renders
+            quick-jump chips for each saved place plus a trailing "★ +"
+            chip that opens the manage modal (and acts as the first-add
+            affordance for users with no places yet). */}
+        {authUser && (
+          <View
+            style={styles.placesRow}
+            accessibilityLabel="Saved places quick-jump"
+          >
+            {savedPlaces.map((place) => (
+              <Pressable
+                key={place.id}
+                onPress={() => {
+                  mapRef.current?.animateTo({
+                    latitude: place.lat,
+                    longitude: place.lng,
+                    latitudeDelta: 0.01,
+                    longitudeDelta: 0.01,
+                  });
+                }}
+                style={({ pressed }) => [
+                  styles.placeChip,
+                  pressed && styles.placeChipPressed,
+                ]}
+                accessibilityRole="button"
+                accessibilityLabel={`Jump map to ${place.name}`}
+              >
+                <Text style={styles.placeChipGlyph}>📍</Text>
+                <Text style={styles.placeChipText} numberOfLines={1}>
+                  {place.name}
+                </Text>
+              </Pressable>
+            ))}
+            <Pressable
+              onPress={() => setPlacesOpen(true)}
+              style={({ pressed }) => [
+                styles.placeChip,
+                styles.placeChipManage,
+                pressed && styles.placeChipPressed,
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel={
+                savedPlaces.length === 0
+                  ? 'Save a place'
+                  : 'Manage saved places'
+              }
+              accessibilityHint="Opens the saved places list to add, rename, or remove"
+            >
+              <Text style={styles.placeChipGlyph}>★</Text>
+              <Text style={styles.placeChipText}>
+                {savedPlaces.length === 0 ? 'Save a place' : 'Manage'}
+              </Text>
+            </Pressable>
+          </View>
+        )}
+
         {filtersOpen && (
           <View style={styles.filterPanel}>
             <View style={styles.filterHeaderRow}>
@@ -1082,6 +1164,27 @@ export default function MapScreen() {
         }}
       />
 
+      <SavedPlacesModal
+        visible={placesOpen}
+        currentLocation={location}
+        onClose={() => {
+          setPlacesOpen(false);
+          // Refresh the chip-row list so newly-added / removed places
+          // show up immediately without waiting for re-mount.
+          void refreshSavedPlaces();
+        }}
+        onJumpToPlace={(place) => {
+          // Tighter zoom (delta 0.01) than search results because the
+          // user pinned this exact spot — they want street-level detail.
+          mapRef.current?.animateTo({
+            latitude: place.lat,
+            longitude: place.lng,
+            latitudeDelta: 0.01,
+            longitudeDelta: 0.01,
+          });
+        }}
+      />
+
       <NearbyFlagsModal
         visible={nearbyOpen}
         location={location}
@@ -1185,6 +1288,36 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   topRow: { flexDirection: 'row', gap: 8, alignItems: 'center' },
+  // Saved Places chip row — slim secondary row beneath the action bar.
+  // Wraps so a long list breaks to a second line rather than truncating.
+  placesRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginTop: 8,
+  },
+  placeChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    backgroundColor: 'rgba(255,255,255,0.95)',
+    borderRadius: 999,
+    minHeight: 36,
+    maxWidth: 160,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    shadowOffset: { width: 0, height: 1 },
+    elevation: 1,
+  },
+  placeChipPressed: { backgroundColor: '#eef1f5', opacity: 0.9 },
+  // The trailing manage chip uses a tinted background so the affordance
+  // reads visually distinct from the place chips.
+  placeChipManage: { backgroundColor: '#eaf3ff' },
+  placeChipGlyph: { fontSize: 14, color: '#2f80ed' },
+  placeChipText: { fontSize: 13, fontWeight: '600', color: '#1a4fa3' },
   statusPill: {
     flex: 1,
     backgroundColor: 'rgba(255,255,255,0.95)',
