@@ -98,6 +98,14 @@ export default function ActivityFeedModal({
     if (visible) load();
   }, [visible, load]);
 
+  // If the user signs out while the modal is open (or while it was
+  // already mounted with a non-'all' filter), force the filter back to
+  // 'all'. Otherwise the only-'all'-chip-rendered guard would leave the
+  // filter pinned to 'mine' or 'watched' with no way to reset it. (QA #1)
+  useEffect(() => {
+    if (!user && filter !== 'all') setFilter('all');
+  }, [user, filter]);
+
   // Apply the active filter on top of the recent-flags list.
   const filteredFlags = useMemo(() => {
     if (filter === 'mine') {
