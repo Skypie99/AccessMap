@@ -148,6 +148,26 @@ describe('loadStreak / persistence', () => {
     const loaded = await loadStreak('u1');
     expect(loaded.longest).toBe(7);
   });
+
+  it('resets current to 0 when lastVisitDay is invalid (QA C4 invariant)', async () => {
+    // A user with a 30-day streak whose lastVisitDay somehow got
+    // corrupted should NOT keep current=30 — the invariant
+    // (current > 0 ⇒ lastVisitDay set) must hold, or applyVisit
+    // would treat it as "first visit ever" and break the math.
+    // longest is preserved so the personal-best memory survives.
+    mockStorage.__setRaw(
+      '@accessmap/streak_v1:u1',
+      JSON.stringify({
+        current: 30,
+        longest: 30,
+        lastVisitDay: 'corrupted',
+      }),
+    );
+    const loaded = await loadStreak('u1');
+    expect(loaded.current).toBe(0);
+    expect(loaded.longest).toBe(30);
+    expect(loaded.lastVisitDay).toBeNull();
+  });
 });
 
 describe('tickVisit', () => {

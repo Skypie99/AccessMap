@@ -64,23 +64,30 @@ function daysBetween(fromIso: string, toIso: string): number {
 
 /**
  * Defensive parser — drops anything that isn't a well-formed StreakState.
+ *
+ * Invariant: `current > 0` implies `lastVisitDay !== null`. If
+ * `lastVisitDay` is missing or malformed we cannot honor the streak
+ * (next applyVisit would see no baseline and reset to 1 anyway), so
+ * we drop `current` to 0 instead — preserves `longest` so the user's
+ * personal-best memory survives the corruption. (QA C4)
  */
 function parseStreak(raw: unknown): StreakState {
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return EMPTY_STREAK;
   const obj = raw as Record<string, unknown>;
-  const current = typeof obj.current === 'number' && obj.current >= 0
+  const rawCurrent = typeof obj.current === 'number' && obj.current >= 0
     ? Math.floor(obj.current)
     : 0;
-  const longest = typeof obj.longest === 'number' && obj.longest >= 0
+  const rawLongest = typeof obj.longest === 'number' && obj.longest >= 0
     ? Math.floor(obj.longest)
     : 0;
   const lastVisitDay =
     typeof obj.lastVisitDay === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(obj.lastVisitDay)
       ? obj.lastVisitDay
       : null;
+  const current = lastVisitDay === null ? 0 : rawCurrent;
   return {
     current,
-    longest: Math.max(longest, current),
+    longest: Math.max(rawLongest, current),
     lastVisitDay,
   };
 }
