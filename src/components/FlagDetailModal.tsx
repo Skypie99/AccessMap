@@ -318,9 +318,37 @@ export default function FlagDetailModal({
             </Text>
 
             <Text style={styles.sectionLabel}>Location</Text>
-            <Text style={styles.metaValue} accessibilityLabel={coordsA11y}>
-              {formattedCoords}
-            </Text>
+            {/* Row: selectable coords + copy button. selectable lets users
+                long-press to get the native "Copy" context menu — the copy
+                button triggers Share.share for a one-tap path on iOS/Android. */}
+            <View style={styles.coordsRow}>
+              <Text
+                style={[styles.metaValue, styles.coordsText]}
+                accessibilityLabel={coordsA11y}
+                accessibilityHint="Long press to select and copy these coordinates"
+                selectable
+              >
+                {formattedCoords}
+              </Text>
+              <Pressable
+                onPress={() =>
+                  Share.share({
+                    message: formattedCoords,
+                    title: 'Flag coordinates',
+                  })
+                }
+                hitSlop={10}
+                style={({ pressed }) => [
+                  styles.coordsCopyBtn,
+                  pressed && styles.coordsCopyBtnPressed,
+                ]}
+                accessibilityRole="button"
+                accessibilityLabel="Copy coordinates"
+                accessibilityHint="Opens share/copy options for these coordinates"
+              >
+                <Text style={styles.coordsCopyGlyph}>⧉</Text>
+              </Pressable>
+            </View>
 
             {watched !== null && (
               <Pressable
@@ -557,6 +585,20 @@ const styles = StyleSheet.create({
   },
   description: { fontSize: 15, color: '#222', lineHeight: 21 },
   metaValue: { fontSize: 14, color: '#333' },
+  coordsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  coordsText: { flex: 1 },
+  coordsCopyBtn: {
+    padding: 4,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  coordsCopyBtnPressed: { opacity: 0.4 },
+  // Overlapping-squares glyph — universally understood as "copy"
+  coordsCopyGlyph: { fontSize: 16, color: '#2f80ed' },
   actionRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
