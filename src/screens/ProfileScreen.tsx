@@ -223,10 +223,20 @@ export default function ProfileScreen() {
   // reports + watched flags. Diff against the baseline stored from the
   // previous markAllSeen call. First-time-seen flags don't count (the
   // baseline absorbs them silently).
+  //
+  // Request-id gating (QA #2): rapid focus → blur → focus could fire two
+  // refreshUpdateCount calls concurrently. We tag each call with an
+  // incrementing seq; only the most-recent call is allowed to mutate
+  // state. Otherwise an older response could clobber a fresher one.
+  const updateSeqRef = useRef(0);
   const refreshUpdateCount = useCallback(async () => {
+    const mySeq = ++updateSeqRef.current;
+    const isCurrent = () =>
+      mountedRef.current && updateSeqRef.current === mySeq;
+
     if (!user) {
       trackedFlagsRef.current = [];
-      setUpdateCount(0);
+      if (isCurrent()) setUpdateCount(0);
       return;
     }
     try {
@@ -241,7 +251,7 @@ export default function ProfileScreen() {
         ? await fetchFlagsByIds(watchedOnly)
         : [];
       const tracked = [...ownFlags, ...watchedFlags];
-      if (!mountedRef.current) return;
+      if (!isCurrent()) return;
       trackedFlagsRef.current = tracked;
       const updates = diffUpdates(tracked, lastSeen);
       // If lastSeen is empty (brand-new user / first run after upgrade),
@@ -249,14 +259,14 @@ export default function ProfileScreen() {
       // existing flag on the next visit.
       if (Object.keys(lastSeen).length === 0 && tracked.length > 0) {
         await markAllSeen(user.id, tracked);
-        if (mountedRef.current) setUpdateCount(0);
+        if (isCurrent()) setUpdateCount(0);
         return;
       }
-      if (mountedRef.current) setUpdateCount(updates.length);
+      if (isCurrent()) setUpdateCount(updates.length);
     } catch {
       // Updates are non-critical — silently skip on error. Profile load
       // itself surfaces its own errors via Alert.
-      if (mountedRef.current) setUpdateCount(0);
+      if (isCurrent()) setUpdateCount(0);
     }
   }, [user]);
 
@@ -268,10 +278,14 @@ export default function ProfileScreen() {
 
   const acknowledgeUpdates = useCallback(async () => {
     if (!user) return;
-    const tracked = trackedFlagsRef.current;
+    // Snapshot the tracked flags into a local const BEFORE awaiting
+    // anything. If refreshUpdateCount fires while we're awaiting
+    // markAllSeen and overwrites trackedFlagsRef.current with a newer
+    // (or empty) array, we'd otherwise be persisting stale data. (QA #2)
+    const trackedSnapshot = [...trackedFlagsRef.current];
     setUpdateCount(0);
     try {
-      await markAllSeen(user.id, tracked);
+      await markAllSeen(user.id, trackedSnapshot);
     } catch {
       // Best-effort. UI already cleared the banner; a transient
       // AsyncStorage failure means the banner might reappear next focus,
