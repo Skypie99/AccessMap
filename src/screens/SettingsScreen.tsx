@@ -14,15 +14,19 @@ import { color, font, radius, shadow, spacing } from '@/theme';
 import { signOut, supabase } from '@/lib/supabase';
 import { confirm } from '@/lib/confirm';
 import { useAuth } from '@/lib/auth';
+import { useSharedModals } from '@/lib/sharedModalsContext';
 import { CATEGORY_LABELS, listFlagsByUser } from '@/lib/flags';
 import { listFeedbackByUser } from '@/lib/feedbackStore';
 import { formatDataExport } from '@/lib/dataExport';
 import type { UserRow } from '@/types/database';
+// NotificationPrefsModal stays mounted locally — Settings's instance is
+// bare (no initialPrefs / onPrefsChanged), but ProfileScreen's instance
+// is per-screen-stateful (carries `initialPrefs={notificationPrefs}` and
+// an `onPrefsChanged` that fires Profile's `refreshUpdateCount`). Lifting
+// it would either drop the Profile optimization or force callbacks
+// through the context. See src/lib/sharedModalsContext.tsx for the full
+// rationale.
 import NotificationPrefsModal from '@/components/NotificationPrefsModal';
-import HelpModal from '@/components/HelpModal';
-import ChangelogModal from '@/components/ChangelogModal';
-import FeedbackModal from '@/components/FeedbackModal';
-import MyFeedbackModal from '@/components/MyFeedbackModal';
 import AboutScreen from '@/screens/AboutScreen';
 
 // One row in the settings list. We declare it locally instead of factoring
@@ -128,15 +132,17 @@ function SettingsRow({
  * `src/theme.ts` so future style edits propagate.
  */
 export default function SettingsScreen() {
-  // Each modal opens from a Settings row. Keeping their visible-state
-  // flags here (rather than inside SettingsRow) lets a single press both
-  // open the modal and any future logic that needs to fire alongside it
-  // (e.g. analytics — we don't have any yet, but the shape is ready).
+  // Help, Changelog, Feedback, and MyFeedback are all mounted ONCE at
+  // the navigator level via <SharedModalsHost /> (see RootNavigator.tsx +
+  // src/lib/sharedModalsContext.tsx). Settings just sets the shared
+  // "which modal is open" key here.
+  const { setOpen } = useSharedModals();
+  // NotificationPrefs and About stay per-screen — see the import-block
+  // comment for why NotificationPrefs is excluded from the shared pool,
+  // and AboutScreen is mounted per-screen everywhere it appears (also
+  // present on ProfileScreen with its own state) because its parent
+  // styles differ slightly per host. Both keep their own visible flag.
   const [notifOpen, setNotifOpen] = useState(false);
-  const [helpOpen, setHelpOpen] = useState(false);
-  const [changelogOpen, setChangelogOpen] = useState(false);
-  const [feedbackOpen, setFeedbackOpen] = useState(false);
-  const [myFeedbackOpen, setMyFeedbackOpen] = useState(false);
   const [aboutOpen, setAboutOpen] = useState(false);
 
   const { user } = useAuth();
@@ -308,14 +314,14 @@ export default function SettingsScreen() {
           title="Help & FAQ"
           subtitle="Common questions about reports, points, and accessibility."
           accessibilityHint="Opens collapsible answers to common questions"
-          onPress={() => setHelpOpen(true)}
+          onPress={() => setOpen('help')}
         />
 
         <SettingsRow
           title="What's new"
           subtitle="Recent features added to AccessMap."
           accessibilityHint="Opens a dated list of recent shipped features"
-          onPress={() => setChangelogOpen(true)}
+          onPress={() => setOpen('changelog')}
         />
 
         <SettingsRow
@@ -333,14 +339,14 @@ export default function SettingsScreen() {
           title="Send feedback"
           subtitle="Tell the maintainer what's working or what's broken."
           accessibilityHint="Opens the feedback form"
-          onPress={() => setFeedbackOpen(true)}
+          onPress={() => setOpen('feedback')}
         />
 
         <SettingsRow
           title="My feedback history"
           subtitle="View the feedback messages you've sent."
           accessibilityHint="Opens the list of feedback you've sent"
-          onPress={() => setMyFeedbackOpen(true)}
+          onPress={() => setOpen('myFeedback')}
         />
 
         <Text style={styles.sectionLabel} accessibilityRole="header">
@@ -372,22 +378,12 @@ export default function SettingsScreen() {
         />
       </ScrollView>
 
+      {/* Only NotificationPrefs + About render here; the other four
+          modals (Help, Changelog, Feedback, MyFeedback) live in a single
+          <SharedModalsHost /> mount inside RootNavigator. */}
       <NotificationPrefsModal
         visible={notifOpen}
         onClose={() => setNotifOpen(false)}
-      />
-      <HelpModal visible={helpOpen} onClose={() => setHelpOpen(false)} />
-      <ChangelogModal
-        visible={changelogOpen}
-        onClose={() => setChangelogOpen(false)}
-      />
-      <FeedbackModal
-        visible={feedbackOpen}
-        onClose={() => setFeedbackOpen(false)}
-      />
-      <MyFeedbackModal
-        visible={myFeedbackOpen}
-        onClose={() => setMyFeedbackOpen(false)}
       />
       <AboutScreen visible={aboutOpen} onClose={() => setAboutOpen(false)} />
     </>

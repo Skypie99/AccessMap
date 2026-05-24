@@ -106,7 +106,18 @@ export default function HelpModal({ visible, onClose }: Props) {
       transparent
       onRequestClose={onClose}
     >
-      <View style={styles.backdrop}>
+      {/* accessibilityViewIsModal tells iOS VoiceOver that everything
+          behind this view is inert while the modal is up — focus can't
+          wander out of the modal and read the underlying screen. Alex P5.
+          (We intentionally don't set importantForAccessibility on the
+          backdrop itself — "no-hide-descendants" would hide the modal's
+          own contents from TalkBack. Android relies on RN Modal's own
+          focus trap and the elevation/z-index of the backdrop.) */}
+      <View
+        style={styles.backdrop}
+        accessibilityViewIsModal
+        testID="helpModal-backdrop"
+      >
         <View style={styles.card}>
           <View style={styles.headerRow}>
             <Text style={styles.title} accessibilityRole="header">

@@ -18,6 +18,7 @@ import { useAuth } from '@/lib/auth';
 import { confirm } from '@/lib/confirm';
 import { errorMessage } from '@/lib/errors';
 import { signOut, supabase } from '@/lib/supabase';
+import { useSharedModals } from '@/lib/sharedModalsContext';
 import { updateUserProfile } from '@/lib/users';
 import {
   DEFAULT_TABS,
@@ -45,13 +46,23 @@ import FlagDetailModal, {
   type DetailAction,
 } from '@/components/FlagDetailModal';
 import AboutScreen from '@/screens/AboutScreen';
-import MyFeedbackModal from '@/components/MyFeedbackModal';
-import HelpModal from '@/components/HelpModal';
-import ChangelogModal from '@/components/ChangelogModal';
+// HelpModal, ChangelogModal, and MyFeedbackModal used to mount here;
+// they now live in a single <SharedModalsHost /> at the navigator level
+// (see RootNavigator.tsx + src/lib/sharedModalsContext.tsx). Profile
+// just calls setOpen('help' | 'changelog' | 'myFeedback') via the
+// context.
 import ActivityFeedModal from '@/components/ActivityFeedModal';
 import UpdateBanner from '@/components/UpdateBanner';
 import { diffUpdates, loadLastSeen, markAllSeen } from '@/lib/flagUpdates';
 import { loadWatched } from '@/lib/watchedFlags';
+// NotificationPrefsModal stays mounted PER-SCREEN on Profile (not in
+// the shared pool). The Profile instance carries per-screen state:
+// `initialPrefs` is seeded from this screen's already-loaded
+// `notificationPrefs` so the first paint matches reality, and
+// `onPrefsChanged` re-runs `refreshUpdateCount` so the banner count
+// reflects newly-muted statuses immediately. Lifting it would either
+// drop those optimizations or force callbacks through the shared
+// context — both costlier than the second mount it saves.
 import NotificationPrefsModal from '@/components/NotificationPrefsModal';
 import {
   DEFAULT_PREFS,
@@ -199,19 +210,13 @@ export default function ProfileScreen() {
   // "Send feedback" CTA so we don't have to coordinate two open modals.
   const [aboutOpen, setAboutOpen] = useState(false);
 
-  // My Feedback modal — opened from the "My Feedback" row. Renders an
-  // empty state when the migration hasn't been applied or the user
-  // hasn't sent anything yet, so it's safe to open in any state.
-  const [feedbackOpen, setFeedbackOpen] = useState(false);
+  // My Feedback, Help, and Changelog modals are mounted ONCE at the
+  // navigator level via <SharedModalsHost />. Profile triggers them by
+  // calling setOpen('myFeedback' | 'help' | 'changelog'). Before this,
+  // each modal had a duplicate mount here AND in SettingsScreen — same
+  // state shape twice, same useEffect on visible-change twice.
+  const { setOpen: setSharedModal } = useSharedModals();
 
-  // Help / FAQ modal — opened from the "Help & FAQ" row. Static
-  // content, no fetch, no state beyond per-item expand/collapse
-  // managed inside the modal.
-  const [helpOpen, setHelpOpen] = useState(false);
-
-  // What's New / Changelog modal — opened from the "What's New" row.
-  // Inline RELEASES list inside the modal, no fetch.
-  const [changelogOpen, setChangelogOpen] = useState(false);
   const [achievementsOpen, setAchievementsOpen] = useState(false);
 
   // T4: Reputation-tier explainer sheet. Opens when the user taps the
@@ -963,7 +968,7 @@ export default function ProfileScreen() {
             styles.myReportsBtn,
             pressed && styles.myReportsBtnPressed,
           ]}
-          onPress={() => setFeedbackOpen(true)}
+          onPress={() => setSharedModal('myFeedback')}
           accessibilityRole="button"
           accessibilityLabel="My Feedback"
           accessibilityHint="Opens the list of feedback you've sent to the maintainer"
@@ -1079,7 +1084,7 @@ export default function ProfileScreen() {
             styles.aboutRow,
             pressed && styles.aboutRowPressed,
           ]}
-          onPress={() => setHelpOpen(true)}
+          onPress={() => setSharedModal('help')}
           accessibilityRole="button"
           accessibilityLabel="Help and frequently asked questions"
           accessibilityHint="Opens collapsible answers to common questions about the app"
@@ -1100,7 +1105,7 @@ export default function ProfileScreen() {
             styles.aboutRow,
             pressed && styles.aboutRowPressed,
           ]}
-          onPress={() => setChangelogOpen(true)}
+          onPress={() => setSharedModal('changelog')}
           accessibilityRole="button"
           accessibilityLabel="What's New"
           accessibilityHint="Opens a dated list of recent shipped features"
@@ -1184,20 +1189,10 @@ export default function ProfileScreen() {
         onClose={() => setAboutOpen(false)}
       />
 
-      <MyFeedbackModal
-        visible={feedbackOpen}
-        onClose={() => setFeedbackOpen(false)}
-      />
-
-      <HelpModal
-        visible={helpOpen}
-        onClose={() => setHelpOpen(false)}
-      />
-
-      <ChangelogModal
-        visible={changelogOpen}
-        onClose={() => setChangelogOpen(false)}
-      />
+      {/* MyFeedbackModal, HelpModal, and ChangelogModal mounts used to
+          sit here. They now live in <SharedModalsHost /> at the
+          navigator root (see RootNavigator.tsx + sharedModalsContext.tsx).
+          Profile triggers them via setSharedModal(...) higher up. */}
 
       <AchievementsModal
         visible={achievementsOpen}
