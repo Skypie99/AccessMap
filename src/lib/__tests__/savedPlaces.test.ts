@@ -242,4 +242,83 @@ describe('savedPlaces', () => {
       expect(bobLoaded.map((p) => p.name)).toEqual(['Bob Home']);
     });
   });
+
+  describe('storage integrity (QA PL1)', () => {
+    it('parsePlaces truncates to MAX_PLACES on read (QA E3)', async () => {
+      // Simulate corrupt/forced over-cap storage.
+      const oversized: any[] = [];
+      for (let i = 0; i < MAX_PLACES + 7; i++) {
+        oversized.push({
+          id: `p${i}`,
+          name: `Place ${i}`,
+          lat: 47,
+          lng: -122,
+          created_at: new Date().toISOString(),
+        });
+      }
+      mockStorage.__setRaw(
+        '@accessmap/saved_places_v1:u1',
+        JSON.stringify(oversized),
+      );
+      const loaded = await loadPlaces(USER);
+      expect(loaded.length).toBe(MAX_PLACES);
+    });
+
+    it('addPlace propagates AsyncStorage write failures (QA C1)', async () => {
+      const original = mockStorage.setItem;
+      // Force the next setItem to reject — previously the silent-warn
+      // would swallow this and let addPlace return success.
+      mockStorage.setItem = jest.fn(async () => {
+        throw new Error('disk full');
+      });
+      await expect(
+        addPlace(USER, { name: 'Will fail', ...SEATTLE }),
+      ).rejects.toThrow('disk full');
+      mockStorage.setItem = original;
+      // Storage is empty — the failed write didn't half-commit.
+      expect(await loadPlaces(USER)).toEqual([]);
+    });
+
+    it('serializes concurrent addPlace calls (QA E2)', async () => {
+      // Fire 5 add operations in parallel. Without the write lock, two
+      // racing load-modify-save chains would clobber each other and the
+      // final list would be shorter than 5.
+      await Promise.all([
+        addPlace(USER, { name: 'P1', ...SEATTLE }),
+        addPlace(USER, { name: 'P2', ...BELLEVUE }),
+        addPlace(USER, { name: 'P3', lat: 47.7, lng: -122.4 }),
+        addPlace(USER, { name: 'P4', lat: 47.8, lng: -122.5 }),
+        addPlace(USER, { name: 'P5', lat: 47.9, lng: -122.6 }),
+      ]);
+      const loaded = await loadPlaces(USER);
+      expect(loaded.length).toBe(5);
+      expect(loaded.map((p) => p.name).sort()).toEqual(
+        ['P1', 'P2', 'P3', 'P4', 'P5'].sort(),
+      );
+    });
+
+    it('serializes a concurrent add + remove without resurrecting the deleted place', async () => {
+      const a = await addPlace(USER, { name: 'A', ...SEATTLE });
+      // Now fire remove + add in parallel — the lock should serialize.
+      await Promise.all([
+        removePlace(USER, a.id),
+        addPlace(USER, { name: 'B', ...BELLEVUE }),
+      ]);
+      const loaded = await loadPlaces(USER);
+      expect(loaded.length).toBe(1);
+      expect(loaded[0]!.name).toBe('B');
+    });
+
+    it('does not leak write-queue entries after operations complete', async () => {
+      await addPlace(USER, { name: 'A', ...SEATTLE });
+      await removePlace(USER, 'nonexistent');
+      // Give the .finally cleanup a microtask to run.
+      await Promise.resolve();
+      // Spy not necessary — just verify the next add works cleanly
+      // (no stale rejected promise blocking the chain).
+      await expect(
+        addPlace(USER, { name: 'B', ...BELLEVUE }),
+      ).resolves.toBeDefined();
+    });
+  });
 });

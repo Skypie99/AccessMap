@@ -43,7 +43,9 @@ function isFiniteLatLng(lat: unknown, lng: unknown): boolean {
 
 /**
  * Defensive parser: drops anything that isn't a well-formed SavedPlace.
- * Never throws — returns [] on any structural problem.
+ * Never throws — returns [] on any structural problem. Hard-caps the
+ * returned list at MAX_PLACES (QA E3) so a forced over-cap write to
+ * AsyncStorage doesn't leak into a misbehaving chip row.
  */
 function parsePlaces(raw: unknown): SavedPlace[] {
   if (!Array.isArray(raw)) return [];
@@ -68,6 +70,7 @@ function parsePlaces(raw: unknown): SavedPlace[] {
       lng: obj.lng as number,
       created_at: obj.created_at,
     });
+    if (out.length >= MAX_PLACES) break;
   }
   return out;
 }
@@ -87,14 +90,36 @@ export async function loadPlaces(userId: string): Promise<SavedPlace[]> {
 }
 
 async function persist(userId: string, places: SavedPlace[]): Promise<void> {
-  try {
-    await AsyncStorage.setItem(storageKey(userId), JSON.stringify(places));
-  } catch (e) {
-    console.warn(
-      '[savedPlaces] save failed:',
-      errorMessage(e, 'AsyncStorage error.'),
-    );
-  }
+  // QA C1: previously this swallowed errors with console.warn, so
+  // addPlace / removePlace / renamePlace would return success even if
+  // the disk write failed and the change would silently vanish on next
+  // reload. Re-throw so callers can surface a real error to the user.
+  await AsyncStorage.setItem(storageKey(userId), JSON.stringify(places));
+}
+
+// QA E2/C3: serialize compound load-modify-save operations per user so
+// rapid double-taps can't read → mutate → clobber each other. Keyed by
+// userId — different users don't share a chain.
+const writeQueues = new Map<string, Promise<unknown>>();
+
+function withWriteLock<T>(
+  userId: string,
+  task: () => Promise<T>,
+): Promise<T> {
+  const prev = writeQueues.get(userId) ?? Promise.resolve();
+  // Allow `task` to settle in sequence after the previous chain finishes.
+  // We don't care whether `prev` resolved or rejected — its errors are
+  // already owned by whoever awaited it.
+  const next = prev.catch(() => undefined).then(task);
+  writeQueues.set(userId, next);
+  // Cleanup branch: must observe BOTH settle outcomes so an unhandled
+  // rejection isn't logged just because we attached a side-effect. The
+  // caller awaits `next` directly and owns the real error.
+  const cleanup = () => {
+    if (writeQueues.get(userId) === next) writeQueues.delete(userId);
+  };
+  next.then(cleanup, cleanup);
+  return next;
 }
 
 /**
@@ -136,6 +161,10 @@ export class SavedPlacesError extends Error {
  * Adds a place. Throws SavedPlacesError with a typed `code` for the UI to
  * map to friendly copy. Duplicate-name check is case-insensitive so
  * "Home" and "home" are considered the same.
+ *
+ * QA E2: load-mutate-save is serialized per-user via withWriteLock so
+ * concurrent calls (e.g. accidental double-tap) can't clobber each
+ * other or race past the MAX_PLACES cap.
  */
 export async function addPlace(
   userId: string,
@@ -151,41 +180,45 @@ export async function addPlace(
       'Place coordinates are out of range.',
     );
   }
-  const current = await loadPlaces(userId);
-  if (current.length >= MAX_PLACES) {
-    throw new SavedPlacesError(
-      'limit_reached',
-      `You can save up to ${MAX_PLACES} places. Remove one to add another.`,
+  return withWriteLock(userId, async () => {
+    const current = await loadPlaces(userId);
+    if (current.length >= MAX_PLACES) {
+      throw new SavedPlacesError(
+        'limit_reached',
+        `You can save up to ${MAX_PLACES} places. Remove one to add another.`,
+      );
+    }
+    const existsByName = current.some(
+      (p) => p.name.toLowerCase() === name.toLowerCase(),
     );
-  }
-  const existsByName = current.some(
-    (p) => p.name.toLowerCase() === name.toLowerCase(),
-  );
-  if (existsByName) {
-    throw new SavedPlacesError(
-      'duplicate_name',
-      `A place named "${name}" already exists.`,
-    );
-  }
-  const next: SavedPlace = {
-    id: generateId(),
-    name,
-    lat: input.lat,
-    lng: input.lng,
-    created_at: new Date().toISOString(),
-  };
-  await persist(userId, [...current, next]);
-  return next;
+    if (existsByName) {
+      throw new SavedPlacesError(
+        'duplicate_name',
+        `A place named "${name}" already exists.`,
+      );
+    }
+    const next: SavedPlace = {
+      id: generateId(),
+      name,
+      lat: input.lat,
+      lng: input.lng,
+      created_at: new Date().toISOString(),
+    };
+    await persist(userId, [...current, next]);
+    return next;
+  });
 }
 
 export async function removePlace(
   userId: string,
   placeId: string,
 ): Promise<void> {
-  const current = await loadPlaces(userId);
-  const next = current.filter((p) => p.id !== placeId);
-  if (next.length === current.length) return; // nothing to remove
-  await persist(userId, next);
+  return withWriteLock(userId, async () => {
+    const current = await loadPlaces(userId);
+    const next = current.filter((p) => p.id !== placeId);
+    if (next.length === current.length) return; // nothing to remove
+    await persist(userId, next);
+  });
 }
 
 /**
@@ -202,25 +235,27 @@ export async function renamePlace(
   if (!name) {
     throw new SavedPlacesError('invalid_name', 'Place name cannot be empty.');
   }
-  const current = await loadPlaces(userId);
-  const existing = current.find((p) => p.id === placeId);
-  if (!existing) return null;
-  const dup = current.some(
-    (p) =>
-      p.id !== placeId && p.name.toLowerCase() === name.toLowerCase(),
-  );
-  if (dup) {
-    throw new SavedPlacesError(
-      'duplicate_name',
-      `A place named "${name}" already exists.`,
+  return withWriteLock(userId, async () => {
+    const current = await loadPlaces(userId);
+    const existing = current.find((p) => p.id === placeId);
+    if (!existing) return null;
+    const dup = current.some(
+      (p) =>
+        p.id !== placeId && p.name.toLowerCase() === name.toLowerCase(),
     );
-  }
-  const updated: SavedPlace = { ...existing, name };
-  await persist(
-    userId,
-    current.map((p) => (p.id === placeId ? updated : p)),
-  );
-  return updated;
+    if (dup) {
+      throw new SavedPlacesError(
+        'duplicate_name',
+        `A place named "${name}" already exists.`,
+      );
+    }
+    const updated: SavedPlace = { ...existing, name };
+    await persist(
+      userId,
+      current.map((p) => (p.id === placeId ? updated : p)),
+    );
+    return updated;
+  });
 }
 
 export { MAX_PLACES, MAX_NAME_LENGTH };
