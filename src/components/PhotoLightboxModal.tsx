@@ -144,7 +144,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 16,
     paddingBottom: 32,
-    backgroundColor: 'rgba(0,0,0,0.45)',
+    backgroundColor: 'rgba(0,0,0,0.72)',
   },
   captionText: { color: '#fff', fontSize: 14, fontWeight: '600' },
   closeBtn: {

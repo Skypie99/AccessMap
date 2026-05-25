@@ -1242,8 +1242,8 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
     backgroundColor: color.surfaceNeutral,
   },
   cardBodyText: { flex: 1, gap: 4 },
-  cardDesc: { fontSize: 14, color: '#222' },
-  cardMeta: { fontSize: 12, color: '#666' },
+  cardDesc: { fontSize: 14, color: color.textStrong },
+  cardMeta: { fontSize: 12, color: color.textMuted },
   cardHint: { fontSize: 11, color: color.textSubtle, fontStyle: 'italic' },
   cardActions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 4 },
   actionBtn: {
