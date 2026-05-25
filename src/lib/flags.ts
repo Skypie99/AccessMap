@@ -220,6 +220,23 @@ export async function createFlag(
   return { row: data as FlagRow, tagsAccepted };
 }
 
+export type FlagContentPatch = {
+  description?: string | null;
+  category?: FlagCategory;
+  severity?: FlagSeverity;
+};
+
+export async function updateFlagContent(flagId: string, patch: FlagContentPatch) {
+  const { data, error } = await supabase
+    .from('flags')
+    .update(patch)
+    .eq('id', flagId)
+    .select()
+    .single();
+  if (error) throw error;
+  return data as FlagRow;
+}
+
 export async function updateFlagStatus(flagId: string, status: FlagStatus) {
   const { data, error } = await supabase
     .from('flags')
