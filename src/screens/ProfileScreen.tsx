@@ -76,6 +76,7 @@ import {
   type AchievementStats,
 } from '@/lib/achievements';
 import AchievementsModal from '@/components/AchievementsModal';
+import ReportsBreakdownCard from '@/components/ReportsBreakdownCard';
 import {
   REPUTATION_TIERS,
   getTier,
@@ -151,6 +152,12 @@ export default function ProfileScreen() {
   // list modal, open the detail modal, and re-show the list on close.
   const [reportsOpen, setReportsOpen] = useState(false);
   const [reportsRefreshKey, setReportsRefreshKey] = useState(0);
+  // Independent refresh key for the breakdown card so it refetches on
+  // every tab focus AND when the parent already-known triggers fire
+  // (detail-modal close, new report). Bumped from the focus effect
+  // below — distinct from `reportsRefreshKey` to keep the two consumers
+  // from accidentally re-fetching each other.
+  const [breakdownRefreshKey, setBreakdownRefreshKey] = useState(0);
   const [watchedOpen, setWatchedOpen] = useState(false);
   const [watchedRefreshKey, setWatchedRefreshKey] = useState(0);
   const [activityOpen, setActivityOpen] = useState(false);
@@ -391,6 +398,10 @@ export default function ProfileScreen() {
   useFocusEffect(
     useCallback(() => {
       void Promise.all([load(), refreshUpdateCount(), refreshStreak()]);
+      // Tell the breakdown card to refetch — its own counts are not in
+      // the Promise.all above (it owns its data fetch) so we drive it
+      // via the refresh-key bump.
+      setBreakdownRefreshKey((k) => k + 1);
     }, [load, refreshUpdateCount, refreshStreak]),
   );
 
@@ -844,6 +855,15 @@ export default function ProfileScreen() {
             )}
           </View>
         )}
+
+        {/* Category + severity breakdown of the user's own reports.
+            Refresh key bumps on every Profile focus via the
+            useFocusEffect above, and the parent doesn't need to call
+            into the card's internals — it owns its own fetch. */}
+        <ReportsBreakdownCard
+          userId={user?.id ?? null}
+          refreshKey={breakdownRefreshKey}
+        />
 
         <Pressable
           style={({ pressed }) => [
