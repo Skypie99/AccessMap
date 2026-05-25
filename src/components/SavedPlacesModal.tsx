@@ -278,6 +278,7 @@ export default function SavedPlacesModal({
                 value={nameInput}
                 onChangeText={setNameInput}
                 placeholder="e.g. Home, Work, Mom's"
+                placeholderTextColor={color.textMuted}
                 maxLength={MAX_NAME_LENGTH}
                 style={styles.input}
                 autoFocus

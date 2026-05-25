@@ -996,6 +996,7 @@ export default function ProfileScreen() {
               value={nameDraft}
               onChangeText={setNameDraft}
               placeholder="Add a display name"
+              placeholderTextColor={color.textMuted}
               style={styles.nameInput}
               editable={!savingName}
               accessibilityLabel="Display name"
