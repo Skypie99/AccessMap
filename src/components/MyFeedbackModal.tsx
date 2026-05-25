@@ -22,8 +22,10 @@ import {
   FEEDBACK_CATEGORY_FILTERS,
   FEEDBACK_CATEGORY_FILTER_LABELS,
   filterFeedback,
+  filterFeedbackByQuery,
   type FeedbackCategoryFilter,
 } from '@/lib/feedbackFilter';
+import SearchInputRow from '@/components/SearchInputRow';
 import type { FeedbackRow } from '@/types/database';
 
 interface Props {
@@ -59,6 +61,10 @@ export default function MyFeedbackModal({
   // Category filter for the chip row. Per-modal-open state — resets to
   // 'all' every time the modal closes so reopens always show everything.
   const [filter, setFilter] = useState<FeedbackCategoryFilter>('all');
+  // Free-text query for body search. Resets to '' on close so reopens
+  // always start with an unfiltered list (same discipline as the category
+  // filter above).
+  const [searchQuery, setSearchQuery] = useState('');
 
   const mountedRef = useRef(true);
   useEffect(() => {
@@ -82,18 +88,22 @@ export default function MyFeedbackModal({
     if (visible) load();
   }, [visible, refreshKey, load]);
 
-  // Reset the filter to 'all' on close so the next open starts clean.
-  // (We do it on close, not on open, so the value is correct before the
-  // first frame of the next render.)
+  // Reset the filter and search query on close so the next open starts
+  // clean. (We do it on close, not on open, so values are correct before
+  // the first frame of the next render.)
   useEffect(() => {
-    if (!visible) setFilter('all');
+    if (!visible) {
+      setFilter('all');
+      setSearchQuery('');
+    }
   }, [visible]);
 
-  // The list the FlatList renders — derived from rows + filter. Memoized
-  // so FlatList doesn't think the data array changed on every render.
+  // The list the FlatList renders — category filter first, then text
+  // query. Two-stage pipeline mirrors MyReportsModal. Memoized so
+  // FlatList doesn't think the data array changed on every render.
   const filteredRows = useMemo(
-    () => filterFeedback(rows, filter),
-    [rows, filter],
+    () => filterFeedbackByQuery(filterFeedback(rows, filter), searchQuery),
+    [rows, filter, searchQuery],
   );
 
   return (
@@ -126,6 +136,21 @@ export default function MyFeedbackModal({
               <Text style={styles.closeBtnText}>✕</Text>
             </Pressable>
           </View>
+
+          {/* Free-text search — only shown when there's more than one row
+              to filter (matching MyReportsModal's guard). Searches the
+              feedback body text; works in combination with the category
+              chips below (category applied first, then query). */}
+          {rows.length > 1 && (
+            <SearchInputRow
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              onClear={() => setSearchQuery('')}
+              placeholder="Search your feedback…"
+              accessibilityLabel="Search your feedback"
+              accessibilityHint="Filters your feedback list to entries whose text contains your search words"
+            />
+          )}
 
           {/* Category filter chips — only shown when there's more than
               one row to filter (otherwise the chips are noise). Style
