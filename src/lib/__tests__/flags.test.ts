@@ -49,6 +49,8 @@ import {
   DEFAULT_STATUSES,
   FLAG_PHOTOS_BUCKET,
   updateFlagContent,
+  uploadFlagPhoto,
+
 } from "../flags";
 import type {
   FlagCategory,
@@ -241,5 +243,62 @@ describe("updateFlagContent", () => {
     await updateFlagContent("flag-abc", { severity: 1 });
 
     expect(mockFrom).toHaveBeenCalledWith("flags");
+  });
+});
+
+// Validation paths in uploadFlagPhoto are pre-Storage: each one throws
+// before any Supabase call, so we can exercise them without a mocked
+// client. The "happy path" is still deferred until the wider
+// Supabase-mock setup lands (see header comment).
+describe("uploadFlagPhoto — input validation", () => {
+  const USER = "00000000-0000-0000-0000-000000000001";
+
+  it("rejects an empty URI", async () => {
+    await expect(uploadFlagPhoto(USER, "")).rejects.toThrow(
+      /no photo/i,
+    );
+  });
+
+  it("rejects an http(s) URI (would re-upload a remote image)", async () => {
+    await expect(
+      uploadFlagPhoto(USER, "https://example.com/foo.jpg"),
+    ).rejects.toThrow(/unsupported/i);
+  });
+
+  it("rejects a non-image extension on an otherwise valid scheme", async () => {
+    await expect(
+      uploadFlagPhoto(USER, "file:///tmp/payload.svg"),
+    ).rejects.toThrow(/jpg|png|webp|heic/i);
+  });
+
+  it("rejects an empty file body", async () => {
+    const originalFetch = global.fetch;
+    // Cast through unknown so we don't need DOM Fetch types in the test
+    // file. The validation path only awaits .arrayBuffer().
+    (global as unknown as { fetch: unknown }).fetch = async () => ({
+      arrayBuffer: async () => new ArrayBuffer(0),
+    });
+    try {
+      await expect(
+        uploadFlagPhoto(USER, "file:///tmp/empty.jpg"),
+      ).rejects.toThrow(/empty/i);
+    } finally {
+      (global as unknown as { fetch: unknown }).fetch = originalFetch;
+    }
+  });
+
+  it("rejects a file over 10 MB", async () => {
+    const originalFetch = global.fetch;
+    (global as unknown as { fetch: unknown }).fetch = async () => ({
+      // 10 MB + 1 byte
+      arrayBuffer: async () => new ArrayBuffer(10 * 1024 * 1024 + 1),
+    });
+    try {
+      await expect(
+        uploadFlagPhoto(USER, "file:///tmp/huge.jpg"),
+      ).rejects.toThrow(/too large|10 MB/i);
+    } finally {
+      (global as unknown as { fetch: unknown }).fetch = originalFetch;
+    }
   });
 });

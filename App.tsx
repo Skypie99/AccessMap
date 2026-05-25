@@ -13,6 +13,7 @@ import {
   getLastSeenPoints,
   setLastSeenPoints,
 } from '@/lib/points';
+import ErrorBoundary from '@/components/ErrorBoundary';
 import FlashBanner from '@/components/FlashBanner';
 import OnboardingCards from '@/components/OnboardingCards';
 import RootNavigator from '@/navigation/RootNavigator';
@@ -168,15 +169,18 @@ function FirstLaunchGate({ children }: { children: React.ReactNode }) {
 
 export default function App() {
   return (
-    <SafeAreaProvider>
-      <ThemeProvider>
-        <AuthProvider>
-          <FirstLaunchGate>
-            <Gate />
-          </FirstLaunchGate>
-          <StatusBar style="auto" />
-        </AuthProvider>
-      </ThemeProvider>
-    </SafeAreaProvider>
+    <ErrorBoundary>
+      <SafeAreaProvider>
+        <ThemeProvider>
+          <AuthProvider>
+            <FirstLaunchGate>
+              <Gate />
+            </FirstLaunchGate>
+            <StatusBar style="auto" />
+          </AuthProvider>
+        </ThemeProvider>
+      </SafeAreaProvider>
+    </ErrorBoundary>
+
   );
 }

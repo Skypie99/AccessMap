@@ -8,6 +8,40 @@ import type {
 
 export const FLAG_PHOTOS_BUCKET = 'flag-photos';
 
+// 10 MB. Bigger than any photo the picker will hand us at quality=0.7,
+// small enough that a runaway upload can't burn the user's data plan or
+// hog the device while we wait for arrayBuffer(). Tune up if real photos
+// start hitting this cap.
+const MAX_PHOTO_BYTES = 10 * 1024 * 1024;
+
+// Only image extensions we're willing to upload. Anything else (svg, html,
+// pdf, exe…) gets rejected with a clear message rather than landing in a
+// public Storage bucket with an inferred MIME type that may or may not
+// match the actual bytes.
+const ALLOWED_PHOTO_EXTS = new Set([
+  'jpg',
+  'jpeg',
+  'png',
+  'webp',
+  'heic',
+  'heif',
+]);
+
+// Schemes expo-image-picker produces. `file://` (most platforms),
+// `content://` (Android storage URIs), `ph://` and `assets-library://`
+// (iOS photo library). `data:` and `blob:` show up on web. We deliberately
+// don't accept `http(s)://` here — those would fetch from the network and
+// happily re-upload someone else's image. The whole point of this helper
+// is "take this just-picked local photo and put it in Storage."
+const ALLOWED_PHOTO_SCHEMES = [
+  'file://',
+  'content://',
+  'ph://',
+  'assets-library://',
+  'data:',
+  'blob:',
+];
+
 /**
  * Default page sizes used by listFlagsPage and FlagsProvider.
  * Exported here so flagsStore.tsx and TasksScreen.tsx can import them
@@ -19,18 +53,45 @@ export const NEXT_PAGE_SIZE = 20;
 /**
  * Upload a local image (file:// URI from expo-image-picker) to the
  * flag-photos Supabase bucket and return its public URL.
+ *
+ * Validates the URI scheme, the extension, and the byte size before
+ * touching Storage so a malformed pick or a runaway file fails loudly
+ * here instead of silently filling the bucket with garbage.
  */
 export async function uploadFlagPhoto(
   userId: string,
   localUri: string,
 ): Promise<string> {
-  const response = await fetch(localUri);
-  const arrayBuffer = await response.arrayBuffer();
-  // Pick an extension from the uri; default to jpg.
+  if (!localUri || typeof localUri !== 'string') {
+    throw new Error('No photo selected.');
+  }
+  if (!ALLOWED_PHOTO_SCHEMES.some((s) => localUri.startsWith(s))) {
+    throw new Error('Unsupported photo source.');
+  }
+  // Pick an extension from the uri; default to jpg for schemes that
+  // don't carry one (data:, blob:, some content:// uris).
   const match = /\.([a-zA-Z0-9]+)(?:\?.*)?$/.exec(localUri);
   const ext = (match?.[1] ?? 'jpg').toLowerCase();
+  if (!ALLOWED_PHOTO_EXTS.has(ext)) {
+    throw new Error('Photo must be a JPG, PNG, WEBP, or HEIC image.');
+  }
+
+  const response = await fetch(localUri);
+  const arrayBuffer = await response.arrayBuffer();
+  if (arrayBuffer.byteLength === 0) {
+    throw new Error('Photo file is empty.');
+  }
+  if (arrayBuffer.byteLength > MAX_PHOTO_BYTES) {
+    throw new Error('Photo is too large. Please pick one under 10 MB.');
+  }
   const contentType =
-    ext === 'png' ? 'image/png' : ext === 'webp' ? 'image/webp' : 'image/jpeg';
+    ext === 'png'
+      ? 'image/png'
+      : ext === 'webp'
+        ? 'image/webp'
+        : ext === 'heic' || ext === 'heif'
+          ? 'image/heic'
+          : 'image/jpeg';
   const filePath = `${userId}/${Date.now()}.${ext}`;
 
   const { error: uploadErr } = await supabase.storage

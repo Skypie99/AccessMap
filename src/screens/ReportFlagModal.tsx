@@ -266,26 +266,32 @@ export default function ReportFlagModal({
             placeholder="What's going on here?"
             placeholderTextColor={color.textMuted}
             multiline
-            maxLength={500}
+            // Mirror the DB check constraint
+            // (flags_description_length_chk in
+            // supabase/migrations/2026-05-23_data_layer_hardening.sql).
+            // Cap the input here too so the user can't paste a wall of
+            // text only to get a Postgres error after upload+insert.
+            maxLength={2000}
+
             style={styles.input}
             accessibilityLabel="Description of the accessibility issue"
-            accessibilityHint="Optional. Up to 500 characters."
+            accessibilityHint="Optional. Up to 2000 characters."
           />
           {/* Character counter — visible once the user starts typing.
-              Turns amber at 400 chars (20% left) and red at 480 (4% left)
+              Turns amber at 1800 chars (200 left) and red at 1960 (40 left)
               so they have clear warning before the hard limit cuts them off. */}
           {description.length > 0 && (
             <Text
               style={[
                 styles.charCounter,
-                description.length >= 480 && styles.charCounterRed,
-                description.length >= 400 &&
-                  description.length < 480 &&
+                description.length >= 1960 && styles.charCounterRed,
+                description.length >= 1800 &&
+                  description.length < 1960 &&
                   styles.charCounterAmber,
               ]}
-              accessibilityLabel={`${description.length} of 500 characters used`}
+              accessibilityLabel={`${description.length} of 2000 characters used`}
             >
-              {description.length} / 500
+              {description.length} / 2000
             </Text>
           )}
 
