@@ -81,15 +81,29 @@ Cycle F shipped F3/F6/F-search via `cycle/F-2026-05-24`. These remain:
 - **Flag editing** — reporter can edit open flag description/severity. Jordan
   conditions documented in `qa-reports/2026-05-25_Jordan_flag-edit-review.md`;
   confirm final RLS migration is applied before shipping widely.
-- **Offline / PWA support.** Cache recent flags + OSM tiles seen recently for
-  flaky connections. (**Jordan review required** — touches cached user location
-  + flag data.)
-- **Push notifications on flag updates.** Reporter learns when their flag is
-  verified or resolved; requires Edge Function + push token storage.
-  (**Jordan review required** — push tokens are user-identifiable data.)
 - **Tasks screen sort options** (R7) — merge branch when queue clears.
 - **Map long-press to drop a flag** (R8) — merge branch when queue clears.
 - **Profile nearest-unresolved jump** (R9) — merge branch when queue clears.
+
+---
+
+## Shipped 2026-05-25 — Wave 4
+
+- **Offline Cache (AsyncStorage persistence).** `FlagsProvider` persists flag
+  data to AsyncStorage with a 24 h TTL and a user-scoped cache key. App shows
+  stale data gracefully when offline; cache clears on sign-out. No migration
+  required.
+- **Push Notifications (opt-in).** Expo push token stored in a new
+  `push_tokens` table (migration propose-only). Opt-in flow with in-app
+  explanation, Settings toggle to enable/disable, and token cleared on
+  sign-out. Edge Function `notify-flag-status` fires on flag status change;
+  notification content: "Your [category] flag was [verified/resolved]."
+  **Requires Sky action before production use:** apply the `push_tokens`
+  migration, deploy the `notify-flag-status` Edge Function, and run
+  `npx expo install expo-notifications`.
+- **Centralised `signOut(userId)` cleanup.** Clears offline cache + push token
+  before the Supabase auth sign-out, ensuring no stale data or orphaned tokens
+  remain after a session ends.
 
 ---
 
