@@ -199,7 +199,7 @@ export default function AddressSearchModal({
             autoCapitalize="words"
             autoCorrect={false}
             placeholder="e.g. 1 Infinite Loop, Cupertino"
-            placeholderTextColor={color.textSubtle}
+            placeholderTextColor={color.placeholderText}
             style={styles.input}
             returnKeyType="search"
             accessibilityLabel="Address search"

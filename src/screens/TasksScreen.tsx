@@ -44,6 +44,7 @@ import {
   toggleId,
   type TaskSelectionState,
 } from '@/lib/taskSelection';
+import { loadScope, saveScope } from '@/lib/tasksScope';
 import type { FlagRow, FlagStatus } from '@/types/database';
 import type { RootTabParamList } from '@/navigation/RootNavigator';
 import FlagDetailModal, {
@@ -83,8 +84,30 @@ export default function TasksScreen() {
   );
 
   // "Mine only" toggle — when true, shows only the current user's submitted
-  // flags. Local session state — not persisted. Hidden when not signed in.
+  // flags. Persisted device-wide via AsyncStorage so the preference survives
+  // app restarts. Hydrated from disk in an effect (same pattern as sortMode).
   const [mineOnly, setMineOnly] = useState(false);
+  // Guard: chips are disabled until the stored value has loaded. Without this,
+  // a tap before hydration completes would be overwritten by the effect's
+  // setMineOnly(saved) call, silently reverting the user's choice.
+  const [mineOnlyHydrated, setMineOnlyHydrated] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    void loadScope().then((saved) => {
+      if (!cancelled) {
+        setMineOnly(saved);
+        setMineOnlyHydrated(true);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+  const handleScopeChange = useCallback((next: boolean) => {
+    setMineOnly(next);
+    // Fire-and-forget — saveScope fails-soft with a console.warn.
+    void saveScope(next);
+  }, []);
 
   // Min-severity threshold. 0 means "show all" (no filter applied); 2..5
   // means "show flags with severity >= N". Lets coordinators focus on the
@@ -488,22 +511,24 @@ export default function TasksScreen() {
       {userId && (
         <View style={styles.mineToggleRow}>
           <Pressable
-            onPress={() => setMineOnly(false)}
+            onPress={() => handleScopeChange(false)}
+            disabled={!mineOnlyHydrated}
             style={[styles.mineChip, !mineOnly && styles.mineChipActive]}
             accessibilityRole="button"
             accessibilityLabel="Show all flags"
-            accessibilityState={{ selected: !mineOnly }}
+            accessibilityState={{ selected: !mineOnly, disabled: !mineOnlyHydrated }}
           >
             <Text style={[styles.mineChipText, !mineOnly && styles.mineChipTextActive]}>
               All
             </Text>
           </Pressable>
           <Pressable
-            onPress={() => setMineOnly(true)}
+            onPress={() => handleScopeChange(true)}
+            disabled={!mineOnlyHydrated}
             style={[styles.mineChip, mineOnly && styles.mineChipActive]}
             accessibilityRole="button"
             accessibilityLabel="Show only my flags"
-            accessibilityState={{ selected: mineOnly }}
+            accessibilityState={{ selected: mineOnly, disabled: !mineOnlyHydrated }}
           >
             <Text style={[styles.mineChipText, mineOnly && styles.mineChipTextActive]}>
               Mine

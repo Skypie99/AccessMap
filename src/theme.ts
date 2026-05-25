@@ -62,6 +62,7 @@ export const color = {
   text: '#333',                 // body (12.6:1)
   textMuted: '#666',            // secondary (5.7:1, AA pass)
   textSubtle: '#999',           // disabled / tertiary; only for non-essential text or 18pt+
+  placeholderText: '#5b6470',   // TextInput placeholder — AA pass: ~4.7:1 on white, ~4.5:1 on #f7f9fc
   textOnBrand: '#fff',          // text drawn on brand-blue or severity colors
 
   // Brand — primary action color
