@@ -1,0 +1,91 @@
+{
+  "// =========================================================================": "",
+  "// AccessMap — EAS Build & Submit Configuration": "",
+  "// =========================================================================": "",
+  "//": "",
+  "// PROFILES:": "",
+  "//   development  — iOS device build with Expo dev client. Use for local": "",
+  "//                  feature work. Requires a registered device UDID.": "",
+  "//                  Command: eas build --profile development --platform ios": "",
+  "//   preview      — iOS internal distribution (TestFlight) for QA/stakeholder": "",
+  "//                  review. Invite testers via App Store Connect.": "",
+  "//                  Command: eas build --profile preview --platform ios": "",
+  "//   production   — App Store submission build. Use eas submit after build.": "",
+  "//                  Command: eas build --profile production --platform ios": "",
+  "//": "",
+  "// CREDENTIALS REQUIRED BEFORE FIRST BUILD:": "",
+  "//   APPLE_TEAM_ID   — 10-character ID from developer.apple.com/account": "",
+  "//                     Set via: eas secret:create --name APPLE_TEAM_ID --value <id>": "",
+  "//   APPLE_ID        — Your Apple ID email (used by eas submit for iOS)": "",
+  "//                     Set via: eas secret:create --name APPLE_ID --value <email>": "",
+  "//   ASC_APP_ID      — App Store Connect numeric app ID (find in App Store": "",
+  "//                     Connect → App → General → App Information → Apple ID)": "",
+  "//                     Set in submit.production.ios.ascAppId below once known.": "",
+  "//   Android (future) — serviceAccountKeyPath: path to a Google Service Account": "",
+  "//                     JSON key downloaded from Google Play Console →": "",
+  "//                     Setup → API access. Not needed for iOS-only builds.": "",
+  "// =========================================================================": "",
+
+  "cli": {
+    "version": ">= 10.0.0"
+  },
+
+  "build": {
+    "development": {
+      "// description": "iOS dev-client build for physical device testing. developmentClient enables the Expo Go-style launcher. simulator: false = real device only.",
+      "developmentClient": true,
+      "distribution": "internal",
+      "ios": {
+        "simulator": false,
+        "// TODO": "Register device UDIDs via: eas device:create. APPLE_TEAM_ID must be set in EAS secrets."
+      },
+      "env": {
+        "APP_ENV": "development"
+      }
+    },
+
+    "preview": {
+      "// description": "iOS internal TestFlight build for QA and stakeholder review. distribution: internal uploads to TestFlight automatically after build.",
+      "distribution": "internal",
+      "ios": {
+        "bundleIdentifier": "com.accessmap.app",
+        "// TODO": "APPLE_TEAM_ID must be set in EAS secrets before this profile works."
+      },
+      "env": {
+        "APP_ENV": "preview"
+      }
+    },
+
+    "production": {
+      "// description": "App Store submission build. After a successful build run: eas submit --profile production --platform ios",
+      "distribution": "store",
+      "ios": {
+        "bundleIdentifier": "com.accessmap.app",
+        "// TODO": "APPLE_TEAM_ID and signing credentials must be configured in EAS. Run: eas credentials"
+      },
+      "env": {
+        "APP_ENV": "production"
+      }
+    }
+  },
+
+  "submit": {
+    "production": {
+      "ios": {
+        "// DOCS": "https://docs.expo.dev/submit/ios/",
+        "// TODO_APPLE_ID": "Replace with your Apple ID email. Can also be set via EXPO_APPLE_ID env var.",
+        "appleId": "TODO_APPLE_ID@example.com",
+        "// TODO_ASC_APP_ID": "Replace with the numeric App Store Connect app ID once the app record is created.",
+        "ascAppId": "TODO_ASC_APP_ID",
+        "// TODO_APPLE_TEAM_ID": "Replace with your 10-character Apple Team ID from developer.apple.com/account.",
+        "appleTeamId": "TODO_APPLE_TEAM_ID"
+      },
+      "android": {
+        "// DOCS": "https://docs.expo.dev/submit/android/",
+        "// TODO_serviceAccountKeyPath": "Path to Google Service Account JSON key from Google Play Console → Setup → API access. Not needed until Android support is added.",
+        "serviceAccountKeyPath": "TODO_PATH_TO_GOOGLE_SERVICE_ACCOUNT_KEY.json",
+        "track": "internal"
+      }
+    }
+  }
+}
