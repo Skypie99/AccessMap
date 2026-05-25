@@ -33,6 +33,8 @@ export interface SearchInputRowProps {
   placeholder?: string;
   autoFocus?: boolean;
   accessibilityLabel?: string;
+  /** Passed to the TextInput's accessibilityHint — describes what the search filters. */
+  accessibilityHint?: string;
   /** Override styles on the outer wrapper (e.g. margin, width). */
   wrapStyle?: ViewStyle;
 }
@@ -44,6 +46,7 @@ export default function SearchInputRow({
   placeholder = 'Search…',
   autoFocus = false,
   accessibilityLabel = 'Search',
+  accessibilityHint,
   wrapStyle,
 }: SearchInputRowProps) {
   const color = useColor();
@@ -67,6 +70,7 @@ export default function SearchInputRow({
         returnKeyType="search"
         maxLength={200}
         accessibilityLabel={accessibilityLabel}
+        accessibilityHint={accessibilityHint}
       />
 
       {value.length > 0 && (
