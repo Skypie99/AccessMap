@@ -14,6 +14,10 @@ they land on `main`.
 
 ### Parked (2026-05-25)
 
+- **`fix/dani-statushistory-darkmode-2026-05-25`** — StatusHistoryModal
+  background `'#fff'` → `color.surface`; `list`/`listitem` ARIA roles added
+  for web a11y.
+
 - **`a11y/full-sweep-2026-05-25`** — Full a11y sweep; WIP/stashed. Includes
   MyReportsModal chip tap-target fix (44pt). Unblock by finishing the cluster
   + edit-form a11y items documented in
@@ -28,18 +32,43 @@ they land on `main`.
 
 ## Later (sequence after the above)
 
-- **Offline map tile caching.** Pre-fetch tiles for a user's home area so the
-  map renders without network access, complementing the existing flag-data
-  offline cache.
-- **Flag photo review flow.** Let verifiers view/enlarge the submitted photo
-  inline inside the triage modal before accepting or rejecting a flag.
+- **Leaflet tile interception.** Wire `tileCache.ts` into `PlatformMap.web.tsx`
+  using `L.TileLayer.extend` + canvas→base64 so web tiles survive offline.
+  Pseudo-code in `qa-reports/2026-05-25-shamus-offline-tiles.md`.
+
 - **Neighbourhood heat-map layer.** Overlay a colour-density grid on the map
   based on flag density so users can spot high-risk corridors at a glance.
+  **Jordan pre-review required** (location + disability data, Const. Art. 7).
+
+- **react-native-maps tile interception.** Native URLSession/OkHttp override to
+  wire `tileCache.ts` into `PlatformMap.tsx`; requires managed-workflow ejection
+  or a native module.
 
 ---
 
 ## Shipped 2026-05-25 — Wave 4 (later commits)
 
+- **Photo thumbnails inline in Tasks triage.** `FlagCard` renders the submitted
+  photo as an inline thumbnail inside the triage flow. (`a24b44a`)
+- **`flagsMap` O(1) lookups.** `useMemo`-derived `flagsMap` replaces linear
+  scans across the flags array; keyed by flag ID. (`ef7a215`)
+- **`renderItem` useCallback memoization + status history data layer.**
+  `renderItem` in `TasksScreen` is stable across renders; `FlagsProvider`
+  extended with status-history query support. (`582b1c4`)
+- **A11y residuals — 3 items.** `MapScreen` `announceForAccessibility` on filter
+  change; `useReducedMotion` guard in both `PlatformMap` variants; web photo
+  `alt` text on `FlagCard` thumbnails. (`673e296`)
+- **Offline tile cache foundation.** `tileCache.ts` — TTL/LRU eviction, sign-out
+  clear. Cache layer is shipped; tile interception (Leaflet + native) is
+  propose-only (see Later). (`9597c31`)
+- **ESLint + Prettier config.** Lint and format rules added to the repo.
+  (`52fb592`)
+- **Jest open-handles fix.** Test suite exits cleanly; no dangling async handles.
+  (`a42518a`)
+- **LEARNINGS.md sequential merge/build rule.** Concurrent-agent worktree
+  isolation rule documented.
+- **Design tokens.** `size.thumb`, `size.cardMin`, `backdropStrong`,
+  `backdropCaption`, `overlayBtn` added to the token set.
 - **TasksScreen renderItem memoization.** `renderItem` wrapped in `useCallback`
   to prevent unnecessary re-renders on list updates. (`582b1c4`)
 - **Flag status timeline UI.** Flag detail modal shows a chronological status
