@@ -538,7 +538,7 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
   },
   rowBodyText: { flex: 1, gap: 4 },
   rowDesc: { fontSize: 14, color: '#222' },
-  rowDescMuted: { fontSize: 14, color: '#999', fontStyle: 'italic' },
+  rowDescMuted: { fontSize: 14, color: color.textSubtle, fontStyle: 'italic' },
   rowMeta: { fontSize: 12, color: '#666' },
   emptyWrap: {
     alignItems: 'center',
