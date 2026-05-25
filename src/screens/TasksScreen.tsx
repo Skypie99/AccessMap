@@ -708,12 +708,7 @@ export default function TasksScreen() {
           // spinner or end-state beneath an empty list would be confusing.
           sections.length === 0 ? null : (
             <View style={styles.footer}>
-              {loadingMore ? (
-                <ActivityIndicator
-                  accessibilityLabel="Loading more flags"
-                  accessibilityState={{ busy: true }}
-                />
-              ) : hasMore ? (
+              {hasMore ? (
                 <Pressable
                   onPress={handleLoadMore}
                   style={({ pressed }) => [
@@ -723,8 +718,16 @@ export default function TasksScreen() {
                   accessibilityRole="button"
                   accessibilityLabel="Load 20 more flags"
                   accessibilityHint="Fetches the next page of accessibility reports"
+                  accessibilityState={{ busy: loadingMore }}
                 >
-                  <Text style={styles.loadMoreText}>Load 20 more</Text>
+                  {loadingMore ? (
+                    <ActivityIndicator
+                      accessibilityLabel="Loading more flags"
+                      accessibilityState={{ busy: true }}
+                    />
+                  ) : (
+                    <Text style={styles.loadMoreText}>Load 20 more</Text>
+                  )}
                 </Pressable>
               ) : (
                 <Text
@@ -1092,7 +1095,7 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
     borderRadius: 999,
     borderWidth: 1,
     borderColor: color.brand,
-    backgroundColor: color.surface,
+    backgroundColor: color.surfaceNeutral,
     minHeight: 44,
     minWidth: 160,
     alignItems: 'center',
