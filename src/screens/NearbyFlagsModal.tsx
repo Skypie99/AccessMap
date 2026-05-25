@@ -21,6 +21,7 @@ import {
 import { searchFlags } from '@/lib/flagSearch';
 import type { FlagCategory, FlagRow } from '@/types/database';
 import SearchInputRow from '@/components/SearchInputRow';
+import { radius } from '@/theme';
 
 interface Props {
   visible: boolean;
@@ -357,7 +358,7 @@ const styles = StyleSheet.create({
   chip: {
     paddingHorizontal: 14,
     paddingVertical: 7,
-    borderRadius: 999,
+    borderRadius: radius.circle,
     backgroundColor: '#eef1f5',
     minHeight: 34,
     alignItems: 'center',

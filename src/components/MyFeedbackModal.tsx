@@ -195,6 +195,7 @@ export default function MyFeedbackModal({
           <FlatList
             data={filteredRows}
             keyExtractor={(r) => r.id}
+            accessibilityRole="list"
             refreshControl={
               <RefreshControl refreshing={loading} onRefresh={load} />
             }
@@ -267,6 +268,7 @@ function FeedbackRowCard({ row }: { row: FeedbackRow }) {
     <View
       style={styles.rowCard}
       accessible
+      role="listitem"
       accessibilityLabel={`${categoryLabel} feedback sent ${formattedDate}: ${preview}`}
     >
       <View style={styles.rowHeader}>

@@ -34,6 +34,7 @@ import {
   STATUS_LABELS,
 } from '@/lib/flags';
 import { clearWatched, loadWatched, removeWatched } from '@/lib/watchedFlags';
+import { radius } from '@/theme';
 import { decorativeProps } from '@/lib/accessibility';
 import { severityA11y, statusA11y } from '@/lib/a11yText';
 import type { FlagRow } from '@/types/database';
@@ -171,6 +172,7 @@ export default function MyWatchedModal({
     const isResolved = item.status === 'resolved';
 
     return (
+      <View role="listitem">
       <Pressable
         style={({ pressed }) => [
           styles.row,
@@ -255,6 +257,7 @@ export default function MyWatchedModal({
           </Pressable>
         </View>
       </Pressable>
+      </View>
     );
   };
 
@@ -341,6 +344,7 @@ export default function MyWatchedModal({
               contentContainerStyle={styles.list}
               ItemSeparatorComponent={() => <View style={styles.separator} />}
               showsVerticalScrollIndicator={false}
+              accessibilityRole="list"
               accessibilityLabel={`Watched flags list, ${flags.length} ${flags.length === 1 ? 'item' : 'items'}`}
             />
           )}
@@ -448,7 +452,7 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
   statusBadge: {
     paddingHorizontal: 8,
     paddingVertical: 4,
-    borderRadius: 999,
+    borderRadius: radius.circle,
   },
   statusText: { fontSize: 11, fontWeight: '700' },
   unwatchBtn: {

@@ -28,6 +28,7 @@ import {
 } from '@/lib/notificationPrefs';
 import type { FlagStatus } from '@/types/database';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
+import { radius } from '@/theme';
 
 interface Props {
   visible: boolean;
@@ -293,7 +294,7 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
   statusBadge: {
     paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 999,
+    borderRadius: radius.circle,
     minWidth: 76,
     alignItems: 'center',
   },

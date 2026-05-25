@@ -21,6 +21,7 @@ import type {
   Achievement,
   AchievementCategory,
 } from '@/lib/achievements';
+import { radius } from '@/theme';
 
 interface Props {
   visible: boolean;
@@ -233,7 +234,7 @@ const styles = StyleSheet.create({
   statePill: {
     paddingHorizontal: 10,
     paddingVertical: 6,
-    borderRadius: 999,
+    borderRadius: radius.circle,
     minWidth: 64,
     alignItems: 'center',
   },
