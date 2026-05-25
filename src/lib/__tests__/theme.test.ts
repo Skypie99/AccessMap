@@ -197,6 +197,22 @@ describe('color.placeholderText (E1 carry)', () => {
   });
 });
 
+// -------------------------------------------------------------------------
+// Cycle F / F5 — placeholder-sweep contrast lock
+//
+// Gary + Alex audit (2026-05-25) measured color.textMuted (#666) on
+// color.surfaceSoft (#f7f8fa) at ~5.39:1 — above the WCAG AA 4.5:1 floor
+// for normal text. This assertion locks that pairing so a future token
+// change can't silently drop it below AA.
+// -------------------------------------------------------------------------
+
+describe('color.textMuted on color.surfaceSoft (Cycle F / F5)', () => {
+  it('color.textMuted on color.surfaceSoft meets WCAG AA (>=4.5:1)', () => {
+    const ratio = contrastRatio(color.textMuted, color.surfaceSoft);
+    expect(ratio).toBeGreaterThanOrEqual(4.5);
+  });
+});
+
 // Re-import severity locally so the test above can compare without
 // importing the whole module twice at the top.
 function severity4Color(): string {
