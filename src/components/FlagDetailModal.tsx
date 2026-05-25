@@ -15,6 +15,7 @@ import {
   View,
 } from 'react-native';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
+import { font } from '@/theme';
 import { useAuth } from '@/lib/auth';
 import { confirm } from '@/lib/confirm';
 import { getDirectionsUrl } from '@/lib/directionsLink';
@@ -694,7 +695,7 @@ export default function FlagDetailModal({
                 accessibilityState={{ disabled: busy, busy }}
               >
                 {busy ? (
-                  <ActivityIndicator color="#333" />
+                  <ActivityIndicator color={color.text} />
                 ) : (
                   <Text style={styles.rejectText}>Reject</Text>
                 )}
@@ -761,7 +762,7 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
     alignItems: 'center',
     gap: 12,
   },
-  title: { fontSize: 20, fontWeight: '700', flex: 1, color: '#222' },
+  title: { fontSize: 20, fontWeight: '700', flex: 1, color: color.textStrong },
   closeBtn: {
     width: 32,
     height: 32,
@@ -770,14 +771,14 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  closeBtnText: { fontSize: 16, color: '#333', fontWeight: '700' },
+  closeBtnText: { fontSize: 16, color: color.text, fontWeight: '700' },
   body: { flexShrink: 1 },
   bodyContent: { gap: 8, paddingBottom: 4 },
   photo: {
     width: '100%',
     aspectRatio: 4 / 3,
     borderRadius: 12,
-    backgroundColor: '#eef1f5',
+    backgroundColor: color.surfaceNeutral,
     overflow: 'hidden',
   },
   photoInner: { width: '100%', height: '100%' },
@@ -786,7 +787,7 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  photoPlaceholderText: { color: '#666', fontSize: 14, fontWeight: '600' },
+  photoPlaceholderText: { color: color.textMuted, fontSize: 14, fontWeight: '600' },
   metaRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -808,13 +809,13 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
   sectionLabel: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#666',
+    color: color.textMuted,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
     marginTop: 8,
   },
-  description: { fontSize: 15, color: '#222', lineHeight: 21 },
-  metaValue: { fontSize: 14, color: '#333' },
+  description: { fontSize: font.size.md, color: color.textStrong, lineHeight: 21 },
+  metaValue: { fontSize: 14, color: color.text },
   coordsRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -849,8 +850,10 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
   verifyText: { color: color.textOnBrand, fontWeight: '700', fontSize: 14 },
   resolveBtn: { backgroundColor: '#27ae60' },
   resolveText: { color: '#fff', fontWeight: '700', fontSize: 14 },
-  rejectBtn: { backgroundColor: '#eef1f5' },
-  rejectText: { color: '#333', fontWeight: '700', fontSize: 14 },
+  // Reject uses a neutral surface so it reads clearly in dark mode.
+  // color.surfaceNeutral adapts to dark (#2a2a2a) automatically.
+  rejectBtn: { backgroundColor: color.surfaceNeutral },
+  rejectText: { color: color.text, fontWeight: '700', fontSize: 14 },
   deleteBtn: { backgroundColor: '#e74c3c' },
   deleteText: { color: '#fff', fontWeight: '700', fontSize: 14 },
   viewMapBtn: {
@@ -951,14 +954,16 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
     marginRight: 8,
     backgroundColor: color.surface,
   },
-  categoryChipActive: { borderColor: color.brand, backgroundColor: color.brandSoft },
+  // Active chip: filled-brand, matching the MapScreen filter panel pattern.
+  // color.brand (#2f80ed) background with white text — same as filterPillActive.
+  categoryChipActive: { borderColor: color.brand, backgroundColor: color.brand },
   categoryChipText: { fontSize: 13, color: color.text },
-  categoryChipTextActive: { color: color.brandOnSoft, fontWeight: '700' },
+  categoryChipTextActive: { color: color.textOnBrand, fontWeight: '700' },
   severityRow: { flexDirection: 'row', gap: 8 },
   severityBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1.5,
