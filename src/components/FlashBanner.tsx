@@ -60,7 +60,6 @@ export default function FlashBanner({
         accessibilityRole="button"
         accessibilityLabel={message}
         accessibilityHint="Tap to dismiss"
-        accessibilityLiveRegion="polite"
       >
         <Text style={styles.text}>{message}</Text>
       </Pressable>
@@ -90,7 +89,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     elevation: 4,
   },
-  pillSuccess: { backgroundColor: '#27ae60' },
+  pillSuccess: { backgroundColor: '#1e8449' },
   pillInfo: { backgroundColor: '#2f80ed' },
   text: { color: '#fff', fontWeight: '700', fontSize: 14, textAlign: 'center' },
 });
