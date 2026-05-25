@@ -916,3 +916,25 @@ re-normalize).
 
 Tests are easy to write: construct an NFD string from
 `'cafe' + '́'` and ensure the NFC query matches.
+
+---
+
+## 2026-05-25 — Concurrent merge agents collide without worktree isolation
+
+When multiple agents (e.g., two Shamus merge agents) run simultaneously in the
+same git working tree, they race on branch checkouts and file edits.
+
+**What happened:** A safety-merge Shamus and a pagination-merge Shamus both ran
+concurrently. The pagination agent accidentally merged onto `a11y/cherry-pick-2026-05-25`
+instead of `main` because the safety agent had switched branches mid-flight.
+Multiple merge aborts, stashes, and retries were needed. Both eventually succeeded,
+but the detour consumed significant context and wall-clock time.
+
+**Rule:** Any time two or more agents could both touch `git checkout` or modify
+tracked files, they MUST use `git worktree add` to get isolated working trees.
+This applies to all Shamus merge agents, Shamus build agents, and Dani compile runs
+that edit files.
+
+**Enforcement:** Morgan's plan must add `isolation: "worktree"` to every Agent call
+that touches the shared working directory. A single merge agent is safe; two concurrent
+ones are not.
