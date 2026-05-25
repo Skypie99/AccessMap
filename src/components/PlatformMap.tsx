@@ -6,6 +6,7 @@ import type MapView from 'react-native-maps';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { CATEGORY_LABELS, severityColor } from '@/lib/flags';
 import { decorativeProps } from '@/lib/accessibility';
+import { severityA11y, statusA11y } from '@/lib/a11yText';
 import type { FlagRow } from '@/types/database';
 
 export interface PlatformMapRegion {
@@ -140,7 +141,7 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(
             pinColor={severityColor(f.severity)}
             opacity={focusedFlagId && focusedFlagId !== f.id ? 0.55 : 1}
             accessibilityRole="button"
-            accessibilityLabel={`${CATEGORY_LABELS[f.category]}, severity ${f.severity} of 5, ${f.status}. Tap to view details.`}
+            accessibilityLabel={`${CATEGORY_LABELS[f.category]}, ${severityA11y(f.severity)}, ${statusA11y(f.status)}. Tap to view details.`}
           >
             <Callout tooltip>
               <View style={styles.callout}>

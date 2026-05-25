@@ -8,6 +8,7 @@ import {
   useWindowDimensions,
   View,
 } from 'react-native';
+import { useReducedMotion } from '@/lib/accessibility';
 
 interface Props {
   visible: boolean;
@@ -45,10 +46,11 @@ export default function OnboardingModal({ visible, onDone }: Props) {
   const { width } = useWindowDimensions();
   const scrollRef = useRef<ScrollView | null>(null);
   const [index, setIndex] = useState(0);
+  const reducedMotion = useReducedMotion();
 
   const goTo = (next: number) => {
     const clamped = Math.max(0, Math.min(CARDS.length - 1, next));
-    scrollRef.current?.scrollTo({ x: clamped * width, animated: true });
+    scrollRef.current?.scrollTo({ x: clamped * width, animated: !reducedMotion });
     setIndex(clamped);
   };
 

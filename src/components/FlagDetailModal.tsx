@@ -37,6 +37,7 @@ import {
   updateFlagStatus,
   type FlagContentPatch,
 } from '@/lib/flags';
+import { severityA11y, statusA11y } from '@/lib/a11yText';
 import type { FlagCategory, FlagRow, FlagSeverity, FlagStatus } from '@/types/database';
 import PhotoLightboxModal from './PhotoLightboxModal';
 import StatusHistoryModal from './StatusHistoryModal';
@@ -378,7 +379,7 @@ export default function FlagDetailModal({
                   { backgroundColor: severityColor(shownFlag.severity) },
                 ]}
                 accessible
-                accessibilityLabel={`Severity ${shownFlag.severity} out of 5`}
+                accessibilityLabel={severityA11y(shownFlag.severity)}
               >
                 <Text style={styles.severityChipText}>
                   Severity {shownFlag.severity}
@@ -390,7 +391,7 @@ export default function FlagDetailModal({
                   { backgroundColor: statusPalette.bg },
                 ]}
                 accessible
-                accessibilityLabel={`Status: ${STATUS_LABELS[status]}`}
+                accessibilityLabel={statusA11y(status)}
               >
                 <Text style={[styles.statusBadgeText, { color: statusPalette.fg }]}>
                   {STATUS_LABELS[status]}
