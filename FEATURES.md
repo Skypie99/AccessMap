@@ -10,18 +10,17 @@ they land on `main`.
 
 ---
 
-## Parked on branches (2026-05-24) — awaiting Sky merge
+## Merged to main (2026-05-24) — complete
 
-All gates green. Merge ORDER matters — stabilization before Cycle E.
+All four branches merged in order (stabilization → Cycle E → a11y/signin → a11y/contrast).
 
 - **`chore/stabilization-2026-05-24`** (`c02a59f`) — Post-build polish:
   15-file hex-literal → theme-token migration (dark-mode prerequisite),
   ProfileScreen sign-out confirm(), filterSets/filterPresets deprecation
   comments, error-handling tier policy in CLAUDE.md. 0 TS errors · 673 tests.
-  Merge command: `git merge chore/stabilization-2026-05-24`
 
 - **Cycle E — `cycle/E-2026-05-24`** (`475cb6c`) — 5 features + QA polish.
-  Merge AFTER stabilization. 0 TS errors · 690 tests.
+  Merged after stabilization. 0 TS errors · 690 tests.
   - `color.placeholderText` AA token (#5b6470, 4.5:1+) + 6 callsites
   - Default filter set applied on launch (was wired but never fired)
   - `decorativeProps` helper in `src/lib/accessibility.ts` + sweep
@@ -29,18 +28,15 @@ All gates green. Merge ORDER matters — stabilization before Cycle E.
   - `SearchInputRow` reusable component — HelpModal + NearbyFlagsModal refactored
   - QA polish: SearchInputRow `wrapStyle` prop (H1), scope hydration race (H2),
     star chip `accessibilityElementsHidden` (M1), `resolvedAccent` importantForAccessibility (M2)
-  Merge command: `git merge cycle/E-2026-05-24`
 
 - **`a11y/signin-a11y-2026-05-24`** (`3d578c5`) — SignInScreen accessibility:
   visible field labels, border contrast `#ccc`→`#666` (5.7:1), placeholderTextColor,
   `accessibilityRole="header"` on title. 1 file. 0 errors · 673 tests.
-  Merge command: `git merge a11y/signin-a11y-2026-05-24`
 
 - **`a11y/contrast-touch-sweep-2026-05-24`** (`ee86a38`) — Two component fixes:
   FlashBanner success green `#27ae60`→`#1e8449` (AA pass), UpdateBanner "View"
   button minHeight 36→44px + fontSize 13→14, remove duplicate `accessibilityLiveRegion`
   on the banner Pressable. 2 files. 0 errors · 673 tests.
-  Merge command: `git merge a11y/contrast-touch-sweep-2026-05-24`
 
 ---
 
