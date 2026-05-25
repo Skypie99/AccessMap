@@ -259,8 +259,8 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
   },
   headerRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   titleWrap: { flex: 1, gap: 2 },
-  title: { fontSize: 20, fontWeight: '700', color: '#222' },
-  subtitle: { fontSize: 13, color: '#666' },
+  title: { fontSize: 20, fontWeight: '700', color: color.textStrong },
+  subtitle: { fontSize: 13, color: color.textMuted },
   closeBtn: {
     width: 44,
     height: 44,
@@ -299,8 +299,8 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
   },
   statusBadgeText: { fontWeight: '700', fontSize: 11 },
   rowText: { flex: 1, gap: 2 },
-  rowTitle: { fontSize: 14, fontWeight: '600', color: '#222' },
-  rowDesc: { fontSize: 12, color: '#666', lineHeight: 16 },
+  rowTitle: { fontSize: 14, fontWeight: '600', color: color.textStrong },
+  rowDesc: { fontSize: 12, color: color.textMuted, lineHeight: 16 },
   footer: {
     fontSize: 12,
     // color.textMutedAlt (#5b6470) on #fff = 4.6:1 — passes WCAG AA for

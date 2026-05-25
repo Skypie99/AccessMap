@@ -332,18 +332,10 @@ export default function SettingsScreen() {
     );
     if (!ok) return;
 
-    // Jordan condition 5 — clear the push token before signing out.
-    // Best-effort/silent: if this fails (network error, token already gone)
-    // we still complete the sign-out so the user isn't left stuck.
-    if (user) {
-      await deletePushToken(user.id);
-    }
-
-    // Fire-and-forget — signOut returns an AuthResponse but the
-    // AuthProvider listener takes care of routing back to the
-    // SignInScreen, so we don't need to await or surface errors
-    // here. (If sign-out fails, the user simply stays signed in.)
-    void signOut();
+    // Fire-and-forget — signOut (with userId) handles best-effort push
+    // token deletion centrally, then calls supabase.auth.signOut(). The
+    // AuthProvider listener takes care of routing back to SignInScreen.
+    void signOut(user?.id);
   };
 
   return (
@@ -372,7 +364,7 @@ export default function SettingsScreen() {
           style={styles.pushRow}
           accessible
           accessibilityRole="switch"
-          accessibilityLabel="Push notifications"
+          accessibilityLabel={`Push notifications, currently ${pushEnabled ? 'on' : 'off'}`}
           accessibilityHint="Receive a push notification when your flag is verified or resolved"
           accessibilityState={{ checked: pushEnabled, busy: pushBusy }}
         >

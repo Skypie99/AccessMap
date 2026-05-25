@@ -46,6 +46,18 @@ export async function signUpWithEmail(email: string, password: string) {
   return supabase.auth.signUp({ email, password });
 }
 
-export async function signOut() {
+export async function signOut(userId?: string) {
+  // Best-effort token clear — failure is silent per the error tier policy.
+  // Centralising here means every sign-out path (Profile, Settings, future
+  // screens) automatically clears the push token without needing to remember
+  // to call deletePushToken separately.
+  if (userId) {
+    try {
+      const { deletePushToken } = await import('./pushNotifications');
+      await deletePushToken(userId);
+    } catch {
+      // Intentionally silent — token deletion is best-effort.
+    }
+  }
   return supabase.auth.signOut();
 }
