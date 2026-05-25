@@ -50,7 +50,8 @@ import type { RootTabParamList } from '@/navigation/RootNavigator';
 import FlagDetailModal, {
   type DetailAction,
 } from '@/components/FlagDetailModal';
-import { radius, spacing } from '@/theme';
+import PhotoLightboxModal from '@/components/PhotoLightboxModal';
+import { radius, size, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 
 // Statuses Tasks shows. Even if the provider's `statuses` is widened by the
@@ -896,6 +897,12 @@ const FlagCard = memo(function FlagCard({
 }: FlagCardProps) {
   const color = useColor();
   const styles = makeStyles(color);
+  // Controls whether the full-screen photo lightbox is open.
+  // Kept component-local — lightbox state doesn't need to survive unmount.
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  // Tracks whether the photo URL failed to load. On error we render nothing
+  // instead of a broken-image icon — cleaner than an empty grey box.
+  const [photoError, setPhotoError] = useState(false);
   // Compute distance + ETA once per card per location change. Without the
   // memo this would recompute on every parent state flip (busyId, flash).
   const distanceInfo = useMemo(() => {
@@ -968,13 +975,23 @@ const FlagCard = memo(function FlagCard({
         )}
       </View>
       <View style={styles.cardBody}>
-        {flag.photo_url ? (
-          <Image
-            source={{ uri: flag.photo_url }}
-            style={styles.cardThumb}
-            accessible
-            accessibilityLabel={`Photo of the reported ${CATEGORY_LABELS[flag.category]}`}
-          />
+        {flag.photo_url && !photoError ? (
+          <Pressable
+            onPress={() => setLightboxOpen(true)}
+            hitSlop={spacing.sm}
+            style={styles.cardThumbWrap}
+            accessibilityRole="button"
+            accessibilityLabel={`Photo of ${CATEGORY_LABELS[flag.category]} accessibility issue. Tap to view full screen.`}
+            accessibilityHint="Opens a full-screen view of the photo"
+          >
+            <Image
+              source={{ uri: flag.photo_url }}
+              style={styles.cardThumb}
+              onError={() => setPhotoError(true)}
+              accessible={false}
+              importantForAccessibility="no"
+            />
+          </Pressable>
         ) : null}
         <View style={styles.cardBodyText}>
           {flag.description ? (
@@ -1048,6 +1065,17 @@ const FlagCard = memo(function FlagCard({
           </Pressable>
         </View>
       )}
+      {/* Full-screen photo lightbox — only mounts when the thumbnail exists
+          and has loaded successfully. Tapping the thumbnail (or the close
+          button inside the modal) dismisses it. */}
+      {flag.photo_url && !photoError ? (
+        <PhotoLightboxModal
+          visible={lightboxOpen}
+          photoUrl={flag.photo_url}
+          caption={`${CATEGORY_LABELS[flag.category]} accessibility issue`}
+          onClose={() => setLightboxOpen(false)}
+        />
+      ) : null}
     </Pressable>
   );
 });
@@ -1217,6 +1245,7 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
     borderRadius: 12,
     padding: 14,
     gap: 8,
+    minHeight: size.cardMin,
     shadowColor: '#000',
     shadowOpacity: 0.06,
     shadowRadius: 4,
@@ -1235,11 +1264,19 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
     letterSpacing: 0.5,
   },
   cardBody: { flexDirection: 'row', gap: 12 },
-  cardThumb: {
-    width: 72,
-    height: 72,
-    borderRadius: 8,
+  // Container holds the image so overflow:hidden clips rounded corners on
+  // Android (where borderRadius on Image alone is unreliable).
+  cardThumbWrap: {
+    width: size.thumb,
+    height: size.thumb,
+    borderRadius: radius.md,
+    overflow: 'hidden',
     backgroundColor: color.surfaceNeutral,
+    flexShrink: 0,
+  },
+  cardThumb: {
+    width: '100%',
+    height: '100%',
   },
   cardBodyText: { flex: 1, gap: 4 },
   cardDesc: { fontSize: 14, color: '#222' },

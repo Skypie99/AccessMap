@@ -79,6 +79,11 @@ const darkColor = {
   accentOrange: '#f1a520',        // same amber accent
   placeholderText: '#9ca3af',     // TextInput placeholder on dark surfaces (~6:1 on #222)
 
+  // Backdrop / overlay layers — same values as light palette (dark-on-dark is still appropriate)
+  backdropStrong: 'rgba(0,0,0,0.85)',   // full-screen modal overlay on dark bg
+  backdropCaption: 'rgba(0,0,0,0.75)',  // caption bar on photos
+  overlayBtn: 'rgba(255,255,255,0.2)',  // overlay button on dark bg (brighter for visibility)
+
   // Misc
   shadow: '#fff',                 // inverted for dark mode
   pointsPillText: '#dbe7fb',

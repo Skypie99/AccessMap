@@ -112,6 +112,11 @@ export const color = {
   textMutedAlt: '#5b6470',      // AA-safe muted text on light surfaces (4.6:1 on #f4f6f8) — used by ReportFlagModal hints, NotificationPrefsModal copy, TasksScreen
   accentOrange: '#f1a520',      // amber accent for "watch / pinned" affordances (NotificationPrefsModal, ProfileScreen, SavedPlacesModal, MyWatchedModal, FlagDetailModal). Distinct from severity[4].color (#e67e22) on purpose.
 
+  // Backdrop / overlay layers — used by full-screen modals and photo UI
+  backdropStrong: 'rgba(0,0,0,0.75)',   // full-screen modal overlays (replaces raw rgba in PhotoLightboxModal)
+  backdropCaption: 'rgba(0,0,0,0.65)',  // caption bars on photos — contrast gain over scrim (Alex #3)
+  overlayBtn: 'rgba(0,0,0,0.45)',       // overlay action buttons (close button bg in lightbox)
+
   // Misc
   shadow: '#000',
   pointsPillText: '#dbe7fb',    // light-blue label on brand-blue background
@@ -208,6 +213,16 @@ export const shadow = {
 
 export const a11y = {
   minTargetSize: 44, // iOS 44pt / Android 48dp — use the higher number when in doubt
+};
+
+// -------------------------------------------------------------------------
+// Size — named values for component dimensions that recur across screens.
+// Prefer these over inline literals so a resize is one-file change.
+// -------------------------------------------------------------------------
+
+export const size = {
+  thumb: 80,      // square photo thumbnail in FlagCard (TasksScreen)
+  cardMin: 96,    // minimum card height for no-photo FlagCards (density parity)
 };
 
 // -------------------------------------------------------------------------

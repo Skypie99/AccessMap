@@ -21,6 +21,7 @@ import {
   Text,
   View,
 } from 'react-native';
+import { color, font, spacing } from '@/theme';
 
 interface Props {
   visible: boolean;
@@ -50,7 +51,7 @@ export default function PhotoLightboxModal({
     >
       <StatusBar
         barStyle="light-content"
-        backgroundColor="rgba(0,0,0,0.95)"
+        backgroundColor={color.backdropStrong}
       />
       <View style={styles.backdrop} accessibilityViewIsModal>
         {/* Tap-anywhere-to-dismiss pressable layer. Hidden from the a11y
@@ -98,7 +99,7 @@ export default function PhotoLightboxModal({
 
         <Pressable
           onPress={onClose}
-          hitSlop={16}
+          hitSlop={spacing.lg}
           style={({ pressed }) => [
             styles.closeBtn,
             pressed && styles.closeBtnPressed,
@@ -122,7 +123,7 @@ export default function PhotoLightboxModal({
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.95)',
+    backgroundColor: color.backdropStrong,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -133,31 +134,31 @@ const styles = StyleSheet.create({
   empty: {
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 32,
+    padding: spacing.xxxl,
   },
-  emptyText: { color: '#fff', fontSize: 16 },
+  emptyText: { color: color.surface, fontSize: font.size.lg },
   captionBar: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 32,
-    backgroundColor: 'rgba(0,0,0,0.45)',
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.xxxl,
+    backgroundColor: color.backdropCaption,
   },
-  captionText: { color: '#fff', fontSize: 14, fontWeight: '600' },
+  captionText: { color: color.surface, fontSize: font.size.base, fontWeight: '600' },
   closeBtn: {
     position: 'absolute',
     top: 48,
-    right: 16,
+    right: spacing.lg,
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: 'rgba(255,255,255,0.15)',
+    backgroundColor: color.overlayBtn,
     alignItems: 'center',
     justifyContent: 'center',
   },
   closeBtnPressed: { backgroundColor: 'rgba(255,255,255,0.3)' },
-  closeBtnText: { fontSize: 18, color: '#fff', fontWeight: '700' },
+  closeBtnText: { fontSize: font.size.xl, color: color.surface, fontWeight: '700' },
 });
