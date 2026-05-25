@@ -1,0 +1,50 @@
+To:      skylerhalisky@gmail.com
+Subject: Feature push AccessMap — 2026-05-23 — Persistent flag-load error banner
+
+Hi Sky,
+
+Today's feature-push run on AccessMap shipped a small but useful one:
+**a persistent tap-to-retry banner on the Map for flag-load failures**,
+replacing the existing one-shot Alert. It's on branch
+`feat/flag-load-error-banner-2026-05-23` — not merged.
+
+A heads-up before you dive in: I had originally planned to build the
+**Categories & Severity Legend** (top of FEATURES.md → Now), but
+discovered a parallel agent had already shipped that on
+`feat/legend-sheet-2026-05-23`. Rather than duplicate the work, I
+pivoted to the next clearly-scoped backlog item — the error banner
+from QA proposal P-NEW-2.
+
+Two clean commits:
+  d6a0262  MapScreen: persistent tap-to-retry banner
+  8d900f5  docs: seed LEARNINGS.md with two accessibility recipes
+
+Verification:
+  - Typecheck green throughout (npm run typecheck)
+  - Reachable: tap the existing ⟳ refresh button with no network → banner
+    appears. Tap banner → retries.
+  - Born accessible: role=button, full-text label, busy state,
+    accessibilityLiveRegion="polite" (Android), and
+    AccessibilityInfo.announceForAccessibility on iOS so the failure
+    is never silent. Color is paired with a ⚠ glyph and explicit text.
+  - No schema, dep, or auth changes.
+
+How to try it:
+  cd ~/AccessMap
+  git checkout feat/flag-load-error-banner-2026-05-23
+  npm run web         # easiest: DevTools → Network → Offline → tap ⟳
+
+How to review/merge:
+  git diff main..feat/flag-load-error-banner-2026-05-23
+  git checkout main && git merge feat/flag-load-error-banner-2026-05-23
+
+Two forward-looking suggestions in the full report:
+  1. Status filter on the Map (already in your "Now" list).
+  2. Accessible list view of nearby flags (phase 1 — FAB + sorted list).
+
+Full report is at:
+  ~/AccessMap/qa-reports/feature-2026-05-23-error-banner.md
+  ~/Documents/Claude/Projects/Access Map App/Access Map Summarys/
+    2026-05-23_Feature_Development_Report_Error_Banner.md
+
+— Shamus
