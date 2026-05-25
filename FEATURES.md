@@ -14,10 +14,6 @@ they land on `main`.
 
 ### Parked (2026-05-25)
 
-- **`feat/flag-pagination-2026-05-25`** — Cursor-paginated flag fetcher
-  (`listFlagsPage`), `hasMore`/`loadMore`/`loadingMore` in FlagsProvider, and
-  a "Load More" footer in TasksScreen. (DECISION FOR SKY: confirm this is the
-  canonical approach — a 2026-05-23 pagination branch also exists.)
 - **`a11y/full-sweep-2026-05-25`** — Full a11y sweep; WIP/stashed. Includes
   MyReportsModal chip tap-target fix (44pt). Unblock by finishing the cluster
   + edit-form a11y items documented in
@@ -27,52 +23,30 @@ they land on `main`.
 
 - **`feat/decorative-glyph-2026-05-24`** (`ff44775`) — `decorativeProps` sweep
   over 9 broken/stale callsites. Clean single commit; no conflicts expected.
-- **`a11y/placeholder-sweep-cycle-f`** (`9a6a16a`) — Remaining
-  `placeholderTextColor` TextInputs + `sevDot` `decorativeProps` + surfaceSoft
-  contrast test (Cycle F items F1/F2/F5). Unblocked now that cycle/F is on main.
-
-### Parked (2026-05-23)
-
-- **R7 — Tasks screen sort options** (`feat/tasks-sort-2026-05-23` ·
-  `e4e7cb6`). Segmented control: Newest / Oldest / Severity, sort within
-  sections, persisted device-wide. +18 tests.
-- **R8 — Map long-press to drop a flag**
-  (`feat/map-longpress-drop-2026-05-23` · `0bc2b81`). Long-press → confirm →
-  ReportFlagModal pre-filled with coord; native + Leaflet web.
-- **R9 — Profile nearest-unresolved jump**
-  (`feat/profile-nearest-flag-jump-2026-05-23` · `1f31d06`). Pale-blue card on
-  Profile with nearest open/verified flag; tap → Map centered + callout. 9 tests.
-
----
-
-## Now (next 1–2 runs)
-
-- **Remaining 5 `#999` `placeholderTextColor` callsites** — in progress via
-  Shamus; unblock once branch lands.
-- **CI/CD GitHub Actions setup** — in progress via Shamus; typecheck + test on
-  every PR.
-- **LEARNINGS.md sequential merge/build rule** — document the "one branch at a
-  time" merge rule in `LEARNINGS.md`; pending.
-
----
-
-## Cycle F — remaining items (cycle/F partially merged 2026-05-24)
-
-Cycle F shipped F3/F6/F-search via `cycle/F-2026-05-24`. These remain:
-
-1. **F1 — `placeholderTextColor` sweep** (6 remaining TextInputs) — covered by
-   `a11y/placeholder-sweep-cycle-f`; ready to merge.
-2. **F2 — `sevDot` decorativeProps** — covered by `a11y/placeholder-sweep-cycle-f`.
-3. **F4 — surfaceSoft contrast unit test** — one new assertion in
-   `theme.test.ts`; not yet on any branch.
 
 ---
 
 ## Later (sequence after the above)
 
-_(nothing queued — add next features here)_
+- **Offline map tile caching.** Pre-fetch tiles for a user's home area so the
+  map renders without network access, complementing the existing flag-data
+  offline cache.
+- **Flag photo review flow.** Let verifiers view/enlarge the submitted photo
+  inline inside the triage modal before accepting or rejecting a flag.
+- **Neighbourhood heat-map layer.** Overlay a colour-density grid on the map
+  based on flag density so users can spot high-risk corridors at a glance.
 
 ---
+
+## Shipped 2026-05-25 — Wave 4 (later commits)
+
+- **TasksScreen renderItem memoization.** `renderItem` wrapped in `useCallback`
+  to prevent unnecessary re-renders on list updates. (`582b1c4`)
+- **Flag status timeline UI.** Flag detail modal shows a chronological status
+  history strip (graceful degradation — hides if no history data). (`582b1c4`)
+- **Cycle F — F1/F2/F4 complete.** `placeholderTextColor` sweep (remaining
+  inputs), `sevDot` `decorativeProps`, and `surfaceSoft` WCAG AA contrast
+  unit assertion all on main. (`ef2b717`, `e85cf82`)
 
 ## Shipped 2026-05-25 — Wave 4
 
@@ -91,6 +65,15 @@ _(nothing queued — add next features here)_
 - **Centralised `signOut(userId)` cleanup.** Clears offline cache + push token
   before the Supabase auth sign-out, ensuring no stale data or orphaned tokens
   remain after a session ends.
+- **CI/CD GitHub Actions.** Typecheck + test runs on every push and PR.
+  (`e243498`, `b1450f9`)
+- **Remaining `#999` → `color.textSubtle` callsites.** Final a11y colour-token
+  sweep; all raw `#999` literals replaced. (`e243498`)
+- **LEARNINGS.md sequential merge/build rule.** Concurrent-agent worktree
+  isolation rule documented. (`9a3dca9`)
+- **Flag pagination (Load More).** Cursor-paginated `listFlagsPage` fetcher,
+  `hasMore`/`loadMore`/`loadingMore` in `FlagsProvider`, "Load More" footer in
+  `TasksScreen`. (`feat/flag-pagination-2026-05-25` → `d1e2123`)
 
 ---
 
@@ -140,6 +123,18 @@ All items below merged to `main` on 2026-05-25.
   all callsites migrated.
 
 ---
+
+## Shipped 2026-05-23 (R7–R9 cycle)
+
+- **R7 — Tasks screen sort options.** Segmented control: Newest / Oldest /
+  Severity, sort within sections, persisted device-wide. +18 tests.
+  (`feat/tasks-sort-2026-05-23` · `e4e7cb6`)
+- **R8 — Map long-press to drop a flag.** Long-press → confirm →
+  ReportFlagModal pre-filled with coord; native + Leaflet web.
+  (`feat/map-longpress-drop-2026-05-23` · `0bc2b81`)
+- **R9 — Profile nearest-unresolved jump.** Pale-blue card on Profile with
+  nearest open/verified flag; tap → Map centered + callout. 9 tests.
+  (`feat/profile-nearest-flag-jump-2026-05-23` · `1f31d06`)
 
 ## Shipped 2026-05-23 evening (merge-on-done loop)
 
