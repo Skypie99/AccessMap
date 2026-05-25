@@ -61,7 +61,7 @@ import PlatformMap, {
   type PlatformMapHandle,
   type PlatformMapRegion,
 } from '@/components/PlatformMap';
-import { useScreenReader } from '@/lib/accessibility';
+import { useScreenReader, useReducedMotion } from '@/lib/accessibility';
 import ReportFlagModal from './ReportFlagModal';
 import LegendModal from './LegendModal';
 import NearbyFlagsModal from './NearbyFlagsModal';
@@ -175,6 +175,9 @@ export default function MapScreen() {
   // Map and don't re-auto-open. The "📋 List" FAB remains as the manual
   // re-entry.
   const screenReaderOn = useScreenReader();
+  // WCAG 2.3.3: skip non-essential animation when the user has requested
+  // reduced motion. Used at every animateTo / showCallout call site below.
+  const reducedMotion = useReducedMotion();
   const hasAutoOpenedListRef = useRef(false);
   useEffect(() => {
     if (screenReaderOn && !hasAutoOpenedListRef.current) {
@@ -648,11 +651,23 @@ export default function MapScreen() {
   }, [showEmptyCard]);
 
   const requestLocation = useCallback(async () => {
-    if (mountedRef.current) setLocating(true);
+    if (mountedRef.current) {
+      setLocating(true);
+      // WCAG 4.1.3: announce the transient "finding location" state so
+      // screen-reader users hear it without having to discover the spinner.
+      AccessibilityInfo.announceForAccessibility('Finding your location…');
+    }
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
-        if (mountedRef.current) setPermissionDenied(true);
+        if (mountedRef.current) {
+          setPermissionDenied(true);
+          // WCAG 4.1.3: permission-denied is a status change not conveyed
+          // by focus or role; announce it explicitly.
+          AccessibilityInfo.announceForAccessibility(
+            'Location permission denied. Enable it in Settings to report a flag.',
+          );
+        }
         return;
       }
       if (mountedRef.current) setPermissionDenied(false);
@@ -803,6 +818,7 @@ export default function MapScreen() {
         flags={filteredFlags}
         focusedFlagId={focusedFlagId}
         showsUserLocation
+        reducedMotion={reducedMotion}
         onLongPressMap={handleMapLongPress}
       />
 

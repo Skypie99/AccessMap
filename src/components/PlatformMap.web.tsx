@@ -27,6 +27,9 @@ export interface PlatformMapProps {
   flags: FlagRow[];
   focusedFlagId: string | null;
   showsUserLocation?: boolean;
+  /** When true, animateTo uses an instant pan (duration 0) to respect
+   *  the user's "Reduce Motion" system preference (WCAG 2.3.3). */
+  reducedMotion?: boolean;
   /**
    * Drop-flag intent: native fires this on long-press; web fires it on
    * the map's `contextmenu` event (right-click, or long-press on
@@ -69,7 +72,7 @@ function deltaToZoom(latitudeDelta: number): number {
 
 const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(
   function PlatformMap(
-    { initialRegion, flags, focusedFlagId, onLongPressMap },
+    { initialRegion, flags, focusedFlagId, reducedMotion, onLongPressMap },
     ref,
   ) {
     const mapInstance = useRef<LeafletMap | null>(null);
@@ -111,14 +114,15 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(
         animateTo: (r) => {
           const zoom = deltaToZoom(r.latitudeDelta ?? 0.005);
           mapInstance.current?.flyTo([r.latitude, r.longitude], zoom, {
-            duration: 0.6,
+            // Instant jump when "Reduce Motion" is on (WCAG 2.3.3).
+            duration: reducedMotion ? 0 : 0.6,
           });
         },
         showCallout: (id) => {
           markerRefs.current[id]?.openPopup();
         },
       }),
-      [],
+      [reducedMotion],
     );
 
     return (
@@ -166,7 +170,7 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(
                   {f.photo_url ? (
                     <img
                       src={f.photo_url}
-                      alt=""
+                      alt={`Photo of ${CATEGORY_LABELS[f.category]} accessibility issue`}
                       style={{
                         width: '100%',
                         maxHeight: 160,
