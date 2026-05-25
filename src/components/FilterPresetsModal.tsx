@@ -518,6 +518,8 @@ export default function FilterPresetsModal({
               data={presets}
               keyExtractor={(item) => item.id}
               renderItem={renderItem}
+              removeClippedSubviews
+              initialNumToRender={10}
               ItemSeparatorComponent={() => <View style={styles.separator} />}
               contentContainerStyle={styles.listContent}
               keyboardShouldPersistTaps="handled"

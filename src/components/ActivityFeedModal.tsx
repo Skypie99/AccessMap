@@ -59,7 +59,7 @@ export default function ActivityFeedModal({
   onViewOnMap,
 }: Props) {
   const color = useColor();
-  const styles = makeStyles(color);
+  const styles = useMemo(() => makeStyles(color), [color]);
   const { user } = useAuth();
   const [flags, setFlags] = useState<FlagRow[]>([]);
   const [watchedIds, setWatchedIds] = useState<Set<string>>(new Set());
@@ -139,7 +139,7 @@ export default function ActivityFeedModal({
     [filteredFlags],
   );
 
-  const renderItem = ({ item }: { item: FlagRow }) => {
+  const renderItem = useCallback(({ item }: { item: FlagRow }) => {
     const statusPalette = STATUS_COLORS[item.status];
     const a11yLabel =
       `${CATEGORY_LABELS[item.category]}, severity ${item.severity} of 5, ` +
@@ -213,7 +213,7 @@ export default function ActivityFeedModal({
       </Pressable>
       </View>
     );
-  };
+  }, [onSelectFlag, onViewOnMap, styles]);
 
   const filterChips: Array<{ value: FeedFilter; label: string }> = [
     { value: 'all', label: 'All' },
