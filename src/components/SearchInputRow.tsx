@@ -24,7 +24,7 @@ import {
 } from 'react-native';
 import { decorativeProps } from '@/lib/accessibility';
 import { font, radius, spacing } from '@/theme';
-import { useColor } from '@/theme/ThemeContext';
+import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 
 export interface SearchInputRowProps {
   value: string;
@@ -47,8 +47,9 @@ export default function SearchInputRow({
   wrapStyle,
 }: SearchInputRowProps) {
   const color = useColor();
+  const styles = makeStyles(color);
   return (
-    <View style={[styles.searchWrap, { backgroundColor: color.surfaceSoft, borderColor: color.borderSubtle }, wrapStyle]}>
+    <View style={[styles.searchWrap, wrapStyle]}>
       {/* Decorative magnifier — hidden from screen readers */}
       <Text style={styles.searchGlyph} {...decorativeProps}>
         🔎
@@ -59,7 +60,7 @@ export default function SearchInputRow({
         onChangeText={onChangeText}
         placeholder={placeholder}
         placeholderTextColor={color.placeholderText}
-        style={[styles.searchInput, { color: color.textStrong }]}
+        style={styles.searchInput}
         autoFocus={autoFocus}
         autoCorrect={false}
         autoCapitalize="none"
@@ -80,7 +81,7 @@ export default function SearchInputRow({
           accessibilityLabel="Clear search"
         >
           {/* Decorative ✕ — the Pressable's accessibilityLabel already describes the action */}
-          <Text style={[styles.searchClearText, { color: color.textMuted }]} {...decorativeProps}>
+          <Text style={styles.searchClearText} {...decorativeProps}>
             ✕
           </Text>
         </Pressable>
@@ -89,43 +90,46 @@ export default function SearchInputRow({
   );
 }
 
-const styles = StyleSheet.create({
-  searchWrap: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    // No outer horizontal margin here — callers supply via wrapStyle.
-    // HelpModal needs spacing.xl; NearbyFlagsModal wants 0 (full-bleed row).
-    marginBottom: spacing.sm,
-    paddingHorizontal: spacing.md,
-    // backgroundColor + borderColor provided as inline styles (useColor())
-    borderRadius: radius.md,
-    borderWidth: 1,
-  },
-  searchGlyph: {
-    fontSize: font.size.lg,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: font.size.md,
-    // color provided as inline style (useColor())
-    paddingVertical: spacing.sm,
-    // 44pt minimum touch / tap target (WCAG 2.5.5, Apple HIG).
-    minHeight: 44,
-  },
-  searchClear: {
-    // 44pt square touch target so the clear (✕) button never falls
-    // below the WCAG 2.5.5 / Apple HIG recommendation.
-    width: 44,
-    height: 44,
-    borderRadius: radius.full,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  searchClearPressed: { opacity: 0.6 },
-  searchClearText: {
-    fontSize: font.size.sm,
-    // color provided as inline style (useColor())
-    fontWeight: font.weight.bold,
-  },
-});
+function makeStyles(color: ColorTheme) {
+  return StyleSheet.create({
+    searchWrap: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+      // No outer horizontal margin here — callers supply via wrapStyle.
+      // HelpModal needs spacing.xl; NearbyFlagsModal wants 0 (full-bleed row).
+      marginBottom: spacing.sm,
+      paddingHorizontal: spacing.md,
+      backgroundColor: color.surfaceSoft,
+      borderRadius: radius.md,
+      borderWidth: 1,
+      borderColor: color.borderSubtle,
+    },
+    searchGlyph: {
+      fontSize: font.size.lg,
+    },
+    searchInput: {
+      flex: 1,
+      fontSize: font.size.md,
+      color: color.textStrong,
+      paddingVertical: spacing.sm,
+      // 44pt minimum touch / tap target (WCAG 2.5.5, Apple HIG).
+      minHeight: 44,
+    },
+    searchClear: {
+      // 44pt square touch target so the clear (✕) button never falls
+      // below the WCAG 2.5.5 / Apple HIG recommendation.
+      width: 44,
+      height: 44,
+      borderRadius: radius.full,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    searchClearPressed: { opacity: 0.6 },
+    searchClearText: {
+      fontSize: font.size.sm,
+      color: color.textMuted,
+      fontWeight: font.weight.bold,
+    },
+  });
+}

@@ -77,6 +77,7 @@ const darkColor = {
   // Additional tokens
   textMutedAlt: '#9ca3af',        // muted text on dark surfaces
   accentOrange: '#f1a520',        // same amber accent
+  placeholderText: '#9ca3af',     // TextInput placeholder on dark surfaces (~6:1 on #222)
 
   // Misc
   shadow: '#fff',                 // inverted for dark mode

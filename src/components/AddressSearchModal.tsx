@@ -10,7 +10,7 @@ import {
   View,
 } from 'react-native';
 import { font, radius, shadow, spacing } from '@/theme';
-import { useColor } from '@/theme/ThemeContext';
+import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { searchAddress, type GeocodeResult } from '@/lib/geocode';
 import {
   addRecent,
@@ -50,6 +50,7 @@ export default function AddressSearchModal({
   onSelect,
 }: Props) {
   const color = useColor();
+  const styles = makeStyles(color);
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<GeocodeResult[]>([]);
   const [loading, setLoading] = useState(false);
@@ -340,7 +341,8 @@ export default function AddressSearchModal({
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(color: ColorTheme) {
+  return StyleSheet.create({
   backdrop: {
     flex: 1,
     backgroundColor: color.scrim,
@@ -524,3 +526,4 @@ const styles = StyleSheet.create({
     fontWeight: font.weight.regular,
   },
 });
+}
