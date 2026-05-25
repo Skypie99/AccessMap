@@ -27,3 +27,7 @@ web-build/
 # Jest coverage output — never commit these HTML/JSON artifacts.
 # Running `jest --coverage` regenerates them locally.
 coverage/
+
+# AccessMap OS v3.2 observability layer — local machine state, not source.
+# Immutable cycle ledger, delta engine output, and compressed trend summaries.
+.observability/
