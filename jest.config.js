@@ -20,4 +20,10 @@ module.exports = {
     // moduleNameMapper (for vector icons) is preserved via Jest config merging.
     '^@/(.*)$': '<rootDir>/src/$1',
   },
+  // Give Jest 3 s to wait for any remaining async handles after tests finish
+  // before printing the "open handles" warning.  The root cause (Supabase
+  // createClient firing _initialize() in tests that import flags.ts indirectly)
+  // is fixed by mocking '../supabase' in those suites, but this guards against
+  // any future module that spins up async work at import time.
+  openHandlesTimeout: 3000,
 };

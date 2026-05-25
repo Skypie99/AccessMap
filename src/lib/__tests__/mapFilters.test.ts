@@ -41,6 +41,12 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
   },
 }));
 
+// mapFilters.ts → flags.ts → supabase.ts.  The Supabase createClient() fires
+// an async _initialize() that leaves an open network handle in the Jest worker.
+// We only need the constants re-exported from flags.ts here, so mock the whole
+// supabase module to prevent the client from ever being constructed.
+jest.mock('../supabase', () => ({ supabase: {} }));
+
 import {
   DEFAULT_MAP_FILTERS,
   loadMapFilters,
