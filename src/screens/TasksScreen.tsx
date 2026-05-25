@@ -73,6 +73,9 @@ export default function TasksScreen() {
     loading,
     error: flagsError,
     refresh,
+    loadMore,
+    loadingMore,
+    hasMore,
     patchFlag,
     removeFlag,
   } = useFlags();
@@ -441,6 +444,19 @@ export default function TasksScreen() {
     setSelectedFlag(flag);
   }, []);
 
+  // Load-more handler shared by the button (screen-reader / keyboard) and any
+  // future scroll-triggered path. Surfaces errors as an Alert so the user has
+  // a clear retry path.
+  const handleLoadMore = useCallback(() => {
+    if (!hasMore || loadingMore) return;
+    loadMore().catch((e: unknown) => {
+      Alert.alert(
+        'Could not load more flags',
+        errorMessage(e, 'Unknown error'),
+      );
+    });
+  }, [hasMore, loadingMore, loadMore]);
+
   if (loading && flags.length === 0) {
     return (
       <View style={styles.center}>
@@ -687,6 +703,41 @@ export default function TasksScreen() {
             onShowDetails={showDetails}
           />
         )}
+        ListFooterComponent={
+          // Only render the footer when the list has items — showing a
+          // spinner or end-state beneath an empty list would be confusing.
+          sections.length === 0 ? null : (
+            <View style={styles.footer}>
+              {loadingMore ? (
+                <ActivityIndicator
+                  accessibilityLabel="Loading more flags"
+                  accessibilityState={{ busy: true }}
+                />
+              ) : hasMore ? (
+                <Pressable
+                  onPress={handleLoadMore}
+                  style={({ pressed }) => [
+                    styles.loadMoreBtn,
+                    pressed && styles.loadMoreBtnPressed,
+                  ]}
+                  accessibilityRole="button"
+                  accessibilityLabel="Load 20 more flags"
+                  accessibilityHint="Fetches the next page of accessibility reports"
+                >
+                  <Text style={styles.loadMoreText}>Load 20 more</Text>
+                </Pressable>
+              ) : (
+                <Text
+                  style={styles.endText}
+                  accessibilityRole="text"
+                  accessibilityLabel="You have seen all flags nearby"
+                >
+                  {'You\'ve seen all flags nearby ✓'}
+                </Text>
+              )}
+            </View>
+          )
+        }
       />
       {/* Floating bulk-action bar — appears at the bottom in selection
           mode. Positioned absolute so it overlays the SectionList rather
@@ -1027,6 +1078,34 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
     gap: 8,
   },
   list: { padding: 16 },
+  // Load-more footer — centered below the last SectionList card.
+  // minHeight 44 on the button satisfies WCAG 2.5.5 (minimum touch target).
+  footer: {
+    paddingVertical: 20,
+    paddingHorizontal: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loadMoreBtn: {
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: color.brand,
+    backgroundColor: color.surface,
+    minHeight: 44,
+    minWidth: 160,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loadMoreBtnPressed: { opacity: 0.7 },
+  loadMoreText: { color: color.brand, fontWeight: '700', fontSize: 14 },
+  endText: {
+    fontSize: 13,
+    color: color.textMutedAlt,
+    fontStyle: 'italic',
+    textAlign: 'center',
+  },
   emptyContainer: {
     flexGrow: 1,
     alignItems: 'center',
