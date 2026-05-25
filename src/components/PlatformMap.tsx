@@ -95,6 +95,27 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(
         clusterColor="#2563EB"
         clusterTextColor="#ffffff"
         radius={40}
+        renderCluster={(cluster: any) => {
+          const { id, geometry, onPress, properties } = cluster;
+          const count: number = properties.point_count;
+          const coord = {
+            latitude: geometry.coordinates[1] as number,
+            longitude: geometry.coordinates[0] as number,
+          };
+          return (
+            <Marker
+              key={`cluster-${id}`}
+              coordinate={coord}
+              onPress={onPress}
+              accessibilityRole="button"
+              accessibilityLabel={`${count} accessibility flags. Tap to expand.`}
+            >
+              <View style={styles.cluster}>
+                <Text style={styles.clusterCount}>{count}</Text>
+              </View>
+            </Marker>
+          );
+        }}
         onLongPress={
           onLongPressMap
             ? (e) => {
@@ -181,5 +202,23 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginTop: 6,
     backgroundColor: '#eef1f5',
+  },
+  cluster: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#2563EB',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 4,
+  },
+  clusterCount: {
+    color: '#ffffff',
+    fontSize: 13,
+    fontWeight: '700',
   },
 });
