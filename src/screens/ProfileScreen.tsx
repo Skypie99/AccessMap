@@ -1155,7 +1155,7 @@ export default function ProfileScreen() {
               'Sign out',
               true,
             );
-            if (ok) signOut();
+            if (ok) signOut(user?.id);
           }}
           accessibilityRole="button"
           accessibilityLabel="Sign out of your account"
