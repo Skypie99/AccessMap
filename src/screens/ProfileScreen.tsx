@@ -3,7 +3,9 @@ import {
   AccessibilityInfo,
   ActivityIndicator,
   Alert,
+  Image,
   Modal,
+  Platform,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -12,6 +14,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { useAuth } from '@/lib/auth';
@@ -19,7 +22,7 @@ import { confirm } from '@/lib/confirm';
 import { errorMessage } from '@/lib/errors';
 import { signOut, supabase } from '@/lib/supabase';
 import { useSharedModals } from '@/lib/sharedModalsContext';
-import { updateUserProfile } from '@/lib/users';
+import { getInitials, updateUserProfile, uploadAvatar } from '@/lib/users';
 import {
   DEFAULT_TABS,
   getDefaultTab,
@@ -82,6 +85,7 @@ import {
   pointsToNextTier,
 } from '@/lib/reputationTier';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
+import { radius } from '@/theme';
 
 interface Stats {
   reported: number;
@@ -231,6 +235,9 @@ export default function ProfileScreen() {
   // is the persisted value. A Save button fires only when they actually differ.
   const [nameDraft, setNameDraft] = useState('');
   const [savingName, setSavingName] = useState(false);
+
+  // Avatar upload state.
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
   // Default-tab state. null until we've read the preference, so the segmented
   // control doesn't paint a wrong "selected" pill momentarily.
@@ -454,6 +461,62 @@ export default function ProfileScreen() {
     }
   }, [user, trimmedDraft]);
 
+  const doUploadAvatar = useCallback(
+    async (localUri: string) => {
+      if (!user) return;
+      setUploadingAvatar(true);
+      try {
+        const avatarUrl = await uploadAvatar(user.id, localUri);
+        const updated = await updateUserProfile(user.id, { avatar_url: avatarUrl });
+        if (mountedRef.current) {
+          setProfile(updated);
+          AccessibilityInfo.announceForAccessibility('Profile photo updated.');
+        }
+      } catch (e) {
+        Alert.alert('Could not update photo', errorMessage(e));
+      } finally {
+        if (mountedRef.current) setUploadingAvatar(false);
+      }
+    },
+    [user],
+  );
+
+  const handlePickAvatar = useCallback(async () => {
+    if (!user) return;
+    if (Platform.OS === 'web') {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/*';
+      input.onchange = () => {
+        const file = input.files?.[0];
+        if (file) void doUploadAvatar(URL.createObjectURL(file));
+      };
+      input.click();
+      return;
+    }
+    try {
+      const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!perm.granted) {
+        Alert.alert(
+          'Permission needed',
+          'Allow photo library access to set a profile photo.',
+        );
+        return;
+      }
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        quality: 0.8,
+        allowsEditing: true,
+        aspect: [1, 1],
+      });
+      if (!result.canceled && result.assets[0]?.uri) {
+        void doUploadAvatar(result.assets[0].uri);
+      }
+    } catch (e) {
+      Alert.alert('Could not pick photo', errorMessage(e));
+    }
+  }, [user, doUploadAvatar]);
+
   const handlePickTab = useCallback(
     async (tab: DefaultTab) => {
       if (!user || tab === defaultTab) return;
@@ -642,13 +705,53 @@ export default function ProfileScreen() {
               its own independently-focusable Pressable — children of an
               `accessible` View aren't focusable by SR on its own. The
               Texts below provide the same info in announcement order. */}
-          <Text
-            style={styles.heroIcon}
-            accessibilityElementsHidden
-            importantForAccessibility="no-hide-descendants"
+          {/* Avatar — tappable to change. Shows photo if set, else initials. */}
+          <Pressable
+            onPress={handlePickAvatar}
+            disabled={uploadingAvatar}
+            style={({ pressed }) => [
+              styles.avatarBtn,
+              pressed && styles.avatarBtnPressed,
+            ]}
+            accessibilityRole="button"
+            accessibilityLabel={
+              profile?.avatar_url ? 'Change profile photo' : 'Add profile photo'
+            }
+            accessibilityHint="Opens photo picker to update your profile photo"
+            accessibilityState={{ busy: uploadingAvatar }}
           >
-            🏅
-          </Text>
+            {profile?.avatar_url ? (
+              <Image
+                source={{ uri: profile.avatar_url }}
+                style={styles.avatarImg}
+                accessibilityElementsHidden
+                importantForAccessibility="no-hide-descendants"
+              />
+            ) : (
+              <View style={styles.avatarPlaceholder}>
+                <Text
+                  style={styles.avatarInitials}
+                  accessibilityElementsHidden
+                  importantForAccessibility="no-hide-descendants"
+                >
+                  {getInitials(profile?.display_name ?? user.email ?? '')}
+                </Text>
+              </View>
+            )}
+            {uploadingAvatar ? (
+              <View style={styles.avatarOverlay}>
+                <ActivityIndicator color="#fff" size="small" />
+              </View>
+            ) : (
+              <View
+                style={styles.avatarEditBadge}
+                accessibilityElementsHidden
+                importantForAccessibility="no-hide-descendants"
+              >
+                <Text style={styles.avatarEditBadgeText}>✎</Text>
+              </View>
+            )}
+          </Pressable>
           <Text style={styles.heroLabel}>POINTS</Text>
           {/* Value + tier pill on the same row so the pill sits BESIDE
               the points number (per T4 spec). The pill is a Pressable
@@ -1383,6 +1486,58 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
     elevation: 6,
   },
   heroIcon: { fontSize: 32, marginBottom: 4 },
+
+  // Avatar styles — circular tappable photo/initials element in heroCard
+  avatarBtn: {
+    width: 72,
+    height: 72,
+    borderRadius: radius.circle,
+    marginBottom: 10,
+    alignSelf: 'center',
+    overflow: 'hidden',
+  },
+  avatarBtnPressed: { opacity: 0.75 },
+  avatarImg: {
+    width: 72,
+    height: 72,
+    borderRadius: radius.circle,
+  },
+  avatarPlaceholder: {
+    width: 72,
+    height: 72,
+    borderRadius: radius.circle,
+    backgroundColor: 'rgba(255,255,255,0.25)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarInitials: {
+    fontSize: 26,
+    fontWeight: '700',
+    color: '#fff',
+  },
+  avatarOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarEditBadge: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    width: 22,
+    height: 22,
+    borderRadius: radius.circle,
+    backgroundColor: color.brand,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarEditBadgeText: {
+    fontSize: 11,
+    color: color.textOnBrand,
+    fontWeight: '700',
+  },
+
   heroLabel: {
     color: '#dbe7fb',
     fontSize: 11,
@@ -1406,14 +1561,14 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
     width: '100%',
     height: 8,
     backgroundColor: 'rgba(255,255,255,0.25)',
-    borderRadius: 999,
+    borderRadius: radius.circle,
     marginTop: 10,
     overflow: 'hidden',
   },
   progressFill: {
     height: '100%',
     backgroundColor: '#fff',
-    borderRadius: 999,
+    borderRadius: radius.circle,
   },
   // T4: Hero value row — wraps the large points number + the small
   // tier pill side-by-side. centerY keeps the pill optically aligned
@@ -1434,7 +1589,7 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
     gap: 6,
     paddingVertical: 6,
     paddingHorizontal: 12,
-    borderRadius: 999,
+    borderRadius: radius.circle,
     backgroundColor: color.surface,
     minHeight: 32,
     minWidth: 44,
@@ -1710,7 +1865,7 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
     alignSelf: 'center',
     paddingHorizontal: 24,
     paddingVertical: 12,
-    borderRadius: 999,
+    borderRadius: radius.circle,
     backgroundColor: color.surfaceNeutral,
     minHeight: 44,
     justifyContent: 'center',
