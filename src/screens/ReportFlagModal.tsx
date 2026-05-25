@@ -36,6 +36,7 @@ import {
 } from '@/lib/contextTags';
 import type { FlagCategory, FlagSeverity } from '@/types/database';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
+import { radius } from '@/theme';
 
 interface Props {
   visible: boolean;
@@ -450,7 +451,7 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
   pill: {
     paddingHorizontal: 12,
     paddingVertical: 8,
-    borderRadius: 999,
+    borderRadius: radius.circle,
     backgroundColor: color.surfaceNeutral,
   },
   pillActive: { backgroundColor: color.brand },
@@ -539,7 +540,7 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
   tagChip: {
     paddingHorizontal: 14,
     paddingVertical: 10,
-    borderRadius: 999,
+    borderRadius: radius.circle,
     backgroundColor: color.surface,
     borderWidth: 1,
     borderColor: color.brandText,

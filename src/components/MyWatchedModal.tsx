@@ -172,6 +172,7 @@ export default function MyWatchedModal({
     const isResolved = item.status === 'resolved';
 
     return (
+      <View role="listitem">
       <Pressable
         style={({ pressed }) => [
           styles.row,
@@ -256,6 +257,7 @@ export default function MyWatchedModal({
           </Pressable>
         </View>
       </Pressable>
+      </View>
     );
   };
 
@@ -342,6 +344,7 @@ export default function MyWatchedModal({
               contentContainerStyle={styles.list}
               ItemSeparatorComponent={() => <View style={styles.separator} />}
               showsVerticalScrollIndicator={false}
+              accessibilityRole="list"
               accessibilityLabel={`Watched flags list, ${flags.length} ${flags.length === 1 ? 'item' : 'items'}`}
             />
           )}

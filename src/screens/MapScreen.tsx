@@ -15,6 +15,7 @@ import {
 import * as Location from 'expo-location';
 import { useRoute, type RouteProp } from '@react-navigation/native';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
+import { radius } from '@/theme';
 import { errorMessage } from '@/lib/errors';
 import {
   CATEGORY_ICONS,
@@ -1668,7 +1669,7 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 10,
     backgroundColor: 'rgba(255,255,255,0.95)',
-    borderRadius: 999,
+    borderRadius: radius.circle,
     // 44pt is the AccessMap baseline touch target (Apple HIG + Android
     // a11y minimum + WCAG 2.5.5). Bumped from 36 per QA A1.
     minHeight: 44,
@@ -1690,7 +1691,7 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.95)',
     paddingHorizontal: 12,
     paddingVertical: 8,
-    borderRadius: 999,
+    borderRadius: radius.circle,
     shadowColor: '#000',
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -1729,7 +1730,7 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
   actionBar: {
     flexDirection: 'row',
     backgroundColor: 'rgba(255,255,255,0.97)',
-    borderRadius: 999,
+    borderRadius: radius.circle,
     paddingHorizontal: 4,
     paddingVertical: 2,
     alignItems: 'center',
@@ -1795,7 +1796,7 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
   filterPill: {
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 999,
+    borderRadius: radius.circle,
     backgroundColor: color.surfaceNeutral,
   },
   filterPillActive: { backgroundColor: color.brand },
@@ -1876,7 +1877,7 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
     marginTop: 4,
     paddingHorizontal: 16,
     paddingVertical: 10,
-    borderRadius: 999,
+    borderRadius: radius.circle,
     backgroundColor: color.brand,
     minHeight: 44,
     justifyContent: 'center',
@@ -1892,7 +1893,7 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
     backgroundColor: color.brand,
     paddingHorizontal: 18,
     paddingVertical: 14,
-    borderRadius: 999,
+    borderRadius: radius.circle,
     shadowColor: '#000',
     shadowOpacity: 0.2,
     shadowRadius: 6,
@@ -1912,7 +1913,7 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
     alignSelf: 'flex-start',
     paddingHorizontal: 12,
     paddingVertical: 8,
-    borderRadius: 999,
+    borderRadius: radius.circle,
     backgroundColor: color.brand,
     minHeight: 32,
     justifyContent: 'center',

@@ -6,6 +6,7 @@ import {
   Text,
   View,
 } from 'react-native';
+import { radius } from '@/theme';
 
 interface Props {
   /** Banner text. When null, the banner is hidden. */
@@ -79,7 +80,7 @@ const styles = StyleSheet.create({
   pill: {
     paddingHorizontal: 18,
     paddingVertical: 12,
-    borderRadius: 999,
+    borderRadius: radius.circle,
     minHeight: 44,
     justifyContent: 'center',
     maxWidth: '90%',

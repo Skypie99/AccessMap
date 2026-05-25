@@ -15,7 +15,7 @@ import {
   View,
 } from 'react-native';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
-import { font } from '@/theme';
+import { font, radius } from '@/theme';
 import { useAuth } from '@/lib/auth';
 import { confirm } from '@/lib/confirm';
 import { getDirectionsUrl } from '@/lib/directionsLink';
@@ -799,13 +799,13 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
   severityChip: {
     paddingHorizontal: 10,
     paddingVertical: 6,
-    borderRadius: 999,
+    borderRadius: radius.circle,
   },
   severityChipText: { color: '#fff', fontWeight: '700', fontSize: 12 },
   statusBadge: {
     paddingHorizontal: 10,
     paddingVertical: 6,
-    borderRadius: 999,
+    borderRadius: radius.circle,
   },
   statusBadgeText: { fontWeight: '700', fontSize: 12 },
   sectionLabel: {
@@ -907,7 +907,7 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
     gap: 6,
     paddingHorizontal: 14,
     paddingVertical: 9,
-    borderRadius: 999,
+    borderRadius: radius.circle,
     borderWidth: 1.5,
     borderColor: '#bbb',
     marginTop: 10,
@@ -950,7 +950,7 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
   categoryChip: {
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 999,
+    borderRadius: radius.circle,
     borderWidth: 1.5,
     borderColor: color.border,
     marginRight: 8,

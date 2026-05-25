@@ -23,6 +23,7 @@ import {
 import { filterMyReports } from '@/lib/myReportsFilter';
 import type { FlagRow, FlagStatus } from '@/types/database';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
+import { radius } from '@/theme';
 
 const STATUS_FILTER_ORDER: FlagStatus[] = [
   'open',
@@ -170,6 +171,7 @@ export default function MyReportsModal({
       (item.description ? `. Note: ${item.description}` : '');
 
     return (
+      <View role="listitem">
       <Pressable
         onPress={() => onSelectFlag(item)}
         style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
@@ -240,6 +242,7 @@ export default function MyReportsModal({
           </View>
         </View>
       </Pressable>
+      </View>
     );
   };
 
@@ -394,6 +397,7 @@ export default function MyReportsModal({
               data={displayFlags}
               keyExtractor={(f) => f.id}
               renderItem={renderItem}
+              accessibilityRole="list"
               contentContainerStyle={
                 displayFlags.length === 0 ? styles.center : styles.list
               }
@@ -526,7 +530,7 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
   statusBadge: {
     paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 999,
+    borderRadius: radius.circle,
   },
   statusBadgeText: { fontWeight: '700', fontSize: 11 },
   rowBody: { flexDirection: 'row', gap: 12 },
@@ -560,7 +564,7 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
   sortChip: {
     paddingHorizontal: 14,
     paddingVertical: 7,
-    borderRadius: 999,
+    borderRadius: radius.circle,
     backgroundColor: '#eef1f5',
     minHeight: 44,
     alignItems: 'center',
@@ -581,7 +585,7 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
   statusFilterChip: {
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 999,
+    borderRadius: radius.circle,
     backgroundColor: '#eef1f5',
     minHeight: 44,
     alignItems: 'center',

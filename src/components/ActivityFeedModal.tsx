@@ -147,7 +147,7 @@ export default function ActivityFeedModal({
       (item.description ? `. ${item.description}` : '');
 
     return (
-      <View>
+      <View role="listitem">
       <Pressable
         onPress={() => onSelectFlag(item)}
         style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
