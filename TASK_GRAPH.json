@@ -1,0 +1,54 @@
+{
+  "cycle": "morgan/post-project-audit-2026-05-24",
+  "updated": "2026-05-24T00:00:00Z",
+  "nodes": [
+    {
+      "id": "morgan/post-audit#step-1",
+      "role": "Morgan",
+      "status": "completed",
+      "artifact": "branch:main#morgan-post-project-audit-2026-05-24"
+    },
+    {
+      "id": "dana/mutualmesh-push#step-1",
+      "role": "Dana",
+      "status": "blocked",
+      "artifact": null
+    },
+    {
+      "id": "sky/constitution-amendment",
+      "role": "Sky",
+      "status": "blocked",
+      "artifact": null
+    },
+    {
+      "id": "sky/prompt-library-merge",
+      "role": "Sky",
+      "status": "blocked",
+      "artifact": null
+    },
+    {
+      "id": "rory/mutualmesh-push-test",
+      "role": "Rory",
+      "status": "pending",
+      "artifact": null
+    },
+    {
+      "id": "will/branch-cleanup",
+      "role": "Will",
+      "status": "pending",
+      "artifact": null
+    }
+  ],
+  "edges": [
+    {
+      "from": "dana/mutualmesh-push#step-1",
+      "to": "rory/mutualmesh-push-test",
+      "type": "gate"
+    },
+    {
+      "from": "rory/mutualmesh-push-test",
+      "to": "sky/mutualmesh-phase4-approval",
+      "type": "gate"
+    }
+  ]
+}
