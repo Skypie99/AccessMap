@@ -21,3 +21,21 @@ jobs:
         run: npm run typecheck
       - name: Test
         run: npm test -- --passWithNoTests --forceExit
+      # Lint and format gates — these steps run only when the optional
+      # ESLint + Prettier dev packages are installed (see eslint.config.js
+      # for the exact install command).  The `if: always()` on the test step
+      # above means a failed test never skips these checks.
+      - name: Lint (skip if eslint not installed)
+        run: |
+          if npx eslint --version > /dev/null 2>&1; then
+            npm run lint
+          else
+            echo "ESLint not installed — skipping. Run: npm i -D eslint eslint-config-expo prettier eslint-config-prettier"
+          fi
+      - name: Format check (skip if prettier not installed)
+        run: |
+          if npx prettier --version > /dev/null 2>&1; then
+            npm run format:check
+          else
+            echo "Prettier not installed — skipping. Run: npm i -D prettier eslint-config-prettier"
+          fi
