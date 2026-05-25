@@ -12,6 +12,8 @@ import {
 } from 'react-native';
 import { font, radius, shadow, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { offlineCacheKey } from '@/lib/flagsStore';
 import { signOut, supabase } from '@/lib/supabase';
 import { confirm } from '@/lib/confirm';
 import { useAuth } from '@/lib/auth';
@@ -286,6 +288,16 @@ export default function SettingsScreen() {
       true,
     );
     if (!ok) return;
+    // Jordan Condition 1 — clear this user's offline cache BEFORE signing out
+    // so no flag data persists for the next user on a shared device.
+    // Failure is silent (cache is ephemeral, removal is a privacy best-effort).
+    if (user?.id) {
+      try {
+        await AsyncStorage.removeItem(offlineCacheKey(user.id));
+      } catch (e) {
+        console.warn('[SettingsScreen] failed to clear offline cache on sign-out:', e);
+      }
+    }
     // Fire-and-forget — signOut returns an AuthResponse but the
     // AuthProvider listener takes care of routing back to the
     // SignInScreen, so we don't need to await or surface errors

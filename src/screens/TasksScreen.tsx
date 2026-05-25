@@ -78,6 +78,7 @@ export default function TasksScreen() {
     hasMore,
     patchFlag,
     removeFlag,
+    isOfflineCache,
   } = useFlags();
   // Extract userId early so it's available for derived values below.
   const userId = user?.id;
@@ -499,6 +500,21 @@ export default function TasksScreen() {
             {loading ? 'Retrying…' : errorBannerText}
           </Text>
         </Pressable>
+      )}
+      {isOfflineCache && (
+        <View
+          style={styles.offlineBanner}
+          accessibilityRole="text"
+          accessibilityLiveRegion="polite"
+          accessibilityLabel="Showing offline data. Connect to the internet to refresh."
+        >
+          <Text style={styles.offlineBannerIcon} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+            📶
+          </Text>
+          <Text style={styles.offlineBannerText}>
+            Showing offline data — connect to refresh
+          </Text>
+        </View>
       )}
       {/* Select-multiple entry — visible only when there's something to
           select and we're not already in selection mode. Long-press on a
@@ -1073,6 +1089,28 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
   errorBannerPressed: { opacity: 0.7 },
   errorBannerIcon: { color: color.textOnBrand, fontSize: 18, fontWeight: '700' },
   errorBannerText: { color: color.textOnBrand, fontSize: 13, fontWeight: '600', flex: 1 },
+  // Offline data notice — uses warning tokens so it's visually distinct from
+  // the red error banner but still draws the eye. Wraps `warningBg`/`warningFg`
+  // from the theme (WCAG-checked pair). No tap action — it's purely informational.
+  offlineBanner: {
+    marginHorizontal: 16,
+    marginTop: 8,
+    backgroundColor: color.warningBg,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 10,
+    flexDirection: 'row',
+    gap: 8,
+    alignItems: 'center',
+    minHeight: 40,
+  },
+  offlineBannerIcon: { fontSize: 16 },
+  offlineBannerText: {
+    color: color.warningFg,
+    fontSize: 13,
+    fontWeight: '600',
+    flex: 1,
+  },
   center: {
     flexGrow: 1,
     alignItems: 'center',
