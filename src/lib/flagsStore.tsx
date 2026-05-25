@@ -9,20 +9,19 @@ import React, {
 } from 'react';
 import { AccessibilityInfo } from 'react-native';
 import { errorMessage } from './errors';
-import { DEFAULT_STATUSES, listFlags, listFlagsPage } from './flags';
+import {
+  DEFAULT_STATUSES,
+  INITIAL_PAGE_SIZE,
+  NEXT_PAGE_SIZE,
+  listFlags,
+  listFlagsPage,
+} from './flags';
 import {
   type FlagRealtimePayload,
   mergeFlagRealtimePayload,
 } from './flagsRealtime';
 import { supabase } from './supabase';
 import type { FlagRow, FlagStatus } from '@/types/database';
-
-// First page is large enough to cover a typical map viewport and several
-// TasksScreen scrolls before the user hits the Load More button.
-const INITIAL_PAGE_SIZE = 50;
-// Subsequent pages are smaller so each load is fast and the button stays
-// clearly in view (the spec asks for "Load 20 more").
-const NEXT_PAGE_SIZE = 20;
 
 type FlagsContextValue = {
   flags: FlagRow[];

@@ -22,7 +22,7 @@ import {
 } from '@/lib/distance';
 import { confirm } from '@/lib/confirm';
 import { errorMessage } from '@/lib/errors';
-import { CATEGORY_LABELS, severityColor, updateFlagStatus } from '@/lib/flags';
+import { CATEGORY_LABELS, NEXT_PAGE_SIZE, severityColor, updateFlagStatus } from '@/lib/flags';
 import { relativeTime } from '@/lib/relativeTime';
 import { useFlags } from '@/lib/flagsStore';
 import { useUserLocation } from '@/lib/location';
@@ -716,7 +716,7 @@ export default function TasksScreen() {
                     pressed && styles.loadMoreBtnPressed,
                   ]}
                   accessibilityRole="button"
-                  accessibilityLabel="Load 20 more flags"
+                  accessibilityLabel={`Load ${NEXT_PAGE_SIZE} more flags`}
                   accessibilityHint="Fetches the next page of accessibility reports"
                   accessibilityState={{ busy: loadingMore }}
                 >
@@ -726,7 +726,7 @@ export default function TasksScreen() {
                       accessibilityState={{ busy: true }}
                     />
                   ) : (
-                    <Text style={styles.loadMoreText}>Load 20 more</Text>
+                    <Text style={styles.loadMoreText}>{`Load ${NEXT_PAGE_SIZE} more`}</Text>
                   )}
                 </Pressable>
               ) : (

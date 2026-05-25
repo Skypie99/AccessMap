@@ -9,6 +9,14 @@ import type {
 export const FLAG_PHOTOS_BUCKET = 'flag-photos';
 
 /**
+ * Default page sizes used by listFlagsPage and FlagsProvider.
+ * Exported here so flagsStore.tsx and TasksScreen.tsx can import them
+ * without a circular dependency.
+ */
+export const INITIAL_PAGE_SIZE = 50;
+export const NEXT_PAGE_SIZE = 20;
+
+/**
  * Upload a local image (file:// URI from expo-image-picker) to the
  * flag-photos Supabase bucket and return its public URL.
  */
@@ -107,7 +115,7 @@ export async function listFlagsPage(
   statuses: FlagStatus[] = ['open', 'verified'],
   opts: ListFlagsPageOptions = {},
 ): Promise<ListFlagsPageResult> {
-  const limit = opts.limit ?? 50;
+  const limit = opts.limit ?? INITIAL_PAGE_SIZE;
   let query = supabase
     .from('flags')
     .select('*')
