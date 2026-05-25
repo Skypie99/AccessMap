@@ -20,11 +20,13 @@ import React, { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Modal,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
   View,
+  type AccessibilityRole,
 } from 'react-native';
 import { STATUS_LABELS } from '@/lib/flags';
 import { relativeTime } from '@/lib/relativeTime';
@@ -150,20 +152,25 @@ export default function StatusHistoryModal({
                 </Text>
               </View>
             ) : (
-              formatted.map((item) => (
-                <View
-                  key={item.key}
-                  style={styles.entryRow}
-                  accessible
-                  accessibilityLabel={item.line}
-                  accessibilityRole="text"
-                >
-                  <View style={styles.entryDot} />
-                  <View style={styles.entryTextWrap}>
-                    <Text style={styles.entryLine}>{item.line}</Text>
+              <View
+                style={styles.entryList}
+                accessibilityRole={Platform.OS === 'web' ? ('list' as AccessibilityRole) : undefined}
+              >
+                {formatted.map((item) => (
+                  <View
+                    key={item.key}
+                    style={styles.entryRow}
+                    accessible
+                    accessibilityLabel={item.line}
+                    accessibilityRole={Platform.OS === 'web' ? ('listitem' as AccessibilityRole) : 'text'}
+                  >
+                    <View style={styles.entryDot} />
+                    <View style={styles.entryTextWrap}>
+                      <Text style={styles.entryLine}>{item.line}</Text>
+                    </View>
                   </View>
-                </View>
-              ))
+                ))}
+              </View>
             )}
           </ScrollView>
         </View>
@@ -179,7 +186,7 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
     justifyContent: 'flex-end',
   },
   card: {
-    backgroundColor: '#fff',
+    backgroundColor: color.surface,
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,
     paddingHorizontal: 20,
@@ -193,17 +200,16 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
     alignItems: 'center',
     gap: 12,
   },
-  // #222 on white = 16.1:1 — well past AAA.
-  title: { fontSize: 18, fontWeight: '700', flex: 1, color: '#222' },
+  title: { fontSize: 18, fontWeight: '700', flex: 1, color: color.textStrong },
   closeBtn: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: '#eef1f5',
+    backgroundColor: color.surfaceNeutral,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  closeBtnText: { fontSize: 16, color: '#333', fontWeight: '700' },
+  closeBtnText: { fontSize: 16, color: color.text, fontWeight: '700' },
   body: { flexShrink: 1 },
   bodyContent: { gap: 12, paddingBottom: 8, paddingTop: 4 },
   center: {
@@ -211,7 +217,7 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
     gap: 8,
     paddingVertical: 32,
   },
-  loadingText: { fontSize: 14, color: '#555' },
+  loadingText: { fontSize: 14, color: color.textMuted },
   emptyWrap: {
     paddingVertical: 28,
     paddingHorizontal: 8,
@@ -221,15 +227,15 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
   emptyTitle: {
     fontSize: 15,
     fontWeight: '700',
-    color: '#333',
+    color: color.text,
   },
-  // #444 on #fff = 9.7:1 — clears AA at 4.5:1 with plenty of headroom.
   emptyBody: {
     fontSize: 14,
-    color: '#444',
+    color: color.textMuted,
     textAlign: 'center',
     lineHeight: 20,
   },
+  entryList: { gap: 0 },
   entryRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
@@ -250,6 +256,6 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
   entryLine: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#222',
+    color: color.textStrong,
   },
 });
