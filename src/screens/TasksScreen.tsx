@@ -446,6 +446,34 @@ export default function TasksScreen() {
     setSelectedFlag(flag);
   }, []);
 
+  // Memoized renderItem — extracted from inline JSX so React.memo on FlagCard
+  // actually fires. An inline arrow in the SectionList prop creates a new
+  // function reference on every parent render, bypassing memo and causing all
+  // visible cards to re-check their props even when nothing changed.
+  const renderFlagItem = useCallback(
+    ({ item }: { item: FlagRow }) => (
+      <FlagCard
+        flag={item}
+        isBusy={busyId === item.id}
+        isOwn={item.user_id === userId}
+        userLocation={userLocation}
+        selectionActive={selection.active}
+        selected={isSelected(selection, item.id)}
+        onPress={(flag) => {
+          if (selection.active) {
+            setSelection((s) => toggleId(s, flag.id));
+          } else {
+            handleViewOnMap(flag);
+          }
+        }}
+        onLongPress={handleCardLongPress}
+        onSetStatus={setStatus}
+        onShowDetails={showDetails}
+      />
+    ),
+    [busyId, userId, userLocation, selection, handleViewOnMap, handleCardLongPress, setStatus, showDetails],
+  );
+
   // Load-more handler shared by the button (screen-reader / keyboard) and any
   // future scroll-triggered path. Surfaces errors as an Alert so the user has
   // a clear retry path.
@@ -697,29 +725,7 @@ export default function TasksScreen() {
             </Text>
           </View>
         }
-        renderItem={({ item }) => (
-          <FlagCard
-            flag={item}
-            isBusy={busyId === item.id}
-            isOwn={item.user_id === userId}
-            userLocation={userLocation}
-            selectionActive={selection.active}
-            selected={isSelected(selection, item.id)}
-            onPress={(flag) => {
-              // In selection mode, a tap toggles membership instead of
-              // navigating away — matches the standard mobile pattern
-              // (mail apps, photo grids).
-              if (selection.active) {
-                setSelection((s) => toggleId(s, flag.id));
-              } else {
-                handleViewOnMap(flag);
-              }
-            }}
-            onLongPress={handleCardLongPress}
-            onSetStatus={setStatus}
-            onShowDetails={showDetails}
-          />
-        )}
+        renderItem={renderFlagItem}
         ListFooterComponent={
           // Only render the footer when the list has items — showing a
           // spinner or end-state beneath an empty list would be confusing.

@@ -555,3 +555,48 @@ export const STATUS_ORDER: FlagStatus[] = [
 // default set the Map's status filter starts with, so a default-state
 // filter row matches the historical fetch behavior.
 export const DEFAULT_STATUSES: FlagStatus[] = ['open', 'verified'];
+
+/**
+ * One entry from the flag_status_history table. Each row records a single
+ * status transition for a flag (who changed it, from what, to what, when).
+ *
+ * Used by the "Status history" timeline in FlagDetailModal and any future
+ * surfaces (activity feed, notifications).
+ *
+ * `old_status === null` means this is the initial "reported" entry —
+ * the flag entered 'open' for the first time with no prior status.
+ */
+export interface FlagStatusHistoryEntry {
+  old_status: string | null;
+  new_status: string;
+  changed_by: string | null;
+  changed_at: string;
+}
+
+/**
+ * Fetch the status history for a single flag, oldest entry first.
+ *
+ * Reads from the `flag_status_history` table added by migration
+ * `supabase/migrations/2026-05-24_status_history_table.sql`. That
+ * migration is propose-only (Sky applies it); until then this function
+ * returns `[]` and the caller renders nothing — graceful degradation.
+ *
+ * If the query errors for any reason (table missing, RLS rejection, network)
+ * the error is swallowed and an empty array is returned. The caller MUST
+ * treat an empty result as "no history available yet" rather than an error.
+ */
+export async function listFlagStatusHistory(
+  flagId: string,
+): Promise<FlagStatusHistoryEntry[]> {
+  try {
+    const { data, error } = await supabase
+      .from('flag_status_history')
+      .select('old_status, new_status, changed_by, changed_at')
+      .eq('flag_id', flagId)
+      .order('changed_at', { ascending: true });
+    if (error) return []; // Graceful degradation — table may not exist yet
+    return (data ?? []) as FlagStatusHistoryEntry[];
+  } catch {
+    return [];
+  }
+}
