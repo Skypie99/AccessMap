@@ -6,6 +6,115 @@ entries; the file is the project's accumulated wisdom.
 
 ---
 
+## 2026-05-24 — Component extraction: omit caller-specific margin from base style
+
+When extracting a repeated UI pattern into a reusable component (e.g. a
+search-input row with magnifier + TextInput + clear button), do NOT bake
+any outer margin into the component's base `StyleSheet` style. Every call
+site has a different spatial context — the margin that looks right in
+Modal A will narrow the component or misalign it in Modal B.
+
+Pattern: expose a `wrapStyle?: ViewStyle` prop that callers pass only when
+they need offset. The base style stays margin-free.
+
+```tsx
+// SearchInputRow base: no outer margin
+const styles = StyleSheet.create({
+  searchWrap: { flexDirection: 'row', alignItems: 'center', ... },
+  ...
+});
+
+// HelpModal (needs 20px inset):
+<SearchInputRow wrapStyle={{ marginHorizontal: 20 }} ... />
+
+// NearbyFlagsModal (needs 0px — fills to the sheet's own padding):
+<SearchInputRow ... />
+```
+
+Without `wrapStyle`, a Quinn H1 regression (narrowed search bar in
+NearbyFlagsModal) hit in Cycle E QA because the base style had
+`marginHorizontal: spacing.xl` baked in. Caught before merge; fixed in
+the same session.
+
+---
+
+## 2026-05-24 — Hydration race guard for persisted toggle UI
+
+When you load a persisted boolean toggle (e.g. "All / Mine" scope in
+TasksScreen) from AsyncStorage on mount, the load is async — the user
+can tap the chip and set new state BEFORE the load resolves. The
+subsequent `setMineOnly(savedValue)` then silently overwrites the tap.
+
+Fix: gate the control with a `hydrated` boolean flag.
+
+```tsx
+const [mineOnly, setMineOnly] = useState(false);
+const [mineOnlyHydrated, setMineOnlyHydrated] = useState(false);
+
+useEffect(() => {
+  let cancelled = false;
+  void loadScope().then((saved) => {
+    if (!cancelled) { setMineOnly(saved); setMineOnlyHydrated(true); }
+  });
+  return () => { cancelled = true; };
+}, []);
+```
+
+Set `disabled={!mineOnlyHydrated}` on the control and reflect it in
+`accessibilityState={{ disabled: !mineOnlyHydrated }}`. AsyncStorage is
+usually <50ms; the chip appears disabled for one frame and users never
+notice, but the race is permanently closed.
+
+---
+
+## 2026-05-24 — Extract decorativeProps to a named constant
+
+Decorative glyphs (severity dots, star indicators, accent bars) need 3
+props to vanish from the accessibility tree on both iOS and Android:
+
+```tsx
+accessible={false}
+importantForAccessibility="no-hide-descendants"
+accessibilityElementsHidden={true}
+```
+
+Repeating these inline is error-prone — it's easy to set `"no"` instead
+of `"no-hide-descendants"` on the middle one (a Cycle E M2 bug caught by
+Quinn). Extract once:
+
+```ts
+// src/lib/accessibility.ts
+export const decorativeProps = {
+  accessible: false,
+  importantForAccessibility: 'no-hide-descendants' as const,
+  accessibilityElementsHidden: true,
+} as const;
+```
+
+Then spread: `<View {...decorativeProps} />`. Tests lock all three
+values so a future typo is caught at CI time, not in a QA pass.
+
+---
+
+## 2026-05-24 — Worktree isolation can silently collapse to one branch
+
+When two parallel agents are spawned with `isolation: "worktree"`, the
+system may allocate them the same physical worktree if the isolation
+boundary isn't enforced. Result: both feature branches (`feat/E1`, `feat/E2`)
+point to the same commit tip, and one agent's commits silently overwrite
+what the other committed.
+
+Detection: `git log feat/E1 --oneline` and `git log feat/E2 --oneline` —
+if the tip hashes match and the log contains commits from BOTH agents, the
+worktrees collapsed.
+
+Recovery: create a consolidated cycle branch at the shared tip
+(`git branch -f cycle/E-2026-05-24 <shared-tip-sha>`) — the commits are
+correct, just the branch names are wrong. Delete the individual feature
+branches. Verify the commit log for completeness before declaring done.
+
+---
+
 ## 2026-05-23 — Merge-on-done > stacking branches
 
 After landing four stacked fastloop branches in one painful merge, the

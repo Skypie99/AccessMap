@@ -10,6 +10,40 @@ they land on `main`.
 
 ---
 
+## Parked on branches (2026-05-24) — awaiting Sky merge
+
+All gates green. Merge ORDER matters — stabilization before Cycle E.
+
+- **`chore/stabilization-2026-05-24`** (`c02a59f`) — Post-build polish:
+  15-file hex-literal → theme-token migration (dark-mode prerequisite),
+  ProfileScreen sign-out confirm(), filterSets/filterPresets deprecation
+  comments, error-handling tier policy in CLAUDE.md. 0 TS errors · 673 tests.
+  Merge command: `git merge chore/stabilization-2026-05-24`
+
+- **Cycle E — `cycle/E-2026-05-24`** (`475cb6c`) — 5 features + QA polish.
+  Merge AFTER stabilization. 0 TS errors · 690 tests.
+  - `color.placeholderText` AA token (#5b6470, 4.5:1+) + 6 callsites
+  - Default filter set applied on launch (was wired but never fired)
+  - `decorativeProps` helper in `src/lib/accessibility.ts` + sweep
+  - Tasks "All/Mine" scope persisted device-wide (`tasksScope.ts`) + race guard
+  - `SearchInputRow` reusable component — HelpModal + NearbyFlagsModal refactored
+  - QA polish: SearchInputRow `wrapStyle` prop (H1), scope hydration race (H2),
+    star chip `accessibilityElementsHidden` (M1), `resolvedAccent` importantForAccessibility (M2)
+  Merge command: `git merge cycle/E-2026-05-24`
+
+- **`a11y/signin-a11y-2026-05-24`** (`3d578c5`) — SignInScreen accessibility:
+  visible field labels, border contrast `#ccc`→`#666` (5.7:1), placeholderTextColor,
+  `accessibilityRole="header"` on title. 1 file. 0 errors · 673 tests.
+  Merge command: `git merge a11y/signin-a11y-2026-05-24`
+
+- **`a11y/contrast-touch-sweep-2026-05-24`** (`ee86a38`) — Two component fixes:
+  FlashBanner success green `#27ae60`→`#1e8449` (AA pass), UpdateBanner "View"
+  button minHeight 36→44px + fontSize 13→14, remove duplicate `accessibilityLiveRegion`
+  on the banner Pressable. 2 files. 0 errors · 673 tests.
+  Merge command: `git merge a11y/contrast-touch-sweep-2026-05-24`
+
+---
+
 ## Parked on branches (2026-05-23) — awaiting Sky merge
 
 These are committed on independent branches off `main`, all gates
@@ -121,40 +155,41 @@ skips and mailto: handles delivery).
 
 ## Now (next 1–2 runs)
 
-- **Marker clustering on the Map.** Cluster pins when more than ~50 are
-  in the viewport so pan/zoom stays smooth at high density. Native: wrap
-  `MapView` with `react-native-map-clustering`. Web: hand-roll with
-  `supercluster` (react-leaflet has no native primitive). Adds two
-  runtime deps — DECISIONS FOR SKY. Detailed plan in
-  `qa-reports/qa-2026-05-22.md` P4.
-- **Realtime flag updates — client merged to main, awaiting one SQL run.**
-  `FlagsProvider` subscribes to `public.flags` and merges incoming
-  INSERT/UPDATE/DELETE deltas through a pure helper
-  (`src/lib/flagsRealtime.ts`, 11 unit tests). Currently a no-op —
-  becomes live the moment **Sky runs
-  [`supabase/realtime.sql`](supabase/realtime.sql)** in the Supabase
-  dashboard SQL editor (one button-press, idempotent). After that,
-  flags created/triaged on one device appear on others without a refresh.
+- **Merge the 2026-05-24 branch queue (DECISIONS FOR SKY).** Four branches
+  ready to land, in order (see "Parked on branches (2026-05-24)" above):
+  stabilization → cycle/E → a11y/signin → a11y/contrast. All gates green.
+- **Apply Supabase migrations (DECISIONS FOR SKY).** Five migrations in
+  `supabase/migrations/` unlock T1 (status history) and C4 (context tags);
+  `supabase/realtime.sql` activates live flag updates. Apply via Dashboard
+  SQL Editor.
+- **Marker clustering — DECISION FOR SKY.** Needs two new runtime deps
+  (`react-native-map-clustering` + `supercluster`). Detailed plan in
+  `qa-reports/qa-2026-05-22.md` P4. Approve deps to unblock Shamus.
+- **Dark mode Phase 2 — DECISION FOR SKY.** Architecture choice required:
+  Option A (useThemeColors hook, ~30 files, best long-term) vs Option B
+  (root overlay, brittle for complex UIs). All tokens are in place —
+  this is purely an architectural preference before Shamus builds.
 
-## Next (this month)
+## Cycle F — after Cycle E merges to main
 
-- **Default-filter-set on launch — shipped on
-  `feat/default-filter-set-2026-05-23` (unmerged).** Long-press a saved
-  chip → action sheet with Make/Remove default, Delete, Cancel. The
-  default chip shows a ★ prefix and its accessibilityLabel announces
-  "default on launch". On mount the default's filters override the
-  last-toggled mapFilters; a dangling pointer falls back silently and
-  `deleteSet` cascades the pointer clear. 8 new unit tests cover the
-  pointer + cascade.
-- **Distance test coverage.** `src/lib/distance.ts` doesn't have a
-  test file yet (Loop 5 didn't add one). Add one when Jest is in.
-- **Address search / jump-to.** Geocoded address bar at the top of
-  Map; tapping a result animates the map there.
-- **Wire `accessmap://flag/{id}` deep-link handler.** Share button
-  (shipped 2026-05-23 fastloop) emits this URL; the in-app handler
-  isn't there yet. Add an `expo-linking` listener that maps the URL
-  to the Map tab with `{focusFlag: { id, lat, lng }}` — reuses the
-  existing route param.
+These are pre-scoped, no blocking decisions needed (except dark mode):
+
+1. **Dark mode Phase 2** — after Sky picks Option A or B above.
+2. **Marker clustering** — after Sky approves deps above.
+3. **`placeholderTextColor` sweep — 8 remaining TextInputs** (Quinn L3/L4):
+   SignInScreen (2, now fixed via a11y/signin branch), ReportFlagModal (1),
+   MapScreen (2), FilterPresetsModal (2), SavedPlacesModal (1).
+4. **`sevDot` decorativeProps** — TasksScreen FlagCard severity dot needs
+   `{...decorativeProps}` (Quinn L3, pre-existing, one-liner per file).
+5. **SearchInputRow in MyReportsModal + AddressSearchModal** — 2 of 4
+   modals migrated in cycle/E; these 2 remain.
+6. **`SearchInputRow` TextInput `accessibilityHint`** — Quinn L4; add hint
+   text like "Type to filter flags by keyword" to the TextInput inside
+   SearchInputRow.
+7. **`color.placeholderText` contrast test for `surfaceSoft`** — Quinn L1;
+   add a theme.test.ts assertion verifying contrast on `#f7f8fa`.
+8. **Flag editing** — reporter can edit open flag description/severity.
+   Jordan trigger fires (RLS + user data edit) — needs Jordan review first.
 
 ## Later (sequence after the above)
 
