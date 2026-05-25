@@ -18,7 +18,6 @@
  * which matches the actual AsyncStorage semantics closely enough.
  */
 
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   addWatched,
   loadWatched,
