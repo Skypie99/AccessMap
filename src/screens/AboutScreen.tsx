@@ -137,6 +137,11 @@ export default function AboutScreen({ visible, onClose }: Props) {
               community can see the history of a flag. The log is visible to
               other users without identifying who made each change.
             </Text>
+            <Text style={styles.bodyText}>
+              Map tile images are cached locally on your device for up to 7
+              days to improve performance. This data is not shared with anyone
+              and is cleared when you sign out.
+            </Text>
           </ScrollView>
         </View>
       </View>

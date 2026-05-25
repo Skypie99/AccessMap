@@ -60,6 +60,13 @@ export async function signOut(userId?: string) {
     } catch (e) {
       console.warn('[signOut] offline cache clear failed (silent):', e);
     }
+    // Clear tile cache (Jordan offline-tiles Condition 1).
+    try {
+      const { clearTileCache } = await import('./tileCache');
+      await clearTileCache(userId);
+    } catch (e) {
+      console.warn('[signOut] tile cache clear failed (silent):', e);
+    }
     // Clear push token (Jordan push-notifs Condition 5)
     try {
       const { deletePushToken } = await import('./pushNotifications');
