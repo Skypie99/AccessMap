@@ -1,10 +1,8 @@
 import React, { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
 import { Image, StyleSheet, Text, View } from 'react-native';
-import MapView, {
-  Callout,
-  Marker,
-  PROVIDER_DEFAULT,
-} from 'react-native-maps';
+import ClusteredMapView from 'react-native-map-clustering';
+import { Callout, Marker, PROVIDER_DEFAULT } from 'react-native-maps';
+import type MapView from 'react-native-maps';
 import { CATEGORY_LABELS, severityColor } from '@/lib/flags';
 import type { FlagRow } from '@/types/database';
 
@@ -49,6 +47,8 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(
     },
     ref,
   ) {
+    // Ref to ClusteredMapView — cast to MapView for animateToRegion calls
+    // (ClusteredMapView wraps MapView internally and delegates map methods)
     const mapRef = useRef<MapView | null>(null);
     const markerRefs = useRef<Record<string, InstanceType<typeof Marker> | null>>({});
 
@@ -85,17 +85,16 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(
     );
 
     return (
-      <MapView
-        ref={mapRef}
+      <ClusteredMapView
+        mapRef={(r: any) => { mapRef.current = r; }}
         style={StyleSheet.absoluteFillObject}
         provider={PROVIDER_DEFAULT}
         initialRegion={initialRegion}
         showsUserLocation={showsUserLocation}
         showsMyLocationButton={false}
-        // Long-press a spot on the map → fire the parent's drop handler
-        // with the press coordinates. iOS/Android only — web variant
-        // handles the same intent via a contextmenu listener. The
-        // 500ms default duration is fine; we don't override it.
+        clusterColor="#2563EB"
+        clusterTextColor="#ffffff"
+        radius={40}
         onLongPress={
           onLongPressMap
             ? (e) => {
@@ -146,7 +145,7 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(
             </Callout>
           </Marker>
         ))}
-      </MapView>
+      </ClusteredMapView>
     );
   },
 );
