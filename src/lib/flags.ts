@@ -57,8 +57,9 @@ export interface CreateFlagInput {
 
 /**
  * Fetch flags matching the given statuses. Capped at 500 rows so a runaway
- * table can't lock up the Map/Tasks screens. Real cursor-paginated fetching
- * is tracked as a proposal in qa-reports/qa-2026-05-22.md (P1).
+ * table can't lock up the Map/Tasks screens. The shared FlagsProvider now
+ * uses listFlagsPage() for the default open+verified set; this function is
+ * kept for one-shot filtered queries (e.g. Map filter when toggling Resolved).
  */
 export async function listFlags(statuses: FlagStatus[] = ['open', 'verified']) {
   const { data, error } = await supabase
@@ -69,6 +70,59 @@ export async function listFlags(statuses: FlagStatus[] = ['open', 'verified']) {
     .limit(500);
   if (error) throw error;
   return (data ?? []) as FlagRow[];
+}
+
+export interface ListFlagsPageOptions {
+  limit?: number;
+  /**
+   * Cursor: when set, fetch rows whose created_at is strictly less than this
+   * ISO timestamp. Pair with the previous page's `nextCursor`.
+   */
+  before?: string;
+}
+
+export interface ListFlagsPageResult {
+  rows: FlagRow[];
+  /**
+   * `created_at` of the last row when a full page was returned — implies more
+   * may exist. `null` once the server returned fewer than `limit` rows.
+   */
+  nextCursor: string | null;
+}
+
+/**
+ * Cursor-paginated fetch over the flags table. Used by FlagsProvider for the
+ * default open+verified feed so the first page arrives fast and the user
+ * loads more on demand. Cursor is the `created_at` value of the last row in
+ * the previous page.
+ *
+ * Returns `{ rows, nextCursor }`. `nextCursor` is only set when a full page
+ * was returned; once a short page comes back we know we've reached the end.
+ *
+ * Note on ties: two rows with identical `created_at` could be skipped at a
+ * page boundary (strict `lt` cursor). Postgres `now()` is microsecond
+ * resolution so collisions are very unlikely in practice.
+ */
+export async function listFlagsPage(
+  statuses: FlagStatus[] = ['open', 'verified'],
+  opts: ListFlagsPageOptions = {},
+): Promise<ListFlagsPageResult> {
+  const limit = opts.limit ?? 50;
+  let query = supabase
+    .from('flags')
+    .select('*')
+    .in('status', statuses)
+    .order('created_at', { ascending: false })
+    .limit(limit);
+  if (opts.before) {
+    query = query.lt('created_at', opts.before);
+  }
+  const { data, error } = await query;
+  if (error) throw error;
+  const rows = (data ?? []) as FlagRow[];
+  const nextCursor =
+    rows.length === limit ? (rows[rows.length - 1]?.created_at ?? null) : null;
+  return { rows, nextCursor };
 }
 
 /**
