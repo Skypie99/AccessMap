@@ -65,3 +65,32 @@ export function filterFeedback<T extends { category: FeedbackCategoryRow }>(
   if (filter === 'all') return items;
   return items.filter((item) => item.category === filter);
 }
+
+/**
+ * Filter a list of feedback rows by a free-text query against the body.
+ *
+ * - Empty / whitespace-only query is a pass-through.
+ * - Multi-word queries are AND-combined (every word must appear somewhere
+ *   in the body). Same semantics as filterMyReports.
+ * - NFC-normalised and case-insensitive so accented characters and
+ *   different capitalisation don't fragment results.
+ *
+ * Generic over `T extends { body: string }` for testability without
+ * importing the full FeedbackRow type.
+ */
+export function filterFeedbackByQuery<T extends { body: string }>(
+  items: T[],
+  query: string,
+): T[] {
+  const trimmed = query.trim();
+  if (!trimmed) return items;
+  const tokens = trimmed
+    .normalize('NFC')
+    .toLowerCase()
+    .split(/\s+/)
+    .filter(Boolean);
+  return items.filter((item) => {
+    const haystack = item.body.normalize('NFC').toLowerCase();
+    return tokens.every((token) => haystack.includes(token));
+  });
+}
