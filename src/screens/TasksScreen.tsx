@@ -71,6 +71,7 @@ export default function TasksScreen() {
   const { user } = useAuth();
   const {
     flags: providerFlags,
+    flagsMap,
     loading,
     error: flagsError,
     refresh,
@@ -199,11 +200,11 @@ export default function TasksScreen() {
     if (!selection.active || selection.selectedIds.length === 0) return 0;
     let n = 0;
     for (const id of selection.selectedIds) {
-      const flag = flags.find((f) => f.id === id);
+      const flag = flagsMap.get(id);
       if (flag && flag.status === 'open') n += 1;
     }
     return n;
-  }, [selection, flags]);
+  }, [selection, flagsMap]);
 
   // Announce the selection bar's appearance once, when it first becomes
   // visible. Skipping the announcement on every count change keeps SR
@@ -281,7 +282,7 @@ export default function TasksScreen() {
       // For 'verify' we skip anything not in 'open' (already-verified
       // flags would be a no-op). For 'resolve' we accept both open + verified.
       const targetIds = ids.filter((id) => {
-        const flag = flags.find((f) => f.id === id);
+        const flag = flagsMap.get(id);
         if (!flag) return false;
         if (action === 'verify') return flag.status === 'open';
         return flag.status === 'open' || flag.status === 'verified';
@@ -342,7 +343,7 @@ export default function TasksScreen() {
       }
       exitSelection();
     },
-    [selection, flags, patchFlag, removeFlag, refresh, exitSelection, showFlash],
+    [selection, flagsMap, patchFlag, removeFlag, refresh, exitSelection, showFlash],
   );
 
   useEffect(

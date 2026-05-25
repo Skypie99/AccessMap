@@ -99,6 +99,9 @@ async function readFlagsCache(userId: string): Promise<FlagRow[] | null> {
 
 type FlagsContextValue = {
   flags: FlagRow[];
+  /** O(1) lookup by flag id. Derived from `flags` via useMemo — use instead
+   *  of `flags.find(f => f.id === id)` in hot paths or large flag sets. */
+  flagsMap: Map<string, FlagRow>;
   loading: boolean;
   // Set when the last refresh failed. Cleared on a successful refresh.
   error: string | null;
@@ -342,9 +345,19 @@ export function FlagsProvider({
     setFlags((prev) => prev.filter((f) => f.id !== id));
   }, []);
 
+  // O(1) id → FlagRow lookup. Built once per `flags` change so consumers
+  // avoid repeated O(n) `.find()` calls — especially valuable when
+  // flags > 200 rows (e.g. bulk-select operations over large datasets).
+  const flagsMap = useMemo(() => {
+    const m = new Map<string, FlagRow>();
+    flags.forEach((f) => m.set(f.id, f));
+    return m;
+  }, [flags]);
+
   const value = useMemo<FlagsContextValue>(
     () => ({
       flags,
+      flagsMap,
       loading,
       error,
       refresh,
@@ -357,7 +370,7 @@ export function FlagsProvider({
       removeFlag,
       isOfflineCache,
     }),
-    [flags, loading, error, refresh, loadMore, loadingMore, hasMore, statuses, setStatuses, patchFlag, removeFlag, isOfflineCache],
+    [flags, flagsMap, loading, error, refresh, loadMore, loadingMore, hasMore, statuses, setStatuses, patchFlag, removeFlag, isOfflineCache],
   );
 
   return <FlagsContext.Provider value={value}>{children}</FlagsContext.Provider>;
