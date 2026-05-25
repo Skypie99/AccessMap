@@ -29,7 +29,12 @@ import {
   STATUS_ORDER,
 } from '@/lib/flags';
 import { useFlags } from '@/lib/flagsStore';
-import { loadMapFilters, saveMapFilters } from '@/lib/mapFilters';
+import {
+  DISTANCE_OPTIONS,
+  loadMapFilters,
+  saveMapFilters,
+} from '@/lib/mapFilters';
+import { haversineKm } from '@/lib/distance';
 import {
   loadFilterPanelCollapsed,
   saveFilterPanelCollapsed,
@@ -203,6 +208,13 @@ export default function MapScreen() {
   const [activeStatuses, setActiveStatuses] = useState<Set<FlagStatus>>(
     () => new Set(DEFAULT_STATUSES),
   );
+  // Max distance (km) from the user to consider a flag visible. null = off
+  // (no distance filter applied). When the user has no known location
+  // (permission denied / still loading), the filter is treated as inactive
+  // regardless of this value — see filteredFlags below. Persisted via
+  // mapFilters; saved sets/presets do not carry this axis (yet) so applying
+  // a set leaves the current radius untouched.
+  const [maxDistanceKm, setMaxDistanceKm] = useState<number | null>(null);
   // Tracks whether we've finished reading saved filters from AsyncStorage.
   // The save-effect below is gated on this so the very first render
   // doesn't overwrite stored state with the (still-default) starting set
@@ -269,6 +281,7 @@ export default function MapScreen() {
     setActiveCategories(new Set());
     setMinSeverity(1);
     setActiveStatuses(new Set(DEFAULT_STATUSES));
+    setMaxDistanceKm(null);
   }, []);
 
   // Quick-toggle severity from the top icon row without opening the full
@@ -377,6 +390,10 @@ export default function MapScreen() {
         setMinSeverity(saved.minSeverity);
         setActiveStatuses(new Set(saved.statuses));
       }
+      // Distance is hydrated from the last-toggled mapFilters even when a
+      // default saved set is being applied — saved sets don't currently
+      // carry distance, so we still want the user's last radius choice.
+      if (saved) setMaxDistanceKm(saved.maxDistanceKm);
       setSavedSets(sets);
       setDefaultIdState(defaultSet ? defaultSet.id : null);
       setPanelCollapsed(collapsed);
@@ -589,11 +606,26 @@ export default function MapScreen() {
       categories: Array.from(activeCategories),
       minSeverity,
       statuses: Array.from(activeStatuses),
+      maxDistanceKm,
     });
-  }, [activeCategories, minSeverity, activeStatuses, filtersHydrated]);
+  }, [
+    activeCategories,
+    minSeverity,
+    activeStatuses,
+    maxDistanceKm,
+    filtersHydrated,
+  ]);
+
+  // Distance is only effective when we know where the user is — otherwise
+  // the filter would silently hide every flag. Track this in a derived
+  // flag so the chip row + filteredFlags + filtersActive agree.
+  const distanceFilterEffective = maxDistanceKm !== null && location !== null;
 
   const filtersActive =
-    activeCategories.size > 0 || minSeverity > 1 || statusFilterActive;
+    activeCategories.size > 0 ||
+    minSeverity > 1 ||
+    statusFilterActive ||
+    distanceFilterEffective;
 
   // Category quick-cycle button derived state — computed once per render
   // so the JSX stays readable. catCycleActive drives the filled-blue style;
@@ -627,12 +659,32 @@ export default function MapScreen() {
 
   const filteredFlags = useMemo(() => {
     if (!filtersActive) return flags;
-    return flags.filter(
-      (f) =>
-        (activeCategories.size === 0 || activeCategories.has(f.category)) &&
-        f.severity >= minSeverity,
-    );
-  }, [flags, activeCategories, minSeverity, filtersActive]);
+    return flags.filter((f) => {
+      if (activeCategories.size > 0 && !activeCategories.has(f.category)) {
+        return false;
+      }
+      if (f.severity < minSeverity) return false;
+      // Distance filter — only applied when we actually know where the user
+      // is (see distanceFilterEffective). Status filtering already happens
+      // server-side via setStatuses, so we don't repeat it here.
+      if (distanceFilterEffective && maxDistanceKm !== null && location) {
+        const km = haversineKm(
+          { lat: location.lat, lng: location.lng },
+          { lat: f.lat, lng: f.lng },
+        );
+        if (km > maxDistanceKm) return false;
+      }
+      return true;
+    });
+  }, [
+    flags,
+    activeCategories,
+    minSeverity,
+    filtersActive,
+    distanceFilterEffective,
+    maxDistanceKm,
+    location,
+  ]);
 
   // Announce the empty-results state to iOS screen readers when it appears
   // (Android picks it up via the alert's accessibilityLiveRegion). Only
@@ -1239,6 +1291,72 @@ export default function MapScreen() {
             {activeStatuses.size === 0 && (
               <Text style={styles.statusHint}>
                 Pick at least one status to see flags.
+              </Text>
+            )}
+
+            {/* Distance — radius from the user's current location. Chips
+                follow the same pill pattern as Status/Category; "Off"
+                renders selected when no radius is active. When the user
+                has no known location (permission denied / still loading)
+                we still render the chips but show a hint underneath
+                explaining the filter is inactive until location is known.
+                We rely on `location` (the existing requestLocation state),
+                not a separate hook, to stay consistent with the rest of
+                the screen.
+
+                Saved sets/presets intentionally do NOT carry distance
+                yet — saved sets are device-wide and presets are about
+                category/severity/status combinations; mixing in a radius
+                that depends on the user's current GPS would make a
+                "saved view" portable in a way it isn't today. We can
+                revisit when location-aware sets become a clear need. */}
+            <Text style={styles.filterSubLabel}>Distance</Text>
+            <View style={styles.filterRow}>
+              {DISTANCE_OPTIONS.map((opt) => {
+                const active = opt === maxDistanceKm;
+                const label =
+                  opt === null
+                    ? 'Off'
+                    : opt < 1
+                      ? `${Math.round(opt * 1000)} m`
+                      : `${opt} km`;
+                const a11yLabel =
+                  opt === null
+                    ? 'Distance filter off'
+                    : opt < 1
+                      ? `Within ${Math.round(opt * 1000)} meters`
+                      : `Within ${opt} kilometer${opt === 1 ? '' : 's'}`;
+                return (
+                  <Pressable
+                    key={opt === null ? 'off' : String(opt)}
+                    onPress={() => setMaxDistanceKm(opt)}
+                    style={[
+                      styles.filterPill,
+                      active && styles.filterPillActive,
+                    ]}
+                    accessibilityRole="button"
+                    accessibilityLabel={a11yLabel}
+                    accessibilityState={{ selected: active }}
+                  >
+                    <Text
+                      style={[
+                        styles.filterPillText,
+                        active && styles.filterPillTextActive,
+                      ]}
+                    >
+                      {label}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+            {maxDistanceKm !== null && !location && (
+              <Text
+                style={styles.statusHint}
+                accessibilityLiveRegion="polite"
+              >
+                Distance filter needs your location. It will activate once
+                location is shared.
               </Text>
             )}
 
