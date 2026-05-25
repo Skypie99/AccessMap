@@ -58,6 +58,7 @@ export default function SignInScreen() {
         onChangeText={setEmail}
         style={styles.input}
         accessibilityLabel="Email address"
+        accessibilityHint="Enter the email you signed up with"
       />
 
       <Text style={styles.inputLabel}>Password</Text>
@@ -71,6 +72,7 @@ export default function SignInScreen() {
         onChangeText={setPassword}
         style={styles.input}
         accessibilityLabel="Password"
+        accessibilityHint="At least 6 characters"
       />
 
       {validationError ? (
@@ -78,7 +80,14 @@ export default function SignInScreen() {
           {validationError}
         </Text>
       ) : null}
-      <Button title="Sign in" onPress={() => submit('in')} disabled={busy} />
+      {busy ? (
+        <Text style={styles.busyText} accessibilityLiveRegion="polite">
+          Signing you in…
+        </Text>
+      ) : null}
+      <View accessibilityState={{ busy }}>
+        <Button title="Sign in" onPress={() => submit('in')} disabled={busy} />
+      </View>
       <Button title="Create account" onPress={() => submit('up')} disabled={busy} />
     </View>
   );
@@ -98,6 +107,11 @@ const styles = StyleSheet.create({
   },
   errorText: {
     color: '#c0392b',
+    fontSize: 13,
+    textAlign: 'center',
+  },
+  busyText: {
+    color: '#666',
     fontSize: 13,
     textAlign: 'center',
   },
