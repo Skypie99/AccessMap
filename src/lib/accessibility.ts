@@ -55,3 +55,42 @@ export function useScreenReader(): boolean {
 
   return enabled;
 }
+
+/**
+ * `true` if the user has the system-level "Reduce Motion" preference on
+ * (iOS: Settings → Accessibility → Motion → Reduce Motion; Android: Settings
+ * → Accessibility → Remove animations). When this is on, callers should
+ * suppress non-essential animations — map fly-tos, slide transitions,
+ * onboarding paging — so motion-sensitive users (vestibular disorders,
+ * migraine triggers) aren't forced through them. WCAG 2.3.3.
+ *
+ * Returns the live value: re-renders if the user toggles the preference
+ * mid-session. Web/unsupported platforms quietly resolve to `false`.
+ */
+export function useReducedMotion(): boolean {
+  const [reduced, setReduced] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    AccessibilityInfo.isReduceMotionEnabled()
+      .then((value) => {
+        if (!cancelled) setReduced(value);
+      })
+      .catch(() => {});
+
+    const sub = AccessibilityInfo.addEventListener(
+      'reduceMotionChanged',
+      (value) => {
+        setReduced(value);
+      },
+    );
+
+    return () => {
+      cancelled = true;
+      sub.remove();
+    };
+  }, []);
+
+  return reduced;
+}
