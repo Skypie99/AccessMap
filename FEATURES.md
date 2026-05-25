@@ -47,20 +47,12 @@ they land on `main`.
 
 ## Now (next 1–2 runs)
 
-- **Finish cluster + edit-form a11y fixes.** Two open items from
-  `a11y/audit-2026-05-25` (cluster bubble focus order, edit-form field
-  labels); resolve so `a11y/full-sweep-2026-05-25` can close cleanly.
-- **Merge `feat/decorative-glyph-2026-05-24`.** Standalone; no conflicts
-  expected.
-- **Merge `a11y/placeholder-sweep-cycle-f`.** Cycle F items F1/F2/F5;
-  ready to land.
-- **Merge `feat/flag-pagination-2026-05-25` (DECISION FOR SKY).** Confirm
-  this is the canonical pagination approach before merging.
-- **Cycle F remaining item F4.** Add `theme.test.ts` assertion verifying
-  `color.placeholderText` contrast on `surfaceSoft` (`#f7f8fa`).
-- **Apply Supabase migrations (DECISION FOR SKY).** Migrations in
-  `supabase/migrations/` unlock status history (T1), context tags (C4), and
-  realtime updates (`supabase/realtime.sql`). Apply via Dashboard SQL Editor.
+- **Remaining 5 `#999` `placeholderTextColor` callsites** — in progress via
+  Shamus; unblock once branch lands.
+- **CI/CD GitHub Actions setup** — in progress via Shamus; typecheck + test on
+  every PR.
+- **LEARNINGS.md sequential merge/build rule** — document the "one branch at a
+  time" merge rule in `LEARNINGS.md`; pending.
 
 ---
 
@@ -78,12 +70,7 @@ Cycle F shipped F3/F6/F-search via `cycle/F-2026-05-24`. These remain:
 
 ## Later (sequence after the above)
 
-- **Flag editing** — reporter can edit open flag description/severity. Jordan
-  conditions documented in `qa-reports/2026-05-25_Jordan_flag-edit-review.md`;
-  confirm final RLS migration is applied before shipping widely.
-- **Tasks screen sort options** (R7) — merge branch when queue clears.
-- **Map long-press to drop a flag** (R8) — merge branch when queue clears.
-- **Profile nearest-unresolved jump** (R9) — merge branch when queue clears.
+_(nothing queued — add next features here)_
 
 ---
 
