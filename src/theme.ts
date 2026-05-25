@@ -116,6 +116,7 @@ export const color = {
   backdropStrong: 'rgba(0,0,0,0.75)',   // full-screen modal overlays (replaces raw rgba in PhotoLightboxModal)
   backdropCaption: 'rgba(0,0,0,0.65)',  // caption bars on photos — contrast gain over scrim (Alex #3)
   overlayBtn: 'rgba(0,0,0,0.45)',       // overlay action buttons (close button bg in lightbox)
+  overlayBtnPressed: 'rgba(0,0,0,0.60)', // pressed state for overlay action buttons
 
   // Misc
   shadow: '#000',
@@ -148,6 +149,7 @@ export const radius = {
   lg: 12,      // panels, modals
   xl: 16,      // sheet headers
   full: 999,   // pills, FABs, round icon buttons
+  circle: 9999, // perfectly circular elements (avatar frames, round icon buttons)
 };
 
 // -------------------------------------------------------------------------

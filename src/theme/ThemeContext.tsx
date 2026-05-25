@@ -83,6 +83,7 @@ const darkColor = {
   backdropStrong: 'rgba(0,0,0,0.85)',   // full-screen modal overlay on dark bg
   backdropCaption: 'rgba(0,0,0,0.75)',  // caption bar on photos
   overlayBtn: 'rgba(255,255,255,0.2)',  // overlay button on dark bg (brighter for visibility)
+  overlayBtnPressed: 'rgba(255,255,255,0.30)', // pressed state for overlay button on dark bg
 
   // Misc
   shadow: '#fff',                 // inverted for dark mode

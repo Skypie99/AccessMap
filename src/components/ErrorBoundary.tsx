@@ -1,5 +1,6 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { radius } from '@/theme';
 
 /**
  * Top-level error boundary.
@@ -88,7 +89,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#2f80ed',
     paddingHorizontal: 20,
     paddingVertical: 12,
-    borderRadius: 999,
+    borderRadius: radius.circle,
     minHeight: 44,
     justifyContent: 'center',
   },

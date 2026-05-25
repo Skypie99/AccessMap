@@ -41,6 +41,7 @@ import { relativeTime } from '@/lib/relativeTime';
 import { loadWatched } from '@/lib/watchedFlags';
 import type { FlagRow } from '@/types/database';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
+import { radius } from '@/theme';
 
 type FeedFilter = 'all' | 'mine' | 'watched';
 
@@ -146,6 +147,7 @@ export default function ActivityFeedModal({
       (item.description ? `. ${item.description}` : '');
 
     return (
+      <View>
       <Pressable
         onPress={() => onSelectFlag(item)}
         style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
@@ -209,6 +211,7 @@ export default function ActivityFeedModal({
           </View>
         </View>
       </Pressable>
+      </View>
     );
   };
 
@@ -296,6 +299,7 @@ export default function ActivityFeedModal({
               sections={sections}
               keyExtractor={(f) => f.id}
               renderItem={renderItem}
+              accessibilityRole="list"
               stickySectionHeadersEnabled={false}
               contentContainerStyle={
                 sections.length === 0 ? styles.center : styles.list
@@ -382,7 +386,7 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
   filterChip: {
     paddingHorizontal: 14,
     paddingVertical: 10,
-    borderRadius: 999,
+    borderRadius: radius.circle,
     backgroundColor: '#eef1f5',
     // 44pt is the AccessMap touch-target baseline (Apple HIG / Android
     // accessibility minimum) — critical for users with motor impairments.
@@ -462,7 +466,7 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
   statusBadge: {
     paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 999,
+    borderRadius: radius.circle,
   },
   statusBadgeText: { fontWeight: '700', fontSize: 11 },
   viewOnMapBtn: {

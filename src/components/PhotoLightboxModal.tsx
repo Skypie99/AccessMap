@@ -159,6 +159,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  closeBtnPressed: { backgroundColor: 'rgba(255,255,255,0.3)' },
+  closeBtnPressed: { backgroundColor: color.overlayBtnPressed },
   closeBtnText: { fontSize: font.size.xl, color: color.surface, fontWeight: '700' },
 });
