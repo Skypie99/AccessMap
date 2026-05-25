@@ -6,6 +6,23 @@ entries; the file is the project's accumulated wisdom.
 
 ---
 
+## 2026-05-25 — Sequential merge/build discipline (concurrent working-tree collision)
+
+**Rule:** Build → QA (parallel OK) → wait for merge push confirmation → next Build.
+Merge agent and build agent must NEVER run concurrently on the same working directory.
+
+**What happened:** During Wave 4 night cycle, the merge agent ran `git checkout main`
+while the build agent had uncommitted changes to `TasksScreen.tsx` still in-flight.
+Result: merge failed with "local changes would be overwritten by checkout."
+Resolved by waiting for the build agent to commit, then retrying the merge.
+
+**Going forward:** Dispatch the next build agent only AFTER the merge push is confirmed
+on the remote. If parallelism is needed, use `--worktree` isolation. QA agents (Gary,
+Alex, Dani) may run in parallel against a branch that's already committed — they are
+read-only and don't touch the working tree.
+
+---
+
 ## 2026-05-24 — Component extraction: omit caller-specific margin from base style
 
 When extracting a repeated UI pattern into a reusable component (e.g. a
