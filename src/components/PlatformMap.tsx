@@ -3,6 +3,7 @@ import { Image, StyleSheet, Text, View } from 'react-native';
 import ClusteredMapView from 'react-native-map-clustering';
 import { Callout, Marker, PROVIDER_DEFAULT } from 'react-native-maps';
 import type MapView from 'react-native-maps';
+import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { CATEGORY_LABELS, severityColor } from '@/lib/flags';
 import type { FlagRow } from '@/types/database';
 
@@ -47,6 +48,8 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(
     },
     ref,
   ) {
+    const color = useColor();
+    const styles = makeStyles(color);
     // Ref to ClusteredMapView — cast to MapView for animateToRegion calls
     // (ClusteredMapView wraps MapView internally and delegates map methods)
     const mapRef = useRef<MapView | null>(null);
@@ -92,8 +95,8 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(
         initialRegion={initialRegion}
         showsUserLocation={showsUserLocation}
         showsMyLocationButton={false}
-        clusterColor="#2563EB"
-        clusterTextColor="#ffffff"
+        clusterColor={color.brand}
+        clusterTextColor={color.textOnBrand}
         radius={40}
         renderCluster={(cluster: any) => {
           const { id, geometry, onPress, properties } = cluster;
@@ -134,6 +137,8 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(
             coordinate={{ latitude: f.lat, longitude: f.lng }}
             pinColor={severityColor(f.severity)}
             opacity={focusedFlagId && focusedFlagId !== f.id ? 0.55 : 1}
+            accessibilityRole="button"
+            accessibilityLabel={`${CATEGORY_LABELS[f.category]}, severity ${f.severity} of 5, ${f.status}. Tap to view details.`}
           >
             <Callout tooltip>
               <View style={styles.callout}>
@@ -142,6 +147,9 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(
                     styles.calloutSevBar,
                     { backgroundColor: severityColor(f.severity) },
                   ]}
+                  // Decorative color bar — severity info is in the text below
+                  accessibilityElementsHidden
+                  importantForAccessibility="no-hide-descendants"
                 />
                 <View style={styles.calloutBody}>
                   <Text style={styles.calloutTitle} numberOfLines={1}>
@@ -154,6 +162,9 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(
                     <Image
                       source={{ uri: f.photo_url }}
                       style={styles.calloutPhoto}
+                      // Decorative thumbnail inside an already-labeled callout.
+                      accessibilityElementsHidden
+                      importantForAccessibility="no-hide-descendants"
                     />
                   ) : null}
                   {f.description ? (
@@ -173,14 +184,14 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(
 
 export default PlatformMap;
 
-const styles = StyleSheet.create({
+const makeStyles = (color: ColorTheme) => StyleSheet.create({
   callout: {
     flexDirection: 'row',
     width: 240,
-    backgroundColor: '#fff',
+    backgroundColor: color.surface,
     borderRadius: 12,
     overflow: 'hidden',
-    shadowColor: '#000',
+    shadowColor: color.shadow,
     shadowOpacity: 0.18,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 3 },
@@ -188,36 +199,36 @@ const styles = StyleSheet.create({
   },
   calloutSevBar: { width: 6 },
   calloutBody: { flex: 1, padding: 10, gap: 4 },
-  calloutTitle: { fontSize: 14, fontWeight: '700', color: '#222' },
+  calloutTitle: { fontSize: 14, fontWeight: '700', color: color.textStrong },
   calloutMeta: {
     fontSize: 11,
-    color: '#666',
+    color: color.textMuted,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
-  calloutDesc: { fontSize: 12, color: '#333', marginTop: 4 },
+  calloutDesc: { fontSize: 12, color: color.text, marginTop: 4 },
   calloutPhoto: {
     width: '100%',
     height: 120,
     borderRadius: 8,
     marginTop: 6,
-    backgroundColor: '#eef1f5',
+    backgroundColor: color.surfaceNeutral,
   },
   cluster: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#2563EB',
+    backgroundColor: color.brand,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
+    shadowColor: color.shadow,
     shadowOpacity: 0.2,
     shadowRadius: 4,
     shadowOffset: { width: 0, height: 2 },
     elevation: 4,
   },
   clusterCount: {
-    color: '#ffffff',
+    color: color.textOnBrand,
     fontSize: 13,
     fontWeight: '700',
   },
