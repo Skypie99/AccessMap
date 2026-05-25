@@ -8,9 +8,9 @@ import {
   RefreshControl,
   StyleSheet,
   Text,
-  TextInput,
   View,
 } from 'react-native';
+import SearchInputRow from '@/components/SearchInputRow';
 import { useAuth } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
 import {
@@ -276,54 +276,14 @@ export default function MyReportsModal({
               via filterMyReports. Multi-token AND, NFC-normalized, case-
               insensitive. Reset on modal close (useEffect above). */}
           {flags.length > 1 && (
-            <View style={styles.searchWrap}>
-              <Text
-                style={styles.searchGlyph}
-                accessibilityElementsHidden
-                importantForAccessibility="no-hide-descendants"
-              >
-                🔎
-              </Text>
-              <TextInput
-                value={searchQuery}
-                onChangeText={setSearchQuery}
-                placeholder="Search your reports…"
-                // WCAG AA: placeholder needs ≥ 4.5:1 against the tinted
-                // searchWrap background (#f7f9fc). color.placeholderText
-                // (#5b6470) lands at ~5.8:1 — comfortably above the threshold.
-                placeholderTextColor={color.placeholderText}
-                style={styles.searchInput}
-                autoCorrect={false}
-                autoCapitalize="none"
-                returnKeyType="search"
-                // 200 is plenty for any natural-language query; caps a
-                // paste of an enormous string that would re-scan the
-                // whole list on every keystroke (mirrors NearbyFlagsModal).
-                maxLength={200}
-                accessibilityLabel="Search your reports"
-                accessibilityHint="Filters your reports list to those whose description, category, or status contains your search words"
-              />
-              {hasQuery && (
-                <Pressable
-                  onPress={() => setSearchQuery('')}
-                  hitSlop={10}
-                  style={({ pressed }) => [
-                    styles.searchClear,
-                    pressed && styles.searchClearPressed,
-                  ]}
-                  accessibilityRole="button"
-                  accessibilityLabel="Clear search"
-                >
-                  <Text
-                    style={styles.searchClearText}
-                    accessibilityElementsHidden
-                    importantForAccessibility="no-hide-descendants"
-                  >
-                    ✕
-                  </Text>
-                </Pressable>
-              )}
-            </View>
+            <SearchInputRow
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              onClear={() => setSearchQuery('')}
+              placeholder="Search your reports…"
+              accessibilityLabel="Search your reports"
+              accessibilityHint="Filters your reports list to those whose description, category, or status contains your search words"
+            />
           )}
 
           {/* Sort chips — only shown when there's something to sort */}
@@ -640,37 +600,5 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
   },
   viewOnMapBtnPressed: { opacity: 0.6, backgroundColor: color.borderPressed },
   viewOnMapGlyph: { fontSize: 16 },
-  // Search bar — sits between the header and the sort/status chip rows.
-  // Magnifier glyph + free-text input + optional clear ✕. Visual style
-  // mirrors NearbyFlagsModal so the two search affordances feel like
-  // the same control. Clear button is 44pt for the WCAG 2.5.5 target.
-  searchWrap: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    backgroundColor: '#f7f9fc',
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: '#eef1f5',
-  },
-  searchGlyph: { fontSize: 16 },
-  searchInput: {
-    flex: 1,
-    fontSize: 15,
-    color: '#222',
-    paddingVertical: 8,
-    minHeight: 44,
-  },
-  searchClear: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#eef1f5',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  searchClearPressed: { backgroundColor: color.borderPressed, opacity: 0.85 },
-  searchClearText: { fontSize: 14, color: '#333', fontWeight: '700' },
 });
+
