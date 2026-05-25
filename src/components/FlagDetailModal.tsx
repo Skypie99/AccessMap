@@ -953,7 +953,7 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
   },
   categoryChipActive: { borderColor: color.brand, backgroundColor: color.brandSoft },
   categoryChipText: { fontSize: 13, color: color.text },
-  categoryChipTextActive: { color: color.brand, fontWeight: '700' },
+  categoryChipTextActive: { color: color.brandOnSoft, fontWeight: '700' },
   severityRow: { flexDirection: 'row', gap: 8 },
   severityBtn: {
     width: 40,
