@@ -23,6 +23,83 @@ read-only and don't touch the working tree.
 
 ---
 
+## 2026-05-25 — size token category added
+
+The design token system now has a `size` category alongside `color`, `font`, `spacing`,
+`shadow`, `radius`, `motion`, and `breakpoints`. Current entries:
+
+- `size.thumb: 80` — square thumbnail dimension
+- `size.cardMin: 96` — minimum card height
+
+Use these for fixed-dimension UI elements. Do NOT hardcode pixel values for
+thumbs or card heights — reference `size.thumb` / `size.cardMin` via the token system.
+Add new entries through Dani (token ownership rule applies).
+
+---
+
+## 2026-05-25 — Supabase createClient() causes Jest open-handle warnings
+
+Any test file that imports a module which transitively imports `supabase.ts` will
+trigger a Jest open-handle warning. The root cause: `supabase.ts` calls `createClient()`
+at module-evaluation time with `autoRefreshToken: true`, which fires an async auth
+refresh that never settles in the test environment.
+
+**Fix:** add a mock at the top of any affected test file:
+
+```ts
+jest.mock('../supabase', () => ({ supabase: {} }));
+```
+
+This is already the pattern across the test suite — check existing mocks for reference.
+The path (`'../supabase'` vs `'../../supabase'`) must match the file's depth. If you
+see `"Jest did not exit one second after the test run has completed"`, check whether
+the file (or a file it imports) has a transitive supabase dependency.
+
+---
+
+## 2026-05-25 — Parallel merge paths silently drop commits
+
+When resolving a merge conflict by taking one side (e.g. `git checkout --ours` or
+`git checkout --theirs` for conflicting files), verify that the OTHER branch's unique
+commits are not lost.
+
+**What happened:** `fix/a11y-contrast` had TWO commits — a test commit and a code-fix
+commit. The merge kept `main`'s version of conflicting files, which silently dropped
+the test commit. The code-fix commit survived, but the test coverage disappeared.
+
+**Rule:** after any merge with conflict resolution, run:
+
+```bash
+git log --oneline main..HEAD
+```
+
+on the resolved merge to confirm all expected commits are present. If a commit was
+dropped, cherry-pick it separately before pushing.
+
+Also verify with the branch author's commit list — `git log --oneline <branch>` —
+so you know exactly how many commits to expect in the final merge.
+
+---
+
+## 2026-05-25 — Sequential build/merge discipline (uncommitted-change collision)
+
+**Rule:** Build → QA (parallel OK) → wait for merge push confirmation → next Build.
+The merge agent and the build agent must NEVER run concurrently on the shared working
+directory.
+
+**What happened:** During the night cycle, a build agent left `TasksScreen.tsx`
+with uncommitted changes in-flight. The merge agent then ran `git checkout main`,
+which aborted with "local changes would be overwritten by checkout." The merge was
+blocked until the build agent's final commit was confirmed on the remote.
+
+**Fix:** dispatch the next build agent only AFTER the merge push is confirmed on
+the remote (`git push` exits 0 and the remote SHA is verified). If true parallelism
+is needed, use `git worktree add` so each agent has an isolated working directory.
+QA agents (Gary, Alex, Dani) may run in parallel against an already-committed
+branch — they are read-only.
+
+---
+
 ## 2026-05-24 — Component extraction: omit caller-specific margin from base style
 
 When extracting a repeated UI pattern into a reusable component (e.g. a
