@@ -1,6 +1,6 @@
 # AccessMap — Project State
 
-**Updated:** 2026-05-25 (morning cycle — post night-cycle Wave 5 + overnight branch activity)
+**Updated:** 2026-05-25 (morning continuation — 4 features built on branches)
 **Source:** Morgan read pass | git log | qa-reports | migration files
 **Main SHA:** `1659092` · Tests: 789/789 · TSC errors: 0 · Test suites: 52
 
@@ -40,6 +40,17 @@
 
 ### IN-PROGRESS / CARRY-FORWARD (open branches, not yet merged)
 
+### Morning continuation — 4 features ready for review
+
+| Branch | What | Action |
+|---|---|---|
+| `feat/leaflet-tile-interception-2026-05-25` | `CachedTileLayer` in `PlatformMap.web.tsx`; tiles served from `tileCache.ts` after first load | Review + merge |
+| `feat/edit-profile-2026-05-25` | Avatar photo upload + initials fallback + `radius.circle`/`overlayBtnPressed` token sweep | **Note:** commit `8f24ba4` from a concurrent agent is noisy (CHANGELOG.md, coverage/). Consider cherry-picking `c41e5ca` + `5e92a6e` only |
+| `feat/context-tags-display-2026-05-25` | "Conditions" chip row in FlagDetailModal (context tags previously set but never shown) | Review + merge |
+| `feat/tasks-search-2026-05-25` | `SearchInputRow` above Mine/All chips in Tasks; filters on category + description in real time | Review + merge |
+
+### From prior cycles
+
 | Branch | What | Action |
 |---|---|---|
 | `fix/dani-statushistory-darkmode-2026-05-25` | StatusHistoryModal raw `'#fff'` tokens + list/listitem a11y roles | Spawn next Shamus task chip |
@@ -50,7 +61,6 @@
 
 | Feature | Gate / Notes |
 |---|---|
-| Leaflet tile interception (web-only) | No native dep; pseudo-code in `2026-05-25-shamus-offline-tiles.md`; low complexity |
 | Neighbourhood heat-map | Jordan APPROVED WITH CONDITIONS (k>=3 floor, severity disclosure). Sky decision on severity-colour rendering needed before Shamus builds (see Open Decisions D5) |
 | Flag edit history audit table | `2026-05-25_flag_edit_history_table.sql` CONDITIONAL — Sky answers YES/NO first (D6) |
 | EAS Build / TestFlight | `eas.json` missing; Rory proposed config in `release-2026-05-25.md` |
@@ -82,6 +92,7 @@
 | `origin/main` | Everything shipped through Wave 5 | Canonical |
 | `origin/shamus/marker-clustering-2026-05-25` | Clustering + flag editing + Gary tests + Alex a11y fixes | Ready after RLS migration |
 | `origin/feat/expo-web-vercel-2026-05-25` | Expo Web + Vercel deployment config | Ready for Sky review + merge |
+| `origin/feat/tasks-search-2026-05-25` | Tasks text search + state docs | Ready for review |
 | `origin/a11y/residual-2026-05-25` | Content already on main via `20823fa` | Safe to delete |
 | `origin/docs/learnings-sequential-merge-2026-05-25` | Content already on main | Safe to delete |
 | `origin/cycle/H-2026-05-24` | Cycle H carry-over | Audit — likely superseded |
@@ -113,6 +124,7 @@
 5. Run `npx expo install expo-notifications` in Terminal at ~/AccessMap and rebuild dev client
 6. Apply remaining batch: `data_layer_hardening`, `rls_initplan`, `realtime_flags` (~15 min)
 7. Review and merge `origin/feat/expo-web-vercel-2026-05-25`
-8. Answer D5 (heat-map severity colour) so Shamus can start heat-map build
-9. Create `eas.json` from Rory's proposal in `release-2026-05-25.md` when TestFlight is on the horizon
-10. Delete safe stale branches: `a11y/residual-2026-05-25`, `docs/learnings-sequential-merge-2026-05-25`, `sync/local-main-to-origin`
+8. Review morning feature branches: `feat/tasks-search-2026-05-25` (PR #6), `feat/leaflet-tile-interception-2026-05-25`, `feat/context-tags-display-2026-05-25`, `feat/edit-profile-2026-05-25` (cherry-pick `c41e5ca`+`5e92a6e` only — noisy concurrent-agent commit)
+9. Answer D5 (heat-map severity colour) so Shamus can start heat-map build
+10. Create `eas.json` from Rory's proposal in `release-2026-05-25.md` when TestFlight is on the horizon
+11. Delete safe stale branches: `a11y/residual-2026-05-25`, `docs/learnings-sequential-merge-2026-05-25`, `sync/local-main-to-origin`

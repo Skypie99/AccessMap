@@ -6,6 +6,52 @@ entries; the file is the project's accumulated wisdom.
 
 ---
 
+## 2026-05-25 — Concurrent agent commits to the same feature branch
+
+When two agents run simultaneously against the same named branch (not worktrees), one
+agent can commit on top of the other without either being aware.
+
+**What happened:** During the morning continuation, a second Shamus agent committed
+`8f24ba4 chore(tokens): radius.circle token, overlayBtnPressed, listitem a11y cohesion`
+to `feat/edit-profile-2026-05-25` while this session was mid-build on the same branch.
+That commit included unrelated files (CHANGELOG.md added, coverage/ deleted) because
+the other agent had a dirtier working tree.
+
+**Detection:** `git log --oneline feat/<branch>` after your commits should only show
+your own commits. An unexpected commit from "another Shamus" (or any agent) is the signal.
+
+**Recovery without destructive ops:** cherry-pick the clean commits (`c41e5ca`, `5e92a6e`)
+onto a fresh branch from main rather than trying to surgically remove the noisy commit
+from the shared branch. Flag it in the feature report so Sky can decide whether to
+merge the full branch or cherry-pick.
+
+**Prevention:** Morgan must not dispatch two agents against the same branch name at the
+same time. Use `isolation: "worktree"` for all build agents, and ensure the dispatch
+plan explicitly names different branches for concurrent builds.
+
+---
+
+## 2026-05-25 — git lock file recovery + staged-state leakage after lock removal
+
+**Pattern:** If a git process exits uncleanly (signal, context timeout, etc.), it may
+leave `.git/index.lock` and/or `.git/HEAD.lock` behind. Any subsequent git command
+fails with `"Unable to create '…lock': File exists"`.
+
+**Fix:** `rm -f /path/to/repo/.git/index.lock /path/to/repo/.git/HEAD.lock`
+
+**Hidden danger after lock removal:** When a `git add` fails mid-run because of a
+lock (leaving it partially applied), removing the lock and re-running a different
+`git add <specific-files>` can silently include previously-staged hunks from the
+failed run. The index has a partially-applied state that `git status` may not display
+clearly.
+
+**Rule:** After any lock-removal, always run `git status` + `git diff --cached` before
+committing. Confirm exactly which files are staged. If anything unexpected appears
+in `--cached`, run `git reset HEAD <file>` to unstage it before committing. Never
+commit after lock removal without explicitly reviewing the staged diff.
+
+---
+
 ## 2026-05-25 — Sequential merge/build discipline (concurrent working-tree collision)
 
 **Rule:** Build → QA (parallel OK) → wait for merge push confirmation → next Build.
