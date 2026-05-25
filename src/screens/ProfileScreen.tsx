@@ -1629,7 +1629,7 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
   // main title still reads as the link affordance.
   achievementsCount: { fontWeight: '600', color: '#888', fontSize: 14 },
   myReportsSubtitle: { fontSize: 13, color: '#666' },
-  myReportsChevron: { fontSize: 28, color: '#999', fontWeight: '300' },
+  myReportsChevron: { fontSize: 28, color: color.textSubtle, fontWeight: '300' },
   section: { gap: 8, marginTop: 8 },
   sectionLabel: {
     fontSize: 12,
@@ -1704,7 +1704,7 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
   aboutTextWrap: { flex: 1, gap: 2 },
   aboutTitle: { fontSize: 16, fontWeight: '700', color: '#222' },
   aboutSubtitle: { fontSize: 13, color: '#666' },
-  aboutChevron: { fontSize: 28, color: '#999', fontWeight: '300' },
+  aboutChevron: { fontSize: 28, color: color.textSubtle, fontWeight: '300' },
   signOutBtn: {
     marginTop: 16,
     alignSelf: 'center',

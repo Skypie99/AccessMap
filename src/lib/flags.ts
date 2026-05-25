@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { color as themeColor } from '@/theme';
 import type {
   FlagCategory,
   FlagRow,
@@ -494,7 +495,7 @@ export function severityColor(s: FlagSeverity): string {
     case 3: return '#f1c40f';
     case 4: return '#e67e22';
     case 5: return '#e74c3c';
-    default: return '#999';
+    default: return themeColor.textSubtle;
   }
 }
 
