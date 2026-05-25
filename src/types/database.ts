@@ -97,6 +97,32 @@ export type Database = {
         Update: Partial<FeedbackRow>;
         Relationships: EmptyRelationships;
       };
+      // Optional until supabase/migrations/2026-05-25_push_tokens.sql is
+      // applied. Absence of a row means push notifications are disabled for
+      // that user — there is no "disabled" flag, the row simply doesn't exist.
+      push_tokens: {
+        Row: {
+          user_id: string;
+          token: string;
+          platform: 'ios' | 'android' | 'web' | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          user_id: string;
+          token: string;
+          platform?: 'ios' | 'android' | 'web' | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          user_id?: string;
+          token?: string;
+          platform?: 'ios' | 'android' | 'web' | null;
+          updated_at?: string;
+        };
+        Relationships: EmptyRelationships;
+      };
     };
     Views: { [_ in never]: never };
     Functions: { [_ in never]: never };
