@@ -476,6 +476,12 @@ export default function SettingsScreen() {
   );
 }
 
+// Named constant for the large touch-target row height used by SettingsRow and
+// pushRow. 64pt exceeds WCAG 2.5.5's 44pt minimum, giving comfortable tap area
+// for a two-line (title + subtitle) row. Replace with a spacing token when one
+// is added to src/theme.ts (e.g. spacing.touchTargetLg).
+const SETTINGS_ROW_HEIGHT = 64;
+
 const makeStyles = (color: ColorTheme) => StyleSheet.create({
   screen: { flex: 1, backgroundColor: color.surfaceMuted },
   container: {
@@ -501,7 +507,7 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
     // Minimum 44pt touch target — already easily satisfied by the
     // padding+text height, but pinned here so future copy changes can't
     // accidentally shrink it under the WCAG floor.
-    minHeight: 64,
+    minHeight: SETTINGS_ROW_HEIGHT,
     ...shadow.e1,
   },
   rowPressed: { opacity: 0.85, backgroundColor: color.surfaceMuted },
@@ -552,7 +558,7 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
-    minHeight: 64,
+    minHeight: SETTINGS_ROW_HEIGHT,
     ...shadow.e1,
   },
   pushTextWrap: { flex: 1, gap: 2 },

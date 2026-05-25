@@ -184,68 +184,83 @@ export function FlagsProvider({
     }
     const seq = ++fetchSeqRef.current;
     setLoading(true);
+
+    const currentUserId = userIdRef.current;
+    // Use paginated fetch for the default open+verified set so we get a
+    // fast first page and can load more on demand. For non-default status
+    // sets (e.g. when Map filter includes Resolved) fall back to listFlags
+    // which is simpler for one-shot queries.
+    const isDefaultStatuses =
+      current.length === DEFAULT_STATUSES.length &&
+      current.every((s) => DEFAULT_STATUSES.includes(s));
+
+    // Stale-while-revalidate: fire network + cache read in parallel so offline
+    // users see cached data immediately rather than waiting for (timeout + read).
+    // Only worth racing on the default-status path where we maintain a cache.
+    const networkPromise: Promise<{ rows: FlagRow[]; nextCursor: string | null }> =
+      isDefaultStatuses
+        ? listFlagsPage(current, { limit: INITIAL_PAGE_SIZE })
+        : listFlags(current).then((rows) => ({ rows, nextCursor: null }));
+
+    const cachePromise: Promise<FlagRow[] | null> =
+      isDefaultStatuses && currentUserId
+        ? readFlagsCache(currentUserId)
+        : Promise.resolve(null);
+
     try {
-      // Use paginated fetch for the default open+verified set so we get a
-      // fast first page and can load more on demand. For non-default status
-      // sets (e.g. when Map filter includes Resolved) fall back to listFlags
-      // which is simpler for one-shot queries.
-      const isDefaultStatuses =
-        current.length === DEFAULT_STATUSES.length &&
-        current.every((s) => DEFAULT_STATUSES.includes(s));
-      let fetchedRows: FlagRow[];
-      if (isDefaultStatuses) {
-        const { rows, nextCursor } = await listFlagsPage(current, {
-          limit: INITIAL_PAGE_SIZE,
-        });
-        if (seq !== fetchSeqRef.current) return;
-        fetchedRows = rows;
+      const [networkResult, cachedResult] = await Promise.allSettled([
+        networkPromise,
+        cachePromise,
+      ]);
+
+      if (seq !== fetchSeqRef.current) return;
+
+      if (networkResult.status === 'fulfilled') {
+        const { rows: fetchedRows, nextCursor } = networkResult.value;
         cursorRef.current = nextCursor;
         setHasMore(nextCursor !== null);
+        setFlags(fetchedRows);
+        setIsOfflineCache(false);
+        setError(null);
+        // Write the fresh first page to the offline cache so it's available
+        // on the next offline launch. Only cache when we have a user id
+        // (Jordan Condition 2) and we fetched the default paginated set
+        // (non-default queries are one-shot filtered views, not the main feed).
+        if (currentUserId && isDefaultStatuses) {
+          // Fire-and-forget — write failure is ephemeral, per CLAUDE.md tier.
+          void writeFlagsCache(currentUserId, fetchedRows);
+        }
       } else {
-        const rows = await listFlags(current);
-        if (seq !== fetchSeqRef.current) return;
-        fetchedRows = rows;
-        cursorRef.current = null;
-        setHasMore(false);
-      }
-      setFlags(fetchedRows);
-      setIsOfflineCache(false);
-      setError(null);
-      // Write the fresh first page to the offline cache so it's available
-      // on the next offline launch. Only cache when we have a user id
-      // (Jordan Condition 2) and we fetched the default paginated set
-      // (non-default queries are one-shot filtered views, not the main feed).
-      const currentUserId = userIdRef.current;
-      if (currentUserId && isDefaultStatuses) {
-        // Fire-and-forget — write failure is ephemeral, per CLAUDE.md tier.
-        void writeFlagsCache(currentUserId, fetchedRows);
-      }
-    } catch (e) {
-      if (seq !== fetchSeqRef.current) return;
-      // Network fetch failed — try the offline cache before surfacing error.
-      const currentUserId = userIdRef.current;
-      if (currentUserId) {
-        const cached = await readFlagsCache(currentUserId);
+        // Network failed — try the cache that was already fetched in parallel.
+        const cached =
+          cachedResult.status === 'fulfilled' ? cachedResult.value : null;
         if (cached !== null && seq === fetchSeqRef.current) {
           setFlags(cached);
           setIsOfflineCache(true);
           setError(null);
           // Don't re-throw: the cached data satisfies the UI's need.
           // loading will be set false in finally.
-          return;
+        } else {
+          if (seq !== fetchSeqRef.current) return;
+          setError(errorMessage(networkResult.reason, 'Unknown error'));
+          throw networkResult.reason;
         }
       }
-      setError(errorMessage(e, 'Unknown error'));
-      throw e;
     } finally {
       if (seq === fetchSeqRef.current) setLoading(false);
     }
   }, []);
 
+  // Ref-based in-flight guard for loadMore — avoids the race condition where a
+  // second tap arrives between the first tap and React's state flush (at which
+  // point the closure-captured `loadingMore` state value is still `false`).
+  const loadingMoreRef = useRef(false);
+
   const loadMore = useCallback(async () => {
     // Guard: nothing to fetch, or a fetch is already in flight.
     if (cursorRef.current === null) return;
-    if (loadingMore) return;
+    if (loadingMoreRef.current) return;
+    loadingMoreRef.current = true;
     setLoadingMore(true);
     try {
       const { rows, nextCursor } = await listFlagsPage(statusesRef.current, {
@@ -265,9 +280,10 @@ export function FlagsProvider({
       setError(errorMessage(e, 'Unknown error'));
       throw e;
     } finally {
+      loadingMoreRef.current = false;
       setLoadingMore(false);
     }
-  }, [loadingMore]);
+  }, []);
 
   const setStatuses = useCallback((next: FlagStatus[]) => {
     setStatusesState(next);

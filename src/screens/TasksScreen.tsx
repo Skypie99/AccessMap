@@ -50,6 +50,7 @@ import type { RootTabParamList } from '@/navigation/RootNavigator';
 import FlagDetailModal, {
   type DetailAction,
 } from '@/components/FlagDetailModal';
+import { radius, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 
 // Statuses Tasks shows. Even if the provider's `statuses` is widened by the
@@ -1069,14 +1070,14 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
   },
   flashText: { color: '#fff', fontWeight: '700', fontSize: 13 },
   errorBanner: {
-    marginHorizontal: 16,
-    marginTop: 12,
+    marginHorizontal: spacing.lg,
+    marginTop: spacing.md,
     backgroundColor: color.error,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    borderRadius: 10,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+    borderRadius: radius.lg,
     flexDirection: 'row',
-    gap: 10,
+    gap: spacing.sm,
     alignItems: 'center',
     minHeight: 44,
     shadowColor: '#000',
@@ -1093,14 +1094,14 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
   // the red error banner but still draws the eye. Wraps `warningBg`/`warningFg`
   // from the theme (WCAG-checked pair). No tap action — it's purely informational.
   offlineBanner: {
-    marginHorizontal: 16,
-    marginTop: 8,
+    marginHorizontal: spacing.lg,
+    marginTop: spacing.sm,
     backgroundColor: color.warningBg,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 10,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,   // matches errorBanner's paddingVertical: 12
+    borderRadius: radius.lg,
     flexDirection: 'row',
-    gap: 8,
+    gap: spacing.sm,
     alignItems: 'center',
     minHeight: 40,
   },
