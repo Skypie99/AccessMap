@@ -3,6 +3,8 @@ import {
   type StatusHistoryEntry,
 } from '../statusHistory';
 
+jest.mock('../supabase', () => ({ supabase: {} }));
+
 type StatusHistoryEntryKey = keyof StatusHistoryEntry;
 
 // Deterministic time callback — every entry timestamp resolves to the

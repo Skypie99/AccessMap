@@ -20,6 +20,8 @@ import { formatFlagShareText } from '../shareFlag';
 import { CATEGORY_LABELS } from '../flags';
 import type { FlagCategory, FlagRow, FlagSeverity, FlagStatus } from '@/types/database';
 
+jest.mock('../supabase', () => ({ supabase: {} }));
+
 // Helper: build a minimal flag-slice the formatter accepts. Defaults give us
 // a known baseline so each test only declares what it's varying.
 const makeFlag = (

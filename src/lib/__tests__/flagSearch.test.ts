@@ -1,6 +1,8 @@
 import { searchFlags, tokenizeQuery } from '../flagSearch';
 import type { FlagRow, FlagCategory, FlagStatus } from '@/types/database';
 
+jest.mock('../supabase', () => ({ supabase: {} }));
+
 function makeFlag(
   id: string,
   partial: Partial<FlagRow> = {},

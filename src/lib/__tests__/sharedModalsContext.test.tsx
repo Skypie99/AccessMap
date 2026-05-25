@@ -47,6 +47,8 @@ import ChangelogModal from '@/components/ChangelogModal';
 import FeedbackModal from '@/components/FeedbackModal';
 import MyFeedbackModal from '@/components/MyFeedbackModal';
 
+jest.mock('../supabase', () => ({ supabase: {} }));
+
 // Tiny consumer that pushes every observed context value into the
 // supplied array. Lets the test assert on the sequence of values the
 // provider exposed.

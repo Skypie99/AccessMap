@@ -17,6 +17,8 @@ import {
 import { INITIAL_PAGE_SIZE } from '../flags';
 import type { FlagRow } from '@/types/database';
 
+jest.mock('../supabase', () => ({ supabase: {} }));
+
 // ---------------------------------------------------------------------------
 // AsyncStorage mock — in-memory store with reset and raw-set helpers.
 // Matches the pattern used by notificationPrefs.test.ts.
