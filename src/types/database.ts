@@ -25,6 +25,9 @@ export type FlagRow = {
   // is applied. After that migration runs, every row has updated_at set
   // (default now() on insert, BEFORE UPDATE trigger on edit).
   updated_at?: string;
+  // Optional until supabase/migrations/2026-05-24_flag_context_tags.sql
+  // is applied. The column holds ≤5 vocabulary strings from contextTags.ts.
+  context_tags?: string[];
 };
 
 export type UserRow = {
