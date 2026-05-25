@@ -19,6 +19,7 @@
 // few seconds.
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { Platform } from 'react-native';
 import * as Location from 'expo-location';
 import type { LatLng } from './distance';
 import { errorMessage } from './errors';
@@ -76,6 +77,40 @@ export function useUserLocation(
       setError(null);
     }
     try {
+      // Web path — use the browser Geolocation API instead of expo-location,
+      // which is native-only. Behaviour mirrors the native path: permission
+      // denial → permissionDenied=true, position success → location set.
+      if (Platform.OS === 'web') {
+        if (!navigator.geolocation) {
+          if (mountedRef.current) {
+            setPermissionDenied(true);
+            setLocation(null);
+          }
+          return;
+        }
+        await new Promise<void>((resolve) => {
+          navigator.geolocation.getCurrentPosition(
+            (pos) => {
+              if (mountedRef.current) {
+                setPermissionDenied(false);
+                setLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+              }
+              resolve();
+            },
+            () => {
+              if (mountedRef.current) {
+                setPermissionDenied(true);
+                setLocation(null);
+              }
+              resolve();
+            },
+            { enableHighAccuracy: false, timeout: 10_000, maximumAge: 60_000 },
+          );
+        });
+        return;
+      }
+
+      // Native path — expo-location.
       // Privacy gate (Const. Art. 9.6): if requireExistingPermission is on,
       // use the no-prompt status check. Otherwise (default) request, which
       // will surface the OS prompt the first time.
