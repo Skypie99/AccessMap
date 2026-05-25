@@ -1,9 +1,11 @@
 import 'leaflet/dist/leaflet.css';
 import React, { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
-import { MapContainer, Marker, Popup, TileLayer } from 'react-leaflet';
+import { MapContainer, Marker, Popup, useMap } from 'react-leaflet';
 import L, { Map as LeafletMap, Marker as LeafletMarker } from 'leaflet';
 import { CATEGORY_LABELS, severityColor } from '@/lib/flags';
 import type { FlagRow } from '@/types/database';
+import { useAuth } from '@/lib/auth';
+import { getCachedTile, setCachedTile } from '@/lib/tileCache';
 
 export interface PlatformMapRegion {
   latitude: number;
@@ -70,12 +72,131 @@ function deltaToZoom(latitudeDelta: number): number {
   return Math.max(2, Math.min(18, Math.round(Math.log2(360 / latitudeDelta))));
 }
 
+// ---------------------------------------------------------------------------
+// CachedTileLayer — extends L.TileLayer to intercept tile HTTP requests and
+// route them through the offline tile cache (getCachedTile / setCachedTile).
+//
+// Strategy per tile:
+//   1. Build the concrete tile URL (Leaflet already does this in getTileUrl).
+//   2. Check the cache (getCachedTile). On HIT: set img.src to the stored
+//      data-URI and call done() immediately — no network round-trip.
+//   3. On MISS: fetch() → Blob → FileReader → base64 data-URI → set img.src
+//      → fire-and-forget setCachedTile → call done().
+//   4. On ANY error (network, FileReader, cache write): fall back to setting
+//      img.src directly to the URL so Leaflet can try its own XHR retry path.
+//      A broken tile is never shown.
+// ---------------------------------------------------------------------------
+
+interface CachedTileLayerOptions extends L.TileLayerOptions {
+  userId: string | null;
+}
+
+class CachedTileLayer extends L.TileLayer {
+  private _userId: string | null;
+
+  constructor(urlTemplate: string, options: CachedTileLayerOptions) {
+    const { userId, ...rest } = options;
+    super(urlTemplate, rest);
+    this._userId = userId;
+  }
+
+  createTile(
+    coords: L.Coords,
+    done: (err: Error | undefined, tile: HTMLElement) => void,
+  ): HTMLElement {
+    const img = document.createElement('img');
+    // Required for CORS tiles (e.g. OSM)
+    img.crossOrigin = 'anonymous';
+    img.alt = '';
+
+    const url = this.getTileUrl(coords);
+    const userId = this._userId;
+
+    if (!userId) {
+      // No authenticated user — skip cache, load tile directly.
+      img.onload = () => done(undefined, img);
+      img.onerror = () => done(undefined, img); // keep fallback: never broken
+      img.src = url;
+      return img;
+    }
+
+    void (async () => {
+      try {
+        // Step 1: cache hit?
+        const cached = await getCachedTile(userId, url);
+        if (cached) {
+          img.onload = () => done(undefined, img);
+          img.onerror = () => { img.src = url; done(undefined, img); };
+          img.src = cached;
+          return;
+        }
+
+        // Step 2: cache miss — fetch, convert, store, display
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`Tile fetch failed: ${response.status}`);
+        const blob = await response.blob();
+
+        const dataUri = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = () => reject(reader.error);
+          reader.readAsDataURL(blob);
+        });
+
+        img.onload = () => done(undefined, img);
+        img.onerror = () => { img.src = url; done(undefined, img); };
+        img.src = dataUri;
+
+        // Fire-and-forget: persist to cache; errors are swallowed by
+        // setCachedTile itself (it already logs internally).
+        void setCachedTile(userId, url, dataUri);
+      } catch {
+        // Any error → graceful fallback to direct URL (never a broken tile)
+        img.onload = () => done(undefined, img);
+        img.onerror = () => done(undefined, img);
+        img.src = url;
+      }
+    })();
+
+    return img;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// CachedTileLayerWrapper — react-leaflet inner component that mounts the
+// CachedTileLayer imperatively via useMap(). Re-creates the layer whenever
+// userId changes so tiles are always keyed to the current authenticated user.
+// ---------------------------------------------------------------------------
+
+const OSM_URL = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+const OSM_ATTRIBUTION =
+  '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
+
+function CachedTileLayerWrapper({ userId }: { userId: string | null }): null {
+  const map = useMap();
+
+  useEffect(() => {
+    const layer = new CachedTileLayer(OSM_URL, {
+      attribution: OSM_ATTRIBUTION,
+      userId,
+    });
+    layer.addTo(map);
+    return () => {
+      layer.remove();
+    };
+  }, [map, userId]);
+
+  return null;
+}
+
 const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(
   function PlatformMap(
     { initialRegion, flags, focusedFlagId, reducedMotion, onLongPressMap },
     ref,
   ) {
     const mapInstance = useRef<LeafletMap | null>(null);
+    const { user } = useAuth();
+    const userId = user?.id ?? null;
     const markerRefs = useRef<Record<string, LeafletMarker | null>>({});
 
     // See PlatformMap.tsx for why we prune: ref callbacks leave null entries
@@ -135,10 +256,7 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(
             mapInstance.current = m;
           }}
         >
-          <TileLayer
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          />
+          <CachedTileLayerWrapper userId={userId} />
           {flags.map((f) => (
             <Marker
               key={f.id}

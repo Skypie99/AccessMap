@@ -1,110 +1,118 @@
 # AccessMap — Project State
 
-**Updated:** 2026-05-25 (night cycle Wave 5 complete)
-**Cycle:** morgan/night-cycle-2026-05-25
+**Updated:** 2026-05-25 (morning cycle — post night-cycle Wave 5 + overnight branch activity)
+**Source:** Morgan read pass | git log | qa-reports | migration files
+**Main SHA:** `1659092` · Tests: 789/789 · TSC errors: 0 · Test suites: 52
 
 ---
 
-## Main Branch
+## Features
 
-| Field | Value |
+### LIVE (on main, shipped)
+
+| Feature | Notes |
 |---|---|
-| SHA | `af5f0bc` |
-| Tests | 789 / 789 |
-| TSC errors | 0 |
-| Test suites | 52 |
+| Photo thumbnails in triage | FlagCard inline photo → PhotoLightboxModal; onError graceful degradation |
+| Offline tile cache | `src/lib/tileCache.ts` TTL 7d, LRU 50 MB, user-keyed; sign-out clear wired |
+| My Flags toggle | "All / Mine" chip in TasksScreen; AsyncStorage-persisted |
+| Status history UI | FlagDetailModal "History" tab; graceful degradation if migration not yet applied |
+| flagsMap O(1) lookups | `useMemo` Map in FlagsContext; replaces O(n) `find()` in TasksScreen |
+| renderItem memoization | `useCallback` in TasksScreen; React.memo on FlagCard now effective |
+| 3 a11y residuals (Wave 5) | MapScreen announceForAccessibility; useReducedMotion both PlatformMap variants; web photo alt text |
+| ESLint + Prettier | `eslint.config.js`, `.prettierrc.json`, lint/format npm scripts |
+| Jest open-handles fix | `jest.mock('../supabase')` in filterSets + mapFilters test files |
+| GitHub Actions CI | typecheck + test on push/PR |
+| Offline flags cache | AsyncStorage 24h TTL, user-scoped, stale-while-revalidate, offline banner |
+| Push notification client | Token storage, settings toggle, sign-out clear, Edge Function written — awaiting Sky DB steps |
+| Dark mode | useColor() + ThemeContext, all 8 token categories |
+| Flag pagination | Cursor-based Load More |
+| Activity Feed, Watched Flags, Saved Places, Visit Streak, Achievements | Stable |
+| Address search, Open in Maps, Feedback flow, Help/FAQ, About, What's New | Stable |
+| Text search (NFC), Notification prefs, Tasks sort, Map long-press, Nearest flag jump | Stable |
+| Realtime flags (client wired) | Subscription wired; awaiting DB migration to go live |
 
----
+### BUILT-NOT-MERGED (ready pending Sky action)
 
-## Active Modules (stable on main)
-
-### Features shipped this cycle
-- **Photo thumbnails in triage** — FlagCard inline photo → PhotoLightboxModal on tap; onError graceful degradation; Dani COMMIT after 2 polish iterations
-- **Offline tile cache** — `src/lib/tileCache.ts`: TTL 7d, LRU 50 MB cap, user-keyed namespace; `signOut` clear wired (Jordan C1–C5 ✅); tile _interception_ is propose-only
-- **My Flags toggle** — "All / Mine" chip in TasksScreen; AsyncStorage-persisted scope
-- **Status history UI** — "History" button in FlagDetailModal → StatusHistoryModal timeline; graceful degradation if `flag_status_history` migration not applied
-- **3 a11y residuals** — MapScreen `announceForAccessibility` (WCAG 4.1.3); `useReducedMotion` wired into both PlatformMap variants (WCAG 2.3.3); web photo popup category-derived alt text (WCAG 1.1.1)
-- **flagsMap O(1) lookups** — `useMemo` Map in FlagsContext
-- **renderItem memoization** — `useCallback` in TasksScreen; React.memo on FlagCard now effective
-- **ESLint + Prettier** — `eslint.config.js`, `.prettierrc.json`, lint/format npm scripts
-- **Jest open-handles fix** — `jest.mock('../supabase')` in filterSets + mapFilters test files
-
-### Features stable from prior cycles
-- Offline flags cache (AsyncStorage, 24h TTL, user-scoped, stale-while-revalidate, offline banner)
-- Push notifications (opt-in, settings toggle, push_tokens migration ready, Edge Function ready)
-- Flag editing for open-flag owners (RLS guard **PENDING Sky** — don't promote yet)
-- Supabase realtime (client ready; migration file ready, not applied)
-- Dark mode (useColor() + ThemeContext, all tokens)
-- Flag pagination cursor-based Load More
-- Marker clustering, ErrorBoundary, photo upload hardening, maxLength 2000
-- Activity Feed, UpdateBanner, Watched Flags, Saved Places, Visit Streak, Achievements
-- Address search, Open in Maps, Photo lightbox, Feedback flow, Help/FAQ, About, What's New
-- Text search (NFC-normalized), Notification preferences, Tasks sort, Map long-press, Nearest flag jump
-
-### Design System
-Token categories: **color · font · spacing · shadow · radius · motion · breakpoints · size** (8 total)
-
-New tokens this cycle:
-- `size.thumb: 80` · `size.cardMin: 96` ← first `size` category entries
-- `color.backdropStrong` · `color.backdropCaption` · `color.overlayBtn` + dark variants
-
-### Infrastructure
-- GitHub Actions CI — typecheck + test on push/PR
-- ESLint + Prettier configured
-- Jest: Supabase mock pattern required for any test with transitive `supabase.ts` import
-
----
-
-## Critical — Sky Must Apply (DB / production)
-
-| Priority | Item | Where |
+| Branch | What | Gate |
 |---|---|---|
-| 🔴 BLOCKING | Flag-edit RLS `status='open'` guard | `qa-reports/2026-05-25-shamus-flag-editing-brief.md` → Supabase SQL Editor |
-| High | 5 older migrations | data_layer_hardening · feedback_table · rls_initplan · status_update_trigger · flag_context_tags |
-| High | `2026-05-25_push_tokens.sql` + deploy `notify-flag-status` Edge Function + DB Webhook | Supabase SQL Editor + Dashboard |
-| Medium | `npx expo install expo-notifications` + rebuild dev client | Terminal |
-| Optional | Tile interception | `qa-reports/2026-05-25-shamus-offline-tiles.md` — Leaflet (web) simpler; native requires ejection |
+| `origin/shamus/marker-clustering-2026-05-25` | Marker clustering + flag editing UI; Gary's 20 `updateFlagContent` tests; Alex 5 a11y fixes — all stacked on one branch | Sky applies `2026-05-25_flag_edit_rls_replacement.sql` first, then merge is safe |
+| `origin/feat/expo-web-vercel-2026-05-25` | Expo Web build + Vercel deployment config | Sky review — no migration dependency; low risk |
 
----
-
-## Open Branches (Sky decision / carry-forward)
+### IN-PROGRESS / CARRY-FORWARD (open branches, not yet merged)
 
 | Branch | What | Action |
 |---|---|---|
-| `fix/dani-statushistory-darkmode-2026-05-25` | StatusHistoryModal `'#fff'` → `color.surface` + list/listitem a11y | Spawn task chip — Sky clicks to build |
-| `chore/design-token-residuals-2026-05-25` | radius.circle · overlayBtnPressed · accessibilityRole cohesion | Spawn task chip |
-| `worktree-agent-a31117016067fc579` | 15 unique commits incl. shared FlagsProvider code | Spawn task chip — audit before deleting |
-| `feat/offline-tiles-2026-05-25` | Content already on main via 9597c31 | Safe to delete |
-| `test/auto-2026-05-25` | Content already incorporated | Safe to delete |
+| `fix/dani-statushistory-darkmode-2026-05-25` | StatusHistoryModal raw `'#fff'` tokens + list/listitem a11y roles | Spawn next Shamus task chip |
+| `chore/design-token-residuals-2026-05-25` | radius.circle, overlayBtnPressed, accessibilityRole cohesion | Spawn next Dani task chip |
+| `worktree-agent-a31117016067fc579` | 15 unique commits including shared FlagsProvider code; unaudited | Audit before deleting — possible cherry-picks |
+
+### PLANNED (approved, build not started)
+
+| Feature | Gate / Notes |
+|---|---|
+| Leaflet tile interception (web-only) | No native dep; pseudo-code in `2026-05-25-shamus-offline-tiles.md`; low complexity |
+| Neighbourhood heat-map | Jordan APPROVED WITH CONDITIONS (k>=3 floor, severity disclosure). Sky decision on severity-colour rendering needed before Shamus builds (see Open Decisions D5) |
+| Flag edit history audit table | `2026-05-25_flag_edit_history_table.sql` CONDITIONAL — Sky answers YES/NO first (D6) |
+| EAS Build / TestFlight | `eas.json` missing; Rory proposed config in `release-2026-05-25.md` |
+| `expo-notifications` install | `npx expo install expo-notifications` + rebuild dev client; unblocks push notifications end-to-end |
 
 ---
 
-## Decisions Made This Cycle
+## Migrations
 
-1. **`size` token category** — owned by Dani; add new entries via Dani per token ownership rule
-2. **Sequential build/merge discipline** — Build → QA (parallel OK) → wait for push confirm → next Build (in LEARNINGS.md)
-3. **Parallel merge conflict resolution** — verify `git log --oneline main..HEAD` after any conflict resolution to catch dropped commits (in LEARNINGS.md)
-4. **Supabase mock pattern** — `jest.mock('../supabase', () => ({ supabase: {} }))` required for test files with transitive supabase.ts import (in LEARNINGS.md)
-
----
-
-## Open Risks / Blockers
-
-- 🔴 Flag-edit RLS gap — live in prod without DB guard; must not promote to users
-- Tile interception (react-native-maps native) requires managed workflow ejection — high complexity
-- `worktree-agent-a31117016067fc579` has potentially valuable code not yet audited
-
----
-
-## Known Contradictions Detected
-
-None — `state_consistency: pass`
+| File | Status | Notes |
+|---|---|---|
+| `2026-05-23_data_layer_hardening.sql` | PENDING (file only) | Sky applies via Supabase SQL Editor |
+| `2026-05-23_feedback_table.sql` | APPLIED (Cycle F confirmed) | `public.feedback` table live |
+| `2026-05-23_rls_initplan_and_non_owner_status_update.sql` | PENDING (file only) | Sky applies via SQL Editor |
+| `2026-05-23_status_update_trigger_proposal.sql` | PROPOSE-ONLY — HELD | Steve sign-off needed (trigger vs. RLS failure-mode). Morgan recommends APPROVE (Decision 3). Sky messages Steve, then applies. |
+| `2026-05-24_flag_context_tags.sql` | APPLIED (Cycle F confirmed) | `context_tags` column live; `createFlag()` fallback can be removed |
+| `2026-05-24_realtime_flags.sql` | PENDING (file only) | Sky applies — unlocks Supabase Realtime |
+| `2026-05-24_status_history_table.sql` | APPLIED (Cycle F confirmed) | `flag_status_history` table + trigger live |
+| `2026-05-25_flag_edit_history_table.sql` | PROPOSE-ONLY — CONDITIONAL | Apply only if Sky answers YES to D6 |
+| `2026-05-25_flag_edit_rls_replacement.sql` | PROPOSE-ONLY — BLOCKING | Must apply before `shamus/marker-clustering-2026-05-25` merges. Replaces `flags update own` with `flags owner edit open` (status='open' guard). |
+| `2026-05-25_push_tokens.sql` | PROPOSE-ONLY | Apply to enable push notifications DB layer. Pair with Edge Function deploy + `expo-notifications` install. |
 
 ---
 
-## Next Cycle Intent
+## Active Branches
 
-1. **Leaflet tile interception** (web-only, no native dep) — `L.TileLayer.extend` wiring; pseudo-code in `qa-reports/2026-05-25-shamus-offline-tiles.md`
-2. **Neighbourhood heat-map layer** — Jordan pre-review first (location + disability data aggregation)
-3. **Branch cleanup** — delete `feat/offline-tiles-2026-05-25` and `test/auto-2026-05-25`
-4. **Dani P4** — `bannerBase` shared style extraction (low priority, tracked)
+| Branch | Contains | Status |
+|---|---|---|
+| `origin/main` | Everything shipped through Wave 5 | Canonical |
+| `origin/shamus/marker-clustering-2026-05-25` | Clustering + flag editing + Gary tests + Alex a11y fixes | Ready after RLS migration |
+| `origin/feat/expo-web-vercel-2026-05-25` | Expo Web + Vercel deployment config | Ready for Sky review + merge |
+| `origin/a11y/residual-2026-05-25` | Content already on main via `20823fa` | Safe to delete |
+| `origin/docs/learnings-sequential-merge-2026-05-25` | Content already on main | Safe to delete |
+| `origin/cycle/H-2026-05-24` | Cycle H carry-over | Audit — likely superseded |
+| `origin/sync/local-main-to-origin` | Sync utility | Safe to delete |
+| `worktree-agent-a31117016067fc579` (local) | 15 commits, FlagsProvider code | Audit before deleting |
+
+---
+
+## Open Decisions for Sky
+
+| # | Decision | Urgency |
+|---|---|---|
+| D1 | Apply `2026-05-25_flag_edit_rls_replacement.sql` in Supabase SQL Editor | BLOCKING — flag edit cannot merge without it |
+| D2 | Apply `2026-05-25_push_tokens.sql` + deploy Edge Function + install `expo-notifications` | HIGH — fully built, zero user value until applied |
+| D3 | Steve trigger sign-off on `2026-05-23_status_update_trigger_proposal.sql` — Morgan recommends APPROVE | HIGH |
+| D4 | Apply pending batch: `data_layer_hardening`, `rls_initplan`, `realtime_flags` | MEDIUM (~15 min in SQL Editor) |
+| D5 | Heat-map severity-colour rendering: gradient yes or no | MEDIUM — Jordan pre-reviewed; Sky answer unblocks Shamus build |
+| D6 | Flag edit history audit table: apply CONDITIONAL migration yes or no | LOW |
+| D7 | Constitution Art. 1.2 amendment (Cowork-as-Sky merge authority) | LOW — no sprint impact |
+
+---
+
+## What Sky Needs To Do Before Next Sprint (ordered)
+
+1. Apply `2026-05-25_flag_edit_rls_replacement.sql` in Supabase SQL Editor → merge `origin/shamus/marker-clustering-2026-05-25`
+2. Message Steve about `2026-05-23_status_update_trigger_proposal.sql` — get confirm, then apply
+3. Apply `2026-05-25_push_tokens.sql` in Supabase SQL Editor
+4. Deploy `notify-flag-status` Edge Function via Supabase Dashboard
+5. Run `npx expo install expo-notifications` in Terminal at ~/AccessMap and rebuild dev client
+6. Apply remaining batch: `data_layer_hardening`, `rls_initplan`, `realtime_flags` (~15 min)
+7. Review and merge `origin/feat/expo-web-vercel-2026-05-25`
+8. Answer D5 (heat-map severity colour) so Shamus can start heat-map build
+9. Create `eas.json` from Rory's proposal in `release-2026-05-25.md` when TestFlight is on the horizon
+10. Delete safe stale branches: `a11y/residual-2026-05-25`, `docs/learnings-sequential-merge-2026-05-25`, `sync/local-main-to-origin`
