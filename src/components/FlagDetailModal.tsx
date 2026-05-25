@@ -26,6 +26,7 @@ import {
   loadWatched,
   removeWatched,
 } from '@/lib/watchedFlags';
+import { recordView } from '@/lib/recentlyViewed';
 import {
   CATEGORY_LABELS,
   CATEGORY_ORDER,
@@ -117,6 +118,16 @@ export default function FlagDetailModal({
   useEffect(() => {
     setHistoryOpen(false);
   }, [flag?.id]);
+
+  // Record a "view" the first time this modal becomes visible with a flag
+  // and user. Fire-and-forget — the recently-viewed row on Profile updates
+  // on its next focus; we don't want to block the modal open on storage.
+  // Deduping + capping live inside recordView itself; re-opening the
+  // same flag just bubbles it to the top of the list.
+  useEffect(() => {
+    if (!visible || !shownFlag || !user) return;
+    void recordView(user.id, shownFlag.id);
+  }, [visible, shownFlag, user]);
 
   // Read the user's watched list to know whether THIS flag is being
   // tracked. Re-runs whenever the modal opens or the shown flag changes,
