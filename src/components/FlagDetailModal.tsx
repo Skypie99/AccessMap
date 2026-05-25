@@ -547,7 +547,7 @@ export default function FlagDetailModal({
                         editSeverity === s && { backgroundColor: severityColor(s) },
                       ]}
                       accessibilityRole="radio"
-                      accessibilityLabel={`Severity ${s}`}
+                      accessibilityLabel={`Severity ${s} of 5`}
                       accessibilityState={{ checked: editSeverity === s }}
                     >
                       <Text style={[styles.severityBtnText, editSeverity === s && styles.severityBtnTextActive]}>
@@ -563,6 +563,7 @@ export default function FlagDetailModal({
                     style={[styles.actionBtn, styles.cancelBtn]}
                     accessibilityRole="button"
                     accessibilityLabel="Cancel editing"
+                    accessibilityState={{ disabled: busy }}
                   >
                     <Text style={styles.cancelBtnText}>Cancel</Text>
                   </Pressable>

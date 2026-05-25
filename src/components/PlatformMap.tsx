@@ -5,6 +5,7 @@ import { Callout, Marker, PROVIDER_DEFAULT } from 'react-native-maps';
 import type MapView from 'react-native-maps';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { CATEGORY_LABELS, severityColor } from '@/lib/flags';
+import { decorativeProps } from '@/lib/accessibility';
 import type { FlagRow } from '@/types/database';
 
 export interface PlatformMapRegion {
@@ -110,11 +111,12 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(
               key={`cluster-${id}`}
               coordinate={coord}
               onPress={onPress}
+              hitSlop={{ top: 2, bottom: 2, left: 2, right: 2 }}
               accessibilityRole="button"
-              accessibilityLabel={`${count} accessibility flags. Tap to expand.`}
+              accessibilityLabel={`${count} ${count === 1 ? 'flag' : 'flags'}. Tap to expand.`}
             >
               <View style={styles.cluster}>
-                <Text style={styles.clusterCount}>{count}</Text>
+                <Text style={styles.clusterCount} {...decorativeProps}>{count}</Text>
               </View>
             </Marker>
           );
