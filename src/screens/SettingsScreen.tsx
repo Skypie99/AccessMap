@@ -35,6 +35,7 @@ import {
 // rationale.
 import NotificationPrefsModal from '@/components/NotificationPrefsModal';
 import AboutScreen from '@/screens/AboutScreen';
+import NotificationPreferencesScreen from '@/screens/NotificationPreferencesScreen';
 
 // One row in the settings list. We declare it locally instead of factoring
 // into its own file because it's only used here and the rest of the app
@@ -159,6 +160,7 @@ export default function SettingsScreen() {
   // styles differ slightly per host. Both keep their own visible flag.
   const [notifOpen, setNotifOpen] = useState(false);
   const [aboutOpen, setAboutOpen] = useState(false);
+  const [notifPrefsOpen, setNotifPrefsOpen] = useState(false);
 
   const { user } = useAuth();
   const [exporting, setExporting] = useState(false);
@@ -357,17 +359,34 @@ export default function SettingsScreen() {
           onPress={() => setNotifOpen(true)}
         />
 
+        <SettingsRow
+          title="Alert preferences"
+          subtitle="Choose which push alerts and nearby notifications you receive."
+          accessibilityHint="Opens alert and push notification preferences"
+          onPress={() => setNotifPrefsOpen(true)}
+        />
+
         {/* Push notifications toggle — Jordan condition 4.
             Uses a Switch so the current state is always visible without
             tapping into a sub-screen. On/off mirrors the push_tokens row
-            presence: row exists = enabled, absent = disabled. */}
-        <View
-          style={styles.pushRow}
-          accessible
+            presence: row exists = enabled, absent = disabled.
+            A11y fix (wave 6): the outer container is now a Pressable so
+            VoiceOver/TalkBack can activate the switch by tapping the row.
+            The inner Switch is hidden from AT (accessibilityElementsHidden)
+            to avoid double-activation — the Pressable's onPress calls
+            handlePushToggle directly. WCAG 4.1.2 (name/role/value). */}
+        <Pressable
+          style={({ pressed }) => [
+            styles.pushRow,
+            pressed && !(pushBusy || !user) && styles.rowPressed,
+            (pushBusy || !user) && styles.rowDisabled,
+          ]}
+          onPress={() => { void handlePushToggle(!pushEnabled); }}
+          disabled={pushBusy || !user}
           accessibilityRole="switch"
           accessibilityLabel={`Push notifications, currently ${pushEnabled ? 'on' : 'off'}`}
           accessibilityHint="Receive a push notification when your flag is verified or resolved"
-          accessibilityState={{ checked: pushEnabled, busy: pushBusy }}
+          accessibilityState={{ checked: pushEnabled, busy: pushBusy, disabled: pushBusy || !user }}
         >
           <View style={styles.pushTextWrap}>
             <Text style={styles.rowTitle}>Push notifications</Text>
@@ -390,7 +409,7 @@ export default function SettingsScreen() {
               importantForAccessibility="no-hide-descendants"
             />
           )}
-        </View>
+        </Pressable>
 
         <Text style={styles.sectionLabel} accessibilityRole="header">
           Help & info
@@ -464,14 +483,18 @@ export default function SettingsScreen() {
         />
       </ScrollView>
 
-      {/* Only NotificationPrefs + About render here; the other four
-          modals (Help, Changelog, Feedback, MyFeedback) live in a single
-          <SharedModalsHost /> mount inside RootNavigator. */}
+      {/* Only NotificationPrefs + About + NotificationPreferencesScreen render
+          here; the other four modals (Help, Changelog, Feedback, MyFeedback)
+          live in a single <SharedModalsHost /> mount inside RootNavigator. */}
       <NotificationPrefsModal
         visible={notifOpen}
         onClose={() => setNotifOpen(false)}
       />
       <AboutScreen visible={aboutOpen} onClose={() => setAboutOpen(false)} />
+      <NotificationPreferencesScreen
+        visible={notifPrefsOpen}
+        onClose={() => setNotifPrefsOpen(false)}
+      />
     </>
   );
 }
