@@ -1,7 +1,17 @@
 import 'react-native-url-polyfill/auto';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createClient } from '@supabase/supabase-js';
+import { Platform } from 'react-native';
 import type { Database } from '@/types/database';
+
+// On web, supabase-js defaults to localStorage when no storage adapter is
+// provided, which is exactly what we want. On native, we hand it AsyncStorage
+// so sessions survive app restarts. Using a single conditional keeps the client
+// initialisation in one place and avoids a separate *.web.ts file.
+const authStorage =
+  Platform.OS === 'web'
+    ? undefined // supabase-js uses localStorage automatically
+    : AsyncStorage;
 
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL ?? '';
 const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '';
@@ -20,10 +30,11 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
   auth: {
-    storage: AsyncStorage,
+    storage: authStorage,
     autoRefreshToken: true,
     persistSession: true,
-    detectSessionInUrl: false,
+    // On web, detect OAuth redirects embedded in the URL hash/query.
+    detectSessionInUrl: Platform.OS === 'web',
   },
 });
 

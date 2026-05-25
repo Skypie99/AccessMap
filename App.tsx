@@ -1,6 +1,6 @@
 import 'react-native-gesture-handler';
 import React, { useCallback, useEffect, useState } from 'react';
-import { View } from 'react-native';
+import { Platform, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ThemeProvider } from '@/theme/ThemeContext';
@@ -106,8 +106,20 @@ function SignedInArea() {
 
 function Gate() {
   const { session, loading } = useAuth();
+
   if (loading) return null;
-  return session ? <SignedInArea /> : <SignInScreen />;
+
+  if (session) return <SignedInArea />;
+
+  // Web demo mode — on web, visitors can browse the live map without signing in.
+  // Flag submission still requires auth (the form explains this inline). We render
+  // RootNavigator directly instead of SignedInArea, which needs a user object for
+  // points/onboarding features that are auth-gated by design.
+  if (Platform.OS === 'web') {
+    return <RootNavigator initialRouteName="Map" />;
+  }
+
+  return <SignInScreen />;
 }
 
 /**

@@ -1,9 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
   Image,
   Modal,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -58,6 +59,8 @@ export default function ReportFlagModal({
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [contextTags, setContextTags] = useState<ContextTag[]>([]);
   const [submitting, setSubmitting] = useState(false);
+  // Web-only: hidden <input type="file"> used as the image picker substitute.
+  const webFileInputRef = useRef<HTMLInputElement | null>(null);
   // Mirror of the module-level capability flag in src/lib/flags.ts. When
   // it flips to 'unavailable' (the propose-only migration isn't on this
   // backend yet) we disable the chip picker and surface a "coming soon"
@@ -75,21 +78,45 @@ export default function ReportFlagModal({
     setContextTags([]);
   };
 
-  const pickPhoto = async (source: 'camera' | 'library') => {
+  const pickPhoto = async (_source: 'camera' | 'library') => {
+    // Web path — use a hidden <input type="file"> instead of expo-image-picker,
+    // which is native-only. The input is programmatically clicked; the selected
+    // file is converted to a blob URL so the rest of the upload path (which
+    // just needs a URI string) works unchanged.
+    if (Platform.OS === 'web') {
+      if (!webFileInputRef.current) {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'image/*';
+        input.style.display = 'none';
+        input.onchange = () => {
+          const file = input.files?.[0];
+          if (file) {
+            setPhotoUri(URL.createObjectURL(file));
+          }
+        };
+        document.body.appendChild(input);
+        webFileInputRef.current = input;
+      }
+      webFileInputRef.current.click();
+      return;
+    }
+
+    // Native path — expo-image-picker.
     try {
       const perm =
-        source === 'camera'
+        _source === 'camera'
           ? await ImagePicker.requestCameraPermissionsAsync()
           : await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (!perm.granted) {
         Alert.alert(
           'Permission needed',
-          `Allow ${source === 'camera' ? 'camera' : 'photo library'} access to attach a photo.`,
+          `Allow ${_source === 'camera' ? 'camera' : 'photo library'} access to attach a photo.`,
         );
         return;
       }
       const result =
-        source === 'camera'
+        _source === 'camera'
           ? await ImagePicker.launchCameraAsync({
               mediaTypes: ImagePicker.MediaTypeOptions.Images,
               quality: 0.7,

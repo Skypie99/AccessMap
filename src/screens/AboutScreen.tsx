@@ -19,11 +19,14 @@ interface Props {
 }
 
 // Read version once at module scope so re-renders don't re-read it. The
-// fall-through order matches what Expo SDK 54 recommends.
+// fall-through order matches what Expo SDK 54 recommends. On web,
+// nativeAppVersion is undefined, so we fall through to the expoConfig
+// value (present in the metro web bundle) or a hard-coded fallback.
 const APP_VERSION =
   Constants.expoConfig?.version ??
-  Constants.nativeAppVersion ??
-  '0.0.0';
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (Constants as any).nativeAppVersion ??
+  '1.0.0';
 
 /**
  * About AccessMap — meta page for the Settings tab. Shows version, the
