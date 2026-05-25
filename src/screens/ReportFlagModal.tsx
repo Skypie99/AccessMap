@@ -235,6 +235,7 @@ export default function ReportFlagModal({
             value={description}
             onChangeText={setDescription}
             placeholder="What's going on here?"
+            placeholderTextColor={color.textMuted}
             multiline
             maxLength={500}
             style={styles.input}

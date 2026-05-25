@@ -245,6 +245,7 @@ export default function FilterPresetsModal({
                 value={renameValue}
                 onChangeText={setRenameValue}
                 placeholder="New name"
+                placeholderTextColor={color.textMuted}
                 maxLength={MAX_NAME_LENGTH}
                 style={styles.input}
                 autoFocus
@@ -442,6 +443,7 @@ export default function FilterPresetsModal({
                 value={newName}
                 onChangeText={setNewName}
                 placeholder="e.g. Downtown commute"
+                placeholderTextColor={color.textMuted}
                 maxLength={MAX_NAME_LENGTH}
                 style={styles.input}
                 autoFocus

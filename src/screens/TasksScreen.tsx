@@ -835,6 +835,9 @@ const FlagCard = memo(function FlagCard({
             styles.sevDot,
             { backgroundColor: severityColor(flag.severity) },
           ]}
+          accessible={false}
+          importantForAccessibility="no-hide-descendants"
+          accessibilityElementsHidden={true}
         />
         <Text style={styles.cardTitle}>{CATEGORY_LABELS[flag.category]}</Text>
         <Text style={styles.statusTag}>{flag.status}</Text>
