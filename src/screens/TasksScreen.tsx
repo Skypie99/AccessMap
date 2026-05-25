@@ -23,6 +23,7 @@ import {
 import { confirm } from '@/lib/confirm';
 import { errorMessage } from '@/lib/errors';
 import { CATEGORY_LABELS, NEXT_PAGE_SIZE, severityColor, updateFlagStatus } from '@/lib/flags';
+import SearchInputRow from '@/components/SearchInputRow';
 import { relativeTime } from '@/lib/relativeTime';
 import { useFlags } from '@/lib/flagsStore';
 import { useUserLocation } from '@/lib/location';
@@ -123,6 +124,10 @@ export default function TasksScreen() {
   // most-urgent issues without leaving the triage screen.
   const [minSeverity, setMinSeverity] = useState<0 | 2 | 3 | 4 | 5>(0);
 
+  // Free-text search — filters by category label or description substring.
+  // Local-only (filters the already-loaded page), resets on tab blur.
+  const [searchQuery, setSearchQuery] = useState('');
+
   // Sort mode — applied within each section. Persisted device-wide via
   // AsyncStorage so a refresh / app-restart keeps the user's last choice.
   // Hydrated from disk in an effect so first paint matches the default
@@ -143,14 +148,22 @@ export default function TasksScreen() {
     void saveTasksSort(next);
   }, []);
 
-  // Apply the mine-only and min-severity filters on top of the triage filter
-  // so sections always reflect exactly what the list renders.
+  // Apply the mine-only, min-severity, and text-search filters on top of the
+  // triage filter so sections always reflect exactly what the list renders.
   const displayFlags = useMemo(() => {
     let out = flags;
     if (mineOnly && userId) out = out.filter((f) => f.user_id === userId);
     if (minSeverity > 0) out = out.filter((f) => f.severity >= minSeverity);
+    const q = searchQuery.trim().toLowerCase();
+    if (q) {
+      out = out.filter(
+        (f) =>
+          CATEGORY_LABELS[f.category].toLowerCase().includes(q) ||
+          (f.description ?? '').toLowerCase().includes(q),
+      );
+    }
     return out;
-  }, [flags, mineOnly, userId, minSeverity]);
+  }, [flags, mineOnly, userId, minSeverity, searchQuery]);
 
   // Group the visible flags by status so the SectionList can show "Open"
   // and "Verified" as distinct sections. Sections with zero rows are
@@ -568,6 +581,19 @@ export default function TasksScreen() {
             <Text style={styles.selectEntryText}>Select multiple</Text>
           </Pressable>
         </View>
+      )}
+      {/* Text search — shown when there are triage flags to filter.
+          Searches category label and description; purely local (works on
+          the loaded page only, no extra network requests). */}
+      {flags.length > 1 && (
+        <SearchInputRow
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          onClear={() => setSearchQuery('')}
+          placeholder="Search flags…"
+          accessibilityLabel="Search flags"
+          accessibilityHint="Filters the triage list to flags whose category or description contains your search words"
+        />
       )}
       {/* Mine-only toggle — shown only when signed in. A chip row that
           switches between "All flags" and "My flags" without opening the
