@@ -11,6 +11,7 @@ import {
   Share,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from 'react-native';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
@@ -26,13 +27,16 @@ import {
 } from '@/lib/watchedFlags';
 import {
   CATEGORY_LABELS,
+  CATEGORY_ORDER,
   deleteFlag,
   severityColor,
   STATUS_COLORS,
   STATUS_LABELS,
+  updateFlagContent,
   updateFlagStatus,
+  type FlagContentPatch,
 } from '@/lib/flags';
-import type { FlagRow, FlagStatus } from '@/types/database';
+import type { FlagCategory, FlagRow, FlagSeverity, FlagStatus } from '@/types/database';
 import PhotoLightboxModal from './PhotoLightboxModal';
 import StatusHistoryModal from './StatusHistoryModal';
 
@@ -61,6 +65,10 @@ export default function FlagDetailModal({
   const styles = makeStyles(color);
   const { user } = useAuth();
   const [busy, setBusy] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editDesc, setEditDesc] = useState('');
+  const [editCategory, setEditCategory] = useState<FlagCategory>('steep_grade');
+  const [editSeverity, setEditSeverity] = useState<FlagSeverity>(3);
   // Watched state — null while we're loading the per-user list, true/false
   // once known. Hidden button until we know, so we never render a stale
   // "Watch" that flips to "Unwatch" 100ms after the modal opens.
@@ -77,7 +85,13 @@ export default function FlagDetailModal({
   // turns blank as it animates away.
   const [shownFlag, setShownFlag] = useState<FlagRow | null>(flag);
   useEffect(() => {
-    if (flag) setShownFlag(flag);
+    if (flag) {
+      setShownFlag(flag);
+      setIsEditing(false);
+      setEditDesc(flag.description ?? '');
+      setEditCategory(flag.category);
+      setEditSeverity(flag.severity);
+    }
   }, [flag]);
 
   // Reset the lightbox whenever the parent modal closes OR the flag swaps.
@@ -159,6 +173,27 @@ export default function FlagDetailModal({
   const formattedCoords = `${shownFlag.lat.toFixed(5)}, ${shownFlag.lng.toFixed(5)}`;
   const coordsA11y = `Coordinates ${shownFlag.lat.toFixed(5)} latitude, ${shownFlag.lng.toFixed(5)} longitude`;
   const statusPalette = STATUS_COLORS[status];
+
+  const canEdit = isOwn && status === 'open';
+
+  const handleSaveEdit = async () => {
+    if (busy || !shownFlag) return;
+    setBusy(true);
+    try {
+      const patch: FlagContentPatch = {
+        description: editDesc.trim() || null,
+        category: editCategory,
+        severity: editSeverity,
+      };
+      const updated = await updateFlagContent(shownFlag.id, patch);
+      setShownFlag(updated);
+      setIsEditing(false);
+    } catch (e) {
+      Alert.alert('Could not save changes', errorMessage(e));
+    } finally {
+      setBusy(false);
+    }
+  };
 
   const runStatusChange = async (next: FlagStatus, action: DetailAction) => {
     if (busy) return;
@@ -454,6 +489,98 @@ export default function FlagDetailModal({
                   {watched ? 'Watching' : 'Watch'}
                 </Text>
               </Pressable>
+            )}
+
+            {canEdit && !isEditing && (
+              <Pressable
+                onPress={() => setIsEditing(true)}
+                disabled={busy}
+                style={[styles.actionBtn, styles.editBtn]}
+                accessibilityRole="button"
+                accessibilityLabel="Edit this flag"
+                accessibilityHint="Opens an edit form for description, category, and severity"
+                accessibilityState={{ disabled: busy }}
+              >
+                <Text style={styles.editBtnText}>Edit</Text>
+              </Pressable>
+            )}
+
+            {isEditing && (
+              <View style={styles.editForm}>
+                <Text style={styles.editLabel}>Description</Text>
+                <TextInput
+                  style={styles.editInput}
+                  value={editDesc}
+                  onChangeText={setEditDesc}
+                  placeholder="Describe the accessibility issue"
+                  placeholderTextColor={color.textMuted}
+                  multiline
+                  maxLength={500}
+                  accessibilityLabel="Flag description"
+                />
+                <Text style={styles.editLabel}>Category</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoryRow}>
+                  {CATEGORY_ORDER.map((cat) => (
+                    <Pressable
+                      key={cat}
+                      onPress={() => setEditCategory(cat)}
+                      style={[styles.categoryChip, editCategory === cat && styles.categoryChipActive]}
+                      accessibilityRole="radio"
+                      accessibilityLabel={CATEGORY_LABELS[cat]}
+                      accessibilityState={{ checked: editCategory === cat }}
+                    >
+                      <Text style={[styles.categoryChipText, editCategory === cat && styles.categoryChipTextActive]}>
+                        {CATEGORY_LABELS[cat]}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </ScrollView>
+                <Text style={styles.editLabel}>Severity</Text>
+                <View style={styles.severityRow}>
+                  {([1, 2, 3, 4, 5] as FlagSeverity[]).map((s) => (
+                    <Pressable
+                      key={s}
+                      onPress={() => setEditSeverity(s)}
+                      style={[
+                        styles.severityBtn,
+                        editSeverity === s && { backgroundColor: severityColor(s) },
+                      ]}
+                      accessibilityRole="radio"
+                      accessibilityLabel={`Severity ${s}`}
+                      accessibilityState={{ checked: editSeverity === s }}
+                    >
+                      <Text style={[styles.severityBtnText, editSeverity === s && styles.severityBtnTextActive]}>
+                        {s}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </View>
+                <View style={styles.editActions}>
+                  <Pressable
+                    onPress={() => setIsEditing(false)}
+                    disabled={busy}
+                    style={[styles.actionBtn, styles.cancelBtn]}
+                    accessibilityRole="button"
+                    accessibilityLabel="Cancel editing"
+                  >
+                    <Text style={styles.cancelBtnText}>Cancel</Text>
+                  </Pressable>
+                  <Pressable
+                    onPress={() => void handleSaveEdit()}
+                    disabled={busy}
+                    style={[styles.actionBtn, styles.saveBtn]}
+                    accessibilityRole="button"
+                    accessibilityLabel="Save changes"
+                    accessibilityState={{ busy, disabled: busy }}
+                  >
+                    {busy ? (
+                      <ActivityIndicator size="small" color="#fff" />
+                    ) : (
+                      <Text style={styles.saveBtnText}>Save</Text>
+                    )}
+                  </Pressable>
+                </View>
+              </View>
             )}
 
             <View style={styles.secondaryRow}>
@@ -799,4 +926,50 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
   watchBtnTextActive: {
     color: '#b07800',
   },
+  editBtn: { backgroundColor: color.surface, borderWidth: 1.5, borderColor: color.border },
+  editBtnText: { color: color.text, fontWeight: '700', fontSize: 14 },
+  editForm: { gap: 10, marginTop: 4, marginBottom: 8 },
+  editLabel: { fontSize: 12, fontWeight: '700', color: color.textMuted, textTransform: 'uppercase', letterSpacing: 0.5 },
+  editInput: {
+    borderWidth: 1,
+    borderColor: color.border,
+    borderRadius: 10,
+    padding: 10,
+    fontSize: 14,
+    color: color.text,
+    backgroundColor: color.surface,
+    minHeight: 72,
+    textAlignVertical: 'top',
+  },
+  categoryRow: { flexGrow: 0 },
+  categoryChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 999,
+    borderWidth: 1.5,
+    borderColor: color.border,
+    marginRight: 8,
+    backgroundColor: color.surface,
+  },
+  categoryChipActive: { borderColor: color.brand, backgroundColor: color.brandSoft },
+  categoryChipText: { fontSize: 13, color: color.text },
+  categoryChipTextActive: { color: color.brandOnSoft, fontWeight: '700' },
+  severityRow: { flexDirection: 'row', gap: 8 },
+  severityBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1.5,
+    borderColor: color.border,
+    backgroundColor: color.surface,
+  },
+  severityBtnText: { fontSize: 14, fontWeight: '700', color: color.text },
+  severityBtnTextActive: { color: '#fff' },
+  editActions: { flexDirection: 'row', gap: 10, marginTop: 4 },
+  cancelBtn: { flex: 1, backgroundColor: color.surface, borderWidth: 1.5, borderColor: color.border },
+  cancelBtnText: { color: color.text, fontWeight: '700', fontSize: 14 },
+  saveBtn: { flex: 1, backgroundColor: color.brand },
+  saveBtnText: { color: color.textOnBrand, fontWeight: '700', fontSize: 14 },
 });

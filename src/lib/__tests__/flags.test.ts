@@ -5,17 +5,35 @@
  * jest + jest-expo are installed; see qa-reports/proposal-testing-2026-05-23.md
  * for the one-command setup.
  *
- * The async helpers in this module (uploadFlagPhoto, listFlags, createFlag,
- * updateFlagStatus, deleteFlag, listFlagsByUser) all touch Supabase and need
- * a mocked client to test — that's left as a propose-only follow-up in the
- * same doc, since it requires the jest setup to land first.
- *
- * What we DO cover here: the data dictionaries (CATEGORY_LABELS,
- * SEVERITY_LABELS, STATUS_LABELS, etc.) — making sure every Flag* type member
- * has an entry, and the ORDER arrays are full and unique. These are the
- * constants that the Map filter, Tasks list, and ReportFlagModal pull from,
- * so a missing entry would silently render a blank cell.
+ * Sections:
+ *  1. Data dictionaries (CATEGORY_LABELS, SEVERITY_LABELS, etc.) — constants
+ *     that must be complete and unique.
+ *  2. updateFlagContent — Supabase-backed async helper, tested via a mocked
+ *     client so no network is required.
  */
+
+// ---------------------------------------------------------------------------
+// Supabase mock — hoisted by Jest before any import runs. Follows the same
+// builder-chain pattern used in feedbackStore.test.ts. Only the chain that
+// updateFlagContent uses is wired: from → update → eq → select → single.
+// Other async helpers (createFlag, listFlags, etc.) are NOT exercised by
+// these tests and intentionally left unmocked at this time.
+// ---------------------------------------------------------------------------
+const mockUpdate = jest.fn();
+const mockEq = jest.fn();
+const mockSelectAfterUpdate = jest.fn();
+const mockSingle = jest.fn();
+const mockFrom = jest.fn();
+
+jest.mock('../supabase', () => ({
+  __esModule: true,
+  supabase: {
+    // Wrap in an arrow function so the factory closure captures a live
+    // reference to mockFrom rather than the undefined TDZ value at hoist
+    // time (jest.mock is hoisted above const declarations).
+    from: (...args: unknown[]) => mockFrom(...args),
+  },
+}));
 
 import {
   CATEGORY_LABELS,
@@ -30,6 +48,7 @@ import {
   STATUS_ORDER,
   DEFAULT_STATUSES,
   FLAG_PHOTOS_BUCKET,
+  updateFlagContent,
 } from "../flags";
 import type {
   FlagCategory,
@@ -149,5 +168,78 @@ describe("FLAG_PHOTOS_BUCKET", () => {
     // silently 404 against the wrong bucket. Pin it here so the lib +
     // schema can't disagree without a failing test.
     expect(FLAG_PHOTOS_BUCKET).toBe("flag-photos");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// updateFlagContent — Supabase-backed async helper
+// Chain under test: supabase.from('flags').update(patch).eq('id', flagId).select().single()
+// ---------------------------------------------------------------------------
+
+describe("updateFlagContent", () => {
+  const SAMPLE_ROW = {
+    id: "flag-abc",
+    user_id: "user-1",
+    lat: 49.25,
+    lng: -123.1,
+    category: "no_ramp" as const,
+    severity: 3 as const,
+    description: "updated description",
+    photo_url: null,
+    status: "open" as const,
+    created_at: "2026-05-25T00:00:00Z",
+  };
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    // Wire the builder chain so each method returns the next link.
+    mockFrom.mockReturnValue({ update: mockUpdate });
+    mockUpdate.mockReturnValue({ eq: mockEq });
+    mockEq.mockReturnValue({ select: mockSelectAfterUpdate });
+    mockSelectAfterUpdate.mockReturnValue({ single: mockSingle });
+  });
+
+  it("resolves with the FlagRow returned by Supabase on success", async () => {
+    mockSingle.mockResolvedValueOnce({ data: SAMPLE_ROW, error: null });
+
+    const result = await updateFlagContent("flag-abc", { description: "updated description" });
+
+    expect(result).toEqual(SAMPLE_ROW);
+  });
+
+  it("throws when Supabase returns an error", async () => {
+    const dbError = { message: "permission denied", code: "42501" };
+    mockSingle.mockResolvedValueOnce({ data: null, error: dbError });
+
+    await expect(
+      updateFlagContent("flag-abc", { severity: 5 })
+    ).rejects.toEqual(dbError);
+  });
+
+  it("passes only the patch fields to .update() — never readonly fields", async () => {
+    mockSingle.mockResolvedValueOnce({ data: SAMPLE_ROW, error: null });
+
+    const patch = { description: "new text", category: "broken_sidewalk" as const, severity: 2 as const };
+    await updateFlagContent("flag-abc", patch);
+
+    // .update() must receive exactly the patch — no status, user_id, lat, lng, etc.
+    expect(mockUpdate).toHaveBeenCalledWith(patch);
+    expect(mockUpdate).toHaveBeenCalledTimes(1);
+  });
+
+  it("targets the correct row by id via .eq('id', flagId)", async () => {
+    mockSingle.mockResolvedValueOnce({ data: SAMPLE_ROW, error: null });
+
+    await updateFlagContent("flag-abc", { description: "x" });
+
+    expect(mockEq).toHaveBeenCalledWith("id", "flag-abc");
+  });
+
+  it("queries the 'flags' table (not a wrong table name)", async () => {
+    mockSingle.mockResolvedValueOnce({ data: SAMPLE_ROW, error: null });
+
+    await updateFlagContent("flag-abc", { severity: 1 });
+
+    expect(mockFrom).toHaveBeenCalledWith("flags");
   });
 });

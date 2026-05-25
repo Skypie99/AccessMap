@@ -1,10 +1,8 @@
 import React, { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
 import { Image, StyleSheet, Text, View } from 'react-native';
-import MapView, {
-  Callout,
-  Marker,
-  PROVIDER_DEFAULT,
-} from 'react-native-maps';
+import ClusteredMapView from 'react-native-map-clustering';
+import { Callout, Marker, PROVIDER_DEFAULT } from 'react-native-maps';
+import type MapView from 'react-native-maps';
 import { CATEGORY_LABELS, severityColor } from '@/lib/flags';
 import type { FlagRow } from '@/types/database';
 
@@ -49,6 +47,8 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(
     },
     ref,
   ) {
+    // Ref to ClusteredMapView — cast to MapView for animateToRegion calls
+    // (ClusteredMapView wraps MapView internally and delegates map methods)
     const mapRef = useRef<MapView | null>(null);
     const markerRefs = useRef<Record<string, InstanceType<typeof Marker> | null>>({});
 
@@ -85,17 +85,37 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(
     );
 
     return (
-      <MapView
-        ref={mapRef}
+      <ClusteredMapView
+        mapRef={(r: any) => { mapRef.current = r; }}
         style={StyleSheet.absoluteFillObject}
         provider={PROVIDER_DEFAULT}
         initialRegion={initialRegion}
         showsUserLocation={showsUserLocation}
         showsMyLocationButton={false}
-        // Long-press a spot on the map → fire the parent's drop handler
-        // with the press coordinates. iOS/Android only — web variant
-        // handles the same intent via a contextmenu listener. The
-        // 500ms default duration is fine; we don't override it.
+        clusterColor="#2563EB"
+        clusterTextColor="#ffffff"
+        radius={40}
+        renderCluster={(cluster: any) => {
+          const { id, geometry, onPress, properties } = cluster;
+          const count: number = properties.point_count;
+          const coord = {
+            latitude: geometry.coordinates[1] as number,
+            longitude: geometry.coordinates[0] as number,
+          };
+          return (
+            <Marker
+              key={`cluster-${id}`}
+              coordinate={coord}
+              onPress={onPress}
+              accessibilityRole="button"
+              accessibilityLabel={`${count} accessibility flags. Tap to expand.`}
+            >
+              <View style={styles.cluster}>
+                <Text style={styles.clusterCount}>{count}</Text>
+              </View>
+            </Marker>
+          );
+        }}
         onLongPress={
           onLongPressMap
             ? (e) => {
@@ -146,7 +166,7 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(
             </Callout>
           </Marker>
         ))}
-      </MapView>
+      </ClusteredMapView>
     );
   },
 );
@@ -182,5 +202,23 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginTop: 6,
     backgroundColor: '#eef1f5',
+  },
+  cluster: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#2563EB',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 4,
+  },
+  clusterCount: {
+    color: '#ffffff',
+    fontSize: 13,
+    fontWeight: '700',
   },
 });
