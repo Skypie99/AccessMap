@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -7,6 +7,7 @@ import {
   ScrollView,
   Share,
   StyleSheet,
+  Switch,
   Text,
   View,
 } from 'react-native';
@@ -20,6 +21,11 @@ import { CATEGORY_LABELS, listFlagsByUser } from '@/lib/flags';
 import { listFeedbackByUser } from '@/lib/feedbackStore';
 import { formatDataExport } from '@/lib/dataExport';
 import type { UserRow } from '@/types/database';
+import {
+  deletePushToken,
+  enablePushNotifications,
+  getPushEnabled,
+} from '@/lib/pushNotifications';
 // NotificationPrefsModal stays mounted locally — Settings's instance is
 // bare (no initialPrefs / onPrefsChanged), but ProfileScreen's instance
 // is per-screen-stateful (carries `initialPrefs={notificationPrefs}` and
@@ -137,6 +143,10 @@ function SettingsRow({
 export default function SettingsScreen() {
   const color = useColor();
   const styles = makeStyles(color);
+  // Keep a stable reference for the push ActivityIndicator color — we can't
+  // call useColor() inside conditional JSX, so we capture it here at the
+  // top of the component.
+  const pushSpinnerColor = color.textSubtle;
   // Help, Changelog, Feedback, and MyFeedback are all mounted ONCE at
   // the navigator level via <SharedModalsHost /> (see RootNavigator.tsx +
   // src/lib/sharedModalsContext.tsx). Settings just sets the shared
@@ -152,6 +162,41 @@ export default function SettingsScreen() {
 
   const { user } = useAuth();
   const [exporting, setExporting] = useState(false);
+
+  // Push notifications toggle state.
+  // Reads the AsyncStorage preference on mount so the toggle reflects the
+  // user's last choice without a round-trip to the DB.
+  const [pushEnabled, setPushEnabled] = useState(false);
+  const [pushBusy, setPushBusy] = useState(false);
+
+  useEffect(() => {
+    if (!user) return;
+    getPushEnabled(user.id)
+      .then(setPushEnabled)
+      .catch(() => setPushEnabled(false));
+  }, [user]);
+
+  const handlePushToggle = async (value: boolean) => {
+    if (!user || pushBusy) return;
+    setPushBusy(true);
+    try {
+      if (value) {
+        const success = await enablePushNotifications(user.id);
+        // Only update local state if the full flow succeeded (user confirmed +
+        // token obtained). If they tapped "Not now" or permission was denied,
+        // the toggle stays off.
+        if (success) setPushEnabled(true);
+      } else {
+        await deletePushToken(user.id);
+        setPushEnabled(false);
+      }
+    } catch (e) {
+      Alert.alert('Could not update notifications', 'Please try again.');
+      console.warn('[SettingsScreen] handlePushToggle error:', e);
+    } finally {
+      setPushBusy(false);
+    }
+  };
 
   /**
    * "Export my data" handler. PIPEDA-aware right-of-access flow:
@@ -286,6 +331,14 @@ export default function SettingsScreen() {
       true,
     );
     if (!ok) return;
+
+    // Jordan condition 5 — clear the push token before signing out.
+    // Best-effort/silent: if this fails (network error, token already gone)
+    // we still complete the sign-out so the user isn't left stuck.
+    if (user) {
+      await deletePushToken(user.id);
+    }
+
     // Fire-and-forget — signOut returns an AuthResponse but the
     // AuthProvider listener takes care of routing back to the
     // SignInScreen, so we don't need to await or surface errors
@@ -310,6 +363,41 @@ export default function SettingsScreen() {
           accessibilityHint="Opens notification preferences"
           onPress={() => setNotifOpen(true)}
         />
+
+        {/* Push notifications toggle — Jordan condition 4.
+            Uses a Switch so the current state is always visible without
+            tapping into a sub-screen. On/off mirrors the push_tokens row
+            presence: row exists = enabled, absent = disabled. */}
+        <View
+          style={styles.pushRow}
+          accessible
+          accessibilityRole="switch"
+          accessibilityLabel="Push notifications"
+          accessibilityHint="Receive a push notification when your flag is verified or resolved"
+          accessibilityState={{ checked: pushEnabled, busy: pushBusy }}
+        >
+          <View style={styles.pushTextWrap}>
+            <Text style={styles.rowTitle}>Push notifications</Text>
+            <Text style={styles.rowSubtitle}>
+              Get notified when your flag is verified or resolved.
+            </Text>
+          </View>
+          {pushBusy ? (
+            <ActivityIndicator
+              accessibilityElementsHidden
+              importantForAccessibility="no-hide-descendants"
+              color={pushSpinnerColor}
+            />
+          ) : (
+            <Switch
+              value={pushEnabled}
+              onValueChange={handlePushToggle}
+              disabled={pushBusy || !user}
+              accessibilityElementsHidden
+              importantForAccessibility="no-hide-descendants"
+            />
+          )}
+        </View>
 
         <Text style={styles.sectionLabel} accessibilityRole="header">
           Help & info
@@ -461,4 +549,18 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
   rowSpinner: {
     width: 28,
   },
+  // Push notifications toggle row — same visual weight as SettingsRow but
+  // with a Switch in place of a chevron. Matches the row padding and
+  // shadow so the two control types look like siblings in the section.
+  pushRow: {
+    backgroundColor: color.surface,
+    borderRadius: radius.lg,
+    padding: spacing.lg,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    minHeight: 64,
+    ...shadow.e1,
+  },
+  pushTextWrap: { flex: 1, gap: 2 },
 });
