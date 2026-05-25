@@ -31,6 +31,9 @@ export interface PlatformMapProps {
   flags: FlagRow[];
   focusedFlagId: string | null;
   showsUserLocation?: boolean;
+  /** When true, animateTo uses an instant pan (duration 0) to respect
+   *  the user's "Reduce Motion" system preference (WCAG 2.3.3). */
+  reducedMotion?: boolean;
   /**
    * Long-press anywhere on the map to drop a flag at that location.
    * Fires with the geographic coordinate of the press. Web variant
@@ -46,6 +49,7 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(
       flags,
       focusedFlagId,
       showsUserLocation,
+      reducedMotion,
       onLongPressMap,
     },
     ref,
@@ -79,14 +83,15 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(
               latitudeDelta: r.latitudeDelta ?? 0.005,
               longitudeDelta: r.longitudeDelta ?? 0.005,
             },
-            600,
+            // Instant jump when "Reduce Motion" is on (WCAG 2.3.3).
+            reducedMotion ? 0 : 600,
           );
         },
         showCallout: (id) => {
           markerRefs.current[id]?.showCallout();
         },
       }),
-      [],
+      [reducedMotion],
     );
 
     return (
