@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
+  AccessibilityInfo,
   ActivityIndicator,
   Alert,
   Image,
@@ -34,6 +35,10 @@ import {
   toggleTag,
   type ContextTag,
 } from '@/lib/contextTags';
+import {
+  validReportTemplates,
+  type ReportTemplate,
+} from '@/lib/reportTemplates';
 import type { FlagCategory, FlagSeverity } from '@/types/database';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 
@@ -76,6 +81,41 @@ export default function ReportFlagModal({
     setDescription('');
     setPhotoUri(null);
     setContextTags([]);
+    setAppliedTemplateId(null);
+  };
+
+  // Templates list — computed once per render. validReportTemplates filters
+  // out any whose category/severity drifted out of the enum, so a future
+  // category rename can't leak a broken chip into the picker.
+  const templates = validReportTemplates();
+
+  // Track which template the user last applied so the chip can render in
+  // a selected/active style. Cleared when the user manually changes any
+  // field that the template populated, so the chip doesn't lie about
+  // matching the live form.
+  const [appliedTemplateId, setAppliedTemplateId] = useState<string | null>(
+    null,
+  );
+
+  const applyTemplate = (t: ReportTemplate) => {
+    setCategory(t.category);
+    setSeverity(t.severity);
+    // Only overwrite description if it's empty OR was clearly placed by a
+    // previous template tap (we can't distinguish from typed text after
+    // the fact, but a fresh form / re-tap is the common case). Erring on
+    // the side of overwriting keeps the chip useful — the user can always
+    // edit the textbox after.
+    if (description.trim() === '') {
+      setDescription(t.description ?? '');
+    }
+    setAppliedTemplateId(t.id);
+    // Screen-reader users don't see the chip-tint change; announce so
+    // they know the form jumped.
+    AccessibilityInfo.announceForAccessibility(
+      `Template applied: ${t.label}. Category, severity${
+        t.description ? ', and a starter description' : ''
+      } pre-filled. Edit any field before submitting.`,
+    );
   };
 
   const pickPhoto = async (_source: 'camera' | 'library') => {
@@ -197,6 +237,68 @@ export default function ReportFlagModal({
               : 'Waiting for location…'}
           </Text>
 
+          {/* Quick-fill templates — appears above the manual Category /
+              Severity rows so a reporter who just wants "the obvious one"
+              can tap a chip and submit without scrolling. Each chip
+              applies a curated (category + severity + suggested
+              description) triple. Description is only seeded when the
+              textbox is empty so we don't trample text a user already
+              wrote. Tapping a second template overrides the previous
+              chip's selection (driven by appliedTemplateId state). */}
+          {templates.length > 0 && (
+            <>
+              <Text style={styles.label} accessibilityRole="header">
+                Quick-fill templates (optional)
+              </Text>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.row}
+                accessibilityHint="A row of common-scenario templates that pre-fill the form. Tap one to seed category, severity, and a description; edit any field before submitting."
+              >
+                {templates.map((t) => {
+                  const active = t.id === appliedTemplateId;
+                  return (
+                    <Pressable
+                      key={t.id}
+                      onPress={() => applyTemplate(t)}
+                      style={[
+                        styles.templateChip,
+                        active && styles.templateChipActive,
+                      ]}
+                      accessibilityRole="button"
+                      accessibilityLabel={
+                        active
+                          ? `Template applied: ${t.label}. Tap to re-apply.`
+                          : `Apply template: ${t.label}`
+                      }
+                      accessibilityState={{ selected: active }}
+                    >
+                      <Text
+                        style={[
+                          styles.templateChipGlyph,
+                          active && styles.templateChipGlyphActive,
+                        ]}
+                        accessibilityElementsHidden
+                        importantForAccessibility="no-hide-descendants"
+                      >
+                        {t.glyph}
+                      </Text>
+                      <Text
+                        style={[
+                          styles.templateChipText,
+                          active && styles.templateChipTextActive,
+                        ]}
+                      >
+                        {t.label}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </ScrollView>
+            </>
+          )}
+
           <Text style={styles.label}>Category</Text>
           <ScrollView
             horizontal
@@ -208,7 +310,13 @@ export default function ReportFlagModal({
               return (
                 <Pressable
                   key={c}
-                  onPress={() => setCategory(c)}
+                  onPress={() => {
+                    setCategory(c);
+                    // Manual edit invalidates the "this template is
+                    // currently applied" claim — clear so the chip
+                    // visuals stay truthful.
+                    setAppliedTemplateId(null);
+                  }}
                   style={[styles.pill, active && styles.pillActive]}
                   accessibilityRole="button"
                   accessibilityLabel={`Category: ${CATEGORY_LABELS[c]}`}
@@ -229,7 +337,13 @@ export default function ReportFlagModal({
               return (
                 <Pressable
                   key={s}
-                  onPress={() => setSeverity(s)}
+                  onPress={() => {
+                    setSeverity(s);
+                    // Same pattern as Category — manual edit clears the
+                    // applied-template chip so its selected state stays
+                    // consistent with the live form.
+                    setAppliedTemplateId(null);
+                  }}
                   style={[
                     styles.sevBtn,
                     active && styles.sevBtnActive,
@@ -569,5 +683,41 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
     fontSize: 12,
     color: color.textMutedAlt,
     marginTop: -4,
+  },
+  // Template chip — taller than .pill because it carries a glyph + label
+  // and needs the 44pt touch-target floor. We use the same brand-accent
+  // active fill the context-tag chip uses so the two row patterns feel
+  // related; the inactive state is a soft outline so the row reads as
+  // "secondary" relative to the required Category row below.
+  templateChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 999,
+    backgroundColor: color.surface,
+    borderWidth: 1,
+    borderColor: color.brandText,
+    minHeight: 44,
+  },
+  templateChipActive: {
+    backgroundColor: color.brandText,
+    borderColor: color.brandText,
+  },
+  templateChipGlyph: {
+    fontSize: 16,
+    color: color.brandText,
+  },
+  templateChipGlyphActive: {
+    color: color.textOnBrand,
+  },
+  templateChipText: {
+    color: color.brandText,
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  templateChipTextActive: {
+    color: color.textOnBrand,
   },
 });
