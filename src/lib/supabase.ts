@@ -47,16 +47,25 @@ export async function signUpWithEmail(email: string, password: string) {
 }
 
 export async function signOut(userId?: string) {
-  // Best-effort token clear — failure is silent per the error tier policy.
   // Centralising here means every sign-out path (Profile, Settings, future
-  // screens) automatically clears the push token without needing to remember
-  // to call deletePushToken separately.
+  // screens) automatically clears both the offline flag cache AND the push
+  // token without needing to remember either call separately.
   if (userId) {
+    // Clear offline cache (Jordan offline-cache Condition 1).
+    // Key mirrors offlineCacheKey() in flagsStore — kept inline here to avoid
+    // a circular dep (flagsStore imports supabase). If the key scheme ever
+    // changes, update both places.
+    try {
+      await AsyncStorage.removeItem(`@accessmap/offline_flags_v1:${userId}`);
+    } catch (e) {
+      console.warn('[signOut] offline cache clear failed (silent):', e);
+    }
+    // Clear push token (Jordan push-notifs Condition 5)
     try {
       const { deletePushToken } = await import('./pushNotifications');
       await deletePushToken(userId);
-    } catch {
-      // Intentionally silent — token deletion is best-effort.
+    } catch (e) {
+      console.warn('[signOut] push token clear failed (silent):', e);
     }
   }
   return supabase.auth.signOut();
