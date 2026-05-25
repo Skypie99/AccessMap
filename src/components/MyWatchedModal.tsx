@@ -35,6 +35,7 @@ import {
 } from '@/lib/flags';
 import { clearWatched, loadWatched, removeWatched } from '@/lib/watchedFlags';
 import { decorativeProps } from '@/lib/accessibility';
+import { severityA11y, statusA11y } from '@/lib/a11yText';
 import type { FlagRow } from '@/types/database';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 
@@ -178,7 +179,7 @@ export default function MyWatchedModal({
         ]}
         onPress={() => onSelectFlag(item)}
         accessibilityRole="button"
-        accessibilityLabel={`${CATEGORY_LABELS[item.category]}, severity ${item.severity}, status ${STATUS_LABELS[item.status]}, reported ${date}`}
+        accessibilityLabel={`${CATEGORY_LABELS[item.category]}, ${severityA11y(item.severity)}, ${statusA11y(item.status)}, reported ${date}`}
         accessibilityHint="Opens the full details for this flag"
       >
         {/* Green left-edge accent bar for resolved flags — decorative only */}
@@ -218,7 +219,7 @@ export default function MyWatchedModal({
               { backgroundColor: statusPalette.bg },
             ]}
             accessible
-            accessibilityLabel={`Status: ${STATUS_LABELS[item.status]}`}
+            accessibilityLabel={statusA11y(item.status)}
           >
             <Text style={[styles.statusText, { color: statusPalette.fg }]}>
               {STATUS_LABELS[item.status]}
