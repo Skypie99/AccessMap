@@ -212,7 +212,7 @@ export const a11y = {
 
 // -------------------------------------------------------------------------
 // Severity — single source of truth for the 1→5 color ramp.
-// Keep this aligned with severityColor() in src/screens/ReportFlagModal.tsx.
+// Keep this aligned with severityColor() in src/lib/flags.ts.
 // Each color is ALWAYS paired with a number + a word; never used as the
 // only signal (color blind users + WCAG 1.4.1).
 // -------------------------------------------------------------------------
