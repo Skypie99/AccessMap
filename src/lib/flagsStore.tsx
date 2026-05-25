@@ -1,3 +1,4 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, {
   createContext,
   useCallback,
@@ -22,6 +23,79 @@ import {
 } from './flagsRealtime';
 import { supabase } from './supabase';
 import type { FlagRow, FlagStatus } from '@/types/database';
+
+// ---------------------------------------------------------------------------
+// Offline cache helpers (Jordan-approved: Conditions 1–4 implemented)
+// ---------------------------------------------------------------------------
+
+/** Jordan Condition 2 — user-scoped key so no cross-user data leakage. */
+export const offlineCacheKey = (userId: string): string =>
+  `@accessmap/offline_flags_v1:${userId}`;
+
+/** Jordan Condition 3 — 24-hour TTL. */
+export const MAX_CACHE_AGE_MS = 24 * 60 * 60 * 1000;
+
+/** The on-disk shape stored by the cache. */
+interface OfflineCacheEntry {
+  cachedAt: string; // ISO timestamp
+  rows: FlagRow[]; // max INITIAL_PAGE_SIZE (Jordan Condition 4)
+}
+
+/**
+ * Write the first INITIAL_PAGE_SIZE rows to AsyncStorage under the
+ * user-scoped key. Failure is non-fatal (cache is ephemeral) — log + ignore.
+ * Exported with a `__` prefix for unit tests only — not part of the public API.
+ */
+export async function __writeFlagsCache(userId: string, rows: FlagRow[]): Promise<void> {
+  return writeFlagsCache(userId, rows);
+}
+async function writeFlagsCache(userId: string, rows: FlagRow[]): Promise<void> {
+  const entry: OfflineCacheEntry = {
+    cachedAt: new Date().toISOString(),
+    // Jordan Condition 4 — cap at INITIAL_PAGE_SIZE.
+    rows: rows.slice(0, INITIAL_PAGE_SIZE),
+  };
+  try {
+    await AsyncStorage.setItem(offlineCacheKey(userId), JSON.stringify(entry));
+  } catch (e) {
+    console.warn('[flagsStore] cache write failed:', e);
+  }
+}
+
+/**
+ * Read the offline cache for a user. Returns null when:
+ *   - no entry exists
+ *   - the entry is older than MAX_CACHE_AGE_MS (Jordan Condition 3)
+ *   - the entry can't be parsed (defensive read)
+ * Failure is non-fatal — log + return null so the caller falls through
+ * to the normal network path (CLAUDE.md AsyncStorage READ tier).
+ * Exported with a `__` prefix for unit tests only — not part of the public API.
+ */
+export async function __readFlagsCache(userId: string): Promise<FlagRow[] | null> {
+  return readFlagsCache(userId);
+}
+async function readFlagsCache(userId: string): Promise<FlagRow[] | null> {
+  try {
+    const raw = await AsyncStorage.getItem(offlineCacheKey(userId));
+    if (!raw) return null;
+    const entry = JSON.parse(raw) as OfflineCacheEntry;
+    if (
+      !entry ||
+      typeof entry.cachedAt !== 'string' ||
+      !Array.isArray(entry.rows)
+    ) {
+      return null;
+    }
+    // Jordan Condition 3 — reject stale entries.
+    if (Date.now() - Date.parse(entry.cachedAt) > MAX_CACHE_AGE_MS) {
+      return null;
+    }
+    return entry.rows;
+  } catch (e) {
+    console.warn('[flagsStore] cache read failed:', e);
+    return null;
+  }
+}
 
 type FlagsContextValue = {
   flags: FlagRow[];
@@ -50,17 +124,29 @@ type FlagsContextValue = {
   // settles to reconcile with actual DB state.
   patchFlag: (id: string, patch: Partial<FlagRow>) => void;
   removeFlag: (id: string) => void;
+  // True when flags are served from the offline cache (network unavailable).
+  // Screens use this to show an "Offline data" notice to the user.
+  isOfflineCache: boolean;
 };
 
 const FlagsContext = createContext<FlagsContextValue | null>(null);
 
-export function FlagsProvider({ children }: { children: React.ReactNode }) {
+export function FlagsProvider({
+  children,
+  userId,
+}: {
+  children: React.ReactNode;
+  /** The currently signed-in user's id, or null when unauthenticated.
+   *  Used to scope the offline cache to the right user. */
+  userId?: string | null;
+}) {
   const [flags, setFlags] = useState<FlagRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(false);
   const [statuses, setStatusesState] = useState<FlagStatus[]>(DEFAULT_STATUSES);
+  const [isOfflineCache, setIsOfflineCache] = useState(false);
 
   // Latest statuses in a ref so refresh() has a stable identity but always
   // reads the freshest value at fetch time.
@@ -77,6 +163,13 @@ export function FlagsProvider({ children }: { children: React.ReactNode }) {
   // Sequence tag — discards stale fetch responses if a newer one started
   // while the previous was in flight (rapid Map filter toggles).
   const fetchSeqRef = useRef(0);
+
+  // Keep userId in a ref so refresh() can read the current user without
+  // becoming a dependency (which would cause infinite re-refresh loops).
+  const userIdRef = useRef<string | null | undefined>(userId);
+  useEffect(() => {
+    userIdRef.current = userId;
+  }, [userId]);
 
   const refresh = useCallback(async () => {
     const current = statusesRef.current;
@@ -99,24 +192,49 @@ export function FlagsProvider({ children }: { children: React.ReactNode }) {
       const isDefaultStatuses =
         current.length === DEFAULT_STATUSES.length &&
         current.every((s) => DEFAULT_STATUSES.includes(s));
+      let fetchedRows: FlagRow[];
       if (isDefaultStatuses) {
         const { rows, nextCursor } = await listFlagsPage(current, {
           limit: INITIAL_PAGE_SIZE,
         });
         if (seq !== fetchSeqRef.current) return;
-        setFlags(rows);
+        fetchedRows = rows;
         cursorRef.current = nextCursor;
         setHasMore(nextCursor !== null);
       } else {
         const rows = await listFlags(current);
         if (seq !== fetchSeqRef.current) return;
-        setFlags(rows);
+        fetchedRows = rows;
         cursorRef.current = null;
         setHasMore(false);
       }
+      setFlags(fetchedRows);
+      setIsOfflineCache(false);
       setError(null);
+      // Write the fresh first page to the offline cache so it's available
+      // on the next offline launch. Only cache when we have a user id
+      // (Jordan Condition 2) and we fetched the default paginated set
+      // (non-default queries are one-shot filtered views, not the main feed).
+      const currentUserId = userIdRef.current;
+      if (currentUserId && isDefaultStatuses) {
+        // Fire-and-forget — write failure is ephemeral, per CLAUDE.md tier.
+        void writeFlagsCache(currentUserId, fetchedRows);
+      }
     } catch (e) {
       if (seq !== fetchSeqRef.current) return;
+      // Network fetch failed — try the offline cache before surfacing error.
+      const currentUserId = userIdRef.current;
+      if (currentUserId) {
+        const cached = await readFlagsCache(currentUserId);
+        if (cached !== null && seq === fetchSeqRef.current) {
+          setFlags(cached);
+          setIsOfflineCache(true);
+          setError(null);
+          // Don't re-throw: the cached data satisfies the UI's need.
+          // loading will be set false in finally.
+          return;
+        }
+      }
       setError(errorMessage(e, 'Unknown error'));
       throw e;
     } finally {
@@ -221,8 +339,9 @@ export function FlagsProvider({ children }: { children: React.ReactNode }) {
       setStatuses,
       patchFlag,
       removeFlag,
+      isOfflineCache,
     }),
-    [flags, loading, error, refresh, loadMore, loadingMore, hasMore, statuses, setStatuses, patchFlag, removeFlag],
+    [flags, loading, error, refresh, loadMore, loadingMore, hasMore, statuses, setStatuses, patchFlag, removeFlag, isOfflineCache],
   );
 
   return <FlagsContext.Provider value={value}>{children}</FlagsContext.Provider>;

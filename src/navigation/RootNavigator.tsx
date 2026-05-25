@@ -2,6 +2,7 @@ import React from 'react';
 import { Pressable, StyleSheet, Text } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { useAuth } from '@/lib/auth';
 import { FlagsProvider } from '@/lib/flagsStore';
 import {
   SharedModalsProvider,
@@ -71,20 +72,37 @@ interface Props {
 export default function RootNavigator({ initialRouteName = 'Map' }: Props) {
   return (
     <NavigationContainer linking={linking}>
-      <FlagsProvider>
-        {/* SharedModalsProvider owns the "which shared modal is open"
-            slot. All four pooled modals (Help, Changelog, Feedback,
-            MyFeedback) are mounted ONCE inside <SharedModalsHost />
-            below; ProfileScreen and SettingsScreen call setOpen()
-            from the context instead of mounting their own copies.
-            See src/lib/sharedModalsContext.tsx for the rationale +
-            which modals were intentionally left per-screen. */}
-        <SharedModalsProvider>
-          <NavInner initialRouteName={initialRouteName} />
-          <SharedModalsHost />
-        </SharedModalsProvider>
-      </FlagsProvider>
+      <FlagsProviderWithAuth initialRouteName={initialRouteName} />
     </NavigationContainer>
+  );
+}
+
+/**
+ * Inner wrapper that reads the current userId from AuthContext and passes it
+ * to FlagsProvider so the offline cache can be scoped per user (Jordan
+ * Condition 2). Must live inside NavigationContainer (for the linking config)
+ * and also inside AuthProvider (which wraps the whole App in App.tsx).
+ */
+function FlagsProviderWithAuth({
+  initialRouteName,
+}: {
+  initialRouteName: keyof RootTabParamList;
+}) {
+  const { user } = useAuth();
+  return (
+    <FlagsProvider userId={user?.id ?? null}>
+      {/* SharedModalsProvider owns the "which shared modal is open"
+          slot. All four pooled modals (Help, Changelog, Feedback,
+          MyFeedback) are mounted ONCE inside <SharedModalsHost />
+          below; ProfileScreen and SettingsScreen call setOpen()
+          from the context instead of mounting their own copies.
+          See src/lib/sharedModalsContext.tsx for the rationale +
+          which modals were intentionally left per-screen. */}
+      <SharedModalsProvider>
+        <NavInner initialRouteName={initialRouteName} />
+        <SharedModalsHost />
+      </SharedModalsProvider>
+    </FlagsProvider>
   );
 }
 
