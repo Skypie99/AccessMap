@@ -38,7 +38,39 @@ export interface MapFilters {
   categories: FlagCategory[];
   minSeverity: FlagSeverity;
   statuses: FlagStatus[];
+  /**
+   * Maximum distance (in km) from the user's current location at which a
+   * flag stays visible on the Map. `null` means "no distance filter".
+   *
+   * Optional in the persisted blob — pre-v1.1 saves don't have it and we
+   * parse a missing/invalid value as null (off). Saved sets/presets do not
+   * carry this axis yet; it persists as a last-toggled value via mapFilters
+   * just like categories/severity/status.
+   */
+  maxDistanceKm: number | null;
 }
+
+/**
+ * Allowed values for the distance chip. `null` means "off". Other values
+ * are the radii surfaced to the user. We constrain to a small enum rather
+ * than a slider because:
+ *  - The five-step set covers the urban-walking → driving-radius range
+ *    AccessMap cares about (within a block → across a city) without UI
+ *    overload.
+ *  - Discrete values are screen-reader-friendly (each chip has a clean
+ *    label) and trivial to validate on load.
+ *
+ * If you add a value, add a matching chip label in MapScreen's distance
+ * row — there's no programmatic mapping so the label and value stay in
+ * lockstep visually.
+ */
+export const DISTANCE_OPTIONS: ReadonlyArray<number | null> = [
+  null,
+  0.5,
+  1,
+  5,
+  25,
+];
 
 // Canonical default shape — what MapScreen would show with nothing stored.
 // Kept here rather than in MapScreen so we have one source of truth for
@@ -48,6 +80,7 @@ export const DEFAULT_MAP_FILTERS: MapFilters = {
   categories: [],
   minSeverity: 1,
   statuses: [...DEFAULT_STATUSES],
+  maxDistanceKm: null,
 };
 
 // Lookup sets used for validation. Built from the canonical orders so a
@@ -82,6 +115,20 @@ function isFlagSeverity(v: unknown): v is FlagSeverity {
  * the whole load, so removing a category from the enum doesn't lock users
  * out of their saved view.
  */
+// New maxDistanceKm field is BACKWARD-COMPATIBLE: missing or invalid values
+// resolve to null ("off"), so older saved blobs continue to load without
+// resetting the rest of the filter triple. Only values that match the
+// DISTANCE_OPTIONS enum survive — anything else (negative, NaN, unknown
+// number, string) drops to null silently.
+function parseMaxDistanceKm(v: unknown): number | null {
+  if (v === null) return null;
+  if (typeof v !== 'number' || !Number.isFinite(v)) return null;
+  for (const opt of DISTANCE_OPTIONS) {
+    if (opt !== null && opt === v) return opt;
+  }
+  return null;
+}
+
 function parseMapFilters(raw: string): MapFilters | null {
   let parsed: unknown;
   try {
@@ -103,6 +150,7 @@ function parseMapFilters(raw: string): MapFilters | null {
     categories,
     minSeverity: obj.minSeverity,
     statuses,
+    maxDistanceKm: parseMaxDistanceKm(obj.maxDistanceKm),
   };
 }
 

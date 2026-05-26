@@ -90,9 +90,55 @@ describe('loadMapFilters', () => {
       categories: ['broken_sidewalk', 'no_ramp'],
       minSeverity: 3,
       statuses: ['open'],
+      maxDistanceKm: null,
     };
     await saveMapFilters(filters);
     expect(await loadMapFilters()).toEqual(filters);
+  });
+
+  it('round-trips a save with a distance filter set', async () => {
+    const filters: MapFilters = {
+      categories: [],
+      minSeverity: 1,
+      statuses: ['open', 'verified'],
+      maxDistanceKm: 5,
+    };
+    await saveMapFilters(filters);
+    expect(await loadMapFilters()).toEqual(filters);
+  });
+
+  it('treats a missing maxDistanceKm in older blobs as null (back-compat)', async () => {
+    // Pre-v1.1 saves don't have the field. Loader should fill it with
+    // null rather than failing the whole parse — otherwise a user who
+    // upgrades would silently lose their saved category/severity view.
+    mockStorage[KEY] = JSON.stringify({
+      categories: ['broken_sidewalk'],
+      minSeverity: 2,
+      statuses: ['open'],
+    });
+    expect(await loadMapFilters()).toEqual({
+      categories: ['broken_sidewalk'],
+      minSeverity: 2,
+      statuses: ['open'],
+      maxDistanceKm: null,
+    });
+  });
+
+  it('drops an out-of-vocab maxDistanceKm to null rather than failing', async () => {
+    // 999 is not in DISTANCE_OPTIONS; rather than crashing the load,
+    // fall back to "off" so the rest of the filter still applies.
+    mockStorage[KEY] = JSON.stringify({
+      categories: [],
+      minSeverity: 1,
+      statuses: ['open'],
+      maxDistanceKm: 999,
+    });
+    expect(await loadMapFilters()).toEqual({
+      categories: [],
+      minSeverity: 1,
+      statuses: ['open'],
+      maxDistanceKm: null,
+    });
   });
 
   it('returns null on garbage JSON (corrupt blob)', async () => {
@@ -136,6 +182,7 @@ describe('loadMapFilters', () => {
       categories: ['broken_sidewalk'],
       minSeverity: 2,
       statuses: ['open'],
+      maxDistanceKm: null,
     });
   });
 
@@ -151,6 +198,7 @@ describe('saveMapFilters', () => {
       categories: ['no_ramp'],
       minSeverity: 4,
       statuses: ['open', 'verified'],
+      maxDistanceKm: null,
     });
     expect(mockStorage[KEY]).toBeDefined();
     // Asserted defined on the line above; the `!` satisfies
@@ -159,6 +207,7 @@ describe('saveMapFilters', () => {
       categories: ['no_ramp'],
       minSeverity: 4,
       statuses: ['open', 'verified'],
+      maxDistanceKm: null,
     });
   });
 
@@ -169,6 +218,7 @@ describe('saveMapFilters', () => {
         categories: [],
         minSeverity: 1,
         statuses: ['open', 'verified'],
+        maxDistanceKm: null,
       }),
     ).resolves.toBeUndefined();
   });
