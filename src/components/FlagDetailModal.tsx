@@ -38,6 +38,7 @@ import {
   type FlagContentPatch,
 } from '@/lib/flags';
 import { severityA11y, statusA11y } from '@/lib/a11yText';
+import { CONTEXT_TAG_LABELS, isValidTag } from '@/lib/contextTags';
 import type { FlagCategory, FlagRow, FlagSeverity, FlagStatus } from '@/types/database';
 import PhotoLightboxModal from './PhotoLightboxModal';
 import StatusHistoryModal from './StatusHistoryModal';
@@ -405,6 +406,37 @@ export default function FlagDetailModal({
                 ? shownFlag.description
                 : 'No description provided.'}
             </Text>
+
+            {/* Context tags — only shown when the flag has them */}
+            {(shownFlag.context_tags ?? []).filter(isValidTag).length > 0 ? (
+              <>
+                <Text style={styles.sectionLabel}>Conditions</Text>
+                <View
+                  style={styles.contextTagsRow}
+                  accessible
+                  accessibilityLabel={
+                    'Conditions: ' +
+                    (shownFlag.context_tags ?? [])
+                      .filter(isValidTag)
+                      .map((t) => CONTEXT_TAG_LABELS[t])
+                      .join(', ')
+                  }
+                >
+                  {(shownFlag.context_tags ?? []).filter(isValidTag).map((tag) => (
+                    <View
+                      key={tag}
+                      style={styles.contextChip}
+                      accessibilityElementsHidden
+                      importantForAccessibility="no-hide-descendants"
+                    >
+                      <Text style={styles.contextChipText}>
+                        {CONTEXT_TAG_LABELS[tag]}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+              </>
+            ) : null}
 
             <Text style={styles.sectionLabel}>Reported by</Text>
             <Text style={styles.metaValue}>
@@ -817,6 +849,23 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
     marginTop: 8,
   },
   description: { fontSize: font.size.md, color: color.textStrong, lineHeight: 21 },
+  contextTagsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginTop: 4,
+  },
+  contextChip: {
+    backgroundColor: color.surfaceNeutral,
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  contextChipText: {
+    fontSize: 12,
+    color: color.textMuted,
+    fontWeight: '500',
+  },
   metaValue: { fontSize: 14, color: color.text },
   coordsRow: {
     flexDirection: 'row',
