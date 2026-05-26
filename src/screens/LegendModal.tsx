@@ -1,12 +1,5 @@
 import React from 'react';
-import {
-  Modal,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import {
   CATEGORY_DESCRIPTIONS,
   CATEGORY_ICONS,
@@ -26,12 +19,7 @@ interface Props {
 
 export default function LegendModal({ visible, onClose }: Props) {
   return (
-    <Modal
-      visible={visible}
-      animationType="slide"
-      transparent
-      onRequestClose={onClose}
-    >
+    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <Pressable
         style={styles.backdrop}
         onPress={onClose}
@@ -44,25 +32,13 @@ export default function LegendModal({ visible, onClose }: Props) {
           onPress={() => {}}
           accessibilityViewIsModal
         >
-          <View
-            style={styles.headerRow}
-            accessible
-            accessibilityRole="header"
-          >
+          <View style={styles.headerRow} accessible accessibilityRole="header">
             <Text style={styles.title}>Map legend</Text>
           </View>
-          <Text style={styles.subtitle}>
-            What the colors and categories on the map mean.
-          </Text>
+          <Text style={styles.subtitle}>What the colors and categories on the map mean.</Text>
 
-          <ScrollView
-            style={styles.scroll}
-            contentContainerStyle={styles.scrollContent}
-          >
-            <Text
-              style={styles.sectionLabel}
-              accessibilityRole="header"
-            >
+          <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
+            <Text style={styles.sectionLabel} accessibilityRole="header">
               Severity
             </Text>
             {SEVERITY_ORDER.map((s) => {
@@ -126,8 +102,8 @@ export default function LegendModal({ visible, onClose }: Props) {
             })}
 
             <Text style={styles.footnote}>
-              Reporters earn points when their flag is verified or resolved.
-              Verifiers and resolvers earn points too.
+              Reporters earn points when their flag is verified or resolved. Verifiers and resolvers
+              earn points too.
             </Text>
           </ScrollView>
 

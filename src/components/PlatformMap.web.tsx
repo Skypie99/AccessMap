@@ -126,7 +126,10 @@ class CachedTileLayer extends L.TileLayer {
         const cached = await getCachedTile(userId, url);
         if (cached) {
           img.onload = () => done(undefined, img);
-          img.onerror = () => { img.src = url; done(undefined, img); };
+          img.onerror = () => {
+            img.src = url;
+            done(undefined, img);
+          };
           img.src = cached;
           return;
         }
@@ -144,7 +147,10 @@ class CachedTileLayer extends L.TileLayer {
         });
 
         img.onload = () => done(undefined, img);
-        img.onerror = () => { img.src = url; done(undefined, img); };
+        img.onerror = () => {
+          img.src = url;
+          done(undefined, img);
+        };
         img.src = dataUri;
 
         // Fire-and-forget: persist to cache; errors are swallowed by
@@ -189,128 +195,122 @@ function CachedTileLayerWrapper({ userId }: { userId: string | null }): null {
   return null;
 }
 
-const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(
-  function PlatformMap(
-    { initialRegion, flags, focusedFlagId, reducedMotion, onLongPressMap },
+const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(function PlatformMap(
+  { initialRegion, flags, focusedFlagId, reducedMotion, onLongPressMap },
+  ref,
+) {
+  const mapInstance = useRef<LeafletMap | null>(null);
+  const { user } = useAuth();
+  const userId = user?.id ?? null;
+  const markerRefs = useRef<Record<string, LeafletMarker | null>>({});
+
+  // See PlatformMap.tsx for why we prune: ref callbacks leave null entries
+  // behind when markers unmount; without pruning, the dict grows forever.
+  useEffect(() => {
+    const valid = new Set(flags.map((f) => f.id));
+    for (const id of Object.keys(markerRefs.current)) {
+      if (!valid.has(id)) delete markerRefs.current[id];
+    }
+  }, [flags]);
+
+  // Wire `contextmenu` to the drop-flag intent on web. Leaflet fires
+  // this on right-click on desktop and on a long-touch on mobile
+  // browsers (the OS surfaces the press as a context menu request).
+  // We re-bind on every change to `onLongPressMap` so the latest
+  // closure is used.
+  useEffect(() => {
+    const map = mapInstance.current;
+    if (!map || !onLongPressMap) return;
+    const handler = (e: L.LeafletMouseEvent) => {
+      // Prevent the browser's default right-click menu from showing
+      // over the map.
+      const oe = e.originalEvent;
+      if (oe && 'preventDefault' in oe) oe.preventDefault();
+      onLongPressMap({ lat: e.latlng.lat, lng: e.latlng.lng });
+    };
+    map.on('contextmenu', handler);
+    return () => {
+      map.off('contextmenu', handler);
+    };
+  }, [onLongPressMap]);
+
+  useImperativeHandle(
     ref,
-  ) {
-    const mapInstance = useRef<LeafletMap | null>(null);
-    const { user } = useAuth();
-    const userId = user?.id ?? null;
-    const markerRefs = useRef<Record<string, LeafletMarker | null>>({});
+    () => ({
+      animateTo: (r) => {
+        const zoom = deltaToZoom(r.latitudeDelta ?? 0.005);
+        mapInstance.current?.flyTo([r.latitude, r.longitude], zoom, {
+          // Instant jump when "Reduce Motion" is on (WCAG 2.3.3).
+          duration: reducedMotion ? 0 : 0.6,
+        });
+      },
+      showCallout: (id) => {
+        markerRefs.current[id]?.openPopup();
+      },
+    }),
+    [reducedMotion],
+  );
 
-    // See PlatformMap.tsx for why we prune: ref callbacks leave null entries
-    // behind when markers unmount; without pruning, the dict grows forever.
-    useEffect(() => {
-      const valid = new Set(flags.map((f) => f.id));
-      for (const id of Object.keys(markerRefs.current)) {
-        if (!valid.has(id)) delete markerRefs.current[id];
-      }
-    }, [flags]);
-
-    // Wire `contextmenu` to the drop-flag intent on web. Leaflet fires
-    // this on right-click on desktop and on a long-touch on mobile
-    // browsers (the OS surfaces the press as a context menu request).
-    // We re-bind on every change to `onLongPressMap` so the latest
-    // closure is used.
-    useEffect(() => {
-      const map = mapInstance.current;
-      if (!map || !onLongPressMap) return;
-      const handler = (e: L.LeafletMouseEvent) => {
-        // Prevent the browser's default right-click menu from showing
-        // over the map.
-        const oe = e.originalEvent;
-        if (oe && 'preventDefault' in oe) oe.preventDefault();
-        onLongPressMap({ lat: e.latlng.lat, lng: e.latlng.lng });
-      };
-      map.on('contextmenu', handler);
-      return () => {
-        map.off('contextmenu', handler);
-      };
-    }, [onLongPressMap]);
-
-    useImperativeHandle(
-      ref,
-      () => ({
-        animateTo: (r) => {
-          const zoom = deltaToZoom(r.latitudeDelta ?? 0.005);
-          mapInstance.current?.flyTo([r.latitude, r.longitude], zoom, {
-            // Instant jump when "Reduce Motion" is on (WCAG 2.3.3).
-            duration: reducedMotion ? 0 : 0.6,
-          });
-        },
-        showCallout: (id) => {
-          markerRefs.current[id]?.openPopup();
-        },
-      }),
-      [reducedMotion],
-    );
-
-    return (
-      <div style={{ position: 'absolute', inset: 0 }}>
-        <MapContainer
-          center={[initialRegion.latitude, initialRegion.longitude]}
-          zoom={deltaToZoom(initialRegion.latitudeDelta)}
-          style={{ height: '100%', width: '100%' }}
-          ref={(m) => {
-            mapInstance.current = m;
-          }}
-        >
-          <CachedTileLayerWrapper userId={userId} />
-          {flags.map((f) => (
-            <Marker
-              key={f.id}
-              position={[f.lat, f.lng]}
-              icon={pinIcon(
-                severityColor(f.severity),
-                focusedFlagId !== null && focusedFlagId !== f.id,
-              )}
-              ref={(m) => {
-                markerRefs.current[f.id] = m;
-              }}
-            >
-              <Popup>
-                <div style={{ minWidth: 200 }}>
-                  <div style={{ fontWeight: 700, fontSize: 14 }}>
-                    {CATEGORY_LABELS[f.category]}
-                  </div>
-                  <div
-                    style={{
-                      fontSize: 11,
-                      color: '#666',
-                      textTransform: 'uppercase',
-                      letterSpacing: 0.5,
-                      marginTop: 2,
-                    }}
-                  >
-                    Severity {f.severity} · {f.status}
-                  </div>
-                  {f.photo_url ? (
-                    <img
-                      src={f.photo_url}
-                      alt={`Photo of ${CATEGORY_LABELS[f.category]} accessibility issue`}
-                      style={{
-                        width: '100%',
-                        maxHeight: 160,
-                        objectFit: 'cover',
-                        borderRadius: 8,
-                        marginTop: 6,
-                      }}
-                    />
-                  ) : null}
-                  {f.description ? (
-                    <div style={{ marginTop: 6, fontSize: 12 }}>
-                      {f.description}
-                    </div>
-                  ) : null}
+  return (
+    <div style={{ position: 'absolute', inset: 0 }}>
+      <MapContainer
+        center={[initialRegion.latitude, initialRegion.longitude]}
+        zoom={deltaToZoom(initialRegion.latitudeDelta)}
+        style={{ height: '100%', width: '100%' }}
+        ref={(m) => {
+          mapInstance.current = m;
+        }}
+      >
+        <CachedTileLayerWrapper userId={userId} />
+        {flags.map((f) => (
+          <Marker
+            key={f.id}
+            position={[f.lat, f.lng]}
+            icon={pinIcon(
+              severityColor(f.severity),
+              focusedFlagId !== null && focusedFlagId !== f.id,
+            )}
+            ref={(m) => {
+              markerRefs.current[f.id] = m;
+            }}
+          >
+            <Popup>
+              <div style={{ minWidth: 200 }}>
+                <div style={{ fontWeight: 700, fontSize: 14 }}>{CATEGORY_LABELS[f.category]}</div>
+                <div
+                  style={{
+                    fontSize: 11,
+                    color: '#666',
+                    textTransform: 'uppercase',
+                    letterSpacing: 0.5,
+                    marginTop: 2,
+                  }}
+                >
+                  Severity {f.severity} · {f.status}
                 </div>
-              </Popup>
-            </Marker>
-          ))}
-        </MapContainer>
-      </div>
-    );
-  },
-);
+                {f.photo_url ? (
+                  <img
+                    src={f.photo_url}
+                    alt={`Photo of ${CATEGORY_LABELS[f.category]} accessibility issue`}
+                    style={{
+                      width: '100%',
+                      maxHeight: 160,
+                      objectFit: 'cover',
+                      borderRadius: 8,
+                      marginTop: 6,
+                    }}
+                  />
+                ) : null}
+                {f.description ? (
+                  <div style={{ marginTop: 6, fontSize: 12 }}>{f.description}</div>
+                ) : null}
+              </div>
+            </Popup>
+          </Marker>
+        ))}
+      </MapContainer>
+    </div>
+  );
+});
 
 export default PlatformMap;

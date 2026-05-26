@@ -14,12 +14,7 @@ import {
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { useAuth } from '@/lib/auth';
-import {
-  formatDistance,
-  formatWalkingEta,
-  haversineKm,
-  type LatLng,
-} from '@/lib/distance';
+import { formatDistance, formatWalkingEta, haversineKm, type LatLng } from '@/lib/distance';
 import { confirm } from '@/lib/confirm';
 import { errorMessage } from '@/lib/errors';
 import { CATEGORY_LABELS, NEXT_PAGE_SIZE, severityColor, updateFlagStatus } from '@/lib/flags';
@@ -48,9 +43,7 @@ import {
 import { loadScope, saveScope } from '@/lib/tasksScope';
 import type { FlagRow, FlagStatus } from '@/types/database';
 import type { RootTabParamList } from '@/navigation/RootNavigator';
-import FlagDetailModal, {
-  type DetailAction,
-} from '@/components/FlagDetailModal';
+import FlagDetailModal, { type DetailAction } from '@/components/FlagDetailModal';
 import PhotoLightboxModal from '@/components/PhotoLightboxModal';
 import { radius, size, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
@@ -68,8 +61,7 @@ const BULK_BAR_HEIGHT = 88;
 export default function TasksScreen() {
   const color = useColor();
   const styles = makeStyles(color);
-  const navigation =
-    useNavigation<BottomTabNavigationProp<RootTabParamList, 'Tasks'>>();
+  const navigation = useNavigation<BottomTabNavigationProp<RootTabParamList, 'Tasks'>>();
   const { user } = useAuth();
   const {
     flags: providerFlags,
@@ -199,9 +191,7 @@ export default function TasksScreen() {
   // Bulk-select state — component-local on purpose. Switching tabs unmounts
   // TasksScreen which resets the selection (matches the brief: "resets on
   // tab change"). Pure helpers live in src/lib/taskSelection.ts.
-  const [selection, setSelection] = useState<TaskSelectionState>(
-    EMPTY_SELECTION,
-  );
+  const [selection, setSelection] = useState<TaskSelectionState>(EMPTY_SELECTION);
   // Tracks whether a bulk action is currently running so we can disable
   // the floating bar's buttons and avoid double-submits.
   const [bulkBusy, setBulkBusy] = useState(false);
@@ -257,9 +247,7 @@ export default function TasksScreen() {
   // already picked. If we're already in selection mode, long-press just
   // toggles (mirrors the tap behavior so muscle memory works either way).
   const handleCardLongPress = useCallback((flag: FlagRow) => {
-    setSelection((s) =>
-      s.active ? toggleId(s, flag.id) : enterSelectionWith(flag.id),
-    );
+    setSelection((s) => (s.active ? toggleId(s, flag.id) : enterSelectionWith(flag.id)));
   }, []);
 
   // SR-accessible entry into selection mode — a button at the top of the
@@ -268,9 +256,7 @@ export default function TasksScreen() {
   // cards via the checkbox role we wire up below.
   const enterSelectionEmpty = useCallback(() => {
     setSelection({ active: true, selectedIds: [] });
-    AccessibilityInfo.announceForAccessibility(
-      'Selection mode. Tap cards to select.',
-    );
+    AccessibilityInfo.announceForAccessibility('Selection mode. Tap cards to select.');
   }, []);
 
   // Track the flash-banner timer in a ref so we can cancel it on unmount or
@@ -290,8 +276,7 @@ export default function TasksScreen() {
   // Declared AFTER showFlash so the closure binds to its real value.
   const runBulkAction = useCallback(
     async (action: 'verify' | 'resolve') => {
-      const targetStatus: FlagStatus =
-        action === 'verify' ? 'verified' : 'resolved';
+      const targetStatus: FlagStatus = action === 'verify' ? 'verified' : 'resolved';
       const ids = selection.selectedIds.slice();
       // For 'verify' we skip anything not in 'open' (already-verified
       // flags would be a no-op). For 'resolve' we accept both open + verified.
@@ -424,11 +409,7 @@ export default function TasksScreen() {
       try {
         const updated = await updateFlagStatus(id, status);
         const action: DetailAction =
-          status === 'verified'
-            ? 'verify'
-            : status === 'resolved'
-              ? 'resolve'
-              : 'reject';
+          status === 'verified' ? 'verify' : status === 'resolved' ? 'resolve' : 'reject';
         applyStatusChange(updated, action, isOwn);
       } catch (e) {
         Alert.alert('Could not update flag', errorMessage(e));
@@ -486,7 +467,16 @@ export default function TasksScreen() {
         onShowDetails={showDetails}
       />
     ),
-    [busyId, userId, userLocation, selection, handleViewOnMap, handleCardLongPress, setStatus, showDetails],
+    [
+      busyId,
+      userId,
+      userLocation,
+      selection,
+      handleViewOnMap,
+      handleCardLongPress,
+      setStatus,
+      showDetails,
+    ],
   );
 
   // Load-more handler shared by the button (screen-reader / keyboard) and any
@@ -495,10 +485,7 @@ export default function TasksScreen() {
   const handleLoadMore = useCallback(() => {
     if (!hasMore || loadingMore) return;
     loadMore().catch((e: unknown) => {
-      Alert.alert(
-        'Could not load more flags',
-        errorMessage(e, 'Unknown error'),
-      );
+      Alert.alert('Could not load more flags', errorMessage(e, 'Unknown error'));
     });
   }, [hasMore, loadingMore, loadMore]);
 
@@ -522,7 +509,9 @@ export default function TasksScreen() {
       )}
       {errorBannerText && (
         <Pressable
-          onPress={() => { refresh().catch(() => {}); }}
+          onPress={() => {
+            refresh().catch(() => {});
+          }}
           disabled={loading}
           style={({ pressed }) => [
             styles.errorBanner,
@@ -552,12 +541,14 @@ export default function TasksScreen() {
           accessibilityLiveRegion="polite"
           accessibilityLabel="Showing offline data. Connect to the internet to refresh."
         >
-          <Text style={styles.offlineBannerIcon} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+          <Text
+            style={styles.offlineBannerIcon}
+            accessibilityElementsHidden
+            importantForAccessibility="no-hide-descendants"
+          >
             📶
           </Text>
-          <Text style={styles.offlineBannerText}>
-            Showing offline data — connect to refresh
-          </Text>
+          <Text style={styles.offlineBannerText}>Showing offline data — connect to refresh</Text>
         </View>
       )}
       {/* Select-multiple entry — visible only when there's something to
@@ -609,9 +600,7 @@ export default function TasksScreen() {
             accessibilityLabel="Show all flags"
             accessibilityState={{ selected: !mineOnly, disabled: !mineOnlyHydrated }}
           >
-            <Text style={[styles.mineChipText, !mineOnly && styles.mineChipTextActive]}>
-              All
-            </Text>
+            <Text style={[styles.mineChipText, !mineOnly && styles.mineChipTextActive]}>All</Text>
           </Pressable>
           <Pressable
             onPress={() => handleScopeChange(true)}
@@ -621,9 +610,7 @@ export default function TasksScreen() {
             accessibilityLabel="Show only my flags"
             accessibilityState={{ selected: mineOnly, disabled: !mineOnlyHydrated }}
           >
-            <Text style={[styles.mineChipText, mineOnly && styles.mineChipTextActive]}>
-              Mine
-            </Text>
+            <Text style={[styles.mineChipText, mineOnly && styles.mineChipTextActive]}>Mine</Text>
           </Pressable>
         </View>
       )}
@@ -631,43 +618,30 @@ export default function TasksScreen() {
           on the public flag list). Hidden if the list is empty so there's
           nothing to filter against. */}
       {flags.length > 0 && (
-        <View
-          style={styles.sevFilterRow}
-          accessibilityLabel="Filter by minimum severity"
-        >
-          {(
-            [
-              { value: 0 as const, label: 'All' },
-              { value: 2 as const, label: '2+' },
-              { value: 3 as const, label: '3+' },
-              { value: 4 as const, label: '4+' },
-              { value: 5 as const, label: '5' },
-            ]
-          ).map(({ value, label }) => {
+        <View style={styles.sevFilterRow} accessibilityLabel="Filter by minimum severity">
+          {[
+            { value: 0 as const, label: 'All' },
+            { value: 2 as const, label: '2+' },
+            { value: 3 as const, label: '3+' },
+            { value: 4 as const, label: '4+' },
+            { value: 5 as const, label: '5' },
+          ].map(({ value, label }) => {
             const active = minSeverity === value;
             // When active and value > 0, tint with the severity palette so
             // the threshold's color is immediately recognizable.
-            const activeColor =
-              value === 0 ? '#2f80ed' : severityColor(value);
+            const activeColor = value === 0 ? '#2f80ed' : severityColor(value);
             return (
               <Pressable
                 key={value}
                 onPress={() => setMinSeverity(value)}
-                style={[
-                  styles.sevChip,
-                  active && { backgroundColor: activeColor },
-                ]}
+                style={[styles.sevChip, active && { backgroundColor: activeColor }]}
                 accessibilityRole="button"
                 accessibilityLabel={
-                  value === 0
-                    ? 'Show all severities'
-                    : `Show severity ${value} and above`
+                  value === 0 ? 'Show all severities' : `Show severity ${value} and above`
                 }
                 accessibilityState={{ selected: active }}
               >
-                <Text
-                  style={[styles.sevChipText, active && styles.sevChipTextActive]}
-                >
+                <Text style={[styles.sevChipText, active && styles.sevChipTextActive]}>
                   {label}
                 </Text>
               </Pressable>
@@ -680,11 +654,7 @@ export default function TasksScreen() {
           Hidden when there's nothing to sort (no flags after filtering)
           to keep the chrome tight. */}
       {displayFlags.length >= 2 && (
-        <View
-          style={styles.sortRow}
-          accessibilityRole="tablist"
-          accessibilityLabel="Sort order"
-        >
+        <View style={styles.sortRow} accessibilityRole="tablist" accessibilityLabel="Sort order">
           <Text
             style={styles.sortLabel}
             accessibilityElementsHidden
@@ -703,12 +673,7 @@ export default function TasksScreen() {
                 accessibilityLabel={`Sort by ${TASKS_SORT_LABELS[mode]}`}
                 accessibilityState={{ selected: active }}
               >
-                <Text
-                  style={[
-                    styles.sortChipText,
-                    active && styles.sortChipTextActive,
-                  ]}
-                >
+                <Text style={[styles.sortChipText, active && styles.sortChipTextActive]}>
                   {TASKS_SORT_LABELS[mode]}
                 </Text>
               </Pressable>
@@ -730,7 +695,9 @@ export default function TasksScreen() {
         refreshControl={
           <RefreshControl
             refreshing={loading}
-            onRefresh={() => { refresh().catch(() => {}); }}
+            onRefresh={() => {
+              refresh().catch(() => {});
+            }}
           />
         }
         renderSectionHeader={({ section: { title, data } }) => (
@@ -748,8 +715,8 @@ export default function TasksScreen() {
             </Text>
             <Text style={styles.emptyTitle}>All caught up</Text>
             <Text style={styles.emptyBody}>
-              No flags to triage right now. New community reports will
-              land here as they're added — pull to refresh anytime.
+              No flags to triage right now. New community reports will land here as they're added —
+              pull to refresh anytime.
             </Text>
           </View>
         }
@@ -786,7 +753,7 @@ export default function TasksScreen() {
                   accessibilityRole="text"
                   accessibilityLabel="You have seen all flags nearby"
                 >
-                  {'You\'ve seen all flags nearby ✓'}
+                  {"You've seen all flags nearby ✓"}
                 </Text>
               )}
             </View>
@@ -803,15 +770,14 @@ export default function TasksScreen() {
           {/* The single source of truth for "how many are picked", spoken
               by SR on every change. Buttons below are static labels so
               they don't double-announce. */}
-          <Text
-            style={styles.bulkCountText}
-            accessibilityLiveRegion="polite"
-          >
+          <Text style={styles.bulkCountText} accessibilityLiveRegion="polite">
             {`${selectionCount(selection)} selected`}
           </Text>
           <View style={styles.bulkButtonRow}>
             <Pressable
-              onPress={() => { void runBulkAction('verify'); }}
+              onPress={() => {
+                void runBulkAction('verify');
+              }}
               disabled={bulkBusy || selectedOpenCount === 0}
               style={({ pressed }) => [
                 styles.bulkBtn,
@@ -834,7 +800,9 @@ export default function TasksScreen() {
               <Text style={styles.bulkBtnText}>Verify</Text>
             </Pressable>
             <Pressable
-              onPress={() => { void runBulkAction('resolve'); }}
+              onPress={() => {
+                void runBulkAction('resolve');
+              }}
               disabled={bulkBusy || selectionCount(selection) === 0}
               style={({ pressed }) => [
                 styles.bulkBtn,
@@ -958,9 +926,7 @@ const FlagCard = memo(function FlagCard({
       ]}
       accessibilityRole={selectionActive ? 'checkbox' : 'button'}
       accessibilityState={
-        selectionActive
-          ? { checked: selected, disabled: isBusy }
-          : { disabled: isBusy }
+        selectionActive ? { checked: selected, disabled: isBusy } : { disabled: isBusy }
       }
       accessibilityLabel={a11yLabel}
       accessibilityHint={
@@ -971,10 +937,7 @@ const FlagCard = memo(function FlagCard({
     >
       <View style={styles.cardHeader}>
         <View
-          style={[
-            styles.sevDot,
-            { backgroundColor: severityColor(flag.severity) },
-          ]}
+          style={[styles.sevDot, { backgroundColor: severityColor(flag.severity) }]}
           accessible={false}
           importantForAccessibility="no-hide-descendants"
           accessibilityElementsHidden={true}
@@ -987,16 +950,11 @@ const FlagCard = memo(function FlagCard({
             "checked" twice. */}
         {selectionActive && (
           <View
-            style={[
-              styles.selectCheck,
-              selected && styles.selectCheckOn,
-            ]}
+            style={[styles.selectCheck, selected && styles.selectCheckOn]}
             accessibilityElementsHidden
             importantForAccessibility="no-hide-descendants"
           >
-            {selected ? (
-              <Text style={styles.selectCheckMark}>✓</Text>
-            ) : null}
+            {selected ? <Text style={styles.selectCheckMark}>✓</Text> : null}
           </View>
         )}
       </View>
@@ -1020,14 +978,10 @@ const FlagCard = memo(function FlagCard({
           </Pressable>
         ) : null}
         <View style={styles.cardBodyText}>
-          {flag.description ? (
-            <Text style={styles.cardDesc}>{flag.description}</Text>
-          ) : null}
+          {flag.description ? <Text style={styles.cardDesc}>{flag.description}</Text> : null}
           <Text style={styles.cardMeta}>
             {`Severity ${flag.severity}` +
-              (distanceInfo
-                ? ` • ${distanceInfo.label} · ${distanceInfo.eta}`
-                : '') +
+              (distanceInfo ? ` • ${distanceInfo.label} · ${distanceInfo.eta}` : '') +
               ` • ${flag.lat.toFixed(4)}, ${flag.lng.toFixed(4)}` +
               ` • ${relativeTime(flag.created_at)}`}
           </Text>
@@ -1106,404 +1060,405 @@ const FlagCard = memo(function FlagCard({
   );
 });
 
-const makeStyles = (color: ColorTheme) => StyleSheet.create({
-  // Screen wash — same #f7f9fc the Profile screen uses, so the white
-  // cards inside read as cards instead of blending into a white page.
-  screen: { flex: 1, backgroundColor: color.surfaceMuted },
-  flashWrap: {
-    position: 'absolute',
-    top: 12,
-    left: 0,
-    right: 0,
-    alignItems: 'center',
-    zIndex: 10,
-  },
-  flashPill: {
-    backgroundColor: '#27ae60',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: radius.circle,
-    shadowColor: '#000',
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 4,
-  },
-  flashText: { color: '#fff', fontWeight: '700', fontSize: 13 },
-  errorBanner: {
-    marginHorizontal: spacing.lg,
-    marginTop: spacing.md,
-    backgroundColor: color.error,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-    borderRadius: radius.lg,
-    flexDirection: 'row',
-    gap: spacing.sm,
-    alignItems: 'center',
-    minHeight: 44,
-    shadowColor: '#000',
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 3,
-  },
-  errorBannerBusy: { opacity: 0.85 },
-  errorBannerPressed: { opacity: 0.7 },
-  errorBannerIcon: { color: color.textOnBrand, fontSize: 18, fontWeight: '700' },
-  errorBannerText: { color: color.textOnBrand, fontSize: 13, fontWeight: '600', flex: 1 },
-  // Offline data notice — uses warning tokens so it's visually distinct from
-  // the red error banner but still draws the eye. Wraps `warningBg`/`warningFg`
-  // from the theme (WCAG-checked pair). No tap action — it's purely informational.
-  offlineBanner: {
-    marginHorizontal: spacing.lg,
-    marginTop: spacing.sm,
-    backgroundColor: color.warningBg,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,   // matches errorBanner's paddingVertical: 12
-    borderRadius: radius.lg,
-    flexDirection: 'row',
-    gap: spacing.sm,
-    alignItems: 'center',
-    minHeight: 40,
-  },
-  offlineBannerIcon: { fontSize: 16 },
-  offlineBannerText: {
-    color: color.warningFg,
-    fontSize: 13,
-    fontWeight: '600',
-    flex: 1,
-  },
-  center: {
-    flexGrow: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 24,
-    gap: 8,
-  },
-  list: { padding: 16 },
-  // Load-more footer — centered below the last SectionList card.
-  // minHeight 44 on the button satisfies WCAG 2.5.5 (minimum touch target).
-  footer: {
-    paddingVertical: 20,
-    paddingHorizontal: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  loadMoreBtn: {
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: radius.circle,
-    borderWidth: 1,
-    borderColor: color.brand,
-    backgroundColor: color.surfaceNeutral,
-    minHeight: 44,
-    minWidth: 160,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  loadMoreBtnPressed: { opacity: 0.7 },
-  loadMoreText: { color: color.brand, fontWeight: '700', fontSize: 14 },
-  endText: {
-    fontSize: 13,
-    color: color.textMutedAlt,
-    fontStyle: 'italic',
-    textAlign: 'center',
-  },
-  emptyContainer: {
-    flexGrow: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 24,
-  },
-  emptyCard: {
-    backgroundColor: color.surface,
-    borderRadius: 16,
-    paddingHorizontal: 24,
-    paddingVertical: 28,
-    alignItems: 'center',
-    gap: 8,
-    maxWidth: 340,
-    shadowColor: '#000',
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 1 },
-    elevation: 1,
-  },
-  emptyIcon: { fontSize: 36 },
-  emptyTitle: { fontSize: 18, fontWeight: '700', color: '#222' },
-  emptyBody: {
-    fontSize: 13,
-    color: '#666',
-    textAlign: 'center',
-    lineHeight: 18,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingTop: 8,
-    paddingBottom: 8,
-  },
-  sectionTitle: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#666',
-    textTransform: 'uppercase',
-    letterSpacing: 0.6,
-  },
-  sectionCountPill: {
-    backgroundColor: '#d6e6f9',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: radius.circle,
-    minWidth: 22,
-    alignItems: 'center',
-  },
-  sectionCountText: {
-    color: color.brandText,
-    fontSize: 11,
-    fontWeight: '700',
-  },
-  title: { fontSize: 18, fontWeight: '600' },
-  subtitle: { fontSize: 13, color: '#666', textAlign: 'center' },
-  card: {
-    backgroundColor: color.surface,
-    borderRadius: 12,
-    padding: 14,
-    gap: 8,
-    minHeight: size.cardMin,
-    shadowColor: '#000',
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 1 },
-    elevation: 1,
-    marginBottom: 12,
-  },
-  cardPressed: { opacity: 0.85, transform: [{ scale: 0.99 }] },
-  cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  sevDot: { width: 12, height: 12, borderRadius: 6 },
-  cardTitle: { fontSize: 16, fontWeight: '600', flex: 1 },
-  statusTag: {
-    fontSize: 11,
-    color: '#666',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  cardBody: { flexDirection: 'row', gap: 12 },
-  // Container holds the image so overflow:hidden clips rounded corners on
-  // Android (where borderRadius on Image alone is unreliable).
-  cardThumbWrap: {
-    width: size.thumb,
-    height: size.thumb,
-    borderRadius: radius.md,
-    overflow: 'hidden',
-    backgroundColor: color.surfaceNeutral,
-    flexShrink: 0,
-  },
-  cardThumb: {
-    width: '100%',
-    height: '100%',
-  },
-  cardBodyText: { flex: 1, gap: 4 },
-  cardDesc: { fontSize: 14, color: color.textStrong },
-  cardMeta: { fontSize: 12, color: color.textMuted },
-  cardHint: { fontSize: 11, color: color.textSubtle, fontStyle: 'italic' },
-  cardActions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 4 },
-  actionBtn: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
-  },
-  verifyBtn: { backgroundColor: color.brand },
-  verifyText: { color: color.textOnBrand, fontWeight: '600', fontSize: 13 },
-  resolveBtn: { backgroundColor: '#27ae60' },
-  resolveText: { color: '#fff', fontWeight: '600', fontSize: 13 },
-  rejectBtn: { backgroundColor: color.surfaceNeutral },
-  rejectText: { color: '#333', fontWeight: '600', fontSize: 13 },
-  detailsBtn: {
-    backgroundColor: 'transparent',
-    borderWidth: 1,
-    borderColor: color.brand,
-  },
-  detailsText: { color: color.brand, fontWeight: '600', fontSize: 13 },
-  mineToggleRow: {
-    flexDirection: 'row',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    gap: 8,
-    backgroundColor: color.surfaceMuted,
-  },
-  mineChip: {
-    paddingHorizontal: 16,
-    paddingVertical: 7,
-    borderRadius: radius.circle,
-    backgroundColor: color.surfaceNeutral,
-    minHeight: 36,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  mineChipActive: { backgroundColor: color.brand },
-  mineChipText: { fontSize: 13, fontWeight: '600', color: '#555' },
-  mineChipTextActive: { color: color.textOnBrand },
-  sevFilterRow: {
-    flexDirection: 'row',
-    gap: 6,
-    paddingHorizontal: 16,
-    paddingBottom: 8,
-  },
-  sevChip: {
-    flexGrow: 1,
-    flexBasis: 0,
-    minHeight: 36,
-    paddingVertical: 8,
-    borderRadius: radius.circle,
-    backgroundColor: color.surfaceNeutral,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  sevChipText: { fontSize: 13, fontWeight: '700', color: '#555' },
-  sevChipTextActive: { color: color.textOnBrand },
-  // Sort row — mirrors sevFilterRow's look, with an explicit "Sort:" label
-  // before the chips so sighted users get a hint distinguishing it from
-  // the severity row above. The label is a11y-hidden because the chip
-  // labels already say "Sort by …".
-  sortRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 16,
-    paddingBottom: 8,
-  },
-  sortLabel: {
-    fontSize: 12,
-    fontWeight: '600',
-    // color.textMutedAlt (#5b6470) on screen wash (#f7f9fc) ≈ 7.0:1 — comfortably above AA.
-    color: color.textMutedAlt,
-    marginRight: 2,
-  },
-  sortChip: {
-    flexGrow: 1,
-    flexBasis: 0,
-    minHeight: 44,
-    paddingVertical: 8,
-    borderRadius: radius.circle,
-    backgroundColor: color.surfaceNeutral,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  sortChipActive: { backgroundColor: color.brand },
-  sortChipText: { fontSize: 13, fontWeight: '700', color: '#555' },
-  sortChipTextActive: { color: color.textOnBrand },
-  // Bulk-select entry row — a single full-width button sitting at the top
-  // of the screen so SR users and anyone unfamiliar with long-press can
-  // discover the feature. Tinted to match the sort chip's accent.
-  selectEntryRow: {
-    paddingHorizontal: 16,
-    paddingBottom: 8,
-  },
-  selectEntryBtn: {
-    minHeight: 44,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: radius.circle,
-    backgroundColor: color.surfaceNeutral,
-    borderWidth: 1,
-    borderColor: color.brand,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  selectEntryBtnPressed: { opacity: 0.7 },
-  // 14pt + bold on white-tinted chip background — meets WCAG 1.4.3 AA for
-  // body text. Bumped from 13pt to clear the AA threshold against #eef1f5.
-  selectEntryText: { color: color.brand, fontWeight: '700', fontSize: 14 },
-  // Card selection visuals — a subtle tinted background + a 2px accent
-  // border so a selected card pops without needing to recolor the photo
-  // thumbnail or muddle the severity dot. Pairs with the checkmark in
-  // the card header for an unambiguous "yes this one's picked" signal.
-  cardSelected: {
-    backgroundColor: color.brandSofter,
-    borderWidth: 2,
-    borderColor: color.brand,
-    // Compensate for the 2px border so the card doesn't jump on toggle.
-    padding: 12,
-  },
-  selectCheck: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    borderWidth: 2,
-    borderColor: color.brand,
-    backgroundColor: color.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  selectCheckOn: { backgroundColor: color.brand },
-  selectCheckMark: {
-    color: color.textOnBrand,
-    fontSize: 14,
-    fontWeight: '900',
-    lineHeight: 16,
-  },
-  // Floating bulk-action bar — pinned to the bottom of the screen on top
-  // of the SectionList. Column-laid so the live-region count Text sits
-  // above the row of action buttons. paddingBottom includes a generous
-  // inset so it clears the iOS home indicator and Android nav bar without
-  // depending on react-native-safe-area-context (not in this project yet).
-  bulkBar: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    flexDirection: 'column',
-    gap: 8,
-    paddingHorizontal: 12,
-    paddingTop: 10,
-    paddingBottom: 24,
-    backgroundColor: color.surface,
-    borderTopWidth: 1,
-    borderTopColor: '#e1e6ee',
-    shadowColor: '#000',
-    shadowOpacity: 0.12,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: -2 },
-    elevation: 8,
-  },
-  // The single SR live region for the bar — re-announces "N selected"
-  // when the count changes, without re-reading every button label.
-  // #2c3e50 on #fff ≈ 12.6:1.
-  bulkCountText: {
-    color: '#2c3e50',
-    fontSize: 14,
-    fontWeight: '700',
-    paddingHorizontal: 4,
-  },
-  bulkButtonRow: { flexDirection: 'row', gap: 8 },
-  bulkBtn: {
-    flexGrow: 1,
-    flexBasis: 0,
-    minHeight: 44,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  bulkBtnDisabled: { opacity: 0.45 },
-  bulkBtnPressed: { opacity: 0.85 },
-  bulkVerifyBtn: { backgroundColor: color.brand },
-  // #1e8449 on white-text ≈ 7.0:1 — meets AAA for 14pt bold. Bumped from
-  // #27ae60 (~2.83:1, AA fail) to clear WCAG 1.4.3 AA + 1.4.11 non-text 3:1.
-  bulkResolveBtn: { backgroundColor: '#1e8449' },
-  // Cancel uses the neutral chip palette so it doesn't compete for
-  // attention with the primary actions.
-  bulkCancelBtn: {
-    backgroundColor: color.surfaceNeutral,
-    borderWidth: 1,
-    borderColor: '#cfd5de',
-  },
-  // 14pt bold on the dark button fills — meets WCAG 1.4.3 AA for body text.
-  // Bumped from 13pt with the resolve-btn color change to clear AA.
-  bulkBtnText: { color: color.textOnBrand, fontWeight: '700', fontSize: 14 },
-  // #2c3e50 on #eef1f5 ≈ 11.0:1 — comfortably above AA. 14pt for parity.
-  bulkCancelText: { color: '#2c3e50', fontWeight: '700', fontSize: 14 },
-});
+const makeStyles = (color: ColorTheme) =>
+  StyleSheet.create({
+    // Screen wash — same #f7f9fc the Profile screen uses, so the white
+    // cards inside read as cards instead of blending into a white page.
+    screen: { flex: 1, backgroundColor: color.surfaceMuted },
+    flashWrap: {
+      position: 'absolute',
+      top: 12,
+      left: 0,
+      right: 0,
+      alignItems: 'center',
+      zIndex: 10,
+    },
+    flashPill: {
+      backgroundColor: '#27ae60',
+      paddingHorizontal: 16,
+      paddingVertical: 10,
+      borderRadius: radius.circle,
+      shadowColor: '#000',
+      shadowOpacity: 0.15,
+      shadowRadius: 6,
+      shadowOffset: { width: 0, height: 2 },
+      elevation: 4,
+    },
+    flashText: { color: '#fff', fontWeight: '700', fontSize: 13 },
+    errorBanner: {
+      marginHorizontal: spacing.lg,
+      marginTop: spacing.md,
+      backgroundColor: color.error,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.md,
+      borderRadius: radius.lg,
+      flexDirection: 'row',
+      gap: spacing.sm,
+      alignItems: 'center',
+      minHeight: 44,
+      shadowColor: '#000',
+      shadowOpacity: 0.2,
+      shadowRadius: 6,
+      shadowOffset: { width: 0, height: 2 },
+      elevation: 3,
+    },
+    errorBannerBusy: { opacity: 0.85 },
+    errorBannerPressed: { opacity: 0.7 },
+    errorBannerIcon: { color: color.textOnBrand, fontSize: 18, fontWeight: '700' },
+    errorBannerText: { color: color.textOnBrand, fontSize: 13, fontWeight: '600', flex: 1 },
+    // Offline data notice — uses warning tokens so it's visually distinct from
+    // the red error banner but still draws the eye. Wraps `warningBg`/`warningFg`
+    // from the theme (WCAG-checked pair). No tap action — it's purely informational.
+    offlineBanner: {
+      marginHorizontal: spacing.lg,
+      marginTop: spacing.sm,
+      backgroundColor: color.warningBg,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.md, // matches errorBanner's paddingVertical: 12
+      borderRadius: radius.lg,
+      flexDirection: 'row',
+      gap: spacing.sm,
+      alignItems: 'center',
+      minHeight: 40,
+    },
+    offlineBannerIcon: { fontSize: 16 },
+    offlineBannerText: {
+      color: color.warningFg,
+      fontSize: 13,
+      fontWeight: '600',
+      flex: 1,
+    },
+    center: {
+      flexGrow: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: 24,
+      gap: 8,
+    },
+    list: { padding: 16 },
+    // Load-more footer — centered below the last SectionList card.
+    // minHeight 44 on the button satisfies WCAG 2.5.5 (minimum touch target).
+    footer: {
+      paddingVertical: 20,
+      paddingHorizontal: 16,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    loadMoreBtn: {
+      paddingHorizontal: 20,
+      paddingVertical: 12,
+      borderRadius: radius.circle,
+      borderWidth: 1,
+      borderColor: color.brand,
+      backgroundColor: color.surfaceNeutral,
+      minHeight: 44,
+      minWidth: 160,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    loadMoreBtnPressed: { opacity: 0.7 },
+    loadMoreText: { color: color.brand, fontWeight: '700', fontSize: 14 },
+    endText: {
+      fontSize: 13,
+      color: color.textMutedAlt,
+      fontStyle: 'italic',
+      textAlign: 'center',
+    },
+    emptyContainer: {
+      flexGrow: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: 24,
+    },
+    emptyCard: {
+      backgroundColor: color.surface,
+      borderRadius: 16,
+      paddingHorizontal: 24,
+      paddingVertical: 28,
+      alignItems: 'center',
+      gap: 8,
+      maxWidth: 340,
+      shadowColor: '#000',
+      shadowOpacity: 0.06,
+      shadowRadius: 4,
+      shadowOffset: { width: 0, height: 1 },
+      elevation: 1,
+    },
+    emptyIcon: { fontSize: 36 },
+    emptyTitle: { fontSize: 18, fontWeight: '700', color: '#222' },
+    emptyBody: {
+      fontSize: 13,
+      color: '#666',
+      textAlign: 'center',
+      lineHeight: 18,
+    },
+    sectionHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+      paddingTop: 8,
+      paddingBottom: 8,
+    },
+    sectionTitle: {
+      fontSize: 12,
+      fontWeight: '700',
+      color: '#666',
+      textTransform: 'uppercase',
+      letterSpacing: 0.6,
+    },
+    sectionCountPill: {
+      backgroundColor: '#d6e6f9',
+      paddingHorizontal: 8,
+      paddingVertical: 2,
+      borderRadius: radius.circle,
+      minWidth: 22,
+      alignItems: 'center',
+    },
+    sectionCountText: {
+      color: color.brandText,
+      fontSize: 11,
+      fontWeight: '700',
+    },
+    title: { fontSize: 18, fontWeight: '600' },
+    subtitle: { fontSize: 13, color: '#666', textAlign: 'center' },
+    card: {
+      backgroundColor: color.surface,
+      borderRadius: 12,
+      padding: 14,
+      gap: 8,
+      minHeight: size.cardMin,
+      shadowColor: '#000',
+      shadowOpacity: 0.06,
+      shadowRadius: 4,
+      shadowOffset: { width: 0, height: 1 },
+      elevation: 1,
+      marginBottom: 12,
+    },
+    cardPressed: { opacity: 0.85, transform: [{ scale: 0.99 }] },
+    cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+    sevDot: { width: 12, height: 12, borderRadius: 6 },
+    cardTitle: { fontSize: 16, fontWeight: '600', flex: 1 },
+    statusTag: {
+      fontSize: 11,
+      color: '#666',
+      textTransform: 'uppercase',
+      letterSpacing: 0.5,
+    },
+    cardBody: { flexDirection: 'row', gap: 12 },
+    // Container holds the image so overflow:hidden clips rounded corners on
+    // Android (where borderRadius on Image alone is unreliable).
+    cardThumbWrap: {
+      width: size.thumb,
+      height: size.thumb,
+      borderRadius: radius.md,
+      overflow: 'hidden',
+      backgroundColor: color.surfaceNeutral,
+      flexShrink: 0,
+    },
+    cardThumb: {
+      width: '100%',
+      height: '100%',
+    },
+    cardBodyText: { flex: 1, gap: 4 },
+    cardDesc: { fontSize: 14, color: color.textStrong },
+    cardMeta: { fontSize: 12, color: color.textMuted },
+    cardHint: { fontSize: 11, color: color.textSubtle, fontStyle: 'italic' },
+    cardActions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 4 },
+    actionBtn: {
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      borderRadius: 8,
+    },
+    verifyBtn: { backgroundColor: color.brand },
+    verifyText: { color: color.textOnBrand, fontWeight: '600', fontSize: 13 },
+    resolveBtn: { backgroundColor: '#27ae60' },
+    resolveText: { color: '#fff', fontWeight: '600', fontSize: 13 },
+    rejectBtn: { backgroundColor: color.surfaceNeutral },
+    rejectText: { color: '#333', fontWeight: '600', fontSize: 13 },
+    detailsBtn: {
+      backgroundColor: 'transparent',
+      borderWidth: 1,
+      borderColor: color.brand,
+    },
+    detailsText: { color: color.brand, fontWeight: '600', fontSize: 13 },
+    mineToggleRow: {
+      flexDirection: 'row',
+      paddingHorizontal: 16,
+      paddingVertical: 8,
+      gap: 8,
+      backgroundColor: color.surfaceMuted,
+    },
+    mineChip: {
+      paddingHorizontal: 16,
+      paddingVertical: 7,
+      borderRadius: radius.circle,
+      backgroundColor: color.surfaceNeutral,
+      minHeight: 36,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    mineChipActive: { backgroundColor: color.brand },
+    mineChipText: { fontSize: 13, fontWeight: '600', color: '#555' },
+    mineChipTextActive: { color: color.textOnBrand },
+    sevFilterRow: {
+      flexDirection: 'row',
+      gap: 6,
+      paddingHorizontal: 16,
+      paddingBottom: 8,
+    },
+    sevChip: {
+      flexGrow: 1,
+      flexBasis: 0,
+      minHeight: 36,
+      paddingVertical: 8,
+      borderRadius: radius.circle,
+      backgroundColor: color.surfaceNeutral,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    sevChipText: { fontSize: 13, fontWeight: '700', color: '#555' },
+    sevChipTextActive: { color: color.textOnBrand },
+    // Sort row — mirrors sevFilterRow's look, with an explicit "Sort:" label
+    // before the chips so sighted users get a hint distinguishing it from
+    // the severity row above. The label is a11y-hidden because the chip
+    // labels already say "Sort by …".
+    sortRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      paddingHorizontal: 16,
+      paddingBottom: 8,
+    },
+    sortLabel: {
+      fontSize: 12,
+      fontWeight: '600',
+      // color.textMutedAlt (#5b6470) on screen wash (#f7f9fc) ≈ 7.0:1 — comfortably above AA.
+      color: color.textMutedAlt,
+      marginRight: 2,
+    },
+    sortChip: {
+      flexGrow: 1,
+      flexBasis: 0,
+      minHeight: 44,
+      paddingVertical: 8,
+      borderRadius: radius.circle,
+      backgroundColor: color.surfaceNeutral,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    sortChipActive: { backgroundColor: color.brand },
+    sortChipText: { fontSize: 13, fontWeight: '700', color: '#555' },
+    sortChipTextActive: { color: color.textOnBrand },
+    // Bulk-select entry row — a single full-width button sitting at the top
+    // of the screen so SR users and anyone unfamiliar with long-press can
+    // discover the feature. Tinted to match the sort chip's accent.
+    selectEntryRow: {
+      paddingHorizontal: 16,
+      paddingBottom: 8,
+    },
+    selectEntryBtn: {
+      minHeight: 44,
+      paddingHorizontal: 14,
+      paddingVertical: 10,
+      borderRadius: radius.circle,
+      backgroundColor: color.surfaceNeutral,
+      borderWidth: 1,
+      borderColor: color.brand,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    selectEntryBtnPressed: { opacity: 0.7 },
+    // 14pt + bold on white-tinted chip background — meets WCAG 1.4.3 AA for
+    // body text. Bumped from 13pt to clear the AA threshold against #eef1f5.
+    selectEntryText: { color: color.brand, fontWeight: '700', fontSize: 14 },
+    // Card selection visuals — a subtle tinted background + a 2px accent
+    // border so a selected card pops without needing to recolor the photo
+    // thumbnail or muddle the severity dot. Pairs with the checkmark in
+    // the card header for an unambiguous "yes this one's picked" signal.
+    cardSelected: {
+      backgroundColor: color.brandSofter,
+      borderWidth: 2,
+      borderColor: color.brand,
+      // Compensate for the 2px border so the card doesn't jump on toggle.
+      padding: 12,
+    },
+    selectCheck: {
+      width: 22,
+      height: 22,
+      borderRadius: 11,
+      borderWidth: 2,
+      borderColor: color.brand,
+      backgroundColor: color.surface,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    selectCheckOn: { backgroundColor: color.brand },
+    selectCheckMark: {
+      color: color.textOnBrand,
+      fontSize: 14,
+      fontWeight: '900',
+      lineHeight: 16,
+    },
+    // Floating bulk-action bar — pinned to the bottom of the screen on top
+    // of the SectionList. Column-laid so the live-region count Text sits
+    // above the row of action buttons. paddingBottom includes a generous
+    // inset so it clears the iOS home indicator and Android nav bar without
+    // depending on react-native-safe-area-context (not in this project yet).
+    bulkBar: {
+      position: 'absolute',
+      left: 0,
+      right: 0,
+      bottom: 0,
+      flexDirection: 'column',
+      gap: 8,
+      paddingHorizontal: 12,
+      paddingTop: 10,
+      paddingBottom: 24,
+      backgroundColor: color.surface,
+      borderTopWidth: 1,
+      borderTopColor: '#e1e6ee',
+      shadowColor: '#000',
+      shadowOpacity: 0.12,
+      shadowRadius: 8,
+      shadowOffset: { width: 0, height: -2 },
+      elevation: 8,
+    },
+    // The single SR live region for the bar — re-announces "N selected"
+    // when the count changes, without re-reading every button label.
+    // #2c3e50 on #fff ≈ 12.6:1.
+    bulkCountText: {
+      color: '#2c3e50',
+      fontSize: 14,
+      fontWeight: '700',
+      paddingHorizontal: 4,
+    },
+    bulkButtonRow: { flexDirection: 'row', gap: 8 },
+    bulkBtn: {
+      flexGrow: 1,
+      flexBasis: 0,
+      minHeight: 44,
+      paddingHorizontal: 12,
+      paddingVertical: 10,
+      borderRadius: 8,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    bulkBtnDisabled: { opacity: 0.45 },
+    bulkBtnPressed: { opacity: 0.85 },
+    bulkVerifyBtn: { backgroundColor: color.brand },
+    // #1e8449 on white-text ≈ 7.0:1 — meets AAA for 14pt bold. Bumped from
+    // #27ae60 (~2.83:1, AA fail) to clear WCAG 1.4.3 AA + 1.4.11 non-text 3:1.
+    bulkResolveBtn: { backgroundColor: '#1e8449' },
+    // Cancel uses the neutral chip palette so it doesn't compete for
+    // attention with the primary actions.
+    bulkCancelBtn: {
+      backgroundColor: color.surfaceNeutral,
+      borderWidth: 1,
+      borderColor: '#cfd5de',
+    },
+    // 14pt bold on the dark button fills — meets WCAG 1.4.3 AA for body text.
+    // Bumped from 13pt with the resolve-btn color change to clear AA.
+    bulkBtnText: { color: color.textOnBrand, fontWeight: '700', fontSize: 14 },
+    // #2c3e50 on #eef1f5 ≈ 11.0:1 — comfortably above AA. 14pt for parity.
+    bulkCancelText: { color: '#2c3e50', fontWeight: '700', fontSize: 14 },
+  });

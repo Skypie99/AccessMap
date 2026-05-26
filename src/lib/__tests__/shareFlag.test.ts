@@ -25,10 +25,9 @@ jest.mock('../supabase', () => ({ supabase: {} }));
 // Helper: build a minimal flag-slice the formatter accepts. Defaults give us
 // a known baseline so each test only declares what it's varying.
 const makeFlag = (
-  overrides: Partial<Pick<
-    FlagRow,
-    'category' | 'severity' | 'lat' | 'lng' | 'status' | 'description'
-  >> = {},
+  overrides: Partial<
+    Pick<FlagRow, 'category' | 'severity' | 'lat' | 'lng' | 'status' | 'description'>
+  > = {},
 ): Pick<FlagRow, 'category' | 'severity' | 'lat' | 'lng' | 'status' | 'description'> => ({
   category: 'no_ramp',
   severity: 3,
@@ -78,10 +77,7 @@ describe('formatFlagShareText', () => {
   it('treats whitespace-only description as missing (no blank paragraph)', () => {
     // Without this guard, a flag with description "   " would render an
     // empty paragraph between the header and the footer.
-    const out = formatFlagShareText(
-      makeFlag({ description: '   \n  \t  ' }),
-      labelOf,
-    );
+    const out = formatFlagShareText(makeFlag({ description: '   \n  \t  ' }), labelOf);
     expect(out).not.toContain('  '); // no leaked spaces from the empty desc
     expect(out).toBe(
       [
@@ -145,28 +141,19 @@ describe('formatFlagShareText', () => {
   it('pads short coordinates out to 5 decimals (no integer shortening)', () => {
     // toFixed(5) pads zeros — a flag at "lat 0" should render "0.00000",
     // not "0". Keeps the format predictable.
-    const out = formatFlagShareText(
-      makeFlag({ lat: 0, lng: 0 }),
-      labelOf,
-    );
+    const out = formatFlagShareText(makeFlag({ lat: 0, lng: 0 }), labelOf);
     expect(out).toContain('At 0.00000, 0.00000');
   });
 
   it('preserves the sign on negative coordinates', () => {
-    const out = formatFlagShareText(
-      makeFlag({ lat: -33.8688, lng: 151.2093 }),
-      labelOf,
-    );
+    const out = formatFlagShareText(makeFlag({ lat: -33.8688, lng: 151.2093 }), labelOf);
     expect(out).toContain('At -33.86880, 151.20930');
   });
 
   it('ends with "Reported via AccessMap." — no trailing newline', () => {
     // Some share sheets render a trailing newline as an awkward blank
     // line. Pin the ending to keep the message tight.
-    const out = formatFlagShareText(
-      makeFlag({ description: 'Anything.' }),
-      labelOf,
-    );
+    const out = formatFlagShareText(makeFlag({ description: 'Anything.' }), labelOf);
     expect(out.endsWith('Reported via AccessMap.')).toBe(true);
     expect(out.endsWith('\n')).toBe(false);
   });
@@ -174,10 +161,7 @@ describe('formatFlagShareText', () => {
   it('handles null description (the DB default for blank reports)', () => {
     // FlagRow.description is `string | null` — make sure the formatter
     // doesn't choke on the null case.
-    const out = formatFlagShareText(
-      makeFlag({ description: null }),
-      labelOf,
-    );
+    const out = formatFlagShareText(makeFlag({ description: null }), labelOf);
     expect(out).not.toContain('null');
     expect(out).toContain('Reported via AccessMap.');
   });
@@ -185,10 +169,7 @@ describe('formatFlagShareText', () => {
   it('honors the injected categoryLabel function (decoupled from CATEGORY_LABELS)', () => {
     // The injected-function pattern lets a future localizer swap labels
     // without touching this module. Verify it actually flows through.
-    const out = formatFlagShareText(
-      makeFlag({ category: 'no_ramp' }),
-      () => 'CUSTOM_LABEL',
-    );
+    const out = formatFlagShareText(makeFlag({ category: 'no_ramp' }), () => 'CUSTOM_LABEL');
     expect(out.split('\n')[0]).toBe('CUSTOM_LABEL');
   });
 });

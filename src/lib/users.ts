@@ -13,10 +13,7 @@ export interface UserProfilePatch {
   display_name?: string | null;
 }
 
-export async function updateUserProfile(
-  userId: string,
-  patch: UserProfilePatch,
-): Promise<UserRow> {
+export async function updateUserProfile(userId: string, patch: UserProfilePatch): Promise<UserRow> {
   const { data, error } = await supabase
     .from('users')
     .update(patch)

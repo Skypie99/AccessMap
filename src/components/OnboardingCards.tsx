@@ -60,20 +60,17 @@ const CARDS: Card[] = [
   {
     emoji: '📍',
     title: 'Drop pins where accessibility matters',
-    body:
-      'See a broken sidewalk, a missing ramp, or a blocked path? Drop a pin so others can plan around it. A few seconds from you saves a real headache for someone else.',
+    body: 'See a broken sidewalk, a missing ramp, or a blocked path? Drop a pin so others can plan around it. A few seconds from you saves a real headache for someone else.',
   },
   {
     emoji: '✅',
     title: "Verify others' reports",
-    body:
-      "When you pass a flagged spot, you can confirm it's still an issue — or mark it resolved if it's been fixed. That's how the map stays trustworthy over time.",
+    body: "When you pass a flagged spot, you can confirm it's still an issue — or mark it resolved if it's been fixed. That's how the map stays trustworthy over time.",
   },
   {
     emoji: '⭐',
     title: 'Earn points for accuracy',
-    body:
-      'You earn points when your reports get verified or resolved, and when you verify or resolve others. The points reward real, helpful contributions.',
+    body: 'You earn points when your reports get verified or resolved, and when you verify or resolve others. The points reward real, helpful contributions.',
   },
 ];
 
@@ -92,10 +89,7 @@ export default function OnboardingCards({ onDone }: Props) {
     AccessibilityInfo.isReduceMotionEnabled().then((on) => {
       if (!cancelled) setReduceMotion(on);
     });
-    const sub = AccessibilityInfo.addEventListener(
-      'reduceMotionChanged',
-      setReduceMotion,
-    );
+    const sub = AccessibilityInfo.addEventListener('reduceMotionChanged', setReduceMotion);
     return () => {
       cancelled = true;
       sub.remove();
@@ -106,9 +100,7 @@ export default function OnboardingCards({ onDone }: Props) {
   // position so screen reader users get the "Card N of 3" context even
   // though the card container is no longer a single accessible element.
   useEffect(() => {
-    AccessibilityInfo.announceForAccessibility(
-      `Card ${index + 1} of ${CARDS.length}`,
-    );
+    AccessibilityInfo.announceForAccessibility(`Card ${index + 1} of ${CARDS.length}`);
   }, [index]);
 
   const goTo = (next: number) => {
@@ -120,9 +112,7 @@ export default function OnboardingCards({ onDone }: Props) {
     setIndex(clamped);
   };
 
-  const handleScroll = (e: {
-    nativeEvent: { contentOffset: { x: number } };
-  }) => {
+  const handleScroll = (e: { nativeEvent: { contentOffset: { x: number } } }) => {
     const next = Math.round(e.nativeEvent.contentOffset.x / Math.max(1, width));
     if (next !== index) setIndex(next);
   };
@@ -131,17 +121,8 @@ export default function OnboardingCards({ onDone }: Props) {
   const isLast = index === CARDS.length - 1;
 
   return (
-    <Modal
-      visible
-      animationType="fade"
-      onRequestClose={onDone}
-      presentationStyle="fullScreen"
-    >
-      <View
-        style={styles.screen}
-        accessibilityViewIsModal
-        importantForAccessibility="yes"
-      >
+    <Modal visible animationType="fade" onRequestClose={onDone} presentationStyle="fullScreen">
+      <View style={styles.screen} accessibilityViewIsModal importantForAccessibility="yes">
         {/* Top row: Skip always visible top-right. */}
         <View style={styles.topBar}>
           <Pressable
@@ -195,10 +176,7 @@ export default function OnboardingCards({ onDone }: Props) {
           accessibilityElementsHidden
         >
           {CARDS.map((card, i) => (
-            <View
-              key={card.title}
-              style={[styles.dot, i === index && styles.dotActive]}
-            />
+            <View key={card.title} style={[styles.dot, i === index && styles.dotActive]} />
           ))}
         </View>
 
@@ -222,20 +200,13 @@ export default function OnboardingCards({ onDone }: Props) {
             accessibilityState={{ disabled: isFirst }}
             hitSlop={8}
           >
-            <Text
-              style={[styles.backBtnText, isFirst && styles.backBtnTextDisabled]}
-            >
-              Back
-            </Text>
+            <Text style={[styles.backBtnText, isFirst && styles.backBtnTextDisabled]}>Back</Text>
           </Pressable>
 
           {!isLast ? (
             <Pressable
               onPress={() => goTo(index + 1)}
-              style={({ pressed }) => [
-                styles.primaryBtn,
-                pressed && styles.btnPressed,
-              ]}
+              style={({ pressed }) => [styles.primaryBtn, pressed && styles.btnPressed]}
               accessibilityRole="button"
               accessibilityLabel={`Next. Currently on card ${index + 1} of ${CARDS.length}.`}
             >
@@ -244,10 +215,7 @@ export default function OnboardingCards({ onDone }: Props) {
           ) : (
             <Pressable
               onPress={onDone}
-              style={({ pressed }) => [
-                styles.primaryBtn,
-                pressed && styles.btnPressed,
-              ]}
+              style={({ pressed }) => [styles.primaryBtn, pressed && styles.btnPressed]}
               accessibilityRole="button"
               accessibilityLabel="Get Started"
               accessibilityHint="Completes the tutorial and opens the app"
@@ -261,120 +229,121 @@ export default function OnboardingCards({ onDone }: Props) {
   );
 }
 
-const makeStyles = (color: ColorTheme) => StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: color.surface,
-  },
-  topBar: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    paddingHorizontal: spacing.md,
-    paddingTop: 48,
-    paddingBottom: spacing.sm,
-  },
-  skipBtn: {
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    borderRadius: radius.md,
-    minHeight: 44,
-    minWidth: 44,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  // textMuted (#666) is 5.7:1 on white — passes WCAG AA for body text.
-  skipText: {
-    color: color.textMuted,
-    fontWeight: font.weight.semibold,
-    fontSize: font.size.base,
-  },
-  scroll: { flex: 1 },
-  card: {
-    flex: 1,
-    paddingHorizontal: spacing.xxxl,
-    paddingTop: spacing.xxl,
-    paddingBottom: spacing.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.xl,
-  },
-  emoji: { fontSize: font.size.displayLg, textAlign: 'center' },
-  // Small position label above the heading — visible AND screen-reader
-  // friendly. textMuted (#666) is 5.7:1 on white, AA pass.
-  position: {
-    fontSize: font.size.sm,
-    color: color.textMuted,
-    fontWeight: font.weight.semibold,
-    textAlign: 'center',
-    letterSpacing: 0.5,
-  },
-  title: {
-    fontSize: font.size.h2,
-    fontWeight: font.weight.bold,
-    color: color.textStrong,
-    textAlign: 'center',
-  },
-  body: {
-    fontSize: font.size.lg,
-    color: color.text,
-    textAlign: 'center',
-    lineHeight: 24,
-    maxWidth: 360,
-  },
-  dotsRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: spacing.sm,
-    paddingVertical: spacing.md,
-  },
-  dot: {
-    width: 8,
-    height: 8,
-    borderRadius: radius.xs,
-    backgroundColor: color.borderStrong,
-  },
-  dotActive: { backgroundColor: color.brand, width: 22 },
-  actions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.xxl,
-    paddingBottom: 36,
-    paddingTop: spacing.sm,
-    gap: spacing.md,
-  },
-  backBtn: {
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    borderRadius: radius.md,
-    minHeight: 44,
-    minWidth: 44,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  backBtnDisabled: { opacity: 0.4 },
-  // textMuted again — 5.7:1 on white, AA pass even when not "disabled".
-  backBtnText: {
-    color: color.textMuted,
-    fontWeight: font.weight.semibold,
-    fontSize: font.size.base,
-  },
-  backBtnTextDisabled: { color: color.textMuted },
-  primaryBtn: {
-    flex: 1,
-    backgroundColor: color.brand,
-    paddingVertical: spacing.lg,
-    paddingHorizontal: spacing.xxl,
-    borderRadius: radius.lg,
-    alignItems: 'center',
-    minHeight: 44,
-    justifyContent: 'center',
-    ...shadow.e2,
-  },
-  btnPressed: { opacity: 0.85 },
-  primaryBtnText: {
-    color: color.textOnBrand,
-    fontWeight: font.weight.bold,
-    fontSize: font.size.lg,
-  },
-});
+const makeStyles = (color: ColorTheme) =>
+  StyleSheet.create({
+    screen: {
+      flex: 1,
+      backgroundColor: color.surface,
+    },
+    topBar: {
+      flexDirection: 'row',
+      justifyContent: 'flex-end',
+      paddingHorizontal: spacing.md,
+      paddingTop: 48,
+      paddingBottom: spacing.sm,
+    },
+    skipBtn: {
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.md,
+      borderRadius: radius.md,
+      minHeight: 44,
+      minWidth: 44,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    // textMuted (#666) is 5.7:1 on white — passes WCAG AA for body text.
+    skipText: {
+      color: color.textMuted,
+      fontWeight: font.weight.semibold,
+      fontSize: font.size.base,
+    },
+    scroll: { flex: 1 },
+    card: {
+      flex: 1,
+      paddingHorizontal: spacing.xxxl,
+      paddingTop: spacing.xxl,
+      paddingBottom: spacing.md,
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: spacing.xl,
+    },
+    emoji: { fontSize: font.size.displayLg, textAlign: 'center' },
+    // Small position label above the heading — visible AND screen-reader
+    // friendly. textMuted (#666) is 5.7:1 on white, AA pass.
+    position: {
+      fontSize: font.size.sm,
+      color: color.textMuted,
+      fontWeight: font.weight.semibold,
+      textAlign: 'center',
+      letterSpacing: 0.5,
+    },
+    title: {
+      fontSize: font.size.h2,
+      fontWeight: font.weight.bold,
+      color: color.textStrong,
+      textAlign: 'center',
+    },
+    body: {
+      fontSize: font.size.lg,
+      color: color.text,
+      textAlign: 'center',
+      lineHeight: 24,
+      maxWidth: 360,
+    },
+    dotsRow: {
+      flexDirection: 'row',
+      justifyContent: 'center',
+      gap: spacing.sm,
+      paddingVertical: spacing.md,
+    },
+    dot: {
+      width: 8,
+      height: 8,
+      borderRadius: radius.xs,
+      backgroundColor: color.borderStrong,
+    },
+    dotActive: { backgroundColor: color.brand, width: 22 },
+    actions: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: spacing.xxl,
+      paddingBottom: 36,
+      paddingTop: spacing.sm,
+      gap: spacing.md,
+    },
+    backBtn: {
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.md,
+      borderRadius: radius.md,
+      minHeight: 44,
+      minWidth: 44,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    backBtnDisabled: { opacity: 0.4 },
+    // textMuted again — 5.7:1 on white, AA pass even when not "disabled".
+    backBtnText: {
+      color: color.textMuted,
+      fontWeight: font.weight.semibold,
+      fontSize: font.size.base,
+    },
+    backBtnTextDisabled: { color: color.textMuted },
+    primaryBtn: {
+      flex: 1,
+      backgroundColor: color.brand,
+      paddingVertical: spacing.lg,
+      paddingHorizontal: spacing.xxl,
+      borderRadius: radius.lg,
+      alignItems: 'center',
+      minHeight: 44,
+      justifyContent: 'center',
+      ...shadow.e2,
+    },
+    btnPressed: { opacity: 0.85 },
+    primaryBtnText: {
+      color: color.textOnBrand,
+      fontWeight: font.weight.bold,
+      fontSize: font.size.lg,
+    },
+  });

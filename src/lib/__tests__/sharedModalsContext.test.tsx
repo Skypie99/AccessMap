@@ -37,11 +37,7 @@ interface ReactTestRendererModule {
 }
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { create, act } = require('react-test-renderer') as ReactTestRendererModule;
-import {
-  SharedModalsProvider,
-  useSharedModals,
-  type SharedModalKey,
-} from '../sharedModalsContext';
+import { SharedModalsProvider, useSharedModals, type SharedModalKey } from '../sharedModalsContext';
 import HelpModal from '@/components/HelpModal';
 import ChangelogModal from '@/components/ChangelogModal';
 import FeedbackModal from '@/components/FeedbackModal';
@@ -243,11 +239,7 @@ describe('sharedModalsContext', () => {
   // ditto for each of the other three keys.
   // ───────────────────────────────────────────────────────────────────
   it('mounts each shared modal exactly once regardless of how many screens open it', () => {
-    function Consumer({
-      capture,
-    }: {
-      capture: (setOpen: (k: SharedModalKey) => void) => void;
-    }) {
+    function Consumer({ capture }: { capture: (setOpen: (k: SharedModalKey) => void) => void }) {
       const { setOpen } = useSharedModals();
       capture(setOpen);
       return null;
@@ -415,9 +407,7 @@ describe('sharedModalsContext', () => {
       // first match is the backdrop itself (vs. a stylesheet object
       // or other passthrough), and its props must include
       // accessibilityViewIsModal: true.
-      const backdrop = found.find(
-        (n) => n.props.accessibilityViewIsModal === true,
-      );
+      const backdrop = found.find((n) => n.props.accessibilityViewIsModal === true);
       expect({ key, found: !!backdrop }).toEqual({ key, found: true });
       act(() => {
         renderer?.unmount();

@@ -12,15 +12,7 @@
  * but is deferred to a polish loop to keep the surface tight.
  */
 import React from 'react';
-import {
-  Image,
-  Modal,
-  Pressable,
-  StatusBar,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { Image, Modal, Pressable, StatusBar, StyleSheet, Text, View } from 'react-native';
 import { color, font, spacing } from '@/theme';
 
 interface Props {
@@ -31,12 +23,7 @@ interface Props {
   onClose: () => void;
 }
 
-export default function PhotoLightboxModal({
-  visible,
-  photoUrl,
-  caption,
-  onClose,
-}: Props) {
+export default function PhotoLightboxModal({ visible, photoUrl, caption, onClose }: Props) {
   // Defensive: still render the modal frame if photoUrl is null so the
   // close button is reachable, but show a friendly fallback.
   return (
@@ -49,10 +36,7 @@ export default function PhotoLightboxModal({
       // status bar so the dim effect feels full-screen.
       statusBarTranslucent
     >
-      <StatusBar
-        barStyle="light-content"
-        backgroundColor={color.backdropStrong}
-      />
+      <StatusBar barStyle="light-content" backgroundColor={color.backdropStrong} />
       <View style={styles.backdrop} accessibilityViewIsModal>
         {/* Tap-anywhere-to-dismiss pressable layer. Hidden from the a11y
             tree so screen-reader users land on the photo first (the actual
@@ -100,10 +84,7 @@ export default function PhotoLightboxModal({
         <Pressable
           onPress={onClose}
           hitSlop={spacing.lg}
-          style={({ pressed }) => [
-            styles.closeBtn,
-            pressed && styles.closeBtnPressed,
-          ]}
+          style={({ pressed }) => [styles.closeBtn, pressed && styles.closeBtnPressed]}
           accessibilityRole="button"
           accessibilityLabel="Close photo"
         >

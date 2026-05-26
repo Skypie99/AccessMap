@@ -74,9 +74,7 @@ describe('DEFAULT_MAP_FILTERS', () => {
     expect(DEFAULT_MAP_FILTERS.categories).toEqual([]);
     expect(DEFAULT_MAP_FILTERS.minSeverity).toBe(1);
     // Order doesn't matter for the fetch — just that the set is right.
-    expect([...DEFAULT_MAP_FILTERS.statuses].sort()).toEqual(
-      ['open', 'verified'].sort(),
-    );
+    expect([...DEFAULT_MAP_FILTERS.statuses].sort()).toEqual(['open', 'verified'].sort());
   });
 });
 

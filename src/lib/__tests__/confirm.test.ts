@@ -94,9 +94,7 @@ describe('confirm', () => {
     it('resolves true when the confirm button is pressed', async () => {
       // Capture the buttons array Alert.alert is called with, then fire
       // the confirm button's onPress to simulate the user tapping it.
-      const alertSpy = jest
-        .spyOn(Alert, 'alert')
-        .mockImplementation(() => {});
+      const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
 
       const { confirm } = require('../confirm');
       const pending = confirm('Sign out?', 'Are you sure?', 'Sign out', true);
@@ -117,9 +115,7 @@ describe('confirm', () => {
     });
 
     it('resolves false when the cancel button is pressed', async () => {
-      const alertSpy = jest
-        .spyOn(Alert, 'alert')
-        .mockImplementation(() => {});
+      const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
 
       const { confirm } = require('../confirm');
       const pending = confirm('Title', 'Body');
@@ -137,9 +133,7 @@ describe('confirm', () => {
     });
 
     it('resolves false on Android dismiss (tap outside the alert)', async () => {
-      const alertSpy = jest
-        .spyOn(Alert, 'alert')
-        .mockImplementation(() => {});
+      const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
 
       const { confirm } = require('../confirm');
       const pending = confirm('Title', 'Body');
@@ -156,9 +150,7 @@ describe('confirm', () => {
     });
 
     it('uses non-destructive style by default', async () => {
-      const alertSpy = jest
-        .spyOn(Alert, 'alert')
-        .mockImplementation(() => {});
+      const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
 
       const { confirm } = require('../confirm');
       const pending = confirm('Title', 'Body');

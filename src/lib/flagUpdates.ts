@@ -68,10 +68,7 @@ export async function loadLastSeen(userId: string): Promise<LastSeenMap> {
     if (!raw) return {};
     return parseLastSeen(JSON.parse(raw));
   } catch (e) {
-    console.warn(
-      '[flagUpdates] load failed:',
-      errorMessage(e, 'AsyncStorage error.'),
-    );
+    console.warn('[flagUpdates] load failed:', errorMessage(e, 'AsyncStorage error.'));
     return {};
   }
 }
@@ -80,10 +77,7 @@ async function persist(userId: string, map: LastSeenMap): Promise<void> {
   try {
     await AsyncStorage.setItem(storageKey(userId), JSON.stringify(map));
   } catch (e) {
-    console.warn(
-      '[flagUpdates] save failed:',
-      errorMessage(e, 'AsyncStorage error.'),
-    );
+    console.warn('[flagUpdates] save failed:', errorMessage(e, 'AsyncStorage error.'));
   }
 }
 
@@ -121,10 +115,7 @@ export function diffUpdates(
  * Caller passes the result to `persist` (or use `markAllSeen` for the
  * common load-merge-save pattern).
  */
-export function nextLastSeen(
-  flags: FlagRow[],
-  lastSeen: LastSeenMap,
-): LastSeenMap {
+export function nextLastSeen(flags: FlagRow[], lastSeen: LastSeenMap): LastSeenMap {
   const merged: LastSeenMap = { ...lastSeen };
   for (const f of flags) {
     // Delete first so JS object iteration order treats this as a fresh
@@ -146,10 +137,7 @@ export function nextLastSeen(
  * statuses, and persist. Use after the user has acknowledged updates (e.g.
  * opened the Activity Feed or dismissed the banner).
  */
-export async function markAllSeen(
-  userId: string,
-  flags: FlagRow[],
-): Promise<LastSeenMap> {
+export async function markAllSeen(userId: string, flags: FlagRow[]): Promise<LastSeenMap> {
   const current = await loadLastSeen(userId);
   const merged = nextLastSeen(flags, current);
   await persist(userId, merged);

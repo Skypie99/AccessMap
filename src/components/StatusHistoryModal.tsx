@@ -55,11 +55,7 @@ function statusLabel(s: string): string {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
-export default function StatusHistoryModal({
-  visible,
-  flagId,
-  onClose,
-}: Props) {
+export default function StatusHistoryModal({ visible, flagId, onClose }: Props) {
   const color = useColor();
   const styles = makeStyles(color);
   const [entries, setEntries] = useState<StatusHistoryEntry[]>([]);
@@ -100,19 +96,11 @@ export default function StatusHistoryModal({
   );
 
   return (
-    <Modal
-      visible={visible}
-      animationType="slide"
-      transparent
-      onRequestClose={onClose}
-    >
+    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <View style={styles.backdrop}>
         <View style={styles.card} accessibilityViewIsModal>
           <View style={styles.headerRow}>
-            <Text
-              style={styles.title}
-              accessibilityRole="header"
-            >
+            <Text style={styles.title} accessibilityRole="header">
               Status history
             </Text>
             <Pressable
@@ -146,15 +134,16 @@ export default function StatusHistoryModal({
               <View style={styles.emptyWrap}>
                 <Text style={styles.emptyTitle}>No history yet</Text>
                 <Text style={styles.emptyBody}>
-                  History not yet enabled — when this feature is fully set
-                  up, you{'’'}ll see who changed the status of this flag
-                  here.
+                  History not yet enabled — when this feature is fully set up, you{'’'}ll see who
+                  changed the status of this flag here.
                 </Text>
               </View>
             ) : (
               <View
                 style={styles.entryList}
-                accessibilityRole={Platform.OS === 'web' ? ('list' as AccessibilityRole) : undefined}
+                accessibilityRole={
+                  Platform.OS === 'web' ? ('list' as AccessibilityRole) : undefined
+                }
               >
                 {formatted.map((item) => (
                   <View
@@ -162,7 +151,9 @@ export default function StatusHistoryModal({
                     style={styles.entryRow}
                     accessible
                     accessibilityLabel={item.line}
-                    accessibilityRole={Platform.OS === 'web' ? ('listitem' as AccessibilityRole) : 'text'}
+                    accessibilityRole={
+                      Platform.OS === 'web' ? ('listitem' as AccessibilityRole) : 'text'
+                    }
                   >
                     <View style={styles.entryDot} />
                     <View style={styles.entryTextWrap}>
@@ -179,83 +170,84 @@ export default function StatusHistoryModal({
   );
 }
 
-const makeStyles = (color: ColorTheme) => StyleSheet.create({
-  backdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.4)',
-    justifyContent: 'flex-end',
-  },
-  card: {
-    backgroundColor: color.surface,
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 24,
-    gap: 12,
-    maxHeight: '80%',
-  },
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  title: { fontSize: 18, fontWeight: '700', flex: 1, color: color.textStrong },
-  closeBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: color.surfaceNeutral,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  closeBtnText: { fontSize: 16, color: color.text, fontWeight: '700' },
-  body: { flexShrink: 1 },
-  bodyContent: { gap: 12, paddingBottom: 8, paddingTop: 4 },
-  center: {
-    alignItems: 'center',
-    gap: 8,
-    paddingVertical: 32,
-  },
-  loadingText: { fontSize: 14, color: color.textMuted },
-  emptyWrap: {
-    paddingVertical: 28,
-    paddingHorizontal: 8,
-    alignItems: 'center',
-    gap: 8,
-  },
-  emptyTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: color.text,
-  },
-  emptyBody: {
-    fontSize: 14,
-    color: color.textMuted,
-    textAlign: 'center',
-    lineHeight: 20,
-  },
-  entryList: { gap: 0 },
-  entryRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 12,
-    paddingVertical: 4,
-  },
-  // Brand-blue bullet — uses color.brandText (the AA-safe small-text brand
-  // hex). Cycle D / d2 cleared the Cycle C carry-forward: was previously
-  // a literal '#1c4f99' awaiting CL2 to land in this branch.
-  entryDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: color.brandText,
-    marginTop: 6,
-  },
-  entryTextWrap: { flex: 1, gap: 2 },
-  entryLine: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: color.textStrong,
-  },
-});
+const makeStyles = (color: ColorTheme) =>
+  StyleSheet.create({
+    backdrop: {
+      flex: 1,
+      backgroundColor: 'rgba(0,0,0,0.4)',
+      justifyContent: 'flex-end',
+    },
+    card: {
+      backgroundColor: color.surface,
+      borderTopLeftRadius: 16,
+      borderTopRightRadius: 16,
+      paddingHorizontal: 20,
+      paddingTop: 16,
+      paddingBottom: 24,
+      gap: 12,
+      maxHeight: '80%',
+    },
+    headerRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+    },
+    title: { fontSize: 18, fontWeight: '700', flex: 1, color: color.textStrong },
+    closeBtn: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      backgroundColor: color.surfaceNeutral,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    closeBtnText: { fontSize: 16, color: color.text, fontWeight: '700' },
+    body: { flexShrink: 1 },
+    bodyContent: { gap: 12, paddingBottom: 8, paddingTop: 4 },
+    center: {
+      alignItems: 'center',
+      gap: 8,
+      paddingVertical: 32,
+    },
+    loadingText: { fontSize: 14, color: color.textMuted },
+    emptyWrap: {
+      paddingVertical: 28,
+      paddingHorizontal: 8,
+      alignItems: 'center',
+      gap: 8,
+    },
+    emptyTitle: {
+      fontSize: 15,
+      fontWeight: '700',
+      color: color.text,
+    },
+    emptyBody: {
+      fontSize: 14,
+      color: color.textMuted,
+      textAlign: 'center',
+      lineHeight: 20,
+    },
+    entryList: { gap: 0 },
+    entryRow: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      gap: 12,
+      paddingVertical: 4,
+    },
+    // Brand-blue bullet — uses color.brandText (the AA-safe small-text brand
+    // hex). Cycle D / d2 cleared the Cycle C carry-forward: was previously
+    // a literal '#1c4f99' awaiting CL2 to land in this branch.
+    entryDot: {
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+      backgroundColor: color.brandText,
+      marginTop: 6,
+    },
+    entryTextWrap: { flex: 1, gap: 2 },
+    entryLine: {
+      fontSize: 15,
+      fontWeight: '600',
+      color: color.textStrong,
+    },
+  });

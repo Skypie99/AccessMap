@@ -217,26 +217,24 @@ describe('updateFlagContent — error propagation', () => {
     };
     mockSingle.mockResolvedValueOnce({ data: null, error: notFoundError });
 
-    await expect(
-      updateFlagContent('nonexistent-flag-id', { severity: 1 }),
-    ).rejects.toMatchObject({ code: 'PGRST116' });
+    await expect(updateFlagContent('nonexistent-flag-id', { severity: 1 })).rejects.toMatchObject({
+      code: 'PGRST116',
+    });
   });
 
   it('throws a network/generic error when the query fails', async () => {
     const networkError = new Error('Failed to fetch');
     mockSingle.mockResolvedValueOnce({ data: null, error: networkError });
 
-    await expect(
-      updateFlagContent(FLAG_ID, { category: 'other' }),
-    ).rejects.toThrow('Failed to fetch');
+    await expect(updateFlagContent(FLAG_ID, { category: 'other' })).rejects.toThrow(
+      'Failed to fetch',
+    );
   });
 
   it('does NOT throw when error is null (success case)', async () => {
     mockSingle.mockResolvedValueOnce({ data: fakeRow, error: null });
 
-    await expect(
-      updateFlagContent(FLAG_ID, { description: 'Fine' }),
-    ).resolves.toBeDefined();
+    await expect(updateFlagContent(FLAG_ID, { description: 'Fine' })).resolves.toBeDefined();
   });
 });
 

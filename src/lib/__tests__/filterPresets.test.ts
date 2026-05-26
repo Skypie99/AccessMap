@@ -33,8 +33,7 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
   },
 }));
 
-const mockStorage =
-  jest.requireMock('@react-native-async-storage/async-storage').default;
+const mockStorage = jest.requireMock('@react-native-async-storage/async-storage').default;
 
 import {
   addPreset,
@@ -110,13 +109,11 @@ describe('addPreset', () => {
 
   it('caps at FILTER_PRESETS_MAX, trimming the OLDEST entry', () => {
     // Fill to the cap.
-    const seeded: FilterPreset[] = Array.from(
-      { length: FILTER_PRESETS_MAX },
-      (_, i) =>
-        makePreset({
-          id: `id-${i}`,
-          name: `Preset ${i}`,
-        }),
+    const seeded: FilterPreset[] = Array.from({ length: FILTER_PRESETS_MAX }, (_, i) =>
+      makePreset({
+        id: `id-${i}`,
+        name: `Preset ${i}`,
+      }),
     );
     const next = addPreset(seeded, {
       name: 'NEW',
@@ -179,10 +176,7 @@ describe('removePreset', () => {
   });
 
   it('does not mutate the input list', () => {
-    const list: FilterPreset[] = [
-      makePreset({ id: 'a' }),
-      makePreset({ id: 'b' }),
-    ];
+    const list: FilterPreset[] = [makePreset({ id: 'a' }), makePreset({ id: 'b' })];
     const snapshot = [...list];
     removePreset(list, 'a');
     expect(list).toEqual(snapshot);
@@ -223,9 +217,8 @@ describe('loadPresets / savePresets IO', () => {
   });
 
   it('trims an over-cap stored array down to FILTER_PRESETS_MAX on load by dropping OLDEST', async () => {
-    const over: FilterPreset[] = Array.from(
-      { length: FILTER_PRESETS_MAX + 5 },
-      (_, i) => makePreset({ id: `id-${i}`, name: `P${i}` }),
+    const over: FilterPreset[] = Array.from({ length: FILTER_PRESETS_MAX + 5 }, (_, i) =>
+      makePreset({ id: `id-${i}`, name: `P${i}` }),
     );
     mockStorage.__setRaw(KEY, JSON.stringify(over));
     const loaded = await loadPresets(USER);

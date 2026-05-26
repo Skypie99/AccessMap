@@ -1,10 +1,4 @@
-import {
-  diffUpdates,
-  loadLastSeen,
-  markAllSeen,
-  MAX_TRACKED,
-  nextLastSeen,
-} from '../flagUpdates';
+import { diffUpdates, loadLastSeen, markAllSeen, MAX_TRACKED, nextLastSeen } from '../flagUpdates';
 import type { FlagRow, FlagStatus } from '@/types/database';
 
 // AsyncStorage mock — same in-memory pattern as watchedFlags tests.
@@ -26,8 +20,7 @@ jest.mock('@react-native-async-storage/async-storage', () => {
   };
 });
 
-const mockStorage =
-  jest.requireMock('@react-native-async-storage/async-storage').default;
+const mockStorage = jest.requireMock('@react-native-async-storage/async-storage').default;
 
 function makeFlag(id: string, status: FlagStatus): FlagRow {
   return {
@@ -162,10 +155,7 @@ describe('flagUpdates', () => {
 
   describe('nextLastSeen', () => {
     it('merges new flags into an empty baseline', () => {
-      const merged = nextLastSeen(
-        [makeFlag('a', 'open'), makeFlag('b', 'verified')],
-        {},
-      );
+      const merged = nextLastSeen([makeFlag('a', 'open'), makeFlag('b', 'verified')], {});
       expect(merged).toEqual({ a: 'open', b: 'verified' });
     });
 

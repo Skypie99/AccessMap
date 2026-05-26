@@ -35,9 +35,7 @@ function storageKey(userId: string): string {
  * null on error so the caller can choose to skip the diff rather than
  * showing a confusing "+NaN" or wrong-direction toast.
  */
-export async function fetchCurrentPoints(
-  userId: string,
-): Promise<number | null> {
+export async function fetchCurrentPoints(userId: string): Promise<number | null> {
   const { data, error } = await supabase
     .from('users')
     .select('points')
@@ -53,9 +51,7 @@ export async function fetchCurrentPoints(
  * if we've never recorded one. null is meaningful — the caller treats
  * "first-ever observation" differently from a delta of 0.
  */
-export async function getLastSeenPoints(
-  userId: string,
-): Promise<number | null> {
+export async function getLastSeenPoints(userId: string): Promise<number | null> {
   try {
     const raw = await AsyncStorage.getItem(storageKey(userId));
     if (raw === null) return null;
@@ -66,10 +62,7 @@ export async function getLastSeenPoints(
   }
 }
 
-export async function setLastSeenPoints(
-  userId: string,
-  points: number,
-): Promise<void> {
+export async function setLastSeenPoints(userId: string, points: number): Promise<void> {
   try {
     await AsyncStorage.setItem(storageKey(userId), String(Math.max(0, points)));
   } catch {

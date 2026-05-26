@@ -38,13 +38,7 @@ function makeRow(
 
 describe('FEEDBACK_CATEGORY_FILTERS', () => {
   it('lists exactly the 5 filter options in render order', () => {
-    expect(FEEDBACK_CATEGORY_FILTERS).toEqual([
-      'all',
-      'bug',
-      'idea',
-      'love',
-      'other',
-    ]);
+    expect(FEEDBACK_CATEGORY_FILTERS).toEqual(['all', 'bug', 'idea', 'love', 'other']);
   });
 
   it('has a label for every filter', () => {
@@ -68,15 +62,7 @@ describe('filterFeedback', () => {
   it("'all' returns the full list unchanged", () => {
     const result = filterFeedback(rows, 'all');
     expect(result).toHaveLength(rows.length);
-    expect(result.map((r) => r.id)).toEqual([
-      'r1',
-      'r2',
-      'r3',
-      'r4',
-      'r5',
-      'r6',
-      'r7',
-    ]);
+    expect(result.map((r) => r.id)).toEqual(['r1', 'r2', 'r3', 'r4', 'r5', 'r6', 'r7']);
   });
 
   it("'bug' returns only bug rows", () => {
@@ -117,7 +103,7 @@ describe('filterFeedback', () => {
     expect(filterFeedback(onlyBugs, 'other')).toEqual([]);
   });
 
-  it("does not mutate the input array", () => {
+  it('does not mutate the input array', () => {
     const original = [makeRow('r1', 'bug'), makeRow('r2', 'idea')];
     const snapshot = original.map((r) => r.id);
     filterFeedback(original, 'bug');
@@ -129,10 +115,7 @@ describe('filterFeedback', () => {
     // `data` prop (and `extraData`). If 'all' ever started cloning the
     // input (e.g. `items.slice()`), every chip toggle to 'all' would
     // re-render the full list and lose scroll position. Pin it.
-    const items: FeedbackRow[] = [
-      makeRow('r1', 'bug'),
-      makeRow('r2', 'idea'),
-    ];
+    const items: FeedbackRow[] = [makeRow('r1', 'bug'), makeRow('r2', 'idea')];
     const result = filterFeedback(items, 'all');
     expect(result).toBe(items); // referential identity, not just deep equal
   });

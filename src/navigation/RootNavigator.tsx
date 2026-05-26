@@ -4,10 +4,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useAuth } from '@/lib/auth';
 import { FlagsProvider } from '@/lib/flagsStore';
-import {
-  SharedModalsProvider,
-  useSharedModals,
-} from '@/lib/sharedModalsContext';
+import { SharedModalsProvider, useSharedModals } from '@/lib/sharedModalsContext';
 import { font, radius, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import FeedbackModal from '@/components/FeedbackModal';
@@ -58,9 +55,11 @@ const linking = {
 
 const Tab = createBottomTabNavigator<RootTabParamList>();
 
-const tabIcon = (emoji: string) => ({ color: tintColor }: { color: string }) => (
-  <Text style={{ fontSize: 20, color: tintColor }}>{emoji}</Text>
-);
+const tabIcon =
+  (emoji: string) =>
+  ({ color: tintColor }: { color: string }) => (
+    <Text style={{ fontSize: 20, color: tintColor }}>{emoji}</Text>
+  );
 
 interface Props {
   // Which tab to open on first render. Used by App.tsx to honor the user's
@@ -83,11 +82,7 @@ export default function RootNavigator({ initialRouteName = 'Map' }: Props) {
  * Condition 2). Must live inside NavigationContainer (for the linking config)
  * and also inside AuthProvider (which wraps the whole App in App.tsx).
  */
-function FlagsProviderWithAuth({
-  initialRouteName,
-}: {
-  initialRouteName: keyof RootTabParamList;
-}) {
+function FlagsProviderWithAuth({ initialRouteName }: { initialRouteName: keyof RootTabParamList }) {
   const { user } = useAuth();
   return (
     <FlagsProvider userId={user?.id ?? null}>
@@ -112,11 +107,7 @@ function FlagsProviderWithAuth({
  * provider tree (hooks can't run on the same component that renders
  * the provider — useSharedModals would see no context).
  */
-function NavInner({
-  initialRouteName,
-}: {
-  initialRouteName: keyof RootTabParamList;
-}) {
+function NavInner({ initialRouteName }: { initialRouteName: keyof RootTabParamList }) {
   // Header "Feedback" button now routes through the shared context —
   // same FeedbackModal mount that SettingsScreen's "Send feedback" row
   // uses. Before the lift, we kept a private `feedbackOpen` state here
@@ -129,10 +120,7 @@ function NavInner({
   const renderHeaderRight = () => (
     <Pressable
       onPress={() => setOpen('feedback')}
-      style={({ pressed }) => [
-        styles.feedbackBtn,
-        pressed && styles.feedbackBtnPressed,
-      ]}
+      style={({ pressed }) => [styles.feedbackBtn, pressed && styles.feedbackBtnPressed]}
       accessibilityRole="button"
       accessibilityLabel="Send feedback"
       accessibilityHint="Opens a form to email feedback to the AccessMap owner"
@@ -174,16 +162,8 @@ function NavInner({
         tabBarInactiveTintColor: color.textSubtle,
       }}
     >
-      <Tab.Screen
-        name="Map"
-        component={MapScreen}
-        options={{ tabBarIcon: tabIcon('🗺️') }}
-      />
-      <Tab.Screen
-        name="Tasks"
-        component={TasksScreen}
-        options={{ tabBarIcon: tabIcon('✅') }}
-      />
+      <Tab.Screen name="Map" component={MapScreen} options={{ tabBarIcon: tabIcon('🗺️') }} />
+      <Tab.Screen name="Tasks" component={TasksScreen} options={{ tabBarIcon: tabIcon('✅') }} />
       <Tab.Screen
         name="Profile"
         component={ProfileScreen}
@@ -219,21 +199,22 @@ function SharedModalsHost() {
   );
 }
 
-const makeStyles = (color: ColorTheme) => StyleSheet.create({
-  feedbackBtn: {
-    marginRight: spacing.md,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    borderRadius: radius.full,
-    backgroundColor: 'rgba(255,255,255,0.18)',
-    minHeight: 32,
-    justifyContent: 'center',
-  },
-  feedbackBtnPressed: { backgroundColor: 'rgba(255,255,255,0.32)' },
-  feedbackBtnText: {
-    color: color.textOnBrand,
-    fontWeight: font.weight.bold,
-    fontSize: font.size.sm,
-    letterSpacing: 0.3,
-  },
-});
+const makeStyles = (color: ColorTheme) =>
+  StyleSheet.create({
+    feedbackBtn: {
+      marginRight: spacing.md,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.xs,
+      borderRadius: radius.full,
+      backgroundColor: 'rgba(255,255,255,0.18)',
+      minHeight: 32,
+      justifyContent: 'center',
+    },
+    feedbackBtnPressed: { backgroundColor: 'rgba(255,255,255,0.32)' },
+    feedbackBtnText: {
+      color: color.textOnBrand,
+      fontWeight: font.weight.bold,
+      fontSize: font.size.sm,
+      letterSpacing: 0.3,
+    },
+  });

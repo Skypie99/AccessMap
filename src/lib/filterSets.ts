@@ -1,15 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {
-  CATEGORY_ORDER,
-  SEVERITY_ORDER,
-  STATUS_ORDER,
-} from './flags';
+import { CATEGORY_ORDER, SEVERITY_ORDER, STATUS_ORDER } from './flags';
 import { errorMessage } from './errors';
-import type {
-  FlagCategory,
-  FlagSeverity,
-  FlagStatus,
-} from '@/types/database';
+import type { FlagCategory, FlagSeverity, FlagStatus } from '@/types/database';
 
 /**
  * Saved named filter sets — on-device only.
@@ -160,10 +152,7 @@ export async function listSets(): Promise<FilterSet[]> {
     if (raw === null) return [];
     return parseSetsBlob(raw);
   } catch (e) {
-    console.warn(
-      '[filterSets] listSets failed:',
-      errorMessage(e, 'AsyncStorage error.'),
-    );
+    console.warn('[filterSets] listSets failed:', errorMessage(e, 'AsyncStorage error.'));
     return [];
   }
 }
@@ -174,9 +163,7 @@ export async function listSets(): Promise<FilterSet[]> {
  * and collision-free for the tiny scale (<= 5 entries).
  */
 function makeId(): string {
-  return (
-    Date.now().toString(36) + Math.random().toString(36).slice(2, 6)
-  );
+  return Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 }
 
 interface SaveSetInput {
@@ -193,10 +180,7 @@ interface SaveSetInput {
  *
  * Returns the newly-created FilterSet (caller pushes it into local state).
  */
-export async function saveSet(
-  name: string,
-  current: SaveSetInput,
-): Promise<FilterSet> {
+export async function saveSet(name: string, current: SaveSetInput): Promise<FilterSet> {
   const trimmedName = name.trim();
   if (trimmedName.length === 0) {
     throw new FilterSetError('empty', 'Give this filter a name.');
@@ -213,10 +197,7 @@ export async function saveSet(
 
   const nameKey = trimmedName.toLowerCase();
   if (existing.some((s) => s.name.trim().toLowerCase() === nameKey)) {
-    throw new FilterSetError(
-      'duplicate',
-      `You already have a filter named "${trimmedName}".`,
-    );
+    throw new FilterSetError('duplicate', `You already have a filter named "${trimmedName}".`);
   }
 
   const created: FilterSet = {
@@ -255,10 +236,7 @@ export async function deleteSet(id: string): Promise<void> {
       await setDefaultSetId(null);
     }
   } catch (e) {
-    console.warn(
-      '[filterSets] deleteSet failed:',
-      errorMessage(e, 'AsyncStorage error.'),
-    );
+    console.warn('[filterSets] deleteSet failed:', errorMessage(e, 'AsyncStorage error.'));
   }
 }
 
@@ -285,10 +263,7 @@ export async function getDefaultSetId(): Promise<string | null> {
     if (typeof parsed !== 'string' || parsed.length === 0) return null;
     return parsed;
   } catch (e) {
-    console.warn(
-      '[filterSets] getDefaultSetId failed:',
-      errorMessage(e, 'AsyncStorage error.'),
-    );
+    console.warn('[filterSets] getDefaultSetId failed:', errorMessage(e, 'AsyncStorage error.'));
     return null;
   }
 }
@@ -307,9 +282,6 @@ export async function setDefaultSetId(id: string | null): Promise<void> {
     }
     await AsyncStorage.setItem(DEFAULT_KEY, JSON.stringify(id));
   } catch (e) {
-    console.warn(
-      '[filterSets] setDefaultSetId failed:',
-      errorMessage(e, 'AsyncStorage error.'),
-    );
+    console.warn('[filterSets] setDefaultSetId failed:', errorMessage(e, 'AsyncStorage error.'));
   }
 }

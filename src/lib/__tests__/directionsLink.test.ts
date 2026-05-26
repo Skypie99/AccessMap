@@ -98,9 +98,7 @@ describe('getDirectionsUrl', () => {
       // No mode key on any platform → all three should yield walking URLs.
       expect(getDirectionsUrl(1, 2, { platformOverride: 'ios' })).toContain('dirflg=w');
       expect(getDirectionsUrl(1, 2, { platformOverride: 'android' })).toContain('mode=w');
-      expect(getDirectionsUrl(1, 2, { platformOverride: 'web' })).toContain(
-        'travelmode=walking',
-      );
+      expect(getDirectionsUrl(1, 2, { platformOverride: 'web' })).toContain('travelmode=walking');
     });
 
     it('explicit mode: walking matches the default (round-trip safety)', () => {
@@ -138,9 +136,7 @@ describe('getDirectionsUrl', () => {
 
     it('handles the null island (0, 0) without dropping the zero', () => {
       const url = getDirectionsUrl(0, 0, { platformOverride: 'web' });
-      expect(url).toBe(
-        'https://www.google.com/maps/dir/?api=1&destination=0,0&travelmode=walking',
-      );
+      expect(url).toBe('https://www.google.com/maps/dir/?api=1&destination=0,0&travelmode=walking');
     });
   });
 
@@ -173,17 +169,13 @@ describe('getDirectionsUrl', () => {
     it('iOS URL parses with the expected `maps:` scheme and dirflg', () => {
       const url = getDirectionsUrl(37.331741, -122.030333, { platformOverride: 'ios' });
       expect(url.startsWith('maps:')).toBe(true);
-      expect(url).toMatch(
-        /^maps:\?daddr=-?\d+(\.\d+)?,-?\d+(\.\d+)?&dirflg=[wdr]$/,
-      );
+      expect(url).toMatch(/^maps:\?daddr=-?\d+(\.\d+)?,-?\d+(\.\d+)?&dirflg=[wdr]$/);
     });
 
     it('Android URL parses with the expected `google.navigation:` scheme and mode', () => {
       const url = getDirectionsUrl(37.331741, -122.030333, { platformOverride: 'android' });
       expect(url.startsWith('google.navigation:')).toBe(true);
-      expect(url).toMatch(
-        /^google\.navigation:q=-?\d+(\.\d+)?,-?\d+(\.\d+)?&mode=(w|d|transit)$/,
-      );
+      expect(url).toMatch(/^google\.navigation:q=-?\d+(\.\d+)?,-?\d+(\.\d+)?&mode=(w|d|transit)$/);
     });
 
     it('Web URL is a valid https URL with destination + travelmode params', () => {
@@ -194,9 +186,7 @@ describe('getDirectionsUrl', () => {
       expect(parsed.hostname).toBe('www.google.com');
       expect(parsed.pathname).toBe('/maps/dir/');
       expect(parsed.searchParams.get('api')).toBe('1');
-      expect(parsed.searchParams.get('destination')).toBe(
-        '37.331741,-122.030333',
-      );
+      expect(parsed.searchParams.get('destination')).toBe('37.331741,-122.030333');
       expect(parsed.searchParams.get('travelmode')).toBe('walking');
     });
   });

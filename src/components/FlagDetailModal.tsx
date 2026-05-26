@@ -21,11 +21,7 @@ import { confirm } from '@/lib/confirm';
 import { getDirectionsUrl } from '@/lib/directionsLink';
 import { errorMessage } from '@/lib/errors';
 import { formatFlagShareText } from '@/lib/shareFlag';
-import {
-  addWatched,
-  loadWatched,
-  removeWatched,
-} from '@/lib/watchedFlags';
+import { addWatched, loadWatched, removeWatched } from '@/lib/watchedFlags';
 import {
   CATEGORY_LABELS,
   CATEGORY_ORDER,
@@ -158,9 +154,7 @@ export default function FlagDetailModal({
   };
 
   if (!shownFlag) {
-    return (
-      <Modal visible={false} transparent onRequestClose={onClose} />
-    );
+    return <Modal visible={false} transparent onRequestClose={onClose} />;
   }
 
   const isOwn = shownFlag.user_id === user?.id;
@@ -226,15 +220,11 @@ export default function FlagDetailModal({
   // the action feels silent. Real errors still surface as an alert.
   const handleShare = async () => {
     if (busy) return;
-    const message = formatFlagShareText(
-      shownFlag,
-      (cat) => CATEGORY_LABELS[cat],
-    );
+    const message = formatFlagShareText(shownFlag, (cat) => CATEGORY_LABELS[cat]);
 
     if (Platform.OS === 'web') {
       try {
-        const nav =
-          typeof navigator !== 'undefined' ? navigator : undefined;
+        const nav = typeof navigator !== 'undefined' ? navigator : undefined;
         // navigator.share isn't on every browser (Firefox desktop, older
         // Safari). Fall back to writing to the clipboard so the user
         // always has SOMETHING they can paste.
@@ -303,680 +293,679 @@ export default function FlagDetailModal({
 
   return (
     <>
-    <Modal
-      visible={visible}
-      animationType="slide"
-      transparent
-      onRequestClose={onClose}
-    >
-      <View style={styles.backdrop}>
-        {/* accessibilityViewIsModal: tells iOS VoiceOver that everything
+      <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
+        <View style={styles.backdrop}>
+          {/* accessibilityViewIsModal: tells iOS VoiceOver that everything
             outside this card is non-interactive — important because we
             render the lightbox as a sibling Modal (Android-stable pattern),
             and without this prop the focus could leak to Verify/Resolve
             buttons that are visually obscured. QA Pass-2 #2. */}
-        <View style={styles.card} accessibilityViewIsModal>
-          <View style={styles.headerRow}>
-            <Text
-              style={styles.title}
-              accessibilityRole="header"
-              accessibilityLabel={`Flag details: ${CATEGORY_LABELS[shownFlag.category]}`}
-            >
-              {CATEGORY_LABELS[shownFlag.category]}
-            </Text>
-            <Pressable
-              onPress={onClose}
-              disabled={busy}
-              hitSlop={12}
-              style={styles.closeBtn}
-              accessibilityRole="button"
-              accessibilityLabel="Close flag details"
-              accessibilityHint="Returns to the flag list"
-              accessibilityState={{ disabled: busy }}
-            >
-              <Text style={styles.closeBtnText}>✕</Text>
-            </Pressable>
-          </View>
-
-          <ScrollView
-            style={styles.body}
-            contentContainerStyle={styles.bodyContent}
-            showsVerticalScrollIndicator={false}
-          >
-            {shownFlag.photo_url ? (
-              <Pressable
-                onPress={() => setLightboxOpen(true)}
-                style={({ pressed }) => [
-                  styles.photo,
-                  pressed && styles.photoPressed,
-                ]}
-                accessibilityRole="imagebutton"
-                accessibilityLabel={`Photo of the reported ${CATEGORY_LABELS[shownFlag.category]}`}
-                accessibilityHint="Tap to view full screen"
-              >
-                <Image
-                  source={{ uri: shownFlag.photo_url }}
-                  style={styles.photoInner}
-                  resizeMode="cover"
-                  accessibilityElementsHidden
-                  importantForAccessibility="no-hide-descendants"
-                />
-              </Pressable>
-            ) : (
-              <View
-                style={[styles.photo, styles.photoPlaceholder]}
-                accessible
-                accessibilityLabel="No photo available"
-              >
-                <Text style={styles.photoPlaceholderText}>No photo</Text>
-              </View>
-            )}
-
-            <View style={styles.metaRow}>
-              <View
-                style={[
-                  styles.severityChip,
-                  { backgroundColor: severityColor(shownFlag.severity) },
-                ]}
-                accessible
-                accessibilityLabel={severityA11y(shownFlag.severity)}
-              >
-                <Text style={styles.severityChipText}>
-                  Severity {shownFlag.severity}
-                </Text>
-              </View>
-              <View
-                style={[
-                  styles.statusBadge,
-                  { backgroundColor: statusPalette.bg },
-                ]}
-                accessible
-                accessibilityLabel={statusA11y(status)}
-              >
-                <Text style={[styles.statusBadgeText, { color: statusPalette.fg }]}>
-                  {STATUS_LABELS[status]}
-                </Text>
-              </View>
-            </View>
-
-            <Text style={styles.sectionLabel}>Description</Text>
-            <Text style={styles.description}>
-              {shownFlag.description?.trim()
-                ? shownFlag.description
-                : 'No description provided.'}
-            </Text>
-
-            <Text style={styles.sectionLabel}>Reported by</Text>
-            <Text style={styles.metaValue}>
-              {isOwn ? 'You' : 'Another community member'}
-            </Text>
-
-            <Text style={styles.sectionLabel}>Date</Text>
-            <Text
-              style={styles.metaValue}
-              accessibilityLabel={`Reported on ${formattedDate}`}
-            >
-              {formattedDate}
-            </Text>
-
-            <Text style={styles.sectionLabel}>Location</Text>
-            {/* Row: selectable coords + copy button. selectable lets users
-                long-press to get the native "Copy" context menu — the copy
-                button triggers Share.share for a one-tap path on iOS/Android. */}
-            <View style={styles.coordsRow}>
+          <View style={styles.card} accessibilityViewIsModal>
+            <View style={styles.headerRow}>
               <Text
-                style={[styles.metaValue, styles.coordsText]}
-                accessibilityLabel={coordsA11y}
-                accessibilityHint="Long press to select and copy these coordinates"
-                selectable
+                style={styles.title}
+                accessibilityRole="header"
+                accessibilityLabel={`Flag details: ${CATEGORY_LABELS[shownFlag.category]}`}
               >
-                {formattedCoords}
+                {CATEGORY_LABELS[shownFlag.category]}
               </Text>
               <Pressable
-                onPress={() =>
-                  Share.share({
-                    message: formattedCoords,
-                    title: 'Flag coordinates',
-                  })
-                }
-                hitSlop={10}
-                style={({ pressed }) => [
-                  styles.coordsCopyBtn,
-                  pressed && styles.coordsCopyBtnPressed,
-                ]}
+                onPress={onClose}
+                disabled={busy}
+                hitSlop={12}
+                style={styles.closeBtn}
                 accessibilityRole="button"
-                accessibilityLabel="Copy coordinates"
-                accessibilityHint="Opens share/copy options for these coordinates"
+                accessibilityLabel="Close flag details"
+                accessibilityHint="Returns to the flag list"
+                accessibilityState={{ disabled: busy }}
               >
-                <Text style={styles.coordsCopyGlyph}>⧉</Text>
+                <Text style={styles.closeBtnText}>✕</Text>
               </Pressable>
             </View>
 
-            {watched !== null && (
-              <Pressable
-                onPress={handleToggleWatch}
-                disabled={busy || watchSaving}
-                style={({ pressed }) => [
-                  styles.watchBtn,
-                  watched && styles.watchBtnActive,
-                  pressed && styles.watchBtnPressed,
-                ]}
-                accessibilityRole="button"
-                accessibilityLabel={
-                  watched ? 'Stop watching this flag' : 'Watch this flag'
-                }
-                accessibilityHint={
-                  watched
-                    ? 'Removes this flag from your Watched list in Profile'
-                    : 'Adds this flag to your Watched list in Profile so you can track its status'
-                }
-                accessibilityState={{
-                  selected: watched,
-                  busy: watchSaving,
-                  disabled: busy || watchSaving,
-                }}
-              >
-                <Text
-                  style={styles.watchBtnGlyph}
-                  accessibilityElementsHidden
+            <ScrollView
+              style={styles.body}
+              contentContainerStyle={styles.bodyContent}
+              showsVerticalScrollIndicator={false}
+            >
+              {shownFlag.photo_url ? (
+                <Pressable
+                  onPress={() => setLightboxOpen(true)}
+                  style={({ pressed }) => [styles.photo, pressed && styles.photoPressed]}
+                  accessibilityRole="imagebutton"
+                  accessibilityLabel={`Photo of the reported ${CATEGORY_LABELS[shownFlag.category]}`}
+                  accessibilityHint="Tap to view full screen"
                 >
-                  {watched ? '★' : '☆'}
-                </Text>
-                <Text
-                  style={[
-                    styles.watchBtnText,
-                    watched && styles.watchBtnTextActive,
-                  ]}
+                  <Image
+                    source={{ uri: shownFlag.photo_url }}
+                    style={styles.photoInner}
+                    resizeMode="cover"
+                    accessibilityElementsHidden
+                    importantForAccessibility="no-hide-descendants"
+                  />
+                </Pressable>
+              ) : (
+                <View
+                  style={[styles.photo, styles.photoPlaceholder]}
+                  accessible
+                  accessibilityLabel="No photo available"
                 >
-                  {watched ? 'Watching' : 'Watch'}
-                </Text>
-              </Pressable>
-            )}
-
-            {canEdit && !isEditing && (
-              <Pressable
-                onPress={() => setIsEditing(true)}
-                disabled={busy}
-                style={[styles.actionBtn, styles.editBtn]}
-                accessibilityRole="button"
-                accessibilityLabel="Edit this flag"
-                accessibilityHint="Opens an edit form for description, category, and severity"
-                accessibilityState={{ disabled: busy }}
-              >
-                <Text style={styles.editBtnText}>Edit</Text>
-              </Pressable>
-            )}
-
-            {isEditing && (
-              <View style={styles.editForm}>
-                <Text style={styles.editLabel}>Description</Text>
-                <TextInput
-                  style={styles.editInput}
-                  value={editDesc}
-                  onChangeText={setEditDesc}
-                  placeholder="Describe the accessibility issue"
-                  placeholderTextColor={color.textMuted}
-                  multiline
-                  maxLength={500}
-                  accessibilityLabel="Flag description"
-                />
-                <Text style={styles.editLabel}>Category</Text>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoryRow}>
-                  {CATEGORY_ORDER.map((cat) => (
-                    <Pressable
-                      key={cat}
-                      onPress={() => setEditCategory(cat)}
-                      style={[styles.categoryChip, editCategory === cat && styles.categoryChipActive]}
-                      accessibilityRole="radio"
-                      accessibilityLabel={CATEGORY_LABELS[cat]}
-                      accessibilityState={{ checked: editCategory === cat }}
-                    >
-                      <Text style={[styles.categoryChipText, editCategory === cat && styles.categoryChipTextActive]}>
-                        {CATEGORY_LABELS[cat]}
-                      </Text>
-                    </Pressable>
-                  ))}
-                </ScrollView>
-                <Text style={styles.editLabel}>Severity</Text>
-                <View style={styles.severityRow}>
-                  {([1, 2, 3, 4, 5] as FlagSeverity[]).map((s) => (
-                    <Pressable
-                      key={s}
-                      onPress={() => setEditSeverity(s)}
-                      style={[
-                        styles.severityBtn,
-                        editSeverity === s && { backgroundColor: severityColor(s) },
-                      ]}
-                      accessibilityRole="radio"
-                      accessibilityLabel={`Severity ${s} of 5`}
-                      accessibilityState={{ checked: editSeverity === s }}
-                    >
-                      <Text style={[styles.severityBtnText, editSeverity === s && styles.severityBtnTextActive]}>
-                        {s}
-                      </Text>
-                    </Pressable>
-                  ))}
+                  <Text style={styles.photoPlaceholderText}>No photo</Text>
                 </View>
-                <View style={styles.editActions}>
-                  <Pressable
-                    onPress={() => setIsEditing(false)}
-                    disabled={busy}
-                    style={[styles.actionBtn, styles.cancelBtn]}
-                    accessibilityRole="button"
-                    accessibilityLabel="Cancel editing"
-                    accessibilityState={{ disabled: busy }}
-                  >
-                    <Text style={styles.cancelBtnText}>Cancel</Text>
-                  </Pressable>
-                  <Pressable
-                    onPress={() => void handleSaveEdit()}
-                    disabled={busy}
-                    style={[styles.actionBtn, styles.saveBtn]}
-                    accessibilityRole="button"
-                    accessibilityLabel="Save changes"
-                    accessibilityState={{ busy, disabled: busy }}
-                  >
-                    {busy ? (
-                      <ActivityIndicator size="small" color="#fff" />
-                    ) : (
-                      <Text style={styles.saveBtnText}>Save</Text>
-                    )}
-                  </Pressable>
+              )}
+
+              <View style={styles.metaRow}>
+                <View
+                  style={[
+                    styles.severityChip,
+                    { backgroundColor: severityColor(shownFlag.severity) },
+                  ]}
+                  accessible
+                  accessibilityLabel={severityA11y(shownFlag.severity)}
+                >
+                  <Text style={styles.severityChipText}>Severity {shownFlag.severity}</Text>
+                </View>
+                <View
+                  style={[styles.statusBadge, { backgroundColor: statusPalette.bg }]}
+                  accessible
+                  accessibilityLabel={statusA11y(status)}
+                >
+                  <Text style={[styles.statusBadgeText, { color: statusPalette.fg }]}>
+                    {STATUS_LABELS[status]}
+                  </Text>
                 </View>
               </View>
-            )}
 
-            <View style={styles.secondaryRow}>
-              <Pressable
-                onPress={() => {
-                  onViewOnMap(shownFlag);
-                  onClose();
-                }}
-                disabled={busy}
-                style={[styles.actionBtn, styles.viewMapBtn]}
-                accessibilityRole="button"
-                accessibilityLabel="View this flag on the map"
-                accessibilityHint="Switches to the Map tab and centers on this flag"
-                accessibilityState={{ disabled: busy }}
-              >
-                <Text style={styles.viewMapBtnText}>View on Map</Text>
-              </Pressable>
-              <Pressable
-                onPress={async () => {
-                  // Pure handoff to the user's preferred maps app via
-                  // platform deep link — no on-platform routing. The URL
-                  // shape is built by `getDirectionsUrl` (pure, unit-
-                  // tested). openURL can reject only in the extremely
-                  // rare case where the OS finds no app to handle the
-                  // scheme; surface a brief alert so the user isn't
-                  // left wondering why nothing happened.
-                  const url = getDirectionsUrl(shownFlag.lat, shownFlag.lng);
-                  try {
-                    await Linking.openURL(url);
-                  } catch {
-                    Alert.alert('Could not open maps app.');
+              <Text style={styles.sectionLabel}>Description</Text>
+              <Text style={styles.description}>
+                {shownFlag.description?.trim() ? shownFlag.description : 'No description provided.'}
+              </Text>
+
+              <Text style={styles.sectionLabel}>Reported by</Text>
+              <Text style={styles.metaValue}>{isOwn ? 'You' : 'Another community member'}</Text>
+
+              <Text style={styles.sectionLabel}>Date</Text>
+              <Text style={styles.metaValue} accessibilityLabel={`Reported on ${formattedDate}`}>
+                {formattedDate}
+              </Text>
+
+              <Text style={styles.sectionLabel}>Location</Text>
+              {/* Row: selectable coords + copy button. selectable lets users
+                long-press to get the native "Copy" context menu — the copy
+                button triggers Share.share for a one-tap path on iOS/Android. */}
+              <View style={styles.coordsRow}>
+                <Text
+                  style={[styles.metaValue, styles.coordsText]}
+                  accessibilityLabel={coordsA11y}
+                  accessibilityHint="Long press to select and copy these coordinates"
+                  selectable
+                >
+                  {formattedCoords}
+                </Text>
+                <Pressable
+                  onPress={() =>
+                    Share.share({
+                      message: formattedCoords,
+                      title: 'Flag coordinates',
+                    })
                   }
-                }}
-                disabled={busy}
-                style={[styles.actionBtn, styles.directionsBtn]}
-                accessibilityRole="button"
-                accessibilityLabel="Get directions to this flag"
-                accessibilityHint="Opens your maps app with directions"
-                accessibilityState={{ disabled: busy }}
-              >
-                <Text style={styles.directionsBtnText}>Directions</Text>
-              </Pressable>
-              <Pressable
-                onPress={handleShare}
-                disabled={busy}
-                style={[styles.actionBtn, styles.shareBtn]}
-                accessibilityRole="button"
-                accessibilityLabel="Share this flag"
-                accessibilityHint="Opens the system share sheet"
-                accessibilityState={{ disabled: busy }}
-              >
-                <Text style={styles.shareBtnText}>Share</Text>
-              </Pressable>
-              <Pressable
-                onPress={() => setHistoryOpen(true)}
-                disabled={busy}
-                style={[styles.actionBtn, styles.historyBtn]}
-                accessibilityRole="button"
-                accessibilityLabel="View status history"
-                accessibilityHint="Shows who changed the status of this flag and when"
-                accessibilityState={{ disabled: busy }}
-              >
-                <Text style={styles.historyBtnText}>History</Text>
-              </Pressable>
-            </View>
-          </ScrollView>
+                  hitSlop={10}
+                  style={({ pressed }) => [
+                    styles.coordsCopyBtn,
+                    pressed && styles.coordsCopyBtnPressed,
+                  ]}
+                  accessibilityRole="button"
+                  accessibilityLabel="Copy coordinates"
+                  accessibilityHint="Opens share/copy options for these coordinates"
+                >
+                  <Text style={styles.coordsCopyGlyph}>⧉</Text>
+                </Pressable>
+              </View>
 
-          <View style={styles.actionRow}>
-            {canVerify && (
-              <Pressable
-                onPress={() => runStatusChange('verified', 'verify')}
-                disabled={busy}
-                style={[styles.actionBtn, styles.verifyBtn]}
-                accessibilityRole="button"
-                accessibilityLabel="Verify this flag"
-                accessibilityHint="Marks this report as confirmed"
-                accessibilityState={{ disabled: busy, busy }}
-              >
-                {busy ? (
-                  <ActivityIndicator color="#fff" />
-                ) : (
-                  <Text style={styles.verifyText}>Verify</Text>
-                )}
-              </Pressable>
-            )}
-            {canResolve && (
-              <Pressable
-                onPress={() => runStatusChange('resolved', 'resolve')}
-                disabled={busy}
-                style={[styles.actionBtn, styles.resolveBtn]}
-                accessibilityRole="button"
-                accessibilityLabel="Mark this flag resolved"
-                accessibilityHint="Marks the accessibility issue as fixed"
-                accessibilityState={{ disabled: busy, busy }}
-              >
-                {busy ? (
-                  <ActivityIndicator color="#fff" />
-                ) : (
-                  <Text style={styles.resolveText}>Resolved</Text>
-                )}
-              </Pressable>
-            )}
-            {canReject && (
-              <Pressable
-                onPress={() => runStatusChange('rejected', 'reject')}
-                disabled={busy}
-                style={[styles.actionBtn, styles.rejectBtn]}
-                accessibilityRole="button"
-                accessibilityLabel="Reject this flag"
-                accessibilityHint="Marks this report as invalid or spam"
-                accessibilityState={{ disabled: busy, busy }}
-              >
-                {busy ? (
-                  <ActivityIndicator color={color.text} />
-                ) : (
-                  <Text style={styles.rejectText}>Reject</Text>
-                )}
-              </Pressable>
-            )}
-            {isOwn && (
-              <Pressable
-                onPress={handleDelete}
-                disabled={busy}
-                style={[styles.actionBtn, styles.deleteBtn]}
-                accessibilityRole="button"
-                accessibilityLabel="Delete this flag"
-                accessibilityHint="Permanently removes your report"
-                accessibilityState={{ disabled: busy, busy }}
-              >
-                {busy ? (
-                  <ActivityIndicator color="#fff" />
-                ) : (
-                  <Text style={styles.deleteText}>Delete</Text>
-                )}
-              </Pressable>
-            )}
+              {watched !== null && (
+                <Pressable
+                  onPress={handleToggleWatch}
+                  disabled={busy || watchSaving}
+                  style={({ pressed }) => [
+                    styles.watchBtn,
+                    watched && styles.watchBtnActive,
+                    pressed && styles.watchBtnPressed,
+                  ]}
+                  accessibilityRole="button"
+                  accessibilityLabel={watched ? 'Stop watching this flag' : 'Watch this flag'}
+                  accessibilityHint={
+                    watched
+                      ? 'Removes this flag from your Watched list in Profile'
+                      : 'Adds this flag to your Watched list in Profile so you can track its status'
+                  }
+                  accessibilityState={{
+                    selected: watched,
+                    busy: watchSaving,
+                    disabled: busy || watchSaving,
+                  }}
+                >
+                  <Text style={styles.watchBtnGlyph} accessibilityElementsHidden>
+                    {watched ? '★' : '☆'}
+                  </Text>
+                  <Text style={[styles.watchBtnText, watched && styles.watchBtnTextActive]}>
+                    {watched ? 'Watching' : 'Watch'}
+                  </Text>
+                </Pressable>
+              )}
+
+              {canEdit && !isEditing && (
+                <Pressable
+                  onPress={() => setIsEditing(true)}
+                  disabled={busy}
+                  style={[styles.actionBtn, styles.editBtn]}
+                  accessibilityRole="button"
+                  accessibilityLabel="Edit this flag"
+                  accessibilityHint="Opens an edit form for description, category, and severity"
+                  accessibilityState={{ disabled: busy }}
+                >
+                  <Text style={styles.editBtnText}>Edit</Text>
+                </Pressable>
+              )}
+
+              {isEditing && (
+                <View style={styles.editForm}>
+                  <Text style={styles.editLabel}>Description</Text>
+                  <TextInput
+                    style={styles.editInput}
+                    value={editDesc}
+                    onChangeText={setEditDesc}
+                    placeholder="Describe the accessibility issue"
+                    placeholderTextColor={color.textMuted}
+                    multiline
+                    maxLength={500}
+                    accessibilityLabel="Flag description"
+                  />
+                  <Text style={styles.editLabel}>Category</Text>
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    style={styles.categoryRow}
+                  >
+                    {CATEGORY_ORDER.map((cat) => (
+                      <Pressable
+                        key={cat}
+                        onPress={() => setEditCategory(cat)}
+                        style={[
+                          styles.categoryChip,
+                          editCategory === cat && styles.categoryChipActive,
+                        ]}
+                        accessibilityRole="radio"
+                        accessibilityLabel={CATEGORY_LABELS[cat]}
+                        accessibilityState={{ checked: editCategory === cat }}
+                      >
+                        <Text
+                          style={[
+                            styles.categoryChipText,
+                            editCategory === cat && styles.categoryChipTextActive,
+                          ]}
+                        >
+                          {CATEGORY_LABELS[cat]}
+                        </Text>
+                      </Pressable>
+                    ))}
+                  </ScrollView>
+                  <Text style={styles.editLabel}>Severity</Text>
+                  <View style={styles.severityRow}>
+                    {([1, 2, 3, 4, 5] as FlagSeverity[]).map((s) => (
+                      <Pressable
+                        key={s}
+                        onPress={() => setEditSeverity(s)}
+                        style={[
+                          styles.severityBtn,
+                          editSeverity === s && { backgroundColor: severityColor(s) },
+                        ]}
+                        accessibilityRole="radio"
+                        accessibilityLabel={`Severity ${s} of 5`}
+                        accessibilityState={{ checked: editSeverity === s }}
+                      >
+                        <Text
+                          style={[
+                            styles.severityBtnText,
+                            editSeverity === s && styles.severityBtnTextActive,
+                          ]}
+                        >
+                          {s}
+                        </Text>
+                      </Pressable>
+                    ))}
+                  </View>
+                  <View style={styles.editActions}>
+                    <Pressable
+                      onPress={() => setIsEditing(false)}
+                      disabled={busy}
+                      style={[styles.actionBtn, styles.cancelBtn]}
+                      accessibilityRole="button"
+                      accessibilityLabel="Cancel editing"
+                      accessibilityState={{ disabled: busy }}
+                    >
+                      <Text style={styles.cancelBtnText}>Cancel</Text>
+                    </Pressable>
+                    <Pressable
+                      onPress={() => void handleSaveEdit()}
+                      disabled={busy}
+                      style={[styles.actionBtn, styles.saveBtn]}
+                      accessibilityRole="button"
+                      accessibilityLabel="Save changes"
+                      accessibilityState={{ busy, disabled: busy }}
+                    >
+                      {busy ? (
+                        <ActivityIndicator size="small" color="#fff" />
+                      ) : (
+                        <Text style={styles.saveBtnText}>Save</Text>
+                      )}
+                    </Pressable>
+                  </View>
+                </View>
+              )}
+
+              <View style={styles.secondaryRow}>
+                <Pressable
+                  onPress={() => {
+                    onViewOnMap(shownFlag);
+                    onClose();
+                  }}
+                  disabled={busy}
+                  style={[styles.actionBtn, styles.viewMapBtn]}
+                  accessibilityRole="button"
+                  accessibilityLabel="View this flag on the map"
+                  accessibilityHint="Switches to the Map tab and centers on this flag"
+                  accessibilityState={{ disabled: busy }}
+                >
+                  <Text style={styles.viewMapBtnText}>View on Map</Text>
+                </Pressable>
+                <Pressable
+                  onPress={async () => {
+                    // Pure handoff to the user's preferred maps app via
+                    // platform deep link — no on-platform routing. The URL
+                    // shape is built by `getDirectionsUrl` (pure, unit-
+                    // tested). openURL can reject only in the extremely
+                    // rare case where the OS finds no app to handle the
+                    // scheme; surface a brief alert so the user isn't
+                    // left wondering why nothing happened.
+                    const url = getDirectionsUrl(shownFlag.lat, shownFlag.lng);
+                    try {
+                      await Linking.openURL(url);
+                    } catch {
+                      Alert.alert('Could not open maps app.');
+                    }
+                  }}
+                  disabled={busy}
+                  style={[styles.actionBtn, styles.directionsBtn]}
+                  accessibilityRole="button"
+                  accessibilityLabel="Get directions to this flag"
+                  accessibilityHint="Opens your maps app with directions"
+                  accessibilityState={{ disabled: busy }}
+                >
+                  <Text style={styles.directionsBtnText}>Directions</Text>
+                </Pressable>
+                <Pressable
+                  onPress={handleShare}
+                  disabled={busy}
+                  style={[styles.actionBtn, styles.shareBtn]}
+                  accessibilityRole="button"
+                  accessibilityLabel="Share this flag"
+                  accessibilityHint="Opens the system share sheet"
+                  accessibilityState={{ disabled: busy }}
+                >
+                  <Text style={styles.shareBtnText}>Share</Text>
+                </Pressable>
+                <Pressable
+                  onPress={() => setHistoryOpen(true)}
+                  disabled={busy}
+                  style={[styles.actionBtn, styles.historyBtn]}
+                  accessibilityRole="button"
+                  accessibilityLabel="View status history"
+                  accessibilityHint="Shows who changed the status of this flag and when"
+                  accessibilityState={{ disabled: busy }}
+                >
+                  <Text style={styles.historyBtnText}>History</Text>
+                </Pressable>
+              </View>
+            </ScrollView>
+
+            <View style={styles.actionRow}>
+              {canVerify && (
+                <Pressable
+                  onPress={() => runStatusChange('verified', 'verify')}
+                  disabled={busy}
+                  style={[styles.actionBtn, styles.verifyBtn]}
+                  accessibilityRole="button"
+                  accessibilityLabel="Verify this flag"
+                  accessibilityHint="Marks this report as confirmed"
+                  accessibilityState={{ disabled: busy, busy }}
+                >
+                  {busy ? (
+                    <ActivityIndicator color="#fff" />
+                  ) : (
+                    <Text style={styles.verifyText}>Verify</Text>
+                  )}
+                </Pressable>
+              )}
+              {canResolve && (
+                <Pressable
+                  onPress={() => runStatusChange('resolved', 'resolve')}
+                  disabled={busy}
+                  style={[styles.actionBtn, styles.resolveBtn]}
+                  accessibilityRole="button"
+                  accessibilityLabel="Mark this flag resolved"
+                  accessibilityHint="Marks the accessibility issue as fixed"
+                  accessibilityState={{ disabled: busy, busy }}
+                >
+                  {busy ? (
+                    <ActivityIndicator color="#fff" />
+                  ) : (
+                    <Text style={styles.resolveText}>Resolved</Text>
+                  )}
+                </Pressable>
+              )}
+              {canReject && (
+                <Pressable
+                  onPress={() => runStatusChange('rejected', 'reject')}
+                  disabled={busy}
+                  style={[styles.actionBtn, styles.rejectBtn]}
+                  accessibilityRole="button"
+                  accessibilityLabel="Reject this flag"
+                  accessibilityHint="Marks this report as invalid or spam"
+                  accessibilityState={{ disabled: busy, busy }}
+                >
+                  {busy ? (
+                    <ActivityIndicator color={color.text} />
+                  ) : (
+                    <Text style={styles.rejectText}>Reject</Text>
+                  )}
+                </Pressable>
+              )}
+              {isOwn && (
+                <Pressable
+                  onPress={handleDelete}
+                  disabled={busy}
+                  style={[styles.actionBtn, styles.deleteBtn]}
+                  accessibilityRole="button"
+                  accessibilityLabel="Delete this flag"
+                  accessibilityHint="Permanently removes your report"
+                  accessibilityState={{ disabled: busy, busy }}
+                >
+                  {busy ? (
+                    <ActivityIndicator color="#fff" />
+                  ) : (
+                    <Text style={styles.deleteText}>Delete</Text>
+                  )}
+                </Pressable>
+              )}
+            </View>
           </View>
         </View>
-      </View>
-    </Modal>
-    <PhotoLightboxModal
-      visible={lightboxOpen}
-      photoUrl={shownFlag?.photo_url ?? null}
-      caption={
-        shownFlag
-          ? `${CATEGORY_LABELS[shownFlag.category]} · ${STATUS_LABELS[shownFlag.status]}`
-          : undefined
-      }
-      onClose={() => setLightboxOpen(false)}
-    />
-    <StatusHistoryModal
-      visible={historyOpen}
-      flagId={shownFlag?.id ?? null}
-      onClose={() => setHistoryOpen(false)}
-    />
+      </Modal>
+      <PhotoLightboxModal
+        visible={lightboxOpen}
+        photoUrl={shownFlag?.photo_url ?? null}
+        caption={
+          shownFlag
+            ? `${CATEGORY_LABELS[shownFlag.category]} · ${STATUS_LABELS[shownFlag.status]}`
+            : undefined
+        }
+        onClose={() => setLightboxOpen(false)}
+      />
+      <StatusHistoryModal
+        visible={historyOpen}
+        flagId={shownFlag?.id ?? null}
+        onClose={() => setHistoryOpen(false)}
+      />
     </>
   );
 }
 
-const makeStyles = (color: ColorTheme) => StyleSheet.create({
-  backdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.4)',
-    justifyContent: 'flex-end',
-  },
-  card: {
-    backgroundColor: color.surface,
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 20,
-    gap: 12,
-    maxHeight: '90%',
-  },
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  title: { fontSize: 20, fontWeight: '700', flex: 1, color: color.textStrong },
-  closeBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: color.surfaceNeutral,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  closeBtnText: { fontSize: 16, color: color.text, fontWeight: '700' },
-  body: { flexShrink: 1 },
-  bodyContent: { gap: 8, paddingBottom: 4 },
-  photo: {
-    width: '100%',
-    aspectRatio: 4 / 3,
-    borderRadius: 12,
-    backgroundColor: color.surfaceNeutral,
-    overflow: 'hidden',
-  },
-  photoInner: { width: '100%', height: '100%' },
-  photoPressed: { opacity: 0.85 },
-  photoPlaceholder: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  photoPlaceholderText: { color: color.textMuted, fontSize: 14, fontWeight: '600' },
-  metaRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginTop: 4,
-  },
-  severityChip: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: radius.circle,
-  },
-  severityChipText: { color: '#fff', fontWeight: '700', fontSize: 12 },
-  statusBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: radius.circle,
-  },
-  statusBadgeText: { fontWeight: '700', fontSize: 12 },
-  sectionLabel: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: color.textMuted,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginTop: 8,
-  },
-  description: { fontSize: font.size.md, color: color.textStrong, lineHeight: 21 },
-  metaValue: { fontSize: 14, color: color.text },
-  coordsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  coordsText: { flex: 1 },
-  coordsCopyBtn: {
-    padding: 4,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  coordsCopyBtnPressed: { opacity: 0.4 },
-  // Overlapping-squares glyph — universally understood as "copy"
-  coordsCopyGlyph: { fontSize: 16, color: color.brand },
-  actionRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginTop: 4,
-  },
-  actionBtn: {
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    borderRadius: 10,
-    minHeight: 44,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexGrow: 1,
-    minWidth: 100,
-  },
-  verifyBtn: { backgroundColor: color.brand },
-  verifyText: { color: color.textOnBrand, fontWeight: '700', fontSize: 14 },
-  resolveBtn: { backgroundColor: '#27ae60' },
-  resolveText: { color: '#fff', fontWeight: '700', fontSize: 14 },
-  // Reject uses a neutral surface so it reads clearly in dark mode.
-  // color.surfaceNeutral adapts to dark (#2a2a2a) automatically.
-  rejectBtn: { backgroundColor: color.surfaceNeutral },
-  rejectText: { color: color.text, fontWeight: '700', fontSize: 14 },
-  deleteBtn: { backgroundColor: '#e74c3c' },
-  deleteText: { color: '#fff', fontWeight: '700', fontSize: 14 },
-  viewMapBtn: {
-    backgroundColor: 'transparent',
-    borderWidth: 1,
-    borderColor: color.brand,
-  },
-  // Outlined button: blue text on white card. Uses color.brandText
-  // (#1c4f99 ≈ 7.6:1) instead of color.brand (#2f80ed ≈ 3.3:1) so it
-  // stays AA-safe even if the font size drops below 14pt-bold.
-  viewMapBtnText: { color: color.brandText, fontWeight: '700', fontSize: 14 },
-  secondaryRow: {
-    flexDirection: 'row',
-    // 4 buttons now (View on Map, Directions, Share, History) — wrap so
-    // the row stays usable on narrow screens / large text sizes.
-    flexWrap: 'wrap',
-    gap: 8,
-    marginTop: 8,
-  },
-  shareBtn: {
-    backgroundColor: 'transparent',
-    borderWidth: 1,
-    borderColor: color.brand,
-  },
-  // Outlined Share button: blue text on white card. Uses color.brandText
-  // for AA-safe contrast at any size (see viewMapBtnText note above).
-  shareBtnText: { color: color.brandText, fontWeight: '700', fontSize: 14 },
-  // History sits next to Share — same outlined-blue treatment for visual
-  // consistency. Uses color.brandText (from CL2) for AA-safe contrast.
-  historyBtn: {
-    backgroundColor: 'transparent',
-    borderWidth: 1,
-    borderColor: color.brand,
-  },
-  historyBtnText: { color: color.brandText, fontWeight: '700', fontSize: 14 },
-  // Directions sits between View on Map and Share in the secondary row.
-  // Filled brand-blue (not outlined) so it reads as the primary action of
-  // the trio — getting somewhere is usually what the user wants more than
-  // re-centering the map or sharing.
-  directionsBtn: { backgroundColor: color.brand },
-  directionsBtnText: { color: color.textOnBrand, fontWeight: '700', fontSize: 14 },
-  // Watch button — star pill between the location section and secondaryRow.
-  // Neutral outline when unset; filled amber when actively watching so the
-  // state is unambiguous without relying on the star glyph alone.
-  watchBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    gap: 6,
-    paddingHorizontal: 14,
-    paddingVertical: 9,
-    borderRadius: radius.circle,
-    borderWidth: 1.5,
-    borderColor: '#bbb',
-    marginTop: 10,
-  },
-  watchBtnActive: {
-    borderColor: color.accentOrange,
-    backgroundColor: '#fff8e7',
-  },
-  watchBtnPressed: {
-    opacity: 0.7,
-  },
-  watchBtnGlyph: {
-    fontSize: 16,
-    color: '#888',
-  },
-  watchBtnText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#555',
-  },
-  watchBtnTextActive: {
-    color: '#b07800',
-  },
-  editBtn: { backgroundColor: color.surface, borderWidth: 1.5, borderColor: color.border },
-  editBtnText: { color: color.text, fontWeight: '700', fontSize: 14 },
-  editForm: { gap: 10, marginTop: 4, marginBottom: 8 },
-  editLabel: { fontSize: 12, fontWeight: '700', color: color.textMuted, textTransform: 'uppercase', letterSpacing: 0.5 },
-  editInput: {
-    borderWidth: 1,
-    borderColor: color.border,
-    borderRadius: 10,
-    padding: 10,
-    fontSize: 14,
-    color: color.text,
-    backgroundColor: color.surface,
-    minHeight: 72,
-    textAlignVertical: 'top',
-  },
-  categoryRow: { flexGrow: 0 },
-  categoryChip: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: radius.circle,
-    borderWidth: 1.5,
-    borderColor: color.border,
-    marginRight: 8,
-    backgroundColor: color.surface,
-  },
-  // Active chip: filled-brand, matching the MapScreen filter panel pattern.
-  // color.brand (#2f80ed) background with white text — same as filterPillActive.
-  categoryChipActive: { borderColor: color.brand, backgroundColor: color.brand },
-  categoryChipText: { fontSize: 13, color: color.text },
-  categoryChipTextActive: { color: color.textOnBrand, fontWeight: '700' },
-  severityRow: { flexDirection: 'row', gap: 8 },
-  severityBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1.5,
-    borderColor: color.border,
-    backgroundColor: color.surface,
-  },
-  severityBtnText: { fontSize: 14, fontWeight: '700', color: color.text },
-  severityBtnTextActive: { color: '#fff' },
-  editActions: { flexDirection: 'row', gap: 10, marginTop: 4 },
-  cancelBtn: { flex: 1, backgroundColor: color.surface, borderWidth: 1.5, borderColor: color.border },
-  cancelBtnText: { color: color.text, fontWeight: '700', fontSize: 14 },
-  saveBtn: { flex: 1, backgroundColor: color.brand },
-  saveBtnText: { color: color.textOnBrand, fontWeight: '700', fontSize: 14 },
-});
+const makeStyles = (color: ColorTheme) =>
+  StyleSheet.create({
+    backdrop: {
+      flex: 1,
+      backgroundColor: 'rgba(0,0,0,0.4)',
+      justifyContent: 'flex-end',
+    },
+    card: {
+      backgroundColor: color.surface,
+      borderTopLeftRadius: 16,
+      borderTopRightRadius: 16,
+      paddingHorizontal: 20,
+      paddingTop: 16,
+      paddingBottom: 20,
+      gap: 12,
+      maxHeight: '90%',
+    },
+    headerRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+    },
+    title: { fontSize: 20, fontWeight: '700', flex: 1, color: color.textStrong },
+    closeBtn: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      backgroundColor: color.surfaceNeutral,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    closeBtnText: { fontSize: 16, color: color.text, fontWeight: '700' },
+    body: { flexShrink: 1 },
+    bodyContent: { gap: 8, paddingBottom: 4 },
+    photo: {
+      width: '100%',
+      aspectRatio: 4 / 3,
+      borderRadius: 12,
+      backgroundColor: color.surfaceNeutral,
+      overflow: 'hidden',
+    },
+    photoInner: { width: '100%', height: '100%' },
+    photoPressed: { opacity: 0.85 },
+    photoPlaceholder: {
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    photoPlaceholderText: { color: color.textMuted, fontSize: 14, fontWeight: '600' },
+    metaRow: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 8,
+      marginTop: 4,
+    },
+    severityChip: {
+      paddingHorizontal: 10,
+      paddingVertical: 6,
+      borderRadius: radius.circle,
+    },
+    severityChipText: { color: '#fff', fontWeight: '700', fontSize: 12 },
+    statusBadge: {
+      paddingHorizontal: 10,
+      paddingVertical: 6,
+      borderRadius: radius.circle,
+    },
+    statusBadgeText: { fontWeight: '700', fontSize: 12 },
+    sectionLabel: {
+      fontSize: 12,
+      fontWeight: '600',
+      color: color.textMuted,
+      textTransform: 'uppercase',
+      letterSpacing: 0.5,
+      marginTop: 8,
+    },
+    description: { fontSize: font.size.md, color: color.textStrong, lineHeight: 21 },
+    metaValue: { fontSize: 14, color: color.text },
+    coordsRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+    },
+    coordsText: { flex: 1 },
+    coordsCopyBtn: {
+      padding: 4,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    coordsCopyBtnPressed: { opacity: 0.4 },
+    // Overlapping-squares glyph — universally understood as "copy"
+    coordsCopyGlyph: { fontSize: 16, color: color.brand },
+    actionRow: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 8,
+      marginTop: 4,
+    },
+    actionBtn: {
+      paddingHorizontal: 14,
+      paddingVertical: 12,
+      borderRadius: 10,
+      minHeight: 44,
+      alignItems: 'center',
+      justifyContent: 'center',
+      flexGrow: 1,
+      minWidth: 100,
+    },
+    verifyBtn: { backgroundColor: color.brand },
+    verifyText: { color: color.textOnBrand, fontWeight: '700', fontSize: 14 },
+    resolveBtn: { backgroundColor: '#27ae60' },
+    resolveText: { color: '#fff', fontWeight: '700', fontSize: 14 },
+    // Reject uses a neutral surface so it reads clearly in dark mode.
+    // color.surfaceNeutral adapts to dark (#2a2a2a) automatically.
+    rejectBtn: { backgroundColor: color.surfaceNeutral },
+    rejectText: { color: color.text, fontWeight: '700', fontSize: 14 },
+    deleteBtn: { backgroundColor: '#e74c3c' },
+    deleteText: { color: '#fff', fontWeight: '700', fontSize: 14 },
+    viewMapBtn: {
+      backgroundColor: 'transparent',
+      borderWidth: 1,
+      borderColor: color.brand,
+    },
+    // Outlined button: blue text on white card. Uses color.brandText
+    // (#1c4f99 ≈ 7.6:1) instead of color.brand (#2f80ed ≈ 3.3:1) so it
+    // stays AA-safe even if the font size drops below 14pt-bold.
+    viewMapBtnText: { color: color.brandText, fontWeight: '700', fontSize: 14 },
+    secondaryRow: {
+      flexDirection: 'row',
+      // 4 buttons now (View on Map, Directions, Share, History) — wrap so
+      // the row stays usable on narrow screens / large text sizes.
+      flexWrap: 'wrap',
+      gap: 8,
+      marginTop: 8,
+    },
+    shareBtn: {
+      backgroundColor: 'transparent',
+      borderWidth: 1,
+      borderColor: color.brand,
+    },
+    // Outlined Share button: blue text on white card. Uses color.brandText
+    // for AA-safe contrast at any size (see viewMapBtnText note above).
+    shareBtnText: { color: color.brandText, fontWeight: '700', fontSize: 14 },
+    // History sits next to Share — same outlined-blue treatment for visual
+    // consistency. Uses color.brandText (from CL2) for AA-safe contrast.
+    historyBtn: {
+      backgroundColor: 'transparent',
+      borderWidth: 1,
+      borderColor: color.brand,
+    },
+    historyBtnText: { color: color.brandText, fontWeight: '700', fontSize: 14 },
+    // Directions sits between View on Map and Share in the secondary row.
+    // Filled brand-blue (not outlined) so it reads as the primary action of
+    // the trio — getting somewhere is usually what the user wants more than
+    // re-centering the map or sharing.
+    directionsBtn: { backgroundColor: color.brand },
+    directionsBtnText: { color: color.textOnBrand, fontWeight: '700', fontSize: 14 },
+    // Watch button — star pill between the location section and secondaryRow.
+    // Neutral outline when unset; filled amber when actively watching so the
+    // state is unambiguous without relying on the star glyph alone.
+    watchBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      alignSelf: 'flex-start',
+      gap: 6,
+      paddingHorizontal: 14,
+      paddingVertical: 9,
+      borderRadius: radius.circle,
+      borderWidth: 1.5,
+      borderColor: '#bbb',
+      marginTop: 10,
+    },
+    watchBtnActive: {
+      borderColor: color.accentOrange,
+      backgroundColor: '#fff8e7',
+    },
+    watchBtnPressed: {
+      opacity: 0.7,
+    },
+    watchBtnGlyph: {
+      fontSize: 16,
+      color: '#888',
+    },
+    watchBtnText: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: '#555',
+    },
+    watchBtnTextActive: {
+      color: '#b07800',
+    },
+    editBtn: { backgroundColor: color.surface, borderWidth: 1.5, borderColor: color.border },
+    editBtnText: { color: color.text, fontWeight: '700', fontSize: 14 },
+    editForm: { gap: 10, marginTop: 4, marginBottom: 8 },
+    editLabel: {
+      fontSize: 12,
+      fontWeight: '700',
+      color: color.textMuted,
+      textTransform: 'uppercase',
+      letterSpacing: 0.5,
+    },
+    editInput: {
+      borderWidth: 1,
+      borderColor: color.border,
+      borderRadius: 10,
+      padding: 10,
+      fontSize: 14,
+      color: color.text,
+      backgroundColor: color.surface,
+      minHeight: 72,
+      textAlignVertical: 'top',
+    },
+    categoryRow: { flexGrow: 0 },
+    categoryChip: {
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: radius.circle,
+      borderWidth: 1.5,
+      borderColor: color.border,
+      marginRight: 8,
+      backgroundColor: color.surface,
+    },
+    // Active chip: filled-brand, matching the MapScreen filter panel pattern.
+    // color.brand (#2f80ed) background with white text — same as filterPillActive.
+    categoryChipActive: { borderColor: color.brand, backgroundColor: color.brand },
+    categoryChipText: { fontSize: 13, color: color.text },
+    categoryChipTextActive: { color: color.textOnBrand, fontWeight: '700' },
+    severityRow: { flexDirection: 'row', gap: 8 },
+    severityBtn: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderWidth: 1.5,
+      borderColor: color.border,
+      backgroundColor: color.surface,
+    },
+    severityBtnText: { fontSize: 14, fontWeight: '700', color: color.text },
+    severityBtnTextActive: { color: '#fff' },
+    editActions: { flexDirection: 'row', gap: 10, marginTop: 4 },
+    cancelBtn: {
+      flex: 1,
+      backgroundColor: color.surface,
+      borderWidth: 1.5,
+      borderColor: color.border,
+    },
+    cancelBtnText: { color: color.text, fontWeight: '700', fontSize: 14 },
+    saveBtn: { flex: 1, backgroundColor: color.brand },
+    saveBtnText: { color: color.textOnBrand, fontWeight: '700', fontSize: 14 },
+  });

@@ -12,12 +12,7 @@ import {
 } from 'react-native';
 import { CATEGORY_LABELS, CATEGORY_ORDER, severityColor } from '@/lib/flags';
 import { relativeTime } from '@/lib/relativeTime';
-import {
-  formatDistance,
-  haversineKm,
-  speakDistance,
-  type LatLng,
-} from '@/lib/distance';
+import { formatDistance, haversineKm, speakDistance, type LatLng } from '@/lib/distance';
 import { searchFlags } from '@/lib/flagSearch';
 import type { FlagCategory, FlagRow } from '@/types/database';
 import SearchInputRow from '@/components/SearchInputRow';
@@ -112,8 +107,7 @@ export default function NearbyFlagsModal({
         {!location && (
           <View style={styles.notice}>
             <Text style={styles.noticeText}>
-              Allow location access to sort flags by distance. Showing the
-              most recent first.
+              Allow location access to sort flags by distance. Showing the most recent first.
             </Text>
           </View>
         )}
@@ -177,9 +171,7 @@ export default function NearbyFlagsModal({
         <FlatList
           data={displayFlags}
           keyExtractor={(f) => f.id}
-          contentContainerStyle={
-            displayFlags.length === 0 ? styles.emptyWrap : styles.list
-          }
+          contentContainerStyle={displayFlags.length === 0 ? styles.emptyWrap : styles.list}
           ListEmptyComponent={
             <View style={styles.emptyInner}>
               <Text style={styles.emptyTitle}>
@@ -202,10 +194,8 @@ export default function NearbyFlagsModal({
             const distance = location
               ? haversineKm(location, { lat: item.lat, lng: item.lng })
               : null;
-            const distanceText =
-              distance != null ? formatDistance(distance) : null;
-            const a11yDistance =
-              distance != null ? `, ${speakDistance(distance)}` : '';
+            const distanceText = distance != null ? formatDistance(distance) : null;
+            const a11yDistance = distance != null ? `, ${speakDistance(distance)}` : '';
             const a11yLabel =
               `${CATEGORY_LABELS[item.category]}, severity ${item.severity}` +
               `${a11yDistance}. Status ${item.status}.` +
@@ -213,20 +203,14 @@ export default function NearbyFlagsModal({
             return (
               <Pressable
                 onPress={() => onSelectFlag(item)}
-                style={({ pressed }) => [
-                  styles.card,
-                  pressed && styles.cardPressed,
-                ]}
+                style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
                 accessibilityRole="button"
                 accessibilityLabel={a11yLabel}
                 accessibilityHint="Closes the list and centers the map on this flag"
               >
                 <View style={styles.cardHeader}>
                   <View
-                    style={[
-                      styles.sevDot,
-                      { backgroundColor: severityColor(item.severity) },
-                    ]}
+                    style={[styles.sevDot, { backgroundColor: severityColor(item.severity) }]}
                     importantForAccessibility="no"
                     accessibilityElementsHidden
                   >
@@ -235,9 +219,7 @@ export default function NearbyFlagsModal({
                   <Text style={styles.cardTitle} numberOfLines={1}>
                     {CATEGORY_LABELS[item.category]}
                   </Text>
-                  {distanceText && (
-                    <Text style={styles.distance}>{distanceText}</Text>
-                  )}
+                  {distanceText && <Text style={styles.distance}>{distanceText}</Text>}
                 </View>
                 <View style={styles.cardBody}>
                   {item.photo_url ? (

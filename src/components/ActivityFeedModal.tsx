@@ -52,12 +52,7 @@ interface Props {
   onViewOnMap?: (flag: FlagRow) => void;
 }
 
-export default function ActivityFeedModal({
-  visible,
-  onClose,
-  onSelectFlag,
-  onViewOnMap,
-}: Props) {
+export default function ActivityFeedModal({ visible, onClose, onSelectFlag, onViewOnMap }: Props) {
   const color = useColor();
   const styles = makeStyles(color);
   const { user } = useAuth();
@@ -91,10 +86,7 @@ export default function ActivityFeedModal({
         }
         return;
       }
-      const [rows, watched] = await Promise.all([
-        listRecentFlags(100),
-        loadWatched(user.id),
-      ]);
+      const [rows, watched] = await Promise.all([listRecentFlags(100), loadWatched(user.id)]);
       if (!mountedRef.current) return;
       setFlags(rows);
       setWatchedIds(new Set(watched));
@@ -134,10 +126,7 @@ export default function ActivityFeedModal({
   }, [flags, filter, user, watchedIds]);
 
   // Bucket the filtered list into day-sections for SectionList.
-  const sections = useMemo(
-    () => groupByDay(filteredFlags, (f) => f.created_at),
-    [filteredFlags],
-  );
+  const sections = useMemo(() => groupByDay(filteredFlags, (f) => f.created_at), [filteredFlags]);
 
   const renderItem = ({ item }: { item: FlagRow }) => {
     const statusPalette = STATUS_COLORS[item.status];
@@ -148,69 +137,66 @@ export default function ActivityFeedModal({
 
     return (
       <View role="listitem">
-      <Pressable
-        onPress={() => onSelectFlag(item)}
-        style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
-        accessibilityRole="button"
-        accessibilityLabel={a11yLabel}
-        accessibilityHint="Opens the full report"
-      >
-        <View style={styles.rowHeader}>
-          <View
-            style={[
-              styles.sevDot,
-              { backgroundColor: severityColor(item.severity) },
-            ]}
-            // Severity is already in the row's a11yLabel; this badge is
-            // purely visual reinforcement. Hide on both platforms.
-            accessibilityElementsHidden
-            importantForAccessibility="no-hide-descendants"
-          >
-            <Text style={styles.sevDotText}>{item.severity}</Text>
-          </View>
-          <Text style={styles.rowTitle} numberOfLines={1}>
-            {CATEGORY_LABELS[item.category]}
-          </Text>
-          <View style={[styles.statusBadge, { backgroundColor: statusPalette.bg }]}>
-            <Text style={[styles.statusBadgeText, { color: statusPalette.fg }]}>
-              {STATUS_LABELS[item.status]}
-            </Text>
-          </View>
-          {onViewOnMap && (
-            <Pressable
-              onPress={() => onViewOnMap(item)}
-              hitSlop={8}
-              style={({ pressed }) => [
-                styles.viewOnMapBtn,
-                pressed && styles.viewOnMapBtnPressed,
-              ]}
-              accessibilityRole="button"
-              accessibilityLabel={`Show ${CATEGORY_LABELS[item.category]} on the map`}
-              accessibilityHint="Closes this list and centers the Map tab on the flag"
-            >
-              <Text style={styles.viewOnMapGlyph}>📍</Text>
-            </Pressable>
-          )}
-        </View>
-        <View style={styles.rowBody}>
-          {item.photo_url ? (
-            <Image
-              source={{ uri: item.photo_url }}
-              style={styles.thumb}
+        <Pressable
+          onPress={() => onSelectFlag(item)}
+          style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
+          accessibilityRole="button"
+          accessibilityLabel={a11yLabel}
+          accessibilityHint="Opens the full report"
+        >
+          <View style={styles.rowHeader}>
+            <View
+              style={[styles.sevDot, { backgroundColor: severityColor(item.severity) }]}
+              // Severity is already in the row's a11yLabel; this badge is
+              // purely visual reinforcement. Hide on both platforms.
               accessibilityElementsHidden
-              importantForAccessibility="no"
-            />
-          ) : null}
-          <View style={styles.rowBodyText}>
-            {item.description ? (
-              <Text style={styles.rowDesc} numberOfLines={2}>
-                {item.description}
+              importantForAccessibility="no-hide-descendants"
+            >
+              <Text style={styles.sevDotText}>{item.severity}</Text>
+            </View>
+            <Text style={styles.rowTitle} numberOfLines={1}>
+              {CATEGORY_LABELS[item.category]}
+            </Text>
+            <View style={[styles.statusBadge, { backgroundColor: statusPalette.bg }]}>
+              <Text style={[styles.statusBadgeText, { color: statusPalette.fg }]}>
+                {STATUS_LABELS[item.status]}
               </Text>
-            ) : null}
-            <Text style={styles.rowMeta}>{relativeTime(item.created_at)}</Text>
+            </View>
+            {onViewOnMap && (
+              <Pressable
+                onPress={() => onViewOnMap(item)}
+                hitSlop={8}
+                style={({ pressed }) => [
+                  styles.viewOnMapBtn,
+                  pressed && styles.viewOnMapBtnPressed,
+                ]}
+                accessibilityRole="button"
+                accessibilityLabel={`Show ${CATEGORY_LABELS[item.category]} on the map`}
+                accessibilityHint="Closes this list and centers the Map tab on the flag"
+              >
+                <Text style={styles.viewOnMapGlyph}>📍</Text>
+              </Pressable>
+            )}
           </View>
-        </View>
-      </Pressable>
+          <View style={styles.rowBody}>
+            {item.photo_url ? (
+              <Image
+                source={{ uri: item.photo_url }}
+                style={styles.thumb}
+                accessibilityElementsHidden
+                importantForAccessibility="no"
+              />
+            ) : null}
+            <View style={styles.rowBodyText}>
+              {item.description ? (
+                <Text style={styles.rowDesc} numberOfLines={2}>
+                  {item.description}
+                </Text>
+              ) : null}
+              <Text style={styles.rowMeta}>{relativeTime(item.created_at)}</Text>
+            </View>
+          </View>
+        </Pressable>
       </View>
     );
   };
@@ -222,12 +208,7 @@ export default function ActivityFeedModal({
   ];
 
   return (
-    <Modal
-      visible={visible}
-      animationType="slide"
-      transparent
-      onRequestClose={onClose}
-    >
+    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <View style={styles.backdrop}>
         <View style={styles.card} accessibilityViewIsModal>
           <View style={styles.headerRow}>
@@ -262,12 +243,7 @@ export default function ActivityFeedModal({
                     accessibilityLabel={`Show ${label.toLowerCase()} activity`}
                     accessibilityState={{ selected: active }}
                   >
-                    <Text
-                      style={[
-                        styles.filterChipText,
-                        active && styles.filterChipTextActive,
-                      ]}
-                    >
+                    <Text style={[styles.filterChipText, active && styles.filterChipTextActive]}>
                       {label}
                     </Text>
                   </Pressable>
@@ -301,9 +277,7 @@ export default function ActivityFeedModal({
               renderItem={renderItem}
               accessibilityRole="list"
               stickySectionHeadersEnabled={false}
-              contentContainerStyle={
-                sections.length === 0 ? styles.center : styles.list
-              }
+              contentContainerStyle={sections.length === 0 ? styles.center : styles.list}
               renderSectionHeader={({ section: { title, data } }) => (
                 <View style={styles.sectionHeader}>
                   <Text style={styles.sectionHeaderText}>{title}</Text>
@@ -312,9 +286,7 @@ export default function ActivityFeedModal({
                   </Text>
                 </View>
               )}
-              refreshControl={
-                <RefreshControl refreshing={loading} onRefresh={load} />
-              }
+              refreshControl={<RefreshControl refreshing={loading} onRefresh={load} />}
               accessibilityLabel={
                 filteredFlags.length === 0
                   ? 'Recent activity, empty'
@@ -348,157 +320,158 @@ export default function ActivityFeedModal({
   );
 }
 
-const makeStyles = (color: ColorTheme) => StyleSheet.create({
-  backdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.4)',
-    justifyContent: 'flex-end',
-  },
-  card: {
-    backgroundColor: '#f7f8fa',
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 20,
-    gap: 12,
-    height: '85%',
-  },
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  title: { fontSize: 20, fontWeight: '700', flex: 1, color: '#222' },
-  closeBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#eef1f5',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  closeBtnText: { fontSize: 18, color: '#333', fontWeight: '700' },
-  filterRow: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  filterChip: {
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: radius.circle,
-    backgroundColor: '#eef1f5',
-    // 44pt is the AccessMap touch-target baseline (Apple HIG / Android
-    // accessibility minimum) — critical for users with motor impairments.
-    minHeight: 44,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  filterChipActive: { backgroundColor: color.brand },
-  filterChipText: { fontSize: 13, fontWeight: '600', color: '#555' },
-  filterChipTextActive: { color: color.textOnBrand },
-  errorBanner: {
-    backgroundColor: '#fdecea',
-    borderRadius: 10,
-    padding: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  errorText: { color: '#8a1f1f', flex: 1, fontSize: 13 },
-  retryBtn: {
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 8,
-    backgroundColor: color.error,
-    minHeight: 44,
-    justifyContent: 'center',
-  },
-  retryText: { color: color.textOnBrand, fontWeight: '700', fontSize: 13 },
-  center: {
-    flexGrow: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 24,
-    gap: 8,
-  },
-  subtitle: { fontSize: 13, color: '#666', textAlign: 'center' },
-  list: { paddingTop: 4, paddingBottom: 12 },
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    paddingTop: 12,
-    paddingBottom: 8,
-    gap: 8,
-  },
-  sectionHeaderText: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#444',
-    textTransform: 'uppercase',
-    letterSpacing: 0.4,
-  },
-  sectionHeaderCount: { fontSize: 12, color: '#888' },
-  row: {
-    backgroundColor: color.surface,
-    borderRadius: 12,
-    padding: 14,
-    gap: 8,
-    marginBottom: 10,
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    shadowOffset: { width: 0, height: 1 },
-    elevation: 1,
-    minHeight: 44,
-  },
-  rowPressed: { opacity: 0.85, backgroundColor: '#f7f9fc' },
-  rowHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  sevDot: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  sevDotText: { color: '#fff', fontWeight: '700', fontSize: 12 },
-  rowTitle: { fontSize: 15, fontWeight: '600', flex: 1, color: '#222' },
-  statusBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: radius.circle,
-  },
-  statusBadgeText: { fontWeight: '700', fontSize: 11 },
-  viewOnMapBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#eef1f5',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  viewOnMapBtnPressed: { opacity: 0.6, backgroundColor: color.borderPressed },
-  viewOnMapGlyph: { fontSize: 14 },
-  rowBody: { flexDirection: 'row', gap: 12 },
-  thumb: {
-    width: 56,
-    height: 56,
-    borderRadius: 8,
-    backgroundColor: '#eef1f5',
-  },
-  rowBodyText: { flex: 1, gap: 4, justifyContent: 'center' },
-  rowDesc: { fontSize: 14, color: '#222' },
-  rowMeta: { fontSize: 12, color: '#666' },
-  emptyWrap: {
-    alignItems: 'center',
-    gap: 8,
-    paddingHorizontal: 24,
-  },
-  emptyTitle: { fontSize: 18, fontWeight: '600', color: '#222' },
-  emptyBody: {
-    fontSize: 14,
-    color: '#555',
-    textAlign: 'center',
-    lineHeight: 20,
-  },
-});
+const makeStyles = (color: ColorTheme) =>
+  StyleSheet.create({
+    backdrop: {
+      flex: 1,
+      backgroundColor: 'rgba(0,0,0,0.4)',
+      justifyContent: 'flex-end',
+    },
+    card: {
+      backgroundColor: '#f7f8fa',
+      borderTopLeftRadius: 16,
+      borderTopRightRadius: 16,
+      paddingHorizontal: 20,
+      paddingTop: 16,
+      paddingBottom: 20,
+      gap: 12,
+      height: '85%',
+    },
+    headerRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+    },
+    title: { fontSize: 20, fontWeight: '700', flex: 1, color: '#222' },
+    closeBtn: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      backgroundColor: '#eef1f5',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    closeBtnText: { fontSize: 18, color: '#333', fontWeight: '700' },
+    filterRow: {
+      flexDirection: 'row',
+      gap: 8,
+    },
+    filterChip: {
+      paddingHorizontal: 14,
+      paddingVertical: 10,
+      borderRadius: radius.circle,
+      backgroundColor: '#eef1f5',
+      // 44pt is the AccessMap touch-target baseline (Apple HIG / Android
+      // accessibility minimum) — critical for users with motor impairments.
+      minHeight: 44,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    filterChipActive: { backgroundColor: color.brand },
+    filterChipText: { fontSize: 13, fontWeight: '600', color: '#555' },
+    filterChipTextActive: { color: color.textOnBrand },
+    errorBanner: {
+      backgroundColor: '#fdecea',
+      borderRadius: 10,
+      padding: 12,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+    },
+    errorText: { color: '#8a1f1f', flex: 1, fontSize: 13 },
+    retryBtn: {
+      paddingHorizontal: 14,
+      paddingVertical: 10,
+      borderRadius: 8,
+      backgroundColor: color.error,
+      minHeight: 44,
+      justifyContent: 'center',
+    },
+    retryText: { color: color.textOnBrand, fontWeight: '700', fontSize: 13 },
+    center: {
+      flexGrow: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: 24,
+      gap: 8,
+    },
+    subtitle: { fontSize: 13, color: '#666', textAlign: 'center' },
+    list: { paddingTop: 4, paddingBottom: 12 },
+    sectionHeader: {
+      flexDirection: 'row',
+      alignItems: 'baseline',
+      paddingTop: 12,
+      paddingBottom: 8,
+      gap: 8,
+    },
+    sectionHeaderText: {
+      fontSize: 13,
+      fontWeight: '700',
+      color: '#444',
+      textTransform: 'uppercase',
+      letterSpacing: 0.4,
+    },
+    sectionHeaderCount: { fontSize: 12, color: '#888' },
+    row: {
+      backgroundColor: color.surface,
+      borderRadius: 12,
+      padding: 14,
+      gap: 8,
+      marginBottom: 10,
+      shadowColor: '#000',
+      shadowOpacity: 0.05,
+      shadowRadius: 3,
+      shadowOffset: { width: 0, height: 1 },
+      elevation: 1,
+      minHeight: 44,
+    },
+    rowPressed: { opacity: 0.85, backgroundColor: '#f7f9fc' },
+    rowHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+    sevDot: {
+      width: 26,
+      height: 26,
+      borderRadius: 13,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    sevDotText: { color: '#fff', fontWeight: '700', fontSize: 12 },
+    rowTitle: { fontSize: 15, fontWeight: '600', flex: 1, color: '#222' },
+    statusBadge: {
+      paddingHorizontal: 10,
+      paddingVertical: 4,
+      borderRadius: radius.circle,
+    },
+    statusBadgeText: { fontWeight: '700', fontSize: 11 },
+    viewOnMapBtn: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      backgroundColor: '#eef1f5',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    viewOnMapBtnPressed: { opacity: 0.6, backgroundColor: color.borderPressed },
+    viewOnMapGlyph: { fontSize: 14 },
+    rowBody: { flexDirection: 'row', gap: 12 },
+    thumb: {
+      width: 56,
+      height: 56,
+      borderRadius: 8,
+      backgroundColor: '#eef1f5',
+    },
+    rowBodyText: { flex: 1, gap: 4, justifyContent: 'center' },
+    rowDesc: { fontSize: 14, color: '#222' },
+    rowMeta: { fontSize: 12, color: '#666' },
+    emptyWrap: {
+      alignItems: 'center',
+      gap: 8,
+      paddingHorizontal: 24,
+    },
+    emptyTitle: { fontSize: 18, fontWeight: '600', color: '#222' },
+    emptyBody: {
+      fontSize: 14,
+      color: '#555',
+      textAlign: 'center',
+      lineHeight: 20,
+    },
+  });

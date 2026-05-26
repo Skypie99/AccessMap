@@ -43,7 +43,9 @@ export default function SignInScreen() {
   return (
     <View style={styles.container}>
       {/* SI-6: accessibilityRole="header" so screen-reader users can navigate by heading */}
-      <Text style={styles.title} accessibilityRole="header">AccessMap</Text>
+      <Text style={styles.title} accessibilityRole="header">
+        AccessMap
+      </Text>
 
       {/* SI-1: visible label above each input so the field name persists after typing */}
       <Text style={styles.inputLabel}>Email address</Text>
@@ -100,7 +102,7 @@ const styles = StyleSheet.create({
   inputLabel: { fontSize: 14, fontWeight: '600', color: color.textMuted },
   input: {
     borderWidth: 1,
-    borderColor: '#666',   // SI-2: was '#ccc' (1.6:1) → '#666' (5.7:1, passes 3:1 non-text)
+    borderColor: '#666', // SI-2: was '#ccc' (1.6:1) → '#666' (5.7:1, passes 3:1 non-text)
     borderRadius: 8,
     padding: 12,
     fontSize: 16,

@@ -74,12 +74,10 @@ function daysBetween(fromIso: string, toIso: string): number {
 function parseStreak(raw: unknown): StreakState {
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return EMPTY_STREAK;
   const obj = raw as Record<string, unknown>;
-  const rawCurrent = typeof obj.current === 'number' && obj.current >= 0
-    ? Math.floor(obj.current)
-    : 0;
-  const rawLongest = typeof obj.longest === 'number' && obj.longest >= 0
-    ? Math.floor(obj.longest)
-    : 0;
+  const rawCurrent =
+    typeof obj.current === 'number' && obj.current >= 0 ? Math.floor(obj.current) : 0;
+  const rawLongest =
+    typeof obj.longest === 'number' && obj.longest >= 0 ? Math.floor(obj.longest) : 0;
   const lastVisitDay =
     typeof obj.lastVisitDay === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(obj.lastVisitDay)
       ? obj.lastVisitDay
@@ -98,10 +96,7 @@ export async function loadStreak(userId: string): Promise<StreakState> {
     if (!raw) return EMPTY_STREAK;
     return parseStreak(JSON.parse(raw));
   } catch (e) {
-    console.warn(
-      '[streak] load failed:',
-      errorMessage(e, 'AsyncStorage error.'),
-    );
+    console.warn('[streak] load failed:', errorMessage(e, 'AsyncStorage error.'));
     return EMPTY_STREAK;
   }
 }
@@ -110,10 +105,7 @@ async function persist(userId: string, state: StreakState): Promise<void> {
   try {
     await AsyncStorage.setItem(storageKey(userId), JSON.stringify(state));
   } catch (e) {
-    console.warn(
-      '[streak] save failed:',
-      errorMessage(e, 'AsyncStorage error.'),
-    );
+    console.warn('[streak] save failed:', errorMessage(e, 'AsyncStorage error.'));
   }
 }
 
@@ -154,10 +146,7 @@ export function applyVisit(prev: StreakState, todayIso: string): StreakState {
  * actual now). Returns the resulting state so the caller can render the
  * banner / number without a second load.
  */
-export async function tickVisit(
-  userId: string,
-  now: Date = new Date(),
-): Promise<StreakState> {
+export async function tickVisit(userId: string, now: Date = new Date()): Promise<StreakState> {
   const today = isoDay(now);
   const prev = await loadStreak(userId);
   const next = applyVisit(prev, today);

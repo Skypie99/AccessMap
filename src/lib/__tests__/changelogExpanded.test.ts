@@ -25,10 +25,7 @@ describe('initialExpanded', () => {
   });
 
   it('uses index in the key (allows duplicate dates)', () => {
-    const result = initialExpanded([
-      { date: '2026-05-23' },
-      { date: '2026-05-23' },
-    ]);
+    const result = initialExpanded([{ date: '2026-05-23' }, { date: '2026-05-23' }]);
     expect(Object.keys(result)).toEqual(['2026-05-23-0', '2026-05-23-1']);
     expect(result['2026-05-23-0']).toBe(true);
     expect(result['2026-05-23-1']).toBe(false);

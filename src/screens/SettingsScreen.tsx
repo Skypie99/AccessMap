@@ -21,11 +21,7 @@ import { CATEGORY_LABELS, listFlagsByUser } from '@/lib/flags';
 import { listFeedbackByUser } from '@/lib/feedbackStore';
 import { formatDataExport } from '@/lib/dataExport';
 import type { UserRow } from '@/types/database';
-import {
-  deletePushToken,
-  enablePushNotifications,
-  getPushEnabled,
-} from '@/lib/pushNotifications';
+import { deletePushToken, enablePushNotifications, getPushEnabled } from '@/lib/pushNotifications';
 // NotificationPrefsModal stays mounted locally — Settings's instance is
 // bare (no initialPrefs / onPrefsChanged), but ProfileScreen's instance
 // is per-screen-stateful (carries `initialPrefs={notificationPrefs}` and
@@ -95,9 +91,7 @@ function SettingsRow({
         </Text>
       ) : null}
       <View style={styles.rowTextWrap}>
-        <Text style={[styles.rowTitle, destructive && styles.rowTitleDestructive]}>
-          {title}
-        </Text>
+        <Text style={[styles.rowTitle, destructive && styles.rowTitleDestructive]}>{title}</Text>
         <Text style={styles.rowSubtitle}>{subtitle}</Text>
       </View>
       {/* Trailing affordance: a spinner while the row's handler runs, a
@@ -266,24 +260,16 @@ export default function SettingsScreen() {
       const feedbackCount = feedbackRows.length;
       const successMsg = `Exported ${flagCount} flag${
         flagCount === 1 ? '' : 's'
-      } + ${feedbackCount} feedback item${
-        feedbackCount === 1 ? '' : 's'
-      } to your clipboard.`;
+      } + ${feedbackCount} feedback item${feedbackCount === 1 ? '' : 's'} to your clipboard.`;
 
       if (Platform.OS === 'web') {
         const nav = typeof navigator !== 'undefined' ? navigator : undefined;
         if (nav?.clipboard?.writeText) {
           await nav.clipboard.writeText(text);
-          if (
-            typeof window !== 'undefined' &&
-            typeof window.alert === 'function'
-          ) {
+          if (typeof window !== 'undefined' && typeof window.alert === 'function') {
             window.alert(successMsg);
           }
-        } else if (
-          typeof window !== 'undefined' &&
-          typeof window.alert === 'function'
-        ) {
+        } else if (typeof window !== 'undefined' && typeof window.alert === 'function') {
           // No clipboard API available — fall back to dumping the text
           // into the alert so the user can copy it manually. Not pretty,
           // but PIPEDA right-of-access requires the user can actually get
@@ -324,12 +310,7 @@ export default function SettingsScreen() {
     // is a no-op on react-native-web, so going straight to Alert.alert here
     // would silently break sign-out on the web build. The helper routes to
     // window.confirm on web and Alert.alert everywhere else.
-    const ok = await confirm(
-      'Sign out?',
-      'Are you sure you want to sign out?',
-      'Sign out',
-      true,
-    );
+    const ok = await confirm('Sign out?', 'Are you sure you want to sign out?', 'Sign out', true);
     if (!ok) return;
 
     // Fire-and-forget — signOut (with userId) handles best-effort offline
@@ -467,10 +448,7 @@ export default function SettingsScreen() {
       {/* Only NotificationPrefs + About render here; the other four
           modals (Help, Changelog, Feedback, MyFeedback) live in a single
           <SharedModalsHost /> mount inside RootNavigator. */}
-      <NotificationPrefsModal
-        visible={notifOpen}
-        onClose={() => setNotifOpen(false)}
-      />
+      <NotificationPrefsModal visible={notifOpen} onClose={() => setNotifOpen(false)} />
       <AboutScreen visible={aboutOpen} onClose={() => setAboutOpen(false)} />
     </>
   );
@@ -482,84 +460,85 @@ export default function SettingsScreen() {
 // is added to src/theme.ts (e.g. spacing.touchTargetLg).
 const SETTINGS_ROW_HEIGHT = 64;
 
-const makeStyles = (color: ColorTheme) => StyleSheet.create({
-  screen: { flex: 1, backgroundColor: color.surfaceMuted },
-  container: {
-    padding: spacing.xxl,
-    gap: spacing.md,
-    alignItems: 'stretch',
-  },
-  sectionLabel: {
-    fontSize: font.size.xs,
-    color: color.textMuted,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    fontWeight: font.weight.bold,
-    marginTop: spacing.sm,
-  },
-  row: {
-    backgroundColor: color.surface,
-    borderRadius: radius.lg,
-    padding: spacing.lg,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-    // Minimum 44pt touch target — already easily satisfied by the
-    // padding+text height, but pinned here so future copy changes can't
-    // accidentally shrink it under the WCAG floor.
-    minHeight: SETTINGS_ROW_HEIGHT,
-    ...shadow.e1,
-  },
-  rowPressed: { opacity: 0.85, backgroundColor: color.surfaceMuted },
-  // Visual cue while the export handler is running. The handler also
-  // guards re-entrancy in code, so this is purely a "don't tap me twice"
-  // affordance.
-  rowDisabled: { opacity: 0.6 },
-  // Decorative leading glyph. font.size.xl matches the chevron's visual
-  // weight so the row balances left-to-right.
-  rowIcon: {
-    fontSize: font.size.xl,
-    width: 28,
-    textAlign: 'center',
-    color: color.textMuted,
-  },
-  rowTextWrap: { flex: 1, gap: 2 },
-  rowTitle: {
-    fontSize: font.size.lg,
-    fontWeight: font.weight.bold,
-    color: color.textStrong,
-  },
-  // The "Sign out" row uses a slightly more cautious color so the destructive
-  // intent is visually distinct before the confirm Alert fires. Subtitle stays
-  // neutral — we don't want the whole row screaming danger, just hinting.
-  rowTitleDestructive: { color: color.error },
-  rowSubtitle: {
-    fontSize: font.size.sm,
-    color: color.textMuted,
-  },
-  rowChevron: {
-    fontSize: 28,
-    color: color.textSubtle,
-    fontWeight: font.weight.regular,
-  },
-  // Spinner sits where the chevron usually does so the row width doesn't
-  // jump when toggling busy/idle. Width roughly matches the chevron's
-  // glyph width — keeps the layout calm.
-  rowSpinner: {
-    width: 28,
-  },
-  // Push notifications toggle row — same visual weight as SettingsRow but
-  // with a Switch in place of a chevron. Matches the row padding and
-  // shadow so the two control types look like siblings in the section.
-  pushRow: {
-    backgroundColor: color.surface,
-    borderRadius: radius.lg,
-    padding: spacing.lg,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-    minHeight: SETTINGS_ROW_HEIGHT,
-    ...shadow.e1,
-  },
-  pushTextWrap: { flex: 1, gap: 2 },
-});
+const makeStyles = (color: ColorTheme) =>
+  StyleSheet.create({
+    screen: { flex: 1, backgroundColor: color.surfaceMuted },
+    container: {
+      padding: spacing.xxl,
+      gap: spacing.md,
+      alignItems: 'stretch',
+    },
+    sectionLabel: {
+      fontSize: font.size.xs,
+      color: color.textMuted,
+      textTransform: 'uppercase',
+      letterSpacing: 0.5,
+      fontWeight: font.weight.bold,
+      marginTop: spacing.sm,
+    },
+    row: {
+      backgroundColor: color.surface,
+      borderRadius: radius.lg,
+      padding: spacing.lg,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.md,
+      // Minimum 44pt touch target — already easily satisfied by the
+      // padding+text height, but pinned here so future copy changes can't
+      // accidentally shrink it under the WCAG floor.
+      minHeight: SETTINGS_ROW_HEIGHT,
+      ...shadow.e1,
+    },
+    rowPressed: { opacity: 0.85, backgroundColor: color.surfaceMuted },
+    // Visual cue while the export handler is running. The handler also
+    // guards re-entrancy in code, so this is purely a "don't tap me twice"
+    // affordance.
+    rowDisabled: { opacity: 0.6 },
+    // Decorative leading glyph. font.size.xl matches the chevron's visual
+    // weight so the row balances left-to-right.
+    rowIcon: {
+      fontSize: font.size.xl,
+      width: 28,
+      textAlign: 'center',
+      color: color.textMuted,
+    },
+    rowTextWrap: { flex: 1, gap: 2 },
+    rowTitle: {
+      fontSize: font.size.lg,
+      fontWeight: font.weight.bold,
+      color: color.textStrong,
+    },
+    // The "Sign out" row uses a slightly more cautious color so the destructive
+    // intent is visually distinct before the confirm Alert fires. Subtitle stays
+    // neutral — we don't want the whole row screaming danger, just hinting.
+    rowTitleDestructive: { color: color.error },
+    rowSubtitle: {
+      fontSize: font.size.sm,
+      color: color.textMuted,
+    },
+    rowChevron: {
+      fontSize: 28,
+      color: color.textSubtle,
+      fontWeight: font.weight.regular,
+    },
+    // Spinner sits where the chevron usually does so the row width doesn't
+    // jump when toggling busy/idle. Width roughly matches the chevron's
+    // glyph width — keeps the layout calm.
+    rowSpinner: {
+      width: 28,
+    },
+    // Push notifications toggle row — same visual weight as SettingsRow but
+    // with a Switch in place of a chevron. Matches the row padding and
+    // shadow so the two control types look like siblings in the section.
+    pushRow: {
+      backgroundColor: color.surface,
+      borderRadius: radius.lg,
+      padding: spacing.lg,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.md,
+      minHeight: SETTINGS_ROW_HEIGHT,
+      ...shadow.e1,
+    },
+    pushTextWrap: { flex: 1, gap: 2 },
+  });

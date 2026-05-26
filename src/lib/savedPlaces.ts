@@ -81,10 +81,7 @@ export async function loadPlaces(userId: string): Promise<SavedPlace[]> {
     if (!raw) return [];
     return parsePlaces(JSON.parse(raw));
   } catch (e) {
-    console.warn(
-      '[savedPlaces] load failed:',
-      errorMessage(e, 'AsyncStorage error.'),
-    );
+    console.warn('[savedPlaces] load failed:', errorMessage(e, 'AsyncStorage error.'));
     return [];
   }
 }
@@ -102,10 +99,7 @@ async function persist(userId: string, places: SavedPlace[]): Promise<void> {
 // userId — different users don't share a chain.
 const writeQueues = new Map<string, Promise<unknown>>();
 
-function withWriteLock<T>(
-  userId: string,
-  task: () => Promise<T>,
-): Promise<T> {
+function withWriteLock<T>(userId: string, task: () => Promise<T>): Promise<T> {
   const prev = writeQueues.get(userId) ?? Promise.resolve();
   // Allow `task` to settle in sequence after the previous chain finishes.
   // We don't care whether `prev` resolved or rejected — its errors are
@@ -138,9 +132,7 @@ function generateId(): string {
 export function normalizePlaceName(raw: string): string | null {
   const trimmed = raw.replace(/\s+/g, ' ').trim();
   if (trimmed.length === 0) return null;
-  return trimmed.length > MAX_NAME_LENGTH
-    ? trimmed.slice(0, MAX_NAME_LENGTH)
-    : trimmed;
+  return trimmed.length > MAX_NAME_LENGTH ? trimmed.slice(0, MAX_NAME_LENGTH) : trimmed;
 }
 
 export interface AddPlaceInput {
@@ -166,19 +158,13 @@ export class SavedPlacesError extends Error {
  * concurrent calls (e.g. accidental double-tap) can't clobber each
  * other or race past the MAX_PLACES cap.
  */
-export async function addPlace(
-  userId: string,
-  input: AddPlaceInput,
-): Promise<SavedPlace> {
+export async function addPlace(userId: string, input: AddPlaceInput): Promise<SavedPlace> {
   const name = normalizePlaceName(input.name);
   if (!name) {
     throw new SavedPlacesError('invalid_name', 'Place name cannot be empty.');
   }
   if (!isFiniteLatLng(input.lat, input.lng)) {
-    throw new SavedPlacesError(
-      'invalid_coords',
-      'Place coordinates are out of range.',
-    );
+    throw new SavedPlacesError('invalid_coords', 'Place coordinates are out of range.');
   }
   return withWriteLock(userId, async () => {
     const current = await loadPlaces(userId);
@@ -188,14 +174,9 @@ export async function addPlace(
         `You can save up to ${MAX_PLACES} places. Remove one to add another.`,
       );
     }
-    const existsByName = current.some(
-      (p) => p.name.toLowerCase() === name.toLowerCase(),
-    );
+    const existsByName = current.some((p) => p.name.toLowerCase() === name.toLowerCase());
     if (existsByName) {
-      throw new SavedPlacesError(
-        'duplicate_name',
-        `A place named "${name}" already exists.`,
-      );
+      throw new SavedPlacesError('duplicate_name', `A place named "${name}" already exists.`);
     }
     const next: SavedPlace = {
       id: generateId(),
@@ -209,10 +190,7 @@ export async function addPlace(
   });
 }
 
-export async function removePlace(
-  userId: string,
-  placeId: string,
-): Promise<void> {
+export async function removePlace(userId: string, placeId: string): Promise<void> {
   return withWriteLock(userId, async () => {
     const current = await loadPlaces(userId);
     const next = current.filter((p) => p.id !== placeId);
@@ -240,14 +218,10 @@ export async function renamePlace(
     const existing = current.find((p) => p.id === placeId);
     if (!existing) return null;
     const dup = current.some(
-      (p) =>
-        p.id !== placeId && p.name.toLowerCase() === name.toLowerCase(),
+      (p) => p.id !== placeId && p.name.toLowerCase() === name.toLowerCase(),
     );
     if (dup) {
-      throw new SavedPlacesError(
-        'duplicate_name',
-        `A place named "${name}" already exists.`,
-      );
+      throw new SavedPlacesError('duplicate_name', `A place named "${name}" already exists.`);
     }
     const updated: SavedPlace = { ...existing, name };
     await persist(

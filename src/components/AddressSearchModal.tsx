@@ -44,11 +44,7 @@ const DEBOUNCE_MS = 350;
  *  - Mirrors the existing modal patterns (ReportFlagModal, FeedbackModal,
  *    AboutScreen) so the app feels consistent.
  */
-export default function AddressSearchModal({
-  visible,
-  onClose,
-  onSelect,
-}: Props) {
+export default function AddressSearchModal({ visible, onClose, onSelect }: Props) {
   const color = useColor();
   const styles = makeStyles(color);
   const [query, setQuery] = useState('');
@@ -168,12 +164,7 @@ export default function AddressSearchModal({
   const showRecents = visible && query.trim().length === 0 && recents.length > 0;
 
   return (
-    <Modal
-      visible={visible}
-      animationType="slide"
-      transparent
-      onRequestClose={onClose}
-    >
+    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <View style={styles.backdrop}>
         <View style={styles.card}>
           <View style={styles.headerRow}>
@@ -212,10 +203,7 @@ export default function AddressSearchModal({
           {showRecents && (
             <View style={styles.recentSection}>
               <View style={styles.recentHeaderRow}>
-                <Text
-                  style={styles.recentHeader}
-                  accessibilityRole="header"
-                >
+                <Text style={styles.recentHeader} accessibilityRole="header">
                   Recent
                 </Text>
                 <Pressable
@@ -234,30 +222,18 @@ export default function AddressSearchModal({
                   // at 5 entries; id may be absent on legacy payloads.
                   key={`${entry.displayName}-${idx}`}
                   onPress={() => handlePickRecent(entry)}
-                  style={({ pressed }) => [
-                    styles.recentRow,
-                    pressed && styles.recentRowPressed,
-                  ]}
+                  style={({ pressed }) => [styles.recentRow, pressed && styles.recentRowPressed]}
                   accessibilityRole="button"
                   accessibilityLabel={`Recent search: ${entry.displayName}`}
                   accessibilityHint="Centers the map on this location and closes search"
                 >
-                  <Text
-                    style={styles.recentGlyph}
-                    accessibilityElementsHidden
-                  >
+                  <Text style={styles.recentGlyph} accessibilityElementsHidden>
                     🕘
                   </Text>
-                  <Text
-                    style={styles.recentText}
-                    numberOfLines={2}
-                  >
+                  <Text style={styles.recentText} numberOfLines={2}>
                     {entry.displayName}
                   </Text>
-                  <Text
-                    style={styles.recentChevron}
-                    accessibilityElementsHidden
-                  >
+                  <Text style={styles.recentChevron} accessibilityElementsHidden>
                     ›
                   </Text>
                 </Pressable>
@@ -285,8 +261,7 @@ export default function AddressSearchModal({
               </Text>
               <Text style={styles.emptyTitle}>No matches</Text>
               <Text style={styles.emptyBody}>
-                Try a different spelling, add a city, or drop the
-                street number to widen the search.
+                Try a different spelling, add a city, or drop the street number to widen the search.
               </Text>
             </View>
           )}
@@ -300,35 +275,23 @@ export default function AddressSearchModal({
               renderItem={({ item }) => (
                 <Pressable
                   onPress={() => handlePick(item)}
-                  style={({ pressed }) => [
-                    styles.resultRow,
-                    pressed && styles.resultRowPressed,
-                  ]}
+                  style={({ pressed }) => [styles.resultRow, pressed && styles.resultRowPressed]}
                   accessibilityRole="button"
                   accessibilityLabel={`Jump to ${item.displayName}`}
                   accessibilityHint="Centers the map on this location and closes search"
                 >
-                  <Text
-                    style={styles.resultGlyph}
-                    accessibilityElementsHidden
-                  >
+                  <Text style={styles.resultGlyph} accessibilityElementsHidden>
                     📍
                   </Text>
                   <View style={styles.resultTextWrap}>
-                    <Text
-                      style={styles.resultText}
-                      numberOfLines={2}
-                    >
+                    <Text style={styles.resultText} numberOfLines={2}>
                       {item.displayName}
                     </Text>
                     <Text style={styles.resultCoords}>
                       {item.lat.toFixed(4)}, {item.lng.toFixed(4)}
                     </Text>
                   </View>
-                  <Text
-                    style={styles.resultChevron}
-                    accessibilityElementsHidden
-                  >
+                  <Text style={styles.resultChevron} accessibilityElementsHidden>
                     ›
                   </Text>
                 </Pressable>
@@ -343,187 +306,187 @@ export default function AddressSearchModal({
 
 function makeStyles(color: ColorTheme) {
   return StyleSheet.create({
-  backdrop: {
-    flex: 1,
-    backgroundColor: color.scrim,
-    justifyContent: 'flex-end',
-  },
-  card: {
-    backgroundColor: color.surfaceMuted,
-    borderTopLeftRadius: radius.xl,
-    borderTopRightRadius: radius.xl,
-    paddingHorizontal: spacing.xl,
-    paddingTop: spacing.lg,
-    paddingBottom: spacing.xl,
-    gap: spacing.sm,
-    maxHeight: '85%',
-    ...shadow.e3,
-  },
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-  },
-  title: {
-    flex: 1,
-    fontSize: font.size.xl,
-    fontWeight: font.weight.bold,
-    color: color.textStrong,
-  },
-  closeBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: radius.full,
-    backgroundColor: color.surfaceNeutral,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  closeBtnText: {
-    fontSize: font.size.lg,
-    color: color.text,
-    fontWeight: font.weight.bold,
-  },
-  subtitle: {
-    fontSize: font.size.sm,
-    color: color.textMuted,
-    lineHeight: 18,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: color.borderSubtle,
-    backgroundColor: color.surface,
-    borderRadius: radius.md,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-    fontSize: font.size.md,
-    color: color.text,
-    minHeight: 44,
-  },
-  loadingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    paddingVertical: spacing.md,
-    justifyContent: 'center',
-  },
-  loadingText: {
-    fontSize: font.size.sm,
-    color: color.textMuted,
-  },
-  emptyCard: {
-    backgroundColor: color.surface,
-    borderRadius: radius.lg,
-    padding: spacing.lg,
-    alignItems: 'center',
-    gap: spacing.xs,
-    ...shadow.e1,
-  },
-  emptyIcon: { fontSize: 28 },
-  emptyTitle: {
-    fontSize: font.size.lg,
-    fontWeight: font.weight.bold,
-    color: color.textStrong,
-  },
-  emptyBody: {
-    fontSize: font.size.sm,
-    color: color.textMuted,
-    textAlign: 'center',
-    lineHeight: 19,
-  },
-  resultsList: {
-    gap: spacing.sm,
-  },
-  resultRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-    backgroundColor: color.surface,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-    borderRadius: radius.lg,
-    minHeight: 56,
-    ...shadow.e1,
-  },
-  resultRowPressed: { opacity: 0.85, backgroundColor: color.surfaceSoft },
-  resultGlyph: { fontSize: font.size.xl },
-  resultTextWrap: { flex: 1, gap: 2 },
-  resultText: {
-    fontSize: font.size.sm,
-    color: color.textStrong,
-    fontWeight: font.weight.semibold,
-    lineHeight: 18,
-  },
-  resultCoords: {
-    fontSize: font.size.xs,
-    color: color.textMuted,
-  },
-  resultChevron: {
-    fontSize: font.size.xl,
-    color: color.textSubtle,
-    fontWeight: font.weight.regular,
-  },
-  // Recent section — mirrors the live-results visual rhythm (same card
-  // shadow, same row height/padding) so the modal feels of-a-piece. The
-  // 🕘 glyph differentiates "history" from the 📍 "live pin" glyph.
-  recentSection: {
-    gap: spacing.sm,
-  },
-  recentHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingTop: spacing.xs,
-  },
-  recentHeader: {
-    // textMuted (#666) is 5.7:1 on white — clears AA at body size and
-    // beats the "≥ #5b6470" minimum from the spec.
-    fontSize: font.size.sm,
-    fontWeight: font.weight.semibold,
-    color: color.textMuted,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  clearRecentBtn: {
-    // Tap target ≥ 44pt — hitSlop on the Pressable bumps the
-    // effective touch area beyond this rendered box.
-    minHeight: 44,
-    minWidth: 44,
-    paddingHorizontal: spacing.sm,
-    alignItems: 'flex-end',
-    justifyContent: 'center',
-  },
-  clearRecentText: {
-    // Uses color.brandText (#1c4f99 ≈ 7.6:1) instead of color.brand
-    // (#2f80ed ≈ 3.3:1) so it's AA-safe at any size — robust if the
-    // font size ever drops below the 14pt-bold large-text threshold.
-    fontSize: font.size.base,
-    fontWeight: font.weight.semibold,
-    color: color.brandText,
-  },
-  recentRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-    backgroundColor: color.surface,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-    borderRadius: radius.lg,
-    minHeight: 56, // ≥ 44pt with breathing room
-    ...shadow.e1,
-  },
-  recentRowPressed: { opacity: 0.85, backgroundColor: color.surfaceSoft },
-  recentGlyph: { fontSize: font.size.lg },
-  recentText: {
-    flex: 1,
-    fontSize: font.size.sm,
-    color: color.textStrong,
-    fontWeight: font.weight.semibold,
-    lineHeight: 18,
-  },
-  recentChevron: {
-    fontSize: font.size.xl,
-    color: color.textSubtle,
-    fontWeight: font.weight.regular,
-  },
-});
+    backdrop: {
+      flex: 1,
+      backgroundColor: color.scrim,
+      justifyContent: 'flex-end',
+    },
+    card: {
+      backgroundColor: color.surfaceMuted,
+      borderTopLeftRadius: radius.xl,
+      borderTopRightRadius: radius.xl,
+      paddingHorizontal: spacing.xl,
+      paddingTop: spacing.lg,
+      paddingBottom: spacing.xl,
+      gap: spacing.sm,
+      maxHeight: '85%',
+      ...shadow.e3,
+    },
+    headerRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.md,
+    },
+    title: {
+      flex: 1,
+      fontSize: font.size.xl,
+      fontWeight: font.weight.bold,
+      color: color.textStrong,
+    },
+    closeBtn: {
+      width: 32,
+      height: 32,
+      borderRadius: radius.full,
+      backgroundColor: color.surfaceNeutral,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    closeBtnText: {
+      fontSize: font.size.lg,
+      color: color.text,
+      fontWeight: font.weight.bold,
+    },
+    subtitle: {
+      fontSize: font.size.sm,
+      color: color.textMuted,
+      lineHeight: 18,
+    },
+    input: {
+      borderWidth: 1,
+      borderColor: color.borderSubtle,
+      backgroundColor: color.surface,
+      borderRadius: radius.md,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.md,
+      fontSize: font.size.md,
+      color: color.text,
+      minHeight: 44,
+    },
+    loadingRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+      paddingVertical: spacing.md,
+      justifyContent: 'center',
+    },
+    loadingText: {
+      fontSize: font.size.sm,
+      color: color.textMuted,
+    },
+    emptyCard: {
+      backgroundColor: color.surface,
+      borderRadius: radius.lg,
+      padding: spacing.lg,
+      alignItems: 'center',
+      gap: spacing.xs,
+      ...shadow.e1,
+    },
+    emptyIcon: { fontSize: 28 },
+    emptyTitle: {
+      fontSize: font.size.lg,
+      fontWeight: font.weight.bold,
+      color: color.textStrong,
+    },
+    emptyBody: {
+      fontSize: font.size.sm,
+      color: color.textMuted,
+      textAlign: 'center',
+      lineHeight: 19,
+    },
+    resultsList: {
+      gap: spacing.sm,
+    },
+    resultRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.md,
+      backgroundColor: color.surface,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.md,
+      borderRadius: radius.lg,
+      minHeight: 56,
+      ...shadow.e1,
+    },
+    resultRowPressed: { opacity: 0.85, backgroundColor: color.surfaceSoft },
+    resultGlyph: { fontSize: font.size.xl },
+    resultTextWrap: { flex: 1, gap: 2 },
+    resultText: {
+      fontSize: font.size.sm,
+      color: color.textStrong,
+      fontWeight: font.weight.semibold,
+      lineHeight: 18,
+    },
+    resultCoords: {
+      fontSize: font.size.xs,
+      color: color.textMuted,
+    },
+    resultChevron: {
+      fontSize: font.size.xl,
+      color: color.textSubtle,
+      fontWeight: font.weight.regular,
+    },
+    // Recent section — mirrors the live-results visual rhythm (same card
+    // shadow, same row height/padding) so the modal feels of-a-piece. The
+    // 🕘 glyph differentiates "history" from the 📍 "live pin" glyph.
+    recentSection: {
+      gap: spacing.sm,
+    },
+    recentHeaderRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingTop: spacing.xs,
+    },
+    recentHeader: {
+      // textMuted (#666) is 5.7:1 on white — clears AA at body size and
+      // beats the "≥ #5b6470" minimum from the spec.
+      fontSize: font.size.sm,
+      fontWeight: font.weight.semibold,
+      color: color.textMuted,
+      textTransform: 'uppercase',
+      letterSpacing: 0.5,
+    },
+    clearRecentBtn: {
+      // Tap target ≥ 44pt — hitSlop on the Pressable bumps the
+      // effective touch area beyond this rendered box.
+      minHeight: 44,
+      minWidth: 44,
+      paddingHorizontal: spacing.sm,
+      alignItems: 'flex-end',
+      justifyContent: 'center',
+    },
+    clearRecentText: {
+      // Uses color.brandText (#1c4f99 ≈ 7.6:1) instead of color.brand
+      // (#2f80ed ≈ 3.3:1) so it's AA-safe at any size — robust if the
+      // font size ever drops below the 14pt-bold large-text threshold.
+      fontSize: font.size.base,
+      fontWeight: font.weight.semibold,
+      color: color.brandText,
+    },
+    recentRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.md,
+      backgroundColor: color.surface,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.md,
+      borderRadius: radius.lg,
+      minHeight: 56, // ≥ 44pt with breathing room
+      ...shadow.e1,
+    },
+    recentRowPressed: { opacity: 0.85, backgroundColor: color.surfaceSoft },
+    recentGlyph: { fontSize: font.size.lg },
+    recentText: {
+      flex: 1,
+      fontSize: font.size.sm,
+      color: color.textStrong,
+      fontWeight: font.weight.semibold,
+      lineHeight: 18,
+    },
+    recentChevron: {
+      fontSize: font.size.xl,
+      color: color.textSubtle,
+      fontWeight: font.weight.regular,
+    },
+  });
 }

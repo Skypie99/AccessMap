@@ -37,10 +37,7 @@ import type { FlagRow } from '@/types/database';
  *                      Pass `(cat) => CATEGORY_LABELS[cat]` at the call site.
  */
 export function formatFlagShareText(
-  flag: Pick<
-    FlagRow,
-    'category' | 'severity' | 'lat' | 'lng' | 'status' | 'description'
-  >,
+  flag: Pick<FlagRow, 'category' | 'severity' | 'lat' | 'lng' | 'status' | 'description'>,
   categoryLabel: (cat: FlagRow['category']) => string,
 ): string {
   const label = categoryLabel(flag.category);

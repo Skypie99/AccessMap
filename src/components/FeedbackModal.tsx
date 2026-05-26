@@ -135,17 +135,10 @@ export default function FeedbackModal({ visible, onClose }: Props) {
       {/* accessibilityViewIsModal — VoiceOver treats everything behind
           this view as inert while the modal is up. Same pattern as
           HelpModal; see that file for the longer comment. Alex P5. */}
-      <View
-        style={styles.backdrop}
-        accessibilityViewIsModal
-        testID="feedbackModal-backdrop"
-      >
+      <View style={styles.backdrop} accessibilityViewIsModal testID="feedbackModal-backdrop">
         <View style={styles.card}>
           <View style={styles.headerRow}>
-            <Text
-              style={styles.title}
-              accessibilityRole="header"
-            >
+            <Text style={styles.title} accessibilityRole="header">
               Send feedback
             </Text>
             <Pressable
@@ -162,8 +155,8 @@ export default function FeedbackModal({ visible, onClose }: Props) {
           </View>
 
           <Text style={styles.subtitle}>
-            Tell us what's working, what isn't, or what you wish AccessMap did.
-            Tapping Send opens your email app with the message prefilled.
+            Tell us what's working, what isn't, or what you wish AccessMap did. Tapping Send opens
+            your email app with the message prefilled.
           </Text>
 
           <Text style={styles.label}>Category</Text>
@@ -179,10 +172,7 @@ export default function FeedbackModal({ visible, onClose }: Props) {
                   key={c}
                   onPress={() => setCategory(c)}
                   disabled={sending}
-                  style={[
-                    styles.categoryChip,
-                    selected && styles.categoryChipSelected,
-                  ]}
+                  style={[styles.categoryChip, selected && styles.categoryChipSelected]}
                   accessibilityRole="radio"
                   accessibilityLabel={FEEDBACK_CATEGORY_LABELS[c]}
                   accessibilityState={{
@@ -190,17 +180,11 @@ export default function FeedbackModal({ visible, onClose }: Props) {
                     disabled: sending,
                   }}
                 >
-                  <Text
-                    style={styles.categoryChipGlyph}
-                    accessibilityElementsHidden
-                  >
+                  <Text style={styles.categoryChipGlyph} accessibilityElementsHidden>
                     {FEEDBACK_CATEGORY_GLYPHS[c]}
                   </Text>
                   <Text
-                    style={[
-                      styles.categoryChipText,
-                      selected && styles.categoryChipTextSelected,
-                    ]}
+                    style={[styles.categoryChipText, selected && styles.categoryChipTextSelected]}
                   >
                     {FEEDBACK_CATEGORY_LABELS[c]}
                   </Text>
@@ -253,11 +237,7 @@ export default function FeedbackModal({ visible, onClose }: Props) {
             <Pressable
               onPress={handleSend}
               disabled={!canSend}
-              style={[
-                styles.btn,
-                styles.btnSend,
-                !canSend && styles.btnSendDisabled,
-              ]}
+              style={[styles.btn, styles.btnSend, !canSend && styles.btnSendDisabled]}
               accessibilityRole="button"
               accessibilityLabel="Send feedback"
               accessibilityHint="Opens your email app with the message prefilled."
@@ -279,133 +259,134 @@ export default function FeedbackModal({ visible, onClose }: Props) {
   );
 }
 
-const makeStyles = (color: ColorTheme) => StyleSheet.create({
-  backdrop: {
-    flex: 1,
-    backgroundColor: color.scrim,
-    justifyContent: 'flex-end',
-  },
-  card: {
-    backgroundColor: color.surface,
-    borderTopLeftRadius: radius.xl,
-    borderTopRightRadius: radius.xl,
-    paddingHorizontal: spacing.xl,
-    paddingTop: spacing.lg,
-    paddingBottom: spacing.xl,
-    gap: spacing.sm,
-    ...shadow.e3,
-  },
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-  },
-  title: {
-    flex: 1,
-    fontSize: font.size.xl,
-    fontWeight: font.weight.bold,
-    color: color.textStrong,
-  },
-  closeBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: radius.full,
-    backgroundColor: color.surfaceNeutral,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  closeBtnText: {
-    fontSize: font.size.lg,
-    color: color.text,
-    fontWeight: font.weight.bold,
-  },
-  subtitle: {
-    fontSize: font.size.sm,
-    color: color.textMuted,
-    lineHeight: 18,
-  },
-  label: {
-    fontSize: font.size.xs,
-    color: color.textMuted,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    fontWeight: font.weight.semibold,
-    marginTop: spacing.sm,
-  },
-  categoryRow: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-    flexWrap: 'wrap',
-  },
-  categoryChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: radius.full,
-    backgroundColor: color.surfaceNeutral,
-    borderWidth: 1,
-    borderColor: 'transparent',
-    minHeight: 36,
-  },
-  categoryChipSelected: {
-    backgroundColor: color.brandSoft,
-    borderColor: color.brand,
-  },
-  categoryChipGlyph: { fontSize: font.size.base },
-  categoryChipText: {
-    color: color.text,
-    fontWeight: font.weight.semibold,
-    fontSize: font.size.sm,
-  },
-  categoryChipTextSelected: { color: color.brandOnSoft },
-  bodyInput: {
-    borderWidth: 1,
-    borderColor: color.borderSubtle,
-    backgroundColor: color.surfaceSoft,
-    borderRadius: radius.md,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-    fontSize: font.size.md,
-    color: color.text,
-    minHeight: 120,
-  },
-  contactInput: {
-    borderWidth: 1,
-    borderColor: color.borderSubtle,
-    backgroundColor: color.surfaceSoft,
-    borderRadius: radius.md,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-    fontSize: font.size.md,
-    color: color.text,
-    minHeight: 44,
-  },
-  actionsRow: {
-    flexDirection: 'row',
-    gap: spacing.md,
-    marginTop: spacing.md,
-  },
-  btn: {
-    flex: 1,
-    paddingVertical: spacing.md,
-    borderRadius: radius.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: 44,
-  },
-  btnCancel: { backgroundColor: color.surfaceNeutral },
-  btnCancelText: {
-    color: color.text,
-    fontWeight: font.weight.semibold,
-    fontSize: font.size.base,
-  },
-  btnSend: { backgroundColor: color.brand },
-  btnSendDisabled: { opacity: 0.4 },
-  btnSendText: {
-    color: color.textOnBrand,
-    fontWeight: font.weight.bold,
-    fontSize: font.size.base,
-  },
-});
+const makeStyles = (color: ColorTheme) =>
+  StyleSheet.create({
+    backdrop: {
+      flex: 1,
+      backgroundColor: color.scrim,
+      justifyContent: 'flex-end',
+    },
+    card: {
+      backgroundColor: color.surface,
+      borderTopLeftRadius: radius.xl,
+      borderTopRightRadius: radius.xl,
+      paddingHorizontal: spacing.xl,
+      paddingTop: spacing.lg,
+      paddingBottom: spacing.xl,
+      gap: spacing.sm,
+      ...shadow.e3,
+    },
+    headerRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.md,
+    },
+    title: {
+      flex: 1,
+      fontSize: font.size.xl,
+      fontWeight: font.weight.bold,
+      color: color.textStrong,
+    },
+    closeBtn: {
+      width: 32,
+      height: 32,
+      borderRadius: radius.full,
+      backgroundColor: color.surfaceNeutral,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    closeBtnText: {
+      fontSize: font.size.lg,
+      color: color.text,
+      fontWeight: font.weight.bold,
+    },
+    subtitle: {
+      fontSize: font.size.sm,
+      color: color.textMuted,
+      lineHeight: 18,
+    },
+    label: {
+      fontSize: font.size.xs,
+      color: color.textMuted,
+      textTransform: 'uppercase',
+      letterSpacing: 0.5,
+      fontWeight: font.weight.semibold,
+      marginTop: spacing.sm,
+    },
+    categoryRow: {
+      flexDirection: 'row',
+      gap: spacing.sm,
+      flexWrap: 'wrap',
+    },
+    categoryChip: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.xs,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+      borderRadius: radius.full,
+      backgroundColor: color.surfaceNeutral,
+      borderWidth: 1,
+      borderColor: 'transparent',
+      minHeight: 36,
+    },
+    categoryChipSelected: {
+      backgroundColor: color.brandSoft,
+      borderColor: color.brand,
+    },
+    categoryChipGlyph: { fontSize: font.size.base },
+    categoryChipText: {
+      color: color.text,
+      fontWeight: font.weight.semibold,
+      fontSize: font.size.sm,
+    },
+    categoryChipTextSelected: { color: color.brandOnSoft },
+    bodyInput: {
+      borderWidth: 1,
+      borderColor: color.borderSubtle,
+      backgroundColor: color.surfaceSoft,
+      borderRadius: radius.md,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.md,
+      fontSize: font.size.md,
+      color: color.text,
+      minHeight: 120,
+    },
+    contactInput: {
+      borderWidth: 1,
+      borderColor: color.borderSubtle,
+      backgroundColor: color.surfaceSoft,
+      borderRadius: radius.md,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.md,
+      fontSize: font.size.md,
+      color: color.text,
+      minHeight: 44,
+    },
+    actionsRow: {
+      flexDirection: 'row',
+      gap: spacing.md,
+      marginTop: spacing.md,
+    },
+    btn: {
+      flex: 1,
+      paddingVertical: spacing.md,
+      borderRadius: radius.md,
+      alignItems: 'center',
+      justifyContent: 'center',
+      minHeight: 44,
+    },
+    btnCancel: { backgroundColor: color.surfaceNeutral },
+    btnCancelText: {
+      color: color.text,
+      fontWeight: font.weight.semibold,
+      fontSize: font.size.base,
+    },
+    btnSend: { backgroundColor: color.brand },
+    btnSendDisabled: { opacity: 0.4 },
+    btnSendText: {
+      color: color.textOnBrand,
+      fontWeight: font.weight.bold,
+      fontSize: font.size.base,
+    },
+  });

@@ -15,10 +15,7 @@ import type { FlagRow, FlagStatus } from '@/types/database';
  * Statuses considered "still actionable" for the nearest-jump CTA.
  * Reordering or extending requires updating the test cases too.
  */
-export const UNRESOLVED_STATUSES: ReadonlyArray<FlagStatus> = [
-  'open',
-  'verified',
-] as const;
+export const UNRESOLVED_STATUSES: ReadonlyArray<FlagStatus> = ['open', 'verified'] as const;
 
 export interface NearestFlagHit {
   flag: FlagRow;

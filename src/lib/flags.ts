@@ -1,11 +1,6 @@
 import { supabase } from './supabase';
 import { color as themeColor } from '@/theme';
-import type {
-  FlagCategory,
-  FlagRow,
-  FlagSeverity,
-  FlagStatus,
-} from '@/types/database';
+import type { FlagCategory, FlagRow, FlagSeverity, FlagStatus } from '@/types/database';
 
 export const FLAG_PHOTOS_BUCKET = 'flag-photos';
 
@@ -19,14 +14,7 @@ const MAX_PHOTO_BYTES = 10 * 1024 * 1024;
 // pdf, exe…) gets rejected with a clear message rather than landing in a
 // public Storage bucket with an inferred MIME type that may or may not
 // match the actual bytes.
-const ALLOWED_PHOTO_EXTS = new Set([
-  'jpg',
-  'jpeg',
-  'png',
-  'webp',
-  'heic',
-  'heif',
-]);
+const ALLOWED_PHOTO_EXTS = new Set(['jpg', 'jpeg', 'png', 'webp', 'heic', 'heif']);
 
 // Schemes expo-image-picker produces. `file://` (most platforms),
 // `content://` (Android storage URIs), `ph://` and `assets-library://`
@@ -59,10 +47,7 @@ export const NEXT_PAGE_SIZE = 20;
  * touching Storage so a malformed pick or a runaway file fails loudly
  * here instead of silently filling the bucket with garbage.
  */
-export async function uploadFlagPhoto(
-  userId: string,
-  localUri: string,
-): Promise<string> {
+export async function uploadFlagPhoto(userId: string, localUri: string): Promise<string> {
   if (!localUri || typeof localUri !== 'string') {
     throw new Error('No photo selected.');
   }
@@ -103,9 +88,7 @@ export async function uploadFlagPhoto(
     });
   if (uploadErr) throw uploadErr;
 
-  const { data } = supabase.storage
-    .from(FLAG_PHOTOS_BUCKET)
-    .getPublicUrl(filePath);
+  const { data } = supabase.storage.from(FLAG_PHOTOS_BUCKET).getPublicUrl(filePath);
   return data.publicUrl;
 }
 
@@ -190,8 +173,7 @@ export async function listFlagsPage(
   const { data, error } = await query;
   if (error) throw error;
   const rows = (data ?? []) as FlagRow[];
-  const nextCursor =
-    rows.length === limit ? (rows[rows.length - 1]?.created_at ?? null) : null;
+  const nextCursor = rows.length === limit ? (rows[rows.length - 1]?.created_at ?? null) : null;
   return { rows, nextCursor };
 }
 
@@ -309,8 +291,7 @@ export async function createFlag(
   // Only attempt the tagged insert when (a) the caller actually has tags
   // AND (b) we haven't already learned the column is missing on this
   // backend. This avoids the wasted round-trip + the silent drop.
-  const shouldTryTagged =
-    tagsToSend !== undefined && contextTagsCapability !== 'unavailable';
+  const shouldTryTagged = tagsToSend !== undefined && contextTagsCapability !== 'unavailable';
   if (shouldTryTagged) {
     // The Database type in src/types/database.ts doesn't list context_tags
     // yet (we're keeping the migration propose-only), so cast the payload
@@ -332,11 +313,7 @@ export async function createFlag(
     setContextTagsCapability('unavailable');
     // Fall through to the legacy-shape insert below.
   }
-  const { data, error } = await supabase
-    .from('flags')
-    .insert(basePayload)
-    .select()
-    .single();
+  const { data, error } = await supabase.from('flags').insert(basePayload).select().single();
   if (error) throw error;
   // tagsAccepted is true only when the user didn't try to send any in the
   // first place. If they tried and we fell back, surface that to the caller.
@@ -389,11 +366,7 @@ export async function deleteFlag(flagId: string) {
  * normally without focusing on anything.
  */
 export async function fetchFlagById(flagId: string): Promise<FlagRow | null> {
-  const { data, error } = await supabase
-    .from('flags')
-    .select('*')
-    .eq('id', flagId)
-    .maybeSingle();
+  const { data, error } = await supabase.from('flags').select('*').eq('id', flagId).maybeSingle();
   if (error) throw error;
   return (data as FlagRow | null) ?? null;
 }
@@ -410,10 +383,7 @@ export async function fetchFlagById(flagId: string): Promise<FlagRow | null> {
  */
 export async function fetchFlagsByIds(flagIds: string[]): Promise<FlagRow[]> {
   if (flagIds.length === 0) return [];
-  const { data, error } = await supabase
-    .from('flags')
-    .select('*')
-    .in('id', flagIds);
+  const { data, error } = await supabase.from('flags').select('*').in('id', flagIds);
   if (error) throw error;
   return (data ?? []) as FlagRow[];
 }
@@ -490,12 +460,18 @@ export const SEVERITY_ORDER: FlagSeverity[] = [1, 2, 3, 4, 5];
 // `undefined` so the marker/severity bar still renders something.
 export function severityColor(s: FlagSeverity): string {
   switch (s) {
-    case 1: return '#27ae60';
-    case 2: return '#7fb800';
-    case 3: return '#f1c40f';
-    case 4: return '#e67e22';
-    case 5: return '#e74c3c';
-    default: return themeColor.textSubtle;
+    case 1:
+      return '#27ae60';
+    case 2:
+      return '#7fb800';
+    case 3:
+      return '#f1c40f';
+    case 4:
+      return '#e67e22';
+    case 5:
+      return '#e74c3c';
+    default:
+      return themeColor.textSubtle;
   }
 }
 
@@ -544,12 +520,7 @@ export const STATUS_COLORS: Record<FlagStatus, { bg: string; fg: string }> = {
 };
 
 // Order shown in the Map filter and elsewhere — chronological lifecycle.
-export const STATUS_ORDER: FlagStatus[] = [
-  'open',
-  'verified',
-  'resolved',
-  'rejected',
-];
+export const STATUS_ORDER: FlagStatus[] = ['open', 'verified', 'resolved', 'rejected'];
 
 // What listFlags() falls back to when no statuses are passed — also the
 // default set the Map's status filter starts with, so a default-state
@@ -585,9 +556,7 @@ export interface FlagStatusHistoryEntry {
  * the error is swallowed and an empty array is returned. The caller MUST
  * treat an empty result as "no history available yet" rather than an error.
  */
-export async function listFlagStatusHistory(
-  flagId: string,
-): Promise<FlagStatusHistoryEntry[]> {
+export async function listFlagStatusHistory(flagId: string): Promise<FlagStatusHistoryEntry[]> {
   try {
     const { data, error } = await supabase
       .from('flag_status_history')

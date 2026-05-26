@@ -39,10 +39,7 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
   },
 }));
 
-import {
-  loadFilterPanelCollapsed,
-  saveFilterPanelCollapsed,
-} from '../filterPanelPrefs';
+import { loadFilterPanelCollapsed, saveFilterPanelCollapsed } from '../filterPanelPrefs';
 
 const KEY = '@accessmap/filter_panel_collapsed_v1';
 
