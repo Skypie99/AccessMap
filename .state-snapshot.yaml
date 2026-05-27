@@ -1,0 +1,13 @@
+---
+project: AccessMap
+snapshot_date: 2026-05-27
+snapshot_version: 1
+state_health: blocked
+blockers:
+  - RLS policies verification needed
+  - EXIF GPS leak mitigation required (privacy gate)
+staged_count: 0
+decisions_pending: 1
+last_commit: 2026-05-24T12:30:00Z
+activity_level: low
+---

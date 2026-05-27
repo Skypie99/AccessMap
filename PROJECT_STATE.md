@@ -1,8 +1,57 @@
 # AccessMap — Project State
 
-**Updated:** 2026-05-25 (morning cycle — post night-cycle Wave 5 + overnight branch activity)
-**Source:** Morgan read pass | git log | qa-reports | migration files
+**Updated:** 2026-05-27 (T+0 bootstrap — Phase 1 launch, 16 agents active, 4 new hires approved)
+**Source:** Morgan read pass | TaskList #1-26 | agent dispatch logs | git log
 **Main SHA:** `1659092` · Tests: 789/789 · TSC errors: 0 · Test suites: 52
+**Phase:** Phase 1 ACTIVE (T+0 to T+120); Phase 2 planning (19 tasks created #8-26)
+
+---
+
+## SUMMARY (Daily Operations — Load This)
+
+**Phase 1 Status:** ACTIVE, T+0 (2026-05-27)  
+**Active Agents:** 4 (Rory branches, Alex a11y audit, Dani design compile, Will UX audit)  
+**Critical Path:** 3 Sky actions by EOD 2026-05-28 (see below)
+
+| Item | Status | Owner |
+|---|---|---|
+| Wave 1 features (8 total) | 0 merged, 3 built, 5 in-progress | Shamus |
+| Marker clustering | Built, awaiting flag_edit_rls.sql | Shamus |
+| Heatmap | Built, awaiting design decision | Shamus + Dani |
+| Push notifications | Built, awaiting push_tokens.sql + edge function | Shamus |
+| New hires (4) | Approved, onboarding plan ready | Marcus, Devon, Iris, Jake |
+| Phase 2 planning | DONE, 19 tasks created (Quality/Infra/Product) | Morgan |
+
+**Next 48 Hours:**
+- [ ] Sky: Apply flag_edit_rls_replacement.sql (5 min)
+- [ ] Sky: Apply push_tokens.sql + deploy edge function (10 min)
+- [ ] Sky: Decide heatmap severity color gradient (decision by 2026-05-29)
+- [ ] Morgan: Refine Decision Boundaries (Thursday sync)
+- [ ] Morgan: Finalize Phase 2 task assignments (post-Thursday)
+- [ ] All: Thursday 6 PM sync (2026-05-30)
+
+---
+
+## Phase 1 Status (T+0 — Launch Day) — Full Details Below
+
+**Active Agent Dispatch:**
+| Agent | Task | Status | Expected Output |
+|---|---|---|---|
+| **Rory** | Recreate feat/tasks-search + feat/push-notifications (clean branches, quality focus) | IN PROGRESS | Two clean branches pushed; PART D handoff to Alex |
+| **Alex** | Audit both branches for WCAG 2.2 AA compliance | PENDING (waits Rory push) | qa-report: `2026-05-27_Alex_A11yAudit_RecreatedBranches.md` |
+| **Dani** | Design Compiler gate on heatmap-severity; Wave 2-4 mood board | IN PROGRESS | qa-report: `2026-05-27_Dani_DesignCompile_heatmap.md` + `2026-05-27_Dani_Wave24Mood.md` |
+| **Will** | End-to-end UX audit (all 8 screens) + Wave 2-4 feature brainstorm | IN PROGRESS | qa-report: `2026-05-27_Will_UXAudit.md` |
+
+**New Team Members (Approved, Starting Phase 1):**
+- Marcus (QA Manager) — quality enforcement, test gates, CI compliance
+- Devon (SRE / Incident Response) — deployment safety, observability, runbooks
+- Iris (User Researcher) — Wave 2-4 feature validation, user interviews
+- Jake (Dev Experience Lead) — DX tools, build setup, onboarding
+
+**Phase 1 Timeline:**
+- T+0 (2026-05-27): Launch — 16 agents dispatch + 4 new hires + Phase 2 task creation
+- T+24: First qa-report batch (Rory → Alex → Design Compiler)
+- T+120 (2026-06-26): Phase 1 complete — 8 features shipped, foundation solid
 
 ---
 
