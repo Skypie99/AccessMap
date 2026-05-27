@@ -536,6 +536,30 @@ const makeStyles = (color: ColorTheme) =>
       alignItems: 'center',
     },
     photoBtnText: { color: '#333', fontWeight: '600', fontSize: 13 },
+    photoNudge: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      gap: 8,
+      backgroundColor: color.warningBg,
+      borderRadius: 8,
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      marginBottom: 6,
+    },
+    photoNudgeIcon: {
+      fontSize: 18,
+      lineHeight: 22,
+    },
+    photoNudgeBody: {
+      flex: 1,
+      fontSize: 12,
+      color: color.warningFg,
+      lineHeight: 17,
+    },
+    photoNudgeBold: {
+      fontWeight: '700',
+      color: color.warningFg,
+    },
     photoPreviewWrap: { position: 'relative', alignSelf: 'flex-start' },
     photoPreview: { width: 140, height: 140, borderRadius: 10 },
     photoClear: {

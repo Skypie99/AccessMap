@@ -1528,6 +1528,11 @@ const makeStyles = (color: ColorTheme) =>
     // #1e8449 on white-text ≈ 7.0:1 — meets AAA for 14pt bold. Bumped from
     // #27ae60 (~2.83:1, AA fail) to clear WCAG 1.4.3 AA + 1.4.11 non-text 3:1.
     bulkResolveBtn: { backgroundColor: '#1e8449' },
+    // Watch fill: deep purple chosen so it's distinguishable from the
+    // brand-blue Verify and the green Resolve at a glance — even for
+    // protanopia/deuteranopia where blue and green can blur. #5b21b6 on
+    // white-text ≈ 8.2:1, comfortable AAA for 14pt bold.
+    bulkWatchBtn: { backgroundColor: '#5b21b6' },
     // Cancel uses the neutral chip palette so it doesn't compete for
     // attention with the primary actions.
     bulkCancelBtn: {

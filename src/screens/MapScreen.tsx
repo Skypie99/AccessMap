@@ -30,8 +30,16 @@ import {
   STATUS_ORDER,
 } from '@/lib/flags';
 import { useFlags } from '@/lib/flagsStore';
-import { loadMapFilters, saveMapFilters } from '@/lib/mapFilters';
-import { loadFilterPanelCollapsed, saveFilterPanelCollapsed } from '@/lib/filterPanelPrefs';
+import {
+  DISTANCE_OPTIONS,
+  loadMapFilters,
+  saveMapFilters,
+} from '@/lib/mapFilters';
+import { haversineKm } from '@/lib/distance';
+import {
+  loadFilterPanelCollapsed,
+  saveFilterPanelCollapsed,
+} from '@/lib/filterPanelPrefs';
 import {
   deleteSet,
   FilterSetError,

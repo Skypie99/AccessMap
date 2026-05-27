@@ -35,6 +35,7 @@ import {
 } from '@/lib/flags';
 import { severityA11y, statusA11y } from '@/lib/a11yText';
 import { CONTEXT_TAG_LABELS, isValidTag } from '@/lib/contextTags';
+import { recordView } from '@/lib/recentlyViewed';
 import type { FlagCategory, FlagRow, FlagSeverity, FlagStatus } from '@/types/database';
 import PhotoLightboxModal from './PhotoLightboxModal';
 import StatusHistoryModal from './StatusHistoryModal';

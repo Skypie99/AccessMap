@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, Text } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useAuth } from '@/lib/auth';
-import { FlagsProvider } from '@/lib/flagsStore';
+import { FlagsProvider, useFlags } from '@/lib/flagsStore';
 import { SharedModalsProvider, useSharedModals } from '@/lib/sharedModalsContext';
 import { font, radius, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';

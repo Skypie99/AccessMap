@@ -64,6 +64,7 @@ import { computeAchievements, countEarned, type AchievementStats } from '@/lib/a
 import AchievementsModal from '@/components/AchievementsModal';
 import { REPUTATION_TIERS, getTier, pointsToNextTier } from '@/lib/reputationTier';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
+import RecentlyViewedRow from '@/components/RecentlyViewedRow';
 
 interface Stats {
   reported: number;
@@ -1273,8 +1274,20 @@ const makeStyles = (color: ColorTheme) =>
       flex: 1,
       alignItems: 'center',
       justifyContent: 'center',
+      gap: 16,
       backgroundColor: color.surfaceMuted,
     },
+    signInBtn: {
+      backgroundColor: color.brand,
+      paddingHorizontal: 32,
+      paddingVertical: 14,
+      borderRadius: 100,
+      minHeight: 44,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    signInBtnPressed: { opacity: 0.8 },
+    signInBtnText: { color: color.textOnBrand, fontSize: 16, fontWeight: '600' },
     container: { padding: 24, gap: 16, alignItems: 'stretch' },
     email: {
       fontSize: 13,
