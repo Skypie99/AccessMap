@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, Text } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useAuth } from '@/lib/auth';
-import { FlagsProvider } from '@/lib/flagsStore';
+import { FlagsProvider, useFlags } from '@/lib/flagsStore';
 import {
   SharedModalsProvider,
   useSharedModals,
@@ -126,6 +126,16 @@ function NavInner({
   const color = useColor();
   const styles = makeStyles(color);
 
+  // Badge on the Tasks tab: count of 'open' flags (need verification).
+  // Gives users an at-a-glance signal that there's work to do without
+  // requiring them to tap in and count. Capped at 99 so the badge stays
+  // compact on narrow screens; cleared to undefined (no badge) when the
+  // queue is empty so the tab reads "all done."
+  const { flags } = useFlags();
+  const openCount = flags.filter((f) => f.status === 'open').length;
+  const tasksBadge: number | undefined =
+    openCount > 0 ? Math.min(openCount, 99) : undefined;
+
   const renderHeaderRight = () => (
     <Pressable
       onPress={() => setOpen('feedback')}
@@ -182,7 +192,19 @@ function NavInner({
       <Tab.Screen
         name="Tasks"
         component={TasksScreen}
-        options={{ tabBarIcon: tabIcon('✅') }}
+        options={{
+          tabBarIcon: tabIcon('✅'),
+          // Live count of open flags — tells the user at a glance that
+          // there are reports awaiting verification. Cleared (no badge)
+          // when the queue is empty so the tab reads "all done."
+          // React Navigation also exposes this count to VoiceOver /
+          // TalkBack via the tab's accessibilityLabel automatically.
+          tabBarBadge: tasksBadge,
+          tabBarBadgeStyle:
+            tasksBadge !== undefined
+              ? { backgroundColor: color.brand, color: color.textOnBrand }
+              : undefined,
+        }}
       />
       <Tab.Screen
         name="Profile"
