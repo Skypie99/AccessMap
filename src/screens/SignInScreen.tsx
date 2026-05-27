@@ -3,7 +3,7 @@ import { Alert, Button, StyleSheet, Text, TextInput, View } from 'react-native';
 import { color } from '@/theme';
 import { signInWithEmail, signUpWithEmail } from '@/lib/supabase';
 
-export default function SignInScreen() {
+export default function SignInScreen({ onClose }: { onClose?: () => void } = {}) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
@@ -31,6 +31,9 @@ export default function SignInScreen() {
     if (error) {
       Alert.alert('Auth error', error.message);
       return;
+    }
+    if (mode === 'in') {
+      onClose?.();
     }
     if (mode === 'up') {
       Alert.alert(

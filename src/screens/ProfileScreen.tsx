@@ -46,6 +46,7 @@ import FlagDetailModal, {
   type DetailAction,
 } from '@/components/FlagDetailModal';
 import AboutScreen from '@/screens/AboutScreen';
+import SignInScreen from '@/screens/SignInScreen';
 // HelpModal, ChangelogModal, and MyFeedbackModal used to mount here;
 // they now live in a single <SharedModalsHost /> at the navigator level
 // (see RootNavigator.tsx + src/lib/sharedModalsContext.tsx). Profile
@@ -150,6 +151,7 @@ export default function ProfileScreen() {
   // render on top without nesting Modals — nested transparent Modals are
   // platform-flaky (mostly on Android). When a row is tapped we hide the
   // list modal, open the detail modal, and re-show the list on close.
+  const [signInOpen, setSignInOpen] = useState(false);
   const [reportsOpen, setReportsOpen] = useState(false);
   const [reportsRefreshKey, setReportsRefreshKey] = useState(0);
   // Independent refresh key for the Recently Viewed row — bumped on
@@ -594,6 +596,17 @@ export default function ProfileScreen() {
     return (
       <View style={styles.center}>
         <Text style={styles.subtitle}>Not signed in.</Text>
+        <Pressable
+          onPress={() => setSignInOpen(true)}
+          style={({ pressed }) => [styles.signInBtn, pressed && styles.signInBtnPressed]}
+          accessibilityRole="button"
+          accessibilityLabel="Sign in to your account"
+        >
+          <Text style={styles.signInBtnText}>Sign in</Text>
+        </Pressable>
+        <Modal visible={signInOpen} animationType="slide" onRequestClose={() => setSignInOpen(false)}>
+          <SignInScreen onClose={() => setSignInOpen(false)} />
+        </Modal>
       </View>
     );
   }
@@ -1381,8 +1394,20 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 16,
     backgroundColor: color.surfaceMuted,
   },
+  signInBtn: {
+    backgroundColor: color.brand,
+    paddingHorizontal: 32,
+    paddingVertical: 14,
+    borderRadius: 100,
+    minHeight: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  signInBtnPressed: { opacity: 0.8 },
+  signInBtnText: { color: color.textOnBrand, fontSize: 16, fontWeight: '600' },
   container: { padding: 24, gap: 16, alignItems: 'stretch' },
   email: {
     fontSize: 13,

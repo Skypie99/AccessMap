@@ -1770,6 +1770,7 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     padding: 16,
     justifyContent: 'space-between',
+    zIndex: 10,
   },
   topRow: { flexDirection: 'row', gap: 8, alignItems: 'center' },
   // Saved Places chip row — slim secondary row beneath the action bar.

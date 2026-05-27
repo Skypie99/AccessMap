@@ -247,7 +247,7 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(
     );
 
     return (
-      <div style={{ position: 'absolute', inset: 0 }}>
+      <div style={{ position: 'absolute', inset: 0, zIndex: 0 }}>
         <MapContainer
           center={[initialRegion.latitude, initialRegion.longitude]}
           zoom={deltaToZoom(initialRegion.latitudeDelta)}
