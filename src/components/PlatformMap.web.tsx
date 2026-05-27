@@ -1,11 +1,17 @@
 import 'leaflet/dist/leaflet.css';
 import React, { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
-import { MapContainer, Marker, Popup, useMap } from 'react-leaflet';
+import { Circle, MapContainer, Marker, Popup, useMap } from 'react-leaflet';
 import L, { Map as LeafletMap, Marker as LeafletMarker } from 'leaflet';
 import { CATEGORY_LABELS, severityColor } from '@/lib/flags';
 import type { FlagRow } from '@/types/database';
 import { useAuth } from '@/lib/auth';
 import { getCachedTile, setCachedTile } from '@/lib/tileCache';
+import {
+  type HeatCell,
+  heatColorForSeverity,
+  heatOpacityForCount,
+  DEFAULT_HEAT_GRID_DEG,
+} from '@/lib/heatmap';
 
 export interface PlatformMapRegion {
   latitude: number;
@@ -39,6 +45,15 @@ export interface PlatformMapProps {
    * is the geographic point under the press.
    */
   onLongPressMap?: (coord: { lat: number; lng: number }) => void;
+  /**
+   * Heat-map overlay cells. When provided and non-empty, the map renders
+   * coloured Circle overlays — one per cell — using the same severity
+   * palette as individual pins. Cells are pre-binned at k>=3 (Jordan C1)
+   * so the renderer never has to enforce the privacy floor itself.
+   *
+   * Pass `undefined` (or `[]`) to hide the heat layer entirely.
+   */
+  heatCells?: HeatCell[];
 }
 
 // Cache pin icons by (color + dim). There are only 6 possible combinations
@@ -168,6 +183,16 @@ class CachedTileLayer extends L.TileLayer {
 // userId changes so tiles are always keyed to the current authenticated user.
 // ---------------------------------------------------------------------------
 
+// Heat-cell circle radius in meters. Derived from the default 0.005° grid
+// (~557m at the equator); rendered at ~70% of the cell half-diagonal so
+// adjacent cells visually blend into a continuous "blob" instead of looking
+// like isolated dots. Constant — if Sky tunes the grid size in heatmap.ts,
+// adjacent cells will still overlap because the visible density scales with
+// flag count via heatOpacityForCount(), not radius.
+const HEAT_CELL_RADIUS_M = Math.round(
+  ((DEFAULT_HEAT_GRID_DEG * 111320) / 2) * Math.SQRT2,
+);
+
 const OSM_URL = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
 const OSM_ATTRIBUTION =
   '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
@@ -191,7 +216,14 @@ function CachedTileLayerWrapper({ userId }: { userId: string | null }): null {
 
 const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(
   function PlatformMap(
-    { initialRegion, flags, focusedFlagId, reducedMotion, onLongPressMap },
+    {
+      initialRegion,
+      flags,
+      focusedFlagId,
+      reducedMotion,
+      onLongPressMap,
+      heatCells,
+    },
     ref,
   ) {
     const mapInstance = useRef<LeafletMap | null>(null);
@@ -257,6 +289,33 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(
           }}
         >
           <CachedTileLayerWrapper userId={userId} />
+          {/*
+            Heat overlay — rendered BEFORE individual markers so the pin
+            layer stays clickable on top. Each cell is a coloured Circle;
+            severity drives hue (heatColorForSeverity), count drives fill
+            opacity (heatOpacityForCount). Cells are already filtered to
+            k>=3 by computeHeatGrid — privacy floor is enforced upstream.
+            Circles use weight=0 (no border) so a sparse area doesn't show
+            "outline only" rings; the SVG layer beneath is non-interactive
+            so pins remain the primary interaction target.
+          */}
+          {heatCells?.map((cell) => {
+            const fill = heatColorForSeverity(cell.avgSeverity);
+            return (
+              <Circle
+                key={`heat-${cell.lat.toFixed(5)}-${cell.lng.toFixed(5)}`}
+                center={[cell.lat, cell.lng]}
+                radius={HEAT_CELL_RADIUS_M}
+                pathOptions={{
+                  color: fill,
+                  fillColor: fill,
+                  fillOpacity: heatOpacityForCount(cell.count),
+                  weight: 0,
+                  interactive: false,
+                }}
+              />
+            );
+          })}
           {flags.map((f) => (
             <Marker
               key={f.id}

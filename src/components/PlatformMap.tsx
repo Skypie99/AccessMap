@@ -1,13 +1,37 @@
 import React, { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
 import { Image, StyleSheet, Text, View } from 'react-native';
 import ClusteredMapView from 'react-native-map-clustering';
-import { Callout, Marker, PROVIDER_DEFAULT } from 'react-native-maps';
+import { Callout, Circle, Marker, PROVIDER_DEFAULT } from 'react-native-maps';
 import type MapView from 'react-native-maps';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { CATEGORY_LABELS, severityColor } from '@/lib/flags';
 import { decorativeProps } from '@/lib/accessibility';
 import { severityA11y, statusA11y } from '@/lib/a11yText';
 import type { FlagRow } from '@/types/database';
+import {
+  type HeatCell,
+  heatColorForSeverity,
+  heatOpacityForCount,
+  DEFAULT_HEAT_GRID_DEG,
+} from '@/lib/heatmap';
+
+// Heat-cell circle radius in meters. Matches the web variant — see
+// src/components/PlatformMap.web.tsx for the derivation. Both platforms
+// render the same HeatCell[] at the same geographic size so the layer
+// reads identically across web and native.
+const HEAT_CELL_RADIUS_M = Math.round(
+  ((DEFAULT_HEAT_GRID_DEG * 111320) / 2) * Math.SQRT2,
+);
+
+// react-native-maps' Circle expects fillColor as an rgba() string. Convert
+// a hex color + opacity into that form once per render — there are only a
+// handful of unique (color, opacity) pairs per frame, so this is cheap.
+function rgbaFromHex(hex: string, opacity: number): string {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return `rgba(${r}, ${g}, ${b}, ${opacity.toFixed(3)})`;
+}
 
 export interface PlatformMapRegion {
   latitude: number;
@@ -40,6 +64,14 @@ export interface PlatformMapProps {
    * implements the same callback via a `contextmenu` listener.
    */
   onLongPressMap?: (coord: { lat: number; lng: number }) => void;
+  /**
+   * Heat-map overlay cells. When provided and non-empty, the map renders
+   * `<Circle>` overlays — one per cell — using the same severity palette
+   * as individual pins. Cells are pre-binned at k>=3 (Jordan C1) by
+   * computeHeatGrid before being passed in. Pass `undefined` or `[]` to
+   * hide the heat layer entirely.
+   */
+  heatCells?: HeatCell[];
 }
 
 const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(
@@ -51,6 +83,7 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(
       showsUserLocation,
       reducedMotion,
       onLongPressMap,
+      heatCells,
     },
     ref,
   ) {
@@ -136,6 +169,29 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(
             : undefined
         }
       >
+        {/*
+          Heat overlay — rendered BEFORE markers so pins stay on top and
+          remain tappable. Each cell is a translucent <Circle>; severity
+          drives the hue (heatColorForSeverity), count drives the fill
+          opacity (heatOpacityForCount). Privacy floor (k>=3) is enforced
+          upstream by computeHeatGrid — Circles here just visualize.
+          strokeColor uses the same fill (no border ring) so a sparse
+          area doesn't show "outline only".
+        */}
+        {heatCells?.map((cell) => {
+          const hex = heatColorForSeverity(cell.avgSeverity);
+          const rgba = rgbaFromHex(hex, heatOpacityForCount(cell.count));
+          return (
+            <Circle
+              key={`heat-${cell.lat.toFixed(5)}-${cell.lng.toFixed(5)}`}
+              center={{ latitude: cell.lat, longitude: cell.lng }}
+              radius={HEAT_CELL_RADIUS_M}
+              fillColor={rgba}
+              strokeColor={rgba}
+              strokeWidth={0}
+            />
+          );
+        })}
         {flags.map((f) => (
           <Marker
             key={f.id}
