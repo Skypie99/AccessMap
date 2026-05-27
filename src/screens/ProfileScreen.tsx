@@ -79,7 +79,7 @@ import RecentlyViewedRow from '@/components/RecentlyViewedRow';
 import ReportsBreakdownCard from '@/components/ReportsBreakdownCard';
 import LeaderboardModal from '@/components/LeaderboardModal';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
-import { radius } from '@/theme';
+import { radius, shadow } from '@/theme';
 import { getTier, pointsToNextTier, REPUTATION_TIERS } from '@/lib/reputationTier';
 import SignInScreen from '@/screens/SignInScreen';
 import AboutScreen from '@/screens/AboutScreen';
@@ -768,7 +768,7 @@ export default function ProfileScreen() {
             )}
             {uploadingAvatar ? (
               <View style={styles.avatarOverlay}>
-                <ActivityIndicator color="#fff" size="small" />
+                <ActivityIndicator color={color.textOnBrand} size="small" />
               </View>
             ) : (
               <View
@@ -1555,26 +1555,25 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
   container: { padding: 24, gap: 16, alignItems: 'stretch' },
   email: {
     fontSize: 13,
-    color: '#666',
+    color: color.textMuted,
     textAlign: 'center',
     marginBottom: 4,
   },
-  subtitle: { fontSize: 14, color: '#555' },
+  subtitle: { fontSize: 14, color: color.text },
   heroCard: {
     backgroundColor: color.brand,
-    borderRadius: 20,
+    borderRadius: 24,
     paddingHorizontal: 24,
-    paddingTop: 20,
-    paddingBottom: 22,
+    paddingTop: 22,
+    paddingBottom: 24,
     alignItems: 'center',
     gap: 4,
-    // Heavier drop shadow than the surrounding cards so the hero sits
-    // forward and reads as the page's anchor.
-    shadowColor: '#000',
-    shadowOpacity: 0.18,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 6,
+    // Heavier drop shadow so the hero sits forward as the page anchor.
+    shadowColor: color.shadow,
+    shadowOpacity: 0.22,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 8,
   },
   heroIcon: { fontSize: 32, marginBottom: 4 },
 
@@ -1604,11 +1603,12 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
   avatarInitials: {
     fontSize: 26,
     fontWeight: '700',
-    color: '#fff',
+    color: color.textOnBrand,
+    letterSpacing: 0.5,
   },
   avatarOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.45)',
+    backgroundColor: color.overlayBtn,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1630,19 +1630,21 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
   },
 
   heroLabel: {
-    color: '#dbe7fb',
+    color: color.pointsPillText,
     fontSize: 11,
-    letterSpacing: 2,
+    letterSpacing: 2.4,
     fontWeight: '700',
+    textTransform: 'uppercase',
   },
   heroValue: {
     color: color.textOnBrand,
     fontSize: 56,
     fontWeight: '800',
     lineHeight: 60,
+    letterSpacing: -1.2,
   },
   heroSubtitle: {
-    color: '#dbe7fb',
+    color: color.pointsPillText,
     fontSize: 13,
     fontWeight: '600',
     textAlign: 'center',
@@ -1658,7 +1660,7 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
   },
   progressFill: {
     height: '100%',
-    backgroundColor: '#fff',
+    backgroundColor: color.textOnBrand,
     borderRadius: radius.circle,
   },
   // T4: Hero value row — wraps the large points number + the small
@@ -1685,13 +1687,7 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
     minHeight: 32,
     minWidth: 44,
     justifyContent: 'center',
-    // Subtle shadow so the pill reads as a separate affordance, not a
-    // flat label baked into the hero.
-    shadowColor: '#000',
-    shadowOpacity: 0.12,
-    shadowRadius: 3,
-    shadowOffset: { width: 0, height: 1 },
-    elevation: 2,
+    ...shadow.e1,
   },
   tierPillPressed: {
     backgroundColor: color.brandSofter,
@@ -1701,44 +1697,51 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
   tierPillLabel: {
     fontSize: 13,
     fontWeight: '700',
-    color: '#1b4373',
+    color: color.brandText,
+    letterSpacing: 0.2,
   },
   // T4: Tier-explainer modal. Mirrors AboutScreen's translucent backdrop
   // and rounded card; lives inline here because it's small and
   // tightly coupled to the pill above.
   tierBackdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.45)',
+    backgroundColor: color.scrim,
     justifyContent: 'center',
     padding: 24,
   },
   tierSheet: {
     backgroundColor: color.surface,
-    borderRadius: 16,
+    borderRadius: radius.xl,
     padding: 20,
     gap: 12,
-    shadowColor: '#000',
-    shadowOpacity: 0.25,
-    shadowRadius: 16,
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 10,
+    ...shadow.e3,
   },
   tierHeaderRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  tierHeaderTitle: { fontSize: 18, fontWeight: '700', color: '#222' },
+  tierHeaderTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: color.textStrong,
+    letterSpacing: -0.2,
+  },
   tierCloseBtn: {
     width: 32,
     height: 32,
-    borderRadius: 16,
+    borderRadius: radius.circle,
     backgroundColor: color.surfaceNeutral,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  tierCloseBtnText: { fontSize: 16, color: '#555', fontWeight: '600' },
-  tierIntro: { fontSize: 13, color: '#555', lineHeight: 18 },
+  tierCloseBtnText: {
+    fontSize: 16,
+    color: color.text,
+    fontWeight: '600',
+    lineHeight: 18,
+  },
+  tierIntro: { fontSize: 13, color: color.text, lineHeight: 19 },
   tierList: { gap: 8, marginTop: 4 },
   tierRow: {
     flexDirection: 'row',
@@ -1759,14 +1762,14 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
   },
   tierRowEmoji: { fontSize: 22 },
   tierRowTextWrap: { flex: 1, gap: 2 },
-  tierRowLabel: { fontSize: 15, fontWeight: '700', color: '#333' },
-  tierRowLabelCurrent: { color: '#1b4373' },
-  tierRowCurrentTag: { fontSize: 12, fontWeight: '600', color: '#345e8e' },
-  tierRowRange: { fontSize: 12, color: '#666' },
+  tierRowLabel: { fontSize: 15, fontWeight: '700', color: color.text },
+  tierRowLabelCurrent: { color: color.brandText },
+  tierRowCurrentTag: { fontSize: 12, fontWeight: '600', color: color.brandText },
+  tierRowRange: { fontSize: 12, color: color.textMuted },
   tierFooter: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#345e8e',
+    color: color.brandText,
     textAlign: 'center',
     marginTop: 4,
   },
@@ -1777,8 +1780,8 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    backgroundColor: '#fff7e6',
-    borderRadius: 12,
+    backgroundColor: color.warningBg,
+    borderRadius: radius.lg,
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderLeftWidth: 3,
@@ -1786,8 +1789,8 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
   },
   streakIcon: { fontSize: 24 },
   streakTextWrap: { flex: 1, gap: 2 },
-  streakValue: { fontSize: 15, fontWeight: '700', color: '#7a5500' },
-  streakSubtitle: { fontSize: 12, color: '#8c6510' },
+  streakValue: { fontSize: 15, fontWeight: '700', color: color.warningFg },
+  streakSubtitle: { fontSize: 12, color: color.warningFg, opacity: 0.85 },
   // R9: Nearest-unresolved jump button. Pale-blue card to set it apart
   // from the orange streak card directly above; chevron hints at the
   // navigation action.
@@ -1804,17 +1807,16 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
     borderLeftColor: color.brand,
   },
   nearestBtnPressed: {
-    backgroundColor: '#d8e8fb',
+    backgroundColor: color.brandSoft,
     opacity: 0.9,
   },
   nearestBtnIcon: { fontSize: 22 },
   nearestBtnTextWrap: { flex: 1, gap: 2 },
-  // #1b4373 on #eaf3ff ≈ 9.5:1 — comfortably above AA.
-  nearestBtnTitle: { fontSize: 15, fontWeight: '700', color: '#1b4373' },
-  nearestBtnSubtitle: { fontSize: 12, color: '#345e8e' },
+  nearestBtnTitle: { fontSize: 15, fontWeight: '700', color: color.brandText },
+  nearestBtnSubtitle: { fontSize: 12, color: color.brandText, opacity: 0.85 },
   nearestBtnChevron: {
     fontSize: 22,
-    color: '#2f80ed',
+    color: color.brand,
     paddingHorizontal: 4,
     fontWeight: '700',
   },
@@ -1822,17 +1824,24 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
   statCard: {
     flex: 1,
     backgroundColor: color.surface,
-    borderRadius: 12,
+    borderRadius: radius.lg,
     padding: 16,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 1 },
-    elevation: 1,
+    ...shadow.e1,
   },
-  statValue: { fontSize: 28, fontWeight: '700', color: '#222' },
-  statLabel: { fontSize: 12, color: '#666', textTransform: 'uppercase' },
+  statValue: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: color.textStrong,
+    letterSpacing: -0.5,
+  },
+  statLabel: {
+    fontSize: 11,
+    color: color.textMuted,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    fontWeight: '600',
+  },
   // Per-status pill row (open / verified / resolved / rejected). Uses
   // STATUS_COLORS for visual continuity with the badges in detail modals.
   statusBreakdownRow: {
@@ -1856,45 +1865,47 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
   statusPillLabel: { fontSize: 10, fontWeight: '700', textTransform: 'uppercase' },
   myReportsBtn: {
     backgroundColor: color.surface,
-    borderRadius: 12,
+    borderRadius: radius.lg,
     padding: 16,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    shadowColor: '#000',
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 1 },
-    elevation: 1,
+    ...shadow.e1,
     minHeight: 64,
   },
-  myReportsBtnPressed: { opacity: 0.85, backgroundColor: '#f7f9fc' },
+  myReportsBtnPressed: { opacity: 0.85, backgroundColor: color.surfaceMuted },
   myReportsTextWrap: { flex: 1, gap: 2 },
-  myReportsTitle: { fontSize: 16, fontWeight: '700', color: '#222' },
+  myReportsTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: color.textStrong,
+    letterSpacing: -0.1,
+  },
   // Inline "· X / N" count next to the Achievements title — muted so the
   // main title still reads as the link affordance.
-  achievementsCount: { fontWeight: '600', color: '#888', fontSize: 14 },
-  myReportsSubtitle: { fontSize: 13, color: '#666' },
+  achievementsCount: { fontWeight: '600', color: color.textSubtle, fontSize: 14 },
+  myReportsSubtitle: { fontSize: 13, color: color.textMuted },
   myReportsChevron: { fontSize: 28, color: color.textSubtle, fontWeight: '300' },
   section: { gap: 8, marginTop: 8 },
   sectionLabel: {
     fontSize: 12,
-    color: '#666',
+    color: color.textMuted,
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    letterSpacing: 0.8,
     fontWeight: '700',
   },
   nameRow: { flexDirection: 'row', gap: 8 },
   nameInput: {
     flex: 1,
     borderWidth: 1,
-    borderColor: '#dde2ea',
-    backgroundColor: '#fff',
-    borderRadius: 8,
+    borderColor: color.borderSubtle,
+    backgroundColor: color.surface,
+    borderRadius: radius.md,
     paddingHorizontal: 12,
     paddingVertical: 10,
     fontSize: 15,
     minHeight: 44,
+    color: color.text,
   },
   saveBtn: {
     backgroundColor: color.brand,
@@ -1907,7 +1918,7 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
   },
   saveBtnDisabled: { opacity: 0.4 },
   saveBtnText: { color: color.textOnBrand, fontWeight: '700', fontSize: 14 },
-  hint: { fontSize: 12, color: '#666' },
+  hint: { fontSize: 12, color: color.textMuted, lineHeight: 16 },
   tabRow: { flexDirection: 'row', gap: 8 },
   tabPill: {
     flex: 1,
@@ -1919,7 +1930,7 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
     justifyContent: 'center',
   },
   tabPillSelected: { backgroundColor: color.brand },
-  tabPillText: { color: '#333', fontWeight: '600', fontSize: 14 },
+  tabPillText: { color: color.text, fontWeight: '600', fontSize: 14 },
   tabPillTextSelected: { color: color.textOnBrand },
   linkBtn: {
     backgroundColor: color.surfaceNeutral,
@@ -1934,22 +1945,23 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
   aboutRow: {
     marginTop: 16,
     backgroundColor: color.surface,
-    borderRadius: 12,
+    borderRadius: radius.lg,
     padding: 16,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    shadowColor: '#000',
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 1 },
-    elevation: 1,
+    ...shadow.e1,
     minHeight: 64,
   },
-  aboutRowPressed: { opacity: 0.85, backgroundColor: '#f7f9fc' },
+  aboutRowPressed: { opacity: 0.85, backgroundColor: color.surfaceMuted },
   aboutTextWrap: { flex: 1, gap: 2 },
-  aboutTitle: { fontSize: 16, fontWeight: '700', color: '#222' },
-  aboutSubtitle: { fontSize: 13, color: '#666' },
+  aboutTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: color.textStrong,
+    letterSpacing: -0.1,
+  },
+  aboutSubtitle: { fontSize: 13, color: color.textMuted },
   aboutChevron: { fontSize: 28, color: color.textSubtle, fontWeight: '300' },
   signOutBtn: {
     marginTop: 16,
@@ -1961,5 +1973,5 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
     minHeight: 44,
     justifyContent: 'center',
   },
-  signOutText: { color: '#333', fontWeight: '600' },
+  signOutText: { color: color.text, fontWeight: '600' },
 });

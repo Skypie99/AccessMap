@@ -3,6 +3,7 @@ import { Image, StyleSheet, Text, View } from 'react-native';
 import ClusteredMapView from 'react-native-map-clustering';
 import { Callout, Marker, PROVIDER_DEFAULT } from 'react-native-maps';
 import type MapView from 'react-native-maps';
+import { font, radius, shadow, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { CATEGORY_LABELS, severityColor } from '@/lib/flags';
 import { decorativeProps } from '@/lib/accessibility';
@@ -195,49 +196,59 @@ export default PlatformMap;
 const makeStyles = (color: ColorTheme) => StyleSheet.create({
   callout: {
     flexDirection: 'row',
-    width: 240,
+    width: 244,
     backgroundColor: color.surface,
-    borderRadius: 12,
+    borderRadius: radius.lg,
     overflow: 'hidden',
-    shadowColor: color.shadow,
-    shadowOpacity: 0.18,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 3 },
-    elevation: 5,
+    ...shadow.e3,
   },
   calloutSevBar: { width: 6 },
-  calloutBody: { flex: 1, padding: 10, gap: 4 },
-  calloutTitle: { fontSize: 14, fontWeight: '700', color: color.textStrong },
+  calloutBody: { flex: 1, padding: spacing.md, gap: spacing.tight },
+  calloutTitle: {
+    fontSize: font.size.base,
+    fontWeight: font.weight.bold,
+    color: color.textStrong,
+    letterSpacing: -0.1,
+  },
   calloutMeta: {
-    fontSize: 11,
+    fontSize: font.size.caption,
     color: color.textMuted,
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    letterSpacing: 0.6,
+    fontWeight: font.weight.semibold,
   },
-  calloutDesc: { fontSize: 12, color: color.text, marginTop: 4 },
+  calloutDesc: {
+    fontSize: font.size.xs,
+    color: color.text,
+    marginTop: spacing.tight,
+    lineHeight: 17,
+  },
   calloutPhoto: {
     width: '100%',
     height: 120,
-    borderRadius: 8,
-    marginTop: 6,
+    borderRadius: radius.md,
+    marginTop: spacing.xs,
     backgroundColor: color.surfaceNeutral,
   },
+  // Cluster marker — a soft halo + filled core in brand blue. The halo
+  // gives the cluster a sense of "grouped energy" so it reads as more
+  // than just an oversized pin. Inner ring catches the eye and gives
+  // separation from the underlying map tile.
   cluster: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 44,
+    height: 44,
+    borderRadius: radius.circle,
     backgroundColor: color.brand,
+    borderWidth: 2.5,
+    borderColor: color.textOnBrand,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: color.shadow,
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 4,
+    ...shadow.e2,
   },
   clusterCount: {
     color: color.textOnBrand,
-    fontSize: 13,
-    fontWeight: '700',
+    fontSize: font.size.base,
+    fontWeight: font.weight.bold,
+    letterSpacing: -0.2,
   },
 });
