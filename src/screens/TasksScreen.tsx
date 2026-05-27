@@ -41,6 +41,7 @@ import {
   type TaskSelectionState,
 } from '@/lib/taskSelection';
 import { loadScope, saveScope } from '@/lib/tasksScope';
+import { addWatchedBulk } from '@/lib/watchedFlags';
 import type { FlagRow, FlagStatus } from '@/types/database';
 import type { RootTabParamList } from '@/navigation/RootNavigator';
 import FlagDetailModal, { type DetailAction } from '@/components/FlagDetailModal';
@@ -344,6 +345,54 @@ export default function TasksScreen() {
     },
     [selection, flagsMap, patchFlag, removeFlag, refresh, exitSelection, showFlash],
   );
+
+  // Bulk-watch — adds every currently-selected id to the user's Watched
+  // list in one shot. Useful when triaging a clump of related flags
+  // ("watch all of these for status changes") without leaving the
+  // SectionList. Delegates to addWatchedBulk so the FIFO eviction and
+  // dedupe live in one place.
+  const runBulkWatch = useCallback(async () => {
+    if (!user) {
+      Alert.alert('Sign in required', 'Please sign in to watch flags.');
+      return;
+    }
+    const ids = selection.selectedIds.slice();
+    if (ids.length === 0) {
+      exitSelection();
+      return;
+    }
+    setBulkBusy(true);
+    try {
+      const { added, alreadyWatched, dropped } = await addWatchedBulk(
+        user.id,
+        ids,
+      );
+      if (added === 0 && alreadyWatched > 0) {
+        showFlash(
+          alreadyWatched === 1
+            ? 'Already watching that flag'
+            : `Already watching all ${alreadyWatched} flags`,
+        );
+      } else if (added > 0) {
+        // Compose a single-line summary so the screen-reader announcement
+        // matches the visible flash. Mentions the eviction when it
+        // happened (rare but the user should know).
+        const parts: string[] = [
+          `Watching ${added} flag${added === 1 ? '' : 's'}`,
+        ];
+        if (alreadyWatched > 0) parts.push(`${alreadyWatched} already watched`);
+        if (dropped > 0) parts.push(`${dropped} oldest dropped`);
+        const msg = parts.join(', ');
+        showFlash(msg);
+        AccessibilityInfo.announceForAccessibility(msg);
+      }
+    } catch (e) {
+      Alert.alert('Could not update watched list', errorMessage(e));
+    } finally {
+      setBulkBusy(false);
+      exitSelection();
+    }
+  }, [user, selection, exitSelection, showFlash]);
 
   useEffect(
     () => () => {
@@ -823,6 +872,36 @@ export default function TasksScreen() {
               }}
             >
               <Text style={styles.bulkBtnText}>Resolve</Text>
+            </Pressable>
+            <Pressable
+              onPress={() => { void runBulkWatch(); }}
+              disabled={bulkBusy || selectionCount(selection) === 0 || !user}
+              style={({ pressed }) => [
+                styles.bulkBtn,
+                styles.bulkWatchBtn,
+                (bulkBusy || selectionCount(selection) === 0 || !user) &&
+                  styles.bulkBtnDisabled,
+                pressed &&
+                  !bulkBusy &&
+                  selectionCount(selection) > 0 &&
+                  user &&
+                  styles.bulkBtnPressed,
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel="Watch"
+              accessibilityHint={
+                !user
+                  ? 'Sign in to watch flags'
+                  : selectionCount(selection) === 0
+                    ? 'No flags selected'
+                    : 'Adds each selected flag to your watched list'
+              }
+              accessibilityState={{
+                disabled: bulkBusy || selectionCount(selection) === 0 || !user,
+                busy: bulkBusy,
+              }}
+            >
+              <Text style={styles.bulkBtnText}>Watch</Text>
             </Pressable>
             <Pressable
               onPress={exitSelection}

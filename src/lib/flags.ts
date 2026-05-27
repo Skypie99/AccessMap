@@ -117,7 +117,7 @@ export interface CreateFlagInput {
 export async function listFlags(statuses: FlagStatus[] = ['open', 'verified']) {
   const { data, error } = await supabase
     .from('flags')
-    .select('*')
+    .select('id, user_id, lat, lng, category, description, severity, photo_url, status, created_at')
     .in('status', statuses)
     .order('created_at', { ascending: false })
     .limit(500);
@@ -163,7 +163,7 @@ export async function listFlagsPage(
   const limit = opts.limit ?? INITIAL_PAGE_SIZE;
   let query = supabase
     .from('flags')
-    .select('*')
+    .select('id, user_id, lat, lng, category, description, severity, photo_url, status, created_at')
     .in('status', statuses)
     .order('created_at', { ascending: false })
     .limit(limit);
@@ -186,7 +186,7 @@ export async function listFlagsPage(
 export async function listFlagsByUser(userId: string) {
   const { data, error } = await supabase
     .from('flags')
-    .select('*')
+    .select('id, user_id, lat, lng, category, description, severity, photo_url, status, created_at')
     .eq('user_id', userId)
     .order('created_at', { ascending: false })
     .limit(200);
@@ -400,7 +400,7 @@ export async function fetchFlagsByIds(flagIds: string[]): Promise<FlagRow[]> {
 export async function listRecentFlags(limit = 100): Promise<FlagRow[]> {
   const { data, error } = await supabase
     .from('flags')
-    .select('*')
+    .select('id, user_id, lat, lng, category, description, severity, photo_url, status, created_at')
     .order('created_at', { ascending: false })
     .limit(limit);
   if (error) throw error;

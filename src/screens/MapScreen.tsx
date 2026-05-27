@@ -195,6 +195,13 @@ export default function MapScreen() {
   const [activeStatuses, setActiveStatuses] = useState<Set<FlagStatus>>(
     () => new Set(DEFAULT_STATUSES),
   );
+  // Max distance (km) from the user to consider a flag visible. null = off
+  // (no distance filter applied). When the user has no known location
+  // (permission denied / still loading), the filter is treated as inactive
+  // regardless of this value — see filteredFlags below. Persisted via
+  // mapFilters; saved sets/presets do not carry this axis (yet) so applying
+  // a set leaves the current radius untouched.
+  const [maxDistanceKm, setMaxDistanceKm] = useState<number | null>(null);
   // Tracks whether we've finished reading saved filters from AsyncStorage.
   // The save-effect below is gated on this so the very first render
   // doesn't overwrite stored state with the (still-default) starting set
@@ -261,6 +268,7 @@ export default function MapScreen() {
     setActiveCategories(new Set());
     setMinSeverity(1);
     setActiveStatuses(new Set(DEFAULT_STATUSES));
+    setMaxDistanceKm(null);
   }, []);
 
   // Quick-toggle severity from the top icon row without opening the full
@@ -364,6 +372,10 @@ export default function MapScreen() {
         setMinSeverity(saved.minSeverity);
         setActiveStatuses(new Set(saved.statuses));
       }
+      // Distance is hydrated from the last-toggled mapFilters even when a
+      // default saved set is being applied — saved sets don't currently
+      // carry distance, so we still want the user's last radius choice.
+      if (saved) setMaxDistanceKm(saved.maxDistanceKm);
       setSavedSets(sets);
       setDefaultIdState(defaultSet ? defaultSet.id : null);
       setPanelCollapsed(collapsed);
@@ -558,8 +570,20 @@ export default function MapScreen() {
       categories: Array.from(activeCategories),
       minSeverity,
       statuses: Array.from(activeStatuses),
+      maxDistanceKm,
     });
-  }, [activeCategories, minSeverity, activeStatuses, filtersHydrated]);
+  }, [
+    activeCategories,
+    minSeverity,
+    activeStatuses,
+    maxDistanceKm,
+    filtersHydrated,
+  ]);
+
+  // Distance is only effective when we know where the user is — otherwise
+  // the filter would silently hide every flag. Track this in a derived
+  // flag so the chip row + filteredFlags + filtersActive agree.
+  const distanceFilterEffective = maxDistanceKm !== null && location !== null;
 
   const filtersActive = activeCategories.size > 0 || minSeverity > 1 || statusFilterActive;
 
@@ -592,12 +616,32 @@ export default function MapScreen() {
 
   const filteredFlags = useMemo(() => {
     if (!filtersActive) return flags;
-    return flags.filter(
-      (f) =>
-        (activeCategories.size === 0 || activeCategories.has(f.category)) &&
-        f.severity >= minSeverity,
-    );
-  }, [flags, activeCategories, minSeverity, filtersActive]);
+    return flags.filter((f) => {
+      if (activeCategories.size > 0 && !activeCategories.has(f.category)) {
+        return false;
+      }
+      if (f.severity < minSeverity) return false;
+      // Distance filter — only applied when we actually know where the user
+      // is (see distanceFilterEffective). Status filtering already happens
+      // server-side via setStatuses, so we don't repeat it here.
+      if (distanceFilterEffective && maxDistanceKm !== null && location) {
+        const km = haversineKm(
+          { lat: location.lat, lng: location.lng },
+          { lat: f.lat, lng: f.lng },
+        );
+        if (km > maxDistanceKm) return false;
+      }
+      return true;
+    });
+  }, [
+    flags,
+    activeCategories,
+    minSeverity,
+    filtersActive,
+    distanceFilterEffective,
+    maxDistanceKm,
+    location,
+  ]);
 
   // Announce the empty-results state to iOS screen readers when it appears
   // (Android picks it up via the alert's accessibilityLiveRegion). Only

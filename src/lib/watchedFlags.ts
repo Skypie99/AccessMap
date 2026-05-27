@@ -91,6 +91,55 @@ export async function removeWatched(userId: string, flagId: string): Promise<str
 }
 
 /**
+ * Bulk-add a batch of flag IDs to the watched list. Returns a summary
+ * with `added` (how many were newly stored), `alreadyWatched` (how many
+ * IDs in the batch were already on the list, no-oped), and `dropped`
+ * (how many of the OLDEST existing entries got evicted to stay under
+ * MAX_WATCHED).
+ *
+ * Why not loop addWatched: each individual call does its own load+save
+ * round-trip. For a batch (e.g. a 20-flag triage selection), the
+ * sequential AsyncStorage writes pile up — the FIFO bookkeeping also
+ * gets confusing across writes. One read + one write here keeps the
+ * semantics obvious and the storage churn low.
+ */
+export async function addWatchedBulk(
+  userId: string,
+  flagIds: string[],
+): Promise<{ added: number; alreadyWatched: number; dropped: number }> {
+  if (flagIds.length === 0) {
+    return { added: 0, alreadyWatched: 0, dropped: 0 };
+  }
+  const current = await loadWatched(userId);
+  const existingSet = new Set(current);
+  // Preserve the caller's batch order, dedupe within the batch itself
+  // (in case the selection had duplicates from somewhere), and drop any
+  // ids already on the list (those become alreadyWatched counts).
+  const seenInBatch = new Set<string>();
+  const toAdd: string[] = [];
+  let alreadyWatched = 0;
+  for (const id of flagIds) {
+    if (seenInBatch.has(id)) continue;
+    seenInBatch.add(id);
+    if (existingSet.has(id)) {
+      alreadyWatched += 1;
+      continue;
+    }
+    toAdd.push(id);
+  }
+  if (toAdd.length === 0) {
+    return { added: 0, alreadyWatched, dropped: 0 };
+  }
+  const combined = [...current, ...toAdd];
+  // FIFO eviction to stay at MAX_WATCHED. Compute dropped count so the
+  // UI can warn the user if some watched-for-ages flags got bumped.
+  const dropped = Math.max(0, combined.length - MAX_WATCHED);
+  const next = dropped > 0 ? combined.slice(dropped) : combined;
+  await persist(userId, next);
+  return { added: toAdd.length, alreadyWatched, dropped };
+}
+
+/**
  * Replace the user's watched list with the given ids (preserving the
  * order given). Used by the Watched view to prune ids whose flags no
  * longer exist on the server. No-op if the new list is identical to

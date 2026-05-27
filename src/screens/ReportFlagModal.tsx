@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
+  AccessibilityInfo,
   ActivityIndicator,
   Alert,
   Image,
@@ -64,6 +65,22 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
   const [tagsCapability, setTagsCapability] = useState<ContextTagsCapability>('unknown');
   useEffect(() => subscribeContextTagsCapability(setTagsCapability), []);
   const tagsDisabled = tagsCapability === 'unavailable';
+
+  // When severity crosses into "high" territory (≥4) and the user hasn't
+  // attached a photo yet, announce a nudge to screen readers via
+  // AccessibilityInfo (iOS VoiceOver — Android uses accessibilityLiveRegion
+  // on the rendered hint element). Only fires on severity change, not on
+  // every render, and never fires if a photo is already attached.
+  const prevHighRef = useRef(false);
+  useEffect(() => {
+    const isHigh = severity >= 4 && !photoUri;
+    if (isHigh && !prevHighRef.current) {
+      void AccessibilityInfo.announceForAccessibility(
+        `Tip: adding a photo helps verify this ${severity === 5 ? 'severe' : 'major'} barrier without a site visit.`,
+      );
+    }
+    prevHighRef.current = isHigh;
+  }, [severity, photoUri]);
 
   const reset = () => {
     setCategory('no_ramp');
@@ -281,6 +298,42 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
           )}
 
           <Text style={styles.label}>Photo (optional)</Text>
+
+          {/* High-severity photo nudge — only shown when severity ≥ 4 and
+              no photo has been selected. At severity 4–5, a photo is the
+              single biggest factor that lets verifiers act without visiting
+              in person, so surfacing this tip here (rather than in help
+              text buried elsewhere) meaningfully improves flag quality.
+              Once a photo is attached the nudge disappears — no clutter.
+
+              accessible + accessibilityLabel: the whole card is one a11y
+              node; the emoji is decorative and screened out. The
+              accessibilityLiveRegion triggers the Android AT announcement;
+              iOS is handled by the useEffect above. */}
+          {severity >= 4 && !photoUri && (
+            <View
+              style={styles.photoNudge}
+              accessible
+              accessibilityLabel={`Tip: adding a photo helps verify this ${severity === 5 ? 'severe' : 'major'} barrier without a site visit.`}
+              accessibilityLiveRegion="polite"
+            >
+              <Text
+                style={styles.photoNudgeIcon}
+                accessibilityElementsHidden
+                importantForAccessibility="no-hide-descendants"
+              >
+                📸
+              </Text>
+              <Text style={styles.photoNudgeBody}>
+                {'A photo helps verify this '}
+                <Text style={styles.photoNudgeBold}>
+                  {severity === 5 ? 'severe' : 'major'} barrier
+                </Text>
+                {' without a site visit.'}
+              </Text>
+            </View>
+          )}
+
           {photoUri ? (
             <View style={styles.photoPreviewWrap}>
               <Image

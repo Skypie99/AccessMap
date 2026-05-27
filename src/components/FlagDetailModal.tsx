@@ -34,6 +34,7 @@ import {
   type FlagContentPatch,
 } from '@/lib/flags';
 import { severityA11y, statusA11y } from '@/lib/a11yText';
+import { CONTEXT_TAG_LABELS, isValidTag } from '@/lib/contextTags';
 import type { FlagCategory, FlagRow, FlagSeverity, FlagStatus } from '@/types/database';
 import PhotoLightboxModal from './PhotoLightboxModal';
 import StatusHistoryModal from './StatusHistoryModal';
@@ -113,6 +114,16 @@ export default function FlagDetailModal({
   useEffect(() => {
     setHistoryOpen(false);
   }, [flag?.id]);
+
+  // Record a "view" the first time this modal becomes visible with a flag
+  // and user. Fire-and-forget — the recently-viewed row on Profile updates
+  // on its next focus; we don't want to block the modal open on storage.
+  // Deduping + capping live inside recordView itself; re-opening the
+  // same flag just bubbles it to the top of the list.
+  useEffect(() => {
+    if (!visible || !shownFlag || !user) return;
+    void recordView(user.id, shownFlag.id);
+  }, [visible, shownFlag, user]);
 
   // Read the user's watched list to know whether THIS flag is being
   // tracked. Re-runs whenever the modal opens or the shown flag changes,

@@ -18,7 +18,7 @@ export async function updateUserProfile(userId: string, patch: UserProfilePatch)
     .from('users')
     .update(patch)
     .eq('id', userId)
-    .select()
+    .select('id, email, display_name, avatar_url, points, created_at')
     .single();
   if (error) throw error;
   return data as UserRow;

@@ -39,6 +39,7 @@ import MyReportsModal from '@/components/MyReportsModal';
 import MyWatchedModal from '@/components/MyWatchedModal';
 import FlagDetailModal, { type DetailAction } from '@/components/FlagDetailModal';
 import AboutScreen from '@/screens/AboutScreen';
+import SignInScreen from '@/screens/SignInScreen';
 // HelpModal, ChangelogModal, and MyFeedbackModal used to mount here;
 // they now live in a single <SharedModalsHost /> at the navigator level
 // (see RootNavigator.tsx + src/lib/sharedModalsContext.tsx). Profile
@@ -128,8 +129,13 @@ export default function ProfileScreen() {
   // render on top without nesting Modals — nested transparent Modals are
   // platform-flaky (mostly on Android). When a row is tapped we hide the
   // list modal, open the detail modal, and re-show the list on close.
+  const [signInOpen, setSignInOpen] = useState(false);
   const [reportsOpen, setReportsOpen] = useState(false);
   const [reportsRefreshKey, setReportsRefreshKey] = useState(0);
+  // Independent refresh key for the Recently Viewed row — bumped on
+  // every Profile focus so flags opened on other tabs since the last
+  // focus are reflected in the chip row immediately.
+  const [recentRefreshKey, setRecentRefreshKey] = useState(0);
   const [watchedOpen, setWatchedOpen] = useState(false);
   const [watchedRefreshKey, setWatchedRefreshKey] = useState(0);
   const [activityOpen, setActivityOpen] = useState(false);
@@ -361,6 +367,10 @@ export default function ProfileScreen() {
   useFocusEffect(
     useCallback(() => {
       void Promise.all([load(), refreshUpdateCount(), refreshStreak()]);
+      // RecentlyViewedRow owns its own fetch; bump its key on focus so
+      // it picks up flags the user opened on other tabs since the last
+      // focus event.
+      setRecentRefreshKey((k) => k + 1);
     }, [load, refreshUpdateCount, refreshStreak]),
   );
 
@@ -548,6 +558,17 @@ export default function ProfileScreen() {
     return (
       <View style={styles.center}>
         <Text style={styles.subtitle}>Not signed in.</Text>
+        <Pressable
+          onPress={() => setSignInOpen(true)}
+          style={({ pressed }) => [styles.signInBtn, pressed && styles.signInBtnPressed]}
+          accessibilityRole="button"
+          accessibilityLabel="Sign in to your account"
+        >
+          <Text style={styles.signInBtnText}>Sign in</Text>
+        </Pressable>
+        <Modal visible={signInOpen} animationType="slide" onRequestClose={() => setSignInOpen(false)}>
+          <SignInScreen onClose={() => setSignInOpen(false)} />
+        </Modal>
       </View>
     );
   }
@@ -790,6 +811,22 @@ export default function ProfileScreen() {
             })}
           </View>
         )}
+
+        {/* Recently viewed — appears above My Reports because the user
+            generally wants to jump back to the flag they just looked at,
+            not browse their full history. Hidden when empty. */}
+        <RecentlyViewedRow
+          userId={user?.id ?? null}
+          refreshKey={recentRefreshKey}
+          onSelect={(flag) => {
+            // Reuse the existing focusFlag navigation pattern Tasks→Map
+            // and the Nearest-Unresolved card already use.
+            navigation.navigate('Map', {
+              focusFlag: { id: flag.id, lat: flag.lat, lng: flag.lng },
+              ts: Date.now(),
+            });
+          }}
+        />
 
         <Pressable
           style={({ pressed }) => [styles.myReportsBtn, pressed && styles.myReportsBtnPressed]}
