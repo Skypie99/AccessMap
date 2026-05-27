@@ -53,7 +53,7 @@ import FlagDetailModal, {
   type DetailAction,
 } from '@/components/FlagDetailModal';
 import PhotoLightboxModal from '@/components/PhotoLightboxModal';
-import { radius, size, spacing } from '@/theme';
+import { radius, shadow, size, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 
 // Statuses Tasks shows. Even if the provider's `statuses` is widened by the
@@ -684,7 +684,7 @@ export default function TasksScreen() {
             // When active and value > 0, tint with the severity palette so
             // the threshold's color is immediately recognizable.
             const activeColor =
-              value === 0 ? '#2f80ed' : severityColor(value);
+              value === 0 ? color.brand : severityColor(value);
             return (
               <Pressable
                 key={value}
@@ -1232,17 +1232,13 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
     zIndex: 10,
   },
   flashPill: {
-    backgroundColor: '#27ae60',
+    backgroundColor: color.success,
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: radius.circle,
-    shadowColor: '#000',
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 4,
+    ...shadow.e2,
   },
-  flashText: { color: '#fff', fontWeight: '700', fontSize: 13 },
+  flashText: { color: color.textOnBrand, fontWeight: '700', fontSize: 13 },
   errorBanner: {
     marginHorizontal: spacing.lg,
     marginTop: spacing.md,
@@ -1254,11 +1250,7 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
     gap: spacing.sm,
     alignItems: 'center',
     minHeight: 44,
-    shadowColor: '#000',
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 3,
+    ...shadow.e2,
   },
   errorBannerBusy: { opacity: 0.85 },
   errorBannerPressed: { opacity: 0.7 },
@@ -1330,25 +1322,26 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
   },
   emptyCard: {
     backgroundColor: color.surface,
-    borderRadius: 16,
+    borderRadius: radius.xl,
     paddingHorizontal: 24,
     paddingVertical: 28,
     alignItems: 'center',
     gap: 8,
     maxWidth: 340,
-    shadowColor: '#000',
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 1 },
-    elevation: 1,
+    ...shadow.e1,
   },
   emptyIcon: { fontSize: 36 },
-  emptyTitle: { fontSize: 18, fontWeight: '700', color: '#222' },
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: color.textStrong,
+    letterSpacing: -0.2,
+  },
   emptyBody: {
     fontSize: 13,
-    color: '#666',
+    color: color.textMuted,
     textAlign: 'center',
-    lineHeight: 18,
+    lineHeight: 19,
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -1360,12 +1353,12 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
   sectionTitle: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#666',
+    color: color.textMuted,
     textTransform: 'uppercase',
-    letterSpacing: 0.6,
+    letterSpacing: 0.8,
   },
   sectionCountPill: {
-    backgroundColor: '#d6e6f9',
+    backgroundColor: color.brandSoft,
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: radius.circle,
@@ -1378,18 +1371,14 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
     fontWeight: '700',
   },
   title: { fontSize: 18, fontWeight: '600' },
-  subtitle: { fontSize: 13, color: '#666', textAlign: 'center' },
+  subtitle: { fontSize: 13, color: color.textMuted, textAlign: 'center', lineHeight: 19 },
   card: {
     backgroundColor: color.surface,
-    borderRadius: 12,
+    borderRadius: radius.lg,
     padding: 14,
     gap: 8,
     minHeight: size.cardMin,
-    shadowColor: '#000',
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 1 },
-    elevation: 1,
+    ...shadow.e1,
     marginBottom: 12,
   },
   cardPressed: { opacity: 0.85, transform: [{ scale: 0.99 }] },
@@ -1398,9 +1387,9 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
   cardTitle: { fontSize: 16, fontWeight: '600', flex: 1 },
   statusTag: {
     fontSize: 11,
-    color: '#666',
+    color: color.textMuted,
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    letterSpacing: 0.6,
   },
   cardBody: { flexDirection: 'row', gap: 12 },
   // Container holds the image so overflow:hidden clips rounded corners on
@@ -1429,10 +1418,10 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
   },
   verifyBtn: { backgroundColor: color.brand },
   verifyText: { color: color.textOnBrand, fontWeight: '600', fontSize: 13 },
-  resolveBtn: { backgroundColor: '#27ae60' },
-  resolveText: { color: '#fff', fontWeight: '600', fontSize: 13 },
+  resolveBtn: { backgroundColor: color.success },
+  resolveText: { color: color.textOnBrand, fontWeight: '600', fontSize: 13 },
   rejectBtn: { backgroundColor: color.surfaceNeutral },
-  rejectText: { color: '#333', fontWeight: '600', fontSize: 13 },
+  rejectText: { color: color.text, fontWeight: '600', fontSize: 13 },
   detailsBtn: {
     backgroundColor: 'transparent',
     borderWidth: 1,
@@ -1456,7 +1445,7 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
     justifyContent: 'center',
   },
   mineChipActive: { backgroundColor: color.brand },
-  mineChipText: { fontSize: 13, fontWeight: '600', color: '#555' },
+  mineChipText: { fontSize: 13, fontWeight: '600', color: color.text },
   mineChipTextActive: { color: color.textOnBrand },
   sevFilterRow: {
     flexDirection: 'row',
@@ -1474,7 +1463,7 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  sevChipText: { fontSize: 13, fontWeight: '700', color: '#555' },
+  sevChipText: { fontSize: 13, fontWeight: '700', color: color.text },
   sevChipTextActive: { color: color.textOnBrand },
   // Category chip strip — horizontally scrollable so all 6 categories
   // fit on narrow phones without truncating labels. Visual weight
@@ -1496,7 +1485,7 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
     justifyContent: 'center',
   },
   catChipActive: { backgroundColor: color.brand },
-  catChipText: { fontSize: 13, fontWeight: '600', color: '#555', flexShrink: 0 },
+  catChipText: { fontSize: 13, fontWeight: '600', color: color.text, flexShrink: 0 },
   catChipTextActive: { color: color.textOnBrand },
   // Sort row — mirrors sevFilterRow's look, with an explicit "Sort:" label
   // before the chips so sighted users get a hint distinguishing it from
@@ -1527,7 +1516,7 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
     justifyContent: 'center',
   },
   sortChipActive: { backgroundColor: color.brand },
-  sortChipText: { fontSize: 13, fontWeight: '700', color: '#555' },
+  sortChipText: { fontSize: 13, fontWeight: '700', color: color.text },
   sortChipTextActive: { color: color.textOnBrand },
   // Bulk-select entry row — a single full-width button sitting at the top
   // of the screen so SR users and anyone unfamiliar with long-press can
@@ -1596,21 +1585,19 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
     paddingBottom: 24,
     backgroundColor: color.surface,
     borderTopWidth: 1,
-    borderTopColor: '#e1e6ee',
-    shadowColor: '#000',
+    borderTopColor: color.borderSubtle,
+    shadowColor: color.shadow,
     shadowOpacity: 0.12,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: -2 },
     elevation: 8,
   },
-  // The single SR live region for the bar — re-announces "N selected"
-  // when the count changes, without re-reading every button label.
-  // #2c3e50 on #fff ≈ 12.6:1.
   bulkCountText: {
-    color: '#2c3e50',
+    color: color.textStrong,
     fontSize: 14,
     fontWeight: '700',
     paddingHorizontal: 4,
+    letterSpacing: 0.2,
   },
   bulkButtonRow: { flexDirection: 'row', gap: 8 },
   bulkBtn: {
@@ -1628,7 +1615,7 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
   bulkVerifyBtn: { backgroundColor: color.brand },
   // #1e8449 on white-text ≈ 7.0:1 — meets AAA for 14pt bold. Bumped from
   // #27ae60 (~2.83:1, AA fail) to clear WCAG 1.4.3 AA + 1.4.11 non-text 3:1.
-  bulkResolveBtn: { backgroundColor: '#1e8449' },
+  bulkResolveBtn: { backgroundColor: '#1e8449' }, // deeper green than color.success for AA on white text (~7:1 vs 2.7:1)
   // Watch fill: deep purple chosen so it's distinguishable from the
   // brand-blue Verify and the green Resolve at a glance — even for
   // protanopia/deuteranopia where blue and green can blur. #5b21b6 on
@@ -1639,11 +1626,11 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
   bulkCancelBtn: {
     backgroundColor: color.surfaceNeutral,
     borderWidth: 1,
-    borderColor: '#cfd5de',
+    borderColor: color.borderStrong,
   },
   // 14pt bold on the dark button fills — meets WCAG 1.4.3 AA for body text.
   // Bumped from 13pt with the resolve-btn color change to clear AA.
   bulkBtnText: { color: color.textOnBrand, fontWeight: '700', fontSize: 14 },
   // #2c3e50 on #eef1f5 ≈ 11.0:1 — comfortably above AA. 14pt for parity.
-  bulkCancelText: { color: '#2c3e50', fontWeight: '700', fontSize: 14 },
+  bulkCancelText: { color: color.textStrong, fontWeight: '700', fontSize: 14 },
 });
