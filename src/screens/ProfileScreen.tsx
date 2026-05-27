@@ -74,16 +74,9 @@ import {
   type AchievementStats,
 } from '@/lib/achievements';
 import AchievementsModal from '@/components/AchievementsModal';
-<<<<<<< HEAD
 import RecentlyViewedRow from '@/components/RecentlyViewedRow';
-=======
 import ReportsBreakdownCard from '@/components/ReportsBreakdownCard';
->>>>>>> feat/reports-breakdown-2026-05-25
-import {
-  REPUTATION_TIERS,
-  getTier,
-  pointsToNextTier,
-} from '@/lib/reputationTier';
+import LeaderboardModal from '@/components/LeaderboardModal';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 
 interface Stats {
@@ -238,6 +231,7 @@ export default function ProfileScreen() {
   const { setOpen: setSharedModal } = useSharedModals();
 
   const [achievementsOpen, setAchievementsOpen] = useState(false);
+  const [leaderboardOpen, setLeaderboardOpen] = useState(false);
 
   // T4: Reputation-tier explainer sheet. Opens when the user taps the
   // tier pill in the hero card. Inline (not a separate component file)
@@ -1015,6 +1009,27 @@ export default function ProfileScreen() {
             styles.myReportsBtn,
             pressed && styles.myReportsBtnPressed,
           ]}
+          onPress={() => setLeaderboardOpen(true)}
+          accessibilityRole="button"
+          accessibilityLabel="Community Leaderboard"
+          accessibilityHint="Opens the top 10 contributors ranked by points"
+        >
+          <View style={styles.myReportsTextWrap}>
+            <Text style={styles.myReportsTitle}>Community Leaderboard</Text>
+            <Text style={styles.myReportsSubtitle}>
+              See the top contributors in your area ranked by points.
+            </Text>
+          </View>
+          <Text style={styles.myReportsChevron} accessibilityElementsHidden>
+            ›
+          </Text>
+        </Pressable>
+
+        <Pressable
+          style={({ pressed }) => [
+            styles.myReportsBtn,
+            pressed && styles.myReportsBtnPressed,
+          ]}
           onPress={() => setNotifPrefsOpen(true)}
           accessibilityRole="button"
           accessibilityLabel="Notification settings"
@@ -1275,6 +1290,11 @@ export default function ProfileScreen() {
         visible={achievementsOpen}
         onClose={() => setAchievementsOpen(false)}
         achievements={achievements}
+      />
+
+      <LeaderboardModal
+        visible={leaderboardOpen}
+        onClose={() => setLeaderboardOpen(false)}
       />
 
       <NotificationPrefsModal
