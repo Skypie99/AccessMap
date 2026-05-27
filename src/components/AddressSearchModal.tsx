@@ -296,6 +296,7 @@ export default function AddressSearchModal({
               data={results}
               keyExtractor={(r) => r.id}
               keyboardShouldPersistTaps="handled"
+              removeClippedSubviews
               contentContainerStyle={styles.resultsList}
               renderItem={({ item }) => (
                 <Pressable
