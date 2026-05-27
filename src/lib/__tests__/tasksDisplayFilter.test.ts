@@ -49,7 +49,6 @@ function makeFlag(
     user_id: 'user-1',
     lat: 49.25,
     lng: -123.1,
-    category: overrides.category,
     severity: 3,
     description: overrides.description ?? null,
     photo_url: null,

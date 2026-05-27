@@ -500,10 +500,10 @@ export default function SettingsScreen() {
       <OnboardingModal
         visible={tutorialOpen}
         onDone={() => setTutorialOpen(false)}
+      />
       <NotificationPreferencesScreen
         visible={notifPrefsOpen}
         onClose={() => setNotifPrefsOpen(false)}
-      />
       />
     </>
   );

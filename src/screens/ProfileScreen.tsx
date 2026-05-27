@@ -45,9 +45,7 @@ import type { FlagRow, FlagStatus, UserRow } from '@/types/database';
 import type { RootTabParamList } from '@/navigation/RootNavigator';
 import MyReportsModal from '@/components/MyReportsModal';
 import MyWatchedModal from '@/components/MyWatchedModal';
-import FlagDetailModal, {
-import RecentlyViewedRow from '@/lib/components/RecentlyViewedRow';
-import ReportsBreakdownCard from '@/components/ReportsBreakdownCard';
+import FlagDetailModal, { type DetailAction } from '@/components/FlagDetailModal';
 // they now live in a single <SharedModalsHost /> at the navigator level
 // (see RootNavigator.tsx + src/lib/sharedModalsContext.tsx). Profile
 // just calls setOpen('help' | 'changelog' | 'myFeedback') via the
@@ -82,6 +80,9 @@ import ReportsBreakdownCard from '@/components/ReportsBreakdownCard';
 import LeaderboardModal from '@/components/LeaderboardModal';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { radius } from '@/theme';
+import { getTier, pointsToNextTier, REPUTATION_TIERS } from '@/lib/reputationTier';
+import SignInScreen from '@/screens/SignInScreen';
+import AboutScreen from '@/screens/AboutScreen';
 
 interface Stats {
   reported: number;
@@ -152,19 +153,16 @@ export default function ProfileScreen() {
   const [signInOpen, setSignInOpen] = useState(false);
   const [reportsOpen, setReportsOpen] = useState(false);
   const [reportsRefreshKey, setReportsRefreshKey] = useState(0);
-<<<<<<< HEAD
   // Independent refresh key for the Recently Viewed row — bumped on
   // every Profile focus so flags opened on other tabs since the last
   // focus are reflected in the chip row immediately.
   const [recentRefreshKey, setRecentRefreshKey] = useState(0);
-=======
   // Independent refresh key for the breakdown card so it refetches on
   // every tab focus AND when the parent already-known triggers fire
   // (detail-modal close, new report). Bumped from the focus effect
   // below — distinct from `reportsRefreshKey` to keep the two consumers
   // from accidentally re-fetching each other.
   const [breakdownRefreshKey, setBreakdownRefreshKey] = useState(0);
->>>>>>> feat/reports-breakdown-2026-05-25
   const [watchedOpen, setWatchedOpen] = useState(false);
   const [watchedRefreshKey, setWatchedRefreshKey] = useState(0);
   const [activityOpen, setActivityOpen] = useState(false);
@@ -409,17 +407,14 @@ export default function ProfileScreen() {
   useFocusEffect(
     useCallback(() => {
       void Promise.all([load(), refreshUpdateCount(), refreshStreak()]);
-<<<<<<< HEAD
       // RecentlyViewedRow owns its own fetch; bump its key on focus so
       // it picks up flags the user opened on other tabs since the last
       // focus event.
       setRecentRefreshKey((k) => k + 1);
-=======
       // Tell the breakdown card to refetch — its own counts are not in
       // the Promise.all above (it owns its data fetch) so we drive it
       // via the refresh-key bump.
       setBreakdownRefreshKey((k) => k + 1);
->>>>>>> feat/reports-breakdown-2026-05-25
     }, [load, refreshUpdateCount, refreshStreak]),
   );
 
@@ -981,7 +976,6 @@ export default function ProfileScreen() {
           </View>
         )}
 
-<<<<<<< HEAD
         {/* Recently viewed — appears above My Reports because the user
             generally wants to jump back to the flag they just looked at,
             not browse their full history. Hidden when empty. */}
@@ -996,7 +990,8 @@ export default function ProfileScreen() {
               ts: Date.now(),
             });
           }}
-=======
+        />
+
         {/* Category + severity breakdown of the user's own reports.
             Refresh key bumps on every Profile focus via the
             useFocusEffect above, and the parent doesn't need to call
@@ -1004,7 +999,6 @@ export default function ProfileScreen() {
         <ReportsBreakdownCard
           userId={user?.id ?? null}
           refreshKey={breakdownRefreshKey}
->>>>>>> feat/reports-breakdown-2026-05-25
         />
 
         <Pressable
