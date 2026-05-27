@@ -106,11 +106,6 @@ export default function MyFeedbackModal({
     [rows, filter, searchQuery],
   );
 
-  const renderFeedbackItem = useCallback(
-    ({ item }: { item: FeedbackRow }) => <FeedbackRowCard row={item} />,
-    [],
-  );
-
   return (
     <Modal
       visible={visible}
@@ -200,9 +195,6 @@ export default function MyFeedbackModal({
           <FlatList
             data={filteredRows}
             keyExtractor={(r) => r.id}
-            renderItem={renderFeedbackItem}
-            removeClippedSubviews
-            initialNumToRender={10}
             accessibilityRole="list"
             refreshControl={
               <RefreshControl refreshing={loading} onRefresh={load} />
@@ -212,6 +204,7 @@ export default function MyFeedbackModal({
                 ? styles.emptyContainer
                 : styles.listContainer
             }
+            renderItem={({ item }) => <FeedbackRowCard row={item} />}
             ListEmptyComponent={
               <View style={styles.emptyCard} accessible accessibilityRole="text">
                 {loading ? (

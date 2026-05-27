@@ -52,7 +52,7 @@ export default function MyReportsModal({
   refreshKey = 0,
 }: Props) {
   const color = useColor();
-  const styles = useMemo(() => makeStyles(color), [color]);
+  const styles = makeStyles(color);
   const { user } = useAuth();
   const [flags, setFlags] = useState<FlagRow[]>([]);
   const [loading, setLoading] = useState(false);
@@ -158,7 +158,7 @@ export default function MyReportsModal({
     if (visible) load();
   }, [visible, refreshKey, load]);
 
-  const renderItem = useCallback(({ item }: { item: FlagRow }) => {
+  const renderItem = ({ item }: { item: FlagRow }) => {
     const statusPalette = STATUS_COLORS[item.status];
     const dateLabel = new Date(item.created_at).toLocaleDateString(undefined, {
       year: 'numeric',
@@ -244,7 +244,7 @@ export default function MyReportsModal({
       </Pressable>
       </View>
     );
-  }, [onSelectFlag, onViewOnMap, styles]);
+  };
 
   return (
     <Modal
@@ -397,8 +397,6 @@ export default function MyReportsModal({
               data={displayFlags}
               keyExtractor={(f) => f.id}
               renderItem={renderItem}
-              removeClippedSubviews
-              initialNumToRender={10}
               accessibilityRole="list"
               contentContainerStyle={
                 displayFlags.length === 0 ? styles.center : styles.list
