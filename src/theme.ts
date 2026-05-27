@@ -179,6 +179,11 @@ export const font = {
     semibold: '600' as const,
     bold: '700' as const,
   },
+  lineHeight: {
+    // caption × 1.4, rounded — Dani Design Compiler approved formula.
+    // Use wherever font.size.caption text needs explicit lineHeight.
+    caption: Math.round(11 * 1.4), // 15
+  },
 };
 
 // -------------------------------------------------------------------------

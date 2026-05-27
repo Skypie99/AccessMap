@@ -15,7 +15,7 @@ import {
 import * as Location from 'expo-location';
 import { useRoute, type RouteProp } from '@react-navigation/native';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
-import { radius } from '@/theme';
+import { font, radius, shadow, spacing } from '@/theme';
 import { errorMessage } from '@/lib/errors';
 import {
   CATEGORY_ICONS,
@@ -1963,24 +1963,20 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
   heatDisclaimer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    marginTop: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    backgroundColor: 'rgba(255,255,255,0.97)',
-    borderRadius: 10,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 1 },
-    elevation: 2,
+    gap: spacing.sm,
+    marginTop: spacing.sm,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    backgroundColor: color.overlay,
+    borderRadius: radius.md,
+    ...shadow.e1,
   },
-  heatDisclaimerIcon: { fontSize: 14, color: color.brand, fontWeight: '700' },
+  heatDisclaimerIcon: { fontSize: 14, color: color.brand, fontWeight: font.weight.bold },
   heatDisclaimerText: {
     flex: 1,
-    fontSize: 11,
+    fontSize: font.size.caption,
     color: color.text,
-    lineHeight: 15,
+    lineHeight: font.lineHeight.caption,
   },
   filterPanel: {
     marginTop: 8,

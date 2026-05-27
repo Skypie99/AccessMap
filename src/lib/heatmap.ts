@@ -19,6 +19,7 @@
  *   (useMemo over the in-memory filtered flags array — no extra Supabase
  *   fetch, per Jordan trigger 4) and is passed to whichever map renders.
  */
+import { severity as severityTokens } from '@/theme';
 import type { FlagRow, FlagSeverity } from '@/types/database';
 
 export interface HeatCell {
@@ -117,22 +118,33 @@ export function computeHeatGrid(
   return cells;
 }
 
+/** Parse a "#rrggbb" hex color string into an [r, g, b] triple. */
+function hexToRgb(hex: string): [number, number, number] {
+  const h = hex.replace('#', '');
+  return [
+    parseInt(h.slice(0, 2), 16),
+    parseInt(h.slice(2, 4), 16),
+    parseInt(h.slice(4, 6), 16),
+  ];
+}
+
 /**
  * Map an average-severity (1..5, possibly fractional) to a gradient hex color.
- * Anchors match `severityColor()` in src/lib/flags.ts so the heat layer reads
- * as the same palette as individual pins.
+ * Anchors are read from `severity[n].color` in src/theme.ts — the single source
+ * of truth for the 1→5 color ramp — so the heat layer always matches individual
+ * pins without duplicating values here.
  *
  * Implementation: piecewise linear RGB interpolation between the five anchor
- * colors (1=green, 2=lime, 3=yellow, 4=orange, 5=red). Out-of-range inputs are
- * clamped — a defensive choice so the renderer never gets a bad color string.
+ * colors. Out-of-range inputs are clamped — a defensive choice so the renderer
+ * never gets a bad color string.
  */
 export function heatColorForSeverity(avgSeverity: number): string {
   const anchors: Array<{ at: FlagSeverity; rgb: [number, number, number] }> = [
-    { at: 1, rgb: [0x27, 0xae, 0x60] }, // #27ae60 — green
-    { at: 2, rgb: [0x7f, 0xb8, 0x00] }, // #7fb800 — lime
-    { at: 3, rgb: [0xf1, 0xc4, 0x0f] }, // #f1c40f — yellow
-    { at: 4, rgb: [0xe6, 0x7e, 0x22] }, // #e67e22 — orange
-    { at: 5, rgb: [0xe7, 0x4c, 0x3c] }, // #e74c3c — red
+    { at: 1, rgb: hexToRgb(severityTokens[1].color) },
+    { at: 2, rgb: hexToRgb(severityTokens[2].color) },
+    { at: 3, rgb: hexToRgb(severityTokens[3].color) },
+    { at: 4, rgb: hexToRgb(severityTokens[4].color) },
+    { at: 5, rgb: hexToRgb(severityTokens[5].color) },
   ];
   if (avgSeverity <= 1) return rgbToHex(anchors[0]!.rgb);
   if (avgSeverity >= 5) return rgbToHex(anchors[4]!.rgb);
