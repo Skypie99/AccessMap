@@ -6,6 +6,7 @@ import {
   Image,
   Pressable,
   RefreshControl,
+  ScrollView,
   SectionList,
   StyleSheet,
   Text,
@@ -22,7 +23,7 @@ import {
 } from '@/lib/distance';
 import { confirm } from '@/lib/confirm';
 import { errorMessage } from '@/lib/errors';
-import { CATEGORY_LABELS, NEXT_PAGE_SIZE, severityColor, updateFlagStatus } from '@/lib/flags';
+import { CATEGORY_LABELS, CATEGORY_ORDER, NEXT_PAGE_SIZE, severityColor, updateFlagStatus } from '@/lib/flags';
 import { relativeTime } from '@/lib/relativeTime';
 import { useFlags } from '@/lib/flagsStore';
 import { useUserLocation } from '@/lib/location';
@@ -46,7 +47,7 @@ import {
 } from '@/lib/taskSelection';
 import { loadScope, saveScope } from '@/lib/tasksScope';
 import { addWatchedBulk } from '@/lib/watchedFlags';
-import type { FlagRow, FlagStatus } from '@/types/database';
+import type { FlagCategory, FlagRow, FlagStatus } from '@/types/database';
 import type { RootTabParamList } from '@/navigation/RootNavigator';
 import FlagDetailModal, {
   type DetailAction,
@@ -124,6 +125,17 @@ export default function TasksScreen() {
   // most-urgent issues without leaving the triage screen.
   const [minSeverity, setMinSeverity] = useState<0 | 2 | 3 | 4 | 5>(0);
 
+  // Category quick-filter. null = all categories. Session-only (not
+  // persisted) so the filter resets when the user leaves and returns to
+  // the tab — keeps triage intent explicit and avoids stale state after
+  // new flags arrive.
+  const [categoryFilter, setCategoryFilter] = useState<FlagCategory | null>(null);
+  const handleCategoryChange = useCallback((cat: FlagCategory | null) => {
+    setCategoryFilter(cat);
+    const label = cat ? CATEGORY_LABELS[cat] : 'all categories';
+    AccessibilityInfo.announceForAccessibility(`Showing ${label}`);
+  }, []);
+
   // Sort mode — applied within each section. Persisted device-wide via
   // AsyncStorage so a refresh / app-restart keeps the user's last choice.
   // Hydrated from disk in an effect so first paint matches the default
@@ -144,14 +156,15 @@ export default function TasksScreen() {
     void saveTasksSort(next);
   }, []);
 
-  // Apply the mine-only and min-severity filters on top of the triage filter
-  // so sections always reflect exactly what the list renders.
+  // Apply the mine-only, min-severity, and category filters on top of the
+  // triage filter so sections always reflect exactly what the list renders.
   const displayFlags = useMemo(() => {
     let out = flags;
     if (mineOnly && userId) out = out.filter((f) => f.user_id === userId);
     if (minSeverity > 0) out = out.filter((f) => f.severity >= minSeverity);
+    if (categoryFilter) out = out.filter((f) => f.category === categoryFilter);
     return out;
-  }, [flags, mineOnly, userId, minSeverity]);
+  }, [flags, mineOnly, userId, minSeverity, categoryFilter]);
 
   // Group the visible flags by status so the SectionList can show "Open"
   // and "Verified" as distinct sections. Sections with zero rows are
@@ -698,6 +711,48 @@ export default function TasksScreen() {
           })}
         </View>
       )}
+      {/* Category quick-filter — horizontally scrollable chip strip
+          beneath the severity row. Always lists every category so the
+          strip is stable as flags come and go. Tapping the active chip
+          clears it (toggles to All). Session-only — resets with the tab. */}
+      {flags.length > 0 && (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.categoryScroll}
+          contentContainerStyle={styles.categoryScrollContent}
+          accessibilityLabel="Filter by category"
+        >
+          <Pressable
+            onPress={() => handleCategoryChange(null)}
+            style={[styles.catChip, categoryFilter === null && styles.catChipActive]}
+            accessibilityRole="button"
+            accessibilityLabel="Show all categories"
+            accessibilityState={{ selected: categoryFilter === null }}
+          >
+            <Text style={[styles.catChipText, categoryFilter === null && styles.catChipTextActive]}>
+              All
+            </Text>
+          </Pressable>
+          {CATEGORY_ORDER.map((cat) => {
+            const active = categoryFilter === cat;
+            return (
+              <Pressable
+                key={cat}
+                onPress={() => handleCategoryChange(active ? null : cat)}
+                style={[styles.catChip, active && styles.catChipActive]}
+                accessibilityRole="button"
+                accessibilityLabel={`${CATEGORY_LABELS[cat]}${active ? ', selected, tap to deselect' : ''}`}
+                accessibilityState={{ selected: active }}
+              >
+                <Text style={[styles.catChipText, active && styles.catChipTextActive]}>
+                  {CATEGORY_LABELS[cat]}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+      )}
       {/* Sort segmented control — sits below the filter rows so the
           user reads "what shows up" → "in what order" top to bottom.
           Hidden when there's nothing to sort (no flags after filtering)
@@ -767,12 +822,17 @@ export default function TasksScreen() {
         ListEmptyComponent={
           <View style={styles.emptyCard} accessible accessibilityRole="text">
             <Text style={styles.emptyIcon} accessibilityElementsHidden>
-              ✨
+              {categoryFilter ? '🔍' : '✨'}
             </Text>
-            <Text style={styles.emptyTitle}>All caught up</Text>
+            <Text style={styles.emptyTitle}>
+              {categoryFilter
+                ? `No ${CATEGORY_LABELS[categoryFilter]} flags`
+                : 'All caught up'}
+            </Text>
             <Text style={styles.emptyBody}>
-              No flags to triage right now. New community reports will
-              land here as they're added — pull to refresh anytime.
+              {categoryFilter
+                ? `No open or verified ${CATEGORY_LABELS[categoryFilter].toLowerCase()} flags right now. Tap "All" above to see every category.`
+                : 'No flags to triage right now. New community reports will land here as they\'re added — pull to refresh anytime.'}
             </Text>
           </View>
         }
@@ -1416,6 +1476,28 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
   },
   sevChipText: { fontSize: 13, fontWeight: '700', color: '#555' },
   sevChipTextActive: { color: color.textOnBrand },
+  // Category chip strip — horizontally scrollable so all 6 categories
+  // fit on narrow phones without truncating labels. Visual weight
+  // matches sevChip; brand fill on active so it reads as "selected".
+  categoryScroll: { paddingBottom: 8 },
+  categoryScrollContent: {
+    flexDirection: 'row',
+    gap: 6,
+    paddingHorizontal: 16,
+    paddingBottom: 2,
+  },
+  catChip: {
+    minHeight: 36,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: radius.circle,
+    backgroundColor: color.surfaceNeutral,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  catChipActive: { backgroundColor: color.brand },
+  catChipText: { fontSize: 13, fontWeight: '600', color: '#555', flexShrink: 0 },
+  catChipTextActive: { color: color.textOnBrand },
   // Sort row — mirrors sevFilterRow's look, with an explicit "Sort:" label
   // before the chips so sighted users get a hint distinguishing it from
   // the severity row above. The label is a11y-hidden because the chip
