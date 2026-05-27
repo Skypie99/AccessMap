@@ -30,6 +30,7 @@ import {
   STATUS_ORDER,
 } from '@/lib/flags';
 import { useFlags } from '@/lib/flagsStore';
+import { computeHeatGrid } from '@/lib/heatmap';
 import {
   DISTANCE_OPTIONS,
   loadMapFilters,
@@ -173,6 +174,14 @@ export default function MapScreen() {
     void refreshSavedPlaces();
   }, [refreshSavedPlaces]);
   const [focusedFlagId, setFocusedFlagId] = useState<string | null>(null);
+  // Heat-map overlay toggle. Off by default per Jordan's design
+  // recommendation (2026-05-25 review) — users should consciously opt in
+  // to the aggregate density layer rather than being shown a always-on
+  // neighbourhood quality visualization. Ephemeral state — not persisted
+  // across launches; the visualization is novel enough that we want users
+  // to deliberately re-enable it each session for now. Sky can promote
+  // this to mapFilters persistence later if user feedback asks for it.
+  const [heatmapOn, setHeatmapOn] = useState(false);
 
   // Phase 2 of the accessible list view: auto-open the linear list when a
   // screen reader is on, so blind/low-vision users land directly in the
@@ -687,6 +696,17 @@ export default function MapScreen() {
     location,
   ]);
 
+  // Heat-grid cells — memoized over the already-filtered flag list so the
+  // overlay respects the user's active filters (Jordan trigger 4: no extra
+  // Supabase fetch; consume in-memory data). Computed only when the
+  // heat-map layer is on so we don't pay the O(n) binning cost on every
+  // filter change when nobody is looking at the overlay. k>=3 floor lives
+  // inside computeHeatGrid (Jordan C1).
+  const heatCells = useMemo(
+    () => (heatmapOn ? computeHeatGrid(filteredFlags) : undefined),
+    [heatmapOn, filteredFlags],
+  );
+
   // Announce the empty-results state to iOS screen readers when it appears
   // (Android picks it up via the alert's accessibilityLiveRegion). Only
   // fires on transitions into "0 results" — not on every re-render while
@@ -873,6 +893,7 @@ export default function MapScreen() {
         showsUserLocation
         reducedMotion={reducedMotion}
         onLongPressMap={handleMapLongPress}
+        heatCells={heatCells}
       />
 
       <View pointerEvents="box-none" style={styles.overlay}>
@@ -996,6 +1017,41 @@ export default function MapScreen() {
             </Pressable>
             <View style={styles.actionDivider} accessibilityElementsHidden />
             <Pressable
+              onPress={() => {
+                setHeatmapOn((v) => {
+                  const next = !v;
+                  // WCAG 4.1.3: announce the state change so screen reader
+                  // users hear that the overlay turned on/off and what it
+                  // shows. Jordan C2 disclaimer is also surfaced here so
+                  // SR users hear the "community reports, coverage varies"
+                  // qualifier without needing to find the visible banner.
+                  AccessibilityInfo.announceForAccessibility(
+                    next
+                      ? 'Barrier-density heat-map on. Based on community reports — coverage varies.'
+                      : 'Barrier-density heat-map off',
+                  );
+                  return next;
+                });
+              }}
+              style={[
+                styles.actionBtn,
+                heatmapOn && styles.actionBtnActive,
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel={
+                heatmapOn ? 'Hide barrier-density heat-map' : 'Show barrier-density heat-map'
+              }
+              accessibilityHint="Overlays a colour gradient on areas with three or more reported barriers"
+              accessibilityState={{ selected: heatmapOn }}
+            >
+              <Text
+                style={[styles.iconText, heatmapOn && styles.iconTextActive]}
+              >
+                ▦
+              </Text>
+            </Pressable>
+            <View style={styles.actionDivider} accessibilityElementsHidden />
+            <Pressable
               onPress={requestLocation}
               style={styles.actionBtn}
               accessibilityRole="button"
@@ -1005,6 +1061,34 @@ export default function MapScreen() {
             </Pressable>
           </View>
         </View>
+
+        {/* Heat-map disclaimer banner — Jordan condition C2 (2026-05-25).
+            Visible whenever the heat layer is active. Required copy:
+            "community-sourced data, coverage varies". This is a privacy
+            merge gate — do not remove without re-reviewing C2.
+            Rendered as a small chip below the action bar so it's hard
+            to miss but doesn't block the map view. */}
+        {heatmapOn && (
+          <View
+            style={styles.heatDisclaimer}
+            accessibilityRole="text"
+            accessibilityLabel="Heat-map shows community-reported barrier density. Coverage varies; not an authoritative accessibility score."
+          >
+            <Text
+              style={styles.heatDisclaimerIcon}
+              accessibilityElementsHidden
+              importantForAccessibility="no-hide-descendants"
+            >
+              ⓘ
+            </Text>
+            <Text style={styles.heatDisclaimerText}>
+              Based on community reports — coverage varies.{' '}
+              {heatCells && heatCells.length === 0
+                ? 'Need 3+ reports in an area to show a zone.'
+                : 'Zones require 3+ reports.'}
+            </Text>
+          </View>
+        )}
 
         {/* Saved Places chip row — shown only when signed in. Renders
             quick-jump chips for each saved place plus a trailing "★ +"
@@ -1872,6 +1956,31 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
     width: 1,
     height: 18,
     backgroundColor: '#e5e5e5',
+  },
+  // Heat-map disclaimer banner. Jordan C2 — mandatory when the heat layer
+  // is visible. Slim row beneath the action bar; coloured neutrally so it
+  // reads as informational, not a warning.
+  heatDisclaimer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    backgroundColor: 'rgba(255,255,255,0.97)',
+    borderRadius: 10,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 1 },
+    elevation: 2,
+  },
+  heatDisclaimerIcon: { fontSize: 14, color: color.brand, fontWeight: '700' },
+  heatDisclaimerText: {
+    flex: 1,
+    fontSize: 11,
+    color: color.text,
+    lineHeight: 15,
   },
   filterPanel: {
     marginTop: 8,
