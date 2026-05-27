@@ -36,6 +36,7 @@ import {
 import NotificationPrefsModal from '@/components/NotificationPrefsModal';
 import AboutScreen from '@/screens/AboutScreen';
 import OnboardingModal from '@/screens/OnboardingModal';
+import NotificationPreferencesScreen from '@/screens/NotificationPreferencesScreen';
 
 // One row in the settings list. We declare it locally instead of factoring
 // into its own file because it's only used here and the rest of the app
@@ -166,6 +167,7 @@ export default function SettingsScreen() {
   // a sign-out / sign-in to actually see the cards). This is the
   // immediate-replay version most users expect from a "Replay" control.
   const [tutorialOpen, setTutorialOpen] = useState(false);
+  const [notifPrefsOpen, setNotifPrefsOpen] = useState(false);
 
   const { user } = useAuth();
   const [exporting, setExporting] = useState(false);
@@ -498,6 +500,10 @@ export default function SettingsScreen() {
       <OnboardingModal
         visible={tutorialOpen}
         onDone={() => setTutorialOpen(false)}
+      <NotificationPreferencesScreen
+        visible={notifPrefsOpen}
+        onClose={() => setNotifPrefsOpen(false)}
+      />
       />
     </>
   );
