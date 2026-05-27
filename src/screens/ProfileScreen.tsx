@@ -567,7 +567,11 @@ export default function ProfileScreen() {
         >
           <Text style={styles.signInBtnText}>Sign in</Text>
         </Pressable>
-        <Modal visible={signInOpen} animationType="slide" onRequestClose={() => setSignInOpen(false)}>
+        <Modal
+          visible={signInOpen}
+          animationType="slide"
+          onRequestClose={() => setSignInOpen(false)}
+        >
           <SignInScreen onClose={() => setSignInOpen(false)} />
         </Modal>
       </View>

@@ -124,8 +124,7 @@ function NavInner({ initialRouteName }: { initialRouteName: keyof RootTabParamLi
   // queue is empty so the tab reads "all done."
   const { flags } = useFlags();
   const openCount = flags.filter((f) => f.status === 'open').length;
-  const tasksBadge: number | undefined =
-    openCount > 0 ? Math.min(openCount, 99) : undefined;
+  const tasksBadge: number | undefined = openCount > 0 ? Math.min(openCount, 99) : undefined;
 
   const renderHeaderRight = () => (
     <Pressable

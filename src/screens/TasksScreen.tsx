@@ -363,10 +363,7 @@ export default function TasksScreen() {
     }
     setBulkBusy(true);
     try {
-      const { added, alreadyWatched, dropped } = await addWatchedBulk(
-        user.id,
-        ids,
-      );
+      const { added, alreadyWatched, dropped } = await addWatchedBulk(user.id, ids);
       if (added === 0 && alreadyWatched > 0) {
         showFlash(
           alreadyWatched === 1
@@ -377,9 +374,7 @@ export default function TasksScreen() {
         // Compose a single-line summary so the screen-reader announcement
         // matches the visible flash. Mentions the eviction when it
         // happened (rare but the user should know).
-        const parts: string[] = [
-          `Watching ${added} flag${added === 1 ? '' : 's'}`,
-        ];
+        const parts: string[] = [`Watching ${added} flag${added === 1 ? '' : 's'}`];
         if (alreadyWatched > 0) parts.push(`${alreadyWatched} already watched`);
         if (dropped > 0) parts.push(`${dropped} oldest dropped`);
         const msg = parts.join(', ');
@@ -874,13 +869,14 @@ export default function TasksScreen() {
               <Text style={styles.bulkBtnText}>Resolve</Text>
             </Pressable>
             <Pressable
-              onPress={() => { void runBulkWatch(); }}
+              onPress={() => {
+                void runBulkWatch();
+              }}
               disabled={bulkBusy || selectionCount(selection) === 0 || !user}
               style={({ pressed }) => [
                 styles.bulkBtn,
                 styles.bulkWatchBtn,
-                (bulkBusy || selectionCount(selection) === 0 || !user) &&
-                  styles.bulkBtnDisabled,
+                (bulkBusy || selectionCount(selection) === 0 || !user) && styles.bulkBtnDisabled,
                 pressed &&
                   !bulkBusy &&
                   selectionCount(selection) > 0 &&

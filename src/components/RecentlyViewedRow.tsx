@@ -15,11 +15,7 @@
  */
 import React, { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import {
-  CATEGORY_LABELS,
-  fetchFlagsByIds,
-  severityColor,
-} from '@/lib/flags';
+import { CATEGORY_LABELS, fetchFlagsByIds, severityColor } from '@/lib/flags';
 import { loadRecentlyViewed } from '@/lib/recentlyViewed';
 import { font, radius, shadow, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
@@ -41,11 +37,7 @@ interface Props {
   onSelect: (flag: FlagRow) => void;
 }
 
-export default function RecentlyViewedRow({
-  userId,
-  refreshKey,
-  onSelect,
-}: Props) {
+export default function RecentlyViewedRow({ userId, refreshKey, onSelect }: Props) {
   const color = useColor();
   const styles = makeStyles(color);
   const [flags, setFlags] = useState<FlagRow[]>([]);
@@ -122,29 +114,21 @@ export default function RecentlyViewedRow({
           <Pressable
             key={f.id}
             onPress={() => onSelect(f)}
-            style={({ pressed }) => [
-              styles.chip,
-              pressed && styles.chipPressed,
-            ]}
+            style={({ pressed }) => [styles.chip, pressed && styles.chipPressed]}
             accessibilityRole="button"
             // Compose: category + severity + truncated description.
             // Severity is read as a NUMBER (not the color) since color
             // alone is never a sufficient accessibility cue.
             accessibilityLabel={
               `${CATEGORY_LABELS[f.category]}, severity ${f.severity}` +
-              (f.description
-                ? `. ${f.description.slice(0, 80)}`
-                : '')
+              (f.description ? `. ${f.description.slice(0, 80)}` : '')
             }
             accessibilityHint="Opens this flag on the Map"
           >
             {/* Severity dot — decorative; the numeric severity is in
                 the label above so screen readers skip this safely. */}
             <View
-              style={[
-                styles.sevDot,
-                { backgroundColor: severityColor(f.severity) },
-              ]}
+              style={[styles.sevDot, { backgroundColor: severityColor(f.severity) }]}
               accessibilityElementsHidden
               importantForAccessibility="no-hide-descendants"
             >
@@ -160,52 +144,53 @@ export default function RecentlyViewedRow({
   );
 }
 
-const makeStyles = (color: ColorTheme) => StyleSheet.create({
-  card: {
-    backgroundColor: color.surface,
-    borderRadius: radius.lg,
-    padding: spacing.lg,
-    gap: spacing.sm,
-    ...shadow.e1,
-  },
-  title: {
-    fontSize: font.size.lg,
-    fontWeight: font.weight.bold,
-    color: color.textStrong,
-  },
-  row: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-    paddingRight: spacing.sm,
-  },
-  chip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: radius.full,
-    backgroundColor: color.surfaceMuted,
-    minHeight: 44,
-    maxWidth: 200,
-  },
-  chipPressed: { opacity: 0.85 },
-  sevDot: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  sevDotText: {
-    color: color.textOnBrand,
-    fontSize: 12,
-    fontWeight: font.weight.bold,
-  },
-  chipLabel: {
-    color: color.textStrong,
-    fontSize: font.size.sm,
-    fontWeight: font.weight.bold,
-    flexShrink: 1,
-  },
-});
+const makeStyles = (color: ColorTheme) =>
+  StyleSheet.create({
+    card: {
+      backgroundColor: color.surface,
+      borderRadius: radius.lg,
+      padding: spacing.lg,
+      gap: spacing.sm,
+      ...shadow.e1,
+    },
+    title: {
+      fontSize: font.size.lg,
+      fontWeight: font.weight.bold,
+      color: color.textStrong,
+    },
+    row: {
+      flexDirection: 'row',
+      gap: spacing.sm,
+      paddingRight: spacing.sm,
+    },
+    chip: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+      borderRadius: radius.full,
+      backgroundColor: color.surfaceMuted,
+      minHeight: 44,
+      maxWidth: 200,
+    },
+    chipPressed: { opacity: 0.85 },
+    sevDot: {
+      width: 24,
+      height: 24,
+      borderRadius: 12,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    sevDotText: {
+      color: color.textOnBrand,
+      fontSize: 12,
+      fontWeight: font.weight.bold,
+    },
+    chipLabel: {
+      color: color.textStrong,
+      fontSize: font.size.sm,
+      fontWeight: font.weight.bold,
+      flexShrink: 1,
+    },
+  });

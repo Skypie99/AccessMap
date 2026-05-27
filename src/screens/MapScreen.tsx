@@ -30,16 +30,9 @@ import {
   STATUS_ORDER,
 } from '@/lib/flags';
 import { useFlags } from '@/lib/flagsStore';
-import {
-  DISTANCE_OPTIONS,
-  loadMapFilters,
-  saveMapFilters,
-} from '@/lib/mapFilters';
+import { DISTANCE_OPTIONS, loadMapFilters, saveMapFilters } from '@/lib/mapFilters';
 import { haversineKm } from '@/lib/distance';
-import {
-  loadFilterPanelCollapsed,
-  saveFilterPanelCollapsed,
-} from '@/lib/filterPanelPrefs';
+import { loadFilterPanelCollapsed, saveFilterPanelCollapsed } from '@/lib/filterPanelPrefs';
 import {
   deleteSet,
   FilterSetError,
@@ -580,13 +573,7 @@ export default function MapScreen() {
       statuses: Array.from(activeStatuses),
       maxDistanceKm,
     });
-  }, [
-    activeCategories,
-    minSeverity,
-    activeStatuses,
-    maxDistanceKm,
-    filtersHydrated,
-  ]);
+  }, [activeCategories, minSeverity, activeStatuses, maxDistanceKm, filtersHydrated]);
 
   // Distance is only effective when we know where the user is — otherwise
   // the filter would silently hide every flag. Track this in a derived
