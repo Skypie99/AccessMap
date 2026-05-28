@@ -1,5 +1,5 @@
 import 'leaflet/dist/leaflet.css';
-import React, { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
+import React, { forwardRef, memo, useEffect, useImperativeHandle, useRef } from 'react';
 import { MapContainer, Marker, Popup, useMap } from 'react-leaflet';
 import L, { Map as LeafletMap, Marker as LeafletMarker } from 'leaflet';
 import { CATEGORY_LABELS, severityColor } from '@/lib/flags';
@@ -51,18 +51,31 @@ function pinIcon(color: string, dim: boolean): L.DivIcon {
   const key = `${color}|${dim ? 1 : 0}`;
   const cached = pinIconCache.get(key);
   if (cached) return cached;
+  // Two-layer pin: a soft outer halo for depth + an inner severity dot with a
+  // crisp white ring. Reads as a "pin" rather than a flat blob, and keeps
+  // good contrast against the OSM tile background.
   const icon = L.divIcon({
     className: 'accessmap-pin',
     html: `<div style="
-      width:22px;height:22px;border-radius:50%;
-      background:${color};
-      border:2px solid white;
-      box-shadow:0 1px 4px rgba(0,0,0,0.4);
+      position:relative;width:26px;height:26px;
+      display:flex;align-items:center;justify-content:center;
       opacity:${dim ? 0.55 : 1};
-    "></div>`,
-    iconSize: [22, 22],
-    iconAnchor: [11, 11],
-    popupAnchor: [0, -12],
+      filter:drop-shadow(0 2px 4px rgba(0,0,0,0.35));
+    ">
+      <div style="
+        position:absolute;inset:0;border-radius:50%;
+        background:${color};opacity:0.22;
+      "></div>
+      <div style="
+        width:18px;height:18px;border-radius:50%;
+        background:${color};
+        border:2.5px solid #fff;
+        box-shadow:inset 0 0 0 1px rgba(0,0,0,0.06);
+      "></div>
+    </div>`,
+    iconSize: [26, 26],
+    iconAnchor: [13, 13],
+    popupAnchor: [0, -14],
   });
   pinIconCache.set(key, icon);
   return icon;
@@ -265,6 +278,11 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(
                 severityColor(f.severity),
                 focusedFlagId !== null && focusedFlagId !== f.id,
               )}
+              // alt is what screen readers announce for the marker; title is
+              // the browser tooltip. Mirrors the accessibilityLabel on the
+              // native Marker so SR users hear the same description on web.
+              alt={`${CATEGORY_LABELS[f.category]}, severity ${f.severity}, ${f.status}. Open for details.`}
+              title={`${CATEGORY_LABELS[f.category]} — severity ${f.severity}`}
               ref={(m) => {
                 markerRefs.current[f.id] = m;
               }}
@@ -279,8 +297,9 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(
                       fontSize: 11,
                       color: '#666',
                       textTransform: 'uppercase',
-                      letterSpacing: 0.5,
+                      letterSpacing: 0.6,
                       marginTop: 2,
+                      fontWeight: 600,
                     }}
                   >
                     Severity {f.severity} · {f.status}
@@ -313,4 +332,7 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(
   },
 );
 
-export default PlatformMap;
+// See PlatformMap.tsx — same rationale: memo skips re-renders for parent
+// state changes unrelated to map props. Critical on web because every
+// re-render rebuilds Leaflet's Marker layers.
+export default memo(PlatformMap);

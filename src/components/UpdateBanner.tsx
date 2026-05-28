@@ -99,7 +99,7 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 12,
     borderWidth: 1,
-    borderColor: '#c7defb',
+    borderColor: color.brandSoft,
     marginBottom: 12,
   },
   icon: { fontSize: 18 },
@@ -113,7 +113,7 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  viewBtnPressed: { backgroundColor: '#1c5fc0' },
+  viewBtnPressed: { opacity: 0.85 },
   viewBtnText: { color: color.textOnBrand, fontWeight: '700', fontSize: 14 },
   dismissBtn: {
     width: 30,
@@ -122,6 +122,6 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  dismissBtnPressed: { backgroundColor: '#d3e3f5' },
+  dismissBtnPressed: { backgroundColor: color.brandSoft },
   dismissText: { fontSize: 14, color: color.brandTextAlt, fontWeight: '700' },
 });

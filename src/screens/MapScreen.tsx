@@ -15,7 +15,7 @@ import {
 import * as Location from 'expo-location';
 import { useRoute, type RouteProp } from '@react-navigation/native';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
-import { radius } from '@/theme';
+import { radius, shadow } from '@/theme';
 import { errorMessage } from '@/lib/errors';
 import {
   CATEGORY_ICONS,
@@ -813,14 +813,23 @@ export default function MapScreen() {
     };
   }, [route.params?.flagId]);
 
-  const initialRegion: PlatformMapRegion = location
-    ? {
-        latitude: location.lat,
-        longitude: location.lng,
-        latitudeDelta: 0.01,
-        longitudeDelta: 0.01,
-      }
-    : DEFAULT_REGION;
+  // Memoized so the React.memo on PlatformMap can actually skip re-renders
+  // when MapScreen re-renders for reasons unrelated to the map's seed region
+  // (filter panel toggles, modal opens, name-draft text input, etc.).
+  // Without memoization this object identity changes every render, defeating
+  // shallow prop equality.
+  const initialRegion: PlatformMapRegion = useMemo(
+    () =>
+      location
+        ? {
+            latitude: location.lat,
+            longitude: location.lng,
+            latitudeDelta: 0.01,
+            longitudeDelta: 0.01,
+          }
+        : DEFAULT_REGION,
+    [location],
+  );
 
   // Long-press anywhere on the map → confirm prompt → open the report
   // modal with that coord pre-filled. The confirm step matters: a
@@ -1793,11 +1802,7 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
     // a11y minimum + WCAG 2.5.5). Bumped from 36 per QA A1.
     minHeight: 44,
     maxWidth: 180,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    shadowOffset: { width: 0, height: 1 },
-    elevation: 1,
+    ...shadow.e1,
   },
   placeChipPressed: { backgroundColor: color.surfaceNeutral, opacity: 0.9 },
   // The trailing manage chip uses a tinted background so the affordance
@@ -1807,29 +1812,21 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
   placeChipText: { fontSize: 13, fontWeight: '600', color: color.brandTextAlt },
   statusPill: {
     flex: 1,
-    backgroundColor: 'rgba(255,255,255,0.95)',
+    backgroundColor: color.overlaySoft,
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: radius.circle,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 1 },
-    elevation: 2,
+    ...shadow.e1,
   },
-  statusText: { fontSize: 13, color: '#333', fontWeight: '600' },
+  statusText: { fontSize: 13, color: color.text, fontWeight: '600' },
   iconBtn: {
     width: 36,
     height: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(255,255,255,0.95)',
+    borderRadius: radius.circle,
+    backgroundColor: color.overlaySoft,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 1 },
-    elevation: 2,
+    ...shadow.e1,
   },
   iconText: { fontSize: 18, color: color.brand, fontWeight: '700' },
   iconBtnActive: { backgroundColor: color.brand },
@@ -1848,18 +1845,12 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
   // the cheap "scattered buttons" look the user called out.
   actionBar: {
     flexDirection: 'row',
-    backgroundColor: 'rgba(255,255,255,0.97)',
+    backgroundColor: color.overlay,
     borderRadius: radius.circle,
     paddingHorizontal: 4,
     paddingVertical: 2,
     alignItems: 'center',
-    // Slightly deeper shadow than the individual iconBtns it replaced,
-    // so the merged surface still feels lifted.
-    shadowColor: '#000',
-    shadowOpacity: 0.14,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 4,
+    ...shadow.e2,
   },
   actionBtn: {
     width: 36,
@@ -1872,26 +1863,22 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
   actionDivider: {
     width: 1,
     height: 18,
-    backgroundColor: '#e5e5e5',
+    backgroundColor: color.border,
   },
   filterPanel: {
     marginTop: 8,
-    backgroundColor: 'rgba(255,255,255,0.97)',
-    borderRadius: 14,
+    backgroundColor: color.overlay,
+    borderRadius: radius.lg,
     padding: 12,
     gap: 8,
-    shadowColor: '#000',
-    shadowOpacity: 0.12,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 3,
+    ...shadow.e2,
   },
   filterHeaderRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  filterTitle: { fontSize: 14, fontWeight: '700', color: '#222' },
+  filterTitle: { fontSize: 14, fontWeight: '700', color: color.textStrong },
   filterTitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1906,9 +1893,9 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
   clearLink: { fontSize: 12, color: color.brand, fontWeight: '600' },
   filterSubLabel: {
     fontSize: 11,
-    color: '#666',
+    color: color.textMuted,
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    letterSpacing: 0.6,
     marginTop: 4,
   },
   filterRow: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
@@ -1919,7 +1906,7 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
     backgroundColor: color.surfaceNeutral,
   },
   filterPillActive: { backgroundColor: color.brand },
-  filterPillText: { fontSize: 12, color: '#333', fontWeight: '600' },
+  filterPillText: { fontSize: 12, color: color.text, fontWeight: '600' },
   filterPillTextActive: { color: color.textOnBrand },
   sevPill: {
     width: 44,
@@ -1929,12 +1916,12 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: color.surfaceNeutral,
   },
-  sevPillText: { fontSize: 13, color: '#333', fontWeight: '700' },
+  sevPillText: { fontSize: 13, color: color.text, fontWeight: '700' },
   sevPillTextActive: { color: color.textOnBrand },
-  statusHint: { fontSize: 11, color: '#a04040', marginTop: 4 },
+  statusHint: { fontSize: 11, color: color.warningHint, marginTop: 4 },
   banner: {
     alignSelf: 'center',
-    backgroundColor: 'rgba(255,255,255,0.95)',
+    backgroundColor: color.overlaySoft,
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 8,
@@ -1942,7 +1929,7 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
     gap: 8,
     alignItems: 'center',
   },
-  bannerText: { fontSize: 13, color: '#333' },
+  bannerText: { fontSize: 13, color: color.text },
   errorBanner: {
     marginTop: 8,
     backgroundColor: color.error,
@@ -1953,11 +1940,7 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
     gap: 10,
     alignItems: 'center',
     minHeight: 44,
-    shadowColor: '#000',
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 3,
+    ...shadow.e2,
   },
   errorBannerBusy: { opacity: 0.85 },
   errorBannerPressed: { opacity: 0.7 },
@@ -1967,28 +1950,25 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
     alignSelf: 'center',
     marginTop: 16,
     maxWidth: 320,
-    backgroundColor: 'rgba(255,255,255,0.98)',
+    backgroundColor: color.overlay,
     paddingHorizontal: 20,
     paddingVertical: 18,
-    borderRadius: 14,
+    borderRadius: radius.lg,
     gap: 8,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 4,
+    ...shadow.e2,
   },
   emptyCardIcon: { fontSize: 28 },
   emptyCardTitle: {
     fontSize: 15,
     fontWeight: '700',
-    color: '#222',
+    color: color.textStrong,
     textAlign: 'center',
+    letterSpacing: -0.1,
   },
   emptyCardBody: {
     fontSize: 13,
-    color: '#666',
+    color: color.textMuted,
     textAlign: 'center',
     lineHeight: 18,
   },
@@ -2010,24 +1990,20 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
   },
   fab: {
     backgroundColor: color.brand,
-    paddingHorizontal: 18,
+    paddingHorizontal: 20,
     paddingVertical: 14,
     borderRadius: radius.circle,
-    shadowColor: '#000',
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 4,
-    minHeight: 44,
+    ...shadow.e2,
+    minHeight: 48,
     justifyContent: 'center',
   },
-  fabSecondary: { backgroundColor: 'rgba(255,255,255,0.97)' },
+  fabSecondary: { backgroundColor: color.overlay },
   fabSecondaryText: { color: color.brand, fontWeight: '700', fontSize: 15 },
   fabDisabled: { opacity: 0.5 },
   fabPressed: { opacity: 0.8 },
   fabText: { color: color.textOnBrand, fontWeight: '700', fontSize: 15 },
   savedEmpty: { gap: 8, marginTop: 4 },
-  savedEmptyText: { fontSize: 12, color: '#666', lineHeight: 16 },
+  savedEmptyText: { fontSize: 12, color: color.textMuted, lineHeight: 16 },
   savedSaveBtn: {
     alignSelf: 'flex-start',
     paddingHorizontal: 12,
@@ -2080,26 +2056,32 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
   presetBtnSecondaryText: { color: color.brandText, fontWeight: '700', fontSize: 14 },
   nameBackdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.4)',
+    backgroundColor: color.scrim,
     justifyContent: 'center',
     padding: 20,
   },
   nameCard: {
     backgroundColor: color.surface,
-    borderRadius: 16,
+    borderRadius: radius.xl,
     padding: 20,
     gap: 12,
   },
-  nameTitle: { fontSize: 18, fontWeight: '700', color: '#222' },
-  nameHint: { fontSize: 12, color: '#666' },
+  nameTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: color.textStrong,
+    letterSpacing: -0.2,
+  },
+  nameHint: { fontSize: 12, color: color.textMuted },
   nameInput: {
     borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
+    borderColor: color.borderStrong,
+    borderRadius: radius.md,
     paddingHorizontal: 12,
     paddingVertical: 10,
     fontSize: 15,
     minHeight: 44,
+    color: color.text,
   },
   nameActions: { flexDirection: 'row', gap: 12, marginTop: 4 },
   nameBtn: {
@@ -2111,7 +2093,7 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
     minHeight: 44,
   },
   nameBtnCancel: { backgroundColor: color.surfaceNeutral },
-  nameBtnCancelText: { color: '#333', fontWeight: '600', fontSize: 14 },
+  nameBtnCancelText: { color: color.text, fontWeight: '600', fontSize: 14 },
   nameBtnSave: { backgroundColor: color.brand },
   nameBtnSaveDisabled: { opacity: 0.5 },
   nameBtnSaveText: { color: color.textOnBrand, fontWeight: '700', fontSize: 14 },
