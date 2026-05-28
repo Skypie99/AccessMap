@@ -1,54 +1,74 @@
 {
-  "cycle": "morgan/post-project-audit-2026-05-24",
-  "updated": "2026-05-24T00:00:00Z",
+  "cycle": "cycle/auto-2026-05-28",
+  "updated": "2026-05-28T00:00:00Z",
   "nodes": [
     {
-      "id": "morgan/post-audit#step-1",
+      "id": "gary/exif-tests",
+      "role": "Gary",
+      "status": "completed",
+      "artifact": "branch:test/gary-exif-2026-05-28#7361873",
+      "notes": "12 tests: verifyExifStripped (7), stripExifNative (4), stripExifWeb (1). 884 tests pass in worktree."
+    },
+    {
+      "id": "alex/heatmap-a11y",
+      "role": "Alex",
+      "status": "completed",
+      "artifact": "qa-reports/2026-05-28_Alex_HeatmapA11y.md",
+      "notes": "WCAG 2.2 AA PASS. CLEAR FOR MERGE. 2 non-blocking polish notes."
+    },
+    {
+      "id": "steve/security-wave2",
+      "role": "Steve",
+      "status": "completed",
+      "artifact": "qa-reports/2026-05-28_Steve_SecurityHardeningWave2.md",
+      "notes": "APPROVED. New DECISION FOR SKY: apply 2026-05-27_users_email_privacy.sql."
+    },
+    {
+      "id": "will/docs-update",
+      "role": "Will",
+      "status": "completed",
+      "artifact": "PROJECT_STATE.md + DECISIONS_LOG.md + LEARNINGS.md",
+      "notes": "PROJECT_STATE refreshed from 3-day staleness. 3 new DECISIONS_LOG entries. 2 new LEARNINGS."
+    },
+    {
+      "id": "morgan/cycle-briefing",
       "role": "Morgan",
       "status": "completed",
-      "artifact": "branch:main#morgan-post-project-audit-2026-05-24"
+      "artifact": "qa-reports/cycle-2026-05-28.md"
     },
     {
-      "id": "dana/mutualmesh-push#step-1",
-      "role": "Dana",
-      "status": "blocked",
-      "artifact": null
-    },
-    {
-      "id": "sky/constitution-amendment",
+      "id": "sky/monday-merge-wave",
       "role": "Sky",
-      "status": "blocked",
-      "artifact": null
+      "status": "pending",
+      "depends_on": ["morgan/cycle-briefing"],
+      "notes": "Execute 15-branch merge wave on 2026-06-02 (Monday 10am). Readmap: 2026-05-28_Morgan_Monday_Execution_Readmap.md."
     },
     {
-      "id": "sky/prompt-library-merge",
+      "id": "sky/apply-migrations-batch",
       "role": "Sky",
-      "status": "blocked",
-      "artifact": null
+      "status": "pending",
+      "notes": "Apply: data_layer_hardening, rls_initplan, realtime_flags, users_email_privacy. ~20 min in SQL Editor."
     },
     {
-      "id": "rory/mutualmesh-push-test",
-      "role": "Rory",
+      "id": "sky/d2-push-notifications",
+      "role": "Sky",
       "status": "pending",
-      "artifact": null
+      "notes": "Apply push_tokens.sql + deploy notify-flag-status Edge Function + npx expo install expo-notifications"
     },
     {
-      "id": "will/branch-cleanup",
-      "role": "Will",
+      "id": "sky/d1-flag-edit-rls",
+      "role": "Sky",
       "status": "pending",
-      "artifact": null
+      "notes": "BLOCKING: Apply 2026-05-25_flag_edit_rls_replacement.sql before marker-clustering merges."
     }
   ],
   "edges": [
-    {
-      "from": "dana/mutualmesh-push#step-1",
-      "to": "rory/mutualmesh-push-test",
-      "type": "gate"
-    },
-    {
-      "from": "rory/mutualmesh-push-test",
-      "to": "sky/mutualmesh-phase4-approval",
-      "type": "gate"
-    }
-  ]
+    { "from": "gary/exif-tests", "to": "sky/monday-merge-wave", "type": "unlocks" },
+    { "from": "alex/heatmap-a11y", "to": "sky/monday-merge-wave", "type": "unlocks" },
+    { "from": "steve/security-wave2", "to": "sky/monday-merge-wave", "type": "unlocks" },
+    { "from": "will/docs-update", "to": "morgan/cycle-briefing", "type": "prereq" },
+    { "from": "morgan/cycle-briefing", "to": "sky/monday-merge-wave", "type": "prereq" }
+  ],
+  "critical_path": ["gary/exif-tests", "alex/heatmap-a11y", "steve/security-wave2", "will/docs-update", "morgan/cycle-briefing", "sky/monday-merge-wave"],
+  "note": "Last updated 2026-05-28. Monday merge wave is the next Sky action."
 }
