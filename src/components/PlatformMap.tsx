@@ -1,4 +1,4 @@
-import React, { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
+import React, { forwardRef, memo, useEffect, useImperativeHandle, useRef } from 'react';
 import { Image, StyleSheet, Text, View } from 'react-native';
 import ClusteredMapView from 'react-native-map-clustering';
 import { Callout, Marker, PROVIDER_DEFAULT } from 'react-native-maps';
@@ -191,7 +191,13 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(
   },
 );
 
-export default PlatformMap;
+// React.memo skips the re-render when MapScreen re-renders for reasons
+// unrelated to the map (e.g. opening a modal, toggling filter panel
+// collapsed state). Without it, every parent state change tore down and
+// rebuilt every Marker. Props are shallowly compared — callers must stabilize
+// `flags`, `initialRegion`, and `onLongPressMap` via useMemo / useCallback
+// for this to be effective.
+export default memo(PlatformMap);
 
 const makeStyles = (color: ColorTheme) => StyleSheet.create({
   callout: {

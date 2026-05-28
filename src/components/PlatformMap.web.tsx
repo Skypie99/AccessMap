@@ -1,5 +1,5 @@
 import 'leaflet/dist/leaflet.css';
-import React, { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
+import React, { forwardRef, memo, useEffect, useImperativeHandle, useRef } from 'react';
 import { MapContainer, Marker, Popup, useMap } from 'react-leaflet';
 import L, { Map as LeafletMap, Marker as LeafletMarker } from 'leaflet';
 import { CATEGORY_LABELS, severityColor } from '@/lib/flags';
@@ -278,6 +278,11 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(
                 severityColor(f.severity),
                 focusedFlagId !== null && focusedFlagId !== f.id,
               )}
+              // alt is what screen readers announce for the marker; title is
+              // the browser tooltip. Mirrors the accessibilityLabel on the
+              // native Marker so SR users hear the same description on web.
+              alt={`${CATEGORY_LABELS[f.category]}, severity ${f.severity}, ${f.status}. Open for details.`}
+              title={`${CATEGORY_LABELS[f.category]} — severity ${f.severity}`}
               ref={(m) => {
                 markerRefs.current[f.id] = m;
               }}
@@ -327,4 +332,7 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(
   },
 );
 
-export default PlatformMap;
+// See PlatformMap.tsx — same rationale: memo skips re-renders for parent
+// state changes unrelated to map props. Critical on web because every
+// re-render rebuilds Leaflet's Marker layers.
+export default memo(PlatformMap);

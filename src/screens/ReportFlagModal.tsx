@@ -246,8 +246,8 @@ export default function ReportFlagModal({
       onRequestClose={onClose}
     >
       <View style={styles.backdrop}>
-        <View style={styles.card}>
-          <Text style={styles.title}>Report a flag</Text>
+        <View style={styles.card} accessibilityViewIsModal>
+          <Text style={styles.title} accessibilityRole="header">Report a flag</Text>
           <Text style={styles.location}>
             {location
               ? `at ${location.lat.toFixed(5)}, ${location.lng.toFixed(5)}`
@@ -474,6 +474,10 @@ export default function ReportFlagModal({
               <Pressable
                 onPress={() => setPhotoUri(null)}
                 style={styles.photoClear}
+                // hitSlop expands the 26pt visual target to ~46pt so the
+                // tiny corner-X clears the 44pt touch-target floor without
+                // resizing the visible chrome.
+                hitSlop={10}
                 accessibilityRole="button"
                 accessibilityLabel="Remove photo"
               >
@@ -629,6 +633,9 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
     paddingVertical: 8,
     borderRadius: radius.circle,
     backgroundColor: color.surfaceNeutral,
+    // 44pt is the AccessMap baseline touch target (Apple HIG + WCAG 2.5.5).
+    minHeight: 44,
+    justifyContent: 'center',
   },
   pillActive: { backgroundColor: color.brand },
   pillText: { color: color.text, fontSize: 13 },
@@ -678,6 +685,9 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
     borderRadius: 8,
     backgroundColor: color.surfaceNeutral,
     alignItems: 'center',
+    // 44pt baseline touch target.
+    minHeight: 44,
+    justifyContent: 'center',
   },
   photoBtnText: { color: color.text, fontWeight: '600', fontSize: 13 },
   // High-severity photo nudge card — amber-tinted, appears between the

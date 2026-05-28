@@ -813,14 +813,23 @@ export default function MapScreen() {
     };
   }, [route.params?.flagId]);
 
-  const initialRegion: PlatformMapRegion = location
-    ? {
-        latitude: location.lat,
-        longitude: location.lng,
-        latitudeDelta: 0.01,
-        longitudeDelta: 0.01,
-      }
-    : DEFAULT_REGION;
+  // Memoized so the React.memo on PlatformMap can actually skip re-renders
+  // when MapScreen re-renders for reasons unrelated to the map's seed region
+  // (filter panel toggles, modal opens, name-draft text input, etc.).
+  // Without memoization this object identity changes every render, defeating
+  // shallow prop equality.
+  const initialRegion: PlatformMapRegion = useMemo(
+    () =>
+      location
+        ? {
+            latitude: location.lat,
+            longitude: location.lng,
+            latitudeDelta: 0.01,
+            longitudeDelta: 0.01,
+          }
+        : DEFAULT_REGION,
+    [location],
+  );
 
   // Long-press anywhere on the map → confirm prompt → open the report
   // modal with that coord pre-filled. The confirm step matters: a
