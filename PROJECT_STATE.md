@@ -1,8 +1,9 @@
 # AccessMap — Project State
 
-**Updated:** 2026-05-25 (morning cycle — post night-cycle Wave 5 + overnight branch activity)
+**Updated:** 2026-05-28 (cycle/auto-2026-05-28 — Gary EXIF tests + Alex heatmap audit + Steve security review)
 **Source:** Morgan read pass | git log | qa-reports | migration files
-**Main SHA:** `1659092` · Tests: 789/789 · TSC errors: 0 · Test suites: 52
+**Main SHA:** `1659092` · Tests: 872/872 (main) · TSC errors: 0 · Test suites: 58
+**Active branch:** `privacy/exif-strip-2026-05-28` (EXIF strip + cycle QA artifacts) — 3 commits ahead of main
 
 ---
 
@@ -18,9 +19,8 @@
 | Status history UI | FlagDetailModal "History" tab; graceful degradation if migration not yet applied |
 | flagsMap O(1) lookups | `useMemo` Map in FlagsContext; replaces O(n) `find()` in TasksScreen |
 | renderItem memoization | `useCallback` in TasksScreen; React.memo on FlagCard now effective |
-| 3 a11y residuals (Wave 5) | MapScreen announceForAccessibility; useReducedMotion both PlatformMap variants; web photo alt text |
+| A11y Wave 5 residuals | MapScreen announceForAccessibility; useReducedMotion both PlatformMap variants; web photo alt text |
 | ESLint + Prettier | `eslint.config.js`, `.prettierrc.json`, lint/format npm scripts |
-| Jest open-handles fix | `jest.mock('../supabase')` in filterSets + mapFilters test files |
 | GitHub Actions CI | typecheck + test on push/PR |
 | Offline flags cache | AsyncStorage 24h TTL, user-scoped, stale-while-revalidate, offline banner |
 | Push notification client | Token storage, settings toggle, sign-out clear, Edge Function written — awaiting Sky DB steps |
@@ -31,30 +31,38 @@
 | Text search (NFC), Notification prefs, Tasks sort, Map long-press, Nearest flag jump | Stable |
 | Realtime flags (client wired) | Subscription wired; awaiting DB migration to go live |
 
+### BUILT TODAY — GATE-APPROVED (branches ready for Monday merge wave)
+
+| Branch | What | Gate status |
+|---|---|---|
+| `privacy/exif-strip-2026-05-28` | EXIF metadata stripping before photo upload (GPS/timestamp/camera PII removal) | **Jordan APPROVED** (2026-05-28) |
+| `test/gary-exif-2026-05-28` | 12 tests for EXIF strip functions (verifyExifStripped + native/web fail-safes) | **Gary APPROVED** — 884 tests pass |
+| `feat/heat-map-severity-2026-05-27` | Neighbourhood heatmap: severity gradient, k≥3 privacy floor, HeatmapLegend, persistence | **Alex APPROVED** WCAG 2.2 AA (2026-05-28) |
+| `security/hardening-wave2-2026-05-27` | display_name cap, FeedbackModal input guards, email PII migration (propose-only) | **Steve APPROVED** (2026-05-28) |
+
 ### BUILT-NOT-MERGED (ready pending Sky action)
 
 | Branch | What | Gate |
 |---|---|---|
-| `origin/shamus/marker-clustering-2026-05-25` | Marker clustering + flag editing UI; Gary's 20 `updateFlagContent` tests; Alex 5 a11y fixes — all stacked on one branch | Sky applies `2026-05-25_flag_edit_rls_replacement.sql` first, then merge is safe |
-| `origin/feat/expo-web-vercel-2026-05-25` | Expo Web build + Vercel deployment config | Sky review — no migration dependency; low risk |
+| `origin/shamus/marker-clustering-2026-05-25` | Marker clustering + flag editing UI; Gary's 20 tests; Alex 5 a11y fixes | Sky applies `2026-05-25_flag_edit_rls_replacement.sql` first |
+| `origin/feat/expo-web-vercel-2026-05-25` | Expo Web build + Vercel deployment config | Sky review — low risk |
 
-### IN-PROGRESS / CARRY-FORWARD (open branches, not yet merged)
+### MONDAY MERGE WAVE (cycle/auto-2026-06-02 target)
 
-| Branch | What | Action |
-|---|---|---|
-| `fix/dani-statushistory-darkmode-2026-05-25` | StatusHistoryModal raw `'#fff'` tokens + list/listitem a11y roles | Spawn next Shamus task chip |
-| `chore/design-token-residuals-2026-05-25` | radius.circle, overlayBtnPressed, accessibilityRole cohesion | Spawn next Dani task chip |
-| `worktree-agent-a31117016067fc579` | 15 unique commits including shared FlagsProvider code; unaudited | Audit before deleting — possible cherry-picks |
+15 branches staged for sequential merge. Ordered by tier:
+1. **Tier 1 — Safety/Quality:** `test/gary-wave2-2026-05-26`, `security/hardening-wave2-2026-05-27`, `fix/sql-cleanup-2026-05-27`, `design/auto-2026-05-26-linheight-token`, `a11y/alex-wave2-2026-05-26`
+2. **Tier 2 — Design Polish:** `design/creative-polish-2026-05-27`, `a11y-perf/wave3-2026-05-27`
+3. **Tier 3 — Features:** `feat/shamus-category-quickfilter-2026-05-26`, `feat/shamus-flag-deeplink-detail-2026-05-27`, `feat/heat-map-severity-2026-05-27`, `feat/tasks-search-2026-05-25`, `privacy/exif-strip-2026-05-28` + `test/gary-exif-2026-05-28`
+4. **Tier 4 — Release:** `release/auto-2026-05-28`
+5. **Blocked:** `feat/notify-flag-status-2026-05-27` (awaiting D2)
 
 ### PLANNED (approved, build not started)
 
 | Feature | Gate / Notes |
 |---|---|
-| Leaflet tile interception (web-only) | No native dep; pseudo-code in `2026-05-25-shamus-offline-tiles.md`; low complexity |
-| Neighbourhood heat-map | Jordan APPROVED WITH CONDITIONS (k>=3 floor, severity disclosure). Sky decision on severity-colour rendering needed before Shamus builds (see Open Decisions D5) |
-| Flag edit history audit table | `2026-05-25_flag_edit_history_table.sql` CONDITIONAL — Sky answers YES/NO first (D6) |
-| EAS Build / TestFlight | `eas.json` missing; Rory proposed config in `release-2026-05-25.md` |
-| `expo-notifications` install | `npx expo install expo-notifications` + rebuild dev client; unblocks push notifications end-to-end |
+| Leaflet tile interception (web-only) | Low complexity; pseudo-code in `2026-05-25-shamus-offline-tiles.md` |
+| Flag edit history audit table | `2026-05-25_flag_edit_history_table.sql` CONDITIONAL — Sky answers D6 yes/no |
+| EAS Build / TestFlight | `eas.json` exists on `release/auto-2026-05-28`; Rory confirmed infra ready |
 
 ---
 
@@ -62,31 +70,17 @@
 
 | File | Status | Notes |
 |---|---|---|
-| `2026-05-23_data_layer_hardening.sql` | PENDING (file only) | Sky applies via Supabase SQL Editor |
-| `2026-05-23_feedback_table.sql` | APPLIED (Cycle F confirmed) | `public.feedback` table live |
-| `2026-05-23_rls_initplan_and_non_owner_status_update.sql` | PENDING (file only) | Sky applies via SQL Editor |
-| `2026-05-23_status_update_trigger_proposal.sql` | PROPOSE-ONLY — HELD | Steve sign-off needed (trigger vs. RLS failure-mode). Morgan recommends APPROVE (Decision 3). Sky messages Steve, then applies. |
-| `2026-05-24_flag_context_tags.sql` | APPLIED (Cycle F confirmed) | `context_tags` column live; `createFlag()` fallback can be removed |
-| `2026-05-24_realtime_flags.sql` | PENDING (file only) | Sky applies — unlocks Supabase Realtime |
-| `2026-05-24_status_history_table.sql` | APPLIED (Cycle F confirmed) | `flag_status_history` table + trigger live |
-| `2026-05-25_flag_edit_history_table.sql` | PROPOSE-ONLY — CONDITIONAL | Apply only if Sky answers YES to D6 |
-| `2026-05-25_flag_edit_rls_replacement.sql` | PROPOSE-ONLY — BLOCKING | Must apply before `shamus/marker-clustering-2026-05-25` merges. Replaces `flags update own` with `flags owner edit open` (status='open' guard). |
-| `2026-05-25_push_tokens.sql` | PROPOSE-ONLY | Apply to enable push notifications DB layer. Pair with Edge Function deploy + `expo-notifications` install. |
-
----
-
-## Active Branches
-
-| Branch | Contains | Status |
-|---|---|---|
-| `origin/main` | Everything shipped through Wave 5 | Canonical |
-| `origin/shamus/marker-clustering-2026-05-25` | Clustering + flag editing + Gary tests + Alex a11y fixes | Ready after RLS migration |
-| `origin/feat/expo-web-vercel-2026-05-25` | Expo Web + Vercel deployment config | Ready for Sky review + merge |
-| `origin/a11y/residual-2026-05-25` | Content already on main via `20823fa` | Safe to delete |
-| `origin/docs/learnings-sequential-merge-2026-05-25` | Content already on main | Safe to delete |
-| `origin/cycle/H-2026-05-24` | Cycle H carry-over | Audit — likely superseded |
-| `origin/sync/local-main-to-origin` | Sync utility | Safe to delete |
-| `worktree-agent-a31117016067fc579` (local) | 15 commits, FlagsProvider code | Audit before deleting |
+| `2026-05-23_data_layer_hardening.sql` | PENDING | Sky applies via Supabase SQL Editor |
+| `2026-05-23_feedback_table.sql` | APPLIED | `public.feedback` table live |
+| `2026-05-23_rls_initplan_and_non_owner_status_update.sql` | PENDING | Sky applies |
+| `2026-05-23_status_update_trigger_proposal.sql` | PROPOSE-ONLY — HELD | Steve sign-off needed |
+| `2026-05-24_flag_context_tags.sql` | APPLIED | `context_tags` column live |
+| `2026-05-24_realtime_flags.sql` | PENDING | Sky applies — unlocks Supabase Realtime |
+| `2026-05-24_status_history_table.sql` | APPLIED | `flag_status_history` table + trigger live |
+| `2026-05-25_flag_edit_history_table.sql` | PROPOSE-ONLY — CONDITIONAL | Sky decides D6 |
+| `2026-05-25_flag_edit_rls_replacement.sql` | PROPOSE-ONLY — BLOCKING | Must apply before marker-clustering merges |
+| `2026-05-25_push_tokens.sql` | PROPOSE-ONLY | Apply to enable push notifications DB layer |
+| `2026-05-27_users_email_privacy.sql` | PROPOSE-ONLY — **NEW** | Steve APPROVED 2026-05-28. Closes email PII exposure. Apply with pending batch. |
 
 ---
 
@@ -94,25 +88,31 @@
 
 | # | Decision | Urgency |
 |---|---|---|
-| D1 | Apply `2026-05-25_flag_edit_rls_replacement.sql` in Supabase SQL Editor | BLOCKING — flag edit cannot merge without it |
-| D2 | Apply `2026-05-25_push_tokens.sql` + deploy Edge Function + install `expo-notifications` | HIGH — fully built, zero user value until applied |
+| D1 | Apply `2026-05-25_flag_edit_rls_replacement.sql` | BLOCKING — marker clustering cannot merge |
+| D2 | Apply `2026-05-25_push_tokens.sql` + deploy Edge Function + install `expo-notifications` | HIGH — fully built |
 | D3 | Steve trigger sign-off on `2026-05-23_status_update_trigger_proposal.sql` — Morgan recommends APPROVE | HIGH |
-| D4 | Apply pending batch: `data_layer_hardening`, `rls_initplan`, `realtime_flags` | MEDIUM (~15 min in SQL Editor) |
-| D5 | Heat-map severity-colour rendering: gradient yes or no | MEDIUM — Jordan pre-reviewed; Sky answer unblocks Shamus build |
+| D4 | Apply pending batch: `data_layer_hardening`, `rls_initplan`, `realtime_flags`, `users_email_privacy` | MEDIUM (~20 min in SQL Editor) |
+| D5 | Heat-map severity-colour gradient: **RESOLVED** — Sky approved gradient (2026-05-28), feature built ✅ | DONE |
 | D6 | Flag edit history audit table: apply CONDITIONAL migration yes or no | LOW |
-| D7 | Constitution Art. 1.2 amendment (Cowork-as-Sky merge authority) | LOW — no sprint impact |
+| D7 | Constitution Art. 1.2 amendment (Cowork-as-Sky merge authority) | LOW |
 
 ---
 
-## What Sky Needs To Do Before Next Sprint (ordered)
+## Active Worktrees (as of 2026-05-28 evening)
 
-1. Apply `2026-05-25_flag_edit_rls_replacement.sql` in Supabase SQL Editor → merge `origin/shamus/marker-clustering-2026-05-25`
-2. Message Steve about `2026-05-23_status_update_trigger_proposal.sql` — get confirm, then apply
-3. Apply `2026-05-25_push_tokens.sql` in Supabase SQL Editor
-4. Deploy `notify-flag-status` Edge Function via Supabase Dashboard
-5. Run `npx expo install expo-notifications` in Terminal at ~/AccessMap and rebuild dev client
-6. Apply remaining batch: `data_layer_hardening`, `rls_initplan`, `realtime_flags` (~15 min)
-7. Review and merge `origin/feat/expo-web-vercel-2026-05-25`
-8. Answer D5 (heat-map severity colour) so Shamus can start heat-map build
-9. Create `eas.json` from Rory's proposal in `release-2026-05-25.md` when TestFlight is on the horizon
-10. Delete safe stale branches: `a11y/residual-2026-05-25`, `docs/learnings-sequential-merge-2026-05-25`, `sync/local-main-to-origin`
+| Path | Branch | Status |
+|---|---|---|
+| `~/AccessMap` | `privacy/exif-strip-2026-05-28` | Active working tree |
+| `/tmp/gary-w3-verify` | `test/gary-wave3-2026-05-27` | Clean — can remove |
+| `/tmp/gary-exif-2026-05-28` | `test/gary-exif-2026-05-28` | Completed — ready to push/merge |
+| `/tmp/alex-heatmap-a11y-2026-05-28` | `a11y/heatmap-2026-05-28` | Completed — a11y report written |
+| `.claude/worktrees/` (11 entries) | various `claude/*` | Stale — audit before deleting |
+
+---
+
+## Next Cycle Intent
+
+1. Monday 2026-06-02: Execute 15-branch merge wave (cycle/auto-2026-06-02) under Morgan orchestration
+2. Post-merge: Sky applies D2 (push tokens + Edge Function + expo-notifications install) to light up notifications end-to-end
+3. Post-merge: Apply D4 batch migrations (~20 min) to activate realtime flags + email privacy
+4. Resume feature cycle: EAS / TestFlight prep (Rory) + next feature batch
