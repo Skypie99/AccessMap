@@ -1,0 +1,95 @@
+To:      skylerhalisky@gmail.com
+Subject: PM briefing — 2026-05-24 — 12 decisions awaiting you
+
+Hi Sky,
+
+You mentioned you answered some decisions. Here's the verified state across
+all projects and what your answers unlocked — plus what's still waiting on you.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+WHAT YOU ANSWERED (documented)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+MutualMesh PRIVACY.md — all 22 gating items ✅
+  D1–D10 (Jordan's privacy decisions): 10/10 approved (D1+D2 edited/strengthened)
+  S1–S8 (Steve's security decisions): 8/8 approved
+  Q1–Q4 (open questions): 4/4 answered
+  → Unlocked: Phase 0b + Cycle 1 fully built (schema, OTP signup, Gate routing,
+    WaitingRoom, 91 tests green). App is ready for a live Supabase project.
+
+AccessMap team decisions (handed off) — team resolved 4/5 ✅
+  D1 Jest install: Applied. 195 tests now running.
+  D2 Realtime SQL file: Committed. You apply it.
+  D3 Worktree path rules: Documented.
+  D4 Design tokens: Merged to main.
+  D5 Branch cleanup: Deferred (active worktrees). Recipe in decisions-2026-05-23-morgan.md.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+STILL WAITING ON YOU (12 items)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+MutualMesh (highest priority — team is idle until schema exists):
+
+A. Apply Supabase schema (8 steps in qa-reports/cycle-1-auth-gate-2026-05-23.md)
+   This is THE blocker for Cycle 2. Kick off Cycle 2 with the prompt at the
+   end of that report once done.
+
+B. Pick launch cities for the city dropdown (DFS-C1.2)
+   Default: Toronto, Hamilton, Vancouver, Montréal, Ottawa, Other (all 6 active).
+   Casey assumes one city seeded at a time. Removing cities later is hard.
+
+C. Approve handle-validator copy (DFS-C1.1) — already implemented, just needs your OK.
+   "Reminder: your handle is public — don't use your real name unless you're
+   choosing to. Try the randomized suggestion if you want privacy."
+
+AccessMap (SQL applies + merges):
+
+D. Apply supabase/realtime.sql in Supabase dashboard (one idempotent line)
+   Unlocks: Realtime flag updates. Rollback in the same file.
+
+E. Apply supabase/migrations/2026-05-23_feedback_table.sql in dashboard
+   Unlocks: My Feedback history in Profile.
+   Rollback: DROP TABLE public.feedback CASCADE;
+
+F. Approve marker clustering deps: react-native-map-clustering + supercluster
+   Steve says: signed, actively maintained, no new attack surface.
+   Say "approve" → Shamus installs and builds.
+
+G. Merge feat/tasks-sort-2026-05-23
+   Tasks screen sort: Newest / Oldest / Severity. +18 tests (368 total).
+
+H. Merge feat/map-longpress-drop-2026-05-23
+   Long-press map to drop a flag anywhere. 350 tests passing.
+
+I. Merge feat/profile-nearest-flag-jump-2026-05-23
+   Profile: nearest unresolved flag quick-jump. +9 tests (359 total).
+
+J. Merge perf/auto-2026-05-24 (Peter's perf sweep today)
+   4 memoization wins — behavior-preserving. Review and merge if happy.
+
+K. Branch cleanup (Decision 5 recipe in decisions-2026-05-23-morgan.md)
+   Primary AccessMap checkout is on feat/distance-eta-2026-05-23, not main.
+   Run recipe when no orchestrator is active.
+
+Prompt Library (one merge away from current):
+
+L. Merge cycle/auto-2026-05-23-n3-cleanup into main
+   Contains: 20 features + Next.js CVE fix (15.1.6 → 15.5.18) + a11y cleanup.
+
+   cd "/Users/skypie/Documents/Claude/Projects/Prompt Library Tool"
+   git checkout main && git merge cycle/auto-2026-05-23-n3-cleanup
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+HIGHEST VALUE MOVE RIGHT NOW
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. Apply MutualMesh schema (A) — unblocks Cycle 2 entirely
+2. Merge R7/R8/R9 (G/H/I) — three features ready, zero risk, five minutes
+3. Merge Prompt Library cleanup branch (L) — one git command
+
+Full briefing saved to:
+  ~/AccessMap/qa-reports/2026-05-24_Project_Manager_Report.md
+
+NOTE: Gmail draft creation failed (reconnect Gmail MCP to enable email delivery).
+
+— Morgan, 2026-05-24

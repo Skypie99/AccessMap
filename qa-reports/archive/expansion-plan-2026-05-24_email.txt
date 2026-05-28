@@ -1,0 +1,126 @@
+Subject: AccessMap expansion plan — 20 features, 3 phases, 14 weeks to v1.0
+
+Sky —
+
+Planning pass done. Here's the 5-minute version.
+
+────────────────────────────────────
+THE DIRECTION (three pillars)
+────────────────────────────────────
+
+1. TRUST — multi-user verification, status history, reporter reputation
+   → so a wheelchair user can rely on what the app says
+2. CONTEXT — threaded comments, multi-photo, accessibility-specific tags
+   → so a single photo doesn't have to tell the whole story
+3. REACH — push notifications, public web URLs, offline cache, get-directions
+   → so the data gets to the people who need it, when they need it
+
+Success in 3–4 months: a user opens a flag, reads 2–3 community comments,
+sees who verified it and when, taps "Get directions" → Apple/Google Maps
+opens with the route. They get a push when a watched flag flips status.
+The list works offline.
+
+────────────────────────────────────
+THE 20 FEATURES (priority order)
+────────────────────────────────────
+
+TRUST:
+  T1 Flag status history (audit trail) — L
+  T2 Threaded comments — M (THE big one)
+  T3 Multi-user verification threshold — L
+  T4 Reporter reputation tier — L
+  T5 Inappropriate-content flagging — M
+
+CONTEXT:
+  C1 Multiple photos per flag — M
+  C2 Accessibility-specific tags — M
+  C3 Status notes (verifier reason) — L
+  C4 Time-of-day / weather tags — L
+  C5 Linked flags (see-also) — M
+
+REACH:
+  R1 Push notifications — H (THE other big one)
+  R2 Get-directions handoff — L
+  R3 Offline cached flags — M
+  R4 Public web flag URLs — M
+  R5 Heatmap / cluster view — M
+
+FOUNDATIONS:
+  F1 Dark mode — M
+  F2 Onboarding flow — L
+  F3 Settings screen consolidation — L
+  F4 Filter presets — L
+  F5 i18n (Spanish first) — H
+
+L=~1 cycle  M=~2–3 cycles  H=~4+ cycles
+
+────────────────────────────────────
+THE PLAN (3 PHASES, 13 CYCLES, ~14 WEEKS)
+────────────────────────────────────
+
+PHASE 1 (4 cycles, 2–3 weeks) — IMMEDIATE WINS, zero schema risk
+  A: F2 + F3 + F4 + R2 (4 parallel; all AsyncStorage/nav-only)
+  B: T1 + T4 + C4 + R5 (4 parallel; existing schema)
+  C: F1 dark mode (theme refactor — own cycle)
+  D: QA sweep + beta to TestFlight
+
+PHASE 2 (5 cycles, 4–6 weeks) — TRUST + CONTEXT (schema lands here)
+  E: T3 + C3 + F5 scaffolding
+  F: T2 threaded comments (cycle theme — Dana + Steve + Shamus)
+  G: C1 multi-photo + C2 tags (bundled migration)
+  H: T5 moderation + C5 linked flags + F5 Spanish content
+  I: Phase-2 QA + migration audit + beta
+
+PHASE 3 (4 cycles, 3–4 weeks) — REACH
+  J: R3 offline + R4 web URL scaffolding
+  K: R1 push notifications (cycle theme)
+  L: R4 web pages + a11y push + i18n expand
+  M: Production release prep
+
+────────────────────────────────────
+NEXT ACTIONS — THIS WEEK
+────────────────────────────────────
+
+1. (Sky, 10 min) Merge the 9 parked branches per the recipe in
+   qa-reports/cycle-2026-05-24-v2.md. Decide B1 (R9 location prompt) first.
+
+2. (Sky, 5 min) Apply 2 unblocking migrations in Supabase dashboard:
+     - supabase/realtime.sql
+     - supabase/migrations/2026-05-23_feedback_table.sql
+
+3. (Cycle A kickoff, ~45 min wall) Shamus × 4 in parallel:
+     - F2 Onboarding
+     - F3 Settings consolidation
+     - F4 Filter presets
+     - R2 Get-directions handoff
+   Then Quinn + Alex + Gary QA pass. Then Sky merges.
+
+────────────────────────────────────
+WHAT TO DEFER
+────────────────────────────────────
+
+  - F5 i18n        → Cycle E (Phase 2). Premature now.
+  - R1 push        → Cycle K. Too many moving parts for Phase 1.
+  - R3 offline     → Cycle J. Premature optimization until user count grows.
+  - Routing on-platform → deferred indefinitely (R2 handoff covers it)
+  - 60+ stale branch deletion → quiet-weekend triage
+
+────────────────────────────────────
+RISKS WORTH KNOWING
+────────────────────────────────────
+
+  - Schema sprawl in Phase 2 — bundle migrations, Steve reviews each
+  - Push notifications (R1) is its own beast — own cycle
+  - Web/native divergence keeps biting (R8 + R11 this session) —
+    Gary should add a Playwright web smoke test in Phase 1
+  - Comments (T2) attract abuse — T5 moderation MUST land same cycle
+  - 60+ stale branches are a conflict trap — triage before Cycle A
+
+────────────────────────────────────
+FILES
+────────────────────────────────────
+
+  Master plan: ~/AccessMap/qa-reports/expansion-plan-2026-05-24.md
+  Copy:        ~/Documents/Claude/Agent Summarys /Access Map Summarys/2026-05-24_Expansion_Plan.md
+
+— Morgan, 2026-05-24
