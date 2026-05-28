@@ -177,4 +177,18 @@ is not inverted. **Correct behaviour confirmed.**
 
 ---
 
+---
+
+## For Morgan — Sky notification
+
+Gary is silent on external channels (Const. Art. 5). Morgan: please iMessage
+`skylerhalisky@gmail.com` with the following 2-sentence summary:
+
+> "Gary's Wave 4 tests are done: 55 new tests across heatmapPrefs (persistence),
+> HeatmapLegend (rendering + a11y), and heatmap edge cases — total suite now
+> 882/882 on `test/gary-wave4-heatmap-2026-05-27`. No production code changed;
+> branch is ready for review and merge into the heat-map feature branch."
+
+---
+
 **Prepared by:** Gary (QA) — Wave 4 | 2026-05-27
