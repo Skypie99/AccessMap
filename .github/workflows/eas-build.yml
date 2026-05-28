@@ -1,0 +1,43 @@
+name: EAS Build (Development)
+
+# Auto-build on every push to any branch for fast testing feedback
+on:
+  push:
+    branches:
+      - '**'
+    paths-ignore:
+      - '**.md'
+      - 'qa-reports/**'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    name: Build iOS Development
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Typecheck (safety gate)
+        run: npm run typecheck
+
+      - name: Test (safety gate)
+        run: npm test -- --passWithNoTests --forceExit
+
+      - name: Install EAS CLI
+        run: npm install -g eas-cli@latest
+
+      - name: Build with EAS (development profile)
+        env:
+          EAS_TOKEN: ${{ secrets.EAS_TOKEN }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: eas build --platform ios --profile development --non-interactive
+
+      # Note: Build artifacts are automatically uploaded to EAS Build logs.
+      # For TestFlight submission, see eas-testflight-submit.yml (manual/tag trigger).

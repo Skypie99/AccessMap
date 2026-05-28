@@ -1,0 +1,74 @@
+name: EAS TestFlight Submit
+
+# Trigger manually or on release tag for TestFlight submission
+on:
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: 'Build profile (preview or production)'
+        required: true
+        default: 'preview'
+        type: choice
+        options:
+          - preview
+          - production
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-and-submit:
+    runs-on: ubuntu-latest
+    name: Build & Submit to TestFlight
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Test
+        run: npm test -- --passWithNoTests --forceExit
+
+      - name: Install EAS CLI
+        run: npm install -g eas-cli@latest
+
+      - name: Determine profile
+        id: profile
+        run: |
+          if [[ "${{ github.event_name }}" == "push" ]]; then
+            echo "PROFILE=production" >> $GITHUB_OUTPUT
+          else
+            echo "PROFILE=${{ github.event.inputs.profile }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Build with EAS
+        env:
+          EAS_TOKEN: ${{ secrets.EAS_TOKEN }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: eas build --platform ios --profile ${{ steps.profile.outputs.PROFILE }} --non-interactive
+
+      - name: Submit to TestFlight
+        env:
+          EAS_TOKEN: ${{ secrets.EAS_TOKEN }}
+          EXPO_APPLE_ID: ${{ secrets.EXPO_APPLE_ID }}
+          EXPO_APPLE_PASSWORD: ${{ secrets.EXPO_APPLE_PASSWORD }}
+          EXPO_APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: eas submit --platform ios --profile ${{ steps.profile.outputs.PROFILE }} --non-interactive
+
+      - name: Create GitHub Release (tag only)
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v1
+        with:
+          body: |
+            TestFlight build submitted for version ${{ github.ref_name }}.
+            Check App Store Connect for review status.
+          draft: false
+          prerelease: false
