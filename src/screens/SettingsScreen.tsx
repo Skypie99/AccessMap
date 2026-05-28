@@ -31,6 +31,8 @@ import { deletePushToken, enablePushNotifications, getPushEnabled } from '@/lib/
 // rationale.
 import NotificationPrefsModal from '@/components/NotificationPrefsModal';
 import AboutScreen from '@/screens/AboutScreen';
+import OnboardingModal from '@/screens/OnboardingModal';
+import NotificationPreferencesScreen from '@/screens/NotificationPreferencesScreen';
 
 // One row in the settings list. We declare it locally instead of factoring
 // into its own file because it's only used here and the rest of the app
@@ -153,6 +155,13 @@ export default function SettingsScreen() {
   // styles differ slightly per host. Both keep their own visible flag.
   const [notifOpen, setNotifOpen] = useState(false);
   const [aboutOpen, setAboutOpen] = useState(false);
+  // "Replay tutorial" — opens the 3-card OnboardingModal inline so the
+  // user actually SEES the tutorial right now, rather than the Profile
+  // tab's existing button which only resets the per-user flag (forcing
+  // a sign-out / sign-in to actually see the cards). This is the
+  // immediate-replay version most users expect from a "Replay" control.
+  const [tutorialOpen, setTutorialOpen] = useState(false);
+  const [notifPrefsOpen, setNotifPrefsOpen] = useState(false);
 
   const { user } = useAuth();
   const [exporting, setExporting] = useState(false);
@@ -398,6 +407,14 @@ export default function SettingsScreen() {
           onPress={() => setAboutOpen(true)}
         />
 
+        <SettingsRow
+          title="Replay tutorial"
+          subtitle="Re-show the 3-card welcome intro."
+          icon="🎬"
+          accessibilityHint="Opens the welcome intro you saw the first time you signed in"
+          onPress={() => setTutorialOpen(true)}
+        />
+
         <Text style={styles.sectionLabel} accessibilityRole="header">
           Feedback
         </Text>
@@ -450,6 +467,22 @@ export default function SettingsScreen() {
           <SharedModalsHost /> mount inside RootNavigator. */}
       <NotificationPrefsModal visible={notifOpen} onClose={() => setNotifOpen(false)} />
       <AboutScreen visible={aboutOpen} onClose={() => setAboutOpen(false)} />
+      {/* Replay tutorial — same OnboardingModal App.tsx mounts on first
+          launch. Reusing it (rather than a sibling "tutorial-light"
+          surface) means the content stays in lockstep with the original
+          experience. The modal's onDone closes it; we deliberately do
+          NOT call markOnboardingSeen here — the per-user "seen" flag is
+          already set (otherwise the auto-show in App.tsx would've fired
+          before the user could reach Settings), so there's nothing to
+          mutate. */}
+      <OnboardingModal
+        visible={tutorialOpen}
+        onDone={() => setTutorialOpen(false)}
+      />
+      <NotificationPreferencesScreen
+        visible={notifPrefsOpen}
+        onClose={() => setNotifPrefsOpen(false)}
+      />
     </>
   );
 }

@@ -569,3 +569,27 @@ export async function listFlagStatusHistory(flagId: string): Promise<FlagStatusH
     return [];
   }
 }
+
+// ---------------------------------------------------------------------------
+// Community leaderboard
+// ---------------------------------------------------------------------------
+
+export interface LeaderboardEntry {
+  id: string;
+  display_name: string | null;
+  points: number;
+}
+
+/**
+ * Returns the top `limit` users by points, highest first.
+ * The `users` table is readable by all authenticated users (no RLS change needed).
+ */
+export async function listLeaderboard(limit = 10): Promise<LeaderboardEntry[]> {
+  const { data, error } = await supabase
+    .from('users')
+    .select('id, display_name, points')
+    .order('points', { ascending: false })
+    .limit(limit);
+  if (error) throw error;
+  return (data ?? []) as LeaderboardEntry[];
+}

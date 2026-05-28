@@ -209,6 +209,7 @@ export default function OnboardingCards({ onDone }: Props) {
               style={({ pressed }) => [styles.primaryBtn, pressed && styles.btnPressed]}
               accessibilityRole="button"
               accessibilityLabel={`Next. Currently on card ${index + 1} of ${CARDS.length}.`}
+              accessibilityHint="Moves to the next tutorial card"
             >
               <Text style={styles.primaryBtnText}>Next</Text>
             </Pressable>

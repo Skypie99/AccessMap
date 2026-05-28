@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   FlatList,
   Image,
@@ -12,7 +12,12 @@ import {
 } from 'react-native';
 import { CATEGORY_LABELS, CATEGORY_ORDER, severityColor } from '@/lib/flags';
 import { relativeTime } from '@/lib/relativeTime';
-import { formatDistance, haversineKm, speakDistance, type LatLng } from '@/lib/distance';
+import {
+  formatDistance,
+  haversineKm,
+  speakDistance,
+  type LatLng,
+} from '@/lib/distance';
 import { searchFlags } from '@/lib/flagSearch';
 import type { FlagCategory, FlagRow } from '@/types/database';
 import SearchInputRow from '@/components/SearchInputRow';
@@ -83,6 +88,81 @@ export default function NearbyFlagsModal({
     [categoryFiltered, searchQuery],
   );
 
+  // Pre-compute distance strings once per item so renderItem never runs
+  // haversine inline (Peter Wave 6: expensive computation in render path).
+  const distanceMap = useMemo(() => {
+    if (!location) return new Map<string, { text: string; speak: string }>();
+    const m = new Map<string, { text: string; speak: string }>();
+    for (const f of displayFlags) {
+      const d = haversineKm(location, { lat: f.lat, lng: f.lng });
+      m.set(f.id, { text: formatDistance(d), speak: speakDistance(d) });
+    }
+    return m;
+  }, [location, displayFlags]);
+
+  const renderItem = useCallback(
+    ({ item }: { item: FlagRow }) => {
+      const dist = distanceMap.get(item.id);
+      const a11yLabel =
+        `${CATEGORY_LABELS[item.category]}, severity ${item.severity}` +
+        (dist ? `, ${dist.speak}` : '') +
+        `. Status ${item.status}.` +
+        (item.description ? ` ${item.description}` : '');
+      return (
+        <Pressable
+          onPress={() => onSelectFlag(item)}
+          style={({ pressed }) => [
+            styles.card,
+            pressed && styles.cardPressed,
+          ]}
+          accessibilityRole="button"
+          accessibilityLabel={a11yLabel}
+          accessibilityHint="Closes the list and centers the map on this flag"
+        >
+          <View style={styles.cardHeader}>
+            <View
+              style={[
+                styles.sevDot,
+                { backgroundColor: severityColor(item.severity) },
+              ]}
+              importantForAccessibility="no"
+              accessibilityElementsHidden
+            >
+              <Text style={styles.sevDotText}>{item.severity}</Text>
+            </View>
+            <Text style={styles.cardTitle} numberOfLines={1}>
+              {CATEGORY_LABELS[item.category]}
+            </Text>
+            {dist && (
+              <Text style={styles.distance}>{dist.text}</Text>
+            )}
+          </View>
+          <View style={styles.cardBody}>
+            {item.photo_url ? (
+              <Image
+                source={{ uri: item.photo_url }}
+                style={styles.thumb}
+                accessible
+                accessibilityLabel={`Photo of the reported ${CATEGORY_LABELS[item.category]}`}
+              />
+            ) : null}
+            <View style={styles.cardBodyText}>
+              {item.description ? (
+                <Text style={styles.cardDesc} numberOfLines={2}>
+                  {item.description}
+                </Text>
+              ) : null}
+              <Text style={styles.cardMeta}>
+                Severity {item.severity} · {item.status} · {relativeTime(item.created_at)}
+              </Text>
+            </View>
+          </View>
+        </Pressable>
+      );
+    },
+    [distanceMap, onSelectFlag],
+  );
+
   return (
     <Modal
       visible={visible}
@@ -107,7 +187,8 @@ export default function NearbyFlagsModal({
         {!location && (
           <View style={styles.notice}>
             <Text style={styles.noticeText}>
-              Allow location access to sort flags by distance. Showing the most recent first.
+              Allow location access to sort flags by distance. Showing the
+              most recent first.
             </Text>
           </View>
         )}
@@ -171,7 +252,12 @@ export default function NearbyFlagsModal({
         <FlatList
           data={displayFlags}
           keyExtractor={(f) => f.id}
-          contentContainerStyle={displayFlags.length === 0 ? styles.emptyWrap : styles.list}
+          renderItem={renderItem}
+          removeClippedSubviews
+          initialNumToRender={10}
+          contentContainerStyle={
+            displayFlags.length === 0 ? styles.emptyWrap : styles.list
+          }
           ListEmptyComponent={
             <View style={styles.emptyInner}>
               <Text style={styles.emptyTitle}>
@@ -190,60 +276,6 @@ export default function NearbyFlagsModal({
               </Text>
             </View>
           }
-          renderItem={({ item }) => {
-            const distance = location
-              ? haversineKm(location, { lat: item.lat, lng: item.lng })
-              : null;
-            const distanceText = distance != null ? formatDistance(distance) : null;
-            const a11yDistance = distance != null ? `, ${speakDistance(distance)}` : '';
-            const a11yLabel =
-              `${CATEGORY_LABELS[item.category]}, severity ${item.severity}` +
-              `${a11yDistance}. Status ${item.status}.` +
-              (item.description ? ` ${item.description}` : '');
-            return (
-              <Pressable
-                onPress={() => onSelectFlag(item)}
-                style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
-                accessibilityRole="button"
-                accessibilityLabel={a11yLabel}
-                accessibilityHint="Closes the list and centers the map on this flag"
-              >
-                <View style={styles.cardHeader}>
-                  <View
-                    style={[styles.sevDot, { backgroundColor: severityColor(item.severity) }]}
-                    importantForAccessibility="no"
-                    accessibilityElementsHidden
-                  >
-                    <Text style={styles.sevDotText}>{item.severity}</Text>
-                  </View>
-                  <Text style={styles.cardTitle} numberOfLines={1}>
-                    {CATEGORY_LABELS[item.category]}
-                  </Text>
-                  {distanceText && <Text style={styles.distance}>{distanceText}</Text>}
-                </View>
-                <View style={styles.cardBody}>
-                  {item.photo_url ? (
-                    <Image
-                      source={{ uri: item.photo_url }}
-                      style={styles.thumb}
-                      accessible
-                      accessibilityLabel={`Photo of the reported ${CATEGORY_LABELS[item.category]}`}
-                    />
-                  ) : null}
-                  <View style={styles.cardBodyText}>
-                    {item.description ? (
-                      <Text style={styles.cardDesc} numberOfLines={2}>
-                        {item.description}
-                      </Text>
-                    ) : null}
-                    <Text style={styles.cardMeta}>
-                      Severity {item.severity} · {item.status} · {relativeTime(item.created_at)}
-                    </Text>
-                  </View>
-                </View>
-              </Pressable>
-            );
-          }}
         />
       </SafeAreaView>
     </Modal>

@@ -35,6 +35,10 @@ import {
   toggleTag,
   type ContextTag,
 } from '@/lib/contextTags';
+import {
+  validReportTemplates,
+  type ReportTemplate,
+} from '@/lib/reportTemplates';
 import type { FlagCategory, FlagSeverity } from '@/types/database';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { radius } from '@/theme';
@@ -46,7 +50,12 @@ interface Props {
   onCreated: () => void;
 }
 
-export default function ReportFlagModal({ visible, location, onClose, onCreated }: Props) {
+export default function ReportFlagModal({
+  visible,
+  location,
+  onClose,
+  onCreated,
+}: Props) {
   const color = useColor();
   const styles = makeStyles(color);
   const { user } = useAuth();
@@ -62,7 +71,8 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
   // it flips to 'unavailable' (the propose-only migration isn't on this
   // backend yet) we disable the chip picker and surface a "coming soon"
   // hint instead of letting the user pick tags that get silently dropped.
-  const [tagsCapability, setTagsCapability] = useState<ContextTagsCapability>('unknown');
+  const [tagsCapability, setTagsCapability] =
+    useState<ContextTagsCapability>('unknown');
   useEffect(() => subscribeContextTagsCapability(setTagsCapability), []);
   const tagsDisabled = tagsCapability === 'unavailable';
 
@@ -88,6 +98,41 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
     setDescription('');
     setPhotoUri(null);
     setContextTags([]);
+    setAppliedTemplateId(null);
+  };
+
+  // Templates list — computed once per render. validReportTemplates filters
+  // out any whose category/severity drifted out of the enum, so a future
+  // category rename can't leak a broken chip into the picker.
+  const templates = validReportTemplates();
+
+  // Track which template the user last applied so the chip can render in
+  // a selected/active style. Cleared when the user manually changes any
+  // field that the template populated, so the chip doesn't lie about
+  // matching the live form.
+  const [appliedTemplateId, setAppliedTemplateId] = useState<string | null>(
+    null,
+  );
+
+  const applyTemplate = (t: ReportTemplate) => {
+    setCategory(t.category);
+    setSeverity(t.severity);
+    // Only overwrite description if it's empty OR was clearly placed by a
+    // previous template tap (we can't distinguish from typed text after
+    // the fact, but a fresh form / re-tap is the common case). Erring on
+    // the side of overwriting keeps the chip useful — the user can always
+    // edit the textbox after.
+    if (description.trim() === '') {
+      setDescription(t.description ?? '');
+    }
+    setAppliedTemplateId(t.id);
+    // Screen-reader users don't see the chip-tint change; announce so
+    // they know the form jumped.
+    AccessibilityInfo.announceForAccessibility(
+      `Template applied: ${t.label}. Category, severity${
+        t.description ? ', and a starter description' : ''
+      } pre-filled. Edit any field before submitting.`,
+    );
   };
 
   const pickPhoto = async (_source: 'camera' | 'library') => {
@@ -194,7 +239,12 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
   };
 
   return (
-    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
+    <Modal
+      visible={visible}
+      animationType="slide"
+      transparent
+      onRequestClose={onClose}
+    >
       <View style={styles.backdrop}>
         <View style={styles.card}>
           <Text style={styles.title}>Report a flag</Text>
@@ -203,6 +253,68 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
               ? `at ${location.lat.toFixed(5)}, ${location.lng.toFixed(5)}`
               : 'Waiting for location…'}
           </Text>
+
+          {/* Quick-fill templates — appears above the manual Category /
+              Severity rows so a reporter who just wants "the obvious one"
+              can tap a chip and submit without scrolling. Each chip
+              applies a curated (category + severity + suggested
+              description) triple. Description is only seeded when the
+              textbox is empty so we don't trample text a user already
+              wrote. Tapping a second template overrides the previous
+              chip's selection (driven by appliedTemplateId state). */}
+          {templates.length > 0 && (
+            <>
+              <Text style={styles.label} accessibilityRole="header">
+                Quick-fill templates (optional)
+              </Text>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.row}
+                accessibilityHint="A row of common-scenario templates that pre-fill the form. Tap one to seed category, severity, and a description; edit any field before submitting."
+              >
+                {templates.map((t) => {
+                  const active = t.id === appliedTemplateId;
+                  return (
+                    <Pressable
+                      key={t.id}
+                      onPress={() => applyTemplate(t)}
+                      style={[
+                        styles.templateChip,
+                        active && styles.templateChipActive,
+                      ]}
+                      accessibilityRole="button"
+                      accessibilityLabel={
+                        active
+                          ? `Template applied: ${t.label}. Tap to re-apply.`
+                          : `Apply template: ${t.label}`
+                      }
+                      accessibilityState={{ selected: active }}
+                    >
+                      <Text
+                        style={[
+                          styles.templateChipGlyph,
+                          active && styles.templateChipGlyphActive,
+                        ]}
+                        accessibilityElementsHidden
+                        importantForAccessibility="no-hide-descendants"
+                      >
+                        {t.glyph}
+                      </Text>
+                      <Text
+                        style={[
+                          styles.templateChipText,
+                          active && styles.templateChipTextActive,
+                        ]}
+                      >
+                        {t.label}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </ScrollView>
+            </>
+          )}
 
           <Text style={styles.label}>Category</Text>
           <ScrollView
@@ -215,7 +327,13 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
               return (
                 <Pressable
                   key={c}
-                  onPress={() => setCategory(c)}
+                  onPress={() => {
+                    setCategory(c);
+                    // Manual edit invalidates the "this template is
+                    // currently applied" claim — clear so the chip
+                    // visuals stay truthful.
+                    setAppliedTemplateId(null);
+                  }}
                   style={[styles.pill, active && styles.pillActive]}
                   accessibilityRole="button"
                   accessibilityLabel={`Category: ${CATEGORY_LABELS[c]}`}
@@ -236,7 +354,13 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
               return (
                 <Pressable
                   key={s}
-                  onPress={() => setSeverity(s)}
+                  onPress={() => {
+                    setSeverity(s);
+                    // Same pattern as Category — manual edit clears the
+                    // applied-template chip so its selected state stays
+                    // consistent with the live form.
+                    setAppliedTemplateId(null);
+                  }}
                   style={[
                     styles.sevBtn,
                     active && styles.sevBtnActive,
@@ -246,7 +370,9 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
                   accessibilityLabel={`Severity ${s}`}
                   accessibilityState={{ selected: active }}
                 >
-                  <Text style={[styles.sevText, active && styles.sevTextActive]}>{s}</Text>
+                  <Text style={[styles.sevText, active && styles.sevTextActive]}>
+                    {s}
+                  </Text>
                 </Pressable>
               );
             })}
@@ -277,6 +403,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
             // Cap the input here too so the user can't paste a wall of
             // text only to get a Postgres error after upload+insert.
             maxLength={2000}
+
             style={styles.input}
             accessibilityLabel="Description of the accessibility issue"
             accessibilityHint="Optional. Up to 2000 characters."
@@ -289,7 +416,9 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
               style={[
                 styles.charCounter,
                 description.length >= 1960 && styles.charCounterRed,
-                description.length >= 1800 && description.length < 1960 && styles.charCounterAmber,
+                description.length >= 1800 &&
+                  description.length < 1960 &&
+                  styles.charCounterAmber,
               ]}
               accessibilityLabel={`${description.length} of 2000 characters used`}
             >
@@ -408,7 +537,9 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
                   accessibilityLabel={label}
                   accessibilityState={{ checked: active, disabled: tagsDisabled }}
                   accessibilityHint={
-                    tagsDisabled ? 'Context tags will be available soon.' : undefined
+                    tagsDisabled
+                      ? 'Context tags will be available soon.'
+                      : undefined
                   }
                 >
                   <Text
@@ -466,169 +597,207 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
   );
 }
 
-const makeStyles = (color: ColorTheme) =>
-  StyleSheet.create({
-    backdrop: {
-      flex: 1,
-      backgroundColor: 'rgba(0,0,0,0.4)',
-      justifyContent: 'flex-end',
-    },
-    card: {
-      backgroundColor: color.surface,
-      padding: 20,
-      borderTopLeftRadius: 16,
-      borderTopRightRadius: 16,
-      gap: 12,
-    },
-    title: { fontSize: 20, fontWeight: '700' },
-    location: { fontSize: 12, color: '#666' },
-    label: { fontSize: 13, fontWeight: '600', color: '#333', marginTop: 4 },
-    row: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
-    pill: {
-      paddingHorizontal: 12,
-      paddingVertical: 8,
-      borderRadius: radius.circle,
-      backgroundColor: color.surfaceNeutral,
-    },
-    pillActive: { backgroundColor: color.brand },
-    pillText: { color: '#333', fontSize: 13 },
-    pillTextActive: { color: color.textOnBrand, fontWeight: '600' },
-    sevBtn: {
-      width: 44,
-      height: 44,
-      borderRadius: 22,
-      backgroundColor: color.surfaceNeutral,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    sevBtnActive: {},
-    sevText: { fontSize: 16, color: '#333', fontWeight: '600' },
-    sevTextActive: { color: color.textOnBrand },
-    input: {
-      borderWidth: 1,
-      borderColor: '#ddd',
-      borderRadius: 8,
-      padding: 10,
-      minHeight: 70,
-      textAlignVertical: 'top',
-    },
-    sevHint: {
-      fontSize: 13,
-      color: '#555',
-      lineHeight: 18,
-      marginTop: -4,
-    },
-    sevHintLabel: { fontWeight: '700', color: '#333' },
-    charCounter: {
-      fontSize: 12,
-      color: '#888',
-      textAlign: 'right',
-      marginTop: 2,
-    },
-    charCounterAmber: { color: '#c07a00' },
-    charCounterRed: { color: color.error, fontWeight: '700' },
-    photoBtn: {
-      flexGrow: 1,
-      paddingHorizontal: 12,
-      paddingVertical: 10,
-      borderRadius: 8,
-      backgroundColor: color.surfaceNeutral,
-      alignItems: 'center',
-    },
-    photoBtnText: { color: '#333', fontWeight: '600', fontSize: 13 },
-    photoNudge: {
-      flexDirection: 'row',
-      alignItems: 'flex-start',
-      gap: 8,
-      backgroundColor: color.warningBg,
-      borderRadius: 8,
-      paddingHorizontal: 12,
-      paddingVertical: 8,
-      marginBottom: 6,
-    },
-    photoNudgeIcon: {
-      fontSize: 18,
-      lineHeight: 22,
-    },
-    photoNudgeBody: {
-      flex: 1,
-      fontSize: 12,
-      color: color.warningFg,
-      lineHeight: 17,
-    },
-    photoNudgeBold: {
-      fontWeight: '700',
-      color: color.warningFg,
-    },
-    photoPreviewWrap: { position: 'relative', alignSelf: 'flex-start' },
-    photoPreview: { width: 140, height: 140, borderRadius: 10 },
-    photoClear: {
-      position: 'absolute',
-      top: -6,
-      right: -6,
-      backgroundColor: '#000',
-      width: 24,
-      height: 24,
-      borderRadius: 12,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    photoClearText: { color: '#fff', fontWeight: '700', fontSize: 12 },
-    actions: { flexDirection: 'row', gap: 12, marginTop: 8 },
-    actionBtn: {
-      flex: 1,
-      paddingVertical: 12,
-      borderRadius: 8,
-      alignItems: 'center',
-    },
-    cancelBtn: { backgroundColor: color.surfaceNeutral },
-    cancelText: { color: '#333', fontWeight: '600' },
-    submitBtn: { backgroundColor: color.brand },
-    submitBtnDisabled: { opacity: 0.6 },
-    submitText: { color: color.textOnBrand, fontWeight: '700' },
-    // Context-tag chips. Three visual states matching accessibilityState:
-    //   - unselected → outline (white bg, dark-blue border + text)  → 7.6:1 text/bg
-    //   - selected   → solid dark-blue fill, white text              → 7.6:1 text/bg
-    //   - disabled   → muted gray border + text on white             → 4.6:1 text/bg
-    // The active fill uses #1c4f99 (Cycle C floor, AA-large 4.5:1+ on 13pt-600
-    // and AA-large on white-text 7.6:1). This literal WILL switch to the
-    // `color.brandText` token CL2 added to src/theme.ts once the C4 and CL2
-    // branches both land — the Cycle C cleanup pass will reconcile. Don't
-    // import from CL2 yet (it isn't merged into this worktree).
-    // Touch target: paddingVertical 10 + line-height ~17 + minHeight 44 keeps
-    // every chip at least 44pt tall regardless of dynamic-type scaling.
-    tagChip: {
-      paddingHorizontal: 14,
-      paddingVertical: 10,
-      borderRadius: radius.circle,
-      backgroundColor: color.surface,
-      borderWidth: 1,
-      borderColor: color.brandText,
-      minHeight: 44,
-      justifyContent: 'center',
-    },
-    tagChipActive: {
-      backgroundColor: color.brandText,
-      borderColor: color.brandText,
-    },
-    tagChipDisabled: {
-      borderColor: '#9aa3ad',
-      backgroundColor: '#f4f6f8',
-    },
-    tagChipText: {
-      color: color.brandText,
-      fontSize: 13,
-      fontWeight: '600',
-    },
-    tagChipTextActive: {
-      color: color.textOnBrand,
-    },
-    tagChipTextDisabled: {
-      color: color.textMutedAlt, // AA pass: on #f4f6f8 = 4.6:1
-    },
-    tagHelper: {
-      fontSize: 12,
-      color: color.textMutedAlt,
-      marginTop: -4,
-    },
-  });
+const makeStyles = (color: ColorTheme) => StyleSheet.create({
+  backdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'flex-end',
+  },
+  card: {
+    backgroundColor: color.surface,
+    padding: 20,
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    gap: 12,
+  },
+  title: { fontSize: 20, fontWeight: '700' },
+  location: { fontSize: 12, color: '#666' },
+  label: { fontSize: 13, fontWeight: '600', color: '#333', marginTop: 4 },
+  row: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
+  pill: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: radius.circle,
+    backgroundColor: color.surfaceNeutral,
+  },
+  pillActive: { backgroundColor: color.brand },
+  pillText: { color: '#333', fontSize: 13 },
+  pillTextActive: { color: color.textOnBrand, fontWeight: '600' },
+  sevBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: color.surfaceNeutral,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sevBtnActive: {},
+  sevText: { fontSize: 16, color: '#333', fontWeight: '600' },
+  sevTextActive: { color: color.textOnBrand },
+  input: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    padding: 10,
+    minHeight: 70,
+    textAlignVertical: 'top',
+  },
+  sevHint: {
+    fontSize: 13,
+    color: '#555',
+    lineHeight: 18,
+    marginTop: -4,
+  },
+  sevHintLabel: { fontWeight: '700', color: '#333' },
+  charCounter: {
+    fontSize: 12,
+    color: '#888',
+    textAlign: 'right',
+    marginTop: 2,
+  },
+  charCounterAmber: { color: '#c07a00' },
+  charCounterRed: { color: color.error, fontWeight: '700' },
+  photoBtn: {
+    flexGrow: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 8,
+    backgroundColor: color.surfaceNeutral,
+    alignItems: 'center',
+  },
+  photoBtnText: { color: '#333', fontWeight: '600', fontSize: 13 },
+  // High-severity photo nudge card — amber-tinted, appears between the
+  // "Photo" label and picker when severity ≥ 4 and no photo is attached.
+  // warningBg (#fff7e6) / warningFg (#714b00): 8.3:1 contrast, WCAG AA.
+  photoNudge: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
+    backgroundColor: color.warningBg,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    marginBottom: 6,
+  },
+  photoNudgeIcon: {
+    fontSize: 18,
+    lineHeight: 22,
+  },
+  photoNudgeBody: {
+    flex: 1,
+    fontSize: 12,
+    color: color.warningFg,
+    lineHeight: 17,
+  },
+  photoNudgeBold: {
+    fontWeight: '700',
+    color: color.warningFg,
+  },
+  photoPreviewWrap: { position: 'relative', alignSelf: 'flex-start' },
+  photoPreview: { width: 140, height: 140, borderRadius: 10 },
+  photoClear: {
+    position: 'absolute',
+    top: -6,
+    right: -6,
+    backgroundColor: '#000',
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  photoClearText: { color: '#fff', fontWeight: '700', fontSize: 12 },
+  actions: { flexDirection: 'row', gap: 12, marginTop: 8 },
+  actionBtn: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  cancelBtn: { backgroundColor: color.surfaceNeutral },
+  cancelText: { color: '#333', fontWeight: '600' },
+  submitBtn: { backgroundColor: color.brand },
+  submitBtnDisabled: { opacity: 0.6 },
+  submitText: { color: color.textOnBrand, fontWeight: '700' },
+  // Context-tag chips. Three visual states matching accessibilityState:
+  //   - unselected → outline (white bg, dark-blue border + text)  → 7.6:1 text/bg
+  //   - selected   → solid dark-blue fill, white text              → 7.6:1 text/bg
+  //   - disabled   → muted gray border + text on white             → 4.6:1 text/bg
+  // The active fill uses #1c4f99 (Cycle C floor, AA-large 4.5:1+ on 13pt-600
+  // and AA-large on white-text 7.6:1). This literal WILL switch to the
+  // `color.brandText` token CL2 added to src/theme.ts once the C4 and CL2
+  // branches both land — the Cycle C cleanup pass will reconcile. Don't
+  // import from CL2 yet (it isn't merged into this worktree).
+  // Touch target: paddingVertical 10 + line-height ~17 + minHeight 44 keeps
+  // every chip at least 44pt tall regardless of dynamic-type scaling.
+  tagChip: {
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: radius.circle,
+    backgroundColor: color.surface,
+    borderWidth: 1,
+    borderColor: color.brandText,
+    minHeight: 44,
+    justifyContent: 'center',
+  },
+  tagChipActive: {
+    backgroundColor: color.brandText,
+    borderColor: color.brandText,
+  },
+  tagChipDisabled: {
+    borderColor: '#9aa3ad',
+    backgroundColor: '#f4f6f8',
+  },
+  tagChipText: {
+    color: color.brandText,
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  tagChipTextActive: {
+    color: color.textOnBrand,
+  },
+  tagChipTextDisabled: {
+    color: color.textMutedAlt, // AA pass: on #f4f6f8 = 4.6:1
+  },
+  tagHelper: {
+    fontSize: 12,
+    color: color.textMutedAlt,
+    marginTop: -4,
+  },
+  // Template chip — taller than .pill because it carries a glyph + label
+  // and needs the 44pt touch-target floor. We use the same brand-accent
+  // active fill the context-tag chip uses so the two row patterns feel
+  // related; the inactive state is a soft outline so the row reads as
+  // "secondary" relative to the required Category row below.
+  templateChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 999,
+    backgroundColor: color.surface,
+    borderWidth: 1,
+    borderColor: color.brandText,
+    minHeight: 44,
+  },
+  templateChipActive: {
+    backgroundColor: color.brandText,
+    borderColor: color.brandText,
+  },
+  templateChipGlyph: {
+    fontSize: 16,
+    color: color.brandText,
+  },
+  templateChipGlyphActive: {
+    color: color.textOnBrand,
+  },
+  templateChipText: {
+    color: color.brandText,
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  templateChipTextActive: {
+    color: color.textOnBrand,
+  },
+});

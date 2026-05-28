@@ -13,7 +13,7 @@
  * by fetchFlagsByIds; the count note at the top tells the user how many are
  * loaded vs how many IDs are stored.
  */
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -34,8 +34,6 @@ import {
   STATUS_LABELS,
 } from '@/lib/flags';
 import { clearWatched, loadWatched, removeWatched } from '@/lib/watchedFlags';
-import { filterWatchedFlags } from '@/lib/watchedFlagsFilter';
-import SearchInputRow from '@/components/SearchInputRow';
 import { radius } from '@/theme';
 import { decorativeProps } from '@/lib/accessibility';
 import { severityA11y, statusA11y } from '@/lib/a11yText';
@@ -76,7 +74,6 @@ export default function MyWatchedModal({
   const [watchedIds, setWatchedIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
 
   const mountedRef = useRef(true);
   useEffect(() => {
@@ -161,16 +158,6 @@ export default function MyWatchedModal({
   }, [user, flags.length]);
 
   const missingCount = watchedIds.length - flags.length;
-
-  // Local filter — no network call. Derived from the already-loaded flags list.
-  // Returns the same array reference when the query is empty so FlatList
-  // doesn't re-render unnecessarily.
-  const filteredWatched = useMemo(
-    () => filterWatchedFlags(flags, searchQuery, (cat) => CATEGORY_LABELS[cat]),
-    [flags, searchQuery],
-  );
-
-  const hasQuery = searchQuery.trim().length > 0;
 
   const renderItem = ({ item }: { item: FlagRow }) => {
     const statusPalette = STATUS_COLORS[item.status];
@@ -306,19 +293,6 @@ export default function MyWatchedModal({
             </View>
           )}
 
-          {/* Search bar — only shown once flags are loaded and there's
-              something to search. Hidden during loading / error states. */}
-          {!loading && !loadError && flags.length > 0 && (
-            <SearchInputRow
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              onClear={() => setSearchQuery('')}
-              placeholder="Search by category or description…"
-              accessibilityLabel="Search watched flags"
-              accessibilityHint="Filter by category or description"
-            />
-          )}
-
           {loading ? (
             <View style={styles.center}>
               <ActivityIndicator />
@@ -346,23 +320,16 @@ export default function MyWatchedModal({
                 <Text style={styles.emptyBold}>Watch</Text> to track it here.
               </Text>
             </View>
-          ) : filteredWatched.length === 0 && hasQuery ? (
-            <View style={styles.center}>
-              <Text style={styles.emptyTitle}>No watched flags match</Text>
-              <Text style={styles.emptySubtitle}>
-                Try a different category or description keyword.
-              </Text>
-            </View>
           ) : (
             <FlatList
-              data={filteredWatched}
+              data={flags}
               keyExtractor={(item) => item.id}
               renderItem={renderItem}
               contentContainerStyle={styles.list}
               ItemSeparatorComponent={() => <View style={styles.separator} />}
               showsVerticalScrollIndicator={false}
               accessibilityRole="list"
-              accessibilityLabel={`Watched flags list, ${filteredWatched.length} ${filteredWatched.length === 1 ? 'item' : 'items'}`}
+              accessibilityLabel={`Watched flags list, ${flags.length} ${flags.length === 1 ? 'item' : 'items'}`}
             />
           )}
         </View>

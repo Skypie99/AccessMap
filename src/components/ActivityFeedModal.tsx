@@ -54,7 +54,7 @@ interface Props {
 
 export default function ActivityFeedModal({ visible, onClose, onSelectFlag, onViewOnMap }: Props) {
   const color = useColor();
-  const styles = makeStyles(color);
+  const styles = useMemo(() => makeStyles(color), [color]);
   const { user } = useAuth();
   const [flags, setFlags] = useState<FlagRow[]>([]);
   const [watchedIds, setWatchedIds] = useState<Set<string>>(new Set());
@@ -128,7 +128,7 @@ export default function ActivityFeedModal({ visible, onClose, onSelectFlag, onVi
   // Bucket the filtered list into day-sections for SectionList.
   const sections = useMemo(() => groupByDay(filteredFlags, (f) => f.created_at), [filteredFlags]);
 
-  const renderItem = ({ item }: { item: FlagRow }) => {
+  const renderItem = useCallback(({ item }: { item: FlagRow }) => {
     const statusPalette = STATUS_COLORS[item.status];
     const a11yLabel =
       `${CATEGORY_LABELS[item.category]}, severity ${item.severity} of 5, ` +
@@ -199,7 +199,7 @@ export default function ActivityFeedModal({ visible, onClose, onSelectFlag, onVi
         </Pressable>
       </View>
     );
-  };
+  }, [onSelectFlag, onViewOnMap, styles]);
 
   const filterChips: Array<{ value: FeedFilter; label: string }> = [
     { value: 'all', label: 'All' },
