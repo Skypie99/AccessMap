@@ -10,6 +10,7 @@ import {
   SectionList,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
@@ -136,6 +137,12 @@ export default function TasksScreen() {
     AccessibilityInfo.announceForAccessibility(`Showing ${label}`);
   }, []);
 
+  // Free-text quick search. Substring match against description and the
+  // human-readable category label. Trimmed + lowercased once in useMemo
+  // so the per-row filter is a cheap `.includes`. Session-only — resets
+  // on tab unmount, matching the rest of the Tasks filters.
+  const [searchText, setSearchText] = useState('');
+
   // Sort mode — applied within each section. Persisted device-wide via
   // AsyncStorage so a refresh / app-restart keeps the user's last choice.
   // Hydrated from disk in an effect so first paint matches the default
@@ -156,15 +163,23 @@ export default function TasksScreen() {
     void saveTasksSort(next);
   }, []);
 
-  // Apply the mine-only, min-severity, and category filters on top of the
+  // Apply the mine-only, min-severity, category, and free-text filters on top of the
   // triage filter so sections always reflect exactly what the list renders.
   const displayFlags = useMemo(() => {
     let out = flags;
     if (mineOnly && userId) out = out.filter((f) => f.user_id === userId);
     if (minSeverity > 0) out = out.filter((f) => f.severity >= minSeverity);
     if (categoryFilter) out = out.filter((f) => f.category === categoryFilter);
+    const q = searchText.trim().toLowerCase();
+    if (q) {
+      out = out.filter((f) => {
+        const desc = (f.description ?? '').toLowerCase();
+        const catLabel = CATEGORY_LABELS[f.category].toLowerCase();
+        return desc.includes(q) || catLabel.includes(q);
+      });
+    }
     return out;
-  }, [flags, mineOnly, userId, minSeverity, categoryFilter]);
+  }, [flags, mineOnly, userId, minSeverity, categoryFilter, searchText]);
 
   // Group the visible flags by status so the SectionList can show "Open"
   // and "Verified" as distinct sections. Sections with zero rows are
@@ -631,6 +646,37 @@ export default function TasksScreen() {
           </Pressable>
         </View>
       )}
+      {/* Free-text search — substring match against description and
+          category label. Hidden if the list is empty (nothing to search).
+          The clear (×) button is part of the textbox row so it stays a
+          single, predictable a11y target. */}
+      {flags.length > 0 && (
+        <View style={styles.searchRow}>
+          <TextInput
+            value={searchText}
+            onChangeText={setSearchText}
+            placeholder="Search description or category"
+            placeholderTextColor={color.placeholderText}
+            autoCorrect={false}
+            autoCapitalize="none"
+            returnKeyType="search"
+            style={styles.searchInput}
+            accessibilityLabel="Search flags"
+            accessibilityHint="Filter the list by matching description or category"
+          />
+          {searchText.length > 0 && (
+            <Pressable
+              onPress={() => setSearchText('')}
+              style={styles.searchClearBtn}
+              accessibilityRole="button"
+              accessibilityLabel="Clear search"
+              hitSlop={8}
+            >
+              <Text style={styles.searchClearText}>✕</Text>
+            </Pressable>
+          )}
+        </View>
+      )}
       {/* Mine-only toggle — shown only when signed in. A chip row that
           switches between "All flags" and "My flags" without opening the
           full filter panel. Resets to All when the tab loses focus? No —
@@ -822,16 +868,18 @@ export default function TasksScreen() {
         ListEmptyComponent={
           <View style={styles.emptyCard} accessible accessibilityRole="text">
             <Text style={styles.emptyIcon} accessibilityElementsHidden>
-              {categoryFilter ? '🔍' : '✨'}
+              {(categoryFilter || searchText.trim()) ? '🔍' : '✨'}
             </Text>
             <Text style={styles.emptyTitle}>
               {categoryFilter
                 ? `No ${CATEGORY_LABELS[categoryFilter]} flags`
-                : 'All caught up'}
+                : searchText.trim() ? 'No matches' : 'All caught up'}
             </Text>
             <Text style={styles.emptyBody}>
               {categoryFilter
                 ? `No open or verified ${CATEGORY_LABELS[categoryFilter].toLowerCase()} flags right now. Tap "All" above to see every category.`
+                : searchText.trim()
+                ? `Nothing matches "${searchText.trim()}". Try a different keyword or clear the search.`
                 : 'No flags to triage right now. New community reports will land here as they\'re added — pull to refresh anytime.'}
             </Text>
           </View>
@@ -1447,6 +1495,36 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
   mineChipActive: { backgroundColor: color.brand },
   mineChipText: { fontSize: 13, fontWeight: '600', color: color.text },
   mineChipTextActive: { color: color.textOnBrand },
+  // Free-text search — sits above the chip filter rows so the cursor
+  // doesn't shift down when the user starts typing. Bordered field +
+  // inline clear button so the affordance is obvious without a separate
+  // label.
+  searchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingBottom: 8,
+    gap: 6,
+  },
+  searchInput: {
+    flex: 1,
+    minHeight: 40,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: radius.circle,
+    backgroundColor: color.surfaceNeutral,
+    color: color.text,
+    fontSize: 14,
+  },
+  searchClearBtn: {
+    minWidth: 32,
+    minHeight: 32,
+    paddingHorizontal: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: radius.circle,
+  },
+  searchClearText: { fontSize: 16, fontWeight: '600', color: '#555' },
   sevFilterRow: {
     flexDirection: 'row',
     gap: 6,
