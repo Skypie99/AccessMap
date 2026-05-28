@@ -65,7 +65,8 @@
 | `2026-05-23_data_layer_hardening.sql` | PENDING (file only) | Sky applies via Supabase SQL Editor |
 | `2026-05-23_feedback_table.sql` | APPLIED (Cycle F confirmed) | `public.feedback` table live |
 | `2026-05-23_rls_initplan_and_non_owner_status_update.sql` | PENDING (file only) | Sky applies via SQL Editor |
-| `2026-05-23_status_update_trigger_proposal.sql` | PROPOSE-ONLY — HELD | Steve sign-off needed (trigger vs. RLS failure-mode). Morgan recommends APPROVE (Decision 3). Sky messages Steve, then applies. |
+| `2026-05-23_status_update_trigger_proposal.sql` | **APPROVED — AWAITING SKY APPLY** | Steve signed off 2026-05-27. Safe to apply. Unblocks `shamus/marker-clustering-2026-05-25` merge. See qa-reports/2026-05-27_D3_Steve_TriggerApproval.md |
+| `2026-05-27_users_email_privacy.sql` | **SECURITY — AWAITING SKY APPLY** | Fixes `public.users.email` PII exposure (Const. Art. 2.4). Apply after wave2 branch merge. See qa-reports/2026-05-27_Steve_Security_Wave2.md |
 | `2026-05-24_flag_context_tags.sql` | APPLIED (Cycle F confirmed) | `context_tags` column live; `createFlag()` fallback can be removed |
 | `2026-05-24_realtime_flags.sql` | PENDING (file only) | Sky applies — unlocks Supabase Realtime |
 | `2026-05-24_status_history_table.sql` | APPLIED (Cycle F confirmed) | `flag_status_history` table + trigger live |
@@ -96,7 +97,8 @@
 |---|---|---|
 | D1 | Apply `2026-05-25_flag_edit_rls_replacement.sql` in Supabase SQL Editor | BLOCKING — flag edit cannot merge without it |
 | D2 | Apply `2026-05-25_push_tokens.sql` + deploy Edge Function + install `expo-notifications` | HIGH — fully built, zero user value until applied |
-| D3 | Steve trigger sign-off on `2026-05-23_status_update_trigger_proposal.sql` — Morgan recommends APPROVE | HIGH |
+| D3 | ✅ APPROVED — Apply `2026-05-23_status_update_trigger_proposal.sql` in Supabase SQL Editor (Steve signed off 2026-05-27) | **BLOCKING** — apply before merging marker-clustering |
+| D8 | Apply `2026-05-27_users_email_privacy.sql` in Supabase SQL Editor — email PII fix (Const. 2.4) | **HIGH** — apply same cycle as wave2 branch merge |
 | D4 | Apply pending batch: `data_layer_hardening`, `rls_initplan`, `realtime_flags` | MEDIUM (~15 min in SQL Editor) |
 | D5 | Heat-map severity-colour rendering: gradient yes or no | MEDIUM — Jordan pre-reviewed; Sky answer unblocks Shamus build |
 | D6 | Flag edit history audit table: apply CONDITIONAL migration yes or no | LOW |
@@ -106,8 +108,8 @@
 
 ## What Sky Needs To Do Before Next Sprint (ordered)
 
-1. Apply `2026-05-25_flag_edit_rls_replacement.sql` in Supabase SQL Editor → merge `origin/shamus/marker-clustering-2026-05-25`
-2. Message Steve about `2026-05-23_status_update_trigger_proposal.sql` — get confirm, then apply
+1. Apply `2026-05-23_status_update_trigger_proposal.sql` in Supabase SQL Editor → then apply `2026-05-25_flag_edit_rls_replacement.sql` → merge `origin/shamus/marker-clustering-2026-05-25` (D3 Steve-approved 2026-05-27)
+2. Merge `security/hardening-wave2-2026-05-27` → apply `2026-05-27_users_email_privacy.sql` in Supabase SQL Editor (PII fix, Const. 2.4)
 3. Apply `2026-05-25_push_tokens.sql` in Supabase SQL Editor
 4. Deploy `notify-flag-status` Edge Function via Supabase Dashboard
 5. Run `npx expo install expo-notifications` in Terminal at ~/AccessMap and rebuild dev client
