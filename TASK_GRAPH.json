@@ -1,54 +1,129 @@
 {
-  "cycle": "morgan/post-project-audit-2026-05-24",
-  "updated": "2026-05-24T00:00:00Z",
+  "cycle": "morgan/heatmap-wave3-briefing-2026-05-27",
+  "updated": "2026-05-27T00:00:00Z",
   "nodes": [
+    {
+      "id": "morgan/state-files-update#step-1",
+      "role": "Morgan",
+      "label": "Update PROJECT_STATE.md, TASK_GRAPH.json, DECISIONS_LOG.md",
+      "status": "completed",
+      "artifact": "branch:feat/heat-map-severity-2026-05-27#morgan-state-update-2026-05-27"
+    },
+    {
+      "id": "gary/heatmap-wave4-confirm#step-1",
+      "role": "Gary",
+      "label": "Review test/gary-wave4-heatmap-2026-05-27 — confirm tests are additive, not blocking",
+      "status": "pending",
+      "artifact": "branch:test/gary-wave4-heatmap-2026-05-27"
+    },
+    {
+      "id": "sky/merge-heatmap-wave3",
+      "role": "Sky",
+      "label": "Merge feat/heat-map-severity-2026-05-27 — no migration, no gate",
+      "status": "ready",
+      "artifact": "branch:feat/heat-map-severity-2026-05-27",
+      "decision": "D-NEW-8"
+    },
+    {
+      "id": "sky/apply-rls-sql-D1",
+      "role": "Sky",
+      "label": "Apply 2026-05-25_flag_edit_rls_replacement.sql in Supabase SQL Editor",
+      "status": "blocked",
+      "artifact": "supabase/migrations/2026-05-25_flag_edit_rls_replacement.sql",
+      "decision": "D1"
+    },
+    {
+      "id": "sky/merge-marker-clustering",
+      "role": "Sky",
+      "label": "Merge shamus/marker-clustering-2026-05-25 after D1 SQL applied",
+      "status": "blocked",
+      "artifact": "branch:shamus/marker-clustering-2026-05-25",
+      "decision": "D1"
+    },
+    {
+      "id": "sky/merge-expo-web-vercel",
+      "role": "Sky",
+      "label": "Review + merge feat/expo-web-vercel-2026-05-25 — low risk",
+      "status": "ready",
+      "artifact": "branch:feat/expo-web-vercel-2026-05-25"
+    },
+    {
+      "id": "will/audit-unmerged-branches",
+      "role": "Will",
+      "label": "Read-only audit of 21 unmerged branches — produce safe-delete list + status for 12+ uncharted",
+      "status": "pending",
+      "artifact": null,
+      "decision": "D-NEW-9"
+    },
+    {
+      "id": "sky/branch-pruning",
+      "role": "Sky",
+      "label": "Delete stale branches including feat/heatmap-severity-gradient-2026-05-25",
+      "status": "blocked",
+      "artifact": null,
+      "decision": "D-NEW-10"
+    },
+    {
+      "id": "sky/resolve-D2-push-tokens",
+      "role": "Sky",
+      "label": "Apply 2026-05-25_push_tokens.sql + deploy Edge Function + npx expo install expo-notifications",
+      "status": "pending",
+      "artifact": "supabase/migrations/2026-05-25_push_tokens.sql",
+      "decision": "D2"
+    },
+    {
+      "id": "sky/resolve-D3-steve-trigger",
+      "role": "Sky",
+      "label": "Message Steve for sign-off on 2026-05-23_status_update_trigger_proposal.sql; apply on confirm",
+      "status": "pending",
+      "artifact": "supabase/migrations/2026-05-23_status_update_trigger_proposal.sql",
+      "decision": "D3"
+    },
     {
       "id": "morgan/post-audit#step-1",
       "role": "Morgan",
+      "label": "2026-05-24 post-project-audit cycle",
       "status": "completed",
       "artifact": "branch:main#morgan-post-project-audit-2026-05-24"
     },
     {
-      "id": "dana/mutualmesh-push#step-1",
-      "role": "Dana",
-      "status": "blocked",
-      "artifact": null
-    },
-    {
-      "id": "sky/constitution-amendment",
-      "role": "Sky",
-      "status": "blocked",
-      "artifact": null
-    },
-    {
-      "id": "sky/prompt-library-merge",
-      "role": "Sky",
-      "status": "blocked",
-      "artifact": null
-    },
-    {
-      "id": "rory/mutualmesh-push-test",
-      "role": "Rory",
-      "status": "pending",
-      "artifact": null
-    },
-    {
       "id": "will/branch-cleanup",
       "role": "Will",
+      "label": "2026-05-24 branch cleanup (carry-forward)",
       "status": "pending",
       "artifact": null
     }
   ],
   "edges": [
     {
-      "from": "dana/mutualmesh-push#step-1",
-      "to": "rory/mutualmesh-push-test",
-      "type": "gate"
+      "from": "gary/heatmap-wave4-confirm#step-1",
+      "to": "sky/merge-heatmap-wave3",
+      "type": "gate",
+      "label": "confirm gary wave4 tests are additive, not blocking"
     },
     {
-      "from": "rory/mutualmesh-push-test",
-      "to": "sky/mutualmesh-phase4-approval",
-      "type": "gate"
+      "from": "sky/apply-rls-sql-D1",
+      "to": "sky/merge-marker-clustering",
+      "type": "safety",
+      "label": "RLS migration required before marker-clustering merge"
+    },
+    {
+      "from": "will/audit-unmerged-branches",
+      "to": "sky/branch-pruning",
+      "type": "data",
+      "label": "audit provides safe-delete list"
+    },
+    {
+      "from": "morgan/state-files-update#step-1",
+      "to": "sky/merge-heatmap-wave3",
+      "type": "data",
+      "label": "updated state files inform subsequent actions"
+    },
+    {
+      "from": "morgan/state-files-update#step-1",
+      "to": "will/audit-unmerged-branches",
+      "type": "data",
+      "label": "updated state files inform subsequent actions"
     }
   ]
 }
