@@ -41,6 +41,16 @@ import {
   saveFilterPanelCollapsed,
 } from '@/lib/filterPanelPrefs';
 import {
+  loadHeatmapEnabled,
+  saveHeatmapEnabled,
+} from '@/lib/heatmapPrefs';
+import {
+  bucketFlagsToCells,
+  DEFAULT_HEATMAP_MODE,
+  DEFAULT_K_FLOOR,
+  type HeatmapMode,
+} from '@/lib/heatmap';
+import {
   deleteSet,
   FilterSetError,
   getDefaultSetId,
@@ -70,6 +80,7 @@ import PlatformMap, {
 import { useScreenReader, useReducedMotion } from '@/lib/accessibility';
 import ReportFlagModal from './ReportFlagModal';
 import LegendModal from './LegendModal';
+import HeatmapLegend from '@/components/HeatmapLegend';
 import NearbyFlagsModal from './NearbyFlagsModal';
 import AddressSearchModal from '@/components/AddressSearchModal';
 import SavedPlacesModal from '@/components/SavedPlacesModal';
@@ -94,6 +105,20 @@ const DEFAULT_REGION: PlatformMapRegion = {
 // (empty Set), followed by each category in display order. Defined here
 // (module-level) so the useCallback below can reference it without a dep.
 const CATEGORY_CYCLE: Array<FlagCategory | null> = [null, ...CATEGORY_ORDER];
+
+// ----------------------------------------------------------------------------
+// Heat-map render mode — single config constant for Sky's D5 follow-up.
+//
+// Sky pre-approved a gradient (D5 = yes) and Dani's design compile signed off
+// with POLISH. The contingency: if the gradient reads as too busy in real
+// testing, Sky flips this constant to 'density' and ships a uniform
+// brand-tinted layer instead. ONE-LINE CHANGE here — no other code in the
+// screen / map / clustering lib has to move.
+//
+// Jordan's k>=3 floor is enforced inside `bucketFlagsToCells`; lowering it
+// requires a fresh privacy review.
+// ----------------------------------------------------------------------------
+const HEATMAP_MODE: HeatmapMode = DEFAULT_HEATMAP_MODE;
 
 export default function MapScreen() {
   const color = useColor();
@@ -199,6 +224,12 @@ export default function MapScreen() {
   // initial default during the brief mount→load window.
   const [panelCollapsed, setPanelCollapsed] = useState(false);
   const [panelCollapsedHydrated, setPanelCollapsedHydrated] = useState(false);
+  // Heat-map toggle — defaults to OFF (Dani's design compile: don't obscure
+  // pins on first load). Persisted via heatmapPrefs.ts. `heatmapHydrated`
+  // gates the save-effect so we don't clobber the stored value during the
+  // brief mount→load window.
+  const [heatmapEnabled, setHeatmapEnabled] = useState(false);
+  const [heatmapHydrated, setHeatmapHydrated] = useState(false);
   const [activeCategories, setActiveCategories] = useState<Set<FlagCategory>>(
     new Set(),
   );
@@ -371,11 +402,12 @@ export default function MapScreen() {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const [saved, sets, storedDefault, collapsed] = await Promise.all([
+      const [saved, sets, storedDefault, collapsed, heatOn] = await Promise.all([
         loadMapFilters(),
         listSets(),
         getDefaultSetId(),
         loadFilterPanelCollapsed(),
+        loadHeatmapEnabled(),
       ]);
       if (cancelled) return;
       const defaultSet =
@@ -398,8 +430,10 @@ export default function MapScreen() {
       setSavedSets(sets);
       setDefaultIdState(defaultSet ? defaultSet.id : null);
       setPanelCollapsed(collapsed);
+      setHeatmapEnabled(heatOn);
       setFiltersHydrated(true);
       setPanelCollapsedHydrated(true);
+      setHeatmapHydrated(true);
     })();
     return () => {
       cancelled = true;
@@ -413,6 +447,12 @@ export default function MapScreen() {
     if (!panelCollapsedHydrated) return;
     saveFilterPanelCollapsed(panelCollapsed);
   }, [panelCollapsed, panelCollapsedHydrated]);
+
+  // Persist the heat-map visibility toggle. Same fire-and-forget pattern.
+  useEffect(() => {
+    if (!heatmapHydrated) return;
+    saveHeatmapEnabled(heatmapEnabled);
+  }, [heatmapEnabled, heatmapHydrated]);
 
   // Apply a saved set: copy its filter triple over the active filters.
   // The existing save-effect below pushes the new values through to
@@ -687,6 +727,16 @@ export default function MapScreen() {
     location,
   ]);
 
+  // Heat-cell aggregation — buckets the currently-visible flag set onto
+  // the grid and drops anything below the privacy floor (k>=3). Memoised
+  // so a parent re-render that doesn't touch flags/toggle doesn't redo
+  // the pass. Skipped entirely when the toggle is off so the layer has
+  // zero cost on the default-off path.
+  const heatCells = useMemo(() => {
+    if (!heatmapEnabled) return [];
+    return bucketFlagsToCells(filteredFlags);
+  }, [heatmapEnabled, filteredFlags]);
+
   // Announce the empty-results state to iOS screen readers when it appears
   // (Android picks it up via the alert's accessibilityLiveRegion). Only
   // fires on transitions into "0 results" — not on every re-render while
@@ -882,6 +932,8 @@ export default function MapScreen() {
         showsUserLocation
         reducedMotion={reducedMotion}
         onLongPressMap={handleMapLongPress}
+        heatCells={heatCells}
+        heatmapMode={HEATMAP_MODE}
       />
 
       <View pointerEvents="box-none" style={styles.overlay}>
@@ -1270,6 +1322,41 @@ export default function MapScreen() {
               })}
             </View>
 
+            {/* Heat-map toggle — sits above Status because it's a render
+                axis (what gets drawn) not a fetch axis (what gets fetched).
+                Hidden under panelCollapsed alongside the rest of the panel.
+                Off by default per Dani's design compile. */}
+            <Text style={styles.filterSubLabel}>Layers</Text>
+            <View style={styles.filterRow}>
+              <Pressable
+                onPress={() => setHeatmapEnabled((v) => !v)}
+                style={[
+                  styles.filterPill,
+                  heatmapEnabled && styles.filterPillActive,
+                ]}
+                accessibilityRole="switch"
+                accessibilityLabel="Show neighbourhood heat map"
+                accessibilityState={{ checked: heatmapEnabled }}
+                accessibilityHint={`Overlays a coloured grid that summarises severity across neighbourhoods. Only areas with at least ${DEFAULT_K_FLOOR} reports are shown.`}
+              >
+                <Text
+                  style={[
+                    styles.filterPillText,
+                    heatmapEnabled && styles.filterPillTextActive,
+                  ]}
+                >
+                  {heatmapEnabled ? '✓ Heat map' : 'Heat map'}
+                </Text>
+              </Pressable>
+            </View>
+            {heatmapEnabled && (
+              <Text style={styles.statusHint}>
+                Heat zones only appear where at least {DEFAULT_K_FLOOR} flags
+                have been reported. Colour shows mean severity (1–5); the
+                legend explains the full scale.
+              </Text>
+            )}
+
             <Text style={styles.filterSubLabel}>Status</Text>
             <View style={styles.filterRow}>
               {STATUS_ORDER.map((s) => {
@@ -1494,35 +1581,39 @@ export default function MapScreen() {
           </View>
         )}
 
-        <View style={styles.fabColumn}>
-          <Pressable
-            style={({ pressed }) => [
-              styles.fab,
-              styles.fabSecondary,
-              pressed && styles.fabPressed,
-            ]}
-            onPress={() => setNearbyOpen(true)}
-            accessibilityRole="button"
-            accessibilityLabel="Open nearby flags list"
-            accessibilityHint="Opens an accessible list of flags sorted by distance"
-          >
-            <Text style={styles.fabSecondaryText}>📋 List</Text>
-          </Pressable>
-          <Pressable
-            style={({ pressed }) => [
-              styles.fab,
-              !location && styles.fabDisabled,
-              pressed && styles.fabPressed,
-            ]}
-            onPress={() => setReportOpen(true)}
-            disabled={!location}
-            accessibilityRole="button"
-            accessibilityLabel="Report a flag here"
-            accessibilityHint="Opens a form to report an accessibility issue at your current location"
-            accessibilityState={{ disabled: !location }}
-          >
-            <Text style={styles.fabText}>＋ Report</Text>
-          </Pressable>
+        {/* Bottom bar: legend (left, conditional) + FABs (right) */}
+        <View style={styles.bottomBar}>
+          {heatmapEnabled ? <HeatmapLegend /> : <View />}
+          <View style={styles.fabColumn}>
+            <Pressable
+              style={({ pressed }) => [
+                styles.fab,
+                styles.fabSecondary,
+                pressed && styles.fabPressed,
+              ]}
+              onPress={() => setNearbyOpen(true)}
+              accessibilityRole="button"
+              accessibilityLabel="Open nearby flags list"
+              accessibilityHint="Opens an accessible list of flags sorted by distance"
+            >
+              <Text style={styles.fabSecondaryText}>📋 List</Text>
+            </Pressable>
+            <Pressable
+              style={({ pressed }) => [
+                styles.fab,
+                !location && styles.fabDisabled,
+                pressed && styles.fabPressed,
+              ]}
+              onPress={() => setReportOpen(true)}
+              disabled={!location}
+              accessibilityRole="button"
+              accessibilityLabel="Report a flag here"
+              accessibilityHint="Opens a form to report an accessibility issue at your current location"
+              accessibilityState={{ disabled: !location }}
+            >
+              <Text style={styles.fabText}>＋ Report</Text>
+            </Pressable>
+          </View>
         </View>
       </View>
 
@@ -1983,8 +2074,12 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
   },
   emptyCardBtnPressed: { opacity: 0.8 },
   emptyCardBtnText: { color: color.textOnBrand, fontSize: 14, fontWeight: '700' },
+  bottomBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
+  },
   fabColumn: {
-    alignSelf: 'flex-end',
     alignItems: 'flex-end',
     gap: 10,
   },

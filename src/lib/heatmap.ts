@@ -195,6 +195,15 @@ export function gradientColorForSeverity(
 export type HeatmapMode = 'gradient' | 'density';
 
 /**
+ * ── CONFIG ──────────────────────────────────────────────────────────────────
+ * Change to `'density'` to switch from the severity-gradient colour scheme
+ * (green → yellow → red) to a uniform brand-tinted density view.
+ * This is the single knob Sky asked for — one edit here flips both the
+ * native and web map layers simultaneously.
+ */
+export const DEFAULT_HEATMAP_MODE: HeatmapMode = 'gradient';
+
+/**
  * Opacity used by both modes. 0.65 leaves the underlying map tiles and
  * the pin layer readable on top — Dani's compiler called for the heat
  * layer to not obscure markers.

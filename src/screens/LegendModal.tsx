@@ -126,6 +126,19 @@ export default function LegendModal({ visible, onClose }: Props) {
               );
             })}
 
+            <Text
+              style={[styles.sectionLabel, styles.sectionLabelSpaced]}
+              accessibilityRole="header"
+            >
+              Heat map
+            </Text>
+            <Text style={styles.rowDesc}>
+              When the heat map is on, neighbourhoods are tinted by their
+              MEAN severity (using the 1–5 scale above) and labelled with the
+              rounded value. To protect reporters, heat zones only appear
+              where at least 3 flags have been submitted.
+            </Text>
+
             <Text style={styles.footnote}>
               Reporters earn points when their flag is verified or resolved.
               Verifiers and resolvers earn points too.

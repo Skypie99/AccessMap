@@ -1,13 +1,20 @@
 import React, { forwardRef, memo, useEffect, useImperativeHandle, useRef } from 'react';
 import { Image, StyleSheet, Text, View } from 'react-native';
 import ClusteredMapView from 'react-native-map-clustering';
-import { Callout, Marker, PROVIDER_DEFAULT } from 'react-native-maps';
+import { Callout, Marker, Polygon, PROVIDER_DEFAULT } from 'react-native-maps';
 import type MapView from 'react-native-maps';
 import { font, radius, shadow, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
+import { severity as severityTokens } from '@/theme';
 import { CATEGORY_LABELS, severityColor } from '@/lib/flags';
 import { decorativeProps } from '@/lib/accessibility';
 import { severityA11y, statusA11y } from '@/lib/a11yText';
+import {
+  colorForCell,
+  HEATMAP_FILL_OPACITY,
+  type HeatCell,
+  type HeatmapMode,
+} from '@/lib/heatmap';
 import type { FlagRow } from '@/types/database';
 
 export interface PlatformMapRegion {
@@ -41,6 +48,14 @@ export interface PlatformMapProps {
    * implements the same callback via a `contextmenu` listener.
    */
   onLongPressMap?: (coord: { lat: number; lng: number }) => void;
+  /**
+   * Pre-computed heat-map cells (already privacy-filtered to k>=3).
+   * Rendered as translucent polygons UNDER the flag-pin markers, with
+   * a small numeric badge at each centroid showing the mean severity.
+   */
+  heatCells?: HeatCell[];
+  /** Heat-map colour mode. See `HeatmapMode` for the contract. */
+  heatmapMode?: HeatmapMode;
 }
 
 const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(
@@ -52,6 +67,8 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(
       showsUserLocation,
       reducedMotion,
       onLongPressMap,
+      heatCells = [],
+      heatmapMode = 'gradient',
     },
     ref,
   ) {
@@ -137,6 +154,59 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(
             : undefined
         }
       >
+        {/* Heat-map polygons + centroid label markers. JSX-ordered before
+            the pin Markers so they paint underneath; label Markers use
+            cluster={false} to bypass SuperCluster so a sparse "1 cell, 1
+            label" view isn't rolled up into a generic cluster bubble. */}
+        {heatCells.map((cell) => {
+          const fill = colorForCell(
+            cell,
+            heatmapMode,
+            severityTokens,
+            color.brand,
+          );
+          const meanRounded = Math.round(cell.meanSeverity);
+          const labelTone =
+            meanRounded >= 3 ? color.textOnBrand : color.textStrong;
+          // Alpha-on-hex (#RRGGBBAA) — react-native-maps accepts it on
+          // both iOS + Android. Mirrors the HEATMAP_FILL_OPACITY constant
+          // so a tweak there flows here without a separate edit.
+          const alphaSuffix = Math.round(HEATMAP_FILL_OPACITY * 255)
+            .toString(16)
+            .padStart(2, '0');
+          const coords = [
+            { latitude: cell.latStart, longitude: cell.lngStart },
+            { latitude: cell.latEnd, longitude: cell.lngStart },
+            { latitude: cell.latEnd, longitude: cell.lngEnd },
+            { latitude: cell.latStart, longitude: cell.lngEnd },
+          ];
+          return (
+            <React.Fragment key={`heat-${cell.key}`}>
+              <Polygon
+                coordinates={coords}
+                fillColor={`${fill}${alphaSuffix}`}
+                strokeColor={fill}
+                strokeWidth={1}
+                tappable={false}
+              />
+              <Marker
+                coordinate={{ latitude: cell.lat, longitude: cell.lng }}
+                anchor={{ x: 0.5, y: 0.5 }}
+                tracksViewChanges={false}
+                // Bypass SuperCluster — see comment above.
+                {...({ cluster: false } as { cluster: false })}
+                accessibilityRole="text"
+                accessibilityLabel={`Heat zone: ${cell.count} flags, mean severity ${cell.meanSeverity.toFixed(1)} out of 5.`}
+              >
+                <View style={[styles.heatBadge, { backgroundColor: fill }]}>
+                  <Text style={[styles.heatBadgeText, { color: labelTone }]}>
+                    {meanRounded}
+                  </Text>
+                </View>
+              </Marker>
+            </React.Fragment>
+          );
+        })}
         {flags.map((f) => (
           <Marker
             key={f.id}
@@ -257,4 +327,23 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
     fontWeight: font.weight.bold,
     letterSpacing: -0.2,
   },
+  // Heat-cell centroid badge — rounded mean-severity label that gives
+  // colorblind users a non-color cue for the cell's intensity. Sized so
+  // it stays readable at zoom 14 without crowding adjacent pins.
+  heatBadge: {
+    minWidth: 28,
+    minHeight: 28,
+    paddingHorizontal: 8,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: color.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: color.shadow,
+    shadowOpacity: 0.25,
+    shadowRadius: 3,
+    shadowOffset: { width: 0, height: 1 },
+    elevation: 3,
+  },
+  heatBadgeText: { fontSize: 13, fontWeight: '700' },
 });
