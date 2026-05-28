@@ -46,6 +46,7 @@ import {
 } from '@/lib/heatmapPrefs';
 import {
   bucketFlagsToCells,
+  DEFAULT_HEATMAP_MODE,
   DEFAULT_K_FLOOR,
   type HeatmapMode,
 } from '@/lib/heatmap';
@@ -117,7 +118,7 @@ const CATEGORY_CYCLE: Array<FlagCategory | null> = [null, ...CATEGORY_ORDER];
 // Jordan's k>=3 floor is enforced inside `bucketFlagsToCells`; lowering it
 // requires a fresh privacy review.
 // ----------------------------------------------------------------------------
-const HEATMAP_MODE: HeatmapMode = 'gradient';
+const HEATMAP_MODE: HeatmapMode = DEFAULT_HEATMAP_MODE;
 
 export default function MapScreen() {
   const color = useColor();
@@ -1571,35 +1572,39 @@ export default function MapScreen() {
           </View>
         )}
 
-        <View style={styles.fabColumn}>
-          <Pressable
-            style={({ pressed }) => [
-              styles.fab,
-              styles.fabSecondary,
-              pressed && styles.fabPressed,
-            ]}
-            onPress={() => setNearbyOpen(true)}
-            accessibilityRole="button"
-            accessibilityLabel="Open nearby flags list"
-            accessibilityHint="Opens an accessible list of flags sorted by distance"
-          >
-            <Text style={styles.fabSecondaryText}>📋 List</Text>
-          </Pressable>
-          <Pressable
-            style={({ pressed }) => [
-              styles.fab,
-              !location && styles.fabDisabled,
-              pressed && styles.fabPressed,
-            ]}
-            onPress={() => setReportOpen(true)}
-            disabled={!location}
-            accessibilityRole="button"
-            accessibilityLabel="Report a flag here"
-            accessibilityHint="Opens a form to report an accessibility issue at your current location"
-            accessibilityState={{ disabled: !location }}
-          >
-            <Text style={styles.fabText}>＋ Report</Text>
-          </Pressable>
+        {/* Bottom bar: legend (left, conditional) + FABs (right) */}
+        <View style={styles.bottomBar}>
+          {heatmapEnabled ? <HeatmapLegend /> : <View />}
+          <View style={styles.fabColumn}>
+            <Pressable
+              style={({ pressed }) => [
+                styles.fab,
+                styles.fabSecondary,
+                pressed && styles.fabPressed,
+              ]}
+              onPress={() => setNearbyOpen(true)}
+              accessibilityRole="button"
+              accessibilityLabel="Open nearby flags list"
+              accessibilityHint="Opens an accessible list of flags sorted by distance"
+            >
+              <Text style={styles.fabSecondaryText}>📋 List</Text>
+            </Pressable>
+            <Pressable
+              style={({ pressed }) => [
+                styles.fab,
+                !location && styles.fabDisabled,
+                pressed && styles.fabPressed,
+              ]}
+              onPress={() => setReportOpen(true)}
+              disabled={!location}
+              accessibilityRole="button"
+              accessibilityLabel="Report a flag here"
+              accessibilityHint="Opens a form to report an accessibility issue at your current location"
+              accessibilityState={{ disabled: !location }}
+            >
+              <Text style={styles.fabText}>＋ Report</Text>
+            </Pressable>
+          </View>
         </View>
       </View>
 
@@ -2089,8 +2094,12 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
   },
   emptyCardBtnPressed: { opacity: 0.8 },
   emptyCardBtnText: { color: color.textOnBrand, fontSize: 14, fontWeight: '700' },
+  bottomBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
+  },
   fabColumn: {
-    alignSelf: 'flex-end',
     alignItems: 'flex-end',
     gap: 10,
   },
