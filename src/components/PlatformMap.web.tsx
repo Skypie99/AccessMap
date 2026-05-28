@@ -1,11 +1,18 @@
 import 'leaflet/dist/leaflet.css';
 import React, { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
-import { MapContainer, Marker, Popup, useMap } from 'react-leaflet';
+import { MapContainer, Marker, Popup, Rectangle, useMap } from 'react-leaflet';
 import L, { Map as LeafletMap, Marker as LeafletMarker } from 'leaflet';
 import { CATEGORY_LABELS, severityColor } from '@/lib/flags';
+import { severity as severityTokens, color as themeColor } from '@/theme';
 import type { FlagRow } from '@/types/database';
 import { useAuth } from '@/lib/auth';
 import { getCachedTile, setCachedTile } from '@/lib/tileCache';
+import {
+  colorForCell,
+  HEATMAP_FILL_OPACITY,
+  type HeatCell,
+  type HeatmapMode,
+} from '@/lib/heatmap';
 
 export interface PlatformMapRegion {
   latitude: number;
@@ -39,6 +46,41 @@ export interface PlatformMapProps {
    * is the geographic point under the press.
    */
   onLongPressMap?: (coord: { lat: number; lng: number }) => void;
+  /** Pre-computed heat-map cells (already privacy-filtered to k>=3). */
+  heatCells?: HeatCell[];
+  /** Heat-map colour mode. Matches the native variant. */
+  heatmapMode?: HeatmapMode;
+}
+
+// Cache the heat-label divIcon by (color + tone + number). Cells with the
+// same rounded mean severity render an identical badge, so caching keeps
+// Leaflet from rebuilding hundreds of icons during a pan.
+const heatLabelIconCache = new Map<string, L.DivIcon>();
+function heatLabelIcon(
+  fill: string,
+  text: string,
+  textColor: string,
+): L.DivIcon {
+  const key = `${fill}|${text}|${textColor}`;
+  const cached = heatLabelIconCache.get(key);
+  if (cached) return cached;
+  // Inline styles so the badge paints identically on the first frame
+  // without waiting for any external stylesheet.
+  const icon = L.divIcon({
+    className: 'accessmap-heat-label',
+    html: `<div style="
+      display:flex;align-items:center;justify-content:center;
+      min-width:28px;height:28px;padding:0 8px;
+      background:${fill};color:${textColor};
+      font-weight:700;font-size:13px;
+      border:1.5px solid #fff;border-radius:14px;
+      box-shadow:0 1px 3px rgba(0,0,0,0.25);
+    ">${text}</div>`,
+    iconSize: [28, 28],
+    iconAnchor: [14, 14],
+  });
+  heatLabelIconCache.set(key, icon);
+  return icon;
 }
 
 // Cache pin icons by (color + dim). There are only 6 possible combinations
@@ -191,7 +233,15 @@ function CachedTileLayerWrapper({ userId }: { userId: string | null }): null {
 
 const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(
   function PlatformMap(
-    { initialRegion, flags, focusedFlagId, reducedMotion, onLongPressMap },
+    {
+      initialRegion,
+      flags,
+      focusedFlagId,
+      reducedMotion,
+      onLongPressMap,
+      heatCells = [],
+      heatmapMode = 'gradient',
+    },
     ref,
   ) {
     const mapInstance = useRef<LeafletMap | null>(null);
@@ -257,6 +307,48 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(
           }}
         >
           <CachedTileLayerWrapper userId={userId} />
+          {/* Heat-map: Rectangle for each cell footprint + a divIcon Marker
+              at the centroid showing the rounded mean severity. Leaflet
+              paints Rectangles on `overlayPane` (SVG default) which sits
+              beneath `markerPane`, so the cell tints render under the pins
+              without any explicit z-index work. */}
+          {heatCells.map((cell) => {
+            const fill = colorForCell(
+              cell,
+              heatmapMode,
+              severityTokens,
+              themeColor.brand,
+            );
+            const meanRounded = Math.round(cell.meanSeverity);
+            const labelTone =
+              meanRounded >= 3 ? themeColor.textOnBrand : themeColor.textStrong;
+            const icon = heatLabelIcon(fill, String(meanRounded), labelTone);
+            return (
+              <React.Fragment key={`heat-${cell.key}`}>
+                <Rectangle
+                  bounds={[
+                    [cell.latStart, cell.lngStart],
+                    [cell.latEnd, cell.lngEnd],
+                  ]}
+                  pathOptions={{
+                    color: fill,
+                    weight: 1,
+                    fillColor: fill,
+                    fillOpacity: HEATMAP_FILL_OPACITY,
+                    interactive: false,
+                  }}
+                />
+                <Marker
+                  position={[cell.lat, cell.lng]}
+                  icon={icon}
+                  // Decorative aggregate — let keyboard focus stay on real pins.
+                  keyboard={false}
+                  alt={`Heat zone: ${cell.count} flags, mean severity ${cell.meanSeverity.toFixed(1)} out of 5.`}
+                  title={`${cell.count} flags · mean severity ${cell.meanSeverity.toFixed(1)}`}
+                />
+              </React.Fragment>
+            );
+          })}
           {flags.map((f) => (
             <Marker
               key={f.id}
