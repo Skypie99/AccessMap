@@ -560,8 +560,14 @@ export default function FlagDetailModal({
                   placeholder="Describe the accessibility issue"
                   placeholderTextColor={color.textMuted}
                   multiline
-                  maxLength={500}
+                  // Mirror ReportFlagModal + the DB
+                  // flags_description_length_chk constraint (2000).
+                  // Was 500 — caused silent truncation when editing a
+                  // longer description that was created via the report
+                  // flow.
+                  maxLength={2000}
                   accessibilityLabel="Flag description"
+                  accessibilityHint="Up to 2000 characters."
                 />
                 <Text style={styles.editLabel}>Category</Text>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoryRow}>

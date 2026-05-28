@@ -12,13 +12,38 @@ export interface UserProfilePatch {
   avatar_url?: string | null;
 }
 
+// Defense-in-depth cap on the free-text profile field. ProfileScreen
+// already enforces maxLength=60 on the TextInput, but a malicious REST
+// client can bypass the UI entirely, so we re-check at the boundary.
+// Number matches the UI cap.
+const MAX_DISPLAY_NAME_LEN = 60;
+
 export async function updateUserProfile(
   userId: string,
   patch: UserProfilePatch,
 ): Promise<UserRow> {
+  const clean: UserProfilePatch = {};
+  if ('display_name' in patch) {
+    const raw = patch.display_name;
+    if (raw === null) {
+      clean.display_name = null;
+    } else if (typeof raw === 'string') {
+      const trimmed = raw.trim();
+      if (trimmed.length === 0) {
+        clean.display_name = null;
+      } else if (trimmed.length > MAX_DISPLAY_NAME_LEN) {
+        throw new Error(
+          `Display name must be ${MAX_DISPLAY_NAME_LEN} characters or fewer.`,
+        );
+      } else {
+        clean.display_name = trimmed;
+      }
+    }
+  }
+
   const { data, error } = await supabase
     .from('users')
-    .update(patch)
+    .update(clean)
     .eq('id', userId)
     .select('id, email, display_name, avatar_url, points, created_at')
     .single();
