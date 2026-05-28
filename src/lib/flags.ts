@@ -56,7 +56,7 @@ export const NEXT_PAGE_SIZE = 20;
  *
  * Post-strip verification reads the output bytes to confirm EXIF is gone.
  */
-async function stripExifNative(
+export async function stripExifNative(
   arrayBuffer: ArrayBuffer,
   ext: string,
 ): Promise<ArrayBuffer> {
@@ -111,7 +111,7 @@ async function stripExifNative(
  *
  * Post-strip verification checks the output bytes.
  */
-function stripExifWeb(
+export function stripExifWeb(
   arrayBuffer: ArrayBuffer,
   ext: string,
 ): Promise<ArrayBuffer> {
@@ -216,7 +216,7 @@ function stripExifWeb(
  * Returns true if EXIF signatures are NOT found (safe to upload).
  * Returns false if EXIF markers ARE detected (stripping may have failed).
  */
-function verifyExifStripped(arrayBuffer: ArrayBuffer): boolean {
+export function verifyExifStripped(arrayBuffer: ArrayBuffer): boolean {
   const view = new Uint8Array(arrayBuffer);
 
   // Check for JPEG markers that indicate metadata: FFE1 (EXIF), FFED (IPTC), FFE9 (XMP).
