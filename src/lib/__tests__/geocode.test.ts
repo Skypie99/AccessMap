@@ -37,16 +37,12 @@ describe('parseGeocodeRow', () => {
 
   it('returns null when lat is missing or NaN', () => {
     expect(parseGeocodeRow({ display_name: 'x', lon: '2' })).toBeNull();
-    expect(
-      parseGeocodeRow({ display_name: 'x', lat: 'oops', lon: '2' }),
-    ).toBeNull();
+    expect(parseGeocodeRow({ display_name: 'x', lat: 'oops', lon: '2' })).toBeNull();
   });
 
   it('returns null when lon is missing or NaN', () => {
     expect(parseGeocodeRow({ display_name: 'x', lat: '1' })).toBeNull();
-    expect(
-      parseGeocodeRow({ display_name: 'x', lat: '1', lon: 'oops' }),
-    ).toBeNull();
+    expect(parseGeocodeRow({ display_name: 'x', lat: '1', lon: 'oops' })).toBeNull();
   });
 
   it('falls back to lat,lng concat when place_id is missing', () => {
@@ -101,17 +97,14 @@ describe('searchAddress', () => {
 
   it('returns [] for queries shorter than 3 chars without calling fetch', async () => {
     const fetchMock = jest.fn();
-    (global as { fetch: typeof fetch }).fetch =
-      fetchMock as unknown as typeof fetch;
+    (global as { fetch: typeof fetch }).fetch = fetchMock as unknown as typeof fetch;
     expect(await searchAddress('')).toEqual([]);
     expect(await searchAddress('ab')).toEqual([]);
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it('returns parsed results on a successful fetch', async () => {
-    const payload = [
-      { display_name: 'a', lat: '1', lon: '2', place_id: 1 },
-    ];
+    const payload = [{ display_name: 'a', lat: '1', lon: '2', place_id: 1 }];
     (global as { fetch: typeof fetch }).fetch = jest.fn().mockResolvedValue({
       ok: true,
       json: jest.fn().mockResolvedValue(payload),
@@ -158,8 +151,7 @@ describe('searchAddress', () => {
       ok: true,
       json: jest.fn().mockResolvedValue([]),
     } as unknown as Response);
-    (global as { fetch: typeof fetch }).fetch =
-      fetchMock as unknown as typeof fetch;
+    (global as { fetch: typeof fetch }).fetch = fetchMock as unknown as typeof fetch;
 
     await searchAddress('a b & c');
     const url = fetchMock.mock.calls[0]?.[0] as string;
@@ -171,8 +163,7 @@ describe('searchAddress', () => {
       ok: true,
       json: jest.fn().mockResolvedValue([]),
     } as unknown as Response);
-    (global as { fetch: typeof fetch }).fetch =
-      fetchMock as unknown as typeof fetch;
+    (global as { fetch: typeof fetch }).fetch = fetchMock as unknown as typeof fetch;
 
     await searchAddress('cupertino');
     const init = fetchMock.mock.calls[0]?.[1] as RequestInit | undefined;

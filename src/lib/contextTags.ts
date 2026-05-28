@@ -96,10 +96,7 @@ export function isValidTag(value: unknown): value is ContextTag {
  * unchanged so React's referential-equality check still triggers a re-render
  * on a no-op toggle (matches the `taskSelection.toggleId` pattern).
  */
-export function toggleTag(
-  current: ReadonlyArray<ContextTag>,
-  tag: ContextTag,
-): ContextTag[] {
+export function toggleTag(current: ReadonlyArray<ContextTag>, tag: ContextTag): ContextTag[] {
   const idx = current.indexOf(tag);
   if (idx !== -1) return current.filter((t) => t !== tag);
   // Cap enforcement: an "add" that would exceed MAX_CONTEXT_TAGS is a

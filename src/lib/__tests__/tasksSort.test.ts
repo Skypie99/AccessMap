@@ -18,11 +18,7 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
   },
 }));
 
-function makeFlag(
-  id: string,
-  severity: 1 | 2 | 3 | 4 | 5,
-  createdAt: string,
-): FlagRow {
+function makeFlag(id: string, severity: 1 | 2 | 3 | 4 | 5, createdAt: string): FlagRow {
   return {
     id,
     user_id: 'u1',
@@ -71,11 +67,7 @@ describe('sortFlags', () => {
 
   it('severity: highest first, newer wins on ties', () => {
     // a is sev 5, c is sev 4, b is sev 3 — so a, c, b.
-    expect(sortFlags(flags, 'severity').map((f) => f.id)).toEqual([
-      'a',
-      'c',
-      'b',
-    ]);
+    expect(sortFlags(flags, 'severity').map((f) => f.id)).toEqual(['a', 'c', 'b']);
   });
 
   it('severity tiebreaker prefers newer created_at', () => {
@@ -95,42 +87,24 @@ describe('sortFlags', () => {
     // Two flags with identical severity AND created_at — must keep input order.
     const same1 = makeFlag('x1', 3, '2026-05-22T08:00:00Z');
     const same2 = makeFlag('x2', 3, '2026-05-22T08:00:00Z');
-    expect(sortFlags([same1, same2], 'severity').map((f) => f.id)).toEqual([
-      'x1',
-      'x2',
-    ]);
-    expect(sortFlags([same2, same1], 'severity').map((f) => f.id)).toEqual([
-      'x2',
-      'x1',
-    ]);
+    expect(sortFlags([same1, same2], 'severity').map((f) => f.id)).toEqual(['x1', 'x2']);
+    expect(sortFlags([same2, same1], 'severity').map((f) => f.id)).toEqual(['x2', 'x1']);
   });
 
   it('sortFlags by newest puts equal-timestamp flags in input order (stable)', () => {
     // Two flags with identical created_at — must keep input order under 'newest'.
     const same1 = makeFlag('n1', 4, '2026-05-22T08:00:00Z');
     const same2 = makeFlag('n2', 2, '2026-05-22T08:00:00Z');
-    expect(sortFlags([same1, same2], 'newest').map((f) => f.id)).toEqual([
-      'n1',
-      'n2',
-    ]);
-    expect(sortFlags([same2, same1], 'newest').map((f) => f.id)).toEqual([
-      'n2',
-      'n1',
-    ]);
+    expect(sortFlags([same1, same2], 'newest').map((f) => f.id)).toEqual(['n1', 'n2']);
+    expect(sortFlags([same2, same1], 'newest').map((f) => f.id)).toEqual(['n2', 'n1']);
   });
 
   it('sortFlags by oldest puts equal-timestamp flags in input order (stable)', () => {
     // Same setup, opposite sort — input order must still be preserved.
     const same1 = makeFlag('o1', 4, '2026-05-22T08:00:00Z');
     const same2 = makeFlag('o2', 2, '2026-05-22T08:00:00Z');
-    expect(sortFlags([same1, same2], 'oldest').map((f) => f.id)).toEqual([
-      'o1',
-      'o2',
-    ]);
-    expect(sortFlags([same2, same1], 'oldest').map((f) => f.id)).toEqual([
-      'o2',
-      'o1',
-    ]);
+    expect(sortFlags([same1, same2], 'oldest').map((f) => f.id)).toEqual(['o1', 'o2']);
+    expect(sortFlags([same2, same1], 'oldest').map((f) => f.id)).toEqual(['o2', 'o1']);
   });
 
   it('returns a new array even for empty input', () => {
@@ -190,10 +164,7 @@ describe('saveTasksSort', () => {
 
   it('persists the chosen mode as JSON', async () => {
     await saveTasksSort('oldest');
-    expect(setItem).toHaveBeenCalledWith(
-      '@accessmap/tasks_sort_v1',
-      JSON.stringify('oldest'),
-    );
+    expect(setItem).toHaveBeenCalledWith('@accessmap/tasks_sort_v1', JSON.stringify('oldest'));
   });
 
   it('fails soft on write error', async () => {

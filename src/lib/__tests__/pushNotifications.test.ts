@@ -98,10 +98,7 @@ describe('savePushToken', () => {
 
     await savePushToken(USER_ID, TOKEN);
 
-    expect(AsyncStorage.setItem).toHaveBeenCalledWith(
-      pushEnabledKey(USER_ID),
-      'true',
-    );
+    expect(AsyncStorage.setItem).toHaveBeenCalledWith(pushEnabledKey(USER_ID), 'true');
   });
 
   it('does NOT include the token in any console.log call', async () => {
@@ -129,10 +126,7 @@ describe('deletePushToken', () => {
 
     expect(mockFrom).toHaveBeenCalledWith('push_tokens');
     expect(eqMock).toHaveBeenCalledWith('user_id', USER_ID);
-    expect(AsyncStorage.setItem).toHaveBeenCalledWith(
-      pushEnabledKey(USER_ID),
-      'false',
-    );
+    expect(AsyncStorage.setItem).toHaveBeenCalledWith(pushEnabledKey(USER_ID), 'false');
   });
 
   it('does not throw when the DB call rejects (best-effort)', async () => {

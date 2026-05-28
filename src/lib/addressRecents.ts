@@ -46,14 +46,9 @@ export const ADDRESS_RECENTS_MAX = 5;
  *   if we'd exceed the cap.
  * - Pure — no AsyncStorage, no Date.now(). Safe to call in render.
  */
-export function addRecent(
-  list: AddressRecent[],
-  entry: AddressRecent,
-): AddressRecent[] {
+export function addRecent(list: AddressRecent[], entry: AddressRecent): AddressRecent[] {
   const lowered = entry.displayName.toLowerCase();
-  const filtered = list.filter(
-    (r) => r.displayName.toLowerCase() !== lowered,
-  );
+  const filtered = list.filter((r) => r.displayName.toLowerCase() !== lowered);
   return [entry, ...filtered].slice(0, ADDRESS_RECENTS_MAX);
 }
 
@@ -98,10 +93,7 @@ export async function loadRecents(): Promise<AddressRecent[]> {
     if (!raw) return [];
     return parseRecents(JSON.parse(raw));
   } catch (e) {
-    console.warn(
-      '[addressRecents] load failed:',
-      errorMessage(e, 'AsyncStorage error.'),
-    );
+    console.warn('[addressRecents] load failed:', errorMessage(e, 'AsyncStorage error.'));
     return [];
   }
 }
@@ -110,17 +102,11 @@ export async function saveRecents(list: AddressRecent[]): Promise<void> {
   try {
     // Trim defensively in case a caller passes an over-cap list.
     const trimmed = list.slice(0, ADDRESS_RECENTS_MAX);
-    await AsyncStorage.setItem(
-      ADDRESS_RECENTS_KEY,
-      JSON.stringify(trimmed),
-    );
+    await AsyncStorage.setItem(ADDRESS_RECENTS_KEY, JSON.stringify(trimmed));
   } catch (e) {
     // Persisted recents are a convenience — don't escalate a write
     // failure into a search-flow crash. Log + continue.
-    console.warn(
-      '[addressRecents] save failed:',
-      errorMessage(e, 'AsyncStorage error.'),
-    );
+    console.warn('[addressRecents] save failed:', errorMessage(e, 'AsyncStorage error.'));
   }
 }
 
@@ -128,9 +114,6 @@ export async function clearRecents(): Promise<void> {
   try {
     await AsyncStorage.removeItem(ADDRESS_RECENTS_KEY);
   } catch (e) {
-    console.warn(
-      '[addressRecents] clear failed:',
-      errorMessage(e, 'AsyncStorage error.'),
-    );
+    console.warn('[addressRecents] clear failed:', errorMessage(e, 'AsyncStorage error.'));
   }
 }

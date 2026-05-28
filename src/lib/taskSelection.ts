@@ -47,10 +47,7 @@ export const EMPTY_SELECTION: TaskSelectionState = Object.freeze({
  *  - `active` is preserved. (Entering selection mode is the caller's
  *    job — see `enterSelectionWith`.)
  */
-export function toggleId(
-  state: TaskSelectionState,
-  id: string,
-): TaskSelectionState {
+export function toggleId(state: TaskSelectionState, id: string): TaskSelectionState {
   const idx = state.selectedIds.indexOf(id);
   if (idx === -1) {
     return {
@@ -89,10 +86,7 @@ export function enterSelectionWith(id: string): TaskSelectionState {
 }
 
 /** True when `id` is currently in the selection. O(n) but n is tiny. */
-export function isSelected(
-  state: TaskSelectionState,
-  id: string,
-): boolean {
+export function isSelected(state: TaskSelectionState, id: string): boolean {
   return state.selectedIds.includes(id);
 }
 

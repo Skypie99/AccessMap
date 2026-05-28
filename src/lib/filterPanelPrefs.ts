@@ -21,23 +21,15 @@ export async function loadFilterPanelCollapsed(): Promise<boolean> {
     const raw = await AsyncStorage.getItem(STORAGE_KEY);
     return raw === 'true';
   } catch (e) {
-    console.warn(
-      '[filterPanelPrefs] load failed:',
-      errorMessage(e, 'AsyncStorage error.'),
-    );
+    console.warn('[filterPanelPrefs] load failed:', errorMessage(e, 'AsyncStorage error.'));
     return false;
   }
 }
 
-export async function saveFilterPanelCollapsed(
-  collapsed: boolean,
-): Promise<void> {
+export async function saveFilterPanelCollapsed(collapsed: boolean): Promise<void> {
   try {
     await AsyncStorage.setItem(STORAGE_KEY, collapsed ? 'true' : 'false');
   } catch (e) {
-    console.warn(
-      '[filterPanelPrefs] save failed:',
-      errorMessage(e, 'AsyncStorage error.'),
-    );
+    console.warn('[filterPanelPrefs] save failed:', errorMessage(e, 'AsyncStorage error.'));
   }
 }

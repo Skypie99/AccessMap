@@ -33,9 +33,12 @@ export const FILTER_PRESETS_MAX = 20;
 
 export type FilterPresetStatus = 'open' | 'verified' | 'resolved' | 'rejected';
 
-const STATUS_SET: ReadonlySet<FilterPresetStatus> = new Set<FilterPresetStatus>(
-  ['open', 'verified', 'resolved', 'rejected'],
-);
+const STATUS_SET: ReadonlySet<FilterPresetStatus> = new Set<FilterPresetStatus>([
+  'open',
+  'verified',
+  'resolved',
+  'rejected',
+]);
 
 export type FilterPreset = {
   /** Client-generated id; collision-free at this tiny scale. */
@@ -97,9 +100,7 @@ function parsePreset(raw: unknown): FilterPreset | null {
   if (!Array.isArray(obj.categories)) return null;
   if (!Array.isArray(obj.statusFilter)) return null;
 
-  const categories = obj.categories.filter(
-    (c): c is string => typeof c === 'string',
-  );
+  const categories = obj.categories.filter((c): c is string => typeof c === 'string');
   const statusFilter = obj.statusFilter.filter(isFilterPresetStatus);
 
   return {
@@ -187,11 +188,7 @@ export function addPreset(
  * The name is stored as-given — the UI is responsible for trim / length
  * validation upstream of this call.
  */
-export function renamePreset(
-  list: FilterPreset[],
-  id: string,
-  newName: string,
-): FilterPreset[] {
+export function renamePreset(list: FilterPreset[], id: string, newName: string): FilterPreset[] {
   let changed = false;
   const next = list.map((p) => {
     if (p.id === id) {
@@ -210,10 +207,7 @@ export function renamePreset(
  * Return a NEW list with the matching preset removed. If no entry matches
  * the id, the list is returned unchanged. Does NOT mutate the input.
  */
-export function removePreset(
-  list: FilterPreset[],
-  id: string,
-): FilterPreset[] {
+export function removePreset(list: FilterPreset[], id: string): FilterPreset[] {
   const next = list.filter((p) => p.id !== id);
   return next.length === list.length ? list : next;
 }
@@ -256,10 +250,7 @@ export async function loadPresets(userId: string): Promise<FilterPreset[]> {
     if (raw === null) return [];
     return parsePresetsBlob(raw);
   } catch (e) {
-    console.warn(
-      '[filterPresets] loadPresets failed:',
-      errorMessage(e, 'AsyncStorage error.'),
-    );
+    console.warn('[filterPresets] loadPresets failed:', errorMessage(e, 'AsyncStorage error.'));
     return [];
   }
 }
@@ -272,10 +263,7 @@ export async function loadPresets(userId: string): Promise<FilterPreset[]> {
  * swallowed; that's appropriate for trivial UI ergonomics state, not
  * for user-authored data.)
  */
-export async function savePresets(
-  userId: string,
-  list: FilterPreset[],
-): Promise<void> {
+export async function savePresets(userId: string, list: FilterPreset[]): Promise<void> {
   await AsyncStorage.setItem(storageKey(userId), JSON.stringify(list));
 }
 
@@ -288,9 +276,6 @@ export async function clearPresets(userId: string): Promise<void> {
   try {
     await AsyncStorage.removeItem(storageKey(userId));
   } catch (e) {
-    console.warn(
-      '[filterPresets] clearPresets failed:',
-      errorMessage(e, 'AsyncStorage error.'),
-    );
+    console.warn('[filterPresets] clearPresets failed:', errorMessage(e, 'AsyncStorage error.'));
   }
 }

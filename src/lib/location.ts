@@ -52,9 +52,7 @@ export interface UseUserLocationOptions {
   requireExistingPermission?: boolean;
 }
 
-export function useUserLocation(
-  options: UseUserLocationOptions = {},
-): UserLocationState {
+export function useUserLocation(options: UseUserLocationOptions = {}): UserLocationState {
   const { requireExistingPermission = false } = options;
   const [location, setLocation] = useState<LatLng | null>(null);
   const [loading, setLoading] = useState(true);

@@ -32,19 +32,19 @@ const darkColor = {
   scrim: 'rgba(0,0,0,0.6)',
 
   // Text — checked >= 4.5:1 on #111 surface
-  textStrong: '#f5f5f5',          // ~18:1 on #111
-  text: '#ddd',                   // ~13:1 on #111
-  textMuted: '#aaa',              // ~6.7:1 on #111
-  textSubtle: '#777',             // ~4.1:1 on #111 — only for non-essential/18pt+
+  textStrong: '#f5f5f5', // ~18:1 on #111
+  text: '#ddd', // ~13:1 on #111
+  textMuted: '#aaa', // ~6.7:1 on #111
+  textSubtle: '#777', // ~4.1:1 on #111 — only for non-essential/18pt+
   textOnBrand: '#fff',
 
   // Brand — brand stays the same (AA on dark surfaces), brandText adjusted
   brand: '#2f80ed',
-  brandText: '#60a5fa',           // lighter blue, AA on dark (#111) at any text size
+  brandText: '#60a5fa', // lighter blue, AA on dark (#111) at any text size
   brandTextAlt: '#60a5fa',
-  brandSoft: '#1e3a5f',           // dark brand-tinted background
-  brandSofter: '#162d4a',         // darker brand wash
-  brandOnSoft: '#93c5fd',         // light brand text on dark brandSoft
+  brandSoft: '#1e3a5f', // dark brand-tinted background
+  brandSofter: '#162d4a', // darker brand wash
+  brandOnSoft: '#93c5fd', // light brand text on dark brandSoft
 
   // Status surfaces — kept close to light values; contrast checked on dark bg
   statusOpenBg: '#3b2200',
@@ -75,18 +75,18 @@ const darkColor = {
   divider: '#2d2d2d',
 
   // Additional tokens
-  textMutedAlt: '#9ca3af',        // muted text on dark surfaces
-  accentOrange: '#f1a520',        // same amber accent
-  placeholderText: '#9ca3af',     // TextInput placeholder on dark surfaces (~6:1 on #222)
+  textMutedAlt: '#9ca3af', // muted text on dark surfaces
+  accentOrange: '#f1a520', // same amber accent
+  placeholderText: '#9ca3af', // TextInput placeholder on dark surfaces (~6:1 on #222)
 
   // Backdrop / overlay layers — same values as light palette (dark-on-dark is still appropriate)
-  backdropStrong: 'rgba(0,0,0,0.85)',   // full-screen modal overlay on dark bg
-  backdropCaption: 'rgba(0,0,0,0.75)',  // caption bar on photos
-  overlayBtn: 'rgba(255,255,255,0.2)',  // overlay button on dark bg (brighter for visibility)
+  backdropStrong: 'rgba(0,0,0,0.85)', // full-screen modal overlay on dark bg
+  backdropCaption: 'rgba(0,0,0,0.75)', // caption bar on photos
+  overlayBtn: 'rgba(255,255,255,0.2)', // overlay button on dark bg (brighter for visibility)
   overlayBtnPressed: 'rgba(255,255,255,0.30)', // pressed state for overlay button on dark bg
 
   // Misc
-  shadow: '#fff',                 // inverted for dark mode
+  shadow: '#fff', // inverted for dark mode
   pointsPillText: '#dbe7fb',
 } as const satisfies typeof lightColor;
 

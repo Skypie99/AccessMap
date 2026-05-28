@@ -50,51 +50,46 @@ import {
   FLAG_PHOTOS_BUCKET,
   updateFlagContent,
   uploadFlagPhoto,
-
-} from "../flags";
-import type {
-  FlagCategory,
-  FlagSeverity,
-  FlagStatus,
-} from "@/types/database";
+} from '../flags';
+import type { FlagCategory, FlagSeverity, FlagStatus } from '@/types/database';
 
 const ALL_CATEGORIES: FlagCategory[] = [
-  "no_ramp",
-  "broken_sidewalk",
-  "blocked_path",
-  "missing_signal",
-  "steep_grade",
-  "other",
+  'no_ramp',
+  'broken_sidewalk',
+  'blocked_path',
+  'missing_signal',
+  'steep_grade',
+  'other',
 ];
 
 const ALL_SEVERITIES: FlagSeverity[] = [1, 2, 3, 4, 5];
 
-const ALL_STATUSES: FlagStatus[] = ["open", "verified", "resolved", "rejected"];
+const ALL_STATUSES: FlagStatus[] = ['open', 'verified', 'resolved', 'rejected'];
 
-describe("CATEGORY_LABELS / CATEGORY_DESCRIPTIONS / CATEGORY_ICONS", () => {
-  it.each(ALL_CATEGORIES)("has a label for %s", (cat) => {
-    expect(typeof CATEGORY_LABELS[cat]).toBe("string");
+describe('CATEGORY_LABELS / CATEGORY_DESCRIPTIONS / CATEGORY_ICONS', () => {
+  it.each(ALL_CATEGORIES)('has a label for %s', (cat) => {
+    expect(typeof CATEGORY_LABELS[cat]).toBe('string');
     expect(CATEGORY_LABELS[cat].length).toBeGreaterThan(0);
   });
 
-  it.each(ALL_CATEGORIES)("has a description for %s", (cat) => {
-    expect(typeof CATEGORY_DESCRIPTIONS[cat]).toBe("string");
+  it.each(ALL_CATEGORIES)('has a description for %s', (cat) => {
+    expect(typeof CATEGORY_DESCRIPTIONS[cat]).toBe('string');
     expect(CATEGORY_DESCRIPTIONS[cat].length).toBeGreaterThan(0);
   });
 
-  it.each(ALL_CATEGORIES)("has an icon for %s", (cat) => {
-    expect(typeof CATEGORY_ICONS[cat]).toBe("string");
+  it.each(ALL_CATEGORIES)('has an icon for %s', (cat) => {
+    expect(typeof CATEGORY_ICONS[cat]).toBe('string');
     expect(CATEGORY_ICONS[cat].length).toBeGreaterThan(0);
   });
 
-  it("labels are unique (so the filter chips never collide)", () => {
+  it('labels are unique (so the filter chips never collide)', () => {
     const labels = ALL_CATEGORIES.map((c) => CATEGORY_LABELS[c]);
     expect(new Set(labels).size).toBe(labels.length);
   });
 });
 
-describe("CATEGORY_ORDER", () => {
-  it("contains every category exactly once", () => {
+describe('CATEGORY_ORDER', () => {
+  it('contains every category exactly once', () => {
     expect(new Set(CATEGORY_ORDER).size).toBe(CATEGORY_ORDER.length);
     expect(CATEGORY_ORDER).toHaveLength(ALL_CATEGORIES.length);
     for (const cat of ALL_CATEGORIES) {
@@ -103,23 +98,23 @@ describe("CATEGORY_ORDER", () => {
   });
 });
 
-describe("SEVERITY_LABELS / SEVERITY_COLOR_NAMES / SEVERITY_DESCRIPTIONS", () => {
-  it.each(ALL_SEVERITIES)("has a label for severity %i", (sev) => {
-    expect(typeof SEVERITY_LABELS[sev]).toBe("string");
+describe('SEVERITY_LABELS / SEVERITY_COLOR_NAMES / SEVERITY_DESCRIPTIONS', () => {
+  it.each(ALL_SEVERITIES)('has a label for severity %i', (sev) => {
+    expect(typeof SEVERITY_LABELS[sev]).toBe('string');
     expect(SEVERITY_LABELS[sev].length).toBeGreaterThan(0);
   });
 
-  it.each(ALL_SEVERITIES)("has a color name for severity %i", (sev) => {
-    expect(typeof SEVERITY_COLOR_NAMES[sev]).toBe("string");
+  it.each(ALL_SEVERITIES)('has a color name for severity %i', (sev) => {
+    expect(typeof SEVERITY_COLOR_NAMES[sev]).toBe('string');
     expect(SEVERITY_COLOR_NAMES[sev].length).toBeGreaterThan(0);
   });
 
-  it.each(ALL_SEVERITIES)("has a description for severity %i", (sev) => {
-    expect(typeof SEVERITY_DESCRIPTIONS[sev]).toBe("string");
+  it.each(ALL_SEVERITIES)('has a description for severity %i', (sev) => {
+    expect(typeof SEVERITY_DESCRIPTIONS[sev]).toBe('string');
     expect(SEVERITY_DESCRIPTIONS[sev].length).toBeGreaterThan(0);
   });
 
-  it("color names do not rely on color alone (a screen-reader-readable label exists per severity)", () => {
+  it('color names do not rely on color alone (a screen-reader-readable label exists per severity)', () => {
     // The point of SEVERITY_COLOR_NAMES is to read 'red' aloud rather than
     // signal severity via fill color only. Make sure no two severities share
     // a color name (a duplicate would defeat the readability goal).
@@ -128,48 +123,48 @@ describe("SEVERITY_LABELS / SEVERITY_COLOR_NAMES / SEVERITY_DESCRIPTIONS", () =>
   });
 });
 
-describe("SEVERITY_ORDER", () => {
-  it("is the canonical 1..5 ascending sequence", () => {
+describe('SEVERITY_ORDER', () => {
+  it('is the canonical 1..5 ascending sequence', () => {
     expect(SEVERITY_ORDER).toEqual([1, 2, 3, 4, 5]);
   });
 });
 
-describe("STATUS_LABELS / STATUS_ORDER", () => {
-  it.each(ALL_STATUSES)("has a label for %s", (status) => {
-    expect(typeof STATUS_LABELS[status]).toBe("string");
+describe('STATUS_LABELS / STATUS_ORDER', () => {
+  it.each(ALL_STATUSES)('has a label for %s', (status) => {
+    expect(typeof STATUS_LABELS[status]).toBe('string');
     expect(STATUS_LABELS[status].length).toBeGreaterThan(0);
   });
 
-  it("STATUS_ORDER contains every status exactly once", () => {
+  it('STATUS_ORDER contains every status exactly once', () => {
     expect(new Set(STATUS_ORDER).size).toBe(STATUS_ORDER.length);
     expect(STATUS_ORDER).toHaveLength(ALL_STATUSES.length);
   });
 
-  it("STATUS_ORDER follows the chronological lifecycle", () => {
-    expect(STATUS_ORDER).toEqual(["open", "verified", "resolved", "rejected"]);
+  it('STATUS_ORDER follows the chronological lifecycle', () => {
+    expect(STATUS_ORDER).toEqual(['open', 'verified', 'resolved', 'rejected']);
   });
 });
 
-describe("DEFAULT_STATUSES", () => {
+describe('DEFAULT_STATUSES', () => {
   it("matches the Map filter's default-on chips (open + verified)", () => {
     // If this changes, MapScreen.tsx and TasksScreen.tsx default filters
     // must move together — they share this constant by design.
-    expect(DEFAULT_STATUSES).toEqual(["open", "verified"]);
+    expect(DEFAULT_STATUSES).toEqual(['open', 'verified']);
   });
 
-  it("is a subset of STATUS_ORDER", () => {
+  it('is a subset of STATUS_ORDER', () => {
     for (const s of DEFAULT_STATUSES) {
       expect(STATUS_ORDER).toContain(s);
     }
   });
 });
 
-describe("FLAG_PHOTOS_BUCKET", () => {
-  it("matches the bucket name referenced by Supabase Storage RLS in schema.sql", () => {
+describe('FLAG_PHOTOS_BUCKET', () => {
+  it('matches the bucket name referenced by Supabase Storage RLS in schema.sql', () => {
     // If this constant ever drifts from supabase/schema.sql, uploads will
     // silently 404 against the wrong bucket. Pin it here so the lib +
     // schema can't disagree without a failing test.
-    expect(FLAG_PHOTOS_BUCKET).toBe("flag-photos");
+    expect(FLAG_PHOTOS_BUCKET).toBe('flag-photos');
   });
 });
 
@@ -178,18 +173,18 @@ describe("FLAG_PHOTOS_BUCKET", () => {
 // Chain under test: supabase.from('flags').update(patch).eq('id', flagId).select().single()
 // ---------------------------------------------------------------------------
 
-describe("updateFlagContent", () => {
+describe('updateFlagContent', () => {
   const SAMPLE_ROW = {
-    id: "flag-abc",
-    user_id: "user-1",
+    id: 'flag-abc',
+    user_id: 'user-1',
     lat: 49.25,
     lng: -123.1,
-    category: "no_ramp" as const,
+    category: 'no_ramp' as const,
     severity: 3 as const,
-    description: "updated description",
+    description: 'updated description',
     photo_url: null,
-    status: "open" as const,
-    created_at: "2026-05-25T00:00:00Z",
+    status: 'open' as const,
+    created_at: '2026-05-25T00:00:00Z',
   };
 
   beforeEach(() => {
@@ -201,28 +196,30 @@ describe("updateFlagContent", () => {
     mockSelectAfterUpdate.mockReturnValue({ single: mockSingle });
   });
 
-  it("resolves with the FlagRow returned by Supabase on success", async () => {
+  it('resolves with the FlagRow returned by Supabase on success', async () => {
     mockSingle.mockResolvedValueOnce({ data: SAMPLE_ROW, error: null });
 
-    const result = await updateFlagContent("flag-abc", { description: "updated description" });
+    const result = await updateFlagContent('flag-abc', { description: 'updated description' });
 
     expect(result).toEqual(SAMPLE_ROW);
   });
 
-  it("throws when Supabase returns an error", async () => {
-    const dbError = { message: "permission denied", code: "42501" };
+  it('throws when Supabase returns an error', async () => {
+    const dbError = { message: 'permission denied', code: '42501' };
     mockSingle.mockResolvedValueOnce({ data: null, error: dbError });
 
-    await expect(
-      updateFlagContent("flag-abc", { severity: 5 })
-    ).rejects.toEqual(dbError);
+    await expect(updateFlagContent('flag-abc', { severity: 5 })).rejects.toEqual(dbError);
   });
 
-  it("passes only the patch fields to .update() — never readonly fields", async () => {
+  it('passes only the patch fields to .update() — never readonly fields', async () => {
     mockSingle.mockResolvedValueOnce({ data: SAMPLE_ROW, error: null });
 
-    const patch = { description: "new text", category: "broken_sidewalk" as const, severity: 2 as const };
-    await updateFlagContent("flag-abc", patch);
+    const patch = {
+      description: 'new text',
+      category: 'broken_sidewalk' as const,
+      severity: 2 as const,
+    };
+    await updateFlagContent('flag-abc', patch);
 
     // .update() must receive exactly the patch — no status, user_id, lat, lng, etc.
     expect(mockUpdate).toHaveBeenCalledWith(patch);
@@ -232,17 +229,17 @@ describe("updateFlagContent", () => {
   it("targets the correct row by id via .eq('id', flagId)", async () => {
     mockSingle.mockResolvedValueOnce({ data: SAMPLE_ROW, error: null });
 
-    await updateFlagContent("flag-abc", { description: "x" });
+    await updateFlagContent('flag-abc', { description: 'x' });
 
-    expect(mockEq).toHaveBeenCalledWith("id", "flag-abc");
+    expect(mockEq).toHaveBeenCalledWith('id', 'flag-abc');
   });
 
   it("queries the 'flags' table (not a wrong table name)", async () => {
     mockSingle.mockResolvedValueOnce({ data: SAMPLE_ROW, error: null });
 
-    await updateFlagContent("flag-abc", { severity: 1 });
+    await updateFlagContent('flag-abc', { severity: 1 });
 
-    expect(mockFrom).toHaveBeenCalledWith("flags");
+    expect(mockFrom).toHaveBeenCalledWith('flags');
   });
 });
 
@@ -250,28 +247,26 @@ describe("updateFlagContent", () => {
 // before any Supabase call, so we can exercise them without a mocked
 // client. The "happy path" is still deferred until the wider
 // Supabase-mock setup lands (see header comment).
-describe("uploadFlagPhoto — input validation", () => {
-  const USER = "00000000-0000-0000-0000-000000000001";
+describe('uploadFlagPhoto — input validation', () => {
+  const USER = '00000000-0000-0000-0000-000000000001';
 
-  it("rejects an empty URI", async () => {
-    await expect(uploadFlagPhoto(USER, "")).rejects.toThrow(
-      /no photo/i,
+  it('rejects an empty URI', async () => {
+    await expect(uploadFlagPhoto(USER, '')).rejects.toThrow(/no photo/i);
+  });
+
+  it('rejects an http(s) URI (would re-upload a remote image)', async () => {
+    await expect(uploadFlagPhoto(USER, 'https://example.com/foo.jpg')).rejects.toThrow(
+      /unsupported/i,
     );
   });
 
-  it("rejects an http(s) URI (would re-upload a remote image)", async () => {
-    await expect(
-      uploadFlagPhoto(USER, "https://example.com/foo.jpg"),
-    ).rejects.toThrow(/unsupported/i);
+  it('rejects a non-image extension on an otherwise valid scheme', async () => {
+    await expect(uploadFlagPhoto(USER, 'file:///tmp/payload.svg')).rejects.toThrow(
+      /jpg|png|webp|heic/i,
+    );
   });
 
-  it("rejects a non-image extension on an otherwise valid scheme", async () => {
-    await expect(
-      uploadFlagPhoto(USER, "file:///tmp/payload.svg"),
-    ).rejects.toThrow(/jpg|png|webp|heic/i);
-  });
-
-  it("rejects an empty file body", async () => {
+  it('rejects an empty file body', async () => {
     const originalFetch = global.fetch;
     // Cast through unknown so we don't need DOM Fetch types in the test
     // file. The validation path only awaits .arrayBuffer().
@@ -279,24 +274,22 @@ describe("uploadFlagPhoto — input validation", () => {
       arrayBuffer: async () => new ArrayBuffer(0),
     });
     try {
-      await expect(
-        uploadFlagPhoto(USER, "file:///tmp/empty.jpg"),
-      ).rejects.toThrow(/empty/i);
+      await expect(uploadFlagPhoto(USER, 'file:///tmp/empty.jpg')).rejects.toThrow(/empty/i);
     } finally {
       (global as unknown as { fetch: unknown }).fetch = originalFetch;
     }
   });
 
-  it("rejects a file over 10 MB", async () => {
+  it('rejects a file over 10 MB', async () => {
     const originalFetch = global.fetch;
     (global as unknown as { fetch: unknown }).fetch = async () => ({
       // 10 MB + 1 byte
       arrayBuffer: async () => new ArrayBuffer(10 * 1024 * 1024 + 1),
     });
     try {
-      await expect(
-        uploadFlagPhoto(USER, "file:///tmp/huge.jpg"),
-      ).rejects.toThrow(/too large|10 MB/i);
+      await expect(uploadFlagPhoto(USER, 'file:///tmp/huge.jpg')).rejects.toThrow(
+        /too large|10 MB/i,
+      );
     } finally {
       (global as unknown as { fetch: unknown }).fetch = originalFetch;
     }

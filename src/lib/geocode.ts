@@ -59,8 +59,7 @@ export function parseGeocodeRow(row: NominatimRow): GeocodeResult | null {
   if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
   // place_id may come as number or string — coerce to string for stable
   // React keys. Fall back to lat,lng concat if it's missing.
-  const id =
-    row.place_id !== undefined ? String(row.place_id) : `${lat},${lng}`;
+  const id = row.place_id !== undefined ? String(row.place_id) : `${lat},${lng}`;
   return { id, displayName: row.display_name, lat, lng };
 }
 
@@ -80,10 +79,7 @@ export function parseResults(payload: unknown): GeocodeResult[] {
  * characters before this one settles. The modal wires AbortController
  * to its debounce timer.
  */
-export async function searchAddress(
-  query: string,
-  signal?: AbortSignal,
-): Promise<GeocodeResult[]> {
+export async function searchAddress(query: string, signal?: AbortSignal): Promise<GeocodeResult[]> {
   const trimmed = query.trim();
   if (trimmed.length < 3) return [];
   try {

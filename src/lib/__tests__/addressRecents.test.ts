@@ -29,8 +29,7 @@ jest.mock('@react-native-async-storage/async-storage', () => {
   };
 });
 
-const mockStorage =
-  jest.requireMock('@react-native-async-storage/async-storage').default;
+const mockStorage = jest.requireMock('@react-native-async-storage/async-storage').default;
 
 const CUPERTINO: AddressRecent = {
   id: '1',
@@ -141,9 +140,7 @@ describe('addressRecents', () => {
       list = addRecent(list, TOKYO);
       expect(list).toHaveLength(ADDRESS_RECENTS_MAX);
       expect(list[0]!.displayName).toBe(TOKYO.displayName);
-      expect(list.map((r) => r.displayName)).not.toContain(
-        CUPERTINO.displayName,
-      );
+      expect(list.map((r) => r.displayName)).not.toContain(CUPERTINO.displayName);
     });
 
     it('is pure — does not mutate the input list', () => {
@@ -189,10 +186,7 @@ describe('addressRecents', () => {
     });
 
     it('returns [] when the stored value is not an array', async () => {
-      mockStorage.__setRaw(
-        ADDRESS_RECENTS_KEY,
-        JSON.stringify({ displayName: 'X' }),
-      );
+      mockStorage.__setRaw(ADDRESS_RECENTS_KEY, JSON.stringify({ displayName: 'X' }));
       expect(await loadRecents()).toEqual([]);
     });
 

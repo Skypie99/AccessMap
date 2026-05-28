@@ -49,21 +49,21 @@ import type { FlagSeverity } from './types/database';
 
 export const color = {
   // Surfaces
-  surface: '#fff',              // primary background, button text on brand
-  surfaceMuted: '#f7f9fc',      // app-level subtle backgrounds (e.g. screen wash)
-  surfaceSoft: '#f7f8fa',       // input fields, card alt
-  surfaceNeutral: '#eef1f5',    // pill background, inactive chip
+  surface: '#fff', // primary background, button text on brand
+  surfaceMuted: '#f7f9fc', // app-level subtle backgrounds (e.g. screen wash)
+  surfaceSoft: '#f7f8fa', // input fields, card alt
+  surfaceNeutral: '#eef1f5', // pill background, inactive chip
   overlay: 'rgba(255,255,255,0.97)', // floating panels (filter, banner) over map
   overlaySoft: 'rgba(255,255,255,0.95)',
-  scrim: 'rgba(0,0,0,0.4)',     // modal backdrop
+  scrim: 'rgba(0,0,0,0.4)', // modal backdrop
 
   // Text — all checked ≥ 4.5:1 on surface
-  textStrong: '#222',           // headings (16:1 on white)
-  text: '#333',                 // body (12.6:1)
-  textMuted: '#666',            // secondary (5.7:1 on #fff, AA pass). Also used as placeholderTextColor on surfaceSoft (#f7f8fa) where contrast is ~5.6:1 — still passes WCAG AA (4.5:1 for normal text).
-  textSubtle: '#999',           // disabled / tertiary; only for non-essential text or 18pt+
-  placeholderText: '#5b6470',   // TextInput placeholder — AA pass: ~4.7:1 on white, ~4.5:1 on #f7f9fc
-  textOnBrand: '#fff',          // text drawn on brand-blue or severity colors
+  textStrong: '#222', // headings (16:1 on white)
+  text: '#333', // body (12.6:1)
+  textMuted: '#666', // secondary (5.7:1 on #fff, AA pass). Also used as placeholderTextColor on surfaceSoft (#f7f8fa) where contrast is ~5.6:1 — still passes WCAG AA (4.5:1 for normal text).
+  textSubtle: '#999', // disabled / tertiary; only for non-essential text or 18pt+
+  placeholderText: '#5b6470', // TextInput placeholder — AA pass: ~4.7:1 on white, ~4.5:1 on #f7f9fc
+  textOnBrand: '#fff', // text drawn on brand-blue or severity colors
 
   // Brand — primary action color
   // brand:     UI surfaces / button backgrounds / ≥14pt bold text on white
@@ -72,55 +72,55 @@ export const color = {
   // Migration note: existing color.brand usages on small text should
   // gradually move to color.brandText. New code should use brandText
   // for text-on-white anywhere it's NOT explicitly ≥14pt bold.
-  brand: '#2f80ed',             // 3.3:1 on white → UI/large-text only (AA UI 3:1)
-  brandText: '#1c4f99',         // 7.6:1 on white → AA pass at any text size
-  brandTextAlt: '#1a4fa3',      // near-identical AA-safe brand text (used by UpdateBanner, SavedPlacesModal, FilterPresetsModal, MapScreen). Kept as a separate token so future dark-mode swap can choose to merge with brandText or keep distinct.
-  brandSoft: '#d6e6f9',         // brand-tinted background for verified pill
-  brandSofter: '#eaf3ff',       // even lighter brand wash (chip backgrounds, banner backgrounds, "manage" affordances)
-  brandOnSoft: '#1c4f99',       // dark brand text for use on brandSoft (7.6:1)
+  brand: '#2f80ed', // 3.3:1 on white → UI/large-text only (AA UI 3:1)
+  brandText: '#1c4f99', // 7.6:1 on white → AA pass at any text size
+  brandTextAlt: '#1a4fa3', // near-identical AA-safe brand text (used by UpdateBanner, SavedPlacesModal, FilterPresetsModal, MapScreen). Kept as a separate token so future dark-mode swap can choose to merge with brandText or keep distinct.
+  brandSoft: '#d6e6f9', // brand-tinted background for verified pill
+  brandSofter: '#eaf3ff', // even lighter brand wash (chip backgrounds, banner backgrounds, "manage" affordances)
+  brandOnSoft: '#1c4f99', // dark brand text for use on brandSoft (7.6:1)
 
   // Status surfaces (bg + fg pairings) — used by status pills, banners
   // Each fg passes AA on its bg.
   statusOpenBg: '#fdebd0',
-  statusOpenFg: '#8a4b00',      // 6.5:1 on statusOpenBg
+  statusOpenFg: '#8a4b00', // 6.5:1 on statusOpenBg
   statusVerifiedBg: '#d6e6f9',
-  statusVerifiedFg: '#1c4f99',  // 7.6:1
+  statusVerifiedFg: '#1c4f99', // 7.6:1
   statusResolvedBg: '#d4ecdb',
-  statusResolvedFg: '#1b6b34',  // 6.4:1
+  statusResolvedFg: '#1b6b34', // 6.4:1
   statusRejectedBg: '#e5e5e5',
-  statusRejectedFg: '#3a3a3a',  // 10.4:1
+  statusRejectedFg: '#3a3a3a', // 10.4:1
 
   // Semantic
-  success: '#27ae60',           // resolve action background (text on it must be white-large)
+  success: '#27ae60', // resolve action background (text on it must be white-large)
   successSoft: '#d4ecdb',
   warningBg: '#fff7e6',
-  warningFg: '#714b00',         // 8.3:1 on warningBg
-  warningHint: '#a04040',       // for inline hint text on white (4.6:1)
-  error: '#c0392b',             // banner background, destructive when subtle
-  errorStrong: '#e74c3c',       // destructive action background (delete)
+  warningFg: '#714b00', // 8.3:1 on warningBg
+  warningHint: '#a04040', // for inline hint text on white (4.6:1)
+  error: '#c0392b', // banner background, destructive when subtle
+  errorStrong: '#e74c3c', // destructive action background (delete)
   errorBg: '#fdecea',
-  errorFg: '#8a1f1f',           // 7.4:1 on errorBg
+  errorFg: '#8a1f1f', // 7.4:1 on errorBg
 
   // Borders / dividers
   border: '#e5e5e5',
   borderStrong: '#d0d4dc',
   borderSubtle: '#dde2ea',
-  borderPressed: '#dde3eb',     // pressed-state background on neutral chips/buttons (MyReportsModal, ActivityFeedModal, NearbyFlagsModal, MyWatchedModal)
+  borderPressed: '#dde3eb', // pressed-state background on neutral chips/buttons (MyReportsModal, ActivityFeedModal, NearbyFlagsModal, MyWatchedModal)
   divider: '#ddd',
 
   // Additional muted-text / accent tokens
-  textMutedAlt: '#5b6470',      // AA-safe muted text on light surfaces (4.6:1 on #f4f6f8) — used by ReportFlagModal hints, NotificationPrefsModal copy, TasksScreen
-  accentOrange: '#f1a520',      // amber accent for "watch / pinned" affordances (NotificationPrefsModal, ProfileScreen, SavedPlacesModal, MyWatchedModal, FlagDetailModal). Distinct from severity[4].color (#e67e22) on purpose.
+  textMutedAlt: '#5b6470', // AA-safe muted text on light surfaces (4.6:1 on #f4f6f8) — used by ReportFlagModal hints, NotificationPrefsModal copy, TasksScreen
+  accentOrange: '#f1a520', // amber accent for "watch / pinned" affordances (NotificationPrefsModal, ProfileScreen, SavedPlacesModal, MyWatchedModal, FlagDetailModal). Distinct from severity[4].color (#e67e22) on purpose.
 
   // Backdrop / overlay layers — used by full-screen modals and photo UI
-  backdropStrong: 'rgba(0,0,0,0.75)',   // full-screen modal overlays (replaces raw rgba in PhotoLightboxModal)
-  backdropCaption: 'rgba(0,0,0,0.65)',  // caption bars on photos — contrast gain over scrim (Alex #3)
-  overlayBtn: 'rgba(0,0,0,0.45)',       // overlay action buttons (close button bg in lightbox)
+  backdropStrong: 'rgba(0,0,0,0.75)', // full-screen modal overlays (replaces raw rgba in PhotoLightboxModal)
+  backdropCaption: 'rgba(0,0,0,0.65)', // caption bars on photos — contrast gain over scrim (Alex #3)
+  overlayBtn: 'rgba(0,0,0,0.45)', // overlay action buttons (close button bg in lightbox)
   overlayBtnPressed: 'rgba(0,0,0,0.60)', // pressed state for overlay action buttons
 
   // Misc
   shadow: '#000',
-  pointsPillText: '#dbe7fb',    // light-blue label on brand-blue background
+  pointsPillText: '#dbe7fb', // light-blue label on brand-blue background
 };
 
 // -------------------------------------------------------------------------
@@ -128,13 +128,13 @@ export const color = {
 // -------------------------------------------------------------------------
 
 export const spacing = {
-  tight: 4,    // gap between text + adjacent icon, very small offsets
+  tight: 4, // gap between text + adjacent icon, very small offsets
   xs: 6,
-  sm: 8,       // most common gap
-  md: 12,      // most common padding
-  lg: 16,      // section padding
+  sm: 8, // most common gap
+  md: 12, // most common padding
+  lg: 16, // section padding
   xl: 20,
-  xxl: 24,     // generous screen padding
+  xxl: 24, // generous screen padding
   xxxl: 32,
 };
 
@@ -145,10 +145,10 @@ export const spacing = {
 export const radius = {
   xs: 4,
   sm: 6,
-  md: 8,       // default for cards/buttons
-  lg: 12,      // panels, modals
-  xl: 16,      // sheet headers
-  full: 999,   // pills, FABs, round icon buttons
+  md: 8, // default for cards/buttons
+  lg: 12, // panels, modals
+  xl: 16, // sheet headers
+  full: 999, // pills, FABs, round icon buttons
   circle: 9999, // perfectly circular elements (avatar frames, round icon buttons)
 };
 
@@ -160,13 +160,13 @@ export const radius = {
 
 export const font = {
   size: {
-    caption: 11,   // tiny meta (status hint)
-    xs: 12,        // pill labels, captions
-    sm: 13,        // dense body (cards), default banner copy
-    base: 14,      // body default — the most common size
-    md: 15,        // emphasized body, FAB label
-    lg: 16,        // subtitle, input text
-    xl: 18,        // section title
+    caption: 11, // tiny meta (status hint)
+    xs: 12, // pill labels, captions
+    sm: 13, // dense body (cards), default banner copy
+    base: 14, // body default — the most common size
+    md: 15, // emphasized body, FAB label
+    lg: 16, // subtitle, input text
+    xl: 18, // section title
     xxl: 20,
     h2: 24,
     h1: 28,
@@ -231,8 +231,8 @@ export const a11y = {
 // -------------------------------------------------------------------------
 
 export const size = {
-  thumb: 80,      // square photo thumbnail in FlagCard (TasksScreen)
-  cardMin: 96,    // minimum card height for no-photo FlagCards (density parity)
+  thumb: 80, // square photo thumbnail in FlagCard (TasksScreen)
+  cardMin: 96, // minimum card height for no-photo FlagCards (density parity)
 };
 
 // -------------------------------------------------------------------------

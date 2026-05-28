@@ -40,12 +40,9 @@ export function useScreenReader(): boolean {
         // sighted-user experience stays the default fallback.
       });
 
-    const sub = AccessibilityInfo.addEventListener(
-      'screenReaderChanged',
-      (value) => {
-        setEnabled(value);
-      },
-    );
+    const sub = AccessibilityInfo.addEventListener('screenReaderChanged', (value) => {
+      setEnabled(value);
+    });
 
     return () => {
       cancelled = true;
@@ -79,12 +76,9 @@ export function useReducedMotion(): boolean {
       })
       .catch(() => {});
 
-    const sub = AccessibilityInfo.addEventListener(
-      'reduceMotionChanged',
-      (value) => {
-        setReduced(value);
-      },
-    );
+    const sub = AccessibilityInfo.addEventListener('reduceMotionChanged', (value) => {
+      setReduced(value);
+    });
 
     return () => {
       cancelled = true;

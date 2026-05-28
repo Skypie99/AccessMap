@@ -58,10 +58,7 @@ export async function loadWatched(userId: string): Promise<string[]> {
     const raw = await AsyncStorage.getItem(watchedKey(userId));
     return parseWatched(raw);
   } catch (e) {
-    console.warn(
-      '[watchedFlags] load failed:',
-      errorMessage(e, 'AsyncStorage error.'),
-    );
+    console.warn('[watchedFlags] load failed:', errorMessage(e, 'AsyncStorage error.'));
     return [];
   }
 }
@@ -73,16 +70,10 @@ export async function loadWatched(userId: string): Promise<string[]> {
  * Returns the new full list (lets the caller update local state in one
  * step instead of re-reading).
  */
-export async function addWatched(
-  userId: string,
-  flagId: string,
-): Promise<string[]> {
+export async function addWatched(userId: string, flagId: string): Promise<string[]> {
   const current = await loadWatched(userId);
   if (current.includes(flagId)) return current;
-  const next =
-    current.length >= MAX_WATCHED
-      ? [...current.slice(1), flagId]
-      : [...current, flagId];
+  const next = current.length >= MAX_WATCHED ? [...current.slice(1), flagId] : [...current, flagId];
   await persist(userId, next);
   return next;
 }
@@ -91,10 +82,7 @@ export async function addWatched(
  * Remove a flag ID from the user's watched list. No-op if not present.
  * Returns the new full list (same reason as addWatched).
  */
-export async function removeWatched(
-  userId: string,
-  flagId: string,
-): Promise<string[]> {
+export async function removeWatched(userId: string, flagId: string): Promise<string[]> {
   const current = await loadWatched(userId);
   if (!current.includes(flagId)) return current;
   const next = current.filter((id) => id !== flagId);
@@ -158,14 +146,9 @@ export async function addWatchedBulk(
  * what's already stored, so a routine refresh that finds nothing to
  * prune doesn't generate a pointless AsyncStorage write.
  */
-export async function setWatched(
-  userId: string,
-  ids: string[],
-): Promise<string[]> {
+export async function setWatched(userId: string, ids: string[]): Promise<string[]> {
   const current = await loadWatched(userId);
-  const unchanged =
-    current.length === ids.length &&
-    current.every((id, i) => id === ids[i]);
+  const unchanged = current.length === ids.length && current.every((id, i) => id === ids[i]);
   if (unchanged) return current;
   await persist(userId, ids);
   return ids;
@@ -175,10 +158,7 @@ async function persist(userId: string, ids: string[]): Promise<void> {
   try {
     await AsyncStorage.setItem(watchedKey(userId), JSON.stringify(ids));
   } catch (e) {
-    console.warn(
-      '[watchedFlags] save failed:',
-      errorMessage(e, 'AsyncStorage error.'),
-    );
+    console.warn('[watchedFlags] save failed:', errorMessage(e, 'AsyncStorage error.'));
   }
 }
 

@@ -45,15 +45,12 @@ export default class ErrorBoundary extends React.Component<Props, State> {
         <View style={styles.container} accessibilityRole="alert">
           <Text style={styles.title}>Something went wrong</Text>
           <Text style={styles.body}>
-            The app hit an unexpected problem and stopped. Try again, or
-            close and reopen the app if it keeps happening.
+            The app hit an unexpected problem and stopped. Try again, or close and reopen the app if
+            it keeps happening.
           </Text>
           <Pressable
             onPress={this.handleReset}
-            style={({ pressed }) => [
-              styles.btn,
-              pressed && styles.btnPressed,
-            ]}
+            style={({ pressed }) => [styles.btn, pressed && styles.btnPressed]}
             accessibilityRole="button"
             accessibilityLabel="Try again"
             accessibilityHint="Resets the app screen after an error"

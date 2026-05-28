@@ -106,9 +106,7 @@ export function formatDataExport(input: ExportInput): string {
 
   // Defensive newest-first sort. Stable for ties (preserves input order
   // when created_at matches — keeps the export deterministic).
-  const sortedFlags = [...input.flags].sort((a, b) =>
-    b.created_at.localeCompare(a.created_at),
-  );
+  const sortedFlags = [...input.flags].sort((a, b) => b.created_at.localeCompare(a.created_at));
 
   lines.push(`REPORTS (${sortedFlags.length} flags):`);
   if (sortedFlags.length === 0) {
@@ -121,9 +119,7 @@ export function formatDataExport(input: ExportInput): string {
       // this guard the export would print literal "undefined" — confusing,
       // and worse, it would hide what the actual category was.
       const category = input.categoryLabel(f.category) ?? f.category;
-      lines.push(
-        `  - ${date} · ${category} · severity ${f.severity}/5 · ${f.status}`,
-      );
+      lines.push(`  - ${date} · ${category} · severity ${f.severity}/5 · ${f.status}`);
       // Coords: 6 decimal places (~10cm precision) is fine for a
       // user-readable record. They're not editing surveying data.
       lines.push(`    ${f.lat.toFixed(6)}, ${f.lng.toFixed(6)}`);
