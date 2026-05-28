@@ -21,6 +21,11 @@
  * See qa-reports/2026-05-25-gary-cycle4-coverage-gaps.md (GAP-7).
  */
 
+jest.mock('../supabase', () => ({
+  __esModule: true,
+  supabase: { from: jest.fn() },
+}));
+
 import { CATEGORY_LABELS } from '../flags';
 import type { FlagRow } from '@/types/database';
 
