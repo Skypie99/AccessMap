@@ -25,7 +25,17 @@
       ]
     },
     "web": {
-      "bundler": "metro"
+      "bundler": "metro",
+      "favicon": "./assets/favicon.png",
+      "name": "AccessMap",
+      "shortName": "AccessMap",
+      "description": "Community-powered accessibility map",
+      "backgroundColor": "#ffffff",
+      "themeColor": "#1a4fa3",
+      "display": "standalone",
+      "orientation": "portrait",
+      "scope": "/",
+      "startUrl": "/"
     },
     "plugins": [
       [
