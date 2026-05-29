@@ -147,8 +147,10 @@ export default function SettingsScreen() {
   const styles = makeStyles(color);
   // Keep a stable reference for the push ActivityIndicator color — we can't
   // call useColor() inside conditional JSX, so we capture it here at the
-  // top of the component.
-  const pushSpinnerColor = color.textSubtle;
+  // top of the component. Use color.text (#333 light, #ddd dark) for ≥4.5:1
+  // contrast on spinner strokes. color.textSubtle (#999 light, #777 dark) is
+  // only for non-essential text or 18pt+, which thin spinners are not.
+  const pushSpinnerColor = color.text;
   // Help, Changelog, Feedback, and MyFeedback are all mounted ONCE at
   // the navigator level via <SharedModalsHost /> (see RootNavigator.tsx +
   // src/lib/sharedModalsContext.tsx). Settings just sets the shared
