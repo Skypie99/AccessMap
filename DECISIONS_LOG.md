@@ -4,6 +4,15 @@ Structural decisions, append-only. New entries at the top. Do NOT re-litigate en
 
 ---
 
+## 2026-05-29 — Analytics Scaffold Jordan Gate Required [ANALYTICS-JORDAN-GATE]
+`phase2/track-b-infrastructure` adds src/lib/analytics.ts with `identifyUser(userId)` — triggers Const. Art. 7.6 #5 (external API sending user data). Jordan reviewed and issued APPROVE WITH CONDITIONS. 5 blocking conditions must be met before wiring a real SDK. Stub is safe to merge as-is. Sky decisions required: (1) privacy policy author, (2) opt-in vs opt-out default, (3) confirm flagId removal from analytics events. — 2026-05-29
+
+## 2026-05-29 — Plist Background Location: Jordan DROP-IT [PLIST-JORDAN-BLOCKED]
+`fix/expo-notifications-and-plist` added NSLocationAlwaysAndWhenInUseUsageDescription + NSLocationAlwaysUsageDescription to app.json. Jordan DROP-IT (2026-05-29_Jordan_BackgroundLocationGate.md) — app uses zero background location APIs; risks App Store rejection (Guideline 5.1.1) + PIPEDA/CPRA over-collection. Rory removed both keys in commit `4239748`. Branch cleaned but not merged. — 2026-05-29
+
+## 2026-05-29 — Lighthouse CI State Discrepancy [LIGHTHOUSE-PHANTOM-MERGE]
+Prior parallel session claimed push to SHA 723e23f but actual main was 01362aa. Resolved: Rory merged ci/lighthouse-2026-05-30 + release/0.2.0-version-bump cleanly onto main. Main now at 78251b1. LEARNINGS:2026-05-25 concurrent-agent phantom merge pattern confirmed + resolved. — 2026-05-29
+
 ## 2026-05-29 — Heat-map Display Style: Gradient Layer (Sky)
 
 - **Decision:** Heat-map display style = **gradient layer** (NOT density dots). Explicit Sky choice.
