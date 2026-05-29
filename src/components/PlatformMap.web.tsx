@@ -131,8 +131,23 @@ function deltaToZoom(latitudeDelta: number): number {
 }
 
 // ---------------------------------------------------------------------------
+// WCAG 2.2 AA contrast helper — picks #111 or #fff for text on a hex bg.
+// Relative luminance via W3C formula; threshold 0.179 gives ≥4.5:1 on both.
+// ---------------------------------------------------------------------------
+function pickContrastText(bgHex: string): string {
+  const hex = bgHex.replace('#', '');
+  const toLinear = (c: number) =>
+    c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+  const r = toLinear(parseInt(hex.slice(0, 2), 16) / 255);
+  const g = toLinear(parseInt(hex.slice(2, 4), 16) / 255);
+  const b = toLinear(parseInt(hex.slice(4, 6), 16) / 255);
+  const L = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  return L > 0.179 ? '#111' : '#fff';
+}
+
+// ---------------------------------------------------------------------------
 // Cluster icon — a branded bubble showing the count. Matches the native
-// ClusteredMapView style: brand-color fill, white text, subtle drop shadow.
+// ClusteredMapView style: brand-color fill, WCAG-contrast text, subtle shadow.
 // Cache by (brandColor + count) so identical bubbles share one DivIcon.
 // ---------------------------------------------------------------------------
 const clusterIconCache = new Map<string, L.DivIcon>();
@@ -251,7 +266,7 @@ function ClusteredMarkers({
         if (props.cluster) {
           const count = props.point_count as number;
           const clusterId = props.cluster_id as number;
-          const icon = makeClusterIcon(brandColor, textOnBrand, count);
+          const icon = makeClusterIcon(brandColor, pickContrastText(brandColor), count);
           const a11yLabel = `${count} accessibility ${count === 1 ? 'flag' : 'flags'} grouped. Tap to zoom in and expand.`;
 
           return (

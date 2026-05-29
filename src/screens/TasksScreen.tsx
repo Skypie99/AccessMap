@@ -141,6 +141,11 @@ export default function TasksScreen() {
   // so the per-row filter is a cheap `.includes`. Session-only — resets
   // on tab unmount, matching the rest of the Tasks filters.
   const [searchText, setSearchText] = useState('');
+  const [debouncedSearchText, setDebouncedSearchText] = useState('');
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearchText(searchText), 250);
+    return () => clearTimeout(t);
+  }, [searchText]);
 
   // Sort mode — applied within each section. Persisted device-wide via
   // AsyncStorage so a refresh / app-restart keeps the user's last choice.
@@ -170,7 +175,7 @@ export default function TasksScreen() {
     if (mineOnly && userId) out = out.filter((f) => f.user_id === userId);
     if (minSeverity > 0) out = out.filter((f) => f.severity >= minSeverity);
     if (categoryFilter) out = out.filter((f) => f.category === categoryFilter);
-    const q = searchText.trim().toLowerCase();
+    const q = debouncedSearchText.trim().toLowerCase();
     if (q) {
       out = out.filter((f) => {
         const desc = (f.description ?? '').toLowerCase();
@@ -179,7 +184,7 @@ export default function TasksScreen() {
       });
     }
     return out;
-  }, [flags, mineOnly, userId, minSeverity, categoryFilter, searchText]);
+  }, [flags, mineOnly, userId, minSeverity, categoryFilter, debouncedSearchText]);
 
   // Group the visible flags by status so the SectionList can show "Open"
   // and "Verified" as distinct sections. Sections with zero rows are

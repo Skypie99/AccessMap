@@ -17,6 +17,7 @@ export type AnalyticsEvent =
   | { name: 'push_notification_received'; props: { type: string } }
   // Tile cache instrumentation — measures offline map usage.
   // zoom: Leaflet zoom level at time of request (web only).
+  // PRIVACY: only zoom allowed; x/y tile coords encode location bbox — do not add
   | { name: 'tile_cache_hit'; props: { zoom: number } }
   | { name: 'tile_cache_miss'; props: { zoom: number } };
 

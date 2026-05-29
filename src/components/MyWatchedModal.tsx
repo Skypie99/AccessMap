@@ -81,7 +81,13 @@ export default function MyWatchedModal({
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedQuery, setDebouncedQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<WatchedStatusFilter>('all');
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedQuery(searchQuery), 250);
+    return () => clearTimeout(t);
+  }, [searchQuery]);
 
   const mountedRef = useRef(true);
   useEffect(() => {
@@ -177,12 +183,12 @@ export default function MyWatchedModal({
   // Apply text + status filters locally — no extra fetches needed.
   const displayFlags = useMemo(() => {
     const byStatus = filterWatchedFlagsByStatus(flags, statusFilter);
-    return filterWatchedFlags(byStatus, searchQuery, (cat) => CATEGORY_LABELS[cat] ?? '');
-  }, [flags, searchQuery, statusFilter]);
+    return filterWatchedFlags(byStatus, debouncedQuery, (cat) => CATEGORY_LABELS[cat] ?? '');
+  }, [flags, debouncedQuery, statusFilter]);
 
   const missingCount = watchedIds.length - flags.length;
 
-  const renderItem = ({ item }: { item: FlagRow }) => {
+  const renderItem = useCallback(({ item }: { item: FlagRow }) => {
     const date = new Date(item.created_at).toLocaleDateString(undefined, {
       month: 'short',
       day: 'numeric',
@@ -267,7 +273,7 @@ export default function MyWatchedModal({
         </Pressable>
       </View>
     );
-  };
+  }, [styles, onSelectFlag, onViewOnMap, handleUnwatch]);
 
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
@@ -612,7 +618,7 @@ const makeStyles = (color: ColorTheme) =>
       paddingHorizontal: spacing.md,
       paddingVertical: spacing.xs + 2,
       borderRadius: radius.full,
-      minHeight: 32,
+      minHeight: 44,
       alignItems: 'center',
       justifyContent: 'center',
     },
