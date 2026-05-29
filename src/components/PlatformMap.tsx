@@ -117,7 +117,7 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(function Pla
       showsUserLocation={showsUserLocation}
       showsMyLocationButton={false}
       clusterColor={color.brand}
-      clusterTextColor={color.textOnBrand}
+      clusterTextColor='#111'
       radius={40}
       renderCluster={(cluster: any) => {
         const { id, geometry, onPress, properties } = cluster;
@@ -309,7 +309,7 @@ const makeStyles = (color: ColorTheme) =>
       ...shadow.e2,
     },
     clusterCount: {
-      color: color.textOnBrand,
+      color: '#111',
       fontSize: font.size.base,
       fontWeight: font.weight.bold,
       letterSpacing: -0.2,
