@@ -126,6 +126,7 @@ export default function MapScreen() {
     refresh: refreshFlags,
     setStatuses,
     setViewportGate,
+    isOfflineCache,
   } = useFlags();
 
   const [reportOpen, setReportOpen] = useState(false);
@@ -1479,6 +1480,18 @@ export default function MapScreen() {
           </View>
         )}
 
+        {isOfflineCache && (
+          <View
+            style={styles.offlineBadge}
+            accessible
+            accessibilityRole="text"
+            accessibilityLiveRegion="polite"
+            accessibilityLabel="Offline — viewing cached map data"
+          >
+            <Text style={styles.offlineBadgeText}>Offline — viewing cached map</Text>
+          </View>
+        )}
+
         {locating && !location && (
           <View style={styles.banner}>
             <ActivityIndicator />
@@ -1966,6 +1979,21 @@ const makeStyles = (color: ColorTheme) =>
     sevPillText: { fontSize: 13, color: color.text, fontWeight: '700' },
     sevPillTextActive: { color: color.textOnBrand },
     statusHint: { fontSize: 11, color: color.textMuted, marginTop: 4 },
+    offlineBadge: {
+      alignSelf: 'center',
+      backgroundColor: color.warningBg,
+      borderWidth: 1,
+      borderColor: color.accentOrange,
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 20,
+      marginBottom: 6,
+    },
+    offlineBadgeText: {
+      fontSize: 12,
+      fontWeight: '600' as const,
+      color: color.warningFg,
+    },
     banner: {
       alignSelf: 'center',
       backgroundColor: color.overlaySoft,

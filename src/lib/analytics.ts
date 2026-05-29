@@ -14,7 +14,12 @@ export type AnalyticsEvent =
   | { name: 'flag_viewed'; props: { flagId: string; source: 'map' | 'tasks' } }
   | { name: 'flag_status_changed'; props: { flagId: string; from: string; to: string } }
   | { name: 'user_signed_in'; props: { method: 'email'; isNewUser: boolean } }
-  | { name: 'push_notification_received'; props: { type: string } };
+  | { name: 'push_notification_received'; props: { type: string } }
+  // Tile cache instrumentation — measures offline map usage.
+  // zoom: Leaflet zoom level at time of request (web only).
+  // PRIVACY: only zoom allowed; x/y tile coords encode location bbox — do not add
+  | { name: 'tile_cache_hit'; props: { zoom: number } }
+  | { name: 'tile_cache_miss'; props: { zoom: number } };
 
 // ---------------------------------------------------------------------------
 // Core tracking function

@@ -42,6 +42,7 @@ module.exports = {
     '!src/components/**',
     // Hooks require device APIs (notifications, location, color scheme).
     '!src/hooks/**',
+    // Platform-specific map wrappers need a real device.
     '!src/components/PlatformMap*.tsx',
     '!src/navigation/**',
     '!src/theme/**',
