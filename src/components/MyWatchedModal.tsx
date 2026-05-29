@@ -30,8 +30,6 @@ import {
   CATEGORY_LABELS,
   fetchFlagsByIds,
   severityColor,
-  STATUS_COLORS,
-  STATUS_LABELS,
 } from '@/lib/flags';
 import { clearWatched, loadWatched, removeWatched } from '@/lib/watchedFlags';
 import { font, radius, spacing } from '@/theme';
@@ -39,6 +37,7 @@ import { decorativeProps } from '@/lib/accessibility';
 import { severityA11y, statusA11y } from '@/lib/a11yText';
 import type { FlagRow } from '@/types/database';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
+import { StatusBadge } from './StatusBadge';
 
 interface Props {
   visible: boolean;
@@ -160,7 +159,6 @@ export default function MyWatchedModal({
   const missingCount = watchedIds.length - flags.length;
 
   const renderItem = ({ item }: { item: FlagRow }) => {
-    const statusPalette = STATUS_COLORS[item.status];
     const date = new Date(item.created_at).toLocaleDateString(undefined, {
       month: 'short',
       day: 'numeric',
@@ -211,15 +209,11 @@ export default function MyWatchedModal({
 
           {/* Right: status badge + unwatch */}
           <View style={styles.rowRight}>
-            <View
-              style={[styles.statusBadge, { backgroundColor: statusPalette.bg }]}
-              accessible
+            <StatusBadge
+              status={item.status}
               accessibilityLabel={statusA11y(item.status)}
-            >
-              <Text style={[styles.statusText, { color: statusPalette.fg }]}>
-                {STATUS_LABELS[item.status]}
-              </Text>
-            </View>
+              size="sm"
+            />
             {onViewOnMap && (
               <Pressable
                 onPress={() => onViewOnMap(item)}
@@ -476,12 +470,6 @@ const makeStyles = (color: ColorTheme) =>
       gap: spacing.sm,
       flexShrink: 0,
     },
-    statusBadge: {
-      paddingHorizontal: spacing.sm,
-      paddingVertical: spacing.tight,
-      borderRadius: radius.circle,
-    },
-    statusText: { fontSize: font.size.caption, fontWeight: font.weight.bold },
     unwatchBtn: {
       padding: spacing.tight,
       alignItems: 'center',
