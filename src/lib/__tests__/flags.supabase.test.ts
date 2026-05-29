@@ -132,7 +132,13 @@ function setupChain(result: { data: unknown; error: unknown }) {
 }
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  // resetAllMocks() clears both usage data (calls/results) AND the
+  // mockResolvedValueOnce / mockReturnValue queues.  This matters here
+  // because setupChain() always queues mockSingle AND mockMaybeSingle even
+  // when only one terminal is needed for a given code path; without a full
+  // reset those stale queue entries bleed into subsequent tests.
+  // clearAllMocks() only clears usage data and leaves queues intact.
+  jest.resetAllMocks();
 });
 
 // ---------------------------------------------------------------------------
