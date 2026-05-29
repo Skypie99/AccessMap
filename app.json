@@ -2,7 +2,7 @@
   "expo": {
     "name": "AccessMap",
     "slug": "accessmap",
-    "version": "1.0.0",
+    "version": "0.2.0",
     "orientation": "portrait",
     "scheme": "accessmap",
     "userInterfaceStyle": "automatic",
@@ -10,6 +10,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.accessmap.app",
+      "buildNumber": "2",
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "AccessMap uses your location to show nearby accessibility flags and to attach your location when you report a new flag."
       }
@@ -19,6 +20,7 @@
         "backgroundColor": "#ffffff"
       },
       "package": "com.accessmap.app",
+      "versionCode": 2,
       "permissions": [
         "ACCESS_COARSE_LOCATION",
         "ACCESS_FINE_LOCATION"
