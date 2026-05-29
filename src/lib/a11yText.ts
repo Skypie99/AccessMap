@@ -1,7 +1,4 @@
-import {
-  SEVERITY_LABELS,
-  STATUS_LABELS,
-} from '@/lib/flags';
+import { SEVERITY_LABELS, STATUS_LABELS } from '@/lib/flags';
 import type { FlagSeverity, FlagStatus } from '@/types/database';
 
 // Centralised accessibility-text helpers. Every screen used to compose its own

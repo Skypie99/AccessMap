@@ -45,8 +45,7 @@ jest.mock('@react-native-async-storage/async-storage', () => {
   };
 });
 
-const mockStorage =
-  jest.requireMock('@react-native-async-storage/async-storage').default;
+const mockStorage = jest.requireMock('@react-native-async-storage/async-storage').default;
 
 // ---------------------------------------------------------------------------
 // Helpers

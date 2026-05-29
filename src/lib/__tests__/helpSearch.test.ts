@@ -90,11 +90,7 @@ describe('filterFaqs', () => {
     // acute accent). Without .normalize('NFC') on BOTH sides, a query of
     // "café" (precomposed U+00E9) would compare code-unit-by-code-unit and
     // never match.
-    const nfd = faq(
-      'Coffee questions',
-      'Is there a café nearby that is accessible?',
-      'nfd',
-    );
+    const nfd = faq('Coffee questions', 'Is there a café nearby that is accessible?', 'nfd');
     const list = [...items, nfd];
 
     // Query is precomposed NFC (what most keyboards produce).
@@ -104,11 +100,7 @@ describe('filterFaqs', () => {
 
   it('normalizes Unicode NFC in the reverse direction too', () => {
     // Haystack is precomposed; query is decomposed. Should still match.
-    const nfc = faq(
-      'Coffee questions',
-      'Is there a café nearby that is accessible?',
-      'nfc',
-    );
+    const nfc = faq('Coffee questions', 'Is there a café nearby that is accessible?', 'nfc');
     const list = [...items, nfc];
 
     // Decomposed query: 'cafe' + U+0301.
@@ -119,12 +111,7 @@ describe('filterFaqs', () => {
   it('preserves input order in the result', () => {
     // 'a' appears in every entry — result should keep input order.
     const result = filterFaqs(items, 'a');
-    expect(result.map((i: any) => i.id)).toEqual([
-      'report',
-      'points',
-      'privacy',
-      'a11y',
-    ]);
+    expect(result.map((i: any) => i.id)).toEqual(['report', 'points', 'privacy', 'a11y']);
   });
 
   it('handles an empty input list', () => {

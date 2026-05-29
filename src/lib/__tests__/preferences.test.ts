@@ -44,11 +44,7 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
   },
 }));
 
-import {
-  DEFAULT_TABS,
-  getDefaultTab,
-  setDefaultTab,
-} from '../preferences';
+import { DEFAULT_TABS, getDefaultTab, setDefaultTab } from '../preferences';
 
 beforeEach(() => {
   for (const k of Object.keys(mockStorage)) delete mockStorage[k];

@@ -1,16 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {
-  CATEGORY_ORDER,
-  DEFAULT_STATUSES,
-  SEVERITY_ORDER,
-  STATUS_ORDER,
-} from './flags';
+import { CATEGORY_ORDER, DEFAULT_STATUSES, SEVERITY_ORDER, STATUS_ORDER } from './flags';
 import { errorMessage } from './errors';
-import type {
-  FlagCategory,
-  FlagSeverity,
-  FlagStatus,
-} from '@/types/database';
+import type { FlagCategory, FlagSeverity, FlagStatus } from '@/types/database';
 
 /**
  * Map filter persistence — on-device only.
@@ -64,13 +55,7 @@ export interface MapFilters {
  * row — there's no programmatic mapping so the label and value stay in
  * lockstep visually.
  */
-export const DISTANCE_OPTIONS: ReadonlyArray<number | null> = [
-  null,
-  0.5,
-  1,
-  5,
-  25,
-];
+export const DISTANCE_OPTIONS: ReadonlyArray<number | null> = [null, 0.5, 1, 5, 25];
 
 // Canonical default shape — what MapScreen would show with nothing stored.
 // Kept here rather than in MapScreen so we have one source of truth for
@@ -99,9 +84,7 @@ function isFlagStatus(v: unknown): v is FlagStatus {
 }
 
 function isFlagSeverity(v: unknown): v is FlagSeverity {
-  return (
-    typeof v === 'number' && SEVERITY_SET.has(v as FlagSeverity)
-  );
+  return typeof v === 'number' && SEVERITY_SET.has(v as FlagSeverity);
 }
 
 /**
@@ -169,10 +152,7 @@ export async function loadMapFilters(): Promise<MapFilters | null> {
     return parseMapFilters(raw);
   } catch (e) {
     // Best-effort log; ignore the error so the UI proceeds with defaults.
-    console.warn(
-      '[mapFilters] loadMapFilters failed:',
-      errorMessage(e, 'AsyncStorage error.'),
-    );
+    console.warn('[mapFilters] loadMapFilters failed:', errorMessage(e, 'AsyncStorage error.'));
     return null;
   }
 }
@@ -187,9 +167,6 @@ export async function saveMapFilters(filters: MapFilters): Promise<void> {
   try {
     await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(filters));
   } catch (e) {
-    console.warn(
-      '[mapFilters] saveMapFilters failed:',
-      errorMessage(e, 'AsyncStorage error.'),
-    );
+    console.warn('[mapFilters] saveMapFilters failed:', errorMessage(e, 'AsyncStorage error.'));
   }
 }

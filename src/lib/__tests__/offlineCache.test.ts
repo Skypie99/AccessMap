@@ -17,6 +17,8 @@ import {
 import { INITIAL_PAGE_SIZE } from '../flags';
 import type { FlagRow } from '@/types/database';
 
+jest.mock('../supabase', () => ({ supabase: {} }));
+
 // ---------------------------------------------------------------------------
 // AsyncStorage mock — in-memory store with reset and raw-set helpers.
 // Matches the pattern used by notificationPrefs.test.ts.
@@ -40,8 +42,7 @@ jest.mock('@react-native-async-storage/async-storage', () => {
   };
 });
 
-const mockStorage =
-  jest.requireMock('@react-native-async-storage/async-storage').default;
+const mockStorage = jest.requireMock('@react-native-async-storage/async-storage').default;
 
 // ---------------------------------------------------------------------------
 // Minimal FlagRow factory — only the fields that readFlagsCache cares about.
@@ -156,9 +157,7 @@ describe('TTL rejection (Jordan Condition 3)', () => {
   });
 
   it('returns null when the entry is older than MAX_CACHE_AGE_MS', async () => {
-    const staleTimestamp = new Date(
-      Date.now() - MAX_CACHE_AGE_MS - 1000,
-    ).toISOString();
+    const staleTimestamp = new Date(Date.now() - MAX_CACHE_AGE_MS - 1000).toISOString();
     const entry = {
       cachedAt: staleTimestamp,
       rows: [makeFlagRow({ id: 'stale' })],
@@ -169,9 +168,7 @@ describe('TTL rejection (Jordan Condition 3)', () => {
 
   it('returns rows when cachedAt is exactly at the TTL boundary (inclusive edge)', async () => {
     // cachedAt = now - MAX_CACHE_AGE_MS + 1 → still within TTL
-    const justFreshTimestamp = new Date(
-      Date.now() - MAX_CACHE_AGE_MS + 1,
-    ).toISOString();
+    const justFreshTimestamp = new Date(Date.now() - MAX_CACHE_AGE_MS + 1).toISOString();
     const entry = {
       cachedAt: justFreshTimestamp,
       rows: [makeFlagRow({ id: 'edge' })],
@@ -201,10 +198,7 @@ describe('defensive read behavior', () => {
   });
 
   it('returns null when entry has wrong shape (missing cachedAt)', async () => {
-    mockStorage.__setRaw(
-      offlineCacheKey('user-shape2'),
-      JSON.stringify({ rows: [] }),
-    );
+    mockStorage.__setRaw(offlineCacheKey('user-shape2'), JSON.stringify({ rows: [] }));
     expect(await __readFlagsCache('user-shape2')).toBeNull();
   });
 
@@ -221,8 +215,6 @@ describe('write failure handling', () => {
   it('does not throw when AsyncStorage.setItem rejects', async () => {
     mockStorage.setItem.mockRejectedValueOnce(new Error('disk full'));
     // Should not throw — write failure is logged + ignored.
-    await expect(
-      __writeFlagsCache('user-fail', [makeFlagRow()]),
-    ).resolves.toBeUndefined();
+    await expect(__writeFlagsCache('user-fail', [makeFlagRow()])).resolves.toBeUndefined();
   });
 });

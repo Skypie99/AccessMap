@@ -1,7 +1,6 @@
-import {
-  formatHistoryEntry,
-  type StatusHistoryEntry,
-} from '../statusHistory';
+import { formatHistoryEntry, type StatusHistoryEntry } from '../statusHistory';
+
+jest.mock('../supabase', () => ({ supabase: {} }));
 
 type StatusHistoryEntryKey = keyof StatusHistoryEntry;
 
@@ -63,9 +62,9 @@ describe('formatHistoryEntry', () => {
     STATUSES.forEach((from) => {
       STATUSES.forEach((to) => {
         it(`renders "${labelCap(from)} → ${labelCap(to)} · 2h ago" for ${from} → ${to}`, () => {
-          expect(
-            formatHistoryEntry(entry(from, to), labelCap, fixedTime),
-          ).toBe(`${labelCap(from)} → ${labelCap(to)} · 2h ago`);
+          expect(formatHistoryEntry(entry(from, to), labelCap, fixedTime)).toBe(
+            `${labelCap(from)} → ${labelCap(to)} · 2h ago`,
+          );
         });
       });
     });
@@ -98,9 +97,9 @@ describe('formatHistoryEntry', () => {
       // A future status the client doesn't know about: the resolver passes
       // it through, and the formatter renders it verbatim. No crash.
       const passthrough = (s: string) => s;
-      expect(
-        formatHistoryEntry(entry('open', 'archived'), passthrough, fixedTime),
-      ).toBe('open → archived · 2h ago');
+      expect(formatHistoryEntry(entry('open', 'archived'), passthrough, fixedTime)).toBe(
+        'open → archived · 2h ago',
+      );
     });
   });
 
@@ -108,12 +107,12 @@ describe('formatHistoryEntry', () => {
     it('uses whatever string the time callback returns', () => {
       const recent = () => 'just now';
       const oldish = () => 'May 1, 2026';
-      expect(
-        formatHistoryEntry(entry('open', 'verified'), labelCap, recent),
-      ).toBe('Open → Verified · just now');
-      expect(
-        formatHistoryEntry(entry('open', 'verified'), labelCap, oldish),
-      ).toBe('Open → Verified · May 1, 2026');
+      expect(formatHistoryEntry(entry('open', 'verified'), labelCap, recent)).toBe(
+        'Open → Verified · just now',
+      );
+      expect(formatHistoryEntry(entry('open', 'verified'), labelCap, oldish)).toBe(
+        'Open → Verified · May 1, 2026',
+      );
     });
 
     it('is deterministic given a deterministic callback', () => {
@@ -143,9 +142,7 @@ describe('StatusHistoryEntry privacy shape', () => {
   it('exposes exactly the five public columns and no more', () => {
     const sample = entry('open', 'verified');
     const keys = Object.keys(sample).sort();
-    expect(keys).toEqual(
-      ['created_at', 'flag_id', 'from_status', 'id', 'to_status'].sort(),
-    );
+    expect(keys).toEqual(['created_at', 'flag_id', 'from_status', 'id', 'to_status'].sort());
   });
 
   it('rejects user_id at the type level (compile-time guard)', () => {

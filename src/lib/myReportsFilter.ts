@@ -51,9 +51,7 @@ export function filterMyReports(
   if (tokens.length === 0) return flags;
   return flags.filter((f) => {
     const haystack = normalize(
-      `${f.description ?? ''} ` +
-        `${categoryLabel(f.category) ?? ''} ` +
-        `${f.status}`,
+      `${f.description ?? ''} ` + `${categoryLabel(f.category) ?? ''} ` + `${f.status}`,
     );
     return tokens.every((tok) => haystack.includes(tok));
   });

@@ -1,10 +1,9 @@
 import { searchFlags, tokenizeQuery } from '../flagSearch';
 import type { FlagRow, FlagCategory, FlagStatus } from '@/types/database';
 
-function makeFlag(
-  id: string,
-  partial: Partial<FlagRow> = {},
-): FlagRow {
+jest.mock('../supabase', () => ({ supabase: {} }));
+
+function makeFlag(id: string, partial: Partial<FlagRow> = {}): FlagRow {
   return {
     id,
     user_id: 'u1',
@@ -32,19 +31,11 @@ describe('tokenizeQuery', () => {
   });
 
   it('splits on whitespace', () => {
-    expect(tokenizeQuery('broken sidewalk near')).toEqual([
-      'broken',
-      'sidewalk',
-      'near',
-    ]);
+    expect(tokenizeQuery('broken sidewalk near')).toEqual(['broken', 'sidewalk', 'near']);
   });
 
   it('collapses multiple spaces', () => {
-    expect(tokenizeQuery('broken   sidewalk\t\tnear')).toEqual([
-      'broken',
-      'sidewalk',
-      'near',
-    ]);
+    expect(tokenizeQuery('broken   sidewalk\t\tnear')).toEqual(['broken', 'sidewalk', 'near']);
   });
 });
 
@@ -138,9 +129,7 @@ describe('searchFlags', () => {
   it('preserves input order in results', () => {
     const all = searchFlags(flags, 'a'); // letter 'a' appears in multiple
     // Order should match input order.
-    expect(all.map((f) => f.id)).toEqual(
-      flags.filter((f) => all.includes(f)).map((f) => f.id),
-    );
+    expect(all.map((f) => f.id)).toEqual(flags.filter((f) => all.includes(f)).map((f) => f.id));
   });
 
   it('matches across Unicode NFC vs NFD normalizations', () => {

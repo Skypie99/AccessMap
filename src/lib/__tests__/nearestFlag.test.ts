@@ -1,12 +1,7 @@
 import { findNearestUnresolved, UNRESOLVED_STATUSES } from '../nearestFlag';
 import type { FlagRow, FlagStatus } from '@/types/database';
 
-function makeFlag(
-  id: string,
-  lat: number,
-  lng: number,
-  status: FlagStatus = 'open',
-): FlagRow {
+function makeFlag(id: string, lat: number, lng: number, status: FlagStatus = 'open'): FlagRow {
   return {
     id,
     user_id: 'u1',

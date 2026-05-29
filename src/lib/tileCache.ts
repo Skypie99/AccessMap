@@ -22,8 +22,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 // ---------------------------------------------------------------------------
 export const TILE_CACHE_VERSION = 'v1';
 export const MAX_CACHE_SIZE_BYTES = 50 * 1024 * 1024; // 50 MB  (Jordan C4)
-export const EVICT_TARGET_BYTES  = 40 * 1024 * 1024; // evict down to 40 MB
-export const TILE_TTL_MS         = 7 * 24 * 60 * 60 * 1000; // 7 days (Jordan C5)
+export const EVICT_TARGET_BYTES = 40 * 1024 * 1024; // evict down to 40 MB
+export const TILE_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days (Jordan C5)
 
 // ---------------------------------------------------------------------------
 // Key helpers
@@ -43,8 +43,8 @@ export const tileDataKey = (userId: string, tileUrl: string): string =>
 
 export interface TileMeta {
   url: string;
-  cachedAt: number;   // ms since epoch
-  size: number;       // bytes (byte-length of the stored base64 string)
+  cachedAt: number; // ms since epoch
+  size: number; // bytes (byte-length of the stored base64 string)
   lastAccessed: number; // ms since epoch — updated on every cache hit
 }
 
@@ -93,10 +93,7 @@ function totalSize(index: TileCacheIndex): number {
  *
  * Jordan C5: entries older than TILE_TTL_MS are treated as a miss and pruned.
  */
-export async function getCachedTile(
-  userId: string,
-  tileUrl: string,
-): Promise<string | null> {
+export async function getCachedTile(userId: string, tileUrl: string): Promise<string | null> {
   const index = await readIndex(userId);
   const meta = index[tileUrl];
   if (!meta) return null;
@@ -108,7 +105,9 @@ export async function getCachedTile(
     // Prune the expired entry silently
     try {
       await AsyncStorage.removeItem(tileDataKey(userId, tileUrl));
-    } catch { /* silent */ }
+    } catch {
+      /* silent */
+    }
     delete index[tileUrl];
     await writeIndex(userId, index);
     return null;
@@ -140,11 +139,7 @@ export async function getCachedTile(
  * Jordan C3: callers should only invoke this after fetching a tile on-demand.
  * Jordan C4: evicts LRU entries when over the size bound.
  */
-export async function setCachedTile(
-  userId: string,
-  tileUrl: string,
-  data: string,
-): Promise<void> {
+export async function setCachedTile(userId: string, tileUrl: string, data: string): Promise<void> {
   const size = data.length; // byte approximation (1 char ≈ 1 byte for base64)
   const now = Date.now();
 
@@ -202,9 +197,7 @@ export async function evictLRU(userId: string): Promise<void> {
   if (current <= EVICT_TARGET_BYTES) return;
 
   // Sort entries oldest-accessed first
-  const sorted = Object.values(index).sort(
-    (a, b) => a.lastAccessed - b.lastAccessed,
-  );
+  const sorted = Object.values(index).sort((a, b) => a.lastAccessed - b.lastAccessed);
 
   const keysToRemove: string[] = [];
   for (const meta of sorted) {

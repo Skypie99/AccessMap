@@ -27,8 +27,7 @@ jest.mock('@react-native-async-storage/async-storage', () => {
   };
 });
 
-const mockStorage =
-  jest.requireMock('@react-native-async-storage/async-storage').default;
+const mockStorage = jest.requireMock('@react-native-async-storage/async-storage').default;
 
 const USER = 'u1';
 const SEATTLE = { lat: 47.6062, lng: -122.3321 };
@@ -46,9 +45,7 @@ describe('savedPlaces', () => {
     });
 
     it('collapses internal whitespace', () => {
-      expect(normalizePlaceName('My   Favorite\t\tCafe')).toBe(
-        'My Favorite Cafe',
-      );
+      expect(normalizePlaceName('My   Favorite\t\tCafe')).toBe('My Favorite Cafe');
     });
 
     it('returns null for empty / whitespace-only input', () => {
@@ -83,10 +80,7 @@ describe('savedPlaces', () => {
     });
 
     it('returns [] when the stored value is not an array', async () => {
-      mockStorage.__setRaw(
-        '@accessmap/saved_places_v1:u1',
-        '{"id":"a","name":"X"}',
-      );
+      mockStorage.__setRaw('@accessmap/saved_places_v1:u1', '{"id":"a","name":"X"}');
       expect(await loadPlaces(USER)).toEqual([]);
     });
 
@@ -110,9 +104,9 @@ describe('savedPlaces', () => {
 
   describe('addPlace', () => {
     it('rejects empty names with invalid_name', async () => {
-      await expect(
-        addPlace(USER, { name: '   ', ...SEATTLE }),
-      ).rejects.toBeInstanceOf(SavedPlacesError);
+      await expect(addPlace(USER, { name: '   ', ...SEATTLE })).rejects.toBeInstanceOf(
+        SavedPlacesError,
+      );
       try {
         await addPlace(USER, { name: '', ...SEATTLE });
       } catch (e) {
@@ -121,9 +115,9 @@ describe('savedPlaces', () => {
     });
 
     it('rejects out-of-range coords with invalid_coords', async () => {
-      await expect(
-        addPlace(USER, { name: 'Bad', lat: 999, lng: -122 }),
-      ).rejects.toBeInstanceOf(SavedPlacesError);
+      await expect(addPlace(USER, { name: 'Bad', lat: 999, lng: -122 })).rejects.toBeInstanceOf(
+        SavedPlacesError,
+      );
       try {
         await addPlace(USER, { name: 'Bad', lat: 47, lng: -999 });
       } catch (e) {
@@ -132,16 +126,16 @@ describe('savedPlaces', () => {
     });
 
     it('rejects NaN coords', async () => {
-      await expect(
-        addPlace(USER, { name: 'NaN', lat: NaN, lng: -122 }),
-      ).rejects.toBeInstanceOf(SavedPlacesError);
+      await expect(addPlace(USER, { name: 'NaN', lat: NaN, lng: -122 })).rejects.toBeInstanceOf(
+        SavedPlacesError,
+      );
     });
 
     it('rejects case-insensitive duplicate names', async () => {
       await addPlace(USER, { name: 'Home', ...SEATTLE });
-      await expect(
-        addPlace(USER, { name: 'home', ...BELLEVUE }),
-      ).rejects.toBeInstanceOf(SavedPlacesError);
+      await expect(addPlace(USER, { name: 'home', ...BELLEVUE })).rejects.toBeInstanceOf(
+        SavedPlacesError,
+      );
       try {
         await addPlace(USER, { name: 'HOME', ...BELLEVUE });
       } catch (e) {
@@ -169,13 +163,10 @@ describe('savedPlaces', () => {
           created_at: new Date().toISOString(),
         });
       }
-      mockStorage.__setRaw(
-        '@accessmap/saved_places_v1:u1',
-        JSON.stringify(seeded),
+      mockStorage.__setRaw('@accessmap/saved_places_v1:u1', JSON.stringify(seeded));
+      await expect(addPlace(USER, { name: 'One too many', ...SEATTLE })).rejects.toBeInstanceOf(
+        SavedPlacesError,
       );
-      await expect(
-        addPlace(USER, { name: 'One too many', ...SEATTLE }),
-      ).rejects.toBeInstanceOf(SavedPlacesError);
       try {
         await addPlace(USER, { name: 'One too many', ...SEATTLE });
       } catch (e) {
@@ -220,12 +211,10 @@ describe('savedPlaces', () => {
     it('rejects renaming to an existing other place name (case-insensitive)', async () => {
       await addPlace(USER, { name: 'Home', ...SEATTLE });
       const b = await addPlace(USER, { name: 'Work', ...BELLEVUE });
-      await expect(renamePlace(USER, b.id, 'HOME')).rejects.toBeInstanceOf(
-        SavedPlacesError,
-      );
+      await expect(renamePlace(USER, b.id, 'HOME')).rejects.toBeInstanceOf(SavedPlacesError);
     });
 
-    it("allows renaming a place to a casing of its own current name", async () => {
+    it('allows renaming a place to a casing of its own current name', async () => {
       const a = await addPlace(USER, { name: 'home', ...SEATTLE });
       const updated = await renamePlace(USER, a.id, 'Home');
       expect(updated?.name).toBe('Home');
@@ -256,10 +245,7 @@ describe('savedPlaces', () => {
           created_at: new Date().toISOString(),
         });
       }
-      mockStorage.__setRaw(
-        '@accessmap/saved_places_v1:u1',
-        JSON.stringify(oversized),
-      );
+      mockStorage.__setRaw('@accessmap/saved_places_v1:u1', JSON.stringify(oversized));
       const loaded = await loadPlaces(USER);
       expect(loaded.length).toBe(MAX_PLACES);
     });
@@ -271,9 +257,7 @@ describe('savedPlaces', () => {
       mockStorage.setItem = jest.fn(async () => {
         throw new Error('disk full');
       });
-      await expect(
-        addPlace(USER, { name: 'Will fail', ...SEATTLE }),
-      ).rejects.toThrow('disk full');
+      await expect(addPlace(USER, { name: 'Will fail', ...SEATTLE })).rejects.toThrow('disk full');
       mockStorage.setItem = original;
       // Storage is empty — the failed write didn't half-commit.
       expect(await loadPlaces(USER)).toEqual([]);
@@ -292,18 +276,13 @@ describe('savedPlaces', () => {
       ]);
       const loaded = await loadPlaces(USER);
       expect(loaded.length).toBe(5);
-      expect(loaded.map((p) => p.name).sort()).toEqual(
-        ['P1', 'P2', 'P3', 'P4', 'P5'].sort(),
-      );
+      expect(loaded.map((p) => p.name).sort()).toEqual(['P1', 'P2', 'P3', 'P4', 'P5'].sort());
     });
 
     it('serializes a concurrent add + remove without resurrecting the deleted place', async () => {
       const a = await addPlace(USER, { name: 'A', ...SEATTLE });
       // Now fire remove + add in parallel — the lock should serialize.
-      await Promise.all([
-        removePlace(USER, a.id),
-        addPlace(USER, { name: 'B', ...BELLEVUE }),
-      ]);
+      await Promise.all([removePlace(USER, a.id), addPlace(USER, { name: 'B', ...BELLEVUE })]);
       const loaded = await loadPlaces(USER);
       expect(loaded.length).toBe(1);
       expect(loaded[0]!.name).toBe('B');
@@ -316,9 +295,7 @@ describe('savedPlaces', () => {
       await Promise.resolve();
       // Spy not necessary — just verify the next add works cleanly
       // (no stale rejected promise blocking the chain).
-      await expect(
-        addPlace(USER, { name: 'B', ...BELLEVUE }),
-      ).resolves.toBeDefined();
+      await expect(addPlace(USER, { name: 'B', ...BELLEVUE })).resolves.toBeDefined();
     });
   });
 });

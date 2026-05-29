@@ -12,6 +12,29 @@ they land on `main`.
 
 ## Parked on branches — awaiting Sky merge
 
+### Parked (2026-05-25 — morning continuation)
+
+- **`feat/leaflet-tile-interception-2026-05-25`** (`170f11e`) — Web map tiles now
+  flow through `tileCache.ts` via a `CachedTileLayer` class that overrides
+  `createTile()`. Cache hit → instant; miss → fetch + store. Auto-clears on
+  sign-out.
+
+- **`feat/edit-profile-2026-05-25`** (`5e92a6e` feature, `c41e5ca` token sweep) —
+  Circular avatar on Profile hero: photo if `avatar_url` is set, else coloured
+  circle with up to 2 initials. Tapping opens the library picker (square crop).
+  Token sweep adds `radius.circle` + `color.overlayBtnPressed`. **⚠ commit
+  `8f24ba4` from a concurrent agent is noisy — cherry-pick `c41e5ca` + `5e92a6e`
+  only.**
+
+- **`feat/context-tags-display-2026-05-25`** (`e1e2638`) — Context tags that were
+  already settable in the report form now appear as a "Conditions" chip row in
+  `FlagDetailModal`. Requires `supabase/migrations/2026-05-24_flag_context_tags.sql`
+  to be applied; degrades gracefully without it.
+
+- **`feat/tasks-search-2026-05-25`** (`d6b6fa7`) — `SearchInputRow` above the
+  Mine/All chips in TasksScreen; real-time filter on category label + description,
+  case-insensitive. Pure local filter, no extra queries.
+
 ### Parked (2026-05-25)
 
 - **`fix/dani-statushistory-darkmode-2026-05-25`** — StatusHistoryModal
@@ -32,9 +55,14 @@ they land on `main`.
 
 ## Later (sequence after the above)
 
-- **Leaflet tile interception.** Wire `tileCache.ts` into `PlatformMap.web.tsx`
-  using `L.TileLayer.extend` + canvas→base64 so web tiles survive offline.
-  Pseudo-code in `qa-reports/2026-05-25-shamus-offline-tiles.md`.
+- **Flag clustering on the web map.** `PlatformMap.web.tsx` doesn't cluster
+  markers; `supercluster` is already a dep and could be wired into the Leaflet
+  render path the same way it's wired into the native map.
+
+- **Search/filter for the Watched Flags list.** `MyWatchedModal` shows all
+  watched flags in a flat list with no search or filter. A `SearchInputRow` +
+  status/severity filter chips (matching the Tasks pattern) would make it
+  scannable, especially for a11y users.
 
 - **Neighbourhood heat-map layer.** Overlay a colour-density grid on the map
   based on flag density so users can spot high-risk corridors at a glance.

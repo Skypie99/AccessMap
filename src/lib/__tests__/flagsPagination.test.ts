@@ -177,14 +177,8 @@ describe('listFlagsPage — cursor forwarding', () => {
 describe('listFlagsPage — de-duplication (realtime race)', () => {
   it('merged list does not double a row that appears on both pages', () => {
     const sharedRow = makeRow('shared-id', '2026-05-25T11:00:00Z');
-    const page1 = [
-      makeRow('f1', '2026-05-25T12:00:00Z'),
-      sharedRow,
-    ];
-    const page2 = [
-      sharedRow,
-      makeRow('f2', '2026-05-25T10:00:00Z'),
-    ];
+    const page1 = [makeRow('f1', '2026-05-25T12:00:00Z'), sharedRow];
+    const page2 = [sharedRow, makeRow('f2', '2026-05-25T10:00:00Z')];
 
     const prev = page1;
     const seen = new Set(prev.map((f) => f.id));
@@ -212,8 +206,6 @@ describe('listFlagsPage — error propagation', () => {
   it('propagates a network-level rejection', async () => {
     mockQueryExec.mockRejectedValueOnce(new Error('Network error'));
 
-    await expect(listFlagsPage(['open'], { limit: 5 })).rejects.toThrow(
-      'Network error',
-    );
+    await expect(listFlagsPage(['open'], { limit: 5 })).rejects.toThrow('Network error');
   });
 });

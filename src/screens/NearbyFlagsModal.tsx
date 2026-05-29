@@ -21,7 +21,8 @@ import {
 import { searchFlags } from '@/lib/flagSearch';
 import type { FlagCategory, FlagRow } from '@/types/database';
 import SearchInputRow from '@/components/SearchInputRow';
-import { radius } from '@/theme';
+import { font, radius, shadow, spacing } from '@/theme';
+import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 
 interface Props {
   visible: boolean;
@@ -38,6 +39,8 @@ export default function NearbyFlagsModal({
   onClose,
   onSelectFlag,
 }: Props) {
+  const color = useColor();
+  const styles = makeStyles(color);
   // null = show all categories; set to a FlagCategory to narrow the list.
   const [filterCat, setFilterCat] = useState<FlagCategory | null>(null);
   // Free-text search across description / category label / status label.
@@ -282,103 +285,152 @@ export default function NearbyFlagsModal({
   );
 }
 
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: '#f7f8fa' },
+const makeStyles = (color: ColorTheme) => StyleSheet.create({
+  screen: { flex: 1, backgroundColor: color.surfaceMuted },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: '#fff',
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    backgroundColor: color.surface,
     borderBottomWidth: 1,
-    borderBottomColor: '#eef1f5',
+    borderBottomColor: color.borderSubtle,
   },
-  title: { flex: 1, fontSize: 18, fontWeight: '700', color: '#222' },
+  title: {
+    flex: 1,
+    fontSize: font.size.xl,
+    fontWeight: font.weight.bold,
+    color: color.textStrong,
+    letterSpacing: -0.2,
+  },
   closeBtn: {
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 8,
-    backgroundColor: '#eef1f5',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.md,
+    backgroundColor: color.surfaceNeutral,
     minHeight: 44,
     minWidth: 44,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  closeText: { color: '#333', fontWeight: '700', fontSize: 14 },
-  notice: {
-    backgroundColor: '#fff7e6',
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0e4cf',
+  closeText: {
+    color: color.text,
+    fontWeight: font.weight.semibold,
+    fontSize: font.size.base,
   },
-  noticeText: { fontSize: 13, color: '#714b00' },
-  list: { padding: 16, paddingBottom: 32 },
+  notice: {
+    backgroundColor: color.warningBg,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: color.borderSubtle,
+  },
+  noticeText: {
+    fontSize: font.size.sm,
+    color: color.warningFg,
+    lineHeight: 18,
+  },
+  list: { padding: spacing.lg, paddingBottom: spacing.xxxl },
   emptyWrap: { flexGrow: 1 },
   emptyInner: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 32,
-    gap: 8,
+    padding: spacing.xxxl,
+    gap: spacing.sm,
   },
-  emptyTitle: { fontSize: 18, fontWeight: '700', color: '#222' },
-  emptySub: { fontSize: 13, color: '#666', textAlign: 'center' },
+  emptyTitle: {
+    fontSize: font.size.xl,
+    fontWeight: font.weight.bold,
+    color: color.textStrong,
+  },
+  emptySub: {
+    fontSize: font.size.sm,
+    color: color.textMuted,
+    textAlign: 'center',
+    lineHeight: 19,
+    maxWidth: 320,
+  },
   card: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 14,
-    gap: 8,
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 1 },
-    elevation: 1,
+    backgroundColor: color.surface,
+    borderRadius: radius.lg,
+    padding: spacing.lg,
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+    ...shadow.e1,
     minHeight: 44,
   },
-  cardPressed: { opacity: 0.85, transform: [{ scale: 0.99 }] },
-  cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  cardPressed: {
+    opacity: 0.9,
+    transform: [{ scale: 0.99 }],
+    backgroundColor: color.surfaceSoft,
+  },
+  cardHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   sevDot: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 32,
+    height: 32,
+    borderRadius: radius.circle,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  sevDotText: { color: '#fff', fontWeight: '700', fontSize: 13 },
-  cardTitle: { fontSize: 16, fontWeight: '600', color: '#222', flex: 1 },
-  distance: { fontSize: 13, color: '#2f80ed', fontWeight: '700' },
-  cardBody: { flexDirection: 'row', gap: 12 },
+  sevDotText: {
+    color: color.textOnBrand,
+    fontWeight: font.weight.bold,
+    fontSize: font.size.sm,
+  },
+  cardTitle: {
+    fontSize: font.size.lg,
+    fontWeight: font.weight.semibold,
+    color: color.textStrong,
+    flex: 1,
+    letterSpacing: -0.1,
+  },
+  distance: {
+    fontSize: font.size.sm,
+    color: color.brandText,
+    fontWeight: font.weight.bold,
+  },
+  cardBody: { flexDirection: 'row', gap: spacing.md },
   thumb: {
     width: 64,
     height: 64,
-    borderRadius: 8,
-    backgroundColor: '#eef1f5',
+    borderRadius: radius.md,
+    backgroundColor: color.surfaceNeutral,
   },
-  cardBodyText: { flex: 1, gap: 4, justifyContent: 'center' },
-  cardDesc: { fontSize: 14, color: '#222' },
-  cardMeta: { fontSize: 12, color: '#666' },
-  // (Search row extracted to SearchInputRow component.)
+  cardBodyText: { flex: 1, gap: spacing.tight, justifyContent: 'center' },
+  cardDesc: {
+    fontSize: font.size.base,
+    color: color.text,
+    lineHeight: 19,
+  },
+  cardMeta: {
+    fontSize: font.size.xs,
+    color: color.textMuted,
+    lineHeight: 16,
+  },
   chipBar: {
     flexDirection: 'row',
-    gap: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    backgroundColor: '#fff',
+    gap: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md - 2,
+    backgroundColor: color.surface,
     borderBottomWidth: 1,
-    borderBottomColor: '#eef1f5',
+    borderBottomColor: color.borderSubtle,
   },
   chip: {
-    paddingHorizontal: 14,
-    paddingVertical: 7,
+    paddingHorizontal: spacing.md + 2,
+    paddingVertical: spacing.xs + 1,
     borderRadius: radius.circle,
-    backgroundColor: '#eef1f5',
-    minHeight: 34,
+    backgroundColor: color.surfaceNeutral,
+    minHeight: 36,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  chipActive: { backgroundColor: '#2f80ed' },
-  chipText: { fontSize: 13, fontWeight: '600', color: '#555' },
-  chipTextActive: { color: '#fff' },
+  chipActive: { backgroundColor: color.brand },
+  chipText: {
+    fontSize: font.size.sm,
+    fontWeight: font.weight.semibold,
+    color: color.text,
+  },
+  chipTextActive: { color: color.textOnBrand },
 });

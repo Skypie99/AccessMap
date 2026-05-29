@@ -1,8 +1,4 @@
-import {
-  ACHIEVEMENTS_CATALOG,
-  computeAchievements,
-  countEarned,
-} from '../achievements';
+import { ACHIEVEMENTS_CATALOG, computeAchievements, countEarned } from '../achievements';
 
 describe('catalog', () => {
   it('has at least one badge per category', () => {

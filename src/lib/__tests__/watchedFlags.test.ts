@@ -18,12 +18,7 @@
  * which matches the actual AsyncStorage semantics closely enough.
  */
 
-import {
-  addWatched,
-  loadWatched,
-  MAX_WATCHED,
-  removeWatched,
-} from '../watchedFlags';
+import { addWatched, loadWatched, MAX_WATCHED, removeWatched } from '../watchedFlags';
 
 // ────────────────────────────────────────────────────────────────────────────
 // AsyncStorage mock — in-memory store so tests don't touch the device and
@@ -195,7 +190,7 @@ describe('MAX_WATCHED cap', () => {
 // Per-user isolation
 // ────────────────────────────────────────────────────────────────────────────
 describe('per-user isolation', () => {
-  it('two users share a device without seeing each other\'s watched lists', async () => {
+  it("two users share a device without seeing each other's watched lists", async () => {
     await addWatched(USER_A, FLAG_1);
     await addWatched(USER_B, FLAG_2);
 

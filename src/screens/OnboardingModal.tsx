@@ -9,7 +9,7 @@ import {
   useWindowDimensions,
   View,
 } from 'react-native';
-import { font, radius, spacing } from '@/theme';
+import { font, radius, shadow, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { useReducedMotion } from '@/lib/accessibility';
 
@@ -28,20 +28,17 @@ const CARDS: Card[] = [
   {
     emoji: '📍',
     title: 'Welcome to AccessMap',
-    body:
-      "Drop a pin where you find an accessibility issue — a missing ramp, a broken sidewalk, a blocked path — so others can plan around it, or help fix it.",
+    body: 'Drop a pin where you find an accessibility issue — a missing ramp, a broken sidewalk, a blocked path — so others can plan around it, or help fix it.',
   },
   {
     emoji: '🎯',
     title: 'Severity 1 to 5',
-    body:
-      "When you report a flag, pick how bad it is. 1 is a minor inconvenience, 5 is impassable. The map shows both the number and a color so the meaning is clear even without color vision.",
+    body: 'When you report a flag, pick how bad it is. 1 is a minor inconvenience, 5 is impassable. The map shows both the number and a color so the meaning is clear even without color vision.',
   },
   {
     emoji: '⭐',
     title: 'Earn points together',
-    body:
-      "You earn points when your reports get verified or resolved by others — and when you verify or resolve theirs. Help build the map.",
+    body: 'You earn points when your reports get verified or resolved by others — and when you verify or resolve theirs. Help build the map.',
   },
 ];
 
@@ -68,9 +65,7 @@ export default function OnboardingModal({ visible, onDone }: Props) {
     setIndex(clamped);
   };
 
-  const handleScroll = (e: {
-    nativeEvent: { contentOffset: { x: number } };
-  }) => {
+  const handleScroll = (e: { nativeEvent: { contentOffset: { x: number } } }) => {
     const next = Math.round(e.nativeEvent.contentOffset.x / Math.max(1, width));
     if (next !== index) setIndex(next);
   };
@@ -148,10 +143,7 @@ export default function OnboardingModal({ visible, onDone }: Props) {
           {!isLast ? (
             <Pressable
               onPress={() => goTo(index + 1)}
-              style={({ pressed }) => [
-                styles.primaryBtn,
-                pressed && styles.btnPressed,
-              ]}
+              style={({ pressed }) => [styles.primaryBtn, pressed && styles.btnPressed]}
               accessibilityRole="button"
               accessibilityLabel={`Next. Step ${index + 1} of ${CARDS.length}.`}
               accessibilityHint="Moves to the next introduction card"
@@ -161,10 +153,7 @@ export default function OnboardingModal({ visible, onDone }: Props) {
           ) : (
             <Pressable
               onPress={onDone}
-              style={({ pressed }) => [
-                styles.primaryBtn,
-                pressed && styles.btnPressed,
-              ]}
+              style={({ pressed }) => [styles.primaryBtn, pressed && styles.btnPressed]}
               accessibilityRole="button"
               accessibilityLabel="Get started using AccessMap"
               accessibilityHint="Closes the introduction and opens the app"
@@ -264,11 +253,7 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
     alignItems: 'center',
     minHeight: 44,
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.18,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 3,
+    ...shadow.e2,
   },
   btnPressed: { opacity: 0.85 },
   // textOnBrand: #fff on brand = 3.3:1 — passes WCAG 1.4.3 for large bold text

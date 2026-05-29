@@ -170,10 +170,7 @@ describe('sanitizeTagList', () => {
   });
 
   it('keeps valid tags as-is', () => {
-    expect(sanitizeTagList(['high_tide', 'morning_rush'])).toEqual([
-      'high_tide',
-      'morning_rush',
-    ]);
+    expect(sanitizeTagList(['high_tide', 'morning_rush'])).toEqual(['high_tide', 'morning_rush']);
   });
 
   it('strips unknown tag strings', () => {
@@ -205,13 +202,7 @@ describe('sanitizeTagList', () => {
 
   it('preserves the caller-supplied order across a mixed-validity list', () => {
     expect(
-      sanitizeTagList([
-        'evening_rush',
-        'unknown',
-        'morning_rush',
-        null,
-        'after_dark',
-      ]),
+      sanitizeTagList(['evening_rush', 'unknown', 'morning_rush', null, 'after_dark']),
     ).toEqual(['evening_rush', 'morning_rush', 'after_dark']);
   });
 

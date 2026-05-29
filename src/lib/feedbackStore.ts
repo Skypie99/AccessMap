@@ -44,9 +44,7 @@ export type SubmitFeedbackResult =
  * reasons: table not yet created on the server, transient network blip,
  * RLS rejected the insert because of an auth mismatch.
  */
-export async function submitFeedback(
-  input: SubmitInput,
-): Promise<SubmitFeedbackResult> {
+export async function submitFeedback(input: SubmitInput): Promise<SubmitFeedbackResult> {
   try {
     const { data, error } = await supabase
       .from('feedback')
@@ -84,9 +82,7 @@ export async function submitFeedback(
  * signed out — the caller renders an "empty state" card either way, so
  * the distinction doesn't matter for UX.
  */
-export async function listFeedbackByUser(
-  userId: string,
-): Promise<FeedbackRow[]> {
+export async function listFeedbackByUser(userId: string): Promise<FeedbackRow[]> {
   try {
     const { data, error } = await supabase
       .from('feedback')

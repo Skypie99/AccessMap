@@ -13,10 +13,7 @@ import {
 import { useAuth } from '@/lib/auth';
 import { font, radius, shadow, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
-import {
-  FEEDBACK_CATEGORY_GLYPHS,
-  FEEDBACK_CATEGORY_LABELS,
-} from '@/lib/feedback';
+import { FEEDBACK_CATEGORY_GLYPHS, FEEDBACK_CATEGORY_LABELS } from '@/lib/feedback';
 import { listFeedbackByUser } from '@/lib/feedbackStore';
 import {
   FEEDBACK_CATEGORY_FILTERS,
@@ -48,11 +45,7 @@ interface Props {
  *    the "relation does not exist" error and returns []. The user sees
  *    the empty state, not an alarming error.
  */
-export default function MyFeedbackModal({
-  visible,
-  onClose,
-  refreshKey = 0,
-}: Props) {
+export default function MyFeedbackModal({ visible, onClose, refreshKey = 0 }: Props) {
   const color = useColor();
   const styles = makeStyles(color);
   const { user } = useAuth();
@@ -107,20 +100,11 @@ export default function MyFeedbackModal({
   );
 
   return (
-    <Modal
-      visible={visible}
-      animationType="slide"
-      transparent
-      onRequestClose={onClose}
-    >
+    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       {/* accessibilityViewIsModal — VoiceOver treats everything behind
           this view as inert while the modal is up. Same pattern as
           HelpModal; see that file for the longer comment. Alex P5. */}
-      <View
-        style={styles.backdrop}
-        accessibilityViewIsModal
-        testID="myFeedbackModal-backdrop"
-      >
+      <View style={styles.backdrop} accessibilityViewIsModal testID="myFeedbackModal-backdrop">
         <View style={styles.card}>
           <View style={styles.headerRow}>
             <Text style={styles.title} accessibilityRole="header">
@@ -178,12 +162,7 @@ export default function MyFeedbackModal({
                     accessibilityState={{ selected: isActive }}
                     accessibilityLabel={`Filter to ${label}`}
                   >
-                    <Text
-                      style={[
-                        styles.chipText,
-                        isActive && styles.chipTextActive,
-                      ]}
-                    >
+                    <Text style={[styles.chipText, isActive && styles.chipTextActive]}>
                       {activeCount !== null ? `${label} (${activeCount})` : label}
                     </Text>
                   </Pressable>
@@ -196,13 +175,9 @@ export default function MyFeedbackModal({
             data={filteredRows}
             keyExtractor={(r) => r.id}
             accessibilityRole="list"
-            refreshControl={
-              <RefreshControl refreshing={loading} onRefresh={load} />
-            }
+            refreshControl={<RefreshControl refreshing={loading} onRefresh={load} />}
             contentContainerStyle={
-              filteredRows.length === 0
-                ? styles.emptyContainer
-                : styles.listContainer
+              filteredRows.length === 0 ? styles.emptyContainer : styles.listContainer
             }
             renderItem={({ item }) => <FeedbackRowCard row={item} />}
             ListEmptyComponent={
@@ -212,10 +187,7 @@ export default function MyFeedbackModal({
                 ) : rows.length > 0 ? (
                   // Have feedback, but the active filter hides all of it.
                   <>
-                    <Text
-                      style={styles.emptyIcon}
-                      accessibilityElementsHidden
-                    >
+                    <Text style={styles.emptyIcon} accessibilityElementsHidden>
                       🔍
                     </Text>
                     <Text style={styles.emptyTitle}>
@@ -227,17 +199,13 @@ export default function MyFeedbackModal({
                   </>
                 ) : (
                   <>
-                    <Text
-                      style={styles.emptyIcon}
-                      accessibilityElementsHidden
-                    >
+                    <Text style={styles.emptyIcon} accessibilityElementsHidden>
                       💬
                     </Text>
                     <Text style={styles.emptyTitle}>No feedback yet</Text>
                     <Text style={styles.emptyBody}>
-                      Tap the "Feedback" button at the top of any screen
-                      to send your first message. It lands here and in
-                      the maintainer's inbox.
+                      Tap the "Feedback" button at the top of any screen to send your first message.
+                      It lands here and in the maintainer's inbox.
                     </Text>
                   </>
                 )}
@@ -261,8 +229,7 @@ function FeedbackRowCard({ row }: { row: FeedbackRow }) {
   // Keep the row's body compact in the list — full text isn't needed for
   // a "did I send this?" scan, and very long bodies would push every
   // other row off the screen.
-  const preview =
-    row.body.length > 200 ? `${row.body.slice(0, 200).trim()}…` : row.body;
+  const preview = row.body.length > 200 ? `${row.body.slice(0, 200).trim()}…` : row.body;
 
   return (
     <View
@@ -285,139 +252,140 @@ function FeedbackRowCard({ row }: { row: FeedbackRow }) {
   );
 }
 
-const makeStyles = (color: ColorTheme) => StyleSheet.create({
-  backdrop: {
-    flex: 1,
-    backgroundColor: color.scrim,
-    justifyContent: 'flex-end',
-  },
-  card: {
-    backgroundColor: color.surfaceMuted,
-    borderTopLeftRadius: radius.xl,
-    borderTopRightRadius: radius.xl,
-    paddingTop: spacing.lg,
-    paddingBottom: spacing.sm,
-    maxHeight: '90%',
-    ...shadow.e3,
-  },
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-    paddingHorizontal: spacing.xl,
-    marginBottom: spacing.sm,
-  },
-  title: {
-    flex: 1,
-    fontSize: font.size.xl,
-    fontWeight: font.weight.bold,
-    color: color.textStrong,
-  },
-  closeBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: radius.full,
-    backgroundColor: color.surfaceNeutral,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  closeBtnText: {
-    fontSize: font.size.lg,
-    color: color.text,
-    fontWeight: font.weight.bold,
-  },
-  // Chip row sits below the header and above the list. Layout mirrors
-  // the NearbyFlagsModal chip bar so the two share a visual language —
-  // same height, same pill radius, same active fill colour.
-  chipBar: {
-    flexDirection: 'row',
-    gap: spacing.xs,
-    paddingHorizontal: spacing.xl,
-    paddingVertical: spacing.sm,
-  },
-  chip: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    borderRadius: radius.full,
-    backgroundColor: color.surfaceNeutral,
-    // Touch-target floor — WCAG 2.5.5 wants ≥ 44pt. minHeight on the
-    // Pressable + the padding above gets us there comfortably.
-    minHeight: 44,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  chipActive: { backgroundColor: color.brand },
-  chipText: {
-    fontSize: font.size.sm,
-    fontWeight: font.weight.bold,
-    color: color.textMuted,
-  },
-  chipTextActive: { color: color.textOnBrand },
-  listContainer: {
-    paddingHorizontal: spacing.xl,
-    paddingBottom: spacing.lg,
-    gap: spacing.sm,
-  },
-  emptyContainer: {
-    paddingHorizontal: spacing.xl,
-    paddingTop: spacing.xxxl,
-    paddingBottom: spacing.lg,
-  },
-  emptyCard: {
-    alignItems: 'center',
-    gap: spacing.sm,
-    padding: spacing.xl,
-    backgroundColor: color.surface,
-    borderRadius: radius.lg,
-    ...shadow.e1,
-  },
-  emptyIcon: { fontSize: 36 },
-  emptyTitle: {
-    fontSize: font.size.lg,
-    fontWeight: font.weight.bold,
-    color: color.textStrong,
-  },
-  emptyBody: {
-    fontSize: font.size.sm,
-    color: color.textMuted,
-    textAlign: 'center',
-    lineHeight: 19,
-  },
-  rowCard: {
-    backgroundColor: color.surface,
-    padding: spacing.md,
-    borderRadius: radius.lg,
-    gap: spacing.sm,
-    ...shadow.e1,
-  },
-  rowHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-  categoryPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    backgroundColor: color.brandSoft,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.tight,
-    borderRadius: radius.full,
-  },
-  categoryGlyph: { fontSize: font.size.sm },
-  categoryText: {
-    color: color.brandOnSoft,
-    fontWeight: font.weight.bold,
-    fontSize: font.size.xs,
-  },
-  dateText: {
-    fontSize: font.size.xs,
-    color: color.textMuted,
-  },
-  bodyText: {
-    fontSize: font.size.sm,
-    color: color.text,
-    lineHeight: 19,
-  },
-});
+const makeStyles = (color: ColorTheme) =>
+  StyleSheet.create({
+    backdrop: {
+      flex: 1,
+      backgroundColor: color.scrim,
+      justifyContent: 'flex-end',
+    },
+    card: {
+      backgroundColor: color.surfaceMuted,
+      borderTopLeftRadius: radius.xl,
+      borderTopRightRadius: radius.xl,
+      paddingTop: spacing.lg,
+      paddingBottom: spacing.sm,
+      maxHeight: '90%',
+      ...shadow.e3,
+    },
+    headerRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.md,
+      paddingHorizontal: spacing.xl,
+      marginBottom: spacing.sm,
+    },
+    title: {
+      flex: 1,
+      fontSize: font.size.xl,
+      fontWeight: font.weight.bold,
+      color: color.textStrong,
+    },
+    closeBtn: {
+      width: 32,
+      height: 32,
+      borderRadius: radius.full,
+      backgroundColor: color.surfaceNeutral,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    closeBtnText: {
+      fontSize: font.size.lg,
+      color: color.text,
+      fontWeight: font.weight.bold,
+    },
+    // Chip row sits below the header and above the list. Layout mirrors
+    // the NearbyFlagsModal chip bar so the two share a visual language —
+    // same height, same pill radius, same active fill colour.
+    chipBar: {
+      flexDirection: 'row',
+      gap: spacing.xs,
+      paddingHorizontal: spacing.xl,
+      paddingVertical: spacing.sm,
+    },
+    chip: {
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.xs,
+      borderRadius: radius.full,
+      backgroundColor: color.surfaceNeutral,
+      // Touch-target floor — WCAG 2.5.5 wants ≥ 44pt. minHeight on the
+      // Pressable + the padding above gets us there comfortably.
+      minHeight: 44,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    chipActive: { backgroundColor: color.brand },
+    chipText: {
+      fontSize: font.size.sm,
+      fontWeight: font.weight.bold,
+      color: color.textMuted,
+    },
+    chipTextActive: { color: color.textOnBrand },
+    listContainer: {
+      paddingHorizontal: spacing.xl,
+      paddingBottom: spacing.lg,
+      gap: spacing.sm,
+    },
+    emptyContainer: {
+      paddingHorizontal: spacing.xl,
+      paddingTop: spacing.xxxl,
+      paddingBottom: spacing.lg,
+    },
+    emptyCard: {
+      alignItems: 'center',
+      gap: spacing.sm,
+      padding: spacing.xl,
+      backgroundColor: color.surface,
+      borderRadius: radius.lg,
+      ...shadow.e1,
+    },
+    emptyIcon: { fontSize: 36 },
+    emptyTitle: {
+      fontSize: font.size.lg,
+      fontWeight: font.weight.bold,
+      color: color.textStrong,
+    },
+    emptyBody: {
+      fontSize: font.size.sm,
+      color: color.textMuted,
+      textAlign: 'center',
+      lineHeight: 19,
+    },
+    rowCard: {
+      backgroundColor: color.surface,
+      padding: spacing.md,
+      borderRadius: radius.lg,
+      gap: spacing.sm,
+      ...shadow.e1,
+    },
+    rowHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      gap: spacing.sm,
+    },
+    categoryPill: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.xs,
+      backgroundColor: color.brandSoft,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: spacing.tight,
+      borderRadius: radius.full,
+    },
+    categoryGlyph: { fontSize: font.size.sm },
+    categoryText: {
+      color: color.brandOnSoft,
+      fontWeight: font.weight.bold,
+      fontSize: font.size.xs,
+    },
+    dateText: {
+      fontSize: font.size.xs,
+      color: color.textMuted,
+    },
+    bodyText: {
+      fontSize: font.size.sm,
+      color: color.text,
+      lineHeight: 19,
+    },
+  });

@@ -138,11 +138,7 @@ describe('mergeFlagRealtimePayload — DELETE', () => {
 
   it('is a no-op when old.id is missing', () => {
     const list = [flag({ id: 'a' })];
-    const next = mergeFlagRealtimePayload(
-      list,
-      { eventType: 'DELETE', new: {}, old: {} },
-      DEFAULT,
-    );
+    const next = mergeFlagRealtimePayload(list, { eventType: 'DELETE', new: {}, old: {} }, DEFAULT);
     expect(next).toBe(list);
   });
 });

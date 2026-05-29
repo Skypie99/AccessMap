@@ -1,19 +1,10 @@
-import {
-  REPUTATION_TIERS,
-  getTier,
-  pointsToNextTier,
-} from '../reputationTier';
+import { REPUTATION_TIERS, getTier, pointsToNextTier } from '../reputationTier';
 
 describe('reputationTier', () => {
   describe('REPUTATION_TIERS catalog', () => {
     it('contains all four tiers in ascending threshold order', () => {
       expect(REPUTATION_TIERS).toHaveLength(4);
-      expect(REPUTATION_TIERS.map((t) => t.name)).toEqual([
-        'bronze',
-        'silver',
-        'gold',
-        'platinum',
-      ]);
+      expect(REPUTATION_TIERS.map((t) => t.name)).toEqual(['bronze', 'silver', 'gold', 'platinum']);
     });
 
     it('has matching label/emoji/threshold for each tier', () => {
