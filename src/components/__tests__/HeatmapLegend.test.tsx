@@ -34,9 +34,7 @@ jest.mock('@/lib/supabase', () => ({
 
 /** Extract text content from all rendered Text nodes (bypasses a11y-hidden filter). */
 function getAllTextStrings(component: ReturnType<typeof render>): string[] {
-  return component.UNSAFE_getAllByType(Text).map(
-    (node) => node.props.children as string,
-  );
+  return component.UNSAFE_getAllByType(Text).map((node) => node.props.children as string);
 }
 
 describe('HeatmapLegend', () => {

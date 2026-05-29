@@ -8,10 +8,7 @@
  */
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {
-  loadRealtimeEnabled,
-  saveRealtimeEnabled,
-} from '../realtimePrefs';
+import { loadRealtimeEnabled, saveRealtimeEnabled } from '../realtimePrefs';
 
 // AsyncStorage is already mocked in jest.setup.js
 jest.mock('@react-native-async-storage/async-storage');
@@ -57,9 +54,7 @@ describe('realtimePrefs — D4 Per-User Opt-In', () => {
   // ========================================================================
   it('returns false and logs when AsyncStorage.getItem throws', async () => {
     const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation();
-    (AsyncStorage.getItem as jest.Mock).mockRejectedValue(
-      new Error('AsyncStorage error'),
-    );
+    (AsyncStorage.getItem as jest.Mock).mockRejectedValue(new Error('AsyncStorage error'));
 
     const result = await loadRealtimeEnabled();
     expect(result).toBe(false);
@@ -73,10 +68,7 @@ describe('realtimePrefs — D4 Per-User Opt-In', () => {
     (AsyncStorage.setItem as jest.Mock).mockResolvedValue(undefined);
 
     await saveRealtimeEnabled(true);
-    expect(AsyncStorage.setItem).toHaveBeenCalledWith(
-      'realtime_enabled',
-      'true',
-    );
+    expect(AsyncStorage.setItem).toHaveBeenCalledWith('realtime_enabled', 'true');
   });
 
   // ========================================================================
@@ -86,19 +78,14 @@ describe('realtimePrefs — D4 Per-User Opt-In', () => {
     (AsyncStorage.setItem as jest.Mock).mockResolvedValue(undefined);
 
     await saveRealtimeEnabled(false);
-    expect(AsyncStorage.setItem).toHaveBeenCalledWith(
-      'realtime_enabled',
-      'false',
-    );
+    expect(AsyncStorage.setItem).toHaveBeenCalledWith('realtime_enabled', 'false');
   });
 
   // ========================================================================
   // Test 7: saveRealtimeEnabled throws on AsyncStorage write failure
   // ========================================================================
   it('throws when AsyncStorage.setItem fails', async () => {
-    (AsyncStorage.setItem as jest.Mock).mockRejectedValue(
-      new Error('Storage full'),
-    );
+    (AsyncStorage.setItem as jest.Mock).mockRejectedValue(new Error('Storage full'));
 
     await expect(saveRealtimeEnabled(true)).rejects.toThrow('Storage full');
   });

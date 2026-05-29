@@ -297,12 +297,7 @@ export default function MapScreen() {
       const latMax = r.latitude + r.latitudeDelta / 2;
       const lngMin = r.longitude - r.longitudeDelta / 2;
       const lngMax = r.longitude + r.longitudeDelta / 2;
-      return (
-        flag.lat >= latMin &&
-        flag.lat <= latMax &&
-        flag.lng >= lngMin &&
-        flag.lng <= lngMax
-      );
+      return flag.lat >= latMin && flag.lat <= latMax && flag.lng >= lngMin && flag.lng <= lngMax;
     });
     return () => {
       setViewportGate(null);

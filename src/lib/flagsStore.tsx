@@ -28,8 +28,7 @@ import type { FlagRow, FlagStatus } from '@/types/database';
 // ---------------------------------------------------------------------------
 
 /** Jordan Condition 2 — user-scoped key so no cross-user data leakage. */
-export const offlineCacheKey = (userId: string): string =>
-  `@accessmap/offline_flags_v1:${userId}`;
+export const offlineCacheKey = (userId: string): string => `@accessmap/offline_flags_v1:${userId}`;
 
 /** Jordan Condition 3 — 24-hour TTL. */
 export const MAX_CACHE_AGE_MS = 24 * 60 * 60 * 1000;
@@ -78,11 +77,7 @@ async function readFlagsCache(userId: string): Promise<FlagRow[] | null> {
     const raw = await AsyncStorage.getItem(offlineCacheKey(userId));
     if (!raw) return null;
     const entry = JSON.parse(raw) as OfflineCacheEntry;
-    if (
-      !entry ||
-      typeof entry.cachedAt !== 'string' ||
-      !Array.isArray(entry.rows)
-    ) {
+    if (!entry || typeof entry.cachedAt !== 'string' || !Array.isArray(entry.rows)) {
       return null;
     }
     // Jordan Condition 3 — reject stale entries.
@@ -210,9 +205,7 @@ export function FlagsProvider({
         : listFlags(current).then((rows) => ({ rows, nextCursor: null }));
 
     const cachePromise: Promise<FlagRow[] | null> =
-      isDefaultStatuses && currentUserId
-        ? readFlagsCache(currentUserId)
-        : Promise.resolve(null);
+      isDefaultStatuses && currentUserId ? readFlagsCache(currentUserId) : Promise.resolve(null);
 
     try {
       const [networkResult, cachedResult] = await Promise.allSettled([
@@ -239,8 +232,7 @@ export function FlagsProvider({
         }
       } else {
         // Network failed — try the cache that was already fetched in parallel.
-        const cached =
-          cachedResult.status === 'fulfilled' ? cachedResult.value : null;
+        const cached = cachedResult.status === 'fulfilled' ? cachedResult.value : null;
         if (cached !== null && seq === fetchSeqRef.current) {
           setFlags(cached);
           setIsOfflineCache(true);
@@ -351,51 +343,47 @@ export function FlagsProvider({
 
       channelRef = supabase
         .channel(D4_CHANNEL)
-        .on(
-          'postgres_changes',
-          { event: '*', schema: 'public', table: 'flags' },
-          async (raw) => {
-            // D4 Option 2: payload only carries {id, status}.
-            // For DELETE events `new` is empty; identify by `old.id`.
-            const flagId =
-              (raw.new as { id?: string } | undefined)?.id ??
-              (raw.old as { id?: string } | undefined)?.id;
-            if (!flagId) return;
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'flags' }, async (raw) => {
+          // D4 Option 2: payload only carries {id, status}.
+          // For DELETE events `new` is empty; identify by `old.id`.
+          const flagId =
+            (raw.new as { id?: string } | undefined)?.id ??
+            (raw.old as { id?: string } | undefined)?.id;
+          if (!flagId) return;
 
-            if (raw.eventType === 'DELETE') {
-              setFlags((prev) => prev.filter((f) => f.id !== flagId));
-              return;
-            }
+          if (raw.eventType === 'DELETE') {
+            setFlags((prev) => prev.filter((f) => f.id !== flagId));
+            return;
+          }
 
-            // Re-fetch the full row via RLS-gated REST endpoint.
-            // Failure (deleted, permission denied, network) is non-fatal —
-            // the next manual refresh will reconcile state.
-            try {
-              const freshFlag = await fetchFlagById(flagId);
-              if (!freshFlag || !mounted) return;
+          // Re-fetch the full row via RLS-gated REST endpoint.
+          // Failure (deleted, permission denied, network) is non-fatal —
+          // the next manual refresh will reconcile state.
+          try {
+            const freshFlag = await fetchFlagById(flagId);
+            if (!freshFlag || !mounted) return;
 
-              // Safeguard #1 — viewport geofence (delegated to MapScreen).
-              const gate = viewportGateRef.current;
-              if (gate && !gate(freshFlag)) return;
+            // Safeguard #1 — viewport geofence (delegated to MapScreen).
+            const gate = viewportGateRef.current;
+            if (gate && !gate(freshFlag)) return;
 
-              // Merge into local state respecting the active status filter.
-              setFlags((prev) => {
-                const exists = prev.some((f) => f.id === freshFlag.id);
-                if (!statusesRef.current.includes(freshFlag.status)) {
-                  return exists ? prev.filter((f) => f.id !== freshFlag.id) : prev;
-                }
-                if (exists) {
-                  return prev.map((f) => (f.id === freshFlag.id ? freshFlag : f));
-                }
-                const next = [freshFlag, ...prev];
-                next.sort((a, b) => b.created_at.localeCompare(a.created_at));
-                return next;
-              });
-            } catch {
-              // Non-fatal: re-fetch silently failed. State stays as-is.
-            }
-          },
-        )
+            // Merge into local state respecting the active status filter.
+            setFlags((prev) => {
+              const exists = prev.some((f) => f.id === freshFlag.id);
+              if (!statusesRef.current.includes(freshFlag.status)) {
+                return exists ? prev.filter((f) => f.id !== freshFlag.id) : prev;
+              }
+              if (exists) {
+                return prev.map((f) => (f.id === freshFlag.id ? freshFlag : f));
+              }
+              const next = [freshFlag, ...prev];
+              next.sort((a, b) => b.created_at.localeCompare(a.created_at));
+              return next;
+            });
+          } catch {
+            // Non-fatal: re-fetch silently failed. State stays as-is.
+          }
+        })
         .subscribe((status) => {
           if (status === 'SUBSCRIBED') {
             void logRealtimeEvent('subscribe', D4_CHANNEL);
@@ -412,11 +400,11 @@ export function FlagsProvider({
         void supabase.removeChannel(channelRef);
       }
     };
-  // Re-run only if the user re-mounts the provider (e.g. auth change).
-  // The opt-in state is polled once on mount; live changes are handled
-  // by MapScreen/ProfileScreen tearing down and re-mounting the provider
-  // indirectly via the `realtimeEnabled` toggle (see flagsStore architecture).
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // Re-run only if the user re-mounts the provider (e.g. auth change).
+    // The opt-in state is polled once on mount; live changes are handled
+    // by MapScreen/ProfileScreen tearing down and re-mounting the provider
+    // indirectly via the `realtimeEnabled` toggle (see flagsStore architecture).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const patchFlag = useCallback((id: string, patch: Partial<FlagRow>) => {
@@ -428,12 +416,9 @@ export function FlagsProvider({
   }, []);
 
   // D4 Safeguard #1 — stable setter so MapScreen's useEffect dep array stays clean.
-  const setViewportGate = useCallback(
-    (gate: ((flag: FlagRow) => boolean) | null) => {
-      viewportGateRef.current = gate;
-    },
-    [],
-  );
+  const setViewportGate = useCallback((gate: ((flag: FlagRow) => boolean) | null) => {
+    viewportGateRef.current = gate;
+  }, []);
 
   // O(1) id → FlagRow lookup. Built once per `flags` change so consumers
   // avoid repeated O(n) `.find()` calls — especially valuable when
@@ -461,7 +446,22 @@ export function FlagsProvider({
       isOfflineCache,
       setViewportGate,
     }),
-    [flags, flagsMap, loading, error, refresh, loadMore, loadingMore, hasMore, statuses, setStatuses, patchFlag, removeFlag, isOfflineCache, setViewportGate],
+    [
+      flags,
+      flagsMap,
+      loading,
+      error,
+      refresh,
+      loadMore,
+      loadingMore,
+      hasMore,
+      statuses,
+      setStatuses,
+      patchFlag,
+      removeFlag,
+      isOfflineCache,
+      setViewportGate,
+    ],
   );
 
   return <FlagsContext.Provider value={value}>{children}</FlagsContext.Provider>;

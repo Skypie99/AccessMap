@@ -55,9 +55,7 @@ describe('realtimeLog — D4 Observability RPC', () => {
   // Test 3: Degrades gracefully when RPC function doesn't exist (404)
   // ========================================================================
   it('logs warning when RPC returns error (pre-apply state)', async () => {
-    const consoleWarnSpy = jest
-      .spyOn(console, 'warn')
-      .mockImplementation(() => {});
+    const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
 
     const mockError = new Error('PGRST000 No relation');
     (supabase.rpc as jest.Mock).mockResolvedValue({
@@ -66,9 +64,7 @@ describe('realtimeLog — D4 Observability RPC', () => {
     });
 
     // Function should not throw — fire-and-forget
-    await expect(
-      logRealtimeEvent('subscribe', 'flags-status'),
-    ).resolves.toBeUndefined();
+    await expect(logRealtimeEvent('subscribe', 'flags-status')).resolves.toBeUndefined();
 
     expect(consoleWarnSpy).toHaveBeenCalled();
     const firstCall = (consoleWarnSpy.mock.calls[0] as any[])[0];
@@ -81,18 +77,12 @@ describe('realtimeLog — D4 Observability RPC', () => {
   // Test 4: Degrades gracefully when RPC throws unexpected error
   // ========================================================================
   it('logs warning when RPC throws unexpected error', async () => {
-    const consoleWarnSpy = jest
-      .spyOn(console, 'warn')
-      .mockImplementation(() => {});
+    const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
 
-    (supabase.rpc as jest.Mock).mockRejectedValue(
-      new Error('Network timeout'),
-    );
+    (supabase.rpc as jest.Mock).mockRejectedValue(new Error('Network timeout'));
 
     // Function should not throw — fire-and-forget
-    await expect(
-      logRealtimeEvent('subscribe', 'flags-status'),
-    ).resolves.toBeUndefined();
+    await expect(logRealtimeEvent('subscribe', 'flags-status')).resolves.toBeUndefined();
 
     expect(consoleWarnSpy).toHaveBeenCalled();
     const firstCall = (consoleWarnSpy.mock.calls[0] as any[])[0];
@@ -105,9 +95,7 @@ describe('realtimeLog — D4 Observability RPC', () => {
   // Test 5: Fire-and-forget — returns immediately (doesn't await inner promise)
   // ========================================================================
   it('returns without awaiting RPC response', async () => {
-    const consoleWarnSpy = jest
-      .spyOn(console, 'warn')
-      .mockImplementation(() => {});
+    const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
 
     let rpcResolved = false;
     (supabase.rpc as jest.Mock).mockImplementation(
@@ -133,9 +121,7 @@ describe('realtimeLog — D4 Observability RPC', () => {
   // Test 6: RPC success (data returned) is silent
   // ========================================================================
   it('is silent when RPC succeeds', async () => {
-    const consoleWarnSpy = jest
-      .spyOn(console, 'warn')
-      .mockImplementation(() => {});
+    const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
 
     (supabase.rpc as jest.Mock).mockResolvedValue({
       data: null,

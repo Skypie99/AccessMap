@@ -176,10 +176,7 @@ describe('D4 Realtime Flags', () => {
 
     // Verify log_realtime_event was called with subscribe
     await waitFor(() => {
-      expect(realtimeLog.logRealtimeEvent).toHaveBeenCalledWith(
-        'subscribe',
-        'flags-status',
-      );
+      expect(realtimeLog.logRealtimeEvent).toHaveBeenCalledWith('subscribe', 'flags-status');
     });
   });
 
@@ -210,10 +207,7 @@ describe('D4 Realtime Flags', () => {
     // Verify log_realtime_event was called with unsubscribe
     // (It's called in the .then() of unsubscribe)
     await waitFor(() => {
-      expect(realtimeLog.logRealtimeEvent).toHaveBeenCalledWith(
-        'unsubscribe',
-        'flags-status',
-      );
+      expect(realtimeLog.logRealtimeEvent).toHaveBeenCalledWith('unsubscribe', 'flags-status');
     });
   });
 
@@ -283,10 +277,7 @@ describe('D4 Realtime Flags', () => {
           const lngMin = -122.4;
           const lngMax = -122.2;
           return (
-            flag.lat >= latMin &&
-            flag.lat <= latMax &&
-            flag.lng >= lngMin &&
-            flag.lng <= lngMax
+            flag.lat >= latMin && flag.lat <= latMax && flag.lng >= lngMin && flag.lng <= lngMax
           );
         });
       }, [setViewportGate]);
@@ -339,10 +330,7 @@ describe('D4 Realtime Flags', () => {
           const lngMin = -122.4;
           const lngMax = -122.2;
           return (
-            flag.lat >= latMin &&
-            flag.lat <= latMax &&
-            flag.lng >= lngMin &&
-            flag.lng <= lngMax
+            flag.lat >= latMin && flag.lat <= latMax && flag.lng >= lngMin && flag.lng <= lngMax
           );
         });
       }, [setViewportGate]);
@@ -368,9 +356,7 @@ describe('D4 Realtime Flags', () => {
     };
 
     // fetchFlagById returns a flag outside the viewport
-    (flags.fetchFlagById as jest.Mock).mockResolvedValue(
-      mockFlagOutsideViewport,
-    );
+    (flags.fetchFlagById as jest.Mock).mockResolvedValue(mockFlagOutsideViewport);
 
     await mockPayloadHandler?.(payload);
 
@@ -449,10 +435,7 @@ describe('D4 Realtime Flags', () => {
 
     // Even though logRealtimeEvent "fails", subscription should still work
     await waitFor(() => {
-      expect(realtimeLog.logRealtimeEvent).toHaveBeenCalledWith(
-        'subscribe',
-        'flags-status',
-      );
+      expect(realtimeLog.logRealtimeEvent).toHaveBeenCalledWith('subscribe', 'flags-status');
     });
 
     // The provider should remain functional (no error thrown to component)
