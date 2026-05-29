@@ -10,6 +10,7 @@ import {
   RefreshControl,
   ScrollView,
   StyleSheet,
+  Switch,
   Text,
   TextInput,
   View,
@@ -29,6 +30,7 @@ import {
   setDefaultTab,
   type DefaultTab,
 } from '@/lib/preferences';
+import { useRealtimeEnabled } from '@/lib/realtimePrefs';
 import { clearOnboardingSeen } from '@/lib/onboarding';
 import {
   CATEGORY_LABELS,
@@ -252,6 +254,14 @@ export default function ProfileScreen() {
   // control doesn't paint a wrong "selected" pill momentarily.
   const [defaultTab, setDefaultTabValue] = useState<DefaultTab | null>(null);
   const [savingTab, setSavingTab] = useState(false);
+
+  // D4: realtime opt-in toggle (Safeguard #2).
+  // Backed by AsyncStorage `realtime_enabled` (default false). When the user
+  // flips the toggle, saveRealtimeEnabled persists the value and notifies all
+  // mounted hook instances (including MapScreen's indirect consumer in
+  // FlagsProvider) so the subscription is established or torn down reactively.
+  const { realtimeEnabled, setRealtimeEnabled } = useRealtimeEnabled();
+  const [savingRealtime, setSavingRealtime] = useState(false);
 
   // True while this screen is on screen — checked before any setState that
   // runs after an `await` so a slow request can't update a torn-down screen.
@@ -556,6 +566,26 @@ export default function ProfileScreen() {
       }
     },
     [user, defaultTab],
+  );
+
+  const handleRealtimeToggle = useCallback(
+    async (value: boolean) => {
+      if (savingRealtime) return;
+      setSavingRealtime(true);
+      try {
+        await setRealtimeEnabled(value);
+        AccessibilityInfo.announceForAccessibility(
+          value
+            ? 'Real-time flag updates enabled.'
+            : 'Real-time flag updates disabled.',
+        );
+      } catch {
+        Alert.alert("Couldn't save preference");
+      } finally {
+        if (mountedRef.current) setSavingRealtime(false);
+      }
+    },
+    [savingRealtime, setRealtimeEnabled],
   );
 
   const handleShowIntroAgain = useCallback(async () => {
@@ -1245,6 +1275,41 @@ export default function ProfileScreen() {
           </Text>
         </View>
 
+        {/* D4: Realtime opt-in toggle (Safeguard #2).
+            Default off — users must explicitly enable to subscribe.
+            The underlying AsyncStorage write is surfaced as an error if
+            it fails (not silently swallowed) because the user just told
+            us their preference and we must honour it. */}
+        <View style={styles.section}>
+          <Text style={styles.sectionLabel} accessibilityRole="header">
+            Real-time updates
+          </Text>
+          <View
+            style={styles.toggleRow}
+            accessible
+            accessibilityRole="switch"
+            accessibilityLabel="Show new flags in real-time"
+            accessibilityHint="When on, the map updates automatically as new flags are reported or triaged — no need to refresh manually"
+            accessibilityState={{ checked: realtimeEnabled, busy: savingRealtime }}
+          >
+            <View style={styles.toggleTextWrap}>
+              <Text style={styles.toggleLabel}>Show new flags in real-time</Text>
+              <Text style={styles.toggleHint}>
+                Map updates automatically when flags change.
+              </Text>
+            </View>
+            <Switch
+              value={realtimeEnabled}
+              onValueChange={handleRealtimeToggle}
+              disabled={savingRealtime}
+              accessibilityElementsHidden
+              importantForAccessibility="no-hide-descendants"
+              trackColor={{ false: '#ccc', true: color.brand }}
+              thumbColor={Platform.OS === 'android' ? (realtimeEnabled ? color.brand : '#f4f3f4') : undefined}
+            />
+          </View>
+        </View>
+
         <View style={styles.section}>
           <Text style={styles.sectionLabel} accessibilityRole="header">
             Onboarding
@@ -1931,6 +1996,18 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
     justifyContent: 'center',
   },
   linkBtnText: { color: color.brand, fontWeight: '600', fontSize: 14 },
+  // D4: realtime toggle row — label + hint on the left, Switch on the right.
+  toggleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 4,
+    gap: 12,
+    minHeight: 44,
+  },
+  toggleTextWrap: { flex: 1, gap: 2 },
+  toggleLabel: { fontSize: 14, fontWeight: '600', color: '#222' },
+  toggleHint: { fontSize: 12, color: '#666' },
   aboutRow: {
     marginTop: 16,
     backgroundColor: color.surface,

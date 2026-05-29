@@ -114,6 +114,7 @@ export default function MapScreen() {
     error: loadError,
     refresh: refreshFlags,
     setStatuses,
+    setViewportGate,
   } = useFlags();
 
   const [reportOpen, setReportOpen] = useState(false);
@@ -259,6 +260,39 @@ export default function MapScreen() {
       mountedRef.current = false;
     };
   }, []);
+
+  // D4 Safeguard #1 — Viewport geofence for realtime flag events.
+  //
+  // Tracks the latest known map region so the D4 payload handler can discard
+  // flags whose lat/lng fall outside what the user is currently viewing.
+  // Seeded from DEFAULT_REGION on mount; updated when `location` resolves
+  // (see useEffect below that syncs with `initialRegion`).
+  //
+  // We use a ref (not state) because the viewport gate callback is a closure
+  // over this ref — no re-render needed when the region changes.
+  const currentRegionRef = useRef<PlatformMapRegion>(DEFAULT_REGION);
+
+  // Register a viewport gate with FlagsProvider on mount; deregister on unmount.
+  // The gate is a pure predicate: returns true if the flag is inside the current
+  // map bounds, false if outside (payload should be discarded).
+  useEffect(() => {
+    setViewportGate((flag) => {
+      const r = currentRegionRef.current;
+      const latMin = r.latitude - r.latitudeDelta / 2;
+      const latMax = r.latitude + r.latitudeDelta / 2;
+      const lngMin = r.longitude - r.longitudeDelta / 2;
+      const lngMax = r.longitude + r.longitudeDelta / 2;
+      return (
+        flag.lat >= latMin &&
+        flag.lat <= latMax &&
+        flag.lng >= lngMin &&
+        flag.lng <= lngMax
+      );
+    });
+    return () => {
+      setViewportGate(null);
+    };
+  }, [setViewportGate]);
 
   const toggleCategory = useCallback((c: FlagCategory) => {
     setActiveCategories((prev) => {
@@ -821,6 +855,14 @@ export default function MapScreen() {
         longitudeDelta: 0.01,
       }
     : DEFAULT_REGION;
+
+  // Keep the viewport ref in sync with the resolved initial region. This fires
+  // once when `location` becomes non-null, giving the gate an accurate starting
+  // region rather than the fallback DEFAULT_REGION.
+  useEffect(() => {
+    currentRegionRef.current = initialRegion;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location]);
 
   // Long-press anywhere on the map → confirm prompt → open the report
   // modal with that coord pre-filled. The confirm step matters: a
