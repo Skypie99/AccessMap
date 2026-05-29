@@ -83,7 +83,7 @@ export default function SignInScreen({
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.brandBlock}>
-          <LogoMark variant="badge" size={80} />
+          <LogoMark variant="badge" size={88} />
           <Text style={styles.title} accessibilityRole="header">AccessMap</Text>
           <Text style={styles.tagline}>
             Flag the world.{'\n'}Make it more accessible — together.
@@ -134,13 +134,13 @@ export default function SignInScreen({
             <Pressable
               onPress={() => submit('in')}
               disabled={busy}
-              style={busy && styles.btnDisabled}
+              style={({ pressed }) => [pressed && { opacity: 0.88 }, busy && styles.btnDisabled]}
               accessibilityRole="button"
               accessibilityLabel="Sign in"
               accessibilityState={{ disabled: busy }}
             >
               <LinearGradient
-                colors={['#2563eb', '#1d4ed8']}
+                colors={['#3b82f6', '#2563eb', '#1d4ed8']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={styles.primaryBtn}
@@ -152,6 +152,12 @@ export default function SignInScreen({
                 )}
               </LinearGradient>
             </Pressable>
+
+            <View style={styles.dividerRow}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerText}>or</Text>
+              <View style={styles.dividerLine} />
+            </View>
 
             <Pressable
               onPress={() => submit('up')}
@@ -285,42 +291,58 @@ const makeStyles = (_color: ColorTheme) =>
       marginTop: spacing.xs,
     },
     actions: {
-      gap: spacing.sm,
+      gap: spacing.md,
       marginTop: spacing.lg,
     },
     primaryBtn: {
-      borderRadius: radius.md,
-      paddingVertical: spacing.md,
+      borderRadius: radius.lg,
+      paddingVertical: 15,
       paddingHorizontal: spacing.lg,
       alignItems: 'center',
       justifyContent: 'center',
-      minHeight: 52,
+      minHeight: 56,
       shadowColor: '#2563eb',
-      shadowOpacity: 0.5,
-      shadowRadius: 12,
-      shadowOffset: { width: 0, height: 4 },
-      elevation: 6,
+      shadowOpacity: 0.6,
+      shadowRadius: 16,
+      shadowOffset: { width: 0, height: 6 },
+      elevation: 8,
     },
     primaryBtnText: {
       color: '#fff',
-      fontSize: font.size.md,
+      fontSize: font.size.lg,
       fontWeight: font.weight.bold,
-      letterSpacing: 0.3,
+      letterSpacing: 0.4,
+    },
+    dividerRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+    },
+    dividerLine: {
+      flex: 1,
+      height: 1,
+      backgroundColor: 'rgba(255,255,255,0.1)',
+    },
+    dividerText: {
+      fontSize: font.size.xs,
+      color: 'rgba(255,255,255,0.35)',
+      fontWeight: font.weight.medium,
+      letterSpacing: 0.5,
     },
     secondaryBtn: {
-      borderRadius: radius.md,
+      borderRadius: radius.lg,
       borderWidth: 1.5,
-      borderColor: 'rgba(96,165,250,0.5)',
-      paddingVertical: spacing.md,
+      borderColor: 'rgba(96,165,250,0.4)',
+      paddingVertical: 14,
       paddingHorizontal: spacing.lg,
       alignItems: 'center',
       justifyContent: 'center',
-      minHeight: 52,
-      backgroundColor: 'rgba(37,99,235,0.08)',
+      minHeight: 56,
+      backgroundColor: 'rgba(37,99,235,0.06)',
     },
     secondaryBtnPressed: {
-      backgroundColor: 'rgba(37,99,235,0.18)',
-      borderColor: 'rgba(96,165,250,0.8)',
+      backgroundColor: 'rgba(37,99,235,0.16)',
+      borderColor: 'rgba(96,165,250,0.75)',
     },
     btnDisabled: { opacity: 0.45 },
     secondaryBtnText: {

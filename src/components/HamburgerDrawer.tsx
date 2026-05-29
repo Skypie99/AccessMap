@@ -258,21 +258,21 @@ const makeStyles = (color: ColorTheme) =>
       flexDirection: 'row',
       alignItems: 'center',
       paddingHorizontal: spacing.lg,
-      paddingVertical: spacing.md,
-      borderBottomWidth: StyleSheet.hairlineWidth,
-      borderBottomColor: 'rgba(255,255,255,0.1)',
-      gap: spacing.sm,
+      paddingVertical: spacing.lg,
+      borderBottomWidth: 1,
+      borderBottomColor: 'rgba(255,255,255,0.08)',
+      gap: spacing.md,
     },
     logoMini: {
-      width: 32,
-      height: 32,
+      width: 36,
+      height: 36,
       borderRadius: radius.md,
       backgroundColor: color.brand,
       alignItems: 'center',
       justifyContent: 'center',
     },
     logoMiniText: {
-      color: color.textOnBrand,
+      color: '#fff',
       fontSize: font.size.md,
       fontWeight: font.weight.bold,
     },
@@ -281,19 +281,24 @@ const makeStyles = (color: ColorTheme) =>
       fontSize: font.size.lg,
       fontWeight: font.weight.bold,
       color: '#f0f6ff',
-      letterSpacing: -0.3,
+      letterSpacing: -0.4,
     },
     closeBtn: {
-      padding: spacing.xs,
+      width: 32,
+      height: 32,
+      borderRadius: radius.full,
+      backgroundColor: 'rgba(255,255,255,0.08)',
+      alignItems: 'center',
+      justifyContent: 'center',
     },
     menuSection: {
-      paddingVertical: spacing.sm,
+      paddingVertical: spacing.xs,
     },
     divider: {
-      height: StyleSheet.hairlineWidth,
-      backgroundColor: color.border,
+      height: 1,
+      backgroundColor: 'rgba(255,255,255,0.07)',
       marginHorizontal: spacing.lg,
-      marginVertical: spacing.xs,
+      marginVertical: spacing.sm,
     },
     drawerFooter: {
       position: 'absolute',
@@ -301,37 +306,44 @@ const makeStyles = (color: ColorTheme) =>
       left: 0,
       right: 0,
       paddingHorizontal: spacing.lg,
+      paddingTop: spacing.sm,
+      borderTopWidth: 1,
+      borderTopColor: 'rgba(255,255,255,0.06)',
     },
     footerText: {
       fontSize: font.size.xs,
-      color: color.textSubtle,
+      color: 'rgba(255,255,255,0.3)',
+      letterSpacing: 0.2,
     },
   });
 
-const makeItemStyles = (color: ColorTheme) =>
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const makeItemStyles = (_color: ColorTheme) =>
   StyleSheet.create({
     item: {
       flexDirection: 'row',
       alignItems: 'center',
-      paddingVertical: spacing.md,
+      paddingVertical: 15,
       paddingHorizontal: spacing.lg,
       gap: spacing.md,
-      minHeight: 52,
+      minHeight: 56,
     },
     itemPressed: {
-      backgroundColor: color.surfaceMuted,
+      backgroundColor: 'rgba(255,255,255,0.06)',
     },
     iconWrap: {
-      width: 28,
+      width: 30,
       alignItems: 'center',
     },
     label: {
       flex: 1,
       fontSize: font.size.md,
-      fontWeight: font.weight.medium,
-      color: color.textStrong,
+      fontWeight: font.weight.semibold,
+      color: '#e8f0ff',
+      letterSpacing: 0.1,
     },
     labelMuted: {
-      color: color.textSubtle,
+      color: 'rgba(255,255,255,0.45)',
+      fontWeight: font.weight.regular,
     },
   });

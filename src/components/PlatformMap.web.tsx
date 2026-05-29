@@ -220,9 +220,11 @@ class CachedTileLayer extends L.TileLayer {
 // userId changes so tiles are always keyed to the current authenticated user.
 // ---------------------------------------------------------------------------
 
-const OSM_URL = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+// CartoDB Dark Matter — matches the app's dark UI.
+const OSM_URL = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
 const OSM_ATTRIBUTION =
-  '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
+  '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors ' +
+  '&copy; <a href="https://carto.com/attributions">CARTO</a>';
 
 function CachedTileLayerWrapper({ userId }: { userId: string | null }): null {
   const map = useMap();
