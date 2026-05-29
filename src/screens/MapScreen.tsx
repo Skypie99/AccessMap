@@ -1512,6 +1512,15 @@ export default function MapScreen() {
           </View>
         )}
 
+        {heatmapEnabled && (
+          <View style={styles.heatmapDisclaimer} accessible accessibilityRole="text" accessibilityLiveRegion="polite">
+            <Text style={styles.heatmapDisclaimerText}>
+              Heat zones only appear where at least {DEFAULT_K_FLOOR} flags have been reported.
+              Based on community reports — coverage varies by area.
+            </Text>
+          </View>
+        )}
+
         {/* Bottom bar: legend (left, conditional) + FABs (right) */}
         <View style={styles.bottomBar}>
           {heatmapEnabled ? <HeatmapLegend /> : <View />}
@@ -2021,6 +2030,8 @@ const makeStyles = (color: ColorTheme) =>
       lineHeight: 15,
       textAlign: 'center',
     },
+    heatmapDisclaimer: { alignSelf: 'stretch', backgroundColor: 'rgba(0,0,0,0.55)', borderRadius: radius.md, paddingHorizontal: 12, paddingVertical: 7, marginBottom: 8 },
+    heatmapDisclaimerText: { fontSize: 11, color: 'rgba(255,255,255,0.85)', lineHeight: 15, textAlign: 'center' },
     bottomBar: {
       flexDirection: 'row',
       justifyContent: 'space-between',
