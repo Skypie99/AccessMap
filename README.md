@@ -2,6 +2,23 @@
 
 Expo + React Native + TypeScript app for crowdsourced accessibility flags, backed by Supabase.
 
+## What's in v0.2.0
+
+- **Accessibility flag reporting** — drop pins with location, photo, description, and category (6 types)
+- **Community map** — react-native-maps on iOS/Android, react-leaflet on web
+- **Marker clustering** — groups nearby flags to keep the map readable
+- **Heatmap density view** — shows accessibility hot spots (privacy-safe k≥3 minimum)
+- **Realtime flag updates** — Supabase Realtime keeps all users in sync
+- **Push notifications** — iOS push support for flag status changes
+- **Web tile caching** — offline-capable map tiles via react-leaflet
+- **Points + achievements** — gamified reporting: +5 verified, +10 resolved
+- **Edit profile** — avatar upload, custom display name
+- **Context tags** — categorize flags by type (no ramp, broken sidewalk, etc.)
+- **Dark mode** — consistent throughout the app
+- **WCAG 2.1 AA** — fully accessible from signup to reporting
+- **GitHub Actions CI** — 1,120 automated tests on every push
+- **EAS build profiles** — App Store ready, signed release builds
+
 ## Setup
 
 ```bash
