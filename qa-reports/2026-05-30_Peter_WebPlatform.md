@@ -36,7 +36,7 @@
 - Upload target: `temporary-public-storage` (no token required to see results)
 - `LHCI_GITHUB_APP_TOKEN`: optional — adds inline PR annotations when set as a repo secret; workflow runs regardless
 - Node version: 22 (matches existing CI)
-- PR: [see below]
+- PR: https://github.com/Skypie99/AccessMap/pull/13
 - Status: READY
 
 ---
