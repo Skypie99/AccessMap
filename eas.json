@@ -17,6 +17,10 @@
 
     "preview": {
       "distribution": "internal",
+      "ios": {
+        "simulator": false,
+        "appleTeamId": "ADD_YOUR_APPLE_TEAM_ID_HERE"
+      },
       "env": {
         "APP_ENV": "preview"
       }
@@ -24,6 +28,10 @@
 
     "production": {
       "distribution": "store",
+      "ios": {
+        "simulator": false,
+        "appleTeamId": "ADD_YOUR_APPLE_TEAM_ID_HERE"
+      },
       "env": {
         "APP_ENV": "production"
       }
