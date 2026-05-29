@@ -15,6 +15,7 @@ import {
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '@/lib/auth';
+import { track } from '@/lib/analytics';
 import { errorMessage } from '@/lib/errors';
 import {
   CATEGORY_LABELS,
@@ -217,6 +218,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
           'Your report was filed, but the context tags you picked could not be stored yet (server update pending). The picker will be re-enabled automatically once it is.',
         );
       }
+      track('flag_created', { category, severity, hasPhoto: !!photoUrl });
       reset();
       onCreated();
       onClose();
