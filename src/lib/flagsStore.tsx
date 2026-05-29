@@ -14,10 +14,12 @@ import {
   DEFAULT_STATUSES,
   INITIAL_PAGE_SIZE,
   NEXT_PAGE_SIZE,
+  fetchFlagById,
   listFlags,
   listFlagsPage,
 } from './flags';
-import { type FlagRealtimePayload, mergeFlagRealtimePayload } from './flagsRealtime';
+import { loadRealtimeEnabled } from './realtimePrefs';
+import { logRealtimeEvent } from './realtimeLog';
 import { supabase } from './supabase';
 import type { FlagRow, FlagStatus } from '@/types/database';
 
@@ -26,7 +28,8 @@ import type { FlagRow, FlagStatus } from '@/types/database';
 // ---------------------------------------------------------------------------
 
 /** Jordan Condition 2 — user-scoped key so no cross-user data leakage. */
-export const offlineCacheKey = (userId: string): string => `@accessmap/offline_flags_v1:${userId}`;
+export const offlineCacheKey = (userId: string): string =>
+  `@accessmap/offline_flags_v1:${userId}`;
 
 /** Jordan Condition 3 — 24-hour TTL. */
 export const MAX_CACHE_AGE_MS = 24 * 60 * 60 * 1000;
@@ -75,7 +78,11 @@ async function readFlagsCache(userId: string): Promise<FlagRow[] | null> {
     const raw = await AsyncStorage.getItem(offlineCacheKey(userId));
     if (!raw) return null;
     const entry = JSON.parse(raw) as OfflineCacheEntry;
-    if (!entry || typeof entry.cachedAt !== 'string' || !Array.isArray(entry.rows)) {
+    if (
+      !entry ||
+      typeof entry.cachedAt !== 'string' ||
+      !Array.isArray(entry.rows)
+    ) {
       return null;
     }
     // Jordan Condition 3 — reject stale entries.
@@ -122,6 +129,11 @@ type FlagsContextValue = {
   // True when flags are served from the offline cache (network unavailable).
   // Screens use this to show an "Offline data" notice to the user.
   isOfflineCache: boolean;
+  // D4 Safeguard #1 — viewport geofence registration.
+  // MapScreen registers a callback here so the D4 realtime payload handler
+  // can discard flags outside the current map viewport without the store
+  // needing to know about map regions. Pass `null` to deregister (on unmount).
+  setViewportGate: (gate: ((flag: FlagRow) => boolean) | null) => void;
 };
 
 const FlagsContext = createContext<FlagsContextValue | null>(null);
@@ -198,7 +210,9 @@ export function FlagsProvider({
         : listFlags(current).then((rows) => ({ rows, nextCursor: null }));
 
     const cachePromise: Promise<FlagRow[] | null> =
-      isDefaultStatuses && currentUserId ? readFlagsCache(currentUserId) : Promise.resolve(null);
+      isDefaultStatuses && currentUserId
+        ? readFlagsCache(currentUserId)
+        : Promise.resolve(null);
 
     try {
       const [networkResult, cachedResult] = await Promise.allSettled([
@@ -225,7 +239,8 @@ export function FlagsProvider({
         }
       } else {
         // Network failed — try the cache that was already fetched in parallel.
-        const cached = cachedResult.status === 'fulfilled' ? cachedResult.value : null;
+        const cached =
+          cachedResult.status === 'fulfilled' ? cachedResult.value : null;
         if (cached !== null && seq === fetchSeqRef.current) {
           setFlags(cached);
           setIsOfflineCache(true);
@@ -298,26 +313,110 @@ export function FlagsProvider({
     if (error) AccessibilityInfo.announceForAccessibility(error);
   }, [error]);
 
-  // Realtime: stays quiet until `supabase/realtime.sql` is applied (adds
-  // public.flags to the supabase_realtime publication). Subscribing ahead
-  // of time is safe — no events fire, no errors. Merges deltas through
-  // the pure helper so it stays in lockstep with the active statuses
-  // filter (a row whose status moves out of the filter is removed).
+  // D4 Realtime (Option 2 — filtered broadcast, Safeguard #2 opt-in).
+  //
+  // Only subscribes when `realtime_enabled === true` (user opt-in stored in
+  // AsyncStorage via realtimePrefs). When disabled the channel is torn down
+  // immediately and an `unsubscribe` event is logged.
+  //
+  // Payload shape from the filtered publication: { new: {id, status}, old: {id} }.
+  // We receive ONLY these two columns — lat/lng and other sensitive fields
+  // are intentionally absent (Option 2 privacy posture, Dana spec).
+  // After receiving a payload we re-fetch the full row via the existing
+  // RLS-gated REST endpoint and merge it into local state.
+  //
+  // The viewport geofence (Safeguard #1) is enforced in MapScreen's own
+  // `onRealtimeFlag` callback, which is passed down through context and
+  // applied before any UI state update. This keeps the geographic
+  // filtering co-located with the map region state that owns the bounds.
+  //
+  // Observability (Safeguard #3): logRealtimeEvent is called on SUBSCRIBED
+  // and on channel teardown. It is fire-and-forget; a missing DB function
+  // degrades gracefully to console.warn without breaking the subscribe flow.
+  const D4_CHANNEL = 'flags-status';
+
+  // Expose a ref so MapScreen can register a viewport-gate callback without
+  // causing this effect to re-run. The callback returns `true` if the flag
+  // should be accepted into local state, `false` to discard (outside viewport).
+  // When no callback is registered (MapScreen not mounted), all flags pass.
+  const viewportGateRef = useRef<((flag: FlagRow) => boolean) | null>(null);
+
   useEffect(() => {
-    const channel = supabase
-      .channel('public-flags')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'flags' }, (raw) => {
-        const evt = {
-          eventType: raw.eventType,
-          new: raw.new,
-          old: raw.old,
-        } as FlagRealtimePayload;
-        setFlags((prev) => mergeFlagRealtimePayload(prev, evt, statusesRef.current));
-      })
-      .subscribe();
+    let channelRef: ReturnType<typeof supabase.channel> | null = null;
+    let mounted = true;
+
+    (async () => {
+      const enabled = await loadRealtimeEnabled();
+      if (!mounted || !enabled) return;
+
+      channelRef = supabase
+        .channel(D4_CHANNEL)
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'flags' },
+          async (raw) => {
+            // D4 Option 2: payload only carries {id, status}.
+            // For DELETE events `new` is empty; identify by `old.id`.
+            const flagId =
+              (raw.new as { id?: string } | undefined)?.id ??
+              (raw.old as { id?: string } | undefined)?.id;
+            if (!flagId) return;
+
+            if (raw.eventType === 'DELETE') {
+              setFlags((prev) => prev.filter((f) => f.id !== flagId));
+              return;
+            }
+
+            // Re-fetch the full row via RLS-gated REST endpoint.
+            // Failure (deleted, permission denied, network) is non-fatal —
+            // the next manual refresh will reconcile state.
+            try {
+              const freshFlag = await fetchFlagById(flagId);
+              if (!freshFlag || !mounted) return;
+
+              // Safeguard #1 — viewport geofence (delegated to MapScreen).
+              const gate = viewportGateRef.current;
+              if (gate && !gate(freshFlag)) return;
+
+              // Merge into local state respecting the active status filter.
+              setFlags((prev) => {
+                const exists = prev.some((f) => f.id === freshFlag.id);
+                if (!statusesRef.current.includes(freshFlag.status)) {
+                  return exists ? prev.filter((f) => f.id !== freshFlag.id) : prev;
+                }
+                if (exists) {
+                  return prev.map((f) => (f.id === freshFlag.id ? freshFlag : f));
+                }
+                const next = [freshFlag, ...prev];
+                next.sort((a, b) => b.created_at.localeCompare(a.created_at));
+                return next;
+              });
+            } catch {
+              // Non-fatal: re-fetch silently failed. State stays as-is.
+            }
+          },
+        )
+        .subscribe((status) => {
+          if (status === 'SUBSCRIBED') {
+            void logRealtimeEvent('subscribe', D4_CHANNEL);
+          }
+        });
+    })();
+
     return () => {
-      supabase.removeChannel(channel);
+      mounted = false;
+      if (channelRef) {
+        void channelRef.unsubscribe().then(() => {
+          void logRealtimeEvent('unsubscribe', D4_CHANNEL);
+        });
+        void supabase.removeChannel(channelRef);
+      }
     };
+  // Re-run only if the user re-mounts the provider (e.g. auth change).
+  // The opt-in state is polled once on mount; live changes are handled
+  // by MapScreen/ProfileScreen tearing down and re-mounting the provider
+  // indirectly via the `realtimeEnabled` toggle (see flagsStore architecture).
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const patchFlag = useCallback((id: string, patch: Partial<FlagRow>) => {
@@ -327,6 +426,14 @@ export function FlagsProvider({
   const removeFlag = useCallback((id: string) => {
     setFlags((prev) => prev.filter((f) => f.id !== id));
   }, []);
+
+  // D4 Safeguard #1 — stable setter so MapScreen's useEffect dep array stays clean.
+  const setViewportGate = useCallback(
+    (gate: ((flag: FlagRow) => boolean) | null) => {
+      viewportGateRef.current = gate;
+    },
+    [],
+  );
 
   // O(1) id → FlagRow lookup. Built once per `flags` change so consumers
   // avoid repeated O(n) `.find()` calls — especially valuable when
@@ -352,22 +459,9 @@ export function FlagsProvider({
       patchFlag,
       removeFlag,
       isOfflineCache,
+      setViewportGate,
     }),
-    [
-      flags,
-      flagsMap,
-      loading,
-      error,
-      refresh,
-      loadMore,
-      loadingMore,
-      hasMore,
-      statuses,
-      setStatuses,
-      patchFlag,
-      removeFlag,
-      isOfflineCache,
-    ],
+    [flags, flagsMap, loading, error, refresh, loadMore, loadingMore, hasMore, statuses, setStatuses, patchFlag, removeFlag, isOfflineCache, setViewportGate],
   );
 
   return <FlagsContext.Provider value={value}>{children}</FlagsContext.Provider>;

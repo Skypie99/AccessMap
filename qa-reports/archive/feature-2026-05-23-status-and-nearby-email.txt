@@ -1,0 +1,76 @@
+To:      skylerhalisky@gmail.com
+Subject: Feature push AccessMap — 2026-05-23 — Status filter + Nearby flags list
+
+Hi Sky,
+
+Per your follow-up ask, I shipped both of the suggested next features.
+Each is on its own branch off main so they can be reviewed and merged
+independently.
+
+1) Status filter on the Map
+   Branch: feat/status-filter-2026-05-23
+   Commit: 7b9de67  MapScreen: add Status filter row
+   Files:  +112 / -6  (src/lib/flags.ts + src/screens/MapScreen.tsx)
+
+   A new "Status" row in the existing filter panel with four multi-
+   select pills (Open / Verified / Resolved / Rejected), defaulting to
+   {open, verified} to match the historical hardcoded listFlags call.
+   Toggling pills re-fetches with the chosen statuses. Clear resets to
+   default. Empty-selection state shows a small hint and skips the
+   network call. Reuses the existing filterPill styles so contrast,
+   text size, and target size match the proven category row.
+
+2) Accessible list view of nearby flags (Phase 1)
+   Branch: feat/nearby-flags-list-2026-05-23
+   Commit: c546740  Add NearbyFlagsModal — accessible list view…
+   Files:  +328 / -16  (new NearbyFlagsModal.tsx + MapScreen.tsx)
+
+   A new "📋 List" FAB on the Map (stacked above the existing "+ Report"
+   FAB) opens a full-screen modal showing the already-fetched flags
+   sorted by haversine distance from the user. Each row tap closes the
+   modal and centers the Map on that flag with the callout open —
+   reusing the existing focusFlag / animateTo / showCallout chain end
+   to end. Composed accessibilityLabel per row reads as one full
+   sentence ("No ramp, severity 3, 320 meters away. Status verified.
+   …"). Distance is in m/km and is paired with text everywhere.
+   Phase 2 (auto-open when screen reader is on) intentionally
+   deferred — see report for the proposed follow-up spec.
+
+Verification (both branches):
+  - Typecheck green throughout (npm run typecheck)
+  - Reachable: Feature 1 = Map → ⌕ filter → new Status row. Feature 2
+    = Map → bottom-right "📋 List" FAB.
+  - Born accessible: role/label/state on every interactive element,
+    composed labels on list rows, decorative children hidden, ≥44pt
+    targets, no color-only meaning, onRequestClose wired for Android
+    back-button.
+  - No schema, dep, auth, or map-library changes.
+  - Types still use `type` not `interface`.
+
+How to try:
+  cd ~/AccessMap
+  git checkout feat/status-filter-2026-05-23   # Feature 1
+  npm run web
+  # tap ⌕, find the new Status row, toggle Resolved
+
+  git checkout feat/nearby-flags-list-2026-05-23   # Feature 2
+  npm run web
+  # tap the "📋 List" FAB on the Map
+
+How to review/merge (any order — no conflicts between them):
+  git diff main..feat/status-filter-2026-05-23
+  git diff main..feat/nearby-flags-list-2026-05-23
+  git checkout main
+  git merge feat/status-filter-2026-05-23
+  git merge feat/nearby-flags-list-2026-05-23
+
+Two forward-looking suggestions in the full report:
+  1. Phase 2 of the accessible list — auto-open when screen reader on.
+  2. Onboarding / first-run cards (already on your Next list).
+
+Full report is at:
+  ~/AccessMap/qa-reports/feature-2026-05-23-status-and-nearby.md
+  ~/Documents/Claude/Projects/Access Map App/Access Map Summarys/
+    2026-05-23_Feature_Development_Report_Status_And_Nearby.md
+
+— Shamus
