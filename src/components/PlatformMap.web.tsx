@@ -18,6 +18,7 @@ import { useColor } from '@/theme/ThemeContext';
 import type { FlagRow } from '@/types/database';
 import { useAuth } from '@/lib/auth';
 import { getCachedTile, setCachedTile } from '@/lib/tileCache';
+import { track } from '@/lib/analytics';
 import { colorForCell, HEATMAP_FILL_OPACITY, type HeatCell, type HeatmapMode } from '@/lib/heatmap';
 
 export interface PlatformMapRegion {
@@ -390,6 +391,7 @@ class CachedTileLayer extends L.TileLayer {
         // Step 1: cache hit?
         const cached = await getCachedTile(userId, url);
         if (cached) {
+          track('tile_cache_hit', { zoom: coords.z });
           img.onload = () => done(undefined, img);
           img.onerror = () => {
             img.src = url;
@@ -400,6 +402,7 @@ class CachedTileLayer extends L.TileLayer {
         }
 
         // Step 2: cache miss — fetch, convert, store, display
+        track('tile_cache_miss', { zoom: coords.z });
         const response = await fetch(url);
         if (!response.ok) throw new Error(`Tile fetch failed: ${response.status}`);
         const blob = await response.blob();
