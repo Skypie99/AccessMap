@@ -46,10 +46,18 @@
       "startUrl": "/"
     },
     "plugins": [
+      "@sentry/react-native/expo",
       [
         "expo-location",
         {
           "locationWhenInUsePermission": "AccessMap uses your location to show nearby accessibility flags and to attach your location when you report a new flag."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "AccessMap needs photo access to attach images to accessibility reports.",
+          "cameraPermission": "AccessMap uses the camera to capture photos of accessibility barriers."
         }
       ]
     ],
