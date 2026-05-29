@@ -192,7 +192,6 @@ create policy "flags delete own"
   using ((select auth.uid()) = user_id);
 
 -- ---------------------------------------------------------------------------
--- ---------------------------------------------------------------------------
 -- push_tokens: Expo push notification tokens (one per user, upserted).
 -- Tokens are PII under PIPEDA and must be stored securely.
 -- ---------------------------------------------------------------------------

@@ -13,6 +13,10 @@ export const pushEnabledKey = (userId: string) => `@accessmap/push_enabled:${use
 
 export async function getPushEnabled(userId: string): Promise<boolean> {
   try {
+    // Only check AsyncStorage on native platforms (not web).
+    if (Platform.OS === 'web') {
+      return false; // Web doesn't use persistent storage for push preference
+    }
     const val = await AsyncStorage.getItem(pushEnabledKey(userId));
     return val === 'true';
   } catch {
@@ -91,7 +95,7 @@ export async function requestExpoPushToken(): Promise<string | null> {
 
 /**
  * Save a push token to the database (upsert handles OS token rotation on
- * reinstall). Also persists the preference to AsyncStorage.
+ * reinstall). Also persists the preference to AsyncStorage (native only).
  *
  * DO NOT log the token parameter.
  */
@@ -101,7 +105,11 @@ export async function savePushToken(userId: string, token: string): Promise<void
   await supabase
     .from('push_tokens')
     .upsert({ user_id: userId, token, platform }, { onConflict: 'user_id' });
-  await AsyncStorage.setItem(pushEnabledKey(userId), 'true');
+
+  // Persist preference to AsyncStorage (native platforms only).
+  if (Platform.OS !== 'web') {
+    await AsyncStorage.setItem(pushEnabledKey(userId), 'true');
+  }
 }
 
 /**
@@ -111,7 +119,10 @@ export async function savePushToken(userId: string, token: string): Promise<void
 export async function deletePushToken(userId: string): Promise<void> {
   try {
     await supabase.from('push_tokens').delete().eq('user_id', userId);
-    await AsyncStorage.setItem(pushEnabledKey(userId), 'false');
+    // Clear preference (native platforms only).
+    if (Platform.OS !== 'web') {
+      await AsyncStorage.setItem(pushEnabledKey(userId), 'false');
+    }
 
     // Cancel any locally scheduled notifications too.
     try {
