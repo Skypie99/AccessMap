@@ -13,13 +13,12 @@
   "//   production   — App Store submission build. Use eas submit after build.": "",
   "//                  Command: eas build --profile production --platform ios": "",
   "//": "",
-  "// CREDENTIALS REQUIRED BEFORE FIRST BUILD:": "",
-  "//   APPLE_TEAM_ID   — 10-character ID from developer.apple.com/account": "",
-  "//                     Set via: eas secret:create --name APPLE_TEAM_ID --value <id>": "",
-  "//   APPLE_ID        — Your Apple ID email (used by eas submit for iOS)": "",
-  "//                     Set via: eas secret:create --name APPLE_ID --value <email>": "",
-  "//   ASC_APP_ID      — App Store Connect numeric app ID (find in App Store": "",
-  "//                     Connect → App → General → App Information → Apple ID)": "",
+  "// CREDENTIALS STATUS:": "",
+  "//   APPLE_TEAM_ID   — ✅ Set: S78F8ZA8QU (Skyler Halisky, Individual)": "",
+  "//   APPLE_ID        — ✅ Set: skylerhalisky@gmail.com": "",
+  "//   ASC_APP_ID      — ⏳ Pending: create app record in App Store Connect first,": "",
+  "//                     then paste the numeric Apple ID shown under": "",
+  "//                     App Information → General → Apple ID.": "",
   "//                     Set in submit.production.ios.ascAppId below once known.": "",
   "//   Android (future) — serviceAccountKeyPath: path to a Google Service Account": "",
   "//                     JSON key downloaded from Google Play Console →": "",
@@ -73,12 +72,10 @@
     "production": {
       "ios": {
         "// DOCS": "https://docs.expo.dev/submit/ios/",
-        "// TODO_APPLE_ID": "Replace with your Apple ID email. Can also be set via EXPO_APPLE_ID env var.",
-        "appleId": "TODO_APPLE_ID@example.com",
-        "// TODO_ASC_APP_ID": "Replace with the numeric App Store Connect app ID once the app record is created.",
+        "appleId": "skylerhalisky@gmail.com",
+        "// TODO_ASC_APP_ID": "Pending: create app record in App Store Connect first, then paste the numeric Apple ID shown under App Information → General.",
         "ascAppId": "TODO_ASC_APP_ID",
-        "// TODO_APPLE_TEAM_ID": "Replace with your 10-character Apple Team ID from developer.apple.com/account.",
-        "appleTeamId": "TODO_APPLE_TEAM_ID"
+        "appleTeamId": "S78F8ZA8QU"
       },
       "android": {
         "// DOCS": "https://docs.expo.dev/submit/android/",
