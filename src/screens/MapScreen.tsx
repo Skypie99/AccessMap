@@ -1964,8 +1964,8 @@ const makeStyles = (color: ColorTheme) =>
     filterPillTextActive: { color: color.textOnBrand },
     sevPill: {
       width: 44,
-      height: 32,
-      borderRadius: 16,
+      height: 44,
+      borderRadius: 22,
       alignItems: 'center',
       justifyContent: 'center',
       backgroundColor: color.surfaceNeutral,
