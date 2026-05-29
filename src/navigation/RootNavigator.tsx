@@ -255,7 +255,7 @@ const makeStyles = (_color: ColorTheme) =>
       paddingVertical: spacing.xs,
       borderRadius: radius.full,
       backgroundColor: 'rgba(255,255,255,0.14)',
-      minHeight: 32,
+      minHeight: 44, // WCAG 2.1 AA touch target minimum (was 32)
       justifyContent: 'center',
     },
     feedbackBtnPressed: { backgroundColor: 'rgba(255,255,255,0.28)' },

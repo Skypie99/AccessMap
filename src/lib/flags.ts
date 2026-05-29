@@ -317,7 +317,8 @@ export async function uploadFlagPhoto(userId: string, localUri: string): Promise
   // Post-strip verification: check that EXIF markers are not present.
   const exifCheckPassed = verifyExifStripped(arrayBuffer);
   if (!exifCheckPassed) {
-    console.warn('[EXIF] Verification detected possible metadata markers.');
+    // D8 privacy gate: do not upload if GPS/EXIF metadata cannot be verified stripped.
+    throw new Error('Photo privacy check failed. Please try a different photo or contact support.');
   }
 
   const contentType =
