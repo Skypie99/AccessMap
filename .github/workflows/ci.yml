@@ -1,41 +1,72 @@
 name: CI
 
 on:
-  push:
-    branches: [main]
   pull_request:
+    branches: [main]
+  push:
     branches: [main]
 
 jobs:
-  typecheck-and-test:
+  typecheck:
+    name: TypeScript
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
           cache: 'npm'
+
       - name: Install dependencies
         run: npm ci --legacy-peer-deps
-      - name: Typecheck
+
+      - name: TypeScript check
         run: npm run typecheck
-      - name: Test
-        run: npm test -- --passWithNoTests --forceExit
-      # Lint and format gates — these steps run only when the optional
-      # ESLint + Prettier dev packages are installed (see eslint.config.js
-      # for the exact install command).  The `if: always()` on the test step
-      # above means a failed test never skips these checks.
-      - name: Lint (skip if eslint not installed)
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Lint
         run: |
           if npx eslint --version > /dev/null 2>&1; then
             npm run lint
           else
             echo "ESLint not installed — skipping. Run: npm i -D eslint eslint-config-expo prettier eslint-config-prettier"
           fi
-      - name: Format check (skip if prettier not installed)
+
+      - name: Format check
         run: |
           if npx prettier --version > /dev/null 2>&1; then
             npm run format:check
           else
             echo "Prettier not installed — skipping. Run: npm i -D prettier eslint-config-prettier"
           fi
+
+  test:
+    name: Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Run tests
+        run: npm test -- --passWithNoTests --forceExit --watchAll=false
