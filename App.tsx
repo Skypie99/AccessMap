@@ -1,4 +1,6 @@
 import 'react-native-gesture-handler';
+import { initSentry } from '@/lib/sentry';
+initSentry();
 import React, { useCallback, useEffect, useState } from 'react';
 import { Platform, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
