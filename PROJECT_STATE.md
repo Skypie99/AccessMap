@@ -1,16 +1,16 @@
 # AccessMap — Project State
 
-**Updated:** 2026-05-27 (Security Wave 2 completion + D3 approval + Morgan execution replan)
-**Source:** Steve security audit | Morgan briefing consolidation | DECISIONS_LOG.md | qa-reports consolidation
-**Main SHA:** `3c30d1e` · Tests: 922/922 · TSC errors: 0 · Test suites: 61
+**Updated:** 2026-05-29 (Rory merge wave — CI bump, EXIF/MIME security fix, privacy commits landed)
+**Source:** Rory merge wave qa-reports/2026-05-29_Rory_MergeWave.md | DECISIONS_LOG.md | qa-reports consolidation
+**Main SHA:** `5698fef` · Tests: 1135/1135 · TSC errors: 0 · Test suites: 72
 
 ---
 
 ## Current Status
 
-**Wave 2 Security + D3 Trigger**: Steve completed hardening audit and approved D3 trigger. Wave 2 branch ready for merge (no migration dependencies). Three critical-path items awaiting Sky action: wave2 merge → email privacy SQL apply (same-cycle), D3 trigger SQL apply (unblocks marker-clustering). Heatmap build blocked on D5 colour decision (Jordan pre-approved; Sky call only).
+**Merge Wave Complete (2026-05-29):** Rory landed 3 branches this cycle (CI bump, EXIF/MIME security, Jordan privacy commits). Main is now at `5698fef`. Test suite grew from 922→1135 (Jordan heatmap + coverage work). `test/heatmap-lib-coverage-2026-05-29` was skipped — redundant after security branch merge (same commit `66ff6ed`). Fix branch `fix/prelaunch-blockers-2026-05-30` has one open in-progress change on `flags.ts` (privacy gate throw). SQL migrations remain AWAITING SKY APPLY — not touched.
 
-**Coherence:** 0.92 (one merge blocker resolved; D3 unblocked; security wave 2 stacked properly)
+**Coherence:** 0.94 (security + CI on main; privacy commits live; SQL migrations remain only open gate)
 
 ---
 
