@@ -1,0 +1,30 @@
+#!/usr/bin/env sh
+# Security pre-commit: block commits containing secrets/credentials.
+# Scans staged files only — fast, zero false positives on untouched files.
+STAGED=$(git diff --cached --name-only --diff-filter=ACMR 2>/dev/null)
+if [ -z "$STAGED" ]; then
+  exit 0
+fi
+FOUND=0
+check_pattern() {
+  LABEL="$1"
+  PATTERN="$2"
+  MATCHES=$(git diff --cached -U0 | grep -n "^+" | grep -iE "$PATTERN" 2>/dev/null || true)
+  if [ -n "$MATCHES" ]; then
+    echo "  [SECRET SCAN] $LABEL"
+    echo "$MATCHES" | head -5
+    FOUND=1
+  fi
+}
+echo "Running secret scan on staged changes..."
+check_pattern "Supabase service_role key" "service_role"
+check_pattern "AWS Access Key ID" "(AKIA|ASIA|AROA)[A-Z0-9]{16}"
+check_pattern "AWS Secret Access Key" "aws_secret_access_key\s*=\s*['\"][A-Za-z0-9/+=]{40}"
+check_pattern "Generic API key/token" "(api_key|apikey|auth_token|access_token|secret_key|client_secret|private_key)\s*[=:]\s*['\"][A-Za-z0-9_\-]{20,}"
+check_pattern "Private key PEM block" "-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY-----"
+check_pattern "Hard-coded password" "(passwd|pwd)\s*[=:]\s*['\"][^'\"]{8,}"
+if [ "$FOUND" -ne 0 ]; then
+  echo "Secret scan FAILED. Use git commit --no-verify for false positives (document in PR)."
+  exit 1
+fi
+echo "Secret scan passed."
