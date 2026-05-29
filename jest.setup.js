@@ -15,3 +15,10 @@ process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY =
 jest.mock('@react-native-async-storage/async-storage', () =>
   require('@react-native-async-storage/async-storage/jest/async-storage-mock'),
 );
+
+// expo-image-manipulator is used by flags.ts (stripExifNative). Tests that
+// import flags.ts indirectly need a stub so the module resolves in Node.
+jest.mock('expo-image-manipulator', () => ({
+  manipulateAsync: jest.fn().mockResolvedValue({ uri: 'mocked-uri' }),
+  SaveFormat: { JPEG: 'jpeg', PNG: 'png' },
+}));
