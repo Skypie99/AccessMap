@@ -5,7 +5,7 @@ import { Callout, Marker, Polygon, PROVIDER_DEFAULT } from 'react-native-maps';
 import type MapView from 'react-native-maps';
 import { font, radius, shadow, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
-import { severity as severityTokens } from '@/theme';
+import { heatmapSeverity as severityTokens } from '@/theme';
 import { CATEGORY_LABELS, severityColor } from '@/lib/flags';
 import { decorativeProps } from '@/lib/accessibility';
 import { severityA11y, statusA11y } from '@/lib/a11yText';

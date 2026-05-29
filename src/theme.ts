@@ -250,3 +250,29 @@ export const severity = {
   4: { color: '#e67e22', label: 'High' },
   5: { color: '#e74c3c', label: 'Severe' },
 } as const satisfies Record<FlagSeverity, { color: string; label: string }>;
+
+// -------------------------------------------------------------------------
+// Heatmap severity — Dani Design Compiler COMMIT (2026-05-29, D5).
+// Distinct from the pin-marker severity ramp above. These tokens encode
+// the heatmap fill color so the heat layer reads as a continuous
+// yellow→orange→red gradient, optimised for readability over the map
+// tiles rather than discrete pin identification.
+//
+// Approved palette (from qa-reports/2026-05-29_Dani_HeatmapColorDecision.md):
+//   sev1 = #fde047 (yellow-300)   → low-severity clusters
+//   sev2 = #fb923c (orange-400)   → mild clusters
+//   sev3 = #f97316 (orange-500)   → moderate clusters
+//   sev4 = #ef4444 (red-500)      → high-severity clusters
+//   sev5 = #dc2626 (red-600)      → severe clusters
+//
+// Usage: import into PlatformMap (native + web) and feed to colorForCell()
+// instead of the `severity` token map above.
+// -------------------------------------------------------------------------
+
+export const heatmapSeverity = {
+  1: { color: '#fde047', label: 'Minor' },
+  2: { color: '#fb923c', label: 'Low' },
+  3: { color: '#f97316', label: 'Moderate' },
+  4: { color: '#ef4444', label: 'High' },
+  5: { color: '#dc2626', label: 'Severe' },
+} as const satisfies Record<FlagSeverity, { color: string; label: string }>;

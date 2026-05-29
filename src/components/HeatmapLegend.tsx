@@ -1,14 +1,17 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { SEVERITY_ORDER, SEVERITY_LABELS, severityColor } from '@/lib/flags';
+import { SEVERITY_ORDER, SEVERITY_LABELS } from '@/lib/flags';
 import type { FlagSeverity } from '@/types/database';
-import { radius } from '@/theme';
+import { radius, heatmapSeverity } from '@/theme';
 
 /**
  * HeatmapLegend — compact severity key shown whenever the heat layer is
  * visible. Satisfies Jordan's pre-approval condition: "the severity scale
  * must be disclosed in the UI". Each swatch shows the colour + numeric
  * label + word so colorblind users have two non-colour signals.
+ *
+ * Swatch colors mirror the heatmapSeverity tokens (Dani D5 COMMIT) so
+ * the legend always matches what the map layer actually renders.
  */
 export default function HeatmapLegend() {
   return (
@@ -16,7 +19,7 @@ export default function HeatmapLegend() {
       style={styles.container}
       accessible
       accessibilityRole="image"
-      accessibilityLabel="Heat map legend: 1 Minor green, 2 Mild light green, 3 Moderate yellow, 4 Significant orange, 5 Severe red"
+      accessibilityLabel="Heat map legend: 1 Minor yellow, 2 Mild orange, 3 Moderate orange-red, 4 Significant red, 5 Severe deep red"
     >
       <Text
         style={styles.title}
@@ -32,7 +35,7 @@ export default function HeatmapLegend() {
       >
         {SEVERITY_ORDER.map((s: FlagSeverity) => (
           <View key={s} style={styles.item}>
-            <View style={[styles.swatch, { backgroundColor: severityColor(s) }]} />
+            <View style={[styles.swatch, { backgroundColor: heatmapSeverity[s].color }]} />
             <Text style={styles.label}>{`${s} ${SEVERITY_LABELS[s]}`}</Text>
           </View>
         ))}

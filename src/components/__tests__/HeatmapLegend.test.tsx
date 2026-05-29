@@ -98,7 +98,8 @@ describe('HeatmapLegend', () => {
   it('accessibilityLabel mentions colour names (WCAG: colour is not the only signal)', () => {
     const { getByRole } = render(<HeatmapLegend />);
     const label: string = getByRole('image').props.accessibilityLabel ?? '';
-    expect(label).toContain('green');
+    // Heatmap uses the D5 palette (yellow→orange→red), not pin-marker green.
+    expect(label).toContain('yellow');
     expect(label).toContain('red');
   });
 
