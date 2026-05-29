@@ -858,6 +858,12 @@ export default function MapScreen() {
     [location],
   );
 
+  // Memoize the flags array passed to PlatformMap so a filter UI state
+  // change (name-draft text, modal open) doesn't trigger a shallow-prop
+  // inequality and force the map to re-render. The identity only changes
+  // when the actual flag list or filter result changes.
+  const memoizedFlags = useMemo(() => filteredFlags, [filteredFlags]);
+
   // Keep the viewport ref in sync with the resolved initial region. This fires
   // once when `location` becomes non-null, giving the gate an accurate starting
   // region rather than the fallback DEFAULT_REGION.
@@ -905,7 +911,7 @@ export default function MapScreen() {
       <PlatformMap
         ref={mapRef}
         initialRegion={initialRegion}
-        flags={filteredFlags}
+        flags={memoizedFlags}
         focusedFlagId={focusedFlagId}
         showsUserLocation
         reducedMotion={reducedMotion}

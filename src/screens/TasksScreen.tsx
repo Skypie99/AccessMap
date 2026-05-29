@@ -158,6 +158,7 @@ export default function TasksScreen() {
   const handleSortChange = useCallback((next: TasksSort) => {
     setSortMode(next);
     // Fire-and-forget — saveTasksSort fails-soft with a console.warn.
+    // No deps needed; saveTasksSort is a pure function.
     void saveTasksSort(next);
   }, []);
 
@@ -817,6 +818,25 @@ export default function TasksScreen() {
           selection.active && { paddingBottom: BULK_BAR_HEIGHT },
         ]}
         stickySectionHeadersEnabled={false}
+        getItemLayout={(data, index) => {
+          // FlagCard has minHeight 88 (size.cardMin) + 12px marginBottom.
+          // Section headers have ~32pt height. Use a conservative estimate
+          // so VirtualizedList can skip off-screen measurements entirely.
+          const CARD_HEIGHT = 100; // minHeight + marginBottom + safety margin
+          const HEADER_HEIGHT = 32;
+          let offset = 0;
+          let itemIndex = 0;
+          if (!data) return { length: CARD_HEIGHT, offset: 0, index };
+          for (let i = 0; i < data.length; i++) {
+            if (itemIndex === index) {
+              return { length: CARD_HEIGHT, offset, index };
+            }
+            offset += HEADER_HEIGHT; // section header
+            offset += data[i]!.data.length * CARD_HEIGHT;
+            itemIndex += data[i]!.data.length;
+          }
+          return { length: CARD_HEIGHT, offset: 0, index };
+        }}
         refreshControl={
           <RefreshControl
             refreshing={loading}
@@ -1062,6 +1082,10 @@ const FlagCard = memo(function FlagCard({
   // Tracks whether the photo URL failed to load. On error we render nothing
   // instead of a broken-image icon — cleaner than an empty grey box.
   const [photoError, setPhotoError] = useState(false);
+  // Lazy-load the photo: only render the Image once the user has scrolled
+  // the card into view. Before then, show a placeholder so the UI doesn't
+  // jank when the image finally arrives.
+  const [photoInView, setPhotoInView] = useState(false);
   // Compute distance + ETA once per card per location change. Without the
   // memo this would recompute on every parent state flip (busyId, flash).
   const distanceInfo = useMemo(() => {
@@ -1127,19 +1151,24 @@ const FlagCard = memo(function FlagCard({
         {flag.photo_url && !photoError ? (
           <Pressable
             onPress={() => setLightboxOpen(true)}
+            onLayout={() => setPhotoInView(true)}
             hitSlop={spacing.sm}
             style={styles.cardThumbWrap}
             accessibilityRole="button"
             accessibilityLabel={`Photo of ${CATEGORY_LABELS[flag.category]} accessibility issue. Tap to view full screen.`}
             accessibilityHint="Opens a full-screen view of the photo"
           >
-            <Image
-              source={{ uri: flag.photo_url }}
-              style={styles.cardThumb}
-              onError={() => setPhotoError(true)}
-              accessible={false}
-              importantForAccessibility="no"
-            />
+            {photoInView ? (
+              <Image
+                source={{ uri: flag.photo_url }}
+                style={styles.cardThumb}
+                onError={() => setPhotoError(true)}
+                accessible={false}
+                importantForAccessibility="no"
+              />
+            ) : (
+              <View style={[styles.cardThumb, { backgroundColor: color.surfaceNeutral }]} />
+            )}
           </Pressable>
         ) : null}
         <View style={styles.cardBodyText}>

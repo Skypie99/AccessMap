@@ -1,5 +1,7 @@
-import React from 'react';
-import { Pressable, StyleSheet, Text } from 'react-native';
+import React, { useState } from 'react';
+import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import HamburgerDrawer from '@/components/HamburgerDrawer';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useAuth } from '@/lib/auth';
@@ -56,9 +58,9 @@ const linking = {
 const Tab = createBottomTabNavigator<RootTabParamList>();
 
 const tabIcon =
-  (emoji: string) =>
-  ({ color: tintColor }: { color: string }) => (
-    <Text style={{ fontSize: 20, color: tintColor }}>{emoji}</Text>
+  (name: keyof typeof Ionicons.glyphMap) =>
+  ({ color: tintColor, size }: { color: string; size: number }) => (
+    <Ionicons name={name} size={size} color={tintColor} />
   );
 
 interface Props {
@@ -108,23 +110,29 @@ function FlagsProviderWithAuth({ initialRouteName }: { initialRouteName: keyof R
  * the provider — useSharedModals would see no context).
  */
 function NavInner({ initialRouteName }: { initialRouteName: keyof RootTabParamList }) {
-  // Header "Feedback" button now routes through the shared context —
-  // same FeedbackModal mount that SettingsScreen's "Send feedback" row
-  // uses. Before the lift, we kept a private `feedbackOpen` state here
-  // because the header lives outside the screens; now the context
-  // pulls double duty.
   const { setOpen } = useSharedModals();
   const color = useColor();
   const styles = makeStyles(color);
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
-  // Badge on the Tasks tab: count of 'open' flags (need verification).
-  // Gives users an at-a-glance signal that there's work to do without
-  // requiring them to tap in and count. Capped at 99 so the badge stays
-  // compact on narrow screens; cleared to undefined (no badge) when the
-  // queue is empty so the tab reads "all done."
   const { flags } = useFlags();
   const openCount = flags.filter((f) => f.status === 'open').length;
   const tasksBadge: number | undefined = openCount > 0 ? Math.min(openCount, 99) : undefined;
+
+  const renderHamburger = () => (
+    <>
+      <Pressable
+        onPress={() => setDrawerOpen(true)}
+        style={({ pressed }) => [styles.hamburgerBtn, pressed && styles.hamburgerBtnPressed]}
+        accessibilityRole="button"
+        accessibilityLabel="Open navigation menu"
+        hitSlop={8}
+      >
+        <Ionicons name="menu-outline" size={24} color="#f0f6ff" />
+      </Pressable>
+      <HamburgerDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
+    </>
+  );
 
   const renderHeaderRight = () => (
     <Pressable
@@ -143,45 +151,65 @@ function NavInner({ initialRouteName }: { initialRouteName: keyof RootTabParamLi
     <Tab.Navigator
       initialRouteName={initialRouteName}
       screenOptions={{
-        // Branded header — replaces the default white strip with the
-        // app's primary color. Same on every tab so navigation feels
-        // anchored.
         headerStyle: {
-          backgroundColor: color.brand,
-          // Drop the default 1px border so the header reads as a
-          // single brand surface, not a labelled tab strip.
-          borderBottomWidth: 0,
-          // Subtle elevation so the header casts a tiny shadow over
-          // map / list content.
-          shadowColor: color.shadow,
-          shadowOpacity: 0.15,
-          shadowRadius: 4,
+          backgroundColor: '#0d1829',
+          borderBottomWidth: 1,
+          borderBottomColor: 'rgba(255,255,255,0.08)',
+          shadowColor: '#000',
+          shadowOpacity: 0.4,
+          shadowRadius: 8,
           shadowOffset: { width: 0, height: 2 },
-          elevation: 4,
+          elevation: 8,
         },
         headerTitleStyle: {
-          color: color.textOnBrand,
+          color: '#f0f6ff',
           fontWeight: font.weight.bold,
           fontSize: font.size.lg,
+          letterSpacing: 0.2,
         },
-        headerTintColor: color.textOnBrand,
+        headerTintColor: '#f0f6ff',
         headerTitleAlign: 'center',
         headerRight: renderHeaderRight,
-        tabBarActiveTintColor: color.brand,
-        tabBarInactiveTintColor: color.textSubtle,
+        tabBarActiveTintColor: '#60a5fa',
+        tabBarInactiveTintColor: 'rgba(255,255,255,0.45)',
+        tabBarStyle: {
+          borderTopWidth: 1,
+          borderTopColor: 'rgba(255,255,255,0.1)',
+          backgroundColor: 'rgba(7,11,24,0.92)',
+          height: 62,
+          paddingBottom: 8,
+          paddingTop: 6,
+          ...(Platform.OS === 'web'
+            ? { backdropFilter: 'blur(20px) saturate(160%)' } as object
+            : {}),
+        },
+        tabBarLabelStyle: {
+          fontSize: font.size.xs,
+          fontWeight: font.weight.semibold,
+          marginTop: 2,
+          letterSpacing: 0.2,
+        },
       }}
     >
-      <Tab.Screen name="Map" component={MapScreen} options={{ tabBarIcon: tabIcon('🗺️') }} />
-      <Tab.Screen name="Tasks" component={TasksScreen} options={{ tabBarIcon: tabIcon('✅') }} />
+      <Tab.Screen
+        name="Map"
+        component={MapScreen}
+        options={{ tabBarIcon: tabIcon('map-outline'), headerLeft: renderHamburger }}
+      />
+      <Tab.Screen
+        name="Tasks"
+        component={TasksScreen}
+        options={{ tabBarIcon: tabIcon('checkmark-done-outline'), tabBarBadge: tasksBadge }}
+      />
       <Tab.Screen
         name="Profile"
         component={ProfileScreen}
-        options={{ tabBarIcon: tabIcon('👤') }}
+        options={{ tabBarIcon: tabIcon('person-outline') }}
       />
       <Tab.Screen
         name="Settings"
         component={SettingsScreen}
-        options={{ tabBarIcon: tabIcon('⚙️') }}
+        options={{ tabBarIcon: tabIcon('settings-outline') }}
       />
     </Tab.Navigator>
   );
@@ -208,20 +236,31 @@ function SharedModalsHost() {
   );
 }
 
-const makeStyles = (color: ColorTheme) =>
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const makeStyles = (_color: ColorTheme) =>
   StyleSheet.create({
+    hamburgerBtn: {
+      marginLeft: spacing.md,
+      width: 36,
+      height: 36,
+      borderRadius: radius.md,
+      backgroundColor: 'rgba(255,255,255,0.12)',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    hamburgerBtnPressed: { backgroundColor: 'rgba(255,255,255,0.22)' },
     feedbackBtn: {
       marginRight: spacing.md,
       paddingHorizontal: spacing.md,
       paddingVertical: spacing.xs,
       borderRadius: radius.full,
-      backgroundColor: 'rgba(255,255,255,0.18)',
+      backgroundColor: 'rgba(255,255,255,0.14)',
       minHeight: 32,
       justifyContent: 'center',
     },
-    feedbackBtnPressed: { backgroundColor: 'rgba(255,255,255,0.32)' },
+    feedbackBtnPressed: { backgroundColor: 'rgba(255,255,255,0.28)' },
     feedbackBtnText: {
-      color: color.textOnBrand,
+      color: '#f0f6ff',
       fontWeight: font.weight.bold,
       fontSize: font.size.sm,
       letterSpacing: 0.3,

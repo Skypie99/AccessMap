@@ -192,6 +192,59 @@ create policy "flags delete own"
   using ((select auth.uid()) = user_id);
 
 -- ---------------------------------------------------------------------------
+-- ---------------------------------------------------------------------------
+-- push_tokens: Expo push notification tokens (one per user, upserted).
+-- Tokens are PII under PIPEDA and must be stored securely.
+-- ---------------------------------------------------------------------------
+create table if not exists public.push_tokens (
+  user_id   uuid primary key references public.users(id) on delete cascade,
+  token     text not null,
+  platform  text check (platform in ('ios', 'android', 'web')),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+alter table public.push_tokens enable row level security;
+
+-- Each user can only read/write/delete their own push token.
+-- The service-role (Edge Functions) bypasses RLS to send notifications.
+drop policy if exists "push_tokens owner select" on public.push_tokens;
+create policy "push_tokens owner select"
+  on public.push_tokens for select
+  using (auth.uid() = user_id);
+
+drop policy if exists "push_tokens owner insert" on public.push_tokens;
+create policy "push_tokens owner insert"
+  on public.push_tokens for insert
+  with check (auth.uid() = user_id);
+
+drop policy if exists "push_tokens owner update" on public.push_tokens;
+create policy "push_tokens owner update"
+  on public.push_tokens for update
+  using (auth.uid() = user_id);
+
+drop policy if exists "push_tokens owner delete" on public.push_tokens;
+create policy "push_tokens owner delete"
+  on public.push_tokens for delete
+  using (auth.uid() = user_id);
+
+-- Update-at timestamp trigger.
+create or replace function public.handle_push_token_updated_at()
+returns trigger
+language plpgsql
+as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$;
+
+drop trigger if exists push_tokens_updated_at on public.push_tokens;
+create trigger push_tokens_updated_at
+  before update on public.push_tokens
+  for each row execute function public.handle_push_token_updated_at();
+
+-- ---------------------------------------------------------------------------
 -- Storage: bucket for flag photos. Public read so everyone sees the thumbnail;
 -- uploads scoped to the authenticated user's own folder (`<auth.uid>/<file>`).
 -- ---------------------------------------------------------------------------
