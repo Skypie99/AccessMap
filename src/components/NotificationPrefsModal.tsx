@@ -246,7 +246,7 @@ const makeStyles = (color: ColorTheme) =>
     closeBtn: {
       width: 44,
       height: 44,
-      borderRadius: 22,
+      borderRadius: radius.circle,
       backgroundColor: color.surfaceNeutral,
       alignItems: 'center',
       justifyContent: 'center',

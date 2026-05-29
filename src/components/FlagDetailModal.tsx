@@ -1013,7 +1013,7 @@ const makeStyles = (color: ColorTheme) =>
     severityBtn: {
       width: 44,
       height: 44,
-      borderRadius: 22,
+      borderRadius: radius.circle,
       alignItems: 'center',
       justifyContent: 'center',
       borderWidth: 1.5,

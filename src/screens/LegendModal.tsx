@@ -11,7 +11,8 @@ import {
   SEVERITY_LABELS,
   SEVERITY_ORDER,
 } from '@/lib/flags';
-import { color, font, radius, spacing } from '@/theme';
+import { font, radius, spacing } from '@/theme';
+import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 
 interface Props {
   visible: boolean;
@@ -19,6 +20,8 @@ interface Props {
 }
 
 export default function LegendModal({ visible, onClose }: Props) {
+  const color = useColor();
+  const styles = makeStyles(color);
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <Pressable
@@ -43,7 +46,7 @@ export default function LegendModal({ visible, onClose }: Props) {
               Severity
             </Text>
             {SEVERITY_ORDER.map((s) => {
-              const color = severityColor(s);
+              const sevColor = severityColor(s);
               const label = SEVERITY_LABELS[s];
               const colorName = SEVERITY_COLOR_NAMES[s];
               const desc = SEVERITY_DESCRIPTIONS[s];
@@ -55,7 +58,7 @@ export default function LegendModal({ visible, onClose }: Props) {
                   accessibilityLabel={`Severity ${s}, ${label}. ${colorName}. ${desc}`}
                 >
                   <View
-                    style={[styles.sevDot, { backgroundColor: color }]}
+                    style={[styles.sevDot, { backgroundColor: sevColor }]}
                     importantForAccessibility="no"
                     accessibilityElementsHidden
                   >
@@ -134,7 +137,8 @@ export default function LegendModal({ visible, onClose }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (color: ColorTheme) =>
+  StyleSheet.create({
   backdrop: {
     flex: 1,
     backgroundColor: color.scrim,

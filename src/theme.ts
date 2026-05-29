@@ -148,6 +148,7 @@ export const radius = {
   md: 8, // default for cards/buttons
   lg: 12, // panels, modals
   xl: 16, // sheet headers
+  sheet: 22, // bottom-sheet / modal top corners (ReportFlagModal, FlagDetailModal, NotificationPrefsModal, PhotoLightboxModal)
   full: 999, // pills, FABs, round icon buttons
   circle: 9999, // perfectly circular elements (avatar frames, round icon buttons)
 };

@@ -13,7 +13,8 @@
  */
 import React from 'react';
 import { Image, Modal, Pressable, StatusBar, StyleSheet, Text, View } from 'react-native';
-import { color, font, spacing } from '@/theme';
+import { font, radius, spacing } from '@/theme';
+import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 
 interface Props {
   visible: boolean;
@@ -24,6 +25,8 @@ interface Props {
 }
 
 export default function PhotoLightboxModal({ visible, photoUrl, caption, onClose }: Props) {
+  const color = useColor();
+  const styles = makeStyles(color);
   // Defensive: still render the modal frame if photoUrl is null so the
   // close button is reachable, but show a friendly fallback.
   return (
@@ -101,7 +104,8 @@ export default function PhotoLightboxModal({ visible, photoUrl, caption, onClose
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (color: ColorTheme) =>
+  StyleSheet.create({
   backdrop: {
     flex: 1,
     backgroundColor: color.backdropStrong,
@@ -135,7 +139,7 @@ const styles = StyleSheet.create({
     right: spacing.lg,
     width: 44,
     height: 44,
-    borderRadius: 22,
+    borderRadius: radius.circle,
     backgroundColor: color.overlayBtn,
     alignItems: 'center',
     justifyContent: 'center',

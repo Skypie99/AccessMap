@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { AccessibilityInfo, Pressable, StyleSheet, Text, View } from 'react-native';
-import { color, font, radius, shadow, spacing } from '@/theme';
+import { font, radius, shadow, spacing } from '@/theme';
+import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 
 interface Props {
   /** Banner text. When null, the banner is hidden. */
@@ -30,6 +31,8 @@ export default function FlashBanner({
   tone = 'success',
   durationMs = 4000,
 }: Props) {
+  const color = useColor();
+  const styles = makeStyles(color);
   // Speak the message the moment it appears, in case the user isn't
   // looking at the top of the screen. The visible banner is the
   // visual-channel half of the same announcement.
@@ -62,7 +65,8 @@ export default function FlashBanner({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (color: ColorTheme) =>
+  StyleSheet.create({
   wrap: {
     position: 'absolute',
     top: 56,

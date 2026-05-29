@@ -11,7 +11,8 @@
 import React, { useMemo } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import type { Achievement, AchievementCategory } from '@/lib/achievements';
-import { color, font, radius, spacing } from '@/theme';
+import { font, radius, spacing } from '@/theme';
+import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 
 interface Props {
   visible: boolean;
@@ -28,7 +29,113 @@ const CATEGORY_LABEL: Record<AchievementCategory, string> = {
 
 const CATEGORY_ORDER: AchievementCategory[] = ['reporting', 'resolution', 'points', 'streak'];
 
+// Defined before both components so AchievementRow can call it without a hoisting issue.
+const makeStyles = (color: ColorTheme) =>
+  StyleSheet.create({
+    backdrop: {
+      flex: 1,
+      backgroundColor: color.scrim,
+      justifyContent: 'flex-end',
+    },
+    card: {
+      backgroundColor: color.surfaceMuted,
+      borderTopLeftRadius: radius.xl,
+      borderTopRightRadius: radius.xl,
+      paddingHorizontal: spacing.xl,
+      paddingTop: spacing.lg,
+      paddingBottom: spacing.xl,
+      gap: spacing.md,
+      height: '85%',
+    },
+    headerRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.md,
+    },
+    titleWrap: { flex: 1, gap: 2 },
+    title: {
+      fontSize: font.size.xxl,
+      fontWeight: font.weight.bold,
+      color: color.textStrong,
+      letterSpacing: -0.3,
+    },
+    subtitle: { fontSize: font.size.sm, color: color.textMuted },
+    closeBtn: {
+      width: 44,
+      height: 44,
+      borderRadius: radius.circle,
+      backgroundColor: color.surfaceNeutral,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    closeBtnText: {
+      fontSize: font.size.xl,
+      color: color.text,
+      fontWeight: font.weight.bold,
+      lineHeight: font.size.xl + 2,
+    },
+    scroll: { paddingBottom: spacing.md, gap: spacing.lg },
+    section: { gap: spacing.sm },
+    sectionHeader: {
+      fontSize: font.size.sm,
+      fontWeight: font.weight.bold,
+      color: color.textStrong,
+      textTransform: 'uppercase',
+      letterSpacing: 0.6,
+    },
+    list: { gap: spacing.sm },
+    row: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.md,
+      paddingHorizontal: spacing.md + 2,
+      paddingVertical: spacing.md,
+      backgroundColor: color.surface,
+      borderRadius: radius.lg,
+      borderWidth: 1,
+      borderColor: color.borderSubtle,
+      minHeight: 56,
+    },
+    rowDimmed: { opacity: 0.7 },
+    iconCircle: {
+      width: 44,
+      height: 44,
+      borderRadius: radius.circle,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    iconCircleEarned: { backgroundColor: '#fff3d1' }, // amber wash; intentionally outside token set (achievement-specific glow)
+    iconCircleLocked: { backgroundColor: color.surfaceNeutral },
+    icon: { fontSize: font.size.xxl - 2 },
+    iconDimmed: { opacity: 0.55 },
+    rowText: { flex: 1, gap: 2 },
+    rowTitle: {
+      fontSize: font.size.md,
+      fontWeight: font.weight.bold,
+      color: color.textStrong,
+    },
+    rowDesc: {
+      fontSize: font.size.sm,
+      color: color.textMuted,
+      lineHeight: 18,
+    },
+    statePill: {
+      paddingHorizontal: spacing.sm + 2,
+      paddingVertical: spacing.xs,
+      borderRadius: radius.circle,
+      minWidth: 64,
+      alignItems: 'center',
+    },
+    statePillEarned: { backgroundColor: color.statusResolvedBg },
+    statePillLocked: { backgroundColor: color.surfaceNeutral },
+    stateText: { fontSize: font.size.caption, fontWeight: font.weight.bold },
+    stateTextEarned: { color: color.statusResolvedFg },
+    stateTextLocked: { color: color.text },
+  });
+
 export default function AchievementsModal({ visible, onClose, achievements }: Props) {
+  const color = useColor();
+  const styles = makeStyles(color);
   // Group by category preserving catalog order within each group.
   const grouped = useMemo(() => {
     const map = new Map<AchievementCategory, Achievement[]>();
@@ -96,18 +203,16 @@ export default function AchievementsModal({ visible, onClose, achievements }: Pr
 }
 
 function AchievementRow({ achievement: a }: { achievement: Achievement }) {
-  const stateText = a.earned ? 'Earned' : `${a.progress} of ${a.threshold}`;
+  const color = useColor();
+  const styles = makeStyles(color);
+  const stateText = a.earned ? "Earned" : `${a.progress} of ${a.threshold}`;
   const a11yLabel =
     `${a.title}, ${a.description} ` +
-    (a.earned ? 'Earned.' : `Progress: ${a.progress} of ${a.threshold}.`);
+    (a.earned ? "Earned." : `Progress: ${a.progress} of ${a.threshold}.`);
 
   return (
     <View
       style={[styles.row, !a.earned && styles.rowDimmed]}
-      // QA A2: accessibilityLabel alone on a non-touchable View doesn't
-      // collapse children into one node — VoiceOver reads each Text
-      // separately and the carefully-composed label is dropped. Setting
-      // accessible={true} groups them into a single announcement.
       accessible={true}
       accessibilityLabel={a11yLabel}
     >
@@ -136,105 +241,3 @@ function AchievementRow({ achievement: a }: { achievement: Achievement }) {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  backdrop: {
-    flex: 1,
-    backgroundColor: color.scrim,
-    justifyContent: 'flex-end',
-  },
-  card: {
-    backgroundColor: color.surfaceMuted,
-    borderTopLeftRadius: radius.xl,
-    borderTopRightRadius: radius.xl,
-    paddingHorizontal: spacing.xl,
-    paddingTop: spacing.lg,
-    paddingBottom: spacing.xl,
-    gap: spacing.md,
-    height: '85%',
-  },
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-  },
-  titleWrap: { flex: 1, gap: 2 },
-  title: {
-    fontSize: font.size.xxl,
-    fontWeight: font.weight.bold,
-    color: color.textStrong,
-    letterSpacing: -0.3,
-  },
-  subtitle: { fontSize: font.size.sm, color: color.textMuted },
-  closeBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: radius.circle,
-    backgroundColor: color.surfaceNeutral,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  closeBtnText: {
-    fontSize: font.size.xl,
-    color: color.text,
-    fontWeight: font.weight.bold,
-    lineHeight: font.size.xl + 2,
-  },
-  scroll: { paddingBottom: spacing.md, gap: spacing.lg },
-  section: { gap: spacing.sm },
-  sectionHeader: {
-    fontSize: font.size.sm,
-    fontWeight: font.weight.bold,
-    color: color.textStrong,
-    textTransform: 'uppercase',
-    letterSpacing: 0.6,
-  },
-  list: { gap: spacing.sm },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-    paddingHorizontal: spacing.md + 2,
-    paddingVertical: spacing.md,
-    backgroundColor: color.surface,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: color.borderSubtle,
-    minHeight: 56,
-  },
-  rowDimmed: { opacity: 0.7 },
-  iconCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: radius.circle,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  iconCircleEarned: { backgroundColor: '#fff3d1' }, // amber wash; intentionally outside token set (achievement-specific glow)
-  iconCircleLocked: { backgroundColor: color.surfaceNeutral },
-  icon: { fontSize: font.size.xxl - 2 },
-  iconDimmed: { opacity: 0.55 },
-  rowText: { flex: 1, gap: 2 },
-  rowTitle: {
-    fontSize: font.size.md,
-    fontWeight: font.weight.bold,
-    color: color.textStrong,
-  },
-  rowDesc: {
-    fontSize: font.size.sm,
-    color: color.textMuted,
-    lineHeight: 18,
-  },
-  statePill: {
-    paddingHorizontal: spacing.sm + 2,
-    paddingVertical: spacing.xs,
-    borderRadius: radius.circle,
-    minWidth: 64,
-    alignItems: 'center',
-  },
-  statePillEarned: { backgroundColor: color.statusResolvedBg },
-  statePillLocked: { backgroundColor: color.surfaceNeutral },
-  stateText: { fontSize: font.size.caption, fontWeight: font.weight.bold },
-  stateTextEarned: { color: color.statusResolvedFg },
-  stateTextLocked: { color: color.text },
-});

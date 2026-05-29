@@ -3,7 +3,8 @@ import React, { forwardRef, memo, useEffect, useImperativeHandle, useRef } from 
 import { MapContainer, Marker, Popup, Rectangle, useMap } from 'react-leaflet';
 import L, { Map as LeafletMap, Marker as LeafletMarker } from 'leaflet';
 import { CATEGORY_LABELS, severityColor } from '@/lib/flags';
-import { severity as severityTokens, color as themeColor } from '@/theme';
+import { severity as severityTokens } from '@/theme';
+import { useColor } from '@/theme/ThemeContext';
 import type { FlagRow } from '@/types/database';
 import { useAuth } from '@/lib/auth';
 import { getCachedTile, setCachedTile } from '@/lib/tileCache';
@@ -255,6 +256,7 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(function Pla
   },
   ref,
 ) {
+  const themeColor = useColor();
   const mapInstance = useRef<LeafletMap | null>(null);
   const { user } = useAuth();
   const userId = user?.id ?? null;
