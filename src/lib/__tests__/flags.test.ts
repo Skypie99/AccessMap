@@ -65,6 +65,7 @@ import {
   verifyExifStripped,
   stripExifNative,
   stripExifWeb,
+  detectMimeFromBytes,
 } from '../flags';
 import type { FlagCategory, FlagSeverity, FlagStatus } from '@/types/database';
 
@@ -447,5 +448,60 @@ describe('stripExifWeb', () => {
         (global as Record<string, unknown>)['document'] = savedDocument;
       }
     }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Section 6 — detectMimeFromBytes
+//
+// Inspects the first 12 bytes of a buffer to detect the image MIME type.
+// Guards against files that pass the extension check but contain non-image
+// content (e.g. a file named evil.jpg with HTML inside).
+// ---------------------------------------------------------------------------
+describe('detectMimeFromBytes', () => {
+  function makeBuffer(...bytes: number[]): ArrayBuffer {
+    // Pad to at least 12 bytes so the function doesn't short-circuit.
+    const arr = new Uint8Array(Math.max(12, bytes.length));
+    bytes.forEach((b, i) => { arr[i] = b; });
+    return arr.buffer;
+  }
+
+  it('returns "image/jpeg" for JPEG magic bytes (FF D8 FF)', () => {
+    const buf = makeBuffer(0xff, 0xd8, 0xff, 0xe0);
+    expect(detectMimeFromBytes(buf)).toBe('image/jpeg');
+  });
+
+  it('returns "image/png" for PNG magic bytes (89 50 4E 47)', () => {
+    const buf = makeBuffer(0x89, 0x50, 0x4e, 0x47);
+    expect(detectMimeFromBytes(buf)).toBe('image/png');
+  });
+
+  it('returns "image/webp" for WEBP magic bytes (RIFF....WEBP)', () => {
+    // Bytes 0-3: RIFF (0x52 49 46 46), bytes 4-7: size (any), bytes 8-11: WEBP (0x57 45 42 50)
+    const buf = makeBuffer(
+      0x52, 0x49, 0x46, 0x46, // RIFF
+      0x00, 0x00, 0x00, 0x00, // size (arbitrary)
+      0x57, 0x45, 0x42, 0x50, // WEBP
+    );
+    expect(detectMimeFromBytes(buf)).toBe('image/webp');
+  });
+
+  it('returns "image/heic" for HEIC magic bytes (ftyp box + mif1 brand)', () => {
+    // Bytes 0-3: box size (any), bytes 4-7: ftyp (0x66 74 79 70), bytes 8-11: mif1 (0x6D 69 66 31)
+    const buf = makeBuffer(
+      0x00, 0x00, 0x00, 0x18, // box size
+      0x66, 0x74, 0x79, 0x70, // ftyp
+      0x6d, 0x69, 0x66, 0x31, // mif1 brand
+    );
+    expect(detectMimeFromBytes(buf)).toBe('image/heic');
+  });
+
+  it('returns null for a buffer shorter than 12 bytes', () => {
+    const buf = new Uint8Array([0xff, 0xd8, 0xff]).buffer; // only 3 bytes
+    expect(detectMimeFromBytes(buf)).toBeNull();
+  });
+
+  it('returns null for an all-zero 512-byte buffer (no magic bytes match)', () => {
+    expect(detectMimeFromBytes(new ArrayBuffer(512))).toBeNull();
   });
 });
