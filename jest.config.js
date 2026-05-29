@@ -40,6 +40,10 @@ module.exports = {
     // Screens depend on native map / image-picker / navigation and are
     // integration-tested via Detox (planned Wave 3); skip here.
     '!src/screens/**',
+    // All components (modals, drawers, banners) require a native runtime.
+    '!src/components/**',
+    // Hooks require device APIs (notifications, location, color scheme).
+    '!src/hooks/**',
     // Platform-specific map wrappers need a real device.
     '!src/components/PlatformMap*.tsx',
     // Navigation component — integration test territory (bottom tabs, routing).
@@ -58,6 +62,8 @@ module.exports = {
     '!src/lib/pushNotifications.ts',
     // Realtime subscription: async Supabase channel subscription, needs live DB.
     '!src/lib/realtimePrefs.ts',
+    '!src/lib/auth.tsx',
+    '!src/lib/flagsStore.tsx',
     '!src/lib/webShare.ts',
     '!src/lib/statusHistory.ts',
     '!src/lib/watchedFlags.ts',
