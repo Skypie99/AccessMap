@@ -107,20 +107,20 @@ function SignedInArea() {
 
 function Gate() {
   const { session, loading } = useAuth();
+  // Guest mode: user dismissed sign-in to browse without an account.
+  // Mirrors the web behaviour — read-only map, no points/onboarding.
+  const [guestMode, setGuestMode] = useState(false);
 
   if (loading) return null;
 
   if (session) return <SignedInArea />;
 
-  // Web demo mode — on web, visitors can browse the live map without signing in.
-  // Flag submission still requires auth (the form explains this inline). We render
-  // RootNavigator directly instead of SignedInArea, which needs a user object for
-  // points/onboarding features that are auth-gated by design.
-  if (Platform.OS === 'web') {
+  // Web or native guest — read-only map, no auth-gated features.
+  if (Platform.OS === 'web' || guestMode) {
     return <RootNavigator initialRouteName="Map" />;
   }
 
-  return <SignInScreen />;
+  return <SignInScreen onGuest={() => setGuestMode(true)} />;
 }
 
 /**
