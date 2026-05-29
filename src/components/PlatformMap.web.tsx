@@ -1,7 +1,17 @@
 import 'leaflet/dist/leaflet.css';
-import React, { forwardRef, memo, useEffect, useImperativeHandle, useRef } from 'react';
-import { MapContainer, Marker, Popup, Rectangle, useMap } from 'react-leaflet';
+import React, {
+  forwardRef,
+  memo,
+  useCallback,
+  useEffect,
+  useImperativeHandle,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
+import { MapContainer, Marker, Popup, Rectangle, useMap, useMapEvents } from 'react-leaflet';
 import L, { Map as LeafletMap, Marker as LeafletMarker } from 'leaflet';
+import Supercluster from 'supercluster';
 import { CATEGORY_LABELS, severityColor } from '@/lib/flags';
 import { severity as severityTokens } from '@/theme';
 import { useColor } from '@/theme/ThemeContext';
@@ -117,6 +127,214 @@ function pinIcon(color: string, dim: boolean): L.DivIcon {
 
 function deltaToZoom(latitudeDelta: number): number {
   return Math.max(2, Math.min(18, Math.round(Math.log2(360 / latitudeDelta))));
+}
+
+// ---------------------------------------------------------------------------
+// Cluster icon — a branded bubble showing the count. Matches the native
+// ClusteredMapView style: brand-color fill, white text, subtle drop shadow.
+// Cache by (brandColor + count) so identical bubbles share one DivIcon.
+// ---------------------------------------------------------------------------
+const clusterIconCache = new Map<string, L.DivIcon>();
+
+function makeClusterIcon(brandColor: string, textColor: string, count: number): L.DivIcon {
+  const label = count >= 1000 ? `${Math.floor(count / 1000)}k` : String(count);
+  const key = `${brandColor}|${textColor}|${label}`;
+  const cached = clusterIconCache.get(key);
+  if (cached) return cached;
+  // Diameter scales with count so large clusters are visually heavier.
+  const size = count <= 9 ? 34 : count <= 99 ? 40 : 46;
+  const icon = L.divIcon({
+    className: 'accessmap-cluster',
+    html: `<div style="
+      display:flex;align-items:center;justify-content:center;
+      width:${size}px;height:${size}px;border-radius:50%;
+      background:${brandColor};color:${textColor};
+      font-weight:700;font-size:${size <= 34 ? 13 : 12}px;
+      border:2.5px solid rgba(255,255,255,0.85);
+      box-shadow:0 2px 6px rgba(0,0,0,0.35);
+      cursor:pointer;
+    ">${label}</div>`,
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size / 2],
+  });
+  clusterIconCache.set(key, icon);
+  return icon;
+}
+
+// GeoJSON point feature shape fed into Supercluster.
+type FlagPointFeature = GeoJSON.Feature<GeoJSON.Point, { flagId: string }>;
+
+// ---------------------------------------------------------------------------
+// ClusteredMarkers — inner react-leaflet component that:
+//   1. Builds a Supercluster index from the flags prop (only on flags change).
+//   2. Listens to zoomend / moveend to recompute the visible cluster set.
+//   3. Renders cluster bubbles (click → zoom to expansion zoom) and pins.
+//
+// markerRefs is shared with the outer PlatformMap so showCallout() can open
+// a popup on an individual pin once the cluster has been expanded.
+// ---------------------------------------------------------------------------
+interface ClusteredMarkersProps {
+  flags: FlagRow[];
+  focusedFlagId: string | null;
+  brandColor: string;
+  textOnBrand: string;
+  markerRefs: React.MutableRefObject<Record<string, LeafletMarker | null>>;
+}
+
+function ClusteredMarkers({
+  flags,
+  focusedFlagId,
+  brandColor,
+  textOnBrand,
+  markerRefs,
+}: ClusteredMarkersProps) {
+  const map = useMap();
+
+  // Build the Supercluster index whenever the flag list changes. radius=60px
+  // matches the native variant's radius={40} scaled up for typical web dpi.
+  const index = useMemo(() => {
+    const sc = new Supercluster<{ flagId: string }, Record<string, never>>({
+      radius: 60,
+      maxZoom: 16,
+      minPoints: 2,
+    });
+    const features: FlagPointFeature[] = flags.map((f) => ({
+      type: 'Feature',
+      geometry: { type: 'Point', coordinates: [f.lng, f.lat] },
+      properties: { flagId: f.id },
+    }));
+    sc.load(features);
+    return sc;
+  }, [flags]);
+
+  // Build a flag lookup map so rendering a pin doesn't need a linear scan.
+  const flagsById = useMemo(
+    () => new Map(flags.map((f) => [f.id, f])),
+    [flags],
+  );
+
+  // Cluster/point features visible in the current viewport.
+  const [clusters, setClusters] = useState<ReturnType<typeof index.getClusters>>([]);
+
+  const recompute = useCallback(() => {
+    const bounds = map.getBounds();
+    const zoom = Math.floor(map.getZoom());
+    const bbox: [number, number, number, number] = [
+      bounds.getWest(),
+      bounds.getSouth(),
+      bounds.getEast(),
+      bounds.getNorth(),
+    ];
+    setClusters(index.getClusters(bbox, zoom));
+  }, [map, index]);
+
+  // Initial computation + recompute whenever the index changes (flag list reload).
+  useEffect(() => {
+    recompute();
+  }, [recompute]);
+
+  // Subscribe to map view changes.
+  useMapEvents({ zoomend: recompute, moveend: recompute });
+
+  return (
+    <>
+      {clusters.map((feature) => {
+        // GeoJSON Position is number[] — index access is safe here because
+        // Supercluster always produces valid [lng, lat] Point coordinates.
+        const lng = feature.geometry.coordinates[0] as number;
+        const lat = feature.geometry.coordinates[1] as number;
+        // Cast to a loose record so we can safely check the `cluster` flag
+        // that Supercluster injects onto cluster features.
+        const props = feature.properties as Record<string, unknown>;
+
+        if (props.cluster) {
+          const count = props.point_count as number;
+          const clusterId = props.cluster_id as number;
+          const icon = makeClusterIcon(brandColor, textOnBrand, count);
+          const a11yLabel = `${count} accessibility ${count === 1 ? 'flag' : 'flags'} grouped. Tap to zoom in and expand.`;
+
+          return (
+            <Marker
+              key={`cluster-${clusterId}`}
+              position={[lat, lng]}
+              icon={icon}
+              alt={a11yLabel}
+              title={`${count} flags — tap to expand`}
+              eventHandlers={{
+                click: () => {
+                  const expansionZoom = Math.min(
+                    index.getClusterExpansionZoom(clusterId),
+                    18,
+                  );
+                  map.flyTo([lat, lng], expansionZoom, { duration: 0.4 });
+                },
+              }}
+            />
+          );
+        }
+
+        // Individual pin.
+        const flagId = (props as { flagId: string }).flagId;
+        const flag = flagsById.get(flagId);
+        if (!flag) return null;
+
+        return (
+          <Marker
+            key={flag.id}
+            position={[flag.lat, flag.lng]}
+            icon={pinIcon(
+              severityColor(flag.severity),
+              focusedFlagId !== null && focusedFlagId !== flag.id,
+            )}
+            // alt is what screen readers announce for the marker; title is
+            // the browser tooltip. Mirrors the accessibilityLabel on the
+            // native Marker so SR users hear the same description on web.
+            alt={`${CATEGORY_LABELS[flag.category]}, severity ${flag.severity}, ${flag.status}. Open for details.`}
+            title={`${CATEGORY_LABELS[flag.category]} — severity ${flag.severity}`}
+            ref={(m) => {
+              markerRefs.current[flag.id] = m;
+            }}
+          >
+            <Popup>
+              <div style={{ minWidth: 200 }}>
+                <div style={{ fontWeight: 700, fontSize: 14 }}>
+                  {CATEGORY_LABELS[flag.category]}
+                </div>
+                <div
+                  style={{
+                    fontSize: 11,
+                    color: '#666',
+                    textTransform: 'uppercase',
+                    letterSpacing: 0.6,
+                    marginTop: 2,
+                    fontWeight: 600,
+                  }}
+                >
+                  Severity {flag.severity} · {flag.status}
+                </div>
+                {flag.photo_url ? (
+                  <img
+                    src={flag.photo_url}
+                    alt={`Photo of ${CATEGORY_LABELS[flag.category]} accessibility issue`}
+                    style={{
+                      width: '100%',
+                      maxHeight: 160,
+                      objectFit: 'cover',
+                      borderRadius: 8,
+                      marginTop: 6,
+                    }}
+                  />
+                ) : null}
+                {flag.description ? (
+                  <div style={{ marginTop: 6, fontSize: 12 }}>{flag.description}</div>
+                ) : null}
+              </div>
+            </Popup>
+          </Marker>
+        );
+      })}
+    </>
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -356,58 +574,15 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(function Pla
             </React.Fragment>
           );
         })}
-        {flags.map((f) => (
-          <Marker
-            key={f.id}
-            position={[f.lat, f.lng]}
-            icon={pinIcon(
-              severityColor(f.severity),
-              focusedFlagId !== null && focusedFlagId !== f.id,
-            )}
-            // alt is what screen readers announce for the marker; title is
-            // the browser tooltip. Mirrors the accessibilityLabel on the
-            // native Marker so SR users hear the same description on web.
-            alt={`${CATEGORY_LABELS[f.category]}, severity ${f.severity}, ${f.status}. Open for details.`}
-            title={`${CATEGORY_LABELS[f.category]} — severity ${f.severity}`}
-            ref={(m) => {
-              markerRefs.current[f.id] = m;
-            }}
-          >
-            <Popup>
-              <div style={{ minWidth: 200 }}>
-                <div style={{ fontWeight: 700, fontSize: 14 }}>{CATEGORY_LABELS[f.category]}</div>
-                <div
-                  style={{
-                    fontSize: 11,
-                    color: '#666',
-                    textTransform: 'uppercase',
-                    letterSpacing: 0.6,
-                    marginTop: 2,
-                    fontWeight: 600,
-                  }}
-                >
-                  Severity {f.severity} · {f.status}
-                </div>
-                {f.photo_url ? (
-                  <img
-                    src={f.photo_url}
-                    alt={`Photo of ${CATEGORY_LABELS[f.category]} accessibility issue`}
-                    style={{
-                      width: '100%',
-                      maxHeight: 160,
-                      objectFit: 'cover',
-                      borderRadius: 8,
-                      marginTop: 6,
-                    }}
-                  />
-                ) : null}
-                {f.description ? (
-                  <div style={{ marginTop: 6, fontSize: 12 }}>{f.description}</div>
-                ) : null}
-              </div>
-            </Popup>
-          </Marker>
-        ))}
+        {/* Clustered flag markers — groups nearby pins into branded bubbles
+              at low zoom; expands to individual pins at zoom 17+. */}
+        <ClusteredMarkers
+          flags={flags}
+          focusedFlagId={focusedFlagId}
+          brandColor={themeColor.brand}
+          textOnBrand={themeColor.textOnBrand}
+          markerRefs={markerRefs}
+        />
       </MapContainer>
     </div>
   );
