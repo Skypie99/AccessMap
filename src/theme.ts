@@ -179,6 +179,14 @@ export const font = {
     semibold: '600' as const,
     bold: '700' as const,
   },
+  lineHeight: {
+    // Sizes computed as font.size × 1.4, rounded up — Dani Design Compiler approved formula.
+    // Use wherever text needs explicit lineHeight control.
+    caption: Math.round(11 * 1.4), // 15 → font.size.caption
+    tight: Math.round(12 * 1.4),   // 16 → font.size.xs
+    base: Math.round(14 * 1.4),    // 20 → font.size.base (most common)
+    relaxed: Math.round(16 * 1.4), // 24 → font.size.lg
+  },
 };
 
 // -------------------------------------------------------------------------

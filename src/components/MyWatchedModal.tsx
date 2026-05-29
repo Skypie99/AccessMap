@@ -34,7 +34,7 @@ import {
   STATUS_LABELS,
 } from '@/lib/flags';
 import { clearWatched, loadWatched, removeWatched } from '@/lib/watchedFlags';
-import { radius } from '@/theme';
+import { font, radius, spacing } from '@/theme';
 import { decorativeProps } from '@/lib/accessibility';
 import { severityA11y, statusA11y } from '@/lib/a11yText';
 import type { FlagRow } from '@/types/database';
@@ -95,9 +95,11 @@ export default function MyWatchedModal({
       // Sort by status priority, then newest first within the same status.
       rows.sort((a, b) => {
         const statusDiff =
-          (STATUS_SORT_ORDER[a.status] ?? 99) - (STATUS_SORT_ORDER[b.status] ?? 99);
+          (STATUS_SORT_ORDER[a.status] ?? 99) -
+          (STATUS_SORT_ORDER[b.status] ?? 99);
         if (statusDiff !== 0) return statusDiff;
-        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        return new Date(b.created_at).getTime() -
+          new Date(a.created_at).getTime();
       });
       if (!mountedRef.current) return;
       setWatchedIds(ids);
@@ -171,88 +173,101 @@ export default function MyWatchedModal({
 
     return (
       <View role="listitem">
-        <Pressable
-          style={({ pressed }) => [
-            styles.row,
-            isResolved && styles.rowResolved,
-            pressed && styles.rowPressed,
-          ]}
-          onPress={() => onSelectFlag(item)}
-          accessibilityRole="button"
-          accessibilityLabel={`${CATEGORY_LABELS[item.category]}, ${severityA11y(item.severity)}, ${statusA11y(item.status)}, reported ${date}`}
-          accessibilityHint="Opens the full details for this flag"
-        >
-          {/* Green left-edge accent bar for resolved flags — decorative only */}
-          {isResolved && (
-            <View
-              style={styles.resolvedAccent}
-              accessibilityElementsHidden
-              importantForAccessibility="no-hide-descendants"
-            />
-          )}
-
-          {/* Left: severity dot */}
+      <Pressable
+        style={({ pressed }) => [
+          styles.row,
+          isResolved && styles.rowResolved,
+          pressed && styles.rowPressed,
+        ]}
+        onPress={() => onSelectFlag(item)}
+        accessibilityRole="button"
+        accessibilityLabel={`${CATEGORY_LABELS[item.category]}, ${severityA11y(item.severity)}, ${statusA11y(item.status)}, reported ${date}`}
+        accessibilityHint="Opens the full details for this flag"
+      >
+        {/* Green left-edge accent bar for resolved flags — decorative only */}
+        {isResolved && (
           <View
-            style={[styles.severityDot, { backgroundColor: severityColor(item.severity) }]}
-            {...decorativeProps}
+            style={styles.resolvedAccent}
+            accessibilityElementsHidden
+            importantForAccessibility="no-hide-descendants"
           />
+        )}
 
-          {/* Middle: category + date */}
-          <View style={styles.rowMid}>
-            <Text
-              style={[styles.rowCategory, isResolved && styles.rowCategoryResolved]}
-              numberOfLines={1}
-            >
-              {isResolved ? '✓ ' : ''}
-              {CATEGORY_LABELS[item.category]}
+        {/* Left: severity dot */}
+        <View
+          style={[
+            styles.severityDot,
+            { backgroundColor: severityColor(item.severity) },
+          ]}
+          {...decorativeProps}
+        />
+
+        {/* Middle: category + date */}
+        <View style={styles.rowMid}>
+          <Text
+            style={[styles.rowCategory, isResolved && styles.rowCategoryResolved]}
+            numberOfLines={1}
+          >
+            {isResolved ? '✓ ' : ''}{CATEGORY_LABELS[item.category]}
+          </Text>
+          <Text style={styles.rowDate}>{date}</Text>
+        </View>
+
+        {/* Right: status badge + unwatch */}
+        <View style={styles.rowRight}>
+          <View
+            style={[
+              styles.statusBadge,
+              { backgroundColor: statusPalette.bg },
+            ]}
+            accessible
+            accessibilityLabel={statusA11y(item.status)}
+          >
+            <Text style={[styles.statusText, { color: statusPalette.fg }]}>
+              {STATUS_LABELS[item.status]}
             </Text>
-            <Text style={styles.rowDate}>{date}</Text>
           </View>
-
-          {/* Right: status badge + unwatch */}
-          <View style={styles.rowRight}>
-            <View
-              style={[styles.statusBadge, { backgroundColor: statusPalette.bg }]}
-              accessible
-              accessibilityLabel={statusA11y(item.status)}
-            >
-              <Text style={[styles.statusText, { color: statusPalette.fg }]}>
-                {STATUS_LABELS[item.status]}
-              </Text>
-            </View>
-            {onViewOnMap && (
-              <Pressable
-                onPress={() => onViewOnMap(item)}
-                hitSlop={8}
-                style={({ pressed }) => [
-                  styles.viewOnMapBtn,
-                  pressed && styles.viewOnMapBtnPressed,
-                ]}
-                accessibilityRole="button"
-                accessibilityLabel={`Show ${CATEGORY_LABELS[item.category]} on the map`}
-                accessibilityHint="Closes this list and centers the Map tab on the flag"
-              >
-                <Text style={styles.viewOnMapGlyph}>📍</Text>
-              </Pressable>
-            )}
+          {onViewOnMap && (
             <Pressable
-              onPress={() => handleUnwatch(item.id)}
-              hitSlop={10}
-              style={({ pressed }) => [styles.unwatchBtn, pressed && styles.unwatchBtnPressed]}
+              onPress={() => onViewOnMap(item)}
+              hitSlop={8}
+              style={({ pressed }) => [
+                styles.viewOnMapBtn,
+                pressed && styles.viewOnMapBtnPressed,
+              ]}
               accessibilityRole="button"
-              accessibilityLabel="Stop watching this flag"
-              accessibilityHint="Removes this flag from your watched list"
+              accessibilityLabel={`Show ${CATEGORY_LABELS[item.category]} on the map`}
+              accessibilityHint="Closes this list and centers the Map tab on the flag"
             >
-              <Text style={styles.unwatchGlyph}>★</Text>
+              <Text style={styles.viewOnMapGlyph}>📍</Text>
             </Pressable>
-          </View>
-        </Pressable>
+          )}
+          <Pressable
+            onPress={() => handleUnwatch(item.id)}
+            hitSlop={10}
+            style={({ pressed }) => [
+              styles.unwatchBtn,
+              pressed && styles.unwatchBtnPressed,
+            ]}
+            accessibilityRole="button"
+            accessibilityLabel="Stop watching this flag"
+            accessibilityHint="Removes this flag from your watched list"
+          >
+            <Text style={styles.unwatchGlyph}>★</Text>
+          </Pressable>
+        </View>
+      </Pressable>
       </View>
     );
   };
 
   return (
-    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
+    <Modal
+      visible={visible}
+      animationType="slide"
+      transparent
+      onRequestClose={onClose}
+    >
       <View style={styles.backdrop}>
         <View style={styles.sheet}>
           {/* Header */}
@@ -287,8 +302,9 @@ export default function MyWatchedModal({
           {missingCount > 0 && !loading && (
             <View style={styles.missingBanner}>
               <Text style={styles.missingText}>
-                {missingCount} {missingCount === 1 ? 'flag has' : 'flags have'} been removed by
-                their author.
+                {missingCount}{' '}
+                {missingCount === 1 ? 'flag has' : 'flags have'} been removed
+                by their author.
               </Text>
             </View>
           )}
@@ -338,136 +354,175 @@ export default function MyWatchedModal({
   );
 }
 
-const makeStyles = (color: ColorTheme) =>
-  StyleSheet.create({
-    backdrop: {
-      flex: 1,
-      backgroundColor: 'rgba(0,0,0,0.35)',
-      justifyContent: 'flex-end',
-    },
-    sheet: {
-      backgroundColor: color.surface,
-      borderTopLeftRadius: 16,
-      borderTopRightRadius: 16,
-      paddingHorizontal: 20,
-      paddingTop: 16,
-      paddingBottom: 28,
-      maxHeight: '85%',
-      gap: 4,
-    },
-    header: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      marginBottom: 8,
-    },
-    title: { fontSize: 20, fontWeight: '700', flex: 1, color: '#222' },
-    closeBtn: {
-      width: 32,
-      height: 32,
-      borderRadius: 16,
-      backgroundColor: color.surfaceNeutral,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    closeBtnText: { fontSize: 16, color: '#333', fontWeight: '700' },
-    clearBtn: {
-      paddingHorizontal: 12,
-      paddingVertical: 8,
-      borderRadius: 8,
-      backgroundColor: '#fdecea',
-      minHeight: 36,
-      alignItems: 'center',
-      justifyContent: 'center',
-      marginRight: 6,
-    },
-    clearBtnText: { fontSize: 13, fontWeight: '700', color: color.error },
-    missingBanner: {
-      backgroundColor: '#fff8e7',
-      borderRadius: 8,
-      paddingHorizontal: 12,
-      paddingVertical: 8,
-      marginBottom: 8,
-      borderLeftWidth: 3,
-      borderLeftColor: color.accentOrange,
-    },
-    missingText: { fontSize: 13, color: '#7a5500' },
-    center: {
-      alignItems: 'center',
-      justifyContent: 'center',
-      paddingVertical: 48,
-      gap: 12,
-    },
-    errorText: { color: color.error, fontSize: 14, textAlign: 'center' },
-    retryBtn: {
-      backgroundColor: color.surfaceNeutral,
-      paddingHorizontal: 20,
-      paddingVertical: 10,
-      borderRadius: 8,
-    },
-    retryText: { color: color.brand, fontWeight: '600' },
-    emptyIcon: { fontSize: 40, color: '#bbb' },
-    emptyTitle: { fontSize: 18, fontWeight: '700', color: '#333' },
-    emptySubtitle: { fontSize: 14, color: '#666', textAlign: 'center', lineHeight: 20 },
-    emptyBold: { fontWeight: '700', color: '#333' },
-    list: { paddingBottom: 8 },
-    separator: { height: 1, backgroundColor: '#eef1f5' },
-    row: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      paddingVertical: 14,
-      gap: 12,
-    },
-    rowPressed: { backgroundColor: '#f7f9fc' },
-    severityDot: {
-      width: 12,
-      height: 12,
-      borderRadius: 6,
-      flexShrink: 0,
-    },
-    rowMid: { flex: 1, gap: 2 },
-    rowCategory: { fontSize: 15, fontWeight: '600', color: '#222' },
-    rowCategoryResolved: { color: '#1a7a44' },
-    rowDate: { fontSize: 12, color: '#888' },
-    rowRight: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 8,
-      flexShrink: 0,
-    },
-    statusBadge: {
-      paddingHorizontal: 8,
-      paddingVertical: 4,
-      borderRadius: radius.circle,
-    },
-    statusText: { fontSize: 11, fontWeight: '700' },
-    unwatchBtn: {
-      padding: 4,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    unwatchBtnPressed: { opacity: 0.5 },
-    // Filled amber star — visually signals "tap to unwatch."
-    unwatchGlyph: { fontSize: 18, color: color.accentOrange },
-    viewOnMapBtn: {
-      width: 32,
-      height: 32,
-      borderRadius: 16,
-      backgroundColor: '#eef1f5',
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    viewOnMapBtnPressed: { opacity: 0.6, backgroundColor: color.borderPressed },
-    viewOnMapGlyph: { fontSize: 14 },
-    // Resolved-row treatments: light green wash + a left-edge accent bar.
-    rowResolved: { backgroundColor: '#f0faf4' },
-    resolvedAccent: {
-      position: 'absolute',
-      left: 0,
-      top: 0,
-      bottom: 0,
-      width: 3,
-      backgroundColor: '#27ae60',
-      borderTopLeftRadius: 2,
-      borderBottomLeftRadius: 2,
-    },
-  });
+const makeStyles = (color: ColorTheme) => StyleSheet.create({
+  backdrop: {
+    flex: 1,
+    backgroundColor: color.scrim,
+    justifyContent: 'flex-end',
+  },
+  sheet: {
+    backgroundColor: color.surface,
+    borderTopLeftRadius: radius.xl,
+    borderTopRightRadius: radius.xl,
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.xxl + 4,
+    maxHeight: '85%',
+    gap: spacing.tight,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: spacing.sm,
+  },
+  title: {
+    fontSize: font.size.xxl,
+    fontWeight: font.weight.bold,
+    flex: 1,
+    color: color.textStrong,
+    letterSpacing: -0.3,
+  },
+  closeBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: radius.circle,
+    backgroundColor: color.surfaceNeutral,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  closeBtnText: {
+    fontSize: font.size.lg,
+    color: color.text,
+    fontWeight: font.weight.bold,
+    lineHeight: font.size.lg + 2,
+  },
+  clearBtn: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.md,
+    backgroundColor: color.errorBg,
+    minHeight: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: spacing.xs,
+  },
+  clearBtnText: {
+    fontSize: font.size.sm,
+    fontWeight: font.weight.bold,
+    color: color.error,
+  },
+  missingBanner: {
+    backgroundColor: color.warningBg,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    marginBottom: spacing.sm,
+    borderLeftWidth: 3,
+    borderLeftColor: color.accentOrange,
+  },
+  missingText: {
+    fontSize: font.size.sm,
+    color: color.warningFg,
+    lineHeight: 18,
+  },
+  center: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 48,
+    gap: spacing.md,
+  },
+  errorText: {
+    color: color.error,
+    fontSize: font.size.base,
+    textAlign: 'center',
+  },
+  retryBtn: {
+    backgroundColor: color.surfaceNeutral,
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.sm + 2,
+    borderRadius: radius.md,
+  },
+  retryText: {
+    color: color.brandText,
+    fontWeight: font.weight.semibold,
+  },
+  emptyIcon: { fontSize: 40, color: color.textSubtle },
+  emptyTitle: {
+    fontSize: font.size.xl,
+    fontWeight: font.weight.bold,
+    color: color.textStrong,
+  },
+  emptySubtitle: {
+    fontSize: font.size.base,
+    color: color.textMuted,
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  emptyBold: {
+    fontWeight: font.weight.bold,
+    color: color.textStrong,
+  },
+  list: { paddingBottom: spacing.sm },
+  separator: { height: 1, backgroundColor: color.borderSubtle },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: spacing.md + 2,
+    gap: spacing.md,
+  },
+  rowPressed: { backgroundColor: color.surfaceMuted },
+  severityDot: {
+    width: 12,
+    height: 12,
+    borderRadius: radius.circle,
+    flexShrink: 0,
+  },
+  rowMid: { flex: 1, gap: 2 },
+  rowCategory: {
+    fontSize: font.size.md,
+    fontWeight: font.weight.semibold,
+    color: color.textStrong,
+  },
+  rowCategoryResolved: { color: color.statusResolvedFg },
+  rowDate: { fontSize: font.size.xs, color: color.textSubtle },
+  rowRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    flexShrink: 0,
+  },
+  statusBadge: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.tight,
+    borderRadius: radius.circle,
+  },
+  statusText: { fontSize: font.size.caption, fontWeight: font.weight.bold },
+  unwatchBtn: {
+    padding: spacing.tight,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  unwatchBtnPressed: { opacity: 0.5 },
+  unwatchGlyph: { fontSize: font.size.xl, color: color.accentOrange },
+  viewOnMapBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: radius.circle,
+    backgroundColor: color.surfaceNeutral,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  viewOnMapBtnPressed: { opacity: 0.6, backgroundColor: color.borderPressed },
+  viewOnMapGlyph: { fontSize: font.size.base },
+  rowResolved: { backgroundColor: color.successSoft },
+  resolvedAccent: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: 3,
+    backgroundColor: color.success,
+    borderTopLeftRadius: 2,
+    borderBottomLeftRadius: 2,
+  },
+});

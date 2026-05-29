@@ -73,7 +73,28 @@ export default function FeedbackModal({ visible, onClose }: Props) {
     };
   }, []);
 
-  const canSend = body.trim().length > 0 && !sending;
+  // Mirrors public.feedback.body check constraint (1..=5000 chars) from
+  // supabase/migrations/2026-05-23_feedback_table.sql. submitFeedback
+  // also slices to 5000 server-side, but capping in the UI lets us tell
+  // the user up-front rather than silently truncating after submit.
+  const MAX_FEEDBACK_LEN = 5000;
+  // RFC 5321 mail-address local-part max is 64 + '@' + 255 = 320. Keeps
+  // a hostile multi-KB paste from sneaking past the server email regex.
+  const MAX_EMAIL_LEN = 320;
+  // Defense-in-depth email validation. The DB has a regex constraint but
+  // it only enforces after the migration is applied; this short check
+  // catches typos and obviously-broken inputs before we round-trip.
+  const isPlausibleEmail = (s: string): boolean =>
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s);
+
+  const trimmedContact = contact.trim();
+  const contactInvalid =
+    trimmedContact.length > 0 && !isPlausibleEmail(trimmedContact);
+  const canSend =
+    body.trim().length > 0 &&
+    body.length <= MAX_FEEDBACK_LEN &&
+    !contactInvalid &&
+    !sending;
 
   const handleSend = async () => {
     if (!canSend) return;
@@ -199,19 +220,21 @@ export default function FeedbackModal({ visible, onClose }: Props) {
             onChangeText={setBody}
             multiline
             numberOfLines={6}
+            maxLength={MAX_FEEDBACK_LEN}
             placeholder="What's on your mind?"
             placeholderTextColor={color.placeholderText}
             style={styles.bodyInput}
             editable={!sending}
             textAlignVertical="top"
             accessibilityLabel="Feedback message"
-            accessibilityHint="Type the feedback you'd like to send."
+            accessibilityHint={`Type the feedback you'd like to send. Up to ${MAX_FEEDBACK_LEN} characters.`}
           />
 
           <Text style={styles.label}>Reply email (optional)</Text>
           <TextInput
             value={contact}
             onChangeText={setContact}
+            maxLength={MAX_EMAIL_LEN}
             placeholder="you@example.com"
             placeholderTextColor={color.placeholderText}
             style={styles.contactInput}
@@ -220,8 +243,24 @@ export default function FeedbackModal({ visible, onClose }: Props) {
             autoCorrect={false}
             keyboardType="email-address"
             accessibilityLabel="Reply email"
-            accessibilityHint="Optional — leave blank to send anonymously."
+            accessibilityHint={
+              contactInvalid
+                ? 'Enter a valid email address or leave blank.'
+                : 'Optional — leave blank to send anonymously.'
+            }
           />
+          {contactInvalid ? (
+            <Text
+              accessibilityLiveRegion="polite"
+              style={{
+                fontSize: 12,
+                color: color.error,
+                marginTop: -4,
+              }}
+            >
+              Please enter a valid email address.
+            </Text>
+          ) : null}
 
           <View style={styles.actionsRow}>
             <Pressable

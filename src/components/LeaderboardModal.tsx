@@ -127,7 +127,12 @@ export default function LeaderboardModal({ visible, onClose }: Props) {
               accessibilityLiveRegion="polite"
             />
           ) : loadError ? (
-            <View style={styles.stateWrap}>
+            <View
+              style={styles.stateWrap}
+              accessibilityLiveRegion="polite"
+              accessible
+              accessibilityLabel={`Could not load leaderboard. ${loadError}`}
+            >
               <Text style={styles.stateText}>{loadError}</Text>
               <Pressable
                 onPress={() => void load()}

@@ -11,6 +11,7 @@ import {
   SEVERITY_LABELS,
   SEVERITY_ORDER,
 } from '@/lib/flags';
+import { color, font, radius, spacing } from '@/theme';
 
 interface Props {
   visible: boolean;
@@ -101,6 +102,19 @@ export default function LegendModal({ visible, onClose }: Props) {
               );
             })}
 
+            <Text
+              style={[styles.sectionLabel, styles.sectionLabelSpaced]}
+              accessibilityRole="header"
+            >
+              Heat map
+            </Text>
+            <Text style={styles.rowDesc}>
+              When the heat map is on, neighbourhoods are tinted by their
+              MEAN severity (using the 1–5 scale above) and labelled with the
+              rounded value. To protect reporters, heat zones only appear
+              where at least 3 flags have been submitted.
+            </Text>
+
             <Text style={styles.footnote}>
               Reporters earn points when their flag is verified or resolved. Verifiers and resolvers
               earn points too.
@@ -124,70 +138,97 @@ export default function LegendModal({ visible, onClose }: Props) {
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.4)',
+    backgroundColor: color.scrim,
     justifyContent: 'flex-end',
   },
   card: {
-    backgroundColor: '#fff',
-    padding: 20,
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
-    gap: 8,
+    backgroundColor: color.surface,
+    padding: spacing.xl,
+    borderTopLeftRadius: radius.xl,
+    borderTopRightRadius: radius.xl,
+    gap: spacing.sm,
     maxHeight: '85%',
   },
   headerRow: { flexDirection: 'row', alignItems: 'center' },
-  title: { fontSize: 20, fontWeight: '700', color: '#222' },
-  subtitle: { fontSize: 13, color: '#666' },
-  scroll: { marginTop: 4 },
-  scrollContent: { paddingBottom: 8, gap: 10 },
-  sectionLabel: {
-    fontSize: 11,
-    color: '#666',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginTop: 4,
-    marginBottom: 2,
-    fontWeight: '700',
+  title: {
+    fontSize: font.size.xxl,
+    fontWeight: font.weight.bold,
+    color: color.textStrong,
+    letterSpacing: -0.3,
   },
-  sectionLabelSpaced: { marginTop: 14 },
+  subtitle: {
+    fontSize: font.size.sm,
+    color: color.textMuted,
+    lineHeight: 18,
+  },
+  scroll: { marginTop: spacing.tight },
+  scrollContent: { paddingBottom: spacing.sm, gap: spacing.sm + 2 },
+  sectionLabel: {
+    fontSize: font.size.caption,
+    color: color.textMuted,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    marginTop: spacing.tight,
+    marginBottom: 2,
+    fontWeight: font.weight.bold,
+  },
+  sectionLabelSpaced: { marginTop: spacing.lg - 2 },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    paddingVertical: 6,
+    gap: spacing.md,
+    paddingVertical: spacing.xs,
   },
   sevDot: {
     width: 32,
     height: 32,
-    borderRadius: 16,
+    borderRadius: radius.circle,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  sevDotText: { color: '#fff', fontWeight: '700', fontSize: 14 },
+  sevDotText: {
+    color: color.textOnBrand,
+    fontWeight: font.weight.bold,
+    fontSize: font.size.base,
+  },
   catIconWrap: {
     width: 32,
     height: 32,
-    borderRadius: 16,
-    backgroundColor: '#eef1f5',
+    borderRadius: radius.circle,
+    backgroundColor: color.surfaceNeutral,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  catIconText: { fontSize: 16 },
+  catIconText: { fontSize: font.size.lg },
   rowText: { flex: 1 },
-  rowTitle: { fontSize: 14, fontWeight: '600', color: '#222' },
-  rowDesc: { fontSize: 12, color: '#555', marginTop: 1 },
+  rowTitle: {
+    fontSize: font.size.base,
+    fontWeight: font.weight.semibold,
+    color: color.textStrong,
+  },
+  rowDesc: {
+    fontSize: font.size.xs,
+    color: color.text,
+    marginTop: 1,
+    lineHeight: 16,
+  },
   footnote: {
-    fontSize: 12,
-    color: '#666',
-    marginTop: 14,
+    fontSize: font.size.xs,
+    color: color.textMuted,
+    marginTop: spacing.lg - 2,
     fontStyle: 'italic',
+    lineHeight: 17,
   },
   closeBtn: {
-    marginTop: 8,
-    paddingVertical: 14,
-    borderRadius: 8,
-    backgroundColor: '#eef1f5',
+    marginTop: spacing.sm,
+    paddingVertical: spacing.md + 2,
+    borderRadius: radius.md,
+    backgroundColor: color.surfaceNeutral,
     alignItems: 'center',
   },
-  closeText: { color: '#333', fontWeight: '700', fontSize: 15 },
+  closeText: {
+    color: color.text,
+    fontWeight: font.weight.bold,
+    fontSize: font.size.md,
+  },
 });

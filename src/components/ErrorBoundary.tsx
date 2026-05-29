@@ -1,6 +1,6 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { radius } from '@/theme';
+import { color, font, radius, spacing } from '@/theme';
 
 /**
  * Top-level error boundary.
@@ -67,29 +67,40 @@ export default class ErrorBoundary extends React.Component<Props, State> {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: color.surface,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 24,
-    gap: 12,
+    padding: spacing.xxl,
+    gap: spacing.md,
   },
-  title: { fontSize: 22, fontWeight: '700', color: '#222', textAlign: 'center' },
+  title: {
+    fontSize: font.size.h2,
+    fontWeight: font.weight.bold,
+    color: color.textStrong,
+    textAlign: 'center',
+    letterSpacing: -0.3,
+  },
   body: {
-    fontSize: 15,
-    color: '#444',
+    fontSize: font.size.md,
+    color: color.text,
     textAlign: 'center',
     lineHeight: 22,
     maxWidth: 320,
   },
   btn: {
-    marginTop: 12,
-    backgroundColor: '#2f80ed',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
+    marginTop: spacing.md,
+    backgroundColor: color.brand,
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.md,
     borderRadius: radius.circle,
     minHeight: 44,
     justifyContent: 'center',
   },
   btnPressed: { opacity: 0.85 },
-  btnText: { color: '#fff', fontWeight: '700', fontSize: 15 },
+  btnText: {
+    color: color.textOnBrand,
+    fontWeight: font.weight.bold,
+    fontSize: font.size.md,
+    letterSpacing: 0.2,
+  },
 });

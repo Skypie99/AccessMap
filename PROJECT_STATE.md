@@ -1,123 +1,104 @@
 # AccessMap — Project State
 
-**Updated:** 2026-05-26 (evening — 5 merges complete + Wave 6 assessment + Gate 2 verified)
-**Source:** Rory merge execution | Wave 6 sweep | Sky Gate 2 verification | qa-reports
-**Main SHA:** `2086fde` · 5 merges today (tasks-tab-badge, photo-prompt-severity, send-push-auth, distance-filter, merge-guide)
+**Updated:** 2026-05-27 (Security Wave 2 completion + D3 approval + Morgan execution replan)
+**Source:** Steve security audit | Morgan briefing consolidation | DECISIONS_LOG.md | qa-reports consolidation
+**Main SHA:** `3c30d1e` · Tests: 922/922 · TSC errors: 0 · Test suites: 61
 
 ---
 
-## STATUS SUMMARY
+## Current Status
 
-**Merged to main today:** 5 branches (all gates passed, fully integrated)
-- ✅ `feat/tasks-tab-badge-2026-05-26` (tasks tab shows live open-flag count)
-- ✅ `feat/photo-prompt-severity-2026-05-26` (amber nudge when severity 4/5 + no photo)
-- ✅ `security/auto-2026-05-26-steve-send-push-auth` (push notification auth hardening)
-- ✅ `privacy/auto-2026-05-26-jordan-distance-filter-review` (distance-filter retroactive privacy PASS)
-- ✅ `docs/auto-2026-05-25-will-merge-guide` (comprehensive merge guide documentation)
+**Wave 2 Security + D3 Trigger**: Steve completed hardening audit and approved D3 trigger. Wave 2 branch ready for merge (no migration dependencies). Three critical-path items awaiting Sky action: wave2 merge → email privacy SQL apply (same-cycle), D3 trigger SQL apply (unblocks marker-clustering). Heatmap build blocked on D5 colour decision (Jordan pre-approved; Sky call only).
 
-**Wave 6 Backlog (13 branches assessed):**
-- 🟢 **9 branches READY to merge** (no external blockers) — propose merge sequence in `/Users/skypie/AccessMap/qa-reports/2026-05-26_Rory_Wave6_ReadinessAssessment.md`
-- 🔴 **3 branches BLOCKED** (waiting: Shamus stash, Dani Design Compiler, Sky migration apply)
-- 📄 **1 branch docs-only** (safe to merge anytime)
-
-**Database state:**
-- ✅ **Gate 2 VERIFIED** — RLS migration `2026-05-25_flag_edit_rls.sql` applied and confirmed
-  - Users can now only edit their own flags, and only when status is 'open'
-  - Once a flag moves to verified/resolved/rejected, editing is locked (Jordan privacy requirement)
-  - All 5 RLS policies on flags table confirmed active
-  - Points trigger system ready (5 points for verify, 10 for resolve)
-- ⏳ **Gate 3 PENDING** — Human understanding test (show app to one person, zero explanation, verify they understand goal in 60 seconds)
+**Coherence:** 0.92 (one merge blocker resolved; D3 unblocked; security wave 2 stacked properly)
 
 ---
 
-## FEATURES
+## Features — LIVE (on main, shipped)
 
-### LIVE (on main, shipped this session)
-
-| Feature | Status | Notes |
-|---|---|---|
-| Tasks tab badge | ✅ LIVE | Shows count of open flags; updates in real-time via FlagsContext |
-| Severity photo nudge | ✅ LIVE | Amber prompt when severity 4/5 + no photo submitted; non-blocking |
-| Distance-filter privacy | ✅ LIVE | In-memory haversine distance filtering; no location data stored/transmitted |
-| Push notification auth | ✅ LIVE | Shared-secret auth on send-push-notification Edge Function; oracle fix for user enumeration |
-| Merge guide docs | ✅ LIVE | Complete CoWork procedures + Cycle 4/5 branch status reference |
-
-### WAVE 6 BACKLOG (ready for merge)
-
-| Branch | What | Action |
-|---|---|---|
-| `a11y/auto-2026-05-25-alex-wave6-settings-onboarding` | SettingsScreen + OnboardingModal a11y labels | Ready to merge (3 commits) |
-| `feat/auto-2026-05-25-shamus-leaderboard` | Community leaderboard modal | Ready to merge (2 commits) |
-| `feat/edit-profile-2026-05-25` | Avatar photo upload + initials + token cleanup | Ready to merge (3 commits) |
-| `feat/replay-tutorial-2026-05-25` | Replay tutorial row in Settings | Ready to merge (1 commit) |
-| `feat/report-templates-2026-05-25` | Quick-fill templates in ReportFlagModal | Ready to merge (1 commit) |
-| `feat/reports-breakdown-2026-05-25` | Reports breakdown card (by category + severity) | Ready to merge (1 commit) |
-| `perf/auto-2026-05-25-shamus-wave6-flatlist-perf` | FlatList memoization + removeClippedSubviews | Ready to merge (2 commits) |
-| `test/auto-2026-05-25-gary-cycle4-gaps` | Tests: getInitials, uploadAvatar, search filter, CachedTileLayer | Ready to merge (1 commit) |
-| `test/auto-2026-05-25-gary-wave6-notif-prefs-screen` | NotifPrefs component tests + perf narrowing | Ready to merge (4 commits) |
-
-### WAVE 6 BACKLOG (blocked — external dependency required)
-
-| Branch | Blocker | Action |
-|---|---|---|
-| `feat/tasks-search-2026-05-25` | Shamus stash@{0} (5 files pending) | Shamus: pop stash, commit, push |
-| `feat/heatmap-severity-gradient-2026-05-25` | Dani Design Compiler gate not run | Dani: invoke `/dani` Design Compiler (Art. 2.4) |
-| `feat/auto-2026-05-25-shamus-wave6-notif-prefs` | `2026-05-25_push_tokens.sql` not applied | Sky: apply migration in Supabase |
+| Feature | Notes |
+|---|---|
+| Photo thumbnails in triage | FlagCard inline photo → PhotoLightboxModal; onError graceful degradation |
+| Offline tile cache | `src/lib/tileCache.ts` TTL 7d, LRU 50 MB, user-keyed; sign-out clear wired |
+| My Flags toggle | "All / Mine" chip in TasksScreen; AsyncStorage-persisted |
+| Status history UI | FlagDetailModal "History" tab; graceful degradation if migration not yet applied |
+| flagsMap O(1) lookups | `useMemo` Map in FlagsContext; replaces O(n) `find()` in TasksScreen |
+| renderItem memoization | `useCallback` in TasksScreen; React.memo on FlagCard now effective |
+| 3 a11y residuals (Wave 5) | MapScreen announceForAccessibility; useReducedMotion both PlatformMap variants; web photo alt text |
+| ESLint + Prettier | `eslint.config.js`, `.prettierrc.json`, lint/format npm scripts |
+| Jest open-handles fix | `jest.mock('../supabase')` in filterSets + mapFilters test files |
+| GitHub Actions CI | typecheck + test on push/PR |
+| Offline flags cache | AsyncStorage 24h TTL, user-scoped, stale-while-revalidate, offline banner |
+| Push notification client | Token storage, settings toggle, sign-out clear, Edge Function written — awaiting Sky DB steps |
+| Dark mode | useColor() + ThemeContext, all 8 token categories |
+| Flag pagination | Cursor-based Load More |
+| Activity Feed, Watched Flags, Saved Places, Visit Streak, Achievements | Stable |
+| Address search, Open in Maps, Feedback flow, Help/FAQ, About, What's New | Stable |
+| Text search (NFC), Notification prefs, Tasks sort, Map long-press, Nearest flag jump | Stable |
+| Realtime flags (client wired) | Subscription wired; awaiting DB migration to go live |
 
 ---
 
-## MIGRATIONS
+## Features — BUILT-NOT-MERGED (pending Sky action)
+
+| Branch | What | Gate |
+|---|---|---|
+| `design/creative-polish-2026-05-27` | Creative UI polish — SignInScreen rebuild, token sweeps (modals, map pins, ProfileScreen hero, TasksScreen, AchievementsModal), category quickfilter, leaderboard a11y | Sky review + merge BEFORE wave3 (wave3 forked from this) |
+| `a11y-perf/wave3-2026-05-27` | A11y+Perf Wave 3 — web marker alt/title, ReportFlagModal containment+44pt, React.memo on PlatformMap variants, initialRegion memoization | **Merge AFTER** `design/creative-polish-2026-05-27` · tsc 0 errors · 922 tests pass |
+| `security/hardening-wave2-2026-05-27` | Steve security wave 2 — input caps, email validation, PII migration (users.email RLS) | **READY FOR MERGE** — no migration dependency; apply 2026-05-27_users_email_privacy.sql after merge |
+| `origin/shamus/marker-clustering-2026-05-25` | Marker clustering + flag editing UI; Gary's 20 `updateFlagContent` tests; Alex 5 a11y fixes | **BLOCKED** on D3 SQL apply; unblocks after Steve-approved `2026-05-23_status_update_trigger_proposal.sql` is applied |
+| `origin/feat/expo-web-vercel-2026-05-25` | Expo Web build + Vercel deployment config | Sky review — no migration dependency; low risk |
+
+---
+
+## Migrations — Status Summary
 
 | File | Status | Notes |
 |---|---|---|
-| `2026-05-25_flag_edit_rls.sql` | ✅ APPLIED | RLS policy restricts flag editing to owners + open status only. Gate 2 verified. |
-| `2026-05-25_push_tokens.sql` | ⏳ PENDING | Required before `feat/auto-2026-05-25-shamus-wave6-notif-prefs` can merge. Sky action: apply in SQL Editor. |
-| `2026-05-23_rls_initplan_and_non_owner_status_update.sql` | ⏳ PENDING | Sky action: apply in SQL Editor (HIGH priority). |
-| `2026-05-23_data_layer_hardening.sql` | ⏳ PENDING | Sky action: apply in SQL Editor (HIGH priority). |
-| `2026-05-24_realtime_flags.sql` | ⏳ PENDING | Sky action: apply to unlock Supabase Realtime subscriptions. |
-| Other migrations | PENDING | See queue in qa-reports. |
+| `2026-05-27_users_email_privacy.sql` | **PROPOSE-ONLY — AWAITING SKY APPLY** | Fixes `public.users.email` PII exposure (Const. 2.4). Apply after wave2 branch merge. Idempotent, rollback 2-line, smoke-test steps included. |
+| `2026-05-23_status_update_trigger_proposal.sql` | **APPROVED — AWAITING SKY APPLY** | Steve sign-off 2026-05-27. BEFORE UPDATE trigger `enforce_flag_status_only_for_non_owner()`. No SQL injection risk, proper role isolation, correct trigger ordering. **CRITICAL PATH** — apply before merging marker-clustering. |
+| `2026-05-23_data_layer_hardening.sql` | PENDING (file only) | Sky applies via Supabase SQL Editor |
+| `2026-05-23_feedback_table.sql` | APPLIED | `public.feedback` table live |
+| `2026-05-23_rls_initplan_and_non_owner_status_update.sql` | PENDING (file only) | Sky applies via SQL Editor |
+| `2026-05-24_flag_context_tags.sql` | APPLIED | `context_tags` column live |
+| `2026-05-24_realtime_flags.sql` | PENDING (file only) | Unlocks Supabase Realtime |
+| `2026-05-24_status_history_table.sql` | APPLIED | `flag_status_history` table + trigger live |
+| `2026-05-25_flag_edit_history_table.sql` | PROPOSE-ONLY — CONDITIONAL | Apply only if Sky answers YES to D6 |
+| `2026-05-25_flag_edit_rls_replacement.sql` | PROPOSE-ONLY — BLOCKING | Must apply before `shamus/marker-clustering-2026-05-25` merges |
+| `2026-05-25_push_tokens.sql` | PROPOSE-ONLY | Pair with Edge Function deploy + `expo-notifications` install |
 
 ---
 
-## OPEN DECISIONS FOR SKY
+## Open Decisions for Sky (critical path)
 
-| # | Decision | Urgency | Status |
+| # | Decision | Status | Impact |
 |---|---|---|---|
-| D1 | Run Gate 3 (human understanding test) | HIGH | ⏳ PENDING — show app to one person, zero explanation, verify understanding in 60s |
-| D2 | Apply remaining 9 migrations in documented order (2026-05-25_push_tokens → 2026-05-23_rls_initplan, etc.) | MEDIUM | ⏳ PENDING — 30-45 min total in Supabase SQL Editor |
-| D3 | Unblock Shamus stash on `feat/tasks-search-2026-05-25` | MEDIUM | ⏳ BLOCKED — Shamus ready to move; 5 files pending commit |
-| D4 | Unblock Dani Design Compiler on `feat/heatmap-severity-gradient-2026-05-25` | MEDIUM | ⏳ BLOCKED — Dani can invoke `/dani` anytime |
+| **Wave 2** | Merge `security/hardening-wave2-2026-05-27` | READY — no dependencies | Enables email privacy migration same-cycle |
+| **Email Privacy** | Apply `2026-05-27_users_email_privacy.sql` in Supabase SQL Editor | PROPOSE-ONLY — closes Const. 2.4 PII leak | Addresses privacy incident; apply same-cycle as wave2 merge |
+| **D3** | Apply `2026-05-23_status_update_trigger_proposal.sql` in Supabase SQL Editor | **APPROVED by Steve** — CRITICAL PATH | Unblocks `shamus/marker-clustering-2026-05-25` merge |
+| **D1** | Apply `2026-05-25_flag_edit_rls_replacement.sql` in Supabase SQL Editor | PROPOSE-ONLY — BLOCKING | Before marker-clustering merges |
+| **D5** | Heat-map severity-colour rendering: gradient yes or no | PENDING (Jordan pre-approved) | Unblocks Shamus heatmap build |
+| **D2** | Apply `2026-05-25_push_tokens.sql` + deploy Edge Function + install `expo-notifications` | FULLY BUILT — awaiting sequential apply | Zero user value until applied |
+| **D4** | Apply remaining batch: `data_layer_hardening`, `rls_initplan`, `realtime_flags` | PROPOSE-ONLY — ~15 min | Unlocks realtime flags |
+| **D6** | Flag edit history audit table: conditional apply yes or no | PROPOSE-ONLY — LOW PRIORITY | Decision pending |
 
 ---
 
-## NEXT ACTIONS (FOR MORGAN TO ASSIGN)
+## What Sky Needs To Do Before Next Sprint (ordered)
 
-### Immediate (ready now)
-
-1. **For `/rory`:** Merge 9 READY Wave 6 branches in proposed sequence (see Wave 6 assessment)
-   - Start after Shamus + Dani blockers clear (or merge READY batch first, then handle blocked separately)
-   
-2. **For `/shamus`:** Pop stash@{0}, commit 5 files on `feat/tasks-search-2026-05-25`, push
-   - Unblocks Wave 6 merge #2
-
-3. **For `/dani`:** Run Design Compiler on `feat/heatmap-severity-gradient-2026-05-25` (Constitution Art. 2.4)
-   - Unblocks Wave 6 merge #3
-
-### Sky-only (irreversible changes — Art. 1.3)
-
-1. **Gate 3:** Run human understanding test (30 min)
-2. **Apply migrations:** `2026-05-25_push_tokens.sql` + remaining 9 in documented order
+1. **[IMMEDIATE]** Merge `security/hardening-wave2-2026-05-27` (no dependencies, ready now)
+2. **[IMMEDIATE]** Apply `2026-05-27_users_email_privacy.sql` in Supabase SQL Editor (PII fix, same-cycle)
+3. Apply `2026-05-23_status_update_trigger_proposal.sql` in Supabase SQL Editor (D3 Steve-approved)
+4. Apply `2026-05-25_flag_edit_rls_replacement.sql` in Supabase SQL Editor → merge `origin/shamus/marker-clustering-2026-05-25`
+5. Merge `design/creative-polish-2026-05-27` → then merge `a11y-perf/wave3-2026-05-27` (order matters)
+6. Merge `origin/feat/expo-web-vercel-2026-05-25` (low risk, ready for review)
+7. Answer D5 (heatmap colour decision) to unblock Shamus build
+8. Apply `2026-05-25_push_tokens.sql` in Supabase SQL Editor
+9. Deploy `notify-flag-status` Edge Function via Supabase Dashboard
+10. Run `npx expo install expo-notifications` in Terminal at ~/AccessMap and rebuild dev client
+11. Apply remaining batch: `data_layer_hardening`, `rls_initplan`, `realtime_flags` (~15 min)
+12. Delete stale branches: `a11y/residual-2026-05-25`, `docs/learnings-sequential-merge-2026-05-25`, `sync/local-main-to-origin`
 
 ---
 
-## GATES STATUS
-
-| Gate | Status | Notes |
-|---|---|---|
-| **Gate 1** (Code Quality — Gary) | ✅ PASSED | 5 branches approved (tasks-tab-badge, photo-prompt-severity, send-push-auth, distance-filter, merge-guide) |
-| **Gate 2** (Supabase Data Integrity) | ✅ PASSED | RLS migration applied and verified. Users can only edit own open flags. Points trigger active. |
-| **Gate 3** (Human Understanding) | ⏳ PENDING | Sky action: show app to 1 person, zero explanation, verify goal clarity in 60s |
-
----
-
-*State file compiled 2026-05-26 by /new-window from merge execution, Wave 6 sweep, and Gate 2 verification.*
+**Last compiled by:** /new-window context compression engine (2026-05-27)

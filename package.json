@@ -14,7 +14,12 @@
     "lint": "eslint src --ext .ts,.tsx",
     "lint:fix": "eslint src --ext .ts,.tsx --fix",
     "format": "prettier --write src",
-    "format:check": "prettier --check src"
+    "format:check": "prettier --check src",
+    "build:dev": "eas build --platform ios --profile development --non-interactive",
+    "build:preview": "eas build --platform ios --profile preview --non-interactive",
+    "build:production": "eas build --platform ios --profile production --non-interactive",
+    "deploy:testflight": "npm run build:preview && eas submit --platform ios --profile preview --non-interactive",
+    "deploy:appstore": "npm run build:production && eas submit --platform ios --profile production --non-interactive"
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "2.2.0",
@@ -25,6 +30,7 @@
     "expo-constants": "~18.0.0",
     "expo-image-picker": "~17.0.11",
     "expo-location": "~19.0.8",
+    "expo-media-library": "~16.0.0",
     "expo-notifications": "~0.32.17",
     "expo-status-bar": "~3.0.0",
     "leaflet": "^1.9.4",

@@ -9,7 +9,7 @@ import {
   useWindowDimensions,
   View,
 } from 'react-native';
-import { font, radius, spacing } from '@/theme';
+import { font, radius, shadow, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { useReducedMotion } from '@/lib/accessibility';
 
@@ -253,11 +253,7 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
     alignItems: 'center',
     minHeight: 44,
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.18,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 3,
+    ...shadow.e2,
   },
   btnPressed: { opacity: 0.85 },
   // textOnBrand: #fff on brand = 3.3:1 — passes WCAG 1.4.3 for large bold text

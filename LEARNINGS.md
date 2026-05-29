@@ -1078,3 +1078,40 @@ that edit files.
 **Enforcement:** Morgan's plan must add `isolation: "worktree"` to every Agent call
 that touches the shared working directory. A single merge agent is safe; two concurrent
 ones are not.
+
+## 2026-05-28 — Worktree node_modules must be symlinked for npm/jest to work
+
+When `git worktree add` creates a new worktree, the new directory does NOT
+get its own `node_modules`. The worktree's `package.json` references deps
+but they're only installed in the parent repo.
+
+**What happened:** Gary's worktree at `/tmp/gary-exif-2026-05-28` had no
+`node_modules`, so `npm test` and `tsc` failed immediately with "jest: command
+not found" and "cannot find module 'react'".
+
+**Fix:** Symlink the parent's node_modules into the worktree:
+```bash
+ln -s ~/AccessMap/node_modules /tmp/<worktree-name>/node_modules
+```
+
+Then all scripts run normally (`npm test`, `npm run typecheck`). The symlink
+is excluded from git (node_modules is in .gitignore) so it doesn't affect commits.
+
+**Rule:** Any orchestrator prompt that creates a worktree and runs npm/jest/tsc
+MUST include the symlink step immediately after `git worktree add`.
+
+## 2026-05-28 — EXIF stripping functions should be exported for test coverage
+
+New privacy-critical code added to `flags.ts` (stripExifNative, stripExifWeb,
+verifyExifStripped) was initially private. Testing through the `uploadFlagPhoto`
+integration path would require mocking the full Supabase Storage chain plus
+MediaLibrary plus fetch — high complexity.
+
+**Better approach:** Export the functions and test them directly. Pure functions
+(like `verifyExifStripped`) are trivially testable. Async functions with platform
+deps (like `stripExifNative`) can be tested with focused mocks for exactly the
+deps they use. The export keyword adds zero runtime overhead.
+
+**Rule:** Any privacy-critical function (one that handles PII, strips metadata,
+validates data before storage) should be exported even if it's "internal", so
+Gary can write direct unit tests rather than integration tests.

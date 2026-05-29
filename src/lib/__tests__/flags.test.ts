@@ -13,6 +13,18 @@
  */
 
 // ---------------------------------------------------------------------------
+// expo-media-library mock — used by stripExifNative.
+// Must declare the spy variable before jest.mock() so the factory closure
+// captures a live reference (same pattern as the Supabase mock below).
+// ---------------------------------------------------------------------------
+const mockSaveToLibraryAsync = jest.fn();
+
+jest.mock('expo-media-library', () => ({
+  __esModule: true,
+  saveToLibraryAsync: (...args: unknown[]) => mockSaveToLibraryAsync(...args),
+}));
+
+// ---------------------------------------------------------------------------
 // Supabase mock — hoisted by Jest before any import runs. Follows the same
 // builder-chain pattern used in feedbackStore.test.ts. Only the chain that
 // updateFlagContent uses is wired: from → update → eq → select → single.
@@ -50,6 +62,9 @@ import {
   FLAG_PHOTOS_BUCKET,
   updateFlagContent,
   uploadFlagPhoto,
+  verifyExifStripped,
+  stripExifNative,
+  stripExifWeb,
 } from '../flags';
 import type { FlagCategory, FlagSeverity, FlagStatus } from '@/types/database';
 
@@ -292,6 +307,139 @@ describe('uploadFlagPhoto — input validation', () => {
       );
     } finally {
       (global as unknown as { fetch: unknown }).fetch = originalFetch;
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Section 3 — verifyExifStripped
+//
+// Pure function: scans raw bytes for JPEG metadata markers.
+//   0xFFE1 → EXIF      (GPS coords live here)
+//   0xFFED → IPTC
+//   0xFFE9 → XMP
+// Returns true  when no markers found (safe to upload).
+// Returns false when a marker is detected (stripping may have failed).
+//
+// This is the most critical privacy gate in the upload path: if it fires,
+// users' GPS coordinates may still be embedded in the photo.
+// ---------------------------------------------------------------------------
+describe("verifyExifStripped", () => {
+  function bufferOf(...bytes: number[]): ArrayBuffer {
+    return new Uint8Array(bytes).buffer;
+  }
+
+  it("returns true for an empty ArrayBuffer (nothing to scan)", () => {
+    expect(verifyExifStripped(new ArrayBuffer(0))).toBe(true);
+  });
+
+  it("returns true for benign bytes with no metadata markers", () => {
+    expect(verifyExifStripped(bufferOf(0xff, 0x00, 0xaa, 0xbb, 0x01, 0x02))).toBe(true);
+  });
+
+  it("returns false when EXIF marker 0xFFE1 is present at position 0", () => {
+    expect(verifyExifStripped(bufferOf(0xff, 0xe1, 0x00, 0x01))).toBe(false);
+  });
+
+  it("returns false when EXIF marker 0xFFE1 is present mid-buffer", () => {
+    // Marker is not at the start — the scan loop must reach it.
+    expect(verifyExifStripped(bufferOf(0xaa, 0xbb, 0xff, 0xe1, 0x00))).toBe(false);
+  });
+
+  it("returns false when IPTC marker 0xFFED is present", () => {
+    expect(verifyExifStripped(bufferOf(0xff, 0xed, 0x00))).toBe(false);
+  });
+
+  it("returns false when XMP marker 0xFFE9 is present", () => {
+    expect(verifyExifStripped(bufferOf(0xff, 0xe9))).toBe(false);
+  });
+
+  it("returns true for a realistic JPEG SOI (0xFFD8) + no metadata markers", () => {
+    // 0xFFD8 is the JPEG start-of-image marker — benign. Should NOT trigger false.
+    expect(verifyExifStripped(bufferOf(0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10))).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Section 4 — stripExifNative (async, uses expo-media-library)
+//
+// Tests the native transcode path (iOS/Android).
+// All paths are fail-safe: if anything goes wrong, the ORIGINAL buffer is
+// returned rather than throwing. User's photo is never lost.
+// ---------------------------------------------------------------------------
+describe("stripExifNative", () => {
+  // A minimal 4-byte "image" to use as input. Real images would be larger
+  // but the function treats the buffer as opaque bytes.
+  const ORIGINAL = new Uint8Array([0x01, 0x02, 0x03, 0x04]).buffer;
+  const STRIPPED = new Uint8Array([0x0a, 0x0b, 0x0c, 0x0d]).buffer;
+
+  beforeEach(() => {
+    mockSaveToLibraryAsync.mockReset();
+    (global as unknown as { fetch: unknown }).fetch = jest.fn();
+  });
+
+  afterEach(() => {
+    // Restore to avoid polluting other test suites.
+    (global as unknown as { fetch: unknown }).fetch = undefined as unknown as typeof fetch;
+  });
+
+  it("returns the stripped buffer when MediaLibrary succeeds", async () => {
+    // MediaLibrary returns a transcoded asset URI.
+    mockSaveToLibraryAsync.mockResolvedValue({ uri: "file:///tmp/stripped.jpg" });
+    // fetch reads back the stripped bytes.
+    (global as unknown as { fetch: (u: string) => Promise<{ arrayBuffer(): Promise<ArrayBuffer> }> }).fetch =
+      jest.fn().mockResolvedValue({ arrayBuffer: async () => STRIPPED });
+
+    const result = await stripExifNative(ORIGINAL, "jpg");
+    expect(result).toBe(STRIPPED);
+  });
+
+  it("returns the original buffer (fail-safe) when MediaLibrary returns null", async () => {
+    mockSaveToLibraryAsync.mockResolvedValue(null);
+
+    const result = await stripExifNative(ORIGINAL, "jpg");
+    expect(result).toBe(ORIGINAL);
+  });
+
+  it("returns the original buffer (fail-safe) when MediaLibrary throws", async () => {
+    mockSaveToLibraryAsync.mockRejectedValue(new Error("Native API unavailable"));
+
+    const result = await stripExifNative(ORIGINAL, "jpg");
+    expect(result).toBe(ORIGINAL);
+  });
+
+  it("returns the original buffer (fail-safe) when the transcoded fetch returns empty bytes", async () => {
+    mockSaveToLibraryAsync.mockResolvedValue({ uri: "file:///tmp/empty.jpg" });
+    (global as unknown as { fetch: (u: string) => Promise<{ arrayBuffer(): Promise<ArrayBuffer> }> }).fetch =
+      jest.fn().mockResolvedValue({ arrayBuffer: async () => new ArrayBuffer(0) });
+
+    const result = await stripExifNative(ORIGINAL, "jpg");
+    expect(result).toBe(ORIGINAL);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Section 5 — stripExifWeb (Canvas re-encoding, browser-only)
+//
+// In the Jest/Node environment, `document` is undefined. The function must
+// detect this and fall back to the original buffer (fail-safe). This
+// ensures the web build degrades gracefully in server-side or test envs.
+// ---------------------------------------------------------------------------
+describe("stripExifWeb", () => {
+  const ORIGINAL = new Uint8Array([0x20, 0x21, 0x22, 0x23]).buffer;
+
+  it("returns the original buffer (fail-safe) when document is undefined (Node/Jest env)", async () => {
+    // In Jest, `document` is undefined unless jsdom is configured.
+    // The function guards with `typeof document === 'undefined'`.
+    const savedDocument = (global as Record<string, unknown>)["document"];
+    delete (global as Record<string, unknown>)["document"];
+    try {
+      const result = await stripExifWeb(ORIGINAL, "jpg");
+      expect(result).toBe(ORIGINAL);
+    } finally {
+      if (savedDocument !== undefined) {
+        (global as Record<string, unknown>)["document"] = savedDocument;
+      }
     }
   });
 });

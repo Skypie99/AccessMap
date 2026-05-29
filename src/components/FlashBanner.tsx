@@ -1,6 +1,12 @@
 import React, { useEffect } from 'react';
-import { AccessibilityInfo, Pressable, StyleSheet, Text, View } from 'react-native';
-import { radius } from '@/theme';
+import {
+  AccessibilityInfo,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
+import { color, font, radius, shadow, spacing } from '@/theme';
 
 interface Props {
   /** Banner text. When null, the banner is hidden. */
@@ -72,19 +78,21 @@ const styles = StyleSheet.create({
     zIndex: 50,
   },
   pill: {
-    paddingHorizontal: 18,
-    paddingVertical: 12,
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.md,
     borderRadius: radius.circle,
     minHeight: 44,
     justifyContent: 'center',
     maxWidth: '90%',
-    shadowColor: '#000',
-    shadowOpacity: 0.18,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 4,
+    ...shadow.e3,
   },
-  pillSuccess: { backgroundColor: '#1e8449' },
-  pillInfo: { backgroundColor: '#2f80ed' },
-  text: { color: '#fff', fontWeight: '700', fontSize: 14, textAlign: 'center' },
+  pillSuccess: { backgroundColor: '#1e8449' }, // deeper-than-success green for AA on white text
+  pillInfo: { backgroundColor: color.brand },
+  text: {
+    color: color.textOnBrand,
+    fontWeight: font.weight.bold,
+    fontSize: font.size.base,
+    textAlign: 'center',
+    letterSpacing: 0.2,
+  },
 });
