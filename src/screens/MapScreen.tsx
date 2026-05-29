@@ -1529,12 +1529,13 @@ export default function MapScreen() {
             >
               <Text style={styles.fabSecondaryText}>📋 List</Text>
             </Pressable>
-            {/* Jordan Condition 2: hide Report FAB for guest users.
-                Guests can browse but not create reports. Hiding at render
-                time avoids collecting location permission before surfacing
-                the "you must sign in" gate — a privacy-adjacent UX issue
-                Jordan flagged in the privacy gate report. */}
-            {authUser && (
+            {/* Jordan Condition 2: guests cannot create reports.
+                We show a disabled ghost FAB instead of hiding entirely so
+                users know the feature exists and why it is unavailable.
+                Tapping the ghost FAB surfaces a brief explanation + sign-in
+                nudge via Alert. We still avoid requesting location permission
+                (no setReportOpen call) so the privacy gate is maintained. */}
+            {authUser ? (
               <Pressable
                 style={({ pressed }) => [
                   styles.fab,
@@ -1549,6 +1550,21 @@ export default function MapScreen() {
                 accessibilityState={{ disabled: !location }}
               >
                 <Text style={styles.fabText}>＋ Report</Text>
+              </Pressable>
+            ) : (
+              <Pressable
+                style={[styles.fab, styles.fabGuestDisabled]}
+                onPress={() =>
+                  Alert.alert(
+                    'Sign in to report',
+                    'Create a free account or sign in to report accessibility barriers.',
+                  )
+                }
+                accessibilityRole="button"
+                accessibilityLabel="Sign in to report accessibility barriers"
+                accessibilityHint="Shows a prompt explaining that an account is required to submit reports"
+              >
+                <Text style={styles.fabGuestText}>＋ Report</Text>
               </Pressable>
             )}
           </View>
@@ -1940,7 +1956,7 @@ const makeStyles = (color: ColorTheme) =>
     },
     sevPillText: { fontSize: 13, color: color.text, fontWeight: '700' },
     sevPillTextActive: { color: color.textOnBrand },
-    statusHint: { fontSize: 11, color: color.warningHint, marginTop: 4 },
+    statusHint: { fontSize: 11, color: color.textMuted, marginTop: 4 },
     banner: {
       alignSelf: 'center',
       backgroundColor: color.overlaySoft,
@@ -2009,7 +2025,7 @@ const makeStyles = (color: ColorTheme) =>
     // layer is active so the text is visible regardless of filter panel state.
     heatmapDisclaimer: {
       alignSelf: 'stretch',
-      backgroundColor: 'rgba(0,0,0,0.55)',
+      backgroundColor: color.overlayBtn,
       borderRadius: radius.md,
       paddingHorizontal: 12,
       paddingVertical: 7,
@@ -2017,7 +2033,7 @@ const makeStyles = (color: ColorTheme) =>
     },
     heatmapDisclaimerText: {
       fontSize: 11,
-      color: 'rgba(255,255,255,0.85)',
+      color: color.textOnBrand,
       lineHeight: 15,
       textAlign: 'center',
     },
@@ -2044,6 +2060,8 @@ const makeStyles = (color: ColorTheme) =>
     fabDisabled: { opacity: 0.5 },
     fabPressed: { opacity: 0.8 },
     fabText: { color: color.textOnBrand, fontWeight: '700', fontSize: 15 },
+    fabGuestDisabled: { backgroundColor: color.surfaceNeutral, opacity: 0.75 },
+    fabGuestText: { color: color.textMuted, fontWeight: '700', fontSize: 15 },
     savedEmpty: { gap: 8, marginTop: 4 },
     savedEmptyText: { fontSize: 12, color: color.textMuted, lineHeight: 16 },
     savedSaveBtn: {
