@@ -148,9 +148,42 @@ export type Database = {
         };
         Relationships: EmptyRelationships;
       };
+      // D4: Realtime Flags — observability log.
+      // Optional until the D4 SQL (2026-05-28_Dana_D4-RealtimeFlags-Filtered-SQL.md)
+      // is applied by Sky in the Supabase dashboard. The `log_realtime_event` RPC
+      // call degrades gracefully (console.warn) if the table/function does not
+      // exist yet, so the client can be deployed before the SQL is applied.
+      realtime_subscribe_log: {
+        Row: {
+          id: number;
+          user_id: string;
+          event: 'subscribe' | 'unsubscribe';
+          channel: string;
+          logged_at: string;
+        };
+        Insert: {
+          user_id: string;
+          event: 'subscribe' | 'unsubscribe';
+          channel: string;
+          logged_at?: string;
+        };
+        Update: Record<string, never>;
+        Relationships: EmptyRelationships;
+      };
     };
     Views: { [_ in never]: never };
-    Functions: { [_ in never]: never };
+    Functions: {
+      // D4: Realtime observability RPC (Safeguard #3).
+      // Server-side: inserts a row into realtime_subscribe_log bound to auth.uid().
+      // Client must be authenticated; anon calls are rejected by the function.
+      log_realtime_event: {
+        Args: {
+          p_event: 'subscribe' | 'unsubscribe';
+          p_channel: string;
+        };
+        Returns: undefined;
+      };
+    };
     Enums: { [_ in never]: never };
     CompositeTypes: { [_ in never]: never };
   };
