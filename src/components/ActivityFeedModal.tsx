@@ -33,7 +33,6 @@ import {
   CATEGORY_LABELS,
   listRecentFlags,
   severityColor,
-  STATUS_COLORS,
   STATUS_LABELS,
 } from '@/lib/flags';
 import { groupByDay } from '@/lib/dayGroup';
@@ -42,6 +41,7 @@ import { loadWatched } from '@/lib/watchedFlags';
 import type { FlagRow } from '@/types/database';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { font, radius, shadow, spacing } from '@/theme';
+import { StatusBadge } from '@/components/StatusBadge';
 
 type FeedFilter = 'all' | 'mine' | 'watched';
 
@@ -130,7 +130,6 @@ export default function ActivityFeedModal({ visible, onClose, onSelectFlag, onVi
 
   const renderItem = useCallback(
     ({ item }: { item: FlagRow }) => {
-      const statusPalette = STATUS_COLORS[item.status];
       const a11yLabel =
         `${CATEGORY_LABELS[item.category]}, severity ${item.severity} of 5, ` +
         `${STATUS_LABELS[item.status]}, ${relativeTime(item.created_at)}` +
@@ -158,11 +157,7 @@ export default function ActivityFeedModal({ visible, onClose, onSelectFlag, onVi
               <Text style={styles.rowTitle} numberOfLines={1}>
                 {CATEGORY_LABELS[item.category]}
               </Text>
-              <View style={[styles.statusBadge, { backgroundColor: statusPalette.bg }]}>
-                <Text style={[styles.statusBadgeText, { color: statusPalette.fg }]}>
-                  {STATUS_LABELS[item.status]}
-                </Text>
-              </View>
+              <StatusBadge status={item.status} />
               {onViewOnMap && (
                 <Pressable
                   onPress={() => onViewOnMap(item)}
@@ -472,12 +467,6 @@ const makeStyles = (color: ColorTheme) =>
       color: color.textStrong,
       letterSpacing: -0.1,
     },
-    statusBadge: {
-      paddingHorizontal: spacing.sm + 2,
-      paddingVertical: spacing.tight,
-      borderRadius: radius.circle,
-    },
-    statusBadgeText: { fontWeight: font.weight.bold, fontSize: font.size.caption },
     viewOnMapBtn: {
       width: 32,
       height: 32,

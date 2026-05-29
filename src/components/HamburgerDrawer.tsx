@@ -275,7 +275,7 @@ const makeStyles = (color: ColorTheme) =>
       justifyContent: 'center',
     },
     logoMiniText: {
-      color: '#fff',
+      color: color.textOnBrand,
       fontSize: font.size.md,
       fontWeight: font.weight.bold,
     },
@@ -283,7 +283,7 @@ const makeStyles = (color: ColorTheme) =>
       flex: 1,
       fontSize: font.size.lg,
       fontWeight: font.weight.bold,
-      color: '#f0f6ff',
+      color: color.textStrong,
       letterSpacing: -0.4,
     },
     closeBtn: {
@@ -320,8 +320,7 @@ const makeStyles = (color: ColorTheme) =>
     },
   });
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const makeItemStyles = (_color: ColorTheme) =>
+const makeItemStyles = (color: ColorTheme) =>
   StyleSheet.create({
     item: {
       flexDirection: 'row',
@@ -342,7 +341,7 @@ const makeItemStyles = (_color: ColorTheme) =>
       flex: 1,
       fontSize: font.size.md,
       fontWeight: font.weight.semibold,
-      color: '#e8f0ff',
+      color: color.textStrong,
       letterSpacing: 0.1,
     },
     labelMuted: {
