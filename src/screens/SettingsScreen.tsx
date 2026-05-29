@@ -243,7 +243,9 @@ export default function SettingsScreen() {
       // already swallowed by listFeedbackByUser, but separating keeps the
       // intent obvious to future readers).
       const [profileRes, flags] = await Promise.all([
-        supabase.from('users').select('*').eq('id', user.id).maybeSingle(),
+        // PRIVACY: Explicit columns — never select('*') on users; future schema
+        // columns must not leak automatically to data-export payloads.
+        supabase.from('users').select('id, email, display_name, avatar_url, points, created_at').eq('id', user.id).maybeSingle(),
         listFlagsByUser(user.id),
       ]);
       if (profileRes.error) throw profileRes.error;
