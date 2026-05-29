@@ -166,6 +166,7 @@ export default function NotificationPrefsModal({
               style={styles.closeBtn}
               accessibilityRole="button"
               accessibilityLabel="Close notifications settings"
+              accessibilityHint="Closes the notification preferences panel"
             >
               <Text
                 style={styles.closeBtnText}
