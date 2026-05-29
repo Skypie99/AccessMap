@@ -4,9 +4,15 @@
 // Expected request body (JSON):
 //   { user_id: string, title: string, body: string, data?: Record<string, unknown> }
 //
+// Auth: callers must include `Authorization: Bearer <SEND_PUSH_SECRET>`.
+// The function checks this header against the SEND_PUSH_SECRET env var before
+// processing the request. Without it, any caller who knows the function URL
+// could spam push notifications to any user_id.
+//
 // Returns:
 //   200 { status: "sent" }
 //   400 { status: "error", error: string }   — bad payload or invalid/malformed token
+//   401 { status: "error", error: string }   — missing or wrong Authorization header
 //   404 { status: "error", error: string }   — no push token found for user
 //   502 { status: "error", error: string }   — Expo Push API rejected the send
 
@@ -24,12 +30,40 @@ const supabase = createClient(
 );
 
 // ---------------------------------------------------------------------------
-// 2. Main handler
+// 2. Auth gate
+//    notify-flag-status sends `Authorization: Bearer <SEND_PUSH_SECRET>`.
+//    Reject anything that doesn't match — prevents unauthenticated callers
+//    from spamming push notifications to any user_id.
+// ---------------------------------------------------------------------------
+function isAuthorized(req: Request): boolean {
+  const secret = Deno.env.get('SEND_PUSH_SECRET');
+  if (!secret) {
+    // Missing env var: lock the function entirely. Prevents accidentally
+    // deploying an open endpoint in a new environment.
+    return false;
+  }
+  const header = req.headers.get('Authorization');
+  if (!header) return false;
+  // Header format: "Bearer <secret>"
+  const parts = header.split(' ');
+  if (parts.length !== 2 || parts[0] !== 'Bearer') return false;
+  return parts[1] === secret;
+}
+
+// ---------------------------------------------------------------------------
+// 3. Main handler
 // ---------------------------------------------------------------------------
 Deno.serve(async (req: Request): Promise<Response> => {
 
   // -------------------------------------------------------------------------
-  // 2a. Parse and validate the incoming JSON payload.
+  // 3a. Auth check — must come before any body parsing.
+  // -------------------------------------------------------------------------
+  if (!isAuthorized(req)) {
+    return jsonResponse(401, { status: 'error', error: 'Unauthorized' });
+  }
+
+  // -------------------------------------------------------------------------
+  // 3b. Parse and validate the incoming JSON payload.
   //     We expect { user_id, title, body, data? }.
   // -------------------------------------------------------------------------
   let payload: {
@@ -65,7 +99,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
   const data   = payload.data as Record<string, unknown> | undefined;
 
   // -------------------------------------------------------------------------
-  // 2b. Look up the user's Expo push token from the push_tokens table.
+  // 3c. Look up the user's Expo push token from the push_tokens table.
   //     A missing row means the user hasn't enabled push notifications; that
   //     is a normal state, not an application error — so we return 404 (not
   //     found) rather than 500 (server error).
@@ -89,7 +123,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
   // We intentionally do NOT log its value (PIPEDA device identifier).
 
   // -------------------------------------------------------------------------
-  // 2c. Basic sanity-check: Expo tokens start with "ExponentPushToken["
+  // 3d. Basic sanity-check: Expo tokens start with "ExponentPushToken["
   //     or "ExpoPushToken[". Anything else is stale / corrupted data; tell
   //     the caller and skip the network round-trip.
   // -------------------------------------------------------------------------
@@ -103,7 +137,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
   }
 
   // -------------------------------------------------------------------------
-  // 2d. Build the Expo push message.
+  // 3e. Build the Expo push message.
   //     Full field reference: https://docs.expo.dev/push-notifications/sending-notifications/#message-request-format
   // -------------------------------------------------------------------------
   const expoMessage: Record<string, unknown> = {
@@ -120,7 +154,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
   }
 
   // -------------------------------------------------------------------------
-  // 2e. Send to the Expo Push API.
+  // 3f. Send to the Expo Push API.
   //     We treat any non-2xx HTTP status as a 502 (upstream error).
   // -------------------------------------------------------------------------
   let expoRes: Response;
@@ -144,7 +178,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
   }
 
   // -------------------------------------------------------------------------
-  // 2f. Parse the Expo response body.
+  // 3g. Parse the Expo response body.
   //     Expo returns { data: [{ status, id, message?, details? }] }
   //     on success, and various error shapes on failure.
   // -------------------------------------------------------------------------
@@ -170,7 +204,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
   }
 
   // -------------------------------------------------------------------------
-  // 2g. Check for per-ticket errors in the Expo response body.
+  // 3h. Check for per-ticket errors in the Expo response body.
   //     Even with HTTP 200, Expo can report per-token errors like
   //     "DeviceNotRegistered" (user uninstalled the app) inside the tickets array.
   // -------------------------------------------------------------------------
@@ -189,13 +223,13 @@ Deno.serve(async (req: Request): Promise<Response> => {
   }
 
   // -------------------------------------------------------------------------
-  // 2h. All checks passed — the notification was queued by Expo successfully.
+  // 3i. All checks passed — the notification was queued by Expo successfully.
   // -------------------------------------------------------------------------
   return jsonResponse(200, { status: 'sent' });
 });
 
 // ---------------------------------------------------------------------------
-// 3. Helper: build a JSON Response with a given HTTP status and body object.
+// 4. Helper: build a JSON Response with a given HTTP status and body object.
 // ---------------------------------------------------------------------------
 function jsonResponse(status: number, body: Record<string, unknown>): Response {
   return new Response(JSON.stringify(body), {
