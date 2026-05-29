@@ -96,6 +96,9 @@ describe('uploadAvatar()', () => {
 
   it('success: returns the public URL on a valid JPG upload', async () => {
     const fakeBuffer = new ArrayBuffer(1024); // 1 KB — valid size
+    // Stamp JPEG magic bytes (FF D8 FF) so detectMimeFromBytes() accepts the buffer.
+    const jpegView = new Uint8Array(fakeBuffer);
+    jpegView[0] = 0xff; jpegView[1] = 0xd8; jpegView[2] = 0xff;
     (global as unknown as { fetch: unknown }).fetch = async () => ({
       arrayBuffer: async () => fakeBuffer,
     });
@@ -153,6 +156,10 @@ describe('uploadAvatar()', () => {
 
   it('error: re-throws the Supabase Storage error on upload failure', async () => {
     const fakeBuffer = new ArrayBuffer(512);
+    // Stamp WEBP magic bytes (RIFF....WEBP) so detectMimeFromBytes() accepts the buffer.
+    const webpView = new Uint8Array(fakeBuffer);
+    webpView[0] = 0x52; webpView[1] = 0x49; webpView[2] = 0x46; webpView[3] = 0x46; // RIFF
+    webpView[8] = 0x57; webpView[9] = 0x45; webpView[10] = 0x42; webpView[11] = 0x50; // WEBP
     (global as unknown as { fetch: unknown }).fetch = async () => ({
       arrayBuffer: async () => fakeBuffer,
     });
