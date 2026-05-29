@@ -60,7 +60,7 @@ jobs:
           EAS_TOKEN: ${{ secrets.EAS_TOKEN }}
           EXPO_APPLE_ID: ${{ secrets.EXPO_APPLE_ID }}
           EXPO_APPLE_PASSWORD: ${{ secrets.EXPO_APPLE_PASSWORD }}
-          EXPO_APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          EXPO_APPLE_TEAM_ID: ${{ secrets.EXPO_APPLE_TEAM_ID }}
         run: eas submit --platform ios --profile ${{ steps.profile.outputs.PROFILE }} --non-interactive
 
       - name: Create GitHub Release (tag only)

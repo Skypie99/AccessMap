@@ -33,9 +33,9 @@
   "submit": {
     "production": {
       "ios": {
-        "appleId": "skylerhalisky@gmail.com",
+        "appleId": "$EXPO_APPLE_ID",
         "ascAppId": "TODO_ASC_APP_ID",
-        "appleTeamId": "S78F8ZA8QU"
+        "appleTeamId": "$EXPO_APPLE_TEAM_ID"
       },
       "android": {
         "serviceAccountKeyPath": "TODO_PATH_TO_GOOGLE_SERVICE_ACCOUNT_KEY.json",
