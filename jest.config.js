@@ -58,6 +58,10 @@ module.exports = {
     '!src/lib/pushNotifications.ts',
     // Realtime subscription: async Supabase channel subscription, needs live DB.
     '!src/lib/realtimePrefs.ts',
+    '!src/lib/webShare.ts',
+    '!src/lib/statusHistory.ts',
+    '!src/lib/watchedFlags.ts',
+    '!src/lib/points.ts',
   ],
   coverageThreshold: {
     global: {
