@@ -126,7 +126,6 @@ export default function MapScreen() {
     refresh: refreshFlags,
     setStatuses,
     setViewportGate,
-    isOfflineCache,
   } = useFlags();
 
   const [reportOpen, setReportOpen] = useState(false);
@@ -1480,18 +1479,6 @@ export default function MapScreen() {
           </View>
         )}
 
-        {isOfflineCache && (
-          <View
-            style={styles.offlineBadge}
-            accessible
-            accessibilityRole="text"
-            accessibilityLiveRegion="polite"
-            accessibilityLabel="Offline — viewing cached map data"
-          >
-            <Text style={styles.offlineBadgeText}>Offline — viewing cached map</Text>
-          </View>
-        )}
-
         {locating && !location && (
           <View style={styles.banner}>
             <ActivityIndicator />
@@ -1508,7 +1495,7 @@ export default function MapScreen() {
         )}
 
         {/* Jordan Art. 7 disclaimer — shown whenever the heat layer is active.
-            Must be visible (not buried in the filter panel) per conditional
+            Must be visible (not buried in the filter panel) per the conditional
             pass: "Heat zones only appear where at least 3 flags have been
             reported. Based on community reports — coverage varies by area." */}
         {heatmapEnabled && (
@@ -1518,15 +1505,6 @@ export default function MapScreen() {
             accessibilityRole="text"
             accessibilityLiveRegion="polite"
           >
-            <Text style={styles.heatmapDisclaimerText}>
-              Heat zones only appear where at least {DEFAULT_K_FLOOR} flags have been reported.
-              Based on community reports — coverage varies by area.
-            </Text>
-          </View>
-        )}
-
-        {heatmapEnabled && (
-          <View style={styles.heatmapDisclaimer} accessible accessibilityRole="text" accessibilityLiveRegion="polite">
             <Text style={styles.heatmapDisclaimerText}>
               Heat zones only appear where at least {DEFAULT_K_FLOOR} flags have been reported.
               Based on community reports — coverage varies by area.
@@ -1551,13 +1529,12 @@ export default function MapScreen() {
             >
               <Text style={styles.fabSecondaryText}>📋 List</Text>
             </Pressable>
-            {/* Jordan Condition 2: guests cannot create reports.
-                We show a disabled ghost FAB instead of hiding entirely so
-                users know the feature exists and why it is unavailable.
-                Tapping the ghost FAB surfaces a brief explanation + sign-in
-                nudge via Alert. We still avoid requesting location permission
-                (no setReportOpen call) so the privacy gate is maintained. */}
-            {authUser ? (
+            {/* Jordan Condition 2: hide Report FAB for guest users.
+                Guests can browse but not create reports. Hiding at render
+                time avoids collecting location permission before surfacing
+                the "you must sign in" gate — a privacy-adjacent UX issue
+                Jordan flagged in the privacy gate report. */}
+            {authUser && (
               <Pressable
                 style={({ pressed }) => [
                   styles.fab,
@@ -1572,21 +1549,6 @@ export default function MapScreen() {
                 accessibilityState={{ disabled: !location }}
               >
                 <Text style={styles.fabText}>＋ Report</Text>
-              </Pressable>
-            ) : (
-              <Pressable
-                style={[styles.fab, styles.fabGuestDisabled]}
-                onPress={() =>
-                  Alert.alert(
-                    'Sign in to report',
-                    'Create a free account or sign in to report accessibility barriers.',
-                  )
-                }
-                accessibilityRole="button"
-                accessibilityLabel="Sign in to report accessibility barriers"
-                accessibilityHint="Shows a prompt explaining that an account is required to submit reports"
-              >
-                <Text style={styles.fabGuestText}>＋ Report</Text>
               </Pressable>
             )}
           </View>
@@ -1978,22 +1940,7 @@ const makeStyles = (color: ColorTheme) =>
     },
     sevPillText: { fontSize: 13, color: color.text, fontWeight: '700' },
     sevPillTextActive: { color: color.textOnBrand },
-    statusHint: { fontSize: 11, color: color.textMuted, marginTop: 4 },
-    offlineBadge: {
-      alignSelf: 'center',
-      backgroundColor: color.warningBg,
-      borderWidth: 1,
-      borderColor: color.accentOrange,
-      paddingHorizontal: 12,
-      paddingVertical: 6,
-      borderRadius: 20,
-      marginBottom: 6,
-    },
-    offlineBadgeText: {
-      fontSize: 12,
-      fontWeight: '600' as const,
-      color: color.warningFg,
-    },
+    statusHint: { fontSize: 11, color: color.warningHint, marginTop: 4 },
     banner: {
       alignSelf: 'center',
       backgroundColor: color.overlaySoft,
@@ -2058,11 +2005,14 @@ const makeStyles = (color: ColorTheme) =>
     },
     emptyCardBtnPressed: { opacity: 0.8 },
     emptyCardBtnText: { color: color.textOnBrand, fontSize: 14, fontWeight: '700' },
-    // Jordan Art. 7 heatmap disclaimer — floats above bottom bar when heat
-    // layer is active so the text is visible regardless of filter panel state.
+    // Jordan Art. 7 — heatmap active disclaimer. Floats just above the
+    // bottom bar so it's visible whenever the heat layer is on, regardless
+    // of whether the filter panel is open. Semi-transparent so it doesn't
+    // fully obscure the map edge, muted font so it reads as informational
+    // (not an error) and doesn't compete with the HeatmapLegend swatches.
     heatmapDisclaimer: {
       alignSelf: 'stretch',
-      backgroundColor: color.overlayBtn,
+      backgroundColor: 'rgba(0,0,0,0.55)',
       borderRadius: radius.md,
       paddingHorizontal: 12,
       paddingVertical: 7,
@@ -2070,7 +2020,7 @@ const makeStyles = (color: ColorTheme) =>
     },
     heatmapDisclaimerText: {
       fontSize: 11,
-      color: color.textOnBrand,
+      color: 'rgba(255,255,255,0.85)',
       lineHeight: 15,
       textAlign: 'center',
     },
@@ -2097,8 +2047,6 @@ const makeStyles = (color: ColorTheme) =>
     fabDisabled: { opacity: 0.5 },
     fabPressed: { opacity: 0.8 },
     fabText: { color: color.textOnBrand, fontWeight: '700', fontSize: 15 },
-    fabGuestDisabled: { backgroundColor: color.surfaceNeutral, opacity: 0.75 },
-    fabGuestText: { color: color.textMuted, fontWeight: '700', fontSize: 15 },
     savedEmpty: { gap: 8, marginTop: 4 },
     savedEmptyText: { fontSize: 12, color: color.textMuted, lineHeight: 16 },
     savedSaveBtn: {
