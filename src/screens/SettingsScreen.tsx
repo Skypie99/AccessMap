@@ -245,7 +245,7 @@ export default function SettingsScreen() {
       const [profileRes, flags] = await Promise.all([
         // PRIVACY: Explicit columns — never select('*') on users; future schema
         // columns must not leak automatically to data-export payloads.
-        supabase.from('users').select('id, email, display_name, avatar_url, points, created_at').eq('id', user.id).maybeSingle(),
+        supabase.from('users').select('id, display_name, avatar_url, points, created_at').eq('id', user.id).maybeSingle(),
         listFlagsByUser(user.id),
       ]);
       if (profileRes.error) throw profileRes.error;
@@ -260,7 +260,7 @@ export default function SettingsScreen() {
 
       const text = formatDataExport({
         user: {
-          email: user.email ?? profileRow?.email ?? null,
+          email: user.email ?? null,
           display_name: profileRow?.display_name ?? null,
           points: profileRow?.points ?? null,
         },

@@ -267,7 +267,7 @@ export default function ProfileScreen() {
       const [{ data: profileRow, error: profileErr }, statusRowsRes] = await Promise.all([
         // PRIVACY: Explicit columns — never select('*') on users; future schema
         // columns (e.g. internal flags, phone number) must not leak automatically.
-        supabase.from('users').select('id, email, display_name, avatar_url, points, created_at').eq('id', user.id).maybeSingle(),
+        supabase.from('users').select('id, display_name, avatar_url, points, created_at').eq('id', user.id).maybeSingle(),
         supabase.from('flags').select('status').eq('user_id', user.id),
       ]);
 
