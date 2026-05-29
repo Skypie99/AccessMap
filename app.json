@@ -11,7 +11,10 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.accessmap.app",
       "infoPlist": {
-        "NSLocationWhenInUseUsageDescription": "AccessMap uses your location to show nearby accessibility flags and to attach your location when you report a new flag."
+        "NSLocationWhenInUseUsageDescription": "AccessMap uses your location to show nearby accessibility flags and to attach your location when you report a new flag.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "AccessMap uses your location to show accessibility flags near you.",
+        "NSPhotoLibraryUsageDescription": "AccessMap needs photo access to attach images to accessibility reports.",
+        "NSCameraUsageDescription": "AccessMap uses the camera to capture photos of accessibility barriers."
       }
     },
     "android": {
