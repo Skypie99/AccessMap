@@ -48,7 +48,13 @@ export default function FlashBanner({
   if (!message) return null;
 
   return (
-    <View style={styles.wrap} pointerEvents="box-none">
+    // accessibilityLiveRegion="polite" — screen readers announce the message
+    // when this View's content changes, covering Android TalkBack. The
+    // AccessibilityInfo.announceForAccessibility call above handles iOS
+    // VoiceOver (imperative announcement fires the moment the message lands).
+    // Using "polite" so the announcement waits for the current speech to
+    // finish — flash banners are confirmations, not urgent alerts.
+    <View style={styles.wrap} pointerEvents="box-none" accessibilityLiveRegion="polite">
       <Pressable
         onPress={onDismiss}
         style={[styles.pill, tone === 'info' ? styles.pillInfo : styles.pillSuccess]}

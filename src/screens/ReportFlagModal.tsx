@@ -344,7 +344,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
                     active && { backgroundColor: severityColor(s) },
                   ]}
                   accessibilityRole="button"
-                  accessibilityLabel={`Severity ${s}`}
+                  accessibilityLabel={`Severity ${s}: ${SEVERITY_LABELS[s]} — ${SEVERITY_DESCRIPTIONS[s]}`}
                   accessibilityState={{ selected: active }}
                 >
                   <Text style={[styles.sevText, active && styles.sevTextActive]}>{s}</Text>
