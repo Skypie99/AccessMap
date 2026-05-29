@@ -13,6 +13,8 @@ jobs:
   build:
     runs-on: ubuntu-latest
     name: Build iOS Development
+    env:
+      EAS_TOKEN: ${{ secrets.EAS_TOKEN }}
     steps:
       - uses: actions/checkout@v4
 
@@ -34,10 +36,14 @@ jobs:
         run: npm install -g eas-cli@latest
 
       - name: Build with EAS (development profile)
+        if: env.EAS_TOKEN != ''
         env:
-          EAS_TOKEN: ${{ secrets.EAS_TOKEN }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: eas build --platform ios --profile development --non-interactive
+
+      - name: Skip EAS build (EAS_TOKEN not configured)
+        if: env.EAS_TOKEN == ''
+        run: echo "EAS_TOKEN secret not set — skipping EAS build. Add it to repo secrets to enable cloud builds."
 
       # Note: Build artifacts are automatically uploaded to EAS Build logs.
       # For TestFlight submission, see eas-testflight-submit.yml (manual/tag trigger).

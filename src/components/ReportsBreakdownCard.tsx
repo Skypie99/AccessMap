@@ -82,12 +82,7 @@ function BarRow({
   // least one entry has a non-zero count.
   const widthPct = max <= 0 ? 0 : Math.max(2, Math.round((count / max) * 100));
   return (
-    <View
-      style={styles.barRow}
-      accessible
-      accessibilityRole="text"
-      accessibilityLabel={a11yLabel}
-    >
+    <View style={styles.barRow} accessible accessibilityRole="text" accessibilityLabel={a11yLabel}>
       <Text style={styles.barLabel} numberOfLines={1}>
         {label}
       </Text>
@@ -96,10 +91,7 @@ function BarRow({
           // The fill is decorative; count is read out by the row label.
           accessibilityElementsHidden
           importantForAccessibility="no-hide-descendants"
-          style={[
-            styles.barFill,
-            { width: `${widthPct}%`, backgroundColor: barColor },
-          ]}
+          style={[styles.barFill, { width: `${widthPct}%`, backgroundColor: barColor }]}
         />
       </View>
       <Text style={styles.barCount}>{count}</Text>
@@ -221,14 +213,8 @@ export default function ReportsBreakdownCard({ userId, refreshKey }: Props) {
     );
   }
 
-  const catMax = Math.max(
-    ...CATEGORY_ORDER.map((c) => stats.byCategory[c]),
-    0,
-  );
-  const sevMax = Math.max(
-    ...SEVERITY_ORDER.map((s) => stats.bySeverity[s]),
-    0,
-  );
+  const catMax = Math.max(...CATEGORY_ORDER.map((c) => stats.byCategory[c]), 0);
+  const sevMax = Math.max(...SEVERITY_ORDER.map((s) => stats.bySeverity[s]), 0);
 
   const topCat = topEntry(stats.byCategory, CATEGORY_ORDER, CATEGORY_LABELS);
   const topSev = topEntry(
@@ -300,75 +286,76 @@ export default function ReportsBreakdownCard({ userId, refreshKey }: Props) {
   );
 }
 
-const makeStyles = (color: ColorTheme) => StyleSheet.create({
-  card: {
-    backgroundColor: color.surface,
-    borderRadius: radius.lg,
-    padding: spacing.lg,
-    gap: spacing.sm,
-    ...shadow.e1,
-  },
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: spacing.sm,
-  },
-  title: {
-    fontSize: font.size.lg,
-    fontWeight: font.weight.bold,
-    color: color.textStrong,
-  },
-  totalChip: {
-    fontSize: font.size.xs,
-    color: color.textMuted,
-    fontWeight: font.weight.bold,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 2,
-    borderRadius: radius.full,
-    backgroundColor: color.surfaceMuted,
-    overflow: 'hidden',
-  },
-  sectionLabel: {
-    fontSize: font.size.xs,
-    color: color.textMuted,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    fontWeight: font.weight.bold,
-    marginTop: spacing.sm,
-  },
-  emptyText: {
-    fontSize: font.size.sm,
-    color: color.textMuted,
-    lineHeight: 20,
-  },
-  barRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    minHeight: 28,
-  },
-  barLabel: {
-    flexBasis: 130,
-    flexShrink: 0,
-    fontSize: font.size.sm,
-    color: color.textStrong,
-  },
-  barTrack: {
-    flex: 1,
-    height: 10,
-    borderRadius: radius.full,
-    backgroundColor: color.surfaceMuted,
-    overflow: 'hidden',
-  },
-  barFill: {
-    height: '100%',
-  },
-  barCount: {
-    width: 36,
-    textAlign: 'right',
-    fontSize: font.size.sm,
-    fontWeight: font.weight.bold,
-    color: color.textStrong,
-  },
-});
+const makeStyles = (color: ColorTheme) =>
+  StyleSheet.create({
+    card: {
+      backgroundColor: color.surface,
+      borderRadius: radius.lg,
+      padding: spacing.lg,
+      gap: spacing.sm,
+      ...shadow.e1,
+    },
+    headerRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: spacing.sm,
+    },
+    title: {
+      fontSize: font.size.lg,
+      fontWeight: font.weight.bold,
+      color: color.textStrong,
+    },
+    totalChip: {
+      fontSize: font.size.xs,
+      color: color.textMuted,
+      fontWeight: font.weight.bold,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: 2,
+      borderRadius: radius.full,
+      backgroundColor: color.surfaceMuted,
+      overflow: 'hidden',
+    },
+    sectionLabel: {
+      fontSize: font.size.xs,
+      color: color.textMuted,
+      textTransform: 'uppercase',
+      letterSpacing: 0.5,
+      fontWeight: font.weight.bold,
+      marginTop: spacing.sm,
+    },
+    emptyText: {
+      fontSize: font.size.sm,
+      color: color.textMuted,
+      lineHeight: 20,
+    },
+    barRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+      minHeight: 28,
+    },
+    barLabel: {
+      flexBasis: 130,
+      flexShrink: 0,
+      fontSize: font.size.sm,
+      color: color.textStrong,
+    },
+    barTrack: {
+      flex: 1,
+      height: 10,
+      borderRadius: radius.full,
+      backgroundColor: color.surfaceMuted,
+      overflow: 'hidden',
+    },
+    barFill: {
+      height: '100%',
+    },
+    barCount: {
+      width: 36,
+      textAlign: 'right',
+      fontSize: font.size.sm,
+      fontWeight: font.weight.bold,
+      color: color.textStrong,
+    },
+  });

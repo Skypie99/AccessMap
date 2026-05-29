@@ -42,8 +42,7 @@ jest.mock('@react-native-async-storage/async-storage', () => {
   };
 });
 
-const mockStorage =
-  jest.requireMock('@react-native-async-storage/async-storage').default;
+const mockStorage = jest.requireMock('@react-native-async-storage/async-storage').default;
 
 const KEY_PREFIX = '@accessmap/recently_viewed_v1:';
 const key = (userId: string) => `${KEY_PREFIX}${userId}`;
@@ -76,10 +75,7 @@ describe('loadRecentlyViewed', () => {
   });
 
   it('returns [] when the stored value is a non-array shape', async () => {
-    mockStorage.__setRaw(
-      key('user-shape'),
-      JSON.stringify({ id: 'oops' }),
-    );
+    mockStorage.__setRaw(key('user-shape'), JSON.stringify({ id: 'oops' }));
     expect(await loadRecentlyViewed('user-shape')).toEqual([]);
   });
 
@@ -93,10 +89,7 @@ describe('loadRecentlyViewed', () => {
   });
 
   it('hard-caps to RECENTLY_VIEWED_MAX on load even if storage was forced over cap', async () => {
-    const oversized = Array.from(
-      { length: RECENTLY_VIEWED_MAX + 5 },
-      (_, i) => `flag-${i}`,
-    );
+    const oversized = Array.from({ length: RECENTLY_VIEWED_MAX + 5 }, (_, i) => `flag-${i}`);
     mockStorage.__setRaw(key('user-oversize'), JSON.stringify(oversized));
     const list = await loadRecentlyViewed('user-oversize');
     expect(list).toHaveLength(RECENTLY_VIEWED_MAX);
@@ -127,11 +120,7 @@ describe('recordView', () => {
     await recordView('user-1', 'flag-a');
     await recordView('user-1', 'flag-b');
     await recordView('user-1', 'flag-c');
-    expect(await loadRecentlyViewed('user-1')).toEqual([
-      'flag-c',
-      'flag-b',
-      'flag-a',
-    ]);
+    expect(await loadRecentlyViewed('user-1')).toEqual(['flag-c', 'flag-b', 'flag-a']);
   });
 
   it('dedupes — re-viewing an existing flag bubbles it to index 0', async () => {
@@ -253,9 +242,7 @@ describe('dropFromRecent', () => {
   });
 
   it('is a silent no-op when the user has nothing stored', async () => {
-    await expect(
-      dropFromRecent('never-existed', 'flag-x'),
-    ).resolves.toBeUndefined();
+    await expect(dropFromRecent('never-existed', 'flag-x')).resolves.toBeUndefined();
     expect(await loadRecentlyViewed('never-existed')).toEqual([]);
   });
 
@@ -267,9 +254,7 @@ describe('dropFromRecent', () => {
     mockStorage.setItem = jest.fn(async () => {
       throw new Error('disk full');
     });
-    await expect(
-      dropFromRecent('user-drop-err', 'flag-a'),
-    ).resolves.toBeUndefined();
+    await expect(dropFromRecent('user-drop-err', 'flag-a')).resolves.toBeUndefined();
     mockStorage.setItem = original;
   });
 });

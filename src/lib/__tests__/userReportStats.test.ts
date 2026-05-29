@@ -32,10 +32,7 @@ jest.mock('../supabase', () => ({
   },
 }));
 
-import {
-  CATEGORY_ORDER,
-  SEVERITY_ORDER,
-} from '../flags';
+import { CATEGORY_ORDER, SEVERITY_ORDER } from '../flags';
 import {
   EMPTY_USER_REPORT_STATS,
   emptyCategoryCounts,
@@ -99,9 +96,11 @@ describe('emptySeverityCounts', () => {
     for (const s of SEVERITY_ORDER) {
       expect(counts[s]).toBe(0);
     }
-    expect(Object.keys(counts).map(Number).sort((a, b) => a - b)).toEqual(
-      [...SEVERITY_ORDER].sort((a, b) => a - b),
-    );
+    expect(
+      Object.keys(counts)
+        .map(Number)
+        .sort((a, b) => a - b),
+    ).toEqual([...SEVERITY_ORDER].sort((a, b) => a - b));
   });
 
   it('returns independent objects per call', () => {
@@ -219,10 +218,8 @@ describe('fetchUserReportStats — orphan rows', () => {
     expect(stats.bySeverity[s0]).toBe(2);
 
     // The drifted category did not create a new bucket.
-    expect((stats.byCategory as Record<string, number>)['no_longer_a_category'])
-      .toBeUndefined();
-    expect((stats.bySeverity as Record<number, number>)[99])
-      .toBeUndefined();
+    expect((stats.byCategory as Record<string, number>)['no_longer_a_category']).toBeUndefined();
+    expect((stats.bySeverity as Record<number, number>)[99]).toBeUndefined();
   });
 });
 

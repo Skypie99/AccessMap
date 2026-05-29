@@ -87,11 +87,7 @@ const PLACEHOLDER_DEFAULTS = {
   >,
 };
 
-export default function FilterPresetsModal({
-  visible,
-  onClose,
-  onApply,
-}: Props) {
+export default function FilterPresetsModal({ visible, onClose, onApply }: Props) {
   const color = useColor();
   const styles = makeStyles(color);
   const { user } = useAuth();
@@ -171,10 +167,7 @@ export default function FilterPresetsModal({
       setAdding(false);
       setNewName('');
     } catch (e) {
-      Alert.alert(
-        'Could not save preset',
-        errorMessage(e, 'Storage error.'),
-      );
+      Alert.alert('Could not save preset', errorMessage(e, 'Storage error.'));
     } finally {
       if (mountedRef.current) setSaving(false);
     }
@@ -195,10 +188,7 @@ export default function FilterPresetsModal({
       } catch (e) {
         // Roll back on disk failure so what the user sees matches storage.
         setPresets(presets);
-        Alert.alert(
-          'Could not rename preset',
-          errorMessage(e, 'Storage error.'),
-        );
+        Alert.alert('Could not rename preset', errorMessage(e, 'Storage error.'));
       }
     },
     [user, renameValue, presets],
@@ -224,10 +214,7 @@ export default function FilterPresetsModal({
       } catch (e) {
         // Roll back on disk failure.
         setPresets(presets);
-        Alert.alert(
-          'Could not delete preset',
-          errorMessage(e, 'Storage error.'),
-        );
+        Alert.alert('Could not delete preset', errorMessage(e, 'Storage error.'));
       }
     },
     [user, presets],
@@ -299,11 +286,7 @@ export default function FilterPresetsModal({
                 {/* Manager mode keeps the honest "no consumer yet" hint;
                     apply mode promotes the row to a real Apply button on
                     the right so the hint would be redundant. */}
-                {!onApply && (
-                  <Text style={styles.rowApplyHint}>
-                    Wiring next release
-                  </Text>
-                )}
+                {!onApply && <Text style={styles.rowApplyHint}>Wiring next release</Text>}
               </View>
               <View style={styles.rowActions}>
                 {onApply && (
@@ -362,12 +345,7 @@ export default function FilterPresetsModal({
   );
 
   return (
-    <Modal
-      visible={visible}
-      animationType="slide"
-      transparent
-      onRequestClose={onClose}
-    >
+    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <View style={styles.backdrop}>
         <View style={styles.card} accessibilityViewIsModal>
           <View style={styles.headerRow}>
@@ -389,11 +367,7 @@ export default function FilterPresetsModal({
                 pressed && styles.newBtnPressed,
               ]}
               accessibilityRole="button"
-              accessibilityLabel={
-                limitReached
-                  ? 'Preset limit reached'
-                  : 'Add new filter preset'
-              }
+              accessibilityLabel={limitReached ? 'Preset limit reached' : 'Add new filter preset'}
               accessibilityState={{
                 disabled: !user || limitReached || adding,
               }}
@@ -419,9 +393,7 @@ export default function FilterPresetsModal({
 
           {!user ? (
             <View style={styles.notice}>
-              <Text style={styles.noticeText}>
-                Sign in to save named filter presets.
-              </Text>
+              <Text style={styles.noticeText}>Sign in to save named filter presets.</Text>
             </View>
           ) : null}
 
@@ -456,9 +428,8 @@ export default function FilterPresetsModal({
                 accessibilityHint={`Required. Up to ${MAX_NAME_LENGTH} characters.`}
               />
               <Text style={styles.addFormHint}>
-                Creates a preset with default filters. To save your
-                current map filters as a preset, use the “Save as preset”
-                button on the Map screen.
+                Creates a preset with default filters. To save your current map filters as a preset,
+                use the “Save as preset” button on the Map screen.
               </Text>
               <View style={styles.addFormActions}>
                 <Pressable
@@ -480,8 +451,7 @@ export default function FilterPresetsModal({
                   style={[
                     styles.formBtn,
                     styles.saveBtn,
-                    (saving || newName.trim().length === 0) &&
-                      styles.saveBtnDisabled,
+                    (saving || newName.trim().length === 0) && styles.saveBtnDisabled,
                   ]}
                   accessibilityRole="button"
                   accessibilityLabel="Save preset"
@@ -532,248 +502,249 @@ export default function FilterPresetsModal({
   );
 }
 
-const makeStyles = (color: ColorTheme) => StyleSheet.create({
-  backdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.4)',
-    justifyContent: 'flex-end',
-  },
-  card: {
-    backgroundColor: color.surface,
-    borderTopLeftRadius: radius.xl,
-    borderTopRightRadius: radius.xl,
-    paddingHorizontal: spacing.xl,
-    paddingTop: spacing.lg,
-    paddingBottom: spacing.xxl,
-    gap: spacing.md,
-    maxHeight: '85%',
-  },
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-  },
-  title: {
-    fontSize: font.size.xxl,
-    fontWeight: font.weight.bold,
-    flex: 1,
-    color: color.textStrong,
-    letterSpacing: -0.3,
-  },
-  newBtn: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: radius.md,
-    backgroundColor: color.brandSofter,
-    minHeight: 44,
-    minWidth: 44,
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: color.brandSoft,
-  },
-  newBtnDisabled: { opacity: 0.5 },
-  newBtnPressed: { opacity: 0.85 },
-  newBtnText: {
-    color: color.brandTextAlt,
-    fontWeight: font.weight.bold,
-    fontSize: font.size.base,
-  },
-  closeBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: radius.circle,
-    backgroundColor: color.surfaceNeutral,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  closeBtnText: {
-    fontSize: font.size.xl,
-    color: color.text,
-    fontWeight: font.weight.bold,
-    lineHeight: font.size.xl + 2,
-  },
-  notice: {
-    backgroundColor: color.warningBg,
-    borderRadius: radius.md,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm + 2,
-    borderLeftWidth: 3,
-    borderLeftColor: color.accentOrange,
-  },
-  noticeText: {
-    color: color.warningFg,
-    fontSize: font.size.sm,
-    lineHeight: 18,
-  },
-  errorBanner: {
-    backgroundColor: color.errorBg,
-    borderRadius: radius.md,
-    padding: spacing.md,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-  },
-  errorText: {
-    color: color.errorFg,
-    flex: 1,
-    fontSize: font.size.sm,
-    lineHeight: 18,
-  },
-  retryBtn: {
-    paddingHorizontal: spacing.md + 2,
-    paddingVertical: spacing.sm + 2,
-    borderRadius: radius.md,
-    backgroundColor: color.error,
-    minHeight: 44,
-    justifyContent: 'center',
-  },
-  retryText: {
-    color: color.textOnBrand,
-    fontWeight: font.weight.bold,
-    fontSize: font.size.sm,
-  },
-  addForm: {
-    backgroundColor: color.surfaceMuted,
-    borderRadius: radius.md,
-    padding: spacing.md,
-    gap: spacing.sm + 2,
-  },
-  addFormLabel: {
-    fontSize: font.size.sm,
-    fontWeight: font.weight.bold,
-    color: color.textStrong,
-  },
-  addFormHint: {
-    fontSize: font.size.xs,
-    color: color.textMutedAlt,
-    lineHeight: 16,
-    fontStyle: 'italic',
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: color.borderStrong,
-    borderRadius: radius.md,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm + 2,
-    minHeight: 44,
-    backgroundColor: color.surface,
-    fontSize: font.size.base,
-    color: color.textStrong,
-  },
-  addFormActions: { flexDirection: 'row', gap: spacing.sm + 2 },
-  formBtn: {
-    flex: 1,
-    minHeight: 44,
-    borderRadius: radius.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  cancelBtn: { backgroundColor: color.surfaceNeutral },
-  cancelBtnText: {
-    color: color.text,
-    fontWeight: font.weight.semibold,
-  },
-  saveBtn: { backgroundColor: color.brand },
-  saveBtnDisabled: { opacity: 0.6 },
-  saveBtnText: {
-    color: color.textOnBrand,
-    fontWeight: font.weight.bold,
-  },
-  center: { alignItems: 'center', padding: spacing.xxl, gap: spacing.sm },
-  subtitle: {
-    fontSize: font.size.sm,
-    color: color.textMuted,
-  },
-  emptyWrap: {
-    alignItems: 'center',
-    gap: spacing.sm,
-    paddingHorizontal: spacing.xxl,
-    paddingVertical: spacing.lg,
-  },
-  emptyTitle: {
-    fontSize: font.size.xl,
-    fontWeight: font.weight.semibold,
-    color: color.textStrong,
-  },
-  emptyBody: {
-    fontSize: font.size.base,
-    color: color.textMutedAlt,
-    textAlign: 'center',
-    lineHeight: 20,
-  },
-  listContent: { paddingVertical: spacing.tight },
-  separator: { height: spacing.sm },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-    backgroundColor: color.surface,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: color.borderSubtle,
-    minHeight: 56,
-  },
-  rowText: { flex: 1, gap: 2 },
-  rowName: {
-    fontSize: font.size.md,
-    fontWeight: font.weight.semibold,
-    color: color.textStrong,
-  },
-  rowSummary: {
-    fontSize: font.size.xs,
-    color: color.textMutedAlt,
-    lineHeight: 16,
-  },
-  rowApplyHint: {
-    fontSize: font.size.caption,
-    color: color.textSubtle,
-    fontStyle: 'italic',
-  },
-  rowActions: {
-    flexDirection: 'row',
-    gap: spacing.xs,
-    alignItems: 'center',
-  },
-  actionBtn: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm + 2,
-    borderRadius: radius.md,
-    minHeight: 44,
-    minWidth: 44,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  renameBtn: { backgroundColor: color.surfaceNeutral },
-  renameBtnPressed: { backgroundColor: color.borderPressed },
-  renameBtnText: {
-    color: color.text,
-    fontWeight: font.weight.semibold,
-    fontSize: font.size.sm,
-  },
-  deleteBtn: { backgroundColor: color.errorBg },
-  deleteBtnPressed: { opacity: 0.7 },
-  deleteBtnText: {
-    color: color.error,
-    fontWeight: font.weight.bold,
-    fontSize: font.size.sm,
-  },
-  applyBtn: { backgroundColor: color.brand },
-  applyBtnPressed: { opacity: 0.85 },
-  applyBtnText: {
-    color: color.textOnBrand,
-    fontWeight: font.weight.bold,
-    fontSize: font.size.base,
-  },
-  renameRow: { flex: 1, gap: spacing.sm + 2 },
-  renameActions: { flexDirection: 'row', gap: spacing.sm },
-  smallBtn: {
-    flex: 1,
-    minHeight: 40,
-    borderRadius: radius.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: spacing.md,
-  },
-});
+const makeStyles = (color: ColorTheme) =>
+  StyleSheet.create({
+    backdrop: {
+      flex: 1,
+      backgroundColor: 'rgba(0,0,0,0.4)',
+      justifyContent: 'flex-end',
+    },
+    card: {
+      backgroundColor: color.surface,
+      borderTopLeftRadius: radius.xl,
+      borderTopRightRadius: radius.xl,
+      paddingHorizontal: spacing.xl,
+      paddingTop: spacing.lg,
+      paddingBottom: spacing.xxl,
+      gap: spacing.md,
+      maxHeight: '85%',
+    },
+    headerRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.md,
+    },
+    title: {
+      fontSize: font.size.xxl,
+      fontWeight: font.weight.bold,
+      flex: 1,
+      color: color.textStrong,
+      letterSpacing: -0.3,
+    },
+    newBtn: {
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+      borderRadius: radius.md,
+      backgroundColor: color.brandSofter,
+      minHeight: 44,
+      minWidth: 44,
+      justifyContent: 'center',
+      borderWidth: 1,
+      borderColor: color.brandSoft,
+    },
+    newBtnDisabled: { opacity: 0.5 },
+    newBtnPressed: { opacity: 0.85 },
+    newBtnText: {
+      color: color.brandTextAlt,
+      fontWeight: font.weight.bold,
+      fontSize: font.size.base,
+    },
+    closeBtn: {
+      width: 44,
+      height: 44,
+      borderRadius: radius.circle,
+      backgroundColor: color.surfaceNeutral,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    closeBtnText: {
+      fontSize: font.size.xl,
+      color: color.text,
+      fontWeight: font.weight.bold,
+      lineHeight: font.size.xl + 2,
+    },
+    notice: {
+      backgroundColor: color.warningBg,
+      borderRadius: radius.md,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm + 2,
+      borderLeftWidth: 3,
+      borderLeftColor: color.accentOrange,
+    },
+    noticeText: {
+      color: color.warningFg,
+      fontSize: font.size.sm,
+      lineHeight: 18,
+    },
+    errorBanner: {
+      backgroundColor: color.errorBg,
+      borderRadius: radius.md,
+      padding: spacing.md,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.md,
+    },
+    errorText: {
+      color: color.errorFg,
+      flex: 1,
+      fontSize: font.size.sm,
+      lineHeight: 18,
+    },
+    retryBtn: {
+      paddingHorizontal: spacing.md + 2,
+      paddingVertical: spacing.sm + 2,
+      borderRadius: radius.md,
+      backgroundColor: color.error,
+      minHeight: 44,
+      justifyContent: 'center',
+    },
+    retryText: {
+      color: color.textOnBrand,
+      fontWeight: font.weight.bold,
+      fontSize: font.size.sm,
+    },
+    addForm: {
+      backgroundColor: color.surfaceMuted,
+      borderRadius: radius.md,
+      padding: spacing.md,
+      gap: spacing.sm + 2,
+    },
+    addFormLabel: {
+      fontSize: font.size.sm,
+      fontWeight: font.weight.bold,
+      color: color.textStrong,
+    },
+    addFormHint: {
+      fontSize: font.size.xs,
+      color: color.textMutedAlt,
+      lineHeight: 16,
+      fontStyle: 'italic',
+    },
+    input: {
+      borderWidth: 1,
+      borderColor: color.borderStrong,
+      borderRadius: radius.md,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm + 2,
+      minHeight: 44,
+      backgroundColor: color.surface,
+      fontSize: font.size.base,
+      color: color.textStrong,
+    },
+    addFormActions: { flexDirection: 'row', gap: spacing.sm + 2 },
+    formBtn: {
+      flex: 1,
+      minHeight: 44,
+      borderRadius: radius.md,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    cancelBtn: { backgroundColor: color.surfaceNeutral },
+    cancelBtnText: {
+      color: color.text,
+      fontWeight: font.weight.semibold,
+    },
+    saveBtn: { backgroundColor: color.brand },
+    saveBtnDisabled: { opacity: 0.6 },
+    saveBtnText: {
+      color: color.textOnBrand,
+      fontWeight: font.weight.bold,
+    },
+    center: { alignItems: 'center', padding: spacing.xxl, gap: spacing.sm },
+    subtitle: {
+      fontSize: font.size.sm,
+      color: color.textMuted,
+    },
+    emptyWrap: {
+      alignItems: 'center',
+      gap: spacing.sm,
+      paddingHorizontal: spacing.xxl,
+      paddingVertical: spacing.lg,
+    },
+    emptyTitle: {
+      fontSize: font.size.xl,
+      fontWeight: font.weight.semibold,
+      color: color.textStrong,
+    },
+    emptyBody: {
+      fontSize: font.size.base,
+      color: color.textMutedAlt,
+      textAlign: 'center',
+      lineHeight: 20,
+    },
+    listContent: { paddingVertical: spacing.tight },
+    separator: { height: spacing.sm },
+    row: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.md,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.md,
+      backgroundColor: color.surface,
+      borderRadius: radius.md,
+      borderWidth: 1,
+      borderColor: color.borderSubtle,
+      minHeight: 56,
+    },
+    rowText: { flex: 1, gap: 2 },
+    rowName: {
+      fontSize: font.size.md,
+      fontWeight: font.weight.semibold,
+      color: color.textStrong,
+    },
+    rowSummary: {
+      fontSize: font.size.xs,
+      color: color.textMutedAlt,
+      lineHeight: 16,
+    },
+    rowApplyHint: {
+      fontSize: font.size.caption,
+      color: color.textSubtle,
+      fontStyle: 'italic',
+    },
+    rowActions: {
+      flexDirection: 'row',
+      gap: spacing.xs,
+      alignItems: 'center',
+    },
+    actionBtn: {
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm + 2,
+      borderRadius: radius.md,
+      minHeight: 44,
+      minWidth: 44,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    renameBtn: { backgroundColor: color.surfaceNeutral },
+    renameBtnPressed: { backgroundColor: color.borderPressed },
+    renameBtnText: {
+      color: color.text,
+      fontWeight: font.weight.semibold,
+      fontSize: font.size.sm,
+    },
+    deleteBtn: { backgroundColor: color.errorBg },
+    deleteBtnPressed: { opacity: 0.7 },
+    deleteBtnText: {
+      color: color.error,
+      fontWeight: font.weight.bold,
+      fontSize: font.size.sm,
+    },
+    applyBtn: { backgroundColor: color.brand },
+    applyBtnPressed: { opacity: 0.85 },
+    applyBtnText: {
+      color: color.textOnBrand,
+      fontWeight: font.weight.bold,
+      fontSize: font.size.base,
+    },
+    renameRow: { flex: 1, gap: spacing.sm + 2 },
+    renameActions: { flexDirection: 'row', gap: spacing.sm },
+    smallBtn: {
+      flex: 1,
+      minHeight: 40,
+      borderRadius: radius.md,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: spacing.md,
+    },
+  });

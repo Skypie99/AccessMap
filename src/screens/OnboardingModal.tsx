@@ -54,9 +54,7 @@ export default function OnboardingModal({ visible, onDone }: Props) {
   // navigates via Back / Next — mirrors the same pattern in OnboardingCards.
   // WCAG 4.1.3 (Status Messages).
   useEffect(() => {
-    AccessibilityInfo.announceForAccessibility(
-      `Step ${index + 1} of ${CARDS.length}`,
-    );
+    AccessibilityInfo.announceForAccessibility(`Step ${index + 1} of ${CARDS.length}`);
   }, [index]);
 
   const goTo = (next: number) => {
@@ -110,10 +108,7 @@ export default function OnboardingModal({ visible, onDone }: Props) {
           importantForAccessibility="no-hide-descendants"
         >
           {CARDS.map((card, i) => (
-            <View
-              key={card.title}
-              style={[styles.card, { width }]}
-            >
+            <View key={card.title} style={[styles.card, { width }]}>
               <Text style={styles.emoji} accessibilityElementsHidden importantForAccessibility="no">
                 {card.emoji}
               </Text>
@@ -132,10 +127,7 @@ export default function OnboardingModal({ visible, onDone }: Props) {
           importantForAccessibility="no-hide-descendants"
         >
           {CARDS.map((card, i) => (
-            <View
-              key={card.title}
-              style={[styles.dot, i === index && styles.dotActive]}
-            />
+            <View key={card.title} style={[styles.dot, i === index && styles.dotActive]} />
           ))}
         </View>
 
@@ -174,93 +166,94 @@ export default function OnboardingModal({ visible, onDone }: Props) {
  * WCAG 1.4.3 (Contrast) — all text/bg pairings delegated to ThemeContext
  * which has been contrast-checked for both light and dark palettes.
  */
-const makeStyles = (color: ColorTheme) => StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: color.surface,
-  },
-  topBar: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    paddingHorizontal: spacing.md,
-    paddingTop: 48,
-    paddingBottom: spacing.sm,
-  },
-  skipBtn: {
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    borderRadius: radius.md,
-    minHeight: 44,
-    minWidth: 44,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  // textMuted: #666 on #fff = 5.7:1 (light) / #aaa on #111 = 6.7:1 (dark) — AA pass.
-  skipText: {
-    color: color.textMuted,
-    fontWeight: font.weight.semibold,
-    fontSize: font.size.base,
-  },
-  scroll: { flex: 1 },
-  card: {
-    flex: 1,
-    paddingHorizontal: spacing.xxxl,
-    paddingTop: spacing.xxl,
-    paddingBottom: spacing.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.xl,
-  },
-  emoji: { fontSize: font.size.displayLg, textAlign: 'center' },
-  title: {
-    fontSize: font.size.h2,
-    fontWeight: font.weight.bold,
-    // textStrong: #222 on #fff = 16:1 (light) / #f5f5f5 on #111 = 18:1 (dark) — AA pass.
-    color: color.textStrong,
-    textAlign: 'center',
-  },
-  body: {
-    fontSize: font.size.lg,
-    // text: #333 on #fff = 12.6:1 (light) / #ddd on #111 = 13:1 (dark) — AA pass.
-    color: color.text,
-    textAlign: 'center',
-    lineHeight: 24,
-    maxWidth: 360,
-  },
-  dotsRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: spacing.sm,
-    paddingVertical: spacing.md,
-  },
-  dot: {
-    width: 8,
-    height: 8,
-    borderRadius: radius.xs,
-    backgroundColor: color.borderStrong,
-  },
-  // brand (#2f80ed) is a UI surface color — dot is decorative (hidden from AT).
-  dotActive: { backgroundColor: color.brand, width: 22 },
-  actions: {
-    paddingHorizontal: spacing.xxl,
-    paddingBottom: 36,
-    paddingTop: spacing.sm,
-  },
-  primaryBtn: {
-    backgroundColor: color.brand,
-    paddingVertical: spacing.lg,
-    borderRadius: radius.lg,
-    alignItems: 'center',
-    minHeight: 44,
-    justifyContent: 'center',
-    ...shadow.e2,
-  },
-  btnPressed: { opacity: 0.85 },
-  // textOnBrand: #fff on brand = 3.3:1 — passes WCAG 1.4.3 for large bold text
-  // (16pt bold = "large text" threshold per WCAG 2.2, 3:1 minimum).
-  primaryBtnText: {
-    color: color.textOnBrand,
-    fontWeight: font.weight.bold,
-    fontSize: font.size.lg,
-  },
-});
+const makeStyles = (color: ColorTheme) =>
+  StyleSheet.create({
+    screen: {
+      flex: 1,
+      backgroundColor: color.surface,
+    },
+    topBar: {
+      flexDirection: 'row',
+      justifyContent: 'flex-end',
+      paddingHorizontal: spacing.md,
+      paddingTop: 48,
+      paddingBottom: spacing.sm,
+    },
+    skipBtn: {
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.md,
+      borderRadius: radius.md,
+      minHeight: 44,
+      minWidth: 44,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    // textMuted: #666 on #fff = 5.7:1 (light) / #aaa on #111 = 6.7:1 (dark) — AA pass.
+    skipText: {
+      color: color.textMuted,
+      fontWeight: font.weight.semibold,
+      fontSize: font.size.base,
+    },
+    scroll: { flex: 1 },
+    card: {
+      flex: 1,
+      paddingHorizontal: spacing.xxxl,
+      paddingTop: spacing.xxl,
+      paddingBottom: spacing.md,
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: spacing.xl,
+    },
+    emoji: { fontSize: font.size.displayLg, textAlign: 'center' },
+    title: {
+      fontSize: font.size.h2,
+      fontWeight: font.weight.bold,
+      // textStrong: #222 on #fff = 16:1 (light) / #f5f5f5 on #111 = 18:1 (dark) — AA pass.
+      color: color.textStrong,
+      textAlign: 'center',
+    },
+    body: {
+      fontSize: font.size.lg,
+      // text: #333 on #fff = 12.6:1 (light) / #ddd on #111 = 13:1 (dark) — AA pass.
+      color: color.text,
+      textAlign: 'center',
+      lineHeight: 24,
+      maxWidth: 360,
+    },
+    dotsRow: {
+      flexDirection: 'row',
+      justifyContent: 'center',
+      gap: spacing.sm,
+      paddingVertical: spacing.md,
+    },
+    dot: {
+      width: 8,
+      height: 8,
+      borderRadius: radius.xs,
+      backgroundColor: color.borderStrong,
+    },
+    // brand (#2f80ed) is a UI surface color — dot is decorative (hidden from AT).
+    dotActive: { backgroundColor: color.brand, width: 22 },
+    actions: {
+      paddingHorizontal: spacing.xxl,
+      paddingBottom: 36,
+      paddingTop: spacing.sm,
+    },
+    primaryBtn: {
+      backgroundColor: color.brand,
+      paddingVertical: spacing.lg,
+      borderRadius: radius.lg,
+      alignItems: 'center',
+      minHeight: 44,
+      justifyContent: 'center',
+      ...shadow.e2,
+    },
+    btnPressed: { opacity: 0.85 },
+    // textOnBrand: #fff on brand = 3.3:1 — passes WCAG 1.4.3 for large bold text
+    // (16pt bold = "large text" threshold per WCAG 2.2, 3:1 minimum).
+    primaryBtnText: {
+      color: color.textOnBrand,
+      fontWeight: font.weight.bold,
+      fontSize: font.size.lg,
+    },
+  });

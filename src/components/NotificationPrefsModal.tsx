@@ -9,15 +9,7 @@
  * refreshUpdateCount with the now-saved prefs).
  */
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import {
-  ActivityIndicator,
-  Modal,
-  Pressable,
-  StyleSheet,
-  Switch,
-  Text,
-  View,
-} from 'react-native';
+import { ActivityIndicator, Modal, Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 import { useAuth } from '@/lib/auth';
 import { STATUS_COLORS, STATUS_LABELS } from '@/lib/flags';
 import {
@@ -56,8 +48,7 @@ const TOGGLES: Array<{
     // Reworded for plainness — the prior copy was technically correct
     // (diffUpdates skips first-time-seen flags so this only fires on a
     // status REVERSION), but the phrasing required context to parse.
-    description:
-      'A flag returns to Open status — e.g., a previous resolve was rolled back.',
+    description: 'A flag returns to Open status — e.g., a previous resolve was rolled back.',
   },
   {
     status: 'verified',
@@ -88,9 +79,7 @@ export default function NotificationPrefsModal({
   // Use the parent-provided initialPrefs if any — they're already up to
   // date from the screen's most recent refreshUpdateCount. Otherwise
   // start at DEFAULT_PREFS (cloned because DEFAULT_PREFS is frozen).
-  const [prefs, setPrefs] = useState<NotificationPrefs>(
-    () => initialPrefs ?? { ...DEFAULT_PREFS },
-  );
+  const [prefs, setPrefs] = useState<NotificationPrefs>(() => initialPrefs ?? { ...DEFAULT_PREFS });
   const [loading, setLoading] = useState(false);
 
   const mountedRef = useRef(true);
@@ -143,12 +132,7 @@ export default function NotificationPrefsModal({
   );
 
   return (
-    <Modal
-      visible={visible}
-      animationType="slide"
-      transparent
-      onRequestClose={onClose}
-    >
+    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <View style={styles.backdrop}>
         <View style={styles.card} accessibilityViewIsModal>
           <View style={styles.headerRow}>
@@ -180,9 +164,7 @@ export default function NotificationPrefsModal({
 
           {!user ? (
             <View style={styles.notice}>
-              <Text style={styles.noticeText}>
-                Sign in to save notification preferences.
-              </Text>
+              <Text style={styles.noticeText}>Sign in to save notification preferences.</Text>
             </View>
           ) : loading ? (
             <View style={styles.center}>
@@ -212,9 +194,7 @@ export default function NotificationPrefsModal({
                       </Text>
                     </View>
                     <View style={styles.rowText}>
-                      <Text style={styles.rowTitle}>
-                        Notify on {STATUS_LABELS[status]}
-                      </Text>
+                      <Text style={styles.rowTitle}>Notify on {STATUS_LABELS[status]}</Text>
                       <Text style={styles.rowDesc}>{description}</Text>
                     </View>
                     <Switch
@@ -232,8 +212,7 @@ export default function NotificationPrefsModal({
                 );
               })}
               <Text style={styles.footer}>
-                Changes apply on your next Profile visit. Defaults to all
-                statuses on.
+                Changes apply on your next Profile visit. Defaults to all statuses on.
               </Text>
             </View>
           )}
@@ -243,78 +222,79 @@ export default function NotificationPrefsModal({
   );
 }
 
-const makeStyles = (color: ColorTheme) => StyleSheet.create({
-  backdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.4)',
-    justifyContent: 'flex-end',
-  },
-  card: {
-    backgroundColor: color.surface,
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 24,
-    gap: 12,
-    maxHeight: '85%',
-  },
-  headerRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  titleWrap: { flex: 1, gap: 2 },
-  title: { fontSize: 20, fontWeight: '700', color: color.textStrong },
-  subtitle: { fontSize: 13, color: color.textMuted },
-  closeBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: color.surfaceNeutral,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  closeBtnText: {
-    fontSize: 18,
-    color: color.text,
-    fontWeight: '700',
-    lineHeight: 20,
-  },
-  notice: {
-    backgroundColor: color.warningBg,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderLeftWidth: 3,
-    borderLeftColor: color.accentOrange,
-  },
-  noticeText: { color: color.warningFg, fontSize: 13, lineHeight: 18 },
-  center: { alignItems: 'center', paddingVertical: 32 },
-  list: { gap: 10 },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    padding: 12,
-    backgroundColor: color.surfaceMuted,
-    borderRadius: 10,
-    minHeight: 56,
-  },
-  statusBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: radius.circle,
-    minWidth: 76,
-    alignItems: 'center',
-  },
-  statusBadgeText: { fontWeight: '700', fontSize: 11 },
-  rowText: { flex: 1, gap: 2 },
-  rowTitle: { fontSize: 14, fontWeight: '600', color: color.textStrong },
-  rowDesc: { fontSize: 12, color: color.textMuted, lineHeight: 16 },
-  footer: {
-    fontSize: 12,
-    // color.textMutedAlt (#5b6470) on #fff = 4.6:1 — passes WCAG AA for
-    // body text. The previous #888 was 3.5:1, which fails AA. QA Pass-2 #7.
-    color: color.textMutedAlt,
-    fontStyle: 'italic',
-    marginTop: 4,
-    paddingHorizontal: 4,
-  },
-});
+const makeStyles = (color: ColorTheme) =>
+  StyleSheet.create({
+    backdrop: {
+      flex: 1,
+      backgroundColor: 'rgba(0,0,0,0.4)',
+      justifyContent: 'flex-end',
+    },
+    card: {
+      backgroundColor: color.surface,
+      borderTopLeftRadius: 16,
+      borderTopRightRadius: 16,
+      paddingHorizontal: 20,
+      paddingTop: 16,
+      paddingBottom: 24,
+      gap: 12,
+      maxHeight: '85%',
+    },
+    headerRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+    titleWrap: { flex: 1, gap: 2 },
+    title: { fontSize: 20, fontWeight: '700', color: color.textStrong },
+    subtitle: { fontSize: 13, color: color.textMuted },
+    closeBtn: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      backgroundColor: color.surfaceNeutral,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    closeBtnText: {
+      fontSize: 18,
+      color: color.text,
+      fontWeight: '700',
+      lineHeight: 20,
+    },
+    notice: {
+      backgroundColor: color.warningBg,
+      borderRadius: 8,
+      paddingHorizontal: 12,
+      paddingVertical: 10,
+      borderLeftWidth: 3,
+      borderLeftColor: color.accentOrange,
+    },
+    noticeText: { color: color.warningFg, fontSize: 13, lineHeight: 18 },
+    center: { alignItems: 'center', paddingVertical: 32 },
+    list: { gap: 10 },
+    row: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+      padding: 12,
+      backgroundColor: color.surfaceMuted,
+      borderRadius: 10,
+      minHeight: 56,
+    },
+    statusBadge: {
+      paddingHorizontal: 10,
+      paddingVertical: 4,
+      borderRadius: radius.circle,
+      minWidth: 76,
+      alignItems: 'center',
+    },
+    statusBadgeText: { fontWeight: '700', fontSize: 11 },
+    rowText: { flex: 1, gap: 2 },
+    rowTitle: { fontSize: 14, fontWeight: '600', color: color.textStrong },
+    rowDesc: { fontSize: 12, color: color.textMuted, lineHeight: 16 },
+    footer: {
+      fontSize: 12,
+      // color.textMutedAlt (#5b6470) on #fff = 4.6:1 — passes WCAG AA for
+      // body text. The previous #888 was 3.5:1, which fails AA. QA Pass-2 #7.
+      color: color.textMutedAlt,
+      fontStyle: 'italic',
+      marginTop: 4,
+      paddingHorizontal: 4,
+    },
+  });

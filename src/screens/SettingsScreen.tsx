@@ -477,10 +477,7 @@ export default function SettingsScreen() {
           already set (otherwise the auto-show in App.tsx would've fired
           before the user could reach Settings), so there's nothing to
           mutate. */}
-      <OnboardingModal
-        visible={tutorialOpen}
-        onDone={() => setTutorialOpen(false)}
-      />
+      <OnboardingModal visible={tutorialOpen} onDone={() => setTutorialOpen(false)} />
       <NotificationPreferencesScreen
         visible={notifPrefsOpen}
         onClose={() => setNotifPrefsOpen(false)}

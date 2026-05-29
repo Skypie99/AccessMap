@@ -18,10 +18,7 @@ export interface UserProfilePatch {
 // Number matches the UI cap.
 const MAX_DISPLAY_NAME_LEN = 60;
 
-export async function updateUserProfile(
-  userId: string,
-  patch: UserProfilePatch,
-): Promise<UserRow> {
+export async function updateUserProfile(userId: string, patch: UserProfilePatch): Promise<UserRow> {
   const clean: UserProfilePatch = {};
   if ('display_name' in patch) {
     const raw = patch.display_name;
@@ -32,9 +29,7 @@ export async function updateUserProfile(
       if (trimmed.length === 0) {
         clean.display_name = null;
       } else if (trimmed.length > MAX_DISPLAY_NAME_LEN) {
-        throw new Error(
-          `Display name must be ${MAX_DISPLAY_NAME_LEN} characters or fewer.`,
-        );
+        throw new Error(`Display name must be ${MAX_DISPLAY_NAME_LEN} characters or fewer.`);
       } else {
         clean.display_name = trimmed;
       }
@@ -56,10 +51,7 @@ export async function updateUserProfile(
  * Path: <userId>/avatar/<timestamp>.<ext> — satisfies the flag-photos
  * Storage RLS policy (split_part(name,'/',1) = auth.uid()).
  */
-export async function uploadAvatar(
-  userId: string,
-  localUri: string,
-): Promise<string> {
+export async function uploadAvatar(userId: string, localUri: string): Promise<string> {
   const match = /\.([a-zA-Z0-9]+)(?:\?.*)?$/.exec(localUri);
   const ext = (match?.[1] ?? 'jpg').toLowerCase();
   if (!ALLOWED_AVATAR_EXTS.has(ext)) {
@@ -88,9 +80,7 @@ export async function uploadAvatar(
     .upload(filePath, arrayBuffer, { contentType, upsert: false });
   if (uploadErr) throw uploadErr;
 
-  const { data } = supabase.storage
-    .from(FLAG_PHOTOS_BUCKET)
-    .getPublicUrl(filePath);
+  const { data } = supabase.storage.from(FLAG_PHOTOS_BUCKET).getPublicUrl(filePath);
   return data.publicUrl;
 }
 

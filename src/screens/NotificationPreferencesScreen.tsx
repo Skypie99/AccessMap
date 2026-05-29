@@ -53,14 +53,12 @@ const TOGGLE_ROWS: ToggleRowDef[] = [
   {
     key: 'flagStatusUpdates',
     label: 'Flag status updates',
-    subtitle:
-      'Notify me when a flag I reported is verified, resolved, or rejected.',
+    subtitle: 'Notify me when a flag I reported is verified, resolved, or rejected.',
   },
   {
     key: 'nearbyFlags',
     label: 'Nearby flags',
-    subtitle:
-      'Notify me when a new accessibility flag is reported near my location.',
+    subtitle: 'Notify me when a new accessibility flag is reported near my location.',
   },
   {
     key: 'watchedFlagUpdates',
@@ -70,8 +68,7 @@ const TOGGLE_ROWS: ToggleRowDef[] = [
   {
     key: 'bulkWatchAlerts',
     label: 'Bulk watch alerts',
-    subtitle:
-      'Send a digest notification when many watched flags update at once.',
+    subtitle: 'Send a digest notification when many watched flags update at once.',
   },
 ];
 
@@ -120,24 +117,14 @@ function ToggleRow({
   );
 }
 
-export default function NotificationPreferencesScreen({
-  visible,
-  onClose,
-}: Props) {
+export default function NotificationPreferencesScreen({ visible, onClose }: Props) {
   const color = useColor();
   const styles = makeStyles(color);
   const { user } = useAuth();
-  const { preferences, setPreference, loading } = useNotificationPreferences(
-    user?.id,
-  );
+  const { preferences, setPreference, loading } = useNotificationPreferences(user?.id);
 
   return (
-    <Modal
-      visible={visible}
-      animationType="slide"
-      transparent
-      onRequestClose={onClose}
-    >
+    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <View style={styles.backdrop}>
         {/* accessibilityViewIsModal traps VoiceOver focus inside the sheet
             so it can't escape back to the underlying Settings screen. */}
@@ -148,9 +135,7 @@ export default function NotificationPreferencesScreen({
               <Text style={styles.title} accessibilityRole="header">
                 Notification Preferences
               </Text>
-              <Text style={styles.titleSubtitle}>
-                Choose which kinds of alerts you receive.
-              </Text>
+              <Text style={styles.titleSubtitle}>Choose which kinds of alerts you receive.</Text>
             </View>
             <Pressable
               onPress={onClose}
@@ -172,9 +157,7 @@ export default function NotificationPreferencesScreen({
           {/* Body */}
           {!user ? (
             <View style={styles.notice}>
-              <Text style={styles.noticeText}>
-                Sign in to save notification preferences.
-              </Text>
+              <Text style={styles.noticeText}>Sign in to save notification preferences.</Text>
             </View>
           ) : loading ? (
             <View style={styles.center}>
@@ -202,8 +185,7 @@ export default function NotificationPreferencesScreen({
                 />
               ))}
               <Text style={styles.footer}>
-                Changes take effect immediately. All notifications are on by
-                default.
+                Changes take effect immediately. All notifications are on by default.
               </Text>
             </ScrollView>
           )}

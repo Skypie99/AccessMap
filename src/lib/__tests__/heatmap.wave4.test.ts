@@ -101,9 +101,7 @@ describe('bucketFlagsToCells — edge cases (Wave 4)', () => {
       makeFlag({ id: `a${i}`, lat, lng: -122.001 }),
     );
     // Cell B: 2 flags — fails kFloor=3
-    const cellB = [37.011, 37.012].map((lat, i) =>
-      makeFlag({ id: `b${i}`, lat, lng: -122.011 }),
-    );
+    const cellB = [37.011, 37.012].map((lat, i) => makeFlag({ id: `b${i}`, lat, lng: -122.011 }));
     const cells = bucketFlagsToCells([...cellA, ...cellB]);
     expect(cells).toHaveLength(1);
     expect(cells[0]!.count).toBe(3);
@@ -224,9 +222,7 @@ describe('bucketFlagsToCells — edge cases (Wave 4)', () => {
   it('larger cellSizeDeg groups more flags into a single cell', () => {
     // Flags spread 0.1° apart — they're in different cells at 0.005° but
     // collapse into one at 0.2°.
-    const flags = [0.05, 0.12, 0.18].map((lat, i) =>
-      makeFlag({ id: String(i), lat, lng: 0.0 }),
-    );
+    const flags = [0.05, 0.12, 0.18].map((lat, i) => makeFlag({ id: String(i), lat, lng: 0.0 }));
     const smallCells = bucketFlagsToCells(flags, { cellSizeDeg: 0.05, kFloor: 1 });
     const bigCells = bucketFlagsToCells(flags, { cellSizeDeg: 0.2, kFloor: 1 });
     expect(smallCells.length).toBeGreaterThan(bigCells.length);

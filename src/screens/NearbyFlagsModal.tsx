@@ -12,12 +12,7 @@ import {
 } from 'react-native';
 import { CATEGORY_LABELS, CATEGORY_ORDER, severityColor } from '@/lib/flags';
 import { relativeTime } from '@/lib/relativeTime';
-import {
-  formatDistance,
-  haversineKm,
-  speakDistance,
-  type LatLng,
-} from '@/lib/distance';
+import { formatDistance, haversineKm, speakDistance, type LatLng } from '@/lib/distance';
 import { searchFlags } from '@/lib/flagSearch';
 import type { FlagCategory, FlagRow } from '@/types/database';
 import SearchInputRow from '@/components/SearchInputRow';
@@ -114,20 +109,14 @@ export default function NearbyFlagsModal({
       return (
         <Pressable
           onPress={() => onSelectFlag(item)}
-          style={({ pressed }) => [
-            styles.card,
-            pressed && styles.cardPressed,
-          ]}
+          style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
           accessibilityRole="button"
           accessibilityLabel={a11yLabel}
           accessibilityHint="Closes the list and centers the map on this flag"
         >
           <View style={styles.cardHeader}>
             <View
-              style={[
-                styles.sevDot,
-                { backgroundColor: severityColor(item.severity) },
-              ]}
+              style={[styles.sevDot, { backgroundColor: severityColor(item.severity) }]}
               importantForAccessibility="no"
               accessibilityElementsHidden
             >
@@ -136,9 +125,7 @@ export default function NearbyFlagsModal({
             <Text style={styles.cardTitle} numberOfLines={1}>
               {CATEGORY_LABELS[item.category]}
             </Text>
-            {dist && (
-              <Text style={styles.distance}>{dist.text}</Text>
-            )}
+            {dist && <Text style={styles.distance}>{dist.text}</Text>}
           </View>
           <View style={styles.cardBody}>
             {item.photo_url ? (
@@ -190,8 +177,7 @@ export default function NearbyFlagsModal({
         {!location && (
           <View style={styles.notice}>
             <Text style={styles.noticeText}>
-              Allow location access to sort flags by distance. Showing the
-              most recent first.
+              Allow location access to sort flags by distance. Showing the most recent first.
             </Text>
           </View>
         )}
@@ -258,9 +244,7 @@ export default function NearbyFlagsModal({
           renderItem={renderItem}
           removeClippedSubviews
           initialNumToRender={10}
-          contentContainerStyle={
-            displayFlags.length === 0 ? styles.emptyWrap : styles.list
-          }
+          contentContainerStyle={displayFlags.length === 0 ? styles.emptyWrap : styles.list}
           ListEmptyComponent={
             <View style={styles.emptyInner}>
               <Text style={styles.emptyTitle}>
@@ -285,152 +269,153 @@ export default function NearbyFlagsModal({
   );
 }
 
-const makeStyles = (color: ColorTheme) => StyleSheet.create({
-  screen: { flex: 1, backgroundColor: color.surfaceMuted },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    backgroundColor: color.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: color.borderSubtle,
-  },
-  title: {
-    flex: 1,
-    fontSize: font.size.xl,
-    fontWeight: font.weight.bold,
-    color: color.textStrong,
-    letterSpacing: -0.2,
-  },
-  closeBtn: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: radius.md,
-    backgroundColor: color.surfaceNeutral,
-    minHeight: 44,
-    minWidth: 44,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  closeText: {
-    color: color.text,
-    fontWeight: font.weight.semibold,
-    fontSize: font.size.base,
-  },
-  notice: {
-    backgroundColor: color.warningBg,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: color.borderSubtle,
-  },
-  noticeText: {
-    fontSize: font.size.sm,
-    color: color.warningFg,
-    lineHeight: 18,
-  },
-  list: { padding: spacing.lg, paddingBottom: spacing.xxxl },
-  emptyWrap: { flexGrow: 1 },
-  emptyInner: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: spacing.xxxl,
-    gap: spacing.sm,
-  },
-  emptyTitle: {
-    fontSize: font.size.xl,
-    fontWeight: font.weight.bold,
-    color: color.textStrong,
-  },
-  emptySub: {
-    fontSize: font.size.sm,
-    color: color.textMuted,
-    textAlign: 'center',
-    lineHeight: 19,
-    maxWidth: 320,
-  },
-  card: {
-    backgroundColor: color.surface,
-    borderRadius: radius.lg,
-    padding: spacing.lg,
-    gap: spacing.sm,
-    marginBottom: spacing.md,
-    ...shadow.e1,
-    minHeight: 44,
-  },
-  cardPressed: {
-    opacity: 0.9,
-    transform: [{ scale: 0.99 }],
-    backgroundColor: color.surfaceSoft,
-  },
-  cardHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
-  sevDot: {
-    width: 32,
-    height: 32,
-    borderRadius: radius.circle,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  sevDotText: {
-    color: color.textOnBrand,
-    fontWeight: font.weight.bold,
-    fontSize: font.size.sm,
-  },
-  cardTitle: {
-    fontSize: font.size.lg,
-    fontWeight: font.weight.semibold,
-    color: color.textStrong,
-    flex: 1,
-    letterSpacing: -0.1,
-  },
-  distance: {
-    fontSize: font.size.sm,
-    color: color.brandText,
-    fontWeight: font.weight.bold,
-  },
-  cardBody: { flexDirection: 'row', gap: spacing.md },
-  thumb: {
-    width: 64,
-    height: 64,
-    borderRadius: radius.md,
-    backgroundColor: color.surfaceNeutral,
-  },
-  cardBodyText: { flex: 1, gap: spacing.tight, justifyContent: 'center' },
-  cardDesc: {
-    fontSize: font.size.base,
-    color: color.text,
-    lineHeight: 19,
-  },
-  cardMeta: {
-    fontSize: font.size.xs,
-    color: color.textMuted,
-    lineHeight: 16,
-  },
-  chipBar: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md - 2,
-    backgroundColor: color.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: color.borderSubtle,
-  },
-  chip: {
-    paddingHorizontal: spacing.md + 2,
-    paddingVertical: spacing.xs + 1,
-    borderRadius: radius.circle,
-    backgroundColor: color.surfaceNeutral,
-    minHeight: 36,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  chipActive: { backgroundColor: color.brand },
-  chipText: {
-    fontSize: font.size.sm,
-    fontWeight: font.weight.semibold,
-    color: color.text,
-  },
-  chipTextActive: { color: color.textOnBrand },
-});
+const makeStyles = (color: ColorTheme) =>
+  StyleSheet.create({
+    screen: { flex: 1, backgroundColor: color.surfaceMuted },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.md,
+      backgroundColor: color.surface,
+      borderBottomWidth: 1,
+      borderBottomColor: color.borderSubtle,
+    },
+    title: {
+      flex: 1,
+      fontSize: font.size.xl,
+      fontWeight: font.weight.bold,
+      color: color.textStrong,
+      letterSpacing: -0.2,
+    },
+    closeBtn: {
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+      borderRadius: radius.md,
+      backgroundColor: color.surfaceNeutral,
+      minHeight: 44,
+      minWidth: 44,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    closeText: {
+      color: color.text,
+      fontWeight: font.weight.semibold,
+      fontSize: font.size.base,
+    },
+    notice: {
+      backgroundColor: color.warningBg,
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.md,
+      borderBottomWidth: 1,
+      borderBottomColor: color.borderSubtle,
+    },
+    noticeText: {
+      fontSize: font.size.sm,
+      color: color.warningFg,
+      lineHeight: 18,
+    },
+    list: { padding: spacing.lg, paddingBottom: spacing.xxxl },
+    emptyWrap: { flexGrow: 1 },
+    emptyInner: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: spacing.xxxl,
+      gap: spacing.sm,
+    },
+    emptyTitle: {
+      fontSize: font.size.xl,
+      fontWeight: font.weight.bold,
+      color: color.textStrong,
+    },
+    emptySub: {
+      fontSize: font.size.sm,
+      color: color.textMuted,
+      textAlign: 'center',
+      lineHeight: 19,
+      maxWidth: 320,
+    },
+    card: {
+      backgroundColor: color.surface,
+      borderRadius: radius.lg,
+      padding: spacing.lg,
+      gap: spacing.sm,
+      marginBottom: spacing.md,
+      ...shadow.e1,
+      minHeight: 44,
+    },
+    cardPressed: {
+      opacity: 0.9,
+      transform: [{ scale: 0.99 }],
+      backgroundColor: color.surfaceSoft,
+    },
+    cardHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+    sevDot: {
+      width: 32,
+      height: 32,
+      borderRadius: radius.circle,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    sevDotText: {
+      color: color.textOnBrand,
+      fontWeight: font.weight.bold,
+      fontSize: font.size.sm,
+    },
+    cardTitle: {
+      fontSize: font.size.lg,
+      fontWeight: font.weight.semibold,
+      color: color.textStrong,
+      flex: 1,
+      letterSpacing: -0.1,
+    },
+    distance: {
+      fontSize: font.size.sm,
+      color: color.brandText,
+      fontWeight: font.weight.bold,
+    },
+    cardBody: { flexDirection: 'row', gap: spacing.md },
+    thumb: {
+      width: 64,
+      height: 64,
+      borderRadius: radius.md,
+      backgroundColor: color.surfaceNeutral,
+    },
+    cardBodyText: { flex: 1, gap: spacing.tight, justifyContent: 'center' },
+    cardDesc: {
+      fontSize: font.size.base,
+      color: color.text,
+      lineHeight: 19,
+    },
+    cardMeta: {
+      fontSize: font.size.xs,
+      color: color.textMuted,
+      lineHeight: 16,
+    },
+    chipBar: {
+      flexDirection: 'row',
+      gap: spacing.sm,
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.md - 2,
+      backgroundColor: color.surface,
+      borderBottomWidth: 1,
+      borderBottomColor: color.borderSubtle,
+    },
+    chip: {
+      paddingHorizontal: spacing.md + 2,
+      paddingVertical: spacing.xs + 1,
+      borderRadius: radius.circle,
+      backgroundColor: color.surfaceNeutral,
+      minHeight: 36,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    chipActive: { backgroundColor: color.brand },
+    chipText: {
+      fontSize: font.size.sm,
+      fontWeight: font.weight.semibold,
+      color: color.text,
+    },
+    chipTextActive: { color: color.textOnBrand },
+  });

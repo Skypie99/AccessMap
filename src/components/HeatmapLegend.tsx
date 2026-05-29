@@ -18,10 +18,18 @@ export default function HeatmapLegend() {
       accessibilityRole="image"
       accessibilityLabel="Heat map legend: 1 Minor green, 2 Mild light green, 3 Moderate yellow, 4 Significant orange, 5 Severe red"
     >
-      <Text style={styles.title} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+      <Text
+        style={styles.title}
+        accessibilityElementsHidden
+        importantForAccessibility="no-hide-descendants"
+      >
         Heat map
       </Text>
-      <View style={styles.row} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+      <View
+        style={styles.row}
+        accessibilityElementsHidden
+        importantForAccessibility="no-hide-descendants"
+      >
         {SEVERITY_ORDER.map((s: FlagSeverity) => (
           <View key={s} style={styles.item}>
             <View style={[styles.swatch, { backgroundColor: severityColor(s) }]} />

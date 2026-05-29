@@ -44,10 +44,9 @@ jest.mock('@/hooks/useNotificationPreferences', () => ({
 
 // Pull the mock reference for per-test reconfiguration.
 import { useNotificationPreferences } from '@/hooks/useNotificationPreferences';
-const mockUseNotificationPreferences =
-  useNotificationPreferences as jest.MockedFunction<
-    typeof useNotificationPreferences
-  >;
+const mockUseNotificationPreferences = useNotificationPreferences as jest.MockedFunction<
+  typeof useNotificationPreferences
+>;
 
 // ---------------------------------------------------------------------------
 // Mock: useAuth — return a signed-in user by default so the "sign in" notice
@@ -95,9 +94,7 @@ import NotificationPreferencesScreen from '../NotificationPreferencesScreen';
 // ---------------------------------------------------------------------------
 
 function renderScreen(onClose = jest.fn()) {
-  return render(
-    <NotificationPreferencesScreen visible onClose={onClose} />,
-  );
+  return render(<NotificationPreferencesScreen visible onClose={onClose} />);
 }
 
 // ---------------------------------------------------------------------------
@@ -270,9 +267,9 @@ describe('accessibility state', () => {
     });
 
     const { getByLabelText } = renderScreen();
-    expect(
-      getByLabelText('Flag status updates').props.accessibilityState,
-    ).toEqual({ checked: false });
+    expect(getByLabelText('Flag status updates').props.accessibilityState).toEqual({
+      checked: false,
+    });
   });
 });
 

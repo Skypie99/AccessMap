@@ -109,10 +109,9 @@ export default function LegendModal({ visible, onClose }: Props) {
               Heat map
             </Text>
             <Text style={styles.rowDesc}>
-              When the heat map is on, neighbourhoods are tinted by their
-              MEAN severity (using the 1–5 scale above) and labelled with the
-              rounded value. To protect reporters, heat zones only appear
-              where at least 3 flags have been submitted.
+              When the heat map is on, neighbourhoods are tinted by their MEAN severity (using the
+              1–5 scale above) and labelled with the rounded value. To protect reporters, heat zones
+              only appear where at least 3 flags have been submitted.
             </Text>
 
             <Text style={styles.footnote}>

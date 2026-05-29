@@ -57,9 +57,7 @@ export const EMPTY_USER_REPORT_STATS: UserReportStats = {
  * counted into `total` but not into the breakdowns — defensive against
  * future enum migrations leaving orphan rows.
  */
-export async function fetchUserReportStats(
-  userId: string,
-): Promise<UserReportStats> {
+export async function fetchUserReportStats(userId: string): Promise<UserReportStats> {
   const { data, error } = await supabase
     .from('flags')
     .select('category, severity')

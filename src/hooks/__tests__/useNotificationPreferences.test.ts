@@ -35,8 +35,7 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
   },
 }));
 
-const mockAsyncStorage =
-  jest.requireMock('@react-native-async-storage/async-storage').default;
+const mockAsyncStorage = jest.requireMock('@react-native-async-storage/async-storage').default;
 
 beforeEach(() => {
   mockAsyncStorage.__reset();
@@ -63,36 +62,24 @@ function storageKey(userId: string) {
   return PREFIX + userId;
 }
 
-async function loadFromStorage(
-  userId: string,
-): Promise<NotificationPreferences> {
+async function loadFromStorage(userId: string): Promise<NotificationPreferences> {
   const raw = await AsyncStorage.getItem(storageKey(userId));
   if (!raw) return { ...DEFAULT_NOTIFICATION_PREFERENCES };
   try {
     const obj = JSON.parse(raw) as Record<string, unknown>;
     return {
-      flagStatusUpdates:
-        typeof obj.flagStatusUpdates === 'boolean'
-          ? obj.flagStatusUpdates
-          : true,
-      nearbyFlags:
-        typeof obj.nearbyFlags === 'boolean' ? obj.nearbyFlags : true,
+      flagStatusUpdates: typeof obj.flagStatusUpdates === 'boolean' ? obj.flagStatusUpdates : true,
+      nearbyFlags: typeof obj.nearbyFlags === 'boolean' ? obj.nearbyFlags : true,
       watchedFlagUpdates:
-        typeof obj.watchedFlagUpdates === 'boolean'
-          ? obj.watchedFlagUpdates
-          : true,
-      bulkWatchAlerts:
-        typeof obj.bulkWatchAlerts === 'boolean' ? obj.bulkWatchAlerts : true,
+        typeof obj.watchedFlagUpdates === 'boolean' ? obj.watchedFlagUpdates : true,
+      bulkWatchAlerts: typeof obj.bulkWatchAlerts === 'boolean' ? obj.bulkWatchAlerts : true,
     };
   } catch {
     return { ...DEFAULT_NOTIFICATION_PREFERENCES };
   }
 }
 
-async function saveToStorage(
-  userId: string,
-  prefs: NotificationPreferences,
-): Promise<void> {
+async function saveToStorage(userId: string, prefs: NotificationPreferences): Promise<void> {
   await AsyncStorage.setItem(storageKey(userId), JSON.stringify(prefs));
 }
 
@@ -132,10 +119,7 @@ describe('load behavior', () => {
   });
 
   it('defaults missing fields to true (defensive against partial writes)', async () => {
-    mockAsyncStorage.__setRaw(
-      storageKey('user-1'),
-      JSON.stringify({ nearbyFlags: false }),
-    );
+    mockAsyncStorage.__setRaw(storageKey('user-1'), JSON.stringify({ nearbyFlags: false }));
     const result = await loadFromStorage('user-1');
     expect(result.nearbyFlags).toBe(false);
     expect(result.flagStatusUpdates).toBe(true);

@@ -21,6 +21,11 @@
  * See qa-reports/2026-05-25-gary-cycle4-coverage-gaps.md (GAP-7).
  */
 
+jest.mock('../supabase', () => ({
+  __esModule: true,
+  supabase: { from: jest.fn() },
+}));
+
 import { CATEGORY_LABELS } from '../flags';
 import type { FlagRow } from '@/types/database';
 
@@ -41,9 +46,7 @@ function applySearchFilter(flags: FlagRow[], searchQuery: string): FlagRow[] {
 // ---------------------------------------------------------------------------
 // Minimal FlagRow factory — only the fields the filter touches.
 // ---------------------------------------------------------------------------
-function makeFlag(
-  overrides: Partial<FlagRow> & { category: FlagRow['category'] },
-): FlagRow {
+function makeFlag(overrides: Partial<FlagRow> & { category: FlagRow['category'] }): FlagRow {
   return {
     id: 'flag-' + Math.random().toString(36).slice(2),
     user_id: 'user-1',

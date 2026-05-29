@@ -13,13 +13,7 @@
  * speech.
  */
 import React from 'react';
-import {
-  AccessibilityInfo,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { AccessibilityInfo, Pressable, StyleSheet, Text, View } from 'react-native';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 
 interface Props {
@@ -49,9 +43,7 @@ export default function UpdateBanner({ count, onView, onDismiss }: Props) {
   if (count <= 0) return null;
 
   const label =
-    count === 1
-      ? '1 update since your last visit'
-      : `${count} updates since your last visit`;
+    count === 1 ? '1 update since your last visit' : `${count} updates since your last visit`;
 
   return (
     <View
@@ -89,39 +81,40 @@ export default function UpdateBanner({ count, onView, onDismiss }: Props) {
   );
 }
 
-const makeStyles = (color: ColorTheme) => StyleSheet.create({
-  banner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    backgroundColor: color.brandSofter,
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    borderWidth: 1,
-    borderColor: color.brandSoft,
-    marginBottom: 12,
-  },
-  icon: { fontSize: 18 },
-  text: { flex: 1, fontSize: 14, color: color.brandTextAlt, fontWeight: '600' },
-  viewBtn: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 8,
-    backgroundColor: color.brand,
-    minHeight: 44,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  viewBtnPressed: { opacity: 0.85 },
-  viewBtnText: { color: color.textOnBrand, fontWeight: '700', fontSize: 14 },
-  dismissBtn: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  dismissBtnPressed: { backgroundColor: color.brandSoft },
-  dismissText: { fontSize: 14, color: color.brandTextAlt, fontWeight: '700' },
-});
+const makeStyles = (color: ColorTheme) =>
+  StyleSheet.create({
+    banner: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 10,
+      backgroundColor: color.brandSofter,
+      borderRadius: 10,
+      paddingHorizontal: 14,
+      paddingVertical: 12,
+      borderWidth: 1,
+      borderColor: color.brandSoft,
+      marginBottom: 12,
+    },
+    icon: { fontSize: 18 },
+    text: { flex: 1, fontSize: 14, color: color.brandTextAlt, fontWeight: '600' },
+    viewBtn: {
+      paddingHorizontal: 14,
+      paddingVertical: 8,
+      borderRadius: 8,
+      backgroundColor: color.brand,
+      minHeight: 44,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    viewBtnPressed: { opacity: 0.85 },
+    viewBtnText: { color: color.textOnBrand, fontWeight: '700', fontSize: 14 },
+    dismissBtn: {
+      width: 30,
+      height: 30,
+      borderRadius: 15,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    dismissBtnPressed: { backgroundColor: color.brandSoft },
+    dismissText: { fontSize: 14, color: color.brandTextAlt, fontWeight: '700' },
+  });

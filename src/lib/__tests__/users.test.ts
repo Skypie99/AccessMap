@@ -116,9 +116,9 @@ describe('uploadAvatar()', () => {
 
   it('error: rejects with a descriptive message for an unsupported extension (.svg)', async () => {
     // No fetch mock needed — the extension check fires before any I/O.
-    await expect(
-      uploadAvatar(USER_ID, 'file:///tmp/image.svg'),
-    ).rejects.toThrow(/jpg|png|webp|heic/i);
+    await expect(uploadAvatar(USER_ID, 'file:///tmp/image.svg')).rejects.toThrow(
+      /jpg|png|webp|heic/i,
+    );
 
     // Supabase storage must NOT be touched.
     expect(mockUpload).not.toHaveBeenCalled();
@@ -131,9 +131,7 @@ describe('uploadAvatar()', () => {
       arrayBuffer: async () => new ArrayBuffer(0),
     });
 
-    await expect(
-      uploadAvatar(USER_ID, 'file:///tmp/empty.png'),
-    ).rejects.toThrow(/empty/i);
+    await expect(uploadAvatar(USER_ID, 'file:///tmp/empty.png')).rejects.toThrow(/empty/i);
 
     expect(mockUpload).not.toHaveBeenCalled();
   });
@@ -146,9 +144,7 @@ describe('uploadAvatar()', () => {
       arrayBuffer: async () => oversized,
     });
 
-    await expect(
-      uploadAvatar(USER_ID, 'file:///tmp/huge.jpg'),
-    ).rejects.toThrow(/too large|10 MB/i);
+    await expect(uploadAvatar(USER_ID, 'file:///tmp/huge.jpg')).rejects.toThrow(/too large|10 MB/i);
 
     expect(mockUpload).not.toHaveBeenCalled();
   });
@@ -164,9 +160,7 @@ describe('uploadAvatar()', () => {
     const storageError = { message: 'Bucket not found', status: 404 };
     mockUpload.mockResolvedValueOnce({ error: storageError });
 
-    await expect(
-      uploadAvatar(USER_ID, 'file:///tmp/photo.webp'),
-    ).rejects.toEqual(storageError);
+    await expect(uploadAvatar(USER_ID, 'file:///tmp/photo.webp')).rejects.toEqual(storageError);
 
     // getPublicUrl must NOT be called when upload fails.
     expect(mockGetPublicUrl).not.toHaveBeenCalled();
