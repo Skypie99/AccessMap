@@ -12,8 +12,8 @@
  *     (react-leaflet) + a Marker with a L.DivIcon badge at the centroid.
  *
  * In both cases the cells arrive pre-bucketed and pre-filtered at the k>=3
- * floor from bucketFlagsToCells() in @/lib/heatmap. This component
- * owns the computation and exposes a clean hook for callers.
+ * floor from bucketFlagsToCells() in @/lib/heatmap. This component's
+ * job is to own that computation and expose a clean hook for callers.
  *
  * Usage (MapScreen does this already):
  *
@@ -22,12 +22,12 @@
  *
  * Jordan Art. 7 conditions enforced here:
  *
- *   1. k-anonymity floor (DEFAULT_K_FLOOR = 3) - bucketFlagsToCells drops
+ *   1. k-anonymity floor (DEFAULT_K_FLOOR = 3) — bucketFlagsToCells drops
  *      any cell with fewer than 3 flags before the array ever reaches the map.
- *   2. No raw coordinates exposed - only cell centroids (+-0.005 deg, ~555 m)
+ *   2. No raw coordinates exposed — only cell centroids (+-0.005 deg, ~555 m)
  *      are passed to the render layer; the original flag lat/lng are lost
  *      in aggregation.
- *   3. Disclaimer text - MapScreen renders the Jordan-mandated text whenever
+ *   3. Disclaimer text — MapScreen renders the Jordan-mandated text whenever
  *      heatmapEnabled is true (see the heatmapDisclaimer block in MapScreen.tsx).
  */
 
@@ -48,7 +48,7 @@ export interface HeatmapLayerProps {
    *  visible is false. */
   flags: ReadonlyArray<FlagRow>;
   visible: boolean;
-  /** gradient (default) or density. Passed through to PlatformMap. */
+  /** 'gradient' (default) or 'density'. Passed through to PlatformMap. */
   heatmapMode?: HeatmapMode;
 }
 
