@@ -1,0 +1,61 @@
+#!/usr/bin/env sh
+# Security pre-commit: block commits containing secrets/credentials.
+# Scans staged files only — fast, zero false positives on untouched files.
+#
+# Patterns caught:
+#   - Supabase service_role JWTs (anon key is intentionally public; service_role is not)
+#   - AWS access key IDs + secret keys
+#   - Generic API key / token / secret assignments
+#   - Private key PEM blocks
+#   - Hard-coded passwords in config-style assignments
+
+STAGED=$(git diff --cached --name-only --diff-filter=ACMR 2>/dev/null)
+
+if [ -z "$STAGED" ]; then
+  exit 0
+fi
+
+FOUND=0
+
+check_pattern() {
+  LABEL="$1"
+  PATTERN="$2"
+  # --line-number so we can show exactly where
+  MATCHES=$(git diff --cached -U0 | grep -n "^+" | grep -iE "$PATTERN" 2>/dev/null || true)
+  if [ -n "$MATCHES" ]; then
+    echo ""
+    echo "  [SECRET SCAN] $LABEL"
+    echo "$MATCHES" | head -5
+    FOUND=1
+  fi
+}
+
+echo "Running secret scan on staged changes..."
+
+# Supabase service_role key (long eyJhbGciO... JWTs with role=service_role)
+# The anon/public key is intentionally committed in .env examples; service_role is NOT.
+check_pattern "Supabase service_role key" "service_role"
+
+# AWS
+check_pattern "AWS Access Key ID" "(AKIA|ASIA|AROA)[A-Z0-9]{16}"
+check_pattern "AWS Secret Access Key" "aws_secret_access_key\s*=\s*['\"][A-Za-z0-9/+=]{40}"
+
+# Generic: any assignment where the RHS looks like a token/key/secret (≥20 chars)
+check_pattern "Generic API key/token assignment" "(api_key|apikey|auth_token|access_token|secret_key|client_secret|private_key)\s*[=:]\s*['\"][A-Za-z0-9_\-]{20,}"
+
+# PEM private key blocks
+check_pattern "Private key PEM block" "-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY-----"
+
+# Hard-coded password assignments (password = "something-that-is-not-empty")
+check_pattern "Hard-coded password" "(password|passwd|pwd)\s*[=:]\s*['\"][^'\"]{8,}"
+
+if [ "$FOUND" -ne 0 ]; then
+  echo ""
+  echo "  Secret scan FAILED. Review the matches above."
+  echo "  If this is a false positive, use: git commit --no-verify"
+  echo "  (and document why in the PR description)"
+  echo ""
+  exit 1
+fi
+
+echo "Secret scan passed."

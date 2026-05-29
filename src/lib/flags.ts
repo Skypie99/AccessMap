@@ -555,6 +555,21 @@ export async function createFlag(
   userId: string,
   input: CreateFlagInput,
 ): Promise<CreateFlagResult> {
+  // Validate coordinates at the trust boundary before hitting the DB.
+  // Supabase/PostgREST accepts any double precision value, so NaN, Infinity,
+  // and out-of-range values would silently land in the table without this
+  // check. The Map picker and location hook produce valid values in practice,
+  // but a future code path or test could pass garbage.
+  if (!Number.isFinite(input.lat) || !Number.isFinite(input.lng)) {
+    throw new Error('Invalid coordinates: lat and lng must be finite numbers.');
+  }
+  if (input.lat < -90 || input.lat > 90) {
+    throw new Error('Invalid coordinates: lat must be between -90 and 90.');
+  }
+  if (input.lng < -180 || input.lng > 180) {
+    throw new Error('Invalid coordinates: lng must be between -180 and 180.');
+  }
+
   const basePayload = {
     user_id: userId,
     lat: input.lat,

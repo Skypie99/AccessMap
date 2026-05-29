@@ -38,11 +38,17 @@ export async function updateUserProfile(userId: string, patch: UserProfilePatch)
     }
   }
 
+  // Note: `email` is intentionally omitted from the select list.
+  // The 2026-05-27 email-privacy migration revokes the `email` column from
+  // the `authenticated` role (column-level grant), so selecting it would
+  // return null. The UI sources email from `useAuth()` (auth.users JWT),
+  // not from this row — omitting it keeps the select honest and avoids a
+  // confusing null in the returned UserRow.
   const { data, error } = await supabase
     .from('users')
     .update(clean)
     .eq('id', userId)
-    .select('id, email, display_name, avatar_url, points, created_at')
+    .select('id, display_name, avatar_url, points, created_at')
     .single();
   if (error) throw error;
   return data as UserRow;

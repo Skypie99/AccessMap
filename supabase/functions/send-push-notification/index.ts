@@ -28,6 +28,11 @@
 // Expected request body (JSON):
 //   { user_id: string, title: string, body: string, data?: Record<string, unknown> }
 //
+// Auth: callers must include `Authorization: Bearer <SEND_PUSH_SECRET>`.
+// The function checks this header against the SEND_PUSH_SECRET env var before
+// processing the request. Without it, any caller who knows the function URL
+// could spam push notifications to any user_id.
+//
 // Returns:
 //   200 { status: "sent" | "queued" }   — sent = Expo accepted; queued = no token found
 //   400 { status: "error", error: string } — bad payload, missing fields, or oversized input

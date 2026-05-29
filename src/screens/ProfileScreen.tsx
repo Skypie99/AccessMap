@@ -1294,7 +1294,12 @@ export default function ProfileScreen() {
               'Sign out',
               true,
             );
-            if (ok) signOut(user?.id);
+            // void: signOut is best-effort; errors are already logged inside
+            // the helper. We don't await here to avoid blocking the sign-out
+            // UI — the auth state change fires synchronously on the Supabase
+            // side, so the screen unmounts even if the cleanup tasks (cache
+            // clear, push token delete) are still in flight.
+            if (ok) void signOut(user?.id);
           }}
           accessibilityRole="button"
           accessibilityLabel="Sign out of your account"
