@@ -1,14 +1,27 @@
 # AccessMap — Project State
 
-**Updated:** 2026-05-29 (Rory merge wave — CI bump, EXIF/MIME security fix, privacy commits landed)
-**Source:** Rory merge wave qa-reports/2026-05-29_Rory_MergeWave.md | DECISIONS_LOG.md | qa-reports consolidation
-**Main SHA:** `5698fef` · Tests: 1135/1135 · TSC errors: 0 · Test suites: 72
+**Updated:** 2026-05-29 (Phase 2 Track A quality gates wired; Phase 1 complete)
+**Source:** qa-reports/2026-05-29_Rory_LighthouseCI_VersionBump.md | qa-reports/2026-05-29_Shamus_Wave2QuickWins.md | PROJECT_STATE housekeeping
+**Current Branch SHA:** `374f1bb` · Tests: 1160/1160 · TSC errors: 0 · Test suites: 72
 
 ---
 
 ## Current Status
 
-**Merge Wave Complete (2026-05-29):** Rory landed 3 branches this cycle (CI bump, EXIF/MIME security, Jordan privacy commits). Main is now at `5698fef`. Test suite grew from 922→1135 (Jordan heatmap + coverage work). `test/heatmap-lib-coverage-2026-05-29` was skipped — redundant after security branch merge (same commit `66ff6ed`). Fix branch `fix/prelaunch-blockers-2026-05-30` has one open in-progress change on `flags.ts` (privacy gate throw). SQL migrations remain AWAITING SKY APPLY — not touched.
+**Phase:** Phase 1 COMPLETE → Phase 2 STARTED (2026-05-29)
+
+**Phase 2 Active Branches:**
+
+| Branch | Purpose |
+|---|---|
+| `phase2/track-a-quality-gates` | CI quality gates (lint, coverage, Lighthouse, search path hardening) |
+| `phase2/track-b-infrastructure` | Infrastructure hardening track |
+| `feat/wave2-quick-wins` | Wave 2 UX + performance quick wins |
+| `fix/expo-notifications-and-plist` | Expo notifications wiring + plist fixes |
+
+**Phase 1 Summary:** All Phase 1 work landed. Test suite grew from 922→1160. Rory wired CI gates in one commit (58e7f75). Dana search path hardening SQL migration written (`supabase/migrations/2026-05-29_function_search_path_hardening.sql`). QA reports from Steve, Shamus, Dana, Rory filed 2026-05-29.
+
+**SQL migrations remain AWAITING SKY APPLY** — not touched by agents.
 
 **Coherence:** 0.94 (security + CI on main; privacy commits live; SQL migrations remain only open gate)
 
@@ -101,4 +114,4 @@
 
 ---
 
-**Last compiled by:** /new-window context compression engine (2026-05-27)
+**Last compiled by:** housekeeping update (2026-05-29) — SHA + test count + Phase 2 branches
