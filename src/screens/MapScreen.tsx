@@ -2046,8 +2046,6 @@ const makeStyles = (color: ColorTheme) =>
       lineHeight: 15,
       textAlign: 'center',
     },
-    heatmapDisclaimer: { alignSelf: 'stretch', backgroundColor: 'rgba(0,0,0,0.55)', borderRadius: radius.md, paddingHorizontal: 12, paddingVertical: 7, marginBottom: 8 },
-    heatmapDisclaimerText: { fontSize: 11, color: 'rgba(255,255,255,0.85)', lineHeight: 15, textAlign: 'center' },
     bottomBar: {
       flexDirection: 'row',
       justifyContent: 'space-between',
