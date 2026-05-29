@@ -31,7 +31,7 @@
       [
         "expo-location",
         {
-          "locationAlwaysAndWhenInUsePermission": "AccessMap uses your location to show nearby accessibility flags and to attach your location when you report a new flag."
+          "locationWhenInUsePermission": "AccessMap uses your location to show nearby accessibility flags and to attach your location when you report a new flag."
         }
       ]
     ]

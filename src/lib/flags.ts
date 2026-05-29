@@ -230,6 +230,39 @@ export function verifyExifStripped(arrayBuffer: ArrayBuffer): boolean {
 }
 
 /**
+ * Inspect the first 12 bytes of an ArrayBuffer to identify the image format.
+ * Returns the detected MIME type, or null if the bytes don't match any known
+ * image magic sequence. Guards against files that pass the extension check
+ * but contain non-image bytes (e.g. a file named evil.jpg with HTML content).
+ *
+ * Handles: JPEG (FF D8 FF), PNG (89 50 4E 47), WEBP (RIFF....WEBP),
+ * HEIC/HEIF (ISO Base Media ftyp box with heic/heix/mif1/... brand).
+ */
+export function detectMimeFromBytes(buffer: ArrayBuffer): string | null {
+  if (buffer.byteLength < 12) return null;
+  const view = new Uint8Array(buffer, 0, 12);
+  const b = (i: number) => view[i] ?? 0;
+
+  // JPEG: FF D8 FF
+  if (b(0) === 0xff && b(1) === 0xd8 && b(2) === 0xff) return 'image/jpeg';
+  // PNG: 89 50 4E 47
+  if (b(0) === 0x89 && b(1) === 0x50 && b(2) === 0x4e && b(3) === 0x47) return 'image/png';
+  // WEBP: RIFF at bytes 0-3, WEBP at bytes 8-11
+  if (
+    b(0) === 0x52 && b(1) === 0x49 && b(2) === 0x46 && b(3) === 0x46 &&
+    b(8) === 0x57 && b(9) === 0x45 && b(10) === 0x42 && b(11) === 0x50
+  )
+    return 'image/webp';
+  // HEIC/HEIF: ISO Base Media ftyp box — 'ftyp' at bytes 4-7, brand at bytes 8-11
+  if (b(4) === 0x66 && b(5) === 0x74 && b(6) === 0x79 && b(7) === 0x70) {
+    const brand = String.fromCharCode(b(8), b(9), b(10), b(11));
+    const heicBrands = ['heic', 'heix', 'heim', 'heis', 'hevc', 'hevx', 'hevm', 'hevs', 'mif1', 'msf1'];
+    if (heicBrands.includes(brand.toLowerCase())) return 'image/heic';
+  }
+  return null;
+}
+
+/**
  * Upload a local image (file:// URI from expo-image-picker) to the
  * flag-photos Supabase bucket and return its public URL.
  *
@@ -266,6 +299,11 @@ export async function uploadFlagPhoto(userId: string, localUri: string): Promise
   }
   if (arrayBuffer.byteLength > MAX_PHOTO_BYTES) {
     throw new Error('Photo is too large. Please pick one under 10 MB.');
+  }
+
+  const detectedMime = detectMimeFromBytes(arrayBuffer);
+  if (!detectedMime) {
+    throw new Error('File does not appear to be a valid image.');
   }
 
   // EXIF stripping: platform-specific approach.
