@@ -1,25 +1,23 @@
 /**
- * Pure filter for the "Watched Flags" list — case-insensitive, NFC-normalized
- * substring match across the user-facing fields of each flag:
+ * Pure filters for the "Watched Flags" list.
  *
- *   - free-text description
- *   - category label  (supplied via callback so this lib stays decoupled
- *     from the labels table)
+ * filterWatchedFlags — case-insensitive, NFC-normalized substring match across
+ *   free-text description and category label. Multi-token AND semantics.
+ *   Mirrors `filterMyReports` in src/lib/myReportsFilter.ts.
  *
- * Multi-token query uses AND semantics: every whitespace-separated token
- * must match somewhere in the haystack. So "ramp concrete" matches a flag
- * whose description mentions concrete and whose category is "No ramp".
- * Mirrors `filterMyReports` in src/lib/myReportsFilter.ts.
+ * filterWatchedFlagsByStatus — restricts to a specific status value, or returns
+ *   the input reference unchanged when statusFilter is 'all'.
  *
- * NFC normalization on both sides means `café` (precomposed, single
- * code point) matches `café` (NFD: 'cafe' + combining acute). Without
- * `.normalize('NFC')` JS `.includes()` compares code units and the two
- * encodings would never match.
+ * NFC normalization means `café` (precomposed) matches `café` (NFD) because
+ * `.normalize('NFC')` puts both into the same code-unit sequence before
+ * `.includes()` compares them.
  *
- * Empty / whitespace-only query short-circuits to the input list
- * reference (cheap no-op for callers — the FlatList prop won't churn).
+ * Empty / whitespace-only query and 'all' status both short-circuit to the
+ * input list reference (cheap no-op — the FlatList prop won't churn).
  */
 import type { FlagRow } from '@/types/database';
+
+export type WatchedStatusFilter = 'all' | 'open' | 'verified' | 'resolved';
 
 /** Normalize a string for substring search: NFC + lowercase. */
 function normalize(s: string): string {
@@ -53,4 +51,17 @@ export function filterWatchedFlags(
     const haystack = normalize(`${f.description ?? ''} ` + `${categoryLabel(f.category) ?? ''}`);
     return tokens.every((tok) => haystack.includes(tok));
   });
+}
+
+/**
+ * Pure: filter `flags` to those matching the given status. 'all' returns the
+ * input reference unchanged. Compose with filterWatchedFlags for combined
+ * text+status filtering.
+ */
+export function filterWatchedFlagsByStatus(
+  flags: FlagRow[],
+  statusFilter: WatchedStatusFilter,
+): FlagRow[] {
+  if (statusFilter === 'all') return flags;
+  return flags.filter((f) => f.status === statusFilter);
 }
