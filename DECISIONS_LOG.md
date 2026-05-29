@@ -4,6 +4,15 @@ Structural decisions, append-only. New entries at the top. Do NOT re-litigate en
 
 ---
 
+## 2026-05-29 — D5 Heatmap Gradient Approved (Sky)
+
+- **Decision:** D5 heatmap color gradient = **YES**. Heatmap feature build unblocked.
+- **Rationale:** Sky ruling 2026-05-29. Spec at qa-reports/2026-05-29_Shamus_D5Heatmap_Implementation.md; Jordan pre-approved (privacy trigger cleared — aggregate severity display, not per-user location exposure).
+- **Authority:** Sky (product decision); recorded by Morgan (housekeeping, Const. 10.2). No code/main/DB change in this entry — record only.
+- **References:** ~/qa-reports/2026-05-29_Sky_Morgan_ToDo_Tracker.md (A1, D5)
+
+---
+
 ## 2026-05-27 — Security Wave 2 + D3 Trigger Decisions
 
 - **Decision:** Security Hardening Wave 2 ready for merge; D3 trigger approved for application.
