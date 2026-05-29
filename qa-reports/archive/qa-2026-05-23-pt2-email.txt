@@ -1,0 +1,55 @@
+To:      skylerhalisky@gmail.com
+Subject: QA run AccessMap + Prompt Library — 2026-05-23 (pt 2) — 6 test files, 0 proposals (4 still pending)
+
+Hi Sky,
+
+Second QA pass today. The morning run laid down the first tests + proposed the runner / linter / CI setup; this afternoon's run extends test coverage to the remaining pure-logic modules so that the moment those proposals are approved, you go from "1 module covered per project" to "every pure-logic module covered."
+
+WHAT I ADDED (additive only — no source-code changes, typecheck green on both projects)
+
+AccessMap — branch qa/auto-2026-05-23 (commit 97592e9 + report eba8e7f):
+  • src/screens/__tests__/severityColor.test.ts          — 7 cases: pins the 1→5 severity-to-hex contract + defensive gray
+  • src/lib/__tests__/preferences.test.ts                — 7 cases: landing-tab default, round-trip, corrupt-value fallback, per-user isolation
+  • src/lib/__tests__/onboarding.test.ts                 — 7 cases: first-run gate, mark/clear, "storage hiccup never buries the intro"
+  • src/lib/__tests__/points.test.ts                     — 8 cases: "+N earned while away" cache, null vs 0, negative-clamp
+
+Prompt Library Tool — branch qa/auto-2026-05-23 (commit 8093c02 + report 7c33b43):
+  • src/lib/__tests__/settings.test.ts                   — 14 cases: MODELS catalog, modelLabel, SSR fallback, unknown-model fallback. Includes one pinned test that documents the "no upper-bound clamp" gap — the test will fail when the fix lands and remind the contributor to update it
+  • src/lib/__tests__/prompts.test.ts                    — 9 cases: getCategories (empty / dedup / alphabetical) + seedPrompts sanity
+
+Total this run: 6 files, ~52 test cases, +622 lines, 0 new dependencies, 0 source-code changes.
+
+NO NEW PROPOSALS. The four from this morning still stand and are the prerequisite for any of these tests to actually run:
+  1. Jest + jest-expo (AccessMap)               — qa-reports/proposal-testing-2026-05-23.md
+  2. Vitest                  (Prompt Library)   — qa-reports/proposal-testing-2026-05-23.md
+  3. ESLint + Prettier       (both)             — qa-reports/proposal-lint-2026-05-23.md
+  4. GitHub Actions CI       (both)             — qa-reports/proposal-ci-2026-05-23.md
+
+A five-minute npm install (#1 and #2) is the biggest single quality unlock available — flipping ~75 test cases from "documentation" to "regression net that runs on every change."
+
+HOW TO REVIEW
+
+  AccessMap:
+    cd ~/AccessMap
+    git diff main..qa/auto-2026-05-23                  # full diff (this morning + afternoon)
+    git diff 2d95152..qa/auto-2026-05-23                # just this afternoon
+    # merge:   git checkout main && git merge qa/auto-2026-05-23
+    # discard: git branch -D qa/auto-2026-05-23
+
+  Prompt Library Tool:
+    cd ~/Documents/Claude/Projects/Prompt\ Library\ Tool
+    git diff main..qa/auto-2026-05-23
+    # merge:   git checkout main && git merge qa/auto-2026-05-23
+    # discard: git branch -D qa/auto-2026-05-23
+
+FORWARD-LOOKING
+
+  • Adopt typecheck + test as the personal ship gate the moment the runner lands. The CI proposal wires this for you on every push.
+  • Co-locate one test file with every new pure-logic module from now on — every existing pure module now has at least one test; keep that ratio at 1:1 and the safety net grows in step with the code.
+
+The full report is on disk at qa-reports/qa-2026-05-23-pt2.md in each project, and also at
+  ~/Documents/Claude/Agent Summarys /Access Map Summarys/2026-05-23_QA_Test_Fix_Report_v2.md
+
+(Gmail draft tool was denied for this action — saving this as an email artifact alongside the report, matching the convention used by qa-2026-05-23-email.txt and qa-test-fix-2026-05-23-gary-email.txt from the morning run.)
+
+— Gary

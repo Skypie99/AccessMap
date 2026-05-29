@@ -1,0 +1,65 @@
+Subject: QA run AccessMap + Prompt Library — 2026-05-23 — 75 tests committed, 6 proposals
+To: skylerhalisky@gmail.com
+
+Hi Sky,
+
+Gary here with the test-coverage & QA-infrastructure pass. Both projects went into this with zero tests, no linter, and no CI — only `tsc --noEmit` as a safety net. This pass leaves them with 75 unit tests already written + 6 propose-only setup docs (Jest/Vitest, ESLint+Prettier, GitHub Actions CI). Nothing was installed unattended. Typechecks stay green on both.
+
+WHAT LANDED (committed on qa/auto-2026-05-23 in each project)
+
+AccessMap
+- src/lib/__tests__/flags.test.ts — 20 cases on the data dictionaries (CATEGORY_LABELS / SEVERITY_LABELS / STATUS_LABELS / etc.). Catches a deleted enum member, a renamed status, or a drifted FLAG_PHOTOS_BUCKET — all of which would silently render blanks or 404 photos today.
+- tsconfig.json — excludes the test directory until a runner is installed (one-line revert in the proposal).
+
+Prompt Library Tool
+- src/lib/__tests__/variables.test.ts — ~25 cases on the {{token}} parser: empty bodies, whitespace tolerance, de-dup order, snake/kebab/camel humanization, multiline detection, parseBody round-trips, substituteBody emptiness handling, countFilled.
+- src/lib/__tests__/library.test.ts — ~15 cases: slugify edge cases, generateId stability + collision spot-check, mergePrompts non-mutation + newest-first.
+- src/lib/__tests__/search.test.ts — ~15 cases: empty/whitespace query, match metadata, getHighlightSegments at start/middle/end and across adjacent ranges.
+- tsconfig.json + .gitignore touch-ups.
+
+All tests use plain describe/it/expect, so they run unchanged the moment Jest or Vitest is installed.
+
+WHAT'S PROPOSED (NOT installed — each is one copy-paste block away)
+
+AccessMap → qa-reports/
+- proposal-testing-2026-05-23.md — Jest + jest-expo + @types/jest (one `npm install --save-dev … --legacy-peer-deps` line, plus jest.config.js and a 3-line jest.setup.js).
+- proposal-lint-2026-05-23.md — ESLint 9 flat config (eslint-config-expo) + Prettier 3. react-hooks/exhaustive-deps set to warn so it doesn't block builds.
+- proposal-ci-2026-05-23.md — single .github/workflows/ci.yml running typecheck + lint + test as a parallel matrix.
+
+Prompt Library Tool → qa-reports/
+- proposal-testing-2026-05-23.md — Vitest 2 + @vitejs/plugin-react + jsdom. Adds a typecheck script (the project doesn't have one yet — type errors only surface through `next build` today).
+- proposal-lint-2026-05-23.md — ESLint 9 + eslint-config-next + Prettier 3 (Next 15 flat-config preset).
+- proposal-ci-2026-05-23.md — .github/workflows/ci.yml with typecheck + lint + test + build matrix. Build is the only thing that catches static-export regressions for the GH Pages deploy.
+
+Each proposal: ~5–10 min to apply, fully reversible by git revert + npm uninstall.
+
+FORWARD-LOOKING
+
+1. Wire the AccessMap points trigger to a shared src/lib/pointsRules.ts so the +5/+10/+2/+5 constants stop being copy-pasted between schema.sql and TasksScreen.tsx. That's the same coupling CLAUDE.md flagged after the May 22 pass.
+2. After the runners install, add an `npm run check` (typecheck + lint + test in series) + a one-line husky pre-commit hook. That's the step that turns "we have a safety net" into "the safety net actually catches things before they ship."
+
+VERIFICATION
+- AccessMap typecheck: PASS (before AND after)
+- Prompt Library typecheck (via npx tsc --noEmit): PASS
+- Both qa/auto-2026-05-23 branches: unmerged, isolated from main
+- No secrets in either diff; no Supabase dashboard actions taken; no dependencies installed
+
+Heads up: there were 2 uncommitted doc-file changes (FEATURES.md, LEARNINGS.md) on the active feature branch when this run started — I stashed them with message "QA auto-stash 2026-05-23 (FEATURES/LEARNINGS WIP)" and will pop them at the end of this run so your working tree is exactly where it was.
+
+NOTE ON EMAIL DELIVERY
+The Gmail connector returned "needs additional permissions" when I tried to send this draft, so I'm saving it as a .txt companion alongside the report (same convention as the May-22 QA, the Steve safety pass, and the feature-development runs). Reconnect the Gmail MCP when you're ready and I can send the next one directly.
+
+Full report saved at:
+/Users/skypie/Documents/Claude/Agent Summarys /Access Map Summarys/2026-05-23_QA_Test_Fix_Report.md
+
+How to land each project:
+  cd <project>
+  git checkout qa/auto-2026-05-23
+  # read the three proposal docs in qa-reports/
+  # run the install blocks
+  # remove the test-file exclusion lines from tsconfig.json
+  npm test          # confirm green
+  npm run typecheck # confirm still green
+  git checkout main && git merge qa/auto-2026-05-23 --no-ff
+
+— Gary
