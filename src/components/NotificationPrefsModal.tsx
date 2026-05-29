@@ -11,7 +11,8 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Modal, Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 import { useAuth } from '@/lib/auth';
-import { STATUS_COLORS, STATUS_LABELS } from '@/lib/flags';
+import { STATUS_LABELS } from '@/lib/flags';
+import { StatusBadge } from './StatusBadge';
 import {
   DEFAULT_PREFS,
   loadPrefs,
@@ -173,7 +174,6 @@ export default function NotificationPrefsModal({
           ) : (
             <View style={styles.list}>
               {TOGGLES.map(({ status, prefKey, description }) => {
-                const palette = STATUS_COLORS[status];
                 const value = prefs[prefKey];
                 return (
                   // NOTE: do NOT add `accessible={true}` here. The row
@@ -184,14 +184,14 @@ export default function NotificationPrefsModal({
                   // and the two Text rows above remain individually
                   // discoverable for users who scan the row.
                   <View key={prefKey} style={styles.row}>
+                    {/* Badge is decorative here — the Switch already carries
+                        the full accessible label+state. Hidden from the a11y
+                        tree to avoid redundant "Flag status: X" announcements. */}
                     <View
-                      style={[styles.statusBadge, { backgroundColor: palette.bg }]}
                       accessibilityElementsHidden
                       importantForAccessibility="no-hide-descendants"
                     >
-                      <Text style={[styles.statusBadgeText, { color: palette.fg }]}>
-                        {STATUS_LABELS[status]}
-                      </Text>
+                      <StatusBadge status={status} style={styles.statusBadge} />
                     </View>
                     <View style={styles.rowText}>
                       <Text style={styles.rowTitle}>Notify on {STATUS_LABELS[status]}</Text>
@@ -284,7 +284,6 @@ const makeStyles = (color: ColorTheme) =>
       minWidth: 76,
       alignItems: 'center',
     },
-    statusBadgeText: { fontWeight: '700', fontSize: 11 },
     rowText: { flex: 1, gap: 2 },
     rowTitle: { fontSize: 14, fontWeight: '600', color: color.textStrong },
     rowDesc: { fontSize: 12, color: color.textMuted, lineHeight: 16 },
