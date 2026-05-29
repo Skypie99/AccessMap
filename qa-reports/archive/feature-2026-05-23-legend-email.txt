@@ -1,0 +1,106 @@
+To: skylerhalisky@gmail.com
+Subject: Feature push AccessMap — 2026-05-23 — Categories / severity legend
+
+Hi Sky,
+
+Tonight's feature push for AccessMap is the top item from your backlog:
+
+  Categories / severity legend on the Map.
+
+A new "?" button on the Map's top row opens a bottom-sheet modal that
+explains the 1–5 severity scale (with color names spoken aloud, never
+color-alone) and the six flag categories with plain-language descriptions.
+
+Branch: feat/legend-sheet-2026-05-23
+Commits: 2
+Files touched: 3  (+283 / -0)
+Typecheck: green before, green after
+
+NOTE: A parallel agent ("Shamus") ran tonight too and built the
+SECOND backlog item ("Persistent flag-load error banner on the Map")
+on its own branch: feat/flag-load-error-banner-2026-05-23. Both
+branches sit on top of main, both are clean, and they don't touch
+the same code in conflicting ways — they can be merged independently.
+
+How to try it
+-------------
+  cd ~/AccessMap
+  git checkout feat/legend-sheet-2026-05-23
+  npm start
+
+In the running app: Map tab → top row → new "?" button (first icon).
+Tap it → "Map legend" sheet slides up. Tap "Close" or the dim area
+above the sheet to dismiss. With VoiceOver/TalkBack, each row reads
+as a single item with the color named ("Severity 3, Moderate. Yellow.
+Hard for many users.").
+
+What was built
+--------------
+- src/screens/LegendModal.tsx (new, 217 lines) — bottom-sheet modal,
+  same Modal + backdrop + card pattern as ReportFlagModal.
+- src/lib/flags.ts (+50 lines) — six new constants alongside
+  CATEGORY_LABELS (descriptions, icons, severity labels, color names,
+  severity descriptions) so display copy stays in one place.
+- src/screens/MapScreen.tsx (+16 lines) — new state, new "?" icon
+  button on the top row using the existing iconBtn style.
+
+Accessibility (built in, not bolted on)
+---------------------------------------
+- Each row is grouped (accessible) with a composed label that includes
+  the color name — meaning is never carried by color alone.
+- Section headers ("Severity", "Categories") use accessibilityRole
+  "header".
+- Decorative glyphs are hidden from the screen reader.
+- Close button is a full-width 44pt+ target.
+- Trigger button has both label ("Map legend") and hint ("Opens a
+  guide explaining flag categories and severity").
+- Sheet has maxHeight 85% with internal ScrollView so content survives
+  large dynamic type.
+
+Proposals (NOT applied — your review)
+-------------------------------------
+1. Top-row buttons (filter, refresh, recenter, and the new legend
+   trigger) are 36pt; the a11y baseline is 44pt. Recommend bumping
+   the shared iconBtn style in MapScreen.tsx from 36→44 (one-line
+   change, fixes four buttons). Held off because it touches existing
+   UI — Alex's domain.
+
+2. Move severityColor() from ReportFlagModal to lib/flags.ts. The new
+   LegendModal imports it from ReportFlagModal, which is a bit
+   awkward — the function isn't really specific to that modal.
+   Cosmetic; not blocking.
+
+3. FEATURES.md couldn't be updated on this branch because the
+   canonical file lives only on feat/my-reports-2026-05-23 and
+   feat/flag-detail-modal-2026-05-23 (both still unmerged). When
+   those branches land, move the legend item from "Now" to "Shipped
+   (unmerged)" with branch feat/legend-sheet-2026-05-23.
+
+4. Gmail connector needs reauthorization — couldn't send a draft
+   directly. This text file is the email-ready version of the report.
+
+Suggested next features
+-----------------------
+1. Filter flags on the Map by status (open / verified / resolved /
+   rejected; default open+verified to match listFlags). Maps cleanly
+   onto the existing chip pattern in the filter panel. (Was #3 in
+   "Now" — the banner item, #2, is being built tonight on a separate
+   branch.)
+
+2. Accessible list view of nearby flags — the screen-reader-first
+   alternative to the map. Would reuse the legend constants added in
+   this push (CATEGORY_DESCRIPTIONS, SEVERITY_LABELS,
+   SEVERITY_COLOR_NAMES).
+
+Review
+------
+  git diff main..feat/legend-sheet-2026-05-23
+
+To merge:    git checkout main && git merge feat/legend-sheet-2026-05-23
+To discard:  git branch -D feat/legend-sheet-2026-05-23
+
+Full markdown report is saved at:
+  ~/AccessMap/qa-reports/feature-2026-05-23-legend.md
+  (and a copy in ~/Documents/Claude/Projects/Access Map App/Access Map Summarys/)
+
+— Shamus

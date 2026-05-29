@@ -1,11 +1,36 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
 import { supabase } from './supabase';
+import {
+  getPushEnabled,
+  requestExpoPushToken,
+  savePushToken,
+  showPushExplanation,
+} from './pushNotifications';
 
 interface AuthContextValue {
   session: Session | null;
   user: User | null;
   loading: boolean;
+}
+
+// Best-effort push token registration. Never throws — all failures are silent.
+// promptIfNew: true on active sign-in (may show PIPEDA explanation);
+//              false on session restore (never prompts, re-registers silently if previously enabled).
+async function registerPushToken(userId: string, promptIfNew: boolean): Promise<void> {
+  try {
+    const alreadyEnabled = await getPushEnabled(userId);
+    if (!alreadyEnabled) {
+      if (!promptIfNew) return;
+      const confirmed = await showPushExplanation();
+      if (!confirmed) return;
+    }
+    const token = await requestExpoPushToken();
+    if (!token) return;
+    await savePushToken(userId, token);
+  } catch {
+    // Push registration is best-effort — never surface errors to the user.
+  }
 }
 
 const AuthContext = createContext<AuthContextValue>({
@@ -34,8 +59,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     })();
 
-    const { data: subscription } = supabase.auth.onAuthStateChange((_event, next) => {
+    const { data: subscription } = supabase.auth.onAuthStateChange((event, next) => {
       setSession(next);
+      if (next?.user) {
+        if (event === 'SIGNED_IN') {
+          // Active sign-in: show PIPEDA explanation if first time, then register.
+          void registerPushToken(next.user.id, true);
+        } else if (event === 'INITIAL_SESSION') {
+          // App restart with persisted session: re-register silently if previously enabled.
+          void registerPushToken(next.user.id, false);
+        }
+      }
     });
 
     return () => {

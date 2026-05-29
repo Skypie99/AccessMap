@@ -1,0 +1,93 @@
+Subject: AccessMap big-lift cycle 2026-05-24-v2 — 9 branches parked, 1 decision needed
+
+Sky —
+
+Big lift complete. Here's the one-screen summary.
+
+WHAT SHIPPED (all parked on branches, none merged to main per the Sky-only rule):
+
+  6 NEW FEATURES (Wave 1, parallel):
+    R10 — Help & FAQ search bar
+    R11 — Flag detail "Share" → OS share sheet (web fallback in polish)
+    R12 — Changelog collapsible release sections
+    R13 — My Reports search bar
+    R14 — Address-search "Recent" list (last 5)
+    R15 — My Feedback filter chips (All/Bug/Idea/Love/Other)
+
+  3 QA PASSES (Wave 2, parallel, read-only):
+    Quinn (correctness) — 17 findings, 2 HIGH
+    Alex   (WCAG 2.2 AA) — 14 findings, 4 HIGH
+    Gary   (test coverage) — 18 gaps, 3 HIGH
+
+  7 POLISH LOOPS (Wave 3, parallel, fix QA findings):
+    PL-R7  — sort chip 44pt target + tiebreaker tests
+    PL-R8  — web Alert.alert no-op fix (long-press now works on web)
+    PL-R11 — web Share fallback restored (navigator.share + clipboard)
+    PL-R12 — initialExpanded extracted to lib + 5 unit tests
+    PL-R13 — placeholder contrast + accessibilityLiveRegion + field-leak test
+    PL-R14 — clear-link AA contrast + empty-name dedupe edge test
+    PL-R15 — pinned referential-identity test for 'all' filter
+
+ALL 9 BRANCHES (R7–R15) ARE READY TO MERGE. Files are disjoint — any order works.
+
+ONE DECISION NEEDS YOUR CALL BEFORE MERGING R9:
+
+  B1 — R9 Profile nearest-flag card triggers a foreground-location
+       permission prompt on Profile tab. Privacy-sensitive per
+       Constitution Art. 9.6.
+       Options:
+         (a) ship as-is — card hides when permission denied
+         (b) cached-permission gate — only show if location already
+             granted (no new prompt)  ← Morgan recommends
+         (c) explicit-CTA — show "Find nearest" button that triggers
+             permission on tap
+
+MERGE RECIPE:
+
+  cd ~/AccessMap
+  git checkout main
+  git merge --no-ff feat/tasks-sort-2026-05-23                -m "R7"
+  git merge --no-ff feat/map-longpress-drop-2026-05-23        -m "R8"
+  # (decide B1 first) then:
+  git merge --no-ff feat/profile-nearest-flag-jump-2026-05-23 -m "R9"
+  git merge --no-ff feat/help-faq-search-2026-05-24           -m "R10"
+  git merge --no-ff feat/flag-share-2026-05-24                -m "R11"
+  git merge --no-ff feat/changelog-collapsible-2026-05-24     -m "R12"
+  git merge --no-ff feat/my-reports-search-2026-05-24         -m "R13"
+  git merge --no-ff feat/address-search-recents-2026-05-24    -m "R14"
+  git merge --no-ff feat/feedback-category-filter-2026-05-24  -m "R15"
+  npx tsc --noEmit && npx jest
+
+OTHER DECISIONS QUEUED (in priority order):
+  B4 — Apply supabase/realtime.sql + 2026-05-23_feedback_table.sql
+       (unblocks features already coded)
+  B2 + B3 — Cross-cutting theme polish: add color.placeholderText (#5b6470)
+            and color.brandText (#1c4f99) to src/lib/theme.ts. Fixes
+            AA contrast issues across multiple components.
+  B5 — Triage 60+ unmerged feature branches (most are duplicates from
+       prior cycles). Sky-only — I can write the triage script but
+       deletion is your call.
+
+NUMBERS:
+  Tests added (combined): +108 (baseline 350 → ~458 if all merged)
+  New dependencies: 0
+  Schema changes: 0
+  Privacy-impacting features: 1 (R9 — see B1)
+
+FULL BRIEFING:
+  ~/AccessMap/qa-reports/cycle-2026-05-24-v2.md
+  (also at ~/Documents/Claude/Agent Summarys /Access Map Summarys/2026-05-24_Project_Manager_Report_v2.md)
+
+INDIVIDUAL QA REPORTS:
+  ~/AccessMap/qa-reports/qa-quinn-r7-r15-2026-05-24.md
+  ~/AccessMap/qa-reports/qa-alex-r7-r15-2026-05-24.md
+  ~/AccessMap/qa-reports/qa-gary-r7-r15-2026-05-24.md
+
+NOTES:
+  - Gmail draft creation still failing (Gmail MCP needs re-auth) —
+    that's why this is text for you to copy-paste rather than a sent draft.
+  - `cycle/auto-2026-05-24` branch has 2 commits from an earlier
+    parallel Morgan run today (map-filter polish + tasks-scope
+    persistence). I did NOT touch it. Worth a separate review.
+
+— Morgan, 2026-05-24
