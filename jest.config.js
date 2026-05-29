@@ -19,6 +19,9 @@ module.exports = {
     // Path alias from tsconfig.json — `@/foo` → `src/foo`. The preset's own
     // moduleNameMapper (for vector icons) is preserved via Jest config merging.
     '^@/(.*)$': '<rootDir>/src/$1',
+    // expo-image-manipulator is used by flags.ts (stripExifNative). Tests that
+    // import flags.ts transitively need this stub to avoid "Cannot find module".
+    '^expo-image-manipulator$': '<rootDir>/__mocks__/expo-image-manipulator.js',
   },
   // Give Jest 3 s to wait for any remaining async handles after tests finish
   // before printing the "open handles" warning.  The root cause (Supabase
