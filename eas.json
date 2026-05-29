@@ -1,6 +1,31 @@
 {
+  "// =========================================================================": "",
+  "// AccessMap — EAS Build & Submit Configuration": "",
+  "// =========================================================================": "",
+  "//": "",
+  "// PROFILES:": "",
+  "//   development  — iOS device build with Expo dev client. Use for local": "",
+  "//                  feature work. Requires a registered device UDID.": "",
+  "//                  Command: eas build --profile development --platform ios": "",
+  "//   preview      — iOS internal distribution (TestFlight) for QA/stakeholder": "",
+  "//                  review. Invite testers via App Store Connect.": "",
+  "//                  Command: eas build --profile preview --platform ios": "",
+  "//   production   — App Store submission build. Use eas submit after build.": "",
+  "//                  Command: eas build --profile production --platform ios": "",
+  "//": "",
+  "// CREDENTIALS STATUS:": "",
+  "//   APPLE_TEAM_ID   — ✅ Set: S78F8ZA8QU (Skyler Halisky, Individual)": "",
+  "//   APPLE_ID        — ✅ Set: skylerhalisky@gmail.com": "",
+  "//   ASC_APP_ID      — ✅ Set: 6774709116 (App Store Connect numeric Apple ID)": "",
+  "//   Android (future) — serviceAccountKeyPath: path to a Google Service Account": "",
+  "//                     JSON key downloaded from Google Play Console →": "",
+  "//                     Setup → API access. Not needed for iOS-only builds.": "",
+  "// =========================================================================": "",
+
   "cli": {
-    "version": ">= 10.0.0"
+    "version": ">= 10.0.0",
+    "appVersionSource": "local",
+    "// appVersionSource": "local = app.json `version` is the source of truth for the marketing version. iOS buildNumber auto-increments per profile (autoIncrement below) so successive uploads don't collide."
   },
 
   "build": {
@@ -16,7 +41,9 @@
     },
 
     "preview": {
+      "// description": "iOS internal TestFlight build for QA and stakeholder review. distribution: internal uploads to TestFlight automatically after build. autoIncrement bumps the iOS buildNumber so successive uploads don't collide.",
       "distribution": "internal",
+      "autoIncrement": true,
       "ios": {
         "simulator": false,
         "appleTeamId": "ADD_YOUR_APPLE_TEAM_ID_HERE"
@@ -26,8 +53,27 @@
       }
     },
 
+    "preview2": {
+      "// description": "Parallel internal TestFlight channel. Inherits everything from preview; only APP_ENV differs. Second concurrent build slot (e.g. a separate tester group).",
+      "extends": "preview",
+      "env": {
+        "APP_ENV": "preview2"
+      }
+    },
+
+    "preview3": {
+      "// description": "Third parallel internal TestFlight channel. Inherits from preview; only APP_ENV differs.",
+      "extends": "preview",
+      "env": {
+        "APP_ENV": "preview3"
+      }
+    },
+
     "production": {
+      "// description": "App Store submission build. After a successful build run: eas submit --profile production --platform ios. autoIncrement keeps buildNumber unique across submissions.",
+      "// PRIVACY GATE": "Do NOT run this profile until the D8 EXIF GPS leak (see PROJECT_STATE.md) is closed. App Store submission of location data while that leak is open is a pre-launch blocker.",
       "distribution": "store",
+      "autoIncrement": true,
       "ios": {
         "simulator": false,
         "appleTeamId": "ADD_YOUR_APPLE_TEAM_ID_HERE"
@@ -41,9 +87,10 @@
   "submit": {
     "production": {
       "ios": {
-        "appleId": "$EXPO_APPLE_ID",
-        "ascAppId": "TODO_ASC_APP_ID",
-        "appleTeamId": "$EXPO_APPLE_TEAM_ID"
+        "// DOCS": "https://docs.expo.dev/submit/ios/",
+        "appleId": "skylerhalisky@gmail.com",
+        "ascAppId": "6774709116",
+        "appleTeamId": "S78F8ZA8QU"
       },
       "android": {
         "serviceAccountKeyPath": "TODO_PATH_TO_GOOGLE_SERVICE_ACCOUNT_KEY.json",
