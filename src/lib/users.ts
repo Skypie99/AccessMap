@@ -42,7 +42,7 @@ export async function updateUserProfile(userId: string, patch: UserProfilePatch)
     .from('users')
     .update(clean)
     .eq('id', userId)
-    .select('id, email, display_name, avatar_url, points, created_at')
+    .select('id, display_name, avatar_url, points, created_at')
     .single();
   if (error) throw error;
   return data as UserRow;
