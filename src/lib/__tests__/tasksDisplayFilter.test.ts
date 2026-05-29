@@ -46,9 +46,7 @@ function applySearchFilter(flags: FlagRow[], searchQuery: string): FlagRow[] {
 // ---------------------------------------------------------------------------
 // Minimal FlagRow factory — only the fields the filter touches.
 // ---------------------------------------------------------------------------
-function makeFlag(
-  overrides: Partial<FlagRow> & { category: FlagRow['category'] },
-): FlagRow {
+function makeFlag(overrides: Partial<FlagRow> & { category: FlagRow['category'] }): FlagRow {
   return {
     id: 'flag-' + Math.random().toString(36).slice(2),
     user_id: 'user-1',

@@ -124,19 +124,16 @@ describe('category quick-filter — predicate', () => {
     expect(out).toBe(ONE_OF_EACH);
   });
 
-  it.each(CATEGORY_ORDER)(
-    'narrows to a single category (%s) — keeps only matching rows',
-    (cat) => {
-      const out = applyDisplayFilter({
-        flags: ONE_OF_EACH,
-        mineOnly: false,
-        userId: undefined,
-        minSeverity: 0,
-        categoryFilter: cat,
-      });
-      expect(out.map((f) => f.category)).toEqual([cat]);
-    },
-  );
+  it.each(CATEGORY_ORDER)('narrows to a single category (%s) — keeps only matching rows', (cat) => {
+    const out = applyDisplayFilter({
+      flags: ONE_OF_EACH,
+      mineOnly: false,
+      userId: undefined,
+      minSeverity: 0,
+      categoryFilter: cat,
+    });
+    expect(out.map((f) => f.category)).toEqual([cat]);
+  });
 
   it('returns [] when no flag matches the chosen category', () => {
     const onlyRamps = [
@@ -272,9 +269,7 @@ describe('category quick-filter — toggle handler', () => {
   });
 
   it('tapping a different chip switches the filter without clearing first', () => {
-    expect(nextCategoryAfterTap('no_ramp', 'blocked_path')).toBe(
-      'blocked_path',
-    );
+    expect(nextCategoryAfterTap('no_ramp', 'blocked_path')).toBe('blocked_path');
   });
 
   it('tapping the explicit "All" chip clears regardless of current state', () => {

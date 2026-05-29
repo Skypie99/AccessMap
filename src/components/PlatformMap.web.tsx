@@ -7,12 +7,7 @@ import { severity as severityTokens, color as themeColor } from '@/theme';
 import type { FlagRow } from '@/types/database';
 import { useAuth } from '@/lib/auth';
 import { getCachedTile, setCachedTile } from '@/lib/tileCache';
-import {
-  colorForCell,
-  HEATMAP_FILL_OPACITY,
-  type HeatCell,
-  type HeatmapMode,
-} from '@/lib/heatmap';
+import { colorForCell, HEATMAP_FILL_OPACITY, type HeatCell, type HeatmapMode } from '@/lib/heatmap';
 
 export interface PlatformMapRegion {
   latitude: number;
@@ -56,11 +51,7 @@ export interface PlatformMapProps {
 // same rounded mean severity render an identical badge, so caching keeps
 // Leaflet from rebuilding hundreds of icons during a pan.
 const heatLabelIconCache = new Map<string, L.DivIcon>();
-function heatLabelIcon(
-  fill: string,
-  text: string,
-  textColor: string,
-): L.DivIcon {
+function heatLabelIcon(fill: string, text: string, textColor: string): L.DivIcon {
   const key = `${fill}|${text}|${textColor}`;
   const cached = heatLabelIconCache.get(key);
   if (cached) return cached;
@@ -181,7 +172,10 @@ class CachedTileLayer extends L.TileLayer {
         const cached = await getCachedTile(userId, url);
         if (cached) {
           img.onload = () => done(undefined, img);
-          img.onerror = () => { img.src = url; done(undefined, img); };
+          img.onerror = () => {
+            img.src = url;
+            done(undefined, img);
+          };
           img.src = cached;
           return;
         }
@@ -199,7 +193,10 @@ class CachedTileLayer extends L.TileLayer {
         });
 
         img.onload = () => done(undefined, img);
-        img.onerror = () => { img.src = url; done(undefined, img); };
+        img.onerror = () => {
+          img.src = url;
+          done(undefined, img);
+        };
         img.src = dataUri;
 
         // Fire-and-forget: persist to cache; errors are swallowed by
@@ -244,185 +241,173 @@ function CachedTileLayerWrapper({ userId }: { userId: string | null }): null {
   return null;
 }
 
-const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(
-  function PlatformMap(
-    {
-      initialRegion,
-      flags,
-      focusedFlagId,
-      reducedMotion,
-      onLongPressMap,
-      heatCells = [],
-      heatmapMode = 'gradient',
-    },
+const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(function PlatformMap(
+  {
+    initialRegion,
+    flags,
+    focusedFlagId,
+    reducedMotion,
+    onLongPressMap,
+    heatCells = [],
+    heatmapMode = 'gradient',
+  },
+  ref,
+) {
+  const mapInstance = useRef<LeafletMap | null>(null);
+  const { user } = useAuth();
+  const userId = user?.id ?? null;
+  const markerRefs = useRef<Record<string, LeafletMarker | null>>({});
+
+  // See PlatformMap.tsx for why we prune: ref callbacks leave null entries
+  // behind when markers unmount; without pruning, the dict grows forever.
+  useEffect(() => {
+    const valid = new Set(flags.map((f) => f.id));
+    for (const id of Object.keys(markerRefs.current)) {
+      if (!valid.has(id)) delete markerRefs.current[id];
+    }
+  }, [flags]);
+
+  // Wire `contextmenu` to the drop-flag intent on web. Leaflet fires
+  // this on right-click on desktop and on a long-touch on mobile
+  // browsers (the OS surfaces the press as a context menu request).
+  // We re-bind on every change to `onLongPressMap` so the latest
+  // closure is used.
+  useEffect(() => {
+    const map = mapInstance.current;
+    if (!map || !onLongPressMap) return;
+    const handler = (e: L.LeafletMouseEvent) => {
+      // Prevent the browser's default right-click menu from showing
+      // over the map.
+      const oe = e.originalEvent;
+      if (oe && 'preventDefault' in oe) oe.preventDefault();
+      onLongPressMap({ lat: e.latlng.lat, lng: e.latlng.lng });
+    };
+    map.on('contextmenu', handler);
+    return () => {
+      map.off('contextmenu', handler);
+    };
+  }, [onLongPressMap]);
+
+  useImperativeHandle(
     ref,
-  ) {
-    const mapInstance = useRef<LeafletMap | null>(null);
-    const { user } = useAuth();
-    const userId = user?.id ?? null;
-    const markerRefs = useRef<Record<string, LeafletMarker | null>>({});
+    () => ({
+      animateTo: (r) => {
+        const zoom = deltaToZoom(r.latitudeDelta ?? 0.005);
+        mapInstance.current?.flyTo([r.latitude, r.longitude], zoom, {
+          // Instant jump when "Reduce Motion" is on (WCAG 2.3.3).
+          duration: reducedMotion ? 0 : 0.6,
+        });
+      },
+      showCallout: (id) => {
+        markerRefs.current[id]?.openPopup();
+      },
+    }),
+    [reducedMotion],
+  );
 
-    // See PlatformMap.tsx for why we prune: ref callbacks leave null entries
-    // behind when markers unmount; without pruning, the dict grows forever.
-    useEffect(() => {
-      const valid = new Set(flags.map((f) => f.id));
-      for (const id of Object.keys(markerRefs.current)) {
-        if (!valid.has(id)) delete markerRefs.current[id];
-      }
-    }, [flags]);
-
-    // Wire `contextmenu` to the drop-flag intent on web. Leaflet fires
-    // this on right-click on desktop and on a long-touch on mobile
-    // browsers (the OS surfaces the press as a context menu request).
-    // We re-bind on every change to `onLongPressMap` so the latest
-    // closure is used.
-    useEffect(() => {
-      const map = mapInstance.current;
-      if (!map || !onLongPressMap) return;
-      const handler = (e: L.LeafletMouseEvent) => {
-        // Prevent the browser's default right-click menu from showing
-        // over the map.
-        const oe = e.originalEvent;
-        if (oe && 'preventDefault' in oe) oe.preventDefault();
-        onLongPressMap({ lat: e.latlng.lat, lng: e.latlng.lng });
-      };
-      map.on('contextmenu', handler);
-      return () => {
-        map.off('contextmenu', handler);
-      };
-    }, [onLongPressMap]);
-
-    useImperativeHandle(
-      ref,
-      () => ({
-        animateTo: (r) => {
-          const zoom = deltaToZoom(r.latitudeDelta ?? 0.005);
-          mapInstance.current?.flyTo([r.latitude, r.longitude], zoom, {
-            // Instant jump when "Reduce Motion" is on (WCAG 2.3.3).
-            duration: reducedMotion ? 0 : 0.6,
-          });
-        },
-        showCallout: (id) => {
-          markerRefs.current[id]?.openPopup();
-        },
-      }),
-      [reducedMotion],
-    );
-
-    return (
-      <div style={{ position: 'absolute', inset: 0, zIndex: 0 }}>
-        <MapContainer
-          center={[initialRegion.latitude, initialRegion.longitude]}
-          zoom={deltaToZoom(initialRegion.latitudeDelta)}
-          style={{ height: '100%', width: '100%' }}
-          ref={(m) => {
-            mapInstance.current = m;
-          }}
-        >
-          <CachedTileLayerWrapper userId={userId} />
-          {/* Heat-map: Rectangle for each cell footprint + a divIcon Marker
+  return (
+    <div style={{ position: 'absolute', inset: 0, zIndex: 0 }}>
+      <MapContainer
+        center={[initialRegion.latitude, initialRegion.longitude]}
+        zoom={deltaToZoom(initialRegion.latitudeDelta)}
+        style={{ height: '100%', width: '100%' }}
+        ref={(m) => {
+          mapInstance.current = m;
+        }}
+      >
+        <CachedTileLayerWrapper userId={userId} />
+        {/* Heat-map: Rectangle for each cell footprint + a divIcon Marker
               at the centroid showing the rounded mean severity. Leaflet
               paints Rectangles on `overlayPane` (SVG default) which sits
               beneath `markerPane`, so the cell tints render under the pins
               without any explicit z-index work. */}
-          {heatCells.map((cell) => {
-            const fill = colorForCell(
-              cell,
-              heatmapMode,
-              severityTokens,
-              themeColor.brand,
-            );
-            const meanRounded = Math.round(cell.meanSeverity);
-            const labelTone =
-              meanRounded >= 3 ? themeColor.textOnBrand : themeColor.textStrong;
-            const icon = heatLabelIcon(fill, String(meanRounded), labelTone);
-            return (
-              <React.Fragment key={`heat-${cell.key}`}>
-                <Rectangle
-                  bounds={[
-                    [cell.latStart, cell.lngStart],
-                    [cell.latEnd, cell.lngEnd],
-                  ]}
-                  pathOptions={{
-                    color: fill,
-                    weight: 1,
-                    fillColor: fill,
-                    fillOpacity: HEATMAP_FILL_OPACITY,
-                    interactive: false,
+        {heatCells.map((cell) => {
+          const fill = colorForCell(cell, heatmapMode, severityTokens, themeColor.brand);
+          const meanRounded = Math.round(cell.meanSeverity);
+          const labelTone = meanRounded >= 3 ? themeColor.textOnBrand : themeColor.textStrong;
+          const icon = heatLabelIcon(fill, String(meanRounded), labelTone);
+          return (
+            <React.Fragment key={`heat-${cell.key}`}>
+              <Rectangle
+                bounds={[
+                  [cell.latStart, cell.lngStart],
+                  [cell.latEnd, cell.lngEnd],
+                ]}
+                pathOptions={{
+                  color: fill,
+                  weight: 1,
+                  fillColor: fill,
+                  fillOpacity: HEATMAP_FILL_OPACITY,
+                  interactive: false,
+                }}
+              />
+              <Marker
+                position={[cell.lat, cell.lng]}
+                icon={icon}
+                // Decorative aggregate — let keyboard focus stay on real pins.
+                keyboard={false}
+                alt={`Heat zone: ${cell.count} flags, mean severity ${cell.meanSeverity.toFixed(1)} out of 5.`}
+                title={`${cell.count} flags · mean severity ${cell.meanSeverity.toFixed(1)}`}
+              />
+            </React.Fragment>
+          );
+        })}
+        {flags.map((f) => (
+          <Marker
+            key={f.id}
+            position={[f.lat, f.lng]}
+            icon={pinIcon(
+              severityColor(f.severity),
+              focusedFlagId !== null && focusedFlagId !== f.id,
+            )}
+            // alt is what screen readers announce for the marker; title is
+            // the browser tooltip. Mirrors the accessibilityLabel on the
+            // native Marker so SR users hear the same description on web.
+            alt={`${CATEGORY_LABELS[f.category]}, severity ${f.severity}, ${f.status}. Open for details.`}
+            title={`${CATEGORY_LABELS[f.category]} — severity ${f.severity}`}
+            ref={(m) => {
+              markerRefs.current[f.id] = m;
+            }}
+          >
+            <Popup>
+              <div style={{ minWidth: 200 }}>
+                <div style={{ fontWeight: 700, fontSize: 14 }}>{CATEGORY_LABELS[f.category]}</div>
+                <div
+                  style={{
+                    fontSize: 11,
+                    color: '#666',
+                    textTransform: 'uppercase',
+                    letterSpacing: 0.6,
+                    marginTop: 2,
+                    fontWeight: 600,
                   }}
-                />
-                <Marker
-                  position={[cell.lat, cell.lng]}
-                  icon={icon}
-                  // Decorative aggregate — let keyboard focus stay on real pins.
-                  keyboard={false}
-                  alt={`Heat zone: ${cell.count} flags, mean severity ${cell.meanSeverity.toFixed(1)} out of 5.`}
-                  title={`${cell.count} flags · mean severity ${cell.meanSeverity.toFixed(1)}`}
-                />
-              </React.Fragment>
-            );
-          })}
-          {flags.map((f) => (
-            <Marker
-              key={f.id}
-              position={[f.lat, f.lng]}
-              icon={pinIcon(
-                severityColor(f.severity),
-                focusedFlagId !== null && focusedFlagId !== f.id,
-              )}
-              // alt is what screen readers announce for the marker; title is
-              // the browser tooltip. Mirrors the accessibilityLabel on the
-              // native Marker so SR users hear the same description on web.
-              alt={`${CATEGORY_LABELS[f.category]}, severity ${f.severity}, ${f.status}. Open for details.`}
-              title={`${CATEGORY_LABELS[f.category]} — severity ${f.severity}`}
-              ref={(m) => {
-                markerRefs.current[f.id] = m;
-              }}
-            >
-              <Popup>
-                <div style={{ minWidth: 200 }}>
-                  <div style={{ fontWeight: 700, fontSize: 14 }}>
-                    {CATEGORY_LABELS[f.category]}
-                  </div>
-                  <div
-                    style={{
-                      fontSize: 11,
-                      color: '#666',
-                      textTransform: 'uppercase',
-                      letterSpacing: 0.6,
-                      marginTop: 2,
-                      fontWeight: 600,
-                    }}
-                  >
-                    Severity {f.severity} · {f.status}
-                  </div>
-                  {f.photo_url ? (
-                    <img
-                      src={f.photo_url}
-                      alt={`Photo of ${CATEGORY_LABELS[f.category]} accessibility issue`}
-                      style={{
-                        width: '100%',
-                        maxHeight: 160,
-                        objectFit: 'cover',
-                        borderRadius: 8,
-                        marginTop: 6,
-                      }}
-                    />
-                  ) : null}
-                  {f.description ? (
-                    <div style={{ marginTop: 6, fontSize: 12 }}>
-                      {f.description}
-                    </div>
-                  ) : null}
+                >
+                  Severity {f.severity} · {f.status}
                 </div>
-              </Popup>
-            </Marker>
-          ))}
-        </MapContainer>
-      </div>
-    );
-  },
-);
+                {f.photo_url ? (
+                  <img
+                    src={f.photo_url}
+                    alt={`Photo of ${CATEGORY_LABELS[f.category]} accessibility issue`}
+                    style={{
+                      width: '100%',
+                      maxHeight: 160,
+                      objectFit: 'cover',
+                      borderRadius: 8,
+                      marginTop: 6,
+                    }}
+                  />
+                ) : null}
+                {f.description ? (
+                  <div style={{ marginTop: 6, fontSize: 12 }}>{f.description}</div>
+                ) : null}
+              </div>
+            </Popup>
+          </Marker>
+        ))}
+      </MapContainer>
+    </div>
+  );
+});
 
 // See PlatformMap.tsx — same rationale: memo skips re-renders for parent
 // state changes unrelated to map props. Critical on web because every

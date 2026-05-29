@@ -93,12 +93,8 @@ describe('bucketFlagsToCells', () => {
   it('separates flags that cross a grid boundary', () => {
     // Flags at 37.004 and 37.006 cross the 0.005° boundary at 37.005
     const base = { lng: -122.001 };
-    const grp1 = [37.001, 37.002, 37.003].map((lat, i) =>
-      makeFlag({ id: `a${i}`, lat, ...base }),
-    );
-    const grp2 = [37.006, 37.007, 37.008].map((lat, i) =>
-      makeFlag({ id: `b${i}`, lat, ...base }),
-    );
+    const grp1 = [37.001, 37.002, 37.003].map((lat, i) => makeFlag({ id: `a${i}`, lat, ...base }));
+    const grp2 = [37.006, 37.007, 37.008].map((lat, i) => makeFlag({ id: `b${i}`, lat, ...base }));
     const cells = bucketFlagsToCells([...grp1, ...grp2], { kFloor: 3 });
     expect(cells).toHaveLength(2);
   });
@@ -238,16 +234,12 @@ describe('colorForCell', () => {
 
   it('gradient mode returns the severity-mapped color', () => {
     const cell = makeCell({ meanSeverity: 1 });
-    expect(colorForCell(cell, 'gradient', SEV_TOKENS, DENSITY_COLOR)).toBe(
-      SEV_TOKENS[1].color,
-    );
+    expect(colorForCell(cell, 'gradient', SEV_TOKENS, DENSITY_COLOR)).toBe(SEV_TOKENS[1].color);
   });
 
   it('density mode always returns the density color', () => {
     const cell = makeCell({ meanSeverity: 5 });
-    expect(colorForCell(cell, 'density', SEV_TOKENS, DENSITY_COLOR)).toBe(
-      DENSITY_COLOR,
-    );
+    expect(colorForCell(cell, 'density', SEV_TOKENS, DENSITY_COLOR)).toBe(DENSITY_COLOR);
   });
 });
 

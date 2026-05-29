@@ -62,17 +62,11 @@ export default function LeaderboardModal({ visible, onClose }: Props) {
           role="listitem"
           accessibilityLabel={`${ordinalLabel(rank)}, ${name}, ${item.points} points${isCurrentUser ? ', you' : ''}`}
         >
-          <Text
-            style={[styles.rank, rank <= 3 && styles.rankTop]}
-            accessibilityElementsHidden
-          >
+          <Text style={[styles.rank, rank <= 3 && styles.rankTop]} accessibilityElementsHidden>
             {ordinalLabel(rank)}
           </Text>
           <View style={styles.nameWrap}>
-            <Text
-              style={[styles.name, isCurrentUser && styles.nameSelf]}
-              numberOfLines={1}
-            >
+            <Text style={[styles.name, isCurrentUser && styles.nameSelf]} numberOfLines={1}>
               {name}
             </Text>
             {isCurrentUser ? (
@@ -81,9 +75,7 @@ export default function LeaderboardModal({ visible, onClose }: Props) {
               </Text>
             ) : null}
           </View>
-          <Text style={styles.points}>
-            {item.points.toLocaleString()} pts
-          </Text>
+          <Text style={styles.points}>{item.points.toLocaleString()} pts</Text>
         </View>
       );
     },
@@ -91,12 +83,7 @@ export default function LeaderboardModal({ visible, onClose }: Props) {
   );
 
   return (
-    <Modal
-      visible={visible}
-      animationType="slide"
-      transparent
-      onRequestClose={onClose}
-    >
+    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <View style={styles.backdrop}>
         <View style={styles.card} accessibilityViewIsModal>
           <View style={styles.headerRow}>
@@ -107,10 +94,7 @@ export default function LeaderboardModal({ visible, onClose }: Props) {
               onPress={onClose}
               accessibilityRole="button"
               accessibilityLabel="Close leaderboard"
-              style={({ pressed }) => [
-                styles.closeBtn,
-                pressed && styles.closeBtnPressed,
-              ]}
+              style={({ pressed }) => [styles.closeBtn, pressed && styles.closeBtnPressed]}
               hitSlop={8}
             >
               <Text style={styles.closeBtnText} accessibilityElementsHidden>
@@ -136,10 +120,7 @@ export default function LeaderboardModal({ visible, onClose }: Props) {
               <Text style={styles.stateText}>{loadError}</Text>
               <Pressable
                 onPress={() => void load()}
-                style={({ pressed }) => [
-                  styles.retryBtn,
-                  pressed && styles.retryBtnPressed,
-                ]}
+                style={({ pressed }) => [styles.retryBtn, pressed && styles.retryBtnPressed]}
                 accessibilityRole="button"
                 accessibilityLabel="Retry loading leaderboard"
               >
@@ -148,9 +129,7 @@ export default function LeaderboardModal({ visible, onClose }: Props) {
             </View>
           ) : entries.length === 0 ? (
             <View style={styles.stateWrap}>
-              <Text style={styles.stateText}>
-                No contributors yet. Be the first!
-              </Text>
+              <Text style={styles.stateText}>No contributors yet. Be the first!</Text>
             </View>
           ) : (
             <FlatList

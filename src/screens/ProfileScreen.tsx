@@ -23,12 +23,7 @@ import { errorMessage } from '@/lib/errors';
 import { signOut, supabase } from '@/lib/supabase';
 import { useSharedModals } from '@/lib/sharedModalsContext';
 import { getInitials, updateUserProfile, uploadAvatar } from '@/lib/users';
-import {
-  DEFAULT_TABS,
-  getDefaultTab,
-  setDefaultTab,
-  type DefaultTab,
-} from '@/lib/preferences';
+import { DEFAULT_TABS, getDefaultTab, setDefaultTab, type DefaultTab } from '@/lib/preferences';
 import { clearOnboardingSeen } from '@/lib/onboarding';
 import {
   CATEGORY_LABELS,
@@ -63,17 +58,9 @@ import { loadWatched } from '@/lib/watchedFlags';
 // drop those optimizations or force callbacks through the shared
 // context — both costlier than the second mount it saves.
 import NotificationPrefsModal from '@/components/NotificationPrefsModal';
-import {
-  DEFAULT_PREFS,
-  loadPrefs,
-  type NotificationPrefs,
-} from '@/lib/notificationPrefs';
+import { DEFAULT_PREFS, loadPrefs, type NotificationPrefs } from '@/lib/notificationPrefs';
 import { EMPTY_STREAK, loadStreak, tickVisit, type StreakState } from '@/lib/streak';
-import {
-  computeAchievements,
-  countEarned,
-  type AchievementStats,
-} from '@/lib/achievements';
+import { computeAchievements, countEarned, type AchievementStats } from '@/lib/achievements';
 import AchievementsModal from '@/components/AchievementsModal';
 import RecentlyViewedRow from '@/components/RecentlyViewedRow';
 import ReportsBreakdownCard from '@/components/ReportsBreakdownCard';
@@ -125,8 +112,7 @@ function milestoneProgress(points: number): {
   if (!next) return { next: null, label: '', progress: 1 };
   // Previous milestone defines the start of the current bar segment so
   // a user at 60 sees the 50→100 bar half-full, not a tiny sliver.
-  const prevAt =
-    [...MILESTONES].reverse().find((m) => m.at <= points)?.at ?? 0;
+  const prevAt = [...MILESTONES].reverse().find((m) => m.at <= points)?.at ?? 0;
   const span = next.at - prevAt;
   const progress = span === 0 ? 0 : (points - prevAt) / span;
   return { next: next.at, label: next.label, progress };
@@ -135,8 +121,7 @@ function milestoneProgress(points: number): {
 export default function ProfileScreen() {
   const color = useColor();
   const styles = makeStyles(color);
-  const navigation =
-    useNavigation<BottomTabNavigationProp<RootTabParamList, 'Profile'>>();
+  const navigation = useNavigation<BottomTabNavigationProp<RootTabParamList, 'Profile'>>();
   const { user, loading: authLoading } = useAuth();
   const [profile, setProfile] = useState<UserRow | null>(null);
   const [stats, setStats] = useState<Stats>({
@@ -176,8 +161,7 @@ export default function ProfileScreen() {
   // Notification prefs — refreshed whenever Profile focuses, AND right
   // after the user toggles one in NotificationPrefsModal. Drives the
   // diffUpdates filter so the banner respects opt-outs.
-  const [notificationPrefs, setNotificationPrefs] =
-    useState<NotificationPrefs>(DEFAULT_PREFS);
+  const [notificationPrefs, setNotificationPrefs] = useState<NotificationPrefs>(DEFAULT_PREFS);
   const [notifPrefsOpen, setNotifPrefsOpen] = useState(false);
   // Visit streak — ticked once per focus per local day. Display in the
   // hero next to points. Gracefully shows nothing until the first tick
@@ -270,14 +254,10 @@ export default function ProfileScreen() {
       // One query for all status counts (and the total). Cheaper than
       // running a separate count(*) per status; row count caps at the
       // user's own report count so payload stays tiny.
-      const [{ data: profileRow, error: profileErr }, statusRowsRes] =
-        await Promise.all([
-          supabase.from('users').select('*').eq('id', user.id).maybeSingle(),
-          supabase
-            .from('flags')
-            .select('status')
-            .eq('user_id', user.id),
-        ]);
+      const [{ data: profileRow, error: profileErr }, statusRowsRes] = await Promise.all([
+        supabase.from('users').select('*').eq('id', user.id).maybeSingle(),
+        supabase.from('flags').select('status').eq('user_id', user.id),
+      ]);
 
       if (profileErr) throw profileErr;
       if (statusRowsRes.error) throw statusRowsRes.error;
@@ -298,8 +278,7 @@ export default function ProfileScreen() {
       // or trigger race produces inconsistent counts. Without the
       // clamp, the breakdown chips could show "5 resolved" while
       // "3 reported" sits above them — confusing.
-      const statusSum =
-        byStatus.open + byStatus.verified + byStatus.resolved + byStatus.rejected;
+      const statusSum = byStatus.open + byStatus.verified + byStatus.resolved + byStatus.rejected;
       setStats({
         reported: Math.max(statusRows.length, statusSum),
         resolved: byStatus.resolved,
@@ -326,8 +305,7 @@ export default function ProfileScreen() {
   const updateSeqRef = useRef(0);
   const refreshUpdateCount = useCallback(async () => {
     const mySeq = ++updateSeqRef.current;
-    const isCurrent = () =>
-      mountedRef.current && updateSeqRef.current === mySeq;
+    const isCurrent = () => mountedRef.current && updateSeqRef.current === mySeq;
 
     if (!user) {
       trackedFlagsRef.current = [];
@@ -343,9 +321,7 @@ export default function ProfileScreen() {
       ]);
       const ownIds = new Set(ownFlags.map((f) => f.id));
       const watchedOnly = watchedIds.filter((id) => !ownIds.has(id));
-      const watchedFlags = watchedOnly.length
-        ? await fetchFlagsByIds(watchedOnly)
-        : [];
+      const watchedFlags = watchedOnly.length ? await fetchFlagsByIds(watchedOnly) : [];
       const tracked = [...ownFlags, ...watchedFlags];
       if (!isCurrent()) return;
       trackedFlagsRef.current = tracked;
@@ -457,8 +433,7 @@ export default function ProfileScreen() {
   }, [user]);
 
   const trimmedDraft = nameDraft.trim();
-  const nameChanged =
-    trimmedDraft !== (profile?.display_name ?? '').trim() && !savingName;
+  const nameChanged = trimmedDraft !== (profile?.display_name ?? '').trim() && !savingName;
 
   const handleSaveName = useCallback(async () => {
     if (!user) return;
@@ -514,10 +489,7 @@ export default function ProfileScreen() {
     try {
       const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (!perm.granted) {
-        Alert.alert(
-          'Permission needed',
-          'Allow photo library access to set a profile photo.',
-        );
+        Alert.alert('Permission needed', 'Allow photo library access to set a profile photo.');
         return;
       }
       const result = await ImagePicker.launchImageLibraryAsync({
@@ -543,9 +515,7 @@ export default function ProfileScreen() {
       setDefaultTabValue(tab);
       try {
         await setDefaultTab(user.id, tab);
-        AccessibilityInfo.announceForAccessibility(
-          `Default tab set to ${tab}.`,
-        );
+        AccessibilityInfo.announceForAccessibility(`Default tab set to ${tab}.`);
       } catch {
         if (mountedRef.current) {
           setDefaultTabValue(defaultTab);
@@ -614,11 +584,7 @@ export default function ProfileScreen() {
     }
   };
 
-  const handleDetailChanged = (
-    _updated: FlagRow,
-    _action: DetailAction,
-    _isOwn: boolean,
-  ) => {
+  const handleDetailChanged = (_updated: FlagRow, _action: DetailAction, _isOwn: boolean) => {
     // Triage from My Reports/Watched might bump the user's own points (reporter
     // bonus on verify/resolve). Refresh the profile stats too.
     load();
@@ -673,7 +639,11 @@ export default function ProfileScreen() {
         >
           <Text style={styles.signInBtnText}>Sign in</Text>
         </Pressable>
-        <Modal visible={signInOpen} animationType="slide" onRequestClose={() => setSignInOpen(false)}>
+        <Modal
+          visible={signInOpen}
+          animationType="slide"
+          onRequestClose={() => setSignInOpen(false)}
+        >
           <SignInScreen onClose={() => setSignInOpen(false)} />
         </Modal>
       </View>
@@ -681,8 +651,7 @@ export default function ProfileScreen() {
   }
 
   const points = profile?.points ?? 0;
-  const { next: nextMilestone, label: milestoneLabel, progress } =
-    milestoneProgress(points);
+  const { next: nextMilestone, label: milestoneLabel, progress } = milestoneProgress(points);
   // T4: Reputation tier — pure derivation from `points`. Drives the
   // small pill beside the points number AND the explainer sheet.
   // `gap` is 0 at Platinum; UI uses that to swap the copy.
@@ -690,12 +659,8 @@ export default function ProfileScreen() {
   const tierGap = pointsToNextTier(points);
   // Find the next tier (one above current) for the explainer copy. Null
   // at Platinum — same signal as tier.nextThreshold === null.
-  const nextTierIdx =
-    REPUTATION_TIERS.findIndex((t) => t.name === tier.name) + 1;
-  const nextTier =
-    nextTierIdx < REPUTATION_TIERS.length
-      ? REPUTATION_TIERS[nextTierIdx]
-      : null;
+  const nextTierIdx = REPUTATION_TIERS.findIndex((t) => t.name === tier.name) + 1;
+  const nextTier = nextTierIdx < REPUTATION_TIERS.length ? REPUTATION_TIERS[nextTierIdx] : null;
 
   // Derive achievements from the four sources of truth already loaded
   // for the rest of the hero. Pure computation, so re-deriving on every
@@ -737,14 +702,9 @@ export default function ProfileScreen() {
           <Pressable
             onPress={handlePickAvatar}
             disabled={uploadingAvatar}
-            style={({ pressed }) => [
-              styles.avatarBtn,
-              pressed && styles.avatarBtnPressed,
-            ]}
+            style={({ pressed }) => [styles.avatarBtn, pressed && styles.avatarBtnPressed]}
             accessibilityRole="button"
-            accessibilityLabel={
-              profile?.avatar_url ? 'Change profile photo' : 'Add profile photo'
-            }
+            accessibilityLabel={profile?.avatar_url ? 'Change profile photo' : 'Add profile photo'}
             accessibilityHint="Opens photo picker to update your profile photo"
             accessibilityState={{ busy: uploadingAvatar }}
           >
@@ -790,10 +750,7 @@ export default function ProfileScreen() {
             </Text>
             <Pressable
               onPress={() => setTierExplainerOpen(true)}
-              style={({ pressed }) => [
-                styles.tierPill,
-                pressed && styles.tierPillPressed,
-              ]}
+              style={({ pressed }) => [styles.tierPill, pressed && styles.tierPillPressed]}
               accessibilityRole="button"
               accessibilityLabel={
                 // QA polish: omit the points number here — the hero's
@@ -826,9 +783,7 @@ export default function ProfileScreen() {
                 accessibilityElementsHidden
                 importantForAccessibility="no-hide-descendants"
               >
-                <View
-                  style={[styles.progressFill, { width: progressBarWidth }]}
-                />
+                <View style={[styles.progressFill, { width: progressBarWidth }]} />
               </View>
               <Text style={styles.heroSubtitle}>
                 {nextMilestone - points} points to {milestoneLabel}
@@ -862,7 +817,11 @@ export default function ProfileScreen() {
                 : `${streak.current} day streak${streak.longest > streak.current ? `. Best ever: ${streak.longest} days.` : '. New personal best!'}`
             }
           >
-            <Text style={styles.streakIcon} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+            <Text
+              style={styles.streakIcon}
+              accessibilityElementsHidden
+              importantForAccessibility="no-hide-descendants"
+            >
               🔥
             </Text>
             <View style={styles.streakTextWrap}>
@@ -886,10 +845,7 @@ export default function ProfileScreen() {
         {nearestUnresolved && (
           <Pressable
             onPress={handleJumpToNearest}
-            style={({ pressed }) => [
-              styles.nearestBtn,
-              pressed && styles.nearestBtnPressed,
-            ]}
+            style={({ pressed }) => [styles.nearestBtn, pressed && styles.nearestBtnPressed]}
             accessibilityRole="button"
             accessibilityLabel={
               `Jump to the nearest unresolved flag: ` +
@@ -944,35 +900,27 @@ export default function ProfileScreen() {
                 .join(', ')
             }
           >
-            {(['open', 'verified', 'resolved', 'rejected'] as FlagStatus[]).map(
-              (status) => {
-                const palette = STATUS_COLORS[status];
-                const count = stats.byStatus[status];
-                return (
-                  <View
-                    key={status}
-                    style={[
-                      styles.statusPill,
-                      { backgroundColor: palette.bg },
-                      count === 0 && styles.statusPillDimmed,
-                    ]}
-                    accessibilityElementsHidden
-                    importantForAccessibility="no"
-                  >
-                    <Text
-                      style={[styles.statusPillCount, { color: palette.fg }]}
-                    >
-                      {count}
-                    </Text>
-                    <Text
-                      style={[styles.statusPillLabel, { color: palette.fg }]}
-                    >
-                      {STATUS_LABELS[status]}
-                    </Text>
-                  </View>
-                );
-              },
-            )}
+            {(['open', 'verified', 'resolved', 'rejected'] as FlagStatus[]).map((status) => {
+              const palette = STATUS_COLORS[status];
+              const count = stats.byStatus[status];
+              return (
+                <View
+                  key={status}
+                  style={[
+                    styles.statusPill,
+                    { backgroundColor: palette.bg },
+                    count === 0 && styles.statusPillDimmed,
+                  ]}
+                  accessibilityElementsHidden
+                  importantForAccessibility="no"
+                >
+                  <Text style={[styles.statusPillCount, { color: palette.fg }]}>{count}</Text>
+                  <Text style={[styles.statusPillLabel, { color: palette.fg }]}>
+                    {STATUS_LABELS[status]}
+                  </Text>
+                </View>
+              );
+            })}
           </View>
         )}
 
@@ -996,16 +944,10 @@ export default function ProfileScreen() {
             Refresh key bumps on every Profile focus via the
             useFocusEffect above, and the parent doesn't need to call
             into the card's internals — it owns its own fetch. */}
-        <ReportsBreakdownCard
-          userId={user?.id ?? null}
-          refreshKey={breakdownRefreshKey}
-        />
+        <ReportsBreakdownCard userId={user?.id ?? null} refreshKey={breakdownRefreshKey} />
 
         <Pressable
-          style={({ pressed }) => [
-            styles.myReportsBtn,
-            pressed && styles.myReportsBtnPressed,
-          ]}
+          style={({ pressed }) => [styles.myReportsBtn, pressed && styles.myReportsBtnPressed]}
           onPress={() => setReportsOpen(true)}
           accessibilityRole="button"
           accessibilityLabel={
@@ -1029,10 +971,7 @@ export default function ProfileScreen() {
         </Pressable>
 
         <Pressable
-          style={({ pressed }) => [
-            styles.myReportsBtn,
-            pressed && styles.myReportsBtnPressed,
-          ]}
+          style={({ pressed }) => [styles.myReportsBtn, pressed && styles.myReportsBtnPressed]}
           onPress={() => setWatchedOpen(true)}
           accessibilityRole="button"
           accessibilityLabel="Watched Flags"
@@ -1050,10 +989,7 @@ export default function ProfileScreen() {
         </Pressable>
 
         <Pressable
-          style={({ pressed }) => [
-            styles.myReportsBtn,
-            pressed && styles.myReportsBtnPressed,
-          ]}
+          style={({ pressed }) => [styles.myReportsBtn, pressed && styles.myReportsBtnPressed]}
           onPress={() => setActivityOpen(true)}
           accessibilityRole="button"
           accessibilityLabel="Recent Activity"
@@ -1062,8 +998,7 @@ export default function ProfileScreen() {
           <View style={styles.myReportsTextWrap}>
             <Text style={styles.myReportsTitle}>Recent Activity</Text>
             <Text style={styles.myReportsSubtitle}>
-              See what's been reported and triaged across the community,
-              newest first.
+              See what's been reported and triaged across the community, newest first.
             </Text>
           </View>
           <Text style={styles.myReportsChevron} accessibilityElementsHidden>
@@ -1072,10 +1007,7 @@ export default function ProfileScreen() {
         </Pressable>
 
         <Pressable
-          style={({ pressed }) => [
-            styles.myReportsBtn,
-            pressed && styles.myReportsBtnPressed,
-          ]}
+          style={({ pressed }) => [styles.myReportsBtn, pressed && styles.myReportsBtnPressed]}
           onPress={() => setAchievementsOpen(true)}
           accessibilityRole="button"
           accessibilityLabel={`Achievements, ${achievementCount.earned} of ${achievementCount.total} earned`}
@@ -1102,10 +1034,7 @@ export default function ProfileScreen() {
         </Pressable>
 
         <Pressable
-          style={({ pressed }) => [
-            styles.myReportsBtn,
-            pressed && styles.myReportsBtnPressed,
-          ]}
+          style={({ pressed }) => [styles.myReportsBtn, pressed && styles.myReportsBtnPressed]}
           onPress={() => setLeaderboardOpen(true)}
           accessibilityRole="button"
           accessibilityLabel="Community Leaderboard"
@@ -1123,10 +1052,7 @@ export default function ProfileScreen() {
         </Pressable>
 
         <Pressable
-          style={({ pressed }) => [
-            styles.myReportsBtn,
-            pressed && styles.myReportsBtnPressed,
-          ]}
+          style={({ pressed }) => [styles.myReportsBtn, pressed && styles.myReportsBtnPressed]}
           onPress={() => setNotifPrefsOpen(true)}
           accessibilityRole="button"
           accessibilityLabel="Notification settings"
@@ -1144,10 +1070,7 @@ export default function ProfileScreen() {
         </Pressable>
 
         <Pressable
-          style={({ pressed }) => [
-            styles.myReportsBtn,
-            pressed && styles.myReportsBtnPressed,
-          ]}
+          style={({ pressed }) => [styles.myReportsBtn, pressed && styles.myReportsBtnPressed]}
           onPress={() => setSharedModal('myFeedback')}
           accessibilityRole="button"
           accessibilityLabel="My Feedback"
@@ -1155,9 +1078,7 @@ export default function ProfileScreen() {
         >
           <View style={styles.myReportsTextWrap}>
             <Text style={styles.myReportsTitle}>My Feedback</Text>
-            <Text style={styles.myReportsSubtitle}>
-              View the feedback messages you've sent.
-            </Text>
+            <Text style={styles.myReportsSubtitle}>View the feedback messages you've sent.</Text>
           </View>
           <Text style={styles.myReportsChevron} accessibilityElementsHidden>
             ›
@@ -1185,10 +1106,7 @@ export default function ProfileScreen() {
             <Pressable
               onPress={handleSaveName}
               disabled={!nameChanged}
-              style={[
-                styles.saveBtn,
-                !nameChanged && styles.saveBtnDisabled,
-              ]}
+              style={[styles.saveBtn, !nameChanged && styles.saveBtnDisabled]}
               accessibilityRole="button"
               accessibilityLabel="Save display name"
               accessibilityState={{ disabled: !nameChanged, busy: savingName }}
@@ -1217,10 +1135,7 @@ export default function ProfileScreen() {
                   key={tab}
                   onPress={() => handlePickTab(tab)}
                   disabled={savingTab || defaultTab === null}
-                  style={[
-                    styles.tabPill,
-                    selected && styles.tabPillSelected,
-                  ]}
+                  style={[styles.tabPill, selected && styles.tabPillSelected]}
                   accessibilityRole="button"
                   accessibilityLabel={`Set default tab to ${tab}`}
                   accessibilityState={{
@@ -1228,21 +1143,14 @@ export default function ProfileScreen() {
                     disabled: savingTab || defaultTab === null,
                   }}
                 >
-                  <Text
-                    style={[
-                      styles.tabPillText,
-                      selected && styles.tabPillTextSelected,
-                    ]}
-                  >
+                  <Text style={[styles.tabPillText, selected && styles.tabPillTextSelected]}>
                     {tab}
                   </Text>
                 </Pressable>
               );
             })}
           </View>
-          <Text style={styles.hint}>
-            The app opens to this tab when you sign in.
-          </Text>
+          <Text style={styles.hint}>The app opens to this tab when you sign in.</Text>
         </View>
 
         <View style={styles.section}>
@@ -1261,10 +1169,7 @@ export default function ProfileScreen() {
         </View>
 
         <Pressable
-          style={({ pressed }) => [
-            styles.aboutRow,
-            pressed && styles.aboutRowPressed,
-          ]}
+          style={({ pressed }) => [styles.aboutRow, pressed && styles.aboutRowPressed]}
           onPress={() => setSharedModal('help')}
           accessibilityRole="button"
           accessibilityLabel="Help and frequently asked questions"
@@ -1282,10 +1187,7 @@ export default function ProfileScreen() {
         </Pressable>
 
         <Pressable
-          style={({ pressed }) => [
-            styles.aboutRow,
-            pressed && styles.aboutRowPressed,
-          ]}
+          style={({ pressed }) => [styles.aboutRow, pressed && styles.aboutRowPressed]}
           onPress={() => setSharedModal('changelog')}
           accessibilityRole="button"
           accessibilityLabel="What's New"
@@ -1293,9 +1195,7 @@ export default function ProfileScreen() {
         >
           <View style={styles.aboutTextWrap}>
             <Text style={styles.aboutTitle}>What's New</Text>
-            <Text style={styles.aboutSubtitle}>
-              Recent features added to AccessMap.
-            </Text>
+            <Text style={styles.aboutSubtitle}>Recent features added to AccessMap.</Text>
           </View>
           <Text style={styles.aboutChevron} accessibilityElementsHidden>
             ›
@@ -1303,10 +1203,7 @@ export default function ProfileScreen() {
         </Pressable>
 
         <Pressable
-          style={({ pressed }) => [
-            styles.aboutRow,
-            pressed && styles.aboutRowPressed,
-          ]}
+          style={({ pressed }) => [styles.aboutRow, pressed && styles.aboutRowPressed]}
           onPress={() => setAboutOpen(true)}
           accessibilityRole="button"
           accessibilityLabel="About AccessMap"
@@ -1373,10 +1270,7 @@ export default function ProfileScreen() {
         onViewOnMap={handleViewOnMap}
       />
 
-      <AboutScreen
-        visible={aboutOpen}
-        onClose={() => setAboutOpen(false)}
-      />
+      <AboutScreen visible={aboutOpen} onClose={() => setAboutOpen(false)} />
 
       {/* MyFeedbackModal, HelpModal, and ChangelogModal mounts used to
           sit here. They now live in <SharedModalsHost /> at the
@@ -1389,10 +1283,7 @@ export default function ProfileScreen() {
         achievements={achievements}
       />
 
-      <LeaderboardModal
-        visible={leaderboardOpen}
-        onClose={() => setLeaderboardOpen(false)}
-      />
+      <LeaderboardModal visible={leaderboardOpen} onClose={() => setLeaderboardOpen(false)} />
 
       <NotificationPrefsModal
         visible={notifPrefsOpen}
@@ -1425,10 +1316,7 @@ export default function ProfileScreen() {
         onRequestClose={() => setTierExplainerOpen(false)}
       >
         <View style={styles.tierBackdrop}>
-          <View
-            style={styles.tierSheet}
-            accessibilityViewIsModal
-          >
+          <View style={styles.tierSheet} accessibilityViewIsModal>
             <View style={styles.tierHeaderRow}>
               <Text style={styles.tierHeaderTitle} accessibilityRole="header">
                 Reputation tiers
@@ -1445,8 +1333,8 @@ export default function ProfileScreen() {
             </View>
 
             <Text style={styles.tierIntro}>
-              Earn points by reporting flags and helping verify or
-              resolve them. Each tier reflects how much you've contributed.
+              Earn points by reporting flags and helping verify or resolve them. Each tier reflects
+              how much you've contributed.
             </Text>
 
             <View style={styles.tierList}>
@@ -1455,10 +1343,7 @@ export default function ProfileScreen() {
                 return (
                   <View
                     key={t.name}
-                    style={[
-                      styles.tierRow,
-                      isCurrent && styles.tierRowCurrent,
-                    ]}
+                    style={[styles.tierRow, isCurrent && styles.tierRowCurrent]}
                     // selected={true} on the current row lets SR
                     // announce "selected" so users know which tier
                     // they're in without scanning visually.
@@ -1466,11 +1351,8 @@ export default function ProfileScreen() {
                     accessibilityState={{ selected: isCurrent }}
                     accessibilityLabel={
                       `${t.label} tier, ${t.threshold}${
-                        t.nextThreshold === null
-                          ? '+'
-                          : ` to ${t.nextThreshold - 1}`
-                      } points` +
-                      (isCurrent ? '. Your current tier.' : '')
+                        t.nextThreshold === null ? '+' : ` to ${t.nextThreshold - 1}`
+                      } points` + (isCurrent ? '. Your current tier.' : '')
                     }
                   >
                     <Text
@@ -1481,19 +1363,9 @@ export default function ProfileScreen() {
                       {t.emoji}
                     </Text>
                     <View style={styles.tierRowTextWrap}>
-                      <Text
-                        style={[
-                          styles.tierRowLabel,
-                          isCurrent && styles.tierRowLabelCurrent,
-                        ]}
-                      >
+                      <Text style={[styles.tierRowLabel, isCurrent && styles.tierRowLabelCurrent]}>
                         {t.label}
-                        {isCurrent && (
-                          <Text style={styles.tierRowCurrentTag}>
-                            {' '}
-                            · you are here
-                          </Text>
-                        )}
+                        {isCurrent && <Text style={styles.tierRowCurrentTag}> · you are here</Text>}
                       </Text>
                       <Text style={styles.tierRowRange}>
                         {t.nextThreshold === null
@@ -1529,449 +1401,450 @@ function Stat({ label, value }: { label: string; value: number }) {
   );
 }
 
-const makeStyles = (color: ColorTheme) => StyleSheet.create({
-  // Screen wash — replaces the default white background so the white
-  // cards inside (stats, My Reports, About row) actually read as cards
-  // rather than blending into the surface they sit on.
-  screen: { flex: 1, backgroundColor: color.surfaceMuted },
-  center: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 16,
-    backgroundColor: color.surfaceMuted,
-  },
-  signInBtn: {
-    backgroundColor: color.brand,
-    paddingHorizontal: 32,
-    paddingVertical: 14,
-    borderRadius: 100,
-    minHeight: 44,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  signInBtnPressed: { opacity: 0.8 },
-  signInBtnText: { color: color.textOnBrand, fontSize: 16, fontWeight: '600' },
-  container: { padding: 24, gap: 16, alignItems: 'stretch' },
-  email: {
-    fontSize: 13,
-    color: color.textMuted,
-    textAlign: 'center',
-    marginBottom: 4,
-  },
-  subtitle: { fontSize: 14, color: color.text },
-  heroCard: {
-    backgroundColor: color.brand,
-    borderRadius: 24,
-    paddingHorizontal: 24,
-    paddingTop: 22,
-    paddingBottom: 24,
-    alignItems: 'center',
-    gap: 4,
-    // Heavier drop shadow so the hero sits forward as the page anchor.
-    shadowColor: color.shadow,
-    shadowOpacity: 0.22,
-    shadowRadius: 16,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 8,
-  },
-  heroIcon: { fontSize: 32, marginBottom: 4 },
+const makeStyles = (color: ColorTheme) =>
+  StyleSheet.create({
+    // Screen wash — replaces the default white background so the white
+    // cards inside (stats, My Reports, About row) actually read as cards
+    // rather than blending into the surface they sit on.
+    screen: { flex: 1, backgroundColor: color.surfaceMuted },
+    center: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 16,
+      backgroundColor: color.surfaceMuted,
+    },
+    signInBtn: {
+      backgroundColor: color.brand,
+      paddingHorizontal: 32,
+      paddingVertical: 14,
+      borderRadius: 100,
+      minHeight: 44,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    signInBtnPressed: { opacity: 0.8 },
+    signInBtnText: { color: color.textOnBrand, fontSize: 16, fontWeight: '600' },
+    container: { padding: 24, gap: 16, alignItems: 'stretch' },
+    email: {
+      fontSize: 13,
+      color: color.textMuted,
+      textAlign: 'center',
+      marginBottom: 4,
+    },
+    subtitle: { fontSize: 14, color: color.text },
+    heroCard: {
+      backgroundColor: color.brand,
+      borderRadius: 24,
+      paddingHorizontal: 24,
+      paddingTop: 22,
+      paddingBottom: 24,
+      alignItems: 'center',
+      gap: 4,
+      // Heavier drop shadow so the hero sits forward as the page anchor.
+      shadowColor: color.shadow,
+      shadowOpacity: 0.22,
+      shadowRadius: 16,
+      shadowOffset: { width: 0, height: 6 },
+      elevation: 8,
+    },
+    heroIcon: { fontSize: 32, marginBottom: 4 },
 
-  // Avatar styles — circular tappable photo/initials element in heroCard
-  avatarBtn: {
-    width: 72,
-    height: 72,
-    borderRadius: radius.circle,
-    marginBottom: 10,
-    alignSelf: 'center',
-    overflow: 'hidden',
-  },
-  avatarBtnPressed: { opacity: 0.75 },
-  avatarImg: {
-    width: 72,
-    height: 72,
-    borderRadius: radius.circle,
-  },
-  avatarPlaceholder: {
-    width: 72,
-    height: 72,
-    borderRadius: radius.circle,
-    backgroundColor: 'rgba(255,255,255,0.25)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarInitials: {
-    fontSize: 26,
-    fontWeight: '700',
-    color: color.textOnBrand,
-    letterSpacing: 0.5,
-  },
-  avatarOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: color.overlayBtn,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarEditBadge: {
-    position: 'absolute',
-    bottom: 0,
-    right: 0,
-    width: 22,
-    height: 22,
-    borderRadius: radius.circle,
-    backgroundColor: color.brand,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarEditBadgeText: {
-    fontSize: 11,
-    color: color.textOnBrand,
-    fontWeight: '700',
-  },
+    // Avatar styles — circular tappable photo/initials element in heroCard
+    avatarBtn: {
+      width: 72,
+      height: 72,
+      borderRadius: radius.circle,
+      marginBottom: 10,
+      alignSelf: 'center',
+      overflow: 'hidden',
+    },
+    avatarBtnPressed: { opacity: 0.75 },
+    avatarImg: {
+      width: 72,
+      height: 72,
+      borderRadius: radius.circle,
+    },
+    avatarPlaceholder: {
+      width: 72,
+      height: 72,
+      borderRadius: radius.circle,
+      backgroundColor: 'rgba(255,255,255,0.25)',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    avatarInitials: {
+      fontSize: 26,
+      fontWeight: '700',
+      color: color.textOnBrand,
+      letterSpacing: 0.5,
+    },
+    avatarOverlay: {
+      ...StyleSheet.absoluteFillObject,
+      backgroundColor: color.overlayBtn,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    avatarEditBadge: {
+      position: 'absolute',
+      bottom: 0,
+      right: 0,
+      width: 22,
+      height: 22,
+      borderRadius: radius.circle,
+      backgroundColor: color.brand,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    avatarEditBadgeText: {
+      fontSize: 11,
+      color: color.textOnBrand,
+      fontWeight: '700',
+    },
 
-  heroLabel: {
-    color: color.pointsPillText,
-    fontSize: 11,
-    letterSpacing: 2.4,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-  },
-  heroValue: {
-    color: color.textOnBrand,
-    fontSize: 56,
-    fontWeight: '800',
-    lineHeight: 60,
-    letterSpacing: -1.2,
-  },
-  heroSubtitle: {
-    color: color.pointsPillText,
-    fontSize: 13,
-    fontWeight: '600',
-    textAlign: 'center',
-    marginTop: 4,
-  },
-  progressTrack: {
-    width: '100%',
-    height: 8,
-    backgroundColor: 'rgba(255,255,255,0.25)',
-    borderRadius: radius.circle,
-    marginTop: 10,
-    overflow: 'hidden',
-  },
-  progressFill: {
-    height: '100%',
-    backgroundColor: color.textOnBrand,
-    borderRadius: radius.circle,
-  },
-  // T4: Hero value row — wraps the large points number + the small
-  // tier pill side-by-side. centerY keeps the pill optically aligned
-  // with the digit baseline; gap gives the pill breathing room.
-  heroValueRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  // T4: Tier pill. White background on the blue hero gives a high
-  // contrast surface for the label (#1b4373 ≈ 10:1 on #fff, well
-  // above WCAG AA). 44pt min height keeps the tap target compliant
-  // even though the visual pill is shorter — the hitSlop on the
-  // Pressable closes the rest of the gap.
-  tierPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: radius.circle,
-    backgroundColor: color.surface,
-    minHeight: 32,
-    minWidth: 44,
-    justifyContent: 'center',
-    ...shadow.e1,
-  },
-  tierPillPressed: {
-    backgroundColor: color.brandSofter,
-    opacity: 0.95,
-  },
-  tierPillEmoji: { fontSize: 14 },
-  tierPillLabel: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: color.brandText,
-    letterSpacing: 0.2,
-  },
-  // T4: Tier-explainer modal. Mirrors AboutScreen's translucent backdrop
-  // and rounded card; lives inline here because it's small and
-  // tightly coupled to the pill above.
-  tierBackdrop: {
-    flex: 1,
-    backgroundColor: color.scrim,
-    justifyContent: 'center',
-    padding: 24,
-  },
-  tierSheet: {
-    backgroundColor: color.surface,
-    borderRadius: radius.xl,
-    padding: 20,
-    gap: 12,
-    ...shadow.e3,
-  },
-  tierHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  tierHeaderTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: color.textStrong,
-    letterSpacing: -0.2,
-  },
-  tierCloseBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: radius.circle,
-    backgroundColor: color.surfaceNeutral,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  tierCloseBtnText: {
-    fontSize: 16,
-    color: color.text,
-    fontWeight: '600',
-    lineHeight: 18,
-  },
-  tierIntro: { fontSize: 13, color: color.text, lineHeight: 19 },
-  tierList: { gap: 8, marginTop: 4 },
-  tierRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderRadius: 10,
-    backgroundColor: color.surfaceMuted,
-    minHeight: 48,
-  },
-  // Highlights the user's current tier — pale blue tint + left accent
-  // bar so it's recognizable at a glance.
-  tierRowCurrent: {
-    backgroundColor: color.brandSofter,
-    borderLeftWidth: 3,
-    borderLeftColor: color.brand,
-  },
-  tierRowEmoji: { fontSize: 22 },
-  tierRowTextWrap: { flex: 1, gap: 2 },
-  tierRowLabel: { fontSize: 15, fontWeight: '700', color: color.text },
-  tierRowLabelCurrent: { color: color.brandText },
-  tierRowCurrentTag: { fontSize: 12, fontWeight: '600', color: color.brandText },
-  tierRowRange: { fontSize: 12, color: color.textMuted },
-  tierFooter: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: color.brandText,
-    textAlign: 'center',
-    marginTop: 4,
-  },
-  // Visit-streak card — amber-tinted pill row between the stat tiles and
-  // the status breakdown. Reads as a "you're on a roll" pat-on-the-back
-  // without competing with the headline points/milestones above.
-  streakCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    backgroundColor: color.warningBg,
-    borderRadius: radius.lg,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderLeftWidth: 3,
-    borderLeftColor: color.accentOrange,
-  },
-  streakIcon: { fontSize: 24 },
-  streakTextWrap: { flex: 1, gap: 2 },
-  streakValue: { fontSize: 15, fontWeight: '700', color: color.warningFg },
-  streakSubtitle: { fontSize: 12, color: color.warningFg, opacity: 0.85 },
-  // R9: Nearest-unresolved jump button. Pale-blue card to set it apart
-  // from the orange streak card directly above; chevron hints at the
-  // navigation action.
-  nearestBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    backgroundColor: color.brandSofter,
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    minHeight: 56,
-    borderLeftWidth: 3,
-    borderLeftColor: color.brand,
-  },
-  nearestBtnPressed: {
-    backgroundColor: color.brandSoft,
-    opacity: 0.9,
-  },
-  nearestBtnIcon: { fontSize: 22 },
-  nearestBtnTextWrap: { flex: 1, gap: 2 },
-  nearestBtnTitle: { fontSize: 15, fontWeight: '700', color: color.brandText },
-  nearestBtnSubtitle: { fontSize: 12, color: color.brandText, opacity: 0.85 },
-  nearestBtnChevron: {
-    fontSize: 22,
-    color: color.brand,
-    paddingHorizontal: 4,
-    fontWeight: '700',
-  },
-  statsRow: { flexDirection: 'row', gap: 12 },
-  statCard: {
-    flex: 1,
-    backgroundColor: color.surface,
-    borderRadius: radius.lg,
-    padding: 16,
-    alignItems: 'center',
-    ...shadow.e1,
-  },
-  statValue: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: color.textStrong,
-    letterSpacing: -0.5,
-  },
-  statLabel: {
-    fontSize: 11,
-    color: color.textMuted,
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
-    fontWeight: '600',
-  },
-  // Per-status pill row (open / verified / resolved / rejected). Uses
-  // STATUS_COLORS for visual continuity with the badges in detail modals.
-  statusBreakdownRow: {
-    flexDirection: 'row',
-    gap: 8,
-    flexWrap: 'wrap',
-  },
-  statusPill: {
-    flexGrow: 1,
-    flexBasis: 0,
-    minWidth: 70,
-    paddingVertical: 8,
-    paddingHorizontal: 10,
-    borderRadius: 10,
-    alignItems: 'center',
-    gap: 2,
-  },
-  // Zero-count pills fade so the eye lands on what's actually there.
-  statusPillDimmed: { opacity: 0.55 },
-  statusPillCount: { fontSize: 18, fontWeight: '700' },
-  statusPillLabel: { fontSize: 10, fontWeight: '700', textTransform: 'uppercase' },
-  myReportsBtn: {
-    backgroundColor: color.surface,
-    borderRadius: radius.lg,
-    padding: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    ...shadow.e1,
-    minHeight: 64,
-  },
-  myReportsBtnPressed: { opacity: 0.85, backgroundColor: color.surfaceMuted },
-  myReportsTextWrap: { flex: 1, gap: 2 },
-  myReportsTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: color.textStrong,
-    letterSpacing: -0.1,
-  },
-  // Inline "· X / N" count next to the Achievements title — muted so the
-  // main title still reads as the link affordance.
-  achievementsCount: { fontWeight: '600', color: color.textSubtle, fontSize: 14 },
-  myReportsSubtitle: { fontSize: 13, color: color.textMuted },
-  myReportsChevron: { fontSize: 28, color: color.textSubtle, fontWeight: '300' },
-  section: { gap: 8, marginTop: 8 },
-  sectionLabel: {
-    fontSize: 12,
-    color: color.textMuted,
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
-    fontWeight: '700',
-  },
-  nameRow: { flexDirection: 'row', gap: 8 },
-  nameInput: {
-    flex: 1,
-    borderWidth: 1,
-    borderColor: color.borderSubtle,
-    backgroundColor: color.surface,
-    borderRadius: radius.md,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 15,
-    minHeight: 44,
-    color: color.text,
-  },
-  saveBtn: {
-    backgroundColor: color.brand,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-    minWidth: 72,
-    minHeight: 44,
-  },
-  saveBtnDisabled: { opacity: 0.4 },
-  saveBtnText: { color: color.textOnBrand, fontWeight: '700', fontSize: 14 },
-  hint: { fontSize: 12, color: color.textMuted, lineHeight: 16 },
-  tabRow: { flexDirection: 'row', gap: 8 },
-  tabPill: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: 8,
-    backgroundColor: color.surfaceNeutral,
-    alignItems: 'center',
-    minHeight: 44,
-    justifyContent: 'center',
-  },
-  tabPillSelected: { backgroundColor: color.brand },
-  tabPillText: { color: color.text, fontWeight: '600', fontSize: 14 },
-  tabPillTextSelected: { color: color.textOnBrand },
-  linkBtn: {
-    backgroundColor: color.surfaceNeutral,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-    minHeight: 44,
-    justifyContent: 'center',
-  },
-  linkBtnText: { color: color.brand, fontWeight: '600', fontSize: 14 },
-  aboutRow: {
-    marginTop: 16,
-    backgroundColor: color.surface,
-    borderRadius: radius.lg,
-    padding: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    ...shadow.e1,
-    minHeight: 64,
-  },
-  aboutRowPressed: { opacity: 0.85, backgroundColor: color.surfaceMuted },
-  aboutTextWrap: { flex: 1, gap: 2 },
-  aboutTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: color.textStrong,
-    letterSpacing: -0.1,
-  },
-  aboutSubtitle: { fontSize: 13, color: color.textMuted },
-  aboutChevron: { fontSize: 28, color: color.textSubtle, fontWeight: '300' },
-  signOutBtn: {
-    marginTop: 16,
-    alignSelf: 'center',
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: radius.circle,
-    backgroundColor: color.surfaceNeutral,
-    minHeight: 44,
-    justifyContent: 'center',
-  },
-  signOutText: { color: color.text, fontWeight: '600' },
-});
+    heroLabel: {
+      color: color.pointsPillText,
+      fontSize: 11,
+      letterSpacing: 2.4,
+      fontWeight: '700',
+      textTransform: 'uppercase',
+    },
+    heroValue: {
+      color: color.textOnBrand,
+      fontSize: 56,
+      fontWeight: '800',
+      lineHeight: 60,
+      letterSpacing: -1.2,
+    },
+    heroSubtitle: {
+      color: color.pointsPillText,
+      fontSize: 13,
+      fontWeight: '600',
+      textAlign: 'center',
+      marginTop: 4,
+    },
+    progressTrack: {
+      width: '100%',
+      height: 8,
+      backgroundColor: 'rgba(255,255,255,0.25)',
+      borderRadius: radius.circle,
+      marginTop: 10,
+      overflow: 'hidden',
+    },
+    progressFill: {
+      height: '100%',
+      backgroundColor: color.textOnBrand,
+      borderRadius: radius.circle,
+    },
+    // T4: Hero value row — wraps the large points number + the small
+    // tier pill side-by-side. centerY keeps the pill optically aligned
+    // with the digit baseline; gap gives the pill breathing room.
+    heroValueRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+    },
+    // T4: Tier pill. White background on the blue hero gives a high
+    // contrast surface for the label (#1b4373 ≈ 10:1 on #fff, well
+    // above WCAG AA). 44pt min height keeps the tap target compliant
+    // even though the visual pill is shorter — the hitSlop on the
+    // Pressable closes the rest of the gap.
+    tierPill: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      paddingVertical: 6,
+      paddingHorizontal: 12,
+      borderRadius: radius.circle,
+      backgroundColor: color.surface,
+      minHeight: 32,
+      minWidth: 44,
+      justifyContent: 'center',
+      ...shadow.e1,
+    },
+    tierPillPressed: {
+      backgroundColor: color.brandSofter,
+      opacity: 0.95,
+    },
+    tierPillEmoji: { fontSize: 14 },
+    tierPillLabel: {
+      fontSize: 13,
+      fontWeight: '700',
+      color: color.brandText,
+      letterSpacing: 0.2,
+    },
+    // T4: Tier-explainer modal. Mirrors AboutScreen's translucent backdrop
+    // and rounded card; lives inline here because it's small and
+    // tightly coupled to the pill above.
+    tierBackdrop: {
+      flex: 1,
+      backgroundColor: color.scrim,
+      justifyContent: 'center',
+      padding: 24,
+    },
+    tierSheet: {
+      backgroundColor: color.surface,
+      borderRadius: radius.xl,
+      padding: 20,
+      gap: 12,
+      ...shadow.e3,
+    },
+    tierHeaderRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+    },
+    tierHeaderTitle: {
+      fontSize: 18,
+      fontWeight: '700',
+      color: color.textStrong,
+      letterSpacing: -0.2,
+    },
+    tierCloseBtn: {
+      width: 32,
+      height: 32,
+      borderRadius: radius.circle,
+      backgroundColor: color.surfaceNeutral,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    tierCloseBtnText: {
+      fontSize: 16,
+      color: color.text,
+      fontWeight: '600',
+      lineHeight: 18,
+    },
+    tierIntro: { fontSize: 13, color: color.text, lineHeight: 19 },
+    tierList: { gap: 8, marginTop: 4 },
+    tierRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+      paddingVertical: 10,
+      paddingHorizontal: 12,
+      borderRadius: 10,
+      backgroundColor: color.surfaceMuted,
+      minHeight: 48,
+    },
+    // Highlights the user's current tier — pale blue tint + left accent
+    // bar so it's recognizable at a glance.
+    tierRowCurrent: {
+      backgroundColor: color.brandSofter,
+      borderLeftWidth: 3,
+      borderLeftColor: color.brand,
+    },
+    tierRowEmoji: { fontSize: 22 },
+    tierRowTextWrap: { flex: 1, gap: 2 },
+    tierRowLabel: { fontSize: 15, fontWeight: '700', color: color.text },
+    tierRowLabelCurrent: { color: color.brandText },
+    tierRowCurrentTag: { fontSize: 12, fontWeight: '600', color: color.brandText },
+    tierRowRange: { fontSize: 12, color: color.textMuted },
+    tierFooter: {
+      fontSize: 13,
+      fontWeight: '600',
+      color: color.brandText,
+      textAlign: 'center',
+      marginTop: 4,
+    },
+    // Visit-streak card — amber-tinted pill row between the stat tiles and
+    // the status breakdown. Reads as a "you're on a roll" pat-on-the-back
+    // without competing with the headline points/milestones above.
+    streakCard: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+      backgroundColor: color.warningBg,
+      borderRadius: radius.lg,
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      borderLeftWidth: 3,
+      borderLeftColor: color.accentOrange,
+    },
+    streakIcon: { fontSize: 24 },
+    streakTextWrap: { flex: 1, gap: 2 },
+    streakValue: { fontSize: 15, fontWeight: '700', color: color.warningFg },
+    streakSubtitle: { fontSize: 12, color: color.warningFg, opacity: 0.85 },
+    // R9: Nearest-unresolved jump button. Pale-blue card to set it apart
+    // from the orange streak card directly above; chevron hints at the
+    // navigation action.
+    nearestBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+      backgroundColor: color.brandSofter,
+      borderRadius: 12,
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      minHeight: 56,
+      borderLeftWidth: 3,
+      borderLeftColor: color.brand,
+    },
+    nearestBtnPressed: {
+      backgroundColor: color.brandSoft,
+      opacity: 0.9,
+    },
+    nearestBtnIcon: { fontSize: 22 },
+    nearestBtnTextWrap: { flex: 1, gap: 2 },
+    nearestBtnTitle: { fontSize: 15, fontWeight: '700', color: color.brandText },
+    nearestBtnSubtitle: { fontSize: 12, color: color.brandText, opacity: 0.85 },
+    nearestBtnChevron: {
+      fontSize: 22,
+      color: color.brand,
+      paddingHorizontal: 4,
+      fontWeight: '700',
+    },
+    statsRow: { flexDirection: 'row', gap: 12 },
+    statCard: {
+      flex: 1,
+      backgroundColor: color.surface,
+      borderRadius: radius.lg,
+      padding: 16,
+      alignItems: 'center',
+      ...shadow.e1,
+    },
+    statValue: {
+      fontSize: 28,
+      fontWeight: '700',
+      color: color.textStrong,
+      letterSpacing: -0.5,
+    },
+    statLabel: {
+      fontSize: 11,
+      color: color.textMuted,
+      textTransform: 'uppercase',
+      letterSpacing: 0.8,
+      fontWeight: '600',
+    },
+    // Per-status pill row (open / verified / resolved / rejected). Uses
+    // STATUS_COLORS for visual continuity with the badges in detail modals.
+    statusBreakdownRow: {
+      flexDirection: 'row',
+      gap: 8,
+      flexWrap: 'wrap',
+    },
+    statusPill: {
+      flexGrow: 1,
+      flexBasis: 0,
+      minWidth: 70,
+      paddingVertical: 8,
+      paddingHorizontal: 10,
+      borderRadius: 10,
+      alignItems: 'center',
+      gap: 2,
+    },
+    // Zero-count pills fade so the eye lands on what's actually there.
+    statusPillDimmed: { opacity: 0.55 },
+    statusPillCount: { fontSize: 18, fontWeight: '700' },
+    statusPillLabel: { fontSize: 10, fontWeight: '700', textTransform: 'uppercase' },
+    myReportsBtn: {
+      backgroundColor: color.surface,
+      borderRadius: radius.lg,
+      padding: 16,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+      ...shadow.e1,
+      minHeight: 64,
+    },
+    myReportsBtnPressed: { opacity: 0.85, backgroundColor: color.surfaceMuted },
+    myReportsTextWrap: { flex: 1, gap: 2 },
+    myReportsTitle: {
+      fontSize: 16,
+      fontWeight: '700',
+      color: color.textStrong,
+      letterSpacing: -0.1,
+    },
+    // Inline "· X / N" count next to the Achievements title — muted so the
+    // main title still reads as the link affordance.
+    achievementsCount: { fontWeight: '600', color: color.textSubtle, fontSize: 14 },
+    myReportsSubtitle: { fontSize: 13, color: color.textMuted },
+    myReportsChevron: { fontSize: 28, color: color.textSubtle, fontWeight: '300' },
+    section: { gap: 8, marginTop: 8 },
+    sectionLabel: {
+      fontSize: 12,
+      color: color.textMuted,
+      textTransform: 'uppercase',
+      letterSpacing: 0.8,
+      fontWeight: '700',
+    },
+    nameRow: { flexDirection: 'row', gap: 8 },
+    nameInput: {
+      flex: 1,
+      borderWidth: 1,
+      borderColor: color.borderSubtle,
+      backgroundColor: color.surface,
+      borderRadius: radius.md,
+      paddingHorizontal: 12,
+      paddingVertical: 10,
+      fontSize: 15,
+      minHeight: 44,
+      color: color.text,
+    },
+    saveBtn: {
+      backgroundColor: color.brand,
+      paddingHorizontal: 16,
+      borderRadius: 8,
+      alignItems: 'center',
+      justifyContent: 'center',
+      minWidth: 72,
+      minHeight: 44,
+    },
+    saveBtnDisabled: { opacity: 0.4 },
+    saveBtnText: { color: color.textOnBrand, fontWeight: '700', fontSize: 14 },
+    hint: { fontSize: 12, color: color.textMuted, lineHeight: 16 },
+    tabRow: { flexDirection: 'row', gap: 8 },
+    tabPill: {
+      flex: 1,
+      paddingVertical: 12,
+      borderRadius: 8,
+      backgroundColor: color.surfaceNeutral,
+      alignItems: 'center',
+      minHeight: 44,
+      justifyContent: 'center',
+    },
+    tabPillSelected: { backgroundColor: color.brand },
+    tabPillText: { color: color.text, fontWeight: '600', fontSize: 14 },
+    tabPillTextSelected: { color: color.textOnBrand },
+    linkBtn: {
+      backgroundColor: color.surfaceNeutral,
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      borderRadius: 8,
+      alignItems: 'center',
+      minHeight: 44,
+      justifyContent: 'center',
+    },
+    linkBtnText: { color: color.brand, fontWeight: '600', fontSize: 14 },
+    aboutRow: {
+      marginTop: 16,
+      backgroundColor: color.surface,
+      borderRadius: radius.lg,
+      padding: 16,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+      ...shadow.e1,
+      minHeight: 64,
+    },
+    aboutRowPressed: { opacity: 0.85, backgroundColor: color.surfaceMuted },
+    aboutTextWrap: { flex: 1, gap: 2 },
+    aboutTitle: {
+      fontSize: 16,
+      fontWeight: '700',
+      color: color.textStrong,
+      letterSpacing: -0.1,
+    },
+    aboutSubtitle: { fontSize: 13, color: color.textMuted },
+    aboutChevron: { fontSize: 28, color: color.textSubtle, fontWeight: '300' },
+    signOutBtn: {
+      marginTop: 16,
+      alignSelf: 'center',
+      paddingHorizontal: 24,
+      paddingVertical: 12,
+      borderRadius: radius.circle,
+      backgroundColor: color.surfaceNeutral,
+      minHeight: 44,
+      justifyContent: 'center',
+    },
+    signOutText: { color: color.text, fontWeight: '600' },
+  });

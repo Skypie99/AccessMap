@@ -1,11 +1,5 @@
 import React, { useEffect } from 'react';
-import {
-  AccessibilityInfo,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { AccessibilityInfo, Pressable, StyleSheet, Text, View } from 'react-native';
 import { color, font, radius, shadow, spacing } from '@/theme';
 
 interface Props {

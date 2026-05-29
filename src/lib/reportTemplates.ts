@@ -93,8 +93,7 @@ export const REPORT_TEMPLATES: ReadonlyArray<ReportTemplate> = [
     glyph: '🔊',
     category: 'missing_signal',
     severity: 4,
-    description:
-      'Pedestrian signal has no audible cue for blind / low-vision crossers.',
+    description: 'Pedestrian signal has no audible cue for blind / low-vision crossers.',
   },
   {
     id: 'steep_grade',

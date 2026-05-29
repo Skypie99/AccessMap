@@ -30,20 +30,10 @@ import {
   STATUS_ORDER,
 } from '@/lib/flags';
 import { useFlags } from '@/lib/flagsStore';
-import {
-  DISTANCE_OPTIONS,
-  loadMapFilters,
-  saveMapFilters,
-} from '@/lib/mapFilters';
+import { DISTANCE_OPTIONS, loadMapFilters, saveMapFilters } from '@/lib/mapFilters';
 import { haversineKm } from '@/lib/distance';
-import {
-  loadFilterPanelCollapsed,
-  saveFilterPanelCollapsed,
-} from '@/lib/filterPanelPrefs';
-import {
-  loadHeatmapEnabled,
-  saveHeatmapEnabled,
-} from '@/lib/heatmapPrefs';
+import { loadFilterPanelCollapsed, saveFilterPanelCollapsed } from '@/lib/filterPanelPrefs';
+import { loadHeatmapEnabled, saveHeatmapEnabled } from '@/lib/heatmapPrefs';
 import {
   bucketFlagsToCells,
   DEFAULT_HEATMAP_MODE,
@@ -67,11 +57,7 @@ import {
   savePresets,
   type FilterPreset,
 } from '@/lib/filterPresets';
-import type {
-  FlagCategory,
-  FlagSeverity,
-  FlagStatus,
-} from '@/types/database';
+import type { FlagCategory, FlagSeverity, FlagStatus } from '@/types/database';
 import type { RootTabParamList } from '@/navigation/RootNavigator';
 import PlatformMap, {
   type PlatformMapHandle,
@@ -230,9 +216,7 @@ export default function MapScreen() {
   // brief mount→load window.
   const [heatmapEnabled, setHeatmapEnabled] = useState(false);
   const [heatmapHydrated, setHeatmapHydrated] = useState(false);
-  const [activeCategories, setActiveCategories] = useState<Set<FlagCategory>>(
-    new Set(),
-  );
+  const [activeCategories, setActiveCategories] = useState<Set<FlagCategory>>(new Set());
   const [minSeverity, setMinSeverity] = useState<FlagSeverity>(1);
   // Which statuses to fetch from the server. Default matches the original
   // hardcoded listFlags(['open','verified']) call, so the Map looks the same
@@ -357,10 +341,7 @@ export default function MapScreen() {
       // CATEGORY_CYCLE.length is always 7 (1 null + 6 categories) so
       // nextIdx is always in range — cast away the `| undefined`.
       const nextCat = (CATEGORY_CYCLE[nextIdx] ?? null) as FlagCategory | null;
-      const nextSet =
-        nextCat === null
-          ? new Set<FlagCategory>()
-          : new Set<FlagCategory>([nextCat]);
+      const nextSet = nextCat === null ? new Set<FlagCategory>() : new Set<FlagCategory>([nextCat]);
       AccessibilityInfo.announceForAccessibility(
         nextCat === null
           ? 'Category filter: all categories'
@@ -411,9 +392,7 @@ export default function MapScreen() {
       ]);
       if (cancelled) return;
       const defaultSet =
-        storedDefault !== null
-          ? sets.find((s) => s.id === storedDefault) ?? null
-          : null;
+        storedDefault !== null ? (sets.find((s) => s.id === storedDefault) ?? null) : null;
       if (defaultSet) {
         setActiveCategories(new Set(defaultSet.categories));
         setMinSeverity(defaultSet.minSeverity);
@@ -532,19 +511,12 @@ export default function MapScreen() {
       setNameModalOpen(false);
       setNameDraft('');
     } catch (e) {
-      const msg =
-        e instanceof FilterSetError ? e.message : errorMessage(e);
+      const msg = e instanceof FilterSetError ? e.message : errorMessage(e);
       Alert.alert("Couldn't save filter", msg);
     } finally {
       if (mountedRef.current) setSavingSet(false);
     }
-  }, [
-    activeCategories,
-    activeStatuses,
-    minSeverity,
-    nameDraft,
-    savingSet,
-  ]);
+  }, [activeCategories, activeStatuses, minSeverity, nameDraft, savingSet]);
 
   // Open the per-user preset save-name prompt with an empty draft.
   const openPresetSaveModal = useCallback(() => {
@@ -573,7 +545,7 @@ export default function MapScreen() {
       // If we're at the cap, addPreset will drop existing[0] (oldest).
       // Capture its name now so we can name it in the success message.
       const droppedName =
-        existing.length >= FILTER_PRESETS_MAX ? existing[0]?.name ?? null : null;
+        existing.length >= FILTER_PRESETS_MAX ? (existing[0]?.name ?? null) : null;
       const next = addPreset(existing, {
         name: trimmed,
         categories: Array.from(activeCategories),
@@ -594,14 +566,7 @@ export default function MapScreen() {
     } finally {
       if (mountedRef.current) setSavingPreset(false);
     }
-  }, [
-    activeCategories,
-    activeStatuses,
-    authUser,
-    minSeverity,
-    presetNameDraft,
-    savingPreset,
-  ]);
+  }, [activeCategories, activeStatuses, authUser, minSeverity, presetNameDraft, savingPreset]);
 
   // Apply a chosen preset's filter triple to the live Map filters and
   // close the picker. Categories and statuses are stored as plain strings
@@ -614,27 +579,23 @@ export default function MapScreen() {
   // intersect against CATEGORY_ORDER (the live source of truth) and drop
   // anything stale. If any were dropped, we mention it in the SR announce
   // so the user knows their filter isn't quite what they saved.
-  const handleApplyPreset = useCallback(
-    (preset: FilterPreset) => {
-      const validCategorySet = new Set<string>(CATEGORY_ORDER);
-      const filteredCategories = preset.categories.filter((c) =>
-        validCategorySet.has(c),
-      ) as FlagCategory[];
-      const droppedCategoryCount =
-        preset.categories.length - filteredCategories.length;
+  const handleApplyPreset = useCallback((preset: FilterPreset) => {
+    const validCategorySet = new Set<string>(CATEGORY_ORDER);
+    const filteredCategories = preset.categories.filter((c) =>
+      validCategorySet.has(c),
+    ) as FlagCategory[];
+    const droppedCategoryCount = preset.categories.length - filteredCategories.length;
 
-      setActiveCategories(new Set<FlagCategory>(filteredCategories));
-      setMinSeverity(preset.minSeverity as FlagSeverity);
-      setActiveStatuses(new Set(preset.statusFilter as FlagStatus[]));
-      setPresetsModalOpen(false);
-      AccessibilityInfo.announceForAccessibility(
-        droppedCategoryCount > 0
-          ? `Applied preset: ${preset.name}. ${droppedCategoryCount} obsolete categor${droppedCategoryCount === 1 ? 'y' : 'ies'} ignored.`
-          : `Applied preset: ${preset.name}`,
-      );
-    },
-    [],
-  );
+    setActiveCategories(new Set<FlagCategory>(filteredCategories));
+    setMinSeverity(preset.minSeverity as FlagSeverity);
+    setActiveStatuses(new Set(preset.statusFilter as FlagStatus[]));
+    setPresetsModalOpen(false);
+    AccessibilityInfo.announceForAccessibility(
+      droppedCategoryCount > 0
+        ? `Applied preset: ${preset.name}. ${droppedCategoryCount} obsolete categor${droppedCategoryCount === 1 ? 'y' : 'ies'} ignored.`
+        : `Applied preset: ${preset.name}`,
+    );
+  }, []);
 
   // Persist filter changes. Gated on filtersHydrated so we don't clobber a
   // saved view with the initial default state during the brief window
@@ -649,13 +610,7 @@ export default function MapScreen() {
       statuses: Array.from(activeStatuses),
       maxDistanceKm,
     });
-  }, [
-    activeCategories,
-    minSeverity,
-    activeStatuses,
-    maxDistanceKm,
-    filtersHydrated,
-  ]);
+  }, [activeCategories, minSeverity, activeStatuses, maxDistanceKm, filtersHydrated]);
 
   // Distance is only effective when we know where the user is — otherwise
   // the filter would silently hide every flag. Track this in a derived
@@ -663,22 +618,16 @@ export default function MapScreen() {
   const distanceFilterEffective = maxDistanceKm !== null && location !== null;
 
   const filtersActive =
-    activeCategories.size > 0 ||
-    minSeverity > 1 ||
-    statusFilterActive ||
-    distanceFilterEffective;
+    activeCategories.size > 0 || minSeverity > 1 || statusFilterActive || distanceFilterEffective;
 
   // Category quick-cycle button derived state — computed once per render
   // so the JSX stays readable. catCycleActive drives the filled-blue style;
   // catCycleLabel is what the button face shows.
   const catCycleActiveCat: FlagCategory | null =
-    activeCategories.size === 1
-      ? (([...activeCategories] as FlagCategory[])[0] ?? null)
-      : null;
+    activeCategories.size === 1 ? (([...activeCategories] as FlagCategory[])[0] ?? null) : null;
   const catCycleActive = catCycleActiveCat !== null;
-  const catCycleLabel = catCycleActive && catCycleActiveCat !== null
-    ? CATEGORY_ICONS[catCycleActiveCat]
-    : '⊕'; // "all categories" glyph — circled plus suggests "expand/all"
+  const catCycleLabel =
+    catCycleActive && catCycleActiveCat !== null ? CATEGORY_ICONS[catCycleActiveCat] : '⊕'; // "all categories" glyph — circled plus suggests "expand/all"
 
   // Which saved set, if any, exactly matches the live filter triple.
   // Used to mark the matching chip `selected` so the user can see at a
@@ -741,8 +690,7 @@ export default function MapScreen() {
   // (Android picks it up via the alert's accessibilityLiveRegion). Only
   // fires on transitions into "0 results" — not on every re-render while
   // empty — so a user who's already heard it doesn't get re-spoken.
-  const showEmptyCard =
-    filtersActive && !loadingFlags && !loadError && filteredFlags.length === 0;
+  const showEmptyCard = filtersActive && !loadingFlags && !loadError && filteredFlags.length === 0;
   const previouslyEmptyRef = useRef(false);
   useEffect(() => {
     if (showEmptyCard && !previouslyEmptyRef.current) {
@@ -895,32 +843,25 @@ export default function MapScreen() {
   // directly — right-click intent on desktop is unambiguous, and the
   // accidental-trigger concern (panning) doesn't apply since web uses
   // right-click rather than a long-press gesture.
-  const handleMapLongPress = useCallback(
-    (coord: { lat: number; lng: number }) => {
-      if (Platform.OS === 'web') {
-        setDropLocation(coord);
-        setReportOpen(true);
-        return;
-      }
-      const latStr = coord.lat.toFixed(5);
-      const lngStr = coord.lng.toFixed(5);
-      Alert.alert(
-        'Report a flag here?',
-        `Drop a new accessibility report at ${latStr}, ${lngStr}.`,
-        [
-          { text: 'Cancel', style: 'cancel' },
-          {
-            text: 'Report here',
-            onPress: () => {
-              setDropLocation(coord);
-              setReportOpen(true);
-            },
-          },
-        ],
-      );
-    },
-    [],
-  );
+  const handleMapLongPress = useCallback((coord: { lat: number; lng: number }) => {
+    if (Platform.OS === 'web') {
+      setDropLocation(coord);
+      setReportOpen(true);
+      return;
+    }
+    const latStr = coord.lat.toFixed(5);
+    const lngStr = coord.lng.toFixed(5);
+    Alert.alert('Report a flag here?', `Drop a new accessibility report at ${latStr}, ${lngStr}.`, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Report here',
+        onPress: () => {
+          setDropLocation(coord);
+          setReportOpen(true);
+        },
+      },
+    ]);
+  }, []);
 
   return (
     <View style={styles.container}>
@@ -977,19 +918,13 @@ export default function MapScreen() {
             <View style={styles.actionDivider} accessibilityElementsHidden />
             <Pressable
               onPress={() => setFiltersOpen((v) => !v)}
-              style={[
-                styles.actionBtn,
-                (filtersOpen || filtersActive) && styles.actionBtnActive,
-              ]}
+              style={[styles.actionBtn, (filtersOpen || filtersActive) && styles.actionBtnActive]}
               accessibilityRole="button"
               accessibilityLabel="Toggle filters"
               accessibilityState={{ expanded: filtersOpen }}
             >
               <Text
-                style={[
-                  styles.iconText,
-                  (filtersOpen || filtersActive) && styles.iconTextActive,
-                ]}
+                style={[styles.iconText, (filtersOpen || filtersActive) && styles.iconTextActive]}
               >
                 ⌕
               </Text>
@@ -1087,10 +1022,7 @@ export default function MapScreen() {
                     longitudeDelta: 0.01,
                   });
                 }}
-                style={({ pressed }) => [
-                  styles.placeChip,
-                  pressed && styles.placeChipPressed,
-                ]}
+                style={({ pressed }) => [styles.placeChip, pressed && styles.placeChipPressed]}
                 accessibilityRole="button"
                 accessibilityLabel={`Jump map to ${place.name}`}
               >
@@ -1114,11 +1046,7 @@ export default function MapScreen() {
                 pressed && styles.placeChipPressed,
               ]}
               accessibilityRole="button"
-              accessibilityLabel={
-                savedPlaces.length === 0
-                  ? 'Save a place'
-                  : 'Manage saved places'
-              }
+              accessibilityLabel={savedPlaces.length === 0 ? 'Save a place' : 'Manage saved places'}
               accessibilityHint="Opens the saved places list to add, rename, or remove"
             >
               <Text
@@ -1144,9 +1072,7 @@ export default function MapScreen() {
                 style={styles.filterTitleRow}
                 accessibilityRole="button"
                 accessibilityLabel={
-                  panelCollapsed
-                    ? 'Expand filter panel'
-                    : 'Collapse filter panel'
+                  panelCollapsed ? 'Expand filter panel' : 'Collapse filter panel'
                 }
                 accessibilityHint={
                   panelCollapsed
@@ -1156,10 +1082,7 @@ export default function MapScreen() {
                 accessibilityState={{ expanded: !panelCollapsed }}
               >
                 <Text style={styles.filterTitle}>Filter flags</Text>
-                <Text
-                  style={styles.filterChevron}
-                  accessibilityElementsHidden
-                >
+                <Text style={styles.filterChevron} accessibilityElementsHidden>
                   {panelCollapsed ? '▸' : '▾'}
                 </Text>
               </Pressable>
@@ -1176,222 +1099,188 @@ export default function MapScreen() {
 
             {!panelCollapsed && (
               <>
-            <Text style={styles.filterSubLabel}>Saved</Text>
-            {savedSets.length === 0 ? (
-              <View style={styles.savedEmpty}>
-                <Text style={styles.savedEmptyText}>
-                  Save your current filter as a named set to quickly
-                  switch later.
-                </Text>
-                <Pressable
-                  onPress={openSaveModal}
-                  style={styles.savedSaveBtn}
-                  accessibilityRole="button"
-                  accessibilityLabel="Save current filter as a named set"
-                  accessibilityHint="Opens a prompt to name the current filter combination"
-                >
-                  <Text style={styles.savedSaveBtnText}>
-                    Save current filter
-                  </Text>
-                </Pressable>
-              </View>
-            ) : (
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.filterRow}
-              >
-                {savedSets.map((set) => {
-                  const isSelected = set.id === activeSetId;
-                  const isDefault = set.id === defaultId;
-                  return (
+                <Text style={styles.filterSubLabel}>Saved</Text>
+                {savedSets.length === 0 ? (
+                  <View style={styles.savedEmpty}>
+                    <Text style={styles.savedEmptyText}>
+                      Save your current filter as a named set to quickly switch later.
+                    </Text>
                     <Pressable
-                      key={set.id}
-                      onPress={() => applySet(set)}
-                      onLongPress={() => openSetMenu(set)}
-                      style={[
-                        styles.filterPill,
-                        isSelected && styles.filterPillActive,
-                      ]}
+                      onPress={openSaveModal}
+                      style={styles.savedSaveBtn}
                       accessibilityRole="button"
-                      accessibilityLabel={
-                        isDefault
-                          ? `${set.name}, default filter set, tap to apply`
-                          : `${set.name}, tap to apply, long press for options`
-                      }
-                      accessibilityHint="Sets the map filter to this saved combination. Long press for options including make default and delete."
-                      accessibilityState={{ selected: isSelected }}
+                      accessibilityLabel="Save current filter as a named set"
+                      accessibilityHint="Opens a prompt to name the current filter combination"
                     >
-                      <Text
-                        style={[
-                          styles.filterPillText,
-                          isSelected && styles.filterPillTextActive,
-                        ]}
-                      >
-                        {/* Star is decorative — the "default on launch"
+                      <Text style={styles.savedSaveBtnText}>Save current filter</Text>
+                    </Pressable>
+                  </View>
+                ) : (
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.filterRow}
+                  >
+                    {savedSets.map((set) => {
+                      const isSelected = set.id === activeSetId;
+                      const isDefault = set.id === defaultId;
+                      return (
+                        <Pressable
+                          key={set.id}
+                          onPress={() => applySet(set)}
+                          onLongPress={() => openSetMenu(set)}
+                          style={[styles.filterPill, isSelected && styles.filterPillActive]}
+                          accessibilityRole="button"
+                          accessibilityLabel={
+                            isDefault
+                              ? `${set.name}, default filter set, tap to apply`
+                              : `${set.name}, tap to apply, long press for options`
+                          }
+                          accessibilityHint="Sets the map filter to this saved combination. Long press for options including make default and delete."
+                          accessibilityState={{ selected: isSelected }}
+                        >
+                          <Text
+                            style={[
+                              styles.filterPillText,
+                              isSelected && styles.filterPillTextActive,
+                            ]}
+                          >
+                            {/* Star is decorative — the "default on launch"
                             wording is carried by accessibilityLabel above
                             so screen readers don't read out a glyph.
                             Wrapped in its own Text so accessible={false}
                             hides it from the AT node tree entirely. */}
-                        {isDefault && (
-                          <Text
-                            accessible={false}
-                            importantForAccessibility="no-hide-descendants"
-                            accessibilityElementsHidden
-                          >
-                            {'★ '}
+                            {isDefault && (
+                              <Text
+                                accessible={false}
+                                importantForAccessibility="no-hide-descendants"
+                                accessibilityElementsHidden
+                              >
+                                {'★ '}
+                              </Text>
+                            )}
+                            {set.name}
                           </Text>
-                        )}
-                        {set.name}
-                      </Text>
-                    </Pressable>
-                  );
-                })}
-                {canSaveMore && (
-                  <Pressable
-                    onPress={openSaveModal}
-                    style={[styles.filterPill, styles.savedAddPill]}
-                    accessibilityRole="button"
-                    accessibilityLabel="Save current filter as a named set"
-                    accessibilityHint="Opens a prompt to name the current filter combination"
-                  >
-                    <Text style={styles.savedAddPillText}>
-                      + Save current
-                    </Text>
-                  </Pressable>
+                        </Pressable>
+                      );
+                    })}
+                    {canSaveMore && (
+                      <Pressable
+                        onPress={openSaveModal}
+                        style={[styles.filterPill, styles.savedAddPill]}
+                        accessibilityRole="button"
+                        accessibilityLabel="Save current filter as a named set"
+                        accessibilityHint="Opens a prompt to name the current filter combination"
+                      >
+                        <Text style={styles.savedAddPillText}>+ Save current</Text>
+                      </Pressable>
+                    )}
+                  </ScrollView>
                 )}
-              </ScrollView>
-            )}
 
-            <Text style={styles.filterSubLabel}>Categories</Text>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.filterRow}
-            >
-              {CATEGORY_ORDER.map((c) => {
-                const active = activeCategories.has(c);
-                return (
-                  <Pressable
-                    key={c}
-                    onPress={() => toggleCategory(c)}
-                    style={[styles.filterPill, active && styles.filterPillActive]}
-                    accessibilityRole="button"
-                    accessibilityLabel={`Filter by ${CATEGORY_LABELS[c]}`}
-                    accessibilityState={{ selected: active }}
-                  >
-                    <Text
-                      style={[
-                        styles.filterPillText,
-                        active && styles.filterPillTextActive,
-                      ]}
-                    >
-                      {CATEGORY_LABELS[c]}
-                    </Text>
-                  </Pressable>
-                );
-              })}
-            </ScrollView>
+                <Text style={styles.filterSubLabel}>Categories</Text>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.filterRow}
+                >
+                  {CATEGORY_ORDER.map((c) => {
+                    const active = activeCategories.has(c);
+                    return (
+                      <Pressable
+                        key={c}
+                        onPress={() => toggleCategory(c)}
+                        style={[styles.filterPill, active && styles.filterPillActive]}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Filter by ${CATEGORY_LABELS[c]}`}
+                        accessibilityState={{ selected: active }}
+                      >
+                        <Text
+                          style={[styles.filterPillText, active && styles.filterPillTextActive]}
+                        >
+                          {CATEGORY_LABELS[c]}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </ScrollView>
 
-            <Text style={styles.filterSubLabel}>Minimum severity</Text>
-            <View style={styles.filterRow}>
-              {SEVERITY_ORDER.map((s) => {
-                const active = s === minSeverity;
-                return (
-                  <Pressable
-                    key={s}
-                    onPress={() => setMinSeverity(s)}
-                    style={[
-                      styles.sevPill,
-                      active && { backgroundColor: severityColor(s) },
-                    ]}
-                    accessibilityRole="button"
-                    accessibilityLabel={`Minimum severity ${s}`}
-                    accessibilityState={{ selected: active }}
-                  >
-                    <Text
-                      style={[
-                        styles.sevPillText,
-                        active && styles.sevPillTextActive,
-                      ]}
-                    >
-                      {s}+
-                    </Text>
-                  </Pressable>
-                );
-              })}
-            </View>
+                <Text style={styles.filterSubLabel}>Minimum severity</Text>
+                <View style={styles.filterRow}>
+                  {SEVERITY_ORDER.map((s) => {
+                    const active = s === minSeverity;
+                    return (
+                      <Pressable
+                        key={s}
+                        onPress={() => setMinSeverity(s)}
+                        style={[styles.sevPill, active && { backgroundColor: severityColor(s) }]}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Minimum severity ${s}`}
+                        accessibilityState={{ selected: active }}
+                      >
+                        <Text style={[styles.sevPillText, active && styles.sevPillTextActive]}>
+                          {s}+
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
 
-            {/* Heat-map toggle — sits above Status because it's a render
+                {/* Heat-map toggle — sits above Status because it's a render
                 axis (what gets drawn) not a fetch axis (what gets fetched).
                 Hidden under panelCollapsed alongside the rest of the panel.
                 Off by default per Dani's design compile. */}
-            <Text style={styles.filterSubLabel}>Layers</Text>
-            <View style={styles.filterRow}>
-              <Pressable
-                onPress={() => setHeatmapEnabled((v) => !v)}
-                style={[
-                  styles.filterPill,
-                  heatmapEnabled && styles.filterPillActive,
-                ]}
-                accessibilityRole="switch"
-                accessibilityLabel="Show neighbourhood heat map"
-                accessibilityState={{ checked: heatmapEnabled }}
-                accessibilityHint={`Overlays a coloured grid that summarises severity across neighbourhoods. Only areas with at least ${DEFAULT_K_FLOOR} reports are shown.`}
-              >
-                <Text
-                  style={[
-                    styles.filterPillText,
-                    heatmapEnabled && styles.filterPillTextActive,
-                  ]}
-                >
-                  {heatmapEnabled ? '✓ Heat map' : 'Heat map'}
-                </Text>
-              </Pressable>
-            </View>
-            {heatmapEnabled && (
-              <Text style={styles.statusHint}>
-                Heat zones only appear where at least {DEFAULT_K_FLOOR} flags
-                have been reported. Colour shows mean severity (1–5); the
-                legend explains the full scale.
-              </Text>
-            )}
-
-            <Text style={styles.filterSubLabel}>Status</Text>
-            <View style={styles.filterRow}>
-              {STATUS_ORDER.map((s) => {
-                const active = activeStatuses.has(s);
-                return (
+                <Text style={styles.filterSubLabel}>Layers</Text>
+                <View style={styles.filterRow}>
                   <Pressable
-                    key={s}
-                    onPress={() => toggleStatus(s)}
-                    style={[
-                      styles.filterPill,
-                      active && styles.filterPillActive,
-                    ]}
-                    accessibilityRole="button"
-                    accessibilityLabel={`Filter by ${STATUS_LABELS[s]}`}
-                    accessibilityState={{ selected: active }}
+                    onPress={() => setHeatmapEnabled((v) => !v)}
+                    style={[styles.filterPill, heatmapEnabled && styles.filterPillActive]}
+                    accessibilityRole="switch"
+                    accessibilityLabel="Show neighbourhood heat map"
+                    accessibilityState={{ checked: heatmapEnabled }}
+                    accessibilityHint={`Overlays a coloured grid that summarises severity across neighbourhoods. Only areas with at least ${DEFAULT_K_FLOOR} reports are shown.`}
                   >
                     <Text
-                      style={[
-                        styles.filterPillText,
-                        active && styles.filterPillTextActive,
-                      ]}
+                      style={[styles.filterPillText, heatmapEnabled && styles.filterPillTextActive]}
                     >
-                      {STATUS_LABELS[s]}
+                      {heatmapEnabled ? '✓ Heat map' : 'Heat map'}
                     </Text>
                   </Pressable>
-                );
-              })}
-            </View>
-            {activeStatuses.size === 0 && (
-              <Text style={styles.statusHint}>
-                Pick at least one status to see flags.
-              </Text>
-            )}
+                </View>
+                {heatmapEnabled && (
+                  <Text style={styles.statusHint}>
+                    Heat zones only appear where at least {DEFAULT_K_FLOOR} flags have been
+                    reported. Colour shows mean severity (1–5); the legend explains the full scale.
+                  </Text>
+                )}
 
-            {/* Distance — radius from the user's current location. Chips
+                <Text style={styles.filterSubLabel}>Status</Text>
+                <View style={styles.filterRow}>
+                  {STATUS_ORDER.map((s) => {
+                    const active = activeStatuses.has(s);
+                    return (
+                      <Pressable
+                        key={s}
+                        onPress={() => toggleStatus(s)}
+                        style={[styles.filterPill, active && styles.filterPillActive]}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Filter by ${STATUS_LABELS[s]}`}
+                        accessibilityState={{ selected: active }}
+                      >
+                        <Text
+                          style={[styles.filterPillText, active && styles.filterPillTextActive]}
+                        >
+                          {STATUS_LABELS[s]}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+                {activeStatuses.size === 0 && (
+                  <Text style={styles.statusHint}>Pick at least one status to see flags.</Text>
+                )}
+
+                {/* Distance — radius from the user's current location. Chips
                 follow the same pill pattern as Status/Category; "Off"
                 renders selected when no radius is active. When the user
                 has no known location (permission denied / still loading)
@@ -1407,93 +1296,77 @@ export default function MapScreen() {
                 that depends on the user's current GPS would make a
                 "saved view" portable in a way it isn't today. We can
                 revisit when location-aware sets become a clear need. */}
-            <Text style={styles.filterSubLabel}>Distance</Text>
-            <View style={styles.filterRow}>
-              {DISTANCE_OPTIONS.map((opt) => {
-                const active = opt === maxDistanceKm;
-                const label =
-                  opt === null
-                    ? 'Off'
-                    : opt < 1
-                      ? `${Math.round(opt * 1000)} m`
-                      : `${opt} km`;
-                const a11yLabel =
-                  opt === null
-                    ? 'Distance filter off'
-                    : opt < 1
-                      ? `Within ${Math.round(opt * 1000)} meters`
-                      : `Within ${opt} kilometer${opt === 1 ? '' : 's'}`;
-                return (
-                  <Pressable
-                    key={opt === null ? 'off' : String(opt)}
-                    onPress={() => setMaxDistanceKm(opt)}
-                    style={[
-                      styles.filterPill,
-                      active && styles.filterPillActive,
-                    ]}
-                    accessibilityRole="button"
-                    accessibilityLabel={a11yLabel}
-                    accessibilityState={{ selected: active }}
-                  >
-                    <Text
-                      style={[
-                        styles.filterPillText,
-                        active && styles.filterPillTextActive,
-                      ]}
-                    >
-                      {label}
-                    </Text>
-                  </Pressable>
-                );
-              })}
-            </View>
-            {maxDistanceKm !== null && !location && (
-              <Text
-                style={styles.statusHint}
-                accessibilityLiveRegion="polite"
-              >
-                Distance filter needs your location. It will activate once
-                location is shared.
-              </Text>
-            )}
+                <Text style={styles.filterSubLabel}>Distance</Text>
+                <View style={styles.filterRow}>
+                  {DISTANCE_OPTIONS.map((opt) => {
+                    const active = opt === maxDistanceKm;
+                    const label =
+                      opt === null ? 'Off' : opt < 1 ? `${Math.round(opt * 1000)} m` : `${opt} km`;
+                    const a11yLabel =
+                      opt === null
+                        ? 'Distance filter off'
+                        : opt < 1
+                          ? `Within ${Math.round(opt * 1000)} meters`
+                          : `Within ${opt} kilometer${opt === 1 ? '' : 's'}`;
+                    return (
+                      <Pressable
+                        key={opt === null ? 'off' : String(opt)}
+                        onPress={() => setMaxDistanceKm(opt)}
+                        style={[styles.filterPill, active && styles.filterPillActive]}
+                        accessibilityRole="button"
+                        accessibilityLabel={a11yLabel}
+                        accessibilityState={{ selected: active }}
+                      >
+                        <Text
+                          style={[styles.filterPillText, active && styles.filterPillTextActive]}
+                        >
+                          {label}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+                {maxDistanceKm !== null && !location && (
+                  <Text style={styles.statusHint} accessibilityLiveRegion="polite">
+                    Distance filter needs your location. It will activate once location is shared.
+                  </Text>
+                )}
 
-            {/* Per-user presets — distinct from the device-wide Saved
+                {/* Per-user presets — distinct from the device-wide Saved
                 chips above. Hidden when signed-out because presets are
                 keyed by user. */}
-            {authUser && (
-              <>
-                <Text style={styles.filterSubLabel}>Presets</Text>
-                <View style={styles.presetRow}>
-                  <Pressable
-                    onPress={openPresetSaveModal}
-                    style={({ pressed }) => [
-                      styles.presetBtn,
-                      pressed && styles.presetBtnPressed,
-                    ]}
-                    accessibilityRole="button"
-                    accessibilityLabel="Save current filters as a preset"
-                    accessibilityHint={`Names and saves your current category, severity, and status filters. Stored per account, up to ${FILTER_PRESETS_MAX} presets.`}
-                  >
-                    <Text style={styles.presetBtnText}>＋ Save as preset</Text>
-                  </Pressable>
-                  <Pressable
-                    onPress={() => setPresetsModalOpen(true)}
-                    style={({ pressed }) => [
-                      styles.presetBtn,
-                      styles.presetBtnSecondary,
-                      pressed && styles.presetBtnPressed,
-                    ]}
-                    accessibilityRole="button"
-                    accessibilityLabel="Load a saved preset"
-                    accessibilityHint="Opens your saved filter presets so you can apply one"
-                  >
-                    <Text style={styles.presetBtnSecondaryText}>
-                      Load preset…
-                    </Text>
-                  </Pressable>
-                </View>
-              </>
-            )}
+                {authUser && (
+                  <>
+                    <Text style={styles.filterSubLabel}>Presets</Text>
+                    <View style={styles.presetRow}>
+                      <Pressable
+                        onPress={openPresetSaveModal}
+                        style={({ pressed }) => [
+                          styles.presetBtn,
+                          pressed && styles.presetBtnPressed,
+                        ]}
+                        accessibilityRole="button"
+                        accessibilityLabel="Save current filters as a preset"
+                        accessibilityHint={`Names and saves your current category, severity, and status filters. Stored per account, up to ${FILTER_PRESETS_MAX} presets.`}
+                      >
+                        <Text style={styles.presetBtnText}>＋ Save as preset</Text>
+                      </Pressable>
+                      <Pressable
+                        onPress={() => setPresetsModalOpen(true)}
+                        style={({ pressed }) => [
+                          styles.presetBtn,
+                          styles.presetBtnSecondary,
+                          pressed && styles.presetBtnPressed,
+                        ]}
+                        accessibilityRole="button"
+                        accessibilityLabel="Load a saved preset"
+                        accessibilityHint="Opens your saved filter presets so you can apply one"
+                      >
+                        <Text style={styles.presetBtnSecondaryText}>Load preset…</Text>
+                      </Pressable>
+                    </View>
+                  </>
+                )}
               </>
             )}
           </View>
@@ -1535,36 +1408,31 @@ export default function MapScreen() {
           below the FABs (which keep their column on the right).
         */}
         {showEmptyCard && (
-            <View
-              style={styles.emptyCard}
-              accessible
-              accessibilityRole="alert"
-              accessibilityLabel="No flags match your filters. Try broadening them or reset filters."
-              accessibilityLiveRegion="polite"
+          <View
+            style={styles.emptyCard}
+            accessible
+            accessibilityRole="alert"
+            accessibilityLabel="No flags match your filters. Try broadening them or reset filters."
+            accessibilityLiveRegion="polite"
+          >
+            <Text style={styles.emptyCardIcon} accessibilityElementsHidden>
+              🔍
+            </Text>
+            <Text style={styles.emptyCardTitle}>No flags match your filters</Text>
+            <Text style={styles.emptyCardBody}>
+              Try broadening your filters, or reset to see all nearby flags.
+            </Text>
+            <Pressable
+              onPress={clearFilters}
+              style={({ pressed }) => [styles.emptyCardBtn, pressed && styles.emptyCardBtnPressed]}
+              accessibilityRole="button"
+              accessibilityLabel="Reset filters"
+              accessibilityHint="Clears categories, severity, and status filters"
             >
-              <Text style={styles.emptyCardIcon} accessibilityElementsHidden>
-                🔍
-              </Text>
-              <Text style={styles.emptyCardTitle}>
-                No flags match your filters
-              </Text>
-              <Text style={styles.emptyCardBody}>
-                Try broadening your filters, or reset to see all nearby flags.
-              </Text>
-              <Pressable
-                onPress={clearFilters}
-                style={({ pressed }) => [
-                  styles.emptyCardBtn,
-                  pressed && styles.emptyCardBtnPressed,
-                ]}
-                accessibilityRole="button"
-                accessibilityLabel="Reset filters"
-                accessibilityHint="Clears categories, severity, and status filters"
-              >
-                <Text style={styles.emptyCardBtnText}>Reset filters</Text>
-              </Pressable>
-            </View>
-          )}
+              <Text style={styles.emptyCardBtnText}>Reset filters</Text>
+            </Pressable>
+          </View>
+        )}
 
         {locating && !location && (
           <View style={styles.banner}>
@@ -1633,10 +1501,7 @@ export default function MapScreen() {
         onCreated={refreshFlags}
       />
 
-      <LegendModal
-        visible={legendOpen}
-        onClose={() => setLegendOpen(false)}
-      />
+      <LegendModal visible={legendOpen} onClose={() => setLegendOpen(false)} />
 
       <AddressSearchModal
         visible={searchOpen}
@@ -1729,8 +1594,7 @@ export default function MapScreen() {
               Name this preset
             </Text>
             <Text style={styles.nameHint}>
-              Saves your current filters. Up to {FILTER_PRESETS_MAX} presets
-              per account.
+              Saves your current filters. Up to {FILTER_PRESETS_MAX} presets per account.
             </Text>
             <TextInput
               value={presetNameDraft}
@@ -1773,8 +1637,7 @@ export default function MapScreen() {
                 accessibilityLabel="Save preset"
                 accessibilityState={{
                   busy: savingPreset,
-                  disabled:
-                    savingPreset || presetNameDraft.trim().length === 0,
+                  disabled: savingPreset || presetNameDraft.trim().length === 0,
                 }}
               >
                 {savingPreset ? (
@@ -1805,9 +1668,7 @@ export default function MapScreen() {
         <View style={styles.nameBackdrop}>
           <View style={styles.nameCard}>
             <Text style={styles.nameTitle}>Name this filter</Text>
-            <Text style={styles.nameHint}>
-              You can save up to {MAX_FILTER_SETS} filter sets.
-            </Text>
+            <Text style={styles.nameHint}>You can save up to {MAX_FILTER_SETS} filter sets.</Text>
             <TextInput
               value={nameDraft}
               onChangeText={setNameDraft}
@@ -1840,8 +1701,7 @@ export default function MapScreen() {
                 style={[
                   styles.nameBtn,
                   styles.nameBtnSave,
-                  (savingSet || nameDraft.trim().length === 0) &&
-                    styles.nameBtnSaveDisabled,
+                  (savingSet || nameDraft.trim().length === 0) && styles.nameBtnSaveDisabled,
                 ]}
                 accessibilityRole="button"
                 accessibilityLabel="Save filter set"
@@ -1864,332 +1724,333 @@ export default function MapScreen() {
   );
 }
 
-const makeStyles = (color: ColorTheme) => StyleSheet.create({
-  container: { flex: 1 },
-  overlay: {
-    ...StyleSheet.absoluteFillObject,
-    padding: 16,
-    justifyContent: 'space-between',
-    zIndex: 10,
-  },
-  topRow: { flexDirection: 'row', gap: 8, alignItems: 'center' },
-  // Saved Places chip row — slim secondary row beneath the action bar.
-  // Wraps so a long list breaks to a second line rather than truncating.
-  placesRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
-    marginTop: 8,
-  },
-  placeChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    backgroundColor: 'rgba(255,255,255,0.95)',
-    borderRadius: radius.circle,
-    // 44pt is the AccessMap baseline touch target (Apple HIG + Android
-    // a11y minimum + WCAG 2.5.5). Bumped from 36 per QA A1.
-    minHeight: 44,
-    maxWidth: 180,
-    ...shadow.e1,
-  },
-  placeChipPressed: { backgroundColor: color.surfaceNeutral, opacity: 0.9 },
-  // The trailing manage chip uses a tinted background so the affordance
-  // reads visually distinct from the place chips.
-  placeChipManage: { backgroundColor: color.brandSofter },
-  placeChipGlyph: { fontSize: 14, color: color.brand },
-  placeChipText: { fontSize: 13, fontWeight: '600', color: color.brandTextAlt },
-  statusPill: {
-    flex: 1,
-    backgroundColor: color.overlaySoft,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: radius.circle,
-    ...shadow.e1,
-  },
-  statusText: { fontSize: 13, color: color.text, fontWeight: '600' },
-  iconBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: radius.circle,
-    backgroundColor: color.overlaySoft,
-    alignItems: 'center',
-    justifyContent: 'center',
-    ...shadow.e1,
-  },
-  iconText: { fontSize: 18, color: color.brand, fontWeight: '700' },
-  iconBtnActive: { backgroundColor: color.brand },
-  iconTextActive: { color: color.textOnBrand },
-  // Quick-cycle severity button — slightly wider than the round icon buttons
-  // to fit the "{n}+" label without crowding the glyph against the edges.
-  sevQuickBtn: { width: 44 },
-  sevQuickText: { fontSize: 14 },
-  // Quick-cycle category button — same sizing/treatment as the severity
-  // button; shows the category icon glyph or "⊕" for "all categories."
-  catQuickBtn: { width: 44 },
-  catQuickText: { fontSize: 15 },
-  // Grouped action bar — wraps the icon buttons in one elevated white
-  // surface with thin internal dividers so they read as a single
-  // connected tool tray instead of four free-floating circles. Replaces
-  // the cheap "scattered buttons" look the user called out.
-  actionBar: {
-    flexDirection: 'row',
-    backgroundColor: color.overlay,
-    borderRadius: radius.circle,
-    paddingHorizontal: 4,
-    paddingVertical: 2,
-    alignItems: 'center',
-    ...shadow.e2,
-  },
-  actionBtn: {
-    width: 36,
-    height: 36,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 18,
-  },
-  actionBtnActive: { backgroundColor: color.brand },
-  actionDivider: {
-    width: 1,
-    height: 18,
-    backgroundColor: color.border,
-  },
-  filterPanel: {
-    marginTop: 8,
-    backgroundColor: color.overlay,
-    borderRadius: radius.lg,
-    padding: 12,
-    gap: 8,
-    ...shadow.e2,
-  },
-  filterHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  filterTitle: { fontSize: 14, fontWeight: '700', color: color.textStrong },
-  filterTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingVertical: 4,
-    // The header row itself is the tap target; combined with the parent
-    // panel padding this gives a comfortable 44pt area despite the small
-    // visible glyph.
-    minHeight: 32,
-  },
-  filterChevron: { fontSize: 12, color: color.brand, fontWeight: '700' },
-  clearLink: { fontSize: 12, color: color.brand, fontWeight: '600' },
-  filterSubLabel: {
-    fontSize: 11,
-    color: color.textMuted,
-    textTransform: 'uppercase',
-    letterSpacing: 0.6,
-    marginTop: 4,
-  },
-  filterRow: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
-  filterPill: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: radius.circle,
-    backgroundColor: color.surfaceNeutral,
-  },
-  filterPillActive: { backgroundColor: color.brand },
-  filterPillText: { fontSize: 12, color: color.text, fontWeight: '600' },
-  filterPillTextActive: { color: color.textOnBrand },
-  sevPill: {
-    width: 44,
-    height: 32,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: color.surfaceNeutral,
-  },
-  sevPillText: { fontSize: 13, color: color.text, fontWeight: '700' },
-  sevPillTextActive: { color: color.textOnBrand },
-  statusHint: { fontSize: 11, color: color.warningHint, marginTop: 4 },
-  banner: {
-    alignSelf: 'center',
-    backgroundColor: color.overlaySoft,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
-    flexDirection: 'row',
-    gap: 8,
-    alignItems: 'center',
-  },
-  bannerText: { fontSize: 13, color: color.text },
-  errorBanner: {
-    marginTop: 8,
-    backgroundColor: color.error,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    borderRadius: 10,
-    flexDirection: 'row',
-    gap: 10,
-    alignItems: 'center',
-    minHeight: 44,
-    ...shadow.e2,
-  },
-  errorBannerBusy: { opacity: 0.85 },
-  errorBannerPressed: { opacity: 0.7 },
-  errorBannerIcon: { color: color.textOnBrand, fontSize: 18, fontWeight: '700' },
-  errorBannerText: { color: color.textOnBrand, fontSize: 13, fontWeight: '600', flex: 1 },
-  emptyCard: {
-    alignSelf: 'center',
-    marginTop: 16,
-    maxWidth: 320,
-    backgroundColor: color.overlay,
-    paddingHorizontal: 20,
-    paddingVertical: 18,
-    borderRadius: radius.lg,
-    gap: 8,
-    alignItems: 'center',
-    ...shadow.e2,
-  },
-  emptyCardIcon: { fontSize: 28 },
-  emptyCardTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: color.textStrong,
-    textAlign: 'center',
-    letterSpacing: -0.1,
-  },
-  emptyCardBody: {
-    fontSize: 13,
-    color: color.textMuted,
-    textAlign: 'center',
-    lineHeight: 18,
-  },
-  emptyCardBtn: {
-    marginTop: 4,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: radius.circle,
-    backgroundColor: color.brand,
-    minHeight: 44,
-    justifyContent: 'center',
-  },
-  emptyCardBtnPressed: { opacity: 0.8 },
-  emptyCardBtnText: { color: color.textOnBrand, fontSize: 14, fontWeight: '700' },
-  bottomBar: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-end',
-  },
-  fabColumn: {
-    alignItems: 'flex-end',
-    gap: 10,
-  },
-  fab: {
-    backgroundColor: color.brand,
-    paddingHorizontal: 20,
-    paddingVertical: 14,
-    borderRadius: radius.circle,
-    ...shadow.e2,
-    minHeight: 48,
-    justifyContent: 'center',
-  },
-  fabSecondary: { backgroundColor: color.overlay },
-  fabSecondaryText: { color: color.brand, fontWeight: '700', fontSize: 15 },
-  fabDisabled: { opacity: 0.5 },
-  fabPressed: { opacity: 0.8 },
-  fabText: { color: color.textOnBrand, fontWeight: '700', fontSize: 15 },
-  savedEmpty: { gap: 8, marginTop: 4 },
-  savedEmptyText: { fontSize: 12, color: color.textMuted, lineHeight: 16 },
-  savedSaveBtn: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: radius.circle,
-    backgroundColor: color.brand,
-    minHeight: 32,
-    justifyContent: 'center',
-  },
-  savedSaveBtnText: { color: color.textOnBrand, fontSize: 12, fontWeight: '700' },
-  savedAddPill: {
-    backgroundColor: color.surface,
-    borderWidth: 1,
-    borderColor: color.brand,
-    borderStyle: 'dashed',
-  },
-  savedAddPillText: { color: color.brand, fontSize: 12, fontWeight: '700' },
-  // Per-user preset buttons — side-by-side pair beneath the Status row.
-  // Primary (Save) is filled blue; secondary (Load) is outlined to keep
-  // the primary action visually distinct without two competing fills.
-  // Both clear 44pt to satisfy WCAG 2.5.5 / Apple HIG touch targets.
-  presetRow: {
-    flexDirection: 'row',
-    gap: 8,
-    marginTop: 4,
-  },
-  presetBtn: {
-    flex: 1,
-    minHeight: 44,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderRadius: 10,
-    backgroundColor: color.brand,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  presetBtnPressed: { opacity: 0.85 },
-  // 14pt bold qualifies as WCAG "large text" — 3:1 ratio applies, so
-  // white-on-#2f80ed (~3.8:1) clears AA. At 13pt it failed the 4.5:1
-  // small-text threshold.
-  presetBtnText: { color: color.textOnBrand, fontWeight: '700', fontSize: 14 },
-  presetBtnSecondary: {
-    backgroundColor: color.surface,
-    borderWidth: 1,
-    borderColor: color.brand,
-  },
-  // Inverted variant (blue on white). Uses color.brandText (#1c4f99 ≈ 7.6:1)
-  // instead of color.brand (#2f80ed ≈ 3.3:1) so it stays AA-safe even if the
-  // font size ever drops below the 14pt-bold large-text threshold.
-  presetBtnSecondaryText: { color: color.brandText, fontWeight: '700', fontSize: 14 },
-  nameBackdrop: {
-    flex: 1,
-    backgroundColor: color.scrim,
-    justifyContent: 'center',
-    padding: 20,
-  },
-  nameCard: {
-    backgroundColor: color.surface,
-    borderRadius: radius.xl,
-    padding: 20,
-    gap: 12,
-  },
-  nameTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: color.textStrong,
-    letterSpacing: -0.2,
-  },
-  nameHint: { fontSize: 12, color: color.textMuted },
-  nameInput: {
-    borderWidth: 1,
-    borderColor: color.borderStrong,
-    borderRadius: radius.md,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 15,
-    minHeight: 44,
-    color: color.text,
-  },
-  nameActions: { flexDirection: 'row', gap: 12, marginTop: 4 },
-  nameBtn: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: 44,
-  },
-  nameBtnCancel: { backgroundColor: color.surfaceNeutral },
-  nameBtnCancelText: { color: color.text, fontWeight: '600', fontSize: 14 },
-  nameBtnSave: { backgroundColor: color.brand },
-  nameBtnSaveDisabled: { opacity: 0.5 },
-  nameBtnSaveText: { color: color.textOnBrand, fontWeight: '700', fontSize: 14 },
-});
+const makeStyles = (color: ColorTheme) =>
+  StyleSheet.create({
+    container: { flex: 1 },
+    overlay: {
+      ...StyleSheet.absoluteFillObject,
+      padding: 16,
+      justifyContent: 'space-between',
+      zIndex: 10,
+    },
+    topRow: { flexDirection: 'row', gap: 8, alignItems: 'center' },
+    // Saved Places chip row — slim secondary row beneath the action bar.
+    // Wraps so a long list breaks to a second line rather than truncating.
+    placesRow: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 6,
+      marginTop: 8,
+    },
+    placeChip: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      paddingHorizontal: 12,
+      paddingVertical: 10,
+      backgroundColor: 'rgba(255,255,255,0.95)',
+      borderRadius: radius.circle,
+      // 44pt is the AccessMap baseline touch target (Apple HIG + Android
+      // a11y minimum + WCAG 2.5.5). Bumped from 36 per QA A1.
+      minHeight: 44,
+      maxWidth: 180,
+      ...shadow.e1,
+    },
+    placeChipPressed: { backgroundColor: color.surfaceNeutral, opacity: 0.9 },
+    // The trailing manage chip uses a tinted background so the affordance
+    // reads visually distinct from the place chips.
+    placeChipManage: { backgroundColor: color.brandSofter },
+    placeChipGlyph: { fontSize: 14, color: color.brand },
+    placeChipText: { fontSize: 13, fontWeight: '600', color: color.brandTextAlt },
+    statusPill: {
+      flex: 1,
+      backgroundColor: color.overlaySoft,
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      borderRadius: radius.circle,
+      ...shadow.e1,
+    },
+    statusText: { fontSize: 13, color: color.text, fontWeight: '600' },
+    iconBtn: {
+      width: 36,
+      height: 36,
+      borderRadius: radius.circle,
+      backgroundColor: color.overlaySoft,
+      alignItems: 'center',
+      justifyContent: 'center',
+      ...shadow.e1,
+    },
+    iconText: { fontSize: 18, color: color.brand, fontWeight: '700' },
+    iconBtnActive: { backgroundColor: color.brand },
+    iconTextActive: { color: color.textOnBrand },
+    // Quick-cycle severity button — slightly wider than the round icon buttons
+    // to fit the "{n}+" label without crowding the glyph against the edges.
+    sevQuickBtn: { width: 44 },
+    sevQuickText: { fontSize: 14 },
+    // Quick-cycle category button — same sizing/treatment as the severity
+    // button; shows the category icon glyph or "⊕" for "all categories."
+    catQuickBtn: { width: 44 },
+    catQuickText: { fontSize: 15 },
+    // Grouped action bar — wraps the icon buttons in one elevated white
+    // surface with thin internal dividers so they read as a single
+    // connected tool tray instead of four free-floating circles. Replaces
+    // the cheap "scattered buttons" look the user called out.
+    actionBar: {
+      flexDirection: 'row',
+      backgroundColor: color.overlay,
+      borderRadius: radius.circle,
+      paddingHorizontal: 4,
+      paddingVertical: 2,
+      alignItems: 'center',
+      ...shadow.e2,
+    },
+    actionBtn: {
+      width: 36,
+      height: 36,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderRadius: 18,
+    },
+    actionBtnActive: { backgroundColor: color.brand },
+    actionDivider: {
+      width: 1,
+      height: 18,
+      backgroundColor: color.border,
+    },
+    filterPanel: {
+      marginTop: 8,
+      backgroundColor: color.overlay,
+      borderRadius: radius.lg,
+      padding: 12,
+      gap: 8,
+      ...shadow.e2,
+    },
+    filterHeaderRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    filterTitle: { fontSize: 14, fontWeight: '700', color: color.textStrong },
+    filterTitleRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      paddingVertical: 4,
+      // The header row itself is the tap target; combined with the parent
+      // panel padding this gives a comfortable 44pt area despite the small
+      // visible glyph.
+      minHeight: 32,
+    },
+    filterChevron: { fontSize: 12, color: color.brand, fontWeight: '700' },
+    clearLink: { fontSize: 12, color: color.brand, fontWeight: '600' },
+    filterSubLabel: {
+      fontSize: 11,
+      color: color.textMuted,
+      textTransform: 'uppercase',
+      letterSpacing: 0.6,
+      marginTop: 4,
+    },
+    filterRow: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
+    filterPill: {
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: radius.circle,
+      backgroundColor: color.surfaceNeutral,
+    },
+    filterPillActive: { backgroundColor: color.brand },
+    filterPillText: { fontSize: 12, color: color.text, fontWeight: '600' },
+    filterPillTextActive: { color: color.textOnBrand },
+    sevPill: {
+      width: 44,
+      height: 32,
+      borderRadius: 16,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: color.surfaceNeutral,
+    },
+    sevPillText: { fontSize: 13, color: color.text, fontWeight: '700' },
+    sevPillTextActive: { color: color.textOnBrand },
+    statusHint: { fontSize: 11, color: color.warningHint, marginTop: 4 },
+    banner: {
+      alignSelf: 'center',
+      backgroundColor: color.overlaySoft,
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      borderRadius: 8,
+      flexDirection: 'row',
+      gap: 8,
+      alignItems: 'center',
+    },
+    bannerText: { fontSize: 13, color: color.text },
+    errorBanner: {
+      marginTop: 8,
+      backgroundColor: color.error,
+      paddingHorizontal: 14,
+      paddingVertical: 12,
+      borderRadius: 10,
+      flexDirection: 'row',
+      gap: 10,
+      alignItems: 'center',
+      minHeight: 44,
+      ...shadow.e2,
+    },
+    errorBannerBusy: { opacity: 0.85 },
+    errorBannerPressed: { opacity: 0.7 },
+    errorBannerIcon: { color: color.textOnBrand, fontSize: 18, fontWeight: '700' },
+    errorBannerText: { color: color.textOnBrand, fontSize: 13, fontWeight: '600', flex: 1 },
+    emptyCard: {
+      alignSelf: 'center',
+      marginTop: 16,
+      maxWidth: 320,
+      backgroundColor: color.overlay,
+      paddingHorizontal: 20,
+      paddingVertical: 18,
+      borderRadius: radius.lg,
+      gap: 8,
+      alignItems: 'center',
+      ...shadow.e2,
+    },
+    emptyCardIcon: { fontSize: 28 },
+    emptyCardTitle: {
+      fontSize: 15,
+      fontWeight: '700',
+      color: color.textStrong,
+      textAlign: 'center',
+      letterSpacing: -0.1,
+    },
+    emptyCardBody: {
+      fontSize: 13,
+      color: color.textMuted,
+      textAlign: 'center',
+      lineHeight: 18,
+    },
+    emptyCardBtn: {
+      marginTop: 4,
+      paddingHorizontal: 16,
+      paddingVertical: 10,
+      borderRadius: radius.circle,
+      backgroundColor: color.brand,
+      minHeight: 44,
+      justifyContent: 'center',
+    },
+    emptyCardBtnPressed: { opacity: 0.8 },
+    emptyCardBtnText: { color: color.textOnBrand, fontSize: 14, fontWeight: '700' },
+    bottomBar: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'flex-end',
+    },
+    fabColumn: {
+      alignItems: 'flex-end',
+      gap: 10,
+    },
+    fab: {
+      backgroundColor: color.brand,
+      paddingHorizontal: 20,
+      paddingVertical: 14,
+      borderRadius: radius.circle,
+      ...shadow.e2,
+      minHeight: 48,
+      justifyContent: 'center',
+    },
+    fabSecondary: { backgroundColor: color.overlay },
+    fabSecondaryText: { color: color.brand, fontWeight: '700', fontSize: 15 },
+    fabDisabled: { opacity: 0.5 },
+    fabPressed: { opacity: 0.8 },
+    fabText: { color: color.textOnBrand, fontWeight: '700', fontSize: 15 },
+    savedEmpty: { gap: 8, marginTop: 4 },
+    savedEmptyText: { fontSize: 12, color: color.textMuted, lineHeight: 16 },
+    savedSaveBtn: {
+      alignSelf: 'flex-start',
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      borderRadius: radius.circle,
+      backgroundColor: color.brand,
+      minHeight: 32,
+      justifyContent: 'center',
+    },
+    savedSaveBtnText: { color: color.textOnBrand, fontSize: 12, fontWeight: '700' },
+    savedAddPill: {
+      backgroundColor: color.surface,
+      borderWidth: 1,
+      borderColor: color.brand,
+      borderStyle: 'dashed',
+    },
+    savedAddPillText: { color: color.brand, fontSize: 12, fontWeight: '700' },
+    // Per-user preset buttons — side-by-side pair beneath the Status row.
+    // Primary (Save) is filled blue; secondary (Load) is outlined to keep
+    // the primary action visually distinct without two competing fills.
+    // Both clear 44pt to satisfy WCAG 2.5.5 / Apple HIG touch targets.
+    presetRow: {
+      flexDirection: 'row',
+      gap: 8,
+      marginTop: 4,
+    },
+    presetBtn: {
+      flex: 1,
+      minHeight: 44,
+      paddingHorizontal: 12,
+      paddingVertical: 10,
+      borderRadius: 10,
+      backgroundColor: color.brand,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    presetBtnPressed: { opacity: 0.85 },
+    // 14pt bold qualifies as WCAG "large text" — 3:1 ratio applies, so
+    // white-on-#2f80ed (~3.8:1) clears AA. At 13pt it failed the 4.5:1
+    // small-text threshold.
+    presetBtnText: { color: color.textOnBrand, fontWeight: '700', fontSize: 14 },
+    presetBtnSecondary: {
+      backgroundColor: color.surface,
+      borderWidth: 1,
+      borderColor: color.brand,
+    },
+    // Inverted variant (blue on white). Uses color.brandText (#1c4f99 ≈ 7.6:1)
+    // instead of color.brand (#2f80ed ≈ 3.3:1) so it stays AA-safe even if the
+    // font size ever drops below the 14pt-bold large-text threshold.
+    presetBtnSecondaryText: { color: color.brandText, fontWeight: '700', fontSize: 14 },
+    nameBackdrop: {
+      flex: 1,
+      backgroundColor: color.scrim,
+      justifyContent: 'center',
+      padding: 20,
+    },
+    nameCard: {
+      backgroundColor: color.surface,
+      borderRadius: radius.xl,
+      padding: 20,
+      gap: 12,
+    },
+    nameTitle: {
+      fontSize: 18,
+      fontWeight: '700',
+      color: color.textStrong,
+      letterSpacing: -0.2,
+    },
+    nameHint: { fontSize: 12, color: color.textMuted },
+    nameInput: {
+      borderWidth: 1,
+      borderColor: color.borderStrong,
+      borderRadius: radius.md,
+      paddingHorizontal: 12,
+      paddingVertical: 10,
+      fontSize: 15,
+      minHeight: 44,
+      color: color.text,
+    },
+    nameActions: { flexDirection: 'row', gap: 12, marginTop: 4 },
+    nameBtn: {
+      flex: 1,
+      paddingVertical: 12,
+      borderRadius: 10,
+      alignItems: 'center',
+      justifyContent: 'center',
+      minHeight: 44,
+    },
+    nameBtnCancel: { backgroundColor: color.surfaceNeutral },
+    nameBtnCancelText: { color: color.text, fontWeight: '600', fontSize: 14 },
+    nameBtnSave: { backgroundColor: color.brand },
+    nameBtnSaveDisabled: { opacity: 0.5 },
+    nameBtnSaveText: { color: color.textOnBrand, fontWeight: '700', fontSize: 14 },
+  });

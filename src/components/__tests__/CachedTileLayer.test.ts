@@ -62,7 +62,7 @@ async function runCreateTileLogic(opts: {
   userId: string | null;
   tileUrl: string;
   mockFetch?: typeof fetch;
-  mockFileReaderResult?: string;   // data URI the mock FileReader emits
+  mockFileReaderResult?: string; // data URI the mock FileReader emits
   fileReaderShouldError?: boolean; // if true, FileReader fires onerror
 }): Promise<{ img: MockImg; doneCalls: DoneCall[] }> {
   const { userId, tileUrl } = opts;
@@ -94,7 +94,10 @@ async function runCreateTileLogic(opts: {
     if (cached) {
       // ── PATH-2: cache HIT ─────────────────────────────────────────────────
       img.onload = () => done(undefined, img);
-      img.onerror = () => { img.src = tileUrl; done(undefined, img); };
+      img.onerror = () => {
+        img.src = tileUrl;
+        done(undefined, img);
+      };
       img.src = cached;
       // Simulate browser firing onload
       done(undefined, img);
@@ -118,7 +121,10 @@ async function runCreateTileLogic(opts: {
       });
 
       img.onload = () => done(undefined, img);
-      img.onerror = () => { img.src = tileUrl; done(undefined, img); };
+      img.onerror = () => {
+        img.src = tileUrl;
+        done(undefined, img);
+      };
       img.src = dataUri;
       // Simulate onload
       done(undefined, img);
@@ -299,9 +305,9 @@ describe('PATH-4: any error → graceful fallback, never a broken tile', () => {
   });
 
   it('falls back to direct URL when fetch throws a network error', async () => {
-    const throwFetch = jest.fn().mockRejectedValue(
-      new Error('Network error'),
-    ) as unknown as typeof fetch;
+    const throwFetch = jest
+      .fn()
+      .mockRejectedValue(new Error('Network error')) as unknown as typeof fetch;
 
     const { img } = await runCreateTileLogic({
       userId: USER_ID,

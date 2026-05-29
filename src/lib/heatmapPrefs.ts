@@ -18,10 +18,7 @@ export async function loadHeatmapEnabled(): Promise<boolean> {
     const raw = await AsyncStorage.getItem(STORAGE_KEY);
     return raw === 'true';
   } catch (e) {
-    console.warn(
-      '[heatmapPrefs] load failed:',
-      errorMessage(e, 'AsyncStorage error.'),
-    );
+    console.warn('[heatmapPrefs] load failed:', errorMessage(e, 'AsyncStorage error.'));
     return false;
   }
 }
@@ -30,9 +27,6 @@ export async function saveHeatmapEnabled(enabled: boolean): Promise<void> {
   try {
     await AsyncStorage.setItem(STORAGE_KEY, enabled ? 'true' : 'false');
   } catch (e) {
-    console.warn(
-      '[heatmapPrefs] save failed:',
-      errorMessage(e, 'AsyncStorage error.'),
-    );
+    console.warn('[heatmapPrefs] save failed:', errorMessage(e, 'AsyncStorage error.'));
   }
 }

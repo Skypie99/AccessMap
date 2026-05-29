@@ -30,13 +30,12 @@ export interface NotificationPreferences {
   bulkWatchAlerts: boolean;
 }
 
-export const DEFAULT_NOTIFICATION_PREFERENCES: Readonly<NotificationPreferences> =
-  Object.freeze({
-    flagStatusUpdates: true,
-    nearbyFlags: true,
-    watchedFlagUpdates: true,
-    bulkWatchAlerts: true,
-  });
+export const DEFAULT_NOTIFICATION_PREFERENCES: Readonly<NotificationPreferences> = Object.freeze({
+  flagStatusUpdates: true,
+  nearbyFlags: true,
+  watchedFlagUpdates: true,
+  bulkWatchAlerts: true,
+});
 
 function storageKey(userId: string): string {
   return STORAGE_KEY_PREFIX + userId;
@@ -48,18 +47,10 @@ function parsePreferences(raw: unknown): NotificationPreferences {
   }
   const obj = raw as Record<string, unknown>;
   return {
-    flagStatusUpdates:
-      typeof obj.flagStatusUpdates === 'boolean'
-        ? obj.flagStatusUpdates
-        : true,
-    nearbyFlags:
-      typeof obj.nearbyFlags === 'boolean' ? obj.nearbyFlags : true,
-    watchedFlagUpdates:
-      typeof obj.watchedFlagUpdates === 'boolean'
-        ? obj.watchedFlagUpdates
-        : true,
-    bulkWatchAlerts:
-      typeof obj.bulkWatchAlerts === 'boolean' ? obj.bulkWatchAlerts : true,
+    flagStatusUpdates: typeof obj.flagStatusUpdates === 'boolean' ? obj.flagStatusUpdates : true,
+    nearbyFlags: typeof obj.nearbyFlags === 'boolean' ? obj.nearbyFlags : true,
+    watchedFlagUpdates: typeof obj.watchedFlagUpdates === 'boolean' ? obj.watchedFlagUpdates : true,
+    bulkWatchAlerts: typeof obj.bulkWatchAlerts === 'boolean' ? obj.bulkWatchAlerts : true,
   };
 }
 
@@ -82,9 +73,9 @@ interface UseNotificationPreferencesResult {
 export function useNotificationPreferences(
   userId: string | null | undefined,
 ): UseNotificationPreferencesResult {
-  const [preferences, setPreferences] = useState<NotificationPreferences>(
-    () => ({ ...DEFAULT_NOTIFICATION_PREFERENCES }),
-  );
+  const [preferences, setPreferences] = useState<NotificationPreferences>(() => ({
+    ...DEFAULT_NOTIFICATION_PREFERENCES,
+  }));
   const [loading, setLoading] = useState(true);
 
   // Guard against state updates after the component that owns this hook
@@ -141,10 +132,7 @@ export function useNotificationPreferences(
   }, [userId]);
 
   const setPreference = useCallback(
-    <K extends keyof NotificationPreferences>(
-      key: K,
-      value: NotificationPreferences[K],
-    ) => {
+    <K extends keyof NotificationPreferences>(key: K, value: NotificationPreferences[K]) => {
       if (!userId) return;
 
       // Functional update to avoid stale-closure bugs when multiple toggles
@@ -154,11 +142,9 @@ export function useNotificationPreferences(
         // Fire-and-forget persist — optimistic UI already shows `next`.
         // Fail-soft on error (AsyncStorage write failures are ephemeral;
         // the next mount will re-read the on-disk state).
-        AsyncStorage.setItem(storageKey(userId), JSON.stringify(next)).catch(
-          () => {
-            // swallowed — warn would be noise here; the UI already updated
-          },
-        );
+        AsyncStorage.setItem(storageKey(userId), JSON.stringify(next)).catch(() => {
+          // swallowed — warn would be noise here; the UI already updated
+        });
         return next;
       });
     },

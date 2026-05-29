@@ -252,19 +252,16 @@ describe('free-text search — category-label matching', () => {
     ['missing_signal' as FlagCategory],
     ['steep_grade' as FlagCategory],
     ['other' as FlagCategory],
-  ])(
-    'matches by label for every category (%s)',
-    (cat) => {
-      const flags = [makeFlag('a', { category: cat, description: null })];
-      const label = CATEGORY_LABELS[cat];
-      const out = applyDisplayFilter({
-        ...BASE_DEFAULTS,
-        flags,
-        searchText: label.toLowerCase(),
-      });
-      expect(out.map((f) => f.id)).toEqual(['a']);
-    },
-  );
+  ])('matches by label for every category (%s)', (cat) => {
+    const flags = [makeFlag('a', { category: cat, description: null })];
+    const label = CATEGORY_LABELS[cat];
+    const out = applyDisplayFilter({
+      ...BASE_DEFAULTS,
+      flags,
+      searchText: label.toLowerCase(),
+    });
+    expect(out.map((f) => f.id)).toEqual(['a']);
+  });
 });
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -289,9 +286,7 @@ describe('free-text search — OR between description and label', () => {
   });
 
   it('a row only needs ONE side to match — not both', () => {
-    const flags = [
-      makeFlag('a', { description: 'foo', category: 'no_ramp' }),
-    ];
+    const flags = [makeFlag('a', { description: 'foo', category: 'no_ramp' })];
     // 'foo' is not in the label "No ramp" but IS in the description.
     // The OR keeps the row.
     const out = applyDisplayFilter({
@@ -489,7 +484,7 @@ describe('free-text search — empty-state echo uses the trimmed query', () => {
     const trimmed = searchText.trim();
     return trimmed
       ? `Nothing matches "${trimmed}". Try a different keyword or clear the search.`
-      : 'No flags to triage right now. New community reports will land here as they\'re added — pull to refresh anytime.';
+      : "No flags to triage right now. New community reports will land here as they're added — pull to refresh anytime.";
   }
 
   it('shows the default empty message when the query is blank', () => {

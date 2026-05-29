@@ -84,17 +84,12 @@ export default function FeedbackModal({ visible, onClose }: Props) {
   // Defense-in-depth email validation. The DB has a regex constraint but
   // it only enforces after the migration is applied; this short check
   // catches typos and obviously-broken inputs before we round-trip.
-  const isPlausibleEmail = (s: string): boolean =>
-    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s);
+  const isPlausibleEmail = (s: string): boolean => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s);
 
   const trimmedContact = contact.trim();
-  const contactInvalid =
-    trimmedContact.length > 0 && !isPlausibleEmail(trimmedContact);
+  const contactInvalid = trimmedContact.length > 0 && !isPlausibleEmail(trimmedContact);
   const canSend =
-    body.trim().length > 0 &&
-    body.length <= MAX_FEEDBACK_LEN &&
-    !contactInvalid &&
-    !sending;
+    body.trim().length > 0 && body.length <= MAX_FEEDBACK_LEN && !contactInvalid && !sending;
 
   const handleSend = async () => {
     if (!canSend) return;

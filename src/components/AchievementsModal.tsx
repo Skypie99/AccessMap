@@ -9,18 +9,8 @@
  * already has the data.
  */
 import React, { useMemo } from 'react';
-import {
-  Modal,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
-import type {
-  Achievement,
-  AchievementCategory,
-} from '@/lib/achievements';
+import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import type { Achievement, AchievementCategory } from '@/lib/achievements';
 import { color, font, radius, spacing } from '@/theme';
 
 interface Props {
@@ -36,18 +26,9 @@ const CATEGORY_LABEL: Record<AchievementCategory, string> = {
   streak: 'Streak',
 };
 
-const CATEGORY_ORDER: AchievementCategory[] = [
-  'reporting',
-  'resolution',
-  'points',
-  'streak',
-];
+const CATEGORY_ORDER: AchievementCategory[] = ['reporting', 'resolution', 'points', 'streak'];
 
-export default function AchievementsModal({
-  visible,
-  onClose,
-  achievements,
-}: Props) {
+export default function AchievementsModal({ visible, onClose, achievements }: Props) {
   // Group by category preserving catalog order within each group.
   const grouped = useMemo(() => {
     const map = new Map<AchievementCategory, Achievement[]>();
@@ -64,12 +45,7 @@ export default function AchievementsModal({
   const totalEarned = achievements.filter((a) => a.earned).length;
 
   return (
-    <Modal
-      visible={visible}
-      animationType="slide"
-      transparent
-      onRequestClose={onClose}
-    >
+    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <View style={styles.backdrop}>
         <View style={styles.card} accessibilityViewIsModal>
           <View style={styles.headerRow}>
@@ -104,9 +80,7 @@ export default function AchievementsModal({
           <ScrollView contentContainerStyle={styles.scroll}>
             {grouped.map(({ cat, items }) => (
               <View key={cat} style={styles.section}>
-                <Text style={styles.sectionHeader}>
-                  {CATEGORY_LABEL[cat]}
-                </Text>
+                <Text style={styles.sectionHeader}>{CATEGORY_LABEL[cat]}</Text>
                 <View style={styles.list}>
                   {items.map((a) => (
                     <AchievementRow key={a.id} achievement={a} />
@@ -125,9 +99,7 @@ function AchievementRow({ achievement: a }: { achievement: Achievement }) {
   const stateText = a.earned ? 'Earned' : `${a.progress} of ${a.threshold}`;
   const a11yLabel =
     `${a.title}, ${a.description} ` +
-    (a.earned
-      ? 'Earned.'
-      : `Progress: ${a.progress} of ${a.threshold}.`);
+    (a.earned ? 'Earned.' : `Progress: ${a.progress} of ${a.threshold}.`);
 
   return (
     <View
@@ -139,7 +111,9 @@ function AchievementRow({ achievement: a }: { achievement: Achievement }) {
       accessible={true}
       accessibilityLabel={a11yLabel}
     >
-      <View style={[styles.iconCircle, a.earned ? styles.iconCircleEarned : styles.iconCircleLocked]}>
+      <View
+        style={[styles.iconCircle, a.earned ? styles.iconCircleEarned : styles.iconCircleLocked]}
+      >
         <Text
           style={[styles.icon, !a.earned && styles.iconDimmed]}
           accessibilityElementsHidden
@@ -153,7 +127,9 @@ function AchievementRow({ achievement: a }: { achievement: Achievement }) {
         <Text style={styles.rowDesc}>{a.description}</Text>
       </View>
       <View style={[styles.statePill, a.earned ? styles.statePillEarned : styles.statePillLocked]}>
-        <Text style={[styles.stateText, a.earned ? styles.stateTextEarned : styles.stateTextLocked]}>
+        <Text
+          style={[styles.stateText, a.earned ? styles.stateTextEarned : styles.stateTextLocked]}
+        >
           {stateText}
         </Text>
       </View>

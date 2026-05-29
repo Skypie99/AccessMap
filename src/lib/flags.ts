@@ -2,12 +2,7 @@ import { supabase } from './supabase';
 import { color as themeColor } from '@/theme';
 import { Platform } from 'react-native';
 import * as MediaLibrary from 'expo-media-library';
-import type {
-  FlagCategory,
-  FlagRow,
-  FlagSeverity,
-  FlagStatus,
-} from '@/types/database';
+import type { FlagCategory, FlagRow, FlagSeverity, FlagStatus } from '@/types/database';
 
 export const FLAG_PHOTOS_BUCKET = 'flag-photos';
 
@@ -56,10 +51,7 @@ export const NEXT_PAGE_SIZE = 20;
  *
  * Post-strip verification reads the output bytes to confirm EXIF is gone.
  */
-export async function stripExifNative(
-  arrayBuffer: ArrayBuffer,
-  ext: string,
-): Promise<ArrayBuffer> {
+export async function stripExifNative(arrayBuffer: ArrayBuffer, ext: string): Promise<ArrayBuffer> {
   try {
     // Convert arrayBuffer to base64 data URL for the native API.
     const bytes = new Uint8Array(arrayBuffer);
@@ -111,10 +103,7 @@ export async function stripExifNative(
  *
  * Post-strip verification checks the output bytes.
  */
-export function stripExifWeb(
-  arrayBuffer: ArrayBuffer,
-  ext: string,
-): Promise<ArrayBuffer> {
+export function stripExifWeb(arrayBuffer: ArrayBuffer, ext: string): Promise<ArrayBuffer> {
   return new Promise((resolve) => {
     try {
       // Avoid calling web-only APIs if not in a browser environment.
@@ -170,9 +159,7 @@ export function stripExifWeb(
             reader.onload = ((_event: any) => {
               const result = reader.result;
               if (!(result instanceof ArrayBuffer)) {
-                console.warn(
-                  '[EXIF] Canvas result not ArrayBuffer; using original.',
-                );
+                console.warn('[EXIF] Canvas result not ArrayBuffer; using original.');
                 return resolve(arrayBuffer);
               }
               console.debug(
