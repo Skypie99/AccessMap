@@ -30,7 +30,7 @@ try {
 
   console.log('\n📋 To apply these migrations:');
   console.log('   1. Go to Supabase dashboard: https://supabase.com/dashboard');
-  console.log('   2. Select project: kldlwszpfkdmsjrjhjym');
+  console.log('   2. Select your Supabase project (URL from EXPO_PUBLIC_SUPABASE_URL in .env)');
   console.log('   3. Go to SQL Editor');
   console.log('   4. Create new query');
   console.log('   5. Copy and paste the content below into the editor');
