@@ -15,6 +15,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { font, radius, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { signInWithEmail, signUpWithEmail } from '@/lib/supabase';
+import { track } from '@/lib/analytics';
 import LogoMark from '@/components/LogoMark';
 
 export default function SignInScreen({
@@ -53,6 +54,7 @@ export default function SignInScreen({
       return;
     }
     if (mode === 'in') {
+      track('user_signed_in', { method: 'email', isNewUser: false });
       onClose?.();
     }
     if (mode === 'up') {
