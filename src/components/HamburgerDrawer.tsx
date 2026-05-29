@@ -91,8 +91,11 @@ export default function HamburgerDrawer({ open, onClose }: Props) {
 
   const handleSignOut = useCallback(async () => {
     closeDrawer();
-    await signOut();
-  }, [closeDrawer]);
+    // Pass userId so signOut() can clear the offline flag cache, tile cache,
+    // and push token. Steve condition: never pass undefined when user is
+    // known — user.id is always a non-empty string for authenticated users.
+    await signOut(user?.id);
+  }, [closeDrawer, user]);
 
   return (
     <>

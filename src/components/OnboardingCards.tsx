@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import {
   AccessibilityInfo,
   Modal,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -9,7 +10,9 @@ import {
   useWindowDimensions,
   View,
 } from 'react-native';
-import { font, radius, shadow, spacing } from '@/theme';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
+import { font, radius, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 
 /**
@@ -51,24 +54,28 @@ interface Props {
 }
 
 interface Card {
-  emoji: string;
+  icon: keyof typeof Ionicons.glyphMap;
+  iconColor: string;
   title: string;
   body: string;
 }
 
 const CARDS: Card[] = [
   {
-    emoji: '📍',
+    icon: 'location-outline',
+    iconColor: '#60a5fa',
     title: 'Drop pins where accessibility matters',
     body: 'See a broken sidewalk, a missing ramp, or a blocked path? Drop a pin so others can plan around it. A few seconds from you saves a real headache for someone else.',
   },
   {
-    emoji: '✅',
+    icon: 'checkmark-circle-outline',
+    iconColor: '#34d399',
     title: "Verify others' reports",
-    body: "When you pass a flagged spot, you can confirm it's still an issue — or mark it resolved if it's been fixed. That's how the map stays trustworthy over time.",
+    body: "When you pass a flagged spot, confirm it's still an issue — or mark it resolved if it's been fixed. That's how the map stays trustworthy over time.",
   },
   {
-    emoji: '⭐',
+    icon: 'star-outline',
+    iconColor: '#fbbf24',
     title: 'Earn points for accuracy',
     body: 'You earn points when your reports get verified or resolved, and when you verify or resolve others. The points reward real, helpful contributions.',
   },
@@ -120,14 +127,26 @@ export default function OnboardingCards({ onDone }: Props) {
   const isFirst = index === 0;
   const isLast = index === CARDS.length - 1;
 
+  const card = CARDS[index]!;
+
   return (
     <Modal visible animationType="fade" onRequestClose={onDone} presentationStyle="fullScreen">
       <View style={styles.screen} accessibilityViewIsModal importantForAccessibility="yes">
-        {/* Top row: Skip always visible top-right. */}
+        {/* Full-screen gradient */}
+        <LinearGradient
+          colors={['#070b18', '#0c1628', '#0f2040']}
+          start={{ x: 0.3, y: 0 }}
+          end={{ x: 0.7, y: 1 }}
+          style={StyleSheet.absoluteFill}
+        />
+        {/* Ambient glow behind icon */}
+        <View style={[styles.glowOrb, { backgroundColor: card.iconColor + '22' }]} pointerEvents="none" />
+
+        {/* Skip */}
         <View style={styles.topBar}>
           <Pressable
             onPress={onDone}
-            style={styles.skipBtn}
+            style={({ pressed }) => [styles.skipBtn, pressed && { opacity: 0.6 }]}
             accessibilityRole="button"
             accessibilityLabel="Skip the tutorial"
             accessibilityHint="Closes the tutorial and opens the app"
@@ -137,8 +156,7 @@ export default function OnboardingCards({ onDone }: Props) {
           </Pressable>
         </View>
 
-        {/* Card carousel. Swipe is sighted-only; SR users navigate via the
-            Back / Next buttons below, which announce position in the label. */}
+        {/* Card carousel */}
         <ScrollView
           ref={scrollRef}
           horizontal
@@ -146,42 +164,41 @@ export default function OnboardingCards({ onDone }: Props) {
           showsHorizontalScrollIndicator={false}
           onMomentumScrollEnd={handleScroll}
           style={styles.scroll}
+          scrollEnabled={!reduceMotion}
         >
-          {CARDS.map((card, i) => (
-            // No `accessible` here — keeping each child individually
-            // focusable preserves the heading role for the VoiceOver
-            // rotor (otherwise the whole card collapses to one label).
-            <View key={card.title} style={[styles.card, { width }]}>
-              <Text
-                style={styles.emoji}
-                accessibilityElementsHidden
-                importantForAccessibility="no-hide-descendants"
-              >
-                {card.emoji}
-              </Text>
-              <Text style={styles.position}>{`Card ${i + 1} of ${CARDS.length}`}</Text>
-              <Text style={styles.title} accessibilityRole="header">
-                {card.title}
-              </Text>
-              <Text style={styles.body}>{card.body}</Text>
+          {CARDS.map((c, i) => (
+            <View key={c.title} style={[styles.cardOuter, { width }]}>
+              {/* Icon circle */}
+              <View style={[styles.iconCircle, { borderColor: c.iconColor + '40', shadowColor: c.iconColor }]}>
+                <Ionicons name={c.icon} size={52} color={c.iconColor} />
+              </View>
+
+              {/* Position pill */}
+              <View style={styles.positionPill}>
+                <Text style={styles.positionText}>{`${i + 1} / ${CARDS.length}`}</Text>
+              </View>
+
+              {/* Text content — glass card */}
+              <View style={styles.cardContent}>
+                <Text style={styles.title} accessibilityRole="header">{c.title}</Text>
+                <Text style={styles.body}>{c.body}</Text>
+              </View>
             </View>
           ))}
         </ScrollView>
 
-        {/* Pagination dots — decorative; the buttons + label carry the
-            real position information for SR. */}
+        {/* Dots */}
         <View
           style={styles.dotsRow}
           importantForAccessibility="no-hide-descendants"
           accessibilityElementsHidden
         >
-          {CARDS.map((card, i) => (
-            <View key={card.title} style={[styles.dot, i === index && styles.dotActive]} />
+          {CARDS.map((c, i) => (
+            <View key={c.title} style={[styles.dot, i === index && styles.dotActive, i === index && { shadowColor: card.iconColor }]} />
           ))}
         </View>
 
-        {/* Bottom action row: Back (faded + disabled on card 1) on the left,
-            Next / Get Started on the right. */}
+        {/* Actions */}
         <View style={styles.actions}>
           <Pressable
             onPress={() => goTo(index - 1)}
@@ -189,14 +206,10 @@ export default function OnboardingCards({ onDone }: Props) {
             style={({ pressed }) => [
               styles.backBtn,
               isFirst && styles.backBtnDisabled,
-              pressed && !isFirst && styles.btnPressed,
+              pressed && !isFirst && { opacity: 0.6 },
             ]}
             accessibilityRole="button"
-            accessibilityLabel={
-              isFirst
-                ? 'Back. Disabled on the first card.'
-                : `Back to card ${index} of ${CARDS.length}`
-            }
+            accessibilityLabel={isFirst ? 'Back. Disabled on first card.' : `Back to card ${index} of ${CARDS.length}`}
             accessibilityState={{ disabled: isFirst }}
             hitSlop={8}
           >
@@ -206,22 +219,34 @@ export default function OnboardingCards({ onDone }: Props) {
           {!isLast ? (
             <Pressable
               onPress={() => goTo(index + 1)}
-              style={({ pressed }) => [styles.primaryBtn, pressed && styles.btnPressed]}
+              style={({ pressed }) => [pressed && { opacity: 0.88 }]}
               accessibilityRole="button"
-              accessibilityLabel={`Next. Currently on card ${index + 1} of ${CARDS.length}.`}
-              accessibilityHint="Moves to the next tutorial card"
+              accessibilityLabel={`Next. Card ${index + 1} of ${CARDS.length}.`}
             >
-              <Text style={styles.primaryBtnText}>Next</Text>
+              <LinearGradient
+                colors={['#3b82f6', '#2563eb', '#1d4ed8']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.primaryBtn}
+              >
+                <Text style={styles.primaryBtnText}>Next</Text>
+              </LinearGradient>
             </Pressable>
           ) : (
             <Pressable
               onPress={onDone}
-              style={({ pressed }) => [styles.primaryBtn, pressed && styles.btnPressed]}
+              style={({ pressed }) => [pressed && { opacity: 0.88 }]}
               accessibilityRole="button"
               accessibilityLabel="Get Started"
-              accessibilityHint="Completes the tutorial and opens the app"
             >
-              <Text style={styles.primaryBtnText}>Get Started</Text>
+              <LinearGradient
+                colors={['#3b82f6', '#2563eb', '#1d4ed8']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.primaryBtn}
+              >
+                <Text style={styles.primaryBtnText}>Get Started</Text>
+              </LinearGradient>
             </Pressable>
           )}
         </View>
