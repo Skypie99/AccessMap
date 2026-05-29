@@ -49,6 +49,7 @@ import {
 } from '@/lib/taskSelection';
 import { loadScope, saveScope } from '@/lib/tasksScope';
 import { addWatchedBulk } from '@/lib/watchedFlags';
+import { track } from '@/lib/analytics';
 import type { FlagCategory, FlagRow, FlagStatus } from '@/types/database';
 import type { RootTabParamList } from '@/navigation/RootNavigator';
 import FlagDetailModal, { type DetailAction } from '@/components/FlagDetailModal';
@@ -330,6 +331,7 @@ export default function TasksScreen() {
       for (const id of targetIds) {
         try {
           const updated = await updateFlagStatus(id, targetStatus);
+          track('flag_status_changed', { flagId: id, from: updated.status === targetStatus ? 'open' : updated.status, to: targetStatus });
           if (action === 'verify') {
             // Verify keeps the flag visible (status becomes 'verified'),
             // so patch the store with the new row.
@@ -525,6 +527,7 @@ export default function TasksScreen() {
           if (selection.active) {
             setSelection((s) => toggleId(s, flag.id));
           } else {
+            track('flag_viewed', { flagId: flag.id, source: 'tasks' });
             handleViewOnMap(flag);
           }
         }}
