@@ -41,8 +41,8 @@ export default function HamburgerDrawer({ open, onClose }: Props) {
   const styles = makeStyles(color);
   const { user } = useAuth();
 
-  const slideAnim = useRef(new Animated.Value(-DRAWER_WIDTH)).current;
-  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const [slideAnim] = useState(() => new Animated.Value(-DRAWER_WIDTH));
+  const [fadeAnim] = useState(() => new Animated.Value(0));
   const [subScreen, setSubScreen] = useState<SubScreen | null>(null);
 
   useEffect(() => {
@@ -74,7 +74,7 @@ export default function HamburgerDrawer({ open, onClose }: Props) {
         }),
       ]).start();
     }
-  }, [open, slideAnim, fadeAnim]);
+  }, [open]);
 
   const closeDrawer = useCallback(() => {
     onClose();
