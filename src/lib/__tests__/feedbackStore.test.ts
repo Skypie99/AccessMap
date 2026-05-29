@@ -131,9 +131,7 @@ describe('submitFeedback', () => {
 
     await submitFeedback({ body: 'anon', category: 'other' });
 
-    expect(mockInsert).toHaveBeenCalledWith(
-      expect.objectContaining({ user_id: null }),
-    );
+    expect(mockInsert).toHaveBeenCalledWith(expect.objectContaining({ user_id: null }));
   });
 
   it('trims and caps the body before sending to supabase', async () => {
@@ -175,9 +173,7 @@ describe('submitFeedback', () => {
     });
 
     await submitFeedback({ body: 'x', category: 'bug', userId: 'u1' });
-    expect(mockInsert).toHaveBeenCalledWith(
-      expect.objectContaining({ platform: 'ios' }),
-    );
+    expect(mockInsert).toHaveBeenCalledWith(expect.objectContaining({ platform: 'ios' }));
   });
 });
 

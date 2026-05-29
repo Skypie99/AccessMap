@@ -14,14 +14,7 @@
  */
 
 import React from 'react';
-import {
-  Pressable,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-  type ViewStyle,
-} from 'react-native';
+import { Pressable, StyleSheet, Text, TextInput, View, type ViewStyle } from 'react-native';
 import { decorativeProps } from '@/lib/accessibility';
 import { font, radius, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
@@ -77,10 +70,7 @@ export default function SearchInputRow({
         <Pressable
           onPress={onClear}
           hitSlop={8}
-          style={({ pressed }) => [
-            styles.searchClear,
-            pressed && styles.searchClearPressed,
-          ]}
+          style={({ pressed }) => [styles.searchClear, pressed && styles.searchClearPressed]}
           accessibilityRole="button"
           accessibilityLabel="Clear search"
         >

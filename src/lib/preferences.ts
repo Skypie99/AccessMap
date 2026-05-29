@@ -38,10 +38,7 @@ export async function getDefaultTab(userId: string): Promise<DefaultTab> {
   }
 }
 
-export async function setDefaultTab(
-  userId: string,
-  tab: DefaultTab,
-): Promise<void> {
+export async function setDefaultTab(userId: string, tab: DefaultTab): Promise<void> {
   try {
     await AsyncStorage.setItem(defaultTabKey(userId), tab);
   } catch {

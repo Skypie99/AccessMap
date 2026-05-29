@@ -17,10 +17,7 @@ import {
   listFlags,
   listFlagsPage,
 } from './flags';
-import {
-  type FlagRealtimePayload,
-  mergeFlagRealtimePayload,
-} from './flagsRealtime';
+import { type FlagRealtimePayload, mergeFlagRealtimePayload } from './flagsRealtime';
 import { supabase } from './supabase';
 import type { FlagRow, FlagStatus } from '@/types/database';
 
@@ -29,8 +26,7 @@ import type { FlagRow, FlagStatus } from '@/types/database';
 // ---------------------------------------------------------------------------
 
 /** Jordan Condition 2 — user-scoped key so no cross-user data leakage. */
-export const offlineCacheKey = (userId: string): string =>
-  `@accessmap/offline_flags_v1:${userId}`;
+export const offlineCacheKey = (userId: string): string => `@accessmap/offline_flags_v1:${userId}`;
 
 /** Jordan Condition 3 — 24-hour TTL. */
 export const MAX_CACHE_AGE_MS = 24 * 60 * 60 * 1000;
@@ -79,11 +75,7 @@ async function readFlagsCache(userId: string): Promise<FlagRow[] | null> {
     const raw = await AsyncStorage.getItem(offlineCacheKey(userId));
     if (!raw) return null;
     const entry = JSON.parse(raw) as OfflineCacheEntry;
-    if (
-      !entry ||
-      typeof entry.cachedAt !== 'string' ||
-      !Array.isArray(entry.rows)
-    ) {
+    if (!entry || typeof entry.cachedAt !== 'string' || !Array.isArray(entry.rows)) {
       return null;
     }
     // Jordan Condition 3 — reject stale entries.
@@ -206,9 +198,7 @@ export function FlagsProvider({
         : listFlags(current).then((rows) => ({ rows, nextCursor: null }));
 
     const cachePromise: Promise<FlagRow[] | null> =
-      isDefaultStatuses && currentUserId
-        ? readFlagsCache(currentUserId)
-        : Promise.resolve(null);
+      isDefaultStatuses && currentUserId ? readFlagsCache(currentUserId) : Promise.resolve(null);
 
     try {
       const [networkResult, cachedResult] = await Promise.allSettled([
@@ -235,8 +225,7 @@ export function FlagsProvider({
         }
       } else {
         // Network failed — try the cache that was already fetched in parallel.
-        const cached =
-          cachedResult.status === 'fulfilled' ? cachedResult.value : null;
+        const cached = cachedResult.status === 'fulfilled' ? cachedResult.value : null;
         if (cached !== null && seq === fetchSeqRef.current) {
           setFlags(cached);
           setIsOfflineCache(true);
@@ -317,20 +306,14 @@ export function FlagsProvider({
   useEffect(() => {
     const channel = supabase
       .channel('public-flags')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'flags' },
-        (raw) => {
-          const evt = {
-            eventType: raw.eventType,
-            new: raw.new,
-            old: raw.old,
-          } as FlagRealtimePayload;
-          setFlags((prev) =>
-            mergeFlagRealtimePayload(prev, evt, statusesRef.current),
-          );
-        },
-      )
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'flags' }, (raw) => {
+        const evt = {
+          eventType: raw.eventType,
+          new: raw.new,
+          old: raw.old,
+        } as FlagRealtimePayload;
+        setFlags((prev) => mergeFlagRealtimePayload(prev, evt, statusesRef.current));
+      })
       .subscribe();
     return () => {
       supabase.removeChannel(channel);
@@ -370,7 +353,21 @@ export function FlagsProvider({
       removeFlag,
       isOfflineCache,
     }),
-    [flags, flagsMap, loading, error, refresh, loadMore, loadingMore, hasMore, statuses, setStatuses, patchFlag, removeFlag, isOfflineCache],
+    [
+      flags,
+      flagsMap,
+      loading,
+      error,
+      refresh,
+      loadMore,
+      loadingMore,
+      hasMore,
+      statuses,
+      setStatuses,
+      patchFlag,
+      removeFlag,
+      isOfflineCache,
+    ],
   );
 
   return <FlagsContext.Provider value={value}>{children}</FlagsContext.Provider>;

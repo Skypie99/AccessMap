@@ -44,9 +44,7 @@ export interface StatusHistoryEntry {
  * order ("Reported" first, then each transition in the order it
  * happened) — which matches how users read a timeline.
  */
-export async function listStatusHistory(
-  flagId: string,
-): Promise<StatusHistoryEntry[]> {
+export async function listStatusHistory(flagId: string): Promise<StatusHistoryEntry[]> {
   try {
     // Cast through `any` on purpose: the `flag_status_history_public`
     // view is intentionally NOT in src/types/database.ts yet because
@@ -59,7 +57,10 @@ export async function listStatusHistory(
     const client = supabase as unknown as {
       from: (table: string) => {
         select: (cols: string) => {
-          eq: (col: string, val: string) => {
+          eq: (
+            col: string,
+            val: string,
+          ) => {
             order: (
               col: string,
               opts: { ascending: boolean },

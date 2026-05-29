@@ -141,7 +141,7 @@ describe('createFlag — PGRST204 fallback when context_tags column is missing',
     mockSingle.mockResolvedValueOnce({
       data: null,
       error: {
-        message: "column flags.context_tags does not exist",
+        message: 'column flags.context_tags does not exist',
       },
     });
     mockSingle.mockResolvedValueOnce({ data: fakeRow, error: null });
@@ -162,7 +162,7 @@ describe('createFlag — capability gate is sticky after a failure', () => {
     // First call trips the gate.
     mockSingle.mockResolvedValueOnce({
       data: null,
-      error: { code: 'PGRST204', message: "context_tags missing" },
+      error: { code: 'PGRST204', message: 'context_tags missing' },
     });
     mockSingle.mockResolvedValueOnce({ data: fakeRow, error: null });
     await createFlag('user-1', { ...baseInput, context_tags: ['morning_rush'] });

@@ -40,8 +40,6 @@ describe('errorMessage', () => {
   });
 
   it('respects the optional fallback argument', () => {
-    expect(errorMessage(null, 'Could not load your reports.')).toBe(
-      'Could not load your reports.',
-    );
+    expect(errorMessage(null, 'Could not load your reports.')).toBe('Could not load your reports.');
   });
 });

@@ -9,8 +9,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Alert, Platform } from 'react-native';
 import { supabase } from './supabase';
 
-export const pushEnabledKey = (userId: string) =>
-  `@accessmap/push_enabled:${userId}`;
+export const pushEnabledKey = (userId: string) => `@accessmap/push_enabled:${userId}`;
 
 export async function getPushEnabled(userId: string): Promise<boolean> {
   try {
@@ -99,10 +98,9 @@ export async function requestExpoPushToken(): Promise<string | null> {
 export async function savePushToken(userId: string, token: string): Promise<void> {
   const platform = Platform.OS as 'ios' | 'android' | 'web';
   // Upsert — handles OS token rotation on reinstall.
-  await supabase.from('push_tokens').upsert(
-    { user_id: userId, token, platform },
-    { onConflict: 'user_id' },
-  );
+  await supabase
+    .from('push_tokens')
+    .upsert({ user_id: userId, token, platform }, { onConflict: 'user_id' });
   await AsyncStorage.setItem(pushEnabledKey(userId), 'true');
 }
 

@@ -560,8 +560,14 @@ export default function FlagDetailModal({
                   placeholder="Describe the accessibility issue"
                   placeholderTextColor={color.textMuted}
                   multiline
-                  maxLength={500}
+                  // Mirror ReportFlagModal + the DB
+                  // flags_description_length_chk constraint (2000).
+                  // Was 500 — caused silent truncation when editing a
+                  // longer description that was created via the report
+                  // flow.
+                  maxLength={2000}
                   accessibilityLabel="Flag description"
+                  accessibilityHint="Up to 2000 characters."
                 />
                 <Text style={styles.editLabel}>Category</Text>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoryRow}>
@@ -620,7 +626,7 @@ export default function FlagDetailModal({
                     accessibilityState={{ busy, disabled: busy }}
                   >
                     {busy ? (
-                      <ActivityIndicator size="small" color="#fff" />
+                      <ActivityIndicator size="small" color={color.textOnBrand} />
                     ) : (
                       <Text style={styles.saveBtnText}>Save</Text>
                     )}
@@ -706,7 +712,7 @@ export default function FlagDetailModal({
                 accessibilityState={{ disabled: busy, busy }}
               >
                 {busy ? (
-                  <ActivityIndicator color="#fff" />
+                  <ActivityIndicator color={color.textOnBrand} />
                 ) : (
                   <Text style={styles.verifyText}>Verify</Text>
                 )}
@@ -723,7 +729,7 @@ export default function FlagDetailModal({
                 accessibilityState={{ disabled: busy, busy }}
               >
                 {busy ? (
-                  <ActivityIndicator color="#fff" />
+                  <ActivityIndicator color={color.textOnBrand} />
                 ) : (
                   <Text style={styles.resolveText}>Resolved</Text>
                 )}
@@ -757,7 +763,7 @@ export default function FlagDetailModal({
                 accessibilityState={{ disabled: busy, busy }}
               >
                 {busy ? (
-                  <ActivityIndicator color="#fff" />
+                  <ActivityIndicator color={color.textOnBrand} />
                 ) : (
                   <Text style={styles.deleteText}>Delete</Text>
                 )}
@@ -844,7 +850,7 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
     paddingVertical: 6,
     borderRadius: radius.circle,
   },
-  severityChipText: { color: '#fff', fontWeight: '700', fontSize: 12 },
+  severityChipText: { color: color.textOnBrand, fontWeight: '700', fontSize: 12 },
   statusBadge: {
     paddingHorizontal: 10,
     paddingVertical: 6,
@@ -910,14 +916,14 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
   },
   verifyBtn: { backgroundColor: color.brand },
   verifyText: { color: color.textOnBrand, fontWeight: '700', fontSize: 14 },
-  resolveBtn: { backgroundColor: '#27ae60' },
-  resolveText: { color: '#fff', fontWeight: '700', fontSize: 14 },
+  resolveBtn: { backgroundColor: color.success },
+  resolveText: { color: color.textOnBrand, fontWeight: '700', fontSize: 14 },
   // Reject uses a neutral surface so it reads clearly in dark mode.
   // color.surfaceNeutral adapts to dark (#2a2a2a) automatically.
   rejectBtn: { backgroundColor: color.surfaceNeutral },
   rejectText: { color: color.text, fontWeight: '700', fontSize: 14 },
-  deleteBtn: { backgroundColor: '#e74c3c' },
-  deleteText: { color: '#fff', fontWeight: '700', fontSize: 14 },
+  deleteBtn: { backgroundColor: color.errorStrong },
+  deleteText: { color: color.textOnBrand, fontWeight: '700', fontSize: 14 },
   viewMapBtn: {
     backgroundColor: 'transparent',
     borderWidth: 1,
@@ -969,27 +975,27 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
     paddingVertical: 9,
     borderRadius: radius.circle,
     borderWidth: 1.5,
-    borderColor: '#bbb',
+    borderColor: color.borderStrong,
     marginTop: 10,
   },
   watchBtnActive: {
     borderColor: color.accentOrange,
-    backgroundColor: '#fff8e7',
+    backgroundColor: color.warningBg,
   },
   watchBtnPressed: {
     opacity: 0.7,
   },
   watchBtnGlyph: {
     fontSize: 16,
-    color: '#888',
+    color: color.textSubtle,
   },
   watchBtnText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#555',
+    color: color.text,
   },
   watchBtnTextActive: {
-    color: '#b07800',
+    color: color.warningFg,
   },
   editBtn: { backgroundColor: color.surface, borderWidth: 1.5, borderColor: color.border },
   editBtnText: { color: color.text, fontWeight: '700', fontSize: 14 },
@@ -1033,7 +1039,7 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
     backgroundColor: color.surface,
   },
   severityBtnText: { fontSize: 14, fontWeight: '700', color: color.text },
-  severityBtnTextActive: { color: '#fff' },
+  severityBtnTextActive: { color: color.textOnBrand },
   editActions: { flexDirection: 'row', gap: 10, marginTop: 4 },
   cancelBtn: { flex: 1, backgroundColor: color.surface, borderWidth: 1.5, borderColor: color.border },
   cancelBtnText: { color: color.text, fontWeight: '700', fontSize: 14 },

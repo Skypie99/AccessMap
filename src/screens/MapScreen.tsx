@@ -15,7 +15,7 @@ import {
 import * as Location from 'expo-location';
 import { useRoute, type RouteProp } from '@react-navigation/native';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
-import { radius } from '@/theme';
+import { radius, shadow } from '@/theme';
 import { errorMessage } from '@/lib/errors';
 import {
   CATEGORY_ICONS,
@@ -40,6 +40,16 @@ import {
   loadFilterPanelCollapsed,
   saveFilterPanelCollapsed,
 } from '@/lib/filterPanelPrefs';
+import {
+  loadHeatmapEnabled,
+  saveHeatmapEnabled,
+} from '@/lib/heatmapPrefs';
+import {
+  bucketFlagsToCells,
+  DEFAULT_HEATMAP_MODE,
+  DEFAULT_K_FLOOR,
+  type HeatmapMode,
+} from '@/lib/heatmap';
 import {
   deleteSet,
   FilterSetError,
@@ -70,6 +80,7 @@ import PlatformMap, {
 import { useScreenReader, useReducedMotion } from '@/lib/accessibility';
 import ReportFlagModal from './ReportFlagModal';
 import LegendModal from './LegendModal';
+import HeatmapLegend from '@/components/HeatmapLegend';
 import NearbyFlagsModal from './NearbyFlagsModal';
 import AddressSearchModal from '@/components/AddressSearchModal';
 import SavedPlacesModal from '@/components/SavedPlacesModal';
@@ -94,6 +105,20 @@ const DEFAULT_REGION: PlatformMapRegion = {
 // (empty Set), followed by each category in display order. Defined here
 // (module-level) so the useCallback below can reference it without a dep.
 const CATEGORY_CYCLE: Array<FlagCategory | null> = [null, ...CATEGORY_ORDER];
+
+// ----------------------------------------------------------------------------
+// Heat-map render mode — single config constant for Sky's D5 follow-up.
+//
+// Sky pre-approved a gradient (D5 = yes) and Dani's design compile signed off
+// with POLISH. The contingency: if the gradient reads as too busy in real
+// testing, Sky flips this constant to 'density' and ships a uniform
+// brand-tinted layer instead. ONE-LINE CHANGE here — no other code in the
+// screen / map / clustering lib has to move.
+//
+// Jordan's k>=3 floor is enforced inside `bucketFlagsToCells`; lowering it
+// requires a fresh privacy review.
+// ----------------------------------------------------------------------------
+const HEATMAP_MODE: HeatmapMode = DEFAULT_HEATMAP_MODE;
 
 export default function MapScreen() {
   const color = useColor();
@@ -199,6 +224,12 @@ export default function MapScreen() {
   // initial default during the brief mount→load window.
   const [panelCollapsed, setPanelCollapsed] = useState(false);
   const [panelCollapsedHydrated, setPanelCollapsedHydrated] = useState(false);
+  // Heat-map toggle — defaults to OFF (Dani's design compile: don't obscure
+  // pins on first load). Persisted via heatmapPrefs.ts. `heatmapHydrated`
+  // gates the save-effect so we don't clobber the stored value during the
+  // brief mount→load window.
+  const [heatmapEnabled, setHeatmapEnabled] = useState(false);
+  const [heatmapHydrated, setHeatmapHydrated] = useState(false);
   const [activeCategories, setActiveCategories] = useState<Set<FlagCategory>>(
     new Set(),
   );
@@ -371,11 +402,12 @@ export default function MapScreen() {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const [saved, sets, storedDefault, collapsed] = await Promise.all([
+      const [saved, sets, storedDefault, collapsed, heatOn] = await Promise.all([
         loadMapFilters(),
         listSets(),
         getDefaultSetId(),
         loadFilterPanelCollapsed(),
+        loadHeatmapEnabled(),
       ]);
       if (cancelled) return;
       const defaultSet =
@@ -398,8 +430,10 @@ export default function MapScreen() {
       setSavedSets(sets);
       setDefaultIdState(defaultSet ? defaultSet.id : null);
       setPanelCollapsed(collapsed);
+      setHeatmapEnabled(heatOn);
       setFiltersHydrated(true);
       setPanelCollapsedHydrated(true);
+      setHeatmapHydrated(true);
     })();
     return () => {
       cancelled = true;
@@ -413,6 +447,12 @@ export default function MapScreen() {
     if (!panelCollapsedHydrated) return;
     saveFilterPanelCollapsed(panelCollapsed);
   }, [panelCollapsed, panelCollapsedHydrated]);
+
+  // Persist the heat-map visibility toggle. Same fire-and-forget pattern.
+  useEffect(() => {
+    if (!heatmapHydrated) return;
+    saveHeatmapEnabled(heatmapEnabled);
+  }, [heatmapEnabled, heatmapHydrated]);
 
   // Apply a saved set: copy its filter triple over the active filters.
   // The existing save-effect below pushes the new values through to
@@ -687,6 +727,16 @@ export default function MapScreen() {
     location,
   ]);
 
+  // Heat-cell aggregation — buckets the currently-visible flag set onto
+  // the grid and drops anything below the privacy floor (k>=3). Memoised
+  // so a parent re-render that doesn't touch flags/toggle doesn't redo
+  // the pass. Skipped entirely when the toggle is off so the layer has
+  // zero cost on the default-off path.
+  const heatCells = useMemo(() => {
+    if (!heatmapEnabled) return [];
+    return bucketFlagsToCells(filteredFlags);
+  }, [heatmapEnabled, filteredFlags]);
+
   // Announce the empty-results state to iOS screen readers when it appears
   // (Android picks it up via the alert's accessibilityLiveRegion). Only
   // fires on transitions into "0 results" — not on every re-render while
@@ -813,14 +863,23 @@ export default function MapScreen() {
     };
   }, [route.params?.flagId]);
 
-  const initialRegion: PlatformMapRegion = location
-    ? {
-        latitude: location.lat,
-        longitude: location.lng,
-        latitudeDelta: 0.01,
-        longitudeDelta: 0.01,
-      }
-    : DEFAULT_REGION;
+  // Memoized so the React.memo on PlatformMap can actually skip re-renders
+  // when MapScreen re-renders for reasons unrelated to the map's seed region
+  // (filter panel toggles, modal opens, name-draft text input, etc.).
+  // Without memoization this object identity changes every render, defeating
+  // shallow prop equality.
+  const initialRegion: PlatformMapRegion = useMemo(
+    () =>
+      location
+        ? {
+            latitude: location.lat,
+            longitude: location.lng,
+            latitudeDelta: 0.01,
+            longitudeDelta: 0.01,
+          }
+        : DEFAULT_REGION,
+    [location],
+  );
 
   // Long-press anywhere on the map → confirm prompt → open the report
   // modal with that coord pre-filled. The confirm step matters: a
@@ -873,6 +932,8 @@ export default function MapScreen() {
         showsUserLocation
         reducedMotion={reducedMotion}
         onLongPressMap={handleMapLongPress}
+        heatCells={heatCells}
+        heatmapMode={HEATMAP_MODE}
       />
 
       <View pointerEvents="box-none" style={styles.overlay}>
@@ -1261,6 +1322,41 @@ export default function MapScreen() {
               })}
             </View>
 
+            {/* Heat-map toggle — sits above Status because it's a render
+                axis (what gets drawn) not a fetch axis (what gets fetched).
+                Hidden under panelCollapsed alongside the rest of the panel.
+                Off by default per Dani's design compile. */}
+            <Text style={styles.filterSubLabel}>Layers</Text>
+            <View style={styles.filterRow}>
+              <Pressable
+                onPress={() => setHeatmapEnabled((v) => !v)}
+                style={[
+                  styles.filterPill,
+                  heatmapEnabled && styles.filterPillActive,
+                ]}
+                accessibilityRole="switch"
+                accessibilityLabel="Show neighbourhood heat map"
+                accessibilityState={{ checked: heatmapEnabled }}
+                accessibilityHint={`Overlays a coloured grid that summarises severity across neighbourhoods. Only areas with at least ${DEFAULT_K_FLOOR} reports are shown.`}
+              >
+                <Text
+                  style={[
+                    styles.filterPillText,
+                    heatmapEnabled && styles.filterPillTextActive,
+                  ]}
+                >
+                  {heatmapEnabled ? '✓ Heat map' : 'Heat map'}
+                </Text>
+              </Pressable>
+            </View>
+            {heatmapEnabled && (
+              <Text style={styles.statusHint}>
+                Heat zones only appear where at least {DEFAULT_K_FLOOR} flags
+                have been reported. Colour shows mean severity (1–5); the
+                legend explains the full scale.
+              </Text>
+            )}
+
             <Text style={styles.filterSubLabel}>Status</Text>
             <View style={styles.filterRow}>
               {STATUS_ORDER.map((s) => {
@@ -1485,35 +1581,39 @@ export default function MapScreen() {
           </View>
         )}
 
-        <View style={styles.fabColumn}>
-          <Pressable
-            style={({ pressed }) => [
-              styles.fab,
-              styles.fabSecondary,
-              pressed && styles.fabPressed,
-            ]}
-            onPress={() => setNearbyOpen(true)}
-            accessibilityRole="button"
-            accessibilityLabel="Open nearby flags list"
-            accessibilityHint="Opens an accessible list of flags sorted by distance"
-          >
-            <Text style={styles.fabSecondaryText}>📋 List</Text>
-          </Pressable>
-          <Pressable
-            style={({ pressed }) => [
-              styles.fab,
-              !location && styles.fabDisabled,
-              pressed && styles.fabPressed,
-            ]}
-            onPress={() => setReportOpen(true)}
-            disabled={!location}
-            accessibilityRole="button"
-            accessibilityLabel="Report a flag here"
-            accessibilityHint="Opens a form to report an accessibility issue at your current location"
-            accessibilityState={{ disabled: !location }}
-          >
-            <Text style={styles.fabText}>＋ Report</Text>
-          </Pressable>
+        {/* Bottom bar: legend (left, conditional) + FABs (right) */}
+        <View style={styles.bottomBar}>
+          {heatmapEnabled ? <HeatmapLegend /> : <View />}
+          <View style={styles.fabColumn}>
+            <Pressable
+              style={({ pressed }) => [
+                styles.fab,
+                styles.fabSecondary,
+                pressed && styles.fabPressed,
+              ]}
+              onPress={() => setNearbyOpen(true)}
+              accessibilityRole="button"
+              accessibilityLabel="Open nearby flags list"
+              accessibilityHint="Opens an accessible list of flags sorted by distance"
+            >
+              <Text style={styles.fabSecondaryText}>📋 List</Text>
+            </Pressable>
+            <Pressable
+              style={({ pressed }) => [
+                styles.fab,
+                !location && styles.fabDisabled,
+                pressed && styles.fabPressed,
+              ]}
+              onPress={() => setReportOpen(true)}
+              disabled={!location}
+              accessibilityRole="button"
+              accessibilityLabel="Report a flag here"
+              accessibilityHint="Opens a form to report an accessibility issue at your current location"
+              accessibilityState={{ disabled: !location }}
+            >
+              <Text style={styles.fabText}>＋ Report</Text>
+            </Pressable>
+          </View>
         </View>
       </View>
 
@@ -1793,11 +1893,7 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
     // a11y minimum + WCAG 2.5.5). Bumped from 36 per QA A1.
     minHeight: 44,
     maxWidth: 180,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    shadowOffset: { width: 0, height: 1 },
-    elevation: 1,
+    ...shadow.e1,
   },
   placeChipPressed: { backgroundColor: color.surfaceNeutral, opacity: 0.9 },
   // The trailing manage chip uses a tinted background so the affordance
@@ -1807,29 +1903,21 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
   placeChipText: { fontSize: 13, fontWeight: '600', color: color.brandTextAlt },
   statusPill: {
     flex: 1,
-    backgroundColor: 'rgba(255,255,255,0.95)',
+    backgroundColor: color.overlaySoft,
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: radius.circle,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 1 },
-    elevation: 2,
+    ...shadow.e1,
   },
-  statusText: { fontSize: 13, color: '#333', fontWeight: '600' },
+  statusText: { fontSize: 13, color: color.text, fontWeight: '600' },
   iconBtn: {
     width: 36,
     height: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(255,255,255,0.95)',
+    borderRadius: radius.circle,
+    backgroundColor: color.overlaySoft,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 1 },
-    elevation: 2,
+    ...shadow.e1,
   },
   iconText: { fontSize: 18, color: color.brand, fontWeight: '700' },
   iconBtnActive: { backgroundColor: color.brand },
@@ -1848,18 +1936,12 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
   // the cheap "scattered buttons" look the user called out.
   actionBar: {
     flexDirection: 'row',
-    backgroundColor: 'rgba(255,255,255,0.97)',
+    backgroundColor: color.overlay,
     borderRadius: radius.circle,
     paddingHorizontal: 4,
     paddingVertical: 2,
     alignItems: 'center',
-    // Slightly deeper shadow than the individual iconBtns it replaced,
-    // so the merged surface still feels lifted.
-    shadowColor: '#000',
-    shadowOpacity: 0.14,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 4,
+    ...shadow.e2,
   },
   actionBtn: {
     width: 36,
@@ -1872,26 +1954,22 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
   actionDivider: {
     width: 1,
     height: 18,
-    backgroundColor: '#e5e5e5',
+    backgroundColor: color.border,
   },
   filterPanel: {
     marginTop: 8,
-    backgroundColor: 'rgba(255,255,255,0.97)',
-    borderRadius: 14,
+    backgroundColor: color.overlay,
+    borderRadius: radius.lg,
     padding: 12,
     gap: 8,
-    shadowColor: '#000',
-    shadowOpacity: 0.12,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 3,
+    ...shadow.e2,
   },
   filterHeaderRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  filterTitle: { fontSize: 14, fontWeight: '700', color: '#222' },
+  filterTitle: { fontSize: 14, fontWeight: '700', color: color.textStrong },
   filterTitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1906,9 +1984,9 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
   clearLink: { fontSize: 12, color: color.brand, fontWeight: '600' },
   filterSubLabel: {
     fontSize: 11,
-    color: '#666',
+    color: color.textMuted,
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    letterSpacing: 0.6,
     marginTop: 4,
   },
   filterRow: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
@@ -1919,7 +1997,7 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
     backgroundColor: color.surfaceNeutral,
   },
   filterPillActive: { backgroundColor: color.brand },
-  filterPillText: { fontSize: 12, color: '#333', fontWeight: '600' },
+  filterPillText: { fontSize: 12, color: color.text, fontWeight: '600' },
   filterPillTextActive: { color: color.textOnBrand },
   sevPill: {
     width: 44,
@@ -1929,12 +2007,12 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: color.surfaceNeutral,
   },
-  sevPillText: { fontSize: 13, color: '#333', fontWeight: '700' },
+  sevPillText: { fontSize: 13, color: color.text, fontWeight: '700' },
   sevPillTextActive: { color: color.textOnBrand },
-  statusHint: { fontSize: 11, color: '#a04040', marginTop: 4 },
+  statusHint: { fontSize: 11, color: color.warningHint, marginTop: 4 },
   banner: {
     alignSelf: 'center',
-    backgroundColor: 'rgba(255,255,255,0.95)',
+    backgroundColor: color.overlaySoft,
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 8,
@@ -1942,7 +2020,7 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
     gap: 8,
     alignItems: 'center',
   },
-  bannerText: { fontSize: 13, color: '#333' },
+  bannerText: { fontSize: 13, color: color.text },
   errorBanner: {
     marginTop: 8,
     backgroundColor: color.error,
@@ -1953,11 +2031,7 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
     gap: 10,
     alignItems: 'center',
     minHeight: 44,
-    shadowColor: '#000',
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 3,
+    ...shadow.e2,
   },
   errorBannerBusy: { opacity: 0.85 },
   errorBannerPressed: { opacity: 0.7 },
@@ -1967,28 +2041,25 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
     alignSelf: 'center',
     marginTop: 16,
     maxWidth: 320,
-    backgroundColor: 'rgba(255,255,255,0.98)',
+    backgroundColor: color.overlay,
     paddingHorizontal: 20,
     paddingVertical: 18,
-    borderRadius: 14,
+    borderRadius: radius.lg,
     gap: 8,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 4,
+    ...shadow.e2,
   },
   emptyCardIcon: { fontSize: 28 },
   emptyCardTitle: {
     fontSize: 15,
     fontWeight: '700',
-    color: '#222',
+    color: color.textStrong,
     textAlign: 'center',
+    letterSpacing: -0.1,
   },
   emptyCardBody: {
     fontSize: 13,
-    color: '#666',
+    color: color.textMuted,
     textAlign: 'center',
     lineHeight: 18,
   },
@@ -2003,31 +2074,31 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
   },
   emptyCardBtnPressed: { opacity: 0.8 },
   emptyCardBtnText: { color: color.textOnBrand, fontSize: 14, fontWeight: '700' },
+  bottomBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
+  },
   fabColumn: {
-    alignSelf: 'flex-end',
     alignItems: 'flex-end',
     gap: 10,
   },
   fab: {
     backgroundColor: color.brand,
-    paddingHorizontal: 18,
+    paddingHorizontal: 20,
     paddingVertical: 14,
     borderRadius: radius.circle,
-    shadowColor: '#000',
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 4,
-    minHeight: 44,
+    ...shadow.e2,
+    minHeight: 48,
     justifyContent: 'center',
   },
-  fabSecondary: { backgroundColor: 'rgba(255,255,255,0.97)' },
+  fabSecondary: { backgroundColor: color.overlay },
   fabSecondaryText: { color: color.brand, fontWeight: '700', fontSize: 15 },
   fabDisabled: { opacity: 0.5 },
   fabPressed: { opacity: 0.8 },
   fabText: { color: color.textOnBrand, fontWeight: '700', fontSize: 15 },
   savedEmpty: { gap: 8, marginTop: 4 },
-  savedEmptyText: { fontSize: 12, color: '#666', lineHeight: 16 },
+  savedEmptyText: { fontSize: 12, color: color.textMuted, lineHeight: 16 },
   savedSaveBtn: {
     alignSelf: 'flex-start',
     paddingHorizontal: 12,
@@ -2080,26 +2151,32 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
   presetBtnSecondaryText: { color: color.brandText, fontWeight: '700', fontSize: 14 },
   nameBackdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.4)',
+    backgroundColor: color.scrim,
     justifyContent: 'center',
     padding: 20,
   },
   nameCard: {
     backgroundColor: color.surface,
-    borderRadius: 16,
+    borderRadius: radius.xl,
     padding: 20,
     gap: 12,
   },
-  nameTitle: { fontSize: 18, fontWeight: '700', color: '#222' },
-  nameHint: { fontSize: 12, color: '#666' },
+  nameTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: color.textStrong,
+    letterSpacing: -0.2,
+  },
+  nameHint: { fontSize: 12, color: color.textMuted },
   nameInput: {
     borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
+    borderColor: color.borderStrong,
+    borderRadius: radius.md,
     paddingHorizontal: 12,
     paddingVertical: 10,
     fontSize: 15,
     minHeight: 44,
+    color: color.text,
   },
   nameActions: { flexDirection: 'row', gap: 12, marginTop: 4 },
   nameBtn: {
@@ -2111,7 +2188,7 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
     minHeight: 44,
   },
   nameBtnCancel: { backgroundColor: color.surfaceNeutral },
-  nameBtnCancelText: { color: '#333', fontWeight: '600', fontSize: 14 },
+  nameBtnCancelText: { color: color.text, fontWeight: '600', fontSize: 14 },
   nameBtnSave: { backgroundColor: color.brand },
   nameBtnSaveDisabled: { opacity: 0.5 },
   nameBtnSaveText: { color: color.textOnBrand, fontWeight: '700', fontSize: 14 },

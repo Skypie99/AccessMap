@@ -26,12 +26,8 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
   },
 }));
 
-const mockGet = AsyncStorage.getItem as jest.MockedFunction<
-  typeof AsyncStorage.getItem
->;
-const mockSet = AsyncStorage.setItem as jest.MockedFunction<
-  typeof AsyncStorage.setItem
->;
+const mockGet = AsyncStorage.getItem as jest.MockedFunction<typeof AsyncStorage.getItem>;
+const mockSet = AsyncStorage.setItem as jest.MockedFunction<typeof AsyncStorage.setItem>;
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 function makeFlag(id: string, partial: Partial<FlagRow> = {}): FlagRow {

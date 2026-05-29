@@ -41,10 +41,7 @@
  *              Multi-word queries are AND-combined across q+a text.
  * @returns matching subset, preserving input order.
  */
-export function filterFaqs<T extends { q: string; a: string }>(
-  items: T[],
-  query: string,
-): T[] {
+export function filterFaqs<T extends { q: string; a: string }>(items: T[], query: string): T[] {
   const trimmed = query.trim();
   if (trimmed.length === 0) {
     return items;

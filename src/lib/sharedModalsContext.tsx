@@ -43,12 +43,7 @@ import React, { createContext, useContext, useMemo, useState } from 'react';
  * none is. Add a new key here when you lift another modal into the pool;
  * the union doubles as an exhaustiveness check at every callsite.
  */
-export type SharedModalKey =
-  | 'help'
-  | 'changelog'
-  | 'feedback'
-  | 'myFeedback'
-  | null;
+export type SharedModalKey = 'help' | 'changelog' | 'feedback' | 'myFeedback' | null;
 
 interface SharedModalsContextValue {
   /** The currently-open modal key, or null when nothing is open. */
@@ -62,33 +57,20 @@ interface SharedModalsContextValue {
   setOpen: (key: SharedModalKey) => void;
 }
 
-const SharedModalsContext = createContext<SharedModalsContextValue | undefined>(
-  undefined,
-);
+const SharedModalsContext = createContext<SharedModalsContextValue | undefined>(undefined);
 
 /**
  * Wrap the navigator (or any subtree that needs shared-modal access) in
  * this provider. RootNavigator does this once at the top, so every
  * screen + tab gets the same `open` slot.
  */
-export function SharedModalsProvider({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export function SharedModalsProvider({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState<SharedModalKey>(null);
   // Stable identity for the context value so consumers don't re-render
   // every time the provider re-renders for unrelated reasons. Only
   // changes when `open` actually changes.
-  const value = useMemo<SharedModalsContextValue>(
-    () => ({ open, setOpen }),
-    [open],
-  );
-  return (
-    <SharedModalsContext.Provider value={value}>
-      {children}
-    </SharedModalsContext.Provider>
-  );
+  const value = useMemo<SharedModalsContextValue>(() => ({ open, setOpen }), [open]);
+  return <SharedModalsContext.Provider value={value}>{children}</SharedModalsContext.Provider>;
 }
 
 /**
@@ -99,9 +81,7 @@ export function SharedModalsProvider({
 export function useSharedModals(): SharedModalsContextValue {
   const ctx = useContext(SharedModalsContext);
   if (!ctx) {
-    throw new Error(
-      'useSharedModals must be used inside <SharedModalsProvider>',
-    );
+    throw new Error('useSharedModals must be used inside <SharedModalsProvider>');
   }
   return ctx;
 }

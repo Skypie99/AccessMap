@@ -50,10 +50,7 @@ export function filterWatchedFlags(
   const tokens = tokenize(query);
   if (tokens.length === 0) return flags;
   return flags.filter((f) => {
-    const haystack = normalize(
-      `${f.description ?? ''} ` +
-        `${categoryLabel(f.category) ?? ''}`,
-    );
+    const haystack = normalize(`${f.description ?? ''} ` + `${categoryLabel(f.category) ?? ''}`);
     return tokens.every((tok) => haystack.includes(tok));
   });
 }

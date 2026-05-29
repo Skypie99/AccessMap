@@ -27,17 +27,20 @@ export type FeedbackCategoryFilter = 'all' | FeedbackCategoryRow;
  * on the default. The rest match the order in FEEDBACK_CATEGORIES so the
  * compose modal and the history modal stay visually aligned.
  */
-export const FEEDBACK_CATEGORY_FILTERS: ReadonlyArray<FeedbackCategoryFilter> =
-  ['all', 'bug', 'idea', 'love', 'other'];
+export const FEEDBACK_CATEGORY_FILTERS: ReadonlyArray<FeedbackCategoryFilter> = [
+  'all',
+  'bug',
+  'idea',
+  'love',
+  'other',
+];
 
 /**
  * Short labels for each chip. Kept here (not pulled from feedback.ts) so
  * the 'all' label has a home — FEEDBACK_CATEGORY_LABELS only covers the
  * four real categories.
  */
-export const FEEDBACK_CATEGORY_FILTER_LABELS: Readonly<
-  Record<FeedbackCategoryFilter, string>
-> = {
+export const FEEDBACK_CATEGORY_FILTER_LABELS: Readonly<Record<FeedbackCategoryFilter, string>> = {
   all: 'All',
   bug: 'Bug',
   idea: 'Idea',
@@ -78,17 +81,10 @@ export function filterFeedback<T extends { category: FeedbackCategoryRow }>(
  * Generic over `T extends { body: string }` for testability without
  * importing the full FeedbackRow type.
  */
-export function filterFeedbackByQuery<T extends { body: string }>(
-  items: T[],
-  query: string,
-): T[] {
+export function filterFeedbackByQuery<T extends { body: string }>(items: T[], query: string): T[] {
   const trimmed = query.trim();
   if (!trimmed) return items;
-  const tokens = trimmed
-    .normalize('NFC')
-    .toLowerCase()
-    .split(/\s+/)
-    .filter(Boolean);
+  const tokens = trimmed.normalize('NFC').toLowerCase().split(/\s+/).filter(Boolean);
   return items.filter((item) => {
     const haystack = item.body.normalize('NFC').toLowerCase();
     return tokens.every((token) => haystack.includes(token));

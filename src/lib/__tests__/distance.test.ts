@@ -15,10 +15,7 @@ describe('haversineKm', () => {
   it('measures a short street-level distance to within meters', () => {
     // Pike Place Market (47.6097, -122.3422) to Seattle Aquarium
     // (47.6075, -122.3434). Hand-calculated: ~270 m.
-    const km = haversineKm(
-      { lat: 47.6097, lng: -122.3422 },
-      { lat: 47.6075, lng: -122.3434 },
-    );
+    const km = haversineKm({ lat: 47.6097, lng: -122.3422 }, { lat: 47.6075, lng: -122.3434 });
     expect(km).toBeGreaterThan(0.2);
     expect(km).toBeLessThan(0.35);
   });
@@ -26,10 +23,7 @@ describe('haversineKm', () => {
   it('measures a multi-km city distance to within a few percent', () => {
     // Seattle (47.6062, -122.3321) to Bellevue (47.6101, -122.2015).
     // Real-world: ~9.7 km great-circle.
-    const km = haversineKm(
-      { lat: 47.6062, lng: -122.3321 },
-      { lat: 47.6101, lng: -122.2015 },
-    );
+    const km = haversineKm({ lat: 47.6062, lng: -122.3321 }, { lat: 47.6101, lng: -122.2015 });
     expect(km).toBeGreaterThan(9.5);
     expect(km).toBeLessThan(10.0);
   });
@@ -43,10 +37,7 @@ describe('haversineKm', () => {
   it('handles antipodal points', () => {
     // Halfway around Earth is ~20,015 km. Allow a generous range
     // because perfect antipodes have a degenerate haversine result.
-    const km = haversineKm(
-      { lat: 0, lng: 0 },
-      { lat: 0, lng: 180 },
-    );
+    const km = haversineKm({ lat: 0, lng: 0 }, { lat: 0, lng: 180 });
     expect(km).toBeGreaterThan(20000);
     expect(km).toBeLessThan(20050);
   });
@@ -54,10 +45,7 @@ describe('haversineKm', () => {
   it('crosses the date line correctly', () => {
     // 1° east of date line vs 1° west — should be ~222 km, not the
     // long way around the globe.
-    const km = haversineKm(
-      { lat: 0, lng: 179 },
-      { lat: 0, lng: -179 },
-    );
+    const km = haversineKm({ lat: 0, lng: 179 }, { lat: 0, lng: -179 });
     expect(km).toBeGreaterThan(200);
     expect(km).toBeLessThan(250);
   });
@@ -65,10 +53,7 @@ describe('haversineKm', () => {
   it('treats lng=180 and lng=-180 as the same point on the date line', () => {
     // Same physical location, opposite sign conventions. Haversine
     // should yield ~0 km (within floating-point noise).
-    const km = haversineKm(
-      { lat: 0, lng: 180 },
-      { lat: 0, lng: -180 },
-    );
+    const km = haversineKm({ lat: 0, lng: 180 }, { lat: 0, lng: -180 });
     expect(km).toBeLessThan(0.001);
   });
 
@@ -77,10 +62,7 @@ describe('haversineKm', () => {
     // Earth's circumference, ~10,007 km. Critically, the result must
     // be a finite number — a naive haversine that doesn't clamp the
     // asin input can produce NaN at the poles.
-    const km = haversineKm(
-      { lat: 90, lng: 0 },
-      { lat: 0, lng: 0 },
-    );
+    const km = haversineKm({ lat: 90, lng: 0 }, { lat: 0, lng: 0 });
     expect(Number.isFinite(km)).toBe(true);
     expect(km).toBeGreaterThan(9900);
     expect(km).toBeLessThan(10100);
@@ -88,20 +70,14 @@ describe('haversineKm', () => {
 
   it('handles the south pole (lat=-90) without NaN', () => {
     // Symmetric to the north-pole case.
-    const km = haversineKm(
-      { lat: -90, lng: 0 },
-      { lat: 0, lng: 0 },
-    );
+    const km = haversineKm({ lat: -90, lng: 0 }, { lat: 0, lng: 0 });
     expect(Number.isFinite(km)).toBe(true);
     expect(km).toBeGreaterThan(9900);
     expect(km).toBeLessThan(10100);
   });
 
   it('pole-to-pole is half Earth circumference (~20,015 km)', () => {
-    const km = haversineKm(
-      { lat: 90, lng: 0 },
-      { lat: -90, lng: 0 },
-    );
+    const km = haversineKm({ lat: 90, lng: 0 }, { lat: -90, lng: 0 });
     expect(Number.isFinite(km)).toBe(true);
     expect(km).toBeGreaterThan(20000);
     expect(km).toBeLessThan(20050);
@@ -110,10 +86,7 @@ describe('haversineKm', () => {
   it('works in the southern + western hemisphere (sign-agnostic)', () => {
     // Buenos Aires (-34.6037, -58.3816) to Santiago (-33.4489, -70.6693).
     // Real-world great-circle: ~1140 km.
-    const km = haversineKm(
-      { lat: -34.6037, lng: -58.3816 },
-      { lat: -33.4489, lng: -70.6693 },
-    );
+    const km = haversineKm({ lat: -34.6037, lng: -58.3816 }, { lat: -33.4489, lng: -70.6693 });
     expect(km).toBeGreaterThan(1100);
     expect(km).toBeLessThan(1200);
   });

@@ -3,7 +3,10 @@
 --                          with a BEFORE UPDATE trigger.
 -- ===========================================================================
 --
--- !!! DO NOT APPLY YET — propose-only. Read the analysis below first. !!!
+-- APPROVED by Steve 2026-05-27. Safe to apply.
+-- Unblocks shamus/marker-clustering-2026-05-25 merge.
+-- Sky: paste this file in Supabase SQL Editor → Run.
+-- Steve sign-off: qa-reports/2026-05-27_D3_Steve_TriggerApproval.md
 --
 -- This is a *better-pattern* proposal, not a fix for a known bug. The current
 -- "flags status update by any authenticated" policy in schema.sql works, but

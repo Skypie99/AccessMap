@@ -41,11 +41,7 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
   },
 }));
 
-import {
-  hasSeenOnboarding,
-  markOnboardingSeen,
-  clearOnboardingSeen,
-} from '../onboarding';
+import { hasSeenOnboarding, markOnboardingSeen, clearOnboardingSeen } from '../onboarding';
 
 beforeEach(() => {
   for (const k of Object.keys(mockStorage)) delete mockStorage[k];

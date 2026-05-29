@@ -1,10 +1,4 @@
-import {
-  applyVisit,
-  EMPTY_STREAK,
-  isoDay,
-  loadStreak,
-  tickVisit,
-} from '../streak';
+import { applyVisit, EMPTY_STREAK, isoDay, loadStreak, tickVisit } from '../streak';
 
 jest.mock('@react-native-async-storage/async-storage', () => {
   const store = new Map<string, string>();
@@ -21,8 +15,7 @@ jest.mock('@react-native-async-storage/async-storage', () => {
   };
 });
 
-const mockStorage =
-  jest.requireMock('@react-native-async-storage/async-storage').default;
+const mockStorage = jest.requireMock('@react-native-async-storage/async-storage').default;
 
 describe('isoDay', () => {
   it('formats yyyy-mm-dd in local time', () => {

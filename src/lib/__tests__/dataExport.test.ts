@@ -122,9 +122,7 @@ describe('formatDataExport', () => {
       generatedAt: FIXED_DATE,
     });
     expect(out).toContain('REPORTS (1 flags):');
-    expect(out).toContain(
-      '  - 2026-05-20 · No ramp · severity 4/5 · verified',
-    );
+    expect(out).toContain('  - 2026-05-20 · No ramp · severity 4/5 · verified');
     expect(out).toContain('    49.282700, -123.120700');
     expect(out).toContain('    Curb missing ramp on the south side.');
   });
@@ -139,9 +137,7 @@ describe('formatDataExport', () => {
     // We expect the date line and coord line, but no third (description) line.
     // Use a regex to assert no extra non-blank line sits between the coords
     // and the next section header.
-    expect(out).toMatch(
-      /49\.282700, -123\.120700\n\nFEEDBACK/,
-    );
+    expect(out).toMatch(/49\.282700, -123\.120700\n\nFEEDBACK/);
   });
 
   it('omits the description line when description is whitespace only', () => {
@@ -208,13 +204,12 @@ describe('formatDataExport', () => {
   it('renders every status label correctly', () => {
     const out = formatDataExport({
       user: { email: 'a@b.c' },
-      flags: (['open', 'verified', 'resolved', 'rejected'] as const).map(
-        (status, i) =>
-          makeFlag({
-            id: `f${i}`,
-            status,
-            created_at: `2026-05-${String(10 + i).padStart(2, '0')}T00:00:00.000Z`,
-          }),
+      flags: (['open', 'verified', 'resolved', 'rejected'] as const).map((status, i) =>
+        makeFlag({
+          id: `f${i}`,
+          status,
+          created_at: `2026-05-${String(10 + i).padStart(2, '0')}T00:00:00.000Z`,
+        }),
       ),
       categoryLabel: label,
       generatedAt: FIXED_DATE,

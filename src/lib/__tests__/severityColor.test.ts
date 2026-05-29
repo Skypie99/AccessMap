@@ -15,6 +15,8 @@
 import { severityColor } from '../flags';
 import type { FlagSeverity } from '@/types/database';
 
+jest.mock('../supabase', () => ({ supabase: {} }));
+
 describe('severityColor', () => {
   it('returns green for severity 1 (minor barrier)', () => {
     expect(severityColor(1)).toBe('#27ae60');

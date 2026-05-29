@@ -6,6 +6,52 @@ entries; the file is the project's accumulated wisdom.
 
 ---
 
+## 2026-05-25 — Concurrent agent commits to the same feature branch
+
+When two agents run simultaneously against the same named branch (not worktrees), one
+agent can commit on top of the other without either being aware.
+
+**What happened:** During the morning continuation, a second Shamus agent committed
+`8f24ba4 chore(tokens): radius.circle token, overlayBtnPressed, listitem a11y cohesion`
+to `feat/edit-profile-2026-05-25` while this session was mid-build on the same branch.
+That commit included unrelated files (CHANGELOG.md added, coverage/ deleted) because
+the other agent had a dirtier working tree.
+
+**Detection:** `git log --oneline feat/<branch>` after your commits should only show
+your own commits. An unexpected commit from "another Shamus" (or any agent) is the signal.
+
+**Recovery without destructive ops:** cherry-pick the clean commits (`c41e5ca`, `5e92a6e`)
+onto a fresh branch from main rather than trying to surgically remove the noisy commit
+from the shared branch. Flag it in the feature report so Sky can decide whether to
+merge the full branch or cherry-pick.
+
+**Prevention:** Morgan must not dispatch two agents against the same branch name at the
+same time. Use `isolation: "worktree"` for all build agents, and ensure the dispatch
+plan explicitly names different branches for concurrent builds.
+
+---
+
+## 2026-05-25 — git lock file recovery + staged-state leakage after lock removal
+
+**Pattern:** If a git process exits uncleanly (signal, context timeout, etc.), it may
+leave `.git/index.lock` and/or `.git/HEAD.lock` behind. Any subsequent git command
+fails with `"Unable to create '…lock': File exists"`.
+
+**Fix:** `rm -f /path/to/repo/.git/index.lock /path/to/repo/.git/HEAD.lock`
+
+**Hidden danger after lock removal:** When a `git add` fails mid-run because of a
+lock (leaving it partially applied), removing the lock and re-running a different
+`git add <specific-files>` can silently include previously-staged hunks from the
+failed run. The index has a partially-applied state that `git status` may not display
+clearly.
+
+**Rule:** After any lock-removal, always run `git status` + `git diff --cached` before
+committing. Confirm exactly which files are staged. If anything unexpected appears
+in `--cached`, run `git reset HEAD <file>` to unstage it before committing. Never
+commit after lock removal without explicitly reviewing the staged diff.
+
+---
+
 ## 2026-05-25 — Sequential merge/build discipline (concurrent working-tree collision)
 
 **Rule:** Build → QA (parallel OK) → wait for merge push confirmation → next Build.
@@ -1032,3 +1078,40 @@ that edit files.
 **Enforcement:** Morgan's plan must add `isolation: "worktree"` to every Agent call
 that touches the shared working directory. A single merge agent is safe; two concurrent
 ones are not.
+
+## 2026-05-28 — Worktree node_modules must be symlinked for npm/jest to work
+
+When `git worktree add` creates a new worktree, the new directory does NOT
+get its own `node_modules`. The worktree's `package.json` references deps
+but they're only installed in the parent repo.
+
+**What happened:** Gary's worktree at `/tmp/gary-exif-2026-05-28` had no
+`node_modules`, so `npm test` and `tsc` failed immediately with "jest: command
+not found" and "cannot find module 'react'".
+
+**Fix:** Symlink the parent's node_modules into the worktree:
+```bash
+ln -s ~/AccessMap/node_modules /tmp/<worktree-name>/node_modules
+```
+
+Then all scripts run normally (`npm test`, `npm run typecheck`). The symlink
+is excluded from git (node_modules is in .gitignore) so it doesn't affect commits.
+
+**Rule:** Any orchestrator prompt that creates a worktree and runs npm/jest/tsc
+MUST include the symlink step immediately after `git worktree add`.
+
+## 2026-05-28 — EXIF stripping functions should be exported for test coverage
+
+New privacy-critical code added to `flags.ts` (stripExifNative, stripExifWeb,
+verifyExifStripped) was initially private. Testing through the `uploadFlagPhoto`
+integration path would require mocking the full Supabase Storage chain plus
+MediaLibrary plus fetch — high complexity.
+
+**Better approach:** Export the functions and test them directly. Pure functions
+(like `verifyExifStripped`) are trivially testable. Async functions with platform
+deps (like `stripExifNative`) can be tested with focused mocks for exactly the
+deps they use. The export keyword adds zero runtime overhead.
+
+**Rule:** Any privacy-critical function (one that handles PII, strips metadata,
+validates data before storage) should be exported even if it's "internal", so
+Gary can write direct unit tests rather than integration tests.

@@ -53,14 +53,10 @@ function parsePrefs(raw: unknown): NotificationPrefs {
   }
   const obj = raw as Record<string, unknown>;
   return {
-    notifyOnOpen:
-      typeof obj.notifyOnOpen === 'boolean' ? obj.notifyOnOpen : true,
-    notifyOnVerified:
-      typeof obj.notifyOnVerified === 'boolean' ? obj.notifyOnVerified : true,
-    notifyOnResolved:
-      typeof obj.notifyOnResolved === 'boolean' ? obj.notifyOnResolved : true,
-    notifyOnRejected:
-      typeof obj.notifyOnRejected === 'boolean' ? obj.notifyOnRejected : true,
+    notifyOnOpen: typeof obj.notifyOnOpen === 'boolean' ? obj.notifyOnOpen : true,
+    notifyOnVerified: typeof obj.notifyOnVerified === 'boolean' ? obj.notifyOnVerified : true,
+    notifyOnResolved: typeof obj.notifyOnResolved === 'boolean' ? obj.notifyOnResolved : true,
+    notifyOnRejected: typeof obj.notifyOnRejected === 'boolean' ? obj.notifyOnRejected : true,
   };
 }
 
@@ -70,25 +66,16 @@ export async function loadPrefs(userId: string): Promise<NotificationPrefs> {
     if (!raw) return { ...DEFAULT_PREFS };
     return parsePrefs(JSON.parse(raw));
   } catch (e) {
-    console.warn(
-      '[notificationPrefs] load failed:',
-      errorMessage(e, 'AsyncStorage error.'),
-    );
+    console.warn('[notificationPrefs] load failed:', errorMessage(e, 'AsyncStorage error.'));
     return { ...DEFAULT_PREFS };
   }
 }
 
-export async function savePrefs(
-  userId: string,
-  prefs: NotificationPrefs,
-): Promise<void> {
+export async function savePrefs(userId: string, prefs: NotificationPrefs): Promise<void> {
   try {
     await AsyncStorage.setItem(storageKey(userId), JSON.stringify(prefs));
   } catch (e) {
-    console.warn(
-      '[notificationPrefs] save failed:',
-      errorMessage(e, 'AsyncStorage error.'),
-    );
+    console.warn('[notificationPrefs] save failed:', errorMessage(e, 'AsyncStorage error.'));
   }
 }
 
@@ -113,9 +100,6 @@ export function prefKeyForStatus(status: FlagStatus): keyof NotificationPrefs {
  * Pure: returns true iff the user wants to be notified when a flag
  * transitions to `toStatus`. Used by diffUpdates' optional prefs param.
  */
-export function isNotifiable(
-  toStatus: FlagStatus,
-  prefs: NotificationPrefs,
-): boolean {
+export function isNotifiable(toStatus: FlagStatus, prefs: NotificationPrefs): boolean {
   return prefs[prefKeyForStatus(toStatus)];
 }

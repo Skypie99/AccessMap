@@ -132,9 +132,7 @@ describe('taskSelection', () => {
     it('matches the length of selectedIds', () => {
       expect(count(EMPTY_SELECTION)).toBe(0);
       expect(count(enterSelectionWith('a'))).toBe(1);
-      expect(
-        count({ active: true, selectedIds: ['a', 'b', 'c'] }),
-      ).toBe(3);
+      expect(count({ active: true, selectedIds: ['a', 'b', 'c'] })).toBe(3);
     });
   });
 

@@ -1,0 +1,13 @@
+---
+project: AccessMap
+digest_date: 2026-05-27
+state_health: blocked
+blockers:
+  - RLS policies verification needed (Jordan privacy audit)
+  - EXIF GPS leak mitigation (photo uploads expose home/work via EXIF)
+decisions_pending: 1
+recent_commits: 2
+features_active: 0
+features_blocked:
+  - rls-policy-hardening
+---

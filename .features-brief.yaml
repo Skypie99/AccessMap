@@ -1,0 +1,12 @@
+---
+project: AccessMap
+updated: 2026-05-27
+active_features: 0
+total_features: 3
+in_progress:
+  - slug: rls-policy-hardening
+    status: blocked-on
+    blocker: Security verification + privacy review
+in_review: []
+shipped_last_week: 0
+---

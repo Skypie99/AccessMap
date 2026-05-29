@@ -43,9 +43,7 @@ describe('buildMailtoUrl', () => {
 
   it('appends the category label to the subject when one is given', () => {
     const url = buildMailtoUrl({ body: 'x', category: 'bug' });
-    expect(url).toContain(
-      `subject=${encodeURIComponent('AccessMap feedback: Bug')}`,
-    );
+    expect(url).toContain(`subject=${encodeURIComponent('AccessMap feedback: Bug')}`);
   });
 
   it('prefixes the body with a Category line when one is given', () => {

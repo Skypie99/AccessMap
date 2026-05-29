@@ -1,12 +1,5 @@
 import React from 'react';
-import {
-  Modal,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 // Expo Constants gives us the bundled app.json version at runtime so we
 // don't have to hard-code (and forget to bump) a string here.
 import Constants from 'expo-constants';
@@ -43,12 +36,7 @@ export default function AboutScreen({ visible, onClose }: Props) {
   const color = useColor();
   const styles = makeStyles(color);
   return (
-    <Modal
-      visible={visible}
-      animationType="slide"
-      transparent
-      onRequestClose={onClose}
-    >
+    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <View style={styles.backdrop}>
         {/* accessibilityViewIsModal traps VoiceOver focus inside this card so
             it can't escape back to the underlying Settings screen while the
@@ -91,37 +79,32 @@ export default function AboutScreen({ visible, onClose }: Props) {
               <Text style={styles.heroBadgeText}>v{APP_VERSION}</Text>
             </View>
 
-            <Text style={styles.tagline}>
-              A crowdsourced map for accessibility issues.
-            </Text>
+            <Text style={styles.tagline}>A crowdsourced map for accessibility issues.</Text>
 
             <Text style={styles.sectionHeader} accessibilityRole="header">
               Built for accessibility
             </Text>
             <Text style={styles.bodyText}>
-              Every screen is designed against WCAG 2.2 AA. Screen-reader
-              labels, 44pt touch targets, color paired with text, and an
-              accessible list view that opens automatically when a screen
-              reader is on. If something is hard to use, the Feedback row
-              in Settings goes straight to the maintainer.
+              Every screen is designed against WCAG 2.2 AA. Screen-reader labels, 44pt touch
+              targets, color paired with text, and an accessible list view that opens automatically
+              when a screen reader is on. If something is hard to use, the Feedback row in Settings
+              goes straight to the maintainer.
             </Text>
 
             <Text style={styles.sectionHeader} accessibilityRole="header">
               Credits
             </Text>
             <Text style={styles.bodyText}>
-              A small project by Sky, built to learn by doing. The maps,
-              icons, and database schema are open and the data belongs to
-              the people who report it.
+              A small project by Sky, built to learn by doing. The maps, icons, and database schema
+              are open and the data belongs to the people who report it.
             </Text>
 
             <Text style={styles.sectionHeader} accessibilityRole="header">
               Source code
             </Text>
             <Text style={styles.bodyText}>
-              AccessMap is built with Expo and React Native on the front
-              end, and Supabase (Postgres + Auth + Storage) on the back
-              end. The web build uses react-leaflet over OpenStreetMap
+              AccessMap is built with Expo and React Native on the front end, and Supabase (Postgres
+              + Auth + Storage) on the back end. The web build uses react-leaflet over OpenStreetMap
               tiles.
             </Text>
 
@@ -129,18 +112,17 @@ export default function AboutScreen({ visible, onClose }: Props) {
               Your privacy
             </Text>
             <Text style={styles.bodyText}>
-              We store flag reports and your profile. Location is requested
-              only when you use the map. No tracking, no ads.
+              We store flag reports and your profile. Location is requested only when you use the
+              map. No tracking, no ads.
             </Text>
             <Text style={styles.bodyText}>
-              Status changes (open → verified → resolved) are logged so the
-              community can see the history of a flag. The log is visible to
-              other users without identifying who made each change.
+              Status changes (open → verified → resolved) are logged so the community can see the
+              history of a flag. The log is visible to other users without identifying who made each
+              change.
             </Text>
             <Text style={styles.bodyText}>
-              Map tile images are cached locally on your device for up to 7
-              days to improve performance. This data is not shared with anyone
-              and is cleared when you sign out.
+              Map tile images are cached locally on your device for up to 7 days to improve
+              performance. This data is not shared with anyone and is cleared when you sign out.
             </Text>
           </ScrollView>
         </View>
@@ -149,85 +131,86 @@ export default function AboutScreen({ visible, onClose }: Props) {
   );
 }
 
-const makeStyles = (color: ColorTheme) => StyleSheet.create({
-  backdrop: {
-    flex: 1,
-    backgroundColor: color.scrim,
-    justifyContent: 'flex-end',
-  },
-  card: {
-    backgroundColor: color.surface,
-    borderTopLeftRadius: radius.xl,
-    borderTopRightRadius: radius.xl,
-    paddingHorizontal: spacing.xl,
-    paddingTop: spacing.lg,
-    paddingBottom: spacing.xl,
-    gap: spacing.md,
-    maxHeight: '90%',
-    ...shadow.e3,
-  },
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-  },
-  title: {
-    flex: 1,
-    fontSize: font.size.xl,
-    fontWeight: font.weight.bold,
-    color: color.textStrong,
-  },
-  closeBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: radius.full,
-    backgroundColor: color.surfaceNeutral,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  closeBtnText: {
-    fontSize: font.size.lg,
-    color: color.text,
-    fontWeight: font.weight.bold,
-  },
-  body: { flexShrink: 1 },
-  bodyContent: { gap: spacing.md, paddingBottom: spacing.sm },
-  heroBadge: {
-    alignSelf: 'flex-start',
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    backgroundColor: color.brandSoft,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    borderRadius: radius.full,
-  },
-  heroBadgeIcon: { fontSize: font.size.lg },
-  heroBadgeText: {
-    color: color.brandOnSoft,
-    fontWeight: font.weight.bold,
-    fontSize: font.size.sm,
-    letterSpacing: 0.3,
-  },
-  tagline: {
-    fontSize: font.size.md,
-    color: color.text,
-    fontWeight: font.weight.semibold,
-  },
-  sectionHeader: {
-    fontSize: font.size.xs,
-    color: color.textMuted,
-    textTransform: 'uppercase',
-    letterSpacing: 0.6,
-    fontWeight: font.weight.bold,
-    marginTop: spacing.sm,
-  },
-  bodyText: {
-    fontSize: font.size.base,
-    // textMuted (#666) is 5.7:1 on white — passes WCAG AA for body text,
-    // matches the per-spec floor of #5b6470 (the brief asked for AA body
-    // contrast on white, and #666 is already in the design tokens).
-    color: color.textMuted,
-    lineHeight: 21,
-  },
-});
+const makeStyles = (color: ColorTheme) =>
+  StyleSheet.create({
+    backdrop: {
+      flex: 1,
+      backgroundColor: color.scrim,
+      justifyContent: 'flex-end',
+    },
+    card: {
+      backgroundColor: color.surface,
+      borderTopLeftRadius: radius.xl,
+      borderTopRightRadius: radius.xl,
+      paddingHorizontal: spacing.xl,
+      paddingTop: spacing.lg,
+      paddingBottom: spacing.xl,
+      gap: spacing.md,
+      maxHeight: '90%',
+      ...shadow.e3,
+    },
+    headerRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.md,
+    },
+    title: {
+      flex: 1,
+      fontSize: font.size.xl,
+      fontWeight: font.weight.bold,
+      color: color.textStrong,
+    },
+    closeBtn: {
+      width: 32,
+      height: 32,
+      borderRadius: radius.full,
+      backgroundColor: color.surfaceNeutral,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    closeBtnText: {
+      fontSize: font.size.lg,
+      color: color.text,
+      fontWeight: font.weight.bold,
+    },
+    body: { flexShrink: 1 },
+    bodyContent: { gap: spacing.md, paddingBottom: spacing.sm },
+    heroBadge: {
+      alignSelf: 'flex-start',
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+      backgroundColor: color.brandSoft,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.xs,
+      borderRadius: radius.full,
+    },
+    heroBadgeIcon: { fontSize: font.size.lg },
+    heroBadgeText: {
+      color: color.brandOnSoft,
+      fontWeight: font.weight.bold,
+      fontSize: font.size.sm,
+      letterSpacing: 0.3,
+    },
+    tagline: {
+      fontSize: font.size.md,
+      color: color.text,
+      fontWeight: font.weight.semibold,
+    },
+    sectionHeader: {
+      fontSize: font.size.xs,
+      color: color.textMuted,
+      textTransform: 'uppercase',
+      letterSpacing: 0.6,
+      fontWeight: font.weight.bold,
+      marginTop: spacing.sm,
+    },
+    bodyText: {
+      fontSize: font.size.base,
+      // textMuted (#666) is 5.7:1 on white — passes WCAG AA for body text,
+      // matches the per-spec floor of #5b6470 (the brief asked for AA body
+      // contrast on white, and #666 is already in the design tokens).
+      color: color.textMuted,
+      lineHeight: 21,
+    },
+  });

@@ -85,10 +85,7 @@ export async function loadTasksSort(): Promise<TasksSort> {
     const parsed: unknown = JSON.parse(raw);
     return isValidSort(parsed) ? parsed : DEFAULT_TASKS_SORT;
   } catch (e) {
-    console.warn(
-      '[tasksSort] load failed:',
-      errorMessage(e, 'AsyncStorage error.'),
-    );
+    console.warn('[tasksSort] load failed:', errorMessage(e, 'AsyncStorage error.'));
     return DEFAULT_TASKS_SORT;
   }
 }
@@ -97,9 +94,6 @@ export async function saveTasksSort(mode: TasksSort): Promise<void> {
   try {
     await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(mode));
   } catch (e) {
-    console.warn(
-      '[tasksSort] save failed:',
-      errorMessage(e, 'AsyncStorage error.'),
-    );
+    console.warn('[tasksSort] save failed:', errorMessage(e, 'AsyncStorage error.'));
   }
 }

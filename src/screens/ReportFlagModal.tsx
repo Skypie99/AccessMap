@@ -246,8 +246,8 @@ export default function ReportFlagModal({
       onRequestClose={onClose}
     >
       <View style={styles.backdrop}>
-        <View style={styles.card}>
-          <Text style={styles.title}>Report a flag</Text>
+        <View style={styles.card} accessibilityViewIsModal>
+          <Text style={styles.title} accessibilityRole="header">Report a flag</Text>
           <Text style={styles.location}>
             {location
               ? `at ${location.lat.toFixed(5)}, ${location.lng.toFixed(5)}`
@@ -474,6 +474,10 @@ export default function ReportFlagModal({
               <Pressable
                 onPress={() => setPhotoUri(null)}
                 style={styles.photoClear}
+                // hitSlop expands the 26pt visual target to ~46pt so the
+                // tiny corner-X clears the 44pt touch-target floor without
+                // resizing the visible chrome.
+                hitSlop={10}
                 accessibilityRole="button"
                 accessibilityLabel="Remove photo"
               >
@@ -600,28 +604,41 @@ export default function ReportFlagModal({
 const makeStyles = (color: ColorTheme) => StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.4)',
+    backgroundColor: color.scrim,
     justifyContent: 'flex-end',
   },
   card: {
     backgroundColor: color.surface,
     padding: 20,
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
+    borderTopLeftRadius: radius.xl,
+    borderTopRightRadius: radius.xl,
     gap: 12,
   },
-  title: { fontSize: 20, fontWeight: '700' },
-  location: { fontSize: 12, color: '#666' },
-  label: { fontSize: 13, fontWeight: '600', color: '#333', marginTop: 4 },
+  title: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: color.textStrong,
+    letterSpacing: -0.3,
+  },
+  location: { fontSize: 12, color: color.textMuted },
+  label: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: color.textStrong,
+    marginTop: 4,
+  },
   row: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
   pill: {
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: radius.circle,
     backgroundColor: color.surfaceNeutral,
+    // 44pt is the AccessMap baseline touch target (Apple HIG + WCAG 2.5.5).
+    minHeight: 44,
+    justifyContent: 'center',
   },
   pillActive: { backgroundColor: color.brand },
-  pillText: { color: '#333', fontSize: 13 },
+  pillText: { color: color.text, fontSize: 13 },
   pillTextActive: { color: color.textOnBrand, fontWeight: '600' },
   sevBtn: {
     width: 44,
@@ -632,30 +649,34 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
     justifyContent: 'center',
   },
   sevBtnActive: {},
-  sevText: { fontSize: 16, color: '#333', fontWeight: '600' },
+  sevText: { fontSize: 16, color: color.text, fontWeight: '600' },
   sevTextActive: { color: color.textOnBrand },
   input: {
     borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    padding: 10,
-    minHeight: 70,
+    borderColor: color.borderStrong,
+    borderRadius: radius.md,
+    padding: 12,
+    minHeight: 80,
     textAlignVertical: 'top',
+    color: color.text,
+    backgroundColor: color.surface,
+    fontSize: 14,
+    lineHeight: 19,
   },
   sevHint: {
     fontSize: 13,
-    color: '#555',
+    color: color.text,
     lineHeight: 18,
     marginTop: -4,
   },
-  sevHintLabel: { fontWeight: '700', color: '#333' },
+  sevHintLabel: { fontWeight: '700', color: color.textStrong },
   charCounter: {
     fontSize: 12,
-    color: '#888',
+    color: color.textSubtle,
     textAlign: 'right',
     marginTop: 2,
   },
-  charCounterAmber: { color: '#c07a00' },
+  charCounterAmber: { color: color.warningHint, fontWeight: '600' },
   charCounterRed: { color: color.error, fontWeight: '700' },
   photoBtn: {
     flexGrow: 1,
@@ -664,8 +685,11 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
     borderRadius: 8,
     backgroundColor: color.surfaceNeutral,
     alignItems: 'center',
+    // 44pt baseline touch target.
+    minHeight: 44,
+    justifyContent: 'center',
   },
-  photoBtnText: { color: '#333', fontWeight: '600', fontSize: 13 },
+  photoBtnText: { color: color.text, fontWeight: '600', fontSize: 13 },
   // High-severity photo nudge card — amber-tinted, appears between the
   // "Photo" label and picker when severity ≥ 4 and no photo is attached.
   // warningBg (#fff7e6) / warningFg (#714b00): 8.3:1 contrast, WCAG AA.
@@ -699,14 +723,19 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
     position: 'absolute',
     top: -6,
     right: -6,
-    backgroundColor: '#000',
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    backgroundColor: color.backdropStrong,
+    width: 26,
+    height: 26,
+    borderRadius: radius.circle,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  photoClearText: { color: '#fff', fontWeight: '700', fontSize: 12 },
+  photoClearText: {
+    color: color.textOnBrand,
+    fontWeight: '700',
+    fontSize: 13,
+    lineHeight: 14,
+  },
   actions: { flexDirection: 'row', gap: 12, marginTop: 8 },
   actionBtn: {
     flex: 1,
@@ -715,7 +744,7 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
     alignItems: 'center',
   },
   cancelBtn: { backgroundColor: color.surfaceNeutral },
-  cancelText: { color: '#333', fontWeight: '600' },
+  cancelText: { color: color.text, fontWeight: '600' },
   submitBtn: { backgroundColor: color.brand },
   submitBtnDisabled: { opacity: 0.6 },
   submitText: { color: color.textOnBrand, fontWeight: '700' },
@@ -745,8 +774,8 @@ const makeStyles = (color: ColorTheme) => StyleSheet.create({
     borderColor: color.brandText,
   },
   tagChipDisabled: {
-    borderColor: '#9aa3ad',
-    backgroundColor: '#f4f6f8',
+    borderColor: color.borderStrong,
+    backgroundColor: color.surfaceSoft,
   },
   tagChipText: {
     color: color.brandText,
