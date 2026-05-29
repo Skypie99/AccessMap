@@ -4,6 +4,15 @@ Structural decisions, append-only. New entries at the top. Do NOT re-litigate en
 
 ---
 
+## 2026-05-29 — Heat-map Display Style: Gradient Layer (Sky)
+
+- **Decision:** Heat-map display style = **gradient layer** (NOT density dots). Explicit Sky choice.
+- **Rationale:** Sky selected gradient layer over density-dot rendering on 2026-05-29 as the canonical heatmap visual. All future heatmap UI work must use gradient; density dots are off the table unless Sky re-decides.
+- **Authority:** Sky (explicit product choice); recorded by Rory (Phase 1 merge wave, Const. 10.2).
+- **References:** HeatmapLayer.tsx (`displayStyle: 'gradient'`); reconciliation report `qa-reports/2026-05-29_Recon_lighthouse.md`
+
+---
+
 ## 2026-05-29 — D5 Heatmap Gradient Approved (Sky)
 
 - **Decision:** D5 heatmap color gradient = **YES**. Heatmap feature build unblocked.
