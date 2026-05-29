@@ -1,26 +1,85 @@
-// HeatmapLayer.tsx — gradient density layer (D5: gradient YES, map A)
-// Privacy: aggregated density only, no individual point coords exposed
-// Art. 7 gate: Jordan privacy review required before showing user data
-import React from 'react';
-import { View } from 'react-native';
+/**
+ * HeatmapLayer — D5 gradient heat-map layer.
+ *
+ * This component is the public contract for the heat-map feature.
+ * The actual pixel rendering is platform-split:
+ *
+ *   - Native (iOS / Android): PlatformMap.tsx renders each cell as a
+ *     Polygon (react-native-maps) + a Marker badge at the centroid.
+ *     Both use colorForCell() from @/lib/heatmap for the severity gradient.
+ *
+ *   - Web: PlatformMap.web.tsx renders each cell as a Rectangle
+ *     (react-leaflet) + a Marker with a L.DivIcon badge at the centroid.
+ *
+ * In both cases the cells arrive pre-bucketed and pre-filtered at the k>=3
+ * floor from bucketFlagsToCells() in @/lib/heatmap. This component
+ * owns the computation and exposes a clean hook for callers.
+ *
+ * Usage (MapScreen does this already):
+ *
+ *   const heatCells = useHeatCells(filteredFlags, heatmapEnabled);
+ *   <PlatformMap ... heatCells={heatCells} heatmapMode={HEATMAP_MODE} />
+ *
+ * Jordan Art. 7 conditions enforced here:
+ *
+ *   1. k-anonymity floor (DEFAULT_K_FLOOR = 3) - bucketFlagsToCells drops
+ *      any cell with fewer than 3 flags before the array ever reaches the map.
+ *   2. No raw coordinates exposed - only cell centroids (+-0.005 deg, ~555 m)
+ *      are passed to the render layer; the original flag lat/lng are lost
+ *      in aggregation.
+ *   3. Disclaimer text - MapScreen renders the Jordan-mandated text whenever
+ *      heatmapEnabled is true (see the heatmapDisclaimer block in MapScreen.tsx).
+ */
 
-// Placeholder — Jordan privacy review pending before implementation
-// This file establishes the component contract
-export interface HeatmapPoint {
-  latitude: number;
-  longitude: number;
-  weight: number; // density weight 0-1
-}
+import { useMemo } from 'react';
+import {
+  bucketFlagsToCells,
+  colorForCell,
+  DEFAULT_K_FLOOR,
+  HEATMAP_FILL_OPACITY,
+  type HeatCell,
+  type HeatmapMode,
+} from '@/lib/heatmap';
+import type { FlagRow } from '@/types/database';
 
 export interface HeatmapLayerProps {
-  points: HeatmapPoint[];
+  /** The full (already-filtered) flag list from the store. Cells are
+   *  computed here via useMemo so the bucketing cost is zero when
+   *  visible is false. */
+  flags: ReadonlyArray<FlagRow>;
   visible: boolean;
-  opacity?: number; // 0-1
+  /** gradient (default) or density. Passed through to PlatformMap. */
+  heatmapMode?: HeatmapMode;
 }
 
-export function HeatmapLayer({ points, visible, opacity = 0.7 }: HeatmapLayerProps) {
-  // TODO: implement gradient heatmap once Jordan Art. 7 review passes
-  // Points aggregated server-side before reaching this component (privacy requirement)
-  if (!visible || points.length === 0) return null;
-  return <View />;
+/**
+ * Hook that produces pre-bucketed, k-anonymous heat cells from a flag list.
+ * Use this in MapScreen to feed heatCells into <PlatformMap />.
+ *
+ * - Returns [] when visible is false (zero compute cost on default-off path).
+ * - Cells are memoised: identity only changes when visible or flags changes.
+ * - k-anonymity floor enforced inside bucketFlagsToCells (DEFAULT_K_FLOOR = 3).
+ *
+ * @example
+ *   const heatCells = useHeatCells(filteredFlags, heatmapEnabled);
+ *   <PlatformMap heatCells={heatCells} heatmapMode={HEATMAP_MODE} />
+ */
+export function useHeatCells(
+  flags: ReadonlyArray<FlagRow>,
+  visible: boolean,
+): HeatCell[] {
+  return useMemo(() => {
+    if (!visible) return [];
+    return bucketFlagsToCells(flags);
+  }, [flags, visible]);
 }
+
+// Re-export everything consumers might need so they can import from a
+// single place instead of reaching into @/lib/heatmap directly.
+export {
+  bucketFlagsToCells,
+  colorForCell,
+  DEFAULT_K_FLOOR,
+  HEATMAP_FILL_OPACITY,
+};
+export type { HeatCell, HeatmapMode };
