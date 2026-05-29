@@ -325,6 +325,12 @@ export interface CreateFlagInput {
  * table can't lock up the Map/Tasks screens. The shared FlagsProvider now
  * uses listFlagsPage() for the default open+verified set; this function is
  * kept for one-shot filtered queries (e.g. Map filter when toggling Resolved).
+ *
+ * PRIVACY: lat+lng+category is sensitive (location + disability context).
+ * user_id is included because the Map callout and Tasks card show ownership
+ * context (e.g. "your flag", edit/delete affordances). RLS on the flags
+ * table ensures only authenticated users can read rows; PostgREST enforces
+ * this before the data reaches the client.
  */
 export async function listFlags(statuses: FlagStatus[] = ['open', 'verified']) {
   const { data, error } = await supabase
@@ -367,6 +373,10 @@ export interface ListFlagsPageResult {
  * Note on ties: two rows with identical `created_at` could be skipped at a
  * page boundary (strict `lt` cursor). Postgres `now()` is microsecond
  * resolution so collisions are very unlikely in practice.
+ *
+ * PRIVACY: same rationale as listFlags — lat+lng+category+user_id are all
+ * required for map rendering, triage affordances, and ownership checks.
+ * Explicit column list prevents future schema additions from leaking here.
  */
 export async function listFlagsPage(
   statuses: FlagStatus[] = ['open', 'verified'],
@@ -394,6 +404,11 @@ export async function listFlagsPage(
  * "My Reports" view on Profile. Capped at 200 — same reasoning as listFlags:
  * a runaway user shouldn't lock up the screen. If someone hits the cap we'll
  * add cursor pagination here too (tracked alongside listFlags in P1).
+ *
+ * PRIVACY: RLS on the flags table ensures this query only returns rows where
+ * user_id = auth.uid() — the caller can only read their own flags. The
+ * lat+lng+category combination is legitimately shown back to the owner for
+ * their own report history (not exposed to other users via this path).
  */
 export async function listFlagsByUser(userId: string) {
   const { data, error } = await supabase
@@ -576,9 +591,18 @@ export async function deleteFlag(flagId: string) {
  * Returns null on not-found instead of throwing, so a stale share link
  * doesn't surface an alarming error to the user — the Map just opens
  * normally without focusing on anything.
+ *
+ * PRIVACY: Explicit column list rather than select('*') so future schema
+ * columns (e.g. internal moderation fields) don't leak to clients
+ * automatically. lat+lng are needed to animate the map; user_id for
+ * ownership checks in the detail modal.
  */
 export async function fetchFlagById(flagId: string): Promise<FlagRow | null> {
-  const { data, error } = await supabase.from('flags').select('*').eq('id', flagId).maybeSingle();
+  const { data, error } = await supabase
+    .from('flags')
+    .select('id, user_id, lat, lng, category, description, severity, photo_url, status, created_at')
+    .eq('id', flagId)
+    .maybeSingle();
   if (error) throw error;
   return (data as FlagRow | null) ?? null;
 }
@@ -592,10 +616,18 @@ export async function fetchFlagById(flagId: string): Promise<FlagRow | null> {
  * (e.g. a flag the user watched then someone deleted) are silently
  * dropped — the caller decides whether to prune them from the
  * watched list.
+ *
+ * PRIVACY: Explicit column list rather than select('*') prevents future
+ * schema columns from leaking automatically. The caller (Watched Flags)
+ * needs status, lat/lng, category, and severity for the detail modal and
+ * map navigation; user_id for ownership affordances.
  */
 export async function fetchFlagsByIds(flagIds: string[]): Promise<FlagRow[]> {
   if (flagIds.length === 0) return [];
-  const { data, error } = await supabase.from('flags').select('*').in('id', flagIds);
+  const { data, error } = await supabase
+    .from('flags')
+    .select('id, user_id, lat, lng, category, description, severity, photo_url, status, created_at')
+    .in('id', flagIds);
   if (error) throw error;
   return (data ?? []) as FlagRow[];
 }
@@ -608,6 +640,21 @@ export async function fetchFlagsByIds(flagIds: string[]): Promise<FlagRow[]> {
  * Limit defaults to 100 — enough for ~a week of activity at typical density,
  * small enough to render without virtualization headaches. Bump if needed
  * once usage tells us more.
+ *
+ * PRIVACY (HIGHEST SENSITIVITY): This query combines lat+lng+category+user_id
+ * across ALL statuses, including resolved and rejected flags — the most
+ * privacy-sensitive query in this file. Each row links a specific user to a
+ * precise disability-barrier location they personally reported.
+ *
+ * Safeguards already in place:
+ *   - RLS on `flags` requires auth.uid() to be non-null (authenticated read).
+ *   - The Activity Feed renderer MUST NOT display raw user_id; it should show
+ *     only display_name (resolved separately) or no identity at all.
+ *   - This query does NOT filter out rejected flags — the Activity Feed is
+ *     community-wide. If the feed later adds "rejected" suppression for
+ *     reporter privacy, add `.not('status', 'eq', 'rejected')` here.
+ *
+ * Do not add email or other PII to this select without a fresh privacy review.
  */
 export async function listRecentFlags(limit = 100): Promise<FlagRow[]> {
   const { data, error } = await supabase
