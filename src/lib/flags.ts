@@ -1,7 +1,7 @@
 import { supabase } from './supabase';
 import { color as themeColor } from '@/theme';
 import { Platform } from 'react-native';
-import * as MediaLibrary from 'expo-media-library';
+import * as ImageManipulator from 'expo-image-manipulator';
 import type { FlagCategory, FlagRow, FlagSeverity, FlagStatus } from '@/types/database';
 
 export const FLAG_PHOTOS_BUCKET = 'flag-photos';
@@ -43,17 +43,24 @@ export const NEXT_PAGE_SIZE = 20;
 
 /**
  * Strip EXIF metadata (GPS, timestamps, camera info, thumbnails, IPTC, XMP)
- * from an image on iOS/Android using expo-media-library native APIs.
+ * from an image on iOS/Android using expo-image-manipulator re-encode.
  *
- * On iOS, this handles HEIC re-encoding to JPEG. On Android, images are
- * transcoded. If stripping fails, we warn and return the original arrayBuffer
- * so the upload proceeds (fail-safe). The orientation is baked into the pixels.
+ * ImageManipulator.manipulateAsync re-encodes the image via the platform codec,
+ * producing a new file with no metadata passthrough. The returned {uri} is a
+ * fresh file:// URI that we fetch back as bytes.
  *
- * Post-strip verification reads the output bytes to confirm EXIF is gone.
+ * D8 privacy gate: returns null on failure so callers can abort the upload
+ * rather than silently proceeding with GPS-bearing original bytes (fail-closed).
+ * The previous expo-media-library implementation was a production no-op —
+ * saveToLibraryAsync returns Promise<void>, so the stripped result was always
+ * undefined and the original unstripped buffer was silently returned.
  */
-export async function stripExifNative(arrayBuffer: ArrayBuffer, ext: string): Promise<ArrayBuffer> {
+export async function stripExifNative(
+  arrayBuffer: ArrayBuffer,
+  ext: string,
+): Promise<ArrayBuffer | null> {
   try {
-    // Convert arrayBuffer to base64 data URL for the native API.
+    // Write the buffer to a temporary data URI so ImageManipulator can read it.
     const bytes = new Uint8Array(arrayBuffer);
     const binaryString = Array.from(bytes)
       .map((b) => String.fromCharCode(b))
@@ -69,30 +76,33 @@ export async function stripExifNative(arrayBuffer: ArrayBuffer, ext: string): Pr
             : 'image/jpeg';
     const dataUrl = `data:${mimeType};base64,${base64}`;
 
-    // expo-media-library transcodes the image, stripping EXIF + baking
-    // orientation. On iOS, HEIC is re-encoded to JPEG. Returns a file:// URI.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const strippedAsset = await (MediaLibrary.saveToLibraryAsync(dataUrl) as any);
-    if (!strippedAsset || !strippedAsset.uri) {
-      console.warn('[EXIF] Native transcode failed; using original.');
-      return arrayBuffer;
-    }
-
-    // Read the transcoded image back as bytes.
-    const strippedResponse = await fetch(strippedAsset.uri as string);
+    // Re-encode with no transform actions. This forces the platform codec to
+    // write a fresh image — EXIF/GPS/IPTC/XMP are not carried through.
+    // SaveFormat.JPEG is used for JPEG/HEIC/HEIF; PNG stays PNG.
+    const saveFormat =
+      ext === 'png'
+        ? ImageManipulator.SaveFormat.PNG
+        : ImageManipulator.SaveFormat.JPEG;
+    const result = await ImageManipulator.manipulateAsync(
+      dataUrl,
+      [], // no transform — re-encode only
+      { compress: 0.9, format: saveFormat },
+    );
+    // result.uri is a fresh file:// URI with no metadata.
+    const strippedResponse = await fetch(result.uri);
     const strippedBuffer = await strippedResponse.arrayBuffer();
     if (strippedBuffer.byteLength === 0) {
-      console.warn('[EXIF] Transcoded image is empty; using original.');
-      return arrayBuffer;
+      console.warn('[EXIF] ImageManipulator output is empty; stripping failed.');
+      return null;
     }
 
     console.debug(
-      `[EXIF] Native transcode: ${arrayBuffer.byteLength} → ${strippedBuffer.byteLength} bytes`,
+      `[EXIF] Native re-encode: ${arrayBuffer.byteLength} → ${strippedBuffer.byteLength} bytes`,
     );
     return strippedBuffer;
   } catch (e) {
-    console.warn('[EXIF] Native transcode failed:', e);
-    return arrayBuffer;
+    console.warn('[EXIF] ImageManipulator transcode failed:', e);
+    return null;
   }
 }
 
@@ -307,11 +317,18 @@ export async function uploadFlagPhoto(userId: string, localUri: string): Promise
   }
 
   // EXIF stripping: platform-specific approach.
-  // On iOS/Android, use native transcoding. On web, use canvas re-encoding.
+  // On iOS/Android, use ImageManipulator re-encode (D8 privacy gate — fail-closed).
+  // On web, use canvas re-encoding.
   if (Platform.OS === 'web') {
     arrayBuffer = await stripExifWeb(arrayBuffer, ext);
   } else {
-    arrayBuffer = await stripExifNative(arrayBuffer, ext);
+    // D8: stripExifNative returns null on failure; abort rather than upload
+    // original bytes that may contain GPS/camera metadata.
+    const stripped = await stripExifNative(arrayBuffer, ext);
+    if (stripped === null) {
+      throw new Error('Photo privacy check failed: EXIF stripping could not be completed. Please try again.');
+    }
+    arrayBuffer = stripped;
   }
 
   // Post-strip verification: check that EXIF markers are not present.

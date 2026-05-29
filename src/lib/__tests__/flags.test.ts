@@ -25,6 +25,23 @@ jest.mock('expo-media-library', () => ({
 }));
 
 // ---------------------------------------------------------------------------
+// expo-image-manipulator mock — used by stripExifNative.
+// Mocks the manipulateAsync function to avoid the native renderAsync call.
+// ---------------------------------------------------------------------------
+jest.mock('expo-image-manipulator', () => ({
+  __esModule: true,
+  manipulateAsync: jest.fn().mockResolvedValue({
+    uri: 'file:///mock/stripped.jpg',
+    width: 1000,
+    height: 1000,
+  }),
+  SaveFormat: {
+    JPEG: 0,
+    PNG: 1,
+  },
+}));
+
+// ---------------------------------------------------------------------------
 // Supabase mock — hoisted by Jest before any import runs. Follows the same
 // builder-chain pattern used in feedbackStore.test.ts. Only the chain that
 // updateFlagContent uses is wired: from → update → eq → select → single.
@@ -385,8 +402,14 @@ describe('stripExifNative', () => {
   });
 
   it('returns the stripped buffer when MediaLibrary succeeds', async () => {
-    // MediaLibrary returns a transcoded asset URI.
-    mockSaveToLibraryAsync.mockResolvedValue({ uri: 'file:///tmp/stripped.jpg' });
+    // MediaLibrary returns an Asset object with id, filename, uri, mediaType.
+    // This matches the real expo-media-library return type on iOS/Android.
+    mockSaveToLibraryAsync.mockResolvedValue({
+      id: 'fake-asset-id',
+      filename: 'stripped.jpg',
+      uri: 'file:///tmp/stripped.jpg',
+      mediaType: 'photo',
+    });
     // fetch reads back the stripped bytes.
     (
       global as unknown as {
@@ -398,22 +421,18 @@ describe('stripExifNative', () => {
     expect(result).toBe(STRIPPED);
   });
 
-  it('returns the original buffer (fail-safe) when MediaLibrary returns null', async () => {
-    mockSaveToLibraryAsync.mockResolvedValue(null);
+  it('returns null (fail-closed) when ImageManipulator throws', async () => {
+    // Mock ImageManipulator.manipulateAsync to throw an error.
+    const ImageManipulator = require('expo-image-manipulator');
+    ImageManipulator.manipulateAsync.mockRejectedValueOnce(new Error('Native API unavailable'));
 
     const result = await stripExifNative(ORIGINAL, 'jpg');
-    expect(result).toBe(ORIGINAL);
+    // Fail-closed: return null on any error (D8 privacy gate).
+    expect(result).toBe(null);
   });
 
-  it('returns the original buffer (fail-safe) when MediaLibrary throws', async () => {
-    mockSaveToLibraryAsync.mockRejectedValue(new Error('Native API unavailable'));
-
-    const result = await stripExifNative(ORIGINAL, 'jpg');
-    expect(result).toBe(ORIGINAL);
-  });
-
-  it('returns the original buffer (fail-safe) when the transcoded fetch returns empty bytes', async () => {
-    mockSaveToLibraryAsync.mockResolvedValue({ uri: 'file:///tmp/empty.jpg' });
+  it('returns null (fail-closed) when the transcoded fetch returns empty bytes', async () => {
+    // Mock fetch to return an empty ArrayBuffer (simulating failed transcode).
     (
       global as unknown as {
         fetch: (u: string) => Promise<{ arrayBuffer(): Promise<ArrayBuffer> }>;
@@ -421,7 +440,33 @@ describe('stripExifNative', () => {
     ).fetch = jest.fn().mockResolvedValue({ arrayBuffer: async () => new ArrayBuffer(0) });
 
     const result = await stripExifNative(ORIGINAL, 'jpg');
-    expect(result).toBe(ORIGINAL);
+    // Fail-closed: return null on any error (D8 privacy gate).
+    expect(result).toBe(null);
+  });
+
+  it('REGRESSION: fails if stripExifNative returns the original buffer unchanged', async () => {
+    // This test ensures that if stripExifNative is broken and returns the
+    // original buffer instead of the transcoded one, this test will fail.
+    // A broken implementation would make this test fail, preventing silent
+    // privacy leaks (GPS metadata in unverified photos).
+    mockSaveToLibraryAsync.mockResolvedValue({
+      id: 'fake-asset-id',
+      filename: 'stripped.jpg',
+      uri: 'file:///tmp/stripped.jpg',
+      mediaType: 'photo',
+    });
+    (
+      global as unknown as {
+        fetch: (u: string) => Promise<{ arrayBuffer(): Promise<ArrayBuffer> }>;
+      }
+    ).fetch = jest.fn().mockResolvedValue({ arrayBuffer: async () => STRIPPED });
+
+    const result = await stripExifNative(ORIGINAL, 'jpg');
+
+    // The result must be the STRIPPED buffer, not the ORIGINAL.
+    // If this assertion fails, stripExifNative is a no-op and GPS data leaks.
+    expect(result).toBe(STRIPPED);
+    expect(result).not.toBe(ORIGINAL);
   });
 });
 

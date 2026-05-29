@@ -75,12 +75,21 @@ export async function uploadAvatar(userId: string, localUri: string): Promise<st
   if (Platform.OS === 'web') {
     arrayBuffer = await stripExifWeb(arrayBuffer, ext);
   } else {
-    arrayBuffer = await stripExifNative(arrayBuffer, ext);
+    // D8: stripExifNative returns null on failure; abort rather than upload
+    // original bytes that may contain GPS/home-location metadata from avatar selfies.
+    const stripped = await stripExifNative(arrayBuffer, ext);
+    if (stripped === null) {
+      throw new Error('Photo privacy check failed: EXIF stripping could not be completed. Please try again.');
+    }
+    arrayBuffer = stripped;
   }
 
   const exifCheckPassed = verifyExifStripped(arrayBuffer);
   if (!exifCheckPassed) {
-    console.warn('[EXIF] Verification detected possible metadata markers.');
+    // D8 privacy gate: abort upload if EXIF markers are still present.
+    // Mirrors uploadFlagPhoto behavior in src/lib/flags.ts — same gate, same
+    // rationale (avatar selfies likely contain the user's home GPS coordinates).
+    throw new Error('Photo privacy check failed. Please try a different photo or contact support.');
   }
 
   const contentType =

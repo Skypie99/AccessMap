@@ -8,6 +8,35 @@
  */
 
 // ---------------------------------------------------------------------------
+// expo-media-library mock — used by stripExifNative (called by uploadAvatar).
+// Must declare the spy variable before jest.mock() so the factory closure
+// captures a live reference.
+// ---------------------------------------------------------------------------
+const mockSaveToLibraryAsync = jest.fn();
+
+jest.mock('expo-media-library', () => ({
+  __esModule: true,
+  saveToLibraryAsync: (...args: unknown[]) => mockSaveToLibraryAsync(...args),
+}));
+
+// ---------------------------------------------------------------------------
+// expo-image-manipulator mock — used by stripExifNative.
+// Mocks the manipulateAsync function to avoid the native renderAsync call.
+// ---------------------------------------------------------------------------
+jest.mock('expo-image-manipulator', () => ({
+  __esModule: true,
+  manipulateAsync: jest.fn().mockResolvedValue({
+    uri: 'file:///mock/stripped.jpg',
+    width: 1000,
+    height: 1000,
+  }),
+  SaveFormat: {
+    JPEG: 0,
+    PNG: 1,
+  },
+}));
+
+// ---------------------------------------------------------------------------
 // Supabase mock — hoisted by Jest before any import runs.
 // Chain under test for uploadAvatar:
 //   supabase.storage.from(bucket).upload(path, buffer, opts)
@@ -90,6 +119,7 @@ describe('uploadAvatar()', () => {
       upload: mockUpload,
       getPublicUrl: mockGetPublicUrl,
     });
+    mockSaveToLibraryAsync.mockReset();
   });
 
   // ── Success path ─────────────────────────────────────────────────────────
@@ -171,5 +201,60 @@ describe('uploadAvatar()', () => {
 
     // getPublicUrl must NOT be called when upload fails.
     expect(mockGetPublicUrl).not.toHaveBeenCalled();
+  });
+
+  // ── Error path 5: EXIF verification failure ──────────────────────────────
+
+  it('error: aborts upload when verifyExifStripped detects metadata', async () => {
+    // This test ensures that if stripExifNative returns a buffer with EXIF
+    // markers still present, the upload aborts before touching Storage.
+    // Without this test, a no-op stripExif implementation would silently
+    // leak GPS coordinates to the public bucket.
+    const exifBuffer = new ArrayBuffer(512);
+    const jpegView = new Uint8Array(exifBuffer);
+    // Stamp JPEG magic bytes + EXIF marker (FF E1) to simulate stripping failure.
+    jpegView[0] = 0xff; jpegView[1] = 0xd8; jpegView[2] = 0xff; // JPEG SOI
+    jpegView[10] = 0xff; jpegView[11] = 0xe1; // EXIF marker at position 10
+
+    const cleanBuffer = new ArrayBuffer(512);
+    const cleanView = new Uint8Array(cleanBuffer);
+    cleanView[0] = 0xff; cleanView[1] = 0xd8; cleanView[2] = 0xff; // JPEG SOI, no EXIF markers
+
+    // First fetch is for the original upload URI (before stripping).
+    // Second fetch is for the ImageManipulator-stripped URI (which we'll return EXIF-marked).
+    let fetchCallCount = 0;
+    const originalFetch = (global as unknown as { fetch: unknown }).fetch;
+    (global as unknown as { fetch: unknown }).fetch = async (uri: unknown) => {
+      fetchCallCount++;
+      // First call: uploadAvatar fetches the original file (the initial fetch)
+      if (fetchCallCount === 1) {
+        return {
+          arrayBuffer: async () => cleanBuffer,
+        };
+      }
+      // Second call: stripExifNative fetches the ImageManipulator result (still has EXIF)
+      return {
+        arrayBuffer: async () => exifBuffer,
+      };
+    };
+
+    // Mock saveToLibraryAsync to return an Asset object (this triggers the manipulateAsync)
+    mockSaveToLibraryAsync.mockResolvedValue({
+      id: 'fake-asset-id',
+      filename: 'stripped.jpg',
+      uri: 'file:///tmp/stripped.jpg',
+      mediaType: 'photo',
+    });
+
+    try {
+      await expect(uploadAvatar(USER_ID, 'file:///tmp/photo.jpg')).rejects.toThrow(
+        /privacy check failed/i,
+      );
+
+      // Supabase storage must NOT be touched.
+      expect(mockUpload).not.toHaveBeenCalled();
+    } finally {
+      (global as unknown as { fetch: unknown }).fetch = originalFetch;
+    }
   });
 });
