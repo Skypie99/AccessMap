@@ -167,8 +167,8 @@ describe('TTL rejection (Jordan Condition 3)', () => {
   });
 
   it('returns rows when cachedAt is exactly at the TTL boundary (inclusive edge)', async () => {
-    // cachedAt = now - MAX_CACHE_AGE_MS + 1 → still within TTL
-    const justFreshTimestamp = new Date(Date.now() - MAX_CACHE_AGE_MS + 1).toISOString();
+    // cachedAt = now - MAX_CACHE_AGE_MS + 1000 → 1 s inside TTL, stable against clock jitter
+    const justFreshTimestamp = new Date(Date.now() - MAX_CACHE_AGE_MS + 1000).toISOString();
     const entry = {
       cachedAt: justFreshTimestamp,
       rows: [makeFlagRow({ id: 'edge' })],
