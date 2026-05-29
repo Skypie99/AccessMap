@@ -887,6 +887,8 @@ export default function MapScreen() {
   // accidental-trigger concern (panning) doesn't apply since web uses
   // right-click rather than a long-press gesture.
   const handleMapLongPress = useCallback((coord: { lat: number; lng: number }) => {
+    // Jordan Condition 2: guests cannot create reports.
+    if (!authUser) return;
     if (Platform.OS === 'web') {
       setDropLocation(coord);
       setReportOpen(true);
@@ -904,7 +906,7 @@ export default function MapScreen() {
         },
       },
     ]);
-  }, []);
+  }, [authUser]);
 
   return (
     <View style={styles.container}>
@@ -1509,21 +1511,28 @@ export default function MapScreen() {
             >
               <Text style={styles.fabSecondaryText}>📋 List</Text>
             </Pressable>
-            <Pressable
-              style={({ pressed }) => [
-                styles.fab,
-                !location && styles.fabDisabled,
-                pressed && styles.fabPressed,
-              ]}
-              onPress={() => setReportOpen(true)}
-              disabled={!location}
-              accessibilityRole="button"
-              accessibilityLabel="Report a flag here"
-              accessibilityHint="Opens a form to report an accessibility issue at your current location"
-              accessibilityState={{ disabled: !location }}
-            >
-              <Text style={styles.fabText}>＋ Report</Text>
-            </Pressable>
+            {/* Jordan Condition 2: hide Report FAB for guest users.
+                Guests can browse but not create reports. Hiding at render
+                time avoids collecting location permission before surfacing
+                the "you must sign in" gate — a privacy-adjacent UX issue
+                Jordan flagged in the privacy gate report. */}
+            {authUser && (
+              <Pressable
+                style={({ pressed }) => [
+                  styles.fab,
+                  !location && styles.fabDisabled,
+                  pressed && styles.fabPressed,
+                ]}
+                onPress={() => setReportOpen(true)}
+                disabled={!location}
+                accessibilityRole="button"
+                accessibilityLabel="Report a flag here"
+                accessibilityHint="Opens a form to report an accessibility issue at your current location"
+                accessibilityState={{ disabled: !location }}
+              >
+                <Text style={styles.fabText}>＋ Report</Text>
+              </Pressable>
+            )}
           </View>
         </View>
       </View>

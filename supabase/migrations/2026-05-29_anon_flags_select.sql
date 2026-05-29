@@ -1,0 +1,115 @@
+-- ===========================================================================
+-- 2026-05-29 — Allow anon (guest) users to SELECT from public.flags
+-- Author: Shamus (Lead Developer) — approved by Jordan (Privacy Officer)
+-- ===========================================================================
+--
+-- !!! PROPOSE-ONLY — DO NOT APPLY YET. Sky applies this in the Supabase
+--     dashboard after reviewing. The agent system NEVER writes to the
+--     live DB (Const. Art. 5.3). !!!
+--
+-- ---------------------------------------------------------------------------
+-- PURPOSE
+-- ---------------------------------------------------------------------------
+--
+-- The guest sign-in feature (feat/guest-signin-hamburger-menu-2026-05-29)
+-- renders RootNavigator for unauthenticated visitors. The guest browses the
+-- live flag map read-only — same experience as the existing web demo path
+-- (Platform.OS === 'web' in Gate, App.tsx).
+--
+-- All existing flag SELECT policies are scoped `to authenticated`:
+--
+--     create policy "flags readable by authenticated"
+--       on public.flags for select
+--       to authenticated
+--       using (true);
+--
+-- Without an anon SELECT policy, all Supabase queries issued in guest mode
+-- run under the `anon` role and return empty results (PostgREST implicit
+-- deny). The guest map will be blank.
+--
+-- This migration adds the narrowest possible exception: anon can SELECT
+-- from public.flags. Nothing else changes.
+--
+-- ---------------------------------------------------------------------------
+-- PRIVACY ANALYSIS (Jordan gate — 2026-05-29_Jordan_GuestSigninPrivacyGate.md)
+-- ---------------------------------------------------------------------------
+--
+-- Jordan reviewed and approved Option A (this migration) with no blockers.
+-- Key finding: public.flags contains no PII.
+--
+--   Columns exposed to anon SELECT:
+--     lat, lng, category, severity, description, photo_url,
+--     status, created_at, user_id (UUID only — not joined to users
+--     under the anon role; users table has no anon policy)
+--
+--   Columns NOT exposed (not in flags schema):
+--     email, display_name, avatar_url, push_token — none of these
+--     are in public.flags.
+--
+--   The user_id UUID on each flag cannot be reverse-looked-up under the
+--   anon role because public.users has no anon SELECT policy (see
+--   2026-05-27_users_email_privacy.sql which explicitly revokes anon from
+--   public.users). Blast radius: lat/lng + description + photo — all
+--   public-intent data that users submitted knowing flags are visible on
+--   the public map.
+--
+--   Jordan verdict: "This is privacy-safe because flags contain no PII.
+--   This is functionally identical to the existing web demo path."
+--
+-- ---------------------------------------------------------------------------
+-- BLAST RADIUS — what this enables / what remains blocked
+-- ---------------------------------------------------------------------------
+--
+--   | Table              | anon SELECT | anon INSERT | anon UPDATE | anon DELETE |
+--   |--------------------|-------------|-------------|-------------|-------------|
+--   | public.flags       | ALLOWED ✓   | BLOCKED     | BLOCKED     | BLOCKED     |
+--   | public.users       | BLOCKED     | BLOCKED     | BLOCKED     | BLOCKED     |
+--   | public.push_tokens | BLOCKED     | BLOCKED     | BLOCKED     | BLOCKED     |
+--
+--   All write operations on all tables remain blocked for the anon role.
+--   This migration enables READ-ONLY access to the flags table only.
+--
+-- ---------------------------------------------------------------------------
+-- ROLLBACK
+-- ---------------------------------------------------------------------------
+--
+--   drop policy if exists "flags readable by anon" on public.flags;
+--
+--   After rollback, guest users will see a blank map again (anon SELECT
+--   implicitly denied). The "flags readable by authenticated" policy
+--   continues to serve signed-in users unaffected.
+--
+-- ---------------------------------------------------------------------------
+-- THIS FILE IS IDEMPOTENT — safe to run twice (drop-if-exists / create).
+-- ---------------------------------------------------------------------------
+--
+-- =========================================================================
+-- HOW TO APPLY (Sky)
+-- =========================================================================
+--
+-- 1. Supabase Dashboard → Project → SQL Editor → New query →
+--    paste this WHOLE file → Run.
+-- 2. Cost: instant. No table locks, no backfill. Single policy row in
+--    pg_policies.
+-- 3. Smoke test:
+--    a. Open the app as a guest (tap "Browse as guest" on sign-in screen).
+--    b. The map should show all public flags (same as a signed-in user).
+--    c. The "＋ Report" FAB should NOT appear (Jordan Condition 2).
+--    d. Tap a flag callout — detail data (category, severity, description,
+--       photo) should render normally.
+--    e. Switch to Tasks tab — list loads. No "Sign in" prompt for viewing.
+-- 4. Verify writes are still blocked: open Supabase → Table Editor → flags
+--    → manually check that no anon INSERT/UPDATE/DELETE policies exist.
+--
+-- =========================================================================
+
+drop policy if exists "flags readable by anon" on public.flags;
+
+create policy "flags readable by anon"
+  on public.flags for select
+  to anon
+  using (true);
+
+-- ===========================================================================
+-- End of file.
+-- ===========================================================================
