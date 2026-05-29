@@ -54,7 +54,7 @@ jobs:
       - name: Build with EAS
         env:
           EAS_TOKEN: ${{ secrets.EAS_TOKEN }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          EXPO_APPLE_TEAM_ID: ${{ secrets.EXPO_APPLE_TEAM_ID }}
         run: eas build --platform ios --profile ${{ steps.profile.outputs.PROFILE }} --non-interactive
 
       - name: Submit to TestFlight
