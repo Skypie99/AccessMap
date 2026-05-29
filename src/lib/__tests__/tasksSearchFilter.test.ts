@@ -28,6 +28,7 @@
  * Substring (not whole-word), case-insensitive, no regex semantics.
  */
 
+jest.mock('../supabase', () => ({ __esModule: true, supabase: { from: jest.fn() } }));
 import { CATEGORY_LABELS } from '../flags';
 import type { FlagCategory, FlagRow, FlagStatus } from '@/types/database';
 

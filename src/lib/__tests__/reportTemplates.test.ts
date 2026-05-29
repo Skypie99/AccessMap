@@ -11,6 +11,7 @@
  *   - validReportTemplates() does not mutate the source array.
  */
 
+jest.mock('../supabase', () => ({ __esModule: true, supabase: { from: jest.fn() } }));
 import { CATEGORY_ORDER, SEVERITY_ORDER } from '../flags';
 import {
   REPORT_TEMPLATES,
