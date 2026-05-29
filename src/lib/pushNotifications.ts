@@ -142,6 +142,10 @@ export async function deletePushToken(userId: string): Promise<void> {
  * Full enable flow: show explanation → request OS permission → save token.
  * Returns true if notifications were successfully enabled.
  */
+// TODO(analytics): when a foreground notification-received listener is added,
+// call track('push_notification_received', { type: notification.request.content.data?.type ?? 'unknown' })
+// inside the addNotificationReceivedListener callback. See src/lib/analytics.ts.
+
 export async function enablePushNotifications(userId: string): Promise<boolean> {
   const confirmed = await showPushExplanation();
   if (!confirmed) return false;
