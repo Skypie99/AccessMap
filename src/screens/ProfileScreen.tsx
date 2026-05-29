@@ -1890,8 +1890,8 @@ const makeStyles = (color: ColorTheme) =>
       minHeight: 44,
     },
     toggleTextWrap: { flex: 1, gap: 2 },
-    toggleLabel: { fontSize: 14, fontWeight: '600', color: '#222' },
-    toggleHint: { fontSize: 12, color: '#666' },
+    toggleLabel: { fontSize: 14, fontWeight: '600', color: color.textStrong },
+    toggleHint: { fontSize: 12, color: color.textMuted },
     aboutRow: {
       marginTop: 16,
       backgroundColor: color.surface,
