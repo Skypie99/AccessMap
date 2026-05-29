@@ -1953,8 +1953,11 @@ const makeStyles = (color: ColorTheme) =>
     filterPill: {
       paddingHorizontal: 12,
       paddingVertical: 6,
+      minHeight: 44,
       borderRadius: radius.circle,
       backgroundColor: color.surfaceNeutral,
+      alignItems: 'center',
+      justifyContent: 'center',
     },
     filterPillActive: { backgroundColor: color.brand },
     filterPillText: { fontSize: 12, color: color.text, fontWeight: '600' },
