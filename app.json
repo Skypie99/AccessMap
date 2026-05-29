@@ -13,6 +13,7 @@
       "buildNumber": "2",
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "AccessMap uses your location to show nearby accessibility flags and to attach your location when you report a new flag.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "AccessMap uses your location to show accessibility flags near you.",
         "NSCameraUsageDescription": "AccessMap uses the camera to capture photos of accessibility barriers.",
         "NSPhotoLibraryUsageDescription": "AccessMap needs photo access to attach images to accessibility reports."
       }
