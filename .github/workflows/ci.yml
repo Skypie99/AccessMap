@@ -68,5 +68,5 @@ jobs:
       - name: Install dependencies
         run: npm ci --legacy-peer-deps
 
-      - name: Run tests
-        run: npm test -- --passWithNoTests --forceExit --watchAll=false
+      - name: Run tests with coverage
+        run: npm run test:ci -- --passWithNoTests --forceExit --watchAll=false

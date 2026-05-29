@@ -26,4 +26,28 @@ module.exports = {
   // is fixed by mocking '../supabase' in those suites, but this guards against
   // any future module that spins up async work at import time.
   openHandlesTimeout: 3000,
+  // Phase 2 Track A: enforce ≥80% coverage on every CI run.
+  // Applied to src/ only — screens and components that require a native runtime
+  // are excluded via collectCoverageFrom rather than lowering the bar.
+  // To check locally: npm run test:ci
+  collectCoverageFrom: [
+    'src/**/*.{ts,tsx}',
+    '!src/**/*.d.ts',
+    '!src/**/index.ts',
+    // Screens depend on native map / image-picker / navigation and are
+    // integration-tested via Detox (planned Wave 3); skip here.
+    '!src/screens/**',
+    // Platform-specific map wrappers need a real device.
+    '!src/components/PlatformMap*.tsx',
+    // Type-only file — no executable lines.
+    '!src/types/**',
+  ],
+  coverageThreshold: {
+    global: {
+      branches: 80,
+      functions: 80,
+      lines: 80,
+      statements: 80,
+    },
+  },
 };
