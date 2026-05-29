@@ -1,4 +1,4 @@
-import { filterWatchedFlags } from '../watchedFlagsFilter';
+import { filterWatchedFlags, filterWatchedFlagsByStatus } from '../watchedFlagsFilter';
 import type { FlagRow, FlagCategory, FlagStatus } from '@/types/database';
 
 // Minimal CATEGORY_LABELS stand-in so the test doesn't depend on the real
@@ -133,5 +133,40 @@ describe('filterWatchedFlags', () => {
     expect(filterWatchedFlags(flags, 'no ramp', customLabel).map((f) => f.id)).toEqual([]);
     // …but the custom label "Missing kerb cut" does.
     expect(filterWatchedFlags(flags, 'kerb', customLabel).map((f) => f.id)).toEqual(['b']);
+  });
+});
+
+describe('filterWatchedFlagsByStatus', () => {
+  const flags = [
+    makeFlag('a', { status: 'open' }),
+    makeFlag('b', { status: 'verified' }),
+    makeFlag('c', { status: 'resolved' }),
+    makeFlag('d', { status: 'open' }),
+  ];
+
+  it('returns the input reference unchanged for the "all" filter', () => {
+    expect(filterWatchedFlagsByStatus(flags, 'all')).toBe(flags);
+  });
+
+  it('filters to only open flags', () => {
+    const result = filterWatchedFlagsByStatus(flags, 'open');
+    expect(result.map((f) => f.id)).toEqual(['a', 'd']);
+  });
+
+  it('filters to only verified flags', () => {
+    const result = filterWatchedFlagsByStatus(flags, 'verified');
+    expect(result.map((f) => f.id)).toEqual(['b']);
+  });
+
+  it('filters to only resolved flags', () => {
+    const result = filterWatchedFlagsByStatus(flags, 'resolved');
+    expect(result.map((f) => f.id)).toEqual(['c']);
+  });
+
+  it('returns an empty array when no flags match the status', () => {
+    const result = filterWatchedFlagsByStatus(flags, 'verified');
+    // Make a list with no verified flags
+    const noVerified = flags.filter((f) => f.status !== 'verified');
+    expect(filterWatchedFlagsByStatus(noVerified, 'verified')).toEqual([]);
   });
 });

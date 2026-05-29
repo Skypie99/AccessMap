@@ -1,0 +1,45 @@
+version: 2
+
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: America/Los_Angeles
+    groups:
+      expo-ecosystem:
+        patterns:
+          - "expo*"
+          - "@expo/*"
+          - "react-native*"
+          - "@react-native*"
+      navigation:
+        patterns:
+          - "@react-navigation/*"
+      supabase:
+        patterns:
+          - "@supabase/*"
+      testing:
+        patterns:
+          - "jest*"
+          - "@testing-library/*"
+          - "@types/jest"
+          - "jest-expo"
+      typescript-and-tooling:
+        patterns:
+          - "typescript"
+          - "eslint*"
+          - "prettier*"
+          - "@types/*"
+          - "babel*"
+          - "husky"
+    open-pull-requests-limit: 5
+    reviewers:
+      - Skypie99
+    labels:
+      - dependencies
+      - automated
+    commit-message:
+      prefix: "chore(deps)"

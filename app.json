@@ -49,6 +49,11 @@
           "locationWhenInUsePermission": "AccessMap uses your location to show nearby accessibility flags and to attach your location when you report a new flag."
         }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "a7149107-fb9b-4853-a053-648320c05cb6"
+      }
+    }
   }
 }

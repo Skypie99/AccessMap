@@ -13,12 +13,13 @@
  * by fetchFlagsByIds; the count note at the top tells the user how many are
  * loaded vs how many IDs are stored.
  */
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
   Modal,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -32,12 +33,18 @@ import {
   severityColor,
 } from '@/lib/flags';
 import { clearWatched, loadWatched, removeWatched } from '@/lib/watchedFlags';
+import {
+  filterWatchedFlags,
+  filterWatchedFlagsByStatus,
+  type WatchedStatusFilter,
+} from '@/lib/watchedFlagsFilter';
 import { font, radius, spacing } from '@/theme';
 import { decorativeProps } from '@/lib/accessibility';
 import { severityA11y, statusA11y } from '@/lib/a11yText';
 import type { FlagRow } from '@/types/database';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { StatusBadge } from './StatusBadge';
+import SearchInputRow from './SearchInputRow';
 
 interface Props {
   visible: boolean;
@@ -73,6 +80,8 @@ export default function MyWatchedModal({
   const [watchedIds, setWatchedIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<WatchedStatusFilter>('all');
 
   const mountedRef = useRef(true);
   useEffect(() => {
@@ -155,6 +164,21 @@ export default function MyWatchedModal({
       // cleared state; a reload will re-sync if needed.
     }
   }, [user, flags.length]);
+
+  // Reset filters whenever the modal opens so stale state from a previous
+  // session doesn't confuse the "No results" empty state.
+  useEffect(() => {
+    if (visible) {
+      setSearchQuery('');
+      setStatusFilter('all');
+    }
+  }, [visible]);
+
+  // Apply text + status filters locally — no extra fetches needed.
+  const displayFlags = useMemo(() => {
+    const byStatus = filterWatchedFlagsByStatus(flags, statusFilter);
+    return filterWatchedFlags(byStatus, searchQuery, (cat) => CATEGORY_LABELS[cat] ?? '');
+  }, [flags, searchQuery, statusFilter]);
 
   const missingCount = watchedIds.length - flags.length;
 
@@ -278,6 +302,51 @@ export default function MyWatchedModal({
             </Pressable>
           </View>
 
+          {/* Search bar — always shown so the user can type before data loads */}
+          <SearchInputRow
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            onClear={() => setSearchQuery('')}
+            placeholder="Search watched flags…"
+            accessibilityLabel="Search watched flags"
+            accessibilityHint="Filters by category and description"
+            wrapStyle={styles.searchRow}
+          />
+
+          {/* Status filter chips */}
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.statusScroll}
+            contentContainerStyle={styles.statusScrollContent}
+            accessibilityLabel="Filter by status"
+          >
+            {(
+              [
+                { value: 'all' as const, label: 'All' },
+                { value: 'open' as const, label: 'Open' },
+                { value: 'verified' as const, label: 'Verified' },
+                { value: 'resolved' as const, label: 'Resolved' },
+              ] satisfies { value: WatchedStatusFilter; label: string }[]
+            ).map(({ value, label }) => {
+              const active = statusFilter === value;
+              const chipBg = active ? chipActiveBg(value, color) : color.surfaceNeutral;
+              const chipFg = active ? chipActiveFg(value, color) : color.textMuted;
+              return (
+                <Pressable
+                  key={value}
+                  onPress={() => setStatusFilter(value)}
+                  style={[styles.statusChip, { backgroundColor: chipBg }]}
+                  accessibilityRole="button"
+                  accessibilityLabel={value === 'all' ? 'Show all statuses' : `Filter to ${label} flags`}
+                  accessibilityState={{ selected: active }}
+                >
+                  <Text style={[styles.statusChipText, { color: chipFg }]}>{label}</Text>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+
           {missingCount > 0 && !loading && (
             <View style={styles.missingBanner}>
               <Text style={styles.missingText}>
@@ -314,22 +383,52 @@ export default function MyWatchedModal({
                 <Text style={styles.emptyBold}>Watch</Text> to track it here.
               </Text>
             </View>
+          ) : displayFlags.length === 0 ? (
+            <View style={styles.center}>
+              <Text style={styles.emptyIcon} accessibilityElementsHidden>
+                🔎
+              </Text>
+              <Text style={styles.emptyTitle}>No matches</Text>
+              <Text style={styles.emptySubtitle}>
+                Try a different search term or status filter.
+              </Text>
+            </View>
           ) : (
             <FlatList
-              data={flags}
+              data={displayFlags}
               keyExtractor={(item) => item.id}
               renderItem={renderItem}
               contentContainerStyle={styles.list}
               ItemSeparatorComponent={() => <View style={styles.separator} />}
               showsVerticalScrollIndicator={false}
               accessibilityRole="list"
-              accessibilityLabel={`Watched flags list, ${flags.length} ${flags.length === 1 ? 'item' : 'items'}`}
+              accessibilityLabel={`Watched flags list, ${displayFlags.length} ${displayFlags.length === 1 ? 'item' : 'items'}`}
             />
           )}
         </View>
       </View>
     </Modal>
   );
+}
+
+// Returns the active background colour for each status chip, matching the
+// StatusBadge palette so "Open" chips look like Open badges, etc.
+function chipActiveBg(status: WatchedStatusFilter, color: ColorTheme): string {
+  switch (status) {
+    case 'open': return color.statusOpenBg;
+    case 'verified': return color.statusVerifiedBg;
+    case 'resolved': return color.statusResolvedBg;
+    default: return color.brand;
+  }
+}
+
+function chipActiveFg(status: WatchedStatusFilter, color: ColorTheme): string {
+  switch (status) {
+    case 'open': return color.statusOpenFg;
+    case 'verified': return color.statusVerifiedFg;
+    case 'resolved': return color.statusResolvedFg;
+    default: return color.textOnBrand;
+  }
 }
 
 const makeStyles = (color: ColorTheme) =>
@@ -497,5 +596,28 @@ const makeStyles = (color: ColorTheme) =>
       backgroundColor: color.success,
       borderTopLeftRadius: 2,
       borderBottomLeftRadius: 2,
+    },
+    searchRow: {
+      marginBottom: spacing.xs,
+    },
+    statusScroll: {
+      flexGrow: 0,
+      marginBottom: spacing.sm,
+    },
+    statusScrollContent: {
+      gap: spacing.xs,
+      paddingRight: spacing.xs,
+    },
+    statusChip: {
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.xs + 2,
+      borderRadius: radius.full,
+      minHeight: 32,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    statusChipText: {
+      fontSize: font.size.sm,
+      fontWeight: font.weight.semibold,
     },
   });

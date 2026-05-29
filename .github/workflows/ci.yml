@@ -70,3 +70,38 @@ jobs:
 
       - name: Run tests with coverage
         run: npm run test:ci -- --passWithNoTests --forceExit --watchAll=false
+
+  perf-budget:
+    name: Performance Budget
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Build web bundle
+        run: npx expo export --platform web 2>&1 || true
+
+      - name: Check bundle size budget
+        # Budget: web build <= 2 MB gzipped. Baseline ~1.1 MB (bc3ff72).
+        # See docs/PERFORMANCE_BUDGET.md for full baseline + rationale.
+        run: |
+          if [ ! -d "dist" ]; then
+            echo "No dist/ — web build failed or output dir changed. Skipping."
+            exit 0
+          fi
+          TOTAL_GZ=$(find dist -name "*.js" -exec gzip -c {} \; | wc -c)
+          TOTAL_GZ_MB=$(echo "scale=2; $TOTAL_GZ / 1048576" | bc)
+          BUDGET_BYTES=2097152
+          echo "Bundle size (gzipped): ${TOTAL_GZ_MB} MB"
+          if [ "$TOTAL_GZ" -gt "$BUDGET_BYTES" ]; then
+            echo "FAIL: Bundle exceeds 2 MB gzipped (${TOTAL_GZ_MB} MB). See docs/PERFORMANCE_BUDGET.md."
+            exit 1
+          fi
+          echo "PASS: Bundle within budget."

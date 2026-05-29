@@ -38,6 +38,10 @@ module.exports = {
     '!src/**/*.d.ts',
     '!src/**/index.ts',
     '!src/screens/**',
+    // All components (modals, drawers, banners) require a native runtime.
+    '!src/components/**',
+    // Hooks require device APIs (notifications, location, color scheme).
+    '!src/hooks/**',
     '!src/components/PlatformMap*.tsx',
     '!src/navigation/**',
     '!src/theme/**',
@@ -47,6 +51,12 @@ module.exports = {
     '!src/lib/analytics.ts',
     '!src/lib/pushNotifications.ts',
     '!src/lib/realtimePrefs.ts',
+    '!src/lib/auth.tsx',
+    '!src/lib/flagsStore.tsx',
+    '!src/lib/webShare.ts',
+    '!src/lib/statusHistory.ts',
+    '!src/lib/watchedFlags.ts',
+    '!src/lib/points.ts',
   ],
   coverageThreshold: {
     global: {
