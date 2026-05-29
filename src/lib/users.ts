@@ -1,5 +1,7 @@
 import { supabase } from './supabase';
+import { Platform } from 'react-native';
 import type { UserRow } from '@/types/database';
+import { stripExifNative, stripExifWeb, verifyExifStripped, detectMimeFromBytes } from './flags';
 
 // Same bucket as flag photos — Storage RLS requires path to start with
 // auth.uid(), which <userId>/avatar/<timestamp>.<ext> satisfies.
@@ -59,10 +61,26 @@ export async function uploadAvatar(userId: string, localUri: string): Promise<st
   }
 
   const response = await fetch(localUri);
-  const arrayBuffer = await response.arrayBuffer();
+  let arrayBuffer = await response.arrayBuffer();
   if (arrayBuffer.byteLength === 0) throw new Error('Photo file is empty.');
   if (arrayBuffer.byteLength > MAX_AVATAR_BYTES) {
     throw new Error('Photo is too large. Please pick one under 10 MB.');
+  }
+
+  const detectedMime = detectMimeFromBytes(arrayBuffer);
+  if (!detectedMime) {
+    throw new Error('File does not appear to be a valid image.');
+  }
+
+  if (Platform.OS === 'web') {
+    arrayBuffer = await stripExifWeb(arrayBuffer, ext);
+  } else {
+    arrayBuffer = await stripExifNative(arrayBuffer, ext);
+  }
+
+  const exifCheckPassed = verifyExifStripped(arrayBuffer);
+  if (!exifCheckPassed) {
+    console.warn('[EXIF] Verification detected possible metadata markers.');
   }
 
   const contentType =
