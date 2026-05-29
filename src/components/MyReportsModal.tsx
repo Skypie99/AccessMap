@@ -24,6 +24,7 @@ import { filterMyReports } from '@/lib/myReportsFilter';
 import type { FlagRow, FlagStatus } from '@/types/database';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { font, radius, shadow, spacing } from '@/theme';
+import { StatusBadge } from '@/components/StatusBadge';
 
 const STATUS_FILTER_ORDER: FlagStatus[] = ['open', 'verified', 'resolved', 'rejected'];
 
@@ -154,7 +155,6 @@ export default function MyReportsModal({
   }, [visible, refreshKey, load]);
 
   const renderItem = ({ item }: { item: FlagRow }) => {
-    const statusPalette = STATUS_COLORS[item.status];
     const dateLabel = new Date(item.created_at).toLocaleDateString(undefined, {
       year: 'numeric',
       month: 'short',
@@ -185,11 +185,7 @@ export default function MyReportsModal({
             <Text style={styles.rowTitle} numberOfLines={1}>
               {CATEGORY_LABELS[item.category]}
             </Text>
-            <View style={[styles.statusBadge, { backgroundColor: statusPalette.bg }]}>
-              <Text style={[styles.statusBadgeText, { color: statusPalette.fg }]}>
-                {STATUS_LABELS[item.status]}
-              </Text>
-            </View>
+            <StatusBadge status={item.status} />
             {/* Pin shortcut — bypasses the detail modal and jumps straight
               to the Map tab with the pin focused. Only shown when the
               parent passes onViewOnMap. */}
@@ -518,12 +514,6 @@ const makeStyles = (color: ColorTheme) =>
       color: color.textStrong,
       letterSpacing: -0.1,
     },
-    statusBadge: {
-      paddingHorizontal: spacing.sm + 2,
-      paddingVertical: spacing.tight,
-      borderRadius: radius.circle,
-    },
-    statusBadgeText: { fontWeight: font.weight.bold, fontSize: font.size.caption },
     rowBody: { flexDirection: 'row', gap: spacing.md },
     thumb: {
       width: 64,

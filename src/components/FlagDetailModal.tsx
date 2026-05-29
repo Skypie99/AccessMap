@@ -28,7 +28,6 @@ import {
   CATEGORY_ORDER,
   deleteFlag,
   severityColor,
-  STATUS_COLORS,
   STATUS_LABELS,
   updateFlagContent,
   updateFlagStatus,
@@ -39,6 +38,7 @@ import { CONTEXT_TAG_LABELS, isValidTag } from '@/lib/contextTags';
 import type { FlagCategory, FlagRow, FlagSeverity, FlagStatus } from '@/types/database';
 import PhotoLightboxModal from './PhotoLightboxModal';
 import StatusHistoryModal from './StatusHistoryModal';
+import { StatusBadge } from './StatusBadge';
 
 export type DetailAction = 'verify' | 'resolve' | 'reject';
 
@@ -180,8 +180,6 @@ export default function FlagDetailModal({
   });
   const formattedCoords = `${shownFlag.lat.toFixed(5)}, ${shownFlag.lng.toFixed(5)}`;
   const coordsA11y = `Coordinates ${shownFlag.lat.toFixed(5)} latitude, ${shownFlag.lng.toFixed(5)} longitude`;
-  const statusPalette = STATUS_COLORS[status];
-
   const canEdit = isOwn && status === 'open';
 
   const handleSaveEdit = async () => {
@@ -377,15 +375,7 @@ export default function FlagDetailModal({
                 >
                   <Text style={styles.severityChipText}>Severity {shownFlag.severity}</Text>
                 </View>
-                <View
-                  style={[styles.statusBadge, { backgroundColor: statusPalette.bg }]}
-                  accessible
-                  accessibilityLabel={statusA11y(status)}
-                >
-                  <Text style={[styles.statusBadgeText, { color: statusPalette.fg }]}>
-                    {STATUS_LABELS[status]}
-                  </Text>
-                </View>
+                <StatusBadge status={status} accessibilityLabel={statusA11y(status)} />
               </View>
 
               <Text style={styles.sectionLabel}>Description</Text>
@@ -827,12 +817,6 @@ const makeStyles = (color: ColorTheme) =>
       borderRadius: radius.circle,
     },
     severityChipText: { color: color.textOnBrand, fontWeight: '700', fontSize: 12 },
-    statusBadge: {
-      paddingHorizontal: 10,
-      paddingVertical: 6,
-      borderRadius: radius.circle,
-    },
-    statusBadgeText: { fontWeight: '700', fontSize: 12 },
     sectionLabel: {
       fontSize: 12,
       fontWeight: '600',
