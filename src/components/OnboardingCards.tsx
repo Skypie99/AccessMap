@@ -284,6 +284,69 @@ const makeStyles = (color: ColorTheme) =>
       fontSize: font.size.base,
     },
     scroll: { flex: 1 },
+    glowOrb: {
+      position: 'absolute',
+      top: '20%',
+      alignSelf: 'center',
+      width: 280,
+      height: 280,
+      borderRadius: 140,
+      // backgroundColor injected inline — color varies per card
+    },
+    // New liquid-glass card outer wrapper
+    cardOuter: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: spacing.xxxl,
+      paddingTop: spacing.xxl,
+      paddingBottom: spacing.md,
+      gap: spacing.xl,
+    },
+    // Circular icon container with subtle glass border + glow
+    iconCircle: {
+      width: 112,
+      height: 112,
+      borderRadius: 56,
+      backgroundColor: 'rgba(255,255,255,0.06)',
+      borderWidth: 1.5,
+      // borderColor and shadowColor injected inline per card
+      alignItems: 'center',
+      justifyContent: 'center',
+      shadowOpacity: 0.35,
+      shadowRadius: 20,
+      shadowOffset: { width: 0, height: 8 },
+      elevation: 8,
+    },
+    // "1 / 3" pill indicator
+    positionPill: {
+      paddingHorizontal: spacing.md,
+      paddingVertical: 4,
+      borderRadius: radius.circle,
+      backgroundColor: 'rgba(255,255,255,0.1)',
+      borderWidth: 1,
+      borderColor: 'rgba(255,255,255,0.15)',
+    },
+    positionText: {
+      fontSize: font.size.sm,
+      color: 'rgba(255,255,255,0.55)',
+      fontWeight: font.weight.semibold,
+      letterSpacing: 0.8,
+    },
+    // Glass content card holding the title + body
+    cardContent: {
+      backgroundColor: 'rgba(255,255,255,0.07)',
+      borderRadius: radius.xl,
+      borderWidth: 1,
+      borderColor: 'rgba(255,255,255,0.12)',
+      paddingHorizontal: spacing.xl,
+      paddingVertical: spacing.lg,
+      gap: spacing.sm,
+      alignItems: 'center',
+      ...(Platform.OS === 'web'
+        ? { backdropFilter: 'blur(20px) saturate(140%)' } as object
+        : {}),
+    },
     card: {
       flex: 1,
       paddingHorizontal: spacing.xxxl,
@@ -357,14 +420,17 @@ const makeStyles = (color: ColorTheme) =>
     backBtnTextDisabled: { color: color.textMuted },
     primaryBtn: {
       flex: 1,
-      backgroundColor: color.brand,
       paddingVertical: spacing.lg,
       paddingHorizontal: spacing.xxl,
       borderRadius: radius.lg,
       alignItems: 'center',
       minHeight: 44,
       justifyContent: 'center',
-      ...shadow.e2,
+      shadowColor: '#2563eb',
+      shadowOpacity: 0.45,
+      shadowRadius: 12,
+      shadowOffset: { width: 0, height: 4 },
+      elevation: 6,
     },
     btnPressed: { opacity: 0.85 },
     primaryBtnText: {
