@@ -124,6 +124,7 @@ export default function MapScreen() {
     loading: loadingFlags,
     error: loadError,
     refresh: refreshFlags,
+    refreshIfStale: refreshFlagsIfStale,
     setStatuses,
     setViewportGate,
   } = useFlags();
@@ -751,9 +752,15 @@ export default function MapScreen() {
         return;
       }
       if (mountedRef.current) setPermissionDenied(false);
-      const pos = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.Balanced,
-      });
+      // Battery: reuse a cached fix up to 30s old before powering the GPS for a
+      // fresh lock on every recenter/initial-locate. 30s is recent enough to
+      // center the map accurately; getLastKnownPositionAsync returns null when
+      // no recent fix exists, so we fall back to a live read.
+      const pos =
+        (await Location.getLastKnownPositionAsync({ maxAge: 30_000 })) ??
+        (await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.Balanced,
+        }));
       const coords = {
         lat: pos.coords.latitude,
         lng: pos.coords.longitude,
@@ -800,9 +807,13 @@ export default function MapScreen() {
     const t = setTimeout(() => {
       mapRef.current?.showCallout(focus.id);
     }, 700);
-    refreshFlags();
+    // Only revalidate if the flag list is actually stale. Tapping a Tasks card
+    // to focus a flag we already have shouldn't trigger a full network re-fetch
+    // (realtime + the freshness window keep the list current). Saves a
+    // round-trip — and the radio/battery cost — on every card tap.
+    void refreshFlagsIfStale();
     return () => clearTimeout(t);
-  }, [route.params?.focusFlag, route.params?.ts, refreshFlags]);
+  }, [route.params?.focusFlag, route.params?.ts, refreshFlagsIfStale]);
 
   // Deep-link arrival: accessmap://flag/{id} → React Navigation parses the
   // id into route.params.flagId. Fetch the flag's lat/lng on the fly, then
