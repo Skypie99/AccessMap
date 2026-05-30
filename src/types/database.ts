@@ -28,6 +28,14 @@ export type FlagRow = {
   // Optional until supabase/migrations/2026-05-24_flag_context_tags.sql
   // is applied. The column holds ≤5 vocabulary strings from contextTags.ts.
   context_tags?: string[];
+  // F10 reopen mechanism. Optional until
+  // supabase/migrations/2026-05-30_flag_reopen_requests.sql is applied.
+  // reopen_requests is the anonymous aggregate vote count for the current
+  // resolution cycle. reopen_requests_reset_at stamps when the current
+  // cycle started (used for client-side per-cycle dedup without user_id).
+  // Jordan hard condition: no user_id linkage — counter only.
+  reopen_requests?: number;
+  reopen_requests_reset_at?: string | null;
 };
 
 export type UserRow = {
