@@ -1871,11 +1871,11 @@ const makeStyles = (color: ColorTheme) =>
       ...shadow.e2,
     },
     actionBtn: {
-      width: 36,
-      height: 36,
+      minWidth: 44, // WCAG 2.5.5: was 36pt (below 44pt project standard)
+      minHeight: 44,
       alignItems: 'center',
       justifyContent: 'center',
-      borderRadius: 18,
+      borderRadius: 22,
     },
     actionBtnActive: { backgroundColor: color.brand },
     actionDivider: {

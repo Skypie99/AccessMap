@@ -1523,7 +1523,7 @@ const makeStyles = (color: ColorTheme) =>
     sevChip: {
       flexGrow: 1,
       flexBasis: 0,
-      minHeight: 36,
+      minHeight: 44, // WCAG 2.5.5: was 36pt (below 44pt project standard)
       paddingVertical: 8,
       borderRadius: radius.circle,
       backgroundColor: color.surfaceNeutral,
@@ -1543,7 +1543,7 @@ const makeStyles = (color: ColorTheme) =>
       paddingBottom: 2,
     },
     catChip: {
-      minHeight: 36,
+      minHeight: 44, // WCAG 2.5.5: was 36pt (below 44pt project standard)
       paddingHorizontal: 12,
       paddingVertical: 8,
       borderRadius: radius.circle,

@@ -218,7 +218,7 @@ function makeStyles(color: ColorTheme) {
       color: color.textMuted,
     },
     rankTop: {
-      color: color.brand,
+      color: color.brandText, // WCAG 1.4.3: brand (#2f80ed) = 3.3:1 on white, fails AA at 13pt; brandText (#1c4f99) = 7.6:1 ✓
       fontWeight: '700',
     },
     nameWrap: {

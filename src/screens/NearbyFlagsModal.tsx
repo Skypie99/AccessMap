@@ -407,7 +407,7 @@ const makeStyles = (color: ColorTheme) =>
       paddingVertical: spacing.xs + 1,
       borderRadius: radius.circle,
       backgroundColor: color.surfaceNeutral,
-      minHeight: 36,
+      minHeight: 44, // WCAG 2.5.5: was 36pt (below 44pt project standard)
       alignItems: 'center',
       justifyContent: 'center',
     },
