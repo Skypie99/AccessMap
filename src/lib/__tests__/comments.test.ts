@@ -80,6 +80,16 @@ describe('listComments', () => {
     expect(mockFrom).toHaveBeenCalledWith('flag_comments');
   });
 
+  it('filters by flag_id and orders by created_at (newest first)', async () => {
+    const chain = selectChain([]);
+    mockFrom.mockReturnValue(chain);
+
+    await listComments('flag-42');
+
+    expect(chain.eq).toHaveBeenCalledWith('flag_id', 'flag-42');
+    expect(chain.order).toHaveBeenCalledWith('created_at', { ascending: false });
+  });
+
   it('flattens the users.display_name join into display_name', async () => {
     const rawRow = {
       id: 'c1',

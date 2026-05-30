@@ -1,19 +1,45 @@
 /**
- * Tests for useComments hook and the CommentsTableNotReadyError sentinel.
- *
- * @testing-library/react-native is not installed, so we test the hook's
- * dependencies and the CommentsTableNotReadyError sentinel class directly.
- * The hook's React lifecycle (state updates, realtime subscriptions) requires
- * renderHook() and is deferred to an integration test once that library ships.
+ * Tests for the useComments hook + the CommentsTableNotReadyError sentinel.
  *
  * Coverage:
- *  - CommentsTableNotReadyError: name, message, instanceof check
- *  - isTableMissingError detection via listComments error surfacing
- *  - Module shape: hook is exported as a function, result keys are correct
+ *   - CommentsTableNotReadyError: name, message, instanceof semantics
+ *   - useComments lifecycle (via renderHook):
+ *       · initial load populates comments + toggles loading
+ *       · error state surfaces errorMessage
+ *       · table-missing surfaces tableNotReady (not error)
+ *       · null flagId is a no-op (no fetch)
+ *       · realtime channel is subscribed on mount and torn down on unmount
+ *       · addComment calls the lib then refetches
+ *       · deleteComment removes optimistically, and rolls back + rethrows on error
+ *
+ * The comments lib and the supabase realtime client are mocked so nothing
+ * touches the network. CommentsTableNotReadyError is taken from the real
+ * module so `instanceof` checks inside the hook line up with what we throw.
  */
 
-// Supabase mock — must be declared before jest.mock() hoisting.
-const mockFrom = jest.fn();
+import { act, renderHook, waitFor } from '@testing-library/react-native';
+import type { CommentRow } from '@/types/database';
+
+// --- comments lib mock ------------------------------------------------------
+const mockListComments = jest.fn();
+const mockAddComment = jest.fn();
+const mockDeleteComment = jest.fn();
+
+jest.mock('@/lib/comments', () => {
+  const actual = jest.requireActual('@/lib/comments');
+  return {
+    __esModule: true,
+    // Keep the real sentinel class so the hook's `instanceof` check matches
+    // the instances thrown from these tests.
+    CommentsTableNotReadyError: actual.CommentsTableNotReadyError,
+    MAX_COMMENT_LENGTH: actual.MAX_COMMENT_LENGTH,
+    listComments: (...args: unknown[]) => mockListComments(...args),
+    addComment: (...args: unknown[]) => mockAddComment(...args),
+    deleteComment: (...args: unknown[]) => mockDeleteComment(...args),
+  };
+});
+
+// --- supabase realtime mock -------------------------------------------------
 const mockChannel = jest.fn();
 const mockOn = jest.fn();
 const mockSubscribe = jest.fn();
@@ -22,20 +48,40 @@ const mockRemoveChannel = jest.fn();
 jest.mock('@/lib/supabase', () => ({
   __esModule: true,
   supabase: {
-    from: (...args: unknown[]) => mockFrom(...args),
     channel: (...args: unknown[]) => mockChannel(...args),
     removeChannel: (...args: unknown[]) => mockRemoveChannel(...args),
   },
 }));
 
-// Chain the realtime mock so channel(...).on(...).subscribe() works.
-mockChannel.mockReturnValue({
-  on: mockOn.mockReturnThis(),
-  subscribe: mockSubscribe.mockReturnThis(),
-});
-
 import { CommentsTableNotReadyError } from '@/lib/comments';
 import { useComments } from '../useComments';
+
+// ---------------------------------------------------------------------------
+// Fixtures
+// ---------------------------------------------------------------------------
+
+function comment(id: string, content = 'hi'): CommentRow {
+  return {
+    id,
+    flag_id: 'flag-1',
+    user_id: 'user-1',
+    content,
+    created_at: '2026-05-30T12:00:00Z',
+    display_name: 'Sky',
+  };
+}
+
+const SUBSCRIBE_HANDLE = { channel: 'flag_comments:flag-1' };
+
+beforeEach(() => {
+  jest.clearAllMocks();
+  // channel(...).on(...).subscribe() chain
+  mockSubscribe.mockReturnValue(SUBSCRIBE_HANDLE);
+  mockOn.mockReturnValue({ subscribe: mockSubscribe });
+  mockChannel.mockReturnValue({ on: mockOn });
+  // sensible default so effects that fire before a test overrides resolve cleanly
+  mockListComments.mockResolvedValue([]);
+});
 
 // ---------------------------------------------------------------------------
 // CommentsTableNotReadyError sentinel
@@ -43,8 +89,7 @@ import { useComments } from '../useComments';
 
 describe('CommentsTableNotReadyError', () => {
   it('is an instance of Error', () => {
-    const err = new CommentsTableNotReadyError();
-    expect(err).toBeInstanceOf(Error);
+    expect(new CommentsTableNotReadyError()).toBeInstanceOf(Error);
   });
 
   it('has the expected name', () => {
@@ -55,32 +100,184 @@ describe('CommentsTableNotReadyError', () => {
     expect(new CommentsTableNotReadyError().message).toMatch(/flag_comments/);
   });
 
-  it('is detectable with instanceof', () => {
-    const err = new CommentsTableNotReadyError();
-    expect(err instanceof CommentsTableNotReadyError).toBe(true);
-  });
-
-  it('is distinct from other Errors', () => {
+  it('is distinct from a plain Error with the same message', () => {
     const other = new Error('flag_comments table not yet available');
     expect(other instanceof CommentsTableNotReadyError).toBe(false);
   });
 });
 
 // ---------------------------------------------------------------------------
-// useComments — shape check
+// useComments — initial load
 // ---------------------------------------------------------------------------
 
-describe('useComments', () => {
-  it('is exported as a function', () => {
-    expect(typeof useComments).toBe('function');
+describe('useComments — initial load', () => {
+  it('loads comments for the flag and clears loading', async () => {
+    mockListComments.mockResolvedValue([comment('c1'), comment('c2')]);
+
+    const { result } = renderHook(() => useComments('flag-1'));
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(mockListComments).toHaveBeenCalledWith('flag-1');
+    expect(result.current.comments).toHaveLength(2);
+    expect(result.current.error).toBeNull();
+    expect(result.current.tableNotReady).toBe(false);
   });
 
-  // Calling the hook outside a React context would throw, so we just verify
-  // the module export is present and is a function. Full lifecycle tests
-  // belong in an integration test file with renderHook().
-  it('accepts a flagId string argument', () => {
-    // Just confirm the function signature is callable in plain JS.
-    // We don't invoke it here — that requires React context.
-    expect(useComments.length).toBe(1);
+  it('surfaces the error message when the load fails', async () => {
+    mockListComments.mockRejectedValue(new Error('network down'));
+
+    const { result } = renderHook(() => useComments('flag-1'));
+
+    await waitFor(() => expect(result.current.error).toBe('network down'));
+    expect(result.current.comments).toEqual([]);
+    expect(result.current.tableNotReady).toBe(false);
+    expect(result.current.loading).toBe(false);
+  });
+
+  it('sets tableNotReady (not error) when the table is missing', async () => {
+    mockListComments.mockRejectedValue(new CommentsTableNotReadyError());
+
+    const { result } = renderHook(() => useComments('flag-1'));
+
+    await waitFor(() => expect(result.current.tableNotReady).toBe(true));
+    expect(result.current.error).toBeNull();
+  });
+
+  it('is a no-op when flagId is null (no fetch, not loading)', async () => {
+    const { result } = renderHook(() => useComments(null));
+
+    // Give any pending effects a tick to flush.
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(mockListComments).not.toHaveBeenCalled();
+    expect(result.current.loading).toBe(false);
+    expect(result.current.comments).toEqual([]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// useComments — realtime subscription
+// ---------------------------------------------------------------------------
+
+describe('useComments — realtime subscription', () => {
+  it('subscribes to the flag channel on mount and removes it on unmount', async () => {
+    const { result, unmount } = renderHook(() => useComments('flag-1'));
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    expect(mockChannel).toHaveBeenCalledWith('flag_comments:flag-1');
+    expect(mockOn).toHaveBeenCalled();
+    expect(mockSubscribe).toHaveBeenCalled();
+
+    unmount();
+    expect(mockRemoveChannel).toHaveBeenCalledWith(SUBSCRIBE_HANDLE);
+  });
+
+  it('refetches on a realtime INSERT event (to pick up the joined display_name)', async () => {
+    mockListComments.mockResolvedValue([comment('c1')]);
+
+    const { result } = renderHook(() => useComments('flag-1'));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    // The 3rd arg to channel.on(...) is the payload handler.
+    const handler = mockOn.mock.calls[0][2] as (p: unknown) => void;
+
+    mockListComments.mockClear();
+    await act(async () => {
+      handler({ eventType: 'INSERT', new: { id: 'c2' } });
+    });
+
+    expect(mockListComments).toHaveBeenCalledWith('flag-1'); // refetch
+  });
+
+  it('removes a comment locally on a realtime DELETE event (no refetch)', async () => {
+    mockListComments.mockResolvedValue([comment('c1'), comment('c2')]);
+
+    const { result } = renderHook(() => useComments('flag-1'));
+    await waitFor(() => expect(result.current.comments).toHaveLength(2));
+
+    const handler = mockOn.mock.calls[0][2] as (p: unknown) => void;
+
+    mockListComments.mockClear();
+    await act(async () => {
+      handler({ eventType: 'DELETE', old: { id: 'c1' } });
+    });
+
+    expect(result.current.comments.map((c) => c.id)).toEqual(['c2']);
+    expect(mockListComments).not.toHaveBeenCalled(); // DELETE is optimistic, no round-trip
+  });
+
+  it('tears the channel down and does not re-subscribe once the table is found missing', async () => {
+    mockListComments.mockRejectedValue(new CommentsTableNotReadyError());
+
+    const { result } = renderHook(() => useComments('flag-1'));
+
+    await waitFor(() => expect(result.current.tableNotReady).toBe(true));
+
+    // The hook subscribes optimistically on mount, then — once the load
+    // reveals the table is missing — removes the channel and does NOT
+    // subscribe again (the effect bails on tableNotReady).
+    expect(mockChannel).toHaveBeenCalledTimes(1);
+    expect(mockRemoveChannel).toHaveBeenCalledWith(SUBSCRIBE_HANDLE);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// useComments — addComment
+// ---------------------------------------------------------------------------
+
+describe('useComments — addComment', () => {
+  it('delegates to the lib then refetches the list', async () => {
+    mockListComments.mockResolvedValue([]);
+    mockAddComment.mockResolvedValue(comment('c9', 'new one'));
+
+    const { result } = renderHook(() => useComments('flag-1'));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    mockListComments.mockClear(); // count only the refetch triggered by addComment
+    await act(async () => {
+      await result.current.addComment('new one');
+    });
+
+    expect(mockAddComment).toHaveBeenCalledWith('flag-1', 'new one');
+    expect(mockListComments).toHaveBeenCalledWith('flag-1'); // refetch
+  });
+});
+
+// ---------------------------------------------------------------------------
+// useComments — deleteComment (optimistic)
+// ---------------------------------------------------------------------------
+
+describe('useComments — deleteComment', () => {
+  it('removes the comment optimistically and calls the lib', async () => {
+    mockListComments.mockResolvedValue([comment('c1'), comment('c2')]);
+    mockDeleteComment.mockResolvedValue(undefined);
+
+    const { result } = renderHook(() => useComments('flag-1'));
+    await waitFor(() => expect(result.current.comments).toHaveLength(2));
+
+    await act(async () => {
+      await result.current.deleteComment('c1');
+    });
+
+    expect(mockDeleteComment).toHaveBeenCalledWith('c1');
+    expect(result.current.comments.map((c) => c.id)).toEqual(['c2']);
+  });
+
+  it('rolls back (refetches) and rethrows when the delete fails', async () => {
+    mockListComments.mockResolvedValue([comment('c1'), comment('c2')]);
+    mockDeleteComment.mockRejectedValue(new Error('permission denied'));
+
+    const { result } = renderHook(() => useComments('flag-1'));
+    await waitFor(() => expect(result.current.comments).toHaveLength(2));
+
+    mockListComments.mockClear(); // count only the rollback refetch
+    await act(async () => {
+      await expect(result.current.deleteComment('c1')).rejects.toThrow('permission denied');
+    });
+
+    expect(mockListComments).toHaveBeenCalledWith('flag-1'); // rollback refetch
   });
 });
