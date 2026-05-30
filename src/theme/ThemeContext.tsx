@@ -37,6 +37,8 @@ const darkColor = {
   textMuted: '#aaa', // ~6.7:1 on #111
   textSubtle: '#777', // ~4.1:1 on #111 — only for non-essential/18pt+
   textOnBrand: '#fff',
+  // accentOrange is the same in both palettes; dark text remains correct (6.3:1 on #f1a520)
+  textOnAccent: '#222',
 
   // Brand — brand stays the same (AA on dark surfaces), brandText adjusted
   brand: '#2f80ed',

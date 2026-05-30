@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  ActivityIndicator,
   FlatList,
   Image,
   Modal,
@@ -16,7 +15,7 @@ import {
   listLeaderboard,
   type LeaderboardEntry,
 } from '@/lib/flags';
-import { font, radius, shadow } from '@/theme';
+import { font, radius, shadow, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 
 interface Props {
@@ -77,11 +76,108 @@ function AvatarCircle({
   );
 }
 
+const AVATAR_SIZE = 34;
+
+function SkeletonRow({ color }: { color: ColorTheme }) {
+  const bg = color.surfaceNeutral;
+  return (
+    <View
+      style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: spacing.xl,
+        paddingVertical: 10,
+        gap: 10,
+        minHeight: 54,
+      }}
+      accessibilityElementsHidden
+    >
+      <View style={{ width: 40, height: font.size.sm, borderRadius: radius.xs, backgroundColor: bg }} />
+      <View style={{ width: AVATAR_SIZE, height: AVATAR_SIZE, borderRadius: AVATAR_SIZE / 2, backgroundColor: bg }} />
+      <View style={{ flex: 1, height: font.size.sm, borderRadius: radius.xs, backgroundColor: bg }} />
+      <View style={{ width: 50, height: font.size.sm, borderRadius: radius.xs, backgroundColor: bg }} />
+    </View>
+  );
+}
+
 interface UserFooter {
   rank: number;
   points: number;
   verified_count: number;
 }
+
+interface LeaderboardRowProps {
+  rank: number;
+  displayName: string | null;
+  avatarUrl: string | null;
+  points: number;
+  verifiedCount: number;
+  isCurrentUser: boolean;
+  styles: ReturnType<typeof makeStyles>;
+  color: ColorTheme;
+}
+
+// Extracted so React.memo can skip re-renders when the same leaderboard data
+// comes back from a refresh. listLeaderboard constructs new entry objects each
+// call, so without extraction every row re-renders even when data is unchanged.
+// Scalar props + stable styles/color refs → default shallow comparison works.
+const LeaderboardRow = React.memo(function LeaderboardRow({
+  rank,
+  displayName,
+  avatarUrl,
+  points,
+  verifiedCount,
+  isCurrentUser,
+  styles,
+  color,
+}: LeaderboardRowProps) {
+  const name = displayName ?? 'Member';
+  const initials = name.slice(0, 2).toUpperCase();
+  const a11yLabel = [
+    ordinalLabel(rank),
+    name,
+    `${points.toLocaleString()} points`,
+    verifiedCount > 0 ? `${verifiedCount} verified` : null,
+    isCurrentUser ? 'you' : null,
+  ]
+    .filter(Boolean)
+    .join(', ');
+
+  return (
+    <View
+      style={[styles.row, isCurrentUser && styles.rowHighlight]}
+      role="listitem"
+      accessibilityLabel={a11yLabel}
+    >
+      <Text
+        style={[styles.rank, rank <= 3 && styles.rankTop]}
+        accessibilityElementsHidden
+      >
+        {ordinalLabel(rank)}
+      </Text>
+      <AvatarCircle uri={avatarUrl} initials={initials} size={AVATAR_SIZE} color={color} />
+      <View style={styles.nameWrap}>
+        <Text
+          style={[styles.name, isCurrentUser && styles.nameSelf]}
+          numberOfLines={1}
+        >
+          {name}
+        </Text>
+        {isCurrentUser ? (
+          <Text style={styles.youBadge} accessibilityElementsHidden>
+            you
+          </Text>
+        ) : null}
+        {verifiedCount > 0 ? (
+          <Text style={styles.verifiedBadge} accessibilityElementsHidden>
+            {verifiedCount} verified
+          </Text>
+        ) : null}
+      </View>
+      <Text style={styles.points}>{points.toLocaleString()} pts</Text>
+    </View>
+  );
+});
 
 export default function LeaderboardScreen({ visible, onClose }: Props) {
   const color = useColor();
@@ -119,56 +215,18 @@ export default function LeaderboardScreen({ visible, onClose }: Props) {
   }, [visible, load]);
 
   const renderItem = useCallback(
-    ({ item, index }: { item: LeaderboardEntry; index: number }) => {
-      const rank = index + 1;
-      const isCurrentUser = item.id === user?.id;
-      const name = item.display_name ?? 'Member';
-      const initials = name.slice(0, 2).toUpperCase();
-      const a11yLabel = [
-        ordinalLabel(rank),
-        name,
-        `${item.points.toLocaleString()} points`,
-        item.verified_count > 0 ? `${item.verified_count} verified` : null,
-        isCurrentUser ? 'you' : null,
-      ]
-        .filter(Boolean)
-        .join(', ');
-
-      return (
-        <View
-          style={[styles.row, isCurrentUser && styles.rowHighlight]}
-          role="listitem"
-          accessibilityLabel={a11yLabel}
-        >
-          <Text
-            style={[styles.rank, rank <= 3 && styles.rankTop]}
-            accessibilityElementsHidden
-          >
-            {ordinalLabel(rank)}
-          </Text>
-          <AvatarCircle uri={item.avatar_url} initials={initials} size={34} color={color} />
-          <View style={styles.nameWrap}>
-            <Text
-              style={[styles.name, isCurrentUser && styles.nameSelf]}
-              numberOfLines={1}
-            >
-              {name}
-            </Text>
-            {isCurrentUser ? (
-              <Text style={styles.youBadge} accessibilityElementsHidden>
-                you
-              </Text>
-            ) : null}
-            {item.verified_count > 0 ? (
-              <Text style={styles.verifiedBadge} accessibilityElementsHidden>
-                {item.verified_count} verified
-              </Text>
-            ) : null}
-          </View>
-          <Text style={styles.points}>{item.points.toLocaleString()} pts</Text>
-        </View>
-      );
-    },
+    ({ item, index }: { item: LeaderboardEntry; index: number }) => (
+      <LeaderboardRow
+        rank={index + 1}
+        displayName={item.display_name}
+        avatarUrl={item.avatar_url}
+        points={item.points}
+        verifiedCount={item.verified_count}
+        isCurrentUser={item.id === user?.id}
+        styles={styles}
+        color={color}
+      />
+    ),
     [user?.id, styles, color],
   );
 
@@ -182,7 +240,7 @@ export default function LeaderboardScreen({ visible, onClose }: Props) {
               accessibilityRole="button"
               accessibilityLabel="Close leaderboard"
               style={({ pressed }) => [styles.closeBtn, pressed && styles.closeBtnPressed]}
-              hitSlop={8}
+              hitSlop={spacing.sm}
             >
               <Text style={styles.closeBtnText}>✕</Text>
             </Pressable>
@@ -195,31 +253,34 @@ export default function LeaderboardScreen({ visible, onClose }: Props) {
           <Text style={styles.subtitle}>Top 20 contributors by points</Text>
 
           {loading ? (
-            <ActivityIndicator
-              style={styles.spinner}
-              accessibilityLabel="Loading leaderboard"
-              accessibilityLiveRegion="polite"
-            />
+            <View accessibilityLabel="Loading leaderboard" accessibilityLiveRegion="polite">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <SkeletonRow key={i} color={color} />
+              ))}
+            </View>
           ) : loadError ? (
             <View
               style={styles.stateWrap}
               accessibilityLiveRegion="polite"
               accessible
-              accessibilityLabel={`Could not load leaderboard. ${loadError}`}
+              accessibilityLabel={`Couldn't load the leaderboard. ${loadError}`}
             >
-              <Text style={styles.stateText}>{loadError}</Text>
+              <Text style={styles.stateText}>Couldn't load the leaderboard.</Text>
+              <Text style={styles.stateHint}>{loadError}</Text>
               <Pressable
                 onPress={() => void load()}
                 style={({ pressed }) => [styles.retryBtn, pressed && styles.retryBtnPressed]}
                 accessibilityRole="button"
                 accessibilityLabel="Retry loading leaderboard"
               >
-                <Text style={styles.retryText}>Retry</Text>
+                <Text style={styles.retryText}>Try again</Text>
               </Pressable>
             </View>
           ) : entries.length === 0 ? (
             <View style={styles.stateWrap}>
-              <Text style={styles.stateText}>No contributors yet. Be the first!</Text>
+              <Text style={styles.stateIcon}>🏆</Text>
+              <Text style={styles.stateText}>No contributors yet.</Text>
+              <Text style={styles.stateHint}>Be the first to report and verify flags!</Text>
             </View>
           ) : (
             <FlatList
@@ -268,16 +329,16 @@ function makeStyles(color: ColorTheme) {
       backgroundColor: color.surface,
       borderTopLeftRadius: radius.xl,
       borderTopRightRadius: radius.xl,
-      paddingBottom: 24,
+      paddingBottom: spacing.xxl,
       maxHeight: '90%' as unknown as number,
       ...shadow.e2,
     },
     headerRow: {
       flexDirection: 'row',
       alignItems: 'center',
-      paddingHorizontal: 20,
-      paddingTop: 20,
-      paddingBottom: 4,
+      paddingHorizontal: spacing.xl,
+      paddingTop: spacing.xl,
+      paddingBottom: spacing.tight,
     },
     title: {
       flex: 1,
@@ -289,8 +350,8 @@ function makeStyles(color: ColorTheme) {
     subtitle: {
       fontSize: font.size.sm,
       color: color.textMuted,
-      paddingHorizontal: 20,
-      paddingBottom: 12,
+      paddingHorizontal: spacing.xl,
+      paddingBottom: spacing.md,
       textAlign: 'center',
     },
     closeBtn: {
@@ -302,18 +363,18 @@ function makeStyles(color: ColorTheme) {
       justifyContent: 'center',
     },
     closeBtnPressed: { backgroundColor: color.borderPressed },
-    closeBtnText: { fontSize: 14, color: color.textMuted },
+    closeBtnText: { fontSize: font.size.base, color: color.textMuted },
     closeBtnSpacer: { width: 36 },
     list: { flexGrow: 0 },
     row: {
       flexDirection: 'row',
       alignItems: 'center',
-      paddingHorizontal: 20,
-      paddingVertical: 10,
+      paddingHorizontal: spacing.xl,
+      paddingVertical: 10, // intentional: between sm(8) and md(12) for list density
       borderBottomWidth: StyleSheet.hairlineWidth,
       borderBottomColor: color.divider,
       minHeight: 54,
-      gap: 10,
+      gap: 10, // matches paddingVertical — intentional off-grid for density
     },
     rowHighlight: { backgroundColor: color.brandSofter },
     rank: {
@@ -328,7 +389,7 @@ function makeStyles(color: ColorTheme) {
       flexDirection: 'row',
       alignItems: 'center',
       flexWrap: 'wrap',
-      gap: 5,
+      gap: 5, // compact badge gap — intentional between tight(4) and xs(6)
     },
     name: {
       fontSize: font.size.base,
@@ -337,19 +398,19 @@ function makeStyles(color: ColorTheme) {
     },
     nameSelf: { fontWeight: font.weight.semibold, color: color.brandText },
     youBadge: {
-      fontSize: 11,
+      fontSize: font.size.caption,
       color: color.brandOnSoft,
       backgroundColor: color.brandSoft,
-      paddingHorizontal: 6,
-      paddingVertical: 2,
+      paddingHorizontal: spacing.xs,
+      paddingVertical: 2, // below tight(4) — pill needs less vertical height than text
       borderRadius: radius.full,
       overflow: 'hidden',
     },
     verifiedBadge: {
-      fontSize: 11,
+      fontSize: font.size.caption,
       color: color.textMuted,
       backgroundColor: color.surfaceNeutral,
-      paddingHorizontal: 6,
+      paddingHorizontal: spacing.xs,
       paddingVertical: 2,
       borderRadius: radius.full,
       overflow: 'hidden',
@@ -361,12 +422,18 @@ function makeStyles(color: ColorTheme) {
       minWidth: 60,
       textAlign: 'right',
     },
-    spinner: { marginVertical: 40 },
-    stateWrap: { alignItems: 'center', paddingVertical: 40, paddingHorizontal: 20 },
+    stateWrap: { alignItems: 'center', paddingVertical: 40, paddingHorizontal: spacing.xl },
+    stateIcon: { fontSize: 40, marginBottom: spacing.sm },
     stateText: { fontSize: font.size.sm, color: color.textMuted, textAlign: 'center' },
+    stateHint: {
+      fontSize: font.size.xs,
+      color: color.textSubtle,
+      textAlign: 'center',
+      marginTop: spacing.tight,
+    },
     retryBtn: {
-      marginTop: 16,
-      paddingHorizontal: 20,
+      marginTop: spacing.lg,
+      paddingHorizontal: spacing.xl,
       paddingVertical: 10,
       backgroundColor: color.brand,
       borderRadius: radius.md,
@@ -383,8 +450,8 @@ function makeStyles(color: ColorTheme) {
     footer: {
       borderTopWidth: StyleSheet.hairlineWidth,
       borderTopColor: color.divider,
-      paddingHorizontal: 20,
-      paddingVertical: 14,
+      paddingHorizontal: spacing.xl,
+      paddingVertical: 14, // intentional: between md(12) and lg(16) for footer comfort
       backgroundColor: color.brandSofter,
     },
     footerText: {
@@ -394,7 +461,7 @@ function makeStyles(color: ColorTheme) {
     },
     footerRank: {
       fontWeight: font.weight.bold,
-      color: color.brand,
+      color: color.brandText,
     },
   });
 }
