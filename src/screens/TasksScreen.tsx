@@ -463,9 +463,16 @@ export default function TasksScreen() {
         removeFlag(updated.id);
       }
       if (action === 'verify') {
-        showFlash(isOwn ? 'Verified! +5 points' : 'Verified! +2 points');
+        const msg = isOwn ? 'Verified! +5 points' : 'Verified! +2 points';
+        showFlash(msg);
+        // WCAG 4.1.3: announce single-card status changes to screen readers.
+        // Bulk actions in runBulkAction already call announceForAccessibility;
+        // single-card triage through this path was previously silent to SR.
+        AccessibilityInfo.announceForAccessibility(msg);
       } else if (action === 'resolve') {
-        showFlash(isOwn ? 'Resolved! +10 points' : 'Resolved! +5 points');
+        const msg = isOwn ? 'Resolved! +10 points' : 'Resolved! +5 points';
+        showFlash(msg);
+        AccessibilityInfo.announceForAccessibility(msg);
       }
       // Re-fetch via the shared store to reconcile with what the server
       // actually committed. Fire-and-forget — the optimistic update already
@@ -507,6 +514,8 @@ export default function TasksScreen() {
     (deletedId: string) => {
       removeFlag(deletedId);
       showFlash('Flag deleted');
+      // WCAG 4.1.3: announce deletion to screen readers (same pattern as bulk actions).
+      AccessibilityInfo.announceForAccessibility('Flag deleted');
     },
     [removeFlag, showFlash],
   );
@@ -577,7 +586,11 @@ export default function TasksScreen() {
       {flash && (
         <View style={styles.flashWrap} pointerEvents="none">
           <View style={styles.flashPill}>
-            <Text style={styles.flashText}>{flash}</Text>
+            {/* accessibilityLiveRegion="polite" covers Android TalkBack.
+                iOS VoiceOver is handled by announceForAccessibility at
+                each call site (applyStatusChange, handleDeleted, bulk
+                actions). WCAG 4.1.3 — status messages. */}
+            <Text style={styles.flashText} accessibilityLiveRegion="polite">{flash}</Text>
           </View>
         </View>
       )}
