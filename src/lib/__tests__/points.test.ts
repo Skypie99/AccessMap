@@ -1,19 +1,18 @@
 /**
- * Tests for the pure / storage-only helpers in src/lib/points.ts:
- *   - getLastSeenPoints (mockStorage read + parse)
- *   - setLastSeenPoints (mockStorage write + non-negative clamp)
- *
- * `fetchCurrentPoints` is left out of this file because it talks to Supabase;
- * see qa-reports/proposal-testing-2026-05-23.md for the Supabase-mock strategy
- * — when that lands it becomes a sibling test file.
+ * Tests for src/lib/points.ts:
+ *   - getLastSeenPoints (AsyncStorage read + parse)
+ *   - setLastSeenPoints (AsyncStorage write + non-negative clamp)
+ *   - fetchCurrentPoints (Supabase read — previously deferred, now mocked)
  *
  * Behaviour locked in:
- *  - null when never recorded (NOT 0 — the caller treats those differently:
- *    "first-ever observation" should NOT raise a "+N earned while away" toast).
- *  - null when mockStorage holds garbage that can't be parsed.
+ *  - null when never recorded (NOT 0 — "first-ever observation" should NOT
+ *    trigger a "+N earned while away" toast).
+ *  - null when storage holds garbage that can't be parsed.
  *  - Negative writes clamp to 0 — toast logic uses absolute deltas so a
  *    negative stored value would invert the comparison.
  *  - Storage errors are swallowed (UI never throws).
+ *  - fetchCurrentPoints returns null on any Supabase error or missing user,
+ *    and also guards against a non-number `points` column value.
  */
 
 const mockStorage: Record<string, string> = {};
@@ -45,11 +44,21 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
   },
 }));
 
-// supabase is imported transitively but never invoked in these tests.
-// Stub it so the import doesn't try to read env vars at test time.
-jest.mock('../supabase', () => ({ supabase: {} }));
+// Supabase mock — chained builder used by fetchCurrentPoints:
+//   supabase.from('users').select('points').eq('id', userId).maybySingle()
+// getLastSeenPoints and setLastSeenPoints use AsyncStorage only and are
+// completely unaffected by how this mock is configured.
+const mockMaybySingle = jest.fn();
+const mockPointsEq = jest.fn();
+const mockPointsSelect = jest.fn();
 
-import { getLastSeenPoints, setLastSeenPoints } from '../points';
+jest.mock('../supabase', () => ({
+  supabase: {
+    from: jest.fn(() => ({ select: mockPointsSelect })),
+  },
+}));
+
+import { fetchCurrentPoints, getLastSeenPoints, setLastSeenPoints } from '../points';
 
 const userId = 'u1';
 const KEY = `@accessmap/points_last_seen_v1:${userId}`;
@@ -58,8 +67,16 @@ beforeEach(() => {
   for (const k of Object.keys(mockStorage)) delete mockStorage[k];
   mockThrowOnGet = false;
   mockThrowOnSet = false;
+  // Wire the Supabase chain. Default: "no row found, no error".
+  // Individual tests override with mockResolvedValueOnce as needed.
+  mockPointsSelect.mockReturnValue({ eq: mockPointsEq });
+  mockPointsEq.mockReturnValue({ maybeSingle: mockMaybySingle });
+  mockMaybySingle.mockResolvedValue({ data: null, error: null });
 });
 
+// ---------------------------------------------------------------------------
+// getLastSeenPoints
+// ---------------------------------------------------------------------------
 describe('getLastSeenPoints', () => {
   it('returns null when no value has ever been stored', async () => {
     expect(await getLastSeenPoints(userId)).toBeNull();
@@ -82,6 +99,9 @@ describe('getLastSeenPoints', () => {
   });
 });
 
+// ---------------------------------------------------------------------------
+// setLastSeenPoints
+// ---------------------------------------------------------------------------
 describe('setLastSeenPoints', () => {
   it('writes the value as a string', async () => {
     await setLastSeenPoints(userId, 17);
@@ -101,5 +121,47 @@ describe('setLastSeenPoints', () => {
   it('swallows mockStorage errors silently (UI never throws)', async () => {
     mockThrowOnSet = true;
     await expect(setLastSeenPoints(userId, 5)).resolves.toBeUndefined();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// fetchCurrentPoints — Supabase path
+// ---------------------------------------------------------------------------
+// Covers lines 38-47 which were 0% because fetchCurrentPoints makes a real
+// Supabase query. The chain: from('users').select('points').eq(id).maybySingle().
+describe('fetchCurrentPoints', () => {
+  it('returns the points value when the user row exists', async () => {
+    mockMaybySingle.mockResolvedValueOnce({ data: { points: 42 }, error: null });
+    expect(await fetchCurrentPoints(userId)).toBe(42);
+  });
+
+  it('returns 0 when points is 0 (valid zero — not falsy)', async () => {
+    mockMaybySingle.mockResolvedValueOnce({ data: { points: 0 }, error: null });
+    expect(await fetchCurrentPoints(userId)).toBe(0);
+  });
+
+  it('returns null when the Supabase query returns an error', async () => {
+    mockMaybySingle.mockResolvedValueOnce({
+      data: null,
+      error: { message: 'connection refused' },
+    });
+    expect(await fetchCurrentPoints(userId)).toBeNull();
+  });
+
+  it('returns null when data is null (user not found in public.users)', async () => {
+    // Default mock already returns { data: null, error: null } — explicit here.
+    mockMaybySingle.mockResolvedValueOnce({ data: null, error: null });
+    expect(await fetchCurrentPoints(userId)).toBeNull();
+  });
+
+  it('returns null when points is not a number (defensive type guard)', async () => {
+    // Guards against a future migration or stale data returning a string.
+    mockMaybySingle.mockResolvedValueOnce({ data: { points: '42' }, error: null });
+    expect(await fetchCurrentPoints(userId)).toBeNull();
+  });
+
+  it('returns null when points is null inside data (nullable column)', async () => {
+    mockMaybySingle.mockResolvedValueOnce({ data: { points: null }, error: null });
+    expect(await fetchCurrentPoints(userId)).toBeNull();
   });
 });

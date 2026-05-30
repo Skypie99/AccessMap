@@ -2,27 +2,35 @@
  * Tests for src/lib/watchedFlags.ts.
  *
  * What this covers:
- *  - loadWatched returns [] when nothing is stored, and the stored list when
- *    something is there.
- *  - addWatched inserts a new ID and is idempotent when the ID is already
- *    present.
- *  - removeWatched removes an ID and is a no-op when the ID is absent.
- *  - The MAX_WATCHED cap: adding to a full list drops the oldest entry (FIFO).
- *  - parseWatched robustness: bad JSON, non-array values, array with mixed
- *    types — all degrade gracefully to [].
- *  - Per-user isolation: two users share a device without seeing each other's
- *    lists.
+ *  - loadWatched: happy path, parse robustness, AsyncStorage error path.
+ *  - addWatched: insert, idempotent, append order, return value.
+ *  - removeWatched: remove, no-op, persistence.
+ *  - MAX_WATCHED cap: FIFO eviction on single add.
+ *  - addWatchedBulk: empty batch, new ids, already-watched ids,
+ *    within-batch duplicates, FIFO eviction across a full list.
+ *  - setWatched: replaces, no-op when unchanged, clears on [].
+ *  - clearWatched: empties the list.
+ *  - persist error path: swallows AsyncStorage.setItem rejection.
+ *  - Per-user isolation: two users on one device don't see each other's list.
  *
- * We mock AsyncStorage at the module level (jest.mock) so the tests never
- * hit the device. The mock is a simple in-memory Map keyed by storage key,
- * which matches the actual AsyncStorage semantics closely enough.
+ * Mock strategy: in-memory Map that exposes jest.fn() handles so
+ * individual tests can override behaviour (e.g. reject) via
+ * jest.requireMock().
  */
 
-import { addWatched, loadWatched, MAX_WATCHED, removeWatched } from '../watchedFlags';
+import {
+  addWatched,
+  addWatchedBulk,
+  clearWatched,
+  loadWatched,
+  MAX_WATCHED,
+  removeWatched,
+  setWatched,
+} from '../watchedFlags';
 
 // ────────────────────────────────────────────────────────────────────────────
-// AsyncStorage mock — in-memory store so tests don't touch the device and
-// can introspect raw values when needed.
+// AsyncStorage mock — in-memory Map keyed by storage key.
+// Exported as named jest.fn() so tests can use mockRejectedValueOnce.
 // ────────────────────────────────────────────────────────────────────────────
 const mockStore: Map<string, string> = new Map();
 
@@ -44,9 +52,31 @@ const FLAG_1 = 'flag-id-1';
 const FLAG_2 = 'flag-id-2';
 const FLAG_3 = 'flag-id-3';
 
+// Helper to get the mock handles so tests can override behaviour.
+function getMockAS() {
+  return jest.requireMock('@react-native-async-storage/async-storage') as {
+    getItem: jest.Mock;
+    setItem: jest.Mock;
+    removeItem: jest.Mock;
+  };
+}
+
 beforeEach(() => {
   mockStore.clear();
   jest.clearAllMocks();
+  // Re-wire the default implementations after clearAllMocks resets them.
+  const AS = getMockAS();
+  AS.getItem.mockImplementation((key: string) =>
+    Promise.resolve(mockStore.get(key) ?? null),
+  );
+  AS.setItem.mockImplementation((key: string, value: string) => {
+    mockStore.set(key, value);
+    return Promise.resolve();
+  });
+  AS.removeItem.mockImplementation((key: string) => {
+    mockStore.delete(key);
+    return Promise.resolve();
+  });
 });
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -66,7 +96,6 @@ describe('loadWatched', () => {
   });
 
   it('returns [] when the stored value is invalid JSON', async () => {
-    // Manually corrupt the store entry to simulate a past write failure.
     const key = `@accessmap/watched_flags_v1:${USER_A}`;
     mockStore.set(key, 'not-json{{{');
     const result = await loadWatched(USER_A);
@@ -82,10 +111,23 @@ describe('loadWatched', () => {
 
   it('filters out non-string entries from a mixed array', async () => {
     const key = `@accessmap/watched_flags_v1:${USER_A}`;
-    // Simulate a future schema write that accidentally includes a number.
     mockStore.set(key, JSON.stringify([FLAG_1, 99, null, FLAG_2, true]));
     const result = await loadWatched(USER_A);
     expect(result).toEqual([FLAG_1, FLAG_2]);
+  });
+
+  it('returns [] and logs a warning when AsyncStorage.getItem rejects', async () => {
+    // Covers lines 61-62 (the catch block in loadWatched).
+    const AS = getMockAS();
+    AS.getItem.mockRejectedValueOnce(new Error('disk I/O error'));
+    const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+    const result = await loadWatched(USER_A);
+    expect(result).toEqual([]);
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringContaining('[watchedFlags] load failed:'),
+      expect.any(String),
+    );
+    warnSpy.mockRestore();
   });
 });
 
@@ -152,11 +194,10 @@ describe('removeWatched', () => {
 });
 
 // ────────────────────────────────────────────────────────────────────────────
-// MAX_WATCHED cap
+// MAX_WATCHED cap (via addWatched)
 // ────────────────────────────────────────────────────────────────────────────
 describe('MAX_WATCHED cap', () => {
   it('drops the oldest entry when the list is full (FIFO)', async () => {
-    // Pre-fill the store to exactly MAX_WATCHED entries.
     const ids = Array.from({ length: MAX_WATCHED }, (_, i) => `flag-${i}`);
     const key = `@accessmap/watched_flags_v1:${USER_A}`;
     mockStore.set(key, JSON.stringify(ids));
@@ -164,13 +205,9 @@ describe('MAX_WATCHED cap', () => {
     const newId = 'flag-new';
     const result = await addWatched(USER_A, newId);
 
-    // Length stays at MAX_WATCHED.
     expect(result).toHaveLength(MAX_WATCHED);
-    // Oldest (flag-0) is gone.
     expect(result).not.toContain('flag-0');
-    // Newest is present.
     expect(result).toContain(newId);
-    // Second-oldest (flag-1) is still there.
     expect(result).toContain('flag-1');
   });
 
@@ -183,6 +220,161 @@ describe('MAX_WATCHED cap', () => {
     await addWatched(USER_A, 'extra-2');
     const result = await loadWatched(USER_A);
     expect(result.length).toBeLessThanOrEqual(MAX_WATCHED);
+  });
+});
+
+// ────────────────────────────────────────────────────────────────────────────
+// addWatchedBulk — covers lines 110-140
+// ────────────────────────────────────────────────────────────────────────────
+describe('addWatchedBulk', () => {
+  it('returns zeros for an empty batch (fast path)', async () => {
+    const result = await addWatchedBulk(USER_A, []);
+    expect(result).toEqual({ added: 0, alreadyWatched: 0, dropped: 0 });
+  });
+
+  it('adds new ids and reports the count', async () => {
+    const result = await addWatchedBulk(USER_A, [FLAG_1, FLAG_2]);
+    expect(result).toEqual({ added: 2, alreadyWatched: 0, dropped: 0 });
+    expect(await loadWatched(USER_A)).toEqual([FLAG_1, FLAG_2]);
+  });
+
+  it('counts ids already on the list as alreadyWatched (no-op)', async () => {
+    await addWatched(USER_A, FLAG_1);
+    const result = await addWatchedBulk(USER_A, [FLAG_1, FLAG_2]);
+    expect(result.alreadyWatched).toBe(1);
+    expect(result.added).toBe(1);
+    expect(result.dropped).toBe(0);
+  });
+
+  it('deduplicates within the batch itself', async () => {
+    // Passing the same id twice in the batch should add it only once.
+    const result = await addWatchedBulk(USER_A, [FLAG_1, FLAG_1, FLAG_2]);
+    expect(result.added).toBe(2);
+    const stored = await loadWatched(USER_A);
+    expect(stored.filter((id) => id === FLAG_1)).toHaveLength(1);
+  });
+
+  it('returns zero added + alreadyWatched count when all ids already watched', async () => {
+    await addWatched(USER_A, FLAG_1);
+    await addWatched(USER_A, FLAG_2);
+    const result = await addWatchedBulk(USER_A, [FLAG_1, FLAG_2]);
+    expect(result).toEqual({ added: 0, alreadyWatched: 2, dropped: 0 });
+  });
+
+  it('evicts oldest entries (FIFO) when the batch pushes past MAX_WATCHED', async () => {
+    // Pre-fill to exactly MAX_WATCHED - 1 so adding 2 new ids forces 1 eviction.
+    const ids = Array.from({ length: MAX_WATCHED - 1 }, (_, i) => `existing-${i}`);
+    const key = `@accessmap/watched_flags_v1:${USER_A}`;
+    mockStore.set(key, JSON.stringify(ids));
+
+    const result = await addWatchedBulk(USER_A, [FLAG_1, FLAG_2]);
+    expect(result.added).toBe(2);
+    expect(result.dropped).toBe(1); // one oldest evicted
+    const stored = await loadWatched(USER_A);
+    expect(stored).toHaveLength(MAX_WATCHED);
+    // Oldest existing-0 was evicted.
+    expect(stored).not.toContain('existing-0');
+    // Both new ids made it.
+    expect(stored).toContain(FLAG_1);
+    expect(stored).toContain(FLAG_2);
+  });
+
+  it('persists the result — loadWatched confirms all added ids', async () => {
+    await addWatchedBulk(USER_A, [FLAG_1, FLAG_2, FLAG_3]);
+    const stored = await loadWatched(USER_A);
+    expect(stored).toContain(FLAG_1);
+    expect(stored).toContain(FLAG_2);
+    expect(stored).toContain(FLAG_3);
+  });
+});
+
+// ────────────────────────────────────────────────────────────────────────────
+// setWatched — covers lines 149-154
+// ────────────────────────────────────────────────────────────────────────────
+describe('setWatched', () => {
+  it('replaces the list with the provided ids', async () => {
+    await addWatched(USER_A, FLAG_1);
+    await addWatched(USER_A, FLAG_2);
+    const result = await setWatched(USER_A, [FLAG_3]);
+    expect(result).toEqual([FLAG_3]);
+    expect(await loadWatched(USER_A)).toEqual([FLAG_3]);
+  });
+
+  it('is a no-op (no write) when the new list equals the existing one', async () => {
+    await addWatched(USER_A, FLAG_1);
+    await addWatched(USER_A, FLAG_2);
+    jest.clearAllMocks(); // reset call counts
+    const AS = getMockAS();
+    AS.getItem.mockImplementation((key: string) =>
+      Promise.resolve(mockStore.get(key) ?? null),
+    );
+    AS.setItem.mockImplementation((key: string, value: string) => {
+      mockStore.set(key, value);
+      return Promise.resolve();
+    });
+
+    const result = await setWatched(USER_A, [FLAG_1, FLAG_2]);
+    expect(result).toEqual([FLAG_1, FLAG_2]);
+    // setItem should NOT have been called (no-op).
+    expect(AS.setItem).not.toHaveBeenCalled();
+  });
+
+  it('sets the list to [] when given an empty array (clear via setWatched)', async () => {
+    await addWatched(USER_A, FLAG_1);
+    const result = await setWatched(USER_A, []);
+    expect(result).toEqual([]);
+    expect(await loadWatched(USER_A)).toEqual([]);
+  });
+
+  it('returns the new list, which matches what loadWatched returns', async () => {
+    const returned = await setWatched(USER_A, [FLAG_2, FLAG_3]);
+    expect(returned).toEqual(await loadWatched(USER_A));
+  });
+});
+
+// ────────────────────────────────────────────────────────────────────────────
+// clearWatched — covers lines 169-171
+// ────────────────────────────────────────────────────────────────────────────
+describe('clearWatched', () => {
+  it('removes all watched ids for the user', async () => {
+    await addWatched(USER_A, FLAG_1);
+    await addWatched(USER_A, FLAG_2);
+    await clearWatched(USER_A);
+    expect(await loadWatched(USER_A)).toEqual([]);
+  });
+
+  it('is a no-op on an already-empty list (does not throw)', async () => {
+    await expect(clearWatched(USER_A)).resolves.toBeUndefined();
+    expect(await loadWatched(USER_A)).toEqual([]);
+  });
+
+  it('only clears the specified user — other users are unaffected', async () => {
+    await addWatched(USER_A, FLAG_1);
+    await addWatched(USER_B, FLAG_2);
+    await clearWatched(USER_A);
+    expect(await loadWatched(USER_A)).toEqual([]);
+    expect(await loadWatched(USER_B)).toEqual([FLAG_2]);
+  });
+});
+
+// ────────────────────────────────────────────────────────────────────────────
+// persist error path — covers lines 161-162
+// ────────────────────────────────────────────────────────────────────────────
+describe('persist error path', () => {
+  it('swallows AsyncStorage.setItem rejection and logs a warning', async () => {
+    // The persist function is private but exercised via any write helper.
+    // Here we use addWatched as the driver.
+    const AS = getMockAS();
+    AS.setItem.mockRejectedValueOnce(new Error('quota exceeded'));
+    const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+
+    // Should not throw even though setItem fails.
+    await expect(addWatched(USER_A, FLAG_1)).resolves.toBeDefined();
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringContaining('[watchedFlags] save failed:'),
+      expect.any(String),
+    );
+    warnSpy.mockRestore();
   });
 });
 
