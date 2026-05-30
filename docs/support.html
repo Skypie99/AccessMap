@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Support — AccessMap</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: #ffffff;
+      color: #1a1a1a;
+      line-height: 1.7;
+      font-size: 16px;
+    }
+    header {
+      background: #1c6ef3;
+      color: #ffffff;
+      padding: 32px 24px 28px;
+      text-align: center;
+    }
+    header .logo {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+      margin-bottom: 4px;
+    }
+    header h1 {
+      font-size: 28px;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+    header p.tagline {
+      font-size: 15px;
+      opacity: 0.9;
+      max-width: 480px;
+      margin: 0 auto;
+    }
+    .container {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 40px 24px 80px;
+    }
+    .about {
+      background: #f0f7ff;
+      border-radius: 8px;
+      padding: 24px 28px;
+      margin-bottom: 48px;
+      border-left: 4px solid #1c6ef3;
+    }
+    .about h2 {
+      font-size: 17px;
+      font-weight: 700;
+      color: #1c6ef3;
+      margin-bottom: 10px;
+      border: none;
+      padding: 0;
+      margin-top: 0;
+    }
+    h2 {
+      font-size: 20px;
+      font-weight: 700;
+      color: #0f172a;
+      margin-top: 48px;
+      margin-bottom: 16px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid #e2e8f0;
+    }
+    h3 {
+      font-size: 16px;
+      font-weight: 600;
+      color: #1c6ef3;
+      margin-top: 28px;
+      margin-bottom: 8px;
+    }
+    p { margin-bottom: 14px; }
+    ul, ol {
+      padding-left: 20px;
+      margin-bottom: 14px;
+    }
+    li { margin-bottom: 6px; }
+    a { color: #1c6ef3; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .faq-item {
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 20px 24px;
+      margin-bottom: 16px;
+    }
+    .faq-item h3 {
+      margin-top: 0;
+      font-size: 15px;
+      font-weight: 600;
+      color: #0f172a;
+    }
+    .faq-item p {
+      margin-bottom: 0;
+      color: #475569;
+      font-size: 15px;
+    }
+    .contact-card {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 24px 28px;
+      margin-top: 32px;
+    }
+    .contact-card h2 {
+      margin-top: 0;
+      border: none;
+      padding: 0;
+    }
+    .contact-link {
+      display: inline-block;
+      background: #1c6ef3;
+      color: #ffffff;
+      font-weight: 600;
+      padding: 10px 20px;
+      border-radius: 6px;
+      margin-top: 8px;
+      font-size: 15px;
+    }
+    .contact-link:hover {
+      background: #1558cc;
+      text-decoration: none;
+    }
+    .placeholder {
+      background: #fff7ed;
+      color: #c2410c;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-style: italic;
+    }
+    footer {
+      background: #f1f5f9;
+      border-top: 1px solid #e2e8f0;
+      text-align: center;
+      padding: 28px 24px;
+      font-size: 14px;
+      color: #64748b;
+    }
+    footer a { color: #1c6ef3; }
+    @media (max-width: 600px) {
+      header h1 { font-size: 22px; }
+      h2 { font-size: 18px; }
+      .faq-item { padding: 16px 18px; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">AccessMap</div>
+  <h1>Support</h1>
+  <p class="tagline">We're here to help. Find answers below or get in touch.</p>
+</header>
+
+<div class="container">
+
+  <div class="about">
+    <h2>About AccessMap</h2>
+    <p>AccessMap is a crowdsourced mobile app for mapping accessibility barriers in the real world. Users drop pins at locations where there's an accessibility issue — a missing ramp, a broken sidewalk, an inaccessible parking spot — and the community verifies, resolves, or rejects those reports. The goal is to make cities and neighborhoods easier to navigate for everyone.</p>
+  </div>
+
+  <h2>How to Report a Bug</h2>
+  <p>If you've found something that isn't working correctly, we'd love to know about it.</p>
+  <ul>
+    <li><strong>Email us</strong> at <span class="placeholder">[contact email]</span> with a description of what happened and your device/OS version</li>
+    <li><strong>Open a GitHub issue</strong> at <a href="https://github.com/skypie911/accessmap/issues" target="_blank" rel="noopener">github.com/skypie911/accessmap/issues</a> — include steps to reproduce, screenshots if possible, and your device type</li>
+  </ul>
+  <p>We aim to respond to bug reports within 3–5 business days.</p>
+
+  <h2>Frequently Asked Questions</h2>
+
+  <div class="faq-item">
+    <h3>How do I report an accessibility barrier?</h3>
+    <p>Open the app and tap the <strong>+</strong> button (bottom-right of the map screen). Choose the barrier category (ramp, sidewalk, parking, etc.), set the severity, write a short description, and optionally add a photo. Tap <strong>Submit</strong> — your flag will appear on the map immediately. Other users can then verify or resolve it.</p>
+  </div>
+
+  <div class="faq-item">
+    <h3>How do I delete my account?</h3>
+    <p>Go to <strong>Profile → Settings → Account → Delete Account</strong>. This permanently deletes your email, display name, all flags you've submitted, and all associated photos. This action cannot be undone. If you'd prefer, you can also email us at <span class="placeholder">[contact email]</span> and we'll delete it for you within 30 days.</p>
+  </div>
+
+  <div class="faq-item">
+    <h3>Why does the app need my location?</h3>
+    <p>AccessMap uses your location <strong>only while the app is open</strong> — to center the map on where you are and to make it easier to place flags at the right spot. We never access your location in the background, and we never store or share your device's real-time location. When you submit a flag, we only store the specific latitude/longitude you chose for that flag.</p>
+  </div>
+
+  <div class="faq-item">
+    <h3>Are my photos private?</h3>
+    <p>Photos attached to flags are <strong>publicly visible</strong> on the map — anyone using AccessMap can see them. Before storing your photo, we automatically strip all EXIF metadata (including GPS coordinates, timestamps, and camera model) so none of that information is ever stored or visible to others.</p>
+  </div>
+
+  <div class="faq-item">
+    <h3>What do the flag statuses mean?</h3>
+    <p><strong>Open</strong> — newly submitted, needs community verification. <strong>Verified</strong> — at least one other user has confirmed the barrier exists. <strong>Resolved</strong> — the barrier has been fixed or removed. <strong>Rejected</strong> — the flag was determined to be inaccurate or a duplicate.</p>
+  </div>
+
+  <div class="faq-item">
+    <h3>How do I earn points?</h3>
+    <p>You earn points by contributing to the community: <strong>+5</strong> when a flag you submitted gets verified, <strong>+10</strong> when it gets resolved. You also earn <strong>+2</strong> for verifying someone else's flag and <strong>+5</strong> for resolving one. Points reflect your community contribution and appear on your profile.</p>
+  </div>
+
+  <div class="faq-item">
+    <h3>Does the app work on web / without the mobile app?</h3>
+    <p>Yes — AccessMap has a web version that runs in any modern browser. You can view the map without an account. Reporting and verifying flags requires signing in, which works the same way on web as in the mobile app.</p>
+  </div>
+
+  <div class="faq-item">
+    <h3>Is AccessMap available on Android?</h3>
+    <p>The iOS app is the primary release. An Android version is planned — check back for updates or join the beta testing program by emailing us.</p>
+  </div>
+
+  <div class="contact-card">
+    <h2>Still need help?</h2>
+    <p>We're happy to assist. Email us and we'll get back to you within 3–5 business days.</p>
+    <a class="contact-link" href="mailto:[contact email]">Email Support</a>
+    <p style="margin-top:16px; font-size:14px; color:#64748b;">
+      For bug reports and feature requests, you can also open an issue on
+      <a href="https://github.com/skypie911/accessmap/issues" target="_blank" rel="noopener">GitHub</a>.
+    </p>
+  </div>
+
+</div>
+
+<footer>
+  <p>
+    <strong>AccessMap</strong> &nbsp;|&nbsp;
+    Support &nbsp;|&nbsp;
+    <a href="privacy-policy.html">Privacy Policy</a>
+  </p>
+  <p style="margin-top:8px;">© 2026 AccessMap. All rights reserved.</p>
+</footer>
+
+</body>
+</html>
