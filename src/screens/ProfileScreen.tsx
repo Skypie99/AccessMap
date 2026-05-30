@@ -68,7 +68,7 @@ import RecentlyViewedRow from '@/components/RecentlyViewedRow';
 import ReportsBreakdownCard from '@/components/ReportsBreakdownCard';
 import LeaderboardModal from '@/components/LeaderboardModal';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
-import { radius, shadow } from '@/theme';
+import { font, radius, shadow } from '@/theme';
 import { getTier, pointsToNextTier, REPUTATION_TIERS } from '@/lib/reputationTier';
 import SignInScreen from '@/screens/SignInScreen';
 import AboutScreen from '@/screens/AboutScreen';
@@ -1584,9 +1584,11 @@ const makeStyles = (color: ColorTheme) =>
 
     heroLabel: {
       color: color.pointsPillText,
-      fontSize: 11,
+      // WCAG 1.4.3: pointsPillText (#dbe7fb) on brand (#2f80ed) = 3.10:1.
+      // ≥14pt bold = "large text" → 3:1 threshold → passes. (11pt bold = small text → needed 4.5:1 → failed.)
+      fontSize: font.size.base,
       letterSpacing: 2.4,
-      fontWeight: '700',
+      fontWeight: font.weight.bold,
       textTransform: 'uppercase',
     },
     heroValue: {
@@ -1598,8 +1600,10 @@ const makeStyles = (color: ColorTheme) =>
     },
     heroSubtitle: {
       color: color.pointsPillText,
-      fontSize: 13,
-      fontWeight: '600',
+      // WCAG 1.4.3: same 3.10:1 contrast — bumped to 14pt bold (large text → 3:1 → passes).
+      // (13pt semibold = small text → needed 4.5:1 → failed.)
+      fontSize: font.size.base,
+      fontWeight: font.weight.bold,
       textAlign: 'center',
       marginTop: 4,
     },

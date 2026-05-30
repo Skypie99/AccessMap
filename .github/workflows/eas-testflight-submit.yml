@@ -1,29 +1,49 @@
 name: EAS TestFlight Submit
 
-# Trigger manually or on release tag for TestFlight submission
+# MANUAL ONLY, WITH APPROVAL. Previously this auto-built AND submitted to the
+# App Store on any `v*` tag push — that could ship to production unattended while
+# the D8 EXIF GPS privacy blocker is still open. Now:
+#   - dispatch-only (no tag/push trigger),
+#   - runs in the `release-approval` GitHub Environment so a required reviewer
+#     must approve the run before any build/submit happens (see SETUP note below),
+#   - production is hard-blocked by a privacy guard until D8 is closed.
+#
+# SETUP (one-time, in GitHub UI): Settings → Environments → New environment
+#   "release-approval" → add Sky as a Required reviewer. Until that environment
+#   exists with a reviewer, treat this workflow as not-yet-armed.
 on:
   workflow_dispatch:
     inputs:
       profile:
-        description: 'Build profile (preview or production)'
+        description: 'Build profile'
         required: true
         default: 'preview'
         type: choice
         options:
           - preview
+          - preview2
+          - preview3
           - production
-  push:
-    tags:
-      - 'v*'
+      d8_closed:
+        description: 'Type "yes" ONLY if the D8 EXIF GPS privacy blocker is closed (required for production)'
+        required: false
+        default: 'no'
+        type: string
 
 jobs:
   build-and-submit:
     runs-on: ubuntu-latest
-    name: Build & Submit to TestFlight
-    permissions:
-      contents: write
+    name: Build & Submit (manual, approved)
+    environment: release-approval
     steps:
       - uses: actions/checkout@v4
+
+      - name: Privacy gate — block production while D8 is open
+        run: |
+          if [ "${{ github.event.inputs.profile }}" = "production" ] && [ "${{ github.event.inputs.d8_closed }}" != "yes" ]; then
+            echo "::error::Production submit blocked. The D8 EXIF GPS privacy leak is a pre-launch blocker. Re-run with d8_closed=yes ONLY after it is confirmed closed in PROJECT_STATE.md."
+            exit 1
+          fi
 
       - uses: actions/setup-node@v4
         with:
@@ -42,28 +62,19 @@ jobs:
       - name: Install EAS CLI
         run: npm install -g eas-cli@latest
 
-      - name: Determine profile
-        id: profile
-        run: |
-          if [[ "${{ github.event_name }}" == "push" ]]; then
-            echo "PROFILE=production" >> $GITHUB_OUTPUT
-          else
-            echo "PROFILE=${{ github.event.inputs.profile }}" >> $GITHUB_OUTPUT
-          fi
-
       - name: Build with EAS
         env:
           EAS_TOKEN: ${{ secrets.EAS_TOKEN }}
           EXPO_APPLE_TEAM_ID: ${{ secrets.EXPO_APPLE_TEAM_ID }}
-        run: eas build --platform ios --profile ${{ steps.profile.outputs.PROFILE }} --non-interactive
+        run: eas build --platform ios --profile ${{ github.event.inputs.profile }} --non-interactive
 
-      - name: Submit to TestFlight
+      - name: Submit to App Store Connect
         env:
           EAS_TOKEN: ${{ secrets.EAS_TOKEN }}
           EXPO_APPLE_ID: ${{ secrets.EXPO_APPLE_ID }}
           EXPO_APPLE_PASSWORD: ${{ secrets.EXPO_APPLE_PASSWORD }}
           EXPO_APPLE_TEAM_ID: ${{ secrets.EXPO_APPLE_TEAM_ID }}
-        run: eas submit --platform ios --profile ${{ steps.profile.outputs.PROFILE }} --non-interactive
+        run: eas submit --platform ios --profile ${{ github.event.inputs.profile }} --non-interactive
 
       - name: Create GitHub Release (tag only)
         if: startsWith(github.ref, 'refs/tags/')

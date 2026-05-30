@@ -1,13 +1,22 @@
 name: EAS Build (Development)
 
-# Auto-build on every push to any branch for fast testing feedback
+# MANUAL ONLY. Previously this auto-triggered a cloud EAS build on every push to
+# every branch — that violated our "no unattended builds" rule (each push spent
+# build minutes and could ship a build nobody approved). It is now dispatch-only:
+# a human picks the profile and clicks Run. No automatic triggers.
 on:
-  push:
-    branches:
-      - '**'
-    paths-ignore:
-      - '**.md'
-      - 'qa-reports/**'
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: 'Build profile'
+        required: true
+        default: 'development'
+        type: choice
+        options:
+          - development
+          - preview
+          - preview2
+          - preview3
 
 permissions:
   contents: read
@@ -15,7 +24,7 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-    name: Build iOS Development
+    name: Build iOS (manual)
     env:
       EAS_TOKEN: ${{ secrets.EAS_TOKEN }}
     steps:
@@ -35,18 +44,25 @@ jobs:
       - name: Test (safety gate)
         run: npm test -- --passWithNoTests --forceExit
 
+      - name: Guard — production not allowed here
+        run: |
+          if [ "${{ github.event.inputs.profile }}" = "production" ]; then
+            echo "::error::Production builds do not run from this workflow. Use the gated EAS TestFlight Submit workflow."
+            exit 1
+          fi
+
       - name: Install EAS CLI
         run: npm install -g eas-cli@latest
 
-      - name: Build with EAS (development profile)
+      - name: Build with EAS
         if: env.EAS_TOKEN != ''
         env:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-        run: eas build --platform ios --profile development --non-interactive
+        run: eas build --platform ios --profile ${{ github.event.inputs.profile }} --non-interactive
 
       - name: Skip EAS build (EAS_TOKEN not configured)
         if: env.EAS_TOKEN == ''
         run: echo "EAS_TOKEN secret not set — skipping EAS build. Add it to repo secrets to enable cloud builds."
 
-      # Note: Build artifacts are automatically uploaded to EAS Build logs.
-      # For TestFlight submission, see eas-testflight-submit.yml (manual/tag trigger).
+      # Build artifacts are uploaded to EAS Build logs automatically.
+      # For TestFlight / App Store submission, see eas-testflight-submit.yml.

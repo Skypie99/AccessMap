@@ -775,12 +775,14 @@ export default function MapScreen() {
     }
   }, []);
 
-  // Initial location fetch; runs once. (Flag fetching is owned by the
-  // provider — see FlagsProvider in src/lib/flagsStore. iOS screen-reader
-  // announcements for load errors fire from the provider so both Map and
-  // Tasks benefit.)
+  // Initial location fetch; runs once. Only fetches if the OS permission is
+  // already granted — the first-time prompt is deferred to the onboarding flow
+  // (OnboardingCards card 4). The user-facing locate button still calls
+  // requestLocation() directly and will trigger the OS prompt if needed.
   useEffect(() => {
-    requestLocation();
+    Location.getForegroundPermissionsAsync().then(({ status }) => {
+      if (status === 'granted') requestLocation();
+    });
   }, [requestLocation]);
 
   // When Tasks tab navigates here with a focusFlag, animate to it and pop the
@@ -2015,7 +2017,9 @@ const makeStyles = (color: ColorTheme) =>
     // (not an error) and doesn't compete with the HeatmapLegend swatches.
     heatmapDisclaimer: {
       alignSelf: 'stretch',
-      backgroundColor: 'rgba(0,0,0,0.55)',
+      // WCAG 1.4.3: solid colours guarantee contrast on any map tile background.
+      // rgba(0,0,0,0.55) + rgba(255,255,255,0.85) fell to ~2.5:1 on light OSM tiles.
+      backgroundColor: '#1a1a1a',
       borderRadius: radius.md,
       paddingHorizontal: 12,
       paddingVertical: 7,
@@ -2023,7 +2027,8 @@ const makeStyles = (color: ColorTheme) =>
     },
     heatmapDisclaimerText: {
       fontSize: 11,
-      color: 'rgba(255,255,255,0.85)',
+      // White on #1a1a1a = 18.1:1 — passes WCAG AA at any text size.
+      color: '#ffffff',
       lineHeight: 15,
       textAlign: 'center',
     },
