@@ -125,6 +125,11 @@ export function useUserLocation(options: UseUserLocationOptions = {}): UserLocat
       if (mountedRef.current) setPermissionDenied(false);
       const pos = await Location.getCurrentPositionAsync({
         accuracy: Location.Accuracy.Balanced,
+        // Battery: accept a fix up to 60s old instead of powering the GPS for
+        // a fresh lock. Tasks only needs a rough position to sort cards by
+        // distance, so a recent cached fix is plenty — and mirrors the web
+        // path's `maximumAge: 60_000` above.
+        maximumAge: 60_000,
       });
       if (!mountedRef.current) return;
       setLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });

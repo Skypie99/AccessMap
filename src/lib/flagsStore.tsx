@@ -33,6 +33,16 @@ export const offlineCacheKey = (userId: string): string => `@accessmap/offline_f
 /** Jordan Condition 3 — 24-hour TTL. */
 export const MAX_CACHE_AGE_MS = 24 * 60 * 60 * 1000;
 
+/**
+ * Freshness window for `refreshIfStale`. A non-user-initiated refresh (e.g.
+ * tapping a Tasks card to focus a flag on the Map) is skipped when the last
+ * successful network fetch was under this old — the data on screen is already
+ * good enough, so we avoid a redundant round-trip and the battery/radio cost
+ * that comes with it. User-initiated refreshes (pull-to-refresh, the ⟳ button)
+ * always go through `refresh()` and ignore this window.
+ */
+export const FLAGS_FRESH_MS = 30 * 1000;
+
 /** The on-disk shape stored by the cache. */
 interface OfflineCacheEntry {
   cachedAt: string; // ISO timestamp
@@ -103,6 +113,10 @@ type FlagsContextValue = {
   // cursor so loadMore starts from the top. Re-throws so callers can show
   // their own error UI in addition to the context error state.
   refresh: () => Promise<void>;
+  // Refresh only when the cached data is older than `maxAgeMs` (defaults to
+  // FLAGS_FRESH_MS). For non-user-initiated entry points that shouldn't pay
+  // for a network round-trip when the data on screen is already fresh.
+  refreshIfStale: (maxAgeMs?: number) => Promise<void>;
   // Append the next cursor page. No-op when !hasMore or already loading.
   // Re-throws on error so callers can surface failures.
   loadMore: () => Promise<void>;
@@ -166,6 +180,16 @@ export function FlagsProvider({
   // while the previous was in flight (rapid Map filter toggles).
   const fetchSeqRef = useRef(0);
 
+  // Wall-clock of the last *successful network* fetch (0 = never). Drives
+  // refreshIfStale so we can skip redundant round-trips while data is fresh.
+  const lastFetchAtRef = useRef(0);
+
+  // True once the provider has painted flags at least once (from the network
+  // OR the offline cache). Gates the stale-while-revalidate cache paint to the
+  // cold-start window only — on later refreshes we already have rows on screen
+  // and revalidate silently in the background, with no cache-flicker.
+  const hasHydratedRef = useRef(false);
+
   // Keep userId in a ref so refresh() can read the current user without
   // becoming a dependency (which would cause infinite re-refresh loops).
   const userIdRef = useRef<string | null | undefined>(userId);
@@ -187,6 +211,7 @@ export function FlagsProvider({
     const seq = ++fetchSeqRef.current;
     setLoading(true);
 
+    const startedAt = Date.now();
     const currentUserId = userIdRef.current;
     // Use paginated fetch for the default open+verified set so we get a
     // fast first page and can load more on demand. For non-default status
@@ -196,32 +221,65 @@ export function FlagsProvider({
       current.length === DEFAULT_STATUSES.length &&
       current.every((s) => DEFAULT_STATUSES.includes(s));
 
-    // Stale-while-revalidate: fire network + cache read in parallel so offline
-    // users see cached data immediately rather than waiting for (timeout + read).
-    // Only worth racing on the default-status path where we maintain a cache.
+    // Kick off the network fetch immediately — we do NOT await it before
+    // showing something to the user.
     const networkPromise: Promise<{ rows: FlagRow[]; nextCursor: string | null }> =
       isDefaultStatuses
         ? listFlagsPage(current, { limit: INITIAL_PAGE_SIZE })
         : listFlags(current).then((rows) => ({ rows, nextCursor: null }));
 
-    const cachePromise: Promise<FlagRow[] | null> =
-      isDefaultStatuses && currentUserId ? readFlagsCache(currentUserId) : Promise.resolve(null);
+    // True stale-while-revalidate: on a COLD start, paint the cached first
+    // page the instant the (fast, local) AsyncStorage read resolves — usually
+    // well before the network does — so the map/list show data immediately
+    // instead of a spinner. The network result below then reconciles. We gate
+    // this to the cold-start window (hasHydratedRef) because once rows are on
+    // screen, swapping in a possibly-staler cache would just be a flicker.
+    let networkDone = false;
+    const doSwrPaint = isDefaultStatuses && !!currentUserId && !hasHydratedRef.current;
+    const cachePaint: Promise<void> = doSwrPaint
+      ? readFlagsCache(currentUserId as string)
+          .then((cached) => {
+            if (seq !== fetchSeqRef.current || networkDone) return;
+            if (cached && cached.length > 0) {
+              // prev is [] on cold start, so this never clobbers live data.
+              setFlags((prev) => (prev.length === 0 ? cached : prev));
+              setIsOfflineCache(false); // optimistic — network is in flight
+              setLoading(false);
+              hasHydratedRef.current = true;
+              if (__DEV__) {
+                console.log(
+                  `[flagsStore] SWR cache paint: ${cached.length} rows in ${Date.now() - startedAt}ms (cache hit)`,
+                );
+              }
+            }
+          })
+          .catch(() => {})
+      : Promise.resolve();
 
     try {
-      const [networkResult, cachedResult] = await Promise.allSettled([
-        networkPromise,
-        cachePromise,
-      ]);
+      const networkResult = await networkPromise.then(
+        (value) => ({ ok: true as const, value }),
+        (reason) => ({ ok: false as const, reason }),
+      );
+      networkDone = true;
+      await cachePaint; // let the cache paint settle (it bows out on networkDone)
 
       if (seq !== fetchSeqRef.current) return;
 
-      if (networkResult.status === 'fulfilled') {
+      if (networkResult.ok) {
         const { rows: fetchedRows, nextCursor } = networkResult.value;
         cursorRef.current = nextCursor;
         setHasMore(nextCursor !== null);
         setFlags(fetchedRows);
         setIsOfflineCache(false);
         setError(null);
+        lastFetchAtRef.current = Date.now();
+        hasHydratedRef.current = true;
+        if (__DEV__) {
+          console.log(
+            `[flagsStore] network refresh: ${fetchedRows.length} rows in ${Date.now() - startedAt}ms (cache miss / revalidate)`,
+          );
+        }
         // Write the fresh first page to the offline cache so it's available
         // on the next offline launch. Only cache when we have a user id
         // (Jordan Condition 2) and we fetched the default paginated set
@@ -231,16 +289,18 @@ export function FlagsProvider({
           void writeFlagsCache(currentUserId, fetchedRows);
         }
       } else {
-        // Network failed — try the cache that was already fetched in parallel.
-        const cached = cachedResult.status === 'fulfilled' ? cachedResult.value : null;
-        if (cached !== null && seq === fetchSeqRef.current) {
+        // Network failed — fall back to the offline cache.
+        const cached =
+          isDefaultStatuses && currentUserId ? await readFlagsCache(currentUserId) : null;
+        if (seq !== fetchSeqRef.current) return;
+        if (cached !== null) {
           setFlags(cached);
           setIsOfflineCache(true);
           setError(null);
+          hasHydratedRef.current = true;
           // Don't re-throw: the cached data satisfies the UI's need.
           // loading will be set false in finally.
         } else {
-          if (seq !== fetchSeqRef.current) return;
           setError(errorMessage(networkResult.reason, 'Unknown error'));
           throw networkResult.reason;
         }
@@ -249,6 +309,24 @@ export function FlagsProvider({
       if (seq === fetchSeqRef.current) setLoading(false);
     }
   }, []);
+
+  // Refresh only if the data is stale (older than `maxAgeMs`). Used by
+  // non-user-initiated entry points — e.g. focusing a flag on the Map from a
+  // Tasks card — so rapid navigation doesn't trigger a fresh network fetch of
+  // data we already have. An explicit user refresh should call `refresh()`.
+  const refreshIfStale = useCallback(
+    async (maxAgeMs: number = FLAGS_FRESH_MS) => {
+      const age = Date.now() - lastFetchAtRef.current;
+      if (lastFetchAtRef.current !== 0 && age < maxAgeMs) {
+        if (__DEV__) {
+          console.log(`[flagsStore] refreshIfStale: skipped — data ${age}ms old (< ${maxAgeMs}ms)`);
+        }
+        return;
+      }
+      return refresh();
+    },
+    [refresh],
+  );
 
   // Ref-based in-flight guard for loadMore — avoids the race condition where a
   // second tap arrives between the first tap and React's state flush (at which
@@ -436,6 +514,7 @@ export function FlagsProvider({
       loading,
       error,
       refresh,
+      refreshIfStale,
       loadMore,
       loadingMore,
       hasMore,
@@ -452,6 +531,7 @@ export function FlagsProvider({
       loading,
       error,
       refresh,
+      refreshIfStale,
       loadMore,
       loadingMore,
       hasMore,
