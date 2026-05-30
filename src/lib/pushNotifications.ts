@@ -7,6 +7,7 @@
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Alert, Platform } from 'react-native';
+import Constants from 'expo-constants';
 import { supabase } from './supabase';
 
 export const pushEnabledKey = (userId: string) => `@accessmap/push_enabled:${userId}`;
@@ -54,7 +55,7 @@ export function showPushExplanation(): Promise<boolean> {
 interface ExpoNotificationsModule {
   getPermissionsAsync(): Promise<{ status: string }>;
   requestPermissionsAsync(): Promise<{ status: string }>;
-  getExpoPushTokenAsync(): Promise<{ data: string }>;
+  getExpoPushTokenAsync(options?: { projectId?: string }): Promise<{ data: string }>;
   cancelAllScheduledNotificationsAsync(): Promise<void>;
 }
 
@@ -84,8 +85,9 @@ export async function requestExpoPushToken(): Promise<string | null> {
     }
 
     // getExpoPushTokenAsync requires a projectId on SDK 49+.
-    // We read it from the Expo config at runtime to avoid hard-coding it.
-    const tokenData = await Notifications.getExpoPushTokenAsync();
+    // Read from the Expo config at runtime to avoid hard-coding it.
+    const projectId = Constants.expoConfig?.extra?.eas?.projectId as string | undefined;
+    const tokenData = await Notifications.getExpoPushTokenAsync(projectId ? { projectId } : undefined);
     return tokenData.data;
   } catch {
     // expo-notifications not installed, or permissions API unavailable (e.g. web).

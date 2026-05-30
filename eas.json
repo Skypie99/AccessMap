@@ -18,19 +18,18 @@
     "preview": {
       "distribution": "internal",
       "ios": {
-        "simulator": false,
-        "appleTeamId": "ADD_YOUR_APPLE_TEAM_ID_HERE"
+        "simulator": false
       },
       "env": {
-        "APP_ENV": "preview"
+        "APP_ENV": "preview",
+        "SENTRY_DISABLE_AUTO_UPLOAD": "true"
       }
     },
 
     "production": {
       "distribution": "store",
       "ios": {
-        "simulator": false,
-        "appleTeamId": "ADD_YOUR_APPLE_TEAM_ID_HERE"
+        "simulator": false
       },
       "env": {
         "APP_ENV": "production"
