@@ -34,6 +34,8 @@ import {
   CONTEXT_TAGS,
   CONTEXT_TAG_LABELS,
   MAX_CONTEXT_TAGS,
+  SEASONAL_TAGS,
+  SEASONAL_TAG_LABELS,
   toggleTag,
   type ContextTag,
 } from '@/lib/contextTags';
@@ -442,6 +444,60 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
               {description.length} / 2000
             </Text>
           )}
+
+          {/* Seasonal tags (W6-5) — a multi-select chip picker for time-of-year
+              context (icy in winter, flooded in spring, a construction detour
+              that clears in fall, etc.). Sits right after the description so
+              the reporter adds the "when in the year" angle while the issue is
+              fresh in mind. Shares the same `contextTags` state, the same
+              toggleTag cap, and the same capability gate as the general
+              context chips below — seasonal tags are just a subset of
+              context_tags. */}
+          <Text style={styles.label} accessibilityRole="header">
+            Seasonal (optional) — does this change with the seasons?
+          </Text>
+          <View style={styles.row}>
+            {SEASONAL_TAGS.map((tag) => {
+              const active = contextTags.includes(tag);
+              const label = SEASONAL_TAG_LABELS[tag];
+              return (
+                <Pressable
+                  key={tag}
+                  onPress={() => {
+                    if (tagsDisabled) return;
+                    setContextTags((curr) => toggleTag(curr, tag));
+                  }}
+                  disabled={tagsDisabled}
+                  style={[
+                    styles.tagChip,
+                    active && styles.tagChipActive,
+                    tagsDisabled && styles.tagChipDisabled,
+                  ]}
+                  accessibilityRole="checkbox"
+                  accessibilityLabel={label}
+                  accessibilityState={{ checked: active, disabled: tagsDisabled }}
+                  accessibilityHint={
+                    tagsDisabled ? 'Seasonal tags will be available soon.' : undefined
+                  }
+                >
+                  <Text
+                    style={[
+                      styles.tagChipText,
+                      active && styles.tagChipTextActive,
+                      tagsDisabled && styles.tagChipTextDisabled,
+                    ]}
+                  >
+                    {label}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+          <Text style={styles.tagHelper}>
+            {tagsDisabled
+              ? 'Seasonal tags will be available soon (server update pending).'
+              : 'For barriers that aren’t year-round. Counts toward the same 5-tag limit.'}
+          </Text>
 
           <Text style={styles.label}>Photo (optional)</Text>
 

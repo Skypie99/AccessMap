@@ -13,6 +13,7 @@
  */
 
 export type ContextTag =
+  // ── General "when / under what conditions" tags ──
   | 'morning_rush'
   | 'evening_rush'
   | 'after_dark'
@@ -21,12 +22,24 @@ export type ContextTag =
   | 'when_wet'
   | 'snow_or_ice'
   | 'event_day'
-  | 'construction';
+  | 'construction'
+  // ── Seasonal tags (W6-5) — time-of-year context. A subset of context
+  //    tags that share the same flags.context_tags column. See SEASONAL_TAGS. ──
+  | 'icy_winter'
+  | 'wet_spring'
+  | 'construction_temporary'
+  | 'shaded_summer'
+  | 'event_temporary';
 
 /**
  * Canonical chip display order. The UI renders chips in this sequence so the
  * picker layout is stable across renders. Frozen so a caller can't reorder it
  * by accident.
+ *
+ * NOTE: this is the GENERAL vocabulary only — seasonal tags live in their own
+ * `SEASONAL_TAGS` array so the two pickers in ReportFlagModal stay separate.
+ * Validation (`isValidTag`) and the display-label lookup (`tagLabel`) span
+ * BOTH lists; only the chip rendering is split.
  */
 export const CONTEXT_TAGS: ReadonlyArray<ContextTag> = Object.freeze([
   'morning_rush',
@@ -41,38 +54,100 @@ export const CONTEXT_TAGS: ReadonlyArray<ContextTag> = Object.freeze([
 ]);
 
 /**
+ * The seasonal subset of ContextTag. Kept as an explicit union (rather than
+ * derived from the array) so callers like FlagDetailModal can narrow to it.
+ */
+export type SeasonalTag =
+  | 'icy_winter'
+  | 'wet_spring'
+  | 'construction_temporary'
+  | 'shaded_summer'
+  | 'event_temporary';
+
+/**
+ * Seasonal tags (W6-5) — a small subset of context tags describing WHEN IN THE
+ * YEAR a barrier applies. They give time-aware context to flags that aren't
+ * year-round issues (e.g. "icy in winter", "flooded in spring", a construction
+ * detour that clears in fall). Stored in the same `flags.context_tags` column;
+ * rendered in their own chip group so the seasonal angle reads clearly.
+ *
+ * Frozen and intentionally short — Sky can expand the list later.
+ */
+export const SEASONAL_TAGS: ReadonlyArray<SeasonalTag> = Object.freeze([
+  'icy_winter',
+  'wet_spring',
+  'construction_temporary',
+  'shaded_summer',
+  'event_temporary',
+]);
+
+/**
  * Human-readable label for each tag. Used for chip text and accessibility
  * labels. Frozen so a screen can't mutate it. If you change a label here,
  * remember screen readers will read the new value verbatim — keep it short
  * and natural.
  */
-export const CONTEXT_TAG_LABELS: Readonly<Record<ContextTag, string>> = Object.freeze({
-  morning_rush: 'Morning rush hour',
-  evening_rush: 'Evening rush hour',
-  after_dark: 'After dark / poor visibility',
-  school_hours: 'School hours',
-  high_tide: 'Blocked at high tide',
-  when_wet: 'Slippery when wet',
-  snow_or_ice: 'Snow or ice',
-  event_day: 'Event days only',
-  construction: 'Active construction',
+export const CONTEXT_TAG_LABELS: Readonly<Record<Exclude<ContextTag, SeasonalTag>, string>> =
+  Object.freeze({
+    morning_rush: 'Morning rush hour',
+    evening_rush: 'Evening rush hour',
+    after_dark: 'After dark / poor visibility',
+    school_hours: 'School hours',
+    high_tide: 'Blocked at high tide',
+    when_wet: 'Slippery when wet',
+    snow_or_ice: 'Snow or ice',
+    event_day: 'Event days only',
+    construction: 'Active construction',
+  });
+
+/**
+ * Human-readable labels for the seasonal tags. Kept in a separate map from
+ * CONTEXT_TAG_LABELS so each chip group owns its own vocabulary; `tagLabel`
+ * unifies the two for any code that just needs "the label for this tag".
+ */
+export const SEASONAL_TAG_LABELS: Readonly<Record<SeasonalTag, string>> = Object.freeze({
+  icy_winter: 'Icy in winter',
+  wet_spring: 'Flooded in spring',
+  construction_temporary: 'Temporary construction',
+  shaded_summer: 'Shaded in summer',
+  event_temporary: 'Temporary event',
 });
 
 /**
- * Maximum number of context tags a single flag may carry. The vocabulary
- * is 9 wide and most flags are relevant under 1–3 conditions; capping at
- * 5 keeps the chip strip readable and discourages "tag everything"
- * reports that dilute the signal. `toggleTag` enforces this on the way
- * in; `sanitizeTagList` enforces it on the way out (defensive against
- * dirty DB rows).
+ * Display label for ANY context tag — general or seasonal. Use this anywhere
+ * a tag from a mixed source (e.g. a flag's stored `context_tags` array) needs
+ * to be shown, so seasonal and general tags both resolve correctly.
+ */
+export function tagLabel(tag: ContextTag): string {
+  return isSeasonalTag(tag) ? SEASONAL_TAG_LABELS[tag] : CONTEXT_TAG_LABELS[tag];
+}
+
+/**
+ * Type guard: is this tag one of the seasonal ones? Lets the detail view
+ * group seasonal chips separately from general context chips.
+ */
+export function isSeasonalTag(tag: ContextTag): tag is SeasonalTag {
+  return SEASONAL_TAG_SET.has(tag);
+}
+
+const SEASONAL_TAG_SET: ReadonlySet<string> = new Set(SEASONAL_TAGS);
+
+/**
+ * Maximum number of context tags a single flag may carry — SHARED across the
+ * general and seasonal groups, since both write to the one `context_tags`
+ * column. Most flags are relevant under 1–3 conditions; capping at 5 keeps the
+ * chip strip readable and discourages "tag everything" reports that dilute the
+ * signal. `toggleTag` enforces this on the way in; `sanitizeTagList` enforces
+ * it on the way out (defensive against dirty DB rows).
  */
 export const MAX_CONTEXT_TAGS = 5;
 
 /**
- * Lookup set for fast `isValidTag` checks. Built from CONTEXT_TAGS so the
- * two never drift.
+ * Lookup set for fast `isValidTag` checks. Spans BOTH the general and seasonal
+ * vocabularies so a stored seasonal tag validates (and therefore renders) just
+ * like a general one. Built from the two source arrays so they never drift.
  */
-const VALID_TAG_SET: ReadonlySet<string> = new Set(CONTEXT_TAGS);
+const VALID_TAG_SET: ReadonlySet<string> = new Set([...CONTEXT_TAGS, ...SEASONAL_TAGS]);
 
 /**
  * Type guard: is the given value one of the known ContextTag strings?

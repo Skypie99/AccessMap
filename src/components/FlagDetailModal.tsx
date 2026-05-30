@@ -34,7 +34,7 @@ import {
   type FlagContentPatch,
 } from '@/lib/flags';
 import { severityA11y, statusA11y } from '@/lib/a11yText';
-import { CONTEXT_TAG_LABELS, isValidTag } from '@/lib/contextTags';
+import { isSeasonalTag, isValidTag, tagLabel } from '@/lib/contextTags';
 import { addFlagPhoto, listFlagPhotos } from '@/lib/photos';
 import { MAX_COMMENT_LENGTH } from '@/lib/comments';
 import { useComments } from '@/hooks/useComments';
@@ -283,6 +283,14 @@ export default function FlagDetailModal({
   const coordsA11y = `Coordinates ${shownFlag.lat.toFixed(5)} latitude, ${shownFlag.lng.toFixed(5)} longitude`;
   const canEdit = isOwn && status === 'open';
 
+  // Split the flag's stored context_tags into general "conditions" and
+  // seasonal groups so each renders under its own heading. isValidTag scrubs
+  // any unknown/dirty values first (so a future vocabulary change can't crash
+  // the render); isSeasonalTag then partitions what remains.
+  const validTags = (shownFlag.context_tags ?? []).filter(isValidTag);
+  const generalTags = validTags.filter((t) => !isSeasonalTag(t));
+  const seasonalTags = validTags.filter(isSeasonalTag);
+
   const handleSaveEdit = async () => {
     if (busy || !shownFlag) return;
     setBusy(true);
@@ -479,34 +487,39 @@ export default function FlagDetailModal({
                 {shownFlag.description?.trim() ? shownFlag.description : 'No description provided.'}
               </Text>
 
-              {/* Context tags — only shown when the flag has them */}
-              {(shownFlag.context_tags ?? []).filter(isValidTag).length > 0 ? (
-                <>
-                  <Text style={styles.sectionLabel}>Conditions</Text>
-                  <View
-                    style={styles.contextTagsRow}
-                    accessible
-                    accessibilityLabel={
-                      'Conditions: ' +
-                      (shownFlag.context_tags ?? [])
-                        .filter(isValidTag)
-                        .map((t) => CONTEXT_TAG_LABELS[t])
-                        .join(', ')
-                    }
-                  >
-                    {(shownFlag.context_tags ?? []).filter(isValidTag).map((tag) => (
-                      <View
-                        key={tag}
-                        style={styles.contextChip}
-                        accessibilityElementsHidden
-                        importantForAccessibility="no-hide-descendants"
-                      >
-                        <Text style={styles.contextChipText}>{CONTEXT_TAG_LABELS[tag]}</Text>
-                      </View>
-                    ))}
-                  </View>
-                </>
-              ) : null}
+              {/* Context + seasonal tags — small chips below the description.
+                  Split into two labeled groups so the seasonal "when in the
+                  year" angle (W6-5) reads distinctly from general conditions.
+                  Each group renders only when it has tags. The chip strip is
+                  one accessibility node per group with a comma-joined label so
+                  a screen reader reads "Conditions: …" / "Seasonal: …" once
+                  rather than chip-by-chip. */}
+              {[
+                { key: 'conditions', heading: 'Conditions', tags: generalTags },
+                { key: 'seasonal', heading: 'Seasonal', tags: seasonalTags },
+              ].map(({ key, heading, tags }) =>
+                tags.length > 0 ? (
+                  <React.Fragment key={key}>
+                    <Text style={styles.sectionLabel}>{heading}</Text>
+                    <View
+                      style={styles.contextTagsRow}
+                      accessible
+                      accessibilityLabel={`${heading}: ${tags.map((t) => tagLabel(t)).join(', ')}`}
+                    >
+                      {tags.map((tag) => (
+                        <View
+                          key={tag}
+                          style={styles.contextChip}
+                          accessibilityElementsHidden
+                          importantForAccessibility="no-hide-descendants"
+                        >
+                          <Text style={styles.contextChipText}>{tagLabel(tag)}</Text>
+                        </View>
+                      ))}
+                    </View>
+                  </React.Fragment>
+                ) : null,
+              )}
 
               <Text style={styles.sectionLabel}>Reported by</Text>
               <Text style={styles.metaValue}>{isOwn ? 'You' : 'Another community member'}</Text>
