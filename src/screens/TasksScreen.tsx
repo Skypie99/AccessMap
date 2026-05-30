@@ -826,25 +826,6 @@ export default function TasksScreen() {
           selection.active && { paddingBottom: BULK_BAR_HEIGHT },
         ]}
         stickySectionHeadersEnabled={false}
-        getItemLayout={(data, index) => {
-          // FlagCard has minHeight 88 (size.cardMin) + 12px marginBottom.
-          // Section headers have ~32pt height. Use a conservative estimate
-          // so VirtualizedList can skip off-screen measurements entirely.
-          const CARD_HEIGHT = 100; // minHeight + marginBottom + safety margin
-          const HEADER_HEIGHT = 32;
-          let offset = 0;
-          let itemIndex = 0;
-          if (!data) return { length: CARD_HEIGHT, offset: 0, index };
-          for (let i = 0; i < data.length; i++) {
-            if (itemIndex === index) {
-              return { length: CARD_HEIGHT, offset, index };
-            }
-            offset += HEADER_HEIGHT; // section header
-            offset += data[i]!.data.length * CARD_HEIGHT;
-            itemIndex += data[i]!.data.length;
-          }
-          return { length: CARD_HEIGHT, offset: 0, index };
-        }}
         refreshControl={
           <RefreshControl
             refreshing={loading}
