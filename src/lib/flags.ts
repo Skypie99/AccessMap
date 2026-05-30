@@ -96,9 +96,11 @@ export async function stripExifNative(
       return null;
     }
 
-    console.debug(
-      `[EXIF] Native re-encode: ${arrayBuffer.byteLength} → ${strippedBuffer.byteLength} bytes`,
-    );
+    if (__DEV__) {
+      console.debug(
+        `[EXIF] Native re-encode: ${arrayBuffer.byteLength} → ${strippedBuffer.byteLength} bytes`,
+      );
+    }
     return strippedBuffer;
   } catch (e) {
     console.warn('[EXIF] ImageManipulator transcode failed:', e);
@@ -172,9 +174,11 @@ export function stripExifWeb(arrayBuffer: ArrayBuffer, ext: string): Promise<Arr
                 console.warn('[EXIF] Canvas result not ArrayBuffer; using original.');
                 return resolve(arrayBuffer);
               }
-              console.debug(
-                `[EXIF] Web re-encode: ${arrayBuffer.byteLength} → ${result.byteLength} bytes`,
-              );
+              if (__DEV__) {
+                console.debug(
+                  `[EXIF] Web re-encode: ${arrayBuffer.byteLength} → ${result.byteLength} bytes`,
+                );
+              }
               resolve(result);
             }) as any;
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -229,13 +233,13 @@ export function verifyExifStripped(arrayBuffer: ArrayBuffer): boolean {
     if (byte1 !== undefined && byte2 !== undefined) {
       const marker = (byte1 << 8) | byte2;
       if (marker === exifMarker || marker === iptcMarker || marker === xmpMarker) {
-        console.debug('[EXIF] Found metadata marker 0x' + marker.toString(16));
+        if (__DEV__) console.debug('[EXIF] Found metadata marker 0x' + marker.toString(16));
         return false;
       }
     }
   }
 
-  console.debug('[EXIF] Post-strip verification passed (no markers found).');
+  if (__DEV__) console.debug('[EXIF] Post-strip verification passed (no markers found).');
   return true;
 }
 
