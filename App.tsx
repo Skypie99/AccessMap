@@ -7,14 +7,11 @@ import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ThemeProvider } from '@/theme/ThemeContext';
 import { AuthProvider, useAuth } from '@/lib/auth';
+import { trackEvent } from '@/lib/analytics';
 import { hasSeenOnboarding, markOnboardingSeen } from '@/lib/onboarding';
 import { loadOnboarded, setOnboarded } from '@/lib/onboardingState';
 import { getDefaultTab, type DefaultTab } from '@/lib/preferences';
-import {
-  fetchCurrentPoints,
-  getLastSeenPoints,
-  setLastSeenPoints,
-} from '@/lib/points';
+import { fetchCurrentPoints, getLastSeenPoints, setLastSeenPoints } from '@/lib/points';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import FlashBanner from '@/components/FlashBanner';
 import OnboardingCards from '@/components/OnboardingCards';
@@ -35,13 +32,11 @@ function SignedInArea() {
     if (!user) return;
     let cancelled = false;
     // Read onboarding + preferred-tab in parallel; both gate first render.
-    Promise.all([hasSeenOnboarding(user.id), getDefaultTab(user.id)]).then(
-      ([seen, tab]) => {
-        if (cancelled) return;
-        if (!seen) setShowOnboarding(true);
-        setDefaultTabState(tab);
-      },
-    );
+    Promise.all([hasSeenOnboarding(user.id), getDefaultTab(user.id)]).then(([seen, tab]) => {
+      if (cancelled) return;
+      if (!seen) setShowOnboarding(true);
+      setDefaultTabState(tab);
+    });
     return () => {
       cancelled = true;
     };
@@ -170,6 +165,12 @@ function FirstLaunchGate({ children }: { children: React.ReactNode }) {
 }
 
 function App() {
+  // Analytics: one event per app launch. platform only — no PII. Runs once
+  // on mount (App is wrapped by Sentry.wrap below, so Sentry is initialized).
+  useEffect(() => {
+    trackEvent('app_session_started', { platform: Platform.OS });
+  }, []);
+
   return (
     <ErrorBoundary>
       <SafeAreaProvider>
@@ -183,7 +184,6 @@ function App() {
         </ThemeProvider>
       </SafeAreaProvider>
     </ErrorBoundary>
-
   );
 }
 

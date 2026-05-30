@@ -2,6 +2,7 @@ import { supabase } from './supabase';
 import { color as themeColor } from '@/theme';
 import { Platform } from 'react-native';
 import * as ImageManipulator from 'expo-image-manipulator';
+import { trackEvent } from './analytics';
 import type { FlagCategory, FlagRow, FlagSeverity, FlagStatus } from '@/types/database';
 
 export const FLAG_PHOTOS_BUCKET = 'flag-photos';
@@ -644,6 +645,12 @@ export async function updateFlagStatus(flagId: string, status: FlagStatus) {
     .select()
     .single();
   if (error) throw error;
+
+  // Analytics chokepoint: every status change flows through here, so this is
+  // the one place to instrument it. We log only the destination status +
+  // platform — never the flag_id or user_id. See src/lib/analytics.ts.
+  trackEvent('flag_status_updated', { to_status: status, platform: Platform.OS });
+
   return data as FlagRow;
 }
 

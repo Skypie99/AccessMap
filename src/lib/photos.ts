@@ -1,5 +1,7 @@
+import { Platform } from 'react-native';
 import { supabase } from './supabase';
 import { uploadFlagPhoto } from './flags';
+import { trackEvent } from './analytics';
 
 export type FlagPhoto = {
   id: string;
@@ -62,6 +64,11 @@ export async function addFlagPhoto(flagId: string, localUri: string): Promise<Fl
     .single();
 
   if (error) throw error;
+
+  // Analytics: a photo was added. photo_count is the new total; no flag_id or
+  // URL is logged (both are PII-adjacent). See src/lib/analytics.ts.
+  trackEvent('photo_added', { photo_count: position + 1, platform: Platform.OS });
+
   return data as FlagPhoto;
 }
 

@@ -1,5 +1,7 @@
+import { Platform } from 'react-native';
 import { supabase } from './supabase';
 import { errorMessage } from './errors';
+import { trackEvent, commentLengthBucket } from './analytics';
 import type { CommentRow } from '@/types/database';
 
 export { CommentRow };
@@ -85,6 +87,13 @@ export async function addComment(flagId: string, content: string): Promise<Comme
     if (isTableMissingError(error)) throw new CommentsTableNotReadyError();
     throw new Error(errorMessage(error));
   }
+
+  // Analytics: a comment was added. We log only a length *bucket* (never the
+  // text itself) plus platform. No flag_id / user_id. See src/lib/analytics.ts.
+  trackEvent('comment_added', {
+    comment_length_bucket: commentLengthBucket(trimmed.length),
+    platform: Platform.OS,
+  });
 
   return flattenComment(data as RawCommentRow);
 }

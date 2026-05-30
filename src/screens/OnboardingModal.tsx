@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import {
   AccessibilityInfo,
   Modal,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -12,6 +13,7 @@ import {
 import { font, radius, shadow, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { useReducedMotion } from '@/lib/accessibility';
+import { trackEvent } from '@/lib/analytics';
 
 interface Props {
   visible: boolean;
@@ -70,11 +72,23 @@ export default function OnboardingModal({ visible, onDone }: Props) {
 
   const isLast = index === CARDS.length - 1;
 
+  // Analytics: distinguish finishing the intro from bailing out of it. Both
+  // still call onDone(); we just tag which path the user took. platform only —
+  // no PII. See src/lib/analytics.ts.
+  const handleSkip = () => {
+    trackEvent('onboarding_skipped', { platform: Platform.OS });
+    onDone();
+  };
+  const handleComplete = () => {
+    trackEvent('onboarding_completed', { platform: Platform.OS });
+    onDone();
+  };
+
   return (
     <Modal
       visible={visible}
       animationType={reducedMotion ? 'none' : 'slide'}
-      onRequestClose={onDone}
+      onRequestClose={handleSkip}
       presentationStyle="fullScreen"
     >
       {/* accessibilityViewIsModal prevents VoiceOver from focusing elements
@@ -82,7 +96,7 @@ export default function OnboardingModal({ visible, onDone }: Props) {
       <View style={styles.screen} accessibilityViewIsModal>
         <View style={styles.topBar}>
           <Pressable
-            onPress={onDone}
+            onPress={handleSkip}
             style={styles.skipBtn}
             accessibilityRole="button"
             accessibilityLabel="Skip the introduction"
@@ -164,7 +178,7 @@ export default function OnboardingModal({ visible, onDone }: Props) {
             </Pressable>
           ) : (
             <Pressable
-              onPress={onDone}
+              onPress={handleComplete}
               style={({ pressed }) => [
                 styles.primaryBtn,
                 index > 0 && styles.primaryBtnFlex,
