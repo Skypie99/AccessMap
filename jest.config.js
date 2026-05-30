@@ -54,10 +54,8 @@ module.exports = {
     '!src/lib/realtimePrefs.ts',
     '!src/lib/auth.tsx',
     '!src/lib/flagsStore.tsx',
-    '!src/lib/webShare.ts',
-    '!src/lib/statusHistory.ts',
-    '!src/lib/watchedFlags.ts',
-    '!src/lib/points.ts',
+    // Phase 3 coverage sprint: webShare, statusHistory, watchedFlags, points
+    // now meet the 80% threshold — exclusions removed 2026-05-29.
   ],
   coverageThreshold: {
     global: {

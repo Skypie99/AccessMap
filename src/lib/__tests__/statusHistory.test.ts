@@ -1,6 +1,21 @@
-import { formatHistoryEntry, type StatusHistoryEntry } from '../statusHistory';
+import { formatHistoryEntry, listStatusHistory, type StatusHistoryEntry } from '../statusHistory';
 
-jest.mock('../supabase', () => ({ supabase: {} }));
+// ---------------------------------------------------------------------------
+// Supabase mock — chained builder for listStatusHistory:
+//   supabase.from(...).select(...).eq(...).order(...)  →  Promise<{data,error}>
+//
+// formatHistoryEntry is a pure function and doesn't call supabase at all,
+// so this mock is only exercised by the listStatusHistory describe block.
+// ---------------------------------------------------------------------------
+const mockOrderInHistory = jest.fn();
+const mockEqInHistory = jest.fn();
+const mockSelectInHistory = jest.fn();
+
+jest.mock('../supabase', () => ({
+  supabase: {
+    from: jest.fn(() => ({ select: mockSelectInHistory })),
+  },
+}));
 
 type StatusHistoryEntryKey = keyof StatusHistoryEntry;
 
@@ -31,6 +46,17 @@ function entry(
   };
 }
 
+beforeEach(() => {
+  jest.clearAllMocks();
+  // Wire the Supabase chain. Default: no rows, no error.
+  mockSelectInHistory.mockReturnValue({ eq: mockEqInHistory });
+  mockEqInHistory.mockReturnValue({ order: mockOrderInHistory });
+  mockOrderInHistory.mockResolvedValue({ data: [], error: null });
+});
+
+// ---------------------------------------------------------------------------
+// formatHistoryEntry — pure formatter, no Supabase dependency
+// ---------------------------------------------------------------------------
 describe('formatHistoryEntry', () => {
   describe('initial creation entry (from_status === null)', () => {
     it('renders "Reported · <time>" regardless of to_status', () => {
@@ -121,6 +147,82 @@ describe('formatHistoryEntry', () => {
       const b = formatHistoryEntry(e, labelCap, fixedTime);
       expect(a).toBe(b);
     });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// listStatusHistory — Supabase query wrapper
+// ---------------------------------------------------------------------------
+// Covers lines 48-84 which were 0% because the function was excluded from
+// the coverage run. Chain: from('flag_status_history_public').select(...)
+// .eq('flag_id', id).order('created_at', {ascending:true}) → {data, error}.
+describe('listStatusHistory', () => {
+  const FLAG_ID = 'flag-xyz-123';
+
+  const sampleEntries: StatusHistoryEntry[] = [
+    {
+      id: 'h1',
+      flag_id: FLAG_ID,
+      from_status: null,
+      to_status: 'open',
+      created_at: '2026-05-01T08:00:00Z',
+    },
+    {
+      id: 'h2',
+      flag_id: FLAG_ID,
+      from_status: 'open',
+      to_status: 'verified',
+      created_at: '2026-05-02T10:00:00Z',
+    },
+  ];
+
+  it('returns entries in the order Supabase returns them (ascending)', async () => {
+    mockOrderInHistory.mockResolvedValueOnce({ data: sampleEntries, error: null });
+    const result = await listStatusHistory(FLAG_ID);
+    expect(result).toEqual(sampleEntries);
+  });
+
+  it('returns [] when Supabase returns an error (migration not applied, RLS, etc.)', async () => {
+    mockOrderInHistory.mockResolvedValueOnce({
+      data: null,
+      error: { message: 'relation "flag_status_history_public" does not exist' },
+    });
+    const result = await listStatusHistory(FLAG_ID);
+    expect(result).toEqual([]);
+  });
+
+  it('returns [] when data is null and no error (view exists but no rows)', async () => {
+    mockOrderInHistory.mockResolvedValueOnce({ data: null, error: null });
+    const result = await listStatusHistory(FLAG_ID);
+    expect(result).toEqual([]);
+  });
+
+  it('returns [] when data is an empty array (flag has no history yet)', async () => {
+    // Default mock already returns { data: [], error: null } — explicit here.
+    mockOrderInHistory.mockResolvedValueOnce({ data: [], error: null });
+    const result = await listStatusHistory(FLAG_ID);
+    expect(result).toEqual([]);
+  });
+
+  it('returns [] and does not throw when the Supabase call itself throws', async () => {
+    // Covers the outer try/catch (line 83-85 in statusHistory.ts).
+    mockOrderInHistory.mockRejectedValueOnce(new Error('network timeout'));
+    const result = await listStatusHistory(FLAG_ID);
+    expect(result).toEqual([]);
+  });
+
+  it('queries the flag_status_history_public view for the given flagId', async () => {
+    mockOrderInHistory.mockResolvedValueOnce({ data: sampleEntries, error: null });
+    await listStatusHistory(FLAG_ID);
+    // Verify the eq call was given the correct flagId — the wrong ID would
+    // silently return wrong data with no type error.
+    expect(mockEqInHistory).toHaveBeenCalledWith('flag_id', FLAG_ID);
+  });
+
+  it('requests ascending order so the UI renders oldest-first (timeline)', async () => {
+    mockOrderInHistory.mockResolvedValueOnce({ data: sampleEntries, error: null });
+    await listStatusHistory(FLAG_ID);
+    expect(mockOrderInHistory).toHaveBeenCalledWith('created_at', { ascending: true });
   });
 });
 
