@@ -478,12 +478,17 @@ const makeStyles = (color: ColorTheme) =>
     title: {
       fontSize: font.size.h2,
       fontWeight: font.weight.bold,
-      color: color.textStrong,
+      // WCAG 1.4.3: hardcoded white-blue (not theme token) because this screen
+      // forces a dark gradient background regardless of the OS light/dark mode.
+      // Using color.textStrong in light mode would render dark text on dark bg.
+      color: '#f0f6ff',
       textAlign: 'center',
     },
     body: {
       fontSize: font.size.lg,
-      color: color.text,
+      // WCAG 1.4.3: same reasoning as title — forced dark background needs
+      // hardcoded light text. rgba(220,235,255,0.9) on #070b18 ≈ 12:1, AA pass.
+      color: 'rgba(220,235,255,0.9)',
       textAlign: 'center',
       lineHeight: 24,
       maxWidth: 360,

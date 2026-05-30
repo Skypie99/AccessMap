@@ -743,6 +743,8 @@ const makeStyles = (color: ColorTheme) =>
       paddingVertical: 12,
       borderRadius: 8,
       alignItems: 'center',
+      minHeight: 44,
+      justifyContent: 'center',
     },
     cancelBtn: { backgroundColor: color.surfaceNeutral },
     cancelText: { color: color.text, fontWeight: '600' },

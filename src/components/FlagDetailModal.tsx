@@ -939,6 +939,9 @@ const makeStyles = (color: ColorTheme) =>
       borderWidth: 1.5,
       borderColor: color.borderStrong,
       marginTop: 10,
+      minHeight: 44,
+      minWidth: 80,
+      justifyContent: 'center',
     },
     watchBtnActive: {
       borderColor: color.accentOrange,

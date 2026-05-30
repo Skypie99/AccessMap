@@ -1750,7 +1750,7 @@ export default function MapScreen() {
       >
         <View style={styles.nameBackdrop}>
           <View style={styles.nameCard}>
-            <Text style={styles.nameTitle}>Name this filter</Text>
+            <Text style={styles.nameTitle} accessibilityRole="header">Name this filter</Text>
             <Text style={styles.nameHint}>You can save up to {MAX_FILTER_SETS} filter sets.</Text>
             <TextInput
               value={nameDraft}
@@ -2074,7 +2074,7 @@ const makeStyles = (color: ColorTheme) =>
       paddingVertical: 8,
       borderRadius: radius.circle,
       backgroundColor: color.brand,
-      minHeight: 32,
+      minHeight: 44,
       justifyContent: 'center',
     },
     savedSaveBtnText: { color: color.textOnBrand, fontSize: 12, fontWeight: '700' },
