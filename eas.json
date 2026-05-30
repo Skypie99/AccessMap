@@ -18,19 +18,18 @@
     "preview": {
       "distribution": "internal",
       "ios": {
-        "simulator": false,
-        "appleTeamId": "ADD_YOUR_APPLE_TEAM_ID_HERE"
+        "simulator": false
       },
       "env": {
-        "APP_ENV": "preview"
+        "APP_ENV": "preview",
+        "SENTRY_DISABLE_AUTO_UPLOAD": "true"
       }
     },
 
     "production": {
       "distribution": "store",
       "ios": {
-        "simulator": false,
-        "appleTeamId": "ADD_YOUR_APPLE_TEAM_ID_HERE"
+        "simulator": false
       },
       "env": {
         "APP_ENV": "production"
@@ -42,7 +41,7 @@
     "production": {
       "ios": {
         "appleId": "$EXPO_APPLE_ID",
-        "ascAppId": "TODO_ASC_APP_ID",
+        "ascAppId": "6774709116",
         "appleTeamId": "$EXPO_APPLE_TEAM_ID"
       },
       "android": {
