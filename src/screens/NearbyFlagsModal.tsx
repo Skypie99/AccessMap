@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
+  AccessibilityInfo,
   FlatList,
   Image,
   Modal,
@@ -52,6 +53,25 @@ export default function NearbyFlagsModal({
       setSearchQuery('');
     }
   }, [visible]);
+
+  // Announce the list size to screen readers when the modal opens so
+  // VoiceOver users immediately know how much content awaits without
+  // having to swipe through every item to find the end.
+  useEffect(() => {
+    if (!visible) return;
+    const count = flags.length;
+    const msg =
+      count === 0
+        ? 'No flags to show.'
+        : count === 1
+          ? '1 flag nearby. Sorted by distance.'
+          : `${count} flags nearby. Sorted by distance.`;
+    // Small delay so the Modal's open animation settles first; without it
+    // the announcement races with the OS sheet-open utterance and both
+    // can be cut off.
+    const t = setTimeout(() => AccessibilityInfo.announceForAccessibility(msg), 600);
+    return () => clearTimeout(t);
+  }, [visible, flags.length]);
 
   // Sort by distance ascending when we have a location; otherwise keep the
   // existing order (which is most-recent-first from listFlags).
@@ -160,7 +180,7 @@ export default function NearbyFlagsModal({
       onRequestClose={onClose}
       presentationStyle="pageSheet"
     >
-      <SafeAreaView style={styles.screen}>
+      <SafeAreaView style={styles.screen} accessibilityViewIsModal>
         <View style={styles.header} accessibilityRole="header">
           <Text style={styles.title}>Nearby flags</Text>
           <Pressable

@@ -17,6 +17,8 @@ import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '@/lib/auth';
 import { track } from '@/lib/analytics';
 import { errorMessage } from '@/lib/errors';
+import { reverseGeocode } from '@/lib/geocode';
+import { useScreenReader } from '@/lib/accessibility';
 import {
   CATEGORY_LABELS,
   CATEGORY_ORDER,
@@ -52,6 +54,10 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
   const color = useColor();
   const styles = makeStyles(color);
   const { user } = useAuth();
+  const screenReaderOn = useScreenReader();
+  // Reverse-geocoded address for the current location. Resolves async
+  // after the modal opens. Falls back to raw lat/lng if unavailable.
+  const [resolvedAddress, setResolvedAddress] = useState<string | null>(null);
   const [category, setCategory] = useState<FlagCategory>('no_ramp');
   const [severity, setSeverity] = useState<FlagSeverity>(3);
   const [description, setDescription] = useState('');
@@ -83,6 +89,33 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
     }
     prevHighRef.current = isHigh;
   }, [severity, photoUri]);
+
+  // When the modal opens with a valid location, reverse-geocode it so
+  // VoiceOver users hear a human address instead of raw coordinates.
+  // Also announces to screen readers once the address resolves.
+  useEffect(() => {
+    if (!visible || !location) {
+      setResolvedAddress(null);
+      return;
+    }
+    let cancelled = false;
+    const controller = new AbortController();
+    (async () => {
+      const address = await reverseGeocode(location.lat, location.lng, controller.signal);
+      if (cancelled) return;
+      setResolvedAddress(address);
+      if (screenReaderOn) {
+        const where = address ?? `${location.lat.toFixed(4)}, ${location.lng.toFixed(4)}`;
+        AccessibilityInfo.announceForAccessibility(
+          `Placing flag at your current location: ${where}`,
+        );
+      }
+    })();
+    return () => {
+      cancelled = true;
+      controller.abort();
+    };
+  }, [visible, location, screenReaderOn]);
 
   const reset = () => {
     setCategory('no_ramp');
@@ -157,8 +190,8 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
           : await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (!perm.granted) {
         Alert.alert(
-          'Permission needed',
-          `Allow ${_source === 'camera' ? 'camera' : 'photo library'} access to attach a photo.`,
+          _source === 'camera' ? 'Camera access needed' : 'Photo library access needed',
+          `Allow ${_source === 'camera' ? 'camera' : 'photo library'} access in Settings to attach a photo.`,
         );
         return;
       }
@@ -176,17 +209,17 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
         setPhotoUri(result.assets[0].uri);
       }
     } catch (e) {
-      Alert.alert('Could not pick photo', errorMessage(e));
+      Alert.alert("Couldn't open photos", errorMessage(e));
     }
   };
 
   const handleSubmit = async () => {
     if (!user) {
-      Alert.alert('Not signed in', 'Sign in to report a flag.');
+      Alert.alert("You're not signed in", 'Sign in to report a barrier.');
       return;
     }
     if (!location) {
-      Alert.alert('No location', 'We need your location to place the flag.');
+      Alert.alert('Location not ready', 'Your location is still loading. Wait a moment and try again.');
       return;
     }
     setSubmitting(true);
@@ -214,8 +247,8 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
       // weren't. Non-blocking alert: the report itself DID land.
       if (!result.tagsAccepted && contextTags.length > 0) {
         Alert.alert(
-          'Flag saved without context tags',
-          'Your report was filed, but the context tags you picked could not be stored yet (server update pending). The picker will be re-enabled automatically once it is.',
+          'Report filed — tags not saved',
+          'Your report landed, but the context tags you picked could not be stored yet (server update pending). The picker will re-enable automatically once it is.',
         );
       }
       track('flag_created', { category, severity, hasPhoto: !!photoUrl });
@@ -223,7 +256,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
       onCreated();
       onClose();
     } catch (e) {
-      Alert.alert('Could not report flag', errorMessage(e));
+      Alert.alert("Couldn't file your report", errorMessage(e));
     } finally {
       setSubmitting(false);
     }
@@ -234,11 +267,20 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
       <View style={styles.backdrop}>
         <View style={styles.card} accessibilityViewIsModal>
           <Text style={styles.title} accessibilityRole="header">
-            Report a flag
+            Report a barrier
           </Text>
-          <Text style={styles.location}>
+          <Text
+            style={styles.location}
+            accessibilityLabel={
+              location
+                ? resolvedAddress
+                  ? `at ${resolvedAddress}`
+                  : `at ${location.lat.toFixed(4)}, ${location.lng.toFixed(4)}`
+                : 'Waiting for location'
+            }
+          >
             {location
-              ? `at ${location.lat.toFixed(5)}, ${location.lng.toFixed(5)}`
+              ? resolvedAddress ?? `${location.lat.toFixed(5)}, ${location.lng.toFixed(5)}`
               : 'Waiting for location…'}
           </Text>
 
@@ -557,7 +599,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
                 (submitting || !location) && styles.submitBtnDisabled,
               ]}
               accessibilityRole="button"
-              accessibilityLabel="Submit flag report"
+              accessibilityLabel="Submit barrier report"
               accessibilityState={{ disabled: submitting || !location, busy: submitting }}
             >
               {submitting ? (

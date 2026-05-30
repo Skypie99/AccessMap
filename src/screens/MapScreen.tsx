@@ -1545,7 +1545,7 @@ export default function MapScreen() {
                 disabled={!location}
                 accessibilityRole="button"
                 accessibilityLabel="Report a flag here"
-                accessibilityHint="Opens a form to report an accessibility issue at your current location"
+                accessibilityHint="Opens a form to report an accessibility issue at your current location. Tip: sighted users can also long-press the map to drop a report at a specific spot"
                 accessibilityState={{ disabled: !location }}
               >
                 <Text style={styles.fabText}>＋ Report</Text>
@@ -1659,7 +1659,7 @@ export default function MapScreen() {
         }}
       >
         <View style={styles.nameBackdrop}>
-          <View style={styles.nameCard}>
+          <View style={styles.nameCard} accessibilityViewIsModal>
             <Text style={styles.nameTitle} accessibilityRole="header">
               Name this preset
             </Text>
@@ -1736,7 +1736,7 @@ export default function MapScreen() {
         }}
       >
         <View style={styles.nameBackdrop}>
-          <View style={styles.nameCard}>
+          <View style={styles.nameCard} accessibilityViewIsModal>
             <Text style={styles.nameTitle}>Name this filter</Text>
             <Text style={styles.nameHint}>You can save up to {MAX_FILTER_SETS} filter sets.</Text>
             <TextInput

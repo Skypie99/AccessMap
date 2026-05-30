@@ -20,6 +20,7 @@ import { errorMessage } from './errors';
  */
 
 const NOMINATIM_BASE = 'https://nominatim.openstreetmap.org/search';
+const NOMINATIM_REVERSE = 'https://nominatim.openstreetmap.org/reverse';
 
 // Identifies the app for Nominatim's logs per their policy. Includes the
 // maintainer's email as a contact in case usage gets flagged. Bump the
@@ -68,6 +69,33 @@ export function parseResults(payload: unknown): GeocodeResult[] {
   return payload
     .map((row) => parseGeocodeRow(row as NominatimRow))
     .filter((r): r is GeocodeResult => r !== null);
+}
+
+/**
+ * Reverse geocode a coordinate to a human-readable address string.
+ * Returns null on any failure — callers degrade gracefully to showing
+ * raw lat/lng.
+ *
+ * Uses Nominatim's `/reverse` endpoint (zoom=18 = street-level detail).
+ * Same User-Agent and rate-limit rules as `searchAddress`.
+ */
+export async function reverseGeocode(
+  lat: number,
+  lng: number,
+  signal?: AbortSignal,
+): Promise<string | null> {
+  try {
+    const url = `${NOMINATIM_REVERSE}?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=0`;
+    const response = await fetch(url, {
+      headers: { 'User-Agent': USER_AGENT },
+      signal,
+    });
+    if (!response.ok) return null;
+    const data = (await response.json()) as { display_name?: string };
+    return typeof data.display_name === 'string' ? data.display_name : null;
+  } catch {
+    return null;
+  }
 }
 
 /**
