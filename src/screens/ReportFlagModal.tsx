@@ -230,7 +230,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
   };
 
   return (
-    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
+    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose} accessibilityViewIsModal>
       <View style={styles.backdrop}>
         <View style={styles.card} accessibilityViewIsModal>
           <Text style={styles.title} accessibilityRole="header">
