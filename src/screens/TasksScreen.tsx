@@ -586,10 +586,9 @@ export default function TasksScreen() {
       {flash && (
         <View style={styles.flashWrap} pointerEvents="none">
           <View style={styles.flashPill}>
-            {/* accessibilityLiveRegion="polite" covers Android TalkBack.
-                iOS VoiceOver is handled by announceForAccessibility at
-                each call site (applyStatusChange, handleDeleted, bulk
-                actions). WCAG 4.1.3 — status messages. */}
+            {/* accessibilityLiveRegion covers Android TalkBack;
+                iOS VoiceOver handled by announceForAccessibility at each call site.
+                WCAG 4.1.3 — status messages must reach all AT. */}
             <Text style={styles.flashText} accessibilityLiveRegion="polite">{flash}</Text>
           </View>
         </View>
@@ -1478,7 +1477,7 @@ const makeStyles = (color: ColorTheme) =>
       paddingVertical: 7,
       borderRadius: radius.circle,
       backgroundColor: color.surfaceNeutral,
-      minHeight: 36,
+      minHeight: 44, // WCAG 2.5.5: was 36pt (below 44pt project standard)
       alignItems: 'center',
       justifyContent: 'center',
     },
@@ -1498,7 +1497,7 @@ const makeStyles = (color: ColorTheme) =>
     },
     searchInput: {
       flex: 1,
-      minHeight: 40,
+      minHeight: 44, // WCAG 2.5.5: was 40pt (4pt below 44pt project standard)
       paddingHorizontal: 12,
       paddingVertical: 8,
       borderRadius: radius.circle,

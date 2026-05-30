@@ -1585,8 +1585,7 @@ const makeStyles = (color: ColorTheme) =>
     heroLabel: {
       color: color.pointsPillText,
       // WCAG 1.4.3: pointsPillText (#dbe7fb) on brand (#2f80ed) = 3.10:1.
-      // At ≥14pt bold this qualifies as "large text" → 3:1 threshold → passes.
-      // (11pt bold = small text → needed 4.5:1 → failed.)
+      // ≥14pt bold = "large text" → 3:1 threshold → passes. (11pt bold = small text → needed 4.5:1 → failed.)
       fontSize: font.size.base,
       letterSpacing: 2.4,
       fontWeight: font.weight.bold,
@@ -1601,8 +1600,7 @@ const makeStyles = (color: ColorTheme) =>
     },
     heroSubtitle: {
       color: color.pointsPillText,
-      // WCAG 1.4.3: same 3.10:1 contrast as heroLabel — bumped to 14pt bold
-      // so it qualifies as "large text" and clears the 3:1 threshold.
+      // WCAG 1.4.3: same 3.10:1 contrast — bumped to 14pt bold (large text → 3:1 → passes).
       // (13pt semibold = small text → needed 4.5:1 → failed.)
       fontSize: font.size.base,
       fontWeight: font.weight.bold,

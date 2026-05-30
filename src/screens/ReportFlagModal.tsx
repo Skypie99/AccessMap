@@ -233,8 +233,8 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <View style={styles.backdrop}>
         <View style={styles.card} accessibilityViewIsModal>
-          {/* scrollContent + sticky actions — WCAG 1.4.4 Resize Text.
-              Card capped at 88% height; form fields scroll; buttons stay pinned. */}
+          {/* WCAG 1.4.4: card capped at 88% so Dynamic Type XXL content
+              scrolls; Cancel/Report buttons stay pinned as sticky footer. */}
           <ScrollView
             style={styles.scrollContent}
             contentContainerStyle={styles.scrollContentContainer}
@@ -593,9 +593,11 @@ const makeStyles = (color: ColorTheme) =>
       backgroundColor: color.surface,
       paddingHorizontal: 20,
       paddingTop: 20,
-      paddingBottom: 8,
+      paddingBottom: 0,
       borderTopLeftRadius: radius.xl,
       borderTopRightRadius: radius.xl,
+      // WCAG 1.4.4: cap height so content scrolls at Dynamic Type XXL and
+      // the Submit button is never pushed off screen.
       maxHeight: '88%',
     },
     scrollContent: { flex: 1 },
@@ -727,7 +729,7 @@ const makeStyles = (color: ColorTheme) =>
       gap: 12,
       paddingHorizontal: 20,
       paddingTop: 12,
-      paddingBottom: 20,
+      paddingBottom: 24,
       borderTopWidth: StyleSheet.hairlineWidth,
       borderTopColor: color.borderSubtle,
       backgroundColor: color.surface,
