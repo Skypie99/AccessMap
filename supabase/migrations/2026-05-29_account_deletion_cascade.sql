@@ -1,0 +1,64 @@
+-- PROPOSE ONLY — DO NOT APPLY
+--
+-- Purpose: Document the cascade chain that drives account deletion and confirm
+-- that no new DDL is required. All necessary ON DELETE CASCADE / SET NULL
+-- constraints were added in prior migrations and the initial schema.
+--
+-- Triggered by: adminClient.auth.admin.deleteUser(userId) in the
+-- supabase/functions/delete-account Edge Function.
+--
+-- Cascade chain:
+--
+--   auth.users (id)
+--     └─ public.users (id)
+--          ON DELETE CASCADE  — schema.sql line 10
+--          │
+--          ├─ public.flags (user_id)
+--          │    ON DELETE CASCADE  — schema.sql line 23
+--          │
+--          ├─ public.push_tokens (user_id)
+--          │    ON DELETE CASCADE  — 2026-05-25_push_tokens.sql
+--          │
+--          └─ (realtime_flags_subscriptions, if applied)
+--               ON DELETE CASCADE  — 2026-05-28_d4_realtime_flags_filtered.sql
+--
+--     └─ public.notification_preferences (user_id)
+--          ON DELETE CASCADE  — 2026-05-25_notification_preferences_proposal.sql
+--
+--     └─ public.feedback (user_id)
+--          ON DELETE SET NULL  — 2026-05-23_feedback_table.sql
+--          (audit trail preserved — row kept, attribution anonymised)
+--
+--     └─ public.flag_edit_history (user_id)
+--          ON DELETE SET NULL  — 2026-05-25_flag_edit_history_table.sql
+--          (audit trail preserved)
+--
+--     └─ public.status_history (user_id)
+--          ON DELETE SET NULL  — 2026-05-24_status_history_table.sql
+--          (audit trail preserved)
+--
+-- Result: one adminClient.auth.admin.deleteUser() call atomically removes the
+-- user's account, flags, push token, and notification prefs. Audit-trail rows
+-- (feedback, edit history, status history) are anonymised, not deleted.
+--
+-- Verification query (run in Supabase SQL editor to spot any unguarded FKs):
+--
+--   SELECT
+--     tc.table_name,
+--     kcu.column_name,
+--     rc.delete_rule
+--   FROM information_schema.table_constraints tc
+--   JOIN information_schema.key_column_usage kcu
+--     ON tc.constraint_name = kcu.constraint_name
+--   JOIN information_schema.referential_constraints rc
+--     ON tc.constraint_name = rc.constraint_name
+--   JOIN information_schema.key_column_usage ccu
+--     ON rc.unique_constraint_name = ccu.constraint_name
+--   WHERE tc.constraint_type = 'FOREIGN KEY'
+--     AND ccu.table_name IN ('users')
+--     AND ccu.table_schema = 'public'
+--   ORDER BY tc.table_name;
+--
+-- Expected: all rows show CASCADE or NO ACTION (SET NULL maps to NO ACTION in
+-- information_schema). Any RESTRICT row for a user-owned table is a gap that
+-- needs a follow-up migration.
