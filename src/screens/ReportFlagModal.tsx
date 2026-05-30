@@ -233,6 +233,14 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <View style={styles.backdrop}>
         <View style={styles.card} accessibilityViewIsModal>
+          {/* scrollContent + sticky actions — WCAG 1.4.4 Resize Text.
+              Card capped at 88% height; form fields scroll; buttons stay pinned. */}
+          <ScrollView
+            style={styles.scrollContent}
+            contentContainerStyle={styles.scrollContentContainer}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
           <Text style={styles.title} accessibilityRole="header">
             Report a flag
           </Text>
@@ -536,6 +544,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
               ? 'Context tags will be available soon (server update pending).'
               : `Tap any that apply. Up to ${MAX_CONTEXT_TAGS}. Leave empty if none.`}
           </Text>
+          </ScrollView>
 
           <View style={styles.actions}>
             <Pressable
@@ -582,11 +591,15 @@ const makeStyles = (color: ColorTheme) =>
     },
     card: {
       backgroundColor: color.surface,
-      padding: 20,
+      paddingHorizontal: 20,
+      paddingTop: 20,
+      paddingBottom: 8,
       borderTopLeftRadius: radius.xl,
       borderTopRightRadius: radius.xl,
-      gap: 12,
+      maxHeight: '88%',
     },
+    scrollContent: { flex: 1 },
+    scrollContentContainer: { gap: 12, paddingBottom: 4 },
     title: {
       fontSize: 20,
       fontWeight: '700',
@@ -709,7 +722,16 @@ const makeStyles = (color: ColorTheme) =>
       fontSize: 13,
       lineHeight: 14,
     },
-    actions: { flexDirection: 'row', gap: 12, marginTop: 8 },
+    actions: {
+      flexDirection: 'row',
+      gap: 12,
+      paddingHorizontal: 20,
+      paddingTop: 12,
+      paddingBottom: 20,
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: color.borderSubtle,
+      backgroundColor: color.surface,
+    },
     actionBtn: {
       flex: 1,
       paddingVertical: 12,
