@@ -19,6 +19,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { useAuth } from '@/lib/auth';
+import { deleteAccount } from '@/lib/account';
 import { confirm } from '@/lib/confirm';
 import { errorMessage } from '@/lib/errors';
 import { signOut, supabase } from '@/lib/supabase';
@@ -225,6 +226,8 @@ export default function ProfileScreen() {
   // tier pill in the hero card. Inline (not a separate component file)
   // since it's <40 LOC of JSX and reads cleanly here next to the pill.
   const [tierExplainerOpen, setTierExplainerOpen] = useState(false);
+  const [deleteAccountOpen, setDeleteAccountOpen] = useState(false);
+  const [deletingAccount, setDeletingAccount] = useState(false);
 
   // Edit-name state. nameDraft is what the user is typing; profile?.display_name
   // is the persisted value. A Save button fires only when they actually differ.
@@ -1364,8 +1367,12 @@ export default function ProfileScreen() {
               Delete your account?
             </Text>
             <Text style={styles.deleteBody}>
-              This will permanently delete your account, all your flag reports,
-              and your data. This cannot be undone.
+              This will permanently delete your account and personal information.
+              Your accessibility reports will remain on the map anonymously to
+              help the community. This cannot be undone.
+            </Text>
+            <Text style={styles.deleteBodySecondary}>
+              Want to remove your reports too? Contact support.
             </Text>
             <View style={styles.deleteActions}>
               <Pressable
@@ -2060,6 +2067,12 @@ const makeStyles = (color: ColorTheme) =>
       fontSize: 15,
       color: color.text,
       lineHeight: 22,
+    },
+    deleteBodySecondary: {
+      fontSize: 13,
+      color: color.textMuted,
+      lineHeight: 18,
+      marginTop: -4,
     },
     deleteActions: {
       flexDirection: 'row',

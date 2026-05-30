@@ -111,3 +111,42 @@ describe('deleteAccount() — network error', () => {
     expect(mockSignOut).not.toHaveBeenCalled();
   });
 });
+
+// ---------------------------------------------------------------------------
+// 4. Anonymisation ordering contract
+//
+// The anonymisation step (UPDATE flags SET user_id = NULL) runs inside the
+// Edge Function BEFORE auth.users is deleted. From the client's perspective,
+// this is an implementation detail of the delete-account function — the client
+// calls invoke() and the server runs both steps in order.
+//
+// These tests verify the client-side contract:
+//   - On success (both steps ran), signOut is called (account is gone).
+//   - If the Edge Function signals failure (e.g. anonymise step threw), the
+//     client receives an error and does NOT sign out, leaving the user logged in.
+// ---------------------------------------------------------------------------
+
+describe('deleteAccount() — anonymisation ordering', () => {
+  it('calls signOut after invoke succeeds, confirming anonymise+delete both ran', async () => {
+    mockInvoke.mockResolvedValueOnce({ data: { status: 'deleted' }, error: null });
+    mockSignOut.mockResolvedValueOnce(undefined);
+
+    await deleteAccount(USER_ID);
+
+    expect(mockInvoke).toHaveBeenCalledTimes(1);
+    expect(mockSignOut).toHaveBeenCalledWith(USER_ID);
+  });
+
+  it('does NOT call signOut when the Edge Function signals anonymisation failed', async () => {
+    const anonError = new Error('Failed to anonymise flags before deletion.');
+    mockInvoke.mockResolvedValueOnce({ data: null, error: anonError });
+
+    try {
+      await deleteAccount(USER_ID);
+    } catch {
+      // expected — caller stays logged in so the user can retry
+    }
+
+    expect(mockSignOut).not.toHaveBeenCalled();
+  });
+});

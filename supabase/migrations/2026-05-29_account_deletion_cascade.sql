@@ -1,13 +1,26 @@
 -- PROPOSE ONLY — DO NOT APPLY
 --
--- Purpose: Document the cascade chain that drives account deletion and confirm
--- that no new DDL is required. All necessary ON DELETE CASCADE / SET NULL
--- constraints were added in prior migrations and the initial schema.
+-- Purpose: (1) Make public.flags.user_id nullable so that flags can be
+-- anonymised (user_id → NULL) when an account is deleted, rather than
+-- deleted along with the account.
+-- (2) Document the full cascade chain that runs after the anonymisation step.
 --
--- Triggered by: adminClient.auth.admin.deleteUser(userId) in the
--- supabase/functions/delete-account Edge Function.
+-- Background: Sky's decision (2026-05-29) — when a user deletes their account,
+-- their accessibility reports stay on the map anonymously to help the community.
+-- The delete-account Edge Function runs these two steps in order:
+--   1. UPDATE public.flags SET user_id = NULL WHERE user_id = <userId>
+--   2. adminClient.auth.admin.deleteUser(userId)   ← triggers cascade below
 --
--- Cascade chain:
+-- DDL required (step 1 only — flags.user_id is currently NOT NULL):
+ALTER TABLE public.flags
+  ALTER COLUMN user_id DROP NOT NULL;
+
+-- After the above, public.flags.user_id is nullable. Existing rows are
+-- unaffected. The ON DELETE CASCADE FK constraint remains in place — rows that
+-- still have a user_id pointing at a deleted user would cascade-delete as before,
+-- but the anonymisation UPDATE runs first so no such rows remain at deletion time.
+
+-- Cascade chain (triggered by step 2 above):
 --
 --   auth.users (id)
 --     └─ public.users (id)
@@ -15,6 +28,8 @@
 --          │
 --          ├─ public.flags (user_id)
 --          │    ON DELETE CASCADE  — schema.sql line 23
+--          │    NOTE: all rows for this user have user_id = NULL after step 1,
+--          │    so the cascade finds nothing to delete here.
 --          │
 --          ├─ public.push_tokens (user_id)
 --          │    ON DELETE CASCADE  — 2026-05-25_push_tokens.sql
@@ -37,8 +52,8 @@
 --          ON DELETE SET NULL  — 2026-05-24_status_history_table.sql
 --          (audit trail preserved)
 --
--- Result: one adminClient.auth.admin.deleteUser() call atomically removes the
--- user's account, flags, push token, and notification prefs. Audit-trail rows
+-- Result: flags persist on the map (user_id = NULL); account, push token,
+-- notification prefs, and personal data are fully deleted. Audit-trail rows
 -- (feedback, edit history, status history) are anonymised, not deleted.
 --
 -- Verification query (run in Supabase SQL editor to spot any unguarded FKs):
