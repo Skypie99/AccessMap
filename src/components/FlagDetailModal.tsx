@@ -769,11 +769,17 @@ export default function FlagDetailModal({
                 ) : commentsError ? (
                   <Text style={styles.commentsErrorText}>{commentsError}</Text>
                 ) : commentsLoading && comments.length === 0 ? (
-                  <ActivityIndicator size="small" color={color.brand} style={styles.commentsSpinner} />
+                  <ActivityIndicator
+                    size="small"
+                    color={color.brand}
+                    style={styles.commentsSpinner}
+                    accessible
+                    accessibilityLabel="Loading comments"
+                  />
                 ) : comments.length === 0 ? (
                   <Text style={styles.commentsEmptyText}>No comments yet. Be the first!</Text>
                 ) : (
-                  <View style={styles.commentsList}>
+                  <View style={styles.commentsList} accessibilityRole="list">
                     {comments.map((c) => (
                       <CommentBubble
                         key={c.id}
@@ -1227,7 +1233,8 @@ const makeStyles = (color: ColorTheme) =>
       borderRadius: radius.lg,
       paddingHorizontal: spacing.md,
       paddingVertical: spacing.sm,
-      minHeight: 40,
+      // WCAG 2.5.8 / Apple HIG: 44pt minimum touch target. Was 40.
+      minHeight: 44,
       minWidth: 60,
       alignItems: 'center',
       justifyContent: 'center',

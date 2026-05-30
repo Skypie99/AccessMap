@@ -43,7 +43,7 @@ export function CommentBubble({ author, text, createdAt, isOwn, onDelete }: Comm
             hitSlop={8}
             style={({ pressed }) => [styles.deleteBtn, pressed && styles.deleteBtnPressed]}
             accessibilityRole="button"
-            accessibilityLabel="Delete this comment"
+            accessibilityLabel={`Delete ${author}'s comment`}
             accessibilityHint="Permanently removes your comment"
           >
             <Text style={styles.deleteBtnText}>✕</Text>

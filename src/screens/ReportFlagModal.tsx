@@ -134,6 +134,13 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
     setPhotoUris((curr) => (curr.length < MAX_PHOTOS ? [...curr, uri] : curr));
   };
 
+  // Drop a picked-but-not-yet-submitted photo by index. Lets the user undo a
+  // mistaken pick before filing the report (the photos aren't uploaded until
+  // handleSubmit, so this is purely local state).
+  const removeUri = (index: number) => {
+    setPhotoUris((curr) => curr.filter((_, i) => i !== index));
+  };
+
   const pickPhoto = async (_source: 'camera' | 'library') => {
     // Web path — use a hidden <input type="file"> instead of expo-image-picker,
     // which is native-only. The input is programmatically clicked; the selected
@@ -483,6 +490,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
           <PhotoGallery
             photos={photoUris.map((url, i) => ({ url, position: i }))}
             onAddPhoto={pickPhotoForGallery}
+            onRemovePhoto={removeUri}
             maxPhotos={MAX_PHOTOS}
           />
 

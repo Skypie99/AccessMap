@@ -32,9 +32,16 @@ interface Props {
   onAddPhoto?: () => void;
   /** Maximum photos allowed; add button hidden once reached. Default 5. */
   maxPhotos?: number;
+  /**
+   * When provided, each thumbnail shows a ✕ remove button (pre-submission
+   * use only — e.g. ReportFlagModal). Called with the photo's index. Omit
+   * for read-only galleries like FlagDetailModal where photos are already
+   * uploaded.
+   */
+  onRemovePhoto?: (index: number) => void;
 }
 
-export default function PhotoGallery({ photos, onAddPhoto, maxPhotos = 5 }: Props) {
+export default function PhotoGallery({ photos, onAddPhoto, maxPhotos = 5, onRemovePhoto }: Props) {
   const color = useColor();
   const styles = makeStyles(color);
 
@@ -93,6 +100,24 @@ export default function PhotoGallery({ photos, onAddPhoto, maxPhotos = 5 }: Prop
           accessibilityElementsHidden
           importantForAccessibility="no-hide-descendants"
         />
+        {onRemovePhoto && (
+          <Pressable
+            onPress={() => onRemovePhoto(index)}
+            hitSlop={8}
+            style={({ pressed }) => [styles.removeBtn, pressed && styles.removeBtnPressed]}
+            accessibilityRole="button"
+            accessibilityLabel={`Remove photo ${index + 1}`}
+            accessibilityHint="Removes this photo before you submit"
+          >
+            <Text
+              style={styles.removeIcon}
+              accessibilityElementsHidden
+              importantForAccessibility="no-hide-descendants"
+            >
+              ✕
+            </Text>
+          </Pressable>
+        )}
       </Pressable>
     );
   };
@@ -232,6 +257,27 @@ const makeStyles = (color: ColorTheme) =>
     },
     thumbPressed: { opacity: 0.75 },
     thumbImage: { width: '100%', height: '100%' },
+    // ✕ remove badge — top-right corner of a pre-submission thumbnail.
+    // 24x24 visible (WCAG 2.5.8 min) + hitSlop 8 → ~40pt effective target.
+    // Dark scrim badge keeps the white glyph legible over any photo.
+    removeBtn: {
+      position: 'absolute',
+      top: 4,
+      right: 4,
+      width: 24,
+      height: 24,
+      borderRadius: 12,
+      backgroundColor: 'rgba(0,0,0,0.6)',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    removeBtnPressed: { backgroundColor: 'rgba(0,0,0,0.82)' },
+    removeIcon: {
+      color: '#fff',
+      fontSize: 13,
+      fontWeight: '700',
+      lineHeight: 15,
+    },
     addThumb: {
       alignItems: 'center',
       justifyContent: 'center',
