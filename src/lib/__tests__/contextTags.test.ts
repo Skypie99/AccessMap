@@ -16,8 +16,12 @@ import {
   CONTEXT_TAGS,
   CONTEXT_TAG_LABELS,
   MAX_CONTEXT_TAGS,
+  SEASONAL_TAGS,
+  SEASONAL_TAG_LABELS,
+  isSeasonalTag,
   isValidTag,
   sanitizeTagList,
+  tagLabel,
   toggleTag,
   type ContextTag,
 } from '../contextTags';
@@ -262,5 +266,97 @@ describe('MAX_CONTEXT_TAGS cap', () => {
     // Truncation keeps the first-seen tags so the user's intent order
     // is preserved.
     expect(result).toEqual(overflowing.slice(0, MAX_CONTEXT_TAGS));
+  });
+});
+
+describe('seasonal tags (W6-5)', () => {
+  it('exposes exactly 5 seasonal tags', () => {
+    expect(SEASONAL_TAGS.length).toBe(5);
+  });
+
+  it('lists the expected seasonal tags', () => {
+    expect([...SEASONAL_TAGS]).toEqual([
+      'icy_winter',
+      'wet_spring',
+      'construction_temporary',
+      'shaded_summer',
+      'event_temporary',
+    ]);
+  });
+
+  it('SEASONAL_TAGS is frozen', () => {
+    expect(Object.isFrozen(SEASONAL_TAGS)).toBe(true);
+  });
+
+  it('SEASONAL_TAG_LABELS is frozen', () => {
+    expect(Object.isFrozen(SEASONAL_TAG_LABELS)).toBe(true);
+  });
+
+  it('every seasonal tag has a non-empty label', () => {
+    for (const tag of SEASONAL_TAGS) {
+      expect(SEASONAL_TAG_LABELS[tag]).toBeDefined();
+      expect(SEASONAL_TAG_LABELS[tag].length).toBeGreaterThan(0);
+    }
+  });
+
+  it('seasonal label keys match the seasonal tag list exactly', () => {
+    const labelKeys = Object.keys(SEASONAL_TAG_LABELS).sort();
+    const tagKeys = [...SEASONAL_TAGS].sort();
+    expect(labelKeys).toEqual(tagKeys);
+  });
+
+  it('seasonal and general vocabularies do not overlap', () => {
+    const general = new Set<string>(CONTEXT_TAGS);
+    for (const tag of SEASONAL_TAGS) {
+      expect(general.has(tag)).toBe(false);
+    }
+  });
+
+  it('isValidTag accepts every seasonal tag', () => {
+    for (const tag of SEASONAL_TAGS) {
+      expect(isValidTag(tag)).toBe(true);
+    }
+  });
+
+  it('isSeasonalTag is true for seasonal tags and false for general ones', () => {
+    for (const tag of SEASONAL_TAGS) {
+      expect(isSeasonalTag(tag)).toBe(true);
+    }
+    for (const tag of CONTEXT_TAGS) {
+      expect(isSeasonalTag(tag)).toBe(false);
+    }
+  });
+
+  it('tagLabel resolves both general and seasonal tags', () => {
+    for (const tag of CONTEXT_TAGS) {
+      expect(tagLabel(tag)).toBe(CONTEXT_TAG_LABELS[tag]);
+    }
+    for (const tag of SEASONAL_TAGS) {
+      expect(tagLabel(tag)).toBe(SEASONAL_TAG_LABELS[tag]);
+    }
+  });
+
+  it('sanitizeTagList keeps a mix of general and seasonal tags', () => {
+    expect(sanitizeTagList(['icy_winter', 'morning_rush', 'event_temporary'])).toEqual([
+      'icy_winter',
+      'morning_rush',
+      'event_temporary',
+    ]);
+  });
+
+  it('toggleTag enforces the shared cap across general and seasonal tags', () => {
+    // Fill to the cap with a general/seasonal mix, then confirm an
+    // additional seasonal tag is refused (one shared 5-tag limit).
+    const atCap: ContextTag[] = [
+      'morning_rush',
+      'high_tide',
+      'icy_winter',
+      'wet_spring',
+      'shaded_summer',
+    ];
+    expect(atCap).toHaveLength(MAX_CONTEXT_TAGS);
+    const result = toggleTag(atCap, 'event_temporary');
+    expect(result).toHaveLength(MAX_CONTEXT_TAGS);
+    expect(result).not.toContain('event_temporary');
   });
 });
