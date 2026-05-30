@@ -79,6 +79,9 @@ export default function FlagDetailModal({
   // pattern as PhotoLightboxModal. Closed when this modal closes or the
   // shown flag swaps, so it never lingers over the wrong flag.
   const [historyOpen, setHistoryOpen] = useState(false);
+  // Comments — local only; no Supabase yet (table comes in a later migration).
+  const [comments, setComments] = useState<string[]>([]);
+  const [commentDraft, setCommentDraft] = useState('');
 
   // Cache the last flag so the slide-out animation still has content to render
   // after the parent clears `flag` on close. Without this the card briefly
@@ -600,6 +603,73 @@ export default function FlagDetailModal({
                 </View>
               )}
 
+              {/* Comments — UI stub; wired to local state only until the
+                  comments table ships in a later migration. */}
+              <Text style={styles.sectionLabel}>Comments</Text>
+              {comments.length === 0 ? (
+                <Text
+                  style={styles.commentsEmpty}
+                  accessible
+                  accessibilityLiveRegion="polite"
+                >
+                  No comments yet.
+                </Text>
+              ) : (
+                <View
+                  accessibilityRole="list"
+                  accessibilityLabel={`${comments.length} comment${comments.length === 1 ? '' : 's'}`}
+                >
+                  {comments.map((c, i) => (
+                    <View
+                      key={i}
+                      style={styles.commentRow}
+                      role="listitem"
+                      accessibilityLabel={`Comment ${i + 1}: ${c}`}
+                    >
+                      <Text style={styles.commentText}>{c}</Text>
+                    </View>
+                  ))}
+                </View>
+              )}
+              <View style={styles.commentInputRow}>
+                <TextInput
+                  style={styles.commentInput}
+                  value={commentDraft}
+                  onChangeText={setCommentDraft}
+                  placeholder="Add a comment…"
+                  placeholderTextColor={color.textMuted}
+                  maxLength={500}
+                  accessibilityLabel="Comment text"
+                  accessibilityHint="Type a comment, then tap Send"
+                  returnKeyType="send"
+                  onSubmitEditing={() => {
+                    const trimmed = commentDraft.trim();
+                    if (!trimmed) return;
+                    setComments((prev) => [...prev, trimmed]);
+                    setCommentDraft('');
+                  }}
+                />
+                <Pressable
+                  onPress={() => {
+                    const trimmed = commentDraft.trim();
+                    if (!trimmed) return;
+                    setComments((prev) => [...prev, trimmed]);
+                    setCommentDraft('');
+                  }}
+                  disabled={!commentDraft.trim()}
+                  style={({ pressed }) => [
+                    styles.commentSendBtn,
+                    pressed && styles.commentSendBtnPressed,
+                    !commentDraft.trim() && styles.commentSendBtnDisabled,
+                  ]}
+                  accessibilityRole="button"
+                  accessibilityLabel="Send comment"
+                  accessibilityState={{ disabled: !commentDraft.trim() }}
+                >
+                  <Text style={styles.commentSendText}>Send</Text>
+                </Pressable>
+              </View>
+
               <View style={styles.secondaryRow}>
                 <Pressable
                   onPress={() => {
@@ -1016,4 +1086,49 @@ const makeStyles = (color: ColorTheme) =>
     cancelBtnText: { color: color.text, fontWeight: '700', fontSize: 14 },
     saveBtn: { flex: 1, backgroundColor: color.brand },
     saveBtnText: { color: color.textOnBrand, fontWeight: '700', fontSize: 14 },
+    commentsEmpty: {
+      fontSize: 13,
+      color: color.textMuted,
+      fontStyle: 'italic',
+      marginBottom: 10,
+    },
+    commentRow: {
+      backgroundColor: color.surfaceNeutral,
+      borderRadius: radius.md,
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      marginBottom: 6,
+    },
+    commentText: { fontSize: 14, color: color.text },
+    commentInputRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+      marginTop: 4,
+      marginBottom: 12,
+    },
+    commentInput: {
+      flex: 1,
+      borderWidth: 1,
+      borderColor: color.border,
+      borderRadius: radius.md,
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      fontSize: 14,
+      color: color.text,
+      backgroundColor: color.surface,
+      minHeight: 40,
+    },
+    commentSendBtn: {
+      paddingHorizontal: 14,
+      paddingVertical: 8,
+      backgroundColor: color.brand,
+      borderRadius: radius.md,
+      minHeight: 40,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    commentSendBtnPressed: { opacity: 0.8 },
+    commentSendBtnDisabled: { backgroundColor: color.borderSubtle },
+    commentSendText: { fontSize: 14, fontWeight: '700', color: color.textOnBrand },
   });
