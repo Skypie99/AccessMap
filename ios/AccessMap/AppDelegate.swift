@@ -55,10 +55,17 @@ public class AppDelegate: ExpoAppDelegate {
 class ReactNativeDelegate: ExpoReactNativeFactoryDelegate {
   // Extension point for config-plugins
 
+  // sourceURL(for:) is only needed in Debug so expo-dev-client can connect
+  // to the Metro dev server. RCTBridge is not exposed to Swift in Release
+  // builds (the type lives behind the old bridge, which RN 0.81 excludes
+  // from the module map). Guarding with #if DEBUG keeps the Release/
+  // TestFlight build clean while preserving the expo-dev-client path.
+  #if DEBUG
   override func sourceURL(for bridge: RCTBridge) -> URL? {
     // needed to return the correct URL for expo-dev-client.
     bridge.bundleURL ?? bundleURL()
   }
+  #endif
 
   override func bundleURL() -> URL? {
 #if DEBUG
