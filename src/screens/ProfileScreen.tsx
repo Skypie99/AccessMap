@@ -826,8 +826,18 @@ export default function ProfileScreen() {
           )}
         </View>
 
-        <View style={styles.statsRow}>
+        <View
+          style={styles.statsRow}
+          accessible
+          accessibilityRole="summary"
+          accessibilityLabel={
+            `Your stats: ${stats.reported} reported, ` +
+            `${stats.byStatus.verified} verified, ` +
+            `${stats.resolved} resolved`
+          }
+        >
           <Stat label="Reported" value={stats.reported} />
+          <Stat label="Verified" value={stats.byStatus.verified} />
           <Stat label="Resolved" value={stats.resolved} />
         </View>
 
