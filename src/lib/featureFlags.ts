@@ -18,7 +18,7 @@ export type FeatureFlagKey =
 
 /** Default values. Change these here or via `setFlag()` at runtime in dev. */
 const DEFAULTS: Record<FeatureFlagKey, boolean> = {
-  HEATMAP_ENABLED: false,
+  HEATMAP_ENABLED: true,
   PUSH_NOTIFICATIONS_ENABLED: true,
   GUEST_SIGNIN_ENABLED: true,
 };
