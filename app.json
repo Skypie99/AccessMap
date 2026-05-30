@@ -61,7 +61,9 @@
           "photosPermission": "AccessMap needs photo access to attach images to accessibility reports.",
           "cameraPermission": "AccessMap uses the camera to capture photos of accessibility barriers."
         }
-      ]
+      ],
+      "expo-font",
+      "@sentry/react-native"
     ],
     "extra": {
       "eas": {

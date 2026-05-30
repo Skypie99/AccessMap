@@ -1,0 +1,79 @@
+-- PROPOSE ONLY — DO NOT APPLY
+--
+-- Purpose: (1) Make public.flags.user_id nullable so that flags can be
+-- anonymised (user_id → NULL) when an account is deleted, rather than
+-- deleted along with the account.
+-- (2) Document the full cascade chain that runs after the anonymisation step.
+--
+-- Background: Sky's decision (2026-05-29) — when a user deletes their account,
+-- their accessibility reports stay on the map anonymously to help the community.
+-- The delete-account Edge Function runs these two steps in order:
+--   1. UPDATE public.flags SET user_id = NULL WHERE user_id = <userId>
+--   2. adminClient.auth.admin.deleteUser(userId)   ← triggers cascade below
+--
+-- DDL required (step 1 only — flags.user_id is currently NOT NULL):
+ALTER TABLE public.flags
+  ALTER COLUMN user_id DROP NOT NULL;
+
+-- After the above, public.flags.user_id is nullable. Existing rows are
+-- unaffected. The ON DELETE CASCADE FK constraint remains in place — rows that
+-- still have a user_id pointing at a deleted user would cascade-delete as before,
+-- but the anonymisation UPDATE runs first so no such rows remain at deletion time.
+
+-- Cascade chain (triggered by step 2 above):
+--
+--   auth.users (id)
+--     └─ public.users (id)
+--          ON DELETE CASCADE  — schema.sql line 10
+--          │
+--          ├─ public.flags (user_id)
+--          │    ON DELETE CASCADE  — schema.sql line 23
+--          │    NOTE: all rows for this user have user_id = NULL after step 1,
+--          │    so the cascade finds nothing to delete here.
+--          │
+--          ├─ public.push_tokens (user_id)
+--          │    ON DELETE CASCADE  — 2026-05-25_push_tokens.sql
+--          │
+--          └─ (realtime_flags_subscriptions, if applied)
+--               ON DELETE CASCADE  — 2026-05-28_d4_realtime_flags_filtered.sql
+--
+--     └─ public.notification_preferences (user_id)
+--          ON DELETE CASCADE  — 2026-05-25_notification_preferences_proposal.sql
+--
+--     └─ public.feedback (user_id)
+--          ON DELETE SET NULL  — 2026-05-23_feedback_table.sql
+--          (audit trail preserved — row kept, attribution anonymised)
+--
+--     └─ public.flag_edit_history (user_id)
+--          ON DELETE SET NULL  — 2026-05-25_flag_edit_history_table.sql
+--          (audit trail preserved)
+--
+--     └─ public.status_history (user_id)
+--          ON DELETE SET NULL  — 2026-05-24_status_history_table.sql
+--          (audit trail preserved)
+--
+-- Result: flags persist on the map (user_id = NULL); account, push token,
+-- notification prefs, and personal data are fully deleted. Audit-trail rows
+-- (feedback, edit history, status history) are anonymised, not deleted.
+--
+-- Verification query (run in Supabase SQL editor to spot any unguarded FKs):
+--
+--   SELECT
+--     tc.table_name,
+--     kcu.column_name,
+--     rc.delete_rule
+--   FROM information_schema.table_constraints tc
+--   JOIN information_schema.key_column_usage kcu
+--     ON tc.constraint_name = kcu.constraint_name
+--   JOIN information_schema.referential_constraints rc
+--     ON tc.constraint_name = rc.constraint_name
+--   JOIN information_schema.key_column_usage ccu
+--     ON rc.unique_constraint_name = ccu.constraint_name
+--   WHERE tc.constraint_type = 'FOREIGN KEY'
+--     AND ccu.table_name IN ('users')
+--     AND ccu.table_schema = 'public'
+--   ORDER BY tc.table_name;
+--
+-- Expected: all rows show CASCADE or NO ACTION (SET NULL maps to NO ACTION in
+-- information_schema). Any RESTRICT row for a user-owned table is a gap that
+-- needs a follow-up migration.
