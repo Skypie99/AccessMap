@@ -1,0 +1,316 @@
+/**
+ * Tests for src/lib/photos.ts — the multi-photo junction-table layer.
+ *
+ * photos.ts wraps four Supabase calls:
+ *   - listFlagPhotos       SELECT ordered by position (graceful [] on missing table)
+ *   - addFlagPhoto         upload blob → INSERT junction row at next position
+ *   - deleteFlagPhoto      DELETE junction row by id
+ *   - batchInsertFlagPhotos bulk INSERT pre-uploaded URLs (graceful no-op on missing table)
+ *
+ * Mock strategy mirrors comments.test.ts: a hand-built fluent chain per call,
+ * with the terminal method (`order` / `single` / `eq`) resolving the result.
+ * supabase.auth.getUser and the uploadFlagPhoto helper from flags.ts are also
+ * mocked so nothing touches the network or a device.
+ */
+
+// Supabase mock — declared before jest.mock() hoisting.
+const mockFrom = jest.fn();
+const mockGetUser = jest.fn();
+
+jest.mock('../supabase', () => ({
+  __esModule: true,
+  supabase: {
+    from: (...args: unknown[]) => mockFrom(...args),
+    auth: {
+      getUser: (...args: unknown[]) => mockGetUser(...args),
+    },
+  },
+}));
+
+// flags.ts pulls in supabase + expo-image-manipulator at module level; mock the
+// single helper photos.ts actually uses so the real module never loads.
+const mockUploadFlagPhoto = jest.fn();
+jest.mock('../flags', () => ({
+  __esModule: true,
+  uploadFlagPhoto: (...args: unknown[]) => mockUploadFlagPhoto(...args),
+}));
+
+import {
+  addFlagPhoto,
+  batchInsertFlagPhotos,
+  deleteFlagPhoto,
+  listFlagPhotos,
+} from '../photos';
+
+// ---------------------------------------------------------------------------
+// Chain builders — each returns a chain whose terminal method resolves.
+// ---------------------------------------------------------------------------
+
+/** SELECT ... .eq().order() chain — `order` is the terminal that resolves. */
+function selectChain(data: unknown, error: unknown = null) {
+  const chain = {
+    select: jest.fn().mockReturnThis(),
+    eq: jest.fn().mockReturnThis(),
+    order: jest.fn().mockResolvedValue({ data, error }),
+  };
+  return chain;
+}
+
+/** INSERT ... .select().single() chain — `single` is the terminal that resolves. */
+function insertSingleChain(data: unknown, error: unknown = null) {
+  const chain = {
+    insert: jest.fn().mockReturnThis(),
+    select: jest.fn().mockReturnThis(),
+    single: jest.fn().mockResolvedValue({ data, error }),
+  };
+  return chain;
+}
+
+/** INSERT(rows) chain — bare `insert` is the terminal that resolves. */
+function insertChain(error: unknown = null) {
+  const chain = {
+    insert: jest.fn().mockResolvedValue({ data: null, error }),
+  };
+  return chain;
+}
+
+/** DELETE ... .eq() chain — `eq` is the terminal that resolves. */
+function deleteChain(error: unknown = null) {
+  const chain = {
+    delete: jest.fn().mockReturnThis(),
+    eq: jest.fn().mockResolvedValue({ data: null, error }),
+  };
+  return chain;
+}
+
+const TABLE_MISSING_CODE = { code: '42P01', message: 'relation "flag_photos" does not exist' };
+
+beforeEach(() => {
+  jest.clearAllMocks();
+});
+
+// ---------------------------------------------------------------------------
+// listFlagPhotos
+// ---------------------------------------------------------------------------
+
+describe('listFlagPhotos', () => {
+  it('queries flag_photos ordered by position ascending', async () => {
+    const chain = selectChain([
+      { url: 'a.jpg', position: 0 },
+      { url: 'b.jpg', position: 1 },
+    ]);
+    mockFrom.mockReturnValue(chain);
+
+    const result = await listFlagPhotos('flag-1');
+
+    expect(mockFrom).toHaveBeenCalledWith('flag_photos');
+    expect(chain.select).toHaveBeenCalledWith('url, position');
+    expect(chain.eq).toHaveBeenCalledWith('flag_id', 'flag-1');
+    expect(chain.order).toHaveBeenCalledWith('position', { ascending: true });
+    expect(result).toEqual([
+      { url: 'a.jpg', position: 0 },
+      { url: 'b.jpg', position: 1 },
+    ]);
+  });
+
+  it('returns the rows as-is (already sorted by the query)', async () => {
+    mockFrom.mockReturnValue(selectChain([{ url: 'only.jpg', position: 0 }]));
+    const result = await listFlagPhotos('flag-1');
+    expect(result).toHaveLength(1);
+    expect(result[0]).toEqual({ url: 'only.jpg', position: 0 });
+  });
+
+  it('returns [] when data is null', async () => {
+    mockFrom.mockReturnValue(selectChain(null));
+    expect(await listFlagPhotos('flag-1')).toEqual([]);
+  });
+
+  it('returns [] (no throw) when the table is missing — 42P01 code', async () => {
+    mockFrom.mockReturnValue(selectChain(null, TABLE_MISSING_CODE));
+    expect(await listFlagPhotos('flag-1')).toEqual([]);
+  });
+
+  it('returns [] (no throw) when the error message says "does not exist"', async () => {
+    mockFrom.mockReturnValue(
+      selectChain(null, { message: 'relation flag_photos does not exist' }),
+    );
+    expect(await listFlagPhotos('flag-1')).toEqual([]);
+  });
+
+  it('returns [] and warns on an unexpected (non-table-missing) error', async () => {
+    const warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
+    mockFrom.mockReturnValue(selectChain(null, { message: 'permission denied' }));
+
+    const result = await listFlagPhotos('flag-1');
+
+    expect(result).toEqual([]);
+    expect(warn).toHaveBeenCalled();
+    warn.mockRestore();
+  });
+
+  it('returns [] when the query throws synchronously (defensive catch)', async () => {
+    const warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
+    mockFrom.mockImplementation(() => {
+      throw new Error('network down');
+    });
+
+    expect(await listFlagPhotos('flag-1')).toEqual([]);
+    expect(warn).toHaveBeenCalled();
+    warn.mockRestore();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// addFlagPhoto
+// ---------------------------------------------------------------------------
+
+describe('addFlagPhoto', () => {
+  it('throws "Not authenticated" and does not upload when there is no user', async () => {
+    mockGetUser.mockResolvedValue({ data: { user: null } });
+
+    await expect(addFlagPhoto('flag-1', 'file:///local.jpg')).rejects.toThrow('Not authenticated');
+    expect(mockUploadFlagPhoto).not.toHaveBeenCalled();
+    expect(mockFrom).not.toHaveBeenCalled();
+  });
+
+  it('uploads then inserts a junction row at position = existing count', async () => {
+    mockGetUser.mockResolvedValue({ data: { user: { id: 'user-1' } } });
+    mockUploadFlagPhoto.mockResolvedValue('https://cdn/user-1/123.jpg');
+
+    // 1st from() → listFlagPhotos (two existing photos → next position is 2).
+    // 2nd from() → the INSERT.
+    const listChain = selectChain([
+      { url: 'a.jpg', position: 0 },
+      { url: 'b.jpg', position: 1 },
+    ]);
+    const insChain = insertSingleChain({
+      id: 'p3',
+      flag_id: 'flag-1',
+      url: 'https://cdn/user-1/123.jpg',
+      position: 2,
+      created_at: '2026-05-30T12:00:00Z',
+    });
+    mockFrom.mockReturnValueOnce(listChain).mockReturnValueOnce(insChain);
+
+    const result = await addFlagPhoto('flag-1', 'file:///local.jpg');
+
+    expect(mockUploadFlagPhoto).toHaveBeenCalledWith('user-1', 'file:///local.jpg');
+    expect(insChain.insert).toHaveBeenCalledWith({
+      flag_id: 'flag-1',
+      url: 'https://cdn/user-1/123.jpg',
+      position: 2,
+    });
+    expect(result).toMatchObject({ id: 'p3', position: 2, url: 'https://cdn/user-1/123.jpg' });
+  });
+
+  it('inserts at position 0 when there are no existing photos', async () => {
+    mockGetUser.mockResolvedValue({ data: { user: { id: 'user-1' } } });
+    mockUploadFlagPhoto.mockResolvedValue('https://cdn/user-1/first.jpg');
+
+    const listChain = selectChain([]); // no existing photos
+    const insChain = insertSingleChain({
+      id: 'p1',
+      flag_id: 'flag-1',
+      url: 'https://cdn/user-1/first.jpg',
+      position: 0,
+      created_at: '2026-05-30T12:00:00Z',
+    });
+    mockFrom.mockReturnValueOnce(listChain).mockReturnValueOnce(insChain);
+
+    await addFlagPhoto('flag-1', 'file:///local.jpg');
+
+    expect(insChain.insert).toHaveBeenCalledWith(
+      expect.objectContaining({ position: 0 }),
+    );
+  });
+
+  it('propagates an INSERT error', async () => {
+    mockGetUser.mockResolvedValue({ data: { user: { id: 'user-1' } } });
+    mockUploadFlagPhoto.mockResolvedValue('https://cdn/user-1/x.jpg');
+
+    const listChain = selectChain([]);
+    const insChain = insertSingleChain(null, { message: 'RLS violation' });
+    mockFrom.mockReturnValueOnce(listChain).mockReturnValueOnce(insChain);
+
+    await expect(addFlagPhoto('flag-1', 'file:///local.jpg')).rejects.toMatchObject({
+      message: 'RLS violation',
+    });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// deleteFlagPhoto
+// ---------------------------------------------------------------------------
+
+describe('deleteFlagPhoto', () => {
+  it('deletes the junction row by id and resolves', async () => {
+    const chain = deleteChain();
+    mockFrom.mockReturnValue(chain);
+
+    await expect(deleteFlagPhoto('p7')).resolves.toBeUndefined();
+    expect(mockFrom).toHaveBeenCalledWith('flag_photos');
+    expect(chain.delete).toHaveBeenCalled();
+    expect(chain.eq).toHaveBeenCalledWith('id', 'p7');
+  });
+
+  it('throws on a Supabase error', async () => {
+    mockFrom.mockReturnValue(deleteChain({ message: 'not found' }));
+    await expect(deleteFlagPhoto('missing')).rejects.toMatchObject({ message: 'not found' });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// batchInsertFlagPhotos
+// ---------------------------------------------------------------------------
+
+describe('batchInsertFlagPhotos', () => {
+  it('is a no-op (no query) when urls is empty', async () => {
+    await batchInsertFlagPhotos('flag-1', []);
+    expect(mockFrom).not.toHaveBeenCalled();
+  });
+
+  it('inserts every url as a junction row with ascending positions', async () => {
+    const chain = insertChain();
+    mockFrom.mockReturnValue(chain);
+
+    await batchInsertFlagPhotos('flag-1', ['a.jpg', 'b.jpg', 'c.jpg']);
+
+    expect(mockFrom).toHaveBeenCalledWith('flag_photos');
+    expect(chain.insert).toHaveBeenCalledWith([
+      { flag_id: 'flag-1', url: 'a.jpg', position: 0 },
+      { flag_id: 'flag-1', url: 'b.jpg', position: 1 },
+      { flag_id: 'flag-1', url: 'c.jpg', position: 2 },
+    ]);
+  });
+
+  it('silently returns when the table is missing — 42P01 code', async () => {
+    mockFrom.mockReturnValue(insertChain(TABLE_MISSING_CODE));
+    await expect(batchInsertFlagPhotos('flag-1', ['a.jpg'])).resolves.toBeUndefined();
+  });
+
+  it('silently returns when the error message says "does not exist"', async () => {
+    mockFrom.mockReturnValue(insertChain({ message: 'relation does not exist' }));
+    await expect(batchInsertFlagPhotos('flag-1', ['a.jpg'])).resolves.toBeUndefined();
+  });
+
+  it('throws on any other Supabase error', async () => {
+    mockFrom.mockReturnValue(insertChain({ message: 'permission denied' }));
+    await expect(batchInsertFlagPhotos('flag-1', ['a.jpg'])).rejects.toMatchObject({
+      message: 'permission denied',
+    });
+  });
+
+  it('swallows a thrown table-missing exception but rethrows others', async () => {
+    // table-missing exception → silent
+    mockFrom.mockImplementationOnce(() => {
+      throw { code: '42P01', message: 'does not exist' };
+    });
+    await expect(batchInsertFlagPhotos('flag-1', ['a.jpg'])).resolves.toBeUndefined();
+
+    // unrelated exception → rethrown
+    mockFrom.mockImplementationOnce(() => {
+      throw new Error('boom');
+    });
+    await expect(batchInsertFlagPhotos('flag-1', ['a.jpg'])).rejects.toThrow('boom');
+  });
+});
