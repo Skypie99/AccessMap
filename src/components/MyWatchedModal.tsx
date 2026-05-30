@@ -298,7 +298,7 @@ export default function MyWatchedModal({ visible, onClose, onSelectFlag, onViewO
           ) : loadError ? (
             <View style={styles.center}>
               <Text style={styles.errorText}>{loadError}</Text>
-              <Pressable onPress={load} style={styles.retryBtn} accessibilityRole="button" accessibilityLabel="Retry loading watched flags">
+              <Pressable onPress={() => void load()} style={styles.retryBtn} accessibilityRole="button" accessibilityLabel="Retry loading watched flags">
                 <Text style={styles.retryText}>Retry</Text>
               </Pressable>
             </View>
