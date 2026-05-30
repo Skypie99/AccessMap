@@ -33,12 +33,22 @@ export function RankBadge({ rank }: RankBadgeProps) {
     default: { bg: color.border, fg: color.textSubtle },
   }[variant];
 
+  // WCAG 1.3.1: colour alone (gold/silver/bronze palette) isn't sufficient
+  // to communicate rank tier. Include the tier name in the label so AT
+  // users hear "Gold, rank 1" rather than just "Rank 1".
+  const tierLabel =
+    variant === 'gold' ? 'Gold' :
+    variant === 'silver' ? 'Silver' :
+    variant === 'bronze' ? 'Bronze' :
+    null;
+  const a11yLabel = tierLabel ? `${tierLabel}, rank ${rank}` : `Rank ${rank}`;
+
   return (
     <View
       style={[styles.badge, { backgroundColor: palette.bg }]}
       accessible
       accessibilityRole="text"
-      accessibilityLabel={`Rank ${rank}`}
+      accessibilityLabel={a11yLabel}
     >
       <Text style={[styles.label, { color: palette.fg }]}>{rank}</Text>
     </View>

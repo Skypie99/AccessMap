@@ -39,6 +39,7 @@ import type { FlagCategory, FlagRow, FlagSeverity, FlagStatus } from '@/types/da
 import PhotoLightboxModal from './PhotoLightboxModal';
 import StatusHistoryModal from './StatusHistoryModal';
 import { StatusBadge } from './StatusBadge';
+import { useReducedMotion } from '@/lib/accessibility';
 
 export type DetailAction = 'verify' | 'resolve' | 'reject';
 
@@ -64,6 +65,7 @@ export default function FlagDetailModal({
   const color = useColor();
   const styles = makeStyles(color);
   const { user } = useAuth();
+  const reducedMotion = useReducedMotion();
   const [busy, setBusy] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editDesc, setEditDesc] = useState('');
@@ -303,7 +305,7 @@ export default function FlagDetailModal({
 
   return (
     <>
-      <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
+      <Modal visible={visible} animationType={reducedMotion ? 'none' : 'slide'} transparent onRequestClose={onClose}>
         <View style={styles.backdrop}>
           {/* accessibilityViewIsModal: tells iOS VoiceOver that everything
             outside this card is non-interactive — important because we

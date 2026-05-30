@@ -920,7 +920,10 @@ export default function MapScreen() {
 
       <View pointerEvents="box-none" style={styles.overlay}>
         <View style={styles.topRow}>
-          <View style={styles.statusPill}>
+          {/* WCAG 4.1.3: live region ensures AT announces when the count
+              changes after a filter toggle (e.g. "12 of 45 shown"). Using
+              'polite' so it doesn't interrupt mid-sentence. */}
+          <View style={styles.statusPill} accessibilityLiveRegion="polite">
             <Text style={styles.statusText}>
               {loadingFlags
                 ? 'Loading flags…'
@@ -1475,15 +1478,29 @@ export default function MapScreen() {
           </View>
         )}
 
+        {/* WCAG 4.1.3: accessibilityLiveRegion covers Android TalkBack.
+            iOS VoiceOver is already handled by the
+            announceForAccessibility call in requestLocation(). */}
         {locating && !location && (
-          <View style={styles.banner}>
-            <ActivityIndicator />
+          <View
+            style={styles.banner}
+            accessibilityRole="text"
+            accessibilityLiveRegion="polite"
+          >
+            <ActivityIndicator
+              accessibilityElementsHidden
+              importantForAccessibility="no-hide-descendants"
+            />
             <Text style={styles.bannerText}>Finding your location…</Text>
           </View>
         )}
 
         {permissionDenied && (
-          <View style={styles.banner}>
+          <View
+            style={styles.banner}
+            accessibilityRole="alert"
+            accessibilityLiveRegion="assertive"
+          >
             <Text style={styles.bannerText}>
               Location permission denied. Enable it in Settings to report a flag.
             </Text>

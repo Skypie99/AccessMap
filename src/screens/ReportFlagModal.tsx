@@ -40,6 +40,7 @@ import { validReportTemplates, type ReportTemplate } from '@/lib/reportTemplates
 import type { FlagCategory, FlagSeverity } from '@/types/database';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { radius } from '@/theme';
+import { useReducedMotion } from '@/lib/accessibility';
 
 interface Props {
   visible: boolean;
@@ -52,6 +53,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
   const color = useColor();
   const styles = makeStyles(color);
   const { user } = useAuth();
+  const reducedMotion = useReducedMotion();
   const [category, setCategory] = useState<FlagCategory>('no_ramp');
   const [severity, setSeverity] = useState<FlagSeverity>(3);
   const [description, setDescription] = useState('');
@@ -230,7 +232,9 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
   };
 
   return (
-    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
+    // WCAG 2.3.3 (Animation from Interactions): skip the slide animation
+    // when the user has requested reduced motion.
+    <Modal visible={visible} animationType={reducedMotion ? 'none' : 'slide'} transparent onRequestClose={onClose}>
       <View style={styles.backdrop}>
         <View style={styles.card} accessibilityViewIsModal>
           {/* WCAG 1.4.4: card capped at 88% so Dynamic Type XXL content

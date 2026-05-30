@@ -209,6 +209,24 @@ export default function TasksScreen() {
     return out;
   }, [displayFlags, sortMode]);
 
+  // WCAG 4.1.3: announce result count when the debounced search query changes
+  // so AT users hear how many flags match without swiping through the list.
+  // Only fires on a non-empty query — clearing search is silent, the list
+  // just expands and the section headers speak for themselves. Dep on
+  // `debouncedSearchText` only is intentional; other filter axes announce
+  // themselves via handleCategoryChange / handleScopeChange.
+  useEffect(() => {
+    const q = debouncedSearchText.trim();
+    if (!q) return;
+    const count = displayFlags.length;
+    AccessibilityInfo.announceForAccessibility(
+      count === 0
+        ? 'No flags match your search.'
+        : `${count} flag${count === 1 ? '' : 's'} match your search.`,
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedSearchText]);
+
   // One-shot location fetch so each card can show "0.3 km · 4 min walk".
   // Graceful degrade: if the user denies permission (or we error) we just
   // render the card without distance — see FlagCard below.
