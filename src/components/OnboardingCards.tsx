@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   AccessibilityInfo,
   Modal,
@@ -12,14 +12,16 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import * as Location from 'expo-location';
 import { font, radius, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 
 /**
- * First-launch tutorial — three cards introducing the core loop:
+ * First-launch tutorial — four cards introducing the core loop:
  *  1. Drop pins where accessibility matters (the reporting flow)
  *  2. Verify others' reports (community trust)
  *  3. Earn points for accuracy (gamification)
+ *  4. Location permission request (deferred from app launch)
  *
  * Shown ABOVE the rest of the app on the very first launch, gated by the
  * device-wide flag in src/lib/onboardingState.ts. After completion or
@@ -37,7 +39,7 @@ import { type ColorTheme, useColor } from '@/theme/ThemeContext';
  *    element — the card container does NOT set `accessible`, so children
  *    (heading, body, position text) are individually focusable and the
  *    heading rotor works.
- *  - "Card N of 3" is announced two ways: (a) a small visible position
+ *  - "Card N of 4" is announced two ways: (a) a small visible position
  *    label above the heading that screen readers pick up, and (b) an
  *    AccessibilityInfo.announceForAccessibility() when the active card
  *    changes via Back/Next/swipe.
@@ -58,6 +60,7 @@ interface Card {
   iconColor: string;
   title: string;
   body: string;
+  isPermission?: boolean;
 }
 
 const CARDS: Card[] = [
@@ -79,6 +82,13 @@ const CARDS: Card[] = [
     title: 'Earn points for accuracy',
     body: 'You earn points when your reports get verified or resolved, and when you verify or resolve others. The points reward real, helpful contributions.',
   },
+  {
+    icon: 'navigate-circle-outline',
+    iconColor: '#a78bfa',
+    title: 'One last thing',
+    body: 'AccessMap works best with your location. We use it to show nearby issues and to place your reports accurately. Location is only shared while the app is open.',
+    isPermission: true,
+  },
 ];
 
 export default function OnboardingCards({ onDone }: Props) {
@@ -88,6 +98,8 @@ export default function OnboardingCards({ onDone }: Props) {
   const scrollRef = useRef<ScrollView | null>(null);
   const [index, setIndex] = useState(0);
   const [reduceMotion, setReduceMotion] = useState(false);
+  // null = not checked yet, true/false = permission status
+  const [locationGranted, setLocationGranted] = useState<boolean | null>(null);
 
   // Track the OS "Reduce Motion" preference so the swipe animation can
   // be skipped when the user has asked the system to minimize motion.
@@ -104,7 +116,7 @@ export default function OnboardingCards({ onDone }: Props) {
   }, []);
 
   // When the active card changes (Back/Next/swipe), announce the new
-  // position so screen reader users get the "Card N of 3" context even
+  // position so screen reader users get the "Card N of 4" context even
   // though the card container is no longer a single accessible element.
   useEffect(() => {
     AccessibilityInfo.announceForAccessibility(`Card ${index + 1} of ${CARDS.length}`);
@@ -126,6 +138,36 @@ export default function OnboardingCards({ onDone }: Props) {
 
   const isFirst = index === 0;
   const isLast = index === CARDS.length - 1;
+  // True when the permission card (card 4) is visible.
+  const isPermissionCard = isLast && CARDS[index]?.isPermission === true;
+
+  // When the user reaches the permission card, check if location access is
+  // already granted using the no-prompt API. Returning users who already
+  // allowed location see "Get Started" immediately instead of a redundant
+  // OS dialog. Uses getForegroundPermissionsAsync (never prompts the user).
+  useEffect(() => {
+    if (!isPermissionCard || Platform.OS === 'web') return;
+    let cancelled = false;
+    Location.getForegroundPermissionsAsync().then(({ status }) => {
+      if (!cancelled) setLocationGranted(status === 'granted');
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [isPermissionCard]);
+
+  // Tapping "Allow Location Access": request the permission then finish
+  // onboarding regardless of the user's choice — denying location must
+  // never block the user from using the app.
+  const handlePermissionAction = useCallback(async () => {
+    if (Platform.OS === 'web' || locationGranted) {
+      onDone();
+      return;
+    }
+    const { status } = await Location.requestForegroundPermissionsAsync();
+    setLocationGranted(status === 'granted');
+    onDone();
+  }, [locationGranted, onDone]);
 
   const card = CARDS[index]!;
 
@@ -139,10 +181,21 @@ export default function OnboardingCards({ onDone }: Props) {
           end={{ x: 0.7, y: 1 }}
           style={StyleSheet.absoluteFill}
         />
-        {/* Ambient glow behind icon */}
-        <View style={[styles.glowOrb, { backgroundColor: card.iconColor + '22' }]} pointerEvents="none" />
+        {/* Ambient glow behind icon — color tracks the active card */}
+        <View
+          style={[
+            styles.glowOrb,
+            {
+              backgroundColor:
+                isPermissionCard && locationGranted === true
+                  ? '#34d39922'
+                  : card.iconColor + '22',
+            },
+          ]}
+          pointerEvents="none"
+        />
 
-        {/* Skip */}
+        {/* Skip — visible on every card including the permission card */}
         <View style={styles.topBar}>
           <Pressable
             onPress={onDone}
@@ -166,36 +219,65 @@ export default function OnboardingCards({ onDone }: Props) {
           style={styles.scroll}
           scrollEnabled={!reduceMotion}
         >
-          {CARDS.map((c, i) => (
-            <View key={c.title} style={[styles.cardOuter, { width }]}>
-              {/* Icon circle */}
-              <View style={[styles.iconCircle, { borderColor: c.iconColor + '40', shadowColor: c.iconColor }]}>
-                <Ionicons name={c.icon} size={52} color={c.iconColor} />
-              </View>
+          {CARDS.map((c, i) => {
+            // For the permission card, icon and body reflect live permission state.
+            const permGranted = c.isPermission === true && locationGranted === true;
+            const effectiveIcon: keyof typeof Ionicons.glyphMap = permGranted
+              ? 'checkmark-circle'
+              : c.icon;
+            const effectiveColor = permGranted ? '#34d399' : c.iconColor;
+            const effectiveBody = permGranted
+              ? "Location access is on — you're all set!"
+              : c.body;
+            return (
+              <View key={c.title} style={[styles.cardOuter, { width }]}>
+                {/* Icon circle */}
+                <View
+                  style={[
+                    styles.iconCircle,
+                    { borderColor: effectiveColor + '40', shadowColor: effectiveColor },
+                  ]}
+                >
+                  <Ionicons name={effectiveIcon} size={52} color={effectiveColor} />
+                </View>
 
-              {/* Position pill */}
-              <View style={styles.positionPill}>
-                <Text style={styles.positionText}>{`${i + 1} / ${CARDS.length}`}</Text>
-              </View>
+                {/* Position pill */}
+                <View style={styles.positionPill}>
+                  <Text style={styles.positionText}>{`${i + 1} / ${CARDS.length}`}</Text>
+                </View>
 
-              {/* Text content — glass card */}
-              <View style={styles.cardContent}>
-                <Text style={styles.title} accessibilityRole="header">{c.title}</Text>
-                <Text style={styles.body}>{c.body}</Text>
+                {/* Text content — glass card */}
+                <View style={styles.cardContent}>
+                  <Text style={styles.title} accessibilityRole="header">
+                    {c.title}
+                  </Text>
+                  <Text style={styles.body}>{effectiveBody}</Text>
+                </View>
               </View>
-            </View>
-          ))}
+            );
+          })}
         </ScrollView>
 
-        {/* Dots */}
+        {/* Dots — decorative, hidden from assistive tech */}
         <View
           style={styles.dotsRow}
           importantForAccessibility="no-hide-descendants"
           accessibilityElementsHidden
         >
-          {CARDS.map((c, i) => (
-            <View key={c.title} style={[styles.dot, i === index && styles.dotActive, i === index && { shadowColor: card.iconColor }]} />
-          ))}
+          {CARDS.map((c, i) => {
+            const dotColor =
+              isPermissionCard && locationGranted === true ? '#34d399' : card.iconColor;
+            return (
+              <View
+                key={c.title}
+                style={[
+                  styles.dot,
+                  i === index && styles.dotActive,
+                  i === index && { shadowColor: dotColor },
+                ]}
+              />
+            );
+          })}
         </View>
 
         {/* Actions */}
@@ -217,6 +299,7 @@ export default function OnboardingCards({ onDone }: Props) {
           </Pressable>
 
           {!isLast ? (
+            // Cards 1–3: Next
             <Pressable
               onPress={() => goTo(index + 1)}
               style={({ pressed }) => [pressed && { opacity: 0.88 }]}
@@ -232,12 +315,38 @@ export default function OnboardingCards({ onDone }: Props) {
                 <Text style={styles.primaryBtnText}>Next</Text>
               </LinearGradient>
             </Pressable>
+          ) : isPermissionCard && locationGranted !== true ? (
+            // Card 4, permission not yet granted: request access.
+            // Disabled briefly while we check existing permissions (null state).
+            <Pressable
+              onPress={handlePermissionAction}
+              disabled={locationGranted === null}
+              style={({ pressed }) => [
+                pressed && { opacity: 0.88 },
+                locationGranted === null && { opacity: 0.5 },
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel="Allow location access"
+              accessibilityHint="Opens the system location permission dialog"
+              accessibilityState={{ disabled: locationGranted === null }}
+            >
+              <LinearGradient
+                colors={['#8b5cf6', '#7c3aed', '#6d28d9']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.primaryBtn}
+              >
+                <Text style={styles.primaryBtnText}>Allow Location Access</Text>
+              </LinearGradient>
+            </Pressable>
           ) : (
+            // Card 4, permission already granted (or non-permission last card): Get Started.
             <Pressable
               onPress={onDone}
               style={({ pressed }) => [pressed && { opacity: 0.88 }]}
               accessibilityRole="button"
-              accessibilityLabel="Get Started"
+              accessibilityLabel="Get started using AccessMap"
+              accessibilityHint="Closes the introduction and opens the app"
             >
               <LinearGradient
                 colors={['#3b82f6', '#2563eb', '#1d4ed8']}
@@ -318,7 +427,7 @@ const makeStyles = (color: ColorTheme) =>
       shadowOffset: { width: 0, height: 8 },
       elevation: 8,
     },
-    // "1 / 3" pill indicator
+    // "1 / 4" pill indicator
     positionPill: {
       paddingHorizontal: spacing.md,
       paddingVertical: 4,
@@ -344,7 +453,7 @@ const makeStyles = (color: ColorTheme) =>
       gap: spacing.sm,
       alignItems: 'center',
       ...(Platform.OS === 'web'
-        ? { backdropFilter: 'blur(20px) saturate(140%)' } as object
+        ? ({ backdropFilter: 'blur(20px) saturate(140%)' } as object)
         : {}),
     },
     card: {
