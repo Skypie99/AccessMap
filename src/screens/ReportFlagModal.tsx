@@ -3,7 +3,6 @@ import {
   AccessibilityInfo,
   ActivityIndicator,
   Alert,
-  Image,
   Modal,
   Platform,
   Pressable,
@@ -29,6 +28,8 @@ import {
   subscribeContextTagsCapability,
   uploadFlagPhoto,
 } from '@/lib/flags';
+import { batchInsertFlagPhotos } from '@/lib/photos';
+import PhotoGallery from '@/components/PhotoGallery';
 import {
   CONTEXT_TAGS,
   CONTEXT_TAG_LABELS,
@@ -57,7 +58,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
   const [category, setCategory] = useState<FlagCategory>('no_ramp');
   const [severity, setSeverity] = useState<FlagSeverity>(3);
   const [description, setDescription] = useState('');
-  const [photoUri, setPhotoUri] = useState<string | null>(null);
+  const [photoUris, setPhotoUris] = useState<string[]>([]);
   const [contextTags, setContextTags] = useState<ContextTag[]>([]);
   const [submitting, setSubmitting] = useState(false);
   // Web-only: hidden <input type="file"> used as the image picker substitute.
@@ -77,20 +78,20 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
   // every render, and never fires if a photo is already attached.
   const prevHighRef = useRef(false);
   useEffect(() => {
-    const isHigh = severity >= 4 && !photoUri;
+    const isHigh = severity >= 4 && photoUris.length === 0;
     if (isHigh && !prevHighRef.current) {
       void AccessibilityInfo.announceForAccessibility(
         `Tip: adding a photo helps verify this ${severity === 5 ? 'severe' : 'major'} barrier without a site visit.`,
       );
     }
     prevHighRef.current = isHigh;
-  }, [severity, photoUri]);
+  }, [severity, photoUris]);
 
   const reset = () => {
     setCategory('no_ramp');
     setSeverity(3);
     setDescription('');
-    setPhotoUri(null);
+    setPhotoUris([]);
     setContextTags([]);
     setAppliedTemplateId(null);
   };
@@ -127,6 +128,12 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
     );
   };
 
+  const MAX_PHOTOS = 5;
+
+  const addUri = (uri: string) => {
+    setPhotoUris((curr) => (curr.length < MAX_PHOTOS ? [...curr, uri] : curr));
+  };
+
   const pickPhoto = async (_source: 'camera' | 'library') => {
     // Web path — use a hidden <input type="file"> instead of expo-image-picker,
     // which is native-only. The input is programmatically clicked; the selected
@@ -141,7 +148,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
         input.onchange = () => {
           const file = input.files?.[0];
           if (file) {
-            setPhotoUri(URL.createObjectURL(file));
+            addUri(URL.createObjectURL(file));
           }
         };
         document.body.appendChild(input);
@@ -175,11 +182,26 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
               quality: 0.7,
             });
       if (!result.canceled && result.assets[0]?.uri) {
-        setPhotoUri(result.assets[0].uri);
+        addUri(result.assets[0].uri);
       }
     } catch (e) {
       Alert.alert('Could not pick photo', errorMessage(e));
     }
+  };
+
+  // Unified add-photo handler passed to PhotoGallery's onAddPhoto prop.
+  // On native shows an action sheet to choose camera vs library; on web
+  // triggers the hidden file input.
+  const pickPhotoForGallery = () => {
+    if (Platform.OS === 'web') {
+      void pickPhoto('library');
+      return;
+    }
+    Alert.alert('Add photo', undefined, [
+      { text: 'Take photo', onPress: () => void pickPhoto('camera') },
+      { text: 'Choose from library', onPress: () => void pickPhoto('library') },
+      { text: 'Cancel', style: 'cancel' },
+    ]);
   };
 
   const handleSubmit = async () => {
@@ -193,23 +215,32 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
     }
     setSubmitting(true);
     try {
-      let photoUrl: string | null = null;
-      if (photoUri) {
-        photoUrl = await uploadFlagPhoto(user.id, photoUri);
+      // Upload all picked photos. First URL doubles as the legacy photo_url
+      // field for backwards-compat with clients that haven't migrated to
+      // the flag_photos junction table yet.
+      const photoUrls: string[] = [];
+      for (const uri of photoUris) {
+        const url = await uploadFlagPhoto(user.id, uri);
+        photoUrls.push(url);
       }
+
       const result = await createFlag(user.id, {
         lat: location.lat,
         lng: location.lng,
         category,
         severity,
         description: description.trim() ? description.trim() : null,
-        photo_url: photoUrl,
+        photo_url: photoUrls[0] ?? null,
         // Only send the field when the user actually picked tags. Empty
         // array means "no context"; createFlag still tries the column path
         // so it stays exercised, but skipping it keeps the legacy insert
         // path cheap (one round-trip) when no tags are selected.
         context_tags: contextTags.length > 0 ? [...contextTags] : undefined,
       });
+
+      // Insert junction rows for all uploaded photos. Silent no-op if the
+      // flag_photos migration hasn't been applied yet.
+      await batchInsertFlagPhotos(result.row.id, photoUrls);
       // If we asked the server to store tags but the column isn't there
       // yet (capability flipped to 'unavailable' inside createFlag), tell
       // the user — they shouldn't think their picks were saved when they
@@ -220,7 +251,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
           'Your report was filed, but the context tags you picked could not be stored yet (server update pending). The picker will be re-enabled automatically once it is.',
         );
       }
-      track('flag_created', { category, severity, hasPhoto: !!photoUrl });
+      track('flag_created', { category, severity, hasPhoto: photoUrls.length > 0 });
       reset();
       onCreated();
       onClose();
@@ -425,7 +456,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
               node; the emoji is decorative and screened out. The
               accessibilityLiveRegion triggers the Android AT announcement;
               iOS is handled by the useEffect above. */}
-          {severity >= 4 && !photoUri && (
+          {severity >= 4 && photoUris.length === 0 && (
             <View
               style={styles.photoNudge}
               accessible
@@ -449,47 +480,11 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
             </View>
           )}
 
-          {photoUri ? (
-            <View style={styles.photoPreviewWrap}>
-              <Image
-                source={{ uri: photoUri }}
-                style={styles.photoPreview}
-                accessible
-                accessibilityLabel="Selected photo of the accessibility issue"
-              />
-              <Pressable
-                onPress={() => setPhotoUri(null)}
-                style={styles.photoClear}
-                // hitSlop expands the 26pt visual target to ~46pt so the
-                // tiny corner-X clears the 44pt touch-target floor without
-                // resizing the visible chrome.
-                hitSlop={10}
-                accessibilityRole="button"
-                accessibilityLabel="Remove photo"
-              >
-                <Text style={styles.photoClearText}>✕</Text>
-              </Pressable>
-            </View>
-          ) : (
-            <View style={styles.row}>
-              <Pressable
-                onPress={() => pickPhoto('camera')}
-                style={[styles.photoBtn]}
-                accessibilityRole="button"
-                accessibilityLabel="Take a photo with the camera"
-              >
-                <Text style={styles.photoBtnText}>📷 Take photo</Text>
-              </Pressable>
-              <Pressable
-                onPress={() => pickPhoto('library')}
-                style={[styles.photoBtn]}
-                accessibilityRole="button"
-                accessibilityLabel="Choose a photo from the library"
-              >
-                <Text style={styles.photoBtnText}>🖼 Choose from library</Text>
-              </Pressable>
-            </View>
-          )}
+          <PhotoGallery
+            photos={photoUris.map((url, i) => ({ url, position: i }))}
+            onAddPhoto={pickPhotoForGallery}
+            maxPhotos={MAX_PHOTOS}
+          />
 
           {/* Context tags — multi-select chip picker. Optional metadata
               about WHEN / UNDER WHAT CONDITIONS this flag is most relevant
@@ -670,18 +665,6 @@ const makeStyles = (color: ColorTheme) =>
     },
     charCounterAmber: { color: color.warningHint, fontWeight: '600' },
     charCounterRed: { color: color.error, fontWeight: '700' },
-    photoBtn: {
-      flexGrow: 1,
-      paddingHorizontal: 12,
-      paddingVertical: 10,
-      borderRadius: 8,
-      backgroundColor: color.surfaceNeutral,
-      alignItems: 'center',
-      // 44pt baseline touch target.
-      minHeight: 44,
-      justifyContent: 'center',
-    },
-    photoBtnText: { color: color.text, fontWeight: '600', fontSize: 13 },
     // High-severity photo nudge card — amber-tinted, appears between the
     // "Photo" label and picker when severity ≥ 4 and no photo is attached.
     // warningBg (#fff7e6) / warningFg (#714b00): 8.3:1 contrast, WCAG AA.
@@ -708,25 +691,6 @@ const makeStyles = (color: ColorTheme) =>
     photoNudgeBold: {
       fontWeight: '700',
       color: color.warningFg,
-    },
-    photoPreviewWrap: { position: 'relative', alignSelf: 'flex-start' },
-    photoPreview: { width: 140, height: 140, borderRadius: 10 },
-    photoClear: {
-      position: 'absolute',
-      top: -6,
-      right: -6,
-      backgroundColor: color.backdropStrong,
-      width: 26,
-      height: 26,
-      borderRadius: radius.circle,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    photoClearText: {
-      color: color.textOnBrand,
-      fontWeight: '700',
-      fontSize: 13,
-      lineHeight: 14,
     },
     actions: {
       flexDirection: 'row',

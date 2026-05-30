@@ -191,6 +191,30 @@ export type Database = {
         }>;
         Relationships: EmptyRelationships;
       };
+      // Optional until supabase/migrations/2026-05-30_flag_photos_junction.sql
+      // is applied. listFlagPhotos/addFlagPhoto/deleteFlagPhoto gracefully
+      // degrade (return [] / no-op) if the table doesn't exist yet.
+      flag_photos: {
+        Row: {
+          id: string;
+          flag_id: string;
+          url: string;
+          position: number;
+          created_at: string;
+        };
+        Insert: {
+          flag_id: string;
+          url: string;
+          position: number;
+          id?: string;
+          created_at?: string;
+        };
+        Update: Partial<{
+          url: string;
+          position: number;
+        }>;
+        Relationships: EmptyRelationships;
+      };
       // D4: Realtime Flags — observability log.
       // Optional until the D4 SQL (2026-05-28_Dana_D4-RealtimeFlags-Filtered-SQL.md)
       // is applied by Sky in the Supabase dashboard. The `log_realtime_event` RPC
