@@ -85,6 +85,7 @@ export default function MyWatchedModal({ visible, onClose, onSelectFlag, onViewO
   const [flags, setFlags] = useState<FlagRow[]>([]);
   const [watchedIds, setWatchedIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
@@ -102,23 +103,32 @@ export default function MyWatchedModal({ visible, onClose, onSelectFlag, onViewO
     return () => { mountedRef.current = false; };
   }, []);
 
-  const load = useCallback(async () => {
-    if (!user) return;
-    if (mountedRef.current) { setLoading(true); setLoadError(null); }
+  const load = useCallback(async (isPullRefresh = false) => {
+    if (!user || !mountedRef.current) return;
+    if (isPullRefresh) {
+      setRefreshing(true);
+    } else {
+      setLoading(true);
+      setLoadError(null);
+    }
     try {
       const ids = await loadWatched(user.id);
       const rows = await fetchFlagsByIds(ids);
       if (!mountedRef.current) return;
       setWatchedIds(ids);
       setFlags(rows);
+      if (isPullRefresh && mountedRef.current) setLoadError(null);
     } catch (e) {
       if (mountedRef.current) setLoadError(errorMessage(e, 'Could not load watched flags.'));
     } finally {
-      if (mountedRef.current) setLoading(false);
+      if (mountedRef.current) { setLoading(false); setRefreshing(false); }
     }
   }, [user]);
 
+  const handleRefresh = useCallback(() => { void load(true); }, [load]);
+
   useEffect(() => { if (visible) load(); }, [visible, refreshKey, load]);
+
 
   const handleUnwatch = useCallback(async (flagId: string) => {
     if (!user) return;
@@ -315,7 +325,7 @@ export default function MyWatchedModal({ visible, onClose, onSelectFlag, onViewO
               accessibilityRole="list"
               accessibilityLabel={`Watched flags list, ${displayFlags.length} ${displayFlags.length === 1 ? 'item' : 'items'}`}
               refreshControl={
-                <RefreshControl refreshing={loading} onRefresh={load} accessibilityLabel="Pull down to refresh watched flags" />
+                <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} accessibilityLabel="Pull down to refresh watched flags" />
               }
             />
           )}
