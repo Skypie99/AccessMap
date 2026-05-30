@@ -41,7 +41,7 @@
     "production": {
       "ios": {
         "appleId": "$EXPO_APPLE_ID",
-        "ascAppId": "TODO_ASC_APP_ID",
+        "ascAppId": "6774709116",
         "appleTeamId": "$EXPO_APPLE_TEAM_ID"
       },
       "android": {
