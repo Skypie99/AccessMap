@@ -80,7 +80,6 @@ function AvatarCircle({
 interface UserFooter {
   rank: number;
   points: number;
-  verified_count: number;
 }
 
 export default function LeaderboardScreen({ visible, onClose }: Props) {
@@ -124,11 +123,12 @@ export default function LeaderboardScreen({ visible, onClose }: Props) {
       const isCurrentUser = item.id === user?.id;
       const name = item.display_name ?? 'Member';
       const initials = name.slice(0, 2).toUpperCase();
+      // W6-1: no verified-flag count here — exposing verifier activity publicly
+      // would let users single out moderators. See LeaderboardEntry in flags.ts.
       const a11yLabel = [
         ordinalLabel(rank),
         name,
         `${item.points.toLocaleString()} points`,
-        item.verified_count > 0 ? `${item.verified_count} verified` : null,
         isCurrentUser ? 'you' : null,
       ]
         .filter(Boolean)
@@ -157,11 +157,6 @@ export default function LeaderboardScreen({ visible, onClose }: Props) {
             {isCurrentUser ? (
               <Text style={styles.youBadge} accessibilityElementsHidden>
                 you
-              </Text>
-            ) : null}
-            {item.verified_count > 0 ? (
-              <Text style={styles.verifiedBadge} accessibilityElementsHidden>
-                {item.verified_count} verified
               </Text>
             ) : null}
           </View>
@@ -238,16 +233,13 @@ export default function LeaderboardScreen({ visible, onClose }: Props) {
             <View
               style={styles.footer}
               accessible
-              accessibilityLabel={`Your rank: ${ordinalLabel(userFooter.rank)}, ${userFooter.points.toLocaleString()} points, ${userFooter.verified_count} verified`}
+              accessibilityLabel={`Your rank: ${ordinalLabel(userFooter.rank)}, ${userFooter.points.toLocaleString()} points`}
             >
               <Text style={styles.footerText} accessibilityElementsHidden>
                 Your rank:{' '}
                 <Text style={styles.footerRank}>{ordinalLabel(userFooter.rank)}</Text>
                 {'  ·  '}
                 {userFooter.points.toLocaleString()} pts
-                {userFooter.verified_count > 0
-                  ? `  ·  ${userFooter.verified_count} verified`
-                  : ''}
               </Text>
             </View>
           ) : null}
@@ -340,15 +332,6 @@ function makeStyles(color: ColorTheme) {
       fontSize: 11,
       color: color.brandOnSoft,
       backgroundColor: color.brandSoft,
-      paddingHorizontal: 6,
-      paddingVertical: 2,
-      borderRadius: radius.full,
-      overflow: 'hidden',
-    },
-    verifiedBadge: {
-      fontSize: 11,
-      color: color.textMuted,
-      backgroundColor: color.surfaceNeutral,
       paddingHorizontal: 6,
       paddingVertical: 2,
       borderRadius: radius.full,

@@ -913,13 +913,17 @@ export interface LeaderboardEntry {
   display_name: string | null;
   avatar_url: string | null;
   points: number;
-  verified_count: number;
 }
+
+// SECURITY / PRIVACY (W6-1): do NOT add a `verified_count` (or any
+// verifier-activity metric) back to the leaderboard. Surfacing how many flags a
+// user has verified/resolved publicly identifies who is acting as a verifier,
+// which lets bad actors single out and target moderators. The leaderboard
+// intentionally exposes only display_name + points. If you need verify stats,
+// keep them private to the user's own profile — never in a public ranking.
 
 /**
  * Returns the top `limit` users by points, highest first.
- * Also fetches each user's verified+resolved flag count in a second query
- * to avoid N+1 fetches. No new SQL migration needed — both tables exist.
  */
 export async function listLeaderboard(limit = 20): Promise<LeaderboardEntry[]> {
   const { data, error } = await supabase
@@ -928,41 +932,20 @@ export async function listLeaderboard(limit = 20): Promise<LeaderboardEntry[]> {
     .order('points', { ascending: false })
     .limit(limit);
   if (error) throw error;
-  if (!data || data.length === 0) return [];
-
-  type UserRow20 = { id: string; display_name: string | null; avatar_url: string | null; points: number };
-  const rows = data as UserRow20[];
-  const ids = rows.map((u) => u.id);
-
-  const { data: verifiedRows, error: ve } = await supabase
-    .from('flags')
-    .select('user_id')
-    .in('user_id', ids)
-    .in('status', ['verified', 'resolved']);
-  if (ve) throw ve;
-
-  const countMap = new Map<string, number>();
-  for (const row of (verifiedRows ?? []) as { user_id: string }[]) {
-    countMap.set(row.user_id, (countMap.get(row.user_id) ?? 0) + 1);
-  }
-
-  return rows.map((u) => ({
-    id: u.id,
-    display_name: u.display_name,
-    avatar_url: u.avatar_url,
-    points: u.points,
-    verified_count: countMap.get(u.id) ?? 0,
-  }));
+  return (data ?? []) as LeaderboardEntry[];
 }
 
 /**
- * Returns the current user's rank (1-indexed), points, and verified flag count.
+ * Returns the current user's rank (1-indexed) and points.
  * Used when the user isn't in the top-20 — the rank is computed by counting
  * users with strictly more points.
+ *
+ * Note: deliberately does NOT return a verified flag count — see the
+ * SECURITY / PRIVACY note on LeaderboardEntry above (W6-1).
  */
 export async function getUserLeaderboardRank(
   userId: string,
-): Promise<{ rank: number; points: number; verified_count: number }> {
+): Promise<{ rank: number; points: number }> {
   const { data: me, error: me_err } = await supabase
     .from('users')
     .select('points')
@@ -977,12 +960,5 @@ export async function getUserLeaderboardRank(
     .gt('points', userPoints);
   if (rank_err) throw rank_err;
 
-  const { count: vc, error: vc_err } = await supabase
-    .from('flags')
-    .select('*', { count: 'exact', head: true })
-    .eq('user_id', userId)
-    .in('status', ['verified', 'resolved']);
-  if (vc_err) throw vc_err;
-
-  return { rank: (above ?? 0) + 1, points: userPoints, verified_count: vc ?? 0 };
+  return { rank: (above ?? 0) + 1, points: userPoints };
 }
