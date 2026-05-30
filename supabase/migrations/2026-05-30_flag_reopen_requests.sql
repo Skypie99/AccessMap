@@ -1,11 +1,11 @@
 -- =============================================================================
--- PROPOSE-ONLY — DO NOT APPLY WITHOUT SKY'S EXPLICIT APPROVAL
+-- APPROVED — Option A (per-cycle reset). Sky approved 2026-05-30.
 -- =============================================================================
 --
 -- FILE:    2026-05-30_flag_reopen_requests.sql
 -- AUTHOR:  Dana (data engineering, 2026-05-30)
 -- FEATURE: F10 — Flag Reopen Mechanism
--- STATUS:  PROPOSED — not applied to any environment
+-- STATUS:  APPROVED — Option A (per-cycle reset); applied 2026-05-30
 --
 -- PRIVACY NOTE (Jordan, 2026-05-29):
 --   This migration intentionally stores NO user_id linkage for reopen
@@ -113,10 +113,8 @@ COMMENT ON FUNCTION public.increment_reopen_request(uuid) IS
 -- It resets reopen_requests = 0 and stamps reopen_requests_reset_at = now()
 -- whenever a flag moves from 'resolved' to 'open'.
 --
--- Why AFTER (not BEFORE)?  The status trigger for points
--- (handle_flag_status_change) is already an AFTER trigger.  Using AFTER here
--- keeps ordering consistent and avoids NEW/OLD confusion in BEFORE triggers
--- when multiple triggers fire.
+-- Why BEFORE (not AFTER)? This function modifies NEW.reopen_requests and
+-- NEW.reopen_requests_reset_at, which is only legal in a BEFORE trigger.
 --
 -- Why only 'resolved' → 'open'?  A 'verified' → 'open' path doesn't exist
 -- in the normal workflow; only resolved flags accumulate reopen votes.  If the

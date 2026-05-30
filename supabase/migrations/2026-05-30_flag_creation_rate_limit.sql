@@ -7,6 +7,7 @@ CREATE OR REPLACE FUNCTION check_flag_rate_limit()
 RETURNS TRIGGER
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = public
 AS $$
 DECLARE
   flag_count INTEGER;
@@ -15,7 +16,7 @@ BEGIN
   -- Count flags created by this user in the last 24 hours
   SELECT COUNT(*)
   INTO flag_count
-  FROM flags
+  FROM public.flags
   WHERE user_id = auth.uid()
     AND created_at > NOW() - INTERVAL '24 hours';
 
@@ -29,9 +30,9 @@ END;
 $$;
 
 -- Create the trigger on flags table
-DROP TRIGGER IF EXISTS enforce_flag_rate_limit ON flags;
+DROP TRIGGER IF EXISTS enforce_flag_rate_limit ON public.flags;
 CREATE TRIGGER enforce_flag_rate_limit
-  BEFORE INSERT ON flags
+  BEFORE INSERT ON public.flags
   FOR EACH ROW
   EXECUTE FUNCTION check_flag_rate_limit();
 
