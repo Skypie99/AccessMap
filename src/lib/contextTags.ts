@@ -32,6 +32,14 @@ export type ContextTag =
   | 'event_temporary';
 
 /**
+ * The GENERAL (non-seasonal) subset of ContextTag — everything in CONTEXT_TAGS.
+ * Typing CONTEXT_TAGS / CONTEXT_TAG_LABELS with this (rather than the full
+ * union) keeps `CONTEXT_TAG_LABELS[tag]` well-typed in the general chip picker,
+ * since adding seasonal members to ContextTag widened the union.
+ */
+export type GeneralContextTag = Exclude<ContextTag, SeasonalTag>;
+
+/**
  * Canonical chip display order. The UI renders chips in this sequence so the
  * picker layout is stable across renders. Frozen so a caller can't reorder it
  * by accident.
@@ -41,7 +49,7 @@ export type ContextTag =
  * Validation (`isValidTag`) and the display-label lookup (`tagLabel`) span
  * BOTH lists; only the chip rendering is split.
  */
-export const CONTEXT_TAGS: ReadonlyArray<ContextTag> = Object.freeze([
+export const CONTEXT_TAGS: ReadonlyArray<GeneralContextTag> = Object.freeze([
   'morning_rush',
   'evening_rush',
   'after_dark',
@@ -87,18 +95,17 @@ export const SEASONAL_TAGS: ReadonlyArray<SeasonalTag> = Object.freeze([
  * remember screen readers will read the new value verbatim — keep it short
  * and natural.
  */
-export const CONTEXT_TAG_LABELS: Readonly<Record<Exclude<ContextTag, SeasonalTag>, string>> =
-  Object.freeze({
-    morning_rush: 'Morning rush hour',
-    evening_rush: 'Evening rush hour',
-    after_dark: 'After dark / poor visibility',
-    school_hours: 'School hours',
-    high_tide: 'Blocked at high tide',
-    when_wet: 'Slippery when wet',
-    snow_or_ice: 'Snow or ice',
-    event_day: 'Event days only',
-    construction: 'Active construction',
-  });
+export const CONTEXT_TAG_LABELS: Readonly<Record<GeneralContextTag, string>> = Object.freeze({
+  morning_rush: 'Morning rush hour',
+  evening_rush: 'Evening rush hour',
+  after_dark: 'After dark / poor visibility',
+  school_hours: 'School hours',
+  high_tide: 'Blocked at high tide',
+  when_wet: 'Slippery when wet',
+  snow_or_ice: 'Snow or ice',
+  event_day: 'Event days only',
+  construction: 'Active construction',
+});
 
 /**
  * Human-readable labels for the seasonal tags. Kept in a separate map from

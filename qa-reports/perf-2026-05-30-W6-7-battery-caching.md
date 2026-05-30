@@ -51,10 +51,11 @@ The cache-hit path paints in **single-digit ms** (local AsyncStorage) vs. the ne
 - **Fix:** new `refreshIfStale(maxAgeMs = FLAGS_FRESH_MS=30s)` skips the network when the last *successful* fetch is under the window. `MapScreen`'s focus effect now calls `refreshFlagsIfStale()` instead of `refreshFlags()`. Explicit user refresh (pull-to-refresh, the ⟳ button) still calls `refresh()` and always fetches.
 - **Impact:** round-trips per session for "tap card → view on map" navigation: **N taps → ~1 per 30s**. Direct radio/battery saving on the most common navigation path.
 
-### 3. Location `maximumAge` (battery) — `location.ts` + `MapScreen.tsx`
+### 3. Location cached-fix fast-path (battery) — `location.ts` + `MapScreen.tsx`
 - **Cost before:** native one-shot location forced a fresh GPS fix every call.
-- **Fix:** `maximumAge: 60_000` on the Tasks location hook (rough distance sort — a recent fix is plenty; mirrors the existing web path), `maximumAge: 30_000` on `MapScreen.requestLocation` (recenter/initial-locate — recent enough to center accurately).
-- **Impact:** lets the OS return a cached position instead of spinning up the GPS chip on repeat locates — the single biggest per-call battery item for a one-shot fix. Accuracy unchanged (still `Balanced`, fix ≤30–60s old).
+- **Fix:** try `Location.getLastKnownPositionAsync({ maxAge })` first (60s on the Tasks hook for rough distance sort, 30s on `MapScreen.requestLocation` for recenter/initial-locate); fall back to a live `getCurrentPositionAsync` only when no recent cached fix exists.
+- **Note:** my first attempt used `getCurrentPositionAsync({ maximumAge })`, but `maximumAge` is a **browser geolocation** option, not an `expo-location` one — `tsc` caught it. `getLastKnownPositionAsync` is the correct expo-location API for "reuse a recent fix without powering the GPS" and is actually a *bigger* battery win (it can skip the GPS chip entirely on a hit).
+- **Impact:** on a cached-fix hit, no GPS power at all; on a miss, identical to before (`Balanced`). Accuracy unchanged (fix ≤30–60s old).
 
 ### Test added — `src/lib/__tests__/flagsStoreSwr.test.tsx`
 Locks in (a) cache-first paint before the network resolves, then reconcile, and (b) `refreshIfStale` no-op while fresh / forced through at `maxAgeMs=0`. +2 tests (1148→1150).

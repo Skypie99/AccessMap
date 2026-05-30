@@ -752,13 +752,15 @@ export default function MapScreen() {
         return;
       }
       if (mountedRef.current) setPermissionDenied(false);
-      const pos = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.Balanced,
-        // Battery: reuse a fix up to 30s old rather than forcing a fresh GPS
-        // lock on every recenter/initial-locate. 30s is recent enough to
-        // center the map accurately while letting the OS skip a cold fix.
-        maximumAge: 30_000,
-      });
+      // Battery: reuse a cached fix up to 30s old before powering the GPS for a
+      // fresh lock on every recenter/initial-locate. 30s is recent enough to
+      // center the map accurately; getLastKnownPositionAsync returns null when
+      // no recent fix exists, so we fall back to a live read.
+      const pos =
+        (await Location.getLastKnownPositionAsync({ maxAge: 30_000 })) ??
+        (await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.Balanced,
+        }));
       const coords = {
         lat: pos.coords.latitude,
         lng: pos.coords.longitude,

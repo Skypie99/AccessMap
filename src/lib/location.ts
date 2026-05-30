@@ -123,14 +123,17 @@ export function useUserLocation(options: UseUserLocationOptions = {}): UserLocat
         return;
       }
       if (mountedRef.current) setPermissionDenied(false);
-      const pos = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.Balanced,
-        // Battery: accept a fix up to 60s old instead of powering the GPS for
-        // a fresh lock. Tasks only needs a rough position to sort cards by
-        // distance, so a recent cached fix is plenty — and mirrors the web
-        // path's `maximumAge: 60_000` above.
-        maximumAge: 60_000,
-      });
+      // Battery: try a cached fix first (no GPS power) before forcing a fresh
+      // lock. Tasks only needs a rough position to sort cards by distance, so a
+      // fix up to 60s old is plenty. getLastKnownPositionAsync returns null if
+      // there's no recent-enough cached fix, in which case we fall back to a
+      // live read. (expo-location has no `maximumAge` on getCurrentPositionAsync
+      // — that's the browser geolocation option used on the web path above.)
+      const pos =
+        (await Location.getLastKnownPositionAsync({ maxAge: 60_000 })) ??
+        (await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.Balanced,
+        }));
       if (!mountedRef.current) return;
       setLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
     } catch (e: unknown) {
