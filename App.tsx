@@ -1,5 +1,5 @@
 import 'react-native-gesture-handler';
-import { initSentry } from '@/lib/sentry';
+import { initSentry, Sentry } from '@/lib/sentry';
 initSentry();
 import React, { useCallback, useEffect, useState } from 'react';
 import { Platform, View } from 'react-native';
@@ -169,7 +169,7 @@ function FirstLaunchGate({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-export default function App() {
+function App() {
   return (
     <ErrorBoundary>
       <SafeAreaProvider>
@@ -186,3 +186,5 @@ export default function App() {
 
   );
 }
+
+export default Sentry.wrap(App);

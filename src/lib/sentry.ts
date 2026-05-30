@@ -1,7 +1,9 @@
 import * as Sentry from '@sentry/react-native';
-import Constants from 'expo-constants';
 
 const dsn = process.env.EXPO_PUBLIC_SENTRY_DSN ?? '';
+
+// APP_ENV is injected by EAS build profiles (development / preview / production).
+const environment = process.env.APP_ENV ?? 'development';
 
 export function initSentry() {
   if (!dsn) {
@@ -11,9 +13,8 @@ export function initSentry() {
 
   Sentry.init({
     dsn,
-    environment: Constants.expoConfig?.extra?.environment ?? 'development',
-    // Capture 100% of transactions in dev; tune in production.
-    tracesSampleRate: __DEV__ ? 0 : 0.1,
+    environment,
+    tracesSampleRate: __DEV__ ? 1.0 : 0.2,
     debug: __DEV__,
   });
 }
