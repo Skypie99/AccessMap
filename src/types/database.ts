@@ -64,6 +64,18 @@ export type FeedbackRow = {
   created_at: string;
 };
 
+// One comment on a flag. `display_name` is populated by a PostgREST join
+// from public.users; it is NOT a real column on the flag_comments table.
+// Optional until supabase/migrations/2026-05-30_flag_comments.sql is applied.
+export type CommentRow = {
+  id: string;
+  flag_id: string;
+  user_id: string;
+  content: string;
+  created_at: string;
+  display_name: string | null;
+};
+
 type EmptyRelationships = {
   foreignKeyName: string;
   columns: string[];
@@ -154,6 +166,29 @@ export type Database = {
           platform?: 'ios' | 'android' | 'web' | null;
           updated_at?: string;
         };
+        Relationships: EmptyRelationships;
+      };
+      // Optional until supabase/migrations/2026-05-30_flag_comments.sql is
+      // applied. The display_name join is handled at query-time via
+      // PostgREST — it is NOT a real column on this table (see CommentRow).
+      flag_comments: {
+        Row: {
+          id: string;
+          flag_id: string;
+          user_id: string;
+          content: string;
+          created_at: string;
+        };
+        Insert: {
+          flag_id: string;
+          user_id: string;
+          content: string;
+          id?: string;
+          created_at?: string;
+        };
+        Update: Partial<{
+          content: string;
+        }>;
         Relationships: EmptyRelationships;
       };
       // D4: Realtime Flags — observability log.

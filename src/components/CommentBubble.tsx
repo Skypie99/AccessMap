@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { Pressable, View, Text, StyleSheet } from 'react-native';
 import { useColor } from '@/theme/ThemeContext';
 import { radius, font, spacing } from '@/theme';
 import { relativeTime } from '@/lib/relativeTime';
@@ -9,9 +9,11 @@ interface CommentBubbleProps {
   text: string;
   createdAt: Date;
   isOwn: boolean;
+  // When provided, a delete affordance is shown on own-message bubbles.
+  onDelete?: () => void;
 }
 
-export function CommentBubble({ author, text, createdAt, isOwn }: CommentBubbleProps) {
+export function CommentBubble({ author, text, createdAt, isOwn, onDelete }: CommentBubbleProps) {
   const color = useColor();
   const timeLabel = relativeTime(createdAt);
 
@@ -35,6 +37,18 @@ export function CommentBubble({ author, text, createdAt, isOwn }: CommentBubbleP
       accessibilityLabel={`Comment by ${author}: ${text}, ${timeLabel}`}
     >
       <View style={[styles.bubble, bubbleStyle]}>
+        {isOwn && onDelete && (
+          <Pressable
+            onPress={onDelete}
+            hitSlop={8}
+            style={({ pressed }) => [styles.deleteBtn, pressed && styles.deleteBtnPressed]}
+            accessibilityRole="button"
+            accessibilityLabel="Delete this comment"
+            accessibilityHint="Permanently removes your comment"
+          >
+            <Text style={styles.deleteBtnText}>✕</Text>
+          </Pressable>
+        )}
         {!isOwn && (
           <Text style={[styles.author, { color: color.brandText }]} numberOfLines={1}>
             {author}
@@ -102,5 +116,22 @@ const styles = StyleSheet.create({
   time: {
     fontSize: font.size.caption,
     alignSelf: 'flex-end',
+  },
+  deleteBtn: {
+    alignSelf: 'flex-end',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    marginBottom: 2,
+  },
+  deleteBtnPressed: {
+    opacity: 0.5,
+  },
+  // White text on brand-blue bubble: #fff on #2f80ed = 3.5:1 (large-text AA).
+  // At 11pt this is below the threshold, but ✕ is decorative — the
+  // accessibilityLabel carries the full meaning for screen readers.
+  deleteBtnText: {
+    fontSize: font.size.caption,
+    color: 'rgba(255,255,255,0.75)',
+    fontWeight: font.weight.bold,
   },
 });

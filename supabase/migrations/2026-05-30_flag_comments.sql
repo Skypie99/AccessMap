@@ -1,0 +1,42 @@
+-- Flag comments: allow authenticated users to discuss accessibility flags.
+-- FK points to public.users (not auth.users) so PostgREST can resolve the
+-- users(display_name) join in listComments without a cast.
+
+CREATE TABLE IF NOT EXISTS public.flag_comments (
+  id          UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  flag_id     UUID        NOT NULL REFERENCES public.flags(id)  ON DELETE CASCADE,
+  user_id     UUID        NOT NULL REFERENCES public.users(id)  ON DELETE CASCADE,
+  content     TEXT        NOT NULL
+                          CHECK (char_length(content) BETWEEN 1 AND 500),
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+ALTER TABLE public.flag_comments ENABLE ROW LEVEL SECURITY;
+
+-- Any authenticated user can read comments on any flag.
+CREATE POLICY "flag_comments: authenticated read"
+  ON public.flag_comments
+  FOR SELECT
+  TO authenticated
+  USING (true);
+
+-- Users insert only comments where user_id matches their own session.
+CREATE POLICY "flag_comments: own insert"
+  ON public.flag_comments
+  FOR INSERT
+  TO authenticated
+  WITH CHECK (user_id = auth.uid());
+
+-- Users delete only their own comments.
+CREATE POLICY "flag_comments: own delete"
+  ON public.flag_comments
+  FOR DELETE
+  TO authenticated
+  USING (user_id = auth.uid());
+
+-- Composite index: most queries filter by flag_id and sort by time.
+CREATE INDEX IF NOT EXISTS flag_comments_flag_id_created_at_idx
+  ON public.flag_comments (flag_id, created_at DESC);
+
+-- Realtime support so the useComments hook gets live INSERT/DELETE events.
+ALTER PUBLICATION supabase_realtime ADD TABLE public.flag_comments;
