@@ -67,7 +67,7 @@ import { computeAchievements, countEarned, type AchievementStats } from '@/lib/a
 import AchievementsModal from '@/components/AchievementsModal';
 import RecentlyViewedRow from '@/components/RecentlyViewedRow';
 import ReportsBreakdownCard from '@/components/ReportsBreakdownCard';
-import LeaderboardModal from '@/components/LeaderboardModal';
+import LeaderboardScreen from '@/screens/LeaderboardScreen';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { radius, shadow } from '@/theme';
 import { getTier, pointsToNextTier, REPUTATION_TIERS } from '@/lib/reputationTier';
@@ -1097,13 +1097,13 @@ export default function ProfileScreen() {
           style={({ pressed }) => [styles.myReportsBtn, pressed && styles.myReportsBtnPressed]}
           onPress={() => setLeaderboardOpen(true)}
           accessibilityRole="button"
-          accessibilityLabel="Community Leaderboard"
-          accessibilityHint="Opens the top 10 contributors ranked by points"
+          accessibilityLabel="See leaderboard"
+          accessibilityHint="Opens the top 20 contributors ranked by points"
         >
           <View style={styles.myReportsTextWrap}>
-            <Text style={styles.myReportsTitle}>Community Leaderboard</Text>
+            <Text style={styles.myReportsTitle}>See leaderboard</Text>
             <Text style={styles.myReportsSubtitle}>
-              See the top contributors in your area ranked by points.
+              Top 20 contributors ranked by points.
             </Text>
           </View>
           <Text style={styles.myReportsChevron} accessibilityElementsHidden>
@@ -1455,7 +1455,7 @@ export default function ProfileScreen() {
         achievements={achievements}
       />
 
-      <LeaderboardModal visible={leaderboardOpen} onClose={() => setLeaderboardOpen(false)} />
+      <LeaderboardScreen visible={leaderboardOpen} onClose={() => setLeaderboardOpen(false)} />
 
       <NotificationPrefsModal
         visible={notifPrefsOpen}

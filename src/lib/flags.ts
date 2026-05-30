@@ -907,19 +907,78 @@ export async function listFlagStatusHistory(flagId: string): Promise<FlagStatusH
 export interface LeaderboardEntry {
   id: string;
   display_name: string | null;
+  avatar_url: string | null;
   points: number;
+  verified_count: number;
 }
 
 /**
  * Returns the top `limit` users by points, highest first.
- * The `users` table is readable by all authenticated users (no RLS change needed).
+ * Also fetches each user's verified+resolved flag count in a second query
+ * to avoid N+1 fetches. No new SQL migration needed — both tables exist.
  */
-export async function listLeaderboard(limit = 10): Promise<LeaderboardEntry[]> {
+export async function listLeaderboard(limit = 20): Promise<LeaderboardEntry[]> {
   const { data, error } = await supabase
     .from('users')
-    .select('id, display_name, points')
+    .select('id, display_name, avatar_url, points')
     .order('points', { ascending: false })
     .limit(limit);
   if (error) throw error;
-  return (data ?? []) as LeaderboardEntry[];
+  if (!data || data.length === 0) return [];
+
+  type UserRow20 = { id: string; display_name: string | null; avatar_url: string | null; points: number };
+  const rows = data as UserRow20[];
+  const ids = rows.map((u) => u.id);
+
+  const { data: verifiedRows, error: ve } = await supabase
+    .from('flags')
+    .select('user_id')
+    .in('user_id', ids)
+    .in('status', ['verified', 'resolved']);
+  if (ve) throw ve;
+
+  const countMap = new Map<string, number>();
+  for (const row of (verifiedRows ?? []) as { user_id: string }[]) {
+    countMap.set(row.user_id, (countMap.get(row.user_id) ?? 0) + 1);
+  }
+
+  return rows.map((u) => ({
+    id: u.id,
+    display_name: u.display_name,
+    avatar_url: u.avatar_url,
+    points: u.points,
+    verified_count: countMap.get(u.id) ?? 0,
+  }));
+}
+
+/**
+ * Returns the current user's rank (1-indexed), points, and verified flag count.
+ * Used when the user isn't in the top-20 — the rank is computed by counting
+ * users with strictly more points.
+ */
+export async function getUserLeaderboardRank(
+  userId: string,
+): Promise<{ rank: number; points: number; verified_count: number }> {
+  const { data: me, error: me_err } = await supabase
+    .from('users')
+    .select('points')
+    .eq('id', userId)
+    .single();
+  if (me_err) throw me_err;
+  const userPoints = (me as { points: number }).points;
+
+  const { count: above, error: rank_err } = await supabase
+    .from('users')
+    .select('*', { count: 'exact', head: true })
+    .gt('points', userPoints);
+  if (rank_err) throw rank_err;
+
+  const { count: vc, error: vc_err } = await supabase
+    .from('flags')
+    .select('*', { count: 'exact', head: true })
+    .eq('user_id', userId)
+    .in('status', ['verified', 'resolved']);
+  if (vc_err) throw vc_err;
+
+  return { rank: (above ?? 0) + 1, points: userPoints, verified_count: vc ?? 0 };
 }
