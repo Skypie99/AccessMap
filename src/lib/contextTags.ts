@@ -29,15 +29,26 @@ export type ContextTag =
   | 'wet_spring'
   | 'construction_temporary'
   | 'shaded_summer'
-  | 'event_temporary';
+  | 'event_temporary'
+  // ── Disability tags (Sprint 3) — WHO a barrier affects. Another subset of
+  //    context tags sharing the same flags.context_tags column. Lets a user
+  //    filter the map to barriers relevant to their access need. The tag
+  //    describes the BARRIER ("this is a mobility barrier"), never the
+  //    reporter's own disability. See DISABILITY_TAGS. ──
+  | 'mobility_barrier'
+  | 'vision_hazard'
+  | 'hearing_concern'
+  | 'cognitive_load'
+  | 'temporary_closure';
 
 /**
- * The GENERAL (non-seasonal) subset of ContextTag — everything in CONTEXT_TAGS.
- * Typing CONTEXT_TAGS / CONTEXT_TAG_LABELS with this (rather than the full
- * union) keeps `CONTEXT_TAG_LABELS[tag]` well-typed in the general chip picker,
- * since adding seasonal members to ContextTag widened the union.
+ * The GENERAL subset of ContextTag — everything in CONTEXT_TAGS (i.e. neither
+ * a seasonal nor a disability tag). Typing CONTEXT_TAGS / CONTEXT_TAG_LABELS
+ * with this (rather than the full union) keeps `CONTEXT_TAG_LABELS[tag]`
+ * well-typed in the general chip picker, since the seasonal and disability
+ * members widened the union.
  */
-export type GeneralContextTag = Exclude<ContextTag, SeasonalTag>;
+export type GeneralContextTag = Exclude<ContextTag, SeasonalTag | DisabilityTag>;
 
 /**
  * Canonical chip display order. The UI renders chips in this sequence so the
@@ -90,6 +101,39 @@ export const SEASONAL_TAGS: ReadonlyArray<SeasonalTag> = Object.freeze([
 ]);
 
 /**
+ * The disability subset of ContextTag. Like SeasonalTag, kept as an explicit
+ * union (not derived from the array) so callers can narrow to it.
+ */
+export type DisabilityTag =
+  | 'mobility_barrier'
+  | 'vision_hazard'
+  | 'hearing_concern'
+  | 'cognitive_load'
+  | 'temporary_closure';
+
+/**
+ * Disability tags (Sprint 3) — a small subset of context tags describing WHO a
+ * barrier affects, so a user with a specific access need can filter the map to
+ * only the barriers relevant to them (mobility, vision, hearing, cognitive,
+ * temporary). Stored in the same `flags.context_tags` column; rendered in their
+ * own chip group so the "who this affects" angle reads clearly.
+ *
+ * IMPORTANT privacy boundary (Jordan gate): each tag describes the BARRIER, not
+ * the reporter's disability. "mobility_barrier" means "this obstacle affects
+ * wheelchair/walker/scooter users" — it never records anything about who filed
+ * or who is reading the flag.
+ *
+ * Frozen and intentionally short — Sky can expand the list later.
+ */
+export const DISABILITY_TAGS: ReadonlyArray<DisabilityTag> = Object.freeze([
+  'mobility_barrier',
+  'vision_hazard',
+  'hearing_concern',
+  'cognitive_load',
+  'temporary_closure',
+]);
+
+/**
  * Human-readable label for each tag. Used for chip text and accessibility
  * labels. Frozen so a screen can't mutate it. If you change a label here,
  * remember screen readers will read the new value verbatim — keep it short
@@ -121,12 +165,29 @@ export const SEASONAL_TAG_LABELS: Readonly<Record<SeasonalTag, string>> = Object
 });
 
 /**
+ * Human-readable labels for the disability tags. Kept in a separate map (like
+ * SEASONAL_TAG_LABELS) so each chip group owns its own vocabulary; `tagLabel`
+ * unifies all three for code that just needs "the label for this tag". These
+ * read as plain-language descriptions of who a barrier affects, since screen
+ * readers speak them verbatim in both the picker and the map filter.
+ */
+export const DISABILITY_TAG_LABELS: Readonly<Record<DisabilityTag, string>> = Object.freeze({
+  mobility_barrier: 'Mobility (wheelchair, walker, scooter)',
+  vision_hazard: 'Low vision or blind',
+  hearing_concern: 'Deaf or hard of hearing',
+  cognitive_load: 'Confusing layout or signage',
+  temporary_closure: 'Temporary closure',
+});
+
+/**
  * Display label for ANY context tag — general or seasonal. Use this anywhere
  * a tag from a mixed source (e.g. a flag's stored `context_tags` array) needs
  * to be shown, so seasonal and general tags both resolve correctly.
  */
 export function tagLabel(tag: ContextTag): string {
-  return isSeasonalTag(tag) ? SEASONAL_TAG_LABELS[tag] : CONTEXT_TAG_LABELS[tag];
+  if (isSeasonalTag(tag)) return SEASONAL_TAG_LABELS[tag];
+  if (isDisabilityTag(tag)) return DISABILITY_TAG_LABELS[tag];
+  return CONTEXT_TAG_LABELS[tag];
 }
 
 /**
@@ -138,6 +199,17 @@ export function isSeasonalTag(tag: ContextTag): tag is SeasonalTag {
 }
 
 const SEASONAL_TAG_SET: ReadonlySet<string> = new Set(SEASONAL_TAGS);
+
+/**
+ * Type guard: is this tag one of the disability ones? Lets the detail view and
+ * the map filter narrow to the disability subset and group its chips
+ * separately from general/seasonal context chips.
+ */
+export function isDisabilityTag(tag: ContextTag): tag is DisabilityTag {
+  return DISABILITY_TAG_SET.has(tag);
+}
+
+const DISABILITY_TAG_SET: ReadonlySet<string> = new Set(DISABILITY_TAGS);
 
 /**
  * Maximum number of context tags a single flag may carry — SHARED across the
@@ -154,7 +226,11 @@ export const MAX_CONTEXT_TAGS = 5;
  * vocabularies so a stored seasonal tag validates (and therefore renders) just
  * like a general one. Built from the two source arrays so they never drift.
  */
-const VALID_TAG_SET: ReadonlySet<string> = new Set([...CONTEXT_TAGS, ...SEASONAL_TAGS]);
+const VALID_TAG_SET: ReadonlySet<string> = new Set([
+  ...CONTEXT_TAGS,
+  ...SEASONAL_TAGS,
+  ...DISABILITY_TAGS,
+]);
 
 /**
  * Type guard: is the given value one of the known ContextTag strings?
@@ -217,4 +293,34 @@ export function sanitizeTagList(raw: ReadonlyArray<unknown> | unknown): ContextT
     if (out.length >= MAX_CONTEXT_TAGS) break;
   }
   return out;
+}
+
+/**
+ * Pure predicate powering the map's "Who does this affect?" filter (Sprint 3).
+ * Given a flag's stored `context_tags` and the set of disability tags the user
+ * has selected, decide whether the flag should stay visible.
+ *
+ * Semantics:
+ *   - No selection (empty `selected`) → always visible. This is the default,
+ *     "show everything" state, so legacy flags with no disability tag are
+ *     never hidden unless the user actively narrows by access need.
+ *   - One or more selected → OR match: the flag is visible if it carries AT
+ *     LEAST ONE of the selected disability tags. A user with multiple needs
+ *     (e.g. mobility + vision) wants every barrier touching either, not only
+ *     barriers tagged with both.
+ *   - A flag with no disability tags is hidden whenever a filter is active —
+ *     it isn't known to affect the selected need.
+ *
+ * Defensive: tolerates a missing/dirty `tags` value (null, undefined,
+ * non-array) by treating it as "no tags", so a bad DB row can't crash the
+ * map filter. Kept here (pure, no React/Supabase) so the filter logic is
+ * unit-testable independent of the screen.
+ */
+export function matchesDisabilityFilter(
+  tags: ReadonlyArray<unknown> | null | undefined,
+  selected: ReadonlyArray<DisabilityTag>,
+): boolean {
+  if (selected.length === 0) return true;
+  if (!Array.isArray(tags)) return false;
+  return selected.some((tag) => tags.includes(tag));
 }

@@ -15,15 +15,20 @@
 import {
   CONTEXT_TAGS,
   CONTEXT_TAG_LABELS,
+  DISABILITY_TAGS,
+  DISABILITY_TAG_LABELS,
   MAX_CONTEXT_TAGS,
   SEASONAL_TAGS,
   SEASONAL_TAG_LABELS,
+  isDisabilityTag,
   isSeasonalTag,
   isValidTag,
+  matchesDisabilityFilter,
   sanitizeTagList,
   tagLabel,
   toggleTag,
   type ContextTag,
+  type DisabilityTag,
 } from '../contextTags';
 
 describe('contextTags vocabulary', () => {
@@ -358,5 +363,149 @@ describe('seasonal tags (W6-5)', () => {
     const result = toggleTag(atCap, 'event_temporary');
     expect(result).toHaveLength(MAX_CONTEXT_TAGS);
     expect(result).not.toContain('event_temporary');
+  });
+});
+
+describe('disability tags (Sprint 3)', () => {
+  it('exposes exactly 5 disability tags', () => {
+    expect(DISABILITY_TAGS.length).toBe(5);
+  });
+
+  it('lists the expected disability tags', () => {
+    expect([...DISABILITY_TAGS]).toEqual([
+      'mobility_barrier',
+      'vision_hazard',
+      'hearing_concern',
+      'cognitive_load',
+      'temporary_closure',
+    ]);
+  });
+
+  it('DISABILITY_TAGS is frozen', () => {
+    expect(Object.isFrozen(DISABILITY_TAGS)).toBe(true);
+  });
+
+  it('DISABILITY_TAG_LABELS is frozen', () => {
+    expect(Object.isFrozen(DISABILITY_TAG_LABELS)).toBe(true);
+  });
+
+  it('every disability tag has a non-empty label', () => {
+    for (const tag of DISABILITY_TAGS) {
+      expect(DISABILITY_TAG_LABELS[tag]).toBeDefined();
+      expect(DISABILITY_TAG_LABELS[tag].length).toBeGreaterThan(0);
+    }
+  });
+
+  it('disability label keys match the disability tag list exactly', () => {
+    const labelKeys = Object.keys(DISABILITY_TAG_LABELS).sort();
+    const tagKeys = [...DISABILITY_TAGS].sort();
+    expect(labelKeys).toEqual(tagKeys);
+  });
+
+  it('disability tags do not overlap with general or seasonal vocabularies', () => {
+    const others = new Set<string>([...CONTEXT_TAGS, ...SEASONAL_TAGS]);
+    for (const tag of DISABILITY_TAGS) {
+      expect(others.has(tag)).toBe(false);
+    }
+  });
+
+  it('isValidTag accepts every disability tag', () => {
+    for (const tag of DISABILITY_TAGS) {
+      expect(isValidTag(tag)).toBe(true);
+    }
+  });
+
+  it('isDisabilityTag is true for disability tags and false for the others', () => {
+    for (const tag of DISABILITY_TAGS) {
+      expect(isDisabilityTag(tag)).toBe(true);
+    }
+    for (const tag of CONTEXT_TAGS) {
+      expect(isDisabilityTag(tag)).toBe(false);
+    }
+    for (const tag of SEASONAL_TAGS) {
+      expect(isDisabilityTag(tag)).toBe(false);
+    }
+  });
+
+  it('isSeasonalTag is false for disability tags (the two subsets are disjoint)', () => {
+    for (const tag of DISABILITY_TAGS) {
+      expect(isSeasonalTag(tag)).toBe(false);
+    }
+  });
+
+  it('tagLabel resolves disability tags to their disability label', () => {
+    for (const tag of DISABILITY_TAGS) {
+      expect(tagLabel(tag)).toBe(DISABILITY_TAG_LABELS[tag]);
+    }
+  });
+
+  it('sanitizeTagList keeps a mix of general, seasonal, and disability tags', () => {
+    expect(
+      sanitizeTagList(['morning_rush', 'icy_winter', 'mobility_barrier']),
+    ).toEqual(['morning_rush', 'icy_winter', 'mobility_barrier']);
+  });
+
+  it('toggleTag enforces the shared cap across all three subsets', () => {
+    const atCap: ContextTag[] = [
+      'morning_rush',
+      'icy_winter',
+      'mobility_barrier',
+      'vision_hazard',
+      'hearing_concern',
+    ];
+    expect(atCap).toHaveLength(MAX_CONTEXT_TAGS);
+    const result = toggleTag(atCap, 'cognitive_load');
+    expect(result).toHaveLength(MAX_CONTEXT_TAGS);
+    expect(result).not.toContain('cognitive_load');
+  });
+});
+
+describe('matchesDisabilityFilter', () => {
+  it('returns true for any flag when no disability tags are selected', () => {
+    // The "show everything" default — legacy/untagged flags must stay visible.
+    expect(matchesDisabilityFilter([], [])).toBe(true);
+    expect(matchesDisabilityFilter(['mobility_barrier'], [])).toBe(true);
+    expect(matchesDisabilityFilter(null, [])).toBe(true);
+    expect(matchesDisabilityFilter(undefined, [])).toBe(true);
+  });
+
+  it('keeps a flag that carries the single selected tag', () => {
+    expect(matchesDisabilityFilter(['mobility_barrier'], ['mobility_barrier'])).toBe(true);
+  });
+
+  it('hides a flag that does not carry the selected tag', () => {
+    expect(matchesDisabilityFilter(['vision_hazard'], ['mobility_barrier'])).toBe(false);
+  });
+
+  it('hides a flag with no tags whenever a filter is active', () => {
+    expect(matchesDisabilityFilter([], ['mobility_barrier'])).toBe(false);
+    expect(matchesDisabilityFilter(null, ['mobility_barrier'])).toBe(false);
+    expect(matchesDisabilityFilter(undefined, ['mobility_barrier'])).toBe(false);
+  });
+
+  it('OR-matches across multiple selected tags', () => {
+    const selected: DisabilityTag[] = ['mobility_barrier', 'vision_hazard'];
+    // Flag has one of the two → visible.
+    expect(matchesDisabilityFilter(['vision_hazard'], selected)).toBe(true);
+    expect(matchesDisabilityFilter(['mobility_barrier'], selected)).toBe(true);
+    // Flag has neither → hidden.
+    expect(matchesDisabilityFilter(['hearing_concern'], selected)).toBe(false);
+  });
+
+  it('matches even when the flag also carries unrelated general/seasonal tags', () => {
+    expect(
+      matchesDisabilityFilter(
+        ['morning_rush', 'icy_winter', 'mobility_barrier'],
+        ['mobility_barrier'],
+      ),
+    ).toBe(true);
+  });
+
+  it('tolerates a non-array tags value without throwing', () => {
+    expect(matchesDisabilityFilter('mobility_barrier' as unknown as string[], ['mobility_barrier'])).toBe(
+      false,
+    );
+    expect(matchesDisabilityFilter(42 as unknown as string[], ['mobility_barrier'])).toBe(false);
+    expect(matchesDisabilityFilter({} as unknown as string[], ['mobility_barrier'])).toBe(false);
   });
 });

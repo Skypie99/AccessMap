@@ -34,7 +34,7 @@ import {
   type FlagContentPatch,
 } from '@/lib/flags';
 import { severityA11y, statusA11y } from '@/lib/a11yText';
-import { isSeasonalTag, isValidTag, tagLabel } from '@/lib/contextTags';
+import { isDisabilityTag, isSeasonalTag, isValidTag, tagLabel } from '@/lib/contextTags';
 import { addFlagPhoto, listFlagPhotos } from '@/lib/photos';
 import { MAX_COMMENT_LENGTH } from '@/lib/comments';
 import { useComments } from '@/hooks/useComments';
@@ -283,13 +283,15 @@ export default function FlagDetailModal({
   const coordsA11y = `Coordinates ${shownFlag.lat.toFixed(5)} latitude, ${shownFlag.lng.toFixed(5)} longitude`;
   const canEdit = isOwn && status === 'open';
 
-  // Split the flag's stored context_tags into general "conditions" and
-  // seasonal groups so each renders under its own heading. isValidTag scrubs
-  // any unknown/dirty values first (so a future vocabulary change can't crash
-  // the render); isSeasonalTag then partitions what remains.
+  // Split the flag's stored context_tags into general "conditions", seasonal,
+  // and disability groups so each renders under its own heading. isValidTag
+  // scrubs any unknown/dirty values first (so a future vocabulary change can't
+  // crash the render); the type guards then partition what remains. General =
+  // whatever's left after pulling out the two named subsets.
   const validTags = (shownFlag.context_tags ?? []).filter(isValidTag);
-  const generalTags = validTags.filter((t) => !isSeasonalTag(t));
   const seasonalTags = validTags.filter(isSeasonalTag);
+  const disabilityTags = validTags.filter(isDisabilityTag);
+  const generalTags = validTags.filter((t) => !isSeasonalTag(t) && !isDisabilityTag(t));
 
   const handleSaveEdit = async () => {
     if (busy || !shownFlag) return;
@@ -497,6 +499,7 @@ export default function FlagDetailModal({
               {[
                 { key: 'conditions', heading: 'Conditions', tags: generalTags },
                 { key: 'seasonal', heading: 'Seasonal', tags: seasonalTags },
+                { key: 'disability', heading: 'Who this affects', tags: disabilityTags },
               ].map(({ key, heading, tags }) =>
                 tags.length > 0 ? (
                   <React.Fragment key={key}>
