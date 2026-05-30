@@ -24,7 +24,8 @@
         "simulator": false
       },
       "env": {
-        "APP_ENV": "preview"
+        "APP_ENV": "preview",
+        "SENTRY_DISABLE_AUTO_UPLOAD": "true"
       }
     },
 

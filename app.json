@@ -10,6 +10,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.accessmap.app",
+      "appleTeamId": "S78F8ZA8QU",
       "buildNumber": "2",
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "AccessMap uses your location to show nearby accessibility flags and to attach your location when you report a new flag.",

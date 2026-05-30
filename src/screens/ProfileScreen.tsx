@@ -19,6 +19,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { useAuth } from '@/lib/auth';
+import { deleteAccount } from '@/lib/account';
 import { confirm } from '@/lib/confirm';
 import { errorMessage } from '@/lib/errors';
 import { signOut, supabase } from '@/lib/supabase';
@@ -225,6 +226,8 @@ export default function ProfileScreen() {
   // tier pill in the hero card. Inline (not a separate component file)
   // since it's <40 LOC of JSX and reads cleanly here next to the pill.
   const [tierExplainerOpen, setTierExplainerOpen] = useState(false);
+  const [deleteAccountOpen, setDeleteAccountOpen] = useState(false);
+  const [deletingAccount, setDeletingAccount] = useState(false);
 
   // Edit-name state. nameDraft is what the user is typing; profile?.display_name
   // is the persisted value. A Save button fires only when they actually differ.
@@ -573,6 +576,23 @@ export default function ProfileScreen() {
     AccessibilityInfo.announceForAccessibility(
       'Intro reset. You will see it again on next sign in.',
     );
+  }, [user]);
+
+  const handleDeleteAccount = useCallback(async () => {
+    if (!user) return;
+    setDeletingAccount(true);
+    try {
+      await deleteAccount(user.id);
+      // Auth state change (SIGNED_OUT) fires automatically; screen unmounts.
+    } catch (e) {
+      if (mountedRef.current) {
+        Alert.alert(
+          'Could not delete account',
+          errorMessage(e, 'Something went wrong. Your account was not deleted.'),
+        );
+        setDeletingAccount(false);
+      }
+    }
   }, [user]);
 
   // Opens the detail modal from the My Reports list.
@@ -1316,7 +1336,79 @@ export default function ProfileScreen() {
         >
           <Text style={styles.signOutText}>Sign out</Text>
         </Pressable>
+
+        <Pressable
+          style={styles.deleteAccountBtn}
+          onPress={() => setDeleteAccountOpen(true)}
+          accessibilityRole="button"
+          accessibilityLabel="Delete your account"
+          accessibilityHint="Opens a confirmation dialog before permanently deleting your account and data"
+        >
+          <Text style={styles.deleteAccountText}>Delete Account</Text>
+        </Pressable>
       </ScrollView>
+
+      {/* Account-deletion confirmation. Two-button destructive pattern:
+          Cancel (neutral) + Delete Account (red). The Delete button shows a
+          spinner while the Edge Function is in-flight and is disabled to prevent
+          double-taps. accessibilityViewIsModal hides the underlying screen from
+          screen readers while the dialog is open. */}
+      <Modal
+        visible={deleteAccountOpen}
+        animationType="slide"
+        transparent
+        onRequestClose={() => {
+          if (!deletingAccount) setDeleteAccountOpen(false);
+        }}
+      >
+        <View style={styles.deleteBackdrop}>
+          <View style={styles.deleteSheet} accessibilityViewIsModal>
+            <Text style={styles.deleteTitle} accessibilityRole="header">
+              Delete your account?
+            </Text>
+            <Text style={styles.deleteBody}>
+              This will permanently delete your account and personal information.
+              Your accessibility reports will remain on the map anonymously to
+              help the community. This cannot be undone.
+            </Text>
+            <Text style={styles.deleteBodySecondary}>
+              Want to remove your reports too? Contact support.
+            </Text>
+            <View style={styles.deleteActions}>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.deleteCancelBtn,
+                  pressed && styles.deleteCancelBtnPressed,
+                ]}
+                onPress={() => setDeleteAccountOpen(false)}
+                disabled={deletingAccount}
+                accessibilityRole="button"
+                accessibilityLabel="Cancel account deletion"
+              >
+                <Text style={styles.deleteCancelText}>Cancel</Text>
+              </Pressable>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.deleteConfirmBtn,
+                  pressed && styles.deleteConfirmBtnPressed,
+                  deletingAccount && styles.deleteConfirmBtnDisabled,
+                ]}
+                onPress={handleDeleteAccount}
+                disabled={deletingAccount}
+                accessibilityRole="button"
+                accessibilityLabel="Confirm account deletion"
+                accessibilityState={{ busy: deletingAccount, disabled: deletingAccount }}
+              >
+                {deletingAccount ? (
+                  <ActivityIndicator color="#fff" size="small" />
+                ) : (
+                  <Text style={styles.deleteConfirmText}>Delete Account</Text>
+                )}
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
 
       <MyReportsModal
         visible={reportsOpen}
@@ -1943,4 +2035,75 @@ const makeStyles = (color: ColorTheme) =>
       justifyContent: 'center',
     },
     signOutText: { color: color.text, fontWeight: '600' },
+    // Destructive button — text-only red, not a filled button, so it reads as
+    // a secondary action well below the sign-out affordance.
+    deleteAccountBtn: {
+      marginTop: 8,
+      marginBottom: 32,
+      alignSelf: 'center',
+      paddingHorizontal: 24,
+      paddingVertical: 12,
+      minHeight: 44,
+      justifyContent: 'center',
+    },
+    deleteAccountText: { color: '#D93025', fontWeight: '600', fontSize: 15 },
+    // Deletion confirmation modal — translucent backdrop + centred card.
+    deleteBackdrop: {
+      flex: 1,
+      backgroundColor: color.scrim,
+      justifyContent: 'center',
+      padding: 24,
+    },
+    deleteSheet: {
+      backgroundColor: color.surface,
+      borderRadius: radius.xl,
+      padding: 24,
+      gap: 16,
+      ...shadow.e3,
+    },
+    deleteTitle: {
+      fontSize: 20,
+      fontWeight: '700',
+      color: color.textStrong,
+      letterSpacing: -0.3,
+    },
+    deleteBody: {
+      fontSize: 15,
+      color: color.text,
+      lineHeight: 22,
+    },
+    deleteBodySecondary: {
+      fontSize: 13,
+      color: color.textMuted,
+      lineHeight: 18,
+      marginTop: -4,
+    },
+    deleteActions: {
+      flexDirection: 'row',
+      gap: 12,
+      marginTop: 4,
+    },
+    deleteCancelBtn: {
+      flex: 1,
+      paddingVertical: 14,
+      borderRadius: radius.md,
+      backgroundColor: color.surfaceNeutral,
+      alignItems: 'center',
+      minHeight: 48,
+      justifyContent: 'center',
+    },
+    deleteCancelBtnPressed: { opacity: 0.75 },
+    deleteCancelText: { color: color.text, fontWeight: '600', fontSize: 15 },
+    deleteConfirmBtn: {
+      flex: 1,
+      paddingVertical: 14,
+      borderRadius: radius.md,
+      backgroundColor: '#D93025',
+      alignItems: 'center',
+      minHeight: 48,
+      justifyContent: 'center',
+    },
+    deleteConfirmBtnPressed: { opacity: 0.85 },
+    deleteConfirmBtnDisabled: { opacity: 0.55 },
+    deleteConfirmText: { color: '#fff', fontWeight: '700', fontSize: 15 },
   });
