@@ -1,14 +1,36 @@
 # AccessMap — Project State
 
-**Updated:** 2026-05-29 (Phase 2 Track A quality gates wired; Phase 1 complete)
-**Source:** qa-reports/2026-05-29_Rory_LighthouseCI_VersionBump.md | qa-reports/2026-05-29_Shamus_Wave2QuickWins.md | PROJECT_STATE housekeeping
-**Current Branch SHA:** `374f1bb` · Tests: 1160/1160 · TSC errors: 0 · Test suites: 72
+**Updated:** 2026-05-30 (Phase 4 feature branches built + git untangle; see qa-reports/2026-05-30_Rory_GitCleanup.md)
+**Source:** qa-reports/2026-05-30_Rory_GitCleanup.md | qa-reports/2026-05-30_Gary_Phase4Tests.md | PROJECT_STATE housekeeping
+**Current Branch SHA (`feat/phase4-multi-photo`):** `4c04975` · Tests: 1329 passed / 18 todo (1347) · TSC errors: 0 · Test suites: 84
+
+---
+
+## Phase 4 — feature branches built, AWAITING SKY MERGE
+
+Phase 4 work lives on branches (none on `main` yet). After the 2026-05-30 git
+untangle (a concurrent `--amend` had squashed W6-5 seasonal tags + W6-7 battery
+caching + a11y into one commit), each branch now holds a single, clean feature.
+All are TypeScript-clean and tests pass.
+
+| Branch | What | State |
+|---|---|---|
+| `feat/phase4-multi-photo` | Comments backend+UI, multi-photo gallery (PhotoGallery + photos.ts), Phase 4 a11y polish, **Gary's coverage folded in** (PhotoGallery/photos/useComments/comments tests) | **READY FOR MERGE** — tsc 0, 1347 tests (1329 pass / 18 todo), 84 suites |
+| `feat/phase4-seasonal-tags` | W6-5 seasonal context tags — `contextTags.ts` vocabulary + validation, ReportFlagModal seasonal chips, FlagDetailModal display (carries the squashed Phase-4 modal a11y hunks) | Clean single-feature — tsc 0, tests pass (rebuilt off `c9b79d7`) |
+| `feat/phase4-battery-caching` | W6-7 battery + network caching — flagsStore SWR cache-first paint + freshness gate (`refreshIfStale`), location `getLastKnownPositionAsync` fast-path + `maximumAge` (carries the squashed comments-section a11y hunks in MapScreen) | Clean single-feature — tsc 0, tests pass (rebuilt off `c9b79d7`) |
+
+**Phase 4 migrations (files only — AWAITING SKY APPLY, never applied by agents):**
+- `2026-05-30_flag_comments.sql` — `public.flag_comments` table + RLS
+- `2026-05-30_flag_reopen_requests.sql` — reopen-request workflow
+- `2026-05-30_flag_creation_rate_limit.sql` — anti-spam rate limit on flag insert
+
+**Note for Sky:** a concurrent `feat/sprint3-*` line (e.g. `feat/sprint3-disability-filtering`, commit `c3cddf6` "disability filtering Phase A") was built on top of the *old* tangled commit `6273cd4` and is still evolving in the main worktree — left untouched. The old tangle remains reachable from those sprint3 branches, so nothing was lost.
 
 ---
 
 ## Current Status
 
-**Phase:** Phase 1 COMPLETE → Phase 2 STARTED (2026-05-29)
+**Phase:** Phase 1 COMPLETE → Phase 2 STARTED (2026-05-29) → Phase 4 feature branches built (2026-05-30, awaiting merge)
 
 **Phase 2 Active Branches:**
 
