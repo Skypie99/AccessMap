@@ -1,5 +1,15 @@
 # AccessMap — Project State
 
+> **2026-05-30 — Phase 4 MERGED to main ✅** (merge commit `f637653`)
+> Multi-photo gallery, flag comments, and accessibility polish, merged via `--no-ff`.
+> Verified: full Jest suite green (1329 tests / 87 suites). Supabase migrations
+> `supabase/migrations/2026-05-30_flag_comments.sql` and `..._flag_reopen_requests.sql`
+> ship with this merge as **PROPOSE-ONLY — AWAITING SKY APPLY**.
+> Remote branch `feat/phase4-multi-photo` deleted post-merge.
+
+---
+
+
 **Updated:** 2026-05-29 (Phase 2 Track A quality gates wired; Phase 1 complete)
 **Source:** qa-reports/2026-05-29_Rory_LighthouseCI_VersionBump.md | qa-reports/2026-05-29_Shamus_Wave2QuickWins.md | PROJECT_STATE housekeeping
 **Current Branch SHA:** `374f1bb` · Tests: 1160/1160 · TSC errors: 0 · Test suites: 72
