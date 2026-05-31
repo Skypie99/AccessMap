@@ -54,7 +54,7 @@ import type { FlagCategory, FlagRow, FlagStatus } from '@/types/database';
 import type { RootTabParamList } from '@/navigation/RootNavigator';
 import FlagDetailModal, { type DetailAction } from '@/components/FlagDetailModal';
 import PhotoLightboxModal from '@/components/PhotoLightboxModal';
-import { radius, shadow, size, spacing } from '@/theme';
+import { font, radius, shadow, size, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 
 // Statuses Tasks shows. Even if the provider's `statuses` is widened by the
@@ -1534,7 +1534,7 @@ const makeStyles = (color: ColorTheme) =>
       justifyContent: 'center',
       borderRadius: radius.circle,
     },
-    searchClearText: { fontSize: 16, fontWeight: '600', color: '#555' },
+    searchClearText: { fontSize: font.size.lg, fontWeight: font.weight.semibold, color: color.textMuted },
     sevFilterRow: {
       flexDirection: 'row',
       gap: 6,
@@ -1701,14 +1701,10 @@ const makeStyles = (color: ColorTheme) =>
     bulkBtnDisabled: { opacity: 0.45 },
     bulkBtnPressed: { opacity: 0.85 },
     bulkVerifyBtn: { backgroundColor: color.brand },
-    // #1e8449 on white-text ≈ 7.0:1 — meets AAA for 14pt bold. Bumped from
-    // #27ae60 (~2.83:1, AA fail) to clear WCAG 1.4.3 AA + 1.4.11 non-text 3:1.
-    bulkResolveBtn: { backgroundColor: '#1e8449' }, // deeper green than color.success for AA on white text (~7:1 vs 2.7:1)
-    // Watch fill: deep purple chosen so it's distinguishable from the
-    // brand-blue Verify and the green Resolve at a glance — even for
-    // protanopia/deuteranopia where blue and green can blur. #5b21b6 on
-    // white-text ≈ 8.2:1, comfortable AAA for 14pt bold.
-    bulkWatchBtn: { backgroundColor: '#5b21b6' },
+    // color.successStrong on white-text ≈ 4.6:1+ — WCAG 1.4.3 AA. color.success alone fails (~2.8:1).
+    bulkResolveBtn: { backgroundColor: color.successStrong },
+    // color.accentPurple: distinguishable from brand-blue + successStrong for protanopia/deuteranopia.
+    bulkWatchBtn: { backgroundColor: color.accentPurple },
     // Cancel uses the neutral chip palette so it doesn't compete for
     // attention with the primary actions.
     bulkCancelBtn: {

@@ -205,6 +205,7 @@ function ClusteredMarkers({
   markerRefs,
 }: ClusteredMarkersProps) {
   const map = useMap();
+  const themeColor = useColor();
 
   // Build the Supercluster index whenever the flag list changes. radius=60px
   // matches the native variant's radius={40} scaled up for typical web dpi.
@@ -319,7 +320,7 @@ function ClusteredMarkers({
                 <div
                   style={{
                     fontSize: 11,
-                    color: '#666',
+                    color: themeColor.textMuted,
                     textTransform: 'uppercase',
                     letterSpacing: 0.6,
                     marginTop: 2,

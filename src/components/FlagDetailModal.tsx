@@ -986,50 +986,50 @@ const makeStyles = (color: ColorTheme) =>
     },
     card: {
       backgroundColor: color.surface,
-      borderTopLeftRadius: 16,
-      borderTopRightRadius: 16,
-      paddingHorizontal: 20,
-      paddingTop: 16,
-      paddingBottom: 20,
-      gap: 12,
+      borderTopLeftRadius: radius.xl,
+      borderTopRightRadius: radius.xl,
+      paddingHorizontal: spacing.xl,
+      paddingTop: spacing.lg,
+      paddingBottom: spacing.xl,
+      gap: spacing.md,
       maxHeight: '90%',
     },
     headerRow: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 12,
+      gap: spacing.md,
     },
-    title: { fontSize: 20, fontWeight: '700', flex: 1, color: color.textStrong },
+    title: { fontSize: font.size.xxl, fontWeight: font.weight.bold, flex: 1, color: color.textStrong },
     closeBtn: {
       width: 32,
       height: 32,
-      borderRadius: 16,
+      borderRadius: radius.circle,
       backgroundColor: color.surfaceNeutral,
       alignItems: 'center',
       justifyContent: 'center',
     },
-    closeBtnText: { fontSize: 16, color: color.text, fontWeight: '700' },
+    closeBtnText: { fontSize: font.size.lg, color: color.text, fontWeight: font.weight.bold },
     body: { flexShrink: 1 },
-    bodyContent: { gap: 8, paddingBottom: 4 },
+    bodyContent: { gap: spacing.sm, paddingBottom: spacing.tight },
     metaRow: {
       flexDirection: 'row',
       flexWrap: 'wrap',
-      gap: 8,
-      marginTop: 4,
+      gap: spacing.sm,
+      marginTop: spacing.tight,
     },
     severityChip: {
       paddingHorizontal: 10,
       paddingVertical: 6,
       borderRadius: radius.circle,
     },
-    severityChipText: { color: color.textOnBrand, fontWeight: '700', fontSize: 12 },
+    severityChipText: { color: color.textOnBrand, fontWeight: font.weight.bold, fontSize: font.size.xs },
     sectionLabel: {
-      fontSize: 12,
-      fontWeight: '600',
+      fontSize: font.size.xs,
+      fontWeight: font.weight.semibold,
       color: color.textMuted,
       textTransform: 'uppercase',
       letterSpacing: 0.5,
-      marginTop: 8,
+      marginTop: spacing.sm,
     },
     description: { fontSize: font.size.md, color: color.textStrong, lineHeight: 21 },
     contextTagsRow: {
@@ -1040,16 +1040,16 @@ const makeStyles = (color: ColorTheme) =>
     },
     contextChip: {
       backgroundColor: color.surfaceNeutral,
-      borderRadius: 999,
+      borderRadius: radius.full,
       paddingHorizontal: 10,
       paddingVertical: 4,
     },
     contextChipText: {
-      fontSize: 12,
+      fontSize: font.size.xs,
       color: color.textMuted,
-      fontWeight: '500',
+      fontWeight: font.weight.medium,
     },
-    metaValue: { fontSize: 14, color: color.text },
+    metaValue: { fontSize: font.size.base, color: color.text },
     coordsRow: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -1072,8 +1072,8 @@ const makeStyles = (color: ColorTheme) =>
     },
     actionBtn: {
       paddingHorizontal: 14,
-      paddingVertical: 12,
-      borderRadius: 10,
+      paddingVertical: spacing.md,
+      borderRadius: radius.lg,
       minHeight: 44,
       alignItems: 'center',
       justifyContent: 'center',
@@ -1081,15 +1081,15 @@ const makeStyles = (color: ColorTheme) =>
       minWidth: 100,
     },
     verifyBtn: { backgroundColor: color.brand },
-    verifyText: { color: color.textOnBrand, fontWeight: '700', fontSize: 14 },
+    verifyText: { color: color.textOnBrand, fontWeight: font.weight.bold, fontSize: font.size.base },
     resolveBtn: { backgroundColor: color.success },
-    resolveText: { color: color.textOnBrand, fontWeight: '700', fontSize: 14 },
+    resolveText: { color: color.textOnBrand, fontWeight: font.weight.bold, fontSize: font.size.base },
     // Reject uses a neutral surface so it reads clearly in dark mode.
     // color.surfaceNeutral adapts to dark (#2a2a2a) automatically.
     rejectBtn: { backgroundColor: color.surfaceNeutral },
-    rejectText: { color: color.text, fontWeight: '700', fontSize: 14 },
+    rejectText: { color: color.text, fontWeight: font.weight.bold, fontSize: font.size.base },
     deleteBtn: { backgroundColor: color.errorStrong },
-    deleteText: { color: color.textOnBrand, fontWeight: '700', fontSize: 14 },
+    deleteText: { color: color.textOnBrand, fontWeight: font.weight.bold, fontSize: font.size.base },
     viewMapBtn: {
       backgroundColor: 'transparent',
       borderWidth: 1,
@@ -1098,7 +1098,7 @@ const makeStyles = (color: ColorTheme) =>
     // Outlined button: blue text on white card. Uses color.brandText
     // (#1c4f99 ≈ 7.6:1) instead of color.brand (#2f80ed ≈ 3.3:1) so it
     // stays AA-safe even if the font size drops below 14pt-bold.
-    viewMapBtnText: { color: color.brandText, fontWeight: '700', fontSize: 14 },
+    viewMapBtnText: { color: color.brandText, fontWeight: font.weight.bold, fontSize: font.size.base },
     secondaryRow: {
       flexDirection: 'row',
       // 4 buttons now (View on Map, Directions, Share, History) — wrap so
@@ -1114,21 +1114,21 @@ const makeStyles = (color: ColorTheme) =>
     },
     // Outlined Share button: blue text on white card. Uses color.brandText
     // for AA-safe contrast at any size (see viewMapBtnText note above).
-    shareBtnText: { color: color.brandText, fontWeight: '700', fontSize: 14 },
+    shareBtnText: { color: color.brandText, fontWeight: font.weight.bold, fontSize: font.size.base },
     // History sits next to Share — same outlined-blue treatment for visual
-    // consistency. Uses color.brandText (from CL2) for AA-safe contrast.
+    // consistency. Uses color.brandText for AA-safe contrast.
     historyBtn: {
       backgroundColor: 'transparent',
       borderWidth: 1,
       borderColor: color.brand,
     },
-    historyBtnText: { color: color.brandText, fontWeight: '700', fontSize: 14 },
+    historyBtnText: { color: color.brandText, fontWeight: font.weight.bold, fontSize: font.size.base },
     // Directions sits between View on Map and Share in the secondary row.
     // Filled brand-blue (not outlined) so it reads as the primary action of
     // the trio — getting somewhere is usually what the user wants more than
     // re-centering the map or sharing.
     directionsBtn: { backgroundColor: color.brand },
-    directionsBtnText: { color: color.textOnBrand, fontWeight: '700', fontSize: 14 },
+    directionsBtnText: { color: color.textOnBrand, fontWeight: font.weight.bold, fontSize: font.size.base },
     // Watch button — star pill between the location section and secondaryRow.
     // Neutral outline when unset; filled amber when actively watching so the
     // state is unambiguous without relying on the star glyph alone.
@@ -1155,23 +1155,23 @@ const makeStyles = (color: ColorTheme) =>
       opacity: 0.7,
     },
     watchBtnGlyph: {
-      fontSize: 16,
+      fontSize: font.size.lg,
       color: color.textSubtle,
     },
     watchBtnText: {
-      fontSize: 14,
-      fontWeight: '600',
+      fontSize: font.size.base,
+      fontWeight: font.weight.semibold,
       color: color.text,
     },
     watchBtnTextActive: {
       color: color.warningFg,
     },
     editBtn: { backgroundColor: color.surface, borderWidth: 1.5, borderColor: color.border },
-    editBtnText: { color: color.text, fontWeight: '700', fontSize: 14 },
-    editForm: { gap: 10, marginTop: 4, marginBottom: 8 },
+    editBtnText: { color: color.text, fontWeight: font.weight.bold, fontSize: font.size.base },
+    editForm: { gap: spacing.md, marginTop: spacing.tight, marginBottom: spacing.sm },
     editLabel: {
-      fontSize: 12,
-      fontWeight: '700',
+      fontSize: font.size.xs,
+      fontWeight: font.weight.bold,
       color: color.textMuted,
       textTransform: 'uppercase',
       letterSpacing: 0.5,
@@ -1179,9 +1179,9 @@ const makeStyles = (color: ColorTheme) =>
     editInput: {
       borderWidth: 1,
       borderColor: color.border,
-      borderRadius: 10,
-      padding: 10,
-      fontSize: 14,
+      borderRadius: radius.lg,
+      padding: spacing.md,
+      fontSize: font.size.base,
       color: color.text,
       backgroundColor: color.surface,
       minHeight: 72,
@@ -1189,20 +1189,19 @@ const makeStyles = (color: ColorTheme) =>
     },
     categoryRow: { flexGrow: 0 },
     categoryChip: {
-      paddingHorizontal: 12,
-      paddingVertical: 6,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.xs,
       borderRadius: radius.circle,
       borderWidth: 1.5,
       borderColor: color.border,
-      marginRight: 8,
+      marginRight: spacing.sm,
       backgroundColor: color.surface,
     },
     // Active chip: filled-brand, matching the MapScreen filter panel pattern.
-    // color.brand (#2f80ed) background with white text — same as filterPillActive.
     categoryChipActive: { borderColor: color.brand, backgroundColor: color.brand },
-    categoryChipText: { fontSize: 13, color: color.text },
-    categoryChipTextActive: { color: color.textOnBrand, fontWeight: '700' },
-    severityRow: { flexDirection: 'row', gap: 8 },
+    categoryChipText: { fontSize: font.size.sm, color: color.text },
+    categoryChipTextActive: { color: color.textOnBrand, fontWeight: font.weight.bold },
+    severityRow: { flexDirection: 'row', gap: spacing.sm },
     severityBtn: {
       width: 44,
       height: 44,
@@ -1213,18 +1212,18 @@ const makeStyles = (color: ColorTheme) =>
       borderColor: color.border,
       backgroundColor: color.surface,
     },
-    severityBtnText: { fontSize: 14, fontWeight: '700', color: color.text },
+    severityBtnText: { fontSize: font.size.base, fontWeight: font.weight.bold, color: color.text },
     severityBtnTextActive: { color: color.textOnBrand },
-    editActions: { flexDirection: 'row', gap: 10, marginTop: 4 },
+    editActions: { flexDirection: 'row', gap: spacing.md, marginTop: spacing.tight },
     cancelBtn: {
       flex: 1,
       backgroundColor: color.surface,
       borderWidth: 1.5,
       borderColor: color.border,
     },
-    cancelBtnText: { color: color.text, fontWeight: '700', fontSize: 14 },
+    cancelBtnText: { color: color.text, fontWeight: font.weight.bold, fontSize: font.size.base },
     saveBtn: { flex: 1, backgroundColor: color.brand },
-    saveBtnText: { color: color.textOnBrand, fontWeight: '700', fontSize: 14 },
+    saveBtnText: { color: color.textOnBrand, fontWeight: font.weight.bold, fontSize: font.size.base },
     // ── Comments ────────────────────────────────────────────────────────────
     commentsSection: {
       marginTop: spacing.md,
@@ -1251,7 +1250,7 @@ const makeStyles = (color: ColorTheme) =>
       gap: spacing.tight,
       // Negative horizontal margin so CommentBubble's paddingHorizontal
       // from the CommentBubble styles controls the visual inset instead.
-      marginHorizontal: -20,
+      marginHorizontal: -spacing.xl,
     },
     commentInputRow: {
       flexDirection: 'row',
@@ -1296,7 +1295,7 @@ const makeStyles = (color: ColorTheme) =>
     },
     commentSendBtnText: {
       color: color.textOnBrand,
-      fontWeight: '700',
+      fontWeight: font.weight.bold,
       fontSize: font.size.sm,
     },
     // Disability chip — distinct from general/seasonal: brand-tinted fill so
@@ -1312,7 +1311,7 @@ const makeStyles = (color: ColorTheme) =>
     },
     disabilityChipText: {
       color: color.brandText,
-      fontWeight: '600',
+      fontWeight: font.weight.semibold,
     },
     // Comment empty state — centered so the whitespace reads intentionally.
     commentsEmptyContainer: {
@@ -1321,7 +1320,7 @@ const makeStyles = (color: ColorTheme) =>
       gap: spacing.sm,
     },
     commentsEmptyIcon: {
-      fontSize: 28,
+      fontSize: font.size.xxl,
     },
     commentsEmptyLabel: {
       fontSize: font.size.base,

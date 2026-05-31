@@ -276,9 +276,9 @@ const makeStyles = (color: ColorTheme) =>
     },
     removeBtnPressed: { backgroundColor: 'rgba(0,0,0,0.82)' },
     removeIcon: {
-      color: '#fff',
-      fontSize: 13,
-      fontWeight: '700',
+      color: color.textOnBrand,
+      fontSize: font.size.sm,
+      fontWeight: font.weight.bold,
       lineHeight: 15,
     },
     addThumb: {
@@ -343,9 +343,9 @@ const makeStyles = (color: ColorTheme) =>
       borderRadius: radius.circle,
     },
     lightboxCounterText: {
-      color: '#fff',
+      color: color.textOnBrand,
       fontSize: font.size.sm,
-      fontWeight: '600',
+      fontWeight: font.weight.semibold,
     },
     lightboxClose: {
       position: 'absolute',
@@ -359,5 +359,5 @@ const makeStyles = (color: ColorTheme) =>
       justifyContent: 'center',
     },
     lightboxClosePressed: { backgroundColor: color.overlayBtnPressed },
-    lightboxCloseText: { fontSize: font.size.xl, color: '#fff', fontWeight: '700' },
+    lightboxCloseText: { fontSize: font.size.xl, color: color.textOnBrand, fontWeight: font.weight.bold },
   });

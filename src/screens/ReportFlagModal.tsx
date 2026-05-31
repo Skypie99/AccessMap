@@ -45,7 +45,7 @@ import {
 import { validReportTemplates, type ReportTemplate } from '@/lib/reportTemplates';
 import type { FlagCategory, FlagSeverity } from '@/types/database';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
-import { radius } from '@/theme';
+import { font, radius, spacing } from '@/theme';
 import { useReducedMotion } from '@/lib/accessibility';
 
 /** Emoji icon prefix for each disability tag — adds visual distinction without
@@ -732,8 +732,8 @@ const makeStyles = (color: ColorTheme) =>
     card: {
       flex: 1,
       backgroundColor: color.surface,
-      paddingHorizontal: 20,
-      paddingTop: 20,
+      paddingHorizontal: spacing.xl,
+      paddingTop: spacing.xl,
       paddingBottom: 0,
       borderTopLeftRadius: radius.xl,
       borderTopRightRadius: radius.xl,
@@ -742,24 +742,24 @@ const makeStyles = (color: ColorTheme) =>
       maxHeight: '88%',
     },
     scrollContent: { flex: 1 },
-    scrollContentContainer: { gap: 12, paddingBottom: 4 },
+    scrollContentContainer: { gap: spacing.md, paddingBottom: spacing.tight },
     title: {
-      fontSize: 20,
-      fontWeight: '700',
+      fontSize: font.size.xxl,
+      fontWeight: font.weight.bold,
       color: color.textStrong,
       letterSpacing: -0.3,
     },
-    location: { fontSize: 12, color: color.textMuted },
+    location: { fontSize: font.size.xs, color: color.textMuted },
     label: {
-      fontSize: 13,
-      fontWeight: '600',
+      fontSize: font.size.sm,
+      fontWeight: font.weight.semibold,
       color: color.textStrong,
-      marginTop: 4,
+      marginTop: spacing.tight,
     },
-    row: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
+    row: { flexDirection: 'row', gap: spacing.sm, flexWrap: 'wrap' },
     pill: {
-      paddingHorizontal: 12,
-      paddingVertical: 8,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
       borderRadius: radius.circle,
       backgroundColor: color.surfaceNeutral,
       // 44pt is the AccessMap baseline touch target (Apple HIG + WCAG 2.5.5).
@@ -767,8 +767,8 @@ const makeStyles = (color: ColorTheme) =>
       justifyContent: 'center',
     },
     pillActive: { backgroundColor: color.brand },
-    pillText: { color: color.text, fontSize: 13 },
-    pillTextActive: { color: color.textOnBrand, fontWeight: '600' },
+    pillText: { color: color.text, fontSize: font.size.sm },
+    pillTextActive: { color: color.textOnBrand, fontWeight: font.weight.semibold },
     sevBtn: {
       width: 44,
       height: 44,
@@ -778,13 +778,13 @@ const makeStyles = (color: ColorTheme) =>
       justifyContent: 'center',
     },
     sevBtnActive: {},
-    sevText: { fontSize: 16, color: color.text, fontWeight: '600' },
+    sevText: { fontSize: font.size.lg, color: color.text, fontWeight: font.weight.semibold },
     sevTextActive: { color: color.textOnBrand },
     input: {
       borderWidth: 1,
       borderColor: color.borderStrong,
       borderRadius: radius.md,
-      padding: 12,
+      padding: spacing.md,
       minHeight: 80,
       textAlignVertical: 'top',
       color: color.text,
@@ -813,59 +813,56 @@ const makeStyles = (color: ColorTheme) =>
     photoNudge: {
       flexDirection: 'row',
       alignItems: 'flex-start',
-      gap: 8,
+      gap: spacing.sm,
       backgroundColor: color.warningBg,
-      borderRadius: 8,
-      paddingHorizontal: 12,
-      paddingVertical: 8,
-      marginBottom: 6,
+      borderRadius: radius.md,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+      marginBottom: spacing.xs,
     },
     photoNudgeIcon: {
-      fontSize: 18,
+      fontSize: font.size.xl,
       lineHeight: 22,
     },
     photoNudgeBody: {
       flex: 1,
-      fontSize: 12,
+      fontSize: font.size.xs,
       color: color.warningFg,
       lineHeight: 17,
     },
     photoNudgeBold: {
-      fontWeight: '700',
+      fontWeight: font.weight.bold,
       color: color.warningFg,
     },
     actions: {
       flexDirection: 'row',
-      gap: 12,
-      paddingHorizontal: 20,
-      paddingTop: 12,
-      paddingBottom: 24,
+      gap: spacing.md,
+      paddingHorizontal: spacing.xl,
+      paddingTop: spacing.md,
+      paddingBottom: spacing.xxl,
       borderTopWidth: StyleSheet.hairlineWidth,
       borderTopColor: color.borderSubtle,
       backgroundColor: color.surface,
     },
     actionBtn: {
       flex: 1,
-      paddingVertical: 12,
-      borderRadius: 8,
+      paddingVertical: spacing.md,
+      borderRadius: radius.md,
       alignItems: 'center',
       minHeight: 44,
       justifyContent: 'center',
     },
     cancelBtn: { backgroundColor: color.surfaceNeutral },
-    cancelText: { color: color.text, fontWeight: '600' },
+    cancelText: { color: color.text, fontWeight: font.weight.semibold },
     submitBtn: { backgroundColor: color.brand },
     submitBtnDisabled: { opacity: 0.6 },
-    submitText: { color: color.textOnBrand, fontWeight: '700' },
+    submitText: { color: color.textOnBrand, fontWeight: font.weight.bold },
     // Context-tag chips. Three visual states matching accessibilityState:
     //   - unselected → outline (white bg, dark-blue border + text)  → 7.6:1 text/bg
     //   - selected   → solid dark-blue fill, white text              → 7.6:1 text/bg
     //   - disabled   → muted gray border + text on white             → 4.6:1 text/bg
-    // The active fill uses #1c4f99 (Cycle C floor, AA-large 4.5:1+ on 13pt-600
-    // and AA-large on white-text 7.6:1). This literal WILL switch to the
-    // `color.brandText` token CL2 added to src/theme.ts once the C4 and CL2
-    // branches both land — the Cycle C cleanup pass will reconcile. Don't
-    // import from CL2 yet (it isn't merged into this worktree).
+    // Active fill uses color.brandText (#1c4f99): AA on 13pt-600 (4.5:1+) and
+    // AA on white text (7.6:1). Cycle C cleanup — now uses token directly.
     // Touch target: paddingVertical 10 + line-height ~17 + minHeight 44 keeps
     // every chip at least 44pt tall regardless of dynamic-type scaling.
     tagChip: {
@@ -888,8 +885,8 @@ const makeStyles = (color: ColorTheme) =>
     },
     tagChipText: {
       color: color.brandText,
-      fontSize: 13,
-      fontWeight: '600',
+      fontSize: font.size.sm,
+      fontWeight: font.weight.semibold,
     },
     tagChipTextActive: {
       color: color.textOnBrand,
@@ -898,7 +895,7 @@ const makeStyles = (color: ColorTheme) =>
       color: color.textMutedAlt, // AA pass: on #f4f6f8 = 4.6:1
     },
     tagHelper: {
-      fontSize: 12,
+      fontSize: font.size.xs,
       color: color.textMutedAlt,
       marginTop: -4,
     },
@@ -910,10 +907,10 @@ const makeStyles = (color: ColorTheme) =>
     templateChip: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 6,
-      paddingHorizontal: 12,
+      gap: spacing.xs,
+      paddingHorizontal: spacing.md,
       paddingVertical: 10,
-      borderRadius: 999,
+      borderRadius: radius.full,
       backgroundColor: color.surface,
       borderWidth: 1,
       borderColor: color.brandText,
@@ -932,8 +929,8 @@ const makeStyles = (color: ColorTheme) =>
     },
     templateChipText: {
       color: color.brandText,
-      fontSize: 13,
-      fontWeight: '600',
+      fontSize: font.size.sm,
+      fontWeight: font.weight.semibold,
     },
     templateChipTextActive: {
       color: color.textOnBrand,
@@ -943,8 +940,8 @@ const makeStyles = (color: ColorTheme) =>
     disabilitySectionHeader: {
       borderTopWidth: StyleSheet.hairlineWidth,
       borderTopColor: color.borderSubtle,
-      paddingTop: 12,
-      marginTop: 4,
+      paddingTop: spacing.md,
+      marginTop: spacing.tight,
     },
     disabilityLabel: {
       color: color.brandText,
@@ -954,7 +951,7 @@ const makeStyles = (color: ColorTheme) =>
     disabilityTagChip: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 6,
+      gap: spacing.xs,
       backgroundColor: color.brandSofter,
       borderColor: color.brand,
     },
@@ -963,7 +960,7 @@ const makeStyles = (color: ColorTheme) =>
       borderColor: color.brandText,
     },
     disabilityTagIcon: {
-      fontSize: 15,
+      fontSize: font.size.md,
       lineHeight: 19,
     },
   });

@@ -163,11 +163,12 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   letter: {
+    // Intentional literal: always white on severity-colored pin backgrounds
+    // (no ThemeContext — these are map markers, not theme-responsive UI).
     color: '#fff',
     fontWeight: '800',
     letterSpacing: -1,
     textAlign: 'center',
-    // Prevent the letter from affecting the pin/badge layout
     includeFontPadding: false,
   },
 });

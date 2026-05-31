@@ -309,6 +309,8 @@ const makeStyles = (color: ColorTheme) =>
       ...shadow.e2,
     },
     clusterCount: {
+      // Intentional literal: must be darker than color.textStrong (#222) to clear
+      // WCAG AA on sev5 red (#e74c3c). '#111' = 5.1:1, '#222' = 3.1:1 (fails).
       color: '#111',
       fontSize: font.size.base,
       fontWeight: font.weight.bold,
