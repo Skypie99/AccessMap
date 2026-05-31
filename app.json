@@ -45,7 +45,12 @@
       "scope": "/",
       "startUrl": "/"
     },
+    "notification": {
+      "color": "#1a4fa3",
+      "androidMode": "default"
+    },
     "plugins": [
+      "expo-notifications",
       [
         "expo-location",
         {
