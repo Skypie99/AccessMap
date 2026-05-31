@@ -15,16 +15,3 @@ process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY =
 jest.mock('@react-native-async-storage/async-storage', () =>
   require('@react-native-async-storage/async-storage/jest/async-storage-mock'),
 );
-
-// Stub the Sentry native SDK. src/lib/analytics.ts (and sentry.ts) import it,
-// and analytics.ts is now imported transitively by several libs (photos,
-// comments, flags). Without this mock those test suites would try to load the
-// native @sentry/react-native module and crash with "NativeModule null".
-// The methods are jest.fn()s so analytics.test.ts can assert on them.
-jest.mock('@sentry/react-native', () => ({
-  init: jest.fn(),
-  wrap: (component) => component,
-  addBreadcrumb: jest.fn(),
-  setTag: jest.fn(),
-  captureException: jest.fn(),
-}));

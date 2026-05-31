@@ -1,5 +1,5 @@
 import 'react-native-gesture-handler';
-import { initSentry, Sentry } from '@/lib/sentry';
+import { initSentry } from '@/lib/sentry';
 initSentry();
 import React, { useCallback, useEffect, useState } from 'react';
 import { Platform, View } from 'react-native';
@@ -187,4 +187,4 @@ function App() {
   );
 }
 
-export default Sentry.wrap(App);
+export default App;

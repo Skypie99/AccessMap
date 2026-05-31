@@ -1,38 +1,16 @@
-// Analytics — a thin, no-PII wrapper over Sentry.
+// Analytics — no-PII event wrapper.
 //
-// Sprint 3 (Phase 5, Item 5): rather than add a second vendor (Amplitude /
-// Mixpanel / PostHog), we ride on the Sentry SDK that's already wired up in
-// src/lib/sentry.ts. Product events become Sentry *breadcrumbs* (so an error
-// report carries "what the user did right before it broke") and the current
-// screen becomes a Sentry *tag*.
+// Sentry was removed in Phase 5 (iOS 26 crash); re-wire to a real backend
+// (PostHog, Amplitude, etc.) in Phase 6. Until then all functions are stubs
+// that log to the Metro console in dev so callsites keep working unchanged.
 //
-// Why a wrapper at all: it's the single chokepoint where the "never log PII"
-// rule is enforced in code. Every event flows through stripPII() below, so a
-// callsite that accidentally passes user_id / flag_id / lat / lng / a name /
-// free text has that field dropped before it ever leaves the device. Swap the
-// backend here later (PostHog, etc.) without touching a single callsite.
-//
-// Everything here is synchronous and makes no network calls of its own —
-// Sentry batches and flushes on its own schedule.
-
-import { Sentry } from './sentry';
+// The PII guard (stripPII) stays — any future backend wiring must run through
+// it before events leave the device.
 
 // ---------------------------------------------------------------------------
 // PII guard — the load-bearing part of this file.
 // ---------------------------------------------------------------------------
 
-// Keys we drop no matter what. Two lists so we don't accidentally over-strip:
-//
-//  - EXACT: short, ambiguous names that would cause false positives as a
-//    substring. e.g. matching the substring "lat" would wrongly strip
-//    "platform"; matching "name" everywhere is fine, but "lat"/"lng" must be
-//    whole-key only.
-//  - SUBSTRING: long, unambiguous PII names that are safe to match anywhere
-//    in a key (e.g. "user_id" inside "reporter_user_id").
-//
-// NOTE: "comment_length_bucket" deliberately survives — we match the exact key
-// "comment"/"content" (the raw text), never the substring, so the length
-// *bucket* is allowed through.
 const PII_EXACT_KEYS = new Set<string>([
   'lat',
   'lng',
@@ -75,10 +53,9 @@ function isPiiKey(key: string): boolean {
 /**
  * Return a copy of `props` containing only safe, primitive values:
  *   - keys that aren't on the PII denylist, and
- *   - values that are a string, number, or boolean (objects / arrays / null /
- *     functions are dropped — they're a common way for nested PII to sneak in).
+ *   - values that are a string, number, or boolean.
  *
- * Exported so the unit tests can assert the guard directly.
+ * Exported so the unit tests can assert on the guard directly.
  */
 export function stripPII(
   props: Record<string, unknown>,
@@ -94,7 +71,7 @@ export function stripPII(
 }
 
 /**
- * Bucket a comment's length so we can track engagement without ever logging
+ * Bucket a comment's length so we can track engagement without logging
  * the comment text itself. Exported so comments.ts can reuse the exact bins.
  */
 export function commentLengthBucket(length: number): 'short' | 'medium' | 'long' {
@@ -104,84 +81,37 @@ export function commentLengthBucket(length: number): 'short' | 'medium' | 'long'
 }
 
 // ---------------------------------------------------------------------------
-// Public API — the three functions every callsite uses.
+// Public API — stub implementations until Phase 6 wires a real backend.
 // ---------------------------------------------------------------------------
 
-/**
- * Record a product event as a Sentry breadcrumb. Properties are PII-scrubbed
- * before they leave the device.
- *
- * Only pass non-PII attributes: flag_category, flag_severity, photo_count,
- * comment_length_bucket, platform, etc. NEVER pass user_id, flag_id, lat/lng,
- * description text, or display_name — stripPII() will drop them, but don't
- * rely on that as a license to pass them.
- */
 export function trackEvent(
   name: string,
   properties?: Record<string, string | number | boolean>,
 ): void {
-  const data = properties ? stripPII(properties) : undefined;
-
-  Sentry.addBreadcrumb({
-    category: 'analytics',
-    type: 'default',
-    level: 'info',
-    message: name,
-    data,
-  });
-
   if (__DEV__) {
-    // Visible in the Metro console during local dev so you can confirm events fire.
+    const data = properties ? stripPII(properties) : {};
     // eslint-disable-next-line no-console
-    console.log('[analytics]', name, data ?? {});
+    console.log('[analytics]', name, data);
   }
 }
 
-/**
- * Record which screen the user is on. Stored as a Sentry tag so error reports
- * are attributable to a screen, plus a navigation breadcrumb for the trail.
- * The screen name is a static route label (e.g. "Map") — never user content.
- */
 export function trackScreen(screenName: string): void {
-  Sentry.setTag('screen', screenName);
-  Sentry.addBreadcrumb({
-    category: 'navigation',
-    type: 'navigation',
-    level: 'info',
-    message: screenName,
-  });
-
   if (__DEV__) {
     // eslint-disable-next-line no-console
     console.log('[analytics] screen', screenName);
   }
 }
 
-/**
- * Report a handled error to Sentry with optional, PII-scrubbed context.
- *
- * NOTE: this forwards the Error as-is. If an error *message* could itself
- * contain PII, that's scrubbed by Sentry's `beforeSend` config (a separate,
- * Jordan-reviewable concern — see PHASE5_STRATEGY §4), not here.
- */
 export function trackError(error: Error, context?: Record<string, string>): void {
-  const safe = context ? stripPII(context) : undefined;
-  Sentry.captureException(error, safe ? { extra: safe } : undefined);
-
   if (__DEV__) {
+    const safe = context ? stripPII(context) : {};
     // eslint-disable-next-line no-console
-    console.log('[analytics] error', error.message, safe ?? {});
+    console.log('[analytics] error', error.message, safe);
   }
 }
 
 // ---------------------------------------------------------------------------
 // Legacy event catalog (kept for backward-compat).
-//
-// `track()` predates this wrapper (Phase 2 no-op scaffold). The existing
-// callsites — SignInScreen, TasksScreen, ReportFlagModal, PlatformMap.web —
-// keep working unchanged, but now route through trackEvent() so their events
-// actually reach Sentry *and* get PII-scrubbed (the old catalog has flagId in
-// a couple of events; stripPII drops it automatically).
 // ---------------------------------------------------------------------------
 
 export type AnalyticsEvent =
@@ -190,9 +120,6 @@ export type AnalyticsEvent =
   | { name: 'flag_status_changed'; props: { flagId: string; from: string; to: string } }
   | { name: 'user_signed_in'; props: { method: 'email'; isNewUser: boolean } }
   | { name: 'push_notification_received'; props: { type: string } }
-  // Tile cache instrumentation — measures offline map usage.
-  // zoom: Leaflet zoom level at time of request (web only).
-  // PRIVACY: only zoom allowed; x/y tile coords encode location bbox — do not add
   | { name: 'tile_cache_hit'; props: { zoom: number } }
   | { name: 'tile_cache_miss'; props: { zoom: number } };
 
@@ -200,17 +127,11 @@ export function track<E extends AnalyticsEvent>(
   event: E['name'],
   props: Extract<AnalyticsEvent, { name: E['name'] }>['props'],
 ): void {
-  // Route through the chokepoint so legacy events get the same PII scrub +
-  // Sentry breadcrumb as everything else.
   trackEvent(event, props as unknown as Record<string, string | number | boolean>);
 }
 
 // ---------------------------------------------------------------------------
-// User identity — intentionally NOT sent to Sentry.
-//
-// Attaching a user id is exactly the PII we're avoiding. These stay dev-only
-// console helpers so existing callers don't break; they never identify the
-// user to the analytics backend.
+// User identity — intentionally not sent anywhere.
 // ---------------------------------------------------------------------------
 
 export function identifyUser(userId: string, traits?: Record<string, unknown>): void {
