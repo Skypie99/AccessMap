@@ -13,10 +13,12 @@ import FeedbackModal from '@/components/FeedbackModal';
 import HelpModal from '@/components/HelpModal';
 import ChangelogModal from '@/components/ChangelogModal';
 import MyFeedbackModal from '@/components/MyFeedbackModal';
+import { useIsAdmin } from '@/lib/admin';
 import MapScreen from '@/screens/MapScreen';
 import TasksScreen from '@/screens/TasksScreen';
 import ProfileScreen from '@/screens/ProfileScreen';
 import SettingsScreen from '@/screens/SettingsScreen';
+import AdminScreen from '@/screens/AdminScreen';
 
 export type RootTabParamList = {
   Map:
@@ -38,6 +40,9 @@ export type RootTabParamList = {
   // list keeps DefaultTab (in lib/preferences) type-safe; existing stored
   // values for Map / Tasks / Profile continue to round-trip unchanged.
   Settings: undefined;
+  // Admin tab is only rendered when the current user has is_admin = true.
+  // The screen enforces the gate independently as defense-in-depth.
+  Admin: undefined;
 };
 
 // Deep-link config. Registers accessmap://flag/{id} (matches the URL the
@@ -114,6 +119,7 @@ function NavInner({ initialRouteName }: { initialRouteName: keyof RootTabParamLi
   const color = useColor();
   const styles = makeStyles(color);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const isAdmin = useIsAdmin();
 
   const { flags } = useFlags();
   const openCount = flags.filter((f) => f.status === 'open').length;
@@ -211,6 +217,16 @@ function NavInner({ initialRouteName }: { initialRouteName: keyof RootTabParamLi
         component={SettingsScreen}
         options={{ tabBarIcon: tabIcon('settings-outline') }}
       />
+      {isAdmin === true && (
+        <Tab.Screen
+          name="Admin"
+          component={AdminScreen}
+          options={{
+            tabBarIcon: tabIcon('shield-outline'),
+            tabBarLabel: 'Admin',
+          }}
+        />
+      )}
     </Tab.Navigator>
   );
 }
