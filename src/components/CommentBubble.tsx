@@ -139,8 +139,11 @@ const styles = StyleSheet.create({
   deleteBtn: {
     alignSelf: 'flex-end',
     paddingHorizontal: 6,
-    paddingVertical: 2,
+    paddingVertical: 8,
     marginBottom: 2,
+    minHeight: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   deleteBtnPressed: {
     opacity: 0.5,

@@ -1119,9 +1119,9 @@ const FlagCard = memo(function FlagCard({
   // users hear "checked / not checked" instead of a generic button hint.
   // Append the selection state to the existing label so the SR reads the
   // category first (the meaningful bit) and the state at the end.
-  const baseLabel = `Show ${CATEGORY_LABELS[flag.category]} on the map`;
+  const baseLabel = `${CATEGORY_LABELS[flag.category]}, severity ${flag.severity}, ${flag.status}. Tap to view on map.`;
   const a11yLabel = selectionActive
-    ? `${CATEGORY_LABELS[flag.category]}. ${selected ? 'Selected.' : 'Not selected.'}`
+    ? `${CATEGORY_LABELS[flag.category]}, severity ${flag.severity}. ${selected ? 'Selected.' : 'Not selected.'}`
     : baseLabel;
   return (
     <Pressable

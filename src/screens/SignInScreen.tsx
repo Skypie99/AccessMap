@@ -127,7 +127,11 @@ export default function SignInScreen({
           />
 
           {validationError ? (
-            <Text style={styles.errorText} accessibilityLiveRegion="polite">
+            <Text
+              style={styles.errorText}
+              accessibilityRole="alert"
+              accessibilityLiveRegion="assertive"
+            >
               {validationError}
             </Text>
           ) : null}

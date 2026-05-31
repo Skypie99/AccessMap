@@ -261,15 +261,15 @@ const makeStyles = (color: ColorTheme) =>
     thumbPressed: { opacity: 0.75 },
     thumbImage: { width: '100%', height: '100%' },
     // ✕ remove badge — top-right corner of a pre-submission thumbnail.
-    // 24x24 visible (WCAG 2.5.8 min) + hitSlop 8 → ~40pt effective target.
+    // 28x28 visible + hitSlop 8 on each side → 44pt effective target (WCAG 2.5.8).
     // Dark scrim badge keeps the white glyph legible over any photo.
     removeBtn: {
       position: 'absolute',
       top: 4,
       right: 4,
-      width: 24,
-      height: 24,
-      borderRadius: 12,
+      width: 28,
+      height: 28,
+      borderRadius: 14,
       backgroundColor: 'rgba(0,0,0,0.6)',
       alignItems: 'center',
       justifyContent: 'center',
