@@ -13,6 +13,7 @@
 
 import {
   filterFeedback,
+  filterFeedbackByQuery,
   FEEDBACK_CATEGORY_FILTERS,
   FEEDBACK_CATEGORY_FILTER_LABELS,
   type FeedbackCategoryFilter,
@@ -137,5 +138,75 @@ describe('filterFeedback', () => {
       const typed: FeedbackCategoryFilter = filter;
       expect(() => filterFeedback(rows, typed)).not.toThrow();
     }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// filterFeedbackByQuery — free-text search against the body field
+// ---------------------------------------------------------------------------
+
+describe('filterFeedbackByQuery', () => {
+  const items = [
+    { body: 'The sidewalk is broken here' },
+    { body: 'No ramp at the main entrance' },
+    { body: 'Great accessible bathroom' },
+    { body: 'Café has no lift access' },
+  ];
+
+  it('empty query is a pass-through — returns all items', () => {
+    expect(filterFeedbackByQuery(items, '')).toEqual(items);
+  });
+
+  it('whitespace-only query is a pass-through', () => {
+    expect(filterFeedbackByQuery(items, '   ')).toEqual(items);
+  });
+
+  it('single token matches items containing that word', () => {
+    const result = filterFeedbackByQuery(items, 'ramp');
+    expect(result).toHaveLength(1);
+    expect(result[0]?.body).toContain('ramp');
+  });
+
+  it('multi-word query uses AND logic — both tokens must appear', () => {
+    const result = filterFeedbackByQuery(items, 'accessible bathroom');
+    expect(result).toHaveLength(1);
+    expect(result[0]?.body).toContain('accessible');
+    expect(result[0]?.body).toContain('bathroom');
+  });
+
+  it('multi-word query returns nothing if one token is absent', () => {
+    expect(filterFeedbackByQuery(items, 'accessible ramp')).toEqual([]);
+  });
+
+  it('returns empty array when no item matches', () => {
+    expect(filterFeedbackByQuery(items, 'elevator')).toEqual([]);
+  });
+
+  it('is case-insensitive', () => {
+    expect(filterFeedbackByQuery(items, 'SIDEWALK')).toHaveLength(1);
+    expect(filterFeedbackByQuery(items, 'Sidewalk')).toHaveLength(1);
+  });
+
+  it('trims leading/trailing whitespace from the query', () => {
+    expect(filterFeedbackByQuery(items, '  ramp  ')).toHaveLength(1);
+  });
+
+  it('collapses internal whitespace to single-token boundaries', () => {
+    // '  ramp   main  ' splits into ['ramp', 'main'] — both in the same item
+    expect(filterFeedbackByQuery(items, '  ramp   main  ')).toHaveLength(1);
+  });
+
+  it('returns empty array when the items list is empty', () => {
+    expect(filterFeedbackByQuery([], 'ramp')).toEqual([]);
+  });
+
+  it('works with generic objects that only have a body field', () => {
+    type Slim = { id: number; body: string };
+    const slim: Slim[] = [
+      { id: 1, body: 'step at door' },
+      { id: 2, body: 'smooth ramp' },
+    ];
+    const result = filterFeedbackByQuery(slim, 'ramp');
+    expect(result).toEqual([{ id: 2, body: 'smooth ramp' }]);
   });
 });

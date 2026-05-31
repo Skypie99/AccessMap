@@ -56,7 +56,7 @@ jest.mock('../supabase', () => ({
   },
 }));
 
-import { getInitials, uploadAvatar } from '../users';
+import { getInitials, uploadAvatar, updateUserProfile } from '../users';
 
 // ---------------------------------------------------------------------------
 // GAP-1: getInitials() — pure function, no I/O
@@ -256,5 +256,85 @@ describe('uploadAvatar()', () => {
     } finally {
       (global as unknown as { fetch: unknown }).fetch = originalFetch;
     }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// GAP-3: updateUserProfile() — display_name validation + Supabase chain
+// ---------------------------------------------------------------------------
+
+describe('updateUserProfile()', () => {
+  // Build a chainable mock for: supabase.from().update().eq().select().single()
+  const mockSingle = jest.fn();
+  const mockSelect = jest.fn();
+  const mockEq = jest.fn();
+  const mockUpdate = jest.fn();
+  const mockFromUsers = jest.fn();
+
+  const mockSupabase = jest.requireMock('../supabase').supabase as {
+    from: jest.Mock;
+  };
+
+  beforeEach(() => {
+    mockSingle.mockReset();
+    mockSelect.mockReset().mockReturnValue({ single: mockSingle });
+    mockEq.mockReset().mockReturnValue({ select: mockSelect });
+    mockUpdate.mockReset().mockReturnValue({ eq: mockEq });
+    mockFromUsers.mockReset().mockReturnValue({ update: mockUpdate });
+    mockSupabase.from.mockImplementation(() => ({ update: mockUpdate }));
+  });
+
+  const USER_ID = 'user-abc';
+  const BASE_ROW = {
+    id: USER_ID,
+    display_name: 'Alice',
+    avatar_url: null,
+    points: 0,
+    created_at: '2026-01-01T00:00:00Z',
+  };
+
+  it('trims display_name whitespace and saves the clean value', async () => {
+    mockSingle.mockResolvedValue({ data: { ...BASE_ROW, display_name: 'Alice' }, error: null });
+    await updateUserProfile(USER_ID, { display_name: '  Alice  ' });
+    expect(mockUpdate).toHaveBeenCalledWith({ display_name: 'Alice' });
+  });
+
+  it('converts a whitespace-only display_name to null', async () => {
+    mockSingle.mockResolvedValue({ data: { ...BASE_ROW, display_name: null }, error: null });
+    await updateUserProfile(USER_ID, { display_name: '   ' });
+    expect(mockUpdate).toHaveBeenCalledWith({ display_name: null });
+  });
+
+  it('accepts null display_name (explicitly clear the name)', async () => {
+    mockSingle.mockResolvedValue({ data: { ...BASE_ROW, display_name: null }, error: null });
+    await updateUserProfile(USER_ID, { display_name: null });
+    expect(mockUpdate).toHaveBeenCalledWith({ display_name: null });
+  });
+
+  it('throws when display_name exceeds 60 characters', async () => {
+    await expect(
+      updateUserProfile(USER_ID, { display_name: 'x'.repeat(61) })
+    ).rejects.toThrow('60 characters or fewer');
+    expect(mockUpdate).not.toHaveBeenCalled();
+  });
+
+  it('accepts a display_name of exactly 60 characters', async () => {
+    mockSingle.mockResolvedValue({ data: { ...BASE_ROW, display_name: 'x'.repeat(60) }, error: null });
+    await expect(
+      updateUserProfile(USER_ID, { display_name: 'x'.repeat(60) })
+    ).resolves.toBeDefined();
+  });
+
+  it('returns the saved UserRow on success', async () => {
+    const saved = { ...BASE_ROW, display_name: 'Bob' };
+    mockSingle.mockResolvedValue({ data: saved, error: null });
+    const result = await updateUserProfile(USER_ID, { display_name: 'Bob' });
+    expect(result).toEqual(saved);
+  });
+
+  it('throws the Supabase error object when the query fails', async () => {
+    const dbError = { message: 'row not found', code: 'PGRST116' };
+    mockSingle.mockResolvedValue({ data: null, error: dbError });
+    await expect(updateUserProfile(USER_ID, { display_name: 'Bob' })).rejects.toEqual(dbError);
   });
 });

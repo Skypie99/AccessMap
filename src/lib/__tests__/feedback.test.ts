@@ -24,7 +24,14 @@ jest.mock('react-native', () => ({
   },
 }));
 
-import { buildMailtoUrl, FEEDBACK_EMAIL } from '../feedback';
+import { buildMailtoUrl, sendFeedback, openFeedbackComposer, FEEDBACK_EMAIL } from '../feedback';
+
+const mockLinking = jest.requireMock('react-native').Linking as {
+  canOpenURL: jest.Mock;
+  openURL: jest.Mock;
+};
+const mockAlert = jest.requireMock('react-native').Alert as { alert: jest.Mock };
+const mockPlatform = jest.requireMock('react-native').Platform as { OS: string };
 
 describe('FEEDBACK_EMAIL', () => {
   it('points at the maintainer inbox', () => {
@@ -131,5 +138,85 @@ describe('buildMailtoUrl', () => {
     const decoded = decodeURIComponent(bodyParam);
     const userPortion = decoded.split('\n\n---\n')[0] ?? '';
     expect(userPortion).toBe('spaced out');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// sendFeedback — integration paths (Linking mocked)
+// ---------------------------------------------------------------------------
+
+describe('sendFeedback', () => {
+  beforeEach(() => {
+    mockLinking.canOpenURL.mockReset();
+    mockLinking.openURL.mockReset();
+    mockPlatform.OS = 'ios';
+  });
+
+  it('returns {status: "opened"} when mail client is available', async () => {
+    mockLinking.canOpenURL.mockResolvedValue(true);
+    mockLinking.openURL.mockResolvedValue(undefined);
+    const result = await sendFeedback({ body: 'hello' });
+    expect(result).toEqual({ status: 'opened' });
+    expect(mockLinking.openURL).toHaveBeenCalledTimes(1);
+  });
+
+  it('returns {status: "unavailable"} when canOpenURL is false on native', async () => {
+    mockLinking.canOpenURL.mockResolvedValue(false);
+    const result = await sendFeedback({ body: 'hello' });
+    expect(result.status).toBe('unavailable');
+    expect((result as { status: 'unavailable'; url: string }).url).toMatch(/^mailto:/);
+    expect(mockLinking.openURL).not.toHaveBeenCalled();
+  });
+
+  it('skips canOpenURL check on web and calls openURL directly', async () => {
+    mockPlatform.OS = 'web';
+    mockLinking.openURL.mockResolvedValue(undefined);
+    const result = await sendFeedback({ body: 'web feedback' });
+    expect(result).toEqual({ status: 'opened' });
+    expect(mockLinking.canOpenURL).not.toHaveBeenCalled();
+    expect(mockLinking.openURL).toHaveBeenCalledTimes(1);
+  });
+
+  it('returns {status: "error"} when openURL throws', async () => {
+    mockLinking.canOpenURL.mockResolvedValue(true);
+    mockLinking.openURL.mockRejectedValue(new Error('no handler'));
+    const result = await sendFeedback({ body: 'hello' });
+    expect(result.status).toBe('error');
+    expect((result as { status: 'error'; message: string }).message).toBeTruthy();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// openFeedbackComposer — convenience wrapper
+// ---------------------------------------------------------------------------
+
+describe('openFeedbackComposer', () => {
+  beforeEach(() => {
+    mockLinking.canOpenURL.mockReset();
+    mockLinking.openURL.mockReset();
+    mockAlert.alert.mockReset();
+    mockPlatform.OS = 'ios';
+  });
+
+  it('does not show an alert when mail opens successfully', async () => {
+    mockLinking.canOpenURL.mockResolvedValue(true);
+    mockLinking.openURL.mockResolvedValue(undefined);
+    await openFeedbackComposer();
+    expect(mockAlert.alert).not.toHaveBeenCalled();
+  });
+
+  it('shows a fallback Alert with the email address when unavailable', async () => {
+    mockLinking.canOpenURL.mockResolvedValue(false);
+    await openFeedbackComposer();
+    expect(mockAlert.alert).toHaveBeenCalledTimes(1);
+    const [, bodyArg] = mockAlert.alert.mock.calls[0] as [string, string];
+    expect(bodyArg).toContain(FEEDBACK_EMAIL);
+  });
+
+  it('shows a fallback Alert when openURL throws', async () => {
+    mockLinking.canOpenURL.mockResolvedValue(true);
+    mockLinking.openURL.mockRejectedValue(new Error('blocked'));
+    await openFeedbackComposer();
+    expect(mockAlert.alert).toHaveBeenCalledTimes(1);
   });
 });

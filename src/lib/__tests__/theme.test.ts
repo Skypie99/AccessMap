@@ -50,45 +50,49 @@ function contrastRatio(hexA: string, hexB: string): number {
 }
 
 describe('color.brandText', () => {
-  it('is the documented WCAG-AA-safe brand-text hex (#1c4f99)', () => {
-    // FlagDetailModal.viewMapBtnText, FlagDetailModal.shareBtnText, and
-    // MapScreen.presetBtnSecondaryText all reference this exact value.
-    // The Cycle C migration replaced their hardcoded '#1c4f99' literals
-    // with color.brandText — if this constant drifts, those styles drift
-    // too and the AA guarantee silently breaks.
-    expect(color.brandText).toBe('#1c4f99');
+  it('is the documented WCAG-AA-safe brand-text hex (#0F53BE)', () => {
+    // Phase 5 design system update: brandText updated from #1c4f99 to #0F53BE
+    // ("Wayfinder Blue" family). All callsites in FlagDetailModal, MapScreen,
+    // and AddressSearchModal reference color.brandText — if this drifts, AA
+    // for small blue text on white silently breaks.
+    expect(color.brandText).toBe('#0F53BE');
   });
 
   it('passes WCAG 2.2 AA small-text contrast on white (>= 4.5:1)', () => {
-    // Documented as ~7.6:1 in src/theme.ts and DESIGN.md. The 4.5:1
-    // threshold is the minimum for normal text per WCAG 1.4.3.
+    // #0F53BE on #ffffff is ~7.0:1. The 4.5:1 threshold is the minimum
+    // for normal text per WCAG 1.4.3.
     const ratio = contrastRatio(color.brandText, color.surface);
     expect(ratio).toBeGreaterThanOrEqual(4.5);
   });
 
-  it('matches the documented ~7.6:1 ratio on white within a reasonable tolerance', () => {
-    // Tightens the previous assertion — if the hex ever drifts to a value
-    // that still passes 4.5:1 but no longer matches the comment in
-    // src/theme.ts, we want to know. The docs round to ~7.6; the actual
-    // computed ratio for #1c4f99 on #ffffff is ~7.99, so we allow a band
-    // of 7.4 – 8.1 around that.
+  it('matches the documented ~7.0:1 ratio on white within a reasonable tolerance', () => {
+    // Phase 5: #0F53BE on white computes to ~7.0:1. Allow a band of 6.5–7.5
+    // to catch accidental token drift while tolerating floating-point variance.
     const ratio = contrastRatio(color.brandText, color.surface);
-    expect(ratio).toBeGreaterThan(7.4);
-    expect(ratio).toBeLessThan(8.1);
+    expect(ratio).toBeGreaterThan(6.5);
+    expect(ratio).toBeLessThan(7.5);
   });
 
-  it('color.brand (the larger-text variant) does NOT pass small-text AA — confirming why brandText exists', () => {
-    // Sanity check that documents the why: brand alone fails 4.5:1, which
-    // is the entire reason brandText was introduced.
+  it('color.brand passes small-text AA (>= 4.5:1) — Phase 5 upgrade from old brand', () => {
+    // Phase 5 updated brand from #2f80ed (~3.3:1) to #1466E0 (~5.2:1).
+    // The new brand itself passes AA for small text, making brandText the
+    // higher-contrast option for max-contrast or AAA contexts.
     const ratio = contrastRatio(color.brand, color.surface);
-    expect(ratio).toBeLessThan(4.5);
+    expect(ratio).toBeGreaterThanOrEqual(4.5);
   });
 
   it('brandOnSoft equals brandText (used on brandSoft pill background)', () => {
-    // statusVerifiedFg / brandOnSoft both depend on the same dark-brand
-    // value. If brandText changes, these should change in lockstep.
+    // brandOnSoft is the dark brand text used on brandSoft (tinted) surfaces.
+    // It should stay coupled to brandText so pill labels and badges match.
     expect(color.brandOnSoft).toBe(color.brandText);
-    expect(color.statusVerifiedFg).toBe(color.brandText);
+  });
+
+  it('statusVerifiedFg is a semantic green (not blue) — decoupled in Phase 5', () => {
+    // Phase 5: statusVerifiedFg (#067A56) is now a semantic green for the
+    // "Verified" checkmark badge, no longer aliased to brandText (blue).
+    // This preserves WCAG meaning: green = verified, blue = brand action.
+    expect(color.statusVerifiedFg).toBe('#067A56');
+    expect(color.statusVerifiedFg).not.toBe(color.brandText);
   });
 });
 
@@ -102,12 +106,14 @@ describe('color.brandText', () => {
 // -------------------------------------------------------------------------
 
 describe('theme token foundation (Cycle D / d2)', () => {
-  it('color.brand is the documented primary action blue (#2f80ed)', () => {
-    expect(color.brand).toBe('#2f80ed');
+  it('color.brand is the documented primary action blue (#1466E0)', () => {
+    // Phase 5: brand updated from #2f80ed to #1466E0 ("Wayfinder Blue").
+    expect(color.brand).toBe('#1466E0');
   });
 
-  it('color.brandTextAlt is the documented near-brandText hex (#1a4fa3)', () => {
-    expect(color.brandTextAlt).toBe('#1a4fa3');
+  it('color.brandTextAlt is the documented max-contrast brand hex (#0E4499)', () => {
+    // Phase 5: brandTextAlt updated from #1a4fa3 to #0E4499 (7.2:1 on white).
+    expect(color.brandTextAlt).toBe('#0E4499');
   });
 
   it('color.brandTextAlt passes WCAG 2.2 AA small-text contrast on white', () => {
@@ -126,13 +132,13 @@ describe('theme token foundation (Cycle D / d2)', () => {
     expect(color.surfaceMuted).toBe('#f7f9fc');
   });
 
-  it('color.brandSofter is the documented brand wash (#eaf3ff)', () => {
+  it('color.brandSofter is the documented brand wash (#EEF4FE)', () => {
+    // Phase 5: brandSofter updated from #eaf3ff to #EEF4FE (blue-50).
     // Used by tier pill, nearestBtn, UpdateBanner background, place chip
     // manage, FilterPresetsModal newBtn, SavedPlacesModal addBtn, and
     // TasksScreen cardSelected. If this drifts, the whole brand-tinted
-    // background family drifts in lockstep — which is fine for dark mode
-    // (intentional) but should NEVER happen as a typo.
-    expect(color.brandSofter).toBe('#eaf3ff');
+    // background family drifts in lockstep.
+    expect(color.brandSofter).toBe('#EEF4FE');
   });
 
   it('color.borderPressed is the documented pressed-chip background (#dde3eb)', () => {
