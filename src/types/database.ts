@@ -12,7 +12,9 @@ export type FlagSeverity = 1 | 2 | 3 | 4 | 5;
 
 export type FlagRow = {
   id: string;
-  user_id: string;
+  // Null for anonymously-submitted flags (user_id IS NULL in DB).
+  // See supabase/migrations/2026-05-30_anon_flag_reporting.sql.
+  user_id: string | null;
   lat: number;
   lng: number;
   category: FlagCategory;
@@ -45,6 +47,9 @@ export type UserRow = {
   avatar_url: string | null;
   points: number;
   created_at: string;
+  // Optional until supabase/migrations/2026-05-30_admin_role.sql is applied.
+  // False by default; only settable via direct DB / service-role access.
+  is_admin?: boolean;
 };
 
 // Mirrors the `category` enum in supabase/migrations/2026-05-23_feedback_table.sql.
@@ -89,10 +94,12 @@ export type Database = {
     Tables: {
       flags: {
         Row: FlagRow;
-        Insert: Omit<FlagRow, 'id' | 'created_at' | 'status'> & {
+        Insert: Omit<FlagRow, 'id' | 'created_at' | 'status' | 'user_id'> & {
           id?: string;
           created_at?: string;
           status?: FlagStatus;
+          // Optional: omit for anon inserts (Postgres stores NULL); provide for auth inserts.
+          user_id?: string | null;
         };
         Update: Partial<FlagRow>;
         Relationships: EmptyRelationships;

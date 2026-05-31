@@ -42,6 +42,19 @@
       }
     },
 
+    "testflight": {
+      "distribution": "store",
+      "autoIncrement": true,
+      "ios": {
+        "buildConfiguration": "Release",
+        "simulator": false
+      },
+      "env": {
+        "APP_ENV": "production",
+        "SENTRY_DISABLE_AUTO_UPLOAD": "true"
+      }
+    },
+
     "production": {
       "distribution": "store",
       "autoIncrement": true,
@@ -57,9 +70,9 @@
   "submit": {
     "production": {
       "ios": {
-        "appleId": "$EXPO_APPLE_ID",
+        "appleId": "skylerhalisky@gmail.com",
         "ascAppId": "6774709116",
-        "appleTeamId": "$EXPO_APPLE_TEAM_ID"
+        "appleTeamId": "S78F8ZA8QU"
       },
       "android": {
         "serviceAccountKeyPath": "TODO_PATH_TO_GOOGLE_SERVICE_ACCOUNT_KEY.json",
