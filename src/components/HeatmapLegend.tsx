@@ -2,7 +2,7 @@ import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { SEVERITY_ORDER, SEVERITY_LABELS } from '@/lib/flags';
 import type { FlagSeverity } from '@/types/database';
-import { radius, heatmapSeverity } from '@/theme';
+import { color, font, radius, shadow, heatmapSeverity } from '@/theme';
 
 /**
  * HeatmapLegend — compact severity key shown whenever the heat layer is
@@ -47,21 +47,18 @@ export default function HeatmapLegend() {
 const styles = StyleSheet.create({
   container: {
     alignSelf: 'flex-start',
+    // Always-light overlay on the map — white regardless of device theme.
     backgroundColor: 'rgba(255,255,255,0.95)',
     borderRadius: radius.md,
     paddingHorizontal: 10,
     paddingVertical: 8,
     gap: 4,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 1 },
-    elevation: 2,
+    ...shadow.e1,
   },
   title: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: '#555',
+    fontSize: font.size.caption,
+    fontWeight: font.weight.bold,
+    color: color.textMuted,
     textTransform: 'uppercase',
     letterSpacing: 0.4,
   },
@@ -78,11 +75,11 @@ const styles = StyleSheet.create({
   swatch: {
     width: 10,
     height: 10,
-    borderRadius: 2,
+    borderRadius: radius.xs,
   },
   label: {
-    fontSize: 10,
-    color: '#333',
-    fontWeight: '600',
+    fontSize: font.size.caption,
+    color: color.text,
+    fontWeight: font.weight.semibold,
   },
 });

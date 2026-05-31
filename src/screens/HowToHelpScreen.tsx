@@ -26,36 +26,40 @@ interface Props {
 const STEPS = [
   {
     icon: 'flag-outline' as const,
-    color: '#E53E3E',
     number: '1',
     title: 'Report a problem',
     body: "Tap + Report on the map wherever you see a broken sidewalk, missing ramp, blocked path, missing signal, or steep grade. Add a photo and severity — a few seconds from you could save someone a real headache.",
   },
   {
     icon: 'checkmark-circle-outline' as const,
-    color: '#38A169',
     number: '2',
     title: 'Verify flags near you',
     body: "Head to the Tasks tab to see open reports from the community. Confirm the issue is still there — or mark it resolved if it's been fixed. Verifying earns you points and keeps the map accurate.",
   },
   {
     icon: 'people-outline' as const,
-    color: '#3182CE',
     number: '3',
     title: 'Spread the word',
     body: 'Share AccessMap with neighbours, local disability organisations, city councillors, and anyone who wants a more navigable community. The map only works if the community keeps it current.',
   },
   {
     icon: 'star-outline' as const,
-    color: '#D69E2E',
     number: '4',
     title: 'Earn points',
     body: "Every report and verification earns points on your profile. It's a small token — but it reflects real value your contributions add to the community.",
   },
 ];
 
+// Accent colors for each step icon — derived from theme tokens so they
+// respond to dark mode. Semantics: report=error, verify=success, spread=brand, earn=amber.
+function useStepColors() {
+  const color = useColor();
+  return [color.errorStrong, color.success, color.brand, color.accentOrange];
+}
+
 export default function HowToHelpScreen({ visible, onClose }: Props) {
   const color = useColor();
+  const stepColors = useStepColors();
   const styles = makeStyles(color);
 
   return (
@@ -90,10 +94,10 @@ export default function HowToHelpScreen({ visible, onClose }: Props) {
             to make the biggest impact.
           </Text>
 
-          {STEPS.map((step) => (
+          {STEPS.map((step, i) => (
             <View key={step.number} style={styles.stepCard}>
-              <View style={[styles.stepIcon, { backgroundColor: step.color + '18' }]}>
-                <Ionicons name={step.icon} size={28} color={step.color} />
+              <View style={[styles.stepIcon, { backgroundColor: stepColors[i] + '18' }]}>
+                <Ionicons name={step.icon} size={28} color={stepColors[i]} />
               </View>
               <View style={styles.stepText}>
                 <Text style={styles.stepTitle}>{step.title}</Text>

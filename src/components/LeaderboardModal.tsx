@@ -12,7 +12,7 @@ import { useAuth } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
 import { listLeaderboard, type LeaderboardEntry } from '@/lib/flags';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
-import { radius } from '@/theme';
+import { font, radius, shadow, spacing } from '@/theme';
 
 interface Props {
   visible: boolean;
@@ -25,6 +25,8 @@ function ordinalLabel(rank: number): string {
   if (rank === 3) return '3rd';
   return `${rank}th`;
 }
+
+const MEDAL: Record<number, string> = { 1: '🥇', 2: '🥈', 3: '🥉' };
 
 export default function LeaderboardModal({ visible, onClose }: Props) {
   const color = useColor();
@@ -72,7 +74,7 @@ export default function LeaderboardModal({ visible, onClose }: Props) {
           accessibilityLabel={`${medalPrefix}, ${name}, ${item.points} points${isCurrentUser ? ', you' : ''}`}
         >
           <Text style={[styles.rank, rank <= 3 && styles.rankTop]} accessibilityElementsHidden>
-            {ordinalLabel(rank)}
+            {MEDAL[rank] ?? ordinalLabel(rank)}
           </Text>
           <View style={styles.nameWrap}>
             <Text style={[styles.name, isCurrentUser && styles.nameSelf]} numberOfLines={1}>
@@ -96,6 +98,7 @@ export default function LeaderboardModal({ visible, onClose }: Props) {
       <View style={styles.backdrop}>
         <View style={styles.card} accessibilityViewIsModal>
           <View style={styles.headerRow}>
+            <Text style={styles.titleIcon} accessibilityElementsHidden>🏆</Text>
             <Text style={styles.title} accessibilityRole="header">
               Community Leaderboard
             </Text>
@@ -168,27 +171,32 @@ function makeStyles(color: ColorTheme) {
       backgroundColor: color.surface,
       borderTopLeftRadius: radius.xl,
       borderTopRightRadius: radius.xl,
-      paddingBottom: 32,
+      paddingBottom: spacing.xxxl,
       maxHeight: '80%' as unknown as number,
+      ...shadow.e3,
     },
     headerRow: {
       flexDirection: 'row',
       alignItems: 'center',
-      paddingHorizontal: 20,
-      paddingTop: 20,
-      paddingBottom: 4,
+      gap: spacing.sm,
+      paddingHorizontal: spacing.xl,
+      paddingTop: spacing.xl,
+      paddingBottom: spacing.tight,
+    },
+    titleIcon: {
+      fontSize: font.size.xl,
     },
     title: {
       flex: 1,
-      fontSize: 18,
-      fontWeight: '700',
+      fontSize: font.size.xl,
+      fontWeight: font.weight.bold,
       color: color.textStrong,
     },
     subtitle: {
-      fontSize: 13,
+      fontSize: font.size.sm,
       color: color.textMuted,
-      paddingHorizontal: 20,
-      paddingBottom: 12,
+      paddingHorizontal: spacing.xl,
+      paddingBottom: spacing.md,
     },
     closeBtn: {
       width: 36,
@@ -202,7 +210,7 @@ function makeStyles(color: ColorTheme) {
       backgroundColor: color.borderPressed,
     },
     closeBtnText: {
-      fontSize: 14,
+      fontSize: font.size.base,
       color: color.textMuted,
     },
     list: {
@@ -211,8 +219,8 @@ function makeStyles(color: ColorTheme) {
     row: {
       flexDirection: 'row',
       alignItems: 'center',
-      paddingHorizontal: 20,
-      paddingVertical: 12,
+      paddingHorizontal: spacing.xl,
+      paddingVertical: spacing.md,
       borderBottomWidth: StyleSheet.hairlineWidth,
       borderBottomColor: color.divider,
       minHeight: 48,
@@ -222,61 +230,62 @@ function makeStyles(color: ColorTheme) {
     },
     rank: {
       width: 44,
-      fontSize: 13,
-      fontWeight: '600',
+      fontSize: font.size.md,
+      fontWeight: font.weight.semibold,
       color: color.textMuted,
     },
     rankTop: {
-      color: color.brandText, // WCAG 1.4.3: brand (#2f80ed) = 3.3:1 on white, fails AA at 13pt; brandText (#1c4f99) = 7.6:1 ✓
-      fontWeight: '700',
+      // WCAG 1.4.3: brand (#2f80ed) = 3.3:1 on white, fails AA at 13pt; brandText (#1c4f99) = 7.6:1 ✓
+      color: color.brandText,
+      fontWeight: font.weight.bold,
     },
     nameWrap: {
       flex: 1,
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 6,
+      gap: spacing.xs,
     },
     name: {
-      fontSize: 15,
+      fontSize: font.size.md,
       color: color.text,
       flexShrink: 1,
     },
     nameSelf: {
-      fontWeight: '600',
+      fontWeight: font.weight.semibold,
       color: color.brandText,
     },
     youBadge: {
-      fontSize: 11,
+      fontSize: font.size.caption,
       color: color.brandOnSoft,
       backgroundColor: color.brandSoft,
-      paddingHorizontal: 6,
+      paddingHorizontal: spacing.xs,
       paddingVertical: 2,
       borderRadius: radius.full,
       overflow: 'hidden',
     },
     points: {
-      fontSize: 14,
-      fontWeight: '600',
+      fontSize: font.size.base,
+      fontWeight: font.weight.semibold,
       color: color.textStrong,
       minWidth: 64,
       textAlign: 'right',
     },
     spinner: {
-      marginVertical: 40,
+      marginVertical: spacing.xxxl,
     },
     stateWrap: {
       alignItems: 'center',
-      paddingVertical: 40,
-      paddingHorizontal: 20,
+      paddingVertical: spacing.xxxl,
+      paddingHorizontal: spacing.xl,
     },
     stateText: {
-      fontSize: 14,
+      fontSize: font.size.base,
       color: color.textMuted,
       textAlign: 'center',
     },
     retryBtn: {
-      marginTop: 16,
-      paddingHorizontal: 20,
+      marginTop: spacing.lg,
+      paddingHorizontal: spacing.xl,
       paddingVertical: 10,
       backgroundColor: color.brand,
       borderRadius: radius.md,
@@ -288,8 +297,8 @@ function makeStyles(color: ColorTheme) {
       opacity: 0.8,
     },
     retryText: {
-      fontSize: 14,
-      fontWeight: '600',
+      fontSize: font.size.base,
+      fontWeight: font.weight.semibold,
       color: color.textOnBrand,
     },
   });

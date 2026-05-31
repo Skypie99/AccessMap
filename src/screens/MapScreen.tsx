@@ -15,7 +15,7 @@ import {
 import * as Location from 'expo-location';
 import { useRoute, type RouteProp } from '@react-navigation/native';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
-import { radius, shadow } from '@/theme';
+import { font, radius, shadow, spacing } from '@/theme';
 import { errorMessage } from '@/lib/errors';
 import {
   CATEGORY_ICONS,
@@ -1974,7 +1974,7 @@ const makeStyles = (color: ColorTheme) =>
       minHeight: 44,
       alignItems: 'center',
       justifyContent: 'center',
-      borderRadius: 22,
+      borderRadius: radius.circle,
     },
     actionBtnActive: { backgroundColor: color.brand },
     actionDivider: {
@@ -1983,11 +1983,11 @@ const makeStyles = (color: ColorTheme) =>
       backgroundColor: color.border,
     },
     filterPanel: {
-      marginTop: 8,
+      marginTop: spacing.sm,
       backgroundColor: color.overlay,
       borderRadius: radius.lg,
-      padding: 12,
-      gap: 8,
+      padding: spacing.md,
+      gap: spacing.sm,
       ...shadow.e2,
     },
     filterHeaderRow: {
@@ -1995,7 +1995,7 @@ const makeStyles = (color: ColorTheme) =>
       justifyContent: 'space-between',
       alignItems: 'center',
     },
-    filterTitle: { fontSize: 14, fontWeight: '700', color: color.textStrong },
+    filterTitle: { fontSize: font.size.base, fontWeight: font.weight.bold, color: color.textStrong },
     filterTitleRow: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -2006,16 +2006,16 @@ const makeStyles = (color: ColorTheme) =>
       // visible glyph.
       minHeight: 32,
     },
-    filterChevron: { fontSize: 12, color: color.brand, fontWeight: '700' },
-    clearLink: { fontSize: 12, color: color.brand, fontWeight: '600' },
+    filterChevron: { fontSize: font.size.xs, color: color.brand, fontWeight: font.weight.bold },
+    clearLink: { fontSize: font.size.xs, color: color.brand, fontWeight: font.weight.semibold },
     filterSubLabel: {
-      fontSize: 11,
+      fontSize: font.size.caption,
       color: color.textMuted,
       textTransform: 'uppercase',
       letterSpacing: 0.6,
-      marginTop: 4,
+      marginTop: spacing.tight,
     },
-    filterRow: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
+    filterRow: { flexDirection: 'row', gap: spacing.sm, flexWrap: 'wrap' },
     filterPill: {
       paddingHorizontal: 12,
       paddingVertical: 6,
@@ -2026,36 +2026,36 @@ const makeStyles = (color: ColorTheme) =>
       justifyContent: 'center',
     },
     filterPillActive: { backgroundColor: color.brand },
-    filterPillText: { fontSize: 12, color: color.text, fontWeight: '600' },
+    filterPillText: { fontSize: font.size.xs, color: color.text, fontWeight: font.weight.semibold },
     filterPillTextActive: { color: color.textOnBrand },
     sevPill: {
       width: 44,
       height: 44,
-      borderRadius: 22,
+      borderRadius: radius.circle,
       alignItems: 'center',
       justifyContent: 'center',
       backgroundColor: color.surfaceNeutral,
     },
-    sevPillText: { fontSize: 13, color: color.text, fontWeight: '700' },
+    sevPillText: { fontSize: font.size.sm, color: color.text, fontWeight: font.weight.bold },
     sevPillTextActive: { color: color.textOnBrand },
-    statusHint: { fontSize: 11, color: color.warningHint, marginTop: 4 },
+    statusHint: { fontSize: font.size.caption, color: color.warningHint, marginTop: spacing.tight },
     banner: {
       alignSelf: 'center',
       backgroundColor: color.overlaySoft,
-      paddingHorizontal: 12,
-      paddingVertical: 8,
-      borderRadius: 8,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+      borderRadius: radius.md,
       flexDirection: 'row',
-      gap: 8,
+      gap: spacing.sm,
       alignItems: 'center',
     },
-    bannerText: { fontSize: 13, color: color.text },
+    bannerText: { fontSize: font.size.sm, color: color.text },
     errorBanner: {
-      marginTop: 8,
+      marginTop: spacing.sm,
       backgroundColor: color.error,
       paddingHorizontal: 14,
-      paddingVertical: 12,
-      borderRadius: 10,
+      paddingVertical: spacing.md,
+      borderRadius: radius.lg,
       flexDirection: 'row',
       gap: 10,
       alignItems: 'center',
@@ -2064,8 +2064,8 @@ const makeStyles = (color: ColorTheme) =>
     },
     errorBannerBusy: { opacity: 0.85 },
     errorBannerPressed: { opacity: 0.7 },
-    errorBannerIcon: { color: color.textOnBrand, fontSize: 18, fontWeight: '700' },
-    errorBannerText: { color: color.textOnBrand, fontSize: 13, fontWeight: '600', flex: 1 },
+    errorBannerIcon: { color: color.textOnBrand, fontSize: font.size.xl, fontWeight: font.weight.bold },
+    errorBannerText: { color: color.textOnBrand, fontSize: font.size.sm, fontWeight: font.weight.semibold, flex: 1 },
     emptyCard: {
       alignSelf: 'center',
       marginTop: 16,
@@ -2078,23 +2078,23 @@ const makeStyles = (color: ColorTheme) =>
       alignItems: 'center',
       ...shadow.e2,
     },
-    emptyCardIcon: { fontSize: 28 },
+    emptyCardIcon: { fontSize: font.size.xxl },
     emptyCardTitle: {
-      fontSize: 15,
-      fontWeight: '700',
+      fontSize: font.size.md,
+      fontWeight: font.weight.bold,
       color: color.textStrong,
       textAlign: 'center',
       letterSpacing: -0.1,
     },
     emptyCardBody: {
-      fontSize: 13,
+      fontSize: font.size.sm,
       color: color.textMuted,
       textAlign: 'center',
       lineHeight: 18,
     },
     emptyCardBtn: {
-      marginTop: 4,
-      paddingHorizontal: 16,
+      marginTop: spacing.tight,
+      paddingHorizontal: spacing.lg,
       paddingVertical: 10,
       borderRadius: radius.circle,
       backgroundColor: color.brand,
@@ -2102,7 +2102,7 @@ const makeStyles = (color: ColorTheme) =>
       justifyContent: 'center',
     },
     emptyCardBtnPressed: { opacity: 0.8 },
-    emptyCardBtnText: { color: color.textOnBrand, fontSize: 14, fontWeight: '700' },
+    emptyCardBtnText: { color: color.textOnBrand, fontSize: font.size.base, fontWeight: font.weight.bold },
     // Jordan Art. 7 — heatmap active disclaimer. Floats just above the
     // bottom bar so it's visible whenever the heat layer is on, regardless
     // of whether the filter panel is open. Semi-transparent so it doesn't
@@ -2119,9 +2119,9 @@ const makeStyles = (color: ColorTheme) =>
       marginBottom: 8,
     },
     heatmapDisclaimerText: {
-      fontSize: 11,
-      // White on #1a1a1a = 18.1:1 — passes WCAG AA at any text size.
-      color: '#ffffff',
+      fontSize: font.size.caption,
+      // textOnBrand (#fff) on forced dark surface (#1a1a1a) = 18.1:1 — WCAG AA pass.
+      color: color.textOnBrand,
       lineHeight: 15,
       textAlign: 'center',
     },

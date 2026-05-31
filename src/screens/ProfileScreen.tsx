@@ -2046,7 +2046,7 @@ const makeStyles = (color: ColorTheme) =>
       minHeight: 44,
       justifyContent: 'center',
     },
-    deleteAccountText: { color: '#D93025', fontWeight: '600', fontSize: 15 },
+    deleteAccountText: { color: color.error, fontWeight: font.weight.semibold, fontSize: font.size.md },
     // Deletion confirmation modal — translucent backdrop + centred card.
     deleteBackdrop: {
       flex: 1,
@@ -2098,12 +2098,12 @@ const makeStyles = (color: ColorTheme) =>
       flex: 1,
       paddingVertical: 14,
       borderRadius: radius.md,
-      backgroundColor: '#D93025',
+      backgroundColor: color.error,
       alignItems: 'center',
       minHeight: 48,
       justifyContent: 'center',
     },
     deleteConfirmBtnPressed: { opacity: 0.85 },
     deleteConfirmBtnDisabled: { opacity: 0.55 },
-    deleteConfirmText: { color: '#fff', fontWeight: '700', fontSize: 15 },
+    deleteConfirmText: { color: color.textOnBrand, fontWeight: font.weight.bold, fontSize: font.size.md },
   });

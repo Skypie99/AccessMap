@@ -54,7 +54,7 @@ import type { FlagCategory, FlagRow, FlagStatus } from '@/types/database';
 import type { RootTabParamList } from '@/navigation/RootNavigator';
 import FlagDetailModal, { type DetailAction } from '@/components/FlagDetailModal';
 import PhotoLightboxModal from '@/components/PhotoLightboxModal';
-import { radius, shadow, size, spacing } from '@/theme';
+import { font, radius, shadow, size, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 
 // Statuses Tasks shows. Even if the provider's `statuses` is widened by the
@@ -1534,7 +1534,7 @@ const makeStyles = (color: ColorTheme) =>
       justifyContent: 'center',
       borderRadius: radius.circle,
     },
-    searchClearText: { fontSize: 16, fontWeight: '600', color: '#555' },
+    searchClearText: { fontSize: font.size.lg, fontWeight: font.weight.semibold, color: color.textMuted },
     sevFilterRow: {
       flexDirection: 'row',
       gap: 6,
