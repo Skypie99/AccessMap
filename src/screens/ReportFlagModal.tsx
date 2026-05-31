@@ -19,6 +19,7 @@ import { errorMessage } from '@/lib/errors';
 import {
   CATEGORY_LABELS,
   CATEGORY_ORDER,
+  createAnonFlag,
   createFlag,
   type ContextTagsCapability,
   severityColor,
@@ -28,6 +29,7 @@ import {
   subscribeContextTagsCapability,
   uploadFlagPhoto,
 } from '@/lib/flags';
+import { checkAnonRateLimit, recordAnonSubmit } from '@/lib/anonRateLimit';
 import { batchInsertFlagPhotos } from '@/lib/photos';
 import PhotoGallery from '@/components/PhotoGallery';
 import {
@@ -69,6 +71,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
   const color = useColor();
   const styles = makeStyles(color);
   const { user } = useAuth();
+  const isAnon = !user;
   const reducedMotion = useReducedMotion();
   const [category, setCategory] = useState<FlagCategory>('no_ramp');
   const [severity, setSeverity] = useState<FlagSeverity>(3);
@@ -227,14 +230,49 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
   };
 
   const handleSubmit = async () => {
-    if (!user) {
-      Alert.alert('Not signed in', 'Sign in to report a flag.');
-      return;
-    }
     if (!location) {
       Alert.alert('No location', 'We need your location to place the flag.');
       return;
     }
+
+    // Anonymous submission path — no photo upload, no context tags.
+    if (isAnon) {
+      try {
+        await checkAnonRateLimit();
+      } catch {
+        Alert.alert(
+          'Daily limit reached',
+          "You've reported 5 barriers today — thanks for contributing! Sign in to report more.",
+          [
+            { text: 'Sign In', onPress: onClose },
+            { text: 'OK', style: 'cancel' },
+          ],
+        );
+        return;
+      }
+      setSubmitting(true);
+      try {
+        await createAnonFlag({
+          lat: location.lat,
+          lng: location.lng,
+          category,
+          severity,
+          description: description.trim() || undefined,
+        });
+        await recordAnonSubmit();
+        track('flag_created', { category, severity, hasPhoto: false });
+        reset();
+        onCreated();
+        onClose();
+      } catch (e) {
+        Alert.alert('Could not report flag', errorMessage(e));
+      } finally {
+        setSubmitting(false);
+      }
+      return;
+    }
+
+    // Authenticated submission path — full feature set.
     setSubmitting(true);
     try {
       // Upload all picked photos. First URL doubles as the legacy photo_url
@@ -299,7 +337,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
             showsVerticalScrollIndicator={false}
           >
           <Text style={styles.title} accessibilityRole="header">
-            Report a flag
+            {isAnon ? 'Report anonymously' : 'Report a flag'}
           </Text>
           <Text style={styles.location}>
             {location
@@ -307,15 +345,36 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
               : 'Waiting for location…'}
           </Text>
 
-          {/* Quick-fill templates — appears above the manual Category /
-              Severity rows so a reporter who just wants "the obvious one"
-              can tap a chip and submit without scrolling. Each chip
-              applies a curated (category + severity + suggested
-              description) triple. Description is only seeded when the
-              textbox is empty so we don't trample text a user already
-              wrote. Tapping a second template overrides the previous
-              chip's selection (driven by appliedTemplateId state). */}
-          {templates.length > 0 && (
+          {/* Anonymous mode banner — shown when user is not signed in.
+              accessibilityRole="alert" makes VoiceOver announce it on iOS;
+              accessibilityLiveRegion="assertive" does the same on Android. */}
+          {isAnon && (
+            <View
+              accessible
+              accessibilityRole="alert"
+              accessibilityLiveRegion="assertive"
+              accessibilityLabel="Reporting anonymously. Your identity is not stored."
+              style={styles.anonBanner}
+            >
+              <Text style={styles.anonBannerIcon} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">🔒</Text>
+              <View style={styles.anonBannerBody}>
+                <Text style={styles.anonBannerTitle}>Reporting anonymously — your identity is not stored.</Text>
+              </View>
+              <Pressable
+                onPress={onClose}
+                style={styles.anonBannerLink}
+                accessibilityRole="link"
+                accessibilityLabel="Sign in"
+                accessibilityHint="Closes this form so you can sign in"
+              >
+                <Text style={styles.anonBannerLinkText}>Sign in</Text>
+              </Pressable>
+            </View>
+          )}
+
+          {/* Quick-fill templates — auth only; hidden in anon mode to keep
+              the simplified form focused on the three core fields. */}
+          {!isAnon && templates.length > 0 && (
             <>
               <Text style={styles.label} accessibilityRole="header">
                 Quick-fill templates (optional)
@@ -465,225 +524,242 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
             </Text>
           )}
 
-          {/* Seasonal tags (W6-5) — a multi-select chip picker for time-of-year
-              context (icy in winter, flooded in spring, a construction detour
-              that clears in fall, etc.). Sits right after the description so
-              the reporter adds the "when in the year" angle while the issue is
-              fresh in mind. Shares the same `contextTags` state, the same
-              toggleTag cap, and the same capability gate as the general
-              context chips below — seasonal tags are just a subset of
-              context_tags. */}
-          <Text style={styles.label} accessibilityRole="header">
-            Seasonal (optional) — does this change with the seasons?
-          </Text>
-          <View style={styles.row}>
-            {SEASONAL_TAGS.map((tag) => {
-              const active = contextTags.includes(tag);
-              const label = SEASONAL_TAG_LABELS[tag];
-              return (
-                <Pressable
-                  key={tag}
-                  onPress={() => {
-                    if (tagsDisabled) return;
-                    setContextTags((curr) => toggleTag(curr, tag));
-                  }}
-                  disabled={tagsDisabled}
-                  style={[
-                    styles.tagChip,
-                    active && styles.tagChipActive,
-                    tagsDisabled && styles.tagChipDisabled,
-                  ]}
-                  accessibilityRole="checkbox"
-                  accessibilityLabel={label}
-                  accessibilityState={{ checked: active, disabled: tagsDisabled }}
-                  accessibilityHint={
-                    tagsDisabled ? 'Seasonal tags will be available soon.' : undefined
-                  }
-                >
-                  <Text
-                    style={[
-                      styles.tagChipText,
-                      active && styles.tagChipTextActive,
-                      tagsDisabled && styles.tagChipTextDisabled,
-                    ]}
-                  >
-                    {label}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </View>
-          <Text style={styles.tagHelper}>
-            {tagsDisabled
-              ? 'Seasonal tags will be available soon (server update pending).'
-              : 'For barriers that aren’t year-round. Counts toward the same 5-tag limit.'}
-          </Text>
-
-          {/* Disability tags (Sprint 3) — a multi-select chip picker for WHO a
-              barrier affects, so users filtering the map by access need can
-              find it. These describe the BARRIER ("this is a mobility
-              barrier"), not the reporter — see DISABILITY_TAGS. Shares the same
-              `contextTags` state, toggleTag cap, and capability gate as the
-              seasonal/general chips — disability tags are just another subset
-              of context_tags. */}
-          <View style={styles.disabilitySectionHeader}>
-            <Text style={[styles.label, styles.disabilityLabel]} accessibilityRole="header">
-              Who does this affect? (optional)
+          {/* Anon-only: sign-in nudge shown where the photo section would be. */}
+          {isAnon && (
+            <Text style={styles.anonPhotoNudge}>
+              <Text style={styles.anonPhotoNudgeLink} onPress={onClose} accessibilityRole="link">
+                Sign in
+              </Text>
+              {' to attach a photo.'}
             </Text>
-          </View>
-          <View style={styles.row}>
-            {DISABILITY_TAGS.map((tag) => {
-              const active = contextTags.includes(tag);
-              const label = DISABILITY_TAG_LABELS[tag];
-              const icon = DISABILITY_TAG_ICONS[tag];
-              return (
-                <Pressable
-                  key={tag}
-                  onPress={() => {
-                    if (tagsDisabled) return;
-                    setContextTags((curr) => toggleTag(curr, tag));
-                  }}
-                  disabled={tagsDisabled}
-                  style={[
-                    styles.tagChip,
-                    styles.disabilityTagChip,
-                    active && styles.disabilityTagChipActive,
-                    tagsDisabled && styles.tagChipDisabled,
-                  ]}
-                  accessibilityRole="checkbox"
-                  accessibilityLabel={label}
-                  accessibilityState={{ checked: active, disabled: tagsDisabled }}
-                  accessibilityHint={
-                    tagsDisabled ? 'Accessibility tags will be available soon.' : undefined
-                  }
+          )}
+
+          {/* Auth-only sections: seasonal tags, disability tags, photo picker,
+              context tags. Hidden in anon mode — only category/severity/
+              description are shown to keep the anonymous form simple. */}
+          {!isAnon && (
+            <>
+              {/* Seasonal tags (W6-5) — a multi-select chip picker for time-of-year
+                  context (icy in winter, flooded in spring, a construction detour
+                  that clears in fall, etc.). Sits right after the description so
+                  the reporter adds the "when in the year" angle while the issue is
+                  fresh in mind. Shares the same `contextTags` state, the same
+                  toggleTag cap, and the same capability gate as the general
+                  context chips below — seasonal tags are just a subset of
+                  context_tags. */}
+              <Text style={styles.label} accessibilityRole="header">
+                Seasonal (optional) — does this change with the seasons?
+              </Text>
+              <View style={styles.row}>
+                {SEASONAL_TAGS.map((tag) => {
+                  const active = contextTags.includes(tag);
+                  const label = SEASONAL_TAG_LABELS[tag];
+                  return (
+                    <Pressable
+                      key={tag}
+                      onPress={() => {
+                        if (tagsDisabled) return;
+                        setContextTags((curr) => toggleTag(curr, tag));
+                      }}
+                      disabled={tagsDisabled}
+                      style={[
+                        styles.tagChip,
+                        active && styles.tagChipActive,
+                        tagsDisabled && styles.tagChipDisabled,
+                      ]}
+                      accessibilityRole="checkbox"
+                      accessibilityLabel={label}
+                      accessibilityState={{ checked: active, disabled: tagsDisabled }}
+                      accessibilityHint={
+                        tagsDisabled ? 'Seasonal tags will be available soon.' : undefined
+                      }
+                    >
+                      <Text
+                        style={[
+                          styles.tagChipText,
+                          active && styles.tagChipTextActive,
+                          tagsDisabled && styles.tagChipTextDisabled,
+                        ]}
+                      >
+                        {label}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+              <Text style={styles.tagHelper}>
+                {tagsDisabled
+                  ? 'Seasonal tags will be available soon (server update pending).'
+                  : `For barriers that aren't year-round. Counts toward the same 5-tag limit.`}
+              </Text>
+
+              {/* Disability tags (Sprint 3) — a multi-select chip picker for WHO a
+                  barrier affects, so users filtering the map by access need can
+                  find it. These describe the BARRIER ("this is a mobility
+                  barrier"), not the reporter — see DISABILITY_TAGS. Shares the same
+                  `contextTags` state, toggleTag cap, and capability gate as the
+                  seasonal/general chips — disability tags are just another subset
+                  of context_tags. */}
+              <View style={styles.disabilitySectionHeader}>
+                <Text style={[styles.label, styles.disabilityLabel]} accessibilityRole="header">
+                  Who does this affect? (optional)
+                </Text>
+              </View>
+              <View style={styles.row}>
+                {DISABILITY_TAGS.map((tag) => {
+                  const active = contextTags.includes(tag);
+                  const label = DISABILITY_TAG_LABELS[tag];
+                  const icon = DISABILITY_TAG_ICONS[tag];
+                  return (
+                    <Pressable
+                      key={tag}
+                      onPress={() => {
+                        if (tagsDisabled) return;
+                        setContextTags((curr) => toggleTag(curr, tag));
+                      }}
+                      disabled={tagsDisabled}
+                      style={[
+                        styles.tagChip,
+                        styles.disabilityTagChip,
+                        active && styles.disabilityTagChipActive,
+                        tagsDisabled && styles.tagChipDisabled,
+                      ]}
+                      accessibilityRole="checkbox"
+                      accessibilityLabel={label}
+                      accessibilityState={{ checked: active, disabled: tagsDisabled }}
+                      accessibilityHint={
+                        tagsDisabled ? 'Accessibility tags will be available soon.' : undefined
+                      }
+                    >
+                      <Text
+                        style={styles.disabilityTagIcon}
+                        accessibilityElementsHidden
+                        importantForAccessibility="no-hide-descendants"
+                      >
+                        {icon}
+                      </Text>
+                      <Text
+                        style={[
+                          styles.tagChipText,
+                          active && styles.tagChipTextActive,
+                          tagsDisabled && styles.tagChipTextDisabled,
+                        ]}
+                      >
+                        {label}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+              <Text style={styles.tagHelper}>
+                {tagsDisabled
+                  ? 'Accessibility tags will be available soon (server update pending).'
+                  : 'Helps people filter the map to barriers that affect them. Counts toward the same 5-tag limit.'}
+              </Text>
+
+              <Text style={styles.label} accessibilityRole="header">Photo (optional)</Text>
+
+              {/* High-severity photo nudge — only shown when severity ≥ 4 and
+                  no photo has been selected. At severity 4–5, a photo is the
+                  single biggest factor that lets verifiers act without visiting
+                  in person, so surfacing this tip here (rather than in help
+                  text buried elsewhere) meaningfully improves flag quality.
+                  Once a photo is attached the nudge disappears — no clutter.
+
+                  accessible + accessibilityLabel: the whole card is one a11y
+                  node; the emoji is decorative and screened out. The
+                  accessibilityLiveRegion triggers the Android AT announcement;
+                  iOS is handled by the useEffect above. */}
+              {severity >= 4 && photoUris.length === 0 && (
+                <View
+                  style={styles.photoNudge}
+                  accessible
+                  accessibilityLabel={`Tip: adding a photo helps verify this ${severity === 5 ? 'severe' : 'major'} barrier without a site visit.`}
+                  accessibilityLiveRegion="polite"
                 >
                   <Text
-                    style={styles.disabilityTagIcon}
+                    style={styles.photoNudgeIcon}
                     accessibilityElementsHidden
                     importantForAccessibility="no-hide-descendants"
                   >
-                    {icon}
+                    📸
                   </Text>
-                  <Text
-                    style={[
-                      styles.tagChipText,
-                      active && styles.tagChipTextActive,
-                      tagsDisabled && styles.tagChipTextDisabled,
-                    ]}
-                  >
-                    {label}
+                  <Text style={styles.photoNudgeBody}>
+                    {'A photo helps verify this '}
+                    <Text style={styles.photoNudgeBold}>
+                      {severity === 5 ? 'severe' : 'major'} barrier
+                    </Text>
+                    {' without a site visit.'}
                   </Text>
-                </Pressable>
-              );
-            })}
-          </View>
-          <Text style={styles.tagHelper}>
-            {tagsDisabled
-              ? 'Accessibility tags will be available soon (server update pending).'
-              : 'Helps people filter the map to barriers that affect them. Counts toward the same 5-tag limit.'}
-          </Text>
+                </View>
+              )}
 
-          <Text style={styles.label} accessibilityRole="header">Photo (optional)</Text>
+              <PhotoGallery
+                photos={photoUris.map((url, i) => ({ url, position: i }))}
+                onAddPhoto={pickPhotoForGallery}
+                onRemovePhoto={removeUri}
+                maxPhotos={MAX_PHOTOS}
+              />
 
-          {/* High-severity photo nudge — only shown when severity ≥ 4 and
-              no photo has been selected. At severity 4–5, a photo is the
-              single biggest factor that lets verifiers act without visiting
-              in person, so surfacing this tip here (rather than in help
-              text buried elsewhere) meaningfully improves flag quality.
-              Once a photo is attached the nudge disappears — no clutter.
-
-              accessible + accessibilityLabel: the whole card is one a11y
-              node; the emoji is decorative and screened out. The
-              accessibilityLiveRegion triggers the Android AT announcement;
-              iOS is handled by the useEffect above. */}
-          {severity >= 4 && photoUris.length === 0 && (
-            <View
-              style={styles.photoNudge}
-              accessible
-              accessibilityLabel={`Tip: adding a photo helps verify this ${severity === 5 ? 'severe' : 'major'} barrier without a site visit.`}
-              accessibilityLiveRegion="polite"
-            >
-              <Text
-                style={styles.photoNudgeIcon}
-                accessibilityElementsHidden
-                importantForAccessibility="no-hide-descendants"
-              >
-                📸
+              {/* Context tags — multi-select chip picker. Optional metadata
+                  about WHEN / UNDER WHAT CONDITIONS this flag is most relevant
+                  (e.g. "morning_rush", "high_tide"). The values flow into
+                  createFlag → flags.context_tags (text[] column). Until the
+                  2026-05-24_flag_context_tags.sql migration is applied, the
+                  column is missing server-side and the helper silently retries
+                  the insert without the field — the user can still file the
+                  report, the tags are just dropped. See flags.ts → createFlag. */}
+              <Text style={styles.label} accessibilityRole="header">
+                Context (optional) — when is this most relevant?
               </Text>
-              <Text style={styles.photoNudgeBody}>
-                {'A photo helps verify this '}
-                <Text style={styles.photoNudgeBold}>
-                  {severity === 5 ? 'severe' : 'major'} barrier
-                </Text>
-                {' without a site visit.'}
+              <View style={styles.row}>
+                {CONTEXT_TAGS.map((tag) => {
+                  const active = contextTags.includes(tag);
+                  const label = CONTEXT_TAG_LABELS[tag];
+                  // Disable each chip when the capability gate says the
+                  // server can't store tags yet. The Pressable still renders
+                  // (so screen-reader users know what's coming) but won't
+                  // toggle, and gets the muted style.
+                  return (
+                    <Pressable
+                      key={tag}
+                      onPress={() => {
+                        if (tagsDisabled) return;
+                        setContextTags((curr) => toggleTag(curr, tag));
+                      }}
+                      disabled={tagsDisabled}
+                      style={[
+                        styles.tagChip,
+                        active && styles.tagChipActive,
+                        tagsDisabled && styles.tagChipDisabled,
+                      ]}
+                      accessibilityRole="checkbox"
+                      accessibilityLabel={label}
+                      accessibilityState={{ checked: active, disabled: tagsDisabled }}
+                      accessibilityHint={
+                        tagsDisabled ? 'Context tags will be available soon.' : undefined
+                      }
+                    >
+                      <Text
+                        style={[
+                          styles.tagChipText,
+                          active && styles.tagChipTextActive,
+                          tagsDisabled && styles.tagChipTextDisabled,
+                        ]}
+                      >
+                        {label}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+              <Text style={styles.tagHelper}>
+                {tagsDisabled
+                  ? 'Context tags will be available soon (server update pending).'
+                  : `Tap any that apply. Up to ${MAX_CONTEXT_TAGS}. Leave empty if none.`}
               </Text>
-            </View>
+            </>
           )}
-
-          <PhotoGallery
-            photos={photoUris.map((url, i) => ({ url, position: i }))}
-            onAddPhoto={pickPhotoForGallery}
-            onRemovePhoto={removeUri}
-            maxPhotos={MAX_PHOTOS}
-          />
-
-          {/* Context tags — multi-select chip picker. Optional metadata
-              about WHEN / UNDER WHAT CONDITIONS this flag is most relevant
-              (e.g. "morning_rush", "high_tide"). The values flow into
-              createFlag → flags.context_tags (text[] column). Until the
-              2026-05-24_flag_context_tags.sql migration is applied, the
-              column is missing server-side and the helper silently retries
-              the insert without the field — the user can still file the
-              report, the tags are just dropped. See flags.ts → createFlag. */}
-          <Text style={styles.label} accessibilityRole="header">
-            Context (optional) — when is this most relevant?
-          </Text>
-          <View style={styles.row}>
-            {CONTEXT_TAGS.map((tag) => {
-              const active = contextTags.includes(tag);
-              const label = CONTEXT_TAG_LABELS[tag];
-              // Disable each chip when the capability gate says the
-              // server can't store tags yet. The Pressable still renders
-              // (so screen-reader users know what's coming) but won't
-              // toggle, and gets the muted style.
-              return (
-                <Pressable
-                  key={tag}
-                  onPress={() => {
-                    if (tagsDisabled) return;
-                    setContextTags((curr) => toggleTag(curr, tag));
-                  }}
-                  disabled={tagsDisabled}
-                  style={[
-                    styles.tagChip,
-                    active && styles.tagChipActive,
-                    tagsDisabled && styles.tagChipDisabled,
-                  ]}
-                  accessibilityRole="checkbox"
-                  accessibilityLabel={label}
-                  accessibilityState={{ checked: active, disabled: tagsDisabled }}
-                  accessibilityHint={
-                    tagsDisabled ? 'Context tags will be available soon.' : undefined
-                  }
-                >
-                  <Text
-                    style={[
-                      styles.tagChipText,
-                      active && styles.tagChipTextActive,
-                      tagsDisabled && styles.tagChipTextDisabled,
-                    ]}
-                  >
-                    {label}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </View>
-          <Text style={styles.tagHelper}>
-            {tagsDisabled
-              ? 'Context tags will be available soon (server update pending).'
-              : `Tap any that apply. Up to ${MAX_CONTEXT_TAGS}. Leave empty if none.`}
-          </Text>
           </ScrollView>
 
           <View style={styles.actions}>
@@ -706,13 +782,13 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
                 (submitting || !location) && styles.submitBtnDisabled,
               ]}
               accessibilityRole="button"
-              accessibilityLabel="Submit flag report"
+              accessibilityLabel={isAnon ? 'Submit anonymous flag report' : 'Submit flag report'}
               accessibilityState={{ disabled: submitting || !location, busy: submitting }}
             >
               {submitting ? (
                 <ActivityIndicator color={color.textOnBrand} />
               ) : (
-                <Text style={styles.submitText}>Report</Text>
+                <Text style={styles.submitText}>{isAnon ? 'Report anonymously' : 'Report'}</Text>
               )}
             </Pressable>
           </View>
@@ -834,6 +910,37 @@ const makeStyles = (color: ColorTheme) =>
       fontWeight: '700',
       color: color.warningFg,
     },
+    // Anonymous mode banner — tinted info strip shown at the top of the
+    // form when the user is not signed in.
+    // brandSofter/brandOnSoft: 7.6:1 contrast, WCAG AA.
+    anonBanner: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+      backgroundColor: color.brandSofter,
+      borderRadius: 8,
+      paddingHorizontal: 12,
+      paddingVertical: 10,
+    },
+    anonBannerIcon: { fontSize: 16 },
+    anonBannerBody: { flex: 1 },
+    anonBannerTitle: {
+      fontSize: 13,
+      fontWeight: '600',
+      color: color.brandOnSoft,
+    },
+    anonBannerLink: {
+      paddingHorizontal: 8,
+      paddingVertical: 6,
+      minHeight: 44,
+      justifyContent: 'center',
+    },
+    anonBannerLinkText: {
+      fontSize: 13,
+      fontWeight: '700',
+      color: color.brandOnSoft,
+      textDecorationLine: 'underline',
+    },
     actions: {
       flexDirection: 'row',
       gap: 12,
@@ -851,6 +958,15 @@ const makeStyles = (color: ColorTheme) =>
       alignItems: 'center',
       minHeight: 44,
       justifyContent: 'center',
+    },
+    anonPhotoNudge: {
+      fontSize: 13,
+      color: color.textMuted,
+      marginTop: 4,
+    },
+    anonPhotoNudgeLink: {
+      color: color.brandText,
+      fontWeight: '600',
     },
     cancelBtn: { backgroundColor: color.surfaceNeutral },
     cancelText: { color: color.text, fontWeight: '600' },

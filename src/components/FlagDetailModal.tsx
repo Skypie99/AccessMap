@@ -542,9 +542,25 @@ export default function FlagDetailModal({
               )}
 
               <Text style={styles.sectionLabel}>Reported by</Text>
-              <Text style={styles.metaValue}>
-                {isOwn ? 'You' : shownFlag.user_id === null ? 'Anonymous report' : 'Another community member'}
-              </Text>
+              {shownFlag.user_id === null ? (
+                <View
+                  accessible
+                  accessibilityLabel="Reported anonymously"
+                  style={styles.anonBadge}
+                >
+                  <Text
+                    style={styles.anonBadgeText}
+                    importantForAccessibility="no"
+                    accessibilityElementsHidden
+                  >
+                    Anonymous
+                  </Text>
+                </View>
+              ) : (
+                <Text style={styles.metaValue}>
+                  {isOwn ? 'You' : 'Another community member'}
+                </Text>
+              )}
 
               <Text style={styles.sectionLabel}>Date</Text>
               <Text style={styles.metaValue} accessibilityLabel={`Reported on ${formattedDate}`}>
@@ -1052,6 +1068,18 @@ const makeStyles = (color: ColorTheme) =>
       fontWeight: '500',
     },
     metaValue: { fontSize: 14, color: color.text },
+    anonBadge: {
+      alignSelf: 'flex-start',
+      backgroundColor: '#6b7280',
+      borderRadius: 10,
+      paddingHorizontal: 8,
+      paddingVertical: 3,
+    },
+    anonBadgeText: {
+      fontSize: 12,
+      color: '#fff',
+      fontWeight: '600',
+    },
     coordsRow: {
       flexDirection: 'row',
       alignItems: 'center',

@@ -204,10 +204,16 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(function Pla
             markerRefs.current[f.id] = r;
           }}
           coordinate={{ latitude: f.lat, longitude: f.lng }}
-          pinColor={severityColor(f.severity)}
-          opacity={focusedFlagId && focusedFlagId !== f.id ? 0.55 : 1}
+          pinColor={f.user_id === null ? '#9CA3AF' : severityColor(f.severity)}
+          opacity={
+            f.user_id === null
+              ? 0.7
+              : focusedFlagId && focusedFlagId !== f.id
+                ? 0.55
+                : 1
+          }
           accessibilityRole="button"
-          accessibilityLabel={`${CATEGORY_LABELS[f.category]}, ${severityA11y(f.severity)}, ${statusA11y(f.status)}. Tap to view details.`}
+          accessibilityLabel={`${CATEGORY_LABELS[f.category]}, ${severityA11y(f.severity)}, ${statusA11y(f.status)}${f.user_id === null ? ', anonymous report' : ''}. Tap to view details.`}
         >
           <Callout tooltip>
             <View style={styles.callout}>

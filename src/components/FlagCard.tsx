@@ -84,7 +84,7 @@ export const FlagCard = memo(function FlagCard({
       accessibilityLabel={a11yLabel}
       accessibilityHint="Opens the full report"
     >
-      {/* Header row: severity dot + category title + StatusBadge */}
+      {/* Header row: severity dot + category title + StatusBadge + optional anon chip */}
       <View style={styles.header}>
         <View
           style={[styles.sevDot, { backgroundColor: severityColor(flag.severity) }]}
@@ -95,6 +95,15 @@ export const FlagCard = memo(function FlagCard({
           {CATEGORY_LABELS[flag.category]}
         </Text>
         <StatusBadge status={flag.status} size="sm" />
+        {flag.user_id === null && (
+          <View
+            style={styles.anonChip}
+            accessibilityElementsHidden
+            importantForAccessibility="no-hide-descendants"
+          >
+            <Text style={styles.anonChipText}>Anonymous</Text>
+          </View>
+        )}
       </View>
 
       {/* Body row: optional thumbnail + description + meta */}
@@ -184,5 +193,16 @@ const makeStyles = (color: ColorTheme) =>
     meta: {
       fontSize: font.size.xs,
       color: color.textMuted,
+    },
+    anonChip: {
+      backgroundColor: '#6b7280',
+      borderRadius: radius.circle,
+      paddingHorizontal: 6,
+      paddingVertical: 2,
+    },
+    anonChipText: {
+      fontSize: font.size.xs,
+      color: '#fff',
+      fontWeight: font.weight.semibold,
     },
   });
