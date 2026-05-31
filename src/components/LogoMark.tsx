@@ -19,10 +19,9 @@ interface Props {
   size?: number;
 }
 
-// ── shared gradient stops ────────────────────────────────────────────────────
-// Deep royal blue → electric sky blue. Used across all variants for consistency.
-const GRAD_START = '#1a237e'; // deep navy-blue
-const GRAD_END = '#42a5f5';   // bright clear blue
+// ── shared gradient stops — Wayfinder Blue (design system 2026-05-30) ───────
+const GRAD_START = '#0E4499'; // blue-700
+const GRAD_END = '#1466E0';   // blue-500 "Wayfinder Blue" — primary brand color
 
 export default function LogoMark({ variant = 'badge', size = 64 }: Props) {
   switch (variant) {
@@ -82,7 +81,7 @@ function BadgeVariant({ size }: { size: number }) {
 
   return (
     <LinearGradient
-      colors={[GRAD_START, '#1565c0', GRAD_END]}
+      colors={[GRAD_START, '#0F53BE', GRAD_END]}
       start={{ x: 0.15, y: 0 }}
       end={{ x: 0.85, y: 1 }}
       style={[styles.badge, { width: size, height: size, borderRadius: r }]}

@@ -38,21 +38,27 @@ const darkColor = {
   textSubtle: '#777', // ~4.1:1 on #111 — only for non-essential/18pt+
   textOnBrand: '#fff',
 
-  // Brand — brand stays the same (AA on dark surfaces), brandText adjusted
-  brand: '#2f80ed',
-  brandText: '#60a5fa', // lighter blue, AA on dark (#111) at any text size
-  brandTextAlt: '#60a5fa',
-  brandSoft: '#1e3a5f', // dark brand-tinted background
-  brandSofter: '#162d4a', // darker brand wash
-  brandOnSoft: '#93c5fd', // light brand text on dark brandSoft
+  // Brand — Wayfinder Blue on dark; lightened for legibility on dark surfaces
+  brand: '#4E89EF',     // blue-400 — readable on dark, keeps brand feel
+  brandText: '#84AEF6', // blue-300 — AA on #111 dark surface
+  brandTextAlt: '#84AEF6',
+  brandSoft: '#0E4499',  // blue-700 — dark brand tinted background
+  brandSofter: '#0F2D5E', // even darker wash
+  brandOnSoft: '#B4CFFA', // blue-200 — text on dark brandSoft
 
-  // Status surfaces — kept close to light values; contrast checked on dark bg
-  statusOpenBg: '#3b2200',
-  statusOpenFg: '#fbbf24',
-  statusVerifiedBg: '#1e3a5f',
-  statusVerifiedFg: '#93c5fd',
-  statusResolvedBg: '#14361f',
-  statusResolvedFg: '#6ee7a0',
+  // Gamification gold — stays readable on dark
+  goldAccent: '#FBB024',
+  goldLight: '#3D2A00',
+  goldMid: '#4D3500',
+  goldDark: '#FCC44D',
+
+  // Status surfaces — dark-mode equivalents for design-system status tokens
+  statusOpenBg: '#0E2A5C',
+  statusOpenFg: '#84AEF6',
+  statusVerifiedBg: '#083928',
+  statusVerifiedFg: '#6EE7B7',
+  statusResolvedBg: '#063520',
+  statusResolvedFg: '#6EE7B7',
   statusRejectedBg: '#2a2a2a',
   statusRejectedFg: '#d1d5db',
 
