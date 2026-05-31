@@ -58,7 +58,8 @@
           "photosPermission": "AccessMap needs photo access to attach images to accessibility reports.",
           "cameraPermission": "AccessMap uses the camera to capture photos of accessibility barriers."
         }
-      ]
+      ],
+      "expo-font"
     ],
     "extra": {
       "eas": {

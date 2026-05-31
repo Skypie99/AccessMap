@@ -1,8 +1,8 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
-  Keyboard,
+  Image,
   Linking,
   Modal,
   Platform,
@@ -14,9 +14,8 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import * as ImagePicker from 'expo-image-picker';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
-import { font, radius, shadow, spacing } from '@/theme';
+import { font, radius } from '@/theme';
 import { useAuth } from '@/lib/auth';
 import { confirm } from '@/lib/confirm';
 import { getDirectionsUrl } from '@/lib/directionsLink';
@@ -29,21 +28,17 @@ import {
   CATEGORY_ORDER,
   deleteFlag,
   severityColor,
+  STATUS_LABELS,
   updateFlagContent,
   updateFlagStatus,
   type FlagContentPatch,
 } from '@/lib/flags';
 import { severityA11y, statusA11y } from '@/lib/a11yText';
-import { isDisabilityTag, isSeasonalTag, isValidTag, tagLabel } from '@/lib/contextTags';
-import { addFlagPhoto, listFlagPhotos } from '@/lib/photos';
-import { MAX_COMMENT_LENGTH } from '@/lib/comments';
-import { useComments } from '@/hooks/useComments';
+import { CONTEXT_TAG_LABELS, isValidTag } from '@/lib/contextTags';
 import type { FlagCategory, FlagRow, FlagSeverity, FlagStatus } from '@/types/database';
-import PhotoGallery, { type GalleryPhoto } from './PhotoGallery';
+import PhotoLightboxModal from './PhotoLightboxModal';
 import StatusHistoryModal from './StatusHistoryModal';
 import { StatusBadge } from './StatusBadge';
-import { CommentBubble } from './CommentBubble';
-import { useReducedMotion } from '@/lib/accessibility';
 
 export type DetailAction = 'verify' | 'resolve' | 'reject';
 
@@ -69,9 +64,7 @@ export default function FlagDetailModal({
   const color = useColor();
   const styles = makeStyles(color);
   const { user } = useAuth();
-  const reducedMotion = useReducedMotion();
   const [busy, setBusy] = useState(false);
-  const [flagPhotos, setFlagPhotos] = useState<GalleryPhoto[]>([]);
   const [isEditing, setIsEditing] = useState(false);
   const [editDesc, setEditDesc] = useState('');
   const [editCategory, setEditCategory] = useState<FlagCategory>('steep_grade');
@@ -81,28 +74,19 @@ export default function FlagDetailModal({
   // "Watch" that flips to "Unwatch" 100ms after the modal opens.
   const [watched, setWatched] = useState<boolean | null>(null);
   const [watchSaving, setWatchSaving] = useState(false);
-  // Status-history modal — sibling Modal pattern. Closed when this modal
-  // closes or the shown flag swaps, so it never lingers over the wrong flag.
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  // Status-history modal — opens on top of this modal. Same sibling-Modal
+  // pattern as PhotoLightboxModal. Closed when this modal closes or the
+  // shown flag swaps, so it never lingers over the wrong flag.
   const [historyOpen, setHistoryOpen] = useState(false);
+  // Comments — local only; no Supabase yet (table comes in a later migration).
+  const [comments, setComments] = useState<string[]>([]);
+  const [commentDraft, setCommentDraft] = useState('');
 
   // Cache the last flag so the slide-out animation still has content to render
   // after the parent clears `flag` on close. Without this the card briefly
   // turns blank as it animates away.
   const [shownFlag, setShownFlag] = useState<FlagRow | null>(flag);
-
-  // Comments — pass shownFlag?.id so the hook tracks the currently-visible
-  // flag even while the parent is animating the next one in.
-  const {
-    comments,
-    loading: commentsLoading,
-    error: commentsError,
-    tableNotReady: commentsTableNotReady,
-    addComment,
-    deleteComment: deleteCommentById,
-  } = useComments(shownFlag?.id);
-  const [commentText, setCommentText] = useState('');
-  const [commentSubmitting, setCommentSubmitting] = useState(false);
-  const commentInputRef = useRef<TextInput>(null);
   useEffect(() => {
     if (flag) {
       setShownFlag(flag);
@@ -113,9 +97,21 @@ export default function FlagDetailModal({
     }
   }, [flag]);
 
-  // Close-on-parent-close / close-on-flag-swap protection for the history
-  // modal. Prevents it from showing entries for the previous flag after the
-  // user navigates to another one.
+  // Reset the lightbox whenever the parent modal closes OR the flag swaps.
+  // Without this, the sibling lightbox stays mounted with the cached photo
+  // and can pop back over the next flag's details (QA Pass-3 #1) — or stick
+  // on screen after Verify/Resolve/Delete fired `onClose` while the lightbox
+  // was open (QA Pass-1 #2).
+  useEffect(() => {
+    if (!visible) setLightboxOpen(false);
+  }, [visible]);
+  useEffect(() => {
+    setLightboxOpen(false);
+  }, [flag?.id]);
+
+  // Same close-on-parent-close / close-on-flag-swap protection as the
+  // lightbox. Prevents the history modal from showing entries for the
+  // previous flag after the user navigates to another one.
   useEffect(() => {
     if (!visible) setHistoryOpen(false);
   }, [visible]);
@@ -132,23 +128,6 @@ export default function FlagDetailModal({
     if (!visible || !shownFlag || !user) return;
     void recordView(user.id, shownFlag.id);
   }, [visible, shownFlag, user]);
-
-  // Load the gallery photos whenever the modal opens or the flag changes.
-  // listFlagPhotos silently returns [] if the migration hasn't run yet.
-  useEffect(() => {
-    if (!visible || !shownFlag) {
-      setFlagPhotos([]);
-      return;
-    }
-    let cancelled = false;
-    (async () => {
-      const photos = await listFlagPhotos(shownFlag.id);
-      if (!cancelled) setFlagPhotos(photos);
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [visible, shownFlag?.id]);
 
   // Read the user's watched list to know whether THIS flag is being
   // tracked. Re-runs whenever the modal opens or the shown flag changes,
@@ -189,83 +168,6 @@ export default function FlagDetailModal({
     }
   };
 
-  // Pick and upload a new photo for this flag (owner-only).
-  const handleAddPhoto = async () => {
-    if (!shownFlag || !user) return;
-
-    if (Platform.OS === 'web') {
-      const input = document.createElement('input');
-      input.type = 'file';
-      input.accept = 'image/*';
-      input.style.display = 'none';
-      input.onchange = async () => {
-        const file = input.files?.[0];
-        if (!file) return;
-        const localUri = URL.createObjectURL(file);
-        try {
-          await addFlagPhoto(shownFlag.id, localUri);
-          const updated = await listFlagPhotos(shownFlag.id);
-          setFlagPhotos(updated);
-        } catch (e) {
-          Alert.alert('Could not upload photo', errorMessage(e));
-        }
-      };
-      document.body.appendChild(input);
-      input.click();
-      return;
-    }
-
-    Alert.alert('Add photo', 'Choose a source', [
-      {
-        text: 'Take photo',
-        onPress: async () => {
-          const perm = await ImagePicker.requestCameraPermissionsAsync();
-          if (!perm.granted) {
-            Alert.alert('Permission needed', 'Allow camera access to attach a photo.');
-            return;
-          }
-          const result = await ImagePicker.launchCameraAsync({
-            mediaTypes: ImagePicker.MediaTypeOptions.Images,
-            quality: 0.7,
-          });
-          if (!result.canceled && result.assets[0]?.uri) {
-            try {
-              await addFlagPhoto(shownFlag.id, result.assets[0].uri);
-              const updated = await listFlagPhotos(shownFlag.id);
-              setFlagPhotos(updated);
-            } catch (e) {
-              Alert.alert('Could not upload photo', errorMessage(e));
-            }
-          }
-        },
-      },
-      {
-        text: 'Choose from library',
-        onPress: async () => {
-          const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
-          if (!perm.granted) {
-            Alert.alert('Permission needed', 'Allow photo library access to attach a photo.');
-            return;
-          }
-          const result = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ImagePicker.MediaTypeOptions.Images,
-            quality: 0.7,
-          });
-          if (!result.canceled && result.assets[0]?.uri) {
-            try {
-              await addFlagPhoto(shownFlag.id, result.assets[0].uri);
-              const updated = await listFlagPhotos(shownFlag.id);
-              setFlagPhotos(updated);
-            } catch (e) {
-              Alert.alert('Could not upload photo', errorMessage(e));
-            }
-          }
-        },
-      },
-      { text: 'Cancel', style: 'cancel' },
-    ]);
-  };
-
   if (!shownFlag) {
     return <Modal visible={false} transparent onRequestClose={onClose} />;
   }
@@ -282,16 +184,6 @@ export default function FlagDetailModal({
   const formattedCoords = `${shownFlag.lat.toFixed(5)}, ${shownFlag.lng.toFixed(5)}`;
   const coordsA11y = `Coordinates ${shownFlag.lat.toFixed(5)} latitude, ${shownFlag.lng.toFixed(5)} longitude`;
   const canEdit = isOwn && status === 'open';
-
-  // Split the flag's stored context_tags into general "conditions", seasonal,
-  // and disability groups so each renders under its own heading. isValidTag
-  // scrubs any unknown/dirty values first (so a future vocabulary change can't
-  // crash the render); the type guards then partition what remains. General =
-  // whatever's left after pulling out the two named subsets.
-  const validTags = (shownFlag.context_tags ?? []).filter(isValidTag);
-  const seasonalTags = validTags.filter(isSeasonalTag);
-  const disabilityTags = validTags.filter(isDisabilityTag);
-  const generalTags = validTags.filter((t) => !isSeasonalTag(t) && !isDisabilityTag(t));
 
   const handleSaveEdit = async () => {
     if (busy || !shownFlag) return;
@@ -388,21 +280,6 @@ export default function FlagDetailModal({
     }
   };
 
-  const handleSubmitComment = async () => {
-    const trimmed = commentText.trim();
-    if (!trimmed || commentSubmitting) return;
-    setCommentSubmitting(true);
-    try {
-      await addComment(trimmed);
-      setCommentText('');
-      Keyboard.dismiss();
-    } catch (e) {
-      Alert.alert('Could not post comment', errorMessage(e));
-    } finally {
-      setCommentSubmitting(false);
-    }
-  };
-
   const handleDelete = async () => {
     if (busy) return;
     // confirm() is platform-aware: on web, Alert.alert is a no-op, so we use
@@ -429,7 +306,7 @@ export default function FlagDetailModal({
 
   return (
     <>
-      <Modal visible={visible} animationType={reducedMotion ? 'none' : 'slide'} transparent onRequestClose={onClose}>
+      <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
         <View style={styles.backdrop}>
           {/* accessibilityViewIsModal: tells iOS VoiceOver that everything
             outside this card is non-interactive — important because we
@@ -464,11 +341,31 @@ export default function FlagDetailModal({
               contentContainerStyle={styles.bodyContent}
               showsVerticalScrollIndicator={false}
             >
-              <PhotoGallery
-                photos={flagPhotos}
-                onAddPhoto={isOwn && !busy ? handleAddPhoto : undefined}
-                maxPhotos={5}
-              />
+              {shownFlag.photo_url ? (
+                <Pressable
+                  onPress={() => setLightboxOpen(true)}
+                  style={({ pressed }) => [styles.photo, pressed && styles.photoPressed]}
+                  accessibilityRole="imagebutton"
+                  accessibilityLabel={`Photo of the reported ${CATEGORY_LABELS[shownFlag.category]}`}
+                  accessibilityHint="Tap to view full screen"
+                >
+                  <Image
+                    source={{ uri: shownFlag.photo_url }}
+                    style={styles.photoInner}
+                    resizeMode="cover"
+                    accessibilityElementsHidden
+                    importantForAccessibility="no-hide-descendants"
+                  />
+                </Pressable>
+              ) : (
+                <View
+                  style={[styles.photo, styles.photoPlaceholder]}
+                  accessible
+                  accessibilityLabel="No photo available"
+                >
+                  <Text style={styles.photoPlaceholderText}>No photo</Text>
+                </View>
+              )}
 
               <View style={styles.metaRow}>
                 <View
@@ -489,57 +386,34 @@ export default function FlagDetailModal({
                 {shownFlag.description?.trim() ? shownFlag.description : 'No description provided.'}
               </Text>
 
-              {/* Context + seasonal tags — small chips below the description.
-                  Split into two labeled groups so the seasonal "when in the
-                  year" angle (W6-5) reads distinctly from general conditions.
-                  Each group renders only when it has tags. The chip strip is
-                  one accessibility node per group with a comma-joined label so
-                  a screen reader reads "Conditions: …" / "Seasonal: …" once
-                  rather than chip-by-chip. */}
-              {[
-                { key: 'conditions', heading: 'Conditions', tags: generalTags },
-                { key: 'seasonal', heading: 'Seasonal', tags: seasonalTags },
-                { key: 'disability', heading: 'Who this affects', tags: disabilityTags },
-              ].map(({ key, heading, tags }) =>
-                tags.length > 0 ? (
-                  <React.Fragment key={key}>
-                    <Text
-                      style={[
-                        styles.sectionLabel,
-                        key === 'disability' && styles.sectionLabelDisability,
-                      ]}
-                    >
-                      {heading}
-                    </Text>
-                    <View
-                      style={styles.contextTagsRow}
-                      accessible
-                      accessibilityLabel={`${heading}: ${tags.map((t) => tagLabel(t)).join(', ')}`}
-                    >
-                      {tags.map((tag) => (
-                        <View
-                          key={tag}
-                          style={[
-                            styles.contextChip,
-                            key === 'disability' && styles.disabilityChip,
-                          ]}
-                          accessibilityElementsHidden
-                          importantForAccessibility="no-hide-descendants"
-                        >
-                          <Text
-                            style={[
-                              styles.contextChipText,
-                              key === 'disability' && styles.disabilityChipText,
-                            ]}
-                          >
-                            {tagLabel(tag)}
-                          </Text>
-                        </View>
-                      ))}
-                    </View>
-                  </React.Fragment>
-                ) : null,
-              )}
+              {/* Context tags — only shown when the flag has them */}
+              {(shownFlag.context_tags ?? []).filter(isValidTag).length > 0 ? (
+                <>
+                  <Text style={styles.sectionLabel}>Conditions</Text>
+                  <View
+                    style={styles.contextTagsRow}
+                    accessible
+                    accessibilityLabel={
+                      'Conditions: ' +
+                      (shownFlag.context_tags ?? [])
+                        .filter(isValidTag)
+                        .map((t) => CONTEXT_TAG_LABELS[t])
+                        .join(', ')
+                    }
+                  >
+                    {(shownFlag.context_tags ?? []).filter(isValidTag).map((tag) => (
+                      <View
+                        key={tag}
+                        style={styles.contextChip}
+                        accessibilityElementsHidden
+                        importantForAccessibility="no-hide-descendants"
+                      >
+                        <Text style={styles.contextChipText}>{CONTEXT_TAG_LABELS[tag]}</Text>
+                      </View>
+                    ))}
+                  </View>
+                </>
+              ) : null}
 
               <Text style={styles.sectionLabel}>Reported by</Text>
               <Text style={styles.metaValue}>{isOwn ? 'You' : 'Another community member'}</Text>
@@ -729,6 +603,73 @@ export default function FlagDetailModal({
                 </View>
               )}
 
+              {/* Comments — UI stub; wired to local state only until the
+                  comments table ships in a later migration. */}
+              <Text style={styles.sectionLabel}>Comments</Text>
+              {comments.length === 0 ? (
+                <Text
+                  style={styles.commentsEmpty}
+                  accessible
+                  accessibilityLiveRegion="polite"
+                >
+                  No comments yet.
+                </Text>
+              ) : (
+                <View
+                  accessibilityRole="list"
+                  accessibilityLabel={`${comments.length} comment${comments.length === 1 ? '' : 's'}`}
+                >
+                  {comments.map((c, i) => (
+                    <View
+                      key={i}
+                      style={styles.commentRow}
+                      role="listitem"
+                      accessibilityLabel={`Comment ${i + 1}: ${c}`}
+                    >
+                      <Text style={styles.commentText}>{c}</Text>
+                    </View>
+                  ))}
+                </View>
+              )}
+              <View style={styles.commentInputRow}>
+                <TextInput
+                  style={styles.commentInput}
+                  value={commentDraft}
+                  onChangeText={setCommentDraft}
+                  placeholder="Add a comment…"
+                  placeholderTextColor={color.textMuted}
+                  maxLength={500}
+                  accessibilityLabel="Comment text"
+                  accessibilityHint="Type a comment, then tap Send"
+                  returnKeyType="send"
+                  onSubmitEditing={() => {
+                    const trimmed = commentDraft.trim();
+                    if (!trimmed) return;
+                    setComments((prev) => [...prev, trimmed]);
+                    setCommentDraft('');
+                  }}
+                />
+                <Pressable
+                  onPress={() => {
+                    const trimmed = commentDraft.trim();
+                    if (!trimmed) return;
+                    setComments((prev) => [...prev, trimmed]);
+                    setCommentDraft('');
+                  }}
+                  disabled={!commentDraft.trim()}
+                  style={({ pressed }) => [
+                    styles.commentSendBtn,
+                    pressed && styles.commentSendBtnPressed,
+                    !commentDraft.trim() && styles.commentSendBtnDisabled,
+                  ]}
+                  accessibilityRole="button"
+                  accessibilityLabel="Send comment"
+                  accessibilityState={{ disabled: !commentDraft.trim() }}
+                >
+                  <Text style={styles.commentSendText}>Send</Text>
+                </Pressable>
+              </View>
+
               <View style={styles.secondaryRow}>
                 <Pressable
                   onPress={() => {
@@ -757,7 +698,7 @@ export default function FlagDetailModal({
                     try {
                       await Linking.openURL(url);
                     } catch {
-                      Alert.alert("Couldn't open maps", 'No maps app was found on your device.');
+                      Alert.alert('Could not open maps app.');
                     }
                   }}
                   disabled={busy}
@@ -791,107 +732,6 @@ export default function FlagDetailModal({
                 >
                   <Text style={styles.historyBtnText}>History</Text>
                 </Pressable>
-              </View>
-
-              {/* ── Comments ─────────────────────────────────────────── */}
-              <View style={styles.commentsSection}>
-                <Text style={styles.sectionLabel}>Comments</Text>
-
-                {commentsTableNotReady ? (
-                  <Text style={styles.commentsSoonText}>Comments aren't available here yet.</Text>
-                ) : commentsError ? (
-                  <Text style={styles.commentsErrorText}>Couldn't load comments. Check your connection and try again.</Text>
-                ) : commentsLoading && comments.length === 0 ? (
-                  <ActivityIndicator
-                    size="small"
-                    color={color.brand}
-                    style={styles.commentsSpinner}
-                    accessible
-                    accessibilityLabel="Loading comments"
-                  />
-                ) : comments.length === 0 ? (
-                  <View style={styles.commentsEmptyContainer}>
-                    <Text
-                      style={styles.commentsEmptyIcon}
-                      accessibilityElementsHidden
-                      importantForAccessibility="no-hide-descendants"
-                    >
-                      💬
-                    </Text>
-                    <Text style={styles.commentsEmptyLabel}>
-                      No comments yet — share what you know.
-                    </Text>
-                  </View>
-                ) : (
-                  <View style={styles.commentsList} accessibilityRole="list">
-                    {comments.map((c) => (
-                      <CommentBubble
-                        key={c.id}
-                        author={c.display_name ?? 'Anonymous'}
-                        text={c.content}
-                        createdAt={new Date(c.created_at)}
-                        isOwn={c.user_id === user?.id}
-                        onDelete={
-                          c.user_id === user?.id
-                            ? () => {
-                                void confirm(
-                                  'Delete comment?',
-                                  'This permanently removes your comment.',
-                                  'Delete',
-                                  true,
-                                ).then((ok) => {
-                                  if (!ok) return;
-                                  void deleteCommentById(c.id).catch((e: unknown) => {
-                                    Alert.alert('Could not delete comment', errorMessage(e));
-                                  });
-                                });
-                              }
-                            : undefined
-                        }
-                      />
-                    ))}
-                  </View>
-                )}
-
-                {!commentsTableNotReady && user && (
-                  <View style={styles.commentInputRow}>
-                    <TextInput
-                      ref={commentInputRef}
-                      style={styles.commentInput}
-                      value={commentText}
-                      onChangeText={setCommentText}
-                      placeholder="Add a comment…"
-                      placeholderTextColor={color.textMuted}
-                      maxLength={MAX_COMMENT_LENGTH}
-                      returnKeyType="send"
-                      onSubmitEditing={() => void handleSubmitComment()}
-                      blurOnSubmit={false}
-                      accessibilityLabel="Comment text"
-                      accessibilityHint={`Up to ${MAX_COMMENT_LENGTH} characters`}
-                    />
-                    <Pressable
-                      onPress={() => void handleSubmitComment()}
-                      disabled={commentSubmitting || commentText.trim().length === 0}
-                      style={({ pressed }) => [
-                        styles.commentSendBtn,
-                        (commentSubmitting || commentText.trim().length === 0) && styles.commentSendBtnDisabled,
-                        pressed && styles.commentSendBtnPressed,
-                      ]}
-                      accessibilityRole="button"
-                      accessibilityLabel="Send comment"
-                      accessibilityState={{
-                        disabled: commentSubmitting || commentText.trim().length === 0,
-                        busy: commentSubmitting,
-                      }}
-                    >
-                      {commentSubmitting ? (
-                        <ActivityIndicator size="small" color={color.textOnBrand} />
-                      ) : (
-                        <Text style={styles.commentSendBtnText}>Send</Text>
-                      )}
-                    </Pressable>
-                  </View>
-                )}
               </View>
             </ScrollView>
 
@@ -968,6 +808,16 @@ export default function FlagDetailModal({
           </View>
         </View>
       </Modal>
+      <PhotoLightboxModal
+        visible={lightboxOpen}
+        photoUrl={shownFlag?.photo_url ?? null}
+        caption={
+          shownFlag
+            ? `${CATEGORY_LABELS[shownFlag.category]} · ${STATUS_LABELS[shownFlag.status]}`
+            : undefined
+        }
+        onClose={() => setLightboxOpen(false)}
+      />
       <StatusHistoryModal
         visible={historyOpen}
         flagId={shownFlag?.id ?? null}
@@ -986,50 +836,64 @@ const makeStyles = (color: ColorTheme) =>
     },
     card: {
       backgroundColor: color.surface,
-      borderTopLeftRadius: radius.xl,
-      borderTopRightRadius: radius.xl,
-      paddingHorizontal: spacing.xl,
-      paddingTop: spacing.lg,
-      paddingBottom: spacing.xl,
-      gap: spacing.md,
+      borderTopLeftRadius: 16,
+      borderTopRightRadius: 16,
+      paddingHorizontal: 20,
+      paddingTop: 16,
+      paddingBottom: 20,
+      gap: 12,
       maxHeight: '90%',
     },
     headerRow: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: spacing.md,
+      gap: 12,
     },
-    title: { fontSize: font.size.xxl, fontWeight: font.weight.bold, flex: 1, color: color.textStrong },
+    title: { fontSize: 20, fontWeight: '700', flex: 1, color: color.textStrong },
     closeBtn: {
       width: 32,
       height: 32,
-      borderRadius: radius.circle,
+      borderRadius: 16,
       backgroundColor: color.surfaceNeutral,
       alignItems: 'center',
       justifyContent: 'center',
     },
-    closeBtnText: { fontSize: font.size.lg, color: color.text, fontWeight: font.weight.bold },
+    closeBtnText: { fontSize: 16, color: color.text, fontWeight: '700' },
     body: { flexShrink: 1 },
-    bodyContent: { gap: spacing.sm, paddingBottom: spacing.tight },
+    bodyContent: { gap: 8, paddingBottom: 4 },
+    photo: {
+      width: '100%',
+      aspectRatio: 4 / 3,
+      borderRadius: 12,
+      backgroundColor: color.surfaceNeutral,
+      overflow: 'hidden',
+    },
+    photoInner: { width: '100%', height: '100%' },
+    photoPressed: { opacity: 0.85 },
+    photoPlaceholder: {
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    photoPlaceholderText: { color: color.textMuted, fontSize: 14, fontWeight: '600' },
     metaRow: {
       flexDirection: 'row',
       flexWrap: 'wrap',
-      gap: spacing.sm,
-      marginTop: spacing.tight,
+      gap: 8,
+      marginTop: 4,
     },
     severityChip: {
       paddingHorizontal: 10,
       paddingVertical: 6,
       borderRadius: radius.circle,
     },
-    severityChipText: { color: color.textOnBrand, fontWeight: font.weight.bold, fontSize: font.size.xs },
+    severityChipText: { color: color.textOnBrand, fontWeight: '700', fontSize: 12 },
     sectionLabel: {
-      fontSize: font.size.xs,
-      fontWeight: font.weight.semibold,
+      fontSize: 12,
+      fontWeight: '600',
       color: color.textMuted,
       textTransform: 'uppercase',
       letterSpacing: 0.5,
-      marginTop: spacing.sm,
+      marginTop: 8,
     },
     description: { fontSize: font.size.md, color: color.textStrong, lineHeight: 21 },
     contextTagsRow: {
@@ -1040,16 +904,16 @@ const makeStyles = (color: ColorTheme) =>
     },
     contextChip: {
       backgroundColor: color.surfaceNeutral,
-      borderRadius: radius.full,
+      borderRadius: 999,
       paddingHorizontal: 10,
       paddingVertical: 4,
     },
     contextChipText: {
-      fontSize: font.size.xs,
+      fontSize: 12,
       color: color.textMuted,
-      fontWeight: font.weight.medium,
+      fontWeight: '500',
     },
-    metaValue: { fontSize: font.size.base, color: color.text },
+    metaValue: { fontSize: 14, color: color.text },
     coordsRow: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -1072,8 +936,8 @@ const makeStyles = (color: ColorTheme) =>
     },
     actionBtn: {
       paddingHorizontal: 14,
-      paddingVertical: spacing.md,
-      borderRadius: radius.lg,
+      paddingVertical: 12,
+      borderRadius: 10,
       minHeight: 44,
       alignItems: 'center',
       justifyContent: 'center',
@@ -1081,15 +945,15 @@ const makeStyles = (color: ColorTheme) =>
       minWidth: 100,
     },
     verifyBtn: { backgroundColor: color.brand },
-    verifyText: { color: color.textOnBrand, fontWeight: font.weight.bold, fontSize: font.size.base },
+    verifyText: { color: color.textOnBrand, fontWeight: '700', fontSize: 14 },
     resolveBtn: { backgroundColor: color.success },
-    resolveText: { color: color.textOnBrand, fontWeight: font.weight.bold, fontSize: font.size.base },
+    resolveText: { color: color.textOnBrand, fontWeight: '700', fontSize: 14 },
     // Reject uses a neutral surface so it reads clearly in dark mode.
     // color.surfaceNeutral adapts to dark (#2a2a2a) automatically.
     rejectBtn: { backgroundColor: color.surfaceNeutral },
-    rejectText: { color: color.text, fontWeight: font.weight.bold, fontSize: font.size.base },
+    rejectText: { color: color.text, fontWeight: '700', fontSize: 14 },
     deleteBtn: { backgroundColor: color.errorStrong },
-    deleteText: { color: color.textOnBrand, fontWeight: font.weight.bold, fontSize: font.size.base },
+    deleteText: { color: color.textOnBrand, fontWeight: '700', fontSize: 14 },
     viewMapBtn: {
       backgroundColor: 'transparent',
       borderWidth: 1,
@@ -1098,7 +962,7 @@ const makeStyles = (color: ColorTheme) =>
     // Outlined button: blue text on white card. Uses color.brandText
     // (#1c4f99 ≈ 7.6:1) instead of color.brand (#2f80ed ≈ 3.3:1) so it
     // stays AA-safe even if the font size drops below 14pt-bold.
-    viewMapBtnText: { color: color.brandText, fontWeight: font.weight.bold, fontSize: font.size.base },
+    viewMapBtnText: { color: color.brandText, fontWeight: '700', fontSize: 14 },
     secondaryRow: {
       flexDirection: 'row',
       // 4 buttons now (View on Map, Directions, Share, History) — wrap so
@@ -1114,21 +978,21 @@ const makeStyles = (color: ColorTheme) =>
     },
     // Outlined Share button: blue text on white card. Uses color.brandText
     // for AA-safe contrast at any size (see viewMapBtnText note above).
-    shareBtnText: { color: color.brandText, fontWeight: font.weight.bold, fontSize: font.size.base },
+    shareBtnText: { color: color.brandText, fontWeight: '700', fontSize: 14 },
     // History sits next to Share — same outlined-blue treatment for visual
-    // consistency. Uses color.brandText for AA-safe contrast.
+    // consistency. Uses color.brandText (from CL2) for AA-safe contrast.
     historyBtn: {
       backgroundColor: 'transparent',
       borderWidth: 1,
       borderColor: color.brand,
     },
-    historyBtnText: { color: color.brandText, fontWeight: font.weight.bold, fontSize: font.size.base },
+    historyBtnText: { color: color.brandText, fontWeight: '700', fontSize: 14 },
     // Directions sits between View on Map and Share in the secondary row.
     // Filled brand-blue (not outlined) so it reads as the primary action of
     // the trio — getting somewhere is usually what the user wants more than
     // re-centering the map or sharing.
     directionsBtn: { backgroundColor: color.brand },
-    directionsBtnText: { color: color.textOnBrand, fontWeight: font.weight.bold, fontSize: font.size.base },
+    directionsBtnText: { color: color.textOnBrand, fontWeight: '700', fontSize: 14 },
     // Watch button — star pill between the location section and secondaryRow.
     // Neutral outline when unset; filled amber when actively watching so the
     // state is unambiguous without relying on the star glyph alone.
@@ -1143,9 +1007,6 @@ const makeStyles = (color: ColorTheme) =>
       borderWidth: 1.5,
       borderColor: color.borderStrong,
       marginTop: 10,
-      minHeight: 44,
-      minWidth: 80,
-      justifyContent: 'center',
     },
     watchBtnActive: {
       borderColor: color.accentOrange,
@@ -1155,23 +1016,23 @@ const makeStyles = (color: ColorTheme) =>
       opacity: 0.7,
     },
     watchBtnGlyph: {
-      fontSize: font.size.lg,
+      fontSize: 16,
       color: color.textSubtle,
     },
     watchBtnText: {
-      fontSize: font.size.base,
-      fontWeight: font.weight.semibold,
+      fontSize: 14,
+      fontWeight: '600',
       color: color.text,
     },
     watchBtnTextActive: {
       color: color.warningFg,
     },
     editBtn: { backgroundColor: color.surface, borderWidth: 1.5, borderColor: color.border },
-    editBtnText: { color: color.text, fontWeight: font.weight.bold, fontSize: font.size.base },
-    editForm: { gap: spacing.md, marginTop: spacing.tight, marginBottom: spacing.sm },
+    editBtnText: { color: color.text, fontWeight: '700', fontSize: 14 },
+    editForm: { gap: 10, marginTop: 4, marginBottom: 8 },
     editLabel: {
-      fontSize: font.size.xs,
-      fontWeight: font.weight.bold,
+      fontSize: 12,
+      fontWeight: '700',
       color: color.textMuted,
       textTransform: 'uppercase',
       letterSpacing: 0.5,
@@ -1179,9 +1040,9 @@ const makeStyles = (color: ColorTheme) =>
     editInput: {
       borderWidth: 1,
       borderColor: color.border,
-      borderRadius: radius.lg,
-      padding: spacing.md,
-      fontSize: font.size.base,
+      borderRadius: 10,
+      padding: 10,
+      fontSize: 14,
       color: color.text,
       backgroundColor: color.surface,
       minHeight: 72,
@@ -1189,19 +1050,20 @@ const makeStyles = (color: ColorTheme) =>
     },
     categoryRow: { flexGrow: 0 },
     categoryChip: {
-      paddingHorizontal: spacing.md,
-      paddingVertical: spacing.xs,
+      paddingHorizontal: 12,
+      paddingVertical: 6,
       borderRadius: radius.circle,
       borderWidth: 1.5,
       borderColor: color.border,
-      marginRight: spacing.sm,
+      marginRight: 8,
       backgroundColor: color.surface,
     },
     // Active chip: filled-brand, matching the MapScreen filter panel pattern.
+    // color.brand (#2f80ed) background with white text — same as filterPillActive.
     categoryChipActive: { borderColor: color.brand, backgroundColor: color.brand },
-    categoryChipText: { fontSize: font.size.sm, color: color.text },
-    categoryChipTextActive: { color: color.textOnBrand, fontWeight: font.weight.bold },
-    severityRow: { flexDirection: 'row', gap: spacing.sm },
+    categoryChipText: { fontSize: 13, color: color.text },
+    categoryChipTextActive: { color: color.textOnBrand, fontWeight: '700' },
+    severityRow: { flexDirection: 'row', gap: 8 },
     severityBtn: {
       width: 44,
       height: 44,
@@ -1212,119 +1074,61 @@ const makeStyles = (color: ColorTheme) =>
       borderColor: color.border,
       backgroundColor: color.surface,
     },
-    severityBtnText: { fontSize: font.size.base, fontWeight: font.weight.bold, color: color.text },
+    severityBtnText: { fontSize: 14, fontWeight: '700', color: color.text },
     severityBtnTextActive: { color: color.textOnBrand },
-    editActions: { flexDirection: 'row', gap: spacing.md, marginTop: spacing.tight },
+    editActions: { flexDirection: 'row', gap: 10, marginTop: 4 },
     cancelBtn: {
       flex: 1,
       backgroundColor: color.surface,
       borderWidth: 1.5,
       borderColor: color.border,
     },
-    cancelBtnText: { color: color.text, fontWeight: font.weight.bold, fontSize: font.size.base },
+    cancelBtnText: { color: color.text, fontWeight: '700', fontSize: 14 },
     saveBtn: { flex: 1, backgroundColor: color.brand },
-    saveBtnText: { color: color.textOnBrand, fontWeight: font.weight.bold, fontSize: font.size.base },
-    // ── Comments ────────────────────────────────────────────────────────────
-    commentsSection: {
-      marginTop: spacing.md,
-      gap: spacing.sm,
-    },
-    commentsSoonText: {
-      fontSize: font.size.sm,
+    saveBtnText: { color: color.textOnBrand, fontWeight: '700', fontSize: 14 },
+    commentsEmpty: {
+      fontSize: 13,
       color: color.textMuted,
       fontStyle: 'italic',
+      marginBottom: 10,
     },
-    commentsErrorText: {
-      fontSize: font.size.sm,
-      color: color.errorFg,
+    commentRow: {
+      backgroundColor: color.surfaceNeutral,
+      borderRadius: radius.md,
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      marginBottom: 6,
     },
-    commentsSpinner: {
-      marginTop: spacing.sm,
-      alignSelf: 'center',
-    },
-    commentsEmptyText: {
-      fontSize: font.size.sm,
-      color: color.textMuted,
-    },
-    commentsList: {
-      gap: spacing.tight,
-      // Negative horizontal margin so CommentBubble's paddingHorizontal
-      // from the CommentBubble styles controls the visual inset instead.
-      marginHorizontal: -spacing.xl,
-    },
+    commentText: { fontSize: 14, color: color.text },
     commentInputRow: {
       flexDirection: 'row',
-      alignItems: 'flex-end',
-      gap: spacing.sm,
-      marginTop: spacing.sm,
-      // Subtle lift off the card surface — reinforces this is an interactive tray.
-      paddingTop: spacing.sm,
-      borderTopWidth: StyleSheet.hairlineWidth,
-      borderTopColor: color.borderSubtle,
+      alignItems: 'center',
+      gap: 8,
+      marginTop: 4,
+      marginBottom: 12,
     },
     commentInput: {
       flex: 1,
       borderWidth: 1,
-      borderColor: color.borderStrong,
-      borderRadius: radius.xl,
-      paddingHorizontal: spacing.md,
-      paddingVertical: spacing.sm,
-      fontSize: font.size.base,
+      borderColor: color.border,
+      borderRadius: radius.md,
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      fontSize: 14,
       color: color.text,
-      backgroundColor: color.surfaceSoft,
+      backgroundColor: color.surface,
       minHeight: 40,
-      maxHeight: 100,
     },
     commentSendBtn: {
+      paddingHorizontal: 14,
+      paddingVertical: 8,
       backgroundColor: color.brand,
-      borderRadius: radius.xl,
-      paddingHorizontal: spacing.md,
-      paddingVertical: spacing.sm,
-      // WCAG 2.5.8 / Apple HIG: 44pt minimum touch target. Was 40.
-      minHeight: 44,
-      minWidth: 60,
+      borderRadius: radius.md,
+      minHeight: 40,
       alignItems: 'center',
       justifyContent: 'center',
-      ...shadow.e1,
     },
-    commentSendBtnDisabled: {
-      opacity: 0.4,
-    },
-    commentSendBtnPressed: {
-      opacity: 0.75,
-    },
-    commentSendBtnText: {
-      color: color.textOnBrand,
-      fontWeight: font.weight.bold,
-      fontSize: font.size.sm,
-    },
-    // Disability chip — distinct from general/seasonal: brand-tinted fill so
-    // "Who this affects" reads with more visual weight. brandSofter bg with
-    // a 1px brand border matches the report form's active tag fill treatment.
-    sectionLabelDisability: {
-      color: color.brandText,
-    },
-    disabilityChip: {
-      backgroundColor: color.brandSofter,
-      borderWidth: 1,
-      borderColor: color.brand,
-    },
-    disabilityChipText: {
-      color: color.brandText,
-      fontWeight: font.weight.semibold,
-    },
-    // Comment empty state — centered so the whitespace reads intentionally.
-    commentsEmptyContainer: {
-      alignItems: 'center',
-      paddingVertical: spacing.xl,
-      gap: spacing.sm,
-    },
-    commentsEmptyIcon: {
-      fontSize: font.size.xxl,
-    },
-    commentsEmptyLabel: {
-      fontSize: font.size.base,
-      color: color.textMuted,
-      textAlign: 'center',
-    },
+    commentSendBtnPressed: { opacity: 0.8 },
+    commentSendBtnDisabled: { backgroundColor: color.borderSubtle },
+    commentSendText: { fontSize: 14, fontWeight: '700', color: color.textOnBrand },
   });

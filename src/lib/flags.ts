@@ -97,9 +97,11 @@ export async function stripExifNative(
       return null;
     }
 
-    console.debug(
-      `[EXIF] Native re-encode: ${arrayBuffer.byteLength} → ${strippedBuffer.byteLength} bytes`,
-    );
+    if (__DEV__) {
+      console.debug(
+        `[EXIF] Native re-encode: ${arrayBuffer.byteLength} → ${strippedBuffer.byteLength} bytes`,
+      );
+    }
     return strippedBuffer;
   } catch (e) {
     console.warn('[EXIF] ImageManipulator transcode failed:', e);
@@ -173,9 +175,11 @@ export function stripExifWeb(arrayBuffer: ArrayBuffer, ext: string): Promise<Arr
                 console.warn('[EXIF] Canvas result not ArrayBuffer; using original.');
                 return resolve(arrayBuffer);
               }
-              console.debug(
-                `[EXIF] Web re-encode: ${arrayBuffer.byteLength} → ${result.byteLength} bytes`,
-              );
+              if (__DEV__) {
+                console.debug(
+                  `[EXIF] Web re-encode: ${arrayBuffer.byteLength} → ${result.byteLength} bytes`,
+                );
+              }
               resolve(result);
             }) as any;
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -230,13 +234,13 @@ export function verifyExifStripped(arrayBuffer: ArrayBuffer): boolean {
     if (byte1 !== undefined && byte2 !== undefined) {
       const marker = (byte1 << 8) | byte2;
       if (marker === exifMarker || marker === iptcMarker || marker === xmpMarker) {
-        console.debug('[EXIF] Found metadata marker 0x' + marker.toString(16));
+        if (__DEV__) console.debug('[EXIF] Found metadata marker 0x' + marker.toString(16));
         return false;
       }
     }
   }
 
-  console.debug('[EXIF] Post-strip verification passed (no markers found).');
+  if (__DEV__) console.debug('[EXIF] Post-strip verification passed (no markers found).');
   return true;
 }
 
@@ -914,19 +918,54 @@ export async function listFlagStatusHistory(flagId: string): Promise<FlagStatusH
 export interface LeaderboardEntry {
   id: string;
   display_name: string | null;
+  avatar_url: string | null;
   points: number;
 }
 
+// SECURITY / PRIVACY (W6-1): do NOT add a `verified_count` (or any
+// verifier-activity metric) back to the leaderboard. Surfacing how many flags a
+// user has verified/resolved publicly identifies who is acting as a verifier,
+// which lets bad actors single out and target moderators. The leaderboard
+// intentionally exposes only display_name + points. If you need verify stats,
+// keep them private to the user's own profile — never in a public ranking.
+
 /**
  * Returns the top `limit` users by points, highest first.
- * The `users` table is readable by all authenticated users (no RLS change needed).
  */
-export async function listLeaderboard(limit = 10): Promise<LeaderboardEntry[]> {
+export async function listLeaderboard(limit = 20): Promise<LeaderboardEntry[]> {
   const { data, error } = await supabase
     .from('users')
-    .select('id, display_name, points')
+    .select('id, display_name, avatar_url, points')
     .order('points', { ascending: false })
     .limit(limit);
   if (error) throw error;
   return (data ?? []) as LeaderboardEntry[];
+}
+
+/**
+ * Returns the current user's rank (1-indexed) and points.
+ * Used when the user isn't in the top-20 — the rank is computed by counting
+ * users with strictly more points.
+ *
+ * Note: deliberately does NOT return a verified flag count — see the
+ * SECURITY / PRIVACY note on LeaderboardEntry above (W6-1).
+ */
+export async function getUserLeaderboardRank(
+  userId: string,
+): Promise<{ rank: number; points: number }> {
+  const { data: me, error: me_err } = await supabase
+    .from('users')
+    .select('points')
+    .eq('id', userId)
+    .single();
+  if (me_err) throw me_err;
+  const userPoints = (me as { points: number }).points;
+
+  const { count: above, error: rank_err } = await supabase
+    .from('users')
+    .select('*', { count: 'exact', head: true })
+    .gt('points', userPoints);
+  if (rank_err) throw rank_err;
+
+  return { rank: (above ?? 0) + 1, points: userPoints };
 }

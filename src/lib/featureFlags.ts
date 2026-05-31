@@ -18,9 +18,12 @@ export type FeatureFlagKey =
 
 /** Default values. Change these here or via `setFlag()` at runtime in dev. */
 const DEFAULTS: Record<FeatureFlagKey, boolean> = {
-  HEATMAP_ENABLED: false,
+  HEATMAP_ENABLED: true,
   PUSH_NOTIFICATIONS_ENABLED: true,
-  GUEST_SIGNIN_ENABLED: true,
+  // Defaults false — guest access is gated at the App.tsx level; setting this
+  // true here would allow any future isEnabled() check to admit unauthenticated
+  // users before the full guest-auth flow has been audited and RLS-verified.
+  GUEST_SIGNIN_ENABLED: false,
 };
 
 // ---------------------------------------------------------------------------

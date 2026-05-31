@@ -15,7 +15,7 @@ import {
 import * as Location from 'expo-location';
 import { useRoute, type RouteProp } from '@react-navigation/native';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
-import { font, radius, shadow, spacing } from '@/theme';
+import { radius, shadow } from '@/theme';
 import { errorMessage } from '@/lib/errors';
 import {
   CATEGORY_ICONS,
@@ -30,12 +30,6 @@ import {
   STATUS_ORDER,
 } from '@/lib/flags';
 import { useFlags } from '@/lib/flagsStore';
-import {
-  DISABILITY_TAGS,
-  DISABILITY_TAG_LABELS,
-  matchesDisabilityFilter,
-  type DisabilityTag,
-} from '@/lib/contextTags';
 import { DISTANCE_OPTIONS, loadMapFilters, saveMapFilters } from '@/lib/mapFilters';
 import { haversineKm } from '@/lib/distance';
 import { loadFilterPanelCollapsed, saveFilterPanelCollapsed } from '@/lib/filterPanelPrefs';
@@ -130,7 +124,6 @@ export default function MapScreen() {
     loading: loadingFlags,
     error: loadError,
     refresh: refreshFlags,
-    refreshIfStale: refreshFlagsIfStale,
     setStatuses,
     setViewportGate,
   } = useFlags();
@@ -239,14 +232,6 @@ export default function MapScreen() {
   // mapFilters; saved sets/presets do not carry this axis (yet) so applying
   // a set leaves the current radius untouched.
   const [maxDistanceKm, setMaxDistanceKm] = useState<number | null>(null);
-  // "Who does this affect?" filter (Sprint 3) — the disability tags the user
-  // wants to narrow to. Empty = no filter (show everything). This is a pure
-  // client-side filter on already-loaded flags (see filteredFlags) — no new
-  // server query. Intentionally session-only / not persisted to mapFilters:
-  // it's an access-need lens a user picks for the moment, and keeping it out
-  // of the persisted triple avoids disturbing saved-set/preset matching, which
-  // compares categories/severity/status only.
-  const [activeDisabilityTags, setActiveDisabilityTags] = useState<Set<DisabilityTag>>(new Set());
   // Tracks whether we've finished reading saved filters from AsyncStorage.
   // The save-effect below is gated on this so the very first render
   // doesn't overwrite stored state with the (still-default) starting set
@@ -337,21 +322,11 @@ export default function MapScreen() {
     });
   }, []);
 
-  const toggleDisabilityTag = useCallback((tag: DisabilityTag) => {
-    setActiveDisabilityTags((prev) => {
-      const next = new Set(prev);
-      if (next.has(tag)) next.delete(tag);
-      else next.add(tag);
-      return next;
-    });
-  }, []);
-
   const clearFilters = useCallback(() => {
     setActiveCategories(new Set());
     setMinSeverity(1);
     setActiveStatuses(new Set(DEFAULT_STATUSES));
     setMaxDistanceKm(null);
-    setActiveDisabilityTags(new Set());
   }, []);
 
   // Quick-toggle severity from the top icon row without opening the full
@@ -672,11 +647,7 @@ export default function MapScreen() {
   const distanceFilterEffective = maxDistanceKm !== null && location !== null;
 
   const filtersActive =
-    activeCategories.size > 0 ||
-    minSeverity > 1 ||
-    statusFilterActive ||
-    distanceFilterEffective ||
-    activeDisabilityTags.size > 0;
+    activeCategories.size > 0 || minSeverity > 1 || statusFilterActive || distanceFilterEffective;
 
   // Category quick-cycle button derived state — computed once per render
   // so the JSX stays readable. catCycleActive drives the filled-blue style;
@@ -712,12 +683,6 @@ export default function MapScreen() {
         return false;
       }
       if (f.severity < minSeverity) return false;
-      // Disability ("who does this affect?") filter — pure client-side match
-      // on the flag's context_tags. matchesDisabilityFilter returns true when
-      // no tags are selected, so this is a no-op until the user picks one.
-      if (!matchesDisabilityFilter(f.context_tags, [...activeDisabilityTags])) {
-        return false;
-      }
       // Distance filter — only applied when we actually know where the user
       // is (see distanceFilterEffective). Status filtering already happens
       // server-side via setStatuses, so we don't repeat it here.
@@ -735,7 +700,6 @@ export default function MapScreen() {
     activeCategories,
     minSeverity,
     filtersActive,
-    activeDisabilityTags,
     distanceFilterEffective,
     maxDistanceKm,
     location,
@@ -787,15 +751,9 @@ export default function MapScreen() {
         return;
       }
       if (mountedRef.current) setPermissionDenied(false);
-      // Battery: reuse a cached fix up to 30s old before powering the GPS for a
-      // fresh lock on every recenter/initial-locate. 30s is recent enough to
-      // center the map accurately; getLastKnownPositionAsync returns null when
-      // no recent fix exists, so we fall back to a live read.
-      const pos =
-        (await Location.getLastKnownPositionAsync({ maxAge: 30_000 })) ??
-        (await Location.getCurrentPositionAsync({
-          accuracy: Location.Accuracy.Balanced,
-        }));
+      const pos = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Balanced,
+      });
       const coords = {
         lat: pos.coords.latitude,
         lng: pos.coords.longitude,
@@ -817,14 +775,12 @@ export default function MapScreen() {
     }
   }, []);
 
-  // Initial location fetch; runs once. Only fetches if the OS permission is
-  // already granted — the first-time prompt is deferred to the onboarding flow
-  // (OnboardingCards card 4). The user-facing locate button still calls
-  // requestLocation() directly and will trigger the OS prompt if needed.
+  // Initial location fetch; runs once. (Flag fetching is owned by the
+  // provider — see FlagsProvider in src/lib/flagsStore. iOS screen-reader
+  // announcements for load errors fire from the provider so both Map and
+  // Tasks benefit.)
   useEffect(() => {
-    Location.getForegroundPermissionsAsync().then(({ status }) => {
-      if (status === 'granted') requestLocation();
-    });
+    requestLocation();
   }, [requestLocation]);
 
   // When Tasks tab navigates here with a focusFlag, animate to it and pop the
@@ -842,13 +798,9 @@ export default function MapScreen() {
     const t = setTimeout(() => {
       mapRef.current?.showCallout(focus.id);
     }, 700);
-    // Only revalidate if the flag list is actually stale. Tapping a Tasks card
-    // to focus a flag we already have shouldn't trigger a full network re-fetch
-    // (realtime + the freshness window keep the list current). Saves a
-    // round-trip — and the radio/battery cost — on every card tap.
-    void refreshFlagsIfStale();
+    refreshFlags();
     return () => clearTimeout(t);
-  }, [route.params?.focusFlag, route.params?.ts, refreshFlagsIfStale]);
+  }, [route.params?.focusFlag, route.params?.ts, refreshFlags]);
 
   // Deep-link arrival: accessmap://flag/{id} → React Navigation parses the
   // id into route.params.flagId. Fetch the flag's lat/lng on the fly, then
@@ -906,6 +858,12 @@ export default function MapScreen() {
     [location],
   );
 
+  // Memoize the flags array passed to PlatformMap so a filter UI state
+  // change (name-draft text, modal open) doesn't trigger a shallow-prop
+  // inequality and force the map to re-render. The identity only changes
+  // when the actual flag list or filter result changes.
+  const memoizedFlags = useMemo(() => filteredFlags, [filteredFlags]);
+
   // Keep the viewport ref in sync with the resolved initial region. This fires
   // once when `location` becomes non-null, giving the gate an accurate starting
   // region rather than the fallback DEFAULT_REGION.
@@ -955,7 +913,7 @@ export default function MapScreen() {
       <PlatformMap
         ref={mapRef}
         initialRegion={initialRegion}
-        flags={filteredFlags}
+        flags={memoizedFlags}
         focusedFlagId={focusedFlagId}
         showsUserLocation
         reducedMotion={reducedMotion}
@@ -966,10 +924,7 @@ export default function MapScreen() {
 
       <View pointerEvents="box-none" style={styles.overlay}>
         <View style={styles.topRow}>
-          {/* WCAG 4.1.3: live region ensures AT announces when the count
-              changes after a filter toggle (e.g. "12 of 45 shown"). Using
-              'polite' so it doesn't interrupt mid-sentence. */}
-          <View style={styles.statusPill} accessibilityLiveRegion="polite">
+          <View style={styles.statusPill}>
             <Text style={styles.statusText}>
               {loadingFlags
                 ? 'Loading flags…'
@@ -1370,42 +1325,6 @@ export default function MapScreen() {
                   <Text style={styles.statusHint}>Pick at least one status to see flags.</Text>
                 )}
 
-                {/* "Who does this affect?" — disability filter (Sprint 3). A
-                    pure client-side filter on each flag's context_tags: pick
-                    one or more access needs and the map narrows to barriers
-                    tagged for any of them (OR match). Empty = show everything,
-                    so legacy/untagged flags are only hidden once the user
-                    actively narrows. Same pill pattern as the other axes. */}
-                <Text style={styles.filterSubLabel}>Who does this affect?</Text>
-                <View style={styles.filterRow}>
-                  {DISABILITY_TAGS.map((tag) => {
-                    const active = activeDisabilityTags.has(tag);
-                    const label = DISABILITY_TAG_LABELS[tag];
-                    return (
-                      <Pressable
-                        key={tag}
-                        onPress={() => toggleDisabilityTag(tag)}
-                        style={[styles.filterPill, active && styles.filterPillActive]}
-                        accessibilityRole="button"
-                        accessibilityLabel={`Filter by barriers affecting: ${label}`}
-                        accessibilityState={{ selected: active }}
-                      >
-                        <Text
-                          style={[styles.filterPillText, active && styles.filterPillTextActive]}
-                        >
-                          {label}
-                        </Text>
-                      </Pressable>
-                    );
-                  })}
-                </View>
-                {activeDisabilityTags.size > 0 && (
-                  <Text style={styles.statusHint}>
-                    Showing only flags tagged for the selected access need
-                    {activeDisabilityTags.size > 1 ? 's' : ''}. Untagged flags are hidden.
-                  </Text>
-                )}
-
                 {/* Distance — radius from the user's current location. Chips
                 follow the same pill pattern as Status/Category; "Off"
                 renders selected when no radius is active. When the user
@@ -1560,29 +1479,15 @@ export default function MapScreen() {
           </View>
         )}
 
-        {/* WCAG 4.1.3: accessibilityLiveRegion covers Android TalkBack.
-            iOS VoiceOver is already handled by the
-            announceForAccessibility call in requestLocation(). */}
         {locating && !location && (
-          <View
-            style={styles.banner}
-            accessibilityRole="text"
-            accessibilityLiveRegion="polite"
-          >
-            <ActivityIndicator
-              accessibilityElementsHidden
-              importantForAccessibility="no-hide-descendants"
-            />
+          <View style={styles.banner}>
+            <ActivityIndicator />
             <Text style={styles.bannerText}>Finding your location…</Text>
           </View>
         )}
 
         {permissionDenied && (
-          <View
-            style={styles.banner}
-            accessibilityRole="alert"
-            accessibilityLiveRegion="assertive"
-          >
+          <View style={styles.banner}>
             <Text style={styles.bannerText}>
               Location permission denied. Enable it in Settings to report a flag.
             </Text>
@@ -1640,7 +1545,7 @@ export default function MapScreen() {
                 disabled={!location}
                 accessibilityRole="button"
                 accessibilityLabel="Report a flag here"
-                accessibilityHint="Opens a form to report an accessibility issue at your current location"
+                accessibilityHint="Opens a form to report an accessibility issue at your current location. Tip: sighted users can also long-press the map to drop a report at a specific spot"
                 accessibilityState={{ disabled: !location }}
               >
                 <Text style={styles.fabText}>＋ Report</Text>
@@ -1754,7 +1659,7 @@ export default function MapScreen() {
         }}
       >
         <View style={styles.nameBackdrop}>
-          <View style={styles.nameCard}>
+          <View style={styles.nameCard} accessibilityViewIsModal>
             <Text style={styles.nameTitle} accessibilityRole="header">
               Name this preset
             </Text>
@@ -1831,8 +1736,8 @@ export default function MapScreen() {
         }}
       >
         <View style={styles.nameBackdrop}>
-          <View style={styles.nameCard}>
-            <Text style={styles.nameTitle} accessibilityRole="header">Name this filter</Text>
+          <View style={styles.nameCard} accessibilityViewIsModal>
+            <Text style={styles.nameTitle}>Name this filter</Text>
             <Text style={styles.nameHint}>You can save up to {MAX_FILTER_SETS} filter sets.</Text>
             <TextInput
               value={nameDraft}
@@ -1970,11 +1875,11 @@ const makeStyles = (color: ColorTheme) =>
       ...shadow.e2,
     },
     actionBtn: {
-      minWidth: 44, // WCAG 2.5.5: was 36pt (below 44pt project standard)
-      minHeight: 44,
+      width: 36,
+      height: 36,
       alignItems: 'center',
       justifyContent: 'center',
-      borderRadius: radius.circle,
+      borderRadius: 18,
     },
     actionBtnActive: { backgroundColor: color.brand },
     actionDivider: {
@@ -1983,11 +1888,11 @@ const makeStyles = (color: ColorTheme) =>
       backgroundColor: color.border,
     },
     filterPanel: {
-      marginTop: spacing.sm,
+      marginTop: 8,
       backgroundColor: color.overlay,
       borderRadius: radius.lg,
-      padding: spacing.md,
-      gap: spacing.sm,
+      padding: 12,
+      gap: 8,
       ...shadow.e2,
     },
     filterHeaderRow: {
@@ -1995,7 +1900,7 @@ const makeStyles = (color: ColorTheme) =>
       justifyContent: 'space-between',
       alignItems: 'center',
     },
-    filterTitle: { fontSize: font.size.base, fontWeight: font.weight.bold, color: color.textStrong },
+    filterTitle: { fontSize: 14, fontWeight: '700', color: color.textStrong },
     filterTitleRow: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -2006,16 +1911,16 @@ const makeStyles = (color: ColorTheme) =>
       // visible glyph.
       minHeight: 32,
     },
-    filterChevron: { fontSize: font.size.xs, color: color.brand, fontWeight: font.weight.bold },
-    clearLink: { fontSize: font.size.xs, color: color.brand, fontWeight: font.weight.semibold },
+    filterChevron: { fontSize: 12, color: color.brand, fontWeight: '700' },
+    clearLink: { fontSize: 12, color: color.brand, fontWeight: '600' },
     filterSubLabel: {
-      fontSize: font.size.caption,
+      fontSize: 11,
       color: color.textMuted,
       textTransform: 'uppercase',
       letterSpacing: 0.6,
-      marginTop: spacing.tight,
+      marginTop: 4,
     },
-    filterRow: { flexDirection: 'row', gap: spacing.sm, flexWrap: 'wrap' },
+    filterRow: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
     filterPill: {
       paddingHorizontal: 12,
       paddingVertical: 6,
@@ -2026,36 +1931,36 @@ const makeStyles = (color: ColorTheme) =>
       justifyContent: 'center',
     },
     filterPillActive: { backgroundColor: color.brand },
-    filterPillText: { fontSize: font.size.xs, color: color.text, fontWeight: font.weight.semibold },
+    filterPillText: { fontSize: 12, color: color.text, fontWeight: '600' },
     filterPillTextActive: { color: color.textOnBrand },
     sevPill: {
       width: 44,
       height: 44,
-      borderRadius: radius.circle,
+      borderRadius: 22,
       alignItems: 'center',
       justifyContent: 'center',
       backgroundColor: color.surfaceNeutral,
     },
-    sevPillText: { fontSize: font.size.sm, color: color.text, fontWeight: font.weight.bold },
+    sevPillText: { fontSize: 13, color: color.text, fontWeight: '700' },
     sevPillTextActive: { color: color.textOnBrand },
-    statusHint: { fontSize: font.size.caption, color: color.warningHint, marginTop: spacing.tight },
+    statusHint: { fontSize: 11, color: color.warningHint, marginTop: 4 },
     banner: {
       alignSelf: 'center',
       backgroundColor: color.overlaySoft,
-      paddingHorizontal: spacing.md,
-      paddingVertical: spacing.sm,
-      borderRadius: radius.md,
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      borderRadius: 8,
       flexDirection: 'row',
-      gap: spacing.sm,
+      gap: 8,
       alignItems: 'center',
     },
-    bannerText: { fontSize: font.size.sm, color: color.text },
+    bannerText: { fontSize: 13, color: color.text },
     errorBanner: {
-      marginTop: spacing.sm,
+      marginTop: 8,
       backgroundColor: color.error,
       paddingHorizontal: 14,
-      paddingVertical: spacing.md,
-      borderRadius: radius.lg,
+      paddingVertical: 12,
+      borderRadius: 10,
       flexDirection: 'row',
       gap: 10,
       alignItems: 'center',
@@ -2064,8 +1969,8 @@ const makeStyles = (color: ColorTheme) =>
     },
     errorBannerBusy: { opacity: 0.85 },
     errorBannerPressed: { opacity: 0.7 },
-    errorBannerIcon: { color: color.textOnBrand, fontSize: font.size.xl, fontWeight: font.weight.bold },
-    errorBannerText: { color: color.textOnBrand, fontSize: font.size.sm, fontWeight: font.weight.semibold, flex: 1 },
+    errorBannerIcon: { color: color.textOnBrand, fontSize: 18, fontWeight: '700' },
+    errorBannerText: { color: color.textOnBrand, fontSize: 13, fontWeight: '600', flex: 1 },
     emptyCard: {
       alignSelf: 'center',
       marginTop: 16,
@@ -2078,23 +1983,23 @@ const makeStyles = (color: ColorTheme) =>
       alignItems: 'center',
       ...shadow.e2,
     },
-    emptyCardIcon: { fontSize: font.size.xxl },
+    emptyCardIcon: { fontSize: 28 },
     emptyCardTitle: {
-      fontSize: font.size.md,
-      fontWeight: font.weight.bold,
+      fontSize: 15,
+      fontWeight: '700',
       color: color.textStrong,
       textAlign: 'center',
       letterSpacing: -0.1,
     },
     emptyCardBody: {
-      fontSize: font.size.sm,
+      fontSize: 13,
       color: color.textMuted,
       textAlign: 'center',
       lineHeight: 18,
     },
     emptyCardBtn: {
-      marginTop: spacing.tight,
-      paddingHorizontal: spacing.lg,
+      marginTop: 4,
+      paddingHorizontal: 16,
       paddingVertical: 10,
       borderRadius: radius.circle,
       backgroundColor: color.brand,
@@ -2102,7 +2007,7 @@ const makeStyles = (color: ColorTheme) =>
       justifyContent: 'center',
     },
     emptyCardBtnPressed: { opacity: 0.8 },
-    emptyCardBtnText: { color: color.textOnBrand, fontSize: font.size.base, fontWeight: font.weight.bold },
+    emptyCardBtnText: { color: color.textOnBrand, fontSize: 14, fontWeight: '700' },
     // Jordan Art. 7 — heatmap active disclaimer. Floats just above the
     // bottom bar so it's visible whenever the heat layer is on, regardless
     // of whether the filter panel is open. Semi-transparent so it doesn't
@@ -2110,18 +2015,15 @@ const makeStyles = (color: ColorTheme) =>
     // (not an error) and doesn't compete with the HeatmapLegend swatches.
     heatmapDisclaimer: {
       alignSelf: 'stretch',
-      // WCAG 1.4.3: solid colours guarantee contrast on any map tile background.
-      // rgba(0,0,0,0.55) + rgba(255,255,255,0.85) fell to ~2.5:1 on light OSM tiles.
-      backgroundColor: '#1a1a1a',
+      backgroundColor: 'rgba(0,0,0,0.55)',
       borderRadius: radius.md,
       paddingHorizontal: 12,
       paddingVertical: 7,
       marginBottom: 8,
     },
     heatmapDisclaimerText: {
-      fontSize: font.size.caption,
-      // textOnBrand (#fff) on forced dark surface (#1a1a1a) = 18.1:1 — WCAG AA pass.
-      color: color.textOnBrand,
+      fontSize: 11,
+      color: 'rgba(255,255,255,0.85)',
       lineHeight: 15,
       textAlign: 'center',
     },
@@ -2156,7 +2058,7 @@ const makeStyles = (color: ColorTheme) =>
       paddingVertical: 8,
       borderRadius: radius.circle,
       backgroundColor: color.brand,
-      minHeight: 44,
+      minHeight: 32,
       justifyContent: 'center',
     },
     savedSaveBtnText: { color: color.textOnBrand, fontSize: 12, fontWeight: '700' },

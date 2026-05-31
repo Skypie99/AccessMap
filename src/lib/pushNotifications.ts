@@ -153,9 +153,10 @@ export async function requestNotificationPermission(): Promise<boolean> {
 export async function savePushToken(userId: string, token: string): Promise<void> {
   const platform = Platform.OS as 'ios' | 'android' | 'web';
   // Upsert — handles OS token rotation on reinstall.
-  await supabase
+  const { error } = await supabase
     .from('push_tokens')
     .upsert({ user_id: userId, token, platform }, { onConflict: 'user_id' });
+  if (error) throw error;
 
   // Persist preference to AsyncStorage (native platforms only).
   if (Platform.OS !== 'web') {
