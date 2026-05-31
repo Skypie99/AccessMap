@@ -39,6 +39,17 @@
 // ---------------------------------------------------------------------------
 const ALLOWED_STATUSES = new Set(['verified', 'resolved']);
 
+// Inline copy of the client-side CATEGORY_LABELS — Edge Functions cannot
+// import from src/. Keep in sync with src/lib/flags.ts CATEGORY_LABELS.
+const CATEGORY_LABELS: Record<string, string> = {
+  no_ramp:         'No ramp',
+  broken_sidewalk: 'Broken sidewalk',
+  blocked_path:    'Blocked path',
+  missing_signal:  'Missing signal',
+  steep_grade:     'Steep grade',
+  other:           'Other',
+};
+
 // ---------------------------------------------------------------------------
 // 2. Auth gate — shared-secret check
 // ---------------------------------------------------------------------------
@@ -99,6 +110,28 @@ function parseWebhookBody(body: unknown): WebhookBody | null {
 }
 
 // ---------------------------------------------------------------------------
+// 3b. Notification copy builder — Option B (warm/community tone)
+// ---------------------------------------------------------------------------
+function buildNotification(status: string, category: string): { title: string; body: string } {
+  const rawLabel = category ? (CATEGORY_LABELS[category] ?? category.replace(/_/g, ' ')) : '';
+  // 'other' and missing category both fall back to a plain noun so the sentence
+  // reads naturally ("Your accessibility issue report was verified…").
+  const label = rawLabel && rawLabel.toLowerCase() !== 'other' ? rawLabel : 'accessibility issue';
+
+  if (status === 'verified') {
+    return {
+      title: 'The community backed you up',
+      body:  `Your ${label} report was verified by another member. Great catch — thank you.`,
+    };
+  }
+  // resolved
+  return {
+    title: 'Issue marked resolved',
+    body:  `Someone fixed the ${label} you reported. That's real impact — thank you.`,
+  };
+}
+
+// ---------------------------------------------------------------------------
 // 4. Main handler
 // ---------------------------------------------------------------------------
 Deno.serve(async (req: Request): Promise<Response> => {
@@ -139,11 +172,8 @@ Deno.serve(async (req: Request): Promise<Response> => {
     return new Response('ok', { status: 200 });
   }
 
-  // 4f. Build notification message.
-  const categoryLabel = record.category ? `${record.category} ` : '';
-  const notifBody = `Your ${categoryLabel}flag status changed to ${record.status}.`
-    .replace(/\s{2,}/g, ' ')
-    .trim();
+  // 4f. Build notification copy (Option B — warm/community tone).
+  const { title: notifTitle, body: notifBody } = buildNotification(record.status, record.category);
 
   // 4g. Build optional deep-link data so the app can navigate to the flag.
   const data: Record<string, unknown> = { screen: 'FlagDetail' };
@@ -170,7 +200,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
       },
       body: JSON.stringify({
         user_id: record.user_id,
-        title:   'AccessMap',
+        title:   notifTitle,
         body:    notifBody,
         data,
       }),
