@@ -3,17 +3,19 @@
  * count. No new schema columns, no server work: a tier is "reached" iff
  * the user's current points cross its threshold.
  *
- * Tier ladder:
- *   • Bronze    0+ pts  🥉
- *   • Silver   10+ pts  🥈
- *   • Gold     50+ pts  🥇
- *   • Platinum 200+ pts 💎
+ * Tier ladder (Phase 7 thresholds — see docs/TRUST_SCORE_SPEC.md §2.1):
+ *   • Bronze      0–99 pts  🥉  reopen requires 3 votes
+ *   • Silver   100–499 pts  🥈  reopen requires 2 votes
+ *   • Gold     500–1499 pts 🥇  reopen requires 1 vote
+ *   • Platinum  1500+ pts   💎  reopen requires 1 vote
  *
  * `getTier(points)` returns the tier the user currently sits in.
  * `pointsToNextTier(points)` returns how many more points they need to
  * climb to the next tier, or 0 if they're already at Platinum.
+ * `matchesTier(tierName, points)` returns true if the user's current tier
+ * exactly matches the given tier name — useful for exact feature gates.
  *
- * Both functions defensively clamp negative or non-finite input to 0 so
+ * All functions defensively clamp negative or non-finite input to 0 so
  * a transient bad value from the DB never throws or returns a bogus tier.
  */
 
@@ -29,6 +31,12 @@ export interface ReputationTier {
   threshold: number;
   /** Points needed to reach the next tier — null if this is the top tier. */
   nextThreshold: number | null;
+  /**
+   * Number of community reopen votes required when a user at this tier
+   * initiates or contributes to a reopen request. Lower for higher tiers
+   * because their track record earns faster action.
+   */
+  reopen_threshold: number;
 }
 
 // Ordered low → high. getTier walks from the top down and returns the
@@ -36,10 +44,10 @@ export interface ReputationTier {
 // a new tier means slotting it into this array in sort order — no other
 // edits needed.
 export const REPUTATION_TIERS: ReadonlyArray<ReputationTier> = [
-  { name: 'bronze', label: 'Bronze', emoji: '🥉', threshold: 0, nextThreshold: 10 },
-  { name: 'silver', label: 'Silver', emoji: '🥈', threshold: 10, nextThreshold: 50 },
-  { name: 'gold', label: 'Gold', emoji: '🥇', threshold: 50, nextThreshold: 200 },
-  { name: 'platinum', label: 'Platinum', emoji: '💎', threshold: 200, nextThreshold: null },
+  { name: 'bronze', label: 'Bronze', emoji: '🥉', threshold: 0, nextThreshold: 100, reopen_threshold: 3 },
+  { name: 'silver', label: 'Silver', emoji: '🥈', threshold: 100, nextThreshold: 500, reopen_threshold: 2 },
+  { name: 'gold', label: 'Gold', emoji: '🥇', threshold: 500, nextThreshold: 1500, reopen_threshold: 1 },
+  { name: 'platinum', label: 'Platinum', emoji: '💎', threshold: 1500, nextThreshold: null, reopen_threshold: 1 },
 ];
 
 /**
@@ -86,4 +94,17 @@ export function pointsToNextTier(points: number | null | undefined): number {
   const tier = getTier(p);
   if (tier.nextThreshold === null) return 0;
   return tier.nextThreshold - p;
+}
+
+/**
+ * Return true if the user's current tier exactly matches `tierName`.
+ * Use for exact feature gates: e.g. `matchesTier('bronze', points)` to
+ * detect Bronze-only state. For "Silver or above" gates, use
+ * `!matchesTier('bronze', points)` or compare tier thresholds directly.
+ */
+export function matchesTier(
+  tierName: ReputationTierName,
+  points: number | null | undefined,
+): boolean {
+  return getTier(points).name === tierName;
 }
