@@ -930,3 +930,59 @@ export async function listLeaderboard(limit = 10): Promise<LeaderboardEntry[]> {
   if (error) throw error;
   return (data ?? []) as LeaderboardEntry[];
 }
+
+// ---------------------------------------------------------------------------
+// Anonymous flag creation
+// ---------------------------------------------------------------------------
+
+export interface AnonFlagInput {
+  lat: number;
+  lng: number;
+  category: FlagCategory;
+  severity: FlagSeverity;
+  description?: string;
+}
+
+/**
+ * Submit a flag without a signed-in user.
+ *
+ * Privacy contract (enforced here AND by DB RLS WITH CHECK):
+ *   - user_id is never sent — the DB stores NULL.
+ *   - photo_url is always null — Storage RLS requires auth.uid() in the path.
+ *
+ * Rate-limit enforcement is the CALLER's responsibility: call
+ * checkAnonRateLimit() before this function; this function does not call it
+ * internally so that callers (UI, tests) can control timing independently.
+ */
+export async function createAnonFlag(input: AnonFlagInput): Promise<FlagRow> {
+  const { lat, lng, category, severity, description } = input;
+
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+    throw new Error('lat and lng must be finite numbers');
+  }
+  if (lat < -90 || lat > 90) {
+    throw new Error(`lat ${lat} is out of range [-90, 90]`);
+  }
+  if (lng < -180 || lng > 180) {
+    throw new Error(`lng ${lng} is out of range [-180, 180]`);
+  }
+
+  const payload = {
+    lat,
+    lng,
+    category,
+    severity,
+    description: description ?? null,
+    photo_url: null,
+    status: 'open' as const,
+  };
+
+  const { data, error } = await supabase
+    .from('flags')
+    .insert(payload)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data as FlagRow;
+}

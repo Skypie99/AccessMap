@@ -542,7 +542,9 @@ export default function FlagDetailModal({
               )}
 
               <Text style={styles.sectionLabel}>Reported by</Text>
-              <Text style={styles.metaValue}>{isOwn ? 'You' : 'Another community member'}</Text>
+              <Text style={styles.metaValue}>
+                {isOwn ? 'You' : shownFlag.user_id === null ? 'Anonymous report' : 'Another community member'}
+              </Text>
 
               <Text style={styles.sectionLabel}>Date</Text>
               <Text style={styles.metaValue} accessibilityLabel={`Reported on ${formattedDate}`}>

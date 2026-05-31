@@ -72,6 +72,7 @@ export const FlagCard = memo(function FlagCard({
   const a11yLabel =
     `${CATEGORY_LABELS[flag.category]}, severity ${flag.severity} of 5, ` +
     `status ${STATUS_LABELS[flag.status]}` +
+    (flag.user_id === null ? ', anonymous report' : '') +
     (dateLabel ? `, reported ${dateLabel}` : '') +
     (flag.description ? `. ${flag.description}` : '');
 

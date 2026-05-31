@@ -360,7 +360,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
             </>
           )}
 
-          <Text style={styles.label}>Category</Text>
+          <Text style={styles.label} accessibilityRole="header">Category</Text>
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -391,7 +391,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
             })}
           </ScrollView>
 
-          <Text style={styles.label}>Severity</Text>
+          <Text style={styles.label} accessibilityRole="header">Severity</Text>
           <View style={styles.row}>
             {SEVERITY_ORDER.map((s) => {
               const active = s === severity;
@@ -432,7 +432,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
             {SEVERITY_DESCRIPTIONS[severity]}
           </Text>
 
-          <Text style={styles.label}>Description (optional)</Text>
+          <Text style={styles.label} accessibilityRole="header">Description (optional)</Text>
           <TextInput
             value={description}
             onChangeText={setDescription}
@@ -583,7 +583,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
               : 'Helps people filter the map to barriers that affect them. Counts toward the same 5-tag limit.'}
           </Text>
 
-          <Text style={styles.label}>Photo (optional)</Text>
+          <Text style={styles.label} accessibilityRole="header">Photo (optional)</Text>
 
           {/* High-severity photo nudge — only shown when severity ≥ 4 and
               no photo has been selected. At severity 4–5, a photo is the
