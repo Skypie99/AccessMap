@@ -69,7 +69,7 @@ import RecentlyViewedRow from '@/components/RecentlyViewedRow';
 import ReportsBreakdownCard from '@/components/ReportsBreakdownCard';
 import LeaderboardModal from '@/components/LeaderboardModal';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
-import { font, radius, shadow } from '@/theme';
+import { font, radius, shadow, spacing } from '@/theme';
 import { getTier, pointsToNextTier, REPUTATION_TIERS } from '@/lib/reputationTier';
 import {
   getPointEventHistory,
@@ -1883,12 +1883,12 @@ const makeStyles = (color: ColorTheme) =>
       backgroundColor: color.surface,
       borderRadius: radius.lg,
       padding: 16,
-      gap: 10,
+      gap: spacing.sm,  // or spacing.md — Dani design decision P2
       ...shadow.e1,
     },
     pointHistoryTitle: {
-      fontSize: 12,
-      fontWeight: '700',
+      fontSize: font.size.xs,
+      fontWeight: font.weight.bold,
       color: color.textMuted,
       textTransform: 'uppercase',
       letterSpacing: 0.8,
@@ -1896,23 +1896,23 @@ const makeStyles = (color: ColorTheme) =>
     pointHistoryRow: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 8,
+      gap: spacing.sm,
       minHeight: 28,
     },
     pointHistoryLabel: {
       flex: 1,
-      fontSize: 13,
+      fontSize: font.size.sm,
       color: color.text,
     },
     pointHistoryDate: {
-      fontSize: 12,
+      fontSize: font.size.xs,
       color: color.textMuted,
       minWidth: 44,
       textAlign: 'right',
     },
     pointHistoryDelta: {
-      fontSize: 13,
-      fontWeight: '700',
+      fontSize: font.size.sm,
+      fontWeight: font.weight.bold,
       color: color.brandText,
       minWidth: 52,
       textAlign: 'right',
