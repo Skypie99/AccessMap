@@ -85,8 +85,8 @@ const CARDS: Card[] = [
   {
     icon: 'navigate-circle-outline',
     iconColor: '#a78bfa',
-    title: 'One last thing',
-    body: 'AccessMap works best with your location. We use it to show nearby issues and to place your reports accurately. Location is only shared while the app is open.',
+    title: 'Location helps the map work',
+    body: "We use your location to show nearby flags and to place your pins accurately. It’s never stored between sessions or shared with other users.",
     isPermission: true,
   },
 ];
@@ -336,7 +336,7 @@ export default function OnboardingCards({ onDone }: Props) {
                 end={{ x: 1, y: 1 }}
                 style={styles.primaryBtn}
               >
-                <Text style={styles.primaryBtnText}>Allow Location Access</Text>
+                <Text style={styles.primaryBtnText}>Allow Location</Text>
               </LinearGradient>
             </Pressable>
           ) : (
@@ -354,7 +354,7 @@ export default function OnboardingCards({ onDone }: Props) {
                 end={{ x: 1, y: 1 }}
                 style={styles.primaryBtn}
               >
-                <Text style={styles.primaryBtnText}>Get Started</Text>
+                <Text style={styles.primaryBtnText}>Open the Map</Text>
               </LinearGradient>
             </Pressable>
           )}
@@ -387,8 +387,10 @@ const makeStyles = (color: ColorTheme) =>
       justifyContent: 'center',
     },
     // textMuted (#666) is 5.7:1 on white — passes WCAG AA for body text.
+    // Always on a dark gradient — hardcoded semi-transparent white so the
+    // contrast holds regardless of system light/dark mode.
     skipText: {
-      color: color.textMuted,
+      color: 'rgba(255,255,255,0.65)',
       fontWeight: font.weight.semibold,
       fontSize: font.size.base,
     },
@@ -499,13 +501,23 @@ const makeStyles = (color: ColorTheme) =>
       gap: spacing.sm,
       paddingVertical: spacing.md,
     },
+    // Always on dark gradient — white with low opacity for inactive.
     dot: {
       width: 8,
       height: 8,
       borderRadius: radius.xs,
-      backgroundColor: color.borderStrong,
+      backgroundColor: 'rgba(255,255,255,0.25)',
     },
-    dotActive: { backgroundColor: color.brand, width: 22 },
+    // Active dot grows to a pill and glows with the current card's accent color
+    // (shadowColor is injected inline per-card).
+    dotActive: {
+      backgroundColor: '#60a5fa',
+      width: 22,
+      shadowOpacity: 0.55,
+      shadowRadius: 6,
+      shadowOffset: { width: 0, height: 0 },
+      elevation: 3,
+    },
     actions: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -525,13 +537,13 @@ const makeStyles = (color: ColorTheme) =>
       justifyContent: 'center',
     },
     backBtnDisabled: { opacity: 0.4 },
-    // textMuted again — 5.7:1 on white, AA pass even when not "disabled".
+    // Always on dark gradient — hardcoded semi-transparent white.
     backBtnText: {
-      color: color.textMuted,
+      color: 'rgba(255,255,255,0.65)',
       fontWeight: font.weight.semibold,
       fontSize: font.size.base,
     },
-    backBtnTextDisabled: { color: color.textMuted },
+    backBtnTextDisabled: { color: 'rgba(255,255,255,0.25)' },
     primaryBtn: {
       flex: 1,
       paddingVertical: spacing.lg,

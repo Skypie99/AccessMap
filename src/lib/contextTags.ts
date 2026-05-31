@@ -172,11 +172,11 @@ export const SEASONAL_TAG_LABELS: Readonly<Record<SeasonalTag, string>> = Object
  * readers speak them verbatim in both the picker and the map filter.
  */
 export const DISABILITY_TAG_LABELS: Readonly<Record<DisabilityTag, string>> = Object.freeze({
-  mobility_barrier: 'Mobility (wheelchair, walker, scooter)',
-  vision_hazard: 'Low vision or blind',
+  mobility_barrier: 'Wheelchair, walker, or scooter',
+  vision_hazard: 'Blind or low vision',
   hearing_concern: 'Deaf or hard of hearing',
   cognitive_load: 'Confusing layout or signage',
-  temporary_closure: 'Temporary closure',
+  temporary_closure: 'Temporarily closed',
 });
 
 /**

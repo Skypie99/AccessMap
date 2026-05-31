@@ -16,7 +16,7 @@ import {
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
-import { font, radius, spacing } from '@/theme';
+import { font, radius, shadow, spacing } from '@/theme';
 import { useAuth } from '@/lib/auth';
 import { confirm } from '@/lib/confirm';
 import { getDirectionsUrl } from '@/lib/directionsLink';
@@ -503,7 +503,14 @@ export default function FlagDetailModal({
               ].map(({ key, heading, tags }) =>
                 tags.length > 0 ? (
                   <React.Fragment key={key}>
-                    <Text style={styles.sectionLabel}>{heading}</Text>
+                    <Text
+                      style={[
+                        styles.sectionLabel,
+                        key === 'disability' && styles.sectionLabelDisability,
+                      ]}
+                    >
+                      {heading}
+                    </Text>
                     <View
                       style={styles.contextTagsRow}
                       accessible
@@ -512,11 +519,21 @@ export default function FlagDetailModal({
                       {tags.map((tag) => (
                         <View
                           key={tag}
-                          style={styles.contextChip}
+                          style={[
+                            styles.contextChip,
+                            key === 'disability' && styles.disabilityChip,
+                          ]}
                           accessibilityElementsHidden
                           importantForAccessibility="no-hide-descendants"
                         >
-                          <Text style={styles.contextChipText}>{tagLabel(tag)}</Text>
+                          <Text
+                            style={[
+                              styles.contextChipText,
+                              key === 'disability' && styles.disabilityChipText,
+                            ]}
+                          >
+                            {tagLabel(tag)}
+                          </Text>
                         </View>
                       ))}
                     </View>
@@ -740,7 +757,7 @@ export default function FlagDetailModal({
                     try {
                       await Linking.openURL(url);
                     } catch {
-                      Alert.alert('Could not open maps app.');
+                      Alert.alert("Couldn't open maps", 'No maps app was found on your device.');
                     }
                   }}
                   disabled={busy}
@@ -781,13 +798,24 @@ export default function FlagDetailModal({
                 <Text style={styles.sectionLabel}>Comments</Text>
 
                 {commentsTableNotReady ? (
-                  <Text style={styles.commentsSoonText}>Comments coming soon</Text>
+                  <Text style={styles.commentsSoonText}>Comments aren't available here yet.</Text>
                 ) : commentsError ? (
-                  <Text style={styles.commentsErrorText}>{commentsError}</Text>
+                  <Text style={styles.commentsErrorText}>Couldn't load comments. Check your connection and try again.</Text>
                 ) : commentsLoading && comments.length === 0 ? (
                   <ActivityIndicator size="small" color={color.brand} style={styles.commentsSpinner} />
                 ) : comments.length === 0 ? (
-                  <Text style={styles.commentsEmptyText}>No comments yet. Be the first!</Text>
+                  <View style={styles.commentsEmptyContainer}>
+                    <Text
+                      style={styles.commentsEmptyIcon}
+                      accessibilityElementsHidden
+                      importantForAccessibility="no-hide-descendants"
+                    >
+                      💬
+                    </Text>
+                    <Text style={styles.commentsEmptyLabel}>
+                      No comments yet — share what you know.
+                    </Text>
+                  </View>
                 ) : (
                   <View style={styles.commentsList}>
                     {comments.map((c) => (
@@ -1224,12 +1252,16 @@ const makeStyles = (color: ColorTheme) =>
       alignItems: 'flex-end',
       gap: spacing.sm,
       marginTop: spacing.sm,
+      // Subtle lift off the card surface — reinforces this is an interactive tray.
+      paddingTop: spacing.sm,
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: color.borderSubtle,
     },
     commentInput: {
       flex: 1,
       borderWidth: 1,
-      borderColor: color.border,
-      borderRadius: radius.lg,
+      borderColor: color.borderStrong,
+      borderRadius: radius.xl,
       paddingHorizontal: spacing.md,
       paddingVertical: spacing.sm,
       fontSize: font.size.base,
@@ -1240,13 +1272,14 @@ const makeStyles = (color: ColorTheme) =>
     },
     commentSendBtn: {
       backgroundColor: color.brand,
-      borderRadius: radius.lg,
+      borderRadius: radius.xl,
       paddingHorizontal: spacing.md,
       paddingVertical: spacing.sm,
       minHeight: 40,
       minWidth: 60,
       alignItems: 'center',
       justifyContent: 'center',
+      ...shadow.e1,
     },
     commentSendBtnDisabled: {
       opacity: 0.4,
@@ -1258,5 +1291,34 @@ const makeStyles = (color: ColorTheme) =>
       color: color.textOnBrand,
       fontWeight: '700',
       fontSize: font.size.sm,
+    },
+    // Disability chip — distinct from general/seasonal: brand-tinted fill so
+    // "Who this affects" reads with more visual weight. brandSofter bg with
+    // a 1px brand border matches the report form's active tag fill treatment.
+    sectionLabelDisability: {
+      color: color.brandText,
+    },
+    disabilityChip: {
+      backgroundColor: color.brandSofter,
+      borderWidth: 1,
+      borderColor: color.brand,
+    },
+    disabilityChipText: {
+      color: color.brandText,
+      fontWeight: '600',
+    },
+    // Comment empty state — centered so the whitespace reads intentionally.
+    commentsEmptyContainer: {
+      alignItems: 'center',
+      paddingVertical: spacing.xl,
+      gap: spacing.sm,
+    },
+    commentsEmptyIcon: {
+      fontSize: 28,
+    },
+    commentsEmptyLabel: {
+      fontSize: font.size.base,
+      color: color.textMuted,
+      textAlign: 'center',
     },
   });
