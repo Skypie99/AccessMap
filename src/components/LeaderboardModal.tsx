@@ -56,11 +56,20 @@ export default function LeaderboardModal({ visible, onClose }: Props) {
       const rank = index + 1;
       const isCurrentUser = item.id === user?.id;
       const name = item.display_name ?? 'Member';
+      // WCAG 1.3.1: rank 1-3 receive a visually distinct treatment (colour
+      // highlight) that implies Gold / Silver / Bronze. Include the medal
+      // name in the accessible label so AT users who can't see the colour
+      // treatment still understand that top-3 positions are special.
+      const medalPrefix =
+        rank === 1 ? 'Gold, 1st place' :
+        rank === 2 ? 'Silver, 2nd place' :
+        rank === 3 ? 'Bronze, 3rd place' :
+        ordinalLabel(rank);
       return (
         <View
           style={[styles.row, isCurrentUser && styles.rowHighlight]}
           role="listitem"
-          accessibilityLabel={`${ordinalLabel(rank)}, ${name}, ${item.points} points${isCurrentUser ? ', you' : ''}`}
+          accessibilityLabel={`${medalPrefix}, ${name}, ${item.points} points${isCurrentUser ? ', you' : ''}`}
         >
           <Text style={[styles.rank, rank <= 3 && styles.rankTop]} accessibilityElementsHidden>
             {ordinalLabel(rank)}
@@ -218,7 +227,7 @@ function makeStyles(color: ColorTheme) {
       color: color.textMuted,
     },
     rankTop: {
-      color: color.brand,
+      color: color.brandText, // WCAG 1.4.3: brand (#2f80ed) = 3.3:1 on white, fails AA at 13pt; brandText (#1c4f99) = 7.6:1 ✓
       fontWeight: '700',
     },
     nameWrap: {

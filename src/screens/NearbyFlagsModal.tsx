@@ -10,6 +10,7 @@ import {
   Text,
   View,
 } from 'react-native';
+import { useReducedMotion } from '@/lib/accessibility';
 import { CATEGORY_LABELS, CATEGORY_ORDER, severityColor } from '@/lib/flags';
 import { relativeTime } from '@/lib/relativeTime';
 import { formatDistance, haversineKm, speakDistance, type LatLng } from '@/lib/distance';
@@ -36,6 +37,7 @@ export default function NearbyFlagsModal({
 }: Props) {
   const color = useColor();
   const styles = makeStyles(color);
+  const reducedMotion = useReducedMotion();
   // null = show all categories; set to a FlagCategory to narrow the list.
   const [filterCat, setFilterCat] = useState<FlagCategory | null>(null);
   // Free-text search across description / category label / status label.
@@ -132,8 +134,8 @@ export default function NearbyFlagsModal({
               <Image
                 source={{ uri: item.photo_url }}
                 style={styles.thumb}
-                accessible
-                accessibilityLabel={`Photo of the reported ${CATEGORY_LABELS[item.category]}`}
+                accessibilityElementsHidden
+                importantForAccessibility="no"
               />
             ) : null}
             <View style={styles.cardBodyText}>
@@ -156,7 +158,7 @@ export default function NearbyFlagsModal({
   return (
     <Modal
       visible={visible}
-      animationType="slide"
+      animationType={reducedMotion ? 'none' : 'slide'}
       onRequestClose={onClose}
       presentationStyle="pageSheet"
     >
@@ -407,7 +409,7 @@ const makeStyles = (color: ColorTheme) =>
       paddingVertical: spacing.xs + 1,
       borderRadius: radius.circle,
       backgroundColor: color.surfaceNeutral,
-      minHeight: 36,
+      minHeight: 44, // WCAG 2.5.5: was 36pt (below 44pt project standard)
       alignItems: 'center',
       justifyContent: 'center',
     },

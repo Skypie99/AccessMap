@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
-  Image,
+  Keyboard,
   Linking,
   Modal,
   Platform,
@@ -14,8 +14,9 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
-import { font, radius } from '@/theme';
+import { font, radius, spacing } from '@/theme';
 import { useAuth } from '@/lib/auth';
 import { confirm } from '@/lib/confirm';
 import { getDirectionsUrl } from '@/lib/directionsLink';
@@ -28,17 +29,21 @@ import {
   CATEGORY_ORDER,
   deleteFlag,
   severityColor,
-  STATUS_LABELS,
   updateFlagContent,
   updateFlagStatus,
   type FlagContentPatch,
 } from '@/lib/flags';
 import { severityA11y, statusA11y } from '@/lib/a11yText';
 import { CONTEXT_TAG_LABELS, isValidTag } from '@/lib/contextTags';
+import { addFlagPhoto, listFlagPhotos } from '@/lib/photos';
+import { MAX_COMMENT_LENGTH } from '@/lib/comments';
+import { useComments } from '@/hooks/useComments';
 import type { FlagCategory, FlagRow, FlagSeverity, FlagStatus } from '@/types/database';
-import PhotoLightboxModal from './PhotoLightboxModal';
+import PhotoGallery, { type GalleryPhoto } from './PhotoGallery';
 import StatusHistoryModal from './StatusHistoryModal';
 import { StatusBadge } from './StatusBadge';
+import { CommentBubble } from './CommentBubble';
+import { useReducedMotion } from '@/lib/accessibility';
 
 export type DetailAction = 'verify' | 'resolve' | 'reject';
 
@@ -64,7 +69,9 @@ export default function FlagDetailModal({
   const color = useColor();
   const styles = makeStyles(color);
   const { user } = useAuth();
+  const reducedMotion = useReducedMotion();
   const [busy, setBusy] = useState(false);
+  const [flagPhotos, setFlagPhotos] = useState<GalleryPhoto[]>([]);
   const [isEditing, setIsEditing] = useState(false);
   const [editDesc, setEditDesc] = useState('');
   const [editCategory, setEditCategory] = useState<FlagCategory>('steep_grade');
@@ -74,16 +81,28 @@ export default function FlagDetailModal({
   // "Watch" that flips to "Unwatch" 100ms after the modal opens.
   const [watched, setWatched] = useState<boolean | null>(null);
   const [watchSaving, setWatchSaving] = useState(false);
-  const [lightboxOpen, setLightboxOpen] = useState(false);
-  // Status-history modal — opens on top of this modal. Same sibling-Modal
-  // pattern as PhotoLightboxModal. Closed when this modal closes or the
-  // shown flag swaps, so it never lingers over the wrong flag.
+  // Status-history modal — sibling Modal pattern. Closed when this modal
+  // closes or the shown flag swaps, so it never lingers over the wrong flag.
   const [historyOpen, setHistoryOpen] = useState(false);
 
   // Cache the last flag so the slide-out animation still has content to render
   // after the parent clears `flag` on close. Without this the card briefly
   // turns blank as it animates away.
   const [shownFlag, setShownFlag] = useState<FlagRow | null>(flag);
+
+  // Comments — pass shownFlag?.id so the hook tracks the currently-visible
+  // flag even while the parent is animating the next one in.
+  const {
+    comments,
+    loading: commentsLoading,
+    error: commentsError,
+    tableNotReady: commentsTableNotReady,
+    addComment,
+    deleteComment: deleteCommentById,
+  } = useComments(shownFlag?.id);
+  const [commentText, setCommentText] = useState('');
+  const [commentSubmitting, setCommentSubmitting] = useState(false);
+  const commentInputRef = useRef<TextInput>(null);
   useEffect(() => {
     if (flag) {
       setShownFlag(flag);
@@ -94,21 +113,9 @@ export default function FlagDetailModal({
     }
   }, [flag]);
 
-  // Reset the lightbox whenever the parent modal closes OR the flag swaps.
-  // Without this, the sibling lightbox stays mounted with the cached photo
-  // and can pop back over the next flag's details (QA Pass-3 #1) — or stick
-  // on screen after Verify/Resolve/Delete fired `onClose` while the lightbox
-  // was open (QA Pass-1 #2).
-  useEffect(() => {
-    if (!visible) setLightboxOpen(false);
-  }, [visible]);
-  useEffect(() => {
-    setLightboxOpen(false);
-  }, [flag?.id]);
-
-  // Same close-on-parent-close / close-on-flag-swap protection as the
-  // lightbox. Prevents the history modal from showing entries for the
-  // previous flag after the user navigates to another one.
+  // Close-on-parent-close / close-on-flag-swap protection for the history
+  // modal. Prevents it from showing entries for the previous flag after the
+  // user navigates to another one.
   useEffect(() => {
     if (!visible) setHistoryOpen(false);
   }, [visible]);
@@ -125,6 +132,23 @@ export default function FlagDetailModal({
     if (!visible || !shownFlag || !user) return;
     void recordView(user.id, shownFlag.id);
   }, [visible, shownFlag, user]);
+
+  // Load the gallery photos whenever the modal opens or the flag changes.
+  // listFlagPhotos silently returns [] if the migration hasn't run yet.
+  useEffect(() => {
+    if (!visible || !shownFlag) {
+      setFlagPhotos([]);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      const photos = await listFlagPhotos(shownFlag.id);
+      if (!cancelled) setFlagPhotos(photos);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [visible, shownFlag?.id]);
 
   // Read the user's watched list to know whether THIS flag is being
   // tracked. Re-runs whenever the modal opens or the shown flag changes,
@@ -163,6 +187,83 @@ export default function FlagDetailModal({
     } finally {
       setWatchSaving(false);
     }
+  };
+
+  // Pick and upload a new photo for this flag (owner-only).
+  const handleAddPhoto = async () => {
+    if (!shownFlag || !user) return;
+
+    if (Platform.OS === 'web') {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/*';
+      input.style.display = 'none';
+      input.onchange = async () => {
+        const file = input.files?.[0];
+        if (!file) return;
+        const localUri = URL.createObjectURL(file);
+        try {
+          await addFlagPhoto(shownFlag.id, localUri);
+          const updated = await listFlagPhotos(shownFlag.id);
+          setFlagPhotos(updated);
+        } catch (e) {
+          Alert.alert('Could not upload photo', errorMessage(e));
+        }
+      };
+      document.body.appendChild(input);
+      input.click();
+      return;
+    }
+
+    Alert.alert('Add photo', 'Choose a source', [
+      {
+        text: 'Take photo',
+        onPress: async () => {
+          const perm = await ImagePicker.requestCameraPermissionsAsync();
+          if (!perm.granted) {
+            Alert.alert('Permission needed', 'Allow camera access to attach a photo.');
+            return;
+          }
+          const result = await ImagePicker.launchCameraAsync({
+            mediaTypes: ImagePicker.MediaTypeOptions.Images,
+            quality: 0.7,
+          });
+          if (!result.canceled && result.assets[0]?.uri) {
+            try {
+              await addFlagPhoto(shownFlag.id, result.assets[0].uri);
+              const updated = await listFlagPhotos(shownFlag.id);
+              setFlagPhotos(updated);
+            } catch (e) {
+              Alert.alert('Could not upload photo', errorMessage(e));
+            }
+          }
+        },
+      },
+      {
+        text: 'Choose from library',
+        onPress: async () => {
+          const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+          if (!perm.granted) {
+            Alert.alert('Permission needed', 'Allow photo library access to attach a photo.');
+            return;
+          }
+          const result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ImagePicker.MediaTypeOptions.Images,
+            quality: 0.7,
+          });
+          if (!result.canceled && result.assets[0]?.uri) {
+            try {
+              await addFlagPhoto(shownFlag.id, result.assets[0].uri);
+              const updated = await listFlagPhotos(shownFlag.id);
+              setFlagPhotos(updated);
+            } catch (e) {
+              Alert.alert('Could not upload photo', errorMessage(e));
+            }
+          }
+        },
+      },
+      { text: 'Cancel', style: 'cancel' },
+    ]);
   };
 
   if (!shownFlag) {
@@ -277,6 +378,21 @@ export default function FlagDetailModal({
     }
   };
 
+  const handleSubmitComment = async () => {
+    const trimmed = commentText.trim();
+    if (!trimmed || commentSubmitting) return;
+    setCommentSubmitting(true);
+    try {
+      await addComment(trimmed);
+      setCommentText('');
+      Keyboard.dismiss();
+    } catch (e) {
+      Alert.alert('Could not post comment', errorMessage(e));
+    } finally {
+      setCommentSubmitting(false);
+    }
+  };
+
   const handleDelete = async () => {
     if (busy) return;
     // confirm() is platform-aware: on web, Alert.alert is a no-op, so we use
@@ -303,7 +419,7 @@ export default function FlagDetailModal({
 
   return (
     <>
-      <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
+      <Modal visible={visible} animationType={reducedMotion ? 'none' : 'slide'} transparent onRequestClose={onClose}>
         <View style={styles.backdrop}>
           {/* accessibilityViewIsModal: tells iOS VoiceOver that everything
             outside this card is non-interactive — important because we
@@ -338,31 +454,11 @@ export default function FlagDetailModal({
               contentContainerStyle={styles.bodyContent}
               showsVerticalScrollIndicator={false}
             >
-              {shownFlag.photo_url ? (
-                <Pressable
-                  onPress={() => setLightboxOpen(true)}
-                  style={({ pressed }) => [styles.photo, pressed && styles.photoPressed]}
-                  accessibilityRole="imagebutton"
-                  accessibilityLabel={`Photo of the reported ${CATEGORY_LABELS[shownFlag.category]}`}
-                  accessibilityHint="Tap to view full screen"
-                >
-                  <Image
-                    source={{ uri: shownFlag.photo_url }}
-                    style={styles.photoInner}
-                    resizeMode="cover"
-                    accessibilityElementsHidden
-                    importantForAccessibility="no-hide-descendants"
-                  />
-                </Pressable>
-              ) : (
-                <View
-                  style={[styles.photo, styles.photoPlaceholder]}
-                  accessible
-                  accessibilityLabel="No photo available"
-                >
-                  <Text style={styles.photoPlaceholderText}>No photo</Text>
-                </View>
-              )}
+              <PhotoGallery
+                photos={flagPhotos}
+                onAddPhoto={isOwn && !busy ? handleAddPhoto : undefined}
+                maxPhotos={5}
+              />
 
               <View style={styles.metaRow}>
                 <View
@@ -663,6 +759,96 @@ export default function FlagDetailModal({
                   <Text style={styles.historyBtnText}>History</Text>
                 </Pressable>
               </View>
+
+              {/* ── Comments ─────────────────────────────────────────── */}
+              <View style={styles.commentsSection}>
+                <Text style={styles.sectionLabel}>Comments</Text>
+
+                {commentsTableNotReady ? (
+                  <Text style={styles.commentsSoonText}>Comments coming soon</Text>
+                ) : commentsError ? (
+                  <Text style={styles.commentsErrorText}>{commentsError}</Text>
+                ) : commentsLoading && comments.length === 0 ? (
+                  <ActivityIndicator
+                    size="small"
+                    color={color.brand}
+                    style={styles.commentsSpinner}
+                    accessible
+                    accessibilityLabel="Loading comments"
+                  />
+                ) : comments.length === 0 ? (
+                  <Text style={styles.commentsEmptyText}>No comments yet. Be the first!</Text>
+                ) : (
+                  <View style={styles.commentsList} accessibilityRole="list">
+                    {comments.map((c) => (
+                      <CommentBubble
+                        key={c.id}
+                        author={c.display_name ?? 'Anonymous'}
+                        text={c.content}
+                        createdAt={new Date(c.created_at)}
+                        isOwn={c.user_id === user?.id}
+                        onDelete={
+                          c.user_id === user?.id
+                            ? () => {
+                                void confirm(
+                                  'Delete comment?',
+                                  'This permanently removes your comment.',
+                                  'Delete',
+                                  true,
+                                ).then((ok) => {
+                                  if (!ok) return;
+                                  void deleteCommentById(c.id).catch((e: unknown) => {
+                                    Alert.alert('Could not delete comment', errorMessage(e));
+                                  });
+                                });
+                              }
+                            : undefined
+                        }
+                      />
+                    ))}
+                  </View>
+                )}
+
+                {!commentsTableNotReady && user && (
+                  <View style={styles.commentInputRow}>
+                    <TextInput
+                      ref={commentInputRef}
+                      style={styles.commentInput}
+                      value={commentText}
+                      onChangeText={setCommentText}
+                      placeholder="Add a comment…"
+                      placeholderTextColor={color.textMuted}
+                      maxLength={MAX_COMMENT_LENGTH}
+                      returnKeyType="send"
+                      onSubmitEditing={() => void handleSubmitComment()}
+                      blurOnSubmit={false}
+                      accessibilityLabel="Comment text"
+                      accessibilityHint={`Up to ${MAX_COMMENT_LENGTH} characters`}
+                    />
+                    <Pressable
+                      onPress={() => void handleSubmitComment()}
+                      disabled={commentSubmitting || commentText.trim().length === 0}
+                      style={({ pressed }) => [
+                        styles.commentSendBtn,
+                        (commentSubmitting || commentText.trim().length === 0) && styles.commentSendBtnDisabled,
+                        pressed && styles.commentSendBtnPressed,
+                      ]}
+                      accessibilityRole="button"
+                      accessibilityLabel="Send comment"
+                      accessibilityState={{
+                        disabled: commentSubmitting || commentText.trim().length === 0,
+                        busy: commentSubmitting,
+                      }}
+                    >
+                      {commentSubmitting ? (
+                        <ActivityIndicator size="small" color={color.textOnBrand} />
+                      ) : (
+                        <Text style={styles.commentSendBtnText}>Send</Text>
+                      )}
+                    </Pressable>
+                  </View>
+                )}
+              </View>
             </ScrollView>
 
             <View style={styles.actionRow}>
@@ -738,16 +924,6 @@ export default function FlagDetailModal({
           </View>
         </View>
       </Modal>
-      <PhotoLightboxModal
-        visible={lightboxOpen}
-        photoUrl={shownFlag?.photo_url ?? null}
-        caption={
-          shownFlag
-            ? `${CATEGORY_LABELS[shownFlag.category]} · ${STATUS_LABELS[shownFlag.status]}`
-            : undefined
-        }
-        onClose={() => setLightboxOpen(false)}
-      />
       <StatusHistoryModal
         visible={historyOpen}
         flagId={shownFlag?.id ?? null}
@@ -791,20 +967,6 @@ const makeStyles = (color: ColorTheme) =>
     closeBtnText: { fontSize: 16, color: color.text, fontWeight: '700' },
     body: { flexShrink: 1 },
     bodyContent: { gap: 8, paddingBottom: 4 },
-    photo: {
-      width: '100%',
-      aspectRatio: 4 / 3,
-      borderRadius: 12,
-      backgroundColor: color.surfaceNeutral,
-      overflow: 'hidden',
-    },
-    photoInner: { width: '100%', height: '100%' },
-    photoPressed: { opacity: 0.85 },
-    photoPlaceholder: {
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    photoPlaceholderText: { color: color.textMuted, fontSize: 14, fontWeight: '600' },
     metaRow: {
       flexDirection: 'row',
       flexWrap: 'wrap',
@@ -937,6 +1099,9 @@ const makeStyles = (color: ColorTheme) =>
       borderWidth: 1.5,
       borderColor: color.borderStrong,
       marginTop: 10,
+      minHeight: 44,
+      minWidth: 80,
+      justifyContent: 'center',
     },
     watchBtnActive: {
       borderColor: color.accentOrange,
@@ -1016,4 +1181,73 @@ const makeStyles = (color: ColorTheme) =>
     cancelBtnText: { color: color.text, fontWeight: '700', fontSize: 14 },
     saveBtn: { flex: 1, backgroundColor: color.brand },
     saveBtnText: { color: color.textOnBrand, fontWeight: '700', fontSize: 14 },
+    // ── Comments ────────────────────────────────────────────────────────────
+    commentsSection: {
+      marginTop: spacing.md,
+      gap: spacing.sm,
+    },
+    commentsSoonText: {
+      fontSize: font.size.sm,
+      color: color.textMuted,
+      fontStyle: 'italic',
+    },
+    commentsErrorText: {
+      fontSize: font.size.sm,
+      color: color.errorFg,
+    },
+    commentsSpinner: {
+      marginTop: spacing.sm,
+      alignSelf: 'center',
+    },
+    commentsEmptyText: {
+      fontSize: font.size.sm,
+      color: color.textMuted,
+    },
+    commentsList: {
+      gap: spacing.tight,
+      // Negative horizontal margin so CommentBubble's paddingHorizontal
+      // from the CommentBubble styles controls the visual inset instead.
+      marginHorizontal: -20,
+    },
+    commentInputRow: {
+      flexDirection: 'row',
+      alignItems: 'flex-end',
+      gap: spacing.sm,
+      marginTop: spacing.sm,
+    },
+    commentInput: {
+      flex: 1,
+      borderWidth: 1,
+      borderColor: color.border,
+      borderRadius: radius.lg,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+      fontSize: font.size.base,
+      color: color.text,
+      backgroundColor: color.surfaceSoft,
+      minHeight: 40,
+      maxHeight: 100,
+    },
+    commentSendBtn: {
+      backgroundColor: color.brand,
+      borderRadius: radius.lg,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+      // WCAG 2.5.8 / Apple HIG: 44pt minimum touch target. Was 40.
+      minHeight: 44,
+      minWidth: 60,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    commentSendBtnDisabled: {
+      opacity: 0.4,
+    },
+    commentSendBtnPressed: {
+      opacity: 0.75,
+    },
+    commentSendBtnText: {
+      color: color.textOnBrand,
+      fontWeight: '700',
+      fontSize: font.size.sm,
+    },
   });

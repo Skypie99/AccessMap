@@ -1,0 +1,359 @@
+import React, { useState } from 'react';
+import {
+  Dimensions,
+  FlatList,
+  Image,
+  Modal,
+  Pressable,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
+import { type ColorTheme, useColor } from '@/theme/ThemeContext';
+import { font, radius, spacing } from '@/theme';
+
+const SCREEN = Dimensions.get('window');
+
+export type GalleryPhoto = { url: string; position: number };
+
+type AddSentinel = { _type: 'add' };
+type ListItem = GalleryPhoto | AddSentinel;
+
+function isAdd(item: ListItem): item is AddSentinel {
+  return '_type' in item;
+}
+
+const THUMB = 96;
+
+interface Props {
+  photos: GalleryPhoto[];
+  onAddPhoto?: () => void;
+  /** Maximum photos allowed; add button hidden once reached. Default 5. */
+  maxPhotos?: number;
+  /**
+   * When provided, each thumbnail shows a ✕ remove button (pre-submission
+   * use only — e.g. ReportFlagModal). Called with the photo's index. Omit
+   * for read-only galleries like FlagDetailModal where photos are already
+   * uploaded.
+   */
+  onRemovePhoto?: (index: number) => void;
+}
+
+export default function PhotoGallery({ photos, onAddPhoto, maxPhotos = 5, onRemovePhoto }: Props) {
+  const color = useColor();
+  const styles = makeStyles(color);
+
+  const canAdd = !!onAddPhoto && photos.length < maxPhotos;
+
+  // Lightbox state: startPage = which photo opened the lightbox (drives
+  // ScrollView key + contentOffset). currentPage = live page as user swipes.
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxStartPage, setLightboxStartPage] = useState(0);
+  const [lightboxPage, setLightboxPage] = useState(0);
+
+  const data: ListItem[] = [
+    ...photos,
+    ...(canAdd ? [{ _type: 'add' } as AddSentinel] : []),
+  ];
+
+  const openLightbox = (photoIndex: number) => {
+    setLightboxStartPage(photoIndex);
+    setLightboxPage(photoIndex);
+    setLightboxOpen(true);
+  };
+
+  const renderItem = ({ item, index }: { item: ListItem; index: number }) => {
+    if (isAdd(item)) {
+      return (
+        <Pressable
+          onPress={onAddPhoto}
+          style={({ pressed }) => [styles.thumb, styles.addThumb, pressed && styles.thumbPressed]}
+          accessibilityRole="button"
+          accessibilityLabel="Add another photo"
+          accessibilityHint={`${photos.length} of ${maxPhotos} photos added. Tap to add more.`}
+        >
+          <Text style={styles.addIcon} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+            +
+          </Text>
+          <Text style={styles.addLabel} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+            Add photo
+          </Text>
+        </Pressable>
+      );
+    }
+
+    const total = photos.length;
+    return (
+      <Pressable
+        onPress={() => openLightbox(index)}
+        style={({ pressed }) => [styles.thumb, pressed && styles.thumbPressed]}
+        accessibilityRole="imagebutton"
+        accessibilityLabel={`Photo ${index + 1} of ${total}`}
+        accessibilityHint="Tap to view full screen"
+      >
+        <Image
+          source={{ uri: item.url }}
+          style={styles.thumbImage}
+          resizeMode="cover"
+          accessibilityElementsHidden
+          importantForAccessibility="no-hide-descendants"
+        />
+        {onRemovePhoto && (
+          <Pressable
+            onPress={() => onRemovePhoto(index)}
+            hitSlop={8}
+            style={({ pressed }) => [styles.removeBtn, pressed && styles.removeBtnPressed]}
+            accessibilityRole="button"
+            accessibilityLabel={`Remove photo ${index + 1}`}
+            accessibilityHint="Removes this photo before you submit"
+          >
+            <Text
+              style={styles.removeIcon}
+              accessibilityElementsHidden
+              importantForAccessibility="no-hide-descendants"
+            >
+              ✕
+            </Text>
+          </Pressable>
+        )}
+      </Pressable>
+    );
+  };
+
+  const EmptyPlaceholder = (
+    <View
+      style={styles.emptyPlaceholder}
+      accessible
+      accessibilityLabel="No photos attached"
+    >
+      <Text
+        style={styles.emptyIcon}
+        accessibilityElementsHidden
+        importantForAccessibility="no-hide-descendants"
+      >
+        📷
+      </Text>
+      <Text style={styles.emptyLabel}>No photos</Text>
+    </View>
+  );
+
+  return (
+    <>
+      <FlatList
+        horizontal
+        data={data}
+        keyExtractor={(item, i) => (isAdd(item) ? 'add' : `${(item as GalleryPhoto).position}-${i}`)}
+        renderItem={renderItem}
+        ListEmptyComponent={EmptyPlaceholder}
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.list}
+        ItemSeparatorComponent={() => <View style={styles.separator} />}
+      />
+
+      {/* Full-screen lightbox — sibling Modal pattern (same as PhotoLightboxModal).
+          Using ScrollView with pagingEnabled so the user can swipe between photos.
+          key=lightboxStartPage remounts the ScrollView when opening at a different
+          initial page, allowing contentOffset to position correctly on first render. */}
+      <Modal
+        visible={lightboxOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setLightboxOpen(false)}
+        statusBarTranslucent
+      >
+        <StatusBar barStyle="light-content" />
+        <View style={styles.lightboxBackdrop} accessibilityViewIsModal>
+          {/* Tap-anywhere dismiss. Hidden from a11y — the labeled close button
+              below is the screen-reader dismiss path (same convention as
+              PhotoLightboxModal QA Pass-2 #1). */}
+          <Pressable
+            style={StyleSheet.absoluteFill}
+            onPress={() => setLightboxOpen(false)}
+            accessibilityElementsHidden
+            importantForAccessibility="no-hide-descendants"
+          />
+
+          <ScrollView
+            key={lightboxStartPage}
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            contentOffset={{ x: lightboxStartPage * SCREEN.width, y: 0 }}
+            onMomentumScrollEnd={(e) => {
+              const page = Math.round(e.nativeEvent.contentOffset.x / SCREEN.width);
+              setLightboxPage(page);
+            }}
+            style={StyleSheet.absoluteFill}
+            scrollEventThrottle={16}
+          >
+            {photos.map((photo, i) => (
+              <View
+                key={photo.position}
+                style={styles.lightboxPage}
+                accessible
+                accessibilityLabel={`Photo ${i + 1} of ${photos.length}`}
+              >
+                <Image
+                  source={{ uri: photo.url }}
+                  style={styles.lightboxImage}
+                  resizeMode="contain"
+                  accessibilityElementsHidden
+                  importantForAccessibility="no-hide-descendants"
+                />
+              </View>
+            ))}
+          </ScrollView>
+
+          {/* Page counter */}
+          {photos.length > 1 && (
+            <View
+              style={styles.lightboxCounter}
+              pointerEvents="none"
+              accessibilityElementsHidden
+              importantForAccessibility="no-hide-descendants"
+            >
+              <Text style={styles.lightboxCounterText}>
+                {lightboxPage + 1} / {photos.length}
+              </Text>
+            </View>
+          )}
+
+          <Pressable
+            onPress={() => setLightboxOpen(false)}
+            hitSlop={spacing.lg}
+            style={({ pressed }) => [styles.lightboxClose, pressed && styles.lightboxClosePressed]}
+            accessibilityRole="button"
+            accessibilityLabel="Close photo"
+          >
+            <Text
+              style={styles.lightboxCloseText}
+              accessibilityElementsHidden
+              importantForAccessibility="no-hide-descendants"
+            >
+              ✕
+            </Text>
+          </Pressable>
+        </View>
+      </Modal>
+    </>
+  );
+}
+
+const makeStyles = (color: ColorTheme) =>
+  StyleSheet.create({
+    list: {
+      paddingVertical: 4,
+      minWidth: '100%',
+    },
+    separator: { width: 8 },
+    thumb: {
+      width: THUMB,
+      height: THUMB,
+      borderRadius: radius.md,
+      overflow: 'hidden',
+      backgroundColor: color.surfaceNeutral,
+    },
+    thumbPressed: { opacity: 0.75 },
+    thumbImage: { width: '100%', height: '100%' },
+    // ✕ remove badge — top-right corner of a pre-submission thumbnail.
+    // 24x24 visible (WCAG 2.5.8 min) + hitSlop 8 → ~40pt effective target.
+    // Dark scrim badge keeps the white glyph legible over any photo.
+    removeBtn: {
+      position: 'absolute',
+      top: 4,
+      right: 4,
+      width: 24,
+      height: 24,
+      borderRadius: 12,
+      backgroundColor: 'rgba(0,0,0,0.6)',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    removeBtnPressed: { backgroundColor: 'rgba(0,0,0,0.82)' },
+    removeIcon: {
+      color: '#fff',
+      fontSize: 13,
+      fontWeight: '700',
+      lineHeight: 15,
+    },
+    addThumb: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderWidth: 1.5,
+      borderColor: color.brand,
+      borderStyle: 'dashed',
+      backgroundColor: color.brandSofter,
+    },
+    addIcon: {
+      fontSize: 24,
+      fontWeight: '700',
+      color: color.brand,
+      lineHeight: 28,
+    },
+    addLabel: {
+      fontSize: font.size.xs,
+      fontWeight: '600',
+      color: color.brandText,
+      marginTop: 2,
+    },
+    emptyPlaceholder: {
+      width: THUMB,
+      height: THUMB,
+      borderRadius: radius.md,
+      backgroundColor: color.surfaceNeutral,
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 4,
+    },
+    emptyIcon: { fontSize: 22 },
+    emptyLabel: {
+      fontSize: font.size.xs,
+      color: color.textMuted,
+      fontWeight: '500',
+    },
+    lightboxBackdrop: {
+      flex: 1,
+      backgroundColor: 'rgba(0,0,0,0.92)',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    lightboxPage: {
+      width: SCREEN.width,
+      height: SCREEN.height,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    lightboxImage: {
+      width: SCREEN.width,
+      height: SCREEN.height,
+    },
+    lightboxCounter: {
+      position: 'absolute',
+      bottom: 48,
+      alignSelf: 'center',
+      backgroundColor: 'rgba(0,0,0,0.5)',
+      paddingHorizontal: 14,
+      paddingVertical: 6,
+      borderRadius: radius.circle,
+    },
+    lightboxCounterText: {
+      color: '#fff',
+      fontSize: font.size.sm,
+      fontWeight: '600',
+    },
+    lightboxClose: {
+      position: 'absolute',
+      top: 48,
+      right: spacing.lg,
+      width: 44,
+      height: 44,
+      borderRadius: radius.circle,
+      backgroundColor: 'rgba(255,255,255,0.2)',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    lightboxClosePressed: { backgroundColor: 'rgba(255,255,255,0.35)' },
+    lightboxCloseText: { fontSize: font.size.xl, color: '#fff', fontWeight: '700' },
+  });

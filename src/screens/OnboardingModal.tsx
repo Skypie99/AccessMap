@@ -131,11 +131,31 @@ export default function OnboardingModal({ visible, onDone }: Props) {
           ))}
         </View>
 
-        <View style={styles.actions}>
+        {/* WCAG 2.5.7 (Dragging Movements): swipe-to-go-back is the only
+            backward navigation for sighted users, but the scroll container is
+            hidden from AT. When index > 0, render a Back button so VoiceOver,
+            TalkBack, and Switch Access users can return to the previous card
+            without having to abandon the entire flow via Skip. */}
+        <View style={[styles.actions, index > 0 && styles.actionsRow]}>
+          {index > 0 && (
+            <Pressable
+              onPress={() => goTo(index - 1)}
+              style={({ pressed }) => [styles.backBtn, pressed && styles.btnPressed]}
+              accessibilityRole="button"
+              accessibilityLabel={`Back. Step ${index + 1} of ${CARDS.length}.`}
+              accessibilityHint="Returns to the previous introduction card"
+            >
+              <Text style={styles.backBtnText}>Back</Text>
+            </Pressable>
+          )}
           {!isLast ? (
             <Pressable
               onPress={() => goTo(index + 1)}
-              style={({ pressed }) => [styles.primaryBtn, pressed && styles.btnPressed]}
+              style={({ pressed }) => [
+                styles.primaryBtn,
+                index > 0 && styles.primaryBtnFlex,
+                pressed && styles.btnPressed,
+              ]}
               accessibilityRole="button"
               accessibilityLabel={`Next. Step ${index + 1} of ${CARDS.length}.`}
               accessibilityHint="Moves to the next introduction card"
@@ -145,7 +165,11 @@ export default function OnboardingModal({ visible, onDone }: Props) {
           ) : (
             <Pressable
               onPress={onDone}
-              style={({ pressed }) => [styles.primaryBtn, pressed && styles.btnPressed]}
+              style={({ pressed }) => [
+                styles.primaryBtn,
+                index > 0 && styles.primaryBtnFlex,
+                pressed && styles.btnPressed,
+              ]}
               accessibilityRole="button"
               accessibilityLabel="Get started using AccessMap"
               accessibilityHint="Closes the introduction and opens the app"
@@ -239,6 +263,10 @@ const makeStyles = (color: ColorTheme) =>
       paddingBottom: 36,
       paddingTop: spacing.sm,
     },
+    actionsRow: {
+      flexDirection: 'row',
+      gap: spacing.sm,
+    },
     primaryBtn: {
       backgroundColor: color.brand,
       paddingVertical: spacing.lg,
@@ -248,7 +276,23 @@ const makeStyles = (color: ColorTheme) =>
       justifyContent: 'center',
       ...shadow.e2,
     },
+    // Used when Back + Next/Get started share the same row.
+    primaryBtnFlex: { flex: 1 },
     btnPressed: { opacity: 0.85 },
+    backBtn: {
+      flex: 1,
+      backgroundColor: color.surfaceNeutral,
+      paddingVertical: spacing.lg,
+      borderRadius: radius.lg,
+      alignItems: 'center',
+      minHeight: 44,
+      justifyContent: 'center',
+    },
+    backBtnText: {
+      color: color.text,
+      fontWeight: font.weight.semibold,
+      fontSize: font.size.lg,
+    },
     // textOnBrand: #fff on brand = 3.3:1 — passes WCAG 1.4.3 for large bold text
     // (16pt bold = "large text" threshold per WCAG 2.2, 3:1 minimum).
     primaryBtnText: {

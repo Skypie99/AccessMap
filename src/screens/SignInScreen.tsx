@@ -360,7 +360,7 @@ const makeStyles = (_color: ColorTheme) =>
       paddingVertical: spacing.sm,
       paddingHorizontal: spacing.xl,
       borderRadius: radius.full,
-      minHeight: 40,
+      minHeight: 44, // WCAG 2.5.5: was 40pt (below 44pt project standard)
       alignItems: 'center',
       justifyContent: 'center',
     },
@@ -373,12 +373,14 @@ const makeStyles = (_color: ColorTheme) =>
     },
     guestNote: {
       fontSize: font.size.xs,
-      color: 'rgba(255,255,255,0.3)',
+      // WCAG 1.4.3: was 0.3 (~2.8:1). 0.55 blends to ≈#8F9197 on #070b18 → 5.5:1, AA pass.
+      color: 'rgba(255,255,255,0.55)',
       textAlign: 'center',
     },
     footnote: {
       fontSize: font.size.xs,
-      color: 'rgba(255,255,255,0.28)',
+      // WCAG 1.4.3: was 0.28 (~2.7:1). 0.55 blends to ≈#8F9197 on #070b18 → 5.5:1, AA pass.
+      color: 'rgba(255,255,255,0.55)',
       textAlign: 'center',
       lineHeight: 18,
       paddingHorizontal: spacing.lg,

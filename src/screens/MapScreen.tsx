@@ -920,7 +920,10 @@ export default function MapScreen() {
 
       <View pointerEvents="box-none" style={styles.overlay}>
         <View style={styles.topRow}>
-          <View style={styles.statusPill}>
+          {/* WCAG 4.1.3: live region ensures AT announces when the count
+              changes after a filter toggle (e.g. "12 of 45 shown"). Using
+              'polite' so it doesn't interrupt mid-sentence. */}
+          <View style={styles.statusPill} accessibilityLiveRegion="polite">
             <Text style={styles.statusText}>
               {loadingFlags
                 ? 'Loading flags…'
@@ -1475,15 +1478,29 @@ export default function MapScreen() {
           </View>
         )}
 
+        {/* WCAG 4.1.3: accessibilityLiveRegion covers Android TalkBack.
+            iOS VoiceOver is already handled by the
+            announceForAccessibility call in requestLocation(). */}
         {locating && !location && (
-          <View style={styles.banner}>
-            <ActivityIndicator />
+          <View
+            style={styles.banner}
+            accessibilityRole="text"
+            accessibilityLiveRegion="polite"
+          >
+            <ActivityIndicator
+              accessibilityElementsHidden
+              importantForAccessibility="no-hide-descendants"
+            />
             <Text style={styles.bannerText}>Finding your location…</Text>
           </View>
         )}
 
         {permissionDenied && (
-          <View style={styles.banner}>
+          <View
+            style={styles.banner}
+            accessibilityRole="alert"
+            accessibilityLiveRegion="assertive"
+          >
             <Text style={styles.bannerText}>
               Location permission denied. Enable it in Settings to report a flag.
             </Text>
@@ -1733,7 +1750,7 @@ export default function MapScreen() {
       >
         <View style={styles.nameBackdrop}>
           <View style={styles.nameCard}>
-            <Text style={styles.nameTitle}>Name this filter</Text>
+            <Text style={styles.nameTitle} accessibilityRole="header">Name this filter</Text>
             <Text style={styles.nameHint}>You can save up to {MAX_FILTER_SETS} filter sets.</Text>
             <TextInput
               value={nameDraft}
@@ -1871,11 +1888,11 @@ const makeStyles = (color: ColorTheme) =>
       ...shadow.e2,
     },
     actionBtn: {
-      width: 36,
-      height: 36,
+      minWidth: 44, // WCAG 2.5.5: was 36pt (below 44pt project standard)
+      minHeight: 44,
       alignItems: 'center',
       justifyContent: 'center',
-      borderRadius: 18,
+      borderRadius: 22,
     },
     actionBtnActive: { backgroundColor: color.brand },
     actionDivider: {
@@ -2057,7 +2074,7 @@ const makeStyles = (color: ColorTheme) =>
       paddingVertical: 8,
       borderRadius: radius.circle,
       backgroundColor: color.brand,
-      minHeight: 32,
+      minHeight: 44,
       justifyContent: 'center',
     },
     savedSaveBtnText: { color: color.textOnBrand, fontSize: 12, fontWeight: '700' },

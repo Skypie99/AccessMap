@@ -209,6 +209,24 @@ export default function TasksScreen() {
     return out;
   }, [displayFlags, sortMode]);
 
+  // WCAG 4.1.3: announce result count when the debounced search query changes
+  // so AT users hear how many flags match without swiping through the list.
+  // Only fires on a non-empty query — clearing search is silent, the list
+  // just expands and the section headers speak for themselves. Dep on
+  // `debouncedSearchText` only is intentional; other filter axes announce
+  // themselves via handleCategoryChange / handleScopeChange.
+  useEffect(() => {
+    const q = debouncedSearchText.trim();
+    if (!q) return;
+    const count = displayFlags.length;
+    AccessibilityInfo.announceForAccessibility(
+      count === 0
+        ? 'No flags match your search.'
+        : `${count} flag${count === 1 ? '' : 's'} match your search.`,
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedSearchText]);
+
   // One-shot location fetch so each card can show "0.3 km · 4 min walk".
   // Graceful degrade: if the user denies permission (or we error) we just
   // render the card without distance — see FlagCard below.
@@ -1452,6 +1470,9 @@ const makeStyles = (color: ColorTheme) =>
       paddingHorizontal: 12,
       paddingVertical: 8,
       borderRadius: 8,
+      minHeight: 44,
+      alignItems: 'center',
+      justifyContent: 'center',
     },
     verifyBtn: { backgroundColor: color.brand },
     verifyText: { color: color.textOnBrand, fontWeight: '600', fontSize: 13 },
@@ -1523,7 +1544,7 @@ const makeStyles = (color: ColorTheme) =>
     sevChip: {
       flexGrow: 1,
       flexBasis: 0,
-      minHeight: 36,
+      minHeight: 44, // WCAG 2.5.5: was 36pt (below 44pt project standard)
       paddingVertical: 8,
       borderRadius: radius.circle,
       backgroundColor: color.surfaceNeutral,
@@ -1543,7 +1564,7 @@ const makeStyles = (color: ColorTheme) =>
       paddingBottom: 2,
     },
     catChip: {
-      minHeight: 36,
+      minHeight: 44, // WCAG 2.5.5: was 36pt (below 44pt project standard)
       paddingHorizontal: 12,
       paddingVertical: 8,
       borderRadius: radius.circle,

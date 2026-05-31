@@ -28,6 +28,14 @@ export type FlagRow = {
   // Optional until supabase/migrations/2026-05-24_flag_context_tags.sql
   // is applied. The column holds ≤5 vocabulary strings from contextTags.ts.
   context_tags?: string[];
+  // F10 reopen mechanism. Optional until
+  // supabase/migrations/2026-05-30_flag_reopen_requests.sql is applied.
+  // reopen_requests is the anonymous aggregate vote count for the current
+  // resolution cycle. reopen_requests_reset_at stamps when the current
+  // cycle started (used for client-side per-cycle dedup without user_id).
+  // Jordan hard condition: no user_id linkage — counter only.
+  reopen_requests?: number;
+  reopen_requests_reset_at?: string | null;
 };
 
 export type UserRow = {
@@ -54,6 +62,18 @@ export type FeedbackRow = {
   contact_email: string | null;
   platform: string | null;
   created_at: string;
+};
+
+// One comment on a flag. `display_name` is populated by a PostgREST join
+// from public.users; it is NOT a real column on the flag_comments table.
+// Optional until supabase/migrations/2026-05-30_flag_comments.sql is applied.
+export type CommentRow = {
+  id: string;
+  flag_id: string;
+  user_id: string;
+  content: string;
+  created_at: string;
+  display_name: string | null;
 };
 
 type EmptyRelationships = {
@@ -146,6 +166,53 @@ export type Database = {
           platform?: 'ios' | 'android' | 'web' | null;
           updated_at?: string;
         };
+        Relationships: EmptyRelationships;
+      };
+      // Optional until supabase/migrations/2026-05-30_flag_comments.sql is
+      // applied. The display_name join is handled at query-time via
+      // PostgREST — it is NOT a real column on this table (see CommentRow).
+      flag_comments: {
+        Row: {
+          id: string;
+          flag_id: string;
+          user_id: string;
+          content: string;
+          created_at: string;
+        };
+        Insert: {
+          flag_id: string;
+          user_id: string;
+          content: string;
+          id?: string;
+          created_at?: string;
+        };
+        Update: Partial<{
+          content: string;
+        }>;
+        Relationships: EmptyRelationships;
+      };
+      // Optional until supabase/migrations/2026-05-30_flag_photos_junction.sql
+      // is applied. listFlagPhotos/addFlagPhoto/deleteFlagPhoto gracefully
+      // degrade (return [] / no-op) if the table doesn't exist yet.
+      flag_photos: {
+        Row: {
+          id: string;
+          flag_id: string;
+          url: string;
+          position: number;
+          created_at: string;
+        };
+        Insert: {
+          flag_id: string;
+          url: string;
+          position: number;
+          id?: string;
+          created_at?: string;
+        };
+        Update: Partial<{
+          url: string;
+          position: number;
+        }>;
         Relationships: EmptyRelationships;
       };
       // D4: Realtime Flags — observability log.
