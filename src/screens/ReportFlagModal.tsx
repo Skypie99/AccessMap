@@ -40,12 +40,23 @@ import {
   SEASONAL_TAG_LABELS,
   toggleTag,
   type ContextTag,
+  type DisabilityTag,
 } from '@/lib/contextTags';
 import { validReportTemplates, type ReportTemplate } from '@/lib/reportTemplates';
 import type { FlagCategory, FlagSeverity } from '@/types/database';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { radius } from '@/theme';
 import { useReducedMotion } from '@/lib/accessibility';
+
+/** Emoji icon prefix for each disability tag — adds visual distinction without
+ *  adding a dependency. Describes the BARRIER type, not any person's identity. */
+const DISABILITY_TAG_ICONS: Readonly<Record<DisabilityTag, string>> = {
+  mobility_barrier: '♿',
+  vision_hazard: '👁',
+  hearing_concern: '🦻',
+  cognitive_load: '🧠',
+  temporary_closure: '🚧',
+};
 
 interface Props {
   visible: boolean;
@@ -515,13 +526,16 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
               `contextTags` state, toggleTag cap, and capability gate as the
               seasonal/general chips — disability tags are just another subset
               of context_tags. */}
-          <Text style={styles.label} accessibilityRole="header">
-            Who does this affect? (optional)
-          </Text>
+          <View style={styles.disabilitySectionHeader}>
+            <Text style={[styles.label, styles.disabilityLabel]} accessibilityRole="header">
+              Who does this affect? (optional)
+            </Text>
+          </View>
           <View style={styles.row}>
             {DISABILITY_TAGS.map((tag) => {
               const active = contextTags.includes(tag);
               const label = DISABILITY_TAG_LABELS[tag];
+              const icon = DISABILITY_TAG_ICONS[tag];
               return (
                 <Pressable
                   key={tag}
@@ -532,7 +546,8 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
                   disabled={tagsDisabled}
                   style={[
                     styles.tagChip,
-                    active && styles.tagChipActive,
+                    styles.disabilityTagChip,
+                    active && styles.disabilityTagChipActive,
                     tagsDisabled && styles.tagChipDisabled,
                   ]}
                   accessibilityRole="checkbox"
@@ -542,6 +557,13 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
                     tagsDisabled ? 'Accessibility tags will be available soon.' : undefined
                   }
                 >
+                  <Text
+                    style={styles.disabilityTagIcon}
+                    accessibilityElementsHidden
+                    importantForAccessibility="no-hide-descendants"
+                  >
+                    {icon}
+                  </Text>
                   <Text
                     style={[
                       styles.tagChipText,
@@ -915,5 +937,33 @@ const makeStyles = (color: ColorTheme) =>
     },
     templateChipTextActive: {
       color: color.textOnBrand,
+    },
+    // "Who does this affect?" section — visual separator to signal this group
+    // is distinct from the general/seasonal context chips above.
+    disabilitySectionHeader: {
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: color.borderSubtle,
+      paddingTop: 12,
+      marginTop: 4,
+    },
+    disabilityLabel: {
+      color: color.brandText,
+    },
+    // Disability chips use row layout (icon + text) and a brand-softer fill to
+    // visually separate them from the plain text seasonal/context chips.
+    disabilityTagChip: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      backgroundColor: color.brandSofter,
+      borderColor: color.brand,
+    },
+    disabilityTagChipActive: {
+      backgroundColor: color.brandText,
+      borderColor: color.brandText,
+    },
+    disabilityTagIcon: {
+      fontSize: 15,
+      lineHeight: 19,
     },
   });

@@ -34,8 +34,8 @@ const CARDS: Card[] = [
   },
   {
     emoji: '🎯',
-    title: 'Severity 1 to 5',
-    body: 'When you report a flag, pick how bad it is. 1 is a minor inconvenience, 5 is impassable. The map shows both the number and a color so the meaning is clear even without color vision.',
+    title: 'Rate the barrier',
+    body: 'Rate the issue from 1 (a minor inconvenience) to 5 (completely impassable). The map shows both number and color so the meaning is clear at a glance.',
   },
   {
     emoji: '⭐',
@@ -181,14 +181,15 @@ export default function OnboardingModal({ visible, onDone }: Props) {
               onPress={handleComplete}
               style={({ pressed }) => [
                 styles.primaryBtn,
+                styles.primaryBtnLast,
                 index > 0 && styles.primaryBtnFlex,
                 pressed && styles.btnPressed,
               ]}
               accessibilityRole="button"
-              accessibilityLabel="Get started using AccessMap"
-              accessibilityHint="Closes the introduction and opens the app"
+              accessibilityLabel="Open the map"
+              accessibilityHint="Closes the introduction and opens the map"
             >
-              <Text style={styles.primaryBtnText}>Get started</Text>
+              <Text style={styles.primaryBtnText}>Open the Map</Text>
             </Pressable>
           )}
         </View>
@@ -292,6 +293,13 @@ const makeStyles = (color: ColorTheme) =>
     },
     // Used when Back + Next/Get started share the same row.
     primaryBtnFlex: { flex: 1 },
+    // Final "Get started" CTA — stronger shadow signals completion.
+    primaryBtnLast: {
+      shadowOpacity: 0.28,
+      shadowRadius: 10,
+      shadowOffset: { width: 0, height: 4 },
+      elevation: 6,
+    },
     btnPressed: { opacity: 0.85 },
     backBtn: {
       flex: 1,

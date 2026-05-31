@@ -96,6 +96,55 @@ export async function requestExpoPushToken(): Promise<string | null> {
 }
 
 /**
+ * Read the current OS notification-permission status WITHOUT prompting.
+ * Mirrors expo-location's getForegroundPermissionsAsync for the onboarding
+ * notifications slide, so a returning user who already granted sees a
+ * "you're set" state instead of a redundant button.
+ *
+ * Returns `true`/`false` for granted/denied, or `null` when we can't tell
+ * (web, or expo-notifications not installed) — the caller treats `null` as
+ * "no native prompt available here, just continue".
+ */
+export async function getNotificationPermission(): Promise<boolean | null> {
+  try {
+    if (Platform.OS === 'web') return null;
+    // Dynamic require — same optional-dep pattern as the rest of this file.
+    // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-unsafe-assignment
+    const Notifications = require('expo-notifications') as ExpoNotificationsModule;
+    const { status } = await Notifications.getPermissionsAsync();
+    return status === 'granted';
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Fire the OS notification-permission prompt (permission priming only — no
+ * token, no DB write). Used by the first-launch onboarding, which runs
+ * BEFORE sign-in, so there is no userId to attach a token to yet. The token
+ * is registered later by the post-sign-in Settings toggle / enablePushNotifications.
+ *
+ * Returns true if permission ends up granted. Degrades to false on web or if
+ * expo-notifications is absent — denying must never block onboarding.
+ */
+export async function requestNotificationPermission(): Promise<boolean> {
+  try {
+    if (Platform.OS === 'web') return false;
+    // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-unsafe-assignment
+    const Notifications = require('expo-notifications') as ExpoNotificationsModule;
+    const { status: existing } = await Notifications.getPermissionsAsync();
+    let finalStatus = existing;
+    if (existing !== 'granted') {
+      const { status } = await Notifications.requestPermissionsAsync();
+      finalStatus = status;
+    }
+    return finalStatus === 'granted';
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Save a push token to the database (upsert handles OS token rotation on
  * reinstall). Also persists the preference to AsyncStorage (native only).
  *

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
   Dimensions,
   FlatList,
@@ -12,7 +12,7 @@ import {
   View,
 } from 'react-native';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
-import { font, radius, spacing } from '@/theme';
+import { font, radius, shadow, spacing } from '@/theme';
 
 const SCREEN = Dimensions.get('window');
 
@@ -41,9 +41,9 @@ interface Props {
   onRemovePhoto?: (index: number) => void;
 }
 
-export default function PhotoGallery({ photos, onAddPhoto, maxPhotos = 5, onRemovePhoto }: Props) {
+function PhotoGalleryInner({ photos, onAddPhoto, maxPhotos = 5, onRemovePhoto }: Props) {
   const color = useColor();
-  const styles = makeStyles(color);
+  const styles = useMemo(() => makeStyles(color), [color]);
 
   const canAdd = !!onAddPhoto && photos.length < maxPhotos;
 
@@ -53,18 +53,18 @@ export default function PhotoGallery({ photos, onAddPhoto, maxPhotos = 5, onRemo
   const [lightboxStartPage, setLightboxStartPage] = useState(0);
   const [lightboxPage, setLightboxPage] = useState(0);
 
-  const data: ListItem[] = [
-    ...photos,
-    ...(canAdd ? [{ _type: 'add' } as AddSentinel] : []),
-  ];
+  const data: ListItem[] = useMemo(
+    () => [...photos, ...(canAdd ? [{ _type: 'add' } as AddSentinel] : [])],
+    [photos, canAdd],
+  );
 
-  const openLightbox = (photoIndex: number) => {
+  const openLightbox = useCallback((photoIndex: number) => {
     setLightboxStartPage(photoIndex);
     setLightboxPage(photoIndex);
     setLightboxOpen(true);
-  };
+  }, []);
 
-  const renderItem = ({ item, index }: { item: ListItem; index: number }) => {
+  const renderItem = useCallback(({ item, index }: { item: ListItem; index: number }) => {
     if (isAdd(item)) {
       return (
         <Pressable
@@ -120,7 +120,7 @@ export default function PhotoGallery({ photos, onAddPhoto, maxPhotos = 5, onRemo
         )}
       </Pressable>
     );
-  };
+  }, [openLightbox, photos, onAddPhoto, maxPhotos, styles]);
 
   const EmptyPlaceholder = (
     <View
@@ -241,6 +241,8 @@ export default function PhotoGallery({ photos, onAddPhoto, maxPhotos = 5, onRemo
   );
 }
 
+export default React.memo(PhotoGalleryInner);
+
 const makeStyles = (color: ColorTheme) =>
   StyleSheet.create({
     list: {
@@ -251,9 +253,10 @@ const makeStyles = (color: ColorTheme) =>
     thumb: {
       width: THUMB,
       height: THUMB,
-      borderRadius: radius.md,
+      borderRadius: radius.lg,
       overflow: 'hidden',
       backgroundColor: color.surfaceNeutral,
+      ...shadow.e1,
     },
     thumbPressed: { opacity: 0.75 },
     thumbImage: { width: '100%', height: '100%' },
@@ -285,6 +288,7 @@ const makeStyles = (color: ColorTheme) =>
       borderColor: color.brand,
       borderStyle: 'dashed',
       backgroundColor: color.brandSofter,
+      borderRadius: radius.lg,
     },
     addIcon: {
       fontSize: 24,
@@ -301,7 +305,7 @@ const makeStyles = (color: ColorTheme) =>
     emptyPlaceholder: {
       width: THUMB,
       height: THUMB,
-      borderRadius: radius.md,
+      borderRadius: radius.lg,
       backgroundColor: color.surfaceNeutral,
       alignItems: 'center',
       justifyContent: 'center',
@@ -333,7 +337,7 @@ const makeStyles = (color: ColorTheme) =>
       position: 'absolute',
       bottom: 48,
       alignSelf: 'center',
-      backgroundColor: 'rgba(0,0,0,0.5)',
+      backgroundColor: color.backdropCaption,
       paddingHorizontal: 14,
       paddingVertical: 6,
       borderRadius: radius.circle,
@@ -350,10 +354,10 @@ const makeStyles = (color: ColorTheme) =>
       width: 44,
       height: 44,
       borderRadius: radius.circle,
-      backgroundColor: 'rgba(255,255,255,0.2)',
+      backgroundColor: color.overlayBtn,
       alignItems: 'center',
       justifyContent: 'center',
     },
-    lightboxClosePressed: { backgroundColor: 'rgba(255,255,255,0.35)' },
+    lightboxClosePressed: { backgroundColor: color.overlayBtnPressed },
     lightboxCloseText: { fontSize: font.size.xl, color: '#fff', fontWeight: '700' },
   });
