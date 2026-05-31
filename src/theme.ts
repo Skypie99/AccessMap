@@ -120,6 +120,18 @@ export const color = {
   overlayBtn: 'rgba(0,0,0,0.45)', // overlay action buttons (close button bg in lightbox)
   overlayBtnPressed: 'rgba(0,0,0,0.60)', // pressed state for overlay action buttons
 
+  // Progress bar tracks on brand-colored surfaces (hero card, tinted cards).
+  // Tokenizes the raw rgba literal used by milestone + tier progress bars
+  // drawn on the blue hero background. Same semi-transparent white works for
+  // both light and dark mode since the hero surface is always brand blue.
+  surfaceVariant: 'rgba(255,255,255,0.25)',
+
+  // Leaderboard podium row tints — rank 1/2/3.
+  // Each is a very light wash; color.text (#333) on all three gives ≥ 12:1 contrast.
+  tierGoldBg: '#fffbe6',   // warm gold wash — rank 1
+  tierSilverBg: '#f3f4f6', // cool silver wash — rank 2
+  tierBronzeBg: '#fef3ec', // warm bronze wash — rank 3
+
   // Misc
   shadow: '#000',
   pointsPillText: '#dbe7fb', // light-blue label on brand-blue background

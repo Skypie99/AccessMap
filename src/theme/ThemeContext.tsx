@@ -89,6 +89,16 @@ const darkColor = {
   overlayBtn: 'rgba(255,255,255,0.2)', // overlay button on dark bg (brighter for visibility)
   overlayBtnPressed: 'rgba(255,255,255,0.30)', // pressed state for overlay button on dark bg
 
+  // Progress bar track on brand-colored surfaces — same semi-transparent white
+  // works on dark mode since the hero card is always brand blue.
+  surfaceVariant: 'rgba(255,255,255,0.25)',
+
+  // Leaderboard podium row tints — dark-mode equivalents.
+  // color.text (#ddd) on each gives ≥ 10:1 contrast.
+  tierGoldBg: '#2d2509',   // dark warm gold wash — rank 1
+  tierSilverBg: '#1d1d1f', // very slightly elevated from surface — rank 2
+  tierBronzeBg: '#2d1a0d', // dark warm bronze wash — rank 3
+
   // Misc
   shadow: '#fff', // inverted for dark mode
   pointsPillText: '#dbe7fb',

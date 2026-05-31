@@ -71,7 +71,13 @@ export default function LeaderboardModal({ visible, onClose }: Props) {
         ordinalLabel(rank);
       return (
         <View
-          style={[styles.row, isCurrentUser && styles.rowHighlight]}
+          style={[
+            styles.row,
+            rank === 1 && styles.rowTop1,
+            rank === 2 && styles.rowTop2,
+            rank === 3 && styles.rowTop3,
+            isCurrentUser && styles.rowHighlight,
+          ]}
           role="listitem"
           accessibilityLabel={`${medalPrefix}, ${tier.label} tier, ${name}, ${item.points} points${isCurrentUser ? ', you' : ''}`}
         >
@@ -237,6 +243,12 @@ function makeStyles(color: ColorTheme) {
     rowHighlight: {
       backgroundColor: color.brandSofter,
     },
+    // Podium tints — subtle background + shadow.e2 elevation for ranks 1–3.
+    // isCurrentUser rowHighlight sits after these in the style array and wins
+    // on background when the viewer IS the top-ranked user.
+    rowTop1: { backgroundColor: color.tierGoldBg, ...shadow.e2 },
+    rowTop2: { backgroundColor: color.tierSilverBg, ...shadow.e2 },
+    rowTop3: { backgroundColor: color.tierBronzeBg, ...shadow.e2 },
     rank: {
       width: 44,
       fontSize: font.size.md,
@@ -247,6 +259,7 @@ function makeStyles(color: ColorTheme) {
       // WCAG 1.4.3: brand (#2f80ed) = 3.3:1 on white, fails AA at 13pt; brandText (#1c4f99) = 7.6:1 ✓
       color: color.brandText,
       fontWeight: font.weight.bold,
+      fontSize: font.size.xl, // 18 vs base md (15) — premium scale for top-3 medals
     },
     nameWrap: {
       flex: 1,
@@ -255,7 +268,7 @@ function makeStyles(color: ColorTheme) {
       gap: spacing.xs,
     },
     tierEmoji: {
-      fontSize: 14,
+      fontSize: font.size.base,
     },
     name: {
       fontSize: font.size.md,

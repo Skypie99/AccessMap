@@ -3,6 +3,7 @@ import {
   AccessibilityInfo,
   ActivityIndicator,
   Alert,
+  Animated,
   Image,
   Modal,
   Platform,
@@ -78,6 +79,20 @@ import {
 } from '@/lib/pointEvents';
 import SignInScreen from '@/screens/SignInScreen';
 import AboutScreen from '@/screens/AboutScreen';
+
+// Converts an ISO timestamp to a human-readable relative string.
+// Falls back to a short date once the event is more than a week old.
+function formatRelativeTime(iso: string): string {
+  const diffMs = Date.now() - new Date(iso).getTime();
+  const diffMin = Math.floor(diffMs / 60_000);
+  if (diffMin < 1) return 'just now';
+  if (diffMin < 60) return `${diffMin}m ago`;
+  const diffHr = Math.floor(diffMin / 60);
+  if (diffHr < 24) return `${diffHr}h ago`;
+  const diffDays = Math.floor(diffHr / 24);
+  if (diffDays < 7) return `${diffDays}d ago`;
+  return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}
 
 interface Stats {
   reported: number;
@@ -683,6 +698,24 @@ export default function ProfileScreen() {
     });
   }, [nearestUnresolved, navigation]);
 
+  // Tier progress bar animation — drives the fill width from 0 → progress
+  // whenever the user's points change (e.g. after a focus-refresh). Placed
+  // before the conditional returns so the hook call order is always stable.
+  const tierProgressAnim = useRef(new Animated.Value(0)).current;
+  const tierProgressValue = useMemo(() => {
+    const pts = profile?.points ?? 0;
+    const t = getTier(pts);
+    if (t.nextThreshold === null) return 1;
+    return Math.min(1, (pts - t.threshold) / (t.nextThreshold - t.threshold));
+  }, [profile?.points]);
+  useEffect(() => {
+    Animated.timing(tierProgressAnim, {
+      toValue: tierProgressValue,
+      duration: 600,
+      useNativeDriver: false, // width interpolation cannot use the native driver
+    }).start();
+  }, [tierProgressValue, tierProgressAnim]);
+
   if (authLoading) {
     return (
       <View style={styles.center}>
@@ -840,6 +873,35 @@ export default function ProfileScreen() {
               <Text style={styles.tierPillLabel}>{tier.label}</Text>
             </Pressable>
           </View>
+          {/* Tier progress bar — thin animated fill below the tier pill.
+              Hidden at Platinum (nextThreshold null) since there's no
+              next tier to progress toward. Screen readers skip it (decorative
+              duplicate of the "X pts to next tier" text already announced
+              by the tier pill's accessibilityHint above). */}
+          {tier.nextThreshold !== null && (
+            <>
+              <View
+                style={styles.tierProgressTrack}
+                accessibilityElementsHidden
+                importantForAccessibility="no-hide-descendants"
+              >
+                <Animated.View
+                  style={[
+                    styles.tierProgressFill,
+                    {
+                      width: tierProgressAnim.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: ['0%', '100%'],
+                      }),
+                    },
+                  ]}
+                />
+              </View>
+              <Text style={styles.tierProgressLabel}>
+                {tierGap} pts to {nextTier?.label ?? 'next tier'} {nextTier?.emoji ?? ''}
+              </Text>
+            </>
+          )}
           {nextMilestone !== null ? (
             <>
               <View
@@ -860,45 +922,53 @@ export default function ProfileScreen() {
           )}
         </View>
 
-        {/* Point history — owner-only, only rendered when events exist.
-            42P01: if the migration is not yet applied getPointEventHistory
-            returns [] and this section is hidden. flag_id is NOT shown —
-            see TRUST_SCORE_SPEC §3.2 Jordan constraint. */}
-        {pointEvents.length > 0 && (
-          <View style={styles.pointHistoryCard}>
-            <Text style={styles.pointHistoryTitle} accessibilityRole="header">
-              Recent point activity
+        {/* Point history — always rendered. Shows an encouraging empty state
+            when no events exist yet (or migration not applied). flag_id is
+            NOT shown — see TRUST_SCORE_SPEC §3.2 Jordan constraint. */}
+        <View style={styles.pointHistoryCard}>
+          <Text style={styles.pointHistoryTitle} accessibilityRole="header">
+            Recent point activity
+          </Text>
+          {pointEvents.length === 0 ? (
+            <Text style={styles.pointHistoryEmpty}>
+              Start reporting barriers to earn points!
             </Text>
-            {pointEvents.slice(0, 5).map((ev) => {
-              const sign = ev.delta >= 0 ? '+' : '';
-              const date = new Date(ev.created_at).toLocaleDateString(undefined, {
-                month: 'short',
-                day: 'numeric',
-              });
+          ) : (
+            pointEvents.slice(0, 5).map((ev) => {
+              const isGain = ev.delta >= 0;
+              const sign = isGain ? '+' : '';
+              const dateStr = formatRelativeTime(ev.created_at);
               return (
                 <View
                   key={ev.id}
                   style={styles.pointHistoryRow}
                   accessible
-                  accessibilityLabel={`${pointEventLabel(ev.event_type)}, ${sign}${ev.delta} points, ${date}`}
+                  accessibilityLabel={`${pointEventLabel(ev.event_type)}, ${sign}${ev.delta} points, ${dateStr}`}
                 >
+                  <Text
+                    style={[styles.pointHistoryIcon, !isGain && styles.pointHistoryIconNeg]}
+                    accessibilityElementsHidden
+                    importantForAccessibility="no-hide-descendants"
+                  >
+                    {isGain ? '↑' : '↓'}
+                  </Text>
                   <Text style={styles.pointHistoryLabel} numberOfLines={1}>
                     {pointEventLabel(ev.event_type)}
                   </Text>
-                  <Text style={styles.pointHistoryDate}>{date}</Text>
+                  <Text style={styles.pointHistoryDate}>{dateStr}</Text>
                   <Text
                     style={[
                       styles.pointHistoryDelta,
-                      ev.delta < 0 && styles.pointHistoryDeltaNeg,
+                      !isGain && styles.pointHistoryDeltaNeg,
                     ]}
                   >
                     {sign}{ev.delta} pts
                   </Text>
                 </View>
               );
-            })}
-          </View>
-        )}
+            })
+          )}
+        </View>
 
         <View
           style={styles.statsRow}
@@ -1756,7 +1826,7 @@ const makeStyles = (color: ColorTheme) =>
     progressTrack: {
       width: '100%',
       height: 8,
-      backgroundColor: 'rgba(255,255,255,0.25)',
+      backgroundColor: color.surfaceVariant,
       borderRadius: radius.circle,
       marginTop: 10,
       overflow: 'hidden',
@@ -1765,6 +1835,28 @@ const makeStyles = (color: ColorTheme) =>
       height: '100%',
       backgroundColor: color.textOnBrand,
       borderRadius: radius.circle,
+    },
+    // Tier progress bar — thinner than the milestone bar above, sits
+    // directly below the tier pill row. Fill animates from 0 → progress.
+    tierProgressTrack: {
+      width: '100%',
+      height: 6,
+      backgroundColor: color.surfaceVariant,
+      borderRadius: radius.circle,
+      marginTop: spacing.sm,
+      overflow: 'hidden',
+    },
+    tierProgressFill: {
+      height: '100%',
+      backgroundColor: color.textOnBrand,
+      borderRadius: radius.circle,
+    },
+    tierProgressLabel: {
+      color: color.pointsPillText,
+      fontSize: font.size.sm,
+      fontWeight: font.weight.medium,
+      textAlign: 'center',
+      marginTop: spacing.tight,
     },
     // T4: Hero value row — wraps the large points number + the small
     // tier pill side-by-side. centerY keeps the pill optically aligned
@@ -1899,6 +1991,18 @@ const makeStyles = (color: ColorTheme) =>
       gap: spacing.sm,
       minHeight: 28,
     },
+    // Directional icon (↑/↓). successStrong (#1e8449) at 4.66:1 on white
+    // passes WCAG AA; the ↑ shape also conveys direction without color alone.
+    pointHistoryIcon: {
+      fontSize: font.size.base,
+      color: color.successStrong,
+      width: spacing.xl,
+      textAlign: 'center',
+      fontWeight: font.weight.bold,
+    },
+    pointHistoryIconNeg: {
+      color: color.error,
+    },
     pointHistoryLabel: {
       flex: 1,
       fontSize: font.size.sm,
@@ -1907,18 +2011,27 @@ const makeStyles = (color: ColorTheme) =>
     pointHistoryDate: {
       fontSize: font.size.xs,
       color: color.textMuted,
-      minWidth: 44,
       textAlign: 'right',
     },
+    // Positive delta: successStrong (#1e8449, 4.66:1 on white) — AA-safe green.
+    // color.success (#27ae60) is 2.86:1 and fails AA for text; successStrong used instead.
     pointHistoryDelta: {
       fontSize: font.size.sm,
       fontWeight: font.weight.bold,
-      color: color.brandText,
+      color: color.successStrong,
       minWidth: 52,
       textAlign: 'right',
     },
+    // Negative delta: color.error (#c0392b, 5.39:1 on white) — AA pass.
     pointHistoryDeltaNeg: {
-      color: color.errorFg,
+      color: color.error,
+    },
+    // Empty state — encouraging copy when no events exist yet.
+    pointHistoryEmpty: {
+      fontSize: font.size.sm,
+      color: color.textMuted,
+      textAlign: 'center',
+      paddingVertical: spacing.lg,
     },
     // Visit-streak card — amber-tinted pill row between the stat tiles and
     // the status breakdown. Reads as a "you're on a roll" pat-on-the-back
