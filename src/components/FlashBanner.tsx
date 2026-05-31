@@ -90,7 +90,7 @@ const makeStyles = (color: ColorTheme) =>
     maxWidth: '90%',
     ...shadow.e3,
   },
-  pillSuccess: { backgroundColor: '#1e8449' }, // deeper-than-success green for AA on white text
+  pillSuccess: { backgroundColor: color.successStrong },
   pillInfo: { backgroundColor: color.brand },
   text: {
     color: color.textOnBrand,

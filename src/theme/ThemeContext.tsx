@@ -77,6 +77,10 @@ const darkColor = {
   // Additional tokens
   textMutedAlt: '#9ca3af', // muted text on dark surfaces
   accentOrange: '#f1a520', // same amber accent
+  // successStrong: dark mode keeps the same deep green — white text at 4.6:1 holds on dark bg.
+  successStrong: '#1e8449',
+  // accentPurple: lighter violet so the button is legible on dark surfaces.
+  accentPurple: '#7c3aed', // violet-600, white text 5.5:1 on it
   placeholderText: '#9ca3af', // TextInput placeholder on dark surfaces (~6:1 on #222)
 
   // Backdrop / overlay layers — same values as light palette (dark-on-dark is still appropriate)

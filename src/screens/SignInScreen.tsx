@@ -310,7 +310,7 @@ const makeStyles = (_color: ColorTheme) =>
       elevation: 8,
     },
     primaryBtnText: {
-      color: '#fff',
+      color: _color.textOnBrand,
       fontSize: font.size.lg,
       fontWeight: font.weight.bold,
       letterSpacing: 0.4,
