@@ -42,6 +42,19 @@
       }
     },
 
+    "testflight": {
+      "distribution": "store",
+      "autoIncrement": true,
+      "ios": {
+        "buildConfiguration": "Release",
+        "simulator": false
+      },
+      "env": {
+        "APP_ENV": "production",
+        "SENTRY_DISABLE_AUTO_UPLOAD": "true"
+      }
+    },
+
     "production": {
       "distribution": "store",
       "autoIncrement": true,
