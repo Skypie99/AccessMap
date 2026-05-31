@@ -1,8 +1,7 @@
 {
   "cli": {
     "version": ">= 10.0.0",
-    "appVersionSource": "local",
-    "// appVersionSource": "local = app.json `version` is the source of truth for the marketing version. iOS buildNumber auto-increments per profile (autoIncrement below) so successive uploads don't collide."
+    "appVersionSource": "local"
   },
 
   "build": {
@@ -13,7 +12,8 @@
         "simulator": false
       },
       "env": {
-        "APP_ENV": "development"
+        "APP_ENV": "development",
+        "EXPO_PUBLIC_SENTRY_DSN": ""
       }
     },
 
@@ -25,12 +25,12 @@
       },
       "env": {
         "APP_ENV": "preview",
+        "EXPO_PUBLIC_SENTRY_DSN": "",
         "SENTRY_DISABLE_AUTO_UPLOAD": "true"
       }
     },
 
     "preview2": {
-      "// description": "Parallel internal TestFlight channel. Inherits everything from preview; only APP_ENV differs. Second concurrent build slot (e.g. a separate tester group).",
       "extends": "preview",
       "env": {
         "APP_ENV": "preview2"
@@ -38,7 +38,6 @@
     },
 
     "preview3": {
-      "// description": "Third parallel internal TestFlight channel. Inherits from preview; only APP_ENV differs.",
       "extends": "preview",
       "env": {
         "APP_ENV": "preview3"
@@ -46,14 +45,14 @@
     },
 
     "production": {
-      "// PRIVACY GATE": "Do NOT run this profile until the D8 EXIF GPS leak (see PROJECT_STATE.md) is closed. App Store submission of location data while that leak is open is a pre-launch blocker.",
       "distribution": "store",
       "autoIncrement": true,
       "ios": {
         "simulator": false
       },
       "env": {
-        "APP_ENV": "production"
+        "APP_ENV": "production",
+        "EXPO_PUBLIC_SENTRY_DSN": ""
       }
     }
   },
@@ -62,7 +61,7 @@
     "production": {
       "ios": {
         "appleId": "$EXPO_APPLE_ID",
-        "ascAppId": "$EXPO_ASC_APP_ID",
+        "ascAppId": "6774709116",
         "appleTeamId": "$EXPO_APPLE_TEAM_ID"
       },
       "android": {

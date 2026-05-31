@@ -33,7 +33,11 @@ import PhotoGallery from '@/components/PhotoGallery';
 import {
   CONTEXT_TAGS,
   CONTEXT_TAG_LABELS,
+  DISABILITY_TAGS,
+  DISABILITY_TAG_LABELS,
   MAX_CONTEXT_TAGS,
+  SEASONAL_TAGS,
+  SEASONAL_TAG_LABELS,
   toggleTag,
   type ContextTag,
 } from '@/lib/contextTags';
@@ -450,6 +454,113 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
             </Text>
           )}
 
+          {/* Seasonal tags (W6-5) — a multi-select chip picker for time-of-year
+              context (icy in winter, flooded in spring, a construction detour
+              that clears in fall, etc.). Sits right after the description so
+              the reporter adds the "when in the year" angle while the issue is
+              fresh in mind. Shares the same `contextTags` state, the same
+              toggleTag cap, and the same capability gate as the general
+              context chips below — seasonal tags are just a subset of
+              context_tags. */}
+          <Text style={styles.label} accessibilityRole="header">
+            Seasonal (optional) — does this change with the seasons?
+          </Text>
+          <View style={styles.row}>
+            {SEASONAL_TAGS.map((tag) => {
+              const active = contextTags.includes(tag);
+              const label = SEASONAL_TAG_LABELS[tag];
+              return (
+                <Pressable
+                  key={tag}
+                  onPress={() => {
+                    if (tagsDisabled) return;
+                    setContextTags((curr) => toggleTag(curr, tag));
+                  }}
+                  disabled={tagsDisabled}
+                  style={[
+                    styles.tagChip,
+                    active && styles.tagChipActive,
+                    tagsDisabled && styles.tagChipDisabled,
+                  ]}
+                  accessibilityRole="checkbox"
+                  accessibilityLabel={label}
+                  accessibilityState={{ checked: active, disabled: tagsDisabled }}
+                  accessibilityHint={
+                    tagsDisabled ? 'Seasonal tags will be available soon.' : undefined
+                  }
+                >
+                  <Text
+                    style={[
+                      styles.tagChipText,
+                      active && styles.tagChipTextActive,
+                      tagsDisabled && styles.tagChipTextDisabled,
+                    ]}
+                  >
+                    {label}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+          <Text style={styles.tagHelper}>
+            {tagsDisabled
+              ? 'Seasonal tags will be available soon (server update pending).'
+              : 'For barriers that aren’t year-round. Counts toward the same 5-tag limit.'}
+          </Text>
+
+          {/* Disability tags (Sprint 3) — a multi-select chip picker for WHO a
+              barrier affects, so users filtering the map by access need can
+              find it. These describe the BARRIER ("this is a mobility
+              barrier"), not the reporter — see DISABILITY_TAGS. Shares the same
+              `contextTags` state, toggleTag cap, and capability gate as the
+              seasonal/general chips — disability tags are just another subset
+              of context_tags. */}
+          <Text style={styles.label} accessibilityRole="header">
+            Who does this affect? (optional)
+          </Text>
+          <View style={styles.row}>
+            {DISABILITY_TAGS.map((tag) => {
+              const active = contextTags.includes(tag);
+              const label = DISABILITY_TAG_LABELS[tag];
+              return (
+                <Pressable
+                  key={tag}
+                  onPress={() => {
+                    if (tagsDisabled) return;
+                    setContextTags((curr) => toggleTag(curr, tag));
+                  }}
+                  disabled={tagsDisabled}
+                  style={[
+                    styles.tagChip,
+                    active && styles.tagChipActive,
+                    tagsDisabled && styles.tagChipDisabled,
+                  ]}
+                  accessibilityRole="checkbox"
+                  accessibilityLabel={label}
+                  accessibilityState={{ checked: active, disabled: tagsDisabled }}
+                  accessibilityHint={
+                    tagsDisabled ? 'Accessibility tags will be available soon.' : undefined
+                  }
+                >
+                  <Text
+                    style={[
+                      styles.tagChipText,
+                      active && styles.tagChipTextActive,
+                      tagsDisabled && styles.tagChipTextDisabled,
+                    ]}
+                  >
+                    {label}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+          <Text style={styles.tagHelper}>
+            {tagsDisabled
+              ? 'Accessibility tags will be available soon (server update pending).'
+              : 'Helps people filter the map to barriers that affect them. Counts toward the same 5-tag limit.'}
+          </Text>
+
           <Text style={styles.label}>Photo (optional)</Text>
 
           {/* High-severity photo nudge — only shown when severity ≥ 4 and
@@ -597,6 +708,7 @@ const makeStyles = (color: ColorTheme) =>
       justifyContent: 'flex-end',
     },
     card: {
+      flex: 1,
       backgroundColor: color.surface,
       paddingHorizontal: 20,
       paddingTop: 20,

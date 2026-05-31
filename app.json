@@ -11,7 +11,7 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.accessmap.app",
       "appleTeamId": "S78F8ZA8QU",
-      "buildNumber": "2",
+      "buildNumber": "10",
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "AccessMap uses your location to show nearby accessibility flags and to attach your location when you report a new flag.",
         "NSCameraUsageDescription": "AccessMap uses the camera to capture photos of accessibility barriers.",
@@ -46,7 +46,6 @@
       "startUrl": "/"
     },
     "plugins": [
-      "@sentry/react-native/expo",
       [
         "expo-location",
         {

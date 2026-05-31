@@ -30,6 +30,12 @@ import {
   STATUS_ORDER,
 } from '@/lib/flags';
 import { useFlags } from '@/lib/flagsStore';
+import {
+  DISABILITY_TAGS,
+  DISABILITY_TAG_LABELS,
+  matchesDisabilityFilter,
+  type DisabilityTag,
+} from '@/lib/contextTags';
 import { DISTANCE_OPTIONS, loadMapFilters, saveMapFilters } from '@/lib/mapFilters';
 import { haversineKm } from '@/lib/distance';
 import { loadFilterPanelCollapsed, saveFilterPanelCollapsed } from '@/lib/filterPanelPrefs';
@@ -124,6 +130,7 @@ export default function MapScreen() {
     loading: loadingFlags,
     error: loadError,
     refresh: refreshFlags,
+    refreshIfStale: refreshFlagsIfStale,
     setStatuses,
     setViewportGate,
   } = useFlags();
@@ -232,6 +239,14 @@ export default function MapScreen() {
   // mapFilters; saved sets/presets do not carry this axis (yet) so applying
   // a set leaves the current radius untouched.
   const [maxDistanceKm, setMaxDistanceKm] = useState<number | null>(null);
+  // "Who does this affect?" filter (Sprint 3) — the disability tags the user
+  // wants to narrow to. Empty = no filter (show everything). This is a pure
+  // client-side filter on already-loaded flags (see filteredFlags) — no new
+  // server query. Intentionally session-only / not persisted to mapFilters:
+  // it's an access-need lens a user picks for the moment, and keeping it out
+  // of the persisted triple avoids disturbing saved-set/preset matching, which
+  // compares categories/severity/status only.
+  const [activeDisabilityTags, setActiveDisabilityTags] = useState<Set<DisabilityTag>>(new Set());
   // Tracks whether we've finished reading saved filters from AsyncStorage.
   // The save-effect below is gated on this so the very first render
   // doesn't overwrite stored state with the (still-default) starting set
@@ -322,11 +337,21 @@ export default function MapScreen() {
     });
   }, []);
 
+  const toggleDisabilityTag = useCallback((tag: DisabilityTag) => {
+    setActiveDisabilityTags((prev) => {
+      const next = new Set(prev);
+      if (next.has(tag)) next.delete(tag);
+      else next.add(tag);
+      return next;
+    });
+  }, []);
+
   const clearFilters = useCallback(() => {
     setActiveCategories(new Set());
     setMinSeverity(1);
     setActiveStatuses(new Set(DEFAULT_STATUSES));
     setMaxDistanceKm(null);
+    setActiveDisabilityTags(new Set());
   }, []);
 
   // Quick-toggle severity from the top icon row without opening the full
@@ -647,7 +672,11 @@ export default function MapScreen() {
   const distanceFilterEffective = maxDistanceKm !== null && location !== null;
 
   const filtersActive =
-    activeCategories.size > 0 || minSeverity > 1 || statusFilterActive || distanceFilterEffective;
+    activeCategories.size > 0 ||
+    minSeverity > 1 ||
+    statusFilterActive ||
+    distanceFilterEffective ||
+    activeDisabilityTags.size > 0;
 
   // Category quick-cycle button derived state — computed once per render
   // so the JSX stays readable. catCycleActive drives the filled-blue style;
@@ -683,6 +712,12 @@ export default function MapScreen() {
         return false;
       }
       if (f.severity < minSeverity) return false;
+      // Disability ("who does this affect?") filter — pure client-side match
+      // on the flag's context_tags. matchesDisabilityFilter returns true when
+      // no tags are selected, so this is a no-op until the user picks one.
+      if (!matchesDisabilityFilter(f.context_tags, [...activeDisabilityTags])) {
+        return false;
+      }
       // Distance filter — only applied when we actually know where the user
       // is (see distanceFilterEffective). Status filtering already happens
       // server-side via setStatuses, so we don't repeat it here.
@@ -700,6 +735,7 @@ export default function MapScreen() {
     activeCategories,
     minSeverity,
     filtersActive,
+    activeDisabilityTags,
     distanceFilterEffective,
     maxDistanceKm,
     location,
@@ -751,9 +787,15 @@ export default function MapScreen() {
         return;
       }
       if (mountedRef.current) setPermissionDenied(false);
-      const pos = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.Balanced,
-      });
+      // Battery: reuse a cached fix up to 30s old before powering the GPS for a
+      // fresh lock on every recenter/initial-locate. 30s is recent enough to
+      // center the map accurately; getLastKnownPositionAsync returns null when
+      // no recent fix exists, so we fall back to a live read.
+      const pos =
+        (await Location.getLastKnownPositionAsync({ maxAge: 30_000 })) ??
+        (await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.Balanced,
+        }));
       const coords = {
         lat: pos.coords.latitude,
         lng: pos.coords.longitude,
@@ -800,9 +842,13 @@ export default function MapScreen() {
     const t = setTimeout(() => {
       mapRef.current?.showCallout(focus.id);
     }, 700);
-    refreshFlags();
+    // Only revalidate if the flag list is actually stale. Tapping a Tasks card
+    // to focus a flag we already have shouldn't trigger a full network re-fetch
+    // (realtime + the freshness window keep the list current). Saves a
+    // round-trip — and the radio/battery cost — on every card tap.
+    void refreshFlagsIfStale();
     return () => clearTimeout(t);
-  }, [route.params?.focusFlag, route.params?.ts, refreshFlags]);
+  }, [route.params?.focusFlag, route.params?.ts, refreshFlagsIfStale]);
 
   // Deep-link arrival: accessmap://flag/{id} → React Navigation parses the
   // id into route.params.flagId. Fetch the flag's lat/lng on the fly, then
@@ -1322,6 +1368,42 @@ export default function MapScreen() {
                 </View>
                 {activeStatuses.size === 0 && (
                   <Text style={styles.statusHint}>Pick at least one status to see flags.</Text>
+                )}
+
+                {/* "Who does this affect?" — disability filter (Sprint 3). A
+                    pure client-side filter on each flag's context_tags: pick
+                    one or more access needs and the map narrows to barriers
+                    tagged for any of them (OR match). Empty = show everything,
+                    so legacy/untagged flags are only hidden once the user
+                    actively narrows. Same pill pattern as the other axes. */}
+                <Text style={styles.filterSubLabel}>Who does this affect?</Text>
+                <View style={styles.filterRow}>
+                  {DISABILITY_TAGS.map((tag) => {
+                    const active = activeDisabilityTags.has(tag);
+                    const label = DISABILITY_TAG_LABELS[tag];
+                    return (
+                      <Pressable
+                        key={tag}
+                        onPress={() => toggleDisabilityTag(tag)}
+                        style={[styles.filterPill, active && styles.filterPillActive]}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Filter by barriers affecting: ${label}`}
+                        accessibilityState={{ selected: active }}
+                      >
+                        <Text
+                          style={[styles.filterPillText, active && styles.filterPillTextActive]}
+                        >
+                          {label}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+                {activeDisabilityTags.size > 0 && (
+                  <Text style={styles.statusHint}>
+                    Showing only flags tagged for the selected access need
+                    {activeDisabilityTags.size > 1 ? 's' : ''}. Untagged flags are hidden.
+                  </Text>
                 )}
 
                 {/* Distance — radius from the user's current location. Chips
