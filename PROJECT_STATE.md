@@ -1,127 +1,110 @@
+---
 # AccessMap — Project State
-
-> **2026-05-30 — Phase 4 MERGED to main ✅** (merge commit `f637653`)
-> Multi-photo gallery, flag comments, and accessibility polish, merged via `--no-ff`.
-> Verified: full Jest suite green (1329 tests / 87 suites). Supabase migrations
-> `supabase/migrations/2026-05-30_flag_comments.sql` and `..._flag_reopen_requests.sql`
-> ship with this merge as **PROPOSE-ONLY — AWAITING SKY APPLY**.
-> Remote branch `feat/phase4-multi-photo` deleted post-merge.
+*Last updated: 2026-05-30 by Morgan*
 
 ---
 
+## Phase 4 — COMPLETE ✅ (on main)
 
-**Updated:** 2026-05-29 (Phase 2 Track A quality gates wired; Phase 1 complete)
-**Source:** qa-reports/2026-05-29_Rory_LighthouseCI_VersionBump.md | qa-reports/2026-05-29_Shamus_Wave2QuickWins.md | PROJECT_STATE housekeeping
-**Current Branch SHA:** `374f1bb` · Tests: 1160/1160 · TSC errors: 0 · Test suites: 72
+All Phase 4 work is merged to main and shipped.
 
----
-
-## Current Status
-
-**Phase:** Phase 1 COMPLETE → Phase 2 STARTED (2026-05-29)
-
-**Phase 2 Active Branches:**
-
-| Branch | Purpose |
+| Feature | Status |
 |---|---|
-| `phase2/track-a-quality-gates` | CI quality gates (lint, coverage, Lighthouse, search path hardening) |
-| `phase2/track-b-infrastructure` | Infrastructure hardening track |
-| `feat/wave2-quick-wins` | Wave 2 UX + performance quick wins |
-| `fix/expo-notifications-and-plist` | Expo notifications wiring + plist fixes |
-
-**Phase 1 Summary:** All Phase 1 work landed. Test suite grew from 922→1160. Rory wired CI gates in one commit (58e7f75). Dana search path hardening SQL migration written (`supabase/migrations/2026-05-29_function_search_path_hardening.sql`). QA reports from Steve, Shamus, Dana, Rory filed 2026-05-29.
-
-**SQL migrations remain AWAITING SKY APPLY** — not touched by agents.
-
-**Coherence:** 0.94 (security + CI on main; privacy commits live; SQL migrations remain only open gate)
+| Multi-photo gallery | ✅ merged |
+| Flag comments | ✅ merged |
+| Flag reopen | ✅ merged |
+| Rate limiting (anon + auth) | ✅ merged |
+| Accessibility fixes (a11y) | ✅ merged |
+| Test coverage (unit + integration) | ✅ merged |
+| Security audit (Steve gate) | ✅ passed |
 
 ---
 
-## Features — LIVE (on main, shipped)
+## Phase 5 — IN PROGRESS 🔄
 
-| Feature | Notes |
-|---|---|
-| Photo thumbnails in triage | FlagCard inline photo → PhotoLightboxModal; onError graceful degradation |
-| Offline tile cache | `src/lib/tileCache.ts` TTL 7d, LRU 50 MB, user-keyed; sign-out clear wired |
-| My Flags toggle | "All / Mine" chip in TasksScreen; AsyncStorage-persisted |
-| Status history UI | FlagDetailModal "History" tab; graceful degradation if migration not yet applied |
-| flagsMap O(1) lookups | `useMemo` Map in FlagsContext; replaces O(n) `find()` in TasksScreen |
-| renderItem memoization | `useCallback` in TasksScreen; React.memo on FlagCard now effective |
-| 3 a11y residuals (Wave 5) | MapScreen announceForAccessibility; useReducedMotion both PlatformMap variants; web photo alt text |
-| ESLint + Prettier | `eslint.config.js`, `.prettierrc.json`, lint/format npm scripts |
-| Jest open-handles fix | `jest.mock('../supabase')` in filterSets + mapFilters test files |
-| GitHub Actions CI | typecheck + test on push/PR |
-| Offline flags cache | AsyncStorage 24h TTL, user-scoped, stale-while-revalidate, offline banner |
-| Push notification client | Token storage, settings toggle, sign-out clear, Edge Function written — awaiting Sky DB steps |
-| Dark mode | useColor() + ThemeContext, all 8 token categories |
-| Flag pagination | Cursor-based Load More |
-| Activity Feed, Watched Flags, Saved Places, Visit Streak, Achievements | Stable |
-| Address search, Open in Maps, Feedback flow, Help/FAQ, About, What's New | Stable |
-| Text search (NFC), Notification prefs, Tasks sort, Map long-press, Nearest flag jump | Stable |
-| Realtime flags (client wired) | Subscription wired; awaiting DB migration to go live |
+**Target:** App Store submission readiness.
 
----
-
-## Features — BUILT-NOT-MERGED (pending Sky action)
-
-| Branch | What | Gate |
+| Feature | Status | Branch |
 |---|---|---|
-| `design/creative-polish-2026-05-27` | Creative UI polish — SignInScreen rebuild, token sweeps (modals, map pins, ProfileScreen hero, TasksScreen, AchievementsModal), category quickfilter, leaderboard a11y | Sky review + merge BEFORE wave3 (wave3 forked from this) |
-| `a11y-perf/wave3-2026-05-27` | A11y+Perf Wave 3 — web marker alt/title, ReportFlagModal containment+44pt, React.memo on PlatformMap variants, initialRegion memoization | **Merge AFTER** `design/creative-polish-2026-05-27` · tsc 0 errors · 922 tests pass |
-| `security/hardening-wave2-2026-05-27` | Steve security wave 2 — input caps, email validation, PII migration (users.email RLS) | **READY FOR MERGE** — no migration dependency; apply 2026-05-27_users_email_privacy.sql after merge |
-| `origin/shamus/marker-clustering-2026-05-25` | Marker clustering + flag editing UI; Gary's 20 `updateFlagContent` tests; Alex 5 a11y fixes | **BLOCKED** on D3 SQL apply; unblocks after Steve-approved `2026-05-23_status_update_trigger_proposal.sql` is applied |
-| `origin/feat/expo-web-vercel-2026-05-25` | Expo Web build + Vercel deployment config | Sky review — no migration dependency; low risk |
+| Onboarding carousel (5 slides) | ✅ merged to main | — |
+| Disability category filtering | ✅ merged to main | — |
+| Anonymous viewing (migration live) | ✅ live | — |
+| Anonymous reporting (migration live) | ✅ built, pending merge | feat/phase5-anon-reporting |
+| Admin moderation MVP | ✅ built, pending merge | (on feat/phase5-anon-reporting) |
+| Sentry removed (crash fix) | ✅ built, needs EAS rebuild | pending |
+| Community trust score | 🔄 Shamus building | feat/phase5-trust-score |
+| Android push notifications | ❌ blocked | google-services.json not in EAS |
+
+### Open Decisions — Phase 5
+- **Trust score thresholds:** Approved → Bronze 0 pts, Silver 100, Gold 500, Diamond 1500
+- **Anon reporting global cap:** Approved — live in migration
+- **Push notification tone:** Approved — Option B (warm community copy)
 
 ---
 
-## Migrations — Status Summary
+## Phase 6 — IN PROGRESS 🔄
 
-| File | Status | Notes |
+**Target:** App Store submission.
+
+| Item | Status | Notes |
 |---|---|---|
-| `2026-05-27_users_email_privacy.sql` | **PROPOSE-ONLY — AWAITING SKY APPLY** | Fixes `public.users.email` PII exposure (Const. 2.4). Apply after wave2 branch merge. Idempotent, rollback 2-line, smoke-test steps included. |
-| `2026-05-23_status_update_trigger_proposal.sql` | **APPROVED — AWAITING SKY APPLY** | Steve sign-off 2026-05-27. BEFORE UPDATE trigger `enforce_flag_status_only_for_non_owner()`. No SQL injection risk, proper role isolation, correct trigger ordering. **CRITICAL PATH** — apply before merging marker-clustering. |
-| `2026-05-23_data_layer_hardening.sql` | PENDING (file only) | Sky applies via Supabase SQL Editor |
-| `2026-05-23_feedback_table.sql` | APPLIED | `public.feedback` table live |
-| `2026-05-23_rls_initplan_and_non_owner_status_update.sql` | PENDING (file only) | Sky applies via SQL Editor |
-| `2026-05-24_flag_context_tags.sql` | APPLIED | `context_tags` column live |
-| `2026-05-24_realtime_flags.sql` | PENDING (file only) | Unlocks Supabase Realtime |
-| `2026-05-24_status_history_table.sql` | APPLIED | `flag_status_history` table + trigger live |
-| `2026-05-25_flag_edit_history_table.sql` | PROPOSE-ONLY — CONDITIONAL | Apply only if Sky answers YES to D6 |
-| `2026-05-25_flag_edit_rls_replacement.sql` | PROPOSE-ONLY — BLOCKING | Must apply before `shamus/marker-clustering-2026-05-25` merges |
-| `2026-05-25_push_tokens.sql` | PROPOSE-ONLY | Pair with Edge Function deploy + `expo-notifications` install |
+| Privacy policy | ✅ live | https://skypie99.github.io/AccessMap/privacy/ |
+| App Store listing copy | ✅ written | docs/APP_STORE_LISTING.md |
+| Full visual polish | ✅ merged | Dani phase 5 + 6 polish |
+| Pre-launch WCAG audit | ✅ merged | Alex Phase 6 sign-off |
+| Push notification copy | ✅ approved | Option B warm tone |
+| Release workflow (RELEASING.md) | ✅ written | 2-command TestFlight process |
+| App Store screenshots | ❌ needed | 6 required; plan in docs/APP_STORE_SCREENSHOTS.md |
+| Test account for App Store reviewer | ❌ needed | Sky to create a demo account |
+| Privacy policy URL in App Store Connect | ❌ needed | Add https://skypie99.github.io/AccessMap/privacy/ |
 
 ---
 
-## Open Decisions for Sky (critical path)
+## What Needs to Ship Before Submission
 
-| # | Decision | Status | Impact |
-|---|---|---|---|
-| **Wave 2** | Merge `security/hardening-wave2-2026-05-27` | READY — no dependencies | Enables email privacy migration same-cycle |
-| **Email Privacy** | Apply `2026-05-27_users_email_privacy.sql` in Supabase SQL Editor | PROPOSE-ONLY — closes Const. 2.4 PII leak | Addresses privacy incident; apply same-cycle as wave2 merge |
-| **D3** | Apply `2026-05-23_status_update_trigger_proposal.sql` in Supabase SQL Editor | **APPROVED by Steve** — CRITICAL PATH | Unblocks `shamus/marker-clustering-2026-05-25` merge |
-| **D1** | Apply `2026-05-25_flag_edit_rls_replacement.sql` in Supabase SQL Editor | PROPOSE-ONLY — BLOCKING | Before marker-clustering merges |
-| **D5** | Heat-map severity-colour rendering: gradient yes or no | PENDING (Jordan pre-approved) | Unblocks Shamus heatmap build |
-| **D2** | Apply `2026-05-25_push_tokens.sql` + deploy Edge Function + install `expo-notifications` | FULLY BUILT — awaiting sequential apply | Zero user value until applied |
-| **D4** | Apply remaining batch: `data_layer_hardening`, `rls_initplan`, `realtime_flags` | PROPOSE-ONLY — ~15 min | Unlocks realtime flags |
-| **D6** | Flag edit history audit table: conditional apply yes or no | PROPOSE-ONLY — LOW PRIORITY | Decision pending |
+1. **Merge feat/phase5-anon-reporting** → gets anon reporting + admin moderation onto main
+2. **Rebuild EAS** after Sentry removal (pending google-services.json for Android push)
+3. **Trust score** — Shamus completes, QA gate, merge
+4. **App Store screenshots** — 6 screenshots (plan ready in docs/)
+5. **Test account** — Sky creates a reviewer demo account
+6. **App Store Connect** — enter privacy policy URL
 
 ---
 
-## What Sky Needs To Do Before Next Sprint (ordered)
+## EAS / TestFlight State (as of 2026-05-30)
 
-1. **[IMMEDIATE]** Merge `security/hardening-wave2-2026-05-27` (no dependencies, ready now)
-2. **[IMMEDIATE]** Apply `2026-05-27_users_email_privacy.sql` in Supabase SQL Editor (PII fix, same-cycle)
-3. Apply `2026-05-23_status_update_trigger_proposal.sql` in Supabase SQL Editor (D3 Steve-approved)
-4. Apply `2026-05-25_flag_edit_rls_replacement.sql` in Supabase SQL Editor → merge `origin/shamus/marker-clustering-2026-05-25`
-5. Merge `design/creative-polish-2026-05-27` → then merge `a11y-perf/wave3-2026-05-27` (order matters)
-6. Merge `origin/feat/expo-web-vercel-2026-05-25` (low risk, ready for review)
-7. Answer D5 (heatmap colour decision) to unblock Shamus build
-8. Apply `2026-05-25_push_tokens.sql` in Supabase SQL Editor
-9. Deploy `notify-flag-status` Edge Function via Supabase Dashboard
-10. Run `npx expo install expo-notifications` in Terminal at ~/AccessMap and rebuild dev client
-11. Apply remaining batch: `data_layer_hardening`, `rls_initplan`, `realtime_flags` (~15 min)
-12. Delete stale branches: `a11y/residual-2026-05-25`, `docs/learnings-sequential-merge-2026-05-25`, `sync/local-main-to-origin`
+- Apple Dev Team: S78F8ZA8QU
+- Provider: 128969691
+- Build 2e91ae9b installed on iPhone — sign-in ✅, map ✅
+- ReportFlagModal layout fix: committed dfb9af7
+- SQL function `net.http_post` — missing on Supabase free tier; push webhook blocked until resolved
+- ASC App ID: still needed in eas.json before automated TestFlight submit
 
 ---
 
-**Last compiled by:** housekeeping update (2026-05-29) — SHA + test count + Phase 2 branches
+## Branches Pending Merge (as of 2026-05-30)
+
+| Branch | Contains | Gate |
+|---|---|---|
+| feat/phase5-anon-reporting | Anon reporting + admin moderation | QA pass ✅ → merge |
+| feat/phase5-trust-score | Community trust score | Shamus building 🔄 |
+
+---
+
+## Team Roles
+
+| Role | Agent | Domain |
+|---|---|---|
+| PM / Status | Morgan | This file, decisions, routing |
+| Feature build | Shamus | New screens, UI, functionality |
+| Design + polish | Dani | Design system, visual QA |
+| Backend / DB | Dana | Schema, migrations, RLS |
+| DevOps | Rory | EAS, CI/CD, release pipeline |
+| QA | Gary | Tests, lint, CI safety |
+| Accessibility | Alex | WCAG 2.2 AA, UX polish |
+| Performance | Peter | Speed, query, render |
+| Security | Steve | Auth, RLS, hardening |
+| Privacy / Legal | Jordan | PIPEDA, data practices |
+| Docs | Will | READMEs, CLAUDE.md, guides |
+
+---
