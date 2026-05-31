@@ -1294,9 +1294,9 @@ export default function ProfileScreen() {
               disabled={savingRealtime}
               accessibilityElementsHidden
               importantForAccessibility="no-hide-descendants"
-              trackColor={{ false: '#ccc', true: color.brand }}
+              trackColor={{ false: color.border, true: color.brand }}
               thumbColor={
-                Platform.OS === 'android' ? (realtimeEnabled ? color.brand : '#f4f3f4') : undefined
+                Platform.OS === 'android' ? (realtimeEnabled ? color.brand : color.surfaceSoft) : undefined
               }
             />
           </View>
@@ -2144,7 +2144,7 @@ const makeStyles = (color: ColorTheme) =>
       minHeight: 44,
       justifyContent: 'center',
     },
-    deleteAccountText: { color: '#D93025', fontWeight: '600', fontSize: 15 },
+    deleteAccountText: { color: color.errorStrong, fontWeight: '600', fontSize: 15 },
     // Deletion confirmation modal — translucent backdrop + centred card.
     deleteBackdrop: {
       flex: 1,
@@ -2196,12 +2196,12 @@ const makeStyles = (color: ColorTheme) =>
       flex: 1,
       paddingVertical: 14,
       borderRadius: radius.md,
-      backgroundColor: '#D93025',
+      backgroundColor: color.errorStrong,
       alignItems: 'center',
       minHeight: 48,
       justifyContent: 'center',
     },
     deleteConfirmBtnPressed: { opacity: 0.85 },
     deleteConfirmBtnDisabled: { opacity: 0.55 },
-    deleteConfirmText: { color: '#fff', fontWeight: '700', fontSize: 15 },
+    deleteConfirmText: { color: color.textOnBrand, fontWeight: '700', fontSize: 15 },
   });

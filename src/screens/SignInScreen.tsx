@@ -71,7 +71,7 @@ export default function SignInScreen({
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <LinearGradient
-        colors={['#070b18', '#0d1829', '#0f2042']}
+        colors={['#070b18', '#0a1428', '#0c1d3a']}
         start={{ x: 0.3, y: 0 }}
         end={{ x: 0.7, y: 1 }}
         style={StyleSheet.absoluteFill}
@@ -142,7 +142,7 @@ export default function SignInScreen({
               accessibilityState={{ disabled: busy }}
             >
               <LinearGradient
-                colors={['#3b82f6', '#2563eb', '#1d4ed8']}
+                colors={['#4E89EF', '#1466E0', '#0F53BE']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={styles.primaryBtn}
@@ -213,7 +213,8 @@ const makeStyles = (_color: ColorTheme) =>
       width: 360,
       height: 360,
       borderRadius: 180,
-      backgroundColor: 'rgba(37,99,235,0.18)',
+      // Wayfinder Blue glow — matches new brand primary
+      backgroundColor: 'rgba(20,102,224,0.18)',
       ...(Platform.OS === 'web' ? { filter: 'blur(80px)' } as object : {}),
     },
     scroll: {
@@ -273,11 +274,11 @@ const makeStyles = (_color: ColorTheme) =>
       minHeight: 50,
     },
     inputFocused: {
-      borderColor: '#60a5fa',
+      borderColor: '#84AEF6', // blue-300 — Wayfinder Blue at legible opacity on dark bg
       borderWidth: 2,
       paddingHorizontal: spacing.md - 1,
       paddingVertical: spacing.md - 1,
-      backgroundColor: 'rgba(37,99,235,0.12)',
+      backgroundColor: 'rgba(20,102,224,0.12)',
     },
     errorText: {
       color: '#fca5a5',
@@ -303,8 +304,9 @@ const makeStyles = (_color: ColorTheme) =>
       alignItems: 'center',
       justifyContent: 'center',
       minHeight: 56,
-      shadowColor: '#2563eb',
-      shadowOpacity: 0.6,
+      // Wayfinder Blue glow under sign-in button
+      shadowColor: '#1466E0',
+      shadowOpacity: 0.55,
       shadowRadius: 16,
       shadowOffset: { width: 0, height: 6 },
       elevation: 8,
@@ -334,21 +336,21 @@ const makeStyles = (_color: ColorTheme) =>
     secondaryBtn: {
       borderRadius: radius.lg,
       borderWidth: 1.5,
-      borderColor: 'rgba(96,165,250,0.4)',
+      borderColor: 'rgba(132,174,246,0.4)', // blue-300 at low opacity on dark
       paddingVertical: 14,
       paddingHorizontal: spacing.lg,
       alignItems: 'center',
       justifyContent: 'center',
       minHeight: 56,
-      backgroundColor: 'rgba(37,99,235,0.06)',
+      backgroundColor: 'rgba(20,102,224,0.06)',
     },
     secondaryBtnPressed: {
-      backgroundColor: 'rgba(37,99,235,0.16)',
-      borderColor: 'rgba(96,165,250,0.75)',
+      backgroundColor: 'rgba(20,102,224,0.16)',
+      borderColor: 'rgba(132,174,246,0.75)',
     },
     btnDisabled: { opacity: 0.45 },
     secondaryBtnText: {
-      color: '#93c5fd',
+      color: '#B4CFFA', // blue-200 — legible Wayfinder Blue on dark background
       fontSize: font.size.md,
       fontWeight: font.weight.semibold,
     },

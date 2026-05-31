@@ -19,6 +19,7 @@ import { errorMessage } from '@/lib/errors';
 import {
   CATEGORY_LABELS,
   CATEGORY_ORDER,
+  createAnonFlag,
   createFlag,
   type ContextTagsCapability,
   severityColor,
@@ -28,6 +29,7 @@ import {
   subscribeContextTagsCapability,
   uploadFlagPhoto,
 } from '@/lib/flags';
+import { checkAnonRateLimit, recordAnonSubmit } from '@/lib/anonRateLimit';
 import { batchInsertFlagPhotos } from '@/lib/photos';
 import PhotoGallery from '@/components/PhotoGallery';
 import {
@@ -226,9 +228,51 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
     ]);
   };
 
+  const RATE_LIMIT_MARKER = 'anon_rate_limit_exceeded';
+
+  const handleAnonSubmit = async () => {
+    if (!location) {
+      Alert.alert('No location', 'We need your location to place the flag.');
+      return;
+    }
+    setSubmitting(true);
+    try {
+      await checkAnonRateLimit();
+      await createAnonFlag({
+        lat: location.lat,
+        lng: location.lng,
+        category,
+        severity,
+        description: description.trim() ? description.trim() : null,
+      });
+      await recordAnonSubmit();
+      track('flag_created', { category, severity, hasPhoto: false });
+      reset();
+      onCreated();
+      onClose();
+    } catch (e) {
+      const msg = errorMessage(e);
+      // Rate limit exceeded — show a friendly message with a sign-in CTA.
+      if (msg.includes('anonymous reports') || msg.includes(RATE_LIMIT_MARKER)) {
+        Alert.alert(
+          'Daily limit reached',
+          "You've reported 5 barriers today — thank you!\n\nSign in to report more.",
+          [
+            { text: 'Sign In', onPress: onClose },
+            { text: 'OK', style: 'cancel' },
+          ],
+        );
+      } else {
+        Alert.alert('Could not report flag', msg);
+      }
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   const handleSubmit = async () => {
     if (!user) {
-      Alert.alert('Not signed in', 'Sign in to report a flag.');
+      void handleAnonSubmit();
       return;
     }
     if (!location) {
@@ -298,8 +342,23 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
           >
+          {!user && (
+            <View
+              style={styles.anonBanner}
+              accessible
+              accessibilityRole="text"
+              accessibilityLabel="Reporting anonymously. Your identity is not stored."
+            >
+              <Text style={styles.anonBannerIcon} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+                👤
+              </Text>
+              <Text style={styles.anonBannerText}>
+                Reporting anonymously — your identity is not stored.
+              </Text>
+            </View>
+          )}
           <Text style={styles.title} accessibilityRole="header">
-            Report a flag
+            {user ? 'Report a flag' : 'Report anonymously'}
           </Text>
           <Text style={styles.location}>
             {location
@@ -307,6 +366,9 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
               : 'Waiting for location…'}
           </Text>
 
+          {/* Anon-mode: hide template chips — they seed descriptions that imply
+              account ownership ("your report"). Templates are an authenticated-
+              mode convenience and add no value for an anon-guest path. */}
           {/* Quick-fill templates — appears above the manual Category /
               Severity rows so a reporter who just wants "the obvious one"
               can tap a chip and submit without scrolling. Each chip
@@ -315,7 +377,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
               textbox is empty so we don't trample text a user already
               wrote. Tapping a second template overrides the previous
               chip's selection (driven by appliedTemplateId state). */}
-          {templates.length > 0 && (
+          {user && templates.length > 0 && (
             <>
               <Text style={styles.label} accessibilityRole="header">
                 Quick-fill templates (optional)
@@ -465,6 +527,19 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
             </Text>
           )}
 
+          {!user && (
+            <Text
+              style={styles.anonDisclaimer}
+              accessibilityRole="text"
+            >
+              This report won't be linked to your account.
+            </Text>
+          )}
+
+          {/* Context tag sections are auth-only: the capability probe requires
+              a Supabase auth session. For anon users, we skip them entirely
+              to avoid confusing "coming soon" states. */}
+          {user && <>
           {/* Seasonal tags (W6-5) — a multi-select chip picker for time-of-year
               context (icy in winter, flooded in spring, a construction detour
               that clears in fall, etc.). Sits right after the description so
@@ -583,6 +658,9 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
               : 'Helps people filter the map to barriers that affect them. Counts toward the same 5-tag limit.'}
           </Text>
 
+          {/* Photo section is auth-only: Storage RLS requires auth.uid in the
+              upload path. Anon-mode photo note is rendered below context tags. */}
+          {user && <>
           <Text style={styles.label}>Photo (optional)</Text>
 
           {/* High-severity photo nudge — only shown when severity ≥ 4 and
@@ -626,7 +704,10 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
             onRemovePhoto={removeUri}
             maxPhotos={MAX_PHOTOS}
           />
+          </>}
 
+          {/* Context tags — auth only, same reason as photo. Inside the
+              {user && <>…</>} block opened by the seasonal section above. */}
           {/* Context tags — multi-select chip picker. Optional metadata
               about WHEN / UNDER WHAT CONDITIONS this flag is most relevant
               (e.g. "morning_rush", "high_tide"). The values flow into
@@ -684,6 +765,18 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
               ? 'Context tags will be available soon (server update pending).'
               : `Tap any that apply. Up to ${MAX_CONTEXT_TAGS}. Leave empty if none.`}
           </Text>
+          </>}
+
+          {/* Anon-mode: photo disabled (Storage RLS requires auth.uid in path). */}
+          {!user && (
+            <Text style={styles.anonPhotoNote}>
+              📷{'  '}
+              <Text style={styles.anonPhotoLink} onPress={onClose}>
+                Sign in
+              </Text>
+              {' to attach a photo.'}
+            </Text>
+          )}
           </ScrollView>
 
           <View style={styles.actions}>
@@ -706,13 +799,13 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
                 (submitting || !location) && styles.submitBtnDisabled,
               ]}
               accessibilityRole="button"
-              accessibilityLabel="Submit flag report"
+              accessibilityLabel={user ? 'Submit flag report' : 'Submit anonymous flag report'}
               accessibilityState={{ disabled: submitting || !location, busy: submitting }}
             >
               {submitting ? (
                 <ActivityIndicator color={color.textOnBrand} />
               ) : (
-                <Text style={styles.submitText}>Report</Text>
+                <Text style={styles.submitText}>{user ? 'Report' : 'Report anonymously'}</Text>
               )}
             </Pressable>
           </View>
@@ -815,7 +908,7 @@ const makeStyles = (color: ColorTheme) =>
       alignItems: 'flex-start',
       gap: 8,
       backgroundColor: color.warningBg,
-      borderRadius: 8,
+      borderRadius: radius.sm,
       paddingHorizontal: 12,
       paddingVertical: 8,
       marginBottom: 6,
@@ -847,7 +940,7 @@ const makeStyles = (color: ColorTheme) =>
     actionBtn: {
       flex: 1,
       paddingVertical: 12,
-      borderRadius: 8,
+      borderRadius: radius.sm,
       alignItems: 'center',
       minHeight: 44,
       justifyContent: 'center',
@@ -913,7 +1006,7 @@ const makeStyles = (color: ColorTheme) =>
       gap: 6,
       paddingHorizontal: 12,
       paddingVertical: 10,
-      borderRadius: 999,
+      borderRadius: radius.full,
       backgroundColor: color.surface,
       borderWidth: 1,
       borderColor: color.brandText,
@@ -937,6 +1030,46 @@ const makeStyles = (color: ColorTheme) =>
     },
     templateChipTextActive: {
       color: color.textOnBrand,
+    },
+    // Anonymous mode banner — tinted info strip at the top of the form.
+    // Uses infoBg/infoFg to stay visually distinct from the amber warningBg
+    // and not alarm the user. Falls back to brand-tinted surface colors
+    // if the info tokens aren't wired in this theme version.
+    anonBanner: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+      backgroundColor: color.brandSofter ?? color.surfaceNeutral,
+      borderRadius: radius.md,
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+    },
+    anonBannerIcon: {
+      fontSize: 16,
+      lineHeight: 20,
+    },
+    anonBannerText: {
+      flex: 1,
+      fontSize: 13,
+      color: color.brandText ?? color.textStrong,
+      lineHeight: 18,
+      fontWeight: '500',
+    },
+    anonDisclaimer: {
+      fontSize: 12,
+      color: color.textMuted,
+      marginTop: -4,
+      fontStyle: 'italic',
+    },
+    anonPhotoNote: {
+      fontSize: 13,
+      color: color.textMuted,
+      marginTop: 4,
+    },
+    anonPhotoLink: {
+      color: color.brand,
+      fontWeight: '600',
+      textDecorationLine: 'underline',
     },
     // "Who does this affect?" section — visual separator to signal this group
     // is distinct from the general/seasonal context chips above.

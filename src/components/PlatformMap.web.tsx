@@ -12,7 +12,7 @@ import React, {
 import { MapContainer, Marker, Popup, Rectangle, useMap, useMapEvents } from 'react-leaflet';
 import L, { Map as LeafletMap, Marker as LeafletMarker } from 'leaflet';
 import Supercluster from 'supercluster';
-import { CATEGORY_LABELS, severityColor } from '@/lib/flags';
+import { CATEGORY_LABELS, isAnon, severityColor } from '@/lib/flags';
 import { heatmapSeverity as severityTokens } from '@/theme';
 import { useColor } from '@/theme/ThemeContext';
 import type { FlagRow } from '@/types/database';
@@ -77,7 +77,7 @@ function heatLabelIcon(fill: string, text: string, textColor: string): L.DivIcon
       background:${fill};color:${textColor};
       font-weight:700;font-size:13px;
       border:1.5px solid #fff;border-radius:14px;
-      box-shadow:0 1px 3px rgba(0,0,0,0.25);
+      box-shadow:0 1px 3px rgba(15,27,45,0.12),0 1px 2px rgba(15,27,45,0.08);
     ">${text}</div>`,
     iconSize: [28, 28],
     iconAnchor: [14, 14],
@@ -105,7 +105,7 @@ function pinIcon(color: string, dim: boolean): L.DivIcon {
       position:relative;width:26px;height:26px;
       display:flex;align-items:center;justify-content:center;
       opacity:${dim ? 0.55 : 1};
-      filter:drop-shadow(0 2px 4px rgba(0,0,0,0.35));
+      filter:drop-shadow(0 4px 8px rgba(15,27,45,0.28)) drop-shadow(0 1px 2px rgba(15,27,45,0.12));
     ">
       <div style="
         position:absolute;inset:0;border-radius:50%;
@@ -294,19 +294,20 @@ function ClusteredMarkers({
         const flag = flagsById.get(flagId);
         if (!flag) return null;
 
+        const flagIsAnon = isAnon(flag);
         return (
           <Marker
             key={flag.id}
             position={[flag.lat, flag.lng]}
             icon={pinIcon(
-              severityColor(flag.severity),
-              focusedFlagId !== null && focusedFlagId !== flag.id,
+              flagIsAnon ? '#9CA3AF' : severityColor(flag.severity),
+              !flagIsAnon && focusedFlagId !== null && focusedFlagId !== flag.id,
             )}
             // alt is what screen readers announce for the marker; title is
             // the browser tooltip. Mirrors the accessibilityLabel on the
             // native Marker so SR users hear the same description on web.
-            alt={`${CATEGORY_LABELS[flag.category]}, severity ${flag.severity}, ${flag.status}. Open for details.`}
-            title={`${CATEGORY_LABELS[flag.category]} — severity ${flag.severity}`}
+            alt={`${CATEGORY_LABELS[flag.category]}, severity ${flag.severity}, ${flag.status}${flagIsAnon ? ', submitted anonymously' : ''}. Open for details.`}
+            title={`${CATEGORY_LABELS[flag.category]} — severity ${flag.severity}${flagIsAnon ? ' (anonymous)' : ''}`}
             ref={(m) => {
               markerRefs.current[flag.id] = m;
             }}
@@ -327,6 +328,7 @@ function ClusteredMarkers({
                   }}
                 >
                   Severity {flag.severity} · {flag.status}
+                  {flagIsAnon ? ' · Anonymous' : ''}
                 </div>
                 {flag.photo_url ? (
                   <img

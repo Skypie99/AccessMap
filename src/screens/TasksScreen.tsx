@@ -1534,7 +1534,7 @@ const makeStyles = (color: ColorTheme) =>
       justifyContent: 'center',
       borderRadius: radius.circle,
     },
-    searchClearText: { fontSize: 16, fontWeight: '600', color: '#555' },
+    searchClearText: { fontSize: 16, fontWeight: '600', color: color.textMuted },
     sevFilterRow: {
       flexDirection: 'row',
       gap: 6,

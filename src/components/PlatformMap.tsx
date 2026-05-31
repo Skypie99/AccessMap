@@ -6,7 +6,7 @@ import type MapView from 'react-native-maps';
 import { font, radius, shadow, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { heatmapSeverity as severityTokens } from '@/theme';
-import { CATEGORY_LABELS, severityColor } from '@/lib/flags';
+import { CATEGORY_LABELS, isAnon, severityColor } from '@/lib/flags';
 import { decorativeProps } from '@/lib/accessibility';
 import { severityA11y, statusA11y } from '@/lib/a11yText';
 import { colorForCell, HEATMAP_FILL_OPACITY, type HeatCell, type HeatmapMode } from '@/lib/heatmap';
@@ -204,15 +204,15 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(function Pla
             markerRefs.current[f.id] = r;
           }}
           coordinate={{ latitude: f.lat, longitude: f.lng }}
-          pinColor={severityColor(f.severity)}
-          opacity={focusedFlagId && focusedFlagId !== f.id ? 0.55 : 1}
+          pinColor={isAnon(f) ? '#9CA3AF' : severityColor(f.severity)}
+          opacity={isAnon(f) ? 0.7 : (focusedFlagId && focusedFlagId !== f.id ? 0.55 : 1)}
           accessibilityRole="button"
-          accessibilityLabel={`${CATEGORY_LABELS[f.category]}, ${severityA11y(f.severity)}, ${statusA11y(f.status)}. Tap to view details.`}
+          accessibilityLabel={`${CATEGORY_LABELS[f.category]}, ${severityA11y(f.severity)}, ${statusA11y(f.status)}${isAnon(f) ? ', submitted anonymously' : ''}. Tap to view details.`}
         >
           <Callout tooltip>
             <View style={styles.callout}>
               <View
-                style={[styles.calloutSevBar, { backgroundColor: severityColor(f.severity) }]}
+                style={[styles.calloutSevBar, { backgroundColor: isAnon(f) ? '#9CA3AF' : severityColor(f.severity) }]}
                 // Decorative color bar — severity info is in the text below
                 accessibilityElementsHidden
                 importantForAccessibility="no-hide-descendants"
@@ -223,6 +223,7 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(function Pla
                 </Text>
                 <Text style={styles.calloutMeta}>
                   Severity {f.severity} • {f.status}
+                  {isAnon(f) ? ' • Anonymous' : ''}
                 </Text>
                 {f.photo_url ? (
                   <Image
@@ -326,11 +327,7 @@ const makeStyles = (color: ColorTheme) =>
       borderColor: color.surface,
       alignItems: 'center',
       justifyContent: 'center',
-      shadowColor: color.shadow,
-      shadowOpacity: 0.25,
-      shadowRadius: 3,
-      shadowOffset: { width: 0, height: 1 },
-      elevation: 3,
+      ...shadow.e2, // cool-tinted shadow (design system)
     },
     heatBadgeText: { fontSize: 13, fontWeight: '700' },
   });

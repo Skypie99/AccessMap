@@ -2110,8 +2110,10 @@ const makeStyles = (color: ColorTheme) =>
     // (not an error) and doesn't compete with the HeatmapLegend swatches.
     heatmapDisclaimer: {
       alignSelf: 'stretch',
-      // WCAG 1.4.3: solid colours guarantee contrast on any map tile background.
+      // WCAG 1.4.3: solid colour guarantees contrast on any map tile background.
       // rgba(0,0,0,0.55) + rgba(255,255,255,0.85) fell to ~2.5:1 on light OSM tiles.
+      // Intentionally dark in both light and dark modes — this overlay sits above
+      // the always-light OSM basemap and must not switch to a light surface.
       backgroundColor: '#1a1a1a',
       borderRadius: radius.md,
       paddingHorizontal: 12,
@@ -2121,7 +2123,7 @@ const makeStyles = (color: ColorTheme) =>
     heatmapDisclaimerText: {
       fontSize: 11,
       // White on #1a1a1a = 18.1:1 — passes WCAG AA at any text size.
-      color: '#ffffff',
+      color: color.textOnBrand,
       lineHeight: 15,
       textAlign: 'center',
     },
