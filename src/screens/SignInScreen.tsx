@@ -14,6 +14,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { font, radius, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
+import { AppText } from '@/components/ui';
 import { signInWithEmail, signUpWithEmail } from '@/lib/supabase';
 import { track } from '@/lib/analytics';
 import LogoMark from '@/components/LogoMark';
@@ -86,7 +87,15 @@ export default function SignInScreen({
       >
         <View style={styles.brandBlock}>
           <LogoMark variant="badge" size={88} />
-          <Text style={styles.title} accessibilityRole="header">AccessMap</Text>
+          <AppText
+            variant="display"
+            size={font.size.h1}
+            color="#f0f6ff"
+            style={styles.title}
+            accessibilityRole="header"
+          >
+            AccessMap
+          </AppText>
           <Text style={styles.tagline}>
             Flag the world.{'\n'}Make it more accessible — together.
           </Text>
@@ -230,9 +239,7 @@ const makeStyles = (_color: ColorTheme) =>
       marginBottom: spacing.sm,
     },
     title: {
-      fontSize: font.size.h1,
-      fontWeight: font.weight.bold,
-      color: '#f0f6ff',
+      // fontSize, fontFamily, color applied via AppText variant="display"
       textAlign: 'center',
       letterSpacing: -0.8,
       marginTop: spacing.sm,

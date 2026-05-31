@@ -12,6 +12,7 @@ import { hasSeenOnboarding, markOnboardingSeen } from '@/lib/onboarding';
 import { loadOnboarded, setOnboarded } from '@/lib/onboardingState';
 import { getDefaultTab, type DefaultTab } from '@/lib/preferences';
 import { fetchCurrentPoints, getLastSeenPoints, setLastSeenPoints } from '@/lib/points';
+import { useAppFonts } from '@/lib/fonts';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import FlashBanner from '@/components/FlashBanner';
 import OnboardingCards from '@/components/OnboardingCards';
@@ -165,11 +166,21 @@ function FirstLaunchGate({ children }: { children: React.ReactNode }) {
 }
 
 function App() {
+  // Load design-system custom fonts. Non-blocking: if fontError is set we
+  // continue with system fonts rather than blocking the app forever.
+  // Fonts are bundled (~150KB) so they load quickly on first paint.
+  const [fontsLoaded, fontError] = useAppFonts();
+
   // Analytics: one event per app launch. platform only — no PII. Runs once
   // on mount (App is wrapped by Sentry.wrap below, so Sentry is initialized).
   useEffect(() => {
     trackEvent('app_session_started', { platform: Platform.OS });
   }, []);
+
+  // Hold render until fonts are ready (or failed). Typical delay: ~50-100ms
+  // on device since TTFs are bundled. On font error, render immediately with
+  // system fonts as fallback — never block the user indefinitely.
+  if (!fontsLoaded && !fontError) return null;
 
   return (
     <ErrorBoundary>

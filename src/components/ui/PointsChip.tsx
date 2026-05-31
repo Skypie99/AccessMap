@@ -8,9 +8,10 @@
  */
 
 import React from 'react';
-import { StyleSheet, Text, View, type ViewStyle } from 'react-native';
+import { StyleSheet, View, type ViewStyle } from 'react-native';
 import { useColor } from '@/theme/ThemeContext';
-import { radius, font, spacing } from '@/theme';
+import { font, radius, spacing } from '@/theme';
+import { AppText } from './AppText';
 
 interface PointsChipProps {
   /** Points value — typically a number like "+5" or "120". */
@@ -49,13 +50,13 @@ export function PointsChip({ value, label, tone = 'gold', size = 'md', style }: 
       accessible
       accessibilityLabel={label ? `${value} ${label}` : `${value} points`}
     >
-      <Text style={[styles.value, { fontSize: textSize, color: toneColors.fg }]}>
+      <AppText variant="monoBold" size={textSize} color={toneColors.fg}>
         {value}
-      </Text>
+      </AppText>
       {label ? (
-        <Text style={[styles.label, { fontSize: textSize, color: toneColors.fg }]}>
+        <AppText variant="mono" size={textSize} color={toneColors.fg}>
           {' '}{label}
-        </Text>
+        </AppText>
       ) : null}
     </View>
   );
@@ -67,11 +68,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: radius.full,
     alignSelf: 'flex-start',
-  },
-  value: {
-    fontWeight: font.weight.bold,
-  },
-  label: {
-    fontWeight: font.weight.medium,
   },
 });

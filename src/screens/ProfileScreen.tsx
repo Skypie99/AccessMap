@@ -70,6 +70,7 @@ import ReportsBreakdownCard from '@/components/ReportsBreakdownCard';
 import LeaderboardModal from '@/components/LeaderboardModal';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { font, radius, shadow } from '@/theme';
+import { AppText } from '@/components/ui';
 import { getTier, pointsToNextTier, REPUTATION_TIERS } from '@/lib/reputationTier';
 import {
   getPointEventHistory,
@@ -809,9 +810,13 @@ export default function ProfileScreen() {
               the points number (per T4 spec). The pill is a Pressable
               with its own a11y label, focusable independently. */}
           <View style={styles.heroValueRow}>
-            <Text style={styles.heroValue} accessibilityLabel={`${points} points`}>
+            <AppText
+              variant="monoBold"
+              style={styles.heroValue}
+              accessibilityLabel={`${points} points`}
+            >
               {points}
-            </Text>
+            </AppText>
             <Pressable
               onPress={() => setTierExplainerOpen(true)}
               style={({ pressed }) => [styles.tierPill, pressed && styles.tierPillPressed]}
