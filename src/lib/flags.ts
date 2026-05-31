@@ -620,6 +620,91 @@ export async function createFlag(
   return { row: data as FlagRow, tagsAccepted };
 }
 
+// ---------------------------------------------------------------------------
+// Anonymous flag helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Returns true when a flag was submitted without an account.
+ * Use this wherever the UI needs to branch on anon vs. attributed.
+ */
+export function isAnon(flag: { user_id: string | null }): boolean {
+  return flag.user_id === null;
+}
+
+// ---------------------------------------------------------------------------
+// Anonymous flag submission (no auth required)
+// ---------------------------------------------------------------------------
+
+export interface CreateAnonFlagInput {
+  lat: number;
+  lng: number;
+  category: FlagCategory;
+  severity: FlagSeverity;
+  description?: string | null;
+  // Photos are not supported for anon submissions — Storage RLS requires
+  // auth.uid() in the upload path. See docs/ANON_REPORTING_SPEC.md §6.
+  // Context tags are also disabled: the capability probe requires an auth
+  // session and silently dropping tags would confuse anon users.
+}
+
+/**
+ * Submit an accessibility flag without an account. Runs under the Supabase
+ * anon role (no auth session). The DB row has user_id = NULL.
+ *
+ * Rate-limit check is the caller's responsibility — call checkAnonRateLimit()
+ * from src/lib/anonRateLimit.ts before this, and recordAnonSubmit() after.
+ *
+ * PRIVACY: No user_id, no photo, no context tags stored. Coordinate + category
+ * is the minimum needed to place the flag. Jordan hard conditions satisfied:
+ *   - user_id IS NULL (enforced by RLS WITH CHECK)
+ *   - No IP logged
+ *   - Rate limit via AsyncStorage only
+ * See supabase/migrations/2026-05-30_anon_flag_reporting.sql.
+ */
+export async function createAnonFlag(input: CreateAnonFlagInput): Promise<FlagRow> {
+  if (!Number.isFinite(input.lat) || !Number.isFinite(input.lng)) {
+    throw new Error('Invalid coordinates: lat and lng must be finite numbers.');
+  }
+  if (input.lat < -90 || input.lat > 90) {
+    throw new Error('Invalid coordinates: lat must be between -90 and 90.');
+  }
+  if (input.lng < -180 || input.lng > 180) {
+    throw new Error('Invalid coordinates: lng must be between -180 and 180.');
+  }
+
+  const { data, error } = await supabase
+    .from('flags')
+    .insert({
+      // user_id intentionally omitted — Postgres stores NULL, enforced by RLS.
+      lat: input.lat,
+      lng: input.lng,
+      category: input.category,
+      severity: input.severity,
+      description: input.description ?? null,
+      photo_url: null,
+    })
+    .select()
+    .single();
+
+  if (error) {
+    // Graceful degradation: if the 2026-05-30_anon_flag_reporting.sql migration
+    // hasn't been applied yet, the insert can fail with:
+    //   42P01 — undefined_table (trigger references a missing object)
+    //   42501 — insufficient_privilege (anon INSERT policy not yet created)
+    //   23502 — not_null_violation (user_id column still has NOT NULL)
+    // Show a user-friendly message so the raw Postgres error never surfaces.
+    const code = (error as { code?: string }).code ?? '';
+    if (code === '42P01' || code === '42501' || code === '23502') {
+      throw new Error(
+        'Anonymous reporting is not yet available on this server. Please sign in to report.',
+      );
+    }
+    throw error;
+  }
+  return data as FlagRow;
+}
+
 export type FlagContentPatch = {
   description?: string | null;
   category?: FlagCategory;
@@ -846,14 +931,14 @@ export const STATUS_LABELS: Record<FlagStatus, string> = {
 };
 
 // Tinted-background + darker-foreground palette for the status badges.
-// Kept here so the badge looks identical wherever it appears (FlagDetailModal,
-// MyReportsModal, future surfaces). Each pair clears WCAG AA 4.5:1 between
-// `fg` and `bg`, so they're safe to drop into any badge component.
+// Updated to design system 2026-05-31. Mirrors color.statusOpen/Verified/Resolved/RejectedBg/Fg
+// in src/theme.ts. Each pair clears WCAG AA 4.5:1 between `fg` and `bg`.
+// Keep these in sync with ThemeContext.tsx dark-mode equivalents.
 export const STATUS_COLORS: Record<FlagStatus, { bg: string; fg: string }> = {
-  open: { bg: '#fdebd0', fg: '#8a4b00' },
-  verified: { bg: '#d6e6f9', fg: '#1c4f99' },
-  resolved: { bg: '#d4ecdb', fg: '#1b6b34' },
-  rejected: { bg: '#e5e5e5', fg: '#3a3a3a' },
+  open:     { bg: '#E7F0FD', fg: '#1A5FB4' },
+  verified: { bg: '#DCF6EC', fg: '#067A56' },
+  resolved: { bg: '#D6F1E6', fg: '#047054' },
+  rejected: { bg: '#EEF0F3', fg: '#4B5563' },
 };
 
 // Order shown in the Map filter and elsewhere — chronological lifecycle.

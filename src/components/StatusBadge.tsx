@@ -2,19 +2,17 @@
  * StatusBadge — shared status pill component.
  *
  * Renders the tinted-background + darker-foreground pill used on every screen
- * that shows a flag's status (open / verified / resolved / rejected). Extracts
- * the inline pattern that was duplicated across FlagDetailModal, MyReportsModal,
- * ActivityFeedModal, and MyWatchedModal.
+ * that shows a flag's status (open / verified / resolved / rejected).
  *
- * Color source: STATUS_COLORS from @/lib/flags (same values as before — using
- * those constants keeps StatusBadge in sync with any future palette updates
- * to that file, and avoids re-deriving the same colors from theme tokens).
+ * Color source: STATUS_COLORS from @/lib/flags, which is now synced with
+ * the design-system status tokens in src/theme.ts.
+ * Dot indicator added per design system 2026-05-31.
  *
  * Props:
  *   status     — the FlagStatus value to display.
- *   size       — 'sm' (11px label, compact padding) | 'md' (12px label, normal padding).
- *                Defaults to 'md', which matches the historical pill dimensions.
- *   showLabel  — whether to render the text label inside the pill. Defaults to true.
+ *   size       — 'sm' (compact) | 'md' (default).
+ *   showLabel  — whether to render the text label. Defaults to true.
+ *   showDot    — whether to show the colored dot before the label. Defaults to true.
  *   style      — optional extra View style applied to the outer badge container.
  */
 
@@ -32,6 +30,8 @@ interface StatusBadgeProps {
   status: FlagStatus;
   size?: 'sm' | 'md';
   showLabel?: boolean;
+  /** Show the colored dot before the label. Defaults to true. */
+  showDot?: boolean;
   /** Override the default accessibilityLabel. Default: "Flag status: {Status}". */
   accessibilityLabel?: string;
   style?: object;
@@ -41,9 +41,10 @@ interface StatusBadgeProps {
 // Component
 // -------------------------------------------------------------------------
 
-export function StatusBadge({ status, size = 'md', showLabel = true, accessibilityLabel, style }: StatusBadgeProps) {
+export function StatusBadge({ status, size = 'md', showLabel = true, showDot = true, accessibilityLabel, style }: StatusBadgeProps) {
   const palette = STATUS_COLORS[status];
   const a11yLabel = accessibilityLabel ?? `Flag status: ${STATUS_LABELS[status]}`;
+  const dotSize = size === 'sm' ? 5 : 6;
 
   return (
     <View
@@ -52,6 +53,9 @@ export function StatusBadge({ status, size = 'md', showLabel = true, accessibili
       accessibilityRole="text"
       accessibilityLabel={a11yLabel}
     >
+      {showDot && (
+        <View style={[styles.dot, { width: dotSize, height: dotSize, backgroundColor: palette.fg }]} />
+      )}
       {showLabel && (
         <Text style={[styles.label, size === 'sm' ? styles.labelSm : styles.labelMd, { color: palette.fg }]}>
           {STATUS_LABELS[status]}
@@ -67,25 +71,27 @@ export function StatusBadge({ status, size = 'md', showLabel = true, accessibili
 
 const styles = StyleSheet.create({
   badge: {
-    borderRadius: radius.circle,
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    gap: 5,
+    borderRadius: radius.circle,
   },
-  // md — matches the historical FlagDetailModal / MyReportsModal / ActivityFeedModal pill
   badgeMd: {
-    paddingHorizontal: spacing.sm + 2, // 10px — matches MyReportsModal / ActivityFeedModal
+    paddingHorizontal: spacing.sm + 2, // 10px
     paddingVertical: spacing.tight,    // 4px
   },
-  // sm — compact variant for denser layouts (future use; saves callers from inline overrides)
   badgeSm: {
     paddingHorizontal: spacing.sm,     // 8px
     paddingVertical: 2,
+  },
+  dot: {
+    borderRadius: radius.circle,
   },
   label: {
     fontWeight: font.weight.bold,
   },
   labelMd: {
-    fontSize: font.size.caption, // 11px — matches historical statusBadgeText across all screens
+    fontSize: font.size.caption, // 11px
   },
   labelSm: {
     fontSize: 10,
