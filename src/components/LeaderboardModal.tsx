@@ -65,9 +65,9 @@ export default function LeaderboardModal({ visible, onClose }: Props) {
       // name in the accessible label so AT users who can't see the colour
       // treatment still understand that top-3 positions are special.
       const medalPrefix =
-        rank === 1 ? 'Gold, 1st place' :
-        rank === 2 ? 'Silver, 2nd place' :
-        rank === 3 ? 'Bronze, 3rd place' :
+        rank === 1 ? 'Gold medal, 1st place' :
+        rank === 2 ? 'Silver medal, 2nd place' :
+        rank === 3 ? 'Bronze medal, 3rd place' :
         ordinalLabel(rank);
       return (
         <View
@@ -156,7 +156,7 @@ export default function LeaderboardModal({ visible, onClose }: Props) {
             </View>
           ) : entries.length === 0 ? (
             <View style={styles.stateWrap}>
-              <Text style={styles.stateText}>No contributors yet — be the first to report a barrier!</Text>
+              <Text style={styles.stateText} accessibilityRole="text">No contributors yet — be the first to report a barrier!</Text>
             </View>
           ) : (
             <FlatList

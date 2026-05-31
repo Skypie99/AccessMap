@@ -875,15 +875,16 @@ export default function ProfileScreen() {
           </View>
           {/* Tier progress bar — thin animated fill below the tier pill.
               Hidden at Platinum (nextThreshold null) since there's no
-              next tier to progress toward. Screen readers skip it (decorative
-              duplicate of the "X pts to next tier" text already announced
-              by the tier pill's accessibilityHint above). */}
+              next tier to progress toward. WCAG 4.1.2: announced as a
+              progressbar with label "Silver tier, 150 of 500 points to Gold";
+              the visual text label below is hidden from AT (duplicate). */}
           {tier.nextThreshold !== null && (
             <>
               <View
                 style={styles.tierProgressTrack}
-                accessibilityElementsHidden
-                importantForAccessibility="no-hide-descendants"
+                accessibilityRole="progressbar"
+                accessibilityLabel={`${tier.label} tier, ${points} of ${tier.nextThreshold} points to ${nextTier?.label ?? 'next tier'}`}
+                accessibilityValue={{ min: tier.threshold, max: tier.nextThreshold, now: points }}
               >
                 <Animated.View
                   style={[
@@ -895,9 +896,15 @@ export default function ProfileScreen() {
                       }),
                     },
                   ]}
+                  accessibilityElementsHidden
+                  importantForAccessibility="no-hide-descendants"
                 />
               </View>
-              <Text style={styles.tierProgressLabel}>
+              <Text
+                style={styles.tierProgressLabel}
+                accessibilityElementsHidden
+                importantForAccessibility="no-hide-descendants"
+              >
                 {tierGap} pts to {nextTier?.label ?? 'next tier'} {nextTier?.emoji ?? ''}
               </Text>
             </>
@@ -906,12 +913,21 @@ export default function ProfileScreen() {
             <>
               <View
                 style={styles.progressTrack}
+                accessibilityRole="progressbar"
+                accessibilityLabel={`Progress toward ${milestoneLabel}, ${points} of ${nextMilestone} points`}
+                accessibilityValue={{ min: 0, max: nextMilestone, now: points }}
+              >
+                <View
+                  style={[styles.progressFill, { width: progressBarWidth }]}
+                  accessibilityElementsHidden
+                  importantForAccessibility="no-hide-descendants"
+                />
+              </View>
+              <Text
+                style={styles.heroSubtitle}
                 accessibilityElementsHidden
                 importantForAccessibility="no-hide-descendants"
               >
-                <View style={[styles.progressFill, { width: progressBarWidth }]} />
-              </View>
-              <Text style={styles.heroSubtitle}>
                 {nextMilestone - points} points to {milestoneLabel}
               </Text>
             </>
@@ -934,39 +950,44 @@ export default function ProfileScreen() {
               Start reporting barriers to earn points!
             </Text>
           ) : (
-            pointEvents.slice(0, 5).map((ev) => {
-              const isGain = ev.delta >= 0;
-              const sign = isGain ? '+' : '';
-              const dateStr = formatRelativeTime(ev.created_at);
-              return (
-                <View
-                  key={ev.id}
-                  style={styles.pointHistoryRow}
-                  accessible
-                  accessibilityLabel={`${pointEventLabel(ev.event_type)}, ${sign}${ev.delta} points, ${dateStr}`}
-                >
-                  <Text
-                    style={[styles.pointHistoryIcon, !isGain && styles.pointHistoryIconNeg]}
-                    accessibilityElementsHidden
-                    importantForAccessibility="no-hide-descendants"
+            <View accessibilityRole="list">
+              {pointEvents.slice(0, 5).map((ev) => {
+                const isGain = ev.delta >= 0;
+                const absPoints = Math.abs(ev.delta);
+                const action = isGain ? 'Earned' : 'Lost';
+                const sign = isGain ? '+' : '';
+                const dateStr = formatRelativeTime(ev.created_at);
+                return (
+                  <View
+                    key={ev.id}
+                    style={styles.pointHistoryRow}
+                    accessible
+                    role="listitem"
+                    accessibilityLabel={`${action} ${absPoints} ${absPoints === 1 ? 'point' : 'points'}: ${pointEventLabel(ev.event_type)}, ${dateStr}`}
                   >
-                    {isGain ? '↑' : '↓'}
-                  </Text>
-                  <Text style={styles.pointHistoryLabel} numberOfLines={1}>
-                    {pointEventLabel(ev.event_type)}
-                  </Text>
-                  <Text style={styles.pointHistoryDate}>{dateStr}</Text>
-                  <Text
-                    style={[
-                      styles.pointHistoryDelta,
-                      !isGain && styles.pointHistoryDeltaNeg,
-                    ]}
-                  >
-                    {sign}{ev.delta} pts
-                  </Text>
-                </View>
-              );
-            })
+                    <Text
+                      style={[styles.pointHistoryIcon, !isGain && styles.pointHistoryIconNeg]}
+                      accessibilityElementsHidden
+                      importantForAccessibility="no-hide-descendants"
+                    >
+                      {isGain ? '↑' : '↓'}
+                    </Text>
+                    <Text style={styles.pointHistoryLabel} numberOfLines={1}>
+                      {pointEventLabel(ev.event_type)}
+                    </Text>
+                    <Text style={styles.pointHistoryDate}>{dateStr}</Text>
+                    <Text
+                      style={[
+                        styles.pointHistoryDelta,
+                        !isGain && styles.pointHistoryDeltaNeg,
+                      ]}
+                    >
+                      {sign}{ev.delta} pts
+                    </Text>
+                  </View>
+                );
+              })}
+            </View>
           )}
         </View>
 
