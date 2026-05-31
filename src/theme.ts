@@ -65,30 +65,35 @@ export const color = {
   placeholderText: '#5b6470', // TextInput placeholder — AA pass: ~4.7:1 on white, ~4.5:1 on #f7f9fc
   textOnBrand: '#fff', // text drawn on brand-blue or severity colors
 
-  // Brand — primary action color
-  // brand:     UI surfaces / button backgrounds / ≥14pt bold text on white
-  // brandText: small bold text on white (passes WCAG 1.4.3 AA at any size)
-  //
-  // Migration note: existing color.brand usages on small text should
-  // gradually move to color.brandText. New code should use brandText
-  // for text-on-white anywhere it's NOT explicitly ≥14pt bold.
-  brand: '#2f80ed', // 3.3:1 on white → UI/large-text only (AA UI 3:1)
-  brandText: '#1c4f99', // 7.6:1 on white → AA pass at any text size
-  brandTextAlt: '#1a4fa3', // near-identical AA-safe brand text (used by UpdateBanner, SavedPlacesModal, FilterPresetsModal, MapScreen). Kept as a separate token so future dark-mode swap can choose to merge with brandText or keep distinct.
-  brandSoft: '#d6e6f9', // brand-tinted background for verified pill
-  brandSofter: '#eaf3ff', // even lighter brand wash (chip backgrounds, banner backgrounds, "manage" affordances)
-  brandOnSoft: '#1c4f99', // dark brand text for use on brandSoft (7.6:1)
+  // Brand — primary action color ("Wayfinder Blue" — design system 2026-05-30)
+  // Rooted in the heritage blue of the International Symbol of Access.
+  // brand:     CTAs, buttons, map pins, links, focus rings (≥14pt bold on white)
+  // brandText: small text on white — darker shade passes AA at any size
+  brand: '#1466E0', // "Wayfinder Blue" — design system primary; ~3:1 on white (AA non-text)
+  brandText: '#0F53BE', // 5.5:1 on white → AA pass at any text size
+  brandTextAlt: '#0E4499', // extra-dark brand text (7.2:1 on white), used for max-contrast contexts
+  brandSoft: '#D9E7FD', // brand-tinted background (blue-100)
+  brandSofter: '#EEF4FE', // lightest brand wash (blue-50)
+  brandOnSoft: '#0F53BE', // dark brand text on brandSoft backgrounds
+
+  // Gamification accent — "Civic Gold" (design system 2026-05-30)
+  // Reserved EXCLUSIVELY for points, streaks, badges, rewards. Never for status.
+  // Always pair with dark ink text — gold is too light for white text (AA fail).
+  goldAccent: '#FBB024', // Civic Gold — the accent
+  goldLight: '#FFF8EB',  // gold-50 — chip/badge background
+  goldMid: '#FEEFC7',    // gold-100 — slightly richer background
+  goldDark: '#B45F09',   // gold-700 — text on gold backgrounds (AA pass)
 
   // Status surfaces (bg + fg pairings) — used by status pills, banners
-  // Each fg passes AA on its bg.
-  statusOpenBg: '#fdebd0',
-  statusOpenFg: '#8a4b00', // 6.5:1 on statusOpenBg
-  statusVerifiedBg: '#d6e6f9',
-  statusVerifiedFg: '#1c4f99', // 7.6:1
-  statusResolvedBg: '#d4ecdb',
-  statusResolvedFg: '#1b6b34', // 6.4:1
-  statusRejectedBg: '#e5e5e5',
-  statusRejectedFg: '#3a3a3a', // 10.4:1
+  // Aligned with design system 2026-05-30. Each fg passes AA on its bg.
+  statusOpenBg: '#E7F0FD',
+  statusOpenFg: '#1A5FB4', // ~6:1 on statusOpenBg
+  statusVerifiedBg: '#DCF6EC',
+  statusVerifiedFg: '#067A56', // ~7:1 on statusVerifiedBg
+  statusResolvedBg: '#D6F1E6',
+  statusResolvedFg: '#047054', // ~6.5:1 on statusResolvedBg
+  statusRejectedBg: '#EEF0F3',
+  statusRejectedFg: '#4B5563', // ~7:1 on statusRejectedBg
 
   // Semantic
   success: '#27ae60', // resolve action background (text on it must be white-large)
@@ -143,14 +148,15 @@ export const spacing = {
 // -------------------------------------------------------------------------
 
 export const radius = {
+  // Updated to design system 2026-05-30. Friendly but not bubbly.
   xs: 4,
   sm: 6,
-  md: 8, // default for cards/buttons
-  lg: 12, // panels, modals
-  xl: 16, // sheet headers
-  sheet: 22, // bottom-sheet / modal top corners (ReportFlagModal, FlagDetailModal, NotificationPrefsModal, PhotoLightboxModal)
-  full: 999, // pills, FABs, round icon buttons
-  circle: 9999, // perfectly circular elements (avatar frames, round icon buttons)
+  md: 12,   // buttons, inputs (was 8)
+  lg: 16,   // cards, floating panels (was 12)
+  xl: 20,   // sheet headers (was 16)
+  sheet: 28, // bottom-sheet top corners (was 22)
+  full: 999, // pills, chips, FABs
+  circle: 9999, // perfectly circular (avatar, round icon buttons)
 };
 
 // -------------------------------------------------------------------------
@@ -195,26 +201,36 @@ export const font = {
 // -------------------------------------------------------------------------
 
 export const shadow = {
+  // Cool-tinted shadows (design system 2026-05-30) — use `#0F1B2D` not pure black.
+  // Matches the design spec: soft and cool-tinted, never harsh black.
   e1: {
-    shadowColor: color.shadow,
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
+    shadowColor: '#0F1B2D',
+    shadowOpacity: 0.06,
+    shadowRadius: 2,
     shadowOffset: { width: 0, height: 1 },
     elevation: 1,
   },
   e2: {
-    shadowColor: color.shadow,
-    shadowOpacity: 0.12,
+    shadowColor: '#0F1B2D',
+    shadowOpacity: 0.09,
     shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 1 },
     elevation: 3,
   },
   e3: {
-    shadowColor: color.shadow,
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 3 },
+    shadowColor: '#0F1B2D',
+    shadowOpacity: 0.12,
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 4 },
     elevation: 5,
+  },
+  // Colored glow for map pins — lifts them off the basemap.
+  pin: {
+    shadowColor: '#1466E0',
+    shadowOpacity: 0.35,
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 8,
   },
 };
 
@@ -244,12 +260,13 @@ export const size = {
 // -------------------------------------------------------------------------
 
 export const severity = {
-  1: { color: '#27ae60', label: 'Minor' },
-  2: { color: '#7fb800', label: 'Low' },
-  3: { color: '#f1c40f', label: 'Moderate' },
-  4: { color: '#e67e22', label: 'High' },
-  5: { color: '#e74c3c', label: 'Severe' },
-} as const satisfies Record<FlagSeverity, { color: string; label: string }>;
+  // Design system 2026-05-30 — yellow→red ramp. Sev 1 uses dark text (yellow too light for white).
+  1: { color: '#F7C948', label: 'Minor',    textOnColor: '#0F1B2D' }, // yellow — use dark ink text
+  2: { color: '#F0A030', label: 'Low',      textOnColor: '#ffffff' },
+  3: { color: '#F2792B', label: 'Moderate', textOnColor: '#ffffff' },
+  4: { color: '#E85638', label: 'High',     textOnColor: '#ffffff' },
+  5: { color: '#D92D20', label: 'Critical', textOnColor: '#ffffff' },
+} as const satisfies Record<FlagSeverity, { color: string; label: string; textOnColor: string }>;
 
 // -------------------------------------------------------------------------
 // Heatmap severity — Dani Design Compiler COMMIT (2026-05-29, D5).
