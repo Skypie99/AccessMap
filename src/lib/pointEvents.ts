@@ -24,16 +24,16 @@ export type PointEventRow = {
 };
 
 const EVENT_LABELS: Record<PointEventType, string> = {
-  flag_submitted: 'Flag submitted',
-  flag_verified_reporter: 'Your flag was verified',
-  flag_resolved_reporter: 'Your flag was resolved',
-  flag_verified_actor: 'You verified a flag',
-  flag_resolved_actor: 'You resolved a flag',
-  flag_photo_added: 'Photo added to flag',
-  comment_added: 'Comment added',
-  comment_upvoted: 'Comment received a thumbs-up',
-  flag_spam_penalty: 'Flag marked as spam',
-  streak_bonus: 'Streak bonus (7 days!)',
+  flag_submitted: 'Reported a barrier',
+  flag_verified_reporter: 'Your report was verified',
+  flag_resolved_reporter: 'Your report was resolved',
+  flag_verified_actor: 'Helped verify a report',
+  flag_resolved_actor: 'Helped resolve a report',
+  flag_photo_added: 'Added a photo',
+  comment_added: 'Added a comment',
+  comment_upvoted: 'Your comment got a thumbs-up',
+  flag_spam_penalty: 'Report marked as spam',
+  streak_bonus: '7-day mapping streak',
 };
 
 export function pointEventLabel(eventType: PointEventType): string {

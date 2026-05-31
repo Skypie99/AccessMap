@@ -150,7 +150,7 @@ export default function LeaderboardModal({ visible, onClose }: Props) {
             </View>
           ) : entries.length === 0 ? (
             <View style={styles.stateWrap}>
-              <Text style={styles.stateText}>No contributors yet. Be the first!</Text>
+              <Text style={styles.stateText}>No contributors yet — be the first to report a barrier!</Text>
             </View>
           ) : (
             <FlatList
