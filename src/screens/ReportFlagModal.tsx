@@ -700,6 +700,7 @@ const makeStyles = (color: ColorTheme) =>
       justifyContent: 'flex-end',
     },
     card: {
+      flex: 1,
       backgroundColor: color.surface,
       paddingHorizontal: 20,
       paddingTop: 20,
