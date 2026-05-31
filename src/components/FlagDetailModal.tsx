@@ -38,6 +38,7 @@ import { isDisabilityTag, isSeasonalTag, isValidTag, tagLabel } from '@/lib/cont
 import { addFlagPhoto, listFlagPhotos } from '@/lib/photos';
 import { MAX_COMMENT_LENGTH } from '@/lib/comments';
 import { useComments } from '@/hooks/useComments';
+import { getTier } from '@/lib/reputationTier';
 import type { FlagCategory, FlagRow, FlagSeverity, FlagStatus } from '@/types/database';
 import PhotoGallery, { type GalleryPhoto } from './PhotoGallery';
 import StatusHistoryModal from './StatusHistoryModal';
@@ -85,6 +86,16 @@ export default function FlagDetailModal({
   // closes or the shown flag swaps, so it never lingers over the wrong flag.
   const [historyOpen, setHistoryOpen] = useState(false);
 
+  // Reopen request flow — F10 (Riley). Only shown when status === 'resolved'
+  // and the current user is NOT the reporter. Tapping opens an inline form;
+  // submitting either reopens the flag (threshold met) or shows a "N more
+  // needed" message (threshold not yet met). No user_id stored — Jordan gate.
+  const [showReopenForm, setShowReopenForm] = useState(false);
+  const [reopenText, setReopenText] = useState('');
+  const [reopenBusy, setReopenBusy] = useState(false);
+  // Inline feedback message after a reopen submit (non-status-change path).
+  const [reopenMessage, setReopenMessage] = useState<string | null>(null);
+
   // Cache the last flag so the slide-out animation still has content to render
   // after the parent clears `flag` on close. Without this the card briefly
   // turns blank as it animates away.
@@ -121,6 +132,20 @@ export default function FlagDetailModal({
   }, [visible]);
   useEffect(() => {
     setHistoryOpen(false);
+  }, [flag?.id]);
+
+  // Reset reopen form state whenever the modal closes or a different flag is shown.
+  useEffect(() => {
+    if (!visible) {
+      setShowReopenForm(false);
+      setReopenText('');
+      setReopenMessage(null);
+    }
+  }, [visible]);
+  useEffect(() => {
+    setShowReopenForm(false);
+    setReopenText('');
+    setReopenMessage(null);
   }, [flag?.id]);
 
   // Record a "view" the first time this modal becomes visible with a flag
@@ -427,6 +452,63 @@ export default function FlagDetailModal({
     }
   };
 
+  // F10 — Reopen threshold logic.
+  // Threshold by reputation tier (Quinn product decision):
+  //   Bronze (default) = 3 reopen requests needed
+  //   Silver           = 2
+  //   Gold / Platinum  = 1
+  //
+  // TODO: once Dana's migration (flag_reopen_count on flags table + flag_reopen_log
+  //       for session-level dedup) is applied, replace the `(shownFlag as any)`
+  //       pattern below with the typed column. The `any` cast is intentional
+  //       scaffolding until the migration lands. (F10 scaffolding — Wave C)
+  const handleReopenSubmit = async () => {
+    if (!user || !shownFlag || reopenBusy) return;
+    const text = reopenText.trim();
+    if (!text) {
+      Alert.alert('Description required', 'Please describe what is still wrong (up to 280 characters).');
+      return;
+    }
+    setReopenBusy(true);
+    try {
+      // TODO: once the profile row is surfaced through AuthContext (or a
+      //       ProfileContext), pass the user's actual points here. Until then,
+      //       the Supabase `User` object doesn't carry public.users.points, so
+      //       we default to Bronze (0 pts) — the safest / most conservative
+      //       threshold. Replace `null` below with the real points value when
+      //       profile data flows into this component. (F10 scaffolding — Wave C)
+      const tier = getTier(null); // defaults to Bronze until profile data is available
+      const threshold =
+        tier.name === 'gold' || tier.name === 'platinum' ? 1
+        : tier.name === 'silver' ? 2
+        : 3; // bronze (default)
+
+      // TODO: replace with typed column after migration applied.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const currentCount = (shownFlag as any).reopen_requests as number ?? 0;
+      const newCount = currentCount + 1;
+
+      if (newCount >= threshold) {
+        // Threshold met — reopen the flag.
+        const updated = await updateFlagStatus(shownFlag.id, 'open');
+        onChanged(updated, 'verify', isOwn);
+        onClose();
+      } else {
+        // Not yet — show inline message, keep modal open.
+        const remaining = threshold - newCount;
+        setReopenMessage(
+          `Reopen request noted. ${remaining} more ${remaining === 1 ? 'request' : 'requests'} needed.`,
+        );
+        setShowReopenForm(false);
+        setReopenText('');
+      }
+    } catch (e) {
+      Alert.alert('Could not submit reopen request', errorMessage(e));
+    } finally {
+      setReopenBusy(false);
+    }
+  };
+
   return (
     <>
       <Modal visible={visible} animationType={reducedMotion ? 'none' : 'slide'} transparent onRequestClose={onClose}>
@@ -727,6 +809,84 @@ export default function FlagDetailModal({
                     </Pressable>
                   </View>
                 </View>
+              )}
+
+              {/* F10 — Reopen request. Only shown when status is 'resolved'
+                  and the current user is NOT the reporter. Jordan gate: no
+                  user_id is stored — only an anonymous aggregate count. */}
+              {status === 'resolved' && !isOwn && (
+                <>
+                  {reopenMessage !== null && (
+                    <Text style={styles.reopenMessage}>{reopenMessage}</Text>
+                  )}
+                  {!showReopenForm && reopenMessage === null && (
+                    <Pressable
+                      onPress={() => setShowReopenForm(true)}
+                      disabled={busy}
+                      style={[styles.actionBtn, styles.reopenBtn]}
+                      accessibilityRole="button"
+                      accessibilityLabel="Request flag reopen"
+                      accessibilityHint="Opens a form to explain why this barrier is still present"
+                      accessibilityState={{ disabled: busy }}
+                    >
+                      <Text style={styles.reopenBtnText}>Still broken? Request reopen</Text>
+                    </Pressable>
+                  )}
+                  {showReopenForm && (
+                    <View style={styles.reopenForm}>
+                      <Text style={styles.reopenFormLabel}>What's still wrong?</Text>
+                      <TextInput
+                        value={reopenText}
+                        onChangeText={setReopenText}
+                        placeholder="Describe why this barrier is still present…"
+                        placeholderTextColor={color.textMuted}
+                        multiline
+                        maxLength={280}
+                        style={styles.reopenInput}
+                        accessibilityLabel="Reopen request description"
+                        accessibilityHint="Up to 280 characters. Required."
+                      />
+                      {reopenText.length > 0 && (
+                        <Text style={styles.reopenCharCounter}>
+                          {reopenText.length} / 280
+                        </Text>
+                      )}
+                      <View style={styles.reopenActions}>
+                        <Pressable
+                          onPress={() => {
+                            setShowReopenForm(false);
+                            setReopenText('');
+                          }}
+                          disabled={reopenBusy}
+                          style={[styles.actionBtn, styles.cancelBtn]}
+                          accessibilityRole="button"
+                          accessibilityLabel="Cancel reopen request"
+                          accessibilityState={{ disabled: reopenBusy }}
+                        >
+                          <Text style={styles.cancelBtnText}>Cancel</Text>
+                        </Pressable>
+                        <Pressable
+                          onPress={() => void handleReopenSubmit()}
+                          disabled={reopenBusy || !reopenText.trim()}
+                          style={[
+                            styles.actionBtn,
+                            styles.reopenSubmitBtn,
+                            (reopenBusy || !reopenText.trim()) && styles.reopenSubmitBtnDisabled,
+                          ]}
+                          accessibilityRole="button"
+                          accessibilityLabel="Submit reopen request"
+                          accessibilityState={{ busy: reopenBusy, disabled: reopenBusy || !reopenText.trim() }}
+                        >
+                          {reopenBusy ? (
+                            <ActivityIndicator size="small" color={color.textOnBrand} />
+                          ) : (
+                            <Text style={styles.reopenSubmitText}>Submit reopen request</Text>
+                          )}
+                        </Pressable>
+                      </View>
+                    </View>
+                  )}
+                </>
               )}
 
               <View style={styles.secondaryRow}>
@@ -1248,8 +1408,6 @@ const makeStyles = (color: ColorTheme) =>
     },
     commentsList: {
       gap: spacing.tight,
-      // Negative horizontal margin so CommentBubble's paddingHorizontal
-      // from the CommentBubble styles controls the visual inset instead.
       marginHorizontal: -spacing.xl,
     },
     commentInputRow: {
@@ -1257,7 +1415,6 @@ const makeStyles = (color: ColorTheme) =>
       alignItems: 'flex-end',
       gap: spacing.sm,
       marginTop: spacing.sm,
-      // Subtle lift off the card surface — reinforces this is an interactive tray.
       paddingTop: spacing.sm,
       borderTopWidth: StyleSheet.hairlineWidth,
       borderTopColor: color.borderSubtle,
@@ -1280,7 +1437,6 @@ const makeStyles = (color: ColorTheme) =>
       borderRadius: radius.xl,
       paddingHorizontal: spacing.md,
       paddingVertical: spacing.sm,
-      // WCAG 2.5.8 / Apple HIG: 44pt minimum touch target. Was 40.
       minHeight: 44,
       minWidth: 60,
       alignItems: 'center',
@@ -1298,9 +1454,6 @@ const makeStyles = (color: ColorTheme) =>
       fontWeight: font.weight.bold,
       fontSize: font.size.sm,
     },
-    // Disability chip — distinct from general/seasonal: brand-tinted fill so
-    // "Who this affects" reads with more visual weight. brandSofter bg with
-    // a 1px brand border matches the report form's active tag fill treatment.
     sectionLabelDisability: {
       color: color.brandText,
     },
@@ -1313,7 +1466,6 @@ const makeStyles = (color: ColorTheme) =>
       color: color.brandText,
       fontWeight: font.weight.semibold,
     },
-    // Comment empty state — centered so the whitespace reads intentionally.
     commentsEmptyContainer: {
       alignItems: 'center',
       paddingVertical: spacing.xl,
@@ -1326,5 +1478,68 @@ const makeStyles = (color: ColorTheme) =>
       fontSize: font.size.base,
       color: color.textMuted,
       textAlign: 'center',
+    },
+    // ── F10 Reopen request ───────────────────────────────────────────────────
+    reopenBtn: {
+      backgroundColor: 'transparent',
+      borderWidth: 1,
+      borderColor: color.accentOrange,
+    },
+    reopenBtnText: {
+      color: color.accentOrange,
+      fontWeight: font.weight.semibold,
+      fontSize: font.size.base,
+    },
+    reopenMessage: {
+      fontSize: font.size.sm,
+      color: color.textMuted,
+      lineHeight: 18,
+      fontStyle: 'italic',
+      marginTop: spacing.xs,
+    },
+    reopenForm: {
+      gap: spacing.sm,
+      marginTop: spacing.xs,
+      marginBottom: spacing.xs,
+    },
+    reopenFormLabel: {
+      fontSize: font.size.xs,
+      fontWeight: font.weight.bold,
+      color: color.textMuted,
+      textTransform: 'uppercase',
+      letterSpacing: 0.5,
+    },
+    reopenInput: {
+      borderWidth: 1,
+      borderColor: color.border,
+      borderRadius: radius.lg,
+      padding: spacing.sm,
+      fontSize: font.size.base,
+      color: color.text,
+      backgroundColor: color.surface,
+      minHeight: 72,
+      textAlignVertical: 'top',
+    },
+    reopenCharCounter: {
+      fontSize: font.size.xs,
+      color: color.textSubtle,
+      textAlign: 'right',
+    },
+    reopenActions: {
+      flexDirection: 'row',
+      gap: spacing.sm,
+      marginTop: spacing.xs,
+    },
+    reopenSubmitBtn: {
+      flex: 2,
+      backgroundColor: color.accentOrange,
+    },
+    reopenSubmitBtnDisabled: {
+      opacity: 0.5,
+    },
+    reopenSubmitText: {
+      color: color.textOnBrand,
+      fontWeight: font.weight.bold,
+      fontSize: font.size.sm,
     },
   });

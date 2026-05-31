@@ -32,9 +32,9 @@ check_pattern() {
 
 echo "Running secret scan on staged changes..."
 
-# Supabase service_role key (long eyJhbGciO... JWTs with role=service_role)
-# The anon/public key is intentionally committed in .env examples; service_role is NOT.
-check_pattern "Supabase service_role key" "service_role"
+# Supabase service_role JWT — only catch lines where the *value* is a JWT (eyJ…).
+# Variable names / env var reads like Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') are safe.
+check_pattern "Supabase service_role key" "service_role.*['\"]eyJ|['\"]eyJ.*service_role"
 
 # AWS
 check_pattern "AWS Access Key ID" "(AKIA|ASIA|AROA)[A-Z0-9]{16}"
