@@ -1070,15 +1070,15 @@ const makeStyles = (color: ColorTheme) =>
     metaValue: { fontSize: 14, color: color.text },
     anonBadge: {
       alignSelf: 'flex-start',
-      backgroundColor: '#6b7280',
-      borderRadius: 10,
-      paddingHorizontal: 8,
+      backgroundColor: color.surfaceNeutral,
+      borderRadius: radius.md,
+      paddingHorizontal: spacing.sm,
       paddingVertical: 3,
     },
     anonBadgeText: {
-      fontSize: 12,
-      color: '#fff',
-      fontWeight: '600',
+      fontSize: font.size.xs,
+      color: color.textMuted,
+      fontWeight: font.weight.semibold,
     },
     coordsRow: {
       flexDirection: 'row',

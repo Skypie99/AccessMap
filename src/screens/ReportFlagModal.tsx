@@ -47,7 +47,7 @@ import {
 import { validReportTemplates, type ReportTemplate } from '@/lib/reportTemplates';
 import type { FlagCategory, FlagSeverity } from '@/types/database';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
-import { radius } from '@/theme';
+import { a11y, font, radius, spacing } from '@/theme';
 import { useReducedMotion } from '@/lib/accessibility';
 
 /** Emoji icon prefix for each disability tag — adds visual distinction without
@@ -916,28 +916,28 @@ const makeStyles = (color: ColorTheme) =>
     anonBanner: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 8,
+      gap: spacing.sm,
       backgroundColor: color.brandSofter,
-      borderRadius: 8,
-      paddingHorizontal: 12,
-      paddingVertical: 10,
+      borderRadius: radius.md,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
     },
-    anonBannerIcon: { fontSize: 16 },
+    anonBannerIcon: { fontSize: font.size.lg },
     anonBannerBody: { flex: 1 },
     anonBannerTitle: {
-      fontSize: 13,
-      fontWeight: '600',
+      fontSize: font.size.sm,
+      fontWeight: font.weight.semibold,
       color: color.brandOnSoft,
     },
     anonBannerLink: {
-      paddingHorizontal: 8,
-      paddingVertical: 6,
-      minHeight: 44,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: spacing.xs,
+      minHeight: a11y.minTargetSize,
       justifyContent: 'center',
     },
     anonBannerLinkText: {
-      fontSize: 13,
-      fontWeight: '700',
+      fontSize: font.size.sm,
+      fontWeight: font.weight.bold,
       color: color.brandOnSoft,
       textDecorationLine: 'underline',
     },

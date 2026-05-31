@@ -195,14 +195,14 @@ const makeStyles = (color: ColorTheme) =>
       color: color.textMuted,
     },
     anonChip: {
-      backgroundColor: '#6b7280',
-      borderRadius: radius.circle,
-      paddingHorizontal: 6,
+      backgroundColor: color.surfaceNeutral,
+      borderRadius: radius.md,
+      paddingHorizontal: spacing.xs,
       paddingVertical: 2,
     },
     anonChipText: {
       fontSize: font.size.xs,
-      color: '#fff',
+      color: color.textMuted,
       fontWeight: font.weight.semibold,
     },
   });
