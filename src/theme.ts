@@ -168,6 +168,23 @@ export const radius = {
 // -------------------------------------------------------------------------
 
 export const font = {
+  // ── Custom font families (design system 2026-05-31) ───────────────────────
+  // Load with useFonts() from src/lib/fonts.ts before using.
+  // Falls back to system UI font automatically if not yet loaded.
+  //
+  //   display/displayBold — Plus Jakarta Sans  — headings, large titles
+  //   body*               — Public Sans        — body text, UI labels
+  //   mono*               — JetBrains Mono     — points, stats, coordinates
+  family: {
+    display:      'PlusJakartaSans_800ExtraBold',
+    displayBold:  'PlusJakartaSans_700Bold',
+    body:         'PublicSans_400Regular',
+    bodyMedium:   'PublicSans_500Medium',
+    bodySemibold: 'PublicSans_600SemiBold',
+    mono:         'JetBrainsMono_400Regular',
+    monoMedium:   'JetBrainsMono_500Medium',
+    monoBold:     'JetBrainsMono_600SemiBold',
+  },
   size: {
     caption: 11, // tiny meta (status hint)
     xs: 12, // pill labels, captions
