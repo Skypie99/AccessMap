@@ -347,18 +347,23 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
 
           {/* Anonymous mode banner — shown when user is not signed in.
               accessibilityRole="alert" makes VoiceOver announce it on iOS;
-              accessibilityLiveRegion="assertive" does the same on Android. */}
+              accessibilityLiveRegion="assertive" does the same on Android.
+              WCAG 4.1.2: the info portion is the accessible alert element;
+              the "Sign in" Pressable sits OUTSIDE that element so VoiceOver
+              can independently focus and activate it. */}
           {isAnon && (
-            <View
-              accessible
-              accessibilityRole="alert"
-              accessibilityLiveRegion="assertive"
-              accessibilityLabel="Reporting anonymously. Your identity is not stored."
-              style={styles.anonBanner}
-            >
-              <Text style={styles.anonBannerIcon} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">🔒</Text>
-              <View style={styles.anonBannerBody}>
-                <Text style={styles.anonBannerTitle}>Reporting anonymously — your identity is not stored.</Text>
+            <View style={styles.anonBanner}>
+              <View
+                accessible
+                accessibilityRole="alert"
+                accessibilityLiveRegion="assertive"
+                accessibilityLabel="Reporting anonymously. Your identity is not stored."
+                style={styles.anonBannerInfo}
+              >
+                <Text style={styles.anonBannerIcon} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">🔒</Text>
+                <View style={styles.anonBannerBody}>
+                  <Text style={styles.anonBannerTitle}>Reporting anonymously — your identity is not stored.</Text>
+                </View>
               </View>
               <Pressable
                 onPress={onClose}
@@ -916,11 +921,18 @@ const makeStyles = (color: ColorTheme) =>
     anonBanner: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 8,
       backgroundColor: color.brandSofter,
       borderRadius: 8,
       paddingHorizontal: 12,
       paddingVertical: 10,
+    },
+    // WCAG 4.1.2: inner accessible alert element (icon + text only).
+    // The "Sign in" Pressable is a sibling so VoiceOver can focus it separately.
+    anonBannerInfo: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+      flex: 1,
     },
     anonBannerIcon: { fontSize: 16 },
     anonBannerBody: { flex: 1 },
