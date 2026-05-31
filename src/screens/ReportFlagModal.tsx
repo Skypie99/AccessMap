@@ -3,7 +3,6 @@ import {
   AccessibilityInfo,
   ActivityIndicator,
   Alert,
-  Image,
   Modal,
   Platform,
   Pressable,
@@ -17,8 +16,6 @@ import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '@/lib/auth';
 import { track } from '@/lib/analytics';
 import { errorMessage } from '@/lib/errors';
-import { reverseGeocode } from '@/lib/geocode';
-import { useScreenReader } from '@/lib/accessibility';
 import {
   CATEGORY_LABELS,
   CATEGORY_ORDER,
@@ -31,17 +28,35 @@ import {
   subscribeContextTagsCapability,
   uploadFlagPhoto,
 } from '@/lib/flags';
+import { batchInsertFlagPhotos } from '@/lib/photos';
+import PhotoGallery from '@/components/PhotoGallery';
 import {
   CONTEXT_TAGS,
   CONTEXT_TAG_LABELS,
+  DISABILITY_TAGS,
+  DISABILITY_TAG_LABELS,
   MAX_CONTEXT_TAGS,
+  SEASONAL_TAGS,
+  SEASONAL_TAG_LABELS,
   toggleTag,
   type ContextTag,
+  type DisabilityTag,
 } from '@/lib/contextTags';
 import { validReportTemplates, type ReportTemplate } from '@/lib/reportTemplates';
 import type { FlagCategory, FlagSeverity } from '@/types/database';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
-import { radius } from '@/theme';
+import { font, radius, spacing } from '@/theme';
+import { useReducedMotion } from '@/lib/accessibility';
+
+/** Emoji icon prefix for each disability tag — adds visual distinction without
+ *  adding a dependency. Describes the BARRIER type, not any person's identity. */
+const DISABILITY_TAG_ICONS: Readonly<Record<DisabilityTag, string>> = {
+  mobility_barrier: '♿',
+  vision_hazard: '👁',
+  hearing_concern: '🦻',
+  cognitive_load: '🧠',
+  temporary_closure: '🚧',
+};
 
 interface Props {
   visible: boolean;
@@ -54,14 +69,11 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
   const color = useColor();
   const styles = makeStyles(color);
   const { user } = useAuth();
-  const screenReaderOn = useScreenReader();
-  // Reverse-geocoded address for the current location. Resolves async
-  // after the modal opens. Falls back to raw lat/lng if unavailable.
-  const [resolvedAddress, setResolvedAddress] = useState<string | null>(null);
+  const reducedMotion = useReducedMotion();
   const [category, setCategory] = useState<FlagCategory>('no_ramp');
   const [severity, setSeverity] = useState<FlagSeverity>(3);
   const [description, setDescription] = useState('');
-  const [photoUri, setPhotoUri] = useState<string | null>(null);
+  const [photoUris, setPhotoUris] = useState<string[]>([]);
   const [contextTags, setContextTags] = useState<ContextTag[]>([]);
   const [submitting, setSubmitting] = useState(false);
   // Web-only: hidden <input type="file"> used as the image picker substitute.
@@ -81,47 +93,20 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
   // every render, and never fires if a photo is already attached.
   const prevHighRef = useRef(false);
   useEffect(() => {
-    const isHigh = severity >= 4 && !photoUri;
+    const isHigh = severity >= 4 && photoUris.length === 0;
     if (isHigh && !prevHighRef.current) {
       void AccessibilityInfo.announceForAccessibility(
         `Tip: adding a photo helps verify this ${severity === 5 ? 'severe' : 'major'} barrier without a site visit.`,
       );
     }
     prevHighRef.current = isHigh;
-  }, [severity, photoUri]);
-
-  // When the modal opens with a valid location, reverse-geocode it so
-  // VoiceOver users hear a human address instead of raw coordinates.
-  // Also announces to screen readers once the address resolves.
-  useEffect(() => {
-    if (!visible || !location) {
-      setResolvedAddress(null);
-      return;
-    }
-    let cancelled = false;
-    const controller = new AbortController();
-    (async () => {
-      const address = await reverseGeocode(location.lat, location.lng, controller.signal);
-      if (cancelled) return;
-      setResolvedAddress(address);
-      if (screenReaderOn) {
-        const where = address ?? `${location.lat.toFixed(4)}, ${location.lng.toFixed(4)}`;
-        AccessibilityInfo.announceForAccessibility(
-          `Placing flag at your current location: ${where}`,
-        );
-      }
-    })();
-    return () => {
-      cancelled = true;
-      controller.abort();
-    };
-  }, [visible, location, screenReaderOn]);
+  }, [severity, photoUris]);
 
   const reset = () => {
     setCategory('no_ramp');
     setSeverity(3);
     setDescription('');
-    setPhotoUri(null);
+    setPhotoUris([]);
     setContextTags([]);
     setAppliedTemplateId(null);
   };
@@ -158,6 +143,19 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
     );
   };
 
+  const MAX_PHOTOS = 5;
+
+  const addUri = (uri: string) => {
+    setPhotoUris((curr) => (curr.length < MAX_PHOTOS ? [...curr, uri] : curr));
+  };
+
+  // Drop a picked-but-not-yet-submitted photo by index. Lets the user undo a
+  // mistaken pick before filing the report (the photos aren't uploaded until
+  // handleSubmit, so this is purely local state).
+  const removeUri = (index: number) => {
+    setPhotoUris((curr) => curr.filter((_, i) => i !== index));
+  };
+
   const pickPhoto = async (_source: 'camera' | 'library') => {
     // Web path — use a hidden <input type="file"> instead of expo-image-picker,
     // which is native-only. The input is programmatically clicked; the selected
@@ -172,7 +170,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
         input.onchange = () => {
           const file = input.files?.[0];
           if (file) {
-            setPhotoUri(URL.createObjectURL(file));
+            addUri(URL.createObjectURL(file));
           }
         };
         document.body.appendChild(input);
@@ -190,8 +188,8 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
           : await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (!perm.granted) {
         Alert.alert(
-          _source === 'camera' ? 'Camera access needed' : 'Photo library access needed',
-          `Allow ${_source === 'camera' ? 'camera' : 'photo library'} access in Settings to attach a photo.`,
+          'Permission needed',
+          `Allow ${_source === 'camera' ? 'camera' : 'photo library'} access to attach a photo.`,
         );
         return;
       }
@@ -206,81 +204,106 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
               quality: 0.7,
             });
       if (!result.canceled && result.assets[0]?.uri) {
-        setPhotoUri(result.assets[0].uri);
+        addUri(result.assets[0].uri);
       }
     } catch (e) {
-      Alert.alert("Couldn't open photos", errorMessage(e));
+      Alert.alert('Could not pick photo', errorMessage(e));
     }
+  };
+
+  // Unified add-photo handler passed to PhotoGallery's onAddPhoto prop.
+  // On native shows an action sheet to choose camera vs library; on web
+  // triggers the hidden file input.
+  const pickPhotoForGallery = () => {
+    if (Platform.OS === 'web') {
+      void pickPhoto('library');
+      return;
+    }
+    Alert.alert('Add photo', undefined, [
+      { text: 'Take photo', onPress: () => void pickPhoto('camera') },
+      { text: 'Choose from library', onPress: () => void pickPhoto('library') },
+      { text: 'Cancel', style: 'cancel' },
+    ]);
   };
 
   const handleSubmit = async () => {
     if (!user) {
-      Alert.alert("You're not signed in", 'Sign in to report a barrier.');
+      Alert.alert('Not signed in', 'Sign in to report a flag.');
       return;
     }
     if (!location) {
-      Alert.alert('Location not ready', 'Your location is still loading. Wait a moment and try again.');
+      Alert.alert('No location', 'We need your location to place the flag.');
       return;
     }
     setSubmitting(true);
     try {
-      let photoUrl: string | null = null;
-      if (photoUri) {
-        photoUrl = await uploadFlagPhoto(user.id, photoUri);
+      // Upload all picked photos. First URL doubles as the legacy photo_url
+      // field for backwards-compat with clients that haven't migrated to
+      // the flag_photos junction table yet.
+      const photoUrls: string[] = [];
+      for (const uri of photoUris) {
+        const url = await uploadFlagPhoto(user.id, uri);
+        photoUrls.push(url);
       }
+
       const result = await createFlag(user.id, {
         lat: location.lat,
         lng: location.lng,
         category,
         severity,
         description: description.trim() ? description.trim() : null,
-        photo_url: photoUrl,
+        photo_url: photoUrls[0] ?? null,
         // Only send the field when the user actually picked tags. Empty
         // array means "no context"; createFlag still tries the column path
         // so it stays exercised, but skipping it keeps the legacy insert
         // path cheap (one round-trip) when no tags are selected.
         context_tags: contextTags.length > 0 ? [...contextTags] : undefined,
       });
+
+      // Insert junction rows for all uploaded photos. Silent no-op if the
+      // flag_photos migration hasn't been applied yet.
+      await batchInsertFlagPhotos(result.row.id, photoUrls);
       // If we asked the server to store tags but the column isn't there
       // yet (capability flipped to 'unavailable' inside createFlag), tell
       // the user — they shouldn't think their picks were saved when they
       // weren't. Non-blocking alert: the report itself DID land.
       if (!result.tagsAccepted && contextTags.length > 0) {
         Alert.alert(
-          'Report filed — tags not saved',
-          'Your report landed, but the context tags you picked could not be stored yet (server update pending). The picker will re-enable automatically once it is.',
+          'Flag saved without context tags',
+          'Your report was filed, but the context tags you picked could not be stored yet (server update pending). The picker will be re-enabled automatically once it is.',
         );
       }
-      track('flag_created', { category, severity, hasPhoto: !!photoUrl });
+      track('flag_created', { category, severity, hasPhoto: photoUrls.length > 0 });
       reset();
       onCreated();
       onClose();
     } catch (e) {
-      Alert.alert("Couldn't file your report", errorMessage(e));
+      Alert.alert('Could not report flag', errorMessage(e));
     } finally {
       setSubmitting(false);
     }
   };
 
   return (
-    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
+    // WCAG 2.3.3 (Animation from Interactions): skip the slide animation
+    // when the user has requested reduced motion.
+    <Modal visible={visible} animationType={reducedMotion ? 'none' : 'slide'} transparent onRequestClose={onClose}>
       <View style={styles.backdrop}>
         <View style={styles.card} accessibilityViewIsModal>
-          <Text style={styles.title} accessibilityRole="header">
-            Report a barrier
-          </Text>
-          <Text
-            style={styles.location}
-            accessibilityLabel={
-              location
-                ? resolvedAddress
-                  ? `at ${resolvedAddress}`
-                  : `at ${location.lat.toFixed(4)}, ${location.lng.toFixed(4)}`
-                : 'Waiting for location'
-            }
+          {/* WCAG 1.4.4: card capped at 88% so Dynamic Type XXL content
+              scrolls; Cancel/Report buttons stay pinned as sticky footer. */}
+          <ScrollView
+            style={styles.scrollContent}
+            contentContainerStyle={styles.scrollContentContainer}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
           >
+          <Text style={styles.title} accessibilityRole="header">
+            Report a flag
+          </Text>
+          <Text style={styles.location}>
             {location
-              ? resolvedAddress ?? `${location.lat.toFixed(5)}, ${location.lng.toFixed(5)}`
+              ? `at ${location.lat.toFixed(5)}, ${location.lng.toFixed(5)}`
               : 'Waiting for location…'}
           </Text>
 
@@ -337,7 +360,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
             </>
           )}
 
-          <Text style={styles.label}>Category</Text>
+          <Text style={styles.label} accessibilityRole="header">Category</Text>
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -368,7 +391,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
             })}
           </ScrollView>
 
-          <Text style={styles.label}>Severity</Text>
+          <Text style={styles.label} accessibilityRole="header">Severity</Text>
           <View style={styles.row}>
             {SEVERITY_ORDER.map((s) => {
               const active = s === severity;
@@ -409,7 +432,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
             {SEVERITY_DESCRIPTIONS[severity]}
           </Text>
 
-          <Text style={styles.label}>Description (optional)</Text>
+          <Text style={styles.label} accessibilityRole="header">Description (optional)</Text>
           <TextInput
             value={description}
             onChangeText={setDescription}
@@ -442,7 +465,125 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
             </Text>
           )}
 
-          <Text style={styles.label}>Photo (optional)</Text>
+          {/* Seasonal tags (W6-5) — a multi-select chip picker for time-of-year
+              context (icy in winter, flooded in spring, a construction detour
+              that clears in fall, etc.). Sits right after the description so
+              the reporter adds the "when in the year" angle while the issue is
+              fresh in mind. Shares the same `contextTags` state, the same
+              toggleTag cap, and the same capability gate as the general
+              context chips below — seasonal tags are just a subset of
+              context_tags. */}
+          <Text style={styles.label} accessibilityRole="header">
+            Seasonal (optional) — does this change with the seasons?
+          </Text>
+          <View style={styles.row}>
+            {SEASONAL_TAGS.map((tag) => {
+              const active = contextTags.includes(tag);
+              const label = SEASONAL_TAG_LABELS[tag];
+              return (
+                <Pressable
+                  key={tag}
+                  onPress={() => {
+                    if (tagsDisabled) return;
+                    setContextTags((curr) => toggleTag(curr, tag));
+                  }}
+                  disabled={tagsDisabled}
+                  style={[
+                    styles.tagChip,
+                    active && styles.tagChipActive,
+                    tagsDisabled && styles.tagChipDisabled,
+                  ]}
+                  accessibilityRole="checkbox"
+                  accessibilityLabel={label}
+                  accessibilityState={{ checked: active, disabled: tagsDisabled }}
+                  accessibilityHint={
+                    tagsDisabled ? 'Seasonal tags will be available soon.' : undefined
+                  }
+                >
+                  <Text
+                    style={[
+                      styles.tagChipText,
+                      active && styles.tagChipTextActive,
+                      tagsDisabled && styles.tagChipTextDisabled,
+                    ]}
+                  >
+                    {label}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+          <Text style={styles.tagHelper}>
+            {tagsDisabled
+              ? 'Seasonal tags will be available soon (server update pending).'
+              : 'For barriers that aren’t year-round. Counts toward the same 5-tag limit.'}
+          </Text>
+
+          {/* Disability tags (Sprint 3) — a multi-select chip picker for WHO a
+              barrier affects, so users filtering the map by access need can
+              find it. These describe the BARRIER ("this is a mobility
+              barrier"), not the reporter — see DISABILITY_TAGS. Shares the same
+              `contextTags` state, toggleTag cap, and capability gate as the
+              seasonal/general chips — disability tags are just another subset
+              of context_tags. */}
+          <View style={styles.disabilitySectionHeader}>
+            <Text style={[styles.label, styles.disabilityLabel]} accessibilityRole="header">
+              Who does this affect? (optional)
+            </Text>
+          </View>
+          <View style={styles.row}>
+            {DISABILITY_TAGS.map((tag) => {
+              const active = contextTags.includes(tag);
+              const label = DISABILITY_TAG_LABELS[tag];
+              const icon = DISABILITY_TAG_ICONS[tag];
+              return (
+                <Pressable
+                  key={tag}
+                  onPress={() => {
+                    if (tagsDisabled) return;
+                    setContextTags((curr) => toggleTag(curr, tag));
+                  }}
+                  disabled={tagsDisabled}
+                  style={[
+                    styles.tagChip,
+                    styles.disabilityTagChip,
+                    active && styles.disabilityTagChipActive,
+                    tagsDisabled && styles.tagChipDisabled,
+                  ]}
+                  accessibilityRole="checkbox"
+                  accessibilityLabel={label}
+                  accessibilityState={{ checked: active, disabled: tagsDisabled }}
+                  accessibilityHint={
+                    tagsDisabled ? 'Accessibility tags will be available soon.' : undefined
+                  }
+                >
+                  <Text
+                    style={styles.disabilityTagIcon}
+                    accessibilityElementsHidden
+                    importantForAccessibility="no-hide-descendants"
+                  >
+                    {icon}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.tagChipText,
+                      active && styles.tagChipTextActive,
+                      tagsDisabled && styles.tagChipTextDisabled,
+                    ]}
+                  >
+                    {label}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+          <Text style={styles.tagHelper}>
+            {tagsDisabled
+              ? 'Accessibility tags will be available soon (server update pending).'
+              : 'Helps people filter the map to barriers that affect them. Counts toward the same 5-tag limit.'}
+          </Text>
+
+          <Text style={styles.label} accessibilityRole="header">Photo (optional)</Text>
 
           {/* High-severity photo nudge — only shown when severity ≥ 4 and
               no photo has been selected. At severity 4–5, a photo is the
@@ -455,7 +596,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
               node; the emoji is decorative and screened out. The
               accessibilityLiveRegion triggers the Android AT announcement;
               iOS is handled by the useEffect above. */}
-          {severity >= 4 && !photoUri && (
+          {severity >= 4 && photoUris.length === 0 && (
             <View
               style={styles.photoNudge}
               accessible
@@ -479,47 +620,12 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
             </View>
           )}
 
-          {photoUri ? (
-            <View style={styles.photoPreviewWrap}>
-              <Image
-                source={{ uri: photoUri }}
-                style={styles.photoPreview}
-                accessible
-                accessibilityLabel="Selected photo of the accessibility issue"
-              />
-              <Pressable
-                onPress={() => setPhotoUri(null)}
-                style={styles.photoClear}
-                // hitSlop expands the 26pt visual target to ~46pt so the
-                // tiny corner-X clears the 44pt touch-target floor without
-                // resizing the visible chrome.
-                hitSlop={10}
-                accessibilityRole="button"
-                accessibilityLabel="Remove photo"
-              >
-                <Text style={styles.photoClearText}>✕</Text>
-              </Pressable>
-            </View>
-          ) : (
-            <View style={styles.row}>
-              <Pressable
-                onPress={() => pickPhoto('camera')}
-                style={[styles.photoBtn]}
-                accessibilityRole="button"
-                accessibilityLabel="Take a photo with the camera"
-              >
-                <Text style={styles.photoBtnText}>📷 Take photo</Text>
-              </Pressable>
-              <Pressable
-                onPress={() => pickPhoto('library')}
-                style={[styles.photoBtn]}
-                accessibilityRole="button"
-                accessibilityLabel="Choose a photo from the library"
-              >
-                <Text style={styles.photoBtnText}>🖼 Choose from library</Text>
-              </Pressable>
-            </View>
-          )}
+          <PhotoGallery
+            photos={photoUris.map((url, i) => ({ url, position: i }))}
+            onAddPhoto={pickPhotoForGallery}
+            onRemovePhoto={removeUri}
+            maxPhotos={MAX_PHOTOS}
+          />
 
           {/* Context tags — multi-select chip picker. Optional metadata
               about WHEN / UNDER WHAT CONDITIONS this flag is most relevant
@@ -578,6 +684,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
               ? 'Context tags will be available soon (server update pending).'
               : `Tap any that apply. Up to ${MAX_CONTEXT_TAGS}. Leave empty if none.`}
           </Text>
+          </ScrollView>
 
           <View style={styles.actions}>
             <Pressable
@@ -599,7 +706,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
                 (submitting || !location) && styles.submitBtnDisabled,
               ]}
               accessibilityRole="button"
-              accessibilityLabel="Submit barrier report"
+              accessibilityLabel="Submit flag report"
               accessibilityState={{ disabled: submitting || !location, busy: submitting }}
             >
               {submitting ? (
@@ -623,29 +730,36 @@ const makeStyles = (color: ColorTheme) =>
       justifyContent: 'flex-end',
     },
     card: {
+      flex: 1,
       backgroundColor: color.surface,
-      padding: 20,
+      paddingHorizontal: spacing.xl,
+      paddingTop: spacing.xl,
+      paddingBottom: 0,
       borderTopLeftRadius: radius.xl,
       borderTopRightRadius: radius.xl,
-      gap: 12,
+      // WCAG 1.4.4: cap height so content scrolls at Dynamic Type XXL and
+      // the Submit button is never pushed off screen.
+      maxHeight: '88%',
     },
+    scrollContent: { flex: 1 },
+    scrollContentContainer: { gap: spacing.md, paddingBottom: spacing.tight },
     title: {
-      fontSize: 20,
-      fontWeight: '700',
+      fontSize: font.size.xxl,
+      fontWeight: font.weight.bold,
       color: color.textStrong,
       letterSpacing: -0.3,
     },
-    location: { fontSize: 12, color: color.textMuted },
+    location: { fontSize: font.size.xs, color: color.textMuted },
     label: {
-      fontSize: 13,
-      fontWeight: '600',
+      fontSize: font.size.sm,
+      fontWeight: font.weight.semibold,
       color: color.textStrong,
-      marginTop: 4,
+      marginTop: spacing.tight,
     },
-    row: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
+    row: { flexDirection: 'row', gap: spacing.sm, flexWrap: 'wrap' },
     pill: {
-      paddingHorizontal: 12,
-      paddingVertical: 8,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
       borderRadius: radius.circle,
       backgroundColor: color.surfaceNeutral,
       // 44pt is the AccessMap baseline touch target (Apple HIG + WCAG 2.5.5).
@@ -653,8 +767,8 @@ const makeStyles = (color: ColorTheme) =>
       justifyContent: 'center',
     },
     pillActive: { backgroundColor: color.brand },
-    pillText: { color: color.text, fontSize: 13 },
-    pillTextActive: { color: color.textOnBrand, fontWeight: '600' },
+    pillText: { color: color.text, fontSize: font.size.sm },
+    pillTextActive: { color: color.textOnBrand, fontWeight: font.weight.semibold },
     sevBtn: {
       width: 44,
       height: 44,
@@ -664,13 +778,13 @@ const makeStyles = (color: ColorTheme) =>
       justifyContent: 'center',
     },
     sevBtnActive: {},
-    sevText: { fontSize: 16, color: color.text, fontWeight: '600' },
+    sevText: { fontSize: font.size.lg, color: color.text, fontWeight: font.weight.semibold },
     sevTextActive: { color: color.textOnBrand },
     input: {
       borderWidth: 1,
       borderColor: color.borderStrong,
       borderRadius: radius.md,
-      padding: 12,
+      padding: spacing.md,
       minHeight: 80,
       textAlignVertical: 'top',
       color: color.text,
@@ -693,85 +807,62 @@ const makeStyles = (color: ColorTheme) =>
     },
     charCounterAmber: { color: color.warningHint, fontWeight: '600' },
     charCounterRed: { color: color.error, fontWeight: '700' },
-    photoBtn: {
-      flexGrow: 1,
-      paddingHorizontal: 12,
-      paddingVertical: 10,
-      borderRadius: 8,
-      backgroundColor: color.surfaceNeutral,
-      alignItems: 'center',
-      // 44pt baseline touch target.
-      minHeight: 44,
-      justifyContent: 'center',
-    },
-    photoBtnText: { color: color.text, fontWeight: '600', fontSize: 13 },
     // High-severity photo nudge card — amber-tinted, appears between the
     // "Photo" label and picker when severity ≥ 4 and no photo is attached.
     // warningBg (#fff7e6) / warningFg (#714b00): 8.3:1 contrast, WCAG AA.
     photoNudge: {
       flexDirection: 'row',
       alignItems: 'flex-start',
-      gap: 8,
+      gap: spacing.sm,
       backgroundColor: color.warningBg,
-      borderRadius: 8,
-      paddingHorizontal: 12,
-      paddingVertical: 8,
-      marginBottom: 6,
+      borderRadius: radius.md,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+      marginBottom: spacing.xs,
     },
     photoNudgeIcon: {
-      fontSize: 18,
+      fontSize: font.size.xl,
       lineHeight: 22,
     },
     photoNudgeBody: {
       flex: 1,
-      fontSize: 12,
+      fontSize: font.size.xs,
       color: color.warningFg,
       lineHeight: 17,
     },
     photoNudgeBold: {
-      fontWeight: '700',
+      fontWeight: font.weight.bold,
       color: color.warningFg,
     },
-    photoPreviewWrap: { position: 'relative', alignSelf: 'flex-start' },
-    photoPreview: { width: 140, height: 140, borderRadius: 10 },
-    photoClear: {
-      position: 'absolute',
-      top: -6,
-      right: -6,
-      backgroundColor: color.backdropStrong,
-      width: 26,
-      height: 26,
-      borderRadius: radius.circle,
-      alignItems: 'center',
-      justifyContent: 'center',
+    actions: {
+      flexDirection: 'row',
+      gap: spacing.md,
+      paddingHorizontal: spacing.xl,
+      paddingTop: spacing.md,
+      paddingBottom: spacing.xxl,
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: color.borderSubtle,
+      backgroundColor: color.surface,
     },
-    photoClearText: {
-      color: color.textOnBrand,
-      fontWeight: '700',
-      fontSize: 13,
-      lineHeight: 14,
-    },
-    actions: { flexDirection: 'row', gap: 12, marginTop: 8 },
     actionBtn: {
       flex: 1,
-      paddingVertical: 12,
-      borderRadius: 8,
+      paddingVertical: spacing.md,
+      borderRadius: radius.md,
       alignItems: 'center',
+      minHeight: 44,
+      justifyContent: 'center',
     },
     cancelBtn: { backgroundColor: color.surfaceNeutral },
-    cancelText: { color: color.text, fontWeight: '600' },
+    cancelText: { color: color.text, fontWeight: font.weight.semibold },
     submitBtn: { backgroundColor: color.brand },
     submitBtnDisabled: { opacity: 0.6 },
-    submitText: { color: color.textOnBrand, fontWeight: '700' },
+    submitText: { color: color.textOnBrand, fontWeight: font.weight.bold },
     // Context-tag chips. Three visual states matching accessibilityState:
     //   - unselected → outline (white bg, dark-blue border + text)  → 7.6:1 text/bg
     //   - selected   → solid dark-blue fill, white text              → 7.6:1 text/bg
     //   - disabled   → muted gray border + text on white             → 4.6:1 text/bg
-    // The active fill uses #1c4f99 (Cycle C floor, AA-large 4.5:1+ on 13pt-600
-    // and AA-large on white-text 7.6:1). This literal WILL switch to the
-    // `color.brandText` token CL2 added to src/theme.ts once the C4 and CL2
-    // branches both land — the Cycle C cleanup pass will reconcile. Don't
-    // import from CL2 yet (it isn't merged into this worktree).
+    // Active fill uses color.brandText (#1c4f99): AA on 13pt-600 (4.5:1+) and
+    // AA on white text (7.6:1). Cycle C cleanup — now uses token directly.
     // Touch target: paddingVertical 10 + line-height ~17 + minHeight 44 keeps
     // every chip at least 44pt tall regardless of dynamic-type scaling.
     tagChip: {
@@ -794,8 +885,8 @@ const makeStyles = (color: ColorTheme) =>
     },
     tagChipText: {
       color: color.brandText,
-      fontSize: 13,
-      fontWeight: '600',
+      fontSize: font.size.sm,
+      fontWeight: font.weight.semibold,
     },
     tagChipTextActive: {
       color: color.textOnBrand,
@@ -804,7 +895,7 @@ const makeStyles = (color: ColorTheme) =>
       color: color.textMutedAlt, // AA pass: on #f4f6f8 = 4.6:1
     },
     tagHelper: {
-      fontSize: 12,
+      fontSize: font.size.xs,
       color: color.textMutedAlt,
       marginTop: -4,
     },
@@ -816,10 +907,10 @@ const makeStyles = (color: ColorTheme) =>
     templateChip: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 6,
-      paddingHorizontal: 12,
+      gap: spacing.xs,
+      paddingHorizontal: spacing.md,
       paddingVertical: 10,
-      borderRadius: 999,
+      borderRadius: radius.full,
       backgroundColor: color.surface,
       borderWidth: 1,
       borderColor: color.brandText,
@@ -838,10 +929,38 @@ const makeStyles = (color: ColorTheme) =>
     },
     templateChipText: {
       color: color.brandText,
-      fontSize: 13,
-      fontWeight: '600',
+      fontSize: font.size.sm,
+      fontWeight: font.weight.semibold,
     },
     templateChipTextActive: {
       color: color.textOnBrand,
+    },
+    // "Who does this affect?" section — visual separator to signal this group
+    // is distinct from the general/seasonal context chips above.
+    disabilitySectionHeader: {
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: color.borderSubtle,
+      paddingTop: spacing.md,
+      marginTop: spacing.tight,
+    },
+    disabilityLabel: {
+      color: color.brandText,
+    },
+    // Disability chips use row layout (icon + text) and a brand-softer fill to
+    // visually separate them from the plain text seasonal/context chips.
+    disabilityTagChip: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.xs,
+      backgroundColor: color.brandSofter,
+      borderColor: color.brand,
+    },
+    disabilityTagChipActive: {
+      backgroundColor: color.brandText,
+      borderColor: color.brandText,
+    },
+    disabilityTagIcon: {
+      fontSize: font.size.md,
+      lineHeight: 19,
     },
   });
