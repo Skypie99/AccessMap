@@ -27,14 +27,21 @@ export function CommentBubble({ author, text, createdAt, isOwn, onDelete }: Comm
         borderBottomLeftRadius: radius.xs,
       };
 
+  // WCAG 4.1.2 fix: when onDelete is present the delete Pressable must be a
+  // separate a11y node. accessible={true} on the row collapses all children
+  // (including the Pressable) into one VoiceOver node, making the delete
+  // button unreachable. For non-deletable bubbles the composite label is the
+  // correct pattern (one clean read, no orphan timestamp node).
+  const useCompositeLabel = !onDelete;
+
   return (
     <View
       style={[styles.row, isOwn ? styles.rowOwn : styles.rowOther]}
-      accessible
-      accessibilityRole="text"
-      // WCAG 4.1.2: composite label includes author + text; timestamp is
-      // conveyed as a relative string read together with the message body.
-      accessibilityLabel={`Comment by ${author}: ${text}, ${timeLabel}`}
+      accessible={useCompositeLabel}
+      accessibilityRole={useCompositeLabel ? 'text' : undefined}
+      accessibilityLabel={
+        useCompositeLabel ? `Comment by ${author}: ${text}, ${timeLabel}` : undefined
+      }
     >
       <View style={[styles.bubble, bubbleStyle]}>
         {isOwn && onDelete && (
@@ -46,7 +53,13 @@ export function CommentBubble({ author, text, createdAt, isOwn, onDelete }: Comm
             accessibilityLabel={`Delete ${author}'s comment`}
             accessibilityHint="Permanently removes your comment"
           >
-            <Text style={styles.deleteBtnText}>✕</Text>
+            <Text
+              style={styles.deleteBtnText}
+              accessibilityElementsHidden
+              importantForAccessibility="no-hide-descendants"
+            >
+              ✕
+            </Text>
           </Pressable>
         )}
         {!isOwn && (
@@ -62,6 +75,10 @@ export function CommentBubble({ author, text, createdAt, isOwn, onDelete }: Comm
 
           Without bold, 14pt regular text needs 4.5:1 and brand blue only
           gives ~3.5:1 — a WCAG 1.4.3 AA failure.
+
+          When onDelete is present (own message with delete button), the outer
+          row is NOT a composite node, so the text carries its own label so
+          VoiceOver can read the message content individually.
         */}
         <Text
           style={[
@@ -71,6 +88,8 @@ export function CommentBubble({ author, text, createdAt, isOwn, onDelete }: Comm
               fontWeight: isOwn ? font.weight.bold : font.weight.regular,
             },
           ]}
+          accessible={!!onDelete}
+          accessibilityLabel={onDelete ? `Your comment: ${text}. ${timeLabel}` : undefined}
         >
           {text}
         </Text>
