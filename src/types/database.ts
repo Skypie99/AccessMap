@@ -50,6 +50,10 @@ export type UserRow = {
   // Optional until supabase/migrations/2026-05-30_admin_role.sql is applied.
   // False by default; only settable via direct DB / service-role access.
   is_admin?: boolean;
+  // Optional until supabase/migrations/2026-05-30_trust_score_system.sql is applied.
+  last_active_date?: string | null;
+  streak_days?: number;
+  longest_streak_days?: number;
 };
 
 // Mirrors the `category` enum in supabase/migrations/2026-05-23_feedback_table.sql.
@@ -220,6 +224,63 @@ export type Database = {
           url: string;
           position: number;
         }>;
+        Relationships: EmptyRelationships;
+      };
+      // Optional until supabase/migrations/2026-05-30_trust_score_system.sql is
+      // applied. Owner-readable only (RLS enforces user_id = auth.uid() on SELECT).
+      // flag_id is present for internal audit but must NOT be displayed in the UI
+      // — it would indirectly reveal the flag's location (see TRUST_SCORE_SPEC §3.2).
+      point_events: {
+        Row: {
+          id: number;
+          user_id: string;
+          event_type: string;
+          delta: number;
+          flag_id: string | null;
+          created_at: string;
+        };
+        Insert: {
+          user_id: string;
+          event_type: string;
+          delta: number;
+          flag_id?: string | null;
+          created_at?: string;
+        };
+        Update: Record<string, never>;
+        Relationships: EmptyRelationships;
+      };
+      // Optional until supabase/migrations/2026-05-30_trust_score_system.sql is applied.
+      flag_verifications: {
+        Row: {
+          id: string;
+          flag_id: string;
+          verifier_id: string;
+          weight: number;
+          created_at: string;
+        };
+        Insert: {
+          flag_id: string;
+          verifier_id: string;
+          weight?: number;
+          id?: string;
+          created_at?: string;
+        };
+        Update: Record<string, never>;
+        Relationships: EmptyRelationships;
+      };
+      // Optional until supabase/migrations/2026-05-30_trust_score_system.sql is applied.
+      comment_votes: {
+        Row: {
+          comment_id: string;
+          voter_id: string;
+          created_at: string;
+        };
+        Insert: {
+          comment_id: string;
+          voter_id: string;
+          created_at?: string;
+        };
+        Update: Record<string, never>;
         Relationships: EmptyRelationships;
       };
       // D4: Realtime Flags — observability log.

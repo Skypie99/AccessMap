@@ -71,6 +71,11 @@ import LeaderboardModal from '@/components/LeaderboardModal';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { font, radius, shadow } from '@/theme';
 import { getTier, pointsToNextTier, REPUTATION_TIERS } from '@/lib/reputationTier';
+import {
+  getPointEventHistory,
+  pointEventLabel,
+  type PointEventRow,
+} from '@/lib/pointEvents';
 import SignInScreen from '@/screens/SignInScreen';
 import AboutScreen from '@/screens/AboutScreen';
 
@@ -222,6 +227,12 @@ export default function ProfileScreen() {
   const [achievementsOpen, setAchievementsOpen] = useState(false);
   const [leaderboardOpen, setLeaderboardOpen] = useState(false);
 
+  // Trust score point event history. Loaded alongside the profile on every
+  // focus. Empty array = no events yet or 42P01 (migration not applied) —
+  // both cases hide the section. Only shown to the profile owner (this
+  // screen is always the signed-in user's own profile).
+  const [pointEvents, setPointEvents] = useState<PointEventRow[]>([]);
+
   // T4: Reputation-tier explainer sheet. Opens when the user taps the
   // tier pill in the hero card. Inline (not a separate component file)
   // since it's <40 LOC of JSX and reads cleanly here next to the pill.
@@ -267,11 +278,13 @@ export default function ProfileScreen() {
       // One query for all status counts (and the total). Cheaper than
       // running a separate count(*) per status; row count caps at the
       // user's own report count so payload stays tiny.
-      const [{ data: profileRow, error: profileErr }, statusRowsRes] = await Promise.all([
+      const [{ data: profileRow, error: profileErr }, statusRowsRes, eventsResult] = await Promise.all([
         // PRIVACY: Explicit columns — never select('*') on users; future schema
         // columns (e.g. internal flags, phone number) must not leak automatically.
         supabase.from('users').select('id, display_name, avatar_url, points, created_at').eq('id', user.id).maybeSingle(),
         supabase.from('flags').select('status').eq('user_id', user.id),
+        // 42P01 guard: migration not yet applied → returns [] silently.
+        getPointEventHistory(user.id).catch(() => [] as PointEventRow[]),
       ]);
 
       if (profileErr) throw profileErr;
@@ -280,6 +293,7 @@ export default function ProfileScreen() {
       const row = (profileRow as UserRow | null) ?? null;
       setProfile(row);
       setNameDraft(row?.display_name ?? '');
+      setPointEvents(eventsResult);
 
       const byStatus: Record<FlagStatus, number> = { ...EMPTY_BY_STATUS };
       const statusRows = (statusRowsRes.data ?? []) as Array<{
@@ -845,6 +859,46 @@ export default function ProfileScreen() {
             </Text>
           )}
         </View>
+
+        {/* Point history — owner-only, only rendered when events exist.
+            42P01: if the migration is not yet applied getPointEventHistory
+            returns [] and this section is hidden. flag_id is NOT shown —
+            see TRUST_SCORE_SPEC §3.2 Jordan constraint. */}
+        {pointEvents.length > 0 && (
+          <View style={styles.pointHistoryCard}>
+            <Text style={styles.pointHistoryTitle} accessibilityRole="header">
+              Recent point activity
+            </Text>
+            {pointEvents.slice(0, 5).map((ev) => {
+              const sign = ev.delta >= 0 ? '+' : '';
+              const date = new Date(ev.created_at).toLocaleDateString(undefined, {
+                month: 'short',
+                day: 'numeric',
+              });
+              return (
+                <View
+                  key={ev.id}
+                  style={styles.pointHistoryRow}
+                  accessible
+                  accessibilityLabel={`${pointEventLabel(ev.event_type)}, ${sign}${ev.delta} points, ${date}`}
+                >
+                  <Text style={styles.pointHistoryLabel} numberOfLines={1}>
+                    {pointEventLabel(ev.event_type)}
+                  </Text>
+                  <Text style={styles.pointHistoryDate}>{date}</Text>
+                  <Text
+                    style={[
+                      styles.pointHistoryDelta,
+                      ev.delta < 0 && styles.pointHistoryDeltaNeg,
+                    ]}
+                  >
+                    {sign}{ev.delta} pts
+                  </Text>
+                </View>
+              );
+            })}
+          </View>
+        )}
 
         <View
           style={styles.statsRow}
@@ -1821,6 +1875,50 @@ const makeStyles = (color: ColorTheme) =>
       color: color.brandText,
       textAlign: 'center',
       marginTop: 4,
+    },
+    // Point history card — owner-only section below the hero card.
+    // Shows the last 5 point events; hidden when empty (migration not applied
+    // or no events yet). Matches the overall card-surface pattern.
+    pointHistoryCard: {
+      backgroundColor: color.surface,
+      borderRadius: radius.lg,
+      padding: 16,
+      gap: 10,
+      ...shadow.e1,
+    },
+    pointHistoryTitle: {
+      fontSize: 12,
+      fontWeight: '700',
+      color: color.textMuted,
+      textTransform: 'uppercase',
+      letterSpacing: 0.8,
+    },
+    pointHistoryRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+      minHeight: 28,
+    },
+    pointHistoryLabel: {
+      flex: 1,
+      fontSize: 13,
+      color: color.text,
+    },
+    pointHistoryDate: {
+      fontSize: 12,
+      color: color.textMuted,
+      minWidth: 44,
+      textAlign: 'right',
+    },
+    pointHistoryDelta: {
+      fontSize: 13,
+      fontWeight: '700',
+      color: color.brandText,
+      minWidth: 52,
+      textAlign: 'right',
+    },
+    pointHistoryDeltaNeg: {
+      color: color.errorFg,
     },
     // Visit-streak card — amber-tinted pill row between the stat tiles and
     // the status breakdown. Reads as a "you're on a roll" pat-on-the-back

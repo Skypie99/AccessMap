@@ -11,6 +11,7 @@ import {
 import { useAuth } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
 import { listLeaderboard, type LeaderboardEntry } from '@/lib/flags';
+import { getTier } from '@/lib/reputationTier';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { font, radius, shadow, spacing } from '@/theme';
 
@@ -58,6 +59,7 @@ export default function LeaderboardModal({ visible, onClose }: Props) {
       const rank = index + 1;
       const isCurrentUser = item.id === user?.id;
       const name = item.display_name ?? 'Member';
+      const tier = getTier(item.points);
       // WCAG 1.3.1: rank 1-3 receive a visually distinct treatment (colour
       // highlight) that implies Gold / Silver / Bronze. Include the medal
       // name in the accessible label so AT users who can't see the colour
@@ -71,12 +73,19 @@ export default function LeaderboardModal({ visible, onClose }: Props) {
         <View
           style={[styles.row, isCurrentUser && styles.rowHighlight]}
           role="listitem"
-          accessibilityLabel={`${medalPrefix}, ${name}, ${item.points} points${isCurrentUser ? ', you' : ''}`}
+          accessibilityLabel={`${medalPrefix}, ${tier.label} tier, ${name}, ${item.points} points${isCurrentUser ? ', you' : ''}`}
         >
           <Text style={[styles.rank, rank <= 3 && styles.rankTop]} accessibilityElementsHidden>
             {MEDAL[rank] ?? ordinalLabel(rank)}
           </Text>
           <View style={styles.nameWrap}>
+            <Text
+              style={styles.tierEmoji}
+              accessibilityElementsHidden
+              importantForAccessibility="no-hide-descendants"
+            >
+              {tier.emoji}
+            </Text>
             <Text style={[styles.name, isCurrentUser && styles.nameSelf]} numberOfLines={1}>
               {name}
             </Text>
@@ -244,6 +253,9 @@ function makeStyles(color: ColorTheme) {
       flexDirection: 'row',
       alignItems: 'center',
       gap: spacing.xs,
+    },
+    tierEmoji: {
+      fontSize: 14,
     },
     name: {
       fontSize: font.size.md,
