@@ -142,3 +142,22 @@ export function matchesTier(
 ): boolean {
   return getTier(points).name === tierName;
 }
+
+/**
+ * Return how far through the current tier the user is, as a 0–1 ratio.
+ * Used to render the tier progress bar in ProfileScreen.
+ *
+ *   0.0 = just entered the tier (points === tier.threshold)
+ *   1.0 = at or past the top of the tier; Platinum always returns 1.0
+ *
+ * Example: Silver spans 100–499 (band = 400).
+ *   At 300 pts → (300-100)/400 = 0.5
+ */
+export function getNextTierProgress(points: number | null | undefined): number {
+  const p = safePoints(points);
+  const tier = getTier(p);
+  if (tier.nextThreshold === null) return 1.0;
+  const bandWidth = tier.nextThreshold - tier.threshold;
+  if (bandWidth === 0) return 1.0;
+  return (p - tier.threshold) / bandWidth;
+}
