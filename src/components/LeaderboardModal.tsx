@@ -257,9 +257,6 @@ function makeStyles(color: ColorTheme) {
     tierEmoji: {
       fontSize: 14,
     },
-    tierEmoji: {
-      fontSize: 14,
-    },
     name: {
       fontSize: font.size.md,
       color: color.text,

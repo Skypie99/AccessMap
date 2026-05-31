@@ -652,62 +652,6 @@ export interface CreateAnonFlagInput {
   // session and silently dropping tags would confuse anon users.
 }
 
-/**
- * Submit an accessibility flag without an account. Runs under the Supabase
- * anon role (no auth session). The DB row has user_id = NULL.
- *
- * Rate-limit check is the caller's responsibility — call checkAnonRateLimit()
- * from src/lib/anonRateLimit.ts before this, and recordAnonSubmit() after.
- *
- * PRIVACY: No user_id, no photo, no context tags stored. Coordinate + category
- * is the minimum needed to place the flag. Jordan hard conditions satisfied:
- *   - user_id IS NULL (enforced by RLS WITH CHECK)
- *   - No IP logged
- *   - Rate limit via AsyncStorage only
- * See supabase/migrations/2026-05-30_anon_flag_reporting.sql.
- */
-export async function createAnonFlag(input: CreateAnonFlagInput): Promise<FlagRow> {
-  if (!Number.isFinite(input.lat) || !Number.isFinite(input.lng)) {
-    throw new Error('Invalid coordinates: lat and lng must be finite numbers.');
-  }
-  if (input.lat < -90 || input.lat > 90) {
-    throw new Error('Invalid coordinates: lat must be between -90 and 90.');
-  }
-  if (input.lng < -180 || input.lng > 180) {
-    throw new Error('Invalid coordinates: lng must be between -180 and 180.');
-  }
-
-  const { data, error } = await supabase
-    .from('flags')
-    .insert({
-      // user_id intentionally omitted — Postgres stores NULL, enforced by RLS.
-      lat: input.lat,
-      lng: input.lng,
-      category: input.category,
-      severity: input.severity,
-      description: input.description ?? null,
-      photo_url: null,
-    })
-    .select()
-    .single();
-
-  if (error) {
-    // Graceful degradation: if the 2026-05-30_anon_flag_reporting.sql migration
-    // hasn't been applied yet, the insert can fail with:
-    //   42P01 — undefined_table (trigger references a missing object)
-    //   42501 — insufficient_privilege (anon INSERT policy not yet created)
-    //   23502 — not_null_violation (user_id column still has NOT NULL)
-    // Show a user-friendly message so the raw Postgres error never surfaces.
-    const code = (error as { code?: string }).code ?? '';
-    if (code === '42P01' || code === '42501' || code === '23502') {
-      throw new Error(
-        'Anonymous reporting is not yet available on this server. Please sign in to report.',
-      );
-    }
-    throw error;
-  }
-  return data as FlagRow;
-}
 
 export type FlagContentPatch = {
   description?: string | null;
