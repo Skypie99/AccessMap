@@ -211,7 +211,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
         addUri(result.assets[0].uri);
       }
     } catch (e) {
-      Alert.alert('Could not pick photo', errorMessage(e));
+      Alert.alert("Couldn't pick a photo", errorMessage(e));
     }
   };
 
@@ -266,7 +266,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
         onCreated();
         onClose();
       } catch (e) {
-        Alert.alert('Could not report flag', errorMessage(e));
+        Alert.alert("Couldn't submit your report", errorMessage(e));
       } finally {
         setSubmitting(false);
       }
@@ -317,7 +317,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
       onCreated();
       onClose();
     } catch (e) {
-      Alert.alert('Could not report flag', errorMessage(e));
+      Alert.alert("Couldn't submit your report", errorMessage(e));
     } finally {
       setSubmitting(false);
     }
@@ -499,7 +499,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
           <TextInput
             value={description}
             onChangeText={setDescription}
-            placeholder="What's going on here?"
+            placeholder="Describe the barrier — e.g. broken curb cut on Main St"
             placeholderTextColor={color.textMuted}
             multiline
             // Mirror the DB check constraint

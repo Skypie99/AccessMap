@@ -51,7 +51,7 @@ export default function SignInScreen({
         : await signUpWithEmail(cleanEmail, password);
     setBusy(false);
     if (error) {
-      Alert.alert('Auth error', error.message);
+      Alert.alert("Couldn't sign you in", error.message);
       return;
     }
     if (mode === 'in') {
@@ -97,7 +97,7 @@ export default function SignInScreen({
             AccessMap
           </AppText>
           <Text style={styles.tagline}>
-            Flag the world.{'\n'}Make it more accessible — together.
+            Spot barriers. Share them.{'\n'}Make your community more accessible.
           </Text>
         </View>
 
@@ -200,14 +200,14 @@ export default function SignInScreen({
               accessibilityLabel="Continue as guest"
               accessibilityHint="Browse the map without signing in. Reporting flags requires an account."
             >
-              <Text style={styles.guestBtnText}>Continue as guest →</Text>
+              <Text style={styles.guestBtnText}>Browse without an account →</Text>
             </Pressable>
-            <Text style={styles.guestNote}>Read-only · can't report or verify flags</Text>
+            <Text style={styles.guestNote}>You can look around, but you'll need an account to report or verify</Text>
           </View>
         ) : null}
 
         <Text style={styles.footnote}>
-          Location is only used when reporting a flag.{'\n'}Your email is never shown publicly.
+          Your location is only used when you place a flag.{'\n'}Your email is never shown publicly.
         </Text>
       </ScrollView>
     </KeyboardAvoidingView>

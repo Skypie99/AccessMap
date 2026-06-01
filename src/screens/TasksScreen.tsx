@@ -430,7 +430,7 @@ export default function TasksScreen() {
         AccessibilityInfo.announceForAccessibility(msg);
       }
     } catch (e) {
-      Alert.alert('Could not update watched list', errorMessage(e));
+      Alert.alert("Couldn't update your watched list", errorMessage(e));
     } finally {
       setBulkBusy(false);
       exitSelection();
@@ -511,7 +511,7 @@ export default function TasksScreen() {
           status === 'verified' ? 'verify' : status === 'resolved' ? 'resolve' : 'reject';
         applyStatusChange(updated, action, isOwn);
       } catch (e) {
-        Alert.alert('Could not update flag', errorMessage(e));
+        Alert.alert("Couldn't update this flag", errorMessage(e));
       } finally {
         setBusyId(null);
       }
@@ -654,7 +654,7 @@ export default function TasksScreen() {
           >
             📶
           </AppText>
-          <AppText variant="body" style={styles.offlineBannerText}>Showing offline data — connect to refresh</AppText>
+          <AppText variant="body" style={styles.offlineBannerText}>Showing saved data — connect to the internet for the latest</AppText>
         </View>
       )}
       {/* Select-multiple entry — visible only when there's something to
@@ -688,7 +688,7 @@ export default function TasksScreen() {
           <TextInput
             value={searchText}
             onChangeText={setSearchText}
-            placeholder="Search description or category"
+            placeholder="Search by description or category…"
             placeholderTextColor={color.placeholderText}
             autoCorrect={false}
             autoCapitalize="none"
@@ -892,7 +892,7 @@ export default function TasksScreen() {
                 ? `No open or verified ${CATEGORY_LABELS[categoryFilter].toLowerCase()} flags right now. Tap "All" above to see every category.`
                 : searchText.trim()
                   ? `Nothing matches "${searchText.trim()}". Try a different keyword or clear the search.`
-                  : "No flags to triage right now. New community reports will land here as they're added — pull to refresh anytime."}
+                  : "You're all caught up — nice work! New reports show up here as the community adds them. Pull down to refresh anytime."}
             </AppText>
           </View>
         }
@@ -930,7 +930,7 @@ export default function TasksScreen() {
                   accessibilityRole="text"
                   accessibilityLabel="You have seen all flags nearby"
                 >
-                  {"You've seen all flags nearby ✓"}
+                  {"That's everything nearby — you're up to date ✓"}
                 </AppText>
               )}
             </View>
