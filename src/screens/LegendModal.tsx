@@ -2,7 +2,6 @@ import React from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import {
   CATEGORY_DESCRIPTIONS,
-  CATEGORY_ICONS,
   CATEGORY_LABELS,
   CATEGORY_ORDER,
   severityColor,
@@ -13,6 +12,7 @@ import {
 } from '@/lib/flags';
 import { font, radius, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
+import CategoryIcon from '@/components/CategoryIcon';
 
 interface Props {
   visible: boolean;
@@ -95,7 +95,7 @@ export default function LegendModal({ visible, onClose }: Props) {
                     importantForAccessibility="no"
                     accessibilityElementsHidden
                   >
-                    <Text style={styles.catIconText}>{CATEGORY_ICONS[c]}</Text>
+                    <CategoryIcon category={c} size={20} color={color.brand} decorative />
                   </View>
                   <View style={styles.rowText}>
                     <Text style={styles.rowTitle}>{label}</Text>

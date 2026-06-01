@@ -55,6 +55,7 @@ import type { RootTabParamList } from '@/navigation/RootNavigator';
 import FlagDetailModal, { type DetailAction } from '@/components/FlagDetailModal';
 import PhotoLightboxModal from '@/components/PhotoLightboxModal';
 import { AppText } from '@/components/ui/AppText';
+import { Search, Sparkles } from 'lucide-react-native';
 import { font, radius, shadow, size, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 
@@ -877,9 +878,17 @@ export default function TasksScreen() {
         )}
         ListEmptyComponent={
           <View style={styles.emptyCard} accessible accessibilityRole="text">
-            <AppText variant="label" style={styles.emptyIcon} accessibilityElementsHidden>
-              {categoryFilter || searchText.trim() ? '🔍' : '✨'}
-            </AppText>
+            <View
+              style={styles.emptyIcon}
+              accessibilityElementsHidden
+              importantForAccessibility="no"
+            >
+              {categoryFilter || searchText.trim() ? (
+                <Search size={36} color={color.textSubtle} strokeWidth={2} />
+              ) : (
+                <Sparkles size={36} color={color.goldAccent} strokeWidth={2} />
+              )}
+            </View>
             <AppText variant="heading" style={styles.emptyTitle}>
               {categoryFilter
                 ? `No ${CATEGORY_LABELS[categoryFilter]} flags`
@@ -1389,7 +1398,7 @@ const makeStyles = (color: ColorTheme) =>
       maxWidth: 340,
       ...shadow.e1,
     },
-    emptyIcon: { fontSize: font.size.display - 12 },
+    emptyIcon: { marginBottom: spacing.tight },
     emptyTitle: {
       fontSize: font.size.xl,
       fontWeight: font.weight.bold,
