@@ -195,6 +195,7 @@ jest.mock('@/theme/ThemeContext', () => ({
 // Mock: @/theme — radius tokens
 // ---------------------------------------------------------------------------
 jest.mock('@/theme', () => ({
+  a11y: { minTargetSize: 44 },
   radius: { xs: 4, sm: 6, md: 8, lg: 12, xl: 16, xxl: 24, circle: 9999 },
   font: {
     size: { xs: 11, sm: 13, md: 15, lg: 17, xl: 19, xxl: 22 },

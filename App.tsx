@@ -1,6 +1,4 @@
 import 'react-native-gesture-handler';
-import { initSentry, Sentry } from '@/lib/sentry';
-initSentry();
 import React, { useCallback, useEffect, useState } from 'react';
 import { Platform, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
@@ -165,8 +163,7 @@ function FirstLaunchGate({ children }: { children: React.ReactNode }) {
 }
 
 function App() {
-  // Analytics: one event per app launch. platform only — no PII. Runs once
-  // on mount (App is wrapped by Sentry.wrap below, so Sentry is initialized).
+  // Analytics: one event per app launch. platform only — no PII.
   useEffect(() => {
     trackEvent('app_session_started', { platform: Platform.OS });
   }, []);
@@ -187,4 +184,4 @@ function App() {
   );
 }
 
-export default Sentry.wrap(App);
+export default App;
