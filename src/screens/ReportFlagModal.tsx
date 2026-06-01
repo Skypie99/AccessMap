@@ -336,14 +336,14 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
           >
-          <Text style={styles.title} accessibilityRole="header">
+          <AppText variant="heading" style={styles.title} accessibilityRole="header">
             {isAnon ? 'Report anonymously' : 'Report a flag'}
-          </Text>
-          <Text style={styles.location}>
+          </AppText>
+          <AppText variant="mono" style={styles.location}>
             {location
               ? `at ${location.lat.toFixed(5)}, ${location.lng.toFixed(5)}`
               : 'Waiting for location…'}
-          </Text>
+          </AppText>
 
           {/* Anonymous mode banner — shown when user is not signed in.
               accessibilityRole="alert" makes VoiceOver announce it on iOS;
@@ -356,9 +356,9 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
               accessibilityLabel="Reporting anonymously. Your identity is not stored."
               style={styles.anonBanner}
             >
-              <Text style={styles.anonBannerIcon} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">🔒</Text>
+              <AppText variant="label" style={styles.anonBannerIcon} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">🔒</AppText>
               <View style={styles.anonBannerBody}>
-                <Text style={styles.anonBannerTitle}>Reporting anonymously — your identity is not stored.</Text>
+                <AppText variant="label" style={styles.anonBannerTitle}>Reporting anonymously — your identity is not stored.</AppText>
               </View>
               <Pressable
                 onPress={onClose}
@@ -367,7 +367,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
                 accessibilityLabel="Sign in"
                 accessibilityHint="Closes this form so you can sign in"
               >
-                <Text style={styles.anonBannerLinkText}>Sign in</Text>
+                <AppText variant="label" style={styles.anonBannerLinkText}>Sign in</AppText>
               </Pressable>
             </View>
           )}
@@ -376,9 +376,9 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
               the simplified form focused on the three core fields. */}
           {!isAnon && templates.length > 0 && (
             <>
-              <Text style={styles.label} accessibilityRole="header">
+              <AppText variant="label" style={styles.label} accessibilityRole="header">
                 Quick-fill templates (optional)
-              </Text>
+              </AppText>
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
@@ -400,18 +400,20 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
                       }
                       accessibilityState={{ selected: active }}
                     >
-                      <Text
+                      <AppText
+                        variant="label"
                         style={[styles.templateChipGlyph, active && styles.templateChipGlyphActive]}
                         accessibilityElementsHidden
                         importantForAccessibility="no-hide-descendants"
                       >
                         {t.glyph}
-                      </Text>
-                      <Text
+                      </AppText>
+                      <AppText
+                        variant="label"
                         style={[styles.templateChipText, active && styles.templateChipTextActive]}
                       >
                         {t.label}
-                      </Text>
+                      </AppText>
                     </Pressable>
                   );
                 })}
