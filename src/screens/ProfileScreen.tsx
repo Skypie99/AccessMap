@@ -1083,7 +1083,7 @@ export default function ProfileScreen() {
             <AppText variant="body" style={styles.myReportsSubtitle}>
               {stats.reported === 0
                 ? "You haven't reported any barriers yet — your first one will show up here."
-                : "View every flag you've submitted."}
+                : "Every barrier you've reported, in one place."}
             </AppText>
           </View>
           <AppText variant="label" style={styles.myReportsChevron} accessibilityElementsHidden>
