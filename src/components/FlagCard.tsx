@@ -24,6 +24,7 @@
 
 import React, { memo } from 'react';
 import { Image, Pressable, StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
+import { AppText } from '@/components/ui/AppText';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { font, radius, shadow, size, spacing } from '@/theme';
 import { CATEGORY_LABELS, severityColor, STATUS_LABELS } from '@/lib/flags';
@@ -91,9 +92,9 @@ export const FlagCard = memo(function FlagCard({
           accessibilityElementsHidden
           importantForAccessibility="no"
         />
-        <Text style={styles.category} numberOfLines={1}>
+        <AppText variant="label" style={styles.category} numberOfLines={1}>
           {CATEGORY_LABELS[flag.category]}
-        </Text>
+        </AppText>
         <StatusBadge status={flag.status} size="sm" />
         {flag.user_id === null && (
           <View
@@ -101,7 +102,7 @@ export const FlagCard = memo(function FlagCard({
             accessibilityElementsHidden
             importantForAccessibility="no-hide-descendants"
           >
-            <Text style={styles.anonChipText}>Anonymous</Text>
+            <AppText variant="label" style={styles.anonChipText}>Anonymous</AppText>
           </View>
         )}
       </View>
@@ -118,13 +119,13 @@ export const FlagCard = memo(function FlagCard({
         ) : null}
         <View style={styles.bodyText}>
           {flag.description ? (
-            <Text style={styles.description} numberOfLines={compact ? 1 : 2}>
+            <AppText variant="body" style={styles.description} numberOfLines={compact ? 1 : 2}>
               {flag.description}
-            </Text>
+            </AppText>
           ) : (
-            <Text style={styles.descriptionMuted}>No description.</Text>
+            <AppText variant="body" style={styles.descriptionMuted}>No description.</AppText>
           )}
-          <Text style={styles.meta}>{metaParts.join(' • ')}</Text>
+          <AppText variant="mono" style={styles.meta}>{metaParts.join(' • ')}</AppText>
         </View>
       </View>
     </Pressable>

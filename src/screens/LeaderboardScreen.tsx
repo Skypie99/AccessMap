@@ -8,6 +8,7 @@ import {
   Text,
   View,
 } from 'react-native';
+import { AppText } from '@/components/ui/AppText';
 import { useAuth } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
 import {
@@ -148,32 +149,34 @@ const LeaderboardRow = React.memo(function LeaderboardRow({
       role="listitem"
       accessibilityLabel={a11yLabel}
     >
-      <Text
+      <AppText
+        variant="mono"
         style={[styles.rank, rank <= 3 && styles.rankTop]}
         accessibilityElementsHidden
       >
         {ordinalLabel(rank)}
-      </Text>
+      </AppText>
       <AvatarCircle uri={avatarUrl} initials={initials} size={AVATAR_SIZE} color={color} />
       <View style={styles.nameWrap}>
-        <Text
+        <AppText
+          variant="body"
           style={[styles.name, isCurrentUser && styles.nameSelf]}
           numberOfLines={1}
         >
           {name}
-        </Text>
+        </AppText>
         {isCurrentUser ? (
-          <Text style={styles.youBadge} accessibilityElementsHidden>
+          <AppText variant="label" style={styles.youBadge} accessibilityElementsHidden>
             you
-          </Text>
+          </AppText>
         ) : null}
         {verifiedCount > 0 ? (
-          <Text style={styles.verifiedBadge} accessibilityElementsHidden>
+          <AppText variant="label" style={styles.verifiedBadge} accessibilityElementsHidden>
             {verifiedCount} verified
-          </Text>
+          </AppText>
         ) : null}
       </View>
-      <Text style={styles.points}>{points.toLocaleString()} pts</Text>
+      <AppText variant="mono" style={styles.points}>{points.toLocaleString()} pts</AppText>
     </View>
   );
 });
@@ -243,15 +246,15 @@ export default function LeaderboardScreen({ visible, onClose }: Props) {
               style={({ pressed }) => [styles.closeBtn, pressed && styles.closeBtnPressed]}
               hitSlop={spacing.sm}
             >
-              <Text style={styles.closeBtnText}>✕</Text>
+              <AppText variant="label" style={styles.closeBtnText}>✕</AppText>
             </Pressable>
-            <Text style={styles.title} accessibilityRole="header">
+            <AppText variant="heading" style={styles.title} accessibilityRole="header">
               Leaderboard
-            </Text>
+            </AppText>
             {/* spacer keeps title centered */}
             <View style={styles.closeBtnSpacer} />
           </View>
-          <Text style={styles.subtitle}>Top 20 contributors by points</Text>
+          <AppText variant="body" style={styles.subtitle}>Top 20 contributors by points</AppText>
 
           {loading ? (
             <View accessibilityLabel="Loading leaderboard" accessibilityLiveRegion="polite">
@@ -266,22 +269,22 @@ export default function LeaderboardScreen({ visible, onClose }: Props) {
               accessible
               accessibilityLabel={`Couldn't load the leaderboard. ${loadError}`}
             >
-              <Text style={styles.stateText}>Couldn't load the leaderboard.</Text>
-              <Text style={styles.stateHint}>{loadError}</Text>
+              <AppText variant="body" style={styles.stateText}>Couldn't load the leaderboard.</AppText>
+              <AppText variant="body" style={styles.stateHint}>{loadError}</AppText>
               <Pressable
                 onPress={() => void load()}
                 style={({ pressed }) => [styles.retryBtn, pressed && styles.retryBtnPressed]}
                 accessibilityRole="button"
                 accessibilityLabel="Retry loading leaderboard"
               >
-                <Text style={styles.retryText}>Try again</Text>
+                <AppText variant="label" style={styles.retryText}>Try again</AppText>
               </Pressable>
             </View>
           ) : entries.length === 0 ? (
             <View style={styles.stateWrap}>
-              <Text style={styles.stateIcon}>🏆</Text>
-              <Text style={styles.stateText}>No contributors yet.</Text>
-              <Text style={styles.stateHint}>Be the first to report and verify flags!</Text>
+              <AppText variant="label" style={styles.stateIcon}>🏆</AppText>
+              <AppText variant="body" style={styles.stateText}>No contributors yet.</AppText>
+              <AppText variant="body" style={styles.stateHint}>Be the first to report and verify flags!</AppText>
             </View>
           ) : (
             <FlatList
@@ -302,12 +305,12 @@ export default function LeaderboardScreen({ visible, onClose }: Props) {
               accessible
               accessibilityLabel={`Your rank: ${ordinalLabel(userFooter.rank)}, ${userFooter.points.toLocaleString()} points`}
             >
-              <Text style={styles.footerText} accessibilityElementsHidden>
+              <AppText variant="mono" style={styles.footerText} accessibilityElementsHidden>
                 Your rank:{' '}
-                <Text style={styles.footerRank}>{ordinalLabel(userFooter.rank)}</Text>
+                <AppText variant="monoBold" style={styles.footerRank}>{ordinalLabel(userFooter.rank)}</AppText>
                 {'  ·  '}
                 {userFooter.points.toLocaleString()} pts
-              </Text>
+              </AppText>
             </View>
           ) : null}
         </View>

@@ -69,6 +69,7 @@ import PlatformMap, {
   type PlatformMapHandle,
   type PlatformMapRegion,
 } from '@/components/PlatformMap';
+import { AppText } from '@/components/ui/AppText';
 import { useScreenReader, useReducedMotion } from '@/lib/accessibility';
 import ReportFlagModal from './ReportFlagModal';
 import LegendModal from './LegendModal';
@@ -970,13 +971,13 @@ export default function MapScreen() {
               changes after a filter toggle (e.g. "12 of 45 shown"). Using
               'polite' so it doesn't interrupt mid-sentence. */}
           <View style={styles.statusPill} accessibilityLiveRegion="polite">
-            <Text style={styles.statusText}>
+            <AppText variant="label" style={styles.statusText}>
               {loadingFlags
                 ? 'Loading flags…'
                 : filtersActive
                   ? `${filteredFlags.length} of ${flags.length} shown`
                   : `${flags.length} flag${flags.length === 1 ? '' : 's'} nearby`}
-            </Text>
+            </AppText>
           </View>
           {/*
             actionBar groups the icon buttons into one connected surface so
@@ -993,7 +994,7 @@ export default function MapScreen() {
               accessibilityLabel="Search by address"
               accessibilityHint="Opens a search box to jump the map to an address or place"
             >
-              <Text style={styles.iconText}>🔍</Text>
+              <AppText variant="label" style={styles.iconText}>🔍</AppText>
             </Pressable>
             <View style={styles.actionDivider} accessibilityElementsHidden />
             <Pressable
@@ -1003,7 +1004,7 @@ export default function MapScreen() {
               accessibilityLabel="Map legend"
               accessibilityHint="Opens a guide explaining flag categories and severity"
             >
-              <Text style={styles.iconText}>?</Text>
+              <AppText variant="label" style={styles.iconText}>?</AppText>
             </Pressable>
             <View style={styles.actionDivider} accessibilityElementsHidden />
             <Pressable
@@ -1013,11 +1014,12 @@ export default function MapScreen() {
               accessibilityLabel="Toggle filters"
               accessibilityState={{ expanded: filtersOpen }}
             >
-              <Text
+              <AppText
+                variant="label"
                 style={[styles.iconText, (filtersOpen || filtersActive) && styles.iconTextActive]}
               >
                 ⌕
-              </Text>
+              </AppText>
             </Pressable>
             <View style={styles.actionDivider} accessibilityElementsHidden />
             <Pressable
@@ -1035,7 +1037,8 @@ export default function MapScreen() {
               }
               accessibilityHint="Tap to cycle through minimum severity filters"
             >
-              <Text
+              <AppText
+                variant="label"
                 style={[
                   styles.iconText,
                   styles.sevQuickText,
@@ -1043,7 +1046,7 @@ export default function MapScreen() {
                 ]}
               >
                 {minSeverity}+
-              </Text>
+              </AppText>
             </Pressable>
             <View style={styles.actionDivider} accessibilityElementsHidden />
             <Pressable
@@ -1061,7 +1064,8 @@ export default function MapScreen() {
               }
               accessibilityHint="Tap to cycle through category filters"
             >
-              <Text
+              <AppText
+                variant="label"
                 style={[
                   styles.iconText,
                   styles.catQuickText,
@@ -1069,7 +1073,7 @@ export default function MapScreen() {
                 ]}
               >
                 {catCycleLabel}
-              </Text>
+              </AppText>
             </Pressable>
             <View style={styles.actionDivider} accessibilityElementsHidden />
             <Pressable
@@ -1078,7 +1082,7 @@ export default function MapScreen() {
               accessibilityRole="button"
               accessibilityLabel="Refresh flags"
             >
-              <Text style={styles.iconText}>⟳</Text>
+              <AppText variant="label" style={styles.iconText}>⟳</AppText>
             </Pressable>
             <View style={styles.actionDivider} accessibilityElementsHidden />
             <Pressable
@@ -1087,7 +1091,7 @@ export default function MapScreen() {
               accessibilityRole="button"
               accessibilityLabel="Recenter on me"
             >
-              <Text style={styles.iconText}>◎</Text>
+              <AppText variant="label" style={styles.iconText}>◎</AppText>
             </Pressable>
           </View>
         </View>
@@ -1116,16 +1120,17 @@ export default function MapScreen() {
                 accessibilityRole="button"
                 accessibilityLabel={`Jump map to ${place.name}`}
               >
-                <Text
+                <AppText
+                  variant="label"
                   style={styles.placeChipGlyph}
                   accessibilityElementsHidden
                   importantForAccessibility="no-hide-descendants"
                 >
                   📍
-                </Text>
-                <Text style={styles.placeChipText} numberOfLines={1}>
+                </AppText>
+                <AppText variant="label" style={styles.placeChipText} numberOfLines={1}>
                   {place.name}
-                </Text>
+                </AppText>
               </Pressable>
             ))}
             <Pressable
@@ -1139,16 +1144,17 @@ export default function MapScreen() {
               accessibilityLabel={savedPlaces.length === 0 ? 'Save a place' : 'Manage saved places'}
               accessibilityHint="Opens the saved places list to add, rename, or remove"
             >
-              <Text
+              <AppText
+                variant="label"
                 style={styles.placeChipGlyph}
                 accessibilityElementsHidden
                 importantForAccessibility="no-hide-descendants"
               >
                 ★
-              </Text>
-              <Text style={styles.placeChipText}>
+              </AppText>
+              <AppText variant="label" style={styles.placeChipText}>
                 {savedPlaces.length === 0 ? 'Save a place' : 'Manage'}
-              </Text>
+              </AppText>
             </Pressable>
           </View>
         )}
@@ -1171,10 +1177,10 @@ export default function MapScreen() {
                 }
                 accessibilityState={{ expanded: !panelCollapsed }}
               >
-                <Text style={styles.filterTitle}>Filter flags</Text>
-                <Text style={styles.filterChevron} accessibilityElementsHidden>
+                <AppText variant="heading" style={styles.filterTitle}>Filter flags</AppText>
+                <AppText variant="label" style={styles.filterChevron} accessibilityElementsHidden>
                   {panelCollapsed ? '▸' : '▾'}
-                </Text>
+                </AppText>
               </Pressable>
               {filtersActive && (
                 <Pressable
@@ -1182,19 +1188,19 @@ export default function MapScreen() {
                   accessibilityRole="button"
                   accessibilityLabel="Clear all filters"
                 >
-                  <Text style={styles.clearLink}>Clear</Text>
+                  <AppText variant="label" style={styles.clearLink}>Clear</AppText>
                 </Pressable>
               )}
             </View>
 
             {!panelCollapsed && (
               <>
-                <Text style={styles.filterSubLabel}>Saved</Text>
+                <AppText variant="heading" style={styles.filterSubLabel}>Saved</AppText>
                 {savedSets.length === 0 ? (
                   <View style={styles.savedEmpty}>
-                    <Text style={styles.savedEmptyText}>
+                    <AppText variant="body" style={styles.savedEmptyText}>
                       Save your current filter as a named set to quickly switch later.
-                    </Text>
+                    </AppText>
                     <Pressable
                       onPress={openSaveModal}
                       style={styles.savedSaveBtn}
@@ -1202,7 +1208,7 @@ export default function MapScreen() {
                       accessibilityLabel="Save current filter as a named set"
                       accessibilityHint="Opens a prompt to name the current filter combination"
                     >
-                      <Text style={styles.savedSaveBtnText}>Save current filter</Text>
+                      <AppText variant="label" style={styles.savedSaveBtnText}>Save current filter</AppText>
                     </Pressable>
                   </View>
                 ) : (
@@ -1229,7 +1235,8 @@ export default function MapScreen() {
                           accessibilityHint="Sets the map filter to this saved combination. Long press for options including make default and delete."
                           accessibilityState={{ selected: isSelected }}
                         >
-                          <Text
+                          <AppText
+                            variant="label"
                             style={[
                               styles.filterPillText,
                               isSelected && styles.filterPillTextActive,
@@ -1250,7 +1257,7 @@ export default function MapScreen() {
                               </Text>
                             )}
                             {set.name}
-                          </Text>
+                          </AppText>
                         </Pressable>
                       );
                     })}
@@ -1262,13 +1269,13 @@ export default function MapScreen() {
                         accessibilityLabel="Save current filter as a named set"
                         accessibilityHint="Opens a prompt to name the current filter combination"
                       >
-                        <Text style={styles.savedAddPillText}>+ Save current</Text>
+                        <AppText variant="label" style={styles.savedAddPillText}>+ Save current</AppText>
                       </Pressable>
                     )}
                   </ScrollView>
                 )}
 
-                <Text style={styles.filterSubLabel}>Categories</Text>
+                <AppText variant="heading" style={styles.filterSubLabel}>Categories</AppText>
                 <ScrollView
                   horizontal
                   showsHorizontalScrollIndicator={false}
@@ -1285,17 +1292,18 @@ export default function MapScreen() {
                         accessibilityLabel={`Filter by ${CATEGORY_LABELS[c]}`}
                         accessibilityState={{ selected: active }}
                       >
-                        <Text
+                        <AppText
+                          variant="label"
                           style={[styles.filterPillText, active && styles.filterPillTextActive]}
                         >
                           {CATEGORY_LABELS[c]}
-                        </Text>
+                        </AppText>
                       </Pressable>
                     );
                   })}
                 </ScrollView>
 
-                <Text style={styles.filterSubLabel}>Minimum severity</Text>
+                <AppText variant="heading" style={styles.filterSubLabel}>Minimum severity</AppText>
                 <View style={styles.filterRow}>
                   {SEVERITY_ORDER.map((s) => {
                     const active = s === minSeverity;
@@ -1308,9 +1316,9 @@ export default function MapScreen() {
                         accessibilityLabel={`Minimum severity ${s}`}
                         accessibilityState={{ selected: active }}
                       >
-                        <Text style={[styles.sevPillText, active && styles.sevPillTextActive]}>
+                        <AppText variant="label" style={[styles.sevPillText, active && styles.sevPillTextActive]}>
                           {s}+
-                        </Text>
+                        </AppText>
                       </Pressable>
                     );
                   })}
@@ -1320,7 +1328,7 @@ export default function MapScreen() {
                 axis (what gets drawn) not a fetch axis (what gets fetched).
                 Hidden under panelCollapsed alongside the rest of the panel.
                 Off by default per Dani's design compile. */}
-                <Text style={styles.filterSubLabel}>Layers</Text>
+                <AppText variant="heading" style={styles.filterSubLabel}>Layers</AppText>
                 <View style={styles.filterRow}>
                   <Pressable
                     onPress={() => setHeatmapEnabled((v) => !v)}
@@ -1330,21 +1338,22 @@ export default function MapScreen() {
                     accessibilityState={{ checked: heatmapEnabled }}
                     accessibilityHint={`Overlays a coloured grid that summarises severity across neighbourhoods. Only areas with at least ${DEFAULT_K_FLOOR} reports are shown.`}
                   >
-                    <Text
+                    <AppText
+                      variant="label"
                       style={[styles.filterPillText, heatmapEnabled && styles.filterPillTextActive]}
                     >
                       {heatmapEnabled ? '✓ Heat map' : 'Heat map'}
-                    </Text>
+                    </AppText>
                   </Pressable>
                 </View>
                 {heatmapEnabled && (
-                  <Text style={styles.statusHint}>
+                  <AppText variant="body" style={styles.statusHint}>
                     Heat zones only appear where at least {DEFAULT_K_FLOOR} flags have been
                     reported. Colour shows mean severity (1–5); the legend explains the full scale.
-                  </Text>
+                  </AppText>
                 )}
 
-                <Text style={styles.filterSubLabel}>Status</Text>
+                <AppText variant="heading" style={styles.filterSubLabel}>Status</AppText>
                 <View style={styles.filterRow}>
                   {STATUS_ORDER.map((s) => {
                     const active = activeStatuses.has(s);
@@ -1357,17 +1366,18 @@ export default function MapScreen() {
                         accessibilityLabel={`Filter by ${STATUS_LABELS[s]}`}
                         accessibilityState={{ selected: active }}
                       >
-                        <Text
+                        <AppText
+                          variant="label"
                           style={[styles.filterPillText, active && styles.filterPillTextActive]}
                         >
                           {STATUS_LABELS[s]}
-                        </Text>
+                        </AppText>
                       </Pressable>
                     );
                   })}
                 </View>
                 {activeStatuses.size === 0 && (
-                  <Text style={styles.statusHint}>Pick at least one status to see flags.</Text>
+                  <AppText variant="body" style={styles.statusHint}>Pick at least one status to see flags.</AppText>
                 )}
 
                 {/* "Who does this affect?" — disability filter (Sprint 3). A
@@ -1376,7 +1386,7 @@ export default function MapScreen() {
                     tagged for any of them (OR match). Empty = show everything,
                     so legacy/untagged flags are only hidden once the user
                     actively narrows. Same pill pattern as the other axes. */}
-                <Text style={styles.filterSubLabel}>Who does this affect?</Text>
+                <AppText variant="heading" style={styles.filterSubLabel}>Who does this affect?</AppText>
                 <View style={styles.filterRow}>
                   {DISABILITY_TAGS.map((tag) => {
                     const active = activeDisabilityTags.has(tag);
@@ -1390,20 +1400,21 @@ export default function MapScreen() {
                         accessibilityLabel={`Filter by barriers affecting: ${label}`}
                         accessibilityState={{ selected: active }}
                       >
-                        <Text
+                        <AppText
+                          variant="label"
                           style={[styles.filterPillText, active && styles.filterPillTextActive]}
                         >
                           {label}
-                        </Text>
+                        </AppText>
                       </Pressable>
                     );
                   })}
                 </View>
                 {activeDisabilityTags.size > 0 && (
-                  <Text style={styles.statusHint}>
+                  <AppText variant="body" style={styles.statusHint}>
                     Showing only flags tagged for the selected access need
                     {activeDisabilityTags.size > 1 ? 's' : ''}. Untagged flags are hidden.
-                  </Text>
+                  </AppText>
                 )}
 
                 {/* Distance — radius from the user's current location. Chips
@@ -1422,7 +1433,7 @@ export default function MapScreen() {
                 that depends on the user's current GPS would make a
                 "saved view" portable in a way it isn't today. We can
                 revisit when location-aware sets become a clear need. */}
-                <Text style={styles.filterSubLabel}>Distance</Text>
+                <AppText variant="heading" style={styles.filterSubLabel}>Distance</AppText>
                 <View style={styles.filterRow}>
                   {DISTANCE_OPTIONS.map((opt) => {
                     const active = opt === maxDistanceKm;
@@ -1443,19 +1454,20 @@ export default function MapScreen() {
                         accessibilityLabel={a11yLabel}
                         accessibilityState={{ selected: active }}
                       >
-                        <Text
+                        <AppText
+                          variant="label"
                           style={[styles.filterPillText, active && styles.filterPillTextActive]}
                         >
                           {label}
-                        </Text>
+                        </AppText>
                       </Pressable>
                     );
                   })}
                 </View>
                 {maxDistanceKm !== null && !location && (
-                  <Text style={styles.statusHint} accessibilityLiveRegion="polite">
+                  <AppText variant="body" style={styles.statusHint} accessibilityLiveRegion="polite">
                     Distance filter needs your location. It will activate once location is shared.
-                  </Text>
+                  </AppText>
                 )}
 
                 {/* Per-user presets — distinct from the device-wide Saved
@@ -1463,7 +1475,7 @@ export default function MapScreen() {
                 keyed by user. */}
                 {authUser && (
                   <>
-                    <Text style={styles.filterSubLabel}>Presets</Text>
+                    <AppText variant="heading" style={styles.filterSubLabel}>Presets</AppText>
                     <View style={styles.presetRow}>
                       <Pressable
                         onPress={openPresetSaveModal}
@@ -1475,7 +1487,7 @@ export default function MapScreen() {
                         accessibilityLabel="Save current filters as a preset"
                         accessibilityHint={`Names and saves your current category, severity, and status filters. Stored per account, up to ${FILTER_PRESETS_MAX} presets.`}
                       >
-                        <Text style={styles.presetBtnText}>＋ Save as preset</Text>
+                        <AppText variant="label" style={styles.presetBtnText}>＋ Save as preset</AppText>
                       </Pressable>
                       <Pressable
                         onPress={() => setPresetsModalOpen(true)}
@@ -1488,7 +1500,7 @@ export default function MapScreen() {
                         accessibilityLabel="Load a saved preset"
                         accessibilityHint="Opens your saved filter presets so you can apply one"
                       >
-                        <Text style={styles.presetBtnSecondaryText}>Load preset…</Text>
+                        <AppText variant="label" style={styles.presetBtnSecondaryText}>Load preset…</AppText>
                       </Pressable>
                     </View>
                   </>
@@ -1518,11 +1530,11 @@ export default function MapScreen() {
             {loadingFlags ? (
               <ActivityIndicator color={color.textOnBrand} />
             ) : (
-              <Text style={styles.errorBannerIcon}>⚠</Text>
+              <AppText variant="label" style={styles.errorBannerIcon}>⚠</AppText>
             )}
-            <Text style={styles.errorBannerText} numberOfLines={2}>
+            <AppText variant="body" style={styles.errorBannerText} numberOfLines={2}>
               {loadingFlags ? 'Retrying…' : loadError}
-            </Text>
+            </AppText>
           </Pressable>
         )}
 
@@ -1541,13 +1553,13 @@ export default function MapScreen() {
             accessibilityLabel="No flags match your filters. Try broadening them or reset filters."
             accessibilityLiveRegion="polite"
           >
-            <Text style={styles.emptyCardIcon} accessibilityElementsHidden>
+            <AppText variant="label" style={styles.emptyCardIcon} accessibilityElementsHidden>
               🔍
-            </Text>
-            <Text style={styles.emptyCardTitle}>No flags match your filters</Text>
-            <Text style={styles.emptyCardBody}>
+            </AppText>
+            <AppText variant="heading" style={styles.emptyCardTitle}>No flags match your filters</AppText>
+            <AppText variant="body" style={styles.emptyCardBody}>
               Try broadening your filters, or reset to see all nearby flags.
-            </Text>
+            </AppText>
             <Pressable
               onPress={clearFilters}
               style={({ pressed }) => [styles.emptyCardBtn, pressed && styles.emptyCardBtnPressed]}
@@ -1555,7 +1567,7 @@ export default function MapScreen() {
               accessibilityLabel="Reset filters"
               accessibilityHint="Clears categories, severity, and status filters"
             >
-              <Text style={styles.emptyCardBtnText}>Reset filters</Text>
+              <AppText variant="label" style={styles.emptyCardBtnText}>Reset filters</AppText>
             </Pressable>
           </View>
         )}
@@ -1573,7 +1585,7 @@ export default function MapScreen() {
               accessibilityElementsHidden
               importantForAccessibility="no-hide-descendants"
             />
-            <Text style={styles.bannerText}>Finding your location…</Text>
+            <AppText variant="body" style={styles.bannerText}>Finding your location…</AppText>
           </View>
         )}
 
@@ -1583,9 +1595,9 @@ export default function MapScreen() {
             accessibilityRole="alert"
             accessibilityLiveRegion="assertive"
           >
-            <Text style={styles.bannerText}>
+            <AppText variant="body" style={styles.bannerText}>
               Location permission denied. Enable it in Settings to report a flag.
-            </Text>
+            </AppText>
           </View>
         )}
 
@@ -1600,10 +1612,10 @@ export default function MapScreen() {
             accessibilityRole="text"
             accessibilityLiveRegion="polite"
           >
-            <Text style={styles.heatmapDisclaimerText}>
+            <AppText variant="body" style={styles.heatmapDisclaimerText}>
               Heat zones only appear where at least {DEFAULT_K_FLOOR} flags have been reported.
               Based on community reports — coverage varies by area.
-            </Text>
+            </AppText>
           </View>
         )}
 
@@ -1622,7 +1634,7 @@ export default function MapScreen() {
               accessibilityLabel="Open nearby flags list"
               accessibilityHint="Opens an accessible list of flags sorted by distance"
             >
-              <Text style={styles.fabSecondaryText}>📋 List</Text>
+              <AppText variant="label" style={styles.fabSecondaryText}>📋 List</AppText>
             </Pressable>
             {/* Jordan Condition 2: hide Report FAB for guest users.
                 Guests can browse but not create reports. Hiding at render
@@ -1643,7 +1655,7 @@ export default function MapScreen() {
                 accessibilityHint="Opens a form to report an accessibility issue at your current location"
                 accessibilityState={{ disabled: !location }}
               >
-                <Text style={styles.fabText}>＋ Report</Text>
+                <AppText variant="label" style={styles.fabText}>＋ Report</AppText>
               </Pressable>
             )}
           </View>
@@ -1755,12 +1767,12 @@ export default function MapScreen() {
       >
         <View style={styles.nameBackdrop}>
           <View style={styles.nameCard}>
-            <Text style={styles.nameTitle} accessibilityRole="header">
+            <AppText variant="heading" style={styles.nameTitle} accessibilityRole="header">
               Name this preset
-            </Text>
-            <Text style={styles.nameHint}>
+            </AppText>
+            <AppText variant="body" style={styles.nameHint}>
               Saves your current filters. Up to {FILTER_PRESETS_MAX} presets per account.
-            </Text>
+            </AppText>
             <TextInput
               value={presetNameDraft}
               onChangeText={setPresetNameDraft}
@@ -1787,7 +1799,7 @@ export default function MapScreen() {
                 accessibilityLabel="Cancel"
                 accessibilityState={{ disabled: savingPreset }}
               >
-                <Text style={styles.nameBtnCancelText}>Cancel</Text>
+                <AppText variant="label" style={styles.nameBtnCancelText}>Cancel</AppText>
               </Pressable>
               <Pressable
                 onPress={submitSavePreset}
@@ -1808,7 +1820,7 @@ export default function MapScreen() {
                 {savingPreset ? (
                   <ActivityIndicator color={color.textOnBrand} />
                 ) : (
-                  <Text style={styles.nameBtnSaveText}>Save</Text>
+                  <AppText variant="label" style={styles.nameBtnSaveText}>Save</AppText>
                 )}
               </Pressable>
             </View>
@@ -1832,8 +1844,8 @@ export default function MapScreen() {
       >
         <View style={styles.nameBackdrop}>
           <View style={styles.nameCard}>
-            <Text style={styles.nameTitle} accessibilityRole="header">Name this filter</Text>
-            <Text style={styles.nameHint}>You can save up to {MAX_FILTER_SETS} filter sets.</Text>
+            <AppText variant="heading" style={styles.nameTitle} accessibilityRole="header">Name this filter</AppText>
+            <AppText variant="body" style={styles.nameHint}>You can save up to {MAX_FILTER_SETS} filter sets.</AppText>
             <TextInput
               value={nameDraft}
               onChangeText={setNameDraft}
@@ -1858,7 +1870,7 @@ export default function MapScreen() {
                 accessibilityRole="button"
                 accessibilityLabel="Cancel"
               >
-                <Text style={styles.nameBtnCancelText}>Cancel</Text>
+                <AppText variant="label" style={styles.nameBtnCancelText}>Cancel</AppText>
               </Pressable>
               <Pressable
                 onPress={submitSaveSet}
@@ -1878,7 +1890,7 @@ export default function MapScreen() {
                 {savingSet ? (
                   <ActivityIndicator color={color.textOnBrand} />
                 ) : (
-                  <Text style={styles.nameBtnSaveText}>Save</Text>
+                  <AppText variant="label" style={styles.nameBtnSaveText}>Save</AppText>
                 )}
               </Pressable>
             </View>

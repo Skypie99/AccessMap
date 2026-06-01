@@ -70,6 +70,7 @@ import ReportsBreakdownCard from '@/components/ReportsBreakdownCard';
 import LeaderboardScreen from '@/screens/LeaderboardScreen';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { font, radius, shadow, spacing } from '@/theme';
+import { AppText } from '@/components/ui/AppText';
 import { getTier, pointsToNextTier, REPUTATION_TIERS } from '@/lib/reputationTier';
 import {
   getPointEventHistory,
@@ -694,14 +695,14 @@ export default function ProfileScreen() {
   if (!user) {
     return (
       <View style={styles.center}>
-        <Text style={styles.subtitle}>Not signed in.</Text>
+        <AppText variant="body" style={styles.subtitle}>Not signed in.</AppText>
         <Pressable
           onPress={() => setSignInOpen(true)}
           style={({ pressed }) => [styles.signInBtn, pressed && styles.signInBtnPressed]}
           accessibilityRole="button"
           accessibilityLabel="Sign in to your account"
         >
-          <Text style={styles.signInBtnText}>Sign in</Text>
+          <AppText variant="label" style={styles.signInBtnText}>Sign in</AppText>
         </Pressable>
         <Modal
           visible={signInOpen}
@@ -748,7 +749,7 @@ export default function ProfileScreen() {
         contentContainerStyle={styles.container}
         refreshControl={<RefreshControl refreshing={loading} onRefresh={load} />}
       >
-        <Text style={styles.email}>Signed in as {user.email}</Text>
+        <AppText variant="body" style={styles.email}>Signed in as {user.email}</AppText>
 
         <UpdateBanner
           count={updateCount}
@@ -781,13 +782,14 @@ export default function ProfileScreen() {
               />
             ) : (
               <View style={styles.avatarPlaceholder}>
-                <Text
+                <AppText
+                  variant="label"
                   style={styles.avatarInitials}
                   accessibilityElementsHidden
                   importantForAccessibility="no-hide-descendants"
                 >
                   {getInitials(profile?.display_name ?? user.email ?? '')}
-                </Text>
+                </AppText>
               </View>
             )}
             {uploadingAvatar ? (
@@ -800,18 +802,18 @@ export default function ProfileScreen() {
                 accessibilityElementsHidden
                 importantForAccessibility="no-hide-descendants"
               >
-                <Text style={styles.avatarEditBadgeText}>✎</Text>
+                <AppText variant="label" style={styles.avatarEditBadgeText}>✎</AppText>
               </View>
             )}
           </Pressable>
-          <Text style={styles.heroLabel}>POINTS</Text>
+          <AppText variant="label" style={styles.heroLabel}>POINTS</AppText>
           {/* Value + tier pill on the same row so the pill sits BESIDE
               the points number (per T4 spec). The pill is a Pressable
               with its own a11y label, focusable independently. */}
           <View style={styles.heroValueRow}>
-            <Text style={styles.heroValue} accessibilityLabel={`${points} points`}>
+            <AppText variant="monoBold" style={styles.heroValue} accessibilityLabel={`${points} points`}>
               {points}
-            </Text>
+            </AppText>
             <Pressable
               onPress={() => setTierExplainerOpen(true)}
               style={({ pressed }) => [styles.tierPill, pressed && styles.tierPillPressed]}
@@ -830,14 +832,15 @@ export default function ProfileScreen() {
               }
               hitSlop={8}
             >
-              <Text
+              <AppText
+                variant="label"
                 style={styles.tierPillEmoji}
                 accessibilityElementsHidden
                 importantForAccessibility="no-hide-descendants"
               >
                 {tier.emoji}
-              </Text>
-              <Text style={styles.tierPillLabel}>{tier.label}</Text>
+              </AppText>
+              <AppText variant="label" style={styles.tierPillLabel}>{tier.label}</AppText>
             </Pressable>
           </View>
           {nextMilestone !== null ? (
@@ -849,14 +852,14 @@ export default function ProfileScreen() {
               >
                 <View style={[styles.progressFill, { width: progressBarWidth }]} />
               </View>
-              <Text style={styles.heroSubtitle}>
+              <AppText variant="label" style={styles.heroSubtitle}>
                 {nextMilestone - points} points to {milestoneLabel}
-              </Text>
+              </AppText>
             </>
           ) : (
-            <Text style={styles.heroSubtitle}>
+            <AppText variant="label" style={styles.heroSubtitle}>
               ⭐ You've reached the top milestone — legend status.
-            </Text>
+            </AppText>
           )}
         </View>
 
@@ -866,9 +869,9 @@ export default function ProfileScreen() {
             see TRUST_SCORE_SPEC §3.2 Jordan constraint. */}
         {pointEvents.length > 0 && (
           <View style={styles.pointHistoryCard}>
-            <Text style={styles.pointHistoryTitle} accessibilityRole="header">
+            <AppText variant="heading" style={styles.pointHistoryTitle} accessibilityRole="header">
               Recent point activity
-            </Text>
+            </AppText>
             {pointEvents.slice(0, 5).map((ev) => {
               const sign = ev.delta >= 0 ? '+' : '';
               const date = new Date(ev.created_at).toLocaleDateString(undefined, {
@@ -882,18 +885,19 @@ export default function ProfileScreen() {
                   accessible
                   accessibilityLabel={`${pointEventLabel(ev.event_type)}, ${sign}${ev.delta} points, ${date}`}
                 >
-                  <Text style={styles.pointHistoryLabel} numberOfLines={1}>
+                  <AppText variant="body" style={styles.pointHistoryLabel} numberOfLines={1}>
                     {pointEventLabel(ev.event_type)}
-                  </Text>
-                  <Text style={styles.pointHistoryDate}>{date}</Text>
-                  <Text
+                  </AppText>
+                  <AppText variant="body" style={styles.pointHistoryDate}>{date}</AppText>
+                  <AppText
+                    variant="monoBold"
                     style={[
                       styles.pointHistoryDelta,
                       ev.delta < 0 && styles.pointHistoryDeltaNeg,
                     ]}
                   >
                     {sign}{ev.delta} pts
-                  </Text>
+                  </AppText>
                 </View>
               );
             })}
@@ -931,22 +935,23 @@ export default function ProfileScreen() {
                 : `${streak.current} day streak${streak.longest > streak.current ? `. Best ever: ${streak.longest} days.` : '. New personal best!'}`
             }
           >
-            <Text
+            <AppText
+              variant="label"
               style={styles.streakIcon}
               accessibilityElementsHidden
               importantForAccessibility="no-hide-descendants"
             >
               🔥
-            </Text>
+            </AppText>
             <View style={styles.streakTextWrap}>
-              <Text style={styles.streakValue}>
+              <AppText variant="label" style={styles.streakValue}>
                 {streak.current} day{streak.current === 1 ? '' : 's'} in a row
-              </Text>
-              <Text style={styles.streakSubtitle}>
+              </AppText>
+              <AppText variant="body" style={styles.streakSubtitle}>
                 {streak.longest > streak.current
                   ? `Best ever: ${streak.longest} days`
                   : 'New personal best!'}
-              </Text>
+              </AppText>
             </View>
           </View>
         )}
@@ -969,29 +974,31 @@ export default function ProfileScreen() {
             }
             accessibilityHint="Opens the Map tab centered on this flag"
           >
-            <Text
+            <AppText
+              variant="label"
               style={styles.nearestBtnIcon}
               accessibilityElementsHidden
               importantForAccessibility="no-hide-descendants"
             >
               📍
-            </Text>
+            </AppText>
             <View style={styles.nearestBtnTextWrap}>
-              <Text style={styles.nearestBtnTitle}>
+              <AppText variant="label" style={styles.nearestBtnTitle}>
                 Nearest unresolved · {formatDistance(nearestUnresolved.km)}
-              </Text>
-              <Text style={styles.nearestBtnSubtitle} numberOfLines={1}>
+              </AppText>
+              <AppText variant="body" style={styles.nearestBtnSubtitle} numberOfLines={1}>
                 {CATEGORY_LABELS[nearestUnresolved.flag.category]} · severity{' '}
                 {nearestUnresolved.flag.severity}
-              </Text>
+              </AppText>
             </View>
-            <Text
+            <AppText
+              variant="label"
               style={styles.nearestBtnChevron}
               accessibilityElementsHidden
               importantForAccessibility="no-hide-descendants"
             >
               ›
-            </Text>
+            </AppText>
           </Pressable>
         )}
 
@@ -1028,10 +1035,10 @@ export default function ProfileScreen() {
                   accessibilityElementsHidden
                   importantForAccessibility="no"
                 >
-                  <Text style={[styles.statusPillCount, { color: palette.fg }]}>{count}</Text>
-                  <Text style={[styles.statusPillLabel, { color: palette.fg }]}>
+                  <AppText variant="monoBold" style={[styles.statusPillCount, { color: palette.fg }]}>{count}</AppText>
+                  <AppText variant="label" style={[styles.statusPillLabel, { color: palette.fg }]}>
                     {STATUS_LABELS[status]}
-                  </Text>
+                  </AppText>
                 </View>
               );
             })}
@@ -1072,16 +1079,16 @@ export default function ProfileScreen() {
           accessibilityHint="Opens a list of every flag you've submitted"
         >
           <View style={styles.myReportsTextWrap}>
-            <Text style={styles.myReportsTitle}>My Reports</Text>
-            <Text style={styles.myReportsSubtitle}>
+            <AppText variant="label" style={styles.myReportsTitle}>My Reports</AppText>
+            <AppText variant="body" style={styles.myReportsSubtitle}>
               {stats.reported === 0
-                ? 'See your reports here once you submit one.'
-                : 'View every flag you’ve submitted.'}
-            </Text>
+                ? "See your reports here once you submit one."
+                : "View every flag you’ve submitted."}
+            </AppText>
           </View>
-          <Text style={styles.myReportsChevron} accessibilityElementsHidden>
+          <AppText variant="label" style={styles.myReportsChevron} accessibilityElementsHidden>
             ›
-          </Text>
+          </AppText>
         </Pressable>
 
         <Pressable
@@ -1092,14 +1099,14 @@ export default function ProfileScreen() {
           accessibilityHint="Opens the list of flags you are tracking for status changes"
         >
           <View style={styles.myReportsTextWrap}>
-            <Text style={styles.myReportsTitle}>Watched Flags</Text>
-            <Text style={styles.myReportsSubtitle}>
+            <AppText variant="label" style={styles.myReportsTitle}>Watched Flags</AppText>
+            <AppText variant="body" style={styles.myReportsSubtitle}>
               Track flags you care about and see when their status changes.
-            </Text>
+            </AppText>
           </View>
-          <Text style={styles.myReportsChevron} accessibilityElementsHidden>
+          <AppText variant="label" style={styles.myReportsChevron} accessibilityElementsHidden>
             ›
-          </Text>
+          </AppText>
         </Pressable>
 
         <Pressable
@@ -1110,14 +1117,14 @@ export default function ProfileScreen() {
           accessibilityHint="Opens a chronological feed of recent flag activity, grouped by day"
         >
           <View style={styles.myReportsTextWrap}>
-            <Text style={styles.myReportsTitle}>Recent Activity</Text>
-            <Text style={styles.myReportsSubtitle}>
+            <AppText variant="label" style={styles.myReportsTitle}>Recent Activity</AppText>
+            <AppText variant="body" style={styles.myReportsSubtitle}>
               See what's been reported and triaged across the community, newest first.
-            </Text>
+            </AppText>
           </View>
-          <Text style={styles.myReportsChevron} accessibilityElementsHidden>
+          <AppText variant="label" style={styles.myReportsChevron} accessibilityElementsHidden>
             ›
-          </Text>
+          </AppText>
         </Pressable>
 
         <Pressable
@@ -1128,23 +1135,23 @@ export default function ProfileScreen() {
           accessibilityHint="Opens the full achievement catalog with your progress on each badge"
         >
           <View style={styles.myReportsTextWrap}>
-            <Text style={styles.myReportsTitle}>
+            <AppText variant="label" style={styles.myReportsTitle}>
               Achievements{' '}
-              <Text style={styles.achievementsCount}>
+              <AppText variant="label" style={styles.achievementsCount}>
                 · {achievementCount.earned} / {achievementCount.total}
-              </Text>
-            </Text>
-            <Text style={styles.myReportsSubtitle}>
+              </AppText>
+            </AppText>
+            <AppText variant="body" style={styles.myReportsSubtitle}>
               {achievementCount.earned === 0
                 ? 'Earn badges by reporting, triaging, and showing up.'
                 : achievementCount.earned === achievementCount.total
                   ? "You've earned every badge — legend status."
                   : `${achievementCount.total - achievementCount.earned} more to go. Tap to see what's next.`}
-            </Text>
+            </AppText>
           </View>
-          <Text style={styles.myReportsChevron} accessibilityElementsHidden>
+          <AppText variant="label" style={styles.myReportsChevron} accessibilityElementsHidden>
             ›
-          </Text>
+          </AppText>
         </Pressable>
 
         <Pressable
@@ -1155,14 +1162,14 @@ export default function ProfileScreen() {
           accessibilityHint="Opens the top 20 contributors ranked by points"
         >
           <View style={styles.myReportsTextWrap}>
-            <Text style={styles.myReportsTitle}>See leaderboard</Text>
-            <Text style={styles.myReportsSubtitle}>
+            <AppText variant="label" style={styles.myReportsTitle}>See leaderboard</AppText>
+            <AppText variant="body" style={styles.myReportsSubtitle}>
               Top 20 contributors ranked by points.
-            </Text>
+            </AppText>
           </View>
-          <Text style={styles.myReportsChevron} accessibilityElementsHidden>
+          <AppText variant="label" style={styles.myReportsChevron} accessibilityElementsHidden>
             ›
-          </Text>
+          </AppText>
         </Pressable>
 
         <Pressable
@@ -1173,14 +1180,14 @@ export default function ProfileScreen() {
           accessibilityHint="Opens settings for which flag status updates surface in your update banner"
         >
           <View style={styles.myReportsTextWrap}>
-            <Text style={styles.myReportsTitle}>Notifications</Text>
-            <Text style={styles.myReportsSubtitle}>
+            <AppText variant="label" style={styles.myReportsTitle}>Notifications</AppText>
+            <AppText variant="body" style={styles.myReportsSubtitle}>
               Choose which flag status changes surface as updates.
-            </Text>
+            </AppText>
           </View>
-          <Text style={styles.myReportsChevron} accessibilityElementsHidden>
+          <AppText variant="label" style={styles.myReportsChevron} accessibilityElementsHidden>
             ›
-          </Text>
+          </AppText>
         </Pressable>
 
         <Pressable
@@ -1191,18 +1198,18 @@ export default function ProfileScreen() {
           accessibilityHint="Opens the list of feedback you've sent to the maintainer"
         >
           <View style={styles.myReportsTextWrap}>
-            <Text style={styles.myReportsTitle}>My Feedback</Text>
-            <Text style={styles.myReportsSubtitle}>View the feedback messages you've sent.</Text>
+            <AppText variant="label" style={styles.myReportsTitle}>My Feedback</AppText>
+            <AppText variant="body" style={styles.myReportsSubtitle}>View the feedback messages you've sent.</AppText>
           </View>
-          <Text style={styles.myReportsChevron} accessibilityElementsHidden>
+          <AppText variant="label" style={styles.myReportsChevron} accessibilityElementsHidden>
             ›
-          </Text>
+          </AppText>
         </Pressable>
 
         <View style={styles.section}>
-          <Text style={styles.sectionLabel} accessibilityRole="header">
+          <AppText variant="heading" style={styles.sectionLabel} accessibilityRole="header">
             Display name
-          </Text>
+          </AppText>
           <View style={styles.nameRow}>
             <TextInput
               value={nameDraft}
@@ -1228,19 +1235,19 @@ export default function ProfileScreen() {
               {savingName ? (
                 <ActivityIndicator color={color.textOnBrand} />
               ) : (
-                <Text style={styles.saveBtnText}>Save</Text>
+                <AppText variant="label" style={styles.saveBtnText}>Save</AppText>
               )}
             </Pressable>
           </View>
-          <Text style={styles.hint}>
+          <AppText variant="body" style={styles.hint}>
             The name shown next to your reports. Leave empty to use your email.
-          </Text>
+          </AppText>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionLabel} accessibilityRole="header">
+          <AppText variant="heading" style={styles.sectionLabel} accessibilityRole="header">
             Default landing tab
-          </Text>
+          </AppText>
           <View style={styles.tabRow}>
             {DEFAULT_TABS.map((tab) => {
               const selected = tab === defaultTab;
@@ -1257,14 +1264,14 @@ export default function ProfileScreen() {
                     disabled: savingTab || defaultTab === null,
                   }}
                 >
-                  <Text style={[styles.tabPillText, selected && styles.tabPillTextSelected]}>
+                  <AppText variant="label" style={[styles.tabPillText, selected && styles.tabPillTextSelected]}>
                     {tab}
-                  </Text>
+                  </AppText>
                 </Pressable>
               );
             })}
           </View>
-          <Text style={styles.hint}>The app opens to this tab when you sign in.</Text>
+          <AppText variant="body" style={styles.hint}>The app opens to this tab when you sign in.</AppText>
         </View>
 
         {/* D4: Realtime opt-in toggle (Safeguard #2).
@@ -1273,9 +1280,9 @@ export default function ProfileScreen() {
             it fails (not silently swallowed) because the user just told
             us their preference and we must honour it. */}
         <View style={styles.section}>
-          <Text style={styles.sectionLabel} accessibilityRole="header">
+          <AppText variant="heading" style={styles.sectionLabel} accessibilityRole="header">
             Real-time updates
-          </Text>
+          </AppText>
           <View
             style={styles.toggleRow}
             accessible
@@ -1285,8 +1292,8 @@ export default function ProfileScreen() {
             accessibilityState={{ checked: realtimeEnabled, busy: savingRealtime }}
           >
             <View style={styles.toggleTextWrap}>
-              <Text style={styles.toggleLabel}>Show new flags in real-time</Text>
-              <Text style={styles.toggleHint}>Map updates automatically when flags change.</Text>
+              <AppText variant="label" style={styles.toggleLabel}>Show new flags in real-time</AppText>
+              <AppText variant="body" style={styles.toggleHint}>Map updates automatically when flags change.</AppText>
             </View>
             <Switch
               value={realtimeEnabled}
@@ -1303,9 +1310,9 @@ export default function ProfileScreen() {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionLabel} accessibilityRole="header">
+          <AppText variant="heading" style={styles.sectionLabel} accessibilityRole="header">
             Onboarding
-          </Text>
+          </AppText>
           <Pressable
             onPress={handleShowIntroAgain}
             style={styles.linkBtn}
@@ -1313,7 +1320,7 @@ export default function ProfileScreen() {
             accessibilityLabel="Show me the intro again"
             accessibilityHint="Resets the first-run cards so they appear at the next sign in"
           >
-            <Text style={styles.linkBtnText}>Show me the intro again</Text>
+            <AppText variant="label" style={styles.linkBtnText}>Show me the intro again</AppText>
           </Pressable>
         </View>
 
@@ -1325,14 +1332,14 @@ export default function ProfileScreen() {
           accessibilityHint="Opens collapsible answers to common questions about the app"
         >
           <View style={styles.aboutTextWrap}>
-            <Text style={styles.aboutTitle}>Help & FAQ</Text>
-            <Text style={styles.aboutSubtitle}>
+            <AppText variant="label" style={styles.aboutTitle}>Help & FAQ</AppText>
+            <AppText variant="body" style={styles.aboutSubtitle}>
               Common questions about reports, points, and accessibility.
-            </Text>
+            </AppText>
           </View>
-          <Text style={styles.aboutChevron} accessibilityElementsHidden>
+          <AppText variant="label" style={styles.aboutChevron} accessibilityElementsHidden>
             ›
-          </Text>
+          </AppText>
         </Pressable>
 
         <Pressable
@@ -1343,12 +1350,12 @@ export default function ProfileScreen() {
           accessibilityHint="Opens a dated list of recent shipped features"
         >
           <View style={styles.aboutTextWrap}>
-            <Text style={styles.aboutTitle}>What's New</Text>
-            <Text style={styles.aboutSubtitle}>Recent features added to AccessMap.</Text>
+            <AppText variant="label" style={styles.aboutTitle}>What's New</AppText>
+            <AppText variant="body" style={styles.aboutSubtitle}>Recent features added to AccessMap.</AppText>
           </View>
-          <Text style={styles.aboutChevron} accessibilityElementsHidden>
+          <AppText variant="label" style={styles.aboutChevron} accessibilityElementsHidden>
             ›
-          </Text>
+          </AppText>
         </Pressable>
 
         <Pressable
@@ -1359,14 +1366,14 @@ export default function ProfileScreen() {
           accessibilityHint="Opens information about the app, version, and how to send feedback"
         >
           <View style={styles.aboutTextWrap}>
-            <Text style={styles.aboutTitle}>About AccessMap</Text>
-            <Text style={styles.aboutSubtitle}>
+            <AppText variant="label" style={styles.aboutTitle}>About AccessMap</AppText>
+            <AppText variant="body" style={styles.aboutSubtitle}>
               What it is, who built it, and how to get in touch.
-            </Text>
+            </AppText>
           </View>
-          <Text style={styles.aboutChevron} accessibilityElementsHidden>
+          <AppText variant="label" style={styles.aboutChevron} accessibilityElementsHidden>
             ›
-          </Text>
+          </AppText>
         </Pressable>
 
         <Pressable
@@ -1388,7 +1395,7 @@ export default function ProfileScreen() {
           accessibilityRole="button"
           accessibilityLabel="Sign out of your account"
         >
-          <Text style={styles.signOutText}>Sign out</Text>
+          <AppText variant="label" style={styles.signOutText}>Sign out</AppText>
         </Pressable>
 
         <Pressable
@@ -1398,7 +1405,7 @@ export default function ProfileScreen() {
           accessibilityLabel="Delete your account"
           accessibilityHint="Opens a confirmation dialog before permanently deleting your account and data"
         >
-          <Text style={styles.deleteAccountText}>Delete Account</Text>
+          <AppText variant="label" style={styles.deleteAccountText}>Delete Account</AppText>
         </Pressable>
       </ScrollView>
 
@@ -1417,17 +1424,17 @@ export default function ProfileScreen() {
       >
         <View style={styles.deleteBackdrop}>
           <View style={styles.deleteSheet} accessibilityViewIsModal>
-            <Text style={styles.deleteTitle} accessibilityRole="header">
+            <AppText variant="heading" style={styles.deleteTitle} accessibilityRole="header">
               Delete your account?
-            </Text>
-            <Text style={styles.deleteBody}>
+            </AppText>
+            <AppText variant="body" style={styles.deleteBody}>
               This will permanently delete your account and personal information.
               Your accessibility reports will remain on the map anonymously to
               help the community. This cannot be undone.
-            </Text>
-            <Text style={styles.deleteBodySecondary}>
+            </AppText>
+            <AppText variant="body" style={styles.deleteBodySecondary}>
               Want to remove your reports too? Contact support.
-            </Text>
+            </AppText>
             <View style={styles.deleteActions}>
               <Pressable
                 style={({ pressed }) => [
@@ -1439,7 +1446,7 @@ export default function ProfileScreen() {
                 accessibilityRole="button"
                 accessibilityLabel="Cancel account deletion"
               >
-                <Text style={styles.deleteCancelText}>Cancel</Text>
+                <AppText variant="label" style={styles.deleteCancelText}>Cancel</AppText>
               </Pressable>
               <Pressable
                 style={({ pressed }) => [
@@ -1456,7 +1463,7 @@ export default function ProfileScreen() {
                 {deletingAccount ? (
                   <ActivityIndicator color="#fff" size="small" />
                 ) : (
-                  <Text style={styles.deleteConfirmText}>Delete Account</Text>
+                  <AppText variant="label" style={styles.deleteConfirmText}>Delete Account</AppText>
                 )}
               </Pressable>
             </View>
@@ -1544,9 +1551,9 @@ export default function ProfileScreen() {
         <View style={styles.tierBackdrop}>
           <View style={styles.tierSheet} accessibilityViewIsModal>
             <View style={styles.tierHeaderRow}>
-              <Text style={styles.tierHeaderTitle} accessibilityRole="header">
+              <AppText variant="heading" style={styles.tierHeaderTitle} accessibilityRole="header">
                 Reputation tiers
-              </Text>
+              </AppText>
               <Pressable
                 onPress={() => setTierExplainerOpen(false)}
                 hitSlop={12}
@@ -1554,14 +1561,14 @@ export default function ProfileScreen() {
                 accessibilityRole="button"
                 accessibilityLabel="Close reputation tiers"
               >
-                <Text style={styles.tierCloseBtnText}>✕</Text>
+                <AppText variant="label" style={styles.tierCloseBtnText}>✕</AppText>
               </Pressable>
             </View>
 
-            <Text style={styles.tierIntro}>
+            <AppText variant="body" style={styles.tierIntro}>
               Earn points by reporting flags and helping verify or resolve them. Each tier reflects
               how much you've contributed.
-            </Text>
+            </AppText>
 
             <View style={styles.tierList}>
               {REPUTATION_TIERS.map((t) => {
@@ -1581,34 +1588,35 @@ export default function ProfileScreen() {
                       } points` + (isCurrent ? '. Your current tier.' : '')
                     }
                   >
-                    <Text
+                    <AppText
+                      variant="label"
                       style={styles.tierRowEmoji}
                       accessibilityElementsHidden
                       importantForAccessibility="no-hide-descendants"
                     >
                       {t.emoji}
-                    </Text>
+                    </AppText>
                     <View style={styles.tierRowTextWrap}>
-                      <Text style={[styles.tierRowLabel, isCurrent && styles.tierRowLabelCurrent]}>
+                      <AppText variant="label" style={[styles.tierRowLabel, isCurrent && styles.tierRowLabelCurrent]}>
                         {t.label}
-                        {isCurrent && <Text style={styles.tierRowCurrentTag}> · you are here</Text>}
-                      </Text>
-                      <Text style={styles.tierRowRange}>
+                        {isCurrent && <AppText variant="label" style={styles.tierRowCurrentTag}> · you are here</AppText>}
+                      </AppText>
+                      <AppText variant="body" style={styles.tierRowRange}>
                         {t.nextThreshold === null
                           ? `${t.threshold}+ points`
                           : `${t.threshold} – ${t.nextThreshold - 1} points`}
-                      </Text>
+                      </AppText>
                     </View>
                   </View>
                 );
               })}
             </View>
 
-            <Text style={styles.tierFooter}>
+            <AppText variant="body" style={styles.tierFooter}>
               {nextTier
                 ? `You're ${tierGap} ${tierGap === 1 ? 'point' : 'points'} away from ${nextTier.label} ${nextTier.emoji}`
                 : `You've reached the top tier — keep contributing!`}
-            </Text>
+            </AppText>
           </View>
         </View>
       </Modal>
@@ -1621,8 +1629,8 @@ function Stat({ label, value }: { label: string; value: number }) {
   const styles = makeStyles(color);
   return (
     <View style={styles.statCard}>
-      <Text style={styles.statValue}>{value}</Text>
-      <Text style={styles.statLabel}>{label}</Text>
+      <AppText variant="monoBold" style={styles.statValue}>{value}</AppText>
+      <AppText variant="label" style={styles.statLabel}>{label}</AppText>
     </View>
   );
 }

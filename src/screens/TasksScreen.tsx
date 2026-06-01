@@ -54,6 +54,7 @@ import type { FlagCategory, FlagRow, FlagStatus } from '@/types/database';
 import type { RootTabParamList } from '@/navigation/RootNavigator';
 import FlagDetailModal, { type DetailAction } from '@/components/FlagDetailModal';
 import PhotoLightboxModal from '@/components/PhotoLightboxModal';
+import { AppText } from '@/components/ui/AppText';
 import { font, radius, shadow, size, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 
@@ -594,7 +595,7 @@ export default function TasksScreen() {
     return (
       <View style={styles.center}>
         <ActivityIndicator />
-        <Text style={styles.subtitle}>Loading flags…</Text>
+        <AppText variant="body" style={styles.subtitle}>Loading flags…</AppText>
       </View>
     );
   }
@@ -607,7 +608,7 @@ export default function TasksScreen() {
             {/* accessibilityLiveRegion covers Android TalkBack;
                 iOS VoiceOver handled by announceForAccessibility at each call site.
                 WCAG 4.1.3 — status messages must reach all AT. */}
-            <Text style={styles.flashText} accessibilityLiveRegion="polite">{flash}</Text>
+            <AppText variant="label" style={styles.flashText} accessibilityLiveRegion="polite">{flash}</AppText>
           </View>
         </View>
       )}
@@ -631,11 +632,11 @@ export default function TasksScreen() {
           {loading ? (
             <ActivityIndicator color={color.textOnBrand} />
           ) : (
-            <Text style={styles.errorBannerIcon}>⚠</Text>
+            <AppText variant="label" style={styles.errorBannerIcon}>⚠</AppText>
           )}
-          <Text style={styles.errorBannerText} numberOfLines={2}>
+          <AppText variant="body" style={styles.errorBannerText} numberOfLines={2}>
             {loading ? 'Retrying…' : errorBannerText}
-          </Text>
+          </AppText>
         </Pressable>
       )}
       {isOfflineCache && (
@@ -645,14 +646,15 @@ export default function TasksScreen() {
           accessibilityLiveRegion="polite"
           accessibilityLabel="Showing offline data. Connect to the internet to refresh."
         >
-          <Text
+          <AppText
+            variant="label"
             style={styles.offlineBannerIcon}
             accessibilityElementsHidden
             importantForAccessibility="no-hide-descendants"
           >
             📶
-          </Text>
-          <Text style={styles.offlineBannerText}>Showing offline data — connect to refresh</Text>
+          </AppText>
+          <AppText variant="body" style={styles.offlineBannerText}>Showing offline data — connect to refresh</AppText>
         </View>
       )}
       {/* Select-multiple entry — visible only when there's something to
@@ -673,7 +675,7 @@ export default function TasksScreen() {
             accessibilityLabel="Select multiple"
             accessibilityHint="Enter selection mode to verify or resolve multiple flags at once"
           >
-            <Text style={styles.selectEntryText}>Select multiple</Text>
+            <AppText variant="label" style={styles.selectEntryText}>Select multiple</AppText>
           </Pressable>
         </View>
       )}
@@ -703,7 +705,7 @@ export default function TasksScreen() {
               accessibilityLabel="Clear search"
               hitSlop={8}
             >
-              <Text style={styles.searchClearText}>✕</Text>
+              <AppText variant="label" style={styles.searchClearText}>✕</AppText>
             </Pressable>
           )}
         </View>
@@ -722,7 +724,7 @@ export default function TasksScreen() {
             accessibilityLabel="Show all flags"
             accessibilityState={{ selected: !mineOnly, disabled: !mineOnlyHydrated }}
           >
-            <Text style={[styles.mineChipText, !mineOnly && styles.mineChipTextActive]}>All</Text>
+            <AppText variant="label" style={[styles.mineChipText, !mineOnly && styles.mineChipTextActive]}>All</AppText>
           </Pressable>
           <Pressable
             onPress={() => handleScopeChange(true)}
@@ -732,7 +734,7 @@ export default function TasksScreen() {
             accessibilityLabel="Show only my flags"
             accessibilityState={{ selected: mineOnly, disabled: !mineOnlyHydrated }}
           >
-            <Text style={[styles.mineChipText, mineOnly && styles.mineChipTextActive]}>Mine</Text>
+            <AppText variant="label" style={[styles.mineChipText, mineOnly && styles.mineChipTextActive]}>Mine</AppText>
           </Pressable>
         </View>
       )}
@@ -763,9 +765,9 @@ export default function TasksScreen() {
                 }
                 accessibilityState={{ selected: active }}
               >
-                <Text style={[styles.sevChipText, active && styles.sevChipTextActive]}>
+                <AppText variant="label" style={[styles.sevChipText, active && styles.sevChipTextActive]}>
                   {label}
-                </Text>
+                </AppText>
               </Pressable>
             );
           })}
@@ -790,9 +792,9 @@ export default function TasksScreen() {
             accessibilityLabel="Show all categories"
             accessibilityState={{ selected: categoryFilter === null }}
           >
-            <Text style={[styles.catChipText, categoryFilter === null && styles.catChipTextActive]}>
+            <AppText variant="label" style={[styles.catChipText, categoryFilter === null && styles.catChipTextActive]}>
               All
-            </Text>
+            </AppText>
           </Pressable>
           {CATEGORY_ORDER.map((cat) => {
             const active = categoryFilter === cat;
@@ -805,9 +807,9 @@ export default function TasksScreen() {
                 accessibilityLabel={`${CATEGORY_LABELS[cat]}${active ? ', selected, tap to deselect' : ''}`}
                 accessibilityState={{ selected: active }}
               >
-                <Text style={[styles.catChipText, active && styles.catChipTextActive]}>
+                <AppText variant="label" style={[styles.catChipText, active && styles.catChipTextActive]}>
                   {CATEGORY_LABELS[cat]}
-                </Text>
+                </AppText>
               </Pressable>
             );
           })}
@@ -819,13 +821,14 @@ export default function TasksScreen() {
           to keep the chrome tight. */}
       {displayFlags.length >= 2 && (
         <View style={styles.sortRow} accessibilityRole="tablist" accessibilityLabel="Sort order">
-          <Text
+          <AppText
+            variant="body"
             style={styles.sortLabel}
             accessibilityElementsHidden
             importantForAccessibility="no-hide-descendants"
           >
             Sort:
-          </Text>
+          </AppText>
           {TASKS_SORT_ORDER.map((mode) => {
             const active = sortMode === mode;
             return (
@@ -837,9 +840,9 @@ export default function TasksScreen() {
                 accessibilityLabel={`Sort by ${TASKS_SORT_LABELS[mode]}`}
                 accessibilityState={{ selected: active }}
               >
-                <Text style={[styles.sortChipText, active && styles.sortChipTextActive]}>
+                <AppText variant="label" style={[styles.sortChipText, active && styles.sortChipTextActive]}>
                   {TASKS_SORT_LABELS[mode]}
-                </Text>
+                </AppText>
               </Pressable>
             );
           })}
@@ -866,31 +869,31 @@ export default function TasksScreen() {
         }
         renderSectionHeader={({ section: { title, data } }) => (
           <View style={styles.sectionHeader} accessible accessibilityRole="header">
-            <Text style={styles.sectionTitle}>{title}</Text>
+            <AppText variant="heading" style={styles.sectionTitle}>{title}</AppText>
             <View style={styles.sectionCountPill}>
-              <Text style={styles.sectionCountText}>{data.length}</Text>
+              <AppText variant="monoBold" style={styles.sectionCountText}>{data.length}</AppText>
             </View>
           </View>
         )}
         ListEmptyComponent={
           <View style={styles.emptyCard} accessible accessibilityRole="text">
-            <Text style={styles.emptyIcon} accessibilityElementsHidden>
+            <AppText variant="label" style={styles.emptyIcon} accessibilityElementsHidden>
               {categoryFilter || searchText.trim() ? '🔍' : '✨'}
-            </Text>
-            <Text style={styles.emptyTitle}>
+            </AppText>
+            <AppText variant="heading" style={styles.emptyTitle}>
               {categoryFilter
                 ? `No ${CATEGORY_LABELS[categoryFilter]} flags`
                 : searchText.trim()
                   ? 'No matches'
                   : 'All caught up'}
-            </Text>
-            <Text style={styles.emptyBody}>
+            </AppText>
+            <AppText variant="body" style={styles.emptyBody}>
               {categoryFilter
                 ? `No open or verified ${CATEGORY_LABELS[categoryFilter].toLowerCase()} flags right now. Tap "All" above to see every category.`
                 : searchText.trim()
                   ? `Nothing matches "${searchText.trim()}". Try a different keyword or clear the search.`
                   : "No flags to triage right now. New community reports will land here as they're added — pull to refresh anytime."}
-            </Text>
+            </AppText>
           </View>
         }
         renderItem={renderFlagItem}
@@ -917,17 +920,18 @@ export default function TasksScreen() {
                       accessibilityState={{ busy: true }}
                     />
                   ) : (
-                    <Text style={styles.loadMoreText}>{`Load ${NEXT_PAGE_SIZE} more`}</Text>
+                    <AppText variant="label" style={styles.loadMoreText}>{`Load ${NEXT_PAGE_SIZE} more`}</AppText>
                   )}
                 </Pressable>
               ) : (
-                <Text
+                <AppText
+                  variant="body"
                   style={styles.endText}
                   accessibilityRole="text"
                   accessibilityLabel="You have seen all flags nearby"
                 >
                   {"You've seen all flags nearby ✓"}
-                </Text>
+                </AppText>
               )}
             </View>
           )
@@ -943,9 +947,9 @@ export default function TasksScreen() {
           {/* The single source of truth for "how many are picked", spoken
               by SR on every change. Buttons below are static labels so
               they don't double-announce. */}
-          <Text style={styles.bulkCountText} accessibilityLiveRegion="polite">
+          <AppText variant="label" style={styles.bulkCountText} accessibilityLiveRegion="polite">
             {`${selectionCount(selection)} selected`}
-          </Text>
+          </AppText>
           <View style={styles.bulkButtonRow}>
             <Pressable
               onPress={() => {
@@ -970,7 +974,7 @@ export default function TasksScreen() {
                 busy: bulkBusy,
               }}
             >
-              <Text style={styles.bulkBtnText}>Verify</Text>
+              <AppText variant="label" style={styles.bulkBtnText}>Verify</AppText>
             </Pressable>
             <Pressable
               onPress={() => {
@@ -995,7 +999,7 @@ export default function TasksScreen() {
                 busy: bulkBusy,
               }}
             >
-              <Text style={styles.bulkBtnText}>Resolve</Text>
+              <AppText variant="label" style={styles.bulkBtnText}>Resolve</AppText>
             </Pressable>
             <Pressable
               onPress={() => {
@@ -1026,7 +1030,7 @@ export default function TasksScreen() {
                 busy: bulkBusy,
               }}
             >
-              <Text style={styles.bulkBtnText}>Watch</Text>
+              <AppText variant="label" style={styles.bulkBtnText}>Watch</AppText>
             </Pressable>
             <Pressable
               onPress={exitSelection}
@@ -1042,7 +1046,7 @@ export default function TasksScreen() {
               accessibilityHint="Exits selection mode without changing any flags"
               accessibilityState={{ disabled: bulkBusy }}
             >
-              <Text style={styles.bulkCancelText}>Cancel</Text>
+              <AppText variant="label" style={styles.bulkCancelText}>Cancel</AppText>
             </Pressable>
           </View>
         </View>
@@ -1150,8 +1154,8 @@ const FlagCard = memo(function FlagCard({
           importantForAccessibility="no-hide-descendants"
           accessibilityElementsHidden={true}
         />
-        <Text style={styles.cardTitle}>{CATEGORY_LABELS[flag.category]}</Text>
-        <Text style={styles.statusTag}>{flag.status}</Text>
+        <AppText variant="label" style={styles.cardTitle}>{CATEGORY_LABELS[flag.category]}</AppText>
+        <AppText variant="label" style={styles.statusTag}>{flag.status}</AppText>
         {/* Checkmark indicator in the top-right corner. Hidden from SR
             because the accessibilityState above already conveys the
             checked/unchecked state — duplicating it would just read
@@ -1162,7 +1166,7 @@ const FlagCard = memo(function FlagCard({
             accessibilityElementsHidden
             importantForAccessibility="no-hide-descendants"
           >
-            {selected ? <Text style={styles.selectCheckMark}>✓</Text> : null}
+            {selected ? <AppText variant="label" style={styles.selectCheckMark}>✓</AppText> : null}
           </View>
         )}
       </View>
@@ -1191,20 +1195,20 @@ const FlagCard = memo(function FlagCard({
           </Pressable>
         ) : null}
         <View style={styles.cardBodyText}>
-          {flag.description ? <Text style={styles.cardDesc}>{flag.description}</Text> : null}
-          <Text style={styles.cardMeta}>
+          {flag.description ? <AppText variant="body" style={styles.cardDesc}>{flag.description}</AppText> : null}
+          <AppText variant="mono" style={styles.cardMeta}>
             {`Severity ${flag.severity}` +
               (distanceInfo ? ` • ${distanceInfo.label} · ${distanceInfo.eta}` : '') +
               ` • ${flag.lat.toFixed(4)}, ${flag.lng.toFixed(4)}` +
               ` • ${relativeTime(flag.created_at)}`}
-          </Text>
-          <Text style={styles.cardHint}>
+          </AppText>
+          <AppText variant="body" style={styles.cardHint}>
             {selectionActive
               ? selected
                 ? 'tap to deselect'
                 : 'tap to select'
               : 'tap to view on map'}
-          </Text>
+          </AppText>
         </View>
       </View>
       {/* Hide per-card action buttons during selection mode — the
@@ -1222,7 +1226,7 @@ const FlagCard = memo(function FlagCard({
               accessibilityLabel="Verify this flag"
               accessibilityState={{ disabled: isBusy }}
             >
-              <Text style={styles.verifyText}>Verify</Text>
+              <AppText variant="label" style={styles.verifyText}>Verify</AppText>
             </Pressable>
           )}
           <Pressable
@@ -1233,7 +1237,7 @@ const FlagCard = memo(function FlagCard({
             accessibilityLabel="Mark this flag resolved"
             accessibilityState={{ disabled: isBusy }}
           >
-            <Text style={styles.resolveText}>Resolved</Text>
+            <AppText variant="label" style={styles.resolveText}>Resolved</AppText>
           </Pressable>
           <Pressable
             disabled={isBusy}
@@ -1243,7 +1247,7 @@ const FlagCard = memo(function FlagCard({
             accessibilityLabel="Reject this flag"
             accessibilityState={{ disabled: isBusy }}
           >
-            <Text style={styles.rejectText}>Reject</Text>
+            <AppText variant="label" style={styles.rejectText}>Reject</AppText>
           </Pressable>
           <Pressable
             disabled={isBusy}
@@ -1254,7 +1258,7 @@ const FlagCard = memo(function FlagCard({
             accessibilityHint="Opens a screen with the full report, photo, and more actions"
             accessibilityState={{ disabled: isBusy }}
           >
-            <Text style={styles.detailsText}>Details</Text>
+            <AppText variant="label" style={styles.detailsText}>Details</AppText>
           </Pressable>
         </View>
       )}
