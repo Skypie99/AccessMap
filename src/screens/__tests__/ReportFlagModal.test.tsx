@@ -197,6 +197,16 @@ jest.mock('@/theme/ThemeContext', () => ({
 jest.mock('@/theme', () => ({
   radius: { xs: 4, sm: 6, md: 8, lg: 12, xl: 16, xxl: 24, circle: 9999 },
   font: {
+    family: {
+      display: 'PlusJakartaSans_800ExtraBold',
+      displayBold: 'PlusJakartaSans_700Bold',
+      body: 'PublicSans_400Regular',
+      bodyMedium: 'PublicSans_500Medium',
+      bodySemibold: 'PublicSans_600SemiBold',
+      mono: 'JetBrainsMono_400Regular',
+      monoMedium: 'JetBrainsMono_500Medium',
+      monoBold: 'JetBrainsMono_600SemiBold',
+    },
     size: { xs: 11, sm: 13, md: 15, lg: 17, xl: 19, xxl: 22 },
     weight: { regular: '400', medium: '500', semibold: '600', bold: '700' },
   },

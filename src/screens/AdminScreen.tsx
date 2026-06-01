@@ -57,7 +57,7 @@ export default function AdminScreen() {
 
   if (!isAdmin) {
     return (
-      <View style={styles.center}>
+      <View style={styles.center} accessible accessibilityRole="alert">
         <Text style={styles.unauthorizedText}>Admin access required.</Text>
       </View>
     );
@@ -97,10 +97,19 @@ export default function AdminScreen() {
   const renderItem = ({ item }: { item: FlagRow }) => {
     const isBusy = actioningId === item.id;
     const dot = { backgroundColor: severityColor(item.severity) };
+    const cardLabel = `${CATEGORY_LABELS[item.category]}, severity ${item.severity}, ${item.status}. ${item.description ?? 'No description.'}`;
     return (
-      <View style={styles.card}>
+      <View
+        style={styles.card}
+        accessible
+        accessibilityLabel={cardLabel}
+      >
         <View style={styles.cardHeader}>
-          <View style={[styles.severityDot, dot]} />
+          <View
+            style={[styles.severityDot, dot]}
+            accessibilityElementsHidden
+            importantForAccessibility="no-hide-descendants"
+          />
           <Text style={styles.categoryText}>{CATEGORY_LABELS[item.category]}</Text>
           <Text style={styles.statusBadge}>{item.status}</Text>
         </View>
@@ -113,17 +122,28 @@ export default function AdminScreen() {
           </Text>
         ) : null}
         {item.photo_url ? (
-          <Image source={{ uri: item.photo_url }} style={styles.thumb} resizeMode="cover" />
+          <Image
+            source={{ uri: item.photo_url }}
+            style={styles.thumb}
+            resizeMode="cover"
+            accessibilityLabel={`Photo of ${CATEGORY_LABELS[item.category]} accessibility issue`}
+            accessibilityRole="image"
+          />
         ) : null}
         {isBusy ? (
-          <ActivityIndicator style={styles.busyIndicator} color="#60a5fa" />
+          <ActivityIndicator
+            style={styles.busyIndicator}
+            color="#60a5fa"
+            accessibilityLabel="Processing"
+          />
         ) : (
           <View style={styles.actions}>
             <Pressable
               style={[styles.btn, styles.btnRemove]}
               onPress={() => void handleRemove(item)}
               accessibilityRole="button"
-              accessibilityLabel={`Remove flag at ${item.lat.toFixed(3)}, ${item.lng.toFixed(3)}`}
+              accessibilityLabel={`Remove ${CATEGORY_LABELS[item.category]} flag`}
+              accessibilityState={{ disabled: isBusy }}
             >
               <Text style={styles.btnRemoveText}>Remove flag</Text>
             </Pressable>
@@ -131,7 +151,8 @@ export default function AdminScreen() {
               style={[styles.btn, styles.btnDismiss]}
               onPress={() => void handleDismiss(item)}
               accessibilityRole="button"
-              accessibilityLabel="Dismiss report"
+              accessibilityLabel={`Dismiss ${CATEGORY_LABELS[item.category]} report`}
+              accessibilityState={{ disabled: isBusy }}
             >
               <Text style={styles.btnDismissText}>Dismiss</Text>
             </Pressable>

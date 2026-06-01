@@ -72,7 +72,7 @@ export default function HowToHelpScreen({ visible, onClose }: Props) {
       <SafeAreaView style={styles.root}>
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.title}>How To Help</Text>
+          <Text style={styles.title} accessibilityRole="header">How To Help</Text>
           <Pressable
             onPress={onClose}
             hitSlop={12}
@@ -95,8 +95,17 @@ export default function HowToHelpScreen({ visible, onClose }: Props) {
           </Text>
 
           {STEPS.map((step, i) => (
-            <View key={step.number} style={styles.stepCard}>
-              <View style={[styles.stepIcon, { backgroundColor: stepColors[i] + '18' }]}>
+            <View
+              key={step.number}
+              style={styles.stepCard}
+              accessible
+              accessibilityLabel={`Step ${step.number}: ${step.title}. ${step.body}`}
+            >
+              <View
+                style={[styles.stepIcon, { backgroundColor: stepColors[i] + '18' }]}
+                accessibilityElementsHidden
+                importantForAccessibility="no-hide-descendants"
+              >
                 <Ionicons name={step.icon} size={28} color={stepColors[i]} />
               </View>
               <View style={styles.stepText}>
@@ -106,8 +115,18 @@ export default function HowToHelpScreen({ visible, onClose }: Props) {
             </View>
           ))}
 
-          <View style={styles.callout}>
-            <Ionicons name="heart" size={18} color={color.brand} />
+          <View
+            style={styles.callout}
+            accessible
+            accessibilityLabel="Every contribution — big or small — makes the world more accessible for people with mobility disabilities. Thank you."
+          >
+            <Ionicons
+              name="heart"
+              size={18}
+              color={color.brand}
+              accessibilityElementsHidden
+              importantForAccessibility="no-hide-descendants"
+            />
             <Text style={styles.calloutText}>
               Every contribution — big or small — makes the world more accessible
               for people with mobility disabilities. Thank you.
@@ -141,7 +160,10 @@ const makeStyles = (color: ColorTheme) =>
       color: color.textStrong,
     },
     closeBtn: {
-      padding: spacing.xs,
+      width: 44,
+      height: 44,
+      alignItems: 'center',
+      justifyContent: 'center',
     },
     scroll: { flex: 1 },
     scrollContent: {

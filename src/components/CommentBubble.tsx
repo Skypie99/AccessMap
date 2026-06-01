@@ -1,5 +1,6 @@
 import React from 'react';
-import { Pressable, View, Text, StyleSheet } from 'react-native';
+import { Pressable, View, StyleSheet } from 'react-native';
+import { AppText } from '@/components/ui/AppText';
 import { useColor } from '@/theme/ThemeContext';
 import { radius, font, spacing } from '@/theme';
 import { relativeTime } from '@/lib/relativeTime';
@@ -53,19 +54,20 @@ export function CommentBubble({ author, text, createdAt, isOwn, onDelete }: Comm
             accessibilityLabel={`Delete ${author}'s comment`}
             accessibilityHint="Permanently removes your comment"
           >
-            <Text
+            <AppText
+              variant="label"
               style={styles.deleteBtnText}
               accessibilityElementsHidden
               importantForAccessibility="no-hide-descendants"
             >
               ✕
-            </Text>
+            </AppText>
           </Pressable>
         )}
         {!isOwn && (
-          <Text style={[styles.author, { color: color.brandText }]} numberOfLines={1}>
+          <AppText variant="label" style={[styles.author, { color: color.brandText }]} numberOfLines={1}>
             {author}
-          </Text>
+          </AppText>
         )}
         {/*
           WCAG 1.4.3 — own-message text uses fontWeight bold (700) so it
@@ -80,7 +82,8 @@ export function CommentBubble({ author, text, createdAt, isOwn, onDelete }: Comm
           row is NOT a composite node, so the text carries its own label so
           VoiceOver can read the message content individually.
         */}
-        <Text
+        <AppText
+          variant="body"
           style={[
             styles.text,
             {
@@ -92,14 +95,15 @@ export function CommentBubble({ author, text, createdAt, isOwn, onDelete }: Comm
           accessibilityLabel={onDelete ? `Your comment: ${text}. ${timeLabel}` : undefined}
         >
           {text}
-        </Text>
-        <Text
+        </AppText>
+        <AppText
+          variant="mono"
           style={[styles.time, { color: isOwn ? color.pointsPillText : color.textSubtle }]}
           accessibilityElementsHidden
           importantForAccessibility="no-hide-descendants"
         >
           {timeLabel}
-        </Text>
+        </AppText>
       </View>
     </View>
   );
@@ -141,7 +145,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
     paddingVertical: 8,
     marginBottom: 2,
-    minHeight: 32,
+    minHeight: 44,
     alignItems: 'center',
     justifyContent: 'center',
   },

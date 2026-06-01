@@ -316,7 +316,7 @@ export default function ProfileScreen() {
       });
     } catch (e) {
       if (mountedRef.current) {
-        Alert.alert('Could not load profile', errorMessage(e));
+        Alert.alert("Couldn't load your profile", errorMessage(e));
       }
     } finally {
       if (mountedRef.current) setLoading(false);
@@ -477,7 +477,7 @@ export default function ProfileScreen() {
         AccessibilityInfo.announceForAccessibility('Display name saved.');
       }
     } catch (e) {
-      Alert.alert('Could not save name', errorMessage(e));
+      Alert.alert("Couldn't save your name", errorMessage(e));
     } finally {
       if (mountedRef.current) setSavingName(false);
     }
@@ -495,7 +495,7 @@ export default function ProfileScreen() {
           AccessibilityInfo.announceForAccessibility('Profile photo updated.');
         }
       } catch (e) {
-        Alert.alert('Could not update photo', errorMessage(e));
+        Alert.alert("Couldn't update your photo", errorMessage(e));
       } finally {
         if (mountedRef.current) setUploadingAvatar(false);
       }
@@ -519,7 +519,7 @@ export default function ProfileScreen() {
     try {
       const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (!perm.granted) {
-        Alert.alert('Permission needed', 'Allow photo library access to set a profile photo.');
+        Alert.alert('Permission needed', 'Allow photo access so you can choose a profile picture.');
         return;
       }
       const result = await ImagePicker.launchImageLibraryAsync({
@@ -532,7 +532,7 @@ export default function ProfileScreen() {
         void doUploadAvatar(result.assets[0].uri);
       }
     } catch (e) {
-      Alert.alert('Could not pick photo', errorMessage(e));
+      Alert.alert("Couldn't pick a photo", errorMessage(e));
     }
   }, [user, doUploadAvatar]);
 
@@ -549,7 +549,7 @@ export default function ProfileScreen() {
       } catch {
         if (mountedRef.current) {
           setDefaultTabValue(defaultTab);
-          Alert.alert('Could not save preference');
+          Alert.alert("Couldn't save that preference");
         }
       } finally {
         if (mountedRef.current) setSavingTab(false);
@@ -695,7 +695,7 @@ export default function ProfileScreen() {
   if (!user) {
     return (
       <View style={styles.center}>
-        <AppText variant="body" style={styles.subtitle}>Not signed in.</AppText>
+        <AppText variant="body" style={styles.subtitle}>Sign in to see your stats, badges, and reports.</AppText>
         <Pressable
           onPress={() => setSignInOpen(true)}
           style={({ pressed }) => [styles.signInBtn, pressed && styles.signInBtnPressed]}
@@ -1082,8 +1082,8 @@ export default function ProfileScreen() {
             <AppText variant="label" style={styles.myReportsTitle}>My Reports</AppText>
             <AppText variant="body" style={styles.myReportsSubtitle}>
               {stats.reported === 0
-                ? "See your reports here once you submit one."
-                : "View every flag you’ve submitted."}
+                ? "You haven't reported any barriers yet — your first one will show up here."
+                : "Every barrier you've reported, in one place."}
             </AppText>
           </View>
           <AppText variant="label" style={styles.myReportsChevron} accessibilityElementsHidden>
@@ -1101,7 +1101,7 @@ export default function ProfileScreen() {
           <View style={styles.myReportsTextWrap}>
             <AppText variant="label" style={styles.myReportsTitle}>Watched Flags</AppText>
             <AppText variant="body" style={styles.myReportsSubtitle}>
-              Track flags you care about and see when their status changes.
+              Keep an eye on barriers you care about and get notified when something changes.
             </AppText>
           </View>
           <AppText variant="label" style={styles.myReportsChevron} accessibilityElementsHidden>
@@ -1119,7 +1119,7 @@ export default function ProfileScreen() {
           <View style={styles.myReportsTextWrap}>
             <AppText variant="label" style={styles.myReportsTitle}>Recent Activity</AppText>
             <AppText variant="body" style={styles.myReportsSubtitle}>
-              See what's been reported and triaged across the community, newest first.
+              What the community has been up to — newest first.
             </AppText>
           </View>
           <AppText variant="label" style={styles.myReportsChevron} accessibilityElementsHidden>
@@ -1143,9 +1143,9 @@ export default function ProfileScreen() {
             </AppText>
             <AppText variant="body" style={styles.myReportsSubtitle}>
               {achievementCount.earned === 0
-                ? 'Earn badges by reporting, triaging, and showing up.'
+                ? 'Start reporting and verifying to earn your first badge.'
                 : achievementCount.earned === achievementCount.total
-                  ? "You've earned every badge — legend status."
+                  ? "You've earned every single badge. Legend."
                   : `${achievementCount.total - achievementCount.earned} more to go. Tap to see what's next.`}
             </AppText>
           </View>
@@ -1164,7 +1164,7 @@ export default function ProfileScreen() {
           <View style={styles.myReportsTextWrap}>
             <AppText variant="label" style={styles.myReportsTitle}>See leaderboard</AppText>
             <AppText variant="body" style={styles.myReportsSubtitle}>
-              Top 20 contributors ranked by points.
+              See who's making the biggest impact in the community.
             </AppText>
           </View>
           <AppText variant="label" style={styles.myReportsChevron} accessibilityElementsHidden>
@@ -1240,7 +1240,7 @@ export default function ProfileScreen() {
             </Pressable>
           </View>
           <AppText variant="body" style={styles.hint}>
-            The name shown next to your reports. Leave empty to use your email.
+            This shows next to your reports. Leave it blank and we'll use your email instead.
           </AppText>
         </View>
 
@@ -1271,7 +1271,7 @@ export default function ProfileScreen() {
               );
             })}
           </View>
-          <AppText variant="body" style={styles.hint}>The app opens to this tab when you sign in.</AppText>
+          <AppText variant="body" style={styles.hint}>AccessMap will open to this tab each time you launch the app.</AppText>
         </View>
 
         {/* D4: Realtime opt-in toggle (Safeguard #2).
@@ -1293,7 +1293,7 @@ export default function ProfileScreen() {
           >
             <View style={styles.toggleTextWrap}>
               <AppText variant="label" style={styles.toggleLabel}>Show new flags in real-time</AppText>
-              <AppText variant="body" style={styles.toggleHint}>Map updates automatically when flags change.</AppText>
+              <AppText variant="body" style={styles.toggleHint}>The map refreshes on its own as flags are added or triaged — no pulling to refresh.</AppText>
             </View>
             <Switch
               value={realtimeEnabled}
@@ -1351,7 +1351,7 @@ export default function ProfileScreen() {
         >
           <View style={styles.aboutTextWrap}>
             <AppText variant="label" style={styles.aboutTitle}>What's New</AppText>
-            <AppText variant="body" style={styles.aboutSubtitle}>Recent features added to AccessMap.</AppText>
+            <AppText variant="body" style={styles.aboutSubtitle}>See what we shipped recently.</AppText>
           </View>
           <AppText variant="label" style={styles.aboutChevron} accessibilityElementsHidden>
             ›
@@ -1368,7 +1368,7 @@ export default function ProfileScreen() {
           <View style={styles.aboutTextWrap}>
             <AppText variant="label" style={styles.aboutTitle}>About AccessMap</AppText>
             <AppText variant="body" style={styles.aboutSubtitle}>
-              What it is, who built it, and how to get in touch.
+              The story behind AccessMap and how to reach us.
             </AppText>
           </View>
           <AppText variant="label" style={styles.aboutChevron} accessibilityElementsHidden>
@@ -1433,7 +1433,7 @@ export default function ProfileScreen() {
               help the community. This cannot be undone.
             </AppText>
             <AppText variant="body" style={styles.deleteBodySecondary}>
-              Want to remove your reports too? Contact support.
+              If you also want your reports removed, get in touch with support and we'll take care of it.
             </AppText>
             <View style={styles.deleteActions}>
               <Pressable
@@ -1566,8 +1566,8 @@ export default function ProfileScreen() {
             </View>
 
             <AppText variant="body" style={styles.tierIntro}>
-              Earn points by reporting flags and helping verify or resolve them. Each tier reflects
-              how much you've contributed.
+              Earn points every time you report a barrier or help verify and resolve one. Each tier shows
+              how much you've given back to the community.
             </AppText>
 
             <View style={styles.tierList}>
@@ -1645,36 +1645,36 @@ const makeStyles = (color: ColorTheme) =>
       flex: 1,
       alignItems: 'center',
       justifyContent: 'center',
-      gap: 16,
+      gap: spacing.lg,
       backgroundColor: color.surfaceMuted,
     },
     signInBtn: {
       backgroundColor: color.brand,
-      paddingHorizontal: 32,
-      paddingVertical: 14,
-      borderRadius: 100,
+      paddingHorizontal: spacing.xxxl,
+      paddingVertical: spacing.md + 2,
+      borderRadius: radius.circle,
       minHeight: 44,
       justifyContent: 'center',
       alignItems: 'center',
     },
     signInBtnPressed: { opacity: 0.8 },
-    signInBtnText: { color: color.textOnBrand, fontSize: 16, fontWeight: '600' },
-    container: { padding: 24, gap: 16, alignItems: 'stretch' },
+    signInBtnText: { color: color.textOnBrand, fontSize: font.size.lg, fontWeight: font.weight.semibold },
+    container: { padding: spacing.xxl, gap: spacing.lg, alignItems: 'stretch' },
     email: {
-      fontSize: 13,
+      fontSize: font.size.sm,
       color: color.textMuted,
       textAlign: 'center',
-      marginBottom: 4,
+      marginBottom: spacing.tight,
     },
-    subtitle: { fontSize: 14, color: color.text },
+    subtitle: { fontSize: font.size.base, color: color.text },
     heroCard: {
       backgroundColor: color.brand,
-      borderRadius: 24,
-      paddingHorizontal: 24,
-      paddingTop: 22,
-      paddingBottom: 24,
+      borderRadius: spacing.xxl,
+      paddingHorizontal: spacing.xxl,
+      paddingTop: spacing.xl + 2,
+      paddingBottom: spacing.xxl,
       alignItems: 'center',
-      gap: 4,
+      gap: spacing.tight,
       // Heavier drop shadow so the hero sits forward as the page anchor.
       shadowColor: color.shadow,
       shadowOpacity: 0.22,
@@ -1839,8 +1839,8 @@ const makeStyles = (color: ColorTheme) =>
       letterSpacing: -0.2,
     },
     tierCloseBtn: {
-      width: 32,
-      height: 32,
+      width: 44,
+      height: 44,
       borderRadius: radius.circle,
       backgroundColor: color.surfaceNeutral,
       alignItems: 'center',
@@ -1967,20 +1967,20 @@ const makeStyles = (color: ColorTheme) =>
     },
     nearestBtnIcon: { fontSize: 22 },
     nearestBtnTextWrap: { flex: 1, gap: 2 },
-    nearestBtnTitle: { fontSize: 15, fontWeight: '700', color: color.brandText },
-    nearestBtnSubtitle: { fontSize: 12, color: color.brandText, opacity: 0.85 },
+    nearestBtnTitle: { fontSize: font.size.md, fontWeight: font.weight.bold, color: color.brandText },
+    nearestBtnSubtitle: { fontSize: font.size.xs, color: color.brandText, opacity: 0.85 },
     nearestBtnChevron: {
       fontSize: 22,
       color: color.brand,
-      paddingHorizontal: 4,
-      fontWeight: '700',
+      paddingHorizontal: spacing.tight,
+      fontWeight: font.weight.bold,
     },
-    statsRow: { flexDirection: 'row', gap: 12 },
+    statsRow: { flexDirection: 'row', gap: spacing.md },
     statCard: {
       flex: 1,
       backgroundColor: color.surface,
       borderRadius: radius.lg,
-      padding: 16,
+      padding: spacing.lg,
       alignItems: 'center',
       ...shadow.e1,
     },
@@ -2110,31 +2110,31 @@ const makeStyles = (color: ColorTheme) =>
     toggleLabel: { fontSize: 14, fontWeight: '600', color: color.textStrong },
     toggleHint: { fontSize: 12, color: color.textMuted },
     aboutRow: {
-      marginTop: 16,
+      marginTop: spacing.lg,
       backgroundColor: color.surface,
       borderRadius: radius.lg,
-      padding: 16,
+      padding: spacing.lg,
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 12,
+      gap: spacing.md,
       ...shadow.e1,
       minHeight: 64,
     },
     aboutRowPressed: { opacity: 0.85, backgroundColor: color.surfaceMuted },
     aboutTextWrap: { flex: 1, gap: 2 },
     aboutTitle: {
-      fontSize: 16,
-      fontWeight: '700',
+      fontSize: font.size.lg,
+      fontWeight: font.weight.bold,
       color: color.textStrong,
       letterSpacing: -0.1,
     },
-    aboutSubtitle: { fontSize: 13, color: color.textMuted },
-    aboutChevron: { fontSize: 28, color: color.textSubtle, fontWeight: '300' },
+    aboutSubtitle: { fontSize: font.size.sm, color: color.textMuted },
+    aboutChevron: { fontSize: 28, color: color.textSubtle, fontWeight: font.weight.regular },
     signOutBtn: {
-      marginTop: 16,
+      marginTop: spacing.lg,
       alignSelf: 'center',
-      paddingHorizontal: 24,
-      paddingVertical: 12,
+      paddingHorizontal: spacing.xxl,
+      paddingVertical: spacing.md,
       borderRadius: radius.circle,
       backgroundColor: color.surfaceNeutral,
       minHeight: 44,

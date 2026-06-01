@@ -7,12 +7,12 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
-  Text,
   useWindowDimensions,
   View,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import { AppText } from '@/components/ui/AppText';
 import * as Location from 'expo-location';
 import {
   getNotificationPermission,
@@ -89,33 +89,33 @@ const CARDS: Card[] = [
     icon: 'navigate-circle-outline',
     iconColor: '#60a5fa',
     title: 'Welcome to AccessMap',
-    body: 'AccessMap helps you find and report accessibility barriers in your community.',
+    body: 'See an accessibility barrier — a missing ramp, a broken sidewalk, a blocked path? Put it on the map so others know, and so it gets fixed.',
   },
   {
     icon: 'map-outline',
     iconColor: '#34d399',
-    title: 'How it works',
-    body: 'Tap the map to report a barrier. Add a photo, rate how severe it is, and help others navigate safely.',
+    title: "Here's how it works",
+    body: 'Tap where the barrier is, snap a photo if you can, and rate how bad it is. Other people verify your report or mark it resolved once the issue is fixed.',
   },
   {
     icon: 'location-outline',
     iconColor: '#a78bfa',
     title: 'Show flags near you',
-    body: "We use your location to show nearby accessibility flags and to place your reports accurately. It’s only used while the app is open — never stored on our servers beyond the flag you place.",
+    body: "We'll use your location to show nearby barriers and place your reports accurately. It's only used while the app is open — never tracked or stored on our servers.",
     permission: 'location',
   },
   {
     icon: 'notifications-outline',
     iconColor: '#fbbf24',
     title: 'Stay in the loop',
-    body: 'Get notified when flags near you are updated or resolved. This is optional — you can always turn it on later in Settings.',
+    body: 'Get a heads-up when flags near you are verified or resolved. Totally optional — you can turn this on later in Settings.',
     permission: 'notifications',
   },
   {
     icon: 'sparkles-outline',
     iconColor: '#34d399',
-    title: "You're ready",
-    body: 'Start exploring your community and help make it more accessible for everyone.',
+    title: "You're all set",
+    body: 'Go explore your neighbourhood. Every barrier you flag helps someone navigate the world a little easier.',
     isFinal: true,
   },
 ];
@@ -276,7 +276,7 @@ export default function OnboardingCards({ onDone }: Props) {
             accessibilityHint="Closes the tutorial and opens the app"
             hitSlop={12}
           >
-            <Text style={styles.skipText}>Skip</Text>
+            <AppText variant="label" style={styles.skipText}>Skip</AppText>
           </Pressable>
         </View>
 
@@ -320,15 +320,15 @@ export default function OnboardingCards({ onDone }: Props) {
 
                 {/* Position pill */}
                 <View style={styles.positionPill}>
-                  <Text style={styles.positionText}>{`${i + 1} / ${CARDS.length}`}</Text>
+                  <AppText variant="label" style={styles.positionText}>{`${i + 1} / ${CARDS.length}`}</AppText>
                 </View>
 
                 {/* Text content — glass card */}
                 <View style={styles.cardContent}>
-                  <Text style={styles.title} accessibilityRole="header">
+                  <AppText variant="heading" style={styles.title} accessibilityRole="header">
                     {c.title}
-                  </Text>
-                  <Text style={styles.body}>{effectiveBody}</Text>
+                  </AppText>
+                  <AppText variant="body" style={styles.body}>{effectiveBody}</AppText>
                 </View>
               </View>
             );
@@ -379,7 +379,7 @@ export default function OnboardingCards({ onDone }: Props) {
             accessibilityState={{ disabled: isFirst }}
             hitSlop={8}
           >
-            <Text style={[styles.backBtnText, isFirst && styles.backBtnTextDisabled]}>Back</Text>
+            <AppText variant="label" style={[styles.backBtnText, isFirst && styles.backBtnTextDisabled]}>Back</AppText>
           </Pressable>
 
           {card.isFinal ? (
@@ -397,7 +397,7 @@ export default function OnboardingCards({ onDone }: Props) {
                 end={{ x: 1, y: 1 }}
                 style={styles.primaryBtn}
               >
-                <Text style={styles.primaryBtnText}>Open the Map</Text>
+                <AppText variant="label" style={styles.primaryBtnText}>Open the Map</AppText>
               </LinearGradient>
             </Pressable>
           ) : permission && currentGranted !== true ? (
@@ -427,9 +427,9 @@ export default function OnboardingCards({ onDone }: Props) {
                 end={{ x: 1, y: 1 }}
                 style={styles.primaryBtn}
               >
-                <Text style={styles.primaryBtnText}>
+                <AppText variant="label" style={styles.primaryBtnText}>
                   {permission === 'location' ? 'Allow Location' : 'Turn on Notifications'}
-                </Text>
+                </AppText>
               </LinearGradient>
             </Pressable>
           ) : (
@@ -449,7 +449,7 @@ export default function OnboardingCards({ onDone }: Props) {
                 end={{ x: 1, y: 1 }}
                 style={styles.primaryBtn}
               >
-                <Text style={styles.primaryBtnText}>{permission ? 'Continue' : 'Next'}</Text>
+                <AppText variant="label" style={styles.primaryBtnText}>{permission ? 'Continue' : 'Next'}</AppText>
               </LinearGradient>
             </Pressable>
           )}
@@ -467,7 +467,7 @@ export default function OnboardingCards({ onDone }: Props) {
             accessibilityHint="Skips notifications and continues to the next step"
             hitSlop={8}
           >
-            <Text style={styles.maybeLaterText}>Maybe later</Text>
+            <AppText variant="label" style={styles.maybeLaterText}>Maybe later</AppText>
           </Pressable>
         )}
       </View>

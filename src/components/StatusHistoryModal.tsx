@@ -194,9 +194,9 @@ const makeStyles = (color: ColorTheme) =>
     },
     title: { fontSize: 18, fontWeight: '700', flex: 1, color: color.textStrong },
     closeBtn: {
-      width: 32,
-      height: 32,
-      borderRadius: 16,
+      width: 44,
+      height: 44,
+      borderRadius: 22,
       backgroundColor: color.surfaceNeutral,
       alignItems: 'center',
       justifyContent: 'center',

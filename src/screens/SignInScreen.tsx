@@ -7,7 +7,6 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
-  Text,
   TextInput,
   View,
 } from 'react-native';
@@ -51,7 +50,7 @@ export default function SignInScreen({
         : await signUpWithEmail(cleanEmail, password);
     setBusy(false);
     if (error) {
-      Alert.alert('Auth error', error.message);
+      Alert.alert("Couldn't sign you in", error.message);
       return;
     }
     if (mode === 'in') {
@@ -96,13 +95,13 @@ export default function SignInScreen({
           >
             AccessMap
           </AppText>
-          <Text style={styles.tagline}>
-            Flag the world.{'\n'}Make it more accessible — together.
-          </Text>
+          <AppText variant="body" style={styles.tagline}>
+            Spot barriers. Share them.{'\n'}Make your community more accessible.
+          </AppText>
         </View>
 
         <View style={styles.formCard}>
-          <Text style={styles.inputLabel}>Email address</Text>
+          <AppText variant="label" style={styles.inputLabel}>Email address</AppText>
           <TextInput
             placeholder="you@example.com"
             placeholderTextColor="rgba(255,255,255,0.35)"
@@ -119,7 +118,7 @@ export default function SignInScreen({
             accessibilityHint="Enter the email you signed up with"
           />
 
-          <Text style={[styles.inputLabel, styles.inputLabelStacked]}>Password</Text>
+          <AppText variant="label" style={[styles.inputLabel, styles.inputLabelStacked]}>Password</AppText>
           <TextInput
             placeholder="At least 6 characters"
             placeholderTextColor="rgba(255,255,255,0.35)"
@@ -136,13 +135,14 @@ export default function SignInScreen({
           />
 
           {validationError ? (
-            <Text
+            <AppText
+              variant="body"
               style={styles.errorText}
               accessibilityRole="alert"
               accessibilityLiveRegion="assertive"
             >
               {validationError}
-            </Text>
+            </AppText>
           ) : null}
 
           <View accessibilityState={{ busy }} style={styles.actions}>
@@ -163,14 +163,14 @@ export default function SignInScreen({
                 {busy ? (
                   <ActivityIndicator color="#fff" size="small" />
                 ) : (
-                  <Text style={styles.primaryBtnText}>Sign in</Text>
+                  <AppText variant="label" style={styles.primaryBtnText}>Sign in</AppText>
                 )}
               </LinearGradient>
             </Pressable>
 
             <View style={styles.dividerRow}>
               <View style={styles.dividerLine} />
-              <Text style={styles.dividerText}>or</Text>
+              <AppText variant="label" style={styles.dividerText}>or</AppText>
               <View style={styles.dividerLine} />
             </View>
 
@@ -186,7 +186,7 @@ export default function SignInScreen({
               accessibilityLabel="Create account"
               accessibilityState={{ disabled: busy }}
             >
-              <Text style={styles.secondaryBtnText}>Create account</Text>
+              <AppText variant="label" style={styles.secondaryBtnText}>Create account</AppText>
             </Pressable>
           </View>
         </View>
@@ -200,15 +200,15 @@ export default function SignInScreen({
               accessibilityLabel="Continue as guest"
               accessibilityHint="Browse the map without signing in. Reporting flags requires an account."
             >
-              <Text style={styles.guestBtnText}>Continue as guest →</Text>
+              <AppText variant="label" style={styles.guestBtnText}>Browse without an account →</AppText>
             </Pressable>
-            <Text style={styles.guestNote}>Read-only · can't report or verify flags</Text>
+            <AppText variant="body" style={styles.guestNote}>You can look around, but you'll need an account to report or verify</AppText>
           </View>
         ) : null}
 
-        <Text style={styles.footnote}>
-          Location is only used when reporting a flag.{'\n'}Your email is never shown publicly.
-        </Text>
+        <AppText variant="body" style={styles.footnote}>
+          Your location is only used when you place a flag.{'\n'}Your email is never shown publicly.
+        </AppText>
       </ScrollView>
     </KeyboardAvoidingView>
   );
