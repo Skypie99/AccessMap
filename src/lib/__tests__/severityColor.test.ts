@@ -18,24 +18,25 @@ import type { FlagSeverity } from '@/types/database';
 jest.mock('../supabase', () => ({ supabase: {} }));
 
 describe('severityColor', () => {
-  it('returns green for severity 1 (minor barrier)', () => {
-    expect(severityColor(1)).toBe('#27ae60');
+  // Claude Design severity ramp (yellow→red) — sourced from theme.ts `severity`.
+  it('returns yellow for severity 1 (minor barrier)', () => {
+    expect(severityColor(1)).toBe('#F7C948');
   });
 
-  it('returns lime for severity 2', () => {
-    expect(severityColor(2)).toBe('#7fb800');
+  it('returns amber for severity 2', () => {
+    expect(severityColor(2)).toBe('#F0A030');
   });
 
-  it('returns yellow for severity 3 (middle of the scale)', () => {
-    expect(severityColor(3)).toBe('#f1c40f');
+  it('returns orange for severity 3 (middle of the scale)', () => {
+    expect(severityColor(3)).toBe('#F2792B');
   });
 
-  it('returns orange for severity 4', () => {
-    expect(severityColor(4)).toBe('#e67e22');
+  it('returns deep orange for severity 4', () => {
+    expect(severityColor(4)).toBe('#E85638');
   });
 
   it('returns red for severity 5 (blocking barrier)', () => {
-    expect(severityColor(5)).toBe('#e74c3c');
+    expect(severityColor(5)).toBe('#D92D20');
   });
 
   it('returns a defensive neutral gray for unexpected severities', () => {
