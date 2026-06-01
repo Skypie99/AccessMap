@@ -10,7 +10,7 @@ import {
   View,
 } from 'react-native';
 import { font, radius, shadow, spacing } from '@/theme';
-import { MapPin } from 'lucide-react-native';
+import { ChevronRight, MapPin, X } from 'lucide-react-native';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { searchAddress, type GeocodeResult } from '@/lib/geocode';
 import {
@@ -179,7 +179,7 @@ export default function AddressSearchModal({ visible, onClose, onSelect }: Props
               accessibilityRole="button"
               accessibilityLabel="Close address search"
             >
-              <Text style={styles.closeBtnText}>✕</Text>
+              <X size={18} color={color.text} strokeWidth={2.2} />
             </Pressable>
           </View>
 
@@ -234,9 +234,12 @@ export default function AddressSearchModal({ visible, onClose, onSelect }: Props
                   <Text style={styles.recentText} numberOfLines={2}>
                     {entry.displayName}
                   </Text>
-                  <Text style={styles.recentChevron} accessibilityElementsHidden>
-                    ›
-                  </Text>
+                  <ChevronRight
+                    size={18}
+                    color={color.textSubtle}
+                    strokeWidth={2.2}
+                    accessibilityElementsHidden
+                  />
                 </Pressable>
               ))}
             </View>
@@ -291,9 +294,12 @@ export default function AddressSearchModal({ visible, onClose, onSelect }: Props
                       {item.lat.toFixed(4)}, {item.lng.toFixed(4)}
                     </Text>
                   </View>
-                  <Text style={styles.resultChevron} accessibilityElementsHidden>
-                    ›
-                  </Text>
+                  <ChevronRight
+                    size={18}
+                    color={color.textSubtle}
+                    strokeWidth={2.2}
+                    accessibilityElementsHidden
+                  />
                 </Pressable>
               )}
             />

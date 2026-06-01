@@ -38,7 +38,7 @@ import {
 } from '@/lib/savedPlaces';
 import type { LatLng } from '@/lib/distance';
 import { font, radius, spacing } from '@/theme';
-import { MapPin } from 'lucide-react-native';
+import { MapPin, X } from 'lucide-react-native';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 
 interface Props {
@@ -189,13 +189,13 @@ export default function SavedPlacesModal({
               accessibilityRole="button"
               accessibilityLabel="Close saved places"
             >
-              <Text
-                style={styles.closeBtnText}
+              <X
+                size={18}
+                color={color.text}
+                strokeWidth={2.2}
                 accessibilityElementsHidden
                 importantForAccessibility="no-hide-descendants"
-              >
-                ✕
-              </Text>
+              />
             </Pressable>
           </View>
 
@@ -361,13 +361,13 @@ export default function SavedPlacesModal({
                     accessibilityLabel={`Remove ${place.name}`}
                     accessibilityHint="Asks you to confirm before removing this saved place"
                   >
-                    <Text
-                      style={styles.removeBtnText}
+                    <X
+                      size={18}
+                      color={color.error}
+                      strokeWidth={2.2}
                       accessibilityElementsHidden
                       importantForAccessibility="no-hide-descendants"
-                    >
-                      ✕
-                    </Text>
+                    />
                   </Pressable>
                 </View>
               ))}

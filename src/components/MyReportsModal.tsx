@@ -24,7 +24,7 @@ import { filterMyReports } from '@/lib/myReportsFilter';
 import type { FlagRow, FlagStatus } from '@/types/database';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { font, radius, shadow, spacing } from '@/theme';
-import { MapPin } from 'lucide-react-native';
+import { MapPin, X } from 'lucide-react-native';
 import { StatusBadge } from '@/components/StatusBadge';
 
 const STATUS_FILTER_ORDER: FlagStatus[] = ['open', 'verified', 'resolved', 'rejected'];
@@ -249,7 +249,7 @@ export default function MyReportsModal({
               accessibilityLabel="Close My Reports"
               accessibilityHint="Returns to your Profile"
             >
-              <Text style={styles.closeBtnText}>✕</Text>
+              <X size={18} color={color.text} strokeWidth={2.2} />
             </Pressable>
           </View>
 

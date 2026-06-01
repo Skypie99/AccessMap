@@ -13,6 +13,7 @@ import {
 import { useAuth } from '@/lib/auth';
 import { font, radius, shadow, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
+import { X } from 'lucide-react-native';
 import { FEEDBACK_CATEGORY_GLYPHS, FEEDBACK_CATEGORY_LABELS } from '@/lib/feedback';
 import { listFeedbackByUser } from '@/lib/feedbackStore';
 import {
@@ -117,7 +118,7 @@ export default function MyFeedbackModal({ visible, onClose, refreshKey = 0 }: Pr
               accessibilityRole="button"
               accessibilityLabel="Close my feedback"
             >
-              <Text style={styles.closeBtnText}>✕</Text>
+              <X size={18} color={color.text} strokeWidth={2.2} />
             </Pressable>
           </View>
 

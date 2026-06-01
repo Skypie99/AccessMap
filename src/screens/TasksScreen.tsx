@@ -55,7 +55,7 @@ import type { RootTabParamList } from '@/navigation/RootNavigator';
 import FlagDetailModal, { type DetailAction } from '@/components/FlagDetailModal';
 import PhotoLightboxModal from '@/components/PhotoLightboxModal';
 import { AppText } from '@/components/ui/AppText';
-import { Search, Sparkles, WifiOff } from 'lucide-react-native';
+import { AlertTriangle, Check, Search, Sparkles, WifiOff, X } from 'lucide-react-native';
 import { font, radius, shadow, size, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 
@@ -633,7 +633,7 @@ export default function TasksScreen() {
           {loading ? (
             <ActivityIndicator color={color.textOnBrand} />
           ) : (
-            <AppText variant="label" style={styles.errorBannerIcon}>⚠</AppText>
+            <AlertTriangle size={18} color={color.textOnBrand} strokeWidth={2.2} />
           )}
           <AppText variant="body" style={styles.errorBannerText} numberOfLines={2}>
             {loading ? 'Retrying…' : errorBannerText}
@@ -699,7 +699,7 @@ export default function TasksScreen() {
               accessibilityLabel="Clear search"
               hitSlop={8}
             >
-              <AppText variant="label" style={styles.searchClearText}>✕</AppText>
+              <X size={18} color={color.textMuted} strokeWidth={2.2} />
             </Pressable>
           )}
         </View>
@@ -932,7 +932,7 @@ export default function TasksScreen() {
                   accessibilityRole="text"
                   accessibilityLabel="You have seen all flags nearby"
                 >
-                  {"That's everything nearby — you're up to date ✓"}
+                  {"That's everything nearby — you're up to date"}
                 </AppText>
               )}
             </View>
@@ -1168,7 +1168,7 @@ const FlagCard = memo(function FlagCard({
             accessibilityElementsHidden
             importantForAccessibility="no-hide-descendants"
           >
-            {selected ? <AppText variant="label" style={styles.selectCheckMark}>✓</AppText> : null}
+            {selected ? <Check size={16} color={color.textOnBrand} strokeWidth={2.2} /> : null}
           </View>
         )}
       </View>

@@ -54,6 +54,7 @@ import {
 } from '@/lib/filterPresets';
 import { font, radius, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
+import { X } from 'lucide-react-native';
 
 interface Props {
   visible: boolean;
@@ -381,13 +382,13 @@ export default function FilterPresetsModal({ visible, onClose, onApply }: Props)
               accessibilityRole="button"
               accessibilityLabel="Close filter presets"
             >
-              <Text
-                style={styles.closeBtnText}
+              <X
+                size={18}
+                color={color.text}
+                strokeWidth={2.2}
                 accessibilityElementsHidden
                 importantForAccessibility="no-hide-descendants"
-              >
-                ✕
-              </Text>
+              />
             </Pressable>
           </View>
 

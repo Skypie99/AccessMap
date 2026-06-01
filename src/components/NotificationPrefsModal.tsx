@@ -22,6 +22,7 @@ import {
 import type { FlagStatus } from '@/types/database';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { radius } from '@/theme';
+import { X } from 'lucide-react-native';
 
 interface Props {
   visible: boolean;
@@ -153,13 +154,13 @@ export default function NotificationPrefsModal({
               accessibilityLabel="Close notifications settings"
               accessibilityHint="Closes the notification preferences panel"
             >
-              <Text
-                style={styles.closeBtnText}
+              <X
+                size={18}
+                color={color.text}
+                strokeWidth={2.2}
                 accessibilityElementsHidden
                 importantForAccessibility="no-hide-descendants"
-              >
-                ✕
-              </Text>
+              />
             </Pressable>
           </View>
 

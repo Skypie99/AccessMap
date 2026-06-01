@@ -4,7 +4,7 @@ import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-nati
 // don't have to hard-code (and forget to bump) a string here.
 import Constants from 'expo-constants';
 import { font, radius, shadow, spacing } from '@/theme';
-import { Map as MapIcon } from 'lucide-react-native';
+import { Map as MapIcon, X } from 'lucide-react-native';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 
 interface Props {
@@ -55,7 +55,7 @@ export default function AboutScreen({ visible, onClose }: Props) {
               accessibilityRole="button"
               accessibilityLabel="Close about"
             >
-              <Text style={styles.closeBtnText}>✕</Text>
+              <X size={18} color={color.text} strokeWidth={2.2} />
             </Pressable>
           </View>
 

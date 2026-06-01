@@ -19,6 +19,7 @@ import { font, radius, shadow, spacing } from '@/theme';
 import { errorMessage } from '@/lib/errors';
 import CategoryIcon from '@/components/CategoryIcon';
 import {
+  AlertTriangle,
   HelpCircle,
   List,
   LocateFixed,
@@ -27,6 +28,7 @@ import {
   Search,
   Shapes,
   SlidersHorizontal,
+  Star,
 } from 'lucide-react-native';
 import {
   CATEGORY_LABELS,
@@ -1143,14 +1145,13 @@ export default function MapScreen() {
               accessibilityLabel={savedPlaces.length === 0 ? 'Save a place' : 'Manage saved places'}
               accessibilityHint="Opens the saved places list to add, rename, or remove"
             >
-              <AppText
-                variant="label"
-                style={styles.placeChipGlyph}
+              <Star
+                size={16}
+                color={color.brand}
+                strokeWidth={2.2}
                 accessibilityElementsHidden
                 importantForAccessibility="no-hide-descendants"
-              >
-                ★
-              </AppText>
+              />
               <AppText variant="label" style={styles.placeChipText}>
                 {savedPlaces.length === 0 ? 'Save a place' : 'Manage'}
               </AppText>
@@ -1244,17 +1245,17 @@ export default function MapScreen() {
                             {/* Star is decorative — the "default on launch"
                             wording is carried by accessibilityLabel above
                             so screen readers don't read out a glyph.
-                            Wrapped in its own Text so accessible={false}
-                            hides it from the AT node tree entirely. */}
+                            Hidden from the AT node tree entirely. */}
                             {isDefault && (
-                              <Text
-                                accessible={false}
-                                importantForAccessibility="no-hide-descendants"
+                              <Star
+                                size={14}
+                                color={color.brand}
+                                strokeWidth={2.2}
                                 accessibilityElementsHidden
-                              >
-                                {'★ '}
-                              </Text>
+                                importantForAccessibility="no-hide-descendants"
+                              />
                             )}
+                            {isDefault ? ' ' : null}
                             {set.name}
                           </AppText>
                         </Pressable>
@@ -1341,7 +1342,7 @@ export default function MapScreen() {
                       variant="label"
                       style={[styles.filterPillText, heatmapEnabled && styles.filterPillTextActive]}
                     >
-                      {heatmapEnabled ? '✓ Heat map' : 'Heat map'}
+                      {heatmapEnabled ? 'Heat map' : 'Heat map'}
                     </AppText>
                   </Pressable>
                 </View>
@@ -1529,7 +1530,7 @@ export default function MapScreen() {
             {loadingFlags ? (
               <ActivityIndicator color={color.textOnBrand} />
             ) : (
-              <AppText variant="label" style={styles.errorBannerIcon}>⚠</AppText>
+              <AlertTriangle size={18} color={color.textOnBrand} strokeWidth={2.2} />
             )}
             <AppText variant="body" style={styles.errorBannerText} numberOfLines={2}>
               {loadingFlags ? 'Retrying…' : loadError}

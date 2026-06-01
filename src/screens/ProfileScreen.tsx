@@ -72,7 +72,7 @@ import LeaderboardScreen from '@/screens/LeaderboardScreen';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { font, radius, shadow, spacing } from '@/theme';
 import { AppText } from '@/components/ui/AppText';
-import { Flame, MapPin } from 'lucide-react-native';
+import { ChevronRight, Flame, MapPin, X } from 'lucide-react-native';
 import TierIcon from '@/components/TierIcon';
 import { getTier, pointsToNextTier, REPUTATION_TIERS } from '@/lib/reputationTier';
 import { useReducedMotion } from '@/lib/accessibility';
@@ -1069,14 +1069,13 @@ export default function ProfileScreen() {
                 {nearestUnresolved.flag.severity}
               </AppText>
             </View>
-            <AppText
-              variant="label"
-              style={styles.nearestBtnChevron}
+            <ChevronRight
+              size={18}
+              color={color.brand}
+              strokeWidth={2.2}
               accessibilityElementsHidden
               importantForAccessibility="no-hide-descendants"
-            >
-              ›
-            </AppText>
+            />
           </Pressable>
         )}
 
@@ -1164,9 +1163,12 @@ export default function ProfileScreen() {
                 : "Every barrier you've reported, in one place."}
             </AppText>
           </View>
-          <AppText variant="label" style={styles.myReportsChevron} accessibilityElementsHidden>
-            ›
-          </AppText>
+          <ChevronRight
+            size={18}
+            color={color.textSubtle}
+            strokeWidth={2.2}
+            accessibilityElementsHidden
+          />
         </Pressable>
 
         <Pressable
@@ -1182,9 +1184,12 @@ export default function ProfileScreen() {
               Keep an eye on barriers you care about and get notified when something changes.
             </AppText>
           </View>
-          <AppText variant="label" style={styles.myReportsChevron} accessibilityElementsHidden>
-            ›
-          </AppText>
+          <ChevronRight
+            size={18}
+            color={color.textSubtle}
+            strokeWidth={2.2}
+            accessibilityElementsHidden
+          />
         </Pressable>
 
         <Pressable
@@ -1200,9 +1205,12 @@ export default function ProfileScreen() {
               What the community has been up to — newest first.
             </AppText>
           </View>
-          <AppText variant="label" style={styles.myReportsChevron} accessibilityElementsHidden>
-            ›
-          </AppText>
+          <ChevronRight
+            size={18}
+            color={color.textSubtle}
+            strokeWidth={2.2}
+            accessibilityElementsHidden
+          />
         </Pressable>
 
         <Pressable
@@ -1227,9 +1235,12 @@ export default function ProfileScreen() {
                   : `${achievementCount.total - achievementCount.earned} more to go. Tap to see what's next.`}
             </AppText>
           </View>
-          <AppText variant="label" style={styles.myReportsChevron} accessibilityElementsHidden>
-            ›
-          </AppText>
+          <ChevronRight
+            size={18}
+            color={color.textSubtle}
+            strokeWidth={2.2}
+            accessibilityElementsHidden
+          />
         </Pressable>
 
         <Pressable
@@ -1245,9 +1256,12 @@ export default function ProfileScreen() {
               See who's making the biggest impact in the community.
             </AppText>
           </View>
-          <AppText variant="label" style={styles.myReportsChevron} accessibilityElementsHidden>
-            ›
-          </AppText>
+          <ChevronRight
+            size={18}
+            color={color.textSubtle}
+            strokeWidth={2.2}
+            accessibilityElementsHidden
+          />
         </Pressable>
 
         <Pressable
@@ -1263,9 +1277,12 @@ export default function ProfileScreen() {
               Pick which changes you want to hear about.
             </AppText>
           </View>
-          <AppText variant="label" style={styles.myReportsChevron} accessibilityElementsHidden>
-            ›
-          </AppText>
+          <ChevronRight
+            size={18}
+            color={color.textSubtle}
+            strokeWidth={2.2}
+            accessibilityElementsHidden
+          />
         </Pressable>
 
         <Pressable
@@ -1279,9 +1296,12 @@ export default function ProfileScreen() {
             <AppText variant="label" style={styles.myReportsTitle}>My Feedback</AppText>
             <AppText variant="body" style={styles.myReportsSubtitle}>See the messages you've sent to the team.</AppText>
           </View>
-          <AppText variant="label" style={styles.myReportsChevron} accessibilityElementsHidden>
-            ›
-          </AppText>
+          <ChevronRight
+            size={18}
+            color={color.textSubtle}
+            strokeWidth={2.2}
+            accessibilityElementsHidden
+          />
         </Pressable>
 
         <View style={styles.section}>
@@ -1415,9 +1435,12 @@ export default function ProfileScreen() {
               Answers to the questions people ask most.
             </AppText>
           </View>
-          <AppText variant="label" style={styles.aboutChevron} accessibilityElementsHidden>
-            ›
-          </AppText>
+          <ChevronRight
+            size={18}
+            color={color.textSubtle}
+            strokeWidth={2.2}
+            accessibilityElementsHidden
+          />
         </Pressable>
 
         <Pressable
@@ -1431,9 +1454,12 @@ export default function ProfileScreen() {
             <AppText variant="label" style={styles.aboutTitle}>What's New</AppText>
             <AppText variant="body" style={styles.aboutSubtitle}>See what we shipped recently.</AppText>
           </View>
-          <AppText variant="label" style={styles.aboutChevron} accessibilityElementsHidden>
-            ›
-          </AppText>
+          <ChevronRight
+            size={18}
+            color={color.textSubtle}
+            strokeWidth={2.2}
+            accessibilityElementsHidden
+          />
         </Pressable>
 
         <Pressable
@@ -1449,9 +1475,12 @@ export default function ProfileScreen() {
               The story behind AccessMap and how to reach us.
             </AppText>
           </View>
-          <AppText variant="label" style={styles.aboutChevron} accessibilityElementsHidden>
-            ›
-          </AppText>
+          <ChevronRight
+            size={18}
+            color={color.textSubtle}
+            strokeWidth={2.2}
+            accessibilityElementsHidden
+          />
         </Pressable>
 
         <Pressable
@@ -1639,7 +1668,7 @@ export default function ProfileScreen() {
                 accessibilityRole="button"
                 accessibilityLabel="Close reputation tiers"
               >
-                <AppText variant="label" style={styles.tierCloseBtnText}>✕</AppText>
+                <X size={18} color={color.text} strokeWidth={2.2} />
               </Pressable>
             </View>
 

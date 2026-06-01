@@ -41,7 +41,7 @@ import { loadWatched } from '@/lib/watchedFlags';
 import type { FlagRow } from '@/types/database';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { font, radius, shadow, spacing } from '@/theme';
-import { MapPin } from 'lucide-react-native';
+import { MapPin, X } from 'lucide-react-native';
 import { StatusBadge } from '@/components/StatusBadge';
 
 type FeedFilter = 'all' | 'mine' | 'watched';
@@ -222,7 +222,7 @@ export default function ActivityFeedModal({ visible, onClose, onSelectFlag, onVi
               accessibilityLabel="Close recent activity"
               accessibilityHint="Returns to your Profile"
             >
-              <Text style={styles.closeBtnText}>✕</Text>
+              <X size={18} color={color.text} strokeWidth={2.2} />
             </Pressable>
           </View>
 

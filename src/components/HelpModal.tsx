@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { font, radius, shadow, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
+import { X } from 'lucide-react-native';
 import { openFeedbackComposer } from '@/lib/feedback';
 import { filterFaqs } from '@/lib/helpSearch';
 import SearchInputRow from '@/components/SearchInputRow';
@@ -110,7 +111,7 @@ export default function HelpModal({ visible, onClose }: Props) {
               accessibilityRole="button"
               accessibilityLabel="Close help"
             >
-              <Text style={styles.closeBtnText}>✕</Text>
+              <X size={18} color={color.text} strokeWidth={2.2} />
             </Pressable>
           </View>
 

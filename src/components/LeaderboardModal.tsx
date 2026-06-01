@@ -14,7 +14,7 @@ import { listLeaderboard, type LeaderboardEntry } from '@/lib/flags';
 import { getTier } from '@/lib/reputationTier';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { font, radius, shadow, spacing } from '@/theme';
-import { Medal } from 'lucide-react-native';
+import { Medal, X } from 'lucide-react-native';
 import TierIcon from '@/components/TierIcon';
 
 interface Props {
@@ -129,9 +129,7 @@ export default function LeaderboardModal({ visible, onClose }: Props) {
               style={({ pressed }) => [styles.closeBtn, pressed && styles.closeBtnPressed]}
               hitSlop={8}
             >
-              <Text style={styles.closeBtnText} accessibilityElementsHidden>
-                ✕
-              </Text>
+              <X size={18} color={color.textMuted} strokeWidth={2.2} accessibilityElementsHidden />
             </Pressable>
           </View>
           <Text style={styles.subtitle}>Top 10 contributors by points</Text>

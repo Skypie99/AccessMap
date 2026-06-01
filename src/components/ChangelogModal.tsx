@@ -3,6 +3,7 @@ import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-nati
 import { initialExpanded } from '@/lib/changelogExpanded';
 import { font, radius, shadow, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
+import { X } from 'lucide-react-native';
 
 interface Props {
   visible: boolean;
@@ -85,7 +86,7 @@ export default function ChangelogModal({ visible, onClose }: Props) {
               accessibilityRole="button"
               accessibilityLabel="Close what's new"
             >
-              <Text style={styles.closeBtnText}>✕</Text>
+              <X size={18} color={color.text} strokeWidth={2.2} />
             </Pressable>
           </View>
 

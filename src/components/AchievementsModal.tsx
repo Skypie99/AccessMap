@@ -26,6 +26,7 @@ import {
   Sparkles,
   Star,
   Trophy,
+  X,
 } from 'lucide-react-native';
 
 // Achievement icon name (from achievements.ts) → Lucide component.
@@ -204,13 +205,13 @@ export default function AchievementsModal({ visible, onClose, achievements }: Pr
               accessibilityRole="button"
               accessibilityLabel="Close achievements"
             >
-              <Text
-                style={styles.closeBtnText}
+              <X
+                size={18}
+                color={color.text}
+                strokeWidth={2.2}
                 accessibilityElementsHidden
                 importantForAccessibility="no-hide-descendants"
-              >
-                ✕
-              </Text>
+              />
             </Pressable>
           </View>
 

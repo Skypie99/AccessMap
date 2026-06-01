@@ -30,7 +30,7 @@ import {
   type WatchedStatusFilter,
 } from '@/lib/watchedFlagsFilter';
 import { font, radius, spacing } from '@/theme';
-import { MapPin } from 'lucide-react-native';
+import { MapPin, Star, X } from 'lucide-react-native';
 import { decorativeProps } from '@/lib/accessibility';
 import { severityA11y, statusA11y } from '@/lib/a11yText';
 import type { FlagRow } from '@/types/database';
@@ -180,7 +180,7 @@ export default function MyWatchedModal({ visible, onClose, onSelectFlag, onViewO
           <View style={[styles.severityDot, { backgroundColor: severityColor(item.severity) }]} {...decorativeProps} />
           <View style={styles.rowMid}>
             <Text style={[styles.rowCategory, isResolved && styles.rowCategoryResolved]} numberOfLines={1}>
-              {isResolved ? '✓ ' : ''}{CATEGORY_LABELS[item.category]}
+              {CATEGORY_LABELS[item.category]}
             </Text>
             <Text style={styles.rowDate}>{date}</Text>
           </View>
@@ -206,7 +206,7 @@ export default function MyWatchedModal({ visible, onClose, onSelectFlag, onViewO
               accessibilityLabel="Stop watching this flag"
               accessibilityHint="Removes this flag from your watched list"
             >
-              <Text style={styles.unwatchGlyph}>★</Text>
+              <Star size={16} color={color.accentOrange} strokeWidth={2.2} />
             </Pressable>
           </View>
         </Pressable>
@@ -232,7 +232,7 @@ export default function MyWatchedModal({ visible, onClose, onSelectFlag, onViewO
             <Pressable onPress={onClose} hitSlop={12} style={styles.closeBtn}
               accessibilityRole="button" accessibilityLabel="Close watched flags"
             >
-              <Text style={styles.closeBtnText}>✕</Text>
+              <X size={18} color={color.text} strokeWidth={2.2} />
             </Pressable>
           </View>
 

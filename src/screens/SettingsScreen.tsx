@@ -11,7 +11,7 @@ import {
   Text,
   View,
 } from 'react-native';
-import { ClipboardCopy, PlayCircle } from 'lucide-react-native';
+import { ChevronRight, ClipboardCopy, PlayCircle } from 'lucide-react-native';
 import { font, radius, shadow, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { signOut, supabase } from '@/lib/supabase';
@@ -111,13 +111,13 @@ function SettingsRow({
           color={color.textSubtle}
         />
       ) : (
-        <Text
-          style={styles.rowChevron}
+        <ChevronRight
+          size={18}
+          color={color.textSubtle}
+          strokeWidth={2.2}
           accessibilityElementsHidden
           importantForAccessibility="no-hide-descendants"
-        >
-          ›
-        </Text>
+        />
       )}
     </Pressable>
   );

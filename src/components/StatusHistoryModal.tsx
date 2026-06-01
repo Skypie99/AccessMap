@@ -31,6 +31,7 @@ import {
 import { STATUS_LABELS } from '@/lib/flags';
 import { relativeTime } from '@/lib/relativeTime';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
+import { X } from 'lucide-react-native';
 import {
   formatHistoryEntry,
   listStatusHistory,
@@ -111,7 +112,7 @@ export default function StatusHistoryModal({ visible, flagId, onClose }: Props) 
               accessibilityLabel="Close status history"
               accessibilityHint="Returns to the flag details"
             >
-              <Text style={styles.closeBtnText}>✕</Text>
+              <X size={18} color={color.text} strokeWidth={2.2} />
             </Pressable>
           </View>
 

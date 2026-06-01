@@ -16,7 +16,7 @@ import {
   type LeaderboardEntry,
 } from '@/lib/flags';
 import { font, radius, shadow, spacing } from '@/theme';
-import { Trophy } from 'lucide-react-native';
+import { Trophy, X } from 'lucide-react-native';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 
 interface Props {
@@ -246,7 +246,7 @@ export default function LeaderboardScreen({ visible, onClose }: Props) {
               style={({ pressed }) => [styles.closeBtn, pressed && styles.closeBtnPressed]}
               hitSlop={spacing.sm}
             >
-              <AppText variant="label" style={styles.closeBtnText}>✕</AppText>
+              <X size={18} color={color.textMuted} strokeWidth={2.2} />
             </Pressable>
             <AppText variant="heading" style={styles.title} accessibilityRole="header">
               Leaderboard

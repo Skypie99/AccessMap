@@ -15,6 +15,7 @@
 import React from 'react';
 import { AccessibilityInfo, Pressable, StyleSheet, Text, View } from 'react-native';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
+import { X } from 'lucide-react-native';
 
 interface Props {
   count: number;
@@ -75,7 +76,7 @@ export default function UpdateBanner({ count, onView, onDismiss }: Props) {
         accessibilityLabel="Dismiss updates banner"
         accessibilityHint="Hides the banner and marks all updates as seen"
       >
-        <Text style={styles.dismissText}>✕</Text>
+        <X size={18} color={color.brandTextAlt} strokeWidth={2.2} />
       </Pressable>
     </View>
   );

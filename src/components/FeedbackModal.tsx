@@ -22,6 +22,7 @@ import {
   type FeedbackCategory,
 } from '@/lib/feedback';
 import { submitFeedback } from '@/lib/feedbackStore';
+import { X } from 'lucide-react-native';
 
 interface Props {
   visible: boolean;
@@ -166,7 +167,7 @@ export default function FeedbackModal({ visible, onClose }: Props) {
               accessibilityLabel="Close feedback"
               accessibilityState={{ disabled: sending }}
             >
-              <Text style={styles.closeBtnText}>✕</Text>
+              <X size={18} color={color.text} strokeWidth={2.2} />
             </Pressable>
           </View>
 

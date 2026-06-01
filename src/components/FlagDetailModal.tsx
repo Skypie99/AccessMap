@@ -14,6 +14,7 @@ import {
   View,
 } from 'react-native';
 import { AppText } from '@/components/ui/AppText';
+import { Star, X } from 'lucide-react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { font, radius, shadow, spacing } from '@/theme';
@@ -538,7 +539,7 @@ export default function FlagDetailModal({
                 accessibilityHint="Returns to the flag list"
                 accessibilityState={{ disabled: busy }}
               >
-                <AppText variant="label" style={styles.closeBtnText}>✕</AppText>
+                <X size={18} color={color.text} strokeWidth={2.2} />
               </Pressable>
             </View>
 
@@ -709,9 +710,13 @@ export default function FlagDetailModal({
                     disabled: busy || watchSaving,
                   }}
                 >
-                  <AppText variant="label" style={styles.watchBtnGlyph} accessibilityElementsHidden>
-                    {watched ? '★' : '☆'}
-                  </AppText>
+                  <Star
+                    size={16}
+                    color={color.accentOrange}
+                    fill={watched ? color.accentOrange : 'none'}
+                    strokeWidth={2.2}
+                    accessibilityElementsHidden
+                  />
                   <AppText variant="label" style={[styles.watchBtnText, watched && styles.watchBtnTextActive]}>
                     {watched ? 'Watching' : 'Watch'}
                   </AppText>

@@ -31,6 +31,7 @@ import {
   View,
 } from 'react-native';
 import { font, radius, shadow, spacing } from '@/theme';
+import { X } from 'lucide-react-native';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { useAuth } from '@/lib/auth';
 import {
@@ -144,13 +145,13 @@ export default function NotificationPreferencesScreen({ visible, onClose }: Prop
               accessibilityRole="button"
               accessibilityLabel="Close notification preferences"
             >
-              <Text
-                style={styles.closeBtnText}
+              <X
+                size={18}
+                color={color.text}
+                strokeWidth={2.2}
                 accessibilityElementsHidden
                 importantForAccessibility="no-hide-descendants"
-              >
-                ✕
-              </Text>
+              />
             </Pressable>
           </View>
 
