@@ -1517,6 +1517,7 @@ const makeStyles = (color: ColorTheme) =>
       flexDirection: 'row',
       alignItems: 'center',
       paddingHorizontal: 16,
+      paddingTop: 8,
       paddingBottom: 8,
       gap: 6,
     },
@@ -1543,6 +1544,7 @@ const makeStyles = (color: ColorTheme) =>
       flexDirection: 'row',
       gap: 6,
       paddingHorizontal: 16,
+      paddingTop: 8,
       paddingBottom: 8,
     },
     sevChip: {
@@ -1560,7 +1562,7 @@ const makeStyles = (color: ColorTheme) =>
     // Category chip strip — horizontally scrollable so all 6 categories
     // fit on narrow phones without truncating labels. Visual weight
     // matches sevChip; brand fill on active so it reads as "selected".
-    categoryScroll: { paddingBottom: 8 },
+    categoryScroll: { paddingTop: 8, paddingBottom: 8 },
     categoryScrollContent: {
       flexDirection: 'row',
       gap: 6,
@@ -1588,7 +1590,8 @@ const makeStyles = (color: ColorTheme) =>
       alignItems: 'center',
       gap: 6,
       paddingHorizontal: 16,
-      paddingBottom: 8,
+      paddingTop: 8,
+      paddingBottom: 12,
     },
     sortLabel: {
       fontSize: 12,
@@ -1615,6 +1618,7 @@ const makeStyles = (color: ColorTheme) =>
     // discover the feature. Tinted to match the sort chip's accent.
     selectEntryRow: {
       paddingHorizontal: 16,
+      paddingTop: 8,
       paddingBottom: 8,
     },
     selectEntryBtn: {
