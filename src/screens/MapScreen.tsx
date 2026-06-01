@@ -782,7 +782,7 @@ export default function MapScreen() {
           // WCAG 4.1.3: permission-denied is a status change not conveyed
           // by focus or role; announce it explicitly.
           AccessibilityInfo.announceForAccessibility(
-            'Location permission denied. Enable it in Settings to report a flag.',
+            'Location access is off. Turn it on in your device Settings to report barriers near you.',
           );
         }
         return;
@@ -811,7 +811,7 @@ export default function MapScreen() {
       });
     } catch (e) {
       if (mountedRef.current) {
-        Alert.alert('Could not get location', errorMessage(e));
+        Alert.alert("Couldn't find your location", errorMessage(e));
       }
     } finally {
       if (mountedRef.current) setLocating(false);
@@ -939,7 +939,7 @@ export default function MapScreen() {
     }
     const latStr = coord.lat.toFixed(5);
     const lngStr = coord.lng.toFixed(5);
-    Alert.alert('Report a flag here?', `Drop a new accessibility report at ${latStr}, ${lngStr}.`, [
+    Alert.alert('Report a barrier here?', `Place a new flag at ${latStr}, ${lngStr}.`, [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Report here',
@@ -1199,7 +1199,7 @@ export default function MapScreen() {
                 {savedSets.length === 0 ? (
                   <View style={styles.savedEmpty}>
                     <AppText variant="body" style={styles.savedEmptyText}>
-                      Save your current filter as a named set to quickly switch later.
+                      No saved filters yet. Save your current view to switch back to it quickly.
                     </AppText>
                     <Pressable
                       onPress={openSaveModal}
@@ -1377,7 +1377,7 @@ export default function MapScreen() {
                   })}
                 </View>
                 {activeStatuses.size === 0 && (
-                  <AppText variant="body" style={styles.statusHint}>Pick at least one status to see flags.</AppText>
+                  <AppText variant="body" style={styles.statusHint}>Pick at least one status — otherwise nothing will show up.</AppText>
                 )}
 
                 {/* "Who does this affect?" — disability filter (Sprint 3). A
@@ -1466,7 +1466,7 @@ export default function MapScreen() {
                 </View>
                 {maxDistanceKm !== null && !location && (
                   <AppText variant="body" style={styles.statusHint} accessibilityLiveRegion="polite">
-                    Distance filter needs your location. It will activate once location is shared.
+                    Distance filter needs your location to work. It'll kick in once you share it.
                   </AppText>
                 )}
 
@@ -1556,9 +1556,9 @@ export default function MapScreen() {
             <AppText variant="label" style={styles.emptyCardIcon} accessibilityElementsHidden>
               🔍
             </AppText>
-            <AppText variant="heading" style={styles.emptyCardTitle}>No flags match your filters</AppText>
+            <AppText variant="heading" style={styles.emptyCardTitle}>Nothing here right now</AppText>
             <AppText variant="body" style={styles.emptyCardBody}>
-              Try broadening your filters, or reset to see all nearby flags.
+              Your filters are hiding everything. Try widening them, or reset to see all nearby flags.
             </AppText>
             <Pressable
               onPress={clearFilters}
@@ -1596,7 +1596,7 @@ export default function MapScreen() {
             accessibilityLiveRegion="assertive"
           >
             <AppText variant="body" style={styles.bannerText}>
-              Location permission denied. Enable it in Settings to report a flag.
+              Location access is off. Turn it on in your device Settings to report barriers near you.
             </AppText>
           </View>
         )}

@@ -111,6 +111,18 @@ export default function OnboardingModal({ visible, onDone }: Props) {
             are removed from the AT tree (accessibilityElementsHidden +
             importantForAccessibility) so VoiceOver/TalkBack can't wander
             into off-screen cards. WCAG 2.5.7 (Dragging Movements). */}
+        {/* SR-accessible card content — the ScrollView below is hidden from
+            AT (swipe is sighted-only), so this View is the ONLY way screen
+            reader users hear the card title and body. Updated reactively via
+            the `index` state that Back/Next already drive. */}
+        <View
+          accessible
+          accessibilityRole="text"
+          accessibilityLabel={`${CARDS[index]?.title}. ${CARDS[index]?.body}`}
+          accessibilityLiveRegion="polite"
+          style={styles.srCardContent}
+        />
+
         <ScrollView
           ref={scrollRef}
           horizontal
@@ -121,7 +133,7 @@ export default function OnboardingModal({ visible, onDone }: Props) {
           accessibilityElementsHidden
           importantForAccessibility="no-hide-descendants"
         >
-          {CARDS.map((card, i) => (
+          {CARDS.map((card) => (
             <View key={card.title} style={[styles.card, { width }]}>
               <Text style={styles.emoji} accessibilityElementsHidden importantForAccessibility="no">
                 {card.emoji}
@@ -273,6 +285,12 @@ const makeStyles = (color: ColorTheme) =>
     },
     // brand (#2f80ed) is a UI surface color — dot is decorative (hidden from AT).
     dotActive: { backgroundColor: color.brand, width: 22 },
+    srCardContent: {
+      position: 'absolute',
+      width: 1,
+      height: 1,
+      overflow: 'hidden',
+    },
     actions: {
       paddingHorizontal: spacing.xxl,
       paddingBottom: 36,

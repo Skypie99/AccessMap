@@ -468,8 +468,8 @@ const makeStyles = (color: ColorTheme) =>
       letterSpacing: -0.1,
     },
     viewOnMapBtn: {
-      width: 32,
-      height: 32,
+      width: 44,
+      height: 44,
       borderRadius: radius.circle,
       backgroundColor: color.surfaceNeutral,
       alignItems: 'center',

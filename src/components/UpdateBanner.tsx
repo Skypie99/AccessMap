@@ -109,9 +109,9 @@ const makeStyles = (color: ColorTheme) =>
     viewBtnPressed: { opacity: 0.85 },
     viewBtnText: { color: color.textOnBrand, fontWeight: '700', fontSize: 14 },
     dismissBtn: {
-      width: 30,
-      height: 30,
-      borderRadius: 15,
+      width: 44,
+      height: 44,
+      borderRadius: 22,
       alignItems: 'center',
       justifyContent: 'center',
     },

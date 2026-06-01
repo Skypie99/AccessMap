@@ -37,7 +37,7 @@ export default function ResourcesScreen({ visible, onClose }: Props) {
       <SafeAreaView style={styles.root}>
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.title}>Resources</Text>
+          <Text style={styles.title} accessibilityRole="header">Resources</Text>
           <Pressable
             onPress={onClose}
             hitSlop={12}
@@ -51,8 +51,16 @@ export default function ResourcesScreen({ visible, onClose }: Props) {
 
         {/* Empty state */}
         <View style={styles.body}>
-          <View style={styles.emptyCard}>
-            <View style={styles.emptyIcon}>
+          <View
+            style={styles.emptyCard}
+            accessible
+            accessibilityLabel="Coming soon. We're curating a list of accessibility resources — organisations, tools, and guides that help make communities more navigable for everyone. Check back in a future update."
+          >
+            <View
+              style={styles.emptyIcon}
+              accessibilityElementsHidden
+              importantForAccessibility="no-hide-descendants"
+            >
               <Ionicons name="layers-outline" size={40} color={color.brand} />
             </View>
             <Text style={styles.emptyTitle}>Coming soon</Text>
@@ -93,7 +101,10 @@ const makeStyles = (color: ColorTheme) =>
       color: color.textStrong,
     },
     closeBtn: {
-      padding: spacing.xs,
+      width: 44,
+      height: 44,
+      alignItems: 'center',
+      justifyContent: 'center',
     },
     body: {
       flex: 1,

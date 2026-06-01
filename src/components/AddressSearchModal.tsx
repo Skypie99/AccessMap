@@ -335,8 +335,8 @@ function makeStyles(color: ColorTheme) {
       color: color.textStrong,
     },
     closeBtn: {
-      width: 32,
-      height: 32,
+      width: 44,
+      height: 44,
       borderRadius: radius.full,
       backgroundColor: color.surfaceNeutral,
       alignItems: 'center',
