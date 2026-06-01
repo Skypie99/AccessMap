@@ -72,7 +72,7 @@ import LeaderboardScreen from '@/screens/LeaderboardScreen';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { font, radius, shadow, spacing } from '@/theme';
 import { AppText } from '@/components/ui/AppText';
-import { ChevronRight, Flame, MapPin, X } from 'lucide-react-native';
+import { ArrowDown, ArrowUp, ChevronRight, Flame, MapPin, Pencil, X } from 'lucide-react-native';
 import TierIcon from '@/components/TierIcon';
 import { getTier, pointsToNextTier, REPUTATION_TIERS } from '@/lib/reputationTier';
 import { useReducedMotion } from '@/lib/accessibility';
@@ -843,7 +843,7 @@ export default function ProfileScreen() {
                 accessibilityElementsHidden
                 importantForAccessibility="no-hide-descendants"
               >
-                <AppText variant="label" style={styles.avatarEditBadgeText}>✎</AppText>
+                <Pencil size={14} color={color.textOnBrand} strokeWidth={2.2} />
               </View>
             )}
           </Pressable>
@@ -974,7 +974,11 @@ export default function ProfileScreen() {
                       accessibilityElementsHidden
                       importantForAccessibility="no-hide-descendants"
                     >
-                      {isGain ? '↑' : '↓'}
+                      {isGain ? (
+                        <ArrowUp size={14} color={color.successStrong} strokeWidth={2.4} />
+                      ) : (
+                        <ArrowDown size={14} color={color.error} strokeWidth={2.4} />
+                      )}
                     </Text>
                     <AppText variant="body" style={styles.pointHistoryLabel} numberOfLines={1}>
                       {pointEventLabel(ev.event_type)}

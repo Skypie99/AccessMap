@@ -54,7 +54,7 @@ import {
 } from '@/lib/filterPresets';
 import { font, radius, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
-import { X } from 'lucide-react-native';
+import { Plus, X } from 'lucide-react-native';
 
 interface Props {
   visible: boolean;
@@ -373,7 +373,10 @@ export default function FilterPresetsModal({ visible, onClose, onApply }: Props)
                 disabled: !user || limitReached || adding,
               }}
             >
-              <Text style={styles.newBtnText}>＋ New</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                <Plus size={15} color={color.brandTextAlt} strokeWidth={2.6} />
+                <Text style={styles.newBtnText}>New</Text>
+              </View>
             </Pressable>
             <Pressable
               onPress={onClose}

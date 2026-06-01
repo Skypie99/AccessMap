@@ -3,7 +3,7 @@ import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-nati
 import { initialExpanded } from '@/lib/changelogExpanded';
 import { font, radius, shadow, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
-import { X } from 'lucide-react-native';
+import { ChevronDown, ChevronRight, X } from 'lucide-react-native';
 
 interface Props {
   visible: boolean;
@@ -120,7 +120,11 @@ export default function ChangelogModal({ visible, onClose }: Props) {
                       accessibilityElementsHidden
                       importantForAccessibility="no-hide-descendants"
                     >
-                      {isOpen ? '▼' : '▶'}
+                      {isOpen ? (
+                        <ChevronDown size={16} color={color.brand} strokeWidth={2.2} />
+                      ) : (
+                        <ChevronRight size={16} color={color.brand} strokeWidth={2.2} />
+                      )}
                     </Text>
                   </Pressable>
                   {isOpen &&

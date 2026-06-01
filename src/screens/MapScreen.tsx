@@ -20,10 +20,13 @@ import { errorMessage } from '@/lib/errors';
 import CategoryIcon from '@/components/CategoryIcon';
 import {
   AlertTriangle,
+  ChevronDown,
+  ChevronRight,
   HelpCircle,
   List,
   LocateFixed,
   MapPin,
+  Plus,
   RotateCw,
   Search,
   Shapes,
@@ -1178,9 +1181,11 @@ export default function MapScreen() {
                 accessibilityState={{ expanded: !panelCollapsed }}
               >
                 <AppText variant="heading" style={styles.filterTitle}>Filter flags</AppText>
-                <AppText variant="label" style={styles.filterChevron} accessibilityElementsHidden>
-                  {panelCollapsed ? '▸' : '▾'}
-                </AppText>
+                {panelCollapsed ? (
+                  <ChevronRight size={16} color={color.brand} strokeWidth={2.4} accessibilityElementsHidden />
+                ) : (
+                  <ChevronDown size={16} color={color.brand} strokeWidth={2.4} accessibilityElementsHidden />
+                )}
               </Pressable>
               {filtersActive && (
                 <Pressable
@@ -1487,7 +1492,10 @@ export default function MapScreen() {
                         accessibilityLabel="Save current filters as a preset"
                         accessibilityHint={`Names and saves your current category, severity, and status filters. Stored per account, up to ${FILTER_PRESETS_MAX} presets.`}
                       >
-                        <AppText variant="label" style={styles.presetBtnText}>＋ Save as preset</AppText>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                          <Plus size={15} color={color.textOnBrand} strokeWidth={2.6} />
+                          <AppText variant="label" style={styles.presetBtnText}>Save as preset</AppText>
+                        </View>
                       </Pressable>
                       <Pressable
                         onPress={() => setPresetsModalOpen(true)}
@@ -1656,7 +1664,10 @@ export default function MapScreen() {
                 accessibilityHint="Opens a form to report an accessibility issue at your current location"
                 accessibilityState={{ disabled: !location }}
               >
-                <AppText variant="label" style={styles.fabText}>＋ Report</AppText>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <Plus size={16} color={color.textOnBrand} strokeWidth={2.6} />
+                  <AppText variant="label" style={styles.fabText}>Report</AppText>
+                </View>
               </Pressable>
             )}
           </View>

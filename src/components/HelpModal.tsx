@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { font, radius, shadow, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
-import { X } from 'lucide-react-native';
+import { ChevronDown, ChevronRight, X } from 'lucide-react-native';
 import { openFeedbackComposer } from '@/lib/feedback';
 import { filterFaqs } from '@/lib/helpSearch';
 import SearchInputRow from '@/components/SearchInputRow';
@@ -153,7 +153,11 @@ export default function HelpModal({ visible, onClose }: Props) {
                   >
                     <Text style={styles.faqQuestion}>{item.q}</Text>
                     <Text style={styles.faqChevron} accessibilityElementsHidden>
-                      {expanded ? '▾' : '▸'}
+                      {expanded ? (
+                        <ChevronDown size={16} color={color.brand} strokeWidth={2.2} />
+                      ) : (
+                        <ChevronRight size={16} color={color.brand} strokeWidth={2.2} />
+                      )}
                     </Text>
                   </Pressable>
                   {expanded && <Text style={styles.faqAnswer}>{item.a}</Text>}

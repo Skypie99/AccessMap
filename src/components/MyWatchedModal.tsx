@@ -305,7 +305,8 @@ export default function MyWatchedModal({ visible, onClose, onSelectFlag, onViewO
             </View>
           ) : flags.length === 0 ? (
             <View style={styles.center}>
-              <Text style={styles.emptyIcon} accessibilityElementsHidden>☆</Text>
+              <Star size={32} color={color.textSubtle} strokeWidth={2.2} accessibilityElementsHidden />
+
               <Text style={styles.emptyTitle}>No watched flags yet</Text>
               <Text style={styles.emptySubtitle}>
                 Open any flag on the map or in Tasks and tap <Text style={styles.emptyBold}>Watch</Text> to track it here.
