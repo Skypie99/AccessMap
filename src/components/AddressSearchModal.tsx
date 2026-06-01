@@ -10,6 +10,7 @@ import {
   View,
 } from 'react-native';
 import { font, radius, shadow, spacing } from '@/theme';
+import { MapPin } from 'lucide-react-native';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { searchAddress, type GeocodeResult } from '@/lib/geocode';
 import {
@@ -281,9 +282,7 @@ export default function AddressSearchModal({ visible, onClose, onSelect }: Props
                   accessibilityLabel={`Jump to ${item.displayName}`}
                   accessibilityHint="Centers the map on this location and closes search"
                 >
-                  <Text style={styles.resultGlyph} accessibilityElementsHidden>
-                    📍
-                  </Text>
+                  <MapPin size={18} color={color.brand} strokeWidth={2.2} />
                   <View style={styles.resultTextWrap}>
                     <Text style={styles.resultText} numberOfLines={2}>
                       {item.displayName}

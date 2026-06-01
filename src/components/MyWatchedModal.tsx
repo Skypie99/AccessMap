@@ -30,6 +30,7 @@ import {
   type WatchedStatusFilter,
 } from '@/lib/watchedFlagsFilter';
 import { font, radius, spacing } from '@/theme';
+import { MapPin } from 'lucide-react-native';
 import { decorativeProps } from '@/lib/accessibility';
 import { severityA11y, statusA11y } from '@/lib/a11yText';
 import type { FlagRow } from '@/types/database';
@@ -194,7 +195,7 @@ export default function MyWatchedModal({ visible, onClose, onSelectFlag, onViewO
                 accessibilityLabel={`Show ${CATEGORY_LABELS[item.category]} on the map`}
                 accessibilityHint="Closes this list and centers the Map tab on the flag"
               >
-                <Text style={styles.viewOnMapGlyph}>📍</Text>
+                <MapPin size={18} color={color.brand} strokeWidth={2.2} />
               </Pressable>
             )}
             <Pressable

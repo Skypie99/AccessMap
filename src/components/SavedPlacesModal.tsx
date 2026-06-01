@@ -38,6 +38,7 @@ import {
 } from '@/lib/savedPlaces';
 import type { LatLng } from '@/lib/distance';
 import { font, radius, spacing } from '@/theme';
+import { MapPin } from 'lucide-react-native';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 
 interface Props {
@@ -250,13 +251,7 @@ export default function SavedPlacesModal({
               }
               accessibilityState={{ disabled: !canShowAddForm }}
             >
-              <Text
-                style={styles.addBtnGlyph}
-                accessibilityElementsHidden
-                importantForAccessibility="no-hide-descendants"
-              >
-                📍
-              </Text>
+              <MapPin size={18} color={color.brand} strokeWidth={2.2} />
               <Text style={styles.addBtnText}>Save my current location</Text>
             </Pressable>
           )}
@@ -340,13 +335,7 @@ export default function SavedPlacesModal({
                     accessibilityLabel={`Jump map to ${place.name}`}
                     accessibilityHint="Closes this list and centers the Map on this place"
                   >
-                    <Text
-                      style={styles.rowGlyph}
-                      accessibilityElementsHidden
-                      importantForAccessibility="no-hide-descendants"
-                    >
-                      📍
-                    </Text>
+                    <MapPin size={18} color={color.brand} strokeWidth={2.2} />
                     <View style={styles.rowText}>
                       <Text style={styles.rowName} numberOfLines={1}>
                         {place.name}

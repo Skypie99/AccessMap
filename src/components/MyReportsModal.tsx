@@ -24,6 +24,7 @@ import { filterMyReports } from '@/lib/myReportsFilter';
 import type { FlagRow, FlagStatus } from '@/types/database';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { font, radius, shadow, spacing } from '@/theme';
+import { MapPin } from 'lucide-react-native';
 import { StatusBadge } from '@/components/StatusBadge';
 
 const STATUS_FILTER_ORDER: FlagStatus[] = ['open', 'verified', 'resolved', 'rejected'];
@@ -201,7 +202,7 @@ export default function MyReportsModal({
                 accessibilityLabel={`Show ${CATEGORY_LABELS[item.category]} on the map`}
                 accessibilityHint="Closes this list and centers the Map tab on the flag"
               >
-                <Text style={styles.viewOnMapGlyph}>📍</Text>
+                <MapPin size={18} color={color.brand} strokeWidth={2.2} />
               </Pressable>
             )}
           </View>
