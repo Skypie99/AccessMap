@@ -72,6 +72,7 @@ import LeaderboardScreen from '@/screens/LeaderboardScreen';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { font, radius, shadow, spacing } from '@/theme';
 import { AppText } from '@/components/ui/AppText';
+import { Flame, MapPin } from 'lucide-react-native';
 import { getTier, pointsToNextTier, REPUTATION_TIERS } from '@/lib/reputationTier';
 import { useReducedMotion } from '@/lib/accessibility';
 import {
@@ -1032,14 +1033,7 @@ export default function ProfileScreen() {
                 : `${streak.current} day streak${streak.longest > streak.current ? `. Best ever: ${streak.longest} days.` : '. New personal best!'}`
             }
           >
-            <AppText
-              variant="label"
-              style={styles.streakIcon}
-              accessibilityElementsHidden
-              importantForAccessibility="no-hide-descendants"
-            >
-              🔥
-            </AppText>
+            <Flame size={22} color={color.accentOrange} strokeWidth={2} />
             <View style={styles.streakTextWrap}>
               <AppText variant="label" style={styles.streakValue}>
                 {streak.current} day{streak.current === 1 ? '' : 's'} in a row
@@ -1071,14 +1065,7 @@ export default function ProfileScreen() {
             }
             accessibilityHint="Opens the Map tab centered on this flag"
           >
-            <AppText
-              variant="label"
-              style={styles.nearestBtnIcon}
-              accessibilityElementsHidden
-              importantForAccessibility="no-hide-descendants"
-            >
-              📍
-            </AppText>
+            <MapPin size={20} color={color.brand} strokeWidth={2.2} />
             <View style={styles.nearestBtnTextWrap}>
               <AppText variant="label" style={styles.nearestBtnTitle}>
                 Nearest unresolved · {formatDistance(nearestUnresolved.km)}
