@@ -761,7 +761,7 @@ export default function MapScreen() {
   useEffect(() => {
     if (showEmptyCard && !previouslyEmptyRef.current) {
       AccessibilityInfo.announceForAccessibility(
-        'No flags match your filters. Try broadening them.',
+        'Nothing here right now. Try broadening them.',
       );
     }
     previouslyEmptyRef.current = showEmptyCard;
@@ -1550,7 +1550,7 @@ export default function MapScreen() {
             style={styles.emptyCard}
             accessible
             accessibilityRole="alert"
-            accessibilityLabel="No flags match your filters. Try broadening them or reset filters."
+            accessibilityLabel="Nothing here right now. Try broadening them or reset filters."
             accessibilityLiveRegion="polite"
           >
             <AppText variant="label" style={styles.emptyCardIcon} accessibilityElementsHidden>

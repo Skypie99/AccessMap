@@ -101,7 +101,7 @@ const CARDS: Card[] = [
     icon: 'location-outline',
     iconColor: '#a78bfa',
     title: 'Show flags near you',
-    body: "We'll use your location to show nearby barriers and place your reports accurately. It's only used while the app is open — never tracked or stored on our servers.",
+    body: "We’ll use your location to show nearby barriers and place your reports accurately. It’s only used while the app is open — never tracked or stored on our servers.",
     permission: 'location',
   },
   {

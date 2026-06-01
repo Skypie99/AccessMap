@@ -1182,7 +1182,7 @@ export default function ProfileScreen() {
           <View style={styles.myReportsTextWrap}>
             <AppText variant="label" style={styles.myReportsTitle}>Notifications</AppText>
             <AppText variant="body" style={styles.myReportsSubtitle}>
-              Choose which flag status changes surface as updates.
+              Pick which changes you want to hear about.
             </AppText>
           </View>
           <AppText variant="label" style={styles.myReportsChevron} accessibilityElementsHidden>
@@ -1199,7 +1199,7 @@ export default function ProfileScreen() {
         >
           <View style={styles.myReportsTextWrap}>
             <AppText variant="label" style={styles.myReportsTitle}>My Feedback</AppText>
-            <AppText variant="body" style={styles.myReportsSubtitle}>View the feedback messages you've sent.</AppText>
+            <AppText variant="body" style={styles.myReportsSubtitle}>See the messages you've sent to the team.</AppText>
           </View>
           <AppText variant="label" style={styles.myReportsChevron} accessibilityElementsHidden>
             ›
@@ -1334,7 +1334,7 @@ export default function ProfileScreen() {
           <View style={styles.aboutTextWrap}>
             <AppText variant="label" style={styles.aboutTitle}>Help & FAQ</AppText>
             <AppText variant="body" style={styles.aboutSubtitle}>
-              Common questions about reports, points, and accessibility.
+              Answers to the questions people ask most.
             </AppText>
           </View>
           <AppText variant="label" style={styles.aboutChevron} accessibilityElementsHidden>
