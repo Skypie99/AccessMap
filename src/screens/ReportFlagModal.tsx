@@ -325,7 +325,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
   return (
     // WCAG 2.3.3 (Animation from Interactions): skip the slide animation
     // when the user has requested reduced motion.
-    <Modal visible={visible} animationType={reducedMotion ? 'none' : 'slide'} transparent onRequestClose={onClose}>
+    <Modal visible={visible} animationType={reducedMotion ? 'none' : 'slide'} transparent onRequestClose={onClose} accessibilityViewIsModal>
       <View style={styles.backdrop}>
         <View style={styles.card} accessibilityViewIsModal>
           {/* WCAG 1.4.4: card capped at 88% so Dynamic Type XXL content

@@ -16,21 +16,20 @@ function variantFor(rank: number): Variant {
   return 'default';
 }
 
-export function RankBadge({ rank }: RankBadgeProps) {
+export const RankBadge = React.memo(function RankBadge({ rank }: RankBadgeProps) {
   const color = useColor();
   const variant = variantFor(rank);
 
   // Contrast audit (WCAG 1.4.3 AA, text is 12pt bold = normal text → needs 4.5:1):
-  //   gold:    '#222' (#222) on accentOrange (#f1a520)  ≈ 7.9:1  ✓
+  //   gold:    textOnAccent on accentOrange — design token pair, passes AA
   //   silver:  textMuted (#666) on surfaceNeutral (#eef1f5) ≈ 5.2:1  ✓  (dark: #aaa on #2a2a2a ≈ 6.3:1 ✓)
   //   bronze:  errorFg (#8a1f1f) on errorBg (#fdecea) ≈ 7.4:1  ✓   (dark: #fca5a5 on #3b0f0f ≈ 8.1:1 ✓)
-  //   default: textSubtle (#999) on border (#e5e5e5) ≈ 2.3:1  — but this is decorative text
-  //            covered by the parent row's composite accessibilityLabel.
+  //   default: textMuted (#666) on border (#e5e5e5) ≈ 4.64:1 ✓  (textSubtle #999 fails at 2.2:1)
   const palette = {
-    gold: { bg: color.accentOrange, fg: '#222' as string },
+    gold: { bg: color.accentOrange, fg: color.textOnAccent },
     silver: { bg: color.surfaceNeutral, fg: color.textMuted },
     bronze: { bg: color.errorBg, fg: color.errorFg },
-    default: { bg: color.border, fg: color.textSubtle },
+    default: { bg: color.border, fg: color.textMuted },
   }[variant];
 
   // WCAG 1.3.1: colour alone (gold/silver/bronze palette) isn't sufficient
@@ -53,7 +52,7 @@ export function RankBadge({ rank }: RankBadgeProps) {
       <Text style={[styles.label, { color: palette.fg }]}>{rank}</Text>
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   badge: {

@@ -64,6 +64,10 @@ export const color = {
   textSubtle: '#999', // disabled / tertiary; only for non-essential text or 18pt+
   placeholderText: '#5b6470', // TextInput placeholder — AA pass: ~4.7:1 on white, ~4.5:1 on #f7f9fc
   textOnBrand: '#fff', // text drawn on brand-blue or severity colors
+  // Fixed-dark text for use on amber/orange accents (accentOrange = #f1a520 in both palettes).
+  // accentOrange does NOT change between light and dark mode, so this token is also fixed.
+  // Contrast: #222 on #f1a520 = 6.3:1 — AA pass at any text size.
+  textOnAccent: '#222',
 
   // Brand — primary action color ("Wayfinder Blue" — design system 2026-05-30)
   // Rooted in the heritage blue of the International Symbol of Access.
