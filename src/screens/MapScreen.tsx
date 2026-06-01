@@ -17,8 +17,18 @@ import { useRoute, type RouteProp } from '@react-navigation/native';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { font, radius, shadow, spacing } from '@/theme';
 import { errorMessage } from '@/lib/errors';
+import CategoryIcon from '@/components/CategoryIcon';
 import {
-  CATEGORY_ICONS,
+  HelpCircle,
+  List,
+  LocateFixed,
+  MapPin,
+  RotateCw,
+  Search,
+  Shapes,
+  SlidersHorizontal,
+} from 'lucide-react-native';
+import {
   CATEGORY_LABELS,
   CATEGORY_ORDER,
   DEFAULT_STATUSES,
@@ -681,12 +691,9 @@ export default function MapScreen() {
 
   // Category quick-cycle button derived state — computed once per render
   // so the JSX stays readable. catCycleActive drives the filled-blue style;
-  // catCycleLabel is what the button face shows.
   const catCycleActiveCat: FlagCategory | null =
     activeCategories.size === 1 ? (([...activeCategories] as FlagCategory[])[0] ?? null) : null;
   const catCycleActive = catCycleActiveCat !== null;
-  const catCycleLabel =
-    catCycleActive && catCycleActiveCat !== null ? CATEGORY_ICONS[catCycleActiveCat] : '⊕'; // "all categories" glyph — circled plus suggests "expand/all"
 
   // Which saved set, if any, exactly matches the live filter triple.
   // Used to mark the matching chip `selected` so the user can see at a
@@ -994,7 +1001,7 @@ export default function MapScreen() {
               accessibilityLabel="Search by address"
               accessibilityHint="Opens a search box to jump the map to an address or place"
             >
-              <AppText variant="label" style={styles.iconText}>🔍</AppText>
+              <Search size={19} color={color.brand} strokeWidth={2.2} />
             </Pressable>
             <View style={styles.actionDivider} accessibilityElementsHidden />
             <Pressable
@@ -1004,7 +1011,7 @@ export default function MapScreen() {
               accessibilityLabel="Map legend"
               accessibilityHint="Opens a guide explaining flag categories and severity"
             >
-              <AppText variant="label" style={styles.iconText}>?</AppText>
+              <HelpCircle size={19} color={color.brand} strokeWidth={2.2} />
             </Pressable>
             <View style={styles.actionDivider} accessibilityElementsHidden />
             <Pressable
@@ -1014,12 +1021,11 @@ export default function MapScreen() {
               accessibilityLabel="Toggle filters"
               accessibilityState={{ expanded: filtersOpen }}
             >
-              <AppText
-                variant="label"
-                style={[styles.iconText, (filtersOpen || filtersActive) && styles.iconTextActive]}
-              >
-                ⌕
-              </AppText>
+              <SlidersHorizontal
+                size={19}
+                color={filtersOpen || filtersActive ? color.textOnBrand : color.brand}
+                strokeWidth={2.2}
+              />
             </Pressable>
             <View style={styles.actionDivider} accessibilityElementsHidden />
             <Pressable
@@ -1064,16 +1070,16 @@ export default function MapScreen() {
               }
               accessibilityHint="Tap to cycle through category filters"
             >
-              <AppText
-                variant="label"
-                style={[
-                  styles.iconText,
-                  styles.catQuickText,
-                  catCycleActive && styles.iconTextActive,
-                ]}
-              >
-                {catCycleLabel}
-              </AppText>
+              {catCycleActive && catCycleActiveCat !== null ? (
+                <CategoryIcon
+                  category={catCycleActiveCat}
+                  size={19}
+                  color={color.textOnBrand}
+                  decorative
+                />
+              ) : (
+                <Shapes size={19} color={color.brand} strokeWidth={2.2} />
+              )}
             </Pressable>
             <View style={styles.actionDivider} accessibilityElementsHidden />
             <Pressable
@@ -1082,7 +1088,7 @@ export default function MapScreen() {
               accessibilityRole="button"
               accessibilityLabel="Refresh flags"
             >
-              <AppText variant="label" style={styles.iconText}>⟳</AppText>
+              <RotateCw size={19} color={color.brand} strokeWidth={2.2} />
             </Pressable>
             <View style={styles.actionDivider} accessibilityElementsHidden />
             <Pressable
@@ -1091,7 +1097,7 @@ export default function MapScreen() {
               accessibilityRole="button"
               accessibilityLabel="Recenter on me"
             >
-              <AppText variant="label" style={styles.iconText}>◎</AppText>
+              <LocateFixed size={19} color={color.brand} strokeWidth={2.2} />
             </Pressable>
           </View>
         </View>
@@ -1120,14 +1126,7 @@ export default function MapScreen() {
                 accessibilityRole="button"
                 accessibilityLabel={`Jump map to ${place.name}`}
               >
-                <AppText
-                  variant="label"
-                  style={styles.placeChipGlyph}
-                  accessibilityElementsHidden
-                  importantForAccessibility="no-hide-descendants"
-                >
-                  📍
-                </AppText>
+                <MapPin size={14} color={color.brand} strokeWidth={2.2} />
                 <AppText variant="label" style={styles.placeChipText} numberOfLines={1}>
                   {place.name}
                 </AppText>
@@ -1553,9 +1552,7 @@ export default function MapScreen() {
             accessibilityLabel="Nothing here right now. Try broadening them or reset filters."
             accessibilityLiveRegion="polite"
           >
-            <AppText variant="label" style={styles.emptyCardIcon} accessibilityElementsHidden>
-              🔍
-            </AppText>
+            <Search size={26} color={color.textSubtle} strokeWidth={2} />
             <AppText variant="heading" style={styles.emptyCardTitle}>Nothing here right now</AppText>
             <AppText variant="body" style={styles.emptyCardBody}>
               Your filters are hiding everything. Try widening them, or reset to see all nearby flags.
@@ -1634,7 +1631,10 @@ export default function MapScreen() {
               accessibilityLabel="Open nearby flags list"
               accessibilityHint="Opens an accessible list of flags sorted by distance"
             >
-              <AppText variant="label" style={styles.fabSecondaryText}>📋 List</AppText>
+              <View style={styles.fabSecondaryRow}>
+                <List size={16} color={color.brand} strokeWidth={2.2} />
+                <AppText variant="label" style={styles.fabSecondaryText}>List</AppText>
+              </View>
             </Pressable>
             {/* Jordan Condition 2: hide Report FAB for guest users.
                 Guests can browse but not create reports. Hiding at render
@@ -2156,6 +2156,7 @@ const makeStyles = (color: ColorTheme) =>
       justifyContent: 'center',
     },
     fabSecondary: { backgroundColor: color.overlay },
+    fabSecondaryRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
     fabSecondaryText: { color: color.brand, fontWeight: '700', fontSize: 15 },
     fabDisabled: { opacity: 0.5 },
     fabPressed: { opacity: 0.8 },
