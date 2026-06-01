@@ -12,7 +12,7 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.accessmap.app",
       "appleTeamId": "S78F8ZA8QU",
-      "buildNumber": "12",
+      "buildNumber": "14",
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "AccessMap uses your location to show nearby accessibility flags and to attach your location when you report a new flag.",
         "NSCameraUsageDescription": "AccessMap uses the camera to capture photos of accessibility barriers.",
