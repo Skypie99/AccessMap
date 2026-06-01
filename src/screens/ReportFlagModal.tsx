@@ -12,6 +12,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { AppText } from '@/components/ui/AppText';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '@/lib/auth';
 import { track } from '@/lib/analytics';
@@ -421,7 +422,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
             </>
           )}
 
-          <Text style={styles.label} accessibilityRole="header">Category</Text>
+          <AppText variant="label" style={styles.label} accessibilityRole="header">Category</AppText>
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -444,15 +445,15 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
                   accessibilityLabel={`Category: ${CATEGORY_LABELS[c]}`}
                   accessibilityState={{ selected: active }}
                 >
-                  <Text style={[styles.pillText, active && styles.pillTextActive]}>
+                  <AppText variant="label" style={[styles.pillText, active && styles.pillTextActive]}>
                     {CATEGORY_LABELS[c]}
-                  </Text>
+                  </AppText>
                 </Pressable>
               );
             })}
           </ScrollView>
 
-          <Text style={styles.label} accessibilityRole="header">Severity</Text>
+          <AppText variant="label" style={styles.label} accessibilityRole="header">Severity</AppText>
           <View style={styles.row}>
             {SEVERITY_ORDER.map((s) => {
               const active = s === severity;
@@ -475,7 +476,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
                   accessibilityLabel={`Severity ${s}: ${SEVERITY_LABELS[s]} — ${SEVERITY_DESCRIPTIONS[s]}`}
                   accessibilityState={{ selected: active }}
                 >
-                  <Text style={[styles.sevText, active && styles.sevTextActive]}>{s}</Text>
+                  <AppText variant="label" style={[styles.sevText, active && styles.sevTextActive]}>{s}</AppText>
                 </Pressable>
               );
             })}
@@ -483,17 +484,18 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
 
           {/* Inline hint: updates as the user taps a severity level so
               they know what each number means before submitting. */}
-          <Text
+          <AppText
+            variant="body"
             style={styles.sevHint}
             accessibilityLabel={`Severity ${severity}: ${SEVERITY_DESCRIPTIONS[severity]}`}
             accessibilityLiveRegion="polite"
           >
-            <Text style={styles.sevHintLabel}>{SEVERITY_LABELS[severity]}</Text>
+            <AppText variant="bodyMedium" style={styles.sevHintLabel}>{SEVERITY_LABELS[severity]}</AppText>
             {'  '}
             {SEVERITY_DESCRIPTIONS[severity]}
-          </Text>
+          </AppText>
 
-          <Text style={styles.label} accessibilityRole="header">Description (optional)</Text>
+          <AppText variant="label" style={styles.label} accessibilityRole="header">Description (optional)</AppText>
           <TextInput
             value={description}
             onChangeText={setDescription}
@@ -514,7 +516,8 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
               Turns amber at 1800 chars (200 left) and red at 1960 (40 left)
               so they have clear warning before the hard limit cuts them off. */}
           {description.length > 0 && (
-            <Text
+            <AppText
+              variant="body"
               style={[
                 styles.charCounter,
                 description.length >= 1960 && styles.charCounterRed,
@@ -523,17 +526,17 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
               accessibilityLabel={`${description.length} of 2000 characters used`}
             >
               {description.length} / 2000
-            </Text>
+            </AppText>
           )}
 
           {/* Anon-only: sign-in nudge shown where the photo section would be. */}
           {isAnon && (
-            <Text style={styles.anonPhotoNudge}>
-              <Text style={styles.anonPhotoNudgeLink} onPress={onClose} accessibilityRole="link">
+            <AppText variant="body" style={styles.anonPhotoNudge}>
+              <AppText variant="label" style={styles.anonPhotoNudgeLink} onPress={onClose} accessibilityRole="link">
                 Sign in
-              </Text>
+              </AppText>
               {' to attach a photo.'}
-            </Text>
+            </AppText>
           )}
 
           {/* Auth-only sections: seasonal tags, disability tags, photo picker,
@@ -549,9 +552,9 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
                   toggleTag cap, and the same capability gate as the general
                   context chips below — seasonal tags are just a subset of
                   context_tags. */}
-              <Text style={styles.label} accessibilityRole="header">
+              <AppText variant="label" style={styles.label} accessibilityRole="header">
                 Seasonal (optional) — does this change with the seasons?
-              </Text>
+              </AppText>
               <View style={styles.row}>
                 {SEASONAL_TAGS.map((tag) => {
                   const active = contextTags.includes(tag);
@@ -576,7 +579,8 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
                         tagsDisabled ? 'Seasonal tags will be available soon.' : undefined
                       }
                     >
-                      <Text
+                      <AppText
+                        variant="label"
                         style={[
                           styles.tagChipText,
                           active && styles.tagChipTextActive,
@@ -584,16 +588,16 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
                         ]}
                       >
                         {label}
-                      </Text>
+                      </AppText>
                     </Pressable>
                   );
                 })}
               </View>
-              <Text style={styles.tagHelper}>
+              <AppText variant="body" style={styles.tagHelper}>
                 {tagsDisabled
                   ? 'Seasonal tags will be available soon (server update pending).'
                   : `For barriers that aren't year-round. Counts toward the same 5-tag limit.`}
-              </Text>
+              </AppText>
 
               {/* Disability tags (Sprint 3) — a multi-select chip picker for WHO a
                   barrier affects, so users filtering the map by access need can
@@ -603,9 +607,9 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
                   seasonal/general chips — disability tags are just another subset
                   of context_tags. */}
               <View style={styles.disabilitySectionHeader}>
-                <Text style={[styles.label, styles.disabilityLabel]} accessibilityRole="header">
+                <AppText variant="label" style={[styles.label, styles.disabilityLabel]} accessibilityRole="header">
                   Who does this affect? (optional)
-                </Text>
+                </AppText>
               </View>
               <View style={styles.row}>
                 {DISABILITY_TAGS.map((tag) => {
@@ -633,14 +637,16 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
                         tagsDisabled ? 'Accessibility tags will be available soon.' : undefined
                       }
                     >
-                      <Text
+                      <AppText
+                        variant="label"
                         style={styles.disabilityTagIcon}
                         accessibilityElementsHidden
                         importantForAccessibility="no-hide-descendants"
                       >
                         {icon}
-                      </Text>
-                      <Text
+                      </AppText>
+                      <AppText
+                        variant="label"
                         style={[
                           styles.tagChipText,
                           active && styles.tagChipTextActive,
@@ -648,18 +654,18 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
                         ]}
                       >
                         {label}
-                      </Text>
+                      </AppText>
                     </Pressable>
                   );
                 })}
               </View>
-              <Text style={styles.tagHelper}>
+              <AppText variant="body" style={styles.tagHelper}>
                 {tagsDisabled
                   ? 'Accessibility tags will be available soon (server update pending).'
                   : 'Helps people filter the map to barriers that affect them. Counts toward the same 5-tag limit.'}
-              </Text>
+              </AppText>
 
-              <Text style={styles.label} accessibilityRole="header">Photo (optional)</Text>
+              <AppText variant="label" style={styles.label} accessibilityRole="header">Photo (optional)</AppText>
 
               {/* High-severity photo nudge — only shown when severity ≥ 4 and
                   no photo has been selected. At severity 4–5, a photo is the
@@ -679,20 +685,21 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
                   accessibilityLabel={`Tip: adding a photo helps verify this ${severity === 5 ? 'severe' : 'major'} barrier without a site visit.`}
                   accessibilityLiveRegion="polite"
                 >
-                  <Text
+                  <AppText
+                    variant="label"
                     style={styles.photoNudgeIcon}
                     accessibilityElementsHidden
                     importantForAccessibility="no-hide-descendants"
                   >
                     📸
-                  </Text>
-                  <Text style={styles.photoNudgeBody}>
+                  </AppText>
+                  <AppText variant="body" style={styles.photoNudgeBody}>
                     {'A photo helps verify this '}
-                    <Text style={styles.photoNudgeBold}>
+                    <AppText variant="bodyMedium" style={styles.photoNudgeBold}>
                       {severity === 5 ? 'severe' : 'major'} barrier
-                    </Text>
+                    </AppText>
                     {' without a site visit.'}
-                  </Text>
+                  </AppText>
                 </View>
               )}
 
@@ -711,9 +718,9 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
                   column is missing server-side and the helper silently retries
                   the insert without the field — the user can still file the
                   report, the tags are just dropped. See flags.ts → createFlag. */}
-              <Text style={styles.label} accessibilityRole="header">
+              <AppText variant="label" style={styles.label} accessibilityRole="header">
                 Context (optional) — when is this most relevant?
-              </Text>
+              </AppText>
               <View style={styles.row}>
                 {CONTEXT_TAGS.map((tag) => {
                   const active = contextTags.includes(tag);
@@ -742,7 +749,8 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
                         tagsDisabled ? 'Context tags will be available soon.' : undefined
                       }
                     >
-                      <Text
+                      <AppText
+                        variant="label"
                         style={[
                           styles.tagChipText,
                           active && styles.tagChipTextActive,
@@ -750,16 +758,16 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
                         ]}
                       >
                         {label}
-                      </Text>
+                      </AppText>
                     </Pressable>
                   );
                 })}
               </View>
-              <Text style={styles.tagHelper}>
+              <AppText variant="body" style={styles.tagHelper}>
                 {tagsDisabled
                   ? 'Context tags will be available soon (server update pending).'
                   : `Tap any that apply. Up to ${MAX_CONTEXT_TAGS}. Leave empty if none.`}
-              </Text>
+              </AppText>
             </>
           )}
           </ScrollView>
@@ -773,7 +781,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
               accessibilityLabel="Cancel and close"
               accessibilityState={{ disabled: submitting }}
             >
-              <Text style={styles.cancelText}>Cancel</Text>
+              <AppText variant="label" style={styles.cancelText}>Cancel</AppText>
             </Pressable>
             <Pressable
               onPress={handleSubmit}
@@ -790,7 +798,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
               {submitting ? (
                 <ActivityIndicator color={color.textOnBrand} />
               ) : (
-                <Text style={styles.submitText}>{isAnon ? 'Report anonymously' : 'Report'}</Text>
+                <AppText variant="label" style={styles.submitText}>{isAnon ? 'Report anonymously' : 'Report'}</AppText>
               )}
             </Pressable>
           </View>
