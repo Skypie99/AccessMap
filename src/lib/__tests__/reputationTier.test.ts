@@ -1,4 +1,4 @@
-import { REPUTATION_TIERS, getTier, matchesTier, pointsToNextTier } from '../reputationTier';
+import { REPUTATION_TIERS, getTier, getNextTierProgress, matchesTier, pointsToNextTier } from '../reputationTier';
 
 describe('reputationTier', () => {
   describe('REPUTATION_TIERS catalog', () => {
@@ -268,6 +268,122 @@ describe('reputationTier', () => {
     it('boundary: 1500 is Platinum (not Gold)', () => {
       expect(matchesTier('platinum', 1500)).toBe(true);
       expect(matchesTier('gold', 1500)).toBe(false);
+    });
+  });
+});
+
+describe('getNextTierProgress — 0–1 ratio within current tier band', () => {
+  describe('Bronze band (0–99, width 100)', () => {
+    it('returns 0.0 at exactly the tier floor (0 pts)', () => {
+      expect(getNextTierProgress(0)).toBeCloseTo(0.0);
+    });
+
+    it('returns 0.5 at the midpoint (50 pts)', () => {
+      expect(getNextTierProgress(50)).toBeCloseTo(0.5);
+    });
+
+    it('returns 0.99 one below the Silver threshold (99 pts)', () => {
+      expect(getNextTierProgress(99)).toBeCloseTo(0.99);
+    });
+  });
+
+  describe('Silver band (100–499, width 400)', () => {
+    it('returns 0.0 at Silver entry (100 pts)', () => {
+      expect(getNextTierProgress(100)).toBeCloseTo(0.0);
+    });
+
+    it('returns 0.5 at the Silver midpoint (300 pts)', () => {
+      expect(getNextTierProgress(300)).toBeCloseTo(0.5);
+    });
+
+    it('returns close to 1.0 one below Gold threshold (499 pts)', () => {
+      expect(getNextTierProgress(499)).toBeCloseTo(0.9975);
+    });
+  });
+
+  describe('Gold band (500–1499, width 1000)', () => {
+    it('returns 0.0 at Gold entry (500 pts)', () => {
+      expect(getNextTierProgress(500)).toBeCloseTo(0.0);
+    });
+
+    it('returns 0.5 at the Gold midpoint (1000 pts)', () => {
+      expect(getNextTierProgress(1000)).toBeCloseTo(0.5);
+    });
+
+    it('returns close to 1.0 one below Platinum threshold (1499 pts)', () => {
+      expect(getNextTierProgress(1499)).toBeCloseTo(0.999);
+    });
+  });
+
+  describe('Platinum — top tier always returns 1.0', () => {
+    it('returns 1.0 at exactly the Platinum floor (1500 pts)', () => {
+      expect(getNextTierProgress(1500)).toBe(1.0);
+    });
+
+    it('returns 1.0 well above Platinum (5000 pts)', () => {
+      expect(getNextTierProgress(5000)).toBe(1.0);
+    });
+  });
+
+  describe('defensive inputs — clamped to Bronze floor', () => {
+    it('treats null as 0 → Bronze progress 0.0', () => {
+      expect(getNextTierProgress(null)).toBeCloseTo(0.0);
+    });
+
+    it('treats undefined as 0 → Bronze progress 0.0', () => {
+      expect(getNextTierProgress(undefined)).toBeCloseTo(0.0);
+    });
+
+    it('treats negative as 0 → Bronze progress 0.0', () => {
+      expect(getNextTierProgress(-100)).toBeCloseTo(0.0);
+    });
+
+    it('treats NaN as 0 → Bronze progress 0.0', () => {
+      expect(getNextTierProgress(NaN)).toBeCloseTo(0.0);
+    });
+  });
+
+  describe('tier-badge emoji integration — getTier().emoji matches each tier', () => {
+    it('Bronze (50 pts) → 🥉', () => {
+      expect(getTier(50).emoji).toBe('🥉');
+    });
+
+    it('Silver (250 pts) → 🥈', () => {
+      expect(getTier(250).emoji).toBe('🥈');
+    });
+
+    it('Gold (750 pts) → 🥇', () => {
+      expect(getTier(750).emoji).toBe('🥇');
+    });
+
+    it('Platinum (2000 pts) → 💎', () => {
+      expect(getTier(2000).emoji).toBe('💎');
+    });
+
+    it('all four REPUTATION_TIERS entries have emoji string', () => {
+      for (const t of REPUTATION_TIERS) {
+        expect(typeof t.emoji).toBe('string');
+        expect(t.emoji.length).toBeGreaterThan(0);
+      }
+    });
+  });
+
+  describe('tier descriptions — each tier has a non-empty description string', () => {
+    it('all four tiers have a description field', () => {
+      for (const t of REPUTATION_TIERS) {
+        expect(typeof t.description).toBe('string');
+        expect(t.description.length).toBeGreaterThan(0);
+      }
+    });
+
+    it('Bronze description mentions "contributor" or "reporting"', () => {
+      const bronze = REPUTATION_TIERS.find((t) => t.name === 'bronze');
+      expect(bronze?.description).toMatch(/contributor|report/i);
+    });
+
+    it('Platinum description mentions trust or contributor', () => {
+      const platinum = REPUTATION_TIERS.find((t) => t.name === 'platinum');
+      expect(platinum?.description).toMatch(/trust|contributor/i);
     });
   });
 });

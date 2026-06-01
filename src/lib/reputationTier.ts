@@ -27,6 +27,8 @@ export interface ReputationTier {
   label: string;
   /** Emoji glyph rendered as the visual badge. Decorative — hide from SR. */
   emoji: string;
+  /** Short description shown when a user taps their tier badge. */
+  description: string;
   /** Minimum points needed to reach this tier. */
   threshold: number;
   /** Points needed to reach the next tier — null if this is the top tier. */
@@ -44,10 +46,42 @@ export interface ReputationTier {
 // a new tier means slotting it into this array in sort order — no other
 // edits needed.
 export const REPUTATION_TIERS: ReadonlyArray<ReputationTier> = [
-  { name: 'bronze', label: 'Bronze', emoji: '🥉', threshold: 0, nextThreshold: 100, reopen_threshold: 3 },
-  { name: 'silver', label: 'Silver', emoji: '🥈', threshold: 100, nextThreshold: 500, reopen_threshold: 2 },
-  { name: 'gold', label: 'Gold', emoji: '🥇', threshold: 500, nextThreshold: 1500, reopen_threshold: 1 },
-  { name: 'platinum', label: 'Platinum', emoji: '💎', threshold: 1500, nextThreshold: null, reopen_threshold: 1 },
+  {
+    name: 'bronze',
+    label: 'Bronze',
+    emoji: '🥉',
+    description: 'New contributor — keep reporting barriers to build trust.',
+    threshold: 0,
+    nextThreshold: 100,
+    reopen_threshold: 3,
+  },
+  {
+    name: 'silver',
+    label: 'Silver',
+    emoji: '🥈',
+    description: 'Trusted contributor — your reports are verified more quickly.',
+    threshold: 100,
+    nextThreshold: 500,
+    reopen_threshold: 2,
+  },
+  {
+    name: 'gold',
+    label: 'Gold',
+    emoji: '🥇',
+    description: 'Community leader — your verifications carry extra weight.',
+    threshold: 500,
+    nextThreshold: 1500,
+    reopen_threshold: 1,
+  },
+  {
+    name: 'platinum',
+    label: 'Platinum',
+    emoji: '💎',
+    description: "Anchor contributor — you're one of our most trusted voices.",
+    threshold: 1500,
+    nextThreshold: null,
+    reopen_threshold: 1,
+  },
 ];
 
 /**
@@ -107,4 +141,23 @@ export function matchesTier(
   points: number | null | undefined,
 ): boolean {
   return getTier(points).name === tierName;
+}
+
+/**
+ * Return how far through the current tier the user is, as a 0–1 ratio.
+ * Used to render the tier progress bar in ProfileScreen.
+ *
+ *   0.0 = just entered the tier (points === tier.threshold)
+ *   1.0 = at or past the top of the tier; Platinum always returns 1.0
+ *
+ * Example: Silver spans 100–499 (band = 400).
+ *   At 300 pts → (300-100)/400 = 0.5
+ */
+export function getNextTierProgress(points: number | null | undefined): number {
+  const p = safePoints(points);
+  const tier = getTier(p);
+  if (tier.nextThreshold === null) return 1.0;
+  const bandWidth = tier.nextThreshold - tier.threshold;
+  if (bandWidth === 0) return 1.0;
+  return (p - tier.threshold) / bandWidth;
 }

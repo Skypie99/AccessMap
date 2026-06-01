@@ -154,17 +154,21 @@ export default function OnboardingCards({ onDone }: Props) {
   ).current;
 
   useEffect(() => {
-    Animated.parallel(
-      dotWidths.map((anim, i) =>
-        Animated.spring(anim, {
-          toValue: i === index ? 22 : 8,
-          speed: 18,
-          bounciness: 3,
-          useNativeDriver: false,
-        }),
-      ),
-    ).start();
-  }, [index, dotWidths]);
+    if (reduceMotion) {
+      dotWidths.forEach((anim, i) => anim.setValue(i === index ? 22 : 8));
+    } else {
+      Animated.parallel(
+        dotWidths.map((anim, i) =>
+          Animated.spring(anim, {
+            toValue: i === index ? 22 : 8,
+            speed: 18,
+            bounciness: 3,
+            useNativeDriver: false,
+          }),
+        ),
+      ).start();
+    }
+  }, [index, dotWidths, reduceMotion]);
 
   // When the active card changes (Back/Next/swipe), announce the new
   // position so screen reader users get the "Card N of 4" context even
@@ -308,12 +312,14 @@ export default function OnboardingCards({ onDone }: Props) {
               : c.body;
             return (
               <View key={c.title} style={[styles.cardOuter, { width }]}>
-                {/* Icon circle */}
+                {/* Icon circle — decorative; card heading conveys the same meaning */}
                 <View
                   style={[
                     styles.iconCircle,
                     { borderColor: effectiveColor + '40', shadowColor: effectiveColor },
                   ]}
+                  accessibilityElementsHidden
+                  importantForAccessibility="no-hide-descendants"
                 >
                   <Ionicons name={effectiveIcon} size={52} color={effectiveColor} />
                 </View>

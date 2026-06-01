@@ -3,6 +3,7 @@ import {
   AccessibilityInfo,
   ActivityIndicator,
   Alert,
+  Animated,
   Image,
   Modal,
   Platform,
@@ -72,6 +73,7 @@ import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { font, radius, shadow, spacing } from '@/theme';
 import { AppText } from '@/components/ui/AppText';
 import { getTier, pointsToNextTier, REPUTATION_TIERS } from '@/lib/reputationTier';
+import { useReducedMotion } from '@/lib/accessibility';
 import {
   getPointEventHistory,
   pointEventLabel,
@@ -79,6 +81,20 @@ import {
 } from '@/lib/pointEvents';
 import SignInScreen from '@/screens/SignInScreen';
 import AboutScreen from '@/screens/AboutScreen';
+
+// Converts an ISO timestamp to a human-readable relative string.
+// Falls back to a short date once the event is more than a week old.
+function formatRelativeTime(iso: string): string {
+  const diffMs = Date.now() - new Date(iso).getTime();
+  const diffMin = Math.floor(diffMs / 60_000);
+  if (diffMin < 1) return 'just now';
+  if (diffMin < 60) return `${diffMin}m ago`;
+  const diffHr = Math.floor(diffMin / 60);
+  if (diffHr < 24) return `${diffHr}h ago`;
+  const diffDays = Math.floor(diffHr / 24);
+  if (diffDays < 7) return `${diffDays}d ago`;
+  return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}
 
 interface Stats {
   reported: number;
@@ -130,6 +146,7 @@ function milestoneProgress(points: number): {
 export default function ProfileScreen() {
   const color = useColor();
   const styles = makeStyles(color);
+  const reduceMotion = useReducedMotion();
   const navigation = useNavigation<BottomTabNavigationProp<RootTabParamList, 'Profile'>>();
   const { user, loading: authLoading } = useAuth();
   const [profile, setProfile] = useState<UserRow | null>(null);
@@ -684,6 +701,28 @@ export default function ProfileScreen() {
     });
   }, [nearestUnresolved, navigation]);
 
+  // Tier progress bar animation — drives the fill width from 0 → progress
+  // whenever the user's points change (e.g. after a focus-refresh). Placed
+  // before the conditional returns so the hook call order is always stable.
+  const tierProgressAnim = useRef(new Animated.Value(0)).current;
+  const tierProgressValue = useMemo(() => {
+    const pts = profile?.points ?? 0;
+    const t = getTier(pts);
+    if (t.nextThreshold === null) return 1;
+    return Math.min(1, (pts - t.threshold) / (t.nextThreshold - t.threshold));
+  }, [profile?.points]);
+  useEffect(() => {
+    if (reduceMotion) {
+      tierProgressAnim.setValue(tierProgressValue);
+    } else {
+      Animated.timing(tierProgressAnim, {
+        toValue: tierProgressValue,
+        duration: 600,
+        useNativeDriver: false, // width interpolation cannot use the native driver
+      }).start();
+    }
+  }, [tierProgressValue, tierProgressAnim, reduceMotion]);
+
   if (authLoading) {
     return (
       <View style={styles.center}>
@@ -843,18 +882,63 @@ export default function ProfileScreen() {
               <AppText variant="label" style={styles.tierPillLabel}>{tier.label}</AppText>
             </Pressable>
           </View>
+          {/* Tier progress bar — thin animated fill below the tier pill.
+              Hidden at Platinum (nextThreshold null) since there's no
+              next tier to progress toward. WCAG 4.1.2: announced as a
+              progressbar with label "Silver tier, 150 of 500 points to Gold";
+              the visual text label below is hidden from AT (duplicate). */}
+          {tier.nextThreshold !== null && (
+            <>
+              <View
+                style={styles.tierProgressTrack}
+                accessibilityRole="progressbar"
+                accessibilityLabel={`${tier.label} tier, ${points} of ${tier.nextThreshold} points to ${nextTier?.label ?? 'next tier'}`}
+                accessibilityValue={{ min: tier.threshold, max: tier.nextThreshold, now: points }}
+              >
+                <Animated.View
+                  style={[
+                    styles.tierProgressFill,
+                    {
+                      width: tierProgressAnim.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: ['0%', '100%'],
+                      }),
+                    },
+                  ]}
+                  accessibilityElementsHidden
+                  importantForAccessibility="no-hide-descendants"
+                />
+              </View>
+              <Text
+                style={styles.tierProgressLabel}
+                accessibilityElementsHidden
+                importantForAccessibility="no-hide-descendants"
+              >
+                {tierGap} pts to {nextTier?.label ?? 'next tier'} {nextTier?.emoji ?? ''}
+              </Text>
+            </>
+          )}
           {nextMilestone !== null ? (
             <>
               <View
                 style={styles.progressTrack}
+                accessibilityRole="progressbar"
+                accessibilityLabel={`Progress toward ${milestoneLabel}, ${points} of ${nextMilestone} points`}
+                accessibilityValue={{ min: 0, max: nextMilestone, now: points }}
+              >
+                <View
+                  style={[styles.progressFill, { width: progressBarWidth }]}
+                  accessibilityElementsHidden
+                  importantForAccessibility="no-hide-descendants"
+                />
+              </View>
+              <Text
+                style={styles.heroSubtitle}
                 accessibilityElementsHidden
                 importantForAccessibility="no-hide-descendants"
               >
-                <View style={[styles.progressFill, { width: progressBarWidth }]} />
-              </View>
-              <AppText variant="label" style={styles.heroSubtitle}>
                 {nextMilestone - points} points to {milestoneLabel}
-              </AppText>
+              </Text>
             </>
           ) : (
             <AppText variant="label" style={styles.heroSubtitle}>
@@ -863,46 +947,59 @@ export default function ProfileScreen() {
           )}
         </View>
 
-        {/* Point history — owner-only, only rendered when events exist.
-            42P01: if the migration is not yet applied getPointEventHistory
-            returns [] and this section is hidden. flag_id is NOT shown —
-            see TRUST_SCORE_SPEC §3.2 Jordan constraint. */}
-        {pointEvents.length > 0 && (
-          <View style={styles.pointHistoryCard}>
-            <AppText variant="heading" style={styles.pointHistoryTitle} accessibilityRole="header">
-              Recent point activity
+        {/* Point history — always rendered. Shows an encouraging empty state
+            when no events exist yet (or migration not applied). flag_id is
+            NOT shown — see TRUST_SCORE_SPEC §3.2 Jordan constraint. */}
+        <View style={styles.pointHistoryCard}>
+          <AppText variant="heading" style={styles.pointHistoryTitle} accessibilityRole="header">
+            Recent point activity
+          </AppText>
+          {pointEvents.length === 0 ? (
+            <AppText variant="body" style={styles.pointHistoryEmpty}>
+              Start reporting barriers to earn points!
             </AppText>
-            {pointEvents.slice(0, 5).map((ev) => {
-              const sign = ev.delta >= 0 ? '+' : '';
-              const date = new Date(ev.created_at).toLocaleDateString(undefined, {
-                month: 'short',
-                day: 'numeric',
-              });
-              return (
-                <View
-                  key={ev.id}
-                  style={styles.pointHistoryRow}
-                  accessible
-                  accessibilityLabel={`${pointEventLabel(ev.event_type)}, ${sign}${ev.delta} points, ${date}`}
-                >
-                  <AppText variant="body" style={styles.pointHistoryLabel} numberOfLines={1}>
-                    {pointEventLabel(ev.event_type)}
-                  </AppText>
-                  <AppText variant="body" style={styles.pointHistoryDate}>{date}</AppText>
-                  <AppText
-                    variant="monoBold"
-                    style={[
-                      styles.pointHistoryDelta,
-                      ev.delta < 0 && styles.pointHistoryDeltaNeg,
-                    ]}
+          ) : (
+            <View accessibilityRole="list">
+              {pointEvents.slice(0, 5).map((ev) => {
+                const isGain = ev.delta >= 0;
+                const absPoints = Math.abs(ev.delta);
+                const action = isGain ? 'Earned' : 'Lost';
+                const sign = isGain ? '+' : '';
+                const dateStr = formatRelativeTime(ev.created_at);
+                return (
+                  <View
+                    key={ev.id}
+                    style={styles.pointHistoryRow}
+                    accessible
+                    role="listitem"
+                    accessibilityLabel={`${action} ${absPoints} ${absPoints === 1 ? 'point' : 'points'}: ${pointEventLabel(ev.event_type)}, ${dateStr}`}
                   >
-                    {sign}{ev.delta} pts
-                  </AppText>
-                </View>
-              );
-            })}
-          </View>
-        )}
+                    <Text
+                      style={[styles.pointHistoryIcon, !isGain && styles.pointHistoryIconNeg]}
+                      accessibilityElementsHidden
+                      importantForAccessibility="no-hide-descendants"
+                    >
+                      {isGain ? '↑' : '↓'}
+                    </Text>
+                    <AppText variant="body" style={styles.pointHistoryLabel} numberOfLines={1}>
+                      {pointEventLabel(ev.event_type)}
+                    </AppText>
+                    <AppText variant="body" style={styles.pointHistoryDate}>{dateStr}</AppText>
+                    <AppText
+                      variant="monoBold"
+                      style={[
+                        styles.pointHistoryDelta,
+                        !isGain && styles.pointHistoryDeltaNeg,
+                      ]}
+                    >
+                      {sign}{ev.delta} pts
+                    </AppText>
+                  </View>
+                );
+              })}
+            </View>
+          )}
+        </View>
 
         <View
           style={styles.statsRow}
@@ -1577,9 +1674,9 @@ export default function ProfileScreen() {
                   <View
                     key={t.name}
                     style={[styles.tierRow, isCurrent && styles.tierRowCurrent]}
-                    // selected={true} on the current row lets SR
-                    // announce "selected" so users know which tier
-                    // they're in without scanning visually.
+                    // accessible + selected: VoiceOver announces "selected" on the
+                    // current tier row so AT users know which tier they're in.
+                    accessible
                     accessibilityRole="text"
                     accessibilityState={{ selected: isCurrent }}
                     accessibilityLabel={
@@ -1764,7 +1861,7 @@ const makeStyles = (color: ColorTheme) =>
     progressTrack: {
       width: '100%',
       height: 8,
-      backgroundColor: 'rgba(255,255,255,0.25)',
+      backgroundColor: color.surfaceVariant,
       borderRadius: radius.circle,
       marginTop: 10,
       overflow: 'hidden',
@@ -1773,6 +1870,30 @@ const makeStyles = (color: ColorTheme) =>
       height: '100%',
       backgroundColor: color.textOnBrand,
       borderRadius: radius.circle,
+    },
+    // Tier progress bar — thinner than the milestone bar above, sits
+    // directly below the tier pill row. Fill animates from 0 → progress.
+    tierProgressTrack: {
+      width: '100%',
+      height: 6,
+      backgroundColor: color.surfaceVariant,
+      borderRadius: radius.circle,
+      marginTop: spacing.sm,
+      overflow: 'hidden',
+    },
+    tierProgressFill: {
+      height: '100%',
+      backgroundColor: color.textOnBrand,
+      borderRadius: radius.circle,
+    },
+    tierProgressLabel: {
+      color: color.pointsPillText,
+      // WCAG 1.4.3: pointsPillText (#dbe7fb) on brand (#2f80ed) = 3.10:1.
+      // 14pt bold = large text → 3:1 threshold → passes (was 13pt medium → needed 4.5:1 → failed).
+      fontSize: font.size.base,
+      fontWeight: font.weight.bold,
+      textAlign: 'center',
+      marginTop: spacing.tight,
     },
     // T4: Hero value row — wraps the large points number + the small
     // tier pill side-by-side. centerY keeps the pill optically aligned
@@ -1907,6 +2028,18 @@ const makeStyles = (color: ColorTheme) =>
       gap: spacing.sm,
       minHeight: 28,
     },
+    // Directional icon (↑/↓). successStrong (#1e8449) at 4.66:1 on white
+    // passes WCAG AA; the ↑ shape also conveys direction without color alone.
+    pointHistoryIcon: {
+      fontSize: font.size.base,
+      color: color.successStrong,
+      width: spacing.xl,
+      textAlign: 'center',
+      fontWeight: font.weight.bold,
+    },
+    pointHistoryIconNeg: {
+      color: color.error,
+    },
     pointHistoryLabel: {
       flex: 1,
       fontSize: font.size.sm,
@@ -1915,18 +2048,27 @@ const makeStyles = (color: ColorTheme) =>
     pointHistoryDate: {
       fontSize: font.size.xs,
       color: color.textMuted,
-      minWidth: 44,
       textAlign: 'right',
     },
+    // Positive delta: successStrong (#1e8449, 4.66:1 on white) — AA-safe green.
+    // color.success (#27ae60) is 2.86:1 and fails AA for text; successStrong used instead.
     pointHistoryDelta: {
       fontSize: font.size.sm,
       fontWeight: font.weight.bold,
-      color: color.brandText,
+      color: color.successStrong,
       minWidth: 52,
       textAlign: 'right',
     },
+    // Negative delta: color.error (#c0392b, 5.39:1 on white) — AA pass.
     pointHistoryDeltaNeg: {
-      color: color.errorFg,
+      color: color.error,
+    },
+    // Empty state — encouraging copy when no events exist yet.
+    pointHistoryEmpty: {
+      fontSize: font.size.sm,
+      color: color.textMuted,
+      textAlign: 'center',
+      paddingVertical: spacing.lg,
     },
     // Visit-streak card — amber-tinted pill row between the stat tiles and
     // the status breakdown. Reads as a "you're on a roll" pat-on-the-back
