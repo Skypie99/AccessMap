@@ -73,6 +73,7 @@ import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { font, radius, shadow, spacing } from '@/theme';
 import { AppText } from '@/components/ui/AppText';
 import { Flame, MapPin } from 'lucide-react-native';
+import TierIcon from '@/components/TierIcon';
 import { getTier, pointsToNextTier, REPUTATION_TIERS } from '@/lib/reputationTier';
 import { useReducedMotion } from '@/lib/accessibility';
 import {
@@ -872,14 +873,7 @@ export default function ProfileScreen() {
               }
               hitSlop={8}
             >
-              <AppText
-                variant="label"
-                style={styles.tierPillEmoji}
-                accessibilityElementsHidden
-                importantForAccessibility="no-hide-descendants"
-              >
-                {tier.emoji}
-              </AppText>
+              <TierIcon tier={tier} size={font.size.lg} />
               <AppText variant="label" style={styles.tierPillLabel}>{tier.label}</AppText>
             </Pressable>
           </View>
@@ -915,7 +909,7 @@ export default function ProfileScreen() {
                 accessibilityElementsHidden
                 importantForAccessibility="no-hide-descendants"
               >
-                {tierGap} pts to {nextTier?.label ?? 'next tier'} {nextTier?.emoji ?? ''}
+                {tierGap} pts to {nextTier?.label ?? 'next tier'}
               </Text>
             </>
           )}
@@ -1672,14 +1666,7 @@ export default function ProfileScreen() {
                       } points` + (isCurrent ? '. Your current tier.' : '')
                     }
                   >
-                    <AppText
-                      variant="label"
-                      style={styles.tierRowEmoji}
-                      accessibilityElementsHidden
-                      importantForAccessibility="no-hide-descendants"
-                    >
-                      {t.emoji}
-                    </AppText>
+                    <TierIcon tier={t} size={font.size.lg} />
                     <View style={styles.tierRowTextWrap}>
                       <AppText variant="label" style={[styles.tierRowLabel, isCurrent && styles.tierRowLabelCurrent]}>
                         {t.label}
@@ -1698,7 +1685,7 @@ export default function ProfileScreen() {
 
             <AppText variant="body" style={styles.tierFooter}>
               {nextTier
-                ? `You're ${tierGap} ${tierGap === 1 ? 'point' : 'points'} away from ${nextTier.label} ${nextTier.emoji}`
+                ? `You're ${tierGap} ${tierGap === 1 ? 'point' : 'points'} away from ${nextTier.label}`
                 : `You've reached the top tier — keep contributing!`}
             </AppText>
           </View>
