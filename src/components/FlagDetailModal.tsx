@@ -10,10 +10,10 @@ import {
   ScrollView,
   Share,
   StyleSheet,
-  Text,
   TextInput,
   View,
 } from 'react-native';
+import { AppText } from '@/components/ui/AppText';
 import * as ImagePicker from 'expo-image-picker';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { font, radius, shadow, spacing } from '@/theme';
@@ -520,13 +520,14 @@ export default function FlagDetailModal({
             buttons that are visually obscured. QA Pass-2 #2. */}
           <View style={styles.card} accessibilityViewIsModal>
             <View style={styles.headerRow}>
-              <Text
+              <AppText
+                variant="heading"
                 style={styles.title}
                 accessibilityRole="header"
                 accessibilityLabel={`Flag details: ${CATEGORY_LABELS[shownFlag.category]}`}
               >
                 {CATEGORY_LABELS[shownFlag.category]}
-              </Text>
+              </AppText>
               <Pressable
                 onPress={onClose}
                 disabled={busy}
@@ -537,7 +538,7 @@ export default function FlagDetailModal({
                 accessibilityHint="Returns to the flag list"
                 accessibilityState={{ disabled: busy }}
               >
-                <Text style={styles.closeBtnText}>✕</Text>
+                <AppText variant="label" style={styles.closeBtnText}>✕</AppText>
               </Pressable>
             </View>
 
@@ -561,15 +562,15 @@ export default function FlagDetailModal({
                   accessible
                   accessibilityLabel={severityA11y(shownFlag.severity)}
                 >
-                  <Text style={styles.severityChipText}>Severity {shownFlag.severity}</Text>
+                  <AppText variant="label" style={styles.severityChipText}>Severity {shownFlag.severity}</AppText>
                 </View>
                 <StatusBadge status={status} accessibilityLabel={statusA11y(status)} />
               </View>
 
-              <Text style={styles.sectionLabel}>Description</Text>
-              <Text style={styles.description}>
+              <AppText variant="label" style={styles.sectionLabel}>Description</AppText>
+              <AppText variant="body" style={styles.description}>
                 {shownFlag.description?.trim() ? shownFlag.description : 'No description provided.'}
-              </Text>
+              </AppText>
 
               {/* Context + seasonal tags — small chips below the description.
                   Split into two labeled groups so the seasonal "when in the
@@ -585,14 +586,15 @@ export default function FlagDetailModal({
               ].map(({ key, heading, tags }) =>
                 tags.length > 0 ? (
                   <React.Fragment key={key}>
-                    <Text
+                    <AppText
+                      variant="label"
                       style={[
                         styles.sectionLabel,
                         key === 'disability' && styles.sectionLabelDisability,
                       ]}
                     >
                       {heading}
-                    </Text>
+                    </AppText>
                     <View
                       style={styles.contextTagsRow}
                       accessible
@@ -608,14 +610,15 @@ export default function FlagDetailModal({
                           accessibilityElementsHidden
                           importantForAccessibility="no-hide-descendants"
                         >
-                          <Text
+                          <AppText
+                            variant="label"
                             style={[
                               styles.contextChipText,
                               key === 'disability' && styles.disabilityChipText,
                             ]}
                           >
                             {tagLabel(tag)}
-                          </Text>
+                          </AppText>
                         </View>
                       ))}
                     </View>
@@ -623,45 +626,47 @@ export default function FlagDetailModal({
                 ) : null,
               )}
 
-              <Text style={styles.sectionLabel}>Reported by</Text>
+              <AppText variant="label" style={styles.sectionLabel}>Reported by</AppText>
               {shownFlag.user_id === null ? (
                 <View
                   accessible
                   accessibilityLabel="Reported anonymously"
                   style={styles.anonBadge}
                 >
-                  <Text
+                  <AppText
+                    variant="label"
                     style={styles.anonBadgeText}
                     importantForAccessibility="no"
                     accessibilityElementsHidden
                   >
                     Anonymous
-                  </Text>
+                  </AppText>
                 </View>
               ) : (
-                <Text style={styles.metaValue}>
+                <AppText variant="body" style={styles.metaValue}>
                   {isOwn ? 'You' : 'Another community member'}
-                </Text>
+                </AppText>
               )}
 
-              <Text style={styles.sectionLabel}>Date</Text>
-              <Text style={styles.metaValue} accessibilityLabel={`Reported on ${formattedDate}`}>
+              <AppText variant="label" style={styles.sectionLabel}>Date</AppText>
+              <AppText variant="body" style={styles.metaValue} accessibilityLabel={`Reported on ${formattedDate}`}>
                 {formattedDate}
-              </Text>
+              </AppText>
 
-              <Text style={styles.sectionLabel}>Location</Text>
+              <AppText variant="label" style={styles.sectionLabel}>Location</AppText>
               {/* Row: selectable coords + copy button. selectable lets users
                 long-press to get the native "Copy" context menu — the copy
                 button triggers Share.share for a one-tap path on iOS/Android. */}
               <View style={styles.coordsRow}>
-                <Text
+                <AppText
+                  variant="mono"
                   style={[styles.metaValue, styles.coordsText]}
                   accessibilityLabel={coordsA11y}
                   accessibilityHint="Long press to select and copy these coordinates"
                   selectable
                 >
                   {formattedCoords}
-                </Text>
+                </AppText>
                 <Pressable
                   onPress={() =>
                     Share.share({
@@ -678,7 +683,7 @@ export default function FlagDetailModal({
                   accessibilityLabel="Copy coordinates"
                   accessibilityHint="Opens share/copy options for these coordinates"
                 >
-                  <Text style={styles.coordsCopyGlyph}>⧉</Text>
+                  <AppText variant="label" style={styles.coordsCopyGlyph}>⧉</AppText>
                 </Pressable>
               </View>
 
@@ -704,12 +709,12 @@ export default function FlagDetailModal({
                     disabled: busy || watchSaving,
                   }}
                 >
-                  <Text style={styles.watchBtnGlyph} accessibilityElementsHidden>
+                  <AppText variant="label" style={styles.watchBtnGlyph} accessibilityElementsHidden>
                     {watched ? '★' : '☆'}
-                  </Text>
-                  <Text style={[styles.watchBtnText, watched && styles.watchBtnTextActive]}>
+                  </AppText>
+                  <AppText variant="label" style={[styles.watchBtnText, watched && styles.watchBtnTextActive]}>
                     {watched ? 'Watching' : 'Watch'}
-                  </Text>
+                  </AppText>
                 </Pressable>
               )}
 
@@ -723,13 +728,13 @@ export default function FlagDetailModal({
                   accessibilityHint="Opens an edit form for description, category, and severity"
                   accessibilityState={{ disabled: busy }}
                 >
-                  <Text style={styles.editBtnText}>Edit</Text>
+                  <AppText variant="label" style={styles.editBtnText}>Edit</AppText>
                 </Pressable>
               )}
 
               {isEditing && (
                 <View style={styles.editForm}>
-                  <Text style={styles.editLabel}>Description</Text>
+                  <AppText variant="label" style={styles.editLabel}>Description</AppText>
                   <TextInput
                     style={styles.editInput}
                     value={editDesc}
@@ -746,7 +751,7 @@ export default function FlagDetailModal({
                     accessibilityLabel="Flag description"
                     accessibilityHint="Up to 2000 characters."
                   />
-                  <Text style={styles.editLabel}>Category</Text>
+                  <AppText variant="label" style={styles.editLabel}>Category</AppText>
                   <ScrollView
                     horizontal
                     showsHorizontalScrollIndicator={false}
@@ -764,18 +769,19 @@ export default function FlagDetailModal({
                         accessibilityLabel={CATEGORY_LABELS[cat]}
                         accessibilityState={{ checked: editCategory === cat }}
                       >
-                        <Text
+                        <AppText
+                          variant="label"
                           style={[
                             styles.categoryChipText,
                             editCategory === cat && styles.categoryChipTextActive,
                           ]}
                         >
                           {CATEGORY_LABELS[cat]}
-                        </Text>
+                        </AppText>
                       </Pressable>
                     ))}
                   </ScrollView>
-                  <Text style={styles.editLabel}>Severity</Text>
+                  <AppText variant="label" style={styles.editLabel}>Severity</AppText>
                   <View style={styles.severityRow}>
                     {([1, 2, 3, 4, 5] as FlagSeverity[]).map((s) => (
                       <Pressable
@@ -789,14 +795,15 @@ export default function FlagDetailModal({
                         accessibilityLabel={`Severity ${s} of 5`}
                         accessibilityState={{ checked: editSeverity === s }}
                       >
-                        <Text
+                        <AppText
+                          variant="monoBold"
                           style={[
                             styles.severityBtnText,
                             editSeverity === s && styles.severityBtnTextActive,
                           ]}
                         >
                           {s}
-                        </Text>
+                        </AppText>
                       </Pressable>
                     ))}
                   </View>
@@ -809,7 +816,7 @@ export default function FlagDetailModal({
                       accessibilityLabel="Cancel editing"
                       accessibilityState={{ disabled: busy }}
                     >
-                      <Text style={styles.cancelBtnText}>Cancel</Text>
+                      <AppText variant="label" style={styles.cancelBtnText}>Cancel</AppText>
                     </Pressable>
                     <Pressable
                       onPress={() => void handleSaveEdit()}
@@ -822,7 +829,7 @@ export default function FlagDetailModal({
                       {busy ? (
                         <ActivityIndicator size="small" color={color.textOnBrand} />
                       ) : (
-                        <Text style={styles.saveBtnText}>Save</Text>
+                        <AppText variant="label" style={styles.saveBtnText}>Save</AppText>
                       )}
                     </Pressable>
                   </View>
@@ -835,7 +842,7 @@ export default function FlagDetailModal({
               {status === 'resolved' && !isOwn && (
                 <>
                   {reopenMessage !== null && (
-                    <Text style={styles.reopenMessage}>{reopenMessage}</Text>
+                    <AppText variant="body" style={styles.reopenMessage}>{reopenMessage}</AppText>
                   )}
                   {!showReopenForm && reopenMessage === null && (
                     <Pressable
@@ -847,12 +854,12 @@ export default function FlagDetailModal({
                       accessibilityHint="Opens a form to explain why this barrier is still present"
                       accessibilityState={{ disabled: busy }}
                     >
-                      <Text style={styles.reopenBtnText}>Still broken? Request reopen</Text>
+                      <AppText variant="label" style={styles.reopenBtnText}>Still broken? Request reopen</AppText>
                     </Pressable>
                   )}
                   {showReopenForm && (
                     <View style={styles.reopenForm}>
-                      <Text style={styles.reopenFormLabel}>What's still wrong?</Text>
+                      <AppText variant="label" style={styles.reopenFormLabel}>What's still wrong?</AppText>
                       <TextInput
                         value={reopenText}
                         onChangeText={setReopenText}
@@ -865,9 +872,9 @@ export default function FlagDetailModal({
                         accessibilityHint="Up to 280 characters. Required."
                       />
                       {reopenText.length > 0 && (
-                        <Text style={styles.reopenCharCounter}>
+                        <AppText variant="mono" style={styles.reopenCharCounter}>
                           {reopenText.length} / 280
-                        </Text>
+                        </AppText>
                       )}
                       <View style={styles.reopenActions}>
                         <Pressable
@@ -881,7 +888,7 @@ export default function FlagDetailModal({
                           accessibilityLabel="Cancel reopen request"
                           accessibilityState={{ disabled: reopenBusy }}
                         >
-                          <Text style={styles.cancelBtnText}>Cancel</Text>
+                          <AppText variant="label" style={styles.cancelBtnText}>Cancel</AppText>
                         </Pressable>
                         <Pressable
                           onPress={() => void handleReopenSubmit()}
@@ -898,7 +905,7 @@ export default function FlagDetailModal({
                           {reopenBusy ? (
                             <ActivityIndicator size="small" color={color.textOnBrand} />
                           ) : (
-                            <Text style={styles.reopenSubmitText}>Submit reopen request</Text>
+                            <AppText variant="label" style={styles.reopenSubmitText}>Submit reopen request</AppText>
                           )}
                         </Pressable>
                       </View>
@@ -920,7 +927,7 @@ export default function FlagDetailModal({
                   accessibilityHint="Switches to the Map tab and centers on this flag"
                   accessibilityState={{ disabled: busy }}
                 >
-                  <Text style={styles.viewMapBtnText}>View on Map</Text>
+                  <AppText variant="label" style={styles.viewMapBtnText}>View on Map</AppText>
                 </Pressable>
                 <Pressable
                   onPress={async () => {
@@ -945,7 +952,7 @@ export default function FlagDetailModal({
                   accessibilityHint="Opens your maps app with directions"
                   accessibilityState={{ disabled: busy }}
                 >
-                  <Text style={styles.directionsBtnText}>Directions</Text>
+                  <AppText variant="label" style={styles.directionsBtnText}>Directions</AppText>
                 </Pressable>
                 <Pressable
                   onPress={handleShare}
@@ -956,7 +963,7 @@ export default function FlagDetailModal({
                   accessibilityHint="Opens the system share sheet"
                   accessibilityState={{ disabled: busy }}
                 >
-                  <Text style={styles.shareBtnText}>Share</Text>
+                  <AppText variant="label" style={styles.shareBtnText}>Share</AppText>
                 </Pressable>
                 <Pressable
                   onPress={() => setHistoryOpen(true)}
@@ -967,18 +974,18 @@ export default function FlagDetailModal({
                   accessibilityHint="Shows who changed the status of this flag and when"
                   accessibilityState={{ disabled: busy }}
                 >
-                  <Text style={styles.historyBtnText}>History</Text>
+                  <AppText variant="label" style={styles.historyBtnText}>History</AppText>
                 </Pressable>
               </View>
 
               {/* ── Comments ─────────────────────────────────────────── */}
               <View style={styles.commentsSection}>
-                <Text style={styles.sectionLabel}>Comments</Text>
+                <AppText variant="label" style={styles.sectionLabel}>Comments</AppText>
 
                 {commentsTableNotReady ? (
-                  <Text style={styles.commentsSoonText}>Comments aren't available here yet.</Text>
+                  <AppText variant="body" style={styles.commentsSoonText}>Comments aren't available here yet.</AppText>
                 ) : commentsError ? (
-                  <Text style={styles.commentsErrorText}>Couldn't load comments. Check your connection and try again.</Text>
+                  <AppText variant="body" style={styles.commentsErrorText}>Couldn't load comments. Check your connection and try again.</AppText>
                 ) : commentsLoading && comments.length === 0 ? (
                   <ActivityIndicator
                     size="small"
@@ -989,16 +996,17 @@ export default function FlagDetailModal({
                   />
                 ) : comments.length === 0 ? (
                   <View style={styles.commentsEmptyContainer}>
-                    <Text
+                    <AppText
+                      variant="body"
                       style={styles.commentsEmptyIcon}
                       accessibilityElementsHidden
                       importantForAccessibility="no-hide-descendants"
                     >
                       💬
-                    </Text>
-                    <Text style={styles.commentsEmptyLabel}>
+                    </AppText>
+                    <AppText variant="body" style={styles.commentsEmptyLabel}>
                       No comments yet — share what you know.
-                    </Text>
+                    </AppText>
                   </View>
                 ) : (
                   <View style={styles.commentsList} accessibilityRole="list">
@@ -1065,7 +1073,7 @@ export default function FlagDetailModal({
                       {commentSubmitting ? (
                         <ActivityIndicator size="small" color={color.textOnBrand} />
                       ) : (
-                        <Text style={styles.commentSendBtnText}>Send</Text>
+                        <AppText variant="label" style={styles.commentSendBtnText}>Send</AppText>
                       )}
                     </Pressable>
                   </View>
@@ -1087,7 +1095,7 @@ export default function FlagDetailModal({
                   {busy ? (
                     <ActivityIndicator color={color.textOnBrand} />
                   ) : (
-                    <Text style={styles.verifyText}>Verify</Text>
+                    <AppText variant="label" style={styles.verifyText}>Verify</AppText>
                   )}
                 </Pressable>
               )}
@@ -1104,7 +1112,7 @@ export default function FlagDetailModal({
                   {busy ? (
                     <ActivityIndicator color={color.textOnBrand} />
                   ) : (
-                    <Text style={styles.resolveText}>Resolved</Text>
+                    <AppText variant="label" style={styles.resolveText}>Resolved</AppText>
                   )}
                 </Pressable>
               )}
@@ -1121,7 +1129,7 @@ export default function FlagDetailModal({
                   {busy ? (
                     <ActivityIndicator color={color.text} />
                   ) : (
-                    <Text style={styles.rejectText}>Reject</Text>
+                    <AppText variant="label" style={styles.rejectText}>Reject</AppText>
                   )}
                 </Pressable>
               )}
@@ -1138,7 +1146,7 @@ export default function FlagDetailModal({
                   {busy ? (
                     <ActivityIndicator color={color.textOnBrand} />
                   ) : (
-                    <Text style={styles.deleteText}>Delete</Text>
+                    <AppText variant="label" style={styles.deleteText}>Delete</AppText>
                   )}
                 </Pressable>
               )}
@@ -1159,7 +1167,7 @@ const makeStyles = (color: ColorTheme) =>
   StyleSheet.create({
     backdrop: {
       flex: 1,
-      backgroundColor: 'rgba(0,0,0,0.4)',
+      backgroundColor: color.scrim,
       justifyContent: 'flex-end',
     },
     card: {
@@ -1179,8 +1187,8 @@ const makeStyles = (color: ColorTheme) =>
     },
     title: { fontSize: font.size.xxl, fontWeight: font.weight.bold, flex: 1, color: color.textStrong },
     closeBtn: {
-      width: 32,
-      height: 32,
+      width: 44,
+      height: 44,
       borderRadius: radius.circle,
       backgroundColor: color.surfaceNeutral,
       alignItems: 'center',
@@ -1230,14 +1238,14 @@ const makeStyles = (color: ColorTheme) =>
     metaValue: { fontSize: font.size.base, color: color.text },
     anonBadge: {
       alignSelf: 'flex-start',
-      backgroundColor: '#6b7280',
+      backgroundColor: color.textMuted,
       borderRadius: 10,
       paddingHorizontal: 8,
       paddingVertical: 3,
     },
     anonBadgeText: {
       fontSize: 12,
-      color: '#fff',
+      color: color.textOnBrand,
       fontWeight: '600',
     },
     coordsRow: {

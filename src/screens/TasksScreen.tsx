@@ -430,7 +430,7 @@ export default function TasksScreen() {
         AccessibilityInfo.announceForAccessibility(msg);
       }
     } catch (e) {
-      Alert.alert('Could not update watched list', errorMessage(e));
+      Alert.alert("Couldn't update your watched list", errorMessage(e));
     } finally {
       setBulkBusy(false);
       exitSelection();
@@ -511,7 +511,7 @@ export default function TasksScreen() {
           status === 'verified' ? 'verify' : status === 'resolved' ? 'resolve' : 'reject';
         applyStatusChange(updated, action, isOwn);
       } catch (e) {
-        Alert.alert('Could not update flag', errorMessage(e));
+        Alert.alert("Couldn't update this flag", errorMessage(e));
       } finally {
         setBusyId(null);
       }
@@ -654,7 +654,7 @@ export default function TasksScreen() {
           >
             📶
           </AppText>
-          <AppText variant="body" style={styles.offlineBannerText}>Showing offline data — connect to refresh</AppText>
+          <AppText variant="body" style={styles.offlineBannerText}>Showing saved data — connect to the internet for the latest</AppText>
         </View>
       )}
       {/* Select-multiple entry — visible only when there's something to
@@ -688,7 +688,7 @@ export default function TasksScreen() {
           <TextInput
             value={searchText}
             onChangeText={setSearchText}
-            placeholder="Search description or category"
+            placeholder="Search by description or category…"
             placeholderTextColor={color.placeholderText}
             autoCorrect={false}
             autoCapitalize="none"
@@ -892,7 +892,7 @@ export default function TasksScreen() {
                 ? `No open or verified ${CATEGORY_LABELS[categoryFilter].toLowerCase()} flags right now. Tap "All" above to see every category.`
                 : searchText.trim()
                   ? `Nothing matches "${searchText.trim()}". Try a different keyword or clear the search.`
-                  : "No flags to triage right now. New community reports will land here as they're added — pull to refresh anytime."}
+                  : "You're all caught up — nice work! New reports show up here as the community adds them. Pull down to refresh anytime."}
             </AppText>
           </View>
         }
@@ -930,7 +930,7 @@ export default function TasksScreen() {
                   accessibilityRole="text"
                   accessibilityLabel="You have seen all flags nearby"
                 >
-                  {"You've seen all flags nearby ✓"}
+                  {"That's everything nearby — you're up to date ✓"}
                 </AppText>
               )}
             </View>
@@ -1292,12 +1292,12 @@ const makeStyles = (color: ColorTheme) =>
     },
     flashPill: {
       backgroundColor: color.success,
-      paddingHorizontal: 16,
-      paddingVertical: 10,
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.md,
       borderRadius: radius.circle,
       ...shadow.e2,
     },
-    flashText: { color: color.textOnBrand, fontWeight: '700', fontSize: 13 },
+    flashText: { color: color.textOnBrand, fontWeight: font.weight.bold, fontSize: font.size.sm },
     errorBanner: {
       marginHorizontal: spacing.lg,
       marginTop: spacing.md,
@@ -1313,8 +1313,8 @@ const makeStyles = (color: ColorTheme) =>
     },
     errorBannerBusy: { opacity: 0.85 },
     errorBannerPressed: { opacity: 0.7 },
-    errorBannerIcon: { color: color.textOnBrand, fontSize: 18, fontWeight: '700' },
-    errorBannerText: { color: color.textOnBrand, fontSize: 13, fontWeight: '600', flex: 1 },
+    errorBannerIcon: { color: color.textOnBrand, fontSize: font.size.xl, fontWeight: font.weight.bold },
+    errorBannerText: { color: color.textOnBrand, fontSize: font.size.sm, fontWeight: font.weight.semibold, flex: 1 },
     // Offline data notice — uses warning tokens so it's visually distinct from
     // the red error banner but still draws the eye. Wraps `warningBg`/`warningFg`
     // from the theme (WCAG-checked pair). No tap action — it's purely informational.
@@ -1330,32 +1330,32 @@ const makeStyles = (color: ColorTheme) =>
       alignItems: 'center',
       minHeight: 40,
     },
-    offlineBannerIcon: { fontSize: 16 },
+    offlineBannerIcon: { fontSize: font.size.lg },
     offlineBannerText: {
       color: color.warningFg,
-      fontSize: 13,
-      fontWeight: '600',
+      fontSize: font.size.sm,
+      fontWeight: font.weight.semibold,
       flex: 1,
     },
     center: {
       flexGrow: 1,
       alignItems: 'center',
       justifyContent: 'center',
-      padding: 24,
-      gap: 8,
+      padding: spacing.xxl,
+      gap: spacing.sm,
     },
-    list: { padding: 16 },
+    list: { padding: spacing.lg },
     // Load-more footer — centered below the last SectionList card.
     // minHeight 44 on the button satisfies WCAG 2.5.5 (minimum touch target).
     footer: {
-      paddingVertical: 20,
-      paddingHorizontal: 16,
+      paddingVertical: spacing.xl,
+      paddingHorizontal: spacing.lg,
       alignItems: 'center',
       justifyContent: 'center',
     },
     loadMoreBtn: {
-      paddingHorizontal: 20,
-      paddingVertical: 12,
+      paddingHorizontal: spacing.xl,
+      paddingVertical: spacing.md,
       borderRadius: radius.circle,
       borderWidth: 1,
       borderColor: color.brand,
@@ -1366,9 +1366,9 @@ const makeStyles = (color: ColorTheme) =>
       justifyContent: 'center',
     },
     loadMoreBtnPressed: { opacity: 0.7 },
-    loadMoreText: { color: color.brand, fontWeight: '700', fontSize: 14 },
+    loadMoreText: { color: color.brand, fontWeight: font.weight.bold, fontSize: font.size.base },
     endText: {
-      fontSize: 13,
+      fontSize: font.size.sm,
       color: color.textMutedAlt,
       fontStyle: 'italic',
       textAlign: 'center',
@@ -1377,27 +1377,27 @@ const makeStyles = (color: ColorTheme) =>
       flexGrow: 1,
       alignItems: 'center',
       justifyContent: 'center',
-      padding: 24,
+      padding: spacing.xxl,
     },
     emptyCard: {
       backgroundColor: color.surface,
       borderRadius: radius.xl,
-      paddingHorizontal: 24,
-      paddingVertical: 28,
+      paddingHorizontal: spacing.xxl,
+      paddingVertical: spacing.xxl + spacing.tight,
       alignItems: 'center',
-      gap: 8,
+      gap: spacing.sm,
       maxWidth: 340,
       ...shadow.e1,
     },
-    emptyIcon: { fontSize: 36 },
+    emptyIcon: { fontSize: font.size.display - 12 },
     emptyTitle: {
-      fontSize: 18,
-      fontWeight: '700',
+      fontSize: font.size.xl,
+      fontWeight: font.weight.bold,
       color: color.textStrong,
       letterSpacing: -0.2,
     },
     emptyBody: {
-      fontSize: 13,
+      fontSize: font.size.sm,
       color: color.textMuted,
       textAlign: 'center',
       lineHeight: 19,
@@ -1405,20 +1405,20 @@ const makeStyles = (color: ColorTheme) =>
     sectionHeader: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 8,
-      paddingTop: 8,
-      paddingBottom: 8,
+      gap: spacing.sm,
+      paddingTop: spacing.sm,
+      paddingBottom: spacing.sm,
     },
     sectionTitle: {
-      fontSize: 12,
-      fontWeight: '700',
+      fontSize: font.size.xs,
+      fontWeight: font.weight.bold,
       color: color.textMuted,
       textTransform: 'uppercase',
       letterSpacing: 0.8,
     },
     sectionCountPill: {
       backgroundColor: color.brandSoft,
-      paddingHorizontal: 8,
+      paddingHorizontal: spacing.sm,
       paddingVertical: 2,
       borderRadius: radius.circle,
       minWidth: 22,
@@ -1426,31 +1426,31 @@ const makeStyles = (color: ColorTheme) =>
     },
     sectionCountText: {
       color: color.brandText,
-      fontSize: 11,
-      fontWeight: '700',
+      fontSize: font.size.caption,
+      fontWeight: font.weight.bold,
     },
-    title: { fontSize: 18, fontWeight: '600' },
-    subtitle: { fontSize: 13, color: color.textMuted, textAlign: 'center', lineHeight: 19 },
+    title: { fontSize: font.size.xl, fontWeight: font.weight.semibold },
+    subtitle: { fontSize: font.size.sm, color: color.textMuted, textAlign: 'center', lineHeight: 19 },
     card: {
       backgroundColor: color.surface,
       borderRadius: radius.lg,
-      padding: 14,
-      gap: 8,
+      padding: spacing.md + 2,
+      gap: spacing.sm,
       minHeight: size.cardMin,
       ...shadow.e1,
-      marginBottom: 12,
+      marginBottom: spacing.md,
     },
     cardPressed: { opacity: 0.85, transform: [{ scale: 0.99 }] },
-    cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+    cardHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
     sevDot: { width: 12, height: 12, borderRadius: 6 },
-    cardTitle: { fontSize: 16, fontWeight: '600', flex: 1 },
+    cardTitle: { fontSize: font.size.lg, fontWeight: font.weight.semibold, flex: 1 },
     statusTag: {
-      fontSize: 11,
+      fontSize: font.size.caption,
       color: color.textMuted,
       textTransform: 'uppercase',
       letterSpacing: 0.6,
     },
-    cardBody: { flexDirection: 'row', gap: 12 },
+    cardBody: { flexDirection: 'row', gap: spacing.md },
     // Container holds the image so overflow:hidden clips rounded corners on
     // Android (where borderRadius on Image alone is unreliable).
     cardThumbWrap: {
@@ -1465,41 +1465,41 @@ const makeStyles = (color: ColorTheme) =>
       width: '100%',
       height: '100%',
     },
-    cardBodyText: { flex: 1, gap: 4 },
-    cardDesc: { fontSize: 14, color: color.textStrong },
-    cardMeta: { fontSize: 12, color: color.textMuted },
-    cardHint: { fontSize: 11, color: color.textSubtle, fontStyle: 'italic' },
-    cardActions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 4 },
+    cardBodyText: { flex: 1, gap: spacing.tight },
+    cardDesc: { fontSize: font.size.base, color: color.textStrong },
+    cardMeta: { fontSize: font.size.xs, color: color.textMuted },
+    cardHint: { fontSize: font.size.caption, color: color.textSubtle, fontStyle: 'italic' },
+    cardActions: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginTop: spacing.tight },
     actionBtn: {
-      paddingHorizontal: 12,
-      paddingVertical: 8,
-      borderRadius: 8,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+      borderRadius: radius.md,
       minHeight: 44,
       alignItems: 'center',
       justifyContent: 'center',
     },
     verifyBtn: { backgroundColor: color.brand },
-    verifyText: { color: color.textOnBrand, fontWeight: '600', fontSize: 13 },
+    verifyText: { color: color.textOnBrand, fontWeight: font.weight.semibold, fontSize: font.size.sm },
     resolveBtn: { backgroundColor: color.success },
-    resolveText: { color: color.textOnBrand, fontWeight: '600', fontSize: 13 },
+    resolveText: { color: color.textOnBrand, fontWeight: font.weight.semibold, fontSize: font.size.sm },
     rejectBtn: { backgroundColor: color.surfaceNeutral },
-    rejectText: { color: color.text, fontWeight: '600', fontSize: 13 },
+    rejectText: { color: color.text, fontWeight: font.weight.semibold, fontSize: font.size.sm },
     detailsBtn: {
       backgroundColor: 'transparent',
       borderWidth: 1,
       borderColor: color.brand,
     },
-    detailsText: { color: color.brand, fontWeight: '600', fontSize: 13 },
+    detailsText: { color: color.brand, fontWeight: font.weight.semibold, fontSize: font.size.sm },
     mineToggleRow: {
       flexDirection: 'row',
-      paddingHorizontal: 16,
-      paddingVertical: 8,
-      gap: 8,
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.sm,
+      gap: spacing.sm,
       backgroundColor: color.surfaceMuted,
     },
     mineChip: {
-      paddingHorizontal: 16,
-      paddingVertical: 7,
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.sm - 1,
       borderRadius: radius.circle,
       backgroundColor: color.surfaceNeutral,
       minHeight: 44, // WCAG 2.5.5: was 36pt (below 44pt project standard)
@@ -1507,7 +1507,7 @@ const makeStyles = (color: ColorTheme) =>
       justifyContent: 'center',
     },
     mineChipActive: { backgroundColor: color.brand },
-    mineChipText: { fontSize: 13, fontWeight: '600', color: color.text },
+    mineChipText: { fontSize: font.size.sm, fontWeight: font.weight.semibold, color: color.text },
     mineChipTextActive: { color: color.textOnBrand },
     // Free-text search — sits above the chip filter rows so the cursor
     // doesn't shift down when the user starts typing. Bordered field +
@@ -1516,25 +1516,25 @@ const makeStyles = (color: ColorTheme) =>
     searchRow: {
       flexDirection: 'row',
       alignItems: 'center',
-      paddingHorizontal: 16,
-      paddingTop: 8,
-      paddingBottom: 8,
-      gap: 6,
+      paddingHorizontal: spacing.lg,
+      paddingTop: spacing.sm,
+      paddingBottom: spacing.sm,
+      gap: spacing.xs,
     },
     searchInput: {
       flex: 1,
       minHeight: 44, // WCAG 2.5.5: was 40pt (4pt below 44pt project standard)
-      paddingHorizontal: 12,
-      paddingVertical: 8,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
       borderRadius: radius.circle,
       backgroundColor: color.surfaceNeutral,
       color: color.text,
-      fontSize: 14,
+      fontSize: font.size.base,
     },
     searchClearBtn: {
       minWidth: 32,
       minHeight: 32,
-      paddingHorizontal: 8,
+      paddingHorizontal: spacing.sm,
       alignItems: 'center',
       justifyContent: 'center',
       borderRadius: radius.circle,
@@ -1542,44 +1542,44 @@ const makeStyles = (color: ColorTheme) =>
     searchClearText: { fontSize: font.size.lg, fontWeight: font.weight.semibold, color: color.textMuted },
     sevFilterRow: {
       flexDirection: 'row',
-      gap: 6,
-      paddingHorizontal: 16,
-      paddingTop: 8,
-      paddingBottom: 8,
+      gap: spacing.xs,
+      paddingHorizontal: spacing.lg,
+      paddingTop: spacing.sm,
+      paddingBottom: spacing.sm,
     },
     sevChip: {
       flexGrow: 1,
       flexBasis: 0,
       minHeight: 44, // WCAG 2.5.5: was 36pt (below 44pt project standard)
-      paddingVertical: 8,
+      paddingVertical: spacing.sm,
       borderRadius: radius.circle,
       backgroundColor: color.surfaceNeutral,
       alignItems: 'center',
       justifyContent: 'center',
     },
-    sevChipText: { fontSize: 13, fontWeight: '700', color: color.text },
+    sevChipText: { fontSize: font.size.sm, fontWeight: font.weight.bold, color: color.text },
     sevChipTextActive: { color: color.textOnBrand },
     // Category chip strip — horizontally scrollable so all 6 categories
     // fit on narrow phones without truncating labels. Visual weight
     // matches sevChip; brand fill on active so it reads as "selected".
-    categoryScroll: { paddingTop: 8, paddingBottom: 8 },
+    categoryScroll: { paddingTop: spacing.sm, paddingBottom: spacing.sm },
     categoryScrollContent: {
       flexDirection: 'row',
-      gap: 6,
-      paddingHorizontal: 16,
+      gap: spacing.xs,
+      paddingHorizontal: spacing.lg,
       paddingBottom: 2,
     },
     catChip: {
       minHeight: 44, // WCAG 2.5.5: was 36pt (below 44pt project standard)
-      paddingHorizontal: 12,
-      paddingVertical: 8,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
       borderRadius: radius.circle,
       backgroundColor: color.surfaceNeutral,
       alignItems: 'center',
       justifyContent: 'center',
     },
     catChipActive: { backgroundColor: color.brand },
-    catChipText: { fontSize: 13, fontWeight: '600', color: color.text, flexShrink: 0 },
+    catChipText: { fontSize: font.size.sm, fontWeight: font.weight.semibold, color: color.text, flexShrink: 0 },
     catChipTextActive: { color: color.textOnBrand },
     // Sort row — mirrors sevFilterRow's look, with an explicit "Sort:" label
     // before the chips so sighted users get a hint distinguishing it from
@@ -1588,14 +1588,14 @@ const makeStyles = (color: ColorTheme) =>
     sortRow: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 6,
-      paddingHorizontal: 16,
-      paddingTop: 8,
-      paddingBottom: 12,
+      gap: spacing.xs,
+      paddingHorizontal: spacing.lg,
+      paddingTop: spacing.sm,
+      paddingBottom: spacing.md,
     },
     sortLabel: {
-      fontSize: 12,
-      fontWeight: '600',
+      fontSize: font.size.xs,
+      fontWeight: font.weight.semibold,
       // color.textMutedAlt (#5b6470) on screen wash (#f7f9fc) ≈ 7.0:1 — comfortably above AA.
       color: color.textMutedAlt,
       marginRight: 2,
@@ -1604,22 +1604,22 @@ const makeStyles = (color: ColorTheme) =>
       flexGrow: 1,
       flexBasis: 0,
       minHeight: 44,
-      paddingVertical: 8,
+      paddingVertical: spacing.sm,
       borderRadius: radius.circle,
       backgroundColor: color.surfaceNeutral,
       alignItems: 'center',
       justifyContent: 'center',
     },
     sortChipActive: { backgroundColor: color.brand },
-    sortChipText: { fontSize: 13, fontWeight: '700', color: color.text },
+    sortChipText: { fontSize: font.size.sm, fontWeight: font.weight.bold, color: color.text },
     sortChipTextActive: { color: color.textOnBrand },
     // Bulk-select entry row — a single full-width button sitting at the top
     // of the screen so SR users and anyone unfamiliar with long-press can
     // discover the feature. Tinted to match the sort chip's accent.
     selectEntryRow: {
-      paddingHorizontal: 16,
-      paddingTop: 8,
-      paddingBottom: 8,
+      paddingHorizontal: spacing.lg,
+      paddingTop: spacing.sm,
+      paddingBottom: spacing.sm,
     },
     selectEntryBtn: {
       minHeight: 44,
@@ -1635,7 +1635,7 @@ const makeStyles = (color: ColorTheme) =>
     selectEntryBtnPressed: { opacity: 0.7 },
     // 14pt + bold on white-tinted chip background — meets WCAG 1.4.3 AA for
     // body text. Bumped from 13pt to clear the AA threshold against #eef1f5.
-    selectEntryText: { color: color.brand, fontWeight: '700', fontSize: 14 },
+    selectEntryText: { color: color.brand, fontWeight: font.weight.bold, fontSize: font.size.base },
     // Card selection visuals — a subtle tinted background + a 2px accent
     // border so a selected card pops without needing to recolor the photo
     // thumbnail or muddle the severity dot. Pairs with the checkmark in
@@ -1644,8 +1644,7 @@ const makeStyles = (color: ColorTheme) =>
       backgroundColor: color.brandSofter,
       borderWidth: 2,
       borderColor: color.brand,
-      // Compensate for the 2px border so the card doesn't jump on toggle.
-      padding: 12,
+      padding: spacing.md,
     },
     selectCheck: {
       width: 22,
@@ -1675,10 +1674,10 @@ const makeStyles = (color: ColorTheme) =>
       right: 0,
       bottom: 0,
       flexDirection: 'column',
-      gap: 8,
-      paddingHorizontal: 12,
-      paddingTop: 10,
-      paddingBottom: 24,
+      gap: spacing.sm,
+      paddingHorizontal: spacing.md,
+      paddingTop: spacing.md - 2,
+      paddingBottom: spacing.xxl,
       backgroundColor: color.surface,
       borderTopWidth: 1,
       borderTopColor: color.borderSubtle,
@@ -1690,19 +1689,19 @@ const makeStyles = (color: ColorTheme) =>
     },
     bulkCountText: {
       color: color.textStrong,
-      fontSize: 14,
-      fontWeight: '700',
-      paddingHorizontal: 4,
+      fontSize: font.size.base,
+      fontWeight: font.weight.bold,
+      paddingHorizontal: spacing.tight,
       letterSpacing: 0.2,
     },
-    bulkButtonRow: { flexDirection: 'row', gap: 8 },
+    bulkButtonRow: { flexDirection: 'row', gap: spacing.sm },
     bulkBtn: {
       flexGrow: 1,
       flexBasis: 0,
       minHeight: 44,
-      paddingHorizontal: 12,
-      paddingVertical: 10,
-      borderRadius: 8,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.md - 2,
+      borderRadius: radius.md,
       alignItems: 'center',
       justifyContent: 'center',
     },
@@ -1722,7 +1721,6 @@ const makeStyles = (color: ColorTheme) =>
     },
     // 14pt bold on the dark button fills — meets WCAG 1.4.3 AA for body text.
     // Bumped from 13pt with the resolve-btn color change to clear AA.
-    bulkBtnText: { color: color.textOnBrand, fontWeight: '700', fontSize: 14 },
-    // #2c3e50 on #eef1f5 ≈ 11.0:1 — comfortably above AA. 14pt for parity.
-    bulkCancelText: { color: color.textStrong, fontWeight: '700', fontSize: 14 },
+    bulkBtnText: { color: color.textOnBrand, fontWeight: font.weight.bold, fontSize: font.size.base },
+    bulkCancelText: { color: color.textStrong, fontWeight: font.weight.bold, fontSize: font.size.base },
   });

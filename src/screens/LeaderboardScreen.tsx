@@ -5,7 +5,6 @@ import {
   Modal,
   Pressable,
   StyleSheet,
-  Text,
   View,
 } from 'react-native';
 import { AppText } from '@/components/ui/AppText';
@@ -69,9 +68,9 @@ function AvatarCircle({
       {uri ? (
         <Image source={{ uri }} style={styles.img} accessibilityElementsHidden />
       ) : (
-        <Text style={styles.initials} accessibilityElementsHidden>
+        <AppText variant="label" style={styles.initials} accessibilityElementsHidden>
           {initials}
-        </Text>
+        </AppText>
       )}
     </View>
   );
@@ -356,8 +355,8 @@ function makeStyles(color: ColorTheme) {
       textAlign: 'center',
     },
     closeBtn: {
-      width: 36,
-      height: 36,
+      width: 44,
+      height: 44,
       borderRadius: radius.circle,
       backgroundColor: color.surfaceNeutral,
       alignItems: 'center',
@@ -365,7 +364,7 @@ function makeStyles(color: ColorTheme) {
     },
     closeBtnPressed: { backgroundColor: color.borderPressed },
     closeBtnText: { fontSize: font.size.base, color: color.textMuted },
-    closeBtnSpacer: { width: 36 },
+    closeBtnSpacer: { width: 44 },
     list: { flexGrow: 0 },
     row: {
       flexDirection: 'row',
