@@ -85,7 +85,7 @@ export default function SignInScreen({
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.brandBlock}>
-          <LogoMark variant="badge" size={88} />
+          <LogoMark variant="white" size={84} />
           <AppText
             variant="display"
             size={font.size.h1}
