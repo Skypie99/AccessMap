@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { font, radius, shadow, spacing } from '@/theme';
+import { Camera } from 'lucide-react-native';
 
 const SCREEN = Dimensions.get('window');
 
@@ -128,13 +129,7 @@ function PhotoGalleryInner({ photos, onAddPhoto, maxPhotos = 5, onRemovePhoto }:
       accessible
       accessibilityLabel="No photos attached"
     >
-      <Text
-        style={styles.emptyIcon}
-        accessibilityElementsHidden
-        importantForAccessibility="no-hide-descendants"
-      >
-        📷
-      </Text>
+      <Camera size={28} color={color.textSubtle} strokeWidth={2} />
       <Text style={styles.emptyLabel}>No photos</Text>
     </View>
   );

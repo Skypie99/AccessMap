@@ -16,6 +16,7 @@ import {
   type LeaderboardEntry,
 } from '@/lib/flags';
 import { font, radius, shadow, spacing } from '@/theme';
+import { Trophy } from 'lucide-react-native';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 
 interface Props {
@@ -281,7 +282,7 @@ export default function LeaderboardScreen({ visible, onClose }: Props) {
             </View>
           ) : entries.length === 0 ? (
             <View style={styles.stateWrap}>
-              <AppText variant="label" style={styles.stateIcon}>🏆</AppText>
+              <Trophy size={32} color={color.goldAccent} strokeWidth={2} />
               <AppText variant="body" style={styles.stateText}>No contributors yet.</AppText>
               <AppText variant="body" style={styles.stateHint}>Be the first to report and verify flags!</AppText>
             </View>

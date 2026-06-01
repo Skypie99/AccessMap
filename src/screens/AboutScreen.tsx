@@ -4,6 +4,7 @@ import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-nati
 // don't have to hard-code (and forget to bump) a string here.
 import Constants from 'expo-constants';
 import { font, radius, shadow, spacing } from '@/theme';
+import { Map as MapIcon } from 'lucide-react-native';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 
 interface Props {
@@ -69,13 +70,7 @@ export default function AboutScreen({ visible, onClose }: Props) {
                   VoiceOver (iOS) and importantForAccessibility hides it from
                   TalkBack (Android). Both are needed; one alone leaks the
                   glyph on the other platform. */}
-              <Text
-                style={styles.heroBadgeIcon}
-                accessibilityElementsHidden
-                importantForAccessibility="no-hide-descendants"
-              >
-                🗺️
-              </Text>
+              <MapIcon size={15} color={color.brand} strokeWidth={2.2} />
               <Text style={styles.heroBadgeText}>v{APP_VERSION}</Text>
             </View>
 

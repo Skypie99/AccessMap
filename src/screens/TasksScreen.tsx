@@ -55,7 +55,7 @@ import type { RootTabParamList } from '@/navigation/RootNavigator';
 import FlagDetailModal, { type DetailAction } from '@/components/FlagDetailModal';
 import PhotoLightboxModal from '@/components/PhotoLightboxModal';
 import { AppText } from '@/components/ui/AppText';
-import { Search, Sparkles } from 'lucide-react-native';
+import { Search, Sparkles, WifiOff } from 'lucide-react-native';
 import { font, radius, shadow, size, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 
@@ -647,14 +647,7 @@ export default function TasksScreen() {
           accessibilityLiveRegion="polite"
           accessibilityLabel="Showing offline data. Connect to the internet to refresh."
         >
-          <AppText
-            variant="label"
-            style={styles.offlineBannerIcon}
-            accessibilityElementsHidden
-            importantForAccessibility="no-hide-descendants"
-          >
-            📶
-          </AppText>
+          <WifiOff size={16} color={color.warningFg} strokeWidth={2} />
           <AppText variant="body" style={styles.offlineBannerText}>Showing saved data — connect to the internet for the latest</AppText>
         </View>
       )}

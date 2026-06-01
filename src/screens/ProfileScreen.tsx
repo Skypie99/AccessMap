@@ -937,7 +937,7 @@ export default function ProfileScreen() {
             </>
           ) : (
             <AppText variant="label" style={styles.heroSubtitle}>
-              ⭐ You've reached the top milestone — legend status.
+              You've reached the top milestone — legend status.
             </AppText>
           )}
         </View>
