@@ -1,9 +1,11 @@
 # AccessMap Security Incident Response Plan
 
-**Last updated:** 2026-05-30  
+**Last updated:** 2026-05-29 (Jordan Canadian-law additions draft)
 **Owner:** Steve (Security Engineering)  
 **Audience:** Sky, Morgan, Rory, Shamus, Dani, Gary  
 **Escalation:** Morgan → Sky (incident confirmation) → Rory (infrastructure), Gary (CI/safety)
+
+> **DRAFT — NOT LEGAL ADVICE.** The PIPEDA/BC PIPA section and AccessMap-specific severity reclassifications in this revision were added by Jordan (AI privacy advisor, Claude Corp) per the 2026-05-29 Cluster 3 privacy review (gap conditions IR-1 through IR-5). This document has NOT been reviewed by a qualified privacy attorney. All breach-notification decisions involving real users must be reviewed by a qualified lawyer before action is taken.
 
 ---
 
@@ -11,10 +13,12 @@
 
 | Level | Description | Response Time | Example |
 |---|---|---|---|
-| **P0 — Critical** | Data breach, auth bypass, mass PII exposure, RLS compromise | Immediate (< 1 hour) | All users' GPS locations exposed; auth token leaked in git history |
-| **P1 — High** | Single user data exposed, injection vulnerability, weak auth, spam outbreak | Same day (< 4 hours) | EXIF GPS on 5 photos; rate-limit bypass allowing 1K flags/min |
+| **P0 — Critical** | Data breach, auth bypass, mass PII exposure, RLS compromise | Immediate (< 1 hour) | All users' GPS locations exposed; auth token leaked in git history; **EXIF GPS data exposed on any number of uploaded photos (AccessMap default — see note below)** |
+| **P1 — High** | Single user data exposed, injection vulnerability, weak auth, spam outbreak | Same day (< 4 hours) | Rate-limit bypass allowing 1K flags/min; single user's non-disability data exposed |
 | **P2 — Medium** | Minor spam/abuse, config drift, non-PII data leak, rate limit bypass contained | Next day (< 24 hours) | 3 spam flags posted; temporary API slowdown |
 | **P3 — Low** | Theoretical vulnerability, minor config issue, missing non-critical security header | Next sprint (< 5 days) | HSTS header not set; CSP could be stricter |
+
+> **AccessMap P0 re-classification note (Jordan, 2026-05-29 — advisory only):** The original plan listed "EXIF GPS on 5 photos" as P1. For AccessMap specifically, any exposure of GPS coordinates in uploaded photos is reclassified to **P0**, regardless of the number of photos affected. Reason: AccessMap flags combine GPS location + accessibility category + user identity. Even one photo with unstripped GPS tied to an identifiable user constitutes a combined location + disability-inference data exposure, which is presumptively high-sensitivity under PIPEDA and BC PIPA and may constitute a "Real Risk of Significant Harm" (RRSH) requiring OPC and BC IPC notification. See the PIPEDA/BC PIPA section below. This re-classification is advisory — confirm with a qualified privacy attorney before treating it as final policy.
 
 ---
 
@@ -185,10 +189,13 @@
 
 4. **If the leak is in git history:**
    ```bash
-   # DO THIS CAREFULLY — check with Morgan first
+   # SKY-ONLY MANUAL ACTION — DO NOT EXECUTE AS AN AUTOMATED AGENT ACTION
+   # Claude Corp Constitution: agents must never modify main; this step is
+   # a human-executed emergency override. Sky must approve and execute this
+   # directly. No Claude Corp agent (including BACKGROUND mode) may run this.
    git filter-branch --tree-filter 'rm -f .env' HEAD
    git push origin main --force-with-lease
-   # This rewrites history and force-pushes. COORDINATE WITH TEAM FIRST.
+   # This rewrites history and force-pushes. COORDINATE WITH MORGAN FIRST.
    ```
 
 ---
@@ -226,14 +233,68 @@ Answer these questions with evidence:
 
 ### Step 3: Notify (within 24 hours of confirmed breach)
 
-**GDPR requires notification within 72 hours if personal data was exposed.**
+> **DRAFT — NOT LEGAL ADVICE.** Notification obligations depend on the specific facts of each incident and applicable law. Consult a qualified privacy attorney before sending any breach notification. The thresholds and timelines below are summaries for planning purposes only.
 
-#### Who to notify
+#### Notification obligations — overview by law
 
-- **Affected users:** Send breach notification email
-- **Supervisory authority (if EU):** File Data Protection Impact Assessment (DPIA) at your national DPA
-- **App stores (if live):** Apple App Store, Google Play (if incident affects app security)
-- **Sky:** Via Morgan immediately upon confirmation
+| Law | Regulator | Threshold | Timeline | Record-keeping |
+|---|---|---|---|---|
+| **PIPEDA (Canada — federal)** | Office of the Privacy Commissioner of Canada (OPC) | Real Risk of Significant Harm (RRSH) — see factors below | "As soon as feasible" after determining RRSH exists | All security incidents (whether reportable or not) must be recorded and kept for **24 months** |
+| **BC PIPA (British Columbia — provincial)** | BC Information and Privacy Commissioner (BC IPC) | Significant breach of security safeguards | "Without unreasonable delay" | Maintain records of all breaches — retain minimum 2 years |
+| **GDPR (EU — if EU users targeted)** | Your national DPA (e.g., Ireland DPC, France CNIL) | Risk to rights/freedoms of natural persons | 72 hours to supervisory authority (Art. 33); "without undue delay" to individuals when HIGH risk (Art. 34) | All breaches must be documented even if not reportable (Art. 33(5)) |
+
+**Note on PIPEDA vs GDPR priority:** AccessMap is a Canadian product. PIPEDA (federal) and BC PIPA (provincial) are the primary obligations. GDPR applies only if AccessMap is actively offered to EU/EEA residents. [SKY TO CONFIRM: Is AccessMap targeting EU users at launch? If Canada-only, GDPR compliance is a stretch goal, not a hard legal requirement. Confirm with a qualified privacy attorney.]
+
+---
+
+#### PIPEDA / BC PIPA — Real Risk of Significant Harm (RRSH) Assessment
+
+Before deciding whether to notify the OPC and affected individuals, assess whether the breach poses a **Real Risk of Significant Harm (RRSH)** using the following factors (PIPEDA Breach of Security Safeguards Regulations, s. 7):
+
+| Factor | AccessMap Default Assessment |
+|---|---|
+| **Sensitivity of the personal information** | **HIGH** — AccessMap combines GPS location + accessibility category + user identity. This combination can reveal disability status or mobility needs, which is heightened-sensitivity under PIPEDA and BC PIPA. |
+| **Probability that the information has been, or will be, misused** | Case-by-case. If data was publicly exposed (e.g., via RLS bypass or unstripped EXIF), misuse probability is elevated. |
+| **Number of individuals affected** | Even a small number (1–5 users) whose disability-inferred data is exposed likely meets RRSH given the sensitivity. |
+| **Nature of harm** | Bodily harm, humiliation, damage to reputation, financial loss, identity theft, loss of employment. For accessibility data: discrimination, targeted harassment, identity theft. |
+
+**AccessMap presumption:** Any breach involving GPS coordinates + flag category + user identifier for any AccessMap user should be treated as presumptively meeting RRSH. This presumption may be rebutted by specific facts, but the default response should be to treat it as reportable until assessed by Sky and legal counsel.
+
+#### Step 3a: Canadian notifications (primary obligation)
+
+**If RRSH assessment concludes breach is reportable:**
+
+1. **Notify the OPC (federal):**
+   - File at: https://www.priv.gc.ca/en/report-a-concern/report-a-privacy-breach/
+   - Include: description of breach, personal information involved, approximate number of individuals affected, steps taken to contain and mitigate, contact information
+   - Timeline: "as soon as feasible" — OPC guidance suggests days, not weeks
+   - [SKY TO CONFIRM: Review the OPC portal above before any incident so the process is known in advance]
+
+2. **Notify the BC IPC (provincial — BC PIPA):**
+   - File at: https://www.oipc.bc.ca/
+   - Required when there is "a significant breach of security safeguards"
+   - Timeline: "without unreasonable delay"
+   - [SKY TO CONFIRM: Review BC IPC submission process at oipc.bc.ca before any incident]
+
+3. **Notify affected individuals:**
+   - When RRSH exists, PIPEDA requires direct notification to each affected individual
+   - Timeline: "as soon as feasible"
+   - Use the breach notification email template below
+
+**If RRSH assessment concludes breach is NOT reportable:**
+- Still required to **record the breach** in the breach register (see Step 3c below)
+- Review with legal counsel before concluding RRSH is absent
+
+#### Step 3b: Who to notify — complete list
+
+| Party | When | Method |
+|---|---|---|
+| **Sky** | Immediately upon incident confirmation (P0/P1) | Via Morgan |
+| **OPC (Canadian federal regulator)** | As soon as feasible if RRSH determined | Online portal (see 3a above) |
+| **BC IPC (BC provincial regulator)** | Without unreasonable delay if significant breach | Online portal (see 3a above) |
+| **Affected users** | As soon as feasible if RRSH | Email (template below) |
+| **EU supervisory authority (if GDPR applies)** | Within 72 hours if risk to individuals' rights/freedoms | National DPA portal |
+| **Apple App Store / Google Play** | If incident affects app security rating | Developer account support portal |
 
 #### Breach notification email template
 
@@ -245,11 +306,16 @@ Dear AccessMap User,
 On [DATE] at [TIME], we detected a security incident in AccessMap 
 that may have exposed the following information:
 
-[ ] GPS locations
-[ ] Photo metadata (EXIF)
-[ ] Flag content
+[ ] GPS locations of flags you submitted
+[ ] Accessibility category and description of flags you submitted
+[ ] Photo metadata (EXIF data from uploaded photos)
 [ ] Your email address
-[ ] Profile information
+[ ] Your display name / profile information
+
+Why this matters: AccessMap stores information about accessibility barriers
+at specific locations. Combined with your account information, some of this
+data may allow inferences about your disability status or mobility needs.
+We take this very seriously.
 
 What we found:
 [Describe what happened in plain language]
@@ -260,25 +326,49 @@ What we did immediately:
 What you should do:
 1. Change your password at [link to reset]
 2. Review your flag history at [link to flag settings]
-3. Disable location sharing if you're concerned
-4. Contact us if you have questions: [support email]
+3. Contact us if you have questions: [SKY TO CONFIRM: support email]
+
+You may also contact the Office of the Privacy Commissioner of Canada
+at 1-800-282-1376 or https://www.priv.gc.ca if you have concerns.
 
 We apologize and are committed to preventing this in the future.
 
 — AccessMap Security Team
 ```
 
-#### GDPR notification (if applicable)
+#### Step 3c: Breach record-keeping obligation (mandatory — PIPEDA 24 months / BC PIPA 2 years)
 
-Contact your national Data Protection Authority. Example (Ireland):
+**PIPEDA requires ALL security incidents (whether or not reported to the OPC) to be recorded and retained for 24 months. BC PIPA requires similar records for a minimum of 2 years.**
+
+For every P0 or P1 incident (and any security event involving personal information):
+
+1. Create or update: `qa-reports/breach-register.md` (create this file if it does not exist)
+2. Each entry must include:
+   - Date and time of incident discovery
+   - Nature of the incident
+   - Personal information involved (categories and approximate number of individuals)
+   - RRSH assessment outcome (reportable or not, with reasoning)
+   - Actions taken (containment, notification, remediation)
+   - Dates notifications sent (OPC, BC IPC, individuals) if applicable
+3. Retain for minimum **24 months** from the date of the incident
+4. Do NOT delete these records when archiving qa-reports
+
+[SKY TO CONFIRM: Should the breach register live in `qa-reports/breach-register.md` (inside the repo) or in a separate private location? Given it may contain sensitive breach details, consider whether it should be outside the public-facing repo.]
+
+#### GDPR notification (if applicable — EU users only)
+
+[SKY TO CONFIRM: Is AccessMap targeting EU users at launch? If no, GDPR notification may not be a launch requirement.] If GDPR applies:
+
 ```
+For EU DPA notification (example — Ireland):
 Data Protection Commission
-21 Lime Street
-Dublin D01 1GA
-Ireland
+21 Lime Street, Dublin D01 1GA, Ireland
+https://www.dataprotection.ie/en/organisations/breach-notification
 
-Subject: Data Breach Notification
+Subject: Data Breach Notification — Article 33 GDPR
 ```
+
+Also note: GDPR Article 34 requires notification to affected data subjects "without undue delay" when a breach is likely to result in a HIGH risk to individuals — a higher bar than Art. 33 supervisory notification. For AccessMap, any breach involving disability-inference data should be assessed for both thresholds.
 
 ---
 
@@ -413,7 +503,7 @@ Subject: Data Breach Notification
 # 4. Add EXIF stripping validation to upload form
 ```
 
-**Reference:** `/Users/skypie/AccessMap/EXIF_SECURITY_CONTEXT.md`
+**Reference:** `./EXIF_SECURITY_CONTEXT.md` (repo root) — if not present, check `docs/EXIF_SECURITY_CONTEXT.md`
 
 ---
 
@@ -664,3 +754,4 @@ psql 'postgresql://...' -c "SELECT * FROM information_schema.role_table_grants W
 | Date | Changes | Owner |
 |---|---|---|
 | 2026-05-30 | Initial playbook, P0-P3 severity, GDPR notification | Steve |
+| 2026-05-29 | **DRAFT additions (branch: jordan/privacy-policy-gaps-2026-05-29):** Added PIPEDA/BC PIPA section with RRSH standard, OPC/BC IPC regulators, 24-month record-keeping obligation, breach register requirement; reclassified EXIF GPS from P1 → P0 for AccessMap; annotated git filter-branch as Sky-only action; fixed absolute path to repo-relative; updated breach notification email template to include disability-inference language; added GDPR Art. 34 data subject notification note | Jordan (AI privacy advisor — NOT LEGAL ADVICE) |
