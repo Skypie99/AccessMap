@@ -19,8 +19,24 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { radius, font, spacing } from '../theme';
-import { STATUS_COLORS, STATUS_LABELS } from '../lib/flags';
+import { useColor, type ColorTheme } from '../theme/ThemeContext';
+import { STATUS_LABELS } from '../lib/flags';
 import type { FlagStatus } from '../types/database';
+
+// Status pill colors come from the themed status tokens (light + dark) rather
+// than the static STATUS_COLORS map, so badges adapt on dark surfaces.
+function statusPalette(c: ColorTheme, status: FlagStatus): { bg: string; fg: string } {
+  switch (status) {
+    case 'open':
+      return { bg: c.statusOpenBg, fg: c.statusOpenFg };
+    case 'verified':
+      return { bg: c.statusVerifiedBg, fg: c.statusVerifiedFg };
+    case 'resolved':
+      return { bg: c.statusResolvedBg, fg: c.statusResolvedFg };
+    case 'rejected':
+      return { bg: c.statusRejectedBg, fg: c.statusRejectedFg };
+  }
+}
 
 // -------------------------------------------------------------------------
 // Types
@@ -42,7 +58,8 @@ interface StatusBadgeProps {
 // -------------------------------------------------------------------------
 
 export function StatusBadge({ status, size = 'md', showLabel = true, showDot = true, accessibilityLabel, style }: StatusBadgeProps) {
-  const palette = STATUS_COLORS[status];
+  const color = useColor();
+  const palette = statusPalette(color, status);
   const a11yLabel = accessibilityLabel ?? `Flag status: ${STATUS_LABELS[status]}`;
   const dotSize = size === 'sm' ? 5 : 6;
 
@@ -94,6 +111,6 @@ const styles = StyleSheet.create({
     fontSize: font.size.caption, // 11px
   },
   labelSm: {
-    fontSize: 10,
+    fontSize: font.size.caption, // 11 — was 10, below the legible floor
   },
 });
