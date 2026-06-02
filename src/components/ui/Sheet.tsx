@@ -1,0 +1,142 @@
+/**
+ * Sheet — design-system bottom-sheet modal scaffold.
+ *
+ * ~20 modals across the app each hand-roll the same structure: a slide-up
+ * Modal, a scrim backdrop, a rounded top card, and a header row with a title +
+ * close button. `Sheet` unifies that (and adds a premium drag-handle pill),
+ * while `SheetHeader` can be dropped into a custom card on its own.
+ *
+ * Reduced-motion aware (no slide when the user prefers reduced motion), themed
+ * via useColor(), and a11y-correct (accessibilityViewIsModal, header role,
+ * labelled close). Incrementally adoptable — content passes through as children.
+ *
+ * Design system 2026-06-01.
+ */
+
+import React from 'react';
+import { Modal, Pressable, StyleSheet, View, type ViewStyle } from 'react-native';
+import { X } from 'lucide-react-native';
+import { useColor } from '@/theme/ThemeContext';
+import { useReducedMotion } from '@/lib/accessibility';
+import { font, radius, shadow, spacing } from '@/theme';
+import { AppText } from './AppText';
+
+export interface SheetHeaderProps {
+  title: string;
+  onClose: () => void;
+  /** Show the drag-handle pill above the title row. Default true. */
+  showHandle?: boolean;
+  /** Accessibility label for the close button. Default `Close {title}`. */
+  closeLabel?: string;
+  /** Optional node rendered in place of the close button (e.g. an action). */
+  right?: React.ReactNode;
+}
+
+export function SheetHeader({ title, onClose, showHandle = true, closeLabel, right }: SheetHeaderProps) {
+  const color = useColor();
+  return (
+    <>
+      {showHandle ? (
+        <View
+          style={styles.handleWrap}
+          accessibilityElementsHidden
+          importantForAccessibility="no-hide-descendants"
+        >
+          <View style={[styles.handle, { backgroundColor: color.borderStrong }]} />
+        </View>
+      ) : null}
+      <View style={styles.headerRow}>
+        <AppText
+          variant="heading"
+          size={font.size.xl}
+          color={color.textStrong}
+          style={styles.title}
+          accessibilityRole="header"
+        >
+          {title}
+        </AppText>
+        {right ?? (
+          <Pressable
+            onPress={onClose}
+            hitSlop={spacing.sm}
+            style={[styles.closeBtn, { backgroundColor: color.surfaceNeutral }]}
+            accessibilityRole="button"
+            accessibilityLabel={closeLabel ?? `Close ${title}`}
+          >
+            <X size={18} color={color.text} strokeWidth={2.2} />
+          </Pressable>
+        )}
+      </View>
+    </>
+  );
+}
+
+export interface SheetProps {
+  visible: boolean;
+  onClose: () => void;
+  title: string;
+  children: React.ReactNode;
+  /** Override the card style (e.g. a different surface or paddingTop). */
+  cardStyle?: ViewStyle;
+  /** Optional right-side header accessory (replaces the close button). */
+  headerRight?: React.ReactNode;
+  showHandle?: boolean;
+  testID?: string;
+}
+
+export function Sheet({
+  visible,
+  onClose,
+  title,
+  children,
+  cardStyle,
+  headerRight,
+  showHandle = true,
+  testID,
+}: SheetProps) {
+  const color = useColor();
+  const reducedMotion = useReducedMotion();
+  return (
+    <Modal
+      visible={visible}
+      transparent
+      animationType={reducedMotion ? 'none' : 'slide'}
+      onRequestClose={onClose}
+    >
+      <View style={[styles.backdrop, { backgroundColor: color.scrim }]} accessibilityViewIsModal testID={testID}>
+        <View style={[styles.card, { backgroundColor: color.surface }, shadow.e3, cardStyle]}>
+          <SheetHeader title={title} onClose={onClose} showHandle={showHandle} right={headerRight} />
+          {children}
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+const styles = StyleSheet.create({
+  backdrop: { flex: 1, justifyContent: 'flex-end' },
+  card: {
+    borderTopLeftRadius: radius.xl,
+    borderTopRightRadius: radius.xl,
+    paddingBottom: spacing.sm,
+    maxHeight: '90%',
+  },
+  handleWrap: { alignItems: 'center', paddingTop: spacing.sm, paddingBottom: spacing.tight },
+  handle: { width: 36, height: 4, borderRadius: radius.full },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing.xs,
+    paddingBottom: spacing.sm,
+  },
+  title: { flex: 1 },
+  closeBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: radius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+});

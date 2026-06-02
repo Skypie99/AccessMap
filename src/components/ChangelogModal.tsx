@@ -1,9 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { initialExpanded } from '@/lib/changelogExpanded';
 import { font, radius, shadow, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
-import { ChevronDown, ChevronRight, X } from 'lucide-react-native';
+import { Sheet } from '@/components/ui';
+import { ChevronDown, ChevronRight } from 'lucide-react-native';
 
 interface Props {
   visible: boolean;
@@ -69,32 +70,18 @@ export default function ChangelogModal({ visible, onClose }: Props) {
   }, [visible]);
 
   return (
-    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
-      {/* accessibilityViewIsModal — VoiceOver treats everything behind
-          this view as inert while the modal is up. Same pattern as
-          HelpModal; see that file for the longer comment. Alex P5. */}
-      <View style={styles.backdrop} accessibilityViewIsModal testID="changelogModal-backdrop">
-        <View style={styles.card}>
-          <View style={styles.headerRow}>
-            <Text style={styles.title} accessibilityRole="header">
-              What's New
-            </Text>
-            <Pressable
-              onPress={onClose}
-              hitSlop={12}
-              style={styles.closeBtn}
-              accessibilityRole="button"
-              accessibilityLabel="Close what's new"
-            >
-              <X size={18} color={color.text} strokeWidth={2.2} />
-            </Pressable>
-          </View>
-
-          <ScrollView
-            style={styles.body}
-            contentContainerStyle={styles.bodyContent}
-            showsVerticalScrollIndicator={false}
-          >
+    <Sheet
+      visible={visible}
+      onClose={onClose}
+      title="What's New"
+      cardStyle={{ backgroundColor: color.surfaceMuted }}
+      testID="changelogModal-backdrop"
+    >
+      <ScrollView
+        style={styles.body}
+        contentContainerStyle={styles.bodyContent}
+        showsVerticalScrollIndicator={false}
+      >
             {RELEASES.map((release, i) => {
               const key = `${release.date}-${i}`;
               const isOpen = expanded[key] ?? false;
@@ -139,55 +126,13 @@ export default function ChangelogModal({ visible, onClose }: Props) {
                 </View>
               );
             })}
-          </ScrollView>
-        </View>
-      </View>
-    </Modal>
+      </ScrollView>
+    </Sheet>
   );
 }
 
 const makeStyles = (color: ColorTheme) =>
   StyleSheet.create({
-    backdrop: {
-      flex: 1,
-      backgroundColor: color.scrim,
-      justifyContent: 'flex-end',
-    },
-    card: {
-      backgroundColor: color.surfaceMuted,
-      borderTopLeftRadius: radius.xl,
-      borderTopRightRadius: radius.xl,
-      paddingTop: spacing.lg,
-      paddingBottom: spacing.sm,
-      maxHeight: '90%',
-      ...shadow.e3,
-    },
-    headerRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: spacing.md,
-      paddingHorizontal: spacing.xl,
-      marginBottom: spacing.sm,
-    },
-    title: {
-      flex: 1,
-      fontSize: font.size.xl,
-      fontWeight: font.weight.bold,
-      color: color.textStrong,
-    },
-    closeBtn: {
-      width: 44,
-      height: 44,
-      borderRadius: radius.full,
-      backgroundColor: color.surfaceNeutral,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    closeBtnText: {
-      fontSize: font.size.lg,
-      color: color.text,
-      fontWeight: font.weight.bold,
-    },
     body: { flexShrink: 1 },
     bodyContent: {
       gap: spacing.md,
