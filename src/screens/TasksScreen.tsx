@@ -55,6 +55,8 @@ import type { RootTabParamList } from '@/navigation/RootNavigator';
 import FlagDetailModal, { type DetailAction } from '@/components/FlagDetailModal';
 import PhotoLightboxModal from '@/components/PhotoLightboxModal';
 import { AppText } from '@/components/ui/AppText';
+import { SkeletonCard } from '@/components/ui/Skeleton';
+import { hapticSelection } from '@/lib/haptics';
 import { AlertTriangle, Check, Search, Sparkles, WifiOff, X } from 'lucide-react-native';
 import { font, radius, shadow, size, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
@@ -296,6 +298,7 @@ export default function TasksScreen() {
   // already picked. If we're already in selection mode, long-press just
   // toggles (mirrors the tap behavior so muscle memory works either way).
   const handleCardLongPress = useCallback((flag: FlagRow) => {
+    hapticSelection();
     setSelection((s) => (s.active ? toggleId(s, flag.id) : enterSelectionWith(flag.id)));
   }, []);
 
@@ -304,6 +307,7 @@ export default function TasksScreen() {
   // with a screen reader. Starts the selection empty so SR users can pick
   // cards via the checkbox role we wire up below.
   const enterSelectionEmpty = useCallback(() => {
+    hapticSelection();
     setSelection({ active: true, selectedIds: [] });
     AccessibilityInfo.announceForAccessibility('Selection mode. Tap cards to select.');
   }, []);
@@ -559,6 +563,7 @@ export default function TasksScreen() {
         selected={isSelected(selection, item.id)}
         onPress={(flag) => {
           if (selection.active) {
+            hapticSelection();
             setSelection((s) => toggleId(s, flag.id));
           } else {
             track('flag_viewed', { flagId: flag.id, source: 'tasks' });
@@ -593,10 +598,18 @@ export default function TasksScreen() {
   }, [hasMore, loadingMore, loadMore]);
 
   if (loading && flags.length === 0) {
+    // Content-shaped skeletons instead of a bare spinner — the list's cards have
+    // a known shape, so this reads as "the list is arriving" rather than "frozen".
     return (
-      <View style={styles.center}>
-        <ActivityIndicator />
-        <AppText variant="body" style={styles.subtitle}>Loading flags…</AppText>
+      <View
+        style={styles.screen}
+        accessible
+        accessibilityRole="progressbar"
+        accessibilityLabel="Loading flags"
+      >
+        {Array.from({ length: 6 }).map((_, i) => (
+          <SkeletonCard key={i} />
+        ))}
       </View>
     );
   }
@@ -1339,13 +1352,6 @@ const makeStyles = (color: ColorTheme) =>
       fontWeight: font.weight.semibold,
       flex: 1,
     },
-    center: {
-      flexGrow: 1,
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: spacing.xxl,
-      gap: spacing.sm,
-    },
     list: { padding: spacing.lg },
     // Load-more footer — centered below the last SectionList card.
     // minHeight 44 on the button satisfies WCAG 2.5.5 (minimum touch target).
@@ -1432,7 +1438,6 @@ const makeStyles = (color: ColorTheme) =>
       fontWeight: font.weight.bold,
     },
     title: { fontSize: font.size.xl, fontWeight: font.weight.semibold },
-    subtitle: { fontSize: font.size.sm, color: color.textMuted, textAlign: 'center', lineHeight: 19 },
     card: {
       backgroundColor: color.surface,
       borderRadius: radius.lg,
