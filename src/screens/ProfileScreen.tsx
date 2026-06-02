@@ -1773,7 +1773,7 @@ const makeStyles = (color: ColorTheme) =>
     subtitle: { fontSize: font.size.base, color: color.text },
     heroCard: {
       backgroundColor: color.brand,
-      borderRadius: spacing.xxl,
+      borderRadius: radius.sheet, // was spacing.xxl — a spacing token misused for a radius
       paddingHorizontal: spacing.xxl,
       paddingTop: spacing.xl + 2,
       paddingBottom: spacing.xxl,
@@ -2033,7 +2033,7 @@ const makeStyles = (color: ColorTheme) =>
       flexDirection: 'row',
       alignItems: 'center',
       gap: spacing.sm,
-      minHeight: 28,
+      minHeight: 44, // WCAG 2.5.5 — these are VoiceOver-focusable rows; meet the 44pt target
     },
     // Directional icon (↑/↓). successStrong (#1e8449) at 4.66:1 on white
     // passes WCAG AA; the ↑ shape also conveys direction without color alone.
