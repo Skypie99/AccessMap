@@ -8,7 +8,6 @@ import {
   Share,
   StyleSheet,
   Switch,
-  Text,
   View,
 } from 'react-native';
 import { ChevronRight, ClipboardCopy, Moon, PlayCircle, Smartphone, Sun } from 'lucide-react-native';
@@ -96,8 +95,10 @@ function SettingsRow({
         </View>
       ) : null}
       <View style={styles.rowTextWrap}>
-        <Text style={[styles.rowTitle, destructive && styles.rowTitleDestructive]}>{title}</Text>
-        <Text style={styles.rowSubtitle}>{subtitle}</Text>
+        <AppText variant="label" style={[styles.rowTitle, destructive && styles.rowTitleDestructive]}>
+          {title}
+        </AppText>
+        <AppText variant="body" style={styles.rowSubtitle}>{subtitle}</AppText>
       </View>
       {/* Trailing affordance: a spinner while the row's handler runs, a
           decorative chevron otherwise. Both are hidden from AT (the row's
@@ -383,9 +384,9 @@ export default function SettingsScreen() {
         contentContainerStyle={styles.container}
         contentInsetAdjustmentBehavior="automatic"
       >
-        <Text style={styles.sectionLabel} accessibilityRole="header">
+        <AppText variant="label" style={styles.sectionLabel} accessibilityRole="header">
           Notifications
-        </Text>
+        </AppText>
 
         <SettingsRow
           title="Notification preferences"
@@ -407,10 +408,10 @@ export default function SettingsScreen() {
           accessibilityState={{ checked: pushEnabled, busy: pushBusy }}
         >
           <View style={styles.pushTextWrap}>
-            <Text style={styles.rowTitle}>Push notifications</Text>
-            <Text style={styles.rowSubtitle}>
+            <AppText variant="label" style={styles.rowTitle}>Push notifications</AppText>
+            <AppText variant="body" style={styles.rowSubtitle}>
               Get notified when your flag is verified or resolved.
-            </Text>
+            </AppText>
           </View>
           {pushBusy ? (
             <ActivityIndicator
@@ -429,15 +430,15 @@ export default function SettingsScreen() {
           )}
         </View>
 
-        <Text style={styles.sectionLabel} accessibilityRole="header">
+        <AppText variant="label" style={styles.sectionLabel} accessibilityRole="header">
           Appearance
-        </Text>
+        </AppText>
 
         <AppearanceControl />
 
-        <Text style={styles.sectionLabel} accessibilityRole="header">
+        <AppText variant="label" style={styles.sectionLabel} accessibilityRole="header">
           Help & info
-        </Text>
+        </AppText>
 
         <SettingsRow
           title="Help & FAQ"
@@ -468,9 +469,9 @@ export default function SettingsScreen() {
           onPress={() => setTutorialOpen(true)}
         />
 
-        <Text style={styles.sectionLabel} accessibilityRole="header">
+        <AppText variant="label" style={styles.sectionLabel} accessibilityRole="header">
           Feedback
-        </Text>
+        </AppText>
 
         <SettingsRow
           title="Send feedback"
@@ -486,9 +487,9 @@ export default function SettingsScreen() {
           onPress={() => setOpen('myFeedback')}
         />
 
-        <Text style={styles.sectionLabel} accessibilityRole="header">
+        <AppText variant="label" style={styles.sectionLabel} accessibilityRole="header">
           Your data
-        </Text>
+        </AppText>
 
         <SettingsRow
           title="Export my data"
@@ -500,9 +501,9 @@ export default function SettingsScreen() {
           busy={exporting}
         />
 
-        <Text style={styles.sectionLabel} accessibilityRole="header">
+        <AppText variant="label" style={styles.sectionLabel} accessibilityRole="header">
           Account
-        </Text>
+        </AppText>
 
         <SettingsRow
           title="Sign out"
