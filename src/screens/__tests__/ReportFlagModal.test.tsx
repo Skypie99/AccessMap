@@ -207,6 +207,14 @@ jest.mock('@/lib/accessibility', () => ({
   useReducedMotion: jest.fn(() => false),
 }));
 
+// Haptics are no-ops in tests — avoids loading expo-haptics during the async
+// submit tests (the require perturbed their timing under parallel workers).
+jest.mock('@/lib/haptics', () => ({
+  hapticSelection: jest.fn(),
+  hapticImpact: jest.fn(),
+  hapticNotify: jest.fn(),
+}));
+
 // ---------------------------------------------------------------------------
 // Import component (after all mocks are registered)
 // ---------------------------------------------------------------------------

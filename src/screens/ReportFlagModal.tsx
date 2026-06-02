@@ -13,6 +13,7 @@ import {
   View,
 } from 'react-native';
 import { AppText } from '@/components/ui/AppText';
+import { hapticSelection } from '@/lib/haptics';
 import { Accessibility, Brain, Camera, Construction, Ear, Eye } from 'lucide-react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '@/lib/auth';
@@ -441,6 +442,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
                 <Pressable
                   key={c}
                   onPress={() => {
+                    hapticSelection();
                     setCategory(c);
                     // Manual edit invalidates the "this template is
                     // currently applied" claim — clear so the chip
@@ -468,6 +470,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
                 <Pressable
                   key={s}
                   onPress={() => {
+                    hapticSelection();
                     setSeverity(s);
                     // Same pattern as Category — manual edit clears the
                     // applied-template chip so its selected state stays
