@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import HamburgerDrawer from '@/components/HamburgerDrawer';
 import { NavigationContainer } from '@react-navigation/native';
@@ -118,6 +119,7 @@ function NavInner({ initialRouteName }: { initialRouteName: keyof RootTabParamLi
   const { setOpen } = useSharedModals();
   const color = useColor();
   const styles = makeStyles(color);
+  const insets = useSafeAreaInsets();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const isAdmin = useIsAdmin();
 
@@ -182,8 +184,11 @@ function NavInner({ initialRouteName }: { initialRouteName: keyof RootTabParamLi
           borderTopWidth: 1,
           borderTopColor: 'rgba(255,255,255,0.1)',
           backgroundColor: 'rgba(7,11,24,0.92)',
-          height: 62,
-          paddingBottom: 8,
+          // Grow by the bottom safe-area inset so the home indicator never
+          // overlaps the tab labels. The hardcoded height had overridden
+          // React Navigation's automatic inset handling.
+          height: 62 + insets.bottom,
+          paddingBottom: 8 + insets.bottom,
           paddingTop: 6,
           ...(Platform.OS === 'web'
             ? { backdropFilter: 'blur(20px) saturate(160%)' } as object
