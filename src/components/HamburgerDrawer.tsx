@@ -19,8 +19,9 @@ import {
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { font, radius, shadow, spacing } from '@/theme';
+import { font, motion, radius, shadow, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
+import { useReducedMotion } from '@/lib/accessibility';
 import { signOut } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth';
 import ResourcesScreen from '@/screens/ResourcesScreen';
@@ -40,41 +41,40 @@ export default function HamburgerDrawer({ open, onClose }: Props) {
   const color = useColor();
   const styles = makeStyles(color);
   const { user } = useAuth();
+  const reducedMotion = useReducedMotion();
 
   const [slideAnim] = useState(() => new Animated.Value(-DRAWER_WIDTH));
   const [fadeAnim] = useState(() => new Animated.Value(0));
   const [subScreen, setSubScreen] = useState<SubScreen | null>(null);
 
   useEffect(() => {
-    if (open) {
-      Animated.parallel([
-        Animated.spring(slideAnim, {
-          toValue: 0,
-          useNativeDriver: true,
-          tension: 70,
-          friction: 12,
-        }),
-        Animated.timing(fadeAnim, {
-          toValue: 1,
-          duration: 180,
-          useNativeDriver: true,
-        }),
-      ]).start();
-    } else {
-      Animated.parallel([
-        Animated.timing(slideAnim, {
-          toValue: -DRAWER_WIDTH,
-          duration: 200,
-          useNativeDriver: true,
-        }),
-        Animated.timing(fadeAnim, {
-          toValue: 0,
-          duration: 180,
-          useNativeDriver: true,
-        }),
-      ]).start();
+    const slideTo = open ? 0 : -DRAWER_WIDTH;
+    const fadeTo = open ? 1 : 0;
+    // WCAG 2.3.3 — snap into place instead of sliding/fading under reduced motion.
+    if (reducedMotion) {
+      slideAnim.setValue(slideTo);
+      fadeAnim.setValue(fadeTo);
+      return;
     }
-  }, [open]);
+    Animated.parallel([
+      open
+        ? Animated.spring(slideAnim, {
+            toValue: slideTo,
+            useNativeDriver: true,
+            ...motion.spring.drawer,
+          })
+        : Animated.timing(slideAnim, {
+            toValue: slideTo,
+            duration: motion.duration.base,
+            useNativeDriver: true,
+          }),
+      Animated.timing(fadeAnim, {
+        toValue: fadeTo,
+        duration: motion.duration.fast,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [open, reducedMotion, slideAnim, fadeAnim]);
 
   const closeDrawer = useCallback(() => {
     onClose();
