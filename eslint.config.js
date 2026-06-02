@@ -38,10 +38,13 @@ module.exports = defineConfig([
 
       // Pre-existing patterns across the codebase — downgraded to warn so CI
       // passes while these are tracked as advisory rather than blocking.
-      'react-hooks/set-state-in-effect': 'warn',
+      // NOTE (2026-06-01): removed `react-hooks/set-state-in-effect` and
+      // `react-hooks/globals` — those are React-Compiler rules from
+      // eslint-plugin-react-hooks v6+, but this project pins v5.2.0 (which ships
+      // only rules-of-hooks + exhaustive-deps). Referencing them made ESLint
+      // throw "rule not found" and broke `npm run lint` entirely.
       'react/no-unescaped-entities': 'warn',
       'react/display-name': 'warn',
-      'react-hooks/globals': 'warn',
     },
   },
 
