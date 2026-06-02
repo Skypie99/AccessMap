@@ -214,12 +214,34 @@ what it is. Append-only.
 
 ---
 
-## 10. Outstanding proposals
+## 10. Iconography (Claude Design — 2026-06-01)
+
+The product UI uses **SVG icons only — no emoji, no Unicode-glyph icons.**
+
+- **General UI icons:** [Lucide](https://lucide.dev) via `lucide-react-native`
+  (2px stroke, round cap) — every control, list affordance, banner, chevron,
+  close (X), check, etc.
+- **Brand mark:** `src/components/LogoMark.tsx` — the Wayfinder-Blue pin + white
+  striding figure (`color` / `white` / `mono`), via `react-native-svg`.
+- **Category icons:** `src/components/CategoryIcon.tsx` — a bespoke 24/2px SVG
+  glyph per `FlagCategory`, `stroke="currentColor"` so it tints with any token.
+- **Tier badges:** `src/components/TierIcon.tsx` — Medal (bronze/silver/gold) +
+  Gem (platinum) in tier colors. Achievements use Lucide icons via a name map.
+- **Map pins:** a teardrop in the severity color with a white ring, a
+  Wayfinder-Blue glow, and the white category glyph inside (a check when
+  resolved) — see `PlatformMap.web.tsx`. (Native renders a colored marker; the
+  in-pin glyph is a device-verified follow-up.)
+- **Civic Gold** (`color.goldAccent`) stays reserved for gamification — points,
+  streaks, badges — always on ink text (`PointsChip`, profile hero, leaderboard).
+
+## 11. Outstanding proposals
 
 (See the latest design report under `qa-reports/design-YYYY-MM-DD.md`.)
 
-- Adopt a dedicated icon set with text labels for the six categories
-  (currently emoji per category; consistent but not customizable for theming).
-- Dark-mode token layer (every color above gets a `.dark` pair).
-- Migrate `severityColor()` to source from `theme.severity` so there's one
-  ramp definition (currently two — the helper and the token).
+- ✅ Done: dedicated category icon set — now `CategoryIcon` (SVG, not emoji).
+- ✅ Done: dark-mode token layer — `src/theme/ThemeContext.tsx`.
+- ✅ Done: `severityColor()` now sources from `theme.severity` (one ramp).
+- Native map pin: render the white category glyph inside the marker (needs
+  on-device verification of the `react-native-maps` custom-marker view).
+- Refresh §1–§7 sample values if they drift from `src/theme.ts` (the tokens in
+  code are the source of truth).

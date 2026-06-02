@@ -14,10 +14,10 @@
  */
 
 import React from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View, type ViewStyle } from 'react-native';
-import { decorativeProps } from '@/lib/accessibility';
+import { Pressable, StyleSheet, TextInput, View, type ViewStyle } from 'react-native';
 import { font, radius, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
+import { Search, X } from 'lucide-react-native';
 
 export interface SearchInputRowProps {
   value: string;
@@ -46,10 +46,8 @@ export default function SearchInputRow({
   const styles = makeStyles(color);
   return (
     <View style={[styles.searchWrap, wrapStyle]}>
-      {/* Decorative magnifier — hidden from screen readers */}
-      <Text style={styles.searchGlyph} {...decorativeProps}>
-        🔎
-      </Text>
+      {/* Decorative magnifier — the TextInput below carries the a11y label */}
+      <Search size={18} color={color.textMuted} strokeWidth={2} />
 
       <TextInput
         value={value}
@@ -75,9 +73,7 @@ export default function SearchInputRow({
           accessibilityLabel="Clear search"
         >
           {/* Decorative ✕ — the Pressable's accessibilityLabel already describes the action */}
-          <Text style={styles.searchClearText} {...decorativeProps}>
-            ✕
-          </Text>
+          <X size={16} color={color.textMuted} strokeWidth={2.4} />
         </Pressable>
       )}
     </View>

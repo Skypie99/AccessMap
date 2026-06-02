@@ -55,6 +55,7 @@ import type { RootTabParamList } from '@/navigation/RootNavigator';
 import FlagDetailModal, { type DetailAction } from '@/components/FlagDetailModal';
 import PhotoLightboxModal from '@/components/PhotoLightboxModal';
 import { AppText } from '@/components/ui/AppText';
+import { AlertTriangle, Check, Search, Sparkles, WifiOff, X } from 'lucide-react-native';
 import { font, radius, shadow, size, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 
@@ -632,7 +633,7 @@ export default function TasksScreen() {
           {loading ? (
             <ActivityIndicator color={color.textOnBrand} />
           ) : (
-            <AppText variant="label" style={styles.errorBannerIcon}>⚠</AppText>
+            <AlertTriangle size={18} color={color.textOnBrand} strokeWidth={2.2} />
           )}
           <AppText variant="body" style={styles.errorBannerText} numberOfLines={2}>
             {loading ? 'Retrying…' : errorBannerText}
@@ -646,14 +647,7 @@ export default function TasksScreen() {
           accessibilityLiveRegion="polite"
           accessibilityLabel="Showing offline data. Connect to the internet to refresh."
         >
-          <AppText
-            variant="label"
-            style={styles.offlineBannerIcon}
-            accessibilityElementsHidden
-            importantForAccessibility="no-hide-descendants"
-          >
-            📶
-          </AppText>
+          <WifiOff size={16} color={color.warningFg} strokeWidth={2} />
           <AppText variant="body" style={styles.offlineBannerText}>Showing saved data — connect to the internet for the latest</AppText>
         </View>
       )}
@@ -705,7 +699,7 @@ export default function TasksScreen() {
               accessibilityLabel="Clear search"
               hitSlop={8}
             >
-              <AppText variant="label" style={styles.searchClearText}>✕</AppText>
+              <X size={18} color={color.textMuted} strokeWidth={2.2} />
             </Pressable>
           )}
         </View>
@@ -877,9 +871,17 @@ export default function TasksScreen() {
         )}
         ListEmptyComponent={
           <View style={styles.emptyCard} accessible accessibilityRole="text">
-            <AppText variant="label" style={styles.emptyIcon} accessibilityElementsHidden>
-              {categoryFilter || searchText.trim() ? '🔍' : '✨'}
-            </AppText>
+            <View
+              style={styles.emptyIcon}
+              accessibilityElementsHidden
+              importantForAccessibility="no"
+            >
+              {categoryFilter || searchText.trim() ? (
+                <Search size={36} color={color.textSubtle} strokeWidth={2} />
+              ) : (
+                <Sparkles size={36} color={color.goldAccent} strokeWidth={2} />
+              )}
+            </View>
             <AppText variant="heading" style={styles.emptyTitle}>
               {categoryFilter
                 ? `No ${CATEGORY_LABELS[categoryFilter]} flags`
@@ -930,7 +932,7 @@ export default function TasksScreen() {
                   accessibilityRole="text"
                   accessibilityLabel="You have seen all flags nearby"
                 >
-                  {"That's everything nearby — you're up to date ✓"}
+                  {"That's everything nearby — you're up to date"}
                 </AppText>
               )}
             </View>
@@ -1166,7 +1168,7 @@ const FlagCard = memo(function FlagCard({
             accessibilityElementsHidden
             importantForAccessibility="no-hide-descendants"
           >
-            {selected ? <AppText variant="label" style={styles.selectCheckMark}>✓</AppText> : null}
+            {selected ? <Check size={16} color={color.textOnBrand} strokeWidth={2.2} /> : null}
           </View>
         )}
       </View>
@@ -1389,7 +1391,7 @@ const makeStyles = (color: ColorTheme) =>
       maxWidth: 340,
       ...shadow.e1,
     },
-    emptyIcon: { fontSize: font.size.display - 12 },
+    emptyIcon: { marginBottom: spacing.tight },
     emptyTitle: {
       fontSize: font.size.xl,
       fontWeight: font.weight.bold,

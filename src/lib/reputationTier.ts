@@ -25,8 +25,12 @@ export interface ReputationTier {
   name: ReputationTierName;
   /** Human-readable label, e.g. 'Bronze'. */
   label: string;
-  /** Emoji glyph rendered as the visual badge. Decorative — hide from SR. */
+  /** Emoji glyph (retained for back-compat / tests — no longer rendered). */
   emoji: string;
+  /** Lucide icon name for the tier badge (replaces the emoji for rendering). */
+  icon: 'medal' | 'gem';
+  /** Badge tint for the tier icon (metal / gem color). */
+  color: string;
   /** Short description shown when a user taps their tier badge. */
   description: string;
   /** Minimum points needed to reach this tier. */
@@ -50,6 +54,8 @@ export const REPUTATION_TIERS: ReadonlyArray<ReputationTier> = [
     name: 'bronze',
     label: 'Bronze',
     emoji: '🥉',
+    icon: 'medal',
+    color: '#C0884F',
     description: 'New contributor — keep reporting barriers to build trust.',
     threshold: 0,
     nextThreshold: 100,
@@ -59,6 +65,8 @@ export const REPUTATION_TIERS: ReadonlyArray<ReputationTier> = [
     name: 'silver',
     label: 'Silver',
     emoji: '🥈',
+    icon: 'medal',
+    color: '#9AA7B5',
     description: 'Trusted contributor — your reports are verified more quickly.',
     threshold: 100,
     nextThreshold: 500,
@@ -68,6 +76,8 @@ export const REPUTATION_TIERS: ReadonlyArray<ReputationTier> = [
     name: 'gold',
     label: 'Gold',
     emoji: '🥇',
+    icon: 'medal',
+    color: '#FBB024',
     description: 'Community leader — your verifications carry extra weight.',
     threshold: 500,
     nextThreshold: 1500,
@@ -77,6 +87,8 @@ export const REPUTATION_TIERS: ReadonlyArray<ReputationTier> = [
     name: 'platinum',
     label: 'Platinum',
     emoji: '💎',
+    icon: 'gem',
+    color: '#5AA9E6',
     description: "Anchor contributor — you're one of our most trusted voices.",
     threshold: 1500,
     nextThreshold: null,

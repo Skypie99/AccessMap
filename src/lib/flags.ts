@@ -1,5 +1,5 @@
 import { supabase } from './supabase';
-import { color as themeColor } from '@/theme';
+import { color as themeColor, severity as severityRamp } from '@/theme';
 import { Platform } from 'react-native';
 import * as ImageManipulator from 'expo-image-manipulator';
 import { trackEvent } from './analytics';
@@ -829,20 +829,10 @@ export const SEVERITY_ORDER: FlagSeverity[] = [1, 2, 3, 4, 5];
 // severity (dirty data, schema widening), return a neutral gray instead of
 // `undefined` so the marker/severity bar still renders something.
 export function severityColor(s: FlagSeverity): string {
-  switch (s) {
-    case 1:
-      return '#27ae60';
-    case 2:
-      return '#7fb800';
-    case 3:
-      return '#f1c40f';
-    case 4:
-      return '#e67e22';
-    case 5:
-      return '#e74c3c';
-    default:
-      return themeColor.textSubtle;
-  }
+  // Single source of truth: the design-system severity ramp in theme.ts
+  // (Claude Design yellow→red). Reading the token here keeps the map pins,
+  // Tasks dots, and LegendModal swatches in lockstep with SeverityBadge.
+  return severityRamp[s]?.color ?? themeColor.textSubtle;
 }
 
 // Short human label and color name for each severity. The color name is read
@@ -856,10 +846,10 @@ export const SEVERITY_LABELS: Record<FlagSeverity, string> = {
 };
 
 export const SEVERITY_COLOR_NAMES: Record<FlagSeverity, string> = {
-  1: 'green',
-  2: 'light green',
-  3: 'yellow',
-  4: 'orange',
+  1: 'yellow',
+  2: 'amber',
+  3: 'orange',
+  4: 'deep orange',
   5: 'red',
 };
 

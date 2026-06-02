@@ -13,6 +13,7 @@ import {
   View,
 } from 'react-native';
 import { AppText } from '@/components/ui/AppText';
+import { Accessibility, Brain, Camera, Construction, Ear, Eye } from 'lucide-react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '@/lib/auth';
 import { track } from '@/lib/analytics';
@@ -53,12 +54,13 @@ import { useReducedMotion } from '@/lib/accessibility';
 
 /** Emoji icon prefix for each disability tag — adds visual distinction without
  *  adding a dependency. Describes the BARRIER type, not any person's identity. */
-const DISABILITY_TAG_ICONS: Readonly<Record<DisabilityTag, string>> = {
-  mobility_barrier: '♿',
-  vision_hazard: '👁',
-  hearing_concern: '🦻',
-  cognitive_load: '🧠',
-  temporary_closure: '🚧',
+type DisabilityIconCmp = React.ComponentType<{ size?: number; color?: string; strokeWidth?: number }>;
+const DISABILITY_TAG_ICONS: Readonly<Record<DisabilityTag, DisabilityIconCmp>> = {
+  mobility_barrier: Accessibility,
+  vision_hazard: Eye,
+  hearing_concern: Ear,
+  cognitive_load: Brain,
+  temporary_closure: Construction,
 };
 
 interface Props {
@@ -620,7 +622,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
                 {DISABILITY_TAGS.map((tag) => {
                   const active = contextTags.includes(tag);
                   const label = DISABILITY_TAG_LABELS[tag];
-                  const icon = DISABILITY_TAG_ICONS[tag];
+                  const TagIcon = DISABILITY_TAG_ICONS[tag];
                   return (
                     <Pressable
                       key={tag}
@@ -642,14 +644,17 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
                         tagsDisabled ? 'Accessibility tags will be available soon.' : undefined
                       }
                     >
-                      <AppText
-                        variant="label"
-                        style={styles.disabilityTagIcon}
-                        accessibilityElementsHidden
-                        importantForAccessibility="no-hide-descendants"
-                      >
-                        {icon}
-                      </AppText>
+                      <TagIcon
+                        size={16}
+                        color={
+                          active
+                            ? color.textOnBrand
+                            : tagsDisabled
+                              ? color.textSubtle
+                              : color.brandText
+                        }
+                        strokeWidth={2.2}
+                      />
                       <AppText
                         variant="label"
                         style={[
@@ -690,14 +695,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
                   accessibilityLabel={`Tip: adding a photo helps verify this ${severity === 5 ? 'severe' : 'major'} barrier without a site visit.`}
                   accessibilityLiveRegion="polite"
                 >
-                  <AppText
-                    variant="label"
-                    style={styles.photoNudgeIcon}
-                    accessibilityElementsHidden
-                    importantForAccessibility="no-hide-descendants"
-                  >
-                    📸
-                  </AppText>
+                  <Camera size={18} color={color.warningFg} strokeWidth={2} />
                   <AppText variant="body" style={styles.photoNudgeBody}>
                     {'A photo helps verify this '}
                     <AppText variant="bodyMedium" style={styles.photoNudgeBold}>

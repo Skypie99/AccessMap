@@ -15,6 +15,7 @@ import React from 'react';
 import { Image, Modal, Pressable, StatusBar, StyleSheet, Text, View } from 'react-native';
 import { font, radius, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
+import { X } from 'lucide-react-native';
 
 interface Props {
   visible: boolean;
@@ -91,13 +92,13 @@ export default function PhotoLightboxModal({ visible, photoUrl, caption, onClose
           accessibilityRole="button"
           accessibilityLabel="Close photo"
         >
-          <Text
-            style={styles.closeBtnText}
+          <X
+            size={18}
+            color={color.surface}
+            strokeWidth={2.2}
             accessibilityElementsHidden
             importantForAccessibility="no-hide-descendants"
-          >
-            ✕
-          </Text>
+          />
         </Pressable>
       </View>
     </Modal>

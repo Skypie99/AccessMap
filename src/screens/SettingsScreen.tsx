@@ -11,6 +11,7 @@ import {
   Text,
   View,
 } from 'react-native';
+import { ChevronRight, ClipboardCopy, PlayCircle } from 'lucide-react-native';
 import { font, radius, shadow, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { signOut, supabase } from '@/lib/supabase';
@@ -56,7 +57,7 @@ function SettingsRow({
   // decoration — hidden from AT so a screen reader doesn't read out
   // "clipboard emoji, Export my data". The row's accessibilityLabel
   // already carries the meaning.
-  icon?: string;
+  icon?: React.ReactNode;
   // When the row is busy running its handler we soften the press affordance
   // and block re-entrancy (the handler also no-ops if it's busy, but the
   // visual cue helps sighted users).
@@ -84,13 +85,13 @@ function SettingsRow({
       accessibilityState={{ disabled: !!disabled, busy: !!busy }}
     >
       {icon ? (
-        <Text
+        <View
           style={styles.rowIcon}
           accessibilityElementsHidden
           importantForAccessibility="no-hide-descendants"
         >
           {icon}
-        </Text>
+        </View>
       ) : null}
       <View style={styles.rowTextWrap}>
         <Text style={[styles.rowTitle, destructive && styles.rowTitleDestructive]}>{title}</Text>
@@ -110,13 +111,13 @@ function SettingsRow({
           color={color.textSubtle}
         />
       ) : (
-        <Text
-          style={styles.rowChevron}
+        <ChevronRight
+          size={18}
+          color={color.textSubtle}
+          strokeWidth={2.2}
           accessibilityElementsHidden
           importantForAccessibility="no-hide-descendants"
-        >
-          ›
-        </Text>
+        />
       )}
     </Pressable>
   );
@@ -414,7 +415,7 @@ export default function SettingsScreen() {
         <SettingsRow
           title="Replay tutorial"
           subtitle="Re-show the 3-card welcome intro."
-          icon="🎬"
+          icon={<PlayCircle size={18} color={color.textMuted} strokeWidth={2.2} />}
           accessibilityHint="Opens the welcome intro you saw the first time you signed in"
           onPress={() => setTutorialOpen(true)}
         />
@@ -444,7 +445,7 @@ export default function SettingsScreen() {
         <SettingsRow
           title="Export my data"
           subtitle="Copy your flags and feedback to your clipboard as plain text."
-          icon="📋"
+          icon={<ClipboardCopy size={18} color={color.textMuted} strokeWidth={2.2} />}
           accessibilityHint="Copies your flags and feedback to your clipboard as plain text"
           onPress={handleExportPress}
           disabled={exporting}

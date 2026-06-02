@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { font, radius, shadow, spacing } from '@/theme';
+import { Camera, X } from 'lucide-react-native';
 
 const SCREEN = Dimensions.get('window');
 
@@ -109,13 +110,13 @@ function PhotoGalleryInner({ photos, onAddPhoto, maxPhotos = 5, onRemovePhoto }:
             accessibilityLabel={`Remove photo ${index + 1}`}
             accessibilityHint="Removes this photo before you submit"
           >
-            <Text
-              style={styles.removeIcon}
+            <X
+              size={18}
+              color={color.textOnBrand}
+              strokeWidth={2.2}
               accessibilityElementsHidden
               importantForAccessibility="no-hide-descendants"
-            >
-              ✕
-            </Text>
+            />
           </Pressable>
         )}
       </Pressable>
@@ -128,13 +129,7 @@ function PhotoGalleryInner({ photos, onAddPhoto, maxPhotos = 5, onRemovePhoto }:
       accessible
       accessibilityLabel="No photos attached"
     >
-      <Text
-        style={styles.emptyIcon}
-        accessibilityElementsHidden
-        importantForAccessibility="no-hide-descendants"
-      >
-        📷
-      </Text>
+      <Camera size={28} color={color.textSubtle} strokeWidth={2} />
       <Text style={styles.emptyLabel}>No photos</Text>
     </View>
   );
@@ -227,13 +222,13 @@ function PhotoGalleryInner({ photos, onAddPhoto, maxPhotos = 5, onRemovePhoto }:
             accessibilityRole="button"
             accessibilityLabel="Close photo"
           >
-            <Text
-              style={styles.lightboxCloseText}
+            <X
+              size={18}
+              color={color.textOnBrand}
+              strokeWidth={2.2}
               accessibilityElementsHidden
               importantForAccessibility="no-hide-descendants"
-            >
-              ✕
-            </Text>
+            />
           </Pressable>
         </View>
       </Modal>

@@ -13,6 +13,7 @@ import { MapContainer, Marker, Popup, Rectangle, useMap, useMapEvents } from 're
 import L, { Map as LeafletMap, Marker as LeafletMarker } from 'leaflet';
 import Supercluster from 'supercluster';
 import { CATEGORY_LABELS, isAnon, severityColor } from '@/lib/flags';
+import type { FlagCategory } from '@/types/database';
 import { heatmapSeverity as severityTokens } from '@/theme';
 import { useColor } from '@/theme/ThemeContext';
 import type { FlagRow } from '@/types/database';
@@ -86,41 +87,46 @@ function heatLabelIcon(fill: string, text: string, textColor: string): L.DivIcon
   return icon;
 }
 
-// Cache pin icons by (color + dim). There are only 6 possible combinations
-// (5 severity colors + the gray fallback × 2 dim states), so this dictionary
-// caps at ~12 entries for the life of the page. Without the cache every
-// render builds a brand-new L.DivIcon for every flag, and Leaflet treats a
-// new icon as a marker change → unnecessary re-renders at hundreds of pins.
+// White category glyph drawn inside the pin — same shapes as CategoryIcon.
+// A resolved flag shows a check instead.
+const CAT_PIN_PATHS: Record<string, string> = {
+  no_ramp:
+    '<path d="M3 20 H21"/><path d="M5 20 L19 7"/><path d="M19 7 V20"/><circle cx="10.5" cy="15" r="1.6"/>',
+  broken_sidewalk:
+    '<path d="M8 21 L10 4"/><path d="M16 21 L14 4"/><path d="M11.3 10 H12.7"/><path d="M10.7 15 H13.3"/>',
+  blocked_path: '<circle cx="12" cy="12" r="9"/><path d="M5.6 5.6 L18.4 18.4"/>',
+  missing_signal: '<path d="M5 21 L8 5"/><path d="M11 21 L12.5 5"/><path d="M17 21 L17 5"/>',
+  steep_grade:
+    '<path d="M3 20 H21"/><path d="M6 20 L18 7"/><path d="M18 7 L13.6 8"/><path d="M18 7 L17 11.4"/>',
+  other:
+    '<circle cx="12" cy="12" r="9"/><circle cx="7.5" cy="12" r="1.1" fill="#fff" stroke="none"/><circle cx="12" cy="12" r="1.1" fill="#fff" stroke="none"/><circle cx="16.5" cy="12" r="1.1" fill="#fff" stroke="none"/>',
+};
+function pinGlyphSvg(category: FlagCategory, resolved: boolean): string {
+  const paths = resolved ? '<path d="M5 12 l4 4 l8 -9"/>' : CAT_PIN_PATHS[category] ?? CAT_PIN_PATHS.other;
+  return `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="${resolved ? 3 : 2.4}" stroke-linecap="round" stroke-linejoin="round">${paths}</svg>`;
+}
+
+// Cache teardrop pin icons by (color + category + resolved + dim). Bounded set
+// (≤6 colors × 6 categories × 2 × 2), so the cache stays tiny for the page
+// life. Without it every render builds a new L.DivIcon → needless marker churn.
 const pinIconCache = new Map<string, L.DivIcon>();
-function pinIcon(color: string, dim: boolean): L.DivIcon {
-  const key = `${color}|${dim ? 1 : 0}`;
+function pinIcon(color: string, category: FlagCategory, resolved: boolean, dim: boolean): L.DivIcon {
+  const key = `${color}|${category}|${resolved ? 'r' : ''}|${dim ? 1 : 0}`;
   const cached = pinIconCache.get(key);
   if (cached) return cached;
-  // Two-layer pin: a soft outer halo for depth + an inner severity dot with a
-  // crisp white ring. Reads as a "pin" rather than a flat blob, and keeps
-  // good contrast against the OSM tile background.
+  // Design teardrop: a severity-colored drop (border-radius 50% 50% 50% 0,
+  // rotated -45°) with a 2.5px white ring, a Wayfinder-Blue glow, and the
+  // white category glyph (counter-rotated upright) — or a check when resolved.
   const icon = L.divIcon({
     className: 'accessmap-pin',
-    html: `<div style="
-      position:relative;width:26px;height:26px;
-      display:flex;align-items:center;justify-content:center;
-      opacity:${dim ? 0.55 : 1};
-      filter:drop-shadow(0 4px 8px rgba(15,27,45,0.28)) drop-shadow(0 1px 2px rgba(15,27,45,0.12));
-    ">
-      <div style="
-        position:absolute;inset:0;border-radius:50%;
-        background:${color};opacity:0.22;
-      "></div>
-      <div style="
-        width:18px;height:18px;border-radius:50%;
-        background:${color};
-        border:2.5px solid #fff;
-        box-shadow:inset 0 0 0 1px rgba(0,0,0,0.06);
-      "></div>
+    html: `<div style="width:30px;height:30px;opacity:${dim ? 0.55 : 1};filter:drop-shadow(0 6px 14px rgba(20,102,224,0.35)) drop-shadow(0 1px 2px rgba(15,27,45,0.18));">
+      <div style="width:30px;height:30px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:${color};border:2.5px solid #fff;display:flex;align-items:center;justify-content:center;">
+        <div style="transform:rotate(45deg);display:flex;align-items:center;justify-content:center;">${pinGlyphSvg(category, resolved)}</div>
+      </div>
     </div>`,
-    iconSize: [26, 26],
-    iconAnchor: [13, 13],
-    popupAnchor: [0, -14],
+    iconSize: [30, 30],
+    iconAnchor: [15, 29],
+    popupAnchor: [0, -28],
   });
   pinIconCache.set(key, icon);
   return icon;
@@ -302,6 +308,8 @@ function ClusteredMarkers({
             position={[flag.lat, flag.lng]}
             icon={pinIcon(
               flagIsAnon ? '#9CA3AF' : severityColor(flag.severity),
+              flag.category,
+              flag.status === 'resolved',
               !flagIsAnon && focusedFlagId !== null && focusedFlagId !== flag.id,
             )}
             // alt is what screen readers announce for the marker; title is

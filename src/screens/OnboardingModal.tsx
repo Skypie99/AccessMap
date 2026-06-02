@@ -14,6 +14,7 @@ import { font, radius, shadow, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { useReducedMotion } from '@/lib/accessibility';
 import { trackEvent } from '@/lib/analytics';
+import { MapPin, Star, Target } from 'lucide-react-native';
 
 interface Props {
   visible: boolean;
@@ -21,24 +22,24 @@ interface Props {
 }
 
 interface Card {
-  emoji: string;
+  Icon: React.ComponentType<{ size?: number; color?: string; strokeWidth?: number }>;
   title: string;
   body: string;
 }
 
 const CARDS: Card[] = [
   {
-    emoji: '📍',
+    Icon: MapPin,
     title: 'Welcome to AccessMap',
     body: 'Drop a pin where you find an accessibility issue — a missing ramp, a broken sidewalk, a blocked path — so others can plan around it, or help fix it.',
   },
   {
-    emoji: '🎯',
+    Icon: Target,
     title: 'Rate the barrier',
     body: 'Rate the issue from 1 (a minor inconvenience) to 5 (completely impassable). The map shows both number and color so the meaning is clear at a glance.',
   },
   {
-    emoji: '⭐',
+    Icon: Star,
     title: 'Earn points together',
     body: 'You earn points when your reports get verified or resolved by others — and when you verify or resolve theirs. Help build the map.',
   },
@@ -133,15 +134,16 @@ export default function OnboardingModal({ visible, onDone }: Props) {
           accessibilityElementsHidden
           importantForAccessibility="no-hide-descendants"
         >
-          {CARDS.map((card) => (
-            <View key={card.title} style={[styles.card, { width }]}>
-              <Text style={styles.emoji} accessibilityElementsHidden importantForAccessibility="no">
-                {card.emoji}
-              </Text>
-              <Text style={styles.title}>{card.title}</Text>
-              <Text style={styles.body}>{card.body}</Text>
-            </View>
-          ))}
+          {CARDS.map((card) => {
+            const CardIcon = card.Icon;
+            return (
+              <View key={card.title} style={[styles.card, { width }]}>
+                <CardIcon size={56} color={color.brand} strokeWidth={2} />
+                <Text style={styles.title}>{card.title}</Text>
+                <Text style={styles.body}>{card.body}</Text>
+              </View>
+            );
+          })}
         </ScrollView>
 
         {/* Dots are purely decorative — position announced by announceForAccessibility

@@ -13,6 +13,37 @@ import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-nati
 import type { Achievement, AchievementCategory } from '@/lib/achievements';
 import { font, radius, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
+import {
+  Award,
+  CircleCheck,
+  Flame,
+  FolderOpen,
+  Footprints,
+  Gem,
+  Landmark,
+  PartyPopper,
+  PenLine,
+  Sparkles,
+  Star,
+  Trophy,
+  X,
+} from 'lucide-react-native';
+
+// Achievement icon name (from achievements.ts) → Lucide component.
+type IconCmp = React.ComponentType<{ size?: number; color?: string; strokeWidth?: number }>;
+const ACH_ICON: Record<string, IconCmp> = {
+  footprints: Footprints,
+  'pen-line': PenLine,
+  'folder-open': FolderOpen,
+  'circle-check': CircleCheck,
+  trophy: Trophy,
+  landmark: Landmark,
+  'party-popper': PartyPopper,
+  star: Star,
+  sparkles: Sparkles,
+  gem: Gem,
+  flame: Flame,
+};
 
 interface Props {
   visible: boolean;
@@ -174,13 +205,13 @@ export default function AchievementsModal({ visible, onClose, achievements }: Pr
               accessibilityRole="button"
               accessibilityLabel="Close achievements"
             >
-              <Text
-                style={styles.closeBtnText}
+              <X
+                size={18}
+                color={color.text}
+                strokeWidth={2.2}
                 accessibilityElementsHidden
                 importantForAccessibility="no-hide-descendants"
-              >
-                ✕
-              </Text>
+              />
             </Pressable>
           </View>
 
@@ -219,13 +250,12 @@ function AchievementRow({ achievement: a }: { achievement: Achievement }) {
       <View
         style={[styles.iconCircle, a.earned ? styles.iconCircleEarned : styles.iconCircleLocked]}
       >
-        <Text
-          style={[styles.icon, !a.earned && styles.iconDimmed]}
-          accessibilityElementsHidden
-          importantForAccessibility="no-hide-descendants"
-        >
-          {a.icon}
-        </Text>
+        {(() => {
+          const Icon = ACH_ICON[a.icon] ?? Award;
+          return (
+            <Icon size={22} color={a.earned ? color.goldDark : color.textSubtle} strokeWidth={2.2} />
+          );
+        })()}
       </View>
       <View style={styles.rowText}>
         <Text style={styles.rowTitle}>{a.title}</Text>

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Pressable, View, StyleSheet } from 'react-native';
 import { AppText } from '@/components/ui/AppText';
+import { X } from 'lucide-react-native';
 import { useColor } from '@/theme/ThemeContext';
 import { radius, font, spacing } from '@/theme';
 import { relativeTime } from '@/lib/relativeTime';
@@ -54,14 +55,13 @@ export function CommentBubble({ author, text, createdAt, isOwn, onDelete }: Comm
             accessibilityLabel={`Delete ${author}'s comment`}
             accessibilityHint="Permanently removes your comment"
           >
-            <AppText
-              variant="label"
-              style={styles.deleteBtnText}
+            <X
+              size={18}
+              color="rgba(255,255,255,0.75)"
+              strokeWidth={2.2}
               accessibilityElementsHidden
               importantForAccessibility="no-hide-descendants"
-            >
-              ✕
-            </AppText>
+            />
           </Pressable>
         )}
         {!isOwn && (

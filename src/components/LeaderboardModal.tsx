@@ -14,6 +14,8 @@ import { listLeaderboard, type LeaderboardEntry } from '@/lib/flags';
 import { getTier } from '@/lib/reputationTier';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { font, radius, shadow, spacing } from '@/theme';
+import { Medal, X } from 'lucide-react-native';
+import TierIcon from '@/components/TierIcon';
 
 interface Props {
   visible: boolean;
@@ -27,7 +29,8 @@ function ordinalLabel(rank: number): string {
   return `${rank}th`;
 }
 
-const MEDAL: Record<number, string> = { 1: '🥇', 2: '🥈', 3: '🥉' };
+// Medal tint per podium rank — Civic Gold / silver / bronze.
+const MEDAL_COLOR: Record<number, string> = { 1: '#FBB024', 2: '#9AA7B5', 3: '#C0884F' };
 
 export default function LeaderboardModal({ visible, onClose }: Props) {
   const color = useColor();
@@ -82,17 +85,18 @@ export default function LeaderboardModal({ visible, onClose }: Props) {
           role="listitem"
           accessibilityLabel={`${medalPrefix}, ${tier.label} tier, ${name}, ${item.points} points${isCurrentUser ? ', you' : ''}`}
         >
-          <Text style={[styles.rank, rank <= 3 && styles.rankTop]} accessibilityElementsHidden>
-            {MEDAL[rank] ?? ordinalLabel(rank)}
-          </Text>
+          <View
+            style={{ width: 44, alignItems: 'center', justifyContent: 'center' }}
+            accessibilityElementsHidden
+          >
+            {rank <= 3 ? (
+              <Medal size={22} color={MEDAL_COLOR[rank] ?? color.textMuted} strokeWidth={2.2} />
+            ) : (
+              <Text style={[styles.rank, { textAlign: 'center' }]}>{ordinalLabel(rank)}</Text>
+            )}
+          </View>
           <View style={styles.nameWrap}>
-            <Text
-              style={styles.tierEmoji}
-              accessibilityElementsHidden
-              importantForAccessibility="no-hide-descendants"
-            >
-              {tier.emoji}
-            </Text>
+            <TierIcon tier={tier} size={font.size.base} />
             <Text style={[styles.name, isCurrentUser && styles.nameSelf]} numberOfLines={1}>
               {name}
             </Text>
@@ -125,9 +129,7 @@ export default function LeaderboardModal({ visible, onClose }: Props) {
               style={({ pressed }) => [styles.closeBtn, pressed && styles.closeBtnPressed]}
               hitSlop={8}
             >
-              <Text style={styles.closeBtnText} accessibilityElementsHidden>
-                ✕
-              </Text>
+              <X size={18} color={color.textMuted} strokeWidth={2.2} accessibilityElementsHidden />
             </Pressable>
           </View>
           <Text style={styles.subtitle}>Top 10 contributors by points</Text>
