@@ -1384,14 +1384,13 @@ export default function ProfileScreen() {
           <AppText variant="heading" style={styles.sectionLabel} accessibilityRole="header">
             Real-time updates
           </AppText>
-          <View
-            style={styles.toggleRow}
-            accessible
-            accessibilityRole="switch"
-            accessibilityLabel="Show new flags in real-time"
-            accessibilityHint="When on, the map updates automatically as new flags are reported or triaged — no need to refresh manually"
-            accessibilityState={{ checked: realtimeEnabled, busy: savingRealtime }}
-          >
+          {/* WCAG 4.1.2/2.1.1: the Switch itself carries the accessible
+              identity (role + label + state) and stays in the a11y tree, so
+              VoiceOver/TalkBack can operate it. The previous version put
+              role="switch" on the wrapper View (which has no press handler)
+              and hid the Switch — so the control announced correctly but
+              could not actually be toggled. Mirrors NotificationPrefsModal. */}
+          <View style={styles.toggleRow}>
             <View style={styles.toggleTextWrap}>
               <AppText variant="label" style={styles.toggleLabel}>Show new flags in real-time</AppText>
               <AppText variant="body" style={styles.toggleHint}>The map refreshes on its own as flags are added or triaged — no pulling to refresh.</AppText>
@@ -1400,8 +1399,10 @@ export default function ProfileScreen() {
               value={realtimeEnabled}
               onValueChange={handleRealtimeToggle}
               disabled={savingRealtime}
-              accessibilityElementsHidden
-              importantForAccessibility="no-hide-descendants"
+              accessibilityRole="switch"
+              accessibilityLabel="Show new flags in real-time"
+              accessibilityHint="When on, the map updates automatically as new flags are reported or triaged — no need to refresh manually"
+              accessibilityState={{ checked: realtimeEnabled, busy: savingRealtime, disabled: savingRealtime }}
               trackColor={{ false: '#ccc', true: color.brand }}
               thumbColor={
                 Platform.OS === 'android' ? (realtimeEnabled ? color.brand : '#f4f3f4') : undefined
