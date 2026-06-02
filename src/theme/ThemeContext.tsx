@@ -12,8 +12,9 @@
  *   const color = useColor();
  */
 
-import React, { createContext, useContext } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import { useColorScheme } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { color as lightColor } from '../theme';
 
 // -------------------------------------------------------------------------
@@ -125,18 +126,63 @@ const darkColor = {
 
 export type ColorTheme = typeof lightColor;
 
+/** Appearance preference. 'system' follows the OS setting (the default). */
+export type ThemeMode = 'light' | 'dark' | 'system';
+
+const APPEARANCE_KEY = 'accessmap:appearance';
+
 export const ThemeContext = createContext<ColorTheme>(lightColor);
 
+interface ThemeModeValue {
+  mode: ThemeMode;
+  setMode: (mode: ThemeMode) => void;
+}
+
+const ThemeModeContext = createContext<ThemeModeValue>({ mode: 'system', setMode: () => {} });
+
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const scheme = useColorScheme();
-  const isDark = scheme === 'dark';
+  const systemScheme = useColorScheme();
+  const [mode, setModeState] = useState<ThemeMode>('system');
+
+  // Load the saved appearance once. READ failure → keep the 'system' fallback
+  // (it's a preference, not user data — see CLAUDE.md error-handling tiers).
+  useEffect(() => {
+    let active = true;
+    AsyncStorage.getItem(APPEARANCE_KEY)
+      .then((saved) => {
+        if (active && (saved === 'light' || saved === 'dark' || saved === 'system')) {
+          setModeState(saved);
+        }
+      })
+      .catch((e) => console.warn('[theme] load appearance failed:', e));
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const setMode = useCallback((next: ThemeMode) => {
+    setModeState(next);
+    // WRITE failure → warn + ignore (ephemeral preference, never blocks the UI).
+    AsyncStorage.setItem(APPEARANCE_KEY, next).catch((e) =>
+      console.warn('[theme] save appearance failed:', e),
+    );
+  }, []);
+
+  const effective = mode === 'system' ? systemScheme : mode;
+  const value = effective === 'dark' ? darkColor : lightColor;
+
   return (
-    <ThemeContext.Provider value={isDark ? darkColor : lightColor}>
-      {children}
-    </ThemeContext.Provider>
+    <ThemeModeContext.Provider value={{ mode, setMode }}>
+      <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
+    </ThemeModeContext.Provider>
   );
 }
 
 export function useColor(): ColorTheme {
   return useContext(ThemeContext);
+}
+
+/** Read + set the appearance preference (light / dark / system). */
+export function useThemeMode(): ThemeModeValue {
+  return useContext(ThemeModeContext);
 }
