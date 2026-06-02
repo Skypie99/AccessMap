@@ -32,6 +32,7 @@ import {
   Shapes,
   SlidersHorizontal,
   Star,
+  WifiOff,
 } from 'lucide-react-native';
 import {
   CATEGORY_LABELS,
@@ -149,6 +150,7 @@ export default function MapScreen() {
     refreshIfStale: refreshFlagsIfStale,
     setStatuses,
     setViewportGate,
+    isOfflineCache,
   } = useFlags();
 
   const [reportOpen, setReportOpen] = useState(false);
@@ -1107,6 +1109,22 @@ export default function MapScreen() {
           </View>
         </View>
 
+        {/* Offline notice — parity with TasksScreen. The map still shows the
+            last cached flags; this tells the user why they may be stale. */}
+        {isOfflineCache && (
+          <View
+            style={styles.offlineBanner}
+            accessibilityRole="text"
+            accessibilityLiveRegion="polite"
+            accessibilityLabel="Showing saved offline data. Connect to the internet to refresh the map."
+          >
+            <WifiOff size={16} color={color.warningFg} strokeWidth={2} />
+            <AppText variant="body" style={styles.offlineBannerText}>
+              Showing saved data — connect for the latest
+            </AppText>
+          </View>
+        )}
+
         {/* Saved Places chip row — shown only when signed in. Renders
             quick-jump chips for each saved place plus a trailing "★ +"
             chip that opens the manage modal (and acts as the first-add
@@ -1915,6 +1933,27 @@ export default function MapScreen() {
 
 const makeStyles = (color: ColorTheme) =>
   StyleSheet.create({
+    // Offline data notice — warning tokens, distinct from the red error
+    // banner. Mirrors the TasksScreen offline banner so both screens read the
+    // same when showing cached data.
+    offlineBanner: {
+      marginHorizontal: spacing.lg,
+      marginTop: spacing.sm,
+      backgroundColor: color.warningBg,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.md,
+      borderRadius: radius.lg,
+      flexDirection: 'row',
+      gap: spacing.sm,
+      alignItems: 'center',
+      minHeight: 40,
+    },
+    offlineBannerText: {
+      color: color.warningFg,
+      fontSize: font.size.sm,
+      fontWeight: font.weight.semibold,
+      flex: 1,
+    },
     container: { flex: 1 },
     overlay: {
       ...StyleSheet.absoluteFillObject,
