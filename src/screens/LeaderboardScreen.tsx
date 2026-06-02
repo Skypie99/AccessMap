@@ -157,6 +157,7 @@ const LeaderboardRow = React.memo(function LeaderboardRow({
         rank === 3 && { backgroundColor: color.tierBronzeBg },
         isCurrentUser && styles.rowHighlight,
       ]}
+      accessible
       role="listitem"
       accessibilityLabel={a11yLabel}
     >

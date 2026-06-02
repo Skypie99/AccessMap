@@ -314,7 +314,7 @@ export default function MyWatchedModal({ visible, onClose, onSelectFlag, onViewO
             </View>
           ) : displayFlags.length === 0 ? (
             <View style={styles.center}>
-              <Text style={styles.emptyIcon} accessibilityElementsHidden>🔎</Text>
+              <Text style={styles.emptyIcon} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">🔎</Text>
               <Text style={styles.emptyTitle}>No matches</Text>
               <Text style={styles.emptySubtitle}>Try a different search term or status filter.</Text>
             </View>

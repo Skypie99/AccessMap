@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
+  AccessibilityInfo,
   ActivityIndicator,
   Alert,
   Keyboard,
@@ -422,6 +423,9 @@ export default function FlagDetailModal({
       await addComment(trimmed);
       setCommentText('');
       Keyboard.dismiss();
+      // WCAG 4.1.3: the new comment bubble appears silently for screen-reader
+      // users — announce so they know the post landed.
+      AccessibilityInfo.announceForAccessibility('Comment posted');
     } catch (e) {
       Alert.alert('Could not post comment', errorMessage(e));
     } finally {
@@ -497,9 +501,10 @@ export default function FlagDetailModal({
       } else {
         // Not yet — show inline message, keep modal open.
         const remaining = threshold - newCount;
-        setReopenMessage(
-          `Reopen request noted. ${remaining} more ${remaining === 1 ? 'request' : 'requests'} needed.`,
-        );
+        const noted = `Reopen request noted. ${remaining} more ${remaining === 1 ? 'request' : 'requests'} needed.`;
+        setReopenMessage(noted);
+        // WCAG 4.1.3: the inline confirmation is otherwise silent for AT users.
+        AccessibilityInfo.announceForAccessibility(noted);
         setShowReopenForm(false);
         setReopenText('');
       }
@@ -1032,9 +1037,14 @@ export default function FlagDetailModal({
                                   true,
                                 ).then((ok) => {
                                   if (!ok) return;
-                                  void deleteCommentById(c.id).catch((e: unknown) => {
-                                    Alert.alert('Could not delete comment', errorMessage(e));
-                                  });
+                                  void deleteCommentById(c.id)
+                                    // WCAG 4.1.3: the bubble vanishes silently otherwise.
+                                    .then(() =>
+                                      AccessibilityInfo.announceForAccessibility('Comment deleted'),
+                                    )
+                                    .catch((e: unknown) => {
+                                      Alert.alert('Could not delete comment', errorMessage(e));
+                                    });
                                 });
                               }
                             : undefined

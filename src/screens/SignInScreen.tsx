@@ -50,7 +50,10 @@ export default function SignInScreen({
         : await signUpWithEmail(cleanEmail, password);
     setBusy(false);
     if (error) {
-      Alert.alert("Couldn't sign you in", error.message);
+      Alert.alert(
+        mode === 'in' ? "Couldn't sign you in" : "Couldn't create your account",
+        error.message,
+      );
       return;
     }
     if (mode === 'in') {
@@ -104,7 +107,7 @@ export default function SignInScreen({
           <AppText variant="label" style={styles.inputLabel}>Email address</AppText>
           <TextInput
             placeholder="you@example.com"
-            placeholderTextColor="rgba(255,255,255,0.35)"
+            placeholderTextColor="rgba(255,255,255,0.5)"
             autoCapitalize="none"
             keyboardType="email-address"
             autoComplete="email"
@@ -122,7 +125,7 @@ export default function SignInScreen({
           <AppText variant="label" style={[styles.inputLabel, styles.inputLabelStacked]}>Password</AppText>
           <TextInput
             placeholder="At least 6 characters"
-            placeholderTextColor="rgba(255,255,255,0.35)"
+            placeholderTextColor="rgba(255,255,255,0.5)"
             secureTextEntry
             autoComplete="password"
             textContentType="password"
