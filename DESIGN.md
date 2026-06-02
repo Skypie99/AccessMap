@@ -131,10 +131,12 @@ text (titles, banner messages should allow at least 2 lines).
 |---|---|---|
 | `xs` | 4 | inline tags |
 | `sm` | 6 | tight chips |
-| `md` | 8 | **default for cards and buttons** |
-| `lg` | 12 | panels, modal sheets |
-| `xl` | 16 | full-screen sheet headers |
+| `md` | 12 | **default for inputs and buttons** |
+| `lg` | 16 | cards, floating panels |
+| `xl` | 20 | sheet headers, hero cards |
+| `sheet` | 28 | bottom-sheet top corners |
 | `full` | 999 | pills, FABs, round icon buttons |
+| `circle` | 9999 | perfectly circular (avatars) |
 
 ---
 
@@ -190,13 +192,52 @@ inside a wrapper that does.
 - Use the `errorBanner` in `MapScreen.tsx` as the canonical example.
 - See `LEARNINGS.md` (2026-05-23) for the cross-platform live-region recipe.
 
+### UI primitives (`src/components/ui/`)
+Prefer these over re-rolling layout. All are themed via `useColor()` and a11y-wired:
+- **`AppText`** — the type primitive. Always use it (not raw `<Text>`) so the brand
+  fonts render. Picks the family by `variant`; derives tight tracking from `size` for
+  display/heading; caps Dynamic Type per variant (`body`/`bodyMedium` stay uncapped so
+  essential text always scales — WCAG 1.4.4).
+- **`Button`** — primary / secondary / ghost × sm / md / lg; press-scale spring (reduced-motion-gated).
+- **`Input`** — themed single-line field: default / focus / error / disabled, optional
+  label / helper / error / left-icon / right-slot, ≥44pt, error as a polite live region.
+- **`Card`, `Pill`, `PointsChip`** — surface, chip, and gamification-chip primitives.
+- **`Skeleton` / `SkeletonRow` / `SkeletonCard`** — content-shaped loading placeholders
+  with a reduced-motion-gated shimmer. Prefer over a bare `ActivityIndicator` for
+  content that has a shape.
+- **`Sheet` / `SheetHeader`** — bottom-sheet scaffold (scrim + rounded card + drag handle
+  + titled, labelled close). Reduced-motion aware. Adopt for new modals.
+
+### Haptics
+`@/lib/haptics` — `hapticSelection` / `hapticImpact` / `hapticNotify`. No-ops on web and
+if the module is unavailable. Use a light `hapticSelection()` on key picks (category,
+severity, segmented controls). The OS-level haptic setting is honored natively — do
+**not** gate on reduce-motion (a separate concern).
+
+### Appearance (dark mode)
+The app ships light + dark palettes (`ThemeContext`) and follows the OS by default. A
+**Light / Dark / System** control in Settings (`useThemeMode()`) lets users override; the
+choice persists in AsyncStorage. Always consume colors via `useColor()` so both palettes
+work. Fixed-background exceptions (do NOT theme): the dark sign-in splash, the always-dark
+nav chrome, and the always-light map overlays (heatmap legend).
+
 ---
 
 ## 8. Motion
 
-Currently minimal — modal slide-in/out, callout reveal. Any future motion
-**must respect Reduce Motion** (`AccessibilityInfo.isReduceMotionEnabled()`).
-Default duration ≤ 200ms; cross-fade as fallback when motion is reduced.
+Motion tokens live in `theme.ts` as `motion` (added 2026-06-01):
+
+| Group | Tokens | Use |
+|---|---|---|
+| `motion.duration` | `instant 0` / `fast 120` / `base 180` / `slow 320` (ms) | never exceed `base` for micro-interactions |
+| `motion.easing` | `standard` / `decelerate` / `accelerate` (cubic-bezier control points) | build with `Easing.bezier(...motion.easing.standard)` at the call site |
+| `motion.spring` | `press` / `pressOut` / `sheet` / `drawer` | spread into `Animated.spring(...)`; set `useNativeDriver` per call |
+
+Rules:
+- **Always gate non-trivial motion** behind `useReducedMotion()` (`@/lib/accessibility`) —
+  snap to the end state when reduced (WCAG 2.3.3). See `Button`, `HamburgerDrawer`, `Skeleton`.
+- Default duration ≤ 200ms; the bottom-sheet slide and drawer are the only longer moves.
+- `Sheet` sets `animationType="none"` under reduced motion automatically.
 
 ---
 
@@ -211,6 +252,14 @@ what it is. Append-only.
   with WCAG-verified pairings. Set `font.size.base = 14` since 14 (×25) and
   13 (×24) dominate body copy. Severity ramp kept identical to existing
   `severityColor()` so no behavior changed.
+- **2026-06-01 — UI/UX polish pass.** Completed + enforced the system: added
+  motion tokens, `font.tracking`, and medal/anon color tokens; gave `AppText`
+  managed Dynamic Type (per-variant caps); built the `Input`, `Skeleton`, and
+  `Sheet`/`SheetHeader` primitives; installed `expo-haptics` + a safe wrapper;
+  added the Light/Dark/System appearance toggle; fixed the tab bar's bottom
+  safe-area inset and reduced-motion gaps (Button, HamburgerDrawer). On branch
+  `ui-polish/auto-2026-06-01` (not merged). Why: take the app from functional to
+  premium — where "premium" and "accessible" are the same goal.
 
 ---
 
@@ -241,6 +290,11 @@ The product UI uses **SVG icons only — no emoji, no Unicode-glyph icons.**
 - ✅ Done: dedicated category icon set — now `CategoryIcon` (SVG, not emoji).
 - ✅ Done: dark-mode token layer — `src/theme/ThemeContext.tsx`.
 - ✅ Done: `severityColor()` now sources from `theme.severity` (one ramp).
+- ✅ Done (2026-06-01): motion tokens, Dynamic Type, dark-mode toggle, and the
+  `Input` / `Skeleton` / `Sheet` primitives.
+- Adopt `Input` across the remaining bespoke fields (Profile display name, Tasks
+  search); adopt `Sheet`/`SheetHeader` across the remaining ~18 modals (started
+  with `ChangelogModal`).
 - Native map pin: render the white category glyph inside the marker (needs
   on-device verification of the `react-native-maps` custom-marker view).
 - Refresh §1–§7 sample values if they drift from `src/theme.ts` (the tokens in
