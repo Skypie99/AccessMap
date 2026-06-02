@@ -2,8 +2,8 @@
 
 **Date:** 2026-06-01
 **Branch:** `ui-polish/auto-2026-06-01` (off `main` @ `4aea25c`) — **NOT merged**
-**Scope:** whole-app premium polish — 17 commits, 25 files, +1021 / −216
-**Status:** `npm run typecheck` clean · **1553 Jest tests green** (verified across repeated parallel + serial runs) · app boots clean on web (0 console errors)
+**Scope:** whole-app premium polish + lint-gate fix — 19 commits, 27 files, +1254 / −512
+**Status:** `npm run typecheck` clean · `npm run lint` passes (0 errors) · **1553 Jest tests green** (serial + parallel) · app boots clean on web (0 console errors)
 
 ---
 
@@ -11,9 +11,9 @@
 
 1. **Merge when ready.** Review `git diff main..ui-polish/auto-2026-06-01`, then merge to `main` (only you merge main). Typecheck + tests are green; the branch is local-only, not pushed.
 
-2. **Delete the stale `a11y/phase5-deep-2026-05-31` branch — do NOT merge it.** Pre-flight found it is *not* an ancestor of main, yet main already contains its Phase-5 a11y fixes. Diffing it shows merging it would **revert the entire brand rebrand** (137 files, −13,843 lines: CategoryIcon, TierIcon, Lucide work, theme). The old memory note "merge deep branch first" is now actively dangerous. Recommend pruning the branch.
+2. **✅ DONE — stale `a11y/phase5-deep-2026-05-31` branch deleted** (local + origin), on your go-ahead. It was *not* an ancestor of main yet main already contained its fixes; merging it would have **reverted the entire brand rebrand** (137 files, −13,843 lines). Recoverable from SHA `86e3fbf` if ever needed. (Also pruned 7 stale `/tmp` worktree registrations.)
 
-3. **The lint gate is broken on main (pre-existing, not from this pass).** `npm run lint` fails: ESLint **10.4.1** is installed but the config references `react-hooks/set-state-in-effect`, a rule the installed plugin doesn't have. This means CI lint + the lint half of `test:ci` are red regardless of code. I used **typecheck + Jest** as the gate throughout. → A Gary/Rory tooling fix (pin ESLint 9, or align the `eslint-plugin-react-hooks` version/rule).
+3. **✅ DONE — lint gate fixed** (was pre-existing-broken on main). ESLint had been bumped to **10.4.1**, which removed `context.getFilename()` that the installed eslint-plugin-react / react-hooks (via eslint-config-expo ~10) still call → `npm run lint` crashed on every file. Fixed by pinning ESLint back to `^9.0.0` (9.39.4) + removing two config rules that only exist in react-hooks v6+ (`set-state-in-effect`, `globals`). **`npm run lint` now passes: 0 errors** (259 pre-existing advisory warnings, non-blocking). Folded into this branch, so the merge restores green lint.
 
 4. **One new dependency, per your approval:** `expo-haptics ~15.0.8` (Expo-official, SDK 54). Wrapped in `src/lib/haptics.ts` (no-ops on web / if unavailable).
 
@@ -84,3 +84,5 @@ Each commit is independently revertible. Verified on web (Expo) — app boots, n
 - **Bottom safe-area** (tab bar) — a notch/home-indicator device or simulator.
 - **Dynamic Type at large sizes** — simulator Accessibility settings.
 - **Dark-mode toggle** — flip Light/Dark/System in Settings on device.
+
+**Known pre-existing test flake (not from this pass):** the 5 `ReportFlagModal` "submit routing" tests have an unwrapped-async race (`act()` warning) that can intermittently fail ~1-in-several **parallel** runs. **Serial (`jest --runInBand`) is 100% green**, and so is the typical parallel run. It's independent of this branch (reproduces on main; in-test the haptic call is a mocked no-op). Recommend Gary harden them with `await waitFor(...)`; until then, a re-run or `--runInBand` clears it. Don't let it block the merge.
