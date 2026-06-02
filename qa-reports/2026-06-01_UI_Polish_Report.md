@@ -2,7 +2,7 @@
 
 **Date:** 2026-06-01
 **Branch:** `ui-polish/auto-2026-06-01` (off `main` @ `4aea25c`) — **NOT merged**
-**Scope:** whole-app premium polish + lint-gate fix — 19 commits, 27 files, +1254 / −512
+**Scope:** whole-app premium polish + lint-gate fix + post-review hardening — 24 commits, 28 files, +1307 / −557
 **Status:** `npm run typecheck` clean · `npm run lint` passes (0 errors) · **1553 Jest tests green** (serial + parallel) · app boots clean on web (0 console errors)
 
 ---
@@ -53,6 +53,14 @@ The brand rebrand already shipped a strong token system, so this pass **complete
 - **ChangelogModal** — *after:* adopted the new `Sheet` primitive (drag handle + AppText title) as the canonical example.
 - **StatusBadge** — *after:* themed status tokens (now correct in dark mode); sub-floor `fontSize:10`→11.
 
+## Post-review hardening (done after your go-ahead — "clean + buckled down for testers")
+
+- ✅ **Test flake eliminated** — the 5 ReportFlagModal submit tests had a pre-existing parallel-only async race; an `afterEach` that drains the tail within `act` makes them deterministic (verified 5/5 + 3/3 parallel runs green).
+- ✅ **SettingsScreen** — all row + section text → AppText (brand fonts render there now too).
+- ✅ **TasksScreen** — initial load uses content-shaped `Skeleton` cards (not a bare spinner); haptic on multi-select.
+- ✅ **`Input` primitive adopted** — ProfileScreen display-name field (first real adoption; no longer an unused export).
+- ✅ **Stale branch deleted + lint gate fixed** (Decisions #2 + #3).
+
 ## Accessibility fixes (polish == accessibility)
 
 - **Reduced motion (WCAG 2.3.3):** gated `Button` press-scale and `HamburgerDrawer` slide/fade (both ignored it before).
@@ -62,20 +70,18 @@ The brand rebrand already shipped a strong token system, so this pass **complete
 - **Dark-mode contrast:** StatusBadge corrected; HeatmapLegend intentionally left light (it overlays the always-light map — theming it would *regress* contrast).
 - **Input a11y:** error surfaced via a polite live region + `accessibilityHint`.
 
-## Proposed, not done (capacity / follow-on)
+## Proposed, not done (deliberately deferred — low-risk follow-ons)
 
-- **Adopt `Input`** across the remaining bespoke single-line fields (Profile display name, Tasks search). Built + validated; not yet wired (SignIn is bespoke-dark, the Report description is multiline).
-- **Roll `Sheet`/`SheetHeader`** to the other ~18 modals (started with ChangelogModal).
-- **TasksScreen** is already the best-tokenized screen; minor follow-ons: skeleton loaders + haptic on multi-select.
-- **ProfileScreen** row differentiation (gamification vs utility rows look alike).
-- **Native map pin** in-glyph (needs on-device verification — pre-existing item).
-- **Fix the broken lint toolchain** (Decision #3).
+- **Roll `Sheet`/`SheetHeader`** to the remaining ~18 modals (pattern proven in ChangelogModal). Each is a small per-modal refactor — deferred to avoid churn right before testers.
+- **ProfileScreen row differentiation** (gamification vs utility rows look alike) — a visual nicety; skipped to avoid restructuring the hero screen (unverifiable on web) right before testers.
+- **Lint warnings:** 259 pre-existing advisory warnings remain (0 errors). 132 are `--fix`-able — recommend a focused cleanup commit, kept off this branch so a large mechanical diff doesn't obscure the polish.
+- **Native map pin** in-glyph — needs on-device verification (pre-existing item).
 
 ## How to review
 
 ```
-git diff main..ui-polish/auto-2026-06-01            # full diff (25 files)
-git log  --oneline main..ui-polish/auto-2026-06-01  # 17 commits, one logical change each
+git diff main..ui-polish/auto-2026-06-01            # full diff (28 files)
+git log  --oneline main..ui-polish/auto-2026-06-01  # 24 commits, one logical change each
 ```
 Each commit is independently revertible. Verified on web (Expo) — app boots, no console errors, brand fonts + cards render cleanly.
 
