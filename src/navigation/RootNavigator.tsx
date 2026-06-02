@@ -20,6 +20,7 @@ import TasksScreen from '@/screens/TasksScreen';
 import ProfileScreen from '@/screens/ProfileScreen';
 import SettingsScreen from '@/screens/SettingsScreen';
 import AdminScreen from '@/screens/AdminScreen';
+import ErrorBoundary from '@/components/ErrorBoundary';
 
 export type RootTabParamList = {
   Map:
@@ -158,6 +159,10 @@ function NavInner({ initialRouteName }: { initialRouteName: keyof RootTabParamLi
   return (
     <Tab.Navigator
       initialRouteName={initialRouteName}
+      // Per-screen safety net: a render crash in one tab shows an in-place
+      // "Try again" fallback instead of bubbling to the app-level boundary and
+      // blanking the whole app. The tab bar and other tabs stay usable.
+      screenLayout={({ children }) => <ErrorBoundary variant="screen">{children}</ErrorBoundary>}
       screenOptions={{
         headerStyle: {
           backgroundColor: '#0d1829',

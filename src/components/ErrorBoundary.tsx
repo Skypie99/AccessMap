@@ -22,28 +22,50 @@ import { type ColorTheme, useColor } from '@/theme/ThemeContext';
  */
 interface Props {
   children: React.ReactNode;
+  /**
+   * 'app' (default) — full-screen top-level fallback ("the app stopped").
+   * 'screen' — in-place fallback for a single screen/section, so the rest of
+   * the app (tab bar, other tabs) stays usable when one screen's render throws.
+   */
+  variant?: 'app' | 'screen';
+  /** Optional section name shown in the 'screen' fallback copy (e.g. "Map"). */
+  label?: string;
 }
 
 interface State {
   error: Error | null;
 }
 
-function ErrorFallback({ onReset }: { onReset: () => void }) {
+function ErrorFallback({
+  onReset,
+  variant = 'app',
+  label,
+}: {
+  onReset: () => void;
+  variant?: 'app' | 'screen';
+  label?: string;
+}) {
   const color = useColor();
   const styles = makeStyles(color);
+  const isScreen = variant === 'screen';
+  const title = isScreen
+    ? label
+      ? `${label} ran into a problem`
+      : 'This section ran into a problem'
+    : 'Something went wrong';
+  const body = isScreen
+    ? 'You can try again, or switch to another tab and come back.'
+    : 'The app hit an unexpected problem and stopped. Try again, or close and reopen the app if it keeps happening.';
   return (
     <View style={styles.container} accessibilityRole="alert">
-      <Text style={styles.title}>Something went wrong</Text>
-      <Text style={styles.body}>
-        The app hit an unexpected problem and stopped. Try again, or close and reopen the app if
-        it keeps happening.
-      </Text>
+      <Text style={styles.title}>{title}</Text>
+      <Text style={styles.body}>{body}</Text>
       <Pressable
         onPress={onReset}
         style={({ pressed }) => [styles.btn, pressed && styles.btnPressed]}
         accessibilityRole="button"
         accessibilityLabel="Try again"
-        accessibilityHint="Resets the app screen after an error"
+        accessibilityHint="Resets the screen after an error"
       >
         <Text style={styles.btnText}>Try again</Text>
       </Pressable>
@@ -61,7 +83,11 @@ export default class ErrorBoundary extends React.Component<Props, State> {
   componentDidCatch(error: Error, info: React.ErrorInfo) {
     // Best-effort logging; safe to ignore if console isn't around.
     // eslint-disable-next-line no-console
-    console.error('[ErrorBoundary] uncaught render error:', error, info);
+    console.error(
+      `[ErrorBoundary${this.props.label ? `:${this.props.label}` : ''}] uncaught render error:`,
+      error,
+      info,
+    );
   }
 
   handleReset = () => {
@@ -70,7 +96,13 @@ export default class ErrorBoundary extends React.Component<Props, State> {
 
   render() {
     if (this.state.error) {
-      return <ErrorFallback onReset={this.handleReset} />;
+      return (
+        <ErrorFallback
+          onReset={this.handleReset}
+          variant={this.props.variant}
+          label={this.props.label}
+        />
+      );
     }
     return this.props.children;
   }
