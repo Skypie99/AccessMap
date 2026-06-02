@@ -2,7 +2,7 @@
   "project": "accessmap",
   "last_updated": "2026-06-01",
   "tasks": [
-    { "id": "sky-merge-brand-rebrand", "title": "Merge feat/brand-rebrand-design-system onto main", "status": "ready", "owner": "Sky", "notes": "Whole-app Claude Design brand, 12 commits, typecheck + 1553 tests green, verified on web. Not pushed — Sky merges. All icons Lucide/SVG, no emoji; web teardrop pins; SignIn kept dark." },
+    { "id": "sky-merge-brand-rebrand", "title": "Merge feat/brand-rebrand-design-system onto main", "status": "done", "owner": "Sky", "notes": "DONE 2026-06-01: merged into main via no-ff merge b60f37c (13 commits) on Sky's authorization. typecheck + 1553 tests green on merged main. Local only — not pushed to origin yet." },
     { "id": "team-native-pin-glyph", "title": "Native map pin: render white category glyph inside the marker", "status": "pending", "owner": "Shamus/Dani", "notes": "Web pin already has the full teardrop+glyph. Native keeps colored pinColor marker; adding the in-pin glyph needs on-device verification (react-native-maps custom markers + tracksViewChanges). Do at next TestFlight build." },
     { "id": "sky-asc-app-id", "title": "Get ASC App ID from App Store Connect → Rory slots into eas.json", "status": "blocked", "owner": "Sky", "notes": "App Store Connect → App → General → App Information → Apple ID (9-10 digits). Only TestFlight blocker. ascAppId ≠ Provider ID (128969691)." },
     { "id": "sky-native-rebuild", "title": "Run fresh native build after plugin fix 01362aa", "status": "pending", "owner": "Sky", "notes": "npx expo run:ios or eas build --profile development. Sentry + image-picker plugins need native link." },

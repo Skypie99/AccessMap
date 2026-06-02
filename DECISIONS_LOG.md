@@ -4,6 +4,9 @@ Structural decisions, append-only. New entries at the top. Do NOT re-litigate en
 
 ---
 
+## 2026-06-01 — Brand Rebrand Merged to Main [BRAND-REBRAND-MERGED]
+On Sky's explicit in-session authorization (overriding the standing "only Sky merges main" rule per the authority order: Sky's intent > Constitution), `feat/brand-rebrand-design-system` was merged into main via no-ff merge commit `b60f37c` (13 commits). typecheck clean + 1553 jest tests green on merged main. **Local only — not pushed to origin** (push withheld as an external side effect, pending Sky's go-ahead). Supersedes the "NOT pushed — Sky merges" status in [BRAND-REBRAND-COMPLETE] below. — 2026-06-01
+
 ## 2026-06-01 — Claude Design Brand Rebrand Complete [BRAND-REBRAND-COMPLETE]
 Whole-app Claude Design brand applied on `feat/brand-rebrand-design-system` (12 commits, off main, NOT pushed — Sky merges). typecheck clean, 1553 tests green, verified live on web. Real LogoMark + CategoryIcon + TierIcon (SVG), severityColor synced to theme ramp, ALL emoji + Unicode glyph-icons → Lucide across ~35 files, web teardrop map pins, splash + DESIGN.md §10. Key discovery: main already had ~70% of the brand (tokens/fonts/gold/assets) — the bundle and main derive from the same 2026-05-30 brief. — 2026-06-01
 

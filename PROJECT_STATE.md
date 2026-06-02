@@ -4,11 +4,12 @@
 
 ---
 
-## Brand Rebrand — COMPLETE ✅ (pending Sky merge — 2026-06-01)
+## Brand Rebrand — ✅ MERGED to main 2026-06-01 (merge commit b60f37c)
 
-Claude Design brand applied across the **whole app** on `feat/brand-rebrand-design-system`
-(12 commits, off main, NOT pushed — Sky merges). typecheck clean · 1553 tests green ·
-verified live on web (logo, category icons, Lucide action bar, severity ramp, teardrop pins).
+Claude Design brand applied across the **whole app**, merged from `feat/brand-rebrand-design-system`
+into main on 2026-06-01 (13 commits via no-ff merge `b60f37c`; **local only — not yet pushed to origin**).
+typecheck clean · 1553 tests green on merged main · verified live on web
+(logo, category icons, Lucide action bar, severity ramp, teardrop pins).
 
 - Real `LogoMark` (pin+figure SVG) + finished `CategoryIcon` (bespoke SVGs) + new `TierIcon`.
 - `severityColor()` synced to the theme yellow→red ramp (off-brand bug fixed).
@@ -103,7 +104,7 @@ All Phase 4 work is merged to main and shipped.
 |---|---|---|
 | feat/phase5-anon-reporting | Anon reporting + admin moderation | QA pass ✅ → merge |
 | feat/phase5-trust-score | Community trust score | Shamus building 🔄 |
-| feat/brand-rebrand-design-system | Whole-app Claude Design brand (12 commits) | typecheck + 1553 tests ✅ → Sky merge |
+| feat/brand-rebrand-design-system | Whole-app Claude Design brand (13 commits) | ✅ MERGED to main 2026-06-01 (b60f37c) |
 
 ---
 
