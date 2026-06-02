@@ -183,8 +183,8 @@ export default function NearbyFlagsModal({
       presentationStyle="pageSheet"
     >
       <SafeAreaView style={styles.screen} accessibilityViewIsModal>
-        <View style={styles.header} accessibilityRole="header">
-          <Text style={styles.title}>Nearby flags</Text>
+        <View style={styles.header}>
+          <Text style={styles.title} accessibilityRole="header">Nearby flags</Text>
           <Pressable
             onPress={onClose}
             style={styles.closeBtn}
