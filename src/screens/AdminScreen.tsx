@@ -2,14 +2,13 @@ import React, { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
-  FlatList,
-  Image,
-  Pressable,
+  FlatList,  Pressable,
   RefreshControl,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
+import { RemoteImage } from '@/components/ui/RemoteImage';
 import { useFocusEffect } from '@react-navigation/native';
 import { useIsAdmin } from '@/lib/admin';
 import { confirm } from '@/lib/confirm';
@@ -122,8 +121,8 @@ export default function AdminScreen() {
           </Text>
         ) : null}
         {item.photo_url ? (
-          <Image
-            source={{ uri: item.photo_url }}
+          <RemoteImage
+            uri={item.photo_url}
             style={styles.thumb}
             resizeMode="cover"
             accessibilityLabel={`Photo of ${CATEGORY_LABELS[item.category]} accessibility issue`}

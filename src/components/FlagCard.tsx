@@ -23,7 +23,8 @@
  */
 
 import React, { memo } from 'react';
-import { Image, Pressable, StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
+import { Pressable, StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
+import { RemoteImage } from '@/components/ui/RemoteImage';
 import { AppText } from '@/components/ui/AppText';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { font, radius, shadow, size, spacing } from '@/theme';
@@ -110,8 +111,8 @@ export const FlagCard = memo(function FlagCard({
       {/* Body row: optional thumbnail + description + meta */}
       <View style={styles.body}>
         {!compact && flag.photo_url ? (
-          <Image
-            source={{ uri: flag.photo_url }}
+          <RemoteImage
+            uri={flag.photo_url}
             style={styles.thumb}
             accessibilityElementsHidden
             importantForAccessibility="no"

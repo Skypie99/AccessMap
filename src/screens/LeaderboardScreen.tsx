@@ -1,12 +1,11 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  FlatList,
-  Image,
-  Modal,
+  FlatList,  Modal,
   Pressable,
   StyleSheet,
   View,
 } from 'react-native';
+import { RemoteImage } from '@/components/ui/RemoteImage';
 import { AppText } from '@/components/ui/AppText';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { useAuth } from '@/lib/auth';
@@ -67,13 +66,16 @@ function AvatarCircle({
 
   return (
     <View style={styles.circle}>
-      {uri ? (
-        <Image source={{ uri }} style={styles.img} accessibilityElementsHidden />
-      ) : (
-        <AppText variant="label" style={styles.initials} accessibilityElementsHidden>
-          {initials}
-        </AppText>
-      )}
+      <RemoteImage
+        uri={uri}
+        style={styles.img}
+        accessibilityElementsHidden
+        fallback={
+          <AppText variant="label" style={styles.initials} accessibilityElementsHidden>
+            {initials}
+          </AppText>
+        }
+      />
     </View>
   );
 }

@@ -1,5 +1,6 @@
 import React, { forwardRef, memo, useEffect, useImperativeHandle, useRef } from 'react';
-import { Image, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
+import { RemoteImage } from '@/components/ui/RemoteImage';
 import ClusteredMapView from 'react-native-map-clustering';
 import { Callout, Marker, Polygon, PROVIDER_DEFAULT } from 'react-native-maps';
 import type MapView from 'react-native-maps';
@@ -231,8 +232,8 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(function Pla
                   Severity {f.severity} • {f.status}
                 </Text>
                 {f.photo_url ? (
-                  <Image
-                    source={{ uri: f.photo_url }}
+                  <RemoteImage
+                    uri={f.photo_url}
                     style={styles.calloutPhoto}
                     // Decorative thumbnail inside an already-labeled callout.
                     accessibilityElementsHidden

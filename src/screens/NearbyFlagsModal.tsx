@@ -1,9 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   AccessibilityInfo,
-  FlatList,
-  Image,
-  Modal,
+  FlatList,  Modal,
   Pressable,
   SafeAreaView,
   ScrollView,
@@ -11,6 +9,7 @@ import {
   Text,
   View,
 } from 'react-native';
+import { RemoteImage } from '@/components/ui/RemoteImage';
 import { useReducedMotion } from '@/lib/accessibility';
 import { CATEGORY_LABELS, CATEGORY_ORDER, severityColor } from '@/lib/flags';
 import { relativeTime } from '@/lib/relativeTime';
@@ -151,8 +150,8 @@ export default function NearbyFlagsModal({
           </View>
           <View style={styles.cardBody}>
             {item.photo_url ? (
-              <Image
-                source={{ uri: item.photo_url }}
+              <RemoteImage
+                uri={item.photo_url}
                 style={styles.thumb}
                 accessibilityElementsHidden
                 importantForAccessibility="no"

@@ -1,9 +1,7 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import {
   Dimensions,
-  FlatList,
-  Image,
-  Modal,
+  FlatList,  Modal,
   Pressable,
   ScrollView,
   StatusBar,
@@ -11,6 +9,7 @@ import {
   Text,
   View,
 } from 'react-native';
+import { RemoteImage } from '@/components/ui/RemoteImage';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { font, radius, shadow, spacing } from '@/theme';
 import { Camera, X } from 'lucide-react-native';
@@ -94,8 +93,8 @@ function PhotoGalleryInner({ photos, onAddPhoto, maxPhotos = 5, onRemovePhoto }:
         accessibilityLabel={`Photo ${index + 1} of ${total}`}
         accessibilityHint="Tap to view full screen"
       >
-        <Image
-          source={{ uri: item.url }}
+        <RemoteImage
+          uri={item.url}
           style={styles.thumbImage}
           resizeMode="cover"
           accessibilityElementsHidden
@@ -190,8 +189,8 @@ function PhotoGalleryInner({ photos, onAddPhoto, maxPhotos = 5, onRemovePhoto }:
                 accessible
                 accessibilityLabel={`Photo ${i + 1} of ${photos.length}`}
               >
-                <Image
-                  source={{ uri: photo.url }}
+                <RemoteImage
+                  uri={photo.url}
                   style={styles.lightboxImage}
                   resizeMode="contain"
                   accessibilityElementsHidden

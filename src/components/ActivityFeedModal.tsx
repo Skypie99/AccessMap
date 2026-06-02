@@ -17,9 +17,7 @@
  */
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  ActivityIndicator,
-  Image,
-  Modal,
+  ActivityIndicator,  Modal,
   Pressable,
   RefreshControl,
   SectionList,
@@ -27,6 +25,7 @@ import {
   Text,
   View,
 } from 'react-native';
+import { RemoteImage } from '@/components/ui/RemoteImage';
 import { useAuth } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
 import {
@@ -177,8 +176,8 @@ export default function ActivityFeedModal({ visible, onClose, onSelectFlag, onVi
             </View>
             <View style={styles.rowBody}>
               {item.photo_url ? (
-                <Image
-                  source={{ uri: item.photo_url }}
+                <RemoteImage
+                  uri={item.photo_url}
                   style={styles.thumb}
                   accessibilityElementsHidden
                   importantForAccessibility="no"

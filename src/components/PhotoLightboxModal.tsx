@@ -12,7 +12,8 @@
  * but is deferred to a polish loop to keep the surface tight.
  */
 import React from 'react';
-import { Image, Modal, Pressable, StatusBar, StyleSheet, Text, View } from 'react-native';
+import { Modal, Pressable, StatusBar, StyleSheet, Text, View } from 'react-native';
+import { RemoteImage } from '@/components/ui/RemoteImage';
 import { font, radius, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { X } from 'lucide-react-native';
@@ -54,8 +55,8 @@ export default function PhotoLightboxModal({ visible, photoUrl, caption, onClose
         />
 
         {photoUrl ? (
-          <Image
-            source={{ uri: photoUrl }}
+          <RemoteImage
+            uri={photoUrl}
             style={styles.image}
             resizeMode="contain"
             accessible={true}

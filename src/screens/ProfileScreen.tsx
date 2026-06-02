@@ -3,9 +3,7 @@ import {
   AccessibilityInfo,
   ActivityIndicator,
   Alert,
-  Animated,
-  Image,
-  Modal,
+  Animated,  Modal,
   Platform,
   Pressable,
   RefreshControl,
@@ -15,6 +13,7 @@ import {
   Text,
   View,
 } from 'react-native';
+import { RemoteImage } from '@/components/ui/RemoteImage';
 import * as ImagePicker from 'expo-image-picker';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
@@ -814,25 +813,24 @@ export default function ProfileScreen() {
             accessibilityHint="Opens photo picker to update your profile photo"
             accessibilityState={{ busy: uploadingAvatar }}
           >
-            {profile?.avatar_url ? (
-              <Image
-                source={{ uri: profile.avatar_url }}
-                style={styles.avatarImg}
-                accessibilityElementsHidden
-                importantForAccessibility="no-hide-descendants"
-              />
-            ) : (
-              <View style={styles.avatarPlaceholder}>
-                <AppText
-                  variant="label"
-                  style={styles.avatarInitials}
-                  accessibilityElementsHidden
-                  importantForAccessibility="no-hide-descendants"
-                >
-                  {getInitials(profile?.display_name ?? user.email ?? '')}
-                </AppText>
-              </View>
-            )}
+            <RemoteImage
+              uri={profile?.avatar_url}
+              style={styles.avatarImg}
+              accessibilityElementsHidden
+              importantForAccessibility="no-hide-descendants"
+              fallback={
+                <View style={styles.avatarPlaceholder}>
+                  <AppText
+                    variant="label"
+                    style={styles.avatarInitials}
+                    accessibilityElementsHidden
+                    importantForAccessibility="no-hide-descendants"
+                  >
+                    {getInitials(profile?.display_name ?? user.email ?? '')}
+                  </AppText>
+                </View>
+              }
+            />
             {uploadingAvatar ? (
               <View style={styles.avatarOverlay}>
                 <ActivityIndicator color={color.textOnBrand} size="small" />

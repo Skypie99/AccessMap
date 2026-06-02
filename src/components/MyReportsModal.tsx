@@ -1,15 +1,14 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
-  FlatList,
-  Image,
-  Modal,
+  FlatList,  Modal,
   Pressable,
   RefreshControl,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
+import { RemoteImage } from '@/components/ui/RemoteImage';
 import SearchInputRow from '@/components/SearchInputRow';
 import { useAuth } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
@@ -208,8 +207,8 @@ export default function MyReportsModal({
           </View>
           <View style={styles.rowBody}>
             {item.photo_url ? (
-              <Image
-                source={{ uri: item.photo_url }}
+              <RemoteImage
+                uri={item.photo_url}
                 style={styles.thumb}
                 accessibilityElementsHidden
                 importantForAccessibility="no"
