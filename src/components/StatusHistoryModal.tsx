@@ -32,6 +32,7 @@ import { STATUS_LABELS } from '@/lib/flags';
 import { relativeTime } from '@/lib/relativeTime';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { X } from 'lucide-react-native';
+import { useReducedMotion } from '@/lib/accessibility';
 import {
   formatHistoryEntry,
   listStatusHistory,
@@ -59,6 +60,7 @@ function statusLabel(s: string): string {
 export default function StatusHistoryModal({ visible, flagId, onClose }: Props) {
   const color = useColor();
   const styles = makeStyles(color);
+  const reducedMotion = useReducedMotion();
   const [entries, setEntries] = useState<StatusHistoryEntry[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -97,7 +99,7 @@ export default function StatusHistoryModal({ visible, flagId, onClose }: Props) 
   );
 
   return (
-    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
+    <Modal visible={visible} animationType={reducedMotion ? 'none' : 'slide'} transparent onRequestClose={onClose}>
       <View style={styles.backdrop}>
         <View style={styles.card} accessibilityViewIsModal>
           <View style={styles.headerRow}>
