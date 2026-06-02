@@ -97,13 +97,12 @@ export default function AdminScreen() {
   const renderItem = ({ item }: { item: FlagRow }) => {
     const isBusy = actioningId === item.id;
     const dot = { backgroundColor: severityColor(item.severity) };
-    const cardLabel = `${CATEGORY_LABELS[item.category]}, severity ${item.severity}, ${item.status}. ${item.description ?? 'No description.'}`;
     return (
-      <View
-        style={styles.card}
-        accessible
-        accessibilityLabel={cardLabel}
-      >
+      // WCAG 4.1.2 / 2.1.1: this card must NOT be `accessible` — it contains the
+      // Remove / Dismiss action buttons, and collapsing the subtree into a single
+      // element makes those buttons unreachable for VoiceOver. Each child (text +
+      // buttons) exposes itself instead.
+      <View style={styles.card}>
         <View style={styles.cardHeader}>
           <View
             style={[styles.severityDot, dot]}
@@ -111,6 +110,8 @@ export default function AdminScreen() {
             importantForAccessibility="no-hide-descendants"
           />
           <Text style={styles.categoryText}>{CATEGORY_LABELS[item.category]}</Text>
+          {/* WCAG 1.4.1: severity carried by text, not the colour dot alone. */}
+          <Text style={styles.severityText}>{`Severity ${item.severity}`}</Text>
           <Text style={styles.statusBadge}>{item.status}</Text>
         </View>
         <Text style={styles.coordText}>
@@ -167,6 +168,7 @@ export default function AdminScreen() {
       data={flags}
       keyExtractor={(f) => f.id}
       renderItem={renderItem}
+      accessibilityRole="list"
       contentContainerStyle={flags.length === 0 ? styles.emptyContainer : styles.listContent}
       refreshControl={<RefreshControl refreshing={loading} onRefresh={load} />}
       ListEmptyComponent={
@@ -223,6 +225,11 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     flex: 1,
+  },
+  severityText: {
+    color: '#cdd',
+    fontSize: 12,
+    fontWeight: '600',
   },
   statusBadge: {
     color: '#aab',
