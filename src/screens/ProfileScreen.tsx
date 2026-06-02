@@ -13,7 +13,6 @@ import {
   StyleSheet,
   Switch,
   Text,
-  TextInput,
   View,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
@@ -72,6 +71,7 @@ import LeaderboardScreen from '@/screens/LeaderboardScreen';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { font, radius, shadow, spacing } from '@/theme';
 import { AppText } from '@/components/ui/AppText';
+import { Input } from '@/components/ui/Input';
 import { ArrowDown, ArrowUp, ChevronRight, Flame, MapPin, Pencil, X } from 'lucide-react-native';
 import TierIcon from '@/components/TierIcon';
 import { getTier, pointsToNextTier, REPUTATION_TIERS } from '@/lib/reputationTier';
@@ -1313,13 +1313,12 @@ export default function ProfileScreen() {
             Display name
           </AppText>
           <View style={styles.nameRow}>
-            <TextInput
+            <Input
               value={nameDraft}
               onChangeText={setNameDraft}
               placeholder="Add a display name"
-              placeholderTextColor={color.textMuted}
-              style={styles.nameInput}
-              editable={!savingName}
+              disabled={savingName}
+              containerStyle={styles.nameInputWrap}
               accessibilityLabel="Display name"
               accessibilityHint="The name shown next to your flags. Leave empty to use your email."
               maxLength={60}
@@ -2199,18 +2198,7 @@ const makeStyles = (color: ColorTheme) =>
       fontWeight: '700',
     },
     nameRow: { flexDirection: 'row', gap: 8 },
-    nameInput: {
-      flex: 1,
-      borderWidth: 1,
-      borderColor: color.borderSubtle,
-      backgroundColor: color.surface,
-      borderRadius: radius.md,
-      paddingHorizontal: 12,
-      paddingVertical: 10,
-      fontSize: 15,
-      minHeight: 44,
-      color: color.text,
-    },
+    nameInputWrap: { flex: 1 },
     saveBtn: {
       backgroundColor: color.brand,
       paddingHorizontal: 16,
