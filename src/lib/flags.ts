@@ -556,6 +556,34 @@ export interface CreateFlagResult {
   tagsAccepted: boolean;
 }
 
+const MAX_FLAG_DESCRIPTION_LENGTH = 2000;
+
+/**
+ * Defense-in-depth validation shared by createFlag + createAnonFlag. The DB
+ * CHECK constraints (severity 1-5, category whitelist) and the Report form's
+ * maxLength are the primary guards; validating here too gives a clean
+ * client-side error and protects any future or untyped caller.
+ */
+function assertValidCategoryAndSeverity(category: FlagCategory, severity: FlagSeverity): void {
+  if (!Object.prototype.hasOwnProperty.call(CATEGORY_LABELS, category)) {
+    throw new Error('Please choose a valid category.');
+  }
+  if (!Number.isInteger(severity) || severity < 1 || severity > 5) {
+    throw new Error('Severity must be a whole number from 1 to 5.');
+  }
+}
+
+/** Trim, collapse empty/whitespace-only to null, and cap the description length. */
+function normalizeFlagDescription(description: string | null | undefined): string | null {
+  if (description == null) return null;
+  const trimmed = description.trim();
+  if (trimmed.length === 0) return null;
+  if (trimmed.length > MAX_FLAG_DESCRIPTION_LENGTH) {
+    throw new Error(`Description must be ${MAX_FLAG_DESCRIPTION_LENGTH} characters or fewer.`);
+  }
+  return trimmed;
+}
+
 export async function createFlag(
   userId: string,
   input: CreateFlagInput,
@@ -574,6 +602,7 @@ export async function createFlag(
   if (input.lng < -180 || input.lng > 180) {
     throw new Error('Invalid coordinates: lng must be between -180 and 180.');
   }
+  assertValidCategoryAndSeverity(input.category, input.severity);
 
   const basePayload = {
     user_id: userId,
@@ -581,7 +610,7 @@ export async function createFlag(
     lng: input.lng,
     category: input.category,
     severity: input.severity,
-    description: input.description ?? null,
+    description: normalizeFlagDescription(input.description),
     photo_url: input.photo_url ?? null,
   };
   // Try the insert WITH context_tags first. If the column isn't there yet
@@ -1024,13 +1053,14 @@ export async function createAnonFlag(input: AnonFlagInput): Promise<FlagRow> {
   if (lng < -180 || lng > 180) {
     throw new Error(`lng ${lng} is out of range [-180, 180]`);
   }
+  assertValidCategoryAndSeverity(category, severity);
 
   const payload = {
     lat,
     lng,
     category,
     severity,
-    description: description ?? null,
+    description: normalizeFlagDescription(description),
     photo_url: null,
     status: 'open' as const,
   };
