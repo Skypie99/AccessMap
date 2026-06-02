@@ -114,6 +114,7 @@ export default function SignInScreen({
             onFocus={() => setEmailFocused(true)}
             onBlur={() => setEmailFocused(false)}
             style={[styles.input, emailFocused && styles.inputFocused]}
+            maxFontSizeMultiplier={1.4}
             accessibilityLabel="Email address"
             accessibilityHint="Enter the email you signed up with"
           />
@@ -130,6 +131,7 @@ export default function SignInScreen({
             onFocus={() => setPasswordFocused(true)}
             onBlur={() => setPasswordFocused(false)}
             style={[styles.input, passwordFocused && styles.inputFocused]}
+            maxFontSizeMultiplier={1.4}
             accessibilityLabel="Password"
             accessibilityHint="At least 6 characters"
           />
