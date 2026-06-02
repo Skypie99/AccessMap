@@ -1661,7 +1661,11 @@ export default function MapScreen() {
                 disabled={!location}
                 accessibilityRole="button"
                 accessibilityLabel="Report a flag here"
-                accessibilityHint="Opens a form to report an accessibility issue at your current location"
+                accessibilityHint={
+                  location
+                    ? 'Opens a form to report an accessibility issue at your current location'
+                    : 'Dimmed until location is on. Use the recenter button to turn on location, then report a flag here.'
+                }
                 accessibilityState={{ disabled: !location }}
               >
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
