@@ -1,6 +1,21 @@
 ---
 # AccessMap — Project State
-*Last updated: 2026-05-30 by Morgan*
+*Last updated: 2026-06-01 by /new-window*
+
+---
+
+## Brand Rebrand — COMPLETE ✅ (pending Sky merge — 2026-06-01)
+
+Claude Design brand applied across the **whole app** on `feat/brand-rebrand-design-system`
+(12 commits, off main, NOT pushed — Sky merges). typecheck clean · 1553 tests green ·
+verified live on web (logo, category icons, Lucide action bar, severity ramp, teardrop pins).
+
+- Real `LogoMark` (pin+figure SVG) + finished `CategoryIcon` (bespoke SVGs) + new `TierIcon`.
+- `severityColor()` synced to the theme yellow→red ramp (off-brand bug fixed).
+- **Every emoji + Unicode glyph-icon → Lucide SVG** across ~35 files. No emoji anywhere.
+- Web map pins → design teardrop (severity + white ring + blue glow + white category glyph).
+- Splash config + DESIGN.md §10 iconography.
+- Decisions: SignIn stays dark glassmorphism (Sky 2026-06-01); native map-pin in-glyph = device-verify follow-up.
 
 ---
 
@@ -88,6 +103,7 @@ All Phase 4 work is merged to main and shipped.
 |---|---|---|
 | feat/phase5-anon-reporting | Anon reporting + admin moderation | QA pass ✅ → merge |
 | feat/phase5-trust-score | Community trust score | Shamus building 🔄 |
+| feat/brand-rebrand-design-system | Whole-app Claude Design brand (12 commits) | typecheck + 1553 tests ✅ → Sky merge |
 
 ---
 

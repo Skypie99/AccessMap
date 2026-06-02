@@ -4,6 +4,15 @@ Structural decisions, append-only. New entries at the top. Do NOT re-litigate en
 
 ---
 
+## 2026-06-01 — Claude Design Brand Rebrand Complete [BRAND-REBRAND-COMPLETE]
+Whole-app Claude Design brand applied on `feat/brand-rebrand-design-system` (12 commits, off main, NOT pushed — Sky merges). typecheck clean, 1553 tests green, verified live on web. Real LogoMark + CategoryIcon + TierIcon (SVG), severityColor synced to theme ramp, ALL emoji + Unicode glyph-icons → Lucide across ~35 files, web teardrop map pins, splash + DESIGN.md §10. Key discovery: main already had ~70% of the brand (tokens/fonts/gold/assets) — the bundle and main derive from the same 2026-05-30 brief. — 2026-06-01
+
+## 2026-06-01 — Icons Are SVG-Only, No Emoji [ICONS-LUCIDE-NO-EMOJI]
+Durable convention: product UI uses Lucide (`lucide-react-native`) + bespoke SVG (`CategoryIcon` / `TierIcon` / `LogoMark`) only. NO emoji, NO Unicode-glyph icons anywhere in the app. Civic Gold (`color.goldAccent`) reserved for gamification (points/streaks/badges) on ink text. All new UI must follow. — 2026-06-01
+
+## 2026-06-01 — Sign-in Stays Dark Glassmorphism [SIGNIN-DARK-KEPT]
+Sky chose to keep the existing dark glassmorphism sign-in (with the new white brand logo) over the design bundle's white mockup. Do not re-propose the white version. — 2026-06-01
+
 ## 2026-05-29 — Analytics Scaffold Jordan Gate Required [ANALYTICS-JORDAN-GATE]
 `phase2/track-b-infrastructure` adds src/lib/analytics.ts with `identifyUser(userId)` — triggers Const. Art. 7.6 #5 (external API sending user data). Jordan reviewed and issued APPROVE WITH CONDITIONS. 5 blocking conditions must be met before wiring a real SDK. Stub is safe to merge as-is. Sky decisions required: (1) privacy policy author, (2) opt-in vs opt-out default, (3) confirm flagId removal from analytics events. — 2026-05-29
 
