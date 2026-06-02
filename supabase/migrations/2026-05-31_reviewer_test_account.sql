@@ -7,7 +7,7 @@
 -- STEP 1 (manual — Supabase Auth dashboard):
 --   Authentication → Users → "Add user" → "Create new user"
 --     Email:    reviewer@accessmap.app
---     Password: AccessMap2026!
+--     Password: set in Supabase dashboard at provisioning; never committed (enter in App Store Connect review notes)
 --   (The handle_new_user trigger auto-creates the public.users row.)
 --
 -- STEP 2 (this script):
