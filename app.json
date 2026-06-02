@@ -4,6 +4,11 @@
     "slug": "accessmap",
     "privacyPolicyUrl": "https://skypie99.github.io/AccessMap/privacy/",
     "icon": "./assets/brand/app-icon.png",
+    "splash": {
+      "image": "./assets/brand/app-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#1466E0"
+    },
     "version": "3.0.0",
     "orientation": "portrait",
     "scheme": "accessmap",
