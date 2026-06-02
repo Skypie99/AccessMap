@@ -44,4 +44,12 @@ edges:
 No duplications detected this cycle. (Steve hands off to Dana; no overlap — Steve = analysis/sign-off, Dana = implementation/apply.)
 
 ## DECISION / DELEGATION
-Sky authorized prod apply (twice) + asked Morgan to delegate. **Routing to Dana** (backend/RLS/migrations) to implement the trigger-based fix, apply to prod, and verify — with **Steve's** standing security sign-off and **Jordan's** privacy sign-off (tightening-only). Executing the Dana handoff in-session now.
+Sky authorized prod apply (twice) + asked Morgan to delegate. **Routed to Dana** (backend/RLS/migrations) with Steve's security sign-off + Jordan privacy note (tightening-only).
+
+## OUTCOME — ✅ RESOLVED on prod (same session)
+Dana implemented + applied + verified (rolled-back probes):
+- **Finding corrected:** non-owner EDIT was never exploitable (the `enforce_flag_status_only_for_non_owner` trigger reverts non-status columns; the first probe was fooled by rowcount). **DELETE was the real hole** and is now BLOCKED.
+- **Fix applied** (`flags_close_nonowner_delete_and_fix_triage_20260601`): simple triage policy + dropped `flags_auth_user_only`; the existing trigger does the column-lock. Verified: non-owner DELETE blocked · content reverted · triage works (no RLS error) · owner edits work · spoofed INSERT blocked. `net.http_post` exists → status triage end-to-end OK.
+- Both prior-cycle BLOCKERS (§3) cleared: net.http_post present; reopen_requests untouched by the fix (no trigger change).
+- **New §3 items for next cycle (route Dana):** (1) rotate 2 hardcoded webhook secrets in trigger defs (pg_proc-extractable); (2) drop duplicate `AFTER UPDATE OF status` trigger → double-points bug; (3) lock context_tags in the trigger (low).
+- No external send (in-session delivery per Sky override).

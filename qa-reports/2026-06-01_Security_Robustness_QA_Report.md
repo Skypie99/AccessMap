@@ -13,31 +13,39 @@ fixes and wrote (propose-only) migrations for the DB findings.
 
 ---
 
-## 🔧 Prod application this session (under Sky's explicit authorization)
+## 🔧 Prod application this session — F1 FIXED + verified (Morgan→Dana, Sky-authorized)
 
-Sky authorized applying the DB fixes to live prod. I applied + **verified with
-rolled-back probes** (two real users, every write rolled back) — which changed
-the picture materially and is exactly why I verified instead of trusting the apply:
+Sky authorized the prod apply and asked Morgan to delegate; the fix is **applied
+and verified on prod** with rolled-back probes (two real users). Live
+introspection also **corrected the finding**:
 
-- **F1 vuln CONFIRMED on prod:** as a second real user I both **edited and
-  deleted** another user's flag. Real, not theoretical.
-- **F1 fix applied → then REVERTED.** Dropping `flags_auth_user_only` broke
-  community triage: the intended `flags status update by any authenticated`
-  policy is *itself* broken (mis-correlated subquery → "more than one row"
-  error), so non-owner status updates errored. I reverted the drop so triage
-  keeps working. The correct fix is **trigger-based** and needs a preview-branch
-  test (see DECISION 1 + the rewritten migration).
-- **Kept (safe, verified):** the anon-insert consolidation — the insecure
-  duplicate policy is gone, closing the anon `photo_url` injection; legit
-  anonymous reporting verified still working.
-- **F2 + F3 NOT applied to prod.** Given the live DB's demonstrated hidden
-  interactions (a "safe" drop unmasked a broken policy), I stopped improvising
-  live RLS/function changes. F2 risks the status webhook (search_path); both
-  should be dry-run on a Supabase preview branch first.
+- **EDIT was never exploitable.** The `enforce_flag_status_only_for_non_owner`
+  BEFORE-UPDATE trigger already reverts every non-status column for non-owners
+  (verified: a non-owner severity change did not persist). My first "edit
+  succeeded" probe only counted rows — the trigger silently reverted the value.
+- **DELETE *was* the real hole** (trigger is UPDATE-only; `flags_auth_user_only`
+  granted DELETE + spoofed INSERT to any signed-in user). Confirmed: a non-owner
+  delete of another's flag persisted.
+- **Fix applied** (`flags_close_nonowner_delete_and_fix_triage_20260601`):
+  replaced the broken triage policy with a simple `using/check(true)` (the
+  trigger does the column-locking) and dropped `flags_auth_user_only`.
+  **Verified on prod:** non-owner DELETE → blocked; non-owner edit → reverted,
+  no RLS error; non-owner status triage → allowed; owner edit → works; spoofed
+  INSERT → blocked. Webhook functions (`net.http_post`,
+  `supabase_functions.http_request`) both exist, so status triage works
+  end-to-end.
+- **Also applied + verified:** anon `photo_url` injection closed; legit anon
+  reporting still works.
 
-**Net prod state vs. session start:** slightly safer (anon photo injection
-closed), triage intact, the non-owner-tamper hole still OPEN pending the
-trigger-based fix. The Supabase migration log shows the apply + the revert.
+**New follow-up findings surfaced during the fix (NOT changed — route to Dana):**
+- **Hardcoded webhook secrets** in two trigger definitions
+  (`flag_status_notify_trigger`, `notify-flag-status`) are extractable by any
+  authenticated role via `pg_proc`/`pg_trigger`. **Rotate both + move to Vault.**
+- **Duplicate triggers** → **double points**: two `AFTER UPDATE OF status`
+  triggers both run `handle_flag_status_change` (plus two webhook triggers, two
+  `updated_at` triggers). Drop the duplicates.
+- `enforce_flag_status_only_for_non_owner` doesn't lock `context_tags` (minor
+  non-owner metadata edit). Low severity.
 
 ---
 
@@ -46,17 +54,13 @@ trigger-based fix. The Supabase migration log shows the apply + the revert.
 > None of these were applied by me. DB changes are migration files for you to
 > run; the rest are dashboard toggles or judgment calls.
 
-1. **[HIGH — still OPEN] Fix the "any signed-in user can edit/delete any flag"
-   hole — via the trigger-based design in the rewritten
-   `2026-06-01_flags_policy_consolidation.sql`, tested on a preview branch.**
-   Confirmed exploitable on prod this session. The naive fix (drop
-   `flags_auth_user_only`) breaks community triage because the
-   `flags status update by any authenticated` policy is itself broken, and RLS
-   column-pinning is fragile against the `updated_at` trigger + `reopen_requests`
-   RPC. The migration now documents the evidence and a trigger-based fix
-   (repair `enforce_flag_status_only_for_non_owner` to lock non-owners to the
-   status column) with a preview-branch test plan. **Best owned by Dana** —
-   it's backend trigger design, not a one-liner. This is the top item.
+1. **[HIGH — ✅ RESOLVED on prod this session]** "Any signed-in user can delete
+   any flag" — fixed + verified (see the Prod-application section above).
+   *New top items surfaced while fixing it (route to Dana):* **(a) rotate the
+   two hardcoded webhook secrets** (extractable via `pg_proc`/`pg_trigger`) and
+   move them to Vault; **(b) drop the duplicate `AFTER UPDATE OF status`
+   trigger** — two of them run `handle_flag_status_change`, so every verify/
+   resolve awards **double points** (gamification-integrity bug).
 
 2. **[MED] `2026-06-01_function_exec_and_search_path_hardening.sql` — dry-run on
    a preview branch, then apply.** Four trigger functions are RPC-callable and
@@ -173,10 +177,10 @@ should reconcile the security / a11y / perf branches at merge time.
 
 ## Remaining risk going into testing
 
-- **The flags table is still open to authenticated tampering** — confirmed
-  exploitable on prod this session (non-owner edit + delete). The fix needs the
-  trigger-based design (DECISION 1) dry-run on a preview branch; it's the single
-  most important follow-up. Everything else is lower severity.
+- **Non-owner DELETE of flags: FIXED + verified on prod** this session. Content
+  edits were already trigger-protected. The remaining DB items are the two
+  hardcoded webhook secrets (rotate) and the duplicate status trigger (double
+  points) — both routed to Dana, neither blocks testers.
 - Anon read privacy posture (F6) is a policy/legal question, not a bug.
 - No new error-tracking backend (Sentry is a stub) — production crashes will be
   silent until Phase 6; the new error boundaries at least keep the app usable.

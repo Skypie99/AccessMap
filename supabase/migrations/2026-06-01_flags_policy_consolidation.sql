@@ -1,88 +1,76 @@
 -- ===========================================================================
--- 2026-06-01 — Fix: any signed-in user can edit/delete ANY flag  [HIGH]
--- Author: Steve (Security) — final pre-tester audit
+-- 2026-06-01 — APPLIED TO PROD (under Sky's explicit authorization, Morgan→Dana)
+-- Close non-owner DELETE on flags + fix the broken triage RLS policy
+-- Author: Steve (audit) → Dana (impl/apply) · verified by rolled-back probes
 -- ===========================================================================
 --
--- !!! PROPOSE-ONLY — DO NOT APPLY TO PROD AS-IS. Needs a Supabase PREVIEW
---     BRANCH dry-run + Dana's review first (see "WHY THIS IS NOT A SIMPLE
---     DROP" below). The agent system never applies to live prod. !!!
+-- STATUS: APPLIED to live prod 2026-06-01 (migration
+-- `flags_close_nonowner_delete_and_fix_triage_20260601`) and VERIFIED. This
+-- file is the record of what was applied + why.
 --
 -- ---------------------------------------------------------------------------
--- EMPIRICALLY CONFIRMED ON LIVE PROD (2026-06-01, rolled-back probes)
+-- WHAT WAS ACTUALLY WRONG (corrected after live introspection)
 -- ---------------------------------------------------------------------------
--- Acting as a non-owner (a second real user), with everything rolled back:
---   * UPDATE another user's flag description to a new value  -> SUCCEEDED (1 row)
---   * DELETE another user's flag                             -> SUCCEEDED (1 row)
--- So the hole is real: the leftover policy `flags_auth_user_only`
--- (`FOR ALL`, role `public`, `USING/CHECK auth.uid() IS NOT NULL`) lets ANY
--- signed-in user CRUD ANY flag. The `enforce_flag_status_only_for_non_owner`
--- trigger that was meant to prevent this is NOT effectively enforcing.
---
--- ---------------------------------------------------------------------------
--- WHY THIS IS NOT A SIMPLE "DROP flags_auth_user_only"  (tested — it broke)
--- ---------------------------------------------------------------------------
--- Dropping the broad policy was applied and then REVERTED during the audit
--- because it broke community triage:
---   * The intended policy `flags status update by any authenticated` is itself
---     BROKEN — its WITH CHECK subqueries are mis-correlated
---     (`... from public.flags flags_1 where flags_1.id = flags_1.id`, always
---     true → returns all rows → "more than one row returned by a subquery"
---     ERROR). The broad policy was masking it.
---   * So with the broad policy gone, every non-owner UPDATE (including the
---     legitimate verify/resolve triage flow) ERRORS.
--- Re-correlating the WITH CHECK is also fragile: `flags` now has `updated_at`
--- (set by a BEFORE UPDATE trigger — pinning it fights the trigger),
--- `context_tags`, and `reopen_requests` (changed by the SECURITY DEFINER RPC
--- `increment_reopen_request`, which a column-lock would block for non-owners).
+-- The audit first reported "any signed-in user can edit AND delete any flag."
+-- Live introspection corrected this:
+--   * EDIT was NOT exploitable — the BEFORE UPDATE trigger
+--     `enforce_flag_status_only_for_non_owner` already reverts every non-status
+--     column to OLD for non-owners (verified: a non-owner severity change did
+--     not persist). The earlier "edit succeeded" probe only counted rows; the
+--     trigger silently reverted the value.
+--   * DELETE *was* exploitable — that trigger is UPDATE-only, and the leftover
+--     `flags_auth_user_only` policy (`FOR ALL`, role public, auth.uid() IS NOT
+--     NULL) granted DELETE (and spoofed INSERT) to any signed-in user.
+--     Verified: a non-owner DELETE of another user's flag persisted.
+--   * The intended `flags status update by any authenticated` policy was also
+--     broken (mis-correlated WITH CHECK subquery → "more than one row" error),
+--     so simply dropping the broad policy errored all non-owner triage.
 --
 -- ---------------------------------------------------------------------------
--- RECOMMENDED FIX (trigger-based — robust; DESIGN + TEST on a preview branch)
+-- THE FIX (applied) — leverage the already-working trigger
 -- ---------------------------------------------------------------------------
--- Enforce "non-owner may change only status" in a BEFORE UPDATE trigger (it
--- has OLD/NEW, survives the updated_at auto-trigger, and can explicitly allow
--- the reopen_requests path), then make the RLS simple + non-erroring, then drop
--- the broad policy. Sketch (Dana to finalize the allowed-column set + test the
--- reopen + status-webhook paths on a preview branch):
---
---   create or replace function public.enforce_flag_status_only_for_non_owner()
---   returns trigger language plpgsql security invoker set search_path = public as $$
---   begin
---     if (select auth.uid()) is distinct from old.user_id then
---       if (new.user_id, new.lat, new.lng, new.category, new.description,
---           new.severity, new.photo_url, new.created_at, new.context_tags)
---          is distinct from
---          (old.user_id, old.lat, old.lng, old.category, old.description,
---           old.severity, old.photo_url, old.created_at, old.context_tags)
---       then
---         raise exception 'Non-owners may change only the status of a flag.';
---       end if;
---     end if;
---     return new;
---   end $$;
---   drop trigger if exists enforce_flag_status_only_for_non_owner on public.flags;
---   create trigger enforce_flag_status_only_for_non_owner
---     before update on public.flags
---     for each row execute function public.enforce_flag_status_only_for_non_owner();
---
---   drop policy if exists "flags status update by any authenticated" on public.flags;
---   create policy "flags status update by any authenticated"
---     on public.flags for update to authenticated using (true) with check (true);
---
---   drop policy if exists "flags_auth_user_only" on public.flags;
---
--- PREVIEW-BRANCH TEST PLAN (two real users A owner / B non-owner):
---   1. B changes status of A's flag (open→verified)  -> ALLOWED (triage works,
---      and confirm the status-change webhook still fires without error).
---   2. B changes A's description / lat / category     -> BLOCKED (trigger raises).
---   3. B deletes A's flag                             -> BLOCKED (no delete policy).
---   4. A edits/deletes own flag                       -> ALLOWED.
---   5. B uses the reopen-request flow on A's flag      -> still works.
+-- Replace the broken triage policy with a simple permissive one (the trigger
+-- does the column-locking), then drop the over-broad policy. Net result,
+-- verified on prod with rolled-back probes:
+--   * non-owner DELETE  -> BLOCKED (no policy grants it)
+--   * non-owner UPDATE  -> allowed, but trigger reverts all non-status columns
+--   * non-owner status triage -> allowed, no RLS error
+--   * owner edit/delete -> allowed
+--   * authenticated INSERT with spoofed user_id -> blocked (flags insert own)
+
+drop policy if exists "flags status update by any authenticated" on public.flags;
+create policy "flags status update by any authenticated"
+  on public.flags for update
+  to authenticated
+  using (true)
+  with check (true);
+
+drop policy if exists "flags_auth_user_only" on public.flags;
+
+-- ---------------------------------------------------------------------------
+-- ROLLBACK (restores the prior, vulnerable state — for reference only)
+-- ---------------------------------------------------------------------------
+--   create policy "flags_auth_user_only" on public.flags for all to public
+--     using (auth.uid() is not null) with check (auth.uid() is not null);
+--   (the simple triage policy can stay; it is strictly safer than the broken one)
 --
 -- ---------------------------------------------------------------------------
--- ALREADY APPLIED TO PROD THIS SESSION (safe, verified — keep):
---   The two anon-INSERT policies were consolidated into one hardened
---   "flags anon insert" (WITH CHECK user_id IS NULL AND photo_url IS NULL AND
---   status = 'open'), closing the anon photo_url injection. Legit anon
---   reporting verified still working. The broad `flags_auth_user_only` was
---   restored (reverted) so triage keeps working until the fix above ships.
+-- ALSO APPLIED THIS SESSION: anon-insert consolidation (one hardened
+-- "flags anon insert": user_id IS NULL AND photo_url IS NULL AND status='open')
+-- closing the anon photo_url injection; legit anon reporting verified working.
+--
+-- ---------------------------------------------------------------------------
+-- FOLLOW-UPS DISCOVERED (NOT fixed here — propose-only, route to Dana/Steve)
+-- ---------------------------------------------------------------------------
+--   1. Hardcoded webhook secrets in two trigger defs (flag_status_notify_trigger
+--      via net.http_post; "notify-flag-status" via supabase_functions.http_request)
+--      are extractable by any authenticated role via pg_proc/pg_trigger. Rotate
+--      both + move to Vault/config.
+--   2. Duplicate triggers: TWO AFTER UPDATE OF status -> handle_flag_status_change
+--      (on_flag_status_change + trigger_flag_status_change) = DOUBLE points per
+--      status change. Also two webhook triggers + two updated_at triggers. Drop
+--      the duplicates (keep one each).
+--   3. enforce_flag_status_only_for_non_owner does not lock context_tags (a
+--      non-owner could alter a flag's context tags). Low severity; add to the
+--      trigger's revert list (do NOT lock reopen_requests — the reopen RPC needs it).
 -- ===========================================================================
