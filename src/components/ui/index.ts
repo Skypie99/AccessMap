@@ -17,3 +17,6 @@ export { Pill } from './Pill';
 
 export { Input } from './Input';
 export type { InputProps } from './Input';
+
+export { Skeleton, SkeletonRow, SkeletonCard } from './Skeleton';
+export type { SkeletonProps } from './Skeleton';
