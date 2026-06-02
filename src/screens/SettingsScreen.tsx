@@ -399,14 +399,12 @@ export default function SettingsScreen() {
             Uses a Switch so the current state is always visible without
             tapping into a sub-screen. On/off mirrors the push_tokens row
             presence: row exists = enabled, absent = disabled. */}
-        <View
-          style={styles.pushRow}
-          accessible
-          accessibilityRole="switch"
-          accessibilityLabel={`Push notifications, currently ${pushEnabled ? 'on' : 'off'}`}
-          accessibilityHint="Receive a push notification when your flag is verified or resolved"
-          accessibilityState={{ checked: pushEnabled, busy: pushBusy }}
-        >
+        {/* WCAG 4.1.2/2.1.1: the Switch carries the accessible identity and
+            stays in the a11y tree so it can actually be toggled by a screen
+            reader. Previously role="switch" sat on the wrapper View (no press
+            handler) with the Switch hidden, so VoiceOver/TalkBack could read
+            but not flip it. Mirrors NotificationPrefsModal. */}
+        <View style={styles.pushRow}>
           <View style={styles.pushTextWrap}>
             <AppText variant="label" style={styles.rowTitle}>Push notifications</AppText>
             <AppText variant="body" style={styles.rowSubtitle}>
@@ -424,8 +422,10 @@ export default function SettingsScreen() {
               value={pushEnabled}
               onValueChange={handlePushToggle}
               disabled={pushBusy || !user}
-              accessibilityElementsHidden
-              importantForAccessibility="no-hide-descendants"
+              accessibilityRole="switch"
+              accessibilityLabel="Push notifications"
+              accessibilityHint="Receive a push notification when your flag is verified or resolved"
+              accessibilityState={{ checked: pushEnabled, disabled: pushBusy || !user }}
             />
           )}
         </View>

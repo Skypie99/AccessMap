@@ -1510,7 +1510,7 @@ export default function MapScreen() {
                         accessibilityLabel="Save current filters as a preset"
                         accessibilityHint={`Names and saves your current category, severity, and status filters. Stored per account, up to ${FILTER_PRESETS_MAX} presets.`}
                       >
-                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                        <View style={styles.iconLabelRow}>
                           <Plus size={15} color={color.textOnBrand} strokeWidth={2.6} />
                           <AppText variant="label" style={styles.presetBtnText}>Save as preset</AppText>
                         </View>
@@ -1679,10 +1679,14 @@ export default function MapScreen() {
                 disabled={!location}
                 accessibilityRole="button"
                 accessibilityLabel="Report a flag here"
-                accessibilityHint="Opens a form to report an accessibility issue at your current location"
+                accessibilityHint={
+                  location
+                    ? 'Opens a form to report an accessibility issue at your current location'
+                    : 'Dimmed until location is on. Use the recenter button to turn on location, then report a flag here.'
+                }
                 accessibilityState={{ disabled: !location }}
               >
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <View style={styles.iconLabelRow}>
                   <Plus size={16} color={color.textOnBrand} strokeWidth={2.6} />
                   <AppText variant="label" style={styles.fabText}>Report</AppText>
                 </View>
@@ -2209,6 +2213,10 @@ const makeStyles = (color: ColorTheme) =>
     fabSecondary: { backgroundColor: color.overlay },
     fabSecondaryRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
     fabSecondaryText: { color: color.brand, fontWeight: '700', fontSize: 15 },
+    // Shared icon+label row. Replaces two identical inline
+    // `{ flexDirection:'row', alignItems:'center', gap:6 }` objects (Save-preset
+    // button + Report FAB) that were re-allocated on every MapScreen render.
+    iconLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
     fabDisabled: { opacity: 0.5 },
     fabPressed: { opacity: 0.8 },
     fabText: { color: color.textOnBrand, fontWeight: '700', fontSize: 15 },

@@ -118,7 +118,7 @@ export default function LeaderboardModal({ visible, onClose }: Props) {
       <View style={styles.backdrop}>
         <View style={styles.card} accessibilityViewIsModal>
           <View style={styles.headerRow}>
-            <Text style={styles.titleIcon} accessibilityElementsHidden>🏆</Text>
+            <Text style={styles.titleIcon} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">🏆</Text>
             <Text style={styles.title} accessibilityRole="header">
               Community Leaderboard
             </Text>
