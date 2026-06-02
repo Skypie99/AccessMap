@@ -8,12 +8,13 @@ import {
   Share,
   StyleSheet,
   Switch,
-  Text,
   View,
 } from 'react-native';
-import { ChevronRight, ClipboardCopy, PlayCircle } from 'lucide-react-native';
+import { ChevronRight, ClipboardCopy, Moon, PlayCircle, Smartphone, Sun } from 'lucide-react-native';
 import { font, radius, shadow, spacing } from '@/theme';
-import { type ColorTheme, useColor } from '@/theme/ThemeContext';
+import { type ColorTheme, type ThemeMode, useColor, useThemeMode } from '@/theme/ThemeContext';
+import { AppText } from '@/components/ui/AppText';
+import { hapticSelection } from '@/lib/haptics';
 import { signOut, supabase } from '@/lib/supabase';
 import { confirm } from '@/lib/confirm';
 import { useAuth } from '@/lib/auth';
@@ -94,8 +95,10 @@ function SettingsRow({
         </View>
       ) : null}
       <View style={styles.rowTextWrap}>
-        <Text style={[styles.rowTitle, destructive && styles.rowTitleDestructive]}>{title}</Text>
-        <Text style={styles.rowSubtitle}>{subtitle}</Text>
+        <AppText variant="label" style={[styles.rowTitle, destructive && styles.rowTitleDestructive]}>
+          {title}
+        </AppText>
+        <AppText variant="body" style={styles.rowSubtitle}>{subtitle}</AppText>
       </View>
       {/* Trailing affordance: a spinner while the row's handler runs, a
           decorative chevron otherwise. Both are hidden from AT (the row's
@@ -120,6 +123,46 @@ function SettingsRow({
         />
       )}
     </Pressable>
+  );
+}
+
+// Light / Dark / System appearance picker — a 3-segment control writing through
+// useThemeMode() (persisted in ThemeContext). 'System' follows the OS setting.
+function AppearanceControl() {
+  const color = useColor();
+  const styles = makeStyles(color);
+  const { mode, setMode } = useThemeMode();
+  const options: { key: ThemeMode; label: string; Icon: typeof Sun }[] = [
+    { key: 'light', label: 'Light', Icon: Sun },
+    { key: 'dark', label: 'Dark', Icon: Moon },
+    { key: 'system', label: 'System', Icon: Smartphone },
+  ];
+  return (
+    <View style={styles.segmentRow} accessibilityRole="radiogroup" accessibilityLabel="Appearance">
+      {options.map(({ key, label, Icon }) => {
+        const selected = mode === key;
+        const fg = selected ? color.brandText : color.textMuted;
+        return (
+          <Pressable
+            key={key}
+            onPress={() => {
+              setMode(key);
+              hapticSelection();
+            }}
+            style={[styles.segment, selected && { backgroundColor: color.brandSofter }]}
+            accessibilityRole="radio"
+            accessibilityState={{ selected }}
+            accessibilityLabel={label}
+            accessibilityHint={`Use ${label.toLowerCase()} appearance`}
+          >
+            <Icon size={16} color={fg} strokeWidth={2.2} />
+            <AppText variant="label" size={font.size.sm} color={fg}>
+              {label}
+            </AppText>
+          </Pressable>
+        );
+      })}
+    </View>
   );
 }
 
@@ -341,9 +384,9 @@ export default function SettingsScreen() {
         contentContainerStyle={styles.container}
         contentInsetAdjustmentBehavior="automatic"
       >
-        <Text style={styles.sectionLabel} accessibilityRole="header">
+        <AppText variant="label" style={styles.sectionLabel} accessibilityRole="header">
           Notifications
-        </Text>
+        </AppText>
 
         <SettingsRow
           title="Notification preferences"
@@ -365,10 +408,10 @@ export default function SettingsScreen() {
           accessibilityState={{ checked: pushEnabled, busy: pushBusy }}
         >
           <View style={styles.pushTextWrap}>
-            <Text style={styles.rowTitle}>Push notifications</Text>
-            <Text style={styles.rowSubtitle}>
+            <AppText variant="label" style={styles.rowTitle}>Push notifications</AppText>
+            <AppText variant="body" style={styles.rowSubtitle}>
               Get notified when your flag is verified or resolved.
-            </Text>
+            </AppText>
           </View>
           {pushBusy ? (
             <ActivityIndicator
@@ -387,9 +430,15 @@ export default function SettingsScreen() {
           )}
         </View>
 
-        <Text style={styles.sectionLabel} accessibilityRole="header">
+        <AppText variant="label" style={styles.sectionLabel} accessibilityRole="header">
+          Appearance
+        </AppText>
+
+        <AppearanceControl />
+
+        <AppText variant="label" style={styles.sectionLabel} accessibilityRole="header">
           Help & info
-        </Text>
+        </AppText>
 
         <SettingsRow
           title="Help & FAQ"
@@ -420,9 +469,9 @@ export default function SettingsScreen() {
           onPress={() => setTutorialOpen(true)}
         />
 
-        <Text style={styles.sectionLabel} accessibilityRole="header">
+        <AppText variant="label" style={styles.sectionLabel} accessibilityRole="header">
           Feedback
-        </Text>
+        </AppText>
 
         <SettingsRow
           title="Send feedback"
@@ -438,9 +487,9 @@ export default function SettingsScreen() {
           onPress={() => setOpen('myFeedback')}
         />
 
-        <Text style={styles.sectionLabel} accessibilityRole="header">
+        <AppText variant="label" style={styles.sectionLabel} accessibilityRole="header">
           Your data
-        </Text>
+        </AppText>
 
         <SettingsRow
           title="Export my data"
@@ -452,9 +501,9 @@ export default function SettingsScreen() {
           busy={exporting}
         />
 
-        <Text style={styles.sectionLabel} accessibilityRole="header">
+        <AppText variant="label" style={styles.sectionLabel} accessibilityRole="header">
           Account
-        </Text>
+        </AppText>
 
         <SettingsRow
           title="Sign out"
@@ -576,4 +625,23 @@ const makeStyles = (color: ColorTheme) =>
       ...shadow.e1,
     },
     pushTextWrap: { flex: 1, gap: 2 },
+    // Appearance segmented control (Light / Dark / System).
+    segmentRow: {
+      flexDirection: 'row',
+      backgroundColor: color.surface,
+      borderRadius: radius.lg,
+      padding: spacing.tight,
+      gap: spacing.tight,
+      ...shadow.e1,
+    },
+    segment: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: spacing.xs,
+      paddingVertical: spacing.sm + 2,
+      borderRadius: radius.md,
+      minHeight: 44,
+    },
   });

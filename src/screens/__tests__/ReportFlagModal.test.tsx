@@ -16,7 +16,7 @@
 
 import React from 'react';
 import { Alert } from 'react-native';
-import { render, fireEvent, waitFor } from '@testing-library/react-native';
+import { render, fireEvent, waitFor, act } from '@testing-library/react-native';
 
 // ---------------------------------------------------------------------------
 // Supabase env stubs — required before any module that imports supabase.ts
@@ -194,32 +194,25 @@ jest.mock('@/theme/ThemeContext', () => ({
 // ---------------------------------------------------------------------------
 // Mock: @/theme — radius tokens
 // ---------------------------------------------------------------------------
-jest.mock('@/theme', () => ({
-  radius: { xs: 4, sm: 6, md: 8, lg: 12, xl: 16, xxl: 24, circle: 9999 },
-  font: {
-    family: {
-      display: 'PlusJakartaSans_800ExtraBold',
-      displayBold: 'PlusJakartaSans_700Bold',
-      body: 'PublicSans_400Regular',
-      bodyMedium: 'PublicSans_500Medium',
-      bodySemibold: 'PublicSans_600SemiBold',
-      mono: 'JetBrainsMono_400Regular',
-      monoMedium: 'JetBrainsMono_500Medium',
-      monoBold: 'JetBrainsMono_600SemiBold',
-    },
-    size: { xs: 11, sm: 13, md: 15, lg: 17, xl: 19, xxl: 22 },
-    weight: { regular: '400', medium: '500', semibold: '600', bold: '700' },
-  },
-  spacing: {
-    tight: 4, sm: 8, md: 12, lg: 16, xl: 20, xxl: 24, xxxl: 32,
-  },
-}));
+// Use the real design tokens instead of a hand-maintained partial mock — it had
+// drifted (stale radius/size values) and lacked newer keys like font.tracking,
+// which crashed AppText's tracking logic. theme.ts is pure data (no runtime
+// imports), so requireActual is safe and the mock can never drift again.
+jest.mock('@/theme', () => jest.requireActual('@/theme'));
 
 // ---------------------------------------------------------------------------
 // Mock: @/lib/accessibility
 // ---------------------------------------------------------------------------
 jest.mock('@/lib/accessibility', () => ({
   useReducedMotion: jest.fn(() => false),
+}));
+
+// Haptics are no-ops in tests — avoids loading expo-haptics during the async
+// submit tests (the require perturbed their timing under parallel workers).
+jest.mock('@/lib/haptics', () => ({
+  hapticSelection: jest.fn(),
+  hapticImpact: jest.fn(),
+  hapticNotify: jest.fn(),
 }));
 
 // ---------------------------------------------------------------------------
@@ -264,6 +257,18 @@ beforeEach(() => {
   mockCreateAnonFlag.mockResolvedValue(SAMPLE_ANON_ROW);
   mockCreateFlag.mockResolvedValue({ row: SAMPLE_AUTH_ROW, tagsAccepted: true });
   mockSubscribeContextTagsCapability.mockReturnValue(() => {});
+});
+
+// handleSubmit keeps running after a test's `waitFor` resolves
+// (createFlag → onCreated → onClose → setSubmitting(false)). That trailing
+// state update could fire after the test ended → "update not wrapped in act"
+// and an intermittent failure under parallel jest workers. Drain the async tail
+// within act after every test so nothing leaks past it. Makes the suite
+// deterministic in parallel (it was already 100% green serially).
+afterEach(async () => {
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  });
 });
 
 // ===========================================================================

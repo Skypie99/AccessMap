@@ -18,7 +18,8 @@ import {
   type TextStyle,
 } from 'react-native';
 import { useColor } from '@/theme/ThemeContext';
-import { radius, shadow, font, spacing } from '@/theme';
+import { useReducedMotion } from '@/lib/accessibility';
+import { motion, radius, shadow, font, spacing } from '@/theme';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -56,24 +57,25 @@ export function Button({
   accessibilityLabel,
 }: ButtonProps) {
   const color = useColor();
+  const reducedMotion = useReducedMotion();
   const scale = useRef(new Animated.Value(1)).current;
   const { paddingH, paddingV, fontSize } = SIZE_STYLES[size];
 
   function handlePressIn() {
+    if (reducedMotion) return; // WCAG 2.3.3 — skip the press-scale under reduced motion
     Animated.spring(scale, {
       toValue: 0.97,
       useNativeDriver: true,
-      speed: 50,
-      bounciness: 0,
+      ...motion.spring.press,
     }).start();
   }
 
   function handlePressOut() {
+    if (reducedMotion) return;
     Animated.spring(scale, {
       toValue: 1,
       useNativeDriver: true,
-      speed: 50,
-      bounciness: 2,
+      ...motion.spring.pressOut,
     }).start();
   }
 

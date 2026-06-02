@@ -15,3 +15,14 @@ process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY =
 jest.mock('@react-native-async-storage/async-storage', () =>
   require('@react-native-async-storage/async-storage/jest/async-storage-mock'),
 );
+
+// expo-haptics has no native module in the Node test env. src/lib/haptics.ts
+// already no-ops safely (try/catch around require), but mocking it here keeps
+// every test that wires up haptics clean and silent.
+jest.mock('expo-haptics', () => ({
+  selectionAsync: jest.fn(),
+  impactAsync: jest.fn(),
+  notificationAsync: jest.fn(),
+  ImpactFeedbackStyle: { Light: 'light', Medium: 'medium', Heavy: 'heavy' },
+  NotificationFeedbackType: { Success: 'success', Warning: 'warning', Error: 'error' },
+}));

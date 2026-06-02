@@ -8,6 +8,7 @@ import {
   View,
 } from 'react-native';
 import { AppText } from '@/components/ui/AppText';
+import { Skeleton } from '@/components/ui/Skeleton';
 import { useAuth } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
 import {
@@ -79,24 +80,26 @@ function AvatarCircle({
 
 const AVATAR_SIZE = 34;
 
-function SkeletonRow({ color }: { color: ColorTheme }) {
-  const bg = color.surfaceNeutral;
+function SkeletonRow() {
+  // Built on the shared Skeleton primitive so it gets the shimmer pulse +
+  // reduced-motion handling, while keeping the leaderboard row's shape.
   return (
     <View
       style={{
         flexDirection: 'row',
         alignItems: 'center',
         paddingHorizontal: spacing.xl,
-        paddingVertical: 10,
-        gap: 10,
+        paddingVertical: spacing.sm + 2,
+        gap: spacing.md,
         minHeight: 54,
       }}
       accessibilityElementsHidden
+      importantForAccessibility="no-hide-descendants"
     >
-      <View style={{ width: 40, height: font.size.sm, borderRadius: radius.xs, backgroundColor: bg }} />
-      <View style={{ width: AVATAR_SIZE, height: AVATAR_SIZE, borderRadius: AVATAR_SIZE / 2, backgroundColor: bg }} />
-      <View style={{ flex: 1, height: font.size.sm, borderRadius: radius.xs, backgroundColor: bg }} />
-      <View style={{ width: 50, height: font.size.sm, borderRadius: radius.xs, backgroundColor: bg }} />
+      <Skeleton width={40} height={font.size.sm} />
+      <Skeleton width={AVATAR_SIZE} height={AVATAR_SIZE} borderRadius={AVATAR_SIZE / 2} />
+      <Skeleton width={120} height={font.size.sm} style={{ flex: 1 }} />
+      <Skeleton width={50} height={font.size.sm} />
     </View>
   );
 }
@@ -145,7 +148,13 @@ const LeaderboardRow = React.memo(function LeaderboardRow({
 
   return (
     <View
-      style={[styles.row, isCurrentUser && styles.rowHighlight]}
+      style={[
+        styles.row,
+        rank === 1 && { backgroundColor: color.tierGoldBg },
+        rank === 2 && { backgroundColor: color.tierSilverBg },
+        rank === 3 && { backgroundColor: color.tierBronzeBg },
+        isCurrentUser && styles.rowHighlight,
+      ]}
       role="listitem"
       accessibilityLabel={a11yLabel}
     >
@@ -259,7 +268,7 @@ export default function LeaderboardScreen({ visible, onClose }: Props) {
           {loading ? (
             <View accessibilityLabel="Loading leaderboard" accessibilityLiveRegion="polite">
               {Array.from({ length: 6 }).map((_, i) => (
-                <SkeletonRow key={i} color={color} />
+                <SkeletonRow key={i} />
               ))}
             </View>
           ) : loadError ? (

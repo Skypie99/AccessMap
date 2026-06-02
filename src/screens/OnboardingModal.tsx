@@ -6,14 +6,16 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
-  Text,
   useWindowDimensions,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { font, radius, shadow, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { useReducedMotion } from '@/lib/accessibility';
+import { hapticSelection } from '@/lib/haptics';
 import { trackEvent } from '@/lib/analytics';
+import { AppText } from '@/components/ui/AppText';
 import { MapPin, Star, Target } from 'lucide-react-native';
 
 interface Props {
@@ -25,21 +27,27 @@ interface Card {
   Icon: React.ComponentType<{ size?: number; color?: string; strokeWidth?: number }>;
   title: string;
   body: string;
+  // Icon-halo tone. 'gold' marks the gamification card (points) — Civic Gold is
+  // the design system's gamification accent; the other cards use the brand wash.
+  tone: 'brand' | 'gold';
 }
 
 const CARDS: Card[] = [
   {
     Icon: MapPin,
+    tone: 'brand',
     title: 'Welcome to AccessMap',
     body: 'Drop a pin where you find an accessibility issue — a missing ramp, a broken sidewalk, a blocked path — so others can plan around it, or help fix it.',
   },
   {
     Icon: Target,
+    tone: 'brand',
     title: 'Rate the barrier',
     body: 'Rate the issue from 1 (a minor inconvenience) to 5 (completely impassable). The map shows both number and color so the meaning is clear at a glance.',
   },
   {
     Icon: Star,
+    tone: 'gold',
     title: 'Earn points together',
     body: 'You earn points when your reports get verified or resolved by others — and when you verify or resolve theirs. Help build the map.',
   },
@@ -49,6 +57,7 @@ export default function OnboardingModal({ visible, onDone }: Props) {
   const color = useColor();
   const styles = makeStyles(color);
   const { width } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
   const scrollRef = useRef<ScrollView | null>(null);
   const [index, setIndex] = useState(0);
   const reducedMotion = useReducedMotion();
@@ -64,6 +73,7 @@ export default function OnboardingModal({ visible, onDone }: Props) {
     const clamped = Math.max(0, Math.min(CARDS.length - 1, next));
     scrollRef.current?.scrollTo({ x: clamped * width, animated: !reducedMotion });
     setIndex(clamped);
+    hapticSelection();
   };
 
   const handleScroll = (e: { nativeEvent: { contentOffset: { x: number } } }) => {
@@ -95,7 +105,7 @@ export default function OnboardingModal({ visible, onDone }: Props) {
       {/* accessibilityViewIsModal prevents VoiceOver from focusing elements
           behind this full-screen modal. WCAG 2.4.3 (Focus Order). */}
       <View style={styles.screen} accessibilityViewIsModal>
-        <View style={styles.topBar}>
+        <View style={[styles.topBar, { paddingTop: Math.max(insets.top, spacing.lg) }]}>
           <Pressable
             onPress={handleSkip}
             style={styles.skipBtn}
@@ -103,19 +113,16 @@ export default function OnboardingModal({ visible, onDone }: Props) {
             accessibilityLabel="Skip the introduction"
             hitSlop={12}
           >
-            <Text style={styles.skipText}>Skip</Text>
+            <AppText variant="label" size={font.size.base} color={color.textMuted}>
+              Skip
+            </AppText>
           </Pressable>
         </View>
 
-        {/* Swipe is a sighted-only affordance. AT users navigate via the
-            Next / Skip buttons below; the scroll container and its children
-            are removed from the AT tree (accessibilityElementsHidden +
-            importantForAccessibility) so VoiceOver/TalkBack can't wander
-            into off-screen cards. WCAG 2.5.7 (Dragging Movements). */}
         {/* SR-accessible card content — the ScrollView below is hidden from
             AT (swipe is sighted-only), so this View is the ONLY way screen
             reader users hear the card title and body. Updated reactively via
-            the `index` state that Back/Next already drive. */}
+            the `index` state that Back/Next already drive. WCAG 2.5.7. */}
         <View
           accessible
           accessibilityRole="text"
@@ -136,11 +143,24 @@ export default function OnboardingModal({ visible, onDone }: Props) {
         >
           {CARDS.map((card) => {
             const CardIcon = card.Icon;
+            const haloBg = card.tone === 'gold' ? color.goldLight : color.brandSofter;
+            const iconColor = card.tone === 'gold' ? color.goldDark : color.brand;
             return (
               <View key={card.title} style={[styles.card, { width }]}>
-                <CardIcon size={56} color={color.brand} strokeWidth={2} />
-                <Text style={styles.title}>{card.title}</Text>
-                <Text style={styles.body}>{card.body}</Text>
+                <View style={[styles.iconHalo, { backgroundColor: haloBg }]}>
+                  <CardIcon size={56} color={iconColor} strokeWidth={2} />
+                </View>
+                <AppText
+                  variant="heading"
+                  size={font.size.h2}
+                  color={color.textStrong}
+                  style={styles.title}
+                >
+                  {card.title}
+                </AppText>
+                <AppText variant="body" size={font.size.lg} color={color.text} style={styles.body}>
+                  {card.body}
+                </AppText>
               </View>
             );
           })}
@@ -164,7 +184,13 @@ export default function OnboardingModal({ visible, onDone }: Props) {
             hidden from AT. When index > 0, render a Back button so VoiceOver,
             TalkBack, and Switch Access users can return to the previous card
             without having to abandon the entire flow via Skip. */}
-        <View style={[styles.actions, index > 0 && styles.actionsRow]}>
+        <View
+          style={[
+            styles.actions,
+            index > 0 && styles.actionsRow,
+            { paddingBottom: insets.bottom + spacing.md },
+          ]}
+        >
           {index > 0 && (
             <Pressable
               onPress={() => goTo(index - 1)}
@@ -173,7 +199,9 @@ export default function OnboardingModal({ visible, onDone }: Props) {
               accessibilityLabel={`Back. Step ${index + 1} of ${CARDS.length}.`}
               accessibilityHint="Returns to the previous introduction card"
             >
-              <Text style={styles.backBtnText}>Back</Text>
+              <AppText variant="label" size={font.size.lg} color={color.text}>
+                Back
+              </AppText>
             </Pressable>
           )}
           {!isLast ? (
@@ -188,7 +216,9 @@ export default function OnboardingModal({ visible, onDone }: Props) {
               accessibilityLabel={`Next. Step ${index + 1} of ${CARDS.length}.`}
               accessibilityHint="Moves to the next introduction card"
             >
-              <Text style={styles.primaryBtnText}>Next</Text>
+              <AppText variant="label" size={font.size.lg} color={color.textOnBrand}>
+                Next
+              </AppText>
             </Pressable>
           ) : (
             <Pressable
@@ -203,7 +233,9 @@ export default function OnboardingModal({ visible, onDone }: Props) {
               accessibilityLabel="Open the map"
               accessibilityHint="Closes the introduction and opens the map"
             >
-              <Text style={styles.primaryBtnText}>Open the Map</Text>
+              <AppText variant="label" size={font.size.lg} color={color.textOnBrand}>
+                Open the Map
+              </AppText>
             </Pressable>
           )}
         </View>
@@ -229,7 +261,6 @@ const makeStyles = (color: ColorTheme) =>
       flexDirection: 'row',
       justifyContent: 'flex-end',
       paddingHorizontal: spacing.md,
-      paddingTop: 48,
       paddingBottom: spacing.sm,
     },
     skipBtn: {
@@ -241,12 +272,6 @@ const makeStyles = (color: ColorTheme) =>
       alignItems: 'center',
       justifyContent: 'center',
     },
-    // textMuted: #666 on #fff = 5.7:1 (light) / #aaa on #111 = 6.7:1 (dark) — AA pass.
-    skipText: {
-      color: color.textMuted,
-      fontWeight: font.weight.semibold,
-      fontSize: font.size.base,
-    },
     scroll: { flex: 1 },
     card: {
       flex: 1,
@@ -257,20 +282,21 @@ const makeStyles = (color: ColorTheme) =>
       justifyContent: 'center',
       gap: spacing.xl,
     },
-    emoji: { fontSize: font.size.displayLg, textAlign: 'center' },
+    // Soft tinted circle behind the card icon — lifts it off the surface and
+    // gives each card a focal point. Decorative (the icon is inside, hidden).
+    iconHalo: {
+      width: 112,
+      height: 112,
+      borderRadius: radius.circle,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
     title: {
-      fontSize: font.size.h2,
-      fontWeight: font.weight.bold,
-      // textStrong: #222 on #fff = 16:1 (light) / #f5f5f5 on #111 = 18:1 (dark) — AA pass.
-      color: color.textStrong,
       textAlign: 'center',
     },
     body: {
-      fontSize: font.size.lg,
-      // text: #333 on #fff = 12.6:1 (light) / #ddd on #111 = 13:1 (dark) — AA pass.
-      color: color.text,
       textAlign: 'center',
-      lineHeight: 24,
+      lineHeight: font.lineHeight.relaxed,
       maxWidth: 360,
     },
     dotsRow: {
@@ -285,7 +311,7 @@ const makeStyles = (color: ColorTheme) =>
       borderRadius: radius.xs,
       backgroundColor: color.borderStrong,
     },
-    // brand (#2f80ed) is a UI surface color — dot is decorative (hidden from AT).
+    // brand is a UI surface color — dot is decorative (hidden from AT).
     dotActive: { backgroundColor: color.brand, width: 22 },
     srCardContent: {
       position: 'absolute',
@@ -295,7 +321,6 @@ const makeStyles = (color: ColorTheme) =>
     },
     actions: {
       paddingHorizontal: spacing.xxl,
-      paddingBottom: 36,
       paddingTop: spacing.sm,
     },
     actionsRow: {
@@ -313,7 +338,7 @@ const makeStyles = (color: ColorTheme) =>
     },
     // Used when Back + Next/Get started share the same row.
     primaryBtnFlex: { flex: 1 },
-    // Final "Get started" CTA — stronger shadow signals completion.
+    // Final "Open the Map" CTA — stronger shadow signals completion.
     primaryBtnLast: {
       shadowOpacity: 0.28,
       shadowRadius: 10,
@@ -329,17 +354,5 @@ const makeStyles = (color: ColorTheme) =>
       alignItems: 'center',
       minHeight: 44,
       justifyContent: 'center',
-    },
-    backBtnText: {
-      color: color.text,
-      fontWeight: font.weight.semibold,
-      fontSize: font.size.lg,
-    },
-    // textOnBrand: #fff on brand = 3.3:1 — passes WCAG 1.4.3 for large bold text
-    // (16pt bold = "large text" threshold per WCAG 2.2, 3:1 minimum).
-    primaryBtnText: {
-      color: color.textOnBrand,
-      fontWeight: font.weight.bold,
-      fontSize: font.size.lg,
     },
   });

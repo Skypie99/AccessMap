@@ -136,10 +136,20 @@ so don't change the path scheme without updating the policy.
 
 - TypeScript strict — no `any` if you can help it. Existing code uses `any` in
   `catch (e: any)` blocks, that's fine.
-- Style: inline `StyleSheet.create` at the bottom of each component file.
-- Colors live as hex literals in styles for now (no theme system yet).
-- Forms use plain `useState` + `Pressable` — no form library.
-- No tests yet. `tsc --noEmit` is the safety net.
+- Style: inline `StyleSheet.create` at the bottom of each component file. Components
+  that adapt to dark mode build styles in a `makeStyles(color)` factory or read
+  `const color = useColor()` and apply colors inline (see `Button`/`Card`).
+- **Design system (`src/theme.ts` + `src/theme/ThemeContext.tsx`):** use the tokens —
+  `color` (via `useColor()`), `spacing`, `radius`, `shadow`, `font`, `motion` — never raw
+  hex/numbers. Use `<AppText>` (not raw `<Text>`) so the brand fonts render. Reusable
+  primitives live in `src/components/ui/` (`AppText`, `Button`, `Input`, `Card`, `Pill`,
+  `PointsChip`, `Skeleton`, `Sheet`). Dark mode follows the OS and has a Settings toggle
+  (`useThemeMode()`); haptics via `@/lib/haptics`. Full reference: `DESIGN.md`.
+- Forms use plain `useState` + `Pressable` — no form library; use the `Input` primitive
+  for text fields.
+- Tests: `npm test` (Jest, ~1550 tests) + `npm run typecheck` are the safety net — run
+  both before shipping. (`npm run lint` is currently broken on main: ESLint v10 vs a
+  `react-hooks` rule mismatch — pending a tooling fix.)
 - Don't add new features that weren't asked for. Beginner-friendly = small,
   understandable diffs.
 
