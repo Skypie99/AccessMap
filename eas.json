@@ -79,22 +79,6 @@
       }
     },
 
-    "preview2": {
-      "// description": "Parallel internal TestFlight channel. Inherits everything from preview; only APP_ENV differs. Second concurrent build slot (e.g. a separate tester group).",
-      "extends": "preview",
-      "env": {
-        "APP_ENV": "preview2"
-      }
-    },
-
-    "preview3": {
-      "// description": "Third parallel internal TestFlight channel. Inherits from preview; only APP_ENV differs.",
-      "extends": "preview",
-      "env": {
-        "APP_ENV": "preview3"
-      }
-    },
-
     "production": {
       "// description": "App Store submission build. After a successful build run: eas submit --profile production --platform ios. autoIncrement keeps buildNumber unique across submissions.",
       "// PRIVACY GATE": "Do NOT run this profile until the D8 EXIF GPS leak (see PROJECT_STATE.md) is closed. App Store submission of location data while that leak is open is a pre-launch blocker.",
