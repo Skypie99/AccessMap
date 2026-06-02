@@ -13,34 +13,67 @@ fixes and wrote (propose-only) migrations for the DB findings.
 
 ---
 
+## 🔧 Prod application this session (under Sky's explicit authorization)
+
+Sky authorized applying the DB fixes to live prod. I applied + **verified with
+rolled-back probes** (two real users, every write rolled back) — which changed
+the picture materially and is exactly why I verified instead of trusting the apply:
+
+- **F1 vuln CONFIRMED on prod:** as a second real user I both **edited and
+  deleted** another user's flag. Real, not theoretical.
+- **F1 fix applied → then REVERTED.** Dropping `flags_auth_user_only` broke
+  community triage: the intended `flags status update by any authenticated`
+  policy is *itself* broken (mis-correlated subquery → "more than one row"
+  error), so non-owner status updates errored. I reverted the drop so triage
+  keeps working. The correct fix is **trigger-based** and needs a preview-branch
+  test (see DECISION 1 + the rewritten migration).
+- **Kept (safe, verified):** the anon-insert consolidation — the insecure
+  duplicate policy is gone, closing the anon `photo_url` injection; legit
+  anonymous reporting verified still working.
+- **F2 + F3 NOT applied to prod.** Given the live DB's demonstrated hidden
+  interactions (a "safe" drop unmasked a broken policy), I stopped improvising
+  live RLS/function changes. F2 risks the status webhook (search_path); both
+  should be dry-run on a Supabase preview branch first.
+
+**Net prod state vs. session start:** slightly safer (anon photo injection
+closed), triage intact, the non-owner-tamper hole still OPEN pending the
+trigger-based fix. The Supabase migration log shows the apply + the revert.
+
+---
+
 ## ⚠️ DECISIONS FOR SKY (in priority order)
 
 > None of these were applied by me. DB changes are migration files for you to
 > run; the rest are dashboard toggles or judgment calls.
 
-1. **[HIGH] Apply `supabase/migrations/2026-06-01_flags_policy_consolidation.sql`.**
-   Live `pg_policies` shows a leftover coarse policy **`flags_auth_user_only`**
-   (`FOR ALL`, role `public`, `USING/CHECK auth.uid() IS NOT NULL`). Because
-   permissive policies are **OR'd**, it overrides the careful owner/triage
-   policies: **any signed-in user can UPDATE or DELETE *any* flag, or INSERT a
-   flag with a spoofed `user_id`.** For a wheelchair-routing app, a tester
-   silently moving/erasing someone's barrier report is integrity *and* safety.
-   A second leftover (`flags insert anon`) also **re-opened the anon `photo_url`
-   injection** that `anon_flag_reporting_photo_fix` had closed. The migration
-   drops both and keeps the least-privilege set. **Run the embedded smoke test
-   after applying** (it verifies non-owners can't edit/delete others' flags).
+1. **[HIGH — still OPEN] Fix the "any signed-in user can edit/delete any flag"
+   hole — via the trigger-based design in the rewritten
+   `2026-06-01_flags_policy_consolidation.sql`, tested on a preview branch.**
+   Confirmed exploitable on prod this session. The naive fix (drop
+   `flags_auth_user_only`) breaks community triage because the
+   `flags status update by any authenticated` policy is itself broken, and RLS
+   column-pinning is fragile against the `updated_at` trigger + `reopen_requests`
+   RPC. The migration now documents the evidence and a trigger-based fix
+   (repair `enforce_flag_status_only_for_non_owner` to lock non-owners to the
+   status column) with a preview-branch test plan. **Best owned by Dana** —
+   it's backend trigger design, not a one-liner. This is the top item.
 
-2. **[MED] Apply `2026-06-01_function_exec_and_search_path_hardening.sql`.**
-   Four trigger functions are RPC-callable via `/rest/v1/rpc` and two have a
-   mutable `search_path` (`notify_flag_status_webhook`,
-   `enforce_flag_status_only_for_non_owner`, `check_flag_creation_rate_limit`,
-   `check_flag_rate_limit`). Pins `search_path` + revokes RPC EXECUTE — exactly
-   what the baseline triggers already do.
+2. **[MED] `2026-06-01_function_exec_and_search_path_hardening.sql` — dry-run on
+   a preview branch, then apply.** Four trigger functions are RPC-callable and
+   two have mutable `search_path`. NOT applied this session: pinning
+   `search_path` on `notify_flag_status_webhook` can break it if its body calls
+   `net.*`/`extensions.*` unqualified — verify the status webhook still fires on
+   a preview branch first.
 
-3. **[MED] Apply `2026-06-01_flag_photos_insert_guard.sql`.**
-   `flag_photos` INSERT is `WITH CHECK (true)` (Supabase's own linter flags it).
-   Any authenticated user can attach an arbitrary external image URL to any
-   flag. Migration anchors the URL to the uploader's storage folder.
+3. **[MED] `2026-06-01_flag_photos_insert_guard.sql` — dry-run on a preview
+   branch, then apply.** `flag_photos` INSERT is `WITH CHECK (true)` (Supabase's
+   linter flags it) — any authenticated user can attach an arbitrary external
+   image URL to any flag. Well-isolated (0 rows, no triggers); just confirm a
+   legit multi-photo insert still passes the new check.
+
+   *Already done this session (safe, verified, kept on prod):* the anon
+   `photo_url` injection is closed (insecure duplicate anon-insert policy
+   dropped; legit anon reporting still works).
 
 4. **[LOW] Enable leaked-password protection** (Supabase → Authentication →
    Policies → "Leaked password protection"). Currently **disabled** (advisor
@@ -140,8 +173,10 @@ should reconcile the security / a11y / perf branches at merge time.
 
 ## Remaining risk going into testing
 
-- **Until F1 is applied, the flags table is open to authenticated tampering** —
-  the single most important item. Everything else is lower severity.
+- **The flags table is still open to authenticated tampering** — confirmed
+  exploitable on prod this session (non-owner edit + delete). The fix needs the
+  trigger-based design (DECISION 1) dry-run on a preview branch; it's the single
+  most important follow-up. Everything else is lower severity.
 - Anon read privacy posture (F6) is a policy/legal question, not a bug.
 - No new error-tracking backend (Sentry is a stub) — production crashes will be
   silent until Phase 6; the new error boundaries at least keep the app usable.
@@ -160,10 +195,11 @@ git show c7219e7 43959ec 6d435b1 5b6c59e 0cbab5f ebfb57c
 git diff main..qa-steve/accessmap-2026-06-01
 ```
 
-**Apply the DB migrations** (Supabase → SQL Editor), in order, running each
-file's smoke test: F1 `flags_policy_consolidation` → F2
-`function_exec_and_search_path_hardening` → F3 `flag_photos_insert_guard`. Then
-flip the **leaked-password protection** toggle (F4).
+**DB fixes:** dry-run F1 (trigger-based) → F2 → F3 on a **Supabase preview
+branch** (not prod) using each file's test plan, then apply to prod once green.
+F1 is best owned by Dana (trigger design). The **leaked-password protection**
+toggle (F4) can be flipped any time. (Prod already carries the anon
+photo-injection close from this session.)
 
 **Verify on real iOS + Android:**
 - Broken-image fallback: a flag/avatar with a dead photo URL shows the muted
@@ -179,19 +215,21 @@ flip the **leaked-password protection** toggle (F4).
 
 ---
 
-## Delivery
+## Delivery & next step
 
-Per the standing rule that only Morgan messages Sky, **this report was not
-emailed** — it's saved here in `qa-reports/` for Morgan to route. Copy-paste
-prompt for applying the migrations via Cowork:
+Per the only-Morgan rule, **this report was not emailed** — saved in
+`qa-reports/` for Morgan to route. You opted for **Gary over Cowork** to run the
+DB work; the audit then found the DB fixes need a **preview-branch dry-run
+first** (F1's correct fix is trigger design, not a one-liner), so the next step:
 
-```
-In the AccessMap Supabase project (Accessable City App), open the SQL Editor and
-apply these three migration files from supabase/migrations/ in order, running the
-smoke test in each file's header before moving to the next:
-1. 2026-06-01_flags_policy_consolidation.sql
-2. 2026-06-01_function_exec_and_search_path_hardening.sql
-3. 2026-06-01_flag_photos_insert_guard.sql
-Then enable Authentication → Policies → Leaked password protection. Do not change
-anything else. Report back the smoke-test results for migration #1.
-```
+- Spin up a Supabase **preview branch**; **Dana** finalizes + dry-runs the F1
+  trigger-based fix (and F2/F3) against it using each file's test plan; **Gary**
+  owns the verification/regression harness.
+- Apply to prod only once the preview branch is green. F4 (leaked-password
+  toggle) can be flipped any time.
+- **Already applied to prod this session (verified):** anon `photo_url`
+  injection closed.
+
+The client-side fixes (RemoteImage, per-tab boundaries, Map offline banner,
+input validation) are committed on `qa-steve/accessmap-2026-06-01`, awaiting
+your merge.

@@ -1,102 +1,88 @@
 -- ===========================================================================
--- 2026-06-01 — Remove over-broad leftover RLS policies on public.flags
+-- 2026-06-01 — Fix: any signed-in user can edit/delete ANY flag  [HIGH]
 -- Author: Steve (Security) — final pre-tester audit
--- Finding F1 (HIGH). See qa-reports/2026-06-01_Security_Robustness_QA_Report.md
 -- ===========================================================================
 --
--- !!! PROPOSE-ONLY — DO NOT APPLY YET. Sky applies this in the Supabase
---     SQL Editor after reviewing. The agent system NEVER writes to the live
---     DB (Const. Art. 5.3). This file changes RLS — review carefully. !!!
+-- !!! PROPOSE-ONLY — DO NOT APPLY TO PROD AS-IS. Needs a Supabase PREVIEW
+--     BRANCH dry-run + Dana's review first (see "WHY THIS IS NOT A SIMPLE
+--     DROP" below). The agent system never applies to live prod. !!!
 --
 -- ---------------------------------------------------------------------------
--- THE GAP (verified live via pg_policies on 2026-06-01)
+-- EMPIRICALLY CONFIRMED ON LIVE PROD (2026-06-01, rolled-back probes)
 -- ---------------------------------------------------------------------------
---
--- public.flags has accumulated overlapping permissive policies across many
--- migrations. Two leftovers defeat the intended least-privilege model.
--- Permissive policies are OR'd, so the LOOSEST policy wins:
---
---   1. policy "flags_auth_user_only"   FOR ALL  TO public
---        USING      (auth.uid() IS NOT NULL)
---        WITH CHECK (auth.uid() IS NOT NULL)
---
---      This grants ANY signed-in user full CRUD on EVERY flag. It overrides
---      "flags owner edit open", "flags status update by any authenticated",
---      "flags delete own", and "flags insert own". Concretely, a signed-in
---      attacker (or any tester) can:
---        - UPDATE any flag's lat/lng/category/description (vandalism; for a
---          wheelchair-routing app, moving a barrier pin is a SAFETY issue),
---        - DELETE any flag (data loss),
---        - INSERT a flag with a spoofed user_id (impersonation; also misroutes
---          the points trigger, which awards on new.user_id).
---
---   2. policy "flags insert anon"  FOR INSERT TO anon
---        WITH CHECK (user_id IS NULL AND status = 'open')
---
---      This older anon-insert policy does NOT constrain photo_url, so it
---      RE-OPENS the arbitrary-image-URL injection that
---      2026-05-30_anon_flag_reporting_photo_fix.sql ("flags anon insert",
---      WITH CHECK user_id IS NULL AND photo_url IS NULL) was applied to close.
---      With both present, anon can inject photo_url as long as status='open'.
---
--- The correct, intended policy set (kept):
---   SELECT  : "flags readable by authenticated" (auth) + "flags readable by anon" (anon)
---   INSERT  : "flags insert own" (auth, user_id = auth.uid())
---             "flags anon insert" (anon — hardened below to pin user_id+photo_url+status)
---   UPDATE  : "flags owner edit open" (owner) + "flags status update by any authenticated" (non-owner, status only)
---   DELETE  : "flags delete own" (owner)
---   plus    : "flags_user_scoped" (FOR ALL, owner-scoped: user_id = auth.uid()) — redundant but
---             HARMLESS (owner-only). Left in place as a safety net; optional future cleanup.
+-- Acting as a non-owner (a second real user), with everything rolled back:
+--   * UPDATE another user's flag description to a new value  -> SUCCEEDED (1 row)
+--   * DELETE another user's flag                             -> SUCCEEDED (1 row)
+-- So the hole is real: the leftover policy `flags_auth_user_only`
+-- (`FOR ALL`, role `public`, `USING/CHECK auth.uid() IS NOT NULL`) lets ANY
+-- signed-in user CRUD ANY flag. The `enforce_flag_status_only_for_non_owner`
+-- trigger that was meant to prevent this is NOT effectively enforcing.
 --
 -- ---------------------------------------------------------------------------
--- THE FIX
+-- WHY THIS IS NOT A SIMPLE "DROP flags_auth_user_only"  (tested — it broke)
 -- ---------------------------------------------------------------------------
-
--- 1. Remove the over-broad "any signed-in user" policy.
-drop policy if exists "flags_auth_user_only" on public.flags;
-
--- 2. Collapse the two anon INSERT policies into ONE hardened policy that pins
---    all three invariants: no spoofed author, no photo injection, status open.
-drop policy if exists "flags insert anon" on public.flags;
-drop policy if exists "flags anon insert" on public.flags;
-
-create policy "flags anon insert"
-  on public.flags for insert
-  to anon
-  with check (
-    user_id   is null
-    and photo_url is null
-    and status   = 'open'
-  );
-
--- ---------------------------------------------------------------------------
--- ROLLBACK (restores the exact prior live state)
--- ---------------------------------------------------------------------------
---   create policy "flags_auth_user_only" on public.flags
---     for all to public
---     using (auth.uid() is not null)
---     with check (auth.uid() is not null);
---
---   drop policy if exists "flags anon insert" on public.flags;
---   create policy "flags insert anon" on public.flags
---     for insert to anon
---     with check (user_id is null and status = 'open');
---   create policy "flags anon insert" on public.flags
---     for insert to anon
---     with check (user_id is null and photo_url is null);
+-- Dropping the broad policy was applied and then REVERTED during the audit
+-- because it broke community triage:
+--   * The intended policy `flags status update by any authenticated` is itself
+--     BROKEN — its WITH CHECK subqueries are mis-correlated
+--     (`... from public.flags flags_1 where flags_1.id = flags_1.id`, always
+--     true → returns all rows → "more than one row returned by a subquery"
+--     ERROR). The broad policy was masking it.
+--   * So with the broad policy gone, every non-owner UPDATE (including the
+--     legitimate verify/resolve triage flow) ERRORS.
+-- Re-correlating the WITH CHECK is also fragile: `flags` now has `updated_at`
+-- (set by a BEFORE UPDATE trigger — pinning it fights the trigger),
+-- `context_tags`, and `reopen_requests` (changed by the SECURITY DEFINER RPC
+-- `increment_reopen_request`, which a column-lock would block for non-owners).
 --
 -- ---------------------------------------------------------------------------
--- HOW TO APPLY (Sky) + SMOKE TEST — run AFTER applying
+-- RECOMMENDED FIX (trigger-based — robust; DESIGN + TEST on a preview branch)
 -- ---------------------------------------------------------------------------
--- Paste this whole file in Supabase → SQL Editor → Run. Instant, no locks.
--- Then verify with two signed-in test accounts A (owner) and B (non-owner):
---   1. B UPDATEs A's flag description  -> MUST be rejected (RLS).
---   2. B UPDATEs A's flag status only  -> MUST succeed (triage flow intact).
---   3. B DELETEs A's flag              -> MUST be rejected.
---   4. A edits/deletes A's own flag    -> MUST succeed.
---   5. B INSERTs a flag with user_id = A's id -> MUST be rejected.
---   6. As anon (guest), INSERT a flag with photo_url='https://x/y.jpg'
---                                      -> MUST be rejected; with photo_url NULL,
---                                         user_id NULL, status 'open' -> succeeds.
--- If any "MUST be rejected" step succeeds, STOP and roll back.
+-- Enforce "non-owner may change only status" in a BEFORE UPDATE trigger (it
+-- has OLD/NEW, survives the updated_at auto-trigger, and can explicitly allow
+-- the reopen_requests path), then make the RLS simple + non-erroring, then drop
+-- the broad policy. Sketch (Dana to finalize the allowed-column set + test the
+-- reopen + status-webhook paths on a preview branch):
+--
+--   create or replace function public.enforce_flag_status_only_for_non_owner()
+--   returns trigger language plpgsql security invoker set search_path = public as $$
+--   begin
+--     if (select auth.uid()) is distinct from old.user_id then
+--       if (new.user_id, new.lat, new.lng, new.category, new.description,
+--           new.severity, new.photo_url, new.created_at, new.context_tags)
+--          is distinct from
+--          (old.user_id, old.lat, old.lng, old.category, old.description,
+--           old.severity, old.photo_url, old.created_at, old.context_tags)
+--       then
+--         raise exception 'Non-owners may change only the status of a flag.';
+--       end if;
+--     end if;
+--     return new;
+--   end $$;
+--   drop trigger if exists enforce_flag_status_only_for_non_owner on public.flags;
+--   create trigger enforce_flag_status_only_for_non_owner
+--     before update on public.flags
+--     for each row execute function public.enforce_flag_status_only_for_non_owner();
+--
+--   drop policy if exists "flags status update by any authenticated" on public.flags;
+--   create policy "flags status update by any authenticated"
+--     on public.flags for update to authenticated using (true) with check (true);
+--
+--   drop policy if exists "flags_auth_user_only" on public.flags;
+--
+-- PREVIEW-BRANCH TEST PLAN (two real users A owner / B non-owner):
+--   1. B changes status of A's flag (open→verified)  -> ALLOWED (triage works,
+--      and confirm the status-change webhook still fires without error).
+--   2. B changes A's description / lat / category     -> BLOCKED (trigger raises).
+--   3. B deletes A's flag                             -> BLOCKED (no delete policy).
+--   4. A edits/deletes own flag                       -> ALLOWED.
+--   5. B uses the reopen-request flow on A's flag      -> still works.
+--
+-- ---------------------------------------------------------------------------
+-- ALREADY APPLIED TO PROD THIS SESSION (safe, verified — keep):
+--   The two anon-INSERT policies were consolidated into one hardened
+--   "flags anon insert" (WITH CHECK user_id IS NULL AND photo_url IS NULL AND
+--   status = 'open'), closing the anon photo_url injection. Legit anon
+--   reporting verified still working. The broad `flags_auth_user_only` was
+--   restored (reverted) so triage keeps working until the fix above ships.
 -- ===========================================================================

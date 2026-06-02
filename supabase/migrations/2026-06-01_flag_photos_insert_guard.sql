@@ -4,9 +4,11 @@
 -- Finding F3 (MED). See qa-reports/2026-06-01_Security_Robustness_QA_Report.md
 -- ===========================================================================
 --
--- !!! PROPOSE-ONLY — DO NOT APPLY YET. Sky applies this in the Supabase
---     SQL Editor after reviewing. The agent system NEVER writes to the live
---     DB (Const. Art. 5.3). !!!
+-- !!! PROPOSE-ONLY — TEST ON A SUPABASE PREVIEW BRANCH FIRST, then Sky applies
+--     to prod. The agent system never applies to live prod (Const. Art. 5.3).
+--     This one is well-isolated (flag_photos has 0 rows, no triggers/webhook),
+--     but verify a legit multi-photo insert still passes the new check on a
+--     preview branch before prod, given the live DB's demonstrated drift. !!!
 --
 -- ---------------------------------------------------------------------------
 -- THE GAP (verified live via get_advisors + pg_policies on 2026-06-01)

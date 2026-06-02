@@ -4,9 +4,13 @@
 -- Finding F2 (MED). See qa-reports/2026-06-01_Security_Robustness_QA_Report.md
 -- ===========================================================================
 --
--- !!! PROPOSE-ONLY — DO NOT APPLY YET. Sky applies this in the Supabase
---     SQL Editor after reviewing. The agent system NEVER writes to the live
---     DB (Const. Art. 5.3). !!!
+-- !!! PROPOSE-ONLY — TEST ON A SUPABASE PREVIEW BRANCH FIRST, then Sky applies
+--     to prod. The agent system never applies to live prod (Const. Art. 5.3).
+--     CAUTION discovered during the audit: the live DB has hidden interactions
+--     (e.g. a broken triage RLS policy that a "safe" change unmasked). For THIS
+--     file specifically: pinning search_path on notify_flag_status_webhook can
+--     break it IF its body calls net.* / extensions.* unqualified — verify the
+--     status-change webhook still fires on a preview branch before prod. !!!
 --
 -- ---------------------------------------------------------------------------
 -- THE GAP (verified live via get_advisors + pg_proc on 2026-06-01)
