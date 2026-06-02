@@ -1965,7 +1965,7 @@ const makeStyles = (color: ColorTheme) =>
       justifyContent: 'space-between',
       zIndex: 10,
     },
-    topRow: { flexDirection: 'row', gap: 8, alignItems: 'center' },
+    topRow: { flexDirection: 'row', gap: 8, alignItems: 'flex-start', flexWrap: 'wrap' },
     // Saved Places chip row — slim secondary row beneath the action bar.
     // Wraps so a long list breaks to a second line rather than truncating.
     placesRow: {
@@ -1995,7 +1995,7 @@ const makeStyles = (color: ColorTheme) =>
     placeChipGlyph: { fontSize: 14, color: color.brand },
     placeChipText: { fontSize: 13, fontWeight: '600', color: color.brandTextAlt },
     statusPill: {
-      flex: 1,
+      alignSelf: 'flex-start',
       backgroundColor: color.overlaySoft,
       paddingHorizontal: 12,
       paddingVertical: 8,
