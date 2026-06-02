@@ -1,0 +1,2 @@
+[functions.notify-flag-status]
+verify_jwt = false
