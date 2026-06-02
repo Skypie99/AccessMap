@@ -107,6 +107,13 @@ const darkColor = {
   tierSilverBg: '#1d1d1f', // very slightly elevated from surface — rank 2
   tierBronzeBg: '#2d1a0d', // dark warm bronze wash — rank 3
 
+  // Podium medal tints — lightened slightly for legibility on dark surfaces.
+  medalSilver: '#B0BEC8',
+  medalBronze: '#D4986A',
+
+  // Anonymous-contributor chip — same neutral; white label text stays readable.
+  anonNeutral: '#6b7280',
+
   // Misc
   shadow: '#fff', // inverted for dark mode
   pointsPillText: '#dbe7fb',

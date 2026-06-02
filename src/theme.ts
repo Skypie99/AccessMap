@@ -141,6 +141,16 @@ export const color = {
   tierSilverBg: '#f3f4f6', // cool silver wash — rank 2
   tierBronzeBg: '#fef3ec', // warm bronze wash — rank 3
 
+  // Podium medal tints — the rank 1/2/3 medal-icon colors (distinct from the row
+  // washes above). Rank 1 reuses goldAccent. Decorative only (icon tint, always
+  // paired with the numeric rank), so contrast is secondary to the metal feel.
+  medalSilver: '#9AA7B5',
+  medalBronze: '#C0884F',
+
+  // Anonymous-contributor chip background (FlagCard). Neutral mid-gray;
+  // white label text on it is ~4.7:1 — AA at any size.
+  anonNeutral: '#6b7280',
+
   // Misc
   shadow: '#000',
   pointsPillText: '#dbe7fb', // light-blue label on brand-blue background
@@ -229,6 +239,19 @@ export const font = {
     base: Math.round(14 * 1.4), // 20 → font.size.base (most common)
     relaxed: Math.round(16 * 1.4), // 24 → font.size.lg
   },
+  // Letter-spacing (tracking) for display/heading variants — tight, premium feel.
+  // Values are absolute pt (RN letterSpacing is pt, not em). Rule of thumb:
+  // tracking ≈ fontSize × -0.02. AppText derives the right one from its size.
+  // Replaces the old hardcoded -0.3 (only correct near 15pt) — fixes the
+  // JSDoc/code "-0.02em vs -0.3" mismatch.
+  tracking: {
+    display: -1.0, // font.size.display (48pt) — hero headlines
+    h1: -0.55, // font.size.h1 (28pt) — screen titles
+    xl: -0.35, // font.size.xl (18pt) — section headings
+    heading: -0.3, // font.size.lg (16pt) default — heading variant at base size
+    none: 0, // body / mono — no tracking
+    loose: 0.4, // all-caps labels / uppercase pill text
+  },
 };
 
 // -------------------------------------------------------------------------
@@ -268,6 +291,38 @@ export const shadow = {
     elevation: 8,
   },
 };
+
+// -------------------------------------------------------------------------
+// Motion — durations, easing curves, and spring presets. DESIGN.md §8 ("≤ 200ms").
+// Kept as pure data so this file stays runtime-free: easing values are
+// cubic-bezier control points — build them with Easing.bezier(...) at the call
+// site, e.g. `Easing.bezier(...motion.easing.standard)`. Spring presets spread
+// into Animated.spring(); set useNativeDriver per call. ALWAYS gate non-trivial
+// motion behind useReducedMotion() from src/lib/accessibility.
+// -------------------------------------------------------------------------
+
+export const motion = {
+  // Named durations in ms. Never exceed `base` for micro-interactions.
+  duration: {
+    instant: 0, // reduced-motion fallback — snap with no perceived delay
+    fast: 120, // icon swaps, small fades, press ripples
+    base: 180, // most micro-interactions (satisfies DESIGN.md §8 ≤ 200ms)
+    slow: 320, // sheet reveals, progress fills — use sparingly
+  },
+  // Cubic-bezier control points. Usage: Easing.bezier(...motion.easing.standard)
+  easing: {
+    standard: [0.4, 0, 0.2, 1] as const, // general value transitions
+    decelerate: [0.0, 0.0, 0.2, 1] as const, // things that "arrive" (sheet in)
+    accelerate: [0.4, 0.0, 1.0, 1] as const, // things that "leave" (sheet out)
+  },
+  // Animated.spring presets — spread into the config; add useNativeDriver per call.
+  spring: {
+    press: { speed: 50, bounciness: 0 }, // button press-in (matches current Button)
+    pressOut: { speed: 50, bounciness: 2 }, // button release
+    sheet: { speed: 18, bounciness: 4 }, // sheet / card entrance
+    drawer: { tension: 70, friction: 12 }, // drawer slide-in
+  },
+} as const;
 
 // -------------------------------------------------------------------------
 // Accessibility — design baseline values that other tokens must respect
