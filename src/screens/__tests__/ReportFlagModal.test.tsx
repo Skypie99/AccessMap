@@ -16,7 +16,7 @@
 
 import React from 'react';
 import { Alert } from 'react-native';
-import { render, fireEvent, waitFor } from '@testing-library/react-native';
+import { render, fireEvent, waitFor, act } from '@testing-library/react-native';
 
 // ---------------------------------------------------------------------------
 // Supabase env stubs — required before any module that imports supabase.ts
@@ -257,6 +257,18 @@ beforeEach(() => {
   mockCreateAnonFlag.mockResolvedValue(SAMPLE_ANON_ROW);
   mockCreateFlag.mockResolvedValue({ row: SAMPLE_AUTH_ROW, tagsAccepted: true });
   mockSubscribeContextTagsCapability.mockReturnValue(() => {});
+});
+
+// handleSubmit keeps running after a test's `waitFor` resolves
+// (createFlag → onCreated → onClose → setSubmitting(false)). That trailing
+// state update could fire after the test ended → "update not wrapped in act"
+// and an intermittent failure under parallel jest workers. Drain the async tail
+// within act after every test so nothing leaks past it. Makes the suite
+// deterministic in parallel (it was already 100% green serially).
+afterEach(async () => {
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  });
 });
 
 // ===========================================================================
