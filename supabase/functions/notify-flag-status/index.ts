@@ -54,16 +54,30 @@ const CATEGORY_LABELS: Record<string, string> = {
 // 2. Auth gate — shared-secret check
 // ---------------------------------------------------------------------------
 // DB webhooks cannot carry a user JWT, so Supabase's built-in verify_jwt is
-// not appropriate. We use a custom header instead.
-function isAuthorized(req: Request): boolean {
-  const secret = Deno.env.get('NOTIFY_WEBHOOK_SECRET');
-  if (!secret) {
-    // Missing env var: lock the function entirely. This prevents accidentally
-    // deploying an open endpoint in a new environment.
+// not appropriate. We use a custom X-Webhook-Secret header instead.
+// The secret is stored in Supabase Vault (name: 'webhook_secret') and verified
+// via the public.verify_webhook_secret() RPC — both sides read from the same
+// single source of truth, so rotation only needs to update Vault.
+async function isAuthorized(req: Request): Promise<boolean> {
+  const incoming = req.headers.get('X-Webhook-Secret');
+  if (!incoming) return false;
+  const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+  const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+  try {
+    const resp = await fetch(`${supabaseUrl}/rest/v1/rpc/verify_webhook_secret`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${serviceKey}`,
+        'apikey': serviceKey,
+      },
+      body: JSON.stringify({ incoming }),
+    });
+    if (!resp.ok) return false;
+    return await resp.json() as boolean;
+  } catch {
     return false;
   }
-  const incoming = req.headers.get('X-Webhook-Secret');
-  return incoming === secret;
 }
 
 // ---------------------------------------------------------------------------
@@ -137,7 +151,7 @@ function buildNotification(status: string, category: string): { title: string; b
 Deno.serve(async (req: Request): Promise<Response> => {
 
   // 4a. Auth check — must come before any body parsing.
-  if (!isAuthorized(req)) {
+  if (!await isAuthorized(req)) {
     return new Response('Unauthorized', { status: 401 });
   }
 
