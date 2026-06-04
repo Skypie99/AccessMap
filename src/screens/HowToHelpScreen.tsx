@@ -14,7 +14,7 @@ import {
   Text,
   View,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { CheckCircle2, Flag, Heart, Star, Users, X } from 'lucide-react-native';
 import { font, radius, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 
@@ -25,25 +25,25 @@ interface Props {
 
 const STEPS = [
   {
-    icon: 'flag-outline' as const,
+    icon: Flag,
     number: '1',
     title: 'Report a problem',
     body: "Tap + Report on the map wherever you see a broken sidewalk, missing ramp, blocked path, missing signal, or steep grade. Add a photo and severity — a few seconds from you could save someone a real headache.",
   },
   {
-    icon: 'checkmark-circle-outline' as const,
+    icon: CheckCircle2,
     number: '2',
     title: 'Verify flags near you',
     body: "Head to the Tasks tab to see open reports from the community. Confirm the issue is still there — or mark it resolved if it's been fixed. Verifying earns you points and keeps the map accurate.",
   },
   {
-    icon: 'people-outline' as const,
+    icon: Users,
     number: '3',
     title: 'Spread the word',
     body: 'Share AccessMap with neighbours, local disability organisations, city councillors, and anyone who wants a more navigable community. The map only works if the community keeps it current.',
   },
   {
-    icon: 'star-outline' as const,
+    icon: Star,
     number: '4',
     title: 'Earn points',
     body: "Every report and verification earns points on your profile. It's a small token — but it reflects real value your contributions add to the community.",
@@ -80,7 +80,7 @@ export default function HowToHelpScreen({ visible, onClose }: Props) {
             accessibilityRole="button"
             accessibilityLabel="Close how to help"
           >
-            <Ionicons name="close" size={24} color={color.textSubtle} />
+            <X size={24} color={color.textSubtle} strokeWidth={2.2} />
           </Pressable>
         </View>
 
@@ -106,7 +106,7 @@ export default function HowToHelpScreen({ visible, onClose }: Props) {
                 accessibilityElementsHidden
                 importantForAccessibility="no-hide-descendants"
               >
-                <Ionicons name={step.icon} size={28} color={stepColors[i]} />
+                <step.icon size={28} color={stepColors[i]} strokeWidth={2} />
               </View>
               <View style={styles.stepText}>
                 <Text style={styles.stepTitle}>{step.title}</Text>
@@ -120,10 +120,10 @@ export default function HowToHelpScreen({ visible, onClose }: Props) {
             accessible
             accessibilityLabel="Every contribution — big or small — makes the world more accessible for people with mobility disabilities. Thank you."
           >
-            <Ionicons
-              name="heart"
+            <Heart
               size={18}
               color={color.brand}
+              strokeWidth={2}
               accessibilityElementsHidden
               importantForAccessibility="no-hide-descendants"
             />

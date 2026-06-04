@@ -66,7 +66,9 @@ describe('QA merge — Alex HIGH #2: Admin moderation buttons reachable + severi
   const admin = read('screens/AdminScreen.tsx');
 
   it('shows severity as text (1.4.1, not a colour dot alone)', () => {
-    expect(admin).toContain('`Severity ${item.severity}`');
+    // Severity now renders as a label + number pill (e.g. "Moderate · 3") via the
+    // design-system severity ramp — strictly more than colour alone (WCAG 1.4.1).
+    expect(admin).toContain('{sev.label} · {item.severity}');
   });
 
   it('marks the flag list with the list role (1.3.1)', () => {

@@ -11,11 +11,11 @@ import {
   Pressable,
   SafeAreaView,
   StyleSheet,
-  Text,
   View,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { font, radius, spacing } from '@/theme';
+import { Layers, X } from 'lucide-react-native';
+import { AppText } from '@/components/ui/AppText';
+import { font, radius, shadow, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 
 interface Props {
@@ -37,7 +37,7 @@ export default function ResourcesScreen({ visible, onClose }: Props) {
       <SafeAreaView style={styles.root}>
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.title} accessibilityRole="header">Resources</Text>
+          <AppText variant="heading" style={styles.title} accessibilityRole="header">Resources</AppText>
           <Pressable
             onPress={onClose}
             hitSlop={12}
@@ -45,7 +45,7 @@ export default function ResourcesScreen({ visible, onClose }: Props) {
             accessibilityRole="button"
             accessibilityLabel="Close resources"
           >
-            <Ionicons name="close" size={24} color={color.textSubtle} />
+            <X size={24} color={color.textSubtle} strokeWidth={2.2} />
           </Pressable>
         </View>
 
@@ -61,17 +61,17 @@ export default function ResourcesScreen({ visible, onClose }: Props) {
               accessibilityElementsHidden
               importantForAccessibility="no-hide-descendants"
             >
-              <Ionicons name="layers-outline" size={40} color={color.brand} />
+              <Layers size={40} color={color.brand} strokeWidth={2} />
             </View>
-            <Text style={styles.emptyTitle}>Coming soon</Text>
-            <Text style={styles.emptyBody}>
+            <AppText variant="heading" style={styles.emptyTitle}>Coming soon</AppText>
+            <AppText variant="body" style={styles.emptyBody}>
               We're curating a list of accessibility resources — organisations,
               tools, and guides that help make communities more navigable for
               everyone.
-            </Text>
-            <Text style={styles.emptyBody}>
+            </AppText>
+            <AppText variant="body" style={styles.emptyBody}>
               Check back in a future update.
-            </Text>
+            </AppText>
           </View>
         </View>
       </SafeAreaView>
@@ -120,6 +120,7 @@ const makeStyles = (color: ColorTheme) =>
       gap: spacing.md,
       maxWidth: 340,
       width: '100%',
+      ...shadow.e2,
     },
     emptyIcon: {
       width: 72,

@@ -11,7 +11,7 @@ import {
   View,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons } from '@expo/vector-icons';
+import { Bell, CheckCircle2, Compass, Map as MapIcon, MapPin, Sparkles, type LucideIcon } from 'lucide-react-native';
 import { AppText } from '@/components/ui/AppText';
 import * as Location from 'expo-location';
 import {
@@ -74,7 +74,7 @@ interface Props {
 type PermissionKind = 'location' | 'notifications';
 
 interface Card {
-  icon: keyof typeof Ionicons.glyphMap;
+  icon: LucideIcon;
   iconColor: string;
   title: string;
   body: string;
@@ -86,33 +86,33 @@ interface Card {
 
 const CARDS: Card[] = [
   {
-    icon: 'navigate-circle-outline',
+    icon: Compass,
     iconColor: '#60a5fa',
     title: 'Welcome to AccessMap',
     body: 'See an accessibility barrier — a missing ramp, a broken sidewalk, a blocked path? Put it on the map so others know, and so it gets fixed.',
   },
   {
-    icon: 'map-outline',
+    icon: MapIcon,
     iconColor: '#34d399',
     title: "Here's how it works",
     body: 'Tap where the barrier is, snap a photo if you can, and rate how bad it is. Other people verify your report or mark it resolved once the issue is fixed.',
   },
   {
-    icon: 'location-outline',
+    icon: MapPin,
     iconColor: '#a78bfa',
     title: 'Show flags near you',
     body: "We’ll use your location to show nearby barriers and place your reports accurately. It’s only used while the app is open — never tracked or stored on our servers.",
     permission: 'location',
   },
   {
-    icon: 'notifications-outline',
+    icon: Bell,
     iconColor: '#fbbf24',
     title: 'Stay in the loop',
     body: 'Get a heads-up when flags near you are verified or resolved. Totally optional — you can turn this on later in Settings.',
     permission: 'notifications',
   },
   {
-    icon: 'sparkles-outline',
+    icon: Sparkles,
     iconColor: '#34d399',
     title: "You're all set",
     body: 'Go explore your neighbourhood. Every barrier you flag helps someone navigate the world a little easier.',
@@ -301,9 +301,7 @@ export default function OnboardingCards({ onDone }: Props) {
             const cardGranted =
               (c.permission === 'location' && locationGranted === true) ||
               (c.permission === 'notifications' && notifGranted === true);
-            const effectiveIcon: keyof typeof Ionicons.glyphMap = cardGranted
-              ? 'checkmark-circle'
-              : c.icon;
+            const EffectiveIcon: LucideIcon = cardGranted ? CheckCircle2 : c.icon;
             const effectiveColor = cardGranted ? '#34d399' : c.iconColor;
             const effectiveBody = cardGranted
               ? c.permission === 'location'
@@ -321,7 +319,7 @@ export default function OnboardingCards({ onDone }: Props) {
                   accessibilityElementsHidden
                   importantForAccessibility="no-hide-descendants"
                 >
-                  <Ionicons name={effectiveIcon} size={52} color={effectiveColor} />
+                  <EffectiveIcon size={52} color={effectiveColor} strokeWidth={2} />
                 </View>
 
                 {/* Position pill */}
