@@ -3,11 +3,13 @@
  *
  * White surface, 1px slate-200 border, shadow-sm (cool-tinted), 16px radius.
  * Rises to shadow-md when interactive (pressable=true).
+ * Focus: tappable cards show a brand focus ring on keyboard / switch-control
+ * focus (WCAG 2.4.7), drawn as an overlay so there's no layout shift.
  *
- * Design system 2026-05-31.
+ * Design system 2026-05-31; focus ring 2026-06-04.
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Pressable,
   StyleSheet,
@@ -15,7 +17,7 @@ import {
   type ViewStyle,
 } from 'react-native';
 import { useColor } from '@/theme/ThemeContext';
-import { radius, shadow, spacing } from '@/theme';
+import { a11y, radius, shadow, spacing } from '@/theme';
 import { hapticSelection } from '@/lib/haptics';
 
 interface CardProps {
@@ -42,6 +44,7 @@ export function Card({
   accessibilityLabel,
 }: CardProps) {
   const color = useColor();
+  const [focused, setFocused] = useState(false);
 
   const cardStyle: ViewStyle = {
     backgroundColor: color.surface,
@@ -57,9 +60,24 @@ export function Card({
       if (haptic) hapticSelection();
       onPress();
     };
+    // Visible focus ring on keyboard / switch-control focus (WCAG 2.4.7/2.4.11).
+    // Drawn as an absolute overlay just outside the card frame so there's no
+    // layout shift — and it never shows on touch, so touch users see no change.
+    const ringStyle: ViewStyle = {
+      position: 'absolute',
+      top: -a11y.focusRingOffset,
+      left: -a11y.focusRingOffset,
+      right: -a11y.focusRingOffset,
+      bottom: -a11y.focusRingOffset,
+      borderRadius: radius.lg + a11y.focusRingOffset,
+      borderWidth: a11y.focusRingWidth,
+      borderColor: color.brand,
+    };
     return (
       <Pressable
         onPress={handlePress}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
         style={({ pressed }) => [
           cardStyle,
           pressed && styles.pressed,
@@ -70,6 +88,7 @@ export function Card({
         accessibilityLabel={accessibilityLabel}
       >
         {children}
+        {focused && <View pointerEvents="none" style={ringStyle} />}
       </Pressable>
     );
   }

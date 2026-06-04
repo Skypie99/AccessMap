@@ -964,7 +964,7 @@ export default function ProfileScreen() {
             </AppText>
           ) : (
             <View accessibilityRole="list">
-              {pointEvents.slice(0, 5).map((ev) => {
+              {pointEvents.slice(0, 5).map((ev, i, arr) => {
                 const isGain = ev.delta >= 0;
                 const absPoints = Math.abs(ev.delta);
                 const action = isGain ? 'Earned' : 'Lost';
@@ -973,7 +973,7 @@ export default function ProfileScreen() {
                 return (
                   <View
                     key={ev.id}
-                    style={styles.pointHistoryRow}
+                    style={[styles.pointHistoryRow, i < arr.length - 1 && styles.pointHistoryRowDivider]}
                     accessible
                     role="listitem"
                     accessibilityLabel={`${action} ${absPoints} ${absPoints === 1 ? 'point' : 'points'}: ${pointEventLabel(ev.event_type)}, ${dateStr}`}
@@ -2044,6 +2044,13 @@ const makeStyles = (color: ColorTheme) =>
       alignItems: 'center',
       gap: spacing.sm,
       minHeight: 44, // WCAG 2.5.5 — these are VoiceOver-focusable rows; meet the 44pt target
+    },
+    // Hairline divider between point-history rows (all but the last) so the list
+    // scans cleanly instead of running together. A neutral hairline (not text),
+    // so no added contrast obligation; reuses the existing border token.
+    pointHistoryRowDivider: {
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: color.border,
     },
     // Directional icon (↑/↓). successStrong (#1e8449) at 4.66:1 on white
     // passes WCAG AA; the ↑ shape also conveys direction without color alone.
