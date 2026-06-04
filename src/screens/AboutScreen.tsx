@@ -1,9 +1,10 @@
 import React from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 // Expo Constants gives us the bundled app.json version at runtime so we
 // don't have to hard-code (and forget to bump) a string here.
 import Constants from 'expo-constants';
 import { font, radius, shadow, spacing } from '@/theme';
+import { AppText } from '@/components/ui/AppText';
 import { Map as MapIcon, X } from 'lucide-react-native';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 
@@ -45,9 +46,9 @@ export default function AboutScreen({ visible, onClose }: Props) {
             on iOS sometimes leaks focus to the parent. */}
         <View style={styles.card} accessibilityViewIsModal>
           <View style={styles.headerRow}>
-            <Text style={styles.title} accessibilityRole="header">
+            <AppText variant="heading" style={styles.title} accessibilityRole="header">
               About AccessMap
-            </Text>
+            </AppText>
             <Pressable
               onPress={onClose}
               hitSlop={12}
@@ -71,54 +72,54 @@ export default function AboutScreen({ visible, onClose }: Props) {
                   TalkBack (Android). Both are needed; one alone leaks the
                   glyph on the other platform. */}
               <MapIcon size={15} color={color.brand} strokeWidth={2.2} />
-              <Text style={styles.heroBadgeText}>v{APP_VERSION}</Text>
+              <AppText variant="label" style={styles.heroBadgeText}>v{APP_VERSION}</AppText>
             </View>
 
-            <Text style={styles.tagline}>A crowdsourced map for accessibility issues.</Text>
+            <AppText variant="label" style={styles.tagline}>A crowdsourced map for accessibility issues.</AppText>
 
-            <Text style={styles.sectionHeader} accessibilityRole="header">
+            <AppText variant="heading" style={styles.sectionHeader} accessibilityRole="header">
               Built for accessibility
-            </Text>
-            <Text style={styles.bodyText}>
+            </AppText>
+            <AppText variant="body" style={styles.bodyText}>
               Every screen is designed against WCAG 2.2 AA. Screen-reader labels, 44pt touch
               targets, color paired with text, and an accessible list view that opens automatically
               when a screen reader is on. If something is hard to use, the Feedback row in Settings
               goes straight to the maintainer.
-            </Text>
+            </AppText>
 
-            <Text style={styles.sectionHeader} accessibilityRole="header">
+            <AppText variant="heading" style={styles.sectionHeader} accessibilityRole="header">
               Credits
-            </Text>
-            <Text style={styles.bodyText}>
+            </AppText>
+            <AppText variant="body" style={styles.bodyText}>
               A small project by Sky, built to learn by doing. The maps, icons, and database schema
               are open and the data belongs to the people who report it.
-            </Text>
+            </AppText>
 
-            <Text style={styles.sectionHeader} accessibilityRole="header">
+            <AppText variant="heading" style={styles.sectionHeader} accessibilityRole="header">
               Source code
-            </Text>
-            <Text style={styles.bodyText}>
+            </AppText>
+            <AppText variant="body" style={styles.bodyText}>
               AccessMap is built with Expo and React Native on the front end, and Supabase (Postgres
               + Auth + Storage) on the back end. The web build uses react-leaflet over OpenStreetMap
               tiles.
-            </Text>
+            </AppText>
 
-            <Text style={styles.sectionHeader} accessibilityRole="header">
+            <AppText variant="heading" style={styles.sectionHeader} accessibilityRole="header">
               Your privacy
-            </Text>
-            <Text style={styles.bodyText}>
+            </AppText>
+            <AppText variant="body" style={styles.bodyText}>
               We store flag reports and your profile. Location is requested only when you use the
               map. No tracking, no ads.
-            </Text>
-            <Text style={styles.bodyText}>
+            </AppText>
+            <AppText variant="body" style={styles.bodyText}>
               Status changes (open → verified → resolved) are logged so the community can see the
               history of a flag. The log is visible to other users without identifying who made each
               change.
-            </Text>
-            <Text style={styles.bodyText}>
+            </AppText>
+            <AppText variant="body" style={styles.bodyText}>
               Map tile images are cached locally on your device for up to 7 days to improve
               performance. This data is not shared with anyone and is cleared when you sign out.
-            </Text>
+            </AppText>
           </ScrollView>
         </View>
       </View>

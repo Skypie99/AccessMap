@@ -1,5 +1,5 @@
 import React from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import {
   CATEGORY_DESCRIPTIONS,
   CATEGORY_LABELS,
@@ -13,6 +13,7 @@ import {
 import { font, radius, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import CategoryIcon from '@/components/CategoryIcon';
+import { AppText } from '@/components/ui/AppText';
 
 interface Props {
   visible: boolean;
@@ -37,14 +38,14 @@ export default function LegendModal({ visible, onClose }: Props) {
           accessibilityViewIsModal
         >
           <View style={styles.headerRow} accessible accessibilityRole="header">
-            <Text style={styles.title}>Map legend</Text>
+            <AppText variant="heading" style={styles.title}>Map legend</AppText>
           </View>
-          <Text style={styles.subtitle}>What the colors and categories on the map mean.</Text>
+          <AppText variant="body" style={styles.subtitle}>What the colors and categories on the map mean.</AppText>
 
           <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
-            <Text style={styles.sectionLabel} accessibilityRole="header">
+            <AppText variant="heading" style={styles.sectionLabel} accessibilityRole="header">
               Severity
-            </Text>
+            </AppText>
             {SEVERITY_ORDER.map((s) => {
               const sevColor = severityColor(s);
               const label = SEVERITY_LABELS[s];
@@ -62,24 +63,25 @@ export default function LegendModal({ visible, onClose }: Props) {
                     importantForAccessibility="no"
                     accessibilityElementsHidden
                   >
-                    <Text style={styles.sevDotText}>{s}</Text>
+                    <AppText variant="label" style={styles.sevDotText}>{s}</AppText>
                   </View>
                   <View style={styles.rowText}>
-                    <Text style={styles.rowTitle}>
+                    <AppText variant="label" style={styles.rowTitle}>
                       {s} — {label}
-                    </Text>
-                    <Text style={styles.rowDesc}>{desc}</Text>
+                    </AppText>
+                    <AppText variant="body" style={styles.rowDesc}>{desc}</AppText>
                   </View>
                 </View>
               );
             })}
 
-            <Text
+            <AppText
+              variant="heading"
               style={[styles.sectionLabel, styles.sectionLabelSpaced]}
               accessibilityRole="header"
             >
               Categories
-            </Text>
+            </AppText>
             {CATEGORY_ORDER.map((c) => {
               const label = CATEGORY_LABELS[c];
               const desc = CATEGORY_DESCRIPTIONS[c];
@@ -98,29 +100,30 @@ export default function LegendModal({ visible, onClose }: Props) {
                     <CategoryIcon category={c} size={20} color={color.brand} decorative />
                   </View>
                   <View style={styles.rowText}>
-                    <Text style={styles.rowTitle}>{label}</Text>
-                    <Text style={styles.rowDesc}>{desc}</Text>
+                    <AppText variant="label" style={styles.rowTitle}>{label}</AppText>
+                    <AppText variant="body" style={styles.rowDesc}>{desc}</AppText>
                   </View>
                 </View>
               );
             })}
 
-            <Text
+            <AppText
+              variant="heading"
               style={[styles.sectionLabel, styles.sectionLabelSpaced]}
               accessibilityRole="header"
             >
               Heat map
-            </Text>
-            <Text style={styles.rowDesc}>
+            </AppText>
+            <AppText variant="body" style={styles.rowDesc}>
               When the heat map is on, neighbourhoods are tinted by their MEAN severity (using the
               1–5 scale above) and labelled with the rounded value. To protect reporters, heat zones
               only appear where at least 3 flags have been submitted.
-            </Text>
+            </AppText>
 
-            <Text style={styles.footnote}>
+            <AppText variant="body" style={styles.footnote}>
               Reporters earn points when their flag is verified or resolved. Verifiers and resolvers
               earn points too.
-            </Text>
+            </AppText>
           </ScrollView>
 
           <Pressable
@@ -129,7 +132,7 @@ export default function LegendModal({ visible, onClose }: Props) {
             accessibilityRole="button"
             accessibilityLabel="Close legend"
           >
-            <Text style={styles.closeText}>Close</Text>
+            <AppText variant="label" style={styles.closeText}>Close</AppText>
           </Pressable>
         </Pressable>
       </Pressable>
