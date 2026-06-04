@@ -260,6 +260,23 @@ what it is. Append-only.
   safe-area inset and reduced-motion gaps (Button, HamburgerDrawer). On branch
   `ui-polish/auto-2026-06-01` (not merged). Why: take the app from functional to
   premium — where "premium" and "accessible" are the same goal.
+- **2026-06-03 — More-expressive elevation pass.** Sky asked for a bolder, more
+  overtly "designed" feel across the whole app while keeping accessibility a hard
+  floor. Added (extend-don't-fork): **focus ring** (`a11y.focusRingWidth/Offset`,
+  ring colour = `color.brand`, WCAG 2.4.7/2.4.11); an **info/tip** pairing
+  (`color.infoBg/infoFg`, both palettes) so helpful nudges stop reading as
+  warnings; a **`gradient`** group (`brand` / `brandHero` / `gold`) for CTAs +
+  gamification surfaces (mode-independent, like the sign-in hero); and soft
+  **colored glows** (`shadow.glowBrand/glowGold`). Primitives gained: `AppText`
+  auto header-role, `Pill` 44pt hit-area, `Card` press-haptic + `elevated`
+  variant, `Button` gradient + glow + focus ring + press haptic. Screens lifted:
+  Admin (full token migration), Tasks (severity stripe + photo shimmer +
+  StatusBadge), Report (info/tip nudge + gradient submit + success haptic),
+  Profile (gradient hero + gold progress), Settings (lifted segmented control),
+  Map (crisper floating chrome). Finished the icon system — the app is now 100%
+  Lucide/SVG (the last Ionicons were converted). Every gradient/glow is held to
+  AA contrast and reduced-motion. On branch `ui-polish/accessmap-2026-06-03`
+  (not merged — Sky's gate).
 
 ---
 
@@ -292,10 +309,41 @@ The product UI uses **SVG icons only — no emoji, no Unicode-glyph icons.**
 - ✅ Done: `severityColor()` now sources from `theme.severity` (one ramp).
 - ✅ Done (2026-06-01): motion tokens, Dynamic Type, dark-mode toggle, and the
   `Input` / `Skeleton` / `Sheet` primitives.
-- Adopt `Input` across the remaining bespoke fields (Profile display name, Tasks
-  search); adopt `Sheet`/`SheetHeader` across the remaining ~18 modals (started
-  with `ChangelogModal`).
+- ✅ Done (2026-06-03): focus-ring, info/tip, gradient + glow tokens (see §12);
+  app is now 100% Lucide/SVG (last Ionicons converted).
+- **Brand-font follow-up:** ~17 secondary/modal files still use raw `<Text>`
+  (system font) instead of `<AppText>` — a mechanical, ~200-node consistency
+  cleanup. Convert in a focused pass (pick the variant that matches each Text's
+  intended weight: heading/label/bodyMedium/body).
+- **Sheet adoption:** the `Sheet` primitive is for *bottom-sheets*; most existing
+  modals are intentionally full-screen page-sheets / lightboxes / drawers and
+  should NOT be converted. Adopt `Sheet` for new bottom-sheets only.
 - Native map pin: render the white category glyph inside the marker (needs
   on-device verification of the `react-native-maps` custom-marker view).
 - Refresh §1–§7 sample values if they drift from `src/theme.ts` (the tokens in
-  code are the source of truth).
+  code are the source of truth — note the §1 table still shows the pre-2026-05-30
+  brand hex `#2f80ed`; live brand is `#1466E0`).
+
+---
+
+## 12. Gradients, glows & focus (more-expressive — 2026-06-03)
+
+These extend the system for the bolder visual direction. Every one is held to the
+same AA / reduced-motion floor as the rest of the system.
+
+| Token | Value | Use |
+|---|---|---|
+| `gradient.brand` | blue → deeper blue | primary buttons / FAB (white label ≥16pt bold — same AA-large/UI posture as solid `brand`) |
+| `gradient.brandHero` | 3-stop brand wash | Profile hero / feature heroes |
+| `gradient.gold` | Civic Gold ramp | gamification accents — **ink text only**, never white |
+| `shadow.glowBrand` | soft blue glow | primary CTAs, the Profile hero |
+| `shadow.glowGold` | soft gold glow | celebratory gamification surfaces |
+| `a11y.focusRingWidth` / `a11y.focusRingOffset` | 2 / 2 | visible focus ring (WCAG 2.4.7/2.4.11), drawn in `color.brand` as a no-layout-shift overlay |
+| `color.infoBg` / `color.infoFg` | calm blue (both palettes) | helpful *tips* (e.g. the "add a photo" nudge) — distinct from warning amber and status-open blue |
+
+**Rules.** Gradients are *mode-independent* (a brand-blue gradient is brand-blue
+in light and dark — like the sign-in hero and map overlays; a DESIGN.md
+"fixed-background exception"). Feed them to `expo-linear-gradient`. The gradient
+self-rounds via its own `borderRadius` so you never need `overflow:hidden` (which
+on iOS would clip the glow shadow). Glows are decorative only — never the sole
+signal. The focus ring appears on keyboard / switch-control focus.
