@@ -2034,6 +2034,9 @@ const makeStyles = (color: ColorTheme) =>
       paddingHorizontal: 4,
       paddingVertical: 2,
       alignItems: 'center',
+      // Hairline edge so the white tray reads as a crisp object over any map tile.
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: color.borderSubtle,
       ...shadow.e2,
     },
     actionBtn: {
@@ -2055,6 +2058,8 @@ const makeStyles = (color: ColorTheme) =>
       borderRadius: radius.lg,
       padding: spacing.md,
       gap: spacing.sm,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: color.borderSubtle,
       ...shadow.e2,
     },
     filterHeaderRow: {
@@ -2079,8 +2084,8 @@ const makeStyles = (color: ColorTheme) =>
       fontSize: font.size.caption,
       color: color.textMuted,
       textTransform: 'uppercase',
-      letterSpacing: 0.6,
-      marginTop: spacing.tight,
+      letterSpacing: font.tracking.loose,
+      marginTop: spacing.sm,
     },
     filterRow: { flexDirection: 'row', gap: spacing.sm, flexWrap: 'wrap' },
     filterPill: {
@@ -2143,6 +2148,8 @@ const makeStyles = (color: ColorTheme) =>
       borderRadius: radius.lg,
       gap: 8,
       alignItems: 'center',
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: color.borderSubtle,
       ...shadow.e2,
     },
     emptyCardIcon: { fontSize: font.size.xxl },
