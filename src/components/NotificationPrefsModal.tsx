@@ -9,8 +9,9 @@
  * refreshUpdateCount with the now-saved prefs).
  */
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Modal, Pressable, StyleSheet, Switch, Text, View } from 'react-native';
+import { ActivityIndicator, Modal, Pressable, StyleSheet, Switch, View } from 'react-native';
 import { useAuth } from '@/lib/auth';
+import { AppText } from '@/components/ui/AppText';
 import { STATUS_LABELS } from '@/lib/flags';
 import { StatusBadge } from './StatusBadge';
 import {
@@ -139,12 +140,12 @@ export default function NotificationPrefsModal({
         <View style={styles.card} accessibilityViewIsModal>
           <View style={styles.headerRow}>
             <View style={styles.titleWrap}>
-              <Text style={styles.title} accessibilityRole="header">
+              <AppText variant="heading" style={styles.title} accessibilityRole="header">
                 Notifications
-              </Text>
-              <Text style={styles.subtitle}>
+              </AppText>
+              <AppText variant="body" style={styles.subtitle}>
                 Choose which flag updates surface on your Profile.
-              </Text>
+              </AppText>
             </View>
             <Pressable
               onPress={onClose}
@@ -166,7 +167,7 @@ export default function NotificationPrefsModal({
 
           {!user ? (
             <View style={styles.notice}>
-              <Text style={styles.noticeText}>Sign in to save notification preferences.</Text>
+              <AppText variant="body" style={styles.noticeText}>Sign in to save notification preferences.</AppText>
             </View>
           ) : loading ? (
             <View style={styles.center}>
@@ -195,8 +196,8 @@ export default function NotificationPrefsModal({
                       <StatusBadge status={status} style={styles.statusBadge} />
                     </View>
                     <View style={styles.rowText}>
-                      <Text style={styles.rowTitle}>Notify on {STATUS_LABELS[status]}</Text>
-                      <Text style={styles.rowDesc}>{description}</Text>
+                      <AppText variant="label" style={styles.rowTitle}>Notify on {STATUS_LABELS[status]}</AppText>
+                      <AppText variant="body" style={styles.rowDesc}>{description}</AppText>
                     </View>
                     <Switch
                       value={value}
@@ -212,9 +213,9 @@ export default function NotificationPrefsModal({
                   </View>
                 );
               })}
-              <Text style={styles.footer}>
+              <AppText variant="body" style={styles.footer}>
                 Changes apply on your next Profile visit. Defaults to all statuses on.
-              </Text>
+              </AppText>
             </View>
           )}
         </View>
