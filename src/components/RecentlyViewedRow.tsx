@@ -14,7 +14,8 @@
  * (a future wiring task — propose-only, not in this slice).
  */
 import React, { useEffect, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { AppText } from '@/components/ui/AppText';
 import { CATEGORY_LABELS, fetchFlagsByIds, severityColor } from '@/lib/flags';
 import { loadRecentlyViewed } from '@/lib/recentlyViewed';
 import { font, radius, shadow, spacing } from '@/theme';
@@ -102,9 +103,9 @@ export default function RecentlyViewedRow({ userId, refreshKey, onSelect }: Prop
       // better served walking them individually than hearing a
       // megaphone summary.
     >
-      <Text style={styles.title} accessibilityRole="header">
+      <AppText variant="heading" style={styles.title} accessibilityRole="header">
         Recently viewed
-      </Text>
+      </AppText>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -132,11 +133,11 @@ export default function RecentlyViewedRow({ userId, refreshKey, onSelect }: Prop
               accessibilityElementsHidden
               importantForAccessibility="no-hide-descendants"
             >
-              <Text style={styles.sevDotText}>{f.severity}</Text>
+              <AppText variant="label" style={styles.sevDotText}>{f.severity}</AppText>
             </View>
-            <Text style={styles.chipLabel} numberOfLines={1}>
+            <AppText variant="label" style={styles.chipLabel} numberOfLines={1}>
               {CATEGORY_LABELS[f.category]}
-            </Text>
+            </AppText>
           </Pressable>
         ))}
       </ScrollView>

@@ -1,5 +1,6 @@
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { AppText } from '@/components/ui/AppText';
 import { font, radius, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 
@@ -58,8 +59,8 @@ function ErrorFallback({
     : 'The app hit an unexpected problem and stopped. Try again, or close and reopen the app if it keeps happening.';
   return (
     <View style={styles.container} accessibilityRole="alert">
-      <Text style={styles.title}>{title}</Text>
-      <Text style={styles.body}>{body}</Text>
+      <AppText variant="heading" style={styles.title}>{title}</AppText>
+      <AppText variant="body" style={styles.body}>{body}</AppText>
       <Pressable
         onPress={onReset}
         style={({ pressed }) => [styles.btn, pressed && styles.btnPressed]}
@@ -67,7 +68,7 @@ function ErrorFallback({
         accessibilityLabel="Try again"
         accessibilityHint="Resets the screen after an error"
       >
-        <Text style={styles.btnText}>Try again</Text>
+        <AppText variant="label" style={styles.btnText}>Try again</AppText>
       </Pressable>
     </View>
   );

@@ -13,7 +13,8 @@
  * speech.
  */
 import React from 'react';
-import { AccessibilityInfo, Pressable, StyleSheet, Text, View } from 'react-native';
+import { AccessibilityInfo, Pressable, StyleSheet, View } from 'react-native';
+import { AppText } from '@/components/ui/AppText';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { X } from 'lucide-react-native';
 
@@ -55,10 +56,10 @@ export default function UpdateBanner({ count, onView, onDismiss }: Props) {
       // assertive — combining with polite was contradictory (QA #8).
       accessibilityLiveRegion="polite"
     >
-      <Text style={styles.icon} accessibilityElementsHidden importantForAccessibility="no">
+      <AppText variant="body" style={styles.icon} accessibilityElementsHidden importantForAccessibility="no">
         🔔
-      </Text>
-      <Text style={styles.text}>{label}</Text>
+      </AppText>
+      <AppText variant="label" style={styles.text}>{label}</AppText>
       <Pressable
         onPress={onView}
         style={({ pressed }) => [styles.viewBtn, pressed && styles.viewBtnPressed]}
@@ -66,7 +67,7 @@ export default function UpdateBanner({ count, onView, onDismiss }: Props) {
         accessibilityLabel={`View ${count} ${count === 1 ? 'update' : 'updates'}`}
         accessibilityHint="Opens the Activity Feed and marks these updates as seen"
       >
-        <Text style={styles.viewBtnText}>View</Text>
+        <AppText variant="label" style={styles.viewBtnText}>View</AppText>
       </Pressable>
       <Pressable
         onPress={onDismiss}

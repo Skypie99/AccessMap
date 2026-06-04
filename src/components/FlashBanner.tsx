@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
-import { AccessibilityInfo, Pressable, StyleSheet, Text, View } from 'react-native';
+import { AccessibilityInfo, Pressable, StyleSheet, View } from 'react-native';
 import { font, radius, shadow, spacing } from '@/theme';
+import { AppText } from '@/components/ui/AppText';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 
 interface Props {
@@ -65,7 +66,7 @@ export default function FlashBanner({
         accessibilityLabel={message}
         accessibilityHint="Tap to dismiss"
       >
-        <Text style={styles.text}>{message}</Text>
+        <AppText variant="label" style={styles.text}>{message}</AppText>
       </Pressable>
     </View>
   );

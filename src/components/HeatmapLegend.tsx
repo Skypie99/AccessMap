@@ -1,5 +1,6 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { AppText } from '@/components/ui/AppText';
 import { SEVERITY_ORDER, SEVERITY_LABELS } from '@/lib/flags';
 import type { FlagSeverity } from '@/types/database';
 import { color, font, radius, shadow, heatmapSeverity } from '@/theme';
@@ -21,13 +22,14 @@ export default function HeatmapLegend() {
       accessibilityRole="image"
       accessibilityLabel="Heat map legend: 1 Minor yellow, 2 Mild orange, 3 Moderate orange-red, 4 Significant red, 5 Severe deep red"
     >
-      <Text
+      <AppText
+        variant="label"
         style={styles.title}
         accessibilityElementsHidden
         importantForAccessibility="no-hide-descendants"
       >
         Heat map
-      </Text>
+      </AppText>
       <View
         style={styles.row}
         accessibilityElementsHidden
@@ -36,7 +38,7 @@ export default function HeatmapLegend() {
         {SEVERITY_ORDER.map((s: FlagSeverity) => (
           <View key={s} style={styles.item}>
             <View style={[styles.swatch, { backgroundColor: heatmapSeverity[s].color }]} />
-            <Text style={styles.label}>{`${s} ${SEVERITY_LABELS[s]}`}</Text>
+            <AppText variant="label" style={styles.label}>{`${s} ${SEVERITY_LABELS[s]}`}</AppText>
           </View>
         ))}
       </View>

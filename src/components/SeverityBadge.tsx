@@ -12,7 +12,8 @@
  */
 
 import React from 'react';
-import { StyleSheet, Text, View, type ViewStyle } from 'react-native';
+import { StyleSheet, View, type ViewStyle } from 'react-native';
+import { AppText } from '@/components/ui/AppText';
 import { severity, font, spacing, radius } from '@/theme';
 import type { FlagSeverity } from '@/types/database';
 
@@ -51,13 +52,13 @@ export function SeverityBadge({ level, showLabel = false, size = 'md', style }: 
       accessibilityRole="text"
       accessibilityLabel={a11yLabel}
     >
-      <Text style={[styles.number, { fontSize: textSize, color: textColor }]}>
+      <AppText variant="label" style={[styles.number, { fontSize: textSize, color: textColor }]}>
         {level}
-      </Text>
+      </AppText>
       {showLabel && (
-        <Text style={[styles.label, { fontSize: textSize, color: textColor }]}>
+        <AppText variant="bodyMedium" style={[styles.label, { fontSize: textSize, color: textColor }]}>
           {' · '}{sev.label}
-        </Text>
+        </AppText>
       )}
     </View>
   );

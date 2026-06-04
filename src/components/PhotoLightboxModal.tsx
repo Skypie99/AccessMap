@@ -12,8 +12,9 @@
  * but is deferred to a polish loop to keep the surface tight.
  */
 import React from 'react';
-import { Modal, Pressable, StatusBar, StyleSheet, Text, View } from 'react-native';
+import { Modal, Pressable, StatusBar, StyleSheet, View } from 'react-native';
 import { RemoteImage } from '@/components/ui/RemoteImage';
+import { AppText } from '@/components/ui/AppText';
 import { font, radius, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { X } from 'lucide-react-native';
@@ -64,7 +65,7 @@ export default function PhotoLightboxModal({ visible, photoUrl, caption, onClose
           />
         ) : (
           <View style={styles.empty}>
-            <Text style={styles.emptyText}>No photo to show.</Text>
+            <AppText variant="body" style={styles.emptyText}>No photo to show.</AppText>
           </View>
         )}
 
@@ -80,9 +81,9 @@ export default function PhotoLightboxModal({ visible, photoUrl, caption, onClose
             accessibilityElementsHidden
             importantForAccessibility="no-hide-descendants"
           >
-            <Text style={styles.captionText} numberOfLines={2}>
+            <AppText variant="label" style={styles.captionText} numberOfLines={2}>
               {caption}
-            </Text>
+            </AppText>
           </View>
         ) : null}
 
