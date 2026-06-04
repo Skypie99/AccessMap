@@ -20,11 +20,11 @@ import {
   Modal,
   Pressable,
   StyleSheet,
-  Text,
   TextInput,
   View,
 } from 'react-native';
 import { useAuth } from '@/lib/auth';
+import { AppText } from '@/components/ui/AppText';
 import { confirm } from '@/lib/confirm';
 import { errorMessage } from '@/lib/errors';
 import {
@@ -179,9 +179,9 @@ export default function SavedPlacesModal({
       <View style={styles.backdrop}>
         <View style={styles.card} accessibilityViewIsModal>
           <View style={styles.headerRow}>
-            <Text style={styles.title} accessibilityRole="header">
+            <AppText variant="heading" style={styles.title} accessibilityRole="header">
               Saved Places
-            </Text>
+            </AppText>
             <Pressable
               onPress={onClose}
               hitSlop={12}
@@ -201,22 +201,22 @@ export default function SavedPlacesModal({
 
           {!user ? (
             <View style={styles.notice}>
-              <Text style={styles.noticeText}>
+              <AppText variant="body" style={styles.noticeText}>
                 Sign in to save your favorite spots and jump back to them in one tap.
-              </Text>
+              </AppText>
             </View>
           ) : null}
 
           {loadError ? (
             <View style={styles.errorBanner}>
-              <Text style={styles.errorText}>{loadError}</Text>
+              <AppText variant="body" style={styles.errorText}>{loadError}</AppText>
               <Pressable
                 onPress={load}
                 style={styles.retryBtn}
                 accessibilityRole="button"
                 accessibilityLabel="Retry loading saved places"
               >
-                <Text style={styles.retryText}>Retry</Text>
+                <AppText variant="label" style={styles.retryText}>Retry</AppText>
               </Pressable>
             </View>
           ) : null}
@@ -252,13 +252,13 @@ export default function SavedPlacesModal({
               accessibilityState={{ disabled: !canShowAddForm }}
             >
               <MapPin size={18} color={color.brand} strokeWidth={2.2} />
-              <Text style={styles.addBtnText}>Save my current location</Text>
+              <AppText variant="label" style={styles.addBtnText}>Save my current location</AppText>
             </Pressable>
           )}
 
           {user && adding && (
             <View style={styles.addForm}>
-              <Text style={styles.addFormLabel}>Name this place</Text>
+              <AppText variant="label" style={styles.addFormLabel}>Name this place</AppText>
               <TextInput
                 value={nameInput}
                 onChangeText={setNameInput}
@@ -284,7 +284,7 @@ export default function SavedPlacesModal({
                   accessibilityLabel="Cancel adding place"
                   accessibilityState={{ disabled: saving }}
                 >
-                  <Text style={styles.cancelBtnText}>Cancel</Text>
+                  <AppText variant="label" style={styles.cancelBtnText}>Cancel</AppText>
                 </Pressable>
                 <Pressable
                   onPress={handleAddSubmit}
@@ -304,7 +304,7 @@ export default function SavedPlacesModal({
                   {saving ? (
                     <ActivityIndicator color={color.textOnBrand} />
                   ) : (
-                    <Text style={styles.saveBtnText}>Save</Text>
+                    <AppText variant="label" style={styles.saveBtnText}>Save</AppText>
                   )}
                 </Pressable>
               </View>
@@ -314,15 +314,15 @@ export default function SavedPlacesModal({
           {loading && places.length === 0 ? (
             <View style={styles.center}>
               <ActivityIndicator />
-              <Text style={styles.subtitle}>Loading saved places…</Text>
+              <AppText variant="body" style={styles.subtitle}>Loading saved places…</AppText>
             </View>
           ) : places.length === 0 && user ? (
             <View style={styles.emptyWrap}>
-              <Text style={styles.emptyTitle}>No saved places yet</Text>
-              <Text style={styles.emptyBody}>
+              <AppText variant="label" style={styles.emptyTitle}>No saved places yet</AppText>
+              <AppText variant="body" style={styles.emptyBody}>
                 Save spots you check often — your home, work, or anywhere you want to jump back to
                 in one tap.
-              </Text>
+              </AppText>
             </View>
           ) : (
             <View style={styles.listWrap}>
@@ -337,10 +337,11 @@ export default function SavedPlacesModal({
                   >
                     <MapPin size={18} color={color.brand} strokeWidth={2.2} />
                     <View style={styles.rowText}>
-                      <Text style={styles.rowName} numberOfLines={1}>
+                      <AppText variant="label" style={styles.rowName} numberOfLines={1}>
                         {place.name}
-                      </Text>
-                      <Text
+                      </AppText>
+                      <AppText
+                        variant="body"
                         style={styles.rowCoords}
                         // QA A5: the Pressable's a11yLabel already covers
                         // "Jump map to {name}"; the raw decimals would be
@@ -350,7 +351,7 @@ export default function SavedPlacesModal({
                         importantForAccessibility="no-hide-descendants"
                       >
                         {place.lat.toFixed(4)}, {place.lng.toFixed(4)}
-                      </Text>
+                      </AppText>
                     </View>
                   </Pressable>
                   <Pressable

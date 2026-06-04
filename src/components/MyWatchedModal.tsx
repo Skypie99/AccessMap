@@ -12,10 +12,10 @@ import {
   RefreshControl,
   ScrollView,
   StyleSheet,
-  Text,
   View,
 } from 'react-native';
 import { useAuth } from '@/lib/auth';
+import { AppText } from '@/components/ui/AppText';
 import { confirm } from '@/lib/confirm';
 import { errorMessage } from '@/lib/errors';
 import {
@@ -179,10 +179,10 @@ export default function MyWatchedModal({ visible, onClose, onSelectFlag, onViewO
           )}
           <View style={[styles.severityDot, { backgroundColor: severityColor(item.severity) }]} {...decorativeProps} />
           <View style={styles.rowMid}>
-            <Text style={[styles.rowCategory, isResolved && styles.rowCategoryResolved]} numberOfLines={1}>
+            <AppText variant="label" style={[styles.rowCategory, isResolved && styles.rowCategoryResolved]} numberOfLines={1}>
               {CATEGORY_LABELS[item.category]}
-            </Text>
-            <Text style={styles.rowDate}>{date}</Text>
+            </AppText>
+            <AppText variant="body" style={styles.rowDate}>{date}</AppText>
           </View>
           <View style={styles.rowRight}>
             <StatusBadge status={item.status} accessibilityLabel={statusA11y(item.status)} size="sm" />
@@ -219,14 +219,14 @@ export default function MyWatchedModal({ visible, onClose, onSelectFlag, onViewO
       <View style={styles.backdrop}>
         <View style={styles.sheet}>
           <View style={styles.header}>
-            <Text style={styles.title} accessibilityRole="header">Watched Flags</Text>
+            <AppText variant="heading" style={styles.title} accessibilityRole="header">Watched Flags</AppText>
             {flags.length > 0 && (
               <Pressable onPress={handleClearAll} hitSlop={10} style={styles.clearBtn}
                 accessibilityRole="button"
                 accessibilityLabel={`Clear all ${flags.length} watched flags`}
                 accessibilityHint="Asks you to confirm before removing all watched flags"
               >
-                <Text style={styles.clearBtnText}>Clear all</Text>
+                <AppText variant="label" style={styles.clearBtnText}>Clear all</AppText>
               </Pressable>
             )}
             <Pressable onPress={onClose} hitSlop={12} style={styles.closeBtn}
@@ -262,7 +262,7 @@ export default function MyWatchedModal({ visible, onClose, onSelectFlag, onViewO
                   accessibilityLabel={value === 'all' ? 'Show all statuses' : `Filter to ${label} flags`}
                   accessibilityState={{ selected: active }}
                 >
-                  <Text style={[styles.statusChipText, { color: chipFg }]}>{label}</Text>
+                  <AppText variant="label" style={[styles.statusChipText, { color: chipFg }]}>{label}</AppText>
                 </Pressable>
               );
             })}
@@ -280,7 +280,7 @@ export default function MyWatchedModal({ visible, onClose, onSelectFlag, onViewO
                   accessibilityRole="button" accessibilityLabel={a11yLabel}
                   accessibilityState={{ selected: active }}
                 >
-                  <Text style={[styles.sortChipText, active && styles.sortChipTextActive]}>{label}</Text>
+                  <AppText variant="label" style={[styles.sortChipText, active && styles.sortChipTextActive]}>{label}</AppText>
                 </Pressable>
               );
             })}
@@ -288,9 +288,9 @@ export default function MyWatchedModal({ visible, onClose, onSelectFlag, onViewO
 
           {missingCount > 0 && !loading && (
             <View style={styles.missingBanner}>
-              <Text style={styles.missingText}>
+              <AppText variant="body" style={styles.missingText}>
                 {missingCount} {missingCount === 1 ? 'flag has' : 'flags have'} been removed by their author.
-              </Text>
+              </AppText>
             </View>
           )}
 
@@ -298,25 +298,25 @@ export default function MyWatchedModal({ visible, onClose, onSelectFlag, onViewO
             <View style={styles.center}><ActivityIndicator /></View>
           ) : loadError ? (
             <View style={styles.center}>
-              <Text style={styles.errorText}>{loadError}</Text>
+              <AppText variant="body" style={styles.errorText}>{loadError}</AppText>
               <Pressable onPress={() => void load()} style={styles.retryBtn} accessibilityRole="button" accessibilityLabel="Retry loading watched flags">
-                <Text style={styles.retryText}>Retry</Text>
+                <AppText variant="label" style={styles.retryText}>Retry</AppText>
               </Pressable>
             </View>
           ) : flags.length === 0 ? (
             <View style={styles.center}>
               <Star size={32} color={color.textSubtle} strokeWidth={2.2} accessibilityElementsHidden />
 
-              <Text style={styles.emptyTitle}>No watched flags yet</Text>
-              <Text style={styles.emptySubtitle}>
-                Open any flag on the map or in Tasks and tap <Text style={styles.emptyBold}>Watch</Text> to track it here.
-              </Text>
+              <AppText variant="heading" style={styles.emptyTitle}>No watched flags yet</AppText>
+              <AppText variant="body" style={styles.emptySubtitle}>
+                Open any flag on the map or in Tasks and tap <AppText variant="label" style={styles.emptyBold}>Watch</AppText> to track it here.
+              </AppText>
             </View>
           ) : displayFlags.length === 0 ? (
             <View style={styles.center}>
-              <Text style={styles.emptyIcon} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">🔎</Text>
-              <Text style={styles.emptyTitle}>No matches</Text>
-              <Text style={styles.emptySubtitle}>Try a different search term or status filter.</Text>
+              <AppText variant="body" style={styles.emptyIcon} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">🔎</AppText>
+              <AppText variant="heading" style={styles.emptyTitle}>No matches</AppText>
+              <AppText variant="body" style={styles.emptySubtitle}>Try a different search term or status filter.</AppText>
             </View>
           ) : (
             <FlatList
