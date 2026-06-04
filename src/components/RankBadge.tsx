@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
+import { AppText } from '@/components/ui/AppText';
 import { useColor } from '@/theme/ThemeContext';
 import { radius, font, spacing } from '@/theme';
 
@@ -49,7 +50,7 @@ export const RankBadge = React.memo(function RankBadge({ rank }: RankBadgeProps)
       accessibilityRole="text"
       accessibilityLabel={a11yLabel}
     >
-      <Text style={[styles.label, { color: palette.fg }]}>{rank}</Text>
+      <AppText variant="label" style={[styles.label, { color: palette.fg }]}>{rank}</AppText>
     </View>
   );
 });

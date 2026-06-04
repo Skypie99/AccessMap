@@ -9,7 +9,8 @@
  * already has the data.
  */
 import React, { useMemo } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { AppText } from '@/components/ui/AppText';
 import type { Achievement, AchievementCategory } from '@/lib/achievements';
 import { font, radius, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
@@ -188,15 +189,16 @@ export default function AchievementsModal({ visible, onClose, achievements }: Pr
         <View style={styles.card} accessibilityViewIsModal>
           <View style={styles.headerRow}>
             <View style={styles.titleWrap}>
-              <Text style={styles.title} accessibilityRole="header">
+              <AppText variant="heading" style={styles.title} accessibilityRole="header">
                 Achievements
-              </Text>
-              <Text
+              </AppText>
+              <AppText
+                variant="body"
                 style={styles.subtitle}
                 accessibilityLabel={`${totalEarned} of ${achievements.length} achievements earned`}
               >
                 {totalEarned} of {achievements.length} earned
-              </Text>
+              </AppText>
             </View>
             <Pressable
               onPress={onClose}
@@ -218,7 +220,7 @@ export default function AchievementsModal({ visible, onClose, achievements }: Pr
           <ScrollView contentContainerStyle={styles.scroll}>
             {grouped.map(({ cat, items }) => (
               <View key={cat} style={styles.section}>
-                <Text style={styles.sectionHeader}>{CATEGORY_LABEL[cat]}</Text>
+                <AppText variant="heading" style={styles.sectionHeader}>{CATEGORY_LABEL[cat]}</AppText>
                 <View style={styles.list}>
                   {items.map((a) => (
                     <AchievementRow key={a.id} achievement={a} />
@@ -258,15 +260,16 @@ function AchievementRow({ achievement: a }: { achievement: Achievement }) {
         })()}
       </View>
       <View style={styles.rowText}>
-        <Text style={styles.rowTitle}>{a.title}</Text>
-        <Text style={styles.rowDesc}>{a.description}</Text>
+        <AppText variant="label" style={styles.rowTitle}>{a.title}</AppText>
+        <AppText variant="body" style={styles.rowDesc}>{a.description}</AppText>
       </View>
       <View style={[styles.statePill, a.earned ? styles.statePillEarned : styles.statePillLocked]}>
-        <Text
+        <AppText
+          variant="label"
           style={[styles.stateText, a.earned ? styles.stateTextEarned : styles.stateTextLocked]}
         >
           {stateText}
-        </Text>
+        </AppText>
       </View>
     </View>
   );

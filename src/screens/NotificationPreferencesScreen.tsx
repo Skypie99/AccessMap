@@ -27,11 +27,11 @@ import {
   ScrollView,
   StyleSheet,
   Switch,
-  Text,
   View,
 } from 'react-native';
 import { font, radius, shadow, spacing } from '@/theme';
 import { X } from 'lucide-react-native';
+import { AppText } from '@/components/ui/AppText';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { useAuth } from '@/lib/auth';
 import {
@@ -105,8 +105,8 @@ function ToggleRow({
       accessibilityState={{ checked: value }}
     >
       <View style={styles.toggleTextWrap}>
-        <Text style={styles.toggleLabel}>{label}</Text>
-        <Text style={styles.toggleSubtitle}>{subtitle}</Text>
+        <AppText variant="label" style={styles.toggleLabel}>{label}</AppText>
+        <AppText variant="body" style={styles.toggleSubtitle}>{subtitle}</AppText>
       </View>
       <Switch
         value={value}
@@ -133,10 +133,10 @@ export default function NotificationPreferencesScreen({ visible, onClose }: Prop
           {/* Header row */}
           <View style={styles.headerRow}>
             <View style={styles.titleWrap}>
-              <Text style={styles.title} accessibilityRole="header">
+              <AppText variant="heading" style={styles.title} accessibilityRole="header">
                 Notification Preferences
-              </Text>
-              <Text style={styles.titleSubtitle}>Choose which kinds of alerts you receive.</Text>
+              </AppText>
+              <AppText variant="body" style={styles.titleSubtitle}>Choose which kinds of alerts you receive.</AppText>
             </View>
             <Pressable
               onPress={onClose}
@@ -158,7 +158,7 @@ export default function NotificationPreferencesScreen({ visible, onClose }: Prop
           {/* Body */}
           {!user ? (
             <View style={styles.notice}>
-              <Text style={styles.noticeText}>Sign in to save notification preferences.</Text>
+              <AppText variant="body" style={styles.noticeText}>Sign in to save notification preferences.</AppText>
             </View>
           ) : loading ? (
             <View style={styles.center}>
@@ -185,9 +185,9 @@ export default function NotificationPreferencesScreen({ visible, onClose }: Prop
                   color={color}
                 />
               ))}
-              <Text style={styles.footer}>
+              <AppText variant="body" style={styles.footer}>
                 Changes take effect immediately. All notifications are on by default.
-              </Text>
+              </AppText>
             </ScrollView>
           )}
         </View>

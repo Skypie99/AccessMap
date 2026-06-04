@@ -6,11 +6,11 @@ import {
   Modal,
   Pressable,
   StyleSheet,
-  Text,
   TextInput,
   View,
 } from 'react-native';
 import { font, radius, shadow, spacing } from '@/theme';
+import { AppText } from '@/components/ui/AppText';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { useAuth } from '@/lib/auth';
 import {
@@ -155,9 +155,9 @@ export default function FeedbackModal({ visible, onClose }: Props) {
       <View style={styles.backdrop} accessibilityViewIsModal testID="feedbackModal-backdrop">
         <View style={styles.card}>
           <View style={styles.headerRow}>
-            <Text style={styles.title} accessibilityRole="header">
+            <AppText variant="heading" style={styles.title} accessibilityRole="header">
               Send feedback
-            </Text>
+            </AppText>
             <Pressable
               onPress={onClose}
               disabled={sending}
@@ -171,12 +171,12 @@ export default function FeedbackModal({ visible, onClose }: Props) {
             </Pressable>
           </View>
 
-          <Text style={styles.subtitle}>
+          <AppText variant="body" style={styles.subtitle}>
             Tell us what's working, what isn't, or what you wish AccessMap did. Tapping Send opens
             your email app with the message prefilled.
-          </Text>
+          </AppText>
 
-          <Text style={styles.label}>Category</Text>
+          <AppText variant="label" style={styles.label}>Category</AppText>
           <View
             style={styles.categoryRow}
             accessibilityRole="radiogroup"
@@ -197,20 +197,21 @@ export default function FeedbackModal({ visible, onClose }: Props) {
                     disabled: sending,
                   }}
                 >
-                  <Text style={styles.categoryChipGlyph} accessibilityElementsHidden>
+                  <AppText variant="body" style={styles.categoryChipGlyph} accessibilityElementsHidden>
                     {FEEDBACK_CATEGORY_GLYPHS[c]}
-                  </Text>
-                  <Text
+                  </AppText>
+                  <AppText
+                    variant="label"
                     style={[styles.categoryChipText, selected && styles.categoryChipTextSelected]}
                   >
                     {FEEDBACK_CATEGORY_LABELS[c]}
-                  </Text>
+                  </AppText>
                 </Pressable>
               );
             })}
           </View>
 
-          <Text style={styles.label}>Your feedback</Text>
+          <AppText variant="label" style={styles.label}>Your feedback</AppText>
           <TextInput
             value={body}
             onChangeText={setBody}
@@ -226,7 +227,7 @@ export default function FeedbackModal({ visible, onClose }: Props) {
             accessibilityHint={`Type the feedback you'd like to send. Up to ${MAX_FEEDBACK_LEN} characters.`}
           />
 
-          <Text style={styles.label}>Reply email (optional)</Text>
+          <AppText variant="label" style={styles.label}>Reply email (optional)</AppText>
           <TextInput
             value={contact}
             onChangeText={setContact}
@@ -246,7 +247,8 @@ export default function FeedbackModal({ visible, onClose }: Props) {
             }
           />
           {contactInvalid ? (
-            <Text
+            <AppText
+              variant="body"
               accessibilityLiveRegion="polite"
               style={{
                 fontSize: 12,
@@ -255,7 +257,7 @@ export default function FeedbackModal({ visible, onClose }: Props) {
               }}
             >
               Please enter a valid email address.
-            </Text>
+            </AppText>
           ) : null}
 
           <View style={styles.actionsRow}>
@@ -267,7 +269,7 @@ export default function FeedbackModal({ visible, onClose }: Props) {
               accessibilityLabel="Cancel"
               accessibilityState={{ disabled: sending }}
             >
-              <Text style={styles.btnCancelText}>Cancel</Text>
+              <AppText variant="label" style={styles.btnCancelText}>Cancel</AppText>
             </Pressable>
             <Pressable
               onPress={handleSend}
@@ -284,7 +286,7 @@ export default function FeedbackModal({ visible, onClose }: Props) {
               {sending ? (
                 <ActivityIndicator color={color.textOnBrand} />
               ) : (
-                <Text style={styles.btnSendText}>Send</Text>
+                <AppText variant="label" style={styles.btnSendText}>Send</AppText>
               )}
             </Pressable>
           </View>

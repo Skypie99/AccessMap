@@ -28,7 +28,8 @@
  *    feature without revisiting layout).
  */
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { AppText } from '@/components/ui/AppText';
 import {
   CATEGORY_LABELS,
   CATEGORY_ORDER,
@@ -83,9 +84,9 @@ function BarRow({
   const widthPct = max <= 0 ? 0 : Math.max(2, Math.round((count / max) * 100));
   return (
     <View style={styles.barRow} accessible accessibilityRole="text" accessibilityLabel={a11yLabel}>
-      <Text style={styles.barLabel} numberOfLines={1}>
+      <AppText variant="body" style={styles.barLabel} numberOfLines={1}>
         {label}
-      </Text>
+      </AppText>
       <View style={styles.barTrack}>
         <View
           // The fill is decorative; count is read out by the row label.
@@ -94,7 +95,7 @@ function BarRow({
           style={[styles.barFill, { width: `${widthPct}%`, backgroundColor: barColor }]}
         />
       </View>
-      <Text style={styles.barCount}>{count}</Text>
+      <AppText variant="label" style={styles.barCount}>{count}</AppText>
     </View>
   );
 }
@@ -174,9 +175,9 @@ export default function ReportsBreakdownCard({ userId, refreshKey }: Props) {
         accessibilityLabel="Loading your report breakdown"
       >
         <View style={styles.headerRow}>
-          <Text style={styles.title} accessibilityRole="header">
+          <AppText variant="heading" style={styles.title} accessibilityRole="header">
             Your reports
-          </Text>
+          </AppText>
         </View>
         <ActivityIndicator
           // The accessible label on the card already announces "loading".
@@ -202,13 +203,13 @@ export default function ReportsBreakdownCard({ userId, refreshKey }: Props) {
         accessibilityLabel="No reports yet. Drop a flag on the Map tab to see your breakdown here."
       >
         <View style={styles.headerRow}>
-          <Text style={styles.title} accessibilityRole="header">
+          <AppText variant="heading" style={styles.title} accessibilityRole="header">
             Your reports
-          </Text>
+          </AppText>
         </View>
-        <Text style={styles.emptyText}>
+        <AppText variant="body" style={styles.emptyText}>
           No reports yet. Drop a flag on the Map tab to see your breakdown here.
-        </Text>
+        </AppText>
       </View>
     );
   }
@@ -242,13 +243,13 @@ export default function ReportsBreakdownCard({ userId, refreshKey }: Props) {
         accessibilityRole="header"
         accessibilityLabel={summary}
       >
-        <Text style={styles.title}>Your reports</Text>
-        <Text style={styles.totalChip}>{stats.total} total</Text>
+        <AppText variant="heading" style={styles.title}>Your reports</AppText>
+        <AppText variant="label" style={styles.totalChip}>{stats.total} total</AppText>
       </View>
 
-      <Text style={styles.sectionLabel} accessibilityRole="header">
+      <AppText variant="heading" style={styles.sectionLabel} accessibilityRole="header">
         By category
-      </Text>
+      </AppText>
       {CATEGORY_ORDER.map((c: FlagCategory) => {
         const count = stats.byCategory[c];
         return (
@@ -263,9 +264,9 @@ export default function ReportsBreakdownCard({ userId, refreshKey }: Props) {
         );
       })}
 
-      <Text style={styles.sectionLabel} accessibilityRole="header">
+      <AppText variant="heading" style={styles.sectionLabel} accessibilityRole="header">
         By severity
-      </Text>
+      </AppText>
       {SEVERITY_ORDER.map((s: FlagSeverity) => {
         const count = stats.bySeverity[s];
         return (

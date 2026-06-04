@@ -17,7 +17,8 @@
  */
 
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
+import { AppText } from './ui/AppText';
 import { radius, font, spacing } from '../theme';
 import { useColor, type ColorTheme } from '../theme/ThemeContext';
 import { STATUS_LABELS } from '../lib/flags';
@@ -74,9 +75,9 @@ export function StatusBadge({ status, size = 'md', showLabel = true, showDot = t
         <View style={[styles.dot, { width: dotSize, height: dotSize, backgroundColor: palette.fg }]} />
       )}
       {showLabel && (
-        <Text style={[styles.label, size === 'sm' ? styles.labelSm : styles.labelMd, { color: palette.fg }]}>
+        <AppText variant="label" style={[styles.label, size === 'sm' ? styles.labelSm : styles.labelMd, { color: palette.fg }]}>
           {STATUS_LABELS[status]}
-        </Text>
+        </AppText>
       )}
     </View>
   );

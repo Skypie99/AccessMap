@@ -6,10 +6,10 @@ import {
   ScrollView,
   StatusBar,
   StyleSheet,
-  Text,
   View,
 } from 'react-native';
 import { RemoteImage } from '@/components/ui/RemoteImage';
+import { AppText } from '@/components/ui/AppText';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { font, radius, shadow, spacing } from '@/theme';
 import { Camera, X } from 'lucide-react-native';
@@ -74,12 +74,12 @@ function PhotoGalleryInner({ photos, onAddPhoto, maxPhotos = 5, onRemovePhoto }:
           accessibilityLabel="Add another photo"
           accessibilityHint={`${photos.length} of ${maxPhotos} photos added. Tap to add more.`}
         >
-          <Text style={styles.addIcon} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+          <AppText variant="label" style={styles.addIcon} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
             +
-          </Text>
-          <Text style={styles.addLabel} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+          </AppText>
+          <AppText variant="label" style={styles.addLabel} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
             Add photo
-          </Text>
+          </AppText>
         </Pressable>
       );
     }
@@ -129,7 +129,7 @@ function PhotoGalleryInner({ photos, onAddPhoto, maxPhotos = 5, onRemovePhoto }:
       accessibilityLabel="No photos attached"
     >
       <Camera size={28} color={color.textSubtle} strokeWidth={2} />
-      <Text style={styles.emptyLabel}>No photos</Text>
+      <AppText variant="bodyMedium" style={styles.emptyLabel}>No photos</AppText>
     </View>
   );
 
@@ -208,9 +208,9 @@ function PhotoGalleryInner({ photos, onAddPhoto, maxPhotos = 5, onRemovePhoto }:
               accessibilityElementsHidden
               importantForAccessibility="no-hide-descendants"
             >
-              <Text style={styles.lightboxCounterText}>
+              <AppText variant="label" style={styles.lightboxCounterText}>
                 {lightboxPage + 1} / {photos.length}
-              </Text>
+              </AppText>
             </View>
           )}
 

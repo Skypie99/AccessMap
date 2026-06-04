@@ -24,10 +24,10 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
-  Text,
   View,
   type AccessibilityRole,
 } from 'react-native';
+import { AppText } from '@/components/ui/AppText';
 import { STATUS_LABELS } from '@/lib/flags';
 import { relativeTime } from '@/lib/relativeTime';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
@@ -103,9 +103,9 @@ export default function StatusHistoryModal({ visible, flagId, onClose }: Props) 
       <View style={styles.backdrop}>
         <View style={styles.card} accessibilityViewIsModal>
           <View style={styles.headerRow}>
-            <Text style={styles.title} accessibilityRole="header">
+            <AppText variant="heading" style={styles.title} accessibilityRole="header">
               Status history
-            </Text>
+            </AppText>
             <Pressable
               onPress={onClose}
               hitSlop={12}
@@ -126,7 +126,7 @@ export default function StatusHistoryModal({ visible, flagId, onClose }: Props) 
             {loading ? (
               <View style={styles.center} accessibilityLiveRegion="polite">
                 <ActivityIndicator color={color.brandText} />
-                <Text style={styles.loadingText}>Loading history…</Text>
+                <AppText variant="body" style={styles.loadingText}>Loading history…</AppText>
               </View>
             ) : formatted.length === 0 ? (
               // Empty / not-yet-enabled state. Same copy regardless of
@@ -135,11 +135,11 @@ export default function StatusHistoryModal({ visible, flagId, onClose }: Props) 
               // The "not yet enabled" framing is honest about the most
               // likely cause (migration pending) without scaring users.
               <View style={styles.emptyWrap}>
-                <Text style={styles.emptyTitle}>No history yet</Text>
-                <Text style={styles.emptyBody}>
+                <AppText variant="heading" style={styles.emptyTitle}>No history yet</AppText>
+                <AppText variant="body" style={styles.emptyBody}>
                   History not yet enabled — when this feature is fully set up, you{'’'}ll see who
                   changed the status of this flag here.
-                </Text>
+                </AppText>
               </View>
             ) : (
               <View
@@ -160,7 +160,7 @@ export default function StatusHistoryModal({ visible, flagId, onClose }: Props) 
                   >
                     <View style={styles.entryDot} />
                     <View style={styles.entryTextWrap}>
-                      <Text style={styles.entryLine}>{item.line}</Text>
+                      <AppText variant="label" style={styles.entryLine}>{item.line}</AppText>
                     </View>
                   </View>
                 ))}

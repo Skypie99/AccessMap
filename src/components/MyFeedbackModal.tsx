@@ -7,10 +7,10 @@ import {
   RefreshControl,
   ScrollView,
   StyleSheet,
-  Text,
   View,
 } from 'react-native';
 import { useAuth } from '@/lib/auth';
+import { AppText } from '@/components/ui/AppText';
 import { font, radius, shadow, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { X } from 'lucide-react-native';
@@ -108,9 +108,9 @@ export default function MyFeedbackModal({ visible, onClose, refreshKey = 0 }: Pr
       <View style={styles.backdrop} accessibilityViewIsModal testID="myFeedbackModal-backdrop">
         <View style={styles.card}>
           <View style={styles.headerRow}>
-            <Text style={styles.title} accessibilityRole="header">
+            <AppText variant="heading" style={styles.title} accessibilityRole="header">
               My Feedback
-            </Text>
+            </AppText>
             <Pressable
               onPress={onClose}
               hitSlop={12}
@@ -163,9 +163,9 @@ export default function MyFeedbackModal({ visible, onClose, refreshKey = 0 }: Pr
                     accessibilityState={{ selected: isActive }}
                     accessibilityLabel={`Filter to ${label}`}
                   >
-                    <Text style={[styles.chipText, isActive && styles.chipTextActive]}>
+                    <AppText variant="label" style={[styles.chipText, isActive && styles.chipTextActive]}>
                       {activeCount !== null ? `${label} (${activeCount})` : label}
-                    </Text>
+                    </AppText>
                   </Pressable>
                 );
               })}
@@ -188,26 +188,26 @@ export default function MyFeedbackModal({ visible, onClose, refreshKey = 0 }: Pr
                 ) : rows.length > 0 ? (
                   // Have feedback, but the active filter hides all of it.
                   <>
-                    <Text style={styles.emptyIcon} accessibilityElementsHidden>
+                    <AppText variant="body" style={styles.emptyIcon} accessibilityElementsHidden>
                       🔍
-                    </Text>
-                    <Text style={styles.emptyTitle}>
+                    </AppText>
+                    <AppText variant="heading" style={styles.emptyTitle}>
                       No {FEEDBACK_CATEGORY_FILTER_LABELS[filter].toLowerCase()} feedback
-                    </Text>
-                    <Text style={styles.emptyBody}>
+                    </AppText>
+                    <AppText variant="body" style={styles.emptyBody}>
                       Tap "All" above to see every message you've sent.
-                    </Text>
+                    </AppText>
                   </>
                 ) : (
                   <>
-                    <Text style={styles.emptyIcon} accessibilityElementsHidden>
+                    <AppText variant="body" style={styles.emptyIcon} accessibilityElementsHidden>
                       💬
-                    </Text>
-                    <Text style={styles.emptyTitle}>No feedback yet</Text>
-                    <Text style={styles.emptyBody}>
+                    </AppText>
+                    <AppText variant="heading" style={styles.emptyTitle}>No feedback yet</AppText>
+                    <AppText variant="body" style={styles.emptyBody}>
                       Tap the "Feedback" button at the top of any screen to send your first message.
                       It lands here and in the maintainer's inbox.
-                    </Text>
+                    </AppText>
                   </>
                 )}
               </View>
@@ -241,14 +241,14 @@ function FeedbackRowCard({ row }: { row: FeedbackRow }) {
     >
       <View style={styles.rowHeader}>
         <View style={styles.categoryPill}>
-          <Text style={styles.categoryGlyph} accessibilityElementsHidden>
+          <AppText variant="body" style={styles.categoryGlyph} accessibilityElementsHidden>
             {FEEDBACK_CATEGORY_GLYPHS[row.category]}
-          </Text>
-          <Text style={styles.categoryText}>{categoryLabel}</Text>
+          </AppText>
+          <AppText variant="label" style={styles.categoryText}>{categoryLabel}</AppText>
         </View>
-        <Text style={styles.dateText}>{formattedDate}</Text>
+        <AppText variant="body" style={styles.dateText}>{formattedDate}</AppText>
       </View>
-      <Text style={styles.bodyText}>{preview}</Text>
+      <AppText variant="body" style={styles.bodyText}>{preview}</AppText>
     </View>
   );
 }

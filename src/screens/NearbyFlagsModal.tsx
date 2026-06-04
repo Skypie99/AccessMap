@@ -6,10 +6,10 @@ import {
   SafeAreaView,
   ScrollView,
   StyleSheet,
-  Text,
   View,
 } from 'react-native';
 import { RemoteImage } from '@/components/ui/RemoteImage';
+import { AppText } from '@/components/ui/AppText';
 import { useReducedMotion } from '@/lib/accessibility';
 import { CATEGORY_LABELS, CATEGORY_ORDER, severityColor } from '@/lib/flags';
 import { relativeTime } from '@/lib/relativeTime';
@@ -141,12 +141,12 @@ export default function NearbyFlagsModal({
               importantForAccessibility="no"
               accessibilityElementsHidden
             >
-              <Text style={styles.sevDotText}>{item.severity}</Text>
+              <AppText variant="label" style={styles.sevDotText}>{item.severity}</AppText>
             </View>
-            <Text style={styles.cardTitle} numberOfLines={1}>
+            <AppText variant="label" style={styles.cardTitle} numberOfLines={1}>
               {CATEGORY_LABELS[item.category]}
-            </Text>
-            {dist && <Text style={styles.distance}>{dist.text}</Text>}
+            </AppText>
+            {dist && <AppText variant="label" style={styles.distance}>{dist.text}</AppText>}
           </View>
           <View style={styles.cardBody}>
             {item.photo_url ? (
@@ -159,13 +159,13 @@ export default function NearbyFlagsModal({
             ) : null}
             <View style={styles.cardBodyText}>
               {item.description ? (
-                <Text style={styles.cardDesc} numberOfLines={2}>
+                <AppText variant="body" style={styles.cardDesc} numberOfLines={2}>
                   {item.description}
-                </Text>
+                </AppText>
               ) : null}
-              <Text style={styles.cardMeta}>
+              <AppText variant="body" style={styles.cardMeta}>
                 Severity {item.severity} · {item.status} · {relativeTime(item.created_at)}
-              </Text>
+              </AppText>
             </View>
           </View>
         </Pressable>
@@ -183,7 +183,7 @@ export default function NearbyFlagsModal({
     >
       <SafeAreaView style={styles.screen} accessibilityViewIsModal>
         <View style={styles.header}>
-          <Text style={styles.title} accessibilityRole="header">Nearby flags</Text>
+          <AppText variant="heading" style={styles.title} accessibilityRole="header">Nearby flags</AppText>
           <Pressable
             onPress={onClose}
             style={styles.closeBtn}
@@ -191,15 +191,15 @@ export default function NearbyFlagsModal({
             accessibilityLabel="Close nearby flags list"
             hitSlop={10}
           >
-            <Text style={styles.closeText}>Close</Text>
+            <AppText variant="label" style={styles.closeText}>Close</AppText>
           </Pressable>
         </View>
 
         {!location && (
           <View style={styles.notice}>
-            <Text style={styles.noticeText}>
+            <AppText variant="body" style={styles.noticeText}>
               Allow location access to sort flags by distance. Showing the most recent first.
-            </Text>
+            </AppText>
           </View>
         )}
 
@@ -234,9 +234,9 @@ export default function NearbyFlagsModal({
               accessibilityLabel="Show all categories"
               accessibilityState={{ selected: filterCat === null }}
             >
-              <Text style={[styles.chipText, filterCat === null && styles.chipTextActive]}>
+              <AppText variant="label" style={[styles.chipText, filterCat === null && styles.chipTextActive]}>
                 All ({flags.length})
-              </Text>
+              </AppText>
             </Pressable>
             {presentCategories.map((cat) => {
               const active = filterCat === cat;
@@ -250,9 +250,9 @@ export default function NearbyFlagsModal({
                   accessibilityLabel={`Filter by ${CATEGORY_LABELS[cat]}, ${count} ${count === 1 ? 'flag' : 'flags'}`}
                   accessibilityState={{ selected: active }}
                 >
-                  <Text style={[styles.chipText, active && styles.chipTextActive]}>
+                  <AppText variant="label" style={[styles.chipText, active && styles.chipTextActive]}>
                     {CATEGORY_LABELS[cat]} ({count})
-                  </Text>
+                  </AppText>
                 </Pressable>
               );
             })}
@@ -268,20 +268,20 @@ export default function NearbyFlagsModal({
           contentContainerStyle={displayFlags.length === 0 ? styles.emptyWrap : styles.list}
           ListEmptyComponent={
             <View style={styles.emptyInner}>
-              <Text style={styles.emptyTitle}>
+              <AppText variant="heading" style={styles.emptyTitle}>
                 {searchQuery.trim().length > 0
                   ? 'No matches'
                   : filterCat !== null
                     ? 'No matching flags'
                     : 'No flags to show'}
-              </Text>
-              <Text style={styles.emptySub}>
+              </AppText>
+              <AppText variant="body" style={styles.emptySub}>
                 {searchQuery.trim().length > 0
                   ? `No flags match "${searchQuery.trim()}". Try a shorter or different query.`
                   : filterCat !== null
                     ? `No ${CATEGORY_LABELS[filterCat]} reports in this area. Try a different category.`
                     : "When community members report accessibility issues, they'll appear here sorted by distance."}
-              </Text>
+              </AppText>
             </View>
           }
         />

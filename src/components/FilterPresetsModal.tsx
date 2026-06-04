@@ -35,11 +35,11 @@ import {
   Modal,
   Pressable,
   StyleSheet,
-  Text,
   TextInput,
   View,
 } from 'react-native';
 import { useAuth } from '@/lib/auth';
+import { AppText } from '@/components/ui/AppText';
 import { confirm } from '@/lib/confirm';
 import { errorMessage } from '@/lib/errors';
 import {
@@ -255,7 +255,7 @@ export default function FilterPresetsModal({ visible, onClose, onApply }: Props)
                   accessibilityRole="button"
                   accessibilityLabel="Cancel rename"
                 >
-                  <Text style={styles.cancelBtnText}>Cancel</Text>
+                  <AppText variant="label" style={styles.cancelBtnText}>Cancel</AppText>
                 </Pressable>
                 <Pressable
                   onPress={() => handleRenameSubmit(item.id)}
@@ -271,23 +271,23 @@ export default function FilterPresetsModal({ visible, onClose, onApply }: Props)
                     disabled: renameValue.trim().length === 0,
                   }}
                 >
-                  <Text style={styles.saveBtnText}>Save</Text>
+                  <AppText variant="label" style={styles.saveBtnText}>Save</AppText>
                 </Pressable>
               </View>
             </View>
           ) : (
             <>
               <View style={styles.rowText}>
-                <Text style={styles.rowName} numberOfLines={1}>
+                <AppText variant="label" style={styles.rowName} numberOfLines={1}>
                   {item.name}
-                </Text>
-                <Text style={styles.rowSummary} numberOfLines={1}>
+                </AppText>
+                <AppText variant="body" style={styles.rowSummary} numberOfLines={1}>
                   {presetSummary(item)}
-                </Text>
+                </AppText>
                 {/* Manager mode keeps the honest "no consumer yet" hint;
                     apply mode promotes the row to a real Apply button on
                     the right so the hint would be redundant. */}
-                {!onApply && <Text style={styles.rowApplyHint}>Wiring next release</Text>}
+                {!onApply && <AppText variant="body" style={styles.rowApplyHint}>Wiring next release</AppText>}
               </View>
               <View style={styles.rowActions}>
                 {onApply && (
@@ -303,7 +303,7 @@ export default function FilterPresetsModal({ visible, onClose, onApply }: Props)
                     accessibilityLabel={`Apply preset ${item.name}`}
                     accessibilityHint="Replaces current map filters with this preset"
                   >
-                    <Text style={styles.applyBtnText}>Apply</Text>
+                    <AppText variant="label" style={styles.applyBtnText}>Apply</AppText>
                   </Pressable>
                 )}
                 <Pressable
@@ -320,7 +320,7 @@ export default function FilterPresetsModal({ visible, onClose, onApply }: Props)
                   accessibilityRole="button"
                   accessibilityLabel={`Rename preset ${item.name}`}
                 >
-                  <Text style={styles.renameBtnText}>Rename</Text>
+                  <AppText variant="label" style={styles.renameBtnText}>Rename</AppText>
                 </Pressable>
                 <Pressable
                   onPress={() => handleDelete(item)}
@@ -334,7 +334,7 @@ export default function FilterPresetsModal({ visible, onClose, onApply }: Props)
                   accessibilityLabel={`Delete preset ${item.name}`}
                   accessibilityHint="Asks you to confirm before deleting"
                 >
-                  <Text style={styles.deleteBtnText}>Delete</Text>
+                  <AppText variant="label" style={styles.deleteBtnText}>Delete</AppText>
                 </Pressable>
               </View>
             </>
@@ -350,9 +350,9 @@ export default function FilterPresetsModal({ visible, onClose, onApply }: Props)
       <View style={styles.backdrop}>
         <View style={styles.card} accessibilityViewIsModal>
           <View style={styles.headerRow}>
-            <Text style={styles.title} accessibilityRole="header">
+            <AppText variant="heading" style={styles.title} accessibilityRole="header">
               Filter Presets
-            </Text>
+            </AppText>
             <Pressable
               onPress={() => {
                 if (!adding || saving) {
@@ -375,7 +375,7 @@ export default function FilterPresetsModal({ visible, onClose, onApply }: Props)
             >
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
                 <Plus size={15} color={color.brandTextAlt} strokeWidth={2.6} />
-                <Text style={styles.newBtnText}>New</Text>
+                <AppText variant="label" style={styles.newBtnText}>New</AppText>
               </View>
             </Pressable>
             <Pressable
@@ -397,27 +397,27 @@ export default function FilterPresetsModal({ visible, onClose, onApply }: Props)
 
           {!user ? (
             <View style={styles.notice}>
-              <Text style={styles.noticeText}>Sign in to save named filter presets.</Text>
+              <AppText variant="body" style={styles.noticeText}>Sign in to save named filter presets.</AppText>
             </View>
           ) : null}
 
           {loadError ? (
             <View style={styles.errorBanner}>
-              <Text style={styles.errorText}>{loadError}</Text>
+              <AppText variant="body" style={styles.errorText}>{loadError}</AppText>
               <Pressable
                 onPress={load}
                 style={styles.retryBtn}
                 accessibilityRole="button"
                 accessibilityLabel="Retry loading filter presets"
               >
-                <Text style={styles.retryText}>Retry</Text>
+                <AppText variant="label" style={styles.retryText}>Retry</AppText>
               </Pressable>
             </View>
           ) : null}
 
           {user && adding && (
             <View style={styles.addForm}>
-              <Text style={styles.addFormLabel}>Name this preset</Text>
+              <AppText variant="label" style={styles.addFormLabel}>Name this preset</AppText>
               <TextInput
                 value={newName}
                 onChangeText={setNewName}
@@ -431,10 +431,10 @@ export default function FilterPresetsModal({ visible, onClose, onApply }: Props)
                 accessibilityLabel="Preset name"
                 accessibilityHint={`Required. Up to ${MAX_NAME_LENGTH} characters.`}
               />
-              <Text style={styles.addFormHint}>
+              <AppText variant="body" style={styles.addFormHint}>
                 Creates a preset with default filters. To save your current map filters as a preset,
                 use the “Save as preset” button on the Map screen.
-              </Text>
+              </AppText>
               <View style={styles.addFormActions}>
                 <Pressable
                   onPress={() => {
@@ -447,7 +447,7 @@ export default function FilterPresetsModal({ visible, onClose, onApply }: Props)
                   accessibilityLabel="Cancel adding preset"
                   accessibilityState={{ disabled: saving }}
                 >
-                  <Text style={styles.cancelBtnText}>Cancel</Text>
+                  <AppText variant="label" style={styles.cancelBtnText}>Cancel</AppText>
                 </Pressable>
                 <Pressable
                   onPress={handleCreate}
@@ -467,7 +467,7 @@ export default function FilterPresetsModal({ visible, onClose, onApply }: Props)
                   {saving ? (
                     <ActivityIndicator color={color.textOnBrand} />
                   ) : (
-                    <Text style={styles.saveBtnText}>Save</Text>
+                    <AppText variant="label" style={styles.saveBtnText}>Save</AppText>
                   )}
                 </Pressable>
               </View>
@@ -477,16 +477,16 @@ export default function FilterPresetsModal({ visible, onClose, onApply }: Props)
           {loading && presets.length === 0 ? (
             <View style={styles.center}>
               <ActivityIndicator />
-              <Text style={styles.subtitle}>Loading presets…</Text>
+              <AppText variant="body" style={styles.subtitle}>Loading presets…</AppText>
             </View>
           ) : presets.length === 0 && user ? (
             <View style={styles.emptyWrap}>
-              <Text style={styles.emptyTitle}>No presets yet</Text>
-              <Text style={styles.emptyBody}>
+              <AppText variant="label" style={styles.emptyTitle}>No presets yet</AppText>
+              <AppText variant="body" style={styles.emptyBody}>
                 {onApply
                   ? 'Save your current map filters as a named preset from the Map screen, then come back here to apply it in one tap.'
                   : 'Save your current map filters as a named preset from the Map screen.'}
-              </Text>
+              </AppText>
             </View>
           ) : (
             <FlatList
