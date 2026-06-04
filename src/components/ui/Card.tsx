@@ -16,6 +16,7 @@ import {
 } from 'react-native';
 import { useColor } from '@/theme/ThemeContext';
 import { radius, shadow, spacing } from '@/theme';
+import { hapticSelection } from '@/lib/haptics';
 
 interface CardProps {
   children: React.ReactNode;
@@ -24,10 +25,22 @@ interface CardProps {
   style?: ViewStyle;
   /** Extra padding override — defaults to spacing.md (12). */
   padding?: number;
+  /** Lift a feature/hero card with a deeper shadow (shadow.e3). */
+  elevated?: boolean;
+  /** Light selection tick on tap. Defaults on for tappable cards; pass false to mute. */
+  haptic?: boolean;
   accessibilityLabel?: string;
 }
 
-export function Card({ children, onPress, style, padding = spacing.md, accessibilityLabel }: CardProps) {
+export function Card({
+  children,
+  onPress,
+  style,
+  padding = spacing.md,
+  elevated = false,
+  haptic = true,
+  accessibilityLabel,
+}: CardProps) {
   const color = useColor();
 
   const cardStyle: ViewStyle = {
@@ -36,13 +49,17 @@ export function Card({ children, onPress, style, padding = spacing.md, accessibi
     borderWidth: 1,
     borderColor: color.border,     // slate-200
     padding,
-    ...(onPress ? shadow.e2 : shadow.e1),
+    ...(elevated ? shadow.e3 : onPress ? shadow.e2 : shadow.e1),
   };
 
   if (onPress) {
+    const handlePress = () => {
+      if (haptic) hapticSelection();
+      onPress();
+    };
     return (
       <Pressable
-        onPress={onPress}
+        onPress={handlePress}
         style={({ pressed }) => [
           cardStyle,
           pressed && styles.pressed,

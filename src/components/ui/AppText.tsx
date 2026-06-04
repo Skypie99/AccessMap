@@ -103,6 +103,7 @@ export function AppText({
   color,
   tracking,
   maxFontSizeMultiplier,
+  accessibilityRole,
   style,
   children,
   ...rest
@@ -110,6 +111,12 @@ export function AppText({
   const family = VARIANT_FAMILY[variant];
   const letterSpacing = resolveTracking(variant, size, tracking);
   const cap = maxFontSizeMultiplier ?? VARIANT_MAX_FONT_MULTIPLIER[variant];
+
+  // `heading` is a section/screen title — expose it as a header to screen
+  // readers (WCAG 1.3.1) so VoiceOver/TalkBack rotor navigation works. An
+  // explicit accessibilityRole always wins. `display` stays unset because it
+  // also covers non-heading hero numerals (e.g. the Profile points figure).
+  const resolvedRole = accessibilityRole ?? (variant === 'heading' ? 'header' : undefined);
 
   const resolvedStyle: TextStyle = {
     fontFamily: family,
@@ -119,7 +126,12 @@ export function AppText({
   };
 
   return (
-    <Text style={[resolvedStyle, style]} maxFontSizeMultiplier={cap} {...rest}>
+    <Text
+      style={[resolvedStyle, style]}
+      maxFontSizeMultiplier={cap}
+      accessibilityRole={resolvedRole}
+      {...rest}
+    >
       {children}
     </Text>
   );
