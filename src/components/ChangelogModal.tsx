@@ -1,9 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { initialExpanded } from '@/lib/changelogExpanded';
 import { font, radius, shadow, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
-import { Sheet } from '@/components/ui';
+import { AppText, Sheet } from '@/components/ui';
 import { ChevronDown, ChevronRight } from 'lucide-react-native';
 
 interface Props {
@@ -99,10 +99,11 @@ export default function ChangelogModal({ visible, onClose }: Props) {
                     accessibilityHint={isOpen ? 'Tap to collapse' : 'Tap to expand'}
                   >
                     <View style={styles.releaseHeaderText}>
-                      <Text style={styles.dateBadge}>{release.date}</Text>
-                      <Text style={styles.releaseTitle}>{release.title}</Text>
+                      <AppText variant="label" style={styles.dateBadge}>{release.date}</AppText>
+                      <AppText variant="label" style={styles.releaseTitle}>{release.title}</AppText>
                     </View>
-                    <Text
+                    <AppText
+                      variant="label"
                       style={styles.chevron}
                       accessibilityElementsHidden
                       importantForAccessibility="no-hide-descendants"
@@ -112,15 +113,15 @@ export default function ChangelogModal({ visible, onClose }: Props) {
                       ) : (
                         <ChevronRight size={16} color={color.brand} strokeWidth={2.2} />
                       )}
-                    </Text>
+                    </AppText>
                   </Pressable>
                   {isOpen &&
                     release.items.map((item, j) => (
                       <View key={j} style={styles.bulletRow}>
-                        <Text style={styles.bulletGlyph} accessibilityElementsHidden>
+                        <AppText variant="body" style={styles.bulletGlyph} accessibilityElementsHidden>
                           •
-                        </Text>
-                        <Text style={styles.bulletText}>{item}</Text>
+                        </AppText>
+                        <AppText variant="body" style={styles.bulletText}>{item}</AppText>
                       </View>
                     ))}
                 </View>
