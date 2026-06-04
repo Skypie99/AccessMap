@@ -105,6 +105,11 @@ export const color = {
   warningBg: '#fff7e6',
   warningFg: '#714b00', // 8.3:1 on warningBg
   warningHint: '#a04040', // for inline hint text on white (4.6:1)
+  // Info / tip — calm blue pairing for *helpful* (non-warning) nudges, e.g. the
+  // "add a photo" tip. Distinct from status-"open" semantics so a tip never
+  // reads as an alert. (design system 2026-06-03 — more-expressive pass)
+  infoBg: '#E7F0FD', // light blue wash
+  infoFg: '#0E4499', // 7.9:1 on infoBg — AAA at any size
   error: '#c0392b', // banner background, destructive when subtle
   errorStrong: '#e74c3c', // destructive action background (delete)
   errorBg: '#fdecea',
@@ -290,7 +295,45 @@ export const shadow = {
     shadowOffset: { width: 0, height: 6 },
     elevation: 8,
   },
+  // Expressive colored glows (more-expressive pass 2026-06-03). Purely
+  // decorative depth for primary CTAs and celebratory gamification surfaces —
+  // never the only signal, and they sit under AA-contrast content. Tuned softer
+  // than `pin` so a button feels lifted, not neon.
+  glowBrand: {
+    shadowColor: '#1466E0',
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 8,
+  },
+  glowGold: {
+    shadowColor: '#FBB024',
+    shadowOpacity: 0.32,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 8,
+  },
 };
+
+// -------------------------------------------------------------------------
+// Gradient — the more-expressive pass (2026-06-03). Bold, *mode-independent*
+// brand/gamification gradients for always-colored surfaces (primary CTAs, the
+// FAB, the Profile hero, points/achievement accents). They are NOT themed:
+// like the sign-in hero and map overlays, a brand-blue gradient is brand-blue
+// in light and dark alike (DESIGN.md "fixed-background exceptions").
+//
+// Feed to expo-linear-gradient: <LinearGradient colors={gradient.brand} .../>.
+// Default direction is top-left → bottom-right (set start/end at the call site).
+// Contrast rule: white label text on `brand`/`brandHero` must stay ≥16pt bold
+// (the lightest stop is ~3.4:1 on white — same AA-large/UI posture as the solid
+// brand token it replaces). `gold` carries INK text only (never white).
+// -------------------------------------------------------------------------
+
+export const gradient = {
+  brand: ['#2E7CF6', '#0F53BE'] as const, // primary button / FAB — blue deepening
+  brandHero: ['#2E7CF6', '#1466E0', '#0B3D8F'] as const, // Profile / feature hero
+  gold: ['#FFC64D', '#F2A60C'] as const, // gamification (points / achievements) — ink text only
+} as const;
 
 // -------------------------------------------------------------------------
 // Motion — durations, easing curves, and spring presets. DESIGN.md §8 ("≤ 200ms").
@@ -330,6 +373,12 @@ export const motion = {
 
 export const a11y = {
   minTargetSize: 44, // iOS 44pt / Android 48dp — use the higher number when in doubt
+  // Visible focus indicator (WCAG 2.4.7 / 2.4.11). Draw a ring in color.brand
+  // (≥3:1 as a UI component on surface in both palettes) at this width, inset
+  // by the offset so it reads as a halo, not a border. Consume color via
+  // useColor() at the call site. (more-expressive pass 2026-06-03)
+  focusRingWidth: 2,
+  focusRingOffset: 2,
 };
 
 // -------------------------------------------------------------------------

@@ -71,6 +71,9 @@ const darkColor = {
   warningBg: '#2d1f00',
   warningFg: '#fbbf24',
   warningHint: '#f87171',
+  // Info / tip — dark calm-blue pairing (mirrors the dark "open" status blue).
+  infoBg: '#0E2A5C',
+  infoFg: '#84AEF6', // 6.2:1 on infoBg — AA at any size
   error: '#c0392b',
   errorStrong: '#e74c3c',
   errorBg: '#3b0f0f',
