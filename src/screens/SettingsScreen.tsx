@@ -149,13 +149,13 @@ function AppearanceControl() {
               setMode(key);
               hapticSelection();
             }}
-            style={[styles.segment, selected && { backgroundColor: color.brandSofter }]}
+            style={[styles.segment, selected && styles.segmentActive]}
             accessibilityRole="radio"
             accessibilityState={{ selected }}
             accessibilityLabel={label}
             accessibilityHint={`Use ${label.toLowerCase()} appearance`}
           >
-            <Icon size={16} color={fg} strokeWidth={2.2} />
+            <Icon size={18} color={fg} strokeWidth={2.2} />
             <AppText variant="label" size={font.size.sm} color={fg}>
               {label}
             </AppText>
@@ -556,9 +556,11 @@ const makeStyles = (color: ColorTheme) =>
       fontSize: font.size.xs,
       color: color.textMuted,
       textTransform: 'uppercase',
-      letterSpacing: 0.5,
+      letterSpacing: font.tracking.loose,
       fontWeight: font.weight.bold,
-      marginTop: spacing.sm,
+      marginTop: spacing.md,
+      marginBottom: spacing.tight,
+      marginLeft: spacing.tight,
     },
     row: {
       backgroundColor: color.surface,
@@ -625,14 +627,14 @@ const makeStyles = (color: ColorTheme) =>
       ...shadow.e1,
     },
     pushTextWrap: { flex: 1, gap: 2 },
-    // Appearance segmented control (Light / Dark / System).
+    // Appearance segmented control (Light / Dark / System). Recessed track with
+    // a lifted white "selected pill" — the classic premium segmented look.
     segmentRow: {
       flexDirection: 'row',
-      backgroundColor: color.surface,
+      backgroundColor: color.surfaceNeutral,
       borderRadius: radius.lg,
       padding: spacing.tight,
       gap: spacing.tight,
-      ...shadow.e1,
     },
     segment: {
       flex: 1,
@@ -643,5 +645,9 @@ const makeStyles = (color: ColorTheme) =>
       paddingVertical: spacing.sm + 2,
       borderRadius: radius.md,
       minHeight: 44,
+    },
+    segmentActive: {
+      backgroundColor: color.surface,
+      ...shadow.e1,
     },
   });
