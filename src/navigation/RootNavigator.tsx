@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, View } from 'react-native';
+import { AppText } from '@/components/ui/AppText';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   ListChecks as TasksIcon,
@@ -160,7 +161,7 @@ function NavInner({ initialRouteName }: { initialRouteName: keyof RootTabParamLi
       accessibilityHint="Opens a form to email feedback to the AccessMap owner"
       hitSlop={8}
     >
-      <Text style={styles.feedbackBtnText}>Feedback</Text>
+      <AppText variant="label" style={styles.feedbackBtnText}>Feedback</AppText>
     </Pressable>
   );
 
