@@ -5,11 +5,11 @@ import {
   Modal,
   Pressable,
   StyleSheet,
-  Text,
   TextInput,
   View,
 } from 'react-native';
 import { font, radius, shadow, spacing } from '@/theme';
+import { AppText } from '@/components/ui/AppText';
 import { ChevronRight, MapPin, X } from 'lucide-react-native';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { searchAddress, type GeocodeResult } from '@/lib/geocode';
@@ -171,9 +171,9 @@ export default function AddressSearchModal({ visible, onClose, onSelect }: Props
             wander onto the map behind it (every other modal sets this). */}
         <View style={styles.card} accessibilityViewIsModal>
           <View style={styles.headerRow}>
-            <Text style={styles.title} accessibilityRole="header">
+            <AppText variant="heading" style={styles.title} accessibilityRole="header">
               Search by address
-            </Text>
+            </AppText>
             <Pressable
               onPress={onClose}
               hitSlop={12}
@@ -185,9 +185,9 @@ export default function AddressSearchModal({ visible, onClose, onSelect }: Props
             </Pressable>
           </View>
 
-          <Text style={styles.subtitle}>
+          <AppText variant="body" style={styles.subtitle}>
             Type at least 3 characters. Results come from OpenStreetMap.
-          </Text>
+          </AppText>
 
           <TextInput
             value={query}
@@ -206,9 +206,9 @@ export default function AddressSearchModal({ visible, onClose, onSelect }: Props
           {showRecents && (
             <View style={styles.recentSection}>
               <View style={styles.recentHeaderRow}>
-                <Text style={styles.recentHeader} accessibilityRole="header">
+                <AppText variant="label" style={styles.recentHeader} accessibilityRole="header">
                   Recent
-                </Text>
+                </AppText>
                 <Pressable
                   onPress={handleClearRecents}
                   hitSlop={12}
@@ -216,7 +216,7 @@ export default function AddressSearchModal({ visible, onClose, onSelect }: Props
                   accessibilityRole="button"
                   accessibilityLabel="Clear recent searches"
                 >
-                  <Text style={styles.clearRecentText}>Clear</Text>
+                  <AppText variant="label" style={styles.clearRecentText}>Clear</AppText>
                 </Pressable>
               </View>
               {recents.map((entry, idx) => (
@@ -230,12 +230,12 @@ export default function AddressSearchModal({ visible, onClose, onSelect }: Props
                   accessibilityLabel={`Recent search: ${entry.displayName}`}
                   accessibilityHint="Centers the map on this location and closes search"
                 >
-                  <Text style={styles.recentGlyph} accessibilityElementsHidden>
+                  <AppText variant="body" style={styles.recentGlyph} accessibilityElementsHidden>
                     🕘
-                  </Text>
-                  <Text style={styles.recentText} numberOfLines={2}>
+                  </AppText>
+                  <AppText variant="label" style={styles.recentText} numberOfLines={2}>
                     {entry.displayName}
-                  </Text>
+                  </AppText>
                   <ChevronRight
                     size={18}
                     color={color.textSubtle}
@@ -250,7 +250,7 @@ export default function AddressSearchModal({ visible, onClose, onSelect }: Props
           {loading && (
             <View style={styles.loadingRow} accessible accessibilityLabel="Searching">
               <ActivityIndicator color={color.brand} />
-              <Text style={styles.loadingText}>Searching…</Text>
+              <AppText variant="body" style={styles.loadingText}>Searching…</AppText>
             </View>
           )}
 
@@ -262,13 +262,13 @@ export default function AddressSearchModal({ visible, onClose, onSelect }: Props
               accessibilityLabel="No matches"
               accessibilityLiveRegion="polite"
             >
-              <Text style={styles.emptyIcon} accessibilityElementsHidden>
+              <AppText variant="body" style={styles.emptyIcon} accessibilityElementsHidden>
                 🔍
-              </Text>
-              <Text style={styles.emptyTitle}>No matches</Text>
-              <Text style={styles.emptyBody}>
+              </AppText>
+              <AppText variant="heading" style={styles.emptyTitle}>No matches</AppText>
+              <AppText variant="body" style={styles.emptyBody}>
                 Try a different spelling, add a city, or drop the street number to widen the search.
-              </Text>
+              </AppText>
             </View>
           )}
 
@@ -289,12 +289,12 @@ export default function AddressSearchModal({ visible, onClose, onSelect }: Props
                 >
                   <MapPin size={18} color={color.brand} strokeWidth={2.2} />
                   <View style={styles.resultTextWrap}>
-                    <Text style={styles.resultText} numberOfLines={2}>
+                    <AppText variant="label" style={styles.resultText} numberOfLines={2}>
                       {item.displayName}
-                    </Text>
-                    <Text style={styles.resultCoords}>
+                    </AppText>
+                    <AppText variant="body" style={styles.resultCoords}>
                       {item.lat.toFixed(4)}, {item.lng.toFixed(4)}
-                    </Text>
+                    </AppText>
                   </View>
                   <ChevronRight
                     size={18}
