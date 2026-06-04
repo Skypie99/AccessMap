@@ -1,15 +1,23 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
-  FlatList,  Pressable,
+  FlatList,
+  Pressable,
   RefreshControl,
   StyleSheet,
-  Text,
   View,
 } from 'react-native';
+import { Ban, Inbox, Lock, Trash2 } from 'lucide-react-native';
 import { RemoteImage } from '@/components/ui/RemoteImage';
+import { AppText } from '@/components/ui/AppText';
+import { Card } from '@/components/ui/Card';
+import CategoryIcon from '@/components/CategoryIcon';
+import { StatusBadge } from '@/components/StatusBadge';
 import { useFocusEffect } from '@react-navigation/native';
+import { useColor, type ColorTheme } from '@/theme/ThemeContext';
+import { font, radius, severity as severityRamp, spacing } from '@/theme';
+import { hapticImpact, hapticSelection } from '@/lib/haptics';
 import { useIsAdmin } from '@/lib/admin';
 import { confirm } from '@/lib/confirm';
 import { errorMessage } from '@/lib/errors';
@@ -17,12 +25,13 @@ import {
   CATEGORY_LABELS,
   deleteFlag,
   listRecentFlags,
-  severityColor,
   updateFlagStatus,
 } from '@/lib/flags';
 import type { FlagRow } from '@/types/database';
 
 export default function AdminScreen() {
+  const color = useColor();
+  const styles = useMemo(() => makeStyles(color), [color]);
   const isAdmin = useIsAdmin();
   const [flags, setFlags] = useState<FlagRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -49,7 +58,7 @@ export default function AdminScreen() {
   if (isAdmin === null) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#60a5fa" />
+        <ActivityIndicator size="large" color={color.brand} />
       </View>
     );
   }
@@ -57,7 +66,13 @@ export default function AdminScreen() {
   if (!isAdmin) {
     return (
       <View style={styles.center} accessible accessibilityRole="alert">
-        <Text style={styles.unauthorizedText}>Admin access required.</Text>
+        <Lock size={32} color={color.textMuted} strokeWidth={2} />
+        <AppText variant="bodyMedium" size={font.size.lg} color={color.text} style={styles.stateTitle}>
+          Admin access required
+        </AppText>
+        <AppText variant="body" size={font.size.sm} color={color.textMuted} style={styles.stateBody}>
+          This area is limited to moderators.
+        </AppText>
       </View>
     );
   }
@@ -68,6 +83,7 @@ export default function AdminScreen() {
       'This permanently deletes the flag and cannot be undone.',
     );
     if (!ok) return;
+    hapticImpact('medium');
     setActioningId(flag.id);
     try {
       await deleteFlag(flag.id);
@@ -82,6 +98,7 @@ export default function AdminScreen() {
   const handleDismiss = async (flag: FlagRow) => {
     const ok = await confirm('Dismiss report?', 'This marks the flag as rejected.');
     if (!ok) return;
+    hapticSelection();
     setActioningId(flag.id);
     try {
       await updateFlagStatus(flag.id, 'rejected');
@@ -95,32 +112,45 @@ export default function AdminScreen() {
 
   const renderItem = ({ item }: { item: FlagRow }) => {
     const isBusy = actioningId === item.id;
-    const dot = { backgroundColor: severityColor(item.severity) };
+    const sev = severityRamp[item.severity];
     return (
       // WCAG 4.1.2 / 2.1.1: this card must NOT be `accessible` — it contains the
       // Remove / Dismiss action buttons, and collapsing the subtree into a single
       // element makes those buttons unreachable for VoiceOver. Each child (text +
-      // buttons) exposes itself instead.
-      <View style={styles.card}>
+      // buttons) exposes itself instead. The non-pressable Card renders a plain
+      // View, so it does not collapse the subtree.
+      <Card padding={spacing.lg} style={styles.card}>
         <View style={styles.cardHeader}>
-          <View
-            style={[styles.severityDot, dot]}
-            accessibilityElementsHidden
-            importantForAccessibility="no-hide-descendants"
-          />
-          <Text style={styles.categoryText}>{CATEGORY_LABELS[item.category]}</Text>
-          {/* WCAG 1.4.1: severity carried by text, not the colour dot alone. */}
-          <Text style={styles.severityText}>{`Severity ${item.severity}`}</Text>
-          <Text style={styles.statusBadge}>{item.status}</Text>
+          <CategoryIcon category={item.category} size={20} color={color.textStrong} decorative />
+          <AppText
+            variant="bodyMedium"
+            size={font.size.md}
+            color={color.textStrong}
+            style={styles.categoryText}
+          >
+            {CATEGORY_LABELS[item.category]}
+          </AppText>
+          <StatusBadge status={item.status} size="sm" />
         </View>
-        <Text style={styles.coordText}>
-          {item.lat.toFixed(5)}, {item.lng.toFixed(5)}
-        </Text>
+
+        <View style={styles.metaRow}>
+          {/* WCAG 1.4.1: severity carried by label + number, not the colour alone. */}
+          <View style={[styles.sevPill, { backgroundColor: sev.color }]}>
+            <AppText variant="label" size={font.size.xs} color={sev.textOnColor}>
+              {sev.label} · {item.severity}
+            </AppText>
+          </View>
+          <AppText variant="mono" size={font.size.xs} color={color.textMuted} style={styles.coordText}>
+            {item.lat.toFixed(5)}, {item.lng.toFixed(5)}
+          </AppText>
+        </View>
+
         {item.description ? (
-          <Text style={styles.descText} numberOfLines={2}>
+          <AppText variant="body" size={font.size.sm} color={color.text} numberOfLines={2}>
             {item.description}
-          </Text>
+          </AppText>
         ) : null}
+
         {item.photo_url ? (
           <RemoteImage
             uri={item.photo_url}
@@ -130,158 +160,181 @@ export default function AdminScreen() {
             accessibilityRole="image"
           />
         ) : null}
+
         {isBusy ? (
           <ActivityIndicator
             style={styles.busyIndicator}
-            color="#60a5fa"
+            color={color.brand}
             accessibilityLabel="Processing"
           />
         ) : (
           <View style={styles.actions}>
             <Pressable
-              style={[styles.btn, styles.btnRemove]}
+              style={({ pressed }) => [styles.btn, styles.btnRemove, pressed && styles.btnPressed]}
               onPress={() => void handleRemove(item)}
               accessibilityRole="button"
               accessibilityLabel={`Remove ${CATEGORY_LABELS[item.category]} flag`}
               accessibilityState={{ disabled: isBusy }}
             >
-              <Text style={styles.btnRemoveText}>Remove flag</Text>
+              <Trash2 size={16} color={color.textOnBrand} strokeWidth={2} />
+              <AppText variant="label" size={font.size.sm} color={color.textOnBrand}>
+                Remove flag
+              </AppText>
             </Pressable>
             <Pressable
-              style={[styles.btn, styles.btnDismiss]}
+              style={({ pressed }) => [styles.btn, styles.btnDismiss, pressed && styles.btnPressed]}
               onPress={() => void handleDismiss(item)}
               accessibilityRole="button"
               accessibilityLabel={`Dismiss ${CATEGORY_LABELS[item.category]} report`}
               accessibilityState={{ disabled: isBusy }}
             >
-              <Text style={styles.btnDismissText}>Dismiss</Text>
+              <Ban size={16} color={color.text} strokeWidth={2} />
+              <AppText variant="label" size={font.size.sm} color={color.text}>
+                Dismiss
+              </AppText>
             </Pressable>
           </View>
         )}
-      </View>
+      </Card>
     );
   };
 
   return (
     <FlatList
+      style={styles.list}
       data={flags}
       keyExtractor={(f) => f.id}
       renderItem={renderItem}
       accessibilityRole="list"
       contentContainerStyle={flags.length === 0 ? styles.emptyContainer : styles.listContent}
-      refreshControl={<RefreshControl refreshing={loading} onRefresh={load} />}
+      refreshControl={
+        <RefreshControl refreshing={loading} onRefresh={load} tintColor={color.brand} />
+      }
+      ListHeaderComponent={
+        flags.length > 0 ? (
+          <AppText variant="label" size={font.size.xs} color={color.textMuted} style={styles.listHeader}>
+            {flags.length} recent {flags.length === 1 ? 'flag' : 'flags'} · pull to refresh
+          </AppText>
+        ) : null
+      }
       ListEmptyComponent={
-        loading ? null : <Text style={styles.emptyText}>No flags to moderate.</Text>
+        loading ? null : (
+          <View style={styles.emptyInner}>
+            <Inbox size={40} color={color.textSubtle} strokeWidth={1.75} />
+            <AppText variant="bodyMedium" size={font.size.lg} color={color.text} style={styles.stateTitle}>
+              No flags to moderate
+            </AppText>
+            <AppText variant="body" size={font.size.sm} color={color.textMuted} style={styles.stateBody}>
+              You're all caught up. New reports will appear here.
+            </AppText>
+          </View>
+        )
       }
     />
   );
 }
 
-const styles = StyleSheet.create({
-  center: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#0d1829',
-  },
-  unauthorizedText: {
-    color: '#aaa',
-    fontSize: 16,
-  },
-  listContent: {
-    padding: 12,
-    gap: 10,
-    backgroundColor: '#0d1829',
-  },
-  emptyContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#0d1829',
-  },
-  emptyText: {
-    color: '#aaa',
-    fontSize: 15,
-  },
-  card: {
-    backgroundColor: '#1a2540',
-    borderRadius: 10,
-    padding: 12,
-    gap: 6,
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  severityDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-  },
-  categoryText: {
-    color: '#f0f6ff',
-    fontSize: 14,
-    fontWeight: '600',
-    flex: 1,
-  },
-  severityText: {
-    color: '#cdd',
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  statusBadge: {
-    color: '#aab',
-    fontSize: 12,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  coordText: {
-    color: '#7a8ba8',
-    fontSize: 12,
-    fontFamily: 'Courier',
-  },
-  descText: {
-    color: '#cdd',
-    fontSize: 13,
-  },
-  thumb: {
-    width: '100%',
-    height: 120,
-    borderRadius: 6,
-    marginTop: 2,
-  },
-  busyIndicator: {
-    marginTop: 8,
-    alignSelf: 'center',
-  },
-  actions: {
-    flexDirection: 'row',
-    gap: 8,
-    marginTop: 4,
-  },
-  btn: {
-    flex: 1,
-    paddingVertical: 8,
-    borderRadius: 6,
-    alignItems: 'center',
-    minHeight: 44,
-    justifyContent: 'center',
-  },
-  btnRemove: {
-    backgroundColor: '#7f1d1d',
-  },
-  btnRemoveText: {
-    color: '#fecaca',
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  btnDismiss: {
-    backgroundColor: '#1e3a5f',
-  },
-  btnDismissText: {
-    color: '#93c5fd',
-    fontSize: 13,
-    fontWeight: '600',
-  },
-});
+function makeStyles(color: ColorTheme) {
+  return StyleSheet.create({
+    list: {
+      flex: 1,
+      backgroundColor: color.surfaceMuted,
+    },
+    center: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: spacing.sm,
+      padding: spacing.xl,
+      backgroundColor: color.surfaceMuted,
+    },
+    listContent: {
+      padding: spacing.lg,
+      gap: spacing.md,
+    },
+    listHeader: {
+      paddingBottom: spacing.xs,
+      paddingHorizontal: spacing.tight,
+    },
+    emptyContainer: {
+      flexGrow: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: spacing.xl,
+    },
+    emptyInner: {
+      alignItems: 'center',
+      gap: spacing.sm,
+    },
+    stateTitle: {
+      marginTop: spacing.sm,
+      textAlign: 'center',
+    },
+    stateBody: {
+      textAlign: 'center',
+      maxWidth: 280,
+    },
+    card: {
+      gap: spacing.sm,
+    },
+    cardHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+    },
+    categoryText: {
+      flex: 1,
+    },
+    metaRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+    },
+    sevPill: {
+      paddingHorizontal: spacing.sm,
+      paddingVertical: 2,
+      borderRadius: radius.full,
+    },
+    coordText: {
+      flex: 1,
+    },
+    thumb: {
+      width: '100%',
+      height: 140,
+      borderRadius: radius.md,
+      marginTop: spacing.tight,
+      borderWidth: 1,
+      borderColor: color.borderSubtle,
+    },
+    busyIndicator: {
+      marginTop: spacing.sm,
+      alignSelf: 'center',
+    },
+    actions: {
+      flexDirection: 'row',
+      gap: spacing.sm,
+      marginTop: spacing.tight,
+    },
+    btn: {
+      flex: 1,
+      flexDirection: 'row',
+      gap: spacing.xs,
+      paddingVertical: spacing.sm,
+      borderRadius: radius.md,
+      alignItems: 'center',
+      minHeight: 44,
+      justifyContent: 'center',
+    },
+    btnPressed: {
+      opacity: 0.85,
+    },
+    btnRemove: {
+      backgroundColor: color.error,
+    },
+    btnDismiss: {
+      backgroundColor: color.surfaceNeutral,
+      borderWidth: 1,
+      borderColor: color.border,
+    },
+  });
+}

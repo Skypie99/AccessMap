@@ -8,9 +8,16 @@
  */
 
 import React from 'react';
-import { Pressable, StyleSheet, Text, type ViewStyle } from 'react-native';
+import { Pressable, StyleSheet, type ViewStyle } from 'react-native';
 import { useColor } from '@/theme/ThemeContext';
 import { radius, font, spacing } from '@/theme';
+import { AppText } from './AppText';
+
+// Vertical hit-area expansion so a compact chip still hits the 44pt target
+// (WCAG 2.5.8 / project a11y.minTargetSize) without inflating its visual height
+// — keeps dense filter rows looking premium, not chunky. Only horizontal slop
+// is kept small to avoid neighbouring chips' hit areas overlapping in a row.
+const HIT_SLOP = { top: 10, bottom: 10, left: 4, right: 4 } as const;
 
 interface PillProps {
   label: string;
@@ -35,6 +42,7 @@ export function Pill({ label, active = false, onPress, style, size = 'md', acces
   return (
     <Pressable
       onPress={onPress}
+      hitSlop={onPress ? HIT_SLOP : undefined}
       style={({ pressed }) => [
         styles.pill,
         {
@@ -50,7 +58,9 @@ export function Pill({ label, active = false, onPress, style, size = 'md', acces
       accessibilityLabel={accessibilityLabel ?? label}
       accessibilityState={{ selected: active }}
     >
-      <Text style={[styles.label, { fontSize, color: fg }]}>{label}</Text>
+      <AppText variant="label" size={fontSize} color={fg}>
+        {label}
+      </AppText>
     </Pressable>
   );
 }
@@ -62,8 +72,5 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  label: {
-    fontWeight: font.weight.semibold,
   },
 });

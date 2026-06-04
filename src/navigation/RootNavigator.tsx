@@ -1,7 +1,15 @@
 import React, { useState } from 'react';
 import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
+import {
+  ListChecks as TasksIcon,
+  Map as MapIcon,
+  Menu as MenuIcon,
+  Settings as SettingsIcon,
+  Shield as AdminIcon,
+  User as ProfileIcon,
+  type LucideIcon,
+} from 'lucide-react-native';
 import HamburgerDrawer from '@/components/HamburgerDrawer';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -65,9 +73,9 @@ const linking = {
 const Tab = createBottomTabNavigator<RootTabParamList>();
 
 const tabIcon =
-  (name: keyof typeof Ionicons.glyphMap) =>
+  (Icon: LucideIcon) =>
   ({ color: tintColor, size }: { color: string; size: number }) => (
-    <Ionicons name={name} size={size} color={tintColor} />
+    <Icon size={size} color={tintColor} strokeWidth={2.2} />
   );
 
 interface Props {
@@ -137,7 +145,7 @@ function NavInner({ initialRouteName }: { initialRouteName: keyof RootTabParamLi
         accessibilityLabel="Open navigation menu"
         hitSlop={8}
       >
-        <Ionicons name="menu-outline" size={24} color="#f0f6ff" />
+        <MenuIcon size={24} color="#f0f6ff" strokeWidth={2.2} />
       </Pressable>
       <HamburgerDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
     </>
@@ -210,29 +218,29 @@ function NavInner({ initialRouteName }: { initialRouteName: keyof RootTabParamLi
       <Tab.Screen
         name="Map"
         component={MapScreen}
-        options={{ tabBarIcon: tabIcon('map-outline'), headerLeft: renderHamburger }}
+        options={{ tabBarIcon: tabIcon(MapIcon), headerLeft: renderHamburger }}
       />
       <Tab.Screen
         name="Tasks"
         component={TasksScreen}
-        options={{ tabBarIcon: tabIcon('checkmark-done-outline'), tabBarBadge: tasksBadge }}
+        options={{ tabBarIcon: tabIcon(TasksIcon), tabBarBadge: tasksBadge }}
       />
       <Tab.Screen
         name="Profile"
         component={ProfileScreen}
-        options={{ tabBarIcon: tabIcon('person-outline') }}
+        options={{ tabBarIcon: tabIcon(ProfileIcon) }}
       />
       <Tab.Screen
         name="Settings"
         component={SettingsScreen}
-        options={{ tabBarIcon: tabIcon('settings-outline') }}
+        options={{ tabBarIcon: tabIcon(SettingsIcon) }}
       />
       {isAdmin === true && (
         <Tab.Screen
           name="Admin"
           component={AdminScreen}
           options={{
-            tabBarIcon: tabIcon('shield-outline'),
+            tabBarIcon: tabIcon(AdminIcon),
             tabBarLabel: 'Admin',
           }}
         />

@@ -15,10 +15,10 @@ import {
   Platform,
   Pressable,
   StyleSheet,
-  Text,
   View,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { ChevronRight, Heart, Info, Layers, LogIn, LogOut, X, type LucideIcon } from 'lucide-react-native';
+import { AppText } from '@/components/ui/AppText';
 import { font, motion, radius, shadow, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { useReducedMotion } from '@/lib/accessibility';
@@ -120,9 +120,9 @@ export default function HamburgerDrawer({ open, onClose }: Props) {
           {/* Header */}
           <View style={styles.drawerHeader}>
             <View style={styles.logoMini}>
-              <Text style={styles.logoMiniText}>A</Text>
+              <AppText variant="heading" style={styles.logoMiniText}>A</AppText>
             </View>
-            <Text style={styles.drawerBrand}>AccessMap</Text>
+            <AppText variant="heading" style={styles.drawerBrand}>AccessMap</AppText>
             <Pressable
               onPress={closeDrawer}
               hitSlop={12}
@@ -130,26 +130,26 @@ export default function HamburgerDrawer({ open, onClose }: Props) {
               accessibilityRole="button"
               accessibilityLabel="Close menu"
             >
-              <Ionicons name="close" size={22} color={color.textSubtle} />
+              <X size={22} color={color.textSubtle} strokeWidth={2.2} />
             </Pressable>
           </View>
 
           {/* Nav items */}
           <View style={styles.menuSection}>
             <DrawerItem
-              icon="layers-outline"
+              icon={Layers}
               label="Resources"
               onPress={() => navigate('resources')}
               color={color}
             />
             <DrawerItem
-              icon="heart-outline"
+              icon={Heart}
               label="How To Help"
               onPress={() => navigate('howToHelp')}
               color={color}
             />
             <DrawerItem
-              icon="information-circle-outline"
+              icon={Info}
               label="About the App"
               onPress={() => navigate('about')}
               color={color}
@@ -162,7 +162,7 @@ export default function HamburgerDrawer({ open, onClose }: Props) {
           <View style={styles.menuSection}>
             {user ? (
               <DrawerItem
-                icon="log-out-outline"
+                icon={LogOut}
                 label="Sign out"
                 onPress={handleSignOut}
                 color={color}
@@ -170,7 +170,7 @@ export default function HamburgerDrawer({ open, onClose }: Props) {
               />
             ) : (
               <DrawerItem
-                icon="log-in-outline"
+                icon={LogIn}
                 label="Sign in"
                 onPress={closeDrawer}
                 color={color}
@@ -180,7 +180,7 @@ export default function HamburgerDrawer({ open, onClose }: Props) {
 
           {/* Footer */}
           <View style={styles.drawerFooter}>
-            <Text style={styles.footerText}>AccessMap · Made with ♥ in Canada</Text>
+            <AppText variant="body" style={styles.footerText}>AccessMap · Made with ♥ in Canada</AppText>
           </View>
         </Animated.View>
       </Modal>
@@ -205,14 +205,14 @@ export default function HamburgerDrawer({ open, onClose }: Props) {
 // ── DrawerItem ────────────────────────────────────────────────────────────────
 
 interface ItemProps {
-  icon: keyof typeof Ionicons.glyphMap;
+  icon: LucideIcon;
   label: string;
   onPress: () => void;
   color: ColorTheme;
   muted?: boolean;
 }
 
-function DrawerItem({ icon, label, onPress, color, muted = false }: ItemProps) {
+function DrawerItem({ icon: Icon, label, onPress, color, muted = false }: ItemProps) {
   const styles = makeItemStyles(color);
   return (
     <Pressable
@@ -222,14 +222,14 @@ function DrawerItem({ icon, label, onPress, color, muted = false }: ItemProps) {
       accessibilityLabel={label}
     >
       <View style={styles.iconWrap}>
-        <Ionicons
-          name={icon}
+        <Icon
           size={20}
           color={muted ? color.textSubtle : color.brand}
+          strokeWidth={2.2}
         />
       </View>
-      <Text style={[styles.label, muted && styles.labelMuted]}>{label}</Text>
-      <Ionicons name="chevron-forward" size={16} color={color.textSubtle} />
+      <AppText variant="label" style={[styles.label, muted && styles.labelMuted]}>{label}</AppText>
+      <ChevronRight size={16} color={color.textSubtle} strokeWidth={2.2} />
     </Pressable>
   );
 }

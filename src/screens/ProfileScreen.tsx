@@ -68,7 +68,8 @@ import RecentlyViewedRow from '@/components/RecentlyViewedRow';
 import ReportsBreakdownCard from '@/components/ReportsBreakdownCard';
 import LeaderboardScreen from '@/screens/LeaderboardScreen';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
-import { font, radius, shadow, spacing } from '@/theme';
+import { LinearGradient } from 'expo-linear-gradient';
+import { font, gradient, radius, shadow, spacing } from '@/theme';
 import { AppText } from '@/components/ui/AppText';
 import { Input } from '@/components/ui/Input';
 import { ArrowDown, ArrowUp, ChevronRight, Flame, MapPin, Pencil, X } from 'lucide-react-native';
@@ -798,6 +799,15 @@ export default function ProfileScreen() {
         />
 
         <View style={styles.heroCard}>
+          {/* Expressive gradient wash behind the hero (self-rounds to the card
+              radius so the card's glow shadow isn't clipped). Decorative. */}
+          <LinearGradient
+            colors={gradient.brandHero}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={[StyleSheet.absoluteFill, { borderRadius: radius.sheet }]}
+            pointerEvents="none"
+          />
           {/* T4: previously this View was `accessible={true}` with a
               combined summary label. Removed so the new tier pill can be
               its own independently-focusable Pressable — children of an
@@ -1770,19 +1780,16 @@ const makeStyles = (color: ColorTheme) =>
     },
     subtitle: { fontSize: font.size.base, color: color.text },
     heroCard: {
-      backgroundColor: color.brand,
+      backgroundColor: color.brand, // fallback under the gradient wash
       borderRadius: radius.sheet, // was spacing.xxl — a spacing token misused for a radius
       paddingHorizontal: spacing.xxl,
       paddingTop: spacing.xl + 2,
       paddingBottom: spacing.xxl,
       alignItems: 'center',
       gap: spacing.tight,
-      // Heavier drop shadow so the hero sits forward as the page anchor.
-      shadowColor: color.shadow,
-      shadowOpacity: 0.22,
-      shadowRadius: 16,
-      shadowOffset: { width: 0, height: 6 },
-      elevation: 8,
+      // Soft brand glow so the hero sits forward as the page anchor (consistent
+      // in light + dark, unlike a neutral #000/#fff drop shadow).
+      ...shadow.glowBrand,
     },
     heroIcon: { fontSize: 32, marginBottom: 4 },
 
@@ -1865,22 +1872,25 @@ const makeStyles = (color: ColorTheme) =>
     },
     progressTrack: {
       width: '100%',
-      height: 8,
+      height: 10,
       backgroundColor: color.surfaceVariant,
       borderRadius: radius.circle,
       marginTop: 10,
       overflow: 'hidden',
     },
+    // Civic Gold fill — progress toward a badge is gamification, so it carries
+    // the gold language and pops against the blue hero (decorative; the
+    // progressbar a11y value conveys the real number).
     progressFill: {
       height: '100%',
-      backgroundColor: color.textOnBrand,
+      backgroundColor: color.goldAccent,
       borderRadius: radius.circle,
     },
-    // Tier progress bar — thinner than the milestone bar above, sits
-    // directly below the tier pill row. Fill animates from 0 → progress.
+    // Tier progress bar — sits directly below the tier pill row. Fill animates
+    // from 0 → progress.
     tierProgressTrack: {
       width: '100%',
-      height: 6,
+      height: 8,
       backgroundColor: color.surfaceVariant,
       borderRadius: radius.circle,
       marginTop: spacing.sm,
@@ -1888,7 +1898,7 @@ const makeStyles = (color: ColorTheme) =>
     },
     tierProgressFill: {
       height: '100%',
-      backgroundColor: color.textOnBrand,
+      backgroundColor: color.goldAccent,
       borderRadius: radius.circle,
     },
     tierProgressLabel: {
@@ -2129,7 +2139,7 @@ const makeStyles = (color: ColorTheme) =>
       borderRadius: radius.lg,
       padding: spacing.lg,
       alignItems: 'center',
-      ...shadow.e1,
+      ...shadow.e2,
     },
     statValue: {
       fontSize: 28,

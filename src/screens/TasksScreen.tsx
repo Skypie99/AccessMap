@@ -55,7 +55,9 @@ import type { RootTabParamList } from '@/navigation/RootNavigator';
 import FlagDetailModal, { type DetailAction } from '@/components/FlagDetailModal';
 import PhotoLightboxModal from '@/components/PhotoLightboxModal';
 import { AppText } from '@/components/ui/AppText';
-import { SkeletonCard } from '@/components/ui/Skeleton';
+import { Skeleton, SkeletonCard } from '@/components/ui/Skeleton';
+import { StatusBadge } from '@/components/StatusBadge';
+import CategoryIcon from '@/components/CategoryIcon';
 import { hapticSelection } from '@/lib/haptics';
 import { AlertTriangle, Check, Search, Sparkles, WifiOff, X } from 'lucide-react-native';
 import { font, radius, shadow, size, spacing } from '@/theme';
@@ -1124,6 +1126,9 @@ const FlagCard = memo(function FlagCard({
   // the card into view. Before then, show a placeholder so the UI doesn't
   // jank when the image finally arrives.
   const [photoInView, setPhotoInView] = useState(false);
+  // Tracks the remote image's load so a shimmer covers the blank gap until the
+  // photo actually paints (not just until it's scrolled into view).
+  const [photoLoaded, setPhotoLoaded] = useState(false);
   // Compute distance + ETA once per card per location change. Without the
   // memo this would recompute on every parent state flip (busyId, flash).
   const distanceInfo = useMemo(() => {
@@ -1162,15 +1167,19 @@ const FlagCard = memo(function FlagCard({
           : 'Opens the Map tab focused on this flag. Long-press to select multiple.'
       }
     >
+      {/* Severity accent stripe down the left edge — colour reinforces the
+          severity that's also stated in the meta line (WCAG 1.4.1, never the
+          sole cue). Decorative; hidden from AT. */}
+      <View
+        style={[styles.cardAccent, { backgroundColor: severityColor(flag.severity) }]}
+        pointerEvents="none"
+        accessibilityElementsHidden
+        importantForAccessibility="no-hide-descendants"
+      />
       <View style={styles.cardHeader}>
-        <View
-          style={[styles.sevDot, { backgroundColor: severityColor(flag.severity) }]}
-          accessible={false}
-          importantForAccessibility="no-hide-descendants"
-          accessibilityElementsHidden={true}
-        />
+        <CategoryIcon category={flag.category} size={18} color={color.textStrong} decorative />
         <AppText variant="label" style={styles.cardTitle}>{CATEGORY_LABELS[flag.category]}</AppText>
-        <AppText variant="label" style={styles.statusTag}>{flag.status}</AppText>
+        <StatusBadge status={flag.status} size="sm" />
         {/* Checkmark indicator in the top-right corner. Hidden from SR
             because the accessibilityState above already conveys the
             checked/unchecked state — duplicating it would just read
@@ -1196,16 +1205,23 @@ const FlagCard = memo(function FlagCard({
             accessibilityLabel={`Photo of ${CATEGORY_LABELS[flag.category]} accessibility issue. Tap to view full screen.`}
             accessibilityHint="Opens a full-screen view of the photo"
           >
-            {photoInView ? (
+            {photoInView && (
               <Image
                 source={{ uri: flag.photo_url }}
                 style={styles.cardThumb}
+                onLoad={() => setPhotoLoaded(true)}
                 onError={() => setPhotoError(true)}
                 accessible={false}
                 importantForAccessibility="no"
               />
-            ) : (
-              <View style={[styles.cardThumb, { backgroundColor: color.surfaceNeutral }]} />
+            )}
+            {!photoLoaded && (
+              <Skeleton
+                width={size.thumb}
+                height={size.thumb}
+                borderRadius={radius.md}
+                style={styles.thumbSkeleton}
+              />
             )}
           </Pressable>
         ) : null}
@@ -1395,7 +1411,7 @@ const makeStyles = (color: ColorTheme) =>
       alignItems: 'center',
       gap: spacing.sm,
       maxWidth: 340,
-      ...shadow.e1,
+      ...shadow.e2,
     },
     emptyIcon: { marginBottom: spacing.tight },
     emptyTitle: {
@@ -1442,21 +1458,26 @@ const makeStyles = (color: ColorTheme) =>
       backgroundColor: color.surface,
       borderRadius: radius.lg,
       padding: spacing.md + 2,
+      paddingLeft: spacing.lg,
       gap: spacing.sm,
       minHeight: size.cardMin,
-      ...shadow.e1,
+      ...shadow.e2,
       marginBottom: spacing.md,
+    },
+    // Severity accent stripe hugging the card's left edge (rounded to match the
+    // card corners). No overflow:hidden on the card — that would clip the iOS shadow.
+    cardAccent: {
+      position: 'absolute',
+      left: 0,
+      top: 0,
+      bottom: 0,
+      width: 4,
+      borderTopLeftRadius: radius.lg,
+      borderBottomLeftRadius: radius.lg,
     },
     cardPressed: { opacity: 0.85, transform: [{ scale: 0.99 }] },
     cardHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-    sevDot: { width: 12, height: 12, borderRadius: 6 },
     cardTitle: { fontSize: font.size.lg, fontWeight: font.weight.semibold, flex: 1 },
-    statusTag: {
-      fontSize: font.size.caption,
-      color: color.textMuted,
-      textTransform: 'uppercase',
-      letterSpacing: 0.6,
-    },
     cardBody: { flexDirection: 'row', gap: spacing.md },
     // Container holds the image so overflow:hidden clips rounded corners on
     // Android (where borderRadius on Image alone is unreliable).
@@ -1472,6 +1493,7 @@ const makeStyles = (color: ColorTheme) =>
       width: '100%',
       height: '100%',
     },
+    thumbSkeleton: { position: 'absolute', top: 0, left: 0 },
     cardBodyText: { flex: 1, gap: spacing.tight },
     cardDesc: { fontSize: font.size.base, color: color.textStrong },
     cardMeta: { fontSize: font.size.xs, color: color.textMuted },
