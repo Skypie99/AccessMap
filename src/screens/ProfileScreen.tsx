@@ -10,7 +10,6 @@ import {
   ScrollView,
   StyleSheet,
   Switch,
-  Text,
   View,
 } from 'react-native';
 import { RemoteImage } from '@/components/ui/RemoteImage';
@@ -912,13 +911,14 @@ export default function ProfileScreen() {
                   importantForAccessibility="no-hide-descendants"
                 />
               </View>
-              <Text
+              <AppText
+                variant="label"
                 style={styles.tierProgressLabel}
                 accessibilityElementsHidden
                 importantForAccessibility="no-hide-descendants"
               >
                 {tierGap} pts to {nextTier?.label ?? 'next tier'}
-              </Text>
+              </AppText>
             </>
           )}
           {nextMilestone !== null ? (
@@ -935,13 +935,14 @@ export default function ProfileScreen() {
                   importantForAccessibility="no-hide-descendants"
                 />
               </View>
-              <Text
+              <AppText
+                variant="label"
                 style={styles.heroSubtitle}
                 accessibilityElementsHidden
                 importantForAccessibility="no-hide-descendants"
               >
                 {nextMilestone - points} points to {milestoneLabel}
-              </Text>
+              </AppText>
             </>
           ) : (
             <AppText variant="label" style={styles.heroSubtitle}>
@@ -977,7 +978,8 @@ export default function ProfileScreen() {
                     role="listitem"
                     accessibilityLabel={`${action} ${absPoints} ${absPoints === 1 ? 'point' : 'points'}: ${pointEventLabel(ev.event_type)}, ${dateStr}`}
                   >
-                    <Text
+                    <AppText
+                      variant="label"
                       style={[styles.pointHistoryIcon, !isGain && styles.pointHistoryIconNeg]}
                       accessibilityElementsHidden
                       importantForAccessibility="no-hide-descendants"
@@ -987,7 +989,7 @@ export default function ProfileScreen() {
                       ) : (
                         <ArrowDown size={14} color={color.error} strokeWidth={2.4} />
                       )}
-                    </Text>
+                    </AppText>
                     <AppText variant="body" style={styles.pointHistoryLabel} numberOfLines={1}>
                       {pointEventLabel(ev.event_type)}
                     </AppText>
