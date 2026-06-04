@@ -5,10 +5,10 @@ import {
   Pressable,
   RefreshControl,
   StyleSheet,
-  Text,
   View,
 } from 'react-native';
 import { RemoteImage } from '@/components/ui/RemoteImage';
+import { AppText } from '@/components/ui/AppText';
 import SearchInputRow from '@/components/SearchInputRow';
 import { useAuth } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
@@ -182,9 +182,9 @@ export default function MyReportsModal({
               accessibilityElementsHidden
               importantForAccessibility="no"
             />
-            <Text style={styles.rowTitle} numberOfLines={1}>
+            <AppText variant="label" style={styles.rowTitle} numberOfLines={1}>
               {CATEGORY_LABELS[item.category]}
-            </Text>
+            </AppText>
             <StatusBadge status={item.status} />
             {/* Pin shortcut — bypasses the detail modal and jumps straight
               to the Map tab with the pin focused. Only shown when the
@@ -216,15 +216,15 @@ export default function MyReportsModal({
             ) : null}
             <View style={styles.rowBodyText}>
               {item.description ? (
-                <Text style={styles.rowDesc} numberOfLines={2}>
+                <AppText variant="body" style={styles.rowDesc} numberOfLines={2}>
                   {item.description}
-                </Text>
+                </AppText>
               ) : (
-                <Text style={styles.rowDescMuted}>No description.</Text>
+                <AppText variant="body" style={styles.rowDescMuted}>No description.</AppText>
               )}
-              <Text style={styles.rowMeta}>
+              <AppText variant="body" style={styles.rowMeta}>
                 Severity {item.severity} • {dateLabel}
-              </Text>
+              </AppText>
             </View>
           </View>
         </Pressable>
@@ -237,9 +237,9 @@ export default function MyReportsModal({
       <View style={styles.backdrop}>
         <View style={styles.card} accessibilityViewIsModal>
           <View style={styles.headerRow}>
-            <Text style={styles.title} accessibilityRole="header">
+            <AppText variant="heading" style={styles.title} accessibilityRole="header">
               My Reports
-            </Text>
+            </AppText>
             <Pressable
               onPress={onClose}
               hitSlop={12}
@@ -282,9 +282,9 @@ export default function MyReportsModal({
                     accessibilityLabel={`Sort by ${labels[opt]}`}
                     accessibilityState={{ selected: active }}
                   >
-                    <Text style={[styles.sortChipText, active && styles.sortChipTextActive]}>
+                    <AppText variant="label" style={[styles.sortChipText, active && styles.sortChipTextActive]}>
                       {labels[opt]}
-                    </Text>
+                    </AppText>
                   </Pressable>
                 );
               })}
@@ -306,14 +306,15 @@ export default function MyReportsModal({
                 accessibilityLabel="Show all statuses"
                 accessibilityState={{ selected: statusFilter === 'all' }}
               >
-                <Text
+                <AppText
+                  variant="label"
                   style={[
                     styles.statusFilterText,
                     statusFilter === 'all' && styles.statusFilterTextActive,
                   ]}
                 >
                   All ({flags.length})
-                </Text>
+                </AppText>
               </Pressable>
               {presentStatuses.map((status) => {
                 const active = statusFilter === status;
@@ -327,11 +328,12 @@ export default function MyReportsModal({
                     accessibilityLabel={`Show only ${STATUS_LABELS[status]} reports, ${statusCounts[status]} ${statusCounts[status] === 1 ? 'item' : 'items'}`}
                     accessibilityState={{ selected: active }}
                   >
-                    <Text
+                    <AppText
+                      variant="label"
                       style={[styles.statusFilterText, active && styles.statusFilterTextActive]}
                     >
                       {STATUS_LABELS[status]} ({statusCounts[status]})
-                    </Text>
+                    </AppText>
                   </Pressable>
                 );
               })}
@@ -340,14 +342,14 @@ export default function MyReportsModal({
 
           {loadError ? (
             <View style={styles.errorBanner}>
-              <Text style={styles.errorText}>{loadError}</Text>
+              <AppText variant="body" style={styles.errorText}>{loadError}</AppText>
               <Pressable
                 onPress={load}
                 style={styles.retryBtn}
                 accessibilityRole="button"
                 accessibilityLabel="Retry loading your reports"
               >
-                <Text style={styles.retryText}>Retry</Text>
+                <AppText variant="label" style={styles.retryText}>Retry</AppText>
               </Pressable>
             </View>
           ) : null}
@@ -355,7 +357,7 @@ export default function MyReportsModal({
           {loading && flags.length === 0 && !loadError ? (
             <View style={styles.center}>
               <ActivityIndicator />
-              <Text style={styles.subtitle}>Loading your reports…</Text>
+              <AppText variant="body" style={styles.subtitle}>Loading your reports…</AppText>
             </View>
           ) : (
             <FlatList
@@ -380,25 +382,25 @@ export default function MyReportsModal({
                   // (iOS VoiceOver doesn't honor the prop but loses nothing
                   // — it's a no-op there.)
                   <View style={styles.emptyWrap} accessibilityLiveRegion="polite">
-                    <Text style={styles.emptyTitle}>No matches</Text>
-                    <Text style={styles.emptyBody}>No reports match that search.</Text>
+                    <AppText variant="label" style={styles.emptyTitle}>No matches</AppText>
+                    <AppText variant="body" style={styles.emptyBody}>No reports match that search.</AppText>
                   </View>
                 ) : flags.length > 0 && statusFilter !== 'all' ? (
                   <View style={styles.emptyWrap}>
-                    <Text style={styles.emptyTitle}>
+                    <AppText variant="label" style={styles.emptyTitle}>
                       No {STATUS_LABELS[statusFilter as FlagStatus].toLowerCase()} reports
-                    </Text>
-                    <Text style={styles.emptyBody}>
+                    </AppText>
+                    <AppText variant="body" style={styles.emptyBody}>
                       You don't have any reports in this status. Tap "All" to see everything.
-                    </Text>
+                    </AppText>
                   </View>
                 ) : (
                   <View style={styles.emptyWrap}>
-                    <Text style={styles.emptyTitle}>No reports yet</Text>
-                    <Text style={styles.emptyBody}>
+                    <AppText variant="label" style={styles.emptyTitle}>No reports yet</AppText>
+                    <AppText variant="body" style={styles.emptyBody}>
                       You haven't reported any accessibility flags. Tap the Map tab and use the
                       Report button to drop your first pin.
-                    </Text>
+                    </AppText>
                   </View>
                 )
               }
