@@ -11,10 +11,10 @@ import {
   SafeAreaView,
   ScrollView,
   StyleSheet,
-  Text,
   View,
 } from 'react-native';
 import { CheckCircle2, Flag, Heart, Star, Users, X } from 'lucide-react-native';
+import { AppText } from '@/components/ui/AppText';
 import { font, radius, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 
@@ -72,7 +72,7 @@ export default function HowToHelpScreen({ visible, onClose }: Props) {
       <SafeAreaView style={styles.root}>
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.title} accessibilityRole="header">How To Help</Text>
+          <AppText variant="heading" style={styles.title} accessibilityRole="header">How To Help</AppText>
           <Pressable
             onPress={onClose}
             hitSlop={12}
@@ -89,10 +89,10 @@ export default function HowToHelpScreen({ visible, onClose }: Props) {
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
-          <Text style={styles.intro}>
+          <AppText variant="body" style={styles.intro}>
             AccessMap is built by people like you, one flag at a time. Here's how
             to make the biggest impact.
-          </Text>
+          </AppText>
 
           {STEPS.map((step, i) => (
             <View
@@ -109,8 +109,8 @@ export default function HowToHelpScreen({ visible, onClose }: Props) {
                 <step.icon size={28} color={stepColors[i]} strokeWidth={2} />
               </View>
               <View style={styles.stepText}>
-                <Text style={styles.stepTitle}>{step.title}</Text>
-                <Text style={styles.stepBody}>{step.body}</Text>
+                <AppText variant="label" style={styles.stepTitle}>{step.title}</AppText>
+                <AppText variant="body" style={styles.stepBody}>{step.body}</AppText>
               </View>
             </View>
           ))}
@@ -127,10 +127,10 @@ export default function HowToHelpScreen({ visible, onClose }: Props) {
               accessibilityElementsHidden
               importantForAccessibility="no-hide-descendants"
             />
-            <Text style={styles.calloutText}>
+            <AppText variant="body" style={styles.calloutText}>
               Every contribution — big or small — makes the world more accessible
               for people with mobility disabilities. Thank you.
-            </Text>
+            </AppText>
           </View>
         </ScrollView>
       </SafeAreaView>

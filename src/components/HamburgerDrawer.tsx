@@ -15,10 +15,10 @@ import {
   Platform,
   Pressable,
   StyleSheet,
-  Text,
   View,
 } from 'react-native';
 import { ChevronRight, Heart, Info, Layers, LogIn, LogOut, X, type LucideIcon } from 'lucide-react-native';
+import { AppText } from '@/components/ui/AppText';
 import { font, motion, radius, shadow, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { useReducedMotion } from '@/lib/accessibility';
@@ -120,9 +120,9 @@ export default function HamburgerDrawer({ open, onClose }: Props) {
           {/* Header */}
           <View style={styles.drawerHeader}>
             <View style={styles.logoMini}>
-              <Text style={styles.logoMiniText}>A</Text>
+              <AppText variant="heading" style={styles.logoMiniText}>A</AppText>
             </View>
-            <Text style={styles.drawerBrand}>AccessMap</Text>
+            <AppText variant="heading" style={styles.drawerBrand}>AccessMap</AppText>
             <Pressable
               onPress={closeDrawer}
               hitSlop={12}
@@ -180,7 +180,7 @@ export default function HamburgerDrawer({ open, onClose }: Props) {
 
           {/* Footer */}
           <View style={styles.drawerFooter}>
-            <Text style={styles.footerText}>AccessMap · Made with ♥ in Canada</Text>
+            <AppText variant="body" style={styles.footerText}>AccessMap · Made with ♥ in Canada</AppText>
           </View>
         </Animated.View>
       </Modal>
@@ -228,7 +228,7 @@ function DrawerItem({ icon: Icon, label, onPress, color, muted = false }: ItemPr
           strokeWidth={2.2}
         />
       </View>
-      <Text style={[styles.label, muted && styles.labelMuted]}>{label}</Text>
+      <AppText variant="label" style={[styles.label, muted && styles.labelMuted]}>{label}</AppText>
       <ChevronRight size={16} color={color.textSubtle} strokeWidth={2.2} />
     </Pressable>
   );
