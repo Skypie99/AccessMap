@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { font, radius, shadow, spacing } from '@/theme';
+import { AppText } from '@/components/ui/AppText';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { ChevronDown, ChevronRight, X } from 'lucide-react-native';
 import { openFeedbackComposer } from '@/lib/feedback';
@@ -101,9 +102,9 @@ export default function HelpModal({ visible, onClose }: Props) {
       <View style={styles.backdrop} accessibilityViewIsModal testID="helpModal-backdrop">
         <View style={styles.card}>
           <View style={styles.headerRow}>
-            <Text style={styles.title} accessibilityRole="header">
+            <AppText variant="heading" style={styles.title} accessibilityRole="header">
               Help & FAQ
-            </Text>
+            </AppText>
             <Pressable
               onPress={onClose}
               hitSlop={12}
@@ -132,9 +133,9 @@ export default function HelpModal({ visible, onClose }: Props) {
             showsVerticalScrollIndicator={false}
           >
             {showEmpty && (
-              <Text style={styles.emptyResults} accessibilityLiveRegion="polite">
+              <AppText variant="body" style={styles.emptyResults} accessibilityLiveRegion="polite">
                 No FAQ matches that search. Try a different term.
-              </Text>
+              </AppText>
             )}
 
             {filteredFaqs.map((item) => {
@@ -151,26 +152,26 @@ export default function HelpModal({ visible, onClose }: Props) {
                       expanded ? 'Tap to collapse the answer' : 'Tap to expand the answer'
                     }
                   >
-                    <Text style={styles.faqQuestion}>{item.q}</Text>
-                    <Text style={styles.faqChevron} accessibilityElementsHidden>
+                    <AppText variant="label" style={styles.faqQuestion}>{item.q}</AppText>
+                    <AppText variant="label" style={styles.faqChevron} accessibilityElementsHidden>
                       {expanded ? (
                         <ChevronDown size={16} color={color.brand} strokeWidth={2.2} />
                       ) : (
                         <ChevronRight size={16} color={color.brand} strokeWidth={2.2} />
                       )}
-                    </Text>
+                    </AppText>
                   </Pressable>
-                  {expanded && <Text style={styles.faqAnswer}>{item.a}</Text>}
+                  {expanded && <AppText variant="body" style={styles.faqAnswer}>{item.a}</AppText>}
                 </View>
               );
             })}
 
             <View style={styles.afterCard}>
-              <Text style={styles.afterTitle}>Didn't find what you needed?</Text>
-              <Text style={styles.afterBody}>
+              <AppText variant="label" style={styles.afterTitle}>Didn't find what you needed?</AppText>
+              <AppText variant="body" style={styles.afterBody}>
                 Send a message and we'll try to help. The Feedback button at the top of any screen
                 prefills the form; this button goes straight to your mail app.
-              </Text>
+              </AppText>
               <Pressable
                 onPress={() => openFeedbackComposer()}
                 style={({ pressed }) => [styles.feedbackBtn, pressed && styles.feedbackBtnPressed]}
@@ -178,7 +179,7 @@ export default function HelpModal({ visible, onClose }: Props) {
                 accessibilityLabel="Email the maintainer"
                 accessibilityHint="Opens your email app with the maintainer's address"
               >
-                <Text style={styles.feedbackBtnText}>Email us</Text>
+                <AppText variant="label" style={styles.feedbackBtnText}>Email us</AppText>
               </Pressable>
             </View>
           </ScrollView>

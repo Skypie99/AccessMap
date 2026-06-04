@@ -5,10 +5,10 @@ import {
   Modal,
   Pressable,
   StyleSheet,
-  Text,
   View,
 } from 'react-native';
 import { useAuth } from '@/lib/auth';
+import { AppText } from '@/components/ui/AppText';
 import { errorMessage } from '@/lib/errors';
 import { listLeaderboard, type LeaderboardEntry } from '@/lib/flags';
 import { getTier } from '@/lib/reputationTier';
@@ -92,21 +92,21 @@ export default function LeaderboardModal({ visible, onClose }: Props) {
             {rank <= 3 ? (
               <Medal size={22} color={MEDAL_COLOR[rank] ?? color.textMuted} strokeWidth={2.2} />
             ) : (
-              <Text style={[styles.rank, { textAlign: 'center' }]}>{ordinalLabel(rank)}</Text>
+              <AppText variant="label" style={[styles.rank, { textAlign: 'center' }]}>{ordinalLabel(rank)}</AppText>
             )}
           </View>
           <View style={styles.nameWrap}>
             <TierIcon tier={tier} size={font.size.base} />
-            <Text style={[styles.name, isCurrentUser && styles.nameSelf]} numberOfLines={1}>
+            <AppText variant="body" style={[styles.name, isCurrentUser && styles.nameSelf]} numberOfLines={1}>
               {name}
-            </Text>
+            </AppText>
             {isCurrentUser ? (
-              <Text style={styles.youBadge} accessibilityElementsHidden>
+              <AppText variant="label" style={styles.youBadge} accessibilityElementsHidden>
                 you
-              </Text>
+              </AppText>
             ) : null}
           </View>
-          <Text style={styles.points}>{item.points.toLocaleString()} pts</Text>
+          <AppText variant="label" style={styles.points}>{item.points.toLocaleString()} pts</AppText>
         </View>
       );
     },
@@ -118,10 +118,10 @@ export default function LeaderboardModal({ visible, onClose }: Props) {
       <View style={styles.backdrop}>
         <View style={styles.card} accessibilityViewIsModal>
           <View style={styles.headerRow}>
-            <Text style={styles.titleIcon} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">🏆</Text>
-            <Text style={styles.title} accessibilityRole="header">
+            <AppText variant="body" style={styles.titleIcon} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">🏆</AppText>
+            <AppText variant="heading" style={styles.title} accessibilityRole="header">
               Community Leaderboard
-            </Text>
+            </AppText>
             <Pressable
               onPress={onClose}
               accessibilityRole="button"
@@ -132,7 +132,7 @@ export default function LeaderboardModal({ visible, onClose }: Props) {
               <X size={18} color={color.textMuted} strokeWidth={2.2} accessibilityElementsHidden />
             </Pressable>
           </View>
-          <Text style={styles.subtitle}>Top 10 contributors by points</Text>
+          <AppText variant="body" style={styles.subtitle}>Top 10 contributors by points</AppText>
 
           {loading ? (
             <ActivityIndicator
@@ -147,19 +147,19 @@ export default function LeaderboardModal({ visible, onClose }: Props) {
               accessible
               accessibilityLabel={`Could not load leaderboard. ${loadError}`}
             >
-              <Text style={styles.stateText}>{loadError}</Text>
+              <AppText variant="body" style={styles.stateText}>{loadError}</AppText>
               <Pressable
                 onPress={() => void load()}
                 style={({ pressed }) => [styles.retryBtn, pressed && styles.retryBtnPressed]}
                 accessibilityRole="button"
                 accessibilityLabel="Retry loading leaderboard"
               >
-                <Text style={styles.retryText}>Retry</Text>
+                <AppText variant="label" style={styles.retryText}>Retry</AppText>
               </Pressable>
             </View>
           ) : entries.length === 0 ? (
             <View style={styles.stateWrap}>
-              <Text style={styles.stateText} accessibilityRole="text">No contributors yet — be the first to report a barrier!</Text>
+              <AppText variant="body" style={styles.stateText} accessibilityRole="text">No contributors yet — be the first to report a barrier!</AppText>
             </View>
           ) : (
             <FlatList
