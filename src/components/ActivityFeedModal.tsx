@@ -22,10 +22,10 @@ import {
   RefreshControl,
   SectionList,
   StyleSheet,
-  Text,
   View,
 } from 'react-native';
 import { RemoteImage } from '@/components/ui/RemoteImage';
+import { AppText } from '@/components/ui/AppText';
 import { useAuth } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
 import {
@@ -152,11 +152,11 @@ export default function ActivityFeedModal({ visible, onClose, onSelectFlag, onVi
                 accessibilityElementsHidden
                 importantForAccessibility="no-hide-descendants"
               >
-                <Text style={styles.sevDotText}>{item.severity}</Text>
+                <AppText variant="label" style={styles.sevDotText}>{item.severity}</AppText>
               </View>
-              <Text style={styles.rowTitle} numberOfLines={1}>
+              <AppText variant="label" style={styles.rowTitle} numberOfLines={1}>
                 {CATEGORY_LABELS[item.category]}
-              </Text>
+              </AppText>
               <StatusBadge status={item.status} />
               {onViewOnMap && (
                 <Pressable
@@ -185,11 +185,11 @@ export default function ActivityFeedModal({ visible, onClose, onSelectFlag, onVi
               ) : null}
               <View style={styles.rowBodyText}>
                 {item.description ? (
-                  <Text style={styles.rowDesc} numberOfLines={2}>
+                  <AppText variant="body" style={styles.rowDesc} numberOfLines={2}>
                     {item.description}
-                  </Text>
+                  </AppText>
                 ) : null}
-                <Text style={styles.rowMeta}>{relativeTime(item.created_at)}</Text>
+                <AppText variant="body" style={styles.rowMeta}>{relativeTime(item.created_at)}</AppText>
               </View>
             </View>
           </Pressable>
@@ -210,9 +210,9 @@ export default function ActivityFeedModal({ visible, onClose, onSelectFlag, onVi
       <View style={styles.backdrop}>
         <View style={styles.card} accessibilityViewIsModal>
           <View style={styles.headerRow}>
-            <Text style={styles.title} accessibilityRole="header">
+            <AppText variant="heading" style={styles.title} accessibilityRole="header">
               Recent Activity
-            </Text>
+            </AppText>
             <Pressable
               onPress={onClose}
               hitSlop={12}
@@ -241,9 +241,9 @@ export default function ActivityFeedModal({ visible, onClose, onSelectFlag, onVi
                     accessibilityLabel={`Show ${label.toLowerCase()} activity`}
                     accessibilityState={{ selected: active }}
                   >
-                    <Text style={[styles.filterChipText, active && styles.filterChipTextActive]}>
+                    <AppText variant="label" style={[styles.filterChipText, active && styles.filterChipTextActive]}>
                       {label}
-                    </Text>
+                    </AppText>
                   </Pressable>
                 );
               })}
@@ -251,14 +251,14 @@ export default function ActivityFeedModal({ visible, onClose, onSelectFlag, onVi
 
           {loadError ? (
             <View style={styles.errorBanner}>
-              <Text style={styles.errorText}>{loadError}</Text>
+              <AppText variant="body" style={styles.errorText}>{loadError}</AppText>
               <Pressable
                 onPress={load}
                 style={styles.retryBtn}
                 accessibilityRole="button"
                 accessibilityLabel="Retry loading activity"
               >
-                <Text style={styles.retryText}>Retry</Text>
+                <AppText variant="label" style={styles.retryText}>Retry</AppText>
               </Pressable>
             </View>
           ) : null}
@@ -266,7 +266,7 @@ export default function ActivityFeedModal({ visible, onClose, onSelectFlag, onVi
           {loading && flags.length === 0 && !loadError ? (
             <View style={styles.center}>
               <ActivityIndicator />
-              <Text style={styles.subtitle}>Loading recent activity…</Text>
+              <AppText variant="body" style={styles.subtitle}>Loading recent activity…</AppText>
             </View>
           ) : (
             <SectionList
@@ -278,10 +278,10 @@ export default function ActivityFeedModal({ visible, onClose, onSelectFlag, onVi
               contentContainerStyle={sections.length === 0 ? styles.center : styles.list}
               renderSectionHeader={({ section: { title, data } }) => (
                 <View style={styles.sectionHeader}>
-                  <Text style={styles.sectionHeaderText}>{title}</Text>
-                  <Text style={styles.sectionHeaderCount}>
+                  <AppText variant="heading" style={styles.sectionHeaderText}>{title}</AppText>
+                  <AppText variant="body" style={styles.sectionHeaderCount}>
                     {data.length} {data.length === 1 ? 'flag' : 'flags'}
-                  </Text>
+                  </AppText>
                 </View>
               )}
               refreshControl={<RefreshControl refreshing={loading} onRefresh={load} />}
@@ -293,20 +293,20 @@ export default function ActivityFeedModal({ visible, onClose, onSelectFlag, onVi
               ListEmptyComponent={
                 loadError ? null : (
                   <View style={styles.emptyWrap}>
-                    <Text style={styles.emptyTitle}>
+                    <AppText variant="label" style={styles.emptyTitle}>
                       {filter === 'mine'
                         ? 'You have no recent reports'
                         : filter === 'watched'
                           ? 'No recent activity on your watched flags'
                           : 'No recent activity'}
-                    </Text>
-                    <Text style={styles.emptyBody}>
+                    </AppText>
+                    <AppText variant="body" style={styles.emptyBody}>
                       {filter === 'mine'
                         ? 'When you report a flag, it appears here right away.'
                         : filter === 'watched'
                           ? 'Watch a flag to follow its updates here.'
                           : "When community members report or triage flags, they'll show up here in chronological order."}
-                    </Text>
+                    </AppText>
                   </View>
                 )
               }
