@@ -13,8 +13,9 @@ import {
   View,
 } from 'react-native';
 import { AppText } from '@/components/ui/AppText';
-import { hapticSelection } from '@/lib/haptics';
-import { Accessibility, Brain, Camera, Construction, Ear, Eye } from 'lucide-react-native';
+import { hapticNotify, hapticSelection } from '@/lib/haptics';
+import { Accessibility, Brain, Camera, Construction, Ear, Eye, Lock, MapPin } from 'lucide-react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '@/lib/auth';
 import { track } from '@/lib/analytics';
@@ -50,11 +51,11 @@ import {
 import { validReportTemplates, type ReportTemplate } from '@/lib/reportTemplates';
 import type { FlagCategory, FlagSeverity } from '@/types/database';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
-import { font, radius, spacing } from '@/theme';
+import { font, gradient, radius, shadow, spacing } from '@/theme';
 import { useReducedMotion } from '@/lib/accessibility';
 
-/** Emoji icon prefix for each disability tag — adds visual distinction without
- *  adding a dependency. Describes the BARRIER type, not any person's identity. */
+/** Lucide icon for each disability tag — adds visual distinction (no emoji, per
+ *  the brand icon rule). Describes the BARRIER type, not any person's identity. */
 type DisabilityIconCmp = React.ComponentType<{ size?: number; color?: string; strokeWidth?: number }>;
 const DISABILITY_TAG_ICONS: Readonly<Record<DisabilityTag, DisabilityIconCmp>> = {
   mobility_barrier: Accessibility,
@@ -265,6 +266,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
         });
         await recordAnonSubmit();
         track('flag_created', { category, severity, hasPhoto: false });
+        hapticNotify('success');
         reset();
         onCreated();
         onClose();
@@ -316,6 +318,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
         );
       }
       track('flag_created', { category, severity, hasPhoto: photoUrls.length > 0 });
+      hapticNotify('success');
       reset();
       onCreated();
       onClose();
@@ -343,11 +346,14 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
           <AppText variant="heading" style={styles.title} accessibilityRole="header">
             {isAnon ? 'Report anonymously' : 'Report a flag'}
           </AppText>
-          <AppText variant="mono" style={styles.location}>
-            {location
-              ? `at ${location.lat.toFixed(5)}, ${location.lng.toFixed(5)}`
-              : 'Waiting for location…'}
-          </AppText>
+          <View style={styles.locationRow}>
+            <MapPin size={13} color={color.textMuted} strokeWidth={2} accessibilityElementsHidden importantForAccessibility="no-hide-descendants" />
+            <AppText variant="mono" style={styles.location}>
+              {location
+                ? `at ${location.lat.toFixed(5)}, ${location.lng.toFixed(5)}`
+                : 'Waiting for location…'}
+            </AppText>
+          </View>
 
           {/* Anonymous mode banner — shown when user is not signed in.
               accessibilityRole="alert" makes VoiceOver announce it on iOS;
@@ -364,7 +370,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
                 accessibilityLabel="Reporting anonymously. Your identity is not stored."
                 style={styles.anonBannerInfo}
               >
-                <AppText variant="label" style={styles.anonBannerIcon} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">🔒</AppText>
+                <Lock size={15} color={color.brandOnSoft} strokeWidth={2.2} accessibilityElementsHidden importantForAccessibility="no-hide-descendants" />
                 <View style={styles.anonBannerBody}>
                   <AppText variant="label" style={styles.anonBannerTitle}>Reporting anonymously — your identity is not stored.</AppText>
                 </View>
@@ -688,7 +694,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
                   Once a photo is attached the nudge disappears — no clutter.
 
                   accessible + accessibilityLabel: the whole card is one a11y
-                  node; the emoji is decorative and screened out. The
+                  node; the icon is decorative and screened out. The
                   accessibilityLiveRegion triggers the Android AT announcement;
                   iOS is handled by the useEffect above. */}
               {severity >= 4 && photoUris.length === 0 && (
@@ -698,7 +704,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
                   accessibilityLabel={`Tip: adding a photo helps verify this ${severity === 5 ? 'severe' : 'major'} barrier without a site visit.`}
                   accessibilityLiveRegion="polite"
                 >
-                  <Camera size={18} color={color.warningFg} strokeWidth={2} />
+                  <Camera size={18} color={color.infoFg} strokeWidth={2} />
                   <AppText variant="body" style={styles.photoNudgeBody}>
                     {'A photo helps verify this '}
                     <AppText variant="bodyMedium" style={styles.photoNudgeBold}>
@@ -801,6 +807,13 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
               accessibilityLabel={isAnon ? 'Submit anonymous flag report' : 'Submit flag report'}
               accessibilityState={{ disabled: submitting || !location, busy: submitting }}
             >
+              <LinearGradient
+                colors={gradient.brand}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={[StyleSheet.absoluteFill, { borderRadius: radius.md }]}
+                pointerEvents="none"
+              />
               {submitting ? (
                 <ActivityIndicator color={color.textOnBrand} />
               ) : (
@@ -841,6 +854,7 @@ const makeStyles = (color: ColorTheme) =>
       color: color.textStrong,
       letterSpacing: -0.3,
     },
+    locationRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.tight, marginBottom: spacing.xs },
     location: { fontSize: font.size.xs, color: color.textMuted },
     label: {
       fontSize: font.size.sm,
@@ -902,12 +916,16 @@ const makeStyles = (color: ColorTheme) =>
     // High-severity photo nudge card — amber-tinted, appears between the
     // "Photo" label and picker when severity ≥ 4 and no photo is attached.
     // warningBg (#fff7e6) / warningFg (#714b00): 8.3:1 contrast, WCAG AA.
+    // Helpful tip, not a warning — info/tip palette so it reads as a friendly
+    // pointer rather than an alert (more-expressive pass 2026-06-03).
     photoNudge: {
       flexDirection: 'row',
       alignItems: 'flex-start',
       gap: spacing.sm,
-      backgroundColor: color.warningBg,
+      backgroundColor: color.infoBg,
       borderRadius: radius.md,
+      borderWidth: 1,
+      borderColor: color.brandSofter,
       paddingHorizontal: spacing.md,
       paddingVertical: spacing.sm,
       marginBottom: spacing.xs,
@@ -919,12 +937,12 @@ const makeStyles = (color: ColorTheme) =>
     photoNudgeBody: {
       flex: 1,
       fontSize: font.size.xs,
-      color: color.warningFg,
+      color: color.infoFg,
       lineHeight: 17,
     },
     photoNudgeBold: {
       fontWeight: font.weight.bold,
-      color: color.warningFg,
+      color: color.infoFg,
     },
     // Anonymous mode banner — tinted info strip shown at the top of the
     // form when the user is not signed in.
@@ -993,7 +1011,7 @@ const makeStyles = (color: ColorTheme) =>
     },
     cancelBtn: { backgroundColor: color.surfaceNeutral },
     cancelText: { color: color.text, fontWeight: font.weight.semibold },
-    submitBtn: { backgroundColor: color.brand },
+    submitBtn: { backgroundColor: color.brand, overflow: 'visible', ...shadow.glowBrand },
     submitBtnDisabled: { opacity: 0.6 },
     submitText: { color: color.textOnBrand, fontWeight: font.weight.bold },
     // Context-tag chips. Three visual states matching accessibilityState:
