@@ -151,13 +151,23 @@ export default function SavedPlacesModal({
         true,
       );
       if (!ok) return;
-      // Optimistic: drop from state immediately.
-      setPlaces((prev) => prev.filter((p) => p.id !== place.id));
+      // Optimistic: drop from state immediately, snapshotting the prior list
+      // (via the updater so we read the freshest value, not a stale closure)
+      // so we can roll back if the persisted delete fails.
+      let restore: SavedPlace[] | null = null;
+      setPlaces((prev) => {
+        restore = prev;
+        return prev.filter((p) => p.id !== place.id);
+      });
       try {
         await removePlace(user.id, place.id);
         onListChanged?.();
-      } catch {
-        // Best-effort. UI already updated.
+      } catch (e) {
+        // F14: removePlace() re-throws on AsyncStorage write failure (per the
+        // error policy). Don't swallow it — restore the entry (otherwise it
+        // reappears on next open as a "ghost") and tell the user.
+        if (mountedRef.current && restore) setPlaces(restore);
+        Alert.alert('Could not remove place', errorMessage(e, 'Please try again.'));
       }
     },
     [user, onListChanged],
