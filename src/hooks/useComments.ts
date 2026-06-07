@@ -40,8 +40,12 @@ export function useComments(flagId: string | null | undefined): UseCommentsResul
   }, []);
 
   const fetch = useCallback(async () => {
-    if (!flagId) return;
+    // Bump the generation BEFORE the early return so that a flagId
+    // truthy -> null/undefined transition also invalidates any in-flight
+    // fetch (otherwise that fetch would still match genRef and could commit
+    // stale comments over the cleared state). Found in the second sweep.
     const gen = ++genRef.current;
+    if (!flagId) return;
     if (mountedRef.current) {
       setLoading(true);
       setError(null);
