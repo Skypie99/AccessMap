@@ -84,6 +84,12 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
   const [photoUris, setPhotoUris] = useState<string[]>([]);
   const [contextTags, setContextTags] = useState<ContextTag[]>([]);
   const [submitting, setSubmitting] = useState(false);
+  // Synchronous re-entry guard. The Submit button's `disabled` reads the
+  // `submitting` STATE, which doesn't flip until React re-renders — and the
+  // anon path awaits checkAnonRateLimit() before setSubmitting(true), leaving
+  // a window where a second tap starts a duplicate submit (F3). This ref is
+  // set synchronously at the top of handleSubmit so the second tap bails.
+  const submittingRef = useRef(false);
   // Web-only: hidden <input type="file"> used as the image picker substitute.
   const webFileInputRef = useRef<HTMLInputElement | null>(null);
   // Mirror of the module-level capability flag in src/lib/flags.ts. When
@@ -235,16 +241,21 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
   };
 
   const handleSubmit = async () => {
+    // F3: bail on a rapid second tap. Set synchronously (before any await) so
+    // it closes the window the state-based button `disabled` can't.
+    if (submittingRef.current) return;
     if (!location) {
       Alert.alert('No location', 'We need your location to place the flag.');
       return;
     }
+    submittingRef.current = true;
 
     // Anonymous submission path — no photo upload, no context tags.
     if (isAnon) {
       try {
         await checkAnonRateLimit();
       } catch {
+        submittingRef.current = false;
         Alert.alert(
           'Daily limit reached',
           "You've reported 5 barriers today — thanks for contributing! Sign in to report more.",
@@ -273,6 +284,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
       } catch (e) {
         Alert.alert("Couldn't submit your report", errorMessage(e));
       } finally {
+        submittingRef.current = false;
         setSubmitting(false);
       }
       return;
@@ -325,6 +337,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
     } catch (e) {
       Alert.alert("Couldn't submit your report", errorMessage(e));
     } finally {
+      submittingRef.current = false;
       setSubmitting(false);
     }
   };
