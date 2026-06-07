@@ -22,6 +22,7 @@ import {
   type FeedbackCategory,
 } from '@/lib/feedback';
 import { submitFeedback } from '@/lib/feedbackStore';
+import { MAX_BODY_CHARS } from '@/lib/feedback';
 import { X } from 'lucide-react-native';
 
 interface Props {
@@ -75,10 +76,12 @@ export default function FeedbackModal({ visible, onClose }: Props) {
   }, []);
 
   // Mirrors public.feedback.body check constraint (1..=5000 chars) from
-  // supabase/migrations/2026-05-23_feedback_table.sql. submitFeedback
-  // also slices to 5000 server-side, but capping in the UI lets us tell
-  // the user up-front rather than silently truncating after submit.
-  const MAX_FEEDBACK_LEN = 5000;
+  // supabase/migrations/2026-05-23_feedback_table.sql. F19: cap the input at
+  // the mailto body limit (MAX_BODY_CHARS) — the email fallback is the always-
+  // available channel (the Supabase feedback table is optional), and it
+  // silently truncated anything past 1800 chars. Capping here guarantees the
+  // user can't type more than will actually be sent, regardless of backend.
+  const MAX_FEEDBACK_LEN = MAX_BODY_CHARS;
   // RFC 5321 mail-address local-part max is 64 + '@' + 255 = 320. Keeps
   // a hostile multi-KB paste from sneaking past the server email regex.
   const MAX_EMAIL_LEN = 320;
