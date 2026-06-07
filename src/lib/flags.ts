@@ -114,15 +114,32 @@ export async function stripExifNative(
  * This draws the image onto a canvas and exports it as a new JPEG/PNG,
  * which discards all metadata. Quality may be slightly reduced (acceptable).
  *
- * Post-strip verification checks the output bytes.
+ * D8 privacy gate — FAIL-CLOSED: returns null on ANY failure (no browser
+ * environment, no canvas context, image decode failure such as a HEIC the
+ * browser can't render, toBlob/FileReader failure). Callers MUST treat null
+ * as "could not strip" and abort the upload rather than send the original
+ * bytes, which may still carry GPS/EXIF — previously these paths returned the
+ * unstripped original, and verifyExifStripped (a JPEG-marker scan) could not
+ * detect EXIF in a WEBP/HEIC container, so GPS bytes passed the gate.
+ * Mirrors stripExifNative's fail-closed contract.
  */
-export function stripExifWeb(arrayBuffer: ArrayBuffer, ext: string): Promise<ArrayBuffer> {
+export function stripExifWeb(arrayBuffer: ArrayBuffer, ext: string): Promise<ArrayBuffer | null> {
   return new Promise((resolve) => {
+    // Hoisted so every exit path can revoke it — no leaked blob URLs even when
+    // we bail before img load (canvas-context-unavailable path) or throw.
+    let objectUrl: string | null = null;
+    const revoke = () => {
+      if (objectUrl) {
+        URL.revokeObjectURL(objectUrl);
+        objectUrl = null;
+      }
+    };
     try {
       // Avoid calling web-only APIs if not in a browser environment.
       if (typeof document === 'undefined') {
-        console.warn('[EXIF] Not in web environment; using original.');
-        return resolve(arrayBuffer);
+        // D8 fail-CLOSED: never resolve the original (unstripped) bytes.
+        console.warn('[EXIF] Not in web environment; cannot strip — failing closed.');
+        return resolve(null);
       }
 
       // Convert arrayBuffer to a blob and then to an object URL.
@@ -136,14 +153,15 @@ export function stripExifWeb(arrayBuffer: ArrayBuffer, ext: string): Promise<Arr
                 ? 'image/heic'
                 : 'image/jpeg',
       });
-      const objectUrl = URL.createObjectURL(blob);
+      objectUrl = URL.createObjectURL(blob);
 
       // Create a canvas and draw the image onto it. This strips metadata.
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
       if (!ctx) {
-        console.warn('[EXIF] Canvas context unavailable; using original.');
-        return resolve(arrayBuffer);
+        console.warn('[EXIF] Canvas context unavailable; failing closed.');
+        revoke();
+        return resolve(null);
       }
 
       const img = new Image();
@@ -155,15 +173,15 @@ export function stripExifWeb(arrayBuffer: ArrayBuffer, ext: string): Promise<Arr
 
         // Draw the image onto the canvas (bakes orientation into pixels).
         ctx.drawImage(img, 0, 0);
-        URL.revokeObjectURL(objectUrl);
+        revoke();
 
         // Export the canvas back to bytes. Use 0.8 quality to balance size/fidelity.
         // For PNG, quality is ignored and lossless compression is used.
         canvas.toBlob(
           (outBlob: Blob | null) => {
             if (!outBlob) {
-              console.warn('[EXIF] Canvas toBlob failed; using original.');
-              return resolve(arrayBuffer);
+              console.warn('[EXIF] Canvas toBlob failed; failing closed.');
+              return resolve(null);
             }
 
             // Convert the blob back to arrayBuffer.
@@ -172,8 +190,8 @@ export function stripExifWeb(arrayBuffer: ArrayBuffer, ext: string): Promise<Arr
             reader.onload = ((_event: any) => {
               const result = reader.result;
               if (!(result instanceof ArrayBuffer)) {
-                console.warn('[EXIF] Canvas result not ArrayBuffer; using original.');
-                return resolve(arrayBuffer);
+                console.warn('[EXIF] Canvas result not ArrayBuffer; failing closed.');
+                return resolve(null);
               }
               if (__DEV__) {
                 console.debug(
@@ -184,8 +202,8 @@ export function stripExifWeb(arrayBuffer: ArrayBuffer, ext: string): Promise<Arr
             }) as any;
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             reader.onerror = ((_error: any) => {
-              console.warn('[EXIF] FileReader error; using original.');
-              resolve(arrayBuffer);
+              console.warn('[EXIF] FileReader error; failing closed.');
+              resolve(null);
             }) as any;
             reader.readAsArrayBuffer(outBlob);
           },
@@ -196,16 +214,17 @@ export function stripExifWeb(arrayBuffer: ArrayBuffer, ext: string): Promise<Arr
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       img.onerror = ((_event: any) => {
-        console.warn('[EXIF] Image load failed; using original.');
-        URL.revokeObjectURL(objectUrl);
-        resolve(arrayBuffer);
+        console.warn('[EXIF] Image load failed; failing closed.');
+        revoke();
+        resolve(null);
       }) as any;
 
       // Trigger load from the object URL.
       img.src = objectUrl;
     } catch (e) {
-      console.warn('[EXIF] Web re-encode failed:', e);
-      resolve(arrayBuffer);
+      console.warn('[EXIF] Web re-encode failed; failing closed:', e);
+      revoke();
+      resolve(null);
     }
   });
 }
@@ -284,9 +303,11 @@ export function detectMimeFromBytes(buffer: ArrayBuffer): string | null {
  * EXIF stripping: Before upload, strips GPS, timestamps, camera info,
  * thumbnails, IPTC, and XMP metadata to protect user location privacy.
  * Uses platform-specific approaches:
- *   - iOS/Android: expo-media-library native transcode (HEIC → JPEG on iOS)
+ *   - iOS/Android: expo-image-manipulator native transcode (HEIC → JPEG on iOS)
  *   - Web: Canvas re-encoding (some quality loss, acceptable)
- *   - Error handling: if stripping fails, uploads original (fail-safe)
+ *   - Error handling: D8 fail-CLOSED — if stripping cannot be completed on
+ *     EITHER platform, the upload is aborted (we never send original bytes
+ *     that may carry GPS/EXIF).
  *
  * Validates the URI scheme, the extension, and the byte size before
  * touching Storage so a malformed pick or a runaway file fails loudly
@@ -325,7 +346,14 @@ export async function uploadFlagPhoto(userId: string, localUri: string): Promise
   // On iOS/Android, use ImageManipulator re-encode (D8 privacy gate — fail-closed).
   // On web, use canvas re-encoding.
   if (Platform.OS === 'web') {
-    arrayBuffer = await stripExifWeb(arrayBuffer, ext);
+    // D8: stripExifWeb returns null on ANY failure (no canvas, image decode
+    // failure — e.g. a HEIC the browser can't render, toBlob/FileReader error).
+    // Fail-closed: abort rather than upload original bytes that may carry GPS.
+    const stripped = await stripExifWeb(arrayBuffer, ext);
+    if (stripped === null) {
+      throw new Error('Photo privacy check failed: EXIF stripping could not be completed. Please try again.');
+    }
+    arrayBuffer = stripped;
   } else {
     // D8: stripExifNative returns null on failure; abort rather than upload
     // original bytes that may contain GPS/camera metadata.
