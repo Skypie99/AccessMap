@@ -12,7 +12,7 @@ import {
   type LucideIcon,
 } from 'lucide-react-native';
 import HamburgerDrawer from '@/components/HamburgerDrawer';
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, createNavigationContainerRef } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useAuth } from '@/lib/auth';
 import { FlagsProvider, useFlags } from '@/lib/flagsStore';
@@ -73,6 +73,11 @@ const linking = {
 
 const Tab = createBottomTabNavigator<RootTabParamList>();
 
+// Container-level nav ref so the hamburger drawer (rendered as the Map header's
+// headerLeft, above the navigator) can switch tabs — used by the guest/web
+// "Sign in" item to jump to the Profile tab, which hosts the sign-in modal.
+const navigationRef = createNavigationContainerRef<RootTabParamList>();
+
 const tabIcon =
   (Icon: LucideIcon) =>
   ({ color: tintColor, size }: { color: string; size: number }) => (
@@ -88,7 +93,7 @@ interface Props {
 
 export default function RootNavigator({ initialRouteName = 'Map' }: Props) {
   return (
-    <NavigationContainer linking={linking}>
+    <NavigationContainer ref={navigationRef} linking={linking}>
       <FlagsProviderWithAuth initialRouteName={initialRouteName} />
     </NavigationContainer>
   );
@@ -148,7 +153,16 @@ function NavInner({ initialRouteName }: { initialRouteName: keyof RootTabParamLi
       >
         <MenuIcon size={24} color="#f0f6ff" strokeWidth={2.2} />
       </Pressable>
-      <HamburgerDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
+      <HamburgerDrawer
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        // F11: guest/web "Sign in" jumps to the Profile tab, which hosts the
+        // sign-in modal (previously the item only closed the drawer — a dead end).
+        onSignIn={() => {
+          setDrawerOpen(false);
+          if (navigationRef.isReady()) navigationRef.navigate('Profile');
+        }}
+      />
     </>
   );
 

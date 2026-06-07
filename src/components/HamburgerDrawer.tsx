@@ -35,9 +35,12 @@ type SubScreen = 'resources' | 'howToHelp' | 'about';
 interface Props {
   open: boolean;
   onClose: () => void;
+  /** Guest/web only: invoked when the "Sign in" item is tapped. When omitted
+   *  the item just closes the drawer (e.g. if a future caller has no auth route). */
+  onSignIn?: () => void;
 }
 
-export default function HamburgerDrawer({ open, onClose }: Props) {
+export default function HamburgerDrawer({ open, onClose, onSignIn }: Props) {
   const color = useColor();
   const styles = makeStyles(color);
   const { user } = useAuth();
@@ -172,7 +175,9 @@ export default function HamburgerDrawer({ open, onClose }: Props) {
               <DrawerItem
                 icon={LogIn}
                 label="Sign in"
-                onPress={closeDrawer}
+                // F11: route to the sign-in entry instead of just closing the
+                // drawer (which left guests with no way to reach auth).
+                onPress={onSignIn ?? closeDrawer}
                 color={color}
               />
             )}
