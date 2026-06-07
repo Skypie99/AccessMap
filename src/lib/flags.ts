@@ -744,6 +744,25 @@ export async function updateFlagStatus(flagId: string, status: FlagStatus) {
   return data as FlagRow;
 }
 
+/**
+ * Cast a reopen vote for a resolved flag via the increment_reopen_request RPC
+ * (migration 2026-05-30_flag_reopen_requests.sql). Returns the new vote count
+ * for the current resolution cycle, or null if the RPC is unavailable on this
+ * backend (migration not applied / RLS rejection) so callers degrade
+ * gracefully instead of throwing. The RPC stores NO user_id (Jordan privacy
+ * gate) and is a server-side no-op (returns 0) unless the flag is 'resolved'.
+ */
+export async function requestFlagReopen(flagId: string): Promise<number | null> {
+  const { data, error } = await supabase.rpc('increment_reopen_request', {
+    p_flag_id: flagId,
+  });
+  if (error) {
+    console.warn('[reopen] increment_reopen_request RPC error:', error.message);
+    return null;
+  }
+  return typeof data === 'number' ? data : null;
+}
+
 // RLS allows delete only when user_id = auth.uid(), so the caller does not
 // need to re-check ownership — Supabase will reject any other user's row.
 export async function deleteFlag(flagId: string) {

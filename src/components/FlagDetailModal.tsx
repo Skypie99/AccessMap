@@ -30,11 +30,13 @@ import {
   CATEGORY_LABELS,
   CATEGORY_ORDER,
   deleteFlag,
+  requestFlagReopen,
   severityColor,
   updateFlagContent,
   updateFlagStatus,
   type FlagContentPatch,
 } from '@/lib/flags';
+import { hasRequestedReopen, recordReopenRequest } from '@/lib/reopenRequests';
 import { severityA11y, statusA11y } from '@/lib/a11yText';
 import { isDisabilityTag, isSeasonalTag, isValidTag, tagLabel } from '@/lib/contextTags';
 import { addFlagPhoto, listFlagPhotos } from '@/lib/photos';
@@ -136,18 +138,25 @@ export default function FlagDetailModal({
     setHistoryOpen(false);
   }, [flag?.id]);
 
-  // Reset reopen form state whenever the modal closes or a different flag is shown.
+  // Reset reopen form state + the comment draft whenever the modal closes or a
+  // different flag is shown. F16: without clearing commentText on a flag swap,
+  // a draft typed for flag A could be submitted against flag B (the modal is
+  // never unmounted — the parent toggles `visible` and swaps the flag prop).
   useEffect(() => {
     if (!visible) {
       setShowReopenForm(false);
       setReopenText('');
       setReopenMessage(null);
+      setCommentText('');
+      setCommentSubmitting(false);
     }
   }, [visible]);
   useEffect(() => {
     setShowReopenForm(false);
     setReopenText('');
     setReopenMessage(null);
+    setCommentText('');
+    setCommentSubmitting(false);
   }, [flag?.id]);
 
   // Record a "view" the first time this modal becomes visible with a flag
@@ -225,9 +234,18 @@ export default function FlagDetailModal({
       input.type = 'file';
       input.accept = 'image/*';
       input.style.display = 'none';
+      // F25: clean up the DOM element and the blob URL on every exit path —
+      // previously each tap left a hidden <input> in the DOM and an
+      // unreleased Blob URL, accumulating for the page session.
+      const cleanup = () => {
+        input.remove();
+      };
       input.onchange = async () => {
         const file = input.files?.[0];
-        if (!file) return;
+        if (!file) {
+          cleanup();
+          return;
+        }
         const localUri = URL.createObjectURL(file);
         try {
           await addFlagPhoto(shownFlag.id, localUri);
@@ -235,8 +253,15 @@ export default function FlagDetailModal({
           setFlagPhotos(updated);
         } catch (e) {
           Alert.alert('Could not upload photo', errorMessage(e));
+        } finally {
+          URL.revokeObjectURL(localUri);
+          cleanup();
         }
       };
+      // Fired when the user dismisses the file picker without choosing — without
+      // this the hidden input would linger in the DOM (modern browsers only;
+      // a no-op elsewhere, which is still no worse than before).
+      input.oncancel = cleanup;
       document.body.appendChild(input);
       input.click();
       return;
@@ -476,22 +501,44 @@ export default function FlagDetailModal({
     }
     setReopenBusy(true);
     try {
-      // TODO: once the profile row is surfaced through AuthContext (or a
-      //       ProfileContext), pass the user's actual points here. Until then,
-      //       the Supabase `User` object doesn't carry public.users.points, so
-      //       we default to Bronze (0 pts) — the safest / most conservative
-      //       threshold. Replace `null` below with the real points value when
-      //       profile data flows into this component. (F10 scaffolding — Wave C)
-      const tier = getTier(null); // defaults to Bronze until profile data is available
+      // Threshold by reputation tier. getTier(null) currently always resolves
+      // to Bronze because public.users.points isn't threaded into this
+      // component yet — the conservative (highest) threshold, which is the safe
+      // default. Threading real points (so Gold/Platinum get the 1-vote path)
+      // is a proposed refinement — see DECISIONS FOR SKY in the deep audit.
+      const tier = getTier(null);
       const threshold =
         tier.name === 'gold' || tier.name === 'platinum' ? 1
         : tier.name === 'silver' ? 2
         : 3; // bronze (default)
 
-      // TODO: replace with typed column after migration applied.
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const currentCount = (shownFlag as any).reopen_requests as number ?? 0;
-      const newCount = currentCount + 1;
+      // Per-device dedup (F8): the server stores no user_id, so without this a
+      // single user could reopen any flag by voting repeatedly. One vote per
+      // flag per user on this device.
+      if (await hasRequestedReopen(user.id, shownFlag.id)) {
+        const msg = "You've already requested a reopen for this flag.";
+        setReopenMessage(msg);
+        AccessibilityInfo.announceForAccessibility(msg);
+        setShowReopenForm(false);
+        setReopenText('');
+        return;
+      }
+
+      // Persist the vote and get the authoritative running count (F8: this was
+      // never wired before — the count was computed locally from an undefined
+      // field, so it never advanced and the flag could never reopen).
+      const newCount = await requestFlagReopen(shownFlag.id);
+      if (newCount === null) {
+        // RPC unavailable on this backend (migration not applied) — be honest
+        // rather than show a fake running tally.
+        const msg = 'Thanks — your reopen request was sent for review.';
+        setReopenMessage(msg);
+        AccessibilityInfo.announceForAccessibility(msg);
+        setShowReopenForm(false);
+        setReopenText('');
+        return;
+      }
+      await recordReopenRequest(user.id, shownFlag.id);
 
       if (newCount >= threshold) {
         // Threshold met — reopen the flag.
@@ -500,7 +547,7 @@ export default function FlagDetailModal({
         onClose();
       } else {
         // Not yet — show inline message, keep modal open.
-        const remaining = threshold - newCount;
+        const remaining = Math.max(1, threshold - newCount);
         const noted = `Reopen request noted. ${remaining} more ${remaining === 1 ? 'request' : 'requests'} needed.`;
         setReopenMessage(noted);
         // WCAG 4.1.3: the inline confirmation is otherwise silent for AT users.
