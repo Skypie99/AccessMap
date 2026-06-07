@@ -248,6 +248,12 @@ export default function TasksScreen() {
   // Tracks whether a bulk action is currently running so we can disable
   // the floating bar's buttons and avoid double-submits.
   const [bulkBusy, setBulkBusy] = useState(false);
+  // Synchronous re-entry guard (F4). The bulk buttons' `disabled` reads the
+  // `bulkBusy` STATE, which doesn't flip until React re-renders — and
+  // runBulkAction awaits confirm() (a dialog) before setBulkBusy(true), so a
+  // rapid second tap could start a second concurrent bulk run. This ref is set
+  // synchronously before the dialog so the second tap bails.
+  const bulkBusyRef = useRef(false);
 
   // How many of the currently selected ids are still 'open'? Drives whether
   // the "Verify N" button is enabled — verifying a flag that's already
@@ -331,6 +337,9 @@ export default function TasksScreen() {
   // Declared AFTER showFlash so the closure binds to its real value.
   const runBulkAction = useCallback(
     async (action: 'verify' | 'resolve') => {
+      // F4: bail on a rapid second tap. The dialog (await confirm) opens a
+      // window where the state-based button `disabled` hasn't flipped yet.
+      if (bulkBusyRef.current) return;
       const targetStatus: FlagStatus = action === 'verify' ? 'verified' : 'resolved';
       const ids = selection.selectedIds.slice();
       // For 'verify' we skip anything not in 'open' (already-verified
@@ -345,58 +354,63 @@ export default function TasksScreen() {
         exitSelection();
         return;
       }
-      const verb = action === 'verify' ? 'Verify' : 'Resolve';
-      const ok = await confirm(
-        `${verb} ${targetIds.length} flag${targetIds.length === 1 ? '' : 's'}?`,
-        action === 'verify'
-          ? 'Marks each selected flag as verified.'
-          : 'Marks each selected flag as resolved.',
-        verb,
-        action === 'resolve',
-      );
-      if (!ok) return;
+      bulkBusyRef.current = true;
+      try {
+        const verb = action === 'verify' ? 'Verify' : 'Resolve';
+        const ok = await confirm(
+          `${verb} ${targetIds.length} flag${targetIds.length === 1 ? '' : 's'}?`,
+          action === 'verify'
+            ? 'Marks each selected flag as verified.'
+            : 'Marks each selected flag as resolved.',
+          verb,
+          action === 'resolve',
+        );
+        if (!ok) return;
 
-      setBulkBusy(true);
-      let succeeded = 0;
-      const failures: string[] = [];
-      for (const id of targetIds) {
-        try {
-          const updated = await updateFlagStatus(id, targetStatus);
-          track('flag_status_changed', { flagId: id, from: updated.status === targetStatus ? 'open' : updated.status, to: targetStatus });
-          if (action === 'verify') {
-            // Verify keeps the flag visible (status becomes 'verified'),
-            // so patch the store with the new row.
-            patchFlag(id, { ...updated });
-          } else {
-            // Resolve removes it from the triage queue.
-            removeFlag(id);
+        setBulkBusy(true);
+        let succeeded = 0;
+        const failures: string[] = [];
+        for (const id of targetIds) {
+          try {
+            const updated = await updateFlagStatus(id, targetStatus);
+            track('flag_status_changed', { flagId: id, from: updated.status === targetStatus ? 'open' : updated.status, to: targetStatus });
+            if (action === 'verify') {
+              // Verify keeps the flag visible (status becomes 'verified'),
+              // so patch the store with the new row.
+              patchFlag(id, { ...updated });
+            } else {
+              // Resolve removes it from the triage queue.
+              removeFlag(id);
+            }
+            succeeded += 1;
+          } catch (e) {
+            failures.push(errorMessage(e));
           }
-          succeeded += 1;
-        } catch (e) {
-          failures.push(errorMessage(e));
         }
-      }
-      setBulkBusy(false);
-      // Reconcile with the server — covers the gap between our optimistic
-      // updates and the actual committed state (e.g. another user resolved
-      // one of the same flags). Fire-and-forget; the optimistic updates
-      // already handled instant feedback.
-      refresh().catch(() => {});
+        setBulkBusy(false);
+        // Reconcile with the server — covers the gap between our optimistic
+        // updates and the actual committed state (e.g. another user resolved
+        // one of the same flags). Fire-and-forget; the optimistic updates
+        // already handled instant feedback.
+        refresh().catch(() => {});
 
-      const past = action === 'verify' ? 'Verified' : 'Resolved';
-      if (succeeded > 0) {
-        showFlash(`${past} ${succeeded} flag${succeeded === 1 ? '' : 's'}`);
-        AccessibilityInfo.announceForAccessibility(
-          `${past} ${succeeded} flag${succeeded === 1 ? '' : 's'}.`,
-        );
+        const past = action === 'verify' ? 'Verified' : 'Resolved';
+        if (succeeded > 0) {
+          showFlash(`${past} ${succeeded} flag${succeeded === 1 ? '' : 's'}`);
+          AccessibilityInfo.announceForAccessibility(
+            `${past} ${succeeded} flag${succeeded === 1 ? '' : 's'}.`,
+          );
+        }
+        if (failures.length > 0) {
+          Alert.alert(
+            `Could not ${action} ${failures.length} flag${failures.length === 1 ? '' : 's'}`,
+            failures[0] ?? 'Unknown error',
+          );
+        }
+        exitSelection();
+      } finally {
+        bulkBusyRef.current = false;
       }
-      if (failures.length > 0) {
-        Alert.alert(
-          `Could not ${action} ${failures.length} flag${failures.length === 1 ? '' : 's'}`,
-          failures[0] ?? 'Unknown error',
-        );
-      }
-      exitSelection();
     },
     [selection, flagsMap, patchFlag, removeFlag, refresh, exitSelection, showFlash],
   );
@@ -407,6 +421,7 @@ export default function TasksScreen() {
   // SectionList. Delegates to addWatchedBulk so the FIFO eviction and
   // dedupe live in one place.
   const runBulkWatch = useCallback(async () => {
+    if (bulkBusyRef.current) return; // F4: same re-entry guard as runBulkAction
     if (!user) {
       Alert.alert('Sign in required', 'Please sign in to watch flags.');
       return;
@@ -416,6 +431,7 @@ export default function TasksScreen() {
       exitSelection();
       return;
     }
+    bulkBusyRef.current = true;
     setBulkBusy(true);
     try {
       const { added, alreadyWatched, dropped } = await addWatchedBulk(user.id, ids);
@@ -439,6 +455,7 @@ export default function TasksScreen() {
     } catch (e) {
       Alert.alert("Couldn't update your watched list", errorMessage(e));
     } finally {
+      bulkBusyRef.current = false;
       setBulkBusy(false);
       exitSelection();
     }
@@ -1196,34 +1213,67 @@ const FlagCard = memo(function FlagCard({
       </View>
       <View style={styles.cardBody}>
         {flag.photo_url && !photoError ? (
-          <Pressable
-            onPress={() => setLightboxOpen(true)}
-            onLayout={() => setPhotoInView(true)}
-            hitSlop={spacing.sm}
-            style={styles.cardThumbWrap}
-            accessibilityRole="button"
-            accessibilityLabel={`Photo of ${CATEGORY_LABELS[flag.category]} accessibility issue. Tap to view full screen.`}
-            accessibilityHint="Opens a full-screen view of the photo"
-          >
-            {photoInView && (
-              <Image
-                source={{ uri: flag.photo_url }}
-                style={styles.cardThumb}
-                onLoad={() => setPhotoLoaded(true)}
-                onError={() => setPhotoError(true)}
-                accessible={false}
-                importantForAccessibility="no"
-              />
-            )}
-            {!photoLoaded && (
-              <Skeleton
-                width={size.thumb}
-                height={size.thumb}
-                borderRadius={radius.md}
-                style={styles.thumbSkeleton}
-              />
-            )}
-          </Pressable>
+          selectionActive ? (
+            // F17: in bulk-select mode the whole card is the selection toggle.
+            // Render the thumbnail as a NON-interactive View so a tap on the
+            // photo falls through to the outer card Pressable instead of opening
+            // the lightbox (a nested Pressable would otherwise swallow it,
+            // making the photo area a dead spot for selection).
+            <View
+              style={styles.cardThumbWrap}
+              onLayout={() => setPhotoInView(true)}
+              accessible={false}
+              importantForAccessibility="no-hide-descendants"
+            >
+              {photoInView && (
+                <Image
+                  source={{ uri: flag.photo_url }}
+                  style={styles.cardThumb}
+                  onLoad={() => setPhotoLoaded(true)}
+                  onError={() => setPhotoError(true)}
+                  accessible={false}
+                  importantForAccessibility="no"
+                />
+              )}
+              {!photoLoaded && (
+                <Skeleton
+                  width={size.thumb}
+                  height={size.thumb}
+                  borderRadius={radius.md}
+                  style={styles.thumbSkeleton}
+                />
+              )}
+            </View>
+          ) : (
+            <Pressable
+              onPress={() => setLightboxOpen(true)}
+              onLayout={() => setPhotoInView(true)}
+              hitSlop={spacing.sm}
+              style={styles.cardThumbWrap}
+              accessibilityRole="button"
+              accessibilityLabel={`Photo of ${CATEGORY_LABELS[flag.category]} accessibility issue. Tap to view full screen.`}
+              accessibilityHint="Opens a full-screen view of the photo"
+            >
+              {photoInView && (
+                <Image
+                  source={{ uri: flag.photo_url }}
+                  style={styles.cardThumb}
+                  onLoad={() => setPhotoLoaded(true)}
+                  onError={() => setPhotoError(true)}
+                  accessible={false}
+                  importantForAccessibility="no"
+                />
+              )}
+              {!photoLoaded && (
+                <Skeleton
+                  width={size.thumb}
+                  height={size.thumb}
+                  borderRadius={radius.md}
+                  style={styles.thumbSkeleton}
+                />
+              )}
+            </Pressable>
+          )
         ) : null}
         <View style={styles.cardBodyText}>
           {flag.description ? <AppText variant="body" style={styles.cardDesc}>{flag.description}</AppText> : null}
