@@ -147,9 +147,9 @@ so don't change the path scheme without updating the policy.
   (`useThemeMode()`); haptics via `@/lib/haptics`. Full reference: `DESIGN.md`.
 - Forms use plain `useState` + `Pressable` — no form library; use the `Input` primitive
   for text fields.
-- Tests: `npm test` (Jest, ~1550 tests) + `npm run typecheck` are the safety net — run
-  both before shipping. (`npm run lint` is currently broken on main: ESLint v10 vs a
-  `react-hooks` rule mismatch — pending a tooling fix.)
+- Tests: `npm test` (Jest, ~1575 tests) + `npm run typecheck` are the safety net — run
+  both before shipping. `npm run lint` runs cleanly (0 errors). ESLint is pinned to
+  `^9.0.0` — do not let it drift to v10 (fixed 2026-06-01).
 - Don't add new features that weren't asked for. Beginner-friendly = small,
   understandable diffs.
 
