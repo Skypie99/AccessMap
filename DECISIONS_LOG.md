@@ -4,6 +4,9 @@ Structural decisions, append-only. New entries at the top. Do NOT re-litigate en
 
 ---
 
+## 2026-06-07 — Phase-4 Wins Banked (Pre-Build Step A) [PHASE4-WINS]
+Orphaned `src/lib/onboarding.ts` + companion test removed (zero production imports confirmed; superseded by `onboardingState.ts` after F5 fix). Lint warnings cleared: 232 → 169 (63 cleared): all `@typescript-eslint/array-type` (Array<T>→T[], ReadonlyArray<T>→readonly T[]), all `react/no-unescaped-entities` apostrophes, `import/no-duplicates` merged splits in PlatformMap files, `react/display-name` named TabIcon in RootNavigator, stale `eslint-disable` comments removed. Remaining 169 are all intentional patterns (import/first hoisting, no-explicit-any catch, no-require-imports tests, react-hooks/exhaustive-deps logic, __DEV__ console instrumentation). Post-4b SHA: `c2ec499`. typecheck 0 · 96 suites / 1568 tests · lint 0 errors. — 2026-06-07
+
 ## 2026-06-07 — Deep-Audit Branch Merged to Main (Pre-Build Step A) [DEEP-AUDIT-MERGED]
 `audit/accessmap-deep-2026-06-07` (15 commits including a pre-merge doc/state capture) merged --no-ff into main on Sky's explicit authorization (authority order: Sky's intent > Constitution Art. 1 "only Sky merges main"). Post-merge SHA: **`c6298df`**, pushed to `origin/main`. 27 verified fixes (F1–F27): 1 critical EXIF/GPS privacy fix (fail-closed on web), 10 broken flows restored, 9 race/double-submit guards, 7 lifecycle leaks fixed. +11 new tests (reopenRequests, tileCache concurrency, flagsStore D4). typecheck 0 · 97 suites / 1,575 tests · lint 0 errors. Rollback: `git revert -m 1 c6298df && git push`. Full report: `qa-reports/summaries/2026-06-07_AccessMap_PreBuild_StepA_Report.md`. — 2026-06-07
 
