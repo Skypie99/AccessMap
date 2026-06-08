@@ -78,12 +78,18 @@ function SignedInArea() {
     };
   }, [user]);
 
+  // Stable identity (F21): FlashBanner's auto-dismiss timer effect depends on
+  // onDismiss; an inline arrow would change every render of SignedInArea (e.g.
+  // a TOKEN_REFRESHED auth event), restarting the countdown and leaving the
+  // banner up past its nominal duration.
+  const handleFlashDismiss = useCallback(() => setFlash(null), []);
+
   if (defaultTab === null) return null;
 
   return (
     <>
       <RootNavigator initialRouteName={defaultTab} />
-      <FlashBanner message={flash} onDismiss={() => setFlash(null)} />
+      <FlashBanner message={flash} onDismiss={handleFlashDismiss} />
     </>
   );
 }

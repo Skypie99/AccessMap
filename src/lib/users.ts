@@ -79,7 +79,14 @@ export async function uploadAvatar(userId: string, localUri: string): Promise<st
   }
 
   if (Platform.OS === 'web') {
-    arrayBuffer = await stripExifWeb(arrayBuffer, ext);
+    // D8: stripExifWeb returns null on ANY failure (no canvas, decode failure
+    // such as a HEIC the browser can't render). Fail-closed — avatar selfies
+    // very likely carry the user's home GPS, so never upload original bytes.
+    const stripped = await stripExifWeb(arrayBuffer, ext);
+    if (stripped === null) {
+      throw new Error('Photo privacy check failed: EXIF stripping could not be completed. Please try again.');
+    }
+    arrayBuffer = stripped;
   } else {
     // D8: stripExifNative returns null on failure; abort rather than upload
     // original bytes that may contain GPS/home-location metadata from avatar selfies.

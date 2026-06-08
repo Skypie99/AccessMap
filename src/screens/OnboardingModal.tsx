@@ -69,6 +69,17 @@ export default function OnboardingModal({ visible, onDone }: Props) {
     AccessibilityInfo.announceForAccessibility(`Step ${index + 1} of ${CARDS.length}`);
   }, [index]);
 
+  // F20: reset to the first card whenever the modal (re)opens. The modal is
+  // never unmounted by its parent (only `visible` toggles), so without this a
+  // replay would resume at whatever card the user last left off on, with the
+  // ScrollView still scrolled there.
+  useEffect(() => {
+    if (visible) {
+      setIndex(0);
+      scrollRef.current?.scrollTo({ x: 0, animated: false });
+    }
+  }, [visible]);
+
   const goTo = (next: number) => {
     const clamped = Math.max(0, Math.min(CARDS.length - 1, next));
     scrollRef.current?.scrollTo({ x: clamped * width, animated: !reducedMotion });

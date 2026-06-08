@@ -80,6 +80,35 @@ function totalSize(index: TileCacheIndex): number {
   return Object.values(index).reduce((sum, m) => sum + m.size, 0);
 }
 
+// Per-user serialization of index read-modify-write (F23). The metadata index
+// lives in a single AsyncStorage key, but Leaflet fires many setCachedTile
+// calls in rapid parallel succession during a pan/zoom. Without a lock, two
+// calls each read the same index snapshot before either writes, and the last
+// write silently drops the other's entry — orphaning that tile's data (it
+// stays in storage with no index record, so it's never LRU-evicted and the
+// cache grows toward the cap untracked). This chain runs index mutations
+// one-at-a-time per user. Non-reentrant: a locked function must only call the
+// *unlocked* helpers (readIndex/writeIndex/evictLRUCore), never another locked
+// public function.
+const indexLocks = new Map<string, Promise<unknown>>();
+
+function withIndexLock<T>(userId: string, fn: () => Promise<T>): Promise<T> {
+  const prev = indexLocks.get(userId) ?? Promise.resolve();
+  // Run fn after prev settles regardless of its outcome (so one failure can't
+  // wedge the queue).
+  const next = prev.then(fn, fn);
+  // Track a settled (never-rejecting) version as the new tail so subsequent
+  // callers chain cleanly; the caller still gets the real result/error via next.
+  indexLocks.set(
+    userId,
+    next.then(
+      () => undefined,
+      () => undefined,
+    ),
+  );
+  return next;
+}
+
 // ---------------------------------------------------------------------------
 // Public API
 // ---------------------------------------------------------------------------
@@ -94,39 +123,43 @@ function totalSize(index: TileCacheIndex): number {
  * Jordan C5: entries older than TILE_TTL_MS are treated as a miss and pruned.
  */
 export async function getCachedTile(userId: string, tileUrl: string): Promise<string | null> {
-  const index = await readIndex(userId);
-  const meta = index[tileUrl];
-  if (!meta) return null;
+  // Serialized with setCachedTile/evictLRU so the lastAccessed/TTL-prune index
+  // write here can't clobber a concurrent setCachedTile addition (F23).
+  return withIndexLock(userId, async () => {
+    const index = await readIndex(userId);
+    const meta = index[tileUrl];
+    if (!meta) return null;
 
-  const now = Date.now();
+    const now = Date.now();
 
-  // Jordan C5: 7-day TTL
-  if (now - meta.cachedAt > TILE_TTL_MS) {
-    // Prune the expired entry silently
-    try {
-      await AsyncStorage.removeItem(tileDataKey(userId, tileUrl));
-    } catch {
-      /* silent */
+    // Jordan C5: 7-day TTL
+    if (now - meta.cachedAt > TILE_TTL_MS) {
+      // Prune the expired entry silently
+      try {
+        await AsyncStorage.removeItem(tileDataKey(userId, tileUrl));
+      } catch {
+        /* silent */
+      }
+      delete index[tileUrl];
+      await writeIndex(userId, index);
+      return null;
     }
-    delete index[tileUrl];
+
+    // Fetch the actual data
+    let data: string | null = null;
+    try {
+      data = await AsyncStorage.getItem(tileDataKey(userId, tileUrl));
+    } catch {
+      return null;
+    }
+    if (!data) return null;
+
+    // Update lastAccessed for LRU tracking
+    index[tileUrl] = { ...meta, lastAccessed: now };
     await writeIndex(userId, index);
-    return null;
-  }
 
-  // Fetch the actual data
-  let data: string | null = null;
-  try {
-    data = await AsyncStorage.getItem(tileDataKey(userId, tileUrl));
-  } catch {
-    return null;
-  }
-  if (!data) return null;
-
-  // Update lastAccessed for LRU tracking
-  index[tileUrl] = { ...meta, lastAccessed: now };
-  await writeIndex(userId, index);
-
-  return data;
+    return data;
+  });
 }
 
 /**
@@ -150,14 +183,19 @@ export async function setCachedTile(userId: string, tileUrl: string, data: strin
     return;
   }
 
-  const index = await readIndex(userId);
-  index[tileUrl] = { url: tileUrl, cachedAt: now, size, lastAccessed: now };
-  await writeIndex(userId, index);
+  // Index read-modify-write + eviction under the per-user lock (F23) so
+  // concurrent tile writes can't drop each other's index entries.
+  await withIndexLock(userId, async () => {
+    const index = await readIndex(userId);
+    index[tileUrl] = { url: tileUrl, cachedAt: now, size, lastAccessed: now };
+    await writeIndex(userId, index);
 
-  // Jordan C4: evict if over the size cap
-  if (totalSize(index) > MAX_CACHE_SIZE_BYTES) {
-    await evictLRU(userId);
-  }
+    // Jordan C4: evict if over the size cap. Call the UNLOCKED core — we're
+    // already holding the lock (the public evictLRU would deadlock).
+    if (totalSize(index) > MAX_CACHE_SIZE_BYTES) {
+      await evictLRUCore(userId);
+    }
+  });
 }
 
 /**
@@ -167,19 +205,23 @@ export async function setCachedTile(userId: string, tileUrl: string, data: strin
  * Called from signOut(userId) — Jordan C1.
  */
 export async function clearTileCache(userId: string): Promise<void> {
-  const index = await readIndex(userId);
-  const tileKeys = Object.keys(index).map((url) => tileDataKey(userId, url));
+  // Under the lock so a tile write racing sign-out can't re-create the index
+  // after we remove it (F23).
+  await withIndexLock(userId, async () => {
+    const index = await readIndex(userId);
+    const tileKeys = Object.keys(index).map((url) => tileDataKey(userId, url));
 
-  // Remove tile data entries in batches to avoid overwhelming AsyncStorage
-  // on large caches. multiRemove is available on both native and web.
-  try {
-    if (tileKeys.length > 0) {
-      await AsyncStorage.multiRemove(tileKeys);
+    // Remove tile data entries in batches to avoid overwhelming AsyncStorage
+    // on large caches. multiRemove is available on both native and web.
+    try {
+      if (tileKeys.length > 0) {
+        await AsyncStorage.multiRemove(tileKeys);
+      }
+      await AsyncStorage.removeItem(cacheMetaKey(userId));
+    } catch (e) {
+      console.warn('[tileCache] clearTileCache error (silent):', e);
     }
-    await AsyncStorage.removeItem(cacheMetaKey(userId));
-  } catch (e) {
-    console.warn('[tileCache] clearTileCache error (silent):', e);
-  }
+  });
 }
 
 /**
@@ -192,6 +234,16 @@ export async function clearTileCache(userId: string): Promise<void> {
  * Jordan C4: 50 MB size bound.
  */
 export async function evictLRU(userId: string): Promise<void> {
+  // Public entry point — acquire the lock, then run the unlocked core.
+  return withIndexLock(userId, () => evictLRUCore(userId));
+}
+
+/**
+ * Unlocked eviction core. MUST be called only while the per-user index lock is
+ * held (by setCachedTile or the public evictLRU wrapper) — calling it without
+ * the lock reintroduces the F23 race.
+ */
+async function evictLRUCore(userId: string): Promise<void> {
   const index = await readIndex(userId);
   let current = totalSize(index);
   if (current <= EVICT_TARGET_BYTES) return;

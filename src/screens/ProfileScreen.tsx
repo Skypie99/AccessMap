@@ -25,7 +25,7 @@ import { useSharedModals } from '@/lib/sharedModalsContext';
 import { getInitials, updateUserProfile, uploadAvatar } from '@/lib/users';
 import { DEFAULT_TABS, getDefaultTab, setDefaultTab, type DefaultTab } from '@/lib/preferences';
 import { useRealtimeEnabled } from '@/lib/realtimePrefs';
-import { clearOnboardingSeen } from '@/lib/onboarding';
+import { clearOnboarded } from '@/lib/onboardingState';
 import {
   CATEGORY_LABELS,
   fetchFlagsByIds,
@@ -601,13 +601,17 @@ export default function ProfileScreen() {
     // silently do nothing on web without the helper.
     const ok = await confirm(
       'Show intro again?',
-      'The 3-card introduction will appear the next time you sign in on this device.',
+      'The 3-card introduction will appear the next time you open the app on this device.',
       'Reset',
     );
     if (!ok) return;
-    await clearOnboardingSeen(user.id);
+    // F5: clear the DEVICE-WIDE onboarding key that App.tsx's FirstLaunchGate
+    // actually reads. The previous call cleared an orphaned per-user key
+    // (src/lib/onboarding.ts) that nothing in production consults, so the
+    // control silently did nothing.
+    await clearOnboarded();
     AccessibilityInfo.announceForAccessibility(
-      'Intro reset. You will see it again on next sign in.',
+      'Intro reset. You will see it again the next time you open the app.',
     );
   }, [user]);
 

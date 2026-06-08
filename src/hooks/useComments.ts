@@ -26,6 +26,11 @@ export function useComments(flagId: string | null | undefined): UseCommentsResul
   const [error, setError] = useState<string | null>(null);
   const [tableNotReady, setTableNotReady] = useState(false);
   const mountedRef = useRef(true);
+  // Generation counter (F15): incremented on every fetch. A fetch only commits
+  // its result if it is still the latest. Without this, switching from flag A
+  // to flag B while A's listComments is in flight lets A resolve last and
+  // overwrite B's comments (mountedRef stays true across a flag swap).
+  const genRef = useRef(0);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -35,6 +40,11 @@ export function useComments(flagId: string | null | undefined): UseCommentsResul
   }, []);
 
   const fetch = useCallback(async () => {
+    // Bump the generation BEFORE the early return so that a flagId
+    // truthy -> null/undefined transition also invalidates any in-flight
+    // fetch (otherwise that fetch would still match genRef and could commit
+    // stale comments over the cleared state). Found in the second sweep.
+    const gen = ++genRef.current;
     if (!flagId) return;
     if (mountedRef.current) {
       setLoading(true);
@@ -42,18 +52,18 @@ export function useComments(flagId: string | null | undefined): UseCommentsResul
     }
     try {
       const data = await listComments(flagId);
-      if (!mountedRef.current) return;
+      if (!mountedRef.current || gen !== genRef.current) return;
       setComments(data);
       setTableNotReady(false);
     } catch (e) {
-      if (!mountedRef.current) return;
+      if (!mountedRef.current || gen !== genRef.current) return;
       if (e instanceof CommentsTableNotReadyError) {
         setTableNotReady(true);
       } else {
         setError(errorMessage(e));
       }
     } finally {
-      if (mountedRef.current) setLoading(false);
+      if (mountedRef.current && gen === genRef.current) setLoading(false);
     }
   }, [flagId]);
 

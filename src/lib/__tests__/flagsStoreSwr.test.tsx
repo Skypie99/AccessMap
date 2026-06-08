@@ -33,6 +33,10 @@ jest.mock('../flags', () => ({
 jest.mock('../realtimePrefs', () => ({
   __esModule: true,
   loadRealtimeEnabled: jest.fn().mockResolvedValue(false),
+  // FlagsProvider now reads the opt-in reactively via this hook (was a
+  // one-shot loadRealtimeEnabled() before). SWR tests don't use realtime —
+  // keep it disabled so no channel is created.
+  useRealtimeEnabled: jest.fn(() => ({ realtimeEnabled: false, setRealtimeEnabled: jest.fn() })),
 }));
 
 const mockChannelObj = {

@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -36,16 +36,28 @@ export default function AdminScreen() {
   const [flags, setFlags] = useState<FlagRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [actioningId, setActioningId] = useState<string | null>(null);
+  // F18: synchronous per-flag guard. The action buttons use only
+  // accessibilityState.disabled (a screen-reader hint that does NOT block
+  // touches) and setActioningId is set only AFTER the confirm dialog resolves,
+  // so a rapid double-tap (or Remove+Dismiss) on the same row would otherwise
+  // start two concurrent mutations. This tracks in-flight flag ids.
+  const actioningRef = useRef<Set<string>>(new Set());
+  // F27: sequence tag so a stale load() (rapid tab focus/blur fires two) can't
+  // overwrite a newer response.
+  const loadSeqRef = useRef(0);
 
   const load = useCallback(async () => {
+    const seq = ++loadSeqRef.current;
     setLoading(true);
     try {
       const rows = await listRecentFlags(200);
+      if (seq !== loadSeqRef.current) return; // superseded by a newer load
       setFlags(rows);
     } catch (e) {
+      if (seq !== loadSeqRef.current) return;
       Alert.alert('Error', errorMessage(e));
     } finally {
-      setLoading(false);
+      if (seq === loadSeqRef.current) setLoading(false);
     }
   }, []);
 
@@ -78,35 +90,47 @@ export default function AdminScreen() {
   }
 
   const handleRemove = async (flag: FlagRow) => {
-    const ok = await confirm(
-      'Remove flag?',
-      'This permanently deletes the flag and cannot be undone.',
-    );
-    if (!ok) return;
-    hapticImpact('medium');
-    setActioningId(flag.id);
+    if (actioningRef.current.has(flag.id)) return; // F18: already actioning this flag
+    actioningRef.current.add(flag.id);
     try {
-      await deleteFlag(flag.id);
-      setFlags((prev) => prev.filter((f) => f.id !== flag.id));
-    } catch (e) {
-      Alert.alert('Error', errorMessage(e));
+      const ok = await confirm(
+        'Remove flag?',
+        'This permanently deletes the flag and cannot be undone.',
+      );
+      if (!ok) return;
+      hapticImpact('medium');
+      setActioningId(flag.id);
+      try {
+        await deleteFlag(flag.id);
+        setFlags((prev) => prev.filter((f) => f.id !== flag.id));
+      } catch (e) {
+        Alert.alert('Error', errorMessage(e));
+      } finally {
+        setActioningId(null);
+      }
     } finally {
-      setActioningId(null);
+      actioningRef.current.delete(flag.id);
     }
   };
 
   const handleDismiss = async (flag: FlagRow) => {
-    const ok = await confirm('Dismiss report?', 'This marks the flag as rejected.');
-    if (!ok) return;
-    hapticSelection();
-    setActioningId(flag.id);
+    if (actioningRef.current.has(flag.id)) return; // F18: already actioning this flag
+    actioningRef.current.add(flag.id);
     try {
-      await updateFlagStatus(flag.id, 'rejected');
-      setFlags((prev) => prev.map((f) => (f.id === flag.id ? { ...f, status: 'rejected' } : f)));
-    } catch (e) {
-      Alert.alert('Error', errorMessage(e));
+      const ok = await confirm('Dismiss report?', 'This marks the flag as rejected.');
+      if (!ok) return;
+      hapticSelection();
+      setActioningId(flag.id);
+      try {
+        await updateFlagStatus(flag.id, 'rejected');
+        setFlags((prev) => prev.map((f) => (f.id === flag.id ? { ...f, status: 'rejected' } : f)));
+      } catch (e) {
+        Alert.alert('Error', errorMessage(e));
+      } finally {
+        setActioningId(null);
+      }
     } finally {
-      setActioningId(null);
+      actioningRef.current.delete(flag.id);
     }
   };
 

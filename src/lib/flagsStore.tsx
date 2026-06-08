@@ -18,7 +18,7 @@ import {
   listFlags,
   listFlagsPage,
 } from './flags';
-import { loadRealtimeEnabled } from './realtimePrefs';
+import { useRealtimeEnabled } from './realtimePrefs';
 import { logRealtimeEvent } from './realtimeLog';
 import { supabase } from './supabase';
 import type { FlagRow, FlagStatus } from '@/types/database';
@@ -163,6 +163,12 @@ export function FlagsProvider({
   const [hasMore, setHasMore] = useState(false);
   const [statuses, setStatusesState] = useState<FlagStatus[]>(DEFAULT_STATUSES);
   const [isOfflineCache, setIsOfflineCache] = useState(false);
+
+  // D4 realtime opt-in, read reactively. When the user flips the toggle in
+  // Profile, this value updates here too (shared listener registry), so the
+  // subscription effect below re-runs — enabling subscribes immediately and
+  // disabling tears the channel down, with no app restart required.
+  const { realtimeEnabled } = useRealtimeEnabled();
 
   // Latest statuses in a ref so refresh() has a stable identity but always
   // reads the freshest value at fetch time.
@@ -339,11 +345,19 @@ export function FlagsProvider({
     if (loadingMoreRef.current) return;
     loadingMoreRef.current = true;
     setLoadingMore(true);
+    // Snapshot the fetch sequence (F12). If a refresh() starts while this page
+    // is in flight — e.g. setStatuses() from a filter toggle, which resets the
+    // cursor and re-fetches the first page of a DIFFERENT status set — it bumps
+    // fetchSeqRef. We must then discard this stale page so we don't write an
+    // old-status-set cursor over the fresh one (which would skip/duplicate rows
+    // on the next loadMore).
+    const seq = fetchSeqRef.current;
     try {
       const { rows, nextCursor } = await listFlagsPage(statusesRef.current, {
         limit: NEXT_PAGE_SIZE,
         before: cursorRef.current,
       });
+      if (seq !== fetchSeqRef.current) return; // superseded by a refresh()
       // Defensive: skip rows we already have (in case a page-boundary tie
       // sneaks one through). Cheap O(n+m) merge for small page sizes.
       setFlags((prev) => {
@@ -354,6 +368,9 @@ export function FlagsProvider({
       cursorRef.current = nextCursor;
       setHasMore(nextCursor !== null);
     } catch (e) {
+      // A stale failure (a refresh superseded us) shouldn't surface an error
+      // banner over the fresh data.
+      if (seq !== fetchSeqRef.current) return;
       setError(errorMessage(e, 'Unknown error'));
       throw e;
     } finally {
@@ -412,78 +429,73 @@ export function FlagsProvider({
   const viewportGateRef = useRef<((flag: FlagRow) => boolean) | null>(null);
 
   useEffect(() => {
-    let channelRef: ReturnType<typeof supabase.channel> | null = null;
+    // Safeguard #2 — only subscribe when the user has opted in. Keyed on
+    // `realtimeEnabled` (not []), so flipping the Profile toggle re-runs this
+    // effect: enabling subscribes now; disabling runs the cleanup below and
+    // returns early. No remount / app restart required (this was a dead toggle
+    // before — the effect read the value once on mount and never re-ran).
+    if (!realtimeEnabled) return;
+
     let mounted = true;
+    const channel = supabase
+      .channel(D4_CHANNEL)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'flags' }, async (raw) => {
+        // D4 Option 2: payload only carries {id, status}.
+        // For DELETE events `new` is empty; identify by `old.id`.
+        const flagId =
+          (raw.new as { id?: string } | undefined)?.id ??
+          (raw.old as { id?: string } | undefined)?.id;
+        if (!flagId) return;
 
-    (async () => {
-      const enabled = await loadRealtimeEnabled();
-      if (!mounted || !enabled) return;
+        if (raw.eventType === 'DELETE') {
+          setFlags((prev) => prev.filter((f) => f.id !== flagId));
+          return;
+        }
 
-      channelRef = supabase
-        .channel(D4_CHANNEL)
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'flags' }, async (raw) => {
-          // D4 Option 2: payload only carries {id, status}.
-          // For DELETE events `new` is empty; identify by `old.id`.
-          const flagId =
-            (raw.new as { id?: string } | undefined)?.id ??
-            (raw.old as { id?: string } | undefined)?.id;
-          if (!flagId) return;
+        // Re-fetch the full row via RLS-gated REST endpoint.
+        // Failure (deleted, permission denied, network) is non-fatal —
+        // the next manual refresh will reconcile state.
+        try {
+          const freshFlag = await fetchFlagById(flagId);
+          if (!freshFlag || !mounted) return;
 
-          if (raw.eventType === 'DELETE') {
-            setFlags((prev) => prev.filter((f) => f.id !== flagId));
-            return;
-          }
+          // Safeguard #1 — viewport geofence (delegated to MapScreen).
+          const gate = viewportGateRef.current;
+          if (gate && !gate(freshFlag)) return;
 
-          // Re-fetch the full row via RLS-gated REST endpoint.
-          // Failure (deleted, permission denied, network) is non-fatal —
-          // the next manual refresh will reconcile state.
-          try {
-            const freshFlag = await fetchFlagById(flagId);
-            if (!freshFlag || !mounted) return;
-
-            // Safeguard #1 — viewport geofence (delegated to MapScreen).
-            const gate = viewportGateRef.current;
-            if (gate && !gate(freshFlag)) return;
-
-            // Merge into local state respecting the active status filter.
-            setFlags((prev) => {
-              const exists = prev.some((f) => f.id === freshFlag.id);
-              if (!statusesRef.current.includes(freshFlag.status)) {
-                return exists ? prev.filter((f) => f.id !== freshFlag.id) : prev;
-              }
-              if (exists) {
-                return prev.map((f) => (f.id === freshFlag.id ? freshFlag : f));
-              }
-              const next = [freshFlag, ...prev];
-              next.sort((a, b) => b.created_at.localeCompare(a.created_at));
-              return next;
-            });
-          } catch {
-            // Non-fatal: re-fetch silently failed. State stays as-is.
-          }
-        })
-        .subscribe((status) => {
-          if (status === 'SUBSCRIBED') {
-            void logRealtimeEvent('subscribe', D4_CHANNEL);
-          }
-        });
-    })();
+          // Merge into local state respecting the active status filter.
+          setFlags((prev) => {
+            const exists = prev.some((f) => f.id === freshFlag.id);
+            if (!statusesRef.current.includes(freshFlag.status)) {
+              return exists ? prev.filter((f) => f.id !== freshFlag.id) : prev;
+            }
+            if (exists) {
+              return prev.map((f) => (f.id === freshFlag.id ? freshFlag : f));
+            }
+            const next = [freshFlag, ...prev];
+            next.sort((a, b) => b.created_at.localeCompare(a.created_at));
+            return next;
+          });
+        } catch {
+          // Non-fatal: re-fetch silently failed. State stays as-is.
+        }
+      })
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          void logRealtimeEvent('subscribe', D4_CHANNEL);
+        }
+      });
 
     return () => {
       mounted = false;
-      if (channelRef) {
-        void channelRef.unsubscribe().then(() => {
-          void logRealtimeEvent('unsubscribe', D4_CHANNEL);
-        });
-        void supabase.removeChannel(channelRef);
-      }
+      // Single teardown (F22): removeChannel() calls unsubscribe() internally
+      // then teardown(). Calling unsubscribe() separately too would send a
+      // duplicate phx_leave. Log once removeChannel settles.
+      void supabase.removeChannel(channel).then(() => {
+        void logRealtimeEvent('unsubscribe', D4_CHANNEL);
+      });
     };
-    // Re-run only if the user re-mounts the provider (e.g. auth change).
-    // The opt-in state is polled once on mount; live changes are handled
-    // by MapScreen/ProfileScreen tearing down and re-mounting the provider
-    // indirectly via the `realtimeEnabled` toggle (see flagsStore architecture).
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [realtimeEnabled]);
 
   const patchFlag = useCallback((id: string, patch: Partial<FlagRow>) => {
     setFlags((prev) => prev.map((f) => (f.id === id ? { ...f, ...patch } : f)));

@@ -85,6 +85,7 @@ import {
   detectMimeFromBytes,
 } from '../flags';
 import type { FlagCategory, FlagSeverity, FlagStatus } from '@/types/database';
+import { Platform } from 'react-native';
 
 const ALL_CATEGORIES: FlagCategory[] = [
   'no_ramp',
@@ -330,6 +331,49 @@ describe('uploadFlagPhoto — input validation', () => {
 });
 
 // ---------------------------------------------------------------------------
+// D8 fail-CLOSED: on web, if EXIF stripping cannot be performed, the upload
+// must ABORT — never fall through to Storage with the original bytes. This
+// locks the privacy fix: a WEBP/HEIC original (whose EXIF lives in a RIFF/ISO
+// container, invisible to the JPEG-marker verifier) must not reach the bucket.
+// ---------------------------------------------------------------------------
+describe('uploadFlagPhoto — D8 web fail-closed', () => {
+  const USER = '00000000-0000-0000-0000-000000000001';
+
+  it('aborts the upload (does not touch Storage) when stripExifWeb cannot strip on web', async () => {
+    const originalOS = Platform.OS;
+    const originalFetch = global.fetch;
+    const savedDocument = (global as Record<string, unknown>)['document'];
+    // Force the web branch; remove `document` so stripExifWeb fails closed (null).
+    (Platform as unknown as { OS: string }).OS = 'web';
+    delete (global as Record<string, unknown>)['document'];
+    // Valid WEBP magic (RIFF....WEBP) so detectMimeFromBytes passes and we
+    // reach the strip step rather than failing the format check.
+    (global as unknown as { fetch: unknown }).fetch = async () => ({
+      arrayBuffer: async () =>
+        new Uint8Array([
+          0x52, 0x49, 0x46, 0x46, 0x10, 0x00, 0x00, 0x00, 0x57, 0x45, 0x42, 0x50, 0x00, 0x00, 0x00, 0x00,
+        ]).buffer,
+    });
+    // Storage must NEVER be called on this path — wire it to fail loudly if it is.
+    mockFrom.mockImplementation(() => {
+      throw new Error('Storage must not be reached when EXIF stripping fails (D8 fail-closed)');
+    });
+    try {
+      await expect(uploadFlagPhoto(USER, 'file:///tmp/photo.webp')).rejects.toThrow(
+        /privacy check failed/i,
+      );
+    } finally {
+      (Platform as unknown as { OS: string }).OS = originalOS;
+      (global as unknown as { fetch: unknown }).fetch = originalFetch;
+      if (savedDocument !== undefined) {
+        (global as Record<string, unknown>)['document'] = savedDocument;
+      }
+      mockFrom.mockReset();
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
 // Section 3 — verifyExifStripped
 //
 // Pure function: scans raw bytes for JPEG metadata markers.
@@ -473,21 +517,25 @@ describe('stripExifNative', () => {
 // ---------------------------------------------------------------------------
 // Section 5 — stripExifWeb (Canvas re-encoding, browser-only)
 //
-// In the Jest/Node environment, `document` is undefined. The function must
-// detect this and fall back to the original buffer (fail-safe). This
-// ensures the web build degrades gracefully in server-side or test envs.
+// D8 privacy gate — FAIL-CLOSED. When stripping cannot be performed (no
+// browser environment, no canvas context, image decode failure), the function
+// returns null so the caller aborts the upload. It must NEVER resolve the
+// original (unstripped) buffer — that previously let GPS-bearing WEBP/HEIC
+// bytes pass the JPEG-only verifyExifStripped check.
 // ---------------------------------------------------------------------------
 describe('stripExifWeb', () => {
   const ORIGINAL = new Uint8Array([0x20, 0x21, 0x22, 0x23]).buffer;
 
-  it('returns the original buffer (fail-safe) when document is undefined (Node/Jest env)', async () => {
+  it('returns null (fail-closed) when document is undefined (Node/Jest env)', async () => {
     // In Jest, `document` is undefined unless jsdom is configured.
     // The function guards with `typeof document === 'undefined'`.
     const savedDocument = (global as Record<string, unknown>)['document'];
     delete (global as Record<string, unknown>)['document'];
     try {
       const result = await stripExifWeb(ORIGINAL, 'jpg');
-      expect(result).toBe(ORIGINAL);
+      expect(result).toBeNull();
+      // Critical: must not leak the original unstripped bytes back to the caller.
+      expect(result).not.toBe(ORIGINAL);
     } finally {
       if (savedDocument !== undefined) {
         (global as Record<string, unknown>)['document'] = savedDocument;

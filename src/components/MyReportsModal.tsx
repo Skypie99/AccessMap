@@ -62,10 +62,18 @@ export default function MyReportsModal({
   // client-side filter via filterMyReports() — no extra fetch.
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Reset the search query when the modal closes, so reopening starts
-  // fresh instead of restoring whatever was typed last time.
+  // Reset transient filters when the modal closes, so reopening starts fresh
+  // instead of restoring whatever was set last time. F9: without resetting
+  // statusFilter, a stale (e.g. 'resolved') filter could leave the list empty
+  // on reopen — and if no flags of that status remain, the filter chip row
+  // (gated on >1 present status) hides the 'All' button, stranding the user in
+  // an empty view whose only escape hint points to a control that isn't shown.
   useEffect(() => {
-    if (!visible) setSearchQuery('');
+    if (!visible) {
+      setSearchQuery('');
+      setStatusFilter('all');
+      setSortBy('newest');
+    }
   }, [visible]);
 
   // Count flags per status — drives the chip badges. Computed once per

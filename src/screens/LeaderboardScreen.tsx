@@ -212,10 +212,17 @@ export default function LeaderboardScreen({ visible, onClose }: Props) {
       const data = await listLeaderboard(20);
       setEntries(data);
 
-      // Check if current user is in the list.
+      // Check if current user is in the list. F26: the rank lookup is a
+      // SEPARATE query that can fail on its own; wrap it so its failure only
+      // drops the footer rather than clobbering loadError and hiding the
+      // leaderboard we already loaded successfully.
       if (user && !data.some((e) => e.id === user.id)) {
-        const myRank = await getUserLeaderboardRank(user.id);
-        setUserFooter(myRank);
+        try {
+          const myRank = await getUserLeaderboardRank(user.id);
+          setUserFooter(myRank);
+        } catch {
+          setUserFooter(null);
+        }
       }
     } catch (e) {
       setLoadError(errorMessage(e));

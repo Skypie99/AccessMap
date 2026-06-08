@@ -68,6 +68,11 @@ export default function AddressSearchModal({ visible, onClose, onSelect }: Props
     if (!visible) return;
     const trimmed = query.trim();
     if (trimmed.length < 3) {
+      // F13: cancel any in-flight 3+ char fetch when the user backtracks below
+      // the threshold. Without this, the prior fetch resolves with
+      // signal.aborted === false and overwrites this reset with stale results
+      // (e.g. typing "mus" then deleting to "mu" still shows "mus" matches).
+      abortRef.current?.abort();
       setResults([]);
       setLoading(false);
       setSearched(false);

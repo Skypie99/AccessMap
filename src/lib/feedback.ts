@@ -36,8 +36,10 @@ const SUBJECT_BASE = 'AccessMap feedback';
 
 // Mailto URLs have practical length limits (~2000 chars in many clients,
 // older Outlook chokes around 1000). Trim early so we never hand the OS
-// a URL it will silently drop.
-const MAX_BODY_CHARS = 1800;
+// a URL it will silently drop. Exported (F19) so the FeedbackModal input
+// caps at the SAME length — otherwise the UI accepted text the mailto body
+// silently dropped, losing whatever the user typed past this limit.
+export const MAX_BODY_CHARS = 1800;
 
 interface ComposeOptions {
   body: string;

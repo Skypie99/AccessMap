@@ -61,9 +61,16 @@ export default function SignInScreen({
       onClose?.();
     }
     if (mode === 'up') {
+      // F6: close the modal after the user acknowledges. When SignInScreen is
+      // presented as a modal (e.g. a guest opening it from Profile), the
+      // sign-up branch previously never called onClose, and the iOS fullscreen
+      // Modal has no swipe-to-dismiss — so the user was trapped with no way
+      // back to the map. onClose is undefined when this is the root auth gate,
+      // where no dismiss is needed.
       Alert.alert(
         'Check your email',
         `We sent a confirmation link to ${cleanEmail}. Open it to finish signing up.`,
+        [{ text: 'OK', onPress: () => onClose?.() }],
       );
     }
   };

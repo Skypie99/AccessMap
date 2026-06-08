@@ -318,6 +318,17 @@ export type Database = {
         };
         Returns: undefined;
       };
+      // F10: Reopen-request counter RPC (migration
+      // 2026-05-30_flag_reopen_requests.sql, applied 2026-05-30). SECURITY
+      // DEFINER; atomically increments flags.reopen_requests for a RESOLVED
+      // flag and returns the new count (0 if the flag isn't resolved). Stores
+      // NO user_id (Jordan privacy gate). Authenticated callers only.
+      increment_reopen_request: {
+        Args: {
+          p_flag_id: string;
+        };
+        Returns: number;
+      };
     };
     Enums: { [_ in never]: never };
     CompositeTypes: { [_ in never]: never };

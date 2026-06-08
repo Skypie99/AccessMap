@@ -87,6 +87,8 @@ describe('D4 Realtime Flags', () => {
   let mockChannelInstance: any;
   let mockSubscribeCallback: ((status: string) => void) | null = null;
   let mockPayloadHandler: ((payload: any) => Promise<void>) | null = null;
+  // Drives the reactive useRealtimeEnabled() hook the provider now reads.
+  let realtimeEnabledValue = false;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -107,10 +109,19 @@ describe('D4 Realtime Flags', () => {
     };
 
     (supabase.channel as jest.Mock).mockReturnValue(mockChannelInstance);
-    (supabase.removeChannel as jest.Mock).mockReturnValue(undefined);
+    // removeChannel returns a Promise in supabase-js; the teardown chains .then()
+    // off it to log the unsubscribe, so it must resolve here.
+    (supabase.removeChannel as jest.Mock).mockResolvedValue(undefined);
 
-    // Default: realtime disabled (opt-in off)
+    // Default: realtime disabled (opt-in off). FlagsProvider reads this
+    // reactively via useRealtimeEnabled(); tests set realtimeEnabledValue
+    // BEFORE rendering to control it.
+    realtimeEnabledValue = false;
     (realtimePrefs.loadRealtimeEnabled as jest.Mock).mockResolvedValue(false);
+    (realtimePrefs.useRealtimeEnabled as jest.Mock).mockImplementation(() => ({
+      realtimeEnabled: realtimeEnabledValue,
+      setRealtimeEnabled: jest.fn(),
+    }));
 
     // Default: log calls succeed silently
     (realtimeLog.logRealtimeEvent as jest.Mock).mockResolvedValue(undefined);
@@ -129,13 +140,10 @@ describe('D4 Realtime Flags', () => {
       </FlagsProvider>,
     );
 
-    // Wait a tick for the async loadRealtimeEnabled to settle
-    await waitFor(
-      () => {
-        expect(realtimePrefs.loadRealtimeEnabled).toHaveBeenCalled();
-      },
-      { timeout: 1000 },
-    );
+    // The provider reads opt-in via the (mocked) reactive hook now.
+    await waitFor(() => {
+      expect(realtimePrefs.useRealtimeEnabled).toHaveBeenCalled();
+    });
 
     // If enabled is false, the channel.on() should never be called
     await waitFor(() => {
@@ -149,7 +157,7 @@ describe('D4 Realtime Flags', () => {
   // Test 2: Realtime enabled → subscription created, logs on SUBSCRIBED
   // ========================================================================
   it('subscribes and logs when realtime_enabled is true', async () => {
-    (realtimePrefs.loadRealtimeEnabled as jest.Mock).mockResolvedValue(true);
+    realtimeEnabledValue = true;
 
     render(
       <FlagsProvider userId="user-123">
@@ -181,10 +189,71 @@ describe('D4 Realtime Flags', () => {
   });
 
   // ========================================================================
+  // Test 2b (F2): toggling the opt-in ON mid-session subscribes reactively —
+  // previously the effect read the value once on mount and never re-ran, so
+  // enabling the toggle was a no-op until the next cold start.
+  // ========================================================================
+  it('subscribes mid-session when the toggle flips on (reactive)', async () => {
+    realtimeEnabledValue = false;
+    const { rerender } = render(
+      <FlagsProvider userId="user-123">
+        <TestComponent />
+      </FlagsProvider>,
+    );
+
+    // Disabled at mount → no channel.
+    await waitFor(() => {
+      expect(realtimePrefs.useRealtimeEnabled).toHaveBeenCalled();
+    });
+    expect(supabase.channel).not.toHaveBeenCalled();
+
+    // User flips the toggle ON; provider re-renders with realtimeEnabled=true.
+    realtimeEnabledValue = true;
+    rerender(
+      <FlagsProvider userId="user-123">
+        <TestComponent />
+      </FlagsProvider>,
+    );
+
+    await waitFor(() => {
+      expect(supabase.channel).toHaveBeenCalledWith('flags-status');
+    });
+  });
+
+  // ========================================================================
+  // Test 2c (F2): toggling the opt-in OFF mid-session tears the channel down —
+  // previously a session that started enabled stayed subscribed until restart.
+  // ========================================================================
+  it('tears the channel down mid-session when the toggle flips off (reactive)', async () => {
+    realtimeEnabledValue = true;
+    const { rerender } = render(
+      <FlagsProvider userId="user-123">
+        <TestComponent />
+      </FlagsProvider>,
+    );
+
+    await waitFor(() => {
+      expect(supabase.channel).toHaveBeenCalledWith('flags-status');
+    });
+
+    // User flips the toggle OFF; the effect cleanup must remove the channel.
+    realtimeEnabledValue = false;
+    rerender(
+      <FlagsProvider userId="user-123">
+        <TestComponent />
+      </FlagsProvider>,
+    );
+
+    await waitFor(() => {
+      expect(supabase.removeChannel).toHaveBeenCalledWith(mockChannelInstance);
+    });
+  });
+
+  // ========================================================================
   // Test 3: Unsubscribe logs correctly when component unmounts
   // ========================================================================
   it('logs unsubscribe event when component unmounts', async () => {
-    (realtimePrefs.loadRealtimeEnabled as jest.Mock).mockResolvedValue(true);
+    realtimeEnabledValue = true;
 
     const { unmount } = render(
       <FlagsProvider userId="user-123">
@@ -199,13 +268,14 @@ describe('D4 Realtime Flags', () => {
 
     unmount();
 
-    // Verify unsubscribe() was called on the channel
+    // Single teardown (F22): removeChannel() is used — it calls unsubscribe()
+    // internally, so we no longer call channel.unsubscribe() ourselves.
     await waitFor(() => {
-      expect(mockChannelInstance.unsubscribe).toHaveBeenCalled();
+      expect(supabase.removeChannel).toHaveBeenCalledWith(mockChannelInstance);
     });
 
     // Verify log_realtime_event was called with unsubscribe
-    // (It's called in the .then() of unsubscribe)
+    // (It's called in the .then() of removeChannel)
     await waitFor(() => {
       expect(realtimeLog.logRealtimeEvent).toHaveBeenCalledWith('unsubscribe', 'flags-status');
     });
@@ -215,7 +285,7 @@ describe('D4 Realtime Flags', () => {
   // Test 4: Payload triggers re-fetch; re-fetch calls fetchFlagById(id)
   // ========================================================================
   it('payload handler re-fetches flag by id', async () => {
-    (realtimePrefs.loadRealtimeEnabled as jest.Mock).mockResolvedValue(true);
+    realtimeEnabledValue = true;
 
     const collectedFlags: FlagRow[][] = [];
     render(
@@ -248,7 +318,7 @@ describe('D4 Realtime Flags', () => {
   // Test 5: Geofence filter — flag inside viewport accepted
   // ========================================================================
   it('accepts flag inside viewport when viewport gate is set', async () => {
-    (realtimePrefs.loadRealtimeEnabled as jest.Mock).mockResolvedValue(true);
+    realtimeEnabledValue = true;
 
     const collectedFlags: FlagRow[][] = [];
     render(
@@ -315,7 +385,7 @@ describe('D4 Realtime Flags', () => {
   // Test 6: Geofence filter — flag outside viewport discarded
   // ========================================================================
   it('discards flag outside viewport when viewport gate is set', async () => {
-    (realtimePrefs.loadRealtimeEnabled as jest.Mock).mockResolvedValue(true);
+    realtimeEnabledValue = true;
 
     let setViewportGateRef: any = null;
 
@@ -374,7 +444,7 @@ describe('D4 Realtime Flags', () => {
   // Test 7: DELETE event removes flag from state
   // ========================================================================
   it('handles DELETE event by removing flag from state', async () => {
-    (realtimePrefs.loadRealtimeEnabled as jest.Mock).mockResolvedValue(true);
+    realtimeEnabledValue = true;
 
     const collectedFlags: FlagRow[][] = [];
 
@@ -408,7 +478,7 @@ describe('D4 Realtime Flags', () => {
   // Test 8: log_realtime_event RPC failures degrade gracefully
   // ========================================================================
   it('degrads gracefully when log_realtime_event RPC fails', async () => {
-    (realtimePrefs.loadRealtimeEnabled as jest.Mock).mockResolvedValue(true);
+    realtimeEnabledValue = true;
 
     // Simulate RPC failure (returns void, but internally throws)
     // The logRealtimeEvent function catches and logs the error, so the

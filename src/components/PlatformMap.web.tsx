@@ -505,6 +505,19 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(function Pla
 ) {
   const themeColor = useColor();
   const mapInstance = useRef<LeafletMap | null>(null);
+  // F7: react-leaflet's MapContainer ref resolves to null on the first commit
+  // (its internal context isn't ready yet) and to the real map only after a
+  // re-render. Track that transition in state so effects that need the map
+  // instance (e.g. the contextmenu binding below) re-run once it's populated —
+  // otherwise they capture a null map and never re-bind for the session.
+  const [mapReady, setMapReady] = useState(false);
+  // Stable ref callback so React only invokes it when the forwarded handle
+  // actually changes (null -> map), not on every render (an inline arrow would
+  // detach/reattach each render and thrash mapReady).
+  const setMapRef = useCallback((m: LeafletMap | null) => {
+    mapInstance.current = m;
+    setMapReady(m != null);
+  }, []);
   const { user } = useAuth();
   const userId = user?.id ?? null;
   const markerRefs = useRef<Record<string, LeafletMarker | null>>({});
@@ -522,7 +535,11 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(function Pla
   // this on right-click on desktop and on a long-touch on mobile
   // browsers (the OS surfaces the press as a context menu request).
   // We re-bind on every change to `onLongPressMap` so the latest
-  // closure is used.
+  // closure is used. `mapReady` is in the deps (F7) so the binding also
+  // runs after the map instance is populated — without it, the effect ran
+  // once with a null map and never re-bound for already-signed-in users
+  // (whose onLongPressMap was stable for the whole session), leaving
+  // right-click drop-flag permanently dead.
   useEffect(() => {
     const map = mapInstance.current;
     if (!map || !onLongPressMap) return;
@@ -537,7 +554,7 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(function Pla
     return () => {
       map.off('contextmenu', handler);
     };
-  }, [onLongPressMap]);
+  }, [onLongPressMap, mapReady]);
 
   useImperativeHandle(
     ref,
@@ -562,9 +579,7 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(function Pla
         center={[initialRegion.latitude, initialRegion.longitude]}
         zoom={deltaToZoom(initialRegion.latitudeDelta)}
         style={{ height: '100%', width: '100%' }}
-        ref={(m) => {
-          mapInstance.current = m;
-        }}
+        ref={setMapRef}
       >
         <CachedTileLayerWrapper userId={userId} />
         {/* Heat-map: Rectangle for each cell footprint + a divIcon Marker

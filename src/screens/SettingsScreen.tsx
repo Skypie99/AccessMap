@@ -389,10 +389,21 @@ export default function SettingsScreen() {
         </AppText>
 
         <SettingsRow
-          title="Notification preferences"
-          subtitle="Choose which flag status changes surface as updates."
-          accessibilityHint="Opens notification preferences"
+          title="Update banner preferences"
+          subtitle="Choose which flag status changes surface in the in-app updates banner."
+          accessibilityHint="Opens in-app update banner preferences"
           onPress={() => setNotifOpen(true)}
+        />
+
+        {/* F10: this row exposes NotificationPreferencesScreen (push-alert
+            categories), which was mounted below but had no entry point in
+            Settings — setNotifPrefsOpen(true) was never called anywhere here,
+            so the screen was permanently unreachable from this tab. */}
+        <SettingsRow
+          title="Push notification types"
+          subtitle="Pick which push alerts you get: status changes, nearby flags, watched flags, and digests."
+          accessibilityHint="Opens push notification category preferences"
+          onPress={() => setNotifPrefsOpen(true)}
         />
 
         {/* Push notifications toggle — Jordan condition 4.
