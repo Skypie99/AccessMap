@@ -117,7 +117,7 @@ const EMPTY_BY_STATUS: Record<FlagStatus, number> = {
 // inline in the hero card. Tuned to feel rewarding early (25, 50) and
 // then pace out at typical engagement levels. If we ever ship real
 // badges/achievements these labels become their names.
-const MILESTONES: Array<{ at: number; label: string }> = [
+const MILESTONES: { at: number; label: string }[] = [
   { at: 25, label: 'First Mile badge' },
   { at: 50, label: 'Bronze Reviewer badge' },
   { at: 100, label: 'Silver Reviewer badge' },
@@ -315,9 +315,9 @@ export default function ProfileScreen() {
       setPointEvents(eventsResult);
 
       const byStatus: Record<FlagStatus, number> = { ...EMPTY_BY_STATUS };
-      const statusRows = (statusRowsRes.data ?? []) as Array<{
+      const statusRows = (statusRowsRes.data ?? []) as {
         status: FlagStatus;
-      }>;
+      }[];
       for (const r of statusRows) {
         if (r.status in byStatus) byStatus[r.status]++;
       }
@@ -950,7 +950,7 @@ export default function ProfileScreen() {
             </>
           ) : (
             <AppText variant="label" style={styles.heroSubtitle}>
-              You've reached the top milestone — legend status.
+              You&apos;ve reached the top milestone — legend status.
             </AppText>
           )}
         </View>
@@ -1271,7 +1271,7 @@ export default function ProfileScreen() {
           <View style={styles.myReportsTextWrap}>
             <AppText variant="label" style={styles.myReportsTitle}>See leaderboard</AppText>
             <AppText variant="body" style={styles.myReportsSubtitle}>
-              See who's making the biggest impact in the community.
+              See who&apos;s making the biggest impact in the community.
             </AppText>
           </View>
           <ChevronRight
@@ -1312,7 +1312,7 @@ export default function ProfileScreen() {
         >
           <View style={styles.myReportsTextWrap}>
             <AppText variant="label" style={styles.myReportsTitle}>My Feedback</AppText>
-            <AppText variant="body" style={styles.myReportsSubtitle}>See the messages you've sent to the team.</AppText>
+            <AppText variant="body" style={styles.myReportsSubtitle}>See the messages you&apos;ve sent to the team.</AppText>
           </View>
           <ChevronRight
             size={18}
@@ -1355,7 +1355,7 @@ export default function ProfileScreen() {
             </Pressable>
           </View>
           <AppText variant="body" style={styles.hint}>
-            This shows next to your reports. Leave it blank and we'll use your email instead.
+            This shows next to your reports. Leave it blank and we&apos;ll use your email instead.
           </AppText>
         </View>
 
@@ -1469,7 +1469,7 @@ export default function ProfileScreen() {
           accessibilityHint="Opens a dated list of recent shipped features"
         >
           <View style={styles.aboutTextWrap}>
-            <AppText variant="label" style={styles.aboutTitle}>What's New</AppText>
+            <AppText variant="label" style={styles.aboutTitle}>What&apos;s New</AppText>
             <AppText variant="body" style={styles.aboutSubtitle}>See what we shipped recently.</AppText>
           </View>
           <ChevronRight
@@ -1558,7 +1558,7 @@ export default function ProfileScreen() {
               help the community. This cannot be undone.
             </AppText>
             <AppText variant="body" style={styles.deleteBodySecondary}>
-              If you also want your reports removed, get in touch with support and we'll take care of it.
+              If you also want your reports removed, get in touch with support and we&apos;ll take care of it.
             </AppText>
             <View style={styles.deleteActions}>
               <Pressable
@@ -1692,7 +1692,7 @@ export default function ProfileScreen() {
 
             <AppText variant="body" style={styles.tierIntro}>
               Earn points every time you report a barrier or help verify and resolve one. Each tier shows
-              how much you've given back to the community.
+              how much you&apos;ve given back to the community.
             </AppText>
 
             <View style={styles.tierList}>

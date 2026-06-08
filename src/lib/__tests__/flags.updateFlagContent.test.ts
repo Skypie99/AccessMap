@@ -19,7 +19,6 @@ const mockSingle = jest.fn();
 const mockSelectAfterUpdate = jest.fn(() => ({ single: mockSingle }));
 const mockEq = jest.fn(() => ({ select: mockSelectAfterUpdate }));
 const mockUpdate = jest.fn(() => ({ eq: mockEq }));
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const mockFrom = jest.fn((_table: string) => ({ update: mockUpdate }));
 
 jest.mock('../supabase', () => ({
@@ -40,7 +39,7 @@ import type { FlagRow } from '@/types/database';
 // Cast through unknown first because jest.fn() infers a zero-arg tuple for
 // mock.calls when no explicit parameter type is given.
 function updateArg(callIndex: number): Record<string, unknown> {
-  const calls = mockUpdate.mock.calls as unknown as Array<[unknown]>;
+  const calls = mockUpdate.mock.calls as unknown as [unknown][];
   const call = calls[callIndex];
   if (!call) throw new Error(`expected a mockUpdate call at index ${callIndex}`);
   return call[0] as Record<string, unknown>;

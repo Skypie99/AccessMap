@@ -13,10 +13,9 @@ import { MapContainer, Marker, Popup, Rectangle, useMap, useMapEvents } from 're
 import L, { Map as LeafletMap, Marker as LeafletMarker } from 'leaflet';
 import Supercluster from 'supercluster';
 import { CATEGORY_LABELS, isAnon, severityColor } from '@/lib/flags';
-import type { FlagCategory } from '@/types/database';
+import type { FlagCategory, FlagRow } from '@/types/database';
 import { heatmapSeverity as severityTokens } from '@/theme';
 import { useColor } from '@/theme/ThemeContext';
-import type { FlagRow } from '@/types/database';
 import { useAuth } from '@/lib/auth';
 import { getCachedTile, setCachedTile } from '@/lib/tileCache';
 import { track } from '@/lib/analytics';

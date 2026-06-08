@@ -46,7 +46,7 @@ export interface HeatmapLayerProps {
   /** The full (already-filtered) flag list from the store. Cells are
    *  computed here via useMemo so the bucketing cost is zero when
    *  visible is false. */
-  flags: ReadonlyArray<FlagRow>;
+  flags: readonly FlagRow[];
   visible: boolean;
   /** 'gradient' (default) or 'density'. Passed through to PlatformMap. */
   heatmapMode?: HeatmapMode;
@@ -65,7 +65,7 @@ export interface HeatmapLayerProps {
  *   <PlatformMap heatCells={heatCells} heatmapMode={HEATMAP_MODE} />
  */
 export function useHeatCells(
-  flags: ReadonlyArray<FlagRow>,
+  flags: readonly FlagRow[],
   visible: boolean,
 ): HeatCell[] {
   return useMemo(() => {

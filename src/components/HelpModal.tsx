@@ -167,9 +167,9 @@ export default function HelpModal({ visible, onClose }: Props) {
             })}
 
             <View style={styles.afterCard}>
-              <AppText variant="label" style={styles.afterTitle}>Didn't find what you needed?</AppText>
+              <AppText variant="label" style={styles.afterTitle}>Didn&apos;t find what you needed?</AppText>
               <AppText variant="body" style={styles.afterBody}>
-                Send a message and we'll try to help. The Feedback button at the top of any screen
+                Send a message and we&apos;ll try to help. The Feedback button at the top of any screen
                 prefills the form; this button goes straight to your mail app.
               </AppText>
               <Pressable

@@ -133,7 +133,7 @@ describe('CommentBubble Component', () => {
           text="Own comment"
           createdAt={new Date()}
           isOwn={true}
-          onDelete={() => console.log('Deleted')}
+          onDelete={() => { /* no-op in test */ }}
         />
       );
     }).not.toThrow();

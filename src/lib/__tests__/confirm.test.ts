@@ -100,11 +100,11 @@ describe('confirm', () => {
       const pending = confirm('Sign out?', 'Are you sure?', 'Sign out', true);
 
       // Alert.alert(title, message, buttons, options)
-      const buttons = alertSpy.mock.calls[0]![2] as Array<{
+      const buttons = alertSpy.mock.calls[0]![2] as {
         text: string;
         style?: string;
         onPress?: () => void;
-      }>;
+      }[];
 
       // The confirm button is the destructive one ("Sign out").
       const confirmButton = buttons.find((b) => b.text === 'Sign out');
@@ -120,11 +120,11 @@ describe('confirm', () => {
       const { confirm } = require('../confirm');
       const pending = confirm('Title', 'Body');
 
-      const buttons = alertSpy.mock.calls[0]![2] as Array<{
+      const buttons = alertSpy.mock.calls[0]![2] as {
         text: string;
         style?: string;
         onPress?: () => void;
-      }>;
+      }[];
       const cancelButton = buttons.find((b) => b.text === 'Cancel');
       expect(cancelButton?.style).toBe('cancel');
       cancelButton?.onPress?.();
@@ -155,11 +155,11 @@ describe('confirm', () => {
       const { confirm } = require('../confirm');
       const pending = confirm('Title', 'Body');
 
-      const buttons = alertSpy.mock.calls[0]![2] as Array<{
+      const buttons = alertSpy.mock.calls[0]![2] as {
         text: string;
         style?: string;
         onPress?: () => void;
-      }>;
+      }[];
       const confirmButton = buttons.find((b) => b.text === 'OK');
       expect(confirmButton?.style).toBe('default');
 

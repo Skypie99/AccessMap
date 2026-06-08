@@ -214,7 +214,7 @@ export default function SignInScreen({
             >
               <AppText variant="label" style={styles.guestBtnText}>Browse without an account →</AppText>
             </Pressable>
-            <AppText variant="body" style={styles.guestNote}>You can look around, but you'll need an account to report or verify</AppText>
+            <AppText variant="body" style={styles.guestNote}>You can look around, but you&apos;ll need an account to report or verify</AppText>
           </View>
         ) : null}
 

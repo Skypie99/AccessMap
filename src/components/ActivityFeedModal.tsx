@@ -199,7 +199,7 @@ export default function ActivityFeedModal({ visible, onClose, onSelectFlag, onVi
     [onSelectFlag, onViewOnMap, styles],
   );
 
-  const filterChips: Array<{ value: FeedFilter; label: string }> = [
+  const filterChips: { value: FeedFilter; label: string }[] = [
     { value: 'all', label: 'All' },
     { value: 'mine', label: 'Mine' },
     { value: 'watched', label: 'Watched' },

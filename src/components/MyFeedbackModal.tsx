@@ -195,7 +195,7 @@ export default function MyFeedbackModal({ visible, onClose, refreshKey = 0 }: Pr
                       No {FEEDBACK_CATEGORY_FILTER_LABELS[filter].toLowerCase()} feedback
                     </AppText>
                     <AppText variant="body" style={styles.emptyBody}>
-                      Tap "All" above to see every message you've sent.
+                      Tap &quot;All&quot; above to see every message you&apos;ve sent.
                     </AppText>
                   </>
                 ) : (
@@ -205,8 +205,8 @@ export default function MyFeedbackModal({ visible, onClose, refreshKey = 0 }: Pr
                     </AppText>
                     <AppText variant="heading" style={styles.emptyTitle}>No feedback yet</AppText>
                     <AppText variant="body" style={styles.emptyBody}>
-                      Tap the "Feedback" button at the top of any screen to send your first message.
-                      It lands here and in the maintainer's inbox.
+                      Tap the &quot;Feedback&quot; button at the top of any screen to send your first message.
+                      It lands here and in the maintainer&apos;s inbox.
                     </AppText>
                   </>
                 )}

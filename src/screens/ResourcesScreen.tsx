@@ -65,7 +65,7 @@ export default function ResourcesScreen({ visible, onClose }: Props) {
             </View>
             <AppText variant="heading" style={styles.emptyTitle}>Coming soon</AppText>
             <AppText variant="body" style={styles.emptyBody}>
-              We're curating a list of accessibility resources — organisations,
+              We&apos;re curating a list of accessibility resources — organisations,
               tools, and guides that help make communities more navigable for
               everyone.
             </AppText>

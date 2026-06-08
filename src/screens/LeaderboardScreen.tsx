@@ -288,7 +288,7 @@ export default function LeaderboardScreen({ visible, onClose }: Props) {
               accessible
               accessibilityLabel={`Couldn't load the leaderboard. ${loadError}`}
             >
-              <AppText variant="body" style={styles.stateText}>Couldn't load the leaderboard.</AppText>
+              <AppText variant="body" style={styles.stateText}>Couldn&apos;t load the leaderboard.</AppText>
               <AppText variant="body" style={styles.stateHint}>{loadError}</AppText>
               <Pressable
                 onPress={() => void load()}

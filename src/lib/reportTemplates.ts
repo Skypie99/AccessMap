@@ -54,7 +54,7 @@ export interface ReportTemplate {
  * crowding the picker hurts more than the marginal coverage of an
  * 8th option. Two-three per category is a healthy upper bound.
  */
-export const REPORT_TEMPLATES: ReadonlyArray<ReportTemplate> = [
+export const REPORT_TEMPLATES: readonly ReportTemplate[] = [
   {
     id: 'broken_sidewalk_basic',
     label: 'Broken sidewalk',

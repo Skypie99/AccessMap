@@ -23,9 +23,9 @@ import React, { useEffect, useRef } from 'react';
 interface ReactTestInstance {
   type: unknown;
   props: { [k: string]: unknown };
-  children: Array<ReactTestInstance | string>;
-  findAllByType(type: unknown): Array<ReactTestInstance>;
-  findAllByProps(props: { [k: string]: unknown }): Array<ReactTestInstance>;
+  children: (ReactTestInstance | string)[];
+  findAllByType(type: unknown): ReactTestInstance[];
+  findAllByProps(props: { [k: string]: unknown }): ReactTestInstance[];
 }
 interface ReactTestRenderer {
   unmount(): void;
@@ -35,7 +35,6 @@ interface ReactTestRendererModule {
   create(element: React.ReactElement): ReactTestRenderer;
   act(callback: () => void): void;
 }
-// eslint-disable-next-line @typescript-eslint/no-var-requires
 const { create, act } = require('react-test-renderer') as ReactTestRendererModule;
 import { SharedModalsProvider, useSharedModals, type SharedModalKey } from '../sharedModalsContext';
 import HelpModal from '@/components/HelpModal';
@@ -52,7 +51,7 @@ function Recorder({
   observed,
   capture,
 }: {
-  observed: Array<SharedModalKey>;
+  observed: SharedModalKey[];
   // Stash the setter so the test can call it from outside the tree.
   capture: (setOpen: (k: SharedModalKey) => void) => void;
 }) {
@@ -66,7 +65,7 @@ function Recorder({
 
 describe('sharedModalsContext', () => {
   it('yields initial open=null', () => {
-    const observed: Array<SharedModalKey> = [];
+    const observed: SharedModalKey[] = [];
     let renderer: ReactTestRenderer | undefined;
     act(() => {
       renderer = create(
@@ -82,7 +81,7 @@ describe('sharedModalsContext', () => {
   });
 
   it("setOpen('help') updates the value to 'help'", () => {
-    const observed: Array<SharedModalKey> = [];
+    const observed: SharedModalKey[] = [];
     let setOpenRef: ((k: SharedModalKey) => void) | undefined;
     let renderer: ReactTestRenderer | undefined;
     act(() => {
@@ -109,7 +108,7 @@ describe('sharedModalsContext', () => {
   });
 
   it('setOpen(null) clears an open key', () => {
-    const observed: Array<SharedModalKey> = [];
+    const observed: SharedModalKey[] = [];
     let setOpenRef: ((k: SharedModalKey) => void) | undefined;
     let renderer: ReactTestRenderer | undefined;
     act(() => {
@@ -279,7 +278,7 @@ describe('sharedModalsContext', () => {
     // Cycle through every key — for each one, even after both
     // consumers tried to open it, the host should still expose just
     // one instance of that modal in the tree.
-    const modalTypes: Array<[string, unknown]> = [
+    const modalTypes: [string, unknown][] = [
       ['HelpModal', HelpModal],
       ['ChangelogModal', ChangelogModal],
       ['FeedbackModal', FeedbackModal],
@@ -308,7 +307,7 @@ describe('sharedModalsContext', () => {
   // automated half.
   // ───────────────────────────────────────────────────────────────────
   it('exposes open→null transitions so consumers can return focus to the trigger', () => {
-    const focusCalls: Array<number> = [];
+    const focusCalls: number[] = [];
     let setOpenRef: ((k: SharedModalKey) => void) | undefined;
 
     function TriggerWithFocusReturn() {
@@ -377,7 +376,7 @@ describe('sharedModalsContext', () => {
   // out of the modal into the underlying screen.
   // ───────────────────────────────────────────────────────────────────
   it('each shared modal sets accessibilityViewIsModal on its backdrop View', () => {
-    const cases: Array<['help' | 'changelog' | 'feedback' | 'myFeedback', string]> = [
+    const cases: ['help' | 'changelog' | 'feedback' | 'myFeedback', string][] = [
       ['help', 'helpModal-backdrop'],
       ['changelog', 'changelogModal-backdrop'],
       ['feedback', 'feedbackModal-backdrop'],
@@ -416,14 +415,14 @@ describe('sharedModalsContext', () => {
   });
 
   it('supports each of the four shared modal keys (smoke-check the union)', () => {
-    const keys: Array<Exclude<SharedModalKey, null>> = [
+    const keys: Exclude<SharedModalKey, null>[] = [
       'help',
       'changelog',
       'feedback',
       'myFeedback',
     ];
     for (const k of keys) {
-      const observed: Array<SharedModalKey> = [];
+      const observed: SharedModalKey[] = [];
       let setOpenRef: ((next: SharedModalKey) => void) | undefined;
       let renderer: ReactTestRenderer | undefined;
       act(() => {

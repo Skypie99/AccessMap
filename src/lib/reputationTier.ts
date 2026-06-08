@@ -49,7 +49,7 @@ export interface ReputationTier {
 // first tier whose threshold the user's points meet or exceed, so adding
 // a new tier means slotting it into this array in sort order — no other
 // edits needed.
-export const REPUTATION_TIERS: ReadonlyArray<ReputationTier> = [
+export const REPUTATION_TIERS: readonly ReputationTier[] = [
   {
     name: 'bronze',
     label: 'Bronze',

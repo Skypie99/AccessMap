@@ -91,7 +91,7 @@ function bucketIndex(value: number, cellSizeDeg: number): number {
  * precise inference about any single pin.
  */
 export function bucketFlagsToCells(
-  flags: ReadonlyArray<FlagRow>,
+  flags: readonly FlagRow[],
   opts: BucketOptions = {},
 ): HeatCell[] {
   const cellSizeDeg = opts.cellSizeDeg ?? DEFAULT_CELL_SIZE_DEG;

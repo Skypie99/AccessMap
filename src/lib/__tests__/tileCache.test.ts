@@ -58,7 +58,7 @@ function fakeBase64(sizeBytes: number): string {
 
 async function seedIndex(
   userId: string,
-  entries: Array<{ url: string; size: number; lastAccessed: number; cachedAt?: number }>,
+  entries: { url: string; size: number; lastAccessed: number; cachedAt?: number }[],
 ): Promise<void> {
   const now = Date.now();
   const index: TileCacheIndex = {};

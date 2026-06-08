@@ -80,9 +80,9 @@ const navigationRef = createNavigationContainerRef<RootTabParamList>();
 
 const tabIcon =
   (Icon: LucideIcon) =>
-  ({ color: tintColor, size }: { color: string; size: number }) => (
-    <Icon size={size} color={tintColor} strokeWidth={2.2} />
-  );
+  function TabIcon({ color: tintColor, size }: { color: string; size: number }) {
+    return <Icon size={size} color={tintColor} strokeWidth={2.2} />;
+  };
 
 interface Props {
   // Which tab to open on first render. Used by App.tsx to honor the user's

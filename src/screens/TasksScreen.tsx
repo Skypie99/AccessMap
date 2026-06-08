@@ -209,7 +209,7 @@ export default function TasksScreen() {
       displayFlags.filter((f) => f.status === 'verified'),
       sortMode,
     );
-    const out: Array<{ title: string; data: FlagRow[] }> = [];
+    const out: { title: string; data: FlagRow[] }[] = [];
     if (open.length > 0) out.push({ title: 'Open', data: open });
     if (verified.length > 0) out.push({ title: 'Verified', data: verified });
     return out;

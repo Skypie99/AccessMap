@@ -51,7 +51,7 @@ interface MockRow {
 }
 
 function wireMockResponse(
-  data: MockRow[] | Array<{ category: string; severity: number }> | null,
+  data: MockRow[] | { category: string; severity: number }[] | null,
   error: { message: string } | null = null,
 ) {
   mockFrom.mockReturnValue({

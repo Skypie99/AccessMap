@@ -45,11 +45,11 @@ export interface ExportInput {
     display_name?: string | null;
     points?: number | null;
   };
-  flags: ReadonlyArray<FlagRow>;
+  flags: readonly FlagRow[];
   // Optional — `undefined` means "feedback table not enabled on this
   // Supabase project yet" (the migration hasn't been applied). `[]`
   // means "enabled but the user hasn't sent any".
-  feedback?: ReadonlyArray<FeedbackRow>;
+  feedback?: readonly FeedbackRow[];
   // Injected so the screen can map enum values to friendly labels
   // without this file having to depend on src/lib/flags.ts (avoiding a
   // circular import the day we move flags.ts).

@@ -81,11 +81,11 @@ const MAX_NAME_LENGTH = 60;
 // state so when wiring lands, "default" actually means "everything visible
 // at the lowest severity threshold."
 const PLACEHOLDER_DEFAULTS = {
-  categories: [] as ReadonlyArray<string>,
+  categories: [] as readonly string[],
   minSeverity: 1,
-  statusFilter: ['open', 'verified'] as ReadonlyArray<
+  statusFilter: ['open', 'verified'] as readonly (
     'open' | 'verified' | 'resolved' | 'rejected'
-  >,
+  )[],
 };
 
 export default function FilterPresetsModal({ visible, onClose, onApply }: Props) {

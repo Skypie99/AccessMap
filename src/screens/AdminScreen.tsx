@@ -249,7 +249,7 @@ export default function AdminScreen() {
               No flags to moderate
             </AppText>
             <AppText variant="body" size={font.size.sm} color={color.textMuted} style={styles.stateBody}>
-              You're all caught up. New reports will appear here.
+              You&apos;re all caught up. New reports will appear here.
             </AppText>
           </View>
         )

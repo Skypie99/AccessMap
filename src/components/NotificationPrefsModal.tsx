@@ -40,11 +40,11 @@ interface Props {
   onPrefsChanged?: () => void;
 }
 
-const TOGGLES: Array<{
+const TOGGLES: {
   status: FlagStatus;
   prefKey: keyof NotificationPrefs;
   description: string;
-}> = [
+}[] = [
   {
     status: 'open',
     prefKey: 'notifyOnOpen',

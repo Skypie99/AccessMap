@@ -83,7 +83,6 @@ export default class ErrorBoundary extends React.Component<Props, State> {
 
   componentDidCatch(error: Error, info: React.ErrorInfo) {
     // Best-effort logging; safe to ignore if console isn't around.
-    // eslint-disable-next-line no-console
     console.error(
       `[ErrorBoundary${this.props.label ? `:${this.props.label}` : ''}] uncaught render error:`,
       error,

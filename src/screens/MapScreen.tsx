@@ -113,7 +113,7 @@ const DEFAULT_REGION: PlatformMapRegion = {
 // Cycle sequence for the category quick-cycle button: null = "All categories"
 // (empty Set), followed by each category in display order. Defined here
 // (module-level) so the useCallback below can reference it without a dep.
-const CATEGORY_CYCLE: Array<FlagCategory | null> = [null, ...CATEGORY_ORDER];
+const CATEGORY_CYCLE: (FlagCategory | null)[] = [null, ...CATEGORY_ORDER];
 
 // ----------------------------------------------------------------------------
 // Heat-map render mode — single config constant for Sky's D5 follow-up.
@@ -1489,7 +1489,7 @@ export default function MapScreen() {
                 </View>
                 {maxDistanceKm !== null && !location && (
                   <AppText variant="body" style={styles.statusHint} accessibilityLiveRegion="polite">
-                    Distance filter needs your location to work. It'll kick in once you share it.
+                    Distance filter needs your location to work. It&apos;ll kick in once you share it.
                   </AppText>
                 )}
 

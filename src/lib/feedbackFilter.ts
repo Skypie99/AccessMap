@@ -27,7 +27,7 @@ export type FeedbackCategoryFilter = 'all' | FeedbackCategoryRow;
  * on the default. The rest match the order in FEEDBACK_CATEGORIES so the
  * compose modal and the history modal stay visually aligned.
  */
-export const FEEDBACK_CATEGORY_FILTERS: ReadonlyArray<FeedbackCategoryFilter> = [
+export const FEEDBACK_CATEGORY_FILTERS: readonly FeedbackCategoryFilter[] = [
   'all',
   'bug',
   'idea',

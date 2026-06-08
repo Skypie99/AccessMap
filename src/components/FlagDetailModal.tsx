@@ -916,7 +916,7 @@ export default function FlagDetailModal({
                   )}
                   {showReopenForm && (
                     <View style={styles.reopenForm}>
-                      <AppText variant="label" style={styles.reopenFormLabel}>What's still wrong?</AppText>
+                      <AppText variant="label" style={styles.reopenFormLabel}>What&apos;s still wrong?</AppText>
                       <TextInput
                         value={reopenText}
                         onChangeText={setReopenText}
@@ -1040,9 +1040,9 @@ export default function FlagDetailModal({
                 <AppText variant="label" style={styles.sectionLabel}>Comments</AppText>
 
                 {commentsTableNotReady ? (
-                  <AppText variant="body" style={styles.commentsSoonText}>Comments aren't available here yet.</AppText>
+                  <AppText variant="body" style={styles.commentsSoonText}>Comments aren&apos;t available here yet.</AppText>
                 ) : commentsError ? (
-                  <AppText variant="body" style={styles.commentsErrorText}>Couldn't load comments. Check your connection and try again.</AppText>
+                  <AppText variant="body" style={styles.commentsErrorText}>Couldn&apos;t load comments. Check your connection and try again.</AppText>
                 ) : commentsLoading && comments.length === 0 ? (
                   <ActivityIndicator
                     size="small"

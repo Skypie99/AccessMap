@@ -107,7 +107,7 @@ describe('getPointEventHistory — other errors propagate', () => {
 });
 
 describe('pointEventLabel — human-readable labels', () => {
-  const cases: Array<[PointEventType, string]> = [
+  const cases: [PointEventType, string][] = [
     ['flag_submitted', 'Reported a barrier'],
     ['flag_verified_reporter', 'Your report was verified'],
     ['flag_resolved_reporter', 'Your report was resolved'],

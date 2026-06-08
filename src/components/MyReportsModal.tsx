@@ -399,14 +399,14 @@ export default function MyReportsModal({
                       No {STATUS_LABELS[statusFilter as FlagStatus].toLowerCase()} reports
                     </AppText>
                     <AppText variant="body" style={styles.emptyBody}>
-                      You don't have any reports in this status. Tap "All" to see everything.
+                      You don&apos;t have any reports in this status. Tap &quot;All&quot; to see everything.
                     </AppText>
                   </View>
                 ) : (
                   <View style={styles.emptyWrap}>
                     <AppText variant="label" style={styles.emptyTitle}>No reports yet</AppText>
                     <AppText variant="body" style={styles.emptyBody}>
-                      You haven't reported any accessibility flags. Tap the Map tab and use the
+                      You haven&apos;t reported any accessibility flags. Tap the Map tab and use the
                       Report button to drop your first pin.
                     </AppText>
                   </View>

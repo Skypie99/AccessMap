@@ -151,7 +151,7 @@ describe('formatDataExport', () => {
   });
 
   it('renders every category label correctly', () => {
-    const cats: Array<FlagRow['category']> = [
+    const cats: FlagRow['category'][] = [
       'no_ramp',
       'broken_sidewalk',
       'blocked_path',

@@ -22,7 +22,7 @@ export interface TaskSelectionState {
   /** When false, the rest of the screen behaves as a normal Tasks list. */
   readonly active: boolean;
   /** Ordered, de-duped list of flag IDs the user has selected. */
-  readonly selectedIds: ReadonlyArray<string>;
+  readonly selectedIds: readonly string[];
 }
 
 /**
@@ -31,7 +31,7 @@ export interface TaskSelectionState {
  */
 export const EMPTY_SELECTION: TaskSelectionState = Object.freeze({
   active: false,
-  selectedIds: Object.freeze([]) as ReadonlyArray<string>,
+  selectedIds: Object.freeze([]) as readonly string[],
 });
 
 /**

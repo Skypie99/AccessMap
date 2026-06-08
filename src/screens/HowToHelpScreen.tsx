@@ -90,7 +90,7 @@ export default function HowToHelpScreen({ visible, onClose }: Props) {
           showsVerticalScrollIndicator={false}
         >
           <AppText variant="body" style={styles.intro}>
-            AccessMap is built by people like you, one flag at a time. Here's how
+            AccessMap is built by people like you, one flag at a time. Here&apos;s how
             to make the biggest impact.
           </AppText>
 

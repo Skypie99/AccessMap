@@ -66,10 +66,10 @@ export async function fetchUserReportStats(userId: string): Promise<UserReportSt
 
   const byCategory = emptyCategoryCounts();
   const bySeverity = emptySeverityCounts();
-  const rows = (data ?? []) as Array<{
+  const rows = (data ?? []) as {
     category: FlagCategory;
     severity: FlagSeverity;
-  }>;
+  }[];
   for (const r of rows) {
     if (r.category in byCategory) byCategory[r.category]++;
     if (r.severity in bySeverity) bySeverity[r.severity]++;

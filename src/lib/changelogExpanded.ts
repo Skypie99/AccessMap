@@ -11,7 +11,7 @@ export type ReleaseKey = string;
  * coverage.
  */
 export function initialExpanded(
-  releases: ReadonlyArray<{ date: string }>,
+  releases: readonly { date: string }[],
 ): Record<ReleaseKey, boolean> {
   const map: Record<string, boolean> = {};
   releases.forEach((release, i) => {

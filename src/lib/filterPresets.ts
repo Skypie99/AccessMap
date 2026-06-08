@@ -50,10 +50,10 @@ export type FilterPreset = {
    * consumer (the next cycle's Map wiring) is responsible for filtering
    * out values that don't match the current category vocabulary.
    */
-  categories: ReadonlyArray<string>;
+  categories: readonly string[];
   /** 1–5, inclusive. */
   minSeverity: number;
-  statusFilter: ReadonlyArray<FilterPresetStatus>;
+  statusFilter: readonly FilterPresetStatus[];
   /** ISO timestamp for "added on" display + recency sort fallback. */
   createdAt: string;
 };

@@ -55,7 +55,7 @@ export interface MapFilters {
  * row — there's no programmatic mapping so the label and value stay in
  * lockstep visually.
  */
-export const DISTANCE_OPTIONS: ReadonlyArray<number | null> = [null, 0.5, 1, 5, 25];
+export const DISTANCE_OPTIONS: readonly (number | null)[] = [null, 0.5, 1, 5, 25];
 
 // Canonical default shape — what MapScreen would show with nothing stored.
 // Kept here rather than in MapScreen so we have one source of truth for

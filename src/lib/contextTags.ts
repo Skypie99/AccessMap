@@ -60,7 +60,7 @@ export type GeneralContextTag = Exclude<ContextTag, SeasonalTag | DisabilityTag>
  * Validation (`isValidTag`) and the display-label lookup (`tagLabel`) span
  * BOTH lists; only the chip rendering is split.
  */
-export const CONTEXT_TAGS: ReadonlyArray<GeneralContextTag> = Object.freeze([
+export const CONTEXT_TAGS: readonly GeneralContextTag[] = Object.freeze([
   'morning_rush',
   'evening_rush',
   'after_dark',
@@ -92,7 +92,7 @@ export type SeasonalTag =
  *
  * Frozen and intentionally short — Sky can expand the list later.
  */
-export const SEASONAL_TAGS: ReadonlyArray<SeasonalTag> = Object.freeze([
+export const SEASONAL_TAGS: readonly SeasonalTag[] = Object.freeze([
   'icy_winter',
   'wet_spring',
   'construction_temporary',
@@ -125,7 +125,7 @@ export type DisabilityTag =
  *
  * Frozen and intentionally short — Sky can expand the list later.
  */
-export const DISABILITY_TAGS: ReadonlyArray<DisabilityTag> = Object.freeze([
+export const DISABILITY_TAGS: readonly DisabilityTag[] = Object.freeze([
   'mobility_barrier',
   'vision_hazard',
   'hearing_concern',
@@ -254,7 +254,7 @@ export function isValidTag(value: unknown): value is ContextTag {
  * unchanged so React's referential-equality check still triggers a re-render
  * on a no-op toggle (matches the `taskSelection.toggleId` pattern).
  */
-export function toggleTag(current: ReadonlyArray<ContextTag>, tag: ContextTag): ContextTag[] {
+export function toggleTag(current: readonly ContextTag[], tag: ContextTag): ContextTag[] {
   const idx = current.indexOf(tag);
   if (idx !== -1) return current.filter((t) => t !== tag);
   // Cap enforcement: an "add" that would exceed MAX_CONTEXT_TAGS is a
@@ -278,7 +278,7 @@ export function toggleTag(current: ReadonlyArray<ContextTag>, tag: ContextTag): 
  * eventually carry meaning to the reporter (e.g. they picked rush-hour
  * first because it's the worst case). Stable order keeps that intent.
  */
-export function sanitizeTagList(raw: ReadonlyArray<unknown> | unknown): ContextTag[] {
+export function sanitizeTagList(raw: readonly unknown[] | unknown): ContextTag[] {
   if (!Array.isArray(raw)) return [];
   const out: ContextTag[] = [];
   const seen = new Set<ContextTag>();
@@ -317,8 +317,8 @@ export function sanitizeTagList(raw: ReadonlyArray<unknown> | unknown): ContextT
  * unit-testable independent of the screen.
  */
 export function matchesDisabilityFilter(
-  tags: ReadonlyArray<unknown> | null | undefined,
-  selected: ReadonlyArray<DisabilityTag>,
+  tags: readonly unknown[] | null | undefined,
+  selected: readonly DisabilityTag[],
 ): boolean {
   if (selected.length === 0) return true;
   if (!Array.isArray(tags)) return false;
