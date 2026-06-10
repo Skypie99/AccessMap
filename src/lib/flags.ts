@@ -839,8 +839,21 @@ export async function requestFlagReopen(flagId: string): Promise<number | null> 
     p_flag_id: flagId,
   });
   if (error) {
-    console.warn('[reopen] increment_reopen_request RPC error:', error.message);
-    return null;
+    // Migration-absent fallback ONLY (F38 re-sweep): PostgREST PGRST202 =
+    // function not found in the schema cache; Postgres 42883 = undefined
+    // function. Anything else — network failure, RLS, timeout — must THROW so
+    // the caller shows an honest error. Collapsing every error to null made
+    // the modal display the success-sounding "sent for review" message for a
+    // vote that never reached the server.
+    const code = (error as { code?: string }).code;
+    if (code === 'PGRST202' || code === '42883') {
+      console.warn(
+        '[reopen] increment_reopen_request RPC missing (migration not applied):',
+        error.message,
+      );
+      return null;
+    }
+    throw error;
   }
   return typeof data === 'number' ? data : null;
 }

@@ -538,6 +538,20 @@ export default function FlagDetailModal({
         setReopenText('');
         return;
       }
+      if (newCount === 0) {
+        // F37 (re-sweep): the RPC only increments while the flag is still
+        // 'resolved' — 0 means the server DISCARDED the vote (someone reopened
+        // or changed the flag while this modal showed a stale snapshot).
+        // Don't record the per-device dedup (that would silently burn this
+        // device's one vote on a no-op), and don't claim "request noted".
+        const msg =
+          'This flag changed while you had it open, so a reopen request is no longer needed. Close and reopen it to see the latest.';
+        setReopenMessage(msg);
+        AccessibilityInfo.announceForAccessibility(msg);
+        setShowReopenForm(false);
+        setReopenText('');
+        return;
+      }
       await recordReopenRequest(user.id, shownFlag.id);
 
       if (newCount >= threshold) {

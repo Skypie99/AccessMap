@@ -78,10 +78,13 @@ function makeChain(terminal: () => unknown): Record<string, unknown> {
 
 const mockFrom = jest.fn();
 
+const mockRpc = jest.fn();
+
 jest.mock('../supabase', () => ({
   __esModule: true,
   supabase: {
     from: (...args: unknown[]) => mockFrom(...args),
+    rpc: (...args: unknown[]) => mockRpc(...args),
   },
 }));
 
@@ -99,6 +102,7 @@ import {
   listRecentFlags,
   listFlagStatusHistory,
   listLeaderboard,
+  requestFlagReopen,
 } from '../flags';
 import type { FlagRow } from '@/types/database';
 
@@ -421,5 +425,56 @@ describe('listLeaderboard', () => {
     setupChain({ data: [{ id: 'u1', display_name: 'Top', points: 999 }], error: null });
     const result = await listLeaderboard(1);
     expect(result).toHaveLength(1);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// requestFlagReopen (F38 re-sweep)
+//
+// null is reserved for "the RPC isn't on this backend" (migration absent);
+// every OTHER error must throw so the caller shows an honest error instead of
+// the success-sounding "sent for review" fallback message.
+// ---------------------------------------------------------------------------
+
+describe('requestFlagReopen', () => {
+  it('returns the new count on success', async () => {
+    mockRpc.mockResolvedValueOnce({ data: 2, error: null });
+    await expect(requestFlagReopen('f1')).resolves.toBe(2);
+    expect(mockRpc).toHaveBeenCalledWith('increment_reopen_request', { p_flag_id: 'f1' });
+  });
+
+  it('returns 0 when the server discarded the vote (flag no longer resolved)', async () => {
+    mockRpc.mockResolvedValueOnce({ data: 0, error: null });
+    await expect(requestFlagReopen('f1')).resolves.toBe(0);
+  });
+
+  it('returns null ONLY for function-missing errors (migration absent)', async () => {
+    mockRpc.mockResolvedValueOnce({
+      data: null,
+      error: { message: 'function not found', code: 'PGRST202' },
+    });
+    await expect(requestFlagReopen('f1')).resolves.toBeNull();
+
+    mockRpc.mockResolvedValueOnce({
+      data: null,
+      error: { message: 'function public.increment_reopen_request(uuid) does not exist', code: '42883' },
+    });
+    await expect(requestFlagReopen('f1')).resolves.toBeNull();
+  });
+
+  it('LOCKING (F38): throws on network/RLS/any other RPC error', async () => {
+    mockRpc.mockResolvedValueOnce({
+      data: null,
+      error: { message: 'TypeError: Failed to fetch', code: undefined },
+    });
+    await expect(requestFlagReopen('f1')).rejects.toMatchObject({
+      message: 'TypeError: Failed to fetch',
+    });
+
+    mockRpc.mockResolvedValueOnce({
+      data: null,
+      error: { message: 'permission denied', code: '42501' },
+    });
+    await expect(requestFlagReopen('f1')).rejects.toMatchObject({ code: '42501' });
   });
 });
