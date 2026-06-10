@@ -17,7 +17,7 @@ import { useRoute, type RouteProp } from '@react-navigation/native';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { font, radius, shadow, spacing } from '@/theme';
 import { errorMessage } from '@/lib/errors';
-import { notify } from '@/lib/confirm';
+import { confirm, notify } from '@/lib/confirm';
 import CategoryIcon from '@/components/CategoryIcon';
 import {
   AlertTriangle,
@@ -142,6 +142,49 @@ export function withFocusFlag(flags: FlagRow[], extra: FlagRow | null): FlagRow[
   if (!extra) return flags;
   if (flags.some((f) => f.id === extra.id)) return flags;
   return [...flags, extra];
+}
+
+// M4 (re-sweep 2026-06-09): web replacement for the saved-set Alert menu.
+// Alert.alert is a no-op shim on react-native-web (same trap documented at
+// handleMapLongPress below), so the three-button action sheet never appears
+// on web — which made saved sets undeletable there and turned the 5-set cap
+// into a dead end. Instead we ask two sequential yes/no questions through
+// the platform-aware confirm() helper:
+//   1. Make default / Remove default (label + copy flip on isDefault)
+//   2. Delete (marked destructive)
+// Declining both means "cancel" → null. The confirm function is injected so
+// the unit test can pin the prompt sequence without a window.confirm shim.
+// A proper sheet-based menu is deliberately out of scope (later design
+// polish).
+export type SetMenuChoice = 'toggleDefault' | 'delete' | null;
+
+export async function webSetMenuChoice(
+  setName: string,
+  isDefault: boolean,
+  confirmFn: (
+    title: string,
+    message: string,
+    confirmLabel?: string,
+    destructive?: boolean,
+  ) => Promise<boolean>,
+): Promise<SetMenuChoice> {
+  const wantsToggle = await confirmFn(
+    setName,
+    isDefault
+      ? 'This filter opens by default on launch. Remove it as the default?'
+      : 'Make this the filter that opens by default on launch?',
+    isDefault ? 'Remove default' : 'Make default',
+    false,
+  );
+  if (wantsToggle) return 'toggleDefault';
+
+  const wantsDelete = await confirmFn(
+    `Delete "${setName}"?`,
+    'This permanently deletes the saved filter set. This cannot be undone.',
+    'Delete',
+    true,
+  );
+  return wantsDelete ? 'delete' : null;
 }
 
 export default function MapScreen() {
@@ -537,14 +580,53 @@ export default function MapScreen() {
     setActiveStatuses(new Set(set.statuses));
   }, []);
 
-  // Long-press a saved chip → native action sheet with Make/Remove default
-  // + Delete + Cancel. Alert.alert is already the in-app pattern for
-  // destructive confirmation, so it gets the familiar OS-native treatment
-  // on iOS and Android. (Web falls back to a vertical list — acceptable
-  // because the feature gracefully degrades there.)
+  // The two saved-set menu actions, hoisted out of the Alert buttons so the
+  // native and web menu paths below share one implementation. Each re-derives
+  // isDefault from current state so the menu copy and the action can't drift.
+  const toggleDefaultFor = useCallback(
+    async (set: FilterSet) => {
+      const isDefault = defaultId === set.id;
+      const nextId = isDefault ? null : set.id;
+      await setDefaultSetId(nextId);
+      if (!mountedRef.current) return;
+      setDefaultIdState(nextId);
+      AccessibilityInfo.announceForAccessibility(
+        isDefault ? 'Default filter cleared' : 'Set as default filter',
+      );
+    },
+    [defaultId],
+  );
+
+  const deleteSetFor = useCallback(
+    async (set: FilterSet) => {
+      await deleteSet(set.id);
+      if (!mountedRef.current) return;
+      setSavedSets((prev) => prev.filter((s) => s.id !== set.id));
+      // deleteSet cascades the storage clear; mirror it in local
+      // state so the star disappears immediately.
+      if (defaultId === set.id) setDefaultIdState(null);
+    },
+    [defaultId],
+  );
+
+  // Long-press a saved chip → action menu with Make/Remove default + Delete
+  // + Cancel. On iOS/Android, Alert.alert is already the in-app pattern for
+  // destructive confirmation, so it gets the familiar OS-native treatment.
+  // On web, Alert.alert is a no-op shim, so we route through the exported
+  // webSetMenuChoice helper (two sequential confirm() binaries) instead —
+  // without it the menu is unreachable and saved sets can never be deleted
+  // once the 5-set cap is hit.
   const openSetMenu = useCallback(
     (set: FilterSet) => {
       const isDefault = defaultId === set.id;
+      if (Platform.OS === 'web') {
+        void (async () => {
+          const choice = await webSetMenuChoice(set.name, isDefault, confirm);
+          if (choice === 'toggleDefault') await toggleDefaultFor(set);
+          else if (choice === 'delete') await deleteSetFor(set);
+        })();
+        return;
+      }
       Alert.alert(
         set.name,
         isDefault
@@ -553,33 +635,18 @@ export default function MapScreen() {
         [
           {
             text: isDefault ? 'Remove default' : 'Make default',
-            onPress: async () => {
-              const nextId = isDefault ? null : set.id;
-              await setDefaultSetId(nextId);
-              if (!mountedRef.current) return;
-              setDefaultIdState(nextId);
-              AccessibilityInfo.announceForAccessibility(
-                isDefault ? 'Default filter cleared' : 'Set as default filter',
-              );
-            },
+            onPress: () => void toggleDefaultFor(set),
           },
           {
             text: 'Delete',
             style: 'destructive',
-            onPress: async () => {
-              await deleteSet(set.id);
-              if (!mountedRef.current) return;
-              setSavedSets((prev) => prev.filter((s) => s.id !== set.id));
-              // deleteSet cascades the storage clear; mirror it in local
-              // state so the star disappears immediately.
-              if (defaultId === set.id) setDefaultIdState(null);
-            },
+            onPress: () => void deleteSetFor(set),
           },
           { text: 'Cancel', style: 'cancel' },
         ],
       );
     },
-    [defaultId],
+    [defaultId, toggleDefaultFor, deleteSetFor],
   );
 
   // Open the save-name modal with an empty draft.
