@@ -384,11 +384,19 @@ interface CachedTileLayerOptions extends L.TileLayerOptions {
 
 class CachedTileLayer extends L.TileLayer {
   private _userId: string | null;
+  // F31: set when the wrapper unmounts the layer. In-flight tile chains are
+  // not cancellable, but they must stop persisting tiles once the layer is
+  // gone (e.g. after sign-out, when the cache for that user was just cleared).
+  private _disposed = false;
 
   constructor(urlTemplate: string, options: CachedTileLayerOptions) {
     const { userId, ...rest } = options;
     super(urlTemplate, rest);
     this._userId = userId;
+  }
+
+  dispose(): void {
+    this._disposed = true;
   }
 
   createTile(
@@ -447,8 +455,9 @@ class CachedTileLayer extends L.TileLayer {
         img.src = dataUri;
 
         // Fire-and-forget: persist to cache; errors are swallowed by
-        // setCachedTile itself (it already logs internally).
-        void setCachedTile(userId, url, dataUri);
+        // setCachedTile itself (it already logs internally). Skip if the
+        // layer was unmounted while this chain was in flight (F31).
+        if (!this._disposed) void setCachedTile(userId, url, dataUri);
       } catch {
         // Any error → graceful fallback to direct URL (never a broken tile)
         img.onload = () => done(undefined, img);
@@ -483,6 +492,7 @@ function CachedTileLayerWrapper({ userId }: { userId: string | null }): null {
     });
     layer.addTo(map);
     return () => {
+      layer.dispose(); // F31: stop in-flight chains from caching post-unmount
       layer.remove();
     };
   }, [map, userId]);

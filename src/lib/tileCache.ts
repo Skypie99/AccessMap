@@ -92,6 +92,25 @@ function totalSize(index: TileCacheIndex): number {
 // public function.
 const indexLocks = new Map<string, Promise<unknown>>();
 
+// Post-clear write guard (F31 re-sweep fix). clearTileCache (sign-out /
+// account deletion — Jordan C1) only serializes against writes via the lock;
+// it can neither cancel nor out-order a setCachedTile that is still in flight:
+//   (a) a tile fetch that completes AFTER the clear calls setCachedTile and
+//       happily re-creates index + data for the signed-out user;
+//   (b) a setCachedTile already queued behind the clear re-reads the empty
+//       index and writes a fresh one.
+// Both resurrect location-revealing tiles for a signed-out user. Guard:
+// clearTileCache bumps a per-user epoch and records the clear time;
+// setCachedTile (1) captures the epoch on entry and skips if a clear happened
+// before its locked turn, and (2) refuses to write at all within
+// TILE_CLEAR_GRACE_MS of the last clear — covering late writes from fetch
+// chains that started before sign-out. Cost: a user who signs back in within
+// the grace window just isn't cached for those first minutes (demand cache —
+// tiles still render from the network).
+export const TILE_CLEAR_GRACE_MS = 2 * 60 * 1000;
+const clearEpochs = new Map<string, number>();
+const lastClearedAt = new Map<string, number>();
+
 function withIndexLock<T>(userId: string, fn: () => Promise<T>): Promise<T> {
   const prev = indexLocks.get(userId) ?? Promise.resolve();
   // Run fn after prev settles regardless of its outcome (so one failure can't
@@ -107,6 +126,17 @@ function withIndexLock<T>(userId: string, fn: () => Promise<T>): Promise<T> {
     ),
   );
   return next;
+}
+
+/**
+ * Test-only: reset the F31 post-clear guards. Module state (clear epochs +
+ * grace-window timestamps) persists across tests in one Jest worker; suites
+ * that exercise clearTileCache must reset it in beforeEach or every later
+ * setCachedTile for the same userId is silently dropped by the grace window.
+ */
+export function __resetTileCacheClearGuardsForTests(): void {
+  clearEpochs.clear();
+  lastClearedAt.clear();
 }
 
 // ---------------------------------------------------------------------------
@@ -175,17 +205,28 @@ export async function getCachedTile(userId: string, tileUrl: string): Promise<st
 export async function setCachedTile(userId: string, tileUrl: string, data: string): Promise<void> {
   const size = data.length; // byte approximation (1 char ≈ 1 byte for base64)
   const now = Date.now();
+  // F31: refuse writes shortly after a clear — a tile fetch that started
+  // before sign-out can land here long after clearTileCache ran.
+  const clearedAt = lastClearedAt.get(userId);
+  if (clearedAt !== undefined && now - clearedAt < TILE_CLEAR_GRACE_MS) return;
+  const epochAtEntry = clearEpochs.get(userId) ?? 0;
 
-  try {
-    await AsyncStorage.setItem(tileDataKey(userId, tileUrl), data);
-  } catch (e) {
-    console.warn('[tileCache] failed to write tile data:', e);
-    return;
-  }
-
-  // Index read-modify-write + eviction under the per-user lock (F23) so
-  // concurrent tile writes can't drop each other's index entries.
+  // Data write + index read-modify-write + eviction all under the per-user
+  // lock (F23/F31): the data write used to happen outside the lock, so a
+  // clearTileCache holding the lock could snapshot an index that didn't list
+  // the new tile yet — its multiRemove missed the data key, and the queued
+  // index write then resurrected the entry.
   await withIndexLock(userId, async () => {
+    // F31: a clear ran between our entry and our turn on the lock — drop the write.
+    if ((clearEpochs.get(userId) ?? 0) !== epochAtEntry) return;
+
+    try {
+      await AsyncStorage.setItem(tileDataKey(userId, tileUrl), data);
+    } catch (e) {
+      console.warn('[tileCache] failed to write tile data:', e);
+      return;
+    }
+
     const index = await readIndex(userId);
     index[tileUrl] = { url: tileUrl, cachedAt: now, size, lastAccessed: now };
     await writeIndex(userId, index);
@@ -205,8 +246,13 @@ export async function setCachedTile(userId: string, tileUrl: string, data: strin
  * Called from signOut(userId) — Jordan C1.
  */
 export async function clearTileCache(userId: string): Promise<void> {
-  // Under the lock so a tile write racing sign-out can't re-create the index
-  // after we remove it (F23).
+  // F31: bump the epoch + record the clear time BEFORE taking the lock so any
+  // setCachedTile already queued (or still fetching its tile) sees the clear
+  // and drops its write instead of resurrecting the cache for a signed-out
+  // user. The lock below still serializes against writes whose locked turn
+  // started before this call.
+  clearEpochs.set(userId, (clearEpochs.get(userId) ?? 0) + 1);
+  lastClearedAt.set(userId, Date.now());
   await withIndexLock(userId, async () => {
     const index = await readIndex(userId);
     const tileKeys = Object.keys(index).map((url) => tileDataKey(userId, url));

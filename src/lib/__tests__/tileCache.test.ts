@@ -10,6 +10,7 @@
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
+  __resetTileCacheClearGuardsForTests,
   clearTileCache,
   evictLRU,
   getCachedTile,
@@ -79,6 +80,9 @@ async function seedIndex(
 
 beforeEach(() => {
   mockStorage.__reset();
+  // F31 guards live in module state and persist across tests — reset so a
+  // clearTileCache in one test can't drop setCachedTile writes in the next.
+  __resetTileCacheClearGuardsForTests();
   jest.clearAllMocks();
 });
 
