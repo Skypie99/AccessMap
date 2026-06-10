@@ -38,11 +38,15 @@ function flattenComment(row: RawCommentRow): CommentRow {
   };
 }
 
+// PostgreSQL error code 42P01 = undefined_table. Inspect the raw error
+// fields directly (same pattern as photos.ts) — errorMessage() now rewrites
+// recognized failures into friendly copy, so its output can no longer be
+// used for code/phrase sniffing. Supabase sometimes embeds the code in the
+// message when it comes back as a PostgREST 404 body, so check both.
 function isTableMissingError(e: unknown): boolean {
-  const msg = errorMessage(e, '');
-  // PostgreSQL error code 42P01 = undefined_table. Supabase embeds it in the
-  // message when it comes back as a PostgREST 404 body.
-  return msg.includes('42P01') || msg.includes('does not exist');
+  const msg = String((e as { message?: string })?.message ?? e ?? '');
+  const code = String((e as { code?: string })?.code ?? '');
+  return code === '42P01' || msg.includes('42P01') || msg.includes('does not exist');
 }
 
 // Fetch comments for a flag, newest-first, with author display_name joined.

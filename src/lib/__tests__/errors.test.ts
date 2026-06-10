@@ -18,7 +18,7 @@ describe('errorMessage', () => {
 
   it('returns the message from a plain object with a string message field', () => {
     // Supabase sometimes throws a plain object, not an Error.
-    expect(errorMessage({ message: 'permission denied' })).toBe('permission denied');
+    expect(errorMessage({ message: 'duplicate key value' })).toBe('duplicate key value');
   });
 
   it('returns a thrown string as-is', () => {
@@ -41,5 +41,92 @@ describe('errorMessage', () => {
 
   it('respects the optional fallback argument', () => {
     expect(errorMessage(null, 'Could not load your reports.')).toBe('Could not load your reports.');
+  });
+});
+
+describe('errorMessage friendly mapping', () => {
+  const FEATURE_UNAVAILABLE = "That feature isn't available yet.";
+  const ITEM_NOT_FOUND = "That item couldn't be found. It may have been deleted.";
+  const NO_PERMISSION = "You don't have permission to do that.";
+  const NETWORK_TROUBLE = 'Check your internet connection and try again.';
+
+  // --- code-based mappings (one per row) ---
+
+  it('maps 42P01 (undefined_table) to the feature-unavailable copy', () => {
+    expect(errorMessage({ code: '42P01', message: 'relation "flag_comments" does not exist' })).toBe(
+      FEATURE_UNAVAILABLE,
+    );
+  });
+
+  it('maps 42883 (undefined_function) to the feature-unavailable copy', () => {
+    expect(
+      errorMessage({ code: '42883', message: 'function public.increment_reopen_request(uuid) does not exist' }),
+    ).toBe(FEATURE_UNAVAILABLE);
+  });
+
+  it('maps PGRST202 (function not in schema cache) to the feature-unavailable copy', () => {
+    expect(errorMessage({ code: 'PGRST202', message: 'Could not find the function' })).toBe(FEATURE_UNAVAILABLE);
+  });
+
+  it('maps PGRST204 (column not in schema cache) to the feature-unavailable copy', () => {
+    expect(errorMessage({ code: 'PGRST204', message: "Could not find the 'context_tags' column" })).toBe(
+      FEATURE_UNAVAILABLE,
+    );
+  });
+
+  it('maps PGRST116 (zero rows) to the not-found copy', () => {
+    expect(errorMessage({ code: 'PGRST116', message: 'JSON object requested, multiple (or no) rows returned' })).toBe(
+      ITEM_NOT_FOUND,
+    );
+  });
+
+  it('maps 42501 (insufficient_privilege) to the permission copy', () => {
+    expect(errorMessage({ code: '42501', message: 'permission denied for table flags' })).toBe(NO_PERMISSION);
+  });
+
+  // --- message-regex mappings (one per row) ---
+
+  it('maps fetch-style network failures to the connection copy', () => {
+    expect(errorMessage(new Error('TypeError: Failed to fetch'))).toBe(NETWORK_TROUBLE);
+    expect(errorMessage(new Error('Network request failed'))).toBe(NETWORK_TROUBLE);
+    expect(errorMessage(new Error('NetworkError when attempting to fetch resource.'))).toBe(NETWORK_TROUBLE);
+  });
+
+  it('maps RLS violations to the permission copy', () => {
+    expect(errorMessage({ message: 'new row violates row-level security policy for table "flags"' })).toBe(
+      NO_PERMISSION,
+    );
+  });
+
+  it('maps "permission denied" messages to the permission copy', () => {
+    expect(errorMessage({ message: 'permission denied' })).toBe(NO_PERMISSION);
+  });
+
+  it('maps "does not exist" messages to the feature-unavailable copy', () => {
+    expect(errorMessage({ message: 'relation "public.feedback" does not exist' })).toBe(FEATURE_UNAVAILABLE);
+  });
+
+  // --- precedence ---
+
+  it('lets the code win over a message that matches a different row', () => {
+    // 42501 (permission) beats the "does not exist" message regex.
+    expect(errorMessage({ code: '42501', message: 'relation "flags" does not exist' })).toBe(NO_PERMISSION);
+    // PGRST116 (not found) beats the network message regex.
+    expect(errorMessage({ code: 'PGRST116', message: 'Failed to fetch' })).toBe(ITEM_NOT_FOUND);
+  });
+
+  // --- unmatched errors keep the old pass-through behavior ---
+
+  it('passes unmapped messages through raw — no blanket generic', () => {
+    expect(errorMessage(new Error('duplicate key value violates unique constraint'))).toBe(
+      'duplicate key value violates unique constraint',
+    );
+    expect(errorMessage({ code: '23505', message: 'duplicate key value' })).toBe('duplicate key value');
+    expect(errorMessage('something went wrong')).toBe('something went wrong');
+  });
+
+  it('keeps the network regex narrow — bare "network" wording passes through', () => {
+    // useComments tests rely on 'network down' surviving untouched.
+    expect(errorMessage(new Error('network down'))).toBe('network down');
   });
 });
