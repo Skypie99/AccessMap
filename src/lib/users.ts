@@ -127,13 +127,17 @@ export function getInitials(name: string): string {
   const trimmed = name.trim();
   if (!trimmed) return '?';
   const parts = trimmed.split(/\s+/);
+  // F59 (re-sweep): index/slice operate on UTF-16 code UNITS — a display name
+  // starting with an emoji (a surrogate pair) was split in half and rendered
+  // as U+FFFD mojibake in the avatar fallback. Array.from iterates real code
+  // points.
   if (parts.length >= 2) {
-    const first = parts[0] ?? '';
-    const last = parts[parts.length - 1] ?? '';
-    return ((first[0] ?? '') + (last[0] ?? '')).toUpperCase();
+    const first = Array.from(parts[0] ?? '')[0] ?? '';
+    const last = Array.from(parts[parts.length - 1] ?? '')[0] ?? '';
+    return (first + last).toUpperCase();
   }
-  // Single word — take first two chars (handles email like "sky@…" → "SK")
+  // Single word — take first two code points (handles email like "sky@…" → "SK")
   const atIdx = trimmed.indexOf('@');
   const word = atIdx > 0 ? trimmed.slice(0, atIdx) : trimmed;
-  return word.slice(0, 2).toUpperCase();
+  return Array.from(word).slice(0, 2).join('').toUpperCase();
 }

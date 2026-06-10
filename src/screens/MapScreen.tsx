@@ -1099,7 +1099,7 @@ export default function MapScreen() {
             </Pressable>
             <View style={styles.actionDivider} accessibilityElementsHidden />
             <Pressable
-              onPress={refreshFlags}
+              onPress={() => { refreshFlags().catch(() => {}); }}
               style={styles.actionBtn}
               accessibilityRole="button"
               accessibilityLabel="Refresh flags"
@@ -1547,7 +1547,7 @@ export default function MapScreen() {
 
         {loadError && (
           <Pressable
-            onPress={refreshFlags}
+            onPress={() => { refreshFlags().catch(() => {}); }}
             disabled={loadingFlags}
             style={({ pressed }) => [
               styles.errorBanner,
@@ -1718,7 +1718,7 @@ export default function MapScreen() {
           // implicit location forever.
           setDropLocation(null);
         }}
-        onCreated={refreshFlags}
+        onCreated={() => { refreshFlags().catch(() => {}); }}
       />
 
       <LegendModal visible={legendOpen} onClose={() => setLegendOpen(false)} />

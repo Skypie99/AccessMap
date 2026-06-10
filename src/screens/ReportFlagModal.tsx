@@ -145,6 +145,9 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
     // the fact, but a fresh form / re-tap is the common case). Erring on
     // the side of overwriting keeps the chip useful — the user can always
     // edit the textbox after.
+    // F62 (re-sweep): only claim a description was pre-filled when it
+    // actually was — with a non-empty draft the announcement lied to SR users.
+    const seededDescription = description.trim() === '' && !!t.description;
     if (description.trim() === '') {
       setDescription(t.description ?? '');
     }
@@ -153,7 +156,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
     // they know the form jumped.
     AccessibilityInfo.announceForAccessibility(
       `Template applied: ${t.label}. Category, severity${
-        t.description ? ', and a starter description' : ''
+        seededDescription ? ', and a starter description' : ''
       } pre-filled. Edit any field before submitting.`,
     );
   };
@@ -551,7 +554,12 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
           <AppText variant="label" style={styles.label} accessibilityRole="header">Description (optional)</AppText>
           <TextInput
             value={description}
-            onChangeText={setDescription}
+            onChangeText={(text) => {
+              setDescription(text);
+              // F62: a manual edit means the form no longer matches the
+              // template — stop showing its chip as 'applied'.
+              if (appliedTemplateId) setAppliedTemplateId(null);
+            }}
             placeholder="Describe the barrier — e.g. broken curb cut on Main St"
             placeholderTextColor={color.textMuted}
             multiline

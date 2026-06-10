@@ -54,7 +54,20 @@ interface ComposeOptions {
  * From address. Exported for testing.
  */
 export function buildMailtoUrl({ body, contactEmail, category }: ComposeOptions): string {
-  const trimmed = body.trim().slice(0, MAX_BODY_CHARS);
+  let trimmed = body.trim().slice(0, MAX_BODY_CHARS);
+  // F60 (re-sweep): MAX_BODY_CHARS counts pre-encoded characters, but mailto
+  // limits bite on the ENCODED URL — multi-byte text encodes at up to ~9x
+  // (emoji) so a max-length body could still blow past the cap the constant
+  // was chosen for and get silently dropped by the mail client (total loss,
+  // worse than truncation). Trim by code points until the encoded body fits.
+  const MAX_ENCODED_BODY_CHARS = 6000;
+  if (encodeURIComponent(trimmed).length > MAX_ENCODED_BODY_CHARS) {
+    let points = Array.from(trimmed);
+    while (points.length > 0 && encodeURIComponent(points.join('')).length > MAX_ENCODED_BODY_CHARS) {
+      points = points.slice(0, Math.max(0, Math.floor(points.length * 0.9) - 1));
+    }
+    trimmed = points.join('');
+  }
   const categoryLabel = category ? FEEDBACK_CATEGORY_LABELS[category] : null;
   // Subject gets the category appended after a colon so the maintainer's
   // inbox can sort by it. Falls back to the plain subject when the caller
