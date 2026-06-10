@@ -80,7 +80,7 @@ import {
   savePresets,
   type FilterPreset,
 } from '@/lib/filterPresets';
-import type { FlagCategory, FlagSeverity, FlagStatus } from '@/types/database';
+import type { FlagCategory, FlagRow, FlagSeverity, FlagStatus } from '@/types/database';
 import type { RootTabParamList } from '@/navigation/RootNavigator';
 import PlatformMap, {
   type PlatformMapHandle,
@@ -129,6 +129,20 @@ const CATEGORY_CYCLE: (FlagCategory | null)[] = [null, ...CATEGORY_ORDER];
 // requires a fresh privacy review.
 // ----------------------------------------------------------------------------
 const HEATMAP_MODE: HeatmapMode = DEFAULT_HEATMAP_MODE;
+
+// M3 (re-sweep 2026-06-09): a deep-linked flag can live outside the first
+// page of loaded flags, in which case animateTo centers the map on empty
+// water — no marker, no callout. This helper appends the fetched flag to
+// the marker list if (and only if) it isn't already there, de-duped by id.
+// It runs AFTER the filter pass on purpose: a flag the user explicitly
+// followed a link to should always be visible, even when the active
+// filters would hide it. Pure + exported so the unit test can pin the
+// append/de-dupe behavior without rendering the screen.
+export function withFocusFlag(flags: FlagRow[], extra: FlagRow | null): FlagRow[] {
+  if (!extra) return flags;
+  if (flags.some((f) => f.id === extra.id)) return flags;
+  return [...flags, extra];
+}
 
 export default function MapScreen() {
   const color = useColor();
@@ -211,6 +225,13 @@ export default function MapScreen() {
     void refreshSavedPlaces();
   }, [refreshSavedPlaces]);
   const [focusedFlagId, setFocusedFlagId] = useState<string | null>(null);
+  // M3: the flag a deep link resolved to. Kept as local state (flagsStore has
+  // no upsert) and merged into the marker list via withFocusFlag below, so a
+  // deep-linked flag outside the loaded page still renders a marker. NOT
+  // cleared when route.params.flagId goes back to undefined — the L9 fix
+  // clears the nav param after the callout fires, and the marker must
+  // persist. Only replaced when a new flagId arrives.
+  const [deepLinkFlag, setDeepLinkFlag] = useState<FlagRow | null>(null);
 
   // Phase 2 of the accessible list view: auto-open the linear list when a
   // screen reader is on, so blind/low-vision users land directly in the
@@ -765,6 +786,15 @@ export default function MapScreen() {
     location,
   ]);
 
+  // M3: marker list for the map = filtered flags + the deep-linked flag (if
+  // any) appended via withFocusFlag. Only <PlatformMap> consumes this —
+  // heatCells, the count pill, and the empty-state card stay driven by
+  // filteredFlags so the focused flag doesn't skew counts or aggregates.
+  const mapFlags = useMemo(
+    () => withFocusFlag(filteredFlags, deepLinkFlag),
+    [filteredFlags, deepLinkFlag],
+  );
+
   // Heat-cell aggregation — buckets the currently-visible flag set onto
   // the grid and drops anything below the privacy floor (k>=3). Memoised
   // so a parent re-render that doesn't touch flags/toggle doesn't redo
@@ -888,10 +918,17 @@ export default function MapScreen() {
     const flagId = route.params?.flagId;
     if (!flagId) return;
     let cancelled = false;
+    // A new flagId is arriving — drop any previous deep-link marker so a
+    // stale flag from an earlier link can't linger if this fetch fails.
+    // (The early return above means flagId → undefined does NOT clear it.)
+    setDeepLinkFlag(null);
     (async () => {
       try {
         const flag = await fetchFlagById(flagId);
         if (cancelled || !flag) return;
+        // M3: keep the fetched row so withFocusFlag can render its marker
+        // even when the flag is outside the loaded page / active filters.
+        setDeepLinkFlag(flag);
         setFocusedFlagId(flag.id);
         mapRef.current?.animateTo({
           latitude: flag.lat,
@@ -979,7 +1016,7 @@ export default function MapScreen() {
       <PlatformMap
         ref={mapRef}
         initialRegion={initialRegion}
-        flags={filteredFlags}
+        flags={mapFlags}
         focusedFlagId={focusedFlagId}
         showsUserLocation
         reducedMotion={reducedMotion}
