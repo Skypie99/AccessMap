@@ -244,6 +244,50 @@ describe('useComments — addComment', () => {
     expect(mockAddComment).toHaveBeenCalledWith('flag-1', 'new one');
     expect(mockListComments).toHaveBeenCalledWith('flag-1'); // refetch
   });
+
+  // F36 (re-sweep): the modal swaps flags without unmounting. A comment posted
+  // on flag A whose network round-trip finishes AFTER the user opened flag B
+  // runs flag A's stale `fetch` closure; before the guard it bumped genRef
+  // (promoting itself to "latest") and committed A's thread under B.
+  it('LOCKING (F36): a slow addComment on flag A cannot refetch A over flag B', async () => {
+    const aThread = [comment('a1', 'thread A')];
+    const bThread = [{ ...comment('b1', 'thread B'), flag_id: 'flag-B' }];
+    mockListComments.mockImplementation(async (id: string) =>
+      id === 'flag-A' ? aThread : bThread,
+    );
+
+    const { result, rerender } = renderHook(({ id }: { id: string }) => useComments(id), {
+      initialProps: { id: 'flag-A' },
+    });
+    await waitFor(() => expect(result.current.comments.map((c) => c.id)).toEqual(['a1']));
+
+    // The post on flag A is slow — its promise resolves only after the swap.
+    let resolveAdd: () => void = () => {};
+    mockAddComment.mockReturnValueOnce(
+      new Promise<void>((resolve) => {
+        resolveAdd = () => resolve();
+      }),
+    );
+    let addPromise: Promise<void> = Promise.resolve();
+    act(() => {
+      addPromise = result.current.addComment('posted on A');
+    });
+
+    // User opens flag B while the post is in flight.
+    rerender({ id: 'flag-B' });
+    await waitFor(() => expect(result.current.comments.map((c) => c.id)).toEqual(['b1']));
+
+    // The post completes — its stale refetch must NOT run listComments('flag-A')
+    // again, and must NOT commit A's thread over B's.
+    mockListComments.mockClear();
+    await act(async () => {
+      resolveAdd();
+      await addPromise;
+    });
+
+    expect(mockListComments).not.toHaveBeenCalledWith('flag-A');
+    expect(result.current.comments.map((c) => c.id)).toEqual(['b1']);
+  });
 });
 
 // ---------------------------------------------------------------------------

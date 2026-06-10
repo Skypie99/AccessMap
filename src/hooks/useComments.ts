@@ -31,6 +31,14 @@ export function useComments(flagId: string | null | undefined): UseCommentsResul
   // to flag B while A's listComments is in flight lets A resolve last and
   // overwrite B's comments (mountedRef stays true across a flag swap).
   const genRef = useRef(0);
+  // Latest flagId (F36 re-sweep): the modal swaps flags WITHOUT unmounting, so
+  // async work started under flag A (addComment's post-write refetch, a
+  // deleteComment rollback, a late realtime callback) can resolve while the
+  // hook already shows flag B. Those calls run flag-A CLOSURES of `fetch`,
+  // which would bump genRef — promoting themselves to "latest" — and commit
+  // A's thread under B. Every fetch checks its closure flagId against this
+  // ref and bails if the hook has moved on.
+  const flagIdRef = useRef(flagId);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -40,23 +48,28 @@ export function useComments(flagId: string | null | undefined): UseCommentsResul
   }, []);
 
   const fetch = useCallback(async () => {
+    const id = flagId;
+    // F36: stale-closure guard — this closure belongs to `id`. If the hook
+    // has since moved to a different flag, bail BEFORE bumping the generation
+    // (a stale closure that bumps genRef would make itself "latest" and win).
+    if (id !== flagIdRef.current) return;
     // Bump the generation BEFORE the early return so that a flagId
     // truthy -> null/undefined transition also invalidates any in-flight
     // fetch (otherwise that fetch would still match genRef and could commit
     // stale comments over the cleared state). Found in the second sweep.
     const gen = ++genRef.current;
-    if (!flagId) return;
+    if (!id) return;
     if (mountedRef.current) {
       setLoading(true);
       setError(null);
     }
     try {
-      const data = await listComments(flagId);
-      if (!mountedRef.current || gen !== genRef.current) return;
+      const data = await listComments(id);
+      if (!mountedRef.current || gen !== genRef.current || id !== flagIdRef.current) return;
       setComments(data);
       setTableNotReady(false);
     } catch (e) {
-      if (!mountedRef.current || gen !== genRef.current) return;
+      if (!mountedRef.current || gen !== genRef.current || id !== flagIdRef.current) return;
       if (e instanceof CommentsTableNotReadyError) {
         setTableNotReady(true);
       } else {
@@ -69,11 +82,14 @@ export function useComments(flagId: string | null | undefined): UseCommentsResul
 
   // Initial load + reload when flagId changes.
   useEffect(() => {
+    // F36: record the new flagId BEFORE kicking off its fetch so stale
+    // closures from the previous flag fail the flagIdRef check from here on.
+    flagIdRef.current = flagId;
     setComments([]);
     setError(null);
     setTableNotReady(false);
     void fetch();
-  }, [fetch]);
+  }, [flagId, fetch]);
 
   // Realtime subscription: INSERT events trigger a refetch (to get the joined
   // display_name); DELETE events are applied optimistically to local state so
