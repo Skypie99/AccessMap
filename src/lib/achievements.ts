@@ -185,6 +185,19 @@ export function computeAchievements(stats: AchievementStats): Achievement[] {
 }
 
 /**
+ * Point milestones for the Profile hero progress bar, derived straight
+ * from the points-category badges above so the bar and the badge catalog
+ * can never drift apart (the screen used to keep its own hand-written
+ * list). Returns ascending `{ at, label }` entries, e.g.
+ * `{ at: 25, label: 'Welcome Aboard badge' }`.
+ */
+export function pointsMilestones(): { at: number; label: string }[] {
+  return CATALOG.filter((def) => def.category === 'points')
+    .map((def) => ({ at: def.threshold, label: `${def.title} badge` }))
+    .sort((a, b) => a.at - b.at);
+}
+
+/**
  * Convenience: count of earned badges out of total. Used by the
  * Profile row that opens the modal ("Achievements · 3 / 13").
  */

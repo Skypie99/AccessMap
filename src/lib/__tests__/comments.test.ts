@@ -14,6 +14,7 @@ import {
   deleteComment,
   listComments,
   MAX_COMMENT_LENGTH,
+  MAX_COMMENTS,
 } from '../comments';
 
 // ---------------------------------------------------------------------------
@@ -46,7 +47,8 @@ function selectChain(data: unknown[], error: unknown = null) {
   const chain = {
     select: jest.fn().mockReturnThis(),
     eq: jest.fn().mockReturnThis(),
-    order: jest.fn().mockResolvedValue({ data, error }),
+    order: jest.fn().mockReturnThis(),
+    limit: jest.fn().mockResolvedValue({ data, error }),
     insert: jest.fn().mockReturnThis(),
     single: jest.fn().mockResolvedValue({ data: data[0], error }),
     delete: jest.fn().mockReturnThis(),
@@ -61,6 +63,12 @@ function selectChain(data: unknown[], error: unknown = null) {
 describe('MAX_COMMENT_LENGTH', () => {
   it('is 500', () => {
     expect(MAX_COMMENT_LENGTH).toBe(500);
+  });
+});
+
+describe('MAX_COMMENTS', () => {
+  it('is 200', () => {
+    expect(MAX_COMMENTS).toBe(200);
   });
 });
 
@@ -88,6 +96,16 @@ describe('listComments', () => {
 
     expect(chain.eq).toHaveBeenCalledWith('flag_id', 'flag-42');
     expect(chain.order).toHaveBeenCalledWith('created_at', { ascending: false });
+  });
+
+  it('caps the fetch at MAX_COMMENTS (200) rows', async () => {
+    const chain = selectChain([]);
+    mockFrom.mockReturnValue(chain);
+
+    await listComments('flag-42');
+
+    expect(chain.limit).toHaveBeenCalledWith(200);
+    expect(chain.limit).toHaveBeenCalledWith(MAX_COMMENTS);
   });
 
   it('flattens the users.display_name join into display_name', async () => {
@@ -133,7 +151,8 @@ describe('listComments', () => {
     const chain = {
       select: jest.fn().mockReturnThis(),
       eq: jest.fn().mockReturnThis(),
-      order: jest.fn().mockResolvedValue({
+      order: jest.fn().mockReturnThis(),
+      limit: jest.fn().mockResolvedValue({
         data: null,
         error: { code: '42P01', message: 'relation "flag_comments" does not exist' },
       }),
@@ -147,7 +166,8 @@ describe('listComments', () => {
     const chain = {
       select: jest.fn().mockReturnThis(),
       eq: jest.fn().mockReturnThis(),
-      order: jest.fn().mockResolvedValue({
+      order: jest.fn().mockReturnThis(),
+      limit: jest.fn().mockResolvedValue({
         data: null,
         error: { message: 'RLS policy violation' },
       }),

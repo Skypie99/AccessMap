@@ -61,7 +61,12 @@ import { loadWatched } from '@/lib/watchedFlags';
 import NotificationPrefsModal from '@/components/NotificationPrefsModal';
 import { DEFAULT_PREFS, loadPrefs, type NotificationPrefs } from '@/lib/notificationPrefs';
 import { EMPTY_STREAK, loadStreak, tickVisit, type StreakState } from '@/lib/streak';
-import { computeAchievements, countEarned, type AchievementStats } from '@/lib/achievements';
+import {
+  computeAchievements,
+  countEarned,
+  pointsMilestones,
+  type AchievementStats,
+} from '@/lib/achievements';
 import AchievementsModal from '@/components/AchievementsModal';
 import RecentlyViewedRow from '@/components/RecentlyViewedRow';
 import ReportsBreakdownCard from '@/components/ReportsBreakdownCard';
@@ -114,18 +119,12 @@ const EMPTY_BY_STATUS: Record<FlagStatus, number> = {
   rejected: 0,
 };
 
-// Notional point milestones — each one is a small "you reached X" badge
-// inline in the hero card. Tuned to feel rewarding early (25, 50) and
-// then pace out at typical engagement levels. If we ever ship real
-// badges/achievements these labels become their names.
-const MILESTONES: { at: number; label: string }[] = [
-  { at: 25, label: 'First Mile badge' },
-  { at: 50, label: 'Bronze Reviewer badge' },
-  { at: 100, label: 'Silver Reviewer badge' },
-  { at: 250, label: 'Gold Reviewer badge' },
-  { at: 500, label: 'Community Hero badge' },
-  { at: 1000, label: 'Legend status' },
-];
+// Point milestones for the hero progress bar — derived from the points-
+// category achievement badges so the bar and the badge catalog can never
+// drift apart (this used to be a separate hand-written list that did).
+const MILESTONES: { at: number; label: string }[] = pointsMilestones();
+// Label of the highest milestone, shown once the user passes it.
+const TOP_MILESTONE_LABEL = MILESTONES[MILESTONES.length - 1]?.label ?? 'top badge';
 
 function milestoneProgress(points: number): {
   next: number | null;
@@ -969,7 +968,7 @@ export default function ProfileScreen() {
             </>
           ) : (
             <AppText variant="label" style={styles.heroSubtitle}>
-              You&apos;ve reached the top milestone — legend status.
+              You&apos;ve reached the top milestone — {TOP_MILESTONE_LABEL} earned.
             </AppText>
           )}
         </View>
