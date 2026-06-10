@@ -304,6 +304,15 @@ export function FlagsProvider({
           setIsOfflineCache(true);
           setError(null);
           hasHydratedRef.current = true;
+          // F33 (re-sweep): the cache only ever holds page 1 — any cursor from
+          // a previous ONLINE session points into data we are no longer
+          // showing. Keeping it made the Tasks footer offer a doomed "Load
+          // more" (fails offline) and, once connectivity returned, silently
+          // appended page 2 rows after stale cached page-1 rows (a ~20-row
+          // gap). Offline-cache mode has no pagination; a manual refresh
+          // re-establishes the cursor when the network is back.
+          cursorRef.current = null;
+          setHasMore(false);
           // Don't re-throw: the cached data satisfies the UI's need.
           // loading will be set false in finally.
         } else {
@@ -367,6 +376,9 @@ export function FlagsProvider({
       });
       cursorRef.current = nextCursor;
       setHasMore(nextCursor !== null);
+      // F35 (re-sweep): a successful page fetch proves the network is back —
+      // don't keep the "Showing saved data" banner over fresh rows.
+      setIsOfflineCache(false);
     } catch (e) {
       // A stale failure (a refresh superseded us) shouldn't surface an error
       // banner over the fresh data.
@@ -386,6 +398,12 @@ export function FlagsProvider({
     // refresh() will re-establish it after the first page arrives.
     cursorRef.current = null;
     setHasMore(false);
+    // F34 (re-sweep): invalidate in-flight pages NOW, not a React task later.
+    // refresh() bumps the sequence too, but it only runs from the [statuses]
+    // effect after the next commit — an old-status-set loadMore page landing
+    // in that gap would pass the F12 seq check and briefly commit stale rows
+    // and a stale cursor.
+    fetchSeqRef.current += 1;
   }, []);
 
   // Re-fetch whenever the statuses change (including initial mount).
