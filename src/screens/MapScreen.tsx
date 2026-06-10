@@ -1684,7 +1684,18 @@ export default function MapScreen() {
                   !location && styles.fabDisabled,
                   pressed && styles.fabPressed,
                 ]}
-                onPress={() => setReportOpen(true)}
+                onPress={() => {
+                  // FIX C (Decision 6, Option A): the `location` state can be
+                  // minutes old by the time the user taps Report. Kick off a
+                  // fresh GPS read fire-and-forget — ReportFlagModal reads its
+                  // `location` prop live at submit time, so the new fix lands
+                  // mid-form and the report pins where the user is standing.
+                  // Worst case (read fails / resolves late) the submit just
+                  // uses today's cached coords. A drop pin overrides GPS, so
+                  // skip the read when one is set.
+                  if (!dropLocation) void requestLocation();
+                  setReportOpen(true);
+                }}
                 disabled={!location}
                 accessibilityRole="button"
                 accessibilityLabel="Report a flag here"

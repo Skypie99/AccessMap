@@ -628,3 +628,65 @@ describe('storage orphan cleanup on failed submit (auth path)', () => {
     warn.mockRestore();
   });
 });
+
+// ===========================================================================
+// 6. Live location prop — FIX C (Decision 6, Option A)
+//
+// MapScreen's Report FAB fires a fire-and-forget requestLocation() right
+// before opening this modal. That fresh fix only reaches the submitted flag
+// if handleSubmit reads the `location` PROP at submit time — NOT a copy
+// taken into state when the modal opened. These tests pin the live-prop
+// behavior: rerender with new coords while the modal is open, then submit
+// must use the NEW coords. If someone refactors location into open-time
+// state, these trip and FIX C silently stops working.
+// ===========================================================================
+
+describe('live location prop (FIX C — fresh GPS read lands mid-form)', () => {
+  const STALE = { lat: 49.28, lng: -123.12 };
+  const FRESH = { lat: 49.2827, lng: -123.1207 };
+
+  it('auth submit uses coords delivered AFTER the modal opened', async () => {
+    mockUseAuth.mockReturnValue({ user: { id: 'user-abc' } } as ReturnType<typeof useAuth>);
+    const onClose = jest.fn();
+    const onCreated = jest.fn();
+    const utils = render(
+      <ReportFlagModal visible location={STALE} onClose={onClose} onCreated={onCreated} />,
+    );
+
+    // The fresh GPS fix resolves while the form is open — MapScreen calls
+    // setLocation, which re-renders the modal with the new prop.
+    utils.rerender(
+      <ReportFlagModal visible location={FRESH} onClose={onClose} onCreated={onCreated} />,
+    );
+
+    fireEvent.press(utils.getByLabelText('Submit flag report'));
+
+    await waitFor(() => {
+      expect(mockCreateFlag).toHaveBeenCalledWith(
+        'user-abc',
+        expect.objectContaining({ lat: FRESH.lat, lng: FRESH.lng }),
+      );
+    });
+  });
+
+  it('anon submit also uses coords delivered AFTER the modal opened', async () => {
+    mockUseAuth.mockReturnValue({ user: null } as ReturnType<typeof useAuth>);
+    const onClose = jest.fn();
+    const onCreated = jest.fn();
+    const utils = render(
+      <ReportFlagModal visible location={STALE} onClose={onClose} onCreated={onCreated} />,
+    );
+
+    utils.rerender(
+      <ReportFlagModal visible location={FRESH} onClose={onClose} onCreated={onCreated} />,
+    );
+
+    fireEvent.press(utils.getByLabelText('Submit anonymous flag report'));
+
+    await waitFor(() => {
+      expect(mockCreateAnonFlag).toHaveBeenCalledWith(
+        expect.objectContaining({ lat: FRESH.lat, lng: FRESH.lng }),
+      );
+    });
+  });
+});
