@@ -10,6 +10,7 @@
  *       · null flagId is a no-op (no fetch)
  *       · realtime channel is subscribed on mount and torn down on unmount
  *       · addComment calls the lib then refetches
+ *       · refetch failure keeps the loaded thread + sets error; success clears it (M1)
  *       · deleteComment removes optimistically, and rolls back + rethrows on error
  *
  * The comments lib and the supabase realtime client are mocked so nothing
@@ -287,6 +288,42 @@ describe('useComments — addComment', () => {
 
     expect(mockListComments).not.toHaveBeenCalledWith('flag-A');
     expect(result.current.comments.map((c) => c.id)).toEqual(['b1']);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// useComments — refetch failure keeps the loaded thread (M1)
+// ---------------------------------------------------------------------------
+
+describe('useComments — refetch failure (M1)', () => {
+  // M1 (re-sweep): FlagDetailModal renders the destructive "Couldn't load
+  // comments" state only when the thread is empty, so the hook MUST keep the
+  // already-loaded comments when a refetch rejects — wiping them would blank
+  // the thread the user is reading over a transient network hiccup.
+  it('LOCKING (M1): a refetch rejection keeps the loaded comments and sets error; the next successful refetch clears it', async () => {
+    mockListComments.mockResolvedValue([comment('c1'), comment('c2')]);
+
+    const { result } = renderHook(() => useComments('flag-1'));
+    await waitFor(() => expect(result.current.comments).toHaveLength(2));
+
+    // Refetch fails — the 2 loaded comments must survive, error must surface.
+    mockListComments.mockRejectedValueOnce(new Error('network down'));
+    await act(async () => {
+      await result.current.refetch();
+    });
+
+    expect(result.current.comments.map((c) => c.id)).toEqual(['c1', 'c2']);
+    expect(result.current.error).toBe('network down');
+    expect(result.current.loading).toBe(false);
+
+    // Next refetch succeeds — error clears and the thread updates.
+    mockListComments.mockResolvedValueOnce([comment('c1'), comment('c2'), comment('c3')]);
+    await act(async () => {
+      await result.current.refetch();
+    });
+
+    expect(result.current.error).toBeNull();
+    expect(result.current.comments.map((c) => c.id)).toEqual(['c1', 'c2', 'c3']);
   });
 });
 

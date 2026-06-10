@@ -121,6 +121,7 @@ export default function FlagDetailModal({
     tableNotReady: commentsTableNotReady,
     addComment,
     deleteComment: deleteCommentById,
+    refetch: refetchComments,
   } = useComments(shownFlag?.id);
   const [commentText, setCommentText] = useState('');
   const [commentSubmitting, setCommentSubmitting] = useState(false);
@@ -1089,8 +1090,19 @@ export default function FlagDetailModal({
 
                 {commentsTableNotReady ? (
                   <AppText variant="body" style={styles.commentsSoonText}>Comments aren&apos;t available here yet.</AppText>
-                ) : commentsError ? (
-                  <AppText variant="body" style={styles.commentsErrorText}>Couldn&apos;t load comments. Check your connection and try again.</AppText>
+                ) : commentsError && comments.length === 0 ? (
+                  // M1: full error state ONLY when there is nothing to show.
+                  <View style={styles.commentsErrorBanner}>
+                    <AppText variant="body" style={styles.commentsErrorText}>Couldn&apos;t load comments. Check your connection and try again.</AppText>
+                    <Pressable
+                      onPress={() => void refetchComments()}
+                      style={styles.commentsRetryBtn}
+                      accessibilityRole="button"
+                      accessibilityLabel="Retry loading comments"
+                    >
+                      <AppText variant="label" style={styles.commentsRetryText}>Retry</AppText>
+                    </Pressable>
+                  </View>
                 ) : commentsLoading && comments.length === 0 ? (
                   <ActivityIndicator
                     size="small"
@@ -1114,39 +1126,57 @@ export default function FlagDetailModal({
                     </AppText>
                   </View>
                 ) : (
-                  <View style={styles.commentsList} accessibilityRole="list">
-                    {comments.map((c) => (
-                      <CommentBubble
-                        key={c.id}
-                        author={c.display_name ?? 'Anonymous'}
-                        text={c.content}
-                        createdAt={new Date(c.created_at)}
-                        isOwn={c.user_id === user?.id}
-                        onDelete={
-                          c.user_id === user?.id
-                            ? () => {
-                                void confirm(
-                                  'Delete comment?',
-                                  'This permanently removes your comment.',
-                                  'Delete',
-                                  true,
-                                ).then((ok) => {
-                                  if (!ok) return;
-                                  void deleteCommentById(c.id)
-                                    // WCAG 4.1.3: the bubble vanishes silently otherwise.
-                                    .then(() =>
-                                      AccessibilityInfo.announceForAccessibility('Comment deleted'),
-                                    )
-                                    .catch((e: unknown) => {
-                                      Alert.alert('Could not delete comment', errorMessage(e));
-                                    });
-                                });
-                              }
-                            : undefined
-                        }
-                      />
-                    ))}
-                  </View>
+                  <>
+                    {/* M1: a refetch failure must NOT wipe the loaded thread —
+                        keep the comments visible and show a non-destructive
+                        banner with a Retry instead. */}
+                    {commentsError ? (
+                      <View style={styles.commentsErrorBanner}>
+                        <AppText variant="body" style={styles.commentsErrorText}>Couldn&apos;t refresh comments.</AppText>
+                        <Pressable
+                          onPress={() => void refetchComments()}
+                          style={styles.commentsRetryBtn}
+                          accessibilityRole="button"
+                          accessibilityLabel="Retry refreshing comments"
+                        >
+                          <AppText variant="label" style={styles.commentsRetryText}>Retry</AppText>
+                        </Pressable>
+                      </View>
+                    ) : null}
+                    <View style={styles.commentsList} accessibilityRole="list">
+                      {comments.map((c) => (
+                        <CommentBubble
+                          key={c.id}
+                          author={c.display_name ?? 'Anonymous'}
+                          text={c.content}
+                          createdAt={new Date(c.created_at)}
+                          isOwn={c.user_id === user?.id}
+                          onDelete={
+                            c.user_id === user?.id
+                              ? () => {
+                                  void confirm(
+                                    'Delete comment?',
+                                    'This permanently removes your comment.',
+                                    'Delete',
+                                    true,
+                                  ).then((ok) => {
+                                    if (!ok) return;
+                                    void deleteCommentById(c.id)
+                                      // WCAG 4.1.3: the bubble vanishes silently otherwise.
+                                      .then(() =>
+                                        AccessibilityInfo.announceForAccessibility('Comment deleted'),
+                                      )
+                                      .catch((e: unknown) => {
+                                        Alert.alert('Could not delete comment', errorMessage(e));
+                                      });
+                                  });
+                                }
+                              : undefined
+                          }
+                        />
+                      ))}
+                    </View>
+                  </>
                 )}
 
                 {!commentsTableNotReady && user && (
@@ -1542,9 +1572,32 @@ const makeStyles = (color: ColorTheme) =>
       color: color.textMuted,
       fontStyle: 'italic',
     },
+    // M1: error banner + Retry, matching the MyReportsModal errorBanner pattern.
+    commentsErrorBanner: {
+      backgroundColor: color.errorBg,
+      borderRadius: radius.md,
+      padding: spacing.md,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.md,
+    },
     commentsErrorText: {
+      flex: 1,
       fontSize: font.size.sm,
       color: color.errorFg,
+    },
+    commentsRetryBtn: {
+      paddingHorizontal: spacing.md + 2,
+      paddingVertical: spacing.sm + 2,
+      borderRadius: radius.md,
+      backgroundColor: color.error,
+      minHeight: 44,
+      justifyContent: 'center',
+    },
+    commentsRetryText: {
+      color: color.textOnBrand,
+      fontWeight: font.weight.bold,
+      fontSize: font.size.sm,
     },
     commentsSpinner: {
       marginTop: spacing.sm,
