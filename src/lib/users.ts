@@ -105,15 +105,13 @@ export async function uploadAvatar(userId: string, localUri: string): Promise<st
     throw new Error('Photo privacy check failed. Please try a different photo or contact support.');
   }
 
-  const contentType =
-    ext === 'png'
-      ? 'image/png'
-      : ext === 'webp'
-        ? 'image/webp'
-        : ext === 'heic' || ext === 'heif'
-          ? 'image/heic'
-          : 'image/jpeg';
-  const filePath = `${userId}/avatar/${Date.now()}.${ext}`;
+  // Derive extension + Content-Type from the ACTUAL post-strip bytes (the
+  // strip re-encodes HEIC/WEBP to JPEG/PNG) so name, MIME, and content agree.
+  // Mirrors uploadFlagPhoto in src/lib/flags.ts.
+  const strippedMime = detectMimeFromBytes(arrayBuffer);
+  const contentType = strippedMime === 'image/png' ? 'image/png' : 'image/jpeg';
+  const finalExt = strippedMime === 'image/png' ? 'png' : 'jpg';
+  const filePath = `${userId}/avatar/${Date.now()}.${finalExt}`;
 
   const { error: uploadErr } = await supabase.storage
     .from(FLAG_PHOTOS_BUCKET)

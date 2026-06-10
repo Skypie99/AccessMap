@@ -124,11 +124,26 @@ describe('uploadAvatar()', () => {
 
   // ── Success path ─────────────────────────────────────────────────────────
 
+  /**
+   * Minimal STRUCTURALLY VALID JPEG: SOI + (optional APP1/EXIF) + APP0 + SOS +
+   * scan data + EOI. The format-aware verifyExifStripped (F29) walks real
+   * marker segments, so fixtures must be well-formed — magic bytes alone now
+   * fail closed as malformed.
+   */
+  function makeJpegBuffer(opts?: { withExifSegment?: boolean }): ArrayBuffer {
+    const bytes: number[] = [0xff, 0xd8]; // SOI
+    if (opts?.withExifSegment) {
+      bytes.push(0xff, 0xe1, 0x00, 0x08, 0x45, 0x78, 0x69, 0x66, 0x00, 0x00); // APP1 "Exif\0\0"
+    }
+    bytes.push(0xff, 0xe0, 0x00, 0x04, 0x4a, 0x46); // APP0, len 4
+    bytes.push(0xff, 0xda, 0x00, 0x04, 0x01, 0x00); // SOS, len 4
+    bytes.push(0x11, 0x22, 0x33, 0x44); // entropy-coded scan data
+    bytes.push(0xff, 0xd9); // EOI
+    return new Uint8Array(bytes).buffer;
+  }
+
   it('success: returns the public URL on a valid JPG upload', async () => {
-    const fakeBuffer = new ArrayBuffer(1024); // 1 KB — valid size
-    // Stamp JPEG magic bytes (FF D8 FF) so detectMimeFromBytes() accepts the buffer.
-    const jpegView = new Uint8Array(fakeBuffer);
-    jpegView[0] = 0xff; jpegView[1] = 0xd8; jpegView[2] = 0xff;
+    const fakeBuffer = makeJpegBuffer();
     (global as unknown as { fetch: unknown }).fetch = async () => ({
       arrayBuffer: async () => fakeBuffer,
     });
@@ -185,11 +200,10 @@ describe('uploadAvatar()', () => {
   // ── Error path 4: Supabase Storage upload error ───────────────────────────
 
   it('error: re-throws the Supabase Storage error on upload failure', async () => {
-    const fakeBuffer = new ArrayBuffer(512);
-    // Stamp WEBP magic bytes (RIFF....WEBP) so detectMimeFromBytes() accepts the buffer.
-    const webpView = new Uint8Array(fakeBuffer);
-    webpView[0] = 0x52; webpView[1] = 0x49; webpView[2] = 0x46; webpView[3] = 0x46; // RIFF
-    webpView[8] = 0x57; webpView[9] = 0x45; webpView[10] = 0x42; webpView[11] = 0x50; // WEBP
+    // .webp URI exercises the extension allowlist; the buffer is a valid JPEG
+    // because the (mocked) strip step's output must pass the format-aware
+    // post-strip verifier to reach the Storage call under test.
+    const fakeBuffer = makeJpegBuffer();
     (global as unknown as { fetch: unknown }).fetch = async () => ({
       arrayBuffer: async () => fakeBuffer,
     });
@@ -210,15 +224,10 @@ describe('uploadAvatar()', () => {
     // markers still present, the upload aborts before touching Storage.
     // Without this test, a no-op stripExif implementation would silently
     // leak GPS coordinates to the public bucket.
-    const exifBuffer = new ArrayBuffer(512);
-    const jpegView = new Uint8Array(exifBuffer);
-    // Stamp JPEG magic bytes + EXIF marker (FF E1) to simulate stripping failure.
-    jpegView[0] = 0xff; jpegView[1] = 0xd8; jpegView[2] = 0xff; // JPEG SOI
-    jpegView[10] = 0xff; jpegView[11] = 0xe1; // EXIF marker at position 10
-
-    const cleanBuffer = new ArrayBuffer(512);
-    const cleanView = new Uint8Array(cleanBuffer);
-    cleanView[0] = 0xff; cleanView[1] = 0xd8; cleanView[2] = 0xff; // JPEG SOI, no EXIF markers
+    // Structurally valid JPEG carrying a real APP1/EXIF segment — simulates a
+    // strip step whose output still contains metadata.
+    const exifBuffer = makeJpegBuffer({ withExifSegment: true });
+    const cleanBuffer = makeJpegBuffer();
 
     // First fetch is for the original upload URI (before stripping).
     // Second fetch is for the ImageManipulator-stripped URI (which we'll return EXIF-marked).

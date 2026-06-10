@@ -230,36 +230,118 @@ export function stripExifWeb(arrayBuffer: ArrayBuffer, ext: string): Promise<Arr
 }
 
 /**
- * Post-strip verification: check if the output bytes still contain EXIF markers.
- * This is a heuristic check (not a full EXIF parser). We look for common
- * EXIF headers: EXIF marker (0xFFE1), IPTC (0xFFED), XMP (0xFFE9), GPS (0x8825).
+ * Post-strip verification, format-aware (F29 re-sweep fix).
  *
- * Returns true if EXIF signatures are NOT found (safe to upload).
- * Returns false if EXIF markers ARE detected (stripping may have failed).
+ * The old implementation scanned the ENTIRE buffer for raw byte pairs
+ * 0xFFE1/0xFFED/0xFFE9. Those pairs are only meaningful as JPEG segment
+ * markers; inside PNG's DEFLATE-compressed IDAT data (or JPEG's own
+ * entropy-coded scan data) they occur by chance roughly once per ~64 KB —
+ * so virtually every photo-sized PNG (e.g. a screenshot) was rejected with
+ * a false "privacy check failed" error, while the scan had no real power
+ * to detect PNG metadata anyway.
+ *
+ * Post-strip bytes are always JPEG or PNG (stripExifNative re-encodes via
+ * ImageManipulator as JPEG/PNG; stripExifWeb's canvas emits JPEG or PNG),
+ * so this verifier checks each format STRUCTURALLY:
+ *   - JPEG: walk the marker segments before SOS; an APP1/APP13/APP9
+ *     (EXIF/IPTC/XMP) segment fails verification. Bytes inside the
+ *     entropy-coded scan no longer false-positive.
+ *   - PNG: walk the chunk list; an `eXIf` chunk (where PNG actually stores
+ *     EXIF/GPS) fails verification — a check the old scan could not do.
+ *   - Anything else (or a malformed structure): fail CLOSED — output that
+ *     isn't well-formed JPEG/PNG means stripping didn't do what we expect.
+ *
+ * Returns true if no metadata containers are found (safe to upload).
+ * Returns false if metadata is detected or the bytes can't be verified.
  */
 export function verifyExifStripped(arrayBuffer: ArrayBuffer): boolean {
   const view = new Uint8Array(arrayBuffer);
 
-  // Check for JPEG markers that indicate metadata: FFE1 (EXIF), FFED (IPTC), FFE9 (XMP).
-  // GPS is stored inside EXIF (0x8825 tag). We don't need a full parser — just
-  // check that common metadata markers are absent.
-  const exifMarker = 0xffe1; // EXIF
-  const iptcMarker = 0xffed; // IPTC
-  const xmpMarker = 0xffe9; // XMP
-
-  for (let i = 0; i < view.length - 1; i++) {
-    const byte1 = view[i];
-    const byte2 = view[i + 1];
-    if (byte1 !== undefined && byte2 !== undefined) {
-      const marker = (byte1 << 8) | byte2;
-      if (marker === exifMarker || marker === iptcMarker || marker === xmpMarker) {
-        if (__DEV__) console.debug('[EXIF] Found metadata marker 0x' + marker.toString(16));
-        return false;
-      }
-    }
+  // JPEG: FF D8
+  if (view.length >= 4 && view[0] === 0xff && view[1] === 0xd8) {
+    const clean = !jpegHasMetadataSegment(view);
+    if (__DEV__ && !clean) console.debug('[EXIF] JPEG metadata segment found post-strip.');
+    return clean;
   }
 
-  if (__DEV__) console.debug('[EXIF] Post-strip verification passed (no markers found).');
+  // PNG: 89 50 4E 47
+  if (
+    view.length >= 16 &&
+    view[0] === 0x89 &&
+    view[1] === 0x50 &&
+    view[2] === 0x4e &&
+    view[3] === 0x47
+  ) {
+    const clean = !pngHasExifChunk(view);
+    if (__DEV__ && !clean) console.debug('[EXIF] PNG eXIf chunk found post-strip.');
+    return clean;
+  }
+
+  // Unknown/truncated format: the strip step should only ever emit JPEG or
+  // PNG, so anything else is unverifiable — fail closed.
+  if (__DEV__) console.debug('[EXIF] Post-strip bytes are not recognizable JPEG/PNG; failing closed.');
+  return false;
+}
+
+/**
+ * Walk JPEG marker segments from SOI to SOS and report whether a metadata
+ * segment (APP1 EXIF/XMP = FFE1, APP9 = FFE9, APP13 IPTC = FFED) is present.
+ * Returns true on malformed structure too (caller treats that as unverifiable).
+ */
+function jpegHasMetadataSegment(view: Uint8Array): boolean {
+  let i = 2; // skip SOI (FF D8)
+  while (i + 1 < view.length) {
+    if (view[i] !== 0xff) return true; // lost segment sync — can't verify
+    let markerAt = i + 1;
+    // Skip fill bytes (a marker may be preceded by any number of 0xFF).
+    while (view[markerAt] === 0xff && markerAt + 1 < view.length) markerAt++;
+    const marker = view[markerAt];
+    if (marker === undefined) return true;
+    // Standalone markers without a length field: TEM (01), RSTn (D0–D7).
+    if (marker === 0x01 || (marker >= 0xd0 && marker <= 0xd7)) {
+      i = markerAt + 1;
+      continue;
+    }
+    // SOS (DA): entropy-coded data follows — no more metadata segments can
+    // appear before EOI. EOI (D9): done.
+    if (marker === 0xda || marker === 0xd9) return false;
+    // All remaining markers carry a 2-byte big-endian length (incl. itself).
+    if (markerAt + 3 >= view.length) return true; // truncated header
+    const len = (((view[markerAt + 1] ?? 0) << 8) | (view[markerAt + 2] ?? 0)) >>> 0;
+    if (len < 2 || markerAt + 1 + len > view.length) return true; // malformed
+    if (marker === 0xe1 || marker === 0xed || marker === 0xe9) return true; // metadata segment
+    i = markerAt + 1 + len;
+  }
+  // Ran off the end without reaching SOS/EOI — malformed, can't verify.
+  return true;
+}
+
+/**
+ * Walk PNG chunks and report whether an `eXIf` chunk is present.
+ * Returns true on malformed structure too (caller treats that as unverifiable).
+ */
+function pngHasExifChunk(view: Uint8Array): boolean {
+  let i = 8; // skip the 8-byte PNG signature
+  while (i + 8 <= view.length) {
+    const length =
+      (((view[i] ?? 0) << 24) |
+        ((view[i + 1] ?? 0) << 16) |
+        ((view[i + 2] ?? 0) << 8) |
+        (view[i + 3] ?? 0)) >>>
+      0;
+    const t0 = view[i + 4];
+    const t1 = view[i + 5];
+    const t2 = view[i + 6];
+    const t3 = view[i + 7];
+    // 'eXIf' — the chunk PNG uses to embed EXIF (incl. GPS).
+    if (t0 === 0x65 && t1 === 0x58 && t2 === 0x49 && t3 === 0x66) return true;
+    // 'IEND' — end of stream, no eXIf seen.
+    if (t0 === 0x49 && t1 === 0x45 && t2 === 0x4e && t3 === 0x44) return false;
+    const next = i + 8 + length + 4; // header + data + CRC
+    if (next <= i || next > view.length) return true; // malformed/truncated
+    i = next;
+  }
+  // Ran off the end without IEND — malformed, can't verify.
   return true;
 }
 
@@ -371,15 +453,15 @@ export async function uploadFlagPhoto(userId: string, localUri: string): Promise
     throw new Error('Photo privacy check failed. Please try a different photo or contact support.');
   }
 
-  const contentType =
-    ext === 'png'
-      ? 'image/png'
-      : ext === 'webp'
-        ? 'image/webp'
-        : ext === 'heic' || ext === 'heif'
-          ? 'image/heic'
-          : 'image/jpeg';
-  const filePath = `${userId}/${Date.now()}.${ext}`;
+  // The strip step re-encodes: HEIC/WEBP inputs come out as JPEG (native
+  // ImageManipulator) or JPEG/PNG (web canvas). Derive the stored extension
+  // and Content-Type from the ACTUAL post-strip bytes so the object's name,
+  // MIME type, and content always agree (previously a HEIC pick uploaded
+  // JPEG bytes as `<ts>.heic` with `image/heic`).
+  const strippedMime = detectMimeFromBytes(arrayBuffer);
+  const contentType = strippedMime === 'image/png' ? 'image/png' : 'image/jpeg';
+  const finalExt = strippedMime === 'image/png' ? 'png' : 'jpg';
+  const filePath = `${userId}/${Date.now()}.${finalExt}`;
 
   const { error: uploadErr } = await supabase.storage
     .from(FLAG_PHOTOS_BUCKET)

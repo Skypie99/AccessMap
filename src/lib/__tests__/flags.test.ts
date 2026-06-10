@@ -374,14 +374,16 @@ describe('uploadFlagPhoto — D8 web fail-closed', () => {
 });
 
 // ---------------------------------------------------------------------------
-// Section 3 — verifyExifStripped
+// Section 3 — verifyExifStripped (format-aware, F29 re-sweep fix)
 //
-// Pure function: scans raw bytes for JPEG metadata markers.
-//   0xFFE1 → EXIF      (GPS coords live here)
-//   0xFFED → IPTC
-//   0xFFE9 → XMP
-// Returns true  when no markers found (safe to upload).
-// Returns false when a marker is detected (stripping may have failed).
+// Structural verification of post-strip bytes:
+//   JPEG: APP1/APP13/APP9 (EXIF/IPTC/XMP) segments before SOS → false.
+//         Marker-like byte pairs inside entropy-coded scan data are IGNORED
+//         (the old raw scan false-positived on them).
+//   PNG:  an `eXIf` chunk → false. Marker-like pairs inside IDAT are IGNORED
+//         (the old raw scan rejected virtually every photo-sized PNG).
+//   Unknown/malformed bytes → false (fail closed: strip output must be
+//   well-formed JPEG or PNG).
 //
 // This is the most critical privacy gate in the upload path: if it fires,
 // users' GPS coordinates may still be embedded in the photo.
@@ -391,34 +393,92 @@ describe('verifyExifStripped', () => {
     return new Uint8Array(bytes).buffer;
   }
 
-  it('returns true for an empty ArrayBuffer (nothing to scan)', () => {
-    expect(verifyExifStripped(new ArrayBuffer(0))).toBe(true);
+  // ── synthetic-image helpers ──────────────────────────────────────────────
+  /** JPEG: SOI + given segments + SOS header + scan bytes + EOI. */
+  function jpegOf(opts: { appSegments?: number[][]; scanBytes?: number[] }): ArrayBuffer {
+    const bytes: number[] = [0xff, 0xd8]; // SOI
+    for (const seg of opts.appSegments ?? []) bytes.push(...seg);
+    bytes.push(0xff, 0xda, 0x00, 0x04, 0x01, 0x00); // SOS, len 4
+    bytes.push(...(opts.scanBytes ?? [0x12, 0x34, 0x56]));
+    bytes.push(0xff, 0xd9); // EOI
+    return new Uint8Array(bytes).buffer;
+  }
+  /** A marker segment: FF <marker> <len hi> <len lo> <payload…>. */
+  function segment(marker: number, payload: number[]): number[] {
+    const len = payload.length + 2;
+    return [0xff, marker, (len >> 8) & 0xff, len & 0xff, ...payload];
+  }
+  const PNG_SIG = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
+  /** A PNG chunk: len(4BE) + type(4 ascii) + data + CRC(4, unvalidated). */
+  function chunk(type: string, data: number[]): number[] {
+    const len = data.length;
+    return [
+      (len >> 24) & 0xff, (len >> 16) & 0xff, (len >> 8) & 0xff, len & 0xff,
+      ...[...type].map((c) => c.charCodeAt(0)),
+      ...data,
+      0, 0, 0, 0, // CRC — not validated by the verifier
+    ];
+  }
+  function pngOf(...chunks: number[][]): ArrayBuffer {
+    return new Uint8Array([...PNG_SIG, ...chunks.flat()]).buffer;
+  }
+  const IHDR = chunk('IHDR', new Array(13).fill(1));
+  const IEND = chunk('IEND', []);
+
+  // ── JPEG ─────────────────────────────────────────────────────────────────
+  it('passes a clean JPEG with only APP0/JFIF before SOS', () => {
+    expect(verifyExifStripped(jpegOf({ appSegments: [segment(0xe0, [0x4a, 0x46, 0x49, 0x46, 0x00])] }))).toBe(true);
   });
 
-  it('returns true for benign bytes with no metadata markers', () => {
-    expect(verifyExifStripped(bufferOf(0xff, 0x00, 0xaa, 0xbb, 0x01, 0x02))).toBe(true);
+  it('rejects a JPEG with an APP1 (EXIF) segment', () => {
+    const exifPayload = [0x45, 0x78, 0x69, 0x66, 0x00, 0x00]; // "Exif\0\0"
+    expect(verifyExifStripped(jpegOf({ appSegments: [segment(0xe1, exifPayload)] }))).toBe(false);
   });
 
-  it('returns false when EXIF marker 0xFFE1 is present at position 0', () => {
-    expect(verifyExifStripped(bufferOf(0xff, 0xe1, 0x00, 0x01))).toBe(false);
+  it('rejects a JPEG with an APP13 (IPTC) segment', () => {
+    expect(verifyExifStripped(jpegOf({ appSegments: [segment(0xed, [0x00, 0x01])] }))).toBe(false);
   });
 
-  it('returns false when EXIF marker 0xFFE1 is present mid-buffer', () => {
-    // Marker is not at the start — the scan loop must reach it.
-    expect(verifyExifStripped(bufferOf(0xaa, 0xbb, 0xff, 0xe1, 0x00))).toBe(false);
+  it('rejects a JPEG with an APP9 (XMP) segment', () => {
+    expect(verifyExifStripped(jpegOf({ appSegments: [segment(0xe9, [0x00, 0x01])] }))).toBe(false);
   });
 
-  it('returns false when IPTC marker 0xFFED is present', () => {
-    expect(verifyExifStripped(bufferOf(0xff, 0xed, 0x00))).toBe(false);
+  it('LOCKING (F29): marker-like bytes inside JPEG scan data are NOT metadata', () => {
+    // 0xFF 0xE1 inside the entropy-coded scan — the old raw scan rejected this.
+    expect(
+      verifyExifStripped(jpegOf({ scanBytes: [0x10, 0xff, 0xe1, 0x22, 0xff, 0xed, 0x33] })),
+    ).toBe(true);
   });
 
-  it('returns false when XMP marker 0xFFE9 is present', () => {
-    expect(verifyExifStripped(bufferOf(0xff, 0xe9))).toBe(false);
+  it('fails closed on a truncated JPEG segment header', () => {
+    // SOI + APP0 claiming length 16 with no payload behind it.
+    expect(verifyExifStripped(bufferOf(0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10))).toBe(false);
   });
 
-  it('returns true for a realistic JPEG SOI (0xFFD8) + no metadata markers', () => {
-    // 0xFFD8 is the JPEG start-of-image marker — benign. Should NOT trigger false.
-    expect(verifyExifStripped(bufferOf(0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10))).toBe(true);
+  // ── PNG ──────────────────────────────────────────────────────────────────
+  it('LOCKING (F29): marker-like bytes inside PNG IDAT are NOT metadata', () => {
+    // The headline bug: photo-sized PNGs (screenshots) virtually always carry
+    // 0xFFE1/0xFFED pairs in compressed IDAT data and were all rejected.
+    const idat = chunk('IDAT', [0x00, 0xff, 0xe1, 0x42, 0xff, 0xed, 0x99, 0xff, 0xe9]);
+    expect(verifyExifStripped(pngOf(IHDR, idat, IEND))).toBe(true);
+  });
+
+  it('rejects a PNG with an eXIf chunk (where PNG actually stores GPS)', () => {
+    const exif = chunk('eXIf', [0x4d, 0x4d, 0x00, 0x2a]); // TIFF header start
+    expect(verifyExifStripped(pngOf(IHDR, exif, IEND))).toBe(false);
+  });
+
+  it('fails closed on a PNG with no IEND (truncated)', () => {
+    expect(verifyExifStripped(pngOf(IHDR))).toBe(false);
+  });
+
+  // ── unknown formats: fail closed ─────────────────────────────────────────
+  it('fails closed on an empty ArrayBuffer', () => {
+    expect(verifyExifStripped(new ArrayBuffer(0))).toBe(false);
+  });
+
+  it('fails closed on bytes that are neither JPEG nor PNG', () => {
+    expect(verifyExifStripped(bufferOf(0xff, 0x00, 0xaa, 0xbb, 0x01, 0x02))).toBe(false);
   });
 });
 
