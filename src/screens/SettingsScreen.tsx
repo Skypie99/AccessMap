@@ -18,6 +18,7 @@ import { hapticSelection } from '@/lib/haptics';
 import { signOut, supabase } from '@/lib/supabase';
 import { confirm, notify } from '@/lib/confirm';
 import { useAuth } from '@/lib/auth';
+import { useFeatureFlag } from '@/lib/featureFlags';
 import { useSharedModals } from '@/lib/sharedModalsContext';
 import { CATEGORY_LABELS, listFlagsByUser } from '@/lib/flags';
 import { listFeedbackByUser } from '@/lib/feedbackStore';
@@ -213,6 +214,9 @@ export default function SettingsScreen() {
   // immediate-replay version most users expect from a "Replay" control.
   const [tutorialOpen, setTutorialOpen] = useState(false);
   const [notifPrefsOpen, setNotifPrefsOpen] = useState(false);
+  // Sky Decision 2 (Option B): the push-notification-types screen saves prefs
+  // nothing reads yet, so the row + screen stay hidden until the flag flips.
+  const pushNotifTypesEnabled = useFeatureFlag('PUSH_NOTIF_TYPES_ENABLED');
 
   const { user } = useAuth();
   const [exporting, setExporting] = useState(false);
@@ -430,13 +434,18 @@ export default function SettingsScreen() {
         {/* F10: this row exposes NotificationPreferencesScreen (push-alert
             categories), which was mounted below but had no entry point in
             Settings — setNotifPrefsOpen(true) was never called anywhere here,
-            so the screen was permanently unreachable from this tab. */}
-        <SettingsRow
-          title="Push notification types"
-          subtitle="Pick which push alerts you get: status changes, nearby flags, watched flags, and digests."
-          accessibilityHint="Opens push notification category preferences"
-          onPress={() => setNotifPrefsOpen(true)}
-        />
+            so the screen was permanently unreachable from this tab.
+            Re-sweep FIX A: gated behind PUSH_NOTIF_TYPES_ENABLED (default
+            false) — the screen's saved prefs aren't read by the push pipeline
+            yet, so the row hides until the wiring lands. */}
+        {pushNotifTypesEnabled && (
+          <SettingsRow
+            title="Push notification types"
+            subtitle="Pick which push alerts you get: status changes, nearby flags, watched flags, and digests."
+            accessibilityHint="Opens push notification category preferences"
+            onPress={() => setNotifPrefsOpen(true)}
+          />
+        )}
 
         {/* Push notifications toggle — Jordan condition 4.
             Uses a Switch so the current state is always visible without
@@ -573,10 +582,12 @@ export default function SettingsScreen() {
           before the user could reach Settings), so there's nothing to
           mutate. */}
       <OnboardingModal visible={tutorialOpen} onDone={() => setTutorialOpen(false)} />
-      <NotificationPreferencesScreen
-        visible={notifPrefsOpen}
-        onClose={() => setNotifPrefsOpen(false)}
-      />
+      {pushNotifTypesEnabled && (
+        <NotificationPreferencesScreen
+          visible={notifPrefsOpen}
+          onClose={() => setNotifPrefsOpen(false)}
+        />
+      )}
     </>
   );
 }
