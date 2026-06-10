@@ -328,7 +328,21 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
 
       // Insert junction rows for all uploaded photos. Silent no-op if the
       // flag_photos migration hasn't been applied yet.
-      await batchInsertFlagPhotos(result.row.id, photoUrls);
+      // F57 (re-sweep): a junction-row failure AFTER createFlag succeeded used
+      // to reject the whole submit — the user was told it failed, retried, and
+      // created a DUPLICATE public flag. The report exists; say photos didn't
+      // attach and finish the flow normally.
+      try {
+        await batchInsertFlagPhotos(result.row.id, photoUrls);
+      } catch (photoLinkErr) {
+        console.warn('[report] photo link insert failed:', photoLinkErr);
+        if (photoUrls.length > 0) {
+          notify(
+            'Report filed — photos not attached',
+            'Your report was saved, but its photos could not be attached. You can add photos again from the flag details.',
+          );
+        }
+      }
       // If we asked the server to store tags but the column isn't there
       // yet (capability flipped to 'unavailable' inside createFlag), tell
       // the user — they shouldn't think their picks were saved when they

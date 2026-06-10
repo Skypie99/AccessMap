@@ -1131,6 +1131,7 @@ export default function TasksScreen() {
         flag={selectedFlag}
         onClose={() => setSelectedFlag(null)}
         onChanged={applyStatusChange}
+        onEdited={(updated) => patchFlag(updated.id, updated)}
         onDeleted={handleDeleted}
         onViewOnMap={handleViewOnMap}
       />

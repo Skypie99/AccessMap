@@ -74,6 +74,7 @@ import { Input } from '@/components/ui/Input';
 import { ArrowDown, ArrowUp, ChevronRight, Flame, MapPin, Pencil, X } from 'lucide-react-native';
 import TierIcon from '@/components/TierIcon';
 import { getTier, pointsToNextTier, REPUTATION_TIERS } from '@/lib/reputationTier';
+import { setLastSeenPoints } from '@/lib/points';
 import { useReducedMotion } from '@/lib/accessibility';
 import {
   getPointEventHistory,
@@ -311,6 +312,10 @@ export default function ProfileScreen() {
       if (!mountedRef.current) return;
       const row = (profileRow as UserRow | null) ?? null;
       setProfile(row);
+      // F55: the user has now SEEN their current total — advance the
+      // "points while you were away" watermark so in-session earnings are
+      // never re-announced as away-earnings on the next launch.
+      if (row) void setLastSeenPoints(user.id, row.points).catch(() => {});
       setNameDraft(row?.display_name ?? '');
       setPointEvents(eventsResult);
 

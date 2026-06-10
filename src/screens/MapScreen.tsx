@@ -17,6 +17,7 @@ import { useRoute, type RouteProp } from '@react-navigation/native';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { font, radius, shadow, spacing } from '@/theme';
 import { errorMessage } from '@/lib/errors';
+import { notify } from '@/lib/confirm';
 import CategoryIcon from '@/components/CategoryIcon';
 import {
   AlertTriangle,
@@ -633,6 +634,14 @@ export default function MapScreen() {
           ? `Saved preset: ${trimmed}. Dropped oldest preset: ${droppedName}.`
           : `Saved preset: ${trimmed}`,
       );
+      // F56 (re-sweep): the eviction was announced to screen readers only —
+      // sighted users lost their oldest preset silently. Mirror it visibly.
+      if (droppedName) {
+        notify(
+          'Preset saved',
+          `"${trimmed}" was saved. You were at the ${FILTER_PRESETS_MAX}-preset limit, so the oldest preset "${droppedName}" was removed.`,
+        );
+      }
     } catch (e) {
       Alert.alert("Couldn't save preset", errorMessage(e));
     } finally {

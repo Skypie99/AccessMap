@@ -46,19 +46,27 @@ function SignedInArea() {
   // updates `public.users.points` and the reporter has no signal until
   // they happen to visit the Profile tab. See src/lib/points.ts for
   // the design rationale (no DB change needed, no Supabase Realtime).
+  // F55 (re-sweep): key on the user ID, not the user OBJECT — supabase-js
+  // emits TOKEN_REFRESHED ~hourly, auth.tsx setSession() produces a new user
+  // identity each time, and this effect re-ran mid-session. Combined with the
+  // watermark only advancing here, an hour of in-session triage produced a
+  // false "+N points while you were away!" toast for points the user earned
+  // (and was already congratulated for) IN the session. ProfileScreen now
+  // also advances the watermark whenever it displays fresh points.
+  const userId = user?.id;
   useEffect(() => {
-    if (!user) return;
+    if (!userId) return;
     let cancelled = false;
     (async () => {
       const [current, lastSeen] = await Promise.all([
-        fetchCurrentPoints(user.id),
-        getLastSeenPoints(user.id),
+        fetchCurrentPoints(userId),
+        getLastSeenPoints(userId),
       ]);
       if (cancelled || current === null) return;
       // First-ever observation: silently record so we don't celebrate
       // points the user already had. Subsequent positive deltas show.
       if (lastSeen === null) {
-        await setLastSeenPoints(user.id, current);
+        await setLastSeenPoints(userId, current);
         return;
       }
       if (current > lastSeen) {
@@ -71,12 +79,12 @@ function SignedInArea() {
       }
       // Always advance the watermark — even if delta is zero or
       // (defensively) negative — so we don't re-fire on every launch.
-      await setLastSeenPoints(user.id, current);
+      await setLastSeenPoints(userId, current);
     })();
     return () => {
       cancelled = true;
     };
-  }, [user]);
+  }, [userId]);
 
   // Stable identity (F21): FlashBanner's auto-dismiss timer effect depends on
   // onDismiss; an inline arrow would change every render of SignedInArea (e.g.

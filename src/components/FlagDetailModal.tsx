@@ -61,6 +61,11 @@ interface Props {
   // right "+points" flash banner (reporter vs. actor bonus).
   onChanged: (updated: FlagRow, action: DetailAction, isOwn: boolean) => void;
   onDeleted: (deletedId: string) => void;
+  // F58 (re-sweep): fired after a successful content edit (description /
+  // category / severity) so the parent can patch the shared store — without
+  // it the Tasks card, the map pin color, and a re-opened modal all kept
+  // showing pre-edit values and the owner believed the save was lost.
+  onEdited?: (updated: FlagRow) => void;
   onViewOnMap: (flag: FlagRow) => void;
 }
 
@@ -70,6 +75,7 @@ export default function FlagDetailModal({
   onClose,
   onChanged,
   onDeleted,
+  onEdited,
   onViewOnMap,
 }: Props) {
   const color = useColor();
@@ -361,6 +367,7 @@ export default function FlagDetailModal({
       };
       const updated = await updateFlagContent(shownFlag.id, patch);
       setShownFlag(updated);
+      onEdited?.(updated); // F58: propagate to the shared store/list
       setIsEditing(false);
     } catch (e) {
       notify('Could not save changes', errorMessage(e));
