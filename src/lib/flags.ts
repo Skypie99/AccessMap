@@ -279,7 +279,6 @@ export function verifyExifStripped(arrayBuffer: ArrayBuffer): boolean {
 
   // Unknown/truncated format: the strip step should only ever emit JPEG or
   // PNG, so anything else is unverifiable — fail closed.
-  if (__DEV__) console.debug('[EXIF] Post-strip bytes are not recognizable JPEG/PNG; failing closed.');
   return false;
 }
 
