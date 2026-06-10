@@ -13,6 +13,7 @@
  *
  *   <description (only if non-empty after trim)>
  *
+ *   Open in AccessMap: accessmap://flag/<id>
  *   Reported via AccessMap.
  *
  * The 5-decimal rounding is intentional — that's roughly ~1m of precision,
@@ -37,7 +38,7 @@ import type { FlagRow } from '@/types/database';
  *                      Pass `(cat) => CATEGORY_LABELS[cat]` at the call site.
  */
 export function formatFlagShareText(
-  flag: Pick<FlagRow, 'category' | 'severity' | 'lat' | 'lng' | 'status' | 'description'>,
+  flag: Pick<FlagRow, 'id' | 'category' | 'severity' | 'lat' | 'lng' | 'status' | 'description'>,
   categoryLabel: (cat: FlagRow['category']) => string,
 ): string {
   const label = categoryLabel(flag.category);
@@ -59,8 +60,10 @@ export function formatFlagShareText(
   const desc = flag.description?.trim();
   const middle = desc ? `\n${desc}\n` : '';
 
-  // Footer — credits the source so a forwarded message has context.
-  const footer = 'Reported via AccessMap.';
+  // Footer — deep link first (recipients with the app installed jump straight
+  // to this flag — same accessmap://flag/{id} URL RootNavigator registers),
+  // then the credit line so a forwarded message has context.
+  const footer = `Open in AccessMap: accessmap://flag/${flag.id}\nReported via AccessMap.`;
 
   return `${headerLines.join('\n')}\n${middle}\n${footer}`;
 }
