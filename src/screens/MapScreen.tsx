@@ -629,18 +629,18 @@ export default function MapScreen() {
       if (!mountedRef.current) return;
       setPresetNameModalOpen(false);
       setPresetNameDraft('');
-      AccessibilityInfo.announceForAccessibility(
-        droppedName
-          ? `Saved preset: ${trimmed}. Dropped oldest preset: ${droppedName}.`
-          : `Saved preset: ${trimmed}`,
-      );
       // F56 (re-sweep): the eviction was announced to screen readers only —
       // sighted users lost their oldest preset silently. Mirror it visibly.
+      // The native Alert announces itself, so only the no-eviction path needs
+      // the explicit SR announcement (avoids a double announcement — second
+      // sweep F65).
       if (droppedName) {
         notify(
           'Preset saved',
           `"${trimmed}" was saved. You were at the ${FILTER_PRESETS_MAX}-preset limit, so the oldest preset "${droppedName}" was removed.`,
         );
+      } else {
+        AccessibilityInfo.announceForAccessibility(`Saved preset: ${trimmed}`);
       }
     } catch (e) {
       Alert.alert("Couldn't save preset", errorMessage(e));

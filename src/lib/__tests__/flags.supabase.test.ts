@@ -247,6 +247,37 @@ describe('updateFlagStatus', () => {
     );
   });
 
+  // Second sweep (F65): the conflict tests above can't see WHICH predicate ran
+  // — deleting the .eq('status', expectedCurrent) line would still pass them.
+  // This test records the builder calls and pins the CAS predicate itself.
+  it('LOCKING (F53): the update is actually filtered by the expected current status', async () => {
+    const eqCalls: [string, unknown][] = [];
+    const recorder: Record<string, unknown> = {
+      update: jest.fn(() => recorder),
+      eq: jest.fn((col: string, val: unknown) => {
+        eqCalls.push([col, val]);
+        return recorder;
+      }),
+      select: jest.fn(() => recorder),
+      maybeSingle: jest.fn().mockResolvedValue({ data: makeRow({ status: 'verified' }), error: null }),
+    };
+    mockFrom.mockReturnValue(recorder);
+
+    await updateFlagStatus('f1', 'verified', 'open');
+    expect(eqCalls).toContainEqual(['id', 'f1']);
+    expect(eqCalls).toContainEqual(['status', 'open']);
+
+    // And without expectedCurrent, no status predicate is added.
+    eqCalls.length = 0;
+    (recorder.maybeSingle as jest.Mock).mockResolvedValue({
+      data: makeRow({ status: 'rejected' }),
+      error: null,
+    });
+    await updateFlagStatus('f1', 'rejected');
+    expect(eqCalls).toContainEqual(['id', 'f1']);
+    expect(eqCalls.some(([col]) => col === 'status')).toBe(false);
+  });
+
   it('LOCKING (F53): throws the conflict for a deleted flag (no raw PGRST116)', async () => {
     mockMaybeSingle.mockResolvedValueOnce({ data: null, error: null });
     mockFrom.mockReturnValue(makeChain(() => {}));

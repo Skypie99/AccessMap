@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import {
+  AccessibilityInfo,
   ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
@@ -54,9 +55,12 @@ export default function SignInScreen({
       // F48 (re-sweep): Alert.alert is a no-op on react-native-web, so a
       // failed sign-in/sign-up showed NOTHING there. The inline error row
       // (same one used for validation) works on every platform.
-      setValidationError(
-        `${mode === 'in' ? "Couldn't sign you in" : "Couldn't create your account"}: ${error.message}`,
-      );
+      const msg = `${mode === 'in' ? "Couldn't sign you in" : "Couldn't create your account"}: ${error.message}`;
+      setValidationError(msg);
+      // F65 (second sweep): iOS VoiceOver doesn't reliably auto-announce RN
+      // live regions (the old system Alert announced itself) — announce
+      // explicitly so SR users still hear the failure.
+      AccessibilityInfo.announceForAccessibility(msg);
       return;
     }
     if (mode === 'in') {

@@ -6,7 +6,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   FlatList,
   Modal,
   Pressable,
@@ -17,7 +16,7 @@ import {
 } from 'react-native';
 import { useAuth } from '@/lib/auth';
 import { AppText } from '@/components/ui/AppText';
-import { confirm } from '@/lib/confirm';
+import { confirm, notify } from '@/lib/confirm';
 import { errorMessage } from '@/lib/errors';
 import {
   CATEGORY_LABELS,
@@ -173,7 +172,7 @@ export default function MyWatchedModal({ visible, onClose, onSelectFlag, onViewO
         });
         setWatchedIds((prev) => (prev.includes(flagId) ? prev : [...prev, flagId]));
       }
-      Alert.alert("Couldn't update your watched list", errorMessage(e));
+      notify("Couldn't update your watched list", errorMessage(e)); // F64: must render on web
     }
   }, [user]);
 
@@ -196,7 +195,7 @@ export default function MyWatchedModal({ visible, onClose, onSelectFlag, onViewO
         setFlags(prevFlags);
         setWatchedIds(prevIds);
       }
-      Alert.alert("Couldn't clear your watched list", errorMessage(e));
+      notify("Couldn't clear your watched list", errorMessage(e)); // F64: must render on web
     }
   }, [user, flags, watchedIds]);
 

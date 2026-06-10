@@ -442,10 +442,12 @@ export default function TasksScreen() {
       Alert.alert('Sign in required', 'Please sign in to watch flags.');
       return;
     }
-    // F39: drop ghost ids (flag deleted/removed since it was selected) so the
-    // watched list never accumulates ids that no longer resolve to a flag —
-    // mirrors runBulkAction's targetIds filter.
-    const ids = selection.selectedIds.filter((id) => flagsMap.has(id));
+    // F64 (second sweep, revising F39): do NOT filter watch targets through
+    // flagsMap — a flag that left the store snapshot may have merely been
+    // resolved out of the default statuses (still real, still watchable; the
+    // user explicitly selected it). Genuinely deleted ids self-heal: the
+    // MyWatched prune (F45) removes them on its next load.
+    const ids = selection.selectedIds.slice();
     if (ids.length === 0) {
       exitSelection();
       return;
@@ -472,13 +474,13 @@ export default function TasksScreen() {
         AccessibilityInfo.announceForAccessibility(msg);
       }
     } catch (e) {
-      Alert.alert("Couldn't update your watched list", errorMessage(e));
+      notify("Couldn't update your watched list", errorMessage(e)); // F64: must render on web
     } finally {
       bulkBusyRef.current = false;
       setBulkBusy(false);
       exitSelection();
     }
-  }, [user, selection, flagsMap, exitSelection, showFlash]);
+  }, [user, selection, exitSelection, showFlash]);
 
   useEffect(
     () => () => {

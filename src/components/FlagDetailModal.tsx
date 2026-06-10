@@ -390,8 +390,10 @@ export default function FlagDetailModal({
       if (e instanceof FlagStatusConflictError) {
         notify(
           'This flag changed',
-          'It was updated (or removed) while you had it open. Close and reopen it to see the latest.',
+          'It was updated (or removed) while you had it open — closing so you can see the latest.',
         );
+        // F64: don't strand the user on a stale snapshot with live buttons.
+        onClose();
       } else {
         notify('Could not update flag', errorMessage(e));
       }
@@ -592,7 +594,17 @@ export default function FlagDetailModal({
         setReopenText('');
       }
     } catch (e) {
-      Alert.alert('Could not submit reopen request', errorMessage(e));
+      // F64 (second sweep): when two deciding reopen votes race, the CAS
+      // loser's vote DID count and the flag IS being reopened — a hard
+      // 'could not submit' error is wrong (and Alert.alert renders nothing on
+      // web). Treat the conflict as benign and close so the user re-opens
+      // fresh state.
+      if (e instanceof FlagStatusConflictError) {
+        notify('Flag updated', 'This flag was just reopened or changed — your request was counted.');
+        onClose();
+      } else {
+        notify('Could not submit reopen request', errorMessage(e));
+      }
     } finally {
       setReopenBusy(false);
     }

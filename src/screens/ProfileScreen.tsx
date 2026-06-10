@@ -17,7 +17,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { useAuth } from '@/lib/auth';
-import { deleteAccount } from '@/lib/account';
+import { AccountDeletedSignOutPendingError, deleteAccount } from '@/lib/account';
 import { confirm, notify } from '@/lib/confirm';
 import { errorMessage } from '@/lib/errors';
 import { signOut, supabase } from '@/lib/supabase';
@@ -628,10 +628,17 @@ export default function ProfileScreen() {
       // Auth state change (SIGNED_OUT) fires automatically; screen unmounts.
     } catch (e) {
       if (mountedRef.current) {
-        Alert.alert(
-          'Could not delete account',
-          errorMessage(e, 'Something went wrong. Your account was not deleted.'),
-        );
+        // F63: distinguish "delete failed" from "deleted, but local sign-out
+        // didn't finish" — the old copy claimed the account was not deleted
+        // even when it was.
+        if (e instanceof AccountDeletedSignOutPendingError) {
+          notify('Account deleted', e.message);
+        } else {
+          notify(
+            'Could not delete account',
+            errorMessage(e, 'Something went wrong. Your account was not deleted.'),
+          );
+        }
         setDeletingAccount(false);
       }
     }
