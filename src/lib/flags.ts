@@ -379,7 +379,10 @@ export function detectMimeFromBytes(buffer: ArrayBuffer): string | null {
 
 /**
  * Upload a local image (file:// URI from expo-image-picker) to the
- * flag-photos Supabase bucket and return its public URL.
+ * flag-photos Supabase bucket and return its public URL plus the storage
+ * path it was uploaded to. Callers keep the `path` so a failed submit can
+ * clean up the now-orphaned object via removeUploadedFlagPhotos — tracking
+ * the path directly avoids fragile URL parsing later.
  *
  * EXIF stripping: Before upload, strips GPS, timestamps, camera info,
  * thumbnails, IPTC, and XMP metadata to protect user location privacy.
@@ -394,7 +397,10 @@ export function detectMimeFromBytes(buffer: ArrayBuffer): string | null {
  * touching Storage so a malformed pick or a runaway file fails loudly
  * here instead of silently filling the bucket with garbage.
  */
-export async function uploadFlagPhoto(userId: string, localUri: string): Promise<string> {
+export async function uploadFlagPhoto(
+  userId: string,
+  localUri: string,
+): Promise<{ url: string; path: string }> {
   if (!localUri || typeof localUri !== 'string') {
     throw new Error('No photo selected.');
   }
@@ -476,7 +482,34 @@ export async function uploadFlagPhoto(userId: string, localUri: string): Promise
   if (uploadErr) throw uploadErr;
 
   const { data } = supabase.storage.from(FLAG_PHOTOS_BUCKET).getPublicUrl(filePath);
-  return data.publicUrl;
+  return { url: data.publicUrl, path: filePath };
+}
+
+/**
+ * Best-effort cleanup of Storage objects uploaded during a flag submit that
+ * subsequently failed (Decision 5, Option A — cleanup on failure only).
+ *
+ * Photos upload BEFORE the flags row is created, so a mid-loop upload
+ * failure or a createFlag failure leaves blobs in the flag-photos bucket
+ * with no DB row referencing them. The submit catch calls this with the
+ * paths it tracked; the bucket's owner-only delete RLS permits removing
+ * one's own objects.
+ *
+ * NEVER throws — the caller is already surfacing the original submit error
+ * to the user, and that error must not be masked by a cleanup failure. A
+ * failed cleanup just console.warns (orphans are invisible to users; a
+ * server-side sweep can collect any that slip through).
+ */
+export async function removeUploadedFlagPhotos(paths: string[]): Promise<void> {
+  if (paths.length === 0) return;
+  try {
+    const { error } = await supabase.storage.from(FLAG_PHOTOS_BUCKET).remove(paths);
+    if (error) {
+      console.warn('[flags] Failed to clean up orphaned flag photos:', error);
+    }
+  } catch (e) {
+    console.warn('[flags] Failed to clean up orphaned flag photos:', e);
+  }
 }
 
 export interface CreateFlagInput {

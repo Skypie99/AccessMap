@@ -27,6 +27,7 @@ import {
   createAnonFlag,
   createFlag,
   type ContextTagsCapability,
+  removeUploadedFlagPhotos,
   severityColor,
   SEVERITY_DESCRIPTIONS,
   SEVERITY_LABELS,
@@ -305,14 +306,21 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
 
     // Authenticated submission path — full feature set.
     setSubmitting(true);
+    // Hoisted OUTSIDE the try so the catch can clean up Storage orphans.
+    // Photos upload BEFORE createFlag, so a mid-loop upload failure or a
+    // createFlag failure would otherwise leave already-uploaded blobs with
+    // no DB row referencing them (Decision 5, Option A — cleanup on failure
+    // only; no retry-reuse of uploaded URLs).
+    const photoUrls: string[] = [];
+    const uploadedPaths: string[] = [];
     try {
       // Upload all picked photos. First URL doubles as the legacy photo_url
       // field for backwards-compat with clients that haven't migrated to
       // the flag_photos junction table yet.
-      const photoUrls: string[] = [];
       for (const uri of photoUris) {
-        const url = await uploadFlagPhoto(user.id, uri);
+        const { url, path } = await uploadFlagPhoto(user.id, uri);
         photoUrls.push(url);
+        uploadedPaths.push(path);
       }
 
       const result = await createFlag(user.id, {
@@ -328,6 +336,12 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
         // path cheap (one round-trip) when no tags are selected.
         context_tags: contextTags.length > 0 ? [...contextTags] : undefined,
       });
+      // The created flag now references these photos (photo_url above + the
+      // junction rows below) — from this line on they are NOT orphans and
+      // must never be deleted. Clear the cleanup list immediately so the
+      // catch below (e.g. the F57 junction path rethrowing something
+      // unexpected) can't remove photos a live flag points at.
+      uploadedPaths.length = 0;
 
       // Insert junction rows for all uploaded photos. Silent no-op if the
       // flag_photos migration hasn't been applied yet.
@@ -362,6 +376,12 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
       onCreated();
       onClose();
     } catch (e) {
+      // Best-effort Storage orphan cleanup: an upload mid-loop failure or a
+      // createFlag failure left blobs no DB row references. Fire-and-forget
+      // (removeUploadedFlagPhotos never throws) so the ORIGINAL error always
+      // surfaces to the user below. Empty after createFlag succeeds — photos
+      // referenced by a created flag are never deleted.
+      if (uploadedPaths.length > 0) void removeUploadedFlagPhotos(uploadedPaths);
       notify("Couldn't submit your report", errorMessage(e));
     } finally {
       submittingRef.current = false;

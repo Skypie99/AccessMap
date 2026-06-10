@@ -175,7 +175,11 @@ describe('addFlagPhoto', () => {
 
   it('uploads then inserts a junction row at position = existing count', async () => {
     mockGetUser.mockResolvedValue({ data: { user: { id: 'user-1' } } });
-    mockUploadFlagPhoto.mockResolvedValue('https://cdn/user-1/123.jpg');
+    // uploadFlagPhoto returns { url, path } (FIX B — path tracked for orphan cleanup).
+    mockUploadFlagPhoto.mockResolvedValue({
+      url: 'https://cdn/user-1/123.jpg',
+      path: 'user-1/123.jpg',
+    });
 
     // 1st from() → listFlagPhotos (two existing photos → next position is 2).
     // 2nd from() → the INSERT.
@@ -205,7 +209,10 @@ describe('addFlagPhoto', () => {
 
   it('inserts at position 0 when there are no existing photos', async () => {
     mockGetUser.mockResolvedValue({ data: { user: { id: 'user-1' } } });
-    mockUploadFlagPhoto.mockResolvedValue('https://cdn/user-1/first.jpg');
+    mockUploadFlagPhoto.mockResolvedValue({
+      url: 'https://cdn/user-1/first.jpg',
+      path: 'user-1/first.jpg',
+    });
 
     const listChain = selectChain([]); // no existing photos
     const insChain = insertSingleChain({
@@ -226,7 +233,10 @@ describe('addFlagPhoto', () => {
 
   it('propagates an INSERT error', async () => {
     mockGetUser.mockResolvedValue({ data: { user: { id: 'user-1' } } });
-    mockUploadFlagPhoto.mockResolvedValue('https://cdn/user-1/x.jpg');
+    mockUploadFlagPhoto.mockResolvedValue({
+      url: 'https://cdn/user-1/x.jpg',
+      path: 'user-1/x.jpg',
+    });
 
     const listChain = selectChain([]);
     const insChain = insertSingleChain(null, { message: 'RLS violation' });

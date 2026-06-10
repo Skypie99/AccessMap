@@ -17,6 +17,10 @@
 import React from 'react';
 import { Alert } from 'react-native';
 import { render, fireEvent, waitFor, act } from '@testing-library/react-native';
+// Mocked below — jest.mock calls are hoisted above all imports, so this
+// resolves to the mock module. Imported here (not mid-file) to keep
+// import/first happy.
+import * as ImagePicker from 'expo-image-picker';
 
 // ---------------------------------------------------------------------------
 // Supabase env stubs — required before any module that imports supabase.ts
@@ -34,6 +38,9 @@ jest.mock('expo-image-picker', () => ({
   launchImageLibraryAsync: jest.fn(),
   MediaTypeOptions: { Images: 'Images' },
 }));
+const mockRequestMediaLibPerm =
+  ImagePicker.requestMediaLibraryPermissionsAsync as jest.Mock;
+const mockLaunchImageLibrary = ImagePicker.launchImageLibraryAsync as jest.Mock;
 
 // ---------------------------------------------------------------------------
 // Mock: @/lib/auth — configurable per-test via mockUseAuth.mockReturnValue(...)
@@ -97,11 +104,17 @@ const SAMPLE_AUTH_ROW = {
 const mockCreateAnonFlag = jest.fn().mockResolvedValue(SAMPLE_ANON_ROW);
 const mockCreateFlag = jest.fn().mockResolvedValue({ row: SAMPLE_AUTH_ROW, tagsAccepted: true });
 const mockSubscribeContextTagsCapability = jest.fn(() => () => {});
+// FIX B (storage orphan cleanup): uploadFlagPhoto returns { url, path };
+// removeUploadedFlagPhotos is the best-effort cleanup the submit catch fires.
+// Both hoisted so tests can stage per-call results and assert calls.
+const mockUploadFlagPhoto = jest.fn();
+const mockRemoveUploadedFlagPhotos = jest.fn();
 
 jest.mock('@/lib/flags', () => ({
   createAnonFlag: (...args: unknown[]) => mockCreateAnonFlag(...args),
   createFlag: (...args: unknown[]) => mockCreateFlag(...args),
-  uploadFlagPhoto: jest.fn().mockResolvedValue('http://example.com/photo.jpg'),
+  uploadFlagPhoto: (...args: unknown[]) => mockUploadFlagPhoto(...args),
+  removeUploadedFlagPhotos: (...args: unknown[]) => mockRemoveUploadedFlagPhotos(...args),
   subscribeContextTagsCapability: (...args: unknown[]) => mockSubscribeContextTagsCapability(...args),
   getContextTagsCapability: jest.fn().mockReturnValue('unknown'),
   CATEGORY_LABELS: {
@@ -131,14 +144,30 @@ jest.mock('@/lib/flags', () => ({
 }));
 
 // ---------------------------------------------------------------------------
-// Mock: @/lib/photos
+// Mock: @/lib/photos — hoisted so the F57 (junction insert) path can be staged
 // ---------------------------------------------------------------------------
-jest.mock('@/lib/photos', () => ({ batchInsertFlagPhotos: jest.fn().mockResolvedValue(undefined) }));
+const mockBatchInsertFlagPhotos = jest.fn();
+jest.mock('@/lib/photos', () => ({
+  batchInsertFlagPhotos: (...args: unknown[]) => mockBatchInsertFlagPhotos(...args),
+}));
 
 // ---------------------------------------------------------------------------
-// Mock: @/components/PhotoGallery — stub so we don't need native image modules
+// Mock: @/components/PhotoGallery — stub so we don't need native image modules.
+// Renders just the add-photo trigger so tests can drive the photo-pick flow
+// (see the addPhoto helper below) without the native gallery internals.
 // ---------------------------------------------------------------------------
-jest.mock('@/components/PhotoGallery', () => ({ __esModule: true, default: () => null }));
+jest.mock('@/components/PhotoGallery', () => {
+  const ReactActual = jest.requireActual('react');
+  const { Pressable } = jest.requireActual('react-native');
+  return {
+    __esModule: true,
+    default: ({ onAddPhoto }: { onAddPhoto?: () => void }) =>
+      ReactActual.createElement(Pressable, {
+        testID: 'photo-gallery-add',
+        onPress: onAddPhoto,
+      }),
+  };
+});
 
 // ---------------------------------------------------------------------------
 // Mock: @/lib/contextTags
@@ -251,12 +280,48 @@ function renderAuth(user: User = { id: 'user-abc' }, props: Partial<{ visible: b
   );
 }
 
+/**
+ * Drive the photo-pick flow end to end: press the PhotoGallery stub's add
+ * trigger, auto-press "Choose from library" in the native action sheet, and
+ * resolve the mocked ImagePicker with the given uri. Leaves the uri in the
+ * modal's photoUris state, ready for submit.
+ */
+async function addPhoto(utils: ReturnType<typeof render>, uri: string) {
+  mockRequestMediaLibPerm.mockResolvedValueOnce({ granted: true });
+  mockLaunchImageLibrary.mockResolvedValueOnce({ canceled: false, assets: [{ uri }] });
+  // Native path: onAddPhoto opens an Alert action sheet — auto-press the
+  // library option, then restore so later asserts can spy Alert.alert fresh.
+  const alertSpy = jest
+    .spyOn(Alert, 'alert')
+    .mockImplementationOnce((_title, _message, buttons) => {
+      const lib = (buttons ?? []).find((b) => b.text === 'Choose from library');
+      lib?.onPress?.();
+    });
+  fireEvent.press(utils.getByTestId('photo-gallery-add'));
+  // Flush pickPhoto's async chain (permission → picker → setPhotoUris).
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  });
+  alertSpy.mockRestore();
+}
+
 beforeEach(() => {
   jest.clearAllMocks();
   mockCheckAnonRateLimit.mockResolvedValue(undefined);
   mockCreateAnonFlag.mockResolvedValue(SAMPLE_ANON_ROW);
   mockCreateFlag.mockResolvedValue({ row: SAMPLE_AUTH_ROW, tagsAccepted: true });
   mockSubscribeContextTagsCapability.mockReturnValue(() => {});
+  // Default upload: derive { url, path } from the picked uri so multi-photo
+  // tests get distinct, recognizable storage paths.
+  mockUploadFlagPhoto.mockImplementation((_userId: unknown, uri: unknown) => {
+    const name = String(uri).split('/').pop() ?? 'photo.jpg';
+    return Promise.resolve({
+      url: `http://example.com/${name}`,
+      path: `user-abc/${name}`,
+    });
+  });
+  mockRemoveUploadedFlagPhotos.mockResolvedValue(undefined);
+  mockBatchInsertFlagPhotos.mockResolvedValue(undefined);
 });
 
 // handleSubmit keeps running after a test's `waitFor` resolves
@@ -457,5 +522,109 @@ describe('submit routing — auth path', () => {
       expect(mockCreateFlag).toHaveBeenCalled();
     });
     expect(mockCheckAnonRateLimit).not.toHaveBeenCalled();
+  });
+});
+
+// ===========================================================================
+// 5. Storage orphan cleanup — FIX B (Decision 5, Option A)
+//
+// Photos upload BEFORE createFlag. If anything fails between the first
+// upload and createFlag resolving, the already-uploaded blobs are orphans
+// and the catch must hand their storage paths to removeUploadedFlagPhotos.
+// Once createFlag resolves, the photos are referenced by the new flag and
+// must NEVER be cleaned up — even when the junction insert (F57) fails.
+// ===========================================================================
+
+describe('storage orphan cleanup on failed submit (auth path)', () => {
+  it('cleans up the already-uploaded path and skips createFlag when an upload fails mid-loop', async () => {
+    const utils = renderAuth();
+    await addPhoto(utils, 'file:///p1.jpg');
+    await addPhoto(utils, 'file:///p2.jpg');
+
+    mockUploadFlagPhoto
+      .mockResolvedValueOnce({ url: 'http://example.com/p1.jpg', path: 'user-abc/p1.jpg' })
+      .mockRejectedValueOnce(new Error('upload failed'));
+
+    fireEvent.press(utils.getByLabelText('Submit flag report'));
+
+    await waitFor(() => {
+      expect(mockRemoveUploadedFlagPhotos).toHaveBeenCalledTimes(1);
+    });
+    // Only the photo that actually reached Storage gets cleaned up.
+    expect(mockRemoveUploadedFlagPhotos).toHaveBeenCalledWith(['user-abc/p1.jpg']);
+    // The flag insert never ran — the blobs were pure orphans.
+    expect(mockCreateFlag).not.toHaveBeenCalled();
+  });
+
+  it('cleans up ALL uploaded paths when createFlag itself fails', async () => {
+    const utils = renderAuth();
+    await addPhoto(utils, 'file:///p1.jpg');
+    await addPhoto(utils, 'file:///p2.jpg');
+
+    mockCreateFlag.mockRejectedValueOnce(new Error('insert failed'));
+
+    fireEvent.press(utils.getByLabelText('Submit flag report'));
+
+    await waitFor(() => {
+      expect(mockRemoveUploadedFlagPhotos).toHaveBeenCalledTimes(1);
+    });
+    expect(mockRemoveUploadedFlagPhotos).toHaveBeenCalledWith([
+      'user-abc/p1.jpg',
+      'user-abc/p2.jpg',
+    ]);
+  });
+
+  it('still surfaces the original submit error to the user after cleanup', async () => {
+    const utils = renderAuth();
+    await addPhoto(utils, 'file:///p1.jpg');
+    // Spy AFTER addPhoto so its scoped action-sheet spy has been restored.
+    const alertSpy = jest.spyOn(Alert, 'alert');
+
+    mockCreateFlag.mockRejectedValueOnce(new Error('insert failed'));
+
+    fireEvent.press(utils.getByLabelText('Submit flag report'));
+
+    await waitFor(() => {
+      expect(alertSpy).toHaveBeenCalledWith("Couldn't submit your report", 'insert failed');
+    });
+    alertSpy.mockRestore();
+  });
+
+  it('performs NO cleanup on a fully successful submit', async () => {
+    const utils = renderAuth();
+    await addPhoto(utils, 'file:///p1.jpg');
+    await addPhoto(utils, 'file:///p2.jpg');
+
+    fireEvent.press(utils.getByLabelText('Submit flag report'));
+
+    await waitFor(() => {
+      expect(mockCreateFlag).toHaveBeenCalledTimes(1);
+    });
+    // Drain the async tail (junction insert → reset → close) before asserting.
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(mockUploadFlagPhoto).toHaveBeenCalledTimes(2);
+    expect(mockRemoveUploadedFlagPhotos).not.toHaveBeenCalled();
+  });
+
+  it('performs NO cleanup when only the junction insert fails after createFlag succeeded (F57)', async () => {
+    const warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
+    const utils = renderAuth();
+    await addPhoto(utils, 'file:///p1.jpg');
+
+    mockBatchInsertFlagPhotos.mockRejectedValueOnce(new Error('junction insert failed'));
+
+    fireEvent.press(utils.getByLabelText('Submit flag report'));
+
+    await waitFor(() => {
+      expect(mockBatchInsertFlagPhotos).toHaveBeenCalledTimes(1);
+    });
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    // The flag exists and references the photos — they are NOT orphans.
+    expect(mockRemoveUploadedFlagPhotos).not.toHaveBeenCalled();
+    warn.mockRestore();
   });
 });
