@@ -118,10 +118,28 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
     prevHighRef.current = isHigh;
   }, [severity, photoUris]);
 
+  // L7: release a draft photo's blob URL once it can never be shown again.
+  // Web picks create object URLs (URL.createObjectURL in pickPhoto) that pin
+  // the underlying File in memory until explicitly revoked — same leak class
+  // as F25 in FlagDetailModal. Native file:// URIs fail the blob: check and
+  // pass through untouched. Called ONLY post-settle — from removeUri (the
+  // user discards a pick) and reset() (after a successful submit). A FAILED
+  // submit must NOT revoke: the draft previews stay alive so the user can
+  // retry without re-picking.
+  const releaseUri = (uri: string) => {
+    if (!uri.startsWith('blob:')) return;
+    if (typeof URL !== 'undefined' && typeof URL.revokeObjectURL === 'function') {
+      URL.revokeObjectURL(uri);
+    }
+  };
+
   const reset = () => {
     setCategory('no_ramp');
     setSeverity(3);
     setDescription('');
+    // L7: the drafts are gone for good once the form resets (reset only runs
+    // after a successful submit) — release their blob URLs.
+    photoUris.forEach(releaseUri);
     setPhotoUris([]);
     setContextTags([]);
     setAppliedTemplateId(null);
@@ -172,6 +190,11 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
   // mistaken pick before filing the report (the photos aren't uploaded until
   // handleSubmit, so this is purely local state).
   const removeUri = (index: number) => {
+    // L7: revoke the blob URL before dropping the pick — once filtered out
+    // the preview can never render again, but without the revoke the object
+    // URL would keep the File bytes alive for the whole page session.
+    const removed = photoUris[index];
+    if (removed !== undefined) releaseUri(removed);
     setPhotoUris((curr) => curr.filter((_, i) => i !== index));
   };
 

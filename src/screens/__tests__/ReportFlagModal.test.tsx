@@ -153,19 +153,34 @@ jest.mock('@/lib/photos', () => ({
 
 // ---------------------------------------------------------------------------
 // Mock: @/components/PhotoGallery — stub so we don't need native image modules.
-// Renders just the add-photo trigger so tests can drive the photo-pick flow
-// (see the addPhoto helper below) without the native gallery internals.
+// Renders the add-photo trigger plus a remove-first-photo trigger so tests
+// can drive both the photo-pick flow (see the addPhoto helper below) and the
+// removeUri path (L7 blob-release tests) without the native gallery internals.
 // ---------------------------------------------------------------------------
 jest.mock('@/components/PhotoGallery', () => {
   const ReactActual = jest.requireActual('react');
-  const { Pressable } = jest.requireActual('react-native');
+  const { Pressable, View } = jest.requireActual('react-native');
   return {
     __esModule: true,
-    default: ({ onAddPhoto }: { onAddPhoto?: () => void }) =>
-      ReactActual.createElement(Pressable, {
-        testID: 'photo-gallery-add',
-        onPress: onAddPhoto,
-      }),
+    default: ({
+      onAddPhoto,
+      onRemovePhoto,
+    }: {
+      onAddPhoto?: () => void;
+      onRemovePhoto?: (index: number) => void;
+    }) =>
+      ReactActual.createElement(
+        View,
+        null,
+        ReactActual.createElement(Pressable, {
+          testID: 'photo-gallery-add',
+          onPress: onAddPhoto,
+        }),
+        ReactActual.createElement(Pressable, {
+          testID: 'photo-gallery-remove-first',
+          onPress: onRemovePhoto ? () => onRemovePhoto(0) : undefined,
+        }),
+      ),
   };
 });
 
@@ -701,6 +716,90 @@ describe('live location prop (FIX C — fresh GPS read lands mid-form)', () => {
 // the form re-enables (previously the state was set late / left the controls
 // editable mid-flight).
 // ===========================================================================
+
+// ===========================================================================
+// 7.5 Blob URL release — L7 (web resilience trio)
+//
+// Web photo picks create object URLs (URL.createObjectURL) that pin the File
+// bytes in memory until revoked. releaseUri() revokes them at exactly two
+// post-settle moments: removeUri (user discards a pick) and reset() (after a
+// SUCCESSFUL submit). A failed submit must NOT revoke — the draft previews
+// stay alive so the user can retry without re-picking. Native file:// URIs
+// are never revoked (blob:-prefix guard).
+// ===========================================================================
+
+describe('blob URL release — L7', () => {
+  const BLOB_URI = 'blob:http://localhost/draft-photo-1';
+  // The node test env's URL may not implement revokeObjectURL — install a
+  // jest.fn() and restore whatever was there after the block.
+  const urlGlobal = URL as unknown as { revokeObjectURL?: (u: string) => void };
+  const originalRevoke = urlGlobal.revokeObjectURL;
+  let revokeSpy: jest.Mock;
+
+  beforeEach(() => {
+    revokeSpy = jest.fn();
+    urlGlobal.revokeObjectURL = revokeSpy;
+  });
+
+  afterAll(() => {
+    urlGlobal.revokeObjectURL = originalRevoke;
+  });
+
+  it('revokes a blob: draft URL when the user removes the pick (removeUri)', async () => {
+    const utils = renderAuth();
+    await addPhoto(utils, BLOB_URI);
+
+    fireEvent.press(utils.getByTestId('photo-gallery-remove-first'));
+
+    expect(revokeSpy).toHaveBeenCalledTimes(1);
+    expect(revokeSpy).toHaveBeenCalledWith(BLOB_URI);
+  });
+
+  it('does NOT revoke a native file:// URI on remove (blob:-prefix guard)', async () => {
+    const utils = renderAuth();
+    await addPhoto(utils, 'file:///p1.jpg');
+
+    fireEvent.press(utils.getByTestId('photo-gallery-remove-first'));
+
+    expect(revokeSpy).not.toHaveBeenCalled();
+  });
+
+  it('revokes blob: draft URLs after a SUCCESSFUL submit (reset)', async () => {
+    const utils = renderAuth();
+    await addPhoto(utils, BLOB_URI);
+
+    fireEvent.press(utils.getByLabelText('Submit flag report'));
+
+    await waitFor(() => {
+      expect(mockCreateFlag).toHaveBeenCalledTimes(1);
+    });
+    // Drain the async tail (junction insert → reset → close).
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(revokeSpy).toHaveBeenCalledWith(BLOB_URI);
+  });
+
+  it('keeps blob: draft URLs ALIVE when the submit fails (retry must work)', async () => {
+    const utils = renderAuth();
+    await addPhoto(utils, BLOB_URI);
+    const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+
+    mockCreateFlag.mockRejectedValueOnce(new Error('insert failed'));
+
+    fireEvent.press(utils.getByLabelText('Submit flag report'));
+
+    await waitFor(() => {
+      expect(alertSpy).toHaveBeenCalledWith("Couldn't submit your report", 'insert failed');
+    });
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    // The preview must still be usable for a retry — nothing revoked.
+    expect(revokeSpy).not.toHaveBeenCalled();
+    alertSpy.mockRestore();
+  });
+});
 
 describe('submitting state — L4 disable sweep', () => {
   it('disables every form control while an auth submit is in flight, re-enables after', async () => {

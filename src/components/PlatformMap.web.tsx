@@ -182,6 +182,61 @@ function makeClusterIcon(brandColor: string, textColor: string, count: number): 
   return icon;
 }
 
+// ---------------------------------------------------------------------------
+// PopupPhoto — the flag photo inside a marker popup (L3). A bare <img> shows
+// the browser's broken-image glyph when the Storage URL 404s or the network
+// drops mid-load; this swaps in a "Photo unavailable" placeholder via onError
+// instead. The error state remembers WHICH src failed, so a new photo url
+// (photo re-uploaded, flag edited) automatically gets a fresh load attempt
+// rather than inheriting the previous failure.
+// ---------------------------------------------------------------------------
+interface PopupPhotoProps {
+  src: string;
+  alt: string;
+  mutedColor: string;
+}
+
+function PopupPhoto({ src, alt, mutedColor }: PopupPhotoProps) {
+  const [failedSrc, setFailedSrc] = useState<string | null>(null);
+  if (failedSrc === src) {
+    return (
+      <div
+        role="img"
+        aria-label="Photo unavailable"
+        style={{
+          width: '100%',
+          height: 72,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: 'rgba(15,27,45,0.06)',
+          color: mutedColor,
+          fontSize: 12,
+          fontWeight: 600,
+          borderRadius: 8,
+          marginTop: 6,
+        }}
+      >
+        Photo unavailable
+      </div>
+    );
+  }
+  return (
+    <img
+      src={src}
+      alt={alt}
+      onError={() => setFailedSrc(src)}
+      style={{
+        width: '100%',
+        maxHeight: 160,
+        objectFit: 'cover',
+        borderRadius: 8,
+        marginTop: 6,
+      }}
+    />
+  );
+}
+
 // GeoJSON point feature shape fed into Supercluster.
 type FlagPointFeature = GeoJSON.Feature<GeoJSON.Point, { flagId: string }>;
 
@@ -339,16 +394,10 @@ function ClusteredMarkers({
                   {flagIsAnon ? ' · Anonymous' : ''}
                 </div>
                 {flag.photo_url ? (
-                  <img
+                  <PopupPhoto
                     src={flag.photo_url}
                     alt={`Photo of ${CATEGORY_LABELS[flag.category]} accessibility issue`}
-                    style={{
-                      width: '100%',
-                      maxHeight: 160,
-                      objectFit: 'cover',
-                      borderRadius: 8,
-                      marginTop: 6,
-                    }}
+                    mutedColor={themeColor.textMuted}
                   />
                 ) : null}
                 {flag.description ? (

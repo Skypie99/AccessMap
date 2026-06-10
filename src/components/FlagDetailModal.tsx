@@ -24,6 +24,7 @@ import { confirm, notify } from '@/lib/confirm';
 import { getDirectionsUrl } from '@/lib/directionsLink';
 import { errorMessage } from '@/lib/errors';
 import { formatFlagShareText } from '@/lib/shareFlag';
+import { webShare } from '@/lib/webShare';
 import { addWatched, loadWatched, removeWatched } from '@/lib/watchedFlags';
 import { recordView } from '@/lib/recentlyViewed';
 import {
@@ -465,6 +466,60 @@ export default function FlagDetailModal({
     }
   };
 
+  // L2 (re-sweep): the coords copy button used a bare inline Share.share —
+  // on web browsers without the Web Share API (Firefox desktop) that's an
+  // unhandled promise rejection and the button silently does nothing. Web
+  // now routes through the tested webShare helper (navigator.share →
+  // clipboard), with a last-ditch window.alert showing the coords so the
+  // button always does SOMETHING. Native mirrors handleShare's try/catch
+  // (user-cancel stays silent; real errors surface).
+  const handleCopyCoords = async () => {
+    if (Platform.OS === 'web') {
+      try {
+        // webShare's contract: `true` = shared or copied; `false` + share API
+        // present = user cancelled; `false` + no share API = clipboard
+        // failed/unavailable. Capture availability BEFORE the call so we can
+        // tell those apart.
+        const shareAvailable =
+          typeof navigator !== 'undefined' &&
+          typeof (navigator as Navigator).share === 'function';
+        const ok = await webShare({ title: 'Flag coordinates', text: formattedCoords });
+        if (ok) {
+          // The clipboard path has no UI of its own — confirm so the user
+          // knows the tap landed. (navigator.share shows its own sheet.)
+          if (!shareAvailable && typeof window !== 'undefined' && typeof window.alert === 'function') {
+            window.alert('Coordinates copied to your clipboard.');
+          }
+          return;
+        }
+        // Share API existed and returned false → user cancelled. Stay silent.
+        if (shareAvailable) return;
+        // No share API and the clipboard write failed — show the coords so
+        // the user can copy them manually.
+        if (typeof window !== 'undefined' && typeof window.alert === 'function') {
+          window.alert(formattedCoords);
+        }
+      } catch (e) {
+        const msg = errorMessage(e);
+        if (/cancel|dismiss|abort/i.test(msg)) return;
+        // Alert.alert is a no-op on web — use window.alert for real errors.
+        if (typeof window !== 'undefined' && typeof window.alert === 'function') {
+          window.alert(`Couldn't copy coordinates: ${msg}`);
+        }
+      }
+      return;
+    }
+
+    // Native: OS share sheet — mirrors handleShare (user-cancel is silent).
+    try {
+      await Share.share({ message: formattedCoords, title: 'Flag coordinates' });
+    } catch (e) {
+      const msg = errorMessage(e);
+      if (/cancel|dismiss/i.test(msg)) return;
+      Alert.alert("Couldn't copy coordinates", msg);
+    }
+  };
+
   const handleSubmitComment = async () => {
     const trimmed = commentText.trim();
     if (!trimmed || commentSubmitting) return;
@@ -758,7 +813,8 @@ export default function FlagDetailModal({
               <AppText variant="label" style={styles.sectionLabel}>Location</AppText>
               {/* Row: selectable coords + copy button. selectable lets users
                 long-press to get the native "Copy" context menu — the copy
-                button triggers Share.share for a one-tap path on iOS/Android. */}
+                button goes through handleCopyCoords: OS share sheet on
+                iOS/Android, webShare → clipboard → alert fallback on web (L2). */}
               <View style={styles.coordsRow}>
                 <AppText
                   variant="mono"
@@ -770,12 +826,7 @@ export default function FlagDetailModal({
                   {formattedCoords}
                 </AppText>
                 <Pressable
-                  onPress={() =>
-                    Share.share({
-                      message: formattedCoords,
-                      title: 'Flag coordinates',
-                    })
-                  }
+                  onPress={handleCopyCoords}
                   hitSlop={10}
                   style={({ pressed }) => [
                     styles.coordsCopyBtn,

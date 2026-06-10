@@ -534,7 +534,14 @@ export default function ProfileScreen() {
       input.accept = 'image/*';
       input.onchange = () => {
         const file = input.files?.[0];
-        if (file) void doUploadAvatar(URL.createObjectURL(file));
+        if (!file) return;
+        // L7 (F25 pattern): hoist the object URL so it can be revoked once
+        // the upload settles — success or failure — instead of pinning the
+        // File bytes in memory for the rest of the page session.
+        // doUploadAvatar never rejects (it catches internally), so .finally
+        // is the only cleanup hook needed.
+        const url = URL.createObjectURL(file);
+        void doUploadAvatar(url).finally(() => URL.revokeObjectURL(url));
       };
       input.click();
       return;
