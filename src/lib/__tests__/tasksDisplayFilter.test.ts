@@ -1,46 +1,41 @@
 /**
  * Tests for the displayFlags text-search filter logic in TasksScreen.
  *
- * GAP-7: The `displayFlags` useMemo in TasksScreen (feat/tasks-search-2026-05-25)
- * includes a searchQuery text filter that was entirely untested. Because the
- * logic is a small, pure transformation over an array of FlagRow objects, we
- * test it here by replicating the exact filter expression from the screen and
- * verifying its behaviour across all meaningful edge cases.
+ * GAP-7 (original): the searchQuery text filter in the `displayFlags`
+ * useMemo was untested, so this file pinned a hand-copied mirror of the
+ * inline filter expression.
  *
- * Source of truth (TasksScreen.tsx, lines added in feat/tasks-search-2026-05-25):
+ * L6 (ReSweep 2026-06-09): TasksScreen now delegates that search to the
+ * SHARED `searchFlags()` helper from `@/lib/flagSearch` — the same one
+ * NearbyFlagsModal uses — so this file now exercises the REAL helper.
+ * Behaviour change vs the old inline filter: the haystack also includes
+ * the STATUS label, and multi-token queries use AND semantics (every
+ * whitespace-separated token must match at least one field).
  *
- *   const q = searchQuery.trim().toLowerCase();
- *   if (q) {
- *     out = out.filter(
- *       (f) =>
- *         CATEGORY_LABELS[f.category].toLowerCase().includes(q) ||
- *         (f.description ?? '').toLowerCase().includes(q),
- *     );
- *   }
+ * Source of truth (TasksScreen.tsx, displayFlags useMemo after L6):
  *
- * See qa-reports/2026-05-25-gary-cycle4-coverage-gaps.md (GAP-7).
+ *   out = searchFlags(out, debouncedSearchText);
+ *
+ * See qa-reports/2026-05-25-gary-cycle4-coverage-gaps.md (GAP-7) and
+ * qa-reports/2026-06-09_AccessMap_ReSweep_Triage.md (L6).
  */
+
+import { STATUS_LABELS } from '../flags';
+import { searchFlags } from '../flagSearch';
+import type { FlagRow } from '@/types/database';
 
 jest.mock('../supabase', () => ({
   __esModule: true,
   supabase: { from: jest.fn() },
 }));
 
-import { CATEGORY_LABELS } from '../flags';
-import type { FlagRow } from '@/types/database';
-
 // ---------------------------------------------------------------------------
-// Mirror of the exact filter logic from TasksScreen — no source changes needed.
-// If TasksScreen changes the filter expression, these tests will catch the drift.
+// Thin alias over the REAL shared helper, applied exactly as TasksScreen does.
+// If TasksScreen stops delegating to searchFlags, these tests must move back
+// to mirroring whatever replaces it.
 // ---------------------------------------------------------------------------
 function applySearchFilter(flags: FlagRow[], searchQuery: string): FlagRow[] {
-  const q = searchQuery.trim().toLowerCase();
-  if (!q) return flags;
-  return flags.filter(
-    (f) =>
-      CATEGORY_LABELS[f.category].toLowerCase().includes(q) ||
-      (f.description ?? '').toLowerCase().includes(q),
-  );
+  return searchFlags(flags, searchQuery);
 }
 
 // ---------------------------------------------------------------------------
@@ -150,5 +145,61 @@ describe('displayFlags text-search filter (GAP-7)', () => {
     const result = applySearchFilter(ALL_FLAGS, 'sidewalk');
     expect(result).toContain(sidewalkFlag);
     expect(result).not.toContain(rampFlag);
+  });
+
+  // ── AND semantics across tokens (L6 — shared searchFlags helper) ─────────
+
+  it('multi-token query requires EVERY token to match (AND, not OR)', () => {
+    // 'broken' matches sidewalkFlag (label + description) — 'handrail' only
+    // matches sidewalkFlag's description. rampFlag matches neither token pair.
+    const result = applySearchFilter(ALL_FLAGS, 'broken handrail');
+    expect(result).toContain(sidewalkFlag);
+    expect(result).toHaveLength(1);
+  });
+
+  it('tokens can match across DIFFERENT fields of the same flag', () => {
+    // rampFlag: 'curb' hits the description ('Curb cut missing'), 'ramp'
+    // hits the category label ('No ramp').
+    const result = applySearchFilter(ALL_FLAGS, 'curb ramp');
+    expect(result).toContain(rampFlag);
+    expect(result).toHaveLength(1);
+  });
+
+  it('returns [] when tokens only match across DIFFERENT flags', () => {
+    // 'curb' only matches rampFlag, 'handrail' only matches sidewalkFlag —
+    // no single flag satisfies both, so AND semantics yield nothing.
+    const result = applySearchFilter(ALL_FLAGS, 'curb handrail');
+    expect(result).toHaveLength(0);
+  });
+
+  // ── Status-label matching (L6 — new field vs the old inline filter) ──────
+
+  it('pins the STATUS_LABELS strings the search haystack is built from', () => {
+    expect(STATUS_LABELS).toEqual({
+      open: 'Open',
+      verified: 'Verified',
+      resolved: 'Resolved',
+      rejected: 'Rejected',
+    });
+  });
+
+  it('matches on the human-readable status label (case-insensitive)', () => {
+    const verifiedFlag = makeFlag({ category: 'other', status: 'verified' });
+    const openFlag = makeFlag({ category: 'other', status: 'open' });
+    const result = applySearchFilter([verifiedFlag, openFlag], 'VERIFIED');
+    expect(result).toContain(verifiedFlag);
+    expect(result).not.toContain(openFlag);
+  });
+
+  it('status label participates in AND semantics with other tokens', () => {
+    const verifiedRamp = makeFlag({
+      category: 'no_ramp',
+      status: 'verified',
+      description: null,
+    });
+    const openRamp = makeFlag({ category: 'no_ramp', status: 'open', description: null });
+    const result = applySearchFilter([verifiedRamp, openRamp], 'verified ramp');
+    expect(result).toContain(verifiedRamp);
+    expect(result).not.toContain(openRamp);
   });
 });

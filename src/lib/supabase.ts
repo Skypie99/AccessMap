@@ -69,5 +69,35 @@ export async function signOut(userId?: string) {
       console.warn('[signOut] push token clear failed (silent):', e);
     }
   }
-  return supabase.auth.signOut();
+  // F50 (re-sweep): supabase.auth.signOut() errors were ignored by every
+  // caller (`void signOut(...)`) — an offline tap on Sign out cleared the
+  // caches above, then SILENTLY left the session alive. Surface the failure.
+  //
+  // Second-sweep correction (F63): in the installed @supabase/auth-js,
+  // signOut({ scope: 'local' }) ALSO posts to /logout and returns the error
+  // BEFORE removing the local session (only 401/403/404 API errors are
+  // ignored) — so a fully offline device cannot complete ANY sign-out
+  // variant. The retry below helps transient/server-error cases only; the
+  // honest offline UX is the failure message. A true offline local sign-out
+  // requires auth-machinery surgery (manual session-storage removal +
+  // synthesizing SIGNED_OUT) and is proposed in DECISIONS FOR SKY instead.
+  const result = await supabase.auth.signOut();
+  if (result.error) {
+    console.warn('[signOut] sign-out failed; retrying with local scope:', result.error.message);
+    const local = await supabase.auth.signOut({ scope: 'local' });
+    const { notify } = await import('./confirm');
+    if (local.error) {
+      notify(
+        "Couldn't sign you out",
+        'Please check your connection and try again. (Your cached map data on this device has already been cleared.)',
+      );
+      return result;
+    }
+    notify(
+      'Signed out on this device',
+      'Note: the server session could not be revoked from here; it remains valid until it expires.',
+    );
+    return local;
+  }
+  return result;
 }

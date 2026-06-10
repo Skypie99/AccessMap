@@ -55,7 +55,7 @@ export async function addFlagPhoto(flagId: string, localUri: string): Promise<Fl
   const existing = await listFlagPhotos(flagId);
   const position = existing.length;
 
-  const url = await uploadFlagPhoto(user.id, localUri);
+  const { url } = await uploadFlagPhoto(user.id, localUri);
 
   const { data, error } = await supabase
     .from('flag_photos')

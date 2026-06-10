@@ -8,6 +8,11 @@ export { CommentRow };
 
 export const MAX_COMMENT_LENGTH = 500;
 
+// Cap how many comments one fetch pulls down. Threads are newest-first, so
+// this keeps the most recent 200 — plenty for a flag discussion — instead of
+// an unbounded query that grows forever with the table.
+export const MAX_COMMENTS = 200;
+
 // Thrown when the flag_comments table doesn't exist yet (migration pending).
 // The UI catches this and shows "Comments coming soon" instead of crashing.
 export class CommentsTableNotReadyError extends Error {
@@ -38,14 +43,19 @@ function flattenComment(row: RawCommentRow): CommentRow {
   };
 }
 
+// PostgreSQL error code 42P01 = undefined_table. Inspect the raw error
+// fields directly (same pattern as photos.ts) — errorMessage() now rewrites
+// recognized failures into friendly copy, so its output can no longer be
+// used for code/phrase sniffing. Supabase sometimes embeds the code in the
+// message when it comes back as a PostgREST 404 body, so check both.
 function isTableMissingError(e: unknown): boolean {
-  const msg = errorMessage(e, '');
-  // PostgreSQL error code 42P01 = undefined_table. Supabase embeds it in the
-  // message when it comes back as a PostgREST 404 body.
-  return msg.includes('42P01') || msg.includes('does not exist');
+  const msg = String((e as { message?: string })?.message ?? e ?? '');
+  const code = String((e as { code?: string })?.code ?? '');
+  return code === '42P01' || msg.includes('42P01') || msg.includes('does not exist');
 }
 
-// Fetch comments for a flag, newest-first, with author display_name joined.
+// Fetch comments for a flag, newest-first (capped at MAX_COMMENTS), with
+// author display_name joined.
 // Throws CommentsTableNotReadyError if the migration hasn't been applied yet.
 export async function listComments(flagId: string): Promise<CommentRow[]> {
   // Cast through `any` for the join query: the flag_comments table has no
@@ -57,7 +67,8 @@ export async function listComments(flagId: string): Promise<CommentRow[]> {
     .from('flag_comments')
     .select('id, flag_id, user_id, content, created_at, users(display_name)')
     .eq('flag_id', flagId)
-    .order('created_at', { ascending: false });
+    .order('created_at', { ascending: false })
+    .limit(MAX_COMMENTS);
 
   if (error) {
     if (isTableMissingError(error)) throw new CommentsTableNotReadyError();

@@ -17,8 +17,8 @@ import * as ImagePicker from 'expo-image-picker';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { useAuth } from '@/lib/auth';
-import { deleteAccount } from '@/lib/account';
-import { confirm } from '@/lib/confirm';
+import { AccountDeletedSignOutPendingError, deleteAccount } from '@/lib/account';
+import { confirm, notify } from '@/lib/confirm';
 import { errorMessage } from '@/lib/errors';
 import { signOut, supabase } from '@/lib/supabase';
 import { useSharedModals } from '@/lib/sharedModalsContext';
@@ -61,7 +61,12 @@ import { loadWatched } from '@/lib/watchedFlags';
 import NotificationPrefsModal from '@/components/NotificationPrefsModal';
 import { DEFAULT_PREFS, loadPrefs, type NotificationPrefs } from '@/lib/notificationPrefs';
 import { EMPTY_STREAK, loadStreak, tickVisit, type StreakState } from '@/lib/streak';
-import { computeAchievements, countEarned, type AchievementStats } from '@/lib/achievements';
+import {
+  computeAchievements,
+  countEarned,
+  pointsMilestones,
+  type AchievementStats,
+} from '@/lib/achievements';
 import AchievementsModal from '@/components/AchievementsModal';
 import RecentlyViewedRow from '@/components/RecentlyViewedRow';
 import ReportsBreakdownCard from '@/components/ReportsBreakdownCard';
@@ -74,6 +79,7 @@ import { Input } from '@/components/ui/Input';
 import { ArrowDown, ArrowUp, ChevronRight, Flame, MapPin, Pencil, X } from 'lucide-react-native';
 import TierIcon from '@/components/TierIcon';
 import { getTier, pointsToNextTier, REPUTATION_TIERS } from '@/lib/reputationTier';
+import { setLastSeenPoints } from '@/lib/points';
 import { useReducedMotion } from '@/lib/accessibility';
 import {
   getPointEventHistory,
@@ -113,18 +119,12 @@ const EMPTY_BY_STATUS: Record<FlagStatus, number> = {
   rejected: 0,
 };
 
-// Notional point milestones — each one is a small "you reached X" badge
-// inline in the hero card. Tuned to feel rewarding early (25, 50) and
-// then pace out at typical engagement levels. If we ever ship real
-// badges/achievements these labels become their names.
-const MILESTONES: { at: number; label: string }[] = [
-  { at: 25, label: 'First Mile badge' },
-  { at: 50, label: 'Bronze Reviewer badge' },
-  { at: 100, label: 'Silver Reviewer badge' },
-  { at: 250, label: 'Gold Reviewer badge' },
-  { at: 500, label: 'Community Hero badge' },
-  { at: 1000, label: 'Legend status' },
-];
+// Point milestones for the hero progress bar — derived from the points-
+// category achievement badges so the bar and the badge catalog can never
+// drift apart (this used to be a separate hand-written list that did).
+const MILESTONES: { at: number; label: string }[] = pointsMilestones();
+// Label of the highest milestone, shown once the user passes it.
+const TOP_MILESTONE_LABEL = MILESTONES[MILESTONES.length - 1]?.label ?? 'top badge';
 
 function milestoneProgress(points: number): {
   next: number | null;
@@ -311,6 +311,10 @@ export default function ProfileScreen() {
       if (!mountedRef.current) return;
       const row = (profileRow as UserRow | null) ?? null;
       setProfile(row);
+      // F55: the user has now SEEN their current total — advance the
+      // "points while you were away" watermark so in-session earnings are
+      // never re-announced as away-earnings on the next launch.
+      if (row) void setLastSeenPoints(user.id, row.points).catch(() => {});
       setNameDraft(row?.display_name ?? '');
       setPointEvents(eventsResult);
 
@@ -495,7 +499,7 @@ export default function ProfileScreen() {
         AccessibilityInfo.announceForAccessibility('Display name saved.');
       }
     } catch (e) {
-      Alert.alert("Couldn't save your name", errorMessage(e));
+      notify("Couldn't save your name", errorMessage(e));
     } finally {
       if (mountedRef.current) setSavingName(false);
     }
@@ -513,7 +517,7 @@ export default function ProfileScreen() {
           AccessibilityInfo.announceForAccessibility('Profile photo updated.');
         }
       } catch (e) {
-        Alert.alert("Couldn't update your photo", errorMessage(e));
+        notify("Couldn't update your photo", errorMessage(e));
       } finally {
         if (mountedRef.current) setUploadingAvatar(false);
       }
@@ -529,7 +533,14 @@ export default function ProfileScreen() {
       input.accept = 'image/*';
       input.onchange = () => {
         const file = input.files?.[0];
-        if (file) void doUploadAvatar(URL.createObjectURL(file));
+        if (!file) return;
+        // L7 (F25 pattern): hoist the object URL so it can be revoked once
+        // the upload settles — success or failure — instead of pinning the
+        // File bytes in memory for the rest of the page session.
+        // doUploadAvatar never rejects (it catches internally), so .finally
+        // is the only cleanup hook needed.
+        const url = URL.createObjectURL(file);
+        void doUploadAvatar(url).finally(() => URL.revokeObjectURL(url));
       };
       input.click();
       return;
@@ -537,7 +548,7 @@ export default function ProfileScreen() {
     try {
       const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (!perm.granted) {
-        Alert.alert('Permission needed', 'Allow photo access so you can choose a profile picture.');
+        notify('Permission needed', 'Allow photo access so you can choose a profile picture.');
         return;
       }
       const result = await ImagePicker.launchImageLibraryAsync({
@@ -550,7 +561,7 @@ export default function ProfileScreen() {
         void doUploadAvatar(result.assets[0].uri);
       }
     } catch (e) {
-      Alert.alert("Couldn't pick a photo", errorMessage(e));
+      notify("Couldn't pick a photo", errorMessage(e));
     }
   }, [user, doUploadAvatar]);
 
@@ -623,10 +634,17 @@ export default function ProfileScreen() {
       // Auth state change (SIGNED_OUT) fires automatically; screen unmounts.
     } catch (e) {
       if (mountedRef.current) {
-        Alert.alert(
-          'Could not delete account',
-          errorMessage(e, 'Something went wrong. Your account was not deleted.'),
-        );
+        // F63: distinguish "delete failed" from "deleted, but local sign-out
+        // didn't finish" — the old copy claimed the account was not deleted
+        // even when it was.
+        if (e instanceof AccountDeletedSignOutPendingError) {
+          notify('Account deleted', e.message);
+        } else {
+          notify(
+            'Could not delete account',
+            errorMessage(e, 'Something went wrong. Your account was not deleted.'),
+          );
+        }
         setDeletingAccount(false);
       }
     }
@@ -950,7 +968,7 @@ export default function ProfileScreen() {
             </>
           ) : (
             <AppText variant="label" style={styles.heroSubtitle}>
-              You&apos;ve reached the top milestone — legend status.
+              You&apos;ve reached the top milestone — {TOP_MILESTONE_LABEL} earned.
             </AppText>
           )}
         </View>

@@ -14,7 +14,8 @@ import { useCallback, useSyncExternalStore } from 'react';
 export type FeatureFlagKey =
   | 'HEATMAP_ENABLED'
   | 'PUSH_NOTIFICATIONS_ENABLED'
-  | 'GUEST_SIGNIN_ENABLED';
+  | 'GUEST_SIGNIN_ENABLED'
+  | 'PUSH_NOTIF_TYPES_ENABLED';
 
 /** Default values. Change these here or via `setFlag()` at runtime in dev. */
 const DEFAULTS: Record<FeatureFlagKey, boolean> = {
@@ -24,6 +25,13 @@ const DEFAULTS: Record<FeatureFlagKey, boolean> = {
   // true here would allow any future isEnabled() check to admit unauthenticated
   // users before the full guest-auth flow has been audited and RLS-verified.
   GUEST_SIGNIN_ENABLED: false,
+  // Defaults false — hides the "Push notification types" row in Settings
+  // (NotificationPreferencesScreen). The screen saves per-category prefs to
+  // '@accessmap/push_notif_prefs_v1:{userId}', but NOTHING in the push
+  // pipeline reads that key yet, so the choices have no effect. Showing the
+  // UI would be a lie to the user (Sky Decision 2, Option B: hide, don't
+  // wire). Flip to true when the push pipeline wiring lands.
+  PUSH_NOTIF_TYPES_ENABLED: false,
 };
 
 // ---------------------------------------------------------------------------

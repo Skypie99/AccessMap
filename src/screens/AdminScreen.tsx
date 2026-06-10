@@ -122,7 +122,7 @@ export default function AdminScreen() {
       hapticSelection();
       setActioningId(flag.id);
       try {
-        await updateFlagStatus(flag.id, 'rejected');
+        await updateFlagStatus(flag.id, 'rejected', flag.status); // F53: CAS
         setFlags((prev) => prev.map((f) => (f.id === flag.id ? { ...f, status: 'rejected' } : f)));
       } catch (e) {
         Alert.alert('Error', errorMessage(e));

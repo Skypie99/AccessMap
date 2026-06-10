@@ -1,5 +1,19 @@
 import { signOut, supabase } from './supabase';
 
+/**
+ * Thrown when the account WAS deleted server-side but this device couldn't
+ * complete the local sign-out (e.g. connectivity dropped right after the
+ * delete). Callers must NOT say "your account was not deleted".
+ */
+export class AccountDeletedSignOutPendingError extends Error {
+  constructor() {
+    super(
+      'Your account was deleted, but this device could not finish signing out. Please restart the app.',
+    );
+    this.name = 'AccountDeletedSignOutPendingError';
+  }
+}
+
 // Permanently deletes the current user's account via the delete-account
 // Edge Function, then clears the local session.
 //
@@ -17,5 +31,11 @@ export async function deleteAccount(userId: string): Promise<void> {
   // Clear local session, offline cache, tile cache, and push token.
   // signOut() clears local storage before the server-side revoke call so it
   // succeeds even though the auth.users row is already gone.
-  await signOut(userId);
+  // F63: if the sign-out fails (network dropped after the successful delete),
+  // no SIGNED_OUT event fires and the caller's spinner would hang forever —
+  // throw a typed error so the UI can reset and explain honestly.
+  const result = await signOut(userId);
+  if (result?.error) {
+    throw new AccountDeletedSignOutPendingError();
+  }
 }

@@ -14,6 +14,8 @@
  *  - A category losing its human label and leaking the enum key
  *    (e.g. "no_ramp" instead of "No ramp") into a shared message.
  *  - The Severity/Status header losing its labels.
+ *  - The accessmap://flag/{id} deep link going missing or pointing at the
+ *    wrong flag (recipients with the app installed tap it to jump there).
  */
 
 import { formatFlagShareText } from '../shareFlag';
@@ -26,9 +28,10 @@ jest.mock('../supabase', () => ({ supabase: {} }));
 // a known baseline so each test only declares what it's varying.
 const makeFlag = (
   overrides: Partial<
-    Pick<FlagRow, 'category' | 'severity' | 'lat' | 'lng' | 'status' | 'description'>
+    Pick<FlagRow, 'id' | 'category' | 'severity' | 'lat' | 'lng' | 'status' | 'description'>
   > = {},
-): Pick<FlagRow, 'category' | 'severity' | 'lat' | 'lng' | 'status' | 'description'> => ({
+): Pick<FlagRow, 'id' | 'category' | 'severity' | 'lat' | 'lng' | 'status' | 'description'> => ({
+  id: 'flag-abc-123',
   category: 'no_ramp',
   severity: 3,
   lat: 37.331741,
@@ -50,6 +53,7 @@ describe('formatFlagShareText', () => {
         'At 37.33174, -122.03033',
         'Status: open',
         '',
+        'Open in AccessMap: accessmap://flag/flag-abc-123',
         'Reported via AccessMap.',
       ].join('\n'),
     );
@@ -69,6 +73,7 @@ describe('formatFlagShareText', () => {
         '',
         'Curb is crumbling on the south corner.',
         '',
+        'Open in AccessMap: accessmap://flag/flag-abc-123',
         'Reported via AccessMap.',
       ].join('\n'),
     );
@@ -86,6 +91,7 @@ describe('formatFlagShareText', () => {
         'At 37.33174, -122.03033',
         'Status: open',
         '',
+        'Open in AccessMap: accessmap://flag/flag-abc-123',
         'Reported via AccessMap.',
       ].join('\n'),
     );
@@ -148,6 +154,18 @@ describe('formatFlagShareText', () => {
   it('preserves the sign on negative coordinates', () => {
     const out = formatFlagShareText(makeFlag({ lat: -33.8688, lng: 151.2093 }), labelOf);
     expect(out).toContain('At -33.86880, 151.20930');
+  });
+
+  it('includes the accessmap://flag/{id} deep link for the shared flag', () => {
+    // Recipients with the app installed tap this to land on the exact flag
+    // (RootNavigator registers the accessmap://flag/{id} route). The id must
+    // be the shared flag's own id — a wrong id strands them on a 404 callout.
+    const out = formatFlagShareText(makeFlag({ id: 'deep-link-id-42' }), labelOf);
+    expect(out).toContain('Open in AccessMap: accessmap://flag/deep-link-id-42');
+    // The link sits on its own line, directly above the credit line.
+    const lines = out.split('\n');
+    expect(lines[lines.length - 2]).toBe('Open in AccessMap: accessmap://flag/deep-link-id-42');
+    expect(lines[lines.length - 1]).toBe('Reported via AccessMap.');
   });
 
   it('ends with "Reported via AccessMap." — no trailing newline', () => {

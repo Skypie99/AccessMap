@@ -159,6 +159,11 @@ async function persist(userId: string, ids: string[]): Promise<void> {
     await AsyncStorage.setItem(watchedKey(userId), JSON.stringify(ids));
   } catch (e) {
     console.warn('[watchedFlags] save failed:', errorMessage(e, 'AsyncStorage error.'));
+    // F43 (re-sweep): the watched list is user data the user deliberately
+    // curates — per the CLAUDE.md error tier for AsyncStorage WRITEs of user
+    // data (same class as savedPlaces.persist), a failed save must THROW so
+    // callers surface it instead of confirming a Watch that was never stored.
+    throw e;
   }
 }
 

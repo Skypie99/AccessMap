@@ -30,6 +30,7 @@ import ProfileScreen from '@/screens/ProfileScreen';
 import SettingsScreen from '@/screens/SettingsScreen';
 import AdminScreen from '@/screens/AdminScreen';
 import ErrorBoundary from '@/components/ErrorBoundary';
+import { createLinking, type TakePendingUrl } from './linking';
 
 export type RootTabParamList = {
   Map:
@@ -56,20 +57,9 @@ export type RootTabParamList = {
   Admin: undefined;
 };
 
-// Deep-link config. Registers accessmap://flag/{id} (matches the URL the
-// Share-flag button on FlagDetailModal emits, and the scheme is already
-// declared in app.json). React Navigation's built-in `linking` uses RN's
-// own Linking API, so no expo-linking dependency needed.
-const linking = {
-  prefixes: ['accessmap://'],
-  config: {
-    screens: {
-      // The :flagId path segment maps to params.flagId on the Map screen.
-      // MapScreen reads it and runs fetchFlagById + animateTo + showCallout.
-      Map: 'flag/:flagId',
-    },
-  },
-};
+// Deep-link config (accessmap://flag/{id}) lives in ./linking.ts —
+// createLinking(takePendingUrl) so the Gate in App.tsx can hand us a deep
+// link it captured while the user was still signed out (L8).
 
 const Tab = createBottomTabNavigator<RootTabParamList>();
 
@@ -89,9 +79,19 @@ interface Props {
   // saved default-tab preference. Defaults to 'Map' to preserve the original
   // behavior when no preference has been set.
   initialRouteName?: keyof RootTabParamList;
+  // L8: consume-once getter for a warm deep link the Gate captured while the
+  // user was signed out (no NavigationContainer mounted to receive it).
+  // Threaded into createLinking's getInitialURL below. Optional — omitted in
+  // tests and anywhere the Gate isn't involved.
+  takePendingUrl?: TakePendingUrl;
 }
 
-export default function RootNavigator({ initialRouteName = 'Map' }: Props) {
+export default function RootNavigator({ initialRouteName = 'Map', takePendingUrl }: Props) {
+  // Built ONCE per mount via the lazy useState initializer —
+  // NavigationContainer reads `linking` on mount only, and a fresh object
+  // every render would be wasted work (and a re-subscribe footgun if React
+  // Navigation ever starts diffing it).
+  const [linking] = useState(() => createLinking(takePendingUrl));
   return (
     <NavigationContainer ref={navigationRef} linking={linking}>
       <FlagsProviderWithAuth initialRouteName={initialRouteName} />

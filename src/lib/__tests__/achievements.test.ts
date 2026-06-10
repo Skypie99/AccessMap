@@ -1,4 +1,9 @@
-import { ACHIEVEMENTS_CATALOG, computeAchievements, countEarned } from '../achievements';
+import {
+  ACHIEVEMENTS_CATALOG,
+  computeAchievements,
+  countEarned,
+  pointsMilestones,
+} from '../achievements';
 
 describe('catalog', () => {
   it('has at least one badge per category', () => {
@@ -19,6 +24,33 @@ describe('catalog', () => {
       expect(a.threshold).toBeGreaterThan(0);
       expect(Number.isInteger(a.threshold)).toBe(true);
     }
+  });
+});
+
+describe('pointsMilestones', () => {
+  it('derives exactly the points-category catalog entries, ascending by threshold', () => {
+    const milestones = pointsMilestones();
+    const pointsBadges = ACHIEVEMENTS_CATALOG.filter((a) => a.category === 'points');
+
+    expect(milestones).toHaveLength(pointsBadges.length);
+    expect(milestones.map((m) => m.at)).toEqual(
+      pointsBadges.map((b) => b.threshold).sort((a, b) => a - b),
+    );
+    // Labels come straight from the badge titles, so renaming a points
+    // badge automatically renames the Profile milestone too.
+    for (const badge of pointsBadges) {
+      const match = milestones.find((m) => m.at === badge.threshold);
+      expect(match?.label).toBe(`${badge.title} badge`);
+    }
+  });
+
+  it('pins the current catalog values (update alongside catalog changes)', () => {
+    expect(pointsMilestones()).toEqual([
+      { at: 25, label: 'Welcome Aboard badge' },
+      { at: 100, label: 'Engaged badge' },
+      { at: 500, label: 'Dedicated badge' },
+      { at: 1000, label: 'Devoted badge' },
+    ]);
   });
 });
 

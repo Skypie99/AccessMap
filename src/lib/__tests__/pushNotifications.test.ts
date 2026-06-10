@@ -129,12 +129,29 @@ describe('deletePushToken', () => {
     expect(AsyncStorage.setItem).toHaveBeenCalledWith(pushEnabledKey(USER_ID), 'false');
   });
 
-  it('does not throw when the DB call rejects (best-effort)', async () => {
+  it('LOCKING (F49): throws when the server delete REPORTS an error', async () => {
+    // postgrest returns { error } rather than rejecting — this was previously
+    // unchecked, so a failed delete left the token live (pushes kept arriving)
+    // while the toggle showed off. An unhonored opt-out must surface; the
+    // sign-out path stays best-effort via its caller's try/catch in
+    // supabase.ts signOut().
+    const eqMock = jest.fn().mockResolvedValue({ error: { message: 'permission denied' } });
+    const deleteMock = jest.fn().mockReturnValue({ eq: eqMock });
+    mockFrom.mockReturnValue({ delete: deleteMock });
+
+    await expect(deletePushToken(USER_ID)).rejects.toMatchObject({
+      message: 'permission denied',
+    });
+    // The local preference must NOT claim "disabled" when the opt-out failed.
+    expect(AsyncStorage.setItem).not.toHaveBeenCalled();
+  });
+
+  it('LOCKING (F49): throws when the DB call rejects (network failure)', async () => {
     const eqMock = jest.fn().mockRejectedValue(new Error('network error'));
     const deleteMock = jest.fn().mockReturnValue({ eq: eqMock });
     mockFrom.mockReturnValue({ delete: deleteMock });
 
-    // Should resolve without throwing — failure is silent per Jordan condition 5.
-    await expect(deletePushToken(USER_ID)).resolves.toBeUndefined();
+    await expect(deletePushToken(USER_ID)).rejects.toThrow('network error');
+    expect(AsyncStorage.setItem).not.toHaveBeenCalled();
   });
 });

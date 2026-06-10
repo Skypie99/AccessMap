@@ -78,10 +78,13 @@ function makeChain(terminal: () => unknown): Record<string, unknown> {
 
 const mockFrom = jest.fn();
 
+const mockRpc = jest.fn();
+
 jest.mock('../supabase', () => ({
   __esModule: true,
   supabase: {
     from: (...args: unknown[]) => mockFrom(...args),
+    rpc: (...args: unknown[]) => mockRpc(...args),
   },
 }));
 
@@ -99,6 +102,8 @@ import {
   listRecentFlags,
   listFlagStatusHistory,
   listLeaderboard,
+  requestFlagReopen,
+  FlagStatusConflictError,
 } from '../flags';
 import type { FlagRow } from '@/types/database';
 
@@ -212,7 +217,7 @@ describe('listFlagsByUser', () => {
 describe('updateFlagStatus', () => {
   it('returns the updated row on success', async () => {
     const updated = makeRow({ id: 'f1', status: 'verified' });
-    mockSingle.mockResolvedValueOnce({ data: updated, error: null });
+    mockMaybeSingle.mockResolvedValueOnce({ data: updated, error: null });
     mockFrom.mockReturnValue(makeChain(() => {}));
 
     const result = await updateFlagStatus('f1', 'verified');
@@ -221,13 +226,65 @@ describe('updateFlagStatus', () => {
   });
 
   it('throws when Supabase returns an error', async () => {
-    mockSingle.mockResolvedValueOnce({
+    mockMaybeSingle.mockResolvedValueOnce({
       data: null,
       error: { message: 'RLS violation', code: '42501' },
     });
     mockFrom.mockReturnValue(makeChain(() => {}));
 
     await expect(updateFlagStatus('f1', 'resolved')).rejects.toMatchObject({ code: '42501' });
+  });
+
+  // F53 (re-sweep): compare-and-set — 0 matched rows (status moved underneath
+  // the caller, or the flag was deleted) must throw the typed conflict, never
+  // commit a stale overwrite or leak a raw PGRST116 coercion message.
+  it('LOCKING (F53): throws FlagStatusConflictError when the CAS matches no row', async () => {
+    mockMaybeSingle.mockResolvedValueOnce({ data: null, error: null });
+    mockFrom.mockReturnValue(makeChain(() => {}));
+
+    await expect(updateFlagStatus('f1', 'verified', 'open')).rejects.toBeInstanceOf(
+      FlagStatusConflictError,
+    );
+  });
+
+  // Second sweep (F65): the conflict tests above can't see WHICH predicate ran
+  // — deleting the .eq('status', expectedCurrent) line would still pass them.
+  // This test records the builder calls and pins the CAS predicate itself.
+  it('LOCKING (F53): the update is actually filtered by the expected current status', async () => {
+    const eqCalls: [string, unknown][] = [];
+    const recorder: Record<string, unknown> = {
+      update: jest.fn(() => recorder),
+      eq: jest.fn((col: string, val: unknown) => {
+        eqCalls.push([col, val]);
+        return recorder;
+      }),
+      select: jest.fn(() => recorder),
+      maybeSingle: jest.fn().mockResolvedValue({ data: makeRow({ status: 'verified' }), error: null }),
+    };
+    mockFrom.mockReturnValue(recorder);
+
+    await updateFlagStatus('f1', 'verified', 'open');
+    expect(eqCalls).toContainEqual(['id', 'f1']);
+    expect(eqCalls).toContainEqual(['status', 'open']);
+
+    // And without expectedCurrent, no status predicate is added.
+    eqCalls.length = 0;
+    (recorder.maybeSingle as jest.Mock).mockResolvedValue({
+      data: makeRow({ status: 'rejected' }),
+      error: null,
+    });
+    await updateFlagStatus('f1', 'rejected');
+    expect(eqCalls).toContainEqual(['id', 'f1']);
+    expect(eqCalls.some(([col]) => col === 'status')).toBe(false);
+  });
+
+  it('LOCKING (F53): throws the conflict for a deleted flag (no raw PGRST116)', async () => {
+    mockMaybeSingle.mockResolvedValueOnce({ data: null, error: null });
+    mockFrom.mockReturnValue(makeChain(() => {}));
+
+    await expect(updateFlagStatus('gone', 'rejected')).rejects.toThrow(
+      /changed since you opened it/i,
+    );
   });
 });
 
@@ -421,5 +478,56 @@ describe('listLeaderboard', () => {
     setupChain({ data: [{ id: 'u1', display_name: 'Top', points: 999 }], error: null });
     const result = await listLeaderboard(1);
     expect(result).toHaveLength(1);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// requestFlagReopen (F38 re-sweep)
+//
+// null is reserved for "the RPC isn't on this backend" (migration absent);
+// every OTHER error must throw so the caller shows an honest error instead of
+// the success-sounding "sent for review" fallback message.
+// ---------------------------------------------------------------------------
+
+describe('requestFlagReopen', () => {
+  it('returns the new count on success', async () => {
+    mockRpc.mockResolvedValueOnce({ data: 2, error: null });
+    await expect(requestFlagReopen('f1')).resolves.toBe(2);
+    expect(mockRpc).toHaveBeenCalledWith('increment_reopen_request', { p_flag_id: 'f1' });
+  });
+
+  it('returns 0 when the server discarded the vote (flag no longer resolved)', async () => {
+    mockRpc.mockResolvedValueOnce({ data: 0, error: null });
+    await expect(requestFlagReopen('f1')).resolves.toBe(0);
+  });
+
+  it('returns null ONLY for function-missing errors (migration absent)', async () => {
+    mockRpc.mockResolvedValueOnce({
+      data: null,
+      error: { message: 'function not found', code: 'PGRST202' },
+    });
+    await expect(requestFlagReopen('f1')).resolves.toBeNull();
+
+    mockRpc.mockResolvedValueOnce({
+      data: null,
+      error: { message: 'function public.increment_reopen_request(uuid) does not exist', code: '42883' },
+    });
+    await expect(requestFlagReopen('f1')).resolves.toBeNull();
+  });
+
+  it('LOCKING (F38): throws on network/RLS/any other RPC error', async () => {
+    mockRpc.mockResolvedValueOnce({
+      data: null,
+      error: { message: 'TypeError: Failed to fetch', code: undefined },
+    });
+    await expect(requestFlagReopen('f1')).rejects.toMatchObject({
+      message: 'TypeError: Failed to fetch',
+    });
+
+    mockRpc.mockResolvedValueOnce({
+      data: null,
+      error: { message: 'permission denied', code: '42501' },
+    });
+    await expect(requestFlagReopen('f1')).rejects.toMatchObject({ code: '42501' });
   });
 });

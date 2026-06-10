@@ -105,15 +105,13 @@ export async function uploadAvatar(userId: string, localUri: string): Promise<st
     throw new Error('Photo privacy check failed. Please try a different photo or contact support.');
   }
 
-  const contentType =
-    ext === 'png'
-      ? 'image/png'
-      : ext === 'webp'
-        ? 'image/webp'
-        : ext === 'heic' || ext === 'heif'
-          ? 'image/heic'
-          : 'image/jpeg';
-  const filePath = `${userId}/avatar/${Date.now()}.${ext}`;
+  // Derive extension + Content-Type from the ACTUAL post-strip bytes (the
+  // strip re-encodes HEIC/WEBP to JPEG/PNG) so name, MIME, and content agree.
+  // Mirrors uploadFlagPhoto in src/lib/flags.ts.
+  const strippedMime = detectMimeFromBytes(arrayBuffer);
+  const contentType = strippedMime === 'image/png' ? 'image/png' : 'image/jpeg';
+  const finalExt = strippedMime === 'image/png' ? 'png' : 'jpg';
+  const filePath = `${userId}/avatar/${Date.now()}.${finalExt}`;
 
   const { error: uploadErr } = await supabase.storage
     .from(FLAG_PHOTOS_BUCKET)
@@ -129,13 +127,17 @@ export function getInitials(name: string): string {
   const trimmed = name.trim();
   if (!trimmed) return '?';
   const parts = trimmed.split(/\s+/);
+  // F59 (re-sweep): index/slice operate on UTF-16 code UNITS — a display name
+  // starting with an emoji (a surrogate pair) was split in half and rendered
+  // as U+FFFD mojibake in the avatar fallback. Array.from iterates real code
+  // points.
   if (parts.length >= 2) {
-    const first = parts[0] ?? '';
-    const last = parts[parts.length - 1] ?? '';
-    return ((first[0] ?? '') + (last[0] ?? '')).toUpperCase();
+    const first = Array.from(parts[0] ?? '')[0] ?? '';
+    const last = Array.from(parts[parts.length - 1] ?? '')[0] ?? '';
+    return (first + last).toUpperCase();
   }
-  // Single word — take first two chars (handles email like "sky@…" → "SK")
+  // Single word — take first two code points (handles email like "sky@…" → "SK")
   const atIdx = trimmed.indexOf('@');
   const word = atIdx > 0 ? trimmed.slice(0, atIdx) : trimmed;
-  return word.slice(0, 2).toUpperCase();
+  return Array.from(word).slice(0, 2).join('').toUpperCase();
 }

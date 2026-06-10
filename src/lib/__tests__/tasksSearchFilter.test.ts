@@ -1,39 +1,38 @@
 /**
  * Tests for the free-text search predicate on the Tasks screen.
  *
- * Pins the substring-match logic added in commit `ee3cfae` (branch
- * `feat/shamus-flag-deeplink-detail-2026-05-27`). At time of writing the
- * branch was not yet merged to `main` — these tests describe the
- * predicate as a contract so the moment it lands the behavior is locked
- * in. A reviewer can confirm by diffing the verbatim block below against
- * the displayFlags useMemo in `src/screens/TasksScreen.tsx`.
+ * L6 (ReSweep 2026-06-09): the Tasks screen's displayFlags useMemo now
+ * delegates its text search to the SHARED `searchFlags()` helper from
+ * `@/lib/flagSearch` — the same helper NearbyFlagsModal uses — instead
+ * of the old inline description/category-label OR filter. These tests
+ * exercise the REAL helper inside a mirror of the surrounding
+ * mine/severity filter chain, so any drift between this contract and
+ * the screen is caught by diffing the block below against the source.
  *
- * Source of truth (TasksScreen.tsx, displayFlags useMemo after ee3cfae):
+ * Source of truth (TasksScreen.tsx, displayFlags useMemo after L6):
  *
  *   const displayFlags = useMemo(() => {
  *     let out = flags;
  *     if (mineOnly && userId) out = out.filter((f) => f.user_id === userId);
  *     if (minSeverity > 0) out = out.filter((f) => f.severity >= minSeverity);
- *     const q = searchText.trim().toLowerCase();
- *     if (q) {
- *       out = out.filter((f) => {
- *         const desc = (f.description ?? '').toLowerCase();
- *         const catLabel = CATEGORY_LABELS[f.category].toLowerCase();
- *         return desc.includes(q) || catLabel.includes(q);
- *       });
- *     }
+ *     if (categoryFilter) out = out.filter((f) => f.category === categoryFilter);
+ *     out = searchFlags(out, debouncedSearchText);
  *     return out;
- *   }, [flags, mineOnly, userId, minSeverity, searchText]);
+ *   }, [flags, mineOnly, userId, minSeverity, categoryFilter, debouncedSearchText]);
  *
- * Substring (not whole-word), case-insensitive, no regex semantics.
+ * searchFlags semantics: substring (not whole-word), case-insensitive,
+ * no regex; matches description + category label + STATUS label; each
+ * whitespace-separated token must match (AND semantics).
  */
 
-jest.mock('../supabase', () => ({ __esModule: true, supabase: { from: jest.fn() } }));
-import { CATEGORY_LABELS } from '../flags';
+import { CATEGORY_LABELS, STATUS_LABELS } from '../flags';
+import { searchFlags } from '../flagSearch';
 import type { FlagCategory, FlagRow, FlagStatus } from '@/types/database';
 
+jest.mock('../supabase', () => ({ __esModule: true, supabase: { from: jest.fn() } }));
+
 // ────────────────────────────────────────────────────────────────────────────
-// Mirror of the displayFlags filter expression — no source changes needed.
+// Mirror of the displayFlags filter chain — calls the REAL searchFlags.
 // ────────────────────────────────────────────────────────────────────────────
 type FilterArgs = {
   flags: FlagRow[];
@@ -53,14 +52,7 @@ function applyDisplayFilter({
   let out = flags;
   if (mineOnly && userId) out = out.filter((f) => f.user_id === userId);
   if (minSeverity > 0) out = out.filter((f) => f.severity >= minSeverity);
-  const q = searchText.trim().toLowerCase();
-  if (q) {
-    out = out.filter((f) => {
-      const desc = (f.description ?? '').toLowerCase();
-      const catLabel = CATEGORY_LABELS[f.category].toLowerCase();
-      return desc.includes(q) || catLabel.includes(q);
-    });
-  }
+  out = searchFlags(out, searchText);
   return out;
 }
 
@@ -265,9 +257,9 @@ describe('free-text search — category-label matching', () => {
 });
 
 // ────────────────────────────────────────────────────────────────────────────
-// 4. OR semantics — match on description OR label
+// 4. Single-token OR across fields — description OR category label OR status
 // ────────────────────────────────────────────────────────────────────────────
-describe('free-text search — OR between description and label', () => {
+describe('free-text search — a single token matches ANY field', () => {
   it('a row matches if EITHER description OR label contains the query', () => {
     const flags = [
       // Description hits, label doesn't (category 'other' → label 'Other').
@@ -293,6 +285,121 @@ describe('free-text search — OR between description and label', () => {
       ...BASE_DEFAULTS,
       flags,
       searchText: 'foo',
+    });
+    expect(out.map((f) => f.id)).toEqual(['a']);
+  });
+});
+
+// ────────────────────────────────────────────────────────────────────────────
+// 4b. AND semantics — every whitespace-separated token must match
+// ────────────────────────────────────────────────────────────────────────────
+describe('free-text search — multi-token queries use AND semantics (L6)', () => {
+  // 'broken' via category label, 'ramp' via description → matches both tokens.
+  const bothTokensFlag = makeFlag('a', {
+    description: 'no ramp on the corner',
+    category: 'broken_sidewalk',
+  });
+  const flags = [
+    bothTokensFlag,
+    // 'broken' via label only — no 'ramp' anywhere.
+    makeFlag('b', { description: 'cracked slab', category: 'broken_sidewalk' }),
+    // 'ramp' via label only — no 'broken' anywhere.
+    makeFlag('c', { description: 'steep approach', category: 'no_ramp' }),
+  ];
+
+  it('"broken ramp" requires BOTH tokens — not OR', () => {
+    const out = applyDisplayFilter({
+      ...BASE_DEFAULTS,
+      flags,
+      searchText: 'broken ramp',
+    });
+    // Only 'a' satisfies both tokens. Under the old OR filter all three
+    // would have matched (each contains 'broken' or 'ramp').
+    expect(out.map((f) => f.id)).toEqual(['a']);
+  });
+
+  it('tokens may match across DIFFERENT fields of the same row', () => {
+    const out = applyDisplayFilter({
+      ...BASE_DEFAULTS,
+      flags: [bothTokensFlag],
+      searchText: 'broken corner',
+    });
+    // 'broken' hits the category label, 'corner' hits the description.
+    expect(out.map((f) => f.id)).toEqual(['a']);
+  });
+
+  it('returns [] when no single row matches every token', () => {
+    const out = applyDisplayFilter({
+      ...BASE_DEFAULTS,
+      flags,
+      searchText: 'cracked steep',
+    });
+    // 'cracked' only in b, 'steep' only in c — no row has both.
+    expect(out).toEqual([]);
+  });
+
+  it('extra whitespace between tokens does not change semantics', () => {
+    const out = applyDisplayFilter({
+      ...BASE_DEFAULTS,
+      flags,
+      searchText: '  broken \t ramp  ',
+    });
+    expect(out.map((f) => f.id)).toEqual(['a']);
+  });
+});
+
+// ────────────────────────────────────────────────────────────────────────────
+// 4c. Status-label matching — new with the shared helper (L6)
+// ────────────────────────────────────────────────────────────────────────────
+describe('free-text search — status-label matching (L6)', () => {
+  // Pin the exact label strings the search matches against. If a label
+  // is ever reworded in src/lib/flags.ts, this fails and the search docs
+  // (and any user-facing search hints) need a matching update.
+  it('pins the STATUS_LABELS strings used by the search haystack', () => {
+    expect(STATUS_LABELS).toEqual({
+      open: 'Open',
+      verified: 'Verified',
+      resolved: 'Resolved',
+      rejected: 'Rejected',
+    });
+  });
+
+  it('matches the human-readable status label, not the enum key', () => {
+    const flags = [
+      makeFlag('a', { status: 'verified', description: null, category: 'other' }),
+      makeFlag('b', { status: 'open', description: null, category: 'other' }),
+    ];
+    const out = applyDisplayFilter({
+      ...BASE_DEFAULTS,
+      flags,
+      searchText: 'verified',
+    });
+    expect(out.map((f) => f.id)).toEqual(['a']);
+  });
+
+  it('status match is case-insensitive', () => {
+    const flags = [
+      makeFlag('a', { status: 'verified', description: null, category: 'other' }),
+      makeFlag('b', { status: 'open', description: null, category: 'other' }),
+    ];
+    const out = applyDisplayFilter({
+      ...BASE_DEFAULTS,
+      flags,
+      searchText: 'VERIFIED',
+    });
+    expect(out.map((f) => f.id)).toEqual(['a']);
+  });
+
+  it('status label composes with another token under AND semantics', () => {
+    const flags = [
+      makeFlag('a', { status: 'verified', description: 'curb hazard', category: 'other' }),
+      makeFlag('b', { status: 'verified', description: 'loose gravel', category: 'other' }),
+      makeFlag('c', { status: 'open', description: 'curb hazard', category: 'other' }),
+    ];
+    const out = applyDisplayFilter({
+      ...BASE_DEFAULTS,
+      flags,
+      searchText: 'verified curb',
     });
     expect(out.map((f) => f.id)).toEqual(['a']);
   });

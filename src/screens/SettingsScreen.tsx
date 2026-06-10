@@ -16,14 +16,20 @@ import { type ColorTheme, type ThemeMode, useColor, useThemeMode } from '@/theme
 import { AppText } from '@/components/ui/AppText';
 import { hapticSelection } from '@/lib/haptics';
 import { signOut, supabase } from '@/lib/supabase';
-import { confirm } from '@/lib/confirm';
+import { confirm, notify } from '@/lib/confirm';
 import { useAuth } from '@/lib/auth';
+import { useFeatureFlag } from '@/lib/featureFlags';
 import { useSharedModals } from '@/lib/sharedModalsContext';
 import { CATEGORY_LABELS, listFlagsByUser } from '@/lib/flags';
 import { listFeedbackByUser } from '@/lib/feedbackStore';
 import { formatDataExport } from '@/lib/dataExport';
 import type { UserRow } from '@/types/database';
-import { deletePushToken, enablePushNotifications, getPushEnabled } from '@/lib/pushNotifications';
+import {
+  deletePushToken,
+  enablePushNotifications,
+  getNotificationPermission,
+  getPushEnabled,
+} from '@/lib/pushNotifications';
 // NotificationPrefsModal stays mounted locally — Settings's instance is
 // bare (no initialPrefs / onPrefsChanged), but ProfileScreen's instance
 // is per-screen-stateful (carries `initialPrefs={notificationPrefs}` and
@@ -208,6 +214,9 @@ export default function SettingsScreen() {
   // immediate-replay version most users expect from a "Replay" control.
   const [tutorialOpen, setTutorialOpen] = useState(false);
   const [notifPrefsOpen, setNotifPrefsOpen] = useState(false);
+  // Sky Decision 2 (Option B): the push-notification-types screen saves prefs
+  // nothing reads yet, so the row + screen stay hidden until the flag flips.
+  const pushNotifTypesEnabled = useFeatureFlag('PUSH_NOTIF_TYPES_ENABLED');
 
   const { user } = useAuth();
   const [exporting, setExporting] = useState(false);
@@ -220,9 +229,29 @@ export default function SettingsScreen() {
 
   useEffect(() => {
     if (!user) return;
-    getPushEnabled(user.id)
-      .then(setPushEnabled)
-      .catch(() => setPushEnabled(false));
+    let cancelled = false;
+    void (async () => {
+      try {
+        const enabled = await getPushEnabled(user.id);
+        if (cancelled) return;
+        if (!enabled) {
+          setPushEnabled(false);
+          return;
+        }
+        // F52 (re-sweep): the stored preference can outlive the OS permission
+        // (user revokes it in system Settings) — without this check the toggle
+        // showed ON while no push could ever be delivered. null = "can't tell
+        // here" (web / module absent), in which case trust the stored pref.
+        const osPermission = await getNotificationPermission();
+        if (cancelled) return;
+        setPushEnabled(osPermission !== false);
+      } catch {
+        if (!cancelled) setPushEnabled(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [user]);
 
   const handlePushToggle = async (value: boolean) => {
@@ -236,11 +265,18 @@ export default function SettingsScreen() {
         // the toggle stays off.
         if (success) setPushEnabled(true);
       } else {
+        // F49: deletePushToken now throws when the server-side delete fails,
+        // so the toggle only flips OFF when the opt-out actually stuck.
         await deletePushToken(user.id);
         setPushEnabled(false);
       }
     } catch (e) {
-      Alert.alert('Could not update notifications', 'Please try again.');
+      notify(
+        'Could not update notifications',
+        value
+          ? 'Please try again.'
+          : "Your opt-out didn't reach the server, so notifications are still on. Please check your connection and try again.",
+      );
       console.warn('[SettingsScreen] handlePushToggle error:', e);
     } finally {
       setPushBusy(false);
@@ -398,13 +434,18 @@ export default function SettingsScreen() {
         {/* F10: this row exposes NotificationPreferencesScreen (push-alert
             categories), which was mounted below but had no entry point in
             Settings — setNotifPrefsOpen(true) was never called anywhere here,
-            so the screen was permanently unreachable from this tab. */}
-        <SettingsRow
-          title="Push notification types"
-          subtitle="Pick which push alerts you get: status changes, nearby flags, watched flags, and digests."
-          accessibilityHint="Opens push notification category preferences"
-          onPress={() => setNotifPrefsOpen(true)}
-        />
+            so the screen was permanently unreachable from this tab.
+            Re-sweep FIX A: gated behind PUSH_NOTIF_TYPES_ENABLED (default
+            false) — the screen's saved prefs aren't read by the push pipeline
+            yet, so the row hides until the wiring lands. */}
+        {pushNotifTypesEnabled && (
+          <SettingsRow
+            title="Push notification types"
+            subtitle="Pick which push alerts you get: status changes, nearby flags, watched flags, and digests."
+            accessibilityHint="Opens push notification category preferences"
+            onPress={() => setNotifPrefsOpen(true)}
+          />
+        )}
 
         {/* Push notifications toggle — Jordan condition 4.
             Uses a Switch so the current state is always visible without
@@ -541,10 +582,12 @@ export default function SettingsScreen() {
           before the user could reach Settings), so there's nothing to
           mutate. */}
       <OnboardingModal visible={tutorialOpen} onDone={() => setTutorialOpen(false)} />
-      <NotificationPreferencesScreen
-        visible={notifPrefsOpen}
-        onClose={() => setNotifPrefsOpen(false)}
-      />
+      {pushNotifTypesEnabled && (
+        <NotificationPreferencesScreen
+          visible={notifPrefsOpen}
+          onClose={() => setNotifPrefsOpen(false)}
+        />
+      )}
     </>
   );
 }

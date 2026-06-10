@@ -20,16 +20,18 @@ import * as ImagePicker from 'expo-image-picker';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { font, radius, shadow, spacing } from '@/theme';
 import { useAuth } from '@/lib/auth';
-import { confirm } from '@/lib/confirm';
+import { confirm, notify } from '@/lib/confirm';
 import { getDirectionsUrl } from '@/lib/directionsLink';
 import { errorMessage } from '@/lib/errors';
 import { formatFlagShareText } from '@/lib/shareFlag';
+import { webShare } from '@/lib/webShare';
 import { addWatched, loadWatched, removeWatched } from '@/lib/watchedFlags';
 import { recordView } from '@/lib/recentlyViewed';
 import {
   CATEGORY_LABELS,
   CATEGORY_ORDER,
   deleteFlag,
+  FlagStatusConflictError,
   requestFlagReopen,
   severityColor,
   updateFlagContent,
@@ -60,6 +62,11 @@ interface Props {
   // right "+points" flash banner (reporter vs. actor bonus).
   onChanged: (updated: FlagRow, action: DetailAction, isOwn: boolean) => void;
   onDeleted: (deletedId: string) => void;
+  // F58 (re-sweep): fired after a successful content edit (description /
+  // category / severity) so the parent can patch the shared store — without
+  // it the Tasks card, the map pin color, and a re-opened modal all kept
+  // showing pre-edit values and the owner believed the save was lost.
+  onEdited?: (updated: FlagRow) => void;
   onViewOnMap: (flag: FlagRow) => void;
 }
 
@@ -69,6 +76,7 @@ export default function FlagDetailModal({
   onClose,
   onChanged,
   onDeleted,
+  onEdited,
   onViewOnMap,
 }: Props) {
   const color = useColor();
@@ -114,6 +122,7 @@ export default function FlagDetailModal({
     tableNotReady: commentsTableNotReady,
     addComment,
     deleteComment: deleteCommentById,
+    refetch: refetchComments,
   } = useComments(shownFlag?.id);
   const [commentText, setCommentText] = useState('');
   const [commentSubmitting, setCommentSubmitting] = useState(false);
@@ -217,9 +226,11 @@ export default function FlagDetailModal({
         await addWatched(user.id, shownFlag.id);
         setWatched(true);
       }
-    } catch {
-      // Storage hiccups already get a console.warn from the helpers.
-      // Nothing to surface to the user — they can retry.
+    } catch (e) {
+      // F43: a failed save means the Watch/Unwatch did NOT stick — say so
+      // (per the user-data write tier in CLAUDE.md). State was only flipped
+      // after a successful save, so no rollback is needed here.
+      notify("Couldn't update your watched list", errorMessage(e));
     } finally {
       setWatchSaving(false);
     }
@@ -252,7 +263,9 @@ export default function FlagDetailModal({
           const updated = await listFlagPhotos(shownFlag.id);
           setFlagPhotos(updated);
         } catch (e) {
-          Alert.alert('Could not upload photo', errorMessage(e));
+          // F46: this is the WEB branch — Alert.alert is a no-op here, which
+          // made a failed (e.g. fail-closed HEIC) upload a silent dead-end.
+          notify('Could not upload photo', errorMessage(e));
         } finally {
           URL.revokeObjectURL(localUri);
           cleanup();
@@ -356,9 +369,10 @@ export default function FlagDetailModal({
       };
       const updated = await updateFlagContent(shownFlag.id, patch);
       setShownFlag(updated);
+      onEdited?.(updated); // F58: propagate to the shared store/list
       setIsEditing(false);
     } catch (e) {
-      Alert.alert('Could not save changes', errorMessage(e));
+      notify('Could not save changes', errorMessage(e));
     } finally {
       setBusy(false);
     }
@@ -368,11 +382,23 @@ export default function FlagDetailModal({
     if (busy) return;
     setBusy(true);
     try {
-      const updated = await updateFlagStatus(shownFlag.id, next);
+      // F53: compare-and-set against the status THIS modal is showing — a
+      // stale snapshot must not silently overwrite a concurrent change
+      // (e.g. reverting another user's resolution to 'verified').
+      const updated = await updateFlagStatus(shownFlag.id, next, shownFlag.status);
       onChanged(updated, action, isOwn);
       onClose();
     } catch (e) {
-      Alert.alert('Could not update flag', errorMessage(e));
+      if (e instanceof FlagStatusConflictError) {
+        notify(
+          'This flag changed',
+          'It was updated (or removed) while you had it open — closing so you can see the latest.',
+        );
+        // F64: don't strand the user on a stale snapshot with live buttons.
+        onClose();
+      } else {
+        notify('Could not update flag', errorMessage(e));
+      }
     } finally {
       setBusy(false);
     }
@@ -437,6 +463,60 @@ export default function FlagDetailModal({
       const msg = errorMessage(e);
       if (/cancel|dismiss/i.test(msg)) return;
       Alert.alert("Couldn't share flag", msg);
+    }
+  };
+
+  // L2 (re-sweep): the coords copy button used a bare inline Share.share —
+  // on web browsers without the Web Share API (Firefox desktop) that's an
+  // unhandled promise rejection and the button silently does nothing. Web
+  // now routes through the tested webShare helper (navigator.share →
+  // clipboard), with a last-ditch window.alert showing the coords so the
+  // button always does SOMETHING. Native mirrors handleShare's try/catch
+  // (user-cancel stays silent; real errors surface).
+  const handleCopyCoords = async () => {
+    if (Platform.OS === 'web') {
+      try {
+        // webShare's contract: `true` = shared or copied; `false` + share API
+        // present = user cancelled; `false` + no share API = clipboard
+        // failed/unavailable. Capture availability BEFORE the call so we can
+        // tell those apart.
+        const shareAvailable =
+          typeof navigator !== 'undefined' &&
+          typeof (navigator as Navigator).share === 'function';
+        const ok = await webShare({ title: 'Flag coordinates', text: formattedCoords });
+        if (ok) {
+          // The clipboard path has no UI of its own — confirm so the user
+          // knows the tap landed. (navigator.share shows its own sheet.)
+          if (!shareAvailable && typeof window !== 'undefined' && typeof window.alert === 'function') {
+            window.alert('Coordinates copied to your clipboard.');
+          }
+          return;
+        }
+        // Share API existed and returned false → user cancelled. Stay silent.
+        if (shareAvailable) return;
+        // No share API and the clipboard write failed — show the coords so
+        // the user can copy them manually.
+        if (typeof window !== 'undefined' && typeof window.alert === 'function') {
+          window.alert(formattedCoords);
+        }
+      } catch (e) {
+        const msg = errorMessage(e);
+        if (/cancel|dismiss|abort/i.test(msg)) return;
+        // Alert.alert is a no-op on web — use window.alert for real errors.
+        if (typeof window !== 'undefined' && typeof window.alert === 'function') {
+          window.alert(`Couldn't copy coordinates: ${msg}`);
+        }
+      }
+      return;
+    }
+
+    // Native: OS share sheet — mirrors handleShare (user-cancel is silent).
+    try {
+      await Share.share({ message: formattedCoords, title: 'Flag coordinates' });
+    } catch (e) {
+      const msg = errorMessage(e);
+      if (/cancel|dismiss/i.test(msg)) return;
+      Alert.alert("Couldn't copy coordinates", msg);
     }
   };
 
@@ -538,11 +618,25 @@ export default function FlagDetailModal({
         setReopenText('');
         return;
       }
+      if (newCount === 0) {
+        // F37 (re-sweep): the RPC only increments while the flag is still
+        // 'resolved' — 0 means the server DISCARDED the vote (someone reopened
+        // or changed the flag while this modal showed a stale snapshot).
+        // Don't record the per-device dedup (that would silently burn this
+        // device's one vote on a no-op), and don't claim "request noted".
+        const msg =
+          'This flag changed while you had it open, so a reopen request is no longer needed. Close and reopen it to see the latest.';
+        setReopenMessage(msg);
+        AccessibilityInfo.announceForAccessibility(msg);
+        setShowReopenForm(false);
+        setReopenText('');
+        return;
+      }
       await recordReopenRequest(user.id, shownFlag.id);
 
       if (newCount >= threshold) {
         // Threshold met — reopen the flag.
-        const updated = await updateFlagStatus(shownFlag.id, 'open');
+        const updated = await updateFlagStatus(shownFlag.id, 'open', 'resolved');
         onChanged(updated, 'verify', isOwn);
         onClose();
       } else {
@@ -556,7 +650,17 @@ export default function FlagDetailModal({
         setReopenText('');
       }
     } catch (e) {
-      Alert.alert('Could not submit reopen request', errorMessage(e));
+      // F64 (second sweep): when two deciding reopen votes race, the CAS
+      // loser's vote DID count and the flag IS being reopened — a hard
+      // 'could not submit' error is wrong (and Alert.alert renders nothing on
+      // web). Treat the conflict as benign and close so the user re-opens
+      // fresh state.
+      if (e instanceof FlagStatusConflictError) {
+        notify('Flag updated', 'This flag was just reopened or changed — your request was counted.');
+        onClose();
+      } else {
+        notify('Could not submit reopen request', errorMessage(e));
+      }
     } finally {
       setReopenBusy(false);
     }
@@ -709,7 +813,8 @@ export default function FlagDetailModal({
               <AppText variant="label" style={styles.sectionLabel}>Location</AppText>
               {/* Row: selectable coords + copy button. selectable lets users
                 long-press to get the native "Copy" context menu — the copy
-                button triggers Share.share for a one-tap path on iOS/Android. */}
+                button goes through handleCopyCoords: OS share sheet on
+                iOS/Android, webShare → clipboard → alert fallback on web (L2). */}
               <View style={styles.coordsRow}>
                 <AppText
                   variant="mono"
@@ -721,12 +826,7 @@ export default function FlagDetailModal({
                   {formattedCoords}
                 </AppText>
                 <Pressable
-                  onPress={() =>
-                    Share.share({
-                      message: formattedCoords,
-                      title: 'Flag coordinates',
-                    })
-                  }
+                  onPress={handleCopyCoords}
                   hitSlop={10}
                   style={({ pressed }) => [
                     styles.coordsCopyBtn,
@@ -1041,8 +1141,19 @@ export default function FlagDetailModal({
 
                 {commentsTableNotReady ? (
                   <AppText variant="body" style={styles.commentsSoonText}>Comments aren&apos;t available here yet.</AppText>
-                ) : commentsError ? (
-                  <AppText variant="body" style={styles.commentsErrorText}>Couldn&apos;t load comments. Check your connection and try again.</AppText>
+                ) : commentsError && comments.length === 0 ? (
+                  // M1: full error state ONLY when there is nothing to show.
+                  <View style={styles.commentsErrorBanner}>
+                    <AppText variant="body" style={styles.commentsErrorText}>Couldn&apos;t load comments. Check your connection and try again.</AppText>
+                    <Pressable
+                      onPress={() => void refetchComments()}
+                      style={styles.commentsRetryBtn}
+                      accessibilityRole="button"
+                      accessibilityLabel="Retry loading comments"
+                    >
+                      <AppText variant="label" style={styles.commentsRetryText}>Retry</AppText>
+                    </Pressable>
+                  </View>
                 ) : commentsLoading && comments.length === 0 ? (
                   <ActivityIndicator
                     size="small"
@@ -1066,39 +1177,57 @@ export default function FlagDetailModal({
                     </AppText>
                   </View>
                 ) : (
-                  <View style={styles.commentsList} accessibilityRole="list">
-                    {comments.map((c) => (
-                      <CommentBubble
-                        key={c.id}
-                        author={c.display_name ?? 'Anonymous'}
-                        text={c.content}
-                        createdAt={new Date(c.created_at)}
-                        isOwn={c.user_id === user?.id}
-                        onDelete={
-                          c.user_id === user?.id
-                            ? () => {
-                                void confirm(
-                                  'Delete comment?',
-                                  'This permanently removes your comment.',
-                                  'Delete',
-                                  true,
-                                ).then((ok) => {
-                                  if (!ok) return;
-                                  void deleteCommentById(c.id)
-                                    // WCAG 4.1.3: the bubble vanishes silently otherwise.
-                                    .then(() =>
-                                      AccessibilityInfo.announceForAccessibility('Comment deleted'),
-                                    )
-                                    .catch((e: unknown) => {
-                                      Alert.alert('Could not delete comment', errorMessage(e));
-                                    });
-                                });
-                              }
-                            : undefined
-                        }
-                      />
-                    ))}
-                  </View>
+                  <>
+                    {/* M1: a refetch failure must NOT wipe the loaded thread —
+                        keep the comments visible and show a non-destructive
+                        banner with a Retry instead. */}
+                    {commentsError ? (
+                      <View style={styles.commentsErrorBanner}>
+                        <AppText variant="body" style={styles.commentsErrorText}>Couldn&apos;t refresh comments.</AppText>
+                        <Pressable
+                          onPress={() => void refetchComments()}
+                          style={styles.commentsRetryBtn}
+                          accessibilityRole="button"
+                          accessibilityLabel="Retry refreshing comments"
+                        >
+                          <AppText variant="label" style={styles.commentsRetryText}>Retry</AppText>
+                        </Pressable>
+                      </View>
+                    ) : null}
+                    <View style={styles.commentsList} accessibilityRole="list">
+                      {comments.map((c) => (
+                        <CommentBubble
+                          key={c.id}
+                          author={c.display_name ?? 'Anonymous'}
+                          text={c.content}
+                          createdAt={new Date(c.created_at)}
+                          isOwn={c.user_id === user?.id}
+                          onDelete={
+                            c.user_id === user?.id
+                              ? () => {
+                                  void confirm(
+                                    'Delete comment?',
+                                    'This permanently removes your comment.',
+                                    'Delete',
+                                    true,
+                                  ).then((ok) => {
+                                    if (!ok) return;
+                                    void deleteCommentById(c.id)
+                                      // WCAG 4.1.3: the bubble vanishes silently otherwise.
+                                      .then(() =>
+                                        AccessibilityInfo.announceForAccessibility('Comment deleted'),
+                                      )
+                                      .catch((e: unknown) => {
+                                        Alert.alert('Could not delete comment', errorMessage(e));
+                                      });
+                                  });
+                                }
+                              : undefined
+                          }
+                        />
+                      ))}
+                    </View>
+                  </>
                 )}
 
                 {!commentsTableNotReady && user && (
@@ -1494,9 +1623,32 @@ const makeStyles = (color: ColorTheme) =>
       color: color.textMuted,
       fontStyle: 'italic',
     },
+    // M1: error banner + Retry, matching the MyReportsModal errorBanner pattern.
+    commentsErrorBanner: {
+      backgroundColor: color.errorBg,
+      borderRadius: radius.md,
+      padding: spacing.md,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.md,
+    },
     commentsErrorText: {
+      flex: 1,
       fontSize: font.size.sm,
       color: color.errorFg,
+    },
+    commentsRetryBtn: {
+      paddingHorizontal: spacing.md + 2,
+      paddingVertical: spacing.sm + 2,
+      borderRadius: radius.md,
+      backgroundColor: color.error,
+      minHeight: 44,
+      justifyContent: 'center',
+    },
+    commentsRetryText: {
+      color: color.textOnBrand,
+      fontWeight: font.weight.bold,
+      fontSize: font.size.sm,
     },
     commentsSpinner: {
       marginTop: spacing.sm,

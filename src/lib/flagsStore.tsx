@@ -304,6 +304,15 @@ export function FlagsProvider({
           setIsOfflineCache(true);
           setError(null);
           hasHydratedRef.current = true;
+          // F33 (re-sweep): the cache only ever holds page 1 — any cursor from
+          // a previous ONLINE session points into data we are no longer
+          // showing. Keeping it made the Tasks footer offer a doomed "Load
+          // more" (fails offline) and, once connectivity returned, silently
+          // appended page 2 rows after stale cached page-1 rows (a ~20-row
+          // gap). Offline-cache mode has no pagination; a manual refresh
+          // re-establishes the cursor when the network is back.
+          cursorRef.current = null;
+          setHasMore(false);
           // Don't re-throw: the cached data satisfies the UI's need.
           // loading will be set false in finally.
         } else {
@@ -367,6 +376,9 @@ export function FlagsProvider({
       });
       cursorRef.current = nextCursor;
       setHasMore(nextCursor !== null);
+      // F35 (re-sweep): a successful page fetch proves the network is back —
+      // don't keep the "Showing saved data" banner over fresh rows.
+      setIsOfflineCache(false);
     } catch (e) {
       // A stale failure (a refresh superseded us) shouldn't surface an error
       // banner over the fresh data.
@@ -386,6 +398,12 @@ export function FlagsProvider({
     // refresh() will re-establish it after the first page arrives.
     cursorRef.current = null;
     setHasMore(false);
+    // F34 (re-sweep): invalidate in-flight pages NOW, not a React task later.
+    // refresh() bumps the sequence too, but it only runs from the [statuses]
+    // effect after the next commit — an old-status-set loadMore page landing
+    // in that gap would pass the F12 seq check and briefly commit stale rows
+    // and a stale cursor.
+    fetchSeqRef.current += 1;
   }, []);
 
   // Re-fetch whenever the statuses change (including initial mount).
@@ -428,6 +446,15 @@ export function FlagsProvider({
   // When no callback is registered (MapScreen not mounted), all flags pass.
   const viewportGateRef = useRef<((flag: FlagRow) => boolean) | null>(null);
 
+  // F32 (re-sweep): serialize teardown → setup across effect runs. supabase-js
+  // dedupes channels by topic, so if the toggle flips OFF→ON before the dying
+  // channel's phx_leave round-trip completes (a fast double-flick, or any flick
+  // on a slow link — the ack timeout is 10 s), supabase.channel() returns the
+  // LEAVING instance, .subscribe() silently no-ops on it, and the pending
+  // removeChannel then tears it down — switch shows ON, zero live subscription.
+  // Each run awaits the previous run's teardown before creating its channel.
+  const realtimeTeardownRef = useRef<Promise<void>>(Promise.resolve());
+
   useEffect(() => {
     // Safeguard #2 — only subscribe when the user has opted in. Keyed on
     // `realtimeEnabled` (not []), so flipping the Profile toggle re-runs this
@@ -437,9 +464,15 @@ export function FlagsProvider({
     if (!realtimeEnabled) return;
 
     let mounted = true;
-    const channel = supabase
-      .channel(D4_CHANNEL)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'flags' }, async (raw) => {
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+    const prevTeardown = realtimeTeardownRef.current;
+
+    void (async () => {
+      await prevTeardown; // F32: never re-acquire a channel that is still leaving
+      if (!mounted) return;
+      channel = supabase
+        .channel(D4_CHANNEL)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'flags' }, async (raw) => {
         // D4 Option 2: payload only carries {id, status}.
         // For DELETE events `new` is empty; identify by `old.id`.
         const flagId =
@@ -480,20 +513,32 @@ export function FlagsProvider({
           // Non-fatal: re-fetch silently failed. State stays as-is.
         }
       })
-      .subscribe((status) => {
-        if (status === 'SUBSCRIBED') {
-          void logRealtimeEvent('subscribe', D4_CHANNEL);
-        }
-      });
+        .subscribe((status) => {
+          if (status === 'SUBSCRIBED') {
+            void logRealtimeEvent('subscribe', D4_CHANNEL);
+          }
+        });
+    })();
 
     return () => {
       mounted = false;
       // Single teardown (F22): removeChannel() calls unsubscribe() internally
       // then teardown(). Calling unsubscribe() separately too would send a
-      // duplicate phx_leave. Log once removeChannel settles.
-      void supabase.removeChannel(channel).then(() => {
-        void logRealtimeEvent('unsubscribe', D4_CHANNEL);
-      });
+      // duplicate phx_leave. Log once removeChannel settles. The teardown
+      // promise is published so the NEXT effect run waits for it (F32); it
+      // never rejects, so a failure can't wedge future toggles.
+      realtimeTeardownRef.current = (async () => {
+        await prevTeardown; // keep ordering even if our own setup never ran
+        if (channel) {
+          try {
+            await supabase.removeChannel(channel);
+            void logRealtimeEvent('unsubscribe', D4_CHANNEL);
+          } catch {
+            // Teardown failure is non-fatal; the channel will be garbage
+            // collected with the socket. Never block the next subscribe.
+          }
+        }
+      })();
     };
   }, [realtimeEnabled]);
 

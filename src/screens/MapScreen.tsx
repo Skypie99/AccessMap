@@ -13,10 +13,12 @@ import {
   View,
 } from 'react-native';
 import * as Location from 'expo-location';
-import { useRoute, type RouteProp } from '@react-navigation/native';
+import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
+import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { font, radius, shadow, spacing } from '@/theme';
 import { errorMessage } from '@/lib/errors';
+import { confirm, notify } from '@/lib/confirm';
 import CategoryIcon from '@/components/CategoryIcon';
 import {
   AlertTriangle,
@@ -79,7 +81,7 @@ import {
   savePresets,
   type FilterPreset,
 } from '@/lib/filterPresets';
-import type { FlagCategory, FlagSeverity, FlagStatus } from '@/types/database';
+import type { FlagCategory, FlagRow, FlagSeverity, FlagStatus } from '@/types/database';
 import type { RootTabParamList } from '@/navigation/RootNavigator';
 import PlatformMap, {
   type PlatformMapHandle,
@@ -129,11 +131,71 @@ const CATEGORY_CYCLE: (FlagCategory | null)[] = [null, ...CATEGORY_ORDER];
 // ----------------------------------------------------------------------------
 const HEATMAP_MODE: HeatmapMode = DEFAULT_HEATMAP_MODE;
 
+// M3 (re-sweep 2026-06-09): a deep-linked flag can live outside the first
+// page of loaded flags, in which case animateTo centers the map on empty
+// water — no marker, no callout. This helper appends the fetched flag to
+// the marker list if (and only if) it isn't already there, de-duped by id.
+// It runs AFTER the filter pass on purpose: a flag the user explicitly
+// followed a link to should always be visible, even when the active
+// filters would hide it. Pure + exported so the unit test can pin the
+// append/de-dupe behavior without rendering the screen.
+export function withFocusFlag(flags: FlagRow[], extra: FlagRow | null): FlagRow[] {
+  if (!extra) return flags;
+  if (flags.some((f) => f.id === extra.id)) return flags;
+  return [...flags, extra];
+}
+
+// M4 (re-sweep 2026-06-09): web replacement for the saved-set Alert menu.
+// Alert.alert is a no-op shim on react-native-web (same trap documented at
+// handleMapLongPress below), so the three-button action sheet never appears
+// on web — which made saved sets undeletable there and turned the 5-set cap
+// into a dead end. Instead we ask two sequential yes/no questions through
+// the platform-aware confirm() helper:
+//   1. Make default / Remove default (label + copy flip on isDefault)
+//   2. Delete (marked destructive)
+// Declining both means "cancel" → null. The confirm function is injected so
+// the unit test can pin the prompt sequence without a window.confirm shim.
+// A proper sheet-based menu is deliberately out of scope (later design
+// polish).
+export type SetMenuChoice = 'toggleDefault' | 'delete' | null;
+
+export async function webSetMenuChoice(
+  setName: string,
+  isDefault: boolean,
+  confirmFn: (
+    title: string,
+    message: string,
+    confirmLabel?: string,
+    destructive?: boolean,
+  ) => Promise<boolean>,
+): Promise<SetMenuChoice> {
+  const wantsToggle = await confirmFn(
+    setName,
+    isDefault
+      ? 'This filter opens by default on launch. Remove it as the default?'
+      : 'Make this the filter that opens by default on launch?',
+    isDefault ? 'Remove default' : 'Make default',
+    false,
+  );
+  if (wantsToggle) return 'toggleDefault';
+
+  const wantsDelete = await confirmFn(
+    `Delete "${setName}"?`,
+    'This permanently deletes the saved filter set. This cannot be undone.',
+    'Delete',
+    true,
+  );
+  return wantsDelete ? 'delete' : null;
+}
+
 export default function MapScreen() {
   const color = useColor();
   const styles = makeStyles(color);
   const mapRef = useRef<PlatformMapHandle | null>(null);
   const route = useRoute<RouteProp<RootTabParamList, 'Map'>>();
+  // L9: needed to reset route.params.flagId after a deep link is handled —
+  // see the deep-link effect below.
+  const navigation = useNavigation<BottomTabNavigationProp<RootTabParamList, 'Map'>>();
   const [location, setLocation] = useState<Coords | null>(null);
   const [locating, setLocating] = useState(true);
   const [permissionDenied, setPermissionDenied] = useState(false);
@@ -210,6 +272,13 @@ export default function MapScreen() {
     void refreshSavedPlaces();
   }, [refreshSavedPlaces]);
   const [focusedFlagId, setFocusedFlagId] = useState<string | null>(null);
+  // M3: the flag a deep link resolved to. Kept as local state (flagsStore has
+  // no upsert) and merged into the marker list via withFocusFlag below, so a
+  // deep-linked flag outside the loaded page still renders a marker. NOT
+  // cleared when route.params.flagId goes back to undefined — the L9 fix
+  // clears the nav param after the callout fires, and the marker must
+  // persist. Only replaced when a new flagId arrives.
+  const [deepLinkFlag, setDeepLinkFlag] = useState<FlagRow | null>(null);
 
   // Phase 2 of the accessible list view: auto-open the linear list when a
   // screen reader is on, so blind/low-vision users land directly in the
@@ -515,14 +584,53 @@ export default function MapScreen() {
     setActiveStatuses(new Set(set.statuses));
   }, []);
 
-  // Long-press a saved chip → native action sheet with Make/Remove default
-  // + Delete + Cancel. Alert.alert is already the in-app pattern for
-  // destructive confirmation, so it gets the familiar OS-native treatment
-  // on iOS and Android. (Web falls back to a vertical list — acceptable
-  // because the feature gracefully degrades there.)
+  // The two saved-set menu actions, hoisted out of the Alert buttons so the
+  // native and web menu paths below share one implementation. Each re-derives
+  // isDefault from current state so the menu copy and the action can't drift.
+  const toggleDefaultFor = useCallback(
+    async (set: FilterSet) => {
+      const isDefault = defaultId === set.id;
+      const nextId = isDefault ? null : set.id;
+      await setDefaultSetId(nextId);
+      if (!mountedRef.current) return;
+      setDefaultIdState(nextId);
+      AccessibilityInfo.announceForAccessibility(
+        isDefault ? 'Default filter cleared' : 'Set as default filter',
+      );
+    },
+    [defaultId],
+  );
+
+  const deleteSetFor = useCallback(
+    async (set: FilterSet) => {
+      await deleteSet(set.id);
+      if (!mountedRef.current) return;
+      setSavedSets((prev) => prev.filter((s) => s.id !== set.id));
+      // deleteSet cascades the storage clear; mirror it in local
+      // state so the star disappears immediately.
+      if (defaultId === set.id) setDefaultIdState(null);
+    },
+    [defaultId],
+  );
+
+  // Long-press a saved chip → action menu with Make/Remove default + Delete
+  // + Cancel. On iOS/Android, Alert.alert is already the in-app pattern for
+  // destructive confirmation, so it gets the familiar OS-native treatment.
+  // On web, Alert.alert is a no-op shim, so we route through the exported
+  // webSetMenuChoice helper (two sequential confirm() binaries) instead —
+  // without it the menu is unreachable and saved sets can never be deleted
+  // once the 5-set cap is hit.
   const openSetMenu = useCallback(
     (set: FilterSet) => {
       const isDefault = defaultId === set.id;
+      if (Platform.OS === 'web') {
+        void (async () => {
+          const choice = await webSetMenuChoice(set.name, isDefault, confirm);
+          if (choice === 'toggleDefault') await toggleDefaultFor(set);
+          else if (choice === 'delete') await deleteSetFor(set);
+        })();
+        return;
+      }
       Alert.alert(
         set.name,
         isDefault
@@ -531,33 +639,18 @@ export default function MapScreen() {
         [
           {
             text: isDefault ? 'Remove default' : 'Make default',
-            onPress: async () => {
-              const nextId = isDefault ? null : set.id;
-              await setDefaultSetId(nextId);
-              if (!mountedRef.current) return;
-              setDefaultIdState(nextId);
-              AccessibilityInfo.announceForAccessibility(
-                isDefault ? 'Default filter cleared' : 'Set as default filter',
-              );
-            },
+            onPress: () => void toggleDefaultFor(set),
           },
           {
             text: 'Delete',
             style: 'destructive',
-            onPress: async () => {
-              await deleteSet(set.id);
-              if (!mountedRef.current) return;
-              setSavedSets((prev) => prev.filter((s) => s.id !== set.id));
-              // deleteSet cascades the storage clear; mirror it in local
-              // state so the star disappears immediately.
-              if (defaultId === set.id) setDefaultIdState(null);
-            },
+            onPress: () => void deleteSetFor(set),
           },
           { text: 'Cancel', style: 'cancel' },
         ],
       );
     },
-    [defaultId],
+    [defaultId, toggleDefaultFor, deleteSetFor],
   );
 
   // Open the save-name modal with an empty draft.
@@ -628,11 +721,19 @@ export default function MapScreen() {
       if (!mountedRef.current) return;
       setPresetNameModalOpen(false);
       setPresetNameDraft('');
-      AccessibilityInfo.announceForAccessibility(
-        droppedName
-          ? `Saved preset: ${trimmed}. Dropped oldest preset: ${droppedName}.`
-          : `Saved preset: ${trimmed}`,
-      );
+      // F56 (re-sweep): the eviction was announced to screen readers only —
+      // sighted users lost their oldest preset silently. Mirror it visibly.
+      // The native Alert announces itself, so only the no-eviction path needs
+      // the explicit SR announcement (avoids a double announcement — second
+      // sweep F65).
+      if (droppedName) {
+        notify(
+          'Preset saved',
+          `"${trimmed}" was saved. You were at the ${FILTER_PRESETS_MAX}-preset limit, so the oldest preset "${droppedName}" was removed.`,
+        );
+      } else {
+        AccessibilityInfo.announceForAccessibility(`Saved preset: ${trimmed}`);
+      }
     } catch (e) {
       Alert.alert("Couldn't save preset", errorMessage(e));
     } finally {
@@ -755,6 +856,15 @@ export default function MapScreen() {
     maxDistanceKm,
     location,
   ]);
+
+  // M3: marker list for the map = filtered flags + the deep-linked flag (if
+  // any) appended via withFocusFlag. Only <PlatformMap> consumes this —
+  // heatCells, the count pill, and the empty-state card stay driven by
+  // filteredFlags so the focused flag doesn't skew counts or aggregates.
+  const mapFlags = useMemo(
+    () => withFocusFlag(filteredFlags, deepLinkFlag),
+    [filteredFlags, deepLinkFlag],
+  );
 
   // Heat-cell aggregation — buckets the currently-visible flag set onto
   // the grid and drops anything below the privacy floor (k>=3). Memoised
@@ -879,10 +989,33 @@ export default function MapScreen() {
     const flagId = route.params?.flagId;
     if (!flagId) return;
     let cancelled = false;
+    // A new flagId is arriving — drop any previous deep-link marker so a
+    // stale flag from an earlier link can't linger if this fetch fails.
+    // (The early return above means flagId → undefined does NOT clear it.)
+    setDeepLinkFlag(null);
+    // L9: once this link is handled (callout shown, id unknown, or fetch
+    // failed), reset the param. With flagId stuck at the old value,
+    // re-tapping the SAME share link navigated with identical params, this
+    // effect never re-ran, and the tap was a silent no-op. Clearing to
+    // undefined re-runs the effect exactly once more, which early-returns
+    // above WITHOUT touching deepLinkFlag — the M3 marker persists. Skipped
+    // when cancelled: a newer flagId owns the param by then.
+    const clearFlagIdParam = () => {
+      if (!cancelled) navigation.setParams({ flagId: undefined });
+    };
     (async () => {
       try {
         const flag = await fetchFlagById(flagId);
-        if (cancelled || !flag) return;
+        if (cancelled) return;
+        if (!flag) {
+          // Unknown / deleted id — leave the map as-is, but free the param
+          // so the next tap of any link (including this one) re-fires.
+          clearFlagIdParam();
+          return;
+        }
+        // M3: keep the fetched row so withFocusFlag can render its marker
+        // even when the flag is outside the loaded page / active filters.
+        setDeepLinkFlag(flag);
         setFocusedFlagId(flag.id);
         mapRef.current?.animateTo({
           latitude: flag.lat,
@@ -891,17 +1024,21 @@ export default function MapScreen() {
           longitudeDelta: 0.005,
         });
         setTimeout(() => {
-          if (!cancelled) mapRef.current?.showCallout(flag.id);
+          if (cancelled) return;
+          mapRef.current?.showCallout(flag.id);
+          clearFlagIdParam();
         }, 700);
       } catch {
         // Swallow — deep-link arrivals shouldn't ever surface an error
-        // dialog. The user just sees the Map open as usual.
+        // dialog. The user just sees the Map open as usual (but the param
+        // is freed so a retry tap actually retries).
+        clearFlagIdParam();
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, [route.params?.flagId]);
+  }, [route.params?.flagId, navigation]);
 
   // Memoized so the React.memo on PlatformMap can actually skip re-renders
   // when MapScreen re-renders for reasons unrelated to the map's seed region
@@ -970,7 +1107,7 @@ export default function MapScreen() {
       <PlatformMap
         ref={mapRef}
         initialRegion={initialRegion}
-        flags={filteredFlags}
+        flags={mapFlags}
         focusedFlagId={focusedFlagId}
         showsUserLocation
         reducedMotion={reducedMotion}
@@ -1090,7 +1227,7 @@ export default function MapScreen() {
             </Pressable>
             <View style={styles.actionDivider} accessibilityElementsHidden />
             <Pressable
-              onPress={refreshFlags}
+              onPress={() => { refreshFlags().catch(() => {}); }}
               style={styles.actionBtn}
               accessibilityRole="button"
               accessibilityLabel="Refresh flags"
@@ -1538,7 +1675,7 @@ export default function MapScreen() {
 
         {loadError && (
           <Pressable
-            onPress={refreshFlags}
+            onPress={() => { refreshFlags().catch(() => {}); }}
             disabled={loadingFlags}
             style={({ pressed }) => [
               styles.errorBanner,
@@ -1675,7 +1812,18 @@ export default function MapScreen() {
                   !location && styles.fabDisabled,
                   pressed && styles.fabPressed,
                 ]}
-                onPress={() => setReportOpen(true)}
+                onPress={() => {
+                  // FIX C (Decision 6, Option A): the `location` state can be
+                  // minutes old by the time the user taps Report. Kick off a
+                  // fresh GPS read fire-and-forget — ReportFlagModal reads its
+                  // `location` prop live at submit time, so the new fix lands
+                  // mid-form and the report pins where the user is standing.
+                  // Worst case (read fails / resolves late) the submit just
+                  // uses today's cached coords. A drop pin overrides GPS, so
+                  // skip the read when one is set.
+                  if (!dropLocation) void requestLocation();
+                  setReportOpen(true);
+                }}
                 disabled={!location}
                 accessibilityRole="button"
                 accessibilityLabel="Report a flag here"
@@ -1709,7 +1857,7 @@ export default function MapScreen() {
           // implicit location forever.
           setDropLocation(null);
         }}
-        onCreated={refreshFlags}
+        onCreated={() => { refreshFlags().catch(() => {}); }}
       />
 
       <LegendModal visible={legendOpen} onClose={() => setLegendOpen(false)} />

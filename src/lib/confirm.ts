@@ -20,6 +20,25 @@ import { Alert, Platform } from 'react-native';
  * @param destructive - On native, marks the confirm button as `destructive`
  *   (iOS shows it in red). Ignored on web — `window.confirm` has no styling.
  */
+/**
+ * Platform-aware INFORMATIONAL dialog (F46 re-sweep).
+ *
+ * Alert.alert is a silent no-op on react-native-web, which is acceptable for
+ * nice-to-know messages (per the CLAUDE.md error tiers) but NOT for telling
+ * the user that something they submitted failed — a failed report/avatar/
+ * photo upload on web previously dead-ended with a spinner stop and zero
+ * feedback. Use this for any message the user must see on web too.
+ */
+export function notify(title: string, message: string): void {
+  if (Platform.OS === 'web') {
+    if (typeof window !== 'undefined' && typeof window.alert === 'function') {
+      window.alert(`${title}\n\n${message}`);
+    }
+    return;
+  }
+  Alert.alert(title, message);
+}
+
 export async function confirm(
   title: string,
   message: string,

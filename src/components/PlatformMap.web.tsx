@@ -182,6 +182,61 @@ function makeClusterIcon(brandColor: string, textColor: string, count: number): 
   return icon;
 }
 
+// ---------------------------------------------------------------------------
+// PopupPhoto — the flag photo inside a marker popup (L3). A bare <img> shows
+// the browser's broken-image glyph when the Storage URL 404s or the network
+// drops mid-load; this swaps in a "Photo unavailable" placeholder via onError
+// instead. The error state remembers WHICH src failed, so a new photo url
+// (photo re-uploaded, flag edited) automatically gets a fresh load attempt
+// rather than inheriting the previous failure.
+// ---------------------------------------------------------------------------
+interface PopupPhotoProps {
+  src: string;
+  alt: string;
+  mutedColor: string;
+}
+
+function PopupPhoto({ src, alt, mutedColor }: PopupPhotoProps) {
+  const [failedSrc, setFailedSrc] = useState<string | null>(null);
+  if (failedSrc === src) {
+    return (
+      <div
+        role="img"
+        aria-label="Photo unavailable"
+        style={{
+          width: '100%',
+          height: 72,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: 'rgba(15,27,45,0.06)',
+          color: mutedColor,
+          fontSize: 12,
+          fontWeight: 600,
+          borderRadius: 8,
+          marginTop: 6,
+        }}
+      >
+        Photo unavailable
+      </div>
+    );
+  }
+  return (
+    <img
+      src={src}
+      alt={alt}
+      onError={() => setFailedSrc(src)}
+      style={{
+        width: '100%',
+        maxHeight: 160,
+        objectFit: 'cover',
+        borderRadius: 8,
+        marginTop: 6,
+      }}
+    />
+  );
+}
+
 // GeoJSON point feature shape fed into Supercluster.
 type FlagPointFeature = GeoJSON.Feature<GeoJSON.Point, { flagId: string }>;
 
@@ -339,16 +394,10 @@ function ClusteredMarkers({
                   {flagIsAnon ? ' · Anonymous' : ''}
                 </div>
                 {flag.photo_url ? (
-                  <img
+                  <PopupPhoto
                     src={flag.photo_url}
                     alt={`Photo of ${CATEGORY_LABELS[flag.category]} accessibility issue`}
-                    style={{
-                      width: '100%',
-                      maxHeight: 160,
-                      objectFit: 'cover',
-                      borderRadius: 8,
-                      marginTop: 6,
-                    }}
+                    mutedColor={themeColor.textMuted}
                   />
                 ) : null}
                 {flag.description ? (
@@ -384,11 +433,19 @@ interface CachedTileLayerOptions extends L.TileLayerOptions {
 
 class CachedTileLayer extends L.TileLayer {
   private _userId: string | null;
+  // F31: set when the wrapper unmounts the layer. In-flight tile chains are
+  // not cancellable, but they must stop persisting tiles once the layer is
+  // gone (e.g. after sign-out, when the cache for that user was just cleared).
+  private _disposed = false;
 
   constructor(urlTemplate: string, options: CachedTileLayerOptions) {
     const { userId, ...rest } = options;
     super(urlTemplate, rest);
     this._userId = userId;
+  }
+
+  dispose(): void {
+    this._disposed = true;
   }
 
   createTile(
@@ -447,8 +504,9 @@ class CachedTileLayer extends L.TileLayer {
         img.src = dataUri;
 
         // Fire-and-forget: persist to cache; errors are swallowed by
-        // setCachedTile itself (it already logs internally).
-        void setCachedTile(userId, url, dataUri);
+        // setCachedTile itself (it already logs internally). Skip if the
+        // layer was unmounted while this chain was in flight (F31).
+        if (!this._disposed) void setCachedTile(userId, url, dataUri);
       } catch {
         // Any error → graceful fallback to direct URL (never a broken tile)
         img.onload = () => done(undefined, img);
@@ -483,6 +541,7 @@ function CachedTileLayerWrapper({ userId }: { userId: string | null }): null {
     });
     layer.addTo(map);
     return () => {
+      layer.dispose(); // F31: stop in-flight chains from caching post-unmount
       layer.remove();
     };
   }, [map, userId]);

@@ -17,6 +17,10 @@
 import React from 'react';
 import { Alert } from 'react-native';
 import { render, fireEvent, waitFor, act } from '@testing-library/react-native';
+// Mocked below — jest.mock calls are hoisted above all imports, so this
+// resolves to the mock module. Imported here (not mid-file) to keep
+// import/first happy.
+import * as ImagePicker from 'expo-image-picker';
 
 // ---------------------------------------------------------------------------
 // Supabase env stubs — required before any module that imports supabase.ts
@@ -34,6 +38,9 @@ jest.mock('expo-image-picker', () => ({
   launchImageLibraryAsync: jest.fn(),
   MediaTypeOptions: { Images: 'Images' },
 }));
+const mockRequestMediaLibPerm =
+  ImagePicker.requestMediaLibraryPermissionsAsync as jest.Mock;
+const mockLaunchImageLibrary = ImagePicker.launchImageLibraryAsync as jest.Mock;
 
 // ---------------------------------------------------------------------------
 // Mock: @/lib/auth — configurable per-test via mockUseAuth.mockReturnValue(...)
@@ -97,11 +104,17 @@ const SAMPLE_AUTH_ROW = {
 const mockCreateAnonFlag = jest.fn().mockResolvedValue(SAMPLE_ANON_ROW);
 const mockCreateFlag = jest.fn().mockResolvedValue({ row: SAMPLE_AUTH_ROW, tagsAccepted: true });
 const mockSubscribeContextTagsCapability = jest.fn(() => () => {});
+// FIX B (storage orphan cleanup): uploadFlagPhoto returns { url, path };
+// removeUploadedFlagPhotos is the best-effort cleanup the submit catch fires.
+// Both hoisted so tests can stage per-call results and assert calls.
+const mockUploadFlagPhoto = jest.fn();
+const mockRemoveUploadedFlagPhotos = jest.fn();
 
 jest.mock('@/lib/flags', () => ({
   createAnonFlag: (...args: unknown[]) => mockCreateAnonFlag(...args),
   createFlag: (...args: unknown[]) => mockCreateFlag(...args),
-  uploadFlagPhoto: jest.fn().mockResolvedValue('http://example.com/photo.jpg'),
+  uploadFlagPhoto: (...args: unknown[]) => mockUploadFlagPhoto(...args),
+  removeUploadedFlagPhotos: (...args: unknown[]) => mockRemoveUploadedFlagPhotos(...args),
   subscribeContextTagsCapability: (...args: unknown[]) => mockSubscribeContextTagsCapability(...args),
   getContextTagsCapability: jest.fn().mockReturnValue('unknown'),
   CATEGORY_LABELS: {
@@ -131,14 +144,45 @@ jest.mock('@/lib/flags', () => ({
 }));
 
 // ---------------------------------------------------------------------------
-// Mock: @/lib/photos
+// Mock: @/lib/photos — hoisted so the F57 (junction insert) path can be staged
 // ---------------------------------------------------------------------------
-jest.mock('@/lib/photos', () => ({ batchInsertFlagPhotos: jest.fn().mockResolvedValue(undefined) }));
+const mockBatchInsertFlagPhotos = jest.fn();
+jest.mock('@/lib/photos', () => ({
+  batchInsertFlagPhotos: (...args: unknown[]) => mockBatchInsertFlagPhotos(...args),
+}));
 
 // ---------------------------------------------------------------------------
-// Mock: @/components/PhotoGallery — stub so we don't need native image modules
+// Mock: @/components/PhotoGallery — stub so we don't need native image modules.
+// Renders the add-photo trigger plus a remove-first-photo trigger so tests
+// can drive both the photo-pick flow (see the addPhoto helper below) and the
+// removeUri path (L7 blob-release tests) without the native gallery internals.
 // ---------------------------------------------------------------------------
-jest.mock('@/components/PhotoGallery', () => ({ __esModule: true, default: () => null }));
+jest.mock('@/components/PhotoGallery', () => {
+  const ReactActual = jest.requireActual('react');
+  const { Pressable, View } = jest.requireActual('react-native');
+  return {
+    __esModule: true,
+    default: ({
+      onAddPhoto,
+      onRemovePhoto,
+    }: {
+      onAddPhoto?: () => void;
+      onRemovePhoto?: (index: number) => void;
+    }) =>
+      ReactActual.createElement(
+        View,
+        null,
+        ReactActual.createElement(Pressable, {
+          testID: 'photo-gallery-add',
+          onPress: onAddPhoto,
+        }),
+        ReactActual.createElement(Pressable, {
+          testID: 'photo-gallery-remove-first',
+          onPress: onRemovePhoto ? () => onRemovePhoto(0) : undefined,
+        }),
+      ),
+  };
+});
 
 // ---------------------------------------------------------------------------
 // Mock: @/lib/contextTags
@@ -251,12 +295,48 @@ function renderAuth(user: User = { id: 'user-abc' }, props: Partial<{ visible: b
   );
 }
 
+/**
+ * Drive the photo-pick flow end to end: press the PhotoGallery stub's add
+ * trigger, auto-press "Choose from library" in the native action sheet, and
+ * resolve the mocked ImagePicker with the given uri. Leaves the uri in the
+ * modal's photoUris state, ready for submit.
+ */
+async function addPhoto(utils: ReturnType<typeof render>, uri: string) {
+  mockRequestMediaLibPerm.mockResolvedValueOnce({ granted: true });
+  mockLaunchImageLibrary.mockResolvedValueOnce({ canceled: false, assets: [{ uri }] });
+  // Native path: onAddPhoto opens an Alert action sheet — auto-press the
+  // library option, then restore so later asserts can spy Alert.alert fresh.
+  const alertSpy = jest
+    .spyOn(Alert, 'alert')
+    .mockImplementationOnce((_title, _message, buttons) => {
+      const lib = (buttons ?? []).find((b) => b.text === 'Choose from library');
+      lib?.onPress?.();
+    });
+  fireEvent.press(utils.getByTestId('photo-gallery-add'));
+  // Flush pickPhoto's async chain (permission → picker → setPhotoUris).
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  });
+  alertSpy.mockRestore();
+}
+
 beforeEach(() => {
   jest.clearAllMocks();
   mockCheckAnonRateLimit.mockResolvedValue(undefined);
   mockCreateAnonFlag.mockResolvedValue(SAMPLE_ANON_ROW);
   mockCreateFlag.mockResolvedValue({ row: SAMPLE_AUTH_ROW, tagsAccepted: true });
   mockSubscribeContextTagsCapability.mockReturnValue(() => {});
+  // Default upload: derive { url, path } from the picked uri so multi-photo
+  // tests get distinct, recognizable storage paths.
+  mockUploadFlagPhoto.mockImplementation((_userId: unknown, uri: unknown) => {
+    const name = String(uri).split('/').pop() ?? 'photo.jpg';
+    return Promise.resolve({
+      url: `http://example.com/${name}`,
+      path: `user-abc/${name}`,
+    });
+  });
+  mockRemoveUploadedFlagPhotos.mockResolvedValue(undefined);
+  mockBatchInsertFlagPhotos.mockResolvedValue(undefined);
 });
 
 // handleSubmit keeps running after a test's `waitFor` resolves
@@ -457,5 +537,367 @@ describe('submit routing — auth path', () => {
       expect(mockCreateFlag).toHaveBeenCalled();
     });
     expect(mockCheckAnonRateLimit).not.toHaveBeenCalled();
+  });
+});
+
+// ===========================================================================
+// 5. Storage orphan cleanup — FIX B (Decision 5, Option A)
+//
+// Photos upload BEFORE createFlag. If anything fails between the first
+// upload and createFlag resolving, the already-uploaded blobs are orphans
+// and the catch must hand their storage paths to removeUploadedFlagPhotos.
+// Once createFlag resolves, the photos are referenced by the new flag and
+// must NEVER be cleaned up — even when the junction insert (F57) fails.
+// ===========================================================================
+
+describe('storage orphan cleanup on failed submit (auth path)', () => {
+  it('cleans up the already-uploaded path and skips createFlag when an upload fails mid-loop', async () => {
+    const utils = renderAuth();
+    await addPhoto(utils, 'file:///p1.jpg');
+    await addPhoto(utils, 'file:///p2.jpg');
+
+    mockUploadFlagPhoto
+      .mockResolvedValueOnce({ url: 'http://example.com/p1.jpg', path: 'user-abc/p1.jpg' })
+      .mockRejectedValueOnce(new Error('upload failed'));
+
+    fireEvent.press(utils.getByLabelText('Submit flag report'));
+
+    await waitFor(() => {
+      expect(mockRemoveUploadedFlagPhotos).toHaveBeenCalledTimes(1);
+    });
+    // Only the photo that actually reached Storage gets cleaned up.
+    expect(mockRemoveUploadedFlagPhotos).toHaveBeenCalledWith(['user-abc/p1.jpg']);
+    // The flag insert never ran — the blobs were pure orphans.
+    expect(mockCreateFlag).not.toHaveBeenCalled();
+  });
+
+  it('cleans up ALL uploaded paths when createFlag itself fails', async () => {
+    const utils = renderAuth();
+    await addPhoto(utils, 'file:///p1.jpg');
+    await addPhoto(utils, 'file:///p2.jpg');
+
+    mockCreateFlag.mockRejectedValueOnce(new Error('insert failed'));
+
+    fireEvent.press(utils.getByLabelText('Submit flag report'));
+
+    await waitFor(() => {
+      expect(mockRemoveUploadedFlagPhotos).toHaveBeenCalledTimes(1);
+    });
+    expect(mockRemoveUploadedFlagPhotos).toHaveBeenCalledWith([
+      'user-abc/p1.jpg',
+      'user-abc/p2.jpg',
+    ]);
+  });
+
+  it('still surfaces the original submit error to the user after cleanup', async () => {
+    const utils = renderAuth();
+    await addPhoto(utils, 'file:///p1.jpg');
+    // Spy AFTER addPhoto so its scoped action-sheet spy has been restored.
+    const alertSpy = jest.spyOn(Alert, 'alert');
+
+    mockCreateFlag.mockRejectedValueOnce(new Error('insert failed'));
+
+    fireEvent.press(utils.getByLabelText('Submit flag report'));
+
+    await waitFor(() => {
+      expect(alertSpy).toHaveBeenCalledWith("Couldn't submit your report", 'insert failed');
+    });
+    alertSpy.mockRestore();
+  });
+
+  it('performs NO cleanup on a fully successful submit', async () => {
+    const utils = renderAuth();
+    await addPhoto(utils, 'file:///p1.jpg');
+    await addPhoto(utils, 'file:///p2.jpg');
+
+    fireEvent.press(utils.getByLabelText('Submit flag report'));
+
+    await waitFor(() => {
+      expect(mockCreateFlag).toHaveBeenCalledTimes(1);
+    });
+    // Drain the async tail (junction insert → reset → close) before asserting.
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(mockUploadFlagPhoto).toHaveBeenCalledTimes(2);
+    expect(mockRemoveUploadedFlagPhotos).not.toHaveBeenCalled();
+  });
+
+  it('performs NO cleanup when only the junction insert fails after createFlag succeeded (F57)', async () => {
+    const warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
+    const utils = renderAuth();
+    await addPhoto(utils, 'file:///p1.jpg');
+
+    mockBatchInsertFlagPhotos.mockRejectedValueOnce(new Error('junction insert failed'));
+
+    fireEvent.press(utils.getByLabelText('Submit flag report'));
+
+    await waitFor(() => {
+      expect(mockBatchInsertFlagPhotos).toHaveBeenCalledTimes(1);
+    });
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    // The flag exists and references the photos — they are NOT orphans.
+    expect(mockRemoveUploadedFlagPhotos).not.toHaveBeenCalled();
+    warn.mockRestore();
+  });
+});
+
+// ===========================================================================
+// 6. Live location prop — FIX C (Decision 6, Option A)
+//
+// MapScreen's Report FAB fires a fire-and-forget requestLocation() right
+// before opening this modal. That fresh fix only reaches the submitted flag
+// if handleSubmit reads the `location` PROP at submit time — NOT a copy
+// taken into state when the modal opened. These tests pin the live-prop
+// behavior: rerender with new coords while the modal is open, then submit
+// must use the NEW coords. If someone refactors location into open-time
+// state, these trip and FIX C silently stops working.
+// ===========================================================================
+
+describe('live location prop (FIX C — fresh GPS read lands mid-form)', () => {
+  const STALE = { lat: 49.28, lng: -123.12 };
+  const FRESH = { lat: 49.2827, lng: -123.1207 };
+
+  it('auth submit uses coords delivered AFTER the modal opened', async () => {
+    mockUseAuth.mockReturnValue({ user: { id: 'user-abc' } } as ReturnType<typeof useAuth>);
+    const onClose = jest.fn();
+    const onCreated = jest.fn();
+    const utils = render(
+      <ReportFlagModal visible location={STALE} onClose={onClose} onCreated={onCreated} />,
+    );
+
+    // The fresh GPS fix resolves while the form is open — MapScreen calls
+    // setLocation, which re-renders the modal with the new prop.
+    utils.rerender(
+      <ReportFlagModal visible location={FRESH} onClose={onClose} onCreated={onCreated} />,
+    );
+
+    fireEvent.press(utils.getByLabelText('Submit flag report'));
+
+    await waitFor(() => {
+      expect(mockCreateFlag).toHaveBeenCalledWith(
+        'user-abc',
+        expect.objectContaining({ lat: FRESH.lat, lng: FRESH.lng }),
+      );
+    });
+  });
+
+  it('anon submit also uses coords delivered AFTER the modal opened', async () => {
+    mockUseAuth.mockReturnValue({ user: null } as ReturnType<typeof useAuth>);
+    const onClose = jest.fn();
+    const onCreated = jest.fn();
+    const utils = render(
+      <ReportFlagModal visible location={STALE} onClose={onClose} onCreated={onCreated} />,
+    );
+
+    utils.rerender(
+      <ReportFlagModal visible location={FRESH} onClose={onClose} onCreated={onCreated} />,
+    );
+
+    fireEvent.press(utils.getByLabelText('Submit anonymous flag report'));
+
+    await waitFor(() => {
+      expect(mockCreateAnonFlag).toHaveBeenCalledWith(
+        expect.objectContaining({ lat: FRESH.lat, lng: FRESH.lng }),
+      );
+    });
+  });
+});
+
+// ===========================================================================
+// 7. Submitting state — L4 (consistent disable sweep while submit in flight)
+//
+// setSubmitting(true) fires synchronously at the top of handleSubmit (right
+// after the F3 re-entry ref), so EVERY control — category pills, severity
+// buttons, description input, photo gallery, cancel — disables for the whole
+// in-flight window. The anon rate-limit catch path must reset the state so
+// the form re-enables (previously the state was set late / left the controls
+// editable mid-flight).
+// ===========================================================================
+
+// ===========================================================================
+// 7.5 Blob URL release — L7 (web resilience trio)
+//
+// Web photo picks create object URLs (URL.createObjectURL) that pin the File
+// bytes in memory until revoked. releaseUri() revokes them at exactly two
+// post-settle moments: removeUri (user discards a pick) and reset() (after a
+// SUCCESSFUL submit). A failed submit must NOT revoke — the draft previews
+// stay alive so the user can retry without re-picking. Native file:// URIs
+// are never revoked (blob:-prefix guard).
+// ===========================================================================
+
+describe('blob URL release — L7', () => {
+  const BLOB_URI = 'blob:http://localhost/draft-photo-1';
+  // The node test env's URL may not implement revokeObjectURL — install a
+  // jest.fn() and restore whatever was there after the block.
+  const urlGlobal = URL as unknown as { revokeObjectURL?: (u: string) => void };
+  const originalRevoke = urlGlobal.revokeObjectURL;
+  let revokeSpy: jest.Mock;
+
+  beforeEach(() => {
+    revokeSpy = jest.fn();
+    urlGlobal.revokeObjectURL = revokeSpy;
+  });
+
+  afterAll(() => {
+    urlGlobal.revokeObjectURL = originalRevoke;
+  });
+
+  it('revokes a blob: draft URL when the user removes the pick (removeUri)', async () => {
+    const utils = renderAuth();
+    await addPhoto(utils, BLOB_URI);
+
+    fireEvent.press(utils.getByTestId('photo-gallery-remove-first'));
+
+    expect(revokeSpy).toHaveBeenCalledTimes(1);
+    expect(revokeSpy).toHaveBeenCalledWith(BLOB_URI);
+  });
+
+  it('does NOT revoke a native file:// URI on remove (blob:-prefix guard)', async () => {
+    const utils = renderAuth();
+    await addPhoto(utils, 'file:///p1.jpg');
+
+    fireEvent.press(utils.getByTestId('photo-gallery-remove-first'));
+
+    expect(revokeSpy).not.toHaveBeenCalled();
+  });
+
+  it('revokes blob: draft URLs after a SUCCESSFUL submit (reset)', async () => {
+    const utils = renderAuth();
+    await addPhoto(utils, BLOB_URI);
+
+    fireEvent.press(utils.getByLabelText('Submit flag report'));
+
+    await waitFor(() => {
+      expect(mockCreateFlag).toHaveBeenCalledTimes(1);
+    });
+    // Drain the async tail (junction insert → reset → close).
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(revokeSpy).toHaveBeenCalledWith(BLOB_URI);
+  });
+
+  it('keeps blob: draft URLs ALIVE when the submit fails (retry must work)', async () => {
+    const utils = renderAuth();
+    await addPhoto(utils, BLOB_URI);
+    const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+
+    mockCreateFlag.mockRejectedValueOnce(new Error('insert failed'));
+
+    fireEvent.press(utils.getByLabelText('Submit flag report'));
+
+    await waitFor(() => {
+      expect(alertSpy).toHaveBeenCalledWith("Couldn't submit your report", 'insert failed');
+    });
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    // The preview must still be usable for a retry — nothing revoked.
+    expect(revokeSpy).not.toHaveBeenCalled();
+    alertSpy.mockRestore();
+  });
+});
+
+describe('submitting state — L4 disable sweep', () => {
+  it('disables every form control while an auth submit is in flight, re-enables after', async () => {
+    // Deferred createFlag — keeps the submit in flight until WE resolve it.
+    let resolveCreate: (value: { row: typeof SAMPLE_AUTH_ROW; tagsAccepted: boolean }) => void =
+      () => {};
+    mockCreateFlag.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolveCreate = resolve;
+        }),
+    );
+
+    const utils = renderAuth();
+
+    // Sanity: before submit, the form is fully interactive.
+    expect(
+      utils.getByLabelText('Description of the accessibility issue').props.editable,
+    ).toBe(true);
+    expect(
+      utils.getByLabelText('Category: No ramp').props.accessibilityState.disabled,
+    ).toBe(false);
+
+    // Spy BEFORE submit so the mid-flight gallery press can be asserted.
+    const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+
+    fireEvent.press(utils.getByLabelText('Submit flag report'));
+
+    // createFlag is pending — the WHOLE form must be locked.
+    await waitFor(() => {
+      expect(mockCreateFlag).toHaveBeenCalledTimes(1);
+    });
+    expect(
+      utils.getByLabelText('Submit flag report').props.accessibilityState,
+    ).toMatchObject({ disabled: true, busy: true });
+    expect(
+      utils.getByLabelText('Cancel and close').props.accessibilityState.disabled,
+    ).toBe(true);
+    expect(
+      utils.getByLabelText('Category: No ramp').props.accessibilityState.disabled,
+    ).toBe(true);
+    expect(
+      utils.getByLabelText(/^Severity 5:/).props.accessibilityState.disabled,
+    ).toBe(true);
+    expect(
+      utils.getByLabelText('Description of the accessibility issue').props.editable,
+    ).toBe(false);
+    // PhotoGallery receives undefined handlers mid-flight — pressing the
+    // stub's add trigger must NOT open the "Add photo" action sheet.
+    fireEvent.press(utils.getByTestId('photo-gallery-add'));
+    expect(alertSpy).not.toHaveBeenCalled();
+
+    // Let the submit finish — the form re-enables.
+    await act(async () => {
+      resolveCreate({ row: SAMPLE_AUTH_ROW, tagsAccepted: true });
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(
+      utils.getByLabelText('Description of the accessibility issue').props.editable,
+    ).toBe(true);
+    expect(
+      utils.getByLabelText('Category: No ramp').props.accessibilityState.disabled,
+    ).toBe(false);
+    // The gallery's add handler is live again — the action sheet opens.
+    fireEvent.press(utils.getByTestId('photo-gallery-add'));
+    expect(alertSpy).toHaveBeenCalledWith('Add photo', undefined, expect.any(Array));
+    alertSpy.mockRestore();
+  });
+
+  it('re-enables the form when the anon rate limit rejects the submit', async () => {
+    mockCheckAnonRateLimit.mockRejectedValueOnce(new Error('rate limited'));
+    const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+    const utils = renderAnon();
+
+    fireEvent.press(utils.getByLabelText('Submit anonymous flag report'));
+
+    await waitFor(() => {
+      expect(alertSpy).toHaveBeenCalledWith(
+        'Daily limit reached',
+        expect.any(String),
+        expect.any(Array),
+      );
+    });
+
+    // The catch path must reset BOTH the F3 ref and the submitting state.
+    expect(
+      utils.getByLabelText('Submit anonymous flag report').props.accessibilityState,
+    ).toMatchObject({ disabled: false, busy: false });
+    expect(
+      utils.getByLabelText('Description of the accessibility issue').props.editable,
+    ).toBe(true);
+
+    // Functional proof: a second tap goes through (rate limit passes now —
+    // the rejection above was mockRejectedValueOnce).
+    fireEvent.press(utils.getByLabelText('Submit anonymous flag report'));
+    await waitFor(() => {
+      expect(mockCreateAnonFlag).toHaveBeenCalledTimes(1);
+    });
+    alertSpy.mockRestore();
   });
 });
