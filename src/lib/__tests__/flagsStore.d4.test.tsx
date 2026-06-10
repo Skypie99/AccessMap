@@ -250,6 +250,63 @@ describe('D4 Realtime Flags', () => {
   });
 
   // ========================================================================
+  // Test 2d (F32 re-sweep): rapid OFF→ON must wait for the dying channel's
+  // teardown before creating the new one. supabase-js dedupes channels by
+  // topic, so subscribing while the old channel is still leaving silently
+  // no-ops and the pending removeChannel kills the "new" subscription —
+  // switch ON, realtime dead.
+  // ========================================================================
+  it('serializes re-subscribe behind a slow teardown on rapid toggle (F32)', async () => {
+    realtimeEnabledValue = true;
+    const { rerender } = render(
+      <FlagsProvider userId="user-123">
+        <TestComponent />
+      </FlagsProvider>,
+    );
+    await waitFor(() => {
+      expect(supabase.channel).toHaveBeenCalledTimes(1);
+    });
+
+    // Make the teardown slow (phx_leave ack pending).
+    let resolveRemove: () => void = () => {};
+    (supabase.removeChannel as jest.Mock).mockReturnValueOnce(
+      new Promise<void>((resolve) => {
+        resolveRemove = () => resolve();
+      }),
+    );
+
+    // OFF…
+    realtimeEnabledValue = false;
+    rerender(
+      <FlagsProvider userId="user-123">
+        <TestComponent />
+      </FlagsProvider>,
+    );
+    await waitFor(() => {
+      expect(supabase.removeChannel).toHaveBeenCalledTimes(1);
+    });
+
+    // …and immediately ON again, while the teardown is still pending.
+    realtimeEnabledValue = true;
+    rerender(
+      <FlagsProvider userId="user-123">
+        <TestComponent />
+      </FlagsProvider>,
+    );
+
+    // The new channel must NOT be created while the old one is still leaving.
+    await new Promise((r) => setTimeout(r, 50));
+    expect(supabase.channel).toHaveBeenCalledTimes(1);
+
+    // Once the teardown completes, the new subscription goes through.
+    resolveRemove();
+    await waitFor(() => {
+      expect(supabase.channel).toHaveBeenCalledTimes(2);
+    });
+    expect(mockChannelInstance.subscribe).toHaveBeenCalledTimes(2);
+  });
+
+  // ========================================================================
   // Test 3: Unsubscribe logs correctly when component unmounts
   // ========================================================================
   it('logs unsubscribe event when component unmounts', async () => {

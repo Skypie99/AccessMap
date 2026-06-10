@@ -428,6 +428,15 @@ export function FlagsProvider({
   // When no callback is registered (MapScreen not mounted), all flags pass.
   const viewportGateRef = useRef<((flag: FlagRow) => boolean) | null>(null);
 
+  // F32 (re-sweep): serialize teardown → setup across effect runs. supabase-js
+  // dedupes channels by topic, so if the toggle flips OFF→ON before the dying
+  // channel's phx_leave round-trip completes (a fast double-flick, or any flick
+  // on a slow link — the ack timeout is 10 s), supabase.channel() returns the
+  // LEAVING instance, .subscribe() silently no-ops on it, and the pending
+  // removeChannel then tears it down — switch shows ON, zero live subscription.
+  // Each run awaits the previous run's teardown before creating its channel.
+  const realtimeTeardownRef = useRef<Promise<void>>(Promise.resolve());
+
   useEffect(() => {
     // Safeguard #2 — only subscribe when the user has opted in. Keyed on
     // `realtimeEnabled` (not []), so flipping the Profile toggle re-runs this
@@ -437,9 +446,15 @@ export function FlagsProvider({
     if (!realtimeEnabled) return;
 
     let mounted = true;
-    const channel = supabase
-      .channel(D4_CHANNEL)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'flags' }, async (raw) => {
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+    const prevTeardown = realtimeTeardownRef.current;
+
+    void (async () => {
+      await prevTeardown; // F32: never re-acquire a channel that is still leaving
+      if (!mounted) return;
+      channel = supabase
+        .channel(D4_CHANNEL)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'flags' }, async (raw) => {
         // D4 Option 2: payload only carries {id, status}.
         // For DELETE events `new` is empty; identify by `old.id`.
         const flagId =
@@ -480,20 +495,32 @@ export function FlagsProvider({
           // Non-fatal: re-fetch silently failed. State stays as-is.
         }
       })
-      .subscribe((status) => {
-        if (status === 'SUBSCRIBED') {
-          void logRealtimeEvent('subscribe', D4_CHANNEL);
-        }
-      });
+        .subscribe((status) => {
+          if (status === 'SUBSCRIBED') {
+            void logRealtimeEvent('subscribe', D4_CHANNEL);
+          }
+        });
+    })();
 
     return () => {
       mounted = false;
       // Single teardown (F22): removeChannel() calls unsubscribe() internally
       // then teardown(). Calling unsubscribe() separately too would send a
-      // duplicate phx_leave. Log once removeChannel settles.
-      void supabase.removeChannel(channel).then(() => {
-        void logRealtimeEvent('unsubscribe', D4_CHANNEL);
-      });
+      // duplicate phx_leave. Log once removeChannel settles. The teardown
+      // promise is published so the NEXT effect run waits for it (F32); it
+      // never rejects, so a failure can't wedge future toggles.
+      realtimeTeardownRef.current = (async () => {
+        await prevTeardown; // keep ordering even if our own setup never ran
+        if (channel) {
+          try {
+            await supabase.removeChannel(channel);
+            void logRealtimeEvent('unsubscribe', D4_CHANNEL);
+          } catch {
+            // Teardown failure is non-fatal; the channel will be garbage
+            // collected with the socket. Never block the next subscribe.
+          }
+        }
+      })();
     };
   }, [realtimeEnabled]);
 
