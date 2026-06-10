@@ -17,9 +17,10 @@ import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { useAuth } from '@/lib/auth';
 import { formatDistance, formatWalkingEta, haversineKm, type LatLng } from '@/lib/distance';
-import { confirm } from '@/lib/confirm';
+import { confirm, notify } from '@/lib/confirm';
 import { errorMessage } from '@/lib/errors';
 import {
+  FlagStatusConflictError,
   CATEGORY_LABELS,
   CATEGORY_ORDER,
   NEXT_PAGE_SIZE,
@@ -386,7 +387,8 @@ export default function TasksScreen() {
         const failures: string[] = [];
         for (const id of targetIds) {
           try {
-            const updated = await updateFlagStatus(id, targetStatus);
+            // F53: CAS on the status the list showed for this row.
+            const updated = await updateFlagStatus(id, targetStatus, flagsMap.get(id)?.status);
             track('flag_status_changed', { flagId: id, from: updated.status === targetStatus ? 'open' : updated.status, to: targetStatus });
             if (action === 'verify') {
               // Verify keeps the flag visible (status becomes 'verified'),
@@ -547,17 +549,25 @@ export default function TasksScreen() {
     async (id: string, status: FlagStatus, isOwn: boolean) => {
       setBusyId(id);
       try {
-        const updated = await updateFlagStatus(id, status);
+        // F53: CAS on the status the card showed — a stale card tap must not
+        // silently overwrite a concurrent change (and the '+points' flash
+        // only fires for transitions the trigger actually awards).
+        const updated = await updateFlagStatus(id, status, flagsMap.get(id)?.status);
         const action: DetailAction =
           status === 'verified' ? 'verify' : status === 'resolved' ? 'resolve' : 'reject';
         applyStatusChange(updated, action, isOwn);
       } catch (e) {
-        Alert.alert("Couldn't update this flag", errorMessage(e));
+        if (e instanceof FlagStatusConflictError) {
+          notify('This flag changed', 'It was updated by someone else just now — refreshing the list.');
+          refresh().catch(() => {});
+        } else {
+          Alert.alert("Couldn't update this flag", errorMessage(e));
+        }
       } finally {
         setBusyId(null);
       }
     },
-    [applyStatusChange],
+    [applyStatusChange, flagsMap, refresh],
   );
 
   const handleViewOnMap = useCallback(

@@ -814,14 +814,39 @@ export async function updateFlagContent(flagId: string, patch: FlagContentPatch)
   return data as FlagRow;
 }
 
-export async function updateFlagStatus(flagId: string, status: FlagStatus) {
-  const { data, error } = await supabase
-    .from('flags')
-    .update({ status })
-    .eq('id', flagId)
-    .select()
-    .single();
+/**
+ * Thrown by updateFlagStatus when the compare-and-set found the flag in a
+ * different state than the caller saw (someone changed or deleted it while
+ * the screen showed a stale snapshot). Callers show a friendly conflict
+ * message + refresh instead of a raw PostgREST error.
+ */
+export class FlagStatusConflictError extends Error {
+  constructor() {
+    super('This flag changed since you opened it.');
+    this.name = 'FlagStatusConflictError';
+  }
+}
+
+export async function updateFlagStatus(
+  flagId: string,
+  status: FlagStatus,
+  expectedCurrent?: FlagStatus,
+) {
+  // F53 (re-sweep): the update was a blind last-write-wins — a user acting on
+  // a stale snapshot (the detail modal/list can sit unrefreshed for minutes)
+  // silently reverted another user's resolution (resolved -> verified) while
+  // being told '+points' the trigger never awarded. When the caller passes the
+  // status it believes the flag has, the write only commits if that is still
+  // true; otherwise (status moved, or flag deleted) it throws a typed
+  // conflict the caller can render honestly. A deleted flag also no longer
+  // surfaces .single()'s raw PGRST116 coercion message.
+  let query = supabase.from('flags').update({ status }).eq('id', flagId);
+  if (expectedCurrent !== undefined) {
+    query = query.eq('status', expectedCurrent);
+  }
+  const { data, error } = await query.select().maybeSingle();
   if (error) throw error;
+  if (!data) throw new FlagStatusConflictError();
 
   // Analytics chokepoint: every status change flows through here, so this is
   // the one place to instrument it. We log only the destination status +

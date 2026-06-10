@@ -30,6 +30,7 @@ import {
   CATEGORY_LABELS,
   CATEGORY_ORDER,
   deleteFlag,
+  FlagStatusConflictError,
   requestFlagReopen,
   severityColor,
   updateFlagContent,
@@ -372,11 +373,21 @@ export default function FlagDetailModal({
     if (busy) return;
     setBusy(true);
     try {
-      const updated = await updateFlagStatus(shownFlag.id, next);
+      // F53: compare-and-set against the status THIS modal is showing — a
+      // stale snapshot must not silently overwrite a concurrent change
+      // (e.g. reverting another user's resolution to 'verified').
+      const updated = await updateFlagStatus(shownFlag.id, next, shownFlag.status);
       onChanged(updated, action, isOwn);
       onClose();
     } catch (e) {
-      notify('Could not update flag', errorMessage(e));
+      if (e instanceof FlagStatusConflictError) {
+        notify(
+          'This flag changed',
+          'It was updated (or removed) while you had it open. Close and reopen it to see the latest.',
+        );
+      } else {
+        notify('Could not update flag', errorMessage(e));
+      }
     } finally {
       setBusy(false);
     }
@@ -560,7 +571,7 @@ export default function FlagDetailModal({
 
       if (newCount >= threshold) {
         // Threshold met — reopen the flag.
-        const updated = await updateFlagStatus(shownFlag.id, 'open');
+        const updated = await updateFlagStatus(shownFlag.id, 'open', 'resolved');
         onChanged(updated, 'verify', isOwn);
         onClose();
       } else {

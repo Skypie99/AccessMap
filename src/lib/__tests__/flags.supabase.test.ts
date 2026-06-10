@@ -103,6 +103,7 @@ import {
   listFlagStatusHistory,
   listLeaderboard,
   requestFlagReopen,
+  FlagStatusConflictError,
 } from '../flags';
 import type { FlagRow } from '@/types/database';
 
@@ -216,7 +217,7 @@ describe('listFlagsByUser', () => {
 describe('updateFlagStatus', () => {
   it('returns the updated row on success', async () => {
     const updated = makeRow({ id: 'f1', status: 'verified' });
-    mockSingle.mockResolvedValueOnce({ data: updated, error: null });
+    mockMaybeSingle.mockResolvedValueOnce({ data: updated, error: null });
     mockFrom.mockReturnValue(makeChain(() => {}));
 
     const result = await updateFlagStatus('f1', 'verified');
@@ -225,13 +226,34 @@ describe('updateFlagStatus', () => {
   });
 
   it('throws when Supabase returns an error', async () => {
-    mockSingle.mockResolvedValueOnce({
+    mockMaybeSingle.mockResolvedValueOnce({
       data: null,
       error: { message: 'RLS violation', code: '42501' },
     });
     mockFrom.mockReturnValue(makeChain(() => {}));
 
     await expect(updateFlagStatus('f1', 'resolved')).rejects.toMatchObject({ code: '42501' });
+  });
+
+  // F53 (re-sweep): compare-and-set — 0 matched rows (status moved underneath
+  // the caller, or the flag was deleted) must throw the typed conflict, never
+  // commit a stale overwrite or leak a raw PGRST116 coercion message.
+  it('LOCKING (F53): throws FlagStatusConflictError when the CAS matches no row', async () => {
+    mockMaybeSingle.mockResolvedValueOnce({ data: null, error: null });
+    mockFrom.mockReturnValue(makeChain(() => {}));
+
+    await expect(updateFlagStatus('f1', 'verified', 'open')).rejects.toBeInstanceOf(
+      FlagStatusConflictError,
+    );
+  });
+
+  it('LOCKING (F53): throws the conflict for a deleted flag (no raw PGRST116)', async () => {
+    mockMaybeSingle.mockResolvedValueOnce({ data: null, error: null });
+    mockFrom.mockReturnValue(makeChain(() => {}));
+
+    await expect(updateFlagStatus('gone', 'rejected')).rejects.toThrow(
+      /changed since you opened it/i,
+    );
   });
 });
 
