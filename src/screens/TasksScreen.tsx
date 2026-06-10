@@ -269,6 +269,20 @@ export default function TasksScreen() {
     return n;
   }, [selection, flagsMap]);
 
+  // F39 (re-sweep): selected ids whose flag still EXISTS in the store. A
+  // selected flag can vanish underneath the selection (realtime delete, admin
+  // remove, another user resolving it out of the filter) — counting those
+  // ghosts inflated the bar's "N selected" and let bulk Watch persist dead
+  // ids to the watched list.
+  const liveSelectedCount = useMemo(() => {
+    if (!selection.active || selection.selectedIds.length === 0) return 0;
+    let n = 0;
+    for (const id of selection.selectedIds) {
+      if (flagsMap.has(id)) n += 1;
+    }
+    return n;
+  }, [selection, flagsMap]);
+
   // Announce the selection bar's appearance once, when it first becomes
   // visible. Skipping the announcement on every count change keeps SR
   // chatter down — each card already announces its own checked/unchecked
@@ -426,7 +440,10 @@ export default function TasksScreen() {
       Alert.alert('Sign in required', 'Please sign in to watch flags.');
       return;
     }
-    const ids = selection.selectedIds.slice();
+    // F39: drop ghost ids (flag deleted/removed since it was selected) so the
+    // watched list never accumulates ids that no longer resolve to a flag —
+    // mirrors runBulkAction's targetIds filter.
+    const ids = selection.selectedIds.filter((id) => flagsMap.has(id));
     if (ids.length === 0) {
       exitSelection();
       return;
@@ -459,7 +476,7 @@ export default function TasksScreen() {
       setBulkBusy(false);
       exitSelection();
     }
-  }, [user, selection, exitSelection, showFlash]);
+  }, [user, selection, flagsMap, exitSelection, showFlash]);
 
   useEffect(
     () => () => {
@@ -908,33 +925,47 @@ export default function TasksScreen() {
               accessibilityElementsHidden
               importantForAccessibility="no"
             >
-              {categoryFilter || searchText.trim() ? (
+              {/* F40/F41 (re-sweep): never show the celebration icon when the
+                  list is empty because the LOAD FAILED or because more pages
+                  exist — celebrate only a genuinely empty, fully-loaded list. */}
+              {flagsError || categoryFilter || searchText.trim() || hasMore ? (
                 <Search size={36} color={color.textSubtle} strokeWidth={2} />
               ) : (
                 <Sparkles size={36} color={color.goldAccent} strokeWidth={2} />
               )}
             </View>
             <AppText variant="heading" style={styles.emptyTitle}>
-              {categoryFilter
-                ? `No ${CATEGORY_LABELS[categoryFilter]} flags`
-                : searchText.trim()
-                  ? 'No matches'
-                  : 'All caught up'}
+              {flagsError
+                ? "Couldn't load flags"
+                : categoryFilter
+                  ? `No ${CATEGORY_LABELS[categoryFilter]} flags`
+                  : searchText.trim()
+                    ? 'No matches'
+                    : hasMore
+                      ? 'Nothing to triage yet'
+                      : 'All caught up'}
             </AppText>
             <AppText variant="body" style={styles.emptyBody}>
-              {categoryFilter
-                ? `No open or verified ${CATEGORY_LABELS[categoryFilter].toLowerCase()} flags right now. Tap "All" above to see every category.`
-                : searchText.trim()
-                  ? `Nothing matches "${searchText.trim()}". Try a different keyword or clear the search.`
-                  : "You're all caught up — nice work! New reports show up here as the community adds them. Pull down to refresh anytime."}
+              {flagsError
+                ? 'Reports could not be loaded. Pull down to retry, or tap the message above.'
+                : categoryFilter
+                  ? `No open or verified ${CATEGORY_LABELS[categoryFilter].toLowerCase()} flags right now. Tap "All" above to see every category.`
+                  : searchText.trim()
+                    ? `Nothing matches "${searchText.trim()}". Try a different keyword or clear the search.`
+                    : hasMore
+                      ? 'None of the reports loaded so far need attention, but there are more to load. Use "Load more" below to keep looking.'
+                      : "You're all caught up — nice work! New reports show up here as the community adds them. Pull down to refresh anytime."}
             </AppText>
           </View>
         }
         renderItem={renderFlagItem}
         ListFooterComponent={
-          // Only render the footer when the list has items — showing a
-          // spinner or end-state beneath an empty list would be confusing.
-          sections.length === 0 ? null : (
+          // Render the footer when the list has items, OR when the list is
+          // empty but more pages exist (F40 re-sweep): local filters can empty
+          // page 1 while hasMore is true, and without the footer the user had
+          // no path to the next page. Stays hidden for the error and genuine
+          // end-of-list empty states.
+          sections.length === 0 && !(hasMore && !flagsError) ? null : (
             <View style={styles.footer}>
               {hasMore ? (
                 <Pressable
@@ -982,7 +1013,7 @@ export default function TasksScreen() {
               by SR on every change. Buttons below are static labels so
               they don't double-announce. */}
           <AppText variant="label" style={styles.bulkCountText} accessibilityLiveRegion="polite">
-            {`${selectionCount(selection)} selected`}
+            {`${liveSelectedCount} selected`}
           </AppText>
           <View style={styles.bulkButtonRow}>
             <Pressable
@@ -1014,22 +1045,22 @@ export default function TasksScreen() {
               onPress={() => {
                 void runBulkAction('resolve');
               }}
-              disabled={bulkBusy || selectionCount(selection) === 0}
+              disabled={bulkBusy || liveSelectedCount === 0}
               style={({ pressed }) => [
                 styles.bulkBtn,
                 styles.bulkResolveBtn,
-                (bulkBusy || selectionCount(selection) === 0) && styles.bulkBtnDisabled,
-                pressed && !bulkBusy && selectionCount(selection) > 0 && styles.bulkBtnPressed,
+                (bulkBusy || liveSelectedCount === 0) && styles.bulkBtnDisabled,
+                pressed && !bulkBusy && liveSelectedCount > 0 && styles.bulkBtnPressed,
               ]}
               accessibilityRole="button"
               accessibilityLabel="Resolve"
               accessibilityHint={
-                selectionCount(selection) === 0
+                liveSelectedCount === 0
                   ? 'No flags selected'
                   : 'Marks each selected flag as resolved'
               }
               accessibilityState={{
-                disabled: bulkBusy || selectionCount(selection) === 0,
+                disabled: bulkBusy || liveSelectedCount === 0,
                 busy: bulkBusy,
               }}
             >
@@ -1039,14 +1070,14 @@ export default function TasksScreen() {
               onPress={() => {
                 void runBulkWatch();
               }}
-              disabled={bulkBusy || selectionCount(selection) === 0 || !user}
+              disabled={bulkBusy || liveSelectedCount === 0 || !user}
               style={({ pressed }) => [
                 styles.bulkBtn,
                 styles.bulkWatchBtn,
-                (bulkBusy || selectionCount(selection) === 0 || !user) && styles.bulkBtnDisabled,
+                (bulkBusy || liveSelectedCount === 0 || !user) && styles.bulkBtnDisabled,
                 pressed &&
                   !bulkBusy &&
-                  selectionCount(selection) > 0 &&
+                  liveSelectedCount > 0 &&
                   user &&
                   styles.bulkBtnPressed,
               ]}
@@ -1055,12 +1086,12 @@ export default function TasksScreen() {
               accessibilityHint={
                 !user
                   ? 'Sign in to watch flags'
-                  : selectionCount(selection) === 0
+                  : liveSelectedCount === 0
                     ? 'No flags selected'
                     : 'Adds each selected flag to your watched list'
               }
               accessibilityState={{
-                disabled: bulkBusy || selectionCount(selection) === 0 || !user,
+                disabled: bulkBusy || liveSelectedCount === 0 || !user,
                 busy: bulkBusy,
               }}
             >
