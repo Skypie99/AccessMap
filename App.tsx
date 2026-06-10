@@ -1,8 +1,8 @@
 import 'react-native-gesture-handler';
 import { initSentry } from '@/lib/sentry';
 initSentry();
-import React, { useCallback, useEffect, useState } from 'react';
-import { Platform, View } from 'react-native';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { Linking, Platform, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ThemeProvider } from '@/theme/ThemeContext';
@@ -16,9 +16,10 @@ import ErrorBoundary from '@/components/ErrorBoundary';
 import FlashBanner from '@/components/FlashBanner';
 import OnboardingCards from '@/components/OnboardingCards';
 import RootNavigator from '@/navigation/RootNavigator';
+import type { TakePendingUrl } from '@/navigation/linking';
 import SignInScreen from '@/screens/SignInScreen';
 
-function SignedInArea() {
+function SignedInArea({ takePendingUrl }: { takePendingUrl?: TakePendingUrl }) {
   const { user } = useAuth();
   // We need the default tab BEFORE rendering RootNavigator, because the
   // tab navigator uses initialRouteName once. Hold render until we've read
@@ -96,7 +97,7 @@ function SignedInArea() {
 
   return (
     <>
-      <RootNavigator initialRouteName={defaultTab} />
+      <RootNavigator initialRouteName={defaultTab} takePendingUrl={takePendingUrl} />
       <FlashBanner message={flash} onDismiss={handleFlashDismiss} />
     </>
   );
@@ -108,13 +109,40 @@ function Gate() {
   // Mirrors the web behaviour — read-only map, no points/onboarding.
   const [guestMode, setGuestMode] = useState(false);
 
+  // L8: warm deep link while signed out. A share link tapped while the app
+  // is ALREADY running on the native sign-in screen fires RN's 'url' event
+  // with nobody listening — React Navigation only subscribes once a
+  // NavigationContainer mounts, and Linking.getInitialURL() replays
+  // cold-start URLs only — so the link used to vanish. Capture it here
+  // (native + signed-out + non-guest is exactly the window where no
+  // container is mounted) and let RootNavigator consume it on mount via
+  // createLinking(takePendingUrl). Last link wins if several arrive.
+  const pendingUrlRef = useRef<string | null>(null);
+  const capturePending = Platform.OS !== 'web' && !session && !guestMode;
+  useEffect(() => {
+    if (!capturePending) return;
+    const sub = Linking.addEventListener('url', ({ url }) => {
+      pendingUrlRef.current = url;
+    });
+    return () => sub.remove();
+  }, [capturePending]);
+
+  // Consume-once getter: clearing on read keeps a stale link from re-firing
+  // on a later sign-out → sign-in cycle. Stable identity so RootNavigator's
+  // once-per-mount linking object never sees a dead closure.
+  const takePendingUrl = useCallback(() => {
+    const url = pendingUrlRef.current;
+    pendingUrlRef.current = null;
+    return url;
+  }, []);
+
   if (loading) return null;
 
-  if (session) return <SignedInArea />;
+  if (session) return <SignedInArea takePendingUrl={takePendingUrl} />;
 
   // Web or native guest — read-only map, no auth-gated features.
   if (Platform.OS === 'web' || guestMode) {
-    return <RootNavigator initialRouteName="Map" />;
+    return <RootNavigator initialRouteName="Map" takePendingUrl={takePendingUrl} />;
   }
 
   return <SignInScreen onGuest={() => setGuestMode(true)} />;

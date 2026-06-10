@@ -13,7 +13,8 @@ import {
   View,
 } from 'react-native';
 import * as Location from 'expo-location';
-import { useRoute, type RouteProp } from '@react-navigation/native';
+import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
+import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { font, radius, shadow, spacing } from '@/theme';
 import { errorMessage } from '@/lib/errors';
@@ -192,6 +193,9 @@ export default function MapScreen() {
   const styles = makeStyles(color);
   const mapRef = useRef<PlatformMapHandle | null>(null);
   const route = useRoute<RouteProp<RootTabParamList, 'Map'>>();
+  // L9: needed to reset route.params.flagId after a deep link is handled —
+  // see the deep-link effect below.
+  const navigation = useNavigation<BottomTabNavigationProp<RootTabParamList, 'Map'>>();
   const [location, setLocation] = useState<Coords | null>(null);
   const [locating, setLocating] = useState(true);
   const [permissionDenied, setPermissionDenied] = useState(false);
@@ -989,10 +993,26 @@ export default function MapScreen() {
     // stale flag from an earlier link can't linger if this fetch fails.
     // (The early return above means flagId → undefined does NOT clear it.)
     setDeepLinkFlag(null);
+    // L9: once this link is handled (callout shown, id unknown, or fetch
+    // failed), reset the param. With flagId stuck at the old value,
+    // re-tapping the SAME share link navigated with identical params, this
+    // effect never re-ran, and the tap was a silent no-op. Clearing to
+    // undefined re-runs the effect exactly once more, which early-returns
+    // above WITHOUT touching deepLinkFlag — the M3 marker persists. Skipped
+    // when cancelled: a newer flagId owns the param by then.
+    const clearFlagIdParam = () => {
+      if (!cancelled) navigation.setParams({ flagId: undefined });
+    };
     (async () => {
       try {
         const flag = await fetchFlagById(flagId);
-        if (cancelled || !flag) return;
+        if (cancelled) return;
+        if (!flag) {
+          // Unknown / deleted id — leave the map as-is, but free the param
+          // so the next tap of any link (including this one) re-fires.
+          clearFlagIdParam();
+          return;
+        }
         // M3: keep the fetched row so withFocusFlag can render its marker
         // even when the flag is outside the loaded page / active filters.
         setDeepLinkFlag(flag);
@@ -1004,17 +1024,21 @@ export default function MapScreen() {
           longitudeDelta: 0.005,
         });
         setTimeout(() => {
-          if (!cancelled) mapRef.current?.showCallout(flag.id);
+          if (cancelled) return;
+          mapRef.current?.showCallout(flag.id);
+          clearFlagIdParam();
         }, 700);
       } catch {
         // Swallow — deep-link arrivals shouldn't ever surface an error
-        // dialog. The user just sees the Map open as usual.
+        // dialog. The user just sees the Map open as usual (but the param
+        // is freed so a retry tap actually retries).
+        clearFlagIdParam();
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, [route.params?.flagId]);
+  }, [route.params?.flagId, navigation]);
 
   // Memoized so the React.memo on PlatformMap can actually skip re-renders
   // when MapScreen re-renders for reasons unrelated to the map's seed region
