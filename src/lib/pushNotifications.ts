@@ -30,6 +30,21 @@ export async function getPushEnabled(userId: string): Promise<boolean> {
  * Returns true if the user confirmed, false if they cancelled.
  */
 export function showPushExplanation(): Promise<boolean> {
+  // F47 (re-sweep): Alert.alert is a no-op on react-native-web, so this
+  // promise NEVER settled there — the Settings push toggle hung forever in
+  // its saving state. Use window.confirm on web (same pattern as
+  // src/lib/confirm.ts); resolve false when even that is unavailable so the
+  // flow always completes.
+  if (Platform.OS === 'web') {
+    if (typeof window !== 'undefined' && typeof window.confirm === 'function') {
+      return Promise.resolve(
+        window.confirm(
+          'Push notifications\n\nGet notified when your flag is verified or resolved. You can turn this off anytime in Settings.',
+        ),
+      );
+    }
+    return Promise.resolve(false);
+  }
   return new Promise((resolve) => {
     Alert.alert(
       'Push notifications',

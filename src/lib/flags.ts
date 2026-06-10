@@ -433,7 +433,12 @@ export async function uploadFlagPhoto(userId: string, localUri: string): Promise
     // Fail-closed: abort rather than upload original bytes that may carry GPS.
     const stripped = await stripExifWeb(arrayBuffer, ext);
     if (stripped === null) {
-      throw new Error('Photo privacy check failed: EXIF stripping could not be completed. Please try again.');
+      // F46: retrying the SAME file fails deterministically when the browser
+      // can't decode it (e.g. HEIC in Chrome/Firefox) — say so instead of
+      // suggesting a doomed retry.
+      throw new Error(
+        "Photo privacy check failed: this photo couldn't be processed in the browser (HEIC photos often can't). Please choose a JPG or PNG instead.",
+      );
     }
     arrayBuffer = stripped;
   } else {

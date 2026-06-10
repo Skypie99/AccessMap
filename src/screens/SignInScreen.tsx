@@ -15,6 +15,7 @@ import { font, radius, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { AppText } from '@/components/ui';
 import { signInWithEmail, signUpWithEmail } from '@/lib/supabase';
+import { notify } from '@/lib/confirm';
 import { track } from '@/lib/analytics';
 import LogoMark from '@/components/LogoMark';
 
@@ -50,9 +51,11 @@ export default function SignInScreen({
         : await signUpWithEmail(cleanEmail, password);
     setBusy(false);
     if (error) {
-      Alert.alert(
-        mode === 'in' ? "Couldn't sign you in" : "Couldn't create your account",
-        error.message,
+      // F48 (re-sweep): Alert.alert is a no-op on react-native-web, so a
+      // failed sign-in/sign-up showed NOTHING there. The inline error row
+      // (same one used for validation) works on every platform.
+      setValidationError(
+        `${mode === 'in' ? "Couldn't sign you in" : "Couldn't create your account"}: ${error.message}`,
       );
       return;
     }
@@ -67,11 +70,16 @@ export default function SignInScreen({
       // Modal has no swipe-to-dismiss — so the user was trapped with no way
       // back to the map. onClose is undefined when this is the root auth gate,
       // where no dismiss is needed.
-      Alert.alert(
-        'Check your email',
-        `We sent a confirmation link to ${cleanEmail}. Open it to finish signing up.`,
-        [{ text: 'OK', onPress: () => onClose?.() }],
-      );
+      const title = 'Check your email';
+      const msg = `We sent a confirmation link to ${cleanEmail}. Open it to finish signing up.`;
+      if (Platform.OS === 'web') {
+        // F48: the button-Alert below never renders on web — sign-up looked
+        // like a silent no-op and the modal never closed.
+        notify(title, msg);
+        onClose?.();
+      } else {
+        Alert.alert(title, msg, [{ text: 'OK', onPress: () => onClose?.() }]);
+      }
     }
   };
 
@@ -94,6 +102,20 @@ export default function SignInScreen({
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
+        {/* F48: when presented as a modal (guest browsing -> sign-in), give a
+            way OUT without authenticating — the iOS fullscreen Modal has no
+            swipe-to-dismiss, so a guest who changed their mind was trapped
+            (the F6 fix only closed the modal AFTER a successful sign-up). */}
+        {onClose ? (
+          <Pressable
+            onPress={onClose}
+            style={({ pressed }) => [styles.backBtn, pressed && styles.guestBtnPressed]}
+            accessibilityRole="button"
+            accessibilityLabel="Go back without signing in"
+          >
+            <AppText variant="label" style={styles.backBtnText}>← Back</AppText>
+          </Pressable>
+        ) : null}
         <View style={styles.brandBlock}>
           <LogoMark variant="white" size={84} />
           <AppText
@@ -390,6 +412,20 @@ const makeStyles = (_color: ColorTheme) =>
       justifyContent: 'center',
     },
     guestBtnPressed: { backgroundColor: 'rgba(255,255,255,0.06)' },
+    backBtn: {
+      alignSelf: 'flex-start',
+      paddingVertical: spacing.sm,
+      paddingHorizontal: spacing.md,
+      borderRadius: radius.full,
+      minHeight: 44,
+      justifyContent: 'center',
+    },
+    backBtnText: {
+      fontSize: font.size.sm,
+      fontWeight: font.weight.medium,
+      color: 'rgba(148,196,255,0.85)',
+      letterSpacing: 0.2,
+    },
     guestBtnText: {
       fontSize: font.size.sm,
       fontWeight: font.weight.medium,

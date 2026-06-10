@@ -20,7 +20,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { font, radius, shadow, spacing } from '@/theme';
 import { useAuth } from '@/lib/auth';
-import { confirm } from '@/lib/confirm';
+import { confirm, notify } from '@/lib/confirm';
 import { getDirectionsUrl } from '@/lib/directionsLink';
 import { errorMessage } from '@/lib/errors';
 import { formatFlagShareText } from '@/lib/shareFlag';
@@ -221,7 +221,7 @@ export default function FlagDetailModal({
       // F43: a failed save means the Watch/Unwatch did NOT stick — say so
       // (per the user-data write tier in CLAUDE.md). State was only flipped
       // after a successful save, so no rollback is needed here.
-      Alert.alert("Couldn't update your watched list", errorMessage(e));
+      notify("Couldn't update your watched list", errorMessage(e));
     } finally {
       setWatchSaving(false);
     }
@@ -254,7 +254,9 @@ export default function FlagDetailModal({
           const updated = await listFlagPhotos(shownFlag.id);
           setFlagPhotos(updated);
         } catch (e) {
-          Alert.alert('Could not upload photo', errorMessage(e));
+          // F46: this is the WEB branch — Alert.alert is a no-op here, which
+          // made a failed (e.g. fail-closed HEIC) upload a silent dead-end.
+          notify('Could not upload photo', errorMessage(e));
         } finally {
           URL.revokeObjectURL(localUri);
           cleanup();
@@ -360,7 +362,7 @@ export default function FlagDetailModal({
       setShownFlag(updated);
       setIsEditing(false);
     } catch (e) {
-      Alert.alert('Could not save changes', errorMessage(e));
+      notify('Could not save changes', errorMessage(e));
     } finally {
       setBusy(false);
     }
@@ -374,7 +376,7 @@ export default function FlagDetailModal({
       onChanged(updated, action, isOwn);
       onClose();
     } catch (e) {
-      Alert.alert('Could not update flag', errorMessage(e));
+      notify('Could not update flag', errorMessage(e));
     } finally {
       setBusy(false);
     }

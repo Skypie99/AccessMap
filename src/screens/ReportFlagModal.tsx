@@ -20,6 +20,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '@/lib/auth';
 import { track } from '@/lib/analytics';
 import { errorMessage } from '@/lib/errors';
+import { notify } from '@/lib/confirm';
 import {
   CATEGORY_LABELS,
   CATEGORY_ORDER,
@@ -201,7 +202,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
           ? await ImagePicker.requestCameraPermissionsAsync()
           : await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (!perm.granted) {
-        Alert.alert(
+        notify(
           'Permission needed',
           `Allow ${_source === 'camera' ? 'camera' : 'photo library'} access to attach a photo.`,
         );
@@ -221,7 +222,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
         addUri(result.assets[0].uri);
       }
     } catch (e) {
-      Alert.alert("Couldn't pick a photo", errorMessage(e));
+      notify("Couldn't pick a photo", errorMessage(e));
     }
   };
 
@@ -245,7 +246,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
     // it closes the window the state-based button `disabled` can't.
     if (submittingRef.current) return;
     if (!location) {
-      Alert.alert('No location', 'We need your location to place the flag.');
+      notify('No location', 'We need your location to place the flag.');
       return;
     }
     submittingRef.current = true;
@@ -256,14 +257,23 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
         await checkAnonRateLimit();
       } catch {
         submittingRef.current = false;
-        Alert.alert(
-          'Daily limit reached',
-          "You've reported 5 barriers today — thanks for contributing! Sign in to report more.",
-          [
-            { text: 'Sign In', onPress: onClose },
-            { text: 'OK', style: 'cancel' },
-          ],
-        );
+        // F46: Alert.alert with buttons is a silent no-op on web — the anon
+        // rate limit MUST be visible there (anon reporting is a web flow).
+        if (Platform.OS === 'web') {
+          notify(
+            'Daily limit reached',
+            "You've reported 5 barriers today — thanks for contributing! Sign in to report more.",
+          );
+        } else {
+          Alert.alert(
+            'Daily limit reached',
+            "You've reported 5 barriers today — thanks for contributing! Sign in to report more.",
+            [
+              { text: 'Sign In', onPress: onClose },
+              { text: 'OK', style: 'cancel' },
+            ],
+          );
+        }
         return;
       }
       setSubmitting(true);
@@ -282,7 +292,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
         onCreated();
         onClose();
       } catch (e) {
-        Alert.alert("Couldn't submit your report", errorMessage(e));
+        notify("Couldn't submit your report", errorMessage(e));
       } finally {
         submittingRef.current = false;
         setSubmitting(false);
@@ -324,7 +334,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
       // the user — they shouldn't think their picks were saved when they
       // weren't. Non-blocking alert: the report itself DID land.
       if (!result.tagsAccepted && contextTags.length > 0) {
-        Alert.alert(
+        notify(
           'Flag saved without context tags',
           'Your report was filed, but the context tags you picked could not be stored yet (server update pending). The picker will be re-enabled automatically once it is.',
         );
@@ -335,7 +345,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
       onCreated();
       onClose();
     } catch (e) {
-      Alert.alert("Couldn't submit your report", errorMessage(e));
+      notify("Couldn't submit your report", errorMessage(e));
     } finally {
       submittingRef.current = false;
       setSubmitting(false);

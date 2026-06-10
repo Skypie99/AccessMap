@@ -18,7 +18,7 @@ import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { useAuth } from '@/lib/auth';
 import { deleteAccount } from '@/lib/account';
-import { confirm } from '@/lib/confirm';
+import { confirm, notify } from '@/lib/confirm';
 import { errorMessage } from '@/lib/errors';
 import { signOut, supabase } from '@/lib/supabase';
 import { useSharedModals } from '@/lib/sharedModalsContext';
@@ -495,7 +495,7 @@ export default function ProfileScreen() {
         AccessibilityInfo.announceForAccessibility('Display name saved.');
       }
     } catch (e) {
-      Alert.alert("Couldn't save your name", errorMessage(e));
+      notify("Couldn't save your name", errorMessage(e));
     } finally {
       if (mountedRef.current) setSavingName(false);
     }
@@ -513,7 +513,7 @@ export default function ProfileScreen() {
           AccessibilityInfo.announceForAccessibility('Profile photo updated.');
         }
       } catch (e) {
-        Alert.alert("Couldn't update your photo", errorMessage(e));
+        notify("Couldn't update your photo", errorMessage(e));
       } finally {
         if (mountedRef.current) setUploadingAvatar(false);
       }
@@ -537,7 +537,7 @@ export default function ProfileScreen() {
     try {
       const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (!perm.granted) {
-        Alert.alert('Permission needed', 'Allow photo access so you can choose a profile picture.');
+        notify('Permission needed', 'Allow photo access so you can choose a profile picture.');
         return;
       }
       const result = await ImagePicker.launchImageLibraryAsync({
@@ -550,7 +550,7 @@ export default function ProfileScreen() {
         void doUploadAvatar(result.assets[0].uri);
       }
     } catch (e) {
-      Alert.alert("Couldn't pick a photo", errorMessage(e));
+      notify("Couldn't pick a photo", errorMessage(e));
     }
   }, [user, doUploadAvatar]);
 
