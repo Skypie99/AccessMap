@@ -690,3 +690,115 @@ describe('live location prop (FIX C — fresh GPS read lands mid-form)', () => {
     });
   });
 });
+
+// ===========================================================================
+// 7. Submitting state — L4 (consistent disable sweep while submit in flight)
+//
+// setSubmitting(true) fires synchronously at the top of handleSubmit (right
+// after the F3 re-entry ref), so EVERY control — category pills, severity
+// buttons, description input, photo gallery, cancel — disables for the whole
+// in-flight window. The anon rate-limit catch path must reset the state so
+// the form re-enables (previously the state was set late / left the controls
+// editable mid-flight).
+// ===========================================================================
+
+describe('submitting state — L4 disable sweep', () => {
+  it('disables every form control while an auth submit is in flight, re-enables after', async () => {
+    // Deferred createFlag — keeps the submit in flight until WE resolve it.
+    let resolveCreate: (value: { row: typeof SAMPLE_AUTH_ROW; tagsAccepted: boolean }) => void =
+      () => {};
+    mockCreateFlag.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolveCreate = resolve;
+        }),
+    );
+
+    const utils = renderAuth();
+
+    // Sanity: before submit, the form is fully interactive.
+    expect(
+      utils.getByLabelText('Description of the accessibility issue').props.editable,
+    ).toBe(true);
+    expect(
+      utils.getByLabelText('Category: No ramp').props.accessibilityState.disabled,
+    ).toBe(false);
+
+    // Spy BEFORE submit so the mid-flight gallery press can be asserted.
+    const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+
+    fireEvent.press(utils.getByLabelText('Submit flag report'));
+
+    // createFlag is pending — the WHOLE form must be locked.
+    await waitFor(() => {
+      expect(mockCreateFlag).toHaveBeenCalledTimes(1);
+    });
+    expect(
+      utils.getByLabelText('Submit flag report').props.accessibilityState,
+    ).toMatchObject({ disabled: true, busy: true });
+    expect(
+      utils.getByLabelText('Cancel and close').props.accessibilityState.disabled,
+    ).toBe(true);
+    expect(
+      utils.getByLabelText('Category: No ramp').props.accessibilityState.disabled,
+    ).toBe(true);
+    expect(
+      utils.getByLabelText(/^Severity 5:/).props.accessibilityState.disabled,
+    ).toBe(true);
+    expect(
+      utils.getByLabelText('Description of the accessibility issue').props.editable,
+    ).toBe(false);
+    // PhotoGallery receives undefined handlers mid-flight — pressing the
+    // stub's add trigger must NOT open the "Add photo" action sheet.
+    fireEvent.press(utils.getByTestId('photo-gallery-add'));
+    expect(alertSpy).not.toHaveBeenCalled();
+
+    // Let the submit finish — the form re-enables.
+    await act(async () => {
+      resolveCreate({ row: SAMPLE_AUTH_ROW, tagsAccepted: true });
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(
+      utils.getByLabelText('Description of the accessibility issue').props.editable,
+    ).toBe(true);
+    expect(
+      utils.getByLabelText('Category: No ramp').props.accessibilityState.disabled,
+    ).toBe(false);
+    // The gallery's add handler is live again — the action sheet opens.
+    fireEvent.press(utils.getByTestId('photo-gallery-add'));
+    expect(alertSpy).toHaveBeenCalledWith('Add photo', undefined, expect.any(Array));
+    alertSpy.mockRestore();
+  });
+
+  it('re-enables the form when the anon rate limit rejects the submit', async () => {
+    mockCheckAnonRateLimit.mockRejectedValueOnce(new Error('rate limited'));
+    const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+    const utils = renderAnon();
+
+    fireEvent.press(utils.getByLabelText('Submit anonymous flag report'));
+
+    await waitFor(() => {
+      expect(alertSpy).toHaveBeenCalledWith(
+        'Daily limit reached',
+        expect.any(String),
+        expect.any(Array),
+      );
+    });
+
+    // The catch path must reset BOTH the F3 ref and the submitting state.
+    expect(
+      utils.getByLabelText('Submit anonymous flag report').props.accessibilityState,
+    ).toMatchObject({ disabled: false, busy: false });
+    expect(
+      utils.getByLabelText('Description of the accessibility issue').props.editable,
+    ).toBe(true);
+
+    // Functional proof: a second tap goes through (rate limit passes now —
+    // the rejection above was mockRejectedValueOnce).
+    fireEvent.press(utils.getByLabelText('Submit anonymous flag report'));
+    await waitFor(() => {
+      expect(mockCreateAnonFlag).toHaveBeenCalledTimes(1);
+    });
+    alertSpy.mockRestore();
+  });
+});

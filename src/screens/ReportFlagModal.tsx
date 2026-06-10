@@ -87,10 +87,10 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
   const [contextTags, setContextTags] = useState<ContextTag[]>([]);
   const [submitting, setSubmitting] = useState(false);
   // Synchronous re-entry guard. The Submit button's `disabled` reads the
-  // `submitting` STATE, which doesn't flip until React re-renders — and the
-  // anon path awaits checkAnonRateLimit() before setSubmitting(true), leaving
-  // a window where a second tap starts a duplicate submit (F3). This ref is
-  // set synchronously at the top of handleSubmit so the second tap bails.
+  // `submitting` STATE, which doesn't flip until React re-renders — so a
+  // rapid second tap before the re-render lands could start a duplicate
+  // submit (F3). This ref is set synchronously at the top of handleSubmit
+  // (right before setSubmitting(true), see L4) so the second tap bails.
   const submittingRef = useRef(false);
   // Web-only: hidden <input type="file"> used as the image picker substitute.
   const webFileInputRef = useRef<HTMLInputElement | null>(null);
@@ -254,6 +254,10 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
       return;
     }
     submittingRef.current = true;
+    // L4: flip the STATE here too (not after the awaits below) so the whole
+    // form — chips, pills, text input, photo gallery — disables for the
+    // entire in-flight window, including the anon rate-limit check.
+    setSubmitting(true);
 
     // Anonymous submission path — no photo upload, no context tags.
     if (isAnon) {
@@ -261,6 +265,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
         await checkAnonRateLimit();
       } catch {
         submittingRef.current = false;
+        setSubmitting(false);
         // F46: Alert.alert with buttons is a silent no-op on web — the anon
         // rate limit MUST be visible there (anon reporting is a web flow).
         if (Platform.OS === 'web') {
@@ -280,7 +285,6 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
         }
         return;
       }
-      setSubmitting(true);
       try {
         await createAnonFlag({
           lat: location.lat,
@@ -305,7 +309,6 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
     }
 
     // Authenticated submission path — full feature set.
-    setSubmitting(true);
     // Hoisted OUTSIDE the try so the catch can clean up Storage orphans.
     // Photos upload BEFORE createFlag, so a mid-loop upload failure or a
     // createFlag failure would otherwise leave already-uploaded blobs with
@@ -466,6 +469,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
                     <Pressable
                       key={t.id}
                       onPress={() => applyTemplate(t)}
+                      disabled={submitting}
                       style={[styles.templateChip, active && styles.templateChipActive]}
                       accessibilityRole="button"
                       accessibilityLabel={
@@ -473,7 +477,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
                           ? `Template applied: ${t.label}. Tap to re-apply.`
                           : `Apply template: ${t.label}`
                       }
-                      accessibilityState={{ selected: active }}
+                      accessibilityState={{ selected: active, disabled: submitting }}
                     >
                       <AppText
                         variant="label"
@@ -515,10 +519,11 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
                     // visuals stay truthful.
                     setAppliedTemplateId(null);
                   }}
+                  disabled={submitting}
                   style={[styles.pill, active && styles.pillActive]}
                   accessibilityRole="button"
                   accessibilityLabel={`Category: ${CATEGORY_LABELS[c]}`}
-                  accessibilityState={{ selected: active }}
+                  accessibilityState={{ selected: active, disabled: submitting }}
                 >
                   <AppText variant="label" style={[styles.pillText, active && styles.pillTextActive]}>
                     {CATEGORY_LABELS[c]}
@@ -543,6 +548,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
                     // consistent with the live form.
                     setAppliedTemplateId(null);
                   }}
+                  disabled={submitting}
                   style={[
                     styles.sevBtn,
                     active && styles.sevBtnActive,
@@ -550,7 +556,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
                   ]}
                   accessibilityRole="button"
                   accessibilityLabel={`Severity ${s}: ${SEVERITY_LABELS[s]} — ${SEVERITY_DESCRIPTIONS[s]}`}
-                  accessibilityState={{ selected: active }}
+                  accessibilityState={{ selected: active, disabled: submitting }}
                 >
                   <AppText variant="label" style={[styles.sevText, active && styles.sevTextActive]}>{s}</AppText>
                 </Pressable>
@@ -589,6 +595,9 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
             // Cap the input here too so the user can't paste a wall of
             // text only to get a Postgres error after upload+insert.
             maxLength={2000}
+            // L4: TextInput has no `disabled` prop — editable={false} is the
+            // RN way to lock it while the submit is in flight.
+            editable={!submitting}
             style={styles.input}
             accessibilityLabel="Description of the accessibility issue"
             accessibilityHint="Optional. Up to 2000 characters."
@@ -644,10 +653,10 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
                     <Pressable
                       key={tag}
                       onPress={() => {
-                        if (tagsDisabled) return;
+                        if (tagsDisabled || submitting) return;
                         setContextTags((curr) => toggleTag(curr, tag));
                       }}
-                      disabled={tagsDisabled}
+                      disabled={tagsDisabled || submitting}
                       style={[
                         styles.tagChip,
                         active && styles.tagChipActive,
@@ -655,7 +664,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
                       ]}
                       accessibilityRole="checkbox"
                       accessibilityLabel={label}
-                      accessibilityState={{ checked: active, disabled: tagsDisabled }}
+                      accessibilityState={{ checked: active, disabled: tagsDisabled || submitting }}
                       accessibilityHint={
                         tagsDisabled ? 'Seasonal tags will be available soon.' : undefined
                       }
@@ -701,10 +710,10 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
                     <Pressable
                       key={tag}
                       onPress={() => {
-                        if (tagsDisabled) return;
+                        if (tagsDisabled || submitting) return;
                         setContextTags((curr) => toggleTag(curr, tag));
                       }}
-                      disabled={tagsDisabled}
+                      disabled={tagsDisabled || submitting}
                       style={[
                         styles.tagChip,
                         styles.disabilityTagChip,
@@ -713,7 +722,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
                       ]}
                       accessibilityRole="checkbox"
                       accessibilityLabel={label}
-                      accessibilityState={{ checked: active, disabled: tagsDisabled }}
+                      accessibilityState={{ checked: active, disabled: tagsDisabled || submitting }}
                       accessibilityHint={
                         tagsDisabled ? 'Accessibility tags will be available soon.' : undefined
                       }
@@ -780,10 +789,14 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
                 </View>
               )}
 
+              {/* L4: both handlers are optional — passing undefined while the
+                  submit is in flight hides the add tile (canAdd checks
+                  !!onAddPhoto) and the per-photo remove buttons, so the photo
+                  set can't change under an in-progress upload loop. */}
               <PhotoGallery
                 photos={photoUris.map((url, i) => ({ url, position: i }))}
-                onAddPhoto={pickPhotoForGallery}
-                onRemovePhoto={removeUri}
+                onAddPhoto={submitting ? undefined : pickPhotoForGallery}
+                onRemovePhoto={submitting ? undefined : removeUri}
                 maxPhotos={MAX_PHOTOS}
               />
 
@@ -810,10 +823,10 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
                     <Pressable
                       key={tag}
                       onPress={() => {
-                        if (tagsDisabled) return;
+                        if (tagsDisabled || submitting) return;
                         setContextTags((curr) => toggleTag(curr, tag));
                       }}
-                      disabled={tagsDisabled}
+                      disabled={tagsDisabled || submitting}
                       style={[
                         styles.tagChip,
                         active && styles.tagChipActive,
@@ -821,7 +834,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
                       ]}
                       accessibilityRole="checkbox"
                       accessibilityLabel={label}
-                      accessibilityState={{ checked: active, disabled: tagsDisabled }}
+                      accessibilityState={{ checked: active, disabled: tagsDisabled || submitting }}
                       accessibilityHint={
                         tagsDisabled ? 'Context tags will be available soon.' : undefined
                       }
