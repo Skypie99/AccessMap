@@ -6,6 +6,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   FlatList,
   Modal,
   Pressable,
@@ -23,7 +24,12 @@ import {
   fetchFlagsByIds,
   severityColor,
 } from '@/lib/flags';
-import { clearWatched, loadWatched, removeWatched } from '@/lib/watchedFlags';
+import {
+  clearWatched,
+  loadWatched,
+  removeWatched,
+  setWatched as persistWatchedIds,
+} from '@/lib/watchedFlags';
 import {
   filterWatchedFlags,
   filterWatchedFlagsByStatus,
@@ -119,6 +125,17 @@ export default function MyWatchedModal({ visible, onClose, onSelectFlag, onViewO
       setWatchedIds(ids);
       setFlags(rows);
       if (isPullRefresh && mountedRef.current) setLoadError(null);
+      // F45 (re-sweep): prune ids whose flags no longer exist on the server so
+      // the "removed by their author" banner shows once (this session) instead
+      // of forever. State keeps the loaded ids so the banner still informs;
+      // storage gets the surviving list so the next open is clean.
+      if (rows.length < ids.length) {
+        const surviving = new Set(rows.map((r) => r.id));
+        void persistWatchedIds(user.id, ids.filter((id) => surviving.has(id))).catch(() => {
+          // Prune is housekeeping — a failed write just means we prune again
+          // next open; never block the list render for it.
+        });
+      }
     } catch (e) {
       if (mountedRef.current) setLoadError(errorMessage(e, 'Could not load watched flags.'));
     } finally {
@@ -133,9 +150,31 @@ export default function MyWatchedModal({ visible, onClose, onSelectFlag, onViewO
 
   const handleUnwatch = useCallback(async (flagId: string) => {
     if (!user) return;
-    setFlags((prev) => prev.filter((f) => f.id !== flagId));
+    // Optimistic removal with rollback (F43): persist now throws on a failed
+    // user-data write, so a failure restores the row and tells the user.
+    let removedFlag: FlagRow | undefined;
+    let removedIdx = -1;
+    setFlags((prev) => {
+      removedIdx = prev.findIndex((f) => f.id === flagId);
+      removedFlag = prev[removedIdx];
+      return prev.filter((f) => f.id !== flagId);
+    });
     setWatchedIds((prev) => prev.filter((id) => id !== flagId));
-    try { await removeWatched(user.id, flagId); } catch { /* best-effort */ }
+    try {
+      await removeWatched(user.id, flagId);
+    } catch (e) {
+      if (mountedRef.current && removedFlag) {
+        const flag = removedFlag;
+        const idx = removedIdx;
+        setFlags((prev) => {
+          const next = prev.slice();
+          next.splice(Math.min(idx, next.length), 0, flag);
+          return next;
+        });
+        setWatchedIds((prev) => (prev.includes(flagId) ? prev : [...prev, flagId]));
+      }
+      Alert.alert("Couldn't update your watched list", errorMessage(e));
+    }
   }, [user]);
 
   const handleClearAll = useCallback(async () => {
@@ -146,9 +185,20 @@ export default function MyWatchedModal({ visible, onClose, onSelectFlag, onViewO
       'Clear all', true,
     );
     if (!ok) return;
+    const prevFlags = flags;
+    const prevIds = watchedIds;
     setFlags([]); setWatchedIds([]);
-    try { await clearWatched(user.id); } catch { /* best-effort */ }
-  }, [user, flags.length]);
+    try {
+      await clearWatched(user.id);
+    } catch (e) {
+      // F43: the clear didn't stick — restore and say so.
+      if (mountedRef.current) {
+        setFlags(prevFlags);
+        setWatchedIds(prevIds);
+      }
+      Alert.alert("Couldn't clear your watched list", errorMessage(e));
+    }
+  }, [user, flags, watchedIds]);
 
   useEffect(() => {
     if (visible) { setSearchQuery(''); setStatusFilter('all'); setSortMode('status'); }
@@ -294,9 +344,22 @@ export default function MyWatchedModal({ visible, onClose, onSelectFlag, onViewO
             </View>
           )}
 
+          {/* F44 (re-sweep): a failed pull-to-refresh used to replace the
+              already-loaded list with this full-screen error. The full-screen
+              error is now reserved for "nothing to show"; with rows on screen
+              the failure renders as a banner above the (stale but useful)
+              list instead. */}
+          {loadError && flags.length > 0 && !loading && (
+            <View style={styles.missingBanner}>
+              <AppText variant="body" style={styles.missingText}>
+                {`Couldn't refresh: ${loadError} Showing your last loaded list.`}
+              </AppText>
+            </View>
+          )}
+
           {loading ? (
             <View style={styles.center}><ActivityIndicator /></View>
-          ) : loadError ? (
+          ) : loadError && flags.length === 0 ? (
             <View style={styles.center}>
               <AppText variant="body" style={styles.errorText}>{loadError}</AppText>
               <Pressable onPress={() => void load()} style={styles.retryBtn} accessibilityRole="button" accessibilityLabel="Retry loading watched flags">

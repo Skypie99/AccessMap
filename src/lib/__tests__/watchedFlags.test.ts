@@ -10,7 +10,8 @@
  *    within-batch duplicates, FIFO eviction across a full list.
  *  - setWatched: replaces, no-op when unchanged, clears on [].
  *  - clearWatched: empties the list.
- *  - persist error path: swallows AsyncStorage.setItem rejection.
+ *  - persist error path: re-throws AsyncStorage.setItem rejection (F43 —
+ *    user-data write tier; callers surface the failure).
  *  - Per-user isolation: two users on one device don't see each other's list.
  *
  * Mock strategy: in-memory Map that exposes jest.fn() handles so
@@ -361,19 +362,23 @@ describe('clearWatched', () => {
 // persist error path — covers lines 161-162
 // ────────────────────────────────────────────────────────────────────────────
 describe('persist error path', () => {
-  it('swallows AsyncStorage.setItem rejection and logs a warning', async () => {
-    // The persist function is private but exercised via any write helper.
-    // Here we use addWatched as the driver.
+  it('LOCKING (F43): re-throws AsyncStorage.setItem rejection after warning', async () => {
+    // The watched list is user data the user deliberately curates — per the
+    // CLAUDE.md error tier for user-data AsyncStorage WRITEs (same class as
+    // savedPlaces.persist), a failed save must THROW so callers surface it
+    // instead of confirming a Watch that was never stored. (This test
+    // previously pinned the opposite, policy-violating swallow behavior.)
     const AS = getMockAS();
     AS.setItem.mockRejectedValueOnce(new Error('quota exceeded'));
     const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
 
-    // Should not throw even though setItem fails.
-    await expect(addWatched(USER_A, FLAG_1)).resolves.toBeDefined();
+    await expect(addWatched(USER_A, FLAG_1)).rejects.toThrow('quota exceeded');
     expect(warnSpy).toHaveBeenCalledWith(
       expect.stringContaining('[watchedFlags] save failed:'),
       expect.any(String),
     );
+    // The failed add must NOT appear on a subsequent load.
+    expect(await loadWatched(USER_A)).toEqual([]);
     warnSpy.mockRestore();
   });
 });

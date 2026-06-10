@@ -217,9 +217,11 @@ export default function FlagDetailModal({
         await addWatched(user.id, shownFlag.id);
         setWatched(true);
       }
-    } catch {
-      // Storage hiccups already get a console.warn from the helpers.
-      // Nothing to surface to the user — they can retry.
+    } catch (e) {
+      // F43: a failed save means the Watch/Unwatch did NOT stick — say so
+      // (per the user-data write tier in CLAUDE.md). State was only flipped
+      // after a successful save, so no rollback is needed here.
+      Alert.alert("Couldn't update your watched list", errorMessage(e));
     } finally {
       setWatchSaving(false);
     }
