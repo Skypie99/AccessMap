@@ -181,11 +181,22 @@ export async function savePushToken(userId: string, token: string): Promise<void
 
 /**
  * Delete the user's push token from the database and clear the local
- * preference. Wrapped in try/catch — failure is best-effort/silent.
+ * preference.
+ *
+ * F49 (re-sweep): the server-side delete result was previously UNCHECKED
+ * (postgrest returns { error } rather than throwing), so a failed delete left
+ * the token live — pushes kept arriving while the Settings toggle showed OFF.
+ * A push opt-out must be honored or surfaced: this now THROWS when the server
+ * delete fails. The sign-out path stays best-effort because its caller
+ * (signOut in supabase.ts) already wraps this in try/catch + warn.
+ * Local cleanup (preference flag, scheduled notifications) remains silent
+ * best-effort — it can't un-deliver anything.
  */
 export async function deletePushToken(userId: string): Promise<void> {
+  const { error } = await supabase.from('push_tokens').delete().eq('user_id', userId);
+  if (error) throw error;
+
   try {
-    await supabase.from('push_tokens').delete().eq('user_id', userId);
     // Clear preference (native platforms only).
     if (Platform.OS !== 'web') {
       await AsyncStorage.setItem(pushEnabledKey(userId), 'false');
@@ -201,7 +212,7 @@ export async function deletePushToken(userId: string): Promise<void> {
       // expo-notifications absent — nothing to cancel.
     }
   } catch (e) {
-    console.warn('[pushNotifications] deletePushToken failed (silent):', e);
+    console.warn('[pushNotifications] deletePushToken local cleanup failed (silent):', e);
   }
 }
 

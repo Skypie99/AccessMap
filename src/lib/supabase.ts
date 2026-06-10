@@ -69,5 +69,28 @@ export async function signOut(userId?: string) {
       console.warn('[signOut] push token clear failed (silent):', e);
     }
   }
-  return supabase.auth.signOut();
+  // F50 (re-sweep): supabase.auth.signOut() needs the network to revoke the
+  // session, and its error was ignored by every caller (`void signOut(...)`).
+  // An offline tap on Sign out cleared the caches above, then SILENTLY left
+  // the session alive — the user believed they were signed out until the next
+  // app open. Fall back to a local-scope sign-out (no network needed) so the
+  // device honors the user's intent, and say the server side will lag. The
+  // unrevoked refresh token is flagged in DECISIONS FOR SKY (a client cannot
+  // revoke it without connectivity).
+  const result = await supabase.auth.signOut();
+  if (result.error) {
+    console.warn('[signOut] server sign-out failed; forcing local sign-out:', result.error.message);
+    const local = await supabase.auth.signOut({ scope: 'local' });
+    const { notify } = await import('./confirm');
+    if (local.error) {
+      notify("Couldn't sign you out", 'Please check your connection and try again.');
+      return result;
+    }
+    notify(
+      'Signed out on this device',
+      "The server couldn't be reached, so the session will be fully revoked next time you're online.",
+    );
+    return local;
+  }
+  return result;
 }
