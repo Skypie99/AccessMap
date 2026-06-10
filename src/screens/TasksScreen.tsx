@@ -28,6 +28,7 @@ import {
   updateFlagStatus,
 } from '@/lib/flags';
 import { relativeTime } from '@/lib/relativeTime';
+import { searchFlags } from '@/lib/flagSearch';
 import { useFlags } from '@/lib/flagsStore';
 import { useUserLocation } from '@/lib/location';
 import {
@@ -143,10 +144,11 @@ export default function TasksScreen() {
     AccessibilityInfo.announceForAccessibility(`Showing ${label}`);
   }, []);
 
-  // Free-text quick search. Substring match against description and the
-  // human-readable category label. Trimmed + lowercased once in useMemo
-  // so the per-row filter is a cheap `.includes`. Session-only — resets
-  // on tab unmount, matching the rest of the Tasks filters.
+  // Free-text quick search. Delegates to the shared searchFlags() helper
+  // (same as NearbyFlagsModal): case-insensitive substring match across
+  // description + category label + status label, with AND semantics
+  // across whitespace-separated tokens. Session-only — resets on tab
+  // unmount, matching the rest of the Tasks filters.
   const [searchText, setSearchText] = useState('');
   const [debouncedSearchText, setDebouncedSearchText] = useState('');
   useEffect(() => {
@@ -182,14 +184,7 @@ export default function TasksScreen() {
     if (mineOnly && userId) out = out.filter((f) => f.user_id === userId);
     if (minSeverity > 0) out = out.filter((f) => f.severity >= minSeverity);
     if (categoryFilter) out = out.filter((f) => f.category === categoryFilter);
-    const q = debouncedSearchText.trim().toLowerCase();
-    if (q) {
-      out = out.filter((f) => {
-        const desc = (f.description ?? '').toLowerCase();
-        const catLabel = CATEGORY_LABELS[f.category].toLowerCase();
-        return desc.includes(q) || catLabel.includes(q);
-      });
-    }
+    out = searchFlags(out, debouncedSearchText);
     return out;
   }, [flags, mineOnly, userId, minSeverity, categoryFilter, debouncedSearchText]);
 
