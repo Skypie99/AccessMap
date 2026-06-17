@@ -387,6 +387,18 @@ export default function FlagDetailModal({
       // (e.g. reverting another user's resolution to 'verified').
       const updated = await updateFlagStatus(shownFlag.id, next, shownFlag.status);
       onChanged(updated, action, isOwn);
+      // A11y: the modal closes on success (visual confirmation for sighted
+      // users). Announce the outcome too so VoiceOver/TalkBack users hear it —
+      // mirrors the comment-post / reopen announcements already in this file.
+      AccessibilityInfo.announceForAccessibility(
+        next === 'verified'
+          ? 'Flag marked verified'
+          : next === 'resolved'
+            ? 'Flag marked resolved'
+            : next === 'rejected'
+              ? 'Flag rejected'
+              : 'Flag reopened',
+      );
       onClose();
     } catch (e) {
       if (e instanceof FlagStatusConflictError) {
