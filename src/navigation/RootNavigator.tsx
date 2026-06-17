@@ -17,7 +17,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useAuth } from '@/lib/auth';
 import { FlagsProvider, useFlags } from '@/lib/flagsStore';
 import { SharedModalsProvider, useSharedModals } from '@/lib/sharedModalsContext';
-import { font, radius, spacing } from '@/theme';
+import { font, icon, radius, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import FeedbackModal from '@/components/FeedbackModal';
 import HelpModal from '@/components/HelpModal';
@@ -151,7 +151,7 @@ function NavInner({ initialRouteName }: { initialRouteName: keyof RootTabParamLi
         accessibilityLabel="Open navigation menu"
         hitSlop={8}
       >
-        <MenuIcon size={24} color="#f0f6ff" strokeWidth={2.2} />
+        <MenuIcon size={icon.lg} color={color.headerFg} strokeWidth={2.2} />
       </Pressable>
       <HamburgerDrawer
         open={drawerOpen}
@@ -188,9 +188,9 @@ function NavInner({ initialRouteName }: { initialRouteName: keyof RootTabParamLi
       screenLayout={({ children }) => <ErrorBoundary variant="screen">{children}</ErrorBoundary>}
       screenOptions={{
         headerStyle: {
-          backgroundColor: '#0d1829',
+          backgroundColor: color.headerBg,
           borderBottomWidth: 1,
-          borderBottomColor: 'rgba(255,255,255,0.08)',
+          borderBottomColor: color.navBorder,
           shadowColor: '#000',
           shadowOpacity: 0.4,
           shadowRadius: 8,
@@ -198,20 +198,20 @@ function NavInner({ initialRouteName }: { initialRouteName: keyof RootTabParamLi
           elevation: 8,
         },
         headerTitleStyle: {
-          color: '#f0f6ff',
+          color: color.headerFg,
           fontWeight: font.weight.bold,
           fontSize: font.size.lg,
           letterSpacing: 0.2,
         },
-        headerTintColor: '#f0f6ff',
+        headerTintColor: color.headerFg,
         headerTitleAlign: 'center',
         headerRight: renderHeaderRight,
-        tabBarActiveTintColor: '#60a5fa',
-        tabBarInactiveTintColor: 'rgba(255,255,255,0.45)',
+        tabBarActiveTintColor: color.tabBarActiveTint,
+        tabBarInactiveTintColor: color.tabBarInactiveTint,
         tabBarStyle: {
           borderTopWidth: 1,
-          borderTopColor: 'rgba(255,255,255,0.1)',
-          backgroundColor: 'rgba(7,11,24,0.92)',
+          borderTopColor: color.navBorder,
+          backgroundColor: color.tabBarBg,
           // Grow by the bottom safe-area inset so the home indicator never
           // overlaps the tab labels. The hardcoded height had overridden
           // React Navigation's automatic inset handling.
@@ -285,8 +285,7 @@ function SharedModalsHost() {
   );
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const makeStyles = (_color: ColorTheme) =>
+const makeStyles = (color: ColorTheme) =>
   StyleSheet.create({
     hamburgerBtn: {
       marginLeft: spacing.md,
@@ -309,7 +308,7 @@ const makeStyles = (_color: ColorTheme) =>
     },
     feedbackBtnPressed: { backgroundColor: 'rgba(255,255,255,0.28)' },
     feedbackBtnText: {
-      color: '#f0f6ff',
+      color: color.headerFg,
       fontWeight: font.weight.bold,
       fontSize: font.size.sm,
       letterSpacing: 0.3,

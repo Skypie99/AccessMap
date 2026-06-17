@@ -34,6 +34,7 @@ import { X } from 'lucide-react-native';
 import { AppText } from '@/components/ui/AppText';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { useAuth } from '@/lib/auth';
+import { useReducedMotion } from '@/lib/accessibility';
 import {
   useNotificationPreferences,
   type NotificationPreferences,
@@ -123,9 +124,16 @@ export default function NotificationPreferencesScreen({ visible, onClose }: Prop
   const styles = makeStyles(color);
   const { user } = useAuth();
   const { preferences, setPreference, loading } = useNotificationPreferences(user?.id);
+  // WCAG 2.3.3: snap (no slide) when the user prefers reduced motion.
+  const reducedMotion = useReducedMotion();
 
   return (
-    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
+    <Modal
+      visible={visible}
+      animationType={reducedMotion ? 'none' : 'slide'}
+      transparent
+      onRequestClose={onClose}
+    >
       <View style={styles.backdrop}>
         {/* accessibilityViewIsModal traps VoiceOver focus inside the sheet
             so it can't escape back to the underlying Settings screen. */}
