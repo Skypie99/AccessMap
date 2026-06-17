@@ -867,6 +867,20 @@ export default function MapScreen() {
     [filteredFlags, deepLinkFlag],
   );
 
+  // Viewport filter counts (UX #1): tally how many of the currently-loaded
+  // flags fall in each category, so the category chips can show a live count.
+  // Pure client-side aggregate over the already-fetched `flags` array — no new
+  // fetch. Counts ALL loaded flags (not filteredFlags) so each chip shows what
+  // selecting it would surface, independent of the other active axes.
+  const categoryCounts = useMemo(() => {
+    const counts = {} as Record<FlagCategory, number>;
+    for (const c of CATEGORY_ORDER) counts[c] = 0;
+    for (const f of flags) {
+      if (f.category in counts) counts[f.category] += 1;
+    }
+    return counts;
+  }, [flags]);
+
   // Heat-cell aggregation — buckets the currently-visible flag set onto
   // the grid and drops anything below the privacy floor (k>=3). Memoised
   // so a parent re-render that doesn't touch flags/toggle doesn't redo
@@ -1466,21 +1480,30 @@ export default function MapScreen() {
                 >
                   {CATEGORY_ORDER.map((c) => {
                     const active = activeCategories.has(c);
+                    const count = categoryCounts[c];
                     return (
                       <Pressable
                         key={c}
                         onPress={() => toggleCategory(c)}
                         style={[styles.filterPill, active && styles.filterPillActive]}
                         accessibilityRole="button"
-                        accessibilityLabel={`Filter by ${CATEGORY_LABELS[c]}`}
+                        accessibilityLabel={`Filter by ${CATEGORY_LABELS[c]}, ${count} flag${count === 1 ? '' : 's'}`}
                         accessibilityState={{ selected: active }}
                       >
-                        <AppText
-                          variant="label"
-                          style={[styles.filterPillText, active && styles.filterPillTextActive]}
-                        >
-                          {CATEGORY_LABELS[c]}
-                        </AppText>
+                        <View style={styles.filterPillRow}>
+                          <AppText
+                            variant="label"
+                            style={[styles.filterPillText, active && styles.filterPillTextActive]}
+                          >
+                            {CATEGORY_LABELS[c]}
+                          </AppText>
+                          <AppText
+                            variant="label"
+                            style={[styles.filterPillCount, active && styles.filterPillTextActive]}
+                          >
+                            {count}
+                          </AppText>
+                        </View>
                       </Pressable>
                     );
                   })}
@@ -2289,6 +2312,15 @@ const makeStyles = (color: ColorTheme) =>
     filterPillActive: { backgroundColor: color.brand },
     filterPillText: { fontSize: font.size.xs, color: color.text, fontWeight: font.weight.semibold },
     filterPillTextActive: { color: color.textOnBrand },
+    // Viewport count badge inside each category chip (UX #1). Sits after the
+    // label with a thin separator gap; muted so the label stays primary, but
+    // turns textOnBrand (via filterPillTextActive) when the chip is selected.
+    filterPillRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
+    filterPillCount: {
+      fontSize: font.size.caption,
+      color: color.textMuted,
+      fontWeight: font.weight.bold,
+    },
     sevPill: {
       width: 44,
       height: 44,
