@@ -165,6 +165,14 @@ export default function ProfileScreen() {
   const [signInOpen, setSignInOpen] = useState(false);
   const [reportsOpen, setReportsOpen] = useState(false);
   const [reportsRefreshKey, setReportsRefreshKey] = useState(0);
+  // Seeds MyReportsModal's internal status filter when it opens. Set when
+  // the user taps a status pill in the breakdown row (e.g. "4 open" →
+  // 'open'); undefined when opened from the plain "My Reports" button so
+  // the list shows every status. Reset to undefined on modal close so the
+  // next plain open isn't accidentally pre-filtered.
+  const [reportsInitialStatus, setReportsInitialStatus] = useState<FlagStatus | undefined>(
+    undefined,
+  );
   // Independent refresh key for the Recently Viewed row — bumped on
   // every Profile focus so flags opened on other tabs since the last
   // focus are reflected in the chip row immediately.
@@ -650,6 +658,21 @@ export default function ProfileScreen() {
     }
   }, [user]);
 
+  // Opens My Reports pre-filtered to a single status — wired to the
+  // tappable status pills in the breakdown row. Presentation/navigation
+  // only: seeds the modal's existing internal status filter, no data change.
+  const handleOpenReportsForStatus = (status: FlagStatus) => {
+    setReportsInitialStatus(status);
+    setReportsOpen(true);
+  };
+
+  // Opens My Reports with no status pre-filter (the plain "My Reports"
+  // button). Clears any seed left over from a status-pill tap.
+  const handleOpenAllReports = () => {
+    setReportsInitialStatus(undefined);
+    setReportsOpen(true);
+  };
+
   // Opens the detail modal from the My Reports list.
   const handleReportsSelectFlag = (flag: FlagRow) => {
     setReportsOpen(false);
@@ -1117,42 +1140,71 @@ export default function ProfileScreen() {
 
         {/* Per-status breakdown — small palette-tinted chips. Only shown
             when the user has at least one report so first-launch profiles
-            stay uncluttered. */}
+            stay uncluttered. Pills with at least one report are tappable:
+            they open My Reports pre-filtered to that status. Zero-count
+            pills stay non-interactive (nothing to view) and dimmed.
+
+            Note: the wrapper used to be `accessible={true}` with a single
+            combined summary label, which made the whole row one SR element.
+            That's removed here so each tappable pill is its own focusable
+            button (children of an `accessible` View aren't independently
+            focusable) — same reasoning as the T4 hero-card change above.
+            Each pill now carries its own count + status in its label. */}
         {stats.reported > 0 && (
-          <View
-            style={styles.statusBreakdownRow}
-            // QA A3: same root cause as the streak card — without
-            // accessible={true}, the per-status pills are read as four
-            // separate elements ("5 OPEN", "3 VERIFIED", …) instead of
-            // the combined summary label.
-            accessible={true}
-            accessibilityRole="summary"
-            accessibilityLabel={
-              `Your reports by status: ` +
-              (['open', 'verified', 'resolved', 'rejected'] as FlagStatus[])
-                .map((s) => `${stats.byStatus[s]} ${STATUS_LABELS[s].toLowerCase()}`)
-                .join(', ')
-            }
-          >
+          <View style={styles.statusBreakdownRow} accessibilityLabel="Your reports by status">
             {(['open', 'verified', 'resolved', 'rejected'] as FlagStatus[]).map((status) => {
               const palette = STATUS_COLORS[status];
               const count = stats.byStatus[status];
-              return (
-                <View
-                  key={status}
-                  style={[
-                    styles.statusPill,
-                    { backgroundColor: palette.bg },
-                    count === 0 && styles.statusPillDimmed,
-                  ]}
-                  accessibilityElementsHidden
-                  importantForAccessibility="no"
-                >
-                  <AppText variant="monoBold" style={[styles.statusPillCount, { color: palette.fg }]}>{count}</AppText>
-                  <AppText variant="label" style={[styles.statusPillLabel, { color: palette.fg }]}>
+              const statusWord = STATUS_LABELS[status].toLowerCase();
+              const pillInner = (
+                <>
+                  <AppText
+                    variant="monoBold"
+                    style={[styles.statusPillCount, { color: palette.fg }]}
+                    accessibilityElementsHidden
+                    importantForAccessibility="no-hide-descendants"
+                  >
+                    {count}
+                  </AppText>
+                  <AppText
+                    variant="label"
+                    style={[styles.statusPillLabel, { color: palette.fg }]}
+                    accessibilityElementsHidden
+                    importantForAccessibility="no-hide-descendants"
+                  >
                     {STATUS_LABELS[status]}
                   </AppText>
-                </View>
+                </>
+              );
+              // Zero-count: nothing to view, so keep it as a plain dimmed
+              // chip. Still announces its count so SR users get the full
+              // picture, but it isn't a button.
+              if (count === 0) {
+                return (
+                  <View
+                    key={status}
+                    style={[styles.statusPill, { backgroundColor: palette.bg }, styles.statusPillDimmed]}
+                    accessibilityLabel={`No ${statusWord} reports`}
+                  >
+                    {pillInner}
+                  </View>
+                );
+              }
+              return (
+                <Pressable
+                  key={status}
+                  onPress={() => handleOpenReportsForStatus(status)}
+                  style={({ pressed }) => [
+                    styles.statusPill,
+                    { backgroundColor: palette.bg },
+                    pressed && styles.statusPillPressed,
+                  ]}
+                  accessibilityRole="button"
+                  accessibilityLabel={`View your ${count} ${statusWord} ${count === 1 ? 'report' : 'reports'}`}
+                  accessibilityHint="Opens My Reports filtered to this status"
+                >
+                  {pillInner}
+                </Pressable>
               );
             })}
           </View>
@@ -1182,7 +1234,7 @@ export default function ProfileScreen() {
 
         <Pressable
           style={({ pressed }) => [styles.myReportsBtn, pressed && styles.myReportsBtnPressed]}
-          onPress={() => setReportsOpen(true)}
+          onPress={handleOpenAllReports}
           accessibilityRole="button"
           accessibilityLabel={
             stats.reported === 0
@@ -1616,10 +1668,16 @@ export default function ProfileScreen() {
 
       <MyReportsModal
         visible={reportsOpen}
-        onClose={() => setReportsOpen(false)}
+        onClose={() => {
+          setReportsOpen(false);
+          // Clear the status seed so a later plain "My Reports" open
+          // doesn't reopen pre-filtered to the last-tapped status.
+          setReportsInitialStatus(undefined);
+        }}
         onSelectFlag={handleReportsSelectFlag}
         onViewOnMap={handleViewOnMap}
         refreshKey={reportsRefreshKey}
+        initialStatus={reportsInitialStatus}
       />
 
       <MyWatchedModal
@@ -2196,12 +2254,18 @@ const makeStyles = (color: ColorTheme) =>
       flexGrow: 1,
       flexBasis: 0,
       minWidth: 70,
+      // minHeight guarantees the now-tappable pills meet the 44pt target
+      // even before content; the count + label already push past it.
+      minHeight: 44,
       paddingVertical: 8,
       paddingHorizontal: 10,
       borderRadius: 10,
       alignItems: 'center',
+      justifyContent: 'center',
       gap: 2,
     },
+    // Pressed feedback for the tappable (non-zero) status pills.
+    statusPillPressed: { opacity: 0.7 },
     // Zero-count pills fade so the eye lands on what's actually there.
     statusPillDimmed: { opacity: 0.55 },
     statusPillCount: { fontSize: 18, fontWeight: '700' },
