@@ -892,6 +892,28 @@ export default function MapScreen() {
     previouslyEmptyRef.current = showEmptyCard;
   }, [showEmptyCard]);
 
+  // Smart empty-state recovery (UX overhaul #2): when filters hide everything,
+  // offer a one-tap clear for EACH active filter axis — not just a blunt
+  // "reset all" — so the user can widen exactly the constraint hiding results.
+  // Pure presentation: each chip flips one existing filter state setter.
+  const emptyResetChips = useMemo(() => {
+    if (!showEmptyCard) return [] as { key: string; label: string; onPress: () => void }[];
+    const chips: { key: string; label: string; onPress: () => void }[] = [];
+    if (activeCategories.size > 0)
+      chips.push({ key: 'cat', label: 'All categories', onPress: () => setActiveCategories(new Set()) });
+    if (minSeverity > 1)
+      chips.push({ key: 'sev', label: 'Any severity', onPress: () => setMinSeverity(1) });
+    if (maxDistanceKm !== null)
+      chips.push({ key: 'dist', label: 'Any distance', onPress: () => setMaxDistanceKm(null) });
+    if (activeDisabilityTags.size > 0)
+      chips.push({
+        key: 'dis',
+        label: 'All access needs',
+        onPress: () => setActiveDisabilityTags(new Set()),
+      });
+    return chips;
+  }, [showEmptyCard, activeCategories, minSeverity, maxDistanceKm, activeDisabilityTags]);
+
   const requestLocation = useCallback(async () => {
     if (mountedRef.current) {
       setLocating(true);
@@ -1720,16 +1742,32 @@ export default function MapScreen() {
             <Search size={26} color={color.textSubtle} strokeWidth={2} />
             <AppText variant="heading" style={styles.emptyCardTitle}>Nothing here right now</AppText>
             <AppText variant="body" style={styles.emptyCardBody}>
-              Your filters are hiding everything. Try widening them, or reset to see all nearby flags.
+              Your filters are hiding everything. Clear just the one in the way, or reset them all.
             </AppText>
+            {emptyResetChips.length > 0 && (
+              <View style={styles.emptyQuickRow}>
+                {emptyResetChips.map((c) => (
+                  <Pressable
+                    key={c.key}
+                    onPress={c.onPress}
+                    style={({ pressed }) => [styles.emptyQuickChip, pressed && styles.emptyCardBtnPressed]}
+                    accessibilityRole="button"
+                    accessibilityLabel={c.label}
+                    accessibilityHint="Clears this one filter so more flags show"
+                  >
+                    <AppText variant="label" style={styles.emptyQuickChipText}>{c.label}</AppText>
+                  </Pressable>
+                ))}
+              </View>
+            )}
             <Pressable
               onPress={clearFilters}
               style={({ pressed }) => [styles.emptyCardBtn, pressed && styles.emptyCardBtnPressed]}
               accessibilityRole="button"
-              accessibilityLabel="Reset filters"
-              accessibilityHint="Clears categories, severity, and status filters"
+              accessibilityLabel="Reset all filters"
+              accessibilityHint="Clears categories, severity, status, distance, and access-need filters"
             >
-              <AppText variant="label" style={styles.emptyCardBtnText}>Reset filters</AppText>
+              <AppText variant="label" style={styles.emptyCardBtnText}>Reset all filters</AppText>
             </Pressable>
           </View>
         )}
@@ -2328,6 +2366,25 @@ const makeStyles = (color: ColorTheme) =>
     },
     emptyCardBtnPressed: { opacity: 0.8 },
     emptyCardBtnText: { color: color.textOnBrand, fontSize: font.size.base, fontWeight: font.weight.bold },
+    // Smart empty-state recovery — per-axis "clear this one" chips above the
+    // reset-all button. Neutral chips (not brand) so the brand reset stays the
+    // visual anchor. Each is a ≥44pt target and wraps on narrow screens.
+    emptyQuickRow: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      justifyContent: 'center',
+      gap: spacing.sm,
+      marginTop: spacing.sm,
+    },
+    emptyQuickChip: {
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+      borderRadius: radius.full,
+      backgroundColor: color.surfaceNeutral,
+      minHeight: 44,
+      justifyContent: 'center',
+    },
+    emptyQuickChipText: { color: color.brandText, fontSize: font.size.sm, fontWeight: font.weight.semibold },
     // Jordan Art. 7 — heatmap active disclaimer. Floats just above the
     // bottom bar so it's visible whenever the heat layer is on, regardless
     // of whether the filter panel is open. Semi-transparent so it doesn't
