@@ -143,7 +143,7 @@ export default function NearbyFlagsModal({
             >
               <AppText variant="label" style={styles.sevDotText}>{item.severity}</AppText>
             </View>
-            <AppText variant="label" style={styles.cardTitle} numberOfLines={1}>
+            <AppText variant="label" style={styles.cardTitle}>
               {CATEGORY_LABELS[item.category]}
             </AppText>
             {dist && <AppText variant="label" style={styles.distance}>{dist.text}</AppText>}

@@ -154,7 +154,7 @@ export default function ActivityFeedModal({ visible, onClose, onSelectFlag, onVi
               >
                 <AppText variant="label" style={styles.sevDotText}>{item.severity}</AppText>
               </View>
-              <AppText variant="label" style={styles.rowTitle} numberOfLines={1}>
+              <AppText variant="label" style={styles.rowTitle}>
                 {CATEGORY_LABELS[item.category]}
               </AppText>
               <StatusBadge status={item.status} />

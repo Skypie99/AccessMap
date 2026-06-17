@@ -93,7 +93,7 @@ export const FlagCard = memo(function FlagCard({
           accessibilityElementsHidden
           importantForAccessibility="no"
         />
-        <AppText variant="label" style={styles.category} numberOfLines={1}>
+        <AppText variant="label" style={styles.category}>
           {CATEGORY_LABELS[flag.category]}
         </AppText>
         <StatusBadge status={flag.status} size="sm" />

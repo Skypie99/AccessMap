@@ -1650,8 +1650,8 @@ const makeStyles = (color: ColorTheme) =>
       fontSize: font.size.base,
     },
     searchClearBtn: {
-      minWidth: 32,
-      minHeight: 32,
+      minWidth: 44, // WCAG 2.5.8: was 32pt (below 44pt project standard)
+      minHeight: 44, // WCAG 2.5.8: was 32pt (below 44pt project standard)
       paddingHorizontal: spacing.sm,
       alignItems: 'center',
       justifyContent: 'center',

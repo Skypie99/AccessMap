@@ -261,7 +261,7 @@ const makeStyles = (color: ColorTheme) =>
       flexDirection: 'row',
       alignItems: 'center',
       gap: spacing.sm,
-      minHeight: 32,
+      minHeight: 44,
     },
     faqQuestion: {
       flex: 1,
@@ -305,7 +305,7 @@ const makeStyles = (color: ColorTheme) =>
       paddingHorizontal: spacing.lg,
       paddingVertical: spacing.sm,
       borderRadius: radius.full,
-      minHeight: 36,
+      minHeight: 44,
       justifyContent: 'center',
     },
     feedbackBtnPressed: { opacity: 0.85 },

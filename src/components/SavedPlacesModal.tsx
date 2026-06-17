@@ -347,7 +347,7 @@ export default function SavedPlacesModal({
                   >
                     <MapPin size={18} color={color.brand} strokeWidth={2.2} />
                     <View style={styles.rowText}>
-                      <AppText variant="label" style={styles.rowName} numberOfLines={1}>
+                      <AppText variant="label" style={styles.rowName}>
                         {place.name}
                       </AppText>
                       <AppText

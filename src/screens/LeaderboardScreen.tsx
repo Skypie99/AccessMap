@@ -173,7 +173,6 @@ const LeaderboardRow = React.memo(function LeaderboardRow({
         <AppText
           variant="body"
           style={[styles.name, isCurrentUser && styles.nameSelf]}
-          numberOfLines={1}
         >
           {name}
         </AppText>

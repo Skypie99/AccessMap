@@ -190,7 +190,7 @@ export default function MyReportsModal({
               accessibilityElementsHidden
               importantForAccessibility="no"
             />
-            <AppText variant="label" style={styles.rowTitle} numberOfLines={1}>
+            <AppText variant="label" style={styles.rowTitle}>
               {CATEGORY_LABELS[item.category]}
             </AppText>
             <StatusBadge status={item.status} />
@@ -599,8 +599,8 @@ const makeStyles = (color: ColorTheme) =>
     },
     statusFilterTextActive: { color: color.textOnBrand },
     viewOnMapBtn: {
-      width: 36,
-      height: 36,
+      width: 44,
+      height: 44,
       borderRadius: radius.circle,
       backgroundColor: color.surfaceNeutral,
       alignItems: 'center',

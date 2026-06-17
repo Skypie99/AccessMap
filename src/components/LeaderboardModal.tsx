@@ -97,7 +97,7 @@ export default function LeaderboardModal({ visible, onClose }: Props) {
           </View>
           <View style={styles.nameWrap}>
             <TierIcon tier={tier} size={font.size.base} />
-            <AppText variant="body" style={[styles.name, isCurrentUser && styles.nameSelf]} numberOfLines={1}>
+            <AppText variant="body" style={[styles.name, isCurrentUser && styles.nameSelf]}>
               {name}
             </AppText>
             {isCurrentUser ? (
@@ -217,8 +217,8 @@ function makeStyles(color: ColorTheme) {
       paddingBottom: spacing.md,
     },
     closeBtn: {
-      width: 36,
-      height: 36,
+      minWidth: 44,
+      minHeight: 44,
       borderRadius: radius.circle,
       backgroundColor: color.surfaceNeutral,
       alignItems: 'center',

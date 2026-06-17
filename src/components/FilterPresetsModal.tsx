@@ -278,7 +278,7 @@ export default function FilterPresetsModal({ visible, onClose, onApply }: Props)
           ) : (
             <>
               <View style={styles.rowText}>
-                <AppText variant="label" style={styles.rowName} numberOfLines={1}>
+                <AppText variant="label" style={styles.rowName}>
                   {item.name}
                 </AppText>
                 <AppText variant="body" style={styles.rowSummary} numberOfLines={1}>
@@ -745,7 +745,7 @@ const makeStyles = (color: ColorTheme) =>
     renameActions: { flexDirection: 'row', gap: spacing.sm },
     smallBtn: {
       flex: 1,
-      minHeight: 40,
+      minHeight: 44,
       borderRadius: radius.md,
       alignItems: 'center',
       justifyContent: 'center',
