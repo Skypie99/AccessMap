@@ -156,6 +156,20 @@ export const color = {
   // white label text on it is ~4.7:1 — AA at any size.
   anonNeutral: '#6b7280',
 
+  // Navigation chrome — always-dark nav surface (DESIGN.md "fixed-background
+  // exception"). These are IDENTICAL in light + dark so the header/tab bar read
+  // the same in both palettes. Tokenizes the literals previously hardcoded in
+  // RootNavigator (header #0d1829, tint #60a5fa, etc.).
+  headerBg: '#0d1829', // app header background (always dark)
+  headerFg: '#f0f6ff', // header title + icon tint on headerBg (~15:1)
+  tabBarBg: 'rgba(7,11,24,0.92)', // bottom tab bar surface (always dark)
+  tabBarActiveTint: '#60a5fa', // active tab icon/label (blue-400 on dark, ~6:1)
+  tabBarInactiveTint: 'rgba(255,255,255,0.55)', // inactive tab — bumped from 0.45 → 0.55 for AA on the dark bar
+  navBorder: 'rgba(255,255,255,0.1)', // hairline divider on nav chrome
+
+  // Achievement earned-state wash — light amber behind unlocked badges.
+  achievementEarnedBg: '#fff3d1',
+
   // Misc
   shadow: '#000',
   pointsPillText: '#dbe7fb', // light-blue label on brand-blue background
@@ -389,6 +403,20 @@ export const a11y = {
 export const size = {
   thumb: 80, // square photo thumbnail in FlagCard (TasksScreen)
   cardMin: 96, // minimum card height for no-photo FlagCards (density parity)
+};
+
+// -------------------------------------------------------------------------
+// Icon — named sizes for Lucide / SVG icons so call sites stop using ad-hoc
+// numbers (size={18}, size={16}, …). Pair with the matching component scale:
+// sm → controls/affordances, md → nav/section, lg → category/map chrome,
+// hero → empty-state + hero illustrations. (Design system 2026-06-17.)
+// -------------------------------------------------------------------------
+
+export const icon = {
+  sm: 16, // close buttons, inline affordances, form helpers
+  md: 20, // navigation, section headers, list-row leading icons
+  lg: 24, // category icons, map-chrome buttons, drawer items
+  hero: 48, // empty-state + hero illustrations
 };
 
 // -------------------------------------------------------------------------

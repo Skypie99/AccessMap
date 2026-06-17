@@ -32,7 +32,7 @@ implementation detail.
 | Text — secondary | `color.textMuted` | `#666` | meta, descriptions |
 | Text — tertiary | `color.textSubtle` | `#999` | disabled, large-text-only |
 | Text — on brand | `color.textOnBrand` | `#fff` | text on the brand blue / severity colors |
-| Brand | `color.brand` | `#2f80ed` | primary action color, links |
+| Brand | `color.brand` | `#1466E0` | primary action color, links ("Wayfinder Blue", 2026-05-30) |
 | Brand soft (bg) | `color.brandSoft` | `#d6e6f9` | verified-status pill background |
 | Brand on soft | `color.brandOnSoft` | `#1c4f99` | text on `brandSoft` |
 | Open status bg/fg | `statusOpenBg/Fg` | `#fdebd0` / `#8a4b00` | open status pill |
@@ -56,7 +56,7 @@ text / UI components). Don't introduce a new fg/bg pair without checking it.
 | `textStrong` (#222) | `surface` | 16:1 | AAA |
 | `textMuted` (#666) | `surface` | 5.7:1 | AA |
 | `textSubtle` (#999) | `surface` | 2.8:1 | **fails normal text** — use only ≥18pt or non-essential |
-| `brand` (#2f80ed) | `surface` | 3.3:1 | AA large / UI only |
+| `brand` (#1466E0) | `surface` | 5.2:1 | AA at any size ("Wayfinder Blue" is darker than the old #2f80ed) |
 | `textOnBrand` (#fff) | `brand` | 3.3:1 | AA large / UI only (use ≥16pt bold) |
 | `statusOpenFg` | `statusOpenBg` | 6.5:1 | AA |
 | `statusVerifiedFg` | `statusVerifiedBg` | 7.6:1 | AAA |
@@ -320,9 +320,11 @@ The product UI uses **SVG icons only — no emoji, no Unicode-glyph icons.**
   should NOT be converted. Adopt `Sheet` for new bottom-sheets only.
 - Native map pin: render the white category glyph inside the marker (needs
   on-device verification of the `react-native-maps` custom-marker view).
-- Refresh §1–§7 sample values if they drift from `src/theme.ts` (the tokens in
-  code are the source of truth — note the §1 table still shows the pre-2026-05-30
-  brand hex `#2f80ed`; live brand is `#1466E0`).
+- Refresh §1–§7 sample values where they still drift from `src/theme.ts` (the
+  tokens in code are the source of truth). The brand hex is now reconciled
+  (`#1466E0`, "Wayfinder Blue"); a remaining sweep covers the status/brandSoft
+  background samples in §1 and the stale `#2f80ed` brand mentions in code
+  comments (the brand *value* is already correct everywhere — only comments lag).
 
 ---
 
