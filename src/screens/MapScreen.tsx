@@ -88,6 +88,7 @@ import PlatformMap, {
   type PlatformMapRegion,
 } from '@/components/PlatformMap';
 import { AppText } from '@/components/ui/AppText';
+import { GlassSurface } from '@/components/ui/GlassSurface';
 import { useScreenReader, useReducedMotion } from '@/lib/accessibility';
 import ReportFlagModal from './ReportFlagModal';
 import LegendModal from './LegendModal';
@@ -1318,7 +1319,7 @@ export default function MapScreen() {
         )}
 
         {filtersOpen && (
-          <View style={styles.filterPanel}>
+          <GlassSurface style={styles.filterPanel} borderRadius={radius.lg}>
             <View style={styles.filterHeaderRow}>
               <Pressable
                 onPress={() => setPanelCollapsed((v) => !v)}
@@ -1670,7 +1671,7 @@ export default function MapScreen() {
                 )}
               </>
             )}
-          </View>
+          </GlassSurface>
         )}
 
         {loadError && (
@@ -2202,7 +2203,9 @@ const makeStyles = (color: ColorTheme) =>
     },
     filterPanel: {
       marginTop: spacing.sm,
-      backgroundColor: color.overlay,
+      // Frosted-glass surface supplied by <GlassSurface> (translucent + blur with
+      // an AA contrast floor); falls back to a solid fill under Reduce Transparency.
+      // No backgroundColor here — GlassSurface owns the surface.
       borderRadius: radius.lg,
       padding: spacing.md,
       gap: spacing.sm,

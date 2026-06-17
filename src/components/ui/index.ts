@@ -23,3 +23,5 @@ export type { SkeletonProps } from './Skeleton';
 
 export { Sheet, SheetHeader } from './Sheet';
 export type { SheetProps, SheetHeaderProps } from './Sheet';
+
+export { GlassSurface } from './GlassSurface';

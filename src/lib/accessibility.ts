@@ -88,3 +88,39 @@ export function useReducedMotion(): boolean {
 
   return reduced;
 }
+
+/**
+ * `true` if the user has the system-level "Reduce Transparency" preference on
+ * (iOS: Settings → Accessibility → Display & Text Size → Reduce Transparency).
+ * When this is on, decorative blur / translucency should be replaced with a
+ * solid surface so contrast and legibility are never compromised. Used by the
+ * `GlassSurface` primitive to drop its frosted-glass blur for an opaque fill.
+ *
+ * Returns the live value: re-renders if the user toggles the preference
+ * mid-session. Android / web have no equivalent and quietly resolve to `false`
+ * (the GlassSurface still keeps an AA-contrast translucent floor regardless).
+ */
+export function useReduceTransparency(): boolean {
+  const [reduced, setReduced] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    AccessibilityInfo.isReduceTransparencyEnabled?.()
+      .then((value) => {
+        if (!cancelled) setReduced(value);
+      })
+      .catch(() => {});
+
+    const sub = AccessibilityInfo.addEventListener('reduceTransparencyChanged', (value) => {
+      setReduced(value);
+    });
+
+    return () => {
+      cancelled = true;
+      sub.remove();
+    };
+  }, []);
+
+  return reduced;
+}

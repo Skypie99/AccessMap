@@ -55,6 +55,10 @@ export const color = {
   surfaceNeutral: '#eef1f5', // pill background, inactive chip
   overlay: 'rgba(255,255,255,0.97)', // floating panels (filter, banner) over map
   overlaySoft: 'rgba(255,255,255,0.95)',
+  // Frosted-glass tint floor for GlassSurface — translucent enough to let the
+  // blur/map texture show through, opaque enough to keep AA contrast for dark
+  // text on ANY basemap (0.82 white over black ≈ #333 at >8:1). 2026-06-17.
+  overlayGlass: 'rgba(255,255,255,0.82)',
   scrim: 'rgba(0,0,0,0.4)', // modal backdrop
 
   // Text — all checked ≥ 4.5:1 on surface
