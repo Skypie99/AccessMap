@@ -945,7 +945,7 @@ export default function TasksScreen() {
                 accessibilityElementsHidden
                 importantForAccessibility="no"
               />
-              <AppText variant="label" style={styles.suggestedText} numberOfLines={1}>
+              <AppText variant="label" style={styles.suggestedText}>
                 {`Nearest open barrier · ${CATEGORY_LABELS[nearestOpenHit.flag.category]} · ${formatDistance(
                   nearestOpenHit.km,
                 )}`}

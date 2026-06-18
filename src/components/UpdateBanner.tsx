@@ -16,6 +16,7 @@ import React from 'react';
 import { AccessibilityInfo, Pressable, StyleSheet, View } from 'react-native';
 import { AppText } from '@/components/ui/AppText';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
+import { font, radius, spacing } from '@/theme';
 import { X } from 'lucide-react-native';
 
 interface Props {
@@ -88,35 +89,35 @@ const makeStyles = (color: ColorTheme) =>
     banner: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 10,
+      gap: spacing.md,
       backgroundColor: color.brandSofter,
-      borderRadius: 10,
-      paddingHorizontal: 14,
-      paddingVertical: 12,
+      borderRadius: radius.md,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.md,
       borderWidth: 1,
       borderColor: color.brandSoft,
-      marginBottom: 12,
+      marginBottom: spacing.md,
     },
-    icon: { fontSize: 18 },
-    text: { flex: 1, fontSize: 14, color: color.brandTextAlt, fontWeight: '600' },
+    icon: { fontSize: font.size.xl },
+    text: { flex: 1, fontSize: font.size.base, color: color.brandTextAlt, fontWeight: '600' },
     viewBtn: {
-      paddingHorizontal: 14,
-      paddingVertical: 8,
-      borderRadius: 8,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+      borderRadius: radius.sm,
       backgroundColor: color.brand,
       minHeight: 44,
       alignItems: 'center',
       justifyContent: 'center',
     },
     viewBtnPressed: { opacity: 0.85 },
-    viewBtnText: { color: color.textOnBrand, fontWeight: '700', fontSize: 14 },
+    viewBtnText: { color: color.textOnBrand, fontWeight: '700', fontSize: font.size.base },
     dismissBtn: {
       width: 44,
       height: 44,
-      borderRadius: 22,
+      borderRadius: radius.circle,
       alignItems: 'center',
       justifyContent: 'center',
     },
     dismissBtnPressed: { backgroundColor: color.brandSoft },
-    dismissText: { fontSize: 14, color: color.brandTextAlt, fontWeight: '700' },
+    dismissText: { fontSize: font.size.base, color: color.brandTextAlt, fontWeight: '700' },
   });

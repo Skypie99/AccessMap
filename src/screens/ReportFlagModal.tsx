@@ -598,7 +598,17 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
                       importantForAccessibility="no-hide-descendants"
                     />
                   )}
-                  <AppText variant="label" style={[styles.sevText, active && styles.sevTextActive]}>{s}</AppText>
+                  {/* Cap the single digit's scaling so the number + the active
+                      Check tick stay inside the 44pt circle at XXL text (review
+                      MED). The full severity word is in the live hint below, so
+                      the digit itself need not scale unbounded. */}
+                  <AppText
+                    variant="label"
+                    maxFontSizeMultiplier={1.3}
+                    style={[styles.sevText, active && styles.sevTextActive]}
+                  >
+                    {s}
+                  </AppText>
                 </Pressable>
               );
             })}

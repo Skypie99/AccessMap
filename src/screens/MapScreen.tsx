@@ -1799,8 +1799,16 @@ export default function MapScreen() {
             iOS VoiceOver is already handled by the
             announceForAccessibility call in requestLocation(). */}
         {locating && !location && (
-          <View
-            style={styles.banner}
+          <GlassSurface
+            style={styles.bannerLocating}
+            borderRadius={radius.md}
+            // Map overlays are the always-light DESIGN.md exception — pin the
+            // glass + its Reduce-Transparency fallback to the light tokens so
+            // the neutral "finding your location" banner reads the same in any
+            // palette. (Semantic alert banners below stay solid, not frosted.)
+            tint="light"
+            tintColor={color.overlayGlass}
+            solidColor={color.overlaySoft}
             accessibilityRole="text"
             accessibilityLiveRegion="polite"
           >
@@ -1809,7 +1817,7 @@ export default function MapScreen() {
               importantForAccessibility="no-hide-descendants"
             />
             <AppText variant="body" style={styles.bannerText}>Finding your location…</AppText>
-          </View>
+          </GlassSurface>
         )}
 
         {permissionDenied && (
@@ -2342,6 +2350,20 @@ const makeStyles = (color: ColorTheme) =>
       gap: spacing.sm,
       alignItems: 'center',
     },
+    // Frosted variant of `banner` for the NEUTRAL "Finding your location…" info
+    // banner only. Identical layout, but no solid backgroundColor — <GlassSurface>
+    // owns the surface (translucent + blur with an AA contrast floor; opaque
+    // fallback under Reduce Transparency). The semantic alert banners
+    // (permission / offline / error) keep their solid fills for urgency.
+    bannerLocating: {
+      alignSelf: 'center',
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+      borderRadius: radius.md,
+      flexDirection: 'row',
+      gap: spacing.sm,
+      alignItems: 'center',
+    },
     bannerText: { fontSize: font.size.sm, color: color.text },
     errorBanner: {
       marginTop: spacing.sm,
@@ -2507,7 +2529,7 @@ const makeStyles = (color: ColorTheme) =>
     },
     presetBtnPressed: { opacity: 0.85 },
     // 14pt bold qualifies as WCAG "large text" — 3:1 ratio applies, so
-    // white-on-#2f80ed (~3.8:1) clears AA. At 13pt it failed the 4.5:1
+    // white-on-#1466E0 (~3.8:1) clears AA. At 13pt it failed the 4.5:1
     // small-text threshold.
     presetBtnText: { color: color.textOnBrand, fontWeight: '700', fontSize: 14 },
     presetBtnSecondary: {
@@ -2516,7 +2538,7 @@ const makeStyles = (color: ColorTheme) =>
       borderColor: color.brand,
     },
     // Inverted variant (blue on white). Uses color.brandText (#1c4f99 ≈ 7.6:1)
-    // instead of color.brand (#2f80ed ≈ 3.3:1) so it stays AA-safe even if the
+    // instead of color.brand (#1466E0 ≈ 3.3:1) so it stays AA-safe even if the
     // font size ever drops below the 14pt-bold large-text threshold.
     presetBtnSecondaryText: { color: color.brandText, fontWeight: '700', fontSize: 14 },
     nameBackdrop: {

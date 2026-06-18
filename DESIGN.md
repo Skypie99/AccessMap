@@ -140,15 +140,43 @@ text (titles, banner messages should allow at least 2 lines).
 
 ---
 
-## 5. Shadow
+## 5. Shadow & elevation
 
-Three tiers. Pick by perceived elevation, not by pixel-exact replication.
+Pick by perceived elevation, not by pixel-exact replication.
 
 | Token | Use |
 |---|---|
 | `shadow.e1` | gentle lift — round icon buttons sitting on the map |
 | `shadow.e2` | floating panel / banner / FAB |
 | `shadow.e3` | modal sheet, error banner over the map |
+
+### The 4-tier elevation language
+
+Elevation is a vocabulary, not a free dial. Every surface speaks in one of four
+tiers, and the tier is chosen by the surface's **semantic role** — how far it
+sits from the base plane in the user's mental model — never to chase a look.
+Depth is always carried by **shadow + position** (the surface lifts *and* floats
+above what it covers); **never by color alone**, because color-only depth
+vanishes for low-vision and color-blind users and breaks in dark mode.
+
+| Tier | Token | Role — what lives here |
+|---|---|---|
+| **Flat** | _no shadow_ | In-flow content on the base plane — list rows, inline cards, section bodies, anything that scrolls *with* the page. Reads as part of the surface, not on top of it. |
+| **Lifted** | `shadow.e1` | A control that nudges off its surface — round icon buttons on the map, a pressable chip that wants a hairline of separation. The smallest "I'm tappable / I'm above the wash" cue. |
+| **Floating** | `shadow.e2` | Persistent UI that hovers over content but doesn't seize the screen — the filter panel, the update banner, the FAB, the heatmap legend. It coexists with the map/list beneath it. |
+| **Prominent** | `shadow.e3` (+ optional `shadow.glowBrand` / `shadow.glowGold`) | Surfaces that command the moment — modal sheets, the error/offline banner over the map, a celebratory gamification card. `e3` is the structural depth; an *optional* colored glow adds expressive lift on brand/reward surfaces only. The glow is decorative — it layers **on top of** `e3`, never replaces it, and is never the only depth cue. |
+
+**Rules of the language:**
+
+- One tier per surface. Don't stack `e2` on an already-`e3` sheet to "make it pop."
+- Move up a tier only when the role changes (a banner that escalates from
+  informational `e2` to an urgent `e3` alert), not for visual variety.
+- Reduced-transparency and dark mode must preserve the *order* of the tiers —
+  Prominent always reads as deeper than Floating — even if absolute shadow
+  values are tuned per palette.
+- A glow (`glowBrand` / `glowGold`) is reserved for **Prominent** brand/reward
+  surfaces and always sits beneath AA-contrast content; it decorates depth, it
+  never signals state.
 
 ---
 

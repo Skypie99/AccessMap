@@ -1497,7 +1497,7 @@ const makeStyles = (color: ColorTheme) =>
       borderColor: color.brand,
     },
     // Outlined button: blue text on white card. Uses color.brandText
-    // (#1c4f99 ≈ 7.6:1) instead of color.brand (#2f80ed ≈ 3.3:1) so it
+    // (#1c4f99 ≈ 7.6:1) instead of color.brand (#1466E0 ≈ 3.3:1) so it
     // stays AA-safe even if the font size drops below 14pt-bold.
     viewMapBtnText: { color: color.brandText, fontWeight: font.weight.bold, fontSize: font.size.base },
     secondaryRow: {

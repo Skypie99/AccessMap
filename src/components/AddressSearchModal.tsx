@@ -470,7 +470,7 @@ function makeStyles(color: ColorTheme) {
     },
     clearRecentText: {
       // Uses color.brandText (#1c4f99 ≈ 7.6:1) instead of color.brand
-      // (#2f80ed ≈ 3.3:1) so it's AA-safe at any size — robust if the
+      // (#1466E0 ≈ 3.3:1) so it's AA-safe at any size — robust if the
       // font size ever drops below the 14pt-bold large-text threshold.
       fontSize: font.size.base,
       fontWeight: font.weight.semibold,

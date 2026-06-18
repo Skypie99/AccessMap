@@ -173,7 +173,7 @@ export default function NotificationPreferencesScreen({ visible, onClose }: Prop
               <ActivityIndicator
                 color={color.text}
                 // Use color.text for ≥4.5:1 contrast on spinner strokes.
-                // color.brand (#2f80ed) is only 3.3:1 on white — AA-safe for UI
+                // color.brand (#1466E0) is only 3.3:1 on white — AA-safe for UI
                 // buttons but not ideal for thin animated spinner strokes.
               />
             </View>

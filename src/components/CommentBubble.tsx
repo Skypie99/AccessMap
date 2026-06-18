@@ -72,7 +72,7 @@ export function CommentBubble({ author, text, createdAt, isOwn, onDelete }: Comm
         {/*
           WCAG 1.4.3 — own-message text uses fontWeight bold (700) so it
           qualifies as "large text" (14pt bold per WCAG 2.2 definition).
-          Large text only requires a 3:1 ratio; color.brand (#2f80ed) on
+          Large text only requires a 3:1 ratio; color.brand (#1466E0) on
           color.textOnBrand (#fff) is ~3.5:1 — AA pass.
 
           Without bold, 14pt regular text needs 4.5:1 and brand blue only
