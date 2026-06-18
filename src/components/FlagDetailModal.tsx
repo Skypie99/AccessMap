@@ -15,6 +15,7 @@ import {
   View,
 } from 'react-native';
 import { AppText } from '@/components/ui/AppText';
+import { RemoteImage } from '@/components/ui/RemoteImage';
 import { Star, X } from 'lucide-react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
@@ -347,6 +348,21 @@ export default function FlagDetailModal({
   const formattedCoords = `${shownFlag.lat.toFixed(5)}, ${shownFlag.lng.toFixed(5)}`;
   const coordsA11y = `Coordinates ${shownFlag.lat.toFixed(5)} latitude, ${shownFlag.lng.toFixed(5)} longitude`;
   const canEdit = isOwn && status === 'open';
+
+  // UX #5 — Before/after resolution photos (presentation only). Mirrors the
+  // gallery's own add-photo gating (PhotoGallery shows its add sentinel only
+  // when onAddPhoto is provided, which is `isOwn && !busy` below). The tip and
+  // the add button reuse that exact same handleAddPhoto handler + addFlagPhoto
+  // path — no new upload route, no schema/RLS/storage change. The before/after
+  // is purely display labels + a recency heuristic over the existing photos.
+  const isResolved = status === 'resolved';
+  const canAddPhoto = isOwn && !busy;
+  // "After" = the most-recent extra photo. flagPhotos is ordered ascending by
+  // position (listFlagPhotos), so the last entry is the highest position — the
+  // "last photo = the resolution" heuristic.
+  const originalPhotoUrl = shownFlag.photo_url?.trim() ? shownFlag.photo_url : null;
+  const afterPhoto = flagPhotos.length > 0 ? flagPhotos[flagPhotos.length - 1] : null;
+  const showBeforeAfter = isResolved && !!originalPhotoUrl && afterPhoto !== null;
 
   // Split the flag's stored context_tags into general "conditions", seasonal,
   // and disability groups so each renders under its own heading. isValidTag
@@ -716,6 +732,71 @@ export default function FlagDetailModal({
               contentContainerStyle={styles.bodyContent}
               showsVerticalScrollIndicator={false}
             >
+              {/* UX #5 — Before/after framing. Only when the flag is resolved
+                  AND has both an original report photo and ≥1 extra photo. The
+                  full PhotoGallery (all community photos) still renders below —
+                  this is an additional labeled pair, not a replacement. */}
+              {showBeforeAfter && originalPhotoUrl && afterPhoto && (
+                <View
+                  style={styles.beforeAfterRow}
+                  accessibilityRole="summary"
+                  accessibilityLabel="Before and after the fix"
+                >
+                  <View style={styles.beforeAfterItem}>
+                    <AppText variant="label" style={styles.beforeAfterCaption}>Before</AppText>
+                    <RemoteImage
+                      uri={originalPhotoUrl}
+                      style={styles.beforeAfterImage}
+                      resizeMode="cover"
+                      accessibilityLabel="Before: the originally reported barrier"
+                    />
+                  </View>
+                  <View
+                    style={styles.beforeAfterArrow}
+                    accessibilityElementsHidden
+                    importantForAccessibility="no-hide-descendants"
+                  >
+                    <AppText variant="label" style={styles.beforeAfterArrowGlyph}>→</AppText>
+                  </View>
+                  <View style={styles.beforeAfterItem}>
+                    <AppText variant="label" style={styles.beforeAfterCaption}>After — the fix</AppText>
+                    <RemoteImage
+                      uri={afterPhoto.url}
+                      style={styles.beforeAfterImage}
+                      resizeMode="cover"
+                      accessibilityLabel="After: the resolved fix"
+                    />
+                  </View>
+                </View>
+              )}
+
+              {/* UX #5 — Resolve-time nudge. A gentle info-toned tip (not a
+                  warning) inviting the owner to add an "after" photo so others
+                  can see the barrier was fixed. The button reuses the SAME
+                  handleAddPhoto handler the gallery's add sentinel uses — no new
+                  upload path. Shown only when resolved AND the user could add a
+                  photo (mirrors the gallery's onAddPhoto gating). */}
+              {isResolved && canAddPhoto && (
+                <View
+                  style={styles.afterTip}
+                  accessible
+                  accessibilityLabel="Show the fix — add an after photo so others can see this barrier was resolved"
+                >
+                  <AppText variant="body" style={styles.afterTipText}>
+                    Show the fix — add an &ldquo;after&rdquo; photo so others can see this barrier was resolved.
+                  </AppText>
+                  <Pressable
+                    onPress={handleAddPhoto}
+                    style={({ pressed }) => [styles.afterTipBtn, pressed && styles.afterTipBtnPressed]}
+                    accessibilityRole="button"
+                    accessibilityLabel="Add an after photo"
+                    accessibilityHint="Opens the camera or photo library to attach a photo of the fix"
+                  >
+                    <AppText variant="label" style={styles.afterTipBtnText}>Add after photo</AppText>
+                  </Pressable>
+                </View>
+              )}
+
               <PhotoGallery
                 photos={flagPhotos}
                 onAddPhoto={isOwn && !busy ? handleAddPhoto : undefined}
@@ -1400,6 +1481,73 @@ const makeStyles = (color: ColorTheme) =>
     closeBtnText: { fontSize: font.size.lg, color: color.text, fontWeight: font.weight.bold },
     body: { flexShrink: 1 },
     bodyContent: { gap: spacing.sm, paddingBottom: spacing.tight },
+    // ── UX #5 Before/after resolution photos ─────────────────────────────────
+    beforeAfterRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+      marginTop: spacing.tight,
+    },
+    beforeAfterItem: {
+      flex: 1,
+      gap: spacing.tight,
+    },
+    beforeAfterCaption: {
+      fontSize: font.size.xs,
+      fontWeight: font.weight.semibold,
+      color: color.textMuted,
+      textTransform: 'uppercase',
+      letterSpacing: 0.5,
+    },
+    beforeAfterImage: {
+      width: '100%',
+      aspectRatio: 1,
+      borderRadius: radius.lg,
+      backgroundColor: color.surfaceNeutral,
+    },
+    beforeAfterArrow: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingTop: spacing.lg,
+    },
+    beforeAfterArrowGlyph: {
+      fontSize: font.size.xl,
+      color: color.textMuted,
+      fontWeight: font.weight.bold,
+    },
+    // Resolve-time nudge — info-toned (NOT warning amber). infoFg on infoBg
+    // clears AA at any size (see theme tokens).
+    afterTip: {
+      backgroundColor: color.infoBg,
+      borderRadius: radius.lg,
+      padding: spacing.md,
+      gap: spacing.sm,
+      marginTop: spacing.tight,
+    },
+    afterTipText: {
+      fontSize: font.size.sm,
+      color: color.infoFg,
+      lineHeight: 19,
+    },
+    afterTipBtn: {
+      alignSelf: 'flex-start',
+      backgroundColor: 'transparent',
+      borderWidth: 1.5,
+      borderColor: color.infoFg,
+      borderRadius: radius.md,
+      paddingHorizontal: 14,
+      paddingVertical: spacing.sm,
+      minHeight: 44,
+      minWidth: 100,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    afterTipBtnPressed: { opacity: 0.7 },
+    afterTipBtnText: {
+      color: color.infoFg,
+      fontWeight: font.weight.bold,
+      fontSize: font.size.base,
+    },
     metaRow: {
       flexDirection: 'row',
       flexWrap: 'wrap',
