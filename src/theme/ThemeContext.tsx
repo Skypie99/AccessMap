@@ -30,6 +30,7 @@ const darkColor = {
   surfaceNeutral: '#2a2a2a',
   overlay: 'rgba(20,20,20,0.97)',
   overlaySoft: 'rgba(20,20,20,0.95)',
+  overlayGlass: 'rgba(20,20,20,0.82)', // frosted-glass tint floor (dark) — AA for light text
   scrim: 'rgba(0,0,0,0.6)',
 
   // Text — checked >= 4.5:1 on #111 surface
@@ -117,6 +118,17 @@ const darkColor = {
 
   // Anonymous-contributor chip — same neutral; white label text stays readable.
   anonNeutral: '#6b7280',
+
+  // Navigation chrome — always-dark, so IDENTICAL to the light palette.
+  headerBg: '#0d1829',
+  headerFg: '#f0f6ff',
+  tabBarBg: 'rgba(7,11,24,0.92)',
+  tabBarActiveTint: '#60a5fa',
+  tabBarInactiveTint: 'rgba(255,255,255,0.55)',
+  navBorder: 'rgba(255,255,255,0.1)',
+
+  // Achievement earned-state wash — dark amber so unlocked badges read on dark.
+  achievementEarnedBg: '#3D2A00',
 
   // Misc
   shadow: '#fff', // inverted for dark mode

@@ -88,6 +88,7 @@ import PlatformMap, {
   type PlatformMapRegion,
 } from '@/components/PlatformMap';
 import { AppText } from '@/components/ui/AppText';
+import { GlassSurface } from '@/components/ui/GlassSurface';
 import { useScreenReader, useReducedMotion } from '@/lib/accessibility';
 import ReportFlagModal from './ReportFlagModal';
 import LegendModal from './LegendModal';
@@ -866,6 +867,20 @@ export default function MapScreen() {
     [filteredFlags, deepLinkFlag],
   );
 
+  // Viewport filter counts (UX #1): tally how many of the currently-loaded
+  // flags fall in each category, so the category chips can show a live count.
+  // Pure client-side aggregate over the already-fetched `flags` array — no new
+  // fetch. Counts ALL loaded flags (not filteredFlags) so each chip shows what
+  // selecting it would surface, independent of the other active axes.
+  const categoryCounts = useMemo(() => {
+    const counts = {} as Record<FlagCategory, number>;
+    for (const c of CATEGORY_ORDER) counts[c] = 0;
+    for (const f of flags) {
+      if (f.category in counts) counts[f.category] += 1;
+    }
+    return counts;
+  }, [flags]);
+
   // Heat-cell aggregation — buckets the currently-visible flag set onto
   // the grid and drops anything below the privacy floor (k>=3). Memoised
   // so a parent re-render that doesn't touch flags/toggle doesn't redo
@@ -890,6 +905,28 @@ export default function MapScreen() {
     }
     previouslyEmptyRef.current = showEmptyCard;
   }, [showEmptyCard]);
+
+  // Smart empty-state recovery (UX overhaul #2): when filters hide everything,
+  // offer a one-tap clear for EACH active filter axis — not just a blunt
+  // "reset all" — so the user can widen exactly the constraint hiding results.
+  // Pure presentation: each chip flips one existing filter state setter.
+  const emptyResetChips = useMemo(() => {
+    if (!showEmptyCard) return [] as { key: string; label: string; onPress: () => void }[];
+    const chips: { key: string; label: string; onPress: () => void }[] = [];
+    if (activeCategories.size > 0)
+      chips.push({ key: 'cat', label: 'All categories', onPress: () => setActiveCategories(new Set()) });
+    if (minSeverity > 1)
+      chips.push({ key: 'sev', label: 'Any severity', onPress: () => setMinSeverity(1) });
+    if (maxDistanceKm !== null)
+      chips.push({ key: 'dist', label: 'Any distance', onPress: () => setMaxDistanceKm(null) });
+    if (activeDisabilityTags.size > 0)
+      chips.push({
+        key: 'dis',
+        label: 'All access needs',
+        onPress: () => setActiveDisabilityTags(new Set()),
+      });
+    return chips;
+  }, [showEmptyCard, activeCategories, minSeverity, maxDistanceKm, activeDisabilityTags]);
 
   const requestLocation = useCallback(async () => {
     if (mountedRef.current) {
@@ -1318,7 +1355,7 @@ export default function MapScreen() {
         )}
 
         {filtersOpen && (
-          <View style={styles.filterPanel}>
+          <GlassSurface style={styles.filterPanel} borderRadius={radius.lg}>
             <View style={styles.filterHeaderRow}>
               <Pressable
                 onPress={() => setPanelCollapsed((v) => !v)}
@@ -1443,21 +1480,30 @@ export default function MapScreen() {
                 >
                   {CATEGORY_ORDER.map((c) => {
                     const active = activeCategories.has(c);
+                    const count = categoryCounts[c];
                     return (
                       <Pressable
                         key={c}
                         onPress={() => toggleCategory(c)}
                         style={[styles.filterPill, active && styles.filterPillActive]}
                         accessibilityRole="button"
-                        accessibilityLabel={`Filter by ${CATEGORY_LABELS[c]}`}
+                        accessibilityLabel={`Filter by ${CATEGORY_LABELS[c]}, ${count} flag${count === 1 ? '' : 's'}`}
                         accessibilityState={{ selected: active }}
                       >
-                        <AppText
-                          variant="label"
-                          style={[styles.filterPillText, active && styles.filterPillTextActive]}
-                        >
-                          {CATEGORY_LABELS[c]}
-                        </AppText>
+                        <View style={styles.filterPillRow}>
+                          <AppText
+                            variant="label"
+                            style={[styles.filterPillText, active && styles.filterPillTextActive]}
+                          >
+                            {CATEGORY_LABELS[c]}
+                          </AppText>
+                          <AppText
+                            variant="label"
+                            style={[styles.filterPillCount, active && styles.filterPillTextActive]}
+                          >
+                            {count}
+                          </AppText>
+                        </View>
                       </Pressable>
                     );
                   })}
@@ -1670,7 +1716,7 @@ export default function MapScreen() {
                 )}
               </>
             )}
-          </View>
+          </GlassSurface>
         )}
 
         {loadError && (
@@ -1719,16 +1765,32 @@ export default function MapScreen() {
             <Search size={26} color={color.textSubtle} strokeWidth={2} />
             <AppText variant="heading" style={styles.emptyCardTitle}>Nothing here right now</AppText>
             <AppText variant="body" style={styles.emptyCardBody}>
-              Your filters are hiding everything. Try widening them, or reset to see all nearby flags.
+              Your filters are hiding everything. Clear just the one in the way, or reset them all.
             </AppText>
+            {emptyResetChips.length > 0 && (
+              <View style={styles.emptyQuickRow}>
+                {emptyResetChips.map((c) => (
+                  <Pressable
+                    key={c.key}
+                    onPress={c.onPress}
+                    style={({ pressed }) => [styles.emptyQuickChip, pressed && styles.emptyCardBtnPressed]}
+                    accessibilityRole="button"
+                    accessibilityLabel={c.label}
+                    accessibilityHint="Clears this one filter so more flags show"
+                  >
+                    <AppText variant="label" style={styles.emptyQuickChipText}>{c.label}</AppText>
+                  </Pressable>
+                ))}
+              </View>
+            )}
             <Pressable
               onPress={clearFilters}
               style={({ pressed }) => [styles.emptyCardBtn, pressed && styles.emptyCardBtnPressed]}
               accessibilityRole="button"
-              accessibilityLabel="Reset filters"
-              accessibilityHint="Clears categories, severity, and status filters"
+              accessibilityLabel="Reset all filters"
+              accessibilityHint="Clears categories, severity, status, distance, and access-need filters"
             >
-              <AppText variant="label" style={styles.emptyCardBtnText}>Reset filters</AppText>
+              <AppText variant="label" style={styles.emptyCardBtnText}>Reset all filters</AppText>
             </Pressable>
           </View>
         )}
@@ -2202,7 +2264,9 @@ const makeStyles = (color: ColorTheme) =>
     },
     filterPanel: {
       marginTop: spacing.sm,
-      backgroundColor: color.overlay,
+      // Frosted-glass surface supplied by <GlassSurface> (translucent + blur with
+      // an AA contrast floor); falls back to a solid fill under Reduce Transparency.
+      // No backgroundColor here — GlassSurface owns the surface.
       borderRadius: radius.lg,
       padding: spacing.md,
       gap: spacing.sm,
@@ -2248,6 +2312,15 @@ const makeStyles = (color: ColorTheme) =>
     filterPillActive: { backgroundColor: color.brand },
     filterPillText: { fontSize: font.size.xs, color: color.text, fontWeight: font.weight.semibold },
     filterPillTextActive: { color: color.textOnBrand },
+    // Viewport count badge inside each category chip (UX #1). Sits after the
+    // label with a thin separator gap; muted so the label stays primary, but
+    // turns textOnBrand (via filterPillTextActive) when the chip is selected.
+    filterPillRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
+    filterPillCount: {
+      fontSize: font.size.caption,
+      color: color.textMuted,
+      fontWeight: font.weight.bold,
+    },
     sevPill: {
       width: 44,
       height: 44,
@@ -2325,6 +2398,25 @@ const makeStyles = (color: ColorTheme) =>
     },
     emptyCardBtnPressed: { opacity: 0.8 },
     emptyCardBtnText: { color: color.textOnBrand, fontSize: font.size.base, fontWeight: font.weight.bold },
+    // Smart empty-state recovery — per-axis "clear this one" chips above the
+    // reset-all button. Neutral chips (not brand) so the brand reset stays the
+    // visual anchor. Each is a ≥44pt target and wraps on narrow screens.
+    emptyQuickRow: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      justifyContent: 'center',
+      gap: spacing.sm,
+      marginTop: spacing.sm,
+    },
+    emptyQuickChip: {
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+      borderRadius: radius.full,
+      backgroundColor: color.surfaceNeutral,
+      minHeight: 44,
+      justifyContent: 'center',
+    },
+    emptyQuickChipText: { color: color.brandText, fontSize: font.size.sm, fontWeight: font.weight.semibold },
     // Jordan Art. 7 — heatmap active disclaimer. Floats just above the
     // bottom bar so it's visible whenever the heat layer is on, regardless
     // of whether the filter panel is open. Semi-transparent so it doesn't

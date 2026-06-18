@@ -23,6 +23,7 @@ import {
 import type { FlagStatus } from '@/types/database';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { radius } from '@/theme';
+import { useReducedMotion } from '@/lib/accessibility';
 import { X } from 'lucide-react-native';
 
 interface Props {
@@ -134,8 +135,15 @@ export default function NotificationPrefsModal({
     [user, onPrefsChanged],
   );
 
+  // WCAG 2.3.3: snap (no slide) when the user prefers reduced motion.
+  const reducedMotion = useReducedMotion();
   return (
-    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
+    <Modal
+      visible={visible}
+      animationType={reducedMotion ? 'none' : 'slide'}
+      transparent
+      onRequestClose={onClose}
+    >
       <View style={styles.backdrop}>
         <View style={styles.card} accessibilityViewIsModal>
           <View style={styles.headerRow}>

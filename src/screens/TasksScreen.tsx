@@ -16,7 +16,7 @@ import {
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { useAuth } from '@/lib/auth';
-import { formatDistance, formatWalkingEta, haversineKm, type LatLng } from '@/lib/distance';
+import { formatDistance, formatWalkingEta, haversineKm, speakDistance, type LatLng } from '@/lib/distance';
 import { confirm, notify } from '@/lib/confirm';
 import { errorMessage } from '@/lib/errors';
 import {
@@ -29,6 +29,7 @@ import {
 } from '@/lib/flags';
 import { relativeTime } from '@/lib/relativeTime';
 import { searchFlags } from '@/lib/flagSearch';
+import { findNearestUnresolved } from '@/lib/nearestFlag';
 import { useFlags } from '@/lib/flagsStore';
 import { useUserLocation } from '@/lib/location';
 import {
@@ -61,7 +62,7 @@ import { Skeleton, SkeletonCard } from '@/components/ui/Skeleton';
 import { StatusBadge } from '@/components/StatusBadge';
 import CategoryIcon from '@/components/CategoryIcon';
 import { hapticSelection } from '@/lib/haptics';
-import { AlertTriangle, Check, Search, Sparkles, WifiOff, X } from 'lucide-react-native';
+import { AlertTriangle, Check, ChevronRight, MapPin, Search, Sparkles, WifiOff, X } from 'lucide-react-native';
 import { font, radius, shadow, size, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 
@@ -233,6 +234,22 @@ export default function TasksScreen() {
   // Graceful degrade: if the user denies permission (or we error) we just
   // render the card without distance — see FlagCard below.
   const { location: userLocation } = useUserLocation();
+
+  // UX #3 "Suggested next action": the single nearest OPEN barrier to the
+  // user, computed from the already-loaded `displayFlags` + `userLocation`.
+  // Presentation-only — no fetch, no location request beyond the one-shot
+  // `useUserLocation()` already wired above. Returns null when location is
+  // unknown or there are no open flags, so the banner renders nothing rather
+  // than a placeholder (see ListHeaderComponent below). Restricted to OPEN
+  // (not open+verified) because the banner copy says "Nearest open barrier".
+  const nearestOpenHit = useMemo(() => {
+    if (!userLocation) return null;
+    return findNearestUnresolved(
+      displayFlags.filter((f) => f.status === 'open'),
+      userLocation,
+    );
+  }, [displayFlags, userLocation]);
+
   const [busyId, setBusyId] = useState<string | null>(null);
   const [flash, setFlash] = useState<string | null>(null);
   const [selectedFlag, setSelectedFlag] = useState<FlagRow | null>(null);
@@ -901,6 +918,48 @@ export default function TasksScreen() {
       <SectionList
         sections={sections}
         keyExtractor={(f) => f.id}
+        // UX #3 "Suggested next action" — one slim row above the list that
+        // surfaces the single nearest OPEN barrier. Renders nothing when
+        // location is unknown or no open flags exist (nearestOpenHit === null).
+        // Tapping opens that flag via showDetails — the SAME handler a card's
+        // Details action uses (onShowDetails). Navigation only: no status
+        // change, no fetch, no new data path.
+        ListHeaderComponent={
+          nearestOpenHit ? (
+            <Pressable
+              onPress={() => showDetails(nearestOpenHit.flag)}
+              style={({ pressed }) => [
+                styles.suggestedRow,
+                pressed && styles.suggestedRowPressed,
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel={`Review the nearest open barrier, ${
+                CATEGORY_LABELS[nearestOpenHit.flag.category]
+              }, ${speakDistance(nearestOpenHit.km)}`}
+              accessibilityHint="Opens the full report for the closest open accessibility barrier"
+            >
+              <MapPin
+                size={18}
+                color={color.brand}
+                strokeWidth={2.2}
+                accessibilityElementsHidden
+                importantForAccessibility="no"
+              />
+              <AppText variant="label" style={styles.suggestedText} numberOfLines={1}>
+                {`Nearest open barrier · ${CATEGORY_LABELS[nearestOpenHit.flag.category]} · ${formatDistance(
+                  nearestOpenHit.km,
+                )}`}
+              </AppText>
+              <ChevronRight
+                size={18}
+                color={color.textMuted}
+                strokeWidth={2.2}
+                accessibilityElementsHidden
+                importantForAccessibility="no"
+              />
+            </Pressable>
+          ) : null
+        }
         contentContainerStyle={[
           sections.length === 0 ? styles.emptyContainer : styles.list,
           // Reserve room for the floating bar so the last card doesn't sit
@@ -1458,6 +1517,32 @@ const makeStyles = (color: ColorTheme) =>
       flex: 1,
     },
     list: { padding: spacing.lg },
+    // UX #3 "Suggested next action" banner — one slim, >=44pt row above the
+    // list. A brand-tinted card so it reads as a soft call-to-action without
+    // competing with the severity-colored flag cards below. Icon + chevron are
+    // decorative (a11y-hidden); the label carries the meaning, and the
+    // accessibilityLabel on the Pressable speaks the full phrase. Color is
+    // never the sole signal — the "Nearest open barrier" text states it plainly.
+    suggestedRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+      minHeight: 44, // WCAG 2.5.5 minimum touch target
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+      marginBottom: spacing.md,
+      borderRadius: radius.lg,
+      backgroundColor: color.brandSoft,
+      borderWidth: 1,
+      borderColor: color.brand,
+    },
+    suggestedRowPressed: { opacity: 0.7 },
+    suggestedText: {
+      flex: 1,
+      color: color.brandText,
+      fontWeight: font.weight.semibold,
+      fontSize: font.size.sm,
+    },
     // Load-more footer — centered below the last SectionList card.
     // minHeight 44 on the button satisfies WCAG 2.5.5 (minimum touch target).
     footer: {
@@ -1650,8 +1735,8 @@ const makeStyles = (color: ColorTheme) =>
       fontSize: font.size.base,
     },
     searchClearBtn: {
-      minWidth: 32,
-      minHeight: 32,
+      minWidth: 44, // WCAG 2.5.8: was 32pt (below 44pt project standard)
+      minHeight: 44, // WCAG 2.5.8: was 32pt (below 44pt project standard)
       paddingHorizontal: spacing.sm,
       alignItems: 'center',
       justifyContent: 'center',

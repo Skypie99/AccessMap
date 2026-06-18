@@ -1,6 +1,7 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import { AppText } from '@/components/ui/AppText';
+import { GlassSurface } from '@/components/ui/GlassSurface';
 import { SEVERITY_ORDER, SEVERITY_LABELS } from '@/lib/flags';
 import type { FlagSeverity } from '@/types/database';
 import { color, font, radius, shadow, heatmapSeverity } from '@/theme';
@@ -16,8 +17,12 @@ import { color, font, radius, shadow, heatmapSeverity } from '@/theme';
  */
 export default function HeatmapLegend() {
   return (
-    <View
+    <GlassSurface
       style={styles.container}
+      borderRadius={radius.md}
+      tint="light"
+      tintColor="rgba(255,255,255,0.82)"
+      solidColor="rgba(255,255,255,0.95)"
       accessible
       accessibilityRole="image"
       accessibilityLabel="Heat map legend: 1 Minor yellow, 2 Mild orange, 3 Moderate orange-red, 4 Significant red, 5 Severe deep red"
@@ -42,15 +47,16 @@ export default function HeatmapLegend() {
           </View>
         ))}
       </View>
-    </View>
+    </GlassSurface>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     alignSelf: 'flex-start',
-    // Always-light overlay on the map — white regardless of device theme.
-    backgroundColor: 'rgba(255,255,255,0.95)',
+    // Frosted-glass surface is supplied by <GlassSurface> (translucent + blur
+    // with an AA contrast floor). Always-light tint regardless of device theme —
+    // the map basemap underneath is always light (DESIGN.md fixed exception).
     borderRadius: radius.md,
     paddingHorizontal: 10,
     paddingVertical: 8,

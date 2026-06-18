@@ -38,6 +38,11 @@ interface Props {
   // Bumping this value triggers a refetch — Profile uses it after a flag
   // is changed or deleted in FlagDetailModal so the list stays in sync.
   refreshKey?: number;
+  // Optional seed for the internal status filter. When provided, the
+  // modal opens already filtered to that status (e.g. Profile taps the
+  // "4 open" status pill → opens here pre-filtered to Open). Undefined
+  // (the default) keeps the existing behavior: opens showing all statuses.
+  initialStatus?: FlagStatus;
 }
 
 export default function MyReportsModal({
@@ -46,6 +51,7 @@ export default function MyReportsModal({
   onSelectFlag,
   onViewOnMap,
   refreshKey = 0,
+  initialStatus,
 }: Props) {
   const color = useColor();
   const styles = makeStyles(color);
@@ -73,8 +79,14 @@ export default function MyReportsModal({
       setSearchQuery('');
       setStatusFilter('all');
       setSortBy('newest');
+    } else {
+      // On open, seed the status filter from the optional initialStatus
+      // prop (e.g. Profile tapped the "Open" status pill). Falls back to
+      // 'all' so callers that don't pass it keep the existing behavior.
+      // Sort + search always start fresh on open.
+      setStatusFilter(initialStatus ?? 'all');
     }
-  }, [visible]);
+  }, [visible, initialStatus]);
 
   // Count flags per status — drives the chip badges. Computed once per
   // `flags` change so it stays cheap.
@@ -190,7 +202,7 @@ export default function MyReportsModal({
               accessibilityElementsHidden
               importantForAccessibility="no"
             />
-            <AppText variant="label" style={styles.rowTitle} numberOfLines={1}>
+            <AppText variant="label" style={styles.rowTitle}>
               {CATEGORY_LABELS[item.category]}
             </AppText>
             <StatusBadge status={item.status} />
@@ -599,8 +611,8 @@ const makeStyles = (color: ColorTheme) =>
     },
     statusFilterTextActive: { color: color.textOnBrand },
     viewOnMapBtn: {
-      width: 36,
-      height: 36,
+      width: 44,
+      height: 44,
       borderRadius: radius.circle,
       backgroundColor: color.surfaceNeutral,
       alignItems: 'center',

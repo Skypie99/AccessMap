@@ -228,7 +228,7 @@ export default function MyWatchedModal({ visible, onClose, onSelectFlag, onViewO
           )}
           <View style={[styles.severityDot, { backgroundColor: severityColor(item.severity) }]} {...decorativeProps} />
           <View style={styles.rowMid}>
-            <AppText variant="label" style={[styles.rowCategory, isResolved && styles.rowCategoryResolved]} numberOfLines={1}>
+            <AppText variant="label" style={[styles.rowCategory, isResolved && styles.rowCategoryResolved]}>
               {CATEGORY_LABELS[item.category]}
             </AppText>
             <AppText variant="body" style={styles.rowDate}>{date}</AppText>

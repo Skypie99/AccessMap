@@ -14,7 +14,7 @@ import {
 } from 'react-native';
 import { AppText } from '@/components/ui/AppText';
 import { hapticNotify, hapticSelection } from '@/lib/haptics';
-import { Accessibility, Brain, Camera, Construction, Ear, Eye, Lock, MapPin } from 'lucide-react-native';
+import { Accessibility, Brain, Camera, Check, Construction, Ear, Eye, Lock, MapPin } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '@/lib/auth';
@@ -581,6 +581,23 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
                   accessibilityLabel={`Severity ${s}: ${SEVERITY_LABELS[s]} — ${SEVERITY_DESCRIPTIONS[s]}`}
                   accessibilityState={{ selected: active, disabled: submitting }}
                 >
+                  {/* WCAG 1.4.1 (Use of Color): the active button is signalled by
+                      the severity-color fill — but color must not be the SOLE
+                      cue. Add non-color cues so selection is perceivable without
+                      color: a small Check tick above the number, a bolder number,
+                      and the thicker ring on .sevBtnActive. The tick is purely
+                      redundant (the number + accessibilityState already carry the
+                      meaning), so it's hidden from assistive tech. */}
+                  {active && (
+                    <Check
+                      size={11}
+                      color={color.textOnBrand}
+                      strokeWidth={3}
+                      style={styles.sevCheck}
+                      accessibilityElementsHidden
+                      importantForAccessibility="no-hide-descendants"
+                    />
+                  )}
                   <AppText variant="label" style={[styles.sevText, active && styles.sevTextActive]}>{s}</AppText>
                 </Pressable>
               );
@@ -983,10 +1000,20 @@ const makeStyles = (color: ColorTheme) =>
       backgroundColor: color.surfaceNeutral,
       alignItems: 'center',
       justifyContent: 'center',
+      // Transparent base ring so the active ring (below) can thicken without
+      // resizing the button or nudging the row layout.
+      borderWidth: 2,
+      borderColor: 'transparent',
     },
-    sevBtnActive: {},
+    // WCAG 1.4.1 non-color cue: a stronger ring around the selected button so
+    // selection reads without relying on the fill color alone.
+    sevBtnActive: { borderColor: color.textStrong },
+    // The redundant tick sits just above the number inside the 44pt circle.
+    sevCheck: { marginBottom: -2 },
     sevText: { fontSize: font.size.lg, color: color.text, fontWeight: font.weight.semibold },
-    sevTextActive: { color: color.textOnBrand },
+    // Bolder number when active — a second non-color weight cue on top of the
+    // tick and ring (and legible white-on-fill, matching textOnBrand).
+    sevTextActive: { color: color.textOnBrand, fontWeight: font.weight.bold },
     input: {
       borderWidth: 1,
       borderColor: color.borderStrong,

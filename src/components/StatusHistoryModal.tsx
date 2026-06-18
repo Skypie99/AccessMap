@@ -32,7 +32,7 @@ import { STATUS_LABELS } from '@/lib/flags';
 import { relativeTime } from '@/lib/relativeTime';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { X } from 'lucide-react-native';
-import { useReducedMotion } from '@/lib/accessibility';
+import { decorativeProps, useReducedMotion } from '@/lib/accessibility';
 import {
   formatHistoryEntry,
   listStatusHistory,
@@ -55,6 +55,27 @@ function statusLabel(s: string): string {
   }
   // Capitalize the unknown string so it still reads pleasantly.
   return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+// Timeline-dot color for a status string. Reuses the themed status*Fg
+// tokens (the same AA-safe foregrounds StatusBadge paints its dot with),
+// so the rail dot matches the status pills elsewhere and adapts to dark
+// mode. Any unrecognized status (a future value the client doesn't know
+// yet) falls back to the brand-blue used by the previous flat-list dot,
+// so the rail never renders an undefined color.
+function statusDotColor(color: ColorTheme, s: string): string {
+  switch (s) {
+    case 'open':
+      return color.statusOpenFg;
+    case 'verified':
+      return color.statusVerifiedFg;
+    case 'resolved':
+      return color.statusResolvedFg;
+    case 'rejected':
+      return color.statusRejectedFg;
+    default:
+      return color.brandText;
+  }
 }
 
 export default function StatusHistoryModal({ visible, flagId, onClose }: Props) {
@@ -91,11 +112,16 @@ export default function StatusHistoryModal({ visible, flagId, onClose }: Props) 
   // as a single line; no attribution suffix.
   const formatted = useMemo(
     () =>
-      entries.map((e) => ({
+      entries.map((e, i) => ({
         key: e.id,
         line: formatHistoryEntry(e, statusLabel, (iso) => relativeTime(iso)),
+        // Dot color comes from the status the flag entered at this point
+        // (`to_status`), reusing the themed status foreground tokens.
+        dotColor: statusDotColor(color, e.to_status),
+        // Last entry gets no trailing connector line.
+        isLast: i === entries.length - 1,
       })),
-    [entries],
+    [entries, color],
   );
 
   return (
@@ -158,7 +184,14 @@ export default function StatusHistoryModal({ visible, flagId, onClose }: Props) 
                       Platform.OS === 'web' ? ('listitem' as AccessibilityRole) : 'text'
                     }
                   >
-                    <View style={styles.entryDot} />
+                    {/* Left rail: status-colored dot + connecting line to the
+                        next entry. Purely decorative — the row's
+                        accessibilityLabel already conveys status + time, so
+                        the rail is hidden from screen readers. */}
+                    <View style={styles.entryRail} {...decorativeProps}>
+                      <View style={[styles.entryDot, { backgroundColor: item.dotColor }]} />
+                      {!item.isLast && <View style={styles.entryLineConnector} />}
+                    </View>
                     <View style={styles.entryTextWrap}>
                       <AppText variant="label" style={styles.entryLine}>{item.line}</AppText>
                     </View>
@@ -230,24 +263,41 @@ const makeStyles = (color: ColorTheme) =>
       textAlign: 'center',
       lineHeight: 20,
     },
+    // gap:0 keeps rows flush so the rail connector reaches the next dot with
+    // no break; per-row breathing room comes from entryTextWrap's paddingBottom.
     entryList: { gap: 0 },
     entryRow: {
       flexDirection: 'row',
-      alignItems: 'flex-start',
+      alignItems: 'stretch',
       gap: 12,
-      paddingVertical: 4,
     },
-    // Brand-blue bullet — uses color.brandText (the AA-safe small-text brand
-    // hex). Cycle D / d2 cleared the Cycle C carry-forward: was previously
-    // a literal '#1c4f99' awaiting CL2 to land in this branch.
+    // Left timeline rail: a fixed-width column holding the status dot and the
+    // thin connector that runs down to the next entry's dot. Centered so the
+    // connector sits directly under the dot.
+    entryRail: {
+      width: 10,
+      alignItems: 'center',
+    },
+    // Status-colored node. Color is applied inline from statusDotColor() (the
+    // themed status*Fg token for this entry's to_status), reusing the same
+    // AA-safe foregrounds as StatusBadge. marginTop nudges it to line up with
+    // the cap height of the first text line.
     entryDot: {
-      width: 8,
-      height: 8,
-      borderRadius: 4,
-      backgroundColor: color.brandText,
-      marginTop: 6,
+      width: 10,
+      height: 10,
+      borderRadius: 5,
+      marginTop: 5,
     },
-    entryTextWrap: { flex: 1, gap: 2 },
+    // Thin connecting line between consecutive dots. flex:1 stretches it to
+    // fill the rest of the row height (rows are alignItems:'stretch'), so it
+    // always meets the next dot regardless of how tall the text wraps.
+    entryLineConnector: {
+      flex: 1,
+      width: 2,
+      backgroundColor: color.divider,
+      marginTop: 2,
+    },
+    entryTextWrap: { flex: 1, gap: 2, paddingBottom: 14 },
     entryLine: {
       fontSize: 15,
       fontWeight: '600',
