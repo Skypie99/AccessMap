@@ -9,6 +9,11 @@
 module.exports = {
   preset: 'jest-expo',
   setupFiles: ['./jest.setup.js'],
+  // Headroom for async/rejection-heavy suites (useComments refetch, ReportFlagModal
+  // anon-rate-limit) under parallel-worker load. The default 5s occasionally tripped
+  // these as intermittent timeout flakes once the suite grew past ~1,700 tests
+  // (2026-06-18). Suites are deterministic in-band; this stabilizes the parallel run.
+  testTimeout: 15000,
   // /.claude/ holds orchestrator worktrees that mirror the repo with their
   // own (sometimes stale) node_modules. Without this ignore, `npx jest`
   // tries to traverse those mirrors and crashes the worker with
