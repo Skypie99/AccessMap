@@ -122,6 +122,53 @@ export async function uploadAvatar(userId: string, localUri: string): Promise<st
   return data.publicUrl;
 }
 
+/**
+ * UX #8: Monthly leaderboard entry. Shape-compatible with LeaderboardEntry in
+ * src/lib/flags.ts (id, display_name, avatar_url, points) so the existing
+ * leaderboard row renders it unchanged — `monthly_points` is mapped to `points`.
+ */
+export interface MonthlyLeaderboardEntry {
+  id: string;
+  display_name: string | null;
+  avatar_url: string | null;
+  points: number;
+}
+
+/**
+ * Fetch the top `limit` contributors by THIS calendar month's points, highest
+ * first, via the `list_monthly_leaderboard` RPC.
+ *
+ * GRACEFUL FALLBACK: the RPC migration is a FILE that may not be applied to the
+ * live backend yet. When the function is absent, PostgREST returns 42883 /
+ * PGRST202 ("could not find the function" / "does not exist"); we warn once and
+ * return [] so the UI shows the friendly empty state instead of an error.
+ * Mirrors the degrade-gracefully pattern in src/lib/photos.ts listFlagPhotos.
+ * Any OTHER error is a real failure and is re-thrown for the caller to surface.
+ */
+export async function listMonthlyLeaderboard(limit = 20): Promise<MonthlyLeaderboardEntry[]> {
+  const { data, error } = await supabase.rpc('list_monthly_leaderboard', { p_limit: limit });
+
+  if (error) {
+    const isMissingFn =
+      error.code === '42883' ||
+      error.code === 'PGRST202' ||
+      /does not exist|Could not find the function/i.test(error.message ?? '');
+    if (isMissingFn) {
+      console.warn('[leaderboard] monthly RPC not applied yet:', error.message);
+      return [];
+    }
+    throw error;
+  }
+
+  // Map monthly_points → points so the row renders identically to the all-time view.
+  return (data ?? []).map((r) => ({
+    id: r.id,
+    display_name: r.display_name,
+    avatar_url: r.avatar_url,
+    points: r.monthly_points,
+  }));
+}
+
 /** Returns up to 2 uppercase initials from a display name or email. */
 export function getInitials(name: string): string {
   const trimmed = name.trim();

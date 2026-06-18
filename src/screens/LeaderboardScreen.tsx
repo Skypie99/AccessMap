@@ -15,6 +15,7 @@ import {
   listLeaderboard,
   type LeaderboardEntry,
 } from '@/lib/flags';
+import { listMonthlyLeaderboard } from '@/lib/users';
 import { font, radius, shadow, spacing } from '@/theme';
 import { Trophy, X } from 'lucide-react-native';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
@@ -111,6 +112,10 @@ interface UserFooter {
   points: number;
 }
 
+// UX #8: which ranking the user is viewing. 'all' = existing all-time board
+// (data source UNCHANGED); 'month' = this calendar month via the monthly RPC.
+type LeaderboardTab = 'all' | 'month';
+
 interface LeaderboardRowProps {
   rank: number;
   displayName: string | null;
@@ -197,10 +202,12 @@ export default function LeaderboardScreen({ visible, onClose }: Props) {
   const styles = useMemo(() => makeStyles(color), [color]);
   const { user } = useAuth();
 
+  const [tab, setTab] = useState<LeaderboardTab>('all');
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   // When the current user is outside the top 20, show their rank in a footer.
+  // All-time only — the monthly RPC doesn't expose an out-of-top-20 rank lookup.
   const [userFooter, setUserFooter] = useState<UserFooter | null>(null);
 
   const load = useCallback(async () => {
@@ -208,6 +215,14 @@ export default function LeaderboardScreen({ visible, onClose }: Props) {
     setLoadError(null);
     setUserFooter(null);
     try {
+      // UX #8: monthly tab pulls from the RPC (which degrades to [] before the
+      // migration is applied → friendly empty state); all-time tab is unchanged.
+      if (tab === 'month') {
+        const data = await listMonthlyLeaderboard(20);
+        setEntries(data);
+        return;
+      }
+
       const data = await listLeaderboard(20);
       setEntries(data);
 
@@ -228,7 +243,7 @@ export default function LeaderboardScreen({ visible, onClose }: Props) {
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [user, tab]);
 
   useEffect(() => {
     if (visible) void load();
@@ -272,7 +287,53 @@ export default function LeaderboardScreen({ visible, onClose }: Props) {
             {/* spacer keeps title centered */}
             <View style={styles.closeBtnSpacer} />
           </View>
-          <AppText variant="body" style={styles.subtitle}>Top 20 contributors by points</AppText>
+          <AppText variant="body" style={styles.subtitle}>
+            {tab === 'month'
+              ? "Top 20 contributors this month"
+              : 'Top 20 contributors by points'}
+          </AppText>
+
+          {/* UX #8: All-time / This Month segmented toggle. WCAG: each button is
+              a button with selected state announced; the selected label carries
+              weight + an underline so colour is never the sole signal. */}
+          <View style={styles.segment} accessibilityRole="tablist">
+            <Pressable
+              onPress={() => setTab('all')}
+              accessibilityRole="button"
+              accessibilityState={{ selected: tab === 'all' }}
+              accessibilityLabel={`All-time ranking${tab === 'all' ? ', selected' : ''}`}
+              style={({ pressed }) => [
+                styles.segBtn,
+                tab === 'all' && styles.segBtnActive,
+                pressed && styles.segBtnPressed,
+              ]}
+            >
+              <AppText
+                variant="label"
+                style={[styles.segLabel, tab === 'all' && styles.segLabelActive]}
+              >
+                All-time
+              </AppText>
+            </Pressable>
+            <Pressable
+              onPress={() => setTab('month')}
+              accessibilityRole="button"
+              accessibilityState={{ selected: tab === 'month' }}
+              accessibilityLabel={`This month's ranking${tab === 'month' ? ', selected' : ''}`}
+              style={({ pressed }) => [
+                styles.segBtn,
+                tab === 'month' && styles.segBtnActive,
+                pressed && styles.segBtnPressed,
+              ]}
+            >
+              <AppText
+                variant="label"
+                style={[styles.segLabel, tab === 'month' && styles.segLabelActive]}
+              >
+                This Month
+              </AppText>
+            </Pressable>
+          </View>
 
           {loading ? (
             <View accessibilityLabel="Loading leaderboard" accessibilityLiveRegion="polite">
@@ -299,10 +360,22 @@ export default function LeaderboardScreen({ visible, onClose }: Props) {
               </Pressable>
             </View>
           ) : entries.length === 0 ? (
+            // UX #8: monthly empty state also covers the "RPC not applied yet"
+            // case — listMonthlyLeaderboard returns [] both when there's no
+            // activity AND when the migration is pending, so one friendly
+            // message serves both.
             <View style={styles.stateWrap}>
               <Trophy size={32} color={color.goldAccent} strokeWidth={2} />
-              <AppText variant="body" style={styles.stateText}>No contributors yet.</AppText>
-              <AppText variant="body" style={styles.stateHint}>Be the first to report and verify flags!</AppText>
+              {tab === 'month' ? (
+                <AppText variant="body" style={styles.stateText}>
+                  No monthly ranking yet — points appear as people verify each other&apos;s reports.
+                </AppText>
+              ) : (
+                <>
+                  <AppText variant="body" style={styles.stateText}>No contributors yet.</AppText>
+                  <AppText variant="body" style={styles.stateHint}>Be the first to report and verify flags!</AppText>
+                </>
+              )}
             </View>
           ) : (
             <FlatList
@@ -316,8 +389,8 @@ export default function LeaderboardScreen({ visible, onClose }: Props) {
             />
           )}
 
-          {/* Current user's rank when they're outside the top 20 */}
-          {userFooter && !loading && !loadError ? (
+          {/* Current user's rank when they're outside the top 20 (all-time only) */}
+          {tab === 'all' && userFooter && !loading && !loadError ? (
             <View
               style={styles.footer}
               accessible
@@ -384,6 +457,38 @@ function makeStyles(color: ColorTheme) {
     closeBtnPressed: { backgroundColor: color.borderPressed },
     closeBtnText: { fontSize: font.size.base, color: color.textMuted },
     closeBtnSpacer: { width: 44 },
+    // UX #8: segmented All-time / This Month toggle.
+    segment: {
+      flexDirection: 'row',
+      gap: spacing.xs,
+      marginHorizontal: spacing.xl,
+      marginBottom: spacing.md,
+      padding: 3, // hairline inset so active fill reads as a segment, not a button
+      backgroundColor: color.surfaceNeutral,
+      borderRadius: radius.md,
+    },
+    segBtn: {
+      flex: 1,
+      minHeight: 44,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: spacing.md,
+      borderRadius: radius.sm,
+    },
+    segBtnActive: { backgroundColor: color.brand, ...shadow.e1 },
+    segBtnPressed: { opacity: 0.85 },
+    segLabel: {
+      fontSize: font.size.sm,
+      fontWeight: font.weight.medium,
+      color: color.textMuted,
+    },
+    // Selected: brand fill + bolder weight + underline so the selection is
+    // legible without relying on colour alone (WCAG 1.4.1).
+    segLabelActive: {
+      color: color.textOnBrand,
+      fontWeight: font.weight.bold,
+      textDecorationLine: 'underline',
+    },
     list: { flexGrow: 0 },
     row: {
       flexDirection: 'row',
