@@ -901,3 +901,77 @@ describe('submitting state — L4 disable sweep', () => {
     alertSpy.mockRestore();
   });
 });
+
+// ===========================================================================
+// 8. Active-severity cue — 2026-06-17 overhaul (WCAG 1.4.1 use-of-color)
+//
+// The selected severity button must signal selection with NON-color cues, not
+// just the severity-color fill: a decorative Check tick + a bold number +
+// accessibilityState.selected. These tests pin that exactly ONE severity is
+// selected at a time, that the Check tick rides ONLY the selected button (and
+// is hidden from assistive tech), and that tapping a new severity moves the
+// whole cue. If a refactor drops the redundant non-color cue, color becomes
+// the sole signal and these trip.
+// ===========================================================================
+
+describe('active-severity cue (WCAG 1.4.1 — non-color selection signal)', () => {
+  // The lucide Check renders as an RNSVG node; find it among a button's
+  // descendants to prove the decorative tick is present on the active button.
+  const hasCheckTick = (btn: { findAll: (p: (n: { type: unknown }) => boolean) => unknown[] }) =>
+    btn.findAll((n) => typeof n.type === 'string' && /svg/i.test(String(n.type))).length > 0;
+
+  // The severity Pressable's label is `Severity N: <label> — <desc>` (the
+  // em-dash distinguishes it from the live-region hint, whose label is just
+  // `Severity N: <desc>` with no em-dash). Grab the BUTTON for a given level.
+  const sevButton = (utils: ReturnType<typeof renderAuth>, n: number) =>
+    utils.getByLabelText(new RegExp(`^Severity ${n}:.*\\u2014`));
+
+  it('selects severity 3 by default and marks exactly one severity button selected', () => {
+    const utils = renderAuth();
+    const selectedCount = [1, 2, 3, 4, 5].filter(
+      (s) => sevButton(utils, s).props.accessibilityState.selected,
+    ).length;
+    expect(selectedCount).toBe(1);
+    // The default severity is 3.
+    expect(sevButton(utils, 3).props.accessibilityState.selected).toBe(true);
+  });
+
+  it('shows the decorative Check tick on the selected button only', () => {
+    const utils = renderAuth();
+    expect(hasCheckTick(sevButton(utils, 3))).toBe(true);
+    expect(hasCheckTick(sevButton(utils, 1))).toBe(false);
+  });
+
+  it('keeps the Check tick hidden from assistive tech (purely redundant cue)', () => {
+    const utils = renderAuth();
+    const active = sevButton(utils, 3);
+    const svg = active.findAll(
+      (n: { type: unknown }) => typeof n.type === 'string' && /svg/i.test(String(n.type)),
+    )[0] as { props: Record<string, unknown> };
+    expect(svg).toBeTruthy();
+    // Hidden on both iOS (accessibilityElementsHidden) and Android
+    // (importantForAccessibility) so VoiceOver/TalkBack never announce it.
+    expect(svg.props.accessibilityElementsHidden).toBe(true);
+    expect(svg.props.importantForAccessibility).toBe('no-hide-descendants');
+  });
+
+  it('moves the selected state + Check tick when a new severity is tapped', () => {
+    const utils = renderAuth();
+    // Tap Severity 5.
+    fireEvent.press(sevButton(utils, 5));
+
+    // Selection moved: 5 is now selected, 3 is not.
+    expect(sevButton(utils, 5).props.accessibilityState.selected).toBe(true);
+    expect(sevButton(utils, 3).props.accessibilityState.selected).toBe(false);
+
+    // The Check tick rode along to the new button.
+    expect(hasCheckTick(sevButton(utils, 5))).toBe(true);
+    expect(hasCheckTick(sevButton(utils, 3))).toBe(false);
+
+    // Still exactly one selected.
+    const selectedCount = [1, 2, 3, 4, 5].filter(
+      (s) => sevButton(utils, s).props.accessibilityState.selected,
+    ).length;
+    expect(selectedCount).toBe(1);
+  });
+});

@@ -259,7 +259,7 @@ function makeStyles(color: ColorTheme) {
       color: color.textMuted,
     },
     rankTop: {
-      // WCAG 1.4.3: brand (#2f80ed) = 3.3:1 on white, fails AA at 13pt; brandText (#1c4f99) = 7.6:1 ✓
+      // WCAG 1.4.3: brand (#1466E0) = 3.3:1 on white, fails AA at 13pt; brandText (#1c4f99) = 7.6:1 ✓
       color: color.brandText,
       fontWeight: font.weight.bold,
       fontSize: font.size.xl, // 18 vs base md (15) — premium scale for top-3 medals

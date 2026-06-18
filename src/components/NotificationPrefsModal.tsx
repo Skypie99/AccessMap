@@ -22,7 +22,7 @@ import {
 } from '@/lib/notificationPrefs';
 import type { FlagStatus } from '@/types/database';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
-import { radius } from '@/theme';
+import { font, radius, spacing } from '@/theme';
 import { useReducedMotion } from '@/lib/accessibility';
 import { X } from 'lucide-react-native';
 
@@ -241,18 +241,18 @@ const makeStyles = (color: ColorTheme) =>
     },
     card: {
       backgroundColor: color.surface,
-      borderTopLeftRadius: 16,
-      borderTopRightRadius: 16,
-      paddingHorizontal: 20,
-      paddingTop: 16,
-      paddingBottom: 24,
-      gap: 12,
+      borderTopLeftRadius: radius.lg,
+      borderTopRightRadius: radius.lg,
+      paddingHorizontal: spacing.xl,
+      paddingTop: spacing.lg,
+      paddingBottom: spacing.xxl,
+      gap: spacing.md,
       maxHeight: '85%',
     },
-    headerRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+    headerRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
     titleWrap: { flex: 1, gap: 2 },
-    title: { fontSize: 20, fontWeight: '700', color: color.textStrong },
-    subtitle: { fontSize: 13, color: color.textMuted },
+    title: { fontSize: font.size.xxl, fontWeight: '700', color: color.textStrong },
+    subtitle: { fontSize: font.size.sm, color: color.textMuted },
     closeBtn: {
       width: 44,
       height: 44,
@@ -262,48 +262,48 @@ const makeStyles = (color: ColorTheme) =>
       justifyContent: 'center',
     },
     closeBtnText: {
-      fontSize: 18,
+      fontSize: font.size.xl,
       color: color.text,
       fontWeight: '700',
-      lineHeight: 20,
+      lineHeight: font.lineHeight.base,
     },
     notice: {
       backgroundColor: color.warningBg,
-      borderRadius: 8,
-      paddingHorizontal: 12,
-      paddingVertical: 10,
+      borderRadius: radius.sm,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.md,
       borderLeftWidth: 3,
       borderLeftColor: color.accentOrange,
     },
-    noticeText: { color: color.warningFg, fontSize: 13, lineHeight: 18 },
-    center: { alignItems: 'center', paddingVertical: 32 },
-    list: { gap: 10 },
+    noticeText: { color: color.warningFg, fontSize: font.size.sm, lineHeight: 18 },
+    center: { alignItems: 'center', paddingVertical: spacing.xxxl },
+    list: { gap: spacing.sm },
     row: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 12,
-      padding: 12,
+      gap: spacing.md,
+      padding: spacing.md,
       backgroundColor: color.surfaceMuted,
-      borderRadius: 10,
+      borderRadius: radius.md,
       minHeight: 56,
     },
     statusBadge: {
-      paddingHorizontal: 10,
-      paddingVertical: 4,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: spacing.tight,
       borderRadius: radius.circle,
       minWidth: 76,
       alignItems: 'center',
     },
     rowText: { flex: 1, gap: 2 },
-    rowTitle: { fontSize: 14, fontWeight: '600', color: color.textStrong },
-    rowDesc: { fontSize: 12, color: color.textMuted, lineHeight: 16 },
+    rowTitle: { fontSize: font.size.base, fontWeight: '600', color: color.textStrong },
+    rowDesc: { fontSize: font.size.xs, color: color.textMuted, lineHeight: font.lineHeight.tight },
     footer: {
-      fontSize: 12,
+      fontSize: font.size.xs,
       // color.textMutedAlt (#5b6470) on #fff = 4.6:1 — passes WCAG AA for
       // body text. The previous #888 was 3.5:1, which fails AA. QA Pass-2 #7.
       color: color.textMutedAlt,
       fontStyle: 'italic',
-      marginTop: 4,
-      paddingHorizontal: 4,
+      marginTop: spacing.tight,
+      paddingHorizontal: spacing.tight,
     },
   });

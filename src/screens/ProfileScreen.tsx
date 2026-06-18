@@ -1184,6 +1184,11 @@ export default function ProfileScreen() {
                   <View
                     key={status}
                     style={[styles.statusPill, { backgroundColor: palette.bg }, styles.statusPillDimmed]}
+                    // Focusable text (not a button — there's nothing to view) so
+                    // screen-reader users still hear the zero count instead of a
+                    // silently-skipped, dead accessibilityLabel. (review HIGH-1)
+                    accessible
+                    accessibilityRole="text"
                     accessibilityLabel={`No ${statusWord} reports`}
                   >
                     {pillInner}
@@ -1929,7 +1934,7 @@ const makeStyles = (color: ColorTheme) =>
 
     heroLabel: {
       color: color.pointsPillText,
-      // WCAG 1.4.3: pointsPillText (#dbe7fb) on brand (#2f80ed) = 3.10:1.
+      // WCAG 1.4.3: pointsPillText (#dbe7fb) on brand (#1466E0) = 3.10:1.
       // ≥14pt bold = "large text" → 3:1 threshold → passes. (11pt bold = small text → needed 4.5:1 → failed.)
       fontSize: font.size.base,
       letterSpacing: 2.4,
@@ -1985,7 +1990,7 @@ const makeStyles = (color: ColorTheme) =>
     },
     tierProgressLabel: {
       color: color.pointsPillText,
-      // WCAG 1.4.3: pointsPillText (#dbe7fb) on brand (#2f80ed) = 3.10:1.
+      // WCAG 1.4.3: pointsPillText (#dbe7fb) on brand (#1466E0) = 3.10:1.
       // 14pt bold = large text → 3:1 threshold → passes (was 13pt medium → needed 4.5:1 → failed).
       fontSize: font.size.base,
       fontWeight: font.weight.bold,
