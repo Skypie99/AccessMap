@@ -11,6 +11,7 @@ import { useAuth } from '@/lib/auth';
 import { AppText } from '@/components/ui/AppText';
 import { errorMessage } from '@/lib/errors';
 import { listLeaderboard, type LeaderboardEntry } from '@/lib/flags';
+import { listMonthlyLeaderboard } from '@/lib/users';
 import { getTier } from '@/lib/reputationTier';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { font, radius, shadow, spacing } from '@/theme';
@@ -32,10 +33,15 @@ function ordinalLabel(rank: number): string {
 // Medal tint per podium rank — Civic Gold / silver / bronze.
 const MEDAL_COLOR: Record<number, string> = { 1: '#FBB024', 2: '#9AA7B5', 3: '#C0884F' };
 
+// UX #8: which ranking is shown. 'all' = existing all-time board (UNCHANGED);
+// 'month' = this calendar month via the monthly RPC.
+type LeaderboardTab = 'all' | 'month';
+
 export default function LeaderboardModal({ visible, onClose }: Props) {
   const color = useColor();
   const styles = useMemo(() => makeStyles(color), [color]);
   const { user } = useAuth();
+  const [tab, setTab] = useState<LeaderboardTab>('all');
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -44,14 +50,17 @@ export default function LeaderboardModal({ visible, onClose }: Props) {
     setLoading(true);
     setLoadError(null);
     try {
-      const data = await listLeaderboard(10);
+      // UX #8: monthly tab uses the RPC (degrades to [] before the migration is
+      // applied → friendly empty state); all-time tab is unchanged.
+      const data =
+        tab === 'month' ? await listMonthlyLeaderboard(10) : await listLeaderboard(10);
       setEntries(data);
     } catch (e) {
       setLoadError(errorMessage(e));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [tab]);
 
   useEffect(() => {
     if (visible) void load();
@@ -132,7 +141,53 @@ export default function LeaderboardModal({ visible, onClose }: Props) {
               <X size={18} color={color.textMuted} strokeWidth={2.2} accessibilityElementsHidden />
             </Pressable>
           </View>
-          <AppText variant="body" style={styles.subtitle}>Top 10 contributors by points</AppText>
+          <AppText variant="body" style={styles.subtitle}>
+            {tab === 'month'
+              ? 'Top 10 contributors this month'
+              : 'Top 10 contributors by points'}
+          </AppText>
+
+          {/* UX #8: All-time / This Month segmented toggle. WCAG: each button is
+              a button with selected state announced; the selected label carries
+              weight + an underline so colour is never the sole signal. */}
+          <View style={styles.segment} accessibilityRole="tablist">
+            <Pressable
+              onPress={() => setTab('all')}
+              accessibilityRole="button"
+              accessibilityState={{ selected: tab === 'all' }}
+              accessibilityLabel={`All-time ranking${tab === 'all' ? ', selected' : ''}`}
+              style={({ pressed }) => [
+                styles.segBtn,
+                tab === 'all' && styles.segBtnActive,
+                pressed && styles.segBtnPressed,
+              ]}
+            >
+              <AppText
+                variant="label"
+                style={[styles.segLabel, tab === 'all' && styles.segLabelActive]}
+              >
+                All-time
+              </AppText>
+            </Pressable>
+            <Pressable
+              onPress={() => setTab('month')}
+              accessibilityRole="button"
+              accessibilityState={{ selected: tab === 'month' }}
+              accessibilityLabel={`This month's ranking${tab === 'month' ? ', selected' : ''}`}
+              style={({ pressed }) => [
+                styles.segBtn,
+                tab === 'month' && styles.segBtnActive,
+                pressed && styles.segBtnPressed,
+              ]}
+            >
+              <AppText
+                variant="label"
+                style={[styles.segLabel, tab === 'month' && styles.segLabelActive]}
+              >
+                This Month
+              </AppText>
+            </Pressable>
+          </View>
 
           {loading ? (
             <ActivityIndicator
@@ -158,8 +213,15 @@ export default function LeaderboardModal({ visible, onClose }: Props) {
               </Pressable>
             </View>
           ) : entries.length === 0 ? (
+            // UX #8: monthly empty state also covers "RPC not applied yet" —
+            // listMonthlyLeaderboard returns [] both when there's no activity
+            // AND when the migration is pending, so one message serves both.
             <View style={styles.stateWrap}>
-              <AppText variant="body" style={styles.stateText} accessibilityRole="text">No contributors yet — be the first to report a barrier!</AppText>
+              <AppText variant="body" style={styles.stateText} accessibilityRole="text">
+                {tab === 'month'
+                  ? "No monthly ranking yet — points appear as people verify each other's reports."
+                  : 'No contributors yet — be the first to report a barrier!'}
+              </AppText>
             </View>
           ) : (
             <FlatList
@@ -230,6 +292,38 @@ function makeStyles(color: ColorTheme) {
     closeBtnText: {
       fontSize: font.size.base,
       color: color.textMuted,
+    },
+    // UX #8: segmented All-time / This Month toggle.
+    segment: {
+      flexDirection: 'row',
+      gap: spacing.xs,
+      marginHorizontal: spacing.xl,
+      marginBottom: spacing.md,
+      padding: 3, // hairline inset so active fill reads as a segment, not a button
+      backgroundColor: color.surfaceNeutral,
+      borderRadius: radius.md,
+    },
+    segBtn: {
+      flex: 1,
+      minHeight: 44,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: spacing.md,
+      borderRadius: radius.sm,
+    },
+    segBtnActive: { backgroundColor: color.brand, ...shadow.e1 },
+    segBtnPressed: { opacity: 0.85 },
+    segLabel: {
+      fontSize: font.size.sm,
+      fontWeight: font.weight.medium,
+      color: color.textMuted,
+    },
+    // Selected: brand fill + bolder weight + underline so the selection is
+    // legible without relying on colour alone (WCAG 1.4.1).
+    segLabelActive: {
+      color: color.textOnBrand,
+      fontWeight: font.weight.bold,
+      textDecorationLine: 'underline',
     },
     list: {
       flexGrow: 0,

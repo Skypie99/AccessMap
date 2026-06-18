@@ -329,6 +329,23 @@ export type Database = {
         };
         Returns: number;
       };
+      // UX #8: Monthly leaderboard RPC. Ranks contributors by THIS calendar
+      // month's points from peer-validated work. Optional until the migration
+      // FILE is applied to the live backend — listMonthlyLeaderboard() in
+      // src/lib/users.ts degrades gracefully (console.warn + return []) when the
+      // function is absent (PostgREST 42883 / PGRST202), so the client can ship
+      // before the SQL runs.
+      list_monthly_leaderboard: {
+        Args: {
+          p_limit?: number;
+        };
+        Returns: {
+          id: string;
+          display_name: string | null;
+          avatar_url: string | null;
+          monthly_points: number;
+        }[];
+      };
     };
     Enums: { [_ in never]: never };
     CompositeTypes: { [_ in never]: never };
