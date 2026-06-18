@@ -12,6 +12,7 @@ import {
 import { useAuth } from '@/lib/auth';
 import { AppText } from '@/components/ui/AppText';
 import { font, radius, shadow, spacing } from '@/theme';
+import { useReducedMotion } from '@/lib/accessibility';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { X } from 'lucide-react-native';
 import { FEEDBACK_CATEGORY_GLYPHS, FEEDBACK_CATEGORY_LABELS } from '@/lib/feedback';
@@ -99,9 +100,16 @@ export default function MyFeedbackModal({ visible, onClose, refreshKey = 0 }: Pr
     () => filterFeedbackByQuery(filterFeedback(rows, filter), searchQuery),
     [rows, filter, searchQuery],
   );
+  // WCAG 2.3.3: snap (no slide) when the user prefers reduced motion.
+  const reducedMotion = useReducedMotion();
 
   return (
-    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
+    <Modal
+      visible={visible}
+      animationType={reducedMotion ? 'none' : 'slide'}
+      transparent
+      onRequestClose={onClose}
+    >
       {/* accessibilityViewIsModal — VoiceOver treats everything behind
           this view as inert while the modal is up. Same pattern as
           HelpModal; see that file for the longer comment. Alex P5. */}

@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { font, radius, shadow, spacing } from '@/theme';
+import { useReducedMotion } from '@/lib/accessibility';
 import { AppText } from '@/components/ui/AppText';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { ChevronDown, ChevronRight, X } from 'lucide-react-native';
@@ -89,9 +90,16 @@ export default function HelpModal({ visible, onClose }: Props) {
   // re-renders (e.g. when only openQuestion changes).
   const filteredFaqs = useMemo(() => filterFaqs(FAQS, query), [query]);
   const showEmpty = query.trim().length > 0 && filteredFaqs.length === 0;
+  // WCAG 2.3.3: snap (no slide) when the user prefers reduced motion.
+  const reducedMotion = useReducedMotion();
 
   return (
-    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
+    <Modal
+      visible={visible}
+      animationType={reducedMotion ? 'none' : 'slide'}
+      transparent
+      onRequestClose={onClose}
+    >
       {/* accessibilityViewIsModal tells iOS VoiceOver that everything
           behind this view is inert while the modal is up — focus can't
           wander out of the modal and read the underlying screen. Alex P5.
