@@ -10,6 +10,7 @@ import {
   View,
 } from 'react-native';
 import { font, radius, shadow, spacing } from '@/theme';
+import { useReducedMotion } from '@/lib/accessibility';
 import { AppText } from '@/components/ui/AppText';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { useAuth } from '@/lib/auth';
@@ -143,10 +144,13 @@ export default function FeedbackModal({ visible, onClose }: Props) {
     Alert.alert("Couldn't open email", result.message);
   };
 
+  // WCAG 2.3.3: snap (no slide) when the user prefers reduced motion.
+  const reducedMotion = useReducedMotion();
+
   return (
     <Modal
       visible={visible}
-      animationType="slide"
+      animationType={reducedMotion ? 'none' : 'slide'}
       transparent
       onRequestClose={() => {
         if (!sending) onClose();
