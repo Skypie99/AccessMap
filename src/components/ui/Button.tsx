@@ -104,6 +104,9 @@ export function Button({
   const surfaceStyle: ViewStyle = {
     paddingHorizontal: paddingH,
     paddingVertical: paddingV,
+    // WCAG 2.5.5 / design-system §6 — every button meets the 44pt touch-target
+    // floor. sm (~30pt) and md (~40pt) were under; the label stays centered.
+    minHeight: a11y.minTargetSize,
     borderRadius: radius.md,
     backgroundColor: kindStyle.bg,
     borderWidth: kindStyle.borderWidth,
