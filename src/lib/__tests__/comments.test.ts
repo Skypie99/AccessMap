@@ -1,13 +1,4 @@
 // Supabase mock — must be declared before jest.mock() hoisting.
-const mockFrom = jest.fn();
-
-jest.mock('../supabase', () => ({
-  __esModule: true,
-  supabase: {
-    from: (...args: unknown[]) => mockFrom(...args),
-  },
-}));
-
 import {
   addComment,
   CommentsTableNotReadyError,
@@ -16,6 +7,15 @@ import {
   MAX_COMMENT_LENGTH,
   MAX_COMMENTS,
 } from '../comments';
+
+const mockFrom = jest.fn();
+
+jest.mock('../supabase', () => ({
+  __esModule: true,
+  supabase: {
+    from: (...args: unknown[]) => mockFrom(...args),
+  },
+}));
 
 // ---------------------------------------------------------------------------
 // Helpers

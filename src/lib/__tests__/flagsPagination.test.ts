@@ -15,6 +15,9 @@
  */
 
 // ─── Supabase mock ────────────────────────────────────────────────────────────
+// ─── Subject under test ───────────────────────────────────────────────────────
+import { listFlagsPage, INITIAL_PAGE_SIZE } from '../flags';
+
 const mockQueryExec = jest.fn();
 
 interface QueryState {
@@ -66,9 +69,6 @@ jest.mock('../supabase', () => ({
   __esModule: true,
   supabase: { from: (t: string) => mockFrom(t) },
 }));
-
-// ─── Subject under test ───────────────────────────────────────────────────────
-import { listFlagsPage, INITIAL_PAGE_SIZE } from '../flags';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function makeRow(id: string, createdAt: string) {

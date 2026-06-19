@@ -165,7 +165,7 @@ export function stripExifWeb(arrayBuffer: ArrayBuffer, ext: string): Promise<Arr
       }
 
       const img = new Image();
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+       
       img.onload = (() => {
         // Set canvas size to match image (respects orientation).
         canvas.width = img.width;

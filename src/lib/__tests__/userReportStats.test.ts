@@ -21,6 +21,15 @@
 // The terminal call (.eq) must resolve to a PostgrestResponse-like object.
 // ---------------------------------------------------------------------------
 
+import { CATEGORY_ORDER, SEVERITY_ORDER } from '../flags';
+import {
+  EMPTY_USER_REPORT_STATS,
+  emptyCategoryCounts,
+  emptySeverityCounts,
+  fetchUserReportStats,
+} from '../userReportStats';
+import type { FlagCategory, FlagSeverity } from '@/types/database';
+
 const mockFrom = jest.fn();
 const mockSelect = jest.fn();
 const mockEq = jest.fn();
@@ -31,15 +40,6 @@ jest.mock('../supabase', () => ({
     from: (...args: unknown[]) => mockFrom(...args),
   },
 }));
-
-import { CATEGORY_ORDER, SEVERITY_ORDER } from '../flags';
-import {
-  EMPTY_USER_REPORT_STATS,
-  emptyCategoryCounts,
-  emptySeverityCounts,
-  fetchUserReportStats,
-} from '../userReportStats';
-import type { FlagCategory, FlagSeverity } from '@/types/database';
 
 // ---------------------------------------------------------------------------
 // Helper — wire the from→select→eq chain to a resolved value.

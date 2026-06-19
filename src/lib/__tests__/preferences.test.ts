@@ -16,6 +16,8 @@
  *    app launchable even when AsyncStorage is broken.
  */
 
+import { DEFAULT_TABS, getDefaultTab, setDefaultTab } from '../preferences';
+
 const mockStorage: Record<string, string> = {};
 let mockThrowNext = false;
 
@@ -43,8 +45,6 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
     }),
   },
 }));
-
-import { DEFAULT_TABS, getDefaultTab, setDefaultTab } from '../preferences';
 
 beforeEach(() => {
   for (const k of Object.keys(mockStorage)) delete mockStorage[k];

@@ -22,6 +22,9 @@ import * as realtimePrefs from '../realtimePrefs';
 import * as realtimeLog from '../realtimeLog';
 import * as flags from '../flags';
 
+import { supabase } from '../supabase';
+import type { FlagRow } from '@/types/database';
+
 // Mock the entire supabase client
 jest.mock('../supabase', () => ({
   supabase: {
@@ -34,9 +37,6 @@ jest.mock('../supabase', () => ({
 jest.mock('../realtimePrefs');
 jest.mock('../realtimeLog');
 jest.mock('../flags');
-
-import { supabase } from '../supabase';
-import type { FlagRow } from '@/types/database';
 
 // ============================================================================
 // Test Fixtures

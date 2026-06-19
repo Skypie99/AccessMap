@@ -222,7 +222,7 @@ describe('color.textMuted on color.surfaceSoft (Cycle F / F5)', () => {
 // Re-import severity locally so the test above can compare without
 // importing the whole module twice at the top.
 function severity4Color(): string {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
+   
   const { severity } = require('../../theme');
   return severity[4].color;
 }

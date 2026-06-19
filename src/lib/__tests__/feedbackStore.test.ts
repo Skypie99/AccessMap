@@ -13,6 +13,8 @@
  *    must serialize as null on the insert.
  */
 
+import { submitFeedback, listFeedbackByUser } from '../feedbackStore';
+
 jest.mock('react-native', () => ({
   Platform: { OS: 'ios' },
 }));
@@ -38,8 +40,6 @@ jest.mock('../supabase', () => ({
     })),
   },
 }));
-
-import { submitFeedback, listFeedbackByUser } from '../feedbackStore';
 
 beforeEach(() => {
   jest.clearAllMocks();

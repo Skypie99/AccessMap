@@ -25,9 +25,9 @@
  * Tapping an already-active chip clears the filter (toggles to null).
  */
 
-jest.mock('../supabase', () => ({ __esModule: true, supabase: { from: jest.fn() } }));
 import { CATEGORY_LABELS, CATEGORY_ORDER } from '../flags';
 import type { FlagCategory, FlagRow, FlagStatus } from '@/types/database';
+jest.mock('../supabase', () => ({ __esModule: true, supabase: { from: jest.fn() } }));
 
 // ────────────────────────────────────────────────────────────────────────────
 // Mirror of the displayFlags filter expression — no source changes needed.

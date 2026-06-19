@@ -15,6 +15,9 @@
 // Supabase mock — hoisted by Jest before any import runs.
 // Chain: from → update → eq → select → single
 // ---------------------------------------------------------------------------
+import { updateFlagContent } from '../flags';
+import type { FlagRow } from '@/types/database';
+
 const mockSingle = jest.fn();
 const mockSelectAfterUpdate = jest.fn(() => ({ single: mockSingle }));
 const mockEq = jest.fn(() => ({ select: mockSelectAfterUpdate }));
@@ -30,9 +33,6 @@ jest.mock('../supabase', () => ({
     from: (table: string) => mockFrom(table),
   },
 }));
-
-import { updateFlagContent } from '../flags';
-import type { FlagRow } from '@/types/database';
 
 // Helper: extract the first argument of the n-th call to mockUpdate safely
 // under noUncheckedIndexedAccess (mock.calls[n] may be undefined).

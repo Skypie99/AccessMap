@@ -9,6 +9,9 @@
  *  - pointEventLabel: returns human-readable label for each event type
  */
 
+import { getPointEventHistory, pointEventLabel } from '../pointEvents';
+import type { PointEventType } from '../pointEvents';
+
 const mockLimit = jest.fn();
 const mockOrder = jest.fn(() => ({ limit: mockLimit }));
 const mockEq = jest.fn(() => ({ order: mockOrder }));
@@ -21,9 +24,6 @@ jest.mock('../supabase', () => ({
     from: (table: string) => mockFrom(table),
   },
 }));
-
-import { getPointEventHistory, pointEventLabel } from '../pointEvents';
-import type { PointEventType } from '../pointEvents';
 
 const fakeEvents = [
   {

@@ -26,6 +26,8 @@ import { Text } from 'react-native';
 import { fireEvent, render } from '@testing-library/react-native';
 import type { FlagRow } from '@/types/database';
 
+import { FlagCard } from '../FlagCard';
+
 // -------------------------------------------------------------------------
 // Module mocks — must be declared before the import under test so Jest
 // hoists them above the import block.
@@ -52,8 +54,6 @@ jest.mock('@/theme/ThemeContext', () => {
     ThemeProvider: ({ children }: { children: React.ReactNode }) => children,
   };
 });
-
-import { FlagCard } from '../FlagCard';
 
 // -------------------------------------------------------------------------
 // Fixture helpers

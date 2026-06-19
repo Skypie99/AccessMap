@@ -19,6 +19,8 @@
 // does), the virtual mock silently fails to apply, the helpers' require()
 // throws, and 5 of these tests fail. Names are `mock`-prefixed because jest
 // hoists jest.mock() above imports and forbids referencing non-`mock` vars.
+import { getNotificationPermission, requestNotificationPermission } from '../pushNotifications';
+
 const mockGetPermissionsAsync = jest.fn();
 const mockRequestPermissionsAsync = jest.fn();
 jest.mock('expo-notifications', () => ({
@@ -35,8 +37,6 @@ jest.mock('expo-notifications', () => ({
 jest.mock('../supabase', () => ({
   supabase: { from: jest.fn() },
 }));
-
-import { getNotificationPermission, requestNotificationPermission } from '../pushNotifications';
 
 // Default Platform.OS under jest-expo is 'ios', so the helpers take the
 // native path and hit our mocked expo-notifications.

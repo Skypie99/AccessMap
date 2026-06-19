@@ -23,6 +23,9 @@
 // expo-image-manipulator is imported by flags.ts; the moduleNameMapper in
 // jest.config.js points to __mocks__/expo-image-manipulator.js automatically,
 // but jest.mock here is belt-and-suspenders so the factory path is explicit.
+import { createAnonFlag } from '../flags';
+import type { FlagRow } from '@/types/database';
+
 jest.mock('expo-image-manipulator', () => ({
   __esModule: true,
   manipulateAsync: jest.fn(),
@@ -43,9 +46,6 @@ jest.mock('../supabase', () => ({
     from: (table: string) => mockFrom(table),
   },
 }));
-
-import { createAnonFlag } from '../flags';
-import type { FlagRow } from '@/types/database';
 
 // ---------------------------------------------------------------------------
 // Fixtures

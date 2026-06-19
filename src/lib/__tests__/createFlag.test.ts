@@ -25,6 +25,12 @@
 // distinct responses per call.
 // Jest insists outer-scope mock vars start with "mock" (case-insensitive)
 // because the jest.mock factory runs before the module's top-level code.
+import {
+  createFlag,
+  getContextTagsCapability,
+  __resetContextTagsCapabilityForTests,
+} from '../flags';
+
 const mockSingle = jest.fn();
 const mockSelect = jest.fn(() => ({ single: mockSingle }));
 const mockInsert = jest.fn((_payload: unknown) => ({ select: mockSelect }));
@@ -36,12 +42,6 @@ jest.mock('../supabase', () => ({
     from: (table: string) => mockFrom(table),
   },
 }));
-
-import {
-  createFlag,
-  getContextTagsCapability,
-  __resetContextTagsCapabilityForTests,
-} from '../flags';
 
 // Helper: read the n-th insert payload safely under
 // noUncheckedIndexedAccess (any expression x[k] might be undefined).

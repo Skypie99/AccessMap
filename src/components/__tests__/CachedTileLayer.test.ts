@@ -19,6 +19,8 @@
 // ---------------------------------------------------------------------------
 // Mock getCachedTile and setCachedTile
 // ---------------------------------------------------------------------------
+import { getCachedTile, setCachedTile } from '@/lib/tileCache';
+
 const mockGetCachedTile = jest.fn<Promise<string | null>, [string, string]>();
 const mockSetCachedTile = jest.fn<Promise<void>, [string, string, string]>();
 
@@ -27,8 +29,6 @@ jest.mock('@/lib/tileCache', () => ({
   getCachedTile: (...args: [string, string]) => mockGetCachedTile(...args),
   setCachedTile: (...args: [string, string, string]) => mockSetCachedTile(...args),
 }));
-
-import { getCachedTile, setCachedTile } from '@/lib/tileCache';
 
 // ---------------------------------------------------------------------------
 // Minimal mock image — tracks what src was set to.

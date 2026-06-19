@@ -21,6 +21,15 @@ import React from 'react';
 import { Switch } from 'react-native';
 import { render, fireEvent } from '@testing-library/react-native';
 
+// Pull the mock reference for per-test reconfiguration.
+import { useNotificationPreferences } from '@/hooks/useNotificationPreferences';
+
+// ---------------------------------------------------------------------------
+// Import the component under test (after all mocks are registered).
+// ---------------------------------------------------------------------------
+
+import NotificationPreferencesScreen from '../NotificationPreferencesScreen';
+
 // ---------------------------------------------------------------------------
 // Mock: useNotificationPreferences
 // ---------------------------------------------------------------------------
@@ -41,9 +50,6 @@ jest.mock('@/hooks/useNotificationPreferences', () => ({
     loading: false,
   })),
 }));
-
-// Pull the mock reference for per-test reconfiguration.
-import { useNotificationPreferences } from '@/hooks/useNotificationPreferences';
 const mockUseNotificationPreferences = useNotificationPreferences as jest.MockedFunction<
   typeof useNotificationPreferences
 >;
@@ -80,12 +86,6 @@ jest.mock('@/theme/ThemeContext', () => ({
     shadow: '#000',
   })),
 }));
-
-// ---------------------------------------------------------------------------
-// Import the component under test (after all mocks are registered).
-// ---------------------------------------------------------------------------
-
-import NotificationPreferencesScreen from '../NotificationPreferencesScreen';
 // Note: the screens/__tests__ directory is one level above screens/, so the
 // relative import goes up one directory (../) to reach NotificationPreferencesScreen.tsx
 

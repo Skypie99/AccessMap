@@ -14,6 +14,10 @@
  * import flags.ts transitively.
  */
 
+import { renderHook } from '@testing-library/react-native';
+import { RankBadge } from '../RankBadge';
+import { CommentBubble } from '../CommentBubble';
+
 jest.mock('@/lib/supabase', () => ({
   supabase: {
     auth: {
@@ -23,10 +27,6 @@ jest.mock('@/lib/supabase', () => ({
     },
   },
 }));
-
-import { renderHook } from '@testing-library/react-native';
-import { RankBadge } from '../RankBadge';
-import { CommentBubble } from '../CommentBubble';
 
 // =========================================================================
 // RankBadge — Accessibility + Rendering

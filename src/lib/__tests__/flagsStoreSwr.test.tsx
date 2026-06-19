@@ -13,6 +13,11 @@ import React from 'react';
 import { render, waitFor, act } from '@testing-library/react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+// --- probe ---------------------------------------------------------------
+
+import { FlagsProvider, useFlags, __writeFlagsCache } from '../flagsStore';
+import type { FlagRow } from '@/types/database';
+
 // --- mocks ---------------------------------------------------------------
 
 const mockListFlagsPage = jest.fn();
@@ -61,11 +66,6 @@ jest.mock('../realtimeLog', () => ({
 jest.mock('@react-native-async-storage/async-storage', () =>
   require('@react-native-async-storage/async-storage/jest/async-storage-mock'),
 );
-
-// --- probe ---------------------------------------------------------------
-
-import { FlagsProvider, useFlags, __writeFlagsCache } from '../flagsStore';
-import type { FlagRow } from '@/types/database';
 
 let lastCtx: ReturnType<typeof useFlags> | null = null;
 

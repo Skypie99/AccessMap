@@ -10,6 +10,8 @@
  *    user's collapsed/expanded preference on next launch.
  */
 
+import { loadFilterPanelCollapsed, saveFilterPanelCollapsed } from '../filterPanelPrefs';
+
 const mockStorage: Record<string, string> = {};
 let mockThrowOnGet = false;
 let mockThrowOnSet = false;
@@ -38,8 +40,6 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
     }),
   },
 }));
-
-import { loadFilterPanelCollapsed, saveFilterPanelCollapsed } from '../filterPanelPrefs';
 
 const KEY = '@accessmap/filter_panel_collapsed_v1';
 

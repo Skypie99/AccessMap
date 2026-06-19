@@ -12,6 +12,19 @@
  *    across accounts on the same device).
  */
 
+import {
+  addPreset,
+  clearPresets,
+  FILTER_PRESETS_KEY_PREFIX,
+  FILTER_PRESETS_MAX,
+  loadPresets,
+  presetSummary,
+  removePreset,
+  renamePreset,
+  savePresets,
+  type FilterPreset,
+} from '../filterPresets';
+
 const mockStore = new Map<string, string>();
 
 jest.mock('@react-native-async-storage/async-storage', () => ({
@@ -34,19 +47,6 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
 }));
 
 const mockStorage = jest.requireMock('@react-native-async-storage/async-storage').default;
-
-import {
-  addPreset,
-  clearPresets,
-  FILTER_PRESETS_KEY_PREFIX,
-  FILTER_PRESETS_MAX,
-  loadPresets,
-  presetSummary,
-  removePreset,
-  renamePreset,
-  savePresets,
-  type FilterPreset,
-} from '../filterPresets';
 
 const USER = 'user-1';
 const OTHER_USER = 'user-2';

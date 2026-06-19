@@ -17,6 +17,29 @@
 // Must declare the spy variable before jest.mock() so the factory closure
 // captures a live reference (same pattern as the Supabase mock below).
 // ---------------------------------------------------------------------------
+import {
+  CATEGORY_LABELS,
+  CATEGORY_ORDER,
+  CATEGORY_DESCRIPTIONS,
+  CATEGORY_ICONS,
+  SEVERITY_ORDER,
+  SEVERITY_LABELS,
+  SEVERITY_COLOR_NAMES,
+  SEVERITY_DESCRIPTIONS,
+  STATUS_LABELS,
+  STATUS_ORDER,
+  DEFAULT_STATUSES,
+  FLAG_PHOTOS_BUCKET,
+  updateFlagContent,
+  uploadFlagPhoto,
+  verifyExifStripped,
+  stripExifNative,
+  stripExifWeb,
+  detectMimeFromBytes,
+} from '../flags';
+import type { FlagCategory, FlagSeverity, FlagStatus } from '@/types/database';
+import { Platform } from 'react-native';
+
 const mockSaveToLibraryAsync = jest.fn();
 
 jest.mock('expo-media-library', () => ({
@@ -63,29 +86,6 @@ jest.mock('../supabase', () => ({
     from: (...args: unknown[]) => mockFrom(...args),
   },
 }));
-
-import {
-  CATEGORY_LABELS,
-  CATEGORY_ORDER,
-  CATEGORY_DESCRIPTIONS,
-  CATEGORY_ICONS,
-  SEVERITY_ORDER,
-  SEVERITY_LABELS,
-  SEVERITY_COLOR_NAMES,
-  SEVERITY_DESCRIPTIONS,
-  STATUS_LABELS,
-  STATUS_ORDER,
-  DEFAULT_STATUSES,
-  FLAG_PHOTOS_BUCKET,
-  updateFlagContent,
-  uploadFlagPhoto,
-  verifyExifStripped,
-  stripExifNative,
-  stripExifWeb,
-  detectMimeFromBytes,
-} from '../flags';
-import type { FlagCategory, FlagSeverity, FlagStatus } from '@/types/database';
-import { Platform } from 'react-native';
 
 const ALL_CATEGORIES: FlagCategory[] = [
   'no_ramp',

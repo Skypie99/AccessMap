@@ -12,6 +12,13 @@
  *    Map usable when AsyncStorage hiccups or someone hand-edits the value.
  */
 
+import {
+  DEFAULT_MAP_FILTERS,
+  loadMapFilters,
+  saveMapFilters,
+  type MapFilters,
+} from '../mapFilters';
+
 const mockStorage: Record<string, string> = {};
 let mockThrowOnGet = false;
 let mockThrowOnSet = false;
@@ -46,13 +53,6 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
 // We only need the constants re-exported from flags.ts here, so mock the whole
 // supabase module to prevent the client from ever being constructed.
 jest.mock('../supabase', () => ({ supabase: {} }));
-
-import {
-  DEFAULT_MAP_FILTERS,
-  loadMapFilters,
-  saveMapFilters,
-  type MapFilters,
-} from '../mapFilters';
 
 const KEY = '@accessmap/map_filters_v1';
 

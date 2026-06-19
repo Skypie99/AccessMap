@@ -27,6 +27,17 @@ import React from 'react';
 import { render, waitFor } from '@testing-library/react-native';
 import type { StatusHistoryEntry } from '@/lib/statusHistory';
 
+import StatusHistoryModal from '../StatusHistoryModal';
+import { color as realColor } from '@/theme';
+
+// ---------------------------------------------------------------------------
+// Tree helpers: a row's rail dot and connector have no testID (they're
+// decorative), so we find them by their distinctive inline style on the row's
+// descendants. ReactTestInstance.findAll walks the subtree; flattenStyle
+// resolves the StyleSheet array into one object we can read.
+// ---------------------------------------------------------------------------
+import type { ReactTestInstance } from 'react-test-renderer';
+
 // ---------------------------------------------------------------------------
 // Mock: @/lib/statusHistory — stub listStatusHistory, keep the real
 // formatHistoryEntry so the row labels reflect production formatting.
@@ -79,9 +90,6 @@ jest.mock('@/lib/accessibility', () => {
   return { ...actual, useReducedMotion: jest.fn(() => false) };
 });
 
-import StatusHistoryModal from '../StatusHistoryModal';
-import { color as realColor } from '@/theme';
-
 // ---------------------------------------------------------------------------
 // Fixtures
 // ---------------------------------------------------------------------------
@@ -115,14 +123,6 @@ beforeEach(() => {
   jest.clearAllMocks();
   mockListStatusHistory.mockResolvedValue(HISTORY);
 });
-
-// ---------------------------------------------------------------------------
-// Tree helpers: a row's rail dot and connector have no testID (they're
-// decorative), so we find them by their distinctive inline style on the row's
-// descendants. ReactTestInstance.findAll walks the subtree; flattenStyle
-// resolves the StyleSheet array into one object we can read.
-// ---------------------------------------------------------------------------
-import type { ReactTestInstance } from 'react-test-renderer';
 
 function flattenStyle(style: unknown): Record<string, unknown> {
   if (Array.isArray(style)) {

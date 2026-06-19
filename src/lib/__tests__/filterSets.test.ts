@@ -19,6 +19,17 @@
  *    misreads a blob (cap calc has to come from the validated count).
  */
 
+import {
+  deleteSet,
+  FilterSetError,
+  getDefaultSetId,
+  listSets,
+  MAX_FILTER_SETS,
+  saveSet,
+  setDefaultSetId,
+  type FilterSet,
+} from '../filterSets';
+
 const mockStorage: Record<string, string> = {};
 let mockThrowOnGet = false;
 let mockThrowOnSet = false;
@@ -53,17 +64,6 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
 // We only need the constants re-exported from flags.ts here, so mock the whole
 // supabase module to prevent the client from ever being constructed.
 jest.mock('../supabase', () => ({ supabase: {} }));
-
-import {
-  deleteSet,
-  FilterSetError,
-  getDefaultSetId,
-  listSets,
-  MAX_FILTER_SETS,
-  saveSet,
-  setDefaultSetId,
-  type FilterSet,
-} from '../filterSets';
 
 const KEY = '@accessmap/filter_sets_v1';
 const DEFAULT_KEY = '@accessmap/default_filter_set_v1';

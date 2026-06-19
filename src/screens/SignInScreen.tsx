@@ -252,7 +252,7 @@ export default function SignInScreen({
   );
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+ 
 const makeStyles = (_color: ColorTheme) =>
   StyleSheet.create({
     container: { flex: 1, backgroundColor: '#070b18' },

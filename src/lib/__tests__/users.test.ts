@@ -12,6 +12,8 @@
 // Must declare the spy variable before jest.mock() so the factory closure
 // captures a live reference.
 // ---------------------------------------------------------------------------
+import { getInitials, uploadAvatar, updateUserProfile } from '../users';
+
 const mockSaveToLibraryAsync = jest.fn();
 
 jest.mock('expo-media-library', () => ({
@@ -55,8 +57,6 @@ jest.mock('../supabase', () => ({
     },
   },
 }));
-
-import { getInitials, uploadAvatar, updateUserProfile } from '../users';
 
 // ---------------------------------------------------------------------------
 // GAP-1: getInitials() — pure function, no I/O

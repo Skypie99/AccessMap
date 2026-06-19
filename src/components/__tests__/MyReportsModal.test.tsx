@@ -27,6 +27,8 @@ import React from 'react';
 import { render, waitFor } from '@testing-library/react-native';
 import type { FlagRow } from '@/types/database';
 
+import MyReportsModal from '../MyReportsModal';
+
 // ---------------------------------------------------------------------------
 // Mock: @/lib/auth — a signed-in user so load() runs.
 // ---------------------------------------------------------------------------
@@ -87,8 +89,6 @@ jest.mock('@/components/ui/RemoteImage', () => ({ RemoteImage: () => null }));
 jest.mock('@/components/SearchInputRow', () => () => null);
 jest.mock('@/components/StatusBadge', () => ({ StatusBadge: () => null }));
 jest.mock('lucide-react-native', () => ({ MapPin: () => null, X: () => null }));
-
-import MyReportsModal from '../MyReportsModal';
 
 // ---------------------------------------------------------------------------
 // Fixture — a mix of statuses so the status filter chip row renders

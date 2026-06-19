@@ -15,6 +15,8 @@
  *    and also guards against a non-number `points` column value.
  */
 
+import { fetchCurrentPoints, getLastSeenPoints, setLastSeenPoints } from '../points';
+
 const mockStorage: Record<string, string> = {};
 let mockThrowOnGet = false;
 let mockThrowOnSet = false;
@@ -57,8 +59,6 @@ jest.mock('../supabase', () => ({
     from: jest.fn(() => ({ select: mockPointsSelect })),
   },
 }));
-
-import { fetchCurrentPoints, getLastSeenPoints, setLastSeenPoints } from '../points';
 
 const userId = 'u1';
 const KEY = `@accessmap/points_last_seen_v1:${userId}`;

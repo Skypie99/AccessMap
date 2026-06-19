@@ -21,6 +21,12 @@ import { render, fireEvent, waitFor, act } from '@testing-library/react-native';
 // resolves to the mock module. Imported here (not mid-file) to keep
 // import/first happy.
 import * as ImagePicker from 'expo-image-picker';
+import { useAuth } from '@/lib/auth';
+
+// ---------------------------------------------------------------------------
+// Import component (after all mocks are registered)
+// ---------------------------------------------------------------------------
+import ReportFlagModal from '../ReportFlagModal';
 
 // ---------------------------------------------------------------------------
 // Supabase env stubs — required before any module that imports supabase.ts
@@ -46,7 +52,6 @@ const mockLaunchImageLibrary = ImagePicker.launchImageLibraryAsync as jest.Mock;
 // Mock: @/lib/auth — configurable per-test via mockUseAuth.mockReturnValue(...)
 // ---------------------------------------------------------------------------
 jest.mock('@/lib/auth', () => ({ useAuth: jest.fn() }));
-import { useAuth } from '@/lib/auth';
 const mockUseAuth = useAuth as jest.MockedFunction<typeof useAuth>;
 
 // ---------------------------------------------------------------------------
@@ -258,11 +263,6 @@ jest.mock('@/lib/haptics', () => ({
   hapticImpact: jest.fn(),
   hapticNotify: jest.fn(),
 }));
-
-// ---------------------------------------------------------------------------
-// Import component (after all mocks are registered)
-// ---------------------------------------------------------------------------
-import ReportFlagModal from '../ReportFlagModal';
 
 // ---------------------------------------------------------------------------
 // Fixtures

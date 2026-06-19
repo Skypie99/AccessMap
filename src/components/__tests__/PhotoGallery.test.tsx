@@ -20,6 +20,8 @@ import React from 'react';
 import { Modal } from 'react-native';
 import { fireEvent, render } from '@testing-library/react-native';
 
+import PhotoGallery, { type GalleryPhoto } from '../PhotoGallery';
+
 // useColor → static light palette so render() works without a provider.
 jest.mock('@/theme/ThemeContext', () => {
   const { color } = jest.requireActual('@/theme');
@@ -28,8 +30,6 @@ jest.mock('@/theme/ThemeContext', () => {
     ThemeProvider: ({ children }: { children: React.ReactNode }) => children,
   };
 });
-
-import PhotoGallery, { type GalleryPhoto } from '../PhotoGallery';
 
 // ---------------------------------------------------------------------------
 // Fixtures

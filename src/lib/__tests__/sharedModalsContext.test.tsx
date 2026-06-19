@@ -15,6 +15,11 @@
  * render. No native modules touched, no AsyncStorage, no Supabase.
  */
 import React, { useEffect, useRef } from 'react';
+import { SharedModalsProvider, useSharedModals, type SharedModalKey } from '../sharedModalsContext';
+import HelpModal from '@/components/HelpModal';
+import ChangelogModal from '@/components/ChangelogModal';
+import FeedbackModal from '@/components/FeedbackModal';
+import MyFeedbackModal from '@/components/MyFeedbackModal';
 // react-test-renderer ships without official types in this project (no
 // @types/react-test-renderer in package.json). Import via require + a
 // local cast so `tsc --noEmit` stays clean without adding a dev-dep.
@@ -36,11 +41,6 @@ interface ReactTestRendererModule {
   act(callback: () => void): void;
 }
 const { create, act } = require('react-test-renderer') as ReactTestRendererModule;
-import { SharedModalsProvider, useSharedModals, type SharedModalKey } from '../sharedModalsContext';
-import HelpModal from '@/components/HelpModal';
-import ChangelogModal from '@/components/ChangelogModal';
-import FeedbackModal from '@/components/FeedbackModal';
-import MyFeedbackModal from '@/components/MyFeedbackModal';
 
 jest.mock('../supabase', () => ({ supabase: {} }));
 

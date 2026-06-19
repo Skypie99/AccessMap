@@ -8,6 +8,8 @@
 // ---------------------------------------------------------------------------
 // Supabase mock — hoisted before any import.
 // ---------------------------------------------------------------------------
+import { deleteAccount } from '../account';
+
 const mockInvoke = jest.fn();
 const mockSignOut = jest.fn();
 
@@ -20,8 +22,6 @@ jest.mock('../supabase', () => ({
   },
   signOut: (...args: unknown[]) => mockSignOut(...args),
 }));
-
-import { deleteAccount } from '../account';
 
 const USER_ID = 'user-test-uuid-1234';
 

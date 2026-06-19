@@ -21,6 +21,16 @@
 // but allows variables whose names start with "mock", case-insensitive).
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// Import the tested module (after mocks are registered)
+// ---------------------------------------------------------------------------
+
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import {
+  DEFAULT_NOTIFICATION_PREFERENCES,
+  type NotificationPreferences,
+} from '../useNotificationPreferences';
+
 const mockStore = new Map<string, string>();
 
 jest.mock('@react-native-async-storage/async-storage', () => ({
@@ -41,16 +51,6 @@ beforeEach(() => {
   mockAsyncStorage.__reset();
   jest.clearAllMocks();
 });
-
-// ---------------------------------------------------------------------------
-// Import the tested module (after mocks are registered)
-// ---------------------------------------------------------------------------
-
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import {
-  DEFAULT_NOTIFICATION_PREFERENCES,
-  type NotificationPreferences,
-} from '../useNotificationPreferences';
 
 // ---------------------------------------------------------------------------
 // Storage helpers mirrored from the hook (for black-box integration tests)

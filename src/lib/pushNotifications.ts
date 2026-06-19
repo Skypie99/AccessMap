@@ -84,7 +84,7 @@ interface ExpoNotificationsModule {
 export async function requestExpoPushToken(): Promise<string | null> {
   try {
     // Dynamic require so the app doesn't crash if expo-notifications is absent.
-    // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-unsafe-assignment
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const Notifications = require('expo-notifications') as ExpoNotificationsModule;
 
     const { status: existingStatus } = await Notifications.getPermissionsAsync();
@@ -124,7 +124,7 @@ export async function getNotificationPermission(): Promise<boolean | null> {
   try {
     if (Platform.OS === 'web') return null;
     // Dynamic require — same optional-dep pattern as the rest of this file.
-    // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-unsafe-assignment
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const Notifications = require('expo-notifications') as ExpoNotificationsModule;
     const { status } = await Notifications.getPermissionsAsync();
     return status === 'granted';
@@ -145,7 +145,7 @@ export async function getNotificationPermission(): Promise<boolean | null> {
 export async function requestNotificationPermission(): Promise<boolean> {
   try {
     if (Platform.OS === 'web') return false;
-    // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-unsafe-assignment
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const Notifications = require('expo-notifications') as ExpoNotificationsModule;
     const { status: existing } = await Notifications.getPermissionsAsync();
     let finalStatus = existing;
@@ -205,7 +205,7 @@ export async function deletePushToken(userId: string): Promise<void> {
     // Cancel any locally scheduled notifications too.
     try {
       // Dynamic require — same optional dep pattern as above.
-      // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-unsafe-assignment
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const Notifications = require('expo-notifications') as ExpoNotificationsModule;
       await Notifications.cancelAllScheduledNotificationsAsync();
     } catch {

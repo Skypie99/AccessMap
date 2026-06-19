@@ -14,6 +14,13 @@
  */
 
 // Supabase mock — declared before jest.mock() hoisting.
+import {
+  addFlagPhoto,
+  batchInsertFlagPhotos,
+  deleteFlagPhoto,
+  listFlagPhotos,
+} from '../photos';
+
 const mockFrom = jest.fn();
 const mockGetUser = jest.fn();
 
@@ -34,13 +41,6 @@ jest.mock('../flags', () => ({
   __esModule: true,
   uploadFlagPhoto: (...args: unknown[]) => mockUploadFlagPhoto(...args),
 }));
-
-import {
-  addFlagPhoto,
-  batchInsertFlagPhotos,
-  deleteFlagPhoto,
-  listFlagPhotos,
-} from '../photos';
 
 // ---------------------------------------------------------------------------
 // Chain builders — each returns a chain whose terminal method resolves.

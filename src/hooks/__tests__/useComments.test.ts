@@ -21,6 +21,9 @@
 import { act, renderHook, waitFor } from '@testing-library/react-native';
 import type { CommentRow } from '@/types/database';
 
+import { CommentsTableNotReadyError } from '@/lib/comments';
+import { useComments } from '../useComments';
+
 // --- comments lib mock ------------------------------------------------------
 const mockListComments = jest.fn();
 const mockAddComment = jest.fn();
@@ -53,9 +56,6 @@ jest.mock('@/lib/supabase', () => ({
     removeChannel: (...args: unknown[]) => mockRemoveChannel(...args),
   },
 }));
-
-import { CommentsTableNotReadyError } from '@/lib/comments';
-import { useComments } from '../useComments';
 
 // ---------------------------------------------------------------------------
 // Fixtures

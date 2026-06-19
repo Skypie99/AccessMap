@@ -31,6 +31,25 @@
 // chainable mock: every method on the chain builder returns itself and
 // the terminal call (exec / single / maybeSingle) resolves from a queue.
 
+// ---------------------------------------------------------------------------
+// Imports (after jest.mock)
+// ---------------------------------------------------------------------------
+
+import {
+  listFlags,
+  listFlagsByUser,
+  updateFlagStatus,
+  deleteFlag,
+  fetchFlagById,
+  fetchFlagsByIds,
+  listRecentFlags,
+  listFlagStatusHistory,
+  listLeaderboard,
+  requestFlagReopen,
+  FlagStatusConflictError,
+} from '../flags';
+import type { FlagRow } from '@/types/database';
+
 const mockTerminal = jest.fn(); // .single() / .maybeSingle() / chain end
 const mockSingle = jest.fn();
 const mockMaybeSingle = jest.fn();
@@ -87,25 +106,6 @@ jest.mock('../supabase', () => ({
     rpc: (...args: unknown[]) => mockRpc(...args),
   },
 }));
-
-// ---------------------------------------------------------------------------
-// Imports (after jest.mock)
-// ---------------------------------------------------------------------------
-
-import {
-  listFlags,
-  listFlagsByUser,
-  updateFlagStatus,
-  deleteFlag,
-  fetchFlagById,
-  fetchFlagsByIds,
-  listRecentFlags,
-  listFlagStatusHistory,
-  listLeaderboard,
-  requestFlagReopen,
-  FlagStatusConflictError,
-} from '../flags';
-import type { FlagRow } from '@/types/database';
 
 // ---------------------------------------------------------------------------
 // Helpers

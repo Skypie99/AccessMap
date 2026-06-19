@@ -25,6 +25,13 @@
 import React from 'react';
 import { Text } from 'react-native';
 import { render } from '@testing-library/react-native';
+import { useReduceTransparency } from '@/lib/accessibility';
+
+// ---------------------------------------------------------------------------
+// Import after mocks are registered.
+// ---------------------------------------------------------------------------
+import { GlassSurface } from '../GlassSurface';
+import { color as realColor } from '@/theme';
 
 // ---------------------------------------------------------------------------
 // Mock: '@/lib/accessibility' — only useReduceTransparency is consumed by
@@ -33,7 +40,6 @@ import { render } from '@testing-library/react-native';
 jest.mock('@/lib/accessibility', () => ({
   useReduceTransparency: jest.fn(() => false),
 }));
-import { useReduceTransparency } from '@/lib/accessibility';
 const mockUseReduceTransparency = useReduceTransparency as jest.MockedFunction<
   typeof useReduceTransparency
 >;
@@ -64,12 +70,6 @@ jest.mock('@/theme/ThemeContext', () => {
 
 // theme.ts is pure data — use the real radius tokens (no drift).
 jest.mock('@/theme', () => jest.requireActual('@/theme'));
-
-// ---------------------------------------------------------------------------
-// Import after mocks are registered.
-// ---------------------------------------------------------------------------
-import { GlassSurface } from '../GlassSurface';
-import { color as realColor } from '@/theme';
 
 beforeEach(() => {
   jest.clearAllMocks();

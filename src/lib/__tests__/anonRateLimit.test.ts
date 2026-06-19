@@ -18,6 +18,8 @@
  * Date.now() is spied on so the 24-hour sliding window is deterministic.
  */
 
+import { checkAnonRateLimit, recordAnonSubmit } from '../anonRateLimit';
+
 jest.mock('@react-native-async-storage/async-storage', () => {
   const store = new Map<string, string>();
   return {
@@ -38,8 +40,6 @@ jest.mock('@react-native-async-storage/async-storage', () => {
 });
 
 const mockStorage = jest.requireMock('@react-native-async-storage/async-storage').default;
-
-import { checkAnonRateLimit, recordAnonSubmit } from '../anonRateLimit';
 
 const STORAGE_KEY = 'anon_submit_timestamps';
 const WINDOW_MS = 24 * 60 * 60 * 1000;

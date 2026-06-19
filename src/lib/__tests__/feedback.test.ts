@@ -15,6 +15,8 @@
  *    mailto: query parameters via incorrect / missing escaping.
  */
 
+import { buildMailtoUrl, sendFeedback, openFeedbackComposer, FEEDBACK_EMAIL } from '../feedback';
+
 jest.mock('react-native', () => ({
   Platform: { OS: 'ios' },
   Alert: { alert: jest.fn() },
@@ -23,8 +25,6 @@ jest.mock('react-native', () => ({
     openURL: jest.fn(),
   },
 }));
-
-import { buildMailtoUrl, sendFeedback, openFeedbackComposer, FEEDBACK_EMAIL } from '../feedback';
 
 const mockLinking = jest.requireMock('react-native').Linking as {
   canOpenURL: jest.Mock;

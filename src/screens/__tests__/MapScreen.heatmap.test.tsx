@@ -13,16 +13,6 @@
  * Supabase is mocked because MapScreen imports flags.ts transitively.
  */
 
-jest.mock('@/lib/supabase', () => ({
-  supabase: {
-    auth: {
-      onAuthStateChange: jest.fn(() => ({
-        data: { subscription: { unsubscribe: jest.fn() } },
-      })),
-    },
-  },
-}));
-
 import { heatmapSeverity } from '@/theme';
 import {
   colorForCell,
@@ -32,6 +22,16 @@ import {
   type HeatCell,
 } from '@/lib/heatmap';
 import type { FlagRow } from '@/types/database';
+
+jest.mock('@/lib/supabase', () => ({
+  supabase: {
+    auth: {
+      onAuthStateChange: jest.fn(() => ({
+        data: { subscription: { unsubscribe: jest.fn() } },
+      })),
+    },
+  },
+}));
 
 // -------------------------------------------------------------------------
 // Color mapping — severity → hex value

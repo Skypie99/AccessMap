@@ -9,14 +9,14 @@
 
 import { logRealtimeEvent } from '../realtimeLog';
 
+import { supabase } from '../supabase';
+
 // Mock the entire supabase client
 jest.mock('../supabase', () => ({
   supabase: {
     rpc: jest.fn(),
   },
 }));
-
-import { supabase } from '../supabase';
 
 describe('realtimeLog — D4 Observability RPC', () => {
   beforeEach(() => {
