@@ -142,8 +142,8 @@ so don't change the path scheme without updating the policy.
 - **Design system (`src/theme.ts` + `src/theme/ThemeContext.tsx`):** use the tokens —
   `color` (via `useColor()`), `spacing`, `radius`, `shadow`, `font`, `motion` — never raw
   hex/numbers. Use `<AppText>` (not raw `<Text>`) so the brand fonts render. Reusable
-  primitives live in `src/components/ui/` (`AppText`, `Button`, `Input`, `Card`, `Pill`,
-  `PointsChip`, `Skeleton`, `Sheet`). Dark mode follows the OS and has a Settings toggle
+  primitives live in `src/components/ui/` (`AppText`, `Button`, `Input`, `Card`,
+  `GlassSurface`, `Skeleton`, `Sheet`). Dark mode follows the OS and has a Settings toggle
   (`useThemeMode()`); haptics via `@/lib/haptics`. Full reference: `DESIGN.md`.
 - Forms use plain `useState` + `Pressable` — no form library; use the `Input` primitive
   for text fields.
