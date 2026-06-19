@@ -398,6 +398,16 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
       }
       track('flag_created', { category, severity, hasPhoto: photoUrls.length > 0 });
       hapticNotify('success');
+      // Surface the (otherwise invisible) privacy protection alongside success:
+      // a resolved uploadFlagPhoto above PROVES the fail-closed strip+verify
+      // passed (flags.ts throws otherwise), so we can truthfully confirm the GPS
+      // removal here. Presentation-only — reads the already-resolved result; no
+      // change to flags.ts or the upload/createFlag calls.
+      AccessibilityInfo.announceForAccessibility(
+        photoUrls.length > 0
+          ? 'Report filed. Location data was removed from your photos.'
+          : 'Report filed.',
+      );
       reset();
       onCreated();
       onClose();
@@ -672,10 +682,11 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
           {/* Anon-only: sign-in nudge shown where the photo section would be. */}
           {isAnon && (
             <AppText variant="body" style={styles.anonPhotoNudge}>
+              {'Your anonymous report still counts. '}
               <AppText variant="label" style={styles.anonPhotoNudgeLink} onPress={onClose} accessibilityRole="link">
                 Sign in
               </AppText>
-              {' to attach a photo.'}
+              {' to add a photo and help verifiers act faster.'}
             </AppText>
           )}
 
@@ -809,6 +820,23 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
               </AppText>
 
               <AppText variant="label" style={styles.label} accessibilityRole="header">Photo (optional)</AppText>
+
+              {/* Privacy reassurance — proactively surface the senior-grade,
+                  fail-closed EXIF/GPS stripping (flags.ts uploadFlagPhoto) so a
+                  privacy-conscious reporter knows a photo of a barrier won't leak
+                  where they live. Calm + always visible, BEFORE any pick or
+                  failure. One a11y node; the lock icon is decorative. The
+                  stripping logic itself is untouched. */}
+              <View
+                style={styles.photoPrivacy}
+                accessible
+                accessibilityLabel="Location data is automatically removed from your photos before they are uploaded."
+              >
+                <Lock size={14} color={color.textMutedAlt} strokeWidth={2} />
+                <AppText variant="body" style={styles.photoPrivacyText}>
+                  Location is removed from your photos automatically.
+                </AppText>
+              </View>
 
               {/* High-severity photo nudge — only shown when severity ≥ 4 and
                   no photo has been selected. At severity 4–5, a photo is the
@@ -1081,6 +1109,21 @@ const makeStyles = (color: ColorTheme) =>
     photoNudgeBold: {
       fontWeight: font.weight.bold,
       color: color.infoFg,
+    },
+    // Privacy reassurance line under the Photo label — calm + muted (NOT an
+    // alert box like photoNudge): a small lock icon + one muted sentence.
+    photoPrivacy: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.tight,
+      marginTop: spacing.tight,
+      marginBottom: spacing.sm,
+    },
+    photoPrivacyText: {
+      flex: 1,
+      fontSize: font.size.xs,
+      color: color.textMutedAlt,
+      lineHeight: 17,
     },
     // Anonymous mode banner — tinted info strip shown at the top of the
     // form when the user is not signed in.
