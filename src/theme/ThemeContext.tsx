@@ -23,11 +23,16 @@ import { color as lightColor } from '../theme';
 // -------------------------------------------------------------------------
 
 const darkColor = {
-  // Surfaces
-  surface: '#111',
-  surfaceMuted: '#1a1a1a',
-  surfaceSoft: '#222',
-  surfaceNeutral: '#2a2a2a',
+  // Surfaces — dark-mode elevation (overhaul Phase 2). Surfaces ASCEND in
+  // lightness so a raised card reads ABOVE its screen wash, mirroring the light
+  // palette's "raised = lighter" lift. This was inverted: `surface` (#111, the
+  // CARD tone) sat darker than `surfaceMuted` (#1a1a1a, the SCREEN wash), so
+  // every card receded into the page like a hole instead of lifting off it.
+  // New order, deepest → highest: wash < card < input/alt < chip.
+  surface: '#1E1E22',        // cards / raised base — now lighter than the wash
+  surfaceMuted: '#121214',   // screen wash — the deepest plane
+  surfaceSoft: '#28282C',    // inputs / alt cards — a step above the card
+  surfaceNeutral: '#323237', // inactive chips — highest neutral
   overlay: 'rgba(20,20,20,0.97)',
   overlaySoft: 'rgba(20,20,20,0.95)',
   overlayGlass: 'rgba(20,20,20,0.82)', // frosted-glass tint floor (dark) — AA for light text
