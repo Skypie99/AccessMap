@@ -176,6 +176,10 @@ export const color = {
 
   // Misc
   shadow: '#000',
+  // Elevation shadow tint — the cool navy used by shadow.e1/e2/e3. In dark mode
+  // (ThemeContext) this flips to a soft cool glow, since a dark shadow is
+  // invisible on dark surfaces. Consumed by the Card primitive via useColor().
+  shadowTint: '#0F1B2D',
   pointsPillText: '#dbe7fb', // light-blue label on brand-blue background
 };
 

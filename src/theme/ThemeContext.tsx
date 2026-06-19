@@ -137,6 +137,10 @@ const darkColor = {
 
   // Misc
   shadow: '#fff', // inverted for dark mode
+  // Soft cool glow so a raised card reads as lifted on dark — a dark shadow is
+  // invisible here. Conservative default; tune the strength on device. The Card
+  // primitive consumes this. (overhaul Phase 2)
+  shadowTint: '#A8C0E0',
   pointsPillText: '#dbe7fb',
 } as const satisfies typeof lightColor;
 
