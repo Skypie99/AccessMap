@@ -1,19 +1,35 @@
 /**
  * ResourcesScreen — modal overlay.
  *
- * Placeholder for a curated list of accessibility resources, tools, and
- * organisations. Will be populated in a future feature cycle.
+ * A curated, evergreen list of accessibility resources that complement the map:
+ * where to report barriers, who pushes for fixes, and how to plan around them.
+ *
+ * Content is intentionally URL-light: each entry is genuinely useful as guidance
+ * on its own, and any entry becomes a tappable external link the moment a `url`
+ * is supplied (TODO(Sky): drop in the specific links you want to point at — the
+ * cards render as plain info cards until then, so nothing ever shows a dead link).
  */
 import React from 'react';
 import {
+  Linking,
   Modal,
-  Platform,
   Pressable,
   SafeAreaView,
+  ScrollView,
   StyleSheet,
   View,
 } from 'react-native';
-import { Layers, X } from 'lucide-react-native';
+import {
+  BookOpen,
+  Building2,
+  ExternalLink,
+  Heart,
+  Map as MapIcon,
+  Navigation,
+  Users,
+  X,
+  type LucideIcon,
+} from 'lucide-react-native';
 import { AppText } from '@/components/ui/AppText';
 import { font, radius, shadow, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
@@ -22,6 +38,55 @@ interface Props {
   visible: boolean;
   onClose: () => void;
 }
+
+interface Resource {
+  icon: LucideIcon;
+  title: string;
+  blurb: string;
+  /** Optional external link. Add one to make the card tappable. */
+  url?: string;
+}
+
+// Evergreen, non-controversial categories that complement crowdsourced flagging.
+// Add a `url` to any entry to turn its card into a tappable link.
+const RESOURCES: Resource[] = [
+  {
+    icon: Building2,
+    title: 'Report it to your city',
+    blurb:
+      'Most municipalities take sidewalk, curb-ramp, and crossing-signal requests directly — often through a 311 service or a public-works web form.',
+  },
+  {
+    icon: Users,
+    title: 'Local advocacy groups',
+    blurb:
+      'Disability advocacy organizations know your area’s process and help push reported barriers toward real fixes.',
+  },
+  {
+    icon: MapIcon,
+    title: 'Accessibility maps',
+    blurb:
+      'Community apps that rate places by step-free access complement the barriers you flag here.',
+  },
+  {
+    icon: Navigation,
+    title: 'Step-free route planners',
+    blurb:
+      'Transit and mapping tools that plan routes avoiding stairs and steep grades for wheels, strollers, and tired legs.',
+  },
+  {
+    icon: BookOpen,
+    title: 'Know your rights',
+    blurb:
+      'National disability-rights resources explain accessibility laws and how to escalate a barrier that isn’t getting fixed.',
+  },
+  {
+    icon: Heart,
+    title: 'Support & community',
+    blurb:
+      'Peer communities share local, lived-experience knowledge about what’s accessible and what to route around.',
+  },
+];
 
 export default function ResourcesScreen({ visible, onClose }: Props) {
   const color = useColor();
@@ -49,31 +114,63 @@ export default function ResourcesScreen({ visible, onClose }: Props) {
           </Pressable>
         </View>
 
-        {/* Empty state */}
-        <View style={styles.body}>
-          <View
-            style={styles.emptyCard}
-            accessible
-            accessibilityLabel="Coming soon. We're curating a list of accessibility resources — organisations, tools, and guides that help make communities more navigable for everyone. Check back in a future update."
-          >
-            <View
-              style={styles.emptyIcon}
-              accessibilityElementsHidden
-              importantForAccessibility="no-hide-descendants"
-            >
-              <Layers size={40} color={color.brand} strokeWidth={2} />
-            </View>
-            <AppText variant="heading" style={styles.emptyTitle}>Coming soon</AppText>
-            <AppText variant="body" style={styles.emptyBody}>
-              We&apos;re curating a list of accessibility resources — organisations,
-              tools, and guides that help make communities more navigable for
-              everyone.
-            </AppText>
-            <AppText variant="body" style={styles.emptyBody}>
-              Check back in a future update.
-            </AppText>
-          </View>
-        </View>
+        <ScrollView contentContainerStyle={styles.body} showsVerticalScrollIndicator={false}>
+          <AppText variant="body" style={styles.intro}>
+            Flagging a barrier is the first step. These resources help get it fixed —
+            and help you plan around it in the meantime.
+          </AppText>
+
+          {RESOURCES.map((r) => {
+            const Icon = r.icon;
+            const linked = !!r.url;
+            const inner = (
+              <>
+                <View
+                  style={styles.cardIcon}
+                  accessibilityElementsHidden
+                  importantForAccessibility="no-hide-descendants"
+                >
+                  <Icon size={24} color={color.brand} strokeWidth={2} />
+                </View>
+                <View style={styles.cardText}>
+                  <View style={styles.cardTitleRow}>
+                    <AppText variant="label" style={styles.cardTitle}>{r.title}</AppText>
+                    {linked && (
+                      <ExternalLink size={16} color={color.textMuted} strokeWidth={2} />
+                    )}
+                  </View>
+                  <AppText variant="body" style={styles.cardBlurb}>{r.blurb}</AppText>
+                </View>
+              </>
+            );
+
+            return linked ? (
+              <Pressable
+                key={r.title}
+                onPress={() => { void Linking.openURL(r.url as string); }}
+                style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
+                accessibilityRole="link"
+                accessibilityLabel={`${r.title}. ${r.blurb}`}
+                accessibilityHint="Opens in your browser"
+              >
+                {inner}
+              </Pressable>
+            ) : (
+              <View
+                key={r.title}
+                style={styles.card}
+                accessible
+                accessibilityLabel={`${r.title}. ${r.blurb}`}
+              >
+                {inner}
+              </View>
+            );
+          })}
+
+          <AppText variant="body" style={styles.footnote}>
+            AccessMap is community-powered — these are starting points, not endorsements.
+          </AppText>
+        </ScrollView>
       </SafeAreaView>
     </Modal>
   );
@@ -107,40 +204,63 @@ const makeStyles = (color: ColorTheme) =>
       justifyContent: 'center',
     },
     body: {
-      flex: 1,
-      justifyContent: 'center',
-      alignItems: 'center',
-      paddingHorizontal: spacing.xl,
+      padding: spacing.lg,
+      gap: spacing.md,
     },
-    emptyCard: {
+    intro: {
+      fontSize: font.size.base,
+      color: color.textMuted,
+      lineHeight: 22,
+      marginBottom: spacing.xs,
+    },
+    card: {
+      flexDirection: 'row',
+      gap: spacing.md,
       backgroundColor: color.surface,
       borderRadius: radius.lg,
-      padding: spacing.xxl,
-      alignItems: 'center',
-      gap: spacing.md,
-      maxWidth: 340,
-      width: '100%',
-      ...shadow.e2,
+      borderWidth: 1,
+      borderColor: color.border,
+      padding: spacing.lg,
+      minHeight: 44,
+      ...shadow.e1,
     },
-    emptyIcon: {
-      width: 72,
-      height: 72,
+    cardPressed: {
+      opacity: 0.92,
+    },
+    cardIcon: {
+      width: 44,
+      height: 44,
       borderRadius: radius.full,
       backgroundColor: color.brandSofter,
       alignItems: 'center',
       justifyContent: 'center',
-      marginBottom: spacing.sm,
     },
-    emptyTitle: {
+    cardText: {
+      flex: 1,
+      gap: spacing.tight,
+    },
+    cardTitleRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+    },
+    cardTitle: {
+      flex: 1,
       fontSize: font.size.lg,
-      fontWeight: font.weight.bold,
+      fontWeight: font.weight.semibold,
       color: color.textStrong,
-      textAlign: 'center',
     },
-    emptyBody: {
-      fontSize: font.size.base,
+    cardBlurb: {
+      fontSize: font.size.sm,
+      color: color.textMuted,
+      lineHeight: 20,
+    },
+    footnote: {
+      fontSize: font.size.xs,
       color: color.textMuted,
       textAlign: 'center',
-      lineHeight: 22,
+      lineHeight: 17,
+      marginTop: spacing.sm,
+      marginBottom: spacing.xl,
     },
   });
