@@ -39,6 +39,9 @@ import {
 } from '../flags';
 import type { FlagCategory, FlagSeverity, FlagStatus } from '@/types/database';
 import { Platform } from 'react-native';
+// Imported (not require()'d) so FIX 3's test can assert on the mocked
+// manipulateAsync without tripping @typescript-eslint/no-require-imports.
+import { manipulateAsync as mockManipulateAsync } from 'expo-image-manipulator';
 
 const mockSaveToLibraryAsync = jest.fn();
 
@@ -546,6 +549,41 @@ describe('stripExifNative', () => {
     const result = await stripExifNative(ORIGINAL, 'jpg');
     // Fail-closed: return null on any error (D8 privacy gate).
     expect(result).toBe(null);
+  });
+
+  it('returns null (fail-closed) when the input buffer is empty', async () => {
+    // P3: the empty-input guard must abort before touching the codec — there
+    // is nothing to strip, and undecodable bytes must never reach Storage.
+    const result = await stripExifNative(new ArrayBuffer(0), 'jpg');
+    expect(result).toBe(null);
+  });
+
+  it('P3 perf: passes the source file URI straight into manipulateAsync (no base64 data: URI)', async () => {
+    // FIX 3: when a source URI is supplied we feed it directly to the codec
+    // instead of building a per-byte ~10 MB JS string + `data:` URI. Assert the
+    // manipulator received the file URI verbatim — and crucially NOT a data:
+    // URI — and that re-encode semantics are preserved (empty actions array).
+    const manipulate = mockManipulateAsync as unknown as jest.Mock;
+    manipulate.mockClear();
+    manipulate.mockResolvedValueOnce({
+      uri: 'file:///tmp/stripped.jpg',
+      width: 10,
+      height: 10,
+    });
+    (
+      global as unknown as {
+        fetch: (u: string) => Promise<{ arrayBuffer(): Promise<ArrayBuffer> }>;
+      }
+    ).fetch = jest.fn().mockResolvedValue({ arrayBuffer: async () => STRIPPED });
+
+    const result = await stripExifNative(ORIGINAL, 'jpg', 'file:///tmp/original.jpg');
+
+    expect(result).toBe(STRIPPED);
+    const [inputArg, actionsArg] = manipulate.mock.calls[0];
+    expect(inputArg).toBe('file:///tmp/original.jpg');
+    expect(String(inputArg).startsWith('data:')).toBe(false);
+    // Re-encode-only semantics preserved: empty actions array.
+    expect(actionsArg).toEqual([]);
   });
 
   it('REGRESSION: fails if stripExifNative returns the original buffer unchanged', async () => {

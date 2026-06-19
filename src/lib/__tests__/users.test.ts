@@ -172,6 +172,26 @@ describe('uploadAvatar()', () => {
     expect(mockUpload).not.toHaveBeenCalled();
   });
 
+  // ── Error path 1b: remote URL rejected by the scheme guard ────────────────
+
+  it('error: rejects an http:// avatar URI (ALLOWED_PHOTO_SCHEMES guard)', async () => {
+    // FIX 2: the avatar path now runs through the shared uploadStrippedImage
+    // helper, which enforces the same ALLOWED_PHOTO_SCHEMES guard as
+    // uploadFlagPhoto. A remote http(s):// URI must be rejected BEFORE any
+    // fetch/strip/upload — otherwise uploadAvatar would fetch and re-upload
+    // someone else's network image. No fetch mock is needed; the guard fires
+    // before any I/O.
+    await expect(uploadAvatar(USER_ID, 'http://evil.example.com/photo.jpg')).rejects.toThrow(
+      /unsupported photo source/i,
+    );
+    await expect(uploadAvatar(USER_ID, 'https://evil.example.com/photo.jpg')).rejects.toThrow(
+      /unsupported photo source/i,
+    );
+
+    // Supabase storage must NOT be touched.
+    expect(mockUpload).not.toHaveBeenCalled();
+  });
+
   // ── Error path 2: empty file ──────────────────────────────────────────────
 
   it('error: rejects when the fetched file is 0 bytes', async () => {

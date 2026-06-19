@@ -59,23 +59,44 @@ export const NEXT_PAGE_SIZE = 20;
 export async function stripExifNative(
   arrayBuffer: ArrayBuffer,
   ext: string,
+  srcUri?: string,
 ): Promise<ArrayBuffer | null> {
   try {
-    // Write the buffer to a temporary data URI so ImageManipulator can read it.
-    const bytes = new Uint8Array(arrayBuffer);
-    const binaryString = Array.from(bytes)
-      .map((b) => String.fromCharCode(b))
-      .join('');
-    const base64 = btoa(binaryString);
-    const mimeType =
-      ext === 'png'
-        ? 'image/png'
-        : ext === 'webp'
-          ? 'image/webp'
-          : ext === 'heic' || ext === 'heif'
-            ? 'image/heic'
-            : 'image/jpeg';
-    const dataUrl = `data:${mimeType};base64,${base64}`;
+    // Fail-closed empty-input guard: an empty buffer can't be a real image, so
+    // there is nothing to strip — abort rather than hand undecodable bytes to
+    // the codec (kept from the original contract).
+    if (arrayBuffer.byteLength === 0) {
+      console.warn('[EXIF] Empty input buffer; stripping failed.');
+      return null;
+    }
+
+    // P3 perf: feed the source file URI straight into ImageManipulator instead
+    // of materializing a per-byte ~10 MB JS string + base64 `data:` URI (the
+    // old `Array.from(bytes).map(String.fromCharCode).join('')` + btoa was
+    // O(n) allocations that briefly tripled peak memory for a large photo).
+    // ImageManipulator reads file://, content://, ph://, etc. directly. We fall
+    // back to a `data:` URI only when no source URI is available (e.g. a
+    // direct unit-test call with bytes but no URI) so the fail-closed contract
+    // and the test surface are preserved.
+    let input: string;
+    if (srcUri) {
+      input = srcUri;
+    } else {
+      const bytes = new Uint8Array(arrayBuffer);
+      const binaryString = Array.from(bytes)
+        .map((b) => String.fromCharCode(b))
+        .join('');
+      const base64 = btoa(binaryString);
+      const mimeType =
+        ext === 'png'
+          ? 'image/png'
+          : ext === 'webp'
+            ? 'image/webp'
+            : ext === 'heic' || ext === 'heif'
+              ? 'image/heic'
+              : 'image/jpeg';
+      input = `data:${mimeType};base64,${base64}`;
+    }
 
     // Re-encode with no transform actions. This forces the platform codec to
     // write a fresh image — EXIF/GPS/IPTC/XMP are not carried through.
@@ -85,7 +106,7 @@ export async function stripExifNative(
         ? ImageManipulator.SaveFormat.PNG
         : ImageManipulator.SaveFormat.JPEG;
     const result = await ImageManipulator.manipulateAsync(
-      dataUrl,
+      input,
       [], // no transform — re-encode only
       { compress: 0.9, format: saveFormat },
     );
@@ -397,13 +418,42 @@ export function detectMimeFromBytes(buffer: ArrayBuffer): string | null {
  * touching Storage so a malformed pick or a runaway file fails loudly
  * here instead of silently filling the bucket with garbage.
  */
-export async function uploadFlagPhoto(
+/**
+ * Shared upload-with-EXIF-strip pipeline used by BOTH uploadFlagPhoto and
+ * uploadAvatar (src/lib/users.ts). Centralizes the privacy-critical sequence
+ * so the avatar path can never drift from the flag-photo path:
+ *
+ *   1. scheme guard      — reject anything not in ALLOWED_PHOTO_SCHEMES,
+ *                          including http(s):// (would fetch/re-upload a
+ *                          remote image instead of the just-picked local one).
+ *   2. extension allowlist (jpg/jpeg/png/webp/heic/heif — not widened).
+ *   3. fetch bytes + empty / 10 MB-cap pre-checks.
+ *   4. detectMimeFromBytes pre-check (magic-byte sniff; reject non-images).
+ *   5. fail-closed strip gate (both platforms): stripExif{Web,Native} returns
+ *      null on ANY failure => abort. The ORIGINAL bytes are NEVER uploaded.
+ *   6. post-strip verifyExifStripped gate (structural JPEG/PNG verifier) —
+ *      abort on false.
+ *   7. derive contentType + finalExt from the ACTUAL post-strip bytes.
+ *   8. upload with upsert:false, then return the public URL + storage path.
+ *
+ * The caller supplies `buildPath(userId, finalExt)` so each surface keeps its
+ * own object-naming scheme (flags: `<uid>/<ts>.<ext>`, avatars:
+ * `<uid>/avatar/<ts>.<ext>`) — the path shape is NOT hardcoded here. The
+ * caller also supplies the web-strip-failure message (flags surface a
+ * HEIC-specific hint; avatars use the generic copy).
+ */
+export async function uploadStrippedImage(
   userId: string,
   localUri: string,
+  buildPath: (userId: string, finalExt: string) => string,
+  webStripFailedMessage: string,
 ): Promise<{ url: string; path: string }> {
   if (!localUri || typeof localUri !== 'string') {
     throw new Error('No photo selected.');
   }
+  // SCHEME GUARD — rejects http(s):// (and any other non-local scheme) so we
+  // never fetch + re-upload a remote image. uploadFlagPhoto has always
+  // enforced this; uploadAvatar previously omitted it.
   if (!ALLOWED_PHOTO_SCHEMES.some((s) => localUri.startsWith(s))) {
     throw new Error('Unsupported photo source.');
   }
@@ -438,18 +488,16 @@ export async function uploadFlagPhoto(
     // Fail-closed: abort rather than upload original bytes that may carry GPS.
     const stripped = await stripExifWeb(arrayBuffer, ext);
     if (stripped === null) {
-      // F46: retrying the SAME file fails deterministically when the browser
-      // can't decode it (e.g. HEIC in Chrome/Firefox) — say so instead of
-      // suggesting a doomed retry.
-      throw new Error(
-        "Photo privacy check failed: this photo couldn't be processed in the browser (HEIC photos often can't). Please choose a JPG or PNG instead.",
-      );
+      throw new Error(webStripFailedMessage);
     }
     arrayBuffer = stripped;
   } else {
     // D8: stripExifNative returns null on failure; abort rather than upload
-    // original bytes that may contain GPS/camera metadata.
-    const stripped = await stripExifNative(arrayBuffer, ext);
+    // original bytes that may contain GPS/camera metadata. P3 perf: pass the
+    // source file URI so the manipulator reads it directly (no ~10 MB base64
+    // data-URI build). The arrayBuffer is still passed for the empty-input
+    // guard + the dev-mode before/after byte-count log.
+    const stripped = await stripExifNative(arrayBuffer, ext, localUri);
     if (stripped === null) {
       throw new Error('Photo privacy check failed: EXIF stripping could not be completed. Please try again.');
     }
@@ -471,7 +519,7 @@ export async function uploadFlagPhoto(
   const strippedMime = detectMimeFromBytes(arrayBuffer);
   const contentType = strippedMime === 'image/png' ? 'image/png' : 'image/jpeg';
   const finalExt = strippedMime === 'image/png' ? 'png' : 'jpg';
-  const filePath = `${userId}/${Date.now()}.${finalExt}`;
+  const filePath = buildPath(userId, finalExt);
 
   const { error: uploadErr } = await supabase.storage
     .from(FLAG_PHOTOS_BUCKET)
@@ -483,6 +531,21 @@ export async function uploadFlagPhoto(
 
   const { data } = supabase.storage.from(FLAG_PHOTOS_BUCKET).getPublicUrl(filePath);
   return { url: data.publicUrl, path: filePath };
+}
+
+export async function uploadFlagPhoto(
+  userId: string,
+  localUri: string,
+): Promise<{ url: string; path: string }> {
+  // Flag photos keep the `<uid>/<ts>.<ext>` object name. The web-strip-failure
+  // copy carries the F46 HEIC-specific hint (retrying the same undecodable
+  // file is doomed — point the user at JPG/PNG instead).
+  return uploadStrippedImage(
+    userId,
+    localUri,
+    (uid, finalExt) => `${uid}/${Date.now()}.${finalExt}`,
+    "Photo privacy check failed: this photo couldn't be processed in the browser (HEIC photos often can't). Please choose a JPG or PNG instead.",
+  );
 }
 
 /**
@@ -1119,49 +1182,6 @@ export const STATUS_ORDER: FlagStatus[] = ['open', 'verified', 'resolved', 'reje
 // default set the Map's status filter starts with, so a default-state
 // filter row matches the historical fetch behavior.
 export const DEFAULT_STATUSES: FlagStatus[] = ['open', 'verified'];
-
-/**
- * One entry from the flag_status_history table. Each row records a single
- * status transition for a flag (who changed it, from what, to what, when).
- *
- * Used by the "Status history" timeline in FlagDetailModal and any future
- * surfaces (activity feed, notifications).
- *
- * `old_status === null` means this is the initial "reported" entry —
- * the flag entered 'open' for the first time with no prior status.
- */
-export interface FlagStatusHistoryEntry {
-  old_status: string | null;
-  new_status: string;
-  changed_by: string | null;
-  changed_at: string;
-}
-
-/**
- * Fetch the status history for a single flag, oldest entry first.
- *
- * Reads from the `flag_status_history` table added by migration
- * `supabase/migrations/2026-05-24_status_history_table.sql`. That
- * migration is propose-only (Sky applies it); until then this function
- * returns `[]` and the caller renders nothing — graceful degradation.
- *
- * If the query errors for any reason (table missing, RLS rejection, network)
- * the error is swallowed and an empty array is returned. The caller MUST
- * treat an empty result as "no history available yet" rather than an error.
- */
-export async function listFlagStatusHistory(flagId: string): Promise<FlagStatusHistoryEntry[]> {
-  try {
-    const { data, error } = await supabase
-      .from('flag_status_history')
-      .select('old_status, new_status, changed_by, changed_at')
-      .eq('flag_id', flagId)
-      .order('changed_at', { ascending: true });
-    if (error) return []; // Graceful degradation — table may not exist yet
-    return (data ?? []) as FlagStatusHistoryEntry[];
-  } catch {
-    return [];
-  }
-}
 
 // ---------------------------------------------------------------------------
 // Community leaderboard

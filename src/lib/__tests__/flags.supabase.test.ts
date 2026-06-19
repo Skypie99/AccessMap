@@ -9,7 +9,6 @@
  *   - fetchFlagById      — found / not-found / error
  *   - fetchFlagsByIds    — multi-id fetch + short-circuit for empty input
  *   - listRecentFlags    — default + custom limit
- *   - listFlagStatusHistory — graceful degradation on table-missing error
  *   - listLeaderboard    — top-N users + error propagation
  *
  * All tests use a fully-mocked Supabase client so no network or DB is needed.
@@ -43,7 +42,6 @@ import {
   fetchFlagById,
   fetchFlagsByIds,
   listRecentFlags,
-  listFlagStatusHistory,
   listLeaderboard,
   requestFlagReopen,
   FlagStatusConflictError,
@@ -399,49 +397,6 @@ describe('listRecentFlags', () => {
     // Just verifying it resolves (the limit is forwarded to the chain; we
     // don't inspect the chain calls because the proxy absorbs them).
     await expect(listRecentFlags(10)).resolves.toHaveLength(1);
-  });
-});
-
-// ---------------------------------------------------------------------------
-// listFlagStatusHistory — graceful degradation
-// ---------------------------------------------------------------------------
-
-describe('listFlagStatusHistory', () => {
-  it('returns the history entries when the table exists and data is present', async () => {
-    const entries = [
-      { old_status: null, new_status: 'open', changed_by: 'u1', changed_at: '2026-05-01T00:00:00Z' },
-      { old_status: 'open', new_status: 'verified', changed_by: 'u2', changed_at: '2026-05-02T00:00:00Z' },
-    ];
-    setupChain({ data: entries, error: null });
-
-    const result = await listFlagStatusHistory('f1');
-    expect(result).toHaveLength(2);
-    expect(result[0]?.new_status).toBe('open');
-    expect(result[1]?.new_status).toBe('verified');
-  });
-
-  it('returns [] (graceful degradation) when Supabase returns an error', async () => {
-    // This covers the "table may not exist yet" case — PGRST204 or similar.
-    setupChain({ data: null, error: { code: 'PGRST204', message: 'relation does not exist' } });
-
-    const result = await listFlagStatusHistory('f1');
-    expect(result).toEqual([]);
-  });
-
-  it('returns [] when data is null (no history recorded yet)', async () => {
-    setupChain({ data: null, error: null });
-    const result = await listFlagStatusHistory('f1');
-    expect(result).toEqual([]);
-  });
-
-  it('returns [] when an unexpected exception is thrown (total failure guard)', async () => {
-    // Simulate the chain throwing synchronously (e.g. network error in fetch).
-    mockFrom.mockImplementationOnce(() => {
-      throw new Error('network exploded');
-    });
-
-    const result = await listFlagStatusHistory('f1');
-    expect(result).toEqual([]);
   });
 });
 

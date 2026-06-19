@@ -1,13 +1,6 @@
 import { supabase } from './supabase';
-import { Platform } from 'react-native';
 import type { UserRow } from '@/types/database';
-import { stripExifNative, stripExifWeb, verifyExifStripped, detectMimeFromBytes } from './flags';
-
-// Same bucket as flag photos — Storage RLS requires path to start with
-// auth.uid(), which <userId>/avatar/<timestamp>.<ext> satisfies.
-const FLAG_PHOTOS_BUCKET = 'flag-photos';
-const ALLOWED_AVATAR_EXTS = new Set(['jpg', 'jpeg', 'png', 'webp', 'heic', 'heif']);
-const MAX_AVATAR_BYTES = 10 * 1024 * 1024; // 10 MB
+import { uploadStrippedImage } from './flags';
 
 export interface UserProfilePatch {
   display_name?: string | null;
@@ -58,68 +51,29 @@ export async function updateUserProfile(userId: string, patch: UserProfilePatch)
  * Uploads a new avatar image and returns its public URL.
  * Path: <userId>/avatar/<timestamp>.<ext> — satisfies the flag-photos
  * Storage RLS policy (split_part(name,'/',1) = auth.uid()).
+ *
+ * Runs the SAME privacy-critical strip pipeline as uploadFlagPhoto via the
+ * shared uploadStrippedImage helper in src/lib/flags.ts, so avatar uploads can
+ * never drift from the flag-photo path. The shared helper enforces, in order:
+ * the ALLOWED_PHOTO_SCHEMES guard (rejects http(s)://), the jpg/jpeg/png/webp/
+ * heic/heif extension allowlist, the empty / 10 MB pre-checks, a magic-byte
+ * MIME pre-check, the fail-closed strip gate on BOTH platforms (null => abort,
+ * original bytes never uploaded — critical for avatar selfies that very likely
+ * carry the user's home GPS), the structural post-strip verifyExifStripped
+ * gate, post-strip MIME-derived contentType/finalExt, and upsert:false.
+ *
+ * The avatar surface keeps its own `<uid>/avatar/<ts>.<ext>` object name (the
+ * path is passed in, not hardcoded in the helper) and uses the generic web
+ * strip-failure copy.
  */
 export async function uploadAvatar(userId: string, localUri: string): Promise<string> {
-  const match = /\.([a-zA-Z0-9]+)(?:\?.*)?$/.exec(localUri);
-  const ext = (match?.[1] ?? 'jpg').toLowerCase();
-  if (!ALLOWED_AVATAR_EXTS.has(ext)) {
-    throw new Error('Avatar must be a JPG, PNG, WEBP, or HEIC image.');
-  }
-
-  const response = await fetch(localUri);
-  let arrayBuffer = await response.arrayBuffer();
-  if (arrayBuffer.byteLength === 0) throw new Error('Photo file is empty.');
-  if (arrayBuffer.byteLength > MAX_AVATAR_BYTES) {
-    throw new Error('Photo is too large. Please pick one under 10 MB.');
-  }
-
-  const detectedMime = detectMimeFromBytes(arrayBuffer);
-  if (!detectedMime) {
-    throw new Error('File does not appear to be a valid image.');
-  }
-
-  if (Platform.OS === 'web') {
-    // D8: stripExifWeb returns null on ANY failure (no canvas, decode failure
-    // such as a HEIC the browser can't render). Fail-closed — avatar selfies
-    // very likely carry the user's home GPS, so never upload original bytes.
-    const stripped = await stripExifWeb(arrayBuffer, ext);
-    if (stripped === null) {
-      throw new Error('Photo privacy check failed: EXIF stripping could not be completed. Please try again.');
-    }
-    arrayBuffer = stripped;
-  } else {
-    // D8: stripExifNative returns null on failure; abort rather than upload
-    // original bytes that may contain GPS/home-location metadata from avatar selfies.
-    const stripped = await stripExifNative(arrayBuffer, ext);
-    if (stripped === null) {
-      throw new Error('Photo privacy check failed: EXIF stripping could not be completed. Please try again.');
-    }
-    arrayBuffer = stripped;
-  }
-
-  const exifCheckPassed = verifyExifStripped(arrayBuffer);
-  if (!exifCheckPassed) {
-    // D8 privacy gate: abort upload if EXIF markers are still present.
-    // Mirrors uploadFlagPhoto behavior in src/lib/flags.ts — same gate, same
-    // rationale (avatar selfies likely contain the user's home GPS coordinates).
-    throw new Error('Photo privacy check failed. Please try a different photo or contact support.');
-  }
-
-  // Derive extension + Content-Type from the ACTUAL post-strip bytes (the
-  // strip re-encodes HEIC/WEBP to JPEG/PNG) so name, MIME, and content agree.
-  // Mirrors uploadFlagPhoto in src/lib/flags.ts.
-  const strippedMime = detectMimeFromBytes(arrayBuffer);
-  const contentType = strippedMime === 'image/png' ? 'image/png' : 'image/jpeg';
-  const finalExt = strippedMime === 'image/png' ? 'png' : 'jpg';
-  const filePath = `${userId}/avatar/${Date.now()}.${finalExt}`;
-
-  const { error: uploadErr } = await supabase.storage
-    .from(FLAG_PHOTOS_BUCKET)
-    .upload(filePath, arrayBuffer, { contentType, upsert: false });
-  if (uploadErr) throw uploadErr;
-
-  const { data } = supabase.storage.from(FLAG_PHOTOS_BUCKET).getPublicUrl(filePath);
-  return data.publicUrl;
+  const { url } = await uploadStrippedImage(
+    userId,
+    localUri,
+    (uid, finalExt) => `${uid}/avatar/${Date.now()}.${finalExt}`,
+    'Photo privacy check failed: EXIF stripping could not be completed. Please try again.',
+  );
+  return url;
 }
 
 /**

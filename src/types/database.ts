@@ -131,28 +131,6 @@ export type Database = {
         Update: Partial<FeedbackRow>;
         Relationships: EmptyRelationships;
       };
-      // Optional until supabase/migrations/2026-05-24_status_history_table.sql
-      // is applied. The migration is propose-only (Sky applies it). Until then,
-      // any listFlagStatusHistory() call degrades gracefully to [].
-      flag_status_history: {
-        Row: {
-          id: string;
-          flag_id: string;
-          old_status: string | null;
-          new_status: string;
-          changed_by: string | null;
-          changed_at: string;
-        };
-        Insert: {
-          flag_id: string;
-          new_status: string;
-          old_status?: string | null;
-          changed_by?: string | null;
-          changed_at?: string;
-        };
-        Update: Record<string, never>;
-        Relationships: EmptyRelationships;
-      };
       // Optional until supabase/migrations/2026-05-25_push_tokens.sql is
       // applied. Absence of a row means push notifications are disabled for
       // that user — there is no "disabled" flag, the row simply doesn't exist.
