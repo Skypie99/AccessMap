@@ -42,20 +42,10 @@ jobs:
         run: npm ci --legacy-peer-deps
 
       - name: Lint
-        run: |
-          if npx eslint --version > /dev/null 2>&1; then
-            npm run lint
-          else
-            echo "ESLint not installed — skipping. Run: npm i -D eslint eslint-config-expo prettier eslint-config-prettier"
-          fi
+        run: npm run lint
 
       - name: Format check
-        run: |
-          if npx prettier --version > /dev/null 2>&1; then
-            npm run format:check
-          else
-            echo "Prettier not installed — skipping. Run: npm i -D prettier eslint-config-prettier"
-          fi
+        run: npm run format:check
 
   test:
     name: Tests

@@ -210,7 +210,7 @@ const makeStyles = (color: ColorTheme) =>
   StyleSheet.create({
     backdrop: {
       flex: 1,
-      backgroundColor: 'rgba(0,0,0,0.4)',
+      backgroundColor: color.scrim,
       justifyContent: 'flex-end',
     },
     card: {

@@ -229,7 +229,7 @@ Prefer these over re-rolling layout. All are themed via `useColor()` and a11y-wi
 - **`Button`** — primary / secondary / ghost × sm / md / lg; press-scale spring (reduced-motion-gated).
 - **`Input`** — themed single-line field: default / focus / error / disabled, optional
   label / helper / error / left-icon / right-slot, ≥44pt, error as a polite live region.
-- **`Card`, `Pill`, `PointsChip`** — surface, chip, and gamification-chip primitives.
+- **`Card`** — surface primitive.
 - **`Skeleton` / `SkeletonRow` / `SkeletonCard`** — content-shaped loading placeholders
   with a reduced-motion-gated shimmer. Prefer over a bare `ActivityIndicator` for
   content that has a shape.

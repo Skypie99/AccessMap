@@ -11,10 +11,6 @@ export type { ButtonKind, ButtonSize } from './Button';
 
 export { Card } from './Card';
 
-export { PointsChip } from './PointsChip';
-
-export { Pill } from './Pill';
-
 export { Input } from './Input';
 export type { InputProps } from './Input';
 
