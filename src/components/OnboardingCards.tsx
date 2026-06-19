@@ -18,7 +18,7 @@ import {
   getNotificationPermission,
   requestNotificationPermission,
 } from '@/lib/pushNotifications';
-import { font, radius, spacing } from '@/theme';
+import { font, radius, spacing, gradient } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 
 /**
@@ -84,6 +84,9 @@ interface Card {
   isFinal?: boolean;
 }
 
+// Icon accents are brand-anchored (not a rainbow): brand blue on dark for the
+// informational/permission slides, with the gold reward accent saved for the
+// final "you're all set" celebration. The granted state stays semantic green.
 const CARDS: Card[] = [
   {
     icon: Compass,
@@ -93,27 +96,27 @@ const CARDS: Card[] = [
   },
   {
     icon: MapIcon,
-    iconColor: '#34d399',
+    iconColor: '#60a5fa',
     title: "Here's how it works",
     body: 'Tap where the barrier is, snap a photo if you can, and rate how bad it is. Other people verify your report or mark it resolved once the issue is fixed.',
   },
   {
     icon: MapPin,
-    iconColor: '#a78bfa',
+    iconColor: '#60a5fa',
     title: 'Show flags near you',
     body: "We’ll use your location to show nearby barriers and place your reports accurately. It’s only used while the app is open — never tracked or stored on our servers.",
     permission: 'location',
   },
   {
     icon: Bell,
-    iconColor: '#fbbf24',
+    iconColor: '#60a5fa',
     title: 'Stay in the loop',
     body: 'Get a heads-up when flags near you are verified or resolved. Totally optional — you can turn this on later in Settings.',
     permission: 'notifications',
   },
   {
     icon: Sparkles,
-    iconColor: '#34d399',
+    iconColor: '#FBB024',
     title: "You're all set",
     body: 'Go explore your neighbourhood. Every barrier you flag helps someone navigate the world a little easier.',
     isFinal: true,
@@ -396,7 +399,7 @@ export default function OnboardingCards({ onDone }: Props) {
               accessibilityHint="Closes the introduction and opens AccessMap"
             >
               <LinearGradient
-                colors={['#3b82f6', '#2563eb', '#1d4ed8']}
+                colors={gradient.brandHero}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={styles.primaryBtn}
@@ -426,7 +429,7 @@ export default function OnboardingCards({ onDone }: Props) {
               accessibilityState={{ disabled: permissionChecking }}
             >
               <LinearGradient
-                colors={['#8b5cf6', '#7c3aed', '#6d28d9']}
+                colors={gradient.brandHero}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={styles.primaryBtn}
@@ -448,7 +451,7 @@ export default function OnboardingCards({ onDone }: Props) {
               }
             >
               <LinearGradient
-                colors={['#3b82f6', '#2563eb', '#1d4ed8']}
+                colors={gradient.brandHero}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={styles.primaryBtn}
@@ -682,7 +685,7 @@ const makeStyles = (color: ColorTheme) =>
       alignItems: 'center',
       minHeight: 44,
       justifyContent: 'center',
-      shadowColor: '#2563eb',
+      shadowColor: '#1466E0',
       shadowOpacity: 0.45,
       shadowRadius: 12,
       shadowOffset: { width: 0, height: 4 },
