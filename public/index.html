@@ -5,6 +5,28 @@
     <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
     <title>%WEB_TITLE%</title>
+
+    <!-- Attribution + share metadata (truthful: a web app, no app-store claim). -->
+    <meta name="description" content="Community-powered accessibility map — report and verify accessibility barriers in your community. A project by Sky Halisky." />
+    <meta name="author" content="Sky Halisky" />
+    <link rel="canonical" href="https://accessmap.skypistudio.com/" />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="AccessMap" />
+    <meta property="og:title" content="AccessMap — community-powered accessibility map" />
+    <meta property="og:description" content="Report and verify accessibility barriers in your community. A project by Sky Halisky." />
+    <meta property="og:url" content="https://accessmap.skypistudio.com/" />
+    <meta property="og:image" content="https://accessmap.skypistudio.com/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="AccessMap — community-powered accessibility map, a project by Sky Halisky" />
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="AccessMap — community-powered accessibility map" />
+    <meta name="twitter:description" content="Report and verify accessibility barriers in your community. A project by Sky Halisky." />
+    <meta name="twitter:image" content="https://accessmap.skypistudio.com/og-image.png" />
     <!-- The `react-native-web` recommended style reset: https://necolas.github.io/react-native-web/docs/setup/#root-element -->
     <style id="expo-reset">
       /* These styles make the body full-height */
@@ -23,6 +45,24 @@
         flex: 1;
       }
     </style>
+    <style id="am-splash-style">
+      /* Instant-paint brand splash shown before the JS bundle mounts. React
+         (createRoot) replaces #root's children when the app mounts, so this
+         needs no removal script and can never get "stuck". Dark text on the
+         default white pre-paint background; AA-legible; reduced-motion safe. */
+      #am-splash {
+        margin: auto;
+        max-width: 32rem;
+        padding: 24px;
+        text-align: center;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      }
+      #am-splash .am-name { margin: 0; font-size: 40px; font-weight: 700; letter-spacing: -0.5px; color: #1466E0; }
+      #am-splash .am-tag { margin: 12px 0 0; font-size: 17px; line-height: 1.5; color: #2B3A55; }
+      #am-splash .am-by { margin: 18px 0 0; font-size: 14px; color: #44546F; }
+      #am-splash .am-by a { color: #0E57C2; font-weight: 600; text-decoration: none; }
+      #am-splash .am-by a:hover, #am-splash .am-by a:focus { text-decoration: underline; }
+    </style>
   </head>
 
   <body>
@@ -30,8 +70,16 @@
     <noscript>
       You need to enable JavaScript to run this app.
     </noscript>
-    <!-- The root element for your Expo app. -->
-    <div id="root"></div>
+    <!-- The root element for your Expo app. The brand splash inside it paints
+         instantly and is replaced by the app on mount (so the first beat reads
+         as AccessMap, not a blank/broken screen). -->
+    <div id="root">
+      <div id="am-splash">
+        <p class="am-name">AccessMap</p>
+        <p class="am-tag">Community-powered accessibility map — report and verify accessibility barriers in your community.</p>
+        <p class="am-by">A project by <a href="https://skypistudio.com" target="_blank" rel="noopener">Sky Halisky</a> · see more work at skypistudio.com</p>
+      </div>
+    </div>
 
     <!-- Service Worker registration for offline map browsing support -->
     <script>
