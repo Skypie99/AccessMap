@@ -274,6 +274,9 @@ export default function LeaderboardScreen({ visible, onClose }: Props) {
       <View style={styles.backdrop}>
         <View style={styles.card} accessibilityViewIsModal>
           <View style={styles.headerRow}>
+            <AppText variant="heading" style={styles.title} accessibilityRole="header">
+              Leaderboard
+            </AppText>
             <Pressable
               onPress={onClose}
               accessibilityRole="button"
@@ -283,11 +286,6 @@ export default function LeaderboardScreen({ visible, onClose }: Props) {
             >
               <X size={18} color={color.textMuted} strokeWidth={2.2} />
             </Pressable>
-            <AppText variant="heading" style={styles.title} accessibilityRole="header">
-              Leaderboard
-            </AppText>
-            {/* spacer keeps title centered */}
-            <View style={styles.closeBtnSpacer} />
           </View>
           <AppText variant="body" style={styles.subtitle}>
             {tab === 'month'
@@ -436,10 +434,10 @@ function makeStyles(color: ColorTheme) {
     },
     title: {
       flex: 1,
-      fontSize: font.size.h2,
+      // Editorial left-aligned big title (Phase 11 — was centered modal style).
+      fontSize: font.size.h1,
       fontWeight: font.weight.bold,
       color: color.textStrong,
-      textAlign: 'center',
       letterSpacing: font.tracking.h1,
     },
     subtitle: {
@@ -447,7 +445,7 @@ function makeStyles(color: ColorTheme) {
       color: color.textMuted,
       paddingHorizontal: spacing.xl,
       paddingBottom: spacing.md,
-      textAlign: 'center',
+      textAlign: 'left',
     },
     closeBtn: {
       width: 44,
