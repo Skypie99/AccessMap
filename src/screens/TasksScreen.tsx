@@ -133,11 +133,6 @@ export default function TasksScreen() {
     void saveScope(next);
   }, []);
 
-  // Min-severity threshold. 0 means "show all" (no filter applied); 2..5
-  // means "show flags with severity >= N". Lets coordinators focus on the
-  // most-urgent issues without leaving the triage screen.
-  const [minSeverity, setMinSeverity] = useState<0 | 2 | 3 | 4 | 5>(0);
-
   // Category quick-filter. null = all categories. Session-only (not
   // persisted) so the filter resets when the user leaves and returns to
   // the tab — keeps triage intent explicit and avoids stale state after
@@ -182,16 +177,15 @@ export default function TasksScreen() {
     void saveTasksSort(next);
   }, []);
 
-  // Apply the mine-only, min-severity, category, and free-text filters on top of the
-  // triage filter so sections always reflect exactly what the list renders.
+  // Apply the mine-only, category, and free-text filters on top of the triage
+  // filter so sections always reflect exactly what the list renders.
   const displayFlags = useMemo(() => {
     let out = flags;
     if (mineOnly && userId) out = out.filter((f) => f.user_id === userId);
-    if (minSeverity > 0) out = out.filter((f) => f.severity >= minSeverity);
     if (categoryFilter) out = out.filter((f) => f.category === categoryFilter);
     out = searchFlags(out, debouncedSearchText);
     return out;
-  }, [flags, mineOnly, userId, minSeverity, categoryFilter, debouncedSearchText]);
+  }, [flags, mineOnly, userId, categoryFilter, debouncedSearchText]);
 
   // Group the visible flags by status so the SectionList can show "Open"
   // and "Verified" as distinct sections. Sections with zero rows are
@@ -836,41 +830,6 @@ export default function TasksScreen() {
           >
             <AppText variant="label" style={[styles.mineChipText, mineOnly && styles.mineChipTextActive]}>Mine</AppText>
           </Pressable>
-        </View>
-      )}
-      {/* Min-severity chip row — show even when not signed in (it works
-          on the public flag list). Hidden if the list is empty so there's
-          nothing to filter against. */}
-      {flags.length > 0 && (
-        <View style={styles.sevFilterRow} accessibilityLabel="Filter by minimum severity">
-          {[
-            { value: 0 as const, label: 'All' },
-            { value: 2 as const, label: '2+' },
-            { value: 3 as const, label: '3+' },
-            { value: 4 as const, label: '4+' },
-            { value: 5 as const, label: '5' },
-          ].map(({ value, label }) => {
-            const active = minSeverity === value;
-            // When active and value > 0, tint with the severity palette so
-            // the threshold's color is immediately recognizable.
-            const activeColor = value === 0 ? color.brand : severityColor(value);
-            return (
-              <Pressable
-                key={value}
-                onPress={() => setMinSeverity(value)}
-                style={[styles.sevChip, active && { backgroundColor: activeColor }]}
-                accessibilityRole="button"
-                accessibilityLabel={
-                  value === 0 ? 'Show all severities' : `Show severity ${value} and above`
-                }
-                accessibilityState={{ selected: active }}
-              >
-                <AppText variant="label" style={[styles.sevChipText, active && styles.sevChipTextActive]}>
-                  {label}
-                </AppText>
-              </Pressable>
-            );
-          })}
         </View>
       )}
       {/* Category quick-filter — horizontally scrollable chip strip
@@ -1778,25 +1737,6 @@ const makeStyles = (color: ColorTheme) =>
       borderRadius: radius.circle,
     },
     searchClearText: { fontSize: font.size.lg, fontWeight: font.weight.semibold, color: color.textMuted },
-    sevFilterRow: {
-      flexDirection: 'row',
-      gap: spacing.xs,
-      paddingHorizontal: spacing.lg,
-      paddingTop: spacing.sm,
-      paddingBottom: spacing.sm,
-    },
-    sevChip: {
-      flexGrow: 1,
-      flexBasis: 0,
-      minHeight: 44, // WCAG 2.5.5: was 36pt (below 44pt project standard)
-      paddingVertical: spacing.sm,
-      borderRadius: radius.circle,
-      backgroundColor: color.surfaceNeutral,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    sevChipText: { fontSize: font.size.sm, fontWeight: font.weight.bold, color: color.text },
-    sevChipTextActive: { color: color.textOnBrand },
     // Category chip strip — horizontally scrollable so all 6 categories
     // fit on narrow phones without truncating labels. Visual weight
     // matches sevChip; brand fill on active so it reads as "selected".
@@ -1855,18 +1795,19 @@ const makeStyles = (color: ColorTheme) =>
     // of the screen so SR users and anyone unfamiliar with long-press can
     // discover the feature. Tinted to match the sort chip's accent.
     selectEntryRow: {
+      // Phase 13: compact, right-aligned secondary action (was a dominating
+      // full-width bordered button) so the cards lead the screen at a glance.
+      alignItems: 'flex-end',
       paddingHorizontal: spacing.lg,
       paddingTop: spacing.sm,
-      paddingBottom: spacing.sm,
+      paddingBottom: 0,
     },
     selectEntryBtn: {
       minHeight: 44,
-      paddingHorizontal: 14,
-      paddingVertical: 10,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.xs,
       borderRadius: radius.circle,
       backgroundColor: color.surfaceNeutral,
-      borderWidth: 1,
-      borderColor: color.brand,
       alignItems: 'center',
       justifyContent: 'center',
     },
