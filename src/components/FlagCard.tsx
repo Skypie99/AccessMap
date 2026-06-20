@@ -142,7 +142,7 @@ const makeStyles = (color: ColorTheme) =>
     card: {
       backgroundColor: color.surface,
       borderRadius: radius.lg,
-      padding: spacing.md,
+      padding: spacing.lg,
       gap: spacing.sm,
       ...shadow.e1,
       marginBottom: spacing.sm,
@@ -164,7 +164,7 @@ const makeStyles = (color: ColorTheme) =>
     },
     category: {
       flex: 1,
-      fontSize: font.size.lg,
+      fontSize: font.size.xl,
       fontWeight: font.weight.semibold,
       color: color.textStrong,
     },
@@ -197,14 +197,14 @@ const makeStyles = (color: ColorTheme) =>
       color: color.textMuted,
     },
     anonChip: {
-      backgroundColor: '#6b7280',
+      backgroundColor: color.anonNeutral,
       borderRadius: radius.circle,
       paddingHorizontal: 6,
       paddingVertical: 2,
     },
     anonChipText: {
       fontSize: font.size.xs,
-      color: '#fff',
+      color: color.textOnBrand,
       fontWeight: font.weight.semibold,
     },
   });

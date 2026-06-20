@@ -17,6 +17,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
+import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { useAuth } from '@/lib/auth';
 import { AccountDeletedSignOutPendingError, deleteAccount } from '@/lib/account';
 import { confirm, notify } from '@/lib/confirm';
@@ -836,7 +837,12 @@ export default function ProfileScreen() {
         contentContainerStyle={[styles.container, { paddingBottom: tabBarHeight + 16 }]}
         refreshControl={<RefreshControl refreshing={loading} onRefresh={load} />}
       >
-        <AppText variant="body" style={styles.email}>Signed in as {user.email}</AppText>
+        <ScreenHeader
+          eyebrow="PROFILE"
+          title={profile?.display_name?.trim() || 'Your profile'}
+          subtitle={`Signed in as ${user.email}`}
+          style={styles.profileHeader}
+        />
 
         <UpdateBanner
           count={updateCount}
@@ -1861,12 +1867,10 @@ const makeStyles = (color: ColorTheme) =>
     signInBtnPressed: { opacity: 0.8 },
     signInBtnText: { color: color.textOnBrand, fontSize: font.size.lg, fontWeight: font.weight.semibold },
     container: { padding: spacing.xxl, gap: spacing.lg, alignItems: 'stretch' },
-    email: {
-      fontSize: font.size.sm,
-      color: color.textMuted,
-      textAlign: 'center',
-      marginBottom: spacing.tight,
-    },
+    // ScreenHeader supplies its own type rhythm; the container already pads
+    // spacing.xxl, so zero the header's own padding to keep it aligned with the
+    // hero/stat cards below (no double indent).
+    profileHeader: { paddingHorizontal: 0, paddingTop: 0, paddingBottom: 0 },
     subtitle: { fontSize: font.size.base, color: color.text },
     heroCard: {
       backgroundColor: color.brand, // fallback under the gradient wash

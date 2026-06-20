@@ -596,8 +596,9 @@ const makeStyles = (color: ColorTheme) =>
       letterSpacing: 0.5,
     },
     title: {
-      fontSize: font.size.h2,
+      fontSize: font.size.h1,
       fontWeight: font.weight.bold,
+      letterSpacing: font.tracking.h1,
       // WCAG 1.4.3: hardcoded white-blue (not theme token) because this screen
       // forces a dark gradient background regardless of the OS light/dark mode.
       // Using color.textStrong in light mode would render dark text on dark bg.
