@@ -1171,7 +1171,7 @@ export default function MapScreen() {
           {/* WCAG 4.1.3: live region ensures AT announces when the count
               changes after a filter toggle (e.g. "12 of 45 shown"). Using
               'polite' so it doesn't interrupt mid-sentence. */}
-          <View style={styles.statusPill} accessibilityLiveRegion="polite">
+          <GlassSurface style={styles.statusPill} borderRadius={radius.circle} accessibilityLiveRegion="polite">
             <AppText variant="label" style={styles.statusText}>
               {loadingFlags
                 ? 'Loading flags…'
@@ -1179,7 +1179,7 @@ export default function MapScreen() {
                   ? `${filteredFlags.length} of ${flags.length} shown`
                   : `${flags.length} flag${flags.length === 1 ? '' : 's'} nearby`}
             </AppText>
-          </View>
+          </GlassSurface>
           {/*
             actionBar groups the icon buttons into one connected surface so
             they feel like a single tool tray instead of four free-floating
@@ -1187,7 +1187,7 @@ export default function MapScreen() {
             inner button drops its own shadow so the row reads as one
             object with internal segments.
           */}
-          <View style={styles.actionBar}>
+          <GlassSurface style={styles.actionBar} borderRadius={radius.circle}>
             <Pressable
               onPress={() => setSearchOpen(true)}
               style={styles.actionBtn}
@@ -1293,7 +1293,7 @@ export default function MapScreen() {
             >
               <LocateFixed size={19} color={color.brand} strokeWidth={2.2} />
             </Pressable>
-          </View>
+          </GlassSurface>
         </View>
 
         {/* Offline notice — parity with TasksScreen. The map still shows the
@@ -2226,8 +2226,9 @@ const makeStyles = (color: ColorTheme) =>
     placeChipGlyph: { fontSize: 14, color: color.brand },
     placeChipText: { fontSize: 13, fontWeight: '600', color: color.brandTextAlt },
     statusPill: {
+      // Frosted glass via <GlassSurface> (Phase 10) — no backgroundColor here,
+      // the surface owns the translucent fill + AA contrast floor.
       alignSelf: 'flex-start',
-      backgroundColor: color.overlaySoft,
       paddingHorizontal: 12,
       paddingVertical: 8,
       borderRadius: radius.circle,
@@ -2259,13 +2260,13 @@ const makeStyles = (color: ColorTheme) =>
     // connected tool tray instead of four free-floating circles. Replaces
     // the cheap "scattered buttons" look the user called out.
     actionBar: {
+      // Frosted glass via <GlassSurface> (Phase 10) — was a near-opaque white
+      // tray; now translucent + blurred, matching the filter panel + legend.
       flexDirection: 'row',
-      backgroundColor: color.overlay,
       borderRadius: radius.circle,
       paddingHorizontal: 4,
       paddingVertical: 2,
       alignItems: 'center',
-      // Hairline edge so the white tray reads as a crisp object over any map tile.
       borderWidth: StyleSheet.hairlineWidth,
       borderColor: color.borderSubtle,
       ...shadow.e2,
