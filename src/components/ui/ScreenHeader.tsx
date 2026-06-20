@@ -27,7 +27,8 @@ interface ScreenHeaderProps {
   subtitle?: string;
   /** Right-aligned controls on the title row (e.g. menu / Feedback buttons). */
   actions?: React.ReactNode;
-  /** Display title size. Default 34. */
+  /** Display title size. Default 40 — big, confident editorial display type
+   *  (at ≥40 AppText uses the tightest display tracking for a dramatic header). */
   titleSize?: number;
   /** Override/extend the outer container style (e.g. padding tweaks). */
   style?: StyleProp<ViewStyle>;
@@ -38,7 +39,7 @@ export function ScreenHeader({
   eyebrow,
   subtitle,
   actions,
-  titleSize = 34,
+  titleSize = 40,
   style,
 }: ScreenHeaderProps) {
   const color = useColor();
