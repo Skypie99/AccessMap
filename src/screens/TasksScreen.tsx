@@ -3,13 +3,13 @@ import {
   AccessibilityInfo,
   ActivityIndicator,
   Alert,
+  Animated,
   Image,
   Pressable,
   RefreshControl,
   ScrollView,
   SectionList,
   StyleSheet,
-  Text,
   TextInput,
   View,
 } from 'react-native';
@@ -58,12 +58,14 @@ import type { RootTabParamList } from '@/navigation/RootNavigator';
 import FlagDetailModal, { type DetailAction } from '@/components/FlagDetailModal';
 import PhotoLightboxModal from '@/components/PhotoLightboxModal';
 import { AppText } from '@/components/ui/AppText';
+import { PressableScale } from '@/components/ui/PressableScale';
 import { Skeleton, SkeletonCard } from '@/components/ui/Skeleton';
 import { StatusBadge } from '@/components/StatusBadge';
 import CategoryIcon from '@/components/CategoryIcon';
 import { hapticSelection } from '@/lib/haptics';
 import { AlertTriangle, Check, ChevronRight, MapPin, Search, Sparkles, WifiOff, X } from 'lucide-react-native';
-import { font, radius, shadow, size, spacing } from '@/theme';
+import { font, motion, radius, shadow, size, spacing } from '@/theme';
+import { useReducedMotion } from '@/lib/accessibility';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 
 // Statuses Tasks shows. Even if the provider's `statuses` is widened by the
@@ -356,6 +358,24 @@ export default function TasksScreen() {
     setFlash(msg);
     flashTimer.current = setTimeout(() => setFlash(null), 2200);
   }, []);
+
+  // Reward pill entrance — a gentle slide-down + fade when a flash appears,
+  // reduced-motion gated (snaps to rest under Reduce Motion). Resets per flash.
+  const reducedMotion = useReducedMotion();
+  const flashAnim = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    if (!flash) return;
+    if (reducedMotion) {
+      flashAnim.setValue(1);
+      return;
+    }
+    flashAnim.setValue(0);
+    Animated.spring(flashAnim, {
+      toValue: 1,
+      useNativeDriver: true,
+      ...motion.spring.sheet,
+    }).start();
+  }, [flash, reducedMotion, flashAnim]);
 
   // Run a bulk action (verify or resolve) across the current selection.
   // Iterates and calls updateFlagStatus per id — keeps the code simple and
@@ -677,14 +697,25 @@ export default function TasksScreen() {
   return (
     <View style={styles.screen}>
       {flash && (
-        <View style={styles.flashWrap} pointerEvents="none">
+        <Animated.View
+          style={[
+            styles.flashWrap,
+            {
+              opacity: flashAnim,
+              transform: [
+                { translateY: flashAnim.interpolate({ inputRange: [0, 1], outputRange: [-10, 0] }) },
+              ],
+            },
+          ]}
+          pointerEvents="none"
+        >
           <View style={styles.flashPill}>
             {/* accessibilityLiveRegion covers Android TalkBack;
                 iOS VoiceOver handled by announceForAccessibility at each call site.
                 WCAG 4.1.3 — status messages must reach all AT. */}
             <AppText variant="label" style={styles.flashText} accessibilityLiveRegion="polite">{flash}</AppText>
           </View>
-        </View>
+        </Animated.View>
       )}
       {errorBannerText && (
         <Pressable
@@ -1397,7 +1428,7 @@ const FlagCard = memo(function FlagCard({
       {!selectionActive && (
         <View style={styles.cardActions}>
           {flag.status === 'open' && (
-            <Pressable
+            <PressableScale
               disabled={isBusy}
               onPress={() => onSetStatus(flag.id, 'verified', isOwn)}
               style={[styles.actionBtn, styles.verifyBtn]}
@@ -1406,9 +1437,9 @@ const FlagCard = memo(function FlagCard({
               accessibilityState={{ disabled: isBusy }}
             >
               <AppText variant="label" style={styles.verifyText}>Verify</AppText>
-            </Pressable>
+            </PressableScale>
           )}
-          <Pressable
+          <PressableScale
             disabled={isBusy}
             onPress={() => onSetStatus(flag.id, 'resolved', isOwn)}
             style={[styles.actionBtn, styles.resolveBtn]}
@@ -1417,8 +1448,8 @@ const FlagCard = memo(function FlagCard({
             accessibilityState={{ disabled: isBusy }}
           >
             <AppText variant="label" style={styles.resolveText}>Resolved</AppText>
-          </Pressable>
-          <Pressable
+          </PressableScale>
+          <PressableScale
             disabled={isBusy}
             onPress={() => onSetStatus(flag.id, 'rejected', isOwn)}
             style={[styles.actionBtn, styles.rejectBtn]}
@@ -1427,7 +1458,7 @@ const FlagCard = memo(function FlagCard({
             accessibilityState={{ disabled: isBusy }}
           >
             <AppText variant="label" style={styles.rejectText}>Reject</AppText>
-          </Pressable>
+          </PressableScale>
           <Pressable
             disabled={isBusy}
             onPress={() => onShowDetails(flag)}
