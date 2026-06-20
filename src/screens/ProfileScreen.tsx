@@ -16,6 +16,7 @@ import { RemoteImage } from '@/components/ui/RemoteImage';
 import * as ImagePicker from 'expo-image-picker';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
+import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { useAuth } from '@/lib/auth';
 import { AccountDeletedSignOutPendingError, deleteAccount } from '@/lib/account';
 import { confirm, notify } from '@/lib/confirm';
@@ -149,6 +150,7 @@ export default function ProfileScreen() {
   const styles = makeStyles(color);
   const reduceMotion = useReducedMotion();
   const navigation = useNavigation<BottomTabNavigationProp<RootTabParamList, 'Profile'>>();
+  const tabBarHeight = useBottomTabBarHeight();
   const { user, loading: authLoading } = useAuth();
   const [profile, setProfile] = useState<UserRow | null>(null);
   const [stats, setStats] = useState<Stats>({
@@ -831,7 +833,7 @@ export default function ProfileScreen() {
     <>
       <ScrollView
         style={styles.screen}
-        contentContainerStyle={styles.container}
+        contentContainerStyle={[styles.container, { paddingBottom: tabBarHeight + 16 }]}
         refreshControl={<RefreshControl refreshing={loading} onRefresh={load} />}
       >
         <AppText variant="body" style={styles.email}>Signed in as {user.email}</AppText>

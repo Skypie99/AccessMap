@@ -15,6 +15,7 @@ import {
 import * as Location from 'expo-location';
 import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
+import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { font, radius, shadow, spacing } from '@/theme';
 import { errorMessage } from '@/lib/errors';
@@ -197,6 +198,9 @@ export default function MapScreen() {
   // L9: needed to reset route.params.flagId after a deep link is handled —
   // see the deep-link effect below.
   const navigation = useNavigation<BottomTabNavigationProp<RootTabParamList, 'FullMap'>>();
+  // Phase 7a: the bottom tab bar is now absolute (frosted glass) on native, so
+  // lift the bottom overlay (FAB tray + legend) above it.
+  const tabBarHeight = useBottomTabBarHeight();
   const [location, setLocation] = useState<Coords | null>(null);
   const [locating, setLocating] = useState(true);
   const [permissionDenied, setPermissionDenied] = useState(false);
@@ -1162,7 +1166,7 @@ export default function MapScreen() {
         heatmapMode={HEATMAP_MODE}
       />
 
-      <View pointerEvents="box-none" style={styles.overlay}>
+      <View pointerEvents="box-none" style={[styles.overlay, { paddingBottom: tabBarHeight + 16 }]}>
         <View style={styles.topRow}>
           {/* WCAG 4.1.3: live region ensures AT announces when the count
               changes after a filter toggle (e.g. "12 of 45 shown"). Using

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Platform, Pressable, StyleSheet } from 'react-native';
+import { Platform, Pressable, StyleSheet, View } from 'react-native';
+import { BlurView } from 'expo-blur';
 import { AppText } from '@/components/ui/AppText';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
@@ -18,6 +19,7 @@ import { SharedModalsProvider, useSharedModals } from '@/lib/sharedModalsContext
 import { DrawerProvider, useDrawer } from '@/lib/drawerContext';
 import { font, icon, radius, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
+import { useReduceTransparency } from '@/lib/accessibility';
 import FeedbackModal from '@/components/FeedbackModal';
 import HelpModal from '@/components/HelpModal';
 import ChangelogModal from '@/components/ChangelogModal';
@@ -85,6 +87,34 @@ const tabIcon =
   function TabIcon({ color: tintColor, size }: { color: string; size: number }) {
     return <Icon size={size} color={tintColor} strokeWidth={2.2} />;
   };
+
+// Dark contrast floor over the tab-bar blur. Kept close to the opaque
+// tabBarBg (rgba(7,11,24,0.92)) so the active/inactive tints stay legible over
+// any content scrolling underneath — a conservative AA default; the headline
+// device check is legibility over the live map. (Same inline-rgba nav-chrome
+// idiom the drawer uses.)
+const TAB_BAR_GLASS_FLOOR = 'rgba(7,11,24,0.85)';
+
+/**
+ * Frosted-glass background for the bottom tab bar (native only — Phase 7a).
+ * Rendered behind the bar's buttons via screenOptions.tabBarBackground. The
+ * bar is positioned absolute + transparent on native so this blur shows the
+ * content scrolling underneath. Honors Reduce Transparency (opaque fallback,
+ * no blur) — mirrors GlassSurface's accessibility contract.
+ */
+function TabBarGlass() {
+  const color = useColor();
+  const reduceTransparency = useReduceTransparency();
+  if (reduceTransparency) {
+    return <View style={[StyleSheet.absoluteFill, { backgroundColor: color.tabBarBg }]} />;
+  }
+  return (
+    <View style={StyleSheet.absoluteFill}>
+      <BlurView intensity={24} tint="dark" style={StyleSheet.absoluteFill} />
+      <View style={[StyleSheet.absoluteFill, { backgroundColor: TAB_BAR_GLASS_FLOOR }]} />
+    </View>
+  );
+}
 
 interface Props {
   // Which tab to open on first render. Used by App.tsx to honor the user's
@@ -219,19 +249,29 @@ function NavInner({ initialRouteName }: { initialRouteName: keyof RootTabParamLi
         headerRight: renderHeaderRight,
         tabBarActiveTintColor: color.tabBarActiveTint,
         tabBarInactiveTintColor: color.tabBarInactiveTint,
+        // Native: a frosted-glass background behind the bar (Phase 7a). On web
+        // we keep the CSS backdropFilter path in tabBarStyle instead.
+        tabBarBackground: Platform.OS === 'web' ? undefined : () => <TabBarGlass />,
         tabBarStyle: {
           borderTopWidth: 1,
           borderTopColor: color.navBorder,
-          backgroundColor: color.tabBarBg,
           // Grow by the bottom safe-area inset so the home indicator never
-          // overlaps the tab labels. The hardcoded height had overridden
-          // React Navigation's automatic inset handling.
+          // overlaps the tab labels.
           height: 62 + insets.bottom,
           paddingBottom: 8 + insets.bottom,
           paddingTop: 6,
           ...(Platform.OS === 'web'
-            ? { backdropFilter: 'blur(20px) saturate(160%)' } as object
-            : {}),
+            ? {
+                backgroundColor: color.tabBarBg,
+                backdropFilter: 'blur(20px) saturate(160%)',
+              } as object
+            : {
+                // Transparent + absolute so the frosted TabBarGlass shows the
+                // map/content scrolling underneath. Screens add bottom padding
+                // (useBottomTabBarHeight) so nothing hides behind the bar.
+                position: 'absolute',
+                backgroundColor: 'transparent',
+              }),
         },
         tabBarLabelStyle: {
           fontSize: font.size.xs,

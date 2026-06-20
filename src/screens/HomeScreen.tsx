@@ -20,6 +20,7 @@ import { Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
+import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import {
   ChevronRight,
   LocateFixed,
@@ -89,10 +90,16 @@ export default function HomeScreen() {
   const color = useColor();
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<HomeNav>();
+  const tabBarHeight = useBottomTabBarHeight();
   const drawer = useDrawer();
   const { setOpen: setSharedModal } = useSharedModals();
   const { flags, loading, error, isOfflineCache, refresh } = useFlags();
   const styles = makeStyles(color);
+
+  // The tab bar is absolute (frosted) on native, so float the Report pill +
+  // scroll padding above it. On web the bar stays in normal flow (reserves its
+  // own space), so the safe-area inset is the right offset there.
+  const bottomInset = Platform.OS === 'web' ? insets.bottom : tabBarHeight;
 
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchCenter, setSearchCenter] = useState<LatLng | null>(null);
@@ -170,7 +177,7 @@ export default function HomeScreen() {
       )}
       <ScrollView
         style={styles.scroll}
-        contentContainerStyle={{ paddingTop: insets.top + spacing.sm, paddingBottom: insets.bottom + 96 }}
+        contentContainerStyle={{ paddingTop: insets.top + spacing.sm, paddingBottom: bottomInset + 96 }}
         showsVerticalScrollIndicator={false}
       >
         {/* Editorial header — menu + Feedback fold in (no dark nav bar here). */}
@@ -341,7 +348,7 @@ export default function HomeScreen() {
 
       {/* Report pill — floats over the scroll. */}
       <PressableScale
-        style={[styles.reportPill, { bottom: insets.bottom + spacing.md }]}
+        style={[styles.reportPill, { bottom: bottomInset + spacing.md }]}
         onPress={() => navigation.navigate('FullMap', { openReport: true, ts: Date.now() })}
         haptic="medium"
         accessibilityRole="button"
