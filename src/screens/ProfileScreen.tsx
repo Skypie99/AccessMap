@@ -729,7 +729,7 @@ export default function ProfileScreen() {
     setReportsOpen(false);
     setWatchedOpen(false);
     setActivityOpen(false);
-    navigation.navigate('Map', {
+    navigation.navigate('FullMap', {
       focusFlag: { id: flag.id, lat: flag.lat, lng: flag.lng },
       ts: Date.now(),
     });
@@ -741,7 +741,7 @@ export default function ProfileScreen() {
   const handleJumpToNearest = useCallback(() => {
     if (!nearestUnresolved) return;
     const { flag } = nearestUnresolved;
-    navigation.navigate('Map', {
+    navigation.navigate('FullMap', {
       focusFlag: { id: flag.id, lat: flag.lat, lng: flag.lng },
       ts: Date.now(),
     });
@@ -1224,7 +1224,7 @@ export default function ProfileScreen() {
           onSelect={(flag) => {
             // Reuse the existing focusFlag navigation pattern Tasks→Map
             // and the Nearest-Unresolved card already use.
-            navigation.navigate('Map', {
+            navigation.navigate('FullMap', {
               focusFlag: { id: flag.id, lat: flag.lat, lng: flag.lng },
               ts: Date.now(),
             });

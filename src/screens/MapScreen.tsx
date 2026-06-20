@@ -193,10 +193,10 @@ export default function MapScreen() {
   const color = useColor();
   const styles = makeStyles(color);
   const mapRef = useRef<PlatformMapHandle | null>(null);
-  const route = useRoute<RouteProp<RootTabParamList, 'Map'>>();
+  const route = useRoute<RouteProp<RootTabParamList, 'FullMap'>>();
   // L9: needed to reset route.params.flagId after a deep link is handled —
   // see the deep-link effect below.
-  const navigation = useNavigation<BottomTabNavigationProp<RootTabParamList, 'Map'>>();
+  const navigation = useNavigation<BottomTabNavigationProp<RootTabParamList, 'FullMap'>>();
   const [location, setLocation] = useState<Coords | null>(null);
   const [locating, setLocating] = useState(true);
   const [permissionDenied, setPermissionDenied] = useState(false);
@@ -1011,6 +1011,15 @@ export default function MapScreen() {
     void refreshFlagsIfStale();
     return () => clearTimeout(t);
   }, [route.params?.focusFlag, route.params?.ts, refreshFlagsIfStale]);
+
+  // Phase 7a: Home's "Report" pill navigates here with openReport:true so the
+  // report sheet opens on arrival. Clear the param right away (mirroring the L9
+  // flagId reset) so it doesn't re-fire on a later re-focus of this route.
+  useEffect(() => {
+    if (!route.params?.openReport) return;
+    setReportOpen(true);
+    navigation.setParams({ openReport: undefined });
+  }, [route.params?.openReport, navigation]);
 
   // Deep-link arrival: accessmap://flag/{id} → React Navigation parses the
   // id into route.params.flagId. Fetch the flag's lat/lng on the fly, then

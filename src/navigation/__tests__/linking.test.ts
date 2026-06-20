@@ -6,10 +6,11 @@
  *        (no NavigationContainer mounted to receive the 'url' event).
  *        getInitialURL prefers the pending URL, falls back to RN's
  *        Linking.getInitialURL, and the Gate-style getter is consume-once.
- *  - L10: the Map path is `flag/:flagId?` — the OPTIONAL param keeps
- *        getPathFromState from serializing the paramless Map route as
+ *  - L10: the FullMap path is `flag/:flagId?` — the OPTIONAL param keeps
+ *        getPathFromState from serializing the paramless FullMap route as
  *        /flag/undefined in the web address bar, while `flag/abc` still
- *        parses to { flagId: 'abc' }.
+ *        parses to { flagId: 'abc' }. (FullMap was renamed from `Map` in
+ *        Phase 7a — the full interactive map is now a hidden route.)
  *
  * getStateFromPath / getPathFromState are React Navigation's own pure
  * helpers, so this exercises the exact parse/serialize logic the container
@@ -87,16 +88,16 @@ describe('createLinking — getInitialURL (L8 warm link while signed out)', () =
 describe('linking config — optional :flagId path param (L10)', () => {
   const { config } = createLinking();
 
-  it("getStateFromPath('flag/abc') resolves the Map screen with flagId", () => {
+  it("getStateFromPath('flag/abc') resolves the FullMap screen with flagId", () => {
     const state = getStateFromPath('flag/abc', config);
     expect(state).toBeTruthy();
     const route = state?.routes[0];
-    expect(route?.name).toBe('Map');
+    expect(route?.name).toBe('FullMap');
     expect(route?.params).toEqual(expect.objectContaining({ flagId: 'abc' }));
   });
 
-  it('serializing the Map route WITHOUT a flagId yields no "undefined" segment', () => {
-    const paramless = { routes: [{ name: 'Map' }] } as PartialState<NavigationState>;
+  it('serializing the FullMap route WITHOUT a flagId yields no "undefined" segment', () => {
+    const paramless = { routes: [{ name: 'FullMap' }] } as PartialState<NavigationState>;
     const path = getPathFromState(paramless, config);
     expect(path).not.toContain('undefined');
   });
@@ -108,7 +109,7 @@ describe('linking config — optional :flagId path param (L10)', () => {
     expect(path).toContain('flag/abc');
     expect(path).not.toContain('undefined');
     const state2 = getStateFromPath(path, config);
-    expect(state2?.routes[0]?.name).toBe('Map');
+    expect(state2?.routes[0]?.name).toBe('FullMap');
     expect(state2?.routes[0]?.params).toEqual(expect.objectContaining({ flagId: 'abc' }));
   });
 });

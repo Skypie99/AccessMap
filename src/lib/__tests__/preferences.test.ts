@@ -9,11 +9,12 @@
  *
  * What this protects against:
  *  - A typo in the mockStorage key prefix that would silently reset every user
- *    to 'Map' on next launch (we'd never notice until someone complained).
+ *    to 'Home' on next launch (we'd never notice until someone complained).
  *  - A regression where the validator (`isDefaultTab`) lets through a string
  *    that isn't a real tab — the navigator would then crash on startup.
- *  - The defensive "return 'Map' if mockStorage rejects" path that keeps the
+ *  - The defensive "return 'Home' if mockStorage rejects" path that keeps the
  *    app launchable even when AsyncStorage is broken.
+ *  - The Phase 7a migration: a stored 'Map' (the old tab) resolves to 'Home'.
  */
 
 import { DEFAULT_TABS, getDefaultTab, setDefaultTab } from '../preferences';
@@ -53,15 +54,15 @@ beforeEach(() => {
 
 describe('DEFAULT_TABS', () => {
   it('lists the three real tabs in the canonical order', () => {
-    expect(DEFAULT_TABS).toEqual(['Map', 'Tasks', 'Profile']);
+    expect(DEFAULT_TABS).toEqual(['Home', 'Tasks', 'Profile']);
   });
 });
 
 describe('getDefaultTab', () => {
   const user = 'user-1';
 
-  it("returns 'Map' the first time we ask (no stored value yet)", async () => {
-    expect(await getDefaultTab(user)).toBe('Map');
+  it("returns 'Home' the first time we ask (no stored value yet)", async () => {
+    expect(await getDefaultTab(user)).toBe('Home');
   });
 
   it('returns a previously-set tab', async () => {
@@ -69,15 +70,22 @@ describe('getDefaultTab', () => {
     expect(await getDefaultTab(user)).toBe('Tasks');
   });
 
-  it("falls back to 'Map' for a stored value that isn't a known tab", async () => {
-    // Simulate corrupt mockStorage / older schema / hand-edited devtools value.
-    mockStorage['@accessmap/default_tab_v1:user-1'] = 'SomethingElse';
-    expect(await getDefaultTab(user)).toBe('Map');
+  it("migrates a stored 'Map' (the old tab) to 'Home'", async () => {
+    // Phase 7a renamed the Map tab to Home (the full map became a hidden
+    // route). Existing users with 'Map' saved must keep a valid landing tab.
+    mockStorage['@accessmap/default_tab_v1:user-1'] = 'Map';
+    expect(await getDefaultTab(user)).toBe('Home');
   });
 
-  it("falls back to 'Map' if the underlying mockStorage rejects", async () => {
+  it("falls back to 'Home' for a stored value that isn't a known tab", async () => {
+    // Simulate corrupt mockStorage / older schema / hand-edited devtools value.
+    mockStorage['@accessmap/default_tab_v1:user-1'] = 'SomethingElse';
+    expect(await getDefaultTab(user)).toBe('Home');
+  });
+
+  it("falls back to 'Home' if the underlying mockStorage rejects", async () => {
     mockThrowNext = true;
-    expect(await getDefaultTab(user)).toBe('Map');
+    expect(await getDefaultTab(user)).toBe('Home');
   });
 
   it('keeps preferences keyed per user (no cross-contamination)', async () => {

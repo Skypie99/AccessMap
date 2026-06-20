@@ -1,13 +1,11 @@
 import React, { useState } from 'react';
-import { Platform, Pressable, StyleSheet, View } from 'react-native';
+import { Platform, Pressable, StyleSheet } from 'react-native';
 import { AppText } from '@/components/ui/AppText';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
+  Home as HomeIcon,
   ListChecks as TasksIcon,
-  Map as MapIcon,
   Menu as MenuIcon,
-  Settings as SettingsIcon,
-  Shield as AdminIcon,
   User as ProfileIcon,
   type LucideIcon,
 } from 'lucide-react-native';
@@ -17,6 +15,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useAuth } from '@/lib/auth';
 import { FlagsProvider, useFlags } from '@/lib/flagsStore';
 import { SharedModalsProvider, useSharedModals } from '@/lib/sharedModalsContext';
+import { DrawerProvider, useDrawer } from '@/lib/drawerContext';
 import { font, icon, radius, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import FeedbackModal from '@/components/FeedbackModal';
@@ -24,6 +23,7 @@ import HelpModal from '@/components/HelpModal';
 import ChangelogModal from '@/components/ChangelogModal';
 import MyFeedbackModal from '@/components/MyFeedbackModal';
 import { useIsAdmin } from '@/lib/admin';
+import HomeScreen from '@/screens/HomeScreen';
 import MapScreen from '@/screens/MapScreen';
 import TasksScreen from '@/screens/TasksScreen';
 import ProfileScreen from '@/screens/ProfileScreen';
@@ -33,7 +33,16 @@ import ErrorBoundary from '@/components/ErrorBoundary';
 import { createLinking, type TakePendingUrl } from './linking';
 
 export type RootTabParamList = {
-  Map:
+  // Home is the editorial landing surface (Phase 7a). It renders HomeScreen
+  // with its own in-screen header (headerShown:false). The full interactive
+  // map lives at the hidden `FullMap` route below.
+  Home: undefined;
+  // FullMap renders MapScreen — the full interactive map. Hidden from the tab
+  // bar (tabBarButton:()=>null) and reached from Home ("Open full map"), from
+  // in-app focus-flag links (Tasks/Profile rows), and from the
+  // accessmap://flag/{id} share/push deep-link. Carries the focus params that
+  // used to live on the old `Map` route.
+  FullMap:
     | {
         focusFlag?: { id: string; lat: number; lng: number };
         ts?: number;
@@ -41,19 +50,22 @@ export type RootTabParamList = {
         // accessmap://flag/{id} URL, React Navigation parses {id} into
         // this field. MapScreen fetches the flag's lat/lng on the fly
         // and animates to it — different from `focusFlag` which is
-        // passed in-app (Tasks → Map) and already has the coordinates.
+        // passed in-app and already has the coordinates.
         flagId?: string;
+        // Phase 7a: Home's "Report" pill sets this so MapScreen opens its
+        // report sheet on arrival (then clears the param).
+        openReport?: boolean;
       }
     | undefined;
   Tasks: undefined;
   Profile: undefined;
-  // Settings is the 4th tab — a hub for app-level meta (notifications,
-  // help, what's new, feedback, about, sign out). Adding it to the param
-  // list keeps DefaultTab (in lib/preferences) type-safe; existing stored
-  // values for Map / Tasks / Profile continue to round-trip unchanged.
+  // Settings + Admin are no longer tab-bar items (Phase 7a 3-tab layout) —
+  // they're hidden routes reached from the hamburger drawer via
+  // navigationRef.navigate(...). Kept in the param list so navigation +
+  // DefaultTab (lib/preferences) stay type-safe.
   Settings: undefined;
-  // Admin tab is only rendered when the current user has is_admin = true.
-  // The screen enforces the gate independently as defense-in-depth.
+  // Admin is only registered when is_admin = true. The screen enforces the
+  // gate independently as defense-in-depth.
   Admin: undefined;
 };
 
@@ -76,8 +88,8 @@ const tabIcon =
 
 interface Props {
   // Which tab to open on first render. Used by App.tsx to honor the user's
-  // saved default-tab preference. Defaults to 'Map' to preserve the original
-  // behavior when no preference has been set.
+  // saved default-tab preference. Defaults to 'Home' (the editorial landing
+  // surface) when no preference has been set.
   initialRouteName?: keyof RootTabParamList;
   // L8: consume-once getter for a warm deep link the Gate captured while the
   // user was signed out (no NavigationContainer mounted to receive it).
@@ -86,7 +98,7 @@ interface Props {
   takePendingUrl?: TakePendingUrl;
 }
 
-export default function RootNavigator({ initialRouteName = 'Map', takePendingUrl }: Props) {
+export default function RootNavigator({ initialRouteName = 'Home', takePendingUrl }: Props) {
   // Built ONCE per mount via the lazy useState initializer —
   // NavigationContainer reads `linking` on mount only, and a fresh object
   // every render would be wasted work (and a re-subscribe footgun if React
@@ -117,8 +129,16 @@ function FlagsProviderWithAuth({ initialRouteName }: { initialRouteName: keyof R
           See src/lib/sharedModalsContext.tsx for the rationale +
           which modals were intentionally left per-screen. */}
       <SharedModalsProvider>
-        <NavInner initialRouteName={initialRouteName} />
-        <SharedModalsHost />
+        {/* DrawerProvider holds the single "is the hamburger drawer open"
+            slot so the menu button can live in multiple headers (the
+            editorial Home header + Tasks/Profile/FullMap) without mounting
+            several <HamburgerDrawer> copies. The drawer itself mounts ONCE
+            in <DrawerHost />, mirroring <SharedModalsHost />. */}
+        <DrawerProvider>
+          <NavInner initialRouteName={initialRouteName} />
+          <SharedModalsHost />
+          <DrawerHost />
+        </DrawerProvider>
       </SharedModalsProvider>
     </FlagsProvider>
   );
@@ -132,38 +152,29 @@ function FlagsProviderWithAuth({ initialRouteName }: { initialRouteName: keyof R
  */
 function NavInner({ initialRouteName }: { initialRouteName: keyof RootTabParamList }) {
   const { setOpen } = useSharedModals();
+  const drawer = useDrawer();
   const color = useColor();
   const styles = makeStyles(color);
   const insets = useSafeAreaInsets();
-  const [drawerOpen, setDrawerOpen] = useState(false);
   const isAdmin = useIsAdmin();
 
   const { flags } = useFlags();
   const openCount = flags.filter((f) => f.status === 'open').length;
   const tasksBadge: number | undefined = openCount > 0 ? Math.min(openCount, 99) : undefined;
 
-  const renderHamburger = () => (
-    <>
-      <Pressable
-        onPress={() => setDrawerOpen(true)}
-        style={({ pressed }) => [styles.hamburgerBtn, pressed && styles.hamburgerBtnPressed]}
-        accessibilityRole="button"
-        accessibilityLabel="Open navigation menu"
-        hitSlop={8}
-      >
-        <MenuIcon size={icon.lg} color={color.headerFg} strokeWidth={2.2} />
-      </Pressable>
-      <HamburgerDrawer
-        open={drawerOpen}
-        onClose={() => setDrawerOpen(false)}
-        // F11: guest/web "Sign in" jumps to the Profile tab, which hosts the
-        // sign-in modal (previously the item only closed the drawer — a dead end).
-        onSignIn={() => {
-          setDrawerOpen(false);
-          if (navigationRef.isReady()) navigationRef.navigate('Profile');
-        }}
-      />
-    </>
+  // Just the menu button — the drawer itself is mounted once in <DrawerHost />.
+  // Used as headerLeft on every dark-header screen; Home renders its own copy
+  // inside the editorial header (it has headerShown:false).
+  const renderMenuButton = () => (
+    <Pressable
+      onPress={() => drawer.setOpen(true)}
+      style={({ pressed }) => [styles.hamburgerBtn, pressed && styles.hamburgerBtnPressed]}
+      accessibilityRole="button"
+      accessibilityLabel="Open navigation menu"
+      hitSlop={8}
+    >
+      <MenuIcon size={icon.lg} color={color.headerFg} strokeWidth={2.2} />
+    </Pressable>
   );
 
   const renderHeaderRight = () => (
@@ -230,33 +241,54 @@ function NavInner({ initialRouteName }: { initialRouteName: keyof RootTabParamLi
         },
       }}
     >
+      {/* Visible tabs: Home · Tasks · Profile (Phase 7a 3-tab layout). */}
       <Tab.Screen
-        name="Map"
-        component={MapScreen}
-        options={{ tabBarIcon: tabIcon(MapIcon), headerLeft: renderHamburger }}
+        name="Home"
+        component={HomeScreen}
+        // Home owns its own editorial header (menu + Feedback folded in), so
+        // the dark nav header is hidden here.
+        options={{ tabBarIcon: tabIcon(HomeIcon), headerShown: false }}
       />
       <Tab.Screen
         name="Tasks"
         component={TasksScreen}
-        options={{ tabBarIcon: tabIcon(TasksIcon), tabBarBadge: tasksBadge }}
+        options={{ tabBarIcon: tabIcon(TasksIcon), tabBarBadge: tasksBadge, headerLeft: renderMenuButton }}
       />
       <Tab.Screen
         name="Profile"
         component={ProfileScreen}
-        options={{ tabBarIcon: tabIcon(ProfileIcon) }}
+        options={{ tabBarIcon: tabIcon(ProfileIcon), headerLeft: renderMenuButton }}
+      />
+      {/* Hidden routes — registered + navigable, but no tab-bar button. The
+          full map is reached from Home / focus-flag links / the deep link;
+          Settings + Admin are reached from the hamburger drawer. */}
+      <Tab.Screen
+        name="FullMap"
+        component={MapScreen}
+        options={{
+          title: 'Map',
+          headerLeft: renderMenuButton,
+          tabBarButton: () => null,
+          tabBarItemStyle: { display: 'none' },
+        }}
       />
       <Tab.Screen
         name="Settings"
         component={SettingsScreen}
-        options={{ tabBarIcon: tabIcon(SettingsIcon) }}
+        options={{
+          headerLeft: renderMenuButton,
+          tabBarButton: () => null,
+          tabBarItemStyle: { display: 'none' },
+        }}
       />
       {isAdmin === true && (
         <Tab.Screen
           name="Admin"
           component={AdminScreen}
           options={{
-            tabBarIcon: tabIcon(AdminIcon),
-            tabBarLabel: 'Admin',
+            headerLeft: renderMenuButton,
+            tabBarButton: () => null,
+            tabBarItemStyle: { display: 'none' },
           }}
         />
       )}
@@ -282,6 +314,34 @@ function SharedModalsHost() {
       <FeedbackModal visible={open === 'feedback'} onClose={close} />
       <MyFeedbackModal visible={open === 'myFeedback'} onClose={close} />
     </>
+  );
+}
+
+/**
+ * Single mount-point for the hamburger drawer (Phase 7a). Reads the open flag
+ * from DrawerContext and routes its menu actions through the container-level
+ * navigationRef so items can reach the hidden tab routes (Settings / Admin)
+ * and the Profile sign-in — exactly the pattern the old inline onSignIn used.
+ */
+function DrawerHost() {
+  const { open, setOpen } = useDrawer();
+  return (
+    <HamburgerDrawer
+      open={open}
+      onClose={() => setOpen(false)}
+      // F11: guest/web "Sign in" jumps to the Profile tab, which hosts the
+      // sign-in modal.
+      onSignIn={() => {
+        setOpen(false);
+        if (navigationRef.isReady()) navigationRef.navigate('Profile');
+      }}
+      // Phase 7a: Settings + Admin moved off the tab bar into the drawer.
+      // They're hidden tab routes, still reachable via navigationRef.
+      onNavigate={(tab) => {
+        setOpen(false);
+        if (navigationRef.isReady()) navigationRef.navigate(tab);
+      }}
+    />
   );
 }
 

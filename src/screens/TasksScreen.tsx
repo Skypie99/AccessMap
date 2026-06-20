@@ -606,7 +606,7 @@ export default function TasksScreen() {
 
   const handleViewOnMap = useCallback(
     (target: FlagRow) => {
-      navigation.navigate('Map', {
+      navigation.navigate('FullMap', {
         focusFlag: { id: target.id, lat: target.lat, lng: target.lng },
         ts: Date.now(),
       });

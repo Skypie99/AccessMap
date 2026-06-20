@@ -1,9 +1,11 @@
 /**
  * HamburgerDrawer — left slide-in navigation drawer.
  *
- * Triggered from the Map screen header. Shows top-level nav links
- * (Resources, How To Help, About the App) and a sign-in/sign-out action.
- * Each menu item opens its own full-screen modal overlay.
+ * Triggered from the app headers (and the editorial Home header) via the
+ * shared DrawerContext. Shows content links that open full-screen modals
+ * (Resources, How To Help, About the App), navigation to the hidden tab
+ * routes (Settings, and Admin for admins) via the `onNavigate` callback, and
+ * a sign-in/sign-out action.
  *
  * The drawer and sub-screen modals are independent React Native Modals so
  * they float correctly above the tab navigator on both native and web.
@@ -17,13 +19,25 @@ import {
   StyleSheet,
   View,
 } from 'react-native';
-import { ChevronRight, Heart, Info, Layers, LogIn, LogOut, X, type LucideIcon } from 'lucide-react-native';
+import {
+  ChevronRight,
+  Heart,
+  Info,
+  Layers,
+  LogIn,
+  LogOut,
+  Settings as SettingsIcon,
+  Shield as AdminIcon,
+  X,
+  type LucideIcon,
+} from 'lucide-react-native';
 import { AppText } from '@/components/ui/AppText';
 import { font, motion, radius, shadow, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { useReducedMotion } from '@/lib/accessibility';
 import { signOut } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth';
+import { useIsAdmin } from '@/lib/admin';
 import ResourcesScreen from '@/screens/ResourcesScreen';
 import HowToHelpScreen from '@/screens/HowToHelpScreen';
 import AboutScreen from '@/screens/AboutScreen';
@@ -38,12 +52,17 @@ interface Props {
   /** Guest/web only: invoked when the "Sign in" item is tapped. When omitted
    *  the item just closes the drawer (e.g. if a future caller has no auth route). */
   onSignIn?: () => void;
+  /** Phase 7a: navigate to a hidden tab route (Settings / Admin), which moved
+   *  off the tab bar into this drawer. The caller closes the drawer + jumps via
+   *  navigationRef. When omitted, the items are hidden. */
+  onNavigate?: (tab: 'Settings' | 'Admin') => void;
 }
 
-export default function HamburgerDrawer({ open, onClose, onSignIn }: Props) {
+export default function HamburgerDrawer({ open, onClose, onSignIn, onNavigate }: Props) {
   const color = useColor();
   const styles = makeStyles(color);
   const { user } = useAuth();
+  const isAdmin = useIsAdmin();
   const reducedMotion = useReducedMotion();
 
   const [slideAnim] = useState(() => new Animated.Value(-DRAWER_WIDTH));
@@ -157,6 +176,24 @@ export default function HamburgerDrawer({ open, onClose, onSignIn }: Props) {
               onPress={() => navigate('about')}
               color={color}
             />
+            {/* Phase 7a: Settings + Admin live here now (off the 3-tab bar).
+                These navigate to hidden tab routes rather than opening modals. */}
+            {onNavigate && (
+              <DrawerItem
+                icon={SettingsIcon}
+                label="Settings"
+                onPress={() => onNavigate('Settings')}
+                color={color}
+              />
+            )}
+            {onNavigate && isAdmin === true && (
+              <DrawerItem
+                icon={AdminIcon}
+                label="Admin"
+                onPress={() => onNavigate('Admin')}
+                color={color}
+              />
+            )}
           </View>
 
           <View style={styles.divider} />
