@@ -252,7 +252,7 @@ export default function OnboardingCards({ onDone }: Props) {
   };
 
   return (
-    <Modal visible animationType="fade" onRequestClose={onDone} presentationStyle="fullScreen">
+    <Modal visible animationType={reduceMotion ? 'none' : 'fade'} onRequestClose={onDone} presentationStyle="fullScreen">
       <View style={styles.screen} accessibilityViewIsModal importantForAccessibility="yes">
         {/* Full-screen gradient */}
         <LinearGradient

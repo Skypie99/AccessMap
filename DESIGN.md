@@ -30,7 +30,7 @@ implementation detail.
 | Text — heading | `color.textStrong` | `#222` | titles, emphasized labels |
 | Text — body | `color.text` | `#333` | default copy |
 | Text — secondary | `color.textMuted` | `#666` | meta, descriptions |
-| Text — tertiary | `color.textSubtle` | `#999` | disabled, large-text-only |
+| Text — tertiary | `color.textSubtle` | `#707070` | faint tertiary meta (dates, counts, hints) — now AA at any size |
 | Text — on brand | `color.textOnBrand` | `#fff` | text on the brand blue / severity colors |
 | Brand | `color.brand` | `#1466E0` | primary action color, links ("Wayfinder Blue", 2026-05-30) |
 | Brand soft (bg) | `color.brandSoft` | `#d6e6f9` | verified-status pill background |
@@ -55,7 +55,7 @@ text / UI components). Don't introduce a new fg/bg pair without checking it.
 | `text` (#333) | `surface` (#fff) | 12.6:1 | AAA |
 | `textStrong` (#222) | `surface` | 16:1 | AAA |
 | `textMuted` (#666) | `surface` | 5.7:1 | AA |
-| `textSubtle` (#999) | `surface` | 2.8:1 | **fails normal text** — use only ≥18pt or non-essential |
+| `textSubtle` (#707070) | `surface` | 4.95:1 | AA at any size (darkened from #999 in the Phase 6 a11y pass) |
 | `brand` (#1466E0) | `surface` | 5.2:1 | AA at any size ("Wayfinder Blue" is darker than the old #2f80ed) |
 | `textOnBrand` (#fff) | `brand` | 3.3:1 | AA large / UI only (use ≥16pt bold) |
 | `statusOpenFg` | `statusOpenBg` | 6.5:1 | AA |

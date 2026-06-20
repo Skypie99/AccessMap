@@ -197,9 +197,9 @@ describe('color.placeholderText (E1 carry)', () => {
     expect(ratio).toBeGreaterThanOrEqual(4.5);
   });
 
-  it('color.textSubtle does NOT pass small-text AA on white — confirming why placeholderText exists', () => {
+  it('color.textSubtle now passes small-text AA on white (Phase 6 a11y pass — darkened from #999)', () => {
     const ratio = contrastRatio(color.textSubtle, color.surface);
-    expect(ratio).toBeLessThan(4.5);
+    expect(ratio).toBeGreaterThanOrEqual(4.5);
   });
 });
 

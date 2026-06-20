@@ -17,6 +17,7 @@ import { CheckCircle2, Flag, Heart, Star, Users, X } from 'lucide-react-native';
 import { AppText } from '@/components/ui/AppText';
 import { font, radius, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
+import { useReducedMotion } from '@/lib/accessibility';
 
 interface Props {
   visible: boolean;
@@ -60,12 +61,13 @@ function useStepColors() {
 export default function HowToHelpScreen({ visible, onClose }: Props) {
   const color = useColor();
   const stepColors = useStepColors();
+  const reducedMotion = useReducedMotion();
   const styles = makeStyles(color);
 
   return (
     <Modal
       visible={visible}
-      animationType="slide"
+      animationType={reducedMotion ? 'none' : 'slide'}
       presentationStyle="pageSheet"
       onRequestClose={onClose}
     >

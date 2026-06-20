@@ -12,6 +12,7 @@ import { font, radius, shadow, spacing } from '@/theme';
 import { AppText } from '@/components/ui/AppText';
 import { ChevronRight, MapPin, X } from 'lucide-react-native';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
+import { useReducedMotion } from '@/lib/accessibility';
 import { searchAddress, type GeocodeResult } from '@/lib/geocode';
 import {
   addRecent,
@@ -48,6 +49,7 @@ const DEBOUNCE_MS = 350;
 export default function AddressSearchModal({ visible, onClose, onSelect }: Props) {
   const color = useColor();
   const styles = makeStyles(color);
+  const reducedMotion = useReducedMotion();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<GeocodeResult[]>([]);
   const [loading, setLoading] = useState(false);
@@ -170,7 +172,7 @@ export default function AddressSearchModal({ visible, onClose, onSelect }: Props
   const showRecents = visible && query.trim().length === 0 && recents.length > 0;
 
   return (
-    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
+    <Modal visible={visible} animationType={reducedMotion ? 'none' : 'slide'} transparent onRequestClose={onClose}>
       <View style={styles.backdrop}>
         {/* WCAG 2.4.3: contain VoiceOver focus inside the sheet so it can't
             wander onto the map behind it (every other modal sets this). */}

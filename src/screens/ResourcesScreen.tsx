@@ -31,6 +31,7 @@ import {
   type LucideIcon,
 } from 'lucide-react-native';
 import { AppText } from '@/components/ui/AppText';
+import { useReducedMotion } from '@/lib/accessibility';
 import { font, radius, shadow, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 
@@ -91,11 +92,12 @@ const RESOURCES: Resource[] = [
 export default function ResourcesScreen({ visible, onClose }: Props) {
   const color = useColor();
   const styles = makeStyles(color);
+  const reducedMotion = useReducedMotion();
 
   return (
     <Modal
       visible={visible}
-      animationType="slide"
+      animationType={reducedMotion ? 'none' : 'slide'}
       presentationStyle="pageSheet"
       onRequestClose={onClose}
     >

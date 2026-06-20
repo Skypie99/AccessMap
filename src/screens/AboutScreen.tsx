@@ -7,6 +7,7 @@ import { font, radius, shadow, spacing } from '@/theme';
 import { AppText } from '@/components/ui/AppText';
 import { Map as MapIcon, X } from 'lucide-react-native';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
+import { useReducedMotion } from '@/lib/accessibility';
 
 interface Props {
   visible: boolean;
@@ -36,9 +37,10 @@ const APP_VERSION =
  */
 export default function AboutScreen({ visible, onClose }: Props) {
   const color = useColor();
+  const reducedMotion = useReducedMotion();
   const styles = makeStyles(color);
   return (
-    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
+    <Modal visible={visible} animationType={reducedMotion ? 'none' : 'slide'} transparent onRequestClose={onClose}>
       <View style={styles.backdrop}>
         {/* accessibilityViewIsModal traps VoiceOver focus inside this card so
             it can't escape back to the underlying Settings screen while the

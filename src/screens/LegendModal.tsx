@@ -12,6 +12,7 @@ import {
 } from '@/lib/flags';
 import { font, radius, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
+import { useReducedMotion } from '@/lib/accessibility';
 import CategoryIcon from '@/components/CategoryIcon';
 import { AppText } from '@/components/ui/AppText';
 
@@ -22,9 +23,10 @@ interface Props {
 
 export default function LegendModal({ visible, onClose }: Props) {
   const color = useColor();
+  const reducedMotion = useReducedMotion();
   const styles = makeStyles(color);
   return (
-    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
+    <Modal visible={visible} animationType={reducedMotion ? 'none' : 'slide'} transparent onRequestClose={onClose}>
       <Pressable
         style={styles.backdrop}
         onPress={onClose}
