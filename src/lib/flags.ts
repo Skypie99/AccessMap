@@ -1132,13 +1132,15 @@ export function severityColor(s: FlagSeverity): string {
 }
 
 // Short human label and color name for each severity. The color name is read
-// aloud so meaning isn't carried by color alone.
+// aloud so meaning isn't carried by color alone. The labels DERIVE from the
+// design-system severity ramp (theme.ts) so the report form, legend, map
+// callouts, and SeverityBadge always name a severity identically — one source.
 export const SEVERITY_LABELS: Record<FlagSeverity, string> = {
-  1: 'Minor',
-  2: 'Mild',
-  3: 'Moderate',
-  4: 'Significant',
-  5: 'Severe',
+  1: severityRamp[1].label,
+  2: severityRamp[2].label,
+  3: severityRamp[3].label,
+  4: severityRamp[4].label,
+  5: severityRamp[5].label,
 };
 
 export const SEVERITY_COLOR_NAMES: Record<FlagSeverity, string> = {

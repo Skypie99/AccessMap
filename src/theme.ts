@@ -176,6 +176,10 @@ export const color = {
 
   // Misc
   shadow: '#000',
+  // Elevation shadow tint — the cool navy used by shadow.e1/e2/e3. In dark mode
+  // (ThemeContext) this flips to a soft cool glow, since a dark shadow is
+  // invisible on dark surfaces. Consumed by the Card primitive via useColor().
+  shadowTint: '#0F1B2D',
   pointsPillText: '#dbe7fb', // light-blue label on brand-blue background
 };
 
@@ -432,11 +436,16 @@ export const icon = {
 
 export const severity = {
   // Design system 2026-05-30 — yellow→red ramp. Sev 1 uses dark text (yellow too light for white).
-  1: { color: '#F7C948', label: 'Minor',    textOnColor: '#0F1B2D' }, // yellow — use dark ink text
-  2: { color: '#F0A030', label: 'Low',      textOnColor: '#ffffff' },
-  3: { color: '#F2792B', label: 'Moderate', textOnColor: '#ffffff' },
-  4: { color: '#E85638', label: 'High',     textOnColor: '#ffffff' },
-  5: { color: '#D92D20', label: 'Critical', textOnColor: '#ffffff' },
+  // The `label` here is the SINGLE SOURCE OF TRUTH for the severity scale — a
+  // human, graduated set (Minor → Severe) that matches DESIGN.md's "Severe (5)"
+  // example and the SEVERITY_DESCRIPTIONS in flags.ts. SeverityBadge reads these
+  // labels, and both SEVERITY_LABELS (flags.ts) and heatmapSeverity (below)
+  // DERIVE from them, so every surface names a given severity identically.
+  1: { color: '#F7C948', label: 'Minor',       textOnColor: '#0F1B2D' }, // yellow — use dark ink text
+  2: { color: '#F0A030', label: 'Mild',        textOnColor: '#ffffff' },
+  3: { color: '#F2792B', label: 'Moderate',    textOnColor: '#ffffff' },
+  4: { color: '#E85638', label: 'Significant', textOnColor: '#ffffff' },
+  5: { color: '#D92D20', label: 'Severe',      textOnColor: '#ffffff' },
 } as const satisfies Record<FlagSeverity, { color: string; label: string; textOnColor: string }>;
 
 // -------------------------------------------------------------------------
@@ -458,9 +467,12 @@ export const severity = {
 // -------------------------------------------------------------------------
 
 export const heatmapSeverity = {
-  1: { color: '#fde047', label: 'Minor' },
-  2: { color: '#fb923c', label: 'Low' },
-  3: { color: '#f97316', label: 'Moderate' },
-  4: { color: '#ef4444', label: 'High' },
-  5: { color: '#dc2626', label: 'Severe' },
+  // Colors are the distinct D5 heat ramp (asserted by HeatmapLayer.test); the
+  // LABELS derive from `severity` above so the heat legend never drifts from the
+  // pin/badge scale. One source of truth for the wording, two ramps for color.
+  1: { color: '#fde047', label: severity[1].label },
+  2: { color: '#fb923c', label: severity[2].label },
+  3: { color: '#f97316', label: severity[3].label },
+  4: { color: '#ef4444', label: severity[4].label },
+  5: { color: '#dc2626', label: severity[5].label },
 } as const satisfies Record<FlagSeverity, { color: string; label: string }>;

@@ -53,6 +53,9 @@ export function Card({
     borderColor: color.border,     // slate-200
     padding,
     ...(elevated ? shadow.e3 : onPress ? shadow.e2 : shadow.e1),
+    // Theme-aware shadow color: cool navy stays in light; dark gets a soft cool
+    // glow so the (now-lighter) card reads as lifted, not flat. (overhaul Phase 2)
+    shadowColor: color.shadowTint,
   };
 
   if (onPress) {

@@ -305,6 +305,18 @@ what it is. Append-only.
   Lucide/SVG (the last Ionicons were converted). Every gradient/glow is held to
   AA contrast and reduced-motion. On branch `ui-polish/accessmap-2026-06-03`
   (not merged — Sky's gate).
+- **2026-06-19 — Severity-label unification + doc reconcile (overhaul Phase 2).**
+  Standardized the severity scale to a single source. `theme.severity` labels
+  (Minor / Mild / Moderate / Significant / Severe) are now canonical; both
+  `SEVERITY_LABELS` (`flags.ts`) and `heatmapSeverity` derive from them, and
+  `SeverityBadge` reads them — so every surface names a severity identically.
+  Previously the badge showed Low / High / Critical while the report form, legend,
+  map callouts and a11y text showed Mild / Significant / Severe. Also reconciled
+  docs to reality: the `Pill` and `PointsChip` primitives were dropped as unused
+  (commit `fbbdc44`, 2026-06-18), so the 2026-06-03 entry above and `CLAUDE.md`
+  reference primitives that no longer exist; the current `src/components/ui/` set
+  is AppText / Button / Input / Card / GlassSurface / Skeleton / Sheet. On branch
+  `overhaul/phase2-design-system` (Sky's gate).
 
 ---
 
@@ -326,7 +338,7 @@ The product UI uses **SVG icons only — no emoji, no Unicode-glyph icons.**
   resolved) — see `PlatformMap.web.tsx`. (Native renders a colored marker; the
   in-pin glyph is a device-verified follow-up.)
 - **Civic Gold** (`color.goldAccent`) stays reserved for gamification — points,
-  streaks, badges — always on ink text (`PointsChip`, profile hero, leaderboard).
+  streaks, badges — always on ink text (profile hero, leaderboard, points/streak chips).
 
 ## 11. Outstanding proposals
 
