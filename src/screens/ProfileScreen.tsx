@@ -74,8 +74,7 @@ import RecentlyViewedRow from '@/components/RecentlyViewedRow';
 import ReportsBreakdownCard from '@/components/ReportsBreakdownCard';
 import LeaderboardScreen from '@/screens/LeaderboardScreen';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
-import { LinearGradient } from 'expo-linear-gradient';
-import { font, gradient, radius, shadow, spacing } from '@/theme';
+import { font, radius, shadow, spacing } from '@/theme';
 import { AppText } from '@/components/ui/AppText';
 import { Input } from '@/components/ui/Input';
 import { ArrowDown, ArrowUp, ChevronRight, Flame, MapPin, Pencil, X } from 'lucide-react-native';
@@ -851,15 +850,9 @@ export default function ProfileScreen() {
         />
 
         <View style={styles.heroCard}>
-          {/* Expressive gradient wash behind the hero (self-rounds to the card
-              radius so the card's glow shadow isn't clipped). Decorative. */}
-          <LinearGradient
-            colors={gradient.brandHero}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={[StyleSheet.absoluteFill, { borderRadius: radius.sheet }]}
-            pointerEvents="none"
-          />
+          {/* Phase 9: clean light editorial stat card (was a dark brand
+              gradient wash — the last "old app" holdover under the new light
+              chrome). Big brand points number carries the hero now. */}
           {/* T4: previously this View was `accessible={true}` with a
               combined summary label. Removed so the new tier pill can be
               its own independently-focusable Pressable — children of an
@@ -1873,16 +1866,16 @@ const makeStyles = (color: ColorTheme) =>
     profileHeader: { paddingHorizontal: 0, paddingTop: 0, paddingBottom: 0 },
     subtitle: { fontSize: font.size.base, color: color.text },
     heroCard: {
-      backgroundColor: color.brand, // fallback under the gradient wash
-      borderRadius: radius.sheet, // was spacing.xxl — a spacing token misused for a radius
+      backgroundColor: color.surface, // clean light editorial card (Phase 9)
+      borderRadius: radius.sheet,
       paddingHorizontal: spacing.xxl,
       paddingTop: spacing.xl + 2,
       paddingBottom: spacing.xxl,
       alignItems: 'center',
       gap: spacing.tight,
-      // Soft brand glow so the hero sits forward as the page anchor (consistent
-      // in light + dark, unlike a neutral #000/#fff drop shadow).
-      ...shadow.glowBrand,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: color.borderSubtle,
+      ...shadow.e2,
     },
     heroIcon: { fontSize: 32, marginBottom: 4 },
 
@@ -1905,14 +1898,14 @@ const makeStyles = (color: ColorTheme) =>
       width: 72,
       height: 72,
       borderRadius: radius.circle,
-      backgroundColor: 'rgba(255,255,255,0.25)',
+      backgroundColor: color.brandSoft,
       alignItems: 'center',
       justifyContent: 'center',
     },
     avatarInitials: {
       fontSize: 26,
       fontWeight: '700',
-      color: color.textOnBrand,
+      color: color.brandText,
       letterSpacing: 0.5,
     },
     avatarOverlay: {
@@ -1939,25 +1932,23 @@ const makeStyles = (color: ColorTheme) =>
     },
 
     heroLabel: {
-      color: color.pointsPillText,
-      // WCAG 1.4.3: pointsPillText (#dbe7fb) on brand (#1466E0) = 3.10:1.
-      // ≥14pt bold = "large text" → 3:1 threshold → passes. (11pt bold = small text → needed 4.5:1 → failed.)
+      // textMuted (#666) on the light card surface = 5.7:1 → AA at any size.
+      color: color.textMuted,
       fontSize: font.size.base,
       letterSpacing: 2.4,
       fontWeight: font.weight.bold,
       textTransform: 'uppercase',
     },
     heroValue: {
-      color: color.textOnBrand,
+      // Big brand-blue stat number carries the hero (one Wayfinder-blue accent).
+      color: color.brand,
       fontSize: 56,
       fontWeight: '800',
       lineHeight: 60,
       letterSpacing: -1.2,
     },
     heroSubtitle: {
-      color: color.pointsPillText,
-      // WCAG 1.4.3: same 3.10:1 contrast — bumped to 14pt bold (large text → 3:1 → passes).
-      // (13pt semibold = small text → needed 4.5:1 → failed.)
+      color: color.textMuted,
       fontSize: font.size.base,
       fontWeight: font.weight.bold,
       textAlign: 'center',
@@ -1995,9 +1986,7 @@ const makeStyles = (color: ColorTheme) =>
       borderRadius: radius.circle,
     },
     tierProgressLabel: {
-      color: color.pointsPillText,
-      // WCAG 1.4.3: pointsPillText (#dbe7fb) on brand (#1466E0) = 3.10:1.
-      // 14pt bold = large text → 3:1 threshold → passes (was 13pt medium → needed 4.5:1 → failed).
+      color: color.textMuted, // on the light card surface — AA at any size
       fontSize: font.size.base,
       fontWeight: font.weight.bold,
       textAlign: 'center',
@@ -2023,14 +2012,15 @@ const makeStyles = (color: ColorTheme) =>
       paddingVertical: 6,
       paddingHorizontal: 12,
       borderRadius: radius.circle,
-      backgroundColor: color.surface,
+      // brand-soft tint (was white) so the pill reads on the now-white hero card
+      backgroundColor: color.brandSofter,
       minHeight: 32,
       minWidth: 44,
       justifyContent: 'center',
       ...shadow.e1,
     },
     tierPillPressed: {
-      backgroundColor: color.brandSofter,
+      backgroundColor: color.brandSoft,
       opacity: 0.95,
     },
     tierPillEmoji: { fontSize: 14 },
