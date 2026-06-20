@@ -1,5 +1,6 @@
 import React, { forwardRef, memo, useEffect, useImperativeHandle, useRef } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
+import { AppText } from '@/components/ui/AppText';
 import { RemoteImage } from '@/components/ui/RemoteImage';
 import ClusteredMapView from 'react-native-map-clustering';
 import { Callout, Marker, Polygon, PROVIDER_DEFAULT } from 'react-native-maps';
@@ -224,12 +225,12 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(function Pla
                 importantForAccessibility="no-hide-descendants"
               />
               <View style={styles.calloutBody}>
-                <Text style={styles.calloutTitle} numberOfLines={1}>
+                <AppText variant="label" style={styles.calloutTitle} numberOfLines={1}>
                   {CATEGORY_LABELS[f.category]}
-                </Text>
-                <Text style={styles.calloutMeta}>
+                </AppText>
+                <AppText variant="body" style={styles.calloutMeta}>
                   Severity {f.severity} • {f.status}
-                </Text>
+                </AppText>
                 {f.photo_url ? (
                   <RemoteImage
                     uri={f.photo_url}
@@ -240,9 +241,9 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(function Pla
                   />
                 ) : null}
                 {f.description ? (
-                  <Text style={styles.calloutDesc} numberOfLines={3}>
+                  <AppText variant="body" style={styles.calloutDesc} numberOfLines={3}>
                     {f.description}
-                  </Text>
+                  </AppText>
                 ) : null}
               </View>
             </View>

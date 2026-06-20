@@ -900,7 +900,7 @@ export default function MapScreen() {
   useEffect(() => {
     if (showEmptyCard && !previouslyEmptyRef.current) {
       AccessibilityInfo.announceForAccessibility(
-        'Nothing here right now. Try broadening them.',
+        'No flags match your active filters. Try clearing one, or reset them all.',
       );
     }
     previouslyEmptyRef.current = showEmptyCard;
@@ -1548,7 +1548,7 @@ export default function MapScreen() {
                       variant="label"
                       style={[styles.filterPillText, heatmapEnabled && styles.filterPillTextActive]}
                     >
-                      {heatmapEnabled ? 'Heat map' : 'Heat map'}
+                      {heatmapEnabled ? 'Heat map · On' : 'Heat map · Off'}
                     </AppText>
                   </Pressable>
                 </View>
@@ -1759,7 +1759,7 @@ export default function MapScreen() {
             style={styles.emptyCard}
             accessible
             accessibilityRole="alert"
-            accessibilityLabel="Nothing here right now. Try broadening them or reset filters."
+            accessibilityLabel="No flags match your active filters. Try clearing one, or reset them all."
             accessibilityLiveRegion="polite"
           >
             <Search size={26} color={color.textSubtle} strokeWidth={2} />

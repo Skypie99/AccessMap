@@ -368,12 +368,13 @@ describe('anon form (user === null)', () => {
     expect(getByText('Reporting anonymously — your identity is not stored.')).toBeTruthy();
   });
 
-  it('shows the "Sign in to attach a photo" note instead of the photo section', () => {
-    // The note is a nested-Text structure: outer Text contains an inner "Sign in"
-    // Text and the suffix " to attach a photo." The full concatenated text is
-    // matched via regex on the outer element.
+  it('shows the anon sign-in-to-add-a-photo note instead of the photo section', () => {
+    // The note is a nested-Text structure: outer Text contains the lead-in
+    // "Your anonymous report still counts.", an inner "Sign in" link Text, and
+    // the suffix " to add a photo and help verifiers act faster." Matched via
+    // regex on the concatenated outer element.
     const { getByText } = renderAnon();
-    expect(getByText(/to attach a photo/i)).toBeTruthy();
+    expect(getByText(/to add a photo/i)).toBeTruthy();
   });
 
   it('does NOT show "Report a flag" title header', () => {
