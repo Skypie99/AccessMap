@@ -1666,8 +1666,8 @@ const makeStyles = (color: ColorTheme) =>
     card: {
       backgroundColor: color.surface,
       borderRadius: radius.lg,
-      padding: spacing.md + 2,
-      paddingLeft: spacing.lg,
+      padding: spacing.lg,
+      paddingLeft: spacing.lg + 2,
       gap: spacing.sm,
       minHeight: size.cardMin,
       ...shadow.e2,
@@ -1686,7 +1686,7 @@ const makeStyles = (color: ColorTheme) =>
     },
     cardPressed: { opacity: 0.85, transform: [{ scale: 0.99 }] },
     cardHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-    cardTitle: { fontSize: font.size.lg, fontWeight: font.weight.semibold, flex: 1 },
+    cardTitle: { fontSize: font.size.xl, fontWeight: font.weight.semibold, flex: 1 },
     cardBody: { flexDirection: 'row', gap: spacing.md },
     // Container holds the image so overflow:hidden clips rounded corners on
     // Android (where borderRadius on Image alone is unreliable).

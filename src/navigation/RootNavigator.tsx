@@ -231,12 +231,14 @@ function NavInner({ initialRouteName }: { initialRouteName: keyof RootTabParamLi
         headerStyle: {
           backgroundColor: color.headerBg,
           borderBottomWidth: 1,
-          borderBottomColor: color.navBorder,
-          shadowColor: '#000',
-          shadowOpacity: 0.4,
+          borderBottomColor: color.headerBorder,
+          // Soft editorial lift (was a heavy #000/0.4 drop tuned for the old
+          // dark navy bar — too heavy under the clean light header).
+          shadowColor: '#0F1B2D',
+          shadowOpacity: 0.06,
           shadowRadius: 8,
           shadowOffset: { width: 0, height: 2 },
-          elevation: 8,
+          elevation: 3,
         },
         headerTitleStyle: {
           color: color.headerFg,
@@ -392,21 +394,21 @@ const makeStyles = (color: ColorTheme) =>
       width: 36,
       height: 36,
       borderRadius: radius.md,
-      backgroundColor: 'rgba(255,255,255,0.12)',
+      backgroundColor: color.headerBtnBg,
       alignItems: 'center',
       justifyContent: 'center',
     },
-    hamburgerBtnPressed: { backgroundColor: 'rgba(255,255,255,0.22)' },
+    hamburgerBtnPressed: { backgroundColor: color.headerBtnBgPressed },
     feedbackBtn: {
       marginRight: spacing.md,
       paddingHorizontal: spacing.md,
       paddingVertical: spacing.xs,
       borderRadius: radius.full,
-      backgroundColor: 'rgba(255,255,255,0.14)',
+      backgroundColor: color.headerBtnBg,
       minHeight: 44, // WCAG 2.1 AA touch target minimum (was 32)
       justifyContent: 'center',
     },
-    feedbackBtnPressed: { backgroundColor: 'rgba(255,255,255,0.28)' },
+    feedbackBtnPressed: { backgroundColor: color.headerBtnBgPressed },
     feedbackBtnText: {
       color: color.headerFg,
       fontWeight: font.weight.bold,
