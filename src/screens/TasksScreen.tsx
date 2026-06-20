@@ -64,10 +64,14 @@ import { Skeleton, SkeletonCard } from '@/components/ui/Skeleton';
 import { StatusBadge } from '@/components/StatusBadge';
 import CategoryIcon from '@/components/CategoryIcon';
 import { hapticSelection } from '@/lib/haptics';
-import { AlertTriangle, Check, ChevronRight, MapPin, Search, Sparkles, WifiOff, X } from 'lucide-react-native';
+import { AlertTriangle, Check, ChevronRight, MapPin, Menu, MessageSquare, Search, Sparkles, WifiOff, X } from 'lucide-react-native';
 import { font, motion, radius, shadow, size, spacing } from '@/theme';
 import { useReducedMotion } from '@/lib/accessibility';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
+import { ScreenHeader } from '@/components/ui/ScreenHeader';
+import { useDrawer } from '@/lib/drawerContext';
+import { useSharedModals } from '@/lib/sharedModalsContext';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // Statuses Tasks shows. Even if the provider's `statuses` is widened by the
 // Map's filter, Tasks restricts the visible set to the actionable lifecycle
@@ -84,6 +88,9 @@ export default function TasksScreen() {
   const styles = makeStyles(color);
   const navigation = useNavigation<BottomTabNavigationProp<RootTabParamList, 'Tasks'>>();
   const tabBarHeight = useBottomTabBarHeight();
+  const insets = useSafeAreaInsets();
+  const drawer = useDrawer();
+  const { setOpen: setSharedModal } = useSharedModals();
   const { user } = useAuth();
   const {
     flags: providerFlags,
@@ -692,6 +699,37 @@ export default function TasksScreen() {
 
   return (
     <View style={styles.screen}>
+      {/* Editorial header (Phase 13) — headerless like Home, menu + Feedback folded in. */}
+      <ScreenHeader
+        eyebrow="TASKS"
+        title="Review barriers"
+        subtitle="Verify and resolve reports"
+        titleSize={30}
+        style={{ paddingTop: insets.top + spacing.sm }}
+        actions={
+          <>
+            <Pressable
+              onPress={() => drawer.setOpen(true)}
+              style={({ pressed }) => [styles.headerBtn, pressed && styles.headerBtnPressed]}
+              accessibilityRole="button"
+              accessibilityLabel="Open navigation menu"
+              hitSlop={8}
+            >
+              <Menu size={22} color={color.textStrong} strokeWidth={2.2} />
+            </Pressable>
+            <Pressable
+              onPress={() => setSharedModal('feedback')}
+              style={({ pressed }) => [styles.headerBtn, pressed && styles.headerBtnPressed]}
+              accessibilityRole="button"
+              accessibilityLabel="Send feedback"
+              accessibilityHint="Opens a form to email feedback to the AccessMap owner"
+              hitSlop={8}
+            >
+              <MessageSquare size={20} color={color.textStrong} strokeWidth={2.2} />
+            </Pressable>
+          </>
+        }
+      />
       {flash && (
         <Animated.View
           style={[
@@ -1453,6 +1491,15 @@ const makeStyles = (color: ColorTheme) =>
     // Screen wash — same #f7f9fc the Profile screen uses, so the white
     // cards inside read as cards instead of blending into a white page.
     screen: { flex: 1, backgroundColor: color.surfaceMuted },
+    headerBtn: {
+      width: 44,
+      height: 44,
+      borderRadius: radius.full,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: color.surface,
+    },
+    headerBtnPressed: { backgroundColor: color.surfaceNeutral },
     flashWrap: {
       position: 'absolute',
       top: 12,
@@ -1668,9 +1715,11 @@ const makeStyles = (color: ColorTheme) =>
     cardHint: { fontSize: font.size.caption, color: color.textSubtle, fontStyle: 'italic' },
     cardActions: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginTop: spacing.tight },
     actionBtn: {
-      paddingHorizontal: spacing.md,
+      // Phase 13: clean fully-rounded pills (was radius.md rects) to match the
+      // editorial button language; status colors kept (brand/success/neutral).
+      paddingHorizontal: spacing.lg,
       paddingVertical: spacing.sm,
-      borderRadius: radius.md,
+      borderRadius: radius.full,
       minHeight: 44,
       alignItems: 'center',
       justifyContent: 'center',
