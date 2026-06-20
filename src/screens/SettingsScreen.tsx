@@ -20,6 +20,7 @@ import { confirm, notify } from '@/lib/confirm';
 import { useAuth } from '@/lib/auth';
 import { useFeatureFlag } from '@/lib/featureFlags';
 import { useSharedModals } from '@/lib/sharedModalsContext';
+import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { CATEGORY_LABELS, listFlagsByUser } from '@/lib/flags';
 import { listFeedbackByUser } from '@/lib/feedbackStore';
 import { formatDataExport } from '@/lib/dataExport';
@@ -189,6 +190,7 @@ function AppearanceControl() {
 export default function SettingsScreen() {
   const color = useColor();
   const styles = makeStyles(color);
+  const tabBarHeight = useBottomTabBarHeight();
   // Keep a stable reference for the push ActivityIndicator color — we can't
   // call useColor() inside conditional JSX, so we capture it here at the
   // top of the component. Use color.text (#333 light, #ddd dark) for ≥4.5:1
@@ -417,7 +419,7 @@ export default function SettingsScreen() {
     <>
       <ScrollView
         style={styles.screen}
-        contentContainerStyle={styles.container}
+        contentContainerStyle={[styles.container, { paddingBottom: tabBarHeight + 16 }]}
         contentInsetAdjustmentBehavior="automatic"
       >
         <AppText variant="label" style={styles.sectionLabel} accessibilityRole="header">

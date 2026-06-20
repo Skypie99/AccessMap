@@ -15,6 +15,7 @@ import { Card } from '@/components/ui/Card';
 import CategoryIcon from '@/components/CategoryIcon';
 import { StatusBadge } from '@/components/StatusBadge';
 import { useFocusEffect } from '@react-navigation/native';
+import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { useColor, type ColorTheme } from '@/theme/ThemeContext';
 import { font, radius, severity as severityRamp, spacing } from '@/theme';
 import { hapticImpact, hapticSelection } from '@/lib/haptics';
@@ -33,6 +34,7 @@ export default function AdminScreen() {
   const color = useColor();
   const styles = useMemo(() => makeStyles(color), [color]);
   const isAdmin = useIsAdmin();
+  const tabBarHeight = useBottomTabBarHeight();
   const [flags, setFlags] = useState<FlagRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [actioningId, setActioningId] = useState<string | null>(null);
@@ -230,7 +232,10 @@ export default function AdminScreen() {
       keyExtractor={(f) => f.id}
       renderItem={renderItem}
       accessibilityRole="list"
-      contentContainerStyle={flags.length === 0 ? styles.emptyContainer : styles.listContent}
+      contentContainerStyle={[
+        flags.length === 0 ? styles.emptyContainer : styles.listContent,
+        { paddingBottom: tabBarHeight + 16 },
+      ]}
       refreshControl={
         <RefreshControl refreshing={loading} onRefresh={load} tintColor={color.brand} />
       }

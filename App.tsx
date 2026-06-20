@@ -23,7 +23,7 @@ function SignedInArea({ takePendingUrl }: { takePendingUrl?: TakePendingUrl }) {
   const { user } = useAuth();
   // We need the default tab BEFORE rendering RootNavigator, because the
   // tab navigator uses initialRouteName once. Hold render until we've read
-  // the user's preference (or fallen back to 'Map').
+  // the user's preference (or fallen back to 'Home').
   const [defaultTab, setDefaultTabState] = useState<DefaultTab | null>(null);
   const [flash, setFlash] = useState<string | null>(null);
 
@@ -140,9 +140,9 @@ function Gate() {
 
   if (session) return <SignedInArea takePendingUrl={takePendingUrl} />;
 
-  // Web or native guest — read-only map, no auth-gated features.
+  // Web or native guest — read-only experience, no auth-gated features.
   if (Platform.OS === 'web' || guestMode) {
-    return <RootNavigator initialRouteName="Map" takePendingUrl={takePendingUrl} />;
+    return <RootNavigator initialRouteName="Home" takePendingUrl={takePendingUrl} />;
   }
 
   return <SignInScreen onGuest={() => setGuestMode(true)} />;

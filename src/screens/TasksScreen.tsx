@@ -15,6 +15,7 @@ import {
 } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
+import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { useAuth } from '@/lib/auth';
 import { formatDistance, formatWalkingEta, haversineKm, speakDistance, type LatLng } from '@/lib/distance';
 import { confirm, notify } from '@/lib/confirm';
@@ -82,6 +83,7 @@ export default function TasksScreen() {
   const color = useColor();
   const styles = makeStyles(color);
   const navigation = useNavigation<BottomTabNavigationProp<RootTabParamList, 'Tasks'>>();
+  const tabBarHeight = useBottomTabBarHeight();
   const { user } = useAuth();
   const {
     flags: providerFlags,
@@ -606,7 +608,7 @@ export default function TasksScreen() {
 
   const handleViewOnMap = useCallback(
     (target: FlagRow) => {
-      navigation.navigate('Map', {
+      navigation.navigate('FullMap', {
         focusFlag: { id: target.id, lat: target.lat, lng: target.lng },
         ts: Date.now(),
       });
@@ -993,10 +995,10 @@ export default function TasksScreen() {
         }
         contentContainerStyle={[
           sections.length === 0 ? styles.emptyContainer : styles.list,
-          // Reserve room for the floating bar so the last card doesn't sit
-          // under it. Using paddingBottom (cross-platform) instead of
-          // contentInset (iOS-only) — Android otherwise hides the last card.
-          selection.active && { paddingBottom: BULK_BAR_HEIGHT },
+          // Reserve room for the floating tab bar (absolute on native) plus the
+          // bulk-action bar when active, so the last card never hides behind
+          // either. paddingBottom is cross-platform (contentInset is iOS-only).
+          { paddingBottom: tabBarHeight + 16 + (selection.active ? BULK_BAR_HEIGHT : 0) },
         ]}
         stickySectionHeadersEnabled={false}
         refreshControl={

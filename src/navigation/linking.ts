@@ -30,12 +30,13 @@ export function createLinking(takePendingUrl?: TakePendingUrl) {
     prefixes: ['accessmap://'],
     config: {
       screens: {
-        // The :flagId path segment maps to params.flagId on the Map screen.
+        // The :flagId path segment maps to params.flagId on the FullMap
+        // screen (the full interactive map — renamed from `Map` in Phase 7a).
         // MapScreen reads it and runs fetchFlagById + animateTo + showCallout.
-        // Optional (`?`, L10): the Map route is also reached with NO flagId —
-        // a required segment made getPathFromState serialize the paramless
-        // route as /flag/undefined in the web address bar.
-        Map: 'flag/:flagId?',
+        // Optional (`?`, L10): the route is also reached with NO flagId — a
+        // required segment made getPathFromState serialize the paramless route
+        // as /flag/undefined in the web address bar.
+        FullMap: 'flag/:flagId?',
       },
     },
     // L8: a URL captured while signed out wins over the cold-start URL;
