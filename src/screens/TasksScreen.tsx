@@ -524,8 +524,8 @@ export default function TasksScreen() {
   }, [flagsError]);
 
   // Trigger lives in supabase/schema.sql (handle_flag_status_change, ~line 75).
-  // Reporter ALWAYS gets the reporter bonus (5 verify / 10 resolve).
-  // Actor gets the actor bonus (2 verify / 5 resolve) ONLY when actor != reporter.
+  // Reporter ALWAYS gets the reporter bonus (10 verify / 15 resolve).
+  // Actor gets the actor bonus (3 verify / 7 resolve) ONLY when actor != reporter.
   // So if you triage your own flag, you earn the reporter bonus only — keep this
   // mapping in sync with the trigger if the values ever change.
   const applyStatusChange = useCallback(
@@ -539,14 +539,14 @@ export default function TasksScreen() {
         removeFlag(updated.id);
       }
       if (action === 'verify') {
-        const msg = isOwn ? 'Verified! +5 points' : 'Verified! +2 points';
+        const msg = isOwn ? 'Verified! +10 points' : 'Verified! +3 points';
         showFlash(msg);
         // WCAG 4.1.3: announce single-card status changes to screen readers.
         // Bulk actions in runBulkAction already call announceForAccessibility;
         // single-card triage through this path was previously silent to SR.
         AccessibilityInfo.announceForAccessibility(msg);
       } else if (action === 'resolve') {
-        const msg = isOwn ? 'Resolved! +10 points' : 'Resolved! +5 points';
+        const msg = isOwn ? 'Resolved! +15 points' : 'Resolved! +7 points';
         showFlash(msg);
         AccessibilityInfo.announceForAccessibility(msg);
       }

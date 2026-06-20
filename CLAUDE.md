@@ -173,9 +173,11 @@ overnight QA pass on branch `qa/auto-2026-05-22` (10 fix commits + this note).
 Full breakdown — including 9 propose-only items (RLS tightening, pagination,
 clustering, lint/CI setup, etc.) — in `qa-reports/qa-2026-05-22.md`.
 
-Flash-banner points in TasksScreen are now coupled to the trigger in
-`supabase/schema.sql` (handle_flag_status_change). If the trigger values
-ever change, update the +5/+10/+2/+5 strings in `setStatus` to match.
+Flash-banner points in TasksScreen are coupled to the trigger in
+`supabase/schema.sql` (handle_flag_status_change). The live trigger awards the
+reporter +10 (verify) / +15 (resolve) and the actor +3 (verify) / +7 (resolve);
+the `applyStatusChange` flash strings in `TasksScreen.tsx` mirror these. If the
+trigger values ever change, update those strings to match.
 
 ---
 
