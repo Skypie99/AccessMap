@@ -13,6 +13,7 @@
  */
 
 import { severityColor } from '../flags';
+import { color } from '@/theme';
 import type { FlagSeverity } from '@/types/database';
 
 jest.mock('../supabase', () => ({ supabase: {} }));
@@ -43,10 +44,10 @@ describe('severityColor', () => {
     // The signature accepts only 1–5, but if a dirty row ever carries a
     // different number we want the marker to still render, not crash and
     // not return `undefined`.
-    expect(severityColor(0 as unknown as FlagSeverity)).toBe('#999');
-    expect(severityColor(6 as unknown as FlagSeverity)).toBe('#999');
-    expect(severityColor(-1 as unknown as FlagSeverity)).toBe('#999');
-    expect(severityColor(NaN as unknown as FlagSeverity)).toBe('#999');
+    expect(severityColor(0 as unknown as FlagSeverity)).toBe(color.textSubtle);
+    expect(severityColor(6 as unknown as FlagSeverity)).toBe(color.textSubtle);
+    expect(severityColor(-1 as unknown as FlagSeverity)).toBe(color.textSubtle);
+    expect(severityColor(NaN as unknown as FlagSeverity)).toBe(color.textSubtle);
   });
 
   it('hues are monotonically distinct across the 1-5 scale', () => {
