@@ -88,13 +88,6 @@ const tabIcon =
     return <Icon size={size} color={tintColor} strokeWidth={2.2} />;
   };
 
-// Dark contrast floor over the tab-bar blur. Kept close to the opaque
-// tabBarBg (rgba(7,11,24,0.92)) so the active/inactive tints stay legible over
-// any content scrolling underneath — a conservative AA default; the headline
-// device check is legibility over the live map. (Same inline-rgba nav-chrome
-// idiom the drawer uses.)
-const TAB_BAR_GLASS_FLOOR = 'rgba(7,11,24,0.85)';
-
 /**
  * Frosted-glass background for the bottom tab bar (native only — Phase 7a).
  * Rendered behind the bar's buttons via screenOptions.tabBarBackground. The
@@ -110,8 +103,8 @@ function TabBarGlass() {
   }
   return (
     <View style={StyleSheet.absoluteFill}>
-      <BlurView intensity={24} tint="dark" style={StyleSheet.absoluteFill} />
-      <View style={[StyleSheet.absoluteFill, { backgroundColor: TAB_BAR_GLASS_FLOOR }]} />
+      <BlurView intensity={24} tint={color.tabBarBlurTint as 'light' | 'dark'} style={StyleSheet.absoluteFill} />
+      <View style={[StyleSheet.absoluteFill, { backgroundColor: color.tabBarGlassFloor }]} />
     </View>
   );
 }

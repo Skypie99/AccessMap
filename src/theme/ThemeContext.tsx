@@ -131,6 +131,8 @@ const darkColor = {
   headerBtnBgPressed: 'rgba(255,255,255,0.22)',
   headerBorder: 'rgba(255,255,255,0.1)',
   tabBarBg: 'rgba(7,11,24,0.92)',
+  tabBarGlassFloor: 'rgba(7,11,24,0.85)',
+  tabBarBlurTint: 'dark',
   tabBarActiveTint: '#60a5fa',
   tabBarInactiveTint: 'rgba(255,255,255,0.55)',
   navBorder: 'rgba(255,255,255,0.1)',

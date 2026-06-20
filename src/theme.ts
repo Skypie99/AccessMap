@@ -172,10 +172,14 @@ export const color = {
   headerBtnBg: 'rgba(22,33,58,0.06)', // hamburger/Feedback button wash on the light header
   headerBtnBgPressed: 'rgba(22,33,58,0.12)',
   headerBorder: 'rgba(22,33,58,0.10)', // hairline under the light header
-  tabBarBg: 'rgba(7,11,24,0.92)', // bottom tab bar surface (always dark)
-  tabBarActiveTint: '#60a5fa', // active tab icon/label (blue-400 on dark, ~6:1)
-  tabBarInactiveTint: 'rgba(255,255,255,0.55)', // inactive tab — bumped from 0.45 → 0.55 for AA on the dark bar
-  navBorder: 'rgba(255,255,255,0.1)', // hairline divider on the (dark) tab bar
+  // Phase 12: the tab bar is now a LIGHT frosted bar in light mode (dark in the
+  // dark palette) — completes the all-light editorial identity.
+  tabBarBg: 'rgba(255,255,255,0.92)', // light tab bar surface (light mode)
+  tabBarGlassFloor: 'rgba(255,255,255,0.82)', // AA contrast floor over the blur
+  tabBarBlurTint: 'light', // expo-blur tint for the frosted bar (light mode)
+  tabBarActiveTint: '#0F53BE', // active tab — brandText, ~7.6:1 on the light bar
+  tabBarInactiveTint: '#6B7280', // inactive tab — muted slate, ~4.8:1 on white
+  navBorder: 'rgba(22,33,58,0.10)', // hairline divider on the light tab bar
 
   // Achievement earned-state wash — light amber behind unlocked badges.
   achievementEarnedBg: '#fff3d1',
