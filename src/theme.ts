@@ -65,7 +65,7 @@ export const color = {
   textStrong: '#222', // headings (16:1 on white)
   text: '#333', // body (12.6:1)
   textMuted: '#666', // secondary (5.7:1 on #fff, AA pass). Also used as placeholderTextColor on surfaceSoft (#f7f8fa) where contrast is ~5.6:1 — still passes WCAG AA (4.5:1 for normal text).
-  textSubtle: '#999', // disabled / tertiary; only for non-essential text or 18pt+
+  textSubtle: '#707070', // tertiary/faint — now AA: ~4.95:1 on surface, ~4.6:1 on surfaceMuted (was #999 / 2.85:1, which failed). Still lighter than textMuted, so the hierarchy holds.
   placeholderText: '#5b6470', // TextInput placeholder — AA pass: ~4.7:1 on white, ~4.5:1 on #f7f9fc
   textOnBrand: '#fff', // text drawn on brand-blue or severity colors
   // Fixed-dark text for use on amber/orange accents (accentOrange = #f1a520 in both palettes).
