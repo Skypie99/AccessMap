@@ -287,7 +287,9 @@ function NavInner({ initialRouteName }: { initialRouteName: keyof RootTabParamLi
       <Tab.Screen
         name="Tasks"
         component={TasksScreen}
-        options={{ tabBarIcon: tabIcon(TasksIcon), tabBarBadge: tasksBadge, headerLeft: renderMenuButton }}
+        // Headerless — Tasks renders its own editorial header (menu + Feedback
+        // folded in), matching Home.
+        options={{ tabBarIcon: tabIcon(TasksIcon), tabBarBadge: tasksBadge, headerShown: false }}
       />
       <Tab.Screen
         name="Profile"

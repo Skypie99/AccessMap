@@ -64,10 +64,14 @@ import { Skeleton, SkeletonCard } from '@/components/ui/Skeleton';
 import { StatusBadge } from '@/components/StatusBadge';
 import CategoryIcon from '@/components/CategoryIcon';
 import { hapticSelection } from '@/lib/haptics';
-import { AlertTriangle, Check, ChevronRight, MapPin, Search, Sparkles, WifiOff, X } from 'lucide-react-native';
+import { AlertTriangle, Check, ChevronRight, MapPin, Menu, MessageSquare, Search, Sparkles, WifiOff, X } from 'lucide-react-native';
 import { font, motion, radius, shadow, size, spacing } from '@/theme';
 import { useReducedMotion } from '@/lib/accessibility';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
+import { ScreenHeader } from '@/components/ui/ScreenHeader';
+import { useDrawer } from '@/lib/drawerContext';
+import { useSharedModals } from '@/lib/sharedModalsContext';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // Statuses Tasks shows. Even if the provider's `statuses` is widened by the
 // Map's filter, Tasks restricts the visible set to the actionable lifecycle
@@ -84,6 +88,9 @@ export default function TasksScreen() {
   const styles = makeStyles(color);
   const navigation = useNavigation<BottomTabNavigationProp<RootTabParamList, 'Tasks'>>();
   const tabBarHeight = useBottomTabBarHeight();
+  const insets = useSafeAreaInsets();
+  const drawer = useDrawer();
+  const { setOpen: setSharedModal } = useSharedModals();
   const { user } = useAuth();
   const {
     flags: providerFlags,
@@ -133,11 +140,6 @@ export default function TasksScreen() {
     void saveScope(next);
   }, []);
 
-  // Min-severity threshold. 0 means "show all" (no filter applied); 2..5
-  // means "show flags with severity >= N". Lets coordinators focus on the
-  // most-urgent issues without leaving the triage screen.
-  const [minSeverity, setMinSeverity] = useState<0 | 2 | 3 | 4 | 5>(0);
-
   // Category quick-filter. null = all categories. Session-only (not
   // persisted) so the filter resets when the user leaves and returns to
   // the tab — keeps triage intent explicit and avoids stale state after
@@ -182,16 +184,15 @@ export default function TasksScreen() {
     void saveTasksSort(next);
   }, []);
 
-  // Apply the mine-only, min-severity, category, and free-text filters on top of the
-  // triage filter so sections always reflect exactly what the list renders.
+  // Apply the mine-only, category, and free-text filters on top of the triage
+  // filter so sections always reflect exactly what the list renders.
   const displayFlags = useMemo(() => {
     let out = flags;
     if (mineOnly && userId) out = out.filter((f) => f.user_id === userId);
-    if (minSeverity > 0) out = out.filter((f) => f.severity >= minSeverity);
     if (categoryFilter) out = out.filter((f) => f.category === categoryFilter);
     out = searchFlags(out, debouncedSearchText);
     return out;
-  }, [flags, mineOnly, userId, minSeverity, categoryFilter, debouncedSearchText]);
+  }, [flags, mineOnly, userId, categoryFilter, debouncedSearchText]);
 
   // Group the visible flags by status so the SectionList can show "Open"
   // and "Verified" as distinct sections. Sections with zero rows are
@@ -698,6 +699,37 @@ export default function TasksScreen() {
 
   return (
     <View style={styles.screen}>
+      {/* Editorial header (Phase 13) — headerless like Home, menu + Feedback folded in. */}
+      <ScreenHeader
+        eyebrow="TASKS"
+        title="Review barriers"
+        subtitle="Verify and resolve reports"
+        titleSize={30}
+        style={{ paddingTop: insets.top + spacing.sm }}
+        actions={
+          <>
+            <Pressable
+              onPress={() => drawer.setOpen(true)}
+              style={({ pressed }) => [styles.headerBtn, pressed && styles.headerBtnPressed]}
+              accessibilityRole="button"
+              accessibilityLabel="Open navigation menu"
+              hitSlop={8}
+            >
+              <Menu size={22} color={color.textStrong} strokeWidth={2.2} />
+            </Pressable>
+            <Pressable
+              onPress={() => setSharedModal('feedback')}
+              style={({ pressed }) => [styles.headerBtn, pressed && styles.headerBtnPressed]}
+              accessibilityRole="button"
+              accessibilityLabel="Send feedback"
+              accessibilityHint="Opens a form to email feedback to the AccessMap owner"
+              hitSlop={8}
+            >
+              <MessageSquare size={20} color={color.textStrong} strokeWidth={2.2} />
+            </Pressable>
+          </>
+        }
+      />
       {flash && (
         <Animated.View
           style={[
@@ -836,41 +868,6 @@ export default function TasksScreen() {
           >
             <AppText variant="label" style={[styles.mineChipText, mineOnly && styles.mineChipTextActive]}>Mine</AppText>
           </Pressable>
-        </View>
-      )}
-      {/* Min-severity chip row — show even when not signed in (it works
-          on the public flag list). Hidden if the list is empty so there's
-          nothing to filter against. */}
-      {flags.length > 0 && (
-        <View style={styles.sevFilterRow} accessibilityLabel="Filter by minimum severity">
-          {[
-            { value: 0 as const, label: 'All' },
-            { value: 2 as const, label: '2+' },
-            { value: 3 as const, label: '3+' },
-            { value: 4 as const, label: '4+' },
-            { value: 5 as const, label: '5' },
-          ].map(({ value, label }) => {
-            const active = minSeverity === value;
-            // When active and value > 0, tint with the severity palette so
-            // the threshold's color is immediately recognizable.
-            const activeColor = value === 0 ? color.brand : severityColor(value);
-            return (
-              <Pressable
-                key={value}
-                onPress={() => setMinSeverity(value)}
-                style={[styles.sevChip, active && { backgroundColor: activeColor }]}
-                accessibilityRole="button"
-                accessibilityLabel={
-                  value === 0 ? 'Show all severities' : `Show severity ${value} and above`
-                }
-                accessibilityState={{ selected: active }}
-              >
-                <AppText variant="label" style={[styles.sevChipText, active && styles.sevChipTextActive]}>
-                  {label}
-                </AppText>
-              </Pressable>
-            );
-          })}
         </View>
       )}
       {/* Category quick-filter — horizontally scrollable chip strip
@@ -1408,11 +1405,10 @@ const FlagCard = memo(function FlagCard({
         ) : null}
         <View style={styles.cardBodyText}>
           {flag.description ? <AppText variant="body" style={styles.cardDesc}>{flag.description}</AppText> : null}
-          <AppText variant="mono" style={styles.cardMeta}>
+          <AppText variant="body" style={styles.cardMeta}>
             {`Severity ${flag.severity}` +
-              (distanceInfo ? ` • ${distanceInfo.label} · ${distanceInfo.eta}` : '') +
-              ` • ${flag.lat.toFixed(4)}, ${flag.lng.toFixed(4)}` +
-              ` • ${relativeTime(flag.created_at)}`}
+              (distanceInfo ? ` · ${distanceInfo.label} · ${distanceInfo.eta}` : '') +
+              ` · ${relativeTime(flag.created_at)}`}
           </AppText>
           <AppText variant="body" style={styles.cardHint}>
             {selectionActive
@@ -1494,6 +1490,15 @@ const makeStyles = (color: ColorTheme) =>
     // Screen wash — same #f7f9fc the Profile screen uses, so the white
     // cards inside read as cards instead of blending into a white page.
     screen: { flex: 1, backgroundColor: color.surfaceMuted },
+    headerBtn: {
+      width: 44,
+      height: 44,
+      borderRadius: radius.full,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: color.surface,
+    },
+    headerBtnPressed: { backgroundColor: color.surfaceNeutral },
     flashWrap: {
       position: 'absolute',
       top: 12,
@@ -1709,9 +1714,12 @@ const makeStyles = (color: ColorTheme) =>
     cardHint: { fontSize: font.size.caption, color: color.textSubtle, fontStyle: 'italic' },
     cardActions: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginTop: spacing.tight },
     actionBtn: {
+      // Phase 13: clean fully-rounded pills (was radius.md rects) to match the
+      // editorial button language; status colors kept (brand/success/neutral).
+      // md horizontal padding keeps all four actions on one row.
       paddingHorizontal: spacing.md,
       paddingVertical: spacing.sm,
-      borderRadius: radius.md,
+      borderRadius: radius.full,
       minHeight: 44,
       alignItems: 'center',
       justifyContent: 'center',
@@ -1778,25 +1786,6 @@ const makeStyles = (color: ColorTheme) =>
       borderRadius: radius.circle,
     },
     searchClearText: { fontSize: font.size.lg, fontWeight: font.weight.semibold, color: color.textMuted },
-    sevFilterRow: {
-      flexDirection: 'row',
-      gap: spacing.xs,
-      paddingHorizontal: spacing.lg,
-      paddingTop: spacing.sm,
-      paddingBottom: spacing.sm,
-    },
-    sevChip: {
-      flexGrow: 1,
-      flexBasis: 0,
-      minHeight: 44, // WCAG 2.5.5: was 36pt (below 44pt project standard)
-      paddingVertical: spacing.sm,
-      borderRadius: radius.circle,
-      backgroundColor: color.surfaceNeutral,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    sevChipText: { fontSize: font.size.sm, fontWeight: font.weight.bold, color: color.text },
-    sevChipTextActive: { color: color.textOnBrand },
     // Category chip strip — horizontally scrollable so all 6 categories
     // fit on narrow phones without truncating labels. Visual weight
     // matches sevChip; brand fill on active so it reads as "selected".
@@ -1855,18 +1844,19 @@ const makeStyles = (color: ColorTheme) =>
     // of the screen so SR users and anyone unfamiliar with long-press can
     // discover the feature. Tinted to match the sort chip's accent.
     selectEntryRow: {
+      // Phase 13: compact, right-aligned secondary action (was a dominating
+      // full-width bordered button) so the cards lead the screen at a glance.
+      alignItems: 'flex-end',
       paddingHorizontal: spacing.lg,
       paddingTop: spacing.sm,
-      paddingBottom: spacing.sm,
+      paddingBottom: 0,
     },
     selectEntryBtn: {
       minHeight: 44,
-      paddingHorizontal: 14,
-      paddingVertical: 10,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.xs,
       borderRadius: radius.circle,
       backgroundColor: color.surfaceNeutral,
-      borderWidth: 1,
-      borderColor: color.brand,
       alignItems: 'center',
       justifyContent: 'center',
     },
