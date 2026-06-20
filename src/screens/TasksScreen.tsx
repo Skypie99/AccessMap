@@ -1470,7 +1470,9 @@ const makeStyles = (color: ColorTheme) =>
       zIndex: 10,
     },
     flashPill: {
-      backgroundColor: color.success,
+      // successStrong (not success): white reward text needs ≥4.5:1 — #27ae60
+      // is only 2.8:1 (AA-large), #1e8449 is 4.6:1. Matches FlashBanner.
+      backgroundColor: color.successStrong,
       paddingHorizontal: spacing.lg,
       paddingVertical: spacing.md,
       borderRadius: radius.circle,
