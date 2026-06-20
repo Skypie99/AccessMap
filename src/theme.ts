@@ -164,12 +164,18 @@ export const color = {
   // exception"). These are IDENTICAL in light + dark so the header/tab bar read
   // the same in both palettes. Tokenizes the literals previously hardcoded in
   // RootNavigator (header #0d1829, tint #60a5fa, etc.).
-  headerBg: '#0d1829', // app header background (always dark)
-  headerFg: '#f0f6ff', // header title + icon tint on headerBg (~15:1)
+  // Phase 8: the app HEADER is now a clean light editorial bar in LIGHT mode
+  // (deep-navy title on white) and stays dark in the dark palette. The TAB BAR
+  // tokens below stay always-dark — the frosted glass bar reads dark in both.
+  headerBg: '#ffffff', // light editorial header background (light mode)
+  headerFg: '#16213a', // deep-navy header title + icon tint (~13:1 on #fff)
+  headerBtnBg: 'rgba(22,33,58,0.06)', // hamburger/Feedback button wash on the light header
+  headerBtnBgPressed: 'rgba(22,33,58,0.12)',
+  headerBorder: 'rgba(22,33,58,0.10)', // hairline under the light header
   tabBarBg: 'rgba(7,11,24,0.92)', // bottom tab bar surface (always dark)
   tabBarActiveTint: '#60a5fa', // active tab icon/label (blue-400 on dark, ~6:1)
   tabBarInactiveTint: 'rgba(255,255,255,0.55)', // inactive tab — bumped from 0.45 → 0.55 for AA on the dark bar
-  navBorder: 'rgba(255,255,255,0.1)', // hairline divider on nav chrome
+  navBorder: 'rgba(255,255,255,0.1)', // hairline divider on the (dark) tab bar
 
   // Achievement earned-state wash — light amber behind unlocked badges.
   achievementEarnedBg: '#fff3d1',

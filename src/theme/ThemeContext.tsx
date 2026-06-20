@@ -127,6 +127,9 @@ const darkColor = {
   // Navigation chrome — always-dark, so IDENTICAL to the light palette.
   headerBg: '#0d1829',
   headerFg: '#f0f6ff',
+  headerBtnBg: 'rgba(255,255,255,0.12)',
+  headerBtnBgPressed: 'rgba(255,255,255,0.22)',
+  headerBorder: 'rgba(255,255,255,0.1)',
   tabBarBg: 'rgba(7,11,24,0.92)',
   tabBarActiveTint: '#60a5fa',
   tabBarInactiveTint: 'rgba(255,255,255,0.55)',
