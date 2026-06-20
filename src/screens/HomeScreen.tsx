@@ -35,6 +35,7 @@ import {
 } from 'lucide-react-native';
 import { AppText } from '@/components/ui/AppText';
 import { GlassSurface } from '@/components/ui/GlassSurface';
+import { ScreenHeader, EYEBROW_TRACKING } from '@/components/ui/ScreenHeader';
 import { PressableScale } from '@/components/ui/PressableScale';
 import { SkeletonRow } from '@/components/ui/Skeleton';
 import PlatformMap from '@/components/PlatformMap';
@@ -59,10 +60,6 @@ const FALLBACK_PEEK_REGION = {
   latitudeDelta: 0.05,
   longitudeDelta: 0.05,
 };
-
-// All-caps micro-label tracking. (Phase 7b folds the editorial header into a
-// shared ScreenHeader and promotes this to a real tracking token.)
-const CAPS_TRACKING = 1.2;
 
 type HomeNav = BottomTabNavigationProp<RootTabParamList, 'Home'>;
 
@@ -181,13 +178,12 @@ export default function HomeScreen() {
         showsVerticalScrollIndicator={false}
       >
         {/* Editorial header — menu + Feedback fold in (no dark nav bar here). */}
-        <View style={styles.header}>
-          <AppText variant="label" style={styles.eyebrow}>{eyebrow}</AppText>
-          <View style={styles.titleRow}>
-            <AppText variant="display" size={34} style={styles.title} numberOfLines={1}>
-              {showFirstLoad ? '—' : `${flags.length} ${flags.length === 1 ? 'barrier' : 'barriers'}`}
-            </AppText>
-            <View style={styles.headerActions}>
+        <ScreenHeader
+          eyebrow={eyebrow}
+          title={showFirstLoad ? '—' : `${flags.length} ${flags.length === 1 ? 'barrier' : 'barriers'}`}
+          subtitle={subtitle}
+          actions={
+            <>
               <Pressable
                 onPress={() => drawer.setOpen(true)}
                 style={({ pressed }) => [styles.headerBtn, pressed && styles.headerBtnPressed]}
@@ -207,10 +203,9 @@ export default function HomeScreen() {
               >
                 <MessageSquare size={20} color={color.textStrong} strokeWidth={2.2} />
               </Pressable>
-            </View>
-          </View>
-          <AppText variant="body" style={styles.subtitle} numberOfLines={1}>{subtitle}</AppText>
-        </View>
+            </>
+          }
+        />
 
         {/* Frosted-glass search — a real control that opens the address search. */}
         <Pressable
@@ -371,16 +366,6 @@ const makeStyles = (color: ColorTheme) =>
   StyleSheet.create({
     screen: { flex: 1, backgroundColor: color.surfaceMuted },
     scroll: { flex: 1 },
-    header: { paddingHorizontal: spacing.xl, paddingTop: spacing.sm, paddingBottom: spacing.md },
-    eyebrow: {
-      fontSize: font.size.xs,
-      letterSpacing: CAPS_TRACKING,
-      color: color.textSubtle,
-      fontWeight: font.weight.semibold,
-    },
-    titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-    title: { flex: 1, color: color.textStrong, marginTop: 2 },
-    headerActions: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
     headerBtn: {
       width: 44,
       height: 44,
@@ -390,7 +375,6 @@ const makeStyles = (color: ColorTheme) =>
       backgroundColor: color.surface,
     },
     headerBtnPressed: { backgroundColor: color.surfaceNeutral },
-    subtitle: { fontSize: font.size.md, color: color.textMuted, marginTop: 3 },
     searchPressable: { marginHorizontal: spacing.lg, marginTop: spacing.xs },
     search: {
       borderRadius: radius.md,
@@ -458,7 +442,7 @@ const makeStyles = (color: ColorTheme) =>
     offlineText: { flex: 1, fontSize: font.size.sm, color: color.warningFg },
     sectionLabel: {
       fontSize: font.size.xs,
-      letterSpacing: CAPS_TRACKING,
+      letterSpacing: EYEBROW_TRACKING,
       color: color.textSubtle,
       fontWeight: font.weight.semibold,
       paddingHorizontal: spacing.xl,
