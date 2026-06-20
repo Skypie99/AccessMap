@@ -436,10 +436,11 @@ function makeStyles(color: ColorTheme) {
     },
     title: {
       flex: 1,
-      fontSize: font.size.lg,
+      fontSize: font.size.h2,
       fontWeight: font.weight.bold,
       color: color.textStrong,
       textAlign: 'center',
+      letterSpacing: font.tracking.h1,
     },
     subtitle: {
       fontSize: font.size.sm,
