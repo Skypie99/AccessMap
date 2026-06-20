@@ -1189,7 +1189,7 @@ export default function MapScreen() {
             object with internal segments.
           */}
           <GlassSurface style={styles.actionBar} borderRadius={radius.circle}>
-            <Pressable
+            <PressableScale
               onPress={() => setSearchOpen(true)}
               style={styles.actionBtn}
               accessibilityRole="button"
@@ -1197,9 +1197,9 @@ export default function MapScreen() {
               accessibilityHint="Opens a search box to jump the map to an address or place"
             >
               <Search size={19} color={color.brand} strokeWidth={2.2} />
-            </Pressable>
+            </PressableScale>
             <View style={styles.actionDivider} accessibilityElementsHidden />
-            <Pressable
+            <PressableScale
               onPress={() => setLegendOpen(true)}
               style={styles.actionBtn}
               accessibilityRole="button"
@@ -1207,9 +1207,9 @@ export default function MapScreen() {
               accessibilityHint="Opens a guide explaining flag categories and severity"
             >
               <HelpCircle size={19} color={color.brand} strokeWidth={2.2} />
-            </Pressable>
+            </PressableScale>
             <View style={styles.actionDivider} accessibilityElementsHidden />
-            <Pressable
+            <PressableScale
               onPress={() => setFiltersOpen((v) => !v)}
               style={[styles.actionBtn, (filtersOpen || filtersActive) && styles.actionBtnActive]}
               accessibilityRole="button"
@@ -1221,9 +1221,9 @@ export default function MapScreen() {
                 color={filtersOpen || filtersActive ? color.textOnBrand : color.brand}
                 strokeWidth={2.2}
               />
-            </Pressable>
+            </PressableScale>
             <View style={styles.actionDivider} accessibilityElementsHidden />
-            <Pressable
+            <PressableScale
               onPress={cycleSeverity}
               style={[
                 styles.actionBtn,
@@ -1248,9 +1248,9 @@ export default function MapScreen() {
               >
                 {minSeverity}+
               </AppText>
-            </Pressable>
+            </PressableScale>
             <View style={styles.actionDivider} accessibilityElementsHidden />
-            <Pressable
+            <PressableScale
               onPress={cycleCategory}
               style={[
                 styles.actionBtn,
@@ -1275,25 +1275,25 @@ export default function MapScreen() {
               ) : (
                 <Shapes size={19} color={color.brand} strokeWidth={2.2} />
               )}
-            </Pressable>
+            </PressableScale>
             <View style={styles.actionDivider} accessibilityElementsHidden />
-            <Pressable
+            <PressableScale
               onPress={() => { refreshFlags().catch(() => {}); }}
               style={styles.actionBtn}
               accessibilityRole="button"
               accessibilityLabel="Refresh flags"
             >
               <RotateCw size={19} color={color.brand} strokeWidth={2.2} />
-            </Pressable>
+            </PressableScale>
             <View style={styles.actionDivider} accessibilityElementsHidden />
-            <Pressable
+            <PressableScale
               onPress={requestLocation}
               style={styles.actionBtn}
               accessibilityRole="button"
               accessibilityLabel="Recenter on me"
             >
               <LocateFixed size={19} color={color.brand} strokeWidth={2.2} />
-            </Pressable>
+            </PressableScale>
           </GlassSurface>
         </View>
 
