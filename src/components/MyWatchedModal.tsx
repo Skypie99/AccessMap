@@ -36,7 +36,7 @@ import {
 } from '@/lib/watchedFlagsFilter';
 import { font, radius, spacing } from '@/theme';
 import { MapPin, Star, X } from 'lucide-react-native';
-import { decorativeProps } from '@/lib/accessibility';
+import { decorativeProps, useReducedMotion } from '@/lib/accessibility';
 import { severityA11y, statusA11y } from '@/lib/a11yText';
 import type { FlagRow } from '@/types/database';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
@@ -87,6 +87,7 @@ export function sortWatchedFlags(items: FlagRow[], mode: WatchedSort): FlagRow[]
 export default function MyWatchedModal({ visible, onClose, onSelectFlag, onViewOnMap, refreshKey = 0 }: Props) {
   const color = useColor();
   const styles = makeStyles(color);
+  const reducedMotion = useReducedMotion();
   const { user } = useAuth();
   const [flags, setFlags] = useState<FlagRow[]>([]);
   const [watchedIds, setWatchedIds] = useState<string[]>([]);
@@ -264,7 +265,7 @@ export default function MyWatchedModal({ visible, onClose, onSelectFlag, onViewO
   }, [styles, onSelectFlag, onViewOnMap, handleUnwatch]);
 
   return (
-    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
+    <Modal visible={visible} animationType={reducedMotion ? 'none' : 'slide'} transparent onRequestClose={onClose}>
       <View style={styles.backdrop}>
         <View style={styles.sheet}>
           <View style={styles.header}>

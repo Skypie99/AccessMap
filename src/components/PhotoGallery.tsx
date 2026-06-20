@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { RemoteImage } from '@/components/ui/RemoteImage';
 import { AppText } from '@/components/ui/AppText';
+import { useReducedMotion } from '@/lib/accessibility';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { font, radius, shadow, spacing } from '@/theme';
 import { Camera, X } from 'lucide-react-native';
@@ -44,6 +45,7 @@ interface Props {
 function PhotoGalleryInner({ photos, onAddPhoto, maxPhotos = 5, onRemovePhoto }: Props) {
   const color = useColor();
   const styles = useMemo(() => makeStyles(color), [color]);
+  const reducedMotion = useReducedMotion();
 
   const canAdd = !!onAddPhoto && photos.length < maxPhotos;
 
@@ -153,7 +155,7 @@ function PhotoGalleryInner({ photos, onAddPhoto, maxPhotos = 5, onRemovePhoto }:
       <Modal
         visible={lightboxOpen}
         transparent
-        animationType="fade"
+        animationType={reducedMotion ? 'none' : 'fade'}
         onRequestClose={() => setLightboxOpen(false)}
         statusBarTranslucent
       >

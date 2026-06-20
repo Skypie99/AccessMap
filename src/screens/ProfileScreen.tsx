@@ -791,7 +791,7 @@ export default function ProfileScreen() {
         </Pressable>
         <Modal
           visible={signInOpen}
-          animationType="slide"
+          animationType={reduceMotion ? 'none' : 'slide'}
           onRequestClose={() => setSignInOpen(false)}
         >
           <SignInScreen onClose={() => setSignInOpen(false)} />
@@ -1616,7 +1616,7 @@ export default function ProfileScreen() {
           screen readers while the dialog is open. */}
       <Modal
         visible={deleteAccountOpen}
-        animationType="slide"
+        animationType={reduceMotion ? 'none' : 'slide'}
         transparent
         onRequestClose={() => {
           if (!deletingAccount) setDeleteAccountOpen(false);
@@ -1750,7 +1750,7 @@ export default function ProfileScreen() {
           screen from SR while open. */}
       <Modal
         visible={tierExplainerOpen}
-        animationType="slide"
+        animationType={reduceMotion ? 'none' : 'slide'}
         transparent
         onRequestClose={() => setTierExplainerOpen(false)}
       >

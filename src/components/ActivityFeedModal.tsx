@@ -27,6 +27,7 @@ import {
 import { RemoteImage } from '@/components/ui/RemoteImage';
 import { AppText } from '@/components/ui/AppText';
 import { useAuth } from '@/lib/auth';
+import { useReducedMotion } from '@/lib/accessibility';
 import { errorMessage } from '@/lib/errors';
 import {
   CATEGORY_LABELS,
@@ -55,6 +56,7 @@ interface Props {
 export default function ActivityFeedModal({ visible, onClose, onSelectFlag, onViewOnMap }: Props) {
   const color = useColor();
   const styles = useMemo(() => makeStyles(color), [color]);
+  const reducedMotion = useReducedMotion();
   const { user } = useAuth();
   const [flags, setFlags] = useState<FlagRow[]>([]);
   const [watchedIds, setWatchedIds] = useState<Set<string>>(new Set());
@@ -206,7 +208,7 @@ export default function ActivityFeedModal({ visible, onClose, onSelectFlag, onVi
   ];
 
   return (
-    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
+    <Modal visible={visible} animationType={reducedMotion ? 'none' : 'slide'} transparent onRequestClose={onClose}>
       <View style={styles.backdrop}>
         <View style={styles.card} accessibilityViewIsModal>
           <View style={styles.headerRow}>

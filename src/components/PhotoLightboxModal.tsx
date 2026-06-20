@@ -15,6 +15,7 @@ import React from 'react';
 import { Modal, Pressable, StatusBar, StyleSheet, View } from 'react-native';
 import { RemoteImage } from '@/components/ui/RemoteImage';
 import { AppText } from '@/components/ui/AppText';
+import { useReducedMotion } from '@/lib/accessibility';
 import { font, radius, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { X } from 'lucide-react-native';
@@ -30,12 +31,13 @@ interface Props {
 export default function PhotoLightboxModal({ visible, photoUrl, caption, onClose }: Props) {
   const color = useColor();
   const styles = makeStyles(color);
+  const reducedMotion = useReducedMotion();
   // Defensive: still render the modal frame if photoUrl is null so the
   // close button is reachable, but show a friendly fallback.
   return (
     <Modal
       visible={visible}
-      animationType="fade"
+      animationType={reducedMotion ? 'none' : 'fade'}
       transparent
       onRequestClose={onClose}
       // statusBarTranslucent on Android lets the backdrop cover the

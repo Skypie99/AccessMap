@@ -40,6 +40,7 @@ import {
 } from 'react-native';
 import { useAuth } from '@/lib/auth';
 import { AppText } from '@/components/ui/AppText';
+import { useReducedMotion } from '@/lib/accessibility';
 import { confirm } from '@/lib/confirm';
 import { errorMessage } from '@/lib/errors';
 import {
@@ -91,6 +92,7 @@ const PLACEHOLDER_DEFAULTS = {
 export default function FilterPresetsModal({ visible, onClose, onApply }: Props) {
   const color = useColor();
   const styles = makeStyles(color);
+  const reducedMotion = useReducedMotion();
   const { user } = useAuth();
 
   const [presets, setPresets] = useState<FilterPreset[]>([]);
@@ -346,7 +348,7 @@ export default function FilterPresetsModal({ visible, onClose, onApply }: Props)
   );
 
   return (
-    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
+    <Modal visible={visible} animationType={reducedMotion ? 'none' : 'slide'} transparent onRequestClose={onClose}>
       <View style={styles.backdrop}>
         <View style={styles.card} accessibilityViewIsModal>
           <View style={styles.headerRow}>

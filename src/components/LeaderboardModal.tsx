@@ -8,6 +8,7 @@ import {
   View,
 } from 'react-native';
 import { useAuth } from '@/lib/auth';
+import { useReducedMotion } from '@/lib/accessibility';
 import { AppText } from '@/components/ui/AppText';
 import { errorMessage } from '@/lib/errors';
 import { listLeaderboard, type LeaderboardEntry } from '@/lib/flags';
@@ -40,6 +41,7 @@ type LeaderboardTab = 'all' | 'month';
 export default function LeaderboardModal({ visible, onClose }: Props) {
   const color = useColor();
   const styles = useMemo(() => makeStyles(color), [color]);
+  const reducedMotion = useReducedMotion();
   const { user } = useAuth();
   const [tab, setTab] = useState<LeaderboardTab>('all');
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
@@ -123,7 +125,7 @@ export default function LeaderboardModal({ visible, onClose }: Props) {
   );
 
   return (
-    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
+    <Modal visible={visible} animationType={reducedMotion ? 'none' : 'slide'} transparent onRequestClose={onClose}>
       <View style={styles.backdrop}>
         <View style={styles.card} accessibilityViewIsModal>
           <View style={styles.headerRow}>

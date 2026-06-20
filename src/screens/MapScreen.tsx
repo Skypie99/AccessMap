@@ -2011,7 +2011,7 @@ export default function MapScreen() {
       */}
       <Modal
         visible={presetNameModalOpen}
-        animationType="fade"
+        animationType={reducedMotion ? 'none' : 'fade'}
         transparent
         onRequestClose={() => {
           if (!savingPreset) setPresetNameModalOpen(false);
@@ -2088,7 +2088,7 @@ export default function MapScreen() {
       */}
       <Modal
         visible={nameModalOpen}
-        animationType="fade"
+        animationType={reducedMotion ? 'none' : 'fade'}
         transparent
         onRequestClose={() => {
           if (!savingSet) setNameModalOpen(false);
