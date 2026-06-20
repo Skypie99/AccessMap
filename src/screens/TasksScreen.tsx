@@ -58,6 +58,7 @@ import type { RootTabParamList } from '@/navigation/RootNavigator';
 import FlagDetailModal, { type DetailAction } from '@/components/FlagDetailModal';
 import PhotoLightboxModal from '@/components/PhotoLightboxModal';
 import { AppText } from '@/components/ui/AppText';
+import { PressableScale } from '@/components/ui/PressableScale';
 import { Skeleton, SkeletonCard } from '@/components/ui/Skeleton';
 import { StatusBadge } from '@/components/StatusBadge';
 import CategoryIcon from '@/components/CategoryIcon';
@@ -1397,7 +1398,7 @@ const FlagCard = memo(function FlagCard({
       {!selectionActive && (
         <View style={styles.cardActions}>
           {flag.status === 'open' && (
-            <Pressable
+            <PressableScale
               disabled={isBusy}
               onPress={() => onSetStatus(flag.id, 'verified', isOwn)}
               style={[styles.actionBtn, styles.verifyBtn]}
@@ -1406,9 +1407,9 @@ const FlagCard = memo(function FlagCard({
               accessibilityState={{ disabled: isBusy }}
             >
               <AppText variant="label" style={styles.verifyText}>Verify</AppText>
-            </Pressable>
+            </PressableScale>
           )}
-          <Pressable
+          <PressableScale
             disabled={isBusy}
             onPress={() => onSetStatus(flag.id, 'resolved', isOwn)}
             style={[styles.actionBtn, styles.resolveBtn]}
@@ -1417,8 +1418,8 @@ const FlagCard = memo(function FlagCard({
             accessibilityState={{ disabled: isBusy }}
           >
             <AppText variant="label" style={styles.resolveText}>Resolved</AppText>
-          </Pressable>
-          <Pressable
+          </PressableScale>
+          <PressableScale
             disabled={isBusy}
             onPress={() => onSetStatus(flag.id, 'rejected', isOwn)}
             style={[styles.actionBtn, styles.rejectBtn]}
@@ -1427,7 +1428,7 @@ const FlagCard = memo(function FlagCard({
             accessibilityState={{ disabled: isBusy }}
           >
             <AppText variant="label" style={styles.rejectText}>Reject</AppText>
-          </Pressable>
+          </PressableScale>
           <Pressable
             disabled={isBusy}
             onPress={() => onShowDetails(flag)}
