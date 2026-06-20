@@ -1405,11 +1405,10 @@ const FlagCard = memo(function FlagCard({
         ) : null}
         <View style={styles.cardBodyText}>
           {flag.description ? <AppText variant="body" style={styles.cardDesc}>{flag.description}</AppText> : null}
-          <AppText variant="mono" style={styles.cardMeta}>
+          <AppText variant="body" style={styles.cardMeta}>
             {`Severity ${flag.severity}` +
-              (distanceInfo ? ` • ${distanceInfo.label} · ${distanceInfo.eta}` : '') +
-              ` • ${flag.lat.toFixed(4)}, ${flag.lng.toFixed(4)}` +
-              ` • ${relativeTime(flag.created_at)}`}
+              (distanceInfo ? ` · ${distanceInfo.label} · ${distanceInfo.eta}` : '') +
+              ` · ${relativeTime(flag.created_at)}`}
           </AppText>
           <AppText variant="body" style={styles.cardHint}>
             {selectionActive
@@ -1717,7 +1716,8 @@ const makeStyles = (color: ColorTheme) =>
     actionBtn: {
       // Phase 13: clean fully-rounded pills (was radius.md rects) to match the
       // editorial button language; status colors kept (brand/success/neutral).
-      paddingHorizontal: spacing.lg,
+      // md horizontal padding keeps all four actions on one row.
+      paddingHorizontal: spacing.md,
       paddingVertical: spacing.sm,
       borderRadius: radius.full,
       minHeight: 44,
