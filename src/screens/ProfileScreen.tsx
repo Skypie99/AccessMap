@@ -159,6 +159,10 @@ export default function ProfileScreen() {
     byStatus: EMPTY_BY_STATUS,
   });
   const [loading, setLoading] = useState(true);
+  // Inline load error (web-safe + retryable). Alert.alert is a no-op on
+  // react-native-web, so a failed profile load used to vanish on web with no
+  // way to retry. Mirrors LeaderboardScreen's loadError + Try again pattern.
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   // My Reports modal lives at this level so its FlagDetailModal sibling can
   // render on top without nesting Modals — nested transparent Modals are
@@ -302,7 +306,10 @@ export default function ProfileScreen() {
 
   const load = useCallback(async () => {
     if (!user) return;
-    if (mountedRef.current) setLoading(true);
+    if (mountedRef.current) {
+      setLoading(true);
+      setLoadError(null);
+    }
     try {
       // One query for all status counts (and the total). Cheaper than
       // running a separate count(*) per status; row count caps at the
@@ -347,8 +354,10 @@ export default function ProfileScreen() {
         byStatus,
       });
     } catch (e) {
+      // Inline error instead of Alert.alert (web no-op) so web users see it
+      // and can retry. The render shows a "Try again" card when loadError set.
       if (mountedRef.current) {
-        Alert.alert("Couldn't load your profile", errorMessage(e));
+        setLoadError(errorMessage(e));
       }
     } finally {
       if (mountedRef.current) setLoading(false);
@@ -848,6 +857,26 @@ export default function ProfileScreen() {
           onView={handleViewUpdates}
           onDismiss={handleDismissUpdates}
         />
+
+        {loadError && (
+          <View
+            style={styles.errorCard}
+            accessible
+            accessibilityLiveRegion="polite"
+            accessibilityLabel={`Couldn't load your profile. ${loadError}`}
+          >
+            <AppText variant="body" style={styles.errorCardText}>Couldn&apos;t load your profile.</AppText>
+            <AppText variant="body" style={styles.errorCardHint}>{loadError}</AppText>
+            <Pressable
+              onPress={() => void load()}
+              style={({ pressed }) => [styles.errorRetryBtn, pressed && styles.errorRetryBtnPressed]}
+              accessibilityRole="button"
+              accessibilityLabel="Try loading your profile again"
+            >
+              <AppText variant="label" style={styles.errorRetryText}>Try again</AppText>
+            </Pressable>
+          </View>
+        )}
 
         <View style={styles.heroCard}>
           {/* Phase 9: clean light editorial stat card (was a dark brand
@@ -1847,6 +1876,33 @@ const makeStyles = (color: ColorTheme) =>
       justifyContent: 'center',
       gap: spacing.lg,
       backgroundColor: color.surfaceMuted,
+    },
+    // Inline load-error card (mirrors LeaderboardScreen's stateWrap/retryBtn).
+    errorCard: {
+      backgroundColor: color.surface,
+      borderRadius: radius.lg,
+      padding: spacing.lg,
+      alignItems: 'center',
+      gap: spacing.tight,
+      ...shadow.e1,
+    },
+    errorCardText: { fontSize: font.size.sm, color: color.textMuted, textAlign: 'center' },
+    errorCardHint: { fontSize: font.size.xs, color: color.textSubtle, textAlign: 'center' },
+    errorRetryBtn: {
+      marginTop: spacing.md,
+      paddingHorizontal: spacing.xl,
+      paddingVertical: 10,
+      backgroundColor: color.brand,
+      borderRadius: radius.md,
+      minHeight: 44,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    errorRetryBtnPressed: { opacity: 0.8 },
+    errorRetryText: {
+      fontSize: font.size.sm,
+      fontWeight: font.weight.semibold,
+      color: color.textOnBrand,
     },
     signInBtn: {
       backgroundColor: color.brand,
