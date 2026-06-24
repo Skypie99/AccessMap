@@ -27,6 +27,32 @@ const NOMINATIM_REVERSE = 'https://nominatim.openstreetmap.org/reverse';
 // version when changing geocoding behavior so logs can be correlated.
 const USER_AGENT = 'AccessMap/1.0 (skylerhalisky@gmail.com)';
 
+/**
+ * fetch() against Nominatim with an 8s hard timeout, combined with the caller's
+ * optional AbortSignal. Without this, a stalled request hangs the address search
+ * forever (Nominatim is a free public service with no SLA).
+ *
+ * We use a manual AbortController + setTimeout rather than AbortSignal.timeout()
+ * /AbortSignal.any() because those aren't reliably present in Hermes (RN 0.81).
+ * The timer is cleared and the caller listener removed once the request settles.
+ */
+function fetchWithTimeout(url: string, callerSignal?: AbortSignal, timeoutMs = 8000): Promise<Response> {
+  const controller = new AbortController();
+  const onAbort = () => controller.abort();
+  if (callerSignal) {
+    if (callerSignal.aborted) controller.abort();
+    else callerSignal.addEventListener('abort', onAbort);
+  }
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  return fetch(url, {
+    headers: { 'User-Agent': USER_AGENT },
+    signal: controller.signal,
+  }).finally(() => {
+    clearTimeout(timer);
+    callerSignal?.removeEventListener('abort', onAbort);
+  });
+}
+
 export interface GeocodeResult {
   // Unique-ish id from Nominatim ('place_id'). Used as React keys.
   id: string;
@@ -86,10 +112,7 @@ export async function reverseGeocode(
 ): Promise<string | null> {
   try {
     const url = `${NOMINATIM_REVERSE}?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=0`;
-    const response = await fetch(url, {
-      headers: { 'User-Agent': USER_AGENT },
-      signal,
-    });
+    const response = await fetchWithTimeout(url, signal);
     if (!response.ok) return null;
     const data = (await response.json()) as { display_name?: string };
     return typeof data.display_name === 'string' ? data.display_name : null;
@@ -99,26 +122,37 @@ export async function reverseGeocode(
 }
 
 /**
- * Search Nominatim for an address. Returns up to 5 results (the
- * default cap is enough for a list dropdown without scrolling — more
- * is just noise).
+ * Search Nominatim for an address, SURFACING real failures (non-OK HTTP
+ * status, network/timeout, JSON parse) by throwing — so a caller can show a
+ * retryable error instead of a misleading "no matches". Still returns [] for
+ * queries under 3 chars.
  *
- * `signal` lets callers abort the fetch when the user types more
- * characters before this one settles. The modal wires AbortController
- * to its debounce timer.
+ * Aborts throw an `AbortError` as usual; callers that race fetches should
+ * check `signal.aborted` and treat that as a cancellation, not an error.
+ *
+ * `signal` lets callers abort the fetch when the user types more characters
+ * before this one settles. The modal wires AbortController to its debounce
+ * timer. Returns up to 5 results — enough for a dropdown without scrolling.
  */
-export async function searchAddress(query: string, signal?: AbortSignal): Promise<GeocodeResult[]> {
+export async function searchAddressStrict(query: string, signal?: AbortSignal): Promise<GeocodeResult[]> {
   const trimmed = query.trim();
   if (trimmed.length < 3) return [];
+  const url = `${NOMINATIM_BASE}?format=json&q=${encodeURIComponent(trimmed)}&limit=5&addressdetails=0`;
+  const response = await fetchWithTimeout(url, signal);
+  if (!response.ok) throw new Error(`Address search failed (${response.status})`);
+  const payload = await response.json();
+  return parseResults(payload);
+}
+
+/**
+ * Swallowing variant of {@link searchAddressStrict}: returns [] on ANY
+ * failure (network, parse, non-OK status). This is the long-standing
+ * contract the geocode tests cover. Callers that need to tell "search
+ * failed" apart from "no matches" should use `searchAddressStrict` + catch.
+ */
+export async function searchAddress(query: string, signal?: AbortSignal): Promise<GeocodeResult[]> {
   try {
-    const url = `${NOMINATIM_BASE}?format=json&q=${encodeURIComponent(trimmed)}&limit=5&addressdetails=0`;
-    const response = await fetch(url, {
-      headers: { 'User-Agent': USER_AGENT },
-      signal,
-    });
-    if (!response.ok) return [];
-    const payload = await response.json();
-    return parseResults(payload);
+    return await searchAddressStrict(query, signal);
   } catch (e) {
     // Aborts throw — treat as "no results" since the caller doesn't
     // want to render anything from a cancelled request.

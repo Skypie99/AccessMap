@@ -13,7 +13,7 @@ import { AppText } from '@/components/ui/AppText';
 import { ChevronRight, MapPin, X } from 'lucide-react-native';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { useReducedMotion } from '@/lib/accessibility';
-import { searchAddress, type GeocodeResult } from '@/lib/geocode';
+import { searchAddressStrict, type GeocodeResult } from '@/lib/geocode';
 import {
   addRecent,
   type AddressRecent,
@@ -54,6 +54,13 @@ export default function AddressSearchModal({ visible, onClose, onSelect }: Props
   const [results, setResults] = useState<GeocodeResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
+  // Distinct from the "No matches" empty state: set when the geocoder request
+  // actually FAILS (network/timeout/HTTP) so we show a retryable error card
+  // instead of pretending there were zero matches.
+  const [searchError, setSearchError] = useState(false);
+  // Bumped by the error card's Retry button; included in the search effect's
+  // deps so a retry re-runs the fetch for the current query.
+  const [retryKey, setRetryKey] = useState(0);
   // Last few addresses the user picked, newest first. Hydrated from
   // AsyncStorage on every modal open so other tabs/devices that wrote
   // recents in the meantime don't show stale state.
@@ -78,25 +85,36 @@ export default function AddressSearchModal({ visible, onClose, onSelect }: Props
       setResults([]);
       setLoading(false);
       setSearched(false);
+      setSearchError(false);
       return;
     }
     setLoading(true);
     setSearched(false);
+    setSearchError(false);
     const timer = setTimeout(async () => {
       abortRef.current?.abort();
       const controller = new AbortController();
       abortRef.current = controller;
-      const found = await searchAddress(trimmed, controller.signal);
-      // Bail if a newer search has superseded this one.
-      if (controller.signal.aborted) return;
-      setResults(found);
-      setLoading(false);
-      setSearched(true);
+      try {
+        const found = await searchAddressStrict(trimmed, controller.signal);
+        // Bail if a newer search has superseded this one.
+        if (controller.signal.aborted) return;
+        setResults(found);
+        setSearched(true);
+        setLoading(false);
+      } catch {
+        // An abort isn't a real error — a newer keystroke (or a modal close)
+        // superseded this fetch, so just bail and let that run own the UI.
+        if (controller.signal.aborted) return;
+        setResults([]);
+        setSearchError(true);
+        setLoading(false);
+      }
     }, DEBOUNCE_MS);
     return () => {
       clearTimeout(timer);
     };
-  }, [query, visible]);
+  }, [query, visible, retryKey]);
 
   // Reset state whenever the modal opens. Doesn't clear `query` until
   // close so a quick "open → see last results → tap one" still works.
@@ -107,6 +125,7 @@ export default function AddressSearchModal({ visible, onClose, onSelect }: Props
       setResults([]);
       setLoading(false);
       setSearched(false);
+      setSearchError(false);
     }
   }, [visible]);
 
@@ -261,7 +280,39 @@ export default function AddressSearchModal({ visible, onClose, onSelect }: Props
             </View>
           )}
 
-          {!loading && searched && results.length === 0 && (
+          {/* Search FAILED (network/timeout/HTTP) — distinct from "No matches"
+              so the user knows it's worth retrying, not rephrasing. */}
+          {!loading && searchError && (
+            <View
+              style={styles.errorCard}
+              accessible
+              accessibilityRole="text"
+              accessibilityLabel="Couldn't search. Check your connection and try again."
+              accessibilityLiveRegion="polite"
+            >
+              <AppText variant="body" style={styles.errorIcon} accessibilityElementsHidden>
+                ⚠️
+              </AppText>
+              <AppText variant="heading" style={styles.errorTitle}>Couldn&apos;t search</AppText>
+              <AppText variant="body" style={styles.errorBody}>
+                Something went wrong reaching the address service. Check your connection and try again.
+              </AppText>
+              <Pressable
+                onPress={() => {
+                  setSearchError(false);
+                  setLoading(true);
+                  setRetryKey((k) => k + 1);
+                }}
+                style={({ pressed }) => [styles.retryBtn, pressed && styles.retryBtnPressed]}
+                accessibilityRole="button"
+                accessibilityLabel="Try searching again"
+              >
+                <AppText variant="label" style={styles.retryText}>Try again</AppText>
+              </Pressable>
+            </View>
+          )}
+
+          {!loading && !searchError && searched && results.length === 0 && (
             <View
               style={styles.emptyCard}
               accessible
@@ -407,6 +458,43 @@ function makeStyles(color: ColorTheme) {
       color: color.textMuted,
       textAlign: 'center',
       lineHeight: 19,
+    },
+    // Search-failed card — same card shape as emptyCard but with a Retry CTA.
+    errorCard: {
+      backgroundColor: color.surface,
+      borderRadius: radius.lg,
+      padding: spacing.lg,
+      alignItems: 'center',
+      gap: spacing.xs,
+      ...shadow.e1,
+    },
+    errorIcon: { fontSize: 28 },
+    errorTitle: {
+      fontSize: font.size.lg,
+      fontWeight: font.weight.bold,
+      color: color.textStrong,
+    },
+    errorBody: {
+      fontSize: font.size.sm,
+      color: color.textMuted,
+      textAlign: 'center',
+      lineHeight: 19,
+    },
+    retryBtn: {
+      marginTop: spacing.sm,
+      paddingHorizontal: spacing.xl,
+      paddingVertical: 10,
+      backgroundColor: color.brand,
+      borderRadius: radius.md,
+      minHeight: 44,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    retryBtnPressed: { opacity: 0.8 },
+    retryText: {
+      fontSize: font.size.sm,
+      fontWeight: font.weight.semibold,
+      color: color.textOnBrand,
     },
     resultsList: {
       gap: spacing.sm,
