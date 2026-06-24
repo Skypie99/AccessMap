@@ -13,6 +13,7 @@ import {
   View,
 } from 'react-native';
 import * as Location from 'expo-location';
+import { getCurrentPositionWithTimeout } from '@/lib/location';
 import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
@@ -960,7 +961,7 @@ export default function MapScreen() {
       // no recent fix exists, so we fall back to a live read.
       const pos =
         (await Location.getLastKnownPositionAsync({ maxAge: 30_000 })) ??
-        (await Location.getCurrentPositionAsync({
+        (await getCurrentPositionWithTimeout({
           accuracy: Location.Accuracy.Balanced,
         }));
       const coords = {
@@ -1152,6 +1153,13 @@ export default function MapScreen() {
       },
     ]);
   }, [authUser]);
+
+  // The Report FAB is dimmed until we have a location on NATIVE (where the
+  // recenter button is the way to turn location on). On WEB we keep it
+  // tappable even without a fix: the tap kicks requestLocation() and opens
+  // ReportFlagModal, which shows "Waiting for location…" and blocks submit
+  // until the location resolves — so the FAB can never dead-end on web.
+  const reportDisabled = !location && Platform.OS !== 'web';
 
   return (
     <View style={styles.container}>
@@ -1887,7 +1895,7 @@ export default function MapScreen() {
                 Jordan flagged in the privacy gate report. */}
             {authUser && (
               <PressableScale
-                style={[styles.fab, !location && styles.fabDisabled]}
+                style={[styles.fab, reportDisabled && styles.fabDisabled]}
                 haptic="medium"
                 onPress={() => {
                   // FIX C (Decision 6, Option A): the `location` state can be
@@ -1901,15 +1909,17 @@ export default function MapScreen() {
                   if (!dropLocation) void requestLocation();
                   setReportOpen(true);
                 }}
-                disabled={!location}
+                disabled={reportDisabled}
                 accessibilityRole="button"
                 accessibilityLabel="Report a flag here"
                 accessibilityHint={
                   location
                     ? 'Opens a form to report an accessibility issue at your current location'
-                    : 'Dimmed until location is on. Use the recenter button to turn on location, then report a flag here.'
+                    : Platform.OS === 'web'
+                      ? 'Opens the report form and finds your location. Allow location access when your browser asks.'
+                      : 'Dimmed until location is on. Use the recenter button to turn on location, then report a flag here.'
                 }
-                accessibilityState={{ disabled: !location }}
+                accessibilityState={{ disabled: reportDisabled }}
               >
                 <View style={styles.iconLabelRow}>
                   <Plus size={16} color={color.textOnBrand} strokeWidth={2.6} />
