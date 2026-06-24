@@ -33,6 +33,7 @@ import { searchFlags } from '@/lib/flagSearch';
 import { findNearestUnresolved } from '@/lib/nearestFlag';
 import { useFlags } from '@/lib/flagsStore';
 import { useUserLocation } from '@/lib/location';
+import { POINTS } from '@/lib/points';
 import {
   DEFAULT_TASKS_SORT,
   TASKS_SORT_LABELS,
@@ -257,6 +258,10 @@ export default function TasksScreen() {
 
   const [busyId, setBusyId] = useState<string | null>(null);
   const [flash, setFlash] = useState<string | null>(null);
+  // Flash tone: 'success' = the green "+points" reward pill (default, every
+  // existing caller). 'muted' = a neutral dark pill for non-reward notices
+  // like "couldn't refresh", so an error doesn't masquerade as a reward.
+  const [flashTone, setFlashTone] = useState<'success' | 'muted'>('success');
   const [selectedFlag, setSelectedFlag] = useState<FlagRow | null>(null);
 
   // Bulk-select state — component-local on purpose. Switching tabs unmounts
@@ -356,9 +361,10 @@ export default function TasksScreen() {
   // when a new flash arrives — otherwise leaving the tab mid-flash triggers
   // a "setState on unmounted component" warning.
   const flashTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const showFlash = useCallback((msg: string) => {
+  const showFlash = useCallback((msg: string, tone: 'success' | 'muted' = 'success') => {
     if (flashTimer.current) clearTimeout(flashTimer.current);
     setFlash(msg);
+    setFlashTone(tone);
     flashTimer.current = setTimeout(() => setFlash(null), 2200);
   }, []);
 
@@ -441,9 +447,10 @@ export default function TasksScreen() {
         setBulkBusy(false);
         // Reconcile with the server — covers the gap between our optimistic
         // updates and the actual committed state (e.g. another user resolved
-        // one of the same flags). Fire-and-forget; the optimistic updates
-        // already handled instant feedback.
-        refresh().catch(() => {});
+        // one of the same flags). The optimistic updates already gave instant
+        // feedback; if the reconcile fails, nudge the user to pull-to-refresh
+        // instead of silently swallowing it.
+        refresh().catch(() => showFlash("Couldn't refresh — pull down to update.", 'muted'));
 
         const past = action === 'verify' ? 'Verified' : 'Resolved';
         if (succeeded > 0) {
@@ -562,22 +569,27 @@ export default function TasksScreen() {
         removeFlag(updated.id);
       }
       if (action === 'verify') {
-        const msg = isOwn ? 'Verified! +10 points' : 'Verified! +3 points';
+        const msg = isOwn
+          ? `Verified! +${POINTS.reporter.verify} points`
+          : `Verified! +${POINTS.actor.verify} points`;
         showFlash(msg);
         // WCAG 4.1.3: announce single-card status changes to screen readers.
         // Bulk actions in runBulkAction already call announceForAccessibility;
         // single-card triage through this path was previously silent to SR.
         AccessibilityInfo.announceForAccessibility(msg);
       } else if (action === 'resolve') {
-        const msg = isOwn ? 'Resolved! +15 points' : 'Resolved! +7 points';
+        const msg = isOwn
+          ? `Resolved! +${POINTS.reporter.resolve} points`
+          : `Resolved! +${POINTS.actor.resolve} points`;
         showFlash(msg);
         AccessibilityInfo.announceForAccessibility(msg);
       }
       // Re-fetch via the shared store to reconcile with what the server
-      // actually committed. Fire-and-forget — the optimistic update already
-      // handled instant feedback. The refresh also updates the Map tab's pin
-      // count through the shared context.
-      refresh().catch(() => {});
+      // actually committed. The optimistic update already gave instant
+      // feedback; if the reconcile fails, nudge the user to pull-to-refresh
+      // instead of silently swallowing it. The refresh also updates the Map
+      // tab's pin count through the shared context.
+      refresh().catch(() => showFlash("Couldn't refresh — pull down to update.", 'muted'));
     },
     [refresh, patchFlag, removeFlag, showFlash],
   );
@@ -743,7 +755,7 @@ export default function TasksScreen() {
           ]}
           pointerEvents="none"
         >
-          <View style={styles.flashPill}>
+          <View style={[styles.flashPill, flashTone === 'muted' && styles.flashPillMuted]}>
             {/* accessibilityLiveRegion covers Android TalkBack;
                 iOS VoiceOver handled by announceForAccessibility at each call site.
                 WCAG 4.1.3 — status messages must reach all AT. */}
@@ -1516,6 +1528,9 @@ const makeStyles = (color: ColorTheme) =>
       borderRadius: radius.circle,
       ...shadow.e2,
     },
+    // Muted (non-reward) tone — neutral dark pill, same white text. Distinct
+    // from the green success pill so an error notice doesn't read as a reward.
+    flashPillMuted: { backgroundColor: color.backdropCaption },
     flashText: { color: color.textOnBrand, fontWeight: font.weight.bold, fontSize: font.size.sm },
     errorBanner: {
       marginHorizontal: spacing.lg,
