@@ -11,6 +11,7 @@ import {
   ScrollView,
   Share,
   StyleSheet,
+  type Text,
   TextInput,
   View,
 } from 'react-native';
@@ -51,7 +52,7 @@ import PhotoGallery, { type GalleryPhoto } from './PhotoGallery';
 import StatusHistoryModal from './StatusHistoryModal';
 import { StatusBadge } from './StatusBadge';
 import { CommentBubble } from './CommentBubble';
-import { useReducedMotion } from '@/lib/accessibility';
+import { useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
 
 export type DetailAction = 'verify' | 'resolve' | 'reject';
 
@@ -113,6 +114,10 @@ export default function FlagDetailModal({
   // after the parent clears `flag` on close. Without this the card briefly
   // turns blank as it animates away.
   const [shownFlag, setShownFlag] = useState<FlagRow | null>(flag);
+
+  // WCAG 2.4.3: move the screen-reader cursor onto the title when the modal
+  // opens with a flag to show (the early-return path renders no title).
+  const titleRef = useFocusOnOpen<Text>(visible && !!shownFlag);
 
   // Comments — pass shownFlag?.id so the hook tracks the currently-visible
   // flag even while the parent is animating the next one in.
@@ -432,6 +437,21 @@ export default function FlagDetailModal({
     }
   };
 
+  // Reject is destructive (marks the report invalid + removes it from the
+  // queue), so gate it behind a confirm — same tier as Delete above and the
+  // Tasks card. confirm() is web-safe (window.confirm on web).
+  const handleReject = async () => {
+    if (busy) return;
+    const ok = await confirm(
+      'Reject this flag?',
+      'This marks the report as invalid or spam and removes it from the queue.',
+      'Reject',
+      true,
+    );
+    if (!ok) return;
+    await runStatusChange('rejected', 'reject');
+  };
+
   // Share the flag. The message is built by the pure `formatFlagShareText`
   // helper (src/lib/shareFlag.ts) so the exact shape is unit-tested and
   // reusable from anywhere else we want a human-readable summary of a flag
@@ -706,6 +726,7 @@ export default function FlagDetailModal({
           <View style={styles.card} accessibilityViewIsModal>
             <View style={styles.headerRow}>
               <AppText
+                ref={titleRef}
                 variant="heading"
                 style={styles.title}
                 accessibilityRole="header"
@@ -1402,7 +1423,7 @@ export default function FlagDetailModal({
               )}
               {canReject && (
                 <Pressable
-                  onPress={() => runStatusChange('rejected', 'reject')}
+                  onPress={handleReject}
                   disabled={busy}
                   style={[styles.actionBtn, styles.rejectBtn]}
                   accessibilityRole="button"

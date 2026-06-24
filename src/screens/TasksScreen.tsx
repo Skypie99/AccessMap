@@ -596,6 +596,18 @@ export default function TasksScreen() {
 
   const setStatus = useCallback(
     async (id: string, status: FlagStatus, isOwn: boolean) => {
+      // Reject removes a report from the queue — confirm first, matching the
+      // destructive-confirm tier (bulk actions, FlagDetailModal Delete/Reject).
+      // confirm() is web-safe: window.confirm on web, Alert.alert on native.
+      if (status === 'rejected') {
+        const ok = await confirm(
+          'Reject this flag?',
+          'This marks the report as invalid or spam and removes it from your queue.',
+          'Reject',
+          true,
+        );
+        if (!ok) return;
+      }
       setBusyId(id);
       try {
         // F53: CAS on the status the card showed — a stale card tap must not
