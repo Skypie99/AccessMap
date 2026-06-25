@@ -1,11 +1,11 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import {
-  Dimensions,
   FlatList,  Modal,
   Pressable,
   ScrollView,
   StatusBar,
   StyleSheet,
+  useWindowDimensions,
   View,
 } from 'react-native';
 import { RemoteImage } from '@/components/ui/RemoteImage';
@@ -14,8 +14,6 @@ import { useReducedMotion } from '@/lib/accessibility';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { font, radius, shadow, spacing } from '@/theme';
 import { Camera, X } from 'lucide-react-native';
-
-const SCREEN = Dimensions.get('window');
 
 export type GalleryPhoto = { url: string; position: number };
 
@@ -46,6 +44,10 @@ function PhotoGalleryInner({ photos, onAddPhoto, maxPhotos = 5, onRemovePhoto }:
   const color = useColor();
   const styles = useMemo(() => makeStyles(color), [color]);
   const reducedMotion = useReducedMotion();
+  // Live window size — read inside the component (not once at module load) so
+  // the lightbox paging width, contentOffset, and page math follow device
+  // rotation instead of freezing at the launch orientation.
+  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
 
   const canAdd = !!onAddPhoto && photos.length < maxPhotos;
 
@@ -172,13 +174,16 @@ function PhotoGalleryInner({ photos, onAddPhoto, maxPhotos = 5, onRemovePhoto }:
           />
 
           <ScrollView
-            key={lightboxStartPage}
+            // Remount when opening at a different page OR when the width
+            // changes (rotation) so contentOffset re-applies at the new size,
+            // keeping the user on the photo they were viewing.
+            key={`${lightboxStartPage}-${screenWidth}`}
             horizontal
             pagingEnabled
             showsHorizontalScrollIndicator={false}
-            contentOffset={{ x: lightboxStartPage * SCREEN.width, y: 0 }}
+            contentOffset={{ x: lightboxPage * screenWidth, y: 0 }}
             onMomentumScrollEnd={(e) => {
-              const page = Math.round(e.nativeEvent.contentOffset.x / SCREEN.width);
+              const page = Math.round(e.nativeEvent.contentOffset.x / screenWidth);
               setLightboxPage(page);
             }}
             style={StyleSheet.absoluteFill}
@@ -187,13 +192,13 @@ function PhotoGalleryInner({ photos, onAddPhoto, maxPhotos = 5, onRemovePhoto }:
             {photos.map((photo, i) => (
               <View
                 key={photo.position}
-                style={styles.lightboxPage}
+                style={[styles.lightboxPage, { width: screenWidth, height: screenHeight }]}
                 accessible
                 accessibilityLabel={`Photo ${i + 1} of ${photos.length}`}
               >
                 <RemoteImage
                   uri={photo.url}
-                  style={styles.lightboxImage}
+                  style={{ width: screenWidth, height: screenHeight }}
                   resizeMode="contain"
                   accessibilityElementsHidden
                   importantForAccessibility="no-hide-descendants"
@@ -320,14 +325,9 @@ const makeStyles = (color: ColorTheme) =>
       justifyContent: 'center',
     },
     lightboxPage: {
-      width: SCREEN.width,
-      height: SCREEN.height,
+      // width/height applied inline from useWindowDimensions (rotation-safe).
       alignItems: 'center',
       justifyContent: 'center',
-    },
-    lightboxImage: {
-      width: SCREEN.width,
-      height: SCREEN.height,
     },
     lightboxCounter: {
       position: 'absolute',
