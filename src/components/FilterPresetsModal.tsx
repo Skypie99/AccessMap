@@ -4,9 +4,9 @@
  *
  * Two modes, controlled by whether the caller passes `onApply`:
  *   • Manager mode (no onApply) — list, create-placeholder, rename, delete.
- *     This is how the modal originally shipped; the "Apply" affordance on
- *     each row is replaced with a "Wiring next release" hint because no
- *     consumer existed for the filter triple.
+ *     This is how the modal originally shipped; with no consumer for the
+ *     filter triple, rows simply omit the per-row Apply control. (Today every
+ *     live call site passes onApply, so this mode is effectively unused.)
  *   • Apply mode (onApply provided) — same management surface, PLUS each
  *     row gets a real Apply button that calls back into the host (the Map
  *     screen) with the chosen preset. The host is responsible for pushing
@@ -65,10 +65,9 @@ interface Props {
    * row gains a real "Apply" button that calls back with the chosen
    * preset. The host (MapScreen) is responsible for closing the modal
    * after applying — typically by dropping `visible` in the same handler.
-   * When omitted, the row's Apply slot keeps the "Wiring next release"
-   * hint (manager mode) so the manager surface keeps working from any
-   * settings/profile entry point that doesn't know how to consume the
-   * filter triple.
+   * When omitted, rows omit the per-row Apply control (manager mode) so the
+   * manager surface keeps working from any settings/profile entry point that
+   * doesn't know how to consume the filter triple.
    */
   onApply?: (preset: FilterPreset) => void;
 }
@@ -286,10 +285,6 @@ export default function FilterPresetsModal({ visible, onClose, onApply }: Props)
                 <AppText variant="body" style={styles.rowSummary} numberOfLines={1}>
                   {presetSummary(item)}
                 </AppText>
-                {/* Manager mode keeps the honest "no consumer yet" hint;
-                    apply mode promotes the row to a real Apply button on
-                    the right so the hint would be redundant. */}
-                {!onApply && <AppText variant="body" style={styles.rowApplyHint}>Wiring next release</AppText>}
               </View>
               <View style={styles.rowActions}>
                 {onApply && (
@@ -702,11 +697,6 @@ const makeStyles = (color: ColorTheme) =>
       fontSize: font.size.xs,
       color: color.textMutedAlt,
       lineHeight: 16,
-    },
-    rowApplyHint: {
-      fontSize: font.size.caption,
-      color: color.textSubtle,
-      fontStyle: 'italic',
     },
     rowActions: {
       flexDirection: 'row',

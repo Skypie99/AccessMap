@@ -31,6 +31,7 @@ import { AppText } from '@/components/ui/AppText';
 import { STATUS_LABELS } from '@/lib/flags';
 import { relativeTime } from '@/lib/relativeTime';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
+import { font, radius, spacing } from '@/theme';
 import { X } from 'lucide-react-native';
 import { decorativeProps, useReducedMotion } from '@/lib/accessibility';
 import {
@@ -215,53 +216,53 @@ const makeStyles = (color: ColorTheme) =>
     },
     card: {
       backgroundColor: color.surface,
-      borderTopLeftRadius: 16,
-      borderTopRightRadius: 16,
-      paddingHorizontal: 20,
-      paddingTop: 16,
-      paddingBottom: 24,
-      gap: 12,
+      borderTopLeftRadius: radius.lg,
+      borderTopRightRadius: radius.lg,
+      paddingHorizontal: spacing.xl,
+      paddingTop: spacing.lg,
+      paddingBottom: spacing.xxl,
+      gap: spacing.md,
       maxHeight: '80%',
     },
     headerRow: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 12,
+      gap: spacing.md,
     },
-    title: { fontSize: 18, fontWeight: '700', flex: 1, color: color.textStrong },
+    title: { fontSize: font.size.xl, fontWeight: '700', flex: 1, color: color.textStrong },
     closeBtn: {
       width: 44,
       height: 44,
-      borderRadius: 22,
+      borderRadius: radius.circle,
       backgroundColor: color.surfaceNeutral,
       alignItems: 'center',
       justifyContent: 'center',
     },
-    closeBtnText: { fontSize: 16, color: color.text, fontWeight: '700' },
+    closeBtnText: { fontSize: font.size.lg, color: color.text, fontWeight: '700' },
     body: { flexShrink: 1 },
-    bodyContent: { gap: 12, paddingBottom: 8, paddingTop: 4 },
+    bodyContent: { gap: spacing.md, paddingBottom: spacing.sm, paddingTop: spacing.tight },
     center: {
       alignItems: 'center',
-      gap: 8,
-      paddingVertical: 32,
+      gap: spacing.sm,
+      paddingVertical: spacing.xxxl,
     },
-    loadingText: { fontSize: 14, color: color.textMuted },
+    loadingText: { fontSize: font.size.base, color: color.textMuted },
     emptyWrap: {
-      paddingVertical: 28,
-      paddingHorizontal: 8,
+      paddingVertical: 28, // no exact spacing token for 28 — left raw
+      paddingHorizontal: spacing.sm,
       alignItems: 'center',
-      gap: 8,
+      gap: spacing.sm,
     },
     emptyTitle: {
-      fontSize: 15,
+      fontSize: font.size.md,
       fontWeight: '700',
       color: color.text,
     },
     emptyBody: {
-      fontSize: 14,
+      fontSize: font.size.base,
       color: color.textMuted,
       textAlign: 'center',
-      lineHeight: 20,
+      lineHeight: font.lineHeight.base,
     },
     // gap:0 keeps rows flush so the rail connector reaches the next dot with
     // no break; per-row breathing room comes from entryTextWrap's paddingBottom.
@@ -269,7 +270,7 @@ const makeStyles = (color: ColorTheme) =>
     entryRow: {
       flexDirection: 'row',
       alignItems: 'stretch',
-      gap: 12,
+      gap: spacing.md,
     },
     // Left timeline rail: a fixed-width column holding the status dot and the
     // thin connector that runs down to the next entry's dot. Centered so the
@@ -299,7 +300,7 @@ const makeStyles = (color: ColorTheme) =>
     },
     entryTextWrap: { flex: 1, gap: 2, paddingBottom: 14 },
     entryLine: {
-      fontSize: 15,
+      fontSize: font.size.md,
       fontWeight: '600',
       color: color.textStrong,
     },
