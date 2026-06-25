@@ -416,9 +416,7 @@ export default function FlagDetailModal({
           ? 'Flag marked verified'
           : next === 'resolved'
             ? 'Flag marked resolved'
-            : next === 'rejected'
-              ? 'Flag rejected'
-              : 'Flag reopened',
+            : 'Flag rejected',
       );
       onClose();
     } catch (e) {

@@ -118,10 +118,14 @@ export default function SavedPlacesModal({
 
   const handleAddSubmit = useCallback(async () => {
     if (!user || !currentLocation) return;
+    // Early-return on an empty name instead of relying on the thrown-error path
+    // (Alert.alert is a web no-op). Mirrors FilterPresetsModal.handleCreate.
+    const trimmed = nameInput.trim();
+    if (trimmed.length === 0) return;
     setSaving(true);
     try {
       const created = await addPlace(user.id, {
-        name: nameInput,
+        name: trimmed,
         lat: currentLocation.lat,
         lng: currentLocation.lng,
       });

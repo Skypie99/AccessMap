@@ -142,8 +142,11 @@ export function useNotificationPreferences(
         // Fire-and-forget persist — optimistic UI already shows `next`.
         // Fail-soft on error (AsyncStorage write failures are ephemeral;
         // the next mount will re-read the on-disk state).
-        AsyncStorage.setItem(storageKey(userId), JSON.stringify(next)).catch(() => {
-          // swallowed — warn would be noise here; the UI already updated
+        AsyncStorage.setItem(storageKey(userId), JSON.stringify(next)).catch((e) => {
+          // Fail-soft: the optimistic UI already shows `next` and the next mount
+          // re-reads disk. Still warn so a persistent write failure is visible
+          // (per CLAUDE.md error-handling tiers: ephemera write -> console.warn).
+          console.warn('Failed to persist notification preferences', e);
         });
         return next;
       });

@@ -254,7 +254,7 @@ function makeStyles(color: ColorTheme) {
       borderTopLeftRadius: radius.xl,
       borderTopRightRadius: radius.xl,
       paddingBottom: spacing.xxxl,
-      maxHeight: '80%' as unknown as number,
+      maxHeight: '80%',
       ...shadow.e3,
     },
     headerRow: {
