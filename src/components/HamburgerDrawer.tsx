@@ -68,6 +68,9 @@ export default function HamburgerDrawer({ open, onClose, onSignIn, onNavigate }:
   const [slideAnim] = useState(() => new Animated.Value(-DRAWER_WIDTH));
   const [fadeAnim] = useState(() => new Animated.Value(0));
   const [subScreen, setSubScreen] = useState<SubScreen | null>(null);
+  // Holds the pending navigate() timer so we can cancel it on unmount — avoids a
+  // setState-after-unmount warning if the drawer goes away during the 220ms delay.
+  const navTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     const slideTo = open ? 0 : -DRAWER_WIDTH;
@@ -106,9 +109,18 @@ export default function HamburgerDrawer({ open, onClose, onSignIn, onNavigate }:
     (screen: SubScreen) => {
       onClose();
       // Small delay so the drawer closes visually before the sub-screen appears.
-      setTimeout(() => setSubScreen(screen), 220);
+      if (navTimer.current) clearTimeout(navTimer.current);
+      navTimer.current = setTimeout(() => setSubScreen(screen), 220);
     },
     [onClose],
+  );
+
+  // Cancel any pending navigate() timer when the drawer unmounts.
+  useEffect(
+    () => () => {
+      if (navTimer.current) clearTimeout(navTimer.current);
+    },
+    [],
   );
 
   const handleSignOut = useCallback(async () => {

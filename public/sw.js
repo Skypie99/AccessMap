@@ -1,7 +1,7 @@
 // AccessMap Service Worker — offline support
-// Strategies: CacheFirst for tiles, NetworkFirst for Supabase API, StaleWhileRevalidate for app shell
+// Strategies: CacheFirst for tiles, NetworkFirst for Supabase API + navigations, StaleWhileRevalidate for hashed app shell
 
-const CACHE_VERSION = 'v1';
+const CACHE_VERSION = 'v2';
 const CACHE_NAME = 'accessmap-' + CACHE_VERSION;
 const TILE_CACHE = 'accessmap-tiles-' + CACHE_VERSION;
 
@@ -117,6 +117,32 @@ self.addEventListener('fetch', (event) => {
               })
           )
         )
+    );
+    return;
+  }
+
+  // ── Navigations: NetworkFirst ─────────────────────────────────────────────
+  // The HTML shell must reflect the latest deploy, so try the network first and
+  // fall back to cache (then '/') only when offline. Hashed JS/CSS keep
+  // StaleWhileRevalidate below.
+  if (request.mode === 'navigate') {
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          if (response.ok) {
+            const copy = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
+          }
+          return response;
+        })
+        .catch(async () => {
+          const cache = await caches.open(CACHE_NAME);
+          return (
+            (await cache.match(request)) ||
+            (await cache.match('/')) ||
+            new Response('Offline', { status: 503, statusText: 'Service Unavailable' })
+          );
+        })
     );
     return;
   }

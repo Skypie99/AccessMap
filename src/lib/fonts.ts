@@ -13,20 +13,17 @@
  */
 
 import { useFonts } from 'expo-font';
-import {
-  PlusJakartaSans_700Bold,
-  PlusJakartaSans_800ExtraBold,
-} from '@expo-google-fonts/plus-jakarta-sans';
-import {
-  PublicSans_400Regular,
-  PublicSans_500Medium,
-  PublicSans_600SemiBold,
-} from '@expo-google-fonts/public-sans';
-import {
-  JetBrainsMono_400Regular,
-  JetBrainsMono_500Medium,
-  JetBrainsMono_600SemiBold,
-} from '@expo-google-fonts/jetbrains-mono';
+// Per-weight subpath imports — NOT the package-root barrel. The barrel re-exports
+// every weight, so importing from it makes Metro bundle all 48 .ttf into dist/
+// even though we ship 8. Importing each weight's own module pulls only that .ttf.
+import { PlusJakartaSans_700Bold } from '@expo-google-fonts/plus-jakarta-sans/700Bold';
+import { PlusJakartaSans_800ExtraBold } from '@expo-google-fonts/plus-jakarta-sans/800ExtraBold';
+import { PublicSans_400Regular } from '@expo-google-fonts/public-sans/400Regular';
+import { PublicSans_500Medium } from '@expo-google-fonts/public-sans/500Medium';
+import { PublicSans_600SemiBold } from '@expo-google-fonts/public-sans/600SemiBold';
+import { JetBrainsMono_400Regular } from '@expo-google-fonts/jetbrains-mono/400Regular';
+import { JetBrainsMono_500Medium } from '@expo-google-fonts/jetbrains-mono/500Medium';
+import { JetBrainsMono_600SemiBold } from '@expo-google-fonts/jetbrains-mono/600SemiBold';
 
 export function useAppFonts() {
   return useFonts({

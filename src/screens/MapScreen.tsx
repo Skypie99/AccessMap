@@ -214,7 +214,7 @@ export async function webSetMenuChoice(
 
 export default function MapScreen() {
   const color = useColor();
-  const styles = makeStyles(color);
+  const styles = useMemo(() => makeStyles(color), [color]);
   const mapRef = useRef<PlatformMapHandle | null>(null);
   const route = useRoute<RouteProp<RootTabParamList, 'FullMap'>>();
   // L9: needed to reset route.params.flagId after a deep link is handled —

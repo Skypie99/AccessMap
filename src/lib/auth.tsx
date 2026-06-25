@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
 import { supabase } from './supabase';
 import {
@@ -77,8 +77,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
+  // Memoize the context value so consumers don't re-render on every AuthProvider
+  // render — only when session or loading actually changes (user derives from session).
+  const value = useMemo(
+    () => ({ session, user: session?.user ?? null, loading }),
+    [session, loading],
+  );
+
   return (
-    <AuthContext.Provider value={{ session, user: session?.user ?? null, loading }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );

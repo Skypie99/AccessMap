@@ -147,7 +147,7 @@ function milestoneProgress(points: number): {
 
 export default function ProfileScreen() {
   const color = useColor();
-  const styles = makeStyles(color);
+  const styles = useMemo(() => makeStyles(color), [color]);
   const reduceMotion = useReducedMotion();
   const navigation = useNavigation<BottomTabNavigationProp<RootTabParamList, 'Profile'>>();
   const tabBarHeight = useBottomTabBarHeight();

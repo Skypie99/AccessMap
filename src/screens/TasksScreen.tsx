@@ -86,7 +86,7 @@ const BULK_BAR_HEIGHT = 88;
 
 export default function TasksScreen() {
   const color = useColor();
-  const styles = makeStyles(color);
+  const styles = useMemo(() => makeStyles(color), [color]);
   const navigation = useNavigation<BottomTabNavigationProp<RootTabParamList, 'Tasks'>>();
   const tabBarHeight = useBottomTabBarHeight();
   const insets = useSafeAreaInsets();
@@ -655,6 +655,24 @@ export default function TasksScreen() {
     setSelectedFlag(flag);
   }, []);
 
+  // Stable tap handler, hoisted out of renderFlagItem. Inline, its identity would
+  // change on every selection toggle (renderFlagItem depends on `selection`),
+  // handing a fresh onPress to every FlagCard and defeating its React.memo.
+  // Depending on `selection.active` (a boolean) instead of the whole `selection`
+  // object keeps it stable while toggling cards within select mode.
+  const handleCardPress = useCallback(
+    (flag: FlagRow) => {
+      if (selection.active) {
+        hapticSelection();
+        setSelection((s) => toggleId(s, flag.id));
+      } else {
+        track('flag_viewed', { flagId: flag.id, source: 'tasks' });
+        handleViewOnMap(flag);
+      }
+    },
+    [selection.active, handleViewOnMap],
+  );
+
   // Memoized renderItem — extracted from inline JSX so React.memo on FlagCard
   // actually fires. An inline arrow in the SectionList prop creates a new
   // function reference on every parent render, bypassing memo and causing all
@@ -668,15 +686,7 @@ export default function TasksScreen() {
         userLocation={userLocation}
         selectionActive={selection.active}
         selected={isSelected(selection, item.id)}
-        onPress={(flag) => {
-          if (selection.active) {
-            hapticSelection();
-            setSelection((s) => toggleId(s, flag.id));
-          } else {
-            track('flag_viewed', { flagId: flag.id, source: 'tasks' });
-            handleViewOnMap(flag);
-          }
-        }}
+        onPress={handleCardPress}
         onLongPress={handleCardLongPress}
         onSetStatus={setStatus}
         onShowDetails={showDetails}
@@ -687,7 +697,7 @@ export default function TasksScreen() {
       userId,
       userLocation,
       selection,
-      handleViewOnMap,
+      handleCardPress,
       handleCardLongPress,
       setStatus,
       showDetails,
@@ -1284,7 +1294,7 @@ const FlagCard = memo(function FlagCard({
   onShowDetails,
 }: FlagCardProps) {
   const color = useColor();
-  const styles = makeStyles(color);
+  const styles = useMemo(() => makeStyles(color), [color]);
   // Controls whether the full-screen photo lightbox is open.
   // Kept component-local — lightbox state doesn't need to survive unmount.
   const [lightboxOpen, setLightboxOpen] = useState(false);

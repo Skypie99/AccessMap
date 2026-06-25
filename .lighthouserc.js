@@ -1,7 +1,7 @@
 module.exports = {
   ci: {
     collect: {
-      startServerCommand: 'npx expo export --platform web && npx serve web-build -p 9001',
+      startServerCommand: 'npx expo export --platform web && npx serve dist -p 9001',
       url: ['http://localhost:9001'],
       numberOfRuns: 1,
     },
