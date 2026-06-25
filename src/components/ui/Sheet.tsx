@@ -14,10 +14,10 @@
  */
 
 import React from 'react';
-import { Modal, Pressable, StyleSheet, View, type ViewStyle } from 'react-native';
+import { Modal, Pressable, StyleSheet, View, type Text, type ViewStyle } from 'react-native';
 import { X } from 'lucide-react-native';
 import { useColor } from '@/theme/ThemeContext';
-import { useReducedMotion } from '@/lib/accessibility';
+import { useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
 import { font, radius, shadow, spacing } from '@/theme';
 import { AppText } from './AppText';
 
@@ -30,9 +30,12 @@ export interface SheetHeaderProps {
   closeLabel?: string;
   /** Optional node rendered in place of the close button (e.g. an action). */
   right?: React.ReactNode;
+  /** When set, screen-reader focus moves to the title on open (WCAG 2.4.3).
+   *  `Sheet` wires this automatically; standalone callers can pass their own. */
+  titleRef?: React.Ref<Text>;
 }
 
-export function SheetHeader({ title, onClose, showHandle = true, closeLabel, right }: SheetHeaderProps) {
+export function SheetHeader({ title, onClose, showHandle = true, closeLabel, right, titleRef }: SheetHeaderProps) {
   const color = useColor();
   return (
     <>
@@ -47,6 +50,7 @@ export function SheetHeader({ title, onClose, showHandle = true, closeLabel, rig
       ) : null}
       <View style={styles.headerRow}>
         <AppText
+          ref={titleRef}
           variant="heading"
           size={font.size.xl}
           color={color.textStrong}
@@ -96,6 +100,9 @@ export function Sheet({
 }: SheetProps) {
   const color = useColor();
   const reducedMotion = useReducedMotion();
+  // WCAG 2.4.3: when the sheet opens, move the screen-reader cursor onto its
+  // title so it doesn't stay on the control behind the sheet.
+  const titleRef = useFocusOnOpen<Text>(visible);
   return (
     <Modal
       visible={visible}
@@ -105,7 +112,7 @@ export function Sheet({
     >
       <View style={[styles.backdrop, { backgroundColor: color.scrim }]} accessibilityViewIsModal testID={testID}>
         <View style={[styles.card, { backgroundColor: color.surface }, shadow.e3, cardStyle]}>
-          <SheetHeader title={title} onClose={onClose} showHandle={showHandle} right={headerRight} />
+          <SheetHeader title={title} onClose={onClose} showHandle={showHandle} right={headerRight} titleRef={titleRef} />
           {children}
         </View>
       </View>

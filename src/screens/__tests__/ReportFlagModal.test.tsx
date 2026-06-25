@@ -254,6 +254,9 @@ jest.mock('@/theme', () => jest.requireActual('@/theme'));
 // ---------------------------------------------------------------------------
 jest.mock('@/lib/accessibility', () => ({
   useReducedMotion: jest.fn(() => false),
+  // The modal moves screen-reader focus to its title on open; in tests the hook
+  // just needs to exist and hand back a ref (focus is a native no-op here).
+  useFocusOnOpen: jest.fn(() => ({ current: null })),
 }));
 
 // Haptics are no-ops in tests — avoids loading expo-haptics during the async

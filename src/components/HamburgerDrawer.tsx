@@ -164,7 +164,7 @@ export default function HamburgerDrawer({ open, onClose, onSignIn, onNavigate }:
               accessibilityRole="button"
               accessibilityLabel="Close menu"
             >
-              <X size={22} color={color.textSubtle} strokeWidth={2.2} />
+              <X size={22} color="rgba(255,255,255,0.7)" strokeWidth={2.2} />
             </Pressable>
           </View>
 
@@ -173,38 +173,28 @@ export default function HamburgerDrawer({ open, onClose, onSignIn, onNavigate }:
             <DrawerItem
               icon={Layers}
               label="Resources"
-              onPress={() => navigate('resources')}
-              color={color}
-            />
+              onPress={() => navigate('resources')}            />
             <DrawerItem
               icon={Heart}
               label="How To Help"
-              onPress={() => navigate('howToHelp')}
-              color={color}
-            />
+              onPress={() => navigate('howToHelp')}            />
             <DrawerItem
               icon={Info}
               label="About the App"
-              onPress={() => navigate('about')}
-              color={color}
-            />
+              onPress={() => navigate('about')}            />
             {/* Phase 7a: Settings + Admin live here now (off the 3-tab bar).
                 These navigate to hidden tab routes rather than opening modals. */}
             {onNavigate && (
               <DrawerItem
                 icon={SettingsIcon}
                 label="Settings"
-                onPress={() => onNavigate('Settings')}
-                color={color}
-              />
+                onPress={() => onNavigate('Settings')}              />
             )}
             {onNavigate && isAdmin === true && (
               <DrawerItem
                 icon={AdminIcon}
                 label="Admin"
-                onPress={() => onNavigate('Admin')}
-                color={color}
-              />
+                onPress={() => onNavigate('Admin')}              />
             )}
           </View>
 
@@ -216,9 +206,7 @@ export default function HamburgerDrawer({ open, onClose, onSignIn, onNavigate }:
               <DrawerItem
                 icon={LogOut}
                 label="Sign out"
-                onPress={handleSignOut}
-                color={color}
-                muted
+                onPress={handleSignOut}                muted
               />
             ) : (
               <DrawerItem
@@ -226,9 +214,7 @@ export default function HamburgerDrawer({ open, onClose, onSignIn, onNavigate }:
                 label="Sign in"
                 // F11: route to the sign-in entry instead of just closing the
                 // drawer (which left guests with no way to reach auth).
-                onPress={onSignIn ?? closeDrawer}
-                color={color}
-              />
+                onPress={onSignIn ?? closeDrawer}              />
             )}
           </View>
 
@@ -262,12 +248,11 @@ interface ItemProps {
   icon: LucideIcon;
   label: string;
   onPress: () => void;
-  color: ColorTheme;
   muted?: boolean;
 }
 
-function DrawerItem({ icon: Icon, label, onPress, color, muted = false }: ItemProps) {
-  const styles = makeItemStyles(color);
+function DrawerItem({ icon: Icon, label, onPress, muted = false }: ItemProps) {
+  const styles = makeItemStyles();
   return (
     <Pressable
       onPress={onPress}
@@ -278,12 +263,15 @@ function DrawerItem({ icon: Icon, label, onPress, color, muted = false }: ItemPr
       <View style={styles.iconWrap}>
         <Icon
           size={20}
-          color={muted ? color.textSubtle : color.brand}
+          // Always-dark drawer: hardcode light-readable colors (the panel is a
+          // hardcoded near-black, so theme tokens would go invisible in light
+          // mode). #4E89EF is the theme's dark-palette brand — reads on dark.
+          color={muted ? 'rgba(255,255,255,0.7)' : '#4E89EF'}
           strokeWidth={2.2}
         />
       </View>
       <AppText variant="label" style={[styles.label, muted && styles.labelMuted]}>{label}</AppText>
-      <ChevronRight size={16} color={color.textSubtle} strokeWidth={2.2} />
+      <ChevronRight size={16} color="rgba(255,255,255,0.7)" strokeWidth={2.2} />
     </Pressable>
   );
 }
@@ -337,7 +325,9 @@ const makeStyles = (color: ColorTheme) =>
       flex: 1,
       fontSize: font.size.lg,
       fontWeight: font.weight.bold,
-      color: color.textStrong,
+      // Always-dark drawer — hardcode light text (matches the hardcoded
+      // white-alpha dividers); theme tokens would be unreadable in light mode.
+      color: '#f5f5f5',
       letterSpacing: -0.4,
     },
     closeBtn: {
@@ -374,7 +364,7 @@ const makeStyles = (color: ColorTheme) =>
     },
   });
 
-const makeItemStyles = (color: ColorTheme) =>
+const makeItemStyles = () =>
   StyleSheet.create({
     item: {
       flexDirection: 'row',
@@ -395,7 +385,8 @@ const makeItemStyles = (color: ColorTheme) =>
       flex: 1,
       fontSize: font.size.md,
       fontWeight: font.weight.semibold,
-      color: color.textStrong,
+      // Always-dark drawer — hardcode light text (see drawerBrand note).
+      color: '#f5f5f5',
       letterSpacing: 0.1,
     },
     labelMuted: {

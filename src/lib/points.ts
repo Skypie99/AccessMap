@@ -2,6 +2,22 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from './supabase';
 
 /**
+ * Canonical point awards — these MIRROR the live DB trigger
+ * (handle_flag_status_change in supabase/schema.sql). This is the single
+ * source of truth for any UI copy that states point values (the Help FAQ,
+ * the Tasks "+points" flash). If the trigger ever changes, change it HERE
+ * and every screen updates with it.
+ */
+export const POINTS = {
+  /** Awarded to the flag's reporter. */
+  reporter: { verify: 10, resolve: 15 },
+  /** Awarded to the actor (verifier/resolver) — only when they aren't the reporter. */
+  actor: { verify: 3, resolve: 7 },
+  /** Rejecting a report awards nothing. */
+  reject: 0,
+} as const;
+
+/**
  * Per-user "points last seen" cache.
  *
  * When the reporter's flag is acted on by someone else, the DB trigger

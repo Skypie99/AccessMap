@@ -54,7 +54,7 @@ import { validReportTemplates, type ReportTemplate } from '@/lib/reportTemplates
 import type { FlagCategory, FlagSeverity } from '@/types/database';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { font, gradient, radius, shadow, spacing } from '@/theme';
-import { useReducedMotion } from '@/lib/accessibility';
+import { useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
 
 /** Lucide icon for each disability tag — adds visual distinction (no emoji, per
  *  the brand icon rule). Describes the BARRIER type, not any person's identity. */
@@ -80,6 +80,8 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
   const { user } = useAuth();
   const isAnon = !user;
   const reducedMotion = useReducedMotion();
+  // WCAG 2.4.3: move the screen-reader cursor onto the title when the modal opens.
+  const titleRef = useFocusOnOpen<Text>(visible);
   const [category, setCategory] = useState<FlagCategory>('no_ramp');
   const [severity, setSeverity] = useState<FlagSeverity>(3);
   const [description, setDescription] = useState('');
@@ -439,7 +441,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
           >
-          <AppText variant="heading" style={styles.title} accessibilityRole="header">
+          <AppText ref={titleRef} variant="heading" style={styles.title} accessibilityRole="header">
             {isAnon ? 'Report anonymously' : 'Report a flag'}
           </AppText>
           <View style={styles.locationRow}>

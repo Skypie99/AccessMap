@@ -34,6 +34,29 @@ export interface UserLocationState {
   refresh: () => void;
 }
 
+/**
+ * Native `getCurrentPositionAsync` with a hard timeout. expo-location can hang
+ * indefinitely when the GPS never gets a fix (tunnel, indoors, airplane mode),
+ * leaving the caller stuck on a spinner forever. We race the read against a
+ * 15s timer and reject if it wins, so the caller's existing catch can surface a
+ * friendly error. Shared by this hook and MapScreen so both sites behave the same.
+ */
+export function getCurrentPositionWithTimeout(
+  options: Location.LocationOptions,
+  timeoutMs = 15_000,
+): Promise<Location.LocationObject> {
+  let timer: ReturnType<typeof setTimeout>;
+  const timeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(
+      () => reject(new Error('Location request timed out. Check your signal and try again.')),
+      timeoutMs,
+    );
+  });
+  return Promise.race([Location.getCurrentPositionAsync(options), timeout]).finally(() =>
+    clearTimeout(timer),
+  );
+}
+
 export interface UseUserLocationOptions {
   /**
    * When true, only fetch the location if foreground permission has
@@ -131,7 +154,7 @@ export function useUserLocation(options: UseUserLocationOptions = {}): UserLocat
       // — that's the browser geolocation option used on the web path above.)
       const pos =
         (await Location.getLastKnownPositionAsync({ maxAge: 60_000 })) ??
-        (await Location.getCurrentPositionAsync({
+        (await getCurrentPositionWithTimeout({
           accuracy: Location.Accuracy.Balanced,
         }));
       if (!mountedRef.current) return;

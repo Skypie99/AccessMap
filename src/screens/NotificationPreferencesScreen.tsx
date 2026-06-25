@@ -27,6 +27,7 @@ import {
   ScrollView,
   StyleSheet,
   Switch,
+  type Text,
   View,
 } from 'react-native';
 import { font, radius, shadow, spacing } from '@/theme';
@@ -34,7 +35,7 @@ import { X } from 'lucide-react-native';
 import { AppText } from '@/components/ui/AppText';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { useAuth } from '@/lib/auth';
-import { useReducedMotion } from '@/lib/accessibility';
+import { useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
 import {
   useNotificationPreferences,
   type NotificationPreferences,
@@ -126,6 +127,8 @@ export default function NotificationPreferencesScreen({ visible, onClose }: Prop
   const { preferences, setPreference, loading } = useNotificationPreferences(user?.id);
   // WCAG 2.3.3: snap (no slide) when the user prefers reduced motion.
   const reducedMotion = useReducedMotion();
+  // WCAG 2.4.3: move the screen-reader cursor onto the title when the modal opens.
+  const titleRef = useFocusOnOpen<Text>(visible);
 
   return (
     <Modal
@@ -141,7 +144,7 @@ export default function NotificationPreferencesScreen({ visible, onClose }: Prop
           {/* Header row */}
           <View style={styles.headerRow}>
             <View style={styles.titleWrap}>
-              <AppText variant="heading" style={styles.title} accessibilityRole="header">
+              <AppText ref={titleRef} variant="heading" style={styles.title} accessibilityRole="header">
                 Notification Preferences
               </AppText>
               <AppText variant="body" style={styles.titleSubtitle}>Choose which kinds of alerts you receive.</AppText>

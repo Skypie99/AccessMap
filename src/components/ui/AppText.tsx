@@ -97,7 +97,7 @@ interface AppTextProps extends TextProps {
   tracking?: number;
 }
 
-export function AppText({
+export const AppText = React.forwardRef<Text, AppTextProps>(function AppText({
   variant = 'body',
   size,
   color,
@@ -107,7 +107,7 @@ export function AppText({
   style,
   children,
   ...rest
-}: AppTextProps) {
+}, ref) {
   const family = VARIANT_FAMILY[variant];
   const letterSpacing = resolveTracking(variant, size, tracking);
   const cap = maxFontSizeMultiplier ?? VARIANT_MAX_FONT_MULTIPLIER[variant];
@@ -127,6 +127,7 @@ export function AppText({
 
   return (
     <Text
+      ref={ref}
       style={[resolvedStyle, style]}
       maxFontSizeMultiplier={cap}
       accessibilityRole={resolvedRole}
@@ -135,4 +136,4 @@ export function AppText({
       {children}
     </Text>
   );
-}
+});

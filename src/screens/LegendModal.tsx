@@ -12,7 +12,7 @@ import {
 } from '@/lib/flags';
 import { font, radius, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
-import { useReducedMotion } from '@/lib/accessibility';
+import { useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
 import CategoryIcon from '@/components/CategoryIcon';
 import { AppText } from '@/components/ui/AppText';
 
@@ -25,6 +25,8 @@ export default function LegendModal({ visible, onClose }: Props) {
   const color = useColor();
   const reducedMotion = useReducedMotion();
   const styles = makeStyles(color);
+  // WCAG 2.4.3: move the screen-reader cursor onto the header when the modal opens.
+  const titleRef = useFocusOnOpen<View>(visible);
   return (
     <Modal visible={visible} animationType={reducedMotion ? 'none' : 'slide'} transparent onRequestClose={onClose}>
       <Pressable
@@ -39,7 +41,7 @@ export default function LegendModal({ visible, onClose }: Props) {
           onPress={() => {}}
           accessibilityViewIsModal
         >
-          <View style={styles.headerRow} accessible accessibilityRole="header">
+          <View ref={titleRef} style={styles.headerRow} accessible accessibilityRole="header">
             <AppText variant="heading" style={styles.title}>Map legend</AppText>
           </View>
           <AppText variant="body" style={styles.subtitle}>What the colors and categories on the map mean.</AppText>

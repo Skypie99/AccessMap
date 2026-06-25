@@ -7,6 +7,7 @@ import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { ChevronDown, ChevronRight, X } from 'lucide-react-native';
 import { openFeedbackComposer } from '@/lib/feedback';
 import { filterFaqs } from '@/lib/helpSearch';
+import { POINTS } from '@/lib/points';
 import SearchInputRow from '@/components/SearchInputRow';
 
 interface Props {
@@ -33,7 +34,7 @@ const FAQS: FaqItem[] = [
   },
   {
     q: 'How do points work?',
-    a: "You earn 5 points when one of your reports gets verified by someone else, and another 10 when it's marked resolved. You also earn 2 points for verifying someone else's report and 5 points for marking one resolved. Rejecting a report awards no points.",
+    a: `You earn ${POINTS.reporter.verify} points when one of your reports gets verified by someone else, and another ${POINTS.reporter.resolve} when it's marked resolved. You also earn ${POINTS.actor.verify} points for verifying someone else's report and ${POINTS.actor.resolve} points for marking one resolved. Rejecting a report awards no points.`,
   },
   {
     q: 'What\'s the difference between "verified" and "resolved"?',
