@@ -8,12 +8,12 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
-  Text,
   TextInput,
   View,
 } from 'react-native';
 import * as Location from 'expo-location';
 import { getCurrentPositionWithTimeout } from '@/lib/location';
+import { OFFLINE_BANNER_TEXT } from '@/lib/copy';
 import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
@@ -1010,9 +1010,11 @@ export default function MapScreen() {
   // (OnboardingCards card 4). The user-facing locate button still calls
   // requestLocation() directly and will trigger the OS prompt if needed.
   useEffect(() => {
-    Location.getForegroundPermissionsAsync().then(({ status }) => {
-      if (status === 'granted') requestLocation();
-    });
+    Location.getForegroundPermissionsAsync()
+      .then(({ status }) => {
+        if (status === 'granted') requestLocation();
+      })
+      .catch(() => {});
   }, [requestLocation]);
 
   // When Tasks tab navigates here with a focusFlag, animate to it and pop the
@@ -1217,7 +1219,7 @@ export default function MapScreen() {
               changes after a filter toggle (e.g. "12 of 45 shown"). Using
               'polite' so it doesn't interrupt mid-sentence. */}
           <GlassSurface style={styles.statusPill} borderRadius={radius.circle} accessibilityLiveRegion="polite">
-            <AppText variant="label" style={styles.statusText}>
+            <AppText variant="label" maxFontSizeMultiplier={1.3} style={styles.statusText}>
               {loadingFlags
                 ? 'Loading flags…'
                 : filtersActive
@@ -1284,6 +1286,7 @@ export default function MapScreen() {
             >
               <AppText
                 variant="label"
+                maxFontSizeMultiplier={1.3}
                 style={[
                   styles.iconText,
                   styles.sevQuickText,
@@ -1352,7 +1355,7 @@ export default function MapScreen() {
           >
             <WifiOff size={16} color={color.warningFg} strokeWidth={2} />
             <AppText variant="body" style={styles.offlineBannerText}>
-              Showing saved data — connect for the latest
+              {OFFLINE_BANNER_TEXT}
             </AppText>
           </View>
         )}
@@ -2221,7 +2224,7 @@ const makeStyles = (color: ColorTheme) =>
       flexDirection: 'row',
       gap: spacing.sm,
       alignItems: 'center',
-      minHeight: 40,
+      minHeight: 44,
     },
     offlineBannerText: {
       color: color.warningFg,
