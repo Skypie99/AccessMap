@@ -27,6 +27,11 @@ module.exports = {
     // expo-image-manipulator is used by flags.ts (stripExifNative). Any test
     // that imports flags.ts transitively needs this stub.
     '^expo-image-manipulator$': '<rootDir>/__mocks__/expo-image-manipulator.js',
+    // The babel plugin (babel-plugins/lucide-deep-imports.js) rewrites lucide
+    // barrel imports to `lucide-react-native/icons/<name>` deep paths. Jest runs
+    // in CommonJS, so map them to lucide's per-icon CJS files — resolves cleanly
+    // without the barrel and without needing an ESM transform.
+    '^lucide-react-native/icons/(.*)$': '<rootDir>/node_modules/lucide-react-native/dist/cjs/icons/$1.js',
   },
   // Give Jest 3 s to wait for any remaining async handles after tests finish
   // before printing the "open handles" warning.  The root cause (Supabase
