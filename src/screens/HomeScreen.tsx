@@ -42,6 +42,7 @@ import PlatformMap from '@/components/PlatformMap';
 import AddressSearchModal from '@/components/AddressSearchModal';
 import { useFlags } from '@/lib/flagsStore';
 import { useUserLocation } from '@/lib/location';
+import { OFFLINE_BANNER_TEXT } from '@/lib/copy';
 import { formatDistance, haversineKm, type LatLng } from '@/lib/distance';
 import { CATEGORY_LABELS, SEVERITY_LABELS, severityColor } from '@/lib/flags';
 import type { GeocodeResult } from '@/lib/geocode';
@@ -272,7 +273,7 @@ export default function HomeScreen() {
           <View style={styles.offlineBanner} accessibilityRole="text">
             <WifiOff size={15} color={color.warningFg} strokeWidth={2.2} />
             <AppText variant="body" style={styles.offlineText}>
-              Showing saved data — connect for the latest.
+              {OFFLINE_BANNER_TEXT}
             </AppText>
           </View>
         )}
