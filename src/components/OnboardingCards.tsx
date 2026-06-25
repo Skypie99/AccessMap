@@ -224,11 +224,13 @@ export default function OnboardingCards({ onDone }: Props) {
       permission === 'location'
         ? Location.getForegroundPermissionsAsync().then(({ status }) => status === 'granted')
         : getNotificationPermission();
-    check.then((granted) => {
-      if (cancelled) return;
-      if (permission === 'location') setLocationGranted(granted);
-      else setNotifGranted(granted);
-    });
+    check
+      .then((granted) => {
+        if (cancelled) return;
+        if (permission === 'location') setLocationGranted(granted);
+        else setNotifGranted(granted);
+      })
+      .catch(() => {});
     return () => {
       cancelled = true;
     };
@@ -295,7 +297,6 @@ export default function OnboardingCards({ onDone }: Props) {
           showsHorizontalScrollIndicator={false}
           onMomentumScrollEnd={handleScroll}
           style={styles.scroll}
-          scrollEnabled={!reduceMotion}
         >
           {CARDS.map((c, i) => {
             // For a permission slide, the icon and body reflect live status:
