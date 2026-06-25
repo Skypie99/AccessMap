@@ -34,6 +34,7 @@ import { findNearestUnresolved } from '@/lib/nearestFlag';
 import { useFlags } from '@/lib/flagsStore';
 import { useUserLocation } from '@/lib/location';
 import { POINTS } from '@/lib/points';
+import { OFFLINE_BANNER_TEXT } from '@/lib/copy';
 import {
   DEFAULT_TASKS_SORT,
   TASKS_SORT_LABELS,
@@ -820,7 +821,7 @@ export default function TasksScreen() {
           accessibilityLabel="Showing offline data. Connect to the internet to refresh."
         >
           <WifiOff size={16} color={color.warningFg} strokeWidth={2} />
-          <AppText variant="body" style={styles.offlineBannerText}>Showing saved data — connect to the internet for the latest</AppText>
+          <AppText variant="body" style={styles.offlineBannerText}>{OFFLINE_BANNER_TEXT}</AppText>
         </View>
       )}
       {/* Select-multiple entry — visible only when there's something to
@@ -1584,7 +1585,7 @@ const makeStyles = (color: ColorTheme) =>
       flexDirection: 'row',
       gap: spacing.sm,
       alignItems: 'center',
-      minHeight: 40,
+      minHeight: 44,
     },
     offlineBannerIcon: { fontSize: font.size.lg },
     offlineBannerText: {

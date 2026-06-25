@@ -235,6 +235,8 @@ const makeStyles = (color: ColorTheme) =>
     borderRadius: radius.md,
     backgroundColor: color.surfaceNeutral,
     alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 44, // WCAG 2.5.5 / Apple HIG touch target (matches sibling modal close buttons)
   },
   closeText: {
     color: color.text,
