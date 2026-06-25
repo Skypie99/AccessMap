@@ -93,13 +93,6 @@ import { AppText } from '@/components/ui/AppText';
 import { GlassSurface } from '@/components/ui/GlassSurface';
 import { PressableScale } from '@/components/ui/PressableScale';
 import { useScreenReader, useReducedMotion } from '@/lib/accessibility';
-// Code-split: the report bottom-sheet is only needed once the user taps the
-// Report FAB. React.lazy moves its (large) code into a separate async chunk on
-// web — it's still always-mounted below (visible-prop controlled), so its
-// open/close animation is unchanged; the chunk just loads when MapScreen first
-// renders rather than sitting in the main bundle. (severityColor lives in
-// @/lib/flags, not this module, so the split is clean.)
-const ReportFlagModal = React.lazy(() => import('./ReportFlagModal'));
 import LegendModal from './LegendModal';
 import HeatmapLegend from '@/components/HeatmapLegend';
 import NearbyFlagsModal from './NearbyFlagsModal';
@@ -109,6 +102,14 @@ import FilterPresetsModal from '@/components/FilterPresetsModal';
 import { loadPlaces, type SavedPlace } from '@/lib/savedPlaces';
 import { useAuth } from '@/lib/auth';
 import type { GeocodeResult } from '@/lib/geocode';
+
+// Code-split: the report bottom-sheet only mounts once the user taps the Report
+// FAB. React.lazy moves its (large) code into a separate async web chunk; it's
+// still always-mounted below (visible-prop controlled), so open/close behavior is
+// unchanged — the chunk just loads on demand instead of sitting in the main
+// bundle. (severityColor lives in @/lib/flags, not this module, so the split is
+// clean.) Declared after the imports so eslint's import/first stays satisfied.
+const ReportFlagModal = React.lazy(() => import('./ReportFlagModal'));
 
 interface Coords {
   lat: number;

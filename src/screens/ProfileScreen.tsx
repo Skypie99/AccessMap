@@ -44,10 +44,6 @@ import type { RootTabParamList } from '@/navigation/RootNavigator';
 import MyReportsModal from '@/components/MyReportsModal';
 import MyWatchedModal from '@/components/MyWatchedModal';
 import type { DetailAction } from '@/components/FlagDetailModal';
-// Code-split: shares the same lazy FlagDetailModal async chunk as TasksScreen
-// (Metro dedups by module path), so the sheet's code lives outside the main
-// bundle and loads on demand. Always-mounted below (visible-prop controlled).
-const FlagDetailModal = React.lazy(() => import('@/components/FlagDetailModal'));
 // they now live in a single <SharedModalsHost /> at the navigator level
 // (see RootNavigator.tsx + src/lib/sharedModalsContext.tsx). Profile
 // just calls setOpen('help' | 'changelog' | 'myFeedback') via the
@@ -93,6 +89,12 @@ import {
 } from '@/lib/pointEvents';
 import SignInScreen from '@/screens/SignInScreen';
 import AboutScreen from '@/screens/AboutScreen';
+
+// Code-split: shares the same lazy FlagDetailModal async web chunk as TasksScreen
+// (Metro dedups by module path), so the sheet's code lives outside the main
+// bundle and loads on demand. Always-mounted below (visible-prop controlled).
+// Declared after the imports so eslint's import/first stays satisfied.
+const FlagDetailModal = React.lazy(() => import('@/components/FlagDetailModal'));
 
 // Converts an ISO timestamp to a human-readable relative string.
 // Falls back to a short date once the event is more than a week old.

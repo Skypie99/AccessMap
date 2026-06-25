@@ -59,12 +59,6 @@ import { track } from '@/lib/analytics';
 import type { FlagCategory, FlagRow, FlagStatus } from '@/types/database';
 import type { RootTabParamList } from '@/navigation/RootNavigator';
 import type { DetailAction } from '@/components/FlagDetailModal';
-// Code-split: the flag-detail sheet only opens when a card is tapped. React.lazy
-// moves its (large) code into a shared async chunk on web — the SAME chunk is
-// reused by ProfileScreen's FlagDetailModal (Metro dedups by module path). It's
-// still always-mounted below (visible-prop controlled), so open/close behavior
-// is unchanged.
-const FlagDetailModal = React.lazy(() => import('@/components/FlagDetailModal'));
 import PhotoLightboxModal from '@/components/PhotoLightboxModal';
 import { AppText } from '@/components/ui/AppText';
 import { PressableScale } from '@/components/ui/PressableScale';
@@ -80,6 +74,13 @@ import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { useDrawer } from '@/lib/drawerContext';
 import { useSharedModals } from '@/lib/sharedModalsContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+// Code-split: the flag-detail sheet only opens when a card is tapped. React.lazy
+// moves its (large) code into a shared async web chunk — the SAME chunk is reused
+// by ProfileScreen's FlagDetailModal (Metro dedups by module path). Always-mounted
+// below (visible-prop controlled), so behavior is unchanged. Declared after the
+// imports so eslint's import/first stays satisfied.
+const FlagDetailModal = React.lazy(() => import('@/components/FlagDetailModal'));
 
 // Statuses Tasks shows. Even if the provider's `statuses` is widened by the
 // Map's filter, Tasks restricts the visible set to the actionable lifecycle
