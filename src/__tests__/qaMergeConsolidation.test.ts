@@ -30,11 +30,15 @@ function around(haystack: string, anchor: string, len = 500): string {
 
 describe('QA merge — MapScreen Report FAB combines Peter + Alex (the one overlap point)', () => {
   const map = read('screens/MapScreen.tsx');
-  const fab = around(map, 'accessibilityLabel="Report a flag here"', 600);
+  // Window widened from 600 → 800: the hint now has a third (web) branch, which
+  // pushes the inner iconLabelRow View further down the FAB block.
+  const fab = around(map, 'accessibilityLabel="Report a flag here"', 800);
 
   it("keeps Alex's conditional accessibilityHint (disabled-state guidance)", () => {
     expect(fab).toMatch(/Dimmed until location is on/);
-    expect(fab).toContain('accessibilityState={{ disabled: !location }}');
+    // Disabled state is now web-aware (reportDisabled = !location on native,
+    // never on web) but the FAB still announces its disabled state.
+    expect(fab).toContain('accessibilityState={{ disabled: reportDisabled }}');
   });
 
   it("keeps Peter's hoisted iconLabelRow style on the FAB's inner View", () => {
