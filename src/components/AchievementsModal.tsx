@@ -78,7 +78,7 @@ const makeStyles = (color: ColorTheme) =>
       paddingTop: spacing.lg,
       paddingBottom: spacing.xl,
       gap: spacing.md,
-      height: '85%',
+      maxHeight: '85%',
     },
     headerRow: {
       flexDirection: 'row',
@@ -137,7 +137,7 @@ const makeStyles = (color: ColorTheme) =>
       alignItems: 'center',
       justifyContent: 'center',
     },
-    iconCircleEarned: { backgroundColor: '#fff3d1' }, // amber wash; intentionally outside token set (achievement-specific glow)
+    iconCircleEarned: { backgroundColor: color.achievementEarnedBg }, // earned-state amber wash — token carries a dark-mode variant (#3D2A00)
     iconCircleLocked: { backgroundColor: color.surfaceNeutral },
     icon: { fontSize: font.size.xxl - 2 },
     iconDimmed: { opacity: 0.55 },
