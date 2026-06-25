@@ -354,6 +354,20 @@ function SharedModalsHost() {
   );
 }
 
+// Run a navigation action once the container is ready. A drawer menu tap can
+// fire before NavigationContainer has mounted (very early taps, or during a
+// remount), and navigationRef.navigate() is a silent no-op until isReady().
+// Rather than dropping the intent, retry on the next frame — bounded so it can
+// never loop forever if the container somehow never mounts.
+function navigateWhenReady(action: () => void, attempts = 10): void {
+  if (navigationRef.isReady()) {
+    action();
+    return;
+  }
+  if (attempts <= 0) return;
+  requestAnimationFrame(() => navigateWhenReady(action, attempts - 1));
+}
+
 /**
  * Single mount-point for the hamburger drawer (Phase 7a). Reads the open flag
  * from DrawerContext and routes its menu actions through the container-level
@@ -370,13 +384,13 @@ function DrawerHost() {
       // sign-in modal.
       onSignIn={() => {
         setOpen(false);
-        if (navigationRef.isReady()) navigationRef.navigate('Profile');
+        navigateWhenReady(() => navigationRef.navigate('Profile'));
       }}
       // Phase 7a: Settings + Admin moved off the tab bar into the drawer.
       // They're hidden tab routes, still reachable via navigationRef.
       onNavigate={(tab) => {
         setOpen(false);
-        if (navigationRef.isReady()) navigationRef.navigate(tab);
+        navigateWhenReady(() => navigationRef.navigate(tab));
       }}
     />
   );
