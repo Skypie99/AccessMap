@@ -116,6 +116,26 @@ const DEFAULT_REGION: PlatformMapRegion = {
   longitudeDelta: 0.05,
 };
 
+// Pop a flag's callout, retrying a few times ~150ms apart. Right after
+// animateTo the marker may not be mounted yet (the web map recomputes its
+// cluster/pin set on the map's zoomend/moveend), so a single fixed-delay call
+// can fire before the pin exists and silently no-op. showCallout/openPopup are
+// idempotent, so the extra calls are harmless once it lands. `isCancelled`
+// lets the caller abort (effect cleanup, or a newer focus) so we never pop a
+// stale callout. Returns a canceller that clears the pending timers.
+function retryShowCallout(
+  map: PlatformMapHandle | null,
+  flagId: string,
+  isCancelled: () => boolean,
+): () => void {
+  const timers = [250, 400, 550, 700].map((ms) =>
+    setTimeout(() => {
+      if (!isCancelled()) map?.showCallout(flagId);
+    }, ms),
+  );
+  return () => timers.forEach(clearTimeout);
+}
+
 // Cycle sequence for the category quick-cycle button: null = "All categories"
 // (empty Set), followed by each category in display order. Defined here
 // (module-level) so the useCallback below can reference it without a dep.
@@ -1000,6 +1020,7 @@ export default function MapScreen() {
   useEffect(() => {
     const focus = route.params?.focusFlag;
     if (!focus) return;
+    let cancelled = false;
     setFocusedFlagId(focus.id);
     mapRef.current?.animateTo({
       latitude: focus.lat,
@@ -1007,15 +1028,18 @@ export default function MapScreen() {
       latitudeDelta: 0.005,
       longitudeDelta: 0.005,
     });
-    const t = setTimeout(() => {
-      mapRef.current?.showCallout(focus.id);
-    }, 700);
+    // Retry the callout a few times — right after animateTo the marker may not
+    // be mounted yet, so a single fixed-delay call can silently no-op.
+    const cancelCallout = retryShowCallout(mapRef.current, focus.id, () => cancelled);
     // Only revalidate if the flag list is actually stale. Tapping a Tasks card
     // to focus a flag we already have shouldn't trigger a full network re-fetch
     // (realtime + the freshness window keep the list current). Saves a
     // round-trip — and the radio/battery cost — on every card tap.
     void refreshFlagsIfStale();
-    return () => clearTimeout(t);
+    return () => {
+      cancelled = true;
+      cancelCallout();
+    };
   }, [route.params?.focusFlag, route.params?.ts, refreshFlagsIfStale]);
 
   // Phase 7a: Home's "Report" pill navigates here with openReport:true so the
@@ -1041,6 +1065,10 @@ export default function MapScreen() {
     const flagId = route.params?.flagId;
     if (!flagId) return;
     let cancelled = false;
+    // Cancellers for the callout-retry timers and the param-clear timer, set
+    // once the flag resolves so the effect cleanup can clear them.
+    let cancelCallout: () => void = () => {};
+    let clearParamTimer: ReturnType<typeof setTimeout> | undefined;
     // A new flagId is arriving — drop any previous deep-link marker so a
     // stale flag from an earlier link can't linger if this fetch fails.
     // (The early return above means flagId → undefined does NOT clear it.)
@@ -1072,14 +1100,20 @@ export default function MapScreen() {
         mapRef.current?.animateTo({
           latitude: flag.lat,
           longitude: flag.lng,
-          latitudeDelta: 0.005,
-          longitudeDelta: 0.005,
+          // Tighter than the Tasks→Map focus (0.005): on web this lands at a
+          // zoom past Supercluster's maxZoom, so the target pin is guaranteed
+          // declustered on arrival and its popup can actually open.
+          latitudeDelta: 0.002,
+          longitudeDelta: 0.002,
         });
-        setTimeout(() => {
-          if (cancelled) return;
-          mapRef.current?.showCallout(flag.id);
-          clearFlagIdParam();
-        }, 700);
+        // Retry the callout a few times — the marker may still be inside a
+        // cluster bubble or not yet mounted right after animateTo, so a single
+        // fixed-delay call can silently no-op. Then free the deep-link param
+        // (after the last retry) so re-tapping the same link re-fires (L9).
+        cancelCallout = retryShowCallout(mapRef.current, flag.id, () => cancelled);
+        clearParamTimer = setTimeout(() => {
+          if (!cancelled) clearFlagIdParam();
+        }, 800);
       } catch {
         // Swallow — deep-link arrivals shouldn't ever surface an error
         // dialog. The user just sees the Map open as usual (but the param
@@ -1089,6 +1123,8 @@ export default function MapScreen() {
     })();
     return () => {
       cancelled = true;
+      cancelCallout();
+      if (clearParamTimer) clearTimeout(clearParamTimer);
     };
   }, [route.params?.flagId, navigation]);
 
