@@ -449,7 +449,7 @@ const makeStyles = (color: ColorTheme) =>
       paddingTop: spacing.lg,
       paddingBottom: spacing.xl,
       gap: spacing.md,
-      height: '85%',
+      maxHeight: '85%',
     },
     headerRow: {
       flexDirection: 'row',
