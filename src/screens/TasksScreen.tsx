@@ -1,4 +1,4 @@
-import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { memo, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   AccessibilityInfo,
   ActivityIndicator,
@@ -58,7 +58,13 @@ import { addWatchedBulk } from '@/lib/watchedFlags';
 import { track } from '@/lib/analytics';
 import type { FlagCategory, FlagRow, FlagStatus } from '@/types/database';
 import type { RootTabParamList } from '@/navigation/RootNavigator';
-import FlagDetailModal, { type DetailAction } from '@/components/FlagDetailModal';
+import type { DetailAction } from '@/components/FlagDetailModal';
+// Code-split: the flag-detail sheet only opens when a card is tapped. React.lazy
+// moves its (large) code into a shared async chunk on web — the SAME chunk is
+// reused by ProfileScreen's FlagDetailModal (Metro dedups by module path). It's
+// still always-mounted below (visible-prop controlled), so open/close behavior
+// is unchanged.
+const FlagDetailModal = React.lazy(() => import('@/components/FlagDetailModal'));
 import PhotoLightboxModal from '@/components/PhotoLightboxModal';
 import { AppText } from '@/components/ui/AppText';
 import { PressableScale } from '@/components/ui/PressableScale';
@@ -1247,15 +1253,17 @@ export default function TasksScreen() {
           </View>
         </View>
       )}
-      <FlagDetailModal
-        visible={selectedFlag !== null}
-        flag={selectedFlag}
-        onClose={() => setSelectedFlag(null)}
-        onChanged={applyStatusChange}
-        onEdited={(updated) => patchFlag(updated.id, updated)}
-        onDeleted={handleDeleted}
-        onViewOnMap={handleViewOnMap}
-      />
+      <Suspense fallback={null}>
+        <FlagDetailModal
+          visible={selectedFlag !== null}
+          flag={selectedFlag}
+          onClose={() => setSelectedFlag(null)}
+          onChanged={applyStatusChange}
+          onEdited={(updated) => patchFlag(updated.id, updated)}
+          onDeleted={handleDeleted}
+          onViewOnMap={handleViewOnMap}
+        />
+      </Suspense>
     </View>
   );
 }

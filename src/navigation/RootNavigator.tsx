@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Platform, Pressable, StyleSheet, View } from 'react-native';
+import React, { Suspense, useState } from 'react';
+import { ActivityIndicator, Platform, Pressable, StyleSheet, View } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { AppText } from '@/components/ui/AppText';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -29,10 +29,45 @@ import HomeScreen from '@/screens/HomeScreen';
 import MapScreen from '@/screens/MapScreen';
 import TasksScreen from '@/screens/TasksScreen';
 import ProfileScreen from '@/screens/ProfileScreen';
-import SettingsScreen from '@/screens/SettingsScreen';
-import AdminScreen from '@/screens/AdminScreen';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import { createLinking, type TakePendingUrl } from './linking';
+
+// Settings + Admin are reached ONLY from the hamburger drawer (Admin is also
+// gated by is_admin), so they never appear on first paint. Code-split them out
+// of the initial bundle with React.lazy — on web Metro emits a separate async
+// chunk for each (loaded on demand when the user opens the screen); on native
+// they load from the packaged bundle the same way. Keeps the heavy SettingsScreen
+// (nested About/Onboarding/NotificationPrefs) out of the main chunk.
+const SettingsScreen = React.lazy(() => import('@/screens/SettingsScreen'));
+const AdminScreen = React.lazy(() => import('@/screens/AdminScreen'));
+
+// Centered fallback shown while a lazy screen's chunk loads. Uses theme tokens
+// so it's correct in dark mode (surfaceMuted = the screen wash). On web the
+// chunk is local, so this only flashes briefly.
+function ScreenFallback() {
+  const color = useColor();
+  return (
+    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: color.surfaceMuted }}>
+      <ActivityIndicator color={color.brand} />
+    </View>
+  );
+}
+
+// React Navigation's `component` prop wants a plain component, not a lazy ref.
+// Wrap each lazy screen so navigation/route props are forwarded and a Suspense
+// boundary catches the async load.
+function lazyScreen<P extends object>(LazyComponent: React.ComponentType<P>) {
+  return function LazyScreenWrapper(props: P) {
+    return (
+      <Suspense fallback={<ScreenFallback />}>
+        <LazyComponent {...props} />
+      </Suspense>
+    );
+  };
+}
+
+const SettingsScreenLazy = lazyScreen(SettingsScreen);
+const AdminScreenLazy = lazyScreen(AdminScreen);
 
 export type RootTabParamList = {
   // Home is the editorial landing surface (Phase 7a). It renders HomeScreen
@@ -311,7 +346,7 @@ function NavInner({ initialRouteName }: { initialRouteName: keyof RootTabParamLi
       />
       <Tab.Screen
         name="Settings"
-        component={SettingsScreen}
+        component={SettingsScreenLazy}
         options={{
           headerLeft: renderMenuButton,
           tabBarButton: () => null,
@@ -321,7 +356,7 @@ function NavInner({ initialRouteName }: { initialRouteName: keyof RootTabParamLi
       {isAdmin === true && (
         <Tab.Screen
           name="Admin"
-          component={AdminScreen}
+          component={AdminScreenLazy}
           options={{
             headerLeft: renderMenuButton,
             tabBarButton: () => null,

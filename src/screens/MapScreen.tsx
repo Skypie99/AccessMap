@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   AccessibilityInfo,
   ActivityIndicator,
@@ -93,7 +93,13 @@ import { AppText } from '@/components/ui/AppText';
 import { GlassSurface } from '@/components/ui/GlassSurface';
 import { PressableScale } from '@/components/ui/PressableScale';
 import { useScreenReader, useReducedMotion } from '@/lib/accessibility';
-import ReportFlagModal from './ReportFlagModal';
+// Code-split: the report bottom-sheet is only needed once the user taps the
+// Report FAB. React.lazy moves its (large) code into a separate async chunk on
+// web — it's still always-mounted below (visible-prop controlled), so its
+// open/close animation is unchanged; the chunk just loads when MapScreen first
+// renders rather than sitting in the main bundle. (severityColor lives in
+// @/lib/flags, not this module, so the split is clean.)
+const ReportFlagModal = React.lazy(() => import('./ReportFlagModal'));
 import LegendModal from './LegendModal';
 import HeatmapLegend from '@/components/HeatmapLegend';
 import NearbyFlagsModal from './NearbyFlagsModal';
@@ -1970,21 +1976,23 @@ export default function MapScreen() {
         </View>
       </View>
 
-      <ReportFlagModal
-        visible={reportOpen}
-        // Prefer the long-press drop location if the user dropped one;
-        // otherwise fall back to the user's current GPS location for the
-        // FAB-triggered "report at my location" flow.
-        location={dropLocation ?? location}
-        onClose={() => {
-          setReportOpen(false);
-          // Clear the drop pin on close so the next FAB-tap defaults back
-          // to GPS. Without this, a long-press once would stick as the
-          // implicit location forever.
-          setDropLocation(null);
-        }}
-        onCreated={() => { refreshFlags().catch(() => {}); }}
-      />
+      <Suspense fallback={null}>
+        <ReportFlagModal
+          visible={reportOpen}
+          // Prefer the long-press drop location if the user dropped one;
+          // otherwise fall back to the user's current GPS location for the
+          // FAB-triggered "report at my location" flow.
+          location={dropLocation ?? location}
+          onClose={() => {
+            setReportOpen(false);
+            // Clear the drop pin on close so the next FAB-tap defaults back
+            // to GPS. Without this, a long-press once would stick as the
+            // implicit location forever.
+            setDropLocation(null);
+          }}
+          onCreated={() => { refreshFlags().catch(() => {}); }}
+        />
+      </Suspense>
 
       <LegendModal visible={legendOpen} onClose={() => setLegendOpen(false)} />
 

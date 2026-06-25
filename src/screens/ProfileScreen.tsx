@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   AccessibilityInfo,
   ActivityIndicator,
@@ -43,7 +43,11 @@ import type { FlagRow, FlagStatus, UserRow } from '@/types/database';
 import type { RootTabParamList } from '@/navigation/RootNavigator';
 import MyReportsModal from '@/components/MyReportsModal';
 import MyWatchedModal from '@/components/MyWatchedModal';
-import FlagDetailModal, { type DetailAction } from '@/components/FlagDetailModal';
+import type { DetailAction } from '@/components/FlagDetailModal';
+// Code-split: shares the same lazy FlagDetailModal async chunk as TasksScreen
+// (Metro dedups by module path), so the sheet's code lives outside the main
+// bundle and loads on demand. Always-mounted below (visible-prop controlled).
+const FlagDetailModal = React.lazy(() => import('@/components/FlagDetailModal'));
 // they now live in a single <SharedModalsHost /> at the navigator level
 // (see RootNavigator.tsx + src/lib/sharedModalsContext.tsx). Profile
 // just calls setOpen('help' | 'changelog' | 'myFeedback') via the
@@ -1730,14 +1734,16 @@ export default function ProfileScreen() {
         onViewOnMap={handleViewOnMap}
       />
 
-      <FlagDetailModal
-        visible={selectedFlag !== null}
-        flag={selectedFlag}
-        onClose={handleDetailClose}
-        onChanged={handleDetailChanged}
-        onDeleted={handleDetailDeleted}
-        onViewOnMap={handleViewOnMap}
-      />
+      <Suspense fallback={null}>
+        <FlagDetailModal
+          visible={selectedFlag !== null}
+          flag={selectedFlag}
+          onClose={handleDetailClose}
+          onChanged={handleDetailChanged}
+          onDeleted={handleDetailDeleted}
+          onViewOnMap={handleViewOnMap}
+        />
+      </Suspense>
 
       <AboutScreen visible={aboutOpen} onClose={() => setAboutOpen(false)} />
 
