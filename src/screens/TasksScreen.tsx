@@ -1534,18 +1534,19 @@ const FlagCard = memo(function FlagCard({
           )
         ) : null}
         <View style={styles.cardBodyText}>
-          {flag.description ? <AppText variant="body" style={styles.cardDesc}>{flag.description}</AppText> : null}
+          {flag.description ? (
+            // Clamp to 2 lines — the full text lives in Details. Stops a long
+            // report from growing the card unbounded (a 2000-char note used to
+            // drive it to ~1612px tall).
+            <AppText variant="body" style={styles.cardDesc} numberOfLines={2}>{flag.description}</AppText>
+          ) : null}
+          {/* Quiet support line. Severity moved up to the header badge, so it's
+              no longer repeated here; filter(Boolean) keeps the separators tidy
+              whether or not distance is known. */}
           <AppText variant="body" style={styles.cardMeta}>
-            {`Severity ${flag.severity}` +
-              (distanceInfo ? ` · ${distanceInfo.label} · ${distanceInfo.eta}` : '') +
-              ` · ${relativeTime(flag.created_at)}`}
-          </AppText>
-          <AppText variant="body" style={styles.cardHint}>
-            {selectionActive
-              ? selected
-                ? 'tap to deselect'
-                : 'tap to select'
-              : 'tap to view on map'}
+            {[distanceInfo?.label, distanceInfo?.eta, relativeTime(flag.created_at)]
+              .filter(Boolean)
+              .join(' · ')}
           </AppText>
         </View>
       </View>
@@ -1812,7 +1813,6 @@ const makeStyles = (color: ColorTheme) =>
     cardBodyText: { flex: 1, gap: spacing.tight },
     cardDesc: { fontSize: font.size.base, color: color.textStrong },
     cardMeta: { fontSize: font.size.xs, color: color.textMuted },
-    cardHint: { fontSize: font.size.caption, color: color.textSubtle, fontStyle: 'italic' },
     // Action row — equal-share flex (the proven bulkBtn pattern), never flexWrap.
     // One tidy row at default; the component swaps to cardActionsStack (lead
     // full-width + sub-row) when compactActions is true (narrow / large type).
