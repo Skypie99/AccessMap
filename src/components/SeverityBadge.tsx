@@ -31,7 +31,9 @@ export function SeverityBadge({ level, showLabel = false, size = 'md', style }: 
 
   const paddingH = size === 'sm' ? spacing.sm : spacing.md;
   const paddingV = size === 'sm' ? 2 : spacing.tight;
-  const textSize = size === 'sm' ? 10 : font.size.caption;
+  // sm stays compact via padding, but the text holds the legible floor (11, was
+  // 10) — matches StatusBadge sm so the two header badges read at the same size.
+  const textSize = font.size.caption;
 
   const a11yLabel = showLabel
     ? `Severity ${level}: ${sev.label}`

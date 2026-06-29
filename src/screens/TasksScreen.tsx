@@ -28,7 +28,6 @@ import {
   CATEGORY_LABELS,
   CATEGORY_ORDER,
   NEXT_PAGE_SIZE,
-  severityColor,
   updateFlagStatus,
 } from '@/lib/flags';
 import { relativeTime } from '@/lib/relativeTime';
@@ -67,7 +66,7 @@ import { AppText } from '@/components/ui/AppText';
 import { PressableScale } from '@/components/ui/PressableScale';
 import { Skeleton, SkeletonCard } from '@/components/ui/Skeleton';
 import { StatusBadge } from '@/components/StatusBadge';
-import CategoryIcon from '@/components/CategoryIcon';
+import { SeverityBadge } from '@/components/SeverityBadge';
 import { hapticSelection } from '@/lib/haptics';
 import { AlertTriangle, Check, ChevronRight, MapPin, Menu, MessageSquare, Search, Sparkles, WifiOff, X } from 'lucide-react-native';
 import { font, motion, radius, shadow, size, spacing } from '@/theme';
@@ -1449,17 +1448,11 @@ const FlagCard = memo(function FlagCard({
           : 'Opens the Map tab focused on this flag. Long-press to select multiple.'
       }
     >
-      {/* Severity accent stripe down the left edge — colour reinforces the
-          severity that's also stated in the meta line (WCAG 1.4.1, never the
-          sole cue). Decorative; hidden from AT. */}
-      <View
-        style={[styles.cardAccent, { backgroundColor: severityColor(flag.severity) }]}
-        pointerEvents="none"
-        accessibilityElementsHidden
-        importantForAccessibility="no-hide-descendants"
-      />
       <View style={styles.cardHeader}>
-        <CategoryIcon category={flag.category} size={18} color={color.textStrong} decorative />
+        {/* Severity leads the header as a legible badge ("3 · Moderate") — number
+            + word + colour, never colour alone (WCAG 1.4.1). Replaces the old
+            left accent stripe + the buried "Severity N" in the meta line. */}
+        <SeverityBadge level={flag.severity} showLabel size="sm" />
         <AppText variant="label" style={styles.cardTitle}>{CATEGORY_LABELS[flag.category]}</AppText>
         <StatusBadge status={flag.status} size="sm" />
         {/* Checkmark indicator in the top-right corner. Hidden from SR
@@ -1781,26 +1774,21 @@ const makeStyles = (color: ColorTheme) =>
       fontWeight: font.weight.bold,
     },
     title: { fontSize: font.size.xl, fontWeight: font.weight.semibold },
+    // Restrained material: a soft e1 lift + a hairline border (extends Home's
+    // flat listCard language) instead of the old e2 "Floating" slab. Depth as a
+    // quiet accent, not every row a box. In dark mode the hairline carries the
+    // lift (shadows barely register on dark). Symmetric padding now the left
+    // severity stripe is gone — the SeverityBadge in the header carries severity.
     card: {
       backgroundColor: color.surface,
       borderRadius: radius.lg,
+      borderWidth: 1,
+      borderColor: color.border,
       padding: spacing.lg,
-      paddingLeft: spacing.lg + 2,
       gap: spacing.sm,
       minHeight: size.cardMin,
-      ...shadow.e2,
+      ...shadow.e1,
       marginBottom: spacing.md,
-    },
-    // Severity accent stripe hugging the card's left edge (rounded to match the
-    // card corners). No overflow:hidden on the card — that would clip the iOS shadow.
-    cardAccent: {
-      position: 'absolute',
-      left: 0,
-      top: 0,
-      bottom: 0,
-      width: 4,
-      borderTopLeftRadius: radius.lg,
-      borderBottomLeftRadius: radius.lg,
     },
     cardPressed: { opacity: 0.85, transform: [{ scale: 0.99 }] },
     cardHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
