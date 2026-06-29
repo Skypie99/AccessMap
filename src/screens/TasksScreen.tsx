@@ -11,7 +11,10 @@ import {
   SectionList,
   StyleSheet,
   TextInput,
+  type TextStyle,
+  useWindowDimensions,
   View,
+  type ViewStyle,
 } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
@@ -101,6 +104,13 @@ export default function TasksScreen() {
   const drawer = useDrawer();
   const { setOpen: setSharedModal } = useSharedModals();
   const { user } = useAuth();
+  // Drives the FlagCard action row's deliberate 1-row → 2-row reflow. Computed
+  // ONCE here (not per-card) so the whole list shares a single Dimensions
+  // subscription instead of N. A narrow device OR large Dynamic Type tips the
+  // four triage buttons from a tidy tiered row to a controlled stack — never a
+  // ragged wrap. Threshold: 375pt fits one row; 360/320pt and ≥1.3× type stack.
+  const { width: windowWidth, fontScale } = useWindowDimensions();
+  const compactActions = windowWidth < 375 || fontScale >= 1.3;
   const {
     flags: providerFlags,
     flagsMap,
@@ -694,6 +704,7 @@ export default function TasksScreen() {
         userLocation={userLocation}
         selectionActive={selection.active}
         selected={isSelected(selection, item.id)}
+        compactActions={compactActions}
         onPress={handleCardPress}
         onLongPress={handleCardLongPress}
         onSetStatus={setStatus}
@@ -705,6 +716,7 @@ export default function TasksScreen() {
       userId,
       userLocation,
       selection,
+      compactActions,
       handleCardPress,
       handleCardLongPress,
       setStatus,
@@ -1279,6 +1291,8 @@ interface FlagCardProps {
   selectionActive: boolean;
   /** True when this card is part of the current selection. */
   selected: boolean;
+  /** When true the action row stacks (narrow width / large type) instead of one row. */
+  compactActions: boolean;
   onPress: (flag: FlagRow) => void;
   /** Long-press enters / extends selection. */
   onLongPress: (flag: FlagRow) => void;
@@ -1298,6 +1312,7 @@ const FlagCard = memo(function FlagCard({
   userLocation,
   selectionActive,
   selected,
+  compactActions,
   onPress,
   onLongPress,
   onSetStatus,
@@ -1336,6 +1351,84 @@ const FlagCard = memo(function FlagCard({
   const a11yLabel = selectionActive
     ? `${CATEGORY_LABELS[flag.category]}, severity ${flag.severity}. ${selected ? 'Selected.' : 'Not selected.'}`
     : baseLabel;
+
+  // ── Triage actions ────────────────────────────────────────────────────────
+  // One descriptor list + one render helper, so the tiered single row and the
+  // deliberate 2-row compact stack share a single source of truth. `Verify`
+  // exists only while the flag is open; once verified the lead becomes
+  // `Resolved`. Every button carries its own a11y label AND hint (WCAG: say
+  // what it does and what happens next).
+  type CardAction = {
+    key: string;
+    label: string;
+    a11yLabel: string;
+    a11yHint: string;
+    onPress: () => void;
+    btnStyle: ViewStyle;
+    textStyle: TextStyle;
+  };
+  const actions: CardAction[] = [
+    ...(flag.status === 'open'
+      ? [{
+          key: 'verify',
+          label: 'Verify',
+          a11yLabel: 'Verify this flag',
+          a11yHint: 'Confirms this barrier report is real',
+          onPress: () => onSetStatus(flag.id, 'verified', isOwn),
+          btnStyle: styles.verifyBtn,
+          textStyle: styles.verifyText,
+        } satisfies CardAction]
+      : []),
+    {
+      key: 'resolved',
+      label: 'Resolved',
+      a11yLabel: 'Mark this flag resolved',
+      a11yHint: 'Marks this barrier as fixed',
+      onPress: () => onSetStatus(flag.id, 'resolved', isOwn),
+      btnStyle: styles.resolveBtn,
+      textStyle: styles.resolveText,
+    },
+    {
+      key: 'reject',
+      label: 'Reject',
+      a11yLabel: 'Reject this flag',
+      a11yHint: 'Dismisses this report; asks you to confirm first',
+      onPress: () => onSetStatus(flag.id, 'rejected', isOwn),
+      btnStyle: styles.rejectBtn,
+      textStyle: styles.rejectText,
+    },
+    {
+      key: 'details',
+      label: 'Details',
+      a11yLabel: 'View flag details',
+      a11yHint: 'Opens a screen with the full report, photo, and more actions',
+      onPress: () => onShowDetails(flag),
+      btnStyle: styles.detailsBtn,
+      textStyle: styles.detailsText,
+    },
+  ];
+  // `actions` always has ≥3 entries (Resolved/Reject/Details always render,
+  // plus Verify while open), so actions[0] is never undefined.
+  const leadAction = actions[0]!;
+  const restActions = actions.slice(1);
+  // hitSlop widens the tap area without changing layout — keeps adjacent
+  // constructive/destructive buttons from mis-firing on the reflowed row.
+  const renderAction = (a: CardAction, widthStyle: ViewStyle) => (
+    <PressableScale
+      key={a.key}
+      disabled={isBusy}
+      onPress={a.onPress}
+      hitSlop={spacing.xs}
+      style={[styles.actionBtn, a.btnStyle, widthStyle]}
+      accessibilityRole="button"
+      accessibilityLabel={a.a11yLabel}
+      accessibilityHint={a.a11yHint}
+      accessibilityState={{ disabled: isBusy }}
+    >
+      <AppText variant="label" style={a.textStyle}>{a.label}</AppText>
+    </PressableScale>
+  );
+
   return (
     <Pressable
       onPress={() => onPress(flag)}
@@ -1467,53 +1560,26 @@ const FlagCard = memo(function FlagCard({
           floating bar handles bulk actions, and showing both would be
           confusing (a tap on Verify here would still fire the single-
           item flow, not the bulk one). */}
-      {!selectionActive && (
-        <View style={styles.cardActions}>
-          {flag.status === 'open' && (
-            <PressableScale
-              disabled={isBusy}
-              onPress={() => onSetStatus(flag.id, 'verified', isOwn)}
-              style={[styles.actionBtn, styles.verifyBtn]}
-              accessibilityRole="button"
-              accessibilityLabel="Verify this flag"
-              accessibilityState={{ disabled: isBusy }}
-            >
-              <AppText variant="label" style={styles.verifyText}>Verify</AppText>
-            </PressableScale>
-          )}
-          <PressableScale
-            disabled={isBusy}
-            onPress={() => onSetStatus(flag.id, 'resolved', isOwn)}
-            style={[styles.actionBtn, styles.resolveBtn]}
-            accessibilityRole="button"
-            accessibilityLabel="Mark this flag resolved"
-            accessibilityState={{ disabled: isBusy }}
-          >
-            <AppText variant="label" style={styles.resolveText}>Resolved</AppText>
-          </PressableScale>
-          <PressableScale
-            disabled={isBusy}
-            onPress={() => onSetStatus(flag.id, 'rejected', isOwn)}
-            style={[styles.actionBtn, styles.rejectBtn]}
-            accessibilityRole="button"
-            accessibilityLabel="Reject this flag"
-            accessibilityState={{ disabled: isBusy }}
-          >
-            <AppText variant="label" style={styles.rejectText}>Reject</AppText>
-          </PressableScale>
-          <Pressable
-            disabled={isBusy}
-            onPress={() => onShowDetails(flag)}
-            style={[styles.actionBtn, styles.detailsBtn]}
-            accessibilityRole="button"
-            accessibilityLabel="View flag details"
-            accessibilityHint="Opens a screen with the full report, photo, and more actions"
-            accessibilityState={{ disabled: isBusy }}
-          >
-            <AppText variant="label" style={styles.detailsText}>Details</AppText>
-          </Pressable>
-        </View>
-      )}
+      {!selectionActive &&
+        (compactActions ? (
+          // Deliberate 2-row stack (narrow width / large type): the lead action
+          // full-width on top, the rest in one equal-share sub-row below.
+          // Reject stays a row apart from the primary — no mis-tap. Never ragged.
+          <View style={styles.cardActionsStack}>
+            {renderAction(leadAction, styles.actionBtnFull)}
+            <View style={styles.cardActionsRow}>
+              {restActions.map((a) => renderAction(a, styles.actionBtnFlex))}
+            </View>
+          </View>
+        ) : (
+          // Tiered single row: one clear primary (lead, wider via flexGrow) plus
+          // quiet equal-share rest. flexGrow + flexBasis:0 distributes the width
+          // evenly so the row can never wrap raggedly the way content-sized pills did.
+          <View style={styles.cardActionsRow}>
+            {renderAction(leadAction, styles.actionBtnLead)}
+            {restActions.map((a) => renderAction(a, styles.actionBtnFlex))}
+          </View>
+        ))}
       {/* Full-screen photo lightbox — only mounts when the thumbnail exists
           and has loaded successfully. Tapping the thumbnail (or the close
           button inside the modal) dismisses it. */}
@@ -1759,28 +1825,43 @@ const makeStyles = (color: ColorTheme) =>
     cardDesc: { fontSize: font.size.base, color: color.textStrong },
     cardMeta: { fontSize: font.size.xs, color: color.textMuted },
     cardHint: { fontSize: font.size.caption, color: color.textSubtle, fontStyle: 'italic' },
-    cardActions: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginTop: spacing.tight },
+    // Action row — equal-share flex (the proven bulkBtn pattern), never flexWrap.
+    // One tidy row at default; the component swaps to cardActionsStack (lead
+    // full-width + sub-row) when compactActions is true (narrow / large type).
+    cardActionsRow: { flexDirection: 'row', gap: spacing.sm },
+    cardActionsStack: { gap: spacing.sm },
     actionBtn: {
-      // Phase 13: clean fully-rounded pills (was radius.md rects) to match the
-      // editorial button language; status colors kept (brand/success/neutral).
-      // md horizontal padding keeps all four actions on one row.
-      paddingHorizontal: spacing.md,
+      // Fully-rounded pills (Phase 13 editorial language). Width is owned by the
+      // flex below — NOT by horizontal padding — so the labels distribute evenly
+      // instead of sizing each pill to its text (the old wrap bug). Vertical
+      // padding + minHeight carry the 44pt touch target.
       paddingVertical: spacing.sm,
       borderRadius: radius.full,
       minHeight: 44,
       alignItems: 'center',
       justifyContent: 'center',
     },
+    // The lead (primary) action: noticeably wider than its quiet siblings, so the
+    // hierarchy reads at a glance even though all share the row. 1.5 (not 2) is
+    // the RN translation of the mockup — leaves the longest secondary ("Resolved")
+    // room at 375pt without clipping.
+    actionBtnLead: { flexGrow: 1.5, flexBasis: 0, minWidth: 0 },
+    actionBtnFlex: { flexGrow: 1, flexBasis: 0, minWidth: 0 },
+    actionBtnFull: { alignSelf: 'stretch' },
     verifyBtn: { backgroundColor: color.brand },
     verifyText: { color: color.textOnBrand, fontWeight: font.weight.semibold, fontSize: font.size.sm },
-    resolveBtn: { backgroundColor: color.success },
-    resolveText: { color: color.textOnBrand, fontWeight: font.weight.semibold, fontSize: font.size.sm },
-    rejectBtn: { backgroundColor: color.surfaceNeutral },
+    // Tiered down from a saturated green fill to a quiet neutral chip — only
+    // Verify stays a filled primary, the rest are calm equals.
+    resolveBtn: { backgroundColor: color.surfaceNeutral },
+    resolveText: { color: color.text, fontWeight: font.weight.semibold, fontSize: font.size.sm },
+    // Reject — quiet ghost (hairline, no fill), neutral ink: present but never
+    // shouting, and visually distinct from the filled primary to avoid mis-tap.
+    rejectBtn: { backgroundColor: 'transparent', borderWidth: 1, borderColor: color.borderSubtle },
     rejectText: { color: color.text, fontWeight: font.weight.semibold, fontSize: font.size.sm },
     detailsBtn: {
       backgroundColor: 'transparent',
       borderWidth: 1,
-      borderColor: color.brand,
+      borderColor: color.borderSubtle,
     },
     detailsText: { color: color.brand, fontWeight: font.weight.semibold, fontSize: font.size.sm },
     mineToggleRow: {
