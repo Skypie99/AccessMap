@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FlagCard redesign — BUILT before → after</title>
+<style>
+  /* Token-faithful reconstruction of the BUILT redesign (overhaul/flagcard-redesign).
+     Mirrors the exact final RN StyleSheet values + theme.ts / ThemeContext tokens.
+     box-sizing:border-box + flex-shrink:0 on the "today" pills reproduce RN/Yoga
+     layout (RN borders are inside the box; RN flex-shrink defaults to 0) so the
+     wrap/reflow behaviour matches the device, the same method Discovery used. */
+  *{box-sizing:border-box}
+  body{margin:0;padding:24px;background:#fbfcfe;font-family:-apple-system,BlinkMacSystemFont,"Public Sans","Segoe UI",Roboto,sans-serif;color:#222}
+  .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+  h1{font-size:19px;font-weight:700;margin:0 0 4px}
+  h2{font-size:15px;font-weight:700;margin:30px 0 10px;padding-top:14px;border-top:1px solid #e7ebf0}
+  .intro{font-size:13px;color:#5b6470;margin:0 0 8px;max-width:680px;line-height:1.55}
+  .tag{font-size:11px;font-weight:700;padding:2px 9px;border-radius:999px;display:inline-block}
+  .tBefore{background:#fdecea;color:#8a1f1f}
+  .tAfter{background:#DCF6EC;color:#067A56}
+  .cap{font-size:12px;color:#5b6470;margin:0 0 8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .pair{display:flex;gap:18px;flex-wrap:wrap;align-items:flex-start}
+  .col{display:flex;flex-direction:column;gap:6px}
+  .lab{font-size:11px;font-weight:700;color:#707883;text-align:center}
+  /* Phone frame = device width; list padding 16 inside, so card inner = width-32-32. */
+  .frame{border-radius:18px;padding:16px}
+  .frameLight{background:#f7f9fc}
+  .frameDark{background:#121214}
+
+  /* ───────── AFTER card (BUILT values) ───────── */
+  .card{border-radius:16px;border-width:1px;border-style:solid;padding:16px;display:flex;flex-direction:column;gap:8px;min-height:96px}
+  .cardLight{background:#fff;border-color:#e5e5e5;box-shadow:0 1px 2px rgba(15,27,45,.06)}
+  .cardDark{background:#1E1E22;border-color:#333;box-shadow:0 1px 2px rgba(0,0,0,.40)}
+  .hdr{display:flex;align-items:center;gap:8px}
+  .sevb{display:inline-flex;align-items:center;border-radius:999px;padding:2px 8px;font-size:11px;line-height:1.25;white-space:nowrap;align-self:flex-start}
+  .stb{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:2px 8px;font-size:11px;font-weight:700;white-space:nowrap}
+  .dot{width:5px;height:5px;border-radius:999px}
+  .title{font-size:18px;font-weight:600;flex:1;min-width:0;line-height:1.2}
+  .tLight{color:#222}.tDark{color:#f5f5f5}
+  .body{display:flex;gap:12px}
+  .thumb{width:80px;height:80px;border-radius:12px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:24px;color:#9aa3af}
+  .thumbLight{background:#eef1f5}.thumbDark{background:#323237}
+  .btxt{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
+  .desc{font-size:14px;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .descLight{color:#222}.descDark{color:#f5f5f5}
+  .meta{font-size:12px;margin:0}
+  .metaLight{color:#666}.metaDark{color:#aaa}
+
+  /* Action row — equal-share flex, never wrap. */
+  .arow{display:flex;gap:8px}
+  .astack{display:flex;flex-direction:column;gap:8px}
+  .ab{min-height:44px;border-radius:999px;display:flex;align-items:center;justify-content:center;padding:8px 6px;font-size:13px;font-weight:600;line-height:1.1;white-space:nowrap}
+  .lead{flex-grow:1.5;flex-basis:0;min-width:0}
+  .flex{flex-grow:1;flex-basis:0;min-width:0}
+  .full{align-self:stretch}
+  /* tiers — light */
+  .abVerifyL{background:#1466E0;color:#fff}
+  .abResolveL{background:#eef1f5;color:#333}
+  .abGhostL{background:transparent;border:1px solid #dde2ea;color:#333}
+  .abGhostBrandL{background:transparent;border:1px solid #dde2ea;color:#1466E0}
+  /* tiers — dark */
+  .abVerifyD{background:#4E89EF;color:#fff}
+  .abResolveD{background:#323237;color:#ddd}
+  .abGhostD{background:transparent;border:1px solid #2d2d2d;color:#ddd}
+  .abGhostBrandD{background:transparent;border:1px solid #2d2d2d;color:#84AEF6}
+
+  /* ───────── TODAY (before) card — real pre-redesign styles ───────── */
+  .oldcard{background:#fff;border-radius:16px;padding:16px 16px 16px 18px;position:relative;box-shadow:0 1px 6px rgba(15,27,45,.13);display:flex;flex-direction:column;gap:8px}
+  .oldcardDark{background:#1E1E22}
+  .stripe{position:absolute;left:0;top:0;bottom:0;width:4px;border-top-left-radius:16px;border-bottom-left-radius:16px}
+  .oldhdr{display:flex;align-items:center;gap:8px}
+  .oicon{font-size:18px}
+  .ohint{font-size:11px;font-style:italic;margin:0}
+  .ohintLight{color:#707070}.ohintDark{color:#8a8a8a}
+  .opills{display:flex;flex-wrap:wrap;gap:8px;margin-top:2px}
+  .opill{flex:none;min-height:44px;border-radius:999px;padding:8px 12px;font-size:13px;font-weight:600;display:flex;align-items:center;justify-content:center;white-space:nowrap}
+  .ovL{background:#1466E0;color:#fff}.orL{background:#27ae60;color:#fff}.oxL{background:#eef1f5;color:#333}.odL{background:transparent;border:1px solid #1466E0;color:#1466E0}
+  .ovD{background:#4E89EF;color:#fff}.orD{background:#27ae60;color:#fff}.oxD{background:#323237;color:#ddd}.odD{background:transparent;border:1px solid #4E89EF;color:#84AEF6}
+  .check{width:22px;height:22px;border-radius:7px;border:2px solid #1466E0;display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;font-weight:800}
+  .x16{font-size:1.6em}
+  .note{font-size:11px;color:#8a1f1f;margin:4px 0 0}
+  .noteOk{font-size:11px;color:#067A56;margin:4px 0 0}
+  .legend{font-size:12px;color:#5b6470;background:#f3f6fa;border-radius:10px;padding:10px 14px;margin:6px 0 0;line-height:1.5;max-width:720px}
+  a{color:#0F53BE}
+</style>
+</head>
+<body>
+<h1>FlagCard redesign — BUILT before → after</h1>
+<p class="intro">The Tasks-list barrier card, rebuilt on <code>overhaul/flagcard-redesign</code> to Sky's locked Pass-2 direction. These are token-faithful reconstructions from the <strong>exact final React Native StyleSheet values</strong> (same method as the Discovery before-images, which are the canonical baseline at <a href="../2026-06-26_flagcard/01-before-board.png">../2026-06-26_flagcard/</a>). Native iOS blur/feel, real Safari layout, VoiceOver order, and real-device scroll are NEEDS-SKY-DEVICE.</p>
+
+<!-- ════════════ 1. THE MONEY SHOT ════════════ -->
+<h2>1 · Full card, open + photo, 375pt — today vs built</h2>
+<div class="pair">
+  <div class="col">
+    <p class="cap"><span class="tag tBefore">Today</span> busy · over-elevated e2 · severity buried · italic hint · 4 candy pills</p>
+    <div class="frame frameLight" style="width:375px">
+      <div class="oldcard">
+        <span class="stripe" style="background:#F2792B"></span>
+        <div class="oldhdr"><span class="oicon">⚠️</span><span class="title tLight">Broken sidewalk</span><span class="stb" style="background:#E7F0FD;color:#1A5FB4"><span class="dot" style="background:#1A5FB4"></span>Open</span></div>
+        <div class="body"><div class="thumb thumbLight">🖼️</div><div class="btxt"><p class="desc descLight" style="-webkit-line-clamp:initial">Curb ramp is cracked and lifted, a wheelchair can't get up the curb here at all.</p><p class="meta metaLight">Severity 3 · 220 m · 3 min · 2h ago</p><p class="ohint ohintLight">tap to view on map</p></div></div>
+        <div class="opills"><span class="opill ovL">Verify</span><span class="opill orL">Resolved</span><span class="opill oxL">Reject</span><span class="opill odL">Details</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="col">
+    <p class="cap"><span class="tag tAfter">Built</span> calm · e1 lift + hairline · "3 · Moderate" badge · clamped · tiered row</p>
+    <div class="frame frameLight" style="width:375px">
+      <div class="card cardLight">
+        <div class="hdr"><span class="sevb" style="background:#F2792B;color:#fff"><b>3</b><span style="font-weight:500">&nbsp;·&nbsp;Moderate</span></span><span class="title tLight">Broken sidewalk</span><span class="stb" style="background:#E7F0FD;color:#1A5FB4"><span class="dot" style="background:#1A5FB4"></span>Open</span></div>
+        <div class="body"><div class="thumb thumbLight">🖼️</div><div class="btxt"><p class="desc descLight">Curb ramp is cracked and lifted, a wheelchair can't get up the curb here at all.</p><p class="meta metaLight">220 m · 3 min walk · 2h ago</p></div></div>
+        <div class="arow"><span class="ab abVerifyL lead">Verify</span><span class="ab abResolveL flex">Resolved</span><span class="ab abGhostL flex">Reject</span><span class="ab abGhostBrandL flex">Details</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<h2>1b · Same, dark mode</h2>
+<div class="pair">
+  <div class="col">
+    <p class="cap"><span class="tag tBefore">Today</span> dark</p>
+    <div class="frame frameDark" style="width:375px">
+      <div class="oldcard oldcardDark">
+        <span class="stripe" style="background:#F2792B"></span>
+        <div class="oldhdr"><span class="oicon">⚠️</span><span class="title tDark">Broken sidewalk</span><span class="stb" style="background:#0E2A5C;color:#84AEF6"><span class="dot" style="background:#84AEF6"></span>Open</span></div>
+        <div class="body"><div class="thumb thumbDark">🖼️</div><div class="btxt"><p class="desc descDark" style="-webkit-line-clamp:initial">Curb ramp is cracked and lifted, a wheelchair can't get up the curb here at all.</p><p class="meta metaDark">Severity 3 · 220 m · 3 min · 2h ago</p><p class="ohint ohintDark">tap to view on map</p></div></div>
+        <div class="opills"><span class="opill ovD">Verify</span><span class="opill orD">Resolved</span><span class="opill oxD">Reject</span><span class="opill odD">Details</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="col">
+    <p class="cap"><span class="tag tAfter">Built</span> dark</p>
+    <div class="frame frameDark" style="width:375px">
+      <div class="card cardDark">
+        <div class="hdr"><span class="sevb" style="background:#F2792B;color:#fff"><b>3</b><span style="font-weight:500">&nbsp;·&nbsp;Moderate</span></span><span class="title tDark">Broken sidewalk</span><span class="stb" style="background:#0E2A5C;color:#84AEF6"><span class="dot" style="background:#84AEF6"></span>Open</span></div>
+        <div class="body"><div class="thumb thumbDark">🖼️</div><div class="btxt"><p class="desc descDark">Curb ramp is cracked and lifted, a wheelchair can't get up the curb here at all.</p><p class="meta metaDark">220 m · 3 min walk · 2h ago</p></div></div>
+        <div class="arow"><span class="ab abVerifyD lead">Verify</span><span class="ab abResolveD flex">Resolved</span><span class="ab abGhostD flex">Reject</span><span class="ab abGhostBrandD flex">Details</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════ 2. ACTION ROW RESILIENCE ════════════ -->
+<h2>2 · The headline fix — action row holds where it used to wrap</h2>
+<p class="intro">Today's four content-sized pills can only wrap (no flex). The built row uses equal-share flex (the proven bulkBtn pattern); a narrow width or large type tips it to a deliberate stack. Each pair: <span class="tag tBefore">today</span> over <span class="tag tAfter">built</span>.</p>
+<div class="pair">
+  <!-- 375 default -->
+  <div class="col"><p class="lab">375pt · default</p>
+    <div class="frame frameLight" style="width:375px"><div class="card cardLight" style="min-height:0;padding:12px">
+      <div class="opills"><span class="opill ovL">Verify</span><span class="opill orL">Resolved</span><span class="opill oxL">Reject</span><span class="opill odL">Details</span></div>
+      <p class="note">today: fits — 6px to spare</p>
+      <div class="arow" style="margin-top:8px"><span class="ab abVerifyL lead">Verify</span><span class="ab abResolveL flex">Resolved</span><span class="ab abGhostL flex">Reject</span><span class="ab abGhostBrandL flex">Details</span></div>
+      <p class="noteOk">built: one tidy tiered row</p>
+    </div></div>
+  </div>
+  <!-- 360 default -->
+  <div class="col"><p class="lab">360pt · default</p>
+    <div class="frame frameLight" style="width:360px"><div class="card cardLight" style="min-height:0;padding:12px">
+      <div class="opills"><span class="opill ovL">Verify</span><span class="opill orL">Resolved</span><span class="opill oxL">Reject</span><span class="opill odL">Details</span></div>
+      <p class="note">today: WRAPS — ragged 2nd row</p>
+      <div class="astack" style="margin-top:8px"><span class="ab abVerifyL full">Verify</span><div class="arow"><span class="ab abResolveL flex">Resolved</span><span class="ab abGhostL flex">Reject</span><span class="ab abGhostBrandL flex">Details</span></div></div>
+      <p class="noteOk">built: deliberate 2-row stack</p>
+    </div></div>
+  </div>
+  <!-- 320 default -->
+  <div class="col"><p class="lab">320pt · default</p>
+    <div class="frame frameLight" style="width:320px"><div class="card cardLight" style="min-height:0;padding:12px">
+      <div class="opills"><span class="opill ovL">Verify</span><span class="opill orL">Resolved</span><span class="opill oxL">Reject</span><span class="opill odL">Details</span></div>
+      <p class="note">today: WRAPS — 49px short</p>
+      <div class="astack" style="margin-top:8px"><span class="ab abVerifyL full">Verify</span><div class="arow"><span class="ab abResolveL flex">Resolved</span><span class="ab abGhostL flex">Reject</span><span class="ab abGhostBrandL flex">Details</span></div></div>
+      <p class="noteOk">built: deliberate 2-row stack</p>
+    </div></div>
+  </div>
+  <!-- 375 x1.6 -->
+  <div class="col"><p class="lab">375pt · large type ×1.6</p>
+    <div class="frame frameLight" style="width:375px"><div class="card cardLight" style="min-height:0;padding:12px">
+      <div class="opills"><span class="opill ovL x16">Verify</span><span class="opill orL x16">Resolved</span><span class="opill oxL x16">Reject</span><span class="opill odL x16">Details</span></div>
+      <p class="note">today: WRAPS — stranded pill</p>
+      <div class="astack" style="margin-top:8px"><span class="ab abVerifyL full x16">Verify</span><div class="arow"><span class="ab abResolveL flex x16">Resolved</span><span class="ab abGhostL flex x16">Reject</span><span class="ab abGhostBrandL flex x16">Details</span></div></div>
+      <p class="noteOk">built: same controlled stack, bigger</p>
+    </div></div>
+  </div>
+</div>
+
+<!-- ════════════ 3. EDGE STATES (built) ════════════ -->
+<h2>3 · Edge states (built) — the layout holds everywhere</h2>
+<div class="pair">
+  <!-- verified: 3 actions, no Verify -->
+  <div class="col"><p class="lab">Verified · 3 actions (no Verify)</p>
+    <div class="frame frameLight" style="width:375px"><div class="card cardLight">
+      <div class="hdr"><span class="sevb" style="background:#E85638;color:#fff"><b>4</b><span style="font-weight:500">&nbsp;·&nbsp;Significant</span></span><span class="title tLight">Missing curb ramp</span><span class="stb" style="background:#DCF6EC;color:#067A56"><span class="dot" style="background:#067A56"></span>Verified</span></div>
+      <div class="body"><div class="thumb thumbLight">🖼️</div><div class="btxt"><p class="desc descLight">No ramp at this corner; the only way down is the road.</p><p class="meta metaLight">140 m · 2 min walk · 5h ago</p></div></div>
+      <div class="arow"><span class="ab abResolveL lead">Resolved</span><span class="ab abGhostL flex">Reject</span><span class="ab abGhostBrandL flex">Details</span></div>
+    </div></div>
+  </div>
+  <!-- no photo -->
+  <div class="col"><p class="lab">No photo</p>
+    <div class="frame frameLight" style="width:375px"><div class="card cardLight">
+      <div class="hdr"><span class="sevb" style="background:#F7C948;color:#0F1B2D"><b>1</b><span style="font-weight:500">&nbsp;·&nbsp;Minor</span></span><span class="title tLight">Uneven pavement</span><span class="stb" style="background:#E7F0FD;color:#1A5FB4"><span class="dot" style="background:#1A5FB4"></span>Open</span></div>
+      <div class="body"><div class="btxt"><p class="desc descLight">Slightly raised slab near the bench, easy to trip on.</p><p class="meta metaLight">90 m · 1 min walk · 30 min ago</p></div></div>
+      <div class="arow"><span class="ab abVerifyL lead">Verify</span><span class="ab abResolveL flex">Resolved</span><span class="ab abGhostL flex">Reject</span><span class="ab abGhostBrandL flex">Details</span></div>
+    </div></div>
+  </div>
+  <!-- select mode -->
+  <div class="col"><p class="lab">Select mode (checkmark, no action row)</p>
+    <div class="frame frameLight" style="width:375px"><div class="card cardLight" style="border-color:#1466E0;border-width:2px">
+      <div class="hdr"><span class="sevb" style="background:#D92D20;color:#fff"><b>5</b><span style="font-weight:500">&nbsp;·&nbsp;Severe</span></span><span class="title tLight">Blocked sidewalk</span><span class="stb" style="background:#E7F0FD;color:#1A5FB4"><span class="dot" style="background:#1A5FB4"></span>Open</span><span class="check" style="background:#1466E0">✓</span></div>
+      <div class="body"><div class="thumb thumbLight">🖼️</div><div class="btxt"><p class="desc descLight">Construction hoarding fully blocks the path, no detour signed.</p><p class="meta metaLight">300 m · 4 min walk · 1h ago</p></div></div>
+    </div></div>
+  </div>
+  <!-- long desc clamp -->
+  <div class="col"><p class="lab">Long description → 2-line clamp</p>
+    <div class="frame frameLight" style="width:375px"><div class="card cardLight">
+      <div class="hdr"><span class="sevb" style="background:#F2792B;color:#fff"><b>3</b><span style="font-weight:500">&nbsp;·&nbsp;Moderate</span></span><span class="title tLight">Broken sidewalk</span><span class="stb" style="background:#E7F0FD;color:#1A5FB4"><span class="dot" style="background:#1A5FB4"></span>Open</span></div>
+      <div class="body"><div class="thumb thumbLight">🖼️</div><div class="btxt"><p class="desc descLight">The curb ramp at this intersection has completely crumbled away over the past winter — the concrete is cracked, lifted, and pooling water, so anyone using a wheelchair, walker, or stroller is forced out into the traffic lane to get around it, which is genuinely dangerous at rush hour.</p><p class="meta metaLight">220 m · 3 min walk · 2h ago</p></div></div>
+      <div class="arow"><span class="ab abVerifyL lead">Verify</span><span class="ab abResolveL flex">Resolved</span><span class="ab abGhostL flex">Reject</span><span class="ab abGhostBrandL flex">Details</span></div>
+    </div></div>
+  </div>
+</div>
+
+<p class="legend"><strong>Built changes, mapped:</strong> ① severity stripe + buried "Severity N" → one legible <b>SeverityBadge "N · Word"</b> in the header (number + word + colour, never colour-alone) · ② over-elevated <b>e2 slab → e1 lift + hairline border</b> (Home's flat-list language) · ③ category icon dropped (title carries it) → ≤6 elements · ④ description <b>clamped to 2 lines</b> (was unbounded, ~1612px on a long note) · ⑤ redundant italic <b>"tap to view on map" hint removed</b> · ⑥ four equal candy pills → <b>one filled Verify primary + quiet equal-share rest</b> that reflows deliberately, never ragged · Reject is a quiet ghost set apart from the primary.</p>
+</body>
+</html>
