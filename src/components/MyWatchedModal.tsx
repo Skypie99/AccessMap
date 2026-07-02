@@ -4,6 +4,7 @@
  * the ID from AsyncStorage immediately.
  */
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 import {
   ActivityIndicator,
   FlatList,
@@ -264,10 +265,14 @@ export default function MyWatchedModal({ visible, onClose, onSelectFlag, onViewO
     );
   }, [styles, onSelectFlag, onViewOnMap, handleUnwatch]);
 
+  // Bottom-anchored sheet clears the home indicator (M15 family recipe).
+  // Non-throwing context read — render tests mount without a provider.
+  const insets = React.useContext(SafeAreaInsetsContext) ?? { top: 0, bottom: 0, left: 0, right: 0 };
+
   return (
     <Modal visible={visible} animationType={reducedMotion ? 'none' : 'slide'} transparent onRequestClose={onClose}>
       <View style={styles.backdrop}>
-        <View style={styles.sheet}>
+        <View style={[styles.sheet, { paddingBottom: Math.max(spacing.xxl + 4, insets.bottom) }]}>
           <View style={styles.header}>
             <AppText variant="heading" style={styles.title} accessibilityRole="header">Watched Flags</AppText>
             {flags.length > 0 && (

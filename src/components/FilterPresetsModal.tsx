@@ -28,6 +28,7 @@
  * shows when there's no user.
  */
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 import {
   ActivityIndicator,
   Alert,
@@ -342,10 +343,17 @@ export default function FilterPresetsModal({ visible, onClose, onApply }: Props)
     [renamingId, renameValue, handleRenameSubmit, handleDelete, onApply],
   );
 
+  // Bottom-anchored sheet clears the home indicator (M15 family recipe).
+  // Non-throwing context read — render tests mount without a provider.
+  const insets = React.useContext(SafeAreaInsetsContext) ?? { top: 0, bottom: 0, left: 0, right: 0 };
+
   return (
     <Modal visible={visible} animationType={reducedMotion ? 'none' : 'slide'} transparent onRequestClose={onClose}>
       <View style={styles.backdrop}>
-        <View style={styles.card} accessibilityViewIsModal>
+        <View
+          style={[styles.card, { paddingBottom: Math.max(spacing.xxl, insets.bottom) }]}
+          accessibilityViewIsModal
+        >
           <View style={styles.headerRow}>
             <AppText variant="heading" style={styles.title} accessibilityRole="header">
               Filter Presets
@@ -558,12 +566,6 @@ const makeStyles = (color: ColorTheme) =>
       alignItems: 'center',
       justifyContent: 'center',
     },
-    closeBtnText: {
-      fontSize: font.size.xl,
-      color: color.text,
-      fontWeight: font.weight.bold,
-      lineHeight: font.size.xl + 2,
-    },
     notice: {
       backgroundColor: color.warningBg,
       borderRadius: radius.md,
@@ -676,8 +678,11 @@ const makeStyles = (color: ColorTheme) =>
     listContent: { paddingVertical: spacing.tight },
     separator: { height: spacing.sm },
     row: {
-      flexDirection: 'row',
-      alignItems: 'center',
+      // Column layout: the name owns line 1, the 3 fixed action buttons own
+      // line 2 — a single row crushed the name to a ~50pt sliver at 360pt and
+      // overflowed any phone at ×1.6 (sweep M12, wrap-to-second-line option).
+      flexDirection: 'column',
+      alignItems: 'stretch',
       gap: spacing.md,
       paddingHorizontal: spacing.md,
       paddingVertical: spacing.md,
@@ -702,6 +707,8 @@ const makeStyles = (color: ColorTheme) =>
       flexDirection: 'row',
       gap: spacing.xs,
       alignItems: 'center',
+      // At ×1.6 the three buttons alone can exceed the card — let them wrap 2+1.
+      flexWrap: 'wrap',
     },
     actionBtn: {
       paddingHorizontal: spacing.md,
@@ -733,7 +740,10 @@ const makeStyles = (color: ColorTheme) =>
       fontWeight: font.weight.bold,
       fontSize: font.size.base,
     },
-    renameRow: { flex: 1, gap: spacing.sm + 2 },
+    // No flex:1 — under the row's column direction that would resolve to a
+    // zero flex-basis HEIGHT and collapse the rename UI (the Bug-1 shape).
+    // alignItems:'stretch' on the row already gives it full width.
+    renameRow: { gap: spacing.sm + 2 },
     renameActions: { flexDirection: 'row', gap: spacing.sm },
     smallBtn: {
       flex: 1,

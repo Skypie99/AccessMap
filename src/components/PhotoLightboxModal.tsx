@@ -83,7 +83,7 @@ export default function PhotoLightboxModal({ visible, photoUrl, caption, onClose
             accessibilityElementsHidden
             importantForAccessibility="no-hide-descendants"
           >
-            <AppText variant="label" style={styles.captionText} numberOfLines={2}>
+            <AppText variant="label" style={styles.captionText} numberOfLines={3}>
               {caption}
             </AppText>
           </View>
@@ -134,7 +134,8 @@ const makeStyles = (color: ColorTheme) =>
     right: 0,
     paddingHorizontal: spacing.xl,
     paddingTop: spacing.lg,
-    paddingBottom: spacing.xxxl,
+    // 34 clears the iOS home-indicator band (spacing.xxxl = 32 was 2pt shy).
+    paddingBottom: 34,
     backgroundColor: color.backdropCaption,
   },
   captionText: { color: color.surface, fontSize: font.size.base, fontWeight: '600' },

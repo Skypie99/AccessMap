@@ -571,6 +571,9 @@ const makeStyles = (color: ColorTheme) =>
       flexDirection: 'row',
       gap: spacing.sm,
       paddingBottom: spacing.sm + 2,
+      // Same wrap allowance as statusFilterRow below — "Severity" clipped at
+      // ≤360pt + large type without it (sweep M9).
+      flexWrap: 'wrap',
     },
     sortChip: {
       paddingHorizontal: spacing.md + 2,

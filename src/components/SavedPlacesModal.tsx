@@ -14,6 +14,7 @@
  * state with a "Sign in to save places" hint shows when there's no user.
  */
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 import {
   ActivityIndicator,
   Alert,
@@ -244,10 +245,17 @@ export default function SavedPlacesModal({
     [handleJump, handleRemove, styles, color],
   );
 
+  // Bottom-anchored sheet clears the home indicator (M15 family recipe).
+  // Non-throwing context read — render tests mount without a provider.
+  const insets = React.useContext(SafeAreaInsetsContext) ?? { top: 0, bottom: 0, left: 0, right: 0 };
+
   return (
     <Modal visible={visible} animationType={reducedMotion ? 'none' : 'slide'} transparent onRequestClose={onClose}>
       <View style={styles.backdrop}>
-        <View style={styles.card} accessibilityViewIsModal>
+        <View
+          style={[styles.card, { paddingBottom: Math.max(spacing.xxl, insets.bottom) }]}
+          accessibilityViewIsModal
+        >
           <View style={styles.headerRow}>
             <AppText variant="heading" style={styles.title} accessibilityRole="header">
               Saved Places
@@ -444,12 +452,6 @@ const makeStyles = (color: ColorTheme) =>
       backgroundColor: color.surfaceNeutral,
       alignItems: 'center',
       justifyContent: 'center',
-    },
-    closeBtnText: {
-      fontSize: font.size.xl,
-      color: color.text,
-      fontWeight: font.weight.bold,
-      lineHeight: font.size.xl + 2,
     },
     notice: {
       backgroundColor: color.warningBg,

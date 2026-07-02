@@ -9,7 +9,8 @@
  * refreshUpdateCount with the now-saved prefs).
  */
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Modal, Pressable, StyleSheet, Switch, View } from 'react-native';
+import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Switch, View } from 'react-native';
+import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 import { useAuth } from '@/lib/auth';
 import { AppText } from '@/components/ui/AppText';
 import { STATUS_LABELS } from '@/lib/flags';
@@ -137,6 +138,9 @@ export default function NotificationPrefsModal({
 
   // WCAG 2.3.3: snap (no slide) when the user prefers reduced motion.
   const reducedMotion = useReducedMotion();
+  // Bottom-anchored sheet clears the home indicator (M15 family recipe).
+  // Non-throwing context read — render tests mount without a provider.
+  const insets = React.useContext(SafeAreaInsetsContext) ?? { top: 0, bottom: 0, left: 0, right: 0 };
   return (
     <Modal
       visible={visible}
@@ -145,7 +149,10 @@ export default function NotificationPrefsModal({
       onRequestClose={onClose}
     >
       <View style={styles.backdrop}>
-        <View style={styles.card} accessibilityViewIsModal>
+        <View
+          style={[styles.card, { paddingBottom: Math.max(spacing.xxl, insets.bottom) }]}
+          accessibilityViewIsModal
+        >
           <View style={styles.headerRow}>
             <View style={styles.titleWrap}>
               <AppText variant="heading" style={styles.title} accessibilityRole="header">
@@ -182,7 +189,15 @@ export default function NotificationPrefsModal({
               <ActivityIndicator />
             </View>
           ) : (
-            <View style={styles.list}>
+            // Toggles scroll inside the 85% card bound — at large type the
+            // "Rejected" Switch + footer used to fall past the card edge with
+            // no way to reach them (sweep M8). Header stays pinned above.
+            <ScrollView
+              style={styles.list}
+              contentContainerStyle={styles.listContent}
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}
+            >
               {TOGGLES.map(({ status, prefKey, description }) => {
                 const value = prefs[prefKey];
                 return (
@@ -224,7 +239,7 @@ export default function NotificationPrefsModal({
               <AppText variant="body" style={styles.footer}>
                 Changes apply on your next Profile visit. Defaults to all statuses on.
               </AppText>
-            </View>
+            </ScrollView>
           )}
         </View>
       </View>
@@ -261,12 +276,6 @@ const makeStyles = (color: ColorTheme) =>
       alignItems: 'center',
       justifyContent: 'center',
     },
-    closeBtnText: {
-      fontSize: font.size.xl,
-      color: color.text,
-      fontWeight: '700',
-      lineHeight: font.lineHeight.base,
-    },
     notice: {
       backgroundColor: color.warningBg,
       borderRadius: radius.sm,
@@ -277,7 +286,9 @@ const makeStyles = (color: ColorTheme) =>
     },
     noticeText: { color: color.warningFg, fontSize: font.size.sm, lineHeight: 18 },
     center: { alignItems: 'center', paddingVertical: spacing.xxxl },
-    list: { gap: spacing.sm },
+    // gap lives on contentContainerStyle — a ScrollView ignores gap on `style`.
+    list: {},
+    listContent: { gap: spacing.sm },
     row: {
       flexDirection: 'row',
       alignItems: 'center',

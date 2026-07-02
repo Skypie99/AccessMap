@@ -260,7 +260,7 @@ function FeedbackRowCard({ row }: { row: FeedbackRow }) {
           </AppText>
           <AppText variant="label" style={styles.categoryText}>{categoryLabel}</AppText>
         </View>
-        <AppText variant="body" style={styles.dateText}>{formattedDate}</AppText>
+        <AppText variant="body" style={styles.dateText} numberOfLines={1}>{formattedDate}</AppText>
       </View>
       <AppText variant="body" style={styles.bodyText}>{preview}</AppText>
     </View>
@@ -389,6 +389,10 @@ const makeStyles = (color: ColorTheme) =>
       paddingHorizontal: spacing.sm,
       paddingVertical: spacing.tight,
       borderRadius: radius.full,
+      // Pill + date must be able to yield or the date bleeds past the card
+      // edge at ≤360pt + large type (sweep minor); full date is in the row's
+      // a11y label, so visual truncation loses nothing for SR users.
+      flexShrink: 1,
     },
     categoryGlyph: { fontSize: font.size.sm },
     categoryText: {
@@ -399,6 +403,8 @@ const makeStyles = (color: ColorTheme) =>
     dateText: {
       fontSize: font.size.xs,
       color: color.textMuted,
+      flexShrink: 1,
+      textAlign: 'right',
     },
     bodyText: {
       fontSize: font.size.sm,

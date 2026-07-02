@@ -6,6 +6,7 @@ import {
   Modal,
   Platform,
   Pressable,
+  ScrollView,
   StyleSheet,
   TextInput,
   View,
@@ -254,6 +255,14 @@ export default function AddressSearchModal({ visible, onClose, onSelect }: Props
                   <AppText variant="label" style={styles.clearRecentText}>Clear</AppText>
                 </Pressable>
               </View>
+              {/* Rows scroll inside the card's 85% bound — at large type on
+                  short phones they used to clip past the card edge with no way
+                  to reach them (sweep M13). Header + input stay pinned above. */}
+              <ScrollView
+                keyboardShouldPersistTaps="handled"
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={styles.recentListContent}
+              >
               {recents.map((entry, idx) => (
                 <Pressable
                   // displayName + index is stable enough for a list capped
@@ -279,6 +288,7 @@ export default function AddressSearchModal({ visible, onClose, onSelect }: Props
                   />
                 </Pressable>
               ))}
+              </ScrollView>
             </View>
           )}
 
@@ -537,7 +547,11 @@ function makeStyles(color: ColorTheme) {
     // 🕘 glyph differentiates "history" from the 📍 "live pin" glyph.
     recentSection: {
       gap: spacing.sm,
+      // Must be able to yield inside the card's 85% bound so the inner
+      // ScrollView actually gets squeezed (RN Views default to flexShrink 0).
+      flexShrink: 1,
     },
+    recentListContent: { gap: spacing.sm },
     recentHeaderRow: {
       flexDirection: 'row',
       alignItems: 'center',
