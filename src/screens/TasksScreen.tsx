@@ -5,6 +5,7 @@ import {
   Alert,
   Animated,
   Image,
+  Platform,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -89,10 +90,12 @@ const FlagDetailModal = React.lazy(() => import('@/components/FlagDetailModal'))
 // states (open → verified).
 const TRIAGE_STATUSES: FlagStatus[] = ['open', 'verified'];
 
-// Approximate height of the floating bulk-action bar including its safe-area
-// padding. Used to reserve list-bottom space so the last card isn't hidden
-// behind the bar in selection mode.
-const BULK_BAR_HEIGHT = 88;
+// Fallback height (pt) of the floating bulk-action bar, used ONLY to seed the
+// list-bottom reserve before the bar's real height is measured via onLayout
+// (below). Approx: paddingTop 10 + count line ~20 + gap 8 + button 44 +
+// paddingBottom 12. Once mounted, the measured height takes over so the last
+// card never hides behind the bar — even at large type, when the bar grows.
+const BULK_BAR_FALLBACK_HEIGHT = 94;
 
 export default function TasksScreen() {
   const color = useColor();
@@ -103,6 +106,10 @@ export default function TasksScreen() {
   const drawer = useDrawer();
   const { setOpen: setSharedModal } = useSharedModals();
   const { user } = useAuth();
+  // Measured height of the floating bulk-action bar (selection mode). Seeded
+  // with the fallback, then set from the bar's real onLayout so the list
+  // reserves the correct space even when the bar grows at large type.
+  const [bulkBarHeight, setBulkBarHeight] = useState(BULK_BAR_FALLBACK_HEIGHT);
   // Drives the FlagCard action row's deliberate 1-row → 2-row reflow. Computed
   // ONCE here (not per-card) so the whole list shares a single Dimensions
   // subscription instead of N. A narrow device OR large Dynamic Type tips the
@@ -1048,7 +1055,7 @@ export default function TasksScreen() {
           // Reserve room for the floating tab bar (absolute on native) plus the
           // bulk-action bar when active, so the last card never hides behind
           // either. paddingBottom is cross-platform (contentInset is iOS-only).
-          { paddingBottom: tabBarHeight + 16 + (selection.active ? BULK_BAR_HEIGHT : 0) },
+          { paddingBottom: tabBarHeight + 16 + (selection.active ? bulkBarHeight : 0) },
         ]}
         stickySectionHeadersEnabled={false}
         refreshControl={
@@ -1157,7 +1164,14 @@ export default function TasksScreen() {
           in its own live-region Text above the buttons so SR re-announces
           the count only (not every button label) when cards toggle. */}
       {selection.active && (
-        <View style={styles.bulkBar}>
+        <View
+          // Web tab bar is in-flow (the list already ends above it), so the bar
+          // sits at bottom: 0. Native tab bar is position:absolute, so the bar
+          // must clear it by sitting at bottom: tabBarHeight. onLayout feeds the
+          // bar's real height back into the list reserve above.
+          style={[styles.bulkBar, { bottom: Platform.OS === 'web' ? 0 : tabBarHeight }]}
+          onLayout={(e) => setBulkBarHeight(e.nativeEvent.layout.height)}
+        >
           {/* The single source of truth for "how many are picked", spoken
               by SR on every change. Buttons below are static labels so
               they don't double-announce. */}
@@ -2004,21 +2018,24 @@ const makeStyles = (color: ColorTheme) =>
       alignItems: 'center',
       justifyContent: 'center',
     },
-    selectCheckOn: { backgroundColor: color.brand },    // Floating bulk-action bar — pinned to the bottom of the screen on top
-    // of the SectionList. Column-laid so the live-region count Text sits
-    // above the row of action buttons. paddingBottom includes a generous
-    // inset so it clears the iOS home indicator and Android nav bar without
-    // depending on react-native-safe-area-context (not in this project yet).
+    selectCheckOn: { backgroundColor: color.brand },
+    // Floating bulk-action bar — overlays the SectionList in selection mode.
+    // Column-laid so the live-region count Text sits above the row of action
+    // buttons. It sits ABOVE the tab bar (bottom offset applied inline at the
+    // JSX site, platform-gated) and its measured height feeds the list reserve.
     bulkBar: {
       position: 'absolute',
       left: 0,
       right: 0,
-      bottom: 0,
+      // `bottom` is applied inline at the JSX site (platform-gated): 0 on web
+      // (tab bar is in-flow), tabBarHeight on native (tab bar is absolute).
       flexDirection: 'column',
       gap: spacing.sm,
       paddingHorizontal: spacing.md,
       paddingTop: spacing.md - 2,
-      paddingBottom: spacing.xxl,
+      // The bar no longer owns the home-indicator inset — the tab bar it now
+      // sits above does. Just enough breathing room below the buttons.
+      paddingBottom: spacing.md,
       backgroundColor: color.surface,
       borderTopWidth: 1,
       borderTopColor: color.borderSubtle,
