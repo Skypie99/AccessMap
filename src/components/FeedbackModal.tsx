@@ -3,8 +3,11 @@ import {
   AccessibilityInfo,
   ActivityIndicator,
   Alert,
+  KeyboardAvoidingView,
   Modal,
+  Platform,
   Pressable,
+  ScrollView,
   StyleSheet,
   TextInput,
   View,
@@ -160,144 +163,162 @@ export default function FeedbackModal({ visible, onClose }: Props) {
           this view as inert while the modal is up. Same pattern as
           HelpModal; see that file for the longer comment. Alex P5. */}
       <View style={styles.backdrop} accessibilityViewIsModal testID="feedbackModal-backdrop">
-        <View style={styles.card}>
-          <View style={styles.headerRow}>
-            <AppText variant="heading" style={styles.title} accessibilityRole="header">
-              Send feedback
-            </AppText>
-            <Pressable
-              onPress={onClose}
-              disabled={sending}
-              hitSlop={12}
-              style={styles.closeBtn}
-              accessibilityRole="button"
-              accessibilityLabel="Close feedback"
-              accessibilityState={{ disabled: sending }}
+        {/* KAV nests INSIDE the backdrop — the backdrop keeps
+            accessibilityViewIsModal + testID (pinned by the sharedModalsContext
+            test) and the KAV lifts the card above the iOS keyboard. Same recipe
+            as AddressSearchModal (G9). */}
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={{ width: '100%' }}
+        >
+          <View style={styles.card}>
+            <View style={styles.headerRow}>
+              <AppText variant="heading" style={styles.title} accessibilityRole="header">
+                Send feedback
+              </AppText>
+              <Pressable
+                onPress={onClose}
+                disabled={sending}
+                hitSlop={12}
+                style={styles.closeBtn}
+                accessibilityRole="button"
+                accessibilityLabel="Close feedback"
+                accessibilityState={{ disabled: sending }}
+              >
+                <X size={18} color={color.text} strokeWidth={2.2} />
+              </Pressable>
+            </View>
+
+            {/* Body scrolls when the card is bound (maxHeight 90%) on short
+                viewports / large type; headerRow above and actionsRow below stay
+                pinned so the ✕ and Cancel/Send never scroll away (G9). */}
+            <ScrollView
+              style={styles.body}
+              contentContainerStyle={styles.bodyContent}
+              keyboardShouldPersistTaps="handled"
             >
-              <X size={18} color={color.text} strokeWidth={2.2} />
-            </Pressable>
-          </View>
+              <AppText variant="body" style={styles.subtitle}>
+                Tell us what&apos;s working, what isn&apos;t, or what you wish AccessMap did. Tapping Send opens
+                your email app with the message prefilled.
+              </AppText>
 
-          <AppText variant="body" style={styles.subtitle}>
-            Tell us what&apos;s working, what isn&apos;t, or what you wish AccessMap did. Tapping Send opens
-            your email app with the message prefilled.
-          </AppText>
+              <AppText variant="label" style={styles.label}>Category</AppText>
+              <View
+                style={styles.categoryRow}
+                accessibilityRole="radiogroup"
+                accessibilityLabel="Feedback category"
+              >
+                {FEEDBACK_CATEGORIES.map((c) => {
+                  const selected = c === category;
+                  return (
+                    <Pressable
+                      key={c}
+                      onPress={() => setCategory(c)}
+                      disabled={sending}
+                      style={[styles.categoryChip, selected && styles.categoryChipSelected]}
+                      accessibilityRole="radio"
+                      accessibilityLabel={FEEDBACK_CATEGORY_LABELS[c]}
+                      accessibilityState={{
+                        selected,
+                        disabled: sending,
+                      }}
+                    >
+                      <AppText variant="body" style={styles.categoryChipGlyph} accessibilityElementsHidden>
+                        {FEEDBACK_CATEGORY_GLYPHS[c]}
+                      </AppText>
+                      <AppText
+                        variant="label"
+                        style={[styles.categoryChipText, selected && styles.categoryChipTextSelected]}
+                      >
+                        {FEEDBACK_CATEGORY_LABELS[c]}
+                      </AppText>
+                    </Pressable>
+                  );
+                })}
+              </View>
 
-          <AppText variant="label" style={styles.label}>Category</AppText>
-          <View
-            style={styles.categoryRow}
-            accessibilityRole="radiogroup"
-            accessibilityLabel="Feedback category"
-          >
-            {FEEDBACK_CATEGORIES.map((c) => {
-              const selected = c === category;
-              return (
-                <Pressable
-                  key={c}
-                  onPress={() => setCategory(c)}
-                  disabled={sending}
-                  style={[styles.categoryChip, selected && styles.categoryChipSelected]}
-                  accessibilityRole="radio"
-                  accessibilityLabel={FEEDBACK_CATEGORY_LABELS[c]}
-                  accessibilityState={{
-                    selected,
-                    disabled: sending,
+              <AppText variant="label" style={styles.label}>Your feedback</AppText>
+              <TextInput
+                value={body}
+                onChangeText={setBody}
+                multiline
+                numberOfLines={6}
+                maxLength={MAX_FEEDBACK_LEN}
+                placeholder="What's on your mind?"
+                placeholderTextColor={color.placeholderText}
+                style={styles.bodyInput}
+                editable={!sending}
+                textAlignVertical="top"
+                accessibilityLabel="Feedback message"
+                accessibilityHint={`Type the feedback you'd like to send. Up to ${MAX_FEEDBACK_LEN} characters.`}
+              />
+
+              <AppText variant="label" style={styles.label}>Reply email (optional)</AppText>
+              <TextInput
+                value={contact}
+                onChangeText={setContact}
+                maxLength={MAX_EMAIL_LEN}
+                placeholder="you@example.com"
+                placeholderTextColor={color.placeholderText}
+                style={styles.contactInput}
+                editable={!sending}
+                autoCapitalize="none"
+                autoCorrect={false}
+                keyboardType="email-address"
+                accessibilityLabel="Reply email"
+                accessibilityHint={
+                  contactInvalid
+                    ? 'Enter a valid email address or leave blank.'
+                    : 'Optional — leave blank to send anonymously.'
+                }
+              />
+              {contactInvalid ? (
+                <AppText
+                  variant="body"
+                  accessibilityLiveRegion="polite"
+                  style={{
+                    fontSize: 12,
+                    color: color.error,
+                    marginTop: -4,
                   }}
                 >
-                  <AppText variant="body" style={styles.categoryChipGlyph} accessibilityElementsHidden>
-                    {FEEDBACK_CATEGORY_GLYPHS[c]}
-                  </AppText>
-                  <AppText
-                    variant="label"
-                    style={[styles.categoryChipText, selected && styles.categoryChipTextSelected]}
-                  >
-                    {FEEDBACK_CATEGORY_LABELS[c]}
-                  </AppText>
-                </Pressable>
-              );
-            })}
+                  Please enter a valid email address.
+                </AppText>
+              ) : null}
+            </ScrollView>
+
+            <View style={styles.actionsRow}>
+              <Pressable
+                onPress={onClose}
+                disabled={sending}
+                style={[styles.btn, styles.btnCancel]}
+                accessibilityRole="button"
+                accessibilityLabel="Cancel"
+                accessibilityState={{ disabled: sending }}
+              >
+                <AppText variant="label" style={styles.btnCancelText}>Cancel</AppText>
+              </Pressable>
+              <Pressable
+                onPress={handleSend}
+                disabled={!canSend}
+                style={[styles.btn, styles.btnSend, !canSend && styles.btnSendDisabled]}
+                accessibilityRole="button"
+                accessibilityLabel="Send feedback"
+                accessibilityHint="Opens your email app with the message prefilled."
+                accessibilityState={{
+                  disabled: !canSend,
+                  busy: sending,
+                }}
+              >
+                {sending ? (
+                  <ActivityIndicator color={color.textOnBrand} />
+                ) : (
+                  <AppText variant="label" style={styles.btnSendText}>Send</AppText>
+                )}
+              </Pressable>
+            </View>
           </View>
-
-          <AppText variant="label" style={styles.label}>Your feedback</AppText>
-          <TextInput
-            value={body}
-            onChangeText={setBody}
-            multiline
-            numberOfLines={6}
-            maxLength={MAX_FEEDBACK_LEN}
-            placeholder="What's on your mind?"
-            placeholderTextColor={color.placeholderText}
-            style={styles.bodyInput}
-            editable={!sending}
-            textAlignVertical="top"
-            accessibilityLabel="Feedback message"
-            accessibilityHint={`Type the feedback you'd like to send. Up to ${MAX_FEEDBACK_LEN} characters.`}
-          />
-
-          <AppText variant="label" style={styles.label}>Reply email (optional)</AppText>
-          <TextInput
-            value={contact}
-            onChangeText={setContact}
-            maxLength={MAX_EMAIL_LEN}
-            placeholder="you@example.com"
-            placeholderTextColor={color.placeholderText}
-            style={styles.contactInput}
-            editable={!sending}
-            autoCapitalize="none"
-            autoCorrect={false}
-            keyboardType="email-address"
-            accessibilityLabel="Reply email"
-            accessibilityHint={
-              contactInvalid
-                ? 'Enter a valid email address or leave blank.'
-                : 'Optional — leave blank to send anonymously.'
-            }
-          />
-          {contactInvalid ? (
-            <AppText
-              variant="body"
-              accessibilityLiveRegion="polite"
-              style={{
-                fontSize: 12,
-                color: color.error,
-                marginTop: -4,
-              }}
-            >
-              Please enter a valid email address.
-            </AppText>
-          ) : null}
-
-          <View style={styles.actionsRow}>
-            <Pressable
-              onPress={onClose}
-              disabled={sending}
-              style={[styles.btn, styles.btnCancel]}
-              accessibilityRole="button"
-              accessibilityLabel="Cancel"
-              accessibilityState={{ disabled: sending }}
-            >
-              <AppText variant="label" style={styles.btnCancelText}>Cancel</AppText>
-            </Pressable>
-            <Pressable
-              onPress={handleSend}
-              disabled={!canSend}
-              style={[styles.btn, styles.btnSend, !canSend && styles.btnSendDisabled]}
-              accessibilityRole="button"
-              accessibilityLabel="Send feedback"
-              accessibilityHint="Opens your email app with the message prefilled."
-              accessibilityState={{
-                disabled: !canSend,
-                busy: sending,
-              }}
-            >
-              {sending ? (
-                <ActivityIndicator color={color.textOnBrand} />
-              ) : (
-                <AppText variant="label" style={styles.btnSendText}>Send</AppText>
-              )}
-            </Pressable>
-          </View>
-        </View>
+        </KeyboardAvoidingView>
       </View>
     </Modal>
   );
@@ -318,7 +339,17 @@ const makeStyles = (color: ColorTheme) =>
       paddingTop: spacing.lg,
       paddingBottom: spacing.xl,
       gap: spacing.sm,
+      maxHeight: '90%',
       ...shadow.e3,
+    },
+    // Scrollable body between the pinned header and actions. flexShrink lets it
+    // give up height so the card honors maxHeight and the body scrolls (G9).
+    body: {
+      flexShrink: 1,
+    },
+    bodyContent: {
+      gap: spacing.sm,
+      paddingBottom: spacing.tight,
     },
     headerRow: {
       flexDirection: 'row',
@@ -372,7 +403,7 @@ const makeStyles = (color: ColorTheme) =>
       backgroundColor: color.surfaceNeutral,
       borderWidth: 1,
       borderColor: 'transparent',
-      minHeight: 36,
+      minHeight: 44,
     },
     categoryChipSelected: {
       backgroundColor: color.brandSoft,
