@@ -9,6 +9,7 @@ import {
   StyleSheet,
   View,
 } from 'react-native';
+import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 import { useAuth } from '@/lib/auth';
 import { AppText } from '@/components/ui/AppText';
 import { font, radius, shadow, spacing } from '@/theme';
@@ -50,6 +51,10 @@ interface Props {
 export default function MyFeedbackModal({ visible, onClose, refreshKey = 0 }: Props) {
   const color = useColor();
   const styles = makeStyles(color);
+  // Read the inset context directly (zero fallback) instead of
+  // useSafeAreaInsets(), which throws when there's no SafeAreaProvider — the
+  // modal render-tests mount these sheets without one. Same value in the app.
+  const insets = React.useContext(SafeAreaInsetsContext) ?? { top: 0, bottom: 0, left: 0, right: 0 };
   const { user } = useAuth();
   const [rows, setRows] = useState<FeedbackRow[]>([]);
   const [loading, setLoading] = useState(false);
@@ -114,7 +119,7 @@ export default function MyFeedbackModal({ visible, onClose, refreshKey = 0 }: Pr
           this view as inert while the modal is up. Same pattern as
           HelpModal; see that file for the longer comment. Alex P5. */}
       <View style={styles.backdrop} accessibilityViewIsModal testID="myFeedbackModal-backdrop">
-        <View style={styles.card}>
+        <View style={[styles.card, { paddingBottom: Math.max(spacing.sm, insets.bottom) }]}>
           <View style={styles.headerRow}>
             <AppText variant="heading" style={styles.title} accessibilityRole="header">
               My Feedback

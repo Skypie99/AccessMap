@@ -10,6 +10,7 @@
  */
 import React, { useMemo } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 import { AppText } from '@/components/ui/AppText';
 import { useReducedMotion } from '@/lib/accessibility';
 import type { Achievement, AchievementCategory } from '@/lib/achievements';
@@ -169,6 +170,10 @@ const makeStyles = (color: ColorTheme) =>
 export default function AchievementsModal({ visible, onClose, achievements }: Props) {
   const color = useColor();
   const styles = makeStyles(color);
+  // Read the inset context directly (zero fallback) instead of
+  // useSafeAreaInsets(), which throws when there's no SafeAreaProvider — the
+  // modal render-tests mount these sheets without one. Same value in the app.
+  const insets = React.useContext(SafeAreaInsetsContext) ?? { top: 0, bottom: 0, left: 0, right: 0 };
   const reducedMotion = useReducedMotion();
   // Group by category preserving catalog order within each group.
   const grouped = useMemo(() => {
@@ -188,7 +193,7 @@ export default function AchievementsModal({ visible, onClose, achievements }: Pr
   return (
     <Modal visible={visible} animationType={reducedMotion ? 'none' : 'slide'} transparent onRequestClose={onClose}>
       <View style={styles.backdrop}>
-        <View style={styles.card} accessibilityViewIsModal>
+        <View style={[styles.card, { paddingBottom: Math.max(spacing.xl, insets.bottom) }]} accessibilityViewIsModal>
           <View style={styles.headerRow}>
             <View style={styles.titleWrap}>
               <AppText variant="heading" style={styles.title} accessibilityRole="header">
