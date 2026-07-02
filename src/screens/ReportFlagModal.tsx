@@ -495,6 +495,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
+                style={styles.chipScroll}
                 contentContainerStyle={styles.row}
                 accessibilityHint="A row of common-scenario templates that pre-fill the form. Tap one to seed category, severity, and a description; edit any field before submitting."
               >
@@ -539,6 +540,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
+            style={styles.chipScroll}
             contentContainerStyle={styles.row}
           >
             {CATEGORY_ORDER.map((c) => {
@@ -1020,6 +1022,9 @@ const makeStyles = (color: ColorTheme) =>
       color: color.textStrong,
       marginTop: spacing.tight,
     },
+    // Pattern B: `chipScroll` pins the horizontal template/category strips
+    // (style prop); `row` stays the shared content-row layout.
+    chipScroll: { flexGrow: 0, flexShrink: 0 },
     row: { flexDirection: 'row', gap: spacing.sm, flexWrap: 'wrap' },
     pill: {
       paddingHorizontal: spacing.md,

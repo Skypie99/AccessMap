@@ -141,6 +141,7 @@ function PhotoGalleryInner({ photos, onAddPhoto, maxPhotos = 5, onRemovePhoto }:
     <>
       <FlatList
         horizontal
+        style={styles.galleryList}
         data={data}
         keyExtractor={(item, i) => (isAdd(item) ? 'add' : `${(item as GalleryPhoto).position}-${i}`)}
         renderItem={renderItem}
@@ -246,6 +247,9 @@ export default React.memo(PhotoGalleryInner);
 
 const makeStyles = (color: ColorTheme) =>
   StyleSheet.create({
+    // Pattern B hardening: pin the list's size so it can't be shrunk if it ever
+    // becomes a child of a bounded flex column.
+    galleryList: { flexGrow: 0, flexShrink: 0 },
     list: {
       paddingVertical: 4,
       minWidth: '100%',

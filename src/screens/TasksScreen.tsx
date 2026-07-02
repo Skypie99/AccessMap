@@ -1905,12 +1905,16 @@ const makeStyles = (color: ColorTheme) =>
     // Category chip strip — horizontally scrollable so all 6 categories
     // fit on narrow phones without truncating labels. Visual weight
     // matches sevChip; brand fill on active so it reads as "selected".
-    categoryScroll: { paddingTop: spacing.sm, paddingBottom: spacing.sm },
+    // Pattern B: pin the strip's size so the sibling SectionList in this flex
+    // column can't shrink it. Vertical padding moved onto the contentContainer
+    // so the total strip height (62pt at default type) is unchanged.
+    categoryScroll: { flexGrow: 0, flexShrink: 0 },
     categoryScrollContent: {
       flexDirection: 'row',
       gap: spacing.xs,
       paddingHorizontal: spacing.lg,
-      paddingBottom: 2,
+      paddingTop: spacing.sm,
+      paddingBottom: spacing.sm + 2,
     },
     catChip: {
       minHeight: 44, // WCAG 2.5.5: was 36pt (below 44pt project standard)

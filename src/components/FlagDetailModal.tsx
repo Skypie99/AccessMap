@@ -1755,7 +1755,7 @@ const makeStyles = (color: ColorTheme) =>
       minHeight: 72,
       textAlignVertical: 'top',
     },
-    categoryRow: { flexGrow: 0 },
+    categoryRow: { flexGrow: 0, flexShrink: 0 },
     categoryChip: {
       paddingHorizontal: spacing.md,
       paddingVertical: spacing.xs,

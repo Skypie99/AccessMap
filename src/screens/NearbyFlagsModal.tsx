@@ -222,6 +222,7 @@ export default function NearbyFlagsModal({
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
+            style={styles.chipBarScroll}
             contentContainerStyle={styles.chipBar}
             accessibilityLabel="Filter by category"
             accessibilityRole="tablist"
@@ -414,14 +415,21 @@ const makeStyles = (color: ColorTheme) =>
       color: color.textMuted,
       lineHeight: 16,
     },
+    // Pattern B: the outer `style` pins the bar's size AND paints the surface +
+    // hairline so they span the full ScrollView width (not just the chips'
+    // content width, which left the bar visually stopping mid-screen).
+    chipBarScroll: {
+      flexGrow: 0,
+      flexShrink: 0,
+      backgroundColor: color.surface,
+      borderBottomWidth: 1,
+      borderBottomColor: color.borderSubtle,
+    },
     chipBar: {
       flexDirection: 'row',
       gap: spacing.sm,
       paddingHorizontal: spacing.lg,
       paddingVertical: spacing.md - 2,
-      backgroundColor: color.surface,
-      borderBottomWidth: 1,
-      borderBottomColor: color.borderSubtle,
     },
     chip: {
       paddingHorizontal: spacing.md + 2,

@@ -153,6 +153,7 @@ export default function MyFeedbackModal({ visible, onClose, refreshKey = 0 }: Pr
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
+              style={styles.chipBarScroll}
               contentContainerStyle={styles.chipBar}
               accessibilityLabel="Filter feedback by category"
             >
@@ -306,6 +307,8 @@ const makeStyles = (color: ColorTheme) =>
     // Chip row sits below the header and above the list. Layout mirrors
     // the NearbyFlagsModal chip bar so the two share a visual language —
     // same height, same pill radius, same active fill colour.
+    // Pattern B: pin the strip's size so the sibling FlatList can't crush it.
+    chipBarScroll: { flexGrow: 0, flexShrink: 0 },
     chipBar: {
       flexDirection: 'row',
       gap: spacing.xs,

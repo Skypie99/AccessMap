@@ -1480,6 +1480,7 @@ export default function MapScreen() {
                   <ScrollView
                     horizontal
                     showsHorizontalScrollIndicator={false}
+                    style={styles.filterScroll}
                     contentContainerStyle={styles.filterRow}
                   >
                     {savedSets.map((set) => {
@@ -1544,6 +1545,7 @@ export default function MapScreen() {
                 <ScrollView
                   horizontal
                   showsHorizontalScrollIndicator={false}
+                  style={styles.filterScroll}
                   contentContainerStyle={styles.filterRow}
                 >
                   {CATEGORY_ORDER.map((c) => {
@@ -2373,6 +2375,10 @@ const makeStyles = (color: ColorTheme) =>
       letterSpacing: font.tracking.loose,
       marginTop: spacing.sm,
     },
+    // Pattern B: `filterScroll` pins the horizontal chip strips (style prop);
+    // `filterRow` stays the shared content-row layout — also reused by 3
+    // non-scrolling Views, so it must NOT gain flexGrow/flexShrink.
+    filterScroll: { flexGrow: 0, flexShrink: 0 },
     filterRow: { flexDirection: 'row', gap: spacing.sm, flexWrap: 'wrap' },
     filterPill: {
       paddingHorizontal: 12,

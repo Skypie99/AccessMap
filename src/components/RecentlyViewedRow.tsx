@@ -109,6 +109,7 @@ export default function RecentlyViewedRow({ userId, refreshKey, onSelect }: Prop
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
+        style={styles.rowScroll}
         contentContainerStyle={styles.row}
       >
         {flags.map((f) => (
@@ -159,6 +160,8 @@ const makeStyles = (color: ColorTheme) =>
       fontWeight: font.weight.bold,
       color: color.textStrong,
     },
+    // Pattern B hardening: pin the strip's size against any future bounded parent.
+    rowScroll: { flexGrow: 0, flexShrink: 0 },
     row: {
       flexDirection: 'row',
       gap: spacing.sm,
