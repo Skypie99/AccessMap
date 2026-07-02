@@ -1923,7 +1923,10 @@ export default function MapScreen() {
 
         {/* Bottom bar: legend (left, conditional) + FABs (right) */}
         <View style={styles.bottomBar}>
-          {heatmapEnabled ? <HeatmapLegend /> : <View />}
+          {/* Flex slot reserves the left half so HeatmapLegend wraps against the
+              true remaining width beside the intrinsic-width fabColumn, instead
+              of overlapping the FABs at narrow widths (G6). */}
+          <View style={styles.legendSlot}>{heatmapEnabled ? <HeatmapLegend /> : null}</View>
           <View style={styles.fabColumn}>
             <PressableScale
               style={[styles.fab, styles.fabSecondary]}
@@ -2552,6 +2555,14 @@ const makeStyles = (color: ColorTheme) =>
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'flex-end',
+    },
+    // Left half of the bottom bar. flex:1 makes it claim the space beside the
+    // intrinsic-width fabColumn, giving HeatmapLegend a definite bounding width
+    // so its internal flexWrap wraps instead of pushing into the FABs (G6).
+    legendSlot: {
+      flex: 1,
+      marginRight: spacing.sm,
+      alignItems: 'flex-start',
     },
     fabColumn: {
       alignItems: 'flex-end',
