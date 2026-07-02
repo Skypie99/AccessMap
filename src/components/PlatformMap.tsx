@@ -137,8 +137,11 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(function Pla
             accessibilityLabel={`${count} ${count === 1 ? 'flag' : 'flags'}. Tap to expand.`}
           >
             <View style={styles.cluster}>
-              <Text style={styles.clusterCount} {...decorativeProps}>
-                {count}
+              {/* Abbreviate like the web twin (PlatformMap.web makeClusterIcon)
+                  and cap scaling — a raw 4-digit count clipped in the circle at
+                  any scale, and any count clipped at AX sizes (sweep M1). */}
+              <Text style={styles.clusterCount} maxFontSizeMultiplier={1.2} {...decorativeProps}>
+                {count >= 1000 ? `${Math.floor(count / 1000)}k` : String(count)}
               </Text>
             </View>
           </Marker>
@@ -312,8 +315,12 @@ const makeStyles = (color: ColorTheme) =>
     // than just an oversized pin. Inner ring catches the eye and gives
     // separation from the underlying map tile.
     cluster: {
-      width: 44,
-      height: 44,
+      // Min dims (not fixed) so a wide abbreviated count can grow the pill —
+      // hard 44×44 clipped 4-digit counts; the count Text style must never
+      // carry a hard height (guard Rule 3).
+      minWidth: 44,
+      minHeight: 44,
+      paddingHorizontal: 4,
       borderRadius: radius.circle,
       backgroundColor: color.brand,
       borderWidth: 2.5,

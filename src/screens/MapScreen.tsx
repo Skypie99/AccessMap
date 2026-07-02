@@ -1236,6 +1236,12 @@ export default function MapScreen() {
       />
 
       <View pointerEvents="box-none" style={[styles.overlay, { paddingBottom: tabBarHeight + 16 }]}>
+        {/* Top cluster in ONE group so the overlay's space-between only ever
+            distributes [topGroup, bottomBar] — with nine direct children, the
+            conditional banners/chips floated to mid-map (sweep M10).
+            box-none is mandatory: an opaque-to-touch wrapper would swallow
+            map pan/zoom; flexShrink lets the G5 filterPanel keep yielding. */}
+        <View style={styles.overlayTopGroup} pointerEvents="box-none">
         <View style={styles.topRow}>
           {/* WCAG 4.1.3: live region ensures AT announces when the count
               changes after a filter toggle (e.g. "12 of 45 shown"). Using
@@ -1257,6 +1263,18 @@ export default function MapScreen() {
             object with internal segments.
           */}
           <GlassSurface style={styles.actionBar} borderRadius={radius.circle}>
+            {/* The 7 buttons scroll horizontally when the tray outgrows the
+                screen (~322pt of targets vs 288pt usable at 320pt — sweep
+                M11). Identical at normal widths: the row is content-sized and
+                only scrolls on overflow. flexShrink on actionBar lets the
+                GlassSurface bound the viewport; the R4 pins live on the
+                scroller so the buttons can never be vertically crushed. */}
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.actionBarScroll}
+              contentContainerStyle={styles.actionBarScrollContent}
+            >
             <PressableScale
               onPress={() => setSearchOpen(true)}
               style={styles.actionBtn}
@@ -1363,6 +1381,7 @@ export default function MapScreen() {
             >
               <LocateFixed size={19} color={color.brand} strokeWidth={2.2} />
             </PressableScale>
+            </ScrollView>
           </GlassSurface>
         </View>
 
@@ -1390,7 +1409,15 @@ export default function MapScreen() {
           // QA A4: dropped the wrapping accessibilityLabel — without
           // accessible={true} it was being ignored anyway, and each
           // chip's own a11yLabel already describes what tapping does.
-          <View style={styles.placesRow}>
+          // Single-line scroller: up to 50 wrapping chips used to stack rows
+          // over the map (sweep minor). No cap — a cap silently hides places.
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.placesRowScroll}
+            contentContainerStyle={styles.placesRowContent}
+            keyboardShouldPersistTaps="handled"
+          >
             {savedPlaces.map((place) => (
               <Pressable
                 key={place.id}
@@ -1434,7 +1461,7 @@ export default function MapScreen() {
                 {savedPlaces.length === 0 ? 'Save a place' : 'Manage'}
               </AppText>
             </Pressable>
-          </View>
+          </ScrollView>
         )}
 
         {filtersOpen && (
@@ -1957,6 +1984,7 @@ export default function MapScreen() {
             </AppText>
           </View>
         )}
+        </View>
 
         {/* Bottom bar: legend (left, conditional) + FABs (right) */}
         <View style={styles.bottomBar}>
@@ -2305,15 +2333,16 @@ const makeStyles = (color: ColorTheme) =>
       justifyContent: 'space-between',
       zIndex: 10,
     },
+    // M10 group: must shrink (RN Views default flexShrink 0) so the nested
+    // filterPanel's own flexShrink/maxHeight bound still engages against the
+    // absolute-fill overlay. Never give this flex:1 or a fixed height.
+    overlayTopGroup: { flexShrink: 1 },
     topRow: { flexDirection: 'row', gap: 8, alignItems: 'flex-start', flexWrap: 'wrap' },
-    // Saved Places chip row — slim secondary row beneath the action bar.
-    // Wraps so a long list breaks to a second line rather than truncating.
-    placesRow: {
-      flexDirection: 'row',
-      flexWrap: 'wrap',
-      gap: 6,
-      marginTop: 8,
-    },
+    // Saved Places chip row — slim secondary single-line scroller beneath the
+    // action bar. Pattern-B pins (guard Rule 4) on the scroller; layout lives
+    // on the content container.
+    placesRowScroll: { flexGrow: 0, flexShrink: 0, marginTop: 8 },
+    placesRowContent: { flexDirection: 'row', gap: 6 },
     placeChip: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -2378,8 +2407,15 @@ const makeStyles = (color: ColorTheme) =>
       alignItems: 'center',
       borderWidth: StyleSheet.hairlineWidth,
       borderColor: color.borderSubtle,
+      // Yields inside topRow so the inner tray ScrollView gets a bounded
+      // viewport at narrow widths (M11) instead of bleeding off-screen.
+      flexShrink: 1,
       ...shadow.e2,
     },
+    // Pattern-B pins (guard Rule 4): a horizontal scroller inside a bounded
+    // flex parent must never grow/shrink on its cross axis.
+    actionBarScroll: { flexGrow: 0, flexShrink: 0 },
+    actionBarScrollContent: { flexDirection: 'row', alignItems: 'center' },
     actionBtn: {
       minWidth: 44, // WCAG 2.5.5: was 36pt (below 44pt project standard)
       minHeight: 44,
