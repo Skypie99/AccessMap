@@ -84,7 +84,7 @@ function BarRow({
   const widthPct = max <= 0 ? 0 : Math.max(2, Math.round((count / max) * 100));
   return (
     <View style={styles.barRow} accessible accessibilityRole="text" accessibilityLabel={a11yLabel}>
-      <AppText variant="body" style={styles.barLabel} numberOfLines={1}>
+      <AppText variant="body" style={styles.barLabel}>
         {label}
       </AppText>
       <View style={styles.barTrack}>
@@ -338,7 +338,9 @@ const makeStyles = (color: ColorTheme) =>
     },
     barLabel: {
       flexBasis: 130,
-      flexShrink: 0,
+      // Shrinkable + wrappable so long labels stop truncating from ~1.25× and
+      // the bar track keeps real width at 320pt (sweep M19).
+      flexShrink: 1,
       fontSize: font.size.sm,
       color: color.textStrong,
     },
@@ -353,7 +355,7 @@ const makeStyles = (color: ColorTheme) =>
       height: '100%',
     },
     barCount: {
-      width: 36,
+      minWidth: 36,
       textAlign: 'right',
       fontSize: font.size.sm,
       fontWeight: font.weight.bold,

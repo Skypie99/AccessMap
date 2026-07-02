@@ -1071,7 +1071,7 @@ export default function ProfileScreen() {
                         <ArrowDown size={14} color={color.error} strokeWidth={2.4} />
                       )}
                     </AppText>
-                    <AppText variant="body" style={styles.pointHistoryLabel} numberOfLines={1}>
+                    <AppText variant="body" style={styles.pointHistoryLabel} numberOfLines={2}>
                       {pointEventLabel(ev.event_type)}
                     </AppText>
                     <AppText variant="body" style={styles.pointHistoryDate}>{dateStr}</AppText>
@@ -1159,7 +1159,7 @@ export default function ProfileScreen() {
               <AppText variant="label" style={styles.nearestBtnTitle}>
                 Nearest unresolved · {formatDistance(nearestUnresolved.km)}
               </AppText>
-              <AppText variant="body" style={styles.nearestBtnSubtitle} numberOfLines={1}>
+              <AppText variant="body" style={styles.nearestBtnSubtitle} numberOfLines={2}>
                 {CATEGORY_LABELS[nearestUnresolved.flag.category]} · severity{' '}
                 {nearestUnresolved.flag.severity}
               </AppText>
@@ -1207,6 +1207,8 @@ export default function ProfileScreen() {
                     style={[styles.statusPillLabel, { color: palette.fg }]}
                     accessibilityElementsHidden
                     importantForAccessibility="no-hide-descendants"
+                    adjustsFontSizeToFit
+                    numberOfLines={1}
                   >
                     {STATUS_LABELS[status]}
                   </AppText>
@@ -1660,17 +1662,21 @@ export default function ProfileScreen() {
       >
         <View style={styles.deleteBackdrop}>
           <View style={styles.deleteSheet} accessibilityViewIsModal>
-            <AppText variant="heading" style={styles.deleteTitle} accessibilityRole="header">
-              Delete your account?
-            </AppText>
-            <AppText variant="body" style={styles.deleteBody}>
-              This will permanently delete your account and personal information.
-              Your accessibility reports will remain on the map anonymously to
-              help the community. This cannot be undone.
-            </AppText>
-            <AppText variant="body" style={styles.deleteBodySecondary}>
-              If you also want your reports removed, get in touch with support and we&apos;ll take care of it.
-            </AppText>
+            {/* Copy scrolls at large type; the destructive Cancel/Delete pair
+                stays OUTSIDE the scroll so it can never slide off (sweep M7). */}
+            <ScrollView contentContainerStyle={styles.deleteScrollContent}>
+              <AppText variant="heading" style={styles.deleteTitle} accessibilityRole="header">
+                Delete your account?
+              </AppText>
+              <AppText variant="body" style={styles.deleteBody}>
+                This will permanently delete your account and personal information.
+                Your accessibility reports will remain on the map anonymously to
+                help the community. This cannot be undone.
+              </AppText>
+              <AppText variant="body" style={styles.deleteBodySecondary}>
+                If you also want your reports removed, get in touch with support and we&apos;ll take care of it.
+              </AppText>
+            </ScrollView>
             <View style={styles.deleteActions}>
               <Pressable
                 style={({ pressed }) => [
@@ -1809,6 +1815,10 @@ export default function ProfileScreen() {
               </Pressable>
             </View>
 
+            {/* Intro + tier list + footer scroll at large type; the header row
+                (title + ✕) stays OUTSIDE so close never leaves the screen
+                (sweep M7). */}
+            <ScrollView contentContainerStyle={styles.tierScrollContent}>
             <AppText variant="body" style={styles.tierIntro}>
               Earn points every time you report a barrier or help verify and resolve one. Each tier shows
               how much you&apos;ve given back to the community.
@@ -1854,6 +1864,7 @@ export default function ProfileScreen() {
                 ? `You're ${tierGap} ${tierGap === 1 ? 'point' : 'points'} away from ${nextTier.label}`
                 : `You've reached the top tier — keep contributing!`}
             </AppText>
+            </ScrollView>
           </View>
         </View>
       </Modal>
@@ -1867,7 +1878,9 @@ function Stat({ label, value }: { label: string; value: number }) {
   return (
     <View style={styles.statCard}>
       <AppText variant="monoBold" style={styles.statValue}>{value}</AppText>
-      <AppText variant="label" style={styles.statLabel}>{label}</AppText>
+      <AppText variant="label" style={styles.statLabel} adjustsFontSizeToFit numberOfLines={1}>
+        {label}
+      </AppText>
     </View>
   );
 }
@@ -1883,6 +1896,7 @@ const makeStyles = (color: ColorTheme) =>
       alignItems: 'center',
       justifyContent: 'center',
       gap: spacing.lg,
+      paddingHorizontal: spacing.xl,
       backgroundColor: color.surfaceMuted,
     },
     // Inline load-error card (mirrors LeaderboardScreen's stateWrap/retryBtn).
@@ -2008,7 +2022,9 @@ const makeStyles = (color: ColorTheme) =>
       color: color.brand,
       fontSize: 56,
       fontWeight: '800',
-      lineHeight: 60,
+      // 74 = JetBrains Mono's real line box (56 × 1.32) — 60 shaved the
+      // ascenders, worst on Android (sweep M5).
+      lineHeight: 74,
       letterSpacing: -1.2,
     },
     heroSubtitle: {
@@ -2063,6 +2079,9 @@ const makeStyles = (color: ColorTheme) =>
       flexDirection: 'row',
       alignItems: 'center',
       gap: 12,
+      // Neither the 56pt number nor the tier pill can shrink — wrap instead of
+      // spilling past the card edge at 5-digit points / large type (sweep M6).
+      flexWrap: 'wrap',
     },
     // T4: Tier pill. White background on the blue hero gives a high
     // contrast surface for the label (#1b4373 ≈ 10:1 on #fff, well
@@ -2108,8 +2127,12 @@ const makeStyles = (color: ColorTheme) =>
       borderRadius: radius.xl,
       padding: 20,
       gap: 12,
+      maxHeight: '85%',
       ...shadow.e3,
     },
+    // Spacing for the scrollable middle (intro + list + footer) — mirrors the
+    // sheet's own gap now that those children live inside the ScrollView.
+    tierScrollContent: { gap: 12 },
     tierHeaderRow: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -2312,6 +2335,10 @@ const makeStyles = (color: ColorTheme) =>
       flexGrow: 1,
       flexBasis: 0,
       minWidth: 70,
+      // A pill that wraps to its own line grows toward 100% — cap it so the
+      // 3+1 wrap at 320pt doesn't stretch the orphan edge-to-edge. At 375 all
+      // four pills sit near 25%, so the default row is untouched.
+      maxWidth: '48%',
       // minHeight guarantees the now-tappable pills meet the 44pt target
       // even before content; the count + label already push past it.
       minHeight: 44,
@@ -2464,8 +2491,11 @@ const makeStyles = (color: ColorTheme) =>
       borderRadius: radius.xl,
       padding: 24,
       gap: 16,
+      maxHeight: '85%',
       ...shadow.e3,
     },
+    // Spacing for the scrollable copy — mirrors the sheet gap inside the ScrollView.
+    deleteScrollContent: { gap: 16 },
     deleteTitle: {
       fontSize: 20,
       fontWeight: '700',
