@@ -3,6 +3,7 @@ import {
   AccessibilityInfo,
   ActivityIndicator,
   Alert,
+  KeyboardAvoidingView,
   Modal,
   Platform,
   Pressable,
@@ -948,6 +949,10 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
           )}
           </ScrollView>
 
+          {/* iOS: lift ONLY the sticky footer above the keyboard (the body
+              ScrollView already insets itself). Wrapping the whole flex-capped
+              card in a KAV is the risky interaction Tier-1 deferred away from. */}
+          <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
           <View style={styles.actions}>
             <Pressable
               onPress={onClose}
@@ -985,6 +990,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
               )}
             </Pressable>
           </View>
+          </KeyboardAvoidingView>
         </View>
       </View>
     </Modal>
@@ -999,7 +1005,9 @@ const makeStyles = (color: ColorTheme) =>
       justifyContent: 'flex-end',
     },
     card: {
-      flex: 1,
+      // No flex:1 — the sheet sizes to its content (the 3-field anonymous form
+      // used to be stretched to 88% with a blank band; sweep minor) and only
+      // the maxHeight cap engages for the tall signed-in form.
       backgroundColor: color.surface,
       paddingHorizontal: spacing.xl,
       paddingTop: spacing.xl,
@@ -1010,7 +1018,9 @@ const makeStyles = (color: ColorTheme) =>
       // the Submit button is never pushed off screen.
       maxHeight: '88%',
     },
-    scrollContent: { flex: 1 },
+    // Shrink-to-cap, never grow: the body yields inside the 88% card so the
+    // long form still scrolls, while a short form hugs its content.
+    scrollContent: { flexGrow: 0, flexShrink: 1 },
     scrollContentContainer: { gap: spacing.md, paddingBottom: spacing.tight },
     title: {
       fontSize: font.size.xxl,
@@ -1177,6 +1187,11 @@ const makeStyles = (color: ColorTheme) =>
     actions: {
       flexDirection: 'row',
       gap: spacing.md,
+      // Full-bleed divider: cancel the card's horizontal padding, then restore
+      // it as our own — buttons align with the form fields (24pt inset, was a
+      // doubled 48pt) and the hairline spans edge-to-edge instead of floating
+      // inset (sweep seam minor). Invariant: |neg margin| == own padding (G7).
+      marginHorizontal: -spacing.xl,
       paddingHorizontal: spacing.xl,
       paddingTop: spacing.md,
       paddingBottom: spacing.xxl,
