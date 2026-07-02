@@ -692,7 +692,10 @@ const makeStyles = (color: ColorTheme) =>
       borderColor: color.borderSubtle,
       minHeight: 56,
     },
-    rowText: { flex: 1, gap: 2 },
+    // No flex:1 — in the row's column direction that would resolve to a
+    // zero flex-basis HEIGHT and collapse the name/summary (Bug-1 shape,
+    // same reason renameRow lost its flex:1). Stretch supplies the width.
+    rowText: { gap: 2 },
     rowName: {
       fontSize: font.size.md,
       fontWeight: font.weight.semibold,

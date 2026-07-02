@@ -433,9 +433,20 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
     // when the user has requested reduced motion.
     <Modal visible={visible} animationType={reducedMotion ? 'none' : 'slide'} transparent onRequestClose={onClose} accessibilityViewIsModal>
       <View style={styles.backdrop}>
+        {/* KAV wraps the WHOLE card from the backdrop (the FeedbackModal /
+            AddressSearchModal recipe): rooted here its keyboard-overlap math
+            uses screen coordinates, so the sticky footer truly rides above
+            the keyboard. Nesting it inside the card measured parent-relative
+            frames and under-lifted (adversarial-review finding). Safe now
+            that the card no longer carries flex:1. The 88% cap lives on the
+            KAV so the percentage resolves against the full-height backdrop. */}
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={styles.kav}
+        >
         <View style={styles.card} accessibilityViewIsModal>
-          {/* WCAG 1.4.4: card capped at 88% so Dynamic Type XXL content
-              scrolls; Cancel/Report buttons stay pinned as sticky footer. */}
+          {/* WCAG 1.4.4: content scrolls under the 88% cap; Cancel/Report
+              buttons stay pinned as sticky footer. */}
           <ScrollView
             style={styles.scrollContent}
             contentContainerStyle={styles.scrollContentContainer}
@@ -443,7 +454,6 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
             showsVerticalScrollIndicator={false}
             // iOS: inset the scroll content so the focused description input
             // isn't hidden behind the keyboard. iOS-only prop; false elsewhere.
-            // (Lifting the sticky footer too is deferred — see the fix report.)
             automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}
           >
           <AppText ref={titleRef} variant="heading" style={styles.title} accessibilityRole="header">
@@ -949,10 +959,6 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
           )}
           </ScrollView>
 
-          {/* iOS: lift ONLY the sticky footer above the keyboard (the body
-              ScrollView already insets itself). Wrapping the whole flex-capped
-              card in a KAV is the risky interaction Tier-1 deferred away from. */}
-          <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
           <View style={styles.actions}>
             <Pressable
               onPress={onClose}
@@ -990,8 +996,8 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
               )}
             </Pressable>
           </View>
-          </KeyboardAvoidingView>
         </View>
+        </KeyboardAvoidingView>
       </View>
     </Modal>
   );
@@ -1004,19 +1010,22 @@ const makeStyles = (color: ColorTheme) =>
       backgroundColor: color.scrim,
       justifyContent: 'flex-end',
     },
+    // WCAG 1.4.4: the 88% cap lives HERE (direct child of the full-height
+    // backdrop) so the percentage resolves; on the card it would resolve
+    // against the auto-height KAV and silently become no cap at all.
+    kav: { width: '100%', maxHeight: '88%' },
     card: {
       // No flex:1 — the sheet sizes to its content (the 3-field anonymous form
       // used to be stretched to 88% with a blank band; sweep minor) and only
-      // the maxHeight cap engages for the tall signed-in form.
+      // grows until the KAV's 88% cap bounds it for the tall signed-in form,
+      // at which point flexShrink lets the body ScrollView take over.
+      flexShrink: 1,
       backgroundColor: color.surface,
       paddingHorizontal: spacing.xl,
       paddingTop: spacing.xl,
       paddingBottom: 0,
       borderTopLeftRadius: radius.xl,
       borderTopRightRadius: radius.xl,
-      // WCAG 1.4.4: cap height so content scrolls at Dynamic Type XXL and
-      // the Submit button is never pushed off screen.
-      maxHeight: '88%',
     },
     // Shrink-to-cap, never grow: the body yields inside the 88% card so the
     // long form still scrolls, while a short form hugs its content.
