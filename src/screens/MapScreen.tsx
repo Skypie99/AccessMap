@@ -10,8 +10,10 @@ import {
   ScrollView,
   StyleSheet,
   TextInput,
+  useWindowDimensions,
   View,
 } from 'react-native';
+import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 import * as Location from 'expo-location';
 import { getCurrentPositionWithTimeout } from '@/lib/location';
 import { OFFLINE_BANNER_TEXT } from '@/lib/copy';
@@ -124,6 +126,13 @@ const DEFAULT_REGION: PlatformMapRegion = {
   longitudeDelta: 0.05,
 };
 
+// Filter-panel height budget (G5). OVERLAY_PADDING mirrors styles.overlay's
+// padding; PANEL_BRACKET_ALLOWANCE reserves room for the action bar above the
+// panel and the FAB bottom bar below it. flexShrink on filterPanel corrects any
+// imprecision, so these only need to be in the right ballpark.
+const OVERLAY_PADDING = 16;
+const PANEL_BRACKET_ALLOWANCE = 160;
+
 // Pop a flag's callout, retrying a few times ~150ms apart. Right after
 // animateTo the marker may not be mounted yet (the web map recomputes its
 // cluster/pin set on the map's zoomend/moveend), so a single fixed-delay call
@@ -231,6 +240,11 @@ export default function MapScreen() {
   // Phase 7a: the bottom tab bar is now absolute (frosted glass) on native, so
   // lift the bottom overlay (FAB tray + legend) above it.
   const tabBarHeight = useBottomTabBarHeight();
+  // Reactive viewport height (rotation-safe) + safe-area insets, used to bound
+  // the filter panel's maxHeight so it can't cover the FABs (G5). Context form
+  // (non-throwing) since a provider isn't guaranteed in every render path.
+  const { height: windowHeight } = useWindowDimensions();
+  const insets = React.useContext(SafeAreaInsetsContext) ?? { top: 0, bottom: 0, left: 0, right: 0 };
   const [location, setLocation] = useState<Coords | null>(null);
   const [locating, setLocating] = useState(true);
   const [permissionDenied, setPermissionDenied] = useState(false);
@@ -1424,7 +1438,24 @@ export default function MapScreen() {
         )}
 
         {filtersOpen && (
-          <GlassSurface style={styles.filterPanel} borderRadius={radius.lg}>
+          <GlassSurface
+            style={[
+              styles.filterPanel,
+              // Bound the panel to the viewport minus overlay padding and the
+              // space reserved for the action bar + FAB tray, so the FABs stay
+              // visible; flexShrink on filterPanel trims any imprecision (G5).
+              {
+                maxHeight:
+                  windowHeight -
+                  insets.top -
+                  insets.bottom -
+                  OVERLAY_PADDING * 2 -
+                  spacing.sm -
+                  PANEL_BRACKET_ALLOWANCE,
+              },
+            ]}
+            borderRadius={radius.lg}
+          >
             <View style={styles.filterHeaderRow}>
               <Pressable
                 onPress={() => setPanelCollapsed((v) => !v)}
@@ -1460,7 +1491,13 @@ export default function MapScreen() {
             </View>
 
             {!panelCollapsed && (
-              <>
+              <ScrollView
+                style={styles.filterPanelScroll}
+                contentContainerStyle={styles.filterPanelScrollContent}
+                showsVerticalScrollIndicator
+                keyboardShouldPersistTaps="handled"
+                nestedScrollEnabled
+              >
                 <AppText variant="heading" style={styles.filterSubLabel}>Saved</AppText>
                 {savedSets.length === 0 ? (
                   <View style={styles.savedEmpty}>
@@ -1785,7 +1822,7 @@ export default function MapScreen() {
                     </View>
                   </>
                 )}
-              </>
+              </ScrollView>
             )}
           </GlassSurface>
         )}
@@ -2358,6 +2395,9 @@ const makeStyles = (color: ColorTheme) =>
     },
     filterPanel: {
       marginTop: spacing.sm,
+      // flexShrink lets the panel give up height inside the absolute-fill overlay
+      // so it can't grow past its siblings and cover the FABs (G5, layer 1).
+      flexShrink: 1,
       // Frosted-glass surface supplied by <GlassSurface> (translucent + blur with
       // an AA contrast floor); falls back to a solid fill under Reduce Transparency.
       // No backgroundColor here — GlassSurface owns the surface.
@@ -2367,6 +2407,16 @@ const makeStyles = (color: ColorTheme) =>
       borderWidth: StyleSheet.hairlineWidth,
       borderColor: color.borderSubtle,
       ...shadow.e2,
+    },
+    // The scrollable region holding the 8 filter sections. flexShrink lets it
+    // shrink within the maxHeight-bounded panel so filterHeaderRow stays pinned
+    // and the sections scroll (G5, layer 2). Content gap replaces the panel gap
+    // the sections lose by moving into the scroll container.
+    filterPanelScroll: {
+      flexShrink: 1,
+    },
+    filterPanelScrollContent: {
+      gap: spacing.sm,
     },
     filterHeaderRow: {
       flexDirection: 'row',
