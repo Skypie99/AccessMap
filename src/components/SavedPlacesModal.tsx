@@ -17,6 +17,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  FlatList,
   Modal,
   Pressable,
   StyleSheet,
@@ -190,6 +191,59 @@ export default function SavedPlacesModal({
   const limitReached = places.length >= MAX_PLACES;
   const canShowAddForm = !!user && !!currentLocation && !limitReached;
 
+  // Row renderer for the saved-places FlatList. Extracted from the old
+  // inline .map() so the list virtualizes and scrolls inside the 85%-height
+  // card (G8) — previously a plain View that overflowed once the list grew.
+  const renderItem = useCallback(
+    ({ item: place }: { item: SavedPlace }) => (
+      <View style={styles.row}>
+        <Pressable
+          onPress={() => handleJump(place)}
+          style={({ pressed }) => [styles.rowMain, pressed && styles.rowMainPressed]}
+          accessibilityRole="button"
+          accessibilityLabel={`Jump map to ${place.name}`}
+          accessibilityHint="Closes this list and centers the Map on this place"
+        >
+          <MapPin size={18} color={color.brand} strokeWidth={2.2} />
+          <View style={styles.rowText}>
+            <AppText variant="label" style={styles.rowName}>
+              {place.name}
+            </AppText>
+            <AppText
+              variant="body"
+              style={styles.rowCoords}
+              // QA A5: the Pressable's a11yLabel already covers
+              // "Jump map to {name}"; the raw decimals would be
+              // read as "47 point 6 0 6 2 negative 122 point…"
+              // which adds no value for SR users.
+              accessibilityElementsHidden
+              importantForAccessibility="no-hide-descendants"
+            >
+              {place.lat.toFixed(4)}, {place.lng.toFixed(4)}
+            </AppText>
+          </View>
+        </Pressable>
+        <Pressable
+          onPress={() => handleRemove(place)}
+          hitSlop={10}
+          style={({ pressed }) => [styles.removeBtn, pressed && styles.removeBtnPressed]}
+          accessibilityRole="button"
+          accessibilityLabel={`Remove ${place.name}`}
+          accessibilityHint="Asks you to confirm before removing this saved place"
+        >
+          <X
+            size={18}
+            color={color.error}
+            strokeWidth={2.2}
+            accessibilityElementsHidden
+            importantForAccessibility="no-hide-descendants"
+          />
+        </Pressable>
+      </View>
+    ),
+    [handleJump, handleRemove, styles, color],
+  );
+
   return (
     <Modal visible={visible} animationType={reducedMotion ? 'none' : 'slide'} transparent onRequestClose={onClose}>
       <View style={styles.backdrop}>
@@ -341,54 +395,16 @@ export default function SavedPlacesModal({
               </AppText>
             </View>
           ) : (
-            <View style={styles.listWrap}>
-              {places.map((place) => (
-                <View key={place.id} style={styles.row}>
-                  <Pressable
-                    onPress={() => handleJump(place)}
-                    style={({ pressed }) => [styles.rowMain, pressed && styles.rowMainPressed]}
-                    accessibilityRole="button"
-                    accessibilityLabel={`Jump map to ${place.name}`}
-                    accessibilityHint="Closes this list and centers the Map on this place"
-                  >
-                    <MapPin size={18} color={color.brand} strokeWidth={2.2} />
-                    <View style={styles.rowText}>
-                      <AppText variant="label" style={styles.rowName}>
-                        {place.name}
-                      </AppText>
-                      <AppText
-                        variant="body"
-                        style={styles.rowCoords}
-                        // QA A5: the Pressable's a11yLabel already covers
-                        // "Jump map to {name}"; the raw decimals would be
-                        // read as "47 point 6 0 6 2 negative 122 point…"
-                        // which adds no value for SR users.
-                        accessibilityElementsHidden
-                        importantForAccessibility="no-hide-descendants"
-                      >
-                        {place.lat.toFixed(4)}, {place.lng.toFixed(4)}
-                      </AppText>
-                    </View>
-                  </Pressable>
-                  <Pressable
-                    onPress={() => handleRemove(place)}
-                    hitSlop={10}
-                    style={({ pressed }) => [styles.removeBtn, pressed && styles.removeBtnPressed]}
-                    accessibilityRole="button"
-                    accessibilityLabel={`Remove ${place.name}`}
-                    accessibilityHint="Asks you to confirm before removing this saved place"
-                  >
-                    <X
-                      size={18}
-                      color={color.error}
-                      strokeWidth={2.2}
-                      accessibilityElementsHidden
-                      importantForAccessibility="no-hide-descendants"
-                    />
-                  </Pressable>
-                </View>
-              ))}
-            </View>
+            <FlatList
+              data={places}
+              keyExtractor={(item) => item.id}
+              renderItem={renderItem}
+              removeClippedSubviews
+              initialNumToRender={10}
+              ItemSeparatorComponent={() => <View style={styles.separator} />}
+              contentContainerStyle={styles.listContent}
+              keyboardShouldPersistTaps="handled"
+            />
           )}
         </View>
       </View>
@@ -548,7 +564,8 @@ const makeStyles = (color: ColorTheme) =>
       textAlign: 'center',
       lineHeight: 20,
     },
-    listWrap: { gap: spacing.sm },
+    listContent: { paddingVertical: spacing.tight },
+    separator: { height: spacing.sm },
     row: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
     rowMain: {
       flex: 1,
