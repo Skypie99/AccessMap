@@ -45,23 +45,14 @@ const SRC = path.resolve(__dirname, '..');
 // cases. Key = `<relPathFromSrc>::<styleName>`. Seeded so the guard is green
 // now; every entry carries why it is safe.
 // ---------------------------------------------------------------------------
-const ALLOW_LIST: Record<string, string> = {
-  // Map callout header is inside a fixed-width (~width:200) bubble anchored to a
-  // pin; horizontal space is hard-bounded by the marker, so one-line truncation
-  // is the intended design rather than a dynamic-type clip.
-  'components/PlatformMap.tsx::calloutTitle':
-    'fixed-width map callout bubble — horizontally bounded by the marker',
-  // Rule 2 (literal lineHeight/fontSize ratio). Both are known, deliberate,
-  // and tracked — not accidental clips:
-  // heroValue: 56/60 = 1.07. The Profile hero points figure; raising it to the
-  //   font's box (lineHeight 74) is Tier-3 finding M5, deferred to a later pass.
-  'screens/ProfileScreen.tsx::heroValue':
-    'M5 hero points lineHeight (56/60) — Tier-3, deferred; fix raises it to 74',
-  // addIcon: 24/28 = 1.17. A decorative "+" glyph on the fixed add-photo tile;
-  //   it is a11y-hidden and its box is fixed, so it cannot clip real content.
-  'components/PhotoGallery.tsx::addIcon':
-    'decorative "+" glyph, a11y-hidden, on a fixed add-tile — cannot clip content',
-};
+// EMPTY as of the Tier-3/4 sweep-finisher pass (2026-07-02) — and it should
+// stay that way. The three seeded entries were drained by fixing (not
+// silencing) each case: ProfileScreen heroValue lineHeight 60→74 (M5),
+// PhotoGallery addIcon lineHeight 28→29, and the PlatformMap calloutTitle
+// design-intent entry relocated to an inline `// dynamic-type-ok` at its
+// site. Prefer the inline opt-out (justification lives next to the code);
+// seed this map only when an opt-out comment genuinely can't sit at the site.
+const ALLOW_LIST: Record<string, string> = {};
 
 // ---------------------------------------------------------------------------
 // File walker — every non-test .ts/.tsx under src/.
@@ -409,6 +400,17 @@ function scanRule2(): Violation[] {
 
 // ---------------------------------------------------------------------------
 // Rule 3 — hard height on a style applied to <AppText>/<Text> (reliable subset).
+//
+// DECISION (Tier-3/4 pass, 2026-07-02): the narrow form STANDS; the deferred
+// "broad" form (hard height co-used near text, name-independent) is NOT
+// implemented. Re-enumerated post-Tier-1: all 8 broad-form catches are
+// decorative or dead — selectCheck/avatarEditBadge lost their text children in
+// Tier-1's dead-style sweep, RankBadge was deleted with the dead components,
+// and the rest are decorative dots/swatches (sevDot, severityDot, HomeScreen
+// dot, HeatmapLegend swatch, ReportsBreakdownCard track, PhotoGallery addTile).
+// The broad form would need a ~6-name exemption list to stay green while
+// adding zero real-bug coverage; this subset already catches the real class
+// (the badgeCount shape) name-independently — see the self-test below.
 // ---------------------------------------------------------------------------
 /** Style names referenced in any <AppText>/<Text> opening tag. (<TextInput excluded). */
 function styleNamesOnTextTags(src: string): Set<string> {

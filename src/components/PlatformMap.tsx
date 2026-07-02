@@ -225,7 +225,14 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(function Pla
                 importantForAccessibility="no-hide-descendants"
               />
               <View style={styles.calloutBody}>
-                <AppText variant="label" style={styles.calloutTitle} numberOfLines={1}>
+                <AppText
+                  variant="label"
+                  style={styles.calloutTitle}
+                  // dynamic-type-ok — fixed-width callout bubble anchored to a pin;
+                  // horizontally hard-bounded by the marker, so one-line truncation
+                  // is the intended design (was the guard's ALLOW_LIST entry).
+                  numberOfLines={1}
+                >
                   {CATEGORY_LABELS[f.category]}
                 </AppText>
                 <AppText variant="body" style={styles.calloutMeta}>
