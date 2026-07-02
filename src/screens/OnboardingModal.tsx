@@ -158,20 +158,31 @@ export default function OnboardingModal({ visible, onDone }: Props) {
             const iconColor = card.tone === 'gold' ? color.goldDark : color.brand;
             return (
               <View key={card.title} style={[styles.card, { width }]}>
-                <View style={[styles.iconHalo, { backgroundColor: haloBg }]}>
-                  <CardIcon size={56} color={iconColor} strokeWidth={2} />
-                </View>
-                <AppText
-                  variant="heading"
-                  size={font.size.h2}
-                  color={color.textStrong}
-                  style={styles.title}
+                {/* Vertical scroll so a tall slide (large type / short screen)
+                    stays reachable; centered when it fits (G10). The inner
+                    vertical scroller reports only contentOffset.y and cannot
+                    corrupt the horizontal pager's .x paging math. */}
+                <ScrollView
+                  style={styles.cardScroll}
+                  contentContainerStyle={styles.cardScrollContent}
+                  showsVerticalScrollIndicator={false}
+                  nestedScrollEnabled
                 >
-                  {card.title}
-                </AppText>
-                <AppText variant="body" size={font.size.lg} color={color.text} style={styles.body}>
-                  {card.body}
-                </AppText>
+                  <View style={[styles.iconHalo, { backgroundColor: haloBg }]}>
+                    <CardIcon size={56} color={iconColor} strokeWidth={2} />
+                  </View>
+                  <AppText
+                    variant="heading"
+                    size={font.size.h2}
+                    color={color.textStrong}
+                    style={styles.title}
+                  >
+                    {card.title}
+                  </AppText>
+                  <AppText variant="body" size={font.size.lg} color={color.text} style={styles.body}>
+                    {card.body}
+                  </AppText>
+                </ScrollView>
               </View>
             );
           })}
@@ -285,7 +296,17 @@ const makeStyles = (color: ColorTheme) =>
     },
     scroll: { flex: 1 },
     card: {
+      // Each slide fills the pager page; the inner ScrollView owns centering,
+      // padding and gap so a tall slide can scroll instead of clipping (G10).
       flex: 1,
+    },
+    cardScroll: {
+      flex: 1,
+    },
+    cardScrollContent: {
+      // flexGrow:1 keeps the content centered when it fits, and lets it grow +
+      // scroll when it doesn't (large type / short screen).
+      flexGrow: 1,
       paddingHorizontal: spacing.xxxl,
       paddingTop: spacing.xxl,
       paddingBottom: spacing.md,

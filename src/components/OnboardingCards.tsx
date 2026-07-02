@@ -314,30 +314,41 @@ export default function OnboardingCards({ onDone }: Props) {
               : c.body;
             return (
               <View key={c.title} style={[styles.cardOuter, { width }]}>
-                {/* Icon circle — decorative; card heading conveys the same meaning */}
-                <View
-                  style={[
-                    styles.iconCircle,
-                    { borderColor: effectiveColor + '40', shadowColor: effectiveColor },
-                  ]}
-                  accessibilityElementsHidden
-                  importantForAccessibility="no-hide-descendants"
+                {/* Vertical scroll so a tall slide (large type / short screen)
+                    stays reachable; centered when it fits (G10). The inner
+                    vertical scroller reports only contentOffset.y and cannot
+                    corrupt the horizontal pager's .x paging math. */}
+                <ScrollView
+                  style={styles.cardScroll}
+                  contentContainerStyle={styles.cardScrollContent}
+                  showsVerticalScrollIndicator={false}
+                  nestedScrollEnabled
                 >
-                  <EffectiveIcon size={52} color={effectiveColor} strokeWidth={2} />
-                </View>
+                  {/* Icon circle — decorative; card heading conveys the same meaning */}
+                  <View
+                    style={[
+                      styles.iconCircle,
+                      { borderColor: effectiveColor + '40', shadowColor: effectiveColor },
+                    ]}
+                    accessibilityElementsHidden
+                    importantForAccessibility="no-hide-descendants"
+                  >
+                    <EffectiveIcon size={52} color={effectiveColor} strokeWidth={2} />
+                  </View>
 
-                {/* Position pill */}
-                <View style={styles.positionPill}>
-                  <AppText variant="label" style={styles.positionText}>{`${i + 1} / ${CARDS.length}`}</AppText>
-                </View>
+                  {/* Position pill */}
+                  <View style={styles.positionPill}>
+                    <AppText variant="label" style={styles.positionText}>{`${i + 1} / ${CARDS.length}`}</AppText>
+                  </View>
 
-                {/* Text content — glass card */}
-                <View style={styles.cardContent}>
-                  <AppText variant="heading" style={styles.title} accessibilityRole="header">
-                    {c.title}
-                  </AppText>
-                  <AppText variant="body" style={styles.body}>{effectiveBody}</AppText>
-                </View>
+                  {/* Text content — glass card */}
+                  <View style={styles.cardContent}>
+                    <AppText variant="heading" style={styles.title} accessibilityRole="header">
+                      {c.title}
+                    </AppText>
+                    <AppText variant="body" style={styles.body}>{effectiveBody}</AppText>
+                  </View>
+                </ScrollView>
               </View>
             );
           })}
@@ -525,7 +536,17 @@ const makeStyles = (color: ColorTheme) =>
     },
     // New liquid-glass card outer wrapper
     cardOuter: {
+      // Each slide fills the pager page; the inner ScrollView owns centering,
+      // padding and gap so a tall slide can scroll instead of clipping (G10).
       flex: 1,
+    },
+    cardScroll: {
+      flex: 1,
+    },
+    cardScrollContent: {
+      // flexGrow:1 keeps the content centered when it fits, and lets it grow +
+      // scroll when it doesn't (large type / short screen).
+      flexGrow: 1,
       alignItems: 'center',
       justifyContent: 'center',
       paddingHorizontal: spacing.xxxl,
