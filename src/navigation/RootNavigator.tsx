@@ -286,8 +286,10 @@ function NavInner({ initialRouteName }: { initialRouteName: keyof RootTabParamLi
           borderTopWidth: 1,
           borderTopColor: color.navBorder,
           // Grow by the bottom safe-area inset so the home indicator never
-          // overlaps the tab labels.
-          height: 62 + insets.bottom,
+          // overlaps the tab labels. 68 (was 62) gives the label's real line
+          // box room — at 62 the shrinkable label wrapper was squeezed to ~7px
+          // and clipped "Home / Tasks / Profile" in half.
+          height: 68 + insets.bottom,
           paddingBottom: 8 + insets.bottom,
           paddingTop: 6,
           ...(Platform.OS === 'web'
@@ -303,8 +305,14 @@ function NavInner({ initialRouteName }: { initialRouteName: keyof RootTabParamLi
                 backgroundColor: 'transparent',
               }),
         },
+        // Cap label scaling: a fixed-height bar can't grow with the OS font
+        // size, so unbounded scaling would drive the label into the icon.
+        tabBarAllowFontScaling: false,
         tabBarLabelStyle: {
           fontSize: font.size.xs,
+          // Explicit line box (12 × 1.33). The label wrapper is shrinkable with
+          // overflow:hidden, so without this it collapses below the glyph box.
+          lineHeight: 16,
           fontWeight: font.weight.semibold,
           marginTop: 2,
           letterSpacing: 0.2,
