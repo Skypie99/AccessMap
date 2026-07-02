@@ -577,25 +577,6 @@ const makeStyles = (color: ColorTheme) =>
         ? ({ backdropFilter: 'blur(20px) saturate(140%)' } as object)
         : {}),
     },
-    card: {
-      flex: 1,
-      paddingHorizontal: spacing.xxxl,
-      paddingTop: spacing.xxl,
-      paddingBottom: spacing.md,
-      alignItems: 'center',
-      justifyContent: 'center',
-      gap: spacing.xl,
-    },
-    emoji: { fontSize: font.size.displayLg, textAlign: 'center' },
-    // Small position label above the heading — visible AND screen-reader
-    // friendly. textMuted (#666) is 5.7:1 on white, AA pass.
-    position: {
-      fontSize: font.size.sm,
-      color: color.textMuted,
-      fontWeight: font.weight.semibold,
-      textAlign: 'center',
-      letterSpacing: 0.5,
-    },
     title: {
       fontSize: font.size.h1,
       fontWeight: font.weight.bold,
@@ -628,10 +609,6 @@ const makeStyles = (color: ColorTheme) =>
       borderRadius: radius.xs,
       backgroundColor: 'rgba(255,255,255,0.25)',
     },
-    // dotActive intentionally left empty — width is driven by Animated.Value,
-    // backgroundColor/shadow are injected inline with the card's iconColor so
-    // the glow tracks the active card's accent. Nothing to declare statically.
-    dotActive: {},
     actions: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -680,7 +657,9 @@ const makeStyles = (color: ColorTheme) =>
     },
     backBtnTextDisabled: { color: 'rgba(255,255,255,0.25)' },
     primaryBtn: {
-      flex: 1,
+      // NOTE: no `flex: 1` here. This gradient sits inside an auto-height
+      // Pressable; a grow child would collapse to flex-basis 0 and get pinned
+      // at minHeight:44 on native, clipping the label. Let it size to content.
       paddingVertical: spacing.lg,
       paddingHorizontal: spacing.xxl,
       borderRadius: radius.lg,
@@ -693,10 +672,10 @@ const makeStyles = (color: ColorTheme) =>
       shadowOffset: { width: 0, height: 4 },
       elevation: 6,
     },
-    btnPressed: { opacity: 0.85 },
     primaryBtnText: {
+      // Weight comes from the label variant's family (PublicSans SemiBold);
+      // a `fontWeight` on a named font face is unreliable in expo-font.
       color: color.textOnBrand,
-      fontWeight: font.weight.bold,
       fontSize: font.size.lg,
     },
   });
