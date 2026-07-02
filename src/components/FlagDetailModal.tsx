@@ -1844,7 +1844,12 @@ const makeStyles = (color: ColorTheme) =>
     },
     commentsList: {
       gap: spacing.tight,
-      marginHorizontal: -spacing.xl,
+      // Bleed the comment column to the card's content edge, but only by
+      // spacing.md — the exact paddingHorizontal each CommentBubble row already
+      // carries — so bubbles land flush with the content edge and their rounded
+      // corners stay inside the body ScrollView's clip (was -spacing.xl, which
+      // over-bled and pushed the corners past the clip).
+      marginHorizontal: -spacing.md,
     },
     commentInputRow: {
       flexDirection: 'row',
