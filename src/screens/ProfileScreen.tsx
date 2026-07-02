@@ -1950,7 +1950,9 @@ const makeStyles = (color: ColorTheme) =>
       borderRadius: radius.circle,
       marginBottom: 10,
       alignSelf: 'center',
-      overflow: 'hidden',
+      // No overflow:'hidden' here — the round photo/initials self-clip via their
+      // own borderRadius, and clipping the parent would cut off the edit badge
+      // that sits at the avatar's bottom-right corner (M4).
     },
     avatarBtnPressed: { opacity: 0.75 },
     avatarImg: {
@@ -1974,6 +1976,10 @@ const makeStyles = (color: ColorTheme) =>
     },
     avatarOverlay: {
       ...StyleSheet.absoluteFillObject,
+      // Round the uploading scrim itself — it used to inherit the parent's
+      // overflow:'hidden' clip (removed above), so without this it would render
+      // as a square over the circular avatar during upload.
+      borderRadius: radius.circle,
       backgroundColor: color.overlayBtn,
       alignItems: 'center',
       justifyContent: 'center',
