@@ -440,6 +440,10 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
             contentContainerStyle={styles.scrollContentContainer}
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
+            // iOS: inset the scroll content so the focused description input
+            // isn't hidden behind the keyboard. iOS-only prop; false elsewhere.
+            // (Lifting the sticky footer too is deferred — see the fix report.)
+            automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}
           >
           <AppText ref={titleRef} variant="heading" style={styles.title} accessibilityRole="header">
             {isAnon ? 'Report anonymously' : 'Report a flag'}

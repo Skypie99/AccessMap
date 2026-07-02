@@ -3,6 +3,7 @@ import {
   AccessibilityInfo,
   ActivityIndicator,
   Alert,
+  KeyboardAvoidingView,
   Modal,
   Platform,
   Pressable,
@@ -2085,6 +2086,12 @@ export default function MapScreen() {
         }}
       >
         <View style={styles.nameBackdrop}>
+          {/* KAV lifts the centered card above the keyboard the autoFocus
+              input opens. iOS 'padding'; width:100% preserves centering. */}
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            style={{ width: '100%' }}
+          >
           <View style={styles.nameCard}>
             <AppText variant="heading" style={styles.nameTitle} accessibilityRole="header">
               Name this preset
@@ -2144,6 +2151,7 @@ export default function MapScreen() {
               </Pressable>
             </View>
           </View>
+          </KeyboardAvoidingView>
         </View>
       </Modal>
 
@@ -2162,6 +2170,12 @@ export default function MapScreen() {
         }}
       >
         <View style={styles.nameBackdrop}>
+          {/* KAV lifts the centered card above the keyboard the autoFocus
+              input opens. iOS 'padding'; width:100% preserves centering. */}
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            style={{ width: '100%' }}
+          >
           <View style={styles.nameCard}>
             <AppText variant="heading" style={styles.nameTitle} accessibilityRole="header">Name this filter</AppText>
             <AppText variant="body" style={styles.nameHint}>You can save up to {MAX_FILTER_SETS} filter sets.</AppText>
@@ -2214,6 +2228,7 @@ export default function MapScreen() {
               </Pressable>
             </View>
           </View>
+          </KeyboardAvoidingView>
         </View>
       </Modal>
     </View>

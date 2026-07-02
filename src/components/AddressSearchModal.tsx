@@ -2,7 +2,9 @@ import React, { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
+  KeyboardAvoidingView,
   Modal,
+  Platform,
   Pressable,
   StyleSheet,
   TextInput,
@@ -193,6 +195,13 @@ export default function AddressSearchModal({ visible, onClose, onSelect }: Props
   return (
     <Modal visible={visible} animationType={reducedMotion ? 'none' : 'slide'} transparent onRequestClose={onClose}>
       <View style={styles.backdrop}>
+        {/* KAV lifts the sheet above the keyboard the autoFocus input opens.
+            iOS 'padding'; Android already resizes (adjustResize default).
+            width:100% (not flex:1) preserves the backdrop's flex-end anchor. */}
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={{ width: '100%' }}
+        >
         {/* WCAG 2.4.3: contain VoiceOver focus inside the sheet so it can't
             wander onto the map behind it (every other modal sets this). */}
         <View style={styles.card} accessibilityViewIsModal>
@@ -365,6 +374,7 @@ export default function AddressSearchModal({ visible, onClose, onSelect }: Props
             />
           )}
         </View>
+        </KeyboardAvoidingView>
       </View>
     </Modal>
   );
