@@ -163,7 +163,7 @@ export default function NearbyFlagsModal({
                   {item.description}
                 </AppText>
               ) : null}
-              <AppText variant="body" style={styles.cardMeta}>
+              <AppText variant="body" style={styles.cardMeta} maxFontSizeMultiplier={1.4}>
                 Severity {item.severity} · {item.status} · {relativeTime(item.created_at)}
               </AppText>
             </View>

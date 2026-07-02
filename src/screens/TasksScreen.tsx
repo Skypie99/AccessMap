@@ -114,9 +114,11 @@ export default function TasksScreen() {
   // ONCE here (not per-card) so the whole list shares a single Dimensions
   // subscription instead of N. A narrow device OR large Dynamic Type tips the
   // four triage buttons from a tidy tiered row to a controlled stack — never a
-  // ragged wrap. Threshold: 375pt fits one row; 360/320pt and ≥1.3× type stack.
+  // ragged wrap. Threshold: ≤375pt or ≥1.15× type stacks — an exactly-375pt
+  // device at 1.1–1.29× type used to take the single-row path and clip
+  // "Resolved" against the pill curvature (sweep M16).
   const { width: windowWidth, fontScale } = useWindowDimensions();
-  const compactActions = windowWidth < 375 || fontScale >= 1.3;
+  const compactActions = windowWidth <= 375 || fontScale >= 1.15;
   const {
     flags: providerFlags,
     flagsMap,
@@ -997,7 +999,13 @@ export default function TasksScreen() {
                 accessibilityLabel={`Sort by ${TASKS_SORT_LABELS[mode]}`}
                 accessibilityState={{ selected: active }}
               >
-                <AppText variant="label" style={[styles.sortChipText, active && styles.sortChipTextActive]}>
+                <AppText
+                  variant="label"
+                  style={[styles.sortChipText, active && styles.sortChipTextActive]}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.8}
+                >
                   {TASKS_SORT_LABELS[mode]}
                 </AppText>
               </Pressable>
@@ -1101,7 +1109,7 @@ export default function TasksScreen() {
                       ? 'Nothing to triage yet'
                       : 'All caught up'}
             </AppText>
-            <AppText variant="body" style={styles.emptyBody}>
+            <AppText variant="body" style={styles.emptyBody} maxFontSizeMultiplier={1.4}>
               {flagsError
                 ? 'Reports could not be loaded. Pull down to retry, or tap the message above.'
                 : categoryFilter
@@ -1202,7 +1210,7 @@ export default function TasksScreen() {
                 busy: bulkBusy,
               }}
             >
-              <AppText variant="label" style={styles.bulkBtnText}>Verify</AppText>
+              <AppText variant="label" style={styles.bulkBtnText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>Verify</AppText>
             </Pressable>
             <Pressable
               onPress={() => {
@@ -1227,7 +1235,7 @@ export default function TasksScreen() {
                 busy: bulkBusy,
               }}
             >
-              <AppText variant="label" style={styles.bulkBtnText}>Resolve</AppText>
+              <AppText variant="label" style={styles.bulkBtnText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>Resolve</AppText>
             </Pressable>
             <Pressable
               onPress={() => {
@@ -1258,7 +1266,7 @@ export default function TasksScreen() {
                 busy: bulkBusy,
               }}
             >
-              <AppText variant="label" style={styles.bulkBtnText}>Watch</AppText>
+              <AppText variant="label" style={styles.bulkBtnText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>Watch</AppText>
             </Pressable>
             <Pressable
               onPress={exitSelection}
@@ -1274,7 +1282,7 @@ export default function TasksScreen() {
               accessibilityHint="Exits selection mode without changing any flags"
               accessibilityState={{ disabled: bulkBusy }}
             >
-              <AppText variant="label" style={styles.bulkCancelText}>Cancel</AppText>
+              <AppText variant="label" style={styles.bulkCancelText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>Cancel</AppText>
             </Pressable>
           </View>
         </View>
@@ -1965,6 +1973,7 @@ const makeStyles = (color: ColorTheme) =>
       flexGrow: 1,
       flexBasis: 0,
       minHeight: 44,
+      paddingHorizontal: spacing.sm,
       paddingVertical: spacing.sm,
       borderRadius: radius.circle,
       backgroundColor: color.surfaceNeutral,
@@ -2006,7 +2015,9 @@ const makeStyles = (color: ColorTheme) =>
       backgroundColor: color.brandSofter,
       borderWidth: 2,
       borderColor: color.brand,
-      padding: spacing.md,
+      // 15 + 2 border = 17 total inset, matching the unselected 16 + 1 — the
+      // content box no longer jumps ~3pt on every select toggle.
+      padding: spacing.lg - 1,
     },
     selectCheck: {
       width: 22,
