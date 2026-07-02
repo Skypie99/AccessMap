@@ -33,9 +33,11 @@ export const EYEBROW_TRACKING = 1.2;
 // `adjustsFontSizeToFit` (in the JSX below) stays as a belt-and-braces backstop.
 
 // Average glyph advance as a fraction of the font size, for the display face.
-// Calibrated against the live web render: "Review barriers" must fit at 320pt,
-// and the same title at 375pt must render at full size (no false shrink).
-const CHAR_WIDTH_RATIO = 0.58;
+// CALIBRATED against the live web render (2026-07-01): "Review barriers" (30pt)
+// measures 219px, and its title slot is 241px at 375pt but ~186px at 320pt. So
+// the estimate must land BELOW 241 (no false shrink at 375) yet ABOVE 186
+// (shrink to fit at 320). 15 chars x 30 x 0.50 = 225px sits in that window.
+const CHAR_WIDTH_RATIO = 0.5;
 
 // Never shrink below 60% of the target size — past that, truncation reads
 // better than microscopic text. Also used as the native minimumFontScale floor.
