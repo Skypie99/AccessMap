@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { AccessibilityInfo, Animated, Easing, Pressable, StyleSheet, View } from 'react-native';
+import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 import { font, motion, radius, shadow, spacing } from '@/theme';
 import { AppText } from '@/components/ui/AppText';
 import { useReducedMotion } from '@/lib/accessibility';
@@ -42,6 +43,10 @@ export default function FlashBanner({
   const color = useColor();
   const styles = makeStyles(color);
   const reducedMotion = useReducedMotion();
+  // The hardcoded top:56 sat ~3pt into the unsafe zone on Dynamic Island
+  // devices — pin below the real inset instead. Non-throwing context read
+  // (null → zeros) so provider-less mounts still render; 0 on web.
+  const insets = React.useContext(SafeAreaInsetsContext) ?? { top: 0, bottom: 0, left: 0, right: 0 };
   const progress = useRef(new Animated.Value(0)).current;
   // The text/mount persist through the exit animation: `display` holds the
   // last message, `rendered` keeps the node mounted until the out-animation ends.
@@ -110,7 +115,11 @@ export default function FlashBanner({
     // AccessibilityInfo.announceForAccessibility call above handles iOS
     // VoiceOver. "polite" so the announcement waits for current speech to
     // finish — flash banners are confirmations, not urgent alerts.
-    <View style={styles.wrap} pointerEvents="box-none" accessibilityLiveRegion="polite">
+    <View
+      style={[styles.wrap, { top: Math.max(insets.top, 56) }]}
+      pointerEvents="box-none"
+      accessibilityLiveRegion="polite"
+    >
       <Animated.View style={{ opacity: progress, transform: [{ translateY }] }}>
         <Pressable
           onPress={onDismiss}
@@ -130,7 +139,7 @@ const makeStyles = (color: ColorTheme) =>
   StyleSheet.create({
   wrap: {
     position: 'absolute',
-    top: 56,
+    // top applied inline: Math.max(insets.top, 56) — see render site.
     left: 0,
     right: 0,
     alignItems: 'center',

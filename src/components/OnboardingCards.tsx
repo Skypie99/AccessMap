@@ -20,6 +20,7 @@ import {
 } from '@/lib/pushNotifications';
 import { font, radius, spacing, gradient } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
+import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 
 /**
  * First-launch onboarding — a five-slide standalone carousel:
@@ -253,6 +254,11 @@ export default function OnboardingCards({ onDone }: Props) {
     goTo(index + 1);
   };
 
+  // Skip must clear the Dynamic Island — the hardcoded 48pt sat ~3pt into the
+  // unsafe zone on insets.top=59 devices (sweep M20). Non-throwing context
+  // read (null → zeros) so a provider-less mount still renders; 0 on web.
+  const insets = React.useContext(SafeAreaInsetsContext) ?? { top: 0, bottom: 0, left: 0, right: 0 };
+
   return (
     <Modal visible animationType={reduceMotion ? 'none' : 'fade'} onRequestClose={onDone} presentationStyle="fullScreen">
       <View style={styles.screen} accessibilityViewIsModal importantForAccessibility="yes">
@@ -276,7 +282,7 @@ export default function OnboardingCards({ onDone }: Props) {
         />
 
         {/* Skip — visible on every card including the permission card */}
-        <View style={styles.topBar}>
+        <View style={[styles.topBar, { paddingTop: Math.max(insets.top, 48) }]}>
           <Pressable
             onPress={onDone}
             style={({ pressed }) => [styles.skipBtn, pressed && { opacity: 0.6 }]}
@@ -504,7 +510,7 @@ const makeStyles = (color: ColorTheme) =>
       flexDirection: 'row',
       justifyContent: 'flex-end',
       paddingHorizontal: spacing.md,
-      paddingTop: 48,
+      // paddingTop applied inline: Math.max(insets.top, 48) — see render site.
       paddingBottom: spacing.sm,
     },
     skipBtn: {

@@ -348,10 +348,11 @@ const makeStyles = (color: ColorTheme) =>
       marginVertical: spacing.sm,
     },
     drawerFooter: {
-      position: 'absolute',
-      bottom: Platform.OS === 'ios' ? 36 : 20,
-      left: 0,
-      right: 0,
+      // In flow (not absolute) so it can never overlap the Sign-out row on
+      // short devices at large type (sweep M22); marginTop:'auto' pushes it to
+      // the panel bottom, paddingBottom keeps the old home-indicator clearance.
+      marginTop: 'auto',
+      paddingBottom: Platform.OS === 'ios' ? 36 : 20,
       paddingHorizontal: spacing.lg,
       paddingTop: spacing.sm,
       borderTopWidth: 1,
