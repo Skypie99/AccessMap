@@ -274,7 +274,14 @@ export default function LeaderboardScreen({ visible, onClose }: Props) {
       <View style={styles.backdrop}>
         <View style={styles.card} accessibilityViewIsModal>
           <View style={styles.headerRow}>
-            <AppText variant="heading" style={styles.title} accessibilityRole="header">
+            <AppText
+              variant="heading"
+              style={styles.title}
+              accessibilityRole="header"
+              adjustsFontSizeToFit
+              numberOfLines={1}
+              minimumFontScale={0.8}
+            >
               Leaderboard
             </AppText>
             <Pressable
@@ -503,7 +510,8 @@ function makeStyles(color: ColorTheme) {
     },
     rowHighlight: { backgroundColor: color.brandSofter },
     rank: {
-      width: 40,
+      // minWidth (not width) — mono "20th" at ×1.4 wraps in a hard 40pt box.
+      minWidth: 40,
       fontSize: font.size.sm,
       fontWeight: font.weight.semibold,
       color: color.textMuted,
@@ -526,7 +534,9 @@ function makeStyles(color: ColorTheme) {
       fontSize: font.size.caption,
       color: color.brandOnSoft,
       backgroundColor: color.brandSoft,
-      paddingHorizontal: spacing.xs,
+      // ≥ the pill's effective corner radius — 4pt let end glyphs shave
+      // inside the radius.full curvature.
+      paddingHorizontal: spacing.sm,
       paddingVertical: 2, // below tight(4) — pill needs less vertical height than text
       borderRadius: radius.full,
       overflow: 'hidden',
@@ -535,7 +545,7 @@ function makeStyles(color: ColorTheme) {
       fontSize: font.size.caption,
       color: color.textMuted,
       backgroundColor: color.surfaceNeutral,
-      paddingHorizontal: spacing.xs,
+      paddingHorizontal: spacing.sm,
       paddingVertical: 2,
       borderRadius: radius.full,
       overflow: 'hidden',

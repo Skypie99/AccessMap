@@ -134,7 +134,9 @@ export default function RecentlyViewedRow({ userId, refreshKey, onSelect }: Prop
               accessibilityElementsHidden
               importantForAccessibility="no-hide-descendants"
             >
-              <AppText variant="label" style={styles.sevDotText}>{f.severity}</AppText>
+              {/* 1.3 cap: at the label variant's 1.6 the glyph box outgrows the
+                  24pt dot (goes negative on the pre-font-load fallback). */}
+              <AppText variant="label" style={styles.sevDotText} maxFontSizeMultiplier={1.3}>{f.severity}</AppText>
             </View>
             <AppText variant="label" style={styles.chipLabel} numberOfLines={1}>
               {CATEGORY_LABELS[f.category]}

@@ -145,7 +145,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
     paddingVertical: 8,
     marginBottom: 2,
-    minHeight: 44,
+    // No minHeight:44 — it inflated every own-bubble with a ~26pt phantom
+    // header. hitSlop={8} on the Pressable keeps the effective target ≥44
+    // (glyph 18 + padding 16 + slop 16), the PhotoGallery removeBtn recipe.
     alignItems: 'center',
     justifyContent: 'center',
   },

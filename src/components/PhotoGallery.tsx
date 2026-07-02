@@ -133,7 +133,9 @@ function PhotoGalleryInner({ photos, onAddPhoto, maxPhotos = 5, onRemovePhoto }:
       accessibilityLabel="No photos attached"
     >
       <Camera size={28} color={color.textSubtle} strokeWidth={2} />
-      <AppText variant="bodyMedium" style={styles.emptyLabel}>No photos</AppText>
+      {/* 1.4 cap: bodyMedium is uncapped and the placeholder box is a fixed
+          96×96 thumb-match — uncapped text squeezes/clips at AX sizes (M21). */}
+      <AppText variant="bodyMedium" style={styles.emptyLabel} maxFontSizeMultiplier={1.4}>No photos</AppText>
     </View>
   );
 
@@ -297,9 +299,10 @@ const makeStyles = (color: ColorTheme) =>
     },
     addIcon: {
       fontSize: 24,
-      fontWeight: '700',
       color: color.brand,
-      lineHeight: 28,
+      // 29 ≥ 24 × 1.18 (Public Sans's real line box) — 28 was a 1.17 ratio,
+      // the guard's last lineHeight allowlist entry besides the hero figure.
+      lineHeight: 29,
     },
     addLabel: {
       fontSize: font.size.xs,

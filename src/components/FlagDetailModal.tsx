@@ -1389,6 +1389,9 @@ export default function FlagDetailModal({
               </View>
             </ScrollView>
 
+            {/* Render only when at least one action exists — an empty row left
+                a ~16pt dead band on resolved non-own flags (sweep minor). */}
+            {(canVerify || canResolve || canReject || isOwn) && (
             <View style={styles.actionRow}>
               {canVerify && (
                 <Pressable
@@ -1459,6 +1462,7 @@ export default function FlagDetailModal({
                 </Pressable>
               )}
             </View>
+            )}
           </View>
         </View>
       </Modal>
@@ -1508,7 +1512,10 @@ const makeStyles = (color: ColorTheme) =>
     // ── UX #5 Before/after resolution photos ─────────────────────────────────
     beforeAfterRow: {
       flexDirection: 'row',
-      alignItems: 'center',
+      // Bottom-align the two equal-aspect image columns — with 'center' the
+      // columns lost alignment whenever the "After" caption wrapped, and the
+      // arrow's hand-tuned top offset mispointed (sweep minor).
+      alignItems: 'flex-end',
       gap: spacing.sm,
       marginTop: spacing.tight,
     },
@@ -1532,7 +1539,9 @@ const makeStyles = (color: ColorTheme) =>
     beforeAfterArrow: {
       alignItems: 'center',
       justifyContent: 'center',
-      paddingTop: spacing.lg,
+      // Span the full row and center the glyph — the old hand-tuned
+      // paddingTop assumed a one-line caption and mispointed on wrap.
+      alignSelf: 'stretch',
     },
     beforeAfterArrowGlyph: {
       fontSize: font.size.xl,
