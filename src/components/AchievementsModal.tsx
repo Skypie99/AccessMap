@@ -101,14 +101,7 @@ const makeStyles = (color: ColorTheme) =>
       backgroundColor: color.surfaceNeutral,
       alignItems: 'center',
       justifyContent: 'center',
-    },
-    closeBtnText: {
-      fontSize: font.size.xl,
-      color: color.text,
-      fontWeight: font.weight.bold,
-      lineHeight: font.size.xl + 2,
-    },
-    scroll: { paddingBottom: spacing.md, gap: spacing.lg },
+    },    scroll: { paddingBottom: spacing.md, gap: spacing.lg },
     section: { gap: spacing.sm },
     sectionHeader: {
       fontSize: font.size.sm,

@@ -416,13 +416,7 @@ function makeStyles(color: ColorTheme) {
       backgroundColor: color.surfaceNeutral,
       alignItems: 'center',
       justifyContent: 'center',
-    },
-    closeBtnText: {
-      fontSize: font.size.lg,
-      color: color.text,
-      fontWeight: font.weight.bold,
-    },
-    subtitle: {
+    },    subtitle: {
       fontSize: font.size.sm,
       color: color.textMuted,
       lineHeight: 18,

@@ -1989,12 +1989,6 @@ const makeStyles = (color: ColorTheme) =>
       alignItems: 'center',
       justifyContent: 'center',
     },
-    avatarEditBadgeText: {
-      fontSize: 11,
-      color: color.textOnBrand,
-      fontWeight: '700',
-    },
-
     heroLabel: {
       // textMuted (#666) on the light card surface = 5.7:1 → AA at any size.
       color: color.textMuted,
@@ -2128,14 +2122,7 @@ const makeStyles = (color: ColorTheme) =>
       backgroundColor: color.surfaceNeutral,
       alignItems: 'center',
       justifyContent: 'center',
-    },
-    tierCloseBtnText: {
-      fontSize: 16,
-      color: color.text,
-      fontWeight: '600',
-      lineHeight: 18,
-    },
-    tierIntro: { fontSize: 13, color: color.text, lineHeight: 19 },
+    },    tierIntro: { fontSize: 13, color: color.text, lineHeight: 19 },
     tierList: { gap: 8, marginTop: 4 },
     tierRow: {
       flexDirection: 'row',

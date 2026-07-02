@@ -2004,14 +2004,7 @@ const makeStyles = (color: ColorTheme) =>
       alignItems: 'center',
       justifyContent: 'center',
     },
-    selectCheckOn: { backgroundColor: color.brand },
-    selectCheckMark: {
-      color: color.textOnBrand,
-      fontSize: 14,
-      fontWeight: '900',
-      lineHeight: 16,
-    },
-    // Floating bulk-action bar — pinned to the bottom of the screen on top
+    selectCheckOn: { backgroundColor: color.brand },    // Floating bulk-action bar — pinned to the bottom of the screen on top
     // of the SectionList. Column-laid so the live-region count Text sits
     // above the row of action buttons. paddingBottom includes a generous
     // inset so it clears the iOS home indicator and Android nav bar without

@@ -361,14 +361,7 @@ const makeStyles = (color: ColorTheme) =>
       backgroundColor: color.surfaceNeutral,
       alignItems: 'center',
       justifyContent: 'center',
-    },
-    closeBtnText: {
-      fontSize: font.size.xl,
-      color: color.text,
-      fontWeight: font.weight.bold,
-      lineHeight: font.size.xl + 2,
-    },
-    filterRow: {
+    },    filterRow: {
       flexDirection: 'row',
       gap: spacing.sm,
     },
