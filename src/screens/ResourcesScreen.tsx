@@ -9,7 +9,7 @@
  * is supplied (TODO(Sky): drop in the specific links you want to point at — the
  * cards render as plain info cards until then, so nothing ever shows a dead link).
  */
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Linking,
   Modal,
@@ -31,6 +31,9 @@ import {
   type LucideIcon,
 } from 'lucide-react-native';
 import { AppText } from '@/components/ui/AppText';
+import { GlassSurface } from '@/components/ui/GlassSurface';
+import { ScreenStage } from '@/components/ui/ScreenStage';
+import { hydrateGlassMode, useGlassMode } from '@/lib/glassMode';
 import { useReducedMotion } from '@/lib/accessibility';
 import { font, radius, shadow, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
@@ -89,10 +92,25 @@ const RESOURCES: Resource[] = [
   },
 ];
 
+// Seeds the top reserve for the single hidden pre-measure pass, before the
+// chrome pane's real height lands via onLayout (single header row + padding).
+// SafeAreaView owns the device inset, so no insets are baked in here.
+const RESOURCES_CHROME_FALLBACK = 72;
+
 export default function ResourcesScreen({ visible, onClose }: Props) {
   const color = useColor();
   const styles = makeStyles(color);
   const reducedMotion = useReducedMotion();
+  // C-lite runtime mode (GLASS.md §4): read-only here — the long-press toggle
+  // lives on the Tasks header; this modal just respects a flip via the store.
+  const glassLite = useGlassMode() === 'lite';
+  useEffect(() => {
+    void hydrateGlassMode();
+  }, []);
+  // Measured height of the absolute chrome glass pane; null until the first
+  // onLayout — the body hides for that one pass so its top pad never jumps.
+  const [chromeHeight, setChromeHeight] = useState<number | null>(null);
+  const chromeTopPad = (chromeHeight ?? RESOURCES_CHROME_FALLBACK) + 10;
 
   return (
     <Modal
@@ -102,21 +120,40 @@ export default function ResourcesScreen({ visible, onClose }: Props) {
       onRequestClose={onClose}
     >
       <SafeAreaView style={styles.root}>
-        {/* Header */}
-        <View style={styles.header}>
-          <AppText variant="heading" style={styles.title} accessibilityRole="header">Resources</AppText>
-          <Pressable
-            onPress={onClose}
-            hitSlop={12}
-            style={styles.closeBtn}
-            accessibilityRole="button"
-            accessibilityLabel="Close resources"
-          >
-            <X size={24} color={color.textSubtle} strokeWidth={2.2} />
-          </Pressable>
-        </View>
+        <ScreenStage />
+        {/* The header is now ONE absolute i=24 chrome pane; content scrolls
+            beneath it (onLayout feeds the top reserve). SafeAreaView already
+            owns the device top inset, so the pane sits at top:0 below it — no
+            insets.top here (that would double-count under SafeAreaView). The
+            pane's bottom edge/lip replaces the old header hairline. */}
+        <GlassSurface
+          variant="chrome"
+          borderRadius={0}
+          style={styles.chromePane}
+          onLayout={(e) => setChromeHeight(e.nativeEvent.layout.height)}
+        >
+          <View style={styles.headerRow}>
+            <AppText variant="heading" style={styles.title} accessibilityRole="header">Resources</AppText>
+            <Pressable
+              onPress={onClose}
+              hitSlop={12}
+              style={styles.closeBtn}
+              accessibilityRole="button"
+              accessibilityLabel="Close resources"
+            >
+              {/* inkGlassMuted, not textSubtle (forbidden on chrome ~2.69:1);
+                  arbitrated chrome-muted icon ink 4.81:1 light / 5.43:1 dark. */}
+              <X size={24} color={color.inkGlassMuted} strokeWidth={2.2} />
+            </Pressable>
+          </View>
+        </GlassSurface>
 
-        <ScrollView contentContainerStyle={styles.body} showsVerticalScrollIndicator={false}>
+        <ScrollView
+          contentContainerStyle={[styles.body, { paddingTop: chromeTopPad }]}
+          style={chromeHeight === null && styles.bodyHidden}
+          scrollIndicatorInsets={{ top: chromeTopPad }}
+          showsVerticalScrollIndicator={false}
+        >
           <AppText variant="body" style={styles.intro}>
             Flagging a barrier is the first step. These resources help get it fixed —
             and help you plan around it in the meantime.
@@ -141,31 +178,41 @@ export default function ResourcesScreen({ visible, onClose }: Props) {
                       <ExternalLink size={16} color={color.textMuted} strokeWidth={2} />
                     )}
                   </View>
-                  <AppText variant="body" style={styles.cardBlurb}>{r.blurb}</AppText>
+                  {/* bodyMedium (>=500): body text on row glass must carry
+                      >=500 weight — the 400 face hazes against blur. */}
+                  <AppText variant="bodyMedium" style={styles.cardBlurb}>{r.blurb}</AppText>
                 </View>
               </>
             );
 
+            // Each card is a pane of ROW glass (i=12 + floor + hairlines).
+            // Linked: the Pressable stays the interactive/a11y root (outer),
+            // GlassSurface is material only (inner) — matching the Tasks
+            // FlagCard recipe. forceEngineered threads C-lite to rows only.
             return linked ? (
               <Pressable
                 key={r.title}
                 onPress={() => { void Linking.openURL(r.url as string); }}
-                style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
+                style={({ pressed }) => (pressed ? styles.cardPressed : null)}
                 accessibilityRole="link"
                 accessibilityLabel={`${r.title}. ${r.blurb}`}
                 accessibilityHint="Opens in your browser"
               >
-                {inner}
+                <GlassSurface variant="row" forceEngineered={glassLite} style={styles.card}>
+                  {inner}
+                </GlassSurface>
               </Pressable>
             ) : (
-              <View
+              <GlassSurface
                 key={r.title}
+                variant="row"
+                forceEngineered={glassLite}
                 style={styles.card}
                 accessible
                 accessibilityLabel={`${r.title}. ${r.blurb}`}
               >
                 {inner}
-              </View>
+              </GlassSurface>
             );
           })}
 
@@ -180,19 +227,31 @@ export default function ResourcesScreen({ visible, onClose }: Props) {
 
 const makeStyles = (color: ColorTheme) =>
   StyleSheet.create({
+    // The Deep Field stage's mid stop — any frame before ScreenStage mounts
+    // (and the safe-area inset strip above the stage) matches the field.
     root: {
       flex: 1,
-      backgroundColor: color.surfaceMuted,
+      backgroundColor: color.stage1,
     },
-    header: {
+    // The absolute chrome glass pane (variant="chrome" supplies i=24 blur +
+    // floor + bottom edge/lip — the old header hairline IS that edge now).
+    chromePane: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      zIndex: 50,
+    },
+    // Header content inside the pane — no border/background of its own now
+    // (the chrome material supplies both).
+    headerRow: {
       flexDirection: 'row',
       alignItems: 'center',
       paddingHorizontal: spacing.lg,
       paddingVertical: spacing.md,
-      borderBottomWidth: StyleSheet.hairlineWidth,
-      borderBottomColor: color.border,
-      backgroundColor: color.surface,
     },
+    // Hides the body for the single pre-measure pass so its top pad never jumps.
+    bodyHidden: { opacity: 0 },
     title: {
       flex: 1,
       fontSize: font.size.lg,
@@ -211,20 +270,24 @@ const makeStyles = (color: ColorTheme) =>
     },
     intro: {
       fontSize: font.size.base,
-      color: color.textMuted,
+      // On the raw stage — inkOnStage, not textMuted (forbidden there,
+      // 4.10:1 over the pool's darkest stop). inkOnStage = 4.83:1 / 6.29:1.
+      color: color.inkOnStage,
       lineHeight: 22,
       marginBottom: spacing.xs,
     },
+    // Row-glass card: layout + radius + lift live on the GlassSurface OUTER
+    // style; the material (floor + edge + specular) comes from variant="row" —
+    // never a backgroundColor/border here (the clip layer swallows them).
     card: {
       flexDirection: 'row',
       gap: spacing.md,
-      backgroundColor: color.surface,
       borderRadius: radius.lg,
-      borderWidth: 1,
-      borderColor: color.border,
       padding: spacing.lg,
       minHeight: 44,
-      ...shadow.e1,
+      // Light-mode lift only; dark is luminosity-led (edge hairlines carry the
+      // lift, drop shadows retire) — matches the Tasks row (GLASS.md §2).
+      ...(color.scheme === 'light' ? shadow.e1 : {}),
     },
     cardPressed: {
       opacity: 0.92,
@@ -259,7 +322,8 @@ const makeStyles = (color: ColorTheme) =>
     },
     footnote: {
       fontSize: font.size.xs,
-      color: color.textMuted,
+      // On the raw stage — inkOnStage (see intro).
+      color: color.inkOnStage,
       textAlign: 'center',
       lineHeight: 17,
       marginTop: spacing.sm,
