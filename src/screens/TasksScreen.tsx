@@ -65,7 +65,7 @@ import type { DetailAction } from '@/components/FlagDetailModal';
 import PhotoLightboxModal from '@/components/PhotoLightboxModal';
 import { AppText } from '@/components/ui/AppText';
 import { PressableScale } from '@/components/ui/PressableScale';
-import { Skeleton, SkeletonCard } from '@/components/ui/Skeleton';
+import { Skeleton } from '@/components/ui/Skeleton';
 import { StatusBadge } from '@/components/StatusBadge';
 import { SeverityBadge } from '@/components/SeverityBadge';
 import { hapticSelection } from '@/lib/haptics';
@@ -76,6 +76,7 @@ import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { ScreenStage } from '@/components/ui/ScreenStage';
 import { GlassSurface } from '@/components/ui/GlassSurface';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useDrawer } from '@/lib/drawerContext';
 import { useSharedModals } from '@/lib/sharedModalsContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -1049,7 +1050,7 @@ export default function TasksScreen() {
           accessibilityLabel="Loading flags"
         >
           {Array.from({ length: 6 }).map((_, i) => (
-            <SkeletonCard key={i} />
+            <GlassSkeletonCard key={i} styles={styles} bar={color.glassSkeletonBar} />
           ))}
         </View>
       ) : (
@@ -1141,9 +1142,22 @@ export default function TasksScreen() {
           </View>
         )}
         ListEmptyComponent={
-          <View style={styles.emptyCard} accessible accessibilityRole="text">
+          <GlassSurface
+            variant="row"
+            borderRadius={radius.xl}
+            style={styles.emptyCard}
+            accessible
+            accessibilityRole="text"
+          >
             <View
-              style={styles.emptyIcon}
+              style={[
+                styles.emptyIcon,
+                // F40/F41: the gold disc celebrates only a genuinely empty,
+                // fully-loaded list (Civic Gold = gamification only).
+                flagsError || categoryFilter || searchText.trim() || hasMore
+                  ? styles.emptyIconNeutral
+                  : styles.emptyIconGold,
+              ]}
               accessibilityElementsHidden
               importantForAccessibility="no"
             >
@@ -1178,7 +1192,7 @@ export default function TasksScreen() {
                       ? 'None of the reports loaded so far need attention, but there are more to load. Use "Load more" below to keep looking.'
                       : "You're all caught up — nice work! New reports show up here as the community adds them. Pull down to refresh anytime."}
             </AppText>
-          </View>
+          </GlassSurface>
         }
         renderItem={renderFlagItem}
         ListFooterComponent={
@@ -1402,7 +1416,27 @@ const FlagCard = memo(function FlagCard({
 }: FlagCardProps) {
   const color = useColor();
   const reduceTransparency = useReduceTransparency();
+  const reducedMotion = useReducedMotion();
   const styles = useMemo(() => makeStyles(color, reduceTransparency), [color, reduceTransparency]);
+  // 120ms press sheen (mockup: optional, reduced-motion gated). Driven by the
+  // outer Pressable's onPressIn/Out; never mounted when the user prefers
+  // reduced motion or transparency, so the gates cost nothing.
+  const sheenActive = !reducedMotion && !reduceTransparency;
+  const sheenAnim = useRef(new Animated.Value(0)).current;
+  const sheenIn = useCallback(() => {
+    Animated.timing(sheenAnim, {
+      toValue: 1,
+      duration: motion.duration.fast,
+      useNativeDriver: true,
+    }).start();
+  }, [sheenAnim]);
+  const sheenOut = useCallback(() => {
+    Animated.timing(sheenAnim, {
+      toValue: 0,
+      duration: motion.duration.fast,
+      useNativeDriver: true,
+    }).start();
+  }, [sheenAnim]);
   // Controls whether the full-screen photo lightbox is open.
   // Kept component-local — lightbox state doesn't need to survive unmount.
   const [lightboxOpen, setLightboxOpen] = useState(false);
@@ -1516,11 +1550,9 @@ const FlagCard = memo(function FlagCard({
     <Pressable
       onPress={() => onPress(flag)}
       onLongPress={() => onLongPress(flag)}
-      style={({ pressed }) => [
-        styles.card,
-        selected && styles.cardSelected,
-        pressed && styles.cardPressed,
-      ]}
+      onPressIn={sheenActive ? sheenIn : undefined}
+      onPressOut={sheenActive ? sheenOut : undefined}
+      style={({ pressed }) => [styles.cardOuter, pressed && styles.cardPressed]}
       accessibilityRole={selectionActive ? 'checkbox' : 'button'}
       accessibilityState={
         selectionActive ? { checked: selected, disabled: isBusy } : { disabled: isBusy }
@@ -1532,6 +1564,37 @@ const FlagCard = memo(function FlagCard({
           : 'Opens the Map tab focused on this flag. Long-press to select multiple.'
       }
     >
+      {/* The card IS a pane of row glass (i=12 + floor + hairlines). The
+          Pressable stays the interactive root — handlers and a11y unchanged;
+          GlassSurface carries material only. Selected state = 2px brand edge
+          (padding compensated below) + the arbitrated selection tint, and its
+          Reduce-Transparency designed fill is brandSofter via solidColor. */}
+      <GlassSurface
+        variant="row"
+        edgeColor={selected ? color.brand : undefined}
+        edgeWidth={selected ? 2 : undefined}
+        overlayTint={selected ? color.glassSelectedTint : undefined}
+        solidColor={selected ? color.brandSofter : undefined}
+        style={[styles.card, selected && styles.cardSelected]}
+      >
+      {/* 120ms press sheen — a top light-wash that answers touch on the
+          glass. Mounted only when motion + transparency are welcome; the
+          linear top-wash is the RN translation of the mockup's radial sheen
+          (honesty-tagged in GLASS.md). */}
+      {sheenActive && (
+        <Animated.View
+          pointerEvents="none"
+          style={[StyleSheet.absoluteFill, styles.sheenClip, { opacity: sheenAnim }]}
+        >
+          <LinearGradient
+            colors={[color.glassSheen, 'transparent']}
+            locations={[0, 0.7]}
+            start={{ x: 0.5, y: 0 }}
+            end={{ x: 0.5, y: 1 }}
+            style={StyleSheet.absoluteFill}
+          />
+        </Animated.View>
+      )}
       <View style={styles.cardHeader}>
         {/* Severity leads the header as a legible badge ("3 · Moderate") — number
             + word + colour, never colour alone (WCAG 1.4.1). Replaces the old
@@ -1643,7 +1706,7 @@ const FlagCard = memo(function FlagCard({
           // Deliberate 2-row stack (narrow width / large type): the lead action
           // full-width on top, the rest in one equal-share sub-row below.
           // Reject stays a row apart from the primary — no mis-tap. Never ragged.
-          <View style={styles.cardActionsStack}>
+          <View style={styles.cardActionsStack} testID="card-actions-stack">
             {renderAction(leadAction, styles.actionBtnFull)}
             <View style={styles.cardActionsRow}>
               {restActions.map((a) => renderAction(a, styles.actionBtnFlex))}
@@ -1653,7 +1716,7 @@ const FlagCard = memo(function FlagCard({
           // Tiered single row: one clear primary (lead, wider via flexGrow) plus
           // quiet equal-share rest. flexGrow + flexBasis:0 distributes the width
           // evenly so the row can never wrap raggedly the way content-sized pills did.
-          <View style={styles.cardActionsRow}>
+          <View style={styles.cardActionsRow} testID="card-actions-row">
             {renderAction(leadAction, styles.actionBtnLead)}
             {restActions.map((a) => renderAction(a, styles.actionBtnFlex))}
           </View>
@@ -1669,9 +1732,48 @@ const FlagCard = memo(function FlagCard({
           onClose={() => setLightboxOpen(false)}
         />
       ) : null}
+      </GlassSurface>
     </Pressable>
   );
 });
+
+/**
+ * First-load skeleton on the ROW MATERIAL — mirrors the FlagCard anatomy
+ * (badge · title · two description lines · lead action · 3-up action row),
+ * matching the mockup's loading state. Bars use the arbitrated skeleton tint;
+ * the pulse inside `Skeleton` is already reduced-motion gated. Takes the
+ * parent's styles/bar so six instances don't re-create the StyleSheet.
+ */
+function GlassSkeletonCard({
+  styles,
+  bar,
+}: {
+  styles: ReturnType<typeof makeStyles>;
+  bar: string;
+}) {
+  return (
+    <GlassSurface variant="row" style={[styles.card, styles.cardOuter]} accessible={false}>
+      <View style={styles.cardHeader}>
+        <Skeleton width={96} height={24} borderRadius={radius.full} style={{ backgroundColor: bar }} />
+        <Skeleton width="45%" height={18} borderRadius={radius.sm} style={{ backgroundColor: bar }} />
+      </View>
+      <Skeleton width="100%" height={13} borderRadius={radius.sm} style={{ backgroundColor: bar }} />
+      <Skeleton width="62%" height={13} borderRadius={radius.sm} style={{ backgroundColor: bar }} />
+      <Skeleton width="100%" height={44} borderRadius={radius.full} style={{ backgroundColor: bar }} />
+      <View style={styles.cardActionsRow}>
+        <View style={styles.actionBtnFlex}>
+          <Skeleton width="100%" height={44} borderRadius={radius.full} style={{ backgroundColor: bar }} />
+        </View>
+        <View style={styles.actionBtnFlex}>
+          <Skeleton width="100%" height={44} borderRadius={radius.full} style={{ backgroundColor: bar }} />
+        </View>
+        <View style={styles.actionBtnFlex}>
+          <Skeleton width="100%" height={44} borderRadius={radius.full} style={{ backgroundColor: bar }} />
+        </View>
+      </View>
+    </GlassSurface>
+  );
+}
 
 const makeStyles = (color: ColorTheme, reduceTransparency: boolean) => {
   // Engineered chip tint — pills/chips/search ON the chrome pane (they carry
@@ -1812,23 +1914,26 @@ const makeStyles = (color: ColorTheme, reduceTransparency: boolean) => {
       alignItems: 'center',
       justifyContent: 'center',
     },
+    // Load-more sits on the raw stage — chip tint + brand edge (the mockup
+    // has no load-more state; chip recipe is the interpretation, flagged in
+    // the build report).
     loadMoreBtn: {
       paddingHorizontal: spacing.xl,
       paddingVertical: spacing.md,
       borderRadius: radius.circle,
       borderWidth: 1,
       borderColor: color.brand,
-      backgroundColor: color.surfaceNeutral,
+      backgroundColor: chipFill,
       minHeight: 44,
       minWidth: 160,
       alignItems: 'center',
       justifyContent: 'center',
     },
     loadMoreBtnPressed: { opacity: 0.7 },
-    loadMoreText: { color: color.brand, fontWeight: font.weight.bold, fontSize: font.size.base },
+    loadMoreText: { color: color.inkSelect, fontWeight: font.weight.bold, fontSize: font.size.base },
     endText: {
       fontSize: font.size.sm,
-      color: color.textMutedAlt,
+      color: color.inkOnStage,
       fontStyle: 'italic',
       textAlign: 'center',
     },
@@ -1838,17 +1943,29 @@ const makeStyles = (color: ColorTheme, reduceTransparency: boolean) => {
       justifyContent: 'center',
       padding: spacing.xxl,
     },
+    // Empty state on the row material at radius.xl (variant="row" supplies
+    // the glass; e2 lift light-only — dark is luminosity-led).
     emptyCard: {
-      backgroundColor: color.surface,
       borderRadius: radius.xl,
       paddingHorizontal: spacing.xxl,
       paddingVertical: spacing.xxl + spacing.tight,
       alignItems: 'center',
       gap: spacing.sm,
       maxWidth: 340,
-      ...shadow.e2,
+      ...(color.scheme === 'light' ? shadow.e2 : {}),
     },
-    emptyIcon: { marginBottom: spacing.tight },
+    // 64pt icon disc (mockup): Civic Gold for the true "all caught up"
+    // celebration, quiet ink-tint for the search/error/filter variants.
+    emptyIcon: {
+      width: 64,
+      height: 64,
+      borderRadius: 32,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: spacing.tight,
+    },
+    emptyIconGold: { backgroundColor: color.goldLight },
+    emptyIconNeutral: { backgroundColor: color.glassNeutralBtn },
     emptyTitle: {
       fontSize: font.size.xl,
       fontWeight: font.weight.bold,
@@ -1870,8 +1987,11 @@ const makeStyles = (color: ColorTheme, reduceTransparency: boolean) => {
     },
     sectionTitle: {
       fontSize: font.size.xs,
-      fontWeight: font.weight.bold,
-      color: color.textMuted,
+      // 600, not 700 — the mockup's section headers are type-only restraint.
+      fontWeight: font.weight.semibold,
+      // inkOnStage — arbitrated for raw-stage text over the pool's darkest
+      // stop (textMuted #666 measured 4.10:1 there — forked deeper).
+      color: color.inkOnStage,
       textTransform: 'uppercase',
       letterSpacing: 0.8,
     },
@@ -1884,30 +2004,38 @@ const makeStyles = (color: ColorTheme, reduceTransparency: boolean) => {
       alignItems: 'center',
     },
     sectionCountText: {
-      color: color.brandText,
+      color: color.brandOnSoft,
       fontSize: font.size.caption,
       fontWeight: font.weight.bold,
     },
     title: { fontSize: font.size.xl, fontWeight: font.weight.semibold },
-    // Restrained material: a soft e1 lift + a hairline border (extends Home's
-    // flat listCard language) instead of the old e2 "Floating" slab. Depth as a
-    // quiet accent, not every row a box. In dark mode the hairline carries the
-    // lift (shadows barely register on dark). Symmetric padding now the left
-    // severity stripe is gone — the SeverityBadge in the header carries severity.
+    // The card is a pane of ROW GLASS (variant="row": i=12 blur + 0.70 floor +
+    // specular top hairline + edge — GlassSurface supplies all of it). The
+    // Pressable outer owns margins + press feedback; this style is the pane's
+    // layout + the light-mode e1 lift. Dark retires drop shadows entirely —
+    // the luminous edge hairlines carry the lift (Deep Field is
+    // luminosity-led; GLASS.md).
+    cardOuter: { marginBottom: spacing.md, minHeight: size.cardMin },
     card: {
-      backgroundColor: color.surface,
       borderRadius: radius.lg,
-      borderWidth: 1,
-      borderColor: color.border,
       padding: spacing.lg,
       gap: spacing.sm,
       minHeight: size.cardMin,
-      ...shadow.e1,
-      marginBottom: spacing.md,
+      ...(color.scheme === 'light' ? shadow.e1 : {}),
     },
+    // Clips the press sheen to the card's rounded corners.
+    sheenClip: { borderRadius: radius.lg, overflow: 'hidden' },
     cardPressed: { opacity: 0.85, transform: [{ scale: 0.99 }] },
     cardHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-    cardTitle: { fontSize: font.size.xl, fontWeight: font.weight.semibold, flex: 1 },
+    // textStrong ink — fixes the pre-glass dark-mode bug where the title had
+    // no color and rendered near-black on the dark card (Material Lab before-
+    // capture finding #1; the description themed correctly, the title didn't).
+    cardTitle: {
+      fontSize: font.size.xl,
+      fontWeight: font.weight.semibold,
+      flex: 1,
+      color: color.textStrong,
+    },
     cardBody: { flexDirection: 'row', gap: spacing.md },
     // Container holds the image so overflow:hidden clips rounded corners on
     // Android (where borderRadius on Image alone is unreliable).
@@ -1925,8 +2053,18 @@ const makeStyles = (color: ColorTheme, reduceTransparency: boolean) => {
     },
     thumbSkeleton: { position: 'absolute', top: 0, left: 0 },
     cardBodyText: { flex: 1, gap: spacing.tight },
-    cardDesc: { fontSize: font.size.base, color: color.textStrong },
-    cardMeta: { fontSize: font.size.xs, color: color.textMuted },
+    // TYPE LAW on translucency (GLASS.md): body text on glass carries ≥500
+    // weight — the 400 face hazes against what moves beneath the pane.
+    cardDesc: {
+      fontSize: font.size.base,
+      color: color.textStrong,
+      fontFamily: font.family.bodyMedium,
+    },
+    cardMeta: {
+      fontSize: font.size.xs,
+      color: color.textMuted,
+      fontFamily: font.family.bodyMedium,
+    },
     // Action row — equal-share flex (the proven bulkBtn pattern), never flexWrap.
     // One tidy row at default; the component swaps to cardActionsStack (lead
     // full-width + sub-row) when compactActions is true (narrow / large type).
@@ -1950,22 +2088,31 @@ const makeStyles = (color: ColorTheme, reduceTransparency: boolean) => {
     actionBtnLead: { flexGrow: 1.5, flexBasis: 0, minWidth: 0 },
     actionBtnFlex: { flexGrow: 1, flexBasis: 0, minWidth: 0 },
     actionBtnFull: { alignSelf: 'stretch' },
-    verifyBtn: { backgroundColor: color.brand },
+    // ctaFill, not brand — the CTA fill is MODE-INDEPENDENT #1466E0 (dark
+    // brand #4E89EF + white = 3.4:1 fails; script-arbitrated, GLASS.md).
+    verifyBtn: { backgroundColor: color.ctaFill },
     verifyText: { color: color.textOnBrand, fontWeight: font.weight.semibold, fontSize: font.size.sm },
     // Tiered down from a saturated green fill to a quiet neutral chip — only
-    // Verify stays a filled primary, the rest are calm equals.
-    resolveBtn: { backgroundColor: color.surfaceNeutral },
+    // Verify stays a filled primary, the rest are calm equals. On glass the
+    // neutral is a translucent ink-tint (mockup --df-neutral-btn); under
+    // Reduce Transparency it returns to the solid neutral.
+    resolveBtn: {
+      backgroundColor: reduceTransparency ? color.surfaceNeutral : color.glassNeutralBtn,
+    },
     resolveText: { color: color.text, fontWeight: font.weight.semibold, fontSize: font.size.sm },
     // Reject — quiet ghost (hairline, no fill), neutral ink: present but never
     // shouting, and visually distinct from the filled primary to avoid mis-tap.
-    rejectBtn: { backgroundColor: 'transparent', borderWidth: 1, borderColor: color.borderSubtle },
+    // Ghost edges use the arbitrated on-glass hairline (borderSubtle vanishes
+    // over the row material).
+    rejectBtn: { backgroundColor: 'transparent', borderWidth: 1, borderColor: color.glassGhostEdge },
     rejectText: { color: color.text, fontWeight: font.weight.semibold, fontSize: font.size.sm },
     detailsBtn: {
       backgroundColor: 'transparent',
       borderWidth: 1,
-      borderColor: color.borderSubtle,
+      borderColor: color.glassGhostEdge,
     },
-    detailsText: { color: color.brand, fontWeight: font.weight.semibold, fontSize: font.size.sm },
+    // inkDetailsGhost — arbitrated on the row material (4.75:1 light worst-case).
+    detailsText: { color: color.inkDetailsGhost, fontWeight: font.weight.semibold, fontSize: font.size.sm },
     mineToggleRow: {
       flexDirection: 'row',
       paddingHorizontal: spacing.lg,
@@ -2115,11 +2262,11 @@ const makeStyles = (color: ColorTheme, reduceTransparency: boolean) => {
     // thumbnail or muddle the severity dot. Pairs with the checkmark in
     // the card header for an unambiguous "yes this one's picked" signal.
     cardSelected: {
-      backgroundColor: color.brandSofter,
-      borderWidth: 2,
-      borderColor: color.brand,
-      // 15 + 2 border = 17 total inset, matching the unselected 16 + 1 — the
-      // content box no longer jumps ~3pt on every select toggle.
+      // Fill + border now come from GlassSurface props (overlayTint =
+      // glassSelectedTint wash, edgeColor/edgeWidth = 2px brand; RT designed
+      // fill = brandSofter via solidColor). Only the padding compensation
+      // lives here: 15 + 2px edge = 17 visual inset, matching the unselected
+      // 16 + 1px hairline — the content box doesn't jump on select toggle.
       padding: spacing.lg - 1,
     },
     selectCheck: {
