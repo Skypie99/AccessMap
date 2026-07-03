@@ -10,7 +10,7 @@
  * The drawer and sub-screen modals are independent React Native Modals so
  * they float correctly above the tab navigator on both native and web.
  */
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Animated,
   Modal,
@@ -34,7 +34,7 @@ import {
 import { AppText } from '@/components/ui/AppText';
 import { font, motion, radius, shadow, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
-import { useReducedMotion } from '@/lib/accessibility';
+import { useReducedMotion, useReduceTransparency } from '@/lib/accessibility';
 import { signOut } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth';
 import { useIsAdmin } from '@/lib/admin';
@@ -60,7 +60,8 @@ interface Props {
 
 export default function HamburgerDrawer({ open, onClose, onSignIn, onNavigate }: Props) {
   const color = useColor();
-  const styles = makeStyles(color);
+  const reduceTransparency = useReduceTransparency();
+  const styles = useMemo(() => makeStyles(color, reduceTransparency), [color, reduceTransparency]);
   const { user } = useAuth();
   const isAdmin = useIsAdmin();
   const reducedMotion = useReducedMotion();
@@ -151,6 +152,15 @@ export default function HamburgerDrawer({ open, onClose, onSignIn, onNavigate }:
           style={[styles.drawer, { transform: [{ translateX: slideAnim }] }]}
           accessibilityViewIsModal
         >
+          {/* Inner light lip just inside the cool right edge (glassChromeLip dark).
+              The panel fill IS the near-opaque dark bulk-Lite tone (styles.drawer
+              bg) rather than a LinearGradient child: a gradient reads as the
+              material only over a TRANSPARENT panel bg, and a transparent bg
+              suppresses the iOS drop shadow (shadow.e3 — an invariant here). The
+              bulk-Lite gradient is ~3% alpha on identical RGB, so the solid fill
+              is visually equivalent while keeping the shadow. NO GlassSurface/
+              BlurView by design (this surface is not a GlassSurface variant). */}
+          <View style={styles.drawerLip} pointerEvents="none" />
           {/* Header */}
           <View style={styles.drawerHeader}>
             <View style={styles.logoMini}>
@@ -278,7 +288,7 @@ function DrawerItem({ icon: Icon, label, onPress, muted = false }: ItemProps) {
 
 // ── Styles ────────────────────────────────────────────────────────────────────
 
-const makeStyles = (color: ColorTheme) =>
+const makeStyles = (color: ColorTheme, reduceTransparency: boolean) =>
   StyleSheet.create({
     backdrop: {
       ...StyleSheet.absoluteFillObject,
@@ -290,14 +300,33 @@ const makeStyles = (color: ColorTheme) =>
       left: 0,
       bottom: 0,
       width: DRAWER_WIDTH,
-      backgroundColor: 'rgba(8,10,20,0.96)',
+      // Deep-field dark OVERLAY material as a near-opaque solid (the spec's
+      // blessed bulk-Lite fallback: ~3% alpha apart on identical RGB, so a solid
+      // reads the same and keeps the iOS shadow). Non-RT: rgba(13,18,32,0.94)
+      // (>=0.9 alpha, no see-through, lets the web backdropFilter show faintly).
+      // RT: fully opaque #0D1220 (the flattened tone). ALWAYS-DARK literals
+      // (never tokens — 271e8ec's re-tokenize broke light mode and was reverted).
+      backgroundColor: reduceTransparency ? '#0D1220' : 'rgba(13,18,32,0.94)',
       borderRightWidth: 1,
-      borderRightColor: 'rgba(255,255,255,0.1)',
+      // Cool #A8C0E0-family hairline (dark chrome edge) in place of white-alpha.
+      borderRightColor: 'rgba(168,192,224,0.18)',
+      // Overlay shadow analog — KEPT deliberately. Deep-field dark rows/chrome
+      // retire drop shadows, but this slide-in overlay needs separation from the
+      // dimmed backdrop (flagged, not a regression).
       ...shadow.e3,
       paddingTop: Platform.OS === 'ios' ? 52 : 24,
-      ...(Platform.OS === 'web'
-        ? { backdropFilter: 'blur(30px) saturate(160%)' } as object
+      ...(Platform.OS === 'web' && !reduceTransparency
+        ? { backdropFilter: 'blur(20px) saturate(160%)' } as object
         : {}),
+    },
+    // 1px inner light lip just inside the right edge (glassChromeLip dark).
+    drawerLip: {
+      position: 'absolute',
+      top: 0,
+      bottom: 0,
+      right: 1,
+      width: 1,
+      backgroundColor: 'rgba(168,192,224,0.14)',
     },
     drawerHeader: {
       flexDirection: 'row',
@@ -360,7 +389,9 @@ const makeStyles = (color: ColorTheme) =>
     },
     footerText: {
       fontSize: font.size.xs,
-      color: 'rgba(255,255,255,0.3)',
+      // Arbiter-forced fork: 0.30 composites to 2.67:1 over the worst-case panel
+      // bg (FAIL); 0.55 = 6.17:1 PASS. Stays a hardcoded dark-panel literal.
+      color: 'rgba(255,255,255,0.55)',
       letterSpacing: 0.2,
     },
   });
@@ -391,7 +422,9 @@ const makeItemStyles = () =>
       letterSpacing: 0.1,
     },
     labelMuted: {
-      color: 'rgba(255,255,255,0.45)',
+      // Margin fork: 0.45 = 4.51:1 (knife-edge, 0.01 over the 4.5 floor) ->
+      // 0.48 = 4.97:1 so anti-aliasing/rounding never dips it under.
+      color: 'rgba(255,255,255,0.48)',
       fontWeight: font.weight.regular,
     },
   });
