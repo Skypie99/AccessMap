@@ -77,6 +77,7 @@ import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { ScreenStage } from '@/components/ui/ScreenStage';
 import { GlassSurface } from '@/components/ui/GlassSurface';
 import { LinearGradient } from 'expo-linear-gradient';
+import { hydrateGlassMode, toggleGlassMode, useGlassMode } from '@/lib/glassMode';
 import { useDrawer } from '@/lib/drawerContext';
 import { useSharedModals } from '@/lib/sharedModalsContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -109,6 +110,16 @@ const BULK_BAR_FALLBACK_HEIGHT = 94;
 // mockup's ResizeObserver → RN onLayout translation.
 const CHROME_FALLBACK_HEIGHT = 350;
 
+/**
+ * The FlagCard action-row reflow threshold (sweep M16): a narrow device OR
+ * large Dynamic Type tips the tiered single row into the deliberate 2-row
+ * stack. Extracted pure so the composition pin test can assert the ×1.6
+ * behavior headlessly (RN-web can't set fontScale for captures).
+ */
+export function isCompactLayout(width: number, fontScale: number): boolean {
+  return width <= 375 || fontScale >= 1.15;
+}
+
 export default function TasksScreen() {
   const color = useColor();
   const reduceTransparency = useReduceTransparency();
@@ -135,11 +146,18 @@ export default function TasksScreen() {
   // device at 1.1–1.29× type used to take the single-row path and clip
   // "Resolved" against the pill curvature (sweep M16).
   const { width: windowWidth, fontScale } = useWindowDimensions();
-  const compactActions = windowWidth <= 375 || fontScale >= 1.15;
+  const compactActions = isCompactLayout(windowWidth, fontScale);
   // Top reserve for content scrolling BENEATH the absolute chrome glass pane
   // (mockup: padding-top = chrome height + 10). Fallback only seeds the first,
   // hidden layout pass — see chromeHeight above.
   const chromeTopPad = (chromeHeight ?? CHROME_FALLBACK_HEIGHT + insets.top) + 10;
+  // C-lite runtime mode (GLASS.md): rows/banner/empty/skeletons drop to the
+  // engineered material; chrome + bulk keep blur. Flipped by long-pressing the
+  // header title — Sky's on-device A/B without a second TestFlight build.
+  const glassLite = useGlassMode() === 'lite';
+  useEffect(() => {
+    void hydrateGlassMode();
+  }, []);
   const {
     flags: providerFlags,
     flagsMap,
@@ -414,6 +432,16 @@ export default function TasksScreen() {
     setFlashTone(tone);
     flashTimer.current = setTimeout(() => setFlash(null), 2200);
   }, []);
+
+  // The C-lite switch (GLASS.md): long-press the header title zone. Hidden
+  // but RELEASE-reachable — Sky's one TestFlight build carries both material
+  // modes for the on-device scroll A/B. Haptic + flash + SR announce (in the
+  // store) confirm the flip; the choice persists across launches.
+  const handleGlassToggle = useCallback(() => {
+    hapticSelection();
+    const next = toggleGlassMode();
+    showFlash(`Glass effects: ${next === 'lite' ? 'Lite' : 'Full'}`, 'muted');
+  }, [showFlash]);
 
   // Reward pill entrance — a gentle slide-down + fade when a flash appears,
   // reduced-motion gated (snaps to rest under Reduce Motion). Resets per flash.
@@ -734,6 +762,7 @@ export default function TasksScreen() {
         selectionActive={selection.active}
         selected={isSelected(selection, item.id)}
         compactActions={compactActions}
+        glassLite={glassLite}
         onPress={handleCardPress}
         onLongPress={handleCardLongPress}
         onSetStatus={setStatus}
@@ -746,6 +775,7 @@ export default function TasksScreen() {
       userLocation,
       selection,
       compactActions,
+      glassLite,
       handleCardPress,
       handleCardLongPress,
       setStatus,
@@ -783,7 +813,12 @@ export default function TasksScreen() {
         style={[styles.chromePane, { paddingTop: insets.top + spacing.sm }]}
         onLayout={(e) => setChromeHeight(e.nativeEvent.layout.height)}
       >
-      {/* Editorial header (Phase 13) — headerless like Home, menu + Feedback folded in. */}
+      {/* Editorial header (Phase 13) — headerless like Home, menu + Feedback
+          folded in. The wrapper is the C-lite long-press affordance
+          (accessible={false}: no touch/SR change for taps — the header's own
+          buttons keep their targets; SR users flip via the store's announce +
+          the documented path in GLASS.md). */}
+      <Pressable onLongPress={handleGlassToggle} delayLongPress={600} accessible={false}>
       <ScreenHeader
         eyebrow="TASKS"
         title="Review barriers"
@@ -815,6 +850,7 @@ export default function TasksScreen() {
           </>
         }
       />
+      </Pressable>
       {errorBannerText && (
         <Pressable
           onPress={() => {
@@ -1050,7 +1086,7 @@ export default function TasksScreen() {
           accessibilityLabel="Loading flags"
         >
           {Array.from({ length: 6 }).map((_, i) => (
-            <GlassSkeletonCard key={i} styles={styles} bar={color.glassSkeletonBar} />
+            <GlassSkeletonCard key={i} styles={styles} bar={color.glassSkeletonBar} lite={glassLite} />
           ))}
         </View>
       ) : (
@@ -1087,7 +1123,7 @@ export default function TasksScreen() {
             >
               {/* The banner is C's SCROLLING i=12 glass pane — it rides with
                   the list (explicitly costed in the blur budget). */}
-              <GlassSurface variant="banner" style={styles.suggestedRow}>
+              <GlassSurface variant="banner" forceEngineered={glassLite} style={styles.suggestedRow}>
                 <MapPin
                   size={18}
                   color={color.brandOnSoft}
@@ -1144,6 +1180,7 @@ export default function TasksScreen() {
         ListEmptyComponent={
           <GlassSurface
             variant="row"
+            forceEngineered={glassLite}
             borderRadius={radius.xl}
             style={styles.emptyCard}
             accessible
@@ -1389,6 +1426,8 @@ interface FlagCardProps {
   selected: boolean;
   /** When true the action row stacks (narrow width / large type) instead of one row. */
   compactActions: boolean;
+  /** C-lite runtime mode: render the engineered row material instead of blur. */
+  glassLite: boolean;
   onPress: (flag: FlagRow) => void;
   /** Long-press enters / extends selection. */
   onLongPress: (flag: FlagRow) => void;
@@ -1409,6 +1448,7 @@ const FlagCard = memo(function FlagCard({
   selectionActive,
   selected,
   compactActions,
+  glassLite,
   onPress,
   onLongPress,
   onSetStatus,
@@ -1420,8 +1460,9 @@ const FlagCard = memo(function FlagCard({
   const styles = useMemo(() => makeStyles(color, reduceTransparency), [color, reduceTransparency]);
   // 120ms press sheen (mockup: optional, reduced-motion gated). Driven by the
   // outer Pressable's onPressIn/Out; never mounted when the user prefers
-  // reduced motion or transparency, so the gates cost nothing.
-  const sheenActive = !reducedMotion && !reduceTransparency;
+  // reduced motion or transparency — or in C-lite, whose whole point is
+  // fewer live layers.
+  const sheenActive = !reducedMotion && !reduceTransparency && !glassLite;
   const sheenAnim = useRef(new Animated.Value(0)).current;
   const sheenIn = useCallback(() => {
     Animated.timing(sheenAnim, {
@@ -1571,6 +1612,7 @@ const FlagCard = memo(function FlagCard({
           Reduce-Transparency designed fill is brandSofter via solidColor. */}
       <GlassSurface
         variant="row"
+        forceEngineered={glassLite}
         edgeColor={selected ? color.brand : undefined}
         edgeWidth={selected ? 2 : undefined}
         overlayTint={selected ? color.glassSelectedTint : undefined}
@@ -1747,12 +1789,19 @@ const FlagCard = memo(function FlagCard({
 function GlassSkeletonCard({
   styles,
   bar,
+  lite,
 }: {
   styles: ReturnType<typeof makeStyles>;
   bar: string;
+  lite: boolean;
 }) {
   return (
-    <GlassSurface variant="row" style={[styles.card, styles.cardOuter]} accessible={false}>
+    <GlassSurface
+      variant="row"
+      forceEngineered={lite}
+      style={[styles.card, styles.cardOuter]}
+      accessible={false}
+    >
       <View style={styles.cardHeader}>
         <Skeleton width={96} height={24} borderRadius={radius.full} style={{ backgroundColor: bar }} />
         <Skeleton width="45%" height={18} borderRadius={radius.sm} style={{ backgroundColor: bar }} />
@@ -1774,6 +1823,12 @@ function GlassSkeletonCard({
     </GlassSurface>
   );
 }
+
+// Test-only export: the composition pin test (contract item 6 — the locked
+// 6-element FlagCard + tiered action row) renders the card directly instead
+// of mocking the whole screen's data layer. Not for reuse — the card is
+// private to this screen by design.
+export { FlagCard };
 
 const makeStyles = (color: ColorTheme, reduceTransparency: boolean) => {
   // Engineered chip tint — pills/chips/search ON the chrome pane (they carry

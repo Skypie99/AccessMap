@@ -235,6 +235,15 @@ Prefer these over re-rolling layout. All are themed via `useColor()` and a11y-wi
   content that has a shape.
 - **`Sheet` / `SheetHeader`** — bottom-sheet scaffold (scrim + rounded card + drag handle
   + titled, labelled close). Reduced-motion aware. Adopt for new modals.
+- **`GlassSurface`** — the frosted-glass material primitive. Legacy call (no `variant`):
+  the 2026-06-17 map-overlay glass (blur + `overlayGlass` AA floor, opaque under Reduce
+  Transparency). **Deep Field variants** (`variant="row" | "chrome" | "banner" | "bulk"`,
+  2026-07-03): the liquid-glass tiers with per-tier floors/edges/speculars, engineered
+  (Android / C-lite) and designed Reduce-Transparency materials, and a `__DEV__`
+  blur-budget counter. Full law: `GLASS.md` (§13 below).
+- **`ScreenStage`** — the Deep Field designed screen background (165° wash + radial
+  brand pools + 2.5% grain; dark is the luminous single-pool variant). Decorative,
+  a11y-hidden. Pair with screen `backgroundColor: color.stage1`.
 
 ### Haptics
 `@/lib/haptics` — `hapticSelection` / `hapticImpact` / `hapticNotify`. No-ops on web and
@@ -317,6 +326,20 @@ what it is. Append-only.
   reference primitives that no longer exist; the current `src/components/ui/` set
   is AppText / Button / Input / Card / GlassSurface / Skeleton / Sheet. On branch
   `overhaul/phase2-design-system` (Sky's gate).
+- **2026-07-03 — "Deep Field" liquid glass ships on Tasks (the benchmark).** Sky chose
+  Candidate C from the Material Lab's three live candidates (Pass 1,
+  `qa-reports/2026-07-02_Tasks_MaterialLab_Direction.md`) for its identity in motion;
+  the build pass (`overhaul/tasks-glass`) made the Tasks screen BE that mockup: stage +
+  row glass i=12 + chrome pane i=24 + scrolling banner + conditional bulk pane, all
+  inks script-arbitrated by `contrast-check.mjs` (the passing floors ARE the tokens —
+  incl. the mode-independent `ctaFill #1466E0`, `inkGlassMuted`, `inkOnStage`). Blur
+  budget = 12 VISIBLE panes, bounded by default list virtualization (never tune
+  windowSize / removeClippedSubviews). C-lite ships as a persisted RUNTIME switch
+  (long-press the Tasks header) so one TestFlight build carries both material modes;
+  Android is all-engineered ("C-on-Android = B"). Dark mode is luminosity-led — drop
+  shadows retired except the bulk bar's up-shadow. Full law + rollout recipe:
+  **GLASS.md** (§13). Composition stayed locked (FlagCard pin test added). On Sky's
+  gate — the device scroll test is THE acceptance gate.
 
 ---
 
@@ -389,3 +412,21 @@ in light and dark — like the sign-in hero and map overlays; a DESIGN.md
 self-rounds via its own `borderRadius` so you never need `overflow:hidden` (which
 on iOS would clip the glow shadow). Glows are decorative only — never the sole
 signal. The focus ring appears on keyboard / switch-control focus.
+
+---
+
+## 13. Liquid glass — "Deep Field" (2026-07-03)
+
+The app's material system, chosen by eye from the Material Lab's three live
+candidates and shipped first on the Tasks screen (the benchmark every screen
+pass copies). **The full law lives in [GLASS.md](GLASS.md)** — surface tiers
+with exact shipped tokens, the blur-budget law (`glass.maxLivePanes = 12`,
+VISIBLE panes, bounded by default list virtualization), the arbitrated on-glass
+inks (incl. the mode-independent `ctaFill`), the C-lite runtime switch, the
+all-engineered Android strategy, the designed Reduce-Transparency states, five
+do/don'ts, the application map, and the step-by-step ROLLOUT RECIPE
+(stage → chrome → rows → completions, with the gates per step).
+
+One rule worth repeating here: **every floor/edge/ink pair on glass is
+script-arbitrated** (`contrast-check.mjs`) — never tuned by eye, never changed
+without re-running the arbiter.
