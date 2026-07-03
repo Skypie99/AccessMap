@@ -31,7 +31,7 @@ implementation detail.
 | Text — body | `color.text` | `#333` | default copy |
 | Text — secondary | `color.textMuted` | `#666` | meta, descriptions |
 | Text — tertiary | `color.textSubtle` | `#707070` | faint tertiary meta (dates, counts, hints) — now AA at any size |
-| Text — on brand | `color.textOnBrand` | `#fff` | text on the brand blue / severity colors |
+| Text — on brand | `color.textOnBrand` | `#fff` | text on the brand blue; on severity fills only sev-5 red — sev 1–4 use ink `#0F1B2D` (AA audit 2026-07-02) |
 | Brand | `color.brand` | `#1466E0` | primary action color, links ("Wayfinder Blue", 2026-05-30) |
 | Brand soft (bg) | `color.brandSoft` | `#d6e6f9` | verified-status pill background |
 | Brand on soft | `color.brandOnSoft` | `#1c4f99` | text on `brandSoft` |

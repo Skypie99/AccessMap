@@ -445,16 +445,22 @@ export const icon = {
 // -------------------------------------------------------------------------
 
 export const severity = {
-  // Design system 2026-05-30 — yellow→red ramp. Sev 1 uses dark text (yellow too light for white).
-  // The `label` here is the SINGLE SOURCE OF TRUTH for the severity scale — a
-  // human, graduated set (Minor → Severe) that matches DESIGN.md's "Severe (5)"
-  // example and the SEVERITY_DESCRIPTIONS in flags.ts. SeverityBadge reads these
-  // labels, and both SEVERITY_LABELS (flags.ts) and heatmapSeverity (below)
-  // DERIVE from them, so every surface names a given severity identically.
-  1: { color: '#F7C948', label: 'Minor',       textOnColor: '#0F1B2D' }, // yellow — use dark ink text
-  2: { color: '#F0A030', label: 'Mild',        textOnColor: '#ffffff' },
-  3: { color: '#F2792B', label: 'Moderate',    textOnColor: '#ffffff' },
-  4: { color: '#E85638', label: 'Significant', textOnColor: '#ffffff' },
+  // Design system 2026-05-30 — yellow→red ramp. The `label` here is the SINGLE
+  // SOURCE OF TRUTH for the severity scale — a human, graduated set (Minor →
+  // Severe) that matches DESIGN.md's "Severe (5)" example and the
+  // SEVERITY_DESCRIPTIONS in flags.ts. SeverityBadge reads these labels, and
+  // both SEVERITY_LABELS (flags.ts) and heatmapSeverity (below) DERIVE from
+  // them, so every surface names a given severity identically.
+  //
+  // textOnColor (2026-07-02 Material Lab AA audit): white text FAILS WCAG AA
+  // on the mid-ramp fills — ~2.1:1 on sev-2, ~2.5:1 on sev-3, ~3.4:1 on sev-4
+  // (floor 4.5:1 at badge text sizes). Ink #0F1B2D measures 8.05 / 6.21 / 4.79
+  // on those same fills, so severities 1–4 all carry ink; only sev-5 red keeps
+  // white (4.83:1 — ink would fail there).
+  1: { color: '#F7C948', label: 'Minor',       textOnColor: '#0F1B2D' },
+  2: { color: '#F0A030', label: 'Mild',        textOnColor: '#0F1B2D' },
+  3: { color: '#F2792B', label: 'Moderate',    textOnColor: '#0F1B2D' },
+  4: { color: '#E85638', label: 'Significant', textOnColor: '#0F1B2D' },
   5: { color: '#D92D20', label: 'Severe',      textOnColor: '#ffffff' },
 } as const satisfies Record<FlagSeverity, { color: string; label: string; textOnColor: string }>;
 
