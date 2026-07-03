@@ -12,9 +12,10 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { font, radius, shadow, spacing } from '@/theme';
-import { useReducedMotion } from '@/lib/accessibility';
+import { font, radius, spacing } from '@/theme';
+import { useReducedMotion, useReduceTransparency } from '@/lib/accessibility';
 import { AppText } from '@/components/ui/AppText';
+import { GlassSurface } from '@/components/ui/GlassSurface';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { useAuth } from '@/lib/auth';
 import {
@@ -53,6 +54,12 @@ interface Props {
 export default function FeedbackModal({ visible, onClose }: Props) {
   const color = useColor();
   const styles = makeStyles(color);
+  // Engineered chip tint (mirrors TasksScreen): the sheet blurs, the chip tints.
+  // Under Reduce Transparency the chips fall back to the solid neutral pair; the
+  // selected chip keeps the mode-independent CTA fill (categoryChipSelected).
+  const reduceTransparency = useReduceTransparency();
+  const chipFill = reduceTransparency ? color.surfaceNeutral : color.glassChipFill;
+  const chipEdge = reduceTransparency ? color.borderSubtle : color.glassChipEdge;
   const { user } = useAuth();
   const [body, setBody] = useState('');
   const [contact, setContact] = useState('');
@@ -171,7 +178,8 @@ export default function FeedbackModal({ visible, onClose }: Props) {
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           style={{ width: '100%' }}
         >
-          <View style={styles.card}>
+          <View style={styles.cardWrap}>
+          <GlassSurface variant="bulk" borderRadius={0} style={styles.card}>
             <View style={styles.headerRow}>
               <AppText variant="heading" style={styles.title} accessibilityRole="header">
                 Send feedback
@@ -197,7 +205,7 @@ export default function FeedbackModal({ visible, onClose }: Props) {
               contentContainerStyle={styles.bodyContent}
               keyboardShouldPersistTaps="handled"
             >
-              <AppText variant="body" style={styles.subtitle}>
+              <AppText variant="bodyMedium" style={styles.subtitle}>
                 Tell us what&apos;s working, what isn&apos;t, or what you wish AccessMap did. Tapping Send opens
                 your email app with the message prefilled.
               </AppText>
@@ -215,7 +223,11 @@ export default function FeedbackModal({ visible, onClose }: Props) {
                       key={c}
                       onPress={() => setCategory(c)}
                       disabled={sending}
-                      style={[styles.categoryChip, selected && styles.categoryChipSelected]}
+                      style={[
+                        styles.categoryChip,
+                        { backgroundColor: chipFill, borderColor: chipEdge },
+                        selected && styles.categoryChipSelected,
+                      ]}
                       accessibilityRole="radio"
                       accessibilityLabel={FEEDBACK_CATEGORY_LABELS[c]}
                       accessibilityState={{
@@ -223,7 +235,7 @@ export default function FeedbackModal({ visible, onClose }: Props) {
                         disabled: sending,
                       }}
                     >
-                      <AppText variant="body" style={styles.categoryChipGlyph} accessibilityElementsHidden>
+                      <AppText variant="bodyMedium" style={styles.categoryChipGlyph} accessibilityElementsHidden>
                         {FEEDBACK_CATEGORY_GLYPHS[c]}
                       </AppText>
                       <AppText
@@ -274,11 +286,13 @@ export default function FeedbackModal({ visible, onClose }: Props) {
               />
               {contactInvalid ? (
                 <AppText
-                  variant="body"
+                  variant="bodyMedium"
                   accessibilityLiveRegion="polite"
                   style={{
                     fontSize: 12,
-                    color: color.error,
+                    // errorFg, not color.error: #c0392b = 3.84:1 light / 2.23:1
+                    // dark on the bulk worst-case (FAIL both). errorFg = ~6.4:1.
+                    color: color.errorFg,
                     marginTop: -4,
                   }}
                 >
@@ -317,6 +331,7 @@ export default function FeedbackModal({ visible, onClose }: Props) {
                 )}
               </Pressable>
             </View>
+          </GlassSurface>
           </View>
         </KeyboardAvoidingView>
       </View>
@@ -331,16 +346,34 @@ const makeStyles = (color: ColorTheme) =>
       backgroundColor: color.scrim,
       justifyContent: 'flex-end',
     },
+    // Bulk-glass sheet material lives on the GlassSurface (variant="bulk" supplies
+    // the floor + top edge/specular + designed RT state). No backgroundColor here
+    // (the variant owns it); overflow:'hidden' + top radius round the sheet top;
+    // maxHeight bounds it so the body ScrollView can shrink (G9). Shadow lives on
+    // cardWrap (overflow would clip it).
     card: {
-      backgroundColor: color.surface,
       borderTopLeftRadius: radius.xl,
       borderTopRightRadius: radius.xl,
+      overflow: 'hidden',
       paddingHorizontal: spacing.xl,
       paddingTop: spacing.lg,
       paddingBottom: spacing.xl,
       gap: spacing.sm,
       maxHeight: '90%',
-      ...shadow.e3,
+    },
+    // Bottom-sheet up-shadow on the OUTER wrapper — identical to AboutScreen
+    // (the two sheets are siblings). Negative height casts it UP off the top
+    // edge. Dark keeps the one sanctioned Deep Field dark shadow (#000@0.35);
+    // light uses shadowTint@0.12. (do/don't #2 deviation — card overflow clips it.)
+    cardWrap: {
+      borderTopLeftRadius: radius.xl,
+      borderTopRightRadius: radius.xl,
+      ...(color.scheme === 'dark'
+        ? { shadowColor: '#000', shadowOpacity: 0.35 }
+        : { shadowColor: color.shadowTint, shadowOpacity: 0.12 }),
+      shadowRadius: 14,
+      shadowOffset: { width: 0, height: -4 },
+      elevation: 5,
     },
     // Scrollable body between the pinned header and actions. flexShrink lets it
     // give up height so the card honors maxHeight and the body scrolls (G9).
@@ -377,12 +410,15 @@ const makeStyles = (color: ColorTheme) =>
     },
     subtitle: {
       fontSize: font.size.sm,
-      color: color.textMuted,
+      // inkGlassMuted, not textMuted (#666 = 4.06:1 FAIL on the light bulk sheet).
+      color: color.inkGlassMuted,
       lineHeight: 18,
     },
     label: {
       fontSize: font.size.xs,
-      color: color.textMuted,
+      // inkGlassMuted (same bulk-sheet fork as subtitle); variant="label" is
+      // already >=500, so only the color re-arbitrates.
+      color: color.inkGlassMuted,
       textTransform: 'uppercase',
       letterSpacing: 0.5,
       fontWeight: font.weight.semibold,
@@ -393,6 +429,8 @@ const makeStyles = (color: ColorTheme) =>
       gap: spacing.sm,
       flexWrap: 'wrap',
     },
+    // Engineered chip tint — fill/edge are applied INLINE on the Pressable
+    // (RT-dependent, can't be static). Selected -> ctaFill via categoryChipSelected.
     categoryChip: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -400,22 +438,23 @@ const makeStyles = (color: ColorTheme) =>
       paddingHorizontal: spacing.md,
       paddingVertical: spacing.sm,
       borderRadius: radius.full,
-      backgroundColor: color.surfaceNeutral,
       borderWidth: 1,
-      borderColor: 'transparent',
       minHeight: 44,
     },
+    // Selected = mode-independent CTA fill + transparent border (chip law).
     categoryChipSelected: {
-      backgroundColor: color.brandSoft,
-      borderColor: color.brand,
+      backgroundColor: color.ctaFill,
+      borderColor: 'transparent',
     },
     categoryChipGlyph: { fontSize: font.size.base },
     categoryChipText: {
-      color: color.text,
+      // glassChipInk on the engineered tint (11.06:1 light / 8.16:1 dark).
+      color: color.glassChipInk,
       fontWeight: font.weight.semibold,
       fontSize: font.size.sm,
     },
-    categoryChipTextSelected: { color: color.brandOnSoft },
+    // Selected label rides ctaFill -> textOnBrand (white, 5.24:1 both modes).
+    categoryChipTextSelected: { color: color.textOnBrand },
     bodyInput: {
       borderWidth: 1,
       borderColor: color.borderSubtle,
@@ -457,7 +496,9 @@ const makeStyles = (color: ColorTheme) =>
       fontWeight: font.weight.semibold,
       fontSize: font.size.base,
     },
-    btnSend: { backgroundColor: color.brand },
+    // ctaFill (mode-independent #1466E0), not color.brand: dark brand #4E89EF +
+    // white = 3.4:1 (FAIL). Matches every other primary CTA in the glass system.
+    btnSend: { backgroundColor: color.ctaFill },
     btnSendDisabled: { opacity: 0.4 },
     btnSendText: {
       color: color.textOnBrand,
