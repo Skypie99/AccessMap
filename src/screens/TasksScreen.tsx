@@ -74,6 +74,7 @@ import { font, motion, radius, shadow, size, spacing } from '@/theme';
 import { useReducedMotion } from '@/lib/accessibility';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
+import { ScreenStage } from '@/components/ui/ScreenStage';
 import { useDrawer } from '@/lib/drawerContext';
 import { useSharedModals } from '@/lib/sharedModalsContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -752,6 +753,7 @@ export default function TasksScreen() {
         accessibilityRole="progressbar"
         accessibilityLabel="Loading flags"
       >
+        <ScreenStage />
         {Array.from({ length: 6 }).map((_, i) => (
           <SkeletonCard key={i} />
         ))}
@@ -761,6 +763,7 @@ export default function TasksScreen() {
 
   return (
     <View style={styles.screen}>
+      <ScreenStage />
       {/* Editorial header (Phase 13) — headerless like Home, menu + Feedback folded in. */}
       <ScreenHeader
         eyebrow="TASKS"
@@ -1613,9 +1616,10 @@ const FlagCard = memo(function FlagCard({
 
 const makeStyles = (color: ColorTheme) =>
   StyleSheet.create({
-    // Screen wash — same #f7f9fc the Profile screen uses, so the white
-    // cards inside read as cards instead of blending into a white page.
-    screen: { flex: 1, backgroundColor: color.surfaceMuted },
+    // Screen wash — the Deep Field stage's mid stop, so any frame rendered
+    // before ScreenStage mounts (or content past its edges) matches the field.
+    // The stage itself (gradient + pools + grain) is <ScreenStage /> below.
+    screen: { flex: 1, backgroundColor: color.stage1 },
     headerBtn: {
       width: 44,
       height: 44,

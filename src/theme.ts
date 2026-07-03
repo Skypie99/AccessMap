@@ -184,6 +184,70 @@ export const color = {
   // Achievement earned-state wash — light amber behind unlocked badges.
   achievementEarnedBg: '#fff3d1',
 
+  // -----------------------------------------------------------------------
+  // Liquid glass — "Deep Field" material system (Tasks glass pass, 2026-07-03).
+  // Values are the Material Lab's script-arbitrated spec (contrast-check.mjs,
+  // 66 pairs, exit 0) — the mock's passing floors ARE these tokens. Do not
+  // tune by eye; re-run the arbiter if any value changes. Full law: GLASS.md.
+  // -----------------------------------------------------------------------
+  // Which palette this is — lets ScreenStage/GlassSurface pick per-mode
+  // recipes (dark = luminosity-led, shadows retired) without re-deriving the
+  // effective scheme. Same cast-at-declaration pattern as tabBarBlurTint.
+  scheme: 'light' as 'light' | 'dark',
+  // The stage — the designed screen background the glass floats over.
+  stage0: '#E7F0FD',
+  stage1: '#F6F9FE',
+  stage2: '#F1F5FB',
+  stagePoolA: 'rgba(46,124,246,0.12)', // brand light pool, top-left
+  stagePoolB: 'rgba(15,83,190,0.06)', // counter-pool, bottom-right (dark: none)
+  // Row glass (FlagCards / empty card / skeletons) — true blur i=12.
+  glassRowFloor: 'rgba(255,255,255,0.70)',
+  glassRowEdge: 'rgba(255,255,255,0.62)',
+  glassRowSpecular: 'rgba(255,255,255,0.90)',
+  // Chrome glass (the header pane) — true blur i=24, the most see-through tier.
+  glassChromeFloor: 'rgba(255,255,255,0.75)',
+  glassChromeEdge: 'rgba(15,40,90,0.10)',
+  glassChromeLip: 'rgba(255,255,255,0.70)',
+  // Banner glass ("Nearest open barrier") — a scrolling i=12 pane.
+  glassBannerFloor: 'rgba(217,231,253,0.70)',
+  glassBannerEdge: 'rgba(20,102,224,0.35)',
+  glassBannerSpecular: 'rgba(255,255,255,0.65)',
+  // Bulk-action bar — the second, conditional i=24 pane (select mode only).
+  glassBulkFloor: 'rgba(255,255,255,0.85)',
+  glassBulkSpecular: 'rgba(255,255,255,0.80)',
+  // Engineered chip tint — pills/chips/search ON the chrome pane carry no blur
+  // of their own; the pane blurs, the chip tints.
+  glassChipFill: 'rgba(255,255,255,0.60)',
+  glassChipEdge: 'rgba(22,33,58,0.10)',
+  glassChipInk: '#333',
+  glassGhostEdge: 'rgba(22,33,58,0.18)', // ghost action-pill hairline on row glass
+  glassNeutralBtn: 'rgba(22,33,58,0.06)', // "Resolved" neutral fill on row glass
+  glassCancelFill: 'rgba(255,255,255,0.62)', // bulk-bar Cancel fill
+  glassSelectedTint: 'rgba(217,231,253,0.35)', // selected-card wash over the row floor
+  glassSkeletonBar: 'rgba(15,27,45,0.08)',
+  glassSheen: 'rgba(255,255,255,0.35)', // press-sheen wash top stop
+  // Inks on glass — every fork below was script-decided over worst-case
+  // scrolling content, both modes (see GLASS.md for the failed candidates).
+  inkGlassMuted: '#414B5A', // eyebrow / subtitle / sort-label on chrome glass
+  inkOnStage: '#525C6B', // section headers + footer text on the raw stage
+  inkSelect: '#0F53BE', // "Select multiple" entry ink
+  inkDetailsGhost: '#1466E0', // Details ghost-button ink on row glass
+  // CTA fill is MODE-INDEPENDENT: dark brand #4E89EF + white = 3.4:1 (fails);
+  // #1466E0 + white = 5.24:1 both modes. Verify / active chips / bulk Verify.
+  ctaFill: '#1466E0',
+  glassPlaceholder: '#5B6470', // search placeholder on the chip tint
+  // C-lite engineered equivalents (B's opaline architecture wearing C's tint):
+  // vertical micro-gradients replacing BlurView+floor when blur is off
+  // (Android always; C-lite runtime mode; per-surface opt-out).
+  glassRowLite0: 'rgba(255,255,255,0.92)',
+  glassRowLite1: 'rgba(255,255,255,0.84)',
+  glassBannerLite0: 'rgba(217,231,253,0.92)',
+  glassBannerLite1: 'rgba(217,231,253,0.84)',
+  glassChromeLite0: 'rgba(255,255,255,0.93)',
+  glassChromeLite1: 'rgba(255,255,255,0.88)',
+  glassBulkLite0: 'rgba(255,255,255,0.95)',
+  glassBulkLite1: 'rgba(255,255,255,0.90)',
+
   // Misc
   shadow: '#000',
   // Elevation shadow tint — the cool navy used by shadow.e1/e2/e3. In dark mode
@@ -365,6 +429,20 @@ export const gradient = {
   brand: ['#2E7CF6', '#0F53BE'] as const, // primary button / FAB — blue deepening
   brandHero: ['#2E7CF6', '#1466E0', '#0B3D8F'] as const, // Profile / feature hero
   gold: ['#FFC64D', '#F2A60C'] as const, // gamification (points / achievements) — ink text only
+} as const;
+
+// -------------------------------------------------------------------------
+// Glass — the "Deep Field" material spec (GLASS.md is the law; these are its
+// machine-readable numbers). Intensities are expo-blur values per surface
+// tier. maxLivePanes is the blur BUDGET: the ceiling on concurrently VISIBLE
+// BlurViews (~9–10 rows + chrome + banner; select mode adds the bulk bar).
+// The list's own virtualization is what keeps the row count bounded — never
+// defeat it (windowSize stays default; no removeClippedSubviews tricks).
+// -------------------------------------------------------------------------
+
+export const glass = {
+  maxLivePanes: 12,
+  intensity: { row: 12, chrome: 24, banner: 12, bulk: 24 },
 } as const;
 
 // -------------------------------------------------------------------------

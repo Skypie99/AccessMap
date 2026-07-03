@@ -140,6 +140,60 @@ const darkColor = {
   // Achievement earned-state wash — dark amber so unlocked badges read on dark.
   achievementEarnedBg: '#3D2A00',
 
+  // -----------------------------------------------------------------------
+  // Liquid glass — "Deep Field" dark palette (luminosity-led: floors LIFT
+  // above the stage, edges become cool #A8C0E0-family hairlines, drop
+  // shadows retire). Script-arbitrated like the light set — see GLASS.md.
+  // -----------------------------------------------------------------------
+  scheme: 'dark',
+  // The stage — dark field IS the light source: one glowing pool, 2-stop base.
+  stage0: '#0E1220',
+  stage1: '#14151A',
+  stage2: '#14151A',
+  stagePoolA: 'rgba(20,102,224,0.16)',
+  stagePoolB: 'transparent', // no counter-pool in dark — ScreenStage skips it
+  // Row glass — i=12.
+  glassRowFloor: 'rgba(30,34,46,0.72)',
+  glassRowEdge: 'rgba(168,192,224,0.16)',
+  glassRowSpecular: 'rgba(168,192,224,0.25)',
+  // Chrome glass — i=24.
+  glassChromeFloor: 'rgba(13,18,32,0.80)',
+  glassChromeEdge: 'rgba(168,192,224,0.18)',
+  glassChromeLip: 'rgba(168,192,224,0.14)',
+  // Banner glass — scrolling i=12 over the dark brandSoft family.
+  glassBannerFloor: 'rgba(14,68,153,0.70)',
+  glassBannerEdge: 'rgba(78,137,239,0.45)',
+  glassBannerSpecular: 'rgba(168,192,224,0.22)',
+  // Bulk bar — conditional i=24.
+  glassBulkFloor: 'rgba(13,18,32,0.85)',
+  glassBulkSpecular: 'rgba(168,192,224,0.18)',
+  // Engineered chip tint — dark chips are a luminosity lift, not a shade.
+  glassChipFill: 'rgba(255,255,255,0.10)',
+  glassChipEdge: 'rgba(168,192,224,0.16)',
+  glassChipInk: '#F5F5F5', // fork: #ddd measures 4.10:1 worst-case on the chip stack
+  glassGhostEdge: 'rgba(168,192,224,0.28)',
+  glassNeutralBtn: 'rgba(255,255,255,0.10)',
+  glassCancelFill: 'rgba(255,255,255,0.14)',
+  glassSelectedTint: 'rgba(15,45,94,0.45)',
+  glassSkeletonBar: 'rgba(168,192,224,0.10)',
+  glassSheen: 'rgba(255,255,255,0.35)',
+  // Inks on glass — dark forks, all script-decided.
+  inkGlassMuted: '#B8BEC9',
+  inkOnStage: '#AAAAAA',
+  inkSelect: '#B4CFFA',
+  inkDetailsGhost: '#84AEF6',
+  ctaFill: '#1466E0', // MODE-INDEPENDENT — see the light palette note
+  glassPlaceholder: '#C9CFD9', // fork from #9ca3af on the dark chip stack
+  // C-lite engineered equivalents.
+  glassRowLite0: 'rgba(30,34,46,0.94)',
+  glassRowLite1: 'rgba(30,34,46,0.88)',
+  glassBannerLite0: 'rgba(14,68,153,0.92)',
+  glassBannerLite1: 'rgba(14,68,153,0.84)',
+  glassChromeLite0: 'rgba(13,18,32,0.94)',
+  glassChromeLite1: 'rgba(13,18,32,0.90)',
+  glassBulkLite0: 'rgba(13,18,32,0.95)',
+  glassBulkLite1: 'rgba(13,18,32,0.92)',
+
   // Misc
   shadow: '#fff', // inverted for dark mode
   // Soft cool glow so a raised card reads as lifted on dark — a dark shadow is
