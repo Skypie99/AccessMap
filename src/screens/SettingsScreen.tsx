@@ -14,6 +14,9 @@ import { ChevronRight, ClipboardCopy, Moon, PlayCircle, Smartphone, Sun } from '
 import { font, radius, shadow, spacing } from '@/theme';
 import { type ColorTheme, type ThemeMode, useColor, useThemeMode } from '@/theme/ThemeContext';
 import { AppText } from '@/components/ui/AppText';
+import { GlassSurface } from '@/components/ui/GlassSurface';
+import { ScreenStage } from '@/components/ui/ScreenStage';
+import { hydrateGlassMode, useGlassMode } from '@/lib/glassMode';
 import { hapticSelection } from '@/lib/haptics';
 import { signOut, supabase } from '@/lib/supabase';
 import { confirm, notify } from '@/lib/confirm';
@@ -55,12 +58,16 @@ function SettingsRow({
   icon,
   disabled,
   busy,
+  glassLite,
 }: {
   title: string;
   subtitle: string;
   onPress: () => void;
   accessibilityHint: string;
   destructive?: boolean;
+  // C-lite runtime flag threaded from the parent (rows only) — drops the row
+  // BlurView for the engineered *Lite gradient when the store is in 'lite'.
+  glassLite: boolean;
   // Optional text glyph rendered at the leading edge of the row. Pure
   // decoration — hidden from AT so a screen reader doesn't read out
   // "clipboard emoji, Export my data". The row's accessibilityLabel
@@ -80,8 +87,10 @@ function SettingsRow({
   const styles = makeStyles(color);
   return (
     <Pressable
+      // Pressable stays the interactive/a11y root; GlassSurface (below) is
+      // material only. Press feedback is an opacity dim (a bg swap is invisible
+      // over glass) — matches the Tasks FlagCard recipe.
       style={({ pressed }) => [
-        styles.row,
         pressed && styles.rowPressed,
         disabled && styles.rowDisabled,
       ]}
@@ -92,43 +101,47 @@ function SettingsRow({
       accessibilityHint={accessibilityHint}
       accessibilityState={{ disabled: !!disabled, busy: !!busy }}
     >
-      {icon ? (
-        <View
-          style={styles.rowIcon}
-          accessibilityElementsHidden
-          importantForAccessibility="no-hide-descendants"
-        >
-          {icon}
+      <GlassSurface variant="row" forceEngineered={glassLite} style={styles.row}>
+        {icon ? (
+          <View
+            style={styles.rowIcon}
+            accessibilityElementsHidden
+            importantForAccessibility="no-hide-descendants"
+          >
+            {icon}
+          </View>
+        ) : null}
+        <View style={styles.rowTextWrap}>
+          <AppText variant="label" style={[styles.rowTitle, destructive && styles.rowTitleDestructive]}>
+            {title}
+          </AppText>
+          {/* bodyMedium (>=500): secondary row text keeps textMuted but must
+              carry >=500 weight on glass (the 400 face hazes). */}
+          <AppText variant="bodyMedium" style={styles.rowSubtitle}>{subtitle}</AppText>
         </View>
-      ) : null}
-      <View style={styles.rowTextWrap}>
-        <AppText variant="label" style={[styles.rowTitle, destructive && styles.rowTitleDestructive]}>
-          {title}
-        </AppText>
-        <AppText variant="body" style={styles.rowSubtitle}>{subtitle}</AppText>
-      </View>
-      {/* Trailing affordance: a spinner while the row's handler runs, a
-          decorative chevron otherwise. Both are hidden from AT (the row's
-          accessibilityLabel + busy state carry the meaning). */}
-      {busy ? (
-        <ActivityIndicator
-          // accessibilityElementsHidden + importantForAccessibility hide the
-          // spinner from VoiceOver/TalkBack — the busy state on the parent
-          // Pressable already announces "in progress".
-          accessibilityElementsHidden
-          importantForAccessibility="no-hide-descendants"
-          style={styles.rowSpinner}
-          color={color.textSubtle}
-        />
-      ) : (
-        <ChevronRight
-          size={18}
-          color={color.textSubtle}
-          strokeWidth={2.2}
-          accessibilityElementsHidden
-          importantForAccessibility="no-hide-descendants"
-        />
-      )}
+        {/* Trailing affordance: a spinner while the row's handler runs, a
+            decorative chevron otherwise. Both are hidden from AT (the row's
+            accessibilityLabel + busy state carry the meaning). */}
+        {busy ? (
+          <ActivityIndicator
+            // accessibilityElementsHidden + importantForAccessibility hide the
+            // spinner from VoiceOver/TalkBack — the busy state on the parent
+            // Pressable already announces "in progress".
+            accessibilityElementsHidden
+            importantForAccessibility="no-hide-descendants"
+            style={styles.rowSpinner}
+            color={color.textSubtle}
+          />
+        ) : (
+          <ChevronRight
+            size={18}
+            color={color.textSubtle}
+            strokeWidth={2.2}
+            accessibilityElementsHidden
+            importantForAccessibility="no-hide-descendants"
+          />
+        )}
+      </GlassSurface>
     </Pressable>
   );
 }
@@ -148,7 +161,10 @@ function AppearanceControl() {
     <View style={styles.segmentRow} accessibilityRole="radiogroup" accessibilityLabel="Appearance">
       {options.map(({ key, label, Icon }) => {
         const selected = mode === key;
-        const fg = selected ? color.brandText : color.textMuted;
+        // Selected pill is opaque (color.surface) -> brandText; unselected sits
+        // on the engineered chip-tint track -> glassChipInk (textMuted forbidden
+        // on the tint/stage).
+        const fg = selected ? color.brandText : color.glassChipInk;
         return (
           <Pressable
             key={key}
@@ -197,6 +213,12 @@ export default function SettingsScreen() {
   // contrast on spinner strokes. color.textSubtle (#999 light, #777 dark) is
   // only for non-essential text or 18pt+, which thin spinners are not.
   const pushSpinnerColor = color.text;
+  // C-lite runtime mode (GLASS.md §4): read-only here — the long-press flip
+  // lives on the Tasks header; this screen just respects it via the store.
+  const glassLite = useGlassMode() === 'lite';
+  useEffect(() => {
+    void hydrateGlassMode();
+  }, []);
   // Help, Changelog, Feedback, and MyFeedback are all mounted ONCE at
   // the navigator level via <SharedModalsHost /> (see RootNavigator.tsx +
   // src/lib/sharedModalsContext.tsx). Settings just sets the shared
@@ -417,16 +439,22 @@ export default function SettingsScreen() {
 
   return (
     <>
-      <ScrollView
-        style={styles.screen}
-        contentContainerStyle={[styles.container, { paddingBottom: tabBarHeight + 16 }]}
-        contentInsetAdjustmentBehavior="automatic"
-      >
+      {/* The screen body is the Deep Field stage. The nav header above is the
+          shared dark chrome (untouched — NO chrome pane here). ScreenStage is
+          absolute-fill + a11y-hidden, so it sits behind the transparent scroll. */}
+      <View style={styles.stageRoot}>
+        <ScreenStage />
+        <ScrollView
+          style={styles.screen}
+          contentContainerStyle={[styles.container, { paddingBottom: tabBarHeight + 16 }]}
+          contentInsetAdjustmentBehavior="automatic"
+        >
         <AppText variant="label" style={styles.sectionLabel} accessibilityRole="header">
           Notifications
         </AppText>
 
         <SettingsRow
+          glassLite={glassLite}
           title="Update banner preferences"
           subtitle="Choose which flag status changes surface in the in-app updates banner."
           accessibilityHint="Opens in-app update banner preferences"
@@ -442,6 +470,7 @@ export default function SettingsScreen() {
             yet, so the row hides until the wiring lands. */}
         {pushNotifTypesEnabled && (
           <SettingsRow
+            glassLite={glassLite}
             title="Push notification types"
             subtitle="Pick which push alerts you get: status changes, nearby flags, watched flags, and digests."
             accessibilityHint="Opens push notification category preferences"
@@ -458,10 +487,10 @@ export default function SettingsScreen() {
             reader. Previously role="switch" sat on the wrapper View (no press
             handler) with the Switch hidden, so VoiceOver/TalkBack could read
             but not flip it. Mirrors NotificationPrefsModal. */}
-        <View style={styles.pushRow}>
+        <GlassSurface variant="row" forceEngineered={glassLite} style={styles.pushRow}>
           <View style={styles.pushTextWrap}>
             <AppText variant="label" style={styles.rowTitle}>Push notifications</AppText>
-            <AppText variant="body" style={styles.rowSubtitle}>
+            <AppText variant="bodyMedium" style={styles.rowSubtitle}>
               Get notified when your flag is verified or resolved.
             </AppText>
           </View>
@@ -482,7 +511,7 @@ export default function SettingsScreen() {
               accessibilityState={{ checked: pushEnabled, disabled: pushBusy || !user }}
             />
           )}
-        </View>
+        </GlassSurface>
 
         <AppText variant="label" style={styles.sectionLabel} accessibilityRole="header">
           Appearance
@@ -495,6 +524,7 @@ export default function SettingsScreen() {
         </AppText>
 
         <SettingsRow
+          glassLite={glassLite}
           title="Help & FAQ"
           subtitle="Common questions about reports, points, and accessibility."
           accessibilityHint="Opens collapsible answers to common questions"
@@ -502,6 +532,7 @@ export default function SettingsScreen() {
         />
 
         <SettingsRow
+          glassLite={glassLite}
           title="What's new"
           subtitle="Recent features added to AccessMap."
           accessibilityHint="Opens a dated list of recent shipped features"
@@ -509,6 +540,7 @@ export default function SettingsScreen() {
         />
 
         <SettingsRow
+          glassLite={glassLite}
           title="About AccessMap"
           subtitle="Version, credits, and a short privacy summary."
           accessibilityHint="Opens the about page with version and privacy info"
@@ -516,6 +548,7 @@ export default function SettingsScreen() {
         />
 
         <SettingsRow
+          glassLite={glassLite}
           title="Replay tutorial"
           subtitle="Re-show the 3-card welcome intro."
           icon={<PlayCircle size={18} color={color.textMuted} strokeWidth={2.2} />}
@@ -528,6 +561,7 @@ export default function SettingsScreen() {
         </AppText>
 
         <SettingsRow
+          glassLite={glassLite}
           title="Send feedback"
           subtitle="Tell the maintainer what's working or what's broken."
           accessibilityHint="Opens the feedback form"
@@ -535,6 +569,7 @@ export default function SettingsScreen() {
         />
 
         <SettingsRow
+          glassLite={glassLite}
           title="My feedback history"
           subtitle="View the feedback messages you've sent."
           accessibilityHint="Opens the list of feedback you've sent"
@@ -546,6 +581,7 @@ export default function SettingsScreen() {
         </AppText>
 
         <SettingsRow
+          glassLite={glassLite}
           title="Export my data"
           subtitle="Copy your flags and feedback to your clipboard as plain text."
           icon={<ClipboardCopy size={18} color={color.textMuted} strokeWidth={2.2} />}
@@ -560,6 +596,7 @@ export default function SettingsScreen() {
         </AppText>
 
         <SettingsRow
+          glassLite={glassLite}
           title="Sign out"
           subtitle="End your session on this device."
           // Signal destructive intent via the hint as well as the red color —
@@ -568,7 +605,8 @@ export default function SettingsScreen() {
           onPress={handleSignOutPress}
           destructive
         />
-      </ScrollView>
+        </ScrollView>
+      </View>
 
       {/* Only NotificationPrefs + About render here; the other four
           modals (Help, Changelog, Feedback, MyFeedback) live in a single
@@ -602,7 +640,11 @@ const SETTINGS_ROW_HEIGHT = 64;
 
 const makeStyles = (color: ColorTheme) =>
   StyleSheet.create({
-    screen: { flex: 1, backgroundColor: color.surfaceMuted },
+    // Transparent so the ScreenStage (behind, in stageRoot) shows through.
+    screen: { flex: 1, backgroundColor: 'transparent' },
+    // Flex root hosting the absolute-fill ScreenStage behind the scroll; bg =
+    // stage1 so any pre-mount frame (and over-scroll) matches the field.
+    stageRoot: { flex: 1, backgroundColor: color.stage1 },
     container: {
       padding: spacing.xxl,
       gap: spacing.md,
@@ -610,7 +652,9 @@ const makeStyles = (color: ColorTheme) =>
     },
     sectionLabel: {
       fontSize: font.size.xs,
-      color: color.textMuted,
+      // On the raw stage — inkOnStage, not textMuted (forbidden there, 4.10:1).
+      // variant="label" already renders >=500, so only the color changes.
+      color: color.inkOnStage,
       textTransform: 'uppercase',
       letterSpacing: font.tracking.loose,
       fontWeight: font.weight.bold,
@@ -618,8 +662,10 @@ const makeStyles = (color: ColorTheme) =>
       marginBottom: spacing.tight,
       marginLeft: spacing.tight,
     },
+    // Row-glass pane: variant="row" supplies the floor/edge/specular; only
+    // layout + radius + light-mode lift live here — NEVER a backgroundColor
+    // (the clip layer swallows it). Dark is luminosity-led (no drop shadow).
     row: {
-      backgroundColor: color.surface,
       borderRadius: radius.lg,
       padding: spacing.lg,
       flexDirection: 'row',
@@ -629,9 +675,10 @@ const makeStyles = (color: ColorTheme) =>
       // padding+text height, but pinned here so future copy changes can't
       // accidentally shrink it under the WCAG floor.
       minHeight: SETTINGS_ROW_HEIGHT,
-      ...shadow.e1,
+      ...(color.scheme === 'light' ? shadow.e1 : {}),
     },
-    rowPressed: { opacity: 0.85, backgroundColor: color.surfaceMuted },
+    // Opacity dim only — a bg swap is invisible/illegal over the glass material.
+    rowPressed: { opacity: 0.85 },
     // Visual cue while the export handler is running. The handler also
     // guards re-entrancy in code, so this is purely a "don't tap me twice"
     // affordance.
@@ -653,7 +700,9 @@ const makeStyles = (color: ColorTheme) =>
     // The "Sign out" row uses a slightly more cautious color so the destructive
     // intent is visually distinct before the confirm Alert fires. Subtitle stays
     // neutral — we don't want the whole row screaming danger, just hinting.
-    rowTitleDestructive: { color: color.error },
+    // Light keeps color.error (4.93:1 on the light row glass); dark forks to
+    // errorFg — color.error #C0392B measures 2.86:1 on dark row glass (FAIL).
+    rowTitleDestructive: { color: color.scheme === 'dark' ? color.errorFg : color.error },
     rowSubtitle: {
       fontSize: font.size.sm,
       color: color.textMuted,
@@ -672,22 +721,28 @@ const makeStyles = (color: ColorTheme) =>
     // Push notifications toggle row — same visual weight as SettingsRow but
     // with a Switch in place of a chevron. Matches the row padding and
     // shadow so the two control types look like siblings in the section.
+    // 11th row-tier pane — same row-glass material as SettingsRow (no bg here;
+    // variant="row" supplies it). Light-mode lift only.
     pushRow: {
-      backgroundColor: color.surface,
       borderRadius: radius.lg,
       padding: spacing.lg,
       flexDirection: 'row',
       alignItems: 'center',
       gap: spacing.md,
       minHeight: SETTINGS_ROW_HEIGHT,
-      ...shadow.e1,
+      ...(color.scheme === 'light' ? shadow.e1 : {}),
     },
     pushTextWrap: { flex: 1, gap: 2 },
     // Appearance segmented control (Light / Dark / System). Recessed track with
     // a lifted white "selected pill" — the classic premium segmented look.
+    // Engineered chip-tint track (no BlurView — the track sits directly on the
+    // stage; chips/controls tint, they don't blur): glassChipFill + glassChipEdge.
+    // The selected pill (segmentActive) stays opaque surface — a real lifted pill.
     segmentRow: {
       flexDirection: 'row',
-      backgroundColor: color.surfaceNeutral,
+      backgroundColor: color.glassChipFill,
+      borderWidth: 1,
+      borderColor: color.glassChipEdge,
       borderRadius: radius.lg,
       padding: spacing.tight,
       gap: spacing.tight,
