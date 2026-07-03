@@ -3,8 +3,9 @@ import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 // Expo Constants gives us the bundled app.json version at runtime so we
 // don't have to hard-code (and forget to bump) a string here.
 import Constants from 'expo-constants';
-import { font, radius, shadow, spacing } from '@/theme';
+import { font, radius, spacing } from '@/theme';
 import { AppText } from '@/components/ui/AppText';
+import { GlassSurface } from '@/components/ui/GlassSurface';
 import { Map as MapIcon, X } from 'lucide-react-native';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { useReducedMotion } from '@/lib/accessibility';
@@ -46,7 +47,8 @@ export default function AboutScreen({ visible, onClose }: Props) {
             it can't escape back to the underlying Settings screen while the
             sheet is open. Belt-and-suspenders with the Modal itself, which
             on iOS sometimes leaks focus to the parent. */}
-        <View style={styles.card} accessibilityViewIsModal>
+        <View style={styles.cardShadow}>
+        <GlassSurface variant="bulk" borderRadius={0} style={styles.card} accessibilityViewIsModal>
           <View style={styles.headerRow}>
             <AppText variant="heading" style={styles.title} accessibilityRole="header">
               About AccessMap
@@ -73,7 +75,7 @@ export default function AboutScreen({ visible, onClose }: Props) {
                   VoiceOver (iOS) and importantForAccessibility hides it from
                   TalkBack (Android). Both are needed; one alone leaks the
                   glyph on the other platform. */}
-              <MapIcon size={15} color={color.brand} strokeWidth={2.2} />
+              <MapIcon size={15} color={color.brandOnSoft} strokeWidth={2.2} />
               <AppText variant="label" style={styles.heroBadgeText}>v{APP_VERSION}</AppText>
             </View>
 
@@ -123,6 +125,7 @@ export default function AboutScreen({ visible, onClose }: Props) {
               performance. This data is not shared with anyone and is cleared when you sign out.
             </AppText>
           </ScrollView>
+        </GlassSurface>
         </View>
       </View>
     </Modal>
@@ -136,16 +139,34 @@ const makeStyles = (color: ColorTheme) =>
       backgroundColor: color.scrim,
       justifyContent: 'flex-end',
     },
+    // The sheet body is now BULK glass (GlassSurface variant="bulk" supplies the
+    // i=24 floor + top edge/specular + designed Reduce-Transparency state). No
+    // backgroundColor here (do/don't #2 — the variant owns the surface);
+    // overflow:'hidden' clips the square bottom and rounds the top to radius.xl.
+    // The elevation shadow can't live here (overflow swallows it) — see cardShadow.
     card: {
-      backgroundColor: color.surface,
       borderTopLeftRadius: radius.xl,
       borderTopRightRadius: radius.xl,
+      overflow: 'hidden',
       paddingHorizontal: spacing.xl,
       paddingTop: spacing.lg,
       paddingBottom: spacing.xl,
       gap: spacing.md,
       maxHeight: '90%',
-      ...shadow.e3,
+    },
+    // Bottom-sheet up-shadow on the OUTER wrapper (the one sanctioned do/don't #2
+    // deviation — the card's overflow:'hidden' would clip it). Negative height
+    // casts the shadow UP off the sheet's top edge. Dark keeps the single
+    // sanctioned Deep Field dark shadow (#000@0.35); light uses shadowTint@0.12.
+    cardShadow: {
+      borderTopLeftRadius: radius.xl,
+      borderTopRightRadius: radius.xl,
+      ...(color.scheme === 'dark'
+        ? { shadowColor: '#000', shadowOpacity: 0.35 }
+        : { shadowColor: color.shadowTint, shadowOpacity: 0.12 }),
+      shadowRadius: 14,
+      shadowOffset: { width: 0, height: -4 },
+      elevation: 5,
     },
     headerRow: {
       flexDirection: 'row',
@@ -197,7 +218,9 @@ const makeStyles = (color: ColorTheme) =>
     },
     sectionHeader: {
       fontSize: font.size.xs,
-      color: color.textMuted,
+      // inkGlassMuted, not textMuted: #666 = 4.06:1 FAILs on the light bulk
+      // sheet's worst-case backdrop; inkGlassMuted = 6.24:1 light / 6.51:1 dark.
+      color: color.inkGlassMuted,
       textTransform: 'uppercase',
       letterSpacing: 0.6,
       fontWeight: font.weight.bold,
@@ -205,10 +228,12 @@ const makeStyles = (color: ColorTheme) =>
     },
     bodyText: {
       fontSize: font.size.base,
-      // textMuted (#666) is 5.7:1 on white — passes WCAG AA for body text,
-      // matches the per-spec floor of #5b6470 (the brief asked for AA body
-      // contrast on white, and #666 is already in the design tokens).
-      color: color.textMuted,
+      // On the BULK sheet the worst-case backdrop is ~#D9D9D9, not #fff —
+      // textMuted #666 measures 4.06:1 there (FAIL). inkGlassMuted is the
+      // arbitrated muted-on-bulk ink: 6.24:1 light / 6.51:1 dark. Body text on
+      // glass also carries >=500 weight (the 400 face hazes) — bodyMedium.
+      color: color.inkGlassMuted,
+      fontFamily: font.family.bodyMedium,
       lineHeight: 21,
     },
   });
