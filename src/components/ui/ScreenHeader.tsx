@@ -62,6 +62,12 @@ interface ScreenHeaderProps {
   titleSize?: number;
   /** Override/extend the outer container style (e.g. padding tweaks). */
   style?: StyleProp<ViewStyle>;
+  /** Override the eyebrow ink (default color.textSubtle). Screens whose header
+   *  sits on glass pass their arbitrated on-glass ink (e.g. inkGlassMuted —
+   *  Tasks glass pass 2026-07-03); everyone else is untouched. */
+  eyebrowColor?: string;
+  /** Override the subtitle ink (default color.textMuted) — same contract. */
+  subtitleColor?: string;
 }
 
 export function ScreenHeader({
@@ -71,6 +77,8 @@ export function ScreenHeader({
   actions,
   titleSize = 40,
   style,
+  eyebrowColor,
+  subtitleColor,
 }: ScreenHeaderProps) {
   const color = useColor();
   const styles = makeStyles(color);
@@ -108,7 +116,7 @@ export function ScreenHeader({
   return (
     <View style={[styles.header, style]}>
       {eyebrow ? (
-        <AppText variant="label" style={styles.eyebrow}>
+        <AppText variant="label" style={[styles.eyebrow, eyebrowColor ? { color: eyebrowColor } : null]}>
           {eyebrow}
         </AppText>
       ) : null}
@@ -130,7 +138,11 @@ export function ScreenHeader({
         {actions ? <View style={styles.actions}>{actions}</View> : null}
       </View>
       {subtitle ? (
-        <AppText variant="body" style={styles.subtitle} numberOfLines={1}>
+        <AppText
+          variant="body"
+          style={[styles.subtitle, subtitleColor ? { color: subtitleColor } : null]}
+          numberOfLines={1}
+        >
           {subtitle}
         </AppText>
       ) : null}

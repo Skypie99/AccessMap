@@ -71,10 +71,11 @@ import { SeverityBadge } from '@/components/SeverityBadge';
 import { hapticSelection } from '@/lib/haptics';
 import { AlertTriangle, Check, ChevronRight, MapPin, Menu, MessageSquare, Search, Sparkles, WifiOff, X } from 'lucide-react-native';
 import { font, motion, radius, shadow, size, spacing } from '@/theme';
-import { useReducedMotion } from '@/lib/accessibility';
+import { useReducedMotion, useReduceTransparency } from '@/lib/accessibility';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { ScreenStage } from '@/components/ui/ScreenStage';
+import { GlassSurface } from '@/components/ui/GlassSurface';
 import { useDrawer } from '@/lib/drawerContext';
 import { useSharedModals } from '@/lib/sharedModalsContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -98,9 +99,19 @@ const TRIAGE_STATUSES: FlagStatus[] = ['open', 'verified'];
 // card never hides behind the bar — even at large type, when the bar grows.
 const BULK_BAR_FALLBACK_HEIGHT = 94;
 
+// Fallback height (pt) of the absolute chrome glass pane, used only to seed
+// the list's top reserve before the pane's real height lands via onLayout
+// (the list is opacity-gated until then, so this only sizes the first layout
+// pass). Approx at default type, all rows visible: header ~112 + select-entry
+// ~52 + search ~60 + category strip ~62 + sort row ~64 ≈ 350; safe-area top is
+// added at the call site. Once measured, the real height takes over — the
+// mockup's ResizeObserver → RN onLayout translation.
+const CHROME_FALLBACK_HEIGHT = 350;
+
 export default function TasksScreen() {
   const color = useColor();
-  const styles = useMemo(() => makeStyles(color), [color]);
+  const reduceTransparency = useReduceTransparency();
+  const styles = useMemo(() => makeStyles(color, reduceTransparency), [color, reduceTransparency]);
   const navigation = useNavigation<BottomTabNavigationProp<RootTabParamList, 'Tasks'>>();
   const tabBarHeight = useBottomTabBarHeight();
   const insets = useSafeAreaInsets();
@@ -111,6 +122,10 @@ export default function TasksScreen() {
   // with the fallback, then set from the bar's real onLayout so the list
   // reserves the correct space even when the bar grows at large type.
   const [bulkBarHeight, setBulkBarHeight] = useState(BULK_BAR_FALLBACK_HEIGHT);
+  // Measured height of the absolute chrome glass pane. null until the first
+  // onLayout — the list hides (opacity 0) for that single pass so the top
+  // padding never visibly jumps from the fallback estimate to the real value.
+  const [chromeHeight, setChromeHeight] = useState<number | null>(null);
   // Drives the FlagCard action row's deliberate 1-row → 2-row reflow. Computed
   // ONCE here (not per-card) so the whole list shares a single Dimensions
   // subscription instead of N. A narrow device OR large Dynamic Type tips the
@@ -120,6 +135,10 @@ export default function TasksScreen() {
   // "Resolved" against the pill curvature (sweep M16).
   const { width: windowWidth, fontScale } = useWindowDimensions();
   const compactActions = windowWidth <= 375 || fontScale >= 1.15;
+  // Top reserve for content scrolling BENEATH the absolute chrome glass pane
+  // (mockup: padding-top = chrome height + 10). Fallback only seeds the first,
+  // hidden layout pass — see chromeHeight above.
+  const chromeTopPad = (chromeHeight ?? CHROME_FALLBACK_HEIGHT + insets.top) + 10;
   const {
     flags: providerFlags,
     flagsMap,
@@ -743,34 +762,34 @@ export default function TasksScreen() {
     });
   }, [hasMore, loadingMore, loadMore]);
 
-  if (loading && flags.length === 0) {
-    // Content-shaped skeletons instead of a bare spinner — the list's cards have
-    // a known shape, so this reads as "the list is arriving" rather than "frozen".
-    return (
-      <View
-        style={styles.screen}
-        accessible
-        accessibilityRole="progressbar"
-        accessibilityLabel="Loading flags"
-      >
-        <ScreenStage />
-        {Array.from({ length: 6 }).map((_, i) => (
-          <SkeletonCard key={i} />
-        ))}
-      </View>
-    );
-  }
+  // First load with nothing cached → content-shaped skeletons render in the
+  // list's place UNDER the chrome pane (mockup loading state), instead of the
+  // old bare headerless early-return.
+  const initialLoading = loading && flags.length === 0;
 
   return (
     <View style={styles.screen}>
       <ScreenStage />
+      {/* The chrome — ONE absolute i=24 glass pane carrying the whole header
+          zone (title, notices, select-entry, search, chips, sort). The list
+          scrolls BENEATH it (onLayout feeds the list's top reserve). Pills and
+          chips inside are engineered tints — the pane blurs, the chip tints
+          (GLASS.md blur-budget law). Rendered before the list so VoiceOver
+          reads the header first; zIndex keeps it painted on top. */}
+      <GlassSurface
+        variant="chrome"
+        borderRadius={0}
+        style={[styles.chromePane, { paddingTop: insets.top + spacing.sm }]}
+        onLayout={(e) => setChromeHeight(e.nativeEvent.layout.height)}
+      >
       {/* Editorial header (Phase 13) — headerless like Home, menu + Feedback folded in. */}
       <ScreenHeader
         eyebrow="TASKS"
         title="Review barriers"
         subtitle="Verify and resolve reports"
         titleSize={30}
-        style={{ paddingTop: insets.top + spacing.sm }}
+        eyebrowColor={color.inkGlassMuted}
+        subtitleColor={color.inkGlassMuted}
         actions={
           <>
             <Pressable
@@ -780,7 +799,7 @@ export default function TasksScreen() {
               accessibilityLabel="Open navigation menu"
               hitSlop={8}
             >
-              <Menu size={22} color={color.textStrong} strokeWidth={2.2} />
+              <Menu size={22} color={color.headerFg} strokeWidth={2.2} />
             </Pressable>
             <Pressable
               onPress={() => setSharedModal('feedback')}
@@ -790,32 +809,11 @@ export default function TasksScreen() {
               accessibilityHint="Opens a form to email feedback to the AccessMap owner"
               hitSlop={8}
             >
-              <MessageSquare size={20} color={color.textStrong} strokeWidth={2.2} />
+              <MessageSquare size={20} color={color.headerFg} strokeWidth={2.2} />
             </Pressable>
           </>
         }
       />
-      {flash && (
-        <Animated.View
-          style={[
-            styles.flashWrap,
-            {
-              opacity: flashAnim,
-              transform: [
-                { translateY: flashAnim.interpolate({ inputRange: [0, 1], outputRange: [-10, 0] }) },
-              ],
-            },
-          ]}
-          pointerEvents="none"
-        >
-          <View style={[styles.flashPill, flashTone === 'muted' && styles.flashPillMuted]}>
-            {/* accessibilityLiveRegion covers Android TalkBack;
-                iOS VoiceOver handled by announceForAccessibility at each call site.
-                WCAG 4.1.3 — status messages must reach all AT. */}
-            <AppText variant="label" style={styles.flashText} accessibilityLiveRegion="polite">{flash}</AppText>
-          </View>
-        </Animated.View>
-      )}
       {errorBannerText && (
         <Pressable
           onPress={() => {
@@ -886,7 +884,7 @@ export default function TasksScreen() {
             value={searchText}
             onChangeText={setSearchText}
             placeholder="Search by description or category…"
-            placeholderTextColor={color.placeholderText}
+            placeholderTextColor={color.glassPlaceholder}
             autoCorrect={false}
             autoCapitalize="none"
             returnKeyType="search"
@@ -1016,9 +1014,56 @@ export default function TasksScreen() {
           })}
         </View>
       )}
+      </GlassSurface>
+      {/* Points/notice flash — floats over the chrome (zIndex above the pane),
+          same visual spot over the header as before the glass pass. */}
+      {flash && (
+        <Animated.View
+          style={[
+            styles.flashWrap,
+            { top: insets.top + spacing.sm },
+            {
+              opacity: flashAnim,
+              transform: [
+                { translateY: flashAnim.interpolate({ inputRange: [0, 1], outputRange: [-10, 0] }) },
+              ],
+            },
+          ]}
+          pointerEvents="none"
+        >
+          <View style={[styles.flashPill, flashTone === 'muted' && styles.flashPillMuted]}>
+            {/* accessibilityLiveRegion covers Android TalkBack;
+                iOS VoiceOver handled by announceForAccessibility at each call site.
+                WCAG 4.1.3 — status messages must reach all AT. */}
+            <AppText variant="label" style={styles.flashText} accessibilityLiveRegion="polite">{flash}</AppText>
+          </View>
+        </Animated.View>
+      )}
+      {initialLoading ? (
+        // Content-shaped skeletons in the list's place, under the chrome —
+        // "the list is arriving" rather than a frozen spinner.
+        <View
+          style={[styles.loadingColumn, { paddingTop: chromeTopPad }]}
+          accessible
+          accessibilityRole="progressbar"
+          accessibilityLabel="Loading flags"
+        >
+          {Array.from({ length: 6 }).map((_, i) => (
+            <SkeletonCard key={i} />
+          ))}
+        </View>
+      ) : (
       <SectionList
         sections={sections}
         keyExtractor={(f) => f.id}
+        // Fills the whole screen now the chrome is absolute; hidden for the
+        // single pre-measure pass so the top padding never visibly jumps.
+        // NOTE (GLASS.md budget law): virtualization props stay at RN defaults
+        // — no windowSize/removeClippedSubviews tuning; the default windowing
+        // is what keeps live row-glass bounded.
+        style={[styles.listLayer, chromeHeight === null && styles.listHidden]}
+        scrollIndicatorInsets={{ top: chromeTopPad }}
+        keyboardDismissMode="on-drag"
         // UX #3 "Suggested next action" — one slim row above the list that
         // surfaces the single nearest OPEN barrier. Renders nothing when
         // location is unknown or no open flags exist (nearestOpenHit === null).
@@ -1030,7 +1075,7 @@ export default function TasksScreen() {
             <Pressable
               onPress={() => showDetails(nearestOpenHit.flag)}
               style={({ pressed }) => [
-                styles.suggestedRow,
+                styles.suggestedRowOuter,
                 pressed && styles.suggestedRowPressed,
               ]}
               accessibilityRole="button"
@@ -1039,39 +1084,49 @@ export default function TasksScreen() {
               }, ${speakDistance(nearestOpenHit.km)}`}
               accessibilityHint="Opens the full report for the closest open accessibility barrier"
             >
-              <MapPin
-                size={18}
-                color={color.brand}
-                strokeWidth={2.2}
-                accessibilityElementsHidden
-                importantForAccessibility="no"
-              />
-              <AppText variant="label" style={styles.suggestedText}>
-                {`Nearest open barrier · ${CATEGORY_LABELS[nearestOpenHit.flag.category]} · ${formatDistance(
-                  nearestOpenHit.km,
-                )}`}
-              </AppText>
-              <ChevronRight
-                size={18}
-                color={color.textMuted}
-                strokeWidth={2.2}
-                accessibilityElementsHidden
-                importantForAccessibility="no"
-              />
+              {/* The banner is C's SCROLLING i=12 glass pane — it rides with
+                  the list (explicitly costed in the blur budget). */}
+              <GlassSurface variant="banner" style={styles.suggestedRow}>
+                <MapPin
+                  size={18}
+                  color={color.brandOnSoft}
+                  strokeWidth={2.2}
+                  accessibilityElementsHidden
+                  importantForAccessibility="no"
+                />
+                <AppText variant="label" style={styles.suggestedText}>
+                  {`Nearest open barrier · ${CATEGORY_LABELS[nearestOpenHit.flag.category]} · ${formatDistance(
+                    nearestOpenHit.km,
+                  )}`}
+                </AppText>
+                <ChevronRight
+                  size={18}
+                  color={color.brandOnSoft}
+                  strokeWidth={2.2}
+                  accessibilityElementsHidden
+                  importantForAccessibility="no"
+                />
+              </GlassSurface>
             </Pressable>
           ) : null
         }
         contentContainerStyle={[
           sections.length === 0 ? styles.emptyContainer : styles.list,
-          // Reserve room for the floating tab bar (absolute on native) plus the
-          // bulk-action bar when active, so the last card never hides behind
-          // either. paddingBottom is cross-platform (contentInset is iOS-only).
-          { paddingBottom: tabBarHeight + 16 + (selection.active ? bulkBarHeight : 0) },
+          // Reserve room for the absolute chrome pane above and the floating
+          // tab bar (absolute on native) plus the bulk-action bar when active,
+          // so content never hides under either. paddingBottom is
+          // cross-platform (contentInset is iOS-only).
+          {
+            paddingTop: chromeTopPad,
+            paddingBottom: tabBarHeight + 16 + (selection.active ? bulkBarHeight : 0),
+          },
         ]}
         stickySectionHeadersEnabled={false}
         refreshControl={
           <RefreshControl
             refreshing={loading}
+            // Spawn the spinner below the absolute chrome pane, not under it.
+            progressViewOffset={chromeHeight ?? CHROME_FALLBACK_HEIGHT + insets.top}
             onRefresh={() => {
               refresh().catch(() => {});
             }}
@@ -1169,17 +1224,20 @@ export default function TasksScreen() {
           )
         }
       />
+      )}
       {/* Floating bulk-action bar — appears at the bottom in selection
           mode. Positioned absolute so it overlays the SectionList rather
           than reflowing it. NOT wrapped in a live region — the count lives
           in its own live-region Text above the buttons so SR re-announces
           the count only (not every button label) when cards toggle. */}
       {selection.active && (
-        <View
+        <GlassSurface
+          variant="bulk"
           // Web tab bar is in-flow (the list already ends above it), so the bar
           // sits at bottom: 0. Native tab bar is position:absolute, so the bar
           // must clear it by sitting at bottom: tabBarHeight. onLayout feeds the
-          // bar's real height back into the list reserve above.
+          // bar's real height back into the list reserve above. The second,
+          // CONDITIONAL i=24 pane of the blur budget — mounts only here.
           style={[styles.bulkBar, { bottom: Platform.OS === 'web' ? 0 : tabBarHeight }]}
           onLayout={(e) => setBulkBarHeight(e.nativeEvent.layout.height)}
         >
@@ -1288,7 +1346,7 @@ export default function TasksScreen() {
               <AppText variant="label" style={styles.bulkCancelText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>Cancel</AppText>
             </Pressable>
           </View>
-        </View>
+        </GlassSurface>
       )}
       <Suspense fallback={null}>
         <FlagDetailModal
@@ -1343,7 +1401,8 @@ const FlagCard = memo(function FlagCard({
   onShowDetails,
 }: FlagCardProps) {
   const color = useColor();
-  const styles = useMemo(() => makeStyles(color), [color]);
+  const reduceTransparency = useReduceTransparency();
+  const styles = useMemo(() => makeStyles(color, reduceTransparency), [color, reduceTransparency]);
   // Controls whether the full-screen photo lightbox is open.
   // Kept component-local — lightbox state doesn't need to survive unmount.
   const [lightboxOpen, setLightboxOpen] = useState(false);
@@ -1614,28 +1673,54 @@ const FlagCard = memo(function FlagCard({
   );
 });
 
-const makeStyles = (color: ColorTheme) =>
-  StyleSheet.create({
+const makeStyles = (color: ColorTheme, reduceTransparency: boolean) => {
+  // Engineered chip tint — pills/chips/search ON the chrome pane (they carry
+  // no blur of their own; the pane blurs, the chip tints). Under Reduce
+  // Transparency the designed opaque state swaps them to the solid neutral
+  // pair (mockup body.rt) — active chips keep the mode-independent CTA fill.
+  const chipFill = reduceTransparency ? color.surfaceNeutral : color.glassChipFill;
+  const chipEdge = reduceTransparency ? color.borderSubtle : color.glassChipEdge;
+
+  return StyleSheet.create({
     // Screen wash — the Deep Field stage's mid stop, so any frame rendered
     // before ScreenStage mounts (or content past its edges) matches the field.
     // The stage itself (gradient + pools + grain) is <ScreenStage /> below.
     screen: { flex: 1, backgroundColor: color.stage1 },
+    // The absolute chrome glass pane (variant="chrome" supplies the material:
+    // i=24 blur + floor + bottom edge/lip). No paddingBottom — the last chrome
+    // row (sort) carries its own 12pt, matching the mockup's pane padding.
+    chromePane: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      zIndex: 50,
+    },
+    // The list fills the whole screen beneath the absolute chrome; hidden for
+    // the single pre-measure pass (see chromeHeight) so padding never jumps.
+    listLayer: { flex: 1 },
+    listHidden: { opacity: 0 },
+    // First-load skeleton column — sits exactly where the list will land.
+    loadingColumn: { flex: 1, paddingHorizontal: spacing.lg },
     headerBtn: {
       width: 44,
       height: 44,
       borderRadius: radius.full,
       alignItems: 'center',
       justifyContent: 'center',
-      backgroundColor: color.surface,
+      backgroundColor: chipFill,
+      borderWidth: 1,
+      borderColor: chipEdge,
     },
-    headerBtnPressed: { backgroundColor: color.surfaceNeutral },
+    headerBtnPressed: { backgroundColor: color.glassNeutralBtn },
     flashWrap: {
       position: 'absolute',
-      top: 12,
+      // `top` applied inline (insets.top + spacing.sm) — over the header
+      // inside the safe area, floating above the chrome pane.
       left: 0,
       right: 0,
       alignItems: 'center',
-      zIndex: 10,
+      zIndex: 60,
     },
     flashPill: {
       // successStrong (not success): white reward text needs ≥4.5:1 — #27ae60
@@ -1696,6 +1781,11 @@ const makeStyles = (color: ColorTheme) =>
     // decorative (a11y-hidden); the label carries the meaning, and the
     // accessibilityLabel on the Pressable speaks the full phrase. Color is
     // never the sole signal — the "Nearest open barrier" text states it plainly.
+    // Split for the glass pass: the Pressable owns margins + pressed state,
+    // the inner GlassSurface (variant="banner": i=12 blur + brandSoft floor +
+    // brand edge + specular) owns the material. Radius on both layers (the
+    // surface clips its material to radius.lg — GlassSurface's default).
+    suggestedRowOuter: { marginBottom: spacing.md },
     suggestedRow: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -1703,16 +1793,14 @@ const makeStyles = (color: ColorTheme) =>
       minHeight: 44, // WCAG 2.5.5 minimum touch target
       paddingHorizontal: spacing.md,
       paddingVertical: spacing.sm,
-      marginBottom: spacing.md,
       borderRadius: radius.lg,
-      backgroundColor: color.brandSoft,
-      borderWidth: 1,
-      borderColor: color.brand,
+      // e1 lift in light only — dark is luminosity-led (edges, not shadows).
+      ...(color.scheme === 'light' ? shadow.e1 : {}),
     },
     suggestedRowPressed: { opacity: 0.7 },
     suggestedText: {
       flex: 1,
-      color: color.brandText,
+      color: color.brandOnSoft,
       fontWeight: font.weight.semibold,
       fontSize: font.size.sm,
     },
@@ -1883,19 +1971,21 @@ const makeStyles = (color: ColorTheme) =>
       paddingHorizontal: spacing.lg,
       paddingVertical: spacing.sm,
       gap: spacing.sm,
-      backgroundColor: color.surfaceMuted,
+      // No fill — the row sits on the chrome pane's glass.
     },
     mineChip: {
       paddingHorizontal: spacing.lg,
       paddingVertical: spacing.sm - 1,
       borderRadius: radius.circle,
-      backgroundColor: color.surfaceNeutral,
+      backgroundColor: chipFill,
+      borderWidth: 1,
+      borderColor: chipEdge,
       minHeight: 44, // WCAG 2.5.5: was 36pt (below 44pt project standard)
       alignItems: 'center',
       justifyContent: 'center',
     },
-    mineChipActive: { backgroundColor: color.brand },
-    mineChipText: { fontSize: font.size.sm, fontWeight: font.weight.semibold, color: color.text },
+    mineChipActive: { backgroundColor: color.ctaFill, borderColor: 'transparent' },
+    mineChipText: { fontSize: font.size.sm, fontWeight: font.weight.semibold, color: color.glassChipInk },
     mineChipTextActive: { color: color.textOnBrand },
     // Free-text search — sits above the chip filter rows so the cursor
     // doesn't shift down when the user starts typing. Bordered field +
@@ -1915,8 +2005,10 @@ const makeStyles = (color: ColorTheme) =>
       paddingHorizontal: spacing.md,
       paddingVertical: spacing.sm,
       borderRadius: radius.circle,
-      backgroundColor: color.surfaceNeutral,
-      color: color.text,
+      backgroundColor: chipFill,
+      borderWidth: 1,
+      borderColor: chipEdge,
+      color: color.glassChipInk,
       fontSize: font.size.base,
     },
     searchClearBtn: {
@@ -1947,12 +2039,14 @@ const makeStyles = (color: ColorTheme) =>
       paddingHorizontal: spacing.md,
       paddingVertical: spacing.sm,
       borderRadius: radius.circle,
-      backgroundColor: color.surfaceNeutral,
+      backgroundColor: chipFill,
+      borderWidth: 1,
+      borderColor: chipEdge,
       alignItems: 'center',
       justifyContent: 'center',
     },
-    catChipActive: { backgroundColor: color.brand },
-    catChipText: { fontSize: font.size.sm, fontWeight: font.weight.semibold, color: color.text, flexShrink: 0 },
+    catChipActive: { backgroundColor: color.ctaFill, borderColor: 'transparent' },
+    catChipText: { fontSize: font.size.sm, fontWeight: font.weight.semibold, color: color.glassChipInk, flexShrink: 0 },
     catChipTextActive: { color: color.textOnBrand },
     // Sort row — mirrors sevFilterRow's look, with an explicit "Sort:" label
     // before the chips so sighted users get a hint distinguishing it from
@@ -1969,8 +2063,9 @@ const makeStyles = (color: ColorTheme) =>
     sortLabel: {
       fontSize: font.size.xs,
       fontWeight: font.weight.semibold,
-      // color.textMutedAlt (#5b6470) on screen wash (#f7f9fc) ≈ 7.0:1 — comfortably above AA.
-      color: color.textMutedAlt,
+      // inkGlassMuted — script-arbitrated for the chrome glass over worst-case
+      // scrolling content (textSubtle #707070 measured 2.69:1 there — killed).
+      color: color.inkGlassMuted,
       marginRight: 2,
     },
     sortChip: {
@@ -1980,12 +2075,14 @@ const makeStyles = (color: ColorTheme) =>
       paddingHorizontal: spacing.sm,
       paddingVertical: spacing.sm,
       borderRadius: radius.circle,
-      backgroundColor: color.surfaceNeutral,
+      backgroundColor: chipFill,
+      borderWidth: 1,
+      borderColor: chipEdge,
       alignItems: 'center',
       justifyContent: 'center',
     },
-    sortChipActive: { backgroundColor: color.brand },
-    sortChipText: { fontSize: font.size.sm, fontWeight: font.weight.bold, color: color.text },
+    sortChipActive: { backgroundColor: color.ctaFill, borderColor: 'transparent' },
+    sortChipText: { fontSize: font.size.sm, fontWeight: font.weight.bold, color: color.glassChipInk },
     sortChipTextActive: { color: color.textOnBrand },
     // Bulk-select entry row — a single full-width button sitting at the top
     // of the screen so SR users and anyone unfamiliar with long-press can
@@ -2003,14 +2100,16 @@ const makeStyles = (color: ColorTheme) =>
       paddingHorizontal: spacing.md,
       paddingVertical: spacing.xs,
       borderRadius: radius.circle,
-      backgroundColor: color.surfaceNeutral,
+      backgroundColor: chipFill,
+      borderWidth: 1,
+      borderColor: chipEdge,
       alignItems: 'center',
       justifyContent: 'center',
     },
     selectEntryBtnPressed: { opacity: 0.7 },
-    // 14pt + bold on white-tinted chip background — meets WCAG 1.4.3 AA for
-    // body text. Bumped from 13pt to clear the AA threshold against #eef1f5.
-    selectEntryText: { color: color.brand, fontWeight: font.weight.bold, fontSize: font.size.base },
+    // inkSelect — script-arbitrated on the chip-over-chrome stack (brand
+    // #1466E0 measured 4.17:1 over the worst-case base — forked to brandText).
+    selectEntryText: { color: color.inkSelect, fontWeight: font.weight.bold, fontSize: font.size.base },
     // Card selection visuals — a subtle tinted background + a 2px accent
     // border so a selected card pops without needing to recolor the photo
     // thumbnail or muddle the severity dot. Pairs with the checkmark in
@@ -2051,11 +2150,14 @@ const makeStyles = (color: ColorTheme) =>
       // The bar no longer owns the home-indicator inset — the tab bar it now
       // sits above does. Just enough breathing room below the buttons.
       paddingBottom: spacing.md,
-      backgroundColor: color.surface,
-      borderTopWidth: 1,
-      borderTopColor: color.borderSubtle,
-      shadowColor: color.shadow,
-      shadowOpacity: 0.12,
+      // Fill/edge/specular come from variant="bulk" (the second, conditional
+      // i=24 pane). The up-shadow stays out here — GlassSurface's clip layer
+      // would swallow it (iOS overflow:hidden clips its own shadow). Mockup:
+      // light 0 -2 8 shadowTint@0.12 · dark 0 -2 8 black@0.35 (the one dark
+      // shadow Deep Field keeps — the bar needs lift off the tab bar).
+      ...(color.scheme === 'light'
+        ? { shadowColor: color.shadowTint, shadowOpacity: 0.12 }
+        : { shadowColor: '#000', shadowOpacity: 0.35 }),
       shadowRadius: 8,
       shadowOffset: { width: 0, height: -2 },
       elevation: 8,
@@ -2080,7 +2182,9 @@ const makeStyles = (color: ColorTheme) =>
     },
     bulkBtnDisabled: { opacity: 0.45 },
     bulkBtnPressed: { opacity: 0.85 },
-    bulkVerifyBtn: { backgroundColor: color.brand },
+    // ctaFill, not brand: the CTA fill is MODE-INDEPENDENT #1466E0 (dark brand
+    // #4E89EF + white text = 3.4:1, fails AA — script-arbitrated fork).
+    bulkVerifyBtn: { backgroundColor: color.ctaFill },
     // color.successStrong on white-text ≈ 4.6:1+ — WCAG 1.4.3 AA. color.success alone fails (~2.8:1).
     bulkResolveBtn: { backgroundColor: color.successStrong },
     // color.accentPurple: distinguishable from brand-blue + successStrong for protanopia/deuteranopia.
@@ -2088,12 +2192,13 @@ const makeStyles = (color: ColorTheme) =>
     // Cancel uses the neutral chip palette so it doesn't compete for
     // attention with the primary actions.
     bulkCancelBtn: {
-      backgroundColor: color.surfaceNeutral,
+      backgroundColor: reduceTransparency ? color.surfaceNeutral : color.glassCancelFill,
       borderWidth: 1,
-      borderColor: color.borderStrong,
+      borderColor: color.scheme === 'dark' ? color.glassGhostEdge : color.borderStrong,
     },
     // 14pt bold on the dark button fills — meets WCAG 1.4.3 AA for body text.
     // Bumped from 13pt with the resolve-btn color change to clear AA.
     bulkBtnText: { color: color.textOnBrand, fontWeight: font.weight.bold, fontSize: font.size.base },
     bulkCancelText: { color: color.textStrong, fontWeight: font.weight.bold, fontSize: font.size.base },
   });
+};

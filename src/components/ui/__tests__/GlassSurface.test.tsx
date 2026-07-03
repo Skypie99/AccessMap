@@ -30,8 +30,8 @@ import { useReduceTransparency } from '@/lib/accessibility';
 // ---------------------------------------------------------------------------
 // Import after mocks are registered.
 // ---------------------------------------------------------------------------
-import { GlassSurface } from '../GlassSurface';
-import { color as realColor } from '@/theme';
+import { GlassSurface, __getLiveBlurPaneCount } from '../GlassSurface';
+import { color as realColor, glass as realGlass } from '@/theme';
 
 // ---------------------------------------------------------------------------
 // Mock: '@/lib/accessibility' — only useReduceTransparency is consumed by
@@ -56,6 +56,20 @@ jest.mock('expo-blur', () => {
     __esModule: true,
     BlurView: (props: Record<string, unknown>) =>
       ReactActual.createElement(RNView, { testID: 'glass-blurview', ...props }),
+  };
+});
+
+// ---------------------------------------------------------------------------
+// Mock: 'expo-linear-gradient' — tagged stub so the engineered (no-blur)
+// material's presence is unambiguous (Deep Field variants, 2026-07-03).
+// ---------------------------------------------------------------------------
+jest.mock('expo-linear-gradient', () => {
+  const ReactActual = jest.requireActual('react');
+  const { View: RNView } = jest.requireActual('react-native');
+  return {
+    __esModule: true,
+    LinearGradient: (props: Record<string, unknown>) =>
+      ReactActual.createElement(RNView, { testID: 'glass-lite-gradient', ...props }),
   };
 });
 
@@ -193,5 +207,122 @@ describe('GlassSurface — ViewProps forwarding', () => {
   it('renders without children (children is optional)', () => {
     const { toJSON } = render(<GlassSurface testID="empty" />);
     expect(toJSON()).not.toBeNull();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Deep Field variants (Tasks glass pass, 2026-07-03) — ADDITIVE coverage.
+// Everything above is the legacy contract and stays byte-identical.
+// ---------------------------------------------------------------------------
+
+/** Flatten a react-test-renderer JSON tree into a list of resolved styles. */
+function collectStyles(node: unknown, out: Record<string, unknown>[] = []) {
+  if (!node || typeof node !== 'object') return out;
+  const n = node as { props?: { style?: unknown }; children?: unknown[] };
+  if (n.props?.style) {
+    const raw = n.props.style;
+    const flat = Array.isArray(raw)
+      ? Object.assign({}, ...(raw.flat(Infinity).filter(Boolean) as object[]))
+      : raw;
+    out.push(flat as Record<string, unknown>);
+  }
+  (n.children ?? []).forEach((c) => collectStyles(c, out));
+  return out;
+}
+
+describe('GlassSurface — Deep Field variants (blur material)', () => {
+  it('variant="row" mounts a BlurView at the row intensity with the scheme tint and row floor', () => {
+    const { getByTestId, toJSON } = render(
+      <GlassSurface variant="row">
+        <Text>x</Text>
+      </GlassSurface>,
+    );
+    const blur = getByTestId('glass-blurview');
+    expect(blur.props.intensity).toBe(realGlass.intensity.row); // 12
+    expect(blur.props.tint).toBe(realColor.scheme); // 'light'
+    const styles = collectStyles(toJSON());
+    expect(styles.some((s) => s.backgroundColor === realColor.glassRowFloor)).toBe(true);
+    expect(styles.some((s) => s.borderColor === realColor.glassRowEdge)).toBe(true);
+  });
+
+  it('variant="chrome" mounts i=24 with the chrome floor and bottom edge', () => {
+    const { getByTestId, toJSON } = render(<GlassSurface variant="chrome" />);
+    expect(getByTestId('glass-blurview').props.intensity).toBe(realGlass.intensity.chrome); // 24
+    const styles = collectStyles(toJSON());
+    expect(styles.some((s) => s.backgroundColor === realColor.glassChromeFloor)).toBe(true);
+    expect(styles.some((s) => s.backgroundColor === realColor.glassChromeEdge)).toBe(true);
+    expect(styles.some((s) => s.backgroundColor === realColor.glassChromeLip)).toBe(true);
+  });
+
+  it('edgeColor/edgeWidth/overlayTint overrides land (the selected-card contract)', () => {
+    const { toJSON } = render(
+      <GlassSurface variant="row" edgeColor={realColor.brand} edgeWidth={2} overlayTint={realColor.glassSelectedTint} />,
+    );
+    const styles = collectStyles(toJSON());
+    expect(styles.some((s) => s.borderColor === realColor.brand && s.borderWidth === 2)).toBe(true);
+    expect(styles.some((s) => s.backgroundColor === realColor.glassSelectedTint)).toBe(true);
+  });
+
+  it('tracks the live blur-pane count (mount + unmount are symmetric)', () => {
+    const before = __getLiveBlurPaneCount();
+    const { unmount } = render(<GlassSurface variant="row" />);
+    expect(__getLiveBlurPaneCount()).toBe(before + 1);
+    unmount();
+    expect(__getLiveBlurPaneCount()).toBe(before);
+  });
+});
+
+describe('GlassSurface — Deep Field variants (engineered material)', () => {
+  it('forceEngineered swaps BlurView+floor for the *Lite micro-gradient (C-lite)', () => {
+    const { queryByTestId, getByTestId } = render(
+      <GlassSurface variant="row" forceEngineered>
+        <Text>x</Text>
+      </GlassSurface>,
+    );
+    expect(queryByTestId('glass-blurview')).toBeNull();
+    const lite = getByTestId('glass-lite-gradient');
+    expect(lite.props.colors).toEqual([realColor.glassRowLite0, realColor.glassRowLite1]);
+  });
+
+  it('engineered panes do not count against the blur budget', () => {
+    const before = __getLiveBlurPaneCount();
+    const { unmount } = render(<GlassSurface variant="banner" forceEngineered />);
+    expect(__getLiveBlurPaneCount()).toBe(before);
+    unmount();
+  });
+});
+
+describe('GlassSurface — Deep Field variants (designed Reduce-Transparency states)', () => {
+  beforeEach(() => {
+    mockUseReduceTransparency.mockReturnValue(true);
+  });
+
+  it('variant="row" renders the opaque overlay fill with a borderStrong hairline, no blur', () => {
+    const { queryByTestId, getByTestId } = render(
+      <GlassSurface variant="row" testID="rt-row">
+        <Text>x</Text>
+      </GlassSurface>,
+    );
+    expect(queryByTestId('glass-blurview')).toBeNull();
+    expect(queryByTestId('glass-lite-gradient')).toBeNull();
+    const styles = collectStyles({ props: getByTestId('rt-row').props, children: [] });
+    expect(styles.some((s) => s.backgroundColor === realColor.overlay)).toBe(true);
+    expect(styles.some((s) => s.borderColor === realColor.borderStrong)).toBe(true);
+  });
+
+  it('variant="banner" renders the brandSofter fill with a brand border (the designed state)', () => {
+    const { getByTestId } = render(<GlassSurface variant="banner" testID="rt-banner" />);
+    const styles = collectStyles({ props: getByTestId('rt-banner').props, children: [] });
+    expect(styles.some((s) => s.backgroundColor === realColor.brandSofter)).toBe(true);
+    expect(styles.some((s) => s.borderColor === realColor.brand)).toBe(true);
+  });
+
+  it('children still render in the RT designed state', () => {
+    const { getByText } = render(
+      <GlassSurface variant="chrome">
+        <Text>chrome content</Text>
+      </GlassSurface>,
+    );
+    expect(getByText('chrome content')).toBeTruthy();
   });
 });
