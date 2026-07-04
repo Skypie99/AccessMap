@@ -77,8 +77,9 @@ import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { font, radius, shadow, spacing } from '@/theme';
 import { AppText } from '@/components/ui/AppText';
 import { Input } from '@/components/ui/Input';
+import { GlassSurface } from '@/components/ui/GlassSurface';
 import { ScreenStage } from '@/components/ui/ScreenStage';
-import { hydrateGlassMode } from '@/lib/glassMode';
+import { hydrateGlassMode, useGlassMode } from '@/lib/glassMode';
 import { ArrowDown, ArrowUp, ChevronRight, Flame, MapPin, Pencil, X } from 'lucide-react-native';
 import TierIcon from '@/components/TierIcon';
 import { getTier, pointsToNextTier, REPUTATION_TIERS } from '@/lib/reputationTier';
@@ -157,9 +158,12 @@ export default function ProfileScreen() {
   const color = useColor();
   const styles = useMemo(() => makeStyles(color), [color]);
   const reduceMotion = useReducedMotion();
-  // Hydrate the persisted C-lite glass mode on mount (GLASS.md §4). The
-  // long-press flip lives on the Tasks header; Profile only reads the store
-  // (the reactive read is added with the first glass surface, next stage).
+  // C-lite runtime mode (GLASS.md §4): read-only here — the long-press flip
+  // lives on the Tasks header; Profile just respects the store. Full → the
+  // hero + stat + point-history cards and the nearest banner carry true blur;
+  // 'lite' → those same surfaces render the engineered *Lite gradient. Every
+  // other row is always engineered (budget-free), so it takes no flag.
+  const glassLite = useGlassMode() === 'lite';
   useEffect(() => {
     void hydrateGlassMode();
   }, []);
@@ -908,7 +912,12 @@ export default function ProfileScreen() {
           </View>
         )}
 
-        <View style={styles.heroCard}>
+        <GlassSurface
+          variant="row"
+          forceEngineered={glassLite}
+          style={styles.heroCard}
+          borderRadius={radius.sheet}
+        >
           {/* Phase 9: clean light editorial stat card (was a dark brand
               gradient wash — the last "old app" holdover under the new light
               chrome). Big brand points number carries the hero now. */}
@@ -1054,7 +1063,7 @@ export default function ProfileScreen() {
               You&apos;ve reached the top milestone — {TOP_MILESTONE_LABEL} earned.
             </AppText>
           )}
-        </View>
+        </GlassSurface>
 
         {/* Point history — always rendered. Shows an encouraging empty state
             when no events exist yet (or migration not applied). flag_id is
@@ -1970,15 +1979,16 @@ const makeStyles = (color: ColorTheme) =>
     profileHeader: { paddingHorizontal: 0, paddingTop: 0, paddingBottom: 0 },
     subtitle: { fontSize: font.size.base, color: color.text },
     heroCard: {
-      backgroundColor: color.surface, // clean light editorial card (Phase 9)
+      // Material supplied by <GlassSurface variant="row"> — no bg/border here
+      // (the variant paints the floor + edge + specular hairline). Radius +
+      // padding + elevation shadow stay on this outer style (GLASS.md do/don't
+      // #2: an overflow:hidden material layer would clip its own shadow).
       borderRadius: radius.sheet,
       paddingHorizontal: spacing.xxl,
       paddingTop: spacing.xl + 2,
       paddingBottom: spacing.xxl,
       alignItems: 'center',
       gap: spacing.tight,
-      borderWidth: StyleSheet.hairlineWidth,
-      borderColor: color.borderSubtle,
       ...shadow.e2,
     },
     heroIcon: { fontSize: 32, marginBottom: 4 },
@@ -2036,16 +2046,19 @@ const makeStyles = (color: ColorTheme) =>
       justifyContent: 'center',
     },
     heroLabel: {
-      // textMuted (#666) on the light card surface = 5.7:1 → AA at any size.
-      color: color.textMuted,
+      // Eyebrow on the hero glass — arbitrated on-glass muted ink (textMuted is
+      // below AA over the row floor on worst-case backdrops).
+      color: color.inkGlassMuted,
       fontSize: font.size.base,
       letterSpacing: 2.4,
       fontWeight: font.weight.bold,
       textTransform: 'uppercase',
     },
     heroValue: {
-      // Big brand-blue stat number carries the hero (one Wayfinder-blue accent).
-      color: color.brand,
+      // The signature 56pt data-display number on the hero glass. inkDetailsGhost
+      // is the arbitrated brand-blue for row glass (light #1466E0 — visually the
+      // same Wayfinder blue, 4.75:1; dark #84AEF6 — raw brand fails on dark glass).
+      color: color.inkDetailsGhost,
       fontSize: 56,
       fontWeight: '800',
       // 74 = JetBrains Mono's real line box (56 × 1.32) — 60 shaved the
@@ -2054,7 +2067,7 @@ const makeStyles = (color: ColorTheme) =>
       letterSpacing: -1.2,
     },
     heroSubtitle: {
-      color: color.textMuted,
+      color: color.inkGlassMuted,
       fontSize: font.size.base,
       fontWeight: font.weight.bold,
       textAlign: 'center',
@@ -2092,7 +2105,7 @@ const makeStyles = (color: ColorTheme) =>
       borderRadius: radius.circle,
     },
     tierProgressLabel: {
-      color: color.textMuted, // on the light card surface — AA at any size
+      color: color.inkGlassMuted, // arbitrated muted ink on the hero glass
       fontSize: font.size.base,
       fontWeight: font.weight.bold,
       textAlign: 'center',
