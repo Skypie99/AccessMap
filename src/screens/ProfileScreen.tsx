@@ -77,6 +77,8 @@ import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { font, radius, shadow, spacing } from '@/theme';
 import { AppText } from '@/components/ui/AppText';
 import { Input } from '@/components/ui/Input';
+import { ScreenStage } from '@/components/ui/ScreenStage';
+import { hydrateGlassMode } from '@/lib/glassMode';
 import { ArrowDown, ArrowUp, ChevronRight, Flame, MapPin, Pencil, X } from 'lucide-react-native';
 import TierIcon from '@/components/TierIcon';
 import { getTier, pointsToNextTier, REPUTATION_TIERS } from '@/lib/reputationTier';
@@ -155,6 +157,12 @@ export default function ProfileScreen() {
   const color = useColor();
   const styles = useMemo(() => makeStyles(color), [color]);
   const reduceMotion = useReducedMotion();
+  // Hydrate the persisted C-lite glass mode on mount (GLASS.md §4). The
+  // long-press flip lives on the Tasks header; Profile only reads the store
+  // (the reactive read is added with the first glass surface, next stage).
+  useEffect(() => {
+    void hydrateGlassMode();
+  }, []);
   const navigation = useNavigation<BottomTabNavigationProp<RootTabParamList, 'Profile'>>();
   const tabBarHeight = useBottomTabBarHeight();
   const { user, loading: authLoading } = useAuth();
@@ -788,15 +796,20 @@ export default function ProfileScreen() {
 
   if (authLoading) {
     return (
-      <View style={styles.center}>
-        <ActivityIndicator />
+      <View style={styles.stageRoot}>
+        <ScreenStage />
+        <View style={styles.center}>
+          <ActivityIndicator />
+        </View>
       </View>
     );
   }
 
   if (!user) {
     return (
-      <View style={styles.center}>
+      <View style={styles.stageRoot}>
+        <ScreenStage />
+        <View style={styles.center}>
         <AppText variant="body" style={styles.subtitle}>Sign in to see your stats, badges, and reports.</AppText>
         <Pressable
           onPress={() => setSignInOpen(true)}
@@ -813,6 +826,7 @@ export default function ProfileScreen() {
         >
           <SignInScreen onClose={() => setSignInOpen(false)} />
         </Modal>
+        </View>
       </View>
     );
   }
@@ -846,6 +860,12 @@ export default function ProfileScreen() {
 
   return (
     <>
+      {/* The screen body is the Deep Field stage (GLASS.md). ScreenStage is
+          absolute-fill + a11y-hidden behind the transparent scroll; the root
+          bg is stage1 so any pre-mount frame matches. No chrome pane — the
+          in-flow ScreenHeader scrolls (mirrors Wave-1 Settings). */}
+      <View style={styles.stageRoot}>
+        <ScreenStage />
       <ScrollView
         style={styles.screen}
         contentContainerStyle={[styles.container, { paddingBottom: tabBarHeight + 16 }]}
@@ -856,6 +876,10 @@ export default function ProfileScreen() {
           title={profile?.display_name?.trim() || 'Your profile'}
           subtitle={`Signed in as ${user.email}`}
           style={styles.profileHeader}
+          // Header sits directly on the stage — eyebrow/subtitle take the
+          // arbitrated on-stage ink (textSubtle/textMuted are below AA there).
+          eyebrowColor={color.inkOnStage}
+          subtitleColor={color.inkOnStage}
         />
 
         <UpdateBanner
@@ -1646,6 +1670,7 @@ export default function ProfileScreen() {
           <AppText variant="label" style={styles.deleteAccountText}>Delete Account</AppText>
         </Pressable>
       </ScrollView>
+      </View>
 
       {/* Account-deletion confirmation. Two-button destructive pattern:
           Cancel (neutral) + Delete Account (red). The Delete button shows a
@@ -1887,17 +1912,18 @@ function Stat({ label, value }: { label: string; value: number }) {
 
 const makeStyles = (color: ColorTheme) =>
   StyleSheet.create({
-    // Screen wash — replaces the default white background so the white
-    // cards inside (stats, My Reports, About row) actually read as cards
-    // rather than blending into the surface they sit on.
-    screen: { flex: 1, backgroundColor: color.surfaceMuted },
+    // Deep Field stage root — bg stage1 so any pre-mount frame matches the
+    // ScreenStage gradient behind the transparent scroll (GLASS.md rollout §1).
+    stageRoot: { flex: 1, backgroundColor: color.stage1 },
+    // Transparent so the stage shows through; the cards float on it as glass.
+    screen: { flex: 1, backgroundColor: 'transparent' },
     center: {
       flex: 1,
       alignItems: 'center',
       justifyContent: 'center',
       gap: spacing.lg,
       paddingHorizontal: spacing.xl,
-      backgroundColor: color.surfaceMuted,
+      backgroundColor: 'transparent',
     },
     // Inline load-error card (mirrors LeaderboardScreen's stateWrap/retryBtn).
     errorCard: {
@@ -2381,7 +2407,8 @@ const makeStyles = (color: ColorTheme) =>
     section: { gap: 8, marginTop: 8 },
     sectionLabel: {
       fontSize: 12,
-      color: color.textMuted,
+      // Section headers sit on the raw stage — inkOnStage (textMuted is below AA there).
+      color: color.inkOnStage,
       textTransform: 'uppercase',
       letterSpacing: 0.8,
       fontWeight: '700',
@@ -2399,7 +2426,7 @@ const makeStyles = (color: ColorTheme) =>
     },
     saveBtnDisabled: { opacity: 0.4 },
     saveBtnText: { color: color.textOnBrand, fontWeight: '700', fontSize: 14 },
-    hint: { fontSize: 12, color: color.textMuted, lineHeight: 16 },
+    hint: { fontSize: 12, color: color.inkOnStage, lineHeight: 16 },
     tabRow: { flexDirection: 'row', gap: 8 },
     tabPill: {
       flex: 1,
@@ -2434,7 +2461,7 @@ const makeStyles = (color: ColorTheme) =>
     },
     toggleTextWrap: { flex: 1, gap: 2 },
     toggleLabel: { fontSize: 14, fontWeight: '600', color: color.textStrong },
-    toggleHint: { fontSize: 12, color: color.textMuted },
+    toggleHint: { fontSize: 12, color: color.inkOnStage },
     aboutRow: {
       marginTop: spacing.lg,
       backgroundColor: color.surface,
