@@ -15,7 +15,7 @@ import {
 } from 'react-native';
 import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 import * as Location from 'expo-location';
-import { getCurrentPositionWithTimeout } from '@/lib/location';
+import { getCurrentPositionWithTimeout, initialLocationAction } from '@/lib/location';
 import { OFFLINE_BANNER_TEXT } from '@/lib/copy';
 import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
@@ -1043,9 +1043,21 @@ export default function MapScreen() {
   useEffect(() => {
     Location.getForegroundPermissionsAsync()
       .then(({ status }) => {
-        if (status === 'granted') requestLocation();
+        if (initialLocationAction(status) === 'fetch') {
+          requestLocation();
+        } else if (mountedRef.current) {
+          // Not granted yet (undetermined on first run, or denied): the initial
+          // fetch is skipped, so clear the `locating` spinner that inits true —
+          // otherwise "Finding your location…" hangs forever over an otherwise
+          // working map. The locate FAB / onboarding still trigger the real OS
+          // prompt via requestLocation().
+          setLocating(false);
+        }
       })
-      .catch(() => {});
+      .catch(() => {
+        // Permission probe itself failed — don't leave the spinner stuck.
+        if (mountedRef.current) setLocating(false);
+      });
   }, [requestLocation]);
 
   // When Tasks tab navigates here with a focusFlag, animate to it and pop the

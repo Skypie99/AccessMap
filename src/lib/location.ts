@@ -57,6 +57,27 @@ export function getCurrentPositionWithTimeout(
   );
 }
 
+/**
+ * Decide what MapScreen's initial-mount effect should do, given the OS
+ * foreground-permission status (probed WITHOUT prompting on mount).
+ *
+ * MapScreen starts with `locating = true` and shows a "Finding your location…"
+ * spinner. The mount effect only fetches when permission is ALREADY granted
+ * (the first-time prompt is deferred to onboarding). This helper names the two
+ * outcomes so the rule is explicit and unit-tested:
+ *
+ *   'granted'     → 'fetch'  (requestLocation clears the spinner in its finally)
+ *   anything else → 'clear'  (undetermined on first run, or denied): skip the
+ *                   fetch and clear `locating` NOW — otherwise the spinner
+ *                   hangs forever over an otherwise-working map. The locate
+ *                   button / onboarding still trigger the real OS prompt.
+ */
+export function initialLocationAction(
+  status: Location.PermissionStatus | string,
+): 'fetch' | 'clear' {
+  return status === 'granted' ? 'fetch' : 'clear';
+}
+
 export interface UseUserLocationOptions {
   /**
    * When true, only fetch the location if foreground permission has
