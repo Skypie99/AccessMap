@@ -30,6 +30,7 @@
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { AppText } from '@/components/ui/AppText';
+import { GlassSurface } from '@/components/ui/GlassSurface';
 import {
   CATEGORY_LABELS,
   CATEGORY_ORDER,
@@ -84,7 +85,7 @@ function BarRow({
   const widthPct = max <= 0 ? 0 : Math.max(2, Math.round((count / max) * 100));
   return (
     <View style={styles.barRow} accessible accessibilityRole="text" accessibilityLabel={a11yLabel}>
-      <AppText variant="body" style={styles.barLabel}>
+      <AppText variant="bodyMedium" style={styles.barLabel}>
         {label}
       </AppText>
       <View style={styles.barTrack}>
@@ -168,8 +169,11 @@ export default function ReportsBreakdownCard({ userId, refreshKey }: Props) {
   // Loading shell so the screen doesn't jump when stats arrive.
   if (loading) {
     return (
-      <View
+      <GlassSurface
+        variant="row"
+        forceEngineered
         style={styles.card}
+        borderRadius={radius.lg}
         accessible
         accessibilityRole="text"
         accessibilityLabel="Loading your report breakdown"
@@ -184,7 +188,7 @@ export default function ReportsBreakdownCard({ userId, refreshKey }: Props) {
           accessibilityElementsHidden
           importantForAccessibility="no-hide-descendants"
         />
-      </View>
+      </GlassSurface>
     );
   }
 
@@ -196,8 +200,11 @@ export default function ReportsBreakdownCard({ userId, refreshKey }: Props) {
   // hint so the card surface doesn't look broken.
   if (stats.total === 0) {
     return (
-      <View
+      <GlassSurface
+        variant="row"
+        forceEngineered
         style={styles.card}
+        borderRadius={radius.lg}
         accessible
         accessibilityRole="text"
         accessibilityLabel="No reports yet. Drop a flag on the Map tab to see your breakdown here."
@@ -207,10 +214,10 @@ export default function ReportsBreakdownCard({ userId, refreshKey }: Props) {
             Your reports
           </AppText>
         </View>
-        <AppText variant="body" style={styles.emptyText}>
+        <AppText variant="bodyMedium" style={styles.emptyText}>
           No reports yet. Drop a flag on the Map tab to see your breakdown here.
         </AppText>
-      </View>
+      </GlassSurface>
     );
   }
 
@@ -236,7 +243,7 @@ export default function ReportsBreakdownCard({ userId, refreshKey }: Props) {
     .join(' ');
 
   return (
-    <View style={styles.card}>
+    <GlassSurface variant="row" forceEngineered style={styles.card} borderRadius={radius.lg}>
       <View
         style={styles.headerRow}
         accessible
@@ -283,14 +290,14 @@ export default function ReportsBreakdownCard({ userId, refreshKey }: Props) {
           />
         );
       })}
-    </View>
+    </GlassSurface>
   );
 }
 
 const makeStyles = (color: ColorTheme) =>
   StyleSheet.create({
     card: {
-      backgroundColor: color.surface,
+      // Material via <GlassSurface variant="row">; no bg here.
       borderRadius: radius.lg,
       padding: spacing.lg,
       gap: spacing.sm,
@@ -309,17 +316,21 @@ const makeStyles = (color: ColorTheme) =>
     },
     totalChip: {
       fontSize: font.size.xs,
-      color: color.textMuted,
+      // Engineered chip tint on the row glass — glassChipInk (textMuted forbidden
+      // on glass), glassChipFill + edge hairline for definition.
+      color: color.glassChipInk,
       fontWeight: font.weight.bold,
       paddingHorizontal: spacing.sm,
       paddingVertical: 2,
       borderRadius: radius.full,
-      backgroundColor: color.surfaceMuted,
+      backgroundColor: color.glassChipFill,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: color.glassChipEdge,
       overflow: 'hidden',
     },
     sectionLabel: {
       fontSize: font.size.xs,
-      color: color.textMuted,
+      color: color.inkGlassMuted, // arbitrated muted ink on the row glass
       textTransform: 'uppercase',
       letterSpacing: 0.5,
       fontWeight: font.weight.bold,
@@ -327,7 +338,7 @@ const makeStyles = (color: ColorTheme) =>
     },
     emptyText: {
       fontSize: font.size.sm,
-      color: color.textMuted,
+      color: color.inkGlassMuted, // on the row glass
       lineHeight: 20,
     },
     barRow: {

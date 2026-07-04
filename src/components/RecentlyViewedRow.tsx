@@ -16,6 +16,7 @@
 import React, { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { AppText } from '@/components/ui/AppText';
+import { GlassSurface } from '@/components/ui/GlassSurface';
 import { CATEGORY_LABELS, fetchFlagsByIds, severityColor } from '@/lib/flags';
 import { loadRecentlyViewed } from '@/lib/recentlyViewed';
 import { font, radius, shadow, spacing } from '@/theme';
@@ -95,8 +96,13 @@ export default function RecentlyViewedRow({ userId, refreshKey, onSelect }: Prop
   if (!loaded || flags.length === 0) return null;
 
   return (
-    <View
+    <GlassSurface
+      variant="row"
+      // Engineered (not true blur): this sibling sits outside the hero blur
+      // cluster, so it never counts against the pane budget (GLASS.md §3).
+      forceEngineered
       style={styles.card}
+      borderRadius={radius.lg}
       accessible={false}
       // We don't put a single accessibilityLabel on the wrapper —
       // each chip is its own button and a screen-reader user is
@@ -144,14 +150,14 @@ export default function RecentlyViewedRow({ userId, refreshKey, onSelect }: Prop
           </Pressable>
         ))}
       </ScrollView>
-    </View>
+    </GlassSurface>
   );
 }
 
 const makeStyles = (color: ColorTheme) =>
   StyleSheet.create({
     card: {
-      backgroundColor: color.surface,
+      // Material via <GlassSurface variant="row">; no bg here.
       borderRadius: radius.lg,
       padding: spacing.lg,
       gap: spacing.sm,
@@ -176,7 +182,11 @@ const makeStyles = (color: ColorTheme) =>
       paddingHorizontal: spacing.md,
       paddingVertical: spacing.sm,
       borderRadius: radius.full,
-      backgroundColor: color.surfaceMuted,
+      // Engineered chip tint (GLASS.md — anything smaller than a row tints,
+      // never blurs); the edge hairline gives it definition on the row glass.
+      backgroundColor: color.glassChipFill,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: color.glassChipEdge,
       minHeight: 44,
       maxWidth: 200,
     },

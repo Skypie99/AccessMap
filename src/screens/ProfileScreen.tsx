@@ -1068,12 +1068,17 @@ export default function ProfileScreen() {
         {/* Point history — always rendered. Shows an encouraging empty state
             when no events exist yet (or migration not applied). flag_id is
             NOT shown — see TRUST_SCORE_SPEC §3.2 Jordan constraint. */}
-        <View style={styles.pointHistoryCard}>
+        <GlassSurface
+          variant="row"
+          forceEngineered={glassLite}
+          style={styles.pointHistoryCard}
+          borderRadius={radius.lg}
+        >
           <AppText variant="heading" style={styles.pointHistoryTitle} accessibilityRole="header">
             Recent point activity
           </AppText>
           {pointEvents.length === 0 ? (
-            <AppText variant="body" style={styles.pointHistoryEmpty}>
+            <AppText variant="bodyMedium" style={styles.pointHistoryEmpty}>
               Start reporting barriers to earn points!
             </AppText>
           ) : (
@@ -1104,7 +1109,7 @@ export default function ProfileScreen() {
                         <ArrowDown size={14} color={color.error} strokeWidth={2.4} />
                       )}
                     </AppText>
-                    <AppText variant="body" style={styles.pointHistoryLabel} numberOfLines={2}>
+                    <AppText variant="bodyMedium" style={styles.pointHistoryLabel} numberOfLines={2}>
                       {pointEventLabel(ev.event_type)}
                     </AppText>
                     <AppText variant="body" style={styles.pointHistoryDate}>{dateStr}</AppText>
@@ -1122,7 +1127,7 @@ export default function ProfileScreen() {
               })}
             </View>
           )}
-        </View>
+        </GlassSurface>
 
         <View
           style={styles.statsRow}
@@ -1134,9 +1139,9 @@ export default function ProfileScreen() {
             `${stats.resolved} resolved`
           }
         >
-          <Stat label="Reported" value={stats.reported} />
-          <Stat label="Verified" value={stats.byStatus.verified} />
-          <Stat label="Resolved" value={stats.resolved} />
+          <Stat label="Reported" value={stats.reported} glassLite={glassLite} />
+          <Stat label="Verified" value={stats.byStatus.verified} glassLite={glassLite} />
+          <Stat label="Resolved" value={stats.resolved} glassLite={glassLite} />
         </View>
 
         {/* Streak card — only renders once we have a real value (≥1)
@@ -1177,7 +1182,10 @@ export default function ProfileScreen() {
         {nearestUnresolved && (
           <Pressable
             onPress={handleJumpToNearest}
-            style={({ pressed }) => [styles.nearestBtn, pressed && styles.nearestBtnPressed]}
+            // Pressable is the interactive/a11y root; GlassSurface (banner) is
+            // material only. Press feedback is opacity (a bg swap is invisible
+            // under glass) — matches the Tasks/Settings recipe.
+            style={({ pressed }) => pressed && styles.nearestBtnPressed}
             accessibilityRole="button"
             accessibilityLabel={
               `Jump to the nearest unresolved flag: ` +
@@ -1187,23 +1195,30 @@ export default function ProfileScreen() {
             }
             accessibilityHint="Opens the Map tab centered on this flag"
           >
-            <MapPin size={20} color={color.brand} strokeWidth={2.2} />
-            <View style={styles.nearestBtnTextWrap}>
-              <AppText variant="label" style={styles.nearestBtnTitle}>
-                Nearest unresolved · {formatDistance(nearestUnresolved.km)}
-              </AppText>
-              <AppText variant="body" style={styles.nearestBtnSubtitle} numberOfLines={2}>
-                {CATEGORY_LABELS[nearestUnresolved.flag.category]} · severity{' '}
-                {nearestUnresolved.flag.severity}
-              </AppText>
-            </View>
-            <ChevronRight
-              size={18}
-              color={color.brand}
-              strokeWidth={2.2}
-              accessibilityElementsHidden
-              importantForAccessibility="no-hide-descendants"
-            />
+            <GlassSurface
+              variant="banner"
+              forceEngineered={glassLite}
+              style={styles.nearestBtn}
+              borderRadius={12}
+            >
+              <MapPin size={20} color={color.brandOnSoft} strokeWidth={2.2} />
+              <View style={styles.nearestBtnTextWrap}>
+                <AppText variant="label" style={styles.nearestBtnTitle}>
+                  Nearest unresolved · {formatDistance(nearestUnresolved.km)}
+                </AppText>
+                <AppText variant="bodyMedium" style={styles.nearestBtnSubtitle} numberOfLines={2}>
+                  {CATEGORY_LABELS[nearestUnresolved.flag.category]} · severity{' '}
+                  {nearestUnresolved.flag.severity}
+                </AppText>
+              </View>
+              <ChevronRight
+                size={18}
+                color={color.brandOnSoft}
+                strokeWidth={2.2}
+                accessibilityElementsHidden
+                importantForAccessibility="no-hide-descendants"
+              />
+            </GlassSurface>
           </Pressable>
         )}
 
@@ -1906,16 +1921,21 @@ export default function ProfileScreen() {
   );
 }
 
-function Stat({ label, value }: { label: string; value: number }) {
+function Stat({ label, value, glassLite }: { label: string; value: number; glassLite: boolean }) {
   const color = useColor();
   const styles = makeStyles(color);
   return (
-    <View style={styles.statCard}>
+    <GlassSurface
+      variant="row"
+      forceEngineered={glassLite}
+      style={styles.statCard}
+      borderRadius={radius.lg}
+    >
       <AppText variant="monoBold" style={styles.statValue}>{value}</AppText>
       <AppText variant="label" style={styles.statLabel} adjustsFontSizeToFit numberOfLines={1}>
         {label}
       </AppText>
-    </View>
+    </GlassSurface>
   );
 }
 
@@ -2226,7 +2246,7 @@ const makeStyles = (color: ColorTheme) =>
     // Shows the last 5 point events; hidden when empty (migration not applied
     // or no events yet). Matches the overall card-surface pattern.
     pointHistoryCard: {
-      backgroundColor: color.surface,
+      // Material via <GlassSurface variant="row">; no bg here.
       borderRadius: radius.lg,
       padding: 16,
       gap: spacing.sm,  // or spacing.md — Dani design decision P2
@@ -2235,7 +2255,7 @@ const makeStyles = (color: ColorTheme) =>
     pointHistoryTitle: {
       fontSize: font.size.xs,
       fontWeight: font.weight.bold,
-      color: color.textMuted,
+      color: color.inkGlassMuted, // arbitrated muted ink on the row glass
       textTransform: 'uppercase',
       letterSpacing: 0.8,
     },
@@ -2271,7 +2291,7 @@ const makeStyles = (color: ColorTheme) =>
     },
     pointHistoryDate: {
       fontSize: font.size.xs,
-      color: color.textMuted,
+      color: color.inkGlassMuted, // arbitrated muted ink on the row glass
       textAlign: 'right',
     },
     // Positive delta: successStrong (#1e8449, 4.66:1 on white) — AA-safe green.
@@ -2290,7 +2310,7 @@ const makeStyles = (color: ColorTheme) =>
     // Empty state — encouraging copy when no events exist yet.
     pointHistoryEmpty: {
       fontSize: font.size.sm,
-      color: color.textMuted,
+      color: color.inkGlassMuted, // on the row glass
       textAlign: 'center',
       paddingVertical: spacing.lg,
     },
@@ -2316,25 +2336,26 @@ const makeStyles = (color: ColorTheme) =>
     // from the orange streak card directly above; chevron hints at the
     // navigation action.
     nearestBtn: {
+      // Banner material via <GlassSurface variant="banner">; the variant's brand
+      // edge replaces the old left-accent bar. No bg/border here.
       flexDirection: 'row',
       alignItems: 'center',
       gap: 12,
-      backgroundColor: color.brandSofter,
       borderRadius: 12,
       paddingHorizontal: 16,
       paddingVertical: 12,
       minHeight: 56,
-      borderLeftWidth: 3,
-      borderLeftColor: color.brand,
     },
     nearestBtnPressed: {
-      backgroundColor: color.brandSoft,
+      // opacity only — a bg swap is invisible under the banner glass.
       opacity: 0.9,
     },
     nearestBtnIcon: { fontSize: 22 },
     nearestBtnTextWrap: { flex: 1, gap: 2 },
-    nearestBtnTitle: { fontSize: font.size.md, fontWeight: font.weight.bold, color: color.brandText },
-    nearestBtnSubtitle: { fontSize: font.size.xs, color: color.brandText, opacity: 0.85 },
+    // brandOnSoft is the arbitrated ink for the brand-tinted banner floor.
+    // (No opacity on the subtitle — a translucent ink over glass hazes below AA.)
+    nearestBtnTitle: { fontSize: font.size.md, fontWeight: font.weight.bold, color: color.brandOnSoft },
+    nearestBtnSubtitle: { fontSize: font.size.xs, color: color.brandOnSoft },
     nearestBtnChevron: {
       fontSize: 22,
       color: color.brand,
@@ -2343,14 +2364,17 @@ const makeStyles = (color: ColorTheme) =>
     },
     statsRow: { flexDirection: 'row', gap: spacing.md },
     statCard: {
+      // Material via <GlassSurface variant="row">; no bg here. flex/radius/
+      // padding/shadow stay on the outer style.
       flex: 1,
-      backgroundColor: color.surface,
       borderRadius: radius.lg,
       padding: spacing.lg,
       alignItems: 'center',
       ...shadow.e2,
     },
     statValue: {
+      // textStrong (near-black / near-white) reads high-contrast on the row
+      // glass in both themes — arbiter-declared, not a muted ink.
       fontSize: 28,
       fontWeight: '700',
       color: color.textStrong,
@@ -2358,7 +2382,7 @@ const makeStyles = (color: ColorTheme) =>
     },
     statLabel: {
       fontSize: 11,
-      color: color.textMuted,
+      color: color.inkGlassMuted, // arbitrated muted ink on the row glass
       textTransform: 'uppercase',
       letterSpacing: 0.8,
       fontWeight: '600',
