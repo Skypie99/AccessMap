@@ -21,7 +21,7 @@ import { useNavigation, useRoute, type RouteProp } from '@react-navigation/nativ
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
-import { font, radius, shadow, spacing } from '@/theme';
+import { font, radius, severity, shadow, spacing } from '@/theme';
 import { errorMessage } from '@/lib/errors';
 import { confirm, notify } from '@/lib/confirm';
 import CategoryIcon from '@/components/CategoryIcon';
@@ -1246,7 +1246,13 @@ export default function MapScreen() {
           {/* WCAG 4.1.3: live region ensures AT announces when the count
               changes after a filter toggle (e.g. "12 of 45 shown"). Using
               'polite' so it doesn't interrupt mid-sentence. */}
-          <GlassSurface style={styles.statusPill} borderRadius={radius.circle} accessibilityLiveRegion="polite">
+          <GlassSurface
+            style={styles.statusPill}
+            variant="row"
+            forceEngineered
+            borderRadius={radius.circle}
+            accessibilityLiveRegion="polite"
+          >
             <AppText variant="label" maxFontSizeMultiplier={1.3} style={styles.statusText}>
               {loadingFlags
                 ? 'Loading flags…'
@@ -1262,7 +1268,7 @@ export default function MapScreen() {
             inner button drops its own shadow so the row reads as one
             object with internal segments.
           */}
-          <GlassSurface style={styles.actionBar} borderRadius={radius.circle}>
+          <GlassSurface style={styles.actionBar} variant="row" forceEngineered borderRadius={radius.circle}>
             {/* The 7 buttons scroll horizontally when the tray outgrows the
                 screen (~322pt of targets vs 288pt usable at 320pt — sweep
                 M11). Identical at normal widths: the row is content-sized and
@@ -1282,7 +1288,7 @@ export default function MapScreen() {
               accessibilityLabel="Search by address"
               accessibilityHint="Opens a search box to jump the map to an address or place"
             >
-              <Search size={19} color={color.brand} strokeWidth={2.2} />
+              <Search size={19} color={color.inkSelect} strokeWidth={2.2} />
             </PressableScale>
             <View style={styles.actionDivider} accessibilityElementsHidden />
             <PressableScale
@@ -1292,7 +1298,7 @@ export default function MapScreen() {
               accessibilityLabel="Map legend"
               accessibilityHint="Opens a guide explaining flag categories and severity"
             >
-              <HelpCircle size={19} color={color.brand} strokeWidth={2.2} />
+              <HelpCircle size={19} color={color.inkSelect} strokeWidth={2.2} />
             </PressableScale>
             <View style={styles.actionDivider} accessibilityElementsHidden />
             <PressableScale
@@ -1304,7 +1310,7 @@ export default function MapScreen() {
             >
               <SlidersHorizontal
                 size={19}
-                color={filtersOpen || filtersActive ? color.textOnBrand : color.brand}
+                color={filtersOpen || filtersActive ? color.textOnBrand : color.inkSelect}
                 strokeWidth={2.2}
               />
             </PressableScale>
@@ -1330,7 +1336,12 @@ export default function MapScreen() {
                 style={[
                   styles.iconText,
                   styles.sevQuickText,
-                  minSeverity > 1 && styles.iconTextActive,
+                  // {n}+ is TEXT (4.5 floor): textStrong at rest; on the active
+                  // severity fill use the severity's own AA-audited ink (sev1-4
+                  // #0F1B2D, sev5 #fff) — plain white here failed 2.2–3.6:1.
+                  minSeverity > 1
+                    ? { color: severity[minSeverity].textOnColor }
+                    : { color: color.textStrong },
                 ]}
               >
                 {minSeverity}+
@@ -1360,7 +1371,7 @@ export default function MapScreen() {
                   decorative
                 />
               ) : (
-                <Shapes size={19} color={color.brand} strokeWidth={2.2} />
+                <Shapes size={19} color={color.inkSelect} strokeWidth={2.2} />
               )}
             </PressableScale>
             <View style={styles.actionDivider} accessibilityElementsHidden />
@@ -1370,7 +1381,7 @@ export default function MapScreen() {
               accessibilityRole="button"
               accessibilityLabel="Refresh flags"
             >
-              <RotateCw size={19} color={color.brand} strokeWidth={2.2} />
+              <RotateCw size={19} color={color.inkSelect} strokeWidth={2.2} />
             </PressableScale>
             <View style={styles.actionDivider} accessibilityElementsHidden />
             <PressableScale
@@ -1379,7 +1390,7 @@ export default function MapScreen() {
               accessibilityRole="button"
               accessibilityLabel="Recenter on me"
             >
-              <LocateFixed size={19} color={color.brand} strokeWidth={2.2} />
+              <LocateFixed size={19} color={color.inkSelect} strokeWidth={2.2} />
             </PressableScale>
             </ScrollView>
           </GlassSurface>
@@ -2367,15 +2378,17 @@ const makeStyles = (color: ColorTheme) =>
     placeChipGlyph: { fontSize: 14, color: '#1466E0' },
     placeChipText: { fontSize: 13, fontWeight: '600', color: '#0E4499' },
     statusPill: {
-      // Frosted glass via <GlassSurface> (Phase 10) — no backgroundColor here,
-      // the surface owns the translucent fill + AA contrast floor.
+      // Deep Field row-tier via <GlassSurface variant="row" forceEngineered>
+      // (Map pass) — no backgroundColor here, the surface owns the translucent
+      // fill + AA floor. Shadow only in light: over the engineered dark chrome
+      // the e1 drop (dark #0F1B2D) reads as muddy fringing, not lift.
       alignSelf: 'flex-start',
       paddingHorizontal: 12,
       paddingVertical: 8,
       borderRadius: radius.circle,
-      ...shadow.e1,
+      ...(color.scheme === 'light' ? shadow.e1 : {}),
     },
-    statusText: { fontSize: 13, color: color.text, fontWeight: '600' },
+    statusText: { fontSize: 13, color: color.textStrong, fontWeight: '600' },
     iconBtn: {
       width: 36,
       height: 36,
@@ -2401,19 +2414,19 @@ const makeStyles = (color: ColorTheme) =>
     // connected tool tray instead of four free-floating circles. Replaces
     // the cheap "scattered buttons" look the user called out.
     actionBar: {
-      // Frosted glass via <GlassSurface> (Phase 10) — was a near-opaque white
-      // tray; now translucent + blurred, matching the filter panel + legend.
+      // Deep Field row-tier via <GlassSurface variant="row" forceEngineered>
+      // (Map pass). No border here — the row variant paints its own hairline
+      // edge, so a second borderWidth would double it. Shadow light-only (see
+      // statusPill note).
       flexDirection: 'row',
       borderRadius: radius.circle,
       paddingHorizontal: 4,
       paddingVertical: 2,
       alignItems: 'center',
-      borderWidth: StyleSheet.hairlineWidth,
-      borderColor: color.borderSubtle,
       // Yields inside topRow so the inner tray ScrollView gets a bounded
       // viewport at narrow widths (M11) instead of bleeding off-screen.
       flexShrink: 1,
-      ...shadow.e2,
+      ...(color.scheme === 'light' ? shadow.e2 : {}),
     },
     // Pattern-B pins (guard Rule 4): a horizontal scroller inside a bounded
     // flex parent must never grow/shrink on its cross axis.
@@ -2426,7 +2439,7 @@ const makeStyles = (color: ColorTheme) =>
       justifyContent: 'center',
       borderRadius: radius.circle,
     },
-    actionBtnActive: { backgroundColor: color.brand },
+    actionBtnActive: { backgroundColor: color.ctaFill },
     actionDivider: {
       width: 1,
       height: 18,
