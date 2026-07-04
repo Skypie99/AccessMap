@@ -224,6 +224,11 @@ export const color = {
   glassNeutralBtn: 'rgba(22,33,58,0.06)', // "Resolved" neutral fill on row glass
   glassCancelFill: 'rgba(255,255,255,0.62)', // bulk-bar Cancel fill
   glassSelectedTint: 'rgba(217,231,253,0.35)', // selected-card wash over the row floor
+  // Map pass: an extra wash painted (as overlayTint) on the filter panel so its
+  // muted / link inks clear AA over LIVE map tiles, where the row floor alone is
+  // too thin. Renders in blur + engineered modes; the RT path never paints it
+  // (the 0.97 opaque fill out-contrasts it anyway).
+  glassMapWash: 'rgba(255,255,255,0.30)',
   glassSkeletonBar: 'rgba(15,27,45,0.08)',
   glassSheen: 'rgba(255,255,255,0.35)', // press-sheen wash top stop
   // Inks on glass — every fork below was script-decided over worst-case

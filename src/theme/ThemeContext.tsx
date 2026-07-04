@@ -175,6 +175,7 @@ const darkColor = {
   glassNeutralBtn: 'rgba(255,255,255,0.10)',
   glassCancelFill: 'rgba(255,255,255,0.14)',
   glassSelectedTint: 'rgba(15,45,94,0.45)',
+  glassMapWash: 'rgba(13,18,32,0.30)', // Map pass — see the light palette note.
   glassSkeletonBar: 'rgba(168,192,224,0.10)',
   glassSheen: 'rgba(255,255,255,0.35)',
   // Inks on glass — dark forks, all script-decided.

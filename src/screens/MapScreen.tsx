@@ -21,6 +21,7 @@ import { useNavigation, useRoute, type RouteProp } from '@react-navigation/nativ
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
+import { hydrateGlassMode, useGlassMode } from '@/lib/glassMode';
 import { font, radius, severity, shadow, spacing } from '@/theme';
 import { errorMessage } from '@/lib/errors';
 import { confirm, notify } from '@/lib/confirm';
@@ -232,6 +233,14 @@ export async function webSetMenuChoice(
 export default function MapScreen() {
   const color = useColor();
   const styles = useMemo(() => makeStyles(color), [color]);
+  // C-lite drives the filter panel's material: full = true blur (F3, the one
+  // frost moment on Map), lite = engineered gradient. Hydrate on mount so a
+  // C-lite user who cold-starts onto Map doesn't get a blur panel for one frame
+  // before another glass screen mounts (bonus fix 3).
+  const glassLite = useGlassMode() === 'lite';
+  useEffect(() => {
+    void hydrateGlassMode();
+  }, []);
   const mapRef = useRef<PlatformMapHandle | null>(null);
   const route = useRoute<RouteProp<RootTabParamList, 'FullMap'>>();
   // L9: needed to reset route.params.flagId after a deep link is handled —
@@ -1492,6 +1501,9 @@ export default function MapScreen() {
                   PANEL_BRACKET_ALLOWANCE,
               },
             ]}
+            variant="row"
+            forceEngineered={glassLite}
+            overlayTint={color.glassMapWash}
             borderRadius={radius.lg}
           >
             <View style={styles.filterHeaderRow}>
@@ -1512,9 +1524,9 @@ export default function MapScreen() {
               >
                 <AppText variant="heading" style={styles.filterTitle}>Filter flags</AppText>
                 {panelCollapsed ? (
-                  <ChevronRight size={16} color={color.brand} strokeWidth={2.4} accessibilityElementsHidden />
+                  <ChevronRight size={16} color={color.inkSelect} strokeWidth={2.4} accessibilityElementsHidden />
                 ) : (
-                  <ChevronDown size={16} color={color.brand} strokeWidth={2.4} accessibilityElementsHidden />
+                  <ChevronDown size={16} color={color.inkSelect} strokeWidth={2.4} accessibilityElementsHidden />
                 )}
               </Pressable>
               {filtersActive && (
@@ -1591,7 +1603,7 @@ export default function MapScreen() {
                             {isDefault && (
                               <Star
                                 size={14}
-                                color={color.brand}
+                                color={color.inkSelect}
                                 strokeWidth={2.2}
                                 accessibilityElementsHidden
                                 importantForAccessibility="no-hide-descendants"
@@ -1668,7 +1680,16 @@ export default function MapScreen() {
                         accessibilityLabel={`Minimum severity ${s}`}
                         accessibilityState={{ selected: active }}
                       >
-                        <AppText variant="label" style={[styles.sevPillText, active && styles.sevPillTextActive]}>
+                        <AppText
+                          variant="label"
+                          style={[
+                            styles.sevPillText,
+                            // Active fill is the severity color — use its own
+                            // AA-audited ink (sev1-4 #0F1B2D, sev5 #fff); plain
+                            // white failed 2.2–3.6:1 on sev 2/3/4.
+                            active && { color: severity[s].textOnColor },
+                          ]}
+                        >
                           {s}+
                         </AppText>
                       </Pressable>
@@ -2456,9 +2477,10 @@ const makeStyles = (color: ColorTheme) =>
       borderRadius: radius.lg,
       padding: spacing.md,
       gap: spacing.sm,
-      borderWidth: StyleSheet.hairlineWidth,
-      borderColor: color.borderSubtle,
-      ...shadow.e2,
+      // No border here — the row variant paints its own hairline edge (a second
+      // border would double it). Shadow light-only (over the engineered/blur
+      // dark panel the dark drop reads as fringing, not lift).
+      ...(color.scheme === 'light' ? shadow.e2 : {}),
     },
     // The scrollable region holding the 8 filter sections. flexShrink lets it
     // shrink within the maxHeight-bounded panel so filterHeaderRow stays pinned
@@ -2487,10 +2509,16 @@ const makeStyles = (color: ColorTheme) =>
       minHeight: 32,
     },
     filterChevron: { fontSize: font.size.xs, color: color.brand, fontWeight: font.weight.bold },
-    clearLink: { fontSize: font.size.xs, color: color.brand, fontWeight: font.weight.semibold },
+    // Bare text link on the washed panel (4.5 floor): light brandTextAlt
+    // #0E4499 / dark inkSelect #B4CFFA. Plain brand was 4.25:1 L / failed dark.
+    clearLink: {
+      fontSize: font.size.xs,
+      color: color.scheme === 'light' ? color.brandTextAlt : color.inkSelect,
+      fontWeight: font.weight.semibold,
+    },
     filterSubLabel: {
       fontSize: font.size.caption,
-      color: color.textMuted,
+      color: color.inkGlassMuted,
       textTransform: 'uppercase',
       letterSpacing: font.tracking.loose,
       marginTop: spacing.sm,
@@ -2505,12 +2533,17 @@ const makeStyles = (color: ColorTheme) =>
       paddingVertical: 6,
       minHeight: 44,
       borderRadius: radius.circle,
-      backgroundColor: color.surfaceNeutral,
+      // Chip-on-pane (law): translucent chip tint + hairline edge over the
+      // washed panel; ink is glassChipInk. Active + dashed-add variants
+      // override the bg below.
+      backgroundColor: color.glassChipFill,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: color.glassChipEdge,
       alignItems: 'center',
       justifyContent: 'center',
     },
-    filterPillActive: { backgroundColor: color.brand },
-    filterPillText: { fontSize: font.size.xs, color: color.text, fontWeight: font.weight.semibold },
+    filterPillActive: { backgroundColor: color.ctaFill },
+    filterPillText: { fontSize: font.size.xs, color: color.glassChipInk, fontWeight: font.weight.semibold },
     filterPillTextActive: { color: color.textOnBrand },
     // Viewport count badge inside each category chip (UX #1). Sits after the
     // label with a thin separator gap; muted so the label stays primary, but
@@ -2518,7 +2551,9 @@ const makeStyles = (color: ColorTheme) =>
     filterPillRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
     filterPillCount: {
       fontSize: font.size.caption,
-      color: color.textMuted,
+      // glassChipInk on the chip stack (10.46/6.25); hierarchy comes from the
+      // smaller caption size, not a lighter ink (inkGlassMuted failed the stack).
+      color: color.glassChipInk,
       fontWeight: font.weight.bold,
     },
     sevPill: {
@@ -2527,11 +2562,15 @@ const makeStyles = (color: ColorTheme) =>
       borderRadius: radius.circle,
       alignItems: 'center',
       justifyContent: 'center',
-      backgroundColor: color.surfaceNeutral,
+      // Chip-on-pane like the filter pills; the active state overrides the bg
+      // with the severity color inline.
+      backgroundColor: color.glassChipFill,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: color.glassChipEdge,
     },
-    sevPillText: { fontSize: font.size.sm, color: color.text, fontWeight: font.weight.bold },
+    sevPillText: { fontSize: font.size.sm, color: color.glassChipInk, fontWeight: font.weight.bold },
     sevPillTextActive: { color: color.textOnBrand },
-    statusHint: { fontSize: font.size.caption, color: color.warningHint, marginTop: spacing.tight },
+    statusHint: { fontSize: font.size.caption, color: color.warningFg, marginTop: spacing.tight },
     banner: {
       alignSelf: 'center',
       backgroundColor: color.overlaySoft,
@@ -2693,13 +2732,13 @@ const makeStyles = (color: ColorTheme) =>
     fabPressed: { opacity: 0.8 },
     fabText: { color: color.textOnBrand, fontWeight: '700', fontSize: 15 },
     savedEmpty: { gap: 8, marginTop: 4 },
-    savedEmptyText: { fontSize: 12, color: color.textMuted, lineHeight: 16 },
+    savedEmptyText: { fontSize: 12, color: color.inkGlassMuted, lineHeight: 16 },
     savedSaveBtn: {
       alignSelf: 'flex-start',
       paddingHorizontal: 12,
       paddingVertical: 8,
       borderRadius: radius.circle,
-      backgroundColor: color.brand,
+      backgroundColor: color.ctaFill,
       minHeight: 44,
       justifyContent: 'center',
     },
@@ -2726,7 +2765,7 @@ const makeStyles = (color: ColorTheme) =>
       paddingHorizontal: 12,
       paddingVertical: 10,
       borderRadius: 10,
-      backgroundColor: color.brand,
+      backgroundColor: color.ctaFill,
       alignItems: 'center',
       justifyContent: 'center',
     },
