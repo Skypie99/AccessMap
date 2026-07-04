@@ -57,7 +57,7 @@ text / UI components). Don't introduce a new fg/bg pair without checking it.
 | `textMuted` (#666) | `surface` | 5.7:1 | AA |
 | `textSubtle` (#707070) | `surface` | 4.95:1 | AA at any size (darkened from #999 in the Phase 6 a11y pass) |
 | `brand` (#1466E0) | `surface` | 5.2:1 | AA at any size ("Wayfinder Blue" is darker than the old #2f80ed) |
-| `textOnBrand` (#fff) | `brand` | 3.3:1 | AA large / UI only (use ≥16pt bold) |
+| `textOnBrand` (#fff) | `ctaFill` (#1466E0) | 5.24:1 | AA — the mode-independent CTA fill; prefer over themed `brand` (dark `#4E89EF` = 3.42:1, fails small text) for any white-on-blue |
 | `statusOpenFg` | `statusOpenBg` | 6.5:1 | AA |
 | `statusVerifiedFg` | `statusVerifiedBg` | 7.6:1 | AAA |
 | `statusResolvedFg` | `statusResolvedBg` | 6.4:1 | AA |
@@ -256,7 +256,10 @@ The app ships light + dark palettes (`ThemeContext`) and follows the OS by defau
 **Light / Dark / System** control in Settings (`useThemeMode()`) lets users override; the
 choice persists in AsyncStorage. Always consume colors via `useColor()` so both palettes
 work. Fixed-background exceptions (do NOT theme): the dark sign-in splash, the always-dark
-nav chrome, and the always-light map overlays (heatmap legend).
+nav chrome, and the always-light map overlays (heatmap legend, locating banner, saved-place
+chips). As of the 2026-07-04 Map pass (GLASS.md §8 + §12), Map's status pill / action bar /
+filter panel are THEMED Deep Field row-tier — dark chrome in dark mode; only the pinned
+overlays above stay always-light.
 
 ---
 

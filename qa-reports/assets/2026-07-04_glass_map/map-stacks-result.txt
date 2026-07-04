@@ -1,0 +1,86 @@
+## Contrast report — glass-map — shipped pairings, Map pass (2026-07-04)
+
+Composite order: `stack[0]` painted first (nearest base) → last element topmost.
+Worst case = the base backdrop that yields the LOWEST ratio for the pair.
+
+### light
+
+| pair | surface | worst base | resulting bg | ratio | min | verdict |
+|---|---|---|---|---|---|---|
+| status pill text textStrong (RE-TIER row) (`#222`) | mapPane | `#000000` | `#B3B3B3` | 7.55:1 | 4.5:1 | PASS |
+| action bar icons inkSelect (1.4.11) (`#0F53BE`) | mapPane | `#000000` | `#B3B3B3` | 3.32:1 | 3:1 | PASS |
+| action bar {n}+ label textStrong (`#222`) | mapPane | `#000000` | `#B3B3B3` | 7.55:1 | 4.5:1 | PASS |
+| panel sub-labels/savedEmptyText inkGlassMuted (`#414B5A`) | mapPaneWash | `#000000` | `#C9C9C9` | 5.36:1 | 4.5:1 | PASS |
+| panel title Filter flags textStrong (`#222`) | mapPaneWash | `#000000` | `#C9C9C9` | 9.65:1 | 4.5:1 | PASS |
+| panel body/labels color.text (`#333`) | mapPaneWash | `#000000` | `#C9C9C9` | 7.67:1 | 4.5:1 | PASS |
+| panel hints statusHint warningFg (`#714b00`) | mapPaneWash | `#000000` | `#C9C9C9` | 4.70:1 | 4.5:1 | PASS |
+| panel Clear link brandTextAlt (light fork) (`#0E4499`) | mapPaneWash | `#000000` | `#C9C9C9` | 5.53:1 | 4.5:1 | PASS |
+| panel chevrons + default Star inkSelect (1.4.11) (`#0F53BE`) | mapPaneWash | `#000000` | `#C9C9C9` | 4.25:1 | 3:1 | PASS |
+| panel filter pills inactive glassChipInk (`#333`) | chipOnPanel | `#000000` | `#EAEAEA` | 10.46:1 | 4.5:1 | PASS |
+| panel pill count caption glassChipInk (11px) (`#333`) | chipOnPanel | `#000000` | `#EAEAEA` | 10.46:1 | 4.5:1 | PASS |
+| panel active pills / savedSaveBtn / presetBtn ctaFill+textOnBrand (`#fff`) | ctaSolid | `#1466E0` | `#1466E0` | 5.24:1 | 4.5:1 | PASS |
+| panel sev1 pill textOnColor (`#0F1B2D`) | sev1 | `#F7C948` | `#F7C948` | 11.03:1 | 4.5:1 | PASS |
+| panel sev2 pill textOnColor (`#0F1B2D`) | sev2 | `#F0A030` | `#F0A030` | 8.05:1 | 4.5:1 | PASS |
+| panel sev3 pill textOnColor (`#0F1B2D`) | sev3 | `#F2792B` | `#F2792B` | 6.21:1 | 4.5:1 | PASS |
+| panel sev4 pill textOnColor (`#0F1B2D`) | sev4 | `#E85638` | `#E85638` | 4.79:1 | 4.5:1 | PASS |
+| panel sev5 pill textOnColor white (`#ffffff`) | sev5 | `#D92D20` | `#D92D20` | 4.83:1 | 4.5:1 | PASS |
+| locating banner ink bannerLocatingText #333 (pinned light) (`#333`) | alwaysLight | `#000000` | `#D1D1D1` | 8.28:1 | 4.5:1 | PASS |
+| locating banner spinner tint #414B5A (1.4.11) (`#414B5A`) | alwaysLight | `#000000` | `#D1D1D1` | 5.79:1 | 3:1 | PASS |
+| HeatmapLegend title #414B5A (was #666) (`#414B5A`) | alwaysLight | `#000000` | `#D1D1D1` | 5.79:1 | 4.5:1 | PASS |
+| saved-places chip ink literal #0E4499 (`#0E4499`) | placeChip | `#000000` | `#F2F2F2` | 8.15:1 | 4.5:1 | PASS |
+| saved-places MapPin icon #1466E0 (1.4.11) (`#1466E0`) | placeChip | `#000000` | `#F2F2F2` | 4.69:1 | 3:1 | PASS |
+| manage chip Star #1466E0 on #EEF4FE (1.4.11) (`#1466E0`) | manageChip | `#000000` | `#EEF4FE` | 4.74:1 | 3:1 | PASS |
+| List FAB color.brand ink KEEP (light brand #1466E0) (`#1466E0`) | listFab | `#000000` | `#F7F7F7` | 4.91:1 | 4.5:1 | PASS |
+| Report FAB ctaFill + white textOnBrand (`#fff`) | ctaSolid | `#1466E0` | `#1466E0` | 5.24:1 | 4.5:1 | PASS |
+| cluster count white textOnBrand on ctaFill disc (`#fff`) | clusterDisc | `#1466E0` | `#1466E0` | 5.24:1 | 4.5:1 | PASS |
+| cluster white 2.5px ring vs dark regime (union member) (`#FFFFFF`) | darkRegime | `#A4922E` | `#A4922E` | 3.12:1 | 3:1 | PASS |
+| cluster 1px #0F1B2D outer hairline vs light regime (union member) (`#0F1B2D`) | lightRegime | `#E87272` | `#E87272` | 5.83:1 | 3:1 | PASS |
+| cluster hairline #0F1B2D vs own ctaFill disc (`#0F1B2D`) | clusterDisc | `#1466E0` | `#1466E0` | 3.30:1 | 3:1 | PASS |
+| heat badge sev1 ink #0F1B2D on own fill (`#0F1B2D`) | heat1 | `#fde047` | `#FDE047` | 13.11:1 | 4.5:1 | PASS |
+| heat badge sev2 ink #0F1B2D on own fill (`#0F1B2D`) | heat2 | `#fb923c` | `#FB923C` | 7.64:1 | 4.5:1 | PASS |
+| heat badge sev3 ink #0F1B2D on own fill (`#0F1B2D`) | heat3 | `#f97316` | `#F97316` | 6.17:1 | 4.5:1 | PASS |
+| heat badge sev4 ink #0F1B2D on own fill (`#0F1B2D`) | heat4 | `#ef4444` | `#EF4444` | 4.59:1 | 4.5:1 | PASS |
+| heat badge sev5 ink white on own fill (`#fff`) | heat5 | `#dc2626` | `#DC2626` | 4.83:1 | 4.5:1 | PASS |
+| heat badge #0F1B2D border/edge vs light regime (`#0F1B2D`) | lightRegime | `#E87272` | `#E87272` | 5.83:1 | 3:1 | PASS |
+
+### dark
+
+| pair | surface | worst base | resulting bg | ratio | min | verdict |
+|---|---|---|---|---|---|---|
+| status pill text textStrong (RE-TIER row) (`#f5f5f5`) | mapPane | `#FFFFFF` | `#5D6069` | 5.77:1 | 4.5:1 | PASS |
+| action bar icons inkSelect (1.4.11) (`#B4CFFA`) | mapPane | `#FFFFFF` | `#5D6069` | 3.97:1 | 3:1 | PASS |
+| action bar {n}+ label textStrong (`#f5f5f5`) | mapPane | `#FFFFFF` | `#5D6069` | 5.77:1 | 4.5:1 | PASS |
+| panel sub-labels/savedEmptyText inkGlassMuted (`#B8BEC9`) | mapPaneWash | `#FFFFFF` | `#454953` | 4.85:1 | 4.5:1 | PASS |
+| panel title Filter flags textStrong (`#f5f5f5`) | mapPaneWash | `#FFFFFF` | `#454953` | 8.31:1 | 4.5:1 | PASS |
+| panel body/labels color.text (`#ddd`) | mapPaneWash | `#FFFFFF` | `#454953` | 6.67:1 | 4.5:1 | PASS |
+| panel hints statusHint warningFg (`#fbbf24`) | mapPaneWash | `#FFFFFF` | `#454953` | 5.43:1 | 4.5:1 | PASS |
+| panel Clear link inkSelect (dark fork) (`#B4CFFA`) | mapPaneWash | `#FFFFFF` | `#454953` | 5.72:1 | 4.5:1 | PASS |
+| panel chevrons + default Star inkSelect (1.4.11) (`#B4CFFA`) | mapPaneWash | `#FFFFFF` | `#454953` | 5.72:1 | 3:1 | PASS |
+| panel filter pills inactive glassChipInk (`#F5F5F5`) | chipOnPanel | `#FFFFFF` | `#585B64` | 6.25:1 | 4.5:1 | PASS |
+| panel pill count caption glassChipInk (11px) (`#F5F5F5`) | chipOnPanel | `#FFFFFF` | `#585B64` | 6.25:1 | 4.5:1 | PASS |
+| panel active pills / savedSaveBtn / presetBtn ctaFill+textOnBrand (`#fff`) | ctaSolid | `#1466E0` | `#1466E0` | 5.24:1 | 4.5:1 | PASS |
+| panel sev1 pill textOnColor (`#0F1B2D`) | sev1 | `#F7C948` | `#F7C948` | 11.03:1 | 4.5:1 | PASS |
+| panel sev2 pill textOnColor (`#0F1B2D`) | sev2 | `#F0A030` | `#F0A030` | 8.05:1 | 4.5:1 | PASS |
+| panel sev3 pill textOnColor (`#0F1B2D`) | sev3 | `#F2792B` | `#F2792B` | 6.21:1 | 4.5:1 | PASS |
+| panel sev4 pill textOnColor (`#0F1B2D`) | sev4 | `#E85638` | `#E85638` | 4.79:1 | 4.5:1 | PASS |
+| panel sev5 pill textOnColor white (`#ffffff`) | sev5 | `#D92D20` | `#D92D20` | 4.83:1 | 4.5:1 | PASS |
+| locating banner ink #333 (pinned light — same in dark) (`#333`) | alwaysLight | `#000000` | `#D1D1D1` | 8.28:1 | 4.5:1 | PASS |
+| locating banner spinner #414B5A (1.4.11) (`#414B5A`) | alwaysLight | `#000000` | `#D1D1D1` | 5.79:1 | 3:1 | PASS |
+| HeatmapLegend title #414B5A (pinned light — same in dark) (`#414B5A`) | alwaysLight | `#000000` | `#D1D1D1` | 5.79:1 | 4.5:1 | PASS |
+| saved-places chip ink literal #0E4499 (pinned) (`#0E4499`) | placeChip | `#000000` | `#F2F2F2` | 8.15:1 | 4.5:1 | PASS |
+| saved-places MapPin icon #1466E0 (1.4.11, pinned) (`#1466E0`) | placeChip | `#000000` | `#F2F2F2` | 4.69:1 | 3:1 | PASS |
+| manage chip Star #1466E0 on #EEF4FE (1.4.11, pinned) (`#1466E0`) | manageChip | `#000000` | `#EEF4FE` | 4.74:1 | 3:1 | PASS |
+| List FAB color.brand ink KEEP (dark brand #4E89EF on dark 0.97 overlay) (`#4E89EF`) | listFab | `#FFFFFF` | `#1B1B1B` | 5.04:1 | 4.5:1 | PASS |
+| Report FAB ctaFill + white textOnBrand (`#fff`) | ctaSolid | `#1466E0` | `#1466E0` | 5.24:1 | 4.5:1 | PASS |
+| cluster count white textOnBrand on ctaFill disc (`#fff`) | clusterDisc | `#1466E0` | `#1466E0` | 5.24:1 | 4.5:1 | PASS |
+| cluster white 2.5px ring vs dark regime (union member) (`#FFFFFF`) | darkRegime | `#A4922E` | `#A4922E` | 3.12:1 | 3:1 | PASS |
+| cluster 1px #0F1B2D outer hairline vs light regime (union member) (`#0F1B2D`) | lightRegime | `#E87272` | `#E87272` | 5.83:1 | 3:1 | PASS |
+| cluster hairline #0F1B2D vs own ctaFill disc (`#0F1B2D`) | clusterDisc | `#1466E0` | `#1466E0` | 3.30:1 | 3:1 | PASS |
+| heat badge sev1 ink #0F1B2D on own fill (`#0F1B2D`) | heat1 | `#fde047` | `#FDE047` | 13.11:1 | 4.5:1 | PASS |
+| heat badge sev2 ink #0F1B2D on own fill (`#0F1B2D`) | heat2 | `#fb923c` | `#FB923C` | 7.64:1 | 4.5:1 | PASS |
+| heat badge sev3 ink #0F1B2D on own fill (`#0F1B2D`) | heat3 | `#f97316` | `#F97316` | 6.17:1 | 4.5:1 | PASS |
+| heat badge sev4 ink #0F1B2D on own fill (`#0F1B2D`) | heat4 | `#ef4444` | `#EF4444` | 4.59:1 | 4.5:1 | PASS |
+| heat badge sev5 ink white on own fill (`#fff`) | heat5 | `#dc2626` | `#DC2626` | 4.83:1 | 4.5:1 | PASS |
+| heat badge #0F1B2D border/edge vs light regime (`#0F1B2D`) | lightRegime | `#E87272` | `#E87272` | 5.83:1 | 3:1 | PASS |
+
+RESULT: ALL PASS

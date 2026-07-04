@@ -1969,21 +1969,23 @@ export default function MapScreen() {
           <GlassSurface
             style={styles.bannerLocating}
             borderRadius={radius.md}
-            // Map overlays are the always-light DESIGN.md exception — pin the
-            // glass + its Reduce-Transparency fallback to the light tokens so
-            // the neutral "finding your location" banner reads the same in any
-            // palette. (Semantic alert banners below stay solid, not frosted.)
+            // Map overlays are the always-light DESIGN.md exception. Pinned to
+            // LITERALS — the themed overlayGlass/overlaySoft tokens rendered
+            // DARK in dark mode (only the blur tint was pinned before). Now the
+            // neutral "finding your location" banner reads identically in any
+            // palette, over any tile. (Semantic alert banners stay solid.)
             tint="light"
-            tintColor={color.overlayGlass}
-            solidColor={color.overlaySoft}
+            tintColor="rgba(255,255,255,0.82)"
+            solidColor="rgba(255,255,255,0.95)"
             accessibilityRole="text"
             accessibilityLiveRegion="polite"
           >
             <ActivityIndicator
+              color="#414B5A"
               accessibilityElementsHidden
               importantForAccessibility="no-hide-descendants"
             />
-            <AppText variant="body" style={styles.bannerText}>Finding your location…</AppText>
+            <AppText variant="body" style={styles.bannerLocatingText}>Finding your location…</AppText>
           </GlassSurface>
         )}
 
@@ -2596,6 +2598,9 @@ const makeStyles = (color: ColorTheme) =>
       alignItems: 'center',
     },
     bannerText: { fontSize: font.size.sm, color: color.text },
+    // Pinned-light literal — NOT the shared bannerText (the permission banner
+    // renders that on a themed dark fill). #333 on the 0.82 white banner = 8.28:1.
+    bannerLocatingText: { fontSize: font.size.sm, color: '#333' },
     errorBanner: {
       marginTop: spacing.sm,
       backgroundColor: color.error,

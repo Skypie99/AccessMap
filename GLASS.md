@@ -162,10 +162,19 @@ the glass itself carries no motion.
 
 ## 8. Application map (how the rest of the app wears Deep Field)
 
-- **Map** — its five legacy `GlassSurface` sites (status pill, action bar, filter panel,
-  locating banner, heatmap legend) keep the legacy path today; migrate composition-
-  untouched to `variant="chrome"`/`"banner"` recipes in a Map pass. The map itself is
-  the stage — `ScreenStage` is NOT for map screens.
+- **Map** (shipped 2026-07-04, `overhaul/glass-map`) — status pill / action bar / filter
+  panel ride `variant="row"`, the floating-pane tier: its radius + full hairline + i=12
+  shape is the right language for chrome floating over live tiles. (Chrome/bulk are
+  *structural-shape* tiers — radius 0, single-edge hairlines — wrong for a floating pane.
+  This is a shape choice, NOT a C-lite constraint: `forceEngineered` is variant-agnostic
+  in the primitive, so any variant can thread it.) Pill + bar are **literal**
+  `forceEngineered` (always the engineered gradient, never live blur — the budget win);
+  the filter panel **threads** `forceEngineered={glassLite}` (true blur i=12 = the one
+  frost moment on Map, F3). The locating banner + heatmap legend + saved-place chips stay
+  LEGACY, pinned always-light by literals (AA-by-construction over any tile — that legacy
+  pin is also why they still mount a BlurView, the accepted cost). Map-internal surfaces
+  (cluster, heat badge, callout) get token/ink harmonization only, never a BlurView. The
+  map itself is the stage — `ScreenStage` is NOT for map screens. Full rules: §12.
 - **Home** — the search pill upgrades to the chrome material (one pane); the screen wash
   adopts `ScreenStage`.
 - **Profile** — `ScreenStage` + cards on `variant="row"`.
@@ -219,3 +228,37 @@ no new warnings · render-compare vs the mockup/spec before committing):
 
 - `src/components/ui/Button.tsx` — zero call sites app-wide. Left untouched by this
   pass per the brief (adopt-or-remove is Sky's decision; the lab recommended adopt).
+
+## 12. LIVE-BACKDROP ADDENDUM (what the Map pass taught the system)
+
+Everything above assumes a *designed* backdrop (a `ScreenStage` you control). Map is the
+first surface whose backdrop is a live, moving, unbounded map. These rules govern any
+future map-class screen:
+
+1. **No stage — the live surface IS the stage.** Map-class screens mount no `ScreenStage`.
+   No scrim substitutes unless Sky picks one; if picked it must be `pointerEvents="none"`,
+   edge-weighted, occlude no pin, and be excluded from the arbiter stacks. (Sky picked
+   NONE for Map.)
+2. **Bases are `#000` + `#FFF` in BOTH modes** (+ documented domain saturants — here the 5
+   heat-ramp colors). Tiles and theme are independent axes: the JS theme is app-only, iOS
+   Apple tiles follow the OS, web CartoDB `dark_all` is always dark. Never assume tile and
+   theme match.
+3. **Window rule.** Extremes are the worst case *iff* the ink's luminance lies outside
+   `[Y(stack over #000), Y(stack over #FFF)]`. Let the arbiter probe every base and take
+   the true minimum — an inside-window ink can hit 1:1 on some mid-tone pixel and no floor
+   fixes it.
+4. **Boundary colors can't span the range alone** — a white ring vanishes on white tiles.
+   Use regime-decomposed unions (paired light + dark rings/edges) and prove the union
+   covers all backdrop luminances. Never reuse a 3.0 boundary union as a 4.5 text
+   guarantee.
+5. **Blur only where the backdrop is quasi-static while the surface is up** (sheet/panel-
+   class — the filter panel). Persistent pan-time chrome = **literal `forceEngineered`**
+   (budget-free by mechanism — no BlurView ever mounts).
+6. **Map-internal world** (markers, cluster children, callouts, heat badges) = tokens/inks
+   only, never a BlurView. Snapshot flags (`tracksViewChanges={false}`) require a
+   content-derived key (`cluster-${id}-${count}`) and a fully mode-independent bubble, or
+   the snapshot goes stale on theme flip.
+7. **Count the blur budget at the worst SIMULTANEOUS state**, and add the tab bar manually
+   (its BlurView is invisible to `__getLiveBlurPaneCount`).
+8. **Always-light pins are literals + static inks, never themed tokens** (a themed token
+   renders dark in dark mode). Semantic alert banners stay solid (reaffirmed).

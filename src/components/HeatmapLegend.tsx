@@ -54,9 +54,11 @@ export default function HeatmapLegend() {
 const styles = StyleSheet.create({
   container: {
     alignSelf: 'flex-start',
-    // Frosted-glass surface is supplied by <GlassSurface> (translucent + blur
-    // with an AA contrast floor). Always-light tint regardless of device theme —
-    // the map basemap underneath is always light (DESIGN.md fixed exception).
+    // Frosted-glass surface via <GlassSurface>, pinned ALWAYS-LIGHT (literal
+    // floors + static light inks) regardless of device theme. AA-by-
+    // construction: a light floor + dark ink clears contrast over ANY tile —
+    // including the web CartoDB dark_all basemap, which the old "basemap is
+    // always light" note wrongly assumed (DESIGN.md fixed exception).
     borderRadius: radius.md,
     paddingHorizontal: 10,
     paddingVertical: 8,
@@ -66,7 +68,9 @@ const styles = StyleSheet.create({
   title: {
     fontSize: font.size.caption,
     fontWeight: font.weight.bold,
-    color: color.textMuted,
+    // Literal #414B5A (not color.textMuted #666, which was 3.76:1 over dark
+    // tiles seen through the 0.82 legend) — 5.79:1, pinned-light like the rest.
+    color: '#414B5A',
     textTransform: 'uppercase',
     letterSpacing: 0.4,
   },
