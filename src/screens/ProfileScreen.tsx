@@ -893,14 +893,17 @@ export default function ProfileScreen() {
         />
 
         {loadError && (
-          <View
+          <GlassSurface
+            variant="row"
+            forceEngineered
             style={styles.errorCard}
+            borderRadius={radius.lg}
             accessible
             accessibilityLiveRegion="polite"
             accessibilityLabel={`Couldn't load your profile. ${loadError}`}
           >
-            <AppText variant="body" style={styles.errorCardText}>Couldn&apos;t load your profile.</AppText>
-            <AppText variant="body" style={styles.errorCardHint}>{loadError}</AppText>
+            <AppText variant="bodyMedium" style={styles.errorCardText}>Couldn&apos;t load your profile.</AppText>
+            <AppText variant="bodyMedium" style={styles.errorCardHint}>{loadError}</AppText>
             <Pressable
               onPress={() => void load()}
               style={({ pressed }) => [styles.errorRetryBtn, pressed && styles.errorRetryBtnPressed]}
@@ -909,7 +912,7 @@ export default function ProfileScreen() {
             >
               <AppText variant="label" style={styles.errorRetryText}>Try again</AppText>
             </Pressable>
-          </View>
+          </GlassSurface>
         )}
 
         <GlassSurface
@@ -1104,9 +1107,21 @@ export default function ProfileScreen() {
                       importantForAccessibility="no-hide-descendants"
                     >
                       {isGain ? (
-                        <ArrowUp size={14} color={color.successStrong} strokeWidth={2.4} />
+                        <ArrowUp
+                          size={14}
+                          // Dark row glass needs a brighter green/red than the
+                          // light-optimized successStrong/error (they go dim on
+                          // the dark floor). Direction is also carried by the
+                          // arrow shape + the +/- sign, never color alone.
+                          color={color.scheme === 'dark' ? color.success : color.successStrong}
+                          strokeWidth={2.4}
+                        />
                       ) : (
-                        <ArrowDown size={14} color={color.error} strokeWidth={2.4} />
+                        <ArrowDown
+                          size={14}
+                          color={color.scheme === 'dark' ? color.errorFg : color.error}
+                          strokeWidth={2.4}
+                        />
                       )}
                     </AppText>
                     <AppText variant="bodyMedium" style={styles.pointHistoryLabel} numberOfLines={2}>
@@ -1115,10 +1130,7 @@ export default function ProfileScreen() {
                     <AppText variant="body" style={styles.pointHistoryDate}>{dateStr}</AppText>
                     <AppText
                       variant="monoBold"
-                      style={[
-                        styles.pointHistoryDelta,
-                        !isGain && styles.pointHistoryDeltaNeg,
-                      ]}
+                      style={styles.pointHistoryDelta}
                     >
                       {sign}{ev.delta} pts
                     </AppText>
@@ -1324,7 +1336,7 @@ export default function ProfileScreen() {
         <ReportsBreakdownCard userId={user?.id ?? null} refreshKey={breakdownRefreshKey} />
 
         <Pressable
-          style={({ pressed }) => [styles.myReportsBtn, pressed && styles.myReportsBtnPressed]}
+          style={({ pressed }) => pressed && styles.myReportsBtnPressed}
           onPress={handleOpenAllReports}
           accessibilityRole="button"
           accessibilityLabel={
@@ -1334,9 +1346,10 @@ export default function ProfileScreen() {
           }
           accessibilityHint="Opens a list of every flag you've submitted"
         >
+          <GlassSurface variant="row" forceEngineered style={styles.myReportsBtn}>
           <View style={styles.myReportsTextWrap}>
             <AppText variant="label" style={styles.myReportsTitle}>My Reports</AppText>
-            <AppText variant="body" style={styles.myReportsSubtitle}>
+            <AppText variant="bodyMedium" style={styles.myReportsSubtitle}>
               {stats.reported === 0
                 ? "You haven't reported any barriers yet — your first one will show up here."
                 : "Every barrier you've reported, in one place."}
@@ -1348,18 +1361,20 @@ export default function ProfileScreen() {
             strokeWidth={2.2}
             accessibilityElementsHidden
           />
+          </GlassSurface>
         </Pressable>
 
         <Pressable
-          style={({ pressed }) => [styles.myReportsBtn, pressed && styles.myReportsBtnPressed]}
+          style={({ pressed }) => pressed && styles.myReportsBtnPressed}
           onPress={() => setWatchedOpen(true)}
           accessibilityRole="button"
           accessibilityLabel="Watched Flags"
           accessibilityHint="Opens the list of flags you are tracking for status changes"
         >
+          <GlassSurface variant="row" forceEngineered style={styles.myReportsBtn}>
           <View style={styles.myReportsTextWrap}>
             <AppText variant="label" style={styles.myReportsTitle}>Watched Flags</AppText>
-            <AppText variant="body" style={styles.myReportsSubtitle}>
+            <AppText variant="bodyMedium" style={styles.myReportsSubtitle}>
               Keep an eye on barriers you care about and get notified when something changes.
             </AppText>
           </View>
@@ -1369,18 +1384,20 @@ export default function ProfileScreen() {
             strokeWidth={2.2}
             accessibilityElementsHidden
           />
+          </GlassSurface>
         </Pressable>
 
         <Pressable
-          style={({ pressed }) => [styles.myReportsBtn, pressed && styles.myReportsBtnPressed]}
+          style={({ pressed }) => pressed && styles.myReportsBtnPressed}
           onPress={() => setActivityOpen(true)}
           accessibilityRole="button"
           accessibilityLabel="Recent Activity"
           accessibilityHint="Opens a chronological feed of recent flag activity, grouped by day"
         >
+          <GlassSurface variant="row" forceEngineered style={styles.myReportsBtn}>
           <View style={styles.myReportsTextWrap}>
             <AppText variant="label" style={styles.myReportsTitle}>Recent Activity</AppText>
-            <AppText variant="body" style={styles.myReportsSubtitle}>
+            <AppText variant="bodyMedium" style={styles.myReportsSubtitle}>
               What the community has been up to — newest first.
             </AppText>
           </View>
@@ -1390,15 +1407,17 @@ export default function ProfileScreen() {
             strokeWidth={2.2}
             accessibilityElementsHidden
           />
+          </GlassSurface>
         </Pressable>
 
         <Pressable
-          style={({ pressed }) => [styles.myReportsBtn, pressed && styles.myReportsBtnPressed]}
+          style={({ pressed }) => pressed && styles.myReportsBtnPressed}
           onPress={() => setAchievementsOpen(true)}
           accessibilityRole="button"
           accessibilityLabel={`Achievements, ${achievementCount.earned} of ${achievementCount.total} earned`}
           accessibilityHint="Opens the full achievement catalog with your progress on each badge"
         >
+          <GlassSurface variant="row" forceEngineered style={styles.myReportsBtn}>
           <View style={styles.myReportsTextWrap}>
             <AppText variant="label" style={styles.myReportsTitle}>
               Achievements{' '}
@@ -1406,7 +1425,7 @@ export default function ProfileScreen() {
                 · {achievementCount.earned} / {achievementCount.total}
               </AppText>
             </AppText>
-            <AppText variant="body" style={styles.myReportsSubtitle}>
+            <AppText variant="bodyMedium" style={styles.myReportsSubtitle}>
               {achievementCount.earned === 0
                 ? 'Start reporting and verifying to earn your first badge.'
                 : achievementCount.earned === achievementCount.total
@@ -1420,18 +1439,20 @@ export default function ProfileScreen() {
             strokeWidth={2.2}
             accessibilityElementsHidden
           />
+          </GlassSurface>
         </Pressable>
 
         <Pressable
-          style={({ pressed }) => [styles.myReportsBtn, pressed && styles.myReportsBtnPressed]}
+          style={({ pressed }) => pressed && styles.myReportsBtnPressed}
           onPress={() => setLeaderboardOpen(true)}
           accessibilityRole="button"
           accessibilityLabel="See leaderboard"
           accessibilityHint="Opens the top 20 contributors ranked by points"
         >
+          <GlassSurface variant="row" forceEngineered style={styles.myReportsBtn}>
           <View style={styles.myReportsTextWrap}>
             <AppText variant="label" style={styles.myReportsTitle}>See leaderboard</AppText>
-            <AppText variant="body" style={styles.myReportsSubtitle}>
+            <AppText variant="bodyMedium" style={styles.myReportsSubtitle}>
               See who&apos;s making the biggest impact in the community.
             </AppText>
           </View>
@@ -1441,18 +1462,20 @@ export default function ProfileScreen() {
             strokeWidth={2.2}
             accessibilityElementsHidden
           />
+          </GlassSurface>
         </Pressable>
 
         <Pressable
-          style={({ pressed }) => [styles.myReportsBtn, pressed && styles.myReportsBtnPressed]}
+          style={({ pressed }) => pressed && styles.myReportsBtnPressed}
           onPress={() => setNotifPrefsOpen(true)}
           accessibilityRole="button"
           accessibilityLabel="Notification settings"
           accessibilityHint="Opens settings for which flag status updates surface in your update banner"
         >
+          <GlassSurface variant="row" forceEngineered style={styles.myReportsBtn}>
           <View style={styles.myReportsTextWrap}>
             <AppText variant="label" style={styles.myReportsTitle}>Notifications</AppText>
-            <AppText variant="body" style={styles.myReportsSubtitle}>
+            <AppText variant="bodyMedium" style={styles.myReportsSubtitle}>
               Pick which changes you want to hear about.
             </AppText>
           </View>
@@ -1462,18 +1485,20 @@ export default function ProfileScreen() {
             strokeWidth={2.2}
             accessibilityElementsHidden
           />
+          </GlassSurface>
         </Pressable>
 
         <Pressable
-          style={({ pressed }) => [styles.myReportsBtn, pressed && styles.myReportsBtnPressed]}
+          style={({ pressed }) => pressed && styles.myReportsBtnPressed}
           onPress={() => setSharedModal('myFeedback')}
           accessibilityRole="button"
           accessibilityLabel="My Feedback"
           accessibilityHint="Opens the list of feedback you've sent to the maintainer"
         >
+          <GlassSurface variant="row" forceEngineered style={styles.myReportsBtn}>
           <View style={styles.myReportsTextWrap}>
             <AppText variant="label" style={styles.myReportsTitle}>My Feedback</AppText>
-            <AppText variant="body" style={styles.myReportsSubtitle}>See the messages you&apos;ve sent to the team.</AppText>
+            <AppText variant="bodyMedium" style={styles.myReportsSubtitle}>See the messages you&apos;ve sent to the team.</AppText>
           </View>
           <ChevronRight
             size={18}
@@ -1481,6 +1506,7 @@ export default function ProfileScreen() {
             strokeWidth={2.2}
             accessibilityElementsHidden
           />
+          </GlassSurface>
         </Pressable>
 
         <View style={styles.section}>
@@ -1602,15 +1628,16 @@ export default function ProfileScreen() {
         </View>
 
         <Pressable
-          style={({ pressed }) => [styles.aboutRow, pressed && styles.aboutRowPressed]}
+          style={({ pressed }) => pressed && styles.aboutRowPressed}
           onPress={() => setSharedModal('help')}
           accessibilityRole="button"
           accessibilityLabel="Help and frequently asked questions"
           accessibilityHint="Opens collapsible answers to common questions about the app"
         >
+          <GlassSurface variant="row" forceEngineered style={styles.aboutRow}>
           <View style={styles.aboutTextWrap}>
             <AppText variant="label" style={styles.aboutTitle}>Help & FAQ</AppText>
-            <AppText variant="body" style={styles.aboutSubtitle}>
+            <AppText variant="bodyMedium" style={styles.aboutSubtitle}>
               Answers to the questions people ask most.
             </AppText>
           </View>
@@ -1620,18 +1647,20 @@ export default function ProfileScreen() {
             strokeWidth={2.2}
             accessibilityElementsHidden
           />
+          </GlassSurface>
         </Pressable>
 
         <Pressable
-          style={({ pressed }) => [styles.aboutRow, pressed && styles.aboutRowPressed]}
+          style={({ pressed }) => pressed && styles.aboutRowPressed}
           onPress={() => setSharedModal('changelog')}
           accessibilityRole="button"
           accessibilityLabel="What's New"
           accessibilityHint="Opens a dated list of recent shipped features"
         >
+          <GlassSurface variant="row" forceEngineered style={styles.aboutRow}>
           <View style={styles.aboutTextWrap}>
             <AppText variant="label" style={styles.aboutTitle}>What&apos;s New</AppText>
-            <AppText variant="body" style={styles.aboutSubtitle}>See what we shipped recently.</AppText>
+            <AppText variant="bodyMedium" style={styles.aboutSubtitle}>See what we shipped recently.</AppText>
           </View>
           <ChevronRight
             size={18}
@@ -1639,18 +1668,20 @@ export default function ProfileScreen() {
             strokeWidth={2.2}
             accessibilityElementsHidden
           />
+          </GlassSurface>
         </Pressable>
 
         <Pressable
-          style={({ pressed }) => [styles.aboutRow, pressed && styles.aboutRowPressed]}
+          style={({ pressed }) => pressed && styles.aboutRowPressed}
           onPress={() => setAboutOpen(true)}
           accessibilityRole="button"
           accessibilityLabel="About AccessMap"
           accessibilityHint="Opens information about the app, version, and how to send feedback"
         >
+          <GlassSurface variant="row" forceEngineered style={styles.aboutRow}>
           <View style={styles.aboutTextWrap}>
             <AppText variant="label" style={styles.aboutTitle}>About AccessMap</AppText>
-            <AppText variant="body" style={styles.aboutSubtitle}>
+            <AppText variant="bodyMedium" style={styles.aboutSubtitle}>
               The story behind AccessMap and how to reach us.
             </AppText>
           </View>
@@ -1660,6 +1691,7 @@ export default function ProfileScreen() {
             strokeWidth={2.2}
             accessibilityElementsHidden
           />
+          </GlassSurface>
         </Pressable>
 
         <Pressable
@@ -1956,20 +1988,20 @@ const makeStyles = (color: ColorTheme) =>
     },
     // Inline load-error card (mirrors LeaderboardScreen's stateWrap/retryBtn).
     errorCard: {
-      backgroundColor: color.surface,
+      // Material via <GlassSurface variant="row" forceEngineered>; no bg here.
       borderRadius: radius.lg,
       padding: spacing.lg,
       alignItems: 'center',
       gap: spacing.tight,
       ...shadow.e1,
     },
-    errorCardText: { fontSize: font.size.sm, color: color.textMuted, textAlign: 'center' },
-    errorCardHint: { fontSize: font.size.xs, color: color.textSubtle, textAlign: 'center' },
+    errorCardText: { fontSize: font.size.sm, color: color.inkGlassMuted, textAlign: 'center' },
+    errorCardHint: { fontSize: font.size.xs, color: color.inkGlassMuted, textAlign: 'center' },
     errorRetryBtn: {
       marginTop: spacing.md,
       paddingHorizontal: spacing.xl,
       paddingVertical: 10,
-      backgroundColor: color.brand,
+      backgroundColor: color.ctaFill, // mode-independent brand fill
       borderRadius: radius.md,
       minHeight: 44,
       alignItems: 'center',
@@ -1982,7 +2014,7 @@ const makeStyles = (color: ColorTheme) =>
       color: color.textOnBrand,
     },
     signInBtn: {
-      backgroundColor: color.brand,
+      backgroundColor: color.ctaFill, // mode-independent brand fill on the stage
       paddingHorizontal: spacing.xxxl,
       paddingVertical: spacing.md + 2,
       borderRadius: radius.circle,
@@ -2294,18 +2326,17 @@ const makeStyles = (color: ColorTheme) =>
       color: color.inkGlassMuted, // arbitrated muted ink on the row glass
       textAlign: 'right',
     },
-    // Positive delta: successStrong (#1e8449, 4.66:1 on white) — AA-safe green.
-    // color.success (#27ae60) is 2.86:1 and fails AA for text; successStrong used instead.
+    // Neutral high-contrast delta number. On the light row-over-stage worst case
+    // the semantic green (successStrong) measures 4.28:1 (<4.5), so the NUMBER
+    // takes textStrong (arbiter-forced) and the gain/loss color lives on the
+    // decorative arrow (1.4.11 graphic, min 3); the +/- sign carries direction
+    // too, so color is never the sole signal.
     pointHistoryDelta: {
       fontSize: font.size.sm,
       fontWeight: font.weight.bold,
-      color: color.successStrong,
+      color: color.textStrong,
       minWidth: 52,
       textAlign: 'right',
-    },
-    // Negative delta: color.error (#c0392b, 5.39:1 on white) — AA pass.
-    pointHistoryDeltaNeg: {
-      color: color.error,
     },
     // Empty state — encouraging copy when no events exist yet.
     pointHistoryEmpty: {
@@ -2419,7 +2450,8 @@ const makeStyles = (color: ColorTheme) =>
     statusPillCount: { fontSize: 18, fontWeight: '700' },
     statusPillLabel: { fontSize: 10, fontWeight: '700', textTransform: 'uppercase' },
     myReportsBtn: {
-      backgroundColor: color.surface,
+      // Material via <GlassSurface variant="row" forceEngineered> (engineered —
+      // outside the blur cluster, budget-free). No bg here; layout + shadow stay.
       borderRadius: radius.lg,
       padding: 16,
       flexDirection: 'row',
@@ -2428,7 +2460,8 @@ const makeStyles = (color: ColorTheme) =>
       ...shadow.e1,
       minHeight: 64,
     },
-    myReportsBtnPressed: { opacity: 0.85, backgroundColor: color.surfaceMuted },
+    // Press feedback is opacity only — a bg swap is invisible under glass.
+    myReportsBtnPressed: { opacity: 0.85 },
     myReportsTextWrap: { flex: 1, gap: 2 },
     myReportsTitle: {
       fontSize: 16,
@@ -2438,8 +2471,8 @@ const makeStyles = (color: ColorTheme) =>
     },
     // Inline "· X / N" count next to the Achievements title — muted so the
     // main title still reads as the link affordance.
-    achievementsCount: { fontWeight: '600', color: color.textSubtle, fontSize: 14 },
-    myReportsSubtitle: { fontSize: 13, color: color.textMuted },
+    achievementsCount: { fontWeight: '600', color: color.inkGlassMuted, fontSize: 14 },
+    myReportsSubtitle: { fontSize: 13, color: color.inkGlassMuted },
     myReportsChevron: { fontSize: 28, color: color.textSubtle, fontWeight: '300' },
     section: { gap: 8, marginTop: 8 },
     sectionLabel: {
@@ -2453,7 +2486,7 @@ const makeStyles = (color: ColorTheme) =>
     nameRow: { flexDirection: 'row', gap: 8 },
     nameInputWrap: { flex: 1 },
     saveBtn: {
-      backgroundColor: color.brand,
+      backgroundColor: color.ctaFill, // mode-independent brand fill (white on it is AA both themes)
       paddingHorizontal: 16,
       borderRadius: 8,
       alignItems: 'center',
@@ -2469,16 +2502,26 @@ const makeStyles = (color: ColorTheme) =>
       flex: 1,
       paddingVertical: 12,
       borderRadius: 8,
-      backgroundColor: color.surfaceNeutral,
+      // Engineered chip tint on the stage (a control smaller than a row tints,
+      // never blurs); the edge hairline gives it definition.
+      backgroundColor: color.glassChipFill,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: color.glassChipEdge,
       alignItems: 'center',
       minHeight: 44,
       justifyContent: 'center',
     },
-    tabPillSelected: { backgroundColor: color.brand },
-    tabPillText: { color: color.text, fontWeight: '600', fontSize: 14 },
+    // Selected: mode-independent ctaFill + white — the one AA brand fill in both
+    // themes (dark brand + white = 3.4:1 fails). borderColor matches so the chip
+    // edge disappears under the fill.
+    tabPillSelected: { backgroundColor: color.ctaFill, borderColor: color.ctaFill },
+    tabPillText: { color: color.glassChipInk, fontWeight: '600', fontSize: 14 },
     tabPillTextSelected: { color: color.textOnBrand },
     linkBtn: {
-      backgroundColor: color.surfaceNeutral,
+      // Engineered chip tint on the stage.
+      backgroundColor: color.glassChipFill,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: color.glassChipEdge,
       paddingHorizontal: 16,
       paddingVertical: 12,
       borderRadius: 8,
@@ -2486,7 +2529,7 @@ const makeStyles = (color: ColorTheme) =>
       minHeight: 44,
       justifyContent: 'center',
     },
-    linkBtnText: { color: color.brand, fontWeight: '600', fontSize: 14 },
+    linkBtnText: { color: color.inkSelect, fontWeight: '600', fontSize: 14 },
     // D4: realtime toggle row — label + hint on the left, Switch on the right.
     toggleRow: {
       flexDirection: 'row',
@@ -2500,8 +2543,9 @@ const makeStyles = (color: ColorTheme) =>
     toggleLabel: { fontSize: 14, fontWeight: '600', color: color.textStrong },
     toggleHint: { fontSize: 12, color: color.inkOnStage },
     aboutRow: {
+      // Material via <GlassSurface variant="row" forceEngineered>; no bg here.
+      // marginTop stays on this outer style (the GlassSurface wrapper).
       marginTop: spacing.lg,
-      backgroundColor: color.surface,
       borderRadius: radius.lg,
       padding: spacing.lg,
       flexDirection: 'row',
@@ -2510,7 +2554,7 @@ const makeStyles = (color: ColorTheme) =>
       ...shadow.e1,
       minHeight: 64,
     },
-    aboutRowPressed: { opacity: 0.85, backgroundColor: color.surfaceMuted },
+    aboutRowPressed: { opacity: 0.85 }, // opacity only — bg swap invisible on glass
     aboutTextWrap: { flex: 1, gap: 2 },
     aboutTitle: {
       fontSize: font.size.lg,
@@ -2518,7 +2562,7 @@ const makeStyles = (color: ColorTheme) =>
       color: color.textStrong,
       letterSpacing: -0.1,
     },
-    aboutSubtitle: { fontSize: font.size.sm, color: color.textMuted },
+    aboutSubtitle: { fontSize: font.size.sm, color: color.inkGlassMuted },
     aboutChevron: { fontSize: 28, color: color.textSubtle, fontWeight: font.weight.regular },
     signOutBtn: {
       marginTop: spacing.lg,
@@ -2542,7 +2586,15 @@ const makeStyles = (color: ColorTheme) =>
       minHeight: 44,
       justifyContent: 'center',
     },
-    deleteAccountText: { color: color.error, fontWeight: font.weight.semibold, fontSize: font.size.md },
+    // On the stage BOTH color.error tones fail (light #c0392b = 3.88:1 on the
+    // stage's darkest stop, dark fails too), so this destructive text takes
+    // errorFg in both themes — the AA-guaranteed red (light #8a1f1f ~8:1, dark
+    // #fca5a5 7.7:1), still unmistakably red.
+    deleteAccountText: {
+      color: color.errorFg,
+      fontWeight: font.weight.semibold,
+      fontSize: font.size.md,
+    },
     // Deletion confirmation modal — translucent backdrop + centred card.
     deleteBackdrop: {
       flex: 1,
