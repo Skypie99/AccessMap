@@ -76,7 +76,7 @@ function heatLabelIcon(fill: string, text: string, textColor: string): L.DivIcon
       min-width:28px;height:28px;padding:0 8px;
       background:${fill};color:${textColor};
       font-weight:700;font-size:13px;
-      border:1.5px solid #fff;border-radius:14px;
+      border:1.5px solid #0F1B2D;border-radius:14px;
       box-shadow:0 1px 3px rgba(15,27,45,0.12),0 1px 2px rgba(15,27,45,0.08);
     ">${text}</div>`,
     iconSize: [28, 28],
@@ -171,8 +171,8 @@ function makeClusterIcon(brandColor: string, textColor: string, count: number): 
       width:${size}px;height:${size}px;border-radius:50%;
       background:${brandColor};color:${textColor};
       font-weight:700;font-size:${size <= 34 ? 13 : 12}px;
-      border:2.5px solid rgba(255,255,255,0.85);
-      box-shadow:0 2px 6px rgba(0,0,0,0.35);
+      border:2.5px solid #fff;
+      box-shadow:0 0 0 1px #0F1B2D,0 2px 6px rgba(0,0,0,0.35);
       cursor:pointer;
     ">${label}</div>`,
     iconSize: [size, size],
@@ -265,7 +265,6 @@ function ClusteredMarkers({
   markerRefs,
 }: ClusteredMarkersProps) {
   const map = useMap();
-  const themeColor = useColor();
 
   // Build the Supercluster index whenever the flag list changes. radius=60px
   // matches the native variant's radius={40} scaled up for typical web dpi.
@@ -383,7 +382,10 @@ function ClusteredMarkers({
                 <div
                   style={{
                     fontSize: 11,
-                    color: themeColor.textMuted,
+                    // Static #666 — the Leaflet popup chrome is always white on
+                    // both platforms, so the themed textMuted (#aaa in dark)
+                    // dropped to ~2.3:1. Pin it light.
+                    color: '#666',
                     textTransform: 'uppercase',
                     letterSpacing: 0.6,
                     marginTop: 2,
@@ -397,7 +399,7 @@ function ClusteredMarkers({
                   <PopupPhoto
                     src={flag.photo_url}
                     alt={`Photo of ${CATEGORY_LABELS[flag.category]} accessibility issue`}
-                    mutedColor={themeColor.textMuted}
+                    mutedColor="#666"
                   />
                 ) : null}
                 {flag.description ? (
@@ -648,7 +650,11 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(function Pla
         {heatCells.map((cell) => {
           const fill = colorForCell(cell, heatmapMode, severityTokens, themeColor.brand);
           const meanRounded = Math.round(cell.meanSeverity);
-          const labelTone = meanRounded >= 3 ? themeColor.textOnBrand : themeColor.textStrong;
+          // Static, fill-keyed ink (mirrors the native twin). A themed ink went
+          // catastrophic on the yellow low-severity fill in dark mode; sev1-4
+          // take dark ink, sev5 red + density brand fill take white.
+          const labelTone =
+            heatmapMode === 'density' ? '#fff' : meanRounded >= 5 ? '#fff' : '#0F1B2D';
           const icon = heatLabelIcon(fill, String(meanRounded), labelTone);
           return (
             <React.Fragment key={`heat-${cell.key}`}>
@@ -681,7 +687,7 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(function Pla
         <ClusteredMarkers
           flags={flags}
           focusedFlagId={focusedFlagId}
-          brandColor={themeColor.brand}
+          brandColor={themeColor.ctaFill}
           textOnBrand={themeColor.textOnBrand}
           markerRefs={markerRefs}
         />

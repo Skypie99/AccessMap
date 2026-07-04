@@ -1433,7 +1433,7 @@ export default function MapScreen() {
                 accessibilityRole="button"
                 accessibilityLabel={`Jump map to ${place.name}`}
               >
-                <MapPin size={14} color={color.brand} strokeWidth={2.2} />
+                <MapPin size={14} color="#1466E0" strokeWidth={2.2} />
                 <AppText variant="label" style={styles.placeChipText} numberOfLines={1}>
                   {place.name}
                 </AppText>
@@ -1452,7 +1452,7 @@ export default function MapScreen() {
             >
               <Star
                 size={16}
-                color={color.brand}
+                color="#1466E0"
                 strokeWidth={2.2}
                 accessibilityElementsHidden
                 importantForAccessibility="no-hide-descendants"
@@ -2357,12 +2357,15 @@ const makeStyles = (color: ColorTheme) =>
       maxWidth: 180,
       ...shadow.e1,
     },
-    placeChipPressed: { backgroundColor: color.surfaceNeutral, opacity: 0.9 },
-    // The trailing manage chip uses a tinted background so the affordance
-    // reads visually distinct from the place chips.
-    placeChipManage: { backgroundColor: color.brandSofter },
-    placeChipGlyph: { fontSize: 14, color: color.brand },
-    placeChipText: { fontSize: 13, fontWeight: '600', color: color.brandTextAlt },
+    // Place chips are PINNED ALWAYS-LIGHT (white 0.95 fill in both themes, like
+    // the heatmap legend) — so every ink/tint here is a light-mode literal, not
+    // a themed token. Themed inks broke over the white fill in dark mode:
+    // brandTextAlt → #84AEF6 = 2.0:1, and surfaceNeutral flashed near-black on
+    // press. The trailing manage chip keeps its tinted background.
+    placeChipPressed: { backgroundColor: '#EEF1F5', opacity: 0.9 },
+    placeChipManage: { backgroundColor: '#EEF4FE' },
+    placeChipGlyph: { fontSize: 14, color: '#1466E0' },
+    placeChipText: { fontSize: 13, fontWeight: '600', color: '#0E4499' },
     statusPill: {
       // Frosted glass via <GlassSurface> (Phase 10) — no backgroundColor here,
       // the surface owns the translucent fill + AA contrast floor.
@@ -2655,7 +2658,10 @@ const makeStyles = (color: ColorTheme) =>
       gap: 10,
     },
     fab: {
-      backgroundColor: color.brand,
+      // ctaFill (mode-independent) — the Report FAB rides this base; plain
+      // color.brand dropped its white text to 3.4:1 in dark. The List FAB
+      // overrides bg to color.overlay (fabSecondary) and keeps color.brand ink (F4).
+      backgroundColor: color.ctaFill,
       paddingHorizontal: 20,
       paddingVertical: 14,
       borderRadius: radius.circle,

@@ -117,8 +117,8 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(function Pla
       initialRegion={initialRegion}
       showsUserLocation={showsUserLocation}
       showsMyLocationButton={false}
-      clusterColor={color.brand}
-      clusterTextColor='#111'
+      clusterColor={color.ctaFill}
+      clusterTextColor={color.textOnBrand}
       radius={40}
       renderCluster={(cluster: any) => {
         const { id, geometry, onPress, properties } = cluster;
@@ -129,20 +129,31 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(function Pla
         };
         return (
           <Marker
-            key={`cluster-${id}`}
+            key={`cluster-${id}-${count}`}
             coordinate={coord}
             onPress={onPress}
+            // The whole bubble is mode-independent now (ctaFill disc, #fff ring +
+            // count, #0F1B2D outer hairline), so snapshotting is safe and cuts
+            // per-pan re-rasterization. The key carries the count so the snapshot
+            // refreshes when the cluster's number changes.
+            tracksViewChanges={false}
             hitSlop={{ top: 2, bottom: 2, left: 2, right: 2 }}
             accessibilityRole="button"
             accessibilityLabel={`${count} ${count === 1 ? 'flag' : 'flags'}. Tap to expand.`}
           >
-            <View style={styles.cluster}>
-              {/* Abbreviate like the web twin (PlatformMap.web makeClusterIcon)
-                  and cap scaling — a raw 4-digit count clipped in the circle at
-                  any scale, and any count clipped at AX sizes (sweep M1). */}
-              <Text style={styles.clusterCount} maxFontSizeMultiplier={1.2} {...decorativeProps}>
-                {count >= 1000 ? `${Math.floor(count / 1000)}k` : String(count)}
-              </Text>
+            {/* Outer 1px #0F1B2D hairline as a wrapper View (RN allows one border
+                per view). Union of the two rings keeps a ≥3:1 edge over ANY map
+                tile — the white ring covers dark backdrops, the dark hairline
+                covers light ones. Neither color spans the range alone. */}
+            <View style={styles.clusterRing}>
+              <View style={styles.cluster}>
+                {/* Abbreviate like the web twin (PlatformMap.web makeClusterIcon)
+                    and cap scaling — a raw 4-digit count clipped in the circle at
+                    any scale, and any count clipped at AX sizes (sweep M1). */}
+                <Text style={styles.clusterCount} maxFontSizeMultiplier={1.2} {...decorativeProps}>
+                  {count >= 1000 ? `${Math.floor(count / 1000)}k` : String(count)}
+                </Text>
+              </View>
             </View>
           </Marker>
         );
@@ -163,7 +174,13 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(function Pla
       {heatCells.map((cell) => {
         const fill = colorForCell(cell, heatmapMode, severityTokens, color.brand);
         const meanRounded = Math.round(cell.meanSeverity);
-        const labelTone = meanRounded >= 3 ? color.textOnBrand : color.textStrong;
+        // Static, fill-keyed ink — a THEMED ink (textStrong) went catastrophic
+        // in dark mode on the low-severity yellow fill (#f5f5f5 on #fde047 =
+        // 1.2:1). Gradient fills sev1-4 are light enough for the dark ink; the
+        // sev5 red and the density brand fill take white. Keyed off the fill,
+        // never the theme.
+        const labelTone =
+          heatmapMode === 'density' ? '#fff' : meanRounded >= 5 ? '#fff' : '#0F1B2D';
         // Alpha-on-hex (#RRGGBBAA) — react-native-maps accepts it on
         // both iOS + Android. Mirrors the HEATMAP_FILL_OPACITY constant
         // so a tweak there flows here without a separate edit.
@@ -314,6 +331,13 @@ const makeStyles = (color: ColorTheme) =>
     // gives the cluster a sense of "grouped energy" so it reads as more
     // than just an oversized pin. Inner ring catches the eye and gives
     // separation from the underlying map tile.
+    // Outer hairline ring — a wrapper View with only a border (no width/height)
+    // so the dark edge hugs just outside the white ring. See the JSX note.
+    clusterRing: {
+      borderRadius: radius.circle,
+      borderWidth: 1,
+      borderColor: '#0F1B2D',
+    },
     cluster: {
       // Min dims (not fixed) so a wide abbreviated count can grow the pill —
       // hard 44×44 clipped 4-digit counts; the count Text style must never
@@ -322,7 +346,10 @@ const makeStyles = (color: ColorTheme) =>
       minHeight: 44,
       paddingHorizontal: 4,
       borderRadius: radius.circle,
-      backgroundColor: color.brand,
+      // ctaFill (mode-independent brand) so the white ring + white count stay at
+      // 5.2:1 in BOTH themes — plain color.brand is lighter in dark and drops
+      // the white count to 3.4:1.
+      backgroundColor: color.ctaFill,
       borderWidth: 2.5,
       borderColor: color.textOnBrand,
       alignItems: 'center',
@@ -330,9 +357,9 @@ const makeStyles = (color: ColorTheme) =>
       ...shadow.e2,
     },
     clusterCount: {
-      // Intentional literal: must be darker than color.textStrong (#222) to clear
-      // WCAG AA on sev5 red (#e74c3c). '#111' = 5.1:1, '#222' = 3.1:1 (fails).
-      color: '#111',
+      // White on the ctaFill disc = 5.2:1. (Was '#111', a stale sev5-red-era
+      // literal that measured only 3.6:1 on today's blue disc.)
+      color: color.textOnBrand,
       fontSize: font.size.base,
       fontWeight: font.weight.bold,
       letterSpacing: -0.2,
@@ -346,7 +373,11 @@ const makeStyles = (color: ColorTheme) =>
       paddingHorizontal: 8,
       borderRadius: 14,
       borderWidth: 1.5,
-      borderColor: color.surface,
+      // Static dark edge (not themed color.surface, which vanished over dark
+      // tiles). Carries the light-tile regime; the fill-keyed ink carries
+      // identification. Boundary residual over the badge's own cell on dark
+      // tiles is disclosed in the stacks _doc (non-interactive text label).
+      borderColor: '#0F1B2D',
       alignItems: 'center',
       justifyContent: 'center',
       shadowColor: color.shadow,
