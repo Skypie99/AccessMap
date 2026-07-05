@@ -41,7 +41,7 @@ export default function AboutScreen({ visible, onClose }: Props) {
   const reducedMotion = useReducedMotion();
   const styles = makeStyles(color);
   return (
-    <Modal visible={visible} animationType={reducedMotion ? 'none' : 'slide'} transparent onRequestClose={onClose}>
+    <Modal visible={visible} animationType={reducedMotion ? 'none' : 'slide'} transparent onRequestClose={onClose} aria-label="About AccessMap">
       <View style={styles.backdrop}>
         {/* accessibilityViewIsModal traps VoiceOver focus inside this card so
             it can't escape back to the underlying Settings screen while the

@@ -87,6 +87,7 @@ export default function HowToHelpScreen({ visible, onClose }: Props) {
       animationType={reducedMotion ? 'none' : 'slide'}
       presentationStyle="pageSheet"
       onRequestClose={onClose}
+      aria-label="How To Help"
     >
       <SafeAreaView style={styles.root}>
         <ScreenStage />

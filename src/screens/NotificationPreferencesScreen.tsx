@@ -136,6 +136,7 @@ export default function NotificationPreferencesScreen({ visible, onClose }: Prop
       animationType={reducedMotion ? 'none' : 'slide'}
       transparent
       onRequestClose={onClose}
+      aria-label="Notification Preferences"
     >
       <View style={styles.backdrop}>
         {/* accessibilityViewIsModal traps VoiceOver focus inside the sheet

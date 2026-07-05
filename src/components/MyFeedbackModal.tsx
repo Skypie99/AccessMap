@@ -110,6 +110,7 @@ export default function MyFeedbackModal({ visible, onClose, refreshKey = 0 }: Pr
 
   return (
     <Modal
+      aria-label="My Feedback"
       visible={visible}
       animationType={reducedMotion ? 'none' : 'slide'}
       transparent

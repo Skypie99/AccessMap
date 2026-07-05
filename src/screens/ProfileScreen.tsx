@@ -826,6 +826,7 @@ export default function ProfileScreen() {
         <Modal
           visible={signInOpen}
           animationType={reduceMotion ? 'none' : 'slide'}
+          aria-label="Sign in"
           onRequestClose={() => setSignInOpen(false)}
         >
           <SignInScreen onClose={() => setSignInOpen(false)} />
@@ -1737,6 +1738,7 @@ export default function ProfileScreen() {
         visible={deleteAccountOpen}
         animationType={reduceMotion ? 'none' : 'slide'}
         transparent
+        aria-label="Delete your account?"
         onRequestClose={() => {
           if (!deletingAccount) setDeleteAccountOpen(false);
         }}
@@ -1877,6 +1879,7 @@ export default function ProfileScreen() {
         visible={tierExplainerOpen}
         animationType={reduceMotion ? 'none' : 'slide'}
         transparent
+        aria-label="Reputation tiers"
         onRequestClose={() => setTierExplainerOpen(false)}
       >
         <View style={styles.tierBackdrop}>

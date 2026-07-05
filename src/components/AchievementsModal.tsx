@@ -184,7 +184,7 @@ export default function AchievementsModal({ visible, onClose, achievements }: Pr
   const totalEarned = achievements.filter((a) => a.earned).length;
 
   return (
-    <Modal visible={visible} animationType={reducedMotion ? 'none' : 'slide'} transparent onRequestClose={onClose}>
+    <Modal aria-label="Achievements" visible={visible} animationType={reducedMotion ? 'none' : 'slide'} transparent onRequestClose={onClose}>
       <View style={styles.backdrop}>
         <View style={[styles.card, { paddingBottom: Math.max(spacing.xl, insets.bottom) }]} accessibilityViewIsModal>
           <View style={styles.headerRow}>

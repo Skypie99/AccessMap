@@ -92,6 +92,7 @@ export default function SignInScreen({
     <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      accessibilityViewIsModal
     >
       <LinearGradient
         colors={['#070b18', '#0a1428', '#0c1d3a']}

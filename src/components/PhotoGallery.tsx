@@ -158,6 +158,7 @@ function PhotoGalleryInner({ photos, onAddPhoto, maxPhotos = 5, onRemovePhoto }:
           key=lightboxStartPage remounts the ScrollView when opening at a different
           initial page, allowing contentOffset to position correctly on first render. */}
       <Modal
+        aria-label="Photo viewer"
         visible={lightboxOpen}
         transparent
         animationType={reducedMotion ? 'none' : 'fade'}

@@ -28,13 +28,21 @@ export default function LegendModal({ visible, onClose }: Props) {
   // WCAG 2.4.3: move the screen-reader cursor onto the header when the modal opens.
   const titleRef = useFocusOnOpen<View>(visible);
   return (
-    <Modal visible={visible} animationType={reducedMotion ? 'none' : 'slide'} transparent onRequestClose={onClose}>
-      <Pressable
-        style={styles.backdrop}
-        onPress={onClose}
-        accessibilityLabel="Close legend"
-        accessibilityRole="button"
-      >
+    <Modal visible={visible} animationType={reducedMotion ? 'none' : 'slide'} transparent onRequestClose={onClose} aria-label="Map legend">
+      <View style={styles.backdrop}>
+        {/* S9 (L6-21): the scrim is an absolute SIBLING of the card, not its
+            ancestor — a screen reader never lands on a giant "Close" button that
+            wraps the whole dialog. Hidden from the a11y tree on web; SR users
+            close via the in-card "Close" button below. Native VoiceOver is
+            trapped in the card (accessibilityViewIsModal) so tap-to-dismiss on
+            the scrim stays a sighted-only affordance. */}
+        <Pressable
+          style={StyleSheet.absoluteFill}
+          onPress={onClose}
+          accessibilityLabel="Close legend"
+          accessibilityRole="button"
+          aria-hidden={true}
+        />
         <Pressable
           style={styles.card}
           // Swallow taps on the card so they don't dismiss via the backdrop.
@@ -139,7 +147,7 @@ export default function LegendModal({ visible, onClose }: Props) {
             <AppText variant="label" style={styles.closeText}>Close</AppText>
           </Pressable>
         </Pressable>
-      </Pressable>
+      </View>
     </Modal>
   );
 }

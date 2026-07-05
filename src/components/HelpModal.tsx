@@ -96,6 +96,7 @@ export default function HelpModal({ visible, onClose }: Props) {
 
   return (
     <Modal
+      aria-label="Help & FAQ"
       visible={visible}
       animationType={reducedMotion ? 'none' : 'slide'}
       transparent

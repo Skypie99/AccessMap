@@ -143,6 +143,7 @@ export default function NotificationPrefsModal({
   const insets = React.useContext(SafeAreaInsetsContext) ?? { top: 0, bottom: 0, left: 0, right: 0 };
   return (
     <Modal
+      aria-label="Notifications"
       visible={visible}
       animationType={reducedMotion ? 'none' : 'slide'}
       transparent

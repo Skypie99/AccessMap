@@ -194,7 +194,7 @@ export default function AddressSearchModal({ visible, onClose, onSelect }: Props
   const showRecents = visible && query.trim().length === 0 && recents.length > 0;
 
   return (
-    <Modal visible={visible} animationType={reducedMotion ? 'none' : 'slide'} transparent onRequestClose={onClose}>
+    <Modal aria-label="Search by address" visible={visible} animationType={reducedMotion ? 'none' : 'slide'} transparent onRequestClose={onClose}>
       <View style={styles.backdrop}>
         {/* KAV lifts the sheet above the keyboard the autoFocus input opens.
             iOS 'padding'; Android already resizes (adjustResize default).

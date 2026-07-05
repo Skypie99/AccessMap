@@ -105,6 +105,7 @@ export function Sheet({
   const titleRef = useFocusOnOpen<Text>(visible);
   return (
     <Modal
+      aria-label={title}
       visible={visible}
       transparent
       animationType={reducedMotion ? 'none' : 'slide'}

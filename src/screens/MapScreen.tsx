@@ -2204,6 +2204,7 @@ export default function MapScreen() {
         visible={presetNameModalOpen}
         animationType={reducedMotion ? 'none' : 'fade'}
         transparent
+        aria-label="Name this preset"
         onRequestClose={() => {
           if (!savingPreset) setPresetNameModalOpen(false);
         }}
@@ -2288,6 +2289,7 @@ export default function MapScreen() {
         visible={nameModalOpen}
         animationType={reducedMotion ? 'none' : 'fade'}
         transparent
+        aria-label="Name this filter"
         onRequestClose={() => {
           if (!savingSet) setNameModalOpen(false);
         }}

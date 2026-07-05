@@ -126,6 +126,7 @@ export function ScreenHeader({
           size={renderSize}
           style={styles.title}
           numberOfLines={1}
+          accessibilityRole="header"
           onLayout={handleTitleLayout}
           // Native backstop (no-op on web): shrink to fit within the box, never
           // below MIN_TITLE_SCALE. The JS estimate above is the primary path and

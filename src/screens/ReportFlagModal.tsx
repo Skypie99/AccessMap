@@ -436,7 +436,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
   return (
     // WCAG 2.3.3 (Animation from Interactions): skip the slide animation
     // when the user has requested reduced motion.
-    <Modal visible={visible} animationType={reducedMotion ? 'none' : 'slide'} transparent onRequestClose={onClose} accessibilityViewIsModal>
+    <Modal visible={visible} animationType={reducedMotion ? 'none' : 'slide'} transparent onRequestClose={onClose} accessibilityViewIsModal aria-label={isAnon ? 'Report anonymously' : 'Report a flag'}>
       <View style={styles.backdrop}>
         {/* KAV wraps the WHOLE card from the backdrop (the FeedbackModal /
             AddressSearchModal recipe): rooted here its keyboard-overlap math

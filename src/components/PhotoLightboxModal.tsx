@@ -36,6 +36,7 @@ export default function PhotoLightboxModal({ visible, photoUrl, caption, onClose
   // close button is reachable, but show a friendly fallback.
   return (
     <Modal
+      aria-label="Photo viewer"
       visible={visible}
       animationType={reducedMotion ? 'none' : 'fade'}
       transparent

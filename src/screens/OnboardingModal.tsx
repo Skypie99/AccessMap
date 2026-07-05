@@ -112,6 +112,7 @@ export default function OnboardingModal({ visible, onDone }: Props) {
       animationType={reducedMotion ? 'none' : 'slide'}
       onRequestClose={handleSkip}
       presentationStyle="fullScreen"
+      aria-label="Welcome to AccessMap"
     >
       {/* accessibilityViewIsModal prevents VoiceOver from focusing elements
           behind this full-screen modal. WCAG 2.4.3 (Focus Order). */}

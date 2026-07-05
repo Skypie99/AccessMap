@@ -159,6 +159,7 @@ export default function FeedbackModal({ visible, onClose }: Props) {
 
   return (
     <Modal
+      aria-label="Send feedback"
       visible={visible}
       animationType={reducedMotion ? 'none' : 'slide'}
       transparent

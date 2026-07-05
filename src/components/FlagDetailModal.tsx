@@ -343,7 +343,7 @@ export default function FlagDetailModal({
   };
 
   if (!shownFlag) {
-    return <Modal visible={false} transparent onRequestClose={onClose} />;
+    return <Modal aria-label="Flag details" visible={false} transparent onRequestClose={onClose} />;
   }
 
   const isOwn = shownFlag.user_id === user?.id;
@@ -719,7 +719,7 @@ export default function FlagDetailModal({
 
   return (
     <>
-      <Modal visible={visible} animationType={reducedMotion ? 'none' : 'slide'} transparent onRequestClose={onClose}>
+      <Modal aria-label={`Flag details: ${CATEGORY_LABELS[shownFlag.category]}`} visible={visible} animationType={reducedMotion ? 'none' : 'slide'} transparent onRequestClose={onClose}>
         <View style={styles.backdrop}>
           {/* accessibilityViewIsModal: tells iOS VoiceOver that everything
             outside this card is non-interactive — important because we

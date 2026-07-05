@@ -265,7 +265,7 @@ export default function OnboardingCards({ onDone }: Props) {
   const insets = React.useContext(SafeAreaInsetsContext) ?? { top: 0, bottom: 0, left: 0, right: 0 };
 
   return (
-    <Modal visible animationType={reduceMotion ? 'none' : 'fade'} onRequestClose={onDone} presentationStyle="fullScreen">
+    <Modal aria-label="Welcome to AccessMap" visible animationType={reduceMotion ? 'none' : 'fade'} onRequestClose={onDone} presentationStyle="fullScreen">
       <View style={styles.screen} accessibilityViewIsModal importantForAccessibility="yes">
         {/* Full-screen gradient */}
         <LinearGradient

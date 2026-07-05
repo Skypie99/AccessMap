@@ -250,7 +250,7 @@ export default function SavedPlacesModal({
   const insets = React.useContext(SafeAreaInsetsContext) ?? { top: 0, bottom: 0, left: 0, right: 0 };
 
   return (
-    <Modal visible={visible} animationType={reducedMotion ? 'none' : 'slide'} transparent onRequestClose={onClose}>
+    <Modal aria-label="Saved Places" visible={visible} animationType={reducedMotion ? 'none' : 'slide'} transparent onRequestClose={onClose}>
       <View style={styles.backdrop}>
         <View
           style={[styles.card, { paddingBottom: Math.max(spacing.xxl, insets.bottom) }]}

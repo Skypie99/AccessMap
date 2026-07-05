@@ -180,6 +180,7 @@ export default function NearbyFlagsModal({
       animationType={reducedMotion ? 'none' : 'slide'}
       onRequestClose={onClose}
       presentationStyle="pageSheet"
+      aria-label="Nearby flags"
     >
       <SafeAreaView style={styles.screen} accessibilityViewIsModal>
         <View style={styles.header}>

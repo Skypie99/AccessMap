@@ -118,6 +118,7 @@ export default function ResourcesScreen({ visible, onClose }: Props) {
       animationType={reducedMotion ? 'none' : 'slide'}
       presentationStyle="pageSheet"
       onRequestClose={onClose}
+      aria-label="Resources"
     >
       <SafeAreaView style={styles.root}>
         <ScreenStage />

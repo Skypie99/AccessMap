@@ -136,6 +136,7 @@ export default function HamburgerDrawer({ open, onClose, onSignIn, onNavigate }:
     <>
       {/* ── Drawer ─────────────────────────────────────────────── */}
       <Modal
+        aria-label="Menu"
         visible={open}
         transparent
         animationType="none"
