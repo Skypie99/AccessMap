@@ -193,6 +193,36 @@ describe('FlagCard — selection mode', () => {
   });
 });
 
+// S13 (L6-04): the card is no longer a single accessible leaf that swallows its
+// action buttons. The header is a labeled SUMMARY node (button/checkbox) and each
+// action is independently reachable. (Native VoiceOver focus order is the D1
+// device check; these pin the structural contract on the web/JS renderer.)
+describe('FlagCard — S13: actions are not trapped in an accessible parent', () => {
+  it('exposes a labeled header summary as the card button (severity · category · status)', () => {
+    const { getByRole } = renderCard();
+    const summary = getByRole('button', {
+      name: 'Blocked path, severity 4, open. Tap to view on map.',
+    });
+    expect(summary).toBeTruthy();
+    // a11yToggle keeps the nested accessibilityState AND emits the flat web alias.
+    expect(summary.props['aria-disabled']).toBe(false);
+  });
+
+  it('a tap on an action fires ONLY that action — the card open handler is not also triggered', () => {
+    const { getByText, handlers } = renderCard();
+    fireEvent.press(getByText('Verify'));
+    expect(handlers.onSetStatus).toHaveBeenCalledWith('flag-1', 'verified', false);
+    expect(handlers.onPress).not.toHaveBeenCalled();
+  });
+
+  it('the card open handler still fires from the summary/body (tap-anywhere preserved)', () => {
+    const { getByText, handlers } = renderCard();
+    fireEvent.press(getByText('Blocked path'));
+    expect(handlers.onPress).toHaveBeenCalledWith(baseFlag);
+    expect(handlers.onSetStatus).not.toHaveBeenCalled();
+  });
+});
+
 describe('FlagCard — material modes (the C-lite runtime switch)', () => {
   it('full glass mounts the row BlurView; glassLite swaps to the engineered gradient', () => {
     const full = renderCard();

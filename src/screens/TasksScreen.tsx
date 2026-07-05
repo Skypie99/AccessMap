@@ -1594,16 +1594,15 @@ const FlagCard = memo(function FlagCard({
       onPressIn={sheenActive ? sheenIn : undefined}
       onPressOut={sheenActive ? sheenOut : undefined}
       style={({ pressed }) => [styles.cardOuter, pressed && styles.cardPressed]}
-      accessibilityRole={selectionActive ? 'checkbox' : 'button'}
-      {...a11yToggle(
-        selectionActive ? { checked: selected, disabled: isBusy } : { disabled: isBusy }
-      )}
-      accessibilityLabel={a11yLabel}
-      accessibilityHint={
-        selectionActive
-          ? 'Toggles this flag in the selection'
-          : 'Opens the Map tab focused on this flag. Long-press to select multiple.'
-      }
+      // S13 (L6-04, the audit's #1 VoiceOver check): the card is NOT one
+      // accessible leaf. accessible={false} exposes the labeled header summary
+      // AND each action button (Verify/Resolve/Reject/Details) and the photo as
+      // independent elements, so a blind user can reach the trust engine — and
+      // it removes the web nested-<button> invalidity. The card's role/label/
+      // state/hint move to the header summary node below; tap-anywhere-to-open
+      // still works through this Pressable (RN touch + web/VoiceOver activation
+      // fall through to it). Bulk-select is unchanged (actions hidden then).
+      accessible={false}
     >
       {/* The card IS a pane of row glass (i=12 + floor + hairlines). The
           Pressable stays the interactive root — handlers and a11y unchanged;
@@ -1637,7 +1636,25 @@ const FlagCard = memo(function FlagCard({
           />
         </Animated.View>
       )}
-      <View style={styles.cardHeader}>
+      {/* S13: the header row is the card's labeled SUMMARY node — the single
+          focusable representative that announces the card (severity · category ·
+          status) and carries the button/checkbox role + state that used to live
+          on the whole card. It wraps only non-interactive badges, so it nests no
+          button. Activating it falls through to the outer Pressable (open/select). */}
+      <View
+        style={styles.cardHeader}
+        accessible
+        accessibilityRole={selectionActive ? 'checkbox' : 'button'}
+        {...a11yToggle(
+          selectionActive ? { checked: selected, disabled: isBusy } : { disabled: isBusy }
+        )}
+        accessibilityLabel={a11yLabel}
+        accessibilityHint={
+          selectionActive
+            ? 'Toggles this flag in the selection'
+            : 'Opens the Map tab focused on this flag. Long-press to select multiple.'
+        }
+      >
         {/* Severity leads the header as a legible badge ("3 · Moderate") — number
             + word + colour, never colour alone (WCAG 1.4.1). Replaces the old
             left accent stripe + the buried "Severity N" in the meta line. */}
