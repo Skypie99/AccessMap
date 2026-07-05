@@ -212,8 +212,12 @@ export default function OnboardingCards({ onDone }: Props) {
   // label doesn't flip from "Continue" to "Allow…" under the user's finger.
   const permissionChecking =
     permission != null && Platform.OS !== 'web' && currentGranted === null;
-  // The notifications slide shows a "Maybe later" escape hatch until granted.
-  const showMaybeLater = permission === 'notifications' && currentGranted !== true;
+  // S19 (L1-3): both permission slides show a visible decline until granted —
+  // location gets "Not now", notifications "Maybe later". Native only: on web
+  // the primary CTA is already just "Continue" (no OS prompt fires there), so a
+  // second decline would be redundant.
+  const showDecline =
+    permission != null && currentGranted !== true && Platform.OS !== 'web';
 
   // When the user reaches a permission slide, read the current status WITHOUT
   // prompting. A returning user who already granted sees a "you're set"
@@ -390,7 +394,7 @@ export default function OnboardingCards({ onDone }: Props) {
         </View>
 
         {/* Actions */}
-        <View style={[styles.actions, showMaybeLater && styles.actionsTight]}>
+        <View style={[styles.actions, showDecline && styles.actionsTight]}>
           <Pressable
             onPress={() => goTo(index - 1)}
             disabled={isFirst}
@@ -437,12 +441,20 @@ export default function OnboardingCards({ onDone }: Props) {
               ]}
               accessibilityRole="button"
               accessibilityLabel={
-                permission === 'location' ? 'Allow location access' : 'Turn on notifications'
+                // S19: on web no OS dialog fires — the button just advances, so
+                // it announces as "Continue", not a location/notification grant.
+                Platform.OS === 'web'
+                  ? 'Continue'
+                  : permission === 'location'
+                    ? 'Allow location access'
+                    : 'Turn on notifications'
               }
               accessibilityHint={
-                permission === 'location'
-                  ? 'Opens the system location permission dialog, then continues'
-                  : 'Opens the system notifications permission dialog, then continues'
+                Platform.OS === 'web'
+                  ? 'Continues to the next step'
+                  : permission === 'location'
+                    ? 'Opens the system location permission dialog, then continues'
+                    : 'Opens the system notifications permission dialog, then continues'
               }
               accessibilityState={{ disabled: permissionChecking }}
             >
@@ -453,7 +465,11 @@ export default function OnboardingCards({ onDone }: Props) {
                 style={styles.primaryBtn}
               >
                 <AppText variant="label" style={styles.primaryBtnText}>
-                  {permission === 'location' ? 'Allow Location' : 'Turn on Notifications'}
+                  {Platform.OS === 'web'
+                    ? 'Continue'
+                    : permission === 'location'
+                      ? 'Allow Location'
+                      : 'Turn on Notifications'}
                 </AppText>
               </LinearGradient>
             </Pressable>
@@ -480,19 +496,26 @@ export default function OnboardingCards({ onDone }: Props) {
           )}
         </View>
 
-        {/* Soft-ask escape hatch on the notifications slide: skip the prompt
-            and continue without granting. The top-right "Skip" exits all of
-            onboarding; this only skips notifications. */}
-        {showMaybeLater && (
+        {/* Soft-ask escape hatch on the permission slides (S19: location gets
+            "Not now", notifications "Maybe later"): skip the prompt and continue
+            without granting. The top-right "Skip" exits all of onboarding; this
+            only skips the current permission. */}
+        {showDecline && (
           <Pressable
             onPress={() => goTo(index + 1)}
             style={({ pressed }) => [styles.maybeLaterBtn, pressed && { opacity: 0.6 }]}
             accessibilityRole="button"
-            accessibilityLabel="Maybe later"
-            accessibilityHint="Skips notifications and continues to the next step"
+            accessibilityLabel={permission === 'location' ? 'Not now' : 'Maybe later'}
+            accessibilityHint={
+              permission === 'location'
+                ? 'Skips location access and continues to the next step'
+                : 'Skips notifications and continues to the next step'
+            }
             hitSlop={8}
           >
-            <AppText variant="label" style={styles.maybeLaterText}>Maybe later</AppText>
+            <AppText variant="label" style={styles.maybeLaterText}>
+              {permission === 'location' ? 'Not now' : 'Maybe later'}
+            </AppText>
           </Pressable>
         )}
       </View>
