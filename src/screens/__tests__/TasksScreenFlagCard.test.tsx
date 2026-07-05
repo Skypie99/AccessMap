@@ -67,6 +67,16 @@ jest.mock('@/lib/accessibility', () => ({
   a11yToggle: jest.requireActual('@/lib/accessibility').a11yToggle,
 }));
 
+// created_at is kept a few days in the PAST relative to the test run so the meta
+// line always renders a "Xd ago" relative string. relativeTime() caps at
+// "30d ago" and then falls back to an absolute locale date (relativeTime.ts:31);
+// a hardcoded fixture date silently rotted past that 30-day cap and broke the
+// `/ago$/` assertion below once >30 days had elapsed since it was written.
+// A dynamic recent date is time-stable and needs no fake timers. 3 days lands
+// squarely in the days tier ("3d ago"), well clear of the hours tier (<24h) and
+// the 30-day absolute-date cutoff.
+const RECENT_CREATED_AT = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString();
+
 const baseFlag: FlagRow = {
   id: 'flag-1',
   lat: 49.89,
@@ -77,7 +87,7 @@ const baseFlag: FlagRow = {
   photo_url: null,
   status: 'open',
   user_id: 'user-9',
-  created_at: '2026-06-05T03:39:24Z',
+  created_at: RECENT_CREATED_AT,
 } as FlagRow;
 
 function renderCard(overrides: Partial<React.ComponentProps<typeof FlagCard>> = {}) {
