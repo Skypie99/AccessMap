@@ -18,6 +18,7 @@ import {
   getNotificationPermission,
   requestNotificationPermission,
 } from '@/lib/pushNotifications';
+import { a11yToggle } from '@/lib/accessibility';
 import { font, radius, spacing, gradient } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
@@ -405,7 +406,7 @@ export default function OnboardingCards({ onDone }: Props) {
             ]}
             accessibilityRole="button"
             accessibilityLabel={isFirst ? 'Back. Disabled on first card.' : `Back to card ${index} of ${CARDS.length}`}
-            accessibilityState={{ disabled: isFirst }}
+            {...a11yToggle({ disabled: isFirst })}
             hitSlop={8}
           >
             <AppText variant="label" style={[styles.backBtnText, isFirst && styles.backBtnTextDisabled]}>Back</AppText>
@@ -456,7 +457,7 @@ export default function OnboardingCards({ onDone }: Props) {
                     ? 'Opens the system location permission dialog, then continues'
                     : 'Opens the system notifications permission dialog, then continues'
               }
-              accessibilityState={{ disabled: permissionChecking }}
+              {...a11yToggle({ disabled: permissionChecking })}
             >
               <LinearGradient
                 colors={gradient.brandHero}

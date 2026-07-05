@@ -22,7 +22,7 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useColor } from '@/theme/ThemeContext';
-import { useReducedMotion } from '@/lib/accessibility';
+import { a11yToggle, useReducedMotion } from '@/lib/accessibility';
 import { hapticImpact } from '@/lib/haptics';
 import { motion, radius, shadow, font, spacing, gradient, a11y } from '@/theme';
 import { AppText } from './AppText';
@@ -139,7 +139,7 @@ export function Button({
         accessible
         accessibilityRole="button"
         accessibilityLabel={accessibilityLabel}
-        accessibilityState={{ disabled }}
+        {...a11yToggle({ disabled })}
       >
         <View style={surfaceStyle}>
           {isPrimary && (

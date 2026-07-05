@@ -35,7 +35,7 @@ import { X } from 'lucide-react-native';
 import { AppText } from '@/components/ui/AppText';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { useAuth } from '@/lib/auth';
-import { useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
+import { a11yToggle, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
 import {
   useNotificationPreferences,
   type NotificationPreferences,
@@ -104,7 +104,7 @@ function ToggleRow({
       accessibilityRole="switch"
       accessibilityLabel={label}
       accessibilityHint={subtitle}
-      accessibilityState={{ checked: value }}
+      {...a11yToggle({ checked: value })}
     >
       <View style={styles.toggleTextWrap}>
         <AppText variant="label" style={styles.toggleLabel}>{label}</AppText>

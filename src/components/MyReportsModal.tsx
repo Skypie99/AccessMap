@@ -11,7 +11,7 @@ import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 import { RemoteImage } from '@/components/ui/RemoteImage';
 import { AppText } from '@/components/ui/AppText';
 import SearchInputRow from '@/components/SearchInputRow';
-import { useReducedMotion } from '@/lib/accessibility';
+import { a11yToggle, useReducedMotion } from '@/lib/accessibility';
 import { useAuth } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
 import {
@@ -307,7 +307,7 @@ export default function MyReportsModal({
                     style={[styles.sortChip, active && styles.sortChipActive]}
                     accessibilityRole="button"
                     accessibilityLabel={`Sort by ${labels[opt]}`}
-                    accessibilityState={{ selected: active }}
+                    {...a11yToggle({ selected: active })}
                   >
                     <AppText variant="label" style={[styles.sortChipText, active && styles.sortChipTextActive]}>
                       {labels[opt]}
@@ -331,7 +331,7 @@ export default function MyReportsModal({
                 ]}
                 accessibilityRole="button"
                 accessibilityLabel="Show all statuses"
-                accessibilityState={{ selected: statusFilter === 'all' }}
+                {...a11yToggle({ selected: statusFilter === 'all' })}
               >
                 <AppText
                   variant="label"
@@ -353,7 +353,7 @@ export default function MyReportsModal({
                     style={[styles.statusFilterChip, active && { backgroundColor: palette.fg }]}
                     accessibilityRole="button"
                     accessibilityLabel={`Show only ${STATUS_LABELS[status]} reports, ${statusCounts[status]} ${statusCounts[status] === 1 ? 'item' : 'items'}`}
-                    accessibilityState={{ selected: active }}
+                    {...a11yToggle({ selected: active })}
                   >
                     <AppText
                       variant="label"

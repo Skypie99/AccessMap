@@ -8,7 +8,7 @@ import {
 import { RemoteImage } from '@/components/ui/RemoteImage';
 import { AppText } from '@/components/ui/AppText';
 import { Skeleton } from '@/components/ui/Skeleton';
-import { useReducedMotion } from '@/lib/accessibility';
+import { a11yToggle, useReducedMotion } from '@/lib/accessibility';
 import { useAuth } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
 import {
@@ -307,7 +307,7 @@ export default function LeaderboardScreen({ visible, onClose }: Props) {
             <Pressable
               onPress={() => setTab('all')}
               accessibilityRole="button"
-              accessibilityState={{ selected: tab === 'all' }}
+              {...a11yToggle({ selected: tab === 'all' })}
               accessibilityLabel={`All-time ranking${tab === 'all' ? ', selected' : ''}`}
               style={({ pressed }) => [
                 styles.segBtn,
@@ -325,7 +325,7 @@ export default function LeaderboardScreen({ visible, onClose }: Props) {
             <Pressable
               onPress={() => setTab('month')}
               accessibilityRole="button"
-              accessibilityState={{ selected: tab === 'month' }}
+              {...a11yToggle({ selected: tab === 'month' })}
               accessibilityLabel={`This month's ranking${tab === 'month' ? ', selected' : ''}`}
               style={({ pressed }) => [
                 styles.segBtn,

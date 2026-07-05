@@ -96,7 +96,7 @@ import PlatformMap, {
 import { AppText } from '@/components/ui/AppText';
 import { GlassSurface } from '@/components/ui/GlassSurface';
 import { PressableScale } from '@/components/ui/PressableScale';
-import { useScreenReader, useReducedMotion } from '@/lib/accessibility';
+import { useScreenReader, useReducedMotion, a11yToggle } from '@/lib/accessibility';
 import LegendModal from './LegendModal';
 import HeatmapLegend from '@/components/HeatmapLegend';
 import NearbyFlagsModal from './NearbyFlagsModal';
@@ -1333,7 +1333,7 @@ export default function MapScreen() {
               style={[styles.actionBtn, (filtersOpen || filtersActive) && styles.actionBtnActive]}
               accessibilityRole="button"
               accessibilityLabel="Toggle filters"
-              accessibilityState={{ expanded: filtersOpen }}
+              {...a11yToggle({ expanded: filtersOpen })}
             >
               <SlidersHorizontal
                 size={19}
@@ -1538,7 +1538,7 @@ export default function MapScreen() {
                     ? 'Shows saved filters, categories, severity, and status'
                     : 'Hides the filter sections, leaving just the header'
                 }
-                accessibilityState={{ expanded: !panelCollapsed }}
+                {...a11yToggle({ expanded: !panelCollapsed })}
               >
                 <AppText variant="heading" style={styles.filterTitle}>Filter flags</AppText>
                 {panelCollapsed ? (
@@ -1605,7 +1605,7 @@ export default function MapScreen() {
                               : `${set.name}, tap to apply, long press for options`
                           }
                           accessibilityHint="Sets the map filter to this saved combination. Long press for options including make default and delete."
-                          accessibilityState={{ selected: isSelected }}
+                          {...a11yToggle({ selected: isSelected })}
                         >
                           <AppText
                             variant="label"
@@ -1664,7 +1664,7 @@ export default function MapScreen() {
                         style={[styles.filterPill, active && styles.filterPillActive]}
                         accessibilityRole="button"
                         accessibilityLabel={`Filter by ${CATEGORY_LABELS[c]}, ${count} flag${count === 1 ? '' : 's'}`}
-                        accessibilityState={{ selected: active }}
+                        {...a11yToggle({ selected: active })}
                       >
                         <View style={styles.filterPillRow}>
                           <AppText
@@ -1696,7 +1696,7 @@ export default function MapScreen() {
                         style={[styles.sevPill, active && { backgroundColor: severityColor(s) }]}
                         accessibilityRole="button"
                         accessibilityLabel={`Minimum severity ${s}`}
-                        accessibilityState={{ selected: active }}
+                        {...a11yToggle({ selected: active })}
                       >
                         <AppText
                           variant="label"
@@ -1726,7 +1726,7 @@ export default function MapScreen() {
                     style={[styles.filterPill, heatmapEnabled && styles.filterPillActive]}
                     accessibilityRole="switch"
                     accessibilityLabel="Show neighbourhood heat map"
-                    accessibilityState={{ checked: heatmapEnabled }}
+                    {...a11yToggle({ checked: heatmapEnabled })}
                     accessibilityHint={`Overlays a coloured grid that summarises severity across neighbourhoods. Only areas with at least ${DEFAULT_K_FLOOR} reports are shown.`}
                   >
                     <AppText
@@ -1755,7 +1755,7 @@ export default function MapScreen() {
                         style={[styles.filterPill, active && styles.filterPillActive]}
                         accessibilityRole="button"
                         accessibilityLabel={`Filter by ${STATUS_LABELS[s]}`}
-                        accessibilityState={{ selected: active }}
+                        {...a11yToggle({ selected: active })}
                       >
                         <AppText
                           variant="label"
@@ -1789,7 +1789,7 @@ export default function MapScreen() {
                         style={[styles.filterPill, active && styles.filterPillActive]}
                         accessibilityRole="button"
                         accessibilityLabel={`Filter by barriers affecting: ${label}`}
-                        accessibilityState={{ selected: active }}
+                        {...a11yToggle({ selected: active })}
                       >
                         <AppText
                           variant="label"
@@ -1843,7 +1843,7 @@ export default function MapScreen() {
                         style={[styles.filterPill, active && styles.filterPillActive]}
                         accessibilityRole="button"
                         accessibilityLabel={a11yLabel}
-                        accessibilityState={{ selected: active }}
+                        {...a11yToggle({ selected: active })}
                       >
                         <AppText
                           variant="label"
@@ -1916,7 +1916,7 @@ export default function MapScreen() {
             accessibilityRole="button"
             accessibilityLabel={loadError}
             accessibilityHint="Tries to load flags again"
-            accessibilityState={{ busy: loadingFlags }}
+            {...a11yToggle({ busy: loadingFlags })}
             // Announces re-renders of this region on Android too; iOS uses
             // the explicit announceForAccessibility above.
             accessibilityLiveRegion="polite"
@@ -2088,7 +2088,7 @@ export default function MapScreen() {
                       ? 'Opens the report form and finds your location. Allow location access when your browser asks.'
                       : 'Dimmed until location is on. Use the recenter button to turn on location, then report a flag here.'
                 }
-                accessibilityState={{ disabled: reportDisabled }}
+                {...a11yToggle({ disabled: reportDisabled })}
               >
                 <View style={styles.iconLabelRow}>
                   <Plus size={16} color={color.textOnBrand} strokeWidth={2.6} />
@@ -2246,7 +2246,7 @@ export default function MapScreen() {
                 style={[styles.nameBtn, styles.nameBtnCancel]}
                 accessibilityRole="button"
                 accessibilityLabel="Cancel"
-                accessibilityState={{ disabled: savingPreset }}
+                {...a11yToggle({ disabled: savingPreset })}
               >
                 <AppText variant="label" style={styles.nameBtnCancelText}>Cancel</AppText>
               </Pressable>
@@ -2261,10 +2261,10 @@ export default function MapScreen() {
                 ]}
                 accessibilityRole="button"
                 accessibilityLabel="Save preset"
-                accessibilityState={{
+                {...a11yToggle({
                   busy: savingPreset,
                   disabled: savingPreset || presetNameDraft.trim().length === 0,
-                }}
+                })}
               >
                 {savingPreset ? (
                   <ActivityIndicator color={color.textOnBrand} />
@@ -2338,10 +2338,10 @@ export default function MapScreen() {
                 ]}
                 accessibilityRole="button"
                 accessibilityLabel="Save filter set"
-                accessibilityState={{
+                {...a11yToggle({
                   busy: savingSet,
                   disabled: savingSet || nameDraft.trim().length === 0,
-                }}
+                })}
               >
                 {savingSet ? (
                   <ActivityIndicator color={color.textOnBrand} />

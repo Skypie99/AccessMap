@@ -20,6 +20,7 @@ import { hydrateGlassMode, useGlassMode } from '@/lib/glassMode';
 import { hapticSelection } from '@/lib/haptics';
 import { signOut, supabase } from '@/lib/supabase';
 import { confirm, notify } from '@/lib/confirm';
+import { a11yToggle } from '@/lib/accessibility';
 import { useAuth } from '@/lib/auth';
 import { useFeatureFlag } from '@/lib/featureFlags';
 import { useSharedModals } from '@/lib/sharedModalsContext';
@@ -99,7 +100,7 @@ function SettingsRow({
       accessibilityRole="button"
       accessibilityLabel={title}
       accessibilityHint={accessibilityHint}
-      accessibilityState={{ disabled: !!disabled, busy: !!busy }}
+      {...a11yToggle({ disabled: !!disabled, busy: !!busy })}
     >
       <GlassSurface variant="row" forceEngineered={glassLite} style={styles.row}>
         {icon ? (
@@ -174,7 +175,7 @@ function AppearanceControl() {
             }}
             style={[styles.segment, selected && styles.segmentActive]}
             accessibilityRole="radio"
-            accessibilityState={{ selected }}
+            {...a11yToggle({ selected })}
             accessibilityLabel={label}
             accessibilityHint={`Use ${label.toLowerCase()} appearance`}
           >
@@ -508,7 +509,7 @@ export default function SettingsScreen() {
               accessibilityRole="switch"
               accessibilityLabel="Push notifications"
               accessibilityHint="Receive a push notification when your flag is verified or resolved"
-              accessibilityState={{ checked: pushEnabled, disabled: pushBusy || !user }}
+              {...a11yToggle({ checked: pushEnabled, disabled: pushBusy || !user })}
             />
           )}
         </GlassSurface>

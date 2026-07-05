@@ -28,7 +28,7 @@ import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 import { RemoteImage } from '@/components/ui/RemoteImage';
 import { AppText } from '@/components/ui/AppText';
 import { useAuth } from '@/lib/auth';
-import { useReducedMotion } from '@/lib/accessibility';
+import { a11yToggle, useReducedMotion } from '@/lib/accessibility';
 import { errorMessage } from '@/lib/errors';
 import {
   CATEGORY_LABELS,
@@ -246,7 +246,7 @@ export default function ActivityFeedModal({ visible, onClose, onSelectFlag, onVi
                     style={[styles.filterChip, active && styles.filterChipActive]}
                     accessibilityRole="button"
                     accessibilityLabel={`Show ${label.toLowerCase()} activity`}
-                    accessibilityState={{ selected: active }}
+                    {...a11yToggle({ selected: active })}
                   >
                     <AppText variant="label" style={[styles.filterChipText, active && styles.filterChipTextActive]}>
                       {label}

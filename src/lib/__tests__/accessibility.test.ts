@@ -13,7 +13,7 @@
 
 import { act, renderHook } from '@testing-library/react-native';
 import { AccessibilityInfo } from 'react-native';
-import { decorativeProps, useReduceTransparency } from '../accessibility';
+import { a11yToggle, decorativeProps, useReduceTransparency } from '../accessibility';
 
 describe('decorativeProps', () => {
   it('exists as a constant object', () => {
@@ -45,6 +45,48 @@ describe('decorativeProps', () => {
     expect(keys).toContain('accessible');
     expect(keys).toContain('importantForAccessibility');
     expect(keys).toContain('accessibilityElementsHidden');
+  });
+});
+
+/**
+ * a11yToggle — emits selection/toggle state so BOTH native and web screen
+ * readers hear it. react-native-web@0.21.2 drops the nested accessibilityState
+ * dialect, so the flat aria-* aliases are what a browser SR actually reads.
+ * The original accessibilityState must be preserved verbatim (native parity,
+ * and existing tests that read .props.accessibilityState).
+ */
+describe('a11yToggle', () => {
+  it('preserves the original accessibilityState verbatim', () => {
+    const state = { selected: true, disabled: false };
+    expect(a11yToggle(state).accessibilityState).toBe(state);
+  });
+
+  it('maps each present key to its flat aria alias', () => {
+    expect(a11yToggle({ selected: true })).toMatchObject({ 'aria-selected': true });
+    expect(a11yToggle({ checked: true })).toMatchObject({ 'aria-checked': true });
+    expect(a11yToggle({ checked: 'mixed' })).toMatchObject({ 'aria-checked': 'mixed' });
+    expect(a11yToggle({ expanded: false })).toMatchObject({ 'aria-expanded': false });
+    expect(a11yToggle({ busy: true })).toMatchObject({ 'aria-busy': true });
+    expect(a11yToggle({ disabled: true })).toMatchObject({ 'aria-disabled': true });
+  });
+
+  it('emits aria aliases only for keys that are present', () => {
+    const out = a11yToggle({ selected: true });
+    expect(out).not.toHaveProperty('aria-disabled');
+    expect(out).not.toHaveProperty('aria-checked');
+    expect(out).not.toHaveProperty('aria-expanded');
+    expect(out).not.toHaveProperty('aria-busy');
+  });
+
+  it('carries a defined false through (never drops it)', () => {
+    expect(a11yToggle({ selected: false })).toMatchObject({ 'aria-selected': false });
+    expect(a11yToggle({ disabled: false })).toMatchObject({ 'aria-disabled': false });
+  });
+
+  it('is safe on an undefined state (pass-through wrappers)', () => {
+    const out = a11yToggle(undefined);
+    expect(out.accessibilityState).toEqual({});
+    expect(Object.keys(out)).toEqual(['accessibilityState']);
   });
 });
 

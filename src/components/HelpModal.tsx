@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { font, radius, shadow, spacing } from '@/theme';
-import { useReducedMotion } from '@/lib/accessibility';
+import { a11yToggle, useReducedMotion } from '@/lib/accessibility';
 import { AppText } from '@/components/ui/AppText';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { ChevronDown, ChevronRight, X } from 'lucide-react-native';
@@ -156,7 +156,7 @@ export default function HelpModal({ visible, onClose }: Props) {
                     style={styles.faqHeader}
                     accessibilityRole="button"
                     accessibilityLabel={item.q}
-                    accessibilityState={{ expanded }}
+                    {...a11yToggle({ expanded })}
                     accessibilityHint={
                       expanded ? 'Tap to collapse the answer' : 'Tap to expand the answer'
                     }

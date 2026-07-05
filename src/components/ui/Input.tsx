@@ -23,6 +23,7 @@ import {
 } from 'react-native';
 import { useColor } from '@/theme/ThemeContext';
 import { a11y, font, radius, spacing } from '@/theme';
+import { a11yToggle } from '@/lib/accessibility';
 import { AppText } from './AppText';
 
 /** Lucide-style icon component (size / color / strokeWidth). */
@@ -108,7 +109,7 @@ export function Input({
           maxFontSizeMultiplier={1.5}
           accessible
           accessibilityLabel={accessibilityLabel ?? label}
-          accessibilityState={{ disabled }}
+          {...a11yToggle({ disabled })}
           accessibilityHint={hasError ? errorText : accessibilityHint}
           onFocus={(e) => {
             setFocused(true);

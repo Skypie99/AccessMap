@@ -38,7 +38,9 @@ describe('QA merge — MapScreen Report FAB combines Peter + Alex (the one overl
     expect(fab).toMatch(/Dimmed until location is on/);
     // Disabled state is now web-aware (reportDisabled = !location on native,
     // never on web) but the FAB still announces its disabled state.
-    expect(fab).toContain('accessibilityState={{ disabled: reportDisabled }}');
+    // S9: the disabled state is now emitted via a11yToggle (accessibilityState
+    // + flat aria-disabled for web SRs); the FAB still announces disabled.
+    expect(fab).toContain('a11yToggle({ disabled: reportDisabled })');
   });
 
   it("keeps Peter's hoisted iconLabelRow style on the FAB's inner View", () => {
@@ -56,13 +58,13 @@ describe('QA merge — Alex HIGH #1: realtime + push switches are operable by sc
   it('Profile realtime <Switch> carries role + checked state itself (not a handler-less wrapper)', () => {
     const block = around(read('screens/ProfileScreen.tsx'), 'onValueChange={handleRealtimeToggle}', 520);
     expect(block).toContain('accessibilityRole="switch"');
-    expect(block).toContain('accessibilityState={{ checked: realtimeEnabled');
+    expect(block).toContain('a11yToggle({ checked: realtimeEnabled');
   });
 
   it('Settings push <Switch> carries role + checked state itself', () => {
     const block = around(read('screens/SettingsScreen.tsx'), 'onValueChange={handlePushToggle}', 520);
     expect(block).toContain('accessibilityRole="switch"');
-    expect(block).toContain('accessibilityState={{ checked: pushEnabled');
+    expect(block).toContain('a11yToggle({ checked: pushEnabled');
   });
 });
 

@@ -1,5 +1,5 @@
 import { type Component, useEffect, useRef, useState } from 'react';
-import { AccessibilityInfo, findNodeHandle } from 'react-native';
+import { AccessibilityInfo, type AccessibilityState, findNodeHandle } from 'react-native';
 
 /**
  * Spread onto a purely decorative View/Text that screen readers should
@@ -16,6 +16,43 @@ export const decorativeProps = {
   importantForAccessibility: 'no-hide-descendants' as const,
   accessibilityElementsHidden: true,
 } as const;
+
+/** The flat ARIA aliases `a11yToggle` emits alongside `accessibilityState`. */
+type FlatAriaState = {
+  'aria-selected'?: boolean;
+  'aria-checked'?: boolean | 'mixed';
+  'aria-expanded'?: boolean;
+  'aria-busy'?: boolean;
+  'aria-disabled'?: boolean;
+};
+
+/**
+ * Emit selection/toggle state so BOTH native AND web screen readers hear it.
+ *
+ * `react-native-web@0.21.2` does not translate the nested `accessibilityState`
+ * dialect into DOM ARIA attributes, so on web (the only surface a guest has) a
+ * screen reader can't hear "selected / checked / expanded / busy / disabled".
+ * This returns the original `accessibilityState` UNCHANGED (native keeps working
+ * exactly as before) PLUS the flat `aria-*` aliases derived from the same values
+ * — which rn-web DOES render. On native the flat props map to the same traits,
+ * so there is no regression; they are purely additive (adoption, not redesign).
+ *
+ * Usage — replace:
+ *   accessibilityState={{ selected, disabled }}
+ * with:
+ *   {...a11yToggle({ selected, disabled })}
+ */
+export function a11yToggle(
+  state: AccessibilityState = {},
+): { accessibilityState: AccessibilityState } & FlatAriaState {
+  const flat: FlatAriaState = {};
+  if (state.selected !== undefined) flat['aria-selected'] = state.selected;
+  if (state.checked !== undefined) flat['aria-checked'] = state.checked;
+  if (state.expanded !== undefined) flat['aria-expanded'] = state.expanded;
+  if (state.busy !== undefined) flat['aria-busy'] = state.busy;
+  if (state.disabled !== undefined) flat['aria-disabled'] = state.disabled;
+  return { accessibilityState: state, ...flat };
+}
 
 /**
  * Moves the screen-reader cursor onto the returned ref's element when `active`

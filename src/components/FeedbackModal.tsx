@@ -13,7 +13,7 @@ import {
   View,
 } from 'react-native';
 import { font, radius, spacing } from '@/theme';
-import { useReducedMotion, useReduceTransparency } from '@/lib/accessibility';
+import { a11yToggle, useReducedMotion, useReduceTransparency } from '@/lib/accessibility';
 import { AppText } from '@/components/ui/AppText';
 import { GlassSurface } from '@/components/ui/GlassSurface';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
@@ -191,7 +191,7 @@ export default function FeedbackModal({ visible, onClose }: Props) {
                 style={styles.closeBtn}
                 accessibilityRole="button"
                 accessibilityLabel="Close feedback"
-                accessibilityState={{ disabled: sending }}
+                {...a11yToggle({ disabled: sending })}
               >
                 <X size={18} color={color.text} strokeWidth={2.2} />
               </Pressable>
@@ -230,10 +230,10 @@ export default function FeedbackModal({ visible, onClose }: Props) {
                       ]}
                       accessibilityRole="radio"
                       accessibilityLabel={FEEDBACK_CATEGORY_LABELS[c]}
-                      accessibilityState={{
+                      {...a11yToggle({
                         selected,
                         disabled: sending,
-                      }}
+                      })}
                     >
                       <AppText variant="bodyMedium" style={styles.categoryChipGlyph} accessibilityElementsHidden>
                         {FEEDBACK_CATEGORY_GLYPHS[c]}
@@ -308,7 +308,7 @@ export default function FeedbackModal({ visible, onClose }: Props) {
                 style={[styles.btn, styles.btnCancel]}
                 accessibilityRole="button"
                 accessibilityLabel="Cancel"
-                accessibilityState={{ disabled: sending }}
+                {...a11yToggle({ disabled: sending })}
               >
                 <AppText variant="label" style={styles.btnCancelText}>Cancel</AppText>
               </Pressable>
@@ -319,10 +319,10 @@ export default function FeedbackModal({ visible, onClose }: Props) {
                 accessibilityRole="button"
                 accessibilityLabel="Send feedback"
                 accessibilityHint="Opens your email app with the message prefilled."
-                accessibilityState={{
+                {...a11yToggle({
                   disabled: !canSend,
                   busy: sending,
-                }}
+                })}
               >
                 {sending ? (
                   <ActivityIndicator color={color.textOnBrand} />

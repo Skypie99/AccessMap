@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { RemoteImage } from '@/components/ui/RemoteImage';
 import { AppText } from '@/components/ui/AppText';
-import { useReducedMotion } from '@/lib/accessibility';
+import { a11yToggle, useReducedMotion } from '@/lib/accessibility';
 import { CATEGORY_LABELS, CATEGORY_ORDER, severityColor } from '@/lib/flags';
 import { relativeTime } from '@/lib/relativeTime';
 import { formatDistance, haversineKm, speakDistance, type LatLng } from '@/lib/distance';
@@ -233,7 +233,7 @@ export default function NearbyFlagsModal({
               style={[styles.chip, filterCat === null && styles.chipActive]}
               accessibilityRole="tab"
               accessibilityLabel="Show all categories"
-              accessibilityState={{ selected: filterCat === null }}
+              {...a11yToggle({ selected: filterCat === null })}
             >
               <AppText variant="label" style={[styles.chipText, filterCat === null && styles.chipTextActive]}>
                 All ({flags.length})
@@ -249,7 +249,7 @@ export default function NearbyFlagsModal({
                   style={[styles.chip, active && styles.chipActive]}
                   accessibilityRole="tab"
                   accessibilityLabel={`Filter by ${CATEGORY_LABELS[cat]}, ${count} ${count === 1 ? 'flag' : 'flags'}`}
-                  accessibilityState={{ selected: active }}
+                  {...a11yToggle({ selected: active })}
                 >
                   <AppText variant="label" style={[styles.chipText, active && styles.chipTextActive]}>
                     {CATEGORY_LABELS[cat]} ({count})

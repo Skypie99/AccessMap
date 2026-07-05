@@ -84,7 +84,7 @@ import { ArrowDown, ArrowUp, ChevronRight, Flame, MapPin, Pencil, X } from 'luci
 import TierIcon from '@/components/TierIcon';
 import { getTier, pointsToNextTier, REPUTATION_TIERS } from '@/lib/reputationTier';
 import { setLastSeenPoints } from '@/lib/points';
-import { useReducedMotion } from '@/lib/accessibility';
+import { a11yToggle, useReducedMotion } from '@/lib/accessibility';
 import {
   getPointEventHistory,
   pointEventLabel,
@@ -937,7 +937,7 @@ export default function ProfileScreen() {
             accessibilityRole="button"
             accessibilityLabel={profile?.avatar_url ? 'Change profile photo' : 'Add profile photo'}
             accessibilityHint="Opens photo picker to update your profile photo"
-            accessibilityState={{ busy: uploadingAvatar }}
+            {...a11yToggle({ busy: uploadingAvatar })}
           >
             <RemoteImage
               uri={profile?.avatar_url}
@@ -1532,7 +1532,7 @@ export default function ProfileScreen() {
               style={[styles.saveBtn, !nameChanged && styles.saveBtnDisabled]}
               accessibilityRole="button"
               accessibilityLabel="Save display name"
-              accessibilityState={{ disabled: !nameChanged, busy: savingName }}
+              {...a11yToggle({ disabled: !nameChanged, busy: savingName })}
             >
               {savingName ? (
                 <ActivityIndicator color={color.textOnBrand} />
@@ -1561,10 +1561,10 @@ export default function ProfileScreen() {
                   style={[styles.tabPill, selected && styles.tabPillSelected]}
                   accessibilityRole="button"
                   accessibilityLabel={`Set default tab to ${tab}`}
-                  accessibilityState={{
+                  {...a11yToggle({
                     selected,
                     disabled: savingTab || defaultTab === null,
-                  }}
+                  })}
                 >
                   <AppText variant="label" style={[styles.tabPillText, selected && styles.tabPillTextSelected]}>
                     {tab}
@@ -1603,7 +1603,7 @@ export default function ProfileScreen() {
               accessibilityRole="switch"
               accessibilityLabel="Show new flags in real-time"
               accessibilityHint="When on, the map updates automatically as new flags are reported or triaged — no need to refresh manually"
-              accessibilityState={{ checked: realtimeEnabled, busy: savingRealtime, disabled: savingRealtime }}
+              {...a11yToggle({ checked: realtimeEnabled, busy: savingRealtime, disabled: savingRealtime })}
               trackColor={{ false: '#ccc', true: color.brand }}
               thumbColor={
                 Platform.OS === 'android' ? (realtimeEnabled ? color.brand : '#f4f3f4') : undefined
@@ -1781,7 +1781,7 @@ export default function ProfileScreen() {
                 disabled={deletingAccount}
                 accessibilityRole="button"
                 accessibilityLabel="Confirm account deletion"
-                accessibilityState={{ busy: deletingAccount, disabled: deletingAccount }}
+                {...a11yToggle({ busy: deletingAccount, disabled: deletingAccount })}
               >
                 {deletingAccount ? (
                   <ActivityIndicator color="#fff" size="small" />
@@ -1916,7 +1916,7 @@ export default function ProfileScreen() {
                     // current tier row so AT users know which tier they're in.
                     accessible
                     accessibilityRole="text"
-                    accessibilityState={{ selected: isCurrent }}
+                    {...a11yToggle({ selected: isCurrent })}
                     accessibilityLabel={
                       `${t.label} tier, ${t.threshold}${
                         t.nextThreshold === null ? '+' : ` to ${t.nextThreshold - 1}`

@@ -41,7 +41,7 @@ import {
 } from 'react-native';
 import { useAuth } from '@/lib/auth';
 import { AppText } from '@/components/ui/AppText';
-import { useReducedMotion } from '@/lib/accessibility';
+import { a11yToggle, useReducedMotion } from '@/lib/accessibility';
 import { confirm } from '@/lib/confirm';
 import { errorMessage } from '@/lib/errors';
 import {
@@ -269,9 +269,9 @@ export default function FilterPresetsModal({ visible, onClose, onApply }: Props)
                   ]}
                   accessibilityRole="button"
                   accessibilityLabel="Save new name"
-                  accessibilityState={{
+                  {...a11yToggle({
                     disabled: renameValue.trim().length === 0,
-                  }}
+                  })}
                 >
                   <AppText variant="label" style={styles.saveBtnText}>Save</AppText>
                 </Pressable>
@@ -374,9 +374,9 @@ export default function FilterPresetsModal({ visible, onClose, onApply }: Props)
               ]}
               accessibilityRole="button"
               accessibilityLabel={limitReached ? 'Preset limit reached' : 'Add new filter preset'}
-              accessibilityState={{
+              {...a11yToggle({
                 disabled: !user || limitReached || adding,
-              }}
+              })}
             >
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
                 <Plus size={15} color={color.brandTextAlt} strokeWidth={2.6} />
@@ -450,7 +450,7 @@ export default function FilterPresetsModal({ visible, onClose, onApply }: Props)
                   style={[styles.formBtn, styles.cancelBtn]}
                   accessibilityRole="button"
                   accessibilityLabel="Cancel adding preset"
-                  accessibilityState={{ disabled: saving }}
+                  {...a11yToggle({ disabled: saving })}
                 >
                   <AppText variant="label" style={styles.cancelBtnText}>Cancel</AppText>
                 </Pressable>
@@ -464,10 +464,10 @@ export default function FilterPresetsModal({ visible, onClose, onApply }: Props)
                   ]}
                   accessibilityRole="button"
                   accessibilityLabel="Save preset"
-                  accessibilityState={{
+                  {...a11yToggle({
                     disabled: saving || newName.trim().length === 0,
                     busy: saving,
-                  }}
+                  })}
                 >
                   {saving ? (
                     <ActivityIndicator color={color.textOnBrand} />

@@ -55,7 +55,7 @@ import { validReportTemplates, type ReportTemplate } from '@/lib/reportTemplates
 import type { FlagCategory, FlagSeverity } from '@/types/database';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { font, gradient, radius, shadow, spacing } from '@/theme';
-import { useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
+import { a11yToggle, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
 
 /** Lucide icon for each disability tag — adds visual distinction (no emoji, per
  *  the brand icon rule). Describes the BARRIER type, not any person's identity. */
@@ -550,7 +550,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
                           ? `Template applied: ${t.label}. Tap to re-apply.`
                           : `Apply template: ${t.label}`
                       }
-                      accessibilityState={{ selected: active, disabled: submitting }}
+                      {...a11yToggle({ selected: active, disabled: submitting })}
                     >
                       <AppText
                         variant="label"
@@ -597,7 +597,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
                   style={[styles.pill, active && styles.pillActive]}
                   accessibilityRole="button"
                   accessibilityLabel={`Category: ${CATEGORY_LABELS[c]}`}
-                  accessibilityState={{ selected: active, disabled: submitting }}
+                  {...a11yToggle({ selected: active, disabled: submitting })}
                 >
                   <AppText variant="label" style={[styles.pillText, active && styles.pillTextActive]}>
                     {CATEGORY_LABELS[c]}
@@ -630,7 +630,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
                   ]}
                   accessibilityRole="button"
                   accessibilityLabel={`Severity ${s}: ${SEVERITY_LABELS[s]} — ${SEVERITY_DESCRIPTIONS[s]}`}
-                  accessibilityState={{ selected: active, disabled: submitting }}
+                  {...a11yToggle({ selected: active, disabled: submitting })}
                 >
                   {/* WCAG 1.4.1 (Use of Color): the active button is signalled by
                       the severity-color fill — but color must not be the SOLE
@@ -766,7 +766,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
                       ]}
                       accessibilityRole="checkbox"
                       accessibilityLabel={label}
-                      accessibilityState={{ checked: active, disabled: tagsDisabled || submitting }}
+                      {...a11yToggle({ checked: active, disabled: tagsDisabled || submitting })}
                       accessibilityHint={
                         tagsDisabled ? 'Seasonal tags will be available soon.' : undefined
                       }
@@ -824,7 +824,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
                       ]}
                       accessibilityRole="checkbox"
                       accessibilityLabel={label}
-                      accessibilityState={{ checked: active, disabled: tagsDisabled || submitting }}
+                      {...a11yToggle({ checked: active, disabled: tagsDisabled || submitting })}
                       accessibilityHint={
                         tagsDisabled ? 'Accessibility tags will be available soon.' : undefined
                       }
@@ -953,7 +953,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
                       ]}
                       accessibilityRole="checkbox"
                       accessibilityLabel={label}
-                      accessibilityState={{ checked: active, disabled: tagsDisabled || submitting }}
+                      {...a11yToggle({ checked: active, disabled: tagsDisabled || submitting })}
                       accessibilityHint={
                         tagsDisabled ? 'Context tags will be available soon.' : undefined
                       }
@@ -995,7 +995,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
               style={[styles.actionBtn, styles.cancelBtn]}
               accessibilityRole="button"
               accessibilityLabel="Cancel and close"
-              accessibilityState={{ disabled: submitting }}
+              {...a11yToggle({ disabled: submitting })}
             >
               <AppText variant="label" style={styles.cancelText}>Cancel</AppText>
             </Pressable>
@@ -1014,7 +1014,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
                   ? "Waiting for your location. Tap 'Use my location' above to try again."
                   : undefined
               }
-              accessibilityState={{ disabled: submitting || !location, busy: submitting }}
+              {...a11yToggle({ disabled: submitting || !location, busy: submitting })}
             >
               <LinearGradient
                 colors={gradient.brand}

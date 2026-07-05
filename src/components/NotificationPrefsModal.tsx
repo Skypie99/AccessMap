@@ -24,7 +24,7 @@ import {
 import type { FlagStatus } from '@/types/database';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { font, radius, spacing } from '@/theme';
-import { useReducedMotion } from '@/lib/accessibility';
+import { a11yToggle, useReducedMotion } from '@/lib/accessibility';
 import { X } from 'lucide-react-native';
 
 interface Props {
@@ -231,7 +231,7 @@ export default function NotificationPrefsModal({
                       // Explicit state — RN's Switch usually reports its
                       // own value, but pairing it with accessibilityState
                       // is the documented contract (QA Pass-2 #5).
-                      accessibilityState={{ checked: value }}
+                      {...a11yToggle({ checked: value })}
                     />
                   </View>
                 );

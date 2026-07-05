@@ -16,6 +16,7 @@ import { font, radius, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { AppText } from '@/components/ui';
 import { signInWithEmail, signUpWithEmail } from '@/lib/supabase';
+import { a11yToggle } from '@/lib/accessibility';
 import { notify } from '@/lib/confirm';
 import { track } from '@/lib/analytics';
 import LogoMark from '@/components/LogoMark';
@@ -183,14 +184,14 @@ export default function SignInScreen({
             </AppText>
           ) : null}
 
-          <View accessibilityState={{ busy }} style={styles.actions}>
+          <View {...a11yToggle({ busy })} style={styles.actions}>
             <Pressable
               onPress={() => submit('in')}
               disabled={busy}
               style={({ pressed }) => [pressed && { opacity: 0.88 }, busy && styles.btnDisabled]}
               accessibilityRole="button"
               accessibilityLabel="Sign in"
-              accessibilityState={{ disabled: busy }}
+              {...a11yToggle({ disabled: busy })}
             >
               <LinearGradient
                 colors={['#4E89EF', '#1466E0', '#0F53BE']}
@@ -222,7 +223,7 @@ export default function SignInScreen({
               ]}
               accessibilityRole="button"
               accessibilityLabel="Create account"
-              accessibilityState={{ disabled: busy }}
+              {...a11yToggle({ disabled: busy })}
             >
               <AppText variant="label" style={styles.secondaryBtnText}>Create account</AppText>
             </Pressable>

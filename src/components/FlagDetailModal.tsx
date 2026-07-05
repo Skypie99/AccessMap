@@ -53,7 +53,7 @@ import PhotoGallery, { type GalleryPhoto } from './PhotoGallery';
 import StatusHistoryModal from './StatusHistoryModal';
 import { StatusBadge } from './StatusBadge';
 import { CommentBubble } from './CommentBubble';
-import { useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
+import { a11yToggle, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
 
 export type DetailAction = 'verify' | 'resolve' | 'reject';
 
@@ -745,7 +745,7 @@ export default function FlagDetailModal({
                 accessibilityRole="button"
                 accessibilityLabel="Close flag details"
                 accessibilityHint="Returns to the flag list"
-                accessibilityState={{ disabled: busy }}
+                {...a11yToggle({ disabled: busy })}
               >
                 <X size={18} color={color.text} strokeWidth={2.2} />
               </Pressable>
@@ -973,11 +973,11 @@ export default function FlagDetailModal({
                       ? 'Removes this flag from your Watched list in Profile'
                       : 'Adds this flag to your Watched list in Profile so you can track its status'
                   }
-                  accessibilityState={{
+                  {...a11yToggle({
                     selected: watched,
                     busy: watchSaving,
                     disabled: busy || watchSaving,
-                  }}
+                  })}
                 >
                   <Star
                     size={16}
@@ -1000,7 +1000,7 @@ export default function FlagDetailModal({
                   accessibilityRole="button"
                   accessibilityLabel="Edit this flag"
                   accessibilityHint="Opens an edit form for description, category, and severity"
-                  accessibilityState={{ disabled: busy }}
+                  {...a11yToggle({ disabled: busy })}
                 >
                   <AppText variant="label" style={styles.editBtnText}>Edit</AppText>
                 </Pressable>
@@ -1041,7 +1041,7 @@ export default function FlagDetailModal({
                         ]}
                         accessibilityRole="radio"
                         accessibilityLabel={CATEGORY_LABELS[cat]}
-                        accessibilityState={{ checked: editCategory === cat }}
+                        {...a11yToggle({ checked: editCategory === cat })}
                       >
                         <AppText
                           variant="label"
@@ -1067,7 +1067,7 @@ export default function FlagDetailModal({
                         ]}
                         accessibilityRole="radio"
                         accessibilityLabel={`Severity ${s} of 5`}
-                        accessibilityState={{ checked: editSeverity === s }}
+                        {...a11yToggle({ checked: editSeverity === s })}
                       >
                         <AppText
                           variant="monoBold"
@@ -1088,7 +1088,7 @@ export default function FlagDetailModal({
                       style={[styles.actionBtn, styles.cancelBtn]}
                       accessibilityRole="button"
                       accessibilityLabel="Cancel editing"
-                      accessibilityState={{ disabled: busy }}
+                      {...a11yToggle({ disabled: busy })}
                     >
                       <AppText variant="label" style={styles.cancelBtnText}>Cancel</AppText>
                     </Pressable>
@@ -1098,7 +1098,7 @@ export default function FlagDetailModal({
                       style={[styles.actionBtn, styles.saveBtn]}
                       accessibilityRole="button"
                       accessibilityLabel="Save changes"
-                      accessibilityState={{ busy, disabled: busy }}
+                      {...a11yToggle({ busy, disabled: busy })}
                     >
                       {busy ? (
                         <ActivityIndicator size="small" color={color.textOnBrand} />
@@ -1126,7 +1126,7 @@ export default function FlagDetailModal({
                       accessibilityRole="button"
                       accessibilityLabel="Request flag reopen"
                       accessibilityHint="Opens a form to explain why this barrier is still present"
-                      accessibilityState={{ disabled: busy }}
+                      {...a11yToggle({ disabled: busy })}
                     >
                       <AppText variant="label" style={styles.reopenBtnText}>Still broken? Request reopen</AppText>
                     </Pressable>
@@ -1160,7 +1160,7 @@ export default function FlagDetailModal({
                           style={[styles.actionBtn, styles.cancelBtn]}
                           accessibilityRole="button"
                           accessibilityLabel="Cancel reopen request"
-                          accessibilityState={{ disabled: reopenBusy }}
+                          {...a11yToggle({ disabled: reopenBusy })}
                         >
                           <AppText variant="label" style={styles.cancelBtnText}>Cancel</AppText>
                         </Pressable>
@@ -1174,7 +1174,7 @@ export default function FlagDetailModal({
                           ]}
                           accessibilityRole="button"
                           accessibilityLabel="Submit reopen request"
-                          accessibilityState={{ busy: reopenBusy, disabled: reopenBusy || !reopenText.trim() }}
+                          {...a11yToggle({ busy: reopenBusy, disabled: reopenBusy || !reopenText.trim() })}
                         >
                           {reopenBusy ? (
                             <ActivityIndicator size="small" color={color.textOnBrand} />
@@ -1199,7 +1199,7 @@ export default function FlagDetailModal({
                   accessibilityRole="button"
                   accessibilityLabel="View this flag on the map"
                   accessibilityHint="Switches to the Map tab and centers on this flag"
-                  accessibilityState={{ disabled: busy }}
+                  {...a11yToggle({ disabled: busy })}
                 >
                   <AppText variant="label" style={styles.viewMapBtnText}>View on Map</AppText>
                 </Pressable>
@@ -1224,7 +1224,7 @@ export default function FlagDetailModal({
                   accessibilityRole="button"
                   accessibilityLabel="Get directions to this flag"
                   accessibilityHint="Opens your maps app with directions"
-                  accessibilityState={{ disabled: busy }}
+                  {...a11yToggle({ disabled: busy })}
                 >
                   <AppText variant="label" style={styles.directionsBtnText}>Directions</AppText>
                 </Pressable>
@@ -1235,7 +1235,7 @@ export default function FlagDetailModal({
                   accessibilityRole="button"
                   accessibilityLabel="Share this flag"
                   accessibilityHint="Opens the system share sheet"
-                  accessibilityState={{ disabled: busy }}
+                  {...a11yToggle({ disabled: busy })}
                 >
                   <AppText variant="label" style={styles.shareBtnText}>Share</AppText>
                 </Pressable>
@@ -1246,7 +1246,7 @@ export default function FlagDetailModal({
                   accessibilityRole="button"
                   accessibilityLabel="View status history"
                   accessibilityHint="Shows who changed the status of this flag and when"
-                  accessibilityState={{ disabled: busy }}
+                  {...a11yToggle({ disabled: busy })}
                 >
                   <AppText variant="label" style={styles.historyBtnText}>History</AppText>
                 </Pressable>
@@ -1373,10 +1373,10 @@ export default function FlagDetailModal({
                       ]}
                       accessibilityRole="button"
                       accessibilityLabel="Send comment"
-                      accessibilityState={{
+                      {...a11yToggle({
                         disabled: commentSubmitting || commentText.trim().length === 0,
                         busy: commentSubmitting,
-                      }}
+                      })}
                     >
                       {commentSubmitting ? (
                         <ActivityIndicator size="small" color={color.textOnBrand} />
@@ -1401,7 +1401,7 @@ export default function FlagDetailModal({
                   accessibilityRole="button"
                   accessibilityLabel="Verify this flag"
                   accessibilityHint="Marks this report as confirmed"
-                  accessibilityState={{ disabled: busy, busy }}
+                  {...a11yToggle({ disabled: busy, busy })}
                 >
                   {busy ? (
                     <ActivityIndicator color={color.textOnBrand} />
@@ -1418,7 +1418,7 @@ export default function FlagDetailModal({
                   accessibilityRole="button"
                   accessibilityLabel="Mark this flag resolved"
                   accessibilityHint="Marks the accessibility issue as fixed"
-                  accessibilityState={{ disabled: busy, busy }}
+                  {...a11yToggle({ disabled: busy, busy })}
                 >
                   {busy ? (
                     <ActivityIndicator color={color.textOnBrand} />
@@ -1435,7 +1435,7 @@ export default function FlagDetailModal({
                   accessibilityRole="button"
                   accessibilityLabel="Reject this flag"
                   accessibilityHint="Marks this report as invalid or spam"
-                  accessibilityState={{ disabled: busy, busy }}
+                  {...a11yToggle({ disabled: busy, busy })}
                 >
                   {busy ? (
                     <ActivityIndicator color={color.text} />
@@ -1452,7 +1452,7 @@ export default function FlagDetailModal({
                   accessibilityRole="button"
                   accessibilityLabel="Delete this flag"
                   accessibilityHint="Permanently removes your report"
-                  accessibilityState={{ disabled: busy, busy }}
+                  {...a11yToggle({ disabled: busy, busy })}
                 >
                   {busy ? (
                     <ActivityIndicator color={color.textOnBrand} />

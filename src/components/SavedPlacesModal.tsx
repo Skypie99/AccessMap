@@ -26,7 +26,7 @@ import {
   View,
 } from 'react-native';
 import { useAuth } from '@/lib/auth';
-import { useReducedMotion } from '@/lib/accessibility';
+import { a11yToggle, useReducedMotion } from '@/lib/accessibility';
 import { AppText } from '@/components/ui/AppText';
 import { confirm } from '@/lib/confirm';
 import { errorMessage } from '@/lib/errors';
@@ -327,7 +327,7 @@ export default function SavedPlacesModal({
                     ? 'Save place limit reached'
                     : 'Save place — waiting for current location'
               }
-              accessibilityState={{ disabled: !canShowAddForm }}
+              {...a11yToggle({ disabled: !canShowAddForm })}
             >
               <MapPin size={18} color={color.brand} strokeWidth={2.2} />
               <AppText variant="label" style={styles.addBtnText}>Save my current location</AppText>
@@ -360,7 +360,7 @@ export default function SavedPlacesModal({
                   style={[styles.formBtn, styles.cancelBtn]}
                   accessibilityRole="button"
                   accessibilityLabel="Cancel adding place"
-                  accessibilityState={{ disabled: saving }}
+                  {...a11yToggle({ disabled: saving })}
                 >
                   <AppText variant="label" style={styles.cancelBtnText}>Cancel</AppText>
                 </Pressable>
@@ -374,10 +374,10 @@ export default function SavedPlacesModal({
                   ]}
                   accessibilityRole="button"
                   accessibilityLabel="Save place"
-                  accessibilityState={{
+                  {...a11yToggle({
                     disabled: saving || nameInput.trim().length === 0,
                     busy: saving,
-                  }}
+                  })}
                 >
                   {saving ? (
                     <ActivityIndicator color={color.textOnBrand} />

@@ -71,7 +71,7 @@ import { SeverityBadge } from '@/components/SeverityBadge';
 import { hapticSelection } from '@/lib/haptics';
 import { AlertTriangle, Check, ChevronRight, MapPin, Menu, MessageSquare, Search, Sparkles, WifiOff, X } from 'lucide-react-native';
 import { font, motion, radius, shadow, size, spacing } from '@/theme';
-import { useReducedMotion, useReduceTransparency } from '@/lib/accessibility';
+import { a11yToggle, useReducedMotion, useReduceTransparency } from '@/lib/accessibility';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { ScreenStage } from '@/components/ui/ScreenStage';
@@ -865,7 +865,7 @@ export default function TasksScreen() {
           accessibilityRole="button"
           accessibilityLabel={errorBannerText}
           accessibilityHint="Tries to load flags again"
-          accessibilityState={{ busy: loading }}
+          {...a11yToggle({ busy: loading })}
           accessibilityLiveRegion="polite"
         >
           {loading ? (
@@ -954,7 +954,7 @@ export default function TasksScreen() {
             style={[styles.mineChip, !mineOnly && styles.mineChipActive]}
             accessibilityRole="button"
             accessibilityLabel="Show all flags"
-            accessibilityState={{ selected: !mineOnly, disabled: !mineOnlyHydrated }}
+            {...a11yToggle({ selected: !mineOnly, disabled: !mineOnlyHydrated })}
           >
             <AppText variant="label" style={[styles.mineChipText, !mineOnly && styles.mineChipTextActive]}>All</AppText>
           </Pressable>
@@ -964,7 +964,7 @@ export default function TasksScreen() {
             style={[styles.mineChip, mineOnly && styles.mineChipActive]}
             accessibilityRole="button"
             accessibilityLabel="Show only my flags"
-            accessibilityState={{ selected: mineOnly, disabled: !mineOnlyHydrated }}
+            {...a11yToggle({ selected: mineOnly, disabled: !mineOnlyHydrated })}
           >
             <AppText variant="label" style={[styles.mineChipText, mineOnly && styles.mineChipTextActive]}>Mine</AppText>
           </Pressable>
@@ -987,7 +987,7 @@ export default function TasksScreen() {
             style={[styles.catChip, categoryFilter === null && styles.catChipActive]}
             accessibilityRole="button"
             accessibilityLabel="Show all categories"
-            accessibilityState={{ selected: categoryFilter === null }}
+            {...a11yToggle({ selected: categoryFilter === null })}
           >
             <AppText variant="label" style={[styles.catChipText, categoryFilter === null && styles.catChipTextActive]}>
               All
@@ -1002,7 +1002,7 @@ export default function TasksScreen() {
                 style={[styles.catChip, active && styles.catChipActive]}
                 accessibilityRole="button"
                 accessibilityLabel={`${CATEGORY_LABELS[cat]}${active ? ', selected, tap to deselect' : ''}`}
-                accessibilityState={{ selected: active }}
+                {...a11yToggle({ selected: active })}
               >
                 <AppText variant="label" style={[styles.catChipText, active && styles.catChipTextActive]}>
                   {CATEGORY_LABELS[cat]}
@@ -1035,7 +1035,7 @@ export default function TasksScreen() {
                 style={[styles.sortChip, active && styles.sortChipActive]}
                 accessibilityRole="tab"
                 accessibilityLabel={`Sort by ${TASKS_SORT_LABELS[mode]}`}
-                accessibilityState={{ selected: active }}
+                {...a11yToggle({ selected: active })}
               >
                 <AppText
                   variant="label"
@@ -1250,12 +1250,12 @@ export default function TasksScreen() {
                   accessibilityRole="button"
                   accessibilityLabel={`Load ${NEXT_PAGE_SIZE} more flags`}
                   accessibilityHint="Fetches the next page of accessibility reports"
-                  accessibilityState={{ busy: loadingMore }}
+                  {...a11yToggle({ busy: loadingMore })}
                 >
                   {loadingMore ? (
                     <ActivityIndicator
                       accessibilityLabel="Loading more flags"
-                      accessibilityState={{ busy: true }}
+                      {...a11yToggle({ busy: true })}
                     />
                   ) : (
                     <AppText variant="label" style={styles.loadMoreText}>{`Load ${NEXT_PAGE_SIZE} more`}</AppText>
@@ -1317,10 +1317,10 @@ export default function TasksScreen() {
                   ? 'No open flags selected'
                   : 'Marks each selected open flag as verified'
               }
-              accessibilityState={{
+              {...a11yToggle({
                 disabled: bulkBusy || selectedOpenCount === 0,
                 busy: bulkBusy,
-              }}
+              })}
             >
               <AppText variant="label" style={styles.bulkBtnText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>Verify</AppText>
             </Pressable>
@@ -1342,10 +1342,10 @@ export default function TasksScreen() {
                   ? 'No flags selected'
                   : 'Marks each selected flag as resolved'
               }
-              accessibilityState={{
+              {...a11yToggle({
                 disabled: bulkBusy || liveSelectedCount === 0,
                 busy: bulkBusy,
-              }}
+              })}
             >
               <AppText variant="label" style={styles.bulkBtnText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>Resolve</AppText>
             </Pressable>
@@ -1373,10 +1373,10 @@ export default function TasksScreen() {
                     ? 'No flags selected'
                     : 'Adds each selected flag to your watched list'
               }
-              accessibilityState={{
+              {...a11yToggle({
                 disabled: bulkBusy || liveSelectedCount === 0 || !user,
                 busy: bulkBusy,
-              }}
+              })}
             >
               <AppText variant="label" style={styles.bulkBtnText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>Watch</AppText>
             </Pressable>
@@ -1392,7 +1392,7 @@ export default function TasksScreen() {
               accessibilityRole="button"
               accessibilityLabel="Cancel selection"
               accessibilityHint="Exits selection mode without changing any flags"
-              accessibilityState={{ disabled: bulkBusy }}
+              {...a11yToggle({ disabled: bulkBusy })}
             >
               <AppText variant="label" style={styles.bulkCancelText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>Cancel</AppText>
             </Pressable>
@@ -1581,7 +1581,7 @@ const FlagCard = memo(function FlagCard({
       accessibilityRole="button"
       accessibilityLabel={a.a11yLabel}
       accessibilityHint={a.a11yHint}
-      accessibilityState={{ disabled: isBusy }}
+      {...a11yToggle({ disabled: isBusy })}
     >
       <AppText variant="label" style={a.textStyle}>{a.label}</AppText>
     </PressableScale>
@@ -1595,9 +1595,9 @@ const FlagCard = memo(function FlagCard({
       onPressOut={sheenActive ? sheenOut : undefined}
       style={({ pressed }) => [styles.cardOuter, pressed && styles.cardPressed]}
       accessibilityRole={selectionActive ? 'checkbox' : 'button'}
-      accessibilityState={
+      {...a11yToggle(
         selectionActive ? { checked: selected, disabled: isBusy } : { disabled: isBusy }
-      }
+      )}
       accessibilityLabel={a11yLabel}
       accessibilityHint={
         selectionActive

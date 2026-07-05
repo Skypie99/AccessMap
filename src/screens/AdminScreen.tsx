@@ -22,6 +22,7 @@ import { hapticImpact, hapticSelection } from '@/lib/haptics';
 import { useIsAdmin } from '@/lib/admin';
 import { confirm } from '@/lib/confirm';
 import { errorMessage } from '@/lib/errors';
+import { a11yToggle } from '@/lib/accessibility';
 import {
   CATEGORY_LABELS,
   deleteFlag,
@@ -200,7 +201,7 @@ export default function AdminScreen() {
               onPress={() => void handleRemove(item)}
               accessibilityRole="button"
               accessibilityLabel={`Remove ${CATEGORY_LABELS[item.category]} flag`}
-              accessibilityState={{ disabled: isBusy }}
+              {...a11yToggle({ disabled: isBusy })}
             >
               <Trash2 size={16} color={color.textOnBrand} strokeWidth={2} />
               <AppText variant="label" size={font.size.sm} color={color.textOnBrand}>
@@ -212,7 +213,7 @@ export default function AdminScreen() {
               onPress={() => void handleDismiss(item)}
               accessibilityRole="button"
               accessibilityLabel={`Dismiss ${CATEGORY_LABELS[item.category]} report`}
-              accessibilityState={{ disabled: isBusy }}
+              {...a11yToggle({ disabled: isBusy })}
             >
               <Ban size={16} color={color.text} strokeWidth={2} />
               <AppText variant="label" size={font.size.sm} color={color.text}>

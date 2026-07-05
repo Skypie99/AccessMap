@@ -63,6 +63,8 @@ jest.mock('@/lib/accessibility', () => ({
   useScreenReader: jest.fn(() => false),
   useFocusOnOpen: jest.fn(),
   decorativeProps: { accessible: false, importantForAccessibility: 'no-hide-descendants' },
+  // S9: real helper — emits accessibilityState + flat aria-* (the card calls it).
+  a11yToggle: jest.requireActual('@/lib/accessibility').a11yToggle,
 }));
 
 const baseFlag: FlagRow = {

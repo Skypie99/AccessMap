@@ -257,6 +257,8 @@ jest.mock('@/lib/accessibility', () => ({
   // The modal moves screen-reader focus to its title on open; in tests the hook
   // just needs to exist and hand back a ref (focus is a native no-op here).
   useFocusOnOpen: jest.fn(() => ({ current: null })),
+  // S9: real helper — emits accessibilityState + flat aria-* (the chips call it).
+  a11yToggle: jest.requireActual('@/lib/accessibility').a11yToggle,
 }));
 
 // Haptics are no-ops in tests — avoids loading expo-haptics during the async

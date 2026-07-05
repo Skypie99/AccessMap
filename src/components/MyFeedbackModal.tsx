@@ -13,7 +13,7 @@ import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 import { useAuth } from '@/lib/auth';
 import { AppText } from '@/components/ui/AppText';
 import { font, radius, shadow, spacing } from '@/theme';
-import { useReducedMotion } from '@/lib/accessibility';
+import { a11yToggle, useReducedMotion } from '@/lib/accessibility';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { X } from 'lucide-react-native';
 import { FEEDBACK_CATEGORY_GLYPHS, FEEDBACK_CATEGORY_LABELS } from '@/lib/feedback';
@@ -174,7 +174,7 @@ export default function MyFeedbackModal({ visible, onClose, refreshKey = 0 }: Pr
                     onPress={() => setFilter(opt)}
                     style={[styles.chip, isActive && styles.chipActive]}
                     accessibilityRole="radio"
-                    accessibilityState={{ selected: isActive }}
+                    {...a11yToggle({ selected: isActive })}
                     accessibilityLabel={`Filter to ${label}`}
                   >
                     <AppText variant="label" style={[styles.chipText, isActive && styles.chipTextActive]}>

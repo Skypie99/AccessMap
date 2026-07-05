@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { initialExpanded } from '@/lib/changelogExpanded';
+import { a11yToggle } from '@/lib/accessibility';
 import { font, radius, shadow, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { AppText, Sheet } from '@/components/ui';
@@ -109,7 +110,7 @@ export default function ChangelogModal({ visible, onClose }: Props) {
                     onPress={() => setExpanded((prev) => ({ ...prev, [key]: !isOpen }))}
                     style={styles.releaseHeader}
                     accessibilityRole="button"
-                    accessibilityState={{ expanded: isOpen }}
+                    {...a11yToggle({ expanded: isOpen })}
                     accessibilityLabel={`${release.title}, ${itemCount} item${
                       itemCount === 1 ? '' : 's'
                     }`}

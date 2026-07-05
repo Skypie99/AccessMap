@@ -37,7 +37,7 @@ import {
 } from '@/lib/watchedFlagsFilter';
 import { font, radius, spacing } from '@/theme';
 import { MapPin, Star, X } from 'lucide-react-native';
-import { decorativeProps, useReducedMotion } from '@/lib/accessibility';
+import { a11yToggle, decorativeProps, useReducedMotion } from '@/lib/accessibility';
 import { severityA11y, statusA11y } from '@/lib/a11yText';
 import type { FlagRow } from '@/types/database';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
@@ -315,7 +315,7 @@ export default function MyWatchedModal({ visible, onClose, onSelectFlag, onViewO
                   style={[styles.statusChip, { backgroundColor: chipBg }]}
                   accessibilityRole="button"
                   accessibilityLabel={value === 'all' ? 'Show all statuses' : `Filter to ${label} flags`}
-                  accessibilityState={{ selected: active }}
+                  {...a11yToggle({ selected: active })}
                 >
                   <AppText variant="label" style={[styles.statusChipText, { color: chipFg }]}>{label}</AppText>
                 </Pressable>
@@ -333,7 +333,7 @@ export default function MyWatchedModal({ visible, onClose, onSelectFlag, onViewO
                 <Pressable key={value} onPress={() => setSortMode(value)}
                   style={[styles.sortChip, active && styles.sortChipActive]}
                   accessibilityRole="button" accessibilityLabel={a11yLabel}
-                  accessibilityState={{ selected: active }}
+                  {...a11yToggle({ selected: active })}
                 >
                   <AppText variant="label" style={[styles.sortChipText, active && styles.sortChipTextActive]}>{label}</AppText>
                 </Pressable>
