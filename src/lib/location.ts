@@ -78,6 +78,24 @@ export function initialLocationAction(
   return status === 'granted' ? 'fetch' : 'clear';
 }
 
+/**
+ * S4 (L3-2): whether the Map's denied-location banner should surface on ARRIVAL,
+ * given the RAW foreground-permission status.
+ *
+ * `initialLocationAction` deliberately collapses `undetermined` (first run,
+ * prompt deferred to onboarding) and `denied` into one `'clear'` outcome. The
+ * arrival banner must NOT ride that whole branch: a never-asked first-run user
+ * would be told "location is off" they never turned off. Only a genuine prior
+ * `'denied'` qualifies — everything else (including `undetermined`) stays false,
+ * so a first-run arrival makes no false claim. Companion to
+ * `initialLocationAction`, which is unchanged.
+ */
+export function arrivalPermissionDenied(
+  status: Location.PermissionStatus | string,
+): boolean {
+  return status === 'denied';
+}
+
 export interface UseUserLocationOptions {
   /**
    * When true, only fetch the location if foreground permission has

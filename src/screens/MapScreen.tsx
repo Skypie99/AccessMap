@@ -15,7 +15,7 @@ import {
 } from 'react-native';
 import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 import * as Location from 'expo-location';
-import { getCurrentPositionWithTimeout, initialLocationAction } from '@/lib/location';
+import { arrivalPermissionDenied, getCurrentPositionWithTimeout, initialLocationAction } from '@/lib/location';
 import { OFFLINE_BANNER_TEXT } from '@/lib/copy';
 import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
@@ -1000,7 +1000,7 @@ export default function MapScreen() {
           // WCAG 4.1.3: permission-denied is a status change not conveyed
           // by focus or role; announce it explicitly.
           AccessibilityInfo.announceForAccessibility(
-            'Location access is off. Turn it on in your device Settings to report barriers near you.',
+            'Location is off, so the map shows the most recent flags, not ones near you. Turn on location access to find flags nearby.',
           );
         }
         return;
@@ -1052,6 +1052,13 @@ export default function MapScreen() {
           // working map. The locate FAB / onboarding still trigger the real OS
           // prompt via requestLocation().
           setLocating(false);
+          // S4 (L3-2): surface the denied banner on ARRIVAL — but ONLY for a real
+          // prior denial. initialLocationAction() collapses undetermined (first
+          // run, prompt deferred to onboarding) and denied into one 'clear', so
+          // gate on the RAW status: a never-asked user must never be told access
+          // is off. undetermined sets nothing → no banner. initialLocationAction
+          // + location.test.ts are untouched — this only ADDS a status-gated setter.
+          if (arrivalPermissionDenied(status)) setPermissionDenied(true);
         }
       })
       .catch(() => {
@@ -1285,7 +1292,7 @@ export default function MapScreen() {
                 ? 'Loading flags…'
                 : filtersActive
                   ? `${filteredFlags.length} of ${flags.length} shown`
-                  : `${flags.length} flag${flags.length === 1 ? '' : 's'} nearby`}
+                  : `Showing ${flags.length} flag${flags.length === 1 ? '' : 's'}`}
             </AppText>
           </GlassSurface>
           {/*
@@ -2014,7 +2021,8 @@ export default function MapScreen() {
             accessibilityLiveRegion="assertive"
           >
             <AppText variant="body" style={styles.bannerText}>
-              Location access is off. Turn it on in your device Settings to report barriers near you.
+              Location is off, so the map shows the most recent flags, not ones near you. Turn on
+              location access to find flags nearby.
             </AppText>
           </View>
         )}
@@ -2050,7 +2058,11 @@ export default function MapScreen() {
               onPress={() => setNearbyOpen(true)}
               accessibilityRole="button"
               accessibilityLabel="Open nearby flags list"
-              accessibilityHint="Opens an accessible list of flags sorted by distance"
+              accessibilityHint={
+                location
+                  ? 'Opens an accessible list of flags sorted by distance'
+                  : 'Opens an accessible list of the most recent flags'
+              }
             >
               <View style={styles.fabSecondaryRow}>
                 <List size={16} color={color.brand} strokeWidth={2.2} />

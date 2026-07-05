@@ -61,18 +61,22 @@ export default function NearbyFlagsModal({
   useEffect(() => {
     if (!visible) return;
     const count = flags.length;
+    // S4/L3-8: only claim "nearby / sorted by distance" when a location actually
+    // backs it. Without location the list is most-recent order (matching the
+    // visible no-location notice) — the announcement must say so, not lie.
+    const suffix = location != null ? ' nearby. Sorted by distance.' : '. Showing the most recent first.';
     const msg =
       count === 0
         ? 'No flags to show.'
         : count === 1
-          ? '1 flag nearby. Sorted by distance.'
-          : `${count} flags nearby. Sorted by distance.`;
+          ? `1 flag${suffix}`
+          : `${count} flags${suffix}`;
     // Small delay so the Modal's open animation settles first; without it
     // the announcement races with the OS sheet-open utterance and both
     // can be cut off.
     const t = setTimeout(() => AccessibilityInfo.announceForAccessibility(msg), 600);
     return () => clearTimeout(t);
-  }, [visible, flags.length]);
+  }, [visible, flags.length, location]);
 
   // Sort by distance ascending when we have a location; otherwise keep the
   // existing order (which is most-recent-first from listFlags).
