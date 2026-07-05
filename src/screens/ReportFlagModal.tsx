@@ -1001,7 +1001,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
                 (submitting || !location) && styles.submitBtnDisabled,
               ]}
               accessibilityRole="button"
-              accessibilityLabel={isAnon ? 'Submit anonymous flag report' : 'Submit flag report'}
+              accessibilityLabel={isAnon ? 'Submit report anonymously' : 'Submit report'}
               accessibilityHint={
                 !location
                   ? "Waiting for your location. Tap 'Use my location' above to try again."
@@ -1019,7 +1019,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
               {submitting ? (
                 <ActivityIndicator color={color.textOnBrand} />
               ) : (
-                <AppText variant="label" style={styles.submitText}>{isAnon ? 'Report anonymously' : 'Report'}</AppText>
+                <AppText variant="label" style={styles.submitText}>Submit report</AppText>
               )}
             </Pressable>
           </View>
@@ -1207,6 +1207,12 @@ const makeStyles = (color: ColorTheme) =>
     anonBanner: {
       flexDirection: 'row',
       alignItems: 'center',
+      // S18 (L5-03): wrap when cramped (200% browser zoom / narrow reflow) so
+      // the "Sign in" link drops to its own line and the sentence keeps
+      // word-boundary wrapping instead of shredding mid-word. PROTECT-8: the
+      // link stays a separate sibling node outside the alert.
+      flexWrap: 'wrap',
+      rowGap: spacing.tight,
       backgroundColor: color.brandSofter,
       borderRadius: 8,
       paddingHorizontal: 12,
@@ -1218,7 +1224,13 @@ const makeStyles = (color: ColorTheme) =>
       flexDirection: 'row',
       alignItems: 'center',
       gap: 8,
-      flex: 1,
+      // S18: claim most of the row so at normal width the "Sign in" link sits
+      // beside the text; under reflow pressure flexBasis + the parent's
+      // flexWrap push the link to the next line and this block expands to the
+      // full width, letting the sentence wrap on word boundaries.
+      flexGrow: 1,
+      flexShrink: 1,
+      flexBasis: '60%',
     },
     anonBannerIcon: { fontSize: 16 },
     anonBannerBody: { flex: 1 },

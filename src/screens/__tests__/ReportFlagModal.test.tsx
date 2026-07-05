@@ -387,15 +387,18 @@ describe('anon form (user === null)', () => {
     expect(flagTitle).toBeUndefined();
   });
 
-  it('submit button accessibilityLabel is "Submit anonymous flag report"', () => {
+  it('submit button accessibilityLabel is "Submit report anonymously" (S18: contains the visible "Submit report")', () => {
     const { getByLabelText } = renderAnon();
-    expect(getByLabelText('Submit anonymous flag report')).toBeTruthy();
+    expect(getByLabelText('Submit report anonymously')).toBeTruthy();
   });
 
-  it('submit button text is "Report anonymously"', () => {
-    const { getAllByText } = renderAnon();
-    // Title AND button both say "Report anonymously" — we just confirm the
-    // string appears at least once (the button) without crashing.
+  it('submit button says "Submit report" while the title still states anonymity', () => {
+    const { getByText, getAllByText } = renderAnon();
+    // S18 (L5-03 / WCAG 2.5.3): the action button is the verb-forward
+    // "Submit report" (was the 19-char "Report anonymously"), and its
+    // accessible name CONTAINS that visible text. Anonymity is still stated
+    // by the title and the anon banner — not the button.
+    expect(getByText('Submit report')).toBeTruthy();
     expect(getAllByText('Report anonymously').length).toBeGreaterThanOrEqual(1);
   });
 });
@@ -422,14 +425,14 @@ describe('auth form (user !== null)', () => {
     expect(queryByText(/to attach a photo/i)).toBeNull();
   });
 
-  it('submit button accessibilityLabel is the non-anon form', () => {
+  it('submit button accessibilityLabel is "Submit report" (auth form)', () => {
     const { getByLabelText } = renderAuth();
-    expect(getByLabelText('Submit flag report')).toBeTruthy();
+    expect(getByLabelText('Submit report')).toBeTruthy();
   });
 
-  it('submit button text is "Report" (not "Report anonymously")', () => {
-    const { getByLabelText, queryByText } = renderAuth();
-    expect(getByLabelText('Submit flag report')).toBeTruthy();
+  it('submit button text is "Submit report" (auth form, not the anon label)', () => {
+    const { getByText, queryByText } = renderAuth();
+    expect(getByText('Submit report')).toBeTruthy();
     expect(queryByText('Report anonymously')).toBeNull();
   });
 });
@@ -441,7 +444,7 @@ describe('auth form (user !== null)', () => {
 describe('submit routing — anon path', () => {
   it('calls checkAnonRateLimit before createAnonFlag on anon submit', async () => {
     const { getByLabelText } = renderAnon();
-    fireEvent.press(getByLabelText('Submit anonymous flag report'));
+    fireEvent.press(getByLabelText('Submit report anonymously'));
 
     await waitFor(() => {
       expect(mockCheckAnonRateLimit).toHaveBeenCalledTimes(1);
@@ -455,7 +458,7 @@ describe('submit routing — anon path', () => {
 
   it('calls recordAnonSubmit after a successful createAnonFlag', async () => {
     const { getByLabelText } = renderAnon();
-    fireEvent.press(getByLabelText('Submit anonymous flag report'));
+    fireEvent.press(getByLabelText('Submit report anonymously'));
 
     await waitFor(() => {
       expect(mockRecordAnonSubmit).toHaveBeenCalledTimes(1);
@@ -464,7 +467,7 @@ describe('submit routing — anon path', () => {
 
   it('does NOT call createFlag on an anon submit', async () => {
     const { getByLabelText } = renderAnon();
-    fireEvent.press(getByLabelText('Submit anonymous flag report'));
+    fireEvent.press(getByLabelText('Submit report anonymously'));
 
     await waitFor(() => {
       expect(mockCreateAnonFlag).toHaveBeenCalled();
@@ -474,7 +477,7 @@ describe('submit routing — anon path', () => {
 
   it('sends the correct lat/lng/category/severity to createAnonFlag', async () => {
     const { getByLabelText } = renderAnon();
-    fireEvent.press(getByLabelText('Submit anonymous flag report'));
+    fireEvent.press(getByLabelText('Submit report anonymously'));
 
     await waitFor(() => {
       expect(mockCreateAnonFlag).toHaveBeenCalledWith(
@@ -494,7 +497,7 @@ describe('submit routing — anon path', () => {
     );
     const alertSpy = jest.spyOn(Alert, 'alert');
     const { getByLabelText } = renderAnon();
-    fireEvent.press(getByLabelText('Submit anonymous flag report'));
+    fireEvent.press(getByLabelText('Submit report anonymously'));
 
     await waitFor(() => {
       expect(alertSpy).toHaveBeenCalledWith(
@@ -516,7 +519,7 @@ describe('submit routing — anon path', () => {
 describe('submit routing — auth path', () => {
   it('calls createFlag (not createAnonFlag) on authenticated submit', async () => {
     const { getByLabelText } = renderAuth();
-    fireEvent.press(getByLabelText('Submit flag report'));
+    fireEvent.press(getByLabelText('Submit report'));
 
     await waitFor(() => {
       expect(mockCreateFlag).toHaveBeenCalledTimes(1);
@@ -526,7 +529,7 @@ describe('submit routing — auth path', () => {
 
   it('passes the user id to createFlag', async () => {
     const { getByLabelText } = renderAuth({ id: 'user-xyz' });
-    fireEvent.press(getByLabelText('Submit flag report'));
+    fireEvent.press(getByLabelText('Submit report'));
 
     await waitFor(() => {
       expect(mockCreateFlag).toHaveBeenCalledWith('user-xyz', expect.any(Object));
@@ -535,7 +538,7 @@ describe('submit routing — auth path', () => {
 
   it('does NOT call checkAnonRateLimit on authenticated submit', async () => {
     const { getByLabelText } = renderAuth();
-    fireEvent.press(getByLabelText('Submit flag report'));
+    fireEvent.press(getByLabelText('Submit report'));
 
     await waitFor(() => {
       expect(mockCreateFlag).toHaveBeenCalled();
@@ -564,7 +567,7 @@ describe('storage orphan cleanup on failed submit (auth path)', () => {
       .mockResolvedValueOnce({ url: 'http://example.com/p1.jpg', path: 'user-abc/p1.jpg' })
       .mockRejectedValueOnce(new Error('upload failed'));
 
-    fireEvent.press(utils.getByLabelText('Submit flag report'));
+    fireEvent.press(utils.getByLabelText('Submit report'));
 
     await waitFor(() => {
       expect(mockRemoveUploadedFlagPhotos).toHaveBeenCalledTimes(1);
@@ -582,7 +585,7 @@ describe('storage orphan cleanup on failed submit (auth path)', () => {
 
     mockCreateFlag.mockRejectedValueOnce(new Error('insert failed'));
 
-    fireEvent.press(utils.getByLabelText('Submit flag report'));
+    fireEvent.press(utils.getByLabelText('Submit report'));
 
     await waitFor(() => {
       expect(mockRemoveUploadedFlagPhotos).toHaveBeenCalledTimes(1);
@@ -601,7 +604,7 @@ describe('storage orphan cleanup on failed submit (auth path)', () => {
 
     mockCreateFlag.mockRejectedValueOnce(new Error('insert failed'));
 
-    fireEvent.press(utils.getByLabelText('Submit flag report'));
+    fireEvent.press(utils.getByLabelText('Submit report'));
 
     await waitFor(() => {
       expect(alertSpy).toHaveBeenCalledWith("Couldn't submit your report", 'insert failed');
@@ -614,7 +617,7 @@ describe('storage orphan cleanup on failed submit (auth path)', () => {
     await addPhoto(utils, 'file:///p1.jpg');
     await addPhoto(utils, 'file:///p2.jpg');
 
-    fireEvent.press(utils.getByLabelText('Submit flag report'));
+    fireEvent.press(utils.getByLabelText('Submit report'));
 
     await waitFor(() => {
       expect(mockCreateFlag).toHaveBeenCalledTimes(1);
@@ -634,7 +637,7 @@ describe('storage orphan cleanup on failed submit (auth path)', () => {
 
     mockBatchInsertFlagPhotos.mockRejectedValueOnce(new Error('junction insert failed'));
 
-    fireEvent.press(utils.getByLabelText('Submit flag report'));
+    fireEvent.press(utils.getByLabelText('Submit report'));
 
     await waitFor(() => {
       expect(mockBatchInsertFlagPhotos).toHaveBeenCalledTimes(1);
@@ -678,7 +681,7 @@ describe('live location prop (FIX C — fresh GPS read lands mid-form)', () => {
       <ReportFlagModal visible location={FRESH} onClose={onClose} onCreated={onCreated} />,
     );
 
-    fireEvent.press(utils.getByLabelText('Submit flag report'));
+    fireEvent.press(utils.getByLabelText('Submit report'));
 
     await waitFor(() => {
       expect(mockCreateFlag).toHaveBeenCalledWith(
@@ -700,7 +703,7 @@ describe('live location prop (FIX C — fresh GPS read lands mid-form)', () => {
       <ReportFlagModal visible location={FRESH} onClose={onClose} onCreated={onCreated} />,
     );
 
-    fireEvent.press(utils.getByLabelText('Submit anonymous flag report'));
+    fireEvent.press(utils.getByLabelText('Submit report anonymously'));
 
     await waitFor(() => {
       expect(mockCreateAnonFlag).toHaveBeenCalledWith(
@@ -772,7 +775,7 @@ describe('blob URL release — L7', () => {
     const utils = renderAuth();
     await addPhoto(utils, BLOB_URI);
 
-    fireEvent.press(utils.getByLabelText('Submit flag report'));
+    fireEvent.press(utils.getByLabelText('Submit report'));
 
     await waitFor(() => {
       expect(mockCreateFlag).toHaveBeenCalledTimes(1);
@@ -791,7 +794,7 @@ describe('blob URL release — L7', () => {
 
     mockCreateFlag.mockRejectedValueOnce(new Error('insert failed'));
 
-    fireEvent.press(utils.getByLabelText('Submit flag report'));
+    fireEvent.press(utils.getByLabelText('Submit report'));
 
     await waitFor(() => {
       expect(alertSpy).toHaveBeenCalledWith("Couldn't submit your report", 'insert failed');
@@ -830,14 +833,14 @@ describe('submitting state — L4 disable sweep', () => {
     // Spy BEFORE submit so the mid-flight gallery press can be asserted.
     const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
 
-    fireEvent.press(utils.getByLabelText('Submit flag report'));
+    fireEvent.press(utils.getByLabelText('Submit report'));
 
     // createFlag is pending — the WHOLE form must be locked.
     await waitFor(() => {
       expect(mockCreateFlag).toHaveBeenCalledTimes(1);
     });
     expect(
-      utils.getByLabelText('Submit flag report').props.accessibilityState,
+      utils.getByLabelText('Submit report').props.accessibilityState,
     ).toMatchObject({ disabled: true, busy: true });
     expect(
       utils.getByLabelText('Cancel and close').props.accessibilityState.disabled,
@@ -878,7 +881,7 @@ describe('submitting state — L4 disable sweep', () => {
     const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
     const utils = renderAnon();
 
-    fireEvent.press(utils.getByLabelText('Submit anonymous flag report'));
+    fireEvent.press(utils.getByLabelText('Submit report anonymously'));
 
     await waitFor(() => {
       expect(alertSpy).toHaveBeenCalledWith(
@@ -890,7 +893,7 @@ describe('submitting state — L4 disable sweep', () => {
 
     // The catch path must reset BOTH the F3 ref and the submitting state.
     expect(
-      utils.getByLabelText('Submit anonymous flag report').props.accessibilityState,
+      utils.getByLabelText('Submit report anonymously').props.accessibilityState,
     ).toMatchObject({ disabled: false, busy: false });
     expect(
       utils.getByLabelText('Description of the accessibility issue').props.editable,
@@ -898,7 +901,7 @@ describe('submitting state — L4 disable sweep', () => {
 
     // Functional proof: a second tap goes through (rate limit passes now —
     // the rejection above was mockRejectedValueOnce).
-    fireEvent.press(utils.getByLabelText('Submit anonymous flag report'));
+    fireEvent.press(utils.getByLabelText('Submit report anonymously'));
     await waitFor(() => {
       expect(mockCreateAnonFlag).toHaveBeenCalledTimes(1);
     });
