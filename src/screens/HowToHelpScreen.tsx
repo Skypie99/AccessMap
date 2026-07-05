@@ -32,13 +32,13 @@ const STEPS = [
     icon: Flag,
     number: '1',
     title: 'Report a problem',
-    body: "Tap + Report on the map wherever you see a broken sidewalk, missing ramp, blocked path, missing signal, or steep grade. Add a photo and severity — a few seconds from you could save someone a real headache.",
+    body: "Open the map and add a barrier wherever you see one — a broken sidewalk, missing ramp, blocked path, missing signal, or steep grade. Set how severe it is (signed-in users can add a photo, too) — a few seconds from you could save someone a real headache.",
   },
   {
     icon: CheckCircle2,
     number: '2',
     title: 'Verify flags near you',
-    body: "Head to the Tasks tab to see open reports from the community. Confirm the issue is still there — or mark it resolved if it's been fixed. Verifying earns you points and keeps the map accurate.",
+    body: "Head to the Tasks tab to see flags waiting to be verified. Confirm the barrier is still there — or mark it resolved if it's been fixed. Verifying earns you points and keeps the map accurate.",
   },
   {
     icon: Users,

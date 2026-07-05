@@ -236,11 +236,11 @@ export default function SignInScreen({
               style={({ pressed }) => [styles.guestBtn, pressed && styles.guestBtnPressed]}
               accessibilityRole="button"
               accessibilityLabel="Continue as guest"
-              accessibilityHint="Browse the map without signing in. Reporting flags requires an account."
+              accessibilityHint="Browse the map without signing in. You can report barriers anonymously; verifying and resolving reports requires an account."
             >
               <AppText variant="label" style={styles.guestBtnText}>Browse without an account →</AppText>
             </Pressable>
-            <AppText variant="body" style={styles.guestNote}>You can look around, but you&apos;ll need an account to report or verify</AppText>
+            <AppText variant="body" style={styles.guestNote}>You can browse and report barriers without an account. Verifying and resolving others&apos; flags needs a free one.</AppText>
           </View>
         ) : null}
 

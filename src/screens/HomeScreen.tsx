@@ -283,7 +283,7 @@ export default function HomeScreen() {
         {error && flags.length === 0 ? (
           <View style={styles.listCard}>
             <View style={styles.stateInner} accessibilityLiveRegion="polite">
-              <AppText variant="body" style={styles.errorText}>Couldn’t load reports.</AppText>
+              <AppText variant="body" style={styles.errorText}>Couldn’t load barriers.</AppText>
               <PressableScale
                 onPress={() => void refresh()}
                 style={styles.retryBtn}

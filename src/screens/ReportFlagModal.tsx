@@ -979,6 +979,13 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
               </AppText>
             </>
           )}
+          {/* S15 (L8-14): the submit moment states what publishing does — the
+              "black box" R6 named. Honest about the community-verify loop and
+              the city non-relationship. The finish-line success banner is
+              S10 (P5); this is the pre-click sentence. */}
+          <AppText variant="body" style={styles.submitMoment}>
+            Your report appears on the map right away for everyone; neighbours can verify it. AccessMap doesn&apos;t notify the city — see Resources.
+          </AppText>
           </ScrollView>
 
           <View style={styles.actions}>
@@ -1084,6 +1091,13 @@ const makeStyles = (color: ColorTheme) =>
       fontSize: font.size.xs,
       fontWeight: '700',
       color: color.brandOnSoft,
+    },
+    // S15: submit-moment caption — small muted line above the sticky footer.
+    submitMoment: {
+      fontSize: font.size.xs,
+      color: color.textMuted,
+      lineHeight: 17,
+      marginTop: spacing.md,
     },
     label: {
       fontSize: font.size.sm,

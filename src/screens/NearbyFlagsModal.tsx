@@ -280,7 +280,7 @@ export default function NearbyFlagsModal({
                 {searchQuery.trim().length > 0
                   ? `No flags match "${searchQuery.trim()}". Try a shorter or different query.`
                   : filterCat !== null
-                    ? `No ${CATEGORY_LABELS[filterCat]} reports in this area. Try a different category.`
+                    ? `No ${CATEGORY_LABELS[filterCat]} flags in this area. Try a different category.`
                     : "When community members report accessibility issues, they'll appear here sorted by distance."}
               </AppText>
             </View>
