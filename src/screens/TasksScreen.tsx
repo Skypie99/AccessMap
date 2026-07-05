@@ -1680,6 +1680,7 @@ const FlagCard = memo(function FlagCard({
                   onError={() => setPhotoError(true)}
                   accessible={false}
                   importantForAccessibility="no"
+                  aria-hidden={true}
                 />
               )}
               {!photoLoaded && (
@@ -1709,6 +1710,7 @@ const FlagCard = memo(function FlagCard({
                   onError={() => setPhotoError(true)}
                   accessible={false}
                   importantForAccessibility="no"
+                  aria-hidden={true}
                 />
               )}
               {!photoLoaded && (

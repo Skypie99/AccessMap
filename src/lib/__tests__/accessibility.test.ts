@@ -39,12 +39,19 @@ describe('decorativeProps', () => {
     expect(decorativeProps.accessibilityElementsHidden).toBe(true);
   });
 
-  it('has exactly the three expected properties (no extras)', () => {
+  it('sets aria-hidden true (web: keeps decorative images out of the a11y tree)', () => {
+    // react-native-web does not derive aria-hidden from accessible={false}, so
+    // without this a decorative <Image> still announces "image" to a browser SR.
+    expect((decorativeProps as Record<string, unknown>)['aria-hidden']).toBe(true);
+  });
+
+  it('has exactly the four expected properties (no extras)', () => {
     const keys = Object.keys(decorativeProps);
-    expect(keys).toHaveLength(3);
+    expect(keys).toHaveLength(4);
     expect(keys).toContain('accessible');
     expect(keys).toContain('importantForAccessibility');
     expect(keys).toContain('accessibilityElementsHidden');
+    expect(keys).toContain('aria-hidden');
   });
 });
 

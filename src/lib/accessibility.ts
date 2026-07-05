@@ -15,6 +15,11 @@ export const decorativeProps = {
   accessible: false,
   importantForAccessibility: 'no-hide-descendants' as const,
   accessibilityElementsHidden: true,
+  // Web: react-native-web does not derive aria-hidden from accessible={false},
+  // so a decorative <Image> without alt still announces "image". This keeps the
+  // element and its subtree out of the browser accessibility tree. (Tasks used
+  // to open its screen reader traversal on a bare "image".)
+  'aria-hidden': true,
 } as const;
 
 /** The flat ARIA aliases `a11yToggle` emits alongside `accessibilityState`. */
