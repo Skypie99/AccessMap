@@ -25,6 +25,23 @@ interface ReleaseNote {
 // CMS / no markdown parser to drag in for a 30-line feature.
 const RELEASES: ReleaseNote[] = [
   {
+    // S20 (L8-13): the changelog had gone three visual eras stale (one 2026-05-23
+    // entry). This v3 entry is drafted from what shipped; SKY-EDITABLE — confirm
+    // the bullet list and adjust the date to the actual public release.
+    date: '2026-07-04',
+    title: 'v3.0.0 — Deep Field, an editorial Home, and an accessibility pass',
+    items: [
+      'A new "Deep Field" look across Tasks, Profile, and the Map — layered glass surfaces with a calmer, more legible palette',
+      'Reduce Transparency support: the glass flattens to solid, high-contrast surfaces when your device asks for it',
+      'A redesigned, more editorial Home screen',
+      'A refreshed onboarding walkthrough for a clearer first run',
+      'Dark mode that follows your device, plus a manual toggle in Settings',
+      'A map heatmap view and a cleaner, grouped map toolbar',
+      'A consistent severity scale (number + word + color) everywhere severity is shown, contrast-checked against WCAG AA',
+      'For screen-reader users, the full map opens an accessible list of nearby flags automatically',
+    ],
+  },
+  {
     date: '2026-05-23',
     title: 'Visual polish, pages, and feedback flow',
     items: [

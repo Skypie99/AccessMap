@@ -95,8 +95,9 @@ export default function AboutScreen({ visible, onClose }: Props) {
               Credits
             </AppText>
             <AppText variant="body" style={styles.bodyText}>
-              A small project by Sky, built to learn by doing. The maps, icons, and database schema
-              are open and the data belongs to the people who report it.
+              A small project by Sky, built to learn by doing on open tools — OpenStreetMap maps,
+              open icon sets, Expo, React Native, and Supabase. The barrier data belongs to the
+              people who report it.
             </AppText>
 
             <AppText variant="heading" style={styles.sectionHeader} accessibilityRole="header">
@@ -117,8 +118,8 @@ export default function AboutScreen({ visible, onClose }: Props) {
             </AppText>
             <AppText variant="body" style={styles.bodyText}>
               Status changes (open → verified → resolved) are logged so the community can see the
-              history of a flag. The log is visible to other users without identifying who made each
-              change.
+              history of a flag — open any flag&apos;s details to view it. The log doesn&apos;t
+              identify who made each change.
             </AppText>
             <AppText variant="body" style={styles.bodyText}>
               Map tile images are cached locally on your device for up to 7 days to improve

@@ -30,7 +30,7 @@ interface FaqItem {
 const FAQS: FaqItem[] = [
   {
     q: 'How do I report a place that needs attention?',
-    a: 'Open the Map tab, position yourself near the spot (or tap and drag the map to it), then tap the "＋ Report" button at the bottom right. Pick a category (broken sidewalk, missing ramp, blocked path, etc.), set how severe it is from 1 to 5, add a short description, and optionally snap a photo.',
+    a: 'From the Home screen, tap the "Report" button — or open the full map and press and hold (long-press) the spot. Pick a category (broken sidewalk, missing ramp, blocked path, etc.), set how severe it is from 1 to 5, and add a short description. Signed-in users can also attach a photo.',
   },
   {
     q: 'How do points work?',
@@ -38,7 +38,7 @@ const FAQS: FaqItem[] = [
   },
   {
     q: 'What\'s the difference between "verified" and "resolved"?',
-    a: 'Verified means another person checked the spot and confirmed the issue is real. Resolved means the issue has been fixed (the ramp was added, the path was cleared, etc.). Resolved reports stay on the map but appear in a different color.',
+    a: 'Verified means another person checked the spot and confirmed the issue is real. Resolved means the issue has been fixed (the ramp was added, the path was cleared, etc.). Resolved flags stay on the map, keep their severity color, and are marked with a checkmark.',
   },
   {
     q: 'Are my photos and location private?',
@@ -46,7 +46,7 @@ const FAQS: FaqItem[] = [
   },
   {
     q: 'I use a screen reader — what should I know?',
-    a: "The Map tab automatically opens an accessible list of nearby flags when it detects a screen reader, so you can browse without the visual map. Every button is labeled, status changes are announced, and color is always paired with text. If something doesn't announce or focus correctly, please send feedback.",
+    a: "The full map automatically opens an accessible list of nearby flags when it detects a screen reader, so you can browse without the visual map. Every button is labeled, status changes are announced, and color is always paired with text. If something doesn't announce or focus correctly, please send feedback.",
   },
   {
     q: 'How do I delete one of my reports?',
@@ -54,7 +54,7 @@ const FAQS: FaqItem[] = [
   },
   {
     q: "Why can't I see flags I expected to see?",
-    a: 'You probably have a filter active. Map → tap the magnifying glass icon at the top → check Categories, Minimum severity, and Status. The "Clear" link in the filter panel header resets everything.',
+    a: 'You probably have a filter active. Open the full map and tap the filters icon (the sliders) at the top → check Categories, Minimum severity, and Status. The "Clear" link in the filter panel header resets everything. (The magnifying glass searches for an address — it doesn\'t filter.)',
   },
 ];
 

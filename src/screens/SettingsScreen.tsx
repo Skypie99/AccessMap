@@ -533,7 +533,7 @@ export default function SettingsScreen() {
 
         <SettingsRow
           glassLite={glassLite}
-          title="What's new"
+          title="What's New"
           subtitle="Recent features added to AccessMap."
           accessibilityHint="Opens a dated list of recent shipped features"
           onPress={() => setOpen('changelog')}
