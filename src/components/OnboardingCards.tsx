@@ -99,7 +99,7 @@ const CARDS: Card[] = [
     icon: MapIcon,
     iconColor: '#60a5fa',
     title: "Here's how it works",
-    body: 'Tap where the barrier is, snap a photo if you can, and rate how bad it is. Other people verify your report or mark it resolved once the issue is fixed.',
+    body: 'Find the spot on the map and add the barrier there, then rate how bad it is. Others verify it or mark it resolved once the issue is fixed. (Signed-in users can add a photo, too.)',
   },
   {
     icon: MapPin,
