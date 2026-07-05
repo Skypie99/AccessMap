@@ -12,6 +12,7 @@ import { loadOnboarded, setOnboarded } from '@/lib/onboardingState';
 import { getDefaultTab, type DefaultTab } from '@/lib/preferences';
 import { fetchCurrentPoints, getLastSeenPoints, setLastSeenPoints } from '@/lib/points';
 import { useAppFonts } from '@/lib/fonts';
+import A11yLiveRegion from '@/components/A11yLiveRegion';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import FlashBanner from '@/components/FlashBanner';
 import OnboardingCards from '@/components/OnboardingCards';
@@ -216,6 +217,9 @@ function App() {
             <FirstLaunchGate>
               <Gate />
             </FirstLaunchGate>
+            {/* S9: the web announce-shim's rendered aria-live region. Mounted
+                above the session branch so the guest-web path has it too. */}
+            <A11yLiveRegion />
             <StatusBar style="auto" />
           </AuthProvider>
         </ThemeProvider>
