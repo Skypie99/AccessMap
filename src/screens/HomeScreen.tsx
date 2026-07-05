@@ -165,7 +165,7 @@ export default function HomeScreen() {
     ? `Near ${searchLabel}`
     : hasCenter
       ? 'Sorted by distance'
-      : 'Most recent reports';
+      : 'Most recent barriers';
   const sectionLabel = hasCenter ? 'CLOSEST' : 'RECENT';
 
   return (
