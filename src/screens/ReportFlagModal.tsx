@@ -73,9 +73,14 @@ interface Props {
   location: { lat: number; lng: number } | null;
   onClose: () => void;
   onCreated: () => void;
+  /** S5: re-run the host screen's locating spine from inside the sheet (the
+   *  "Use my location" retry). Optional so callers that always pass a location
+   *  can omit it — the retry control only renders when both this and a null
+   *  location are present. */
+  onRequestLocation?: () => void;
 }
 
-export default function ReportFlagModal({ visible, location, onClose, onCreated }: Props) {
+export default function ReportFlagModal({ visible, location, onClose, onCreated, onRequestLocation }: Props) {
   const color = useColor();
   const styles = makeStyles(color);
   const { user } = useAuth();
@@ -467,6 +472,23 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
                 : 'Waiting for location…'}
             </AppText>
           </View>
+          {/* S5 (L3-1): when no location has resolved yet — the common
+              first-time web-guest case, where nothing was ever in flight — give
+              an in-sheet retry so recovery doesn't mean abandoning the flow.
+              requestLocation announces its own outcome (found / permission
+              denied), so this one control drives the whole recover loop. */}
+          {!location && onRequestLocation && (
+            <Pressable
+              onPress={onRequestLocation}
+              style={styles.useLocationBtn}
+              accessibilityRole="button"
+              accessibilityLabel="Use my location"
+              accessibilityHint="Finds your current location so you can submit this report"
+            >
+              <MapPin size={14} color={color.brandOnSoft} strokeWidth={2.4} accessibilityElementsHidden importantForAccessibility="no-hide-descendants" />
+              <AppText variant="label" style={styles.useLocationText}>Use my location</AppText>
+            </Pressable>
+          )}
 
           {/* Anonymous mode banner — shown when user is not signed in.
               accessibilityRole="alert" makes VoiceOver announce it on iOS;
@@ -980,6 +1002,11 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated 
               ]}
               accessibilityRole="button"
               accessibilityLabel={isAnon ? 'Submit anonymous flag report' : 'Submit flag report'}
+              accessibilityHint={
+                !location
+                  ? "Waiting for your location. Tap 'Use my location' above to try again."
+                  : undefined
+              }
               accessibilityState={{ disabled: submitting || !location, busy: submitting }}
             >
               <LinearGradient
@@ -1039,6 +1066,25 @@ const makeStyles = (color: ColorTheme) =>
     },
     locationRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.tight, marginBottom: spacing.xs },
     location: { fontSize: font.size.xs, color: color.textMuted },
+    // S5: in-sheet "Use my location" retry — 44pt, brand-soft tint mirroring the
+    // anon banner; only rendered when no location has resolved.
+    useLocationBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      alignSelf: 'flex-start',
+      gap: spacing.tight,
+      minHeight: 44,
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      borderRadius: 8,
+      backgroundColor: color.brandSofter,
+      marginBottom: spacing.sm,
+    },
+    useLocationText: {
+      fontSize: font.size.xs,
+      fontWeight: '700',
+      color: color.brandOnSoft,
+    },
     label: {
       fontSize: font.size.sm,
       fontWeight: font.weight.semibold,

@@ -1092,9 +1092,15 @@ export default function MapScreen() {
   // flagId reset) so it doesn't re-fire on a later re-focus of this route.
   useEffect(() => {
     if (!route.params?.openReport) return;
+    // S5 (L3-1): mirror the Report FAB — kick a location read before opening so
+    // the sheet resolves instead of stalling forever on "Waiting for location…".
+    // A first-time web guest arriving from Home's "Report" pill has no fix in
+    // flight; without this the submit stays permanently disabled. Skip when a
+    // drop pin is set (the sheet uses that coord, so no GPS is needed).
+    if (!dropLocation) void requestLocation();
     setReportOpen(true);
     navigation.setParams({ openReport: undefined });
-  }, [route.params?.openReport, navigation]);
+  }, [route.params?.openReport, navigation, dropLocation, requestLocation]);
 
   // Deep-link arrival: accessmap://flag/{id} → React Navigation parses the
   // id into route.params.flagId. Fetch the flag's lat/lng on the fly, then
@@ -2101,6 +2107,9 @@ export default function MapScreen() {
           // otherwise fall back to the user's current GPS location for the
           // FAB-triggered "report at my location" flow.
           location={dropLocation ?? location}
+          // S5: lets the sheet re-run the same locating spine on demand (the
+          // in-sheet "Use my location" retry) without leaving the flow.
+          onRequestLocation={requestLocation}
           onClose={() => {
             setReportOpen(false);
             // Clear the drop pin on close so the next FAB-tap defaults back
