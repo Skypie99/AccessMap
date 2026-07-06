@@ -32,6 +32,7 @@ import {
   type LucideIcon,
 } from 'lucide-react-native';
 import { AppText } from '@/components/ui/AppText';
+import LogoMark from '@/components/LogoMark';
 import { font, motion, radius, shadow, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { useReducedMotion, useReduceTransparency } from '@/lib/accessibility';
@@ -165,7 +166,7 @@ export default function HamburgerDrawer({ open, onClose, onSignIn, onNavigate }:
           {/* Header */}
           <View style={styles.drawerHeader}>
             <View style={styles.logoMini}>
-              <AppText variant="heading" style={styles.logoMiniText}>A</AppText>
+              <LogoMark variant="white" size={24} />
             </View>
             <AppText variant="heading" style={styles.drawerBrand}>AccessMap</AppText>
             <Pressable
@@ -345,11 +346,6 @@ const makeStyles = (color: ColorTheme, reduceTransparency: boolean) =>
       backgroundColor: color.brand,
       alignItems: 'center',
       justifyContent: 'center',
-    },
-    logoMiniText: {
-      color: color.textOnBrand,
-      fontSize: font.size.md,
-      fontWeight: font.weight.bold,
     },
     drawerBrand: {
       flex: 1,

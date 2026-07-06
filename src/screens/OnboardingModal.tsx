@@ -16,7 +16,8 @@ import { useReducedMotion } from '@/lib/accessibility';
 import { hapticSelection } from '@/lib/haptics';
 import { trackEvent } from '@/lib/analytics';
 import { AppText } from '@/components/ui/AppText';
-import { MapPin, Star, Target } from 'lucide-react-native';
+import { Star, Target } from 'lucide-react-native';
+import LogoMark from '@/components/LogoMark';
 
 interface Props {
   visible: boolean;
@@ -24,7 +25,11 @@ interface Props {
 }
 
 interface Card {
-  Icon: React.ComponentType<{ size?: number; color?: string; strokeWidth?: number }>;
+  // Stock Lucide icon for the slide. Omitted on the brand-mark slide.
+  Icon?: React.ComponentType<{ size?: number; color?: string; strokeWidth?: number }>;
+  // Slide 1 wears the ownable Wayfinder mark (LogoMark) instead of a stock
+  // Lucide glyph — PROTECT-16, wear the house mark more.
+  brandMark?: boolean;
   title: string;
   body: string;
   // Icon-halo tone. 'gold' marks the gamification card (points) — Civic Gold is
@@ -34,7 +39,7 @@ interface Card {
 
 const CARDS: Card[] = [
   {
-    Icon: MapPin,
+    brandMark: true,
     tone: 'brand',
     title: 'Welcome to AccessMap',
     body: 'Drop a pin where you find an accessibility issue — a missing ramp, a broken sidewalk, a blocked path — so others can plan around it, or help fix it.',
@@ -170,7 +175,11 @@ export default function OnboardingModal({ visible, onDone }: Props) {
                   nestedScrollEnabled
                 >
                   <View style={[styles.iconHalo, { backgroundColor: haloBg }]}>
-                    <CardIcon size={56} color={iconColor} strokeWidth={2} />
+                    {card.brandMark ? (
+                      <LogoMark size={60} variant="mono" tint={iconColor} />
+                    ) : CardIcon ? (
+                      <CardIcon size={56} color={iconColor} strokeWidth={2} />
+                    ) : null}
                   </View>
                   <AppText
                     variant="heading"

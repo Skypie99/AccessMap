@@ -11,8 +11,9 @@ import {
   View,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Bell, CheckCircle2, Compass, Map as MapIcon, MapPin, Sparkles, type LucideIcon } from 'lucide-react-native';
+import { Bell, CheckCircle2, Map as MapIcon, MapPin, Sparkles, type LucideIcon } from 'lucide-react-native';
 import { AppText } from '@/components/ui/AppText';
+import LogoMark from '@/components/LogoMark';
 import * as Location from 'expo-location';
 import {
   getNotificationPermission,
@@ -76,10 +77,14 @@ interface Props {
 type PermissionKind = 'location' | 'notifications';
 
 interface Card {
-  icon: LucideIcon;
+  // Stock Lucide icon for the slide. Omitted on the brand-mark slide.
+  icon?: LucideIcon;
   iconColor: string;
   title: string;
   body: string;
+  // Slide 1 wears the ownable Wayfinder mark (LogoMark) instead of a stock
+  // Lucide glyph — PROTECT-16, the app owns a good mark, so wear it more.
+  brandMark?: boolean;
   // Slide primes this OS permission and fires the prompt on its primary tap.
   permission?: PermissionKind;
   // The final slide — primary button is "Open the Map" and finishes onboarding.
@@ -91,7 +96,7 @@ interface Card {
 // final "you're all set" celebration. The granted state stays semantic green.
 const CARDS: Card[] = [
   {
-    icon: Compass,
+    brandMark: true,
     iconColor: '#60a5fa',
     title: 'Welcome to AccessMap',
     body: 'See an accessibility barrier — a missing ramp, a broken sidewalk, a blocked path? Put it on the map so others know, and so it gets fixed.',
@@ -316,7 +321,7 @@ export default function OnboardingCards({ onDone }: Props) {
             const cardGranted =
               (c.permission === 'location' && locationGranted === true) ||
               (c.permission === 'notifications' && notifGranted === true);
-            const EffectiveIcon: LucideIcon = cardGranted ? CheckCircle2 : c.icon;
+            const EffectiveIcon = cardGranted ? CheckCircle2 : c.icon;
             const effectiveColor = cardGranted ? '#34d399' : c.iconColor;
             const effectiveBody = cardGranted
               ? c.permission === 'location'
@@ -344,7 +349,11 @@ export default function OnboardingCards({ onDone }: Props) {
                     accessibilityElementsHidden
                     importantForAccessibility="no-hide-descendants"
                   >
-                    <EffectiveIcon size={52} color={effectiveColor} strokeWidth={2} />
+                    {c.brandMark ? (
+                      <LogoMark size={60} variant="mono" tint={effectiveColor} />
+                    ) : EffectiveIcon ? (
+                      <EffectiveIcon size={52} color={effectiveColor} strokeWidth={2} />
+                    ) : null}
                   </View>
 
                   {/* Position pill */}
