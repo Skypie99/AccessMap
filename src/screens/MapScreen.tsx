@@ -34,6 +34,7 @@ import {
   List,
   LocateFixed,
   MapPin,
+  Minus,
   Plus,
   RotateCw,
   Search,
@@ -1276,7 +1277,10 @@ export default function MapScreen() {
             box-none is mandatory: an opaque-to-touch wrapper would swallow
             map pan/zoom; flexShrink lets the G5 filterPanel keep yielding. */}
         <View style={styles.overlayTopGroup} pointerEvents="box-none">
-        <View style={styles.topRow}>
+        {/* S6 (WCAG 2.5.7): box-none so taps fall THROUGH the row's gaps to the
+            map — the un-guarded wrapper was pointer-dead, killing zoom/pan even
+            on visible tile between the pill and the action tray. */}
+        <View style={styles.topRow} pointerEvents="box-none">
           {/* WCAG 4.1.3: live region ensures AT announces when the count
               changes after a filter toggle (e.g. "12 of 45 shown"). Using
               'polite' so it doesn't interrupt mid-sentence. */}
@@ -2053,6 +2057,29 @@ export default function MapScreen() {
               of overlapping the FABs at narrow widths (G6). */}
           <View style={styles.legendSlot}>{heatmapEnabled ? <HeatmapLegend /> : null}</View>
           <View style={styles.fabColumn}>
+            {/* S6: app-styled 44pt+ zoom buttons — the reachable, pointer-live
+                zoom affordance replacing Leaflet's occluded default control (web)
+                and iOS's missing single-pointer zoom-out (WCAG 2.5.5 / 2.5.7).
+                Opaque ctaFill + white glyph (map tiles unreachable beneath them);
+                box-none group so only the buttons themselves take touches. */}
+            <View style={styles.zoomGroup} pointerEvents="box-none">
+              <PressableScale
+                style={[styles.fab, styles.zoomBtn]}
+                onPress={() => mapRef.current?.zoomBy(1)}
+                accessibilityRole="button"
+                accessibilityLabel="Zoom in"
+              >
+                <Plus size={22} color={color.textOnBrand} strokeWidth={2.6} />
+              </PressableScale>
+              <PressableScale
+                style={[styles.fab, styles.zoomBtn]}
+                onPress={() => mapRef.current?.zoomBy(-1)}
+                accessibilityRole="button"
+                accessibilityLabel="Zoom out"
+              >
+                <Minus size={22} color={color.textOnBrand} strokeWidth={2.6} />
+              </PressableScale>
+            </View>
             <PressableScale
               style={[styles.fab, styles.fabSecondary]}
               onPress={() => setNearbyOpen(true)}
@@ -2748,6 +2775,19 @@ const makeStyles = (color: ColorTheme) =>
     fabColumn: {
       alignItems: 'flex-end',
       gap: 10,
+    },
+    // S6 zoom control — two stacked 48pt circles at the top of the right column.
+    zoomGroup: {
+      alignItems: 'flex-end',
+      gap: 10,
+    },
+    zoomBtn: {
+      width: 48,
+      height: 48,
+      paddingHorizontal: 0,
+      paddingVertical: 0,
+      alignItems: 'center',
+      justifyContent: 'center',
     },
     fab: {
       // ctaFill (mode-independent) — the Report FAB rides this base; plain

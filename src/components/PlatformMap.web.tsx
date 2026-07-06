@@ -36,6 +36,10 @@ export interface PlatformMapHandle {
     longitudeDelta?: number;
   }) => void;
   showCallout: (flagId: string) => void;
+  /** Step the zoom by `delta` levels (+1 in, -1 out). Additive to the handle so
+   *  the overlay's app-styled 44pt buttons drive zoom — replacing Leaflet's
+   *  occluded, pointer-dead default control (WCAG 2.5.7). */
+  zoomBy: (delta: number) => void;
 }
 
 export interface PlatformMapProps {
@@ -651,6 +655,12 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(function Pla
       showCallout: (id) => {
         markerRefs.current[id]?.openPopup();
       },
+      zoomBy: (delta) => {
+        const map = mapInstance.current;
+        if (!map) return;
+        // Leaflet clamps to the layer's min/max; animate unless Reduce Motion.
+        map.setZoom(map.getZoom() + delta, { animate: !reducedMotion });
+      },
     }),
     [reducedMotion],
   );
@@ -662,6 +672,10 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(function Pla
         zoom={deltaToZoom(initialRegion.latitudeDelta)}
         style={{ height: '100%', width: '100%' }}
         ref={setMapRef}
+        // S6: drop Leaflet's default top-left zoom control — it was occluded by
+        // the count pill AND pointer-dead. The app-styled 44pt buttons in the
+        // overlay's bottom zone drive zoom via the imperative handle instead.
+        zoomControl={false}
       >
         <CachedTileLayerWrapper userId={userId} />
         {/* Heat-map: Rectangle for each cell footprint + a divIcon Marker

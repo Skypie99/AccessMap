@@ -41,6 +41,10 @@ export interface PlatformMapHandle {
     longitudeDelta?: number;
   }) => void;
   showCallout: (flagId: string) => void;
+  /** Step the zoom by `delta` levels (+1 in, -1 out). Additive to the handle so
+   *  the overlay's app-styled 44pt buttons can drive zoom — the single-pointer
+   *  zoom-out affordance iOS otherwise lacks (WCAG 2.5.7). */
+  zoomBy: (delta: number) => void;
 }
 
 export interface PlatformMapProps {
@@ -115,6 +119,18 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(function Pla
       },
       showCallout: (id) => {
         markerRefs.current[id]?.showCallout();
+      },
+      zoomBy: (delta) => {
+        const map = mapRef.current;
+        if (!map) return;
+        // Read the current camera, step its zoom, and animate at the RM-gated
+        // duration (instant under Reduce Motion, WCAG 2.3.3).
+        void map.getCamera().then((cam) => {
+          map.animateCamera(
+            { ...cam, zoom: (cam.zoom ?? 12) + delta },
+            { duration: reducedMotion ? 0 : 300 },
+          );
+        });
       },
     }),
     [reducedMotion],
