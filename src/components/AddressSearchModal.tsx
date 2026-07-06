@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { font, radius, shadow, spacing } from '@/theme';
 import { AppText } from '@/components/ui/AppText';
-import { ChevronRight, MapPin, X } from 'lucide-react-native';
+import { AlertTriangle, ChevronRight, Clock, MapPin, Search, X } from 'lucide-react-native';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { useReducedMotion } from '@/lib/accessibility';
 import { searchAddressStrict, type GeocodeResult } from '@/lib/geocode';
@@ -274,9 +274,7 @@ export default function AddressSearchModal({ visible, onClose, onSelect }: Props
                   accessibilityLabel={`Recent search: ${entry.displayName}`}
                   accessibilityHint="Centers the map on this location and closes search"
                 >
-                  <AppText variant="body" style={styles.recentGlyph} accessibilityElementsHidden>
-                    🕘
-                  </AppText>
+                  <Clock size={18} color={color.textSubtle} strokeWidth={2.2} accessibilityElementsHidden />
                   <AppText variant="label" style={styles.recentText} numberOfLines={2}>
                     {entry.displayName}
                   </AppText>
@@ -309,9 +307,7 @@ export default function AddressSearchModal({ visible, onClose, onSelect }: Props
               accessibilityLabel="Couldn't search. Check your connection and try again."
               accessibilityLiveRegion="polite"
             >
-              <AppText variant="body" style={styles.errorIcon} accessibilityElementsHidden>
-                ⚠️
-              </AppText>
+              <AlertTriangle size={28} color={color.error} strokeWidth={2} accessibilityElementsHidden />
               <AppText variant="heading" style={styles.errorTitle}>Couldn&apos;t search</AppText>
               <AppText variant="body" style={styles.errorBody}>
                 Something went wrong reaching the address service. Check your connection and try again.
@@ -339,9 +335,7 @@ export default function AddressSearchModal({ visible, onClose, onSelect }: Props
               accessibilityLabel="No matches"
               accessibilityLiveRegion="polite"
             >
-              <AppText variant="body" style={styles.emptyIcon} accessibilityElementsHidden>
-                🔍
-              </AppText>
+              <Search size={28} color={color.textSubtle} strokeWidth={2} accessibilityElementsHidden />
               <AppText variant="heading" style={styles.emptyTitle}>No matches</AppText>
               <AppText variant="body" style={styles.emptyBody}>
                 Try a different spelling, add a city, or drop the street number to widen the search.
@@ -461,7 +455,6 @@ function makeStyles(color: ColorTheme) {
       gap: spacing.xs,
       ...shadow.e1,
     },
-    emptyIcon: { fontSize: 28 },
     emptyTitle: {
       fontSize: font.size.lg,
       fontWeight: font.weight.bold,
@@ -482,7 +475,6 @@ function makeStyles(color: ColorTheme) {
       gap: spacing.xs,
       ...shadow.e1,
     },
-    errorIcon: { fontSize: 28 },
     errorTitle: {
       fontSize: font.size.lg,
       fontWeight: font.weight.bold,
@@ -544,7 +536,7 @@ function makeStyles(color: ColorTheme) {
     },
     // Recent section — mirrors the live-results visual rhythm (same card
     // shadow, same row height/padding) so the modal feels of-a-piece. The
-    // 🕘 glyph differentiates "history" from the 📍 "live pin" glyph.
+    // Clock icon differentiates "history" rows from the live-pin results.
     recentSection: {
       gap: spacing.sm,
       // Must be able to yield inside the card's 85% bound so the inner
@@ -596,7 +588,6 @@ function makeStyles(color: ColorTheme) {
       ...shadow.e1,
     },
     recentRowPressed: { opacity: 0.85, backgroundColor: color.surfaceSoft },
-    recentGlyph: { fontSize: font.size.lg },
     recentText: {
       flex: 1,
       fontSize: font.size.sm,

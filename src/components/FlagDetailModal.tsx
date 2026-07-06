@@ -18,7 +18,7 @@ import {
 import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 import { AppText } from '@/components/ui/AppText';
 import { RemoteImage } from '@/components/ui/RemoteImage';
-import { Star, X } from 'lucide-react-native';
+import { MessageCircle, Star, X } from 'lucide-react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { font, radius, severity, shadow, spacing } from '@/theme';
@@ -1282,14 +1282,13 @@ export default function FlagDetailModal({
                   />
                 ) : comments.length === 0 ? (
                   <View style={styles.commentsEmptyContainer}>
-                    <AppText
-                      variant="body"
-                      style={styles.commentsEmptyIcon}
+                    <MessageCircle
+                      size={24}
+                      color={color.textMuted}
+                      strokeWidth={2}
                       accessibilityElementsHidden
                       importantForAccessibility="no-hide-descendants"
-                    >
-                      💬
-                    </AppText>
+                    />
                     <AppText variant="body" style={styles.commentsEmptyLabel}>
                       No comments yet — share what you know.
                     </AppText>
@@ -1921,9 +1920,6 @@ const makeStyles = (color: ColorTheme) =>
       alignItems: 'center',
       paddingVertical: spacing.xl,
       gap: spacing.sm,
-    },
-    commentsEmptyIcon: {
-      fontSize: font.size.xxl,
     },
     commentsEmptyLabel: {
       fontSize: font.size.base,

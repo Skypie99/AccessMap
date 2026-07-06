@@ -20,12 +20,12 @@ import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { useAuth } from '@/lib/auth';
 import {
   FEEDBACK_CATEGORIES,
-  FEEDBACK_CATEGORY_GLYPHS,
   FEEDBACK_CATEGORY_LABELS,
   FEEDBACK_EMAIL,
   sendFeedback,
   type FeedbackCategory,
 } from '@/lib/feedback';
+import { FEEDBACK_CATEGORY_ICONS } from '@/components/feedbackCategoryIcons';
 import { submitFeedback } from '@/lib/feedbackStore';
 import { MAX_BODY_CHARS } from '@/lib/feedback';
 import { X } from 'lucide-react-native';
@@ -219,6 +219,7 @@ export default function FeedbackModal({ visible, onClose }: Props) {
               >
                 {FEEDBACK_CATEGORIES.map((c) => {
                   const selected = c === category;
+                  const Icon = FEEDBACK_CATEGORY_ICONS[c];
                   return (
                     <Pressable
                       key={c}
@@ -236,9 +237,12 @@ export default function FeedbackModal({ visible, onClose }: Props) {
                         disabled: sending,
                       })}
                     >
-                      <AppText variant="bodyMedium" style={styles.categoryChipGlyph} accessibilityElementsHidden>
-                        {FEEDBACK_CATEGORY_GLYPHS[c]}
-                      </AppText>
+                      <Icon
+                        size={18}
+                        color={selected ? color.textOnBrand : color.glassChipInk}
+                        strokeWidth={2.2}
+                        accessibilityElementsHidden
+                      />
                       <AppText
                         variant="label"
                         style={[styles.categoryChipText, selected && styles.categoryChipTextSelected]}
@@ -447,7 +451,6 @@ const makeStyles = (color: ColorTheme) =>
       backgroundColor: color.ctaFill,
       borderColor: 'transparent',
     },
-    categoryChipGlyph: { fontSize: font.size.base },
     categoryChipText: {
       // glassChipInk on the engineered tint (11.06:1 light / 8.16:1 dark).
       color: color.glassChipInk,

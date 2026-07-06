@@ -15,8 +15,9 @@ import { AppText } from '@/components/ui/AppText';
 import { font, radius, shadow, spacing } from '@/theme';
 import { a11yToggle, useReducedMotion } from '@/lib/accessibility';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
-import { X } from 'lucide-react-native';
-import { FEEDBACK_CATEGORY_GLYPHS, FEEDBACK_CATEGORY_LABELS } from '@/lib/feedback';
+import { MessageCircle, Search, X } from 'lucide-react-native';
+import { FEEDBACK_CATEGORY_LABELS } from '@/lib/feedback';
+import { FEEDBACK_CATEGORY_ICONS } from '@/components/feedbackCategoryIcons';
 import { listFeedbackByUser } from '@/lib/feedbackStore';
 import {
   FEEDBACK_CATEGORY_FILTERS,
@@ -203,9 +204,7 @@ export default function MyFeedbackModal({ visible, onClose, refreshKey = 0 }: Pr
                 ) : rows.length > 0 ? (
                   // Have feedback, but the active filter hides all of it.
                   <>
-                    <AppText variant="body" style={styles.emptyIcon} accessibilityElementsHidden>
-                      🔍
-                    </AppText>
+                    <Search size={32} color={color.textSubtle} strokeWidth={2} accessibilityElementsHidden />
                     <AppText variant="heading" style={styles.emptyTitle}>
                       No {FEEDBACK_CATEGORY_FILTER_LABELS[filter].toLowerCase()} feedback
                     </AppText>
@@ -215,9 +214,7 @@ export default function MyFeedbackModal({ visible, onClose, refreshKey = 0 }: Pr
                   </>
                 ) : (
                   <>
-                    <AppText variant="body" style={styles.emptyIcon} accessibilityElementsHidden>
-                      💬
-                    </AppText>
+                    <MessageCircle size={32} color={color.textSubtle} strokeWidth={2} accessibilityElementsHidden />
                     <AppText variant="heading" style={styles.emptyTitle}>No feedback yet</AppText>
                     <AppText variant="body" style={styles.emptyBody}>
                       Tap the &quot;Feedback&quot; button at the top of any screen to send your first message.
@@ -242,6 +239,7 @@ function FeedbackRowCard({ row }: { row: FeedbackRow }) {
     timeStyle: 'short',
   });
   const categoryLabel = FEEDBACK_CATEGORY_LABELS[row.category];
+  const Icon = FEEDBACK_CATEGORY_ICONS[row.category];
   // Keep the row's body compact in the list — full text isn't needed for
   // a "did I send this?" scan, and very long bodies would push every
   // other row off the screen.
@@ -256,9 +254,7 @@ function FeedbackRowCard({ row }: { row: FeedbackRow }) {
     >
       <View style={styles.rowHeader}>
         <View style={styles.categoryPill}>
-          <AppText variant="body" style={styles.categoryGlyph} accessibilityElementsHidden>
-            {FEEDBACK_CATEGORY_GLYPHS[row.category]}
-          </AppText>
+          <Icon size={16} color={color.brandOnSoft} strokeWidth={2.2} accessibilityElementsHidden />
           <AppText variant="label" style={styles.categoryText}>{categoryLabel}</AppText>
         </View>
         <AppText variant="body" style={styles.dateText} numberOfLines={1}>{formattedDate}</AppText>
@@ -357,7 +353,6 @@ const makeStyles = (color: ColorTheme) =>
       borderRadius: radius.lg,
       ...shadow.e1,
     },
-    emptyIcon: { fontSize: 36 },
     emptyTitle: {
       fontSize: font.size.lg,
       fontWeight: font.weight.bold,
@@ -395,7 +390,6 @@ const makeStyles = (color: ColorTheme) =>
       // a11y label, so visual truncation loses nothing for SR users.
       flexShrink: 1,
     },
-    categoryGlyph: { fontSize: font.size.sm },
     categoryText: {
       color: color.brandOnSoft,
       fontWeight: font.weight.bold,

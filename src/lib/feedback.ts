@@ -23,15 +23,6 @@ export const FEEDBACK_CATEGORY_LABELS: Record<FeedbackCategory, string> = {
   other: 'Other',
 };
 
-// Emoji glyphs that pair with the labels in the UI. Decorative only —
-// the label is always read aloud, never the emoji.
-export const FEEDBACK_CATEGORY_GLYPHS: Record<FeedbackCategory, string> = {
-  bug: '🐛',
-  idea: '💡',
-  love: '❤️',
-  other: '💬',
-};
-
 const SUBJECT_BASE = 'AccessMap feedback';
 
 // Mailto URLs have practical length limits (~2000 chars in many clients,
