@@ -3,8 +3,9 @@
  *
  * The module is pure data + one filter function. Tests pin:
  *   - REPORT_TEMPLATES integrity: ids are unique, categories are in
- *     CATEGORY_ORDER, severities are in SEVERITY_ORDER, labels and glyphs
- *     are non-empty.
+ *     CATEGORY_ORDER, severities are in SEVERITY_ORDER, labels are
+ *     non-empty. (The chip icon is now the bespoke CategoryIcon, keyed off
+ *     `category` — no per-template glyph field to pin.)
  *   - validReportTemplates() filters out entries whose category/severity
  *     have drifted out of the live enums.
  *   - validReportTemplates() preserves the source ordering of REPORT_TEMPLATES.
@@ -33,12 +34,6 @@ describe('REPORT_TEMPLATES — static integrity', () => {
   it('every template has a non-empty label', () => {
     for (const t of REPORT_TEMPLATES) {
       expect(t.label.trim().length).toBeGreaterThan(0);
-    }
-  });
-
-  it('every template has a non-empty glyph', () => {
-    for (const t of REPORT_TEMPLATES) {
-      expect(t.glyph.length).toBeGreaterThan(0);
     }
   });
 
@@ -94,7 +89,6 @@ describe('validReportTemplates', () => {
       const got = result[i]!;
       expect(got.id).toBe(src.id);
       expect(got.label).toBe(src.label);
-      expect(got.glyph).toBe(src.glyph);
       expect(got.category).toBe(src.category);
       expect(got.severity).toBe(src.severity);
       expect(got.description).toBe(src.description);
@@ -126,7 +120,6 @@ describe('validReportTemplates', () => {
       expect(conforms).toBeDefined();
       expect(typeof conforms.id).toBe('string');
       expect(typeof conforms.label).toBe('string');
-      expect(typeof conforms.glyph).toBe('string');
       expect(typeof conforms.category).toBe('string');
       expect(typeof conforms.severity).toBe('number');
     }

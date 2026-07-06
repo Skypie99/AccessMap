@@ -32,8 +32,6 @@ export interface ReportTemplate {
   id: string;
   /** Short chip label. Should fit on one line at large dynamic type. */
   label: string;
-  /** Decorative glyph rendered alongside the label — hidden from AT. */
-  glyph: string;
   category: FlagCategory;
   severity: FlagSeverity;
   /**
@@ -58,7 +56,6 @@ export const REPORT_TEMPLATES: readonly ReportTemplate[] = [
   {
     id: 'broken_sidewalk_basic',
     label: 'Broken sidewalk',
-    glyph: '▦',
     category: 'broken_sidewalk',
     severity: 3,
     description: 'Cracked or uneven pavement — wheels catch here.',
@@ -66,7 +63,6 @@ export const REPORT_TEMPLATES: readonly ReportTemplate[] = [
   {
     id: 'no_ramp_curb',
     label: 'Missing curb cut',
-    glyph: '↥',
     category: 'no_ramp',
     severity: 4,
     description: 'No ramp at the corner — wheelchair users have to detour.',
@@ -74,7 +70,6 @@ export const REPORT_TEMPLATES: readonly ReportTemplate[] = [
   {
     id: 'blocked_path_construction',
     label: 'Blocked by construction',
-    glyph: '⛔',
     category: 'blocked_path',
     severity: 4,
     description: 'Construction barriers fully block the sidewalk.',
@@ -82,7 +77,6 @@ export const REPORT_TEMPLATES: readonly ReportTemplate[] = [
   {
     id: 'blocked_path_parked',
     label: 'Parked vehicle blocks path',
-    glyph: '🚗',
     category: 'blocked_path',
     severity: 3,
     description: 'A vehicle or scooter is parked across the path.',
@@ -90,7 +84,6 @@ export const REPORT_TEMPLATES: readonly ReportTemplate[] = [
   {
     id: 'missing_signal_audible',
     label: 'No audible signal',
-    glyph: '🔊',
     category: 'missing_signal',
     severity: 4,
     description: 'Pedestrian signal has no audible cue for blind / low-vision crossers.',
@@ -98,7 +91,6 @@ export const REPORT_TEMPLATES: readonly ReportTemplate[] = [
   {
     id: 'steep_grade',
     label: 'Steep slope',
-    glyph: '⛰',
     category: 'steep_grade',
     severity: 3,
     description: 'Slope is too steep to roll up safely.',
@@ -106,7 +98,6 @@ export const REPORT_TEMPLATES: readonly ReportTemplate[] = [
   {
     id: 'other_hazard',
     label: 'Other hazard',
-    glyph: '⚠',
     category: 'other',
     severity: 2,
     description: null,

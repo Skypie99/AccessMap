@@ -39,6 +39,7 @@ import {
 import { checkAnonRateLimit, recordAnonSubmit } from '@/lib/anonRateLimit';
 import { batchInsertFlagPhotos } from '@/lib/photos';
 import PhotoGallery from '@/components/PhotoGallery';
+import CategoryIcon from '@/components/CategoryIcon';
 import {
   CONTEXT_TAGS,
   CONTEXT_TAG_LABELS,
@@ -588,14 +589,12 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
                       }
                       {...a11yToggle({ selected: active, disabled: submitting })}
                     >
-                      <AppText
-                        variant="label"
-                        style={[styles.templateChipGlyph, active && styles.templateChipGlyphActive]}
-                        accessibilityElementsHidden
-                        importantForAccessibility="no-hide-descendants"
-                      >
-                        {t.glyph}
-                      </AppText>
+                      <CategoryIcon
+                        category={t.category}
+                        size={18}
+                        color={active ? color.textOnBrand : color.brandText}
+                        decorative
+                      />
                       <AppText
                         variant="label"
                         style={[styles.templateChipText, active && styles.templateChipTextActive]}
@@ -1426,13 +1425,6 @@ const makeStyles = (color: ColorTheme) =>
     templateChipActive: {
       backgroundColor: color.brandText,
       borderColor: color.brandText,
-    },
-    templateChipGlyph: {
-      fontSize: 16,
-      color: color.brandText,
-    },
-    templateChipGlyphActive: {
-      color: color.textOnBrand,
     },
     templateChipText: {
       color: color.brandText,
