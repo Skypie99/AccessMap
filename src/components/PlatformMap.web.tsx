@@ -286,6 +286,9 @@ interface ClusteredMarkersProps {
   textOnBrand: string;
   markerRefs: React.MutableRefObject<Record<string, LeafletMarker | null>>;
   onOpenDetails?: (flag: FlagRow) => void;
+  // S12: threaded from PlatformMap so the cluster flyTo and each Popup's
+  // autoPan can be gated by Reduce Motion (WCAG 2.3.3).
+  reducedMotion?: boolean;
 }
 
 function ClusteredMarkers({
@@ -295,6 +298,7 @@ function ClusteredMarkers({
   textOnBrand,
   markerRefs,
   onOpenDetails,
+  reducedMotion,
 }: ClusteredMarkersProps) {
   const map = useMap();
 
@@ -374,7 +378,14 @@ function ClusteredMarkers({
                     index.getClusterExpansionZoom(clusterId),
                     18,
                   );
-                  map.flyTo([lat, lng], expansionZoom, { duration: 0.4 });
+                  // S12: same falsy-zero trap as the main camera — under Reduce
+                  // Motion use { animate: false } for an instant jump, never
+                  // duration: 0. Non-RM keeps the 0.4s expansion fly.
+                  map.flyTo(
+                    [lat, lng],
+                    expansionZoom,
+                    reducedMotion ? { animate: false } : { duration: 0.4 },
+                  );
                 },
               }}
             />
@@ -409,7 +420,9 @@ function ClusteredMarkers({
               markerRefs.current[flag.id] = m;
             }}
           >
-            <Popup>
+            {/* S12: autoPan pans the map to keep the popup in view when it
+                opens — that's motion. Suppress it under Reduce Motion. */}
+            <Popup autoPan={!reducedMotion}>
               <div style={{ minWidth: 200 }}>
                 <div style={{ fontWeight: 700, fontSize: 14 }}>
                   {CATEGORY_LABELS[flag.category]}
@@ -713,10 +726,15 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(function Pla
     () => ({
       animateTo: (r) => {
         const zoom = deltaToZoom(r.latitudeDelta ?? 0.005);
-        mapInstance.current?.flyTo([r.latitude, r.longitude], zoom, {
-          // Instant jump when "Reduce Motion" is on (WCAG 2.3.3).
-          duration: reducedMotion ? 0 : 0.6,
-        });
+        // Reduce Motion → { animate: false } (Leaflet short-circuits to an
+        // instant setView). We must NOT pass duration: 0 — Leaflet treats 0 as
+        // falsy and falls back to its default multi-second distance flight, the
+        // exact opposite of what RM asks (WCAG 2.3.3). Non-RM keeps the 0.6s fly.
+        mapInstance.current?.flyTo(
+          [r.latitude, r.longitude],
+          zoom,
+          reducedMotion ? { animate: false } : { duration: 0.6 },
+        );
       },
       showCallout: (id) => {
         markerRefs.current[id]?.openPopup();
@@ -742,6 +760,10 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(function Pla
         // the count pill AND pointer-dead. The app-styled 44pt buttons in the
         // overlay's bottom zone drive zoom via the imperative handle instead.
         zoomControl={false}
+        // S12: kill Leaflet's built-in zoom/fade tweens under Reduce Motion so
+        // setView / setZoom paint instantly instead of animating (WCAG 2.3.3).
+        zoomAnimation={!reducedMotion}
+        fadeAnimation={!reducedMotion}
       >
         <CachedTileLayerWrapper userId={userId} tileUrl={tileUrl} />
         {/* Heat-map: Rectangle for each cell footprint + a divIcon Marker
@@ -793,6 +815,7 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(function Pla
           textOnBrand={themeColor.textOnBrand}
           markerRefs={markerRefs}
           onOpenDetails={onOpenDetails}
+          reducedMotion={reducedMotion}
         />
       </MapContainer>
     </div>

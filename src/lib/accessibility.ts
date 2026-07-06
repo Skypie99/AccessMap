@@ -134,7 +134,14 @@ export function useScreenReader(): boolean {
  * migraine triggers) aren't forced through them. WCAG 2.3.3.
  *
  * Returns the live value: re-renders if the user toggles the preference
- * mid-session. Web/unsupported platforms quietly resolve to `false`.
+ * mid-session. On react-native-web this is LIVE, not a stub:
+ * `AccessibilityInfo.isReduceMotionEnabled()` resolves from the
+ * `prefers-reduced-motion` media query (it resolves — it does NOT reject), so
+ * `reducedMotion` is a real signal on web and the map camera's RM gating is
+ * load-bearing there (a `duration: 0` "instant" that Leaflet treats as falsy
+ * really does fire the long default flight for web RM users — see
+ * PlatformMap.web.tsx). Only genuinely unsupported platforms fall back to
+ * `false` via the `.catch` below.
  */
 export function useReducedMotion(): boolean {
   const [reduced, setReduced] = useState(false);
