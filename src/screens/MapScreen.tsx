@@ -13,7 +13,9 @@ import {
   useWindowDimensions,
   View,
 } from 'react-native';
+import type { LayoutChangeEvent, NativeScrollEvent, NativeSyntheticEvent } from 'react-native';
 import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import * as Location from 'expo-location';
 import { arrivalPermissionDenied, getCurrentPositionWithTimeout, initialLocationAction } from '@/lib/location';
 import { OFFLINE_BANNER_TEXT } from '@/lib/copy';
@@ -370,6 +372,42 @@ export default function MapScreen() {
   // WCAG 2.3.3: skip non-essential animation when the user has requested
   // reduced motion. Used at every animateTo / showCallout call site below.
   const reducedMotion = useReducedMotion();
+
+  // S16 (L5-05): the 7-tool action bar scrolls its last tools (Refresh,
+  // Recenter — the documented CONTRIBUTE entry for locationless users) out of
+  // reach at <=320pt / large Dynamic Type with zero affordance. Track whether
+  // it overflows AND isn't scrolled to the end, and show a fade edge when so.
+  const actionBarViewW = useRef(0);
+  const actionBarContentW = useRef(0);
+  const actionBarOffsetX = useRef(0);
+  const [actionBarHasMore, setActionBarHasMore] = useState(false);
+  const recomputeActionBarFade = useCallback(() => {
+    const overflow = actionBarContentW.current - actionBarViewW.current;
+    const atEnd = actionBarOffsetX.current >= overflow - 1;
+    setActionBarHasMore(overflow > 1 && !atEnd);
+  }, []);
+  const onActionBarScroll = useCallback(
+    (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+      actionBarOffsetX.current = e.nativeEvent.contentOffset.x;
+      recomputeActionBarFade();
+    },
+    [recomputeActionBarFade],
+  );
+  const onActionBarLayout = useCallback(
+    (e: LayoutChangeEvent) => {
+      actionBarViewW.current = e.nativeEvent.layout.width;
+      recomputeActionBarFade();
+    },
+    [recomputeActionBarFade],
+  );
+  const onActionBarContentSize = useCallback(
+    (w: number) => {
+      actionBarContentW.current = w;
+      recomputeActionBarFade();
+    },
+    [recomputeActionBarFade],
+  );
+
   const hasAutoOpenedListRef = useRef(false);
   useEffect(() => {
     if (screenReaderOn && !hasAutoOpenedListRef.current) {
@@ -1419,6 +1457,10 @@ export default function MapScreen() {
               showsHorizontalScrollIndicator={false}
               style={styles.actionBarScroll}
               contentContainerStyle={styles.actionBarScrollContent}
+              scrollEventThrottle={16}
+              onScroll={onActionBarScroll}
+              onLayout={onActionBarLayout}
+              onContentSizeChange={onActionBarContentSize}
             >
             <PressableScale
               onPress={() => setSearchOpen(true)}
@@ -1532,6 +1574,25 @@ export default function MapScreen() {
               <LocateFixed size={19} color={color.inkSelect} strokeWidth={2.2} />
             </PressableScale>
             </ScrollView>
+            {/* S16 (L5-05): fade edge cueing that tools continue past the tray
+                edge when it overflows. Decorative + pointer-inert, so the map
+                gesture law (the box-none overlay) is untouched, and the 44x44
+                buttons are unchanged (the fade wraps AROUND the ScrollView). */}
+            {actionBarHasMore ? (
+              <LinearGradient
+                colors={
+                  color.scheme === 'light'
+                    ? ['rgba(15,27,45,0)', 'rgba(15,27,45,0.22)']
+                    : ['rgba(0,0,0,0)', 'rgba(0,0,0,0.38)']
+                }
+                start={{ x: 0, y: 0.5 }}
+                end={{ x: 1, y: 0.5 }}
+                style={styles.actionBarFade}
+                pointerEvents="none"
+                accessibilityElementsHidden
+                importantForAccessibility="no-hide-descendants"
+              />
+            ) : null}
           </GlassSurface>
         </View>
 
@@ -1662,6 +1723,8 @@ export default function MapScreen() {
               {filtersActive && (
                 <Pressable
                   onPress={clearFilters}
+                  hitSlop={8}
+                  style={styles.clearBtn}
                   accessibilityRole="button"
                   accessibilityLabel="Clear all filters"
                 >
@@ -2679,6 +2742,18 @@ const makeStyles = (color: ColorTheme) =>
     // flex parent must never grow/shrink on its cross axis.
     actionBarScroll: { flexGrow: 0, flexShrink: 0 },
     actionBarScrollContent: { flexDirection: 'row', alignItems: 'center' },
+    // S16: right-edge fade hinting overflow. Decorative only (pointer-inert),
+    // narrow so it never obscures a whole button; clipped to the tray's
+    // rounded edge by the GlassSurface. Sits above the scroller (right-aligned).
+    actionBarFade: {
+      position: 'absolute',
+      right: 0,
+      top: 0,
+      bottom: 0,
+      width: 28,
+      borderTopRightRadius: radius.circle,
+      borderBottomRightRadius: radius.circle,
+    },
     actionBtn: {
       minWidth: 44, // WCAG 2.5.5: was 36pt (below 44pt project standard)
       minHeight: 44,
@@ -2741,6 +2816,16 @@ const makeStyles = (color: ColorTheme) =>
       fontSize: font.size.xs,
       color: color.scheme === 'light' ? color.brandTextAlt : color.inkSelect,
       fontWeight: font.weight.semibold,
+    },
+    // S16 (L5-04, WCAG 2.5.5): the recovery "Clear" control was the app's only
+    // bare-text Pressable (~34x17pt) — a miss collapsed the panel. Give it the
+    // sibling filterTitleRow's comfort treatment: minHeight 32 + padding, plus
+    // hitSlop={8} on the Pressable → an effective target of ~48pt (32 + 8 + 8).
+    clearBtn: {
+      justifyContent: 'center',
+      minHeight: 32,
+      paddingVertical: 4,
+      paddingHorizontal: 4,
     },
     filterSubLabel: {
       fontSize: font.size.caption,
