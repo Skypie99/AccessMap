@@ -7,7 +7,7 @@ import { Callout, Marker, Polygon, PROVIDER_DEFAULT } from 'react-native-maps';
 import type MapView from 'react-native-maps';
 import { font, heatmapSeverity as severityTokens, radius, shadow, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
-import { CATEGORY_LABELS, severityColor } from '@/lib/flags';
+import { CATEGORY_LABELS, SEVERITY_LABELS, severityColor, STATUS_LABELS } from '@/lib/flags';
 import { decorativeProps } from '@/lib/accessibility';
 import { severityA11y, statusA11y } from '@/lib/a11yText';
 import { colorForCell, HEATMAP_FILL_OPACITY, type HeatCell, type HeatmapMode } from '@/lib/heatmap';
@@ -256,7 +256,7 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(function Pla
                   {CATEGORY_LABELS[f.category]}
                 </AppText>
                 <AppText variant="body" style={styles.calloutMeta}>
-                  Severity {f.severity} • {f.status}
+                  Severity {f.severity} of 5 · {SEVERITY_LABELS[f.severity]} · {STATUS_LABELS[f.status]}
                 </AppText>
                 {f.photo_url ? (
                   <RemoteImage

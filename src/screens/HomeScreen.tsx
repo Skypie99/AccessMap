@@ -44,7 +44,8 @@ import { useFlags } from '@/lib/flagsStore';
 import { useUserLocation } from '@/lib/location';
 import { OFFLINE_BANNER_TEXT } from '@/lib/copy';
 import { formatDistance, haversineKm, type LatLng } from '@/lib/distance';
-import { CATEGORY_LABELS, SEVERITY_LABELS, severityColor } from '@/lib/flags';
+import { CATEGORY_LABELS, SEVERITY_LABELS, severityColor, STATUS_LABELS } from '@/lib/flags';
+import { severityA11y, statusA11y } from '@/lib/a11yText';
 import type { GeocodeResult } from '@/lib/geocode';
 import type { RootTabParamList } from '@/navigation/RootNavigator';
 import { font, radius, shadow, spacing } from '@/theme';
@@ -319,8 +320,8 @@ export default function HomeScreen() {
                   accessibilityRole="button"
                   accessibilityLabel={
                     item.km != null
-                      ? `${CATEGORY_LABELS[item.f.category]}, ${SEVERITY_LABELS[item.f.severity]}, ${formatDistance(item.km)} away`
-                      : `${CATEGORY_LABELS[item.f.category]}, ${SEVERITY_LABELS[item.f.severity]}, ${item.f.status}`
+                      ? `${CATEGORY_LABELS[item.f.category]}, ${severityA11y(item.f.severity)}, ${formatDistance(item.km)} away`
+                      : `${CATEGORY_LABELS[item.f.category]}, ${severityA11y(item.f.severity)}, ${statusA11y(item.f.status)}`
                   }
                 >
                   <View style={[styles.dot, { backgroundColor: severityColor(item.f.severity) }]} />
@@ -328,10 +329,13 @@ export default function HomeScreen() {
                     <AppText variant="bodyMedium" style={styles.rowTitle}>
                       {CATEGORY_LABELS[item.f.category]}
                     </AppText>
+                    {/* S1: Home Recent rows gain the severity NUMBER and route the
+                        raw lowercase DB enum through STATUS_LABELS ("open" → "Open",
+                        which a screen reader/first-timer no longer hears as a verb). */}
                     <AppText variant="body" style={styles.rowMeta}>
                       {item.km != null
-                        ? `${SEVERITY_LABELS[item.f.severity]} · ${item.f.status} · ${formatDistance(item.km)}`
-                        : `${SEVERITY_LABELS[item.f.severity]} · ${item.f.status}`}
+                        ? `Severity ${item.f.severity} · ${SEVERITY_LABELS[item.f.severity]} · ${STATUS_LABELS[item.f.status]} · ${formatDistance(item.km)}`
+                        : `Severity ${item.f.severity} · ${SEVERITY_LABELS[item.f.severity]} · ${STATUS_LABELS[item.f.status]}`}
                     </AppText>
                   </View>
                   <ChevronRight size={18} color={color.textSubtle} strokeWidth={2} />

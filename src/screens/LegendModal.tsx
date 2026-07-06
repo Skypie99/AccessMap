@@ -15,6 +15,7 @@ import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
 import CategoryIcon from '@/components/CategoryIcon';
 import { AppText } from '@/components/ui/AppText';
+import { Check } from 'lucide-react-native';
 
 interface Props {
   visible: boolean;
@@ -86,6 +87,57 @@ export default function LegendModal({ visible, onClose }: Props) {
                 </View>
               );
             })}
+
+            <AppText
+              variant="heading"
+              style={[styles.sectionLabel, styles.sectionLabelSpaced]}
+              accessibilityRole="header"
+            >
+              Status
+            </AppText>
+            {/* S1: define the trust word "Verified" in one line — the first place
+                any decision surface says what it means (reuses the FAQ sentence). */}
+            <AppText variant="body" style={styles.rowDesc}>
+              Open — reported, not yet checked. Verified — another person checked the spot and
+              confirmed the issue is real. Resolved — the issue has been fixed.
+            </AppText>
+            {/* The two visual channels a sighted user decodes on the map itself. */}
+            <View
+              style={styles.row}
+              accessible
+              accessibilityLabel="Anonymous report. Shown with a double ring and keeps its severity colour."
+            >
+              <View style={styles.statusSwatch} importantForAccessibility="no" accessibilityElementsHidden>
+                <View style={styles.anonRingOuter}>
+                  <View style={[styles.statusDot, { backgroundColor: severityColor(3) }]} />
+                </View>
+              </View>
+              <View style={styles.rowText}>
+                <AppText variant="label" style={styles.rowTitle}>Anonymous report</AppText>
+                <AppText variant="body" style={styles.rowDesc}>
+                  Reported without an account. Shown with a double ring; still carries its severity colour.
+                </AppText>
+              </View>
+            </View>
+            <View
+              style={styles.row}
+              accessible
+              accessibilityLabel="Resolved. Marked with a checkmark and keeps its severity colour."
+            >
+              <View style={styles.statusSwatch} importantForAccessibility="no" accessibilityElementsHidden>
+                <View style={styles.hairlineRing}>
+                  <View style={[styles.statusDot, { backgroundColor: severityColor(3) }]}>
+                    <Check size={14} color="#fff" strokeWidth={3} />
+                  </View>
+                </View>
+              </View>
+              <View style={styles.rowText}>
+                <AppText variant="label" style={styles.rowTitle}>Resolved</AppText>
+                <AppText variant="body" style={styles.rowDesc}>
+                  The issue has been fixed. Marked with a checkmark; keeps its severity colour.
+                </AppText>
+              </View>
+            </View>
 
             <AppText
               variant="heading"
@@ -218,6 +270,35 @@ const makeStyles = (color: ColorTheme) =>
     justifyContent: 'center',
   },
   catIconText: { fontSize: font.size.lg },
+  // Status legend swatches — miniature pin representations (decorative; the
+  // meaning is carried by the row text). The double ring = anonymous provenance;
+  // the checkmark = resolved. Both keep the severity fill (S1 / L8-7).
+  statusSwatch: {
+    width: 32,
+    height: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  statusDot: {
+    width: 20,
+    height: 20,
+    borderRadius: radius.circle,
+    borderWidth: 2,
+    borderColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  hairlineRing: {
+    borderRadius: radius.circle,
+    borderWidth: 1.5,
+    borderColor: '#0F1B2D',
+  },
+  anonRingOuter: {
+    borderRadius: radius.circle,
+    borderWidth: 1.5,
+    borderColor: '#0F1B2D',
+    padding: 2,
+  },
   rowText: { flex: 1 },
   rowTitle: {
     fontSize: font.size.base,

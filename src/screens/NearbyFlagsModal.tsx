@@ -11,7 +11,7 @@ import {
 import { RemoteImage } from '@/components/ui/RemoteImage';
 import { AppText } from '@/components/ui/AppText';
 import { a11yToggle, useReducedMotion } from '@/lib/accessibility';
-import { CATEGORY_LABELS, CATEGORY_ORDER, severityColor } from '@/lib/flags';
+import { CATEGORY_LABELS, CATEGORY_ORDER, SEVERITY_LABELS, severityColor, STATUS_LABELS } from '@/lib/flags';
 import { relativeTime } from '@/lib/relativeTime';
 import { formatDistance, haversineKm, speakDistance, type LatLng } from '@/lib/distance';
 import { searchFlags } from '@/lib/flagSearch';
@@ -167,8 +167,11 @@ export default function NearbyFlagsModal({
                   {item.description}
                 </AppText>
               ) : null}
+              {/* S1: the visible meta wears the full severity grammar (number +
+                  word + human status), matching the row's SR label. The SR
+                  accessibilityLabel/endpoints are PROTECT-1 and untouched. */}
               <AppText variant="body" style={styles.cardMeta} maxFontSizeMultiplier={1.4}>
-                Severity {item.severity} · {item.status} · {relativeTime(item.created_at)}
+                Severity {item.severity} of 5 · {SEVERITY_LABELS[item.severity]} · {STATUS_LABELS[item.status]} · {relativeTime(item.created_at)}
               </AppText>
             </View>
           </View>

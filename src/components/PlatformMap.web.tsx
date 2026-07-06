@@ -12,7 +12,7 @@ import React, {
 import { MapContainer, Marker, Popup, Rectangle, useMap, useMapEvents } from 'react-leaflet';
 import L, { Map as LeafletMap, Marker as LeafletMarker } from 'leaflet';
 import Supercluster from 'supercluster';
-import { CATEGORY_LABELS, isAnon, severityColor } from '@/lib/flags';
+import { CATEGORY_LABELS, isAnon, SEVERITY_LABELS, severityColor, STATUS_LABELS } from '@/lib/flags';
 import type { FlagCategory, FlagRow } from '@/types/database';
 import { heatmapSeverity as severityTokens } from '@/theme';
 import { useColor } from '@/theme/ThemeContext';
@@ -109,17 +109,33 @@ function pinGlyphSvg(category: FlagCategory, resolved: boolean): string {
 // (≤6 colors × 6 categories × 2 × 2), so the cache stays tiny for the page
 // life. Without it every render builds a new L.DivIcon → needless marker churn.
 const pinIconCache = new Map<string, L.DivIcon>();
-function pinIcon(color: string, category: FlagCategory, resolved: boolean, dim: boolean): L.DivIcon {
-  const key = `${color}|${category}|${resolved ? 'r' : ''}|${dim ? 1 : 0}`;
+function pinIcon(
+  color: string,
+  category: FlagCategory,
+  resolved: boolean,
+  dim: boolean,
+  anon: boolean,
+): L.DivIcon {
+  const key = `${color}|${category}|${resolved ? 'r' : ''}|${dim ? 1 : 0}|${anon ? 'a' : ''}`;
   const cached = pinIconCache.get(key);
   if (cached) return cached;
   // Design teardrop: a severity-colored drop (border-radius 50% 50% 50% 0,
   // rotated -45°) with a 2.5px white ring, a Wayfinder-Blue glow, and the
   // white category glyph (counter-rotated upright) — or a check when resolved.
+  //
+  // Ring/boundary: an ANONYMOUS report keeps its severity FILL (S1 — the safety
+  // encoding is never erased) and carries provenance as a SECOND concentric
+  // ring: the white ring + a #0F1B2D hairline + a white gap + a second #0F1B2D
+  // hairline → a "double ring" a sighted user reads at a glance. Arbiter-proven
+  // over the tile bases + red heat cell. (S14 adds the single #0F1B2D hairline
+  // to every non-anon pin too — the union's light-tile arm.)
+  const ring = anon
+    ? '0 0 0 1px #0F1B2D, 0 0 0 3px #FFFFFF, 0 0 0 4px #0F1B2D'
+    : 'none';
   const icon = L.divIcon({
     className: 'accessmap-pin',
     html: `<div style="width:30px;height:30px;opacity:${dim ? 0.55 : 1};filter:drop-shadow(0 6px 14px rgba(20,102,224,0.35)) drop-shadow(0 1px 2px rgba(15,27,45,0.18));">
-      <div style="width:30px;height:30px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:${color};border:2.5px solid #fff;display:flex;align-items:center;justify-content:center;">
+      <div style="width:30px;height:30px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:${color};border:2.5px solid #fff;box-shadow:${ring};display:flex;align-items:center;justify-content:center;">
         <div style="transform:rotate(45deg);display:flex;align-items:center;justify-content:center;">${pinGlyphSvg(category, resolved)}</div>
       </div>
     </div>`,
@@ -360,15 +376,18 @@ function ClusteredMarkers({
             key={flag.id}
             position={[flag.lat, flag.lng]}
             icon={pinIcon(
-              flagIsAnon ? '#9CA3AF' : severityColor(flag.severity),
+              // S1 (L8-7): anonymous pins keep their SEVERITY fill — the safety
+              // encoding is never swapped to gray; provenance rides the ring.
+              severityColor(flag.severity),
               flag.category,
               flag.status === 'resolved',
               !flagIsAnon && focusedFlagId !== null && focusedFlagId !== flag.id,
+              flagIsAnon,
             )}
             // alt is what screen readers announce for the marker; title is
             // the browser tooltip. Mirrors the accessibilityLabel on the
             // native Marker so SR users hear the same description on web.
-            alt={`${CATEGORY_LABELS[flag.category]}, severity ${flag.severity}, ${flag.status}${flagIsAnon ? ', submitted anonymously' : ''}. Open for details.`}
+            alt={`${CATEGORY_LABELS[flag.category]}, severity ${flag.severity} of 5, ${SEVERITY_LABELS[flag.severity]}, ${STATUS_LABELS[flag.status]}${flagIsAnon ? ', submitted anonymously' : ''}. Open for details.`}
             title={`${CATEGORY_LABELS[flag.category]} — severity ${flag.severity}${flagIsAnon ? ' (anonymous)' : ''}`}
             ref={(m) => {
               markerRefs.current[flag.id] = m;
@@ -392,7 +411,7 @@ function ClusteredMarkers({
                     fontWeight: 600,
                   }}
                 >
-                  Severity {flag.severity} · {flag.status}
+                  Severity {flag.severity} of 5 · {SEVERITY_LABELS[flag.severity]} · {STATUS_LABELS[flag.status]}
                   {flagIsAnon ? ' · Anonymous' : ''}
                 </div>
                 {flag.photo_url ? (
