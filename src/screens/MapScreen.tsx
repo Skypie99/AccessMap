@@ -1744,7 +1744,7 @@ export default function MapScreen() {
                 <AppText variant="heading" style={styles.filterSubLabel}>Saved</AppText>
                 {savedSets.length === 0 ? (
                   <View style={styles.savedEmpty}>
-                    <AppText variant="body" style={styles.savedEmptyText}>
+                    <AppText variant="bodyMedium" style={styles.savedEmptyText}>
                       No saved filters yet. Save your current view to switch back to it quickly.
                     </AppText>
                     <Pressable
@@ -1913,7 +1913,7 @@ export default function MapScreen() {
                   </Pressable>
                 </View>
                 {heatmapEnabled && (
-                  <AppText variant="body" style={styles.statusHint}>
+                  <AppText variant="bodyMedium" style={styles.statusHint}>
                     Heat zones only appear where at least {DEFAULT_K_FLOOR} flags have been
                     reported. Colour shows mean severity (1–5); the legend explains the full scale.
                   </AppText>
@@ -1943,7 +1943,7 @@ export default function MapScreen() {
                   })}
                 </View>
                 {activeStatuses.size === 0 && (
-                  <AppText variant="body" style={styles.statusHint}>Pick at least one status — otherwise nothing will show up.</AppText>
+                  <AppText variant="bodyMedium" style={styles.statusHint}>Pick at least one status — otherwise nothing will show up.</AppText>
                 )}
 
                 {/* "Who does this affect?" — disability filter (Sprint 3). A
@@ -1977,7 +1977,7 @@ export default function MapScreen() {
                   })}
                 </View>
                 {activeDisabilityTags.size > 0 && (
-                  <AppText variant="body" style={styles.statusHint}>
+                  <AppText variant="bodyMedium" style={styles.statusHint}>
                     Showing only flags tagged for the selected access need
                     {activeDisabilityTags.size > 1 ? 's' : ''}. Untagged flags are hidden.
                   </AppText>
@@ -2031,7 +2031,7 @@ export default function MapScreen() {
                   })}
                 </View>
                 {maxDistanceKm !== null && !location && (
-                  <AppText variant="body" style={styles.statusHint} accessibilityLiveRegion="polite">
+                  <AppText variant="bodyMedium" style={styles.statusHint} accessibilityLiveRegion="polite">
                     Distance filter needs your location to work. It&apos;ll kick in once you share it.
                   </AppText>
                 )}

@@ -1218,7 +1218,7 @@ export default function TasksScreen() {
                       ? 'Nothing to triage yet'
                       : 'All caught up'}
             </AppText>
-            <AppText variant="body" style={styles.emptyBody} maxFontSizeMultiplier={1.4}>
+            <AppText variant="bodyMedium" style={styles.emptyBody} maxFontSizeMultiplier={1.4}>
               {flagsError
                 ? 'Reports could not be loaded. Pull down to retry, or tap the message above.'
                 : categoryFilter
