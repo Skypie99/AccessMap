@@ -2495,7 +2495,6 @@ const makeStyles = (color: ColorTheme) =>
     // main title still reads as the link affordance.
     achievementsCount: { fontWeight: '600', color: color.inkGlassMuted, fontSize: 14 },
     myReportsSubtitle: { fontSize: 13, color: color.inkGlassMuted },
-    myReportsChevron: { fontSize: 28, color: color.textSubtle, fontWeight: '300' },
     section: { gap: 8, marginTop: 8 },
     sectionLabel: {
       fontSize: 12,
@@ -2585,7 +2584,6 @@ const makeStyles = (color: ColorTheme) =>
       letterSpacing: -0.1,
     },
     aboutSubtitle: { fontSize: font.size.sm, color: color.inkGlassMuted },
-    aboutChevron: { fontSize: 28, color: color.textSubtle, fontWeight: font.weight.regular },
     signOutBtn: {
       marginTop: spacing.lg,
       alignSelf: 'center',

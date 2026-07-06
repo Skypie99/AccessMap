@@ -733,11 +733,6 @@ const makeStyles = (color: ColorTheme) =>
       fontSize: font.size.sm,
       color: color.textMuted,
     },
-    rowChevron: {
-      fontSize: 28,
-      color: color.textSubtle,
-      fontWeight: font.weight.regular,
-    },
     // Spinner sits where the chevron usually does so the row width doesn't
     // jump when toggling busy/idle. Width roughly matches the chevron's
     // glyph width — keeps the layout calm.

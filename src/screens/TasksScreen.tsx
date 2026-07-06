@@ -2240,7 +2240,6 @@ const makeStyles = (color: ColorTheme, reduceTransparency: boolean) => {
       justifyContent: 'center',
       borderRadius: radius.circle,
     },
-    searchClearText: { fontSize: font.size.lg, fontWeight: font.weight.semibold, color: color.textMuted },
     // Category chip strip — horizontally scrollable so all 6 categories
     // fit on narrow phones without truncating labels. Visual weight
     // matches sevChip; brand fill on active so it reads as "selected".

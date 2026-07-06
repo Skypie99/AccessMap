@@ -2708,7 +2708,7 @@ const makeStyles = (color: ColorTheme) =>
       justifyContent: 'center',
       ...shadow.e1,
     },
-    iconText: { fontSize: 18, color: color.brand, fontWeight: '700' },
+    iconText: { fontSize: 18, fontWeight: '700' },
     iconBtnActive: { backgroundColor: color.brand },
     iconTextActive: { color: color.textOnBrand },
     // Quick-cycle severity button — slightly wider than the round icon buttons
@@ -2809,7 +2809,6 @@ const makeStyles = (color: ColorTheme) =>
       // visible glyph.
       minHeight: 32,
     },
-    filterChevron: { fontSize: font.size.xs, color: color.brand, fontWeight: font.weight.bold },
     // Bare text link on the washed panel (4.5 floor): light brandTextAlt
     // #0E4499 / dark inkSelect #B4CFFA. Plain brand was 4.25:1 L / failed dark.
     clearLink: {
@@ -2940,7 +2939,6 @@ const makeStyles = (color: ColorTheme) =>
       borderColor: color.borderSubtle,
       ...shadow.e2,
     },
-    emptyCardIcon: { fontSize: font.size.xxl },
     emptyCardTitle: {
       fontSize: font.size.md,
       fontWeight: font.weight.bold,
