@@ -2257,7 +2257,20 @@ export default function MapScreen() {
             // implicit location forever.
             setDropLocation(null);
           }}
-          onCreated={() => { refreshFlags().catch(() => {}); }}
+          onCreated={(flag) => {
+            refreshFlags().catch(() => {});
+            // S10: recenter on the brand-new pin so the user SEES their
+            // contribution land. Reduced-motion gated (PROTECT-7) — skipped
+            // instantly under Reduce Motion, exactly like every other camera move.
+            if (flag && !reducedMotion) {
+              mapRef.current?.animateTo({
+                latitude: flag.lat,
+                longitude: flag.lng,
+                latitudeDelta: 0.01,
+                longitudeDelta: 0.01,
+              });
+            }
+          }}
         />
       </Suspense>
 

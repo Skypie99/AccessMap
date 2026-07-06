@@ -52,7 +52,8 @@ import {
   type DisabilityTag,
 } from '@/lib/contextTags';
 import { validReportTemplates, type ReportTemplate } from '@/lib/reportTemplates';
-import type { FlagCategory, FlagSeverity } from '@/types/database';
+import type { FlagCategory, FlagRow, FlagSeverity } from '@/types/database';
+import { setLiveStatus } from '@/lib/liveStatus';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { font, gradient, radius, severity as severityRamp, shadow, spacing } from '@/theme';
 import { a11yToggle, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
@@ -72,7 +73,9 @@ interface Props {
   visible: boolean;
   location: { lat: number; lng: number } | null;
   onClose: () => void;
-  onCreated: () => void;
+  /** Called on a successful submit with the created flag, so the host can
+   *  refresh and (S10) optionally recenter the map on the new pin. */
+  onCreated: (flag?: FlagRow) => void;
   /** S5: re-run the host screen's locating spine from inside the sheet (the
    *  "Use my location" retry). Optional so callers that always pass a location
    *  can omit it — the retry control only renders when both this and a null
@@ -335,7 +338,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
         return;
       }
       try {
-        await createAnonFlag({
+        const created = await createAnonFlag({
           lat: location.lat,
           lng: location.lng,
           category,
@@ -346,8 +349,16 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
         track('flag_created', { category, severity, hasPhoto: false });
         hapticNotify('success');
         reset();
-        onCreated();
+        onCreated(created);
         onClose();
+        // S10: confirm the submit for EVERYONE — including the otherwise-silent
+        // web-anonymous cohort — via the persistent-mounted, guest-reachable
+        // live region (visible + announced). Fires after onClose (PROTECT-3).
+        setLiveStatus({
+          message: 'Report filed — thanks for flagging this barrier',
+          tone: 'success',
+          autoDismissMs: 4000,
+        });
       } catch (e) {
         notify("Couldn't submit your report", errorMessage(e));
       } finally {
@@ -425,19 +436,24 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
       }
       track('flag_created', { category, severity, hasPhoto: photoUrls.length > 0 });
       hapticNotify('success');
-      // Surface the (otherwise invisible) privacy protection alongside success:
-      // a resolved uploadFlagPhoto above PROVES the fail-closed strip+verify
-      // passed (flags.ts throws otherwise), so we can truthfully confirm the GPS
-      // removal here. Presentation-only — reads the already-resolved result; no
-      // change to flags.ts or the upload/createFlag calls.
-      AccessibilityInfo.announceForAccessibility(
-        photoUrls.length > 0
-          ? 'Report filed. Location data was removed from your photos.'
-          : 'Report filed.',
-      );
       reset();
-      onCreated();
+      onCreated(result.row);
       onClose();
+      // S10: visible + live success confirmation via the persistent-mounted
+      // region (it owns the native announce, so the standalone
+      // announceForAccessibility here is retired — no double-announce). On the
+      // photo path we keep the truthful post-EXIF-strip line: a resolved
+      // uploadFlagPhoto above PROVES the fail-closed strip+verify passed
+      // (flags.ts throws otherwise), so the GPS-removal claim is honest
+      // (PROTECT-8). Presentation-only — no change to flags.ts or the upload.
+      setLiveStatus({
+        message:
+          photoUrls.length > 0
+            ? 'Report filed — thanks for flagging this barrier. Location data was removed from your photos.'
+            : 'Report filed — thanks for flagging this barrier',
+        tone: 'success',
+        autoDismissMs: 4000,
+      });
     } catch (e) {
       // Best-effort Storage orphan cleanup: an upload mid-loop failure or a
       // createFlag failure left blobs no DB row references. Fire-and-forget

@@ -67,6 +67,16 @@ jest.mock('@/lib/errors', () => ({
 }));
 
 // ---------------------------------------------------------------------------
+// Mock: @/lib/liveStatus — S10 fires the "Report filed" confirmation through it.
+// ---------------------------------------------------------------------------
+const mockSetLiveStatus = jest.fn();
+jest.mock('@/lib/liveStatus', () => ({
+  __esModule: true,
+  setLiveStatus: (...args: unknown[]) => mockSetLiveStatus(...args),
+  clearLiveStatus: jest.fn(),
+}));
+
+// ---------------------------------------------------------------------------
 // Mock: @/lib/anonRateLimit — spy on check/record so we can assert call order
 // ---------------------------------------------------------------------------
 const mockCheckAnonRateLimit = jest.fn().mockResolvedValue(undefined);
@@ -1064,5 +1074,72 @@ describe('S11 — slow write escalates, never aborts (no double-insert)', () => 
       jest.runOnlyPendingTimers();
       jest.useRealTimers();
     }
+  });
+});
+
+// ===========================================================================
+// 10. S10 — confirm the submit (visible + live "Report filed" for everyone)
+//
+// The CONTRIBUTE flow used to end by silently closing the sheet (dead-silent
+// for the web-anon cohort). S10 fires a persistent-mounted, guest-reachable
+// success confirmation via setLiveStatus, and hands the created flag back to
+// onCreated so the host can recenter on the new pin. The failure branch must
+// NOT fire the confirmation.
+// ===========================================================================
+
+describe('S10 — confirm the submit', () => {
+  it('anon submit fires the "Report filed" confirmation and passes the created flag to onCreated', async () => {
+    mockUseAuth.mockReturnValue({ user: null } as ReturnType<typeof useAuth>);
+    const onCreated = jest.fn();
+    const utils = render(
+      <ReportFlagModal visible location={LOCATION} onClose={jest.fn()} onCreated={onCreated} />,
+    );
+
+    fireEvent.press(utils.getByLabelText('Submit report anonymously'));
+
+    await waitFor(() => {
+      expect(mockSetLiveStatus).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: expect.stringMatching(/Report filed — thanks for flagging this barrier/),
+          tone: 'success',
+        }),
+      );
+    });
+    // The created flag is threaded back so the host can recenter (S10 pin move).
+    expect(onCreated).toHaveBeenCalledWith(SAMPLE_ANON_ROW);
+  });
+
+  it('auth submit fires the confirmation with the created flag', async () => {
+    mockUseAuth.mockReturnValue({ user: { id: 'user-abc' } } as ReturnType<typeof useAuth>);
+    const onCreated = jest.fn();
+    const utils = render(
+      <ReportFlagModal visible location={LOCATION} onClose={jest.fn()} onCreated={onCreated} />,
+    );
+
+    fireEvent.press(utils.getByLabelText('Submit report'));
+
+    await waitFor(() => {
+      expect(mockSetLiveStatus).toHaveBeenCalledWith(
+        expect.objectContaining({ message: expect.stringMatching(/Report filed/), tone: 'success' }),
+      );
+    });
+    expect(onCreated).toHaveBeenCalledWith(SAMPLE_AUTH_ROW);
+  });
+
+  it('does NOT fire the confirmation when the submit fails', async () => {
+    mockCreateAnonFlag.mockRejectedValueOnce(new Error('insert failed'));
+    const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+    mockUseAuth.mockReturnValue({ user: null } as ReturnType<typeof useAuth>);
+    const utils = render(
+      <ReportFlagModal visible location={LOCATION} onClose={jest.fn()} onCreated={jest.fn()} />,
+    );
+
+    fireEvent.press(utils.getByLabelText('Submit report anonymously'));
+
+    await waitFor(() => {
+      expect(alertSpy).toHaveBeenCalledWith("Couldn't submit your report", 'insert failed');
+    });
+    expect(mockSetLiveStatus).not.toHaveBeenCalled();
+    alertSpy.mockRestore();
   });
 });
