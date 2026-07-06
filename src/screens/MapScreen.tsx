@@ -97,6 +97,9 @@ import PlatformMap, {
 import { AppText } from '@/components/ui/AppText';
 import { GlassSurface } from '@/components/ui/GlassSurface';
 import { PressableScale } from '@/components/ui/PressableScale';
+import { HeaderActions } from '@/components/ui/HeaderActions';
+import { useDrawer } from '@/lib/drawerContext';
+import { useSharedModals } from '@/lib/sharedModalsContext';
 import { useScreenReader, useReducedMotion, a11yToggle } from '@/lib/accessibility';
 import LegendModal from './LegendModal';
 import HeatmapLegend from '@/components/HeatmapLegend';
@@ -255,6 +258,10 @@ export default function MapScreen() {
   // (non-throwing) since a provider isn't guaranteed in every render path.
   const { height: windowHeight } = useWindowDimensions();
   const insets = React.useContext(SafeAreaInsetsContext) ?? { top: 0, bottom: 0, left: 0, right: 0 };
+  // S8: the map wears its own editorial header inside the box-none overlay now
+  // (the dark nav bar is gone), so it drives the drawer + Feedback itself.
+  const drawer = useDrawer();
+  const { setOpen: setSharedModal } = useSharedModals();
   const [location, setLocation] = useState<Coords | null>(null);
   const [locating, setLocating] = useState(true);
   const [permissionDenied, setPermissionDenied] = useState(false);
@@ -1270,13 +1277,42 @@ export default function MapScreen() {
         heatmapMode={HEATMAP_MODE}
       />
 
-      <View pointerEvents="box-none" style={[styles.overlay, { paddingBottom: tabBarHeight + 16 }]}>
+      <View
+        pointerEvents="box-none"
+        // S8: headerShown:false on FullMap now, so the overlay clears the notch
+        // itself (was below the dark nav bar).
+        style={[styles.overlay, { paddingTop: insets.top + 16, paddingBottom: tabBarHeight + 16 }]}
+      >
         {/* Top cluster in ONE group so the overlay's space-between only ever
             distributes [topGroup, bottomBar] — with nine direct children, the
             conditional banners/chips floated to mid-map (sweep M10).
             box-none is mandatory: an opaque-to-touch wrapper would swallow
             map pan/zoom; flexShrink lets the G5 filterPanel keep yielding. */}
         <View style={styles.overlayTopGroup} pointerEvents="box-none">
+        {/* S8 (treatment ii): a compact editorial title inside the box-none
+            overlay — the map joins the header family without a nav bar. The row
+            wrapper is box-none; only the content-hugging glass title chip and the
+            menu/Feedback circles take touches (NO full-width opaque strip), so the
+            map stays pannable/zoomable underneath (the box-none gesture law). */}
+        <View style={styles.mapHeaderRow} pointerEvents="box-none">
+          <GlassSurface style={styles.mapHeaderChip} variant="row" forceEngineered borderRadius={radius.lg}>
+            <AppText variant="label" style={styles.mapHeaderEyebrow}>MAP</AppText>
+            <AppText
+              variant="display"
+              size={22}
+              numberOfLines={1}
+              accessibilityRole="header"
+              style={styles.mapHeaderTitle}
+            >
+              Explore
+            </AppText>
+          </GlassSurface>
+          <HeaderActions
+            onMenu={() => drawer.setOpen(true)}
+            onFeedback={() => setSharedModal('feedback')}
+            iconColor={color.textStrong}
+          />
+        </View>
         {/* S6 (WCAG 2.5.7): box-none so taps fall THROUGH the row's gaps to the
             map — the un-guarded wrapper was pointer-dead, killing zoom/pan even
             on visible tile between the pill and the action tray. */}
@@ -2433,6 +2469,27 @@ const makeStyles = (color: ColorTheme) =>
     // filterPanel's own flexShrink/maxHeight bound still engages against the
     // absolute-fill overlay. Never give this flex:1 or a fixed height.
     overlayTopGroup: { flexShrink: 1 },
+    // S8 map editorial header (treatment ii). The row is box-none; only the
+    // content-hugging chip + the action circles are opaque. Inks reuse the map
+    // overlay's proven always-light glass tokens (map-stacks.json) — no arbiter.
+    mapHeaderRow: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      justifyContent: 'space-between',
+      marginBottom: 10,
+    },
+    mapHeaderChip: {
+      paddingHorizontal: 14,
+      paddingVertical: 8,
+      alignItems: 'flex-start',
+    },
+    mapHeaderEyebrow: {
+      fontSize: font.size.xs,
+      letterSpacing: 1.2,
+      color: color.inkGlassMuted,
+      fontWeight: font.weight.semibold,
+    },
+    mapHeaderTitle: { color: color.textStrong, marginTop: 0 },
     topRow: { flexDirection: 'row', gap: 8, alignItems: 'flex-start', flexWrap: 'wrap' },
     // Saved Places chip row — slim secondary single-line scroller beneath the
     // action bar. Pattern-B pins (guard Rule 4) on the scroller; layout lives

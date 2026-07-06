@@ -16,6 +16,10 @@ import { type ColorTheme, type ThemeMode, useColor, useThemeMode } from '@/theme
 import { AppText } from '@/components/ui/AppText';
 import { GlassSurface } from '@/components/ui/GlassSurface';
 import { ScreenStage } from '@/components/ui/ScreenStage';
+import { ScreenHeader } from '@/components/ui/ScreenHeader';
+import { HeaderActions } from '@/components/ui/HeaderActions';
+import { useDrawer } from '@/lib/drawerContext';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { hydrateGlassMode, useGlassMode } from '@/lib/glassMode';
 import { hapticSelection } from '@/lib/haptics';
 import { signOut, supabase } from '@/lib/supabase';
@@ -225,6 +229,8 @@ export default function SettingsScreen() {
   // src/lib/sharedModalsContext.tsx). Settings just sets the shared
   // "which modal is open" key here.
   const { setOpen } = useSharedModals();
+  const drawer = useDrawer();
+  const insets = useSafeAreaInsets();
   // NotificationPrefs and About stay per-screen — see the import-block
   // comment for why NotificationPrefs is excluded from the shared pool,
   // and AboutScreen is mounted per-screen everywhere it appears (also
@@ -447,9 +453,28 @@ export default function SettingsScreen() {
         <ScreenStage />
         <ScrollView
           style={styles.screen}
-          contentContainerStyle={[styles.container, { paddingBottom: tabBarHeight + 16 }]}
-          contentInsetAdjustmentBehavior="automatic"
+          contentContainerStyle={[
+            styles.container,
+            // S8: headerShown:false now — clear the status bar ourselves, uniform
+            // with the headerless Home/Tasks/Profile (automatic is a web no-op).
+            { paddingTop: insets.top + spacing.lg, paddingBottom: tabBarHeight + 16 },
+          ]}
         >
+        {/* S8: Settings gains the editorial header (was nav-header-only) — the
+            menu + Feedback circles and the display title now match every tab. */}
+        <ScreenHeader
+          eyebrow="SETTINGS"
+          title="Settings"
+          eyebrowColor={color.inkOnStage}
+          subtitleColor={color.inkOnStage}
+          actions={
+            <HeaderActions
+              onMenu={() => drawer.setOpen(true)}
+              onFeedback={() => setOpen('feedback')}
+              iconColor={color.textStrong}
+            />
+          }
+        />
         <AppText variant="label" style={styles.sectionLabel} accessibilityRole="header">
           Notifications
         </AppText>

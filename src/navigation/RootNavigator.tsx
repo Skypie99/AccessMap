@@ -337,7 +337,10 @@ function NavInner({ initialRouteName }: { initialRouteName: keyof RootTabParamLi
       <Tab.Screen
         name="Profile"
         component={ProfileScreen}
-        options={{ tabBarIcon: tabIcon(ProfileIcon), headerLeft: renderMenuButton }}
+        // S8: Profile wears the editorial ScreenHeader (menu + Feedback folded
+        // in), so the dark nav header is hidden — this kills the "Profile over
+        // PROFILE" double title (L2-2) and removes the 200%-zoom header collision.
+        options={{ tabBarIcon: tabIcon(ProfileIcon), headerShown: false }}
       />
       {/* Hidden routes — registered + navigable, but no tab-bar button. The
           full map is reached from Home / focus-flag links / the deep link;
@@ -345,9 +348,11 @@ function NavInner({ initialRouteName }: { initialRouteName: keyof RootTabParamLi
       <Tab.Screen
         name="FullMap"
         component={MapScreen}
+        // S8: the map wears a compact editorial title inside its own box-none
+        // overlay (menu + Feedback folded in), so the dark nav header is hidden —
+        // no scrolling display header ever lands on the live map canvas.
         options={{
-          title: 'Map',
-          headerLeft: renderMenuButton,
+          headerShown: false,
           tabBarButton: () => null,
           tabBarItemStyle: { display: 'none' },
         }}
@@ -355,8 +360,10 @@ function NavInner({ initialRouteName }: { initialRouteName: keyof RootTabParamLi
       <Tab.Screen
         name="Settings"
         component={SettingsScreenLazy}
+        // S8: Settings wears the editorial ScreenHeader (menu + Feedback folded
+        // in), so the dark nav header is hidden — one header family across tabs.
         options={{
-          headerLeft: renderMenuButton,
+          headerShown: false,
           tabBarButton: () => null,
           tabBarItemStyle: { display: 'none' },
         }}

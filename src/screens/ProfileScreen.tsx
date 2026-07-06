@@ -17,7 +17,10 @@ import * as ImagePicker from 'expo-image-picker';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
+import { HeaderActions } from '@/components/ui/HeaderActions';
+import { useDrawer } from '@/lib/drawerContext';
 import { useAuth } from '@/lib/auth';
 import { AccountDeletedSignOutPendingError, deleteAccount } from '@/lib/account';
 import { confirm, notify } from '@/lib/confirm';
@@ -274,6 +277,8 @@ export default function ProfileScreen() {
   // each modal had a duplicate mount here AND in SettingsScreen — same
   // state shape twice, same useEffect on visible-change twice.
   const { setOpen: setSharedModal } = useSharedModals();
+  const drawer = useDrawer();
+  const insets = useSafeAreaInsets();
 
   const [achievementsOpen, setAchievementsOpen] = useState(false);
   const [leaderboardOpen, setLeaderboardOpen] = useState(false);
@@ -873,7 +878,12 @@ export default function ProfileScreen() {
         <ScreenStage />
       <ScrollView
         style={styles.screen}
-        contentContainerStyle={[styles.container, { paddingBottom: tabBarHeight + 16 }]}
+        contentContainerStyle={[
+          styles.container,
+          // S8: headerShown:false now, so clear the status bar / notch ourselves
+          // (mirrors the headerless Home/Tasks). Overrides the container's top pad.
+          { paddingTop: insets.top + spacing.lg, paddingBottom: tabBarHeight + 16 },
+        ]}
         refreshControl={<RefreshControl refreshing={loading} onRefresh={load} />}
       >
         <ScreenHeader
@@ -885,6 +895,15 @@ export default function ProfileScreen() {
           // arbitrated on-stage ink (textSubtle/textMuted are below AA there).
           eyebrowColor={color.inkOnStage}
           subtitleColor={color.inkOnStage}
+          // S8: the unified menu + Feedback circles (one shape, one treatment)
+          // now live in the editorial header instead of the removed nav bar.
+          actions={
+            <HeaderActions
+              onMenu={() => drawer.setOpen(true)}
+              onFeedback={() => setSharedModal('feedback')}
+              iconColor={color.textStrong}
+            />
+          }
         />
 
         <UpdateBanner
