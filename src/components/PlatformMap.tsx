@@ -47,6 +47,11 @@ export interface PlatformMapProps {
   /** When true, animateTo uses an instant pan (duration 0) to respect
    *  the user's "Reduce Motion" system preference (WCAG 2.3.3). */
   reducedMotion?: boolean;
+  /** S17: web-only — suppress the Leaflet attribution control on this instance
+   *  (the decorative Home peek, so no live third-party links sit inside a
+   *  button). The FULL map omits it and keeps its legally-required attribution.
+   *  Native has no Leaflet attribution, so it ignores this. */
+  suppressAttribution?: boolean;
   /**
    * Long-press anywhere on the map to drop a flag at that location.
    * Fires with the geographic coordinate of the press. Web variant

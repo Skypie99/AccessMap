@@ -297,3 +297,40 @@ describe.each([[true], [false]])(
     });
   },
 );
+
+// ---------------------------------------------------------------------------
+// S17 — the decorative Home peek suppresses Leaflet's live attribution links so
+// they can't navigate the browser away from inside a button. The FULL map omits
+// the prop and keeps its legally-required attribution.
+// ---------------------------------------------------------------------------
+describe('S17 — peek suppresses Leaflet attribution (full map keeps it)', () => {
+  function renderWith(suppressAttribution?: boolean) {
+    const r = rl();
+    r.recorded.mapContainer = null;
+    render(
+      <PlatformMap
+        initialRegion={REGION}
+        flags={FLAGS}
+        focusedFlagId={null}
+        reducedMotion={false}
+        onOpenDetails={() => {}}
+        suppressAttribution={suppressAttribution}
+      />,
+    );
+    return r.recorded.mapContainer;
+  }
+
+  it('drops the attribution control on the decorative peek', () => {
+    const mc = renderWith(true);
+    expect(mc).toBeTruthy();
+    expect(mc!.attributionControl).toBe(false);
+    // The peek also carries no default zoom control (S6, unchanged).
+    expect(mc!.zoomControl).toBe(false);
+  });
+
+  it('keeps attribution on the full map when the prop is omitted', () => {
+    const mc = renderWith(undefined);
+    expect(mc).toBeTruthy();
+    expect(mc!.attributionControl).toBe(true);
+  });
+});

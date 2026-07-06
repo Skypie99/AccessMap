@@ -262,7 +262,19 @@ export default function HomeScreen() {
           accessibilityRole="button"
           accessibilityLabel="Open the full map"
         >
-          <PlatformMap initialRegion={peekRegion} flags={flags} focusedFlagId={null} />
+          {/* S17 (L5-06): the peek is announced as ONE button — make its live
+              map interior inert so only the parent Pressable receives the tap.
+              This kills scroll/wheel theft AND (with suppressAttribution below)
+              the live Leaflet attribution links that could exit the app from
+              inside a button. PROTECT-10: the peek still SHOWS the map. */}
+          <View style={StyleSheet.absoluteFill} pointerEvents="none">
+            <PlatformMap
+              initialRegion={peekRegion}
+              flags={flags}
+              focusedFlagId={null}
+              suppressAttribution
+            />
+          </View>
           <View style={styles.mapPeekHint} pointerEvents="none">
             <MapIcon size={14} color={color.textOnBrand} strokeWidth={2.4} />
             <AppText variant="label" style={styles.mapPeekHintText}>Open full map</AppText>

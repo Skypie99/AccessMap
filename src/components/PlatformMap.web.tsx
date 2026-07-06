@@ -51,6 +51,11 @@ export interface PlatformMapProps {
   /** When true, animateTo uses an instant pan (duration 0) to respect
    *  the user's "Reduce Motion" system preference (WCAG 2.3.3). */
   reducedMotion?: boolean;
+  /** S17: suppress the Leaflet attribution control on THIS instance (the
+   *  decorative Home peek) so no live "Leaflet / OpenStreetMap / CARTO" links
+   *  sit inside a button and can navigate the browser away from the app. The
+   *  full Map omits this and keeps its legally-required attribution. */
+  suppressAttribution?: boolean;
   /**
    * Drop-flag intent: native fires this on long-press; web fires it on
    * the map's `contextmenu` event (right-click, or long-press on
@@ -660,6 +665,7 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(function Pla
     flags,
     focusedFlagId,
     reducedMotion,
+    suppressAttribution,
     onLongPressMap,
     onOpenDetails,
     heatCells = [],
@@ -760,6 +766,11 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(function Pla
         // the count pill AND pointer-dead. The app-styled 44pt buttons in the
         // overlay's bottom zone drive zoom via the imperative handle instead.
         zoomControl={false}
+        // S17: on the decorative Home peek (suppressAttribution), drop the live
+        // "Leaflet / OpenStreetMap / CARTO" attribution links so they can't
+        // navigate the browser away from inside a button. The full Map omits
+        // this prop → attribution stays (legally required).
+        attributionControl={!suppressAttribution}
         // S12: kill Leaflet's built-in zoom/fade tweens under Reduce Motion so
         // setView / setZoom paint instantly instead of animating (WCAG 2.3.3).
         zoomAnimation={!reducedMotion}
