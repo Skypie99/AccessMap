@@ -1390,7 +1390,11 @@ export default function MapScreen() {
           >
             <AppText variant="label" maxFontSizeMultiplier={1.3} style={styles.statusText}>
               {loadingFlags
-                ? 'Loading flags…'
+                ? // S11: a cold load (nothing on screen yet) reads differently
+                  // from a revalidation over data already shown.
+                  flags.length === 0
+                  ? 'Loading flags…'
+                  : 'Updating…'
                 : filtersActive
                   ? `${filteredFlags.length} of ${flags.length} shown`
                   : `Showing ${flags.length} flag${flags.length === 1 ? '' : 's'}`}

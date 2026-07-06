@@ -94,6 +94,11 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
   const [photoUris, setPhotoUris] = useState<string[]>([]);
   const [contextTags, setContextTags] = useState<ContextTag[]>([]);
   const [submitting, setSubmitting] = useState(false);
+  // S11: a WRITE that outruns this threshold surfaces an in-sheet "still
+  // trying" overlay while the insert CONTINUES (never aborted — a
+  // committed-but-slow write + a false failure would invite a duplicate the
+  // anon 5/day limit then punishes).
+  const [submitStalled, setSubmitStalled] = useState(false);
   // Synchronous re-entry guard. The Submit button's `disabled` reads the
   // `submitting` STATE, which doesn't flip until React re-renders — so a
   // rapid second tap before the re-render lands could start a duplicate
@@ -290,6 +295,18 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
     // entire in-flight window, including the anon rate-limit check.
     setSubmitting(true);
 
+    // S11: a slow WRITE is escalated, never aborted. After a threshold, show an
+    // in-sheet "still trying" overlay while the insert continues; aborting a
+    // possibly-committed write would invite a duplicate the anon 5/day limit
+    // punishes. `endStall()` is called on every exit path so the timer can't
+    // fire after the submit settles.
+    setSubmitStalled(false);
+    const stallTimer = setTimeout(() => setSubmitStalled(true), 12_000);
+    const endStall = () => {
+      clearTimeout(stallTimer);
+      setSubmitStalled(false);
+    };
+
     // Anonymous submission path — no photo upload, no context tags.
     if (isAnon) {
       try {
@@ -297,6 +314,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
       } catch {
         submittingRef.current = false;
         setSubmitting(false);
+        endStall();
         // F46: Alert.alert with buttons is a silent no-op on web — the anon
         // rate limit MUST be visible there (anon reporting is a web flow).
         if (Platform.OS === 'web') {
@@ -335,6 +353,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
       } finally {
         submittingRef.current = false;
         setSubmitting(false);
+        endStall();
       }
       return;
     }
@@ -430,6 +449,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
     } finally {
       submittingRef.current = false;
       setSubmitting(false);
+      endStall();
     }
   };
 
@@ -988,6 +1008,17 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
           </AppText>
           </ScrollView>
 
+          {/* S11: in-sheet "still trying" overlay for a slow WRITE. The insert
+              keeps running (never aborted); this only tells the user we're
+              still working so a slow submit doesn't read as a failure. */}
+          {submitStalled && submitting ? (
+            <View style={styles.submitStall} accessibilityLiveRegion="polite">
+              <AppText variant="label" style={styles.submitStallText}>
+                Still trying — check your signal
+              </AppText>
+            </View>
+          ) : null}
+
           <View style={styles.actions}>
             <Pressable
               onPress={onClose}
@@ -1264,6 +1295,21 @@ const makeStyles = (color: ColorTheme) =>
       fontWeight: '700',
       color: color.brandOnSoft,
       textDecorationLine: 'underline',
+    },
+    // S11: calm in-sheet "still trying" strip for a slow write. Info wash +
+    // infoFg (7.9:1 AAA) — reuses the existing tokens, no new colour.
+    submitStall: {
+      backgroundColor: color.infoBg,
+      borderRadius: radius.md,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+      marginBottom: spacing.sm,
+      alignItems: 'center',
+    },
+    submitStallText: {
+      color: color.infoFg,
+      fontWeight: font.weight.semibold,
+      fontSize: font.size.sm,
     },
     actions: {
       flexDirection: 'row',

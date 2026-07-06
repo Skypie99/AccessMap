@@ -56,7 +56,9 @@ export default function LiveStatusRegion() {
     if (status && Platform.OS !== 'web') {
       AccessibilityInfo.announceForAccessibility(status.message);
     }
-  }, [status?.key]); // eslint-disable-line react-hooks/exhaustive-deps
+    // A new status is always a new object with a new key, so this re-runs once
+    // per status (re-announcing an identical repeated message).
+  }, [status]);
 
   // Auto-dismiss (S10 success). S11's "still trying" omits autoDismissMs and
   // persists until the read settles calls clearLiveStatus().
@@ -65,7 +67,7 @@ export default function LiveStatusRegion() {
       const t = setTimeout(() => clearLiveStatus(), status.autoDismissMs);
       return () => clearTimeout(t);
     }
-  }, [status?.key, status?.autoDismissMs]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [status]);
 
   // Entrance / exit animation, reduced-motion gated (PROTECT-7).
   useEffect(() => {

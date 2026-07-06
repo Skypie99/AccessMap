@@ -34,7 +34,12 @@ const MISSING_FEATURE_CODES = new Set(['42P01', '42883', 'PGRST202', 'PGRST204']
 // Keep the network regex NARROW (the exact phrases fetch/React Native emit).
 // A bare /network/i would swallow legitimate messages like 'network down'
 // that callers expect to pass through untouched.
-const NETWORK_RE = /failed to fetch|network request failed|networkerror/i;
+// A timed-out or aborted request (e.g. the S11 data-layer read ceiling, or any
+// AbortController-cancelled fetch) reads to the user as a connectivity problem —
+// map it to the network copy rather than leaking "Aborted"/"Unknown error".
+// Kept to exact phrases so bare wording like 'network down' still passes through.
+const NETWORK_RE =
+  /failed to fetch|network request failed|networkerror|network request timed out|the operation was aborted/i;
 const PERMISSION_RE = /violates row-level security|permission denied/i;
 const MISSING_RE = /does not exist/i;
 
@@ -66,11 +71,21 @@ export function errorMessage(e: unknown, fallback = 'Unknown error.'): string {
   } else if (typeof e === 'string') {
     raw = e;
   }
+  let name = '';
+  if (e && typeof e === 'object' && 'name' in e) {
+    const n = (e as { name?: unknown }).name;
+    if (typeof n === 'string') name = n;
+  }
 
   // Friendly mapping first; unmatched errors keep the original behavior
   // (raw message preserved — no blanket generic).
   const friendly = friendlyMessage(code, raw);
   if (friendly) return friendly;
+
+  // A cancelled/timed-out request whose message is empty (DOMException
+  // AbortError) still reads as connectivity trouble — catch it by name so it
+  // never falls through to the raw "Aborted" or the 'Unknown error.' fallback.
+  if (name === 'AbortError' || name === 'TimeoutError') return NETWORK_TROUBLE;
 
   if (raw.length > 0) return raw;
   return fallback;

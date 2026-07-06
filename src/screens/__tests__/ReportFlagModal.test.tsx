@@ -984,3 +984,85 @@ describe('active-severity cue (WCAG 1.4.1 — non-color selection signal)', () =
     expect(selectedCount).toBe(1);
   });
 });
+
+// ===========================================================================
+// 9. S11 — slow-write escalation (never abort → never double-insert)
+//
+// A WRITE that outruns the threshold is escalated with an in-sheet "still
+// trying" overlay while the insert CONTINUES. It is never aborted: aborting a
+// possibly-committed insert then re-submitting would create a DUPLICATE flag
+// the anon 5/day limit punishes. These pin exactly-one-insert on a slow write
+// (the write must actually COMPLETE — a test that passes because the write did
+// nothing is invalid) and that the overlay appears without touching the insert.
+// ===========================================================================
+
+describe('S11 — slow write escalates, never aborts (no double-insert)', () => {
+  it('a slow anon submit lands EXACTLY ONE flag and is never re-inserted', async () => {
+    let resolveInsert!: (row: typeof SAMPLE_ANON_ROW) => void;
+    mockCreateAnonFlag.mockImplementationOnce(
+      () => new Promise((resolve) => { resolveInsert = resolve; }),
+    );
+    mockUseAuth.mockReturnValue({ user: null } as ReturnType<typeof useAuth>);
+    const onCreated = jest.fn();
+    const utils = render(
+      <ReportFlagModal visible location={LOCATION} onClose={jest.fn()} onCreated={onCreated} />,
+    );
+
+    fireEvent.press(utils.getByLabelText('Submit report anonymously'));
+
+    // The insert is in flight and awaited (not aborted) — exactly one call.
+    await waitFor(() => expect(mockCreateAnonFlag).toHaveBeenCalledTimes(1));
+    expect(onCreated).not.toHaveBeenCalled();
+
+    // Resolve the slow insert: the write COMPLETES (so the test can't pass by
+    // the write doing nothing) and lands exactly ONE flag — no resubmit.
+    await act(async () => {
+      resolveInsert(SAMPLE_ANON_ROW);
+      await new Promise((r) => setTimeout(r, 0));
+    });
+    expect(onCreated).toHaveBeenCalledTimes(1);
+    expect(mockCreateAnonFlag).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows the "still trying" overlay past the threshold while the insert continues untouched', async () => {
+    jest.useFakeTimers();
+    try {
+      let resolveInsert!: (row: typeof SAMPLE_ANON_ROW) => void;
+      mockCreateAnonFlag.mockImplementationOnce(
+        () => new Promise((resolve) => { resolveInsert = resolve; }),
+      );
+      mockUseAuth.mockReturnValue({ user: null } as ReturnType<typeof useAuth>);
+      const onCreated = jest.fn();
+      const utils = render(
+        <ReportFlagModal visible location={LOCATION} onClose={jest.fn()} onCreated={onCreated} />,
+      );
+
+      fireEvent.press(utils.getByLabelText('Submit report anonymously'));
+      // Flush the resolved rate-limit check so the insert is in flight.
+      await act(async () => {
+        await Promise.resolve();
+      });
+      expect(mockCreateAnonFlag).toHaveBeenCalledTimes(1);
+      expect(utils.queryByText(/Still trying/)).toBeNull();
+
+      // Cross the 12s threshold: the overlay appears; the insert is NOT re-run.
+      act(() => {
+        jest.advanceTimersByTime(12_000);
+      });
+      expect(utils.getByText('Still trying — check your signal')).toBeTruthy();
+      expect(mockCreateAnonFlag).toHaveBeenCalledTimes(1);
+
+      // Resolve — exactly one flag lands and the overlay clears.
+      await act(async () => {
+        resolveInsert(SAMPLE_ANON_ROW);
+        await Promise.resolve();
+      });
+      expect(onCreated).toHaveBeenCalledTimes(1);
+      expect(mockCreateAnonFlag).toHaveBeenCalledTimes(1);
+      expect(utils.queryByText(/Still trying/)).toBeNull();
+    } finally {
+      jest.runOnlyPendingTimers();
+      jest.useRealTimers();
+    }
+  });
+});

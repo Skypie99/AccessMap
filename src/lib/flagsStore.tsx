@@ -20,8 +20,21 @@ import {
 } from './flags';
 import { useRealtimeEnabled } from './realtimePrefs';
 import { logRealtimeEvent } from './realtimeLog';
+import { clearLiveStatus, setLiveStatus } from './liveStatus';
 import { supabase } from './supabase';
 import type { FlagRow, FlagStatus } from '@/types/database';
+
+/** S11: how long a data READ may run before we surface a calm, persistent
+ *  "still trying — check your signal" escalation (with a Retry) — the read
+ *  keeps racing meanwhile, so "still working" and "dead" stop looking
+ *  identical (R1's empty-map-reads-as-"no barriers" danger). */
+export const READ_STILL_TRYING_MS = 12 * 1000;
+/** S11: hard ceiling for a READ — past this the read rejects so the
+ *  offline-cache fallback (or a friendly error) runs, rather than leaving the
+ *  user on an unbounded spinner. Brings the data layer up to the GPS layer's
+ *  15s race posture (PROTECT-6/8). Reads are safe to hard-abort; WRITES are
+ *  never aborted (see ReportFlagModal). */
+export const READ_CEILING_MS = 30 * 1000;
 
 // ---------------------------------------------------------------------------
 // Offline cache helpers (Jordan-approved: Conditions 1–4 implemented)
@@ -203,6 +216,11 @@ export function FlagsProvider({
     userIdRef.current = userId;
   }, [userId]);
 
+  // S11: stable pointer to the latest refresh() so the "still trying" Retry
+  // action can re-run it without refresh() depending on itself. refresh() is
+  // identity-stable ([] deps), so this always points at the same function.
+  const refreshRef = useRef<() => Promise<void>>(() => Promise.resolve());
+
   const refresh = useCallback(async () => {
     const current = statusesRef.current;
     // Empty status set → nothing to fetch.
@@ -262,8 +280,31 @@ export function FlagsProvider({
           .catch(() => {})
       : Promise.resolve();
 
+    // S11: bound the read. A threshold surfaces a calm, persistent "still
+    // trying" escalation (a live region with Retry) before the OS gives up; a
+    // ceiling rejects so the offline-cache fallback / friendly error runs.
+    // Neither aborts the socket — a late result is discarded by fetchSeqRef —
+    // and no pollers are added (PROTECT-6). The escalation lives in the shared
+    // app-root LiveStatusRegion so the guest-web cohort hears it too.
+    const stillTryingTimer = setTimeout(() => {
+      if (seq !== fetchSeqRef.current) return;
+      setLiveStatus({
+        message: 'Still trying — check your signal',
+        tone: 'info',
+        action: { label: 'Retry', onPress: () => void refreshRef.current() },
+      });
+    }, READ_STILL_TRYING_MS);
+    let ceilingTimer: ReturnType<typeof setTimeout> | undefined;
+    const ceiling = new Promise<never>((_, reject) => {
+      ceilingTimer = setTimeout(
+        () =>
+          reject(new Error('Loading barriers is taking longer than usual. Check your signal and try again.')),
+        READ_CEILING_MS,
+      );
+    });
+
     try {
-      const networkResult = await networkPromise.then(
+      const networkResult = await Promise.race([networkPromise, ceiling]).then(
         (value) => ({ ok: true as const, value }),
         (reason) => ({ ok: false as const, reason }),
       );
@@ -321,9 +362,20 @@ export function FlagsProvider({
         }
       }
     } finally {
-      if (seq === fetchSeqRef.current) setLoading(false);
+      // Clearing the ceiling timer means it never rejects → no late unhandled
+      // rejection on the fast path (the loser of Promise.race is not cancelled).
+      clearTimeout(stillTryingTimer);
+      if (ceilingTimer) clearTimeout(ceilingTimer);
+      if (seq === fetchSeqRef.current) {
+        setLoading(false);
+        clearLiveStatus(); // dismiss any "still trying" now the read has settled
+      }
     }
   }, []);
+
+  // Keep the self-reference current (refresh is stable, so this is a no-op after
+  // the first render, but it keeps the Retry action honest if that ever changes).
+  refreshRef.current = refresh;
 
   // Refresh only if the data is stale (older than `maxAgeMs`). Used by
   // non-user-initiated entry points — e.g. focusing a flag on the Map from a
