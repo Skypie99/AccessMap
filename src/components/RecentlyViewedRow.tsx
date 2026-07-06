@@ -19,7 +19,7 @@ import { AppText } from '@/components/ui/AppText';
 import { GlassSurface } from '@/components/ui/GlassSurface';
 import { CATEGORY_LABELS, fetchFlagsByIds, severityColor } from '@/lib/flags';
 import { loadRecentlyViewed } from '@/lib/recentlyViewed';
-import { font, radius, shadow, spacing } from '@/theme';
+import { font, radius, severity, shadow, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import type { FlagRow } from '@/types/database';
 
@@ -142,7 +142,7 @@ export default function RecentlyViewedRow({ userId, refreshKey, onSelect }: Prop
             >
               {/* 1.3 cap: at the label variant's 1.6 the glyph box outgrows the
                   24pt dot (goes negative on the pre-font-load fallback). */}
-              <AppText variant="label" style={styles.sevDotText} maxFontSizeMultiplier={1.3}>{f.severity}</AppText>
+              <AppText variant="label" style={[styles.sevDotText, { color: severity[f.severity].textOnColor }]} maxFontSizeMultiplier={1.3}>{f.severity}</AppText>
             </View>
             <AppText variant="label" style={styles.chipLabel} numberOfLines={1}>
               {CATEGORY_LABELS[f.category]}

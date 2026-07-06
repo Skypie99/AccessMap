@@ -41,7 +41,7 @@ import { relativeTime } from '@/lib/relativeTime';
 import { loadWatched } from '@/lib/watchedFlags';
 import type { FlagRow } from '@/types/database';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
-import { font, radius, shadow, spacing } from '@/theme';
+import { font, radius, severity, shadow, spacing } from '@/theme';
 import { MapPin, X } from 'lucide-react-native';
 import { StatusBadge } from '@/components/StatusBadge';
 
@@ -159,7 +159,7 @@ export default function ActivityFeedModal({ visible, onClose, onSelectFlag, onVi
                 accessibilityElementsHidden
                 importantForAccessibility="no-hide-descendants"
               >
-                <AppText variant="label" style={styles.sevDotText}>{item.severity}</AppText>
+                <AppText variant="label" style={[styles.sevDotText, { color: severity[item.severity].textOnColor }]}>{item.severity}</AppText>
               </View>
               <AppText variant="label" style={styles.rowTitle}>
                 {CATEGORY_LABELS[item.category]}

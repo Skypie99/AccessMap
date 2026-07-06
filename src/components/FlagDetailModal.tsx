@@ -21,7 +21,7 @@ import { RemoteImage } from '@/components/ui/RemoteImage';
 import { Star, X } from 'lucide-react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
-import { font, radius, shadow, spacing } from '@/theme';
+import { font, radius, severity, shadow, spacing } from '@/theme';
 import { useAuth } from '@/lib/auth';
 import { confirm, notify } from '@/lib/confirm';
 import { getDirectionsUrl } from '@/lib/directionsLink';
@@ -836,7 +836,7 @@ export default function FlagDetailModal({
                   accessible
                   accessibilityLabel={severityA11y(shownFlag.severity)}
                 >
-                  <AppText variant="label" style={styles.severityChipText}>Severity {shownFlag.severity}</AppText>
+                  <AppText variant="label" style={[styles.severityChipText, { color: severity[shownFlag.severity].textOnColor }]}>Severity {shownFlag.severity}</AppText>
                 </View>
                 <StatusBadge status={status} accessibilityLabel={statusA11y(status)} />
               </View>
@@ -1074,6 +1074,7 @@ export default function FlagDetailModal({
                           style={[
                             styles.severityBtnText,
                             editSeverity === s && styles.severityBtnTextActive,
+                            editSeverity === s && { color: severity[s].textOnColor },
                           ]}
                         >
                           {s}

@@ -10,7 +10,7 @@ import {
   SEVERITY_LABELS,
   SEVERITY_ORDER,
 } from '@/lib/flags';
-import { font, radius, spacing } from '@/theme';
+import { font, radius, severity, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
 import CategoryIcon from '@/components/CategoryIcon';
@@ -75,7 +75,7 @@ export default function LegendModal({ visible, onClose }: Props) {
                     importantForAccessibility="no"
                     accessibilityElementsHidden
                   >
-                    <AppText variant="label" style={styles.sevDotText}>{s}</AppText>
+                    <AppText variant="label" style={[styles.sevDotText, { color: severity[s].textOnColor }]}>{s}</AppText>
                   </View>
                   <View style={styles.rowText}>
                     <AppText variant="label" style={styles.rowTitle}>

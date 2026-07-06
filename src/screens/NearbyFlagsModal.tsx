@@ -17,7 +17,7 @@ import { formatDistance, haversineKm, speakDistance, type LatLng } from '@/lib/d
 import { searchFlags } from '@/lib/flagSearch';
 import type { FlagCategory, FlagRow } from '@/types/database';
 import SearchInputRow from '@/components/SearchInputRow';
-import { font, radius, shadow, spacing } from '@/theme';
+import { font, radius, severity, shadow, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 
 interface Props {
@@ -145,7 +145,7 @@ export default function NearbyFlagsModal({
               importantForAccessibility="no"
               accessibilityElementsHidden
             >
-              <AppText variant="label" style={styles.sevDotText}>{item.severity}</AppText>
+              <AppText variant="label" style={[styles.sevDotText, { color: severity[item.severity].textOnColor }]}>{item.severity}</AppText>
             </View>
             <AppText variant="label" style={styles.cardTitle}>
               {CATEGORY_LABELS[item.category]}

@@ -54,7 +54,7 @@ import {
 import { validReportTemplates, type ReportTemplate } from '@/lib/reportTemplates';
 import type { FlagCategory, FlagSeverity } from '@/types/database';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
-import { font, gradient, radius, shadow, spacing } from '@/theme';
+import { font, gradient, radius, severity as severityRamp, shadow, spacing } from '@/theme';
 import { a11yToggle, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
 
 /** Lucide icon for each disability tag — adds visual distinction (no emoji, per
@@ -642,7 +642,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
                   {active && (
                     <Check
                       size={11}
-                      color={color.textOnBrand}
+                      color={severityRamp[s].textOnColor}
                       strokeWidth={3}
                       style={styles.sevCheck}
                       accessibilityElementsHidden
@@ -656,7 +656,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
                   <AppText
                     variant="label"
                     maxFontSizeMultiplier={1.3}
-                    style={[styles.sevText, active && styles.sevTextActive]}
+                    style={[styles.sevText, active && styles.sevTextActive, active && { color: severityRamp[s].textOnColor }]}
                   >
                     {s}
                   </AppText>
