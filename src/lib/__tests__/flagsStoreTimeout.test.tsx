@@ -46,6 +46,7 @@ jest.mock('../supabase', () => ({
 jest.mock('../realtimeLog', () => ({ __esModule: true, logRealtimeEvent: jest.fn().mockResolvedValue(undefined) }));
 
 jest.mock('@react-native-async-storage/async-storage', () =>
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   require('@react-native-async-storage/async-storage/jest/async-storage-mock'),
 );
 
