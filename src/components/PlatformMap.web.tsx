@@ -123,15 +123,18 @@ function pinIcon(
   // rotated -45°) with a 2.5px white ring, a Wayfinder-Blue glow, and the
   // white category glyph (counter-rotated upright) — or a check when resolved.
   //
-  // Ring/boundary: an ANONYMOUS report keeps its severity FILL (S1 — the safety
-  // encoding is never erased) and carries provenance as a SECOND concentric
-  // ring: the white ring + a #0F1B2D hairline + a white gap + a second #0F1B2D
-  // hairline → a "double ring" a sighted user reads at a glance. Arbiter-proven
-  // over the tile bases + red heat cell. (S14 adds the single #0F1B2D hairline
-  // to every non-anon pin too — the union's light-tile arm.)
+  // Ring/boundary (GLASS §12.4 union so the pin survives light AND dark tiles):
+  //  - EVERY pin carries a 1px #0F1B2D outer hairline (S14) — the union's
+  //    light-tile arm; the 2.5px white ring is the dark-tile arm. Neither color
+  //    spans the whole tile range alone (the white ring reads 1.00:1 on white
+  //    Apple tiles; the hairline rescues it).
+  //  - an ANONYMOUS report keeps its severity FILL (S1 — the safety encoding is
+  //    never erased) and carries provenance as a SECOND concentric ring: hairline
+  //    + white gap + a second hairline → a "double ring" a sighted user reads at
+  //    a glance. Arbiter-proven over the tile bases + red heat cell.
   const ring = anon
     ? '0 0 0 1px #0F1B2D, 0 0 0 3px #FFFFFF, 0 0 0 4px #0F1B2D'
-    : 'none';
+    : '0 0 0 1px #0F1B2D';
   const icon = L.divIcon({
     className: 'accessmap-pin',
     html: `<div style="width:30px;height:30px;opacity:${dim ? 0.55 : 1};filter:drop-shadow(0 6px 14px rgba(20,102,224,0.35)) drop-shadow(0 1px 2px rgba(15,27,45,0.18));">

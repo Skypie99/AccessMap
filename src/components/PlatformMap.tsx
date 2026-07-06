@@ -2,6 +2,8 @@ import React, { forwardRef, memo, useEffect, useImperativeHandle, useRef } from 
 import { StyleSheet, Text, View } from 'react-native';
 import { AppText } from '@/components/ui/AppText';
 import { RemoteImage } from '@/components/ui/RemoteImage';
+import CategoryIcon from '@/components/CategoryIcon';
+import { Check } from 'lucide-react-native';
 import ClusteredMapView from 'react-native-map-clustering';
 import { Callout, Marker, Polygon, PROVIDER_DEFAULT } from 'react-native-maps';
 import type MapView from 'react-native-maps';
@@ -18,6 +20,17 @@ export interface PlatformMapRegion {
   longitude: number;
   latitudeDelta: number;
   longitudeDelta: number;
+}
+
+// Content-derived key for the custom teardrop markers (S14 / PROTECT-15). With
+// tracksViewChanges={false} the marker snapshots on mount and only re-renders
+// when its key changes — so the key must carry every input that changes the
+// PIXELS: severity fill, anon ring, resolved glyph, category glyph. Opacity
+// (focus dimming) stays a native Marker prop, so it updates WITHOUT a re-snapshot
+// and is deliberately NOT in the key. Nothing time-derived enters the key, so the
+// steady state never re-rasterizes.
+function pinKey(f: FlagRow): string {
+  return `${f.id}|${f.severity}|${f.user_id === null ? 'x' : 'o'}|${f.status === 'resolved' ? 'r' : ''}|${f.category}`;
 }
 
 export interface PlatformMapHandle {
@@ -220,22 +233,42 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(function Pla
       })}
       {flags.map((f) => (
         <Marker
-          key={f.id}
+          key={pinKey(f)}
           ref={(r) => {
             markerRefs.current[f.id] = r;
           }}
           coordinate={{ latitude: f.lat, longitude: f.lng }}
-          pinColor={f.user_id === null ? '#9CA3AF' : severityColor(f.severity)}
-          opacity={
-            f.user_id === null
-              ? 0.7
-              : focusedFlagId && focusedFlagId !== f.id
-                ? 0.55
-                : 1
-          }
+          anchor={{ x: 0.5, y: 1 }}
+          // Snapshot the custom teardrop once (PROTECT-15). Focus dimming rides the
+          // native opacity prop, so it still updates without a re-snapshot.
+          tracksViewChanges={false}
+          opacity={focusedFlagId && focusedFlagId !== f.id ? 0.55 : 1}
           accessibilityRole="button"
           accessibilityLabel={`${CATEGORY_LABELS[f.category]}, ${severityA11y(f.severity)}, ${statusA11y(f.status)}${f.user_id === null ? ', anonymous report' : ''}. Tap to view details.`}
         >
+          {/* S14: custom teardrop marker — the severity FILL + a 2.5px white ring +
+              a 1px #0F1B2D outer hairline (GLASS §12.4 union so low-severity pins
+              survive light AND dark tiles: the white ring covers dark backdrops,
+              the dark hairline covers light ones) + the counter-rotated category
+              glyph (or a check when resolved). S1/L8-7: an ANONYMOUS report keeps
+              its severity fill and carries provenance as a SECOND concentric ring —
+              never the gray swap that erased the safety encoding. All literals are
+              mode-independent (PROTECT-16); the marker snapshots once (PROTECT-15). */}
+          <View style={styles.pinWrap}>
+            <View style={[styles.pinRot, f.user_id === null && styles.pinRotAnon]}>
+              <View style={styles.pinHairline}>
+                <View style={[styles.pinDrop, { backgroundColor: severityColor(f.severity) }]}>
+                  <View style={styles.pinGlyphCounter}>
+                    {f.status === 'resolved' ? (
+                      <Check size={14} color="#fff" strokeWidth={3} />
+                    ) : (
+                      <CategoryIcon category={f.category} size={14} color="#fff" decorative />
+                    )}
+                  </View>
+                </View>
+              </View>
+            </View>
+          </View>
           <Callout tooltip>
             <View style={styles.callout}>
               <View
@@ -326,6 +359,55 @@ const makeStyles = (color: ColorTheme) =>
       borderRadius: radius.md,
       marginTop: spacing.xs,
       backgroundColor: color.surfaceNeutral,
+    },
+    // Custom teardrop pin (S14). Nesting mirrors the cluster union: an outer
+    // #0F1B2D hairline (pinHairline) hugs the white-ringed severity drop (pinDrop).
+    // The rotation lives on pinRot so the whole stack tips into a teardrop; the
+    // glyph counter-rotates upright. Anonymous pins add pinRotAnon — a second
+    // #0F1B2D ring with a white gap (the "double ring"). All literals are
+    // mode-independent (PROTECT-16).
+    pinWrap: {
+      width: 38,
+      height: 40,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    pinRot: {
+      transform: [{ rotate: '-45deg' }],
+      borderTopLeftRadius: 15,
+      borderTopRightRadius: 15,
+      borderBottomRightRadius: 15,
+      borderBottomLeftRadius: 0,
+    },
+    pinRotAnon: {
+      padding: 2,
+      borderWidth: 1.5,
+      borderColor: '#0F1B2D',
+      backgroundColor: '#fff',
+    },
+    pinHairline: {
+      borderTopLeftRadius: 14,
+      borderTopRightRadius: 14,
+      borderBottomRightRadius: 14,
+      borderBottomLeftRadius: 0,
+      borderWidth: 1,
+      borderColor: '#0F1B2D',
+    },
+    pinDrop: {
+      width: 26,
+      height: 26,
+      borderTopLeftRadius: 13,
+      borderTopRightRadius: 13,
+      borderBottomRightRadius: 13,
+      borderBottomLeftRadius: 0,
+      borderWidth: 2.5,
+      borderColor: '#fff',
+      alignItems: 'center',
+      justifyContent: 'center',
+      ...shadow.e2,
+    },
+    pinGlyphCounter: {
+      transform: [{ rotate: '45deg' }],
     },
     // Cluster marker — a soft halo + filled core in brand blue. The halo
     // gives the cluster a sense of "grouped energy" so it reads as more
