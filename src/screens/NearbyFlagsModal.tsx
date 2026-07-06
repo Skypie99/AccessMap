@@ -137,7 +137,12 @@ export default function NearbyFlagsModal({
           style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
           accessibilityRole="button"
           accessibilityLabel={a11yLabel}
-          accessibilityHint="Closes the list and centers the map on this flag"
+          // S3 (L6-05): under a screen reader this row now opens the focus-managed
+          // detail sheet (see MapScreen onSelectFlag), not a silent map recenter.
+          // The hint is only ever heard under SR, where the endpoint is always the
+          // sheet — so an unconditional honest string is correct, and it keeps the
+          // PROTECT-1 one-breath accessibilityLabel above untouched.
+          accessibilityHint="Opens this flag's details"
         >
           <View style={styles.cardHeader}>
             <View

@@ -10,6 +10,7 @@ import type MapView from 'react-native-maps';
 import { font, heatmapSeverity as severityTokens, radius, shadow, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { CATEGORY_LABELS, SEVERITY_LABELS, severityColor, STATUS_LABELS } from '@/lib/flags';
+import { relativeTime } from '@/lib/relativeTime';
 import { decorativeProps } from '@/lib/accessibility';
 import { severityA11y, statusA11y } from '@/lib/a11yText';
 import { pinKey } from '@/lib/pinKey';
@@ -60,6 +61,13 @@ export interface PlatformMapProps {
   heatCells?: HeatCell[];
   /** Heat-map colour mode. See `HeatmapMode` for the contract. */
   heatmapMode?: HeatmapMode;
+  /**
+   * S3: tapping the pin callout's "Open details" affordance opens the full
+   * FlagDetailModal (the trust ledger). On native the whole Callout is the tap
+   * target (Android renders the callout as a snapshot, so only Callout.onPress
+   * is reliable). Optional so existing callers/tests don't have to pass it.
+   */
+  onOpenDetails?: (flag: FlagRow) => void;
 }
 
 const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(function PlatformMap(
@@ -70,6 +78,7 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(function Pla
     showsUserLocation,
     reducedMotion,
     onLongPressMap,
+    onOpenDetails,
     heatCells = [],
     heatmapMode = 'gradient',
   },
@@ -276,7 +285,11 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(function Pla
               </View>
             </View>
           </View>
-          <Callout tooltip>
+          {/* S3: the whole callout is a doorway into the trust ledger. On
+              Android the callout is a snapshot, so Callout.onPress is the only
+              reliable in-bubble tap; on iOS it fires for a tap anywhere on the
+              tooltip. The visible "Open details ›" row is the affordance cue. */}
+          <Callout tooltip onPress={onOpenDetails ? () => onOpenDetails(f) : undefined}>
             <View style={styles.callout}>
               <View
                 style={[styles.calloutSevBar, { backgroundColor: severityColor(f.severity) }]}
@@ -298,6 +311,11 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(function Pla
                 <AppText variant="body" style={styles.calloutMeta}>
                   Severity {f.severity} of 5 · {SEVERITY_LABELS[f.severity]} · {STATUS_LABELS[f.status]}
                 </AppText>
+                {/* S3 (L3-12): a freshness line so even a quick glance shows how
+                    recent the report is — the read-half of the trust ledger. */}
+                <AppText variant="body" style={styles.calloutFresh}>
+                  Reported {relativeTime(f.created_at)}
+                </AppText>
                 {f.photo_url ? (
                   <RemoteImage
                     uri={f.photo_url}
@@ -311,6 +329,15 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(function Pla
                   <AppText variant="body" style={styles.calloutDesc} numberOfLines={3}>
                     {f.description}
                   </AppText>
+                ) : null}
+                {/* S3 (L3-12): the affordance that finally cashes the "open for
+                    details" promise — opens FlagDetailModal via Callout.onPress. */}
+                {onOpenDetails ? (
+                  <View style={styles.calloutCta}>
+                    <AppText variant="label" style={styles.calloutCtaText}>
+                      Open details ›
+                    </AppText>
+                  </View>
                 ) : null}
               </View>
             </View>
@@ -359,6 +386,24 @@ const makeStyles = (color: ColorTheme) =>
       color: color.text,
       marginTop: spacing.tight,
       lineHeight: 17,
+    },
+    // S3: report-freshness line — quiet, muted, sits under the severity meta.
+    calloutFresh: {
+      fontSize: font.size.xs,
+      color: color.textMuted,
+      fontWeight: font.weight.semibold,
+    },
+    // S3: "Open details ›" affordance — the callout's next step into the ledger.
+    calloutCta: {
+      marginTop: spacing.xs,
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    calloutCtaText: {
+      fontSize: font.size.sm,
+      color: color.brandText,
+      fontWeight: font.weight.bold,
+      letterSpacing: 0.2,
     },
     calloutPhoto: {
       width: '100%',

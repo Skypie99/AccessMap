@@ -94,6 +94,7 @@ import PlatformMap, {
   type PlatformMapHandle,
   type PlatformMapRegion,
 } from '@/components/PlatformMap';
+import type { DetailAction } from '@/components/FlagDetailModal';
 import { AppText } from '@/components/ui/AppText';
 import { GlassSurface } from '@/components/ui/GlassSurface';
 import { PressableScale } from '@/components/ui/PressableScale';
@@ -118,6 +119,13 @@ import type { GeocodeResult } from '@/lib/geocode';
 // bundle. (severityColor lives in @/lib/flags, not this module, so the split is
 // clean.) Declared after the imports so eslint's import/first stays satisfied.
 const ReportFlagModal = React.lazy(() => import('./ReportFlagModal'));
+
+// S3 (trust instrumentation): the flag-detail sheet is now reachable from the
+// map itself — the pin callout's "Open details" and, under a screen reader, the
+// Nearby list. Same React.lazy split as Tasks/Profile (Metro dedups by module
+// path, so all three share one async chunk). Always-mounted below, visible-prop
+// controlled. Declared after the imports so eslint's import/first stays happy.
+const FlagDetailModal = React.lazy(() => import('@/components/FlagDetailModal'));
 
 interface Coords {
   lat: number;
@@ -279,6 +287,8 @@ export default function MapScreen() {
     setStatuses,
     setViewportGate,
     isOfflineCache,
+    patchFlag, // S3: keep the map's flag list in sync after a detail-sheet action
+    removeFlag,
   } = useFlags();
 
   const [reportOpen, setReportOpen] = useState(false);
@@ -338,6 +348,10 @@ export default function MapScreen() {
     void refreshSavedPlaces();
   }, [refreshSavedPlaces]);
   const [focusedFlagId, setFocusedFlagId] = useState<string | null>(null);
+  // S3: the flag whose detail sheet is open (null = closed). Per-screen state,
+  // NOT in the shared-modals pool — mirrors Tasks/Profile, which each own their
+  // own selectedFlag because the sheet is opened with per-screen context.
+  const [selectedFlag, setSelectedFlag] = useState<FlagRow | null>(null);
   // M3: the flag a deep link resolved to. Kept as local state (flagsStore has
   // no upsert) and merged into the marker list via withFocusFlag below, so a
   // deep-linked flag outside the loaded page still renders a marker. NOT
@@ -1256,6 +1270,52 @@ export default function MapScreen() {
     ]);
   }, [authUser]);
 
+  // S3 detail-sheet handlers. FlagDetailModal does the server mutation itself and
+  // gates its own actions by auth/ownership (no new writes here — FORK 5 read
+  // side only); MapScreen just REFLECTS the result into the shared store so the
+  // pin re-colours/re-labels.
+  //
+  // Unlike Tasks (whose list is hard-filtered to open+verified, so it removeFlags
+  // on resolve/reject), the Map shows whatever statuses the user selected
+  // (activeStatuses). A resolved flag can still be a valid marker — so we ALWAYS
+  // patch in place, then let refresh() reconcile: if the new status falls outside
+  // the active fetch the refresh drops it; otherwise it stays, updated. We also
+  // patch deepLinkFlag, since patchFlag is a no-op for a flag held only there
+  // (a marker opened from a deep link that isn't in the store array).
+  const handleDetailChanged = useCallback(
+    (updated: FlagRow, _action: DetailAction, _isOwn: boolean) => {
+      patchFlag(updated.id, { ...updated });
+      setDeepLinkFlag((d) => (d && d.id === updated.id ? { ...d, ...updated } : d));
+      refreshFlags().catch(() => {});
+    },
+    [patchFlag, refreshFlags],
+  );
+
+  const handleDetailDeleted = useCallback(
+    (deletedId: string) => {
+      removeFlag(deletedId);
+      setDeepLinkFlag((d) => (d && d.id === deletedId ? null : d));
+      // WCAG 4.1.3: announce deletion to screen readers (same pattern as Tasks).
+      AccessibilityInfo.announceForAccessibility('Flag deleted');
+    },
+    [removeFlag],
+  );
+
+  // On the Map tab we're ALREADY on the map, so "View on map" recenters locally
+  // instead of re-navigating (Tasks/Profile navigate cross-tab). Reuses the same
+  // center-on-flag spine as the focusFlag / deep-link effects. The modal calls
+  // onClose() itself right after this, so we don't touch selectedFlag here.
+  const handleDetailViewOnMap = useCallback((flag: FlagRow) => {
+    setFocusedFlagId(flag.id);
+    mapRef.current?.animateTo({
+      latitude: flag.lat,
+      longitude: flag.lng,
+      latitudeDelta: 0.005,
+      longitudeDelta: 0.005,
+    });
+    retryShowCallout(mapRef.current, flag.id, () => false);
+  }, []);
+
   // The Report FAB is dimmed until we have a location on NATIVE (where the
   // recenter button is the way to turn location on). On WEB we keep it
   // tappable even without a fix: the tap kicks requestLocation() and opens
@@ -1273,6 +1333,7 @@ export default function MapScreen() {
         showsUserLocation
         reducedMotion={reducedMotion}
         onLongPressMap={handleMapLongPress}
+        onOpenDetails={setSelectedFlag} // S3: pin callout "Open details" → detail sheet
         heatCells={heatCells}
         heatmapMode={HEATMAP_MODE}
       />
@@ -2196,6 +2257,22 @@ export default function MapScreen() {
         />
       </Suspense>
 
+      {/* S3: the trust ledger, now reachable from the map. Opened by the pin
+          callout's "Open details" and, under a screen reader, by the Nearby
+          list. Self-manages focus (useFocusOnOpen → title); mounts OUTSIDE the
+          box-none overlay so the map gesture law is untouched. */}
+      <Suspense fallback={null}>
+        <FlagDetailModal
+          visible={selectedFlag !== null}
+          flag={selectedFlag}
+          onClose={() => setSelectedFlag(null)}
+          onChanged={handleDetailChanged}
+          onEdited={(updated) => patchFlag(updated.id, updated)}
+          onDeleted={handleDetailDeleted}
+          onViewOnMap={handleDetailViewOnMap}
+        />
+      </Suspense>
+
       <LegendModal visible={legendOpen} onClose={() => setLegendOpen(false)} />
 
       <AddressSearchModal
@@ -2250,6 +2327,19 @@ export default function MapScreen() {
         flags={flags}
         onClose={() => setNearbyOpen(false)}
         onSelectFlag={(flag) => {
+          // S3 (L6-05): a screen-reader user gets the focus-managed detail sheet
+          // — a real heading with useFocusOnOpen — instead of a silent map
+          // recenter they can't perceive. We present the sheet ON TOP of the
+          // still-open Nearby list (we do NOT close it): closing-then-presenting
+          // races the iOS modal transition, and leaving the list mounted means
+          // VoiceOver focus returns to this row when the sheet closes. Nesting is
+          // already proven here (StatusHistoryModal stacks over FlagDetailModal).
+          if (screenReaderOn) {
+            setSelectedFlag(flag);
+            return;
+          }
+          // Sighted path — unchanged behaviour, upgraded to the robust
+          // retryShowCallout helper (vs the old single fixed 350ms timeout).
           setNearbyOpen(false);
           setFocusedFlagId(flag.id);
           mapRef.current?.animateTo({
@@ -2258,9 +2348,7 @@ export default function MapScreen() {
             latitudeDelta: 0.005,
             longitudeDelta: 0.005,
           });
-          // Give the close animation a beat before opening the callout, so
-          // the marker is visible by the time the bubble appears.
-          setTimeout(() => mapRef.current?.showCallout(flag.id), 350);
+          retryShowCallout(mapRef.current, flag.id, () => false);
         }}
       />
 

@@ -13,6 +13,7 @@ import { MapContainer, Marker, Popup, Rectangle, useMap, useMapEvents } from 're
 import L, { Map as LeafletMap, Marker as LeafletMarker } from 'leaflet';
 import Supercluster from 'supercluster';
 import { CATEGORY_LABELS, isAnon, SEVERITY_LABELS, severityColor, STATUS_LABELS } from '@/lib/flags';
+import { relativeTime } from '@/lib/relativeTime';
 import type { FlagCategory, FlagRow } from '@/types/database';
 import { heatmapSeverity as severityTokens } from '@/theme';
 import { useColor } from '@/theme/ThemeContext';
@@ -61,6 +62,12 @@ export interface PlatformMapProps {
   heatCells?: HeatCell[];
   /** Heat-map colour mode. Matches the native variant. */
   heatmapMode?: HeatmapMode;
+  /**
+   * S3: the popup's "Open details" button opens the full FlagDetailModal (the
+   * trust ledger). Mirrors the native variant's callout affordance. Optional so
+   * existing callers/tests don't have to pass it.
+   */
+  onOpenDetails?: (flag: FlagRow) => void;
 }
 
 // Cache the heat-label divIcon by (color + tone + number). Cells with the
@@ -278,6 +285,7 @@ interface ClusteredMarkersProps {
   brandColor: string;
   textOnBrand: string;
   markerRefs: React.MutableRefObject<Record<string, LeafletMarker | null>>;
+  onOpenDetails?: (flag: FlagRow) => void;
 }
 
 function ClusteredMarkers({
@@ -286,6 +294,7 @@ function ClusteredMarkers({
   brandColor,
   textOnBrand,
   markerRefs,
+  onOpenDetails,
 }: ClusteredMarkersProps) {
   const map = useMap();
 
@@ -421,6 +430,12 @@ function ClusteredMarkers({
                   Severity {flag.severity} of 5 · {SEVERITY_LABELS[flag.severity]} · {STATUS_LABELS[flag.status]}
                   {flagIsAnon ? ' · Anonymous' : ''}
                 </div>
+                {/* S3 (L3-12): report-freshness line — the read-half of the
+                    trust ledger, visible at a glance. #666 like the meta above
+                    (the Leaflet popup chrome is always white). */}
+                <div style={{ fontSize: 11, color: '#666', marginTop: 2, fontWeight: 600 }}>
+                  Reported {relativeTime(flag.created_at)}
+                </div>
                 {flag.photo_url ? (
                   <PopupPhoto
                     src={flag.photo_url}
@@ -430,6 +445,29 @@ function ClusteredMarkers({
                 ) : null}
                 {flag.description ? (
                   <div style={{ marginTop: 6, fontSize: 12 }}>{flag.description}</div>
+                ) : null}
+                {/* S3 (L3-12): the affordance that cashes the marker's "Open for
+                    details" promise — opens FlagDetailModal. Wayfinder Blue
+                    (#1466E0, mode-independent per PROTECT-16) on the white chrome. */}
+                {onOpenDetails ? (
+                  <button
+                    type="button"
+                    onClick={() => onOpenDetails(flag)}
+                    style={{
+                      marginTop: 8,
+                      width: '100%',
+                      padding: '8px 10px',
+                      background: '#1466E0',
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: 8,
+                      fontWeight: 700,
+                      fontSize: 13,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    Open details
+                  </button>
                 ) : null}
               </div>
             </Popup>
@@ -610,6 +648,7 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(function Pla
     focusedFlagId,
     reducedMotion,
     onLongPressMap,
+    onOpenDetails,
     heatCells = [],
     heatmapMode = 'gradient',
   },
@@ -753,6 +792,7 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(function Pla
           brandColor={themeColor.ctaFill}
           textOnBrand={themeColor.textOnBrand}
           markerRefs={markerRefs}
+          onOpenDetails={onOpenDetails}
         />
       </MapContainer>
     </div>
