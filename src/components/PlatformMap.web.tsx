@@ -553,17 +553,42 @@ class CachedTileLayer extends L.TileLayer {
 // userId changes so tiles are always keyed to the current authenticated user.
 // ---------------------------------------------------------------------------
 
-// CartoDB Dark Matter — matches the app's dark UI.
-const OSM_URL = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
+// S7: CARTO basemaps branched on the app's color scheme — Dark Matter in dark,
+// Positron (light_all) in light. The URL was hard-coded to dark_all, so light
+// mode rendered a near-black void (R6: "the map failed to load"). The light
+// family is a Sky-eye candidate (Positron light_all vs the warmer Voyager);
+// Positron keeps the pins + heat cells the most legible over the tiles.
+const OSM_DARK = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
+const OSM_LIGHT = 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
 const OSM_ATTRIBUTION =
   '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors ' +
   '&copy; <a href="https://carto.com/attributions">CARTO</a>';
 
-function CachedTileLayerWrapper({ userId }: { userId: string | null }): null {
+// S7: tame the third-party attribution strip to the app's hairline voice — KEPT
+// (legally required), just quieter and pinned always-light (GLASS §12 overlay
+// discipline). Injected once on web.
+if (typeof document !== 'undefined' && !document.getElementById('accessmap-leaflet-attr')) {
+  const attrStyle = document.createElement('style');
+  attrStyle.id = 'accessmap-leaflet-attr';
+  attrStyle.textContent =
+    '.leaflet-control-attribution{background:rgba(255,255,255,0.78)!important;' +
+    'color:#5B6472!important;font-size:10px!important;line-height:15px!important;' +
+    'padding:0 6px!important;border-top-left-radius:8px!important;box-shadow:none!important;}' +
+    '.leaflet-control-attribution a{color:#3A4657!important;}';
+  document.head.appendChild(attrStyle);
+}
+
+function CachedTileLayerWrapper({
+  userId,
+  tileUrl,
+}: {
+  userId: string | null;
+  tileUrl: string;
+}): null {
   const map = useMap();
 
   useEffect(() => {
-    const layer = new CachedTileLayer(OSM_URL, {
+    const layer = new CachedTileLayer(tileUrl, {
       attribution: OSM_ATTRIBUTION,
       userId,
     });
@@ -572,7 +597,8 @@ function CachedTileLayerWrapper({ userId }: { userId: string | null }): null {
       layer.dispose(); // F31: stop in-flight chains from caching post-unmount
       layer.remove();
     };
-  }, [map, userId]);
+    // tileUrl in deps: a light/dark flip re-creates the layer with the new family.
+  }, [map, userId, tileUrl]);
 
   return null;
 }
@@ -590,6 +616,7 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(function Pla
   ref,
 ) {
   const themeColor = useColor();
+  const tileUrl = themeColor.scheme === 'dark' ? OSM_DARK : OSM_LIGHT;
   const mapInstance = useRef<LeafletMap | null>(null);
   // F7: react-leaflet's MapContainer ref resolves to null on the first commit
   // (its internal context isn't ready yet) and to the real map only after a
@@ -677,7 +704,7 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(function Pla
         // overlay's bottom zone drive zoom via the imperative handle instead.
         zoomControl={false}
       >
-        <CachedTileLayerWrapper userId={userId} />
+        <CachedTileLayerWrapper userId={userId} tileUrl={tileUrl} />
         {/* Heat-map: Rectangle for each cell footprint + a divIcon Marker
               at the centroid showing the rounded mean severity. Leaflet
               paints Rectangles on `overlayPane` (SVG default) which sits
