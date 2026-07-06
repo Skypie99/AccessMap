@@ -12,6 +12,7 @@ import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { CATEGORY_LABELS, SEVERITY_LABELS, severityColor, STATUS_LABELS } from '@/lib/flags';
 import { decorativeProps } from '@/lib/accessibility';
 import { severityA11y, statusA11y } from '@/lib/a11yText';
+import { pinKey } from '@/lib/pinKey';
 import { colorForCell, HEATMAP_FILL_OPACITY, type HeatCell, type HeatmapMode } from '@/lib/heatmap';
 import type { FlagRow } from '@/types/database';
 
@@ -22,16 +23,6 @@ export interface PlatformMapRegion {
   longitudeDelta: number;
 }
 
-// Content-derived key for the custom teardrop markers (S14 / PROTECT-15). With
-// tracksViewChanges={false} the marker snapshots on mount and only re-renders
-// when its key changes — so the key must carry every input that changes the
-// PIXELS: severity fill, anon ring, resolved glyph, category glyph. Opacity
-// (focus dimming) stays a native Marker prop, so it updates WITHOUT a re-snapshot
-// and is deliberately NOT in the key. Nothing time-derived enters the key, so the
-// steady state never re-rasterizes.
-function pinKey(f: FlagRow): string {
-  return `${f.id}|${f.severity}|${f.user_id === null ? 'x' : 'o'}|${f.status === 'resolved' ? 'r' : ''}|${f.category}`;
-}
 
 export interface PlatformMapHandle {
   animateTo: (region: {
