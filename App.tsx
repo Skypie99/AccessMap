@@ -15,6 +15,7 @@ import { useAppFonts } from '@/lib/fonts';
 import A11yLiveRegion from '@/components/A11yLiveRegion';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import FlashBanner from '@/components/FlashBanner';
+import LiveStatusRegion from '@/components/LiveStatusRegion';
 import OnboardingCards from '@/components/OnboardingCards';
 import RootNavigator from '@/navigation/RootNavigator';
 import type { TakePendingUrl } from '@/navigation/linking';
@@ -220,6 +221,10 @@ function App() {
             {/* S9: the web announce-shim's rendered aria-live region. Mounted
                 above the session branch so the guest-web path has it too. */}
             <A11yLiveRegion />
+            {/* S10/S11 (P5): the persistent-mounted VISIBLE + live status region
+                for submit-success + "still trying". Also above the session
+                branch so the guest-web cohort — S10's whole audience — gets it. */}
+            <LiveStatusRegion />
             <StatusBar style="auto" />
           </AuthProvider>
         </ThemeProvider>
