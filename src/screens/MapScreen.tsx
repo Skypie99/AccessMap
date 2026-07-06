@@ -2957,7 +2957,10 @@ const makeStyles = (color: ColorTheme) =>
       paddingHorizontal: spacing.lg,
       paddingVertical: 10,
       borderRadius: radius.circle,
-      backgroundColor: color.brand,
+      // ctaFill (mode-independent Wayfinder Blue) for white-on-blue CTAs —
+      // color.brand + white is 3.42:1 in dark (passing only by 14pt-bold
+      // large-text allowance); ctaFill removes that latent fragility.
+      backgroundColor: color.ctaFill,
       minHeight: 44,
       justifyContent: 'center',
     },
@@ -3148,7 +3151,7 @@ const makeStyles = (color: ColorTheme) =>
     },
     nameBtnCancel: { backgroundColor: color.surfaceNeutral },
     nameBtnCancelText: { color: color.text, fontWeight: '600', fontSize: 14 },
-    nameBtnSave: { backgroundColor: color.brand },
+    nameBtnSave: { backgroundColor: color.ctaFill },
     nameBtnSaveDisabled: { opacity: 0.5 },
     nameBtnSaveText: { color: color.textOnBrand, fontWeight: '700', fontSize: 14 },
   });
