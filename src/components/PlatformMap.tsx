@@ -154,6 +154,14 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(function Pla
       clusterColor={color.ctaFill}
       clusterTextColor={color.textOnBrand}
       radius={40}
+      // B7-B (L4-03): gate the iOS marker-cluster spring under reduce-motion.
+      // react-native-map-clustering fires a global LayoutAnimation.spring on
+      // every pan-settle guarded only by `animationEnabled && Platform.OS ===
+      // 'ios'` — with no RM check. animationEnabled={false} short-circuits that
+      // one call, bringing the last native cluster animation up to the app's
+      // reduce-motion standard (mirrors S12's web-camera gate). iOS spring
+      // amplitude/feel once gated is NEEDS-SKY-DEVICE.
+      animationEnabled={!reducedMotion}
       renderCluster={(cluster: any) => {
         const { id, geometry, onPress, properties } = cluster;
         const count: number = properties.point_count;

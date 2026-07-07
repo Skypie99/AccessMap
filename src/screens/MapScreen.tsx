@@ -2234,6 +2234,25 @@ export default function MapScreen() {
             </AppText>
           </View>
         )}
+
+        {/* B7-A (L7-11): the disclaimer above states the k-threshold RULE but is
+            silent about the OUTCOME. When heat is on and there IS data but no
+            cell clusters enough to qualify, the tinted layer is simply blank —
+            which reads as broken. This complementary line names the outcome so
+            "on + empty" ≠ "broken". (heatCells is the global loaded set, not a
+            viewport query, so the copy stays honest about coverage, not "view".) */}
+        {heatmapEnabled && heatCells.length === 0 && filteredFlags.length > 0 && (
+          <View
+            style={styles.heatmapDisclaimer}
+            accessible
+            accessibilityRole="text"
+            accessibilityLiveRegion="polite"
+          >
+            <AppText variant="body" style={styles.heatmapDisclaimerText}>
+              No heat zones qualify yet — coverage grows as more reports come in.
+            </AppText>
+          </View>
+        )}
         </View>
 
         {/* Bottom bar: legend (left, conditional) + FABs (right) */}
