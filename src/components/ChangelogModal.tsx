@@ -92,7 +92,7 @@ export default function ChangelogModal({ visible, onClose }: Props) {
       visible={visible}
       onClose={onClose}
       title="What's New"
-      cardStyle={{ backgroundColor: color.surfaceMuted }}
+      glass
       testID="changelogModal-backdrop"
     >
       <ScrollView

@@ -20,6 +20,7 @@ import { useColor } from '@/theme/ThemeContext';
 import { useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
 import { font, radius, shadow, spacing } from '@/theme';
 import { AppText } from './AppText';
+import { GlassSurface } from './GlassSurface';
 
 export interface SheetHeaderProps {
   title: string;
@@ -84,6 +85,10 @@ export interface SheetProps {
   cardStyle?: ViewStyle;
   /** Optional right-side header accessory (replaces the close button). */
   headerRight?: React.ReactNode;
+  /** Render the card as bulk-glass (the ratified modal material) instead of an
+   *  opaque surface. Default false — the opaque path is byte-identical to prior
+   *  behavior, so every non-glass consumer is unchanged (B4, GLASS.md). */
+  glass?: boolean;
   showHandle?: boolean;
   testID?: string;
 }
@@ -95,6 +100,7 @@ export function Sheet({
   children,
   cardStyle,
   headerRight,
+  glass = false,
   showHandle = true,
   testID,
 }: SheetProps) {
@@ -103,6 +109,12 @@ export function Sheet({
   // WCAG 2.4.3: when the sheet opens, move the screen-reader cursor onto its
   // title so it doesn't stay on the control behind the sheet.
   const titleRef = useFocusOnOpen<Text>(visible);
+  const inner = (
+    <>
+      <SheetHeader title={title} onClose={onClose} showHandle={showHandle} right={headerRight} titleRef={titleRef} />
+      {children}
+    </>
+  );
   return (
     <Modal
       aria-label={title}
@@ -112,10 +124,28 @@ export function Sheet({
       onRequestClose={onClose}
     >
       <View style={[styles.backdrop, { backgroundColor: color.scrim }]} accessibilityViewIsModal testID={testID}>
-        <View style={[styles.card, { backgroundColor: color.surface }, shadow.e3, cardStyle]}>
-          <SheetHeader title={title} onClose={onClose} showHandle={showHandle} right={headerRight} titleRef={titleRef} />
-          {children}
-        </View>
+        {glass ? (
+          // Bulk-glass card: the variant owns the surface, and overflow:hidden
+          // clips it to the rounded top — so (per GlassSurface's contract) the
+          // up-shadow lives on the outer wrapper, since an overflow:hidden view
+          // clips its own shadow. Recipe identical to FeedbackModal/AboutScreen.
+          <View
+            style={[
+              styles.cardShadow,
+              color.scheme === 'dark'
+                ? { shadowColor: '#000', shadowOpacity: 0.35 }
+                : { shadowColor: color.shadowTint, shadowOpacity: 0.12 },
+            ]}
+          >
+            <GlassSurface variant="bulk" borderRadius={0} style={[styles.card, styles.cardGlass, cardStyle]}>
+              {inner}
+            </GlassSurface>
+          </View>
+        ) : (
+          <View style={[styles.card, { backgroundColor: color.surface }, shadow.e3, cardStyle]}>
+            {inner}
+          </View>
+        )}
       </View>
     </Modal>
   );
@@ -128,6 +158,17 @@ const styles = StyleSheet.create({
     borderTopRightRadius: radius.xl,
     paddingBottom: spacing.sm,
     maxHeight: '90%',
+  },
+  // Glass path only: clip the bulk material to the rounded top.
+  cardGlass: { overflow: 'hidden' },
+  // Glass path only: the up-shadow the clipped card can't cast itself. Mode
+  // tint + opacity applied inline (see the render). Matches FeedbackModal.
+  cardShadow: {
+    borderTopLeftRadius: radius.xl,
+    borderTopRightRadius: radius.xl,
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: -4 },
+    elevation: 5,
   },
   handleWrap: { alignItems: 'center', paddingTop: spacing.sm, paddingBottom: spacing.tight },
   handle: { width: 36, height: 4, borderRadius: radius.full },
