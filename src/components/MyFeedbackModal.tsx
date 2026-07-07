@@ -12,6 +12,7 @@ import {
 import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 import { useAuth } from '@/lib/auth';
 import { AppText } from '@/components/ui/AppText';
+import { GlassSurface } from '@/components/ui/GlassSurface';
 import { font, radius, shadow, spacing } from '@/theme';
 import { a11yToggle, useReducedMotion } from '@/lib/accessibility';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
@@ -121,7 +122,12 @@ export default function MyFeedbackModal({ visible, onClose, refreshKey = 0 }: Pr
           this view as inert while the modal is up. Same pattern as
           HelpModal; see that file for the longer comment. Alex P5. */}
       <View style={styles.backdrop} accessibilityViewIsModal testID="myFeedbackModal-backdrop">
-        <View style={[styles.card, { paddingBottom: Math.max(spacing.sm, insets.bottom) }]}>
+        <View style={styles.cardWrap}>
+        <GlassSurface
+          variant="bulk"
+          borderRadius={0}
+          style={[styles.card, { paddingBottom: Math.max(spacing.sm, insets.bottom) }]}
+        >
           <View style={styles.headerRow}>
             <AppText variant="heading" style={styles.title} accessibilityRole="header">
               My Feedback
@@ -225,6 +231,7 @@ export default function MyFeedbackModal({ visible, onClose, refreshKey = 0 }: Pr
               </View>
             }
           />
+        </GlassSurface>
         </View>
       </View>
     </Modal>
@@ -272,13 +279,26 @@ const makeStyles = (color: ColorTheme) =>
       justifyContent: 'flex-end',
     },
     card: {
-      backgroundColor: color.surfaceMuted,
       borderTopLeftRadius: radius.xl,
       borderTopRightRadius: radius.xl,
       paddingTop: spacing.lg,
       paddingBottom: spacing.sm,
       maxHeight: '90%',
-      ...shadow.e3,
+      // The bulk variant owns the surface; overflow:hidden clips it to the
+      // rounded top (the up-shadow moves to cardWrap — GlassSurface contract).
+      overflow: 'hidden',
+    },
+    // Bulk-glass up-shadow on the outer wrapper (an overflow:hidden view clips
+    // its own shadow). Mode tint identical to FeedbackModal/AboutScreen.
+    cardWrap: {
+      borderTopLeftRadius: radius.xl,
+      borderTopRightRadius: radius.xl,
+      ...(color.scheme === 'dark'
+        ? { shadowColor: '#000', shadowOpacity: 0.35 }
+        : { shadowColor: color.shadowTint, shadowOpacity: 0.12 }),
+      shadowRadius: 14,
+      shadowOffset: { width: 0, height: -4 },
+      elevation: 5,
     },
     headerRow: {
       flexDirection: 'row',

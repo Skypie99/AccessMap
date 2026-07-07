@@ -3,6 +3,7 @@ import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { font, radius, shadow, spacing } from '@/theme';
 import { a11yToggle, useReducedMotion } from '@/lib/accessibility';
 import { AppText } from '@/components/ui/AppText';
+import { GlassSurface } from '@/components/ui/GlassSurface';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { ChevronDown, ChevronRight, X } from 'lucide-react-native';
 import { openFeedbackComposer } from '@/lib/feedback';
@@ -110,7 +111,8 @@ export default function HelpModal({ visible, onClose }: Props) {
           own contents from TalkBack. Android relies on RN Modal's own
           focus trap and the elevation/z-index of the backdrop.) */}
       <View style={styles.backdrop} accessibilityViewIsModal testID="helpModal-backdrop">
-        <View style={styles.card}>
+        <View style={styles.cardWrap}>
+        <GlassSurface variant="bulk" borderRadius={0} style={styles.card}>
           <View style={styles.headerRow}>
             <AppText variant="heading" style={styles.title} accessibilityRole="header">
               Help & FAQ
@@ -193,6 +195,7 @@ export default function HelpModal({ visible, onClose }: Props) {
               </Pressable>
             </View>
           </ScrollView>
+        </GlassSurface>
         </View>
       </View>
     </Modal>
@@ -207,13 +210,26 @@ const makeStyles = (color: ColorTheme) =>
       justifyContent: 'flex-end',
     },
     card: {
-      backgroundColor: color.surfaceMuted,
       borderTopLeftRadius: radius.xl,
       borderTopRightRadius: radius.xl,
       paddingTop: spacing.lg,
       paddingBottom: spacing.sm,
       maxHeight: '90%',
-      ...shadow.e3,
+      // The bulk variant owns the surface; overflow:hidden clips it to the
+      // rounded top (the up-shadow moves to cardWrap — GlassSurface contract).
+      overflow: 'hidden',
+    },
+    // Bulk-glass up-shadow on the outer wrapper (an overflow:hidden view clips
+    // its own shadow). Mode tint identical to FeedbackModal/AboutScreen.
+    cardWrap: {
+      borderTopLeftRadius: radius.xl,
+      borderTopRightRadius: radius.xl,
+      ...(color.scheme === 'dark'
+        ? { shadowColor: '#000', shadowOpacity: 0.35 }
+        : { shadowColor: color.shadowTint, shadowOpacity: 0.12 }),
+      shadowRadius: 14,
+      shadowOffset: { width: 0, height: -4 },
+      elevation: 5,
     },
     headerRow: {
       flexDirection: 'row',
@@ -249,12 +265,12 @@ const makeStyles = (color: ColorTheme) =>
     },
 
     emptyResults: {
-      // color.textMuted (#666) → 5.7:1 on white, comfortably above the
-      // 4.5:1 AA body floor and the #5b6470 (~5.6:1) target called out
-      // in the feature spec. The padding + italics differentiate this
-      // helper text from a real FAQ card without needing a heavier
-      // border or background.
-      color: color.textMuted,
+      // On the bulk-glass sheet the worst-case backdrop is ~#D9D9D9, not white,
+      // so textMuted (#666) no longer clears AA — use the arbitrated on-glass
+      // muted ink + the ≥500 on-glass body weight (GLASS §2). Italic + padding
+      // still differentiate this helper from a real FAQ card.
+      color: color.inkGlassMuted,
+      fontFamily: font.family.bodyMedium,
       fontSize: font.size.sm,
       fontStyle: 'italic',
       paddingVertical: spacing.md,
