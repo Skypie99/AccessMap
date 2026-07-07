@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { font, radius, shadow, spacing } from '@/theme';
 import { AppText } from '@/components/ui/AppText';
+import { GlassSurface } from '@/components/ui/GlassSurface';
 import { AlertTriangle, ChevronRight, Clock, MapPin, Search, X } from 'lucide-react-native';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { useReducedMotion } from '@/lib/accessibility';
@@ -205,7 +206,8 @@ export default function AddressSearchModal({ visible, onClose, onSelect }: Props
         >
         {/* WCAG 2.4.3: contain VoiceOver focus inside the sheet so it can't
             wander onto the map behind it (every other modal sets this). */}
-        <View style={styles.card} accessibilityViewIsModal>
+        <View style={styles.cardWrap}>
+        <GlassSurface variant="bulk" borderRadius={0} style={styles.card} accessibilityViewIsModal>
           <View style={styles.headerRow}>
             <AppText variant="heading" style={styles.title} accessibilityRole="header">
               Search by address
@@ -377,6 +379,7 @@ export default function AddressSearchModal({ visible, onClose, onSelect }: Props
               )}
             />
           )}
+        </GlassSurface>
         </View>
         </KeyboardAvoidingView>
       </View>
@@ -392,7 +395,6 @@ function makeStyles(color: ColorTheme) {
       justifyContent: 'flex-end',
     },
     card: {
-      backgroundColor: color.surfaceMuted,
       borderTopLeftRadius: radius.xl,
       borderTopRightRadius: radius.xl,
       paddingHorizontal: spacing.xl,
@@ -400,7 +402,21 @@ function makeStyles(color: ColorTheme) {
       paddingBottom: spacing.xl,
       gap: spacing.sm,
       maxHeight: '85%',
-      ...shadow.e3,
+      // The bulk variant owns the surface; overflow:hidden clips it to the
+      // rounded top (the up-shadow moves to cardWrap — GlassSurface contract).
+      overflow: 'hidden',
+    },
+    // Bulk-glass up-shadow on the outer wrapper (an overflow:hidden view clips
+    // its own shadow). Mode tint identical to FeedbackModal/AboutScreen.
+    cardWrap: {
+      borderTopLeftRadius: radius.xl,
+      borderTopRightRadius: radius.xl,
+      ...(color.scheme === 'dark'
+        ? { shadowColor: '#000', shadowOpacity: 0.35 }
+        : { shadowColor: color.shadowTint, shadowOpacity: 0.12 }),
+      shadowRadius: 14,
+      shadowOffset: { width: 0, height: -4 },
+      elevation: 5,
     },
     headerRow: {
       flexDirection: 'row',
@@ -422,7 +438,8 @@ function makeStyles(color: ColorTheme) {
       justifyContent: 'center',
     },    subtitle: {
       fontSize: font.size.sm,
-      color: color.textMuted,
+      color: color.inkGlassMuted,
+      fontFamily: font.family.bodyMedium,
       lineHeight: 18,
     },
     input: {
@@ -445,7 +462,8 @@ function makeStyles(color: ColorTheme) {
     },
     loadingText: {
       fontSize: font.size.sm,
-      color: color.textMuted,
+      color: color.inkGlassMuted,
+      fontFamily: font.family.bodyMedium,
     },
     emptyCard: {
       backgroundColor: color.surface,
@@ -551,11 +569,12 @@ function makeStyles(color: ColorTheme) {
       paddingTop: spacing.xs,
     },
     recentHeader: {
-      // textMuted (#666) is 5.7:1 on white — clears AA at body size and
-      // beats the "≥ #5b6470" minimum from the spec.
+      // On the bulk-glass sheet the worst-case backdrop is darker than white,
+      // so textMuted (#666) no longer clears AA — use the arbitrated on-glass
+      // muted ink (inkGlassMuted).
       fontSize: font.size.sm,
       fontWeight: font.weight.semibold,
-      color: color.textMuted,
+      color: color.inkGlassMuted,
       textTransform: 'uppercase',
       letterSpacing: 0.5,
     },

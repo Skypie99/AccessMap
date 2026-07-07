@@ -28,6 +28,7 @@ import {
 import { useAuth } from '@/lib/auth';
 import { a11yToggle, useReducedMotion } from '@/lib/accessibility';
 import { AppText } from '@/components/ui/AppText';
+import { GlassSurface } from '@/components/ui/GlassSurface';
 import { confirm } from '@/lib/confirm';
 import { errorMessage } from '@/lib/errors';
 import {
@@ -252,7 +253,9 @@ export default function SavedPlacesModal({
   return (
     <Modal aria-label="Saved Places" visible={visible} animationType={reducedMotion ? 'none' : 'slide'} transparent onRequestClose={onClose}>
       <View style={styles.backdrop}>
-        <View
+        <GlassSurface
+          variant="bulk"
+          borderRadius={0}
           style={[styles.card, { paddingBottom: Math.max(spacing.xxl, insets.bottom) }]}
           accessibilityViewIsModal
         >
@@ -414,7 +417,7 @@ export default function SavedPlacesModal({
               keyboardShouldPersistTaps="handled"
             />
           )}
-        </View>
+        </GlassSurface>
       </View>
     </Modal>
   );
@@ -428,7 +431,6 @@ const makeStyles = (color: ColorTheme) =>
       justifyContent: 'flex-end',
     },
     card: {
-      backgroundColor: color.surface,
       borderTopLeftRadius: radius.xl,
       borderTopRightRadius: radius.xl,
       paddingHorizontal: spacing.xl,
@@ -436,6 +438,8 @@ const makeStyles = (color: ColorTheme) =>
       paddingBottom: spacing.xxl,
       gap: spacing.md,
       maxHeight: '85%',
+      // The bulk variant owns the surface; clip it to the rounded top.
+      overflow: 'hidden',
     },
     headerRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
     title: {
@@ -548,7 +552,7 @@ const makeStyles = (color: ColorTheme) =>
     saveBtnDisabled: { opacity: 0.6 },
     saveBtnText: { color: color.textOnBrand, fontWeight: font.weight.bold },
     center: { alignItems: 'center', padding: spacing.xxl, gap: spacing.sm },
-    subtitle: { fontSize: font.size.sm, color: color.textMuted },
+    subtitle: { fontSize: font.size.sm, color: color.inkGlassMuted, fontFamily: font.family.bodyMedium },
     emptyWrap: {
       alignItems: 'center',
       gap: spacing.sm,
@@ -562,7 +566,8 @@ const makeStyles = (color: ColorTheme) =>
     },
     emptyBody: {
       fontSize: font.size.base,
-      color: color.textMutedAlt,
+      color: color.inkGlassMuted,
+      fontFamily: font.family.bodyMedium,
       textAlign: 'center',
       lineHeight: 20,
     },

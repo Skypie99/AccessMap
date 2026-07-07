@@ -15,6 +15,7 @@ import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
 import CategoryIcon from '@/components/CategoryIcon';
 import { AppText } from '@/components/ui/AppText';
+import { GlassSurface } from '@/components/ui/GlassSurface';
 import { Check } from 'lucide-react-native';
 
 interface Props {
@@ -45,11 +46,14 @@ export default function LegendModal({ visible, onClose }: Props) {
           aria-hidden={true}
         />
         <Pressable
-          style={styles.card}
+          style={styles.cardShell}
           // Swallow taps on the card so they don't dismiss via the backdrop.
+          // (The tap-swallow + accessibilityViewIsModal stay on this Pressable;
+          //  the bulk-glass material is the child so the guard is preserved.)
           onPress={() => {}}
           accessibilityViewIsModal
         >
+        <GlassSurface variant="bulk" borderRadius={0} style={styles.card}>
           <View ref={titleRef} style={styles.headerRow} accessible accessibilityRole="header">
             <AppText variant="heading" style={styles.title}>Map legend</AppText>
           </View>
@@ -198,6 +202,7 @@ export default function LegendModal({ visible, onClose }: Props) {
           >
             <AppText variant="label" style={styles.closeText}>Close</AppText>
           </Pressable>
+        </GlassSurface>
         </Pressable>
       </View>
     </Modal>
@@ -211,13 +216,21 @@ const makeStyles = (color: ColorTheme) =>
     backgroundColor: color.scrim,
     justifyContent: 'flex-end',
   },
+  // Tap-swallow shell (the Pressable) — bounds the sheet height; the bulk-glass
+  // material is its child, so the backdrop-dismiss guard is preserved. No fill.
+  cardShell: {
+    borderTopLeftRadius: radius.xl,
+    borderTopRightRadius: radius.xl,
+    maxHeight: '85%',
+  },
   card: {
-    backgroundColor: color.surface,
     padding: spacing.xl,
     borderTopLeftRadius: radius.xl,
     borderTopRightRadius: radius.xl,
     gap: spacing.sm,
-    maxHeight: '85%',
+    flexShrink: 1,
+    // The bulk variant owns the surface; clip it to the rounded top.
+    overflow: 'hidden',
   },
   headerRow: { flexDirection: 'row', alignItems: 'center' },
   title: {
@@ -228,14 +241,15 @@ const makeStyles = (color: ColorTheme) =>
   },
   subtitle: {
     fontSize: font.size.sm,
-    color: color.textMuted,
+    color: color.inkGlassMuted,
+    fontFamily: font.family.bodyMedium,
     lineHeight: 18,
   },
-  scroll: { marginTop: spacing.tight },
+  scroll: { marginTop: spacing.tight, flexShrink: 1 },
   scrollContent: { paddingBottom: spacing.sm, gap: spacing.sm + 2 },
   sectionLabel: {
     fontSize: font.size.caption,
-    color: color.textMuted,
+    color: color.inkGlassMuted,
     textTransform: 'uppercase',
     letterSpacing: 0.8,
     marginTop: spacing.tight,
@@ -308,12 +322,16 @@ const makeStyles = (color: ColorTheme) =>
   rowDesc: {
     fontSize: font.size.xs,
     color: color.text,
+    // On-glass body carries the ≥500 weight (GLASS §2); color.text clears AA on
+    // the bulk floor over the worst-case map backdrop (arbiter-declared).
+    fontFamily: font.family.bodyMedium,
     marginTop: 1,
     lineHeight: 16,
   },
   footnote: {
     fontSize: font.size.xs,
-    color: color.textMuted,
+    color: color.inkGlassMuted,
+    fontFamily: font.family.bodyMedium,
     marginTop: spacing.lg - 2,
     fontStyle: 'italic',
     lineHeight: 17,
