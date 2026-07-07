@@ -26,6 +26,7 @@ import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { hydrateGlassMode, useGlassMode } from '@/lib/glassMode';
 import { font, radius, severity, shadow, spacing } from '@/theme';
 import { errorMessage } from '@/lib/errors';
+import { setLiveStatus } from '@/lib/liveStatus';
 import { confirm, notify } from '@/lib/confirm';
 import CategoryIcon from '@/components/CategoryIcon';
 import {
@@ -1046,6 +1047,10 @@ export default function MapScreen() {
     return chips;
   }, [showEmptyCard, activeCategories, minSeverity, maxDistanceKm, activeDisabilityTags]);
 
+  // B10 (L7-07): a stable pointer to the latest requestLocation so the web
+  // locate-failure Retry can re-run it without requestLocation depending on
+  // itself (mirrors the S11 refreshRef pattern; keeps exhaustive-deps quiet).
+  const requestLocationRef = useRef<() => void>(() => {});
   const requestLocation = useCallback(async () => {
     if (mountedRef.current) {
       setLocating(true);
@@ -1090,12 +1095,28 @@ export default function MapScreen() {
       });
     } catch (e) {
       if (mountedRef.current) {
-        Alert.alert("Couldn't find your location", errorMessage(e));
+        // B10 (L7-07): Alert.alert is a no-op on react-native-web, so a web
+        // locate failure was fully silent (no visible message, nothing spoken).
+        // Route web through the persistent LiveStatusRegion — visible + live —
+        // with a Retry. Native keeps its working, announced dialog. Distinct
+        // from the S4 permission-denied arrival banner (a non-throwing state).
+        if (Platform.OS === 'web') {
+          setLiveStatus({
+            message: "Couldn't find your location — check your connection and try again.",
+            tone: 'info',
+            action: { label: 'Retry', onPress: () => requestLocationRef.current() },
+          });
+        } else {
+          Alert.alert("Couldn't find your location", errorMessage(e));
+        }
       }
     } finally {
       if (mountedRef.current) setLocating(false);
     }
   }, []);
+  // Keep the Retry pointer current (requestLocation is stable, so this settles
+  // after the first render).
+  requestLocationRef.current = requestLocation;
 
   // Initial location fetch; runs once. Only fetches if the OS permission is
   // already granted — the first-time prompt is deferred to the onboarding flow
