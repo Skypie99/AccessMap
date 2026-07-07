@@ -18,7 +18,7 @@ import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Location from 'expo-location';
 import { arrivalPermissionDenied, getCurrentPositionWithTimeout, initialLocationAction } from '@/lib/location';
-import { OFFLINE_BANNER_TEXT } from '@/lib/copy';
+import { offlineBannerText } from '@/lib/copy';
 import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
@@ -289,6 +289,7 @@ export default function MapScreen() {
     setStatuses,
     setViewportGate,
     isOfflineCache,
+    offlineCachedAt,
     patchFlag, // S3: keep the map's flag list in sync after a detail-sheet action
     removeFlag,
   } = useFlags();
@@ -1603,11 +1604,11 @@ export default function MapScreen() {
             style={styles.offlineBanner}
             accessibilityRole="text"
             accessibilityLiveRegion="polite"
-            accessibilityLabel="Showing saved offline data. Connect to the internet to refresh the map."
+            accessibilityLabel={offlineBannerText(offlineCachedAt)}
           >
             <WifiOff size={16} color={color.warningFg} strokeWidth={2} />
             <AppText variant="body" style={styles.offlineBannerText}>
-              {OFFLINE_BANNER_TEXT}
+              {offlineBannerText(offlineCachedAt)}
             </AppText>
           </View>
         )}

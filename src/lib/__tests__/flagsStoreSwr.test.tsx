@@ -165,4 +165,34 @@ describe('FlagsProvider SWR + freshness gate', () => {
     });
     expect(mockListFlagsPage).toHaveBeenCalledTimes(2);
   });
+
+  it('B9 (L7-02): a network failure with a warm cache exposes the data age, and clears it on recovery', async () => {
+    // Warm the cache, then force the network to fail so the store falls back.
+    await __writeFlagsCache('user-1', [makeFlag('cached-1')]);
+    mockListFlagsPage.mockRejectedValue(new Error('offline'));
+
+    render(
+      <FlagsProvider userId="user-1">
+        <Probe />
+      </FlagsProvider>,
+    );
+
+    // The mount fetch fails and the store serves the cache…
+    await waitFor(() => {
+      expect(lastCtx!.isOfflineCache).toBe(true);
+    });
+    // …and now surfaces WHEN that cache was saved, so the banner can state its
+    // age ("Showing saved data from 2h ago…") instead of an ageless notice.
+    expect(lastCtx!.offlineCachedAt).toEqual(expect.any(String));
+    expect(Number.isNaN(Date.parse(lastCtx!.offlineCachedAt as string))).toBe(false);
+
+    // A subsequent successful refresh clears both flags — no stale timestamp
+    // lingers once fresh data is on screen.
+    mockListFlagsPage.mockResolvedValue({ rows: [makeFlag('net-1')], nextCursor: null });
+    await act(async () => {
+      await lastCtx!.refresh();
+    });
+    expect(lastCtx!.isOfflineCache).toBe(false);
+    expect(lastCtx!.offlineCachedAt).toBeNull();
+  });
 });

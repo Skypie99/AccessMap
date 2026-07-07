@@ -93,9 +93,13 @@ async function writeFlagsCache(userId: string, rows: FlagRow[]): Promise<void> {
  * Exported with a `__` prefix for unit tests only — not part of the public API.
  */
 export async function __readFlagsCache(userId: string): Promise<FlagRow[] | null> {
-  return readFlagsCache(userId);
+  // Adapter kept at the rows-only shape so the existing offlineCache unit tests
+  // stay green; the internal reader now also carries `cachedAt` (B9 / L7-02).
+  return readFlagsCache(userId).then((r) => (r ? r.rows : null));
 }
-async function readFlagsCache(userId: string): Promise<FlagRow[] | null> {
+async function readFlagsCache(
+  userId: string,
+): Promise<{ rows: FlagRow[]; cachedAt: string } | null> {
   try {
     const raw = await AsyncStorage.getItem(offlineCacheKey(userId));
     if (!raw) return null;
@@ -107,7 +111,9 @@ async function readFlagsCache(userId: string): Promise<FlagRow[] | null> {
     if (Date.now() - Date.parse(entry.cachedAt) > MAX_CACHE_AGE_MS) {
       return null;
     }
-    return entry.rows;
+    // B9 (L7-02): carry the timestamp so the "saved data" banner can state its
+    // age. `cachedAt` was already parsed above for the TTL check.
+    return { rows: entry.rows, cachedAt: entry.cachedAt };
   } catch (e) {
     console.warn('[flagsStore] cache read failed:', e);
     return null;
@@ -151,6 +157,10 @@ type FlagsContextValue = {
   // True when flags are served from the offline cache (network unavailable).
   // Screens use this to show an "Offline data" notice to the user.
   isOfflineCache: boolean;
+  // B9 (L7-02): ISO timestamp of the cache entry currently being served.
+  // Non-null only while isOfflineCache is true; screens compose the banner's
+  // age from it (e.g. "Showing saved data from 2h ago…").
+  offlineCachedAt: string | null;
   // D4 Safeguard #1 — viewport geofence registration.
   // MapScreen registers a callback here so the D4 realtime payload handler
   // can discard flags outside the current map viewport without the store
@@ -176,6 +186,9 @@ export function FlagsProvider({
   const [hasMore, setHasMore] = useState(false);
   const [statuses, setStatusesState] = useState<FlagStatus[]>(DEFAULT_STATUSES);
   const [isOfflineCache, setIsOfflineCache] = useState(false);
+  // B9 (L7-02): timestamp of the served cache entry, kept in lock-step with
+  // isOfflineCache so the banner can state the data's age.
+  const [offlineCachedAt, setOfflineCachedAt] = useState<string | null>(null);
 
   // D4 realtime opt-in, read reactively. When the user flips the toggle in
   // Profile, this value updates here too (shared listener registry), so the
@@ -264,15 +277,16 @@ export function FlagsProvider({
       ? readFlagsCache(currentUserId as string)
           .then((cached) => {
             if (seq !== fetchSeqRef.current || networkDone) return;
-            if (cached && cached.length > 0) {
+            if (cached && cached.rows.length > 0) {
               // prev is [] on cold start, so this never clobbers live data.
-              setFlags((prev) => (prev.length === 0 ? cached : prev));
+              setFlags((prev) => (prev.length === 0 ? cached.rows : prev));
               setIsOfflineCache(false); // optimistic — network is in flight
+              setOfflineCachedAt(null);
               setLoading(false);
               hasHydratedRef.current = true;
               if (__DEV__) {
                 console.log(
-                  `[flagsStore] SWR cache paint: ${cached.length} rows in ${Date.now() - startedAt}ms (cache hit)`,
+                  `[flagsStore] SWR cache paint: ${cached.rows.length} rows in ${Date.now() - startedAt}ms (cache hit)`,
                 );
               }
             }
@@ -319,6 +333,7 @@ export function FlagsProvider({
         setHasMore(nextCursor !== null);
         setFlags(fetchedRows);
         setIsOfflineCache(false);
+        setOfflineCachedAt(null);
         setError(null);
         lastFetchAtRef.current = Date.now();
         hasHydratedRef.current = true;
@@ -341,8 +356,9 @@ export function FlagsProvider({
           isDefaultStatuses && currentUserId ? await readFlagsCache(currentUserId) : null;
         if (seq !== fetchSeqRef.current) return;
         if (cached !== null) {
-          setFlags(cached);
+          setFlags(cached.rows);
           setIsOfflineCache(true);
+          setOfflineCachedAt(cached.cachedAt);
           setError(null);
           hasHydratedRef.current = true;
           // F33 (re-sweep): the cache only ever holds page 1 — any cursor from
@@ -431,6 +447,7 @@ export function FlagsProvider({
       // F35 (re-sweep): a successful page fetch proves the network is back —
       // don't keep the "Showing saved data" banner over fresh rows.
       setIsOfflineCache(false);
+      setOfflineCachedAt(null);
     } catch (e) {
       // A stale failure (a refresh superseded us) shouldn't surface an error
       // banner over the fresh data.
@@ -632,6 +649,7 @@ export function FlagsProvider({
       patchFlag,
       removeFlag,
       isOfflineCache,
+      offlineCachedAt,
       setViewportGate,
     }),
     [
@@ -649,6 +667,7 @@ export function FlagsProvider({
       patchFlag,
       removeFlag,
       isOfflineCache,
+      offlineCachedAt,
       setViewportGate,
     ],
   );

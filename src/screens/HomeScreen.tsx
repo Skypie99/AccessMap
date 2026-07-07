@@ -42,7 +42,7 @@ import PlatformMap from '@/components/PlatformMap';
 import AddressSearchModal from '@/components/AddressSearchModal';
 import { useFlags } from '@/lib/flagsStore';
 import { useUserLocation } from '@/lib/location';
-import { OFFLINE_BANNER_TEXT } from '@/lib/copy';
+import { offlineBannerText } from '@/lib/copy';
 import { formatDistance, haversineKm, type LatLng } from '@/lib/distance';
 import { CATEGORY_LABELS, SEVERITY_LABELS, severityColor, STATUS_LABELS } from '@/lib/flags';
 import { severityA11y, statusA11y } from '@/lib/a11yText';
@@ -92,7 +92,7 @@ export default function HomeScreen() {
   const tabBarHeight = useBottomTabBarHeight();
   const drawer = useDrawer();
   const { setOpen: setSharedModal } = useSharedModals();
-  const { flags, loading, error, isOfflineCache, refresh } = useFlags();
+  const { flags, loading, error, isOfflineCache, offlineCachedAt, refresh } = useFlags();
   const styles = makeStyles(color);
 
   // The tab bar is absolute (frosted) on native, so float the Report pill +
@@ -281,14 +281,33 @@ export default function HomeScreen() {
           </View>
         </Pressable>
 
-        {/* Offline banner (serving the saved cache). */}
+        {/* Offline banner (serving the saved cache). B9: now states the age. */}
         {isOfflineCache && (
           <View style={styles.offlineBanner} accessibilityRole="text">
             <WifiOff size={15} color={color.warningFg} strokeWidth={2.2} />
             <AppText variant="body" style={styles.offlineText}>
-              {OFFLINE_BANNER_TEXT}
+              {offlineBannerText(offlineCachedAt)}
             </AppText>
           </View>
+        )}
+
+        {/* B9b (L7-02): surface a refresh that FAILED while data is still on
+            screen — otherwise Home's error card (which only shows when the list
+            is empty) swallows it and the stale data reads as current. Ceded to
+            the offline banner above when we actually fell back to the cache. */}
+        {error && flags.length > 0 && !isOfflineCache && (
+          <PressableScale
+            onPress={() => void refresh()}
+            style={styles.offlineBanner}
+            accessibilityRole="button"
+            accessibilityLiveRegion="polite"
+            accessibilityLabel="Couldn’t refresh — showing older data. Tap to try again."
+          >
+            <RefreshCw size={15} color={color.warningFg} strokeWidth={2.2} />
+            <AppText variant="body" style={styles.offlineText}>
+              Couldn’t refresh — showing older data. Tap to try again.
+            </AppText>
+          </PressableScale>
         )}
 
         <AppText variant="label" style={styles.sectionLabel}>{sectionLabel}</AppText>

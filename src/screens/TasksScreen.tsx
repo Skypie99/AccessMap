@@ -37,7 +37,7 @@ import { findNearestUnresolved } from '@/lib/nearestFlag';
 import { useFlags } from '@/lib/flagsStore';
 import { useUserLocation } from '@/lib/location';
 import { POINTS } from '@/lib/points';
-import { OFFLINE_BANNER_TEXT } from '@/lib/copy';
+import { offlineBannerText } from '@/lib/copy';
 import {
   DEFAULT_TASKS_SORT,
   TASKS_SORT_LABELS,
@@ -170,6 +170,7 @@ export default function TasksScreen() {
     patchFlag,
     removeFlag,
     isOfflineCache,
+    offlineCachedAt,
   } = useFlags();
   // Extract userId early so it's available for derived values below.
   const userId = user?.id;
@@ -883,10 +884,10 @@ export default function TasksScreen() {
           style={styles.offlineBanner}
           accessibilityRole="text"
           accessibilityLiveRegion="polite"
-          accessibilityLabel="Showing offline data. Connect to the internet to refresh."
+          accessibilityLabel={offlineBannerText(offlineCachedAt)}
         >
           <WifiOff size={16} color={color.warningFg} strokeWidth={2} />
-          <AppText variant="body" style={styles.offlineBannerText}>{OFFLINE_BANNER_TEXT}</AppText>
+          <AppText variant="body" style={styles.offlineBannerText}>{offlineBannerText(offlineCachedAt)}</AppText>
         </View>
       )}
       {/* Select-multiple entry — visible only when there's something to
