@@ -264,6 +264,10 @@ jest.mock('@/theme', () => jest.requireActual('@/theme'));
 // ---------------------------------------------------------------------------
 jest.mock('@/lib/accessibility', () => ({
   useReducedMotion: jest.fn(() => false),
+  // The card now wears GlassSurface (bulk glass, B4); it reads this hook to pick
+  // blur vs the opaque Reduce-Transparency state. Default false → the blur path,
+  // matching production default (see GlassSurface.test.tsx).
+  useReduceTransparency: jest.fn(() => false),
   // The modal moves screen-reader focus to its title on open; in tests the hook
   // just needs to exist and hand back a ref (focus is a native no-op here).
   useFocusOnOpen: jest.fn(() => ({ current: null })),

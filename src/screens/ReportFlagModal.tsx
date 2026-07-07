@@ -14,6 +14,7 @@ import {
   View,
 } from 'react-native';
 import { AppText } from '@/components/ui/AppText';
+import { GlassSurface } from '@/components/ui/GlassSurface';
 import { hapticNotify, hapticSelection } from '@/lib/haptics';
 import { Accessibility, Brain, Camera, Check, Construction, Ear, Eye, Lock, MapPin } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -486,7 +487,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           style={styles.kav}
         >
-        <View style={styles.card} accessibilityViewIsModal>
+        <GlassSurface variant="bulk" borderRadius={0} style={styles.card} accessibilityViewIsModal>
           {/* WCAG 1.4.4: content scrolls under the 88% cap; Cancel/Report
               buttons stay pinned as sticky footer. */}
           <ScrollView
@@ -1076,7 +1077,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
               )}
             </Pressable>
           </View>
-        </View>
+        </GlassSurface>
         </KeyboardAvoidingView>
       </View>
     </Modal>
@@ -1100,12 +1101,15 @@ const makeStyles = (color: ColorTheme) =>
       // grows until the KAV's 88% cap bounds it for the tall signed-in form,
       // at which point flexShrink lets the body ScrollView take over.
       flexShrink: 1,
-      backgroundColor: color.surface,
       paddingHorizontal: spacing.xl,
       paddingTop: spacing.xl,
       paddingBottom: 0,
       borderTopLeftRadius: radius.xl,
       borderTopRightRadius: radius.xl,
+      // The bulk variant owns the surface; clip it to the rounded top. The
+      // sticky footer, KAV/88% cap, and severity-button architecture are
+      // untouched — material only (PROTECT-3).
+      overflow: 'hidden',
     },
     // Shrink-to-cap, never grow: the body yields inside the 88% card so the
     // long form still scrolls, while a short form hugs its content.
@@ -1118,7 +1122,7 @@ const makeStyles = (color: ColorTheme) =>
       letterSpacing: -0.3,
     },
     locationRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.tight, marginBottom: spacing.xs },
-    location: { fontSize: font.size.xs, color: color.textMuted },
+    location: { fontSize: font.size.xs, color: color.inkGlassMuted },
     // S5: in-sheet "Use my location" retry — 44pt, brand-soft tint mirroring the
     // anon banner; only rendered when no location has resolved.
     useLocationBtn: {
@@ -1141,7 +1145,8 @@ const makeStyles = (color: ColorTheme) =>
     // S15: submit-moment caption — small muted line above the sticky footer.
     submitMoment: {
       fontSize: font.size.xs,
-      color: color.textMuted,
+      color: color.inkGlassMuted,
+      fontFamily: font.family.bodyMedium,
       lineHeight: 17,
       marginTop: spacing.md,
     },
@@ -1203,13 +1208,15 @@ const makeStyles = (color: ColorTheme) =>
     sevHint: {
       fontSize: 13,
       color: color.text,
+      fontFamily: font.family.bodyMedium,
       lineHeight: 18,
       marginTop: -4,
     },
     sevHintLabel: { fontWeight: '700', color: color.textStrong },
     charCounter: {
       fontSize: 12,
-      color: color.textSubtle,
+      color: color.inkGlassMuted,
+      fontFamily: font.family.bodyMedium,
       textAlign: 'right',
       marginTop: 2,
     },
@@ -1258,7 +1265,8 @@ const makeStyles = (color: ColorTheme) =>
     photoPrivacyText: {
       flex: 1,
       fontSize: font.size.xs,
-      color: color.textMutedAlt,
+      color: color.inkGlassMuted,
+      fontFamily: font.family.bodyMedium,
       lineHeight: 17,
     },
     // Anonymous mode banner — tinted info strip shown at the top of the
@@ -1351,7 +1359,8 @@ const makeStyles = (color: ColorTheme) =>
     },
     anonPhotoNudge: {
       fontSize: 13,
-      color: color.textMuted,
+      color: color.inkGlassMuted,
+      fontFamily: font.family.bodyMedium,
       marginTop: 4,
     },
     anonPhotoNudgeLink: {
