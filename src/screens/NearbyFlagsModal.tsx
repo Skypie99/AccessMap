@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { RemoteImage } from '@/components/ui/RemoteImage';
 import { AppText } from '@/components/ui/AppText';
+import { GlassSurface } from '@/components/ui/GlassSurface';
 import { a11yToggle, useReducedMotion } from '@/lib/accessibility';
 import { CATEGORY_LABELS, CATEGORY_ORDER, SEVERITY_LABELS, severityColor, STATUS_LABELS } from '@/lib/flags';
 import { relativeTime } from '@/lib/relativeTime';
@@ -194,6 +195,11 @@ export default function NearbyFlagsModal({
       presentationStyle="pageSheet"
       aria-label="Nearby flags"
     >
+      {/* Bulk-glass fills the whole pageSheet edge-to-edge (Sky device pick D10);
+          the SafeAreaView rides transparent on top so the PROTECT-1 list content
+          — one-breath SR labels, tab chips, 44pt controls, reset-on-close — is
+          byte-identical. Material only. */}
+      <GlassSurface variant="bulk" borderRadius={0} style={styles.glassFill}>
       <SafeAreaView style={styles.screen} accessibilityViewIsModal>
         <View style={styles.header}>
           <AppText variant="heading" style={styles.title} accessibilityRole="header">Nearby flags</AppText>
@@ -300,13 +306,16 @@ export default function NearbyFlagsModal({
           }
         />
       </SafeAreaView>
+      </GlassSurface>
     </Modal>
   );
 }
 
 const makeStyles = (color: ColorTheme) =>
   StyleSheet.create({
-    screen: { flex: 1, backgroundColor: color.surfaceMuted },
+    // Transparent — the GlassSurface behind it owns the sheet material.
+    screen: { flex: 1, backgroundColor: 'transparent' },
+    glassFill: { flex: 1 },
     header: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -366,7 +375,8 @@ const makeStyles = (color: ColorTheme) =>
     },
     emptySub: {
       fontSize: font.size.sm,
-      color: color.textMuted,
+      color: color.inkGlassMuted,
+      fontFamily: font.family.bodyMedium,
       textAlign: 'center',
       lineHeight: 19,
       maxWidth: 320,
