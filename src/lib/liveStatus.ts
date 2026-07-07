@@ -82,6 +82,17 @@ export function clearLiveStatus(): void {
   publish();
 }
 
+/** Clear the current status ONLY if it still shows `message`. Lets one flow
+ *  dismiss its OWN banner without clobbering another flow that has since taken
+ *  the shared slot — e.g. a locate retry dismissing its own "Couldn't find your
+ *  location" error, but never an S11 "still trying" that replaced it. */
+export function clearLiveStatusMessage(message: string): void {
+  if (current?.message === message) {
+    current = null;
+    publish();
+  }
+}
+
 /** Test-only: reset module state between tests. */
 export function __resetLiveStatus(): void {
   current = null;

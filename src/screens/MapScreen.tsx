@@ -26,7 +26,7 @@ import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { hydrateGlassMode, useGlassMode } from '@/lib/glassMode';
 import { font, radius, severity, shadow, spacing } from '@/theme';
 import { errorMessage } from '@/lib/errors';
-import { setLiveStatus } from '@/lib/liveStatus';
+import { clearLiveStatusMessage, setLiveStatus } from '@/lib/liveStatus';
 import { confirm, notify } from '@/lib/confirm';
 import CategoryIcon from '@/components/CategoryIcon';
 import {
@@ -187,6 +187,11 @@ const CATEGORY_CYCLE: (FlagCategory | null)[] = [null, ...CATEGORY_ORDER];
 // requires a fresh privacy review.
 // ----------------------------------------------------------------------------
 const HEATMAP_MODE: HeatmapMode = DEFAULT_HEATMAP_MODE;
+
+// B10 (L7-07): the web locate-failure copy, shared by the setter (in the catch)
+// and the message-targeted clear (at the start of each locate attempt) so they
+// agree on exactly which banner to dismiss.
+const LOCATE_FAILED_MSG = "Couldn't find your location — check your connection and try again.";
 
 // M3 (re-sweep 2026-06-09): a deep-linked flag can live outside the first
 // page of loaded flags, in which case animateTo centers the map on empty
@@ -1052,6 +1057,12 @@ export default function MapScreen() {
   // itself (mirrors the S11 refreshRef pattern; keeps exhaustive-deps quiet).
   const requestLocationRef = useRef<() => void>(() => {});
   const requestLocation = useCallback(async () => {
+    // B10 (L7-07): every new locate attempt dismisses a stale locate-failure
+    // banner from a prior attempt (message-targeted so it never clobbers an
+    // S10/S11 data banner that has since taken the shared slot). So a successful
+    // Retry clears the error — the catch below re-shows it only if THIS attempt
+    // also fails. Web-only: native uses Alert.alert, not the live region.
+    if (Platform.OS === 'web') clearLiveStatusMessage(LOCATE_FAILED_MSG);
     if (mountedRef.current) {
       setLocating(true);
       // WCAG 4.1.3: announce the transient "finding location" state so
@@ -1102,7 +1113,7 @@ export default function MapScreen() {
         // from the S4 permission-denied arrival banner (a non-throwing state).
         if (Platform.OS === 'web') {
           setLiveStatus({
-            message: "Couldn't find your location — check your connection and try again.",
+            message: LOCATE_FAILED_MSG,
             tone: 'info',
             action: { label: 'Retry', onPress: () => requestLocationRef.current() },
           });

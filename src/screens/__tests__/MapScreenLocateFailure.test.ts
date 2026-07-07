@@ -24,8 +24,8 @@ function around(haystack: string, anchor: string, len = 700): string {
 }
 
 describe('B10 — web locate-failure gets a visible + spoken outcome', () => {
-  it('imports the shared live-status channel', () => {
-    expect(map).toContain("import { setLiveStatus } from '@/lib/liveStatus'");
+  it('imports the shared live-status channel (set + targeted clear)', () => {
+    expect(map).toContain("import { clearLiveStatusMessage, setLiveStatus } from '@/lib/liveStatus'");
   });
 
   it('branches the locate-failure by platform', () => {
@@ -36,10 +36,21 @@ describe('B10 — web locate-failure gets a visible + spoken outcome', () => {
   it('routes the web failure through LiveStatusRegion with a Retry', () => {
     const block = around(map, 'B10 (L7-07): Alert.alert is a no-op');
     expect(block).toContain('setLiveStatus(');
-    expect(block).toContain("Couldn't find your location");
+    expect(block).toContain('message: LOCATE_FAILED_MSG');
     expect(block).toContain("label: 'Retry'");
     // Retry re-runs the locate via the stable ref (not a self-referential dep).
     expect(block).toContain('requestLocationRef.current()');
+    // The failure copy is a shared const so the setter + clearer agree.
+    expect(map).toContain(
+      'const LOCATE_FAILED_MSG = "Couldn\'t find your location — check your connection and try again."',
+    );
+  });
+
+  it('dismisses its own stale banner when a new locate attempt starts', () => {
+    // A successful Retry must clear the error — every attempt clears first,
+    // message-targeted so it never clobbers an S10/S11 data banner.
+    expect(map).toContain("import { clearLiveStatusMessage, setLiveStatus } from '@/lib/liveStatus'");
+    expect(map).toContain("if (Platform.OS === 'web') clearLiveStatusMessage(LOCATE_FAILED_MSG)");
   });
 
   it('keeps the native Alert.alert dialog (works + announced there)', () => {
