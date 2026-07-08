@@ -23,7 +23,7 @@ import {
 } from 'react-native';
 import { useColor } from '@/theme/ThemeContext';
 import { useReducedMotion } from '@/lib/accessibility';
-import { font, radius, spacing } from '@/theme';
+import { font, motion, radius, spacing } from '@/theme';
 
 export interface SkeletonProps {
   width: DimensionValue;
@@ -44,8 +44,8 @@ export function Skeleton({ width, height, borderRadius = radius.xs, style }: Ske
     }
     const anim = Animated.loop(
       Animated.sequence([
-        Animated.timing(pulse, { toValue: 0.35, duration: 700, useNativeDriver: true }),
-        Animated.timing(pulse, { toValue: 1, duration: 700, useNativeDriver: true }),
+        Animated.timing(pulse, { toValue: 0.35, duration: motion.duration.pulse, useNativeDriver: true }),
+        Animated.timing(pulse, { toValue: 1, duration: motion.duration.pulse, useNativeDriver: true }),
       ]),
     );
     anim.start();

@@ -466,6 +466,9 @@ export const motion = {
     fast: 120, // icon swaps, small fades, press ripples
     base: 180, // most micro-interactions (satisfies DESIGN.md §8 ≤ 200ms)
     slow: 320, // sheet reveals, progress fills — use sparingly
+    pulse: 700, // looped skeleton-shimmer half-cycle — a slow ambient loop,
+    // deliberately OFF the ≤320 micro-interaction scale (documented, not a stray
+    // literal). B5/L4-10.
   },
   // Cubic-bezier control points. Usage: Easing.bezier(...motion.easing.standard)
   easing: {

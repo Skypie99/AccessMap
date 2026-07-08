@@ -111,10 +111,14 @@ export default function HamburgerDrawer({ open, onClose, onSignIn, onNavigate }:
     (screen: SubScreen) => {
       onClose();
       // Small delay so the drawer closes visually before the sub-screen appears.
+      // B5 (L4-11): under reduce motion the drawer snaps closed instantly (see
+      // the useEffect above), so the 220ms wait is dead time for exactly the
+      // users who asked for snappier UI — gate it to 0. setTimeout(fn, 0) is a
+      // genuine next-tick, NOT a falsy-default API, so no falsy-zero trap here.
       if (navTimer.current) clearTimeout(navTimer.current);
-      navTimer.current = setTimeout(() => setSubScreen(screen), 220);
+      navTimer.current = setTimeout(() => setSubScreen(screen), reducedMotion ? 0 : 220);
     },
-    [onClose],
+    [onClose, reducedMotion],
   );
 
   // Cancel any pending navigate() timer when the drawer unmounts.
