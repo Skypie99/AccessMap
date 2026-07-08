@@ -273,6 +273,25 @@ describe.each([[true], [false]])(
       expect(popup.autoPan).toBe(!reducedMotion);
     });
 
+    it('B5: the imperative zoomBy uses { animate: false } under RM (the path S12 left uncovered)', () => {
+      // S12 pinned the MapContainer zoomAnimation PROP but not the imperative
+      // zoomBy handle, which calls Leaflet's setZoom directly. Under RM it must
+      // pass the non-animated form — { animate: false }, never a numeric-zero.
+      const ref = renderMap(reducedMotion);
+      const { fakeMap } = rl();
+      fakeMap.setZoom.mockClear();
+
+      act(() => {
+        ref.current!.zoomBy(1);
+      });
+
+      expect(fakeMap.setZoom).toHaveBeenCalledTimes(1);
+      const [zoom, opts] = fakeMap.setZoom.mock.calls.at(-1)!;
+      expect(zoom).toBe(13); // getZoom() (12) + 1
+      expect(opts).toEqual({ animate: !reducedMotion });
+      expect(opts).not.toEqual({ duration: 0 });
+    });
+
     it('regression sweep: no camera path ever passes duration: 0', () => {
       const ref = renderMap(reducedMotion);
       const { flyTo, recorded } = rl();

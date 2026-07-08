@@ -13,7 +13,7 @@
 
 import { act, renderHook } from '@testing-library/react-native';
 import { AccessibilityInfo } from 'react-native';
-import { a11yToggle, decorativeProps, useReduceTransparency } from '../accessibility';
+import { a11yToggle, decorativeProps, useReducedMotion, useReduceTransparency } from '../accessibility';
 
 describe('decorativeProps', () => {
   it('exists as a constant object', () => {
@@ -210,6 +210,107 @@ describe('useReduceTransparency', () => {
     probeResult = rejected;
 
     const { result } = renderHook(() => useReduceTransparency());
+
+    await act(async () => {
+      await rejected.catch(() => {});
+    });
+
+    expect(result.current).toBe(false);
+  });
+});
+
+/**
+ * useReducedMotion — B5 (L4-05). The motion law (DESIGN.md §8: "ALWAYS gate
+ * non-trivial motion behind useReducedMotion()") had ZERO test enforcement —
+ * the hook itself was untested. That is exactly how the falsy-zero reduce-motion
+ * trap (L4-01/02, fixed by S12) shipped and survived a flagged report. This
+ * suite pins the hook's probe / live-subscription / fail-safe contract so a
+ * regression that silently stops returning the live value is caught in CI, not
+ * on a disabled user's device. Mirrors the useReduceTransparency suite above.
+ */
+describe('useReducedMotion', () => {
+  let changeHandler: ((value: boolean) => void) | undefined;
+  let removeSpy: jest.Mock;
+  let probeResult: Promise<boolean>;
+
+  beforeEach(() => {
+    changeHandler = undefined;
+    removeSpy = jest.fn();
+    probeResult = Promise.resolve(false);
+
+    jest
+      .spyOn(AccessibilityInfo, 'isReduceMotionEnabled')
+      .mockImplementation(() => probeResult);
+
+    jest
+      .spyOn(AccessibilityInfo, 'addEventListener')
+      .mockImplementation((event: string, handler: (value: boolean) => void) => {
+        if (event === 'reduceMotionChanged') {
+          changeHandler = handler;
+        }
+        return { remove: removeSpy } as ReturnType<typeof AccessibilityInfo.addEventListener>;
+      });
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  it('returns false initially (before the async probe resolves)', () => {
+    const { result } = renderHook(() => useReducedMotion());
+    expect(result.current).toBe(false);
+  });
+
+  it('resolves to the probed value once isReduceMotionEnabled settles (true)', async () => {
+    probeResult = Promise.resolve(true);
+    const { result } = renderHook(() => useReducedMotion());
+
+    await act(async () => {
+      await probeResult;
+    });
+
+    expect(result.current).toBe(true);
+  });
+
+  it('subscribes to the "reduceMotionChanged" event', () => {
+    renderHook(() => useReducedMotion());
+    expect(AccessibilityInfo.addEventListener).toHaveBeenCalledWith(
+      'reduceMotionChanged',
+      expect.any(Function),
+    );
+  });
+
+  it('updates live when the user toggles Reduce Motion on, then off', async () => {
+    const { result } = renderHook(() => useReducedMotion());
+
+    await act(async () => {
+      await probeResult;
+    });
+    expect(result.current).toBe(false);
+
+    act(() => {
+      changeHandler?.(true);
+    });
+    expect(result.current).toBe(true);
+
+    act(() => {
+      changeHandler?.(false);
+    });
+    expect(result.current).toBe(false);
+  });
+
+  it('removes its event subscription on unmount (no leak)', () => {
+    const { unmount } = renderHook(() => useReducedMotion());
+    unmount();
+    expect(removeSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('quietly stays false when the probe rejects (web / unsupported platform)', async () => {
+    const rejected = Promise.reject(new Error('unsupported'));
+    rejected.catch(() => {});
+    probeResult = rejected;
+
+    const { result } = renderHook(() => useReducedMotion());
 
     await act(async () => {
       await rejected.catch(() => {});
