@@ -67,7 +67,7 @@ export const PHOTO_MAX_DIMENSION = 2048;
 export function resizeActionFor(
   srcWidth?: number,
   srcHeight?: number,
-): Array<{ resize: { width: number } | { height: number } }> {
+): { resize: { width: number } | { height: number } }[] {
   if (
     typeof srcWidth !== 'number' ||
     typeof srcHeight !== 'number' ||
