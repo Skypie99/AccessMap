@@ -48,14 +48,19 @@ export async function listFlagPhotos(flagId: string): Promise<{ url: string; pos
  * Upload a photo from a local URI and insert a junction row.
  * The next position is determined from the current count.
  */
-export async function addFlagPhoto(flagId: string, localUri: string): Promise<FlagPhoto> {
+export async function addFlagPhoto(
+  flagId: string,
+  localUri: string,
+  srcWidth?: number,
+  srcHeight?: number,
+): Promise<FlagPhoto> {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('Not authenticated');
 
   const existing = await listFlagPhotos(flagId);
   const position = existing.length;
 
-  const { url } = await uploadFlagPhoto(user.id, localUri);
+  const { url } = await uploadFlagPhoto(user.id, localUri, srcWidth, srcHeight);
 
   const { data, error } = await supabase
     .from('flag_photos')

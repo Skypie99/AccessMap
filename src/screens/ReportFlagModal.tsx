@@ -112,6 +112,11 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
   const submittingRef = useRef(false);
   // Web-only: hidden <input type="file"> used as the image picker substitute.
   const webFileInputRef = useRef<HTMLInputElement | null>(null);
+  // B8 (L7-05): picker-reported dimensions per picked uri, used to drive the
+  // downscale-on-ingest at upload time. Kept out of `photoUris` (which stays a
+  // plain string[]) so the sheet's photo state and PhotoGallery mapping are
+  // untouched. Web picks carry no dims — stripExifWeb self-measures the canvas.
+  const photoDimsRef = useRef<Record<string, { width: number; height: number }>>({});
   // Mirror of the module-level capability flag in src/lib/flags.ts. When
   // it flips to 'unavailable' (the propose-only migration isn't on this
   // backend yet) we disable the chip picker and surface a "coming soon"
@@ -212,7 +217,10 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
     // the preview can never render again, but without the revoke the object
     // URL would keep the File bytes alive for the whole page session.
     const removed = photoUris[index];
-    if (removed !== undefined) releaseUri(removed);
+    if (removed !== undefined) {
+      releaseUri(removed);
+      delete photoDimsRef.current[removed];
+    }
     setPhotoUris((curr) => curr.filter((_, i) => i !== index));
   };
 
@@ -264,7 +272,11 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
               quality: 0.7,
             });
       if (!result.canceled && result.assets[0]?.uri) {
-        addUri(result.assets[0].uri);
+        const asset = result.assets[0];
+        if (typeof asset.width === 'number' && typeof asset.height === 'number') {
+          photoDimsRef.current[asset.uri] = { width: asset.width, height: asset.height };
+        }
+        addUri(asset.uri);
       }
     } catch (e) {
       notify("Couldn't pick a photo", errorMessage(e));
@@ -384,7 +396,8 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
       // field for backwards-compat with clients that haven't migrated to
       // the flag_photos junction table yet.
       for (const uri of photoUris) {
-        const { url, path } = await uploadFlagPhoto(user.id, uri);
+        const dims = photoDimsRef.current[uri];
+        const { url, path } = await uploadFlagPhoto(user.id, uri, dims?.width, dims?.height);
         photoUrls.push(url);
         uploadedPaths.push(path);
       }

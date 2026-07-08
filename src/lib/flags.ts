@@ -43,6 +43,67 @@ export const INITIAL_PAGE_SIZE = 50;
 export const NEXT_PAGE_SIZE = 20;
 
 /**
+ * B8 (L7-05): longest-edge cap applied to photos at ingest. Barrier-evidence
+ * photos are shown at most full-screen (`resizeMode="contain"` in PhotoGallery /
+ * PhotoLightboxModal — never larger than one device screen), so 2048px on the
+ * long edge stays crisp on the largest phones while cutting a 12 MP (~4000px)
+ * camera original to roughly a quarter of the pixels. Sky-chosen 2026-07-07.
+ */
+export const PHOTO_MAX_DIMENSION = 2048;
+
+/**
+ * Build the ImageManipulator `actions` array for the strip+resize pass.
+ *
+ * Downscale-only (never upscales a smaller pick) and single-axis (the codec
+ * preserves aspect ratio), capping the LONGER edge at PHOTO_MAX_DIMENSION.
+ * Returns `[]` when the source already fits, or when its dimensions are unknown
+ * (e.g. a bytes-only unit-test call) — so the re-encode still strips EXIF but
+ * changes no pixels.
+ *
+ * The returned action MUST ride in the SAME manipulateAsync pass as the strip
+ * (see stripExifNative) so the emitted asset is BOTH resized and metadata-free —
+ * never an earlier resize pass, never a path that copies the original.
+ */
+export function resizeActionFor(
+  srcWidth?: number,
+  srcHeight?: number,
+): Array<{ resize: { width: number } | { height: number } }> {
+  if (
+    typeof srcWidth !== 'number' ||
+    typeof srcHeight !== 'number' ||
+    !Number.isFinite(srcWidth) ||
+    !Number.isFinite(srcHeight) ||
+    srcWidth <= 0 ||
+    srcHeight <= 0
+  ) {
+    return [];
+  }
+  if (Math.max(srcWidth, srcHeight) <= PHOTO_MAX_DIMENSION) return [];
+  // Constrain the longer edge; the shorter one scales with it.
+  return srcWidth >= srcHeight
+    ? [{ resize: { width: PHOTO_MAX_DIMENSION } }]
+    : [{ resize: { height: PHOTO_MAX_DIMENSION } }];
+}
+
+/**
+ * Web analog of resizeActionFor: the target canvas dimensions for stripExifWeb's
+ * re-encode, downscaled so the longer edge is at most PHOTO_MAX_DIMENSION.
+ * Downscale-only (scale is clamped to 1) and aspect-preserving. Extracted as a
+ * pure function so the web resize math is unit-tested without a canvas mock.
+ */
+export function scaledCanvasDims(
+  srcWidth: number,
+  srcHeight: number,
+): { width: number; height: number } {
+  const longest = Math.max(srcWidth, srcHeight) || 1;
+  const scale = Math.min(1, PHOTO_MAX_DIMENSION / longest);
+  return {
+    width: Math.round(srcWidth * scale),
+    height: Math.round(srcHeight * scale),
+  };
+}
+
+/**
  * Strip EXIF metadata (GPS, timestamps, camera info, thumbnails, IPTC, XMP)
  * from an image on iOS/Android using expo-image-manipulator re-encode.
  *
@@ -60,6 +121,8 @@ export async function stripExifNative(
   arrayBuffer: ArrayBuffer,
   ext: string,
   srcUri?: string,
+  srcWidth?: number,
+  srcHeight?: number,
 ): Promise<ArrayBuffer | null> {
   try {
     // Fail-closed empty-input guard: an empty buffer can't be a real image, so
@@ -98,8 +161,13 @@ export async function stripExifNative(
       input = `data:${mimeType};base64,${base64}`;
     }
 
-    // Re-encode with no transform actions. This forces the platform codec to
-    // write a fresh image — EXIF/GPS/IPTC/XMP are not carried through.
+    // Re-encode (forces the platform codec to write a fresh image —
+    // EXIF/GPS/IPTC/XMP are not carried through) AND, in the SAME pass, apply a
+    // downscale-only longest-edge cap (B8/L7-05). Coupling resize to the strip
+    // guarantees the emitted asset is BOTH resized and metadata-free — there is
+    // no path that emits an un-stripped or un-resized file. `resizeActionFor`
+    // returns [] when dims are unknown or already within the cap, so re-encode
+    // semantics (compress/format untouched) are preserved for those inputs.
     // SaveFormat.JPEG is used for JPEG/HEIC/HEIF; PNG stays PNG.
     const saveFormat =
       ext === 'png'
@@ -107,7 +175,7 @@ export async function stripExifNative(
         : ImageManipulator.SaveFormat.JPEG;
     const result = await ImageManipulator.manipulateAsync(
       input,
-      [], // no transform — re-encode only
+      resizeActionFor(srcWidth, srcHeight),
       { compress: 0.9, format: saveFormat },
     );
     // result.uri is a fresh file:// URI with no metadata.
@@ -188,12 +256,18 @@ export function stripExifWeb(arrayBuffer: ArrayBuffer, ext: string): Promise<Arr
       const img = new Image();
        
       img.onload = (() => {
-        // Set canvas size to match image (respects orientation).
-        canvas.width = img.width;
-        canvas.height = img.height;
+        // B8 (L7-05): downscale-only longest-edge cap in the SAME canvas pass
+        // that strips metadata — the web analog of stripExifNative's resize
+        // action. `img.width/height` are the true decoded dimensions, so the
+        // scale is exact (guest web uploads carry no picker-reported dims).
+        // Never upscales: scaledCanvasDims clamps the scale to 1.
+        const dims = scaledCanvasDims(img.width, img.height);
+        canvas.width = dims.width;
+        canvas.height = dims.height;
 
-        // Draw the image onto the canvas (bakes orientation into pixels).
-        ctx.drawImage(img, 0, 0);
+        // Draw the image scaled to the canvas (bakes orientation into pixels
+        // and applies the downscale in one draw).
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
         revoke();
 
         // Export the canvas back to bytes. Use 0.8 quality to balance size/fidelity.
@@ -447,6 +521,8 @@ export async function uploadStrippedImage(
   localUri: string,
   buildPath: (userId: string, finalExt: string) => string,
   webStripFailedMessage: string,
+  srcWidth?: number,
+  srcHeight?: number,
 ): Promise<{ url: string; path: string }> {
   if (!localUri || typeof localUri !== 'string') {
     throw new Error('No photo selected.');
@@ -497,7 +573,7 @@ export async function uploadStrippedImage(
     // source file URI so the manipulator reads it directly (no ~10 MB base64
     // data-URI build). The arrayBuffer is still passed for the empty-input
     // guard + the dev-mode before/after byte-count log.
-    const stripped = await stripExifNative(arrayBuffer, ext, localUri);
+    const stripped = await stripExifNative(arrayBuffer, ext, localUri, srcWidth, srcHeight);
     if (stripped === null) {
       throw new Error('Photo privacy check failed: EXIF stripping could not be completed. Please try again.');
     }
@@ -536,15 +612,20 @@ export async function uploadStrippedImage(
 export async function uploadFlagPhoto(
   userId: string,
   localUri: string,
+  srcWidth?: number,
+  srcHeight?: number,
 ): Promise<{ url: string; path: string }> {
   // Flag photos keep the `<uid>/<ts>.<ext>` object name. The web-strip-failure
   // copy carries the F46 HEIC-specific hint (retrying the same undecodable
-  // file is doomed — point the user at JPG/PNG instead).
+  // file is doomed — point the user at JPG/PNG instead). srcWidth/srcHeight (the
+  // picker-reported dimensions, when available) drive the B8 downscale-on-ingest.
   return uploadStrippedImage(
     userId,
     localUri,
     (uid, finalExt) => `${uid}/${Date.now()}.${finalExt}`,
     "Photo privacy check failed: this photo couldn't be processed in the browser (HEIC photos often can't). Please choose a JPG or PNG instead.",
+    srcWidth,
+    srcHeight,
   );
 }
 

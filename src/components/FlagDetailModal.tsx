@@ -306,7 +306,12 @@ export default function FlagDetailModal({
           });
           if (!result.canceled && result.assets[0]?.uri) {
             try {
-              await addFlagPhoto(shownFlag.id, result.assets[0].uri);
+              await addFlagPhoto(
+                shownFlag.id,
+                result.assets[0].uri,
+                result.assets[0].width,
+                result.assets[0].height,
+              );
               const updated = await listFlagPhotos(shownFlag.id);
               setFlagPhotos(updated);
             } catch (e) {
@@ -329,7 +334,12 @@ export default function FlagDetailModal({
           });
           if (!result.canceled && result.assets[0]?.uri) {
             try {
-              await addFlagPhoto(shownFlag.id, result.assets[0].uri);
+              await addFlagPhoto(
+                shownFlag.id,
+                result.assets[0].uri,
+                result.assets[0].width,
+                result.assets[0].height,
+              );
               const updated = await listFlagPhotos(shownFlag.id);
               setFlagPhotos(updated);
             } catch (e) {

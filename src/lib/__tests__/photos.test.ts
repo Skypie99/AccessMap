@@ -198,7 +198,9 @@ describe('addFlagPhoto', () => {
 
     const result = await addFlagPhoto('flag-1', 'file:///local.jpg');
 
-    expect(mockUploadFlagPhoto).toHaveBeenCalledWith('user-1', 'file:///local.jpg');
+    // B8: addFlagPhoto forwards optional picker dims (undefined here — no dims
+    // supplied) to uploadFlagPhoto, which drives the downscale-on-ingest.
+    expect(mockUploadFlagPhoto).toHaveBeenCalledWith('user-1', 'file:///local.jpg', undefined, undefined);
     expect(insChain.insert).toHaveBeenCalledWith({
       flag_id: 'flag-1',
       url: 'https://cdn/user-1/123.jpg',

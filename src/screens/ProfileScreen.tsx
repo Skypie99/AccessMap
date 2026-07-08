@@ -548,11 +548,11 @@ export default function ProfileScreen() {
   }, [user, trimmedDraft]);
 
   const doUploadAvatar = useCallback(
-    async (localUri: string) => {
+    async (localUri: string, srcWidth?: number, srcHeight?: number) => {
       if (!user) return;
       setUploadingAvatar(true);
       try {
-        const avatarUrl = await uploadAvatar(user.id, localUri);
+        const avatarUrl = await uploadAvatar(user.id, localUri, srcWidth, srcHeight);
         const updated = await updateUserProfile(user.id, { avatar_url: avatarUrl });
         if (mountedRef.current) {
           setProfile(updated);
@@ -600,7 +600,11 @@ export default function ProfileScreen() {
         aspect: [1, 1],
       });
       if (!result.canceled && result.assets[0]?.uri) {
-        void doUploadAvatar(result.assets[0].uri);
+        void doUploadAvatar(
+          result.assets[0].uri,
+          result.assets[0].width,
+          result.assets[0].height,
+        );
       }
     } catch (e) {
       notify("Couldn't pick a photo", errorMessage(e));

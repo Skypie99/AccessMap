@@ -66,12 +66,19 @@ export async function updateUserProfile(userId: string, patch: UserProfilePatch)
  * path is passed in, not hardcoded in the helper) and uses the generic web
  * strip-failure copy.
  */
-export async function uploadAvatar(userId: string, localUri: string): Promise<string> {
+export async function uploadAvatar(
+  userId: string,
+  localUri: string,
+  srcWidth?: number,
+  srcHeight?: number,
+): Promise<string> {
   const { url } = await uploadStrippedImage(
     userId,
     localUri,
     (uid, finalExt) => `${uid}/avatar/${Date.now()}.${finalExt}`,
     'Photo privacy check failed: EXIF stripping could not be completed. Please try again.',
+    srcWidth,
+    srcHeight,
   );
   return url;
 }

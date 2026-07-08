@@ -36,6 +36,9 @@ import {
   stripExifNative,
   stripExifWeb,
   detectMimeFromBytes,
+  resizeActionFor,
+  scaledCanvasDims,
+  PHOTO_MAX_DIMENSION,
 } from '../flags';
 import type { FlagCategory, FlagSeverity, FlagStatus } from '@/types/database';
 import { Platform } from 'react-native';
@@ -609,6 +612,134 @@ describe('stripExifNative', () => {
     // If this assertion fails, stripExifNative is a no-op and GPS data leaks.
     expect(result).toBe(STRIPPED);
     expect(result).not.toBe(ORIGINAL);
+  });
+
+  // ── B8 (L7-05): resize rides in the SAME pass as the strip ────────────────
+  // A synthetic clean JPEG (APP0/JFIF only) — what the codec emits after the
+  // strip+resize re-encode. A version WITH an APP1/EXIF segment is included to
+  // prove the verifyExifStripped gate actually catches GPS-bearing metadata, so
+  // the "emitted bytes are clean" assertion is meaningful and not vacuous.
+  const CLEAN_JPEG = new Uint8Array([
+    0xff, 0xd8, // SOI
+    0xff, 0xe0, 0x00, 0x07, 0x4a, 0x46, 0x49, 0x46, 0x00, // APP0 "JFIF\0"
+    0xff, 0xda, 0x00, 0x04, 0x01, 0x00, // SOS
+    0x12, 0x34, 0x56, // scan
+    0xff, 0xd9, // EOI
+  ]).buffer;
+  const EXIF_JPEG = new Uint8Array([
+    0xff, 0xd8, // SOI
+    0xff, 0xe1, 0x00, 0x08, 0x45, 0x78, 0x69, 0x66, 0x00, 0x00, // APP1 "Exif\0\0"
+    0xff, 0xda, 0x00, 0x04, 0x01, 0x00, // SOS
+    0x12, 0x34, 0x56, // scan
+    0xff, 0xd9, // EOI
+  ]).buffer;
+
+  it('B8: emits a resized AND EXIF-free asset — the resize action rides in the strip pass, and the FINAL emitted bytes pass the EXIF gate', async () => {
+    // Guard that the gate is real: an EXIF-bearing JPEG is rejected, a clean one passes.
+    expect(verifyExifStripped(EXIF_JPEG)).toBe(false);
+    expect(verifyExifStripped(CLEAN_JPEG)).toBe(true);
+
+    const manipulate = mockManipulateAsync as unknown as jest.Mock;
+    manipulate.mockClear();
+    manipulate.mockResolvedValueOnce({
+      uri: 'file:///mock/resized-stripped.jpg',
+      width: PHOTO_MAX_DIMENSION,
+      height: 1536,
+    });
+    // The bytes read back from the emitted file — i.e. what uploadStrippedImage
+    // would hand to Storage — are the clean (EXIF-free) re-encode.
+    (
+      global as unknown as {
+        fetch: (u: string) => Promise<{ arrayBuffer(): Promise<ArrayBuffer> }>;
+      }
+    ).fetch = jest.fn().mockResolvedValue({ arrayBuffer: async () => CLEAN_JPEG });
+
+    // 4000×3000 landscape original → cap the LONGER (width) edge.
+    const result = await stripExifNative(ORIGINAL, 'jpg', 'file:///tmp/original.jpg', 4000, 3000);
+
+    // (1) The resize action was passed to the SAME manipulateAsync call that
+    // re-encodes (strips) — not an earlier pass, not a separate call.
+    expect(manipulate).toHaveBeenCalledTimes(1);
+    const [inputArg, actionsArg] = manipulate.mock.calls[0];
+    expect(inputArg).toBe('file:///tmp/original.jpg');
+    expect(actionsArg).toEqual([{ resize: { width: PHOTO_MAX_DIMENSION } }]);
+    // (2) The FINAL EMITTED bytes are EXIF-free — GPS is gone from the file that
+    // actually gets uploaded, not merely "manipulateAsync was called."
+    expect(result).not.toBeNull();
+    expect(verifyExifStripped(result as ArrayBuffer)).toBe(true);
+  });
+
+  it('B8: a portrait original caps the HEIGHT edge in the same pass', async () => {
+    const manipulate = mockManipulateAsync as unknown as jest.Mock;
+    manipulate.mockClear();
+    manipulate.mockResolvedValueOnce({ uri: 'file:///mock/p.jpg', width: 1536, height: PHOTO_MAX_DIMENSION });
+    (
+      global as unknown as {
+        fetch: (u: string) => Promise<{ arrayBuffer(): Promise<ArrayBuffer> }>;
+      }
+    ).fetch = jest.fn().mockResolvedValue({ arrayBuffer: async () => CLEAN_JPEG });
+
+    await stripExifNative(ORIGINAL, 'jpg', 'file:///tmp/portrait.jpg', 3000, 4000);
+
+    const [, actionsArg] = manipulate.mock.calls[0];
+    expect(actionsArg).toEqual([{ resize: { height: PHOTO_MAX_DIMENSION } }]);
+  });
+
+  it('B8: a small pick is NOT upscaled — the pass still strips but changes no pixels (empty actions)', async () => {
+    const manipulate = mockManipulateAsync as unknown as jest.Mock;
+    manipulate.mockClear();
+    manipulate.mockResolvedValueOnce({ uri: 'file:///mock/s.jpg', width: 800, height: 600 });
+    (
+      global as unknown as {
+        fetch: (u: string) => Promise<{ arrayBuffer(): Promise<ArrayBuffer> }>;
+      }
+    ).fetch = jest.fn().mockResolvedValue({ arrayBuffer: async () => CLEAN_JPEG });
+
+    await stripExifNative(ORIGINAL, 'jpg', 'file:///tmp/small.jpg', 800, 600);
+
+    const [, actionsArg] = manipulate.mock.calls[0];
+    expect(actionsArg).toEqual([]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Section 4b — B8 (L7-05) resize helpers: resizeActionFor (native manipulate
+// action) + scaledCanvasDims (web canvas dims). Pure functions — the downscale
+// math is unit-tested here without a native codec or a canvas mock.
+// ---------------------------------------------------------------------------
+describe('resizeActionFor (B8/L7-05)', () => {
+  it('caps the WIDTH edge for a landscape original over the cap', () => {
+    expect(resizeActionFor(4000, 3000)).toEqual([{ resize: { width: PHOTO_MAX_DIMENSION } }]);
+  });
+  it('caps the HEIGHT edge for a portrait original over the cap', () => {
+    expect(resizeActionFor(3000, 4000)).toEqual([{ resize: { height: PHOTO_MAX_DIMENSION } }]);
+  });
+  it('returns [] (no resize) when the longer edge already fits', () => {
+    expect(resizeActionFor(800, 600)).toEqual([]);
+    expect(resizeActionFor(PHOTO_MAX_DIMENSION, 1000)).toEqual([]); // exactly the cap
+  });
+  it('returns [] (re-encode only) when dimensions are unknown', () => {
+    expect(resizeActionFor(undefined, undefined)).toEqual([]);
+    expect(resizeActionFor(4000, undefined)).toEqual([]);
+  });
+  it('returns [] (fail-safe) on zero / negative / non-finite dimensions', () => {
+    expect(resizeActionFor(0, 0)).toEqual([]);
+    expect(resizeActionFor(-4000, 3000)).toEqual([]);
+    expect(resizeActionFor(Number.NaN, 3000)).toEqual([]);
+    expect(resizeActionFor(Number.POSITIVE_INFINITY, 3000)).toEqual([]);
+  });
+});
+
+describe('scaledCanvasDims (B8/L7-05 — web)', () => {
+  it('downscales a landscape original so the longer (width) edge hits the cap', () => {
+    expect(scaledCanvasDims(4000, 3000)).toEqual({ width: PHOTO_MAX_DIMENSION, height: 1536 });
+  });
+  it('downscales a portrait original so the longer (height) edge hits the cap', () => {
+    expect(scaledCanvasDims(3000, 4000)).toEqual({ width: 1536, height: PHOTO_MAX_DIMENSION });
+  });
+  it('never upscales a small image (scale clamped to 1)', () => {
+    expect(scaledCanvasDims(800, 600)).toEqual({ width: 800, height: 600 });
+    expect(scaledCanvasDims(PHOTO_MAX_DIMENSION, 1024)).toEqual({ width: PHOTO_MAX_DIMENSION, height: 1024 });
   });
 });
 
