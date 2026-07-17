@@ -17,6 +17,7 @@ import {
 } from 'react-native';
 import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 import { AppText } from '@/components/ui/AppText';
+import { GlassSurface } from '@/components/ui/GlassSurface';
 import { RemoteImage } from '@/components/ui/RemoteImage';
 import { MessageCircle, Star, X } from 'lucide-react-native';
 import * as ImagePicker from 'expo-image-picker';
@@ -736,7 +737,13 @@ export default function FlagDetailModal({
             render the lightbox as a sibling Modal (Android-stable pattern),
             and without this prop the focus could leak to Verify/Resolve
             buttons that are visually obscured. QA Pass-2 #2. */}
-          <View style={[styles.card, { paddingBottom: Math.max(spacing.xl, insets.bottom) }]} accessibilityViewIsModal>
+          <GlassSurface
+            variant="bulk"
+            borderRadius={0}
+            forceEngineered
+            style={[styles.card, { paddingBottom: Math.max(spacing.xl, insets.bottom) }]}
+            accessibilityViewIsModal
+          >
             <View style={styles.headerRow}>
               <AppText
                 ref={titleRef}
@@ -1294,7 +1301,7 @@ export default function FlagDetailModal({
                   <View style={styles.commentsEmptyContainer}>
                     <MessageCircle
                       size={24}
-                      color={color.textMuted}
+                      color={color.inkGlassMuted}
                       strokeWidth={2}
                       accessibilityElementsHidden
                       importantForAccessibility="no-hide-descendants"
@@ -1473,7 +1480,7 @@ export default function FlagDetailModal({
               )}
             </View>
             )}
-          </View>
+          </GlassSurface>
         </View>
       </Modal>
       <StatusHistoryModal
@@ -1493,7 +1500,11 @@ const makeStyles = (color: ColorTheme) =>
       justifyContent: 'flex-end',
     },
     card: {
-      backgroundColor: color.surface,
+      // Bulk-glass sheet (MP4): <GlassSurface variant="bulk" forceEngineered> supplies
+      // the material fill; no backgroundColor here (the variant owns it — drops the
+      // surface wash so FlagDetail shares the one sheet material). overflow:hidden clips
+      // the square material to the rounded top. No up-shadow at HEAD → no cardWrap needed.
+      overflow: 'hidden',
       borderTopLeftRadius: radius.xl,
       borderTopRightRadius: radius.xl,
       paddingHorizontal: spacing.xl,
@@ -1536,7 +1547,7 @@ const makeStyles = (color: ColorTheme) =>
     beforeAfterCaption: {
       fontSize: font.size.xs,
       fontWeight: font.weight.semibold,
-      color: color.textMuted,
+      color: color.inkGlassMuted,
       textTransform: 'uppercase',
       letterSpacing: 0.5,
     },
@@ -1555,7 +1566,7 @@ const makeStyles = (color: ColorTheme) =>
     },
     beforeAfterArrowGlyph: {
       fontSize: font.size.xl,
-      color: color.textMuted,
+      color: color.inkGlassMuted,
       fontWeight: font.weight.bold,
     },
     // Resolve-time nudge — info-toned (NOT warning amber). infoFg on infoBg
@@ -1606,7 +1617,7 @@ const makeStyles = (color: ColorTheme) =>
     sectionLabel: {
       fontSize: font.size.xs,
       fontWeight: font.weight.semibold,
-      color: color.textMuted,
+      color: color.inkGlassMuted,
       textTransform: 'uppercase',
       letterSpacing: 0.5,
       marginTop: spacing.sm,
@@ -1764,7 +1775,7 @@ const makeStyles = (color: ColorTheme) =>
     editLabel: {
       fontSize: font.size.xs,
       fontWeight: font.weight.bold,
-      color: color.textMuted,
+      color: color.inkGlassMuted,
       textTransform: 'uppercase',
       letterSpacing: 0.5,
     },
@@ -1823,7 +1834,7 @@ const makeStyles = (color: ColorTheme) =>
     },
     commentsSoonText: {
       fontSize: font.size.sm,
-      color: color.textMuted,
+      color: color.inkGlassMuted,
       fontStyle: 'italic',
     },
     // M1: error banner + Retry, matching the MyReportsModal errorBanner pattern.
@@ -1933,23 +1944,28 @@ const makeStyles = (color: ColorTheme) =>
     },
     commentsEmptyLabel: {
       fontSize: font.size.base,
-      color: color.textMuted,
+      color: color.inkGlassMuted,
+      fontFamily: font.family.bodyMedium,
       textAlign: 'center',
     },
     // ── F10 Reopen request ───────────────────────────────────────────────────
     reopenBtn: {
       backgroundColor: 'transparent',
       borderWidth: 1,
-      borderColor: color.accentOrange,
+      // MP4/O-2: reopen action re-inks accentOrange -> brandText. The orange was
+      // affordance flair, not severity grammar, and read 2.07:1 text-on-surface at
+      // HEAD (a live AA fail, worse on the glass composite). brandText clears AA
+      // (4.95 light / 5.42 dark on detailSheet — arbiter-banked). Sky-vetoable.
+      borderColor: color.brandText,
     },
     reopenBtnText: {
-      color: color.accentOrange,
+      color: color.brandText,
       fontWeight: font.weight.semibold,
       fontSize: font.size.base,
     },
     reopenMessage: {
       fontSize: font.size.sm,
-      color: color.textMuted,
+      color: color.inkGlassMuted,
       lineHeight: 18,
       fontStyle: 'italic',
       marginTop: spacing.xs,
@@ -1962,7 +1978,7 @@ const makeStyles = (color: ColorTheme) =>
     reopenFormLabel: {
       fontSize: font.size.xs,
       fontWeight: font.weight.bold,
-      color: color.textMuted,
+      color: color.inkGlassMuted,
       textTransform: 'uppercase',
       letterSpacing: 0.5,
     },
@@ -1979,7 +1995,7 @@ const makeStyles = (color: ColorTheme) =>
     },
     reopenCharCounter: {
       fontSize: font.size.xs,
-      color: color.textSubtle,
+      color: color.inkGlassMuted,
       textAlign: 'right',
     },
     reopenActions: {
