@@ -13,8 +13,9 @@
  * speech.
  */
 import React from 'react';
-import { AccessibilityInfo, Pressable, StyleSheet, View } from 'react-native';
+import { AccessibilityInfo, Pressable, StyleSheet } from 'react-native';
 import { AppText } from '@/components/ui/AppText';
+import { GlassSurface } from '@/components/ui/GlassSurface';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { font, radius, spacing } from '@/theme';
 import { X } from 'lucide-react-native';
@@ -49,7 +50,10 @@ export default function UpdateBanner({ count, onView, onDismiss }: Props) {
     count === 1 ? '1 update since your last visit' : `${count} updates since your last visit`;
 
   return (
-    <View
+    <GlassSurface
+      variant="banner"
+      forceEngineered
+      borderRadius={radius.md}
       style={styles.banner}
       // Use a polite live region on Android (announces non-intrusively)
       // and the explicit announceForAccessibility above on iOS. Dropped
@@ -78,33 +82,35 @@ export default function UpdateBanner({ count, onView, onDismiss }: Props) {
         accessibilityLabel="Dismiss updates banner"
         accessibilityHint="Hides the banner and marks all updates as seen"
       >
-        <X size={18} color={color.brandTextAlt} strokeWidth={2.2} />
+        <X size={18} color={color.brandOnSoft} strokeWidth={2.2} />
       </Pressable>
-    </View>
+    </GlassSurface>
   );
 }
 
 const makeStyles = (color: ColorTheme) =>
   StyleSheet.create({
     banner: {
+      // GlassSurface variant="banner" (forceEngineered) supplies the fill,
+      // brand edge, and specular — keep only layout + radius + margin here.
       flexDirection: 'row',
       alignItems: 'center',
       gap: spacing.md,
-      backgroundColor: color.brandSofter,
       borderRadius: radius.md,
       paddingHorizontal: spacing.md,
       paddingVertical: spacing.md,
-      borderWidth: 1,
-      borderColor: color.brandSoft,
       marginBottom: spacing.md,
     },
     icon: { fontSize: font.size.xl },
-    text: { flex: 1, fontSize: font.size.base, color: color.brandTextAlt, fontWeight: '600' },
+    // brandOnSoft (blue-200) reads AA on the banner's dark brand wash / blur.
+    text: { flex: 1, fontSize: font.size.base, color: color.brandOnSoft, fontWeight: '600' },
     viewBtn: {
       paddingHorizontal: spacing.md,
       paddingVertical: spacing.sm,
       borderRadius: radius.sm,
-      backgroundColor: color.brand,
+      // ctaFill (mode-independent Wayfinder Blue) — color.brand was 3.42:1 in
+      // dark, passing only by the large-text allowance; ctaFill is 5.24 both.
+      backgroundColor: color.ctaFill,
       minHeight: 44,
       alignItems: 'center',
       justifyContent: 'center',
