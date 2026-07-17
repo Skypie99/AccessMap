@@ -103,6 +103,9 @@ describe('SeverityDisc — primitive contract (source)', () => {
     expect(src).toMatch(/decorative\s*=\s*true/);
     expect(src).toMatch(/decorative\s*\?\s*decorativeProps\s*:\s*null/);
   });
+  it('adds zero blur panes — the blur budget is unchanged (opaque View only)', () => {
+    expect(src).not.toMatch(/BlurView|expo-blur|GlassSurface|intensity/);
+  });
 });
 
 describe('zero-delta adoption pinning (source)', () => {
