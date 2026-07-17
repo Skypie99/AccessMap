@@ -10,10 +10,11 @@ import {
   SEVERITY_LABELS,
   SEVERITY_ORDER,
 } from '@/lib/flags';
-import { font, radius, severity, spacing } from '@/theme';
+import { font, radius, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
-import { decorativeProps, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
+import { useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
 import CategoryIcon from '@/components/CategoryIcon';
+import { SeverityDisc } from '@/components/SeverityDisc';
 import { AppText } from '@/components/ui/AppText';
 import { GlassSurface } from '@/components/ui/GlassSurface';
 import { Check } from 'lucide-react-native';
@@ -64,7 +65,6 @@ export default function LegendModal({ visible, onClose }: Props) {
               Severity
             </AppText>
             {SEVERITY_ORDER.map((s) => {
-              const sevColor = severityColor(s);
               const label = SEVERITY_LABELS[s];
               const colorName = SEVERITY_COLOR_NAMES[s];
               const desc = SEVERITY_DESCRIPTIONS[s];
@@ -75,17 +75,11 @@ export default function LegendModal({ visible, onClose }: Props) {
                   accessible
                   accessibilityLabel={`Severity ${s}, ${label}. ${colorName}. ${desc}`}
                 >
-                  {/* T8 (F4-01): the digit is purely decorative — the row View
-                      above carries the authored label. decorativeProps adds the
-                      'aria-hidden' that RN-web needs so the digit stops doubling
-                      in the a11y tree (importantForAccessibility="no" alone
-                      doesn't emit it). Never on the label row. */}
-                  <View
-                    style={[styles.sevDot, { backgroundColor: sevColor }]}
-                    {...decorativeProps}
-                  >
-                    <AppText variant="label" style={[styles.sevDotText, { color: severity[s].textOnColor }]}>{s}</AppText>
-                  </View>
+                  {/* The Legend's severity discs — the canonical grammar atom.
+                      SeverityDisc keeps the digit decorative (T8 / F4-01); the
+                      row View above carries the authored label. PROTECT: the
+                      Legend row rhythm (32pt disc + "N — Word" + consequence). */}
+                  <SeverityDisc severity={s} size={32} digitSize={font.size.base} />
                   <View style={styles.rowText}>
                     <AppText variant="label" style={styles.rowTitle}>
                       {s} — {label}
@@ -266,18 +260,6 @@ const makeStyles = (color: ColorTheme) =>
     alignItems: 'center',
     gap: spacing.md,
     paddingVertical: spacing.xs,
-  },
-  sevDot: {
-    width: 32,
-    height: 32,
-    borderRadius: radius.circle,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  sevDotText: {
-    color: color.textOnBrand,
-    fontWeight: font.weight.bold,
-    fontSize: font.size.base,
   },
   catIconWrap: {
     width: 32,

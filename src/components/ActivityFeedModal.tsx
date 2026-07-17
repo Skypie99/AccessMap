@@ -28,13 +28,13 @@ import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 import { RemoteImage } from '@/components/ui/RemoteImage';
 import { AppText } from '@/components/ui/AppText';
 import { GlassSurface } from '@/components/ui/GlassSurface';
+import { SeverityDisc } from '@/components/SeverityDisc';
 import { useAuth } from '@/lib/auth';
 import { a11yToggle, useReducedMotion } from '@/lib/accessibility';
 import { errorMessage } from '@/lib/errors';
 import {
   CATEGORY_LABELS,
   listRecentFlags,
-  severityColor,
   STATUS_LABELS,
 } from '@/lib/flags';
 import { groupByDay } from '@/lib/dayGroup';
@@ -42,7 +42,7 @@ import { relativeTime } from '@/lib/relativeTime';
 import { loadWatched } from '@/lib/watchedFlags';
 import type { FlagRow } from '@/types/database';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
-import { font, radius, severity, shadow, spacing } from '@/theme';
+import { font, radius, shadow, spacing } from '@/theme';
 import { MapPin, X } from 'lucide-react-native';
 import { StatusBadge } from '@/components/StatusBadge';
 
@@ -153,15 +153,7 @@ export default function ActivityFeedModal({ visible, onClose, onSelectFlag, onVi
             accessibilityHint="Opens the full report"
           >
             <View style={styles.rowHeader}>
-              <View
-                style={[styles.sevDot, { backgroundColor: severityColor(item.severity) }]}
-                // Severity is already in the row's a11yLabel; this badge is
-                // purely visual reinforcement. Hide on both platforms.
-                accessibilityElementsHidden
-                importantForAccessibility="no-hide-descendants"
-              >
-                <AppText variant="label" style={[styles.sevDotText, { color: severity[item.severity].textOnColor }]}>{item.severity}</AppText>
-              </View>
+              <SeverityDisc severity={item.severity} size={28} digitSize={font.size.xs} />
               <AppText variant="label" style={styles.rowTitle}>
                 {CATEGORY_LABELS[item.category]}
               </AppText>
@@ -473,18 +465,6 @@ const makeStyles = (color: ColorTheme) =>
     },
     rowPressed: { opacity: 0.9, backgroundColor: color.surfaceMuted },
     rowHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-    sevDot: {
-      width: 28,
-      height: 28,
-      borderRadius: radius.circle,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    sevDotText: {
-      color: color.textOnBrand,
-      fontWeight: font.weight.bold,
-      fontSize: font.size.xs,
-    },
     rowTitle: {
       fontSize: font.size.md,
       fontWeight: font.weight.semibold,

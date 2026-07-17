@@ -14,12 +14,13 @@
  * (a future wiring task — propose-only, not in this slice).
  */
 import React, { useEffect, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet } from 'react-native';
 import { AppText } from '@/components/ui/AppText';
 import { GlassSurface } from '@/components/ui/GlassSurface';
-import { CATEGORY_LABELS, fetchFlagsByIds, severityColor } from '@/lib/flags';
+import { SeverityDisc } from '@/components/SeverityDisc';
+import { CATEGORY_LABELS, fetchFlagsByIds } from '@/lib/flags';
 import { loadRecentlyViewed } from '@/lib/recentlyViewed';
-import { font, radius, severity, shadow, spacing } from '@/theme';
+import { font, radius, shadow, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import type { FlagRow } from '@/types/database';
 
@@ -133,17 +134,10 @@ export default function RecentlyViewedRow({ userId, refreshKey, onSelect }: Prop
             }
             accessibilityHint="Opens this flag on the Map"
           >
-            {/* Severity dot — decorative; the numeric severity is in
-                the label above so screen readers skip this safely. */}
-            <View
-              style={[styles.sevDot, { backgroundColor: severityColor(f.severity) }]}
-              accessibilityElementsHidden
-              importantForAccessibility="no-hide-descendants"
-            >
-              {/* 1.3 cap: at the label variant's 1.6 the glyph box outgrows the
-                  24pt dot (goes negative on the pre-font-load fallback). */}
-              <AppText variant="label" style={[styles.sevDotText, { color: severity[f.severity].textOnColor }]} maxFontSizeMultiplier={1.3}>{f.severity}</AppText>
-            </View>
+            {/* Severity disc — decorative; the numeric severity is in the label
+                above so screen readers skip it. The 1.3 cap keeps the glyph box
+                inside the 24pt dot at large type (label variant's 1.6 overflows). */}
+            <SeverityDisc severity={f.severity} size={24} digitSize={font.size.xs} maxFontSizeMultiplier={1.3} />
             <AppText variant="label" style={styles.chipLabel} numberOfLines={1}>
               {CATEGORY_LABELS[f.category]}
             </AppText>
@@ -191,18 +185,6 @@ const makeStyles = (color: ColorTheme) =>
       maxWidth: 200,
     },
     chipPressed: { opacity: 0.85 },
-    sevDot: {
-      width: 24,
-      height: 24,
-      borderRadius: 12,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    sevDotText: {
-      color: color.textOnBrand,
-      fontSize: 12,
-      fontWeight: font.weight.bold,
-    },
     chipLabel: {
       color: color.textStrong,
       fontSize: font.size.sm,

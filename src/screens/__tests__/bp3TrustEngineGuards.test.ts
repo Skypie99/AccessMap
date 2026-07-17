@@ -102,11 +102,14 @@ describe('T8 — one spoken voice (source contract)', () => {
     expect(homeScreen).toMatch(/statusA11y\(item\.f\.status\)\}, \$\{formatDistance\(item\.km\)\} away/);
   });
 
-  it('the Legend severity digit is decorative via decorativeProps (F4-01)', () => {
-    expect(legendModal).toMatch(/import \{ decorativeProps/);
-    expect(legendModal).toMatch(
-      /style=\{\[styles\.sevDot, \{ backgroundColor: sevColor \}\]\}\s+\{\.\.\.decorativeProps\}/,
-    );
+  it('the Legend severity digit is decorative — now via the SeverityDisc primitive (F4-01)', () => {
+    // BP10 / T5 moved the digit into <SeverityDisc>, which is decorative by
+    // default (it applies decorativeProps so RN-web / VoiceOver don't double-read
+    // the digit; the row View still carries the authored label). The primitive's
+    // own decorative contract is guarded in bp10SeverityGrammarGuards.test.tsx.
+    expect(legendModal).toMatch(/import \{ SeverityDisc \}/);
+    expect(legendModal).toMatch(/<SeverityDisc\s+severity=\{s\}/);
+    expect(legendModal).not.toMatch(/styles\.sevDot/);
   });
 
   it('the severity-4 photo nudge speaks the taught label, not the invented "major"', () => {

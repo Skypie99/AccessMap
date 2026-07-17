@@ -12,13 +12,14 @@ import { RemoteImage } from '@/components/ui/RemoteImage';
 import { AppText } from '@/components/ui/AppText';
 import { GlassSurface } from '@/components/ui/GlassSurface';
 import { a11yToggle, useReducedMotion } from '@/lib/accessibility';
-import { CATEGORY_LABELS, CATEGORY_ORDER, SEVERITY_LABELS, severityColor, STATUS_LABELS } from '@/lib/flags';
+import { CATEGORY_LABELS, CATEGORY_ORDER, SEVERITY_LABELS, STATUS_LABELS } from '@/lib/flags';
 import { relativeTime } from '@/lib/relativeTime';
 import { formatDistance, haversineKm, speakDistance, type LatLng } from '@/lib/distance';
 import { searchFlags } from '@/lib/flagSearch';
 import type { FlagCategory, FlagRow } from '@/types/database';
 import SearchInputRow from '@/components/SearchInputRow';
-import { font, radius, severity, shadow, spacing } from '@/theme';
+import { SeverityDisc } from '@/components/SeverityDisc';
+import { font, radius, shadow, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 
 interface Props {
@@ -146,13 +147,7 @@ export default function NearbyFlagsModal({
           accessibilityHint="Opens this flag's details"
         >
           <View style={styles.cardHeader}>
-            <View
-              style={[styles.sevDot, { backgroundColor: severityColor(item.severity) }]}
-              importantForAccessibility="no"
-              accessibilityElementsHidden
-            >
-              <AppText variant="label" style={[styles.sevDotText, { color: severity[item.severity].textOnColor }]}>{item.severity}</AppText>
-            </View>
+            <SeverityDisc severity={item.severity} size={32} digitSize={font.size.sm} />
             <AppText variant="label" style={styles.cardTitle}>
               {CATEGORY_LABELS[item.category]}
             </AppText>
@@ -396,18 +391,6 @@ const makeStyles = (color: ColorTheme) =>
       backgroundColor: color.surfaceSoft,
     },
     cardHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
-    sevDot: {
-      width: 32,
-      height: 32,
-      borderRadius: radius.circle,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    sevDotText: {
-      color: color.textOnBrand,
-      fontWeight: font.weight.bold,
-      fontSize: font.size.sm,
-    },
     cardTitle: {
       fontSize: font.size.lg,
       fontWeight: font.weight.semibold,
