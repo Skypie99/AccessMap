@@ -60,9 +60,10 @@ describe('S3 source invariants — MapScreen integration hub', () => {
     const sel = around(map, 'onSelectFlag={(flag) => {', 1400);
     expect(sel).toContain('if (screenReaderOn) {');
     expect(sel).toContain('setSelectedFlag(flag);');
-    // Sighted path preserved, upgraded to the robust retry helper (not the old 350ms timeout).
+    // Sighted path preserved, upgraded to the shared last-tap-wins scheduler
+    // (T1/F3-04 — not the old 350ms timeout, not a raw per-site retry).
     expect(sel).toContain('setNearbyOpen(false);');
-    expect(sel).toContain('retryShowCallout(mapRef.current, flag.id, () => false);');
+    expect(sel).toContain('calloutScheduler.schedule(flag.id);');
     expect(sel).not.toContain('setTimeout(() => mapRef.current?.showCallout');
   });
 
@@ -79,7 +80,7 @@ describe('S3 source invariants — MapScreen integration hub', () => {
     // Window widened 320→560 for T1's calloutClear-shaped animateTo call —
     // the asserted invariants themselves are unchanged.
     const view = around(map, 'const handleDetailViewOnMap', 560);
-    expect(view).toContain('retryShowCallout(mapRef.current, flag.id, () => false);');
+    expect(view).toContain('calloutScheduler.schedule(flag.id);');
     expect(view).not.toContain('navigation.navigate');
   });
 

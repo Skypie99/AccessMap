@@ -682,6 +682,11 @@ if (typeof document !== 'undefined' && !document.getElementById('accessmap-leafl
   document.head.appendChild(attrStyle);
 }
 
+// T1 (F3-05): how long the outgoing tile layer may linger if the incoming one
+// never fires 'load' (offline, throttled). Retirement is idempotent — the
+// timer is a hard backstop, not the happy path.
+const TILE_SWAP_FALLBACK_MS = 2000;
+
 function CachedTileLayerWrapper({
   userId,
   tileUrl,
@@ -691,18 +696,58 @@ function CachedTileLayerWrapper({
 }): null {
   const map = useMap();
 
+  // T1 (F3-05): the live layer, owned ACROSS effect runs so a theme flip can
+  // overlap old and new instead of blanking. The old shape removed the
+  // outgoing layer in the effect cleanup — which React runs BEFORE the next
+  // effect body — so the map held an empty pane while the incoming family
+  // fetched its first tiles (the only surface that visibly rebuilt instead of
+  // transforming during the theme moment). Swap MECHANICS only — the tile
+  // family itself is Sky's open eye-candidate, untouched here.
+  const activeLayerRef = useRef<CachedTileLayer | null>(null);
+
   useEffect(() => {
     const layer = new CachedTileLayer(tileUrl, {
       attribution: OSM_ATTRIBUTION,
       userId,
     });
     layer.addTo(map);
-    return () => {
-      layer.dispose(); // F31: stop in-flight chains from caching post-unmount
-      layer.remove();
-    };
+    const prev = activeLayerRef.current;
+    activeLayerRef.current = layer;
+    if (prev) {
+      // The incoming layer mounts FIRST (above — Leaflet stacks by add
+      // order); the outgoing one retires only once the new family has painted
+      // ('load' = all visible tiles done), with a hard fallback so it can
+      // never linger past 2s. dispose() runs NOW: in-flight cache writes must
+      // stop immediately (F31 — a sign-out clears the tile cache; a late
+      // write would resurrect it). The fallback is deliberately NOT cleared
+      // on the next flip: retirement is idempotent, and clearing it could
+      // leak the old layer if the incoming one never loads. Leaflet's
+      // remove() is a safe no-op once detached.
+      prev.dispose();
+      let retired = false;
+      const retirePrev = () => {
+        if (retired) return;
+        retired = true;
+        layer.off('load', retirePrev);
+        prev.remove();
+      };
+      layer.on('load', retirePrev);
+      setTimeout(retirePrev, TILE_SWAP_FALLBACK_MS);
+    }
+    // Flip path: the NEXT effect run retires `layer` (as its `prev`). Only a
+    // true unmount tears down the still-live layer — the effect below.
     // tileUrl in deps: a light/dark flip re-creates the layer with the new family.
   }, [map, userId, tileUrl]);
+
+  // True unmount: dispose + remove whichever layer is still live.
+  useEffect(
+    () => () => {
+      activeLayerRef.current?.dispose(); // F31
+      activeLayerRef.current?.remove();
+      activeLayerRef.current = null;
+    },
+    [],
+  );
 
   return null;
 }

@@ -156,24 +156,54 @@ const PANEL_BRACKET_ALLOWANCE = 160;
 const MAP_HEADER_ROW_MARGIN_BOTTOM = 10;
 const CALLOUT_CHROME_MARGIN = 8;
 
-// Pop a flag's callout, retrying a few times ~150ms apart. Right after
-// animateTo the marker may not be mounted yet (the web map recomputes its
-// cluster/pin set on the map's zoomend/moveend), so a single fixed-delay call
-// can fire before the pin exists and silently no-op. showCallout/openPopup are
-// idempotent, so the extra calls are harmless once it lands. `isCancelled`
-// lets the caller abort (effect cleanup, or a newer focus) so we never pop a
-// stale callout. Returns a canceller that clears the pending timers.
-function retryShowCallout(
+// Pop a flag's callout: one immediate same-tick attempt, then retries ~150ms
+// apart. Right after animateTo the marker may not be mounted yet (the web map
+// recomputes its cluster/pin set on the map's zoomend/moveend), so a purely
+// delayed ladder can fire before the pin exists and silently no-op — but in
+// the COMMON case the marker is already there, and rung 0 lands the payoff in
+// the same frame as the camera move (T1/F3-06: under Reduce Motion that means
+// jump + callout as one designed cut — the old ≥250ms dead beat is gone).
+// showCallout/openPopup are idempotent, so the extra calls are harmless once
+// it lands. `isCancelled` lets the caller abort (effect cleanup, or a newer
+// focus) so we never pop a stale callout. Returns a canceller that clears the
+// pending timers. Exported for the jest guards.
+export function retryShowCallout(
   map: PlatformMapHandle | null,
   flagId: string,
   isCancelled: () => boolean,
 ): () => void {
+  if (!isCancelled()) map?.showCallout(flagId);
   const timers = [250, 400, 550, 700].map((ms) =>
     setTimeout(() => {
       if (!isCancelled()) map?.showCallout(flagId);
     }, ms),
   );
   return () => timers.forEach(clearTimeout);
+}
+
+// T1 (F3-04): ONE shared scheduler so every callout flow is last-tap-wins —
+// scheduling flag B cancels flag A's still-pending rungs across ALL entry
+// paths (Tasks focus, deep link, View-on-map, Nearby select), not just within
+// one. Rapid Nearby A→B can therefore never answer with A's callout on a map
+// centered on B. The optional `isCancelled` predicate lets the effect callers
+// keep their own cleanup semantics — double-cancel is harmless (clearTimeout
+// on a fired or cleared id is a no-op). Exported for the jest guards.
+export function createCalloutScheduler(getMap: () => PlatformMapHandle | null): {
+  schedule: (flagId: string, isCancelled?: () => boolean) => () => void;
+  cancelPending: () => void;
+} {
+  let cancelCurrent: () => void = () => {};
+  return {
+    schedule(flagId, isCancelled = () => false) {
+      cancelCurrent(); // last-tap-wins: kill the previous flag's pending rungs
+      const cancel = retryShowCallout(getMap(), flagId, isCancelled);
+      cancelCurrent = cancel;
+      return cancel;
+    },
+    cancelPending() {
+      cancelCurrent();
+    },
+  };
 }
 
 // Cycle sequence for the category quick-cycle button: null = "All categories"
@@ -269,6 +299,11 @@ export default function MapScreen() {
     void hydrateGlassMode();
   }, []);
   const mapRef = useRef<PlatformMapHandle | null>(null);
+  // T1 (F3-04): one scheduler for all four callout flows — last-tap-wins.
+  const calloutScheduler = useMemo(() => createCalloutScheduler(() => mapRef.current), []);
+  // Leaving the Map screen mid-ladder must not pop a callout into a dead
+  // screen — cancel whatever is still pending on unmount.
+  useEffect(() => () => calloutScheduler.cancelPending(), [calloutScheduler]);
   const route = useRoute<RouteProp<RootTabParamList, 'FullMap'>>();
   // L9: needed to reset route.params.flagId after a deep link is handled —
   // see the deep-link effect below.
@@ -1218,7 +1253,7 @@ export default function MapScreen() {
     );
     // Retry the callout a few times — right after animateTo the marker may not
     // be mounted yet, so a single fixed-delay call can silently no-op.
-    const cancelCallout = retryShowCallout(mapRef.current, focus.id, () => cancelled);
+    const cancelCallout = calloutScheduler.schedule(focus.id, () => cancelled);
     // Only revalidate if the flag list is actually stale. Tapping a Tasks card
     // to focus a flag we already have shouldn't trigger a full network re-fetch
     // (realtime + the freshness window keep the list current). Saves a
@@ -1228,7 +1263,7 @@ export default function MapScreen() {
       cancelled = true;
       cancelCallout();
     };
-  }, [route.params?.focusFlag, route.params?.ts, refreshFlagsIfStale]);
+  }, [route.params?.focusFlag, route.params?.ts, refreshFlagsIfStale, calloutScheduler]);
 
   // Phase 7a: Home's "Report" pill navigates here with openReport:true so the
   // report sheet opens on arrival. Clear the param right away (mirroring the L9
@@ -1309,7 +1344,7 @@ export default function MapScreen() {
         // cluster bubble or not yet mounted right after animateTo, so a single
         // fixed-delay call can silently no-op. Then free the deep-link param
         // (after the last retry) so re-tapping the same link re-fires (L9).
-        cancelCallout = retryShowCallout(mapRef.current, flag.id, () => cancelled);
+        cancelCallout = calloutScheduler.schedule(flag.id, () => cancelled);
         clearParamTimer = setTimeout(() => {
           if (!cancelled) clearFlagIdParam();
         }, 800);
@@ -1325,7 +1360,7 @@ export default function MapScreen() {
       cancelCallout();
       if (clearParamTimer) clearTimeout(clearParamTimer);
     };
-  }, [route.params?.flagId, navigation]);
+  }, [route.params?.flagId, navigation, calloutScheduler]);
 
   // Memoized so the React.memo on PlatformMap can actually skip re-renders
   // when MapScreen re-renders for reasons unrelated to the map's seed region
@@ -1436,8 +1471,8 @@ export default function MapScreen() {
       },
       { calloutClear: true },
     );
-    retryShowCallout(mapRef.current, flag.id, () => false);
-  }, []);
+    calloutScheduler.schedule(flag.id);
+  }, [calloutScheduler]);
 
   // The Report FAB is dimmed until we have a location on NATIVE (where the
   // recenter button is the way to turn location on). On WEB we keep it
@@ -2526,8 +2561,9 @@ export default function MapScreen() {
             setSelectedFlag(flag);
             return;
           }
-          // Sighted path — unchanged behaviour, upgraded to the robust
-          // retryShowCallout helper (vs the old single fixed 350ms timeout).
+          // Sighted path — unchanged behaviour, upgraded to the shared
+          // last-tap-wins scheduler (vs the old single fixed 350ms timeout):
+          // rapid A→B selects can never answer with A's callout (T1/F3-04).
           setNearbyOpen(false);
           setFocusedFlagId(flag.id);
           // T1: calloutClear — the Nearby row select lands on an open callout.
@@ -2540,7 +2576,7 @@ export default function MapScreen() {
             },
             { calloutClear: true },
           );
-          retryShowCallout(mapRef.current, flag.id, () => false);
+          calloutScheduler.schedule(flag.id);
         }}
       />
 
