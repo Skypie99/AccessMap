@@ -2239,14 +2239,18 @@ export default function MapScreen() {
           below the FABs (which keep their column on the right).
         */}
         {showEmptyCard && (
-          <View
+          <GlassSurface
             style={styles.emptyCard}
+            variant="row"
+            forceEngineered
+            overlayTint={color.glassMapWash}
+            borderRadius={radius.lg}
             accessible
             accessibilityRole="alert"
             accessibilityLabel="No flags match your active filters. Try clearing one, or reset them all."
             accessibilityLiveRegion="polite"
           >
-            <Search size={26} color={color.textSubtle} strokeWidth={2} />
+            <Search size={26} color={color.inkGlassMuted} strokeWidth={2} />
             <AppText variant="heading" style={styles.emptyCardTitle}>Nothing here right now</AppText>
             <AppText variant="body" style={styles.emptyCardBody}>
               Your filters are hiding everything. Clear just the one in the way, or reset them all.
@@ -2276,7 +2280,7 @@ export default function MapScreen() {
             >
               <AppText variant="label" style={styles.emptyCardBtnText}>Reset all filters</AppText>
             </Pressable>
-          </View>
+          </GlassSurface>
         )}
 
         {/* WCAG 4.1.3: accessibilityLiveRegion covers Android TalkBack.
@@ -3081,17 +3085,18 @@ const makeStyles = (color: ColorTheme) =>
     errorBannerIcon: { color: color.textOnBrand, fontSize: font.size.xl, fontWeight: font.weight.bold },
     errorBannerText: { color: color.textOnBrand, fontSize: font.size.sm, fontWeight: font.weight.semibold, flex: 1 },
     emptyCard: {
+      // Row-tier Deep Field material (GlassSurface variant="row" forceEngineered
+      // + glassMapWash overlay) supplies the surface, edge, and specular — so no
+      // backgroundColor / border here. Shadow + layout stay on this outer style
+      // (GlassSurface clips only its inner material layer — see its docstring).
       alignSelf: 'center',
       marginTop: 16,
       maxWidth: 320,
-      backgroundColor: color.overlay,
       paddingHorizontal: 20,
       paddingVertical: 18,
       borderRadius: radius.lg,
       gap: 8,
       alignItems: 'center',
-      borderWidth: StyleSheet.hairlineWidth,
-      borderColor: color.borderSubtle,
       ...shadow.e2,
     },
     emptyCardTitle: {
@@ -3103,7 +3108,9 @@ const makeStyles = (color: ColorTheme) =>
     },
     emptyCardBody: {
       fontSize: font.size.sm,
-      color: color.textMuted,
+      // On-glass body reads color.text (7.67 L / 6.67 D over the wash) — the
+      // muted face is banned on glass (GLASS §7.4). Title stays textStrong.
+      color: color.text,
       textAlign: 'center',
       lineHeight: 18,
     },
