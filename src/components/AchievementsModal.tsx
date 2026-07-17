@@ -12,6 +12,7 @@ import React, { useMemo } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 import { AppText } from '@/components/ui/AppText';
+import { GlassSurface } from '@/components/ui/GlassSurface';
 import { useReducedMotion } from '@/lib/accessibility';
 import type { Achievement, AchievementCategory } from '@/lib/achievements';
 import { font, radius, spacing } from '@/theme';
@@ -72,7 +73,11 @@ const makeStyles = (color: ColorTheme) =>
       justifyContent: 'flex-end',
     },
     card: {
-      backgroundColor: color.surfaceMuted,
+      // Bulk-glass sheet: GlassSurface variant="bulk" (forceEngineered) supplies the
+      // surface + top edge/specular + designed Reduce-Transparency state — no
+      // backgroundColor here (the variant owns it; drops the surfaceMuted wash so
+      // Achievements shares the one sheet material). overflow:hidden clips the square
+      // material to the rounded top; the up-shadow moves to cardWrap (GlassSurface contract).
       borderTopLeftRadius: radius.xl,
       borderTopRightRadius: radius.xl,
       paddingHorizontal: spacing.xl,
@@ -80,6 +85,17 @@ const makeStyles = (color: ColorTheme) =>
       paddingBottom: spacing.xl,
       gap: spacing.md,
       maxHeight: '85%',
+      overflow: 'hidden',
+    },
+    cardWrap: {
+      borderTopLeftRadius: radius.xl,
+      borderTopRightRadius: radius.xl,
+      ...(color.scheme === 'dark'
+        ? { shadowColor: '#000', shadowOpacity: 0.35 }
+        : { shadowColor: color.shadowTint, shadowOpacity: 0.12 }),
+      shadowRadius: 14,
+      shadowOffset: { width: 0, height: -4 },
+      elevation: 5,
     },
     headerRow: {
       flexDirection: 'row',
@@ -93,7 +109,7 @@ const makeStyles = (color: ColorTheme) =>
       color: color.textStrong,
       letterSpacing: -0.3,
     },
-    subtitle: { fontSize: font.size.sm, color: color.textMuted },
+    subtitle: { fontSize: font.size.sm, color: color.inkGlassMuted, fontFamily: font.family.bodyMedium },
     closeBtn: {
       width: 44,
       height: 44,
@@ -186,7 +202,14 @@ export default function AchievementsModal({ visible, onClose, achievements }: Pr
   return (
     <Modal aria-label="Achievements" visible={visible} animationType={reducedMotion ? 'none' : 'slide'} transparent onRequestClose={onClose}>
       <View style={styles.backdrop}>
-        <View style={[styles.card, { paddingBottom: Math.max(spacing.xl, insets.bottom) }]} accessibilityViewIsModal>
+        <View style={styles.cardWrap}>
+        <GlassSurface
+          variant="bulk"
+          borderRadius={0}
+          forceEngineered
+          style={[styles.card, { paddingBottom: Math.max(spacing.xl, insets.bottom) }]}
+          accessibilityViewIsModal
+        >
           <View style={styles.headerRow}>
             <View style={styles.titleWrap}>
               <AppText variant="heading" style={styles.title} accessibilityRole="header">
@@ -229,6 +252,7 @@ export default function AchievementsModal({ visible, onClose, achievements }: Pr
               </View>
             ))}
           </ScrollView>
+        </GlassSurface>
         </View>
       </View>
     </Modal>
