@@ -531,7 +531,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
           {!location && onRequestLocation && (
             <Pressable
               onPress={onRequestLocation}
-              style={styles.useLocationBtn}
+              style={({ pressed }) => [styles.useLocationBtn, pressed && styles.chipPressed]}
               accessibilityRole="button"
               accessibilityLabel="Use my location"
               accessibilityHint="Finds your current location so you can submit this report"
@@ -563,7 +563,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
               </View>
               <Pressable
                 onPress={onClose}
-                style={styles.anonBannerLink}
+                style={({ pressed }) => [styles.anonBannerLink, pressed && styles.chipPressed]}
                 accessibilityRole="link"
                 accessibilityLabel="Sign in"
                 accessibilityHint="Closes this form so you can sign in"
@@ -594,7 +594,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
                       key={t.id}
                       onPress={() => applyTemplate(t)}
                       disabled={submitting}
-                      style={[styles.templateChip, active && styles.templateChipActive]}
+                      style={({ pressed }) => [styles.templateChip, active && styles.templateChipActive, !active && pressed && styles.chipPressed]}
                       accessibilityRole="button"
                       accessibilityLabel={
                         active
@@ -634,8 +634,10 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
               return (
                 <Pressable
                   key={c}
+                  // T4 (F1-08): selection tick moves to finger-DOWN so the
+                  // signature pickers answer the press, not the release.
+                  onPressIn={() => hapticSelection()}
                   onPress={() => {
-                    hapticSelection();
                     setCategory(c);
                     // Manual edit invalidates the "this template is
                     // currently applied" claim — clear so the chip
@@ -643,7 +645,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
                     setAppliedTemplateId(null);
                   }}
                   disabled={submitting}
-                  style={[styles.pill, active && styles.pillActive]}
+                  style={({ pressed }) => [styles.pill, active && styles.pillActive, !active && pressed && styles.chipPressed]}
                   accessibilityRole="button"
                   accessibilityLabel={`Category: ${CATEGORY_LABELS[c]}`}
                   {...a11yToggle({ pressed: active, disabled: submitting })}
@@ -663,8 +665,10 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
               return (
                 <Pressable
                   key={s}
+                  // T4 (F1-08): the severity picker is the signature control —
+                  // the selection tick lands on finger-down like the drawer row.
+                  onPressIn={() => hapticSelection()}
                   onPress={() => {
-                    hapticSelection();
                     setSeverity(s);
                     // Same pattern as Category — manual edit clears the
                     // applied-template chip so its selected state stays
@@ -672,10 +676,11 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
                     setAppliedTemplateId(null);
                   }}
                   disabled={submitting}
-                  style={[
+                  style={({ pressed }) => [
                     styles.sevBtn,
                     active && styles.sevBtnActive,
                     active && { backgroundColor: severityColor(s) },
+                    !active && pressed && styles.chipPressed,
                   ]}
                   accessibilityRole="button"
                   accessibilityLabel={`Severity ${s}: ${SEVERITY_LABELS[s]} — ${SEVERITY_DESCRIPTIONS[s]}`}
@@ -808,10 +813,11 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
                         setContextTags((curr) => toggleTag(curr, tag));
                       }}
                       disabled={tagsDisabled || submitting}
-                      style={[
+                      style={({ pressed }) => [
                         styles.tagChip,
                         active && styles.tagChipActive,
                         tagsDisabled && styles.tagChipDisabled,
+                        !active && !tagsDisabled && pressed && styles.chipPressed,
                       ]}
                       accessibilityRole="checkbox"
                       accessibilityLabel={label}
@@ -865,11 +871,12 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
                         setContextTags((curr) => toggleTag(curr, tag));
                       }}
                       disabled={tagsDisabled || submitting}
-                      style={[
+                      style={({ pressed }) => [
                         styles.tagChip,
                         styles.disabilityTagChip,
                         active && styles.disabilityTagChipActive,
                         tagsDisabled && styles.tagChipDisabled,
+                        !active && !tagsDisabled && pressed && styles.chipPressed,
                       ]}
                       accessibilityRole="checkbox"
                       accessibilityLabel={label}
@@ -995,10 +1002,11 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
                         setContextTags((curr) => toggleTag(curr, tag));
                       }}
                       disabled={tagsDisabled || submitting}
-                      style={[
+                      style={({ pressed }) => [
                         styles.tagChip,
                         active && styles.tagChipActive,
                         tagsDisabled && styles.tagChipDisabled,
+                        !active && !tagsDisabled && pressed && styles.chipPressed,
                       ]}
                       accessibilityRole="checkbox"
                       accessibilityLabel={label}
@@ -1052,7 +1060,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
             <Pressable
               onPress={onClose}
               disabled={submitting}
-              style={[styles.actionBtn, styles.cancelBtn]}
+              style={({ pressed }) => [styles.actionBtn, styles.cancelBtn, pressed && styles.chipPressed]}
               accessibilityRole="button"
               accessibilityLabel="Cancel and close"
               {...a11yToggle({ disabled: submitting })}
@@ -1076,17 +1084,26 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
               }
               {...a11yToggle({ disabled: submitting || !location, busy: submitting })}
             >
-              <LinearGradient
-                colors={gradient.brand}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={[StyleSheet.absoluteFill, { borderRadius: radius.md }]}
-                pointerEvents="none"
-              />
-              {submitting ? (
-                <ActivityIndicator color={color.textOnBrand} />
-              ) : (
-                <AppText variant="label" style={styles.submitText}>Submit report</AppText>
+              {({ pressed }) => (
+                <>
+                  <LinearGradient
+                    colors={gradient.brand}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={[StyleSheet.absoluteFill, { borderRadius: radius.md }]}
+                    pointerEvents="none"
+                  />
+                  {/* T4: pressed scrim ABOVE the gradient, BELOW the label — the
+                      brand CTA answers the finger without dimming its white text. */}
+                  {pressed && (
+                    <View pointerEvents="none" style={[StyleSheet.absoluteFill, styles.submitPressedScrim]} />
+                  )}
+                  {submitting ? (
+                    <ActivityIndicator color={color.textOnBrand} />
+                  ) : (
+                    <AppText variant="label" style={styles.submitText}>Submit report</AppText>
+                  )}
+                </>
               )}
             </Pressable>
           </View>
@@ -1391,6 +1408,19 @@ const makeStyles = (color: ColorTheme) =>
     submitBtn: { backgroundColor: color.brand, overflow: 'visible', ...shadow.glowBrand },
     submitBtnDisabled: { opacity: 0.6 },
     submitText: { color: color.textOnBrand, fontWeight: font.weight.bold },
+    // T4 (F1-01): static pressed dim so every control in the sheet answers the
+    // finger. The house idiom (color.borderPressed — FilterPresetsModal,
+    // MyReportsModal, LeaderboardScreen): a fill-COMPOSITED swap that leaves the
+    // label ink at full opacity. NEVER a group opacity on a text-bearing control
+    // (it collapses label-vs-fill contrast below AA). Applied to the
+    // neutral/inactive state; an active brand-filled chip isn't dimmed (white
+    // label on the light pressed grey would fail AA — the arbiter proves this).
+    chipPressed: { backgroundColor: color.borderPressed },
+    // Submit carries a LinearGradient over its fill, so a backgroundColor swap
+    // wouldn't show. Instead composite a translucent scrim ABOVE the gradient
+    // and BELOW the label — the label stays full opacity over a darkened brand
+    // (contrast only improves). borderRadius matches the button.
+    submitPressedScrim: { backgroundColor: 'rgba(0,0,0,0.14)', borderRadius: radius.md },
     // Context-tag chips. Three visual states matching accessibilityState:
     //   - unselected → outline (white bg, dark-blue border + text)  → 7.6:1 text/bg
     //   - selected   → solid dark-blue fill, white text              → 7.6:1 text/bg
