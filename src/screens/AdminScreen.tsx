@@ -11,12 +11,18 @@ import {
 import { Ban, Inbox, Lock, Trash2 } from 'lucide-react-native';
 import { RemoteImage } from '@/components/ui/RemoteImage';
 import { AppText } from '@/components/ui/AppText';
-import { Card } from '@/components/ui/Card';
+import { GlassSurface } from '@/components/ui/GlassSurface';
+import { ScreenStage } from '@/components/ui/ScreenStage';
+import { ScreenHeader } from '@/components/ui/ScreenHeader';
+import { HeaderActions } from '@/components/ui/HeaderActions';
 import CategoryIcon from '@/components/CategoryIcon';
 import { StatusBadge } from '@/components/StatusBadge';
 import { useFocusEffect } from '@react-navigation/native';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useColor, type ColorTheme } from '@/theme/ThemeContext';
+import { useDrawer } from '@/lib/drawerContext';
+import { useSharedModals } from '@/lib/sharedModalsContext';
 import { font, radius, severity as severityRamp, spacing } from '@/theme';
 import { hapticImpact, hapticSelection } from '@/lib/haptics';
 import { useIsAdmin } from '@/lib/admin';
@@ -36,6 +42,9 @@ export default function AdminScreen() {
   const styles = useMemo(() => makeStyles(color), [color]);
   const isAdmin = useIsAdmin();
   const tabBarHeight = useBottomTabBarHeight();
+  const drawer = useDrawer();
+  const { setOpen } = useSharedModals();
+  const insets = useSafeAreaInsets();
   const [flags, setFlags] = useState<FlagRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [actioningId, setActioningId] = useState<string | null>(null);
@@ -70,24 +79,54 @@ export default function AdminScreen() {
     }, [load]),
   );
 
+  // S8 editorial header (menu + Feedback), rendered in all three states so the
+  // drawer stays reachable — Admin now owns its header (M-49 retired the shared
+  // nav-header). Same HeaderActions cluster as Settings/Home.
+  const header = (
+    <ScreenHeader
+      eyebrow="ADMIN"
+      title="Admin"
+      eyebrowColor={color.inkOnStage}
+      actions={
+        <HeaderActions
+          onMenu={() => drawer.setOpen(true)}
+          onFeedback={() => setOpen('feedback')}
+          iconColor={color.textStrong}
+        />
+      }
+    />
+  );
+
   if (isAdmin === null) {
     return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color={color.brand} />
+      <View style={styles.root}>
+        <ScreenStage />
+        <View style={[styles.frame, { paddingTop: insets.top }]}>
+          {header}
+          <View style={styles.center}>
+            <ActivityIndicator size="large" color={color.brand} />
+          </View>
+        </View>
       </View>
     );
   }
 
   if (!isAdmin) {
     return (
-      <View style={styles.center} accessible accessibilityRole="alert">
-        <Lock size={32} color={color.textMuted} strokeWidth={2} />
-        <AppText variant="bodyMedium" size={font.size.lg} color={color.text} style={styles.stateTitle}>
-          Admin access required
-        </AppText>
-        <AppText variant="body" size={font.size.sm} color={color.textMuted} style={styles.stateBody}>
-          This area is limited to moderators.
-        </AppText>
+      <View style={styles.root}>
+        <ScreenStage />
+        <View style={[styles.frame, { paddingTop: insets.top }]}>
+          {header}
+          <View style={styles.center} accessible accessibilityRole="alert">
+            <Lock size={32} color={color.inkOnStage} strokeWidth={2} />
+            <AppText variant="bodyMedium" size={font.size.lg} color={color.text} style={styles.stateTitle}>
+              Admin access required
+            </AppText>
+            <AppText variant="body" size={font.size.sm} color={color.inkOnStage} style={styles.stateBody}>
+              This area is limited to moderators.
+            </AppText>
+          </View>
+        </View>
       </View>
     );
   }
@@ -144,9 +183,9 @@ export default function AdminScreen() {
       // WCAG 4.1.2 / 2.1.1: this card must NOT be `accessible` — it contains the
       // Remove / Dismiss action buttons, and collapsing the subtree into a single
       // element makes those buttons unreachable for VoiceOver. Each child (text +
-      // buttons) exposes itself instead. The non-pressable Card renders a plain
-      // View, so it does not collapse the subtree.
-      <Card padding={spacing.lg} style={styles.card}>
+      // buttons) exposes itself instead. GlassSurface renders a plain View (no
+      // `accessible`), so it does not collapse the subtree.
+      <GlassSurface variant="row" forceEngineered style={styles.card}>
         <View style={styles.cardHeader}>
           <CategoryIcon category={item.category} size={20} color={color.textStrong} decorative />
           <AppText
@@ -167,13 +206,13 @@ export default function AdminScreen() {
               {sev.label} · {item.severity}
             </AppText>
           </View>
-          <AppText variant="mono" size={font.size.xs} color={color.textMuted} style={styles.coordText}>
+          <AppText variant="mono" size={font.size.xs} color={color.inkGlassMuted} style={styles.coordText}>
             {item.lat.toFixed(5)}, {item.lng.toFixed(5)}
           </AppText>
         </View>
 
         {item.description ? (
-          <AppText variant="body" size={font.size.sm} color={color.text} numberOfLines={2}>
+          <AppText variant="body" size={font.size.sm} color={color.text} numberOfLines={2} style={styles.cardBody}>
             {item.description}
           </AppText>
         ) : null}
@@ -222,53 +261,65 @@ export default function AdminScreen() {
             </Pressable>
           </View>
         )}
-      </Card>
+      </GlassSurface>
     );
   };
 
   return (
-    <FlatList
-      style={styles.list}
-      data={flags}
-      keyExtractor={(f) => f.id}
-      renderItem={renderItem}
-      accessibilityRole="list"
-      contentContainerStyle={[
-        flags.length === 0 ? styles.emptyContainer : styles.listContent,
-        { paddingBottom: tabBarHeight + 16 },
-      ]}
-      refreshControl={
-        <RefreshControl refreshing={loading} onRefresh={load} tintColor={color.brand} />
-      }
-      ListHeaderComponent={
-        flags.length > 0 ? (
-          <AppText variant="label" size={font.size.xs} color={color.textMuted} style={styles.listHeader}>
-            {flags.length} recent {flags.length === 1 ? 'flag' : 'flags'} · pull to refresh
-          </AppText>
-        ) : null
-      }
-      ListEmptyComponent={
-        loading ? null : (
-          <View style={styles.emptyInner}>
-            <Inbox size={40} color={color.textSubtle} strokeWidth={1.75} />
-            <AppText variant="bodyMedium" size={font.size.lg} color={color.text} style={styles.stateTitle}>
-              No flags to moderate
-            </AppText>
-            <AppText variant="body" size={font.size.sm} color={color.textMuted} style={styles.stateBody}>
-              You&apos;re all caught up. New reports will appear here.
-            </AppText>
-          </View>
-        )
-      }
-    />
+    <View style={styles.root}>
+      <ScreenStage />
+      <FlatList
+        style={styles.list}
+        data={flags}
+        keyExtractor={(f) => f.id}
+        renderItem={renderItem}
+        accessibilityRole="list"
+        contentContainerStyle={[
+          flags.length === 0 ? styles.emptyContainer : styles.listContent,
+          { paddingTop: insets.top, paddingBottom: tabBarHeight + 16 },
+        ]}
+        refreshControl={
+          <RefreshControl refreshing={loading} onRefresh={load} tintColor={color.brand} />
+        }
+        ListHeaderComponent={
+          <>
+            {header}
+            {flags.length > 0 ? (
+              <AppText variant="label" size={font.size.xs} color={color.inkOnStage} style={styles.listHeader}>
+                {flags.length} recent {flags.length === 1 ? 'flag' : 'flags'} · pull to refresh
+              </AppText>
+            ) : null}
+          </>
+        }
+        ListEmptyComponent={
+          loading ? null : (
+            <View style={styles.emptyInner}>
+              <Inbox size={40} color={color.inkOnStage} strokeWidth={1.75} />
+              <AppText variant="bodyMedium" size={font.size.lg} color={color.text} style={styles.stateTitle}>
+                No flags to moderate
+              </AppText>
+              <AppText variant="body" size={font.size.sm} color={color.inkOnStage} style={styles.stateBody}>
+                You&apos;re all caught up. New reports will appear here.
+              </AppText>
+            </View>
+          )
+        }
+      />
+    </View>
   );
 }
 
 function makeStyles(color: ColorTheme) {
   return StyleSheet.create({
+    root: {
+      flex: 1,
+      backgroundColor: color.stage1,
+    },
+    frame: {
+      flex: 1,
+    },
     list: {
       flex: 1,
-      backgroundColor: color.surfaceMuted,
     },
     center: {
       flex: 1,
@@ -276,25 +327,23 @@ function makeStyles(color: ColorTheme) {
       justifyContent: 'center',
       gap: spacing.sm,
       padding: spacing.xl,
-      backgroundColor: color.surfaceMuted,
     },
     listContent: {
-      padding: spacing.lg,
       gap: spacing.md,
     },
     listHeader: {
       paddingBottom: spacing.xs,
-      paddingHorizontal: spacing.tight,
+      paddingHorizontal: spacing.xl,
     },
     emptyContainer: {
       flexGrow: 1,
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: spacing.xl,
     },
     emptyInner: {
+      flex: 1,
       alignItems: 'center',
+      justifyContent: 'center',
       gap: spacing.sm,
+      padding: spacing.xl,
     },
     stateTitle: {
       marginTop: spacing.sm,
@@ -306,6 +355,11 @@ function makeStyles(color: ColorTheme) {
     },
     card: {
       gap: spacing.sm,
+      padding: spacing.lg,
+      marginHorizontal: spacing.xl,
+    },
+    cardBody: {
+      fontFamily: font.family.bodyMedium,
     },
     cardHeader: {
       flexDirection: 'row',
