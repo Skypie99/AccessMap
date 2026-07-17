@@ -17,6 +17,7 @@ import {
 } from 'react-native';
 import { useAuth } from '@/lib/auth';
 import { AppText } from '@/components/ui/AppText';
+import { GlassSurface } from '@/components/ui/GlassSurface';
 import { confirm, notify } from '@/lib/confirm';
 import { errorMessage } from '@/lib/errors';
 import {
@@ -272,7 +273,16 @@ export default function MyWatchedModal({ visible, onClose, onSelectFlag, onViewO
   return (
     <Modal aria-label="Watched Flags" visible={visible} animationType={reducedMotion ? 'none' : 'slide'} transparent onRequestClose={onClose}>
       <View style={styles.backdrop}>
-        <View style={[styles.sheet, { paddingBottom: Math.max(spacing.xxl + 4, insets.bottom) }]}>
+        <View style={styles.cardWrap}>
+        {/* MP2/M-40: bulk-glass sheet (forceEngineered = budget-free). Deliberately
+            NO accessibilityViewIsModal — this sheet lacks it today and the
+            byte-identical rule carries that gap forward; BP17 closes it (S-11 L7). */}
+        <GlassSurface
+          variant="bulk"
+          borderRadius={0}
+          forceEngineered
+          style={[styles.sheet, { paddingBottom: Math.max(spacing.xxl + 4, insets.bottom) }]}
+        >
           <View style={styles.header}>
             <AppText variant="heading" style={styles.title} accessibilityRole="header">Watched Flags</AppText>
             {flags.length > 0 && (
@@ -366,14 +376,20 @@ export default function MyWatchedModal({ visible, onClose, onSelectFlag, onViewO
             <View style={styles.center}><ActivityIndicator /></View>
           ) : loadError && flags.length === 0 ? (
             <View style={styles.center}>
-              <AppText variant="body" style={styles.errorText}>{loadError}</AppText>
-              <Pressable onPress={() => void load()} style={styles.retryBtn} accessibilityRole="button" accessibilityLabel="Retry loading watched flags">
-                <AppText variant="label" style={styles.retryText}>Retry</AppText>
-              </Pressable>
+              {/* M-40 error repair: was bare color.error text directly on the
+                  (now glass) sheet; adopts the sibling errorBanner pattern —
+                  a self-contained solid errorBg banner (MyReports/ActivityFeed
+                  ship the same), never error-on-glass. */}
+              <View style={styles.errorBanner}>
+                <AppText variant="body" style={styles.errorText}>{loadError}</AppText>
+                <Pressable onPress={() => void load()} style={styles.retryBtn} accessibilityRole="button" accessibilityLabel="Retry loading watched flags">
+                  <AppText variant="label" style={styles.retryText}>Retry</AppText>
+                </Pressable>
+              </View>
             </View>
           ) : flags.length === 0 ? (
             <View style={styles.center}>
-              <Star size={32} color={color.textSubtle} strokeWidth={2.2} accessibilityElementsHidden />
+              <Star size={32} color={color.inkGlassMuted} strokeWidth={2.2} accessibilityElementsHidden />
 
               <AppText variant="heading" style={styles.emptyTitle}>No watched flags yet</AppText>
               <AppText variant="body" style={styles.emptySubtitle}>
@@ -399,6 +415,7 @@ export default function MyWatchedModal({ visible, onClose, onSelectFlag, onViewO
               }
             />
           )}
+        </GlassSurface>
         </View>
       </View>
     </Modal>
@@ -426,10 +443,23 @@ function chipActiveFg(status: WatchedStatusFilter, color: ColorTheme): string {
 const makeStyles = (color: ColorTheme) =>
   StyleSheet.create({
     backdrop: { flex: 1, backgroundColor: color.scrim, justifyContent: 'flex-end' },
+    // Bulk-glass sheet — the variant owns the surface (no backgroundColor);
+    // overflow:hidden clips the square material to the rounded top; the up-shadow
+    // moves to cardWrap (an overflow:hidden view clips its own shadow).
     sheet: {
-      backgroundColor: color.surface, borderTopLeftRadius: radius.xl, borderTopRightRadius: radius.xl,
+      borderTopLeftRadius: radius.xl, borderTopRightRadius: radius.xl,
       paddingHorizontal: spacing.xl, paddingTop: spacing.lg, paddingBottom: spacing.xxl + 4,
-      maxHeight: '85%', gap: spacing.tight,
+      maxHeight: '85%', gap: spacing.tight, overflow: 'hidden',
+    },
+    cardWrap: {
+      borderTopLeftRadius: radius.xl,
+      borderTopRightRadius: radius.xl,
+      ...(color.scheme === 'dark'
+        ? { shadowColor: '#000', shadowOpacity: 0.35 }
+        : { shadowColor: color.shadowTint, shadowOpacity: 0.12 }),
+      shadowRadius: 14,
+      shadowOffset: { width: 0, height: -4 },
+      elevation: 5,
     },
     header: { flexDirection: 'row', alignItems: 'center', marginBottom: spacing.sm },
     title: { fontSize: font.size.xxl, fontWeight: font.weight.bold, flex: 1, color: color.textStrong, letterSpacing: -0.3 },
@@ -438,12 +468,15 @@ const makeStyles = (color: ColorTheme) =>
     missingBanner: { backgroundColor: color.warningBg, borderRadius: radius.md, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, marginBottom: spacing.sm, borderLeftWidth: 3, borderLeftColor: color.accentOrange },
     missingText: { fontSize: font.size.sm, color: color.warningFg, lineHeight: 18 },
     center: { alignItems: 'center', justifyContent: 'center', paddingVertical: 48, gap: spacing.md },
-    errorText: { color: color.error, fontSize: font.size.base, textAlign: 'center' },
-    retryBtn: { backgroundColor: color.surfaceNeutral, paddingHorizontal: spacing.xl, paddingVertical: spacing.sm + 2, borderRadius: radius.md },
-    retryText: { color: color.brandText, fontWeight: font.weight.semibold },
+    // M-40 error-banner (self-contained solid pin — errorBg + errorFg, the
+    // MyReports/ActivityFeed sibling pattern; no new arbiter pair, stacks _doc).
+    errorBanner: { backgroundColor: color.errorBg, borderRadius: radius.md, padding: spacing.md, flexDirection: 'row', alignItems: 'center', gap: spacing.md, alignSelf: 'stretch' },
+    errorText: { color: color.errorFg, flex: 1, fontSize: font.size.sm, lineHeight: 18 },
+    retryBtn: { paddingHorizontal: spacing.md + 2, paddingVertical: spacing.sm + 2, borderRadius: radius.md, backgroundColor: color.error, minHeight: 44, justifyContent: 'center' },
+    retryText: { color: color.textOnBrand, fontWeight: font.weight.bold, fontSize: font.size.sm },
     emptyIcon: { fontSize: 40, color: color.textSubtle },
     emptyTitle: { fontSize: font.size.xl, fontWeight: font.weight.bold, color: color.textStrong },
-    emptySubtitle: { fontSize: font.size.base, color: color.textMuted, textAlign: 'center', lineHeight: 20 },
+    emptySubtitle: { fontSize: font.size.base, color: color.inkGlassMuted, fontFamily: font.family.bodyMedium, textAlign: 'center', lineHeight: 20 },
     emptyBold: { fontWeight: font.weight.bold, color: color.textStrong },
     list: { paddingBottom: spacing.sm },
     separator: { height: 1, backgroundColor: color.borderSubtle },
@@ -453,7 +486,7 @@ const makeStyles = (color: ColorTheme) =>
     rowMid: { flex: 1, gap: 2 },
     rowCategory: { fontSize: font.size.md, fontWeight: font.weight.semibold, color: color.textStrong },
     rowCategoryResolved: { color: color.statusResolvedFg },
-    rowDate: { fontSize: font.size.xs, color: color.textSubtle },
+    rowDate: { fontSize: font.size.xs, color: color.inkGlassMuted, fontFamily: font.family.bodyMedium },
     rowRight: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, flexShrink: 0 },
     unwatchBtn: { padding: spacing.tight, alignItems: 'center', justifyContent: 'center' },
     unwatchBtnPressed: { opacity: 0.5 },
