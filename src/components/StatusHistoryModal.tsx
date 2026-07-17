@@ -29,6 +29,7 @@ import {
 } from 'react-native';
 import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 import { AppText } from '@/components/ui/AppText';
+import { GlassSurface } from '@/components/ui/GlassSurface';
 import { STATUS_LABELS } from '@/lib/flags';
 import { relativeTime } from '@/lib/relativeTime';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
@@ -133,7 +134,13 @@ export default function StatusHistoryModal({ visible, flagId, onClose }: Props) 
   return (
     <Modal aria-label="Status history" visible={visible} animationType={reducedMotion ? 'none' : 'slide'} transparent onRequestClose={onClose}>
       <View style={styles.backdrop}>
-        <View style={[styles.card, { paddingBottom: Math.max(spacing.xxl, insets.bottom) }]} accessibilityViewIsModal>
+        <GlassSurface
+          variant="bulk"
+          borderRadius={0}
+          forceEngineered
+          style={[styles.card, { paddingBottom: Math.max(spacing.xxl, insets.bottom) }]}
+          accessibilityViewIsModal
+        >
           <View style={styles.headerRow}>
             <AppText variant="heading" style={styles.title} accessibilityRole="header">
               Status history
@@ -206,7 +213,7 @@ export default function StatusHistoryModal({ visible, flagId, onClose }: Props) 
               </View>
             )}
           </ScrollView>
-        </View>
+        </GlassSurface>
       </View>
     </Modal>
   );
@@ -220,7 +227,10 @@ const makeStyles = (color: ColorTheme) =>
       justifyContent: 'flex-end',
     },
     card: {
-      backgroundColor: color.surface,
+      // Bulk-glass sheet (MP4): <GlassSurface variant="bulk" forceEngineered> supplies
+      // the material fill; no backgroundColor here (the variant owns it). overflow:hidden
+      // clips the square material to the rounded top. No up-shadow at HEAD -> no cardWrap.
+      overflow: 'hidden',
       borderTopLeftRadius: radius.lg,
       borderTopRightRadius: radius.lg,
       paddingHorizontal: spacing.xl,
@@ -251,7 +261,7 @@ const makeStyles = (color: ColorTheme) =>
       gap: spacing.sm,
       paddingVertical: spacing.xxxl,
     },
-    loadingText: { fontSize: font.size.base, color: color.textMuted },
+    loadingText: { fontSize: font.size.base, color: color.inkGlassMuted, fontFamily: font.family.bodyMedium },
     emptyWrap: {
       paddingVertical: 28, // no exact spacing token for 28 — left raw
       paddingHorizontal: spacing.sm,
@@ -265,7 +275,8 @@ const makeStyles = (color: ColorTheme) =>
     },
     emptyBody: {
       fontSize: font.size.base,
-      color: color.textMuted,
+      color: color.inkGlassMuted,
+      fontFamily: font.family.bodyMedium,
       textAlign: 'center',
       lineHeight: font.lineHeight.base,
     },
