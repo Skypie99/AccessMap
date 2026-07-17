@@ -607,17 +607,12 @@ export default function TasksScreen() {
     [],
   );
 
-  // Keep the Tasks tab badge in sync with the count of open/verified flags so
-  // the user sees at a glance how many items need attention without switching
-  // to this tab. A count of zero clears the badge (undefined removes it).
-  // Uses navigation.setOptions so the badge lives on the screen that owns the
-  // data — no need to thread state through RootNavigator.
-  useEffect(() => {
-    const count = flags.length; // `flags` is already filtered to open+verified
-    navigation.setOptions({
-      tabBarBadge: count > 0 ? count : undefined,
-    });
-  }, [flags, navigation]);
+  // NOTE: the Tasks tab badge has ONE writer — RootNavigator's store-derived
+  // count (open-only, capped 99). TasksScreen deliberately does NOT set
+  // tabBarBadge: a second writer here (open+verified, uncapped) disagreed with
+  // that value and, worse, only applied once this screen mounted — so the badge
+  // changed meaning mid-transition (badge 9 while the list header read OPEN 6).
+  // One writer, one definition, identical before/during/after every tab cut.
 
   // Build the tap-to-retry banner copy from the provider's error string.
   // The provider already includes the leading "Couldn't load flags:" prefix
