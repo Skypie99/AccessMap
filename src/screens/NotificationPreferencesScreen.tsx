@@ -33,6 +33,7 @@ import {
 import { font, radius, shadow, spacing } from '@/theme';
 import { X } from 'lucide-react-native';
 import { AppText } from '@/components/ui/AppText';
+import { GlassSurface } from '@/components/ui/GlassSurface';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { useAuth } from '@/lib/auth';
 import { a11yToggle, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
@@ -141,7 +142,14 @@ export default function NotificationPreferencesScreen({ visible, onClose }: Prop
       <View style={styles.backdrop}>
         {/* accessibilityViewIsModal traps VoiceOver focus inside the sheet
             so it can't escape back to the underlying Settings screen. */}
-        <View style={styles.card} accessibilityViewIsModal>
+        <View style={styles.cardWrap}>
+        <GlassSurface
+          variant="bulk"
+          borderRadius={0}
+          forceEngineered
+          style={styles.card}
+          accessibilityViewIsModal
+        >
           {/* Header row */}
           <View style={styles.headerRow}>
             <View style={styles.titleWrap}>
@@ -202,6 +210,7 @@ export default function NotificationPreferencesScreen({ visible, onClose }: Prop
               </AppText>
             </ScrollView>
           )}
+        </GlassSurface>
         </View>
       </View>
     </Modal>
@@ -216,7 +225,10 @@ const makeStyles = (color: ColorTheme) =>
       justifyContent: 'flex-end',
     },
     card: {
-      backgroundColor: color.surface,
+      // Bulk-glass sheet: GlassSurface variant="bulk" (forceEngineered) supplies
+      // the surface + top edge/specular + designed Reduce-Transparency state — no
+      // backgroundColor here (the variant owns it). overflow:hidden clips the square
+      // material to the rounded top; the up-shadow (was shadow.e3) moves to cardWrap.
       borderTopLeftRadius: radius.xl,
       borderTopRightRadius: radius.xl,
       paddingHorizontal: spacing.xl,
@@ -224,7 +236,17 @@ const makeStyles = (color: ColorTheme) =>
       paddingBottom: spacing.xl,
       gap: spacing.md,
       maxHeight: '85%',
-      ...shadow.e3,
+      overflow: 'hidden',
+    },
+    cardWrap: {
+      borderTopLeftRadius: radius.xl,
+      borderTopRightRadius: radius.xl,
+      ...(color.scheme === 'dark'
+        ? { shadowColor: '#000', shadowOpacity: 0.35 }
+        : { shadowColor: color.shadowTint, shadowOpacity: 0.12 }),
+      shadowRadius: 14,
+      shadowOffset: { width: 0, height: -4 },
+      elevation: 5,
     },
     headerRow: {
       flexDirection: 'row',
@@ -239,7 +261,8 @@ const makeStyles = (color: ColorTheme) =>
     },
     titleSubtitle: {
       fontSize: font.size.sm,
-      color: color.textMuted,
+      color: color.inkGlassMuted,
+      fontFamily: font.family.bodyMedium,
     },
     closeBtn: {
       width: 44,
@@ -294,7 +317,9 @@ const makeStyles = (color: ColorTheme) =>
     },
     footer: {
       fontSize: font.size.xs,
-      color: color.textMutedAlt,
+      // On-glass footnote → inkGlassMuted (GLASS §7.4 bans textMutedAlt on glass);
+      // 6.24:1 over the bulk material, comfortably AA.
+      color: color.inkGlassMuted,
       fontStyle: 'italic',
       marginTop: spacing.xs,
       paddingHorizontal: spacing.xs,
