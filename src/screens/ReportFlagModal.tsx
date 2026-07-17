@@ -601,7 +601,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
                           ? `Template applied: ${t.label}. Tap to re-apply.`
                           : `Apply template: ${t.label}`
                       }
-                      {...a11yToggle({ selected: active, disabled: submitting })}
+                      {...a11yToggle({ pressed: active, disabled: submitting })}
                     >
                       <CategoryIcon
                         category={t.category}
@@ -646,7 +646,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
                   style={[styles.pill, active && styles.pillActive]}
                   accessibilityRole="button"
                   accessibilityLabel={`Category: ${CATEGORY_LABELS[c]}`}
-                  {...a11yToggle({ selected: active, disabled: submitting })}
+                  {...a11yToggle({ pressed: active, disabled: submitting })}
                 >
                   <AppText variant="label" style={[styles.pillText, active && styles.pillTextActive]}>
                     {CATEGORY_LABELS[c]}
@@ -679,7 +679,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
                   ]}
                   accessibilityRole="button"
                   accessibilityLabel={`Severity ${s}: ${SEVERITY_LABELS[s]} — ${SEVERITY_DESCRIPTIONS[s]}`}
-                  {...a11yToggle({ selected: active, disabled: submitting })}
+                  {...a11yToggle({ pressed: active, disabled: submitting })}
                 >
                   {/* WCAG 1.4.1 (Use of Color): the active button is signalled by
                       the severity-color fill — but color must not be the SOLE

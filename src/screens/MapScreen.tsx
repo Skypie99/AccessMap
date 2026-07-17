@@ -1904,7 +1904,7 @@ export default function MapScreen() {
                               : `${set.name}, tap to apply, long press for options`
                           }
                           accessibilityHint="Sets the map filter to this saved combination. Long press for options including make default and delete."
-                          {...a11yToggle({ selected: isSelected })}
+                          {...a11yToggle({ pressed: isSelected })}
                         >
                           <AppText
                             variant="label"
@@ -1963,7 +1963,7 @@ export default function MapScreen() {
                         style={[styles.filterPill, active && styles.filterPillActive]}
                         accessibilityRole="button"
                         accessibilityLabel={`Filter by ${CATEGORY_LABELS[c]}, ${count} flag${count === 1 ? '' : 's'}`}
-                        {...a11yToggle({ selected: active })}
+                        {...a11yToggle({ pressed: active })}
                       >
                         <View style={styles.filterPillRow}>
                           <AppText
@@ -1995,7 +1995,7 @@ export default function MapScreen() {
                         style={[styles.sevPill, active && { backgroundColor: severityColor(s) }]}
                         accessibilityRole="button"
                         accessibilityLabel={`Minimum severity ${s}`}
-                        {...a11yToggle({ selected: active })}
+                        {...a11yToggle({ pressed: active })}
                       >
                         <AppText
                           variant="label"
@@ -2054,7 +2054,7 @@ export default function MapScreen() {
                         style={[styles.filterPill, active && styles.filterPillActive]}
                         accessibilityRole="button"
                         accessibilityLabel={`Filter by ${STATUS_LABELS[s]}`}
-                        {...a11yToggle({ selected: active })}
+                        {...a11yToggle({ pressed: active })}
                       >
                         <AppText
                           variant="label"
@@ -2088,7 +2088,7 @@ export default function MapScreen() {
                         style={[styles.filterPill, active && styles.filterPillActive]}
                         accessibilityRole="button"
                         accessibilityLabel={`Filter by barriers affecting: ${label}`}
-                        {...a11yToggle({ selected: active })}
+                        {...a11yToggle({ pressed: active })}
                       >
                         <AppText
                           variant="label"
@@ -2142,7 +2142,7 @@ export default function MapScreen() {
                         style={[styles.filterPill, active && styles.filterPillActive]}
                         accessibilityRole="button"
                         accessibilityLabel={a11yLabel}
-                        {...a11yToggle({ selected: active })}
+                        {...a11yToggle({ pressed: active })}
                       >
                         <AppText
                           variant="label"

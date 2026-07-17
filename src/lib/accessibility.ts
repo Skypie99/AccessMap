@@ -29,7 +29,11 @@ type FlatAriaState = {
   'aria-expanded'?: boolean;
   'aria-busy'?: boolean;
   'aria-disabled'?: boolean;
+  'aria-pressed'?: boolean;
 };
+
+/** `a11yToggle`'s input: the standard RN state bag plus a web-only `pressed` intent. */
+type ToggleState = AccessibilityState & { pressed?: boolean };
 
 /**
  * Emit selection/toggle state so BOTH native AND web screen readers hear it.
@@ -46,10 +50,36 @@ type FlatAriaState = {
  *   accessibilityState={{ selected, disabled }}
  * with:
  *   {...a11yToggle({ selected, disabled })}
+ *
+ * `pressed` intent (toggle/selected chips with `accessibilityRole="button"`):
+ * Chromium DROPS `aria-selected` from the accessibility tree on `role=button`,
+ * so a chip that carries `{ selected }` looks selected visually but announces no
+ * state to a web screen reader on focus/re-query. `aria-pressed` IS honored on
+ * `role=button` (in every browser), so pass `{ pressed }` instead of `{ selected }`
+ * on those chips. It emits `aria-pressed` for web AND mirrors the value into the
+ * nested `accessibilityState.selected` so native VoiceOver still announces
+ * "selected" exactly as before (no native change, no double-speak). `pressed` is
+ * web-only — RN core has no `pressed` trait, so it never leaks onto native.
+ *
+ *   {...a11yToggle({ pressed: active, disabled: submitting })}
  */
 export function a11yToggle(
-  state: AccessibilityState = {},
+  state: ToggleState = {},
 ): { accessibilityState: AccessibilityState } & FlatAriaState {
+  // `pressed` intent: emit web-honored aria-pressed + mirror to the native
+  // `selected` trait. Early return so the non-pressed path below still returns
+  // the caller's `state` object by reference (identity relied on by tests).
+  if (state.pressed !== undefined) {
+    const { pressed, ...rest } = state;
+    const flat: FlatAriaState = { 'aria-pressed': pressed };
+    // Flags passed ALONGSIDE `pressed` (e.g. disabled while submitting) still
+    // need their web aliases — do not drop them.
+    if (rest.checked !== undefined) flat['aria-checked'] = rest.checked;
+    if (rest.expanded !== undefined) flat['aria-expanded'] = rest.expanded;
+    if (rest.busy !== undefined) flat['aria-busy'] = rest.busy;
+    if (rest.disabled !== undefined) flat['aria-disabled'] = rest.disabled;
+    return { accessibilityState: { ...rest, selected: pressed }, ...flat };
+  }
   const flat: FlatAriaState = {};
   if (state.selected !== undefined) flat['aria-selected'] = state.selected;
   if (state.checked !== undefined) flat['aria-checked'] = state.checked;
