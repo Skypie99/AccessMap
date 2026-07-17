@@ -446,9 +446,10 @@ export default function SettingsScreen() {
 
   return (
     <>
-      {/* The screen body is the Deep Field stage. The nav header above is the
-          shared dark chrome (untouched — NO chrome pane here). ScreenStage is
-          absolute-fill + a11y-hidden, so it sits behind the transparent scroll. */}
+      {/* The screen body is the Deep Field stage. ScreenStage is absolute-fill
+          + a11y-hidden, so it sits behind the transparent scroll. (S8 removed
+          the shared dark nav-header chrome that used to sit above this — there
+          is no chrome pane here.) */}
       <View style={styles.stageRoot}>
         <ScreenStage />
         <ScrollView

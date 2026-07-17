@@ -1894,10 +1894,11 @@ export default function ProfileScreen() {
 
       {/* T4: Reputation-tier explainer. Inline (not a separate file)
           because it's tiny — header + 4 tier rows + a one-line "X to
-          next tier" copy. Matches the visual pattern of AboutScreen:
-          full-screen Modal with translucent backdrop and a rounded
-          card. `accessibilityViewIsModal` on iOS hides the underlying
-          screen from SR while open. */}
+          next tier" copy. Rendered in the DIALOG tier: full-screen Modal
+          with a translucent backdrop and a rounded card. (It no longer
+          "matches AboutScreen" — About migrated to the bulk-glass tier;
+          this dialog deliberately stays a dialog.) `accessibilityViewIsModal`
+          on iOS hides the underlying screen from SR while open. */}
       <Modal
         visible={tierExplainerOpen}
         animationType={reduceMotion ? 'none' : 'slide'}
