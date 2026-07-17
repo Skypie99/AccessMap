@@ -41,12 +41,13 @@ import { SkeletonRow } from '@/components/ui/Skeleton';
 import { ScreenStage } from '@/components/ui/ScreenStage';
 import PlatformMap from '@/components/PlatformMap';
 import AddressSearchModal from '@/components/AddressSearchModal';
+import { SeverityDisc } from '@/components/SeverityDisc';
 import { useFlags } from '@/lib/flagsStore';
 import { useGlassMode } from '@/lib/glassMode';
 import { useUserLocation } from '@/lib/location';
 import { offlineBannerText } from '@/lib/copy';
 import { formatDistance, haversineKm, type LatLng } from '@/lib/distance';
-import { CATEGORY_LABELS, SEVERITY_LABELS, severityColor, STATUS_LABELS } from '@/lib/flags';
+import { CATEGORY_LABELS, SEVERITY_LABELS, STATUS_LABELS } from '@/lib/flags';
 import { severityA11y, statusA11y } from '@/lib/a11yText';
 import type { GeocodeResult } from '@/lib/geocode';
 import type { RootTabParamList } from '@/navigation/RootNavigator';
@@ -364,7 +365,10 @@ export default function HomeScreen() {
                       : `${CATEGORY_LABELS[item.f.category]}, ${severityA11y(item.f.severity)}, ${statusA11y(item.f.status)}`
                   }
                 >
-                  <View style={[styles.dot, { backgroundColor: severityColor(item.f.severity) }]} />
+                  {/* S1 + T5: the Recent row's severity is now a numbered mini-disc
+                      (the RecentlyViewedRow recipe). Decorative — the row label and
+                      the visible meta below already speak number · word · status. */}
+                  <SeverityDisc severity={item.f.severity} size={24} digitSize={font.size.xs} maxFontSizeMultiplier={1.3} />
                   <View style={styles.rowText}>
                     <AppText variant="bodyMedium" style={styles.rowTitle}>
                       {CATEGORY_LABELS[item.f.category]}
@@ -512,8 +516,9 @@ const makeStyles = (color: ColorTheme) =>
     },
     retryText: { fontSize: font.size.sm, color: color.textOnBrand, fontWeight: font.weight.bold },
     row: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingHorizontal: spacing.md, paddingVertical: spacing.md, minHeight: 56 },
-    sep: { height: StyleSheet.hairlineWidth, backgroundColor: color.border, marginLeft: 40 },
-    dot: { width: 11, height: 11, borderRadius: radius.full },
+    // Indented to sit under the row text: paddingHorizontal(12) + disc(24) +
+    // gap(12) = 48 (was 40 for the old 11px dot; the mini-disc pushed the text right).
+    sep: { height: StyleSheet.hairlineWidth, backgroundColor: color.border, marginLeft: 52 },
     rowText: { flex: 1, gap: 1 },
     rowTitle: { fontSize: font.size.lg, color: color.textStrong, fontWeight: font.weight.semibold },
     rowMeta: { fontSize: font.size.sm, fontFamily: font.family.bodyMedium, color: color.inkGlassMuted },

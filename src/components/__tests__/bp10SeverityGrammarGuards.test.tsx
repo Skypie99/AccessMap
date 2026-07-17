@@ -135,4 +135,13 @@ describe('the severity grammar speaks on every surface (source)', () => {
     // the quiet stake line (SEVERITY_DESCRIPTIONS, flags.ts — not theme.ts)
     expect(s).toMatch(/SEVERITY_DESCRIPTIONS\[shownFlag\.severity\]/);
   });
+
+  it('Home Recent: numbered mini-disc; visible meta still speaks number · word', () => {
+    const s = readFileSync('src/screens/HomeScreen.tsx', 'utf8');
+    expect(s).toMatch(
+      /<SeverityDisc\s+severity=\{item\.f\.severity\}\s+size=\{24\}[^>]*maxFontSizeMultiplier=\{1\.3\}/,
+    );
+    expect(s).toMatch(/Severity \$\{item\.f\.severity\} · \$\{SEVERITY_LABELS\[item\.f\.severity\]\}/);
+    expect(s).not.toMatch(/dot:\s*\{\s*width: 11/); // the 11px dot is gone
+  });
 });
