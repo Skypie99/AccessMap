@@ -210,8 +210,12 @@ describe('FlagCard — selection mode', () => {
 describe('FlagCard — S13: actions are not trapped in an accessible parent', () => {
   it('exposes a labeled header summary as the card button (severity · category · status)', () => {
     const { getByRole } = renderCard();
+    // T8 (F4-02): the card speaks the taught severity/status grammar via the
+    // a11yText helpers ("severity 4 of 5, Significant, status Open"), not the
+    // raw enums ("severity 4, open" — where a screen reader hears the status
+    // like a verb).
     const summary = getByRole('button', {
-      name: 'Blocked path, severity 4, open. Tap to view on map.',
+      name: 'Blocked path, severity 4 of 5, Significant, status Open. Tap to view on map.',
     });
     expect(summary).toBeTruthy();
     // a11yToggle keeps the nested accessibilityState AND emits the flat web alias.

@@ -351,7 +351,10 @@ export default function HomeScreen() {
                   accessibilityRole="button"
                   accessibilityLabel={
                     item.km != null
-                      ? `${CATEGORY_LABELS[item.f.category]}, ${severityA11y(item.f.severity)}, ${formatDistance(item.km)} away`
+                      ? // T8 (F4-10): keep the status word when distance renders — the
+                        // visible meta already shows it in both branches; the SR label
+                        // shouldn't drop it just because a distance is present.
+                        `${CATEGORY_LABELS[item.f.category]}, ${severityA11y(item.f.severity)}, ${statusA11y(item.f.status)}, ${formatDistance(item.km)} away`
                       : `${CATEGORY_LABELS[item.f.category]}, ${severityA11y(item.f.severity)}, ${statusA11y(item.f.status)}`
                   }
                 >

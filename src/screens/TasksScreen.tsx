@@ -31,6 +31,7 @@ import {
   NEXT_PAGE_SIZE,
   updateFlagStatus,
 } from '@/lib/flags';
+import { severityA11y, statusA11y } from '@/lib/a11yText';
 import { relativeTime } from '@/lib/relativeTime';
 import { searchFlags } from '@/lib/flagSearch';
 import { findNearestUnresolved } from '@/lib/nearestFlag';
@@ -1512,9 +1513,13 @@ const FlagCard = memo(function FlagCard({
   // users hear "checked / not checked" instead of a generic button hint.
   // Append the selection state to the existing label so the SR reads the
   // category first (the meaningful bit) and the state at the end.
-  const baseLabel = `${CATEGORY_LABELS[flag.category]}, severity ${flag.severity}, ${flag.status}. Tap to view on map.`;
+  // T8 (F4-02): the spoken card routes through the taught severity/status
+  // grammar (a11yText helpers) instead of raw enums — "severity 3 of 5,
+  // Moderate, status Open" not "severity 3, open" (the latter reads the status
+  // like a verb). Same helpers Home + the map already speak.
+  const baseLabel = `${CATEGORY_LABELS[flag.category]}, ${severityA11y(flag.severity)}, ${statusA11y(flag.status)}. Tap to view on map.`;
   const a11yLabel = selectionActive
-    ? `${CATEGORY_LABELS[flag.category]}, severity ${flag.severity}. ${selected ? 'Selected.' : 'Not selected.'}`
+    ? `${CATEGORY_LABELS[flag.category]}, ${severityA11y(flag.severity)}. ${selected ? 'Selected.' : 'Not selected.'}`
     : baseLabel;
 
   // ── Triage actions ────────────────────────────────────────────────────────
@@ -1523,6 +1528,10 @@ const FlagCard = memo(function FlagCard({
   // exists only while the flag is open; once verified the lead becomes
   // `Resolved`. Every button carries its own a11y label AND hint (WCAG: say
   // what it does and what happens next).
+  // T8 (F4-08): each action names its flag, so an SR user swiping a list hears
+  // WHICH flag each "Verify" acts on — category, plus distance only when a
+  // location has resolved (distanceInfo is null-guarded on userLocation).
+  const actionSubject = `${CATEGORY_LABELS[flag.category]}${distanceInfo ? `, ${distanceInfo.label}` : ''}`;
   type CardAction = {
     key: string;
     label: string;
@@ -1542,7 +1551,7 @@ const FlagCard = memo(function FlagCard({
       ? [{
           key: 'verify',
           label: 'Verify',
-          a11yLabel: 'Verify this flag',
+          a11yLabel: `Verify this flag — ${actionSubject}`,
           a11yHint: 'Confirms this barrier report is real',
           onPress: () => onSetStatus(flag.id, 'verified', isOwn),
           btnStyle: styles.verifyBtn,
@@ -1553,7 +1562,7 @@ const FlagCard = memo(function FlagCard({
     {
       key: 'resolved',
       label: 'Resolved',
-      a11yLabel: 'Mark this flag resolved',
+      a11yLabel: `Mark this flag resolved — ${actionSubject}`,
       a11yHint: 'Marks this barrier as fixed',
       onPress: () => onSetStatus(flag.id, 'resolved', isOwn),
       btnStyle: styles.resolveBtn,
@@ -1563,7 +1572,7 @@ const FlagCard = memo(function FlagCard({
     {
       key: 'reject',
       label: 'Reject',
-      a11yLabel: 'Reject this flag',
+      a11yLabel: `Reject this flag — ${actionSubject}`,
       a11yHint: 'Dismisses this report; asks you to confirm first',
       onPress: () => onSetStatus(flag.id, 'rejected', isOwn),
       btnStyle: styles.rejectBtn,
@@ -1573,7 +1582,7 @@ const FlagCard = memo(function FlagCard({
     {
       key: 'details',
       label: 'Details',
-      a11yLabel: 'View flag details',
+      a11yLabel: `View flag details — ${actionSubject}`,
       a11yHint: 'Opens a screen with the full report, photo, and more actions',
       onPress: () => onShowDetails(flag),
       btnStyle: styles.detailsBtn,

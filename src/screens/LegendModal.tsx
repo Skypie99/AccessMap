@@ -12,7 +12,7 @@ import {
 } from '@/lib/flags';
 import { font, radius, severity, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
-import { useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
+import { decorativeProps, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
 import CategoryIcon from '@/components/CategoryIcon';
 import { AppText } from '@/components/ui/AppText';
 import { GlassSurface } from '@/components/ui/GlassSurface';
@@ -75,10 +75,14 @@ export default function LegendModal({ visible, onClose }: Props) {
                   accessible
                   accessibilityLabel={`Severity ${s}, ${label}. ${colorName}. ${desc}`}
                 >
+                  {/* T8 (F4-01): the digit is purely decorative — the row View
+                      above carries the authored label. decorativeProps adds the
+                      'aria-hidden' that RN-web needs so the digit stops doubling
+                      in the a11y tree (importantForAccessibility="no" alone
+                      doesn't emit it). Never on the label row. */}
                   <View
                     style={[styles.sevDot, { backgroundColor: sevColor }]}
-                    importantForAccessibility="no"
-                    accessibilityElementsHidden
+                    {...decorativeProps}
                   >
                     <AppText variant="label" style={[styles.sevDotText, { color: severity[s].textOnColor }]}>{s}</AppText>
                   </View>

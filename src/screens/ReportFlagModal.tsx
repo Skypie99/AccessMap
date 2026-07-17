@@ -135,7 +135,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
     const isHigh = severity >= 4 && photoUris.length === 0;
     if (isHigh && !prevHighRef.current) {
       void AccessibilityInfo.announceForAccessibility(
-        `Tip: adding a photo helps verify this ${severity === 5 ? 'severe' : 'major'} barrier without a site visit.`,
+        `Tip: adding a photo helps verify this ${SEVERITY_LABELS[severity].toLowerCase()} barrier without a site visit.`,
       );
     }
     prevHighRef.current = isHigh;
@@ -950,14 +950,14 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
                 <View
                   style={styles.photoNudge}
                   accessible
-                  accessibilityLabel={`Tip: adding a photo helps verify this ${severity === 5 ? 'severe' : 'major'} barrier without a site visit.`}
+                  accessibilityLabel={`Tip: adding a photo helps verify this ${SEVERITY_LABELS[severity].toLowerCase()} barrier without a site visit.`}
                   accessibilityLiveRegion="polite"
                 >
                   <Camera size={18} color={color.infoFg} strokeWidth={2} />
                   <AppText variant="body" style={styles.photoNudgeBody}>
                     {'A photo helps verify this '}
                     <AppText variant="bodyMedium" style={styles.photoNudgeBold}>
-                      {severity === 5 ? 'severe' : 'major'} barrier
+                      {SEVERITY_LABELS[severity].toLowerCase()} barrier
                     </AppText>
                     {' without a site visit.'}
                   </AppText>
