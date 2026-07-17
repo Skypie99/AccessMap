@@ -13,6 +13,7 @@ import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Switch, Vi
 import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 import { useAuth } from '@/lib/auth';
 import { AppText } from '@/components/ui/AppText';
+import { GlassSurface } from '@/components/ui/GlassSurface';
 import { STATUS_LABELS } from '@/lib/flags';
 import { StatusBadge } from './StatusBadge';
 import {
@@ -150,7 +151,11 @@ export default function NotificationPrefsModal({
       onRequestClose={onClose}
     >
       <View style={styles.backdrop}>
-        <View
+        <View style={styles.cardWrap}>
+        <GlassSurface
+          variant="bulk"
+          borderRadius={0}
+          forceEngineered
           style={[styles.card, { paddingBottom: Math.max(spacing.xxl, insets.bottom) }]}
           accessibilityViewIsModal
         >
@@ -187,7 +192,9 @@ export default function NotificationPrefsModal({
             </View>
           ) : loading ? (
             <View style={styles.center}>
-              <ActivityIndicator />
+              {/* color.text (not brand): brand #1466E0 is only 3.3:1 on the sheet;
+                  matches the inked spinner in NotificationPreferencesScreen (M-24). */}
+              <ActivityIndicator color={color.text} />
             </View>
           ) : (
             // Toggles scroll inside the 85% card bound — at large type the
@@ -242,6 +249,7 @@ export default function NotificationPrefsModal({
               </AppText>
             </ScrollView>
           )}
+        </GlassSurface>
         </View>
       </View>
     </Modal>
@@ -256,7 +264,10 @@ const makeStyles = (color: ColorTheme) =>
       justifyContent: 'flex-end',
     },
     card: {
-      backgroundColor: color.surface,
+      // Bulk-glass sheet: GlassSurface variant="bulk" (forceEngineered) supplies
+      // the surface + top edge/specular + designed Reduce-Transparency state — no
+      // backgroundColor here (the variant owns it). overflow:hidden clips the square
+      // material to the rounded top; the up-shadow moves to cardWrap.
       borderTopLeftRadius: radius.lg,
       borderTopRightRadius: radius.lg,
       paddingHorizontal: spacing.xl,
@@ -264,11 +275,22 @@ const makeStyles = (color: ColorTheme) =>
       paddingBottom: spacing.xxl,
       gap: spacing.md,
       maxHeight: '85%',
+      overflow: 'hidden',
+    },
+    cardWrap: {
+      borderTopLeftRadius: radius.lg,
+      borderTopRightRadius: radius.lg,
+      ...(color.scheme === 'dark'
+        ? { shadowColor: '#000', shadowOpacity: 0.35 }
+        : { shadowColor: color.shadowTint, shadowOpacity: 0.12 }),
+      shadowRadius: 14,
+      shadowOffset: { width: 0, height: -4 },
+      elevation: 5,
     },
     headerRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
     titleWrap: { flex: 1, gap: 2 },
     title: { fontSize: font.size.xxl, fontWeight: '700', color: color.textStrong },
-    subtitle: { fontSize: font.size.sm, color: color.textMuted },
+    subtitle: { fontSize: font.size.sm, color: color.inkGlassMuted, fontFamily: font.family.bodyMedium },
     closeBtn: {
       width: 44,
       height: 44,
@@ -311,9 +333,10 @@ const makeStyles = (color: ColorTheme) =>
     rowDesc: { fontSize: font.size.xs, color: color.textMuted, lineHeight: font.lineHeight.tight },
     footer: {
       fontSize: font.size.xs,
-      // color.textMutedAlt (#5b6470) on #fff = 4.6:1 — passes WCAG AA for
-      // body text. The previous #888 was 3.5:1, which fails AA. QA Pass-2 #7.
-      color: color.textMutedAlt,
+      // On-glass footnote → inkGlassMuted (GLASS §7.4 bans textMutedAlt on glass);
+      // #414B5A over the bulk material = 6.24:1, comfortably AA (was textMutedAlt
+      // 4.6:1 on the old opaque surface). QA Pass-2 #7 intent preserved.
+      color: color.inkGlassMuted,
       fontStyle: 'italic',
       marginTop: spacing.tight,
       paddingHorizontal: spacing.tight,
