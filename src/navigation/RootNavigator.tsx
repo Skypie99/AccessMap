@@ -30,6 +30,7 @@ import MapScreen from '@/screens/MapScreen';
 import TasksScreen from '@/screens/TasksScreen';
 import ProfileScreen from '@/screens/ProfileScreen';
 import ErrorBoundary from '@/components/ErrorBoundary';
+import { computeTasksBadge, applySceneInert } from '@/navigation/perceptionHelpers';
 import { createLinking, type TakePendingUrl } from './linking';
 
 // Settings + Admin are reached ONLY from the hamburger drawer (Admin is also
@@ -209,20 +210,19 @@ function FlagsProviderWithAuth({ initialRouteName }: { initialRouteName: keyof R
  * inactive tab siblings here, so a keyboard user on the Map can Tab straight
  * into the visually-occluded Home controls (verified: the whole Home scene —
  * "Open the full map", the barrier cards — stayed tabbable behind the map).
- * `aria-hidden` alone does NOT remove tab stops; `inert` does. This mirrors each
- * scene's focus → `inert`, so only the active screen is keyboard-reachable.
- * Web-only + additive: native focus is OS-drawn and unaffected; nothing visual
- * changes (the occluded Home simply stops catching Tab). Wraps `screenLayout`,
- * so it applies uniformly to every tab scene.
+ * `aria-hidden` alone does NOT remove tab stops; `inert` does. ScreenInertLayer
+ * mirrors each scene's focus → `inert` (via applySceneInert), so only the active
+ * screen is keyboard-reachable. Web-only + additive: native focus is OS-drawn and
+ * unaffected; nothing visual changes (the occluded Home simply stops catching
+ * Tab). Wraps `screenLayout`, so it applies uniformly to every tab scene.
  */
 const sceneFillStyle = { flex: 1 } as const;
+
 function ScreenInertLayer({ children }: { children: React.ReactNode }) {
   const isFocused = useIsFocused();
   const ref = useRef<View>(null);
   useEffect(() => {
-    if (Platform.OS !== 'web') return;
-    const node = ref.current as unknown as HTMLElement | null;
-    if (node) node.inert = !isFocused;
+    applySceneInert(ref.current as unknown as HTMLElement | null, isFocused);
   }, [isFocused]);
   return (
     <View ref={ref} style={sceneFillStyle}>
@@ -246,8 +246,7 @@ function NavInner({ initialRouteName }: { initialRouteName: keyof RootTabParamLi
   const isAdmin = useIsAdmin();
 
   const { flags } = useFlags();
-  const openCount = flags.filter((f) => f.status === 'open').length;
-  const tasksBadge: number | undefined = openCount > 0 ? Math.min(openCount, 99) : undefined;
+  const tasksBadge = computeTasksBadge(flags);
 
   // Just the menu button — the drawer itself is mounted once in <DrawerHost />.
   // Used as headerLeft on every dark-header screen; Home renders its own copy

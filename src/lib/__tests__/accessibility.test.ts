@@ -98,6 +98,52 @@ describe('a11yToggle', () => {
 });
 
 /**
+ * a11yToggle — `pressed` intent (BP2 / T11 / F1-03). Chromium DROPS aria-selected
+ * from the AX tree on role=button (proven by the CDP probe
+ * design-reviews/r2-audit/tools/probe-bp2-perception.mjs), so a role=button chip
+ * that carried { selected } announced no state to a web screen reader. aria-pressed
+ * IS honored on role=button, so the stateful chips pass { pressed } instead. The
+ * repair must: emit aria-pressed for web, mirror the value into the nested
+ * accessibilityState.selected so native VoiceOver still says "selected", NOT emit
+ * aria-selected, keep any co-passed flags, and leave the ~90 non-pressed call
+ * sites (and the object-identity contract above) untouched.
+ */
+describe('a11yToggle — pressed intent', () => {
+  it('emits aria-pressed for a pressed toggle', () => {
+    expect(a11yToggle({ pressed: true })).toMatchObject({ 'aria-pressed': true });
+    expect(a11yToggle({ pressed: false })).toMatchObject({ 'aria-pressed': false });
+  });
+
+  it('mirrors pressed into accessibilityState.selected (native VoiceOver parity)', () => {
+    expect(a11yToggle({ pressed: true }).accessibilityState).toMatchObject({ selected: true });
+    expect(a11yToggle({ pressed: false }).accessibilityState).toMatchObject({ selected: false });
+  });
+
+  it('does NOT emit aria-selected on a pressed toggle (the whole point)', () => {
+    // aria-selected is the channel Chromium drops on role=button — never emit it here.
+    expect(a11yToggle({ pressed: true })).not.toHaveProperty('aria-selected');
+  });
+
+  it('does not leave a phantom `pressed` key on the nested accessibilityState', () => {
+    // RN's AccessibilityState has no `pressed` field; it must be stripped.
+    expect(a11yToggle({ pressed: true }).accessibilityState).not.toHaveProperty('pressed');
+  });
+
+  it('keeps co-passed flags (disabled while submitting) as web aliases', () => {
+    const out = a11yToggle({ pressed: true, disabled: true });
+    expect(out).toMatchObject({ 'aria-pressed': true, 'aria-disabled': true });
+    expect(out.accessibilityState).toMatchObject({ selected: true, disabled: true });
+  });
+
+  it('leaves the non-pressed path (and its object identity) untouched', () => {
+    const state = { selected: true };
+    // No `pressed` key → the original selected/aria-selected behaviour, same ref.
+    expect(a11yToggle(state).accessibilityState).toBe(state);
+    expect(a11yToggle(state)).toMatchObject({ 'aria-selected': true });
+  });
+});
+
+/**
  * useReduceTransparency — the hook GlassSurface uses to drop its frosted-glass
  * blur for a solid opaque surface when the user has iOS "Reduce Transparency"
  * on. Mirrors useReducedMotion: an initial probe of
