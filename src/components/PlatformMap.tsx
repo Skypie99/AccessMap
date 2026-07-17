@@ -189,12 +189,18 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(function Pla
         .then(([pt, bounds]) => {
           const clamped = Math.min(chromeClearPx, Math.round(windowHeight * 0.45));
           if (pt.y >= clamped + CALLOUT_HEADROOM_PX) return; // already clear
+          // Preserve the CURRENT visible span so the nudge keeps zoom. Guard
+          // the deltas: across the antimeridian getMapBoundaries' longitude
+          // span goes negative, and a bad reading could yield 0 — either would
+          // corrupt animateToRegion. Fall back to the standard focus zoom.
+          const latSpan = bounds.northEast.latitude - bounds.southWest.latitude;
+          const lngSpan = bounds.northEast.longitude - bounds.southWest.longitude;
           mapRef.current?.animateToRegion(
             biasRegionForCallout(
               {
                 ...coord,
-                latitudeDelta: bounds.northEast.latitude - bounds.southWest.latitude,
-                longitudeDelta: bounds.northEast.longitude - bounds.southWest.longitude,
+                latitudeDelta: latSpan > 0 ? latSpan : 0.005,
+                longitudeDelta: lngSpan > 0 ? lngSpan : 0.005,
               },
               chromeClearPx,
               windowHeight,

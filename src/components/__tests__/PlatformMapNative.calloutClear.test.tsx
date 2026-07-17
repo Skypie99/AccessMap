@@ -235,6 +235,59 @@ describe('T1 — direct pin tap: the chrome-band nudge (code-inferred; R2-D12)',
     expect(duration).toBe(600);
   });
 
+  it('the nudge applies a NON-ZERO downward bias when the chrome crosses the midline (not vacuous)', async () => {
+    // At the default jest window height biasRegionForCallout clamps f to 0.5
+    // (zero shift), so the assertion above cannot fail on magnitude. Force a
+    // SHORT map so the chrome + headroom crosses the midline and the bias is
+    // real — then a wiring bug that dropped the shift (or passed the wrong
+    // height) WOULD fail here. windowHeight is read from Dimensions inside
+    // PlatformMap, so mock it before render.
+    const spy = jest.spyOn(Dimensions, 'get').mockReturnValue({
+      width: 390,
+      height: 700,
+      scale: 2,
+      fontScale: 1,
+    } as any);
+    try {
+      mockMap.current.pointForCoordinate.mockResolvedValue({ x: 40, y: 60 });
+      mockMap.current.getMapBoundaries.mockResolvedValue({
+        northEast: { latitude: 37.85, longitude: -122.35 },
+        southWest: { latitude: 37.73, longitude: -122.47 },
+      });
+      renderMap({ chromeInsetTop: 300, flags: [FLAG] });
+      await act(async () => {
+        pressFlagMarker();
+        await flush();
+      });
+      const [region] = mockMap.current.animateToRegion.mock.calls[0];
+      // f = clamp((300 + 220) / 700 = 0.743) → 0.65; shift = 0.15 × latSpan.
+      const latSpan = 37.85 - 37.73;
+      expect(region.latitude).toBeGreaterThan(FLAG.lat); // biased SOUTH of the pin
+      expect(region.latitude).toBeCloseTo(FLAG.lat + 0.15 * latSpan, 10);
+    } finally {
+      spy.mockRestore();
+    }
+  });
+
+  it('an antimeridian / bad boundary span cannot corrupt the nudge (falls back to 0.005 deltas)', async () => {
+    mockMap.current.pointForCoordinate.mockResolvedValue({ x: 40, y: 60 });
+    // Viewport straddling the date line: NE lng < SW lng → negative span.
+    mockMap.current.getMapBoundaries.mockResolvedValue({
+      northEast: { latitude: 37.85, longitude: -179.9 },
+      southWest: { latitude: 37.73, longitude: 179.8 },
+    });
+    renderMap({ chromeInsetTop: 300, flags: [FLAG] });
+    await act(async () => {
+      pressFlagMarker();
+      await flush();
+    });
+    const [region] = mockMap.current.animateToRegion.mock.calls[0];
+    // The negative longitude span is rejected — never handed to MapKit as a
+    // delta — and the latitude span (still positive) is preserved.
+    expect(region.longitudeDelta).toBe(0.005);
+    expect(region.latitudeDelta).toBeCloseTo(37.85 - 37.73, 10);
+  });
+
   it('a pin already clear of the band gets NO camera move', async () => {
     mockMap.current.pointForCoordinate.mockResolvedValue({ x: 40, y: 700 });
     mockMap.current.getMapBoundaries.mockResolvedValue({
