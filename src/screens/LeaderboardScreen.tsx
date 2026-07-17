@@ -7,6 +7,7 @@ import {
 } from 'react-native';
 import { RemoteImage } from '@/components/ui/RemoteImage';
 import { AppText } from '@/components/ui/AppText';
+import { GlassSurface } from '@/components/ui/GlassSurface';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { a11yToggle, useReducedMotion } from '@/lib/accessibility';
 import { useAuth } from '@/lib/auth';
@@ -272,7 +273,14 @@ export default function LeaderboardScreen({ visible, onClose }: Props) {
   return (
     <Modal visible={visible} animationType={reducedMotion ? 'none' : 'slide'} transparent onRequestClose={onClose} aria-label="Leaderboard">
       <View style={styles.backdrop}>
-        <View style={styles.card} accessibilityViewIsModal>
+        <View style={styles.cardWrap}>
+        <GlassSurface
+          variant="bulk"
+          borderRadius={0}
+          forceEngineered
+          style={styles.card}
+          accessibilityViewIsModal
+        >
           <View style={styles.headerRow}>
             <AppText
               variant="heading"
@@ -411,6 +419,7 @@ export default function LeaderboardScreen({ visible, onClose }: Props) {
               </AppText>
             </View>
           ) : null}
+        </GlassSurface>
         </View>
       </View>
     </Modal>
@@ -425,12 +434,25 @@ function makeStyles(color: ColorTheme) {
       justifyContent: 'flex-end',
     },
     card: {
-      backgroundColor: color.surface,
+      // Bulk-glass sheet: GlassSurface variant="bulk" (forceEngineered) supplies
+      // the surface + top edge/specular + designed Reduce-Transparency state — no
+      // backgroundColor here (the variant owns it). overflow:hidden clips the square
+      // material to the rounded top; the up-shadow (was shadow.e2) moves to cardWrap.
       borderTopLeftRadius: radius.xl,
       borderTopRightRadius: radius.xl,
       paddingBottom: spacing.xxl,
       maxHeight: '90%' as unknown as number,
-      ...shadow.e2,
+      overflow: 'hidden',
+    },
+    cardWrap: {
+      borderTopLeftRadius: radius.xl,
+      borderTopRightRadius: radius.xl,
+      ...(color.scheme === 'dark'
+        ? { shadowColor: '#000', shadowOpacity: 0.35 }
+        : { shadowColor: color.shadowTint, shadowOpacity: 0.12 }),
+      shadowRadius: 14,
+      shadowOffset: { width: 0, height: -4 },
+      elevation: 5,
     },
     headerRow: {
       flexDirection: 'row',
@@ -449,7 +471,8 @@ function makeStyles(color: ColorTheme) {
     },
     subtitle: {
       fontSize: font.size.sm,
-      color: color.textMuted,
+      color: color.inkGlassMuted,
+      fontFamily: font.family.bodyMedium,
       paddingHorizontal: spacing.xl,
       paddingBottom: spacing.md,
       textAlign: 'left',
@@ -483,7 +506,7 @@ function makeStyles(color: ColorTheme) {
       paddingHorizontal: spacing.md,
       borderRadius: radius.sm,
     },
-    segBtnActive: { backgroundColor: color.brand, ...shadow.e1 },
+    segBtnActive: { backgroundColor: color.ctaFill, ...shadow.e1 },
     segBtnPressed: { opacity: 0.85 },
     segLabel: {
       fontSize: font.size.sm,
@@ -514,9 +537,12 @@ function makeStyles(color: ColorTheme) {
       minWidth: 40,
       fontSize: font.size.sm,
       fontWeight: font.weight.semibold,
-      color: color.textMuted,
+      // On-glass counter → inkGlassMuted (GLASS §7.4 bans textMuted on glass).
+      color: color.inkGlassMuted,
     },
-    rankTop: { color: color.brand, fontWeight: font.weight.bold },
+    // rankTop: brand → brandText — brand (#1466E0) hit ≈4.45 on the dark
+    // podiumGold row (FAIL); brandText is the arbitrated on-glass select ink.
+    rankTop: { color: color.brandText, fontWeight: font.weight.bold },
     nameWrap: {
       flex: 1,
       flexDirection: 'row',
@@ -527,6 +553,8 @@ function makeStyles(color: ColorTheme) {
     name: {
       fontSize: font.size.base,
       color: color.text,
+      // On-glass body → ≥500 weight (self-row emphasis stays colour-borne via nameSelf).
+      fontFamily: font.family.bodyMedium,
       flexShrink: 1,
     },
     nameSelf: { fontWeight: font.weight.semibold, color: color.brandText },
@@ -559,10 +587,10 @@ function makeStyles(color: ColorTheme) {
     },
     stateWrap: { alignItems: 'center', paddingVertical: 40, paddingHorizontal: spacing.xl },
     stateIcon: { fontSize: 40, marginBottom: spacing.sm },
-    stateText: { fontSize: font.size.sm, color: color.textMuted, textAlign: 'center' },
+    stateText: { fontSize: font.size.sm, color: color.inkGlassMuted, fontFamily: font.family.bodyMedium, textAlign: 'center' },
     stateHint: {
       fontSize: font.size.xs,
-      color: color.textSubtle,
+      color: color.inkGlassMuted,
       textAlign: 'center',
       marginTop: spacing.tight,
     },
@@ -570,7 +598,8 @@ function makeStyles(color: ColorTheme) {
       marginTop: spacing.lg,
       paddingHorizontal: spacing.xl,
       paddingVertical: 10,
-      backgroundColor: color.brand,
+      // brand → ctaFill: white-on-brand was the recorded 3.42 dark FAIL; ctaFill passes.
+      backgroundColor: color.ctaFill,
       borderRadius: radius.md,
       minHeight: 44,
       alignItems: 'center',
