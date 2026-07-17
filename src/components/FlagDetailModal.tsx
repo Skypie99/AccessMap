@@ -37,6 +37,8 @@ import {
   deleteFlag,
   FlagStatusConflictError,
   requestFlagReopen,
+  SEVERITY_DESCRIPTIONS,
+  SEVERITY_LABELS,
   severityColor,
   updateFlagContent,
   updateFlagStatus,
@@ -853,10 +855,21 @@ export default function FlagDetailModal({
                   accessible
                   accessibilityLabel={severityA11y(shownFlag.severity)}
                 >
-                  <AppText variant="label" style={[styles.severityChipText, { color: severity[shownFlag.severity].textOnColor }]}>Severity {shownFlag.severity}</AppText>
+                  <AppText variant="label" style={[styles.severityChipText, { color: severity[shownFlag.severity].textOnColor }]}>Severity {shownFlag.severity} · {SEVERITY_LABELS[shownFlag.severity]}</AppText>
                 </View>
                 <StatusBadge status={status} accessibilityLabel={statusA11y(status)} />
               </View>
+
+              {/* The stake — what a severity of this magnitude MEANS for a user.
+                  Copy is SEVERITY_DESCRIPTIONS (flags.ts), the ramp-aligned stake
+                  sentences (NOT derived from theme.ts). One quiet line completes
+                  the grammar: number · word on the chip, then the consequence.
+                  The chip's accessibilityLabel already speaks "of 5, {word}"
+                  (severityA11y); this line adds the stake for the eye and,
+                  as body text, is read after it by a screen reader. */}
+              <AppText variant="body" style={styles.severityStake}>
+                {SEVERITY_DESCRIPTIONS[shownFlag.severity]}
+              </AppText>
 
               <AppText variant="label" style={styles.sectionLabel}>Description</AppText>
               <AppText variant="body" style={styles.description}>
@@ -1614,6 +1627,7 @@ const makeStyles = (color: ColorTheme) =>
       borderRadius: radius.circle,
     },
     severityChipText: { color: color.textOnBrand, fontWeight: font.weight.bold, fontSize: font.size.xs },
+    severityStake: { fontSize: font.size.sm, color: color.inkGlassMuted, marginTop: spacing.tight },
     sectionLabel: {
       fontSize: font.size.xs,
       fontWeight: font.weight.semibold,

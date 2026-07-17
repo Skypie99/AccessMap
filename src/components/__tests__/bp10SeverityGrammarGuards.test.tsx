@@ -124,3 +124,15 @@ describe('zero-delta adoption pinning (source)', () => {
     expect(s).not.toMatch(/sevDotText:\s*\{/);
   });
 });
+
+describe('the severity grammar speaks on every surface (source)', () => {
+  it('FlagDetail: chip shows number · word, a11y keeps "of 5", stake line present', () => {
+    const s = readFileSync('src/components/FlagDetailModal.tsx', 'utf8');
+    // visible chip: "Severity {n} · {word}"
+    expect(s).toMatch(/Severity \{shownFlag\.severity\} · \{SEVERITY_LABELS\[shownFlag\.severity\]\}/);
+    // the "of 5" anchor cannot regress — a11y stays pinned to severityA11y
+    expect(s).toMatch(/accessibilityLabel=\{severityA11y\(shownFlag\.severity\)\}/);
+    // the quiet stake line (SEVERITY_DESCRIPTIONS, flags.ts — not theme.ts)
+    expect(s).toMatch(/SEVERITY_DESCRIPTIONS\[shownFlag\.severity\]/);
+  });
+});
