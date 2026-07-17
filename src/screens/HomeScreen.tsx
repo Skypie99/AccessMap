@@ -38,9 +38,11 @@ import { GlassSurface } from '@/components/ui/GlassSurface';
 import { ScreenHeader, EYEBROW_TRACKING } from '@/components/ui/ScreenHeader';
 import { PressableScale } from '@/components/ui/PressableScale';
 import { SkeletonRow } from '@/components/ui/Skeleton';
+import { ScreenStage } from '@/components/ui/ScreenStage';
 import PlatformMap from '@/components/PlatformMap';
 import AddressSearchModal from '@/components/AddressSearchModal';
 import { useFlags } from '@/lib/flagsStore';
+import { useGlassMode } from '@/lib/glassMode';
 import { useUserLocation } from '@/lib/location';
 import { offlineBannerText } from '@/lib/copy';
 import { formatDistance, haversineKm, type LatLng } from '@/lib/distance';
@@ -87,6 +89,7 @@ function LocationProbe({
 
 export default function HomeScreen() {
   const color = useColor();
+  const glassLite = useGlassMode() === 'lite';
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<HomeNav>();
   const tabBarHeight = useBottomTabBarHeight();
@@ -171,6 +174,7 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.screen}>
+      <ScreenStage />
       {probeEnabled && (
         <LocationProbe requireExistingPermission={!askedForLocation} onResult={setUserLocation} />
       )}
@@ -184,6 +188,8 @@ export default function HomeScreen() {
           eyebrow={eyebrow}
           title={showFirstLoad ? '—' : `${flags.length} ${flags.length === 1 ? 'barrier' : 'barriers'}`}
           subtitle={subtitle}
+          eyebrowColor={color.inkOnStage}
+          subtitleColor={color.inkOnStage}
           actions={
             <>
               <Pressable
@@ -217,9 +223,9 @@ export default function HomeScreen() {
           accessibilityHint="Find an address to recenter the map and list"
           style={styles.searchPressable}
         >
-          <GlassSurface style={styles.search} borderRadius={radius.md} intensity={20}>
+          <GlassSurface style={styles.search} borderRadius={radius.md} variant="row" forceEngineered>
             <View style={styles.searchInner}>
-              <Search size={18} color={color.textMuted} strokeWidth={2} />
+              <Search size={18} color={color.inkGlassMuted} strokeWidth={2} />
               <AppText
                 variant="body"
                 style={[styles.searchText, searchLabel ? styles.searchTextActive : null]}
@@ -234,7 +240,7 @@ export default function HomeScreen() {
                   accessibilityRole="button"
                   accessibilityLabel="Clear search"
                 >
-                  <X size={16} color={color.textMuted} strokeWidth={2.2} />
+                  <X size={16} color={color.inkGlassMuted} strokeWidth={2.2} />
                 </Pressable>
               )}
             </View>
@@ -313,7 +319,7 @@ export default function HomeScreen() {
         <AppText variant="label" style={styles.sectionLabel}>{sectionLabel}</AppText>
 
         {error && flags.length === 0 ? (
-          <View style={styles.listCard}>
+          <GlassSurface variant="row" forceEngineered={glassLite} style={styles.listCard}>
             <View style={styles.stateInner} accessibilityLiveRegion="polite">
               <AppText variant="body" style={styles.errorText}>Couldn’t load barriers.</AppText>
               <PressableScale
@@ -326,22 +332,22 @@ export default function HomeScreen() {
                 <AppText variant="label" style={styles.retryText}>Try again</AppText>
               </PressableScale>
             </View>
-          </View>
+          </GlassSurface>
         ) : showFirstLoad ? (
-          <View style={styles.listCard}>
+          <GlassSurface variant="row" forceEngineered={glassLite} style={styles.listCard}>
             {[0, 1, 2, 3].map((i) => (
               <View key={i}>
                 {i > 0 && <View style={styles.sep} />}
                 <SkeletonRow />
               </View>
             ))}
-          </View>
+          </GlassSurface>
         ) : items.length === 0 ? (
-          <View style={styles.listCard}>
+          <GlassSurface variant="row" forceEngineered={glassLite} style={styles.listCard}>
             <AppText variant="body" style={styles.emptyText}>No barriers reported yet.</AppText>
-          </View>
+          </GlassSurface>
         ) : (
-          <View style={styles.listCard}>
+          <GlassSurface variant="row" forceEngineered={glassLite} style={styles.listCard}>
             {items.map((item, i) => (
               <View key={item.f.id}>
                 {i > 0 && <View style={styles.sep} />}
@@ -372,11 +378,11 @@ export default function HomeScreen() {
                         : `Severity ${item.f.severity} · ${SEVERITY_LABELS[item.f.severity]} · ${STATUS_LABELS[item.f.status]}`}
                     </AppText>
                   </View>
-                  <ChevronRight size={18} color={color.textSubtle} strokeWidth={2} />
+                  <ChevronRight size={18} color={color.inkGlassMuted} strokeWidth={2} />
                 </PressableScale>
               </View>
             ))}
-          </View>
+          </GlassSurface>
         )}
       </ScrollView>
 
@@ -403,7 +409,7 @@ export default function HomeScreen() {
 
 const makeStyles = (color: ColorTheme) =>
   StyleSheet.create({
-    screen: { flex: 1, backgroundColor: color.surfaceMuted },
+    screen: { flex: 1, backgroundColor: color.stage1 },
     scroll: { flex: 1 },
     headerBtn: {
       width: 44,
@@ -417,8 +423,6 @@ const makeStyles = (color: ColorTheme) =>
     searchPressable: { marginHorizontal: spacing.lg, marginTop: spacing.xs },
     search: {
       borderRadius: radius.md,
-      borderWidth: StyleSheet.hairlineWidth,
-      borderColor: color.border,
     },
     searchInner: {
       flexDirection: 'row',
@@ -428,7 +432,7 @@ const makeStyles = (color: ColorTheme) =>
       paddingVertical: spacing.md,
       minHeight: 48,
     },
-    searchText: { flex: 1, fontSize: font.size.lg, color: color.textMuted },
+    searchText: { flex: 1, fontSize: font.size.lg, fontFamily: font.family.bodyMedium, color: color.glassPlaceholder },
     searchTextActive: { color: color.textStrong },
     locateBtn: {
       flexDirection: 'row',
@@ -482,7 +486,7 @@ const makeStyles = (color: ColorTheme) =>
     sectionLabel: {
       fontSize: font.size.xs,
       letterSpacing: EYEBROW_TRACKING,
-      color: color.textSubtle,
+      color: color.inkOnStage,
       fontWeight: font.weight.semibold,
       paddingHorizontal: spacing.xl,
       paddingTop: spacing.xl,
@@ -490,14 +494,11 @@ const makeStyles = (color: ColorTheme) =>
     },
     listCard: {
       marginHorizontal: spacing.lg,
-      backgroundColor: color.surface,
       borderRadius: radius.lg,
-      borderWidth: StyleSheet.hairlineWidth,
-      borderColor: color.border,
       overflow: 'hidden',
     },
     stateInner: { padding: spacing.lg, alignItems: 'center', gap: spacing.md },
-    errorText: { fontSize: font.size.base, color: color.textMuted, textAlign: 'center' },
+    errorText: { fontSize: font.size.base, color: color.inkGlassMuted, textAlign: 'center' },
     retryBtn: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -515,8 +516,8 @@ const makeStyles = (color: ColorTheme) =>
     dot: { width: 11, height: 11, borderRadius: radius.full },
     rowText: { flex: 1, gap: 1 },
     rowTitle: { fontSize: font.size.lg, color: color.textStrong, fontWeight: font.weight.semibold },
-    rowMeta: { fontSize: font.size.sm, color: color.textMuted },
-    emptyText: { fontSize: font.size.base, color: color.textMuted, padding: spacing.lg, textAlign: 'center' },
+    rowMeta: { fontSize: font.size.sm, fontFamily: font.family.bodyMedium, color: color.inkGlassMuted },
+    emptyText: { fontSize: font.size.base, color: color.inkGlassMuted, padding: spacing.lg, textAlign: 'center' },
     reportPill: {
       position: 'absolute',
       right: spacing.lg,
