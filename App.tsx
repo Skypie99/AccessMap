@@ -5,7 +5,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Linking, Platform, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { ThemeProvider } from '@/theme/ThemeContext';
+import { ThemeProvider, useColor } from '@/theme/ThemeContext';
 import { AuthProvider, useAuth } from '@/lib/auth';
 import { trackEvent } from '@/lib/analytics';
 import { loadOnboarded, setOnboarded } from '@/lib/onboardingState';
@@ -162,6 +162,7 @@ function Gate() {
  * Once past the gate, the app continues to `Gate` for auth routing.
  */
 function FirstLaunchGate({ children }: { children: React.ReactNode }) {
+  const color = useColor();
   // null = still loading, true = onboarded, false = needs the intro
   const [onboarded, setOnboardedState] = useState<boolean | null>(null);
 
@@ -182,8 +183,12 @@ function FirstLaunchGate({ children }: { children: React.ReactNode }) {
   }, []);
 
   if (onboarded === null) {
-    // Loading — neutral surface so we don't flash the sign-in screen.
-    return <View style={{ flex: 1, backgroundColor: '#fff' }} />;
+    // Loading — themed screen wash so dark-mode users don't get a white boot
+    // strobe on frame 1 (M-56). surfaceMuted is the deepest plane in each
+    // palette, so it matches whatever screen paints next. Residual: an
+    // OS-light / app-dark user gets one light frame here; the OS-dark cohort
+    // (the strobe's whole audience) gets the dark wash immediately.
+    return <View style={{ flex: 1, backgroundColor: color.surfaceMuted }} />;
   }
 
   if (!onboarded) {
