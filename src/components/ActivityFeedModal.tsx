@@ -27,6 +27,7 @@ import {
 import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 import { RemoteImage } from '@/components/ui/RemoteImage';
 import { AppText } from '@/components/ui/AppText';
+import { GlassSurface } from '@/components/ui/GlassSurface';
 import { useAuth } from '@/lib/auth';
 import { a11yToggle, useReducedMotion } from '@/lib/accessibility';
 import { errorMessage } from '@/lib/errors';
@@ -215,7 +216,14 @@ export default function ActivityFeedModal({ visible, onClose, onSelectFlag, onVi
   return (
     <Modal aria-label="Recent Activity" visible={visible} animationType={reducedMotion ? 'none' : 'slide'} transparent onRequestClose={onClose}>
       <View style={styles.backdrop}>
-        <View style={[styles.card, { paddingBottom: Math.max(spacing.xl, insets.bottom) }]} accessibilityViewIsModal>
+        <View style={styles.cardWrap}>
+        <GlassSurface
+          variant="bulk"
+          borderRadius={0}
+          forceEngineered
+          style={[styles.card, { paddingBottom: Math.max(spacing.xl, insets.bottom) }]}
+          accessibilityViewIsModal
+        >
           <View style={styles.headerRow}>
             <AppText variant="heading" style={styles.title} accessibilityRole="header">
               Recent Activity
@@ -319,6 +327,7 @@ export default function ActivityFeedModal({ visible, onClose, onSelectFlag, onVi
               }
             />
           )}
+        </GlassSurface>
         </View>
       </View>
     </Modal>
@@ -333,7 +342,11 @@ const makeStyles = (color: ColorTheme) =>
       justifyContent: 'flex-end',
     },
     card: {
-      backgroundColor: color.surfaceMuted,
+      // Bulk-glass sheet: GlassSurface variant="bulk" (forceEngineered) supplies
+      // the surface + top edge/specular + designed Reduce-Transparency state — no
+      // backgroundColor here (the variant owns it; drops the surfaceMuted wash).
+      // overflow:hidden clips the square material to the rounded top; the
+      // up-shadow moves to cardWrap (GlassSurface contract).
       borderTopLeftRadius: radius.xl,
       borderTopRightRadius: radius.xl,
       paddingHorizontal: spacing.xl,
@@ -341,6 +354,17 @@ const makeStyles = (color: ColorTheme) =>
       paddingBottom: spacing.xl,
       gap: spacing.md,
       maxHeight: '85%',
+      overflow: 'hidden',
+    },
+    cardWrap: {
+      borderTopLeftRadius: radius.xl,
+      borderTopRightRadius: radius.xl,
+      ...(color.scheme === 'dark'
+        ? { shadowColor: '#000', shadowOpacity: 0.35 }
+        : { shadowColor: color.shadowTint, shadowOpacity: 0.12 }),
+      shadowRadius: 14,
+      shadowOffset: { width: 0, height: -4 },
+      elevation: 5,
     },
     headerRow: {
       flexDirection: 'row',
@@ -417,7 +441,8 @@ const makeStyles = (color: ColorTheme) =>
     },
     subtitle: {
       fontSize: font.size.sm,
-      color: color.textMuted,
+      color: color.inkGlassMuted,
+      fontFamily: font.family.bodyMedium,
       textAlign: 'center',
       lineHeight: 19,
     },
@@ -436,7 +461,7 @@ const makeStyles = (color: ColorTheme) =>
       textTransform: 'uppercase',
       letterSpacing: 0.6,
     },
-    sectionHeaderCount: { fontSize: font.size.xs, color: color.textSubtle },
+    sectionHeaderCount: { fontSize: font.size.xs, color: color.inkGlassMuted },
     row: {
       backgroundColor: color.surface,
       borderRadius: radius.lg,
@@ -499,7 +524,8 @@ const makeStyles = (color: ColorTheme) =>
     },
     emptyBody: {
       fontSize: font.size.base,
-      color: color.textMutedAlt,
+      color: color.inkGlassMuted,
+      fontFamily: font.family.bodyMedium,
       textAlign: 'center',
       lineHeight: 20,
     },
