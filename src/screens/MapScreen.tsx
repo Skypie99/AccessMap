@@ -2985,7 +2985,13 @@ const makeStyles = (color: ColorTheme) =>
     // Pattern B: `filterScroll` pins the horizontal chip strips (style prop);
     // `filterRow` stays the shared content-row layout — also reused by 3
     // non-scrolling Views, so it must NOT gain flexGrow/flexShrink.
-    filterScroll: { flexGrow: 0, flexShrink: 0 },
+    // Horizontal chip strip. overflow-y is hidden on web, which clips the
+    // keyboard :focus-visible ring to two vertical slivers. The active chip fill
+    // is brand blue = the ring colour, so the ring can't move INSIDE the chip
+    // (it would vanish) — give the outside halo 4px of vertical headroom and
+    // cancel it with a matching negative margin: ring renders whole, zero net
+    // layout cost.
+    filterScroll: { flexGrow: 0, flexShrink: 0, paddingVertical: 4, marginVertical: -4 },
     filterRow: { flexDirection: 'row', gap: spacing.sm, flexWrap: 'wrap' },
     filterPill: {
       paddingHorizontal: 12,

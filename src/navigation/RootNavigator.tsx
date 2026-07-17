@@ -1,4 +1,4 @@
-import React, { Suspense, useState } from 'react';
+import React, { Suspense, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Platform, Pressable, StyleSheet, View } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { AppText } from '@/components/ui/AppText';
@@ -11,7 +11,7 @@ import {
   type LucideIcon,
 } from 'lucide-react-native';
 import HamburgerDrawer from '@/components/HamburgerDrawer';
-import { NavigationContainer, createNavigationContainerRef } from '@react-navigation/native';
+import { NavigationContainer, createNavigationContainerRef, useIsFocused } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useAuth } from '@/lib/auth';
 import { FlagsProvider, useFlags } from '@/lib/flagsStore';
@@ -203,6 +203,35 @@ function FlagsProviderWithAuth({ initialRouteName }: { initialRouteName: keyof R
 }
 
 /**
+ * Web keyboard-focus isolation (WCAG 2.4.3 Focus Order).
+ * React Navigation marks inactive tab scenes `aria-hidden` but leaves them in
+ * the DOM tab order — on web, react-native-screens does not `display:none` the
+ * inactive tab siblings here, so a keyboard user on the Map can Tab straight
+ * into the visually-occluded Home controls (verified: the whole Home scene —
+ * "Open the full map", the barrier cards — stayed tabbable behind the map).
+ * `aria-hidden` alone does NOT remove tab stops; `inert` does. This mirrors each
+ * scene's focus → `inert`, so only the active screen is keyboard-reachable.
+ * Web-only + additive: native focus is OS-drawn and unaffected; nothing visual
+ * changes (the occluded Home simply stops catching Tab). Wraps `screenLayout`,
+ * so it applies uniformly to every tab scene.
+ */
+const sceneFillStyle = { flex: 1 } as const;
+function ScreenInertLayer({ children }: { children: React.ReactNode }) {
+  const isFocused = useIsFocused();
+  const ref = useRef<View>(null);
+  useEffect(() => {
+    if (Platform.OS !== 'web') return;
+    const node = ref.current as unknown as HTMLElement | null;
+    if (node) node.inert = !isFocused;
+  }, [isFocused]);
+  return (
+    <View ref={ref} style={sceneFillStyle}>
+      {children}
+    </View>
+  );
+}
+
+/**
  * The tab navigator + its branded header. Split out so the header's
  * "Feedback" button can call `useSharedModals()` from inside the
  * provider tree (hooks can't run on the same component that renders
@@ -254,7 +283,11 @@ function NavInner({ initialRouteName }: { initialRouteName: keyof RootTabParamLi
       // Per-screen safety net: a render crash in one tab shows an in-place
       // "Try again" fallback instead of bubbling to the app-level boundary and
       // blanking the whole app. The tab bar and other tabs stay usable.
-      screenLayout={({ children }) => <ErrorBoundary variant="screen">{children}</ErrorBoundary>}
+      screenLayout={({ children }) => (
+        <ScreenInertLayer>
+          <ErrorBoundary variant="screen">{children}</ErrorBoundary>
+        </ScreenInertLayer>
+      )}
       screenOptions={{
         headerStyle: {
           backgroundColor: color.headerBg,

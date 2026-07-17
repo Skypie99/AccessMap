@@ -1171,7 +1171,13 @@ const makeStyles = (color: ColorTheme) =>
     },
     // Pattern B: `chipScroll` pins the horizontal template/category strips
     // (style prop); `row` stays the shared content-row layout.
-    chipScroll: { flexGrow: 0, flexShrink: 0 },
+    // Horizontal chip strip. overflow-y is hidden on web, which clips the
+    // keyboard :focus-visible ring (2px outline + 2px offset) to two vertical
+    // slivers. The active chip fill is brand blue = the ring colour, so the
+    // ring can't move INSIDE the chip (it would vanish) — instead give the
+    // outside halo 4px of vertical headroom and cancel it with a matching
+    // negative margin, so the ring renders whole at zero net layout cost.
+    chipScroll: { flexGrow: 0, flexShrink: 0, paddingVertical: 4, marginVertical: -4 },
     row: { flexDirection: 'row', gap: spacing.sm, flexWrap: 'wrap' },
     pill: {
       paddingHorizontal: spacing.md,
