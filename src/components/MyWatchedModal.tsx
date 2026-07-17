@@ -18,12 +18,12 @@ import {
 import { useAuth } from '@/lib/auth';
 import { AppText } from '@/components/ui/AppText';
 import { GlassSurface } from '@/components/ui/GlassSurface';
+import { SeverityDisc } from '@/components/SeverityDisc';
 import { confirm, notify } from '@/lib/confirm';
 import { errorMessage } from '@/lib/errors';
 import {
   CATEGORY_LABELS,
   fetchFlagsByIds,
-  severityColor,
 } from '@/lib/flags';
 import {
   clearWatched,
@@ -38,7 +38,7 @@ import {
 } from '@/lib/watchedFlagsFilter';
 import { font, radius, spacing } from '@/theme';
 import { MapPin, Star, X } from 'lucide-react-native';
-import { a11yToggle, decorativeProps, useReducedMotion } from '@/lib/accessibility';
+import { a11yToggle, useReducedMotion } from '@/lib/accessibility';
 import { severityA11y, statusA11y } from '@/lib/a11yText';
 import type { FlagRow } from '@/types/database';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
@@ -229,7 +229,10 @@ export default function MyWatchedModal({ visible, onClose, onSelectFlag, onViewO
           {isResolved && (
             <View style={styles.resolvedAccent} accessibilityElementsHidden importantForAccessibility="no-hide-descendants" />
           )}
-          <View style={[styles.severityDot, { backgroundColor: severityColor(item.severity) }]} {...decorativeProps} />
+          {/* T5: the watched row gains the severity NUMBER (a colour-only dot
+              spoke none) — the RecentlyViewedRow mini-disc recipe. Decorative;
+              the row's a11y label already speaks severityA11y. */}
+          <SeverityDisc severity={item.severity} size={24} digitSize={font.size.xs} maxFontSizeMultiplier={1.3} />
           <View style={styles.rowMid}>
             <AppText variant="label" style={[styles.rowCategory, isResolved && styles.rowCategoryResolved]}>
               {CATEGORY_LABELS[item.category]}
@@ -482,7 +485,6 @@ const makeStyles = (color: ColorTheme) =>
     separator: { height: 1, backgroundColor: color.borderSubtle },
     row: { flexDirection: 'row', alignItems: 'center', paddingVertical: spacing.md + 2, gap: spacing.md },
     rowPressed: { backgroundColor: color.surfaceMuted },
-    severityDot: { width: 12, height: 12, borderRadius: radius.circle, flexShrink: 0 },
     rowMid: { flex: 1, gap: 2 },
     rowCategory: { fontSize: font.size.md, fontWeight: font.weight.semibold, color: color.textStrong },
     rowCategoryResolved: { color: color.statusResolvedFg },

@@ -18,10 +18,12 @@ import { errorMessage } from '@/lib/errors';
 import {
   CATEGORY_LABELS,
   listFlagsByUser,
+  SEVERITY_LABELS,
   severityColor,
   STATUS_COLORS,
   STATUS_LABELS,
 } from '@/lib/flags';
+import { severityA11y } from '@/lib/a11yText';
 import { filterMyReports } from '@/lib/myReportsFilter';
 import type { FlagRow, FlagStatus } from '@/types/database';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
@@ -189,7 +191,7 @@ export default function MyReportsModal({
       day: 'numeric',
     });
     const a11yLabel =
-      `${CATEGORY_LABELS[item.category]}, severity ${item.severity} of 5, ` +
+      `${CATEGORY_LABELS[item.category]}, ${severityA11y(item.severity)}, ` +
       `status ${STATUS_LABELS[item.status]}, reported ${dateLabel}` +
       (item.description ? `. Note: ${item.description}` : '');
 
@@ -251,7 +253,7 @@ export default function MyReportsModal({
                 <AppText variant="body" style={styles.rowDescMuted}>No description.</AppText>
               )}
               <AppText variant="body" style={styles.rowMeta}>
-                Severity {item.severity} • {dateLabel}
+                Severity {item.severity} · {SEVERITY_LABELS[item.severity]} · {dateLabel}
               </AppText>
             </View>
           </View>

@@ -62,6 +62,7 @@ jest.mock('@/lib/flags', () => ({
     rejected: { bg: '#eef1f5', fg: '#4B5563' },
   },
   severityColor: jest.fn(() => '#888'),
+  SEVERITY_LABELS: { 1: 'Minor', 2: 'Mild', 3: 'Moderate', 4: 'Significant', 5: 'Severe' },
 }));
 
 // ---------------------------------------------------------------------------

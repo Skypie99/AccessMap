@@ -144,4 +144,32 @@ describe('the severity grammar speaks on every surface (source)', () => {
     expect(s).toMatch(/Severity \$\{item\.f\.severity\} · \$\{SEVERITY_LABELS\[item\.f\.severity\]\}/);
     expect(s).not.toMatch(/dot:\s*\{\s*width: 11/); // the 11px dot is gone
   });
+
+  it('Profile: pill shows Severity · word; a11y routed to severityA11y', () => {
+    const s = readFileSync('src/screens/ProfileScreen.tsx', 'utf8');
+    expect(s).toMatch(/· Severity\{' '\}/);
+    expect(s).toMatch(/SEVERITY_LABELS\[nearestUnresolved\.flag\.severity\]/);
+    expect(s).toMatch(/severityA11y\(nearestUnresolved\.flag\.severity\)/);
+    expect(s).not.toMatch(/· severity\{' '\}/); // lowercase, wordless — gone
+  });
+
+  it('MyReports: meta shows number · word · date; a11y routed to severityA11y', () => {
+    const s = readFileSync('src/components/MyReportsModal.tsx', 'utf8');
+    expect(s).toMatch(/Severity \{item\.severity\} · \{SEVERITY_LABELS\[item\.severity\]\} · \{dateLabel\}/);
+    expect(s).toMatch(/severityA11y\(item\.severity\)/);
+    expect(s).not.toMatch(/Severity \{item\.severity\} • /); // the U+2022 bullet is gone
+  });
+
+  it('MyWatched: colour dot becomes a numbered SeverityDisc (a11y already speaks it)', () => {
+    const s = readFileSync('src/components/MyWatchedModal.tsx', 'utf8');
+    expect(s).toMatch(/<SeverityDisc\s+severity=\{item\.severity\}\s+size=\{24\}/);
+    expect(s).toMatch(/severityA11y\(item\.severity\)/); // row a11y already on-spine
+    expect(s).not.toMatch(/severityDot:\s*\{/); // dead colour-dot style gone
+  });
+
+  it('Tasks: nearest-barrier pill gains Severity {n}; a11y gains severityA11y', () => {
+    const s = readFileSync('src/screens/TasksScreen.tsx', 'utf8');
+    expect(s).toMatch(/· Severity \$\{nearestOpenHit\.flag\.severity\} ·/);
+    expect(s).toMatch(/severityA11y\(nearestOpenHit\.flag\.severity\)/);
+  });
 });

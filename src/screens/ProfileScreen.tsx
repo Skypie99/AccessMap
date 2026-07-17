@@ -35,9 +35,11 @@ import {
   CATEGORY_LABELS,
   fetchFlagsByIds,
   listFlagsByUser,
+  SEVERITY_LABELS,
   STATUS_COLORS,
   STATUS_LABELS,
 } from '@/lib/flags';
+import { severityA11y } from '@/lib/a11yText';
 import { useFlags } from '@/lib/flagsStore';
 import { useUserLocation } from '@/lib/location';
 import { formatDistance } from '@/lib/distance';
@@ -1226,7 +1228,7 @@ export default function ProfileScreen() {
             accessibilityLabel={
               `Jump to the nearest unresolved flag: ` +
               `${CATEGORY_LABELS[nearestUnresolved.flag.category]}, ` +
-              `severity ${nearestUnresolved.flag.severity}, ` +
+              `${severityA11y(nearestUnresolved.flag.severity)}, ` +
               `${formatDistance(nearestUnresolved.km)} away.`
             }
             accessibilityHint="Opens the Map tab centered on this flag"
@@ -1243,8 +1245,8 @@ export default function ProfileScreen() {
                   Nearest unresolved · {formatDistance(nearestUnresolved.km)}
                 </AppText>
                 <AppText variant="bodyMedium" style={styles.nearestBtnSubtitle} numberOfLines={2}>
-                  {CATEGORY_LABELS[nearestUnresolved.flag.category]} · severity{' '}
-                  {nearestUnresolved.flag.severity}
+                  {CATEGORY_LABELS[nearestUnresolved.flag.category]} · Severity{' '}
+                  {nearestUnresolved.flag.severity} · {SEVERITY_LABELS[nearestUnresolved.flag.severity]}
                 </AppText>
               </View>
               <ChevronRight

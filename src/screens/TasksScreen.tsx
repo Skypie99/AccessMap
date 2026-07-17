@@ -1126,7 +1126,7 @@ export default function TasksScreen() {
               accessibilityRole="button"
               accessibilityLabel={`Review the nearest open barrier, ${
                 CATEGORY_LABELS[nearestOpenHit.flag.category]
-              }, ${speakDistance(nearestOpenHit.km)}`}
+              }, ${severityA11y(nearestOpenHit.flag.severity)}, ${speakDistance(nearestOpenHit.km)}`}
               accessibilityHint="Opens the full report for the closest open accessibility barrier"
             >
               {/* The banner is C's SCROLLING i=12 glass pane — it rides with
@@ -1140,7 +1140,7 @@ export default function TasksScreen() {
                   importantForAccessibility="no"
                 />
                 <AppText variant="label" style={styles.suggestedText}>
-                  {`Nearest open barrier · ${CATEGORY_LABELS[nearestOpenHit.flag.category]} · ${formatDistance(
+                  {`Nearest open barrier · ${CATEGORY_LABELS[nearestOpenHit.flag.category]} · Severity ${nearestOpenHit.flag.severity} · ${formatDistance(
                     nearestOpenHit.km,
                   )}`}
                 </AppText>
