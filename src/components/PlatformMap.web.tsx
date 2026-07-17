@@ -853,24 +853,46 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(function Pla
     mapInstance.current?.setView(center, zoom, { animate: false });
   }, []);
 
+  // T1 (F2-01): the popupopen listener below outlives renders, so it reads
+  // the inset through a ref — a closure from an early bind (before the chrome
+  // rows finished measuring) must never cut against a stale, tiny inset (the
+  // BP1 evidence probe caught exactly that under-cut).
+  const chromeInsetRef = useRef(0);
+  useEffect(() => {
+    chromeInsetRef.current = chromeInsetTop ?? 0;
+  }, [chromeInsetTop]);
+
   // T1 (F2-01): autoPan is suppressed under Reduce Motion (S12 — the glide is
   // motion), which stranded top-third callouts under the chrome with no
   // recovery. This is the designed instant equivalent: measure where the
-  // just-opened popup landed and, if any of it sits inside the chrome band,
-  // cut the camera so it clears — the same clear position autoPan would have
-  // glided to, delivered with zero animation.
-  const ensureCalloutClearRM = useCallback(
-    (marker: LeafletMarker) => {
+  // just-opened popup ACTUALLY rendered (its real rect against the map
+  // container — no anchor/tip modeling to drift) and, if any of it sits
+  // inside the chrome band, cut the camera so it clears — the same clear
+  // position autoPan would have glided to, delivered with zero animation.
+  const ensurePopupClearRM = useCallback(
+    (popup: L.Popup) => {
       const map = mapInstance.current;
       if (!map) return;
-      const inset = clampChromeInset(chromeInsetTop ?? 0, map.getSize?.().y ?? 0);
+      const inset = clampChromeInset(chromeInsetRef.current, map.getSize?.().y ?? 0);
       if (inset <= 0) return;
-      // The popup renders ABOVE the pin: top = pin's container Y minus the
-      // popup's height minus the anchor/tip gap.
-      const pinY = map.latLngToContainerPoint(marker.getLatLng()).y;
-      const popupH =
-        marker.getPopup()?.getElement()?.offsetHeight ?? CALLOUT_FALLBACK_HEIGHT_PX;
-      const deficit = inset - (pinY - popupH - CALLOUT_TIP_ALLOWANCE_PX);
+      // A rapid A→B may close this popup before the deferred frame lands —
+      // never cut for a callout that is no longer on screen.
+      if (typeof popup.isOpen === 'function' && !popup.isOpen()) return;
+      const el = popup.getElement();
+      const container = map.getContainer?.();
+      let popupTop: number;
+      if (el && container) {
+        popupTop = el.getBoundingClientRect().top - container.getBoundingClientRect().top;
+      } else {
+        // jsdom / not-yet-laid-out fallback: model the box above the pin.
+        const latlng = popup.getLatLng();
+        if (!latlng) return;
+        popupTop =
+          map.latLngToContainerPoint(latlng).y -
+          CALLOUT_FALLBACK_HEIGHT_PX -
+          CALLOUT_TIP_ALLOWANCE_PX;
+      }
+      const deficit = inset - popupTop;
       if (deficit <= 0) return;
       // Move the world DOWN by `deficit` px = re-center on the point that sits
       // `deficit` px ABOVE the current center (Leaflet's own autoPan math,
@@ -879,15 +901,42 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(function Pla
       const target = map.containerPointToLatLng(centerPt.add(L.point(0, -deficit)));
       instantCut(target, map.getZoom());
     },
-    [chromeInsetTop, instantCut],
+    [instantCut],
   );
+
+  // T1 (F2-01): under Reduce Motion the cut must cover EVERY open path — a
+  // DIRECT pin click opens the popup through Leaflet's own bound-popup
+  // handler and never touches the imperative showCallout, so the rescue
+  // rides the map's popupopen event instead (it fires synchronously inside
+  // openPopup — same frame — and only after layout, so the popup box is
+  // measurable). Bound only while RM is on; mapReady re-binds once the map
+  // instance lands (F7, same as contextmenu above). This closed the gap the
+  // BP1 evidence probe caught: the imperative-only branch left a real tap
+  // under RM occluded.
+  useEffect(() => {
+    const map = mapInstance.current;
+    if (!map || !reducedMotion) return;
+    const onPopupOpen = (e: L.PopupEvent) => {
+      // react-leaflet portals the popup CONTENT on the React commit AFTER
+      // popupopen fires (its lifecycle listener flips setOpen(true) first) —
+      // measuring now would see the empty shell and under-cut by the whole
+      // content height (the BP1 evidence probe caught exactly that, a 126px
+      // shortfall). One frame later the box is real; the camera move is
+      // still a zero-animation cut — one frame of deferral, no glide.
+      requestAnimationFrame(() => ensurePopupClearRM(e.popup));
+    };
+    map.on('popupopen', onPopupOpen);
+    return () => {
+      map.off('popupopen', onPopupOpen);
+    };
+  }, [reducedMotion, mapReady, ensurePopupClearRM]);
 
   useImperativeHandle(
     ref,
     () => ({
       // opts.calloutClear is consumed by the NATIVE variant (camera bias); on
       // web the callout's clearance runs at popup-open (autoPan padding above,
-      // ensureCalloutClearRM under Reduce Motion), so targeting stays exact.
+      // the popupopen RM cut below), so targeting stays exact.
       animateTo: (r, _opts) => {
         const zoom = deltaToZoom(r.latitudeDelta ?? 0.005);
         // Reduce Motion → { animate: false } (Leaflet short-circuits to an
@@ -901,10 +950,9 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(function Pla
         );
       },
       showCallout: (id) => {
-        const marker = markerRefs.current[id];
-        if (!marker) return;
-        marker.openPopup();
-        if (reducedMotion) ensureCalloutClearRM(marker);
+        // Opening fires popupopen synchronously; under RM the listener above
+        // delivers the instant clear in the same frame (F3-06).
+        markerRefs.current[id]?.openPopup();
       },
       zoomBy: (delta) => {
         const map = mapInstance.current;
@@ -913,7 +961,7 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(function Pla
         map.setZoom(map.getZoom() + delta, { animate: !reducedMotion });
       },
     }),
-    [reducedMotion, ensureCalloutClearRM],
+    [reducedMotion],
   );
 
   return (
