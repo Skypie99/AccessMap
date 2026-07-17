@@ -172,4 +172,16 @@ describe('the severity grammar speaks on every surface (source)', () => {
     expect(s).toMatch(/· Severity \$\{nearestOpenHit\.flag\.severity\} ·/);
     expect(s).toMatch(/severityA11y\(nearestOpenHit\.flag\.severity\)/);
   });
+
+  it('Onboarding slide 2: five-disc scale row, one spine-derived group label', () => {
+    const s = readFileSync('src/components/OnboardingCards.tsx', 'utf8');
+    expect(s).toMatch(/severityScale: true/); // slide 2 flagged
+    expect(s).toMatch(/SEVERITY_ORDER\.map/); // all five discs
+    expect(s).toMatch(/<SeverityDisc key=\{s\} severity=\{s\} size=\{32\}/);
+    // one accessible group, label derived from SEVERITY_LABELS (Minor..Severe)
+    expect(s).toMatch(
+      /accessibilityLabel=\{`Severity scale — 1 \$\{SEVERITY_LABELS\[1\]\} to 5 \$\{SEVERITY_LABELS\[5\]\}`\}/,
+    );
+    expect(s).not.toMatch(/icon: MapIcon/); // the stock glyph is gone from slide 2
+  });
 });

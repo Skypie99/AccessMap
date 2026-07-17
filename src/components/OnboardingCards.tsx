@@ -11,15 +11,17 @@ import {
   View,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Bell, CheckCircle2, Map as MapIcon, MapPin, Sparkles, type LucideIcon } from 'lucide-react-native';
+import { Bell, CheckCircle2, MapPin, Sparkles, type LucideIcon } from 'lucide-react-native';
 import { AppText } from '@/components/ui/AppText';
 import LogoMark from '@/components/LogoMark';
+import { SeverityDisc } from '@/components/SeverityDisc';
 import * as Location from 'expo-location';
 import {
   getNotificationPermission,
   requestNotificationPermission,
 } from '@/lib/pushNotifications';
 import { a11yToggle } from '@/lib/accessibility';
+import { SEVERITY_LABELS, SEVERITY_ORDER } from '@/lib/flags';
 import { font, radius, spacing, gradient } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
@@ -85,6 +87,9 @@ interface Card {
   // Slide 1 wears the ownable Wayfinder mark (LogoMark) instead of a stock
   // Lucide glyph — PROTECT-16, the app owns a good mark, so wear it more.
   brandMark?: boolean;
+  // Slide 2 shows the severity scale itself — five numbered discs (the Legend
+  // in miniature) instead of a stock glyph. Introduces the grammar on day zero.
+  severityScale?: boolean;
   // Slide primes this OS permission and fires the prompt on its primary tap.
   permission?: PermissionKind;
   // The final slide — primary button is "Open the Map" and finishes onboarding.
@@ -102,7 +107,7 @@ const CARDS: Card[] = [
     body: 'See an accessibility barrier — a missing ramp, a broken sidewalk, a blocked path? Put it on the map so others know, and so it gets fixed.',
   },
   {
-    icon: MapIcon,
+    severityScale: true,
     iconColor: '#60a5fa',
     title: "Here's how it works",
     body: 'Find the spot on the map and add the barrier there, then rate how bad it is. Others verify it or mark it resolved once the issue is fixed. (Signed-in users can add a photo, too.)',
@@ -340,21 +345,41 @@ export default function OnboardingCards({ onDone }: Props) {
                   showsVerticalScrollIndicator={false}
                   nestedScrollEnabled
                 >
-                  {/* Icon circle — decorative; card heading conveys the same meaning */}
-                  <View
-                    style={[
-                      styles.iconCircle,
-                      { borderColor: effectiveColor + '40', shadowColor: effectiveColor },
-                    ]}
-                    accessibilityElementsHidden
-                    importantForAccessibility="no-hide-descendants"
-                  >
-                    {c.brandMark ? (
-                      <LogoMark size={60} variant="mono" tint={effectiveColor} />
-                    ) : EffectiveIcon ? (
-                      <EffectiveIcon size={52} color={effectiveColor} strokeWidth={2} />
-                    ) : null}
-                  </View>
+                  {c.severityScale ? (
+                    /* Slide 2: the Legend in miniature — the five numbered severity
+                       discs as one quiet static row on the Deep Field gradient
+                       (unframed; no glass circle). ONE accessible group names the
+                       scale (label derived from SEVERITY_LABELS); the discs are
+                       decorative. The same 32/14 disc the Legend wears, so a user
+                       meets 1–5 before the report form ever asks. No motion, no
+                       severity-coloured chrome — a static teaching image that is true. */
+                    <View
+                      style={styles.severityScaleRow}
+                      accessible
+                      accessibilityRole="image"
+                      accessibilityLabel={`Severity scale — 1 ${SEVERITY_LABELS[1]} to 5 ${SEVERITY_LABELS[5]}`}
+                    >
+                      {SEVERITY_ORDER.map((s) => (
+                        <SeverityDisc key={s} severity={s} size={32} digitSize={font.size.base} maxFontSizeMultiplier={1.3} />
+                      ))}
+                    </View>
+                  ) : (
+                    /* Icon circle — decorative; card heading conveys the same meaning */
+                    <View
+                      style={[
+                        styles.iconCircle,
+                        { borderColor: effectiveColor + '40', shadowColor: effectiveColor },
+                      ]}
+                      accessibilityElementsHidden
+                      importantForAccessibility="no-hide-descendants"
+                    >
+                      {c.brandMark ? (
+                        <LogoMark size={60} variant="mono" tint={effectiveColor} />
+                      ) : EffectiveIcon ? (
+                        <EffectiveIcon size={52} color={effectiveColor} strokeWidth={2} />
+                      ) : null}
+                    </View>
+                  )}
 
                   {/* Position pill */}
                   <View style={styles.positionPill}>
@@ -607,6 +632,15 @@ const makeStyles = (color: ColorTheme) =>
       shadowRadius: 20,
       shadowOffset: { width: 0, height: 8 },
       elevation: 8,
+    },
+    severityScaleRow: {
+      // The five discs occupy the same 112pt vertical footprint the icon circle
+      // did, so slide 2's rhythm matches the framed illustration of the others.
+      minHeight: 112,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: spacing.md,
     },
     // "1 / 4" pill indicator
     positionPill: {
