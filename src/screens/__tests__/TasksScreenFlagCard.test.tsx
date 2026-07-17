@@ -237,6 +237,29 @@ describe('FlagCard — S13: actions are not trapped in an accessible parent', ()
   });
 });
 
+// T8 (F4-08): each triage action names its flag so an SR user swiping a list
+// hears WHICH flag each "Verify"/"Reject" acts on — the "'Verify this flag' six
+// times in a row with no idea which flag" problem R2 named. Distance rides only
+// when a location has resolved (null-guarded on userLocation via distanceInfo).
+describe('FlagCard — T8: each action names its flag', () => {
+  it('with no location, action labels are category-only (no distance)', () => {
+    const { getByLabelText } = renderCard({ userLocation: null });
+    expect(getByLabelText('Verify this flag — Blocked path')).toBeTruthy();
+    expect(getByLabelText('Reject this flag — Blocked path')).toBeTruthy();
+    expect(getByLabelText('View flag details — Blocked path')).toBeTruthy();
+  });
+
+  it('with a location, the label carries category THEN distance', () => {
+    const { getByLabelText } = renderCard({ userLocation: { lat: 49.9, lng: -119.5 } });
+    expect(getByLabelText(/^Verify this flag — Blocked path, .+/)).toBeTruthy();
+  });
+
+  it('no action regresses to the bare, flag-less label', () => {
+    const { queryByLabelText } = renderCard();
+    expect(queryByLabelText('Verify this flag')).toBeNull();
+  });
+});
+
 describe('FlagCard — material modes (the C-lite runtime switch)', () => {
   it('full glass mounts the row BlurView; glassLite swaps to the engineered gradient', () => {
     const full = renderCard();
