@@ -6,7 +6,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   Home as HomeIcon,
   ListChecks as TasksIcon,
-  Menu as MenuIcon,
   User as ProfileIcon,
   type LucideIcon,
 } from 'lucide-react-native';
@@ -17,7 +16,7 @@ import { useAuth } from '@/lib/auth';
 import { FlagsProvider, useFlags } from '@/lib/flagsStore';
 import { SharedModalsProvider, useSharedModals } from '@/lib/sharedModalsContext';
 import { DrawerProvider, useDrawer } from '@/lib/drawerContext';
-import { font, icon, radius, spacing } from '@/theme';
+import { font, radius, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { useReduceTransparency } from '@/lib/accessibility';
 import FeedbackModal from '@/components/FeedbackModal';
@@ -239,7 +238,6 @@ function ScreenInertLayer({ children }: { children: React.ReactNode }) {
  */
 function NavInner({ initialRouteName }: { initialRouteName: keyof RootTabParamList }) {
   const { setOpen } = useSharedModals();
-  const drawer = useDrawer();
   const color = useColor();
   const styles = makeStyles(color);
   const insets = useSafeAreaInsets();
@@ -247,21 +245,6 @@ function NavInner({ initialRouteName }: { initialRouteName: keyof RootTabParamLi
 
   const { flags } = useFlags();
   const tasksBadge = computeTasksBadge(flags);
-
-  // Just the menu button — the drawer itself is mounted once in <DrawerHost />.
-  // Used as headerLeft on every dark-header screen; Home renders its own copy
-  // inside the editorial header (it has headerShown:false).
-  const renderMenuButton = () => (
-    <Pressable
-      onPress={() => drawer.setOpen(true)}
-      style={({ pressed }) => [styles.hamburgerBtn, pressed && styles.hamburgerBtnPressed]}
-      accessibilityRole="button"
-      accessibilityLabel="Open navigation menu"
-      hitSlop={8}
-    >
-      <MenuIcon size={icon.lg} color={color.headerFg} strokeWidth={2.2} />
-    </Pressable>
-  );
 
   const renderHeaderRight = () => (
     <Pressable
@@ -405,7 +388,7 @@ function NavInner({ initialRouteName }: { initialRouteName: keyof RootTabParamLi
           name="Admin"
           component={AdminScreenLazy}
           options={{
-            headerLeft: renderMenuButton,
+            headerShown: false,
             tabBarButton: () => null,
             tabBarItemStyle: { display: 'none' },
           }}
@@ -480,16 +463,6 @@ function DrawerHost() {
 
 const makeStyles = (color: ColorTheme) =>
   StyleSheet.create({
-    hamburgerBtn: {
-      marginLeft: spacing.md,
-      width: 36,
-      height: 36,
-      borderRadius: radius.md,
-      backgroundColor: color.headerBtnBg,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    hamburgerBtnPressed: { backgroundColor: color.headerBtnBgPressed },
     feedbackBtn: {
       marginRight: spacing.md,
       paddingHorizontal: spacing.md,
