@@ -76,7 +76,9 @@ describe('S3 source invariants — MapScreen integration hub', () => {
   });
 
   it('"View on map" recenters locally (we are already on the Map tab) — no cross-tab navigate', () => {
-    const view = around(map, 'const handleDetailViewOnMap', 320);
+    // Window widened 320→560 for T1's calloutClear-shaped animateTo call —
+    // the asserted invariants themselves are unchanged.
+    const view = around(map, 'const handleDetailViewOnMap', 560);
     expect(view).toContain('retryShowCallout(mapRef.current, flag.id, () => false);');
     expect(view).not.toContain('navigation.navigate');
   });

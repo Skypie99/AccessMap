@@ -1205,12 +1205,17 @@ export default function MapScreen() {
     if (!focus) return;
     let cancelled = false;
     setFocusedFlagId(focus.id);
-    mapRef.current?.animateTo({
-      latitude: focus.lat,
-      longitude: focus.lng,
-      latitudeDelta: 0.005,
-      longitudeDelta: 0.005,
-    });
+    // T1: calloutClear — this move exists to OPEN a callout, so native biases
+    // the target below the measured chrome band (web clears at popup-open).
+    mapRef.current?.animateTo(
+      {
+        latitude: focus.lat,
+        longitude: focus.lng,
+        latitudeDelta: 0.005,
+        longitudeDelta: 0.005,
+      },
+      { calloutClear: true },
+    );
     // Retry the callout a few times — right after animateTo the marker may not
     // be mounted yet, so a single fixed-delay call can silently no-op.
     const cancelCallout = retryShowCallout(mapRef.current, focus.id, () => cancelled);
@@ -1286,15 +1291,20 @@ export default function MapScreen() {
         // even when the flag is outside the loaded page / active filters.
         setDeepLinkFlag(flag);
         setFocusedFlagId(flag.id);
-        mapRef.current?.animateTo({
-          latitude: flag.lat,
-          longitude: flag.lng,
-          // Tighter than the Tasks→Map focus (0.005): on web this lands at a
-          // zoom past Supercluster's maxZoom, so the target pin is guaranteed
-          // declustered on arrival and its popup can actually open.
-          latitudeDelta: 0.002,
-          longitudeDelta: 0.002,
-        });
+        // T1: calloutClear — a deep link's whole job is landing on an open
+        // callout, so native biases the target below the chrome band.
+        mapRef.current?.animateTo(
+          {
+            latitude: flag.lat,
+            longitude: flag.lng,
+            // Tighter than the Tasks→Map focus (0.005): on web this lands at a
+            // zoom past Supercluster's maxZoom, so the target pin is guaranteed
+            // declustered on arrival and its popup can actually open.
+            latitudeDelta: 0.002,
+            longitudeDelta: 0.002,
+          },
+          { calloutClear: true },
+        );
         // Retry the callout a few times — the marker may still be inside a
         // cluster bubble or not yet mounted right after animateTo, so a single
         // fixed-delay call can silently no-op. Then free the deep-link param
@@ -1416,12 +1426,16 @@ export default function MapScreen() {
   // onClose() itself right after this, so we don't touch selectedFlag here.
   const handleDetailViewOnMap = useCallback((flag: FlagRow) => {
     setFocusedFlagId(flag.id);
-    mapRef.current?.animateTo({
-      latitude: flag.lat,
-      longitude: flag.lng,
-      latitudeDelta: 0.005,
-      longitudeDelta: 0.005,
-    });
+    // T1: calloutClear — "View on map" exists to show the callout.
+    mapRef.current?.animateTo(
+      {
+        latitude: flag.lat,
+        longitude: flag.lng,
+        latitudeDelta: 0.005,
+        longitudeDelta: 0.005,
+      },
+      { calloutClear: true },
+    );
     retryShowCallout(mapRef.current, flag.id, () => false);
   }, []);
 
@@ -2516,12 +2530,16 @@ export default function MapScreen() {
           // retryShowCallout helper (vs the old single fixed 350ms timeout).
           setNearbyOpen(false);
           setFocusedFlagId(flag.id);
-          mapRef.current?.animateTo({
-            latitude: flag.lat,
-            longitude: flag.lng,
-            latitudeDelta: 0.005,
-            longitudeDelta: 0.005,
-          });
+          // T1: calloutClear — the Nearby row select lands on an open callout.
+          mapRef.current?.animateTo(
+            {
+              latitude: flag.lat,
+              longitude: flag.lng,
+              latitudeDelta: 0.005,
+              longitudeDelta: 0.005,
+            },
+            { calloutClear: true },
+          );
           retryShowCallout(mapRef.current, flag.id, () => false);
         }}
       />

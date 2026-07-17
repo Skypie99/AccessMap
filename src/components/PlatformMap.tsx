@@ -1,5 +1,5 @@
-import React, { forwardRef, memo, useEffect, useImperativeHandle, useRef } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import React, { forwardRef, memo, useCallback, useEffect, useImperativeHandle, useRef } from 'react';
+import { StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { AppText } from '@/components/ui/AppText';
 import { RemoteImage } from '@/components/ui/RemoteImage';
 import CategoryIcon from '@/components/CategoryIcon';
@@ -22,6 +22,44 @@ export interface PlatformMapRegion {
   longitude: number;
   latitudeDelta: number;
   longitudeDelta: number;
+}
+
+// T1 (F2-01): native callouts render roughly this tall above the pin (title +
+// severity sentence + reported line + "Open details" row). Code-inferred;
+// R2-D12 device-verifies the real box.
+const CALLOUT_HEADROOM_PX = 220;
+
+// T1 (F2-01): bias a callout-bound camera target so the pin lands BELOW the
+// persistent top chrome, leaving the callout (which extends upward from the
+// pin) clear map to open into. Pure math, exported for the jest guards.
+//
+// A region's latitudeDelta spans the viewport top→bottom, so the pin sits at
+// screen fraction f (0 = top) when the center sits (f − 0.5) × Δlat north of
+// it. We aim the pin at the fraction where the chrome band + callout headroom
+// end — never above center (f ≥ 0.5 keeps un-occluded moves exactly
+// centered), never past 0.65 (the pin stays comfortably on-screen). The
+// chrome is clamped to ≤45% of the map height, mirroring the web variant's
+// clampChromeInset, so a runaway measurement degrades to a partial clear.
+export function biasRegionForCallout(
+  region: {
+    latitude: number;
+    longitude: number;
+    latitudeDelta?: number;
+    longitudeDelta?: number;
+  },
+  chromeClearPx: number,
+  mapHeightPx: number,
+): PlatformMapRegion {
+  const base: PlatformMapRegion = {
+    latitude: region.latitude,
+    longitude: region.longitude,
+    latitudeDelta: region.latitudeDelta ?? 0.005,
+    longitudeDelta: region.longitudeDelta ?? 0.005,
+  };
+  if (!chromeClearPx || chromeClearPx <= 0 || !mapHeightPx || mapHeightPx <= 0) return base;
+  const clamped = Math.min(chromeClearPx, Math.round(mapHeightPx * 0.45));
+  const f = Math.min(0.65, Math.max(0.5, (clamped + CALLOUT_HEADROOM_PX) / mapHeightPx));
+  return { ...base, latitude: base.latitude + (f - 0.5) * base.latitudeDelta };
 }
 
 
@@ -101,9 +139,13 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(function Pla
     onOpenDetails,
     heatCells = [],
     heatmapMode = 'gradient',
+    chromeInsetTop,
   },
   ref,
 ) {
+  // T1 (F2-01): the map fills the screen on this app, so the window height is
+  // the honest map-height stand-in for the callout-clear bias math.
+  const { height: windowHeight } = useWindowDimensions();
   const color = useColor();
   const styles = makeStyles(color);
   // Ref to ClusteredMapView — cast to MapView for animateToRegion calls
@@ -122,17 +164,67 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(function Pla
     }
   }, [flags]);
 
+  // T1 (F2-01): a DIRECT pin tap opens the callout natively with no camera
+  // move of ours — a top-third pin's callout would open straight into the
+  // chrome band. If the tapped pin sits inside that band (+ headroom), nudge
+  // the camera with the same biased move the imperative flows use, at the
+  // CURRENT zoom (deltas = the live visible span from getMapBoundaries).
+  // Reduce Motion rides the existing duration-0 instant jump. Both map APIs
+  // are feature-checked and failures are swallowed — a convenience nudge must
+  // never break the tap (code-inferred; R2-D12 device-verifies the feel).
+  const handlePinPress = useCallback(
+    (flag: FlagRow) => {
+      const map = mapRef.current;
+      const chromeClearPx = chromeInsetTop ?? 0;
+      if (
+        !map ||
+        chromeClearPx <= 0 ||
+        typeof map.pointForCoordinate !== 'function' ||
+        typeof map.getMapBoundaries !== 'function'
+      ) {
+        return;
+      }
+      const coord = { latitude: flag.lat, longitude: flag.lng };
+      void Promise.all([map.pointForCoordinate(coord), map.getMapBoundaries()])
+        .then(([pt, bounds]) => {
+          const clamped = Math.min(chromeClearPx, Math.round(windowHeight * 0.45));
+          if (pt.y >= clamped + CALLOUT_HEADROOM_PX) return; // already clear
+          mapRef.current?.animateToRegion(
+            biasRegionForCallout(
+              {
+                ...coord,
+                latitudeDelta: bounds.northEast.latitude - bounds.southWest.latitude,
+                longitudeDelta: bounds.northEast.longitude - bounds.southWest.longitude,
+              },
+              chromeClearPx,
+              windowHeight,
+            ),
+            reducedMotion ? 0 : 600,
+          );
+        })
+        .catch(() => {});
+    },
+    [chromeInsetTop, windowHeight, reducedMotion],
+  );
+
   useImperativeHandle(
     ref,
     () => ({
-      animateTo: (r) => {
+      // T1 (F2-01): callout-bound moves (opts.calloutClear) bias the target
+      // below the measured chrome so the callout opens in clear map. All
+      // other moves (GPS fix, address search, saved places…) keep exact
+      // targeting.
+      animateTo: (r, opts) => {
+        const target: PlatformMapRegion = opts?.calloutClear
+          ? biasRegionForCallout(r, chromeInsetTop ?? 0, windowHeight)
+          : {
+              latitude: r.latitude,
+              longitude: r.longitude,
+              latitudeDelta: r.latitudeDelta ?? 0.005,
+              longitudeDelta: r.longitudeDelta ?? 0.005,
+            };
         mapRef.current?.animateToRegion(
-          {
-            latitude: r.latitude,
-            longitude: r.longitude,
-            latitudeDelta: r.latitudeDelta ?? 0.005,
-            longitudeDelta: r.longitudeDelta ?? 0.005,
-          },
+          target,
           // Instant jump when "Reduce Motion" is on (WCAG 2.3.3).
           reducedMotion ? 0 : 600,
         );
@@ -153,7 +245,7 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(function Pla
         });
       },
     }),
-    [reducedMotion],
+    [reducedMotion, chromeInsetTop, windowHeight],
   );
 
   return (
@@ -289,6 +381,10 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(function Pla
           opacity={focusedFlagId && focusedFlagId !== f.id ? 0.55 : 1}
           accessibilityRole="button"
           accessibilityLabel={`${CATEGORY_LABELS[f.category]}, ${severityA11y(f.severity)}, ${statusA11y(f.status)}${f.user_id === null ? ', anonymous report' : ''}. Tap to view details.`}
+          // T1 (F2-01): the native callout opens on this same tap; if the pin
+          // sits inside the chrome band, nudge the camera clear (see
+          // handlePinPress). onPress does NOT suppress the default callout.
+          onPress={() => handlePinPress(f)}
         >
           {/* S14: custom teardrop marker — the severity FILL + a 2.5px white ring +
               a 1px #0F1B2D outer hairline (GLASS §12.4 union so low-severity pins
