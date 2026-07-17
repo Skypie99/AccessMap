@@ -149,6 +149,13 @@ const DEFAULT_REGION: PlatformMapRegion = {
 const OVERLAY_PADDING = 16;
 const PANEL_BRACKET_ALLOWANCE = 160;
 
+// T1 (F2-01): the persistent top-chrome band that a pin callout must clear.
+// MAP_HEADER_ROW_MARGIN_BOTTOM mirrors styles.mapHeaderRow.marginBottom (the
+// gap between the two measured rows); CALLOUT_CHROME_MARGIN is the breathing
+// room between the chrome's bottom edge and the callout's top edge.
+const MAP_HEADER_ROW_MARGIN_BOTTOM = 10;
+const CALLOUT_CHROME_MARGIN = 8;
+
 // Pop a flag's callout, retrying a few times ~150ms apart. Right after
 // animateTo the marker may not be mounted yet (the web map recomputes its
 // cluster/pin set on the map's zoomend/moveend), so a single fixed-delay call
@@ -413,6 +420,37 @@ export default function MapScreen() {
       recomputeActionBarFade();
     },
     [recomputeActionBarFade],
+  );
+
+  // T1 (F2-01): measure the PERSISTENT top-chrome band — mapHeaderRow + topRow
+  // ONLY, never overlayTopGroup (it also nests the conditional filterPanel /
+  // banners / places row, which would inflate the callout inset toward half
+  // the screen). The sum feeds PlatformMap's chromeInsetTop so an opening pin
+  // callout autoPans (or Reduce-Motion-cuts) fully below the chrome instead of
+  // compositing under it. State, not just refs: topRow flexWraps, so its
+  // height changes at runtime and the inset must re-render through to the map.
+  // onLayout is a passive read — the box-none overlay law is untouched.
+  const mapHeaderRowH = useRef(0);
+  const topRowH = useRef(0);
+  const [chromeBandPx, setChromeBandPx] = useState(0);
+  const recomputeChromeBand = useCallback(() => {
+    setChromeBandPx(
+      Math.round(mapHeaderRowH.current + MAP_HEADER_ROW_MARGIN_BOTTOM + topRowH.current),
+    );
+  }, []);
+  const onMapHeaderRowLayout = useCallback(
+    (e: LayoutChangeEvent) => {
+      mapHeaderRowH.current = e.nativeEvent.layout.height;
+      recomputeChromeBand();
+    },
+    [recomputeChromeBand],
+  );
+  const onTopRowLayout = useCallback(
+    (e: LayoutChangeEvent) => {
+      topRowH.current = e.nativeEvent.layout.height;
+      recomputeChromeBand();
+    },
+    [recomputeChromeBand],
   );
 
   const hasAutoOpenedListRef = useRef(false);
@@ -1407,6 +1445,10 @@ export default function MapScreen() {
         onOpenDetails={setSelectedFlag} // S3: pin callout "Open details" → detail sheet
         heatCells={heatCells}
         heatmapMode={HEATMAP_MODE}
+        // T1 (F2-01): the full vertical band a callout must clear — safe area +
+        // overlay padding + the measured persistent chrome rows + margin. The
+        // map clamps it (≤45% of its own height) before use.
+        chromeInsetTop={insets.top + OVERLAY_PADDING + chromeBandPx + CALLOUT_CHROME_MARGIN}
       />
 
       <View
@@ -1426,7 +1468,7 @@ export default function MapScreen() {
             wrapper is box-none; only the content-hugging glass title chip and the
             menu/Feedback circles take touches (NO full-width opaque strip), so the
             map stays pannable/zoomable underneath (the box-none gesture law). */}
-        <View style={styles.mapHeaderRow} pointerEvents="box-none">
+        <View style={styles.mapHeaderRow} pointerEvents="box-none" onLayout={onMapHeaderRowLayout}>
           <GlassSurface style={styles.mapHeaderChip} variant="row" forceEngineered borderRadius={radius.lg}>
             <AppText variant="label" style={styles.mapHeaderEyebrow}>MAP</AppText>
             <AppText
@@ -1448,7 +1490,7 @@ export default function MapScreen() {
         {/* S6 (WCAG 2.5.7): box-none so taps fall THROUGH the row's gaps to the
             map — the un-guarded wrapper was pointer-dead, killing zoom/pan even
             on visible tile between the pill and the action tray. */}
-        <View style={styles.topRow} pointerEvents="box-none">
+        <View style={styles.topRow} pointerEvents="box-none" onLayout={onTopRowLayout}>
           {/* WCAG 4.1.3: live region ensures AT announces when the count
               changes after a filter toggle (e.g. "12 of 45 shown"). Using
               'polite' so it doesn't interrupt mid-sentence. */}
@@ -2696,7 +2738,8 @@ const makeStyles = (color: ColorTheme) =>
       flexDirection: 'row',
       alignItems: 'flex-start',
       justifyContent: 'space-between',
-      marginBottom: 10,
+      // T1: mirrored by MAP_HEADER_ROW_MARGIN_BOTTOM in the chrome-band measure.
+      marginBottom: MAP_HEADER_ROW_MARGIN_BOTTOM,
     },
     mapHeaderChip: {
       paddingHorizontal: 14,

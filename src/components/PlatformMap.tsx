@@ -26,12 +26,19 @@ export interface PlatformMapRegion {
 
 
 export interface PlatformMapHandle {
-  animateTo: (region: {
-    latitude: number;
-    longitude: number;
-    latitudeDelta?: number;
-    longitudeDelta?: number;
-  }) => void;
+  /** Move the camera. `opts.calloutClear` marks a callout-bound move (T1 /
+   *  F2-01): native biases the target below the measured top chrome so the
+   *  callout opens in clear map; web keeps exact targeting (its clearance
+   *  runs at popup-open via autoPan / the Reduce-Motion instant cut). */
+  animateTo: (
+    region: {
+      latitude: number;
+      longitude: number;
+      latitudeDelta?: number;
+      longitudeDelta?: number;
+    },
+    opts?: { calloutClear?: boolean },
+  ) => void;
   showCallout: (flagId: string) => void;
   /** Step the zoom by `delta` levels (+1 in, -1 out). Additive to the handle so
    *  the overlay's app-styled 44pt buttons can drive zoom — the single-pointer
@@ -73,6 +80,14 @@ export interface PlatformMapProps {
    * is reliable). Optional so existing callers/tests don't have to pass it.
    */
   onOpenDetails?: (flag: FlagRow) => void;
+  /**
+   * T1 (F2-01): the vertical px band of persistent top chrome (safe area +
+   * overlay padding + the measured header/status rows + margin) an opening
+   * pin callout must clear. Consumed clamped to ≤45% of the map's height.
+   * Native biases callout-bound camera moves below it; web feeds Leaflet's
+   * popup autoPan padding + the Reduce-Motion instant cut.
+   */
+  chromeInsetTop?: number;
 }
 
 const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(function PlatformMap(

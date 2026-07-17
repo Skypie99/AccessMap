@@ -30,12 +30,19 @@ export interface PlatformMapRegion {
 }
 
 export interface PlatformMapHandle {
-  animateTo: (region: {
-    latitude: number;
-    longitude: number;
-    latitudeDelta?: number;
-    longitudeDelta?: number;
-  }) => void;
+  /** Move the camera. `opts.calloutClear` marks a callout-bound move (T1 /
+   *  F2-01): native biases the target below the measured top chrome so the
+   *  callout opens in clear map; web keeps exact targeting (its clearance
+   *  runs at popup-open via autoPan / the Reduce-Motion instant cut). */
+  animateTo: (
+    region: {
+      latitude: number;
+      longitude: number;
+      latitudeDelta?: number;
+      longitudeDelta?: number;
+    },
+    opts?: { calloutClear?: boolean },
+  ) => void;
   showCallout: (flagId: string) => void;
   /** Step the zoom by `delta` levels (+1 in, -1 out). Additive to the handle so
    *  the overlay's app-styled 44pt buttons drive zoom — replacing Leaflet's
@@ -73,6 +80,14 @@ export interface PlatformMapProps {
    * existing callers/tests don't have to pass it.
    */
   onOpenDetails?: (flag: FlagRow) => void;
+  /**
+   * T1 (F2-01): the vertical px band of persistent top chrome (safe area +
+   * overlay padding + the measured header/status rows + margin) an opening
+   * pin callout must clear. Consumed clamped to ≤45% of the map's height.
+   * Web feeds Leaflet's popup autoPan padding + the Reduce-Motion instant
+   * cut; native biases callout-bound camera moves below it.
+   */
+  chromeInsetTop?: number;
 }
 
 // Cache the heat-label divIcon by (color + tone + number). Cells with the
@@ -275,6 +290,24 @@ function PopupPhoto({ src, alt, mutedColor }: PopupPhotoProps) {
 // GeoJSON point feature shape fed into Supercluster.
 type FlagPointFeature = GeoJSON.Feature<GeoJSON.Point, { flagId: string }>;
 
+// T1 (F2-01): popup-clearance constants. The X pad keeps autoPan from kissing
+// the screen edge; the tip allowance covers the pin's popupAnchor (28px) plus
+// the popup tip; the fallback height stands in when the popup's DOM box isn't
+// measurable (jsdom, or a not-yet-laid-out open).
+const POPUP_AUTOPAN_PAD_X = 12;
+const CALLOUT_TIP_ALLOWANCE_PX = 40;
+const CALLOUT_FALLBACK_HEIGHT_PX = 220;
+
+// T1 (F2-01): never let the callout inset eat more than ~45% of the map's own
+// height — a runaway measurement (giant Dynamic Type wrapping the pill rows)
+// must degrade to a partial clear, not autoPan/cut the pin off the map.
+// Exported for the jest guards.
+export function clampChromeInset(insetPx: number, mapHeightPx: number): number {
+  if (!insetPx || insetPx <= 0) return 0;
+  if (!mapHeightPx || mapHeightPx <= 0) return insetPx;
+  return Math.min(insetPx, Math.round(mapHeightPx * 0.45));
+}
+
 // ---------------------------------------------------------------------------
 // ClusteredMarkers — inner react-leaflet component that:
 //   1. Builds a Supercluster index from the flags prop (only on flags change).
@@ -294,6 +327,9 @@ interface ClusteredMarkersProps {
   // S12: threaded from PlatformMap so the cluster flyTo and each Popup's
   // autoPan can be gated by Reduce Motion (WCAG 2.3.3).
   reducedMotion?: boolean;
+  // T1 (F2-01): the already-clamped top inset (px) each Popup's autoPan must
+  // clear. 0 = no chrome to clear (e.g. the Home peek) → Leaflet defaults.
+  popupInsetTop: number;
 }
 
 function ClusteredMarkers({
@@ -304,6 +340,7 @@ function ClusteredMarkers({
   markerRefs,
   onOpenDetails,
   reducedMotion,
+  popupInsetTop,
 }: ClusteredMarkersProps) {
   const map = useMap();
 
@@ -426,8 +463,19 @@ function ClusteredMarkers({
             }}
           >
             {/* S12: autoPan pans the map to keep the popup in view when it
-                opens — that's motion. Suppress it under Reduce Motion. */}
-            <Popup autoPan={!reducedMotion}>
+                opens — that's motion. Suppress it under Reduce Motion.
+                T1 (F2-01): autoPanPaddingTopLeft makes that pan clear the
+                MEASURED persistent chrome band, not just the container edge —
+                the top-third callout no longer composites under the pill/rail.
+                Bind-time only for this popup instance; later inset changes are
+                stamped onto live popups by the effect in PlatformMap (react-
+                leaflet never diffs popup options after construction). */}
+            <Popup
+              autoPan={!reducedMotion}
+              autoPanPaddingTopLeft={
+                popupInsetTop > 0 ? [POPUP_AUTOPAN_PAD_X, popupInsetTop] : undefined
+              }
+            >
               <div style={{ minWidth: 200 }}>
                 <div style={{ fontWeight: 700, fontSize: 14 }}>
                   {CATEGORY_LABELS[flag.category]}
@@ -670,6 +718,7 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(function Pla
     onOpenDetails,
     heatCells = [],
     heatmapMode = 'gradient',
+    chromeInsetTop,
   },
   ref,
 ) {
@@ -702,6 +751,29 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(function Pla
     }
   }, [flags]);
 
+  // T1 (F2-01): the chrome inset each popup must clear, clamped against the
+  // live map height (mapReady re-renders once the instance lands; before
+  // that, the window height is the honest stand-in on web).
+  const popupInsetTop = clampChromeInset(
+    chromeInsetTop ?? 0,
+    mapInstance.current?.getSize?.().y ??
+      (typeof window !== 'undefined' ? window.innerHeight : 0),
+  );
+
+  // T1 (F2-01): react-leaflet constructs each L.Popup ONCE from its props and
+  // never diffs option changes afterwards — a later chrome re-measure (status
+  // pill wrapping, rotation) would strand every already-bound popup on a stale
+  // inset. Leaflet reads autoPanPaddingTopLeft at OPEN time (_adjustPan), so
+  // stamping the live instances' options keeps every future open correct; new
+  // popups still pick up the current value at bind time via the <Popup> prop.
+  useEffect(() => {
+    if (popupInsetTop <= 0) return;
+    for (const m of Object.values(markerRefs.current)) {
+      const popup = m?.getPopup();
+      if (popup) popup.options.autoPanPaddingTopLeft = [POPUP_AUTOPAN_PAD_X, popupInsetTop];
+    }
+  }, [popupInsetTop]);
+
   // Wire `contextmenu` to the drop-flag intent on web. Leaflet fires
   // this on right-click on desktop and on a long-touch on mobile
   // browsers (the OS surfaces the press as a context menu request).
@@ -727,10 +799,51 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(function Pla
     };
   }, [onLongPressMap, mapReady]);
 
+  // T1: THE shared instant-camera path — a zero-motion setView cut. BP13/T7
+  // reuses this exact branch for its camera work; keep it a single named
+  // implementation (never inline animate:false setViews elsewhere). NEVER
+  // duration: 0 — Leaflet treats 0 as falsy and falls back to its default
+  // multi-second flight (the animateTo comment below is the canonical law).
+  const instantCut = useCallback((center: L.LatLngExpression, zoom: number) => {
+    mapInstance.current?.setView(center, zoom, { animate: false });
+  }, []);
+
+  // T1 (F2-01): autoPan is suppressed under Reduce Motion (S12 — the glide is
+  // motion), which stranded top-third callouts under the chrome with no
+  // recovery. This is the designed instant equivalent: measure where the
+  // just-opened popup landed and, if any of it sits inside the chrome band,
+  // cut the camera so it clears — the same clear position autoPan would have
+  // glided to, delivered with zero animation.
+  const ensureCalloutClearRM = useCallback(
+    (marker: LeafletMarker) => {
+      const map = mapInstance.current;
+      if (!map) return;
+      const inset = clampChromeInset(chromeInsetTop ?? 0, map.getSize?.().y ?? 0);
+      if (inset <= 0) return;
+      // The popup renders ABOVE the pin: top = pin's container Y minus the
+      // popup's height minus the anchor/tip gap.
+      const pinY = map.latLngToContainerPoint(marker.getLatLng()).y;
+      const popupH =
+        marker.getPopup()?.getElement()?.offsetHeight ?? CALLOUT_FALLBACK_HEIGHT_PX;
+      const deficit = inset - (pinY - popupH - CALLOUT_TIP_ALLOWANCE_PX);
+      if (deficit <= 0) return;
+      // Move the world DOWN by `deficit` px = re-center on the point that sits
+      // `deficit` px ABOVE the current center (Leaflet's own autoPan math,
+      // delivered as a cut).
+      const centerPt = map.latLngToContainerPoint(map.getCenter());
+      const target = map.containerPointToLatLng(centerPt.add(L.point(0, -deficit)));
+      instantCut(target, map.getZoom());
+    },
+    [chromeInsetTop, instantCut],
+  );
+
   useImperativeHandle(
     ref,
     () => ({
-      animateTo: (r) => {
+      // opts.calloutClear is consumed by the NATIVE variant (camera bias); on
+      // web the callout's clearance runs at popup-open (autoPan padding above,
+      // ensureCalloutClearRM under Reduce Motion), so targeting stays exact.
+      animateTo: (r, _opts) => {
         const zoom = deltaToZoom(r.latitudeDelta ?? 0.005);
         // Reduce Motion → { animate: false } (Leaflet short-circuits to an
         // instant setView). We must NOT pass duration: 0 — Leaflet treats 0 as
@@ -743,7 +856,10 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(function Pla
         );
       },
       showCallout: (id) => {
-        markerRefs.current[id]?.openPopup();
+        const marker = markerRefs.current[id];
+        if (!marker) return;
+        marker.openPopup();
+        if (reducedMotion) ensureCalloutClearRM(marker);
       },
       zoomBy: (delta) => {
         const map = mapInstance.current;
@@ -752,7 +868,7 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(function Pla
         map.setZoom(map.getZoom() + delta, { animate: !reducedMotion });
       },
     }),
-    [reducedMotion],
+    [reducedMotion, ensureCalloutClearRM],
   );
 
   return (
@@ -827,6 +943,7 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(function Pla
           markerRefs={markerRefs}
           onOpenDetails={onOpenDetails}
           reducedMotion={reducedMotion}
+          popupInsetTop={popupInsetTop}
         />
       </MapContainer>
     </div>
