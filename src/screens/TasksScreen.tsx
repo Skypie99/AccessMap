@@ -68,7 +68,7 @@ import { PressableScale } from '@/components/ui/PressableScale';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { StatusBadge } from '@/components/StatusBadge';
 import { SeverityBadge } from '@/components/SeverityBadge';
-import { hapticSelection } from '@/lib/haptics';
+import { hapticImpact, hapticNotify, hapticSelection } from '@/lib/haptics';
 import { AlertTriangle, Check, ChevronRight, MapPin, Menu, MessageSquare, Search, Sparkles, WifiOff, X } from 'lucide-react-native';
 import { font, motion, radius, shadow, size, spacing } from '@/theme';
 import { a11yToggle, useReducedMotion, useReduceTransparency } from '@/lib/accessibility';
@@ -631,6 +631,14 @@ export default function TasksScreen() {
   // mapping in sync with the trigger if the values ever change.
   const applyStatusChange = useCallback(
     (updated: FlagRow, action: DetailAction, isOwn: boolean) => {
+      // T4 (F1-08): the commit landed — a medium impact for committing real
+      // state, then a success notify for the outcome, so triage FEELS like a
+      // commit rather than a form. This is the shared commit point for every
+      // action (verify/resolve/reject) and both callers (this card + the
+      // FlagDetailModal via onChanged); it is reached only AFTER
+      // updateFlagStatus resolves, and for Reject only after its confirm gate.
+      hapticImpact('medium');
+      hapticNotify('success');
       // Optimistic update via the shared store: replace the row in-place for
       // verify (status changes but flag stays visible), remove it for
       // resolve/reject (it leaves the triage queue).
@@ -689,6 +697,9 @@ export default function TasksScreen() {
           status === 'verified' ? 'verify' : status === 'resolved' ? 'resolve' : 'reject';
         applyStatusChange(updated, action, isOwn);
       } catch (e) {
+        // T4 (F1-08): the outcome half on the failure path — one error notify
+        // covering both the conflict and generic branches.
+        hapticNotify('error');
         if (e instanceof FlagStatusConflictError) {
           notify('This flag changed', 'It was updated by someone else just now — refreshing the list.');
           refresh().catch(() => {});
@@ -1520,6 +1531,11 @@ const FlagCard = memo(function FlagCard({
     onPress: () => void;
     btnStyle: ViewStyle;
     textStyle: TextStyle;
+    // T4 (F1-08): 'none' on the three commit actions — their outcome haptics
+    // fire at the commit point in applyStatusChange (medium impact + notify), so
+    // a press tick here would double up. Details keeps the 'selection' tick
+    // since it only navigates to the detail sheet.
+    haptic: 'selection' | 'none';
   };
   const actions: CardAction[] = [
     ...(flag.status === 'open'
@@ -1531,6 +1547,7 @@ const FlagCard = memo(function FlagCard({
           onPress: () => onSetStatus(flag.id, 'verified', isOwn),
           btnStyle: styles.verifyBtn,
           textStyle: styles.verifyText,
+          haptic: 'none',
         } satisfies CardAction]
       : []),
     {
@@ -1541,6 +1558,7 @@ const FlagCard = memo(function FlagCard({
       onPress: () => onSetStatus(flag.id, 'resolved', isOwn),
       btnStyle: styles.resolveBtn,
       textStyle: styles.resolveText,
+      haptic: 'none',
     },
     {
       key: 'reject',
@@ -1550,6 +1568,7 @@ const FlagCard = memo(function FlagCard({
       onPress: () => onSetStatus(flag.id, 'rejected', isOwn),
       btnStyle: styles.rejectBtn,
       textStyle: styles.rejectText,
+      haptic: 'none',
     },
     {
       key: 'details',
@@ -1559,6 +1578,7 @@ const FlagCard = memo(function FlagCard({
       onPress: () => onShowDetails(flag),
       btnStyle: styles.detailsBtn,
       textStyle: styles.detailsText,
+      haptic: 'selection',
     },
   ];
   // `actions` always has ≥3 entries (Resolved/Reject/Details always render,
@@ -1571,6 +1591,7 @@ const FlagCard = memo(function FlagCard({
     <PressableScale
       key={a.key}
       disabled={isBusy}
+      haptic={a.haptic}
       onPress={a.onPress}
       hitSlop={spacing.xs}
       style={[styles.actionBtn, a.btnStyle, widthStyle]}
