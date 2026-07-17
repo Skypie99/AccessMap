@@ -159,7 +159,7 @@ const makeStyles = (color: ColorTheme) =>
       ...shadow.e3,
     },
     pillSuccess: { backgroundColor: color.successStrong },
-    pillInfo: { backgroundColor: color.brand },
+    pillInfo: { backgroundColor: color.ctaFill },
     text: {
       color: color.textOnBrand,
       fontWeight: font.weight.bold,
@@ -168,12 +168,14 @@ const makeStyles = (color: ColorTheme) =>
       flexShrink: 1,
     },
     // Inline action (Retry): a 44pt-tall pressable pill on the banner.
+    // Dark scrim (0,0,0,0.25) not a light wash — white actionText was 3.21/3.54/
+    // 2.54 over the 0.22 white fill; darkening the chip restores AA on the pill.
     action: {
       minHeight: 44,
       justifyContent: 'center',
       paddingHorizontal: spacing.md,
       borderRadius: radius.md,
-      backgroundColor: 'rgba(255,255,255,0.22)',
+      backgroundColor: 'rgba(0,0,0,0.25)',
     },
     actionText: {
       color: color.textOnBrand,

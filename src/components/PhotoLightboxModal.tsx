@@ -99,7 +99,7 @@ export default function PhotoLightboxModal({ visible, photoUrl, caption, onClose
         >
           <X
             size={18}
-            color={color.surface}
+            color={color.textOnBrand}
             strokeWidth={2.2}
             accessibilityElementsHidden
             importantForAccessibility="no-hide-descendants"
@@ -127,7 +127,9 @@ const makeStyles = (color: ColorTheme) =>
     justifyContent: 'center',
     padding: spacing.xxxl,
   },
-  emptyText: { color: color.surface, fontSize: font.size.lg },
+  // textOnBrand (#fff, mode-independent) over the dark backdrop — color.surface
+  // rendered ~1.3:1 (near-invisible) in dark mode. Same fix for the caption + X.
+  emptyText: { color: color.textOnBrand, fontSize: font.size.lg },
   captionBar: {
     position: 'absolute',
     bottom: 0,
@@ -139,7 +141,7 @@ const makeStyles = (color: ColorTheme) =>
     paddingBottom: 34,
     backgroundColor: color.backdropCaption,
   },
-  captionText: { color: color.surface, fontSize: font.size.base, fontWeight: '600' },
+  captionText: { color: color.textOnBrand, fontSize: font.size.base, fontWeight: '600' },
   closeBtn: {
     position: 'absolute',
     top: 48,
