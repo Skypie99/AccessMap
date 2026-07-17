@@ -10,6 +10,7 @@ import {
 import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 import { RemoteImage } from '@/components/ui/RemoteImage';
 import { AppText } from '@/components/ui/AppText';
+import { GlassSurface } from '@/components/ui/GlassSurface';
 import SearchInputRow from '@/components/SearchInputRow';
 import { a11yToggle, useReducedMotion } from '@/lib/accessibility';
 import { useAuth } from '@/lib/auth';
@@ -262,7 +263,14 @@ export default function MyReportsModal({
   return (
     <Modal aria-label="My Reports" visible={visible} animationType={reducedMotion ? 'none' : 'slide'} transparent onRequestClose={onClose}>
       <View style={styles.backdrop}>
-        <View style={[styles.card, { paddingBottom: Math.max(spacing.xl, insets.bottom) }]} accessibilityViewIsModal>
+        <View style={styles.cardWrap}>
+        <GlassSurface
+          variant="bulk"
+          borderRadius={0}
+          forceEngineered
+          style={[styles.card, { paddingBottom: Math.max(spacing.xl, insets.bottom) }]}
+          accessibilityViewIsModal
+        >
           <View style={styles.headerRow}>
             <AppText variant="heading" style={styles.title} accessibilityRole="header">
               My Reports
@@ -433,6 +441,7 @@ export default function MyReportsModal({
               }
             />
           )}
+        </GlassSurface>
         </View>
       </View>
     </Modal>
@@ -447,7 +456,11 @@ const makeStyles = (color: ColorTheme) =>
       justifyContent: 'flex-end',
     },
     card: {
-      backgroundColor: color.surface,
+      // Bulk-glass sheet: GlassSurface variant="bulk" (forceEngineered) supplies
+      // the surface + top edge/specular + designed Reduce-Transparency state — no
+      // backgroundColor here (the variant owns it). overflow:hidden clips the
+      // square material to the rounded top; the up-shadow moves to cardWrap
+      // (an overflow:hidden view clips its own shadow — GlassSurface contract).
       borderTopLeftRadius: radius.xl,
       borderTopRightRadius: radius.xl,
       paddingHorizontal: spacing.xl,
@@ -455,6 +468,17 @@ const makeStyles = (color: ColorTheme) =>
       paddingBottom: spacing.xl,
       gap: spacing.md,
       maxHeight: '85%',
+      overflow: 'hidden',
+    },
+    cardWrap: {
+      borderTopLeftRadius: radius.xl,
+      borderTopRightRadius: radius.xl,
+      ...(color.scheme === 'dark'
+        ? { shadowColor: '#000', shadowOpacity: 0.35 }
+        : { shadowColor: color.shadowTint, shadowOpacity: 0.12 }),
+      shadowRadius: 14,
+      shadowOffset: { width: 0, height: -4 },
+      elevation: 5,
     },
     headerRow: {
       flexDirection: 'row',
@@ -511,7 +535,8 @@ const makeStyles = (color: ColorTheme) =>
     },
     subtitle: {
       fontSize: font.size.sm,
-      color: color.textMuted,
+      color: color.inkGlassMuted,
+      fontFamily: font.family.bodyMedium,
       textAlign: 'center',
       lineHeight: 19,
     },
@@ -563,7 +588,8 @@ const makeStyles = (color: ColorTheme) =>
     },
     emptyBody: {
       fontSize: font.size.base,
-      color: color.textMutedAlt,
+      color: color.inkGlassMuted,
+      fontFamily: font.family.bodyMedium,
       textAlign: 'center',
       lineHeight: 20,
     },
