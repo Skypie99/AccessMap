@@ -15,6 +15,8 @@ import {
 } from 'react-native';
 import { AppText } from '@/components/ui/AppText';
 import { GlassSurface } from '@/components/ui/GlassSurface';
+import { OverflowFade } from '@/components/ui/OverflowFade';
+import { useHorizontalOverflowFade } from '@/hooks/useHorizontalOverflowFade';
 import { hapticNotify, hapticSelection } from '@/lib/haptics';
 import { Accessibility, Brain, Camera, Check, Construction, Ear, Eye, Lock, MapPin } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -88,6 +90,9 @@ interface Props {
 export default function ReportFlagModal({ visible, location, onClose, onCreated, onRequestLocation }: Props) {
   const color = useColor();
   const styles = makeStyles(color);
+  // T14 (F2-07): the templates + category chip rails earn the overflow scent.
+  const templatesFade = useHorizontalOverflowFade();
+  const categoriesFade = useHorizontalOverflowFade();
   const { user } = useAuth();
   const isAnon = !user;
   const reducedMotion = useReducedMotion();
@@ -580,12 +585,14 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
               <AppText variant="label" style={styles.label} accessibilityRole="header">
                 Quick-fill templates (optional)
               </AppText>
+              <View style={styles.overflowFadeWrap}>
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
                 style={styles.chipScroll}
                 contentContainerStyle={styles.row}
                 accessibilityHint="A row of common-scenario templates that pre-fill the form. Tap one to seed category, severity, and a description; edit any field before submitting."
+                {...templatesFade.scrollHandlers}
               >
                 {templates.map((t) => {
                   const active = t.id === appliedTemplateId;
@@ -619,15 +626,19 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
                   );
                 })}
               </ScrollView>
+              <OverflowFade visible={templatesFade.hasMore} />
+              </View>
             </>
           )}
 
           <AppText variant="label" style={styles.label} accessibilityRole="header">Category</AppText>
+          <View style={styles.overflowFadeWrap}>
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
             style={styles.chipScroll}
             contentContainerStyle={styles.row}
+            {...categoriesFade.scrollHandlers}
           >
             {CATEGORY_ORDER.map((c) => {
               const active = c === category;
@@ -657,6 +668,8 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
               );
             })}
           </ScrollView>
+          <OverflowFade visible={categoriesFade.hasMore} />
+          </View>
 
           <AppText variant="label" style={styles.label} accessibilityRole="header">Severity</AppText>
           <View style={styles.row}>
@@ -1201,6 +1214,9 @@ const makeStyles = (color: ColorTheme) =>
     // negative margin, so the ring renders whole at zero net layout cost.
     chipScroll: { flexGrow: 0, flexShrink: 0, paddingVertical: 4, marginVertical: -4 },
     row: { flexDirection: 'row', gap: spacing.sm, flexWrap: 'wrap' },
+    // T14 (F2-07): position:relative wrapper so the absolute OverflowFade pins to
+    // the chip rail's right edge (required on web; harmless on native).
+    overflowFadeWrap: { position: 'relative' },
     pill: {
       paddingHorizontal: spacing.md,
       paddingVertical: spacing.sm,

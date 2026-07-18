@@ -15,7 +15,6 @@ import {
 } from 'react-native';
 import type { LayoutChangeEvent, NativeScrollEvent, NativeSyntheticEvent } from 'react-native';
 import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
 import * as Location from 'expo-location';
 import { arrivalPermissionDenied, getCurrentPositionWithTimeout, initialLocationAction } from '@/lib/location';
 import { failureBannerText, offlineBannerText } from '@/lib/copy';
@@ -103,6 +102,11 @@ import { AppText } from '@/components/ui/AppText';
 import { GlassSurface } from '@/components/ui/GlassSurface';
 import { PressableScale } from '@/components/ui/PressableScale';
 import { HeaderActions } from '@/components/ui/HeaderActions';
+import { OverflowFade } from '@/components/ui/OverflowFade';
+import {
+  computeOverflowHasMore,
+  useHorizontalOverflowFade,
+} from '@/hooks/useHorizontalOverflowFade';
 import { useDrawer } from '@/lib/drawerContext';
 import { useSharedModals } from '@/lib/sharedModalsContext';
 import { useScreenReader, useReducedMotion, a11yToggle } from '@/lib/accessibility';
@@ -479,9 +483,13 @@ export default function MapScreen() {
   const actionBarOffsetX = useRef(0);
   const [actionBarHasMore, setActionBarHasMore] = useState(false);
   const recomputeActionBarFade = useCallback(() => {
-    const overflow = actionBarContentW.current - actionBarViewW.current;
-    const atEnd = actionBarOffsetX.current >= overflow - 1;
-    setActionBarHasMore(overflow > 1 && !atEnd);
+    setActionBarHasMore(
+      computeOverflowHasMore(
+        actionBarContentW.current,
+        actionBarViewW.current,
+        actionBarOffsetX.current,
+      ),
+    );
   }, []);
   const onActionBarScroll = useCallback(
     (e: NativeSyntheticEvent<NativeScrollEvent>) => {
@@ -504,6 +512,11 @@ export default function MapScreen() {
     },
     [recomputeActionBarFade],
   );
+
+  // T14 (F2-07): the two silent filter-panel chip rails earn the same overflow
+  // scent as the action bar, from the one shared contract (never a fork).
+  const savedSetsFade = useHorizontalOverflowFade();
+  const categoriesFade = useHorizontalOverflowFade();
 
   // T1 (F2-01): measure the PERSISTENT top-chrome band — mapHeaderRow + topRow
   // ONLY, never overlayTopGroup (it also nests the conditional filterPanel /
@@ -1818,21 +1831,7 @@ export default function MapScreen() {
                 edge when it overflows. Decorative + pointer-inert, so the map
                 gesture law (the box-none overlay) is untouched, and the 44x44
                 buttons are unchanged (the fade wraps AROUND the ScrollView). */}
-            {actionBarHasMore ? (
-              <LinearGradient
-                colors={
-                  color.scheme === 'light'
-                    ? ['rgba(15,27,45,0)', 'rgba(15,27,45,0.22)']
-                    : ['rgba(0,0,0,0)', 'rgba(0,0,0,0.38)']
-                }
-                start={{ x: 0, y: 0.5 }}
-                end={{ x: 1, y: 0.5 }}
-                style={styles.actionBarFade}
-                pointerEvents="none"
-                accessibilityElementsHidden
-                importantForAccessibility="no-hide-descendants"
-              />
-            ) : null}
+            <OverflowFade visible={actionBarHasMore} edge="pill" />
           </GlassSurface>
         </View>
 
@@ -1998,11 +1997,13 @@ export default function MapScreen() {
                     </Pressable>
                   </View>
                 ) : (
+                  <View style={styles.overflowFadeWrap}>
                   <ScrollView
                     horizontal
                     showsHorizontalScrollIndicator={false}
                     style={styles.filterScroll}
                     contentContainerStyle={styles.filterRow}
+                    {...savedSetsFade.scrollHandlers}
                   >
                     {savedSets.map((set) => {
                       const isSelected = set.id === activeSetId;
@@ -2060,14 +2061,18 @@ export default function MapScreen() {
                       </Pressable>
                     )}
                   </ScrollView>
+                  <OverflowFade visible={savedSetsFade.hasMore} />
+                  </View>
                 )}
 
                 <AppText variant="heading" style={styles.filterSubLabel}>Categories</AppText>
+                <View style={styles.overflowFadeWrap}>
                 <ScrollView
                   horizontal
                   showsHorizontalScrollIndicator={false}
                   style={styles.filterScroll}
                   contentContainerStyle={styles.filterRow}
+                  {...categoriesFade.scrollHandlers}
                 >
                   {CATEGORY_ORDER.map((c) => {
                     const active = activeCategories.has(c);
@@ -2099,6 +2104,8 @@ export default function MapScreen() {
                     );
                   })}
                 </ScrollView>
+                <OverflowFade visible={categoriesFade.hasMore} />
+                </View>
 
                 <AppText variant="heading" style={styles.filterSubLabel}>Minimum severity</AppText>
                 <View style={styles.filterRow}>
@@ -3045,18 +3052,10 @@ const makeStyles = (color: ColorTheme) =>
     // flex parent must never grow/shrink on its cross axis.
     actionBarScroll: { flexGrow: 0, flexShrink: 0 },
     actionBarScrollContent: { flexDirection: 'row', alignItems: 'center' },
-    // S16: right-edge fade hinting overflow. Decorative only (pointer-inert),
-    // narrow so it never obscures a whole button; clipped to the tray's
-    // rounded edge by the GlassSurface. Sits above the scroller (right-aligned).
-    actionBarFade: {
-      position: 'absolute',
-      right: 0,
-      top: 0,
-      bottom: 0,
-      width: 28,
-      borderTopRightRadius: radius.circle,
-      borderBottomRightRadius: radius.circle,
-    },
+    // T14 (F2-07): the position:relative wrapper each silent chip rail gets so its
+    // absolute OverflowFade edge pins to that rail's right edge (not the panel).
+    // Redundant on native (Views default relative) but required on the web export.
+    overflowFadeWrap: { position: 'relative' },
     actionBtn: {
       minWidth: 44, // WCAG 2.5.5: was 36pt (below 44pt project standard)
       minHeight: 44,

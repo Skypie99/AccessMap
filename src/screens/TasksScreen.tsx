@@ -67,6 +67,8 @@ import PhotoLightboxModal from '@/components/PhotoLightboxModal';
 import { AppText } from '@/components/ui/AppText';
 import { PressableScale } from '@/components/ui/PressableScale';
 import { Skeleton } from '@/components/ui/Skeleton';
+import { OverflowFade } from '@/components/ui/OverflowFade';
+import { useHorizontalOverflowFade } from '@/hooks/useHorizontalOverflowFade';
 import { StatusBadge } from '@/components/StatusBadge';
 import { SeverityBadge } from '@/components/SeverityBadge';
 import { hapticImpact, hapticNotify, hapticSelection } from '@/lib/haptics';
@@ -123,6 +125,8 @@ export function isCompactLayout(width: number, fontScale: number): boolean {
 
 export default function TasksScreen() {
   const color = useColor();
+  // T14 (F2-07): the category filter strip earns the overflow scent.
+  const categoryFade = useHorizontalOverflowFade();
   const reduceTransparency = useReduceTransparency();
   const styles = useMemo(() => makeStyles(color, reduceTransparency), [color, reduceTransparency]);
   const navigation = useNavigation<BottomTabNavigationProp<RootTabParamList, 'Tasks'>>();
@@ -987,12 +991,14 @@ export default function TasksScreen() {
           strip is stable as flags come and go. Tapping the active chip
           clears it (toggles to All). Session-only — resets with the tab. */}
       {flags.length > 0 && (
+        <View style={styles.overflowFadeWrap}>
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
           style={styles.categoryScroll}
           contentContainerStyle={styles.categoryScrollContent}
           accessibilityLabel="Filter by category"
+          {...categoryFade.scrollHandlers}
         >
           <Pressable
             onPress={() => handleCategoryChange(null)}
@@ -1023,6 +1029,8 @@ export default function TasksScreen() {
             );
           })}
         </ScrollView>
+        <OverflowFade visible={categoryFade.hasMore} />
+        </View>
       )}
       {/* Sort segmented control — sits below the filter rows so the
           user reads "what shows up" → "in what order" top to bottom.
@@ -2292,6 +2300,9 @@ const makeStyles = (color: ColorTheme, reduceTransparency: boolean) => {
     // column can't shrink it. Vertical padding moved onto the contentContainer
     // so the total strip height (62pt at default type) is unchanged.
     categoryScroll: { flexGrow: 0, flexShrink: 0 },
+    // T14 (F2-07): position:relative wrapper so the absolute OverflowFade pins to
+    // the strip's right edge (required on web; harmless on native).
+    overflowFadeWrap: { position: 'relative' },
     categoryScrollContent: {
       flexDirection: 'row',
       gap: spacing.xs,

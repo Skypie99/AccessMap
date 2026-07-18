@@ -11,6 +11,8 @@ import {
 import { RemoteImage } from '@/components/ui/RemoteImage';
 import { AppText } from '@/components/ui/AppText';
 import { GlassSurface } from '@/components/ui/GlassSurface';
+import { OverflowFade } from '@/components/ui/OverflowFade';
+import { useHorizontalOverflowFade } from '@/hooks/useHorizontalOverflowFade';
 import { a11yToggle, useReducedMotion } from '@/lib/accessibility';
 import { CATEGORY_LABELS, CATEGORY_ORDER, SEVERITY_LABELS, STATUS_LABELS } from '@/lib/flags';
 import { relativeTime } from '@/lib/relativeTime';
@@ -39,6 +41,8 @@ export default function NearbyFlagsModal({
 }: Props) {
   const color = useColor();
   const styles = makeStyles(color);
+  // T14 (F2-07): the category tablist chips earn the overflow scent.
+  const categoryFade = useHorizontalOverflowFade();
   const reducedMotion = useReducedMotion();
   // null = show all categories; set to a FlagCategory to narrow the list.
   const [filterCat, setFilterCat] = useState<FlagCategory | null>(null);
@@ -233,6 +237,7 @@ export default function NearbyFlagsModal({
         {/* Category filter chips — only shown when the list has flags in
             more than one category, so there's something to filter. */}
         {presentCategories.length > 1 && (
+          <View style={styles.overflowFadeWrap}>
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -240,6 +245,7 @@ export default function NearbyFlagsModal({
             contentContainerStyle={styles.chipBar}
             accessibilityLabel="Filter by category"
             accessibilityRole="tablist"
+            {...categoryFade.scrollHandlers}
           >
             {/* "All" chip */}
             <Pressable
@@ -272,6 +278,8 @@ export default function NearbyFlagsModal({
               );
             })}
           </ScrollView>
+          <OverflowFade visible={categoryFade.hasMore} />
+          </View>
         )}
 
         <FlatList
@@ -437,6 +445,9 @@ const makeStyles = (color: ColorTheme) =>
       paddingHorizontal: spacing.lg,
       paddingVertical: spacing.md - 2,
     },
+    // T14 (F2-07): position:relative wrapper so the absolute OverflowFade pins to
+    // the tablist's right edge (required on web; harmless on native).
+    overflowFadeWrap: { position: 'relative' },
     chip: {
       paddingHorizontal: spacing.md + 2,
       paddingVertical: spacing.xs + 1,
