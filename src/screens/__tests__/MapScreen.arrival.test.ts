@@ -123,7 +123,9 @@ describe('T7 (BP13) — the undetermined no-location voice + true frame', () => 
 
   it('regionForFlags falls back to DEFAULT_REGION when empty and reuses BP1 instant path (snapToRegion)', () => {
     expect(map).toContain('function regionForFlags');
-    expect(map).toContain('if (rows.length === 0) return DEFAULT_REGION');
+    // noUncheckedIndexedAccess-safe empty fallback: narrow the first row, then bail
+    expect(map).toContain('const first = rows[0]');
+    expect(map).toContain('if (!first) return DEFAULT_REGION');
     // the primitive is threaded through PlatformMap (both variants), never forked
     const web = read('../components/PlatformMap.web.tsx');
     expect(web).toContain('snapToRegion:');

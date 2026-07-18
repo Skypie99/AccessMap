@@ -159,14 +159,15 @@ const NO_LOCATION_HINT =
 // falls back to DEFAULT_REGION (also guarded at the call site). Presentation over
 // already-fetched rows only — never a proximity query (Fork 1 stays Sky's).
 function regionForFlags(rows: readonly { lat: number; lng: number }[]): PlatformMapRegion {
-  if (rows.length === 0) return DEFAULT_REGION;
+  const first = rows[0];
+  if (!first) return DEFAULT_REGION; // empty → keep the default frame (noUncheckedIndexedAccess-safe)
   if (rows.length === 1) {
-    return { latitude: rows[0].lat, longitude: rows[0].lng, latitudeDelta: 0.02, longitudeDelta: 0.02 };
+    return { latitude: first.lat, longitude: first.lng, latitudeDelta: 0.02, longitudeDelta: 0.02 };
   }
-  let minLat = rows[0].lat;
-  let maxLat = rows[0].lat;
-  let minLng = rows[0].lng;
-  let maxLng = rows[0].lng;
+  let minLat = first.lat;
+  let maxLat = first.lat;
+  let minLng = first.lng;
+  let maxLng = first.lng;
   for (const r of rows) {
     if (r.lat < minLat) minLat = r.lat;
     if (r.lat > maxLat) maxLat = r.lat;
