@@ -1,7 +1,9 @@
 import React, { Suspense, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Platform, Pressable, StyleSheet, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, View } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { AppText } from '@/components/ui/AppText';
+import { ScreenStage } from '@/components/ui/ScreenStage';
+import { Skeleton } from '@/components/ui/Skeleton';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   Home as HomeIcon,
@@ -42,14 +44,27 @@ import { createLinking, type TakePendingUrl } from './linking';
 const SettingsScreen = React.lazy(() => import('@/screens/SettingsScreen'));
 const AdminScreen = React.lazy(() => import('@/screens/AdminScreen'));
 
-// Centered fallback shown while a lazy screen's chunk loads. Uses theme tokens
-// so it's correct in dark mode (surfaceMuted = the screen wash). On web the
-// chunk is local, so this only flashes briefly.
+// T12 (F3-01): while a lazy screen's chunk loads, dress the fallback in the
+// destination's own stage instead of a bare spinner — the Deep Field wash
+// (ScreenStage) plus an editorial-header-shaped static Skeleton (a short eyebrow
+// bar over a display-title bar), so the drawer→Settings handoff never drops to a
+// raw interstitial between two fully-dressed surfaces. Both primitives are opaque
+// (no blur), so ScreenFallback keeps its M-54 opaque-system categorization — this
+// is F3-01's sanctioned exception, NOT a material-train migration (the
+// ErrorBoundary crash fallback stays a bare surface, untouched). The Skeleton is
+// RM-static (0.5) + AT-hidden, so this swaps the un-gated spinner for a calmer,
+// RM-improving frame. On web the chunk is local, so this only flashes briefly;
+// the drawer-open warm-import (DrawerHost) usually resolves it before it shows.
 function ScreenFallback() {
   const color = useColor();
+  const insets = useSafeAreaInsets();
   return (
-    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: color.surfaceMuted }}>
-      <ActivityIndicator color={color.brand} />
+    <View style={{ flex: 1, backgroundColor: color.stage1 }}>
+      <ScreenStage />
+      <View style={{ paddingTop: insets.top + spacing.xxl, paddingHorizontal: spacing.xxl, gap: spacing.sm }}>
+        <Skeleton width={96} height={12} borderRadius={radius.sm} />
+        <Skeleton width={200} height={40} borderRadius={radius.md} />
+      </View>
     </View>
   );
 }
@@ -446,6 +461,21 @@ function navigateWhenReady(action: () => void, attempts = 10): void {
  */
 function DrawerHost() {
   const { open, setOpen } = useDrawer();
+  const isAdmin = useIsAdmin();
+  // T12 (F3-01) WARM: the moment the drawer opens, fire the Settings (and Admin,
+  // for admins) lazy-chunk import fire-and-forget, so by the time the user taps
+  // the row the chunk is usually already resolved and the dressed ScreenFallback
+  // never shows except on a cold, slow network. This extends the shipped
+  // Suspense-fallback-null warm-chunk pattern (MapScreen/Tasks/Profile) to the nav
+  // layer. .catch(() => {}) swallows a cold-network reject — the real Suspense
+  // boundary re-attempts the load on navigation. The dynamic import is cached, so
+  // repeat opens are no-ops; the Admin chunk is gated on isAdmin so guests never
+  // fetch it (isAdmin is boolean | null — null while loading, hence === true).
+  useEffect(() => {
+    if (!open) return;
+    import('@/screens/SettingsScreen').catch(() => {});
+    if (isAdmin === true) import('@/screens/AdminScreen').catch(() => {});
+  }, [open, isAdmin]);
   return (
     <HamburgerDrawer
       open={open}
