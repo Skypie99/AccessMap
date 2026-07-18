@@ -189,7 +189,7 @@ export default function FeedbackModal({ visible, onClose }: Props) {
                 onPress={onClose}
                 disabled={sending}
                 hitSlop={12}
-                style={styles.closeBtn}
+                style={({ pressed }) => [styles.closeBtn, pressed && { backgroundColor: color.borderPressed }]}
                 accessibilityRole="button"
                 accessibilityLabel="Close feedback"
                 {...a11yToggle({ disabled: sending })}

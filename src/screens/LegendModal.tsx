@@ -194,7 +194,7 @@ export default function LegendModal({ visible, onClose }: Props) {
 
           <Pressable
             onPress={onClose}
-            style={styles.closeBtn}
+            style={({ pressed }) => [styles.closeBtn, pressed && { backgroundColor: color.borderPressed }]}
             accessibilityRole="button"
             accessibilityLabel="Close legend"
           >

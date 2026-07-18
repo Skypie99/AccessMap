@@ -135,7 +135,7 @@ export default function MyFeedbackModal({ visible, onClose, refreshKey = 0 }: Pr
             <Pressable
               onPress={onClose}
               hitSlop={12}
-              style={styles.closeBtn}
+              style={({ pressed }) => [styles.closeBtn, pressed && { backgroundColor: color.borderPressed }]}
               accessibilityRole="button"
               accessibilityLabel="Close my feedback"
             >

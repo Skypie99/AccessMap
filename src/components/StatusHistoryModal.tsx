@@ -148,7 +148,7 @@ export default function StatusHistoryModal({ visible, flagId, onClose }: Props) 
             <Pressable
               onPress={onClose}
               hitSlop={12}
-              style={styles.closeBtn}
+              style={({ pressed }) => [styles.closeBtn, pressed && { backgroundColor: color.borderPressed }]}
               accessibilityRole="button"
               accessibilityLabel="Close status history"
               accessibilityHint="Returns to the flag details"

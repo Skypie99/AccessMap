@@ -171,7 +171,7 @@ export default function NotificationPrefsModal({
             <Pressable
               onPress={onClose}
               hitSlop={12}
-              style={styles.closeBtn}
+              style={({ pressed }) => [styles.closeBtn, pressed && { backgroundColor: color.borderPressed }]}
               accessibilityRole="button"
               accessibilityLabel="Close notifications settings"
               accessibilityHint="Closes the notification preferences panel"

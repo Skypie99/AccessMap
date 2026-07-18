@@ -200,7 +200,7 @@ export default function NearbyFlagsModal({
           <AppText variant="heading" style={styles.title} accessibilityRole="header">Nearby flags</AppText>
           <Pressable
             onPress={onClose}
-            style={styles.closeBtn}
+            style={({ pressed }) => [styles.closeBtn, pressed && { backgroundColor: color.borderPressed }]}
             accessibilityRole="button"
             accessibilityLabel="Close nearby flags list"
             hitSlop={10}

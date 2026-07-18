@@ -64,7 +64,10 @@ export function SheetHeader({ title, onClose, showHandle = true, closeLabel, rig
           <Pressable
             onPress={onClose}
             hitSlop={spacing.sm}
-            style={[styles.closeBtn, { backgroundColor: color.surfaceNeutral }]}
+            style={({ pressed }) => [
+              styles.closeBtn,
+              { backgroundColor: pressed ? color.borderPressed : color.surfaceNeutral },
+            ]}
             accessibilityRole="button"
             accessibilityLabel={closeLabel ?? `Close ${title}`}
           >

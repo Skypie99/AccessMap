@@ -760,7 +760,7 @@ export default function FlagDetailModal({
                 onPress={onClose}
                 disabled={busy}
                 hitSlop={12}
-                style={styles.closeBtn}
+                style={({ pressed }) => [styles.closeBtn, pressed && { backgroundColor: color.borderPressed }]}
                 accessibilityRole="button"
                 accessibilityLabel="Close flag details"
                 accessibilityHint="Returns to the flag list"
@@ -1026,7 +1026,7 @@ export default function FlagDetailModal({
                 <Pressable
                   onPress={() => setIsEditing(true)}
                   disabled={busy}
-                  style={[styles.actionBtn, styles.editBtn]}
+                  style={({ pressed }) => [styles.actionBtn, styles.editBtn, pressed && { backgroundColor: color.borderPressed }]}
                   accessibilityRole="button"
                   accessibilityLabel="Edit this flag"
                   accessibilityHint="Opens an edit form for description, category, and severity"
@@ -1116,7 +1116,7 @@ export default function FlagDetailModal({
                     <Pressable
                       onPress={() => setIsEditing(false)}
                       disabled={busy}
-                      style={[styles.actionBtn, styles.cancelBtn]}
+                      style={({ pressed }) => [styles.actionBtn, styles.cancelBtn, pressed && { backgroundColor: color.borderPressed }]}
                       accessibilityRole="button"
                       accessibilityLabel="Cancel editing"
                       {...a11yToggle({ disabled: busy })}
@@ -1126,7 +1126,7 @@ export default function FlagDetailModal({
                     <Pressable
                       onPress={() => void handleSaveEdit()}
                       disabled={busy}
-                      style={[styles.actionBtn, styles.saveBtn]}
+                      style={({ pressed }) => [styles.actionBtn, styles.saveBtn, pressed && { backgroundColor: color.ctaFillPressed }]}
                       accessibilityRole="button"
                       accessibilityLabel="Save changes"
                       {...a11yToggle({ busy, disabled: busy })}
@@ -1153,7 +1153,7 @@ export default function FlagDetailModal({
                     <Pressable
                       onPress={() => setShowReopenForm(true)}
                       disabled={busy}
-                      style={[styles.actionBtn, styles.reopenBtn]}
+                      style={({ pressed }) => [styles.actionBtn, styles.reopenBtn, pressed && { backgroundColor: color.borderPressed }]}
                       accessibilityRole="button"
                       accessibilityLabel="Request flag reopen"
                       accessibilityHint="Opens a form to explain why this barrier is still present"
@@ -1188,7 +1188,7 @@ export default function FlagDetailModal({
                             setReopenText('');
                           }}
                           disabled={reopenBusy}
-                          style={[styles.actionBtn, styles.cancelBtn]}
+                          style={({ pressed }) => [styles.actionBtn, styles.cancelBtn, pressed && { backgroundColor: color.borderPressed }]}
                           accessibilityRole="button"
                           accessibilityLabel="Cancel reopen request"
                           {...a11yToggle({ disabled: reopenBusy })}
@@ -1226,7 +1226,7 @@ export default function FlagDetailModal({
                     onClose();
                   }}
                   disabled={busy}
-                  style={[styles.actionBtn, styles.viewMapBtn]}
+                  style={({ pressed }) => [styles.actionBtn, styles.viewMapBtn, pressed && { backgroundColor: color.borderPressed }]}
                   accessibilityRole="button"
                   accessibilityLabel="View this flag on the map"
                   accessibilityHint="Switches to the Map tab and centers on this flag"
@@ -1251,7 +1251,7 @@ export default function FlagDetailModal({
                     }
                   }}
                   disabled={busy}
-                  style={[styles.actionBtn, styles.directionsBtn]}
+                  style={({ pressed }) => [styles.actionBtn, styles.directionsBtn, pressed && { backgroundColor: color.ctaFillPressed }]}
                   accessibilityRole="button"
                   accessibilityLabel="Get directions to this flag"
                   accessibilityHint="Opens your maps app with directions"
@@ -1262,7 +1262,7 @@ export default function FlagDetailModal({
                 <Pressable
                   onPress={handleShare}
                   disabled={busy}
-                  style={[styles.actionBtn, styles.shareBtn]}
+                  style={({ pressed }) => [styles.actionBtn, styles.shareBtn, pressed && { backgroundColor: color.borderPressed }]}
                   accessibilityRole="button"
                   accessibilityLabel="Share this flag"
                   accessibilityHint="Opens the system share sheet"
@@ -1273,7 +1273,7 @@ export default function FlagDetailModal({
                 <Pressable
                   onPress={() => setHistoryOpen(true)}
                   disabled={busy}
-                  style={[styles.actionBtn, styles.historyBtn]}
+                  style={({ pressed }) => [styles.actionBtn, styles.historyBtn, pressed && { backgroundColor: color.borderPressed }]}
                   accessibilityRole="button"
                   accessibilityLabel="View status history"
                   accessibilityHint="Shows who changed the status of this flag and when"
@@ -1427,7 +1427,7 @@ export default function FlagDetailModal({
                 <Pressable
                   onPress={() => runStatusChange('verified', 'verify')}
                   disabled={busy}
-                  style={[styles.actionBtn, styles.verifyBtn]}
+                  style={({ pressed }) => [styles.actionBtn, styles.verifyBtn, pressed && { backgroundColor: color.ctaFillPressed }]}
                   accessibilityRole="button"
                   accessibilityLabel="Verify this flag"
                   accessibilityHint="Marks this report as confirmed"
@@ -1444,7 +1444,7 @@ export default function FlagDetailModal({
                 <Pressable
                   onPress={() => runStatusChange('resolved', 'resolve')}
                   disabled={busy}
-                  style={[styles.actionBtn, styles.resolveBtn]}
+                  style={({ pressed }) => [styles.actionBtn, styles.resolveBtn, pressed && { backgroundColor: color.successStrong }]}
                   accessibilityRole="button"
                   accessibilityLabel="Mark this flag resolved"
                   accessibilityHint="Marks the accessibility issue as fixed"
@@ -1461,7 +1461,7 @@ export default function FlagDetailModal({
                 <Pressable
                   onPress={handleReject}
                   disabled={busy}
-                  style={[styles.actionBtn, styles.rejectBtn]}
+                  style={({ pressed }) => [styles.actionBtn, styles.rejectBtn, pressed && { backgroundColor: color.borderPressed }]}
                   accessibilityRole="button"
                   accessibilityLabel="Reject this flag"
                   accessibilityHint="Marks this report as invalid or spam"
@@ -1478,7 +1478,7 @@ export default function FlagDetailModal({
                 <Pressable
                   onPress={handleDelete}
                   disabled={busy}
-                  style={[styles.actionBtn, styles.deleteBtn]}
+                  style={({ pressed }) => [styles.actionBtn, styles.deleteBtn, pressed && { backgroundColor: color.error }]}
                   accessibilityRole="button"
                   accessibilityLabel="Delete this flag"
                   accessibilityHint="Permanently removes your report"
@@ -1609,7 +1609,7 @@ const makeStyles = (color: ColorTheme) =>
       alignItems: 'center',
       justifyContent: 'center',
     },
-    afterTipBtnPressed: { opacity: 0.7 },
+    afterTipBtnPressed: { backgroundColor: color.borderPressed },
     afterTipBtnText: {
       color: color.infoFg,
       fontWeight: font.weight.bold,
@@ -1678,7 +1678,7 @@ const makeStyles = (color: ColorTheme) =>
       alignItems: 'center',
       justifyContent: 'center',
     },
-    coordsCopyBtnPressed: { opacity: 0.4 },
+    coordsCopyBtnPressed: { backgroundColor: color.borderPressed },
     // Overlapping-squares glyph — universally understood as "copy"
     coordsCopyGlyph: { fontSize: 16, color: color.brand },
     actionRow: {
@@ -1769,7 +1769,7 @@ const makeStyles = (color: ColorTheme) =>
       backgroundColor: color.warningBg,
     },
     watchBtnPressed: {
-      opacity: 0.7,
+      backgroundColor: color.borderPressed,
     },
     watchBtnGlyph: {
       fontSize: font.size.lg,
@@ -1932,7 +1932,7 @@ const makeStyles = (color: ColorTheme) =>
       opacity: 0.4,
     },
     commentSendBtnPressed: {
-      opacity: 0.75,
+      backgroundColor: color.ctaFillPressed,
     },
     commentSendBtnText: {
       color: color.textOnBrand,
