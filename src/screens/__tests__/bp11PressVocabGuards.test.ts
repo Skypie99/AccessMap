@@ -96,11 +96,18 @@ describe('BP11 / T3 — the estate speaks fill-swaps, not group opacity', () => 
   });
 });
 
-describe('BP11 / T3 — tab bar answers with the haptic only (source contract)', () => {
-  it('fires the selection haptic and adds no pressed background dim', () => {
+describe('BP11 / T3 — tab bar: haptic-only + forwards a11y (source contract)', () => {
+  it('fires the haptic, forwards every injected prop, adds no visual dim', () => {
     expect(tabBarButton).toMatch(/hapticSelection\(\)/);
-    // No fill dim on the near-floor tab labels (would drop them below AA).
+    // Built on RN Navigation's own PlatformPressable and spreads {...rest} so
+    // v7's aria-selected / aria-label / href reach the node (v7 sends the
+    // current-tab signal as aria-selected, NOT accessibilityState — dropping it
+    // would un-announce the active tab to screen readers).
+    expect(tabBarButton).toMatch(/PlatformPressable/);
+    expect(tabBarButton).toMatch(/\{\.\.\.rest\}/);
+    // Haptic-only: no background fill dim, and PlatformPressable's own opacity
+    // dip is disabled (pressOpacity 1) — the near-floor labels can't take a dim.
     expect(tabBarButton).not.toMatch(/backgroundColor/);
-    expect(tabBarButton).not.toMatch(/opacity/);
+    expect(tabBarButton).toMatch(/pressOpacity=\{1\}/);
   });
 });
