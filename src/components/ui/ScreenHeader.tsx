@@ -41,8 +41,8 @@ export const EYEBROW_TRACKING = 1.2;
 // (shrink to fit at 320). 15 chars x 30 x 0.50 = 225px sits in that window.
 const CHAR_WIDTH_RATIO = 0.5;
 
-// Never shrink below 60% of the target size — past that, truncation reads
-// better than microscopic text. Also used as the native minimumFontScale floor.
+// Never shrink below 60% of the target size — past that, wrapping to a second
+// line reads better than microscopic text. Also the native minimumFontScale floor.
 const MIN_TITLE_SCALE = 0.6;
 
 // The display variant's Dynamic Type cap (mirrors AppText). The title can't
@@ -183,7 +183,9 @@ export function ScreenHeader({
           variant="display"
           size={renderSize}
           style={styles.title}
-          numberOfLines={1}
+          // WCAG 1.4.4 (T13): at the M18 floor a still-overflowing title wraps to a
+          // 2nd line instead of tail-ellipsizing, so the datum survives 200% zoom.
+          numberOfLines={2}
           accessibilityRole="header"
           onLayout={handleTitleLayout}
           // Native backstop (no-op on web): shrink to fit within the box, never

@@ -12,7 +12,7 @@
  */
 
 import React from 'react';
-import { View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { fireEvent, render } from '@testing-library/react-native';
 import { act, type ReactTestInstance } from 'react-test-renderer';
 import { NavigationContext } from '@react-navigation/native';
@@ -100,5 +100,39 @@ describe('ScreenHeader ledge publish (BP12 / T6)', () => {
     const { UNSAFE_getAllByType } = renderHeader(null);
     act(() => fireLayout(UNSAFE_getAllByType(View), 140));
     expect(getHeaderHeight()).toBeNull();
+  });
+});
+
+// Fire the TITLE's own onLayout (not the container's) with a given slot width so
+// the M18 auto-fit estimate runs: a tiny width forces the 0.6 floor, a wide one
+// leaves the title at its target size. A title-only header renders exactly one
+// <Text> (AppText → Text), so texts[0] is the title.
+function fireTitleLayout(texts: ReactTestInstance[], width: number) {
+  fireEvent(texts[0], 'layout', { nativeEvent: { layout: { x: 0, y: 0, width, height: 48 } } });
+}
+
+describe('ScreenHeader title auto-fit (M18) — wrap at the floor (T13/wrap)', () => {
+  it('at rest: a fitting title keeps its 40pt target size + protected margins (byte-identical rhythm)', () => {
+    const { UNSAFE_getAllByType } = render(<ScreenHeader title="Settings" />);
+    act(() => fireTitleLayout(UNSAFE_getAllByType(Text), 320)); // width >> estimate => no shrink
+    const title = UNSAFE_getAllByType(Text)[0];
+    const s = StyleSheet.flatten(title.props.style);
+    expect(s.fontSize).toBe(40); // structural pin: at-rest size unchanged by the 1->2 change
+    expect(s.marginTop).toBe(2); // protected micro-margin
+    expect(s.flex).toBe(1);
+    expect(title.props.numberOfLines).toBe(2); // 2-line allowance present, unused at rest
+    expect(title.props.ellipsizeMode).toBeUndefined();
+    expect(title.props.children).toBe('Settings');
+  });
+
+  it('starved width: M18 floors to 0.6 then WRAPS to 2 lines — full string, zero ellipsis', () => {
+    const LONG = 'Barrier reports near downtown Seattle';
+    const { UNSAFE_getAllByType } = render(<ScreenHeader title={LONG} />);
+    act(() => fireTitleLayout(UNSAFE_getAllByType(Text), 40)); // forces the floor
+    const title = UNSAFE_getAllByType(Text)[0];
+    expect(StyleSheet.flatten(title.props.style).fontSize).toBe(24); // round(40 * MIN_TITLE_SCALE 0.6)
+    expect(title.props.numberOfLines).toBe(2); // wraps to a 2nd line, never clamped to 1
+    expect(title.props.ellipsizeMode).toBeUndefined(); // no forced tail-ellipsis
+    expect(title.props.children).toBe(LONG); // the full datum survives, un-truncated
   });
 });
