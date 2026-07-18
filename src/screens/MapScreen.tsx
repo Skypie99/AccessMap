@@ -3094,7 +3094,7 @@ const makeStyles = (color: ColorTheme) =>
       ...shadow.e2,
     },
     errorBannerBusy: { opacity: 0.85 },
-    errorBannerPressed: { opacity: 0.7 },
+    errorBannerPressed: { backgroundColor: color.errorPressed },
     errorBannerIcon: { color: color.textOnBrand, fontSize: font.size.xl, fontWeight: font.weight.bold },
     errorBannerText: { color: color.textOnBrand, fontSize: font.size.sm, fontWeight: font.weight.semibold, flex: 1 },
     emptyCard: {

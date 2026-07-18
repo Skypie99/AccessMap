@@ -1295,7 +1295,7 @@ export default function FlagDetailModal({
                     <AppText variant="body" style={styles.commentsErrorText}>Couldn&apos;t load comments. Check your connection and try again.</AppText>
                     <Pressable
                       onPress={() => void refetchComments()}
-                      style={styles.commentsRetryBtn}
+                      style={({ pressed }) => [styles.commentsRetryBtn, pressed && styles.commentsRetryBtnPressed]}
                       accessibilityRole="button"
                       accessibilityLabel="Retry loading comments"
                     >
@@ -1333,7 +1333,7 @@ export default function FlagDetailModal({
                         <AppText variant="body" style={styles.commentsErrorText}>Couldn&apos;t refresh comments.</AppText>
                         <Pressable
                           onPress={() => void refetchComments()}
-                          style={styles.commentsRetryBtn}
+                          style={({ pressed }) => [styles.commentsRetryBtn, pressed && styles.commentsRetryBtnPressed]}
                           accessibilityRole="button"
                           accessibilityLabel="Retry refreshing comments"
                         >
@@ -1873,6 +1873,9 @@ const makeStyles = (color: ColorTheme) =>
       minHeight: 44,
       justifyContent: 'center',
     },
+    // Error-red CTA (white label) → deepen on press; error is the darkest red
+    // token, so its pressed state uses errorPressed. White stays AA (~7:1).
+    commentsRetryBtnPressed: { backgroundColor: color.errorPressed },
     commentsRetryText: {
       color: color.textOnBrand,
       fontWeight: font.weight.bold,

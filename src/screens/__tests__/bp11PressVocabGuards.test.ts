@@ -58,10 +58,15 @@ describe('BP11 / T3 — PressableScale carries the press dialect (source contrac
   });
 });
 
-describe('BP11 / T3 — ctaFillPressed token (source contract)', () => {
-  it('is the mode-independent pressed companion to ctaFill in both palettes', () => {
+describe('BP11 / T3 — pressed-companion tokens (source contract)', () => {
+  it('ctaFillPressed is the mode-independent brand-family pressed companion (both palettes)', () => {
     expect(themeLight).toMatch(/ctaFillPressed: '#0F53BE'/);
     expect(themeDark).toMatch(/ctaFillPressed: '#0F53BE'/);
+  });
+
+  it('errorPressed is the mode-independent red-family pressed companion (both palettes)', () => {
+    expect(themeLight).toMatch(/errorPressed: '#9e2a1e'/);
+    expect(themeDark).toMatch(/errorPressed: '#9e2a1e'/);
   });
 });
 
@@ -93,6 +98,17 @@ describe('BP11 / T3 — the estate speaks fill-swaps, not group opacity', () => 
     // none of the four keep an opacity
     expect(flagDetail).not.toMatch(/afterTipBtnPressed:[^}]*opacity/);
     expect(flagDetail).not.toMatch(/coordsCopyBtnPressed:[^}]*opacity/);
+  });
+
+  it('the completion pass converted the same-file neutral residuals + error CTAs', () => {
+    // Tasks neutral residuals → borderPressed (no more group opacity)
+    expect(tasksScreen).toMatch(/suggestedRowPressed: \{ backgroundColor: color\.borderPressed \}/);
+    expect(tasksScreen).toMatch(/loadMoreBtnPressed: \{ backgroundColor: color\.borderPressed \}/);
+    expect(tasksScreen).toMatch(/selectEntryBtnPressed: \{ backgroundColor: color\.borderPressed \}/);
+    // error-red CTAs (white label) deepen to errorPressed
+    expect(mapScreen).toMatch(/errorBannerPressed: \{ backgroundColor: color\.errorPressed \}/);
+    expect(tasksScreen).toMatch(/errorBannerPressed: \{ backgroundColor: color\.errorPressed \}/);
+    expect(flagDetail).toMatch(/commentsRetryBtnPressed: \{ backgroundColor: color\.errorPressed \}/);
   });
 });
 

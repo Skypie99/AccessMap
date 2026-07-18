@@ -116,6 +116,11 @@ export const color = {
   infoFg: '#0E4499', // 7.9:1 on infoBg — AAA at any size
   error: '#c0392b', // banner background, destructive when subtle
   errorStrong: '#e74c3c', // destructive action background (delete)
+  // Pressed deepen for the error-red CTAs (error-load banners + comment Retry).
+  // error (#c0392b) is already the darkest red token, so its pressed state needs
+  // one darker still; white on it ≈ 7:1. Mode-independent, the red-family sibling
+  // to ctaFillPressed / successStrong.
+  errorPressed: '#9e2a1e',
   errorBg: '#fdecea',
   errorFg: '#8a1f1f', // 7.4:1 on errorBg
 
