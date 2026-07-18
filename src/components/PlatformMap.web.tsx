@@ -332,6 +332,25 @@ interface ClusteredMarkersProps {
   popupInsetTop: number;
 }
 
+// BP11 / T3 (F1-13/14): the popup "Open details" button joins the press
+// vocabulary. Inline React styles can't carry :hover/:active/:focus-visible, so
+// the interactive states live in a class backed by a single injected <style>
+// (id-guarded so repeated popups don't duplicate it). The rest fill lives here
+// too — an inline background would out-specify the :hover rule. Deepen matches
+// the RN ctaFillPressed (#0F53BE); white label clears AA on both blues.
+const CALLOUT_CSS_ID = 'am-callout-css';
+function ensureCalloutStyles() {
+  if (typeof document === 'undefined' || document.getElementById(CALLOUT_CSS_ID)) return;
+  const el = document.createElement('style');
+  el.id = CALLOUT_CSS_ID;
+  el.textContent =
+    '.am-callout-btn{background:#1466E0;transition:background-color .12s}' +
+    '.am-callout-btn:hover{background:#0F53BE}' +
+    '.am-callout-btn:active{background:#0F53BE}' +
+    '.am-callout-btn:focus-visible{outline:2px solid #1466E0;outline-offset:2px}';
+  document.head.appendChild(el);
+}
+
 function ClusteredMarkers({
   flags,
   focusedFlagId,
@@ -343,6 +362,8 @@ function ClusteredMarkers({
   popupInsetTop,
 }: ClusteredMarkersProps) {
   const map = useMap();
+  // Inject the callout button's hover/active/focus styles once (web-only).
+  useEffect(() => { ensureCalloutStyles(); }, []);
 
   // Build the Supercluster index whenever the flag list changes. radius=60px
   // matches the native variant's radius={40} scaled up for typical web dpi.
@@ -518,12 +539,20 @@ function ClusteredMarkers({
                 {onOpenDetails ? (
                   <button
                     type="button"
+                    className="am-callout-btn"
                     onClick={() => onOpenDetails(flag)}
                     style={{
                       marginTop: 8,
                       width: '100%',
+                      // F1-14: reach the 44px min touch target (was ~34px) and
+                      // center the label now that the box is taller.
+                      minHeight: 44,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      boxSizing: 'border-box',
                       padding: '8px 10px',
-                      background: '#1466E0',
+                      // background lives in .am-callout-btn so :hover/:active win.
                       color: '#fff',
                       border: 'none',
                       borderRadius: 8,
