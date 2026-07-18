@@ -5,6 +5,13 @@ import { font, motion, radius, shadow, spacing } from '@/theme';
 import { AppText } from '@/components/ui/AppText';
 import { useReducedMotion } from '@/lib/accessibility';
 import { type LiveStatus, clearLiveStatus, subscribeLiveStatus } from '@/lib/liveStatus';
+import {
+  LIVE_STATUS_OCCUPANT,
+  LIVE_STATUS_PRIORITY,
+  computeLedgeTop,
+  useHeaderHeight,
+  useOccupantSlot,
+} from '@/lib/statusLedge';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 
 /**
@@ -46,6 +53,14 @@ export default function LiveStatusRegion() {
   const [display, setDisplay] = useState<LiveStatus | null>(null);
   const [rendered, setRendered] = useState(false);
   const progress = useRef(new Animated.Value(0)).current;
+
+  // BP12 (T6): dock the pill below the focused editorial header, and stack below
+  // any higher-priority status vehicle instead of superimposing. headerHeight
+  // null (Map, or a screen with no plain header) → today's exact placement.
+  // Registering keyed on `rendered` keeps the slot reserved through the exit
+  // fade, so an arriving pill never overlaps this one mid-animation.
+  const headerHeight = useHeaderHeight();
+  const slot = useOccupantSlot(LIVE_STATUS_OCCUPANT, LIVE_STATUS_PRIORITY, rendered);
 
   useEffect(() => subscribeLiveStatus(setStatus), []);
 
@@ -106,7 +121,11 @@ export default function LiveStatusRegion() {
   // The aria-live WRAPPER is ALWAYS mounted (empty when idle). box-none so the
   // idle region never intercepts taps on the screen beneath it.
   return (
-    <View style={[styles.wrap, { top: Math.max(insets.top, 56) }]} pointerEvents="box-none" {...LIVE_PROPS}>
+    <View
+      style={[styles.wrap, { top: computeLedgeTop(insets.top, headerHeight, slot) }]}
+      pointerEvents="box-none"
+      {...LIVE_PROPS}
+    >
       {rendered && display ? (
         <Animated.View style={{ opacity: progress, transform: [{ translateY }] }}>
           <View
