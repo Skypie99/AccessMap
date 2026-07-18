@@ -19,6 +19,7 @@ import { DrawerProvider, useDrawer } from '@/lib/drawerContext';
 import { font, radius, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { useReduceTransparency } from '@/lib/accessibility';
+import { TabBarButton } from './TabBarButton';
 import FeedbackModal from '@/components/FeedbackModal';
 import HelpModal from '@/components/HelpModal';
 import ChangelogModal from '@/components/ChangelogModal';
@@ -294,6 +295,10 @@ function NavInner({ initialRouteName }: { initialRouteName: keyof RootTabParamLi
         headerRight: renderHeaderRight,
         tabBarActiveTintColor: color.tabBarActiveTint,
         tabBarInactiveTintColor: color.tabBarInactiveTint,
+        // BP11 / T3: every tab answers the hand — selection haptic + the
+        // nav-chrome pressed dim, a11y props forwarded. Hidden routes override
+        // this per-screen with `tabBarButton: () => null`.
+        tabBarButton: (props) => <TabBarButton {...props} />,
         // Native: a frosted-glass background behind the bar (Phase 7a). On web
         // we keep the CSS backdropFilter path in tabBarStyle instead.
         tabBarBackground: Platform.OS === 'web' ? undefined : () => <TabBarGlass />,
