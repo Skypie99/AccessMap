@@ -129,20 +129,27 @@ describe('formatDistance', () => {
   });
 
   it('shows "<50 m" for very close flags', () => {
-    expect(formatDistance(0.02)).toBe('<50 m'); // 20 m
-    expect(formatDistance(0.049)).toBe('<50 m');
+    expect(formatDistance(0.02)).toBe('<50\u00A0m'); // 20 m
+    expect(formatDistance(0.049)).toBe('<50\u00A0m');
   });
 
   it('shows meters (rounded) between 50 and 999 m', () => {
-    expect(formatDistance(0.05)).toBe('50 m');
-    expect(formatDistance(0.123)).toBe('123 m');
-    expect(formatDistance(0.999)).toBe('999 m');
+    expect(formatDistance(0.05)).toBe('50\u00A0m');
+    expect(formatDistance(0.123)).toBe('123\u00A0m');
+    expect(formatDistance(0.999)).toBe('999\u00A0m');
   });
 
   it('shows kilometers with one decimal at 1 km and above', () => {
-    expect(formatDistance(1)).toBe('1.0 km');
-    expect(formatDistance(2.345)).toBe('2.3 km');
-    expect(formatDistance(15.7)).toBe('15.7 km');
+    expect(formatDistance(1)).toBe('1.0\u00A0km');
+    expect(formatDistance(2.345)).toBe('2.3\u00A0km');
+    expect(formatDistance(15.7)).toBe('15.7\u00A0km');
+  });
+
+  it('joins value and unit with a non-breaking space (F2-13), never an ASCII space', () => {
+    expect(formatDistance(0.123)).toBe('123\u00A0m');
+    expect(formatDistance(0.123)).toMatch(/\u00A0/); // the NBSP is present
+    expect(formatDistance(0.123)).not.toMatch(/\d m/); // no ASCII space before the unit
+    expect(formatDistance(2.345)).toMatch(/\u00A0km$/);
   });
 });
 
@@ -181,5 +188,13 @@ describe('speakDistance', () => {
 
   it('uses "kilometers" (full word) at 1 km and above', () => {
     expect(speakDistance(2.5)).toBe('2.5 kilometers away');
+  });
+
+  it('stays plain ASCII - the SR path is byte-identical, no non-breaking space', () => {
+    for (const s of [speakDistance(0.02), speakDistance(0.5), speakDistance(2.5)]) {
+      expect(s).not.toMatch(/\u00A0/); // never an NBSP - VoiceOver wording unchanged
+      expect(s).toMatch(/ /); // plain ASCII spaces only
+    }
+    expect(speakDistance(0.5)).toBe('500 meters away'); // pinned verbatim
   });
 });

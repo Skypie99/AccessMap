@@ -53,9 +53,12 @@ export function walkingMinutes(km: number): number {
 export function formatDistance(km: number): string {
   if (!Number.isFinite(km) || km < 0) return '';
   const meters = km * 1000;
-  if (meters < 50) return '<50 m';
-  if (meters < 1000) return `${Math.round(meters)} m`;
-  return `${km.toFixed(1)} km`;
+  // U+00A0 (non-breaking space) keeps the value and its unit on one line — "297 m"
+  // can never orphan the "m" across a wrap (F2-13). Visible text only; the SR path
+  // (speakDistance) stays a plain ASCII space so VoiceOver wording is unchanged.
+  if (meters < 50) return '<50\u00A0m';
+  if (meters < 1000) return `${Math.round(meters)}\u00A0m`;
+  return `${km.toFixed(1)}\u00A0km`;
 }
 
 /**
