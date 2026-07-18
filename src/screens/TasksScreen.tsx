@@ -1962,7 +1962,7 @@ const makeStyles = (color: ColorTheme, reduceTransparency: boolean) => {
       ...shadow.e2,
     },
     errorBannerBusy: { opacity: 0.85 },
-    errorBannerPressed: { opacity: 0.7 },
+    errorBannerPressed: { backgroundColor: color.errorPressed },
     errorBannerIcon: { color: color.textOnBrand, fontSize: font.size.xl, fontWeight: font.weight.bold },
     errorBannerText: { color: color.textOnBrand, fontSize: font.size.sm, fontWeight: font.weight.semibold, flex: 1 },
     // Offline data notice — uses warning tokens so it's visually distinct from
@@ -2010,7 +2010,7 @@ const makeStyles = (color: ColorTheme, reduceTransparency: boolean) => {
       // e1 lift in light only — dark is luminosity-led (edges, not shadows).
       ...(color.scheme === 'light' ? shadow.e1 : {}),
     },
-    suggestedRowPressed: { opacity: 0.7 },
+    suggestedRowPressed: { backgroundColor: color.borderPressed },
     suggestedText: {
       flex: 1,
       color: color.brandOnSoft,
@@ -2040,7 +2040,7 @@ const makeStyles = (color: ColorTheme, reduceTransparency: boolean) => {
       alignItems: 'center',
       justifyContent: 'center',
     },
-    loadMoreBtnPressed: { opacity: 0.7 },
+    loadMoreBtnPressed: { backgroundColor: color.borderPressed },
     loadMoreText: { color: color.inkSelect, fontWeight: font.weight.bold, fontSize: font.size.base },
     endText: {
       fontSize: font.size.sm,
@@ -2367,7 +2367,7 @@ const makeStyles = (color: ColorTheme, reduceTransparency: boolean) => {
       alignItems: 'center',
       justifyContent: 'center',
     },
-    selectEntryBtnPressed: { opacity: 0.7 },
+    selectEntryBtnPressed: { backgroundColor: color.borderPressed },
     // inkSelect — script-arbitrated on the chip-over-chrome stack (brand
     // #1466E0 measured 4.17:1 over the worst-case base — forked to brandText).
     selectEntryText: { color: color.inkSelect, fontWeight: font.weight.bold, fontSize: font.size.base },

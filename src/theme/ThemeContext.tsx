@@ -82,6 +82,7 @@ const darkColor = {
   infoFg: '#84AEF6', // 6.2:1 on infoBg — AA at any size
   error: '#c0392b',
   errorStrong: '#e74c3c',
+  errorPressed: '#9e2a1e', // pressed deepen for error-red CTAs; mode-independent, white ~7:1
   errorBg: '#3b0f0f',
   errorFg: '#fca5a5',
 
