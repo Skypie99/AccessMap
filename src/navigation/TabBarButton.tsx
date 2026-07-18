@@ -1,21 +1,24 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Pressable } from 'react-native';
 import { type BottomTabBarButtonProps } from '@react-navigation/bottom-tabs';
-import { useColor } from '@/theme/ThemeContext';
 import { hapticSelection } from '@/lib/haptics';
 
 /**
  * Custom bottom-tab button (BP11 / T3): the tab bar joins the one press
- * vocabulary. A press fires the selection haptic and paints the nav-chrome
- * pressed dim — color.headerBtnBgPressed, the same translucent tint the header
- * Feedback button uses — over the frosted bar. Dim-only, no scale: a full tab
- * cell shouldn't bounce.
+ * vocabulary. A press fires the selection haptic — the answer the tab bar was
+ * missing.
+ *
+ * It does NOT carry the fill-swap dim the rest of the estate uses. The bottom-
+ * tab labels sit right at the AA floor (the inactive slate is ~4.8:1 at rest),
+ * so ANY pressed background tint drops them below 4.5:1 — the arbiter proves it
+ * (light inactive 3.81:1, dark active 4.03:1, dark inactive 4.37:1 with
+ * color.headerBtnBgPressed). A dim and legible labels can't coexist on this bar,
+ * and legibility wins. The press is answered by the haptic (OS-governed,
+ * RM-independent) plus the tab's own visible active-state switch on tap.
  *
  * Every injected semantic prop is forwarded verbatim so the tab keeps its
  * accessibilityRole="tab" + accessibilityState.selected for screen readers
  * (the load-bearing invariant, guarded in __tests__/tabBarButton.a11y.test.tsx).
- * The dim is a static backgroundColor swap — no Animated node — so it survives
- * Reduce Motion by construction, and the haptic is OS-governed / RM-independent.
  *
  * Registered globally at Tab.Navigator screenOptions.tabBarButton. Hidden routes
  * (FullMap / Settings / Admin) keep their per-screen `tabBarButton: () => null`
@@ -34,8 +37,6 @@ export function TabBarButton({
   accessibilityLabel,
   testID,
 }: BottomTabBarButtonProps) {
-  const color = useColor();
-  const [pressed, setPressed] = useState(false);
   return (
     <Pressable
       accessibilityRole={accessibilityRole ?? 'tab'}
@@ -47,9 +48,7 @@ export function TabBarButton({
         onPress?.(e);
       }}
       onLongPress={onLongPress}
-      onPressIn={() => setPressed(true)}
-      onPressOut={() => setPressed(false)}
-      style={[style, pressed && { backgroundColor: color.headerBtnBgPressed }]}
+      style={style}
     >
       {children}
     </Pressable>

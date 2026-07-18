@@ -1543,6 +1543,10 @@ const FlagCard = memo(function FlagCard({
     /** Deepen a brand-filled action on press instead of greying it (Verify);
      *  neutral/ghost actions omit it and inherit the house borderPressed dim. */
     pressedTint?: string;
+    /** Opt out of the fill dim where greying would drop the ink below AA
+     *  (Details: inkDetailsGhost is #1466E0 light → 4.03:1 on borderPressed).
+     *  The spring + haptic still answer. */
+    dimOnPress?: boolean;
     // T4 (F1-08): 'none' on the three commit actions — their outcome haptics
     // fire at the commit point in applyStatusChange (medium impact + notify), so
     // a press tick here would double up. Details keeps the 'selection' tick
@@ -1591,6 +1595,7 @@ const FlagCard = memo(function FlagCard({
       onPress: () => onShowDetails(flag),
       btnStyle: styles.detailsBtn,
       textStyle: styles.detailsText,
+      dimOnPress: false,
       haptic: 'selection',
     },
   ];
@@ -1609,6 +1614,7 @@ const FlagCard = memo(function FlagCard({
       hitSlop={spacing.xs}
       style={[styles.actionBtn, a.btnStyle, widthStyle]}
       pressedTint={a.pressedTint}
+      dimOnPress={a.dimOnPress ?? true}
       accessibilityRole="button"
       accessibilityLabel={a.a11yLabel}
       accessibilityHint={a.a11yHint}

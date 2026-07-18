@@ -70,14 +70,15 @@ describe('TabBarButton — a11y + press vocabulary', () => {
     expect(onLongPress).toHaveBeenCalledTimes(1);
   });
 
-  it('answers the press with a background FILL-SWAP dim, never a group opacity', () => {
+  it('adds no fill dim — the near-floor tab labels stay AA (haptic answers the press)', () => {
+    // The bottom-tab labels sit at the AA floor, so a pressed bg tint would drop
+    // them below 4.5:1 (arbiter-proven). The tab answers with the haptic + its
+    // active-state switch instead; the injected layout style is left untouched
+    // and no group opacity is ever introduced.
     const { getByRole } = renderTab();
-    // At rest: no dim from the button itself.
-    expect(StyleSheet.flatten(getByRole('tab', { name: 'Home' }).props.style).backgroundColor).toBeUndefined();
-    // Pressed: the nav-chrome pressed fill appears; opacity is never touched.
     fireEvent(getByRole('tab', { name: 'Home' }), 'pressIn');
     const pressed = StyleSheet.flatten(getByRole('tab', { name: 'Home' }).props.style);
-    expect(pressed.backgroundColor).toBe('rgba(22,33,58,0.12)'); // color.headerBtnBgPressed (light default)
+    expect(pressed.backgroundColor).toBeUndefined();
     expect(pressed.opacity).toBeUndefined();
   });
 });
