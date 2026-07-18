@@ -9,7 +9,7 @@
  * Profile / Leaderboard / future screens consume it for one consistent type
  * rhythm. Presentation only — no data, no app logic.
  */
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useId, useRef, useState } from 'react';
 import {
   PixelRatio,
   StyleSheet,
@@ -18,9 +18,11 @@ import {
   type StyleProp,
   type ViewStyle,
 } from 'react-native';
+import { NavigationContext } from '@react-navigation/native';
 import { AppText } from '@/components/ui/AppText';
 import { font, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
+import { clearHeaderHeight, publishHeaderHeight } from '@/lib/statusLedge';
 
 // All-caps micro-label tracking for the eyebrow + section labels.
 export const EYEBROW_TRACKING = 1.2;
@@ -68,6 +70,12 @@ interface ScreenHeaderProps {
   eyebrowColor?: string;
   /** Override the subtitle ink (default color.textMuted) — same contract. */
   subtitleColor?: string;
+  /** Publish this header's HEIGHT to the status-ledge store while focused, so
+   *  the App-root status pill docks BELOW the header instead of on top of it
+   *  (BP12 / T6). Default true. Screens whose top chrome is NOT a plain
+   *  ScreenHeader (e.g. Tasks, where it's nested inside a composite glass pane)
+   *  pass `false` so the pill keeps its default placement there. */
+  publishLedge?: boolean;
 }
 
 export function ScreenHeader({
@@ -79,6 +87,7 @@ export function ScreenHeader({
   style,
   eyebrowColor,
   subtitleColor,
+  publishLedge = true,
 }: ScreenHeaderProps) {
   const color = useColor();
   const styles = makeStyles(color);
@@ -113,8 +122,57 @@ export function ScreenHeader({
     [title, titleSize],
   );
 
+  // --- status-ledge height publish (BP12 / T6) ------------------------------
+  // Publish this header's HEIGHT to the status-ledge store while it's focused,
+  // so the App-root status pill docks BELOW the header instead of decapitating
+  // it. A non-throwing `useContext(NavigationContext)` (NOT `useIsFocused`,
+  // which throws without a navigator) means a bare ScreenHeader unit test just
+  // no-ops. We publish a HEIGHT (never a live screen-Y), so the ledge is
+  // scroll-invariant — the pill stays put as the header scrolls away.
+  const navigation = React.useContext(NavigationContext);
+  const ledgeId = useId();
+  const ledgeHeight = useRef<number | null>(null);
+  const ledgeFocused = useRef(false);
+
+  useEffect(() => {
+    if (!publishLedge || !navigation) return;
+    const publishIfFocused = () => {
+      if (ledgeFocused.current && ledgeHeight.current != null) {
+        publishHeaderHeight(ledgeId, ledgeHeight.current);
+      }
+    };
+    // Seed: the initially-focused screen never fires a 'focus' event.
+    ledgeFocused.current = navigation.isFocused();
+    publishIfFocused();
+    const unsubFocus = navigation.addListener('focus', () => {
+      ledgeFocused.current = true;
+      publishIfFocused();
+    });
+    const unsubBlur = navigation.addListener('blur', () => {
+      ledgeFocused.current = false;
+      clearHeaderHeight(ledgeId);
+    });
+    return () => {
+      unsubFocus();
+      unsubBlur();
+      clearHeaderHeight(ledgeId); // release the slot on unmount if we own it
+    };
+  }, [navigation, publishLedge, ledgeId]);
+
+  // The outer container's HEIGHT — stash it, and publish if we're focused.
+  // Guarded against the 0-height intermediate pass, same as the title guard.
+  const handleContainerLayout = useCallback(
+    (e: LayoutChangeEvent) => {
+      const h = e.nativeEvent.layout.height;
+      if (h <= 0) return;
+      ledgeHeight.current = h;
+      if (publishLedge && ledgeFocused.current) publishHeaderHeight(ledgeId, h);
+    },
+    [publishLedge, ledgeId],
+  );
+
   return (
-    <View style={[styles.header, style]}>
+    <View style={[styles.header, style]} onLayout={handleContainerLayout}>
       {eyebrow ? (
         <AppText variant="label" style={[styles.eyebrow, eyebrowColor ? { color: eyebrowColor } : null]}>
           {eyebrow}
