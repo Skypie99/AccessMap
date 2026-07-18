@@ -253,6 +253,7 @@ export default function HomeScreen() {
           <PressableScale
             onPress={() => setAskedForLocation(true)}
             style={styles.locateBtn}
+            pressedTint={color.brandSoft}
             accessibilityRole="button"
             accessibilityLabel="Use my location"
             accessibilityHint="Sorts the list by distance from where you are"
@@ -306,6 +307,9 @@ export default function HomeScreen() {
           <PressableScale
             onPress={() => void refresh()}
             style={styles.offlineBanner}
+            // Warning-tinted banner: a neutral grey dim would fight the warning
+            // colour and there's no darker-warning token. Spring + haptic answer it.
+            dimOnPress={false}
             accessibilityRole="button"
             accessibilityLiveRegion="polite"
             accessibilityLabel="Couldn’t refresh — showing older data. Tap to try again."
@@ -326,6 +330,7 @@ export default function HomeScreen() {
               <PressableScale
                 onPress={() => void refresh()}
                 style={styles.retryBtn}
+                pressedTint={color.brandText}
                 accessibilityRole="button"
                 accessibilityLabel="Try again"
               >
@@ -394,6 +399,7 @@ export default function HomeScreen() {
       <PressableScale
         style={[styles.reportPill, { bottom: bottomInset + spacing.md }]}
         onPress={() => navigation.navigate('FullMap', { openReport: true, ts: Date.now() })}
+        pressedTint={color.brandText}
         haptic="medium"
         accessibilityRole="button"
         accessibilityLabel="Report a barrier"

@@ -1540,6 +1540,9 @@ const FlagCard = memo(function FlagCard({
     onPress: () => void;
     btnStyle: ViewStyle;
     textStyle: TextStyle;
+    /** Deepen a brand-filled action on press instead of greying it (Verify);
+     *  neutral/ghost actions omit it and inherit the house borderPressed dim. */
+    pressedTint?: string;
     // T4 (F1-08): 'none' on the three commit actions — their outcome haptics
     // fire at the commit point in applyStatusChange (medium impact + notify), so
     // a press tick here would double up. Details keeps the 'selection' tick
@@ -1556,6 +1559,7 @@ const FlagCard = memo(function FlagCard({
           onPress: () => onSetStatus(flag.id, 'verified', isOwn),
           btnStyle: styles.verifyBtn,
           textStyle: styles.verifyText,
+          pressedTint: color.brandText,
           haptic: 'none',
         } satisfies CardAction]
       : []),
@@ -1604,6 +1608,7 @@ const FlagCard = memo(function FlagCard({
       onPress={a.onPress}
       hitSlop={spacing.xs}
       style={[styles.actionBtn, a.btnStyle, widthStyle]}
+      pressedTint={a.pressedTint}
       accessibilityRole="button"
       accessibilityLabel={a.a11yLabel}
       accessibilityHint={a.a11yHint}

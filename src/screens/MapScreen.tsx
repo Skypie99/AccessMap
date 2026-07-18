@@ -1609,6 +1609,7 @@ export default function MapScreen() {
             <PressableScale
               onPress={() => setFiltersOpen((v) => !v)}
               style={[styles.actionBtn, (filtersOpen || filtersActive) && styles.actionBtnActive]}
+              pressedTint={filtersOpen || filtersActive ? color.brandText : color.borderPressed}
               accessibilityRole="button"
               accessibilityLabel="Toggle filters"
               {...a11yToggle({ expanded: filtersOpen })}
@@ -1627,6 +1628,9 @@ export default function MapScreen() {
                 styles.sevQuickBtn,
                 minSeverity > 1 && { backgroundColor: severityColor(minSeverity) },
               ]}
+              // Active severity fill is AA-tuned per level and not tokenized —
+              // greying it would break the {n}+ ink; dim only in the inactive (all) state.
+              dimOnPress={minSeverity === 1}
               accessibilityRole="button"
               accessibilityLabel={
                 minSeverity === 1
@@ -1660,6 +1664,7 @@ export default function MapScreen() {
                 styles.catQuickBtn,
                 catCycleActive && styles.actionBtnActive,
               ]}
+              pressedTint={catCycleActive ? color.brandText : color.borderPressed}
               accessibilityRole="button"
               accessibilityLabel={
                 catCycleActive && catCycleActiveCat !== null
@@ -2376,6 +2381,7 @@ export default function MapScreen() {
             <View style={styles.zoomGroup} pointerEvents="box-none">
               <PressableScale
                 style={[styles.fab, styles.zoomBtn]}
+                pressedTint={color.brandText}
                 onPress={() => mapRef.current?.zoomBy(1)}
                 accessibilityRole="button"
                 accessibilityLabel="Zoom in"
@@ -2384,6 +2390,7 @@ export default function MapScreen() {
               </PressableScale>
               <PressableScale
                 style={[styles.fab, styles.zoomBtn]}
+                pressedTint={color.brandText}
                 onPress={() => mapRef.current?.zoomBy(-1)}
                 accessibilityRole="button"
                 accessibilityLabel="Zoom out"
@@ -2393,6 +2400,9 @@ export default function MapScreen() {
             </View>
             <PressableScale
               style={[styles.fab, styles.fabSecondary]}
+              // List label is color.brand (15px bold → 4.5 floor); a neutral grey
+              // dim drops it to ~4.2:1. Keep spring + haptic, skip the fill dim.
+              dimOnPress={false}
               onPress={() => setNearbyOpen(true)}
               accessibilityRole="button"
               accessibilityLabel="Open nearby flags list"
@@ -2415,6 +2425,7 @@ export default function MapScreen() {
             {authUser && (
               <PressableScale
                 style={[styles.fab, reportDisabled && styles.fabDisabled]}
+                pressedTint={color.brandText}
                 haptic="medium"
                 onPress={() => {
                   // FIX C (Decision 6, Option A): the `location` state can be
@@ -3219,7 +3230,6 @@ const makeStyles = (color: ColorTheme) =>
     // button + Report FAB) that were re-allocated on every MapScreen render.
     iconLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
     fabDisabled: { opacity: 0.5 },
-    fabPressed: { opacity: 0.8 },
     fabText: { color: color.textOnBrand, fontWeight: '700', fontSize: 15 },
     savedEmpty: { gap: 8, marginTop: 4 },
     savedEmptyText: { fontSize: 12, color: color.inkGlassMuted, lineHeight: 16 },
