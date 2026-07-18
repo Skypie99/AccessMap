@@ -181,7 +181,7 @@ export default function HomeScreen() {
       )}
       <ScrollView
         style={styles.scroll}
-        contentContainerStyle={{ paddingTop: insets.top + spacing.sm, paddingBottom: bottomInset + 96 }}
+        contentContainerStyle={{ paddingTop: insets.top + spacing.sm, paddingBottom: bottomInset + 108 }}
         showsVerticalScrollIndicator={false}
       >
         {/* Editorial header — menu + Feedback fold in (no dark nav bar here). */}
@@ -222,7 +222,10 @@ export default function HomeScreen() {
           accessibilityRole="button"
           accessibilityLabel={searchLabel ? `Search: ${searchLabel}` : 'Search a place'}
           accessibilityHint="Find an address to recenter the map and list"
-          style={styles.searchPressable}
+          style={({ pressed }) => [
+            styles.searchPressable,
+            pressed && { backgroundColor: color.borderPressed, borderRadius: radius.md },
+          ]}
         >
           <GlassSurface style={styles.search} borderRadius={radius.md} variant="row" forceEngineered>
             <View style={styles.searchInner}>
@@ -238,6 +241,7 @@ export default function HomeScreen() {
                 <Pressable
                   onPress={clearSearch}
                   hitSlop={10}
+                  style={({ pressed }) => pressed && { backgroundColor: color.borderPressed, borderRadius: radius.sm }}
                   accessibilityRole="button"
                   accessibilityLabel="Clear search"
                 >
@@ -269,23 +273,31 @@ export default function HomeScreen() {
           accessibilityRole="button"
           accessibilityLabel="Open the full map"
         >
-          {/* S17 (L5-06): the peek is announced as ONE button — make its live
-              map interior inert so only the parent Pressable receives the tap.
-              This kills scroll/wheel theft AND (with suppressAttribution below)
-              the live Leaflet attribution links that could exit the app from
-              inside a button. PROTECT-10: the peek still SHOWS the map. */}
-          <View style={StyleSheet.absoluteFill} pointerEvents="none">
-            <PlatformMap
-              initialRegion={peekRegion}
-              flags={flags}
-              focusedFlagId={null}
-              suppressAttribution
-            />
-          </View>
-          <View style={styles.mapPeekHint} pointerEvents="none">
-            <MapIcon size={14} color={color.textOnBrand} strokeWidth={2.4} />
-            <AppText variant="label" style={styles.mapPeekHintText}>Open full map</AppText>
-          </View>
+          {({ pressed }) => (
+            <>
+              {/* S17 (L5-06): the peek is announced as ONE button — make its live
+                  map interior inert so only the parent Pressable receives the tap.
+                  This kills scroll/wheel theft AND (with suppressAttribution below)
+                  the live Leaflet attribution links that could exit the app from
+                  inside a button. PROTECT-10: the peek still SHOWS the map. BP11:
+                  the press dim lands on the hint CHIP, never the live tiles. */}
+              <View style={StyleSheet.absoluteFill} pointerEvents="none">
+                <PlatformMap
+                  initialRegion={peekRegion}
+                  flags={flags}
+                  focusedFlagId={null}
+                  suppressAttribution
+                />
+              </View>
+              <View
+                style={[styles.mapPeekHint, pressed && { backgroundColor: color.ctaFillPressed }]}
+                pointerEvents="none"
+              >
+                <MapIcon size={14} color={color.textOnBrand} strokeWidth={2.4} />
+                <AppText variant="label" style={styles.mapPeekHintText}>Open full map</AppText>
+              </View>
+            </>
+          )}
         </Pressable>
 
         {/* Offline banner (serving the saved cache). B9: now states the age. */}
