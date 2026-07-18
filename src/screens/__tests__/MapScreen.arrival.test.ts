@@ -117,8 +117,18 @@ describe('T7 (BP13) — the undetermined no-location voice + true frame', () => 
     expect(map).toContain('regionForFlags(flags)');
     expect(map).toContain('mapRef.current?.snapToRegion(region)');
     expect(map).toContain('didInitialFitRef'); // fires exactly once
-    // guarded: only a plain no-param arrival (never an intent-driven camera)
-    expect(map).toContain('route.params?.focusFlag || route.params?.flagId || route.params?.openReport');
+    // guarded: only a plain arrival (never a CAMERA-MOVING intent — focusFlag/deep-link)
+    expect(map).toContain('route.params?.focusFlag || route.params?.flagId');
+    // openReport is deliberately EXCLUDED from the fit's retire scope — it moves no
+    // camera, so a null-location Report-pill arrival still earns the honest fit
+    // (adversarial-verify follow-up). Assert it within the fit effect region.
+    const fitScope = around(map, 'const didInitialFitRef', 1400);
+    expect(fitScope).not.toContain('route.params?.openReport'); // not READ (the comment may name it)
+    // RACE GUARD (adversarial-verify catch): an intent arrival RETIRES the fit (marks
+    // didInitialFitRef), so the deep-link's ~800ms flagId self-clear can't re-run the
+    // effect and yank the viewport off the linked flag. didInitialFitRef is set in
+    // exactly TWO places: the intent-retire branch AND the fit itself.
+    expect((map.match(/didInitialFitRef\.current = true/g) || []).length).toBe(2);
   });
 
   it('regionForFlags falls back to DEFAULT_REGION when empty and reuses BP1 instant path (snapToRegion)', () => {

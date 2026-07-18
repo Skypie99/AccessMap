@@ -1464,17 +1464,32 @@ export default function MapScreen() {
   useEffect(() => {
     if (didInitialFitRef.current) return; // one-time
     if (location) return; // a real location owns the camera via initialRegion
+    // A CAMERA-MOVING intent arrival (Tasks focusFlag / deep-link flagId) owns the
+    // camera — permanently RETIRE the auto-fit here. These params SELF-CLEAR shortly
+    // after they fire (the deep-link clears flagId ~800ms after animating to its
+    // target); WITHOUT retiring, that param-clear would re-run this effect and yank the
+    // viewport off the deep-linked flag. Set the one-time flag BEFORE the flags-loaded
+    // gate so it also covers a deep-link that arrives before the first flags-load.
+    // NOTE: openReport is deliberately NOT here — it opens the report sheet + kicks
+    // requestLocation but moves NO map camera, so a null-location Report-pill arrival
+    // still earns the honest fit behind the sheet (T7's whole point). If location DOES
+    // resolve via that requestLocation, the `if (location) return` guard supersedes it.
+    if (route.params?.focusFlag || route.params?.flagId) {
+      didInitialFitRef.current = true;
+      return;
+    }
     if (loadingFlags || flags.length === 0) return; // wait for the first non-empty load
-    if (route.params?.focusFlag || route.params?.flagId || route.params?.openReport) return;
     // No-gesture proxy: currentRegionRef only syncs to `location` on this screen, so
-    // `=== DEFAULT_REGION` means "still the seed" — no resolved location, nothing to stomp.
+    // `=== DEFAULT_REGION` means "still the seed" — no resolved location. (A user pan on
+    // the pre-fit SF DEFAULT isn't tracked — no onRegionChange — but the fit only replaces
+    // that irrelevant default frame with the real flags; an INTENT camera is retired above.)
     if (currentRegionRef.current !== DEFAULT_REGION) return;
 
     didInitialFitRef.current = true;
     const region = regionForFlags(flags);
     currentRegionRef.current = region; // keep the viewport gate honest post-fit
     mapRef.current?.snapToRegion(region);
-  }, [flags, loadingFlags, location, route.params?.focusFlag, route.params?.flagId, route.params?.openReport]);
+  }, [flags, loadingFlags, location, route.params?.focusFlag, route.params?.flagId]);
 
   // Long-press anywhere on the map → confirm prompt → open the report
   // modal with that coord pre-filled. The confirm step matters: a
