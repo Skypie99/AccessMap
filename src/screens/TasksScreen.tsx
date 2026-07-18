@@ -1559,7 +1559,7 @@ const FlagCard = memo(function FlagCard({
           onPress: () => onSetStatus(flag.id, 'verified', isOwn),
           btnStyle: styles.verifyBtn,
           textStyle: styles.verifyText,
-          pressedTint: color.brandText,
+          pressedTint: color.ctaFillPressed,
           haptic: 'none',
         } satisfies CardAction]
       : []),

@@ -240,6 +240,12 @@ export const color = {
   // CTA fill is MODE-INDEPENDENT: dark brand #4E89EF + white = 3.4:1 (fails);
   // #1466E0 + white = 5.24:1 both modes. Verify / active chips / bulk Verify.
   ctaFill: '#1466E0',
+  // Pressed companion to ctaFill — a MODE-INDEPENDENT deepen (#0F53BE = the
+  // brand deep-end). white + #0F53BE = 7.5:1 in BOTH modes, so a brand-filled
+  // control darkens on press without breaking its white label in dark mode
+  // (where brandText is a LIGHTER blue). Mirrors borderPressed (neutral) +
+  // successStrong (resolve) — the AA-safe pressed fill for its family.
+  ctaFillPressed: '#0F53BE',
   glassPlaceholder: '#5B6470', // search placeholder on the chip tint
   // C-lite engineered equivalents (B's opaline architecture wearing C's tint):
   // vertical micro-gradients replacing BlurView+floor when blur is off

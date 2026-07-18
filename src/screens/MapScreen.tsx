@@ -1609,7 +1609,7 @@ export default function MapScreen() {
             <PressableScale
               onPress={() => setFiltersOpen((v) => !v)}
               style={[styles.actionBtn, (filtersOpen || filtersActive) && styles.actionBtnActive]}
-              pressedTint={filtersOpen || filtersActive ? color.brandText : color.borderPressed}
+              pressedTint={filtersOpen || filtersActive ? color.ctaFillPressed : color.borderPressed}
               accessibilityRole="button"
               accessibilityLabel="Toggle filters"
               {...a11yToggle({ expanded: filtersOpen })}
@@ -1664,7 +1664,7 @@ export default function MapScreen() {
                 styles.catQuickBtn,
                 catCycleActive && styles.actionBtnActive,
               ]}
-              pressedTint={catCycleActive ? color.brandText : color.borderPressed}
+              pressedTint={catCycleActive ? color.ctaFillPressed : color.borderPressed}
               accessibilityRole="button"
               accessibilityLabel={
                 catCycleActive && catCycleActiveCat !== null
@@ -2381,7 +2381,7 @@ export default function MapScreen() {
             <View style={styles.zoomGroup} pointerEvents="box-none">
               <PressableScale
                 style={[styles.fab, styles.zoomBtn]}
-                pressedTint={color.brandText}
+                pressedTint={color.ctaFillPressed}
                 onPress={() => mapRef.current?.zoomBy(1)}
                 accessibilityRole="button"
                 accessibilityLabel="Zoom in"
@@ -2390,7 +2390,7 @@ export default function MapScreen() {
               </PressableScale>
               <PressableScale
                 style={[styles.fab, styles.zoomBtn]}
-                pressedTint={color.brandText}
+                pressedTint={color.ctaFillPressed}
                 onPress={() => mapRef.current?.zoomBy(-1)}
                 accessibilityRole="button"
                 accessibilityLabel="Zoom out"
@@ -2425,7 +2425,7 @@ export default function MapScreen() {
             {authUser && (
               <PressableScale
                 style={[styles.fab, reportDisabled && styles.fabDisabled]}
-                pressedTint={color.brandText}
+                pressedTint={color.ctaFillPressed}
                 haptic="medium"
                 onPress={() => {
                   // FIX C (Decision 6, Option A): the `location` state can be

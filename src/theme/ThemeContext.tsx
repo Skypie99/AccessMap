@@ -184,6 +184,7 @@ const darkColor = {
   inkSelect: '#B4CFFA',
   inkDetailsGhost: '#84AEF6',
   ctaFill: '#1466E0', // MODE-INDEPENDENT — see the light palette note
+  ctaFillPressed: '#0F53BE', // pressed companion to ctaFill — mode-independent deepen; white = 7.5:1 both modes
   glassPlaceholder: '#C9CFD9', // fork from #9ca3af on the dark chip stack
   // C-lite engineered equivalents.
   glassRowLite0: 'rgba(30,34,46,0.94)',

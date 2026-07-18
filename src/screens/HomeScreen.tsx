@@ -253,7 +253,6 @@ export default function HomeScreen() {
           <PressableScale
             onPress={() => setAskedForLocation(true)}
             style={styles.locateBtn}
-            pressedTint={color.brandSoft}
             accessibilityRole="button"
             accessibilityLabel="Use my location"
             accessibilityHint="Sorts the list by distance from where you are"
@@ -330,7 +329,7 @@ export default function HomeScreen() {
               <PressableScale
                 onPress={() => void refresh()}
                 style={styles.retryBtn}
-                pressedTint={color.brandText}
+                pressedTint={color.ctaFillPressed}
                 accessibilityRole="button"
                 accessibilityLabel="Try again"
               >
@@ -399,7 +398,7 @@ export default function HomeScreen() {
       <PressableScale
         style={[styles.reportPill, { bottom: bottomInset + spacing.md }]}
         onPress={() => navigation.navigate('FullMap', { openReport: true, ts: Date.now() })}
-        pressedTint={color.brandText}
+        pressedTint={color.ctaFillPressed}
         haptic="medium"
         accessibilityRole="button"
         accessibilityLabel="Report a barrier"
