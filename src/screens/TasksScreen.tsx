@@ -959,7 +959,7 @@ export default function TasksScreen() {
           <Pressable
             onPress={() => handleScopeChange(false)}
             disabled={!mineOnlyHydrated}
-            style={[styles.mineChip, !mineOnly && styles.mineChipActive]}
+            style={({ pressed }) => [styles.mineChip, !mineOnly && styles.mineChipActive, mineOnly && pressed && styles.chipPressed]}
             accessibilityRole="button"
             accessibilityLabel="Show all flags"
             {...a11yToggle({ selected: !mineOnly, disabled: !mineOnlyHydrated })}
@@ -969,7 +969,7 @@ export default function TasksScreen() {
           <Pressable
             onPress={() => handleScopeChange(true)}
             disabled={!mineOnlyHydrated}
-            style={[styles.mineChip, mineOnly && styles.mineChipActive]}
+            style={({ pressed }) => [styles.mineChip, mineOnly && styles.mineChipActive, !mineOnly && pressed && styles.chipPressed]}
             accessibilityRole="button"
             accessibilityLabel="Show only my flags"
             {...a11yToggle({ selected: mineOnly, disabled: !mineOnlyHydrated })}
@@ -992,7 +992,7 @@ export default function TasksScreen() {
         >
           <Pressable
             onPress={() => handleCategoryChange(null)}
-            style={[styles.catChip, categoryFilter === null && styles.catChipActive]}
+            style={({ pressed }) => [styles.catChip, categoryFilter === null && styles.catChipActive, categoryFilter !== null && pressed && styles.chipPressed]}
             accessibilityRole="button"
             accessibilityLabel="Show all categories"
             {...a11yToggle({ selected: categoryFilter === null })}
@@ -1007,7 +1007,7 @@ export default function TasksScreen() {
               <Pressable
                 key={cat}
                 onPress={() => handleCategoryChange(active ? null : cat)}
-                style={[styles.catChip, active && styles.catChipActive]}
+                style={({ pressed }) => [styles.catChip, active && styles.catChipActive, !active && pressed && styles.chipPressed]}
                 accessibilityRole="button"
                 accessibilityLabel={`${CATEGORY_LABELS[cat]}${active ? ', selected, tap to deselect' : ''}`}
                 {...a11yToggle({ selected: active })}
@@ -1040,7 +1040,7 @@ export default function TasksScreen() {
               <Pressable
                 key={mode}
                 onPress={() => handleSortChange(mode)}
-                style={[styles.sortChip, active && styles.sortChipActive]}
+                style={({ pressed }) => [styles.sortChip, active && styles.sortChipActive, !active && pressed && styles.chipPressed]}
                 accessibilityRole="tab"
                 accessibilityLabel={`Sort by ${TASKS_SORT_LABELS[mode]}`}
                 {...a11yToggle({ selected: active })}
@@ -2239,6 +2239,10 @@ const makeStyles = (color: ColorTheme, reduceTransparency: boolean) => {
     mineChipActive: { backgroundColor: color.ctaFill, borderColor: 'transparent' },
     mineChipText: { fontSize: font.size.sm, fontWeight: font.weight.semibold, color: color.glassChipInk },
     mineChipTextActive: { color: color.textOnBrand },
+    // BP11 one press vocabulary: the neutral pressed fill shared by the mine /
+    // category / sort chips. Inactive chips only (active chips keep their ctaFill);
+    // glassChipInk stays full opacity and AA on borderPressed in both schemes.
+    chipPressed: { backgroundColor: color.borderPressed },
     // Free-text search — sits above the chip filter rows so the cursor
     // doesn't shift down when the user starts typing. Bordered field +
     // inline clear button so the affordance is obvious without a separate

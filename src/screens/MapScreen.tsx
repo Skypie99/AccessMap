@@ -1830,7 +1830,7 @@ export default function MapScreen() {
               <Pressable
                 onPress={() => setPanelCollapsed((v) => !v)}
                 hitSlop={8}
-                style={styles.filterTitleRow}
+                style={({ pressed }) => [styles.filterTitleRow, pressed && styles.filterPillPressed]}
                 accessibilityRole="button"
                 accessibilityLabel={
                   panelCollapsed ? 'Expand filter panel' : 'Collapse filter panel'
@@ -1853,7 +1853,7 @@ export default function MapScreen() {
                 <Pressable
                   onPress={clearFilters}
                   hitSlop={8}
-                  style={styles.clearBtn}
+                  style={({ pressed }) => [styles.clearBtn, pressed && styles.filterPillPressed]}
                   accessibilityRole="button"
                   accessibilityLabel="Clear all filters"
                 >
@@ -1878,7 +1878,7 @@ export default function MapScreen() {
                     </AppText>
                     <Pressable
                       onPress={openSaveModal}
-                      style={styles.savedSaveBtn}
+                      style={({ pressed }) => [styles.savedSaveBtn, pressed && styles.savedSaveBtnPressed]}
                       accessibilityRole="button"
                       accessibilityLabel="Save current filter as a named set"
                       accessibilityHint="Opens a prompt to name the current filter combination"
@@ -1901,7 +1901,7 @@ export default function MapScreen() {
                           key={set.id}
                           onPress={() => applySet(set)}
                           onLongPress={() => openSetMenu(set)}
-                          style={[styles.filterPill, isSelected && styles.filterPillActive]}
+                          style={({ pressed }) => [styles.filterPill, isSelected && styles.filterPillActive, !isSelected && pressed && styles.filterPillPressed]}
                           accessibilityRole="button"
                           accessibilityLabel={
                             isDefault
@@ -1940,7 +1940,7 @@ export default function MapScreen() {
                     {canSaveMore && (
                       <Pressable
                         onPress={openSaveModal}
-                        style={[styles.filterPill, styles.savedAddPill]}
+                        style={({ pressed }) => [styles.filterPill, styles.savedAddPill, pressed && styles.filterPillPressed]}
                         accessibilityRole="button"
                         accessibilityLabel="Save current filter as a named set"
                         accessibilityHint="Opens a prompt to name the current filter combination"
@@ -1965,7 +1965,7 @@ export default function MapScreen() {
                       <Pressable
                         key={c}
                         onPress={() => toggleCategory(c)}
-                        style={[styles.filterPill, active && styles.filterPillActive]}
+                        style={({ pressed }) => [styles.filterPill, active && styles.filterPillActive, !active && pressed && styles.filterPillPressed]}
                         accessibilityRole="button"
                         accessibilityLabel={`Filter by ${CATEGORY_LABELS[c]}, ${count} flag${count === 1 ? '' : 's'}`}
                         {...a11yToggle({ pressed: active })}
@@ -1997,7 +1997,7 @@ export default function MapScreen() {
                       <Pressable
                         key={s}
                         onPress={() => setMinSeverity(s)}
-                        style={[styles.sevPill, active && { backgroundColor: severityColor(s) }]}
+                        style={({ pressed }) => [styles.sevPill, active && { backgroundColor: severityColor(s) }, !active && pressed && styles.filterPillPressed]}
                         accessibilityRole="button"
                         accessibilityLabel={`Minimum severity ${s}`}
                         {...a11yToggle({ pressed: active })}
@@ -2027,7 +2027,7 @@ export default function MapScreen() {
                 <View style={styles.filterRow}>
                   <Pressable
                     onPress={() => setHeatmapEnabled((v) => !v)}
-                    style={[styles.filterPill, heatmapEnabled && styles.filterPillActive]}
+                    style={({ pressed }) => [styles.filterPill, heatmapEnabled && styles.filterPillActive, !heatmapEnabled && pressed && styles.filterPillPressed]}
                     accessibilityRole="switch"
                     accessibilityLabel="Show neighbourhood heat map"
                     {...a11yToggle({ checked: heatmapEnabled })}
@@ -2056,7 +2056,7 @@ export default function MapScreen() {
                       <Pressable
                         key={s}
                         onPress={() => toggleStatus(s)}
-                        style={[styles.filterPill, active && styles.filterPillActive]}
+                        style={({ pressed }) => [styles.filterPill, active && styles.filterPillActive, !active && pressed && styles.filterPillPressed]}
                         accessibilityRole="button"
                         accessibilityLabel={`Filter by ${STATUS_LABELS[s]}`}
                         {...a11yToggle({ pressed: active })}
@@ -2090,7 +2090,7 @@ export default function MapScreen() {
                       <Pressable
                         key={tag}
                         onPress={() => toggleDisabilityTag(tag)}
-                        style={[styles.filterPill, active && styles.filterPillActive]}
+                        style={({ pressed }) => [styles.filterPill, active && styles.filterPillActive, !active && pressed && styles.filterPillPressed]}
                         accessibilityRole="button"
                         accessibilityLabel={`Filter by barriers affecting: ${label}`}
                         {...a11yToggle({ pressed: active })}
@@ -2144,7 +2144,7 @@ export default function MapScreen() {
                       <Pressable
                         key={opt === null ? 'off' : String(opt)}
                         onPress={() => setMaxDistanceKm(opt)}
-                        style={[styles.filterPill, active && styles.filterPillActive]}
+                        style={({ pressed }) => [styles.filterPill, active && styles.filterPillActive, !active && pressed && styles.filterPillPressed]}
                         accessibilityRole="button"
                         accessibilityLabel={a11yLabel}
                         {...a11yToggle({ pressed: active })}
@@ -2192,7 +2192,7 @@ export default function MapScreen() {
                         style={({ pressed }) => [
                           styles.presetBtn,
                           styles.presetBtnSecondary,
-                          pressed && styles.presetBtnPressed,
+                          pressed && styles.presetBtnSecondaryPressed,
                         ]}
                         accessibilityRole="button"
                         accessibilityLabel="Load a saved preset"
@@ -2266,7 +2266,7 @@ export default function MapScreen() {
                   <Pressable
                     key={c.key}
                     onPress={c.onPress}
-                    style={({ pressed }) => [styles.emptyQuickChip, pressed && styles.emptyCardBtnPressed]}
+                    style={({ pressed }) => [styles.emptyQuickChip, pressed && styles.filterPillPressed]}
                     accessibilityRole="button"
                     accessibilityLabel={c.label}
                     accessibilityHint="Clears this one filter so more flags show"
@@ -2847,7 +2847,9 @@ const makeStyles = (color: ColorTheme) =>
     // a themed token. Themed inks broke over the white fill in dark mode:
     // brandTextAlt → #84AEF6 = 2.0:1, and surfaceNeutral flashed near-black on
     // press. The trailing manage chip keeps its tinted background.
-    placeChipPressed: { backgroundColor: '#EEF1F5', opacity: 0.9 },
+    // Fill-swap dim (the pinned-light literal, per the note above); the group
+    // opacity that used to ride here dimmed the label too (dropped in BP11).
+    placeChipPressed: { backgroundColor: '#EEF1F5' },
     placeChipManage: { backgroundColor: '#EEF4FE' },
     placeChipGlyph: { fontSize: 14, color: '#1466E0' },
     placeChipText: { fontSize: 13, fontWeight: '600', color: '#0E4499' },
@@ -3137,7 +3139,9 @@ const makeStyles = (color: ColorTheme) =>
       minHeight: 44,
       justifyContent: 'center',
     },
-    emptyCardBtnPressed: { opacity: 0.8 },
+    // emptyCardBtn is brand-filled (ctaFill + white) → deepen to ctaFillPressed;
+    // the emptyQuickChip (surfaceNeutral + brandText) uses the neutral fill above.
+    emptyCardBtnPressed: { backgroundColor: color.ctaFillPressed },
     emptyCardBtnText: { color: color.textOnBrand, fontSize: font.size.base, fontWeight: font.weight.bold },
     // Smart empty-state recovery — per-axis "clear this one" chips above the
     // reset-all button. Neutral chips (not brand) so the brand reset stays the
@@ -3249,7 +3253,9 @@ const makeStyles = (color: ColorTheme) =>
       borderColor: color.brand,
       borderStyle: 'dashed',
     },
-    savedAddPillText: { color: color.brand, fontSize: 12, fontWeight: '700' },
+    // brandText (not brand) so it stays AA on the neutral pressed fill — matches
+    // its sibling presetBtnSecondaryText, which uses brandText for the same reason.
+    savedAddPillText: { color: color.brandText, fontSize: 12, fontWeight: '700' },
     // Per-user preset buttons — side-by-side pair beneath the Status row.
     // Primary (Save) is filled blue; secondary (Load) is outlined to keep
     // the primary action visually distinct without two competing fills.
@@ -3269,7 +3275,15 @@ const makeStyles = (color: ColorTheme) =>
       alignItems: 'center',
       justifyContent: 'center',
     },
-    presetBtnPressed: { opacity: 0.85 },
+    // Save-as-preset is brand-filled (ctaFill + white) → deepen to ctaFillPressed.
+    presetBtnPressed: { backgroundColor: color.ctaFillPressed },
+    // Load-preset is brandText-on-surface (outline) → neutral pressed fill.
+    presetBtnSecondaryPressed: { backgroundColor: color.borderPressed },
+    // The shared neutral chip/row pressed fill (BP11 one press vocabulary):
+    // inactive filter chips, the collapse header, Clear, +Save-current, the
+    // Load-preset + empty quick chips. Ink stays full opacity on the dimmed fill.
+    filterPillPressed: { backgroundColor: color.borderPressed },
+    savedSaveBtnPressed: { backgroundColor: color.ctaFillPressed },
     // 14pt bold qualifies as WCAG "large text" — 3:1 ratio applies, so
     // white-on-#1466E0 (~3.8:1) clears AA. At 13pt it failed the 4.5:1
     // small-text threshold.
