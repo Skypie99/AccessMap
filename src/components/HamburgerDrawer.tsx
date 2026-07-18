@@ -69,6 +69,15 @@ export default function HamburgerDrawer({ open, onClose, onSignIn, onNavigate }:
 
   const [slideAnim] = useState(() => new Animated.Value(-DRAWER_WIDTH));
   const [fadeAnim] = useState(() => new Animated.Value(0));
+  // T12 (F3-02/F3-07): latch the drawer Modal mounted through its close so the
+  // exit animation actually plays. `open` flips false immediately on close, but
+  // the Modal (animationType="none") unmounts its children on that same render —
+  // so the coded exit slide/fade never rendered ("arrives like glass, vanishes
+  // like a light switch"). Drive Modal visibility off `rendered` instead: mount
+  // on open, stay mounted while the exit timing runs, flip closed in the
+  // animation's completion callback. Under reduce motion the snap sets it false
+  // same-tick (no timers — designed stillness preserved).
+  const [rendered, setRendered] = useState(open);
   const [subScreen, setSubScreen] = useState<SubScreen | null>(null);
   // Holds the pending navigate() timer so we can cancel it on unmount — avoids a
   // setState-after-unmount warning if the drawer goes away during the 220ms delay.
@@ -77,10 +86,16 @@ export default function HamburgerDrawer({ open, onClose, onSignIn, onNavigate }:
   useEffect(() => {
     const slideTo = open ? 0 : -DRAWER_WIDTH;
     const fadeTo = open ? 1 : 0;
+    // Mount immediately on open so the panel can spring in; on close we keep the
+    // Modal mounted (via `rendered`) until the exit animation finishes below.
+    if (open) setRendered(true);
     // WCAG 2.3.3 — snap into place instead of sliding/fading under reduced motion.
     if (reducedMotion) {
       slideAnim.setValue(slideTo);
       fadeAnim.setValue(fadeTo);
+      // Snap-closed same-tick: there's no exit animation to wait for, so unmount
+      // now (no timers — the RM designed-stillness contract is preserved).
+      if (!open) setRendered(false);
       return;
     }
     Animated.parallel([
@@ -100,7 +115,14 @@ export default function HamburgerDrawer({ open, onClose, onSignIn, onNavigate }:
         duration: motion.duration.fast,
         useNativeDriver: true,
       }),
-    ]).start();
+    ]).start(({ finished }) => {
+      // Welded departure: flip the Modal closed only after the panel slide +
+      // backdrop fade have actually played (finished === true). A close
+      // interrupted by a reopen leaves `rendered` true (open is true again, so
+      // this no-ops), and the panel springs back from wherever it is; a completed
+      // exit leaves slideAnim at -DRAWER_WIDTH, so the next open starts off-screen.
+      if (!open && finished) setRendered(false);
+    });
   }, [open, reducedMotion, slideAnim, fadeAnim]);
 
   const closeDrawer = useCallback(() => {
@@ -110,13 +132,18 @@ export default function HamburgerDrawer({ open, onClose, onSignIn, onNavigate }:
   const navigate = useCallback(
     (screen: SubScreen) => {
       onClose();
-      // Small delay so the drawer closes visually before the sub-screen appears.
-      // B5 (L4-11): under reduce motion the drawer snaps closed instantly (see
-      // the useEffect above), so the 220ms wait is dead time for exactly the
-      // users who asked for snappier UI — gate it to 0. setTimeout(fn, 0) is a
-      // genuine next-tick, NOT a falsy-default API, so no falsy-zero trap here.
+      // Wait for the drawer's real close slide before the sub-screen appears.
+      // T12: now that the exit animation actually plays (the `rendered` latch
+      // above), this delay is bound to that slide's own duration —
+      // motion.duration.base — so it earns its premise instead of being an
+      // off-scale literal (retires the transition layer's last raw 220, per B5's
+      // pulse-documentation standard). B5 (L4-11): under reduce motion the drawer
+      // snaps closed instantly (see the useEffect above), so the wait is dead
+      // time for exactly the users who asked for snappier UI — gate it to 0.
+      // setTimeout(fn, 0) is a genuine next-tick, NOT a falsy-default API, so no
+      // falsy-zero trap here.
       if (navTimer.current) clearTimeout(navTimer.current);
-      navTimer.current = setTimeout(() => setSubScreen(screen), reducedMotion ? 0 : 220);
+      navTimer.current = setTimeout(() => setSubScreen(screen), reducedMotion ? 0 : motion.duration.base);
     },
     [onClose, reducedMotion],
   );
@@ -142,7 +169,7 @@ export default function HamburgerDrawer({ open, onClose, onSignIn, onNavigate }:
       {/* ── Drawer ─────────────────────────────────────────────── */}
       <Modal
         aria-label="Menu"
-        visible={open}
+        visible={rendered}
         transparent
         animationType="none"
         onRequestClose={closeDrawer}

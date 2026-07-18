@@ -3,8 +3,10 @@
  * gated. The drawer defers opening a sub-screen by a "wait for the close slide"
  * delay. Under Reduce Motion the drawer snaps closed instantly, so that wait was
  * dead time for exactly the users who asked for snappier UI. This test presses a
- * nav item and inspects the scheduled setTimeout delay: 220ms when motion is on,
- * 0 under Reduce Motion. Covers B5a's own edit.
+ * nav item and inspects the scheduled setTimeout delay: motion.duration.base
+ * (180ms) when motion is on — T12 bound it to the drawer's real close slide,
+ * retiring the old off-scale 220 literal — and 0 under Reduce Motion. Covers
+ * B5a's own edit.
  */
 
 import React from 'react';
@@ -50,9 +52,9 @@ describe('B5 (L4-11) — drawer sub-screen handoff delay is gated by reduce moti
     jest.clearAllMocks();
   });
 
-  it('waits the 220ms visual-close delay when reduce motion is off', () => {
+  it('waits the motion.duration.base (180ms) visual-close delay when reduce motion is off', () => {
     const delays = pressResourcesAndCollectDelays(false);
-    expect(delays).toContain(220);
+    expect(delays).toContain(180);
   });
 
   it('drops the delay to 0 under reduce motion (no dead wait for the snapped-closed drawer)', () => {
