@@ -82,6 +82,16 @@ export interface PlatformMapHandle {
    *  the overlay's app-styled 44pt buttons can drive zoom — the single-pointer
    *  zoom-out affordance iOS otherwise lacks (WCAG 2.5.7). */
   zoomBy: (delta: number) => void;
+  /** T7 (BP13): frame a region INSTANTLY — an unconditional zero-duration jump,
+   *  deliberately NOT Reduce-Motion-gated because it replaces the initial paint
+   *  (the no-location bounds-fit), it is not motion. Reuses the same instant
+   *  animateToRegion(_, 0) primitive the RM branch of animateTo already uses. */
+  snapToRegion: (region: {
+    latitude: number;
+    longitude: number;
+    latitudeDelta?: number;
+    longitudeDelta?: number;
+  }) => void;
 }
 
 export interface PlatformMapProps {
@@ -249,6 +259,20 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(function Pla
             { duration: reducedMotion ? 0 : 300 },
           );
         });
+      },
+      snapToRegion: (r) => {
+        mapRef.current?.animateToRegion(
+          {
+            latitude: r.latitude,
+            longitude: r.longitude,
+            latitudeDelta: r.latitudeDelta ?? 0.01,
+            longitudeDelta: r.longitudeDelta ?? 0.01,
+          },
+          // T7 (BP13): unconditional 0 — the no-location initial-paint fit is
+          // not motion, so never Reduce-Motion-gated. Same instant primitive the
+          // RM branch of animateTo uses above; reused, not forked.
+          0,
+        );
       },
     }),
     [reducedMotion, chromeInsetTop, windowHeight],

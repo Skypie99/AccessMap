@@ -48,6 +48,15 @@ export interface PlatformMapHandle {
    *  the overlay's app-styled 44pt buttons drive zoom — replacing Leaflet's
    *  occluded, pointer-dead default control (WCAG 2.5.7). */
   zoomBy: (delta: number) => void;
+  /** T7 (BP13): frame a region INSTANTLY — reuses the shared zero-motion
+   *  `instantCut` (setView animate:false), deliberately NOT Reduce-Motion-gated
+   *  because it replaces the initial paint (the no-location bounds-fit). */
+  snapToRegion: (region: {
+    latitude: number;
+    longitude: number;
+    latitudeDelta?: number;
+    longitudeDelta?: number;
+  }) => void;
 }
 
 export interface PlatformMapProps {
@@ -989,8 +998,17 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(function Pla
         // Leaflet clamps to the layer's min/max; animate unless Reduce Motion.
         map.setZoom(map.getZoom() + delta, { animate: !reducedMotion });
       },
+      snapToRegion: (r) => {
+        // T7 (BP13): reuse the shared zero-motion path — `instantCut` (setView
+        // animate:false), the SAME primitive animateTo's RM branch uses; and
+        // `deltaToZoom` mirrors animateTo's zoom math, so the no-location
+        // bounds-fit frames exactly like every other camera move, just without
+        // the fly. It replaces the initial paint (not motion), so it is never
+        // Reduce-Motion-gated. Never inline a setView here (see instantCut's law).
+        instantCut([r.latitude, r.longitude], deltaToZoom(r.latitudeDelta ?? 0.01));
+      },
     }),
-    [reducedMotion],
+    [reducedMotion, instantCut],
   );
 
   return (

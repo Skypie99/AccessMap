@@ -19,6 +19,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as Location from 'expo-location';
 import { arrivalPermissionDenied, getCurrentPositionWithTimeout, initialLocationAction } from '@/lib/location';
 import { offlineBannerText } from '@/lib/copy';
+import { announce } from '@/lib/announce';
 import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
@@ -141,6 +142,48 @@ const DEFAULT_REGION: PlatformMapRegion = {
   latitudeDelta: 0.05,
   longitudeDelta: 0.05,
 };
+
+// T7 (F4-03 / F5-03): the honest, non-accusing line for the UNDETERMINED
+// no-location arrival — never-asked web guests (the default first run) and
+// native "Not now" deferrers. Deliberately NOT "off": a never-asked user was
+// never denied, so the S4 gate (see the arrival effect) forbids telling them
+// access is off. The assertive DENIED banner keeps its own stronger wording.
+// PROPOSED (BP13, S-8) — Sky's final wording lands in DECISIONS §A / BP16.
+const NO_LOCATION_HINT =
+  "Location isn't on yet — showing the most recent flags, not ones near you.";
+
+// T7 (F4-03 / F5-03): fit a region to the loaded flags for the honest no-location
+// arrival — a TRUE frame instead of the hardcoded San-Francisco default, so a
+// confident "Showing N flags" pill is visibly true. Bounds midpoint + a padded
+// span with a sane floor; a lone flag gets a fixed sensible zoom; the empty case
+// falls back to DEFAULT_REGION (also guarded at the call site). Presentation over
+// already-fetched rows only — never a proximity query (Fork 1 stays Sky's).
+function regionForFlags(rows: readonly { lat: number; lng: number }[]): PlatformMapRegion {
+  if (rows.length === 0) return DEFAULT_REGION;
+  if (rows.length === 1) {
+    return { latitude: rows[0].lat, longitude: rows[0].lng, latitudeDelta: 0.02, longitudeDelta: 0.02 };
+  }
+  let minLat = rows[0].lat;
+  let maxLat = rows[0].lat;
+  let minLng = rows[0].lng;
+  let maxLng = rows[0].lng;
+  for (const r of rows) {
+    if (r.lat < minLat) minLat = r.lat;
+    if (r.lat > maxLat) maxLat = r.lat;
+    if (r.lng < minLng) minLng = r.lng;
+    if (r.lng > maxLng) maxLng = r.lng;
+  }
+  // ~40% breathing room so pins aren't flush to the edge; MIN_DELTA floors a tight
+  // cluster so it isn't over-zoomed into a single street.
+  const PAD = 1.4;
+  const MIN_DELTA = 0.01;
+  return {
+    latitude: (minLat + maxLat) / 2,
+    longitude: (minLng + maxLng) / 2,
+    latitudeDelta: Math.max((maxLat - minLat) * PAD, MIN_DELTA),
+    longitudeDelta: Math.max((maxLng - minLng) * PAD, MIN_DELTA),
+  };
+}
 
 // Filter-panel height budget (G5). OVERLAY_PADDING mirrors styles.overlay's
 // padding; PANEL_BRACKET_ALLOWANCE reserves room for the action bar above the
@@ -323,6 +366,10 @@ export default function MapScreen() {
   const [location, setLocation] = useState<Coords | null>(null);
   const [locating, setLocating] = useState(true);
   const [permissionDenied, setPermissionDenied] = useState(false);
+  // T7 (F4-03): true only on the UNDETERMINED no-location arrival (never asked).
+  // Mutually exclusive with permissionDenied — a real denial shows the assertive
+  // banner, never this polite hint. Cleared the moment the FAB resolves either way.
+  const [noLocationHint, setNoLocationHint] = useState(false);
 
   // Shared flag list from FlagsProvider — the Map drives the fetched
   // statuses via setStatuses (mirroring its filter UI), and reads
@@ -1146,6 +1193,9 @@ export default function MapScreen() {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
         if (mountedRef.current) {
+          // The FAB forced a real answer: this is now a denial, not the
+          // never-asked hint — retire the polite line for the assertive banner.
+          setNoLocationHint(false);
           setPermissionDenied(true);
           // WCAG 4.1.3: permission-denied is a status change not conveyed
           // by focus or role; announce it explicitly.
@@ -1155,7 +1205,10 @@ export default function MapScreen() {
         }
         return;
       }
-      if (mountedRef.current) setPermissionDenied(false);
+      if (mountedRef.current) {
+        setNoLocationHint(false);
+        setPermissionDenied(false);
+      }
       // Battery: reuse a cached fix up to 30s old before powering the GPS for a
       // fresh lock on every recenter/initial-locate. 30s is recent enough to
       // center the map accurately; getLastKnownPositionAsync returns null when
@@ -1222,9 +1275,19 @@ export default function MapScreen() {
           // prior denial. initialLocationAction() collapses undetermined (first
           // run, prompt deferred to onboarding) and denied into one 'clear', so
           // gate on the RAW status: a never-asked user must never be told access
-          // is off. undetermined sets nothing → no banner. initialLocationAction
-          // + location.test.ts are untouched — this only ADDS a status-gated setter.
-          if (arrivalPermissionDenied(status)) setPermissionDenied(true);
+          // is off. initialLocationAction + location.test.ts are untouched — this
+          // only ADDS status-gated setters.
+          if (arrivalPermissionDenied(status)) {
+            setPermissionDenied(true);
+          } else {
+            // T7 (F4-03): UNDETERMINED (never asked) is no longer wordless. Show
+            // the polite, non-accusing hint — never "off". On web the static
+            // aria-live banner won't speak content present at mount, so publish
+            // once through the announce shim (native reads it via the banner's
+            // polite live region — no double-speak with the SR auto-open sheet).
+            setNoLocationHint(true);
+            if (Platform.OS === 'web') announce(NO_LOCATION_HINT);
+          }
         }
       })
       .catch(() => {
@@ -1387,6 +1450,30 @@ export default function MapScreen() {
     currentRegionRef.current = initialRegion;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location]);
+
+  // T7 (F4-03 / F5-03): the honest no-location arrival's TRUE FRAME. With no usable
+  // location, a hardcoded San-Francisco viewport under a confident "Showing N flags"
+  // pill is the inverted-honesty shape S4/S6 killed. So on the FIRST flags-load while
+  // location is still null — a plain, ungestured arrival — fit the viewport to the
+  // loaded rows with ONE instant cut (snapToRegion reuses BP1's instant-camera path;
+  // never RM-gated because it replaces the initial paint, it is not motion). Fires
+  // exactly once and never overrides an intent-driven camera: a resolved location, a
+  // focusFlag / deep-link / openReport arrival, or a user who already moved the map.
+  const didInitialFitRef = useRef(false);
+  useEffect(() => {
+    if (didInitialFitRef.current) return; // one-time
+    if (location) return; // a real location owns the camera via initialRegion
+    if (loadingFlags || flags.length === 0) return; // wait for the first non-empty load
+    if (route.params?.focusFlag || route.params?.flagId || route.params?.openReport) return;
+    // No-gesture proxy: currentRegionRef only syncs to `location` on this screen, so
+    // `=== DEFAULT_REGION` means "still the seed" — no resolved location, nothing to stomp.
+    if (currentRegionRef.current !== DEFAULT_REGION) return;
+
+    didInitialFitRef.current = true;
+    const region = regionForFlags(flags);
+    currentRegionRef.current = region; // keep the viewport gate honest post-fit
+    mapRef.current?.snapToRegion(region);
+  }, [flags, loadingFlags, location, route.params?.focusFlag, route.params?.flagId, route.params?.openReport]);
 
   // Long-press anywhere on the map → confirm prompt → open the report
   // modal with that coord pre-filled. The confirm step matters: a
@@ -2313,6 +2400,22 @@ export default function MapScreen() {
             />
             <AppText variant="body" style={styles.bannerLocatingText}>Finding your location…</AppText>
           </GlassSurface>
+        )}
+
+        {/* T7 (F4-03): the UNDETERMINED no-location arrival's one honest voice.
+            Polite + role="text" (never the assertive alert — nothing was
+            denied); reuses the banner INK only. Mutually exclusive with the
+            denied banner below, which stays byte-identical. */}
+        {noLocationHint && (
+          <View
+            style={styles.banner}
+            accessibilityRole="text"
+            accessibilityLiveRegion="polite"
+          >
+            <AppText variant="body" style={styles.bannerText}>
+              {NO_LOCATION_HINT}
+            </AppText>
+          </View>
         )}
 
         {permissionDenied && (
