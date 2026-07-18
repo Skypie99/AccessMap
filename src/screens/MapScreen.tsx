@@ -18,7 +18,7 @@ import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Location from 'expo-location';
 import { arrivalPermissionDenied, getCurrentPositionWithTimeout, initialLocationAction } from '@/lib/location';
-import { offlineBannerText } from '@/lib/copy';
+import { failureBannerText, offlineBannerText } from '@/lib/copy';
 import { announce } from '@/lib/announce';
 import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
@@ -1644,9 +1644,15 @@ export default function MapScreen() {
                   flags.length === 0
                   ? 'Loading flags…'
                   : 'Updating…'
-                : filtersActive
-                  ? `${filteredFlags.length} of ${flags.length} shown`
-                  : `Showing ${flags.length} flag${flags.length === 1 ? '' : 's'}`}
+                : // T9 (F5-02): a settled failure with nothing cached gets the honest
+                  // fourth arm — never "Showing 0 flags". The co-present error banner
+                  // below carries the retry. Gated on `&& flags.length === 0` so the
+                  // SWR stale path keeps showing its cached count.
+                  loadError && flags.length === 0
+                  ? "Couldn't load flags"
+                  : filtersActive
+                    ? `${filteredFlags.length} of ${flags.length} shown`
+                    : `Showing ${flags.length} flag${flags.length === 1 ? '' : 's'}`}
             </AppText>
           </GlassSurface>
           {/*
@@ -2318,7 +2324,11 @@ export default function MapScreen() {
               <AlertTriangle size={18} color={color.textOnBrand} strokeWidth={2.2} />
             )}
             <AppText variant="body" style={styles.errorBannerText} numberOfLines={2}>
-              {loadingFlags ? 'Retrying…' : loadError}
+              {/* T9 (F5-05): the visible retry verb APPENDED to the single AppText
+                  (no new child — preserves the M10 grouping + box-none footprint);
+                  single-sourced via copy.ts so Home/Map/Tasks speak one register.
+                  The accessibilityLabel/Hint below already voice the retry to SR. */}
+              {loadingFlags ? 'Retrying…' : failureBannerText(loadError)}
             </AppText>
           </Pressable>
         )}

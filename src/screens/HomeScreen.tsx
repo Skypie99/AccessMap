@@ -187,7 +187,16 @@ export default function HomeScreen() {
         {/* Editorial header — menu + Feedback fold in (no dark nav bar here). */}
         <ScreenHeader
           eyebrow={eyebrow}
-          title={showFirstLoad ? '—' : `${flags.length} ${flags.length === 1 ? 'barrier' : 'barriers'}`}
+          title={
+            // T9 (F5-02): never compute "0 barriers" on a settled failure — the
+            // error card below carries the words; the headline stays a neutral
+            // placeholder, never a false census. (F5-01) word the first-load wait.
+            error && flags.length === 0
+              ? '—'
+              : showFirstLoad
+                ? 'Loading…'
+                : `${flags.length} ${flags.length === 1 ? 'barrier' : 'barriers'}`
+          }
           subtitle={subtitle}
           eyebrowColor={color.inkOnStage}
           subtitleColor={color.inkOnStage}

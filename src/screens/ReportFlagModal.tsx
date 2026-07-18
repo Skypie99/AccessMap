@@ -1099,7 +1099,12 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
                     <View pointerEvents="none" style={[StyleSheet.absoluteFill, styles.submitPressedScrim]} />
                   )}
                   {submitting ? (
-                    <ActivityIndicator color={color.textOnBrand} />
+                    // T9 (F5-09): keep WORDS beside the spinner — a silent spinner
+                    // makes the wait wordless; "Filing your report…" says what's happening.
+                    <View style={styles.submitBusyRow}>
+                      <ActivityIndicator color={color.textOnBrand} />
+                      <AppText variant="label" style={styles.submitText}>Filing your report…</AppText>
+                    </View>
                   ) : (
                     <AppText variant="label" style={styles.submitText}>Submit report</AppText>
                   )}
@@ -1408,6 +1413,8 @@ const makeStyles = (color: ColorTheme) =>
     submitBtn: { backgroundColor: color.brand, overflow: 'visible', ...shadow.glowBrand },
     submitBtnDisabled: { opacity: 0.6 },
     submitText: { color: color.textOnBrand, fontWeight: font.weight.bold },
+    // T9 (F5-09): spinner + "Filing your report…" sit side by side while pending.
+    submitBusyRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.tight },
     // T4 (F1-01): static pressed dim so every control in the sheet answers the
     // finger. The house idiom (color.borderPressed — FilterPresetsModal,
     // MyReportsModal, LeaderboardScreen): a fill-COMPOSITED swap that leaves the

@@ -23,3 +23,24 @@ export function offlineBannerText(cachedAt?: string | null): string {
     ? `Showing saved data from ${relativeTime(cachedAt)} — connect for the latest.`
     : OFFLINE_BANNER_TEXT;
 }
+
+/**
+ * BP13 (T9): the one true retry verb. A read-failure banner appends it so Home,
+ * Map, and Tasks speak ONE failure register instead of three drifting dialects.
+ * A second sentence (not a "state — next step" em-dash status line). PROPOSED
+ * (BP13, S-8) — Sky's final wording lands in DECISIONS §A / BP16.
+ */
+export const RETRY_VERB = 'Tap to retry.';
+
+/**
+ * BP13 (T9, F5-05/09): single-source the read-failure banner text (provider
+ * message + retry verb). Home / Map / Tasks route the SAME presentation contract
+ * through this — NOT a shared component; each screen keeps its own container.
+ * Mirrors Tasks' original inline recipe: append the verb unless the provider
+ * message already carries it, so a double "Tap to retry." never appears.
+ */
+export function failureBannerText(providerMessage: string): string {
+  return providerMessage.toLowerCase().includes('tap to retry')
+    ? providerMessage
+    : `${providerMessage}. ${RETRY_VERB}`;
+}

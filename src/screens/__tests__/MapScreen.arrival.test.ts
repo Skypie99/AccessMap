@@ -57,7 +57,7 @@ describe('arrivalPermissionDenied — the reconciled denied-banner gate', () => 
 
 describe('S4 source invariants — MapScreen', () => {
   const map = read('MapScreen.tsx');
-  const pill = around(map, "'Loading flags…'", 320);
+  const pill = around(map, "'Loading flags…'", 700);
 
   it('the status pill states an honest count, not a "nearby" proximity claim', () => {
     expect(pill).toContain('Showing ${flags.length} flag');

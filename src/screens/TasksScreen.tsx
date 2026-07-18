@@ -38,7 +38,7 @@ import { findNearestUnresolved } from '@/lib/nearestFlag';
 import { useFlags } from '@/lib/flagsStore';
 import { useUserLocation } from '@/lib/location';
 import { POINTS } from '@/lib/points';
-import { offlineBannerText } from '@/lib/copy';
+import { failureBannerText, offlineBannerText } from '@/lib/copy';
 import {
   DEFAULT_TASKS_SORT,
   TASKS_SORT_LABELS,
@@ -615,15 +615,14 @@ export default function TasksScreen() {
   // changed meaning mid-transition (badge 9 while the list header read OPEN 6).
   // One writer, one definition, identical before/during/after every tab cut.
 
-  // Build the tap-to-retry banner copy from the provider's error string.
-  // The provider already includes the leading "Couldn't load flags:" prefix
-  // when relevant; we just append the retry hint if it isn't there.
-  const errorBannerText = useMemo(() => {
-    if (!flagsError) return null;
-    return flagsError.toLowerCase().includes('tap to retry')
-      ? flagsError
-      : `${flagsError}. Tap to retry.`;
-  }, [flagsError]);
+  // T9 (F5-05): the tap-to-retry banner copy is now single-sourced in copy.ts
+  // (failureBannerText) — this screen's original inline recipe, extracted so
+  // Home / Map / Tasks route ONE failure register instead of three dialects.
+  // The helper appends the retry verb unless the provider message already carries it.
+  const errorBannerText = useMemo(
+    () => (flagsError ? failureBannerText(flagsError) : null),
+    [flagsError],
+  );
 
   // Trigger lives in supabase/schema.sql (handle_flag_status_change, ~line 75).
   // Reporter ALWAYS gets the reporter bonus (10 verify / 15 resolve).
