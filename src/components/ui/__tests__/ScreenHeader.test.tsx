@@ -136,3 +136,13 @@ describe('ScreenHeader title auto-fit (M18) — wrap at the floor (T13/wrap)', (
     expect(title.props.children).toBe(LONG); // the full datum survives, un-truncated
   });
 });
+
+describe('ScreenHeader style override — zero the default inset (T13 / F2-06)', () => {
+  it('a caller style overrides the default horizontal padding (Settings/Profile 44 -> 24)', () => {
+    const { UNSAFE_getAllByType } = render(
+      <ScreenHeader title="Settings" style={{ paddingHorizontal: 0 }} />,
+    );
+    const outer = UNSAFE_getAllByType(View)[0]; // the header container View
+    expect(StyleSheet.flatten(outer.props.style).paddingHorizontal).toBe(0);
+  });
+});

@@ -464,6 +464,7 @@ export default function SettingsScreen() {
         {/* S8: Settings gains the editorial header (was nav-header-only) — the
             menu + Feedback circles and the display title now match every tab. */}
         <ScreenHeader
+          style={styles.settingsHeader}
           eyebrow="SETTINGS"
           title="Settings"
           eyebrowColor={color.inkOnStage}
@@ -677,6 +678,11 @@ const makeStyles = (color: ColorTheme) =>
       gap: spacing.md,
       alignItems: 'stretch',
     },
+    // T13 (F2-06): zero the header's OWN horizontal padding so its eyebrow aligns
+    // with the section rows at the single container inset (spacing.xxl) instead of
+    // double-insetting (container xxl + ScreenHeader's default xl = 44). Mirrors
+    // Profile's profileHeader convention. Horizontal only — vertical rhythm intact.
+    settingsHeader: { paddingHorizontal: 0 },
     sectionLabel: {
       fontSize: font.size.xs,
       // On the raw stage — inkOnStage, not textMuted (forbidden there, 4.10:1).

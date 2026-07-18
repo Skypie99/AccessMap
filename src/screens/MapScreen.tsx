@@ -1633,11 +1633,13 @@ export default function MapScreen() {
               Explore
             </AppText>
           </GlassSurface>
-          <HeaderActions
-            onMenu={() => drawer.setOpen(true)}
-            onFeedback={() => setSharedModal('feedback')}
-            iconColor={color.textStrong}
-          />
+          <View style={styles.mapHeaderActions} pointerEvents="box-none">
+            <HeaderActions
+              onMenu={() => drawer.setOpen(true)}
+              onFeedback={() => setSharedModal('feedback')}
+              iconColor={color.textStrong}
+            />
+          </View>
         </View>
         {/* S6 (WCAG 2.5.7): box-none so taps fall THROUGH the row's gaps to the
             map — the un-guarded wrapper was pointer-dead, killing zoom/pan even
@@ -2940,10 +2942,16 @@ const makeStyles = (color: ColorTheme) =>
       marginBottom: MAP_HEADER_ROW_MARGIN_BOTTOM,
     },
     mapHeaderChip: {
-      paddingHorizontal: 14,
+      // T13/F2-12: snap the last off-scale stray in this touched style to a token.
+      // Horizontal only (width) — it does not feed T1's chrome-band HEIGHT measure.
+      paddingHorizontal: spacing.md,
       paddingVertical: 8,
       alignItems: 'flex-start',
     },
+    // T13 (F2-05): the menu + Feedback circles as ONE right-pinned pair, so the
+    // space-between row can no longer strand the menu circle mid-air. box-none
+    // keeps the map pannable through the gap between the two discrete 44pt targets.
+    mapHeaderActions: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
     mapHeaderEyebrow: {
       fontSize: font.size.xs,
       letterSpacing: 1.2,
