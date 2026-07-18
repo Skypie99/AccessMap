@@ -67,7 +67,11 @@ describe('S4 source invariants — MapScreen', () => {
   });
 
   it('the arrival banner is gated on the RAW status via arrivalPermissionDenied', () => {
-    expect(map).toContain('if (arrivalPermissionDenied(status)) setPermissionDenied(true)');
+    // BP13/T7: the gate is now a two-arm branch — a genuine denial → the assertive
+    // banner; an undetermined (never-asked) arrival → the polite no-location hint.
+    // Still gated on the RAW status, so a never-asked user is never told access is off.
+    expect(map).toContain('if (arrivalPermissionDenied(status)) {');
+    expect(map).toContain('setPermissionDenied(true);');
     // initialLocationAction is still the spinner gate and is NOT the banner gate
     expect(map).toContain('initialLocationAction(status) === ');
   });
@@ -81,6 +85,49 @@ describe('S4 source invariants — MapScreen', () => {
   it('the Nearby-list trigger hint drops the false "sorted by distance" when there is no location', () => {
     const hint = around(map, 'Open nearby flags list', 320);
     expect(hint).toContain('Opens an accessible list of the most recent flags');
+  });
+});
+
+describe('T7 (BP13) — the undetermined no-location voice + true frame', () => {
+  const map = read('MapScreen.tsx');
+
+  it('the undetermined (never-asked) arrival shows a status-neutral hint — never "off"', () => {
+    const hint = around(map, 'const NO_LOCATION_HINT', 160);
+    expect(hint).toContain("Location isn't on yet —");
+    expect(hint).not.toContain('is off'); // never tell a never-asked user access is off
+  });
+
+  it('undetermined sets the polite hint (not the denied banner) and announces on web', () => {
+    // The else arm of the raw-status gate: never-asked → polite hint + web announce
+    // (static aria-live won't speak content present at mount, so route through the shim).
+    expect(map).toContain('setNoLocationHint(true);');
+    expect(map).toContain('announce(NO_LOCATION_HINT)');
+  });
+
+  it('the hint banner is polite role=text, mutually exclusive with the assertive denied banner', () => {
+    const banner = around(map, '{noLocationHint && (', 320);
+    expect(banner).toContain('accessibilityRole="text"');
+    expect(banner).toContain('accessibilityLiveRegion="polite"');
+    expect(banner).toContain('style={styles.banner}'); // reuses the banner INK only
+    // the denied banner keeps its own assertive alert (byte-identical, its own block)
+    expect(map).toContain('accessibilityLiveRegion="assertive"');
+  });
+
+  it('the no-location arrival fits the viewport to the loaded flags — a true, one-time, instant frame', () => {
+    expect(map).toContain('regionForFlags(flags)');
+    expect(map).toContain('mapRef.current?.snapToRegion(region)');
+    expect(map).toContain('didInitialFitRef'); // fires exactly once
+    // guarded: only a plain no-param arrival (never an intent-driven camera)
+    expect(map).toContain('route.params?.focusFlag || route.params?.flagId || route.params?.openReport');
+  });
+
+  it('regionForFlags falls back to DEFAULT_REGION when empty and reuses BP1 instant path (snapToRegion)', () => {
+    expect(map).toContain('function regionForFlags');
+    expect(map).toContain('if (rows.length === 0) return DEFAULT_REGION');
+    // the primitive is threaded through PlatformMap (both variants), never forked
+    const web = read('../components/PlatformMap.web.tsx');
+    expect(web).toContain('snapToRegion:');
+    expect(web).toContain('instantCut('); // reuses the shared zero-motion setView path
   });
 });
 
