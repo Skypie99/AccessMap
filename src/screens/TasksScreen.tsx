@@ -832,6 +832,11 @@ export default function TasksScreen() {
         title="Review barriers"
         subtitle="Verify and resolve reports"
         titleSize={30}
+        // BP12 (T6): Tasks' top chrome is the whole composite glass pane (title +
+        // search + chips + sort, measured as chromeHeight), not this title block
+        // — so opt out of publishing a ledge height. The status pill keeps its
+        // default placement here and the inline points flash stays byte-identical.
+        publishLedge={false}
         eyebrowColor={color.inkGlassMuted}
         subtitleColor={color.inkGlassMuted}
         actions={

@@ -4,6 +4,13 @@ import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 import { font, motion, radius, shadow, spacing } from '@/theme';
 import { AppText } from '@/components/ui/AppText';
 import { useReducedMotion } from '@/lib/accessibility';
+import {
+  FLASH_BANNER_OCCUPANT,
+  FLASH_BANNER_PRIORITY,
+  computeLedgeTop,
+  useHeaderHeight,
+  useOccupantSlot,
+} from '@/lib/statusLedge';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 
 interface Props {
@@ -52,6 +59,13 @@ export default function FlashBanner({
   // last message, `rendered` keeps the node mounted until the out-animation ends.
   const [display, setDisplay] = useState<string | null>(message);
   const [rendered, setRendered] = useState<boolean>(message != null);
+
+  // BP12 (T6): share the status ledge with LiveStatusRegion. Dock below the
+  // focused header, and when the status voice is also live, stack BELOW it
+  // (lower priority) instead of superimposing in the same z-50 slot. Keyed on
+  // `rendered` so the slot stays reserved through the exit fade.
+  const headerHeight = useHeaderHeight();
+  const slot = useOccupantSlot(FLASH_BANNER_OCCUPANT, FLASH_BANNER_PRIORITY, rendered);
 
   // Speak the message the moment it appears, in case the user isn't looking at
   // the top of the screen. The visible banner is the visual-channel half.
@@ -116,7 +130,7 @@ export default function FlashBanner({
     // VoiceOver. "polite" so the announcement waits for current speech to
     // finish — flash banners are confirmations, not urgent alerts.
     <View
-      style={[styles.wrap, { top: Math.max(insets.top, 56) }]}
+      style={[styles.wrap, { top: computeLedgeTop(insets.top, headerHeight, slot) }]}
       pointerEvents="box-none"
       accessibilityLiveRegion="polite"
     >

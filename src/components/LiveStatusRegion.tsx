@@ -130,6 +130,11 @@ export default function LiveStatusRegion() {
         <Animated.View style={{ opacity: progress, transform: [{ translateY }] }}>
           <View
             style={[styles.pill, display.tone === 'info' ? styles.pillInfo : styles.pillSuccess]}
+            // box-none (BP12): the pill background is a passive text carrier and
+            // must not intercept taps on the screen/menu circle beneath it. The
+            // inner Retry Pressable still receives touches (box-none passes to
+            // children) — only the empty pill area stops eating taps.
+            pointerEvents="box-none"
             // The message text carrier — this is what the aria-live wrapper
             // announces on web (text mutation on an always-mounted region).
             accessibilityRole="text"
