@@ -66,13 +66,39 @@ export default function OnboardingModal({ visible, onDone }: Props) {
   const scrollRef = useRef<ScrollView | null>(null);
   const [index, setIndex] = useState(0);
   const reducedMotion = useReducedMotion();
+  // Track visibility across commits so the position announce fires only on the
+  // true open edge (false→true) — never on the initial closed mount, nor on an
+  // incidental re-render while already open. `prevIndex` (open-resets folded to
+  // 0) distinguishes a genuine card change from the reset's index settle, so
+  // the reset never double-announces.
+  const wasVisible = useRef(false);
+  const prevIndex = useRef(0);
 
-  // Announce the new card position to screen readers when the user
-  // navigates via Back / Next — mirrors the same pattern in OnboardingCards.
-  // WCAG 4.1.3 (Status Messages).
+  // Announce the current card position to screen readers. This ONE effect owns
+  // every position announce — navigation (index changes while open) AND the
+  // open edge — gated on `visible` so the always-mounted modal stays silent
+  // while closed (no phantom "Step 1 of 3" leaking to VoiceOver on the Settings
+  // screen, which keeps this modal permanently mounted). Motion-decoupled by
+  // design. WCAG 4.1.3 (Status Messages).
   useEffect(() => {
-    AccessibilityInfo.announceForAccessibility(`Step ${index + 1} of ${CARDS.length}`);
-  }, [index]);
+    const opening = visible && !wasVisible.current;
+    const movedWhileOpen = visible && wasVisible.current && index !== prevIndex.current;
+    wasVisible.current = visible;
+    if (opening) {
+      // On the open commit `index` may still hold the stale pre-reset value, so
+      // hard-code position 1 (the reset target) — this is exactly how we avoid
+      // speaking "Step 3 of 3" before "Step 1 of 3". Baseline prevIndex to 0 so
+      // the reset's follow-up index settle isn't read as a move.
+      prevIndex.current = 0;
+      AccessibilityInfo.announceForAccessibility(`Step 1 of ${CARDS.length}`);
+    } else if (movedWhileOpen) {
+      prevIndex.current = index;
+      AccessibilityInfo.announceForAccessibility(`Step ${index + 1} of ${CARDS.length}`);
+    } else {
+      // Closing edge, closed mount, or the reset's index settle → silent.
+      prevIndex.current = index;
+    }
+  }, [index, visible]);
 
   // F20: reset to the first card whenever the modal (re)opens. The modal is
   // never unmounted by its parent (only `visible` toggles), so without this a
