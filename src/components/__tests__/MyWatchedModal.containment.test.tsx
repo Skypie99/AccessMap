@@ -63,7 +63,12 @@ jest.mock('@/components/ui/GlassSurface', () => {
     }: {
       children?: unknown;
       accessibilityViewIsModal?: boolean;
-    }) => ReactActual.createElement(View, { accessibilityViewIsModal }, children),
+    }) =>
+      ReactActual.createElement(
+        View,
+        { accessibilityViewIsModal, testID: 'mywatched-content-sheet' },
+        children,
+      ),
   };
 });
 jest.mock('@/components/SeverityDisc', () => ({ SeverityDisc: () => null }));
@@ -84,11 +89,15 @@ describe('MyWatchedModal — SR containment (BP17 / T20)', () => {
     act(() => {
       renderer = create(<MyWatchedModal visible onClose={noop} onSelectFlag={noop} />);
     });
-    // The only node carrying the containment flag is the GlassSurface content
-    // sheet — the backdrop View is a plain <View> that never sets it. Finding it
-    // proves the prop landed on the content, closing the M-40 gap.
-    const contained = renderer!.root.findAllByProps({ accessibilityViewIsModal: true });
-    expect(contained.length).toBeGreaterThanOrEqual(1);
+    // The containment flag must sit on the CONTENT sheet (the GlassSurface),
+    // never the backdrop. Find the content sheet by its testID and assert IT
+    // carries the flag: if a future edit moved the prop onto the backdrop View
+    // or dropped it, the GlassSurface mock would receive `undefined` here and
+    // this fails — so the guard enforces content PLACEMENT, not mere presence.
+    // (Device VoiceOver, R2-D18, proves the actual focus containment.)
+    const contentSheet = renderer!.root.findAllByProps({ testID: 'mywatched-content-sheet' });
+    expect(contentSheet.length).toBeGreaterThanOrEqual(1);
+    expect(contentSheet.every((n) => n.props.accessibilityViewIsModal === true)).toBe(true);
     act(() => {
       renderer?.unmount();
     });
