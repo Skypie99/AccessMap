@@ -161,10 +161,15 @@ describe('theme token foundation (Cycle D / d2)', () => {
   });
 
   it('color.accentOrange is the documented amber accent (#f1a520)', () => {
-    // Watched-flag accent. Distinct from severity[4] (#e67e22) on purpose
-    // — different semantic (user state vs hazard level).
+    // Watched-flag "user state" accent. It shares the amber band with
+    // severity[2] ("Mild", #F0A030) — accepted, not a collision: severity is
+    // always carried by a numbered disc + word (the BP10 grammar), never hue
+    // alone, so the shared amber never disambiguates meaning. This guard just
+    // pins that the two tokens never become the SAME hex — re-pointed (R2/T19)
+    // from the old severity[4] compare to the real sev-2 near-twin the finding
+    // flagged.
     expect(color.accentOrange).toBe('#f1a520');
-    expect(color.accentOrange).not.toBe(severity4Color());
+    expect(color.accentOrange).not.toBe(severity2Color());
   });
 });
 
@@ -219,10 +224,34 @@ describe('color.textMuted on color.surfaceSoft (Cycle F / F5)', () => {
   });
 });
 
+// -------------------------------------------------------------------------
+// R2 / T19 (F6-09) — OS-chrome brand-hex parity
+//
+// The notification tint used to be a dead blue (#1a4fa3 — the same hex Phase 5
+// retired from brandTextAlt). T19 re-points it to the brand front-door blue so
+// every OS-level surface (splash background, web themeColor, notification tint)
+// speaks one hue. This guard pins that parity so the three never silently drift
+// apart again.
+// -------------------------------------------------------------------------
+
+describe('app.json OS-chrome brand hexes (R2 / T19, F6-09)', () => {
+  const appJson = require('../../../app.json');
+
+  it('notification.color is the brand front-door blue (#1466E0)', () => {
+    expect(appJson.expo.notification.color).toBe('#1466E0');
+  });
+
+  it('notification.color === web.themeColor === splash.backgroundColor (one OS-chrome hue)', () => {
+    const { notification, web, splash } = appJson.expo;
+    expect(notification.color).toBe(web.themeColor);
+    expect(notification.color).toBe(splash.backgroundColor);
+  });
+});
+
 // Re-import severity locally so the test above can compare without
 // importing the whole module twice at the top.
-function severity4Color(): string {
+function severity2Color(): string {
    
   const { severity } = require('../../theme');
-  return severity[4].color;
+  return severity[2].color;
 }

@@ -6,6 +6,7 @@ import Constants from 'expo-constants';
 import { font, radius, spacing } from '@/theme';
 import { AppText } from '@/components/ui/AppText';
 import { GlassSurface } from '@/components/ui/GlassSurface';
+import LogoMark from '@/components/LogoMark';
 import { Map as MapIcon, X } from 'lucide-react-native';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { useReducedMotion } from '@/lib/accessibility';
@@ -50,6 +51,14 @@ export default function AboutScreen({ visible, onClose }: Props) {
         <View style={styles.cardShadow}>
         <GlassSurface variant="bulk" borderRadius={0} style={styles.card} accessibilityViewIsModal>
           <View style={styles.headerRow}>
+            {/* T19 (F6-08): a small brand mark beside the title. Hidden from
+                screen readers — LogoMark bakes an "AccessMap" label and the
+                title already says "About AccessMap", so exposing it would
+                double-speak. Theme-aware so it holds contrast on the bulk sheet
+                in both modes. */}
+            <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+              <LogoMark size={22} variant={color.scheme === 'dark' ? 'white' : 'color'} />
+            </View>
             <AppText variant="heading" style={styles.title} accessibilityRole="header">
               About AccessMap
             </AppText>

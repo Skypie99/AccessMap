@@ -53,7 +53,7 @@
       "startUrl": "/"
     },
     "notification": {
-      "color": "#1a4fa3",
+      "color": "#1466E0",
       "androidMode": "default"
     },
     "plugins": [

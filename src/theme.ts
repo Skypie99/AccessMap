@@ -133,7 +133,7 @@ export const color = {
 
   // Additional muted-text / accent tokens
   textMutedAlt: '#5b6470', // AA-safe muted text on light surfaces (4.6:1 on #f4f6f8) — used by ReportFlagModal hints, NotificationPrefsModal copy, TasksScreen
-  accentOrange: '#f1a520', // amber accent for "watch / pinned" affordances (NotificationPrefsModal, ProfileScreen, SavedPlacesModal, MyWatchedModal, FlagDetailModal). Distinct from severity[4].color (#e67e22) on purpose.
+  accentOrange: '#f1a520', // amber accent for "watch / pinned" affordances (NotificationPrefsModal, ProfileScreen, SavedPlacesModal, MyWatchedModal, FlagDetailModal). Shares the amber band with severity[2].color (#F0A030, "Mild") — accepted, not a collision: severity is ALWAYS carried by a numbered disc + word (WCAG 1.4.1 + the BP10 disc grammar), never hue alone, so the shared amber never disambiguates meaning. accentOrange's own contrast duty is dark text on the fill (textOnAccent #222, ≥4.5:1). [R2 / T19 — comment-only resolution; hue unchanged]
   successStrong: '#1e8449', // WCAG AA green for white text on button background (4.6:1 vs color.success 2.8:1 fails). Used by bulk-resolve + FlashBanner success pill.
   accentPurple: '#5b21b6', // Purple accent for bulk-watch action buttons (8.8:1 on white — strong AA).
 
