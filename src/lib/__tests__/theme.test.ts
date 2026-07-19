@@ -248,6 +248,31 @@ describe('app.json OS-chrome brand hexes (R2 / T19, F6-09)', () => {
   });
 });
 
+// -------------------------------------------------------------------------
+// R2 / T15 — light tab-bar inactive ink meets AA on the frosted bar
+//
+// The light inactive tab label sits on the frosted bar; its guaranteed worst
+// composite is the 0.82 glass floor (tabBarGlassFloor) over pure black — dark
+// photos / always-dark web tiles under the bar — which resolves to #D1D1D1.
+// The old #6B7280 failed AA there (3.17:1). #515964 is the lightest slate
+// clearing 4.5:1 with margin (4.65:1), luminance ~matched to the active tint
+// (#0F53BE). Dark mode uses a separate token and is untouched. Full proof:
+// r2-tabbar-ink-stacks.json.
+// -------------------------------------------------------------------------
+
+describe('color.tabBarInactiveTint (R2 / T15)', () => {
+  // 0.82 white over #000 = #D1D1D1 (the bar's guaranteed worst-case background).
+  const FLOOR_OVER_BLACK = '#D1D1D1';
+
+  it('is the documented darkened slate (#515964)', () => {
+    expect(color.tabBarInactiveTint).toBe('#515964');
+  });
+
+  it('clears WCAG AA (>=4.5:1) on the 0.82 glass floor over black', () => {
+    expect(contrastRatio(color.tabBarInactiveTint, FLOOR_OVER_BLACK)).toBeGreaterThanOrEqual(4.5);
+  });
+});
+
 // Re-import severity locally so the test above can compare without
 // importing the whole module twice at the top.
 function severity2Color(): string {

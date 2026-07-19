@@ -183,7 +183,7 @@ export const color = {
   tabBarGlassFloor: 'rgba(255,255,255,0.82)', // AA contrast floor over the blur
   tabBarBlurTint: 'light', // expo-blur tint for the frosted bar (light mode)
   tabBarActiveTint: '#0F53BE', // active tab — brandText, ~7.6:1 on the light bar
-  tabBarInactiveTint: '#6B7280', // inactive tab — muted slate, ~4.8:1 on white
+  tabBarInactiveTint: '#515964', // inactive tab — muted slate. R2/T15: darkened from #6B7280, which FAILED AA (3.17:1) on the 0.82 glass floor over #000 (dark photos / always-dark web tiles under the frosted bar; the old "~4.8:1 on white" comment ignored the translucent states the bar actually reaches). #515964 is the lightest slate clearing 4.5:1 with margin on that worst composite (4.65:1; 5.92:1 on the 0.92 RT/web surface), luminance ~matched to the active tint #0F53BE so active/inactive separate by hue not weight. Dark mode is a separate token (untouched). Arbiter: r2-tabbar-ink-stacks.json.
   navBorder: 'rgba(22,33,58,0.10)', // hairline divider on the light tab bar
 
   // Achievement earned-state wash — light amber behind unlocked badges.
