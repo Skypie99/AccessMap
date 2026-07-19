@@ -277,14 +277,18 @@ export default function MyWatchedModal({ visible, onClose, onSelectFlag, onViewO
     <Modal aria-label="Watched Flags" visible={visible} animationType={reducedMotion ? 'none' : 'slide'} transparent onRequestClose={onClose}>
       <View style={styles.backdrop}>
         <View style={styles.cardWrap}>
-        {/* MP2/M-40: bulk-glass sheet (forceEngineered = budget-free). Deliberately
-            NO accessibilityViewIsModal — this sheet lacks it today and the
-            byte-identical rule carries that gap forward; BP17 closes it (S-11 L7). */}
+        {/* MP2/M-40: bulk-glass sheet (forceEngineered = budget-free).
+            accessibilityViewIsModal (BP17 / T20) traps VoiceOver focus inside
+            this sheet CONTENT view so it can't escape to the Profile screen
+            behind it — the last sheet missing the app-wide SR-containment
+            blanket. Goes on the GlassSurface, never the backdrop; mirrors
+            MyReportsModal. */}
         <GlassSurface
           variant="bulk"
           borderRadius={0}
           forceEngineered
           style={[styles.sheet, { paddingBottom: Math.max(spacing.xxl + 4, insets.bottom) }]}
+          accessibilityViewIsModal
         >
           <View style={styles.header}>
             <AppText variant="heading" style={styles.title} accessibilityRole="header">Watched Flags</AppText>
