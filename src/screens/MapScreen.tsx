@@ -3444,6 +3444,11 @@ const makeStyles = (color: ColorTheme) =>
       borderRadius: radius.xl,
       padding: 20,
       gap: 12,
+      // T20: shadow.e3 makes the four-dialog tier four-of-four for depth (the
+      // ProfileScreen account dialogs already carry it). Unconditional — these
+      // are solid-surface cards, so the Deep Field transparent-bg shadow
+      // suppression does not apply.
+      ...shadow.e3,
     },
     nameTitle: {
       fontSize: 18,

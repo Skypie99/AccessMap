@@ -1758,7 +1758,7 @@ export default function ProfileScreen() {
           screen readers while the dialog is open. */}
       <Modal
         visible={deleteAccountOpen}
-        animationType={reduceMotion ? 'none' : 'slide'}
+        animationType={reduceMotion ? 'none' : 'fade'}
         transparent
         aria-label="Delete your account?"
         onRequestClose={() => {
@@ -1900,7 +1900,7 @@ export default function ProfileScreen() {
           on iOS hides the underlying screen from SR while open. */}
       <Modal
         visible={tierExplainerOpen}
-        animationType={reduceMotion ? 'none' : 'slide'}
+        animationType={reduceMotion ? 'none' : 'fade'}
         transparent
         aria-label="Reputation tiers"
         onRequestClose={() => setTierExplainerOpen(false)}
