@@ -20,6 +20,7 @@ import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { HeaderActions } from '@/components/ui/HeaderActions';
+import { GuestProfile } from './GuestProfile';
 import { useDrawer } from '@/lib/drawerContext';
 import { useAuth } from '@/lib/auth';
 import { AccountDeletedSignOutPendingError, deleteAccount } from '@/lib/account';
@@ -822,47 +823,15 @@ export default function ProfileScreen() {
 
   if (!user) {
     // T10 (F2-04): the signed-out Profile — the default state of every web
-    // session and native guest — joins the S8 editorial family. The same
-    // ScreenHeader (eyebrow/title/subtitle) + HeaderActions pair the other four
-    // tabs wear, on the existing ScreenStage, above the sign-in CTA. True
-    // render-parity with the signed-in header (:895): eyebrow/subtitle take the
-    // arbitrated on-stage ink (inkOnStage — textSubtle/textMuted are below AA on
-    // the raw stage), the title keeps the default textStrong, and we clear the
-    // notch ourselves (insets.top) since headerShown:false. Fork 3 (the auth
-    // wall) is untouched — same capability, same button, same modal; the drawer +
-    // feedback are already guest-reachable. The existing sentence is promoted to
-    // the header subtitle (no new copy). T19 stacks more into this !user block in
-    // BP17 — it composes above the CTA.
+    // session and native guest — joins the S8 editorial family via <GuestProfile>
+    // (extracted so the guest header is unit-testable without ProfileScreen's
+    // focus-load / realtime effects). Fork 3 (the auth wall) is untouched — same
+    // capability, same button, same modal; the sign-in modal stays owned here.
+    // T19 stacks more into this !user block in BP17.
     return (
       <View style={styles.stageRoot}>
         <ScreenStage />
-        <View style={[styles.guestBody, { paddingTop: insets.top + spacing.lg }]}>
-          <ScreenHeader
-            eyebrow="PROFILE"
-            title="Your profile"
-            subtitle="Sign in to see your stats, badges, and reports."
-            style={styles.profileHeader}
-            eyebrowColor={color.inkOnStage}
-            subtitleColor={color.inkOnStage}
-            actions={
-              <HeaderActions
-                onMenu={() => drawer.setOpen(true)}
-                onFeedback={() => setSharedModal('feedback')}
-                iconColor={color.textStrong}
-              />
-            }
-          />
-          <View style={styles.guestPrompt}>
-            <Pressable
-              onPress={() => setSignInOpen(true)}
-              style={({ pressed }) => [styles.signInBtn, pressed && styles.signInBtnPressed]}
-              accessibilityRole="button"
-              accessibilityLabel="Sign in to your account"
-            >
-              <AppText variant="label" style={styles.signInBtnText}>Sign in</AppText>
-            </Pressable>
-          </View>
-        </View>
+        <GuestProfile onSignInPress={() => setSignInOpen(true)} />
         <Modal
           visible={signInOpen}
           animationType={reduceMotion ? 'none' : 'slide'}
@@ -2070,29 +2039,11 @@ const makeStyles = (color: ColorTheme) =>
       fontWeight: font.weight.semibold,
       color: color.textOnBrand,
     },
-    signInBtn: {
-      backgroundColor: color.ctaFill, // mode-independent brand fill on the stage
-      paddingHorizontal: spacing.xxxl,
-      paddingVertical: spacing.md + 2,
-      borderRadius: radius.circle,
-      minHeight: 44,
-      justifyContent: 'center',
-      alignItems: 'center',
-    },
-    signInBtnPressed: { opacity: 0.8 },
-    signInBtnText: { color: color.textOnBrand, fontSize: font.size.lg, fontWeight: font.weight.semibold },
     container: { padding: spacing.xxl, gap: spacing.lg, alignItems: 'stretch' },
     // ScreenHeader supplies its own type rhythm; the container already pads
     // spacing.xxl, so zero the header's own padding to keep it aligned with the
     // hero/stat cards below (no double indent).
     profileHeader: { paddingHorizontal: 0, paddingTop: 0, paddingBottom: 0 },
-    // T10: the signed-out guest column — editorial header + CTA, top-anchored on
-    // the stage. paddingHorizontal spacing.xxl mirrors the signed-in container's
-    // indent so the header aligns with the family; the header stretches full
-    // width (so HeaderActions reach the right edge), while the CTA hugs the left
-    // in guestPrompt (a stretched pill would look wrong).
-    guestBody: { flex: 1, paddingHorizontal: spacing.xxl, gap: spacing.xl },
-    guestPrompt: { alignItems: 'flex-start' },
     heroCard: {
       // Material supplied by <GlassSurface variant="row"> — no bg/border here
       // (the variant paints the floor + edge + specular hairline). Radius +

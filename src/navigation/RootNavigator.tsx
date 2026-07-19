@@ -2,8 +2,6 @@ import React, { Suspense, useEffect, useRef, useState } from 'react';
 import { Platform, Pressable, StyleSheet, View } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { AppText } from '@/components/ui/AppText';
-import { ScreenStage } from '@/components/ui/ScreenStage';
-import { Skeleton } from '@/components/ui/Skeleton';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   Home as HomeIcon,
@@ -34,6 +32,7 @@ import ProfileScreen from '@/screens/ProfileScreen';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import { computeTasksBadge, applySceneInert } from '@/navigation/perceptionHelpers';
 import { createLinking, type TakePendingUrl } from './linking';
+import { ScreenFallback } from './ScreenFallback';
 
 // Settings + Admin are reached ONLY from the hamburger drawer (Admin is also
 // gated by is_admin), so they never appear on first paint. Code-split them out
@@ -43,31 +42,6 @@ import { createLinking, type TakePendingUrl } from './linking';
 // (nested About/Onboarding/NotificationPrefs) out of the main chunk.
 const SettingsScreen = React.lazy(() => import('@/screens/SettingsScreen'));
 const AdminScreen = React.lazy(() => import('@/screens/AdminScreen'));
-
-// T12 (F3-01): while a lazy screen's chunk loads, dress the fallback in the
-// destination's own stage instead of a bare spinner — the Deep Field wash
-// (ScreenStage) plus an editorial-header-shaped static Skeleton (a short eyebrow
-// bar over a display-title bar), so the drawer→Settings handoff never drops to a
-// raw interstitial between two fully-dressed surfaces. Both primitives are opaque
-// (no blur), so ScreenFallback keeps its M-54 opaque-system categorization — this
-// is F3-01's sanctioned exception, NOT a material-train migration (the
-// ErrorBoundary crash fallback stays a bare surface, untouched). The Skeleton is
-// RM-static (0.5) + AT-hidden, so this swaps the un-gated spinner for a calmer,
-// RM-improving frame. On web the chunk is local, so this only flashes briefly;
-// the drawer-open warm-import (DrawerHost) usually resolves it before it shows.
-function ScreenFallback() {
-  const color = useColor();
-  const insets = useSafeAreaInsets();
-  return (
-    <View style={{ flex: 1, backgroundColor: color.stage1 }}>
-      <ScreenStage />
-      <View style={{ paddingTop: insets.top + spacing.xxl, paddingHorizontal: spacing.xxl, gap: spacing.sm }}>
-        <Skeleton width={96} height={12} borderRadius={radius.sm} />
-        <Skeleton width={200} height={40} borderRadius={radius.md} />
-      </View>
-    </View>
-  );
-}
 
 // React Navigation's `component` prop wants a plain component, not a lazy ref.
 // Wrap each lazy screen so navigation/route props are forwarded and a Suspense
