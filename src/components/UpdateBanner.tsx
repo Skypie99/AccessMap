@@ -18,7 +18,7 @@ import { AppText } from '@/components/ui/AppText';
 import { GlassSurface } from '@/components/ui/GlassSurface';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { font, radius, spacing } from '@/theme';
-import { X } from 'lucide-react-native';
+import { Bell, X } from 'lucide-react-native';
 
 interface Props {
   count: number;
@@ -61,9 +61,17 @@ export default function UpdateBanner({ count, onView, onDismiss }: Props) {
       // assertive — combining with polite was contradictory (QA #8).
       accessibilityLiveRegion="polite"
     >
-      <AppText variant="body" style={styles.icon} accessibilityElementsHidden importantForAccessibility="no">
-        🔔
-      </AppText>
+      {/* Decorative bell — the count is announced via the live region + the
+          "View" label carries the semantics, so the glyph is SR-hidden. Lucide
+          Bell (not an emoji) completes the app-wide house style; tinted with the
+          banner's existing brandOnSoft ink — no new colour pair. */}
+      <Bell
+        size={18}
+        color={color.brandOnSoft}
+        strokeWidth={2.2}
+        accessibilityElementsHidden
+        importantForAccessibility="no"
+      />
       <AppText variant="label" style={styles.text}>{label}</AppText>
       <Pressable
         onPress={onView}
@@ -101,7 +109,6 @@ const makeStyles = (color: ColorTheme) =>
       paddingVertical: spacing.md,
       marginBottom: spacing.md,
     },
-    icon: { fontSize: font.size.xl },
     // brandOnSoft (blue-200) reads AA on the banner's dark brand wash / blur.
     text: { flex: 1, fontSize: font.size.base, color: color.brandOnSoft, fontWeight: '600' },
     viewBtn: {
