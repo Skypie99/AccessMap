@@ -71,6 +71,21 @@
          the OS theme so the cold open never flashes white before the app's
          always-dark map (CartoDB Dark Matter). AA-legible; reduced-motion safe. */
 
+      /* KEEP IN SYNC WITH theme.ts / app.json — this static <head> can't import the
+         design tokens, so the brand hexes in this file are copied by hand. If a
+         brand/surface token changes in theme.ts, update its twin here (and the
+         app.json splash / themeColor / notification literals). Current set — 11
+         distinct colours in this file + the app.json front-door literals:
+           LIGHT: #1466E0 (brand — pin / name / dots, the light theme-color meta, and
+                  the focus ring), #ffffff (page bg = color.surface), #2B3A55 (tagline),
+                  #44546F (byline), #0E57C2 (byline link — high-contrast brand).
+           DARK:  #0d1829 (dark theme-color / nav chrome), #111111 (page bg = the dark
+                  surface, ~#111), #4E89EF (brand pin = darkColor.brand), #84AEF6 (name +
+                  link = darkColor.brandText), #C9D4E3 (tagline), #9AA8BD (byline).
+           app.json: #1466E0 (splash.backgroundColor === web.themeColor ===
+                  notification.color — unified in R2/T19), #ffffff (adaptiveIcon / web bg).
+         Parity is pinned by theme.test.ts (the brand hexes + the T19 OS-chrome guard). */
+
       /* Harmonise the pre-paint page background to the OS theme. Parsed in
          <head> before <body> paints, so the very first frame already matches —
          no white flash ahead of the dark map for dark-mode visitors. */

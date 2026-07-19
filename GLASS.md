@@ -175,11 +175,23 @@ the glass itself carries no motion.
   pin is also why they still mount a BlurView, the accepted cost). Map-internal surfaces
   (cluster, heat badge, callout) get token/ink harmonization only, never a BlurView. The
   map itself is the stage — `ScreenStage` is NOT for map screens. Full rules: §12.
-- **Home** — the search pill upgrades to the chrome material (one pane); the screen wash
-  adopts `ScreenStage`.
+- **Home** — the search pill rides `variant="row"` (shipped in MP1, `HomeScreen.tsx`);
+  the screen wash adopts `ScreenStage`.
 - **Profile** — `ScreenStage` + cards on `variant="row"`.
-- **Tab bar** — already speaks the language (i=24 + floor, RT-aware); a later cleanup
-  can collapse `TabBarGlass` into `variant="chrome"`. Untouched by this pass.
+- **Tab bar** — already speaks the language (i=24 + floor, RT-aware). **Do NOT "clean
+  this up" by collapsing `TabBarGlass` into `variant="chrome"`** — that was tried and
+  killed (M-48): on the true chrome floor the 12px tab labels fail WCAG AA on all four
+  active/inactive × light/dark pairs, because the chrome primitive's floor is thinner
+  than `tabBarGlassFloor` (the thicker floor 12px labels need). The mechanism stays
+  byte-identical; R2/T15 repaired only the light inactive-label ink (#6B7280 → #515964,
+  which had failed AA at 3.17:1 on the 0.82 floor over #000).
+- **Drawer** (HamburgerDrawer) — its own ratified tier, not glass: panel + scrim leave
+  as one welded object, and it drives its own `Animated` slide with `animationType="none"`
+  so Reduce Motion is honored by construction.
+- **Dialogs** — the four-dialog tier (Map "Name this preset" / "Name this filter" prompts
+  + Profile tier-explainer + delete-account) is a solid-surface tier, not glass, ratified
+  to land identically: shared fill / radius / centering / scrim, `shadow.e3` four-of-four,
+  and the RM-gated **fade** entrance four-of-four (unified in R2/T20).
 
 ## 9. ROLLOUT RECIPE — how to apply Deep Field to a new screen
 
