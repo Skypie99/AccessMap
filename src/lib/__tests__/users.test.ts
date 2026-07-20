@@ -2,7 +2,8 @@
  * Tests for src/lib/users.ts — cycle 4 gap fill.
  *
  * GAP-1: getInitials() — pure function, 9 edge cases
- * GAP-2: uploadAvatar() — success path + 4 error paths, Supabase Storage mocked
+ * GAP-2: uploadAvatar() — success paths (incl. codec-APP1 sanitize) + error
+ *        paths, Supabase Storage mocked
  *
  * See qa-reports/2026-05-25-gary-cycle4-coverage-gaps.md for full gap analysis.
  */
@@ -106,7 +107,7 @@ describe('getInitials()', () => {
 });
 
 // ---------------------------------------------------------------------------
-// GAP-2: uploadAvatar() — success path + 4 error paths
+// GAP-2: uploadAvatar() — success paths (incl. codec-APP1 sanitize) + error paths
 // ---------------------------------------------------------------------------
 
 describe('uploadAvatar()', () => {
@@ -237,43 +238,63 @@ describe('uploadAvatar()', () => {
     expect(mockGetPublicUrl).not.toHaveBeenCalled();
   });
 
-  // ── Error path 5: EXIF verification failure ──────────────────────────────
+  // ── Path 5: codec-emitted EXIF is sanitized, not fatal (2026-07-20 fix) ──
 
-  it('error: aborts upload when verifyExifStripped detects metadata', async () => {
-    // This test ensures that if stripExifNative returns a buffer with EXIF
-    // markers still present, the upload aborts before touching Storage.
-    // Without this test, a no-op stripExif implementation would silently
-    // leak GPS coordinates to the public bucket.
-    // Structurally valid JPEG carrying a real APP1/EXIF segment — simulates a
-    // strip step whose output still contains metadata.
+  it('sanitizes a manipulator output that still carries an APP1 and uploads clean bytes', async () => {
+    // Apple's UIImage.jpegData writes a benign APP1 (orientation/XMP) into
+    // every re-encode, so the strip step's REAL output on iOS is APP1-bearing
+    // even though the SOURCE metadata was discarded. The old pipeline treated
+    // that as a fatal privacy failure — every avatar/photo upload died on
+    // device. sanitizeImageMetadata now splices the segment out and the
+    // upload proceeds with clean bytes.
     const exifBuffer = makeJpegBuffer({ withExifSegment: true });
     const cleanBuffer = makeJpegBuffer();
 
     // First fetch is for the original upload URI (before stripping).
-    // Second fetch is for the ImageManipulator-stripped URI (which we'll return EXIF-marked).
+    // Second fetch is for the ImageManipulator output (real codec shape: APP1).
     let fetchCallCount = 0;
     const originalFetch = (global as unknown as { fetch: unknown }).fetch;
-    (global as unknown as { fetch: unknown }).fetch = async (uri: unknown) => {
+    (global as unknown as { fetch: unknown }).fetch = async () => {
       fetchCallCount++;
-      // First call: uploadAvatar fetches the original file (the initial fetch)
-      if (fetchCallCount === 1) {
-        return {
-          arrayBuffer: async () => cleanBuffer,
-        };
-      }
-      // Second call: stripExifNative fetches the ImageManipulator result (still has EXIF)
-      return {
-        arrayBuffer: async () => exifBuffer,
-      };
+      return { arrayBuffer: async () => (fetchCallCount === 1 ? cleanBuffer : exifBuffer) };
     };
 
-    // Mock saveToLibraryAsync to return an Asset object (this triggers the manipulateAsync)
-    mockSaveToLibraryAsync.mockResolvedValue({
-      id: 'fake-asset-id',
-      filename: 'stripped.jpg',
-      uri: 'file:///tmp/stripped.jpg',
-      mediaType: 'photo',
+    mockUpload.mockResolvedValueOnce({ error: null });
+    mockGetPublicUrl.mockReturnValueOnce({
+      data: { publicUrl: 'https://cdn.example.com/user-abc-123/avatar/1234567890.jpg' },
     });
+
+    try {
+      const url = await uploadAvatar(USER_ID, 'file:///tmp/photo.jpg');
+
+      expect(url).toMatch(/^https:\/\//);
+      expect(mockUpload).toHaveBeenCalledTimes(1);
+      // The uploaded bytes are the APP1-spliced codec output — byte-identical
+      // to the same fixture built without the EXIF segment.
+      const [, bufferArg] = mockUpload.mock.calls[0];
+      expect(new Uint8Array(bufferArg as ArrayBuffer)).toEqual(new Uint8Array(cleanBuffer));
+    } finally {
+      (global as unknown as { fetch: unknown }).fetch = originalFetch;
+    }
+  });
+
+  // ── Error path 5: unparseable post-strip bytes still abort (D8) ──────────
+
+  it('error: aborts upload when the post-strip bytes cannot be sanitized/verified', async () => {
+    // A truncated JPEG (segment header claims 16 bytes with nothing behind it)
+    // is unparseable: sanitizeImageMetadata returns null → fail-closed abort
+    // BEFORE Storage is touched. Keeps the D8 abort coverage the old
+    // "manipulator output still has EXIF" test provided, now that APP1-bearing
+    // output is healed rather than fatal.
+    const cleanBuffer = makeJpegBuffer();
+    const malformed = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10]).buffer;
+
+    let fetchCallCount = 0;
+    const originalFetch = (global as unknown as { fetch: unknown }).fetch;
+    (global as unknown as { fetch: unknown }).fetch = async () => {
+      fetchCallCount++;
+      return { arrayBuffer: async () => (fetchCallCount === 1 ? cleanBuffer : malformed) };
+    };
 
     try {
       await expect(uploadAvatar(USER_ID, 'file:///tmp/photo.jpg')).rejects.toThrow(

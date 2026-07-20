@@ -59,8 +59,10 @@ export async function updateUserProfile(userId: string, patch: UserProfilePatch)
  * heic/heif extension allowlist, the empty / 10 MB pre-checks, a magic-byte
  * MIME pre-check, the fail-closed strip gate on BOTH platforms (null => abort,
  * original bytes never uploaded — critical for avatar selfies that very likely
- * carry the user's home GPS), the structural post-strip verifyExifStripped
- * gate, post-strip MIME-derived contentType/finalExt, and upsert:false.
+ * carry the user's home GPS), the byte-level metadata sanitizer (splices the
+ * codec's own benign APP1 / eXIf out of the post-strip bytes), the structural
+ * post-strip verifyExifStripped gate, post-strip MIME-derived
+ * contentType/finalExt, and upsert:false.
  *
  * The avatar surface keeps its own `<uid>/avatar/<ts>.<ext>` object name (the
  * path is passed in, not hardcoded in the helper) and uses the generic web

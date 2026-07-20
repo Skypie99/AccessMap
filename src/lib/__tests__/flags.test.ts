@@ -36,6 +36,7 @@ import {
   stripExifNative,
   stripExifWeb,
   detectMimeFromBytes,
+  sanitizeImageMetadata,
   resizeActionFor,
   scaledCanvasDims,
   PHOTO_MAX_DIMENSION,
@@ -82,6 +83,11 @@ const mockEq = jest.fn();
 const mockSelectAfterUpdate = jest.fn();
 const mockSingle = jest.fn();
 const mockFrom = jest.fn();
+// Storage chain — used by the uploadFlagPhoto sanitizer regression suite:
+//   supabase.storage.from(bucket).upload(path, buffer, opts) / .getPublicUrl(path)
+const mockStorageUpload = jest.fn();
+const mockStorageGetPublicUrl = jest.fn();
+const mockStorageFrom = jest.fn();
 
 jest.mock('../supabase', () => ({
   __esModule: true,
@@ -90,6 +96,9 @@ jest.mock('../supabase', () => ({
     // reference to mockFrom rather than the undefined TDZ value at hoist
     // time (jest.mock is hoisted above const declarations).
     from: (...args: unknown[]) => mockFrom(...args),
+    storage: {
+      from: (...args: unknown[]) => mockStorageFrom(...args),
+    },
   },
 }));
 
@@ -394,43 +403,46 @@ describe('uploadFlagPhoto — D8 web fail-closed', () => {
 // This is the most critical privacy gate in the upload path: if it fires,
 // users' GPS coordinates may still be embedded in the photo.
 // ---------------------------------------------------------------------------
+// ── synthetic-image helpers ──────────────────────────────────────────────
+// Module-scoped: shared by the verifyExifStripped, sanitizeImageMetadata, and
+// uploadFlagPhoto-sanitizer suites below.
+function bufferOf(...bytes: number[]): ArrayBuffer {
+  return new Uint8Array(bytes).buffer;
+}
+/** JPEG: SOI + given segments + SOS header + scan bytes + EOI. */
+function jpegOf(opts: { appSegments?: number[][]; scanBytes?: number[] }): ArrayBuffer {
+  const bytes: number[] = [0xff, 0xd8]; // SOI
+  for (const seg of opts.appSegments ?? []) bytes.push(...seg);
+  bytes.push(0xff, 0xda, 0x00, 0x04, 0x01, 0x00); // SOS, len 4
+  bytes.push(...(opts.scanBytes ?? [0x12, 0x34, 0x56]));
+  bytes.push(0xff, 0xd9); // EOI
+  return new Uint8Array(bytes).buffer;
+}
+/** A marker segment: FF <marker> <len hi> <len lo> <payload…>. */
+function segment(marker: number, payload: number[]): number[] {
+  const len = payload.length + 2;
+  return [0xff, marker, (len >> 8) & 0xff, len & 0xff, ...payload];
+}
+const PNG_SIG = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
+/** A PNG chunk: len(4BE) + type(4 ascii) + data + CRC(4, unvalidated). */
+function chunk(type: string, data: number[]): number[] {
+  const len = data.length;
+  return [
+    (len >> 24) & 0xff, (len >> 16) & 0xff, (len >> 8) & 0xff, len & 0xff,
+    ...[...type].map((c) => c.charCodeAt(0)),
+    ...data,
+    0, 0, 0, 0, // CRC — not validated by the verifier
+  ];
+}
+function pngOf(...chunks: number[][]): ArrayBuffer {
+  return new Uint8Array([...PNG_SIG, ...chunks.flat()]).buffer;
+}
+const IHDR = chunk('IHDR', new Array(13).fill(1));
+const IEND = chunk('IEND', []);
+const EXIF_PAYLOAD = [0x45, 0x78, 0x69, 0x66, 0x00, 0x00]; // "Exif\0\0"
+const JFIF_PAYLOAD = [0x4a, 0x46, 0x49, 0x46, 0x00]; // "JFIF\0"
+
 describe('verifyExifStripped', () => {
-  function bufferOf(...bytes: number[]): ArrayBuffer {
-    return new Uint8Array(bytes).buffer;
-  }
-
-  // ── synthetic-image helpers ──────────────────────────────────────────────
-  /** JPEG: SOI + given segments + SOS header + scan bytes + EOI. */
-  function jpegOf(opts: { appSegments?: number[][]; scanBytes?: number[] }): ArrayBuffer {
-    const bytes: number[] = [0xff, 0xd8]; // SOI
-    for (const seg of opts.appSegments ?? []) bytes.push(...seg);
-    bytes.push(0xff, 0xda, 0x00, 0x04, 0x01, 0x00); // SOS, len 4
-    bytes.push(...(opts.scanBytes ?? [0x12, 0x34, 0x56]));
-    bytes.push(0xff, 0xd9); // EOI
-    return new Uint8Array(bytes).buffer;
-  }
-  /** A marker segment: FF <marker> <len hi> <len lo> <payload…>. */
-  function segment(marker: number, payload: number[]): number[] {
-    const len = payload.length + 2;
-    return [0xff, marker, (len >> 8) & 0xff, len & 0xff, ...payload];
-  }
-  const PNG_SIG = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
-  /** A PNG chunk: len(4BE) + type(4 ascii) + data + CRC(4, unvalidated). */
-  function chunk(type: string, data: number[]): number[] {
-    const len = data.length;
-    return [
-      (len >> 24) & 0xff, (len >> 16) & 0xff, (len >> 8) & 0xff, len & 0xff,
-      ...[...type].map((c) => c.charCodeAt(0)),
-      ...data,
-      0, 0, 0, 0, // CRC — not validated by the verifier
-    ];
-  }
-  function pngOf(...chunks: number[][]): ArrayBuffer {
-    return new Uint8Array([...PNG_SIG, ...chunks.flat()]).buffer;
-  }
-  const IHDR = chunk('IHDR', new Array(13).fill(1));
-  const IEND = chunk('IEND', []);
-
   // ── JPEG ─────────────────────────────────────────────────────────────────
   it('passes a clean JPEG with only APP0/JFIF before SOS', () => {
     expect(verifyExifStripped(jpegOf({ appSegments: [segment(0xe0, [0x4a, 0x46, 0x49, 0x46, 0x00])] }))).toBe(true);
@@ -485,6 +497,146 @@ describe('verifyExifStripped', () => {
 
   it('fails closed on bytes that are neither JPEG nor PNG', () => {
     expect(verifyExifStripped(bufferOf(0xff, 0x00, 0xaa, 0xbb, 0x01, 0x02))).toBe(false);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Section 3b — sanitizeImageMetadata (2026-07-20 fix)
+//
+// Byte-level copy-through sanitizer that splices APP1/APP9/APP13 (JPEG) and
+// eXIf (PNG) OUT of post-strip bytes before verifyExifStripped runs. Exists
+// because the platform codec's re-encode writes its own benign APP1
+// (orientation/XMP) — Apple's always does — which the verifier correctly
+// rejects; without the sanitizer EVERY native photo submit failed.
+// ---------------------------------------------------------------------------
+describe('sanitizeImageMetadata', () => {
+  /** Unwraps the nullable result so tests read cleanly (no non-null asserts). */
+  function sanitizeOrFail(buf: ArrayBuffer): { buffer: ArrayBuffer; removedSegments: number } {
+    const result = sanitizeImageMetadata(buf);
+    expect(result).not.toBeNull();
+    return result as { buffer: ArrayBuffer; removedSegments: number };
+  }
+
+  // ── JPEG: removal, byte-exact ────────────────────────────────────────────
+  it('removes an APP1 (EXIF) segment byte-exactly; result passes the verifier', () => {
+    const input = jpegOf({ appSegments: [segment(0xe1, EXIF_PAYLOAD), segment(0xe0, JFIF_PAYLOAD)] });
+    const expected = jpegOf({ appSegments: [segment(0xe0, JFIF_PAYLOAD)] });
+    const result = sanitizeOrFail(input);
+    expect(result.removedSegments).toBe(1);
+    expect(new Uint8Array(result.buffer)).toEqual(new Uint8Array(expected));
+    expect(verifyExifStripped(result.buffer)).toBe(true);
+  });
+
+  it('removes APP13 (IPTC) and APP9 (XMP) segments too — one count each', () => {
+    const input = jpegOf({
+      appSegments: [
+        segment(0xe0, JFIF_PAYLOAD),
+        segment(0xed, [0x00, 0x01]), // APP13
+        segment(0xe9, [0x00, 0x01]), // APP9
+        segment(0xe1, EXIF_PAYLOAD), // APP1
+      ],
+    });
+    const expected = jpegOf({ appSegments: [segment(0xe0, JFIF_PAYLOAD)] });
+    const result = sanitizeOrFail(input);
+    expect(result.removedSegments).toBe(3);
+    expect(new Uint8Array(result.buffer)).toEqual(new Uint8Array(expected));
+    expect(verifyExifStripped(result.buffer)).toBe(true);
+  });
+
+  it('splices APP1 but copies scan data (incl. marker-like bytes) verbatim', () => {
+    // 0xFFE1/0xFFED pairs inside the entropy-coded scan occur by chance in
+    // real photos — the sanitizer must never touch anything after SOS.
+    const scan = [0x10, 0xff, 0xe1, 0x22, 0xff, 0xed, 0x33];
+    const input = jpegOf({ appSegments: [segment(0xe1, EXIF_PAYLOAD)], scanBytes: scan });
+    const expected = jpegOf({ scanBytes: scan });
+    const result = sanitizeOrFail(input);
+    expect(result.removedSegments).toBe(1);
+    expect(new Uint8Array(result.buffer)).toEqual(new Uint8Array(expected));
+  });
+
+  // ── JPEG: preservation + zero-copy fast path ─────────────────────────────
+  it('LOCKING: a clean JPEG (APP0 + DQT-style segment) returns the SAME buffer instance', () => {
+    // APP0/APP2/APP14 (JFIF/ICC/Adobe) must be preserved — dropping them would
+    // shift colors. Nothing removed ⇒ zero-copy: the very same ArrayBuffer.
+    const input = jpegOf({
+      appSegments: [segment(0xe0, JFIF_PAYLOAD), segment(0xdb, [0x01, 0x02, 0x03])],
+      scanBytes: [0x10, 0xff, 0xe1, 0x22],
+    });
+    const result = sanitizeOrFail(input);
+    expect(result.removedSegments).toBe(0);
+    expect(result.buffer).toBe(input);
+  });
+
+  it('preserves APP2 (ICC profile) while removing APP1', () => {
+    const icc = segment(0xe2, [0x49, 0x43, 0x43, 0x00]); // APP2 "ICC\0"
+    const input = jpegOf({ appSegments: [segment(0xe1, EXIF_PAYLOAD), icc] });
+    const expected = jpegOf({ appSegments: [icc] });
+    const result = sanitizeOrFail(input);
+    expect(result.removedSegments).toBe(1);
+    expect(new Uint8Array(result.buffer)).toEqual(new Uint8Array(expected));
+  });
+
+  it('keeps standalone markers (TEM) and fill bytes before kept markers verbatim', () => {
+    const tem = [0xff, 0x01]; // TEM — standalone, no length field
+    const filledApp0 = [0xff, ...segment(0xe0, JFIF_PAYLOAD)]; // extra 0xFF fill byte
+    const filledApp1 = [0xff, 0xff, ...segment(0xe1, EXIF_PAYLOAD)]; // fill bytes on a DROPPED segment
+    const input = jpegOf({ appSegments: [tem, filledApp0, filledApp1] });
+    const expected = jpegOf({ appSegments: [tem, filledApp0] });
+    const result = sanitizeOrFail(input);
+    expect(result.removedSegments).toBe(1);
+    expect(new Uint8Array(result.buffer)).toEqual(new Uint8Array(expected));
+    expect(verifyExifStripped(result.buffer)).toBe(true);
+  });
+
+  // ── JPEG: malformed ⇒ null (fail-closed) ─────────────────────────────────
+  it('fails closed (null) on a truncated JPEG segment header', () => {
+    expect(sanitizeImageMetadata(bufferOf(0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10))).toBeNull();
+  });
+
+  it('fails closed (null) on lost marker sync (non-FF where a marker must be)', () => {
+    expect(sanitizeImageMetadata(bufferOf(0xff, 0xd8, 0x00, 0x11, 0x22, 0x33))).toBeNull();
+  });
+
+  it('fails closed (null) on an invalid segment length (< 2)', () => {
+    expect(sanitizeImageMetadata(bufferOf(0xff, 0xd8, 0xff, 0xe0, 0x00, 0x01, 0x00, 0x00))).toBeNull();
+  });
+
+  it('fails closed (null) when the walk runs off the end without SOS/EOI', () => {
+    expect(sanitizeImageMetadata(bufferOf(0xff, 0xd8, ...segment(0xe0, JFIF_PAYLOAD)))).toBeNull();
+  });
+
+  // ── PNG ──────────────────────────────────────────────────────────────────
+  it('PNG: removes an eXIf chunk byte-exactly; result passes the verifier', () => {
+    const exifChunk = chunk('eXIf', [0x4d, 0x4d, 0x00, 0x2a]); // TIFF header start
+    const input = pngOf(IHDR, exifChunk, IEND);
+    const expected = pngOf(IHDR, IEND);
+    const result = sanitizeOrFail(input);
+    expect(result.removedSegments).toBe(1);
+    expect(new Uint8Array(result.buffer)).toEqual(new Uint8Array(expected));
+    expect(verifyExifStripped(result.buffer)).toBe(true);
+  });
+
+  it('PNG: a clean PNG (marker-like bytes in IDAT) returns the SAME buffer instance', () => {
+    const idat = chunk('IDAT', [0x00, 0xff, 0xe1, 0x42, 0xff, 0xed, 0x99]);
+    const input = pngOf(IHDR, idat, IEND);
+    const result = sanitizeOrFail(input);
+    expect(result.removedSegments).toBe(0);
+    expect(result.buffer).toBe(input);
+  });
+
+  it('PNG: fails closed (null) on a truncated PNG with no IEND', () => {
+    expect(sanitizeImageMetadata(pngOf(IHDR))).toBeNull();
+  });
+
+  // ── unknown formats ⇒ null (fail-closed) ─────────────────────────────────
+  it('fails closed (null) on an empty buffer, WEBP bytes, and random bytes', () => {
+    expect(sanitizeImageMetadata(new ArrayBuffer(0))).toBeNull();
+    expect(
+      sanitizeImageMetadata(
+        bufferOf(0x52, 0x49, 0x46, 0x46, 0, 0, 0, 0, 0x57, 0x45, 0x42, 0x50, 0, 0, 0, 0),
+      ),
+    ).toBeNull();
+    expect(sanitizeImageMetadata(bufferOf(0x00, 0x11, 0x22, 0x33, 0x44, 0x55))).toBeNull();
   });
 });
 
@@ -638,6 +790,13 @@ describe('stripExifNative', () => {
     // Guard that the gate is real: an EXIF-bearing JPEG is rejected, a clean one passes.
     expect(verifyExifStripped(EXIF_JPEG)).toBe(false);
     expect(verifyExifStripped(CLEAN_JPEG)).toBe(true);
+    // REGRESSION (2026-07-20): the real iOS codec emits APP1-bearing bytes —
+    // the sanitize→verify chain must heal exactly that case. The "final bytes
+    // are EXIF-free" guarantee now lives in uploadStrippedImage (sanitize →
+    // verify), not in stripExifNative's codec output alone.
+    const sanitizedExif = sanitizeImageMetadata(EXIF_JPEG);
+    expect(sanitizedExif).not.toBeNull();
+    expect(verifyExifStripped((sanitizedExif as { buffer: ArrayBuffer }).buffer)).toBe(true);
 
     const manipulate = mockManipulateAsync as unknown as jest.Mock;
     manipulate.mockClear();
@@ -699,6 +858,75 @@ describe('stripExifNative', () => {
 
     const [, actionsArg] = manipulate.mock.calls[0];
     expect(actionsArg).toEqual([]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Section 4a2 — REGRESSION (2026-07-20): codec-emitted APP1 is sanitized, not
+// fatal. Apple's UIImage.jpegData writes a benign APP1 (orientation/XMP) into
+// EVERY re-encode — expo-image-manipulator exposes no option to suppress it —
+// so the strip step's real output on iOS is APP1-bearing even though all
+// SOURCE metadata was discarded. Before sanitizeImageMetadata existed,
+// verifyExifStripped rejected those bytes and every native photo submit died
+// with "Photo privacy check failed." This suite feeds the FULL uploadFlagPhoto
+// pipeline exactly what the iOS codec emits and asserts the upload succeeds
+// with the APP1 spliced out of the uploaded bytes.
+// ---------------------------------------------------------------------------
+describe('uploadFlagPhoto — codec-emitted APP1 is sanitized (native path)', () => {
+  const USER_ID = 'user-123';
+
+  beforeEach(() => {
+    mockStorageUpload.mockReset();
+    mockStorageGetPublicUrl.mockReset();
+    mockStorageFrom.mockReset().mockReturnValue({
+      upload: mockStorageUpload,
+      getPublicUrl: mockStorageGetPublicUrl,
+    });
+  });
+
+  afterEach(() => {
+    // Restore to avoid polluting other test suites.
+    (global as unknown as { fetch: unknown }).fetch = undefined as unknown as typeof fetch;
+  });
+
+  /** 1st fetch = original picker bytes; 2nd = the manipulator's output file. */
+  function mockTwoFetches(originalBytes: ArrayBuffer, postStripBytes: ArrayBuffer) {
+    let call = 0;
+    (global as unknown as { fetch: unknown }).fetch = jest.fn(async () => {
+      call++;
+      return { arrayBuffer: async () => (call === 1 ? originalBytes : postStripBytes) };
+    });
+  }
+
+  it('REGRESSION: an APP1-bearing manipulator output uploads with the APP1 spliced out', async () => {
+    const codecOutput = jpegOf({ appSegments: [segment(0xe1, EXIF_PAYLOAD)] });
+    const expectedUpload = jpegOf({}); // same JPEG minus the APP1
+    mockTwoFetches(jpegOf({}), codecOutput);
+    mockStorageUpload.mockResolvedValueOnce({ error: null });
+    mockStorageGetPublicUrl.mockReturnValueOnce({
+      data: { publicUrl: 'https://cdn.example.com/user-123/1700000000000.jpg' },
+    });
+
+    const result = await uploadFlagPhoto(USER_ID, 'file:///tmp/photo.jpg');
+
+    // On pre-fix code this rejects with "Photo privacy check failed." — the
+    // resolve below IS the bug fix's proof.
+    expect(result.url).toMatch(/^https:\/\//);
+    expect(mockStorageUpload).toHaveBeenCalledTimes(1);
+    const [pathArg, bufferArg] = mockStorageUpload.mock.calls[0];
+    expect(String(pathArg).startsWith(`${USER_ID}/`)).toBe(true);
+    expect(new Uint8Array(bufferArg as ArrayBuffer)).toEqual(new Uint8Array(expectedUpload));
+    expect(verifyExifStripped(bufferArg as ArrayBuffer)).toBe(true);
+  });
+
+  it('D8 fail-closed: unparseable post-strip bytes still abort before Storage', async () => {
+    // Truncated segment header — sanitizeImageMetadata returns null.
+    mockTwoFetches(jpegOf({}), bufferOf(0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10));
+
+    await expect(uploadFlagPhoto(USER_ID, 'file:///tmp/photo.jpg')).rejects.toThrow(
+      /privacy check failed/i,
+    );
+    expect(mockStorageUpload).not.toHaveBeenCalled();
   });
 });
 

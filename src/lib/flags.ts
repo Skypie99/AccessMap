@@ -107,9 +107,13 @@ export function scaledCanvasDims(
  * Strip EXIF metadata (GPS, timestamps, camera info, thumbnails, IPTC, XMP)
  * from an image on iOS/Android using expo-image-manipulator re-encode.
  *
- * ImageManipulator.manipulateAsync re-encodes the image via the platform codec,
- * producing a new file with no metadata passthrough. The returned {uri} is a
- * fresh file:// URI that we fetch back as bytes.
+ * ImageManipulator.manipulateAsync re-encodes the image via the platform
+ * codec, discarding all SOURCE metadata. NOTE: the encoder may still write its
+ * own benign APP1 (orientation/XMP) into the fresh file — Apple's
+ * UIImage.jpegData always does — so the output is NOT guaranteed marker-free;
+ * uploadStrippedImage splices those out via sanitizeImageMetadata before the
+ * verifyExifStripped gate. The returned {uri} is a fresh file:// URI that we
+ * fetch back as bytes.
  *
  * D8 privacy gate: returns null on failure so callers can abort the upload
  * rather than silently proceeding with GPS-bearing original bytes (fail-closed).
@@ -161,8 +165,10 @@ export async function stripExifNative(
       input = `data:${mimeType};base64,${base64}`;
     }
 
-    // Re-encode (forces the platform codec to write a fresh image —
-    // EXIF/GPS/IPTC/XMP are not carried through) AND, in the SAME pass, apply a
+    // Re-encode (forces the platform codec to write a fresh image — SOURCE
+    // EXIF/GPS/IPTC/XMP are not carried through, though the encoder may add
+    // its own benign APP1; the sanitizer in uploadStrippedImage removes it)
+    // AND, in the SAME pass, apply a
     // downscale-only longest-edge cap (B8/L7-05). Coupling resize to the strip
     // guarantees the emitted asset is BOTH resized and metadata-free — there is
     // no path that emits an un-stripped or un-resized file. `resizeActionFor`
@@ -348,6 +354,11 @@ export function stripExifWeb(arrayBuffer: ArrayBuffer, ext: string): Promise<Arr
  *
  * Returns true if no metadata containers are found (safe to upload).
  * Returns false if metadata is detected or the bytes can't be verified.
+ *
+ * In the upload pipeline this runs AFTER sanitizeImageMetadata, which splices
+ * codec-emitted APP1/APP13/APP9 (JPEG) and eXIf (PNG) out of the post-strip
+ * bytes — so this verifier is the unchanged fail-closed backstop, and a
+ * `false` after sanitizing indicates a sanitizer bug.
  */
 export function verifyExifStripped(arrayBuffer: ArrayBuffer): boolean {
   const view = new Uint8Array(arrayBuffer);
@@ -440,6 +451,181 @@ function pngHasExifChunk(view: Uint8Array): boolean {
 }
 
 /**
+ * Splice metadata containers OUT of post-strip image bytes, byte-for-byte.
+ *
+ * Why this exists: stripExifNative's re-encode discards all SOURCE metadata,
+ * but the platform encoder writes its own benign APP1 (orientation/XMP) into
+ * the fresh JPEG — Apple's UIImage.jpegData always does, and expo-image-
+ * manipulator exposes no option to suppress it. verifyExifStripped (correctly)
+ * fails ANY APP1, so without this sanitizer every native photo submit failed
+ * on iOS. Rather than trusting any codec's output, we remove the metadata
+ * containers ourselves, which also makes the privacy guarantee codec-
+ * independent.
+ *
+ * What it removes — exactly the set verifyExifStripped checks:
+ *   - JPEG: APP1 (FFE1, EXIF/XMP), APP9 (FFE9), APP13 (FFED, IPTC) segments
+ *     before SOS. Everything from the first SOS onward is copied verbatim.
+ *     APP0 (JFIF), APP2 (ICC color profile) and APP14 (Adobe transform flag)
+ *     are deliberately PRESERVED — dropping them would shift colors on
+ *     Display-P3 iPhone photos.
+ *   - PNG: eXIf chunks. All other chunks are copied verbatim.
+ *
+ * POST-STRIP BYTES ONLY. This is safe against rotation only because the
+ * re-encode has already baked orientation into the pixels (iOS: forced
+ * ImageFixOrientationTransformer; Android: Glide decode; web: canvas
+ * drawImage), so the codec's APP1 carries Orientation=1 and dropping it is
+ * display-neutral. Never run this on original picker bytes as a substitute
+ * for the re-encode — a non-1 Orientation tag there corrects un-rotated
+ * pixels, and the re-encode is also what kills GPS in containers we don't
+ * parse (HEIC/WEBP).
+ *
+ * Fail-closed contract (D8): returns null when the bytes are not well-formed
+ * JPEG/PNG (lost marker sync, truncated/invalid lengths, missing SOS/IEND,
+ * unknown magic bytes) — callers must abort the upload. When nothing needed
+ * removing, returns the ORIGINAL buffer unchanged (zero-copy fast path), so
+ * already-clean output uploads byte-identical.
+ */
+export function sanitizeImageMetadata(
+  arrayBuffer: ArrayBuffer,
+): { buffer: ArrayBuffer; removedSegments: number } | null {
+  const view = new Uint8Array(arrayBuffer);
+
+  // JPEG: FF D8 (same signature check as verifyExifStripped).
+  if (view.length >= 4 && view[0] === 0xff && view[1] === 0xd8) {
+    const kept = jpegKeepRanges(view);
+    if (kept === null) return null;
+    if (kept.removed === 0) return { buffer: arrayBuffer, removedSegments: 0 };
+    return { buffer: assembleRanges(view, kept.ranges), removedSegments: kept.removed };
+  }
+
+  // PNG: 89 50 4E 47 (same signature check as verifyExifStripped).
+  if (
+    view.length >= 16 &&
+    view[0] === 0x89 &&
+    view[1] === 0x50 &&
+    view[2] === 0x4e &&
+    view[3] === 0x47
+  ) {
+    const kept = pngKeepRanges(view);
+    if (kept === null) return null;
+    if (kept.removed === 0) return { buffer: arrayBuffer, removedSegments: 0 };
+    return { buffer: assembleRanges(view, kept.ranges), removedSegments: kept.removed };
+  }
+
+  // Unknown format: the strip step only ever emits JPEG or PNG — fail closed.
+  return null;
+}
+
+/**
+ * Walk JPEG marker segments SOI→SOS and collect the byte ranges to KEEP,
+ * dropping APP1/APP9/APP13. Copy-through construction: kept segments are
+ * emitted in order and everything from the first SOS (or EOI) onward is kept
+ * verbatim, so entropy-coded scan data — where 0xFFE1 pairs occur by chance —
+ * is never touched. Mirrors jpegHasMetadataSegment's walk semantics exactly
+ * (fill-byte skip, standalone TEM/RSTn, 2-byte big-endian length incl.
+ * itself); every condition the verifier treats as malformed returns null here.
+ */
+function jpegKeepRanges(
+  view: Uint8Array,
+): { ranges: [number, number][]; removed: number } | null {
+  const ranges: [number, number][] = [[0, 2]]; // SOI (FF D8)
+  let removed = 0;
+  let i = 2;
+  while (i + 1 < view.length) {
+    if (view[i] !== 0xff) return null; // lost segment sync — can't sanitize
+    let markerAt = i + 1;
+    // Skip fill bytes (a marker may be preceded by any number of 0xFF).
+    while (view[markerAt] === 0xff && markerAt + 1 < view.length) markerAt++;
+    const marker = view[markerAt];
+    if (marker === undefined) return null;
+    // Standalone markers without a length field: TEM (01), RSTn (D0–D7).
+    if (marker === 0x01 || (marker >= 0xd0 && marker <= 0xd7)) {
+      ranges.push([i, markerAt + 1]);
+      i = markerAt + 1;
+      continue;
+    }
+    // SOS (DA): entropy-coded data follows — keep the remainder verbatim
+    // (covers progressive multi-scan JPEGs and restart markers). EOI (D9):
+    // keep any trailer verbatim too. Either way, done.
+    if (marker === 0xda || marker === 0xd9) {
+      ranges.push([i, view.length]);
+      return { ranges, removed };
+    }
+    // All remaining markers carry a 2-byte big-endian length (incl. itself).
+    if (markerAt + 3 >= view.length) return null; // truncated header
+    const len = (((view[markerAt + 1] ?? 0) << 8) | (view[markerAt + 2] ?? 0)) >>> 0;
+    if (len < 2 || markerAt + 1 + len > view.length) return null; // malformed
+    const end = markerAt + 1 + len;
+    if (marker === 0xe1 || marker === 0xed || marker === 0xe9) {
+      removed++; // drop APP1/APP13/APP9 (leading fill bytes go with it — legal)
+    } else {
+      ranges.push([i, end]); // keep, incl. preceding fill bytes, verbatim
+    }
+    i = end;
+  }
+  // Ran off the end without reaching SOS/EOI — malformed, can't sanitize.
+  return null;
+}
+
+/**
+ * Walk PNG chunks and collect the byte ranges to KEEP, dropping eXIf chunks
+ * (4-byte length + type + data + CRC — CRCs are per-chunk, so no recompute is
+ * needed). IEND and anything after it are kept verbatim. Mirrors
+ * pngHasExifChunk's walk; malformed structure returns null.
+ */
+function pngKeepRanges(
+  view: Uint8Array,
+): { ranges: [number, number][]; removed: number } | null {
+  const ranges: [number, number][] = [[0, 8]]; // PNG signature
+  let removed = 0;
+  let i = 8;
+  while (i + 8 <= view.length) {
+    const length =
+      (((view[i] ?? 0) << 24) |
+        ((view[i + 1] ?? 0) << 16) |
+        ((view[i + 2] ?? 0) << 8) |
+        (view[i + 3] ?? 0)) >>>
+      0;
+    const t0 = view[i + 4];
+    const t1 = view[i + 5];
+    const t2 = view[i + 6];
+    const t3 = view[i + 7];
+    // 'IEND' — keep it (and any trailing bytes) verbatim; done.
+    if (t0 === 0x49 && t1 === 0x45 && t2 === 0x4e && t3 === 0x44) {
+      ranges.push([i, view.length]);
+      return { ranges, removed };
+    }
+    const next = i + 8 + length + 4; // header + data + CRC
+    if (next <= i || next > view.length) return null; // malformed/truncated
+    // 'eXIf' — the chunk PNG uses to embed EXIF (incl. GPS): drop it.
+    if (t0 === 0x65 && t1 === 0x58 && t2 === 0x49 && t3 === 0x66) {
+      removed++;
+    } else {
+      ranges.push([i, next]);
+    }
+    i = next;
+  }
+  // Ran off the end without IEND — malformed, can't sanitize.
+  return null;
+}
+
+/**
+ * Assemble kept byte ranges into a fresh ArrayBuffer (single allocation).
+ */
+function assembleRanges(view: Uint8Array, ranges: [number, number][]): ArrayBuffer {
+  let total = 0;
+  for (const [start, end] of ranges) total += end - start;
+  const out = new ArrayBuffer(total);
+  const outView = new Uint8Array(out);
+  let offset = 0;
+  for (const [start, end] of ranges) {
+    outView.set(view.subarray(start, end), offset);
+    offset += end - start;
+  }
+  return out;
+}
+
+/**
  * Inspect the first 12 bytes of an ArrayBuffer to identify the image format.
  * Returns the detected MIME type, or null if the bytes don't match any known
  * image magic sequence. Guards against files that pass the extension check
@@ -505,8 +691,13 @@ export function detectMimeFromBytes(buffer: ArrayBuffer): string | null {
  *   4. detectMimeFromBytes pre-check (magic-byte sniff; reject non-images).
  *   5. fail-closed strip gate (both platforms): stripExif{Web,Native} returns
  *      null on ANY failure => abort. The ORIGINAL bytes are NEVER uploaded.
- *   6. post-strip verifyExifStripped gate (structural JPEG/PNG verifier) —
- *      abort on false.
+ *   5b. byte-level metadata sanitizer (sanitizeImageMetadata) — splices
+ *      APP1/APP13/APP9 (JPEG) / eXIf (PNG) out of the post-strip bytes.
+ *      Codecs (notably Apple's) re-emit a benign APP1 during re-encode, so we
+ *      remove metadata ourselves instead of trusting any codec's output.
+ *      Fail-closed: null (unparseable bytes) => abort.
+ *   6. post-strip verifyExifStripped gate (structural JPEG/PNG verifier,
+ *      unchanged backstop confirming the sanitizer's work) — abort on false.
  *   7. derive contentType + finalExt from the ACTUAL post-strip bytes.
  *   8. upload with upsert:false, then return the public URL + storage path.
  *
@@ -580,7 +771,30 @@ export async function uploadStrippedImage(
     arrayBuffer = stripped;
   }
 
-  // Post-strip verification: check that EXIF markers are not present.
+  // Sanitize: splice metadata containers OUT of the post-strip bytes
+  // ourselves. The codec's re-encode discards SOURCE metadata but may write
+  // its own benign APP1 (orientation/XMP) into the fresh file — Apple's
+  // encoder always does — which verifyExifStripped would reject. Removing
+  // APP1/APP13/APP9 (JPEG) / eXIf (PNG) byte-for-byte here keeps the privacy
+  // guarantee codec-independent. See sanitizeImageMetadata's doc comment.
+  const sanitized = sanitizeImageMetadata(arrayBuffer);
+  if (sanitized === null) {
+    // D8 fail-closed: bytes we can't parse as JPEG/PNG can't be sanitized.
+    if (__DEV__) {
+      console.debug('[EXIF] Sanitizer could not parse post-strip bytes (unverifiable).');
+    }
+    throw new Error('Photo privacy check failed. Please try a different photo or contact support.');
+  }
+  if (__DEV__ && sanitized.removedSegments > 0) {
+    console.debug(
+      `[EXIF] Sanitizer removed ${sanitized.removedSegments} metadata segment(s) post-strip.`,
+    );
+  }
+  arrayBuffer = sanitized.buffer;
+
+  // Post-strip verification: unchanged fail-closed backstop confirming the
+  // sanitizer's work. A `false` here means a sanitizer bug — codec-emitted
+  // APP1/APP13/APP9 and PNG eXIf are already spliced out above.
   const exifCheckPassed = verifyExifStripped(arrayBuffer);
   if (!exifCheckPassed) {
     // D8 privacy gate: do not upload if GPS/EXIF metadata cannot be verified stripped.
