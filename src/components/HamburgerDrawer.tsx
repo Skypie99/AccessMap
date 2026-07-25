@@ -79,23 +79,50 @@ export default function HamburgerDrawer({ open, onClose, onSignIn, onNavigate }:
   // same-tick (no timers — designed stillness preserved).
   const [rendered, setRendered] = useState(open);
   const [subScreen, setSubScreen] = useState<SubScreen | null>(null);
-  // Holds the pending navigate() timer so we can cancel it on unmount — avoids a
-  // setState-after-unmount warning if the drawer goes away during the 220ms delay.
-  const navTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // D1 (device-tune 1): the sub-screen a nav item asked for, held until the
+  // drawer Modal has ACTUALLY left the screen. iOS serializes Modal
+  // present/dismiss as UIKit transactions — a sibling Modal presented while
+  // the drawer Modal is still dismissing is silently dropped (or torn down
+  // with the dismissing controller it was presented from), so the handoff
+  // must be event-driven, never a parallel clock.
+  const pendingSubScreen = useRef<SubScreen | null>(null);
+
+  const presentPendingSubScreen = useCallback(() => {
+    const pending = pendingSubScreen.current;
+    if (pending) {
+      pendingSubScreen.current = null;
+      setSubScreen(pending);
+    }
+  }, []);
+
+  // The single latch-release point. On iOS the Modal is still presented until
+  // UIKit finishes the dismissal, so the pending sub-screen is handed to the
+  // Modal's onDismiss (the dismissal-complete event) instead of being
+  // presented here. Android stacks dialogs and web Modals are plain portals —
+  // both can present in the same commit safely.
+  const releaseDrawer = useCallback(() => {
+    setRendered(false);
+    if (Platform.OS !== 'ios') presentPendingSubScreen();
+  }, [presentPendingSubScreen]);
 
   useEffect(() => {
     const slideTo = open ? 0 : -DRAWER_WIDTH;
     const fadeTo = open ? 1 : 0;
     // Mount immediately on open so the panel can spring in; on close we keep the
     // Modal mounted (via `rendered`) until the exit animation finishes below.
-    if (open) setRendered(true);
+    if (open) {
+      setRendered(true);
+      // A reopen before the close finished also cancels any pending
+      // sub-screen handoff (mirrors the latch's interrupted-exit semantics).
+      pendingSubScreen.current = null;
+    }
     // WCAG 2.3.3 — snap into place instead of sliding/fading under reduced motion.
     if (reducedMotion) {
       slideAnim.setValue(slideTo);
       fadeAnim.setValue(fadeTo);
       // Snap-closed same-tick: there's no exit animation to wait for, so unmount
       // now (no timers — the RM designed-stillness contract is preserved).
-      if (!open) setRendered(false);
+      if (!open) releaseDrawer();
       return;
     }
     Animated.parallel([
@@ -121,9 +148,9 @@ export default function HamburgerDrawer({ open, onClose, onSignIn, onNavigate }:
       // interrupted by a reopen leaves `rendered` true (open is true again, so
       // this no-ops), and the panel springs back from wherever it is; a completed
       // exit leaves slideAnim at -DRAWER_WIDTH, so the next open starts off-screen.
-      if (!open && finished) setRendered(false);
+      if (!open && finished) releaseDrawer();
     });
-  }, [open, reducedMotion, slideAnim, fadeAnim]);
+  }, [open, reducedMotion, slideAnim, fadeAnim, releaseDrawer]);
 
   const closeDrawer = useCallback(() => {
     onClose();
@@ -131,29 +158,20 @@ export default function HamburgerDrawer({ open, onClose, onSignIn, onNavigate }:
 
   const navigate = useCallback(
     (screen: SubScreen) => {
+      // D1: hand the sub-screen to the drawer's dismissal instead of racing
+      // it. The old parallel setTimeout presented the sub-screen at
+      // motion.duration.base — the same instant the T12 exit latch flips the
+      // drawer Modal's visible=false — so on device the two UIKit
+      // transactions landed in the same frame and the sub-screen never
+      // appeared. The pending ref is consumed by the Modal's onDismiss (iOS)
+      // or releaseDrawer (Android/web), so the presentation starts only once
+      // the drawer is genuinely gone. Under reduce motion the drawer snaps
+      // closed and the dismissal completes at once — still zero timers (B5's
+      // designed-stillness contract, now with no clock at all).
+      pendingSubScreen.current = screen;
       onClose();
-      // Wait for the drawer's real close slide before the sub-screen appears.
-      // T12: now that the exit animation actually plays (the `rendered` latch
-      // above), this delay is bound to that slide's own duration —
-      // motion.duration.base — so it earns its premise instead of being an
-      // off-scale literal (retires the transition layer's last raw 220, per B5's
-      // pulse-documentation standard). B5 (L4-11): under reduce motion the drawer
-      // snaps closed instantly (see the useEffect above), so the wait is dead
-      // time for exactly the users who asked for snappier UI — gate it to 0.
-      // setTimeout(fn, 0) is a genuine next-tick, NOT a falsy-default API, so no
-      // falsy-zero trap here.
-      if (navTimer.current) clearTimeout(navTimer.current);
-      navTimer.current = setTimeout(() => setSubScreen(screen), reducedMotion ? 0 : motion.duration.base);
     },
-    [onClose, reducedMotion],
-  );
-
-  // Cancel any pending navigate() timer when the drawer unmounts.
-  useEffect(
-    () => () => {
-      if (navTimer.current) clearTimeout(navTimer.current);
-    },
-    [],
+    [onClose],
   );
 
   const handleSignOut = useCallback(async () => {
@@ -173,6 +191,9 @@ export default function HamburgerDrawer({ open, onClose, onSignIn, onNavigate }:
         transparent
         animationType="none"
         onRequestClose={closeDrawer}
+        // D1: iOS fires this when the dismissal transaction completes — the
+        // earliest instant a sibling Modal can present without being dropped.
+        onDismiss={presentPendingSubScreen}
         statusBarTranslucent
       >
         {/* Backdrop */}
