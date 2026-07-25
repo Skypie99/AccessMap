@@ -36,6 +36,7 @@ import LogoMark from '@/components/LogoMark';
 import { font, motion, radius, shadow, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { useReducedMotion, useReduceTransparency } from '@/lib/accessibility';
+import { confirm } from '@/lib/confirm';
 import { signOut } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth';
 import { useIsAdmin } from '@/lib/admin';
@@ -175,11 +176,20 @@ export default function HamburgerDrawer({ open, onClose, onSignIn, onNavigate }:
   );
 
   const handleSignOut = useCallback(async () => {
+    // Parity with the Settings row (SettingsScreen.handleSignOutPress): this
+    // was the only sign-out path in the app that skipped confirm(). Dialog
+    // strings are byte-identical to the shipped Settings dialog (BP16 copy
+    // gate — no new copy on drawer surfaces). Confirm BEFORE closing: a
+    // cancel leaves the drawer open, exactly where the user was.
+    const ok = await confirm('Sign out?', 'Are you sure you want to sign out?', 'Sign out', true);
+    if (!ok) return;
     closeDrawer();
     // Pass userId so signOut() can clear the offline flag cache, tile cache,
     // and push token. Steve condition: never pass undefined when user is
     // known — user.id is always a non-empty string for authenticated users.
-    await signOut(user?.id);
+    // Fire-and-forget like every other caller — the AuthProvider listener
+    // routes back to SignInScreen.
+    void signOut(user?.id);
   }, [closeDrawer, user]);
 
   return (
@@ -270,6 +280,9 @@ export default function HamburgerDrawer({ open, onClose, onSignIn, onNavigate }:
               <DrawerItem
                 icon={LogOut}
                 label="Sign out"
+                // Verbatim the Settings row's hint (SettingsScreen.tsx) — the
+                // destructive intent must be spoken, not colored.
+                accessibilityHint="Destructive. Confirms before signing out."
                 onPress={handleSignOut}                muted
               />
             ) : (
@@ -313,9 +326,12 @@ interface ItemProps {
   label: string;
   onPress: () => void;
   muted?: boolean;
+  /** Spoken intent for rows whose consequence isn't in the label (e.g. the
+   *  destructive Sign out row). Optional — plain nav rows need none. */
+  accessibilityHint?: string;
 }
 
-function DrawerItem({ icon: Icon, label, onPress, muted = false }: ItemProps) {
+function DrawerItem({ icon: Icon, label, onPress, muted = false, accessibilityHint }: ItemProps) {
   const styles = makeItemStyles();
   return (
     <Pressable
@@ -323,6 +339,7 @@ function DrawerItem({ icon: Icon, label, onPress, muted = false }: ItemProps) {
       style={({ pressed }) => [styles.item, pressed && styles.itemPressed]}
       accessibilityRole="button"
       accessibilityLabel={label}
+      accessibilityHint={accessibilityHint}
     >
       <View style={styles.iconWrap}>
         <Icon
