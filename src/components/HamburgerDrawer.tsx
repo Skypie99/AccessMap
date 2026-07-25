@@ -79,6 +79,14 @@ export default function HamburgerDrawer({ open, onClose, onSignIn, onNavigate }:
   // animation's completion callback. Under reduce motion the snap sets it false
   // same-tick (no timers — designed stillness preserved).
   const [rendered, setRendered] = useState(open);
+  // Live mirror of `open` for the exit animation's completion callback. The
+  // callback closes over the `open` of the effect run that STARTED the
+  // animation — stale by the time an interrupted exit reports back — and
+  // gating the unmount on that stale value stranded `rendered=true`: a
+  // mounted, invisible Modal whose full-screen backdrop ate every tap in the
+  // app (the D1 wedge — web-reproduced 2026-07-25).
+  const openRef = useRef(open);
+  openRef.current = open;
   const [subScreen, setSubScreen] = useState<SubScreen | null>(null);
   // D1 (device-tune 1): the sub-screen a nav item asked for, held until the
   // drawer Modal has ACTUALLY left the screen. iOS serializes Modal
@@ -143,13 +151,18 @@ export default function HamburgerDrawer({ open, onClose, onSignIn, onNavigate }:
         duration: motion.duration.fast,
         useNativeDriver: true,
       }),
-    ]).start(({ finished }) => {
-      // Welded departure: flip the Modal closed only after the panel slide +
-      // backdrop fade have actually played (finished === true). A close
-      // interrupted by a reopen leaves `rendered` true (open is true again, so
-      // this no-ops), and the panel springs back from wherever it is; a completed
-      // exit leaves slideAnim at -DRAWER_WIDTH, so the next open starts off-screen.
-      if (!open && finished) releaseDrawer();
+    ]).start(() => {
+      // Welded departure: on a NORMAL close this fires when the panel slide +
+      // backdrop fade have actually played, and the Modal flips closed. The
+      // release is gated on the CURRENT open intent (openRef), never on this
+      // callback's stale closure or on `finished`: an exit interrupted by
+      // anything other than a reopen (animation superseded or stopped — the
+      // path that used to strand an invisible, tap-eating Modal) must still
+      // release the latch, just without its last frames. The one case that
+      // must NOT release — a reopen in flight — is exactly the case where
+      // openRef.current is true again: this no-ops and the panel springs back
+      // from wherever it is.
+      if (!openRef.current) releaseDrawer();
     });
   }, [open, reducedMotion, slideAnim, fadeAnim, releaseDrawer]);
 

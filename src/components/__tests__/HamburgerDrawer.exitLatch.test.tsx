@@ -65,7 +65,7 @@ describe('HamburgerDrawer exit latch (T12 / F3-02, F3-07)', () => {
     expect(drawerVisible(u)).toBe(true);
   });
 
-  it('motion: latches the Modal mounted through the close, then unmounts only when the exit finishes', () => {
+  it('motion: latches the Modal mounted through the close, then releases when the exit ends', () => {
     // Capture the exit animation's completion callback so the latch lifecycle is
     // deterministic regardless of jest-expo's native-driver animation timing.
     let done: ((r: { finished: boolean }) => void) | null = null;
@@ -89,12 +89,58 @@ describe('HamburgerDrawer exit latch (T12 / F3-02, F3-07)', () => {
     // The latch keeps the Modal mounted so the exit slide/fade can play.
     expect(drawerVisible(u)).toBe(true);
 
-    // An interrupted exit (finished:false — e.g. reopen) must NOT unmount.
-    act(() => done?.({ finished: false }));
-    expect(drawerVisible(u)).toBe(true);
-
     // A completed exit flips the Modal closed.
     act(() => done?.({ finished: true }));
     expect(drawerVisible(u)).toBe(false);
+  });
+
+  it('motion: an interrupted exit with NO reopen still releases the latch (the D1 wedge)', () => {
+    // The old guard (`!open && finished`) kept the Modal mounted when an exit
+    // ended interrupted — an invisible full-screen backdrop that ate every tap
+    // in the app until relaunch. Interrupted-and-still-closed must unmount.
+    let done: ((r: { finished: boolean }) => void) | null = null;
+    jest.spyOn(Animated, 'parallel').mockImplementation(
+      () =>
+        ({
+          start: (cb?: (r: { finished: boolean }) => void) => {
+            done = cb ?? null;
+          },
+          stop: jest.fn(),
+          reset: jest.fn(),
+        }) as unknown as Animated.CompositeAnimation,
+    );
+
+    mockRM.mockReturnValue(false);
+    const u = render(<HamburgerDrawer open {...cbs} />);
+    u.rerender(<HamburgerDrawer open={false} {...cbs} />);
+    expect(drawerVisible(u)).toBe(true);
+
+    act(() => done?.({ finished: false }));
+    expect(drawerVisible(u)).toBe(false);
+  });
+
+  it('motion: a reopen mid-exit keeps the panel mounted (the stale exit callback no-ops)', () => {
+    let done: ((r: { finished: boolean }) => void) | null = null;
+    jest.spyOn(Animated, 'parallel').mockImplementation(
+      () =>
+        ({
+          start: (cb?: (r: { finished: boolean }) => void) => {
+            done = cb ?? null;
+          },
+          stop: jest.fn(),
+          reset: jest.fn(),
+        }) as unknown as Animated.CompositeAnimation,
+    );
+
+    mockRM.mockReturnValue(false);
+    const u = render(<HamburgerDrawer open {...cbs} />);
+    u.rerender(<HamburgerDrawer open={false} {...cbs} />);
+    // Snapshot the EXIT run's callback before the reopen effect overwrites it.
+    const exitCb = done;
+    u.rerender(<HamburgerDrawer open {...cbs} />);
+    // The superseded exit reports back (finished:false) — the drawer is meant
+    // to be open again, so the latch must NOT release.
+    act(() => exitCb?.({ finished: false }));
+    expect(drawerVisible(u)).toBe(true);
   });
 });

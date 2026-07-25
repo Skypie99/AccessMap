@@ -138,6 +138,25 @@ describe('D1 — in-drawer destinations (Resources / How To Help / About the App
     expect(u.getByTestId('sub-resources')).toBeTruthy();
   });
 
+  it('an interrupted exit still releases the latch AND hands off (no invisible wedge)', () => {
+    // Web-reproduced 2026-07-25: an exit that ended finished:false stranded
+    // the drawer Modal mounted at opacity 0 — an invisible backdrop that ate
+    // every tap in the app (Resources / How To Help / About / Settings all
+    // "dead"). Interrupted-and-still-closed must release and still present.
+    const exitDone = spyExitAnimation();
+    const u = render(<HamburgerDrawer open {...cbs} />);
+
+    fireEvent.press(u.getByLabelText('Resources'));
+    u.rerender(<HamburgerDrawer open={false} {...cbs} />);
+    act(() => exitDone()?.({ finished: false }));
+    expect(drawerModal(u).props.visible).toBe(false);
+
+    act(() => {
+      drawerModal(u).props.onDismiss?.();
+    });
+    expect(u.getByTestId('sub-resources')).toBeTruthy();
+  });
+
   it('a reopen before the close finishes cancels the pending handoff', () => {
     const exitDone = spyExitAnimation();
     const u = render(<HamburgerDrawer open {...cbs} />);
