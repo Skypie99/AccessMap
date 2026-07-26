@@ -842,7 +842,15 @@ export default function TasksScreen() {
       <ScreenHeader
         eyebrow="TASKS"
         title="Review barriers"
-        subtitle="Verify and resolve reports"
+        // D3/C2: the subtitle retires. "Review barriers" already says what the
+        // screen is for, so the second line was restating the title in smaller
+        // type — 16pt of a header that was 53% of the display.
+        //
+        // The `TASKS` eyebrow deliberately STAYS (Sky's A-4 pick). It is not
+        // decoration: the all-caps eyebrow is the editorial voice this app
+        // speaks on every screen — Home carries NEARBY / LATEST above its own
+        // title — and dropping it here alone would make Tasks a different
+        // family member. It costs 18pt, about a tenth of a card. Worth it.
         titleSize={30}
         // BP12 (T6): Tasks' top chrome is the whole composite glass pane (title +
         // search + chips + sort, measured as chromeHeight), not this title block
