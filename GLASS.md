@@ -185,9 +185,21 @@ the glass itself carries no motion.
   than `tabBarGlassFloor` (the thicker floor 12px labels need). The mechanism stays
   byte-identical; R2/T15 repaired only the light inactive-label ink (#6B7280 → #515964,
   which had failed AA at 3.17:1 on the 0.82 floor over #000).
-- **Drawer** (HamburgerDrawer) — its own ratified tier, not glass: panel + scrim leave
-  as one welded object, and it drives its own `Animated` slide with `animationType="none"`
-  so Reduce Motion is honored by construction.
+- **Drawer** (HamburgerDrawer) — the **chrome-Lite tier, scheme-bound**, not a
+  `GlassSurface` variant. Panel + scrim leave as one welded object, and it drives its own
+  `Animated` slide with `animationType="none"` so Reduce Motion is honored by
+  construction. Fill = `glassChromeLite0`, right edge + header rule + divider =
+  `glassChromeEdge`, inner lip = `glassChromeLip`, scrim = `scrim`, inks = `textStrong` /
+  `inkGlassMuted` / `brand`. RT → the designed opaque state: dark keeps the flattened
+  `#0D1220`, light takes `overlay`.
+  **This entry replaced an "always-dark navigation rail" (M-45).** Sky's device read on
+  2026-07-25 was that a dark drawer over a light app reads as two different apps, and her
+  D2 phase prompt superseded the ratification. The earlier re-tokenize (`271e8ec`) that
+  "broke light mode" was a **partial** binding — inks tokenized on a still-hardcoded dark
+  panel. Surfaces and inks must move together; bound that way the same tokens pass the
+  arbiter 32/32 (`design-reviews/device-tune/tools/devicetune-drawer-material-stacks.json`).
+  **Do not "restore" the always-dark drawer** — see `design-reviews/device-tune/DECISIONS.md`
+  §S S-4 and §F F-8.
 - **Dialogs** — the four-dialog tier (Map "Name this preset" / "Name this filter" prompts
   + Profile tier-explainer + delete-account) is a solid-surface tier, not glass, ratified
   to land identically: shared fill / radius / centering / scrim, `shadow.e3` four-of-four,

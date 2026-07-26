@@ -80,3 +80,65 @@ describe('D2/C1 — the drawer footer is retired (Sky, DECISIONS §A A-1)', () =
     expect(src).toMatch(/paddingBottom:\s*Math\.max\(bottomInset,/);
   });
 });
+
+// ── C2 · the always-dark literals are gone and stay gone ────────────────────
+
+/**
+ * The drawer spent its whole life hardcoding a dark panel with light inks, and
+ * six comment blocks asserted that theme tokens "would go invisible in light
+ * mode". C2 disproved that — the reverted `271e8ec` was a PARTIAL binding
+ * (inks tokenized on a still-dark surface; DECISIONS §F F-8) — and rebound the
+ * surface and its inks together. These literals are the fingerprint of a
+ * relapse, so they are banned by name. Comments count: the scan reads the whole
+ * source, which is why the rewritten comments name no hexes.
+ */
+const DARK_LITERALS = [
+  ['rgba(13', '18', '32,'].join(','), // the hardcoded deep-field panel fill
+  ['#f5f5', 'f5'].join(''), // textStrong dark, hardcoded as a light-ink literal
+  ['#4E89', 'EF'].join(''), // brand DARK, hardcoded for icons in BOTH schemes
+  ['rgba(255', '255', '255,'].join(','), // white-alpha inks / washes / hairlines
+  ['rgba(168', '192', '224,'].join(','), // the cool dark-chrome hairline family
+  ['rgba(0', '0', '0,0.5)'].join(','), // the hardcoded backdrop scrim
+];
+
+/** The flattened RT tone — legal in exactly one place. */
+const RT_TONE = ['#0D12', '20'].join('');
+
+describe('D2/C2 — the drawer is scheme-bound, not always-dark', () => {
+  it.each(DARK_LITERALS)('the drawer no longer hardcodes %s', (literal) => {
+    expect(drawerSrc()).not.toContain(literal);
+  });
+
+  it('the one surviving dark literal is the RT tone, and it lives in the RT fork', () => {
+    // Reduce Transparency needs a designed OPAQUE fill, and dark mode keeps the
+    // shipped flattened tone byte-for-byte (DECISIONS §A A-3). That is the ONLY
+    // place a raw dark literal is still legal — anywhere else is a relapse.
+    const src = drawerSrc();
+    const hits = [...src.matchAll(new RegExp(RT_TONE, 'gi'))];
+    expect(hits).toHaveLength(1);
+    const lineNo = src.slice(0, hits[0].index ?? 0).split('\n').length;
+    expect(src.split('\n')[lineNo - 1]).toMatch(/rtFill/);
+  });
+
+  it('the panel fill, edge, lip and scrim all read from the palette', () => {
+    const src = drawerSrc();
+    expect(src).toMatch(
+      /backgroundColor:\s*reduceTransparency\s*\?\s*rtFill\s*:\s*color\.glassChromeLite0/,
+    );
+    expect(src).toMatch(/borderRightColor:\s*color\.glassChromeEdge/);
+    expect(src).toMatch(/backgroundColor:\s*color\.glassChromeLip/);
+    expect(src).toMatch(/backgroundColor:\s*color\.scrim/);
+  });
+
+  it('DrawerItem takes the palette — its rows cannot be scheme-blind again', () => {
+    // makeItemStyles() used to take NO colour argument at all, which is what
+    // made the nav rows structurally incapable of following the theme.
+    const src = drawerSrc();
+    expect(src).toMatch(/const makeItemStyles = \(color: ColorTheme\)/);
+    expect(src).toMatch(/makeItemStyles\(color\)/);
+  });
+
+  it('the muted row label satisfies the GLASS §2 type law (>=500 on glass)', () => {
+    expect(drawerSrc()).toMatch(/labelMuted:\s*\{[\s\S]*?fontWeight:\s*font\.weight\.medium/);
+  });
+});

@@ -165,10 +165,13 @@ export const color = {
   // white label text on it is ~4.7:1 — AA at any size.
   anonNeutral: '#6b7280',
 
-  // Navigation chrome — always-dark nav surface (DESIGN.md "fixed-background
-  // exception"). These are IDENTICAL in light + dark so the header/tab bar read
-  // the same in both palettes. Tokenizes the literals previously hardcoded in
+  // Navigation chrome. Tokenizes the literals previously hardcoded in
   // RootNavigator (header #0d1829, tint #60a5fa, etc.).
+  // NOTE: these were once identical in light + dark ("always-dark nav chrome").
+  // They are NOT any more — Phase 8 flipped the header and Phase 12 the tab bar
+  // to light-mode surfaces, and the 2026-07-25 device-tune D2 pass took the
+  // hamburger drawer off the fixed-background list entirely (GLASS.md §8).
+  // Read each token's own comment; do not assume the pair matches.
   // Phase 8: the app HEADER is now a clean light editorial bar in LIGHT mode
   // (deep-navy title on white) and stays dark in the dark palette. The TAB BAR
   // tokens below stay always-dark — the frosted glass bar reads dark in both.

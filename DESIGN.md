@@ -256,8 +256,10 @@ The app ships light + dark palettes (`ThemeContext`) and follows the OS by defau
 **Light / Dark / System** control in Settings (`useThemeMode()`) lets users override; the
 choice persists in AsyncStorage. Always consume colors via `useColor()` so both palettes
 work. Fixed-background exceptions (do NOT theme): the dark sign-in splash, the always-dark
-nav chrome, and the always-light map overlays (heatmap legend, locating banner, saved-place
-chips). As of the 2026-07-04 Map pass (GLASS.md §8 + §12), Map's status pill / action bar /
+**tab bar**, and the always-light map overlays (heatmap legend, locating banner,
+saved-place chips). The hamburger **drawer is no longer an exception** — as of the
+2026-07-25 device-tune D2 pass it is scheme-bound chrome-Lite glass (GLASS.md §8), because
+a dark drawer over the light app read as two different apps on device. As of the 2026-07-04 Map pass (GLASS.md §8 + §12), Map's status pill / action bar /
 filter panel are THEMED Deep Field row-tier — dark chrome in dark mode; only the pinned
 overlays above stay always-light.
 

@@ -247,14 +247,15 @@ export default function HamburgerDrawer({ open, onClose, onSignIn, onNavigate }:
           style={[styles.drawer, { transform: [{ translateX: slideAnim }] }]}
           accessibilityViewIsModal
         >
-          {/* Inner light lip just inside the cool right edge (glassChromeLip dark).
-              The panel fill IS the near-opaque dark bulk-Lite tone (styles.drawer
-              bg) rather than a LinearGradient child: a gradient reads as the
-              material only over a TRANSPARENT panel bg, and a transparent bg
-              suppresses the iOS drop shadow (shadow.e3 — an invariant here). The
-              bulk-Lite gradient is ~3% alpha on identical RGB, so the solid fill
-              is visually equivalent while keeping the shadow. NO GlassSurface/
-              BlurView by design (this surface is not a GlassSurface variant). */}
+          {/* Inner specular lip just inside the chrome edge (glassChromeLip).
+              The panel fill IS the chrome-Lite tone (styles.drawer bg) rather
+              than a LinearGradient child: a gradient reads as the material only
+              over a TRANSPARENT panel bg, and a transparent bg suppresses the
+              iOS drop shadow (shadow.e3 — an invariant here). The chrome-Lite
+              gradient is ~3% alpha on identical RGB, so the solid fill is
+              visually equivalent while keeping the shadow. NO GlassSurface/
+              BlurView by design — this surface is not a GlassSurface variant,
+              and the engineered tier costs nothing against the blur budget. */}
           <View style={styles.drawerLip} pointerEvents="none" />
           {/* Header */}
           <View style={styles.drawerHeader}>
@@ -269,7 +270,7 @@ export default function HamburgerDrawer({ open, onClose, onSignIn, onNavigate }:
               accessibilityRole="button"
               accessibilityLabel="Close menu"
             >
-              <X size={22} color="rgba(255,255,255,0.7)" strokeWidth={2.2} />
+              <X size={22} color={color.inkGlassMuted} strokeWidth={2.2} />
             </Pressable>
           </View>
 
@@ -358,7 +359,8 @@ interface ItemProps {
 }
 
 function DrawerItem({ icon: Icon, label, onPress, muted = false, accessibilityHint }: ItemProps) {
-  const styles = makeItemStyles();
+  const color = useColor();
+  const styles = useMemo(() => makeItemStyles(color), [color]);
   return (
     <Pressable
       onPress={onPress}
@@ -370,26 +372,37 @@ function DrawerItem({ icon: Icon, label, onPress, muted = false, accessibilityHi
       <View style={styles.iconWrap}>
         <Icon
           size={20}
-          // Always-dark drawer: hardcode light-readable colors (the panel is a
-          // hardcoded near-black, so theme tokens would go invisible in light
-          // mode). #4E89EF is the theme's dark-palette brand — reads on dark.
-          color={muted ? 'rgba(255,255,255,0.7)' : '#4E89EF'}
+          // D2: the row icon is the palette's own brand. It used to hardcode the
+          // DARK-palette brand for BOTH schemes, twelve lines from a logo tile
+          // that already read color.brand — so light mode rendered two different
+          // brand blues at once (DECISIONS §F F-10). Muted rows take the
+          // arbitrated on-glass muted ink, which clears the 3:1 non-text floor
+          // in both schemes.
+          color={muted ? color.inkGlassMuted : color.brand}
           strokeWidth={2.2}
         />
       </View>
       <AppText variant="label" style={[styles.label, muted && styles.labelMuted]}>{label}</AppText>
-      <ChevronRight size={16} color="rgba(255,255,255,0.7)" strokeWidth={2.2} />
+      <ChevronRight size={16} color={color.inkGlassMuted} strokeWidth={2.2} />
     </Pressable>
   );
 }
 
 // ── Styles ────────────────────────────────────────────────────────────────────
 
-const makeStyles = (color: ColorTheme, reduceTransparency: boolean, bottomInset: number) =>
-  StyleSheet.create({
+const makeStyles = (color: ColorTheme, reduceTransparency: boolean, bottomInset: number) => {
+  // Reduce Transparency → the designed OPAQUE state (GLASS §6), never a smear.
+  // DARK keeps the shipped flattened deep-field tone byte-for-byte, so dark mode
+  // does not move; LIGHT takes the house RT chrome fill. The asymmetry is
+  // deliberate: the dark palette's own `overlay` is a NEUTRAL near-black and
+  // would shift the panel off the navy field it has always been — a regression
+  // bought for nothing. Recorded in device-tune DECISIONS §A A-3, and this is
+  // the ONLY raw dark literal left in this file (a guard pins it to this line).
+  const rtFill = color.scheme === 'dark' ? '#0D1220' : color.overlay;
+  return StyleSheet.create({
     backdrop: {
       ...StyleSheet.absoluteFillObject,
-      backgroundColor: 'rgba(0,0,0,0.5)',
+      backgroundColor: color.scrim,
     },
     drawer: {
       position: 'absolute',
@@ -397,16 +410,23 @@ const makeStyles = (color: ColorTheme, reduceTransparency: boolean, bottomInset:
       left: 0,
       bottom: 0,
       width: DRAWER_WIDTH,
-      // Deep-field dark OVERLAY material as a near-opaque solid (the spec's
-      // blessed bulk-Lite fallback: ~3% alpha apart on identical RGB, so a solid
-      // reads the same and keeps the iOS shadow). Non-RT: rgba(13,18,32,0.94)
-      // (>=0.9 alpha, no see-through, lets the web backdropFilter show faintly).
-      // RT: fully opaque #0D1220 (the flattened tone). ALWAYS-DARK literals
-      // (never tokens — 271e8ec's re-tokenize broke light mode and was reverted).
-      backgroundColor: reduceTransparency ? '#0D1220' : 'rgba(13,18,32,0.94)',
+      // D2: the panel wears the app's OWN chrome-Lite material, bound to the
+      // active scheme — one app, one palette. It ships as the engineered tier
+      // (a near-opaque solid, ~3% alpha apart from the *Lite gradient on
+      // identical RGB) rather than live blur: the solid reads the same, keeps
+      // the iOS shadow, and costs nothing against the blur budget.
+      //
+      // The predecessor here was an always-dark literal, justified by a comment
+      // claiming theme tokens "would go invisible in light mode". That was a
+      // true observation with a wrong cause: the reverted re-tokenize bound
+      // three INKS while leaving this surface hardcoded dark, so light inks
+      // landed on a dark panel. Surfaces and inks are bound together now, which
+      // is why the same tokens pass the arbiter 32/32 (DECISIONS §F F-8).
+      backgroundColor: reduceTransparency ? rtFill : color.glassChromeLite0,
       borderRightWidth: 1,
-      // Cool #A8C0E0-family hairline (dark chrome edge) in place of white-alpha.
-      borderRightColor: 'rgba(168,192,224,0.18)',
+      // The chrome tier's own edge hairline — the same token the header rule and
+      // the section divider use, so the whole panel speaks one line.
+      borderRightColor: color.glassChromeEdge,
       // Overlay shadow analog — KEPT deliberately. Deep-field dark rows/chrome
       // retire drop shadows, but this slide-in overlay needs separation from the
       // dimmed backdrop (flagged, not a regression).
@@ -420,14 +440,14 @@ const makeStyles = (color: ColorTheme, reduceTransparency: boolean, bottomInset:
         ? { backdropFilter: 'blur(20px) saturate(160%)' } as object
         : {}),
     },
-    // 1px inner light lip just inside the right edge (glassChromeLip dark).
+    // 1px inner specular lip just inside the right edge (the chrome tier's lip).
     drawerLip: {
       position: 'absolute',
       top: 0,
       bottom: 0,
       right: 1,
       width: 1,
-      backgroundColor: 'rgba(168,192,224,0.14)',
+      backgroundColor: color.glassChromeLip,
     },
     drawerHeader: {
       flexDirection: 'row',
@@ -435,7 +455,10 @@ const makeStyles = (color: ColorTheme, reduceTransparency: boolean, bottomInset:
       paddingHorizontal: spacing.lg,
       paddingVertical: spacing.lg,
       borderBottomWidth: 1,
-      borderBottomColor: 'rgba(255,255,255,0.08)',
+      // The chrome edge, not color.border: on the light panel color.border
+      // measures 1.08:1 — an invisible rule. This is the hairline the chrome
+      // tier is arbitrated with, and it matches the panel's right edge.
+      borderBottomColor: color.glassChromeEdge,
       gap: spacing.md,
     },
     logoMini: {
@@ -450,16 +473,17 @@ const makeStyles = (color: ColorTheme, reduceTransparency: boolean, bottomInset:
       flex: 1,
       fontSize: font.size.lg,
       fontWeight: font.weight.bold,
-      // Always-dark drawer — hardcode light text (matches the hardcoded
-      // white-alpha dividers); theme tokens would be unreadable in light mode.
-      color: '#f5f5f5',
+      // The palette's strongest ink — 13.6:1 light / 16.4:1 dark on the panel.
+      color: color.textStrong,
       letterSpacing: -0.4,
     },
     closeBtn: {
       width: 44,
       height: 44,
       borderRadius: radius.full,
-      backgroundColor: 'rgba(255,255,255,0.08)',
+      // The neutral on-glass button wash: a dark wash on the light panel, a
+      // luminosity lift on the dark one. One token, correct in both.
+      backgroundColor: color.glassNeutralBtn,
       alignItems: 'center',
       justifyContent: 'center',
     },
@@ -468,13 +492,15 @@ const makeStyles = (color: ColorTheme, reduceTransparency: boolean, bottomInset:
     },
     divider: {
       height: 1,
-      backgroundColor: 'rgba(255,255,255,0.07)',
+      // Same hairline vocabulary as the panel edge + header rule (see above).
+      backgroundColor: color.glassChromeEdge,
       marginHorizontal: spacing.lg,
       marginVertical: spacing.sm,
     },
   });
+};
 
-const makeItemStyles = () =>
+const makeItemStyles = (color: ColorTheme) =>
   StyleSheet.create({
     item: {
       flexDirection: 'row',
@@ -485,7 +511,9 @@ const makeItemStyles = () =>
       minHeight: 56,
     },
     itemPressed: {
-      backgroundColor: 'rgba(255,255,255,0.06)',
+      // Same neutral on-glass wash as the close button — the press reads as a
+      // wash in both schemes instead of a white bloom that only works on dark.
+      backgroundColor: color.glassNeutralBtn,
     },
     iconWrap: {
       width: 30,
@@ -495,14 +523,17 @@ const makeItemStyles = () =>
       flex: 1,
       fontSize: font.size.md,
       fontWeight: font.weight.semibold,
-      // Always-dark drawer — hardcode light text (see drawerBrand note).
-      color: '#f5f5f5',
+      // The palette's strongest ink — same token as the brand wordmark.
+      color: color.textStrong,
       letterSpacing: 0.1,
     },
     labelMuted: {
-      // Margin fork: 0.45 = 4.51:1 (knife-edge, 0.01 over the 4.5 floor) ->
-      // 0.48 = 4.97:1 so anti-aliasing/rounding never dips it under.
-      color: 'rgba(255,255,255,0.48)',
-      fontWeight: font.weight.regular,
+      // The arbitrated on-glass muted ink. Its predecessor was a white-alpha
+      // fork that sat at 4.97:1 — a knife-edge half a point over the floor,
+      // reached by hand-tuning alpha. This token measures 7.6–9.6:1 across
+      // every panel state. The weight lifts to 500 because GLASS §2 requires
+      // ≥500 for text on the glass family; the old 400 face was in breach.
+      color: color.inkGlassMuted,
+      fontWeight: font.weight.medium,
     },
   });
