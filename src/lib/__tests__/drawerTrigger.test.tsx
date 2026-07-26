@@ -13,9 +13,8 @@
  * any platform, for any reason — and the drawer must still open.
  */
 import React from 'react';
-import { Platform, findNodeHandle } from 'react-native';
+import { Platform, Pressable, findNodeHandle } from 'react-native';
 import { render, fireEvent } from '@testing-library/react-native';
-import { Pressable } from 'react-native';
 import { DrawerProvider, useDrawer, useDrawerTrigger } from '@/lib/drawerContext';
 
 jest.mock('react-native/Libraries/ReactNative/RendererProxy', () => ({
