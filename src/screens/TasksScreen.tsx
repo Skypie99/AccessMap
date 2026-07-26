@@ -8,7 +8,6 @@ import {
   Platform,
   Pressable,
   RefreshControl,
-  ScrollView,
   SectionList,
   StyleSheet,
   TextInput,
@@ -67,8 +66,6 @@ import PhotoLightboxModal from '@/components/PhotoLightboxModal';
 import { AppText } from '@/components/ui/AppText';
 import { PressableScale } from '@/components/ui/PressableScale';
 import { Skeleton } from '@/components/ui/Skeleton';
-import { OverflowFade } from '@/components/ui/OverflowFade';
-import { useHorizontalOverflowFade } from '@/hooks/useHorizontalOverflowFade';
 import { StatusBadge } from '@/components/StatusBadge';
 import { SeverityBadge } from '@/components/SeverityBadge';
 import { hapticImpact, hapticNotify, hapticSelection } from '@/lib/haptics';
@@ -78,6 +75,7 @@ import { a11yToggle, useReducedMotion, useReduceTransparency } from '@/lib/acces
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { ScreenStage } from '@/components/ui/ScreenStage';
+import { Sheet } from '@/components/ui/Sheet';
 import { GlassSurface } from '@/components/ui/GlassSurface';
 import { LinearGradient } from 'expo-linear-gradient';
 import { hydrateGlassMode, toggleGlassMode, useGlassMode } from '@/lib/glassMode';
@@ -117,9 +115,11 @@ const BULK_BAR_FALLBACK_HEIGHT = 94;
 // DECISIONS §F F-16/F-17), all rows visible, default type:
 //   pane padding 8 + header 98 + search 60 + mine/All 60 + category 62 + sort 64
 //   = 352 post-D3/C1  (it was 404 before C1 returned the select-entry row's 52pt)
-// The constant stays 350 — it is a pre-measurement seed for one layout pass,
-// and 350 vs 352 is not worth a churn in a value nothing reads for long.
-const CHROME_FALLBACK_HEIGHT = 350;
+//
+// D3/C3 then moved mine/All, category and sort into the filter sheet and D3/C2
+// retired the subtitle, so the pane is now just:
+//   pane padding 8 + header 78 + search 60 + filter trigger 64 = 210
+const CHROME_FALLBACK_HEIGHT = 210;
 
 /**
  * The FlagCard action-row reflow threshold (sweep M16): a narrow device OR
@@ -133,8 +133,6 @@ export function isCompactLayout(width: number, fontScale: number): boolean {
 
 export default function TasksScreen() {
   const color = useColor();
-  // T14 (F2-07): the category filter strip earns the overflow scent.
-  const categoryFade = useHorizontalOverflowFade();
   const reduceTransparency = useReduceTransparency();
   const styles = useMemo(() => makeStyles(color, reduceTransparency), [color, reduceTransparency]);
   const navigation = useNavigation<BottomTabNavigationProp<RootTabParamList, 'Tasks'>>();
@@ -238,6 +236,8 @@ export default function TasksScreen() {
   // across whitespace-separated tokens. Session-only — resets on tab
   // unmount, matching the rest of the Tasks filters.
   const [searchText, setSearchText] = useState('');
+  // D3/C3: the consolidated filter sheet's open state.
+  const [filterSheetOpen, setFilterSheetOpen] = useState(false);
   const [debouncedSearchText, setDebouncedSearchText] = useState('');
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearchText(searchText), 250);
@@ -806,6 +806,16 @@ export default function TasksScreen() {
   // Load-more handler shared by the button (screen-reader / keyboard) and any
   // future scroll-triggered path. Surfaces errors as an Alert so the user has
   // a clear retry path.
+  // D3/C3: is anything actually FILTERING the list right now? Sort is
+  // deliberately excluded — it is an ORDER, not a filter, so "Clear filters"
+  // must never silently reset the ordering the user chose.
+  const tasksFiltersActive = mineOnly || categoryFilter !== null || debouncedSearchText !== '';
+  const handleClearFilters = useCallback(() => {
+    handleScopeChange(false);
+    handleCategoryChange(null);
+    setSearchText('');
+  }, [handleScopeChange, handleCategoryChange]);
+
   const handleLoadMore = useCallback(() => {
     if (!hasMore || loadingMore) return;
     loadMore().catch((e: unknown) => {
@@ -989,6 +999,64 @@ export default function TasksScreen() {
           )}
         </View>
       )}
+      {/* D3/C3 — one trigger replaces three rows.
+          The rows themselves are unchanged and live in the sheet below; what
+          changes is that they no longer occupy the header at rest. `Clear
+          filters` mounts only when something is genuinely filtering, so it is
+          never a dead control, and together with the trigger's active fill it
+          means an active filter can never hide behind a closed sheet. */}
+      {flags.length > 0 && (
+        <View style={styles.filterTriggerRow}>
+          <Pressable
+            onPress={() => setFilterSheetOpen(true)}
+            style={({ pressed }) => [
+              styles.filterTriggerBtn,
+              tasksFiltersActive && styles.filterTriggerBtnActive,
+              !tasksFiltersActive && pressed && styles.chipPressed,
+            ]}
+            accessibilityRole="button"
+            accessibilityLabel="Filter and sort"
+            accessibilityHint="Opens filter and sort options"
+            {...a11yToggle({ expanded: filterSheetOpen })}
+          >
+            <AppText
+              variant="label"
+              style={[styles.filterTriggerText, tasksFiltersActive && styles.filterTriggerTextActive]}
+            >
+              Filter &amp; sort
+            </AppText>
+          </Pressable>
+          {tasksFiltersActive && (
+            <Pressable
+              onPress={handleClearFilters}
+              style={({ pressed }) => [styles.clearFiltersBtn, pressed && styles.chipPressed]}
+              accessibilityRole="button"
+              accessibilityLabel="Clear filters"
+              accessibilityHint="Removes the search text, category and my-flags filters"
+            >
+              <AppText variant="label" style={styles.clearFiltersText}>Clear filters</AppText>
+            </Pressable>
+          )}
+        </View>
+      )}
+      </GlassSurface>
+      {/* D3/C3 — the filter sheet. `glass={false}` is the opaque house modal
+          grammar (runtime-proven by ChangelogModal) and costs ZERO against the
+          blur budget, so Tasks still owns exactly one live pane.
+
+          Every handler, every accessibility prop and every label inside is
+          byte-identical to the rows this replaced. Two things did change, both
+          forced by the new container: the category strip WRAPS instead of
+          scrolling horizontally (which is a gain — all seven categories are
+          visible at once; the strip only ever showed about three), and the chip
+          fills take the shipped SOLID pair, because a translucent glass-chip
+          fill over an opaque card would be a composite nobody has arbitrated. */}
+      <Sheet
+        visible={filterSheetOpen}
+        onClose={() => setFilterSheetOpen(false)}
+        title="Filter &amp; sort"
+        glass={false}
+      >
       {/* Mine-only toggle — shown only when signed in. A chip row that
           switches between "All flags" and "My flags" without opening the
           full filter panel. Resets to All when the tab loses focus? No —
@@ -998,22 +1066,22 @@ export default function TasksScreen() {
           <Pressable
             onPress={() => handleScopeChange(false)}
             disabled={!mineOnlyHydrated}
-            style={({ pressed }) => [styles.mineChip, !mineOnly && styles.mineChipActive, mineOnly && pressed && styles.chipPressed]}
+            style={({ pressed }) => [styles.sheetChip, !mineOnly && styles.sheetChipActive, mineOnly && pressed && styles.chipPressed]}
             accessibilityRole="button"
             accessibilityLabel="Show all flags"
             {...a11yToggle({ selected: !mineOnly, disabled: !mineOnlyHydrated })}
           >
-            <AppText variant="label" style={[styles.mineChipText, !mineOnly && styles.mineChipTextActive]}>All</AppText>
+            <AppText variant="label" style={[styles.sheetChipText, !mineOnly && styles.sheetChipTextActive]}>All</AppText>
           </Pressable>
           <Pressable
             onPress={() => handleScopeChange(true)}
             disabled={!mineOnlyHydrated}
-            style={({ pressed }) => [styles.mineChip, mineOnly && styles.mineChipActive, !mineOnly && pressed && styles.chipPressed]}
+            style={({ pressed }) => [styles.sheetChip, mineOnly && styles.sheetChipActive, !mineOnly && pressed && styles.chipPressed]}
             accessibilityRole="button"
             accessibilityLabel="Show only my flags"
             {...a11yToggle({ selected: mineOnly, disabled: !mineOnlyHydrated })}
           >
-            <AppText variant="label" style={[styles.mineChipText, mineOnly && styles.mineChipTextActive]}>Mine</AppText>
+            <AppText variant="label" style={[styles.sheetChipText, mineOnly && styles.sheetChipTextActive]}>Mine</AppText>
           </Pressable>
         </View>
       )}
@@ -1022,23 +1090,15 @@ export default function TasksScreen() {
           strip is stable as flags come and go. Tapping the active chip
           clears it (toggles to All). Session-only — resets with the tab. */}
       {flags.length > 0 && (
-        <View style={styles.overflowFadeWrap}>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.categoryScroll}
-          contentContainerStyle={styles.categoryScrollContent}
-          accessibilityLabel="Filter by category"
-          {...categoryFade.scrollHandlers}
-        >
+        <View style={styles.categoryWrapRow} accessibilityLabel="Filter by category">
           <Pressable
             onPress={() => handleCategoryChange(null)}
-            style={({ pressed }) => [styles.catChip, categoryFilter === null && styles.catChipActive, categoryFilter !== null && pressed && styles.chipPressed]}
+            style={({ pressed }) => [styles.sheetChip, categoryFilter === null && styles.sheetChipActive, categoryFilter !== null && pressed && styles.chipPressed]}
             accessibilityRole="button"
             accessibilityLabel="Show all categories"
             {...a11yToggle({ selected: categoryFilter === null })}
           >
-            <AppText variant="label" style={[styles.catChipText, categoryFilter === null && styles.catChipTextActive]}>
+            <AppText variant="label" style={[styles.sheetChipText, categoryFilter === null && styles.sheetChipTextActive]}>
               All
             </AppText>
           </Pressable>
@@ -1048,19 +1108,17 @@ export default function TasksScreen() {
               <Pressable
                 key={cat}
                 onPress={() => handleCategoryChange(active ? null : cat)}
-                style={({ pressed }) => [styles.catChip, active && styles.catChipActive, !active && pressed && styles.chipPressed]}
+                style={({ pressed }) => [styles.sheetChip, active && styles.sheetChipActive, !active && pressed && styles.chipPressed]}
                 accessibilityRole="button"
                 accessibilityLabel={`${CATEGORY_LABELS[cat]}${active ? ', selected, tap to deselect' : ''}`}
                 {...a11yToggle({ selected: active })}
               >
-                <AppText variant="label" style={[styles.catChipText, active && styles.catChipTextActive]}>
+                <AppText variant="label" style={[styles.sheetChipText, active && styles.sheetChipTextActive]}>
                   {CATEGORY_LABELS[cat]}
                 </AppText>
               </Pressable>
             );
           })}
-        </ScrollView>
-        <OverflowFade visible={categoryFade.hasMore} />
         </View>
       )}
       {/* Sort segmented control — sits below the filter rows so the
@@ -1083,14 +1141,14 @@ export default function TasksScreen() {
               <Pressable
                 key={mode}
                 onPress={() => handleSortChange(mode)}
-                style={({ pressed }) => [styles.sortChip, active && styles.sortChipActive, !active && pressed && styles.chipPressed]}
+                style={({ pressed }) => [styles.sheetSortChip, active && styles.sheetSortChipActive, !active && pressed && styles.chipPressed]}
                 accessibilityRole="tab"
                 accessibilityLabel={`Sort by ${TASKS_SORT_LABELS[mode]}`}
                 {...a11yToggle({ selected: active })}
               >
                 <AppText
                   variant="label"
-                  style={[styles.sortChipText, active && styles.sortChipTextActive]}
+                  style={[styles.sheetSortChipText, active && styles.sheetSortChipTextActive]}
                   numberOfLines={1}
                   adjustsFontSizeToFit
                   minimumFontScale={0.8}
@@ -1102,7 +1160,7 @@ export default function TasksScreen() {
           })}
         </View>
       )}
-      </GlassSurface>
+      </Sheet>
       {/* Points/notice flash — floats over the chrome (zIndex above the pane),
           same visual spot over the header as before the glass pass. */}
       {flash && (
@@ -2267,6 +2325,86 @@ const makeStyles = (color: ColorTheme, reduceTransparency: boolean) => {
     },
     // inkDetailsGhost — arbitrated on the row material (4.75:1 light worst-case).
     detailsText: { color: color.inkDetailsGhost, fontWeight: font.weight.semibold, fontSize: font.size.sm },
+    // D3/C3 — the single trigger that replaced three header rows.
+    filterTriggerRow: {
+      flexDirection: 'row',
+      paddingHorizontal: spacing.lg,
+      paddingTop: spacing.sm,
+      paddingBottom: spacing.md,
+      gap: spacing.sm,
+    },
+    filterTriggerBtn: {
+      minHeight: 44,
+      paddingHorizontal: spacing.lg,
+      borderRadius: radius.circle,
+      backgroundColor: chipFill,
+      borderWidth: 1,
+      borderColor: chipEdge,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    // MapScreen's ratified active grammar — a filled brand chip with white ink.
+    // This is what makes an active filter impossible to miss with the sheet shut.
+    filterTriggerBtnActive: { backgroundColor: color.ctaFill, borderColor: 'transparent' },
+    filterTriggerText: { fontSize: font.size.sm, fontWeight: font.weight.semibold, color: color.glassChipInk },
+    filterTriggerTextActive: { color: color.textOnBrand },
+    // Ships as a CHIP, not a bare link: that keeps it on the already-arbitrated
+    // chipFill + inkSelect stack instead of introducing a new ink-on-chrome pair
+    // (and therefore an arbiter run) for one secondary control.
+    clearFiltersBtn: {
+      minHeight: 44,
+      paddingHorizontal: spacing.md,
+      borderRadius: radius.circle,
+      backgroundColor: chipFill,
+      borderWidth: 1,
+      borderColor: chipEdge,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    clearFiltersText: { fontSize: font.size.sm, fontWeight: font.weight.semibold, color: color.inkSelect },
+    // Inside the OPAQUE sheet the chips take the shipped solid pair. The glass
+    // chipFill is designed to sit on the chrome pane's blur; over an opaque card
+    // it would be an un-arbitrated composite.
+    sheetChip: {
+      minHeight: 44,
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.sm - 1,
+      borderRadius: radius.circle,
+      backgroundColor: color.surfaceNeutral,
+      borderWidth: 1,
+      borderColor: color.borderSubtle,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    sheetChipActive: { backgroundColor: color.ctaFill, borderColor: 'transparent' },
+    sheetChipText: { fontSize: font.size.sm, fontWeight: font.weight.semibold, color: color.textStrong, flexShrink: 0 },
+    sheetChipTextActive: { color: color.textOnBrand },
+    sheetSortChip: {
+      flexGrow: 1,
+      flexBasis: 0,
+      minHeight: 44,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: spacing.sm,
+      borderRadius: radius.circle,
+      backgroundColor: color.surfaceNeutral,
+      borderWidth: 1,
+      borderColor: color.borderSubtle,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    sheetSortChipActive: { backgroundColor: color.ctaFill, borderColor: 'transparent' },
+    sheetSortChipText: { fontSize: font.size.sm, fontWeight: font.weight.bold, color: color.textStrong },
+    sheetSortChipTextActive: { color: color.textOnBrand },
+    // The strip becomes a wrap row inside the sheet: all seven categories are
+    // visible at once, where the horizontal strip showed about three.
+    categoryWrapRow: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: spacing.xs,
+      paddingHorizontal: spacing.lg,
+      paddingTop: spacing.sm,
+      paddingBottom: spacing.sm + 2,
+    },
     mineToggleRow: {
       flexDirection: 'row',
       paddingHorizontal: spacing.lg,
@@ -2323,23 +2461,6 @@ const makeStyles = (color: ColorTheme, reduceTransparency: boolean) => {
       alignItems: 'center',
       justifyContent: 'center',
       borderRadius: radius.circle,
-    },
-    // Category chip strip — horizontally scrollable so all 6 categories
-    // fit on narrow phones without truncating labels. Visual weight
-    // matches sevChip; brand fill on active so it reads as "selected".
-    // Pattern B: pin the strip's size so the sibling SectionList in this flex
-    // column can't shrink it. Vertical padding moved onto the contentContainer
-    // so the total strip height (62pt at default type) is unchanged.
-    categoryScroll: { flexGrow: 0, flexShrink: 0 },
-    // T14 (F2-07): position:relative wrapper so the absolute OverflowFade pins to
-    // the strip's right edge (required on web; harmless on native).
-    overflowFadeWrap: { position: 'relative' },
-    categoryScrollContent: {
-      flexDirection: 'row',
-      gap: spacing.xs,
-      paddingHorizontal: spacing.lg,
-      paddingTop: spacing.sm,
-      paddingBottom: spacing.sm + 2,
     },
     catChip: {
       minHeight: 44, // WCAG 2.5.5: was 36pt (below 44pt project standard)

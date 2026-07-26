@@ -77,11 +77,19 @@ describe('D3/C1 — the control now rides the search row', () => {
   });
 
   it('keeps the header rows themselves in their shipped order', () => {
+    // SUPERSEDED IN PART BY D3/C3. This originally asserted
+    // search < mine < category < sort as four sibling rows in the chrome pane.
+    // C3 moved the last three into the filter sheet, so the surviving contract
+    // is: the search row still leads the header, and the three filter rows keep
+    // their relative order wherever they now live. Their order is what a
+    // VoiceOver user traverses, and C3 was not licensed to shuffle it.
     const search = tasks.indexOf('styles.searchRow');
+    const trigger = tasks.indexOf('styles.filterTriggerRow');
     const mine = tasks.indexOf('styles.mineToggleRow');
-    const categoryRow = tasks.indexOf('styles.categoryScroll');
+    const categoryRow = tasks.indexOf('styles.categoryWrapRow');
     const sort = tasks.indexOf('styles.sortRow');
-    expect(search).toBeLessThan(mine);
+    expect(search).toBeLessThan(trigger);
+    expect(trigger).toBeLessThan(mine);
     expect(mine).toBeLessThan(categoryRow);
     expect(categoryRow).toBeLessThan(sort);
   });
@@ -133,7 +141,14 @@ describe('D3/C1 — the fallback-height comment now matches measured reality', (
     expect(tasks).toMatch(/only renders\s*\n\/\/ when SIGNED IN/);
   });
 
-  it('leaves the seed constant itself alone', () => {
-    expect(tasks).toMatch(/const CHROME_FALLBACK_HEIGHT = 350;/);
+  it('re-seeds the constant once C3 made 350 genuinely wrong', () => {
+    // SUPERSEDED BY D3/C3. At C1 the measured pane was 352 against a seed of
+    // 350, so churning the value bought nothing. C3 moved three rows out and
+    // the pane became 214 — a 136pt seed error is a visible first-paint jump,
+    // not a rounding difference. The live value is pinned by
+    // tasksFilterSheet.test.ts; this asserts only that C1's "leave it alone"
+    // reasoning did not silently outlive the condition it depended on.
+    expect(tasks).not.toMatch(/const CHROME_FALLBACK_HEIGHT = 350;/);
+    expect(tasks).toMatch(/const CHROME_FALLBACK_HEIGHT = \d+;/);
   });
 });
