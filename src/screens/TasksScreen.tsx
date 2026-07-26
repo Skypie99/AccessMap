@@ -107,10 +107,18 @@ const BULK_BAR_FALLBACK_HEIGHT = 94;
 // Fallback height (pt) of the absolute chrome glass pane, used only to seed
 // the list's top reserve before the pane's real height lands via onLayout
 // (the list is opacity-gated until then, so this only sizes the first layout
-// pass). Approx at default type, all rows visible: header ~112 + select-entry
-// ~52 + search ~60 + category strip ~62 + sort row ~64 ≈ 350; safe-area top is
-// added at the call site. Once measured, the real height takes over — the
-// mockup's ResizeObserver → RN onLayout translation.
+// pass). Safe-area top is added at the call site. Once measured, the real
+// height takes over — the mockup's ResizeObserver → RN onLayout translation.
+//
+// The old row list here was wrong twice over: it quoted the header at ~112
+// (measured: 98) and it omitted the mine/All row entirely — which only renders
+// when SIGNED IN, and is therefore invisible to every web capture, so nothing
+// caught it. Measured at 390x844 (design-reviews/device-tune/tools/measure-header.mjs,
+// DECISIONS §F F-16/F-17), all rows visible, default type:
+//   pane padding 8 + header 98 + search 60 + mine/All 60 + category 62 + sort 64
+//   = 352 post-D3/C1  (it was 404 before C1 returned the select-entry row's 52pt)
+// The constant stays 350 — it is a pre-measurement seed for one layout pass,
+// and 350 vs 352 is not worth a churn in a value nothing reads for long.
 const CHROME_FALLBACK_HEIGHT = 350;
 
 /**
@@ -913,32 +921,25 @@ export default function TasksScreen() {
           <AppText variant="body" style={styles.offlineBannerText}>{offlineBannerText(offlineCachedAt)}</AppText>
         </View>
       )}
-      {/* Select-multiple entry — visible only when there's something to
-          select and we're not already in selection mode. Long-press on a
-          card does the same thing, but screen-reader users (and anyone
-          who doesn't know about long-press) need a discoverable button.
-          Renders above the other filter rows so it's the first focusable
-          control on the screen after the error banner. */}
-      {!selection.active && flags.length > 0 && (
-        <View style={styles.selectEntryRow}>
-          <Pressable
-            onPress={enterSelectionEmpty}
-            style={({ pressed }) => [
-              styles.selectEntryBtn,
-              pressed && styles.selectEntryBtnPressed,
-            ]}
-            accessibilityRole="button"
-            accessibilityLabel="Select multiple"
-            accessibilityHint="Enter selection mode to verify or resolve multiple flags at once"
-          >
-            <AppText variant="label" style={styles.selectEntryText}>Select multiple</AppText>
-          </Pressable>
-        </View>
-      )}
       {/* Free-text search — substring match against description and
           category label. Hidden if the list is empty (nothing to search).
           The clear (×) button is part of the textbox row so it stays a
-          single, predictable a11y target. */}
+          single, predictable a11y target.
+
+          D3/C1 (S-5, Sky's pre-decided pick): "Select multiple" used to own a
+          whole row of its own, right-aligned with nothing beside it — 52pt of
+          chrome spent on one secondary control, on a screen whose header
+          already ate more than half the display. It now rides the search row's
+          trailing edge, and that 52pt goes back to the cards.
+
+          The gates compose to exactly the old truth table: the row already
+          required `flags.length > 0`, the button already required that AND
+          `!selection.active`, so nesting the second inside the first changes
+          nothing about when it appears. It is still the first focusable control
+          after the banners, so VoiceOver order is unchanged; the label and hint
+          are byte-identical; the target is still >=44pt (selectEntryBtn's own
+          minHeight), and `flexShrink: 0` keeps it that wide when the input
+          competes for room. */}
       {flags.length > 0 && (
         <View style={styles.searchRow}>
           <TextInput
@@ -962,6 +963,20 @@ export default function TasksScreen() {
               hitSlop={8}
             >
               <X size={18} color={color.textMuted} strokeWidth={2.2} />
+            </Pressable>
+          )}
+          {!selection.active && (
+            <Pressable
+              onPress={enterSelectionEmpty}
+              style={({ pressed }) => [
+                styles.selectEntryBtn,
+                pressed && styles.selectEntryBtnPressed,
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel="Select multiple"
+              accessibilityHint="Enter selection mode to verify or resolve multiple flags at once"
+            >
+              <AppText variant="label" style={styles.selectEntryText}>Select multiple</AppText>
             </Pressable>
           )}
         </View>
@@ -2368,18 +2383,18 @@ const makeStyles = (color: ColorTheme, reduceTransparency: boolean) => {
     sortChipActive: { backgroundColor: color.ctaFill, borderColor: 'transparent' },
     sortChipText: { fontSize: font.size.sm, fontWeight: font.weight.bold, color: color.glassChipInk },
     sortChipTextActive: { color: color.textOnBrand },
-    // Bulk-select entry row — a single full-width button sitting at the top
-    // of the screen so SR users and anyone unfamiliar with long-press can
-    // discover the feature. Tinted to match the sort chip's accent.
-    selectEntryRow: {
-      // Phase 13: compact, right-aligned secondary action (was a dominating
-      // full-width bordered button) so the cards lead the screen at a glance.
-      alignItems: 'flex-end',
-      paddingHorizontal: spacing.lg,
-      paddingTop: spacing.sm,
-      paddingBottom: 0,
-    },
+    // Bulk-select entry — a discoverable button for SR users and anyone
+    // unfamiliar with the long-press gesture. Tinted to match the sort chip's
+    // accent.
+    //
+    // Phase 13 made it a compact right-aligned secondary action (it had been a
+    // dominating full-width bordered button) so the cards led the screen.
+    // D3/C1 finishes that thought: it no longer has a ROW of its own either —
+    // it rides the search row's trailing edge, returning 52pt to the list.
+    // `flexShrink: 0` is what keeps it at its full >=44pt width while the
+    // text input takes the remaining space.
     selectEntryBtn: {
+      flexShrink: 0,
       minHeight: 44,
       paddingHorizontal: spacing.md,
       paddingVertical: spacing.xs,
