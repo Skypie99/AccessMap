@@ -111,24 +111,64 @@ describe('D4/C3 — one const, two channels', () => {
   });
 });
 
-describe('D4/C3 — the caption stays one quiet line', () => {
-  it('shares the C2 slot and its stage styling — no card, no glass, no icon', () => {
-    const slot = home.match(/\{emptyLocal \? \([\s\S]*?\) : null\}/)?.[0] ?? '';
-    expect(slot).toMatch(/style=\{styles\.peekCaption\}/);
-    expect(slot).not.toMatch(/GlassSurface|<View|size=\{/);
+describe('D4/C5 — placement B: the chip on the peek (Sky\u2019s A-5 pick)', () => {
+  const chipBlock = (() => {
+    const start = home.indexOf('{emptyLocal && (');
+    const end = home.indexOf('styles.mapPeekHint', start);
+    return start > -1 && end > start ? home.slice(start, end) : '';
+  })();
+
+  it('renders the sentence ON the peek, not as a caption beneath it', () => {
+    expect(chipBlock).not.toBe('');
+    expect(chipBlock).toMatch(/styles\.peekChipWrap/);
+    expect(chipBlock).toMatch(/\{EMPTY_LOCAL_INVITE\}/);
+    // The caption slot no longer carries this state at all.
+    expect(home).not.toMatch(/\{emptyLocal \? \(/);
   });
 
-  it('can never render two messages at once', () => {
-    // Mutually exclusive by construction: emptyLocal needs a centre,
-    // showLocating needs the absence of one.
+  it('is an ENGINEERED tint, never a live blur pane', () => {
+    // GLASS.md:19/:93 — the pane blurs, the chip tints, and true blur may live
+    // only in a GlassSurface acting as a pane. This also keeps the chip at zero
+    // cost against glass.maxLivePanes.
+    expect(chipBlock).toMatch(/<GlassSurface\s+variant="banner"\s+forceEngineered/);
+  });
+
+  it('is hidden from the accessibility tree — and that RESOLVES the F-19 double', () => {
+    // The peek's own accessibilityLabel already composes this exact sentence.
+    // Exposing the chip as well would announce it twice. Visual channel here,
+    // spoken channel on the button, one voice each.
+    expect(chipBlock).toMatch(/accessibilityElementsHidden/);
+    expect(chipBlock).toMatch(/importantForAccessibility="no-hide-descendants"/);
+    expect(home).toMatch(/`Open the full map\. \$\{EMPTY_LOCAL_INVITE\}`/);
+  });
+
+  it('cannot steal a tap from the peek button', () => {
+    // S17/L5-06: the peek is announced and behaves as ONE button.
+    expect(chipBlock).toMatch(/pointerEvents="none"/);
+  });
+
+  it('cannot collide with the "Open full map" pill', () => {
+    // The pill is pinned bottom-right; the chip is pinned to the top.
+    expect(home).toMatch(/peekChipWrap: \{[\s\S]*?top: spacing\.md,/);
+    expect(home).toMatch(/mapPeekHint: \{[\s\S]*?bottom: spacing\.sm,/);
+  });
+
+  it('scales with Dynamic Type and sets no fixed height', () => {
+    expect(chipBlock).toMatch(/maxFontSizeMultiplier=\{1\.4\}/);
+    const style = home.match(/peekChip: \{[\s\S]*?\n    \},/)?.[0] ?? '';
+    expect(style).not.toMatch(/\bheight:/);
+  });
+
+  it('introduces no new ink value — brandOnSoft was already paired with this tint', () => {
+    expect(home).toMatch(/peekChipText: \{[\s\S]*?color: color\.brandOnSoft,/);
+  });
+
+  it('leaves the locating caption untouched in its own slot', () => {
+    // The two states remain mutually exclusive by construction; only the
+    // empty-local one moved onto the peek.
     expect(home).toMatch(/const showLocating = !hasCenter &&/);
     expect(emptyLocalBlock).toMatch(/hasCenter &&/);
-    expect(home).toMatch(/\) : showLocating \? \(/);
-  });
-
-  it('announces politely and scales with Dynamic Type', () => {
-    const slot = home.match(/\{emptyLocal \? \([\s\S]*?\) : null\}/)?.[0] ?? '';
-    expect(slot.match(/accessibilityLiveRegion="polite"/g) ?? []).toHaveLength(2);
-    expect(slot.match(/maxFontSizeMultiplier=\{1\.4\}/g) ?? []).toHaveLength(2);
+    expect(home).toMatch(/\{showLocating \? \(/);
+    expect(home).toContain('Finding your location…');
   });
 });

@@ -421,6 +421,45 @@ export default function HomeScreen() {
                   suppressAttribution
                 />
               </View>
+              {/* D4/C5 — the empty-local chip (Sky's A-5 placement pick, B).
+                  An ENGINEERED tint, never a live blur: GLASS.md is explicit
+                  that the pane blurs and the chip tints, and true blur may live
+                  only in a GlassSurface variant acting as a pane. So this costs
+                  nothing against the blur budget.
+
+                  a11y-hidden on purpose, and that is a fix rather than an
+                  omission: the peek's own accessibilityLabel already composes
+                  this exact sentence, so exposing the chip too would announce it
+                  twice (DECISIONS §F F-19). Visual channel here, spoken channel
+                  on the button, one voice each. */}
+              {emptyLocal && (
+                <View style={styles.peekChipWrap} pointerEvents="none">
+                  <GlassSurface
+                    variant="banner"
+                    forceEngineered
+                    borderRadius={radius.full}
+                    style={styles.peekChip}
+                  >
+                    <AppText
+                      variant="label"
+                      style={styles.peekChipText}
+                      maxFontSizeMultiplier={1.4}
+                      // `aria-hidden` is the one that works EVERYWHERE. RN-web
+                      // ignores the two legacy props below — proved by the
+                      // shipped "Sort:" label, which carries both and still
+                      // shows up in the web ARIA tree (DECISIONS §F F-22). RN
+                      // 0.81 maps `aria-hidden` onto the native equivalents, so
+                      // this one prop covers iOS, Android and web; the legacy
+                      // pair stays for readability and belt-and-braces.
+                      aria-hidden
+                      accessibilityElementsHidden
+                      importantForAccessibility="no-hide-descendants"
+                    >
+                      {EMPTY_LOCAL_INVITE}
+                    </AppText>
+                  </GlassSurface>
+                </View>
+              )}
               <View
                 style={[styles.mapPeekHint, pressed && { backgroundColor: color.ctaFillPressed }]}
                 pointerEvents="none"
@@ -443,17 +482,7 @@ export default function HomeScreen() {
             `emptyLocal` requires a known center and `showLocating` requires the
             absence of one, so the two can never both be true — the ordering
             here just makes that mutual exclusion explicit on the page. */}
-        {emptyLocal ? (
-          <AppText
-            variant="body"
-            style={styles.peekCaption}
-            accessibilityRole="text"
-            accessibilityLiveRegion="polite"
-            maxFontSizeMultiplier={1.4}
-          >
-            {EMPTY_LOCAL_INVITE}
-          </AppText>
-        ) : showLocating ? (
+        {showLocating ? (
           <AppText
             variant="body"
             style={styles.peekCaption}
@@ -643,6 +672,32 @@ const makeStyles = (color: ColorTheme) =>
       borderWidth: StyleSheet.hairlineWidth,
       borderColor: color.border,
       backgroundColor: color.surfaceSoft,
+    },
+    // D4/C5 — the empty-local chip. Pinned to the TOP of the peek so it can
+    // never collide with the "Open full map" pill in the bottom-right corner.
+    peekChipWrap: {
+      position: 'absolute',
+      top: spacing.md,
+      left: spacing.md,
+      right: spacing.md,
+      alignItems: 'center',
+    },
+    peekChip: {
+      borderRadius: radius.full,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+    },
+    // brandOnSoft is the ink already paired with the banner tint elsewhere in
+    // the app; no new ink value is introduced. Arbitrated over map tiles in
+    // design-reviews/device-tune/tools/devicetune-empty-local-chip-stacks.json,
+    // because glass over LIVE MAP TILES is a composite this estate has not
+    // measured before.
+    peekChipText: {
+      fontSize: font.size.sm,
+      lineHeight: 19,
+      color: color.brandOnSoft,
+      fontWeight: font.weight.semibold,
+      textAlign: 'center',
     },
     mapPeekHint: {
       position: 'absolute',
