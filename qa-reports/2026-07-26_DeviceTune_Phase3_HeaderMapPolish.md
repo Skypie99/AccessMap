@@ -199,8 +199,9 @@ Every number measured against a static export with `tools/measure-header.mjs`, n
 | 12 | **Map comes home:** granted location, cold start → the peek centres on you with **zero prompt** | **P3** |
 | 13 | **Denied** → peek stays on its default region, zero prompt, and the caption says nothing | **P3** |
 | 14 | **Airplane mode** → the read times out inside 15s and falls back without hanging | **P3** |
-| 15 | The **empty-local invite** at a real flagless locale — does it invite or does it read as broken? | **P3** |
-| 16 | **VoiceOver on the peek:** the composed label reads the emptiness — and judge whether hearing it twice (button name + caption, F-19) is chatty. One-line fix if so. | **P3** |
+| 15 | The **empty-local chip** at a real flagless locale, BOTH schemes — does it invite, or read as broken? (Placement B, Sky's A-5 pick — a chip on the map, not the caption this item originally described.) | **P3/P4** |
+| 16 | **The chip's legibility over REAL map tiles.** The arbiter proves 5.45:1 light / 5.57:1 dark against modelled worst-case bases (#000/#FFF). Real tiles at real zoom levels — dense city, water, a dark basemap — are the thing a model cannot check. Look for the sentence washing out over any of them. | **P4** |
+| 16b | **VoiceOver on the peek:** confirm you hear the sentence exactly ONCE. F-19's double announcement is fixed (the chip is `aria-hidden`; the button's composed label is the single spoken channel) and was verified on web — this confirms it on iOS. | **P3/P4** |
 | 17 | **Dynamic Type** on the Tasks header at 200% — nothing truncates, the "Select multiple" target stays ≥44pt beside the search field | **P3** |
 | 18 | **The filter sheet on a real device:** open it, pick a category, close — does the trigger's blue fill + Clear-filters chip read clearly enough that you always know a filter is on? This is the one judgement the whole D3 design rests on. | **P3** |
 | 19 | **VoiceOver through the filter sheet** — focus lands on the sheet title on open, every filter is reachable and announces its selected state, and focus returns sensibly on close | **P3** |
