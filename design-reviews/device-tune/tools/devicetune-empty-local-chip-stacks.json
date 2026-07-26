@@ -1,0 +1,59 @@
+{
+  "name": "Device-Tune Phase 4 / D4-C5 \u2014 the empty-local chip on the Home map peek (branch devicetune/4-empty-local-chip)",
+  "_doc": [
+    "PURPOSE: Sky picked placement B for the empty-local moment (DECISIONS \u00a7A A-5) \u2014 a chip sitting ON the map peek instead of a caption line beneath it. That moves an informational ink off the app's own gradient and onto a composite this estate has never measured: an engineered tint over LIVE MAP TILES. Run: node ~/AccessMap-material-lab/2026-07-02/shared/contrast-check.mjs design-reviews/device-tune/tools/devicetune-empty-local-chip-stacks.json",
+    "WHY AN ARBITER RUN IS OWED HERE AND WAS NOT FOR PLACEMENT A: the caption (placement A) is stage ink on the screen's own gradient \u2014 an already-arbitrated pairing. A chip on the peek is a NEW COMPOSITE, and the backdrop is not the app's: it is OpenStreetMap/Apple tiles, whose luminance the app does not control and cannot predict.",
+    "SURFACE MODEL: the chip is an ENGINEERED tint, not a live blur pane. GLASS.md:19 and :93 are explicit \u2014 'everything smaller (chips, pills, search) is an engineered tint' and 'true blur may live ONLY in GlassSurface variants' acting as panes. GlassSurface's engineered path paints its two lite layers in order, so the stack is [lite0, lite1] over the tile. Stack order per the arbiter contract: stack[0] is nearest the base. This also means the chip costs ZERO against glass.maxLivePanes.",
+    "BASES: #000 and #FFF in both schemes, per GLASS.md \u00a712.2 (the live-backdrop rule). Map tiles are an independent axis from the JS theme \u2014 OSM raster tiles stay light even in dark mode on web, and Apple tiles follow the OS rather than the app. #000 and #FFF bound every reachable tile luminance and the arbiter takes the true minimum across bases.",
+    "INK MODELLED: brandOnSoft (#0F53BE light / #B4CFFA dark) at the 4.5 body-text floor. This is NOT a new ink value \u2014 it is the token already paired with the banner tint on the Tasks suggested-barrier row (TasksScreen.tsx suggestedText). Introducing no new ink is deliberate: it keeps the change inside the arbitrated palette.",
+    "NOT MODELLED (deliberate): the chip's own edge and specular hairlines, which are non-informational ornament (GLASS.md \u00a77.1 puts floors and inks through the arbiter, not decorative hairlines); and the 'Open full map' pill, which is unchanged, fully opaque brand, and already shipped.",
+    "RT (Reduce Transparency): GlassSurface's engineered path is what already renders under RT, so the RT case is the same stack \u2014 there is no separate translucent path to fall back from. That is a property of choosing an engineered tint rather than a blur pane.",
+    "GATE: exit 0 required. If a palette edit ever drops this pair below 4.5:1, this file goes exit 1 and gates the chip \u2014 at which point the honest fallback is placement A (the caption on the gradient), which owes no arbiter run at all."
+  ],
+  "modes": {
+    "light": {
+      "surfaces": {
+        "emptyLocalChipLight": {
+          "stack": [
+            "rgba(217,231,253,0.92)",
+            "rgba(217,231,253,0.84)"
+          ],
+          "base": [
+            "#000",
+            "#FFF"
+          ]
+        }
+      },
+      "pairs": [
+        {
+          "text": "#0F53BE",
+          "surface": "emptyLocalChipLight",
+          "label": "empty-local sentence \u2014 brandOnSoft on the engineered chip tint, over worst-case map tiles (light)",
+          "min": 4.5
+        }
+      ]
+    },
+    "dark": {
+      "surfaces": {
+        "emptyLocalChipDark": {
+          "stack": [
+            "rgba(14,68,153,0.92)",
+            "rgba(14,68,153,0.84)"
+          ],
+          "base": [
+            "#000",
+            "#FFF"
+          ]
+        }
+      },
+      "pairs": [
+        {
+          "text": "#B4CFFA",
+          "surface": "emptyLocalChipDark",
+          "label": "empty-local sentence \u2014 brandOnSoft on the engineered chip tint, over worst-case map tiles (dark)",
+          "min": 4.5
+        }
+      ]
+    }
+  }
+}

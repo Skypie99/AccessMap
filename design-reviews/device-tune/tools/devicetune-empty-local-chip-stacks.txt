@@ -1,0 +1,18 @@
+## Contrast report — Device-Tune Phase 4 / D4-C5 — the empty-local chip on the Home map peek (branch devicetune/4-empty-local-chip)
+
+Composite order: `stack[0]` painted first (nearest base) → last element topmost.
+Worst case = the base backdrop that yields the LOWEST ratio for the pair.
+
+### light
+
+| pair | surface | worst base | resulting bg | ratio | min | verdict |
+|---|---|---|---|---|---|---|
+| empty-local sentence — brandOnSoft on the engineered chip tint, over worst-case map tiles (light) (`#0F53BE`) | emptyLocalChipLight | `#000` | `#D6E4FA` | 5.45:1 | 4.5:1 | PASS |
+
+### dark
+
+| pair | surface | worst base | resulting bg | ratio | min | verdict |
+|---|---|---|---|---|---|---|
+| empty-local sentence — brandOnSoft on the engineered chip tint, over worst-case map tiles (dark) (`#B4CFFA`) | emptyLocalChipDark | `#FFF` | `#11469A` | 5.57:1 | 4.5:1 | PASS |
+
+RESULT: ALL PASS
