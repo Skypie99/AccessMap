@@ -2,6 +2,7 @@ import {
   formatDistance,
   formatWalkingEta,
   haversineKm,
+  regionContainsPoint,
   speakDistance,
   walkingMinutes,
 } from '../distance';
@@ -196,5 +197,70 @@ describe('speakDistance', () => {
       expect(s).toMatch(/ /); // plain ASCII spaces only
     }
     expect(speakDistance(0.5)).toBe('500 meters away'); // pinned verbatim
+  });
+});
+
+/**
+ * D4/C3 — regionContainsPoint: does the peek's window contain this flag?
+ *
+ * This is the predicate behind "no barriers reported here yet". It is tested
+ * against the window the user is actually looking at (the peek's own region),
+ * not an invented radius, because the claim is about what the map SHOWS.
+ */
+describe('regionContainsPoint — what the peek window actually contains', () => {
+  // The shipped peek window: 0.05 degrees, centred on the wave coords.
+  const PEEK = { latitude: 49.8874, longitude: -119.4925, latitudeDelta: 0.05, longitudeDelta: 0.05 };
+
+  it('contains its own centre', () => {
+    expect(regionContainsPoint(PEEK, { lat: 49.8874, lng: -119.4925 })).toBe(true);
+  });
+
+  it('contains a point just inside each edge', () => {
+    expect(regionContainsPoint(PEEK, { lat: 49.8874 + 0.024, lng: -119.4925 })).toBe(true);
+    expect(regionContainsPoint(PEEK, { lat: 49.8874 - 0.024, lng: -119.4925 })).toBe(true);
+    expect(regionContainsPoint(PEEK, { lat: 49.8874, lng: -119.4925 + 0.024 })).toBe(true);
+    expect(regionContainsPoint(PEEK, { lat: 49.8874, lng: -119.4925 - 0.024 })).toBe(true);
+  });
+
+  it('excludes a point just outside each edge', () => {
+    expect(regionContainsPoint(PEEK, { lat: 49.8874 + 0.026, lng: -119.4925 })).toBe(false);
+    expect(regionContainsPoint(PEEK, { lat: 49.8874 - 0.026, lng: -119.4925 })).toBe(false);
+    expect(regionContainsPoint(PEEK, { lat: 49.8874, lng: -119.4925 + 0.026 })).toBe(false);
+    expect(regionContainsPoint(PEEK, { lat: 49.8874, lng: -119.4925 - 0.026 })).toBe(false);
+  });
+
+  it('excludes San Francisco — the case the whole fix is about', () => {
+    // Standing in Kelowna, the SF seed flags must NOT count as "here".
+    expect(regionContainsPoint(PEEK, { lat: 37.7749, lng: -122.4194 })).toBe(false);
+  });
+
+  it('handles a window straddling the antimeridian', () => {
+    const wrap = { latitude: 0, longitude: 179.9, latitudeDelta: 1, longitudeDelta: 1 };
+    expect(regionContainsPoint(wrap, { lat: 0, lng: -179.9 })).toBe(true);
+    expect(regionContainsPoint(wrap, { lat: 0, lng: 179.9 })).toBe(true);
+    expect(regionContainsPoint(wrap, { lat: 0, lng: 178.0 })).toBe(false);
+  });
+
+  it('treats a whole-globe longitude window as containing everything', () => {
+    const globe = { latitude: 0, longitude: 0, latitudeDelta: 180, longitudeDelta: 360 };
+    for (const lng of [-180, -90, 0, 90, 180]) {
+      expect(regionContainsPoint(globe, { lat: 0, lng })).toBe(true);
+    }
+  });
+
+  it('refuses to claim containment it cannot compute', () => {
+    const bad = { latitude: NaN, longitude: 0, latitudeDelta: 1, longitudeDelta: 1 };
+    expect(regionContainsPoint(bad, { lat: 0, lng: 0 })).toBe(false);
+    expect(regionContainsPoint(PEEK, { lat: Number.POSITIVE_INFINITY, lng: 0 })).toBe(false);
+    expect(regionContainsPoint(PEEK, { lat: 0, lng: NaN })).toBe(false);
+  });
+
+  it('refuses a negative window rather than inverting it', () => {
+    const inverted = { latitude: 0, longitude: 0, latitudeDelta: -1, longitudeDelta: 1 };
+    expect(regionContainsPoint(inverted, { lat: 0, lng: 0 })).toBe(false);
+  });
+
+  it('is exact at the boundary (inclusive), so a flag on the edge counts as here', () => {
+    expect(regionContainsPoint(PEEK, { lat: 49.8874 + 0.025, lng: -119.4925 })).toBe(true);
   });
 });

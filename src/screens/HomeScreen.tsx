@@ -46,7 +46,7 @@ import { useFlags } from '@/lib/flagsStore';
 import { useGlassMode } from '@/lib/glassMode';
 import { peekLocationState, useUserLocation, type PeekLocationState } from '@/lib/location';
 import { offlineBannerText } from '@/lib/copy';
-import { formatDistance, haversineKm, type LatLng } from '@/lib/distance';
+import { formatDistance, haversineKm, regionContainsPoint, type LatLng } from '@/lib/distance';
 import { CATEGORY_LABELS, SEVERITY_LABELS, STATUS_LABELS } from '@/lib/flags';
 import { severityA11y, statusA11y } from '@/lib/a11yText';
 import type { GeocodeResult } from '@/lib/geocode';
@@ -65,6 +65,20 @@ const FALLBACK_PEEK_REGION = {
   latitudeDelta: 0.05,
   longitudeDelta: 0.05,
 };
+
+// D4/C3 — the empty-local invite. PROVISIONAL: Sky ratifies the wording at the
+// Phase 3 gate (DECISIONS §A A-5). One const feeds BOTH the visible caption and
+// the peek's spoken label, so ratifying it is a one-line swap in one place.
+//
+// The register rule every option obeys: claim REPORT-absence, never
+// barrier-absence. AccessMap cannot know that a place has no barriers — only
+// that nobody has reported one. "No barriers here" would be a promise the data
+// can't keep, and the people who rely on this app are exactly the people such a
+// promise would strand.
+//   1. 'No barriers reported here yet — be the first.'   <- ships
+//   2. 'Nobody has reported a barrier around here yet.'
+//   3. 'No reports here yet. You could add the first.'
+const EMPTY_LOCAL_INVITE = 'No barriers reported here yet — be the first.';
 
 type HomeNav = BottomTabNavigationProp<RootTabParamList, 'Home'>;
 
@@ -192,6 +206,30 @@ export default function HomeScreen() {
   // with anything that describes a KNOWN place, so the slot only ever carries
   // one line.
   const showLocating = !hasCenter && probeState === 'locating' && locatingRevealed;
+
+  // D4/C3 — the empty-local moment. Centering the peek correctly exposes a case
+  // the SF fallback used to hide: a user standing somewhere nobody has reported
+  // yet now gets a correctly-centered, completely empty map. That blankness
+  // should read as an invitation, not as a broken screen.
+  //
+  // Every clause is an honesty gate, and none of them is optional:
+  //   hasCenter        — we must know where "here" is before naming it
+  //   !loading         — never claim absence while the answer is still arriving
+  //   !error           — never claim absence over a failure (T9/F5-02)
+  //   !isOfflineCache  — never claim absence over data we know is stale
+  //   flags.length > 0 — a globally empty database keeps its OWN designed line
+  //                      in the list card below; two voices for one silence
+  //                      would be worse than none
+  const emptyLocal = useMemo(
+    () =>
+      hasCenter &&
+      !loading &&
+      !error &&
+      !isOfflineCache &&
+      flags.length > 0 &&
+      !flags.some((f) => regionContainsPoint(peekRegion, { lat: f.lat, lng: f.lng })),
+    [hasCenter, loading, error, isOfflineCache, flags, peekRegion],
+  );
 
   const items = useMemo(() => {
     if (center) {
@@ -358,7 +396,12 @@ export default function HomeScreen() {
           style={styles.mapPeek}
           onPress={() => navigation.navigate('FullMap')}
           accessibilityRole="button"
-          accessibilityLabel="Open the full map"
+          // D4/C3: a screen reader user can't see that the map came up empty,
+          // so the state rides on the button's own name — same const as the
+          // visible caption, so the two channels can never drift apart.
+          accessibilityLabel={
+            emptyLocal ? `Open the full map. ${EMPTY_LOCAL_INVITE}` : 'Open the full map'
+          }
         >
           {({ pressed }) => (
             <>
@@ -393,8 +436,23 @@ export default function HomeScreen() {
             icon. It carries at most ONE message, and only when that message is
             true. `Finding your location…` is the app's already-shipped wording
             for this exact state (MapScreen.tsx:2436) reused byte-for-byte, so
-            the two surfaces don't invent two vocabularies for one idea. */}
-        {showLocating && (
+            the two surfaces don't invent two vocabularies for one idea.
+
+            D4/C3 adds the second message to the same slot. It stays ONE line:
+            `emptyLocal` requires a known center and `showLocating` requires the
+            absence of one, so the two can never both be true — the ordering
+            here just makes that mutual exclusion explicit on the page. */}
+        {emptyLocal ? (
+          <AppText
+            variant="body"
+            style={styles.peekCaption}
+            accessibilityRole="text"
+            accessibilityLiveRegion="polite"
+            maxFontSizeMultiplier={1.4}
+          >
+            {EMPTY_LOCAL_INVITE}
+          </AppText>
+        ) : showLocating ? (
           <AppText
             variant="body"
             style={styles.peekCaption}
@@ -404,7 +462,7 @@ export default function HomeScreen() {
           >
             Finding your location…
           </AppText>
-        )}
+        ) : null}
 
         {/* Offline banner (serving the saved cache). B9: now states the age. */}
         {isOfflineCache && (

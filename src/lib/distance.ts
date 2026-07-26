@@ -34,6 +34,50 @@ export function haversineKm(a: LatLng, b: LatLng): number {
   return 2 * R * Math.asin(Math.sqrt(h));
 }
 
+/** A map viewport, in the shape both PlatformMap halves already take. */
+export interface Region {
+  latitude: number;
+  longitude: number;
+  latitudeDelta: number;
+  longitudeDelta: number;
+}
+
+/**
+ * Is this point inside that map window?
+ *
+ * D4/C3 uses this to answer one narrow question honestly: does the map peek
+ * show a place where nothing has been reported? "Nothing here" is only a claim
+ * worth making about the window the user is actually looking at, so the test is
+ * against the peek's own region rather than some invented radius.
+ *
+ * FORK-1 FENCE (verbatim, from design-reviews/fork-briefs BRIEF 1): the peek's
+ * SF fallback constant is a PARKED fork and this helper must never be used to
+ * justify moving it. Centering the peek correctly makes that fork MORE visible,
+ * not less — deciding where an unlocated user's map should point is Sky's call,
+ * not a side effect of a containment test.
+ *
+ * Edge cases are deliberate, not defensive noise:
+ *   - any non-finite input → false (never claim containment you can't compute);
+ *   - a longitude window of 360 degrees or more contains every longitude;
+ *   - the longitude difference is normalized into [-180, 180], so a window
+ *     straddling the antimeridian still contains points on the far side of it.
+ */
+export function regionContainsPoint(region: Region, p: LatLng): boolean {
+  const { latitude, longitude, latitudeDelta, longitudeDelta } = region;
+  const finite = [latitude, longitude, latitudeDelta, longitudeDelta, p.lat, p.lng].every((n) =>
+    Number.isFinite(n),
+  );
+  if (!finite) return false;
+  if (latitudeDelta < 0 || longitudeDelta < 0) return false;
+  if (Math.abs(p.lat - latitude) > latitudeDelta / 2) return false;
+  if (longitudeDelta >= 360) return true;
+  // Both longitudes are within +/-180, so the difference is within +/-360 and
+  // the +540 offset keeps the modulo operand positive (JS % keeps the sign of
+  // its left operand, which would otherwise break the wrap).
+  const dLng = ((p.lng - longitude + 540) % 360) - 180;
+  return Math.abs(dLng) <= longitudeDelta / 2;
+}
+
 /**
  * Walking time in minutes for a given distance, rounded up to at least 1
  * minute. "Standing across the street" still reads as a 1-minute walk —
