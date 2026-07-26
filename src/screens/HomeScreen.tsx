@@ -123,9 +123,42 @@ export default function HomeScreen() {
   const center: LatLng | null = searchCenter ?? userLocation;
   const hasCenter = center != null;
 
-  const peekRegion = center
-    ? { latitude: center.lat, longitude: center.lng, latitudeDelta: 0.05, longitudeDelta: 0.05 }
-    : FALLBACK_PEEK_REGION;
+  // D4/C1 — the peek camera honors a center that arrives AFTER mount.
+  //
+  // `initialRegion` is exactly what it says: both map halves read it once, at
+  // construction, and never again (native passes it straight to the MapView —
+  // PlatformMap.tsx:288; web maps it to react-leaflet's `center`/`zoom` on
+  // MapContainer — PlatformMap.web.tsx:1017-1018, which likewise ignores later
+  // prop changes). The location probe resolves a frame or more AFTER mount, so
+  // a peek that mounted on the fallback stayed on the fallback FOREVER — while
+  // the list beside it had already re-sorted by real distance. That is the
+  // whole of D4: the screen knew where you were and the map didn't.
+  //
+  // The fix is a keyed remount rather than an imperative snap. `snapToRegion`
+  // exists on both halves but silently no-ops before the map is ready and
+  // neither half exposes a ready signal, so using it would mean editing
+  // PlatformMap; a remount honors the new region at construction instead —
+  // race-free, identical on both platforms, and free of state loss because the
+  // peek's interior is inert (`pointerEvents="none"`, S17/L5-06). The key only
+  // changes on a DISCRETE center change (probe resolve, search select, search
+  // clear), never per frame.
+  //
+  // The memo is not decoration: PlatformMap is `memo()` and its own contract
+  // (PlatformMap.tsx:509-511) requires callers to memoize `initialRegion`. The
+  // old object literal was rebuilt every render and defeated that memo, so
+  // this restores a contract Home was quietly violating.
+  const peekRegion = useMemo(
+    () =>
+      center
+        ? { latitude: center.lat, longitude: center.lng, latitudeDelta: 0.05, longitudeDelta: 0.05 }
+        : FALLBACK_PEEK_REGION,
+    [center],
+  );
+  // 5 decimal places ≈ 1 m — finer than the peek's 0.05° (~5 km) window can
+  // show, so this cannot remount for a jitter the user could never see.
+  const peekMapKey = center
+    ? `peek:${center.lat.toFixed(5)},${center.lng.toFixed(5)}`
+    : 'peek:default';
 
   const items = useMemo(() => {
     if (center) {
@@ -300,6 +333,7 @@ export default function HomeScreen() {
                   the press dim lands on the hint CHIP, never the live tiles. */}
               <View style={StyleSheet.absoluteFill} pointerEvents="none">
                 <PlatformMap
+                  key={peekMapKey}
                   initialRegion={peekRegion}
                   flags={flags}
                   focusedFlagId={null}
