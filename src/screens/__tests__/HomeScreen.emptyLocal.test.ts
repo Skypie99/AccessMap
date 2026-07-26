@@ -72,9 +72,11 @@ describe('D4/C3 — the five honesty gates', () => {
 
 describe('D4/C3 — register: report-absence, never barrier-absence', () => {
   it('ships wording that claims only what the data can support', () => {
-    expect(home).toMatch(/const EMPTY_LOCAL_INVITE = 'No barriers reported here yet — be the first\.';/);
-    // The word that makes the claim survivable.
-    expect(home).toMatch(/EMPTY_LOCAL_INVITE = '[^']*reported[^']*'/);
+    expect(home).toMatch(/const EMPTY_LOCAL_INVITE = 'No reports here yet\. You could add the first\.';/);
+    // The word that makes the claim survivable. Matches the whole family —
+    // "report", "reports", "reported" — because the register rule is about what
+    // is being claimed, not about one inflection of one word.
+    expect(home).toMatch(/EMPTY_LOCAL_INVITE = '[^']*report[^']*'/);
   });
 
   it('never states the unqualified claim anywhere on the screen', () => {
@@ -87,10 +89,13 @@ describe('D4/C3 — register: report-absence, never barrier-absence', () => {
     }
   });
 
-  it('is marked PROVISIONAL and carries the alternatives for Sky', () => {
-    expect(home).toMatch(/PROVISIONAL: Sky ratifies the wording at the\s*\n\/\/ Phase 3 gate/);
+  it('records that Sky ratified it, and keeps the alternatives on the record', () => {
+    expect(home).toMatch(/RATIFIED by Sky at the Phase 3 gate/);
+    // The options that were NOT chosen stay in the comment: the next person to
+    // touch this should see what was considered and rejected, not just the winner.
+    expect(home).toMatch(/1\. 'No barriers reported here yet — be the first\.'/);
     expect(home).toMatch(/2\. 'Nobody has reported a barrier around here yet\.'/);
-    expect(home).toMatch(/3\. 'No reports here yet\. You could add the first\.'/);
+    expect(home).toMatch(/3\. 'No reports here yet\. You could add the first\.'   <- RATIFIED/);
   });
 });
 

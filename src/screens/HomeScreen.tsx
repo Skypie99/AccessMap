@@ -66,19 +66,20 @@ const FALLBACK_PEEK_REGION = {
   longitudeDelta: 0.05,
 };
 
-// D4/C3 — the empty-local invite. PROVISIONAL: Sky ratifies the wording at the
-// Phase 3 gate (DECISIONS §A A-5). One const feeds BOTH the visible caption and
-// the peek's spoken label, so ratifying it is a one-line swap in one place.
+// D4/C3 — the empty-local invite. RATIFIED by Sky at the Phase 3 gate
+// (DECISIONS §A A-5, 2026-07-26): option 3. One const feeds BOTH the visible
+// caption and the peek's spoken label, so the two channels cannot drift and a
+// future change stays a one-line swap in one place.
 //
 // The register rule every option obeys: claim REPORT-absence, never
 // barrier-absence. AccessMap cannot know that a place has no barriers — only
 // that nobody has reported one. "No barriers here" would be a promise the data
 // can't keep, and the people who rely on this app are exactly the people such a
 // promise would strand.
-//   1. 'No barriers reported here yet — be the first.'   <- ships
+//   1. 'No barriers reported here yet — be the first.'
 //   2. 'Nobody has reported a barrier around here yet.'
-//   3. 'No reports here yet. You could add the first.'
-const EMPTY_LOCAL_INVITE = 'No barriers reported here yet — be the first.';
+//   3. 'No reports here yet. You could add the first.'   <- RATIFIED by Sky
+const EMPTY_LOCAL_INVITE = 'No reports here yet. You could add the first.';
 
 type HomeNav = BottomTabNavigationProp<RootTabParamList, 'Home'>;
 
