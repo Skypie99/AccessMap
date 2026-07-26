@@ -96,6 +96,40 @@ export function arrivalPermissionDenied(
   return status === 'denied';
 }
 
+/** What Home's map-peek caption is allowed to claim about the location probe. */
+export type PeekLocationState = 'located' | 'locating' | 'default';
+
+/**
+ * D4/C2: collapse the probe's four-field state into the ONE claim the peek
+ * caption is entitled to make.
+ *
+ * The honesty rule is that only a genuine in-flight read may say "Finding your
+ * location…". Denied, undetermined, errored and timed-out are all indistinguishable
+ * from the user's side — the map simply shows its default region — so they all
+ * collapse to `'default'` and the caption renders nothing rather than narrating
+ * a search that isn't happening. `permissionDenied` is checked explicitly even
+ * though the hook also clears `loading` on that path, so the claim can't survive
+ * a future refactor that reorders those.
+ *
+ * Companion to `initialLocationAction` / `arrivalPermissionDenied`: same house
+ * pattern of naming a UI outcome as a pure, unit-tested function instead of
+ * scattering the condition through JSX.
+ *
+ * NOTE the caller still owes a reveal delay — see HomeScreen. A denied check
+ * returns in milliseconds, and painting "Finding your location…" for one frame
+ * on the way to "denied" would be a false claim, just a brief one.
+ */
+export function peekLocationState(probe: {
+  location: LatLng | null;
+  loading: boolean;
+  error: string | null;
+  permissionDenied: boolean;
+}): PeekLocationState {
+  if (probe.location) return 'located';
+  if (probe.loading && !probe.error && !probe.permissionDenied) return 'locating';
+  return 'default';
+}
+
 export interface UseUserLocationOptions {
   /**
    * When true, only fetch the location if foreground permission has

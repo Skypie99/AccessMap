@@ -44,7 +44,7 @@ import AddressSearchModal from '@/components/AddressSearchModal';
 import { SeverityDisc } from '@/components/SeverityDisc';
 import { useFlags } from '@/lib/flagsStore';
 import { useGlassMode } from '@/lib/glassMode';
-import { useUserLocation } from '@/lib/location';
+import { peekLocationState, useUserLocation, type PeekLocationState } from '@/lib/location';
 import { offlineBannerText } from '@/lib/copy';
 import { formatDistance, haversineKm, type LatLng } from '@/lib/distance';
 import { CATEGORY_LABELS, SEVERITY_LABELS, STATUS_LABELS } from '@/lib/flags';
@@ -77,14 +77,25 @@ type HomeNav = BottomTabNavigationProp<RootTabParamList, 'Home'>;
 function LocationProbe({
   requireExistingPermission,
   onResult,
+  onState,
 }: {
   requireExistingPermission: boolean;
   onResult: (loc: LatLng | null) => void;
+  onState: (state: PeekLocationState) => void;
 }) {
-  const { location } = useUserLocation({ requireExistingPermission });
+  const { location, loading, error, permissionDenied } = useUserLocation({
+    requireExistingPermission,
+  });
   useEffect(() => {
     onResult(location);
   }, [location, onResult]);
+  // D4/C2: the probe now reports WHICH of the three honest states it's in, not
+  // just its result, so the peek can say "looking" without ever claiming to be
+  // looking when it isn't. Collapsed by a pure helper so the rule is testable.
+  const state = peekLocationState({ location, loading, error, permissionDenied });
+  useEffect(() => {
+    onState(state);
+  }, [state, onState]);
   return null;
 }
 
@@ -112,6 +123,23 @@ export default function HomeScreen() {
   // false until the user taps "Use my location" — gates the OS prompt to a
   // user-initiated action (fence: never prompt on mount/focus).
   const [askedForLocation, setAskedForLocation] = useState(false);
+  // D4/C2: which of the three honest states the probe is in. Stays 'default'
+  // while the probe isn't mounted at all, which is the truth then.
+  const [probeState, setProbeState] = useState<PeekLocationState>('default');
+  // The reveal delay is load-bearing honesty, not polish. A DENIED permission
+  // check returns in milliseconds, and the hook is `loading` for that whole
+  // window — so without the delay every denied user would see a one-frame
+  // "Finding your location…" flash for a search that never happened. Only a
+  // read still in flight after 300 ms has earned the words.
+  const [locatingRevealed, setLocatingRevealed] = useState(false);
+  useEffect(() => {
+    if (probeState !== 'locating') {
+      setLocatingRevealed(false);
+      return;
+    }
+    const timer = setTimeout(() => setLocatingRevealed(true), 300);
+    return () => clearTimeout(timer);
+  }, [probeState]);
 
   // Native: silently probe an already-granted location on mount (no prompt).
   // Web: only probe after the user opts in (the web geolocation path always
@@ -159,6 +187,11 @@ export default function HomeScreen() {
   const peekMapKey = center
     ? `peek:${center.lat.toFixed(5)},${center.lng.toFixed(5)}`
     : 'peek:default';
+
+  // D4/C2: the peek's caption slot. `hasCenter` makes this mutually exclusive
+  // with anything that describes a KNOWN place, so the slot only ever carries
+  // one line.
+  const showLocating = !hasCenter && probeState === 'locating' && locatingRevealed;
 
   const items = useMemo(() => {
     if (center) {
@@ -211,7 +244,11 @@ export default function HomeScreen() {
     <View style={styles.screen}>
       <ScreenStage />
       {probeEnabled && (
-        <LocationProbe requireExistingPermission={!askedForLocation} onResult={setUserLocation} />
+        <LocationProbe
+          requireExistingPermission={!askedForLocation}
+          onResult={setUserLocation}
+          onState={setProbeState}
+        />
       )}
       <ScrollView
         style={styles.scroll}
@@ -350,6 +387,24 @@ export default function HomeScreen() {
             </>
           )}
         </Pressable>
+
+        {/* D4/C2 — the peek's caption slot. One line, one voice: a quiet piece
+            of stage text under the map, never a card, never a pane, never an
+            icon. It carries at most ONE message, and only when that message is
+            true. `Finding your location…` is the app's already-shipped wording
+            for this exact state (MapScreen.tsx:2436) reused byte-for-byte, so
+            the two surfaces don't invent two vocabularies for one idea. */}
+        {showLocating && (
+          <AppText
+            variant="body"
+            style={styles.peekCaption}
+            accessibilityRole="text"
+            accessibilityLiveRegion="polite"
+            maxFontSizeMultiplier={1.4}
+          >
+            Finding your location…
+          </AppText>
+        )}
 
         {/* Offline banner (serving the saved cache). B9: now states the age. */}
         {isOfflineCache && (
@@ -543,6 +598,16 @@ const makeStyles = (color: ColorTheme) =>
       borderRadius: radius.full,
     },
     mapPeekHintText: { fontSize: font.size.xs, color: color.textOnBrand, fontWeight: font.weight.semibold },
+    // D4/C2 — the peek caption. Stage ink (this sits on the screen's gradient,
+    // not on glass), sm/19 so the line has air without becoming a heading, and
+    // no fixed height so Dynamic Type can grow it freely.
+    peekCaption: {
+      marginHorizontal: spacing.lg,
+      marginTop: spacing.sm,
+      fontSize: font.size.sm,
+      lineHeight: 19,
+      color: color.inkOnStage,
+    },
     offlineBanner: {
       flexDirection: 'row',
       alignItems: 'center',

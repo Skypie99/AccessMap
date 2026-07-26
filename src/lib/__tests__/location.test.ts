@@ -10,7 +10,7 @@
  * else resolves to 'clear'.
  */
 
-import { initialLocationAction } from '@/lib/location';
+import { initialLocationAction, peekLocationState } from '@/lib/location';
 
 describe('initialLocationAction — MapScreen mount permission gate', () => {
   it("fetches when permission is already granted", () => {
@@ -30,6 +30,64 @@ describe('initialLocationAction — MapScreen mount permission gate', () => {
     // Defensive: any unexpected/future status must never leave it fetching.
     for (const status of ['undetermined', 'denied', '', 'restricted', 'unknown']) {
       expect(initialLocationAction(status)).toBe('clear');
+    }
+  });
+});
+
+/**
+ * D4/C2 — peekLocationState: what Home's map-peek caption may claim.
+ *
+ * The rule under test is an honesty rule, not a display rule. Only a read that
+ * is genuinely in flight may say "Finding your location…"; denied, undetermined,
+ * errored and timed-out are all indistinguishable from the user's side (the map
+ * just shows its default region), so they collapse to one silent outcome rather
+ * than narrating a search that isn't happening.
+ */
+describe('peekLocationState — the peek caption tells the truth', () => {
+  const base = { location: null, loading: false, error: null, permissionDenied: false };
+  const KELOWNA = { lat: 49.8874, lng: -119.4925 };
+
+  it('reports located the moment a real fix exists', () => {
+    expect(peekLocationState({ ...base, location: KELOWNA })).toBe('located');
+  });
+
+  it('a resolved fix wins even while a refresh is still in flight', () => {
+    // We have a place to show, so the caption must not regress to "looking".
+    expect(peekLocationState({ ...base, location: KELOWNA, loading: true })).toBe('located');
+  });
+
+  it('reports locating only for a genuine in-flight read', () => {
+    expect(peekLocationState({ ...base, loading: true })).toBe('locating');
+  });
+
+  it('never claims to be looking once permission is denied', () => {
+    // The load-bearing case: a denied check is briefly `loading` too.
+    expect(peekLocationState({ ...base, loading: true, permissionDenied: true })).toBe('default');
+  });
+
+  it('never claims to be looking over a failure or a timeout', () => {
+    expect(
+      peekLocationState({ ...base, loading: true, error: 'Location request timed out.' }),
+    ).toBe('default');
+    expect(peekLocationState({ ...base, error: 'Could not get location.' })).toBe('default');
+  });
+
+  it('says nothing at all when the probe was never mounted (undetermined)', () => {
+    expect(peekLocationState(base)).toBe('default');
+  });
+
+  it('only ever answers with one of the three honest states', () => {
+    const flags = [false, true];
+    for (const location of [null, KELOWNA]) {
+      for (const loading of flags) {
+        for (const permissionDenied of flags) {
+          for (const error of [null, 'boom']) {
+            expect(['located', 'locating', 'default']).toContain(
+              peekLocationState({ location, loading, error, permissionDenied }),
+            );
+          }
+        }
+      }
     }
   });
 });
