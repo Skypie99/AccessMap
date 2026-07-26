@@ -12,10 +12,11 @@
  * that newly join the family: Profile / Settings / the FullMap overlay title.
  */
 import React from 'react';
-import { Pressable, StyleSheet } from 'react-native';
+import { Pressable, StyleSheet, type View } from 'react-native';
 import { Menu, MessageSquare } from 'lucide-react-native';
 import { radius } from '@/theme';
 import { useColor } from '@/theme/ThemeContext';
+import { useDrawerTrigger } from '@/lib/drawerContext';
 
 interface Props {
   onMenu: () => void;
@@ -29,10 +30,19 @@ interface Props {
 export function HeaderActions({ onMenu, onFeedback, iconColor, fillColor }: Props) {
   const color = useColor();
   const bg = fillColor ?? color.surface;
+  // D2/C3: register this button as the drawer's focus-return target, so a
+  // screen reader lands back here when the drawer plainly closes. Registering
+  // here covers every screen that adopted this cluster in one place. No-ops
+  // outside a <DrawerProvider>.
+  const menuTrigger = useDrawerTrigger<View>();
   return (
     <>
       <Pressable
-        onPress={onMenu}
+        ref={menuTrigger.ref}
+        onPress={() => {
+          menuTrigger.register();
+          onMenu();
+        }}
         style={({ pressed }) => [styles.btn, { backgroundColor: pressed ? color.surfaceNeutral : bg }]}
         accessibilityRole="button"
         accessibilityLabel="Open navigation menu"

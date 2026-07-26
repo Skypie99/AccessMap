@@ -81,7 +81,7 @@ import { ScreenStage } from '@/components/ui/ScreenStage';
 import { GlassSurface } from '@/components/ui/GlassSurface';
 import { LinearGradient } from 'expo-linear-gradient';
 import { hydrateGlassMode, toggleGlassMode, useGlassMode } from '@/lib/glassMode';
-import { useDrawer } from '@/lib/drawerContext';
+import { useDrawer, useDrawerTrigger } from '@/lib/drawerContext';
 import { useSharedModals } from '@/lib/sharedModalsContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -133,6 +133,7 @@ export default function TasksScreen() {
   const tabBarHeight = useBottomTabBarHeight();
   const insets = useSafeAreaInsets();
   const drawer = useDrawer();
+  const menuTrigger = useDrawerTrigger<View>();
   const { setOpen: setSharedModal } = useSharedModals();
   const { user } = useAuth();
   // Measured height of the floating bulk-action bar (selection mode). Seeded
@@ -845,7 +846,14 @@ export default function TasksScreen() {
         actions={
           <>
             <Pressable
-              onPress={() => drawer.setOpen(true)}
+              // D2/C3: inline hamburger (this one sits on glass with its own
+              // fill, so it never joined the shared HeaderActions cluster) —
+              // registers itself as the drawer's focus-return target.
+              ref={menuTrigger.ref}
+              onPress={() => {
+                menuTrigger.register();
+                drawer.setOpen(true);
+              }}
               style={({ pressed }) => [styles.headerBtn, pressed && styles.headerBtnPressed]}
               accessibilityRole="button"
               accessibilityLabel="Open navigation menu"

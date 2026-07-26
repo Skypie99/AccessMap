@@ -15,7 +15,13 @@ import { GuestProfile } from '@/screens/GuestProfile';
 import { useDrawer } from '@/lib/drawerContext';
 import { useSharedModals } from '@/lib/sharedModalsContext';
 
-jest.mock('@/lib/drawerContext', () => ({ useDrawer: jest.fn() }));
+// HeaderActions also reads useDrawerTrigger (D2/C3 focus return). This module
+// stub replaces the whole module, so it has to carry both — a bare
+// `{ useDrawer }` leaves the trigger hook undefined at call time.
+jest.mock('@/lib/drawerContext', () => ({
+  useDrawer: jest.fn(),
+  useDrawerTrigger: () => ({ ref: { current: null }, register: jest.fn() }),
+}));
 jest.mock('@/lib/sharedModalsContext', () => ({ useSharedModals: jest.fn() }));
 
 const mockSetDrawerOpen = jest.fn();

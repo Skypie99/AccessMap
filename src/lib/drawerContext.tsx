@@ -14,13 +14,23 @@
  * flag, the drawer is mounted ONCE at the navigator level, and any header /
  * screen opens it with `useDrawer().setOpen(true)`.
  */
-import React, { createContext, useContext, useMemo, useState } from 'react';
+import React, { createContext, useCallback, useContext, useMemo, useRef, useState } from 'react';
+import { findNodeHandle, type NativeMethods } from 'react-native';
 
 interface DrawerContextValue {
   /** Whether the hamburger drawer is currently open. */
   open: boolean;
   /** Open (`true`) or close (`false`) the single shared drawer. */
   setOpen: (open: boolean) => void;
+  /**
+   * D2/C3: record the node that is opening the drawer, so a screen reader can
+   * be sent back to it when the drawer plainly closes (WCAG 2.4.3). Ref-backed
+   * on purpose — noting which hamburger was pressed must never re-render the
+   * header that owns it.
+   */
+  registerTrigger: (node: number | null) => void;
+  /** The registered trigger's node handle, read at dismissal time. */
+  triggerRef: React.RefObject<number | null>;
 }
 
 const DrawerContext = createContext<DrawerContextValue | undefined>(undefined);
@@ -31,9 +41,17 @@ const DrawerContext = createContext<DrawerContextValue | undefined>(undefined);
  */
 export function DrawerProvider({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
+  const triggerRef = useRef<number | null>(null);
+  const registerTrigger = useCallback((node: number | null) => {
+    triggerRef.current = node;
+  }, []);
   // Stable identity so consumers don't re-render on unrelated provider
-  // re-renders — only when `open` actually changes.
-  const value = useMemo<DrawerContextValue>(() => ({ open, setOpen }), [open]);
+  // re-renders — only when `open` actually changes. `registerTrigger` and
+  // `triggerRef` are both stable, so they never churn this.
+  const value = useMemo<DrawerContextValue>(
+    () => ({ open, setOpen, registerTrigger, triggerRef }),
+    [open, registerTrigger],
+  );
   return <DrawerContext.Provider value={value}>{children}</DrawerContext.Provider>;
 }
 
@@ -47,4 +65,35 @@ export function useDrawer(): DrawerContextValue {
     throw new Error('useDrawer must be used inside <DrawerProvider>');
   }
   return ctx;
+}
+
+/**
+ * D2/C3 — wire a hamburger button up for screen-reader focus return.
+ *
+ * Attach `ref` to the trigger and call `register()` in its `onPress`, before
+ * opening the drawer. When the drawer later closes WITHOUT handing off to
+ * another surface, it sends VoiceOver/TalkBack focus back here — otherwise
+ * focus is stranded wherever the drawer used to be (WCAG 2.4.3 Focus Order).
+ *
+ * Unlike `useDrawer()` this NEVER throws outside a `<DrawerProvider>`: focus
+ * return is an enhancement, and several headers are rendered bare in tests.
+ * A missing provider simply means no return target.
+ */
+export function useDrawerTrigger<T extends React.Component<unknown> & NativeMethods>() {
+  const ctx = useContext(DrawerContext);
+  const ref = useRef<T>(null);
+  const register = useCallback(() => {
+    ctx?.registerTrigger(ref.current ? findNodeHandle(ref.current) : null);
+  }, [ctx]);
+  return { ref, register };
+}
+
+/**
+ * The drawer's side of the same contract: read the registered trigger handle at
+ * dismissal time. Also non-throwing — the drawer's own suites render it bare.
+ */
+export function useTriggerHandle(): React.RefObject<number | null> {
+  const ctx = useContext(DrawerContext);
+  const fallback = useRef<number | null>(null);
+  return ctx?.triggerRef ?? fallback;
 }

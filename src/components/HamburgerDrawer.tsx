@@ -12,11 +12,13 @@
  */
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
+  AccessibilityInfo,
   Animated,
   Modal,
   Platform,
   Pressable,
   StyleSheet,
+  Text,
   View,
 } from 'react-native';
 import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
@@ -36,7 +38,8 @@ import { AppText } from '@/components/ui/AppText';
 import LogoMark from '@/components/LogoMark';
 import { font, motion, radius, shadow, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
-import { useReducedMotion, useReduceTransparency } from '@/lib/accessibility';
+import { useFocusOnOpen, useReducedMotion, useReduceTransparency } from '@/lib/accessibility';
+import { useTriggerHandle } from '@/lib/drawerContext';
 import { confirm } from '@/lib/confirm';
 import { signOut } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth';
@@ -114,13 +117,41 @@ export default function HamburgerDrawer({ open, onClose, onSignIn, onNavigate }:
   // must be event-driven, never a parallel clock.
   const pendingSubScreen = useRef<SubScreen | null>(null);
 
+  // D2/C3 — screen-reader focus.
+  //
+  // ON OPEN: pull focus to the panel's own header, so the drawer announces
+  // itself instead of leaving focus on the (now-occluded) hamburger.
+  const titleRef = useFocusOnOpen<Text>(open);
+  // ON CLOSE: hand focus BACK to the trigger — but only on a plain dismissal.
+  // A row that hands off to another surface (a sub-screen, a tab, sign-in,
+  // sign-out) must not yank focus backwards: the destination owns focus from
+  // there, and it already manages its own (About is accessibilityViewIsModal;
+  // the Sheet family uses useFocusOnOpen). `handedOff` is the close REASON.
+  const triggerHandle = useTriggerHandle();
+  const handedOff = useRef(false);
+  const markHandoff = useCallback(() => {
+    handedOff.current = true;
+  }, []);
+
+  // The drawer's dismissal-complete handler: it hands off any pending
+  // sub-screen AND settles focus. The name is pinned by the D1 route guard,
+  // which greps for `onDismiss={presentPendingSubScreen}` — so it keeps the
+  // name even though it now does both jobs.
   const presentPendingSubScreen = useCallback(() => {
     const pending = pendingSubScreen.current;
     if (pending) {
       pendingSubScreen.current = null;
       setSubScreen(pending);
     }
-  }, []);
+    // The drawer has ACTUALLY left the screen — the only moment a focus return
+    // is correct. Web is a no-op (setAccessibilityFocus has no RNW backend).
+    if (handedOff.current) {
+      handedOff.current = false;
+      return;
+    }
+    const node = triggerHandle.current;
+    if (node != null) AccessibilityInfo.setAccessibilityFocus(node);
+  }, [triggerHandle]);
 
   // The single latch-release point. On iOS the Modal is still presented until
   // UIKit finishes the dismissal, so the pending sub-screen is handed to the
@@ -142,6 +173,8 @@ export default function HamburgerDrawer({ open, onClose, onSignIn, onNavigate }:
       // A reopen before the close finished also cancels any pending
       // sub-screen handoff (mirrors the latch's interrupted-exit semantics).
       pendingSubScreen.current = null;
+      // Every open starts as a plain session; a row sets this if it hands off.
+      handedOff.current = false;
     }
     // WCAG 2.3.3 — snap into place instead of sliding/fading under reduced motion.
     if (reducedMotion) {
@@ -201,9 +234,10 @@ export default function HamburgerDrawer({ open, onClose, onSignIn, onNavigate }:
       // closed and the dismissal completes at once — still zero timers (B5's
       // designed-stillness contract, now with no clock at all).
       pendingSubScreen.current = screen;
+      markHandoff();
       onClose();
     },
-    [onClose],
+    [markHandoff, onClose],
   );
 
   const handleSignOut = useCallback(async () => {
@@ -214,6 +248,9 @@ export default function HamburgerDrawer({ open, onClose, onSignIn, onNavigate }:
     // cancel leaves the drawer open, exactly where the user was.
     const ok = await confirm('Sign out?', 'Are you sure you want to sign out?', 'Sign out', true);
     if (!ok) return;
+    // A handoff, not a plain close — the session ends and the trigger unmounts
+    // with the whole tab tree, so there is nothing to return focus to.
+    markHandoff();
     closeDrawer();
     // Pass userId so signOut() can clear the offline flag cache, tile cache,
     // and push token. Steve condition: never pass undefined when user is
@@ -221,7 +258,18 @@ export default function HamburgerDrawer({ open, onClose, onSignIn, onNavigate }:
     // Fire-and-forget like every other caller — the AuthProvider listener
     // routes back to SignInScreen.
     void signOut(user?.id);
-  }, [closeDrawer, user]);
+  }, [closeDrawer, markHandoff, user]);
+
+  const handleSignIn = useCallback(() => {
+    // Only a real auth route is a handoff; without one the row just closes the
+    // drawer, which IS a plain close and should return focus.
+    if (onSignIn) {
+      markHandoff();
+      onSignIn();
+      return;
+    }
+    closeDrawer();
+  }, [closeDrawer, markHandoff, onSignIn]);
 
   return (
     <>
@@ -239,7 +287,18 @@ export default function HamburgerDrawer({ open, onClose, onSignIn, onNavigate }:
       >
         {/* Backdrop */}
         <Animated.View style={[styles.backdrop, { opacity: fadeAnim }]}>
-          <Pressable style={StyleSheet.absoluteFill} onPress={closeDrawer} accessibilityLabel="Close menu" />
+          {/* D2/C3: hidden from assistive tech. Tapping the scrim to dismiss is
+              a sighted-pointer affordance; exposing it duplicated the literal
+              label "Close menu" already carried by the 44pt X, so VoiceOver
+              announced two identical buttons for one action. The screen-reader
+              paths out are that X and onRequestClose (hardware back / Escape),
+              and containment is the panel's accessibilityViewIsModal. */}
+          <Pressable
+            style={StyleSheet.absoluteFill}
+            onPress={closeDrawer}
+            accessible={false}
+            importantForAccessibility="no-hide-descendants"
+          />
         </Animated.View>
 
         {/* Panel */}
@@ -262,7 +321,10 @@ export default function HamburgerDrawer({ open, onClose, onSignIn, onNavigate }:
             <View style={styles.logoMini}>
               <LogoMark variant="white" size={24} />
             </View>
-            <AppText variant="heading" style={styles.drawerBrand}>AccessMap</AppText>
+            {/* Focus target on open. `variant="heading"` already resolves
+                accessibilityRole="header", so this reads as the panel's
+                heading without adding a prop. */}
+            <AppText ref={titleRef} variant="heading" style={styles.drawerBrand}>AccessMap</AppText>
             <Pressable
               onPress={closeDrawer}
               hitSlop={12}
@@ -294,13 +356,13 @@ export default function HamburgerDrawer({ open, onClose, onSignIn, onNavigate }:
               <DrawerItem
                 icon={SettingsIcon}
                 label="Settings"
-                onPress={() => onNavigate('Settings')}              />
+                onPress={() => { markHandoff(); onNavigate('Settings'); }}              />
             )}
             {onNavigate && isAdmin === true && (
               <DrawerItem
                 icon={AdminIcon}
                 label="Admin"
-                onPress={() => onNavigate('Admin')}              />
+                onPress={() => { markHandoff(); onNavigate('Admin'); }}              />
             )}
           </View>
 
@@ -323,7 +385,7 @@ export default function HamburgerDrawer({ open, onClose, onSignIn, onNavigate }:
                 label="Sign in"
                 // F11: route to the sign-in entry instead of just closing the
                 // drawer (which left guests with no way to reach auth).
-                onPress={onSignIn ?? closeDrawer}              />
+                onPress={handleSignIn}              />
             )}
           </View>
         </Animated.View>

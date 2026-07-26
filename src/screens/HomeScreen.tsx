@@ -53,7 +53,7 @@ import type { GeocodeResult } from '@/lib/geocode';
 import type { RootTabParamList } from '@/navigation/RootNavigator';
 import { font, radius, shadow, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
-import { useDrawer } from '@/lib/drawerContext';
+import { useDrawer, useDrawerTrigger } from '@/lib/drawerContext';
 import { useSharedModals } from '@/lib/sharedModalsContext';
 
 // Visual fallback for the map peek ONLY (San Francisco) when we have no
@@ -95,6 +95,7 @@ export default function HomeScreen() {
   const navigation = useNavigation<HomeNav>();
   const tabBarHeight = useBottomTabBarHeight();
   const drawer = useDrawer();
+  const menuTrigger = useDrawerTrigger<View>();
   const { setOpen: setSharedModal } = useSharedModals();
   const { flags, loading, error, isOfflineCache, offlineCachedAt, refresh } = useFlags();
   const styles = makeStyles(color);
@@ -203,7 +204,14 @@ export default function HomeScreen() {
           actions={
             <>
               <Pressable
-                onPress={() => drawer.setOpen(true)}
+                // D2/C3: this header keeps its own inline hamburger (it predates
+                // the shared HeaderActions cluster), so it registers itself as
+                // the drawer's focus-return target.
+                ref={menuTrigger.ref}
+                onPress={() => {
+                  menuTrigger.register();
+                  drawer.setOpen(true);
+                }}
                 style={({ pressed }) => [styles.headerBtn, pressed && styles.headerBtnPressed]}
                 accessibilityRole="button"
                 accessibilityLabel="Open navigation menu"
