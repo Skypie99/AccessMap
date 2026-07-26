@@ -15,7 +15,7 @@
  * screen opens it with `useDrawer().setOpen(true)`.
  */
 import React, { createContext, useCallback, useContext, useMemo, useRef, useState } from 'react';
-import { findNodeHandle, type NativeMethods } from 'react-native';
+import { findNodeHandle, Platform, type NativeMethods } from 'react-native';
 
 interface DrawerContextValue {
   /** Whether the hamburger drawer is currently open. */
@@ -83,7 +83,25 @@ export function useDrawerTrigger<T extends React.Component<unknown> & NativeMeth
   const ctx = useContext(DrawerContext);
   const ref = useRef<T>(null);
   const register = useCallback(() => {
-    ctx?.registerTrigger(ref.current ? findNodeHandle(ref.current) : null);
+    // `register()` runs INSIDE the trigger's onPress, immediately before
+    // setOpen(true) — so anything that throws here stops the drawer from
+    // opening at all. That is exactly what happened on the web build: RNW's
+    // findNodeHandle THROWS ("findNodeHandle is not supported on web"), the
+    // press handler aborted, and the hamburger became inert. Jest could not
+    // see it (react-test-renderer implements findNodeHandle just fine) — a
+    // browser capture caught it.
+    //
+    // Web is skipped by design, not merely defended: the whole point of the
+    // handle is AccessibilityInfo.setAccessibilityFocus, which has no web
+    // backend. The try/catch is the standing rule behind that — an
+    // accessibility enhancement must never be able to break the primary
+    // action, on any platform, ever.
+    if (Platform.OS === 'web') return;
+    try {
+      ctx?.registerTrigger(ref.current ? findNodeHandle(ref.current) : null);
+    } catch {
+      // No return target this time; opening the drawer still matters more.
+    }
   }, [ctx]);
   return { ref, register };
 }
