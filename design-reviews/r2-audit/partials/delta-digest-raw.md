@@ -1,0 +1,404 @@
+# Delta digest — raw distillation (from the r2-delta-digest workflow, 10/10 ledgers, 0 errors)
+
+## P0
+- **S5** Report pill starts a report — in-sheet location retry (CRITICAL, L3-1) [✓HEAD] — surfaces: HomeScreen (Report a barrier pill), ReportFlagModal, MapScreen (openReport effect)
+  - The guest/no-geolocation dead end (permanently disabled submit under 'Waiting for location…') is replaced by a 44pt in-sheet 'Use my location' retry button plus a spoken reason on the disabled submit. requestLocation now fires from MapScreen's openReport effect (mirrors the FAB), so Home's pill actually starts a report.
+  - feel: HIGH for feel: error/blocked-state recovery, press acknowledgment on a new primary retry affordance, and disabled-state voice ('Waiting for your location. Tap Use my location above to try again.'). A core micro-interaction on the app's signature flow. Native permission-denied retry loop is only code-inferred — motion/haptics of the retry on device unchecked.
+- **S18** Submit label honesty + anon-banner reflow at 200% (CRITICAL, L5-03; items ① and ② only) [✓HEAD] — surfaces: ReportFlagModal (submit button + anon banner)
+  - Submit button now shows visible 'Submit report' with accessible name 'Submit report anonymously' (name contains visible text, WCAG 2.5.3 PASS). At 200%-zoom-equivalent (200px) the anon banner wraps on word boundaries and the 'Sign in' link drops to its own line; the submit label wraps inside its pill instead of shredding mid-word or overflowing toward Cancel. Item ③ (header collision) was deliberately deferred to P2.
+  - feel: HIGH for feel: microcopy/voice of the primary CTA, layout dignity under zoom (a states-under-stress craft signal), and the anonymity banner's tone ('Reporting anonymously — your identity is not stored.'). Note: the live code makes the accessible label conditional (isAnon ? 'Submit report anonymously' : 'Submit report'), a refinement beyond the ledger's description.
+- **S15** First-run honesty copy (onboarding, submit-moment, Home header, SignInScreen) [✓HEAD] — surfaces: OnboardingCards (slide 2), ReportFlagModal (submit-moment sentence), HomeScreen (header/subtitle), SignInScreen (native guest block)
+  - Four voice corrections: onboarding slide 2 now says 'Find the spot on the map and add the barrier there… (Signed-in users can add a photo, too.)'; a submit-moment honesty sentence ('AccessMap doesn't notify the city — see Resources.') renders above the report footer; Home subtitle changed 'Most recent reports' → 'Most recent barriers' to match the '5 barriers' header; SignInScreen guest-block false copy corrected (now 'You can browse and report barriers without an account…').
+  - feel: HIGH for feel: this IS the voice work — expectation-setting microcopy at the three trust moments (first run, sign-in, submit). Directly relevant to a Round-2 voice consistency pass; the submit-moment sentence is a candidate signature 'honesty' beat. SignInScreen copy is native-only (web = guest mode) — device gate.
+- **S19** Consent de-theater — 'Continue' relabel + 'Not now' decline (L1-3) [✓HEAD] — surfaces: OnboardingCards (location slide 3, notifications slide)
+  - On web the location-slide primary CTA reads 'Continue' (no longer masquerades as a permission grant); native keeps 'Allow Location' (honest there, since it opens the OS dialog) with hint 'Opens the system location permission dialog, then continues'. A soft-ask decline ('Not now' for location, 'Maybe later' for notifications) skips the prompt without granting. Relabel only — permission wiring is Fork-3.
+  - feel: HIGH for feel: consent-moment voice and the presence of a dignified decline path — a trust-signature microcopy pattern. Native 'Not now' press feel/flow is NEEDS-SKY-DEVICE. The platform-forked CTA ('Continue' web vs 'Allow Location' native) is a voice-consistency seam Round 2 should look at.
+- **S20** Trust-fallback surfaces fact-checked (FAQ / About / Changelog / Legend copy) [✓HEAD] — surfaces: HelpModal (FAQ), LegendModal, MyReportsModal, helpSearch
+  - Static help copy corrected to match reality: FAQ navigation references the real tab structure (Home / Tasks / Profile — no phantom 'Map tab'), and the resolved-marker answer ('keep their severity color, and are marked with a checkmark') was fact-checked against PlatformMap.web.tsx's actual rendering (severityColor kept on resolve, glyph swaps to a check). Deterministic strings; helpSearch + MyReportsModal tests green.
+  - feel: MEDIUM for feel: help/FAQ voice now speaks the severity-grammar signature accurately (resolved = checkmark + kept severity color), which Round 2 can lean on as the canonical description of the signature. No motion/press-state changes. LegendModal echoes the same grammar ('Marked with a checkmark and keeps its severity colour' — note colour/color spelling drift between LegendModal and HelpModal, a micro voice nit).
+
+## P1
+- **S9-a** Flat aria state mapping via a11yToggle (~100 sites) [✓HEAD] — surfaces: ReportFlagModal (category/severity chips), MapScreen filter panel, TasksScreen filter chips, SignInScreen, NearbyFlagsModal, SettingsScreen, NotificationPreferencesScreen, AdminScreen, ProfileScreen
+  - A shared a11yToggle helper maps each accessibilityState key to its web aria alias (aria-selected / aria-checked / aria-expanded / aria-busy / aria-disabled) while preserving native accessibilityState, applied at ~100 call sites so toggles/chips expose real state on web screen readers. 5 unit tests pin the mapping.
+  - feel: States + press acknowledgment for the non-visual channel: a screen-reader user now hears selected/checked/expanded state on every chip and toggle — the SR half of press feedback. No visual change.
+- **S9-b** Web announce shim + persistent A11yLiveRegion [✓HEAD] — surfaces: App root (A11yLiveRegion), every announceForAccessibility call site (~50, incl. MapScreen arrival/Nearby announces)
+  - installWebAnnounceShim() overrides react-native-web's no-op announceForAccessibility and routes text into a single persistently-mounted sr-only aria-live=polite region at the app root; end-to-end web-verified (region empty at rest, spoke the S4 location-denied announce after navigation). ~50 existing call sites now actually speak on web, unchanged.
+  - feel: HIGH for feel: this is the voice channel itself — action confirmations, 'still trying' states, arrival announcements all depend on it. Any Round-2 microcopy/voice audit of announcements flows through this mechanism.
+- **S9-c** decorativeProps — aria-hidden for decorative images [✓HEAD] — surfaces: TasksScreen photo thumbnails (×2), shared decorative-image sites (PlatformMap, SearchInputRow, StatusHistoryModal, MyWatchedModal)
+  - A shared decorativeProps object now carries a 4th key aria-hidden:true (rn-web does not derive it from accessible={false}); the two Tasks photo thumbnails swapped ad-hoc accessible={false} for it, so Tasks no longer announces a bare 'image'. Test pins the aria-hidden key.
+  - feel: Voice hygiene: removes SR noise ('image') from the Tasks reading order — small but real for the non-visual voice audit. No visual change.
+- **S9-d** Dialog naming — aria-label on all 29 modals [✓HEAD] — surfaces: all 29 modal files (LegendModal, ReportFlagModal, NearbyFlagsModal, OnboardingModal, MyWatchedModal, AddressSearchModal, etc.)
+  - Every <Modal> now carries an aria-label; verified that rn-web's ModalContent spreads it onto the role=dialog aria-modal=true node, so each dialog is named for web SR. Code-confirmed (not live-rendered) because the dev preview crashes on heavy modals.
+  - feel: Voice: modal entry now speaks a name — the first word of every sheet/dialog interaction for SR users. Relevant to a voice/microcopy audit (what each dialog calls itself). No visual change.
+- **S13** Tasks FlagCard recomposition — labeled header summary + independent actions [✓HEAD] — surfaces: TasksScreen (FlagCard, inline)
+  - The card's outer pressable became accessible={false}; a distinct labeled header 'summary' button (single-line composed announcement) is now the card's SR representative, Verify/Resolve/Reject/Details fire independently (an action tap no longer also opens the card), tap-anywhere-to-open and the selection-mode checkbox are preserved. 3 composition tests added.
+  - feel: HIGH for feel: this is press-acknowledgment/interaction structure on the app's main worklist — which tap does what, and what a card 'says'. The audit's #1 item; SR focus order = device gate D1. Visually unchanged (a11y props only).
+- **S4** Honest arrival — reconciled denied gate + FINDING-oriented copy [✓HEAD] — surfaces: MapScreen (denied banner, flag-count pill), src/lib/location.ts
+  - arrivalPermissionDenied() gates the banner to denied-only (undetermined/granted/unknown → false, first-run safe); banner copy reworded to the finding-oriented, web-safe 'Location is off, so the map shows the most recent flags, not ones near you…'; pill copy changed from 'N flags nearby' to 'Showing N flags' and the pill is a polite live region. 9 arrival tests + source invariants.
+  - feel: HIGH for feel: this is honest-state microcopy/voice AND a visible copy change — the map's arrival moment now tells the truth about what it's showing. Directly in scope for a voice + states audit; also feeds the severity-grammar signature via the pill's live announcements.
+
+## P2
+- **S2** Severity-keyed textOnColor ink at the seven digit sites (CRITICAL) [✓HEAD] — surfaces: NearbyFlagsModal, LegendModal, ReportFlagModal, ActivityFeedModal, RecentlyViewedRow, FlagDetailModal (view + edit), theme.ts severity tokens
+  - Added per-severity textOnColor to the severity[1..5] token block (dark ink #0F1B2D on sev1-4 fills, white on sev5) and applied it inline at seven digit sites, plus a paired white Check glyph in ReportFlagModal. White-on-amber digits (1.57-3.61 contrast FAIL) became 4.79-11.03 PASS; no new token, no geometry change.
+  - feel: Core to the severity-grammar signature: the severity digit-on-disc is the app's identity mark, and this makes it legible everywhere it appears. R2 should check the ink flip reads as one deliberate system (dark ink 1-4, white 5) rather than an inconsistency.
+- **S1** Wear the severity grammar everywhere + define "verified" (Signature) [✓HEAD] — surfaces: PlatformMap callout (native + web), NearbyFlagsModal rows, HomeScreen recent rows, LegendModal (new Status block), web anon pin (double concentric ring)
+  - Callout and Nearby visible meta gained the spoken grammar "Severity N of 5 · {word} · {Status}"; Home recent rows gained the number and route status through STATUS_LABELS; the web anon pin kept its severity fill and gained a double concentric ring (Sky's pick) instead of the gray swap; the Legend gained a Status block defining Open/Verified/Resolved plus anon-double-ring and resolved-checkmark entries. Nearby SR labels untouched (PROTECT-1).
+  - feel: THE signature item: this IS the severity grammar as voice — one repeated sentence pattern across map, list, and home. Also microcopy (Legend now defines "verified") and provenance-as-material (anon ring instead of dimming). R2 voice/signature audit centers here.
+- **S14** Ratified hairline boundary + native custom teardrop rebuild [✓HEAD] — surfaces: PlatformMap.web.tsx (all web teardrops), PlatformMap.tsx (native custom teardrop marker), src/lib/pinKey.ts (new)
+  - Web: one-line box-shadow 0 0 0 1px #0F1B2D hairline on every teardrop. Native: the bare pinColor marker rebuilt as a custom child-View teardrop (severity fill + white ring + #0F1B2D outer hairline + counter-rotated category/check glyph) mirroring the cluster union, with tracksViewChanges={false} and a content-derived pinKey (PROTECT-15) guarded by 7 tests. Focus dimming rides the Marker opacity prop (no re-snapshot).
+  - feel: Signature + motion: the hairline union is the pins' material identity, and focus dimming via the opacity prop is a micro-interaction quality choice (no flicker/re-snapshot on selection). D8 device gate means the native visual is still eye-unverified.
+- **S6** Honest zoom — app-styled 48pt zoom buttons + topRow pointer repair (CRITICAL) [✓HEAD] — surfaces: MapScreen overlay (bottom FAB column + topRow), PlatformMap.tsx, PlatformMap.web.tsx
+  - Additive zoomBy(delta) on both PlatformMapHandle decls+impls (native getCamera→animateCamera, web Leaflet setZoom), RM-gated; Leaflet's default zoomControl disabled; two stacked 48pt +/− buttons (opaque ctaFill, white glyph) added atop the overlay FAB column in a box-none group; topRow repaired to pointerEvents="box-none" so the map is reachable in header gaps (no gesture theft).
+  - feel: High for press feedback and motion: real, app-voiced zoom controls with an RM-gated animated camera move, plus pointer honesty (every control captures only its own centre). R2 should press-test acknowledgment on the +/− buttons and confirm the RM gate degrades motion, not function.
+- **S7** Claim the flagship map — scheme-branched light tiles + hairline attribution [✓HEAD] — surfaces: PlatformMap.web.tsx (tile layer + CachedTileLayerWrapper), MapScreen (light mode basemap)
+  - Web tile URL branched on color.scheme — CARTO Positron light_all in light mode, dark_all in dark — threaded into CachedTileLayerWrapper and its effect deps so a live theme flip swaps tiles; attribution condensed to a hairline strip (kept, legally required). Kills the near-black void behind light-mode UI.
+  - feel: Atmosphere/material feel: the basemap is the app's largest single surface, and matching it to the scheme is the "one material" thesis made literal. The live theme-flip is itself a transition moment R2 can judge. Positron-vs-Voyager warmth is an open Sky-eye fork.
+- **S8** One editorial header family across every tab (HeaderActions) [✓HEAD] — surfaces: RootNavigator, ProfileScreen, SettingsScreen, MapScreen/FullMap (MAP / Explore editorial chip), src/components/ui/HeaderActions.tsx (new)
+  - New HeaderActions helper unifies the menu + Feedback-icon treatment; headerShown:false on Profile/Settings/FullMap; Profile's editorial header gained the actions (killing the "Profile over PROFILE" double title); Settings gained an editorial ScreenHeader; FullMap got Sky's treatment (ii): a compact content-hugging MAP / Explore editorial chip + action circles inside the box-none overlay. Admin deliberately keeps the nav header (flagged follow-up).
+  - feel: Voice and one-hand consistency: the editorial header family is how every screen introduces itself — R2 should check the chip/circle treatment feels like one hand across tabs, and judge the "Explore" title copy (an open Sky fork). Header press targets are new interactive chrome.
+- **S18③** 200%-zoom {title}Feedback collision made structurally impossible [✓HEAD] — surfaces: Profile/Settings/FullMap headers (rides S8)
+  - By making the public surfaces headerless (S8), the nav-header title + Feedback icon can no longer collide at 200% text zoom — closed structurally, not by a spacing patch. Shares S8's code; no separate diff.
+  - feel: Low-to-moderate: it's a large-text robustness/state item rather than a felt interaction, but R2's dynamic-type pass should confirm the map chip reflows honestly at 200% (still an explicit NEEDS-SKY-DEVICE line).
+
+## P3
+- **S3** The map pin becomes a doorway — surface the trust ledger where trust is spent (rank #1, Signature) [✓HEAD] — surfaces: MapScreen, PlatformMap (native callout), PlatformMap.web (Leaflet popup), NearbyFlagsModal, FlagDetailModal (newly reachable from Map), StatusHistoryModal (newly reachable from Map via detail sheet)
+  - The pin callout stops being a cul-de-sac: native Callout gets tooltip-wide onPress plus a 'Reported {relativeTime}' freshness line and an 'Open details ›' affordance row; the web Leaflet popup gets the same freshness line and a real 'Open details' button (mode-independent Wayfinder Blue #1466E0 on the always-white popup chrome). Both open the always-mounted, lazy FlagDetailModal via onOpenDetails={setSelectedFlag}. Second entry point: under screen reader, selecting a Nearby row now opens the focus-managed detail sheet NESTED over the still-open list (pattern B, avoids the iOS present-while-dismissing race; useFocusOnOpen lands focus on the title) instead of dead-ending on an unperceivable callout; the SR hint became the honest 'Opens this flag's details'. Map-sync after detail actions always patchFlag + refreshFlags (never removeFlag on resolve/reject, because the Map shows user-selected statuses); 'View on map' recenters locally via retryShowCallout with no cross-tab navigate. Resolves L3-12, L6-05, and the read half of L8-2/L8-3. Verified by 14 source-invariant guards in MapScreen.detail.test.ts (PROTECT-1 label lock, FORK-5 read-only, patchFlag-never-removeFlag, no navigation.navigate).
+  - feel: HIGH — this IS the trust/receipt signature move of the audit. Feel dimensions: (a) press acknowledgment — a tap on a pin callout now visibly goes somewhere ('Open details ›' affordance answers 'what happens if I press?'); (b) voice/microcopy — 'Reported {relativeTime}' freshness receipt (e.g. 'Reported 29d ago'), honest SR hint 'Opens this flag's details' replacing the false 'centers the map'; (c) states — kills a dead-end/trapdoor state for SR users, replacing it with a focus-managed sheet whose focus returns to the row on close; (d) severity-grammar signature — the trust ledger (status history, freshness) becomes reachable at the exact point of decision. R2 craft audit should probe: callout press feedback timing on device, the nested-sheet entrance motion over the open Nearby list, and whether the web button vs native chevron-row feel like one hand.
+- **S20** About-screen trust claim cashed (confirmation only — zero code change) [✓HEAD] — surfaces: AboutScreen (claim now true, file untouched), StatusHistoryModal (reachability, not modified)
+  - No edit shipped. The ledger records that S3's wiring makes StatusHistoryModal reachable from the map (callout → Open details → History; SR Nearby → detail sheet → History), so About's pre-existing claim that 'status changes… are logged… visible to other users' now reads TRUE. Explicitly 'no AboutScreen edit'.
+  - feel: MODERATE (voice/honesty) — it is a promise-keeping move: product copy that previously over-claimed is now backed by a real path. For the R2 voice pass, About copy is unchanged, so no visual/motion delta; audit only needs to confirm the claim-path still exists.
+
+## P4
+- **S12** Bring the web map camera up to the native reduce-motion standard (kill the Leaflet falsy-zero trap) [✓HEAD] — surfaces: PlatformMap.web.tsx (web MapScreen camera: main flyTo, ClusteredMarkers cluster-expansion flyTo, Popup autoPan, MapContainer zoom/fade animation init), src/lib/accessibility.ts (doc-comment truth fix), src/components/__tests__/PlatformMapWeb.reduceMotion.test.tsx (new 10-test guard)
+  - Every reduce-motion-gated web camera path was routed to Leaflet's un-trap-able form — reducedMotion ? { animate: false } : { duration: 0.4|0.6 } — because passing duration: 0 is falsy in Leaflet and triggered its default multi-second distance flight on the core FIND payoff. Also gated Popup autoPan and MapContainer zoomAnimation/fadeAnimation on !reducedMotion, threaded a reducedMotion prop into ClusteredMarkers, rewrote the two lying comments (the falsy-zero trap is now named at the call site; accessibility.ts now states that RN-web isReduceMotionEnabled resolves from prefers-reduced-motion), and added a mutation-proven 10-test guard suite covering both RM states across all 5 camera paths. Native PlatformMap.tsx deliberately untouched (0 genuinely means instant in react-native-maps). Resolves audit findings L4-01/L4-02/L4-04/L4-09; WCAG 2.3.3.
+  - feel: HIGH for a craft/feel audit — this is pure motion grammar: a user who asked the OS for LESS motion was handed the app's LARGEST motion (a 1–4s Leaflet flight) exactly at the flag-arrival payoff moment. After S12, Reduce Motion means an instant cut on every web camera path (arrival, cluster expansion, popup pan, zoom/fade), matching the native standard — motion parity across platforms is itself a signature claim. Non-RM users keep the 0.6s/0.4s flights, so the default feel is unchanged. Caveat for Round 2: correctness is code-verified only; the FELT instant-cut is gated NEEDS-SKY-DEVICE (D5).
+
+## P5
+- **S1** Wear the severity grammar everywhere + define 'verified' (Signature) [✓HEAD] — surfaces: PlatformMap callout (native+web), NearbyFlagsModal, HomeScreen Recent rows, LegendModal (new Status block), web anon pin (double concentric ring)
+  - P2 (2b5703d). Callout + Nearby visible meta gain 'Severity N of 5 · {word} · {Status}'; Home Recent rows gain the number and route status through STATUS_LABELS; the web anon pin keeps its severity fill with a double concentric ring instead of a gray swap; Legend gains a Status block defining Open/Verified/Resolved plus anon-ring and resolved-check entries.
+  - feel: THE signature — the audit's thesis is 'signature = the severity grammar, not the glass'. Core voice + visual identity; every Round-2 signature check anchors here.
+- **S2** Severity-keyed textOnColor ink at the seven digit sites (CRITICAL) [✓HEAD] — surfaces: NearbyFlagsModal, LegendModal, ReportFlagModal, ActivityFeedModal, RecentlyViewedRow, FlagDetailModal (view+edit), theme.ts severity tokens
+  - P2 (2707f82). Dark ink #0F1B2D replaces white on the sev1–4 severity discs at seven digit sites (severity[n].textOnColor, theme.ts); white kept on sev5; paired white Check glyph in ReportFlagModal. Contrast flips 1.57–3.61 FAIL to 4.79–11.03 PASS.
+  - feel: Legibility of the severity discs = the readable half of the severity-grammar signature; state clarity, not motion.
+- **S3** The map pin becomes a doorway — trust ledger at the point of decision (rank #1, Signature) [✓HEAD] — surfaces: MapScreen, PlatformMap.tsx (native Callout), PlatformMap.web.tsx (Leaflet Popup), NearbyFlagsModal, FlagDetailModal (now reachable from map)
+  - P3 (b584747). Callout/popup gain a 'Reported {relativeTime}' freshness line and an 'Open details' affordance that opens FlagDetailModal; under a screen reader a Nearby-row select opens the focus-managed detail sheet nested over the open list instead of dead-ending on the map; detail changes always patchFlag (never removeFlag) + local recenter.
+  - feel: High — a whole new micro-interaction (tap the callout, get the ledger), trust-voice microcopy ('Open details', freshness receipt), and SR state flow. Prime Round-2 press-feedback/voice territory.
+- **S4** Honest arrival (CRITICAL) [✓HEAD] — surfaces: MapScreen (denied banner + flags pill), lib/location.ts
+  - P1. Location-denied arrival gets a finding-oriented banner ('Location is off, so the map shows the most recent flags, not ones near you…'), the pill copy changes 'N flags nearby' → 'Showing N flags' (a polite live region), gated by a reconciled first-run-safe arrivalPermissionDenied() helper (denied→true; undetermined/granted→false).
+  - feel: High for voice — honesty microcopy on a degraded state; the pill is a live-region state announcement. Round-2 should listen for tone consistency.
+- **S5** Report pill starts a report — kill the no-location dead end (CRITICAL, L3-1) [✓HEAD] — surfaces: HomeScreen 'Report a barrier' pill, ReportFlagModal
+  - P0. The guest no-geolocation dead end (permanently disabled submit, no recovery) is replaced: the report sheet gains a 44pt 'Use my location' in-sheet retry, a spoken reason on the disabled submit, and requestLocation fires from the openReport effect mirroring the FAB.
+  - feel: High — press acknowledgment on the app's primary CTA and a recoverable error state; check the retry's press feel and disabled-state voice.
+- **S6** Honest zoom — app-styled 48pt zoom buttons + topRow pointer repair (CRITICAL) [✓HEAD] — surfaces: MapScreen overlay (FAB column + topRow), PlatformMap.tsx, PlatformMap.web.tsx
+  - P2 (e8043a3). Additive zoomBy(delta) on both PlatformMapHandle variants (RM-gated), Leaflet's default zoomControl removed, two stacked 48pt +/− ctaFill buttons in a box-none group; topRow repaired to pointerEvents='box-none' so the map stays pannable in the gaps.
+  - feel: High — a new always-on-screen control: press feel, RM-gated zoom motion, and gesture law (no map-gesture theft) are all Round-2 checks.
+- **S7** Claim the flagship map — scheme-branched light tiles + hairline attribution [✓HEAD] — surfaces: PlatformMap.web.tsx (tile layer + attribution strip)
+  - P2 (cf821fd). Tile URL branches on color.scheme — Positron light_all in light mode, dark_all in dark — threaded through CachedTileLayerWrapper with live theme flip; attribution condensed to a hairline strip. Kills the near-black light-mode void.
+  - feel: Moderate — the map's material/mood in light vs dark ('one material' thesis); a live theme-flip transition worth watching, but no interaction change.
+- **S8** One editorial header family across every tab (with S18③) [✓HEAD] — surfaces: HeaderActions.tsx (new ui primitive), ProfileScreen, SettingsScreen, MapScreen/FullMap (MAP/Explore editorial chip), RootNavigator (headerShown:false)
+  - P2 (785554c). New HeaderActions helper unifies the menu + Feedback treatment; nav headers dropped on Profile/Settings/FullMap; Profile's double title killed; Settings gains an editorial ScreenHeader; FullMap gets a compact content-hugging 'MAP / Explore' chip inside the box-none overlay. Structurally removes the 200%-zoom title/Feedback collision (S18③).
+  - feel: High for signature — 'one voice, one hand' chrome consistency; the editorial header family is a house-style tell Round-2 should audit for drift.
+- **S9** Web accessibility parity — announce shim, flat aria, decorativeProps, dialog naming (CRITICAL) [✓HEAD] — surfaces: App root (A11yLiveRegion), ~100 chip/toggle sites via a11yToggle, 29 modal files (aria-label dialogs), TasksScreen photo thumbnails (aria-hidden)
+  - P1. installWebAnnounceShim() routes ~50 announceForAccessibility call sites into a persistently-mounted sr-only A11yLiveRegion; a11yToggle maps accessibilityState to flat aria on web (aria-selected/checked/expanded/busy/disabled); decorativeProps pins aria-hidden; every Modal carries an aria-label dialog name.
+  - feel: High for states/voice as felt through a screen reader — the announcement layer IS the app's voice for AT users; Round-2 SR passes ride this plumbing.
+- **S10** Confirm the submit — visible + live 'Report filed' [✓HEAD] — surfaces: ReportFlagModal, LiveStatusRegion (shared, App.tsx-mounted), MapScreen (recenter on new pin)
+  - P5 (8127d41 + Step-0 4b45c79). Successful submits (anon + auth) fire a visible + live 'Report filed — thanks for flagging this barrier' through the new shared persistent-mounted LiveStatusRegion (visible pill reusing FlashBanner tones, web aria-live + native announce); the created flag threads through onCreated(flag) so MapScreen recenters on the new pin, reduced-motion gated.
+  - feel: Very high — this is the app's core press-acknowledgment moment (submit → confirmation voice → camera answers). The prototypical Round-2 micro-interaction.
+- **S11** Data-layer timeout + honest 'still trying' [✓HEAD] — surfaces: lib/flagsStore.tsx (reads), ReportFlagModal (in-sheet slow-submit overlay), MapScreen ('Loading flags…' vs 'Updating…' split), lib/errors.ts (AbortError→friendly copy), LiveStatusRegion
+  - P5 (f9c7366). Reads get a non-rejecting 12s 'Still trying — check your signal' + Retry via the shared region and a 30s ceiling that falls back to offline cache/friendly error (late results discarded via fetchSeqRef, never aborting the socket); writes are never aborted — a slow submit shows an in-sheet overlay while the insert completes exactly once; raw 'Unknown error' killed; cold-load vs revalidate copy split.
+  - feel: High — the loading/error-state grammar and honest waiting voice; slow-network patience is exactly the 'felt performance' Round-2 probes.
+- **S12** Web map camera reduce-motion parity — kill the falsy-zero trap [✓HEAD] — surfaces: PlatformMap.web.tsx (all 5 camera paths), lib/accessibility.ts (doc-comment truth)
+  - P4 (tip 77658f8). Every web camera path (main flyTo, cluster-expansion flyTo, Popup autoPan, MapContainer zoom/fade animations) now uses reducedMotion ? { animate: false } : { duration: … } — Leaflet treated duration:0 as falsy and flew its 1–4s default flight for exactly the users who asked for less motion. 10 guard tests, mutation-proven.
+  - feel: High — pure motion craft: the RM contract on the app's largest motion. Round-2 motion audit must respect this gate on every new animation.
+- **S13** Tasks FlagCard VoiceOver flattening — labeled summary header + independent actions [✓HEAD] — surfaces: TasksScreen (inline FlagCard)
+  - P1. The card header becomes a distinct labeled summary button (the card's SR representative); Verify/Resolve/Reject/Details fire independently (an action tap no longer also opens the card); tap-anywhere-to-open and the selection-mode checkbox preserved. Native VoiceOver focus order = device gate D1.
+  - feel: High — micro-interaction structure of the app's densest card: press targets, per-action acknowledgment, SR reading order. D1 is the audit's #1 device check.
+- **S14** Ratified hairline boundary + native custom teardrop rebuild [✓HEAD] — surfaces: PlatformMap.web.tsx (box-shadow hairline on every teardrop), PlatformMap.tsx (custom child-View teardrop marker), lib/pinKey.ts (content-derived key)
+  - P2 (c885780). Web pins gain a one-line #0F1B2D hairline; the bare native pinColor marker is rebuilt once as a custom teardrop (fill + white ring + hairline + counter-rotated glyph) with tracksViewChanges={false} and a content-derived pinKey (7 guard tests); focus dimming rides Marker opacity.
+  - feel: Moderate-high — the pin is the signature mark; ring/hairline union is craft detail, and pinKey/tracksViewChanges discipline governs marker re-render flicker (a feel concern).
+- **S15** First-run honesty copy [✓HEAD] — surfaces: OnboardingCards (slide 2), ReportFlagModal (submit-moment sentence), HomeScreen ('Most recent barriers'), SignInScreen (native guest-block copy)
+  - P0. Onboarding stops promising photo-for-everyone; a submit-moment sentence states the report appears immediately and AccessMap doesn't notify the city; Home's header/subtitle contradiction resolved; SignInScreen false copy corrected.
+  - feel: High for voice — the honest-tone register Round-2 should hold all new copy against.
+- **S16** The two worst map touch targets — Clear filters + action-bar overflow fade [✓HEAD] — surfaces: MapScreen filter panel ('Clear all filters'), MapScreen 7-tool action bar
+  - P5 (f8899de). 'Clear all filters' gains hitSlop={8} + minHeight:32 layout → ~48pt effective target; the action bar gets a scheme-aware right-edge gradient fade (expo-linear-gradient, pointerEvents='none') shown only when overflowed and not scrolled to the end, keeping Recenter discoverable; the 44×44 buttons unchanged.
+  - feel: High — target size is press feel, and the conditional fade is a scroll-state affordance (a subtle states/motion detail Round-2 should eyeball).
+- **S17** Contain the Home map peek [✓HEAD] — surfaces: HomeScreen (peek Pressable), PlatformMap.tsx / PlatformMap.web.tsx (suppressAttribution prop)
+  - P5 (e4a1c76). The peek's PlatformMap is wrapped in pointerEvents='none' so only the parent 'Open the full map' Pressable receives the tap; a per-instance suppressAttribution prop drops the web attribution control on the peek only (full map keeps legally-required OSM/CARTO attribution; native ignores the prop). Live web: 0 attribution links, 0 zoom controls on the peek.
+  - feel: Moderate — makes the peek one clean predictable tap (press-feedback integrity); visual de-cluttering of the Home hero.
+- **S18** 'Submit report' visible label + 200%-zoom banner reflow (①② here; ③ rode S8) [✓HEAD] — surfaces: ReportFlagModal (submit button + anon banner)
+  - P0. Submit button shows visible 'Submit report' with accessible name 'Submit report anonymously' (WCAG 2.5.3 label-in-name PASS); at 200%-zoom squeeze the anon banner wraps on word boundaries and the 'Sign in' link drops to its own line — the mid-word shred is gone; the label stays inside its pill. ③ (header collision) closed structurally by S8's headerless public surfaces.
+  - feel: Moderate — voice (label says what the press does) plus reflow-state robustness at large text sizes.
+- **S19** Consent 'Not now' + de-theater the location slide [✓HEAD] — surfaces: OnboardingCards (location slide 3)
+  - P0. The location slide's primary CTA reads 'Continue' instead of 'Allow Location' — it no longer masquerades as an OS permission grant (relabel only; wiring was Fork-3); the native 'Not now' decline path exists (native-only by design).
+  - feel: Moderate — voice honesty at the consent moment; low motion/press relevance.
+- **S20** Trust-fallback surfaces — FAQ/About accuracy [✓HEAD] — surfaces: HelpModal (FAQ), LegendModal (resolved-marker copy), AboutScreen claim (cashed by S3, no edit)
+  - P0 (+S3 confirmation in P3). FAQ navigation copy matches the real Home/Tasks/Profile tabs; the resolved-marker description corrected to match rendering ('keep their severity color… marked with a checkmark'); About's 'status changes are visible' claim became true once S3 made StatusHistoryModal reachable from the map.
+  - feel: Low-moderate — trust voice in static help copy; no interaction or motion surface.
+
+## BENCH-1
+- **B2-i** Retire decorative UI emoji for Lucide (L2-9 · DESIGN.md §10) [✓HEAD] — surfaces: FeedbackModal (category chips), MyFeedbackModal (rows + 2 empty states), AddressSearchModal (recents clock, error triangle, no-matches search), FlagDetailModal (comments-empty)
+  - All 8 decorative UI emoji (🐛💡❤️💬🔍🕘⚠️ — one more site than the audit named) swapped to house-style Lucide line icons (2px stroke, theme-token color, decorative) via a new shared name-map src/components/feedbackCategoryIcons.ts; 6 orphaned text-icon styles removed. Web-verified: zero emoji StaticText nodes in the a11y tree; selected chips tint icons white-on-blue.
+  - feel: HIGH for voice/signature — emoji were the last off-brand voice notes; empty and error states (MyFeedbackModal empties, AddressSearchModal no-matches/error) now speak the house icon language, and chip icons participate in the selected-state tint, which is a press-state acknowledgment detail worth auditing.
+- **B2-ii** ReportFlagModal template chips → CategoryIcon (L2-9 fold-in, Sky-approved) [✓HEAD] — surfaces: ReportFlagModal (template chips)
+  - Removed the glyph field from ReportTemplate and all 7 templates (glyphs ▦↥⛔🚗⛰🔊 retired at source); chips now render <CategoryIcon category={t.category} decorative /> from the bespoke house set, tinting with active state (color.textOnBrand vs color.brandText). Sticky footer, 5 severity buttons, 44pt targets untouched (PROTECT-3). Two blocked_path templates deliberately share one category icon, disambiguated by label.
+  - feel: HIGH for signature + press feedback — the report form is the severity-grammar home surface; chips now wear the ownable icon set and the icon participates in selected-state tinting. The blocked_path samey-icon question is an open feel judgment for device eyes. Was code-inferred only (form not reached in web session).
+- **B3** Wear the Wayfinder mark on the 3 intro surfaces (L8-8 · PROTECT-16) [✓HEAD] — surfaces: OnboardingCards (slide 1), OnboardingModal (slide 1), HamburgerDrawer (header)
+  - Three stock identity stand-ins replaced by the brand LogoMark: OnboardingCards slide 1 Compass → <LogoMark variant="mono" tint size={60}> via a brandMark card flag; OnboardingModal slide 1 MapPin → same mono mark; HamburgerDrawer header placeholder 'A' tile → <LogoMark variant="white" size={24}> knocking out to the blue tile. Dead logoMiniText style removed; per-slide illustrative icons left alone.
+  - feel: HIGH for signature/first-impression — these are the app's three self-introduction moments; the striding-figure mark replacing generic Lucide is pure brand-voice. All three renders are NEEDS-SKY-DEVICE (onboarding dismissed in web session; drawer never rendered in Chromium).
+- **B11-A** Delete 6 dead resurrection-trap styles + strip iconText brand ink (L2-12) [✓HEAD] — surfaces: MapScreen, TasksScreen, SettingsScreen, ProfileScreen
+  - Six re-proved-orphaned styles deleted (filterChevron, emptyCardIcon, searchClearText [TasksScreen], rowChevron, myReportsChevron, aboutChevron); the always-overridden color: color.brand stripped from MapScreen's iconText (style kept, used at the '1+' severity-quick toolbar button). Grep-clean confirmed post-delete; web-verified that the 1+ button still renders correctly.
+  - feel: low — pure hygiene, zero rendered-pixel change; only Round-2 relevance is that these dead styles can no longer resurrect off-system looks.
+- **B11-B** Adopt ctaFill at the 2 white-on-brand stragglers (L2-13) [✓HEAD] — surfaces: MapScreen (empty-filters 'Reset all' card button), MapScreen (save-filter name-prompt Save button)
+  - emptyCardBtn and nameBtnSave switched backgroundColor from color.brand to color.ctaFill (mode-independent Wayfinder Blue), removing the latent dark-mode 3.42:1 white-on-brand contrast fragility. The List FAB's brand ink (Sky's ratified F4 decision) untouched. Web-verified on the filter panel's Save button.
+  - feel: MEDIUM — these are CTA press surfaces inside an empty state and a naming prompt; consistent CTA fill across modes is part of the one-material/one-voice thesis, and dark-mode button legibility is a states concern.
+- **B11-C** Bump on-glass 400 text to ≥500 weight (L2-10 · GLASS §2) [✓HEAD] — surfaces: MapScreen (filter panel: savedEmptyText + statusHint ×4), TasksScreen (row-glass empty card emptyBody)
+  - Six on-glass AppText sites moved variant body → bodyMedium (PublicSans_500Medium, uncapped/DT-safe): the saved-filters empty text, four statusHint usages (verify-first found a 4th the census listed but exploration missed), and the TasksScreen empty-card body. Deliberate exclusion, documented: bannerLocatingText ('Finding your location…') rides a 0.82-opacity legacy pane not bound by Deep-Field law — left at body.
+  - feel: HIGH for states + material feel — this is legibility of empty-state and hint copy on live glass over a moving map; the mechanical bump is code-verified but whether 500 actually un-hazes on device is the open D9 feel judgment. Also note one statusHint carries accessibilityLiveRegion=polite (a live status voice moment).
+
+## BENCH-2
+- **B9a** Offline banner states its data age (L7-02, commit 0bc6694) [✓HEAD] — surfaces: HomeScreen, MapScreen, TasksScreen, flagsStore (lib), copy.ts (lib)
+  - readFlagsCache() now returns { rows, cachedAt }; a new offlineCachedAt context field is set in lock-step with isOfflineCache (set on network-failure→cache fallback, nulled on every recovery). New offlineBannerText(cachedAt) in copy.ts composes the age via the existing relativeTime() — 'Showing saved data from 2h ago — connect for the latest.' — with a plain-string fallback when unknown. Home/Map/Tasks banners render AND announce the age; Map/Tasks accessibilityLabels updated so spoken == visible.
+  - feel: High for voice + honest states: the offline state now tells the truth about HOW stale the data is, in the app's relative-time grammar (spoken copy matches visible copy — a voice-parity signature). Core Round-2 microcopy surface.
+- **B9b** Silent Home refresh-failure surfaced as live, tappable notice (L7-02, commit 0bc6694) [✓HEAD] — surfaces: HomeScreen
+  - Home's error card only rendered when the list was empty, so a no-cache refresh failure while barriers were on screen was swallowed. Added a sibling live, tappable inline notice gated `error && flags.length > 0 && !isOfflineCache` — 'Couldn't refresh — showing older data. Tap to try again.' → refresh(). Deliberately inline (Home-scoped) rather than the shared LiveStatusRegion, to avoid cross-tab announcements and collisions with S10/S11 whose refresh() finally-clears the region.
+  - feel: High for error states + press feedback: a previously-silent failure mode now has an honest, recoverable state with a tap-to-retry affordance and live announcement. Round-2 should check its visual weight, press acknowledgment, and how it coexists with the offline banner.
+- **B10** Web locate-failure gets a visible + spoken outcome with self-clearing Retry (L7-07, commits a656b67 + 1682a69) [✓HEAD] — surfaces: MapScreen (web branch), LiveStatusRegion (reused), liveStatus (lib)
+  - Alert.alert is a no-op on react-native-web, so a web 'locate me' failure was fully silent. The requestLocation catch is now platform-branched: web routes through the persistent LiveStatusRegion (setLiveStatus, tone:'info', Retry action via a stable requestLocationRef mirroring S11's refreshRef); native keeps its announced Alert.alert. Adversarial-review fix (1682a69): every locate attempt message-targeted-clears its own prior failure banner at start via new clearLiveStatusMessage(msg), which clears the shared slot only when it still shows THAT message — a successful Retry dismisses the error and never clobbers an S10/S11 data banner. Distinct from S4's permission-denied arrival banner (different node, copy, trigger).
+  - feel: High for states + press feedback + motion of status: action-initiated failure now has acknowledgment, a Retry that visibly resolves (banner clears on success), and screen-reader parity. The banner set/clear choreography is exactly the micro-interaction territory of a craft audit.
+- **B7a** Heat 'no zones' companion line — empty-outcome honesty (L7-11, commit 01df333) [✓HEAD] — surfaces: MapScreen (heatmap overlay)
+  - The heatmap disclaimer stated the k≥3 RULE but was silent about the OUTCOME, so heat-on with no qualifying cluster rendered blank and read as broken. Added a complementary live line after the disclaimer — 'No heat zones qualify yet — coverage grows as more reports come in.' — gated heatmapEnabled && heatCells.length === 0 && filteredFlags.length > 0, reusing heatmapDisclaimer styling (forced dark, AA-by-construction). Honesty caveat recorded: heatCells is the global loaded set, not a viewport query (Fork 1 / L7-03), so the copy speaks to coverage rather than literal 'in view'.
+  - feel: High for empty states + voice: converts an ambiguous blank render into an honest, forward-looking empty state in the app's voice. Ledger explicitly marks the wording as tunable — a genuinely open microcopy decision the Round-2 audit should weigh.
+- **B7b** iOS cluster-spring gated under Reduce Motion (L4-03, commit 01df333) [✓HEAD] — surfaces: PlatformMap (native)
+  - react-native-map-clustering@4 fires a global LayoutAnimation.spring per pan-settle guarded only by animationEnabled && Platform.OS === 'ios' with no reduce-motion check (ClusteredMapView.js:139). PlatformMap now passes animationEnabled={!reducedMotion}, short-circuiting that call under RM — app-level prop, no patch-package. Mirrors S12's web-camera gate and extends PROTECT-7; tracksViewChanges={false} untouched (PROTECT-15). Guard test renders the real PlatformMap and asserts animationEnabled false under RM / true without.
+  - feel: High for motion: this is a motion-accessibility gate on the map's signature cluster spring. The spring's amplitude/feel when RM is OFF remains an un-audited device question (NEEDS-SKY-DEVICE) — squarely Round-2 motion territory, but device-gated.
+
+## BENCH-3
+- **B4a** Opt-in glass prop on the Sheet scaffold + ChangelogModal flip [✓HEAD] — surfaces: src/components/ui/Sheet.tsx, ChangelogModal
+  - Added an opt-in `glass?: boolean` prop (default false) to the shared Sheet scaffold — default renders the existing opaque card byte-identical so every non-glass consumer, the backdrop's accessibilityViewIsModal, and testIDs are unchanged. ChangelogModal is the first consumer flipped to glass (its body is all opaque releaseCards so no re-ink needed).
+  - feel: Signature: this is the mechanism that lets the whole modal layer speak 'one material'. Backdrop-press dismiss behavior and modal semantics deliberately preserved (press acknowledgment unchanged). Low motion/voice impact by itself.
+- **B4b** Bulk-glass on host-family siblings Help + MyFeedback [✓HEAD] — surfaces: HelpModal (src/components/HelpModal.tsx), MyFeedbackModal (src/components/MyFeedbackModal.tsx)
+  - Container swapped to GlassSurface variant="bulk" with a shared up-shadow wrapper; Help's on-glass empty-search helper text re-inked to on-glass muted ink. Closes the 'two products from one header button' finding (FeedbackModal was already glass).
+  - feel: Voice/material consistency: sibling sheets launched from the same header no longer feel like two different apps. Help's empty-search helper is an empty-state re-ink — a states surface for the craft audit.
+- **B4c** Bulk-glass on the four guest Map sheets [✓HEAD] — surfaces: LegendModal (src/screens/LegendModal.tsx), AddressSearchModal (src/components/AddressSearchModal.tsx), SavedPlacesModal (src/components/SavedPlacesModal.tsx), FilterPresetsModal (src/components/FilterPresetsModal.tsx)
+  - All four Map-hosted sheets adopted GlassSurface variant="bulk". Legend's GlassSurface is wrapped INSIDE its tap-swallow Pressable so backdrop-tap-to-dismiss is preserved; AddressSearch gets its e3 shadow via a wrapper (up-shadow moves to cardWrap per the GlassSurface contract).
+  - feel: Press feedback: backdrop-dismiss gesture explicitly preserved on Legend. Motion/feel: these six map sheets now ship LIVE blur over moving map tiles — the frost-over-map feel is web-approximated only and is a prime Round-2 device-feel target. Material signature cohesion on the guest surface.
+- **B4d** Bulk-glass ReportFlagModal (PROTECT-3), material only [✓HEAD] — surfaces: ReportFlagModal (src/screens/ReportFlagModal.tsx)
+  - Card material swapped to GlassSurface variant="bulk"; six on-glass inks re-inked (inkGlassMuted + bodyMedium ≥500 weight). The KAV/88%-height-cap, sticky opaque footer, five 44pt severity buttons, and the anon banner are byte-identical.
+  - feel: HIGH: this is the app's core reporting flow. Severity-grammar signature (the five calibrated severity buttons + ramp) deliberately untouched — a Round-2 assertion to re-check. Open feel question: submit-button glow under the card's new overflow:hidden is clip-safe by math but unconfirmed on device. Loading/anon states re-inked on glass.
+- **B4e** Bulk-glass Nearby list pageSheet (PROTECT-1; Sky device pick D10) [✓HEAD] — surfaces: NearbyFlagsModal (src/screens/NearbyFlagsModal.tsx)
+  - GlassSurface fills the pageSheet edge-to-edge (styles.glassFill) with the SafeAreaView riding transparent on top; one-breath SR row labels, role=tab chips + counts, 44pt controls, and filter-reset-on-close are byte-identical. Only the empty-state subtitle re-inks. Glassed per Sky's explicit call (device pick D10); reverts cleanly on its own commit if she changes her mind.
+  - feel: HIGH for states + signature: the empty-state subtitle re-ink is a direct states surface; frost is subtle behind the opaque header/chips/cards (a feel judgment call). Native pageSheet blur behind it is device-gated. Screen-reader voice (one-breath labels) asserted unchanged — worth a Round-2 re-listen.
+- **B6** Light bulk-sheet ghosting (L2-6) — CLOSED no-fix [✓HEAD] — surfaces: all bulk-glass sheets (light mode), src/theme.ts (asserted unchanged), src/components/ui/GlassSurface.tsx (asserted unchanged)
+  - Zero code change. Sky read the light bulk sheet on-device (D10) and confirmed it reads clean; every ink already passes the arbiter. Verified by empty git diff on theme.ts / GlassSurface.tsx / ThemeContext.tsx both pre- and post-B4, so the light-bulk material (glassBulkFloor 0.85, glassBulkSpecular 0.80, glassBulkLite0/1 0.95/0.90, intensity.bulk 24) is byte-identical to what shipped.
+  - feel: low as a code change, but it RECORDS a settled feel verdict: light-mode bulk-glass ghosting is accepted as-is. Round 2 should not re-open light-bulk legibility unless a floor changes (which mandates a contrast-check.mjs re-run per GLASS §7.1).
+
+## BENCH-4
+- **B8** Photo resize on ingest (L7-05) — BENCH-4 [✓HEAD] — surfaces: lib/flags.ts (stripExifNative/stripExifWeb, uploadFlagPhoto, uploadAvatar, addFlagPhoto), ReportFlagModal, ProfileScreen (avatar ingest), FlagDetailModal (add-photo ingest), PhotoGallery/PhotoLightboxModal (display sites, unchanged code)
+  - A downscale-only, aspect-preserving longest-edge cap (PHOTO_MAX_DIMENSION = 2048, Sky-chosen) now rides in the SAME pass that strips EXIF — inside the existing manipulateAsync re-encode on native and the canvas re-encode on web — so every emitted photo is resized AND metadata-free with no original-copy path. Picker dims are threaded through the three native ingest screens; in ReportFlagModal dims ride a side photoDimsRef so the sheet architecture stays byte-untouched; a no-dims path falls back to re-encode-only. +11 tests prove the emitted bytes pass verifyExifStripped with the resize action coupled in, never upscaling.
+  - feel: Moderate: perceived image quality (barrier-evidence legibility at full-screen lightbox is the cap's sizing rationale) and faster uploads/loads (12MP originals cut to ~1/4 pixels) — but no visible UI change; resized-photo legibility itself is a device gate.
+- **B5** Motion hygiene sweep + reduced-motion regression net (L4-05/07/08/10/11/12) — BENCH-4 [✓HEAD] — surfaces: HamburgerDrawer, theme.ts (motion.duration.pulse token), Skeleton, Button/PressableScale (test coverage), PlatformMap native+web (test coverage), lib/accessibility.ts useReducedMotion (test coverage), all ~30 gated Modals (static PROTECT #7 guard)
+  - Two edits: (L4-11) HamburgerDrawer's 220ms sub-screen handoff delay is now RM-gated to 0 (setTimeout(fn, reducedMotion ? 0 : 220)) — under reduce-motion the drawer no longer imposes dead wait time; (L4-10) the Skeleton pulse literal is tokenized as motion.duration.pulse = 700 (value-preserving). Plus 21 net-new reduced-motion regression tests covering the useReducedMotion hook, native map animateTo/zoomBy (pins the literal 0 the app passes), web zoomBy ({animate:false}), Skeleton loop, Button/PressableScale press springs, drawer 220 handoff, and a static CI guard that fails on any future bare animationType slide/fade literal in src. L4-07/L4-08 and native map 300/600 literals deliberately flagged-not-snapped (no value-preserving token).
+  - feel: HIGH — this is the motion-craft item of the train: reduced-motion users get an instant drawer handoff instead of dead time; the pulse loop is now a documented deliberate off-scale ambient token; and the DESIGN.md §8 motion law gains its first test enforcement, so every RM branch in press feedback, map camera, skeleton loops, and modal transitions is now un-trap-able.
+- **B5-L4-12** L4-12 fixed 350ms Nearby-select callout delay — discovery: ALREADY CLOSED [✓HEAD] — surfaces: MapScreen (web callout focus path)
+  - No BENCH-4 edit. The 350ms fixed delay the Round-1 review cited no longer exists — it was replaced during the uplift by the retryShowCallout race-ladder (MapScreen.tsx:159), which handles a genuine pin-not-yet-mounted race and was deliberately left untouched (gating it would reintroduce the race).
+  - feel: Moderate: Nearby-select-to-callout responsiveness — the ladder makes callout opening race-safe rather than fixed-latency; relevant when auditing map micro-interaction timing.
+- **B2** Retire 7 UI emoji for Lucide icons (L2-9) — shipped bench/1-housestyle, recorded closed here [✓HEAD] — surfaces: RootNavigator, TasksScreen, LegendModal, AdminScreen, ResourcesScreen
+  - Seven emoji used as UI glyphs replaced with lucide-react-native vector icons for consistent weight/color/scale with the icon system.
+  - feel: HIGH — signature/voice: emoji read as casual and render inconsistently per-platform; Lucide unifies the iconographic hand across screens.
+- **B3** Wear the Wayfinder mark (L8-8) — shipped bench/1-housestyle, recorded closed here [✓HEAD] — surfaces: SignInScreen, OnboardingModal, ProfileScreen, MapScreen, HamburgerDrawer, theme.ts
+  - The Wayfinder brand mark is now worn in-app (sign-in, onboarding, drawer and related surfaces) instead of being absent from the product it brands.
+  - feel: HIGH — signature: the brand mark is a core identity/feel asset; drawer/onboarding mark placement feel is itself a device-gated item from BENCH-1.
+- **B4** Unify modal material — 9 sheets onto bulk-glass (L2-5) — shipped bench/3-material, recorded closed here [✓HEAD] — surfaces: ui/Sheet, ui/GlassSurface (variant 'bulk'), LegendModal, HelpModal, AddressSearchModal, +6 more sheets per BENCH-3
+  - Nine bottom sheets/modals unified onto the single bulk-glass material (GlassSurface variant="bulk" inside Sheet), replacing per-sheet ad-hoc surfaces so all overlays share one material.
+  - feel: HIGH — material signature: 'one material, one voice, one hand' is the R2 thesis; sheet material consistency is central to overlay feel. True-blur quality on device = gate D10.
+- **B6** Light bulk-sheet ghosting (L2-6) — CLOSED NO-FIX (Sky device call D10) [✓HEAD] — surfaces: ui/GlassSurface bulk material in light mode (unchanged)
+  - No code change — Sky judged the light-mode bulk-sheet ghosting acceptable on device (D10); the material is byte-unchanged from BENCH-3. Marker verifies the bulk material exists at HEAD; there is intentionally no fix commit to grep.
+  - feel: Moderate: it is a pure material-feel judgment call (glass legibility in light mode) already adjudicated by Sky's eye — R2 should treat it as settled unless new evidence.
+- **B7** Heat companion + iOS cluster-spring gate (L7-11/L4-03) — shipped bench/2-honesty, recorded closed here [✓HEAD] — surfaces: HeatmapLayer, HeatmapLegend, LegendModal, PlatformMap (native cluster animation gate)
+  - Heatmap gained its companion legend/explanation surfaces, and the react-native-map-clustering global LayoutAnimation.spring on iOS is gated (prop-level) for reduced motion.
+  - feel: HIGH — motion + honesty: cluster-spring gating is an RM feel item (amplitude on device = gate B7-B); the heat legend is a comprehension/voice state for the map's densest visual.
+- **B9** Offline data-age + Home refresh-fail surfacing (L7-02) — shipped bench/2-honesty, recorded closed here (FORK #4 still open) [✓HEAD] — surfaces: HomeScreen (offline banner + refresh-fail row), lib/flagsStore (cachedAt plumbing), lib/copy.ts
+  - The offline banner now states the served cache's AGE (cachedAt threaded through flagsStore), and a failed refresh while cached data is on screen surfaces visibly: 'Couldn't refresh — showing older data. Tap to try again.' with a matching accessibility label. Guest cache-scope question remains FORK #4 for Sky.
+  - feel: HIGH — states + voice: this is honest-state microcopy craft (data-age honesty, error-that-isn't-silent), squarely in the severity-grammar/honesty signature.
+- **B10** Web locate-failure outcome (L7-07) — shipped bench/2-honesty, recorded closed here [✓HEAD] — surfaces: MapScreen (web locate path)
+  - Web geolocation failure — previously fully silent (no visible message, nothing spoken) — now produces a visible, dismissable locate-failure message with Retry; every new locate attempt dismisses a stale failure.
+  - feel: HIGH — error states + voice: a formerly-silent failure now has an acknowledged outcome and recovery path; core honest-arrival feel.
+- **B11** Dead-styles / ctaFill / >=500-weight sweep (L2-12/13/10) — shipped bench/1-housestyle, recorded closed here [✓HEAD] — surfaces: theme.ts (ctaFill token), TasksScreen (verify button, chips), SearchInputRow (dead style), repo-wide dead styles
+  - House-style hygiene: dead StyleSheet entries removed, the mode-independent CTA fill promoted to a ctaFill token (#1466E0) and adopted at usage sites, and the >=500 font-weight haze addressed. searchClearText dead style was flagged as a BENCH-1 discovery left open.
+  - feel: Moderate: ctaFill is signature-color consistency (the CTA blue reads identically in both modes) and the >=500 weight haze is a typographic-feel item (device gate D9); dead-style removal itself is low.
+- **B1** Points flash lies on anon triage (L3-4) — NOT CLOSED: FORK #2, surfaced never built (listed for completeness) [✓HEAD] — surfaces: TasksScreen (applyStatusChange flash banner), supabase/schema.sql trigger (Sky-applied), CLAUDE.md points doc
+  - Nothing shipped. The ledger records it as FORK #2 open for Sky: UI-suppression would be bench-able, but the real fix is a Sky-applied IS DISTINCT FROM migration plus correcting the CLAUDE.md doc drift (teaches 5/2/10/5 vs live 10/3/15/7). The unchanged flash path (applyStatusChange/showFlash) is what the grep marker verifies.
+  - feel: HIGH when it lands — voice/trust: a '+points' flash that can lie is a severity-grammar/honesty violation; R2 should note it as a KNOWN open honesty gap, not re-discover it.
+
+## STALE ROUND-1 CAPTURES (union)
+- [P0] ReportFlagModal / report sheet (audit L3-1 and L5-03 annotated PNGs) — new 'Use my location' retry row, 'Submit report' label, reflowed anon banner, new submit-moment honesty sentence; both the @375 and 200px-squeeze states changed
+- [P0] OnboardingCards — slide 2 body copy rewritten; slide 3 (location) CTA relabeled 'Continue' on web + 'Not now' decline present (audit L1-3 capture stale)
+- [P0] HomeScreen — subtitle now 'Most recent barriers' (header/subtitle contradiction capture stale)
+- [P0] HelpModal (FAQ) — navigation + resolved-marker answers rewritten
+- [P0] SignInScreen (native only) — guest-block copy corrected; web captures unaffected since the screen doesn't render in web guest mode
+- [P1] MapScreen — the only P1 surface with a visible change: denied-state banner copy reworded and the flag-count pill re-copy ('N flags nearby' → 'Showing N flags'). Round-1 Map captures showing the arrival banner or the pill are stale.
+- [P1] (All other P1 items — S9-a/b/c/d, S13 — are a11y-props-only per the ledger's glass-arbiter note; they do not stale any visual capture.)
+- [P2] MapScreen / FullMap — light-mode basemap is now Positron light (S7), zoom buttons added to the FAB column (S6), editorial MAP/Explore chip replaces the nav header (S8), all pins re-rendered with hairline union + custom native teardrop (S14), callout meta grammar changed (S1)
+- [P2] NearbyFlagsModal — digit ink flip on sev1-4 discs (S2) + new visible meta line "Severity N of 5 · word · Status · time" (S1)
+- [P2] LegendModal — digit ink (S2) + new Status block, anon double-ring and resolved-checkmark entries (S1)
+- [P2] ReportFlagModal — severity digit ink + white Check glyph (S2)
+- [P2] FlagDetailModal — digit ink at view + edit sites (S2)
+- [P2] ActivityFeedModal — digit ink (S2)
+- [P2] RecentlyViewedRow — digit ink (S2)
+- [P2] HomeScreen — recent rows now carry severity number + STATUS_LABELS status (S1)
+- [P2] ProfileScreen — dark nav header gone; editorial header with HeaderActions, double title killed (S8)
+- [P2] SettingsScreen — new editorial ScreenHeader (S8)
+- [P2] Web anon pin — double concentric ring replaces gray swap; anon opacity dim removed (S1)
+- [P3] MapScreen — native pin callout (new freshness line 'Reported Nd ago' + 'Open details ›' affordance row inside the tooltip callout)
+- [P3] MapScreen — web Leaflet popup (new freshness line + filled #1466E0 'Open details' button on the white popup chrome)
+- [P3] MapScreen — new reachable state: FlagDetailModal presented from the map (and StatusHistoryModal stacked above it), a surface Round 1 could not capture from the Map tab
+- [P3] NearbyFlagsModal — visually UNCHANGED (only the SR accessibilityHint text changed; PROTECT-1 row label/structure frozen), so its Round-1 screenshot is still valid but any SR-hint transcript capture is stale
+- [P4] MapScreen (web) — motion/behavioral captures only: any Round-1 recording or probe of the web map camera under Reduce Motion (the rm-flight arc, cluster-expansion flight, popup auto-pan, zoom/fade cross-fades) is stale — those now cut instantly. Static screenshots of the web map are NOT stale (S12 changes zero pixels at rest; default non-RM motion also unchanged). No other surface was touched by this train (PROTECT-7 diff-proof: only PlatformMap.web.tsx + accessibility.ts + the new test file).
+- [P5] MapScreen / FullMap — new 48pt zoom buttons, editorial MAP/Explore chip + HeaderActions circles, light Positron tiles in light mode, hairline attribution, denied-arrival banner, 'Showing N flags' pill, 'Loading flags…'/'Updating…' split, Clear-all-filters layout, action-bar gradient fade
+- [P5] Map pin/callout/popup (native + web) — freshness line + 'Open details' affordance, custom native teardrop + hairline, anon double-ring, severity-grammar meta line
+- [P5] HomeScreen — peek stripped of attribution/zoom controls, 'Most recent barriers' subtitle, Recent rows with severity number + Title-cased status
+- [P5] NearbyFlagsModal — 'Severity N of 5 · word · Status · time' meta, dark digit ink on sev1–4 discs, updated row hint
+- [P5] ReportFlagModal — visible 'Submit report' label, 'Use my location' retry, submit-moment honesty sentence, severity-chip ink + white Check, slow-submit overlay
+- [P5] LegendModal — new Status block, anon-double-ring + resolved-check entries, digit ink
+- [P5] FlagDetailModal / ActivityFeedModal / RecentlyViewedRow — severity digit ink (S2)
+- [P5] ProfileScreen + SettingsScreen — nav headers removed, editorial header + HeaderActions (double title gone)
+- [P5] OnboardingCards — slide-2 copy rewrite, slide-3 'Continue' CTA
+- [P5] HelpModal FAQ — corrected navigation + resolved-marker copy
+- [P5] Any screen while a status fires — the new visible LiveStatusRegion pill ('Report filed', 'Still trying — check your signal' + Retry) did not exist in Round 1
+- [P5] NOTE: HEAD is bench/4-quality (a8549ff), so BENCH-1..4 changes (emoji→Lucide icons, Wayfinder mark, sheet material unification, motion hygiene) sit on top of this train — Round-1 captures are stale for those reasons too, beyond this ledger's scope
+- [BENCH-1] FeedbackModal (chips now Lucide, tint on select)
+- [BENCH-1] MyFeedbackModal (rows + both empty states now Lucide)
+- [BENCH-1] AddressSearchModal (recents/error/no-matches icons now Lucide)
+- [BENCH-1] FlagDetailModal (comments-empty now MessageCircle)
+- [BENCH-1] ReportFlagModal (template chips: glyphs → CategoryIcon)
+- [BENCH-1] OnboardingCards slide 1 (Compass → LogoMark)
+- [BENCH-1] OnboardingModal slide 1 (MapPin → LogoMark)
+- [BENCH-1] HamburgerDrawer header ('A' tile → white LogoMark)
+- [BENCH-1] MapScreen filter panel (Reset-all + Save buttons ctaFill; savedEmptyText/statusHint at 500 weight)
+- [BENCH-1] TasksScreen empty card (body at 500 weight)
+- [BENCH-2] HomeScreen — offline-cache state (banner copy now carries data age) and the new refresh-failure-with-data inline notice; default online render unchanged
+- [BENCH-2] MapScreen — offline banner copy (age), the new web locate-failure LiveStatus banner state, and the heat-on-with-no-qualifying-zones state (new companion line under the disclaimer); default render unchanged
+- [BENCH-2] TasksScreen — offline-cache banner state (age copy + updated accessibilityLabel); default render unchanged
+- [BENCH-3] ChangelogModal (opaque card → bulk glass, light + dark)
+- [BENCH-3] HelpModal (opaque → bulk glass + up-shadow wrapper + re-inked empty-search helper)
+- [BENCH-3] MyFeedbackModal (opaque → bulk glass)
+- [BENCH-3] LegendModal (opaque → bulk glass over live map)
+- [BENCH-3] AddressSearchModal (opaque → bulk glass, e3 wrapper shadow)
+- [BENCH-3] SavedPlacesModal (opaque → bulk glass)
+- [BENCH-3] FilterPresetsModal (opaque → bulk glass)
+- [BENCH-3] ReportFlagModal (card material → bulk glass, 6 inks re-inked; footer/severity buttons unchanged)
+- [BENCH-3] NearbyFlagsModal (pageSheet now glass edge-to-edge; empty-state subtitle re-inked)
+- [BENCH-4] None statically — BENCH-4's own changes are value-preserving on screenshots: the pulse tokenization is 700→700, B8 changes only the pixel dimensions of NEWLY-ingested photos (display code untouched), and ReportFlagModal's sheet is byte-untouched.
+- [BENCH-4] HamburgerDrawer (behavioral/timing only): any Round-1 reduced-motion FEEL capture or video of the drawer sub-screen handoff is stale — the 220ms dead wait is now 0 under RM.
+- [BENCH-4] Photo lightbox/PhotoGallery (representational only): captures showing full-resolution camera originals no longer represent what new uploads will look like (2048 cap); existing stored photos are unchanged.
+
+## DEVICE GATES recorded in ledgers (union)
+- [P0] S5 — native permission-denied retry loop: code-inferred only, NEEDS-SKY-DEVICE (status: open)
+- [P0] S15 — SignInScreen guest-block copy correction: native-only screen, code-verified, NEEDS-SKY-DEVICE (status: open)
+- [P0] S19 — native 'Not now' decline on the location slide: native-only by design, NEEDS-SKY-DEVICE (status: open)
+- [P0] Blanket gate from the ledger header: all native paths tagged NEEDS-SKY-DEVICE; web pass was Chromium Expo-web only (status: open)
+- [P1] D1 (the audit's #1) — iOS VoiceOver on a Tasks card: are Verify/Resolve/Reject/Details focusable and is the header summary the card's representative (S13)? Status in ledger: NEEDS-SKY-DEVICE, unrun.
+- [P1] D2 — SignIn accessibilityViewIsModal containment. Status: NEEDS-SKY-DEVICE, unrun (code present at HEAD: SignInScreen.tsx:95).
+- [P1] D3 — LegendModal backdrop no longer traps focus (native). Status: NEEDS-SKY-DEVICE, unrun.
+- [P1] S9 native screen-reader feel (announce shim + flat aria on real iOS). Status: NEEDS-SKY-DEVICE, unrun.
+- [P1] S4 first-run *feel* of the reconciled denied gate on device. Status: NEEDS-SKY-DEVICE, unrun.
+- [P1] Report-form / filter-panel / Tasks live DOM on real web (blocked locally by the dev-preview Metro bug). Status: deferred to real web / device, unrun.
+- [P2] D8 — native Apple-light-tile pin visibility (S14/S7): arbiter-proven ratios (3.12 dark arm / 5.83 light arm), unverified by eye until device; expo-web renders CARTO, not Apple tiles. Status: open, folded into the ONE EAS TestFlight build (D0)
+- [P2] Native VoiceOver traversal of the new severity grammar + editorial headers. Status: open, D0 build
+- [P2] iOS single-pointer zoom-out + pinch alongside the new zoom buttons (S6). Status: open, D0 build
+- [P2] Signed-in Profile one-title state (web verification was guest-mode only; code-inferred). Status: open, D0 build
+- [P2] True 200%-zoom reflow of the FullMap editorial chip (S18③). Status: open, D0 build
+- [P3] Native react-native-maps Callout.onPress actually opening the detail sheet — jsdom mocks Callout to null; wiring code-verified, tap is device-only. Status: recorded, PENDING — fold into the ONE EAS TestFlight build
+- [P3] VoiceOver/TalkBack focus traversal: SR Nearby row → sheet opens with focus on title; on close, focus returns to the row (cross-modal focus-return is the device item; useFocusOnOpen itself unchanged/proven). Status: recorded, PENDING — device gate is Sky's
+- [P3] Sighted callout→modal flow on a real web build (Playwright capture available via design-reviews/fable-audit/tools/capture.mjs after npx playwright install — deliberately NOT run to keep the branch clean; wiring proven by 14 guards + typecheck). Status: recorded, PENDING
+- [P4] D5 — the FELT web reduce-motion result (instant cut vs. Leaflet arc on the live web map): code-verified deterministically via the guard test + Leaflet source (animate===false → setView), but the felt experience stays NEEDS-SKY-DEVICE; status in ledger = open, Sky's gate
+- [P5] D0 — the consolidated NEEDS-SKY-DEVICE pass folded into the ONE EAS TestFlight build; stated status: pending Sky (build exists per later records; gate not run)
+- [P5] D1 — S13 Tasks-card VoiceOver: Verify/Resolve/Reject/Details focusable, header summary as the card's representative — HIGHEST-STAKES (audit's #1 device check); open
+- [P5] D2 — SignIn accessibilityViewIsModal containment (P1); open
+- [P5] D3 — LegendModal backdrop no longer traps focus, native (P1); open
+- [P5] D5 — S12 felt instant-cut vs arc on the RM web map camera (code-verified, feel is device-only); open
+- [P5] D8 — native Apple-light-tile pin/teardrop visibility by eye (S14/S7 — arbiter-proven ratios only); open
+- [P5] D11 — the P5 cluster: S11 poor-signal minute-plus ceiling + on-device 'still trying'/submit-overlay timing; S10 'Report filed' VoiceOver announce timing; S16 Split View / true-320pt action-bar overflow; S17 native react-native-maps peek tap-swallow; all open
+- [P5] Un-numbered device items recorded en route: S6 iOS single-pointer zoom-out + pinch/VoiceOver; S9 native SR feel; S4 first-run feel; S3 native Callout.onPress + cross-modal focus-return; S19 native 'Not now'; signed-in Profile one-title state; 200%-zoom map-chip reflow; all open
+- [BENCH-1] D9 (B11-C): does the 500-weight on-glass text actually un-haze against the moving map — code-verified only, feel flagged not claimed; status: NEEDS-SKY-DEVICE, still open (BENCH tier awaits Sky's merge + the one build)
+- [BENCH-1] B3 onboarding slide-1 LogoMark renders (both OnboardingCards and OnboardingModal) — onboarding was dismissed in web session, resetting first-launch state needs device; status: NEEDS-SKY-DEVICE, open
+- [BENCH-1] B3 HamburgerDrawer white LogoMark in blue tile — drawer never rendered in Chromium preview; status: NEEDS-SKY-DEVICE, open
+- [BENCH-1] B2-ii native template-chip CategoryIcon render — report form not reached in web session (needs pin-placement interaction), code-inferred only; status: NEEDS-SKY-DEVICE, open
+- [BENCH-1] General: native marker/callout + Safari/WebKit unvouched (preview is Chromium-only); status: NEEDS-SKY-DEVICE, open
+- [BENCH-2] NEEDS-SKY-DEVICE: iOS cluster-spring amplitude/feel once gated (B7-B) — open, untestable in sandbox
+- [BENCH-2] NEEDS-SKY-DEVICE: L4-02-native fitToCoordinates cluster-expansion leg — left un-forced, matching the motion-inventory's existing NEEDS-SKY-DEVICE disposition
+- [BENCH-2] Device-caveat (not a formal gate): B9 marked 'test-verified · code-inferred on device'; B10 web on-screen render code-inferred (sandbox can't force a geolocation throw — LiveStatusRegion behavior covered by its own tests)
+- [BENCH-3] True gaussian-blur frost feel over the live/moving map (Report/Legend/AddressSearch/SavedPlaces/FilterPresets/Nearby) — ★ NEEDS-SKY-DEVICE, status OPEN (Chromium backdrop-filter ≠ native i=24; preview is Chromium-only)
+- [BENCH-3] Native pageSheet blur behind NearbyFlagsModal — ★ NEEDS-SKY-DEVICE, status OPEN
+- [BENCH-3] Report submit-button glow under the new overflow:hidden — clip-safe by math (radius 16 + offset 6 ≈ 22px < spacing.xxl inset) but confirm-on-device, status OPEN
+- [BENCH-3] D10 light bulk-sheet read (B6) — DONE: Sky read it on-device and confirmed clean; that read remains valid because B4 moved no bulk-material byte
+- [BENCH-4] ALL gates converge on the ONE EAS TestFlight build (D0) — branch is NOT merged/pushed/built, so every gate below is PENDING
+- [BENCH-4] B8 resized-photo legibility at full-screen (existing D8 device posture) — pending
+- [BENCH-4] Native PlatformMap falsy-zero (PlatformMap.tsx:122,136 pass literal 0 under RM; whether rn-maps treats 0 as instant or falsy→~500ms default is device-only; recorded un-trap fix if it fails: non-falsy sentinel reducedMotion ? 1 : N, mirroring S12) — pending, deliberately not changed blind
+- [BENCH-4] Native map motion feel (300/600 camera durations) — pending
+- [BENCH-4] iOS cluster-spring amplitude (B7-B: prop gate is tested, feel is not) — pending
+- [BENCH-4] OS Modal transition feel + iOS spring feel — explicitly never claimed covered by the jest net
+- [BENCH-4] D9 — >=500 font-weight haze feel (B11-C) — pending
+- [BENCH-4] D10 — true-blur on bulk sheets (B4/B6): B6 already adjudicated closed-no-fix by Sky, B4 blur quality still rides the build — pending
+- [BENCH-4] Review device pass D1–D11 (D1 = S13 Tasks-card VoiceOver = highest-stakes) — pending
+- [BENCH-4] Native fitToCoordinates cluster-expansion leg (L4-02-native, BENCH-2) — device-deferred
+- [BENCH-4] Map-sheet blur cost → forceEngineered fallback if perf regresses (BENCH-3) — device-deferred
+
+## OPEN FLAGS FOR SKY recorded in ledgers (union)
+- [P0] S18 item ③ — report-sheet header collision at zoom, deferred to P2 (not touched in P0)
+- [P0] Fork-3 — S19 was relabel-only; actual consent wiring/behavior decision forked to Sky
+- [P0] Pre-existing jest flake TasksScreenFlagCard.test.tsx:115 (/ago$/ relative-time, date-dependent) — fails identically on pristine main@82e738b; flagged for a separate fix (branch fix/tasksflagcard-date-flake exists per memory)
+- [P0] Web verification was Chromium-only — Safari/WebKit CSS behavior of the reflow fixes unchecked
+- [P1] Pre-existing /ago$/ relative-time jest flake in TasksScreenFlagCard.test.tsx — fails identically on pristine main@82e738b; fix lives on separate branch fix/tasksflagcard-date-flake, Sky's call to take it.
+- [P1] Dev-preview environment limitation: expo web dev build (lazy=true) crashes Map/Tasks/heavy-lucide modals into the ErrorBoundary (Metro lazy-load module resolution) — pre-existing, blocks live DOM re-walk of report-form chips, map/tasks filter panels, and the Tasks card; those remain real-web/device-verify items.
+- [P2] Arbiter sibling-file decision — fold passing P2 rows into audit-stacks.json + labeled open-findings block, or keep tools/p2-material-stacks.json as the sibling (ledger's shipped default)
+- [P2] FORK 5 — verifier count + callout date ride S3, NOT built in P2 (later closed in P3 per memory, but open in this ledger)
+- [P2] Anon double-ring exact weight/gap (Sky-eye render candidate)
+- [P2] Zoom-button slot placement in the bottom overlay zone (Sky-eye)
+- [P2] S7 basemap family — Positron light_all shipped vs warmer Voyager (Sky-eye)
+- [P2] Whether to keep any anon opacity dim (removed; ring now carries provenance) (Sky-eye)
+- [P2] FullMap header treatment — (ii) shipped; (i) slim converged nav header is the calmer fallback (Sky-eye)
+- [P2] FullMap title copy — "Explore" (Sky-eye)
+- [P2] HeaderActions fill on Profile/Settings (Sky-eye)
+- [P2] Admin screen keeps the nav header — flagged follow-up (gated, non-public)
+- [P2] L2-15 modal close-pill convergence — deliberately out of scope (PROTECT-1/3 pills untouched)
+- [P3] FORK 5 (write/count half, NOT built): verifier COUNT display on the callout ('Verified by N people') — Sky's product/data call
+- [P3] FORK 5 (write/count half, NOT built): guest 'flag as wrong' write affordance — Sky's product/data call
+- [P3] Sky-eye copy candidates: callout label 'Open details' / 'Open details ›', freshness copy 'Reported {relativeTime}', Nearby SR hint default vs longer alt, web button's mode-independent Wayfinder Blue #1466E0
+- [P3] Known /ago$/ TasksScreenFlagCard date flake — pre-existing, untouched, fix branch exists (Sky's call per memory)
+- [P3] Merge/push/build were Sky's at ledger time (branch STOPPED; since carried into main per project state)
+- [P4] TasksScreenFlagCard /ago$/ test fixture time-bomb — pre-existing 1-failed baseline (relativeTime caps at 30 days; fixture date aged out); NOT an S12 or product bug; durable fix (pin now or relative fixture date) left to Sky's call
+- [P4] Merge/push/build — train STOPPED on uplift/p4-motion; Sky merges, one EAS build carries everything (note: since superseded — P0→P5 merged to main e428585 per memory; this ledger predates that)
+- [P5] S3 FORK 5 — verifier COUNT on the callout + guest 'flag as wrong' write affordance (product/data decision, deliberately not built)
+- [P5] S11 Strategy B — write-side idempotency column (data fork; only the UI/read half shipped)
+- [P5] P2 arbiter sibling-file decision — fold tools/p2-material-stacks.json into audit-stacks.json, or keep the immutable findings record split
+- [P5] /ago$/ TasksScreenFlagCard date-flake — fix exists on fix/tasksflagcard-date-flake (2264462), landing it is Sky's call
+- [P5] Sky-eye render/copy candidates — anon double-ring weight, zoom-button slot, Positron vs Voyager light tiles, FullMap header treatment (ii) vs (i) + 'Explore' title, HeaderActions fill, S3 callout copy defaults
+- [P5] Admin screen keeps the old nav header (gated, non-public) — flagged follow-up
+- [P5] Merge/push/ONE EAS TestFlight build were the ledger's Sky-only finish steps (per later records these completed 2026-07-06: main e428585, build c64154cc — leaving only the device gate)
+- [BENCH-1] flags.ts:1107 CATEGORY_ICONS — dead exported Unicode-glyph record, deletion recommended in follow-up (verified still present at HEAD line 1188)
+- [BENCH-1] SearchInputRow.tsx searchClearText — second dead style, different file than L2-12 named, flagged not deleted (verified still present at line 119)
+- [BENCH-1] blocked_path per-template icon distinction — construction vs parked-vehicle chips share one category icon; follow-up per-template Lucide icons if too-samey on device
+- [BENCH-1] /ago$/ date-fixture flake — pre-existing, observed once, causally unrelated to BENCH-1 diffs (memory-documented)
+- [BENCH-2] FORK 4 — guests get no offline cache (deliberate privacy fork); B9 shipped only the age-display + failure-surfacing halves, correct under either branch
+- [BENCH-2] B7-A companion copy wording ('No heat zones qualify yet — coverage grows as more reports come in.') — explicitly Sky-tunable, a genuinely open wording choice
+- [BENCH-2] L4-02-native fitToCoordinates cluster-expansion motion leg — left as flagged follow-up (no animated override without flipping preserveClusterPressBehavior, which changes press semantics)
+- [BENCH-2] Branch disposition — bench/2-honesty STOPPED, not merged/pushed/built; Sky merges, one build carries the tier (since subsumed into the bench/4-quality stack, itself unmerged)
+- [BENCH-3] Flag 1 — Device gate D10 + material feel: true i=24 gaussian frost over the live map (6 Map sheets) and the pageSheet blur behind Nearby are web-approximated only; confirm cohesive-luxury frost + no submit-glow clipping on device
+- [BENCH-3] Flag 2 — Map-sheet blur cost: six sheets ship live blur over forceEngineered map chrome; if on-device perf regresses, the fallback is forceEngineered on those sheets (one-prop change, no arbiter delta)
+- [BENCH-3] Flag 3 — Nearby glass is Sky's pick (D10) and B4e reverts cleanly on its own commit if she prefers the opaque screen
+- [BENCH-3] Flag 4 — Secondary list modals deliberately left opaque (named-scope): MyReports, MyWatched, StatusHistory, ActivityFeed, Achievements, NotificationPrefs — a later pass if the whole overlay tier should be one material
+- [BENCH-4] Fork 2 — B1 points-economy fix (IS DISTINCT FROM migration + CLAUDE.md 5/2/10/5-vs-10/3/15/7 doc-drift correction)
+- [BENCH-4] Fork 4 — B9 guest cache-scope
+- [BENCH-4] Forks 1/3/5/6 — carried open from earlier trains (incl. Fork 5 count/guest-write)
+- [BENCH-4] Taste fork 7 — stagePoolB
+- [BENCH-4] Taste fork 8 — dark saved-place chips
+- [BENCH-4] Taste fork 9 — ui/Button adopt-or-remove
+- [BENCH-4] CATEGORY_ICONS dead export in flags.ts — open, recommend delete (BENCH-1 discovery)
+- [BENCH-4] searchClearText dead style, SearchInputRow.tsx:119 — open (BENCH-1 discovery)
+- [BENCH-4] blocked_path per-template icon collision — open for Sky's eye (BENCH-1 discovery)
+- [BENCH-4] Heat 'no zones' copy is Sky-tunable — open (BENCH-2 discovery)
+- [BENCH-4] Nearby-glass reverts cleanly if Sky prefers opaque — open (BENCH-3 discovery)
+- [BENCH-4] Secondary list-modal tier left opaque — deferred to a later whole-overlay pass (BENCH-3)
+- [BENCH-4] OnboardingCards re-implements RM detection locally instead of useReducedMotion() — open, optional unify (BENCH-4 discovery)
+- [BENCH-4] Off-scale motion literals flagged NOT snapped: ProfileScreen tier-bar 600 (L4-07), OnboardingCards dot spring speed:18/bounciness:3 (L4-08), native map 300/600 camera durations
