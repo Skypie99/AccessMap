@@ -19,6 +19,7 @@ import {
   StyleSheet,
   View,
 } from 'react-native';
+import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 import {
   ChevronRight,
   Heart,
@@ -45,6 +46,11 @@ import HowToHelpScreen from '@/screens/HowToHelpScreen';
 import AboutScreen from '@/screens/AboutScreen';
 
 const DRAWER_WIDTH = 288;
+/** Floor for the panel's bottom clearance on devices with no home indicator
+ *  (`insets.bottom === 0`). Inherited verbatim from the retired footer row's
+ *  Android padding, so the non-indicator case keeps the spacing it shipped
+ *  with; indicator devices get their real inset instead of the old 36pt guess. */
+const MIN_BOTTOM_CLEARANCE = 20;
 
 type SubScreen = 'resources' | 'howToHelp' | 'about';
 
@@ -63,7 +69,19 @@ interface Props {
 export default function HamburgerDrawer({ open, onClose, onSignIn, onNavigate }: Props) {
   const color = useColor();
   const reduceTransparency = useReduceTransparency();
-  const styles = useMemo(() => makeStyles(color, reduceTransparency), [color, reduceTransparency]);
+  // D2/C1: the retired footer row was the panel's ONLY bottom clearance (its
+  // paddingBottom: 36/20). With the row gone the clearance belongs to the panel
+  // itself — and as a REAL inset instead of the old hardcoded guess, so the last
+  // nav row clears the home indicator on the devices that have one and doesn't
+  // waste 36pt on the ones that don't. Context rather than useSafeAreaInsets():
+  // the drawer's own suites render it bare, with no SafeAreaProvider above it,
+  // and the hook throws there while the context simply yields null.
+  // Idiom: MyReportsModal.tsx:66.
+  const insets = React.useContext(SafeAreaInsetsContext) ?? { top: 0, bottom: 0, left: 0, right: 0 };
+  const styles = useMemo(
+    () => makeStyles(color, reduceTransparency, insets.bottom),
+    [color, reduceTransparency, insets.bottom],
+  );
   const { user } = useAuth();
   const isAdmin = useIsAdmin();
   const reducedMotion = useReducedMotion();
@@ -307,11 +325,6 @@ export default function HamburgerDrawer({ open, onClose, onSignIn, onNavigate }:
                 onPress={onSignIn ?? closeDrawer}              />
             )}
           </View>
-
-          {/* Footer */}
-          <View style={styles.drawerFooter}>
-            <AppText variant="body" style={styles.footerText}>AccessMap · Made with ♥ in Canada</AppText>
-          </View>
         </Animated.View>
       </Modal>
 
@@ -372,7 +385,7 @@ function DrawerItem({ icon: Icon, label, onPress, muted = false, accessibilityHi
 
 // ── Styles ────────────────────────────────────────────────────────────────────
 
-const makeStyles = (color: ColorTheme, reduceTransparency: boolean) =>
+const makeStyles = (color: ColorTheme, reduceTransparency: boolean, bottomInset: number) =>
   StyleSheet.create({
     backdrop: {
       ...StyleSheet.absoluteFillObject,
@@ -399,6 +412,10 @@ const makeStyles = (color: ColorTheme, reduceTransparency: boolean) =>
       // dimmed backdrop (flagged, not a regression).
       ...shadow.e3,
       paddingTop: Platform.OS === 'ios' ? 52 : 24,
+      // D2/C1: real bottom clearance, inherited from the retired footer row.
+      // (Top stays the shipped 52/24 — that guess is pre-existing and out of
+      // this phase's scope.)
+      paddingBottom: Math.max(bottomInset, MIN_BOTTOM_CLEARANCE),
       ...(Platform.OS === 'web' && !reduceTransparency
         ? { backdropFilter: 'blur(20px) saturate(160%)' } as object
         : {}),
@@ -454,24 +471,6 @@ const makeStyles = (color: ColorTheme, reduceTransparency: boolean) =>
       backgroundColor: 'rgba(255,255,255,0.07)',
       marginHorizontal: spacing.lg,
       marginVertical: spacing.sm,
-    },
-    drawerFooter: {
-      // In flow (not absolute) so it can never overlap the Sign-out row on
-      // short devices at large type (sweep M22); marginTop:'auto' pushes it to
-      // the panel bottom, paddingBottom keeps the old home-indicator clearance.
-      marginTop: 'auto',
-      paddingBottom: Platform.OS === 'ios' ? 36 : 20,
-      paddingHorizontal: spacing.lg,
-      paddingTop: spacing.sm,
-      borderTopWidth: 1,
-      borderTopColor: 'rgba(255,255,255,0.06)',
-    },
-    footerText: {
-      fontSize: font.size.xs,
-      // Arbiter-forced fork: 0.30 composites to 2.67:1 over the worst-case panel
-      // bg (FAIL); 0.55 = 6.17:1 PASS. Stays a hardcoded dark-panel literal.
-      color: 'rgba(255,255,255,0.55)',
-      letterSpacing: 0.2,
     },
   });
 
