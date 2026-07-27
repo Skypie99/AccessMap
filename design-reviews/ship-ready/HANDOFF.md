@@ -1,69 +1,94 @@
-# SHIP-READY Phase 2 — HANDOFF (phase STOPPED on the branch)
+# SHIP-READY — HANDOFF (live resume pointer)
 
-Updated: 2026-07-26 · Branch **`shipready/2-blockers-dismissal`**, 19 commits off `main == origin/main == 512494a`
-Plan: `~/.claude/plans/ship-ready-phase-2-snuggly-sutton.md` · Report: `07_PHASE2_REPORT.md` · Census: `06_dismissal_census_verified.md`
-Provenance: Opus 5, ultracode max effort.
+Updated: 2026-07-27 · Branch **`shipready/3-polish-submission`**, cut off the Phase-2 tip **`f6ac258`**
+`main == origin/main == 512494a` (verify-first note: a memory pointer claiming main advanced to `d43f867`
+is **stale** — the base was re-read this session).
+Plan: `~/.claude/plans/first-action-before-anything-dreamy-squid.md` · Provenance: **Opus 5, ultracode max effort.**
 
-**Gate at the tip: tsc 0 · eslint 0 errors / 79 warnings · jest 167 suites / 2310 passed / 0 failed / 84 todo.**
-Baseline was 158 / 2227 / 0. `src/components/ui/GlassSurface.tsx`: **0 changed lines**. No migration applied.
+**Phase 2 is closed and recorded** — see `07_PHASE2_REPORT.md` (report), `06_dismissal_census_verified.md`
+(census), and `DECISIONS.md §J2/§SKY-2`. Its own handoff text is superseded by this file; nothing in it was lost.
+
+---
+
+## ★ STEP 0 — THE LINT GAP IS CLOSED
+
+The Cowork prep run could not execute eslint: `node_modules` carries
+`@unrs/resolver-binding-darwin-arm64` (correct for Sky's Mac) but that session's shell ran in a Linux VM
+(`linux-arm64`), so `eslint-import-resolver-typescript`'s native binding failed to load and eslint aborted
+**before linting**. It recorded this as an environment limit and asked for a local run rather than claiming green.
+
+**Verified 2026-07-27 on Sky's Mac, at the Phase-2 tip `f6ac258` (which includes the `4cb3c37` flip and the
+`007523d` `database.ts` addition):**
+
+```
+npm run lint  →  exit 0
+✖ 79 problems (0 errors, 79 warnings)
+```
+
+**The baseline holds exactly — 0 errors / 79 warnings.** The prep run's reasoning was sound: `eslint.config.js`
+declares no `max-len` and no `no-unnecessary-condition`, and the flip was a boolean literal plus comments.
+The 79 warnings are the known set (`featureFlags` unused import ×1 · `flags.ts` console/any ×10 ·
+`flagsStore.tsx` console ×3 · `NearbyFlagsModal` exhaustive-deps ×1 — the four files that have carried them
+all along). **Backlog item §SKY-3e#5 is discharged for this tip.**
+
+## Gate baseline this train must hold
+
+| Gate | Baseline |
+|---|---|
+| `npm run typecheck` | 0 errors |
+| `npm run lint` | 0 errors / **79** warnings |
+| `npm test` | 167 suites · 2310 passed · 0 failed · 84 todo |
+| `src/components/ui/GlassSurface.tsx` | **0 changed lines** |
+| migrations applied by an agent | **0** |
+
+Coverage: `src/lib/**` is in scope at an 80% threshold on all four metrics; `src/screens/**`,
+`src/components/**`, `src/hooks/**` are excluded — so every new `src/lib/` module needs its own tests.
+
+Hygiene verified this session: `_to_delete/` contains **no** test files (stale git lock files only), so the
+jest counts above are honest. ⚠ `.claude/launch.json` shows deleted-unstaged in Sky's working tree — **not
+this train's file, deliberately untouched.**
+
+---
 
 ## Completed
 
 | Commit | Item |
 |---|---|
-| `d327b7e` | **A1 · B-7** comments embed — prod REST **300 → 200**, verified |
-| `9235e3b` | **B1 · G6** sheet-overflow ×5 — About X **−65 → 97**, Help **−53 → 97**, wrapper exactly 90% |
-| `a2fc50c` | **A2 · B-5** `supportsTablet: false` |
-| `0a6a38c` | **A3 · B-4** icon alpha — 1,003,245 opaque px, **0** changed RGB |
-| `40cccf1` | **A4 · R-12** ship command — two faults, one unreported |
-| `b7a8398` | **A5 · R-11** stale Sentry claim removed |
-| `0b871cf` | **A6 · R-8a** privacy manifests B-α + B-β |
-| `1e2d67d` | **A7 · R-8b** `expo-media-library` + its two dead jest mocks |
-| `51041ec` | **A8 · B-2** privacy links ×3, PROTECT-11 held |
-| `44a62e0` | **B2 · G9** Report mid-submit close guard |
-| `ca9b1ce` | **B3 · G1a** `ui/Sheet` primitive + its first test file |
-| `da972ae` | **B4 · G1b** drawer — one prop, 7 insertions / 0 deletions |
-| `b653603` | **B5 · G1c** guarded + destructive surfaces |
-| `7b6cd49` | **B6 · G1d** both onboarding surfaces |
-| `6d51254` | **B7 · G1e + G2** MapScreen — AVM where there was none |
-| `0a7a1bb` | **B8 · G1f** the remaining surfaces — 32/32 |
-| `4f7ad5e` | **B9** the source-derived guard suite |
-| `7343b0c` | **A9 · B-1a** W1 artifact banked + client half gated off |
-| `bf2b36d` | **A10 · B-1b** hide list — Apple 1.2(c) mechanism |
+| `58cd047` | **Step 0 · the FIRST ACTION** — `DECISIONS.md §SKY-3g` (Sky's B-1 Option-B design, verbatim) + `§SKY-3h` (her Phase-3 scope picks) |
 
 ## Current
 
-Nothing in flight. The branch is complete as far as it goes and **stops here** — Sky merges, builds, submits.
+Nothing in flight.
 
-## Remaining — read `07_PHASE2_REPORT.md §3` for the reasoning
+## Remaining — the work-item ledger
 
-1. **G5 focus-return hook + 4 adoptions — the one picked item not delivered.** Fully specced in the plan §B11.
-   Generalise the `useDrawerTrigger`/`useTriggerHandle` **pair** *including* the `Platform.OS === 'web'` early
-   return and try/catch; `restore` fires on `onDismiss`, not close-intent; ship `markHandoff` from day one.
-   Adopt **Nearby → Report → FlagDetail → Legend** (Nearby first: the only web-verified failure; Legend last:
-   zero behavioural coverage).
-2. **G3 grabbers — arbiter FIRST, then a mockup gate, then code.** `ui/Sheet`'s pill is `color.borderStrong`,
-   declared in **zero** of the 20 stacks manifests, ≈1.01–1.23 over chrome glass against a 3.0 floor. And
-   03 §7.1 is wrong about Nearby: its header paints opaque `color.surface` over the fill, so Nearby has a
-   **solid-chrome option the other two lack** — that is the genuine fork for Sky.
-3. **SR-112 arbiter** — flag the PROTECT-16 collision (a dark-only `ctaFill` fixes SR-112 and regresses
-   mode-independence) rather than resolving it in code.
-4. **1.2(c) affordance** — the hide-list mechanism is built and tested; the visible control needs one string.
-5. **Sky-side**: apply the SQL slate (then flip `DISPUTE_ENABLED`) · B-3 policy rewrite · B-6 reviewer creds ·
-   the device list.
+| # | Item | State |
+|---|---|---|
+| **A0-1** | **G5 focus-return** — `useSurfaceTrigger()` + `PressableScale` forwardRef + Nearby → Report → Legend + guard **J** | not started |
+| **SR-117** | comment author type lie — **must land before A0-3's comment control** | not started |
+| **A0-3** | **B-1** — Report (1.2(b)) · Hide on comments (1.2(c), PARTIAL) · "Flag as wrong" (W1 accuracy) + dedup | not started |
+| **A0-2** | **G3** — arbiter first, then ONE consolidated mockup board, then **STOP for Sky's pick** (no code) | not started |
+| **A0-4** | the **D-B6 conditional**, carried verbatim into the verdict | close-out |
+| **Class A** | R-2 guest honesty ×4 · R-13 web-cohort pair · R-1 artifact-only | not started |
+| **Class B** | submission collateral | not started |
+| **Class C** | conservation table · ready/not-ready verdict · Sky's ordered list · consolidated device list | not started |
 
-## ⚠ Carry this forward — it invalidates part of 03
+**Sequencing law:** SR-117 before A0-3's comment work (a nullable author column changes how ownership is
+decided on the very rows Report is added to); A0-1 before A0-3's new `<Modal>` (so guard J and the dismissal
+census enrol in that order).
 
-**`onAccessibilityEscape` on `<Modal>` is a silent no-op.** RN 0.81.5 forwards an explicit allowlist to
-`RCTModalHostView` (`Libraries/Modal/Modal.js:326-347`); the prop is not in it and typechecks only because
-`ModalProps` spreads `ViewProps`. It works **on a View** (`RCTView.m:447`). Every handler in this phase rides
-the containment node, and guard assertion **B2** fails if one is ever moved back onto a Modal tag.
+## Carry forward — the two laws Phase 2 discovered
 
-Also: **rn-web drops the prop entirely**, along with `accessibilityViewIsModal`, and stubs
-`setAccessibilityFocus` to an empty body — so the escape work has **zero web-observable delta** and its first
-real proof is Sky's device pass.
+1. **`onAccessibilityEscape` on `<Modal>` is a silent no-op.** RN 0.81.5 forwards an explicit allowlist to
+   `RCTModalHostView`; the prop is not in it and typechecks only because `ModalProps` spreads `ViewProps`. It
+   works **on a View**. Every escape handler rides the containment node, and guard **B2** fails if one is ever
+   moved back. Any new surface this phase obeys the same law.
+2. **rn-web drops the prop entirely**, along with `accessibilityViewIsModal`, and stubs
+   `setAccessibilityFocus` to an empty body — so **all of A0-1 has zero web-observable delta.** Its first real
+   proof is Sky's device pass. Never dress jest green as device green.
 
 ## Next action (if resuming cold)
 
-Read this file → `07_PHASE2_REPORT.md` → `06_dismissal_census_verified.md`. Verify `git log --oneline main..HEAD`
-matches the table above, re-run the gate, then start at **G5** (item 1).
+Read this file → `07_PHASE2_REPORT.md` → `DECISIONS.md §SKY-3g/§SKY-3h` → the plan. Verify
+`git log --oneline f6ac258..HEAD` matches the Completed table, re-run the gate, then start at the first
+not-started row in the ledger.
