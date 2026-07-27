@@ -12,11 +12,6 @@
  *     client so no network is required.
  */
 
-// ---------------------------------------------------------------------------
-// expo-media-library mock — used by stripExifNative.
-// Must declare the spy variable before jest.mock() so the factory closure
-// captures a live reference (same pattern as the Supabase mock below).
-// ---------------------------------------------------------------------------
 import {
   CATEGORY_LABELS,
   CATEGORY_ORDER,
@@ -46,13 +41,6 @@ import { Platform } from 'react-native';
 // Imported (not require()'d) so FIX 3's test can assert on the mocked
 // manipulateAsync without tripping @typescript-eslint/no-require-imports.
 import { manipulateAsync as mockManipulateAsync } from 'expo-image-manipulator';
-
-const mockSaveToLibraryAsync = jest.fn();
-
-jest.mock('expo-media-library', () => ({
-  __esModule: true,
-  saveToLibraryAsync: (...args: unknown[]) => mockSaveToLibraryAsync(...args),
-}));
 
 // ---------------------------------------------------------------------------
 // expo-image-manipulator mock — used by stripExifNative.
@@ -641,7 +629,7 @@ describe('sanitizeImageMetadata', () => {
 });
 
 // ---------------------------------------------------------------------------
-// Section 4 — stripExifNative (async, uses expo-media-library)
+// Section 4 — stripExifNative (async, uses expo-image-manipulator)
 //
 // Tests the native transcode path (iOS/Android).
 // All paths are fail-safe: if anything goes wrong, the ORIGINAL buffer is
@@ -654,7 +642,6 @@ describe('stripExifNative', () => {
   const STRIPPED = new Uint8Array([0x0a, 0x0b, 0x0c, 0x0d]).buffer;
 
   beforeEach(() => {
-    mockSaveToLibraryAsync.mockReset();
     (global as unknown as { fetch: unknown }).fetch = jest.fn();
   });
 
@@ -664,14 +651,6 @@ describe('stripExifNative', () => {
   });
 
   it('returns the stripped buffer when MediaLibrary succeeds', async () => {
-    // MediaLibrary returns an Asset object with id, filename, uri, mediaType.
-    // This matches the real expo-media-library return type on iOS/Android.
-    mockSaveToLibraryAsync.mockResolvedValue({
-      id: 'fake-asset-id',
-      filename: 'stripped.jpg',
-      uri: 'file:///tmp/stripped.jpg',
-      mediaType: 'photo',
-    });
     // fetch reads back the stripped bytes.
     (
       global as unknown as {
@@ -746,12 +725,6 @@ describe('stripExifNative', () => {
     // original buffer instead of the transcoded one, this test will fail.
     // A broken implementation would make this test fail, preventing silent
     // privacy leaks (GPS metadata in unverified photos).
-    mockSaveToLibraryAsync.mockResolvedValue({
-      id: 'fake-asset-id',
-      filename: 'stripped.jpg',
-      uri: 'file:///tmp/stripped.jpg',
-      mediaType: 'photo',
-    });
     (
       global as unknown as {
         fetch: (u: string) => Promise<{ arrayBuffer(): Promise<ArrayBuffer> }>;

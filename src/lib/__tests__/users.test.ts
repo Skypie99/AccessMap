@@ -8,19 +8,7 @@
  * See qa-reports/2026-05-25-gary-cycle4-coverage-gaps.md for full gap analysis.
  */
 
-// ---------------------------------------------------------------------------
-// expo-media-library mock — used by stripExifNative (called by uploadAvatar).
-// Must declare the spy variable before jest.mock() so the factory closure
-// captures a live reference.
-// ---------------------------------------------------------------------------
 import { getInitials, uploadAvatar, updateUserProfile } from '../users';
-
-const mockSaveToLibraryAsync = jest.fn();
-
-jest.mock('expo-media-library', () => ({
-  __esModule: true,
-  saveToLibraryAsync: (...args: unknown[]) => mockSaveToLibraryAsync(...args),
-}));
 
 // ---------------------------------------------------------------------------
 // expo-image-manipulator mock — used by stripExifNative.
@@ -120,7 +108,6 @@ describe('uploadAvatar()', () => {
       upload: mockUpload,
       getPublicUrl: mockGetPublicUrl,
     });
-    mockSaveToLibraryAsync.mockReset();
   });
 
   // ── Success path ─────────────────────────────────────────────────────────
