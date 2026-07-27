@@ -2760,7 +2760,18 @@ export default function MapScreen() {
             behavior={Platform.OS === 'ios' ? 'padding' : undefined}
             style={{ width: '100%' }}
           >
-          <View style={styles.nameCard}>
+          <View
+            style={styles.nameCard}
+            // G2/SR-065: this dialog sits over a LIVE map, which is the worst
+            // case for focus leakage — without containment VoiceOver can wander
+            // onto pins and controls behind a text-entry dialog. One of only two
+            // surfaces in the app that lacked it.
+            accessibilityViewIsModal
+            // G1: same `!savingPreset` guard as onRequestClose.
+            onAccessibilityEscape={() => {
+              if (!savingPreset) setPresetNameModalOpen(false);
+            }}
+          >
             <AppText variant="heading" style={styles.nameTitle} accessibilityRole="header">
               Name this preset
             </AppText>
@@ -2845,7 +2856,15 @@ export default function MapScreen() {
             behavior={Platform.OS === 'ios' ? 'padding' : undefined}
             style={{ width: '100%' }}
           >
-          <View style={styles.nameCard}>
+          <View
+            style={styles.nameCard}
+            // G2/SR-065: containment over the live map (see the preset dialog).
+            accessibilityViewIsModal
+            // G1: same `!savingSet` guard as onRequestClose.
+            onAccessibilityEscape={() => {
+              if (!savingSet) setNameModalOpen(false);
+            }}
+          >
             <AppText variant="heading" style={styles.nameTitle} accessibilityRole="header">Name this filter</AppText>
             <AppText variant="body" style={styles.nameHint}>You can save up to {MAX_FILTER_SETS} filter sets.</AppText>
             <TextInput
