@@ -205,7 +205,10 @@ function App() {
   const [fontsLoaded, fontError] = useAppFonts();
 
   // Analytics: one event per app launch. platform only — no PII. Runs once
-  // on mount (App is wrapped by Sentry.wrap below, so Sentry is initialized).
+  // on mount. NOTE: no crash reporter ships today — src/lib/sentry.ts is a
+  // no-op stub, and there is no Sentry.wrap anywhere. Sky has decided to add
+  // one (crashes only, no analytics), which needs a DSN and a native module;
+  // until then, release crashes are invisible. R-11/SR-006.
   useEffect(() => {
     trackEvent('app_session_started', { platform: Platform.OS });
   }, []);
