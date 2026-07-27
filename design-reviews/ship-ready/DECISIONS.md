@@ -74,3 +74,217 @@ _(picks recorded 2026-07-26 — see below)_
 - **New strings:** ship as PROPOSED constants in `copy.ts` (the `RETRY_VERB` precedent), registered as BP16 rows.
 - **Focus-return:** the hook + 4 adoptions, with the remainder a counted residue — never a false green.
   *(Not delivered this phase — see `07_PHASE2_REPORT.md §3`.)*
+
+---
+
+## §SKY-3 Sky-triggered SQL slate — applied 2026-07-27 (Phase-3 prep window)
+
+Supervised run, Sky as the per-statement trigger. Every item below: exact statement + rollback shown
+to Sky · live pre-state re-read from the catalog immediately before apply · applied · post-state
+verified read-only. Applied via `apply_migration` (not raw execute) so each lands with a **named row
+in the migration ledger** — a direct response to the drift this session uncovered. Ledger versions
+`20260727075327`–`20260727075821`.
+
+- **2026-07-27 — applied C-2 (SR-009 `flag_verifications` null-safe INSERT), verified, rollback in hand.**
+  Ledger `sr009_flag_verifications_null_safe_20260727`. Verified: `WITH CHECK` now carries
+  `IS DISTINCT FROM` with the inner relation aliased. Rollback = commit `40433e0`.
+- **2026-07-27 — applied Fork-2/OA + C-9(ii) folded (SR-008 actor guard + status-history INSERT), verified, rollback in hand.**
+  Ledger `fork2_oa_actor_guard_null_safe_plus_status_history_20260727`. One `CREATE OR REPLACE`, no
+  trigger DDL. Verified: history INSERT present, `is distinct from` guard present, old `<>` guard gone,
+  grants still `{postgres,service_role}` only. Pre-checked safe: `flag_status_history.user_id` is
+  nullable, `to_status` NOT NULL but always supplied, function is DEFINER/postgres so the
+  `WITH CHECK(false)` policy is bypassed by ownership. Rollback = commit `ad09a24`.
+- **2026-07-27 — applied C-10 (A4-3 owner-edit subquery alias fix), verified, rollback in hand.**
+  Ledger `a4_3_owner_edit_subquery_alias_fix_20260727`. Verified: `f.id = flags.id` present,
+  `flags_1.id = flags_1.id` gone. Rollback = commit `bfc1f66`.
+- **2026-07-27 — applied C-3 (SR-024 `flag_photos` anon-collapse made explicit), verified, rollback in hand.**
+  Ledger `sr024_flag_photos_anon_explicit_20260727`. Placeholder `RATIFIED 2026-07-XX` resolved to
+  **2026-07-27** at Sky's instruction. Verified: both policies carry `user_id IS NOT NULL`; table
+  comment reads back correct.
+- **2026-07-27 — applied C-4 (SR-018 revoke `verify_webhook_secret` oracle), verified, rollback in hand.**
+  Ledger `sr018_verify_webhook_secret_revoke_20260727`. Verified: `anon`/`authenticated` EXECUTE gone,
+  `service_role` (the only real caller) intact. Live advisor confirms it dropped off the
+  `security_definer_function_executable` list.
+- **2026-07-27 — applied C-6 (A2-1 close the `context_tags` hole), verified, rollback in hand.**
+  Ledger `a2_1_nonowner_revert_context_tags_20260727`. Verified: `context_tags` + `id` now reverted for
+  non-owners, and the load-bearing `auth.uid() IS NULL` early-out is **preserved** (SR-010
+  account-deletion anonymisation would break without it).
+- **2026-07-27 — applied C-7 (A2-2 anon `feedback` throttle), verified, rollback in hand.**
+  Ledger `a2_2_feedback_anon_throttle_20260727`. `feedback` had zero triggers pre-apply. Verified: one
+  trigger `enforce_feedback_rate_limit`, `tgenabled='O'`. Cap 30/h PROPOSED — Sky tunes.
+- **2026-07-27 — applied C-8 (SR-001 admin delete-comment), verified, rollback in hand.**
+  Ledger `sr001_admin_delete_comment_20260727`. Verified: 2 DELETE policies on `flag_comments`.
+  Closes the RLS half of the Apple 1.2 comment-moderation gap.
+- **2026-07-27 — applied C-9(i) (A4-1 status-history view grant fix), verified, rollback in hand.**
+  Ledger `a4_1_status_history_view_grant_fix_20260727`. Verified: exactly the named columns granted to
+  `authenticated`; **`user_id` absent from both grants**, so Jordan privacy condition #1 is preserved by
+  the grant itself. `anon` gets nothing.
+- **2026-07-27 — applied C-11 (consolidated `auth_rls_initplan` rewrite), verified, rollback in hand.**
+  Ledger `rls_initplan_consolidated_20260727`. 10 policies rewrapped. Verified with a **corrected**
+  query (see §J3-4): bare-call count 11 → 1, policy counts unchanged (push_tokens 4,
+  notification_preferences 3, flag_comments 4, flag_status_history 3), none lost or duplicated. Live
+  advisor `auth_rls_initplan` list is now exactly one entry.
+- **2026-07-27 — applied W1 (Fork 5 dispute counter), verified, rollback in hand.**
+  Ledger `fork5_w1_dispute_counter_20260727`. Verified: both columns exist, RPC granted to
+  `authenticated` only (`anon`/`public` revoked), reset trigger + function present. The resulting
+  advisor WARN (authenticated can call a DEFINER RPC) is W1's stated design, not a regression.
+
+### NOT applied — C-5 (SR-007 anon flag throttle). Sky's decision: SKIP.
+
+**04b §A1-4 / SR-007 is FALSIFIED.** The finding was tagged `[repo-inferred]` and never checked
+against live. `public.flags` carries **three** BEFORE INSERT rate-limit triggers, not one — including
+`enforce_global_anon_rate_limit` → `check_global_anon_rate_limit()`, a repo-less, un-versioned
+**global anon cap at 100/hour** that is functionally the artifact C-5 proposed to build (same shape,
+same 1h window, same P0001 pause). Anonymous reporting was never uncapped server-side.
+
+Applying C-5 would have added a second cap at 60/h; the tighter wins, so the true effect would have
+been a silent tightening of the live ceiling 100 → 60 — not what the artifact claims, and not what
+Sky consented to. Sky's rider had explicitly reasoned about "superseding the old client-only
+decision"; that supersession had already happened, unversioned, by persons unknown.
+
+Both un-versioned throttles banked verbatim in commit `bfc1f66` so they finally exist in version
+control. **Open for Phase 3:** triggers 1 and 2 are redundant duplicates (both 20/24h per user, one
+keyed on `NEW.user_id`, one on `auth.uid()`); deduplicating is a schema change and out of scope for a
+Sky-triggered slate. Note before choosing which to drop: the `NEW.user_id` one also caps
+service-role/dashboard inserts; the `auth.uid()` one does not.
+
+## §J3 Judgment calls made during the Phase-3 prep apply (all reversible)
+
+- **J3-1** Applied via `apply_migration` rather than raw `execute_sql`, so every change carries a named
+  ledger row. The SQL itself is unedited. Rationale: this session found two live objects changed with
+  no ledger trace; applying this slate unversioned would have repeated the exact failure being guarded
+  against.
+- **J3-2** Three drift-capture snapshots were banked as committed migrations **before** their fixes ran
+  (C-2 `40433e0`; C-5 + Fork-2/OA `ad09a24`; C-10 `bfc1f66`), at Sky's direction, so each rollback
+  points at a versioned file rather than at hand-written text in a chat transcript. Two of the four
+  captured objects showed **no drift**; C-5's showed real drift, which is what stopped it.
+- **J3-3** `flags_user_scoped` was **not** touched, though it is now the single remaining bare
+  `auth.uid()` policy and its body is known (`user_id = auth.uid()`, ALL, owner-scoped — the same read
+  that produced the RLS pre-check PASS). C-11 excludes it by name (§F-1). Rewrapping it is a
+  one-line perf fix and a clean Phase-3 candidate, but it is outside every artifact Sky approved.
+- **J3-4** 04b §C-11's own VERIFY regex is **unreliable and was not used as the gate**. Its
+  `(^|[^.(])auth\.(uid|email)\(\)` both false-positives on already-wrapped calls (`( SELECT auth.uid()
+  AS uid)` — the preceding char is a space, which the class accepts) and false-negatives on bare calls
+  written as `(auth.uid() = user_id)` (preceded by `(`, which the class excludes — this is why all four
+  `push_tokens` policies were invisible to it). Verification used a corrected form that strips the
+  wrapped spelling before matching. Anyone re-running §C-11's verify as printed will get a wrong answer.
+- **J3-5** 04b §A4-2's "two webhook triggers ⇒ double push notifications" is **falsified** — exactly one
+  webhook trigger exists on `public.flags`, and there is no dashboard `supabase_functions.http_request`
+  trigger, so SR-018's "literal secret in `pg_trigger.tgargs`" has no live object on this table. A4-2's
+  "two `updated_at` triggers" is **confirmed** and harmless (identical bodies). Discovered incidentally
+  by the C-5 pre-state read; effectively runs 04b §E probe 4.
+
+---
+
+## §SKY-3b Job 2 — DISPUTE_ENABLED flip (2026-07-27)
+
+- **2026-07-27 — flipped `DISPUTE_ENABLED` to `true`, Sky-triggered, post-slate. Commit `4cb3c37`.**
+  Two lines as the artifact's own header specified: the constant in `src/lib/disputes.ts`, and the guard
+  test in `src/lib/__tests__/disputes.test.ts`. The guard was **inverted, not deleted** (Sky's call): it is
+  a tripwire for constant-vs-migration divergence in EITHER direction, and its comment now says so and
+  names the rollback path. The file header — which asserted "THIS FEATURE IS OFF … NOT applied" — was
+  corrected in the same commit; shipping a comment that contradicts the constant directly beneath it is the
+  same defect class as the stale Sentry claim removed in `b7a8398`.
+
+- **GATE RESULT: tsc ✅ 0 errors · jest ✅ 167 suites / 2310 passed / 0 failed / 84 todo · eslint ⚠ NOT RUN.**
+  jest is **byte-identical to the Phase-2 baseline** in HANDOFF (167 / 2310 / 0 / 84), measured across all
+  eight shards. Zero failures anywhere.
+
+  **eslint could not be run, and this is an environment limit, not a code result.** `node_modules` carries
+  `@unrs/resolver-binding-darwin-arm64` (correct for Sky's Mac), but agent shell access executes in the
+  Cowork **Linux VM** (`linux-arm64`), so `eslint-import-resolver-typescript`'s native binding fails to
+  load and eslint aborts before linting. **Sky should run `npm run lint` locally to close this** — the
+  79-warning baseline is expected to hold. Evidence the flip cannot plausibly break it: `eslint.config.js`
+  declares no `max-len` and no `no-unnecessary-condition`; `prettier --check` reports the only two
+  offending lines in the touched test file are **pre-existing** (the 42883/42501 mock calls, untouched by
+  this commit); and the change is a boolean literal plus comments.
+
+- **⚠ HONEST SCOPE OF THE FLIP: it changes no runtime behaviour today.** A repo-wide search finds **zero**
+  consumers of `DISPUTE_ENABLED`, `DISPUTE_THRESHOLD` or `requestFlagDispute` outside `disputes.ts` and its
+  own test. No screen, component or hook imports from `disputes`. The "client half" banked in `7343b0c` is
+  the library only — it was never wired to UI. The flip makes the constant honest against live migration
+  state; it does **not** surface a dispute affordance to users. B-1(b) is exactly as open as `07 §4` says.
+
+- **RPC proven live end-to-end (read-only).** `increment_dispute_request` was called with a UUID matching
+  no flag: returned `0` as designed, zero rows written (verified after: 18 flags, 0 non-zero
+  `dispute_requests`). This is the only end-to-end proof that exists — see the backlog item below.
+
+## §SKY-3c Job 3 — B-1 control wording (2026-07-27)
+
+- **B-1 control label: "Flag as wrong"** — Sky's word, recorded verbatim.
+
+- **Scope confirmation Sky required, answered from source: this control is ACCURACY-ONLY.** W1 increments
+  `flags.dispute_requests`; its migration header calls it "a light signal of doubt that does NOT flip a
+  flag's status", and the RPC is scoped `status in ('open','verified')`. There is no reason field, no
+  category, no reporter identity, no admin queue, and it **cannot target comments at all**.
+
+  **It is NOT the Apple 1.2(b) abuse / objectionable-content path, and that path still needs its own entry
+  point.** `07_PHASE2_REPORT.md §4` records 1.2(b) as "not addressed" and states outright: *"Any report
+  that closes B-1 on the strength of W1 is wrong."* C-8 (applied today) closes the **DB half** of comment
+  takedown — an admin can now delete an abusive comment through the role model — but no user-facing abuse
+  report control exists on flags or comments. **B-1 remains BLOCKING-OPEN.**
+
+- **Correction, on the record:** "Hide" was offered as a candidate label in this session. That was an
+  agent error, caught by Sky. `hiddenContent.ts` is the **1.2(c) block/hide mechanism** — a separate
+  feature with its own affordance — not an alternate wording for the 1.2(b) report control. The two
+  requirements are distinct and must not be collapsed into one control.
+
+## §SKY-3d Job 4 — D-B6 (2026-07-27) · ⛔ BLOCKING GATE, PENDING-BUILD
+
+**Status: UNVERIFIED. Route: TestFlight (Sky's pick).**
+
+⛔ **This is a blocking gate. Phase 3 may NOT be marked complete, and `shipready/2-blockers-dismissal` may
+NOT be merged to `main`, until Sky signs off the on-device check below.** No agent can see her phone, and
+the check is meaningless without a build that CONTAINS the Phase-2 R-6 fix (commit `9235e3b`).
+
+**Step 1 — cut the build (from the repo root, on the branch):**
+
+```
+git checkout shipready/2-blockers-dismissal
+npm run deploy:testflight
+```
+
+That is `eas build --platform ios --profile testflight --non-interactive` followed by
+`eas submit --platform ios --profile production --non-interactive`. Both halves were repaired in `40cccf1`
+(R-12) — before that fix the script chained an internal-distribution profile that ASC cannot accept, so do
+**not** substitute `build:preview`. The `testflight` profile is `distribution: store`, Release config,
+`autoIncrement: true`.
+
+**Step 2 — the 60-second check, on the device, on that build:**
+
+1. Open **Help**. Look at the **top of the sheet**: is the **✕ close button fully visible on screen, and
+   does tapping it actually close the sheet?**
+2. Open **About**. Same two questions.
+3. Increase text size and repeat both: **Settings → Accessibility → Display & Text Size → Larger Text →**
+   turn on **Larger Accessibility Sizes** and drag the slider to the **largest (AX5)** setting. Reopen Help
+   and About.
+
+**What "failing" looks like:** the ✕ is cut off above the top edge of the sheet, or is on screen but
+unreachable / does nothing when tapped. On touch there is no scrim-tap fallback, so a clipped ✕ means the
+sheet **cannot be dismissed at all**.
+
+**Verdict:**
+- **PASS** (✕ visible and tappable in both sheets, at both text sizes) → **R-6 stays closed.** Record it here.
+- **CLIP** (either sheet, either text size) → **R-6 upgrades from RECOMMENDED to BLOCKING.** Tell Phase 3
+  immediately; it becomes a submission blocker, not a polish item.
+
+*Why this can't be automated: `07 §1` measured the fix on the web export (About ✕ −65 → 97, Help −65 → 97,
+wrapper exactly 90% of 812). Web is a proxy. The native binary is the App Store artifact, and Dynamic Type
+at AX5 is a device-only condition.*
+
+## §SKY-3e Backlog raised 2026-07-27 (not actioned this session)
+
+1. **No end-to-end test for the dispute path.** `disputes.test.ts` mocks the Supabase client
+   (`jest.mock('../supabase')`), so all six behavioural tests pass identically whether
+   `increment_dispute_request` exists, works, or is broken. They cover the F38 error discipline only. The
+   fork-discipline test re-reads a constant. Neither proves the RPC works. *(Sky raised this.)*
+2. **`any` cast in `requestFlagDispute`.** Now that `increment_dispute_request` is typed in `database.ts`,
+   the cast and its `eslint-disable` can retire. Deliberately deferred so type errors it surfaces don't mix
+   into this batch.
+3. **`flags_user_scoped`** is the last policy with a bare `auth.uid()`. C-11 excludes it by name (§F-1);
+   its body is now known and benign (`user_id = auth.uid()`, owner-scoped). One-line perf fix.
+4. **Duplicate per-user rate-limit triggers** on `public.flags` — see §SKY-3's C-5 entry.
+5. **eslint cannot run from an agent shell** on this project (darwin binding vs Linux VM). Any future gate
+   claiming "eslint green" from an agent session is claiming something it did not observe.
+6. **`prettier --check` fails on `disputes.test.ts`** for two pre-existing lines (the 42883 / 42501 mock
+   calls exceed printWidth 100). Untouched deliberately — out of scope for a Sky-triggered slate.
