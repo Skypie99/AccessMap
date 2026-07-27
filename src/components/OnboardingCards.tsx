@@ -276,7 +276,15 @@ export default function OnboardingCards({ onDone }: Props) {
 
   return (
     <Modal aria-label="Welcome to AccessMap" visible animationType={reduceMotion ? 'none' : 'fade'} onRequestClose={onDone} presentationStyle="fullScreen">
-      <View style={styles.screen} accessibilityViewIsModal importantForAccessibility="yes">
+      <View
+        style={styles.screen}
+        accessibilityViewIsModal
+        importantForAccessibility="yes"
+        // G1: onDone is correct here. Unlike OnboardingModal this file has no
+        // handleSkip and no analytics — its visible Skip calls onDone
+        // directly, so there is no side effect to preserve.
+        onAccessibilityEscape={onDone}
+      >
         {/* Full-screen gradient */}
         <LinearGradient
           colors={['#070b18', '#0c1628', '#0f2040']}

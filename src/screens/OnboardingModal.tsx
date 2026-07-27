@@ -147,7 +147,15 @@ export default function OnboardingModal({ visible, onDone }: Props) {
     >
       {/* accessibilityViewIsModal prevents VoiceOver from focusing elements
           behind this full-screen modal. WCAG 2.4.3 (Focus Order). */}
-      <View style={styles.screen} accessibilityViewIsModal>
+      <View
+        style={styles.screen}
+        accessibilityViewIsModal
+        // G1: routes to handleSkip, NOT a raw close. handleSkip fires
+        // trackEvent('onboarding_skipped') before onDone, so a raw close would
+        // silently under-count skips and corrupt the funnel — the one place in
+        // this pass where the obvious handler is the wrong one.
+        onAccessibilityEscape={handleSkip}
+      >
         <View style={[styles.topBar, { paddingTop: Math.max(insets.top, spacing.lg) }]}>
           <Pressable
             onPress={handleSkip}
