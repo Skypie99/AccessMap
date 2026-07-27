@@ -23,6 +23,8 @@ import {
   reportFailedBody,
   reportCommentA11yLabel,
   hideCommentA11yLabel,
+  COMMENT_HIDDEN_ANNOUNCEMENT,
+  HIDE_FAILED_TITLE,
 } from '../copy';
 
 /** An ISO string `seconds` in the past relative to real now. */
@@ -129,6 +131,25 @@ describe('B-1 moderation copy', () => {
     }
   });
 
+  it('the 1.2(c) strings stay a PERSONAL filter — never a takedown claim (§SKY-3h)', () => {
+    // Hide is device-local (AsyncStorage). Any word implying the comment went
+    // away for other people would be a moderation verdict this control cannot
+    // deliver — and Sky's §SKY-3c correction was specifically about not letting
+    // Hide and Report bleed into each other's meaning.
+    for (const s of [HIDE_CONTROL_LABEL, COMMENT_HIDDEN_ANNOUNCEMENT, HIDE_FAILED_TITLE]) {
+      expect(s).not.toMatch(/remov|delet|taken down|ban|moderat|report/i);
+    }
+    // And the announcement says WHOSE view changed, so "hidden" cannot be heard
+    // as "hidden from everyone".
+    expect(COMMENT_HIDDEN_ANNOUNCEMENT).toMatch(/this device/i);
+  });
+
+  it('the hide failure title admits failure without inventing a next step', () => {
+    expect(HIDE_FAILED_TITLE.length).toBeGreaterThan(0);
+    expect(HIDE_FAILED_TITLE).not.toMatch(/\d+\s*(hour|day|business|week)/i);
+    expect(HIDE_FAILED_TITLE).not.toMatch(/try again|retry|we will|we'll/i);
+  });
+
   it('carries no report-category taxonomy — that list is Sky\'s copy (05 §3 ⑯)', () => {
     const src = fs.readFileSync(path.join(__dirname, '..', 'copy.ts'), 'utf8');
     // Named in the fence, so named here. The words may appear in prose about
@@ -154,6 +175,8 @@ describe('B-1 copy carries the PROPOSED marker (the honesty fence, mechanised)',
     'reportFailedBody',
     'reportCommentA11yLabel',
     'hideCommentA11yLabel',
+    'COMMENT_HIDDEN_ANNOUNCEMENT',
+    'HIDE_FAILED_TITLE',
   ];
 
   /**

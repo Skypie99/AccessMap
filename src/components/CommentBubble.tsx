@@ -5,7 +5,12 @@ import { X } from 'lucide-react-native';
 import { useColor } from '@/theme/ThemeContext';
 import { radius, font, spacing } from '@/theme';
 import { relativeTime } from '@/lib/relativeTime';
-import { REPORT_CONTROL_LABEL, reportCommentA11yLabel } from '@/lib/copy';
+import {
+  HIDE_CONTROL_LABEL,
+  hideCommentA11yLabel,
+  REPORT_CONTROL_LABEL,
+  reportCommentA11yLabel,
+} from '@/lib/copy';
 
 interface CommentBubbleProps {
   author: string;
@@ -22,6 +27,17 @@ interface CommentBubbleProps {
    * enforces the same rule a second time so the two can never disagree.
    */
   onReport?: () => void;
+  /**
+   * When provided, an Apple 1.2(c) Hide affordance is shown on OTHER people's
+   * bubbles — the same rows as Report, and for the same reason: hiding your own
+   * comment is not a thing you would want (Delete is your affordance there),
+   * and 1.2(c) exists so a reader can stop seeing somebody ELSE's content.
+   *
+   * It is a PERSONAL, device-local filter, not a takedown: the caller writes to
+   * `hiddenContent.ts` (AsyncStorage) and nothing about this control may imply
+   * the comment went away for anyone else.
+   */
+  onHide?: () => void;
 }
 
 export function CommentBubble({
@@ -31,6 +47,7 @@ export function CommentBubble({
   isOwn,
   onDelete,
   onReport,
+  onHide,
 }: CommentBubbleProps) {
   const color = useColor();
   const timeLabel = relativeTime(createdAt);
@@ -45,7 +62,7 @@ export function CommentBubble({
         borderBottomLeftRadius: radius.xs,
       };
 
-  // ── THE COMPOSITE-LABEL LAW (WCAG 4.1.2), re-derived for a second action ──
+  // ── THE COMPOSITE-LABEL LAW (WCAG 4.1.2), re-derived for a THIRD action ──
   //
   // `accessible={true}` on the row collapses every descendant into ONE
   // VoiceOver node — including any child Pressable, which then cannot be
@@ -53,19 +70,28 @@ export function CommentBubble({
   // renders no child Pressable. For a bubble with no actions the composite
   // label is still the right pattern: one clean read, no orphan nodes.
   //
-  // This used to be spelled `!onDelete`, which was correct only while delete
-  // was the only action AND the only reason a Pressable existed. With a second
-  // action that shorthand is wrong in both directions:
-  //   · a reportable bubble would stay composite → Report unreachable (the
-  //     exact 4.1.2 defect the original fix was written to prevent);
-  //   · a non-own bubble handed an onDelete would go non-composite with no
-  //     button to show for it.
-  // So the flag is now derived from the SAME two expressions that gate the
-  // buttons. There is nothing to keep in sync, because it is the same fact
-  // stated once: composite ⇔ no child Pressable rendered.
+  // This was once spelled `!onDelete`, which was correct only while delete was
+  // the only action AND the only reason a Pressable existed; the Report work
+  // replaced it with a derivation over the two gates. That derivation is why
+  // adding Hide is a one-line change instead of a re-audit: the flag is not a
+  // restatement of the rule, it IS the rule — composite ⇔ no child Pressable
+  // rendered — so a new action extends it by construction and cannot drift out
+  // of sync with the buttons it is supposed to describe.
+  //
+  // Get this wrong in either direction and the failure is silent: a hideable
+  // bubble left composite draws a perfect Hide button that VoiceOver cannot
+  // reach, and a bubble that goes non-composite with no button to show for it
+  // loses its one clean read for nothing.
   const showDelete = isOwn && !!onDelete;
   const showReport = !isOwn && !!onReport;
-  const useCompositeLabel = !showDelete && !showReport;
+  const showHide = !isOwn && !!onHide;
+  const useCompositeLabel = !showDelete && !showReport && !showHide;
+
+  // The footer exists for EITHER action, so the timestamp's layout branch is
+  // keyed on the footer, never on one of its occupants. Spelling this
+  // `showReport` (as it was when Report was alone down there) would drop the
+  // timestamp below a Hide-only bubble.
+  const showFooter = showReport || showHide;
 
   // The non-composite text label. It must branch on `isOwn`, NOT on which
   // action is present: Report ships on OTHER people's comments, where "Your
@@ -84,7 +110,7 @@ export function CommentBubble({
       variant="mono"
       style={[
         styles.time,
-        showReport && styles.timeInFooter,
+        showFooter && styles.timeInFooter,
         { color: isOwn ? color.textOnBrand : color.textSubtle },
       ]}
       accessibilityElementsHidden
@@ -176,36 +202,71 @@ export function CommentBubble({
           why every own bubble (showReport can never be true on one) renders
           byte-identically.
         */}
-        {showReport ? (
+        {showFooter ? (
           <View style={styles.footerRow}>
             {/*
-              THE APPLE 1.2(b) REPORT CONTROL, per comment.
+              THE TWO MODERATION CONTROLS, per comment. They are grouped so the
+              timestamp keeps the bubble's right edge it has always had rather
+              than being spread apart from them by the row's space-between.
 
-              DELIBERATELY NO accessibilityHint. Every hint that would actually
-              help here ("we'll take this down", "a moderator will review it")
-              is a moderation promise, and authoring one is not this file's to
-              write. A missing hint is not a WCAG failure — the accessible NAME
-              carries the meaning, and because a thread shows many identical
-              "Report" buttons that name is author-qualified via copy.ts rather
-              than left as a bare, ambiguous verb.
+              DELIBERATELY NO accessibilityHint on either. Every hint that would
+              actually help here ("we'll take this down", "a moderator will
+              review it", "this removes it for everyone") is a moderation
+              promise, and authoring one is not this file's to write. A missing
+              hint is not a WCAG failure — the accessible NAME carries the
+              meaning, and because a thread shows many buttons whose visible
+              text is the same word, each name is author-qualified via copy.ts
+              rather than left as a bare, ambiguous verb.
 
               TOUCH TARGET: the deleteBtn recipe, verbatim — padding 6/8 plus
               hitSlop 8, and explicitly NO minHeight:44 (this file records that
               minHeight inflated every bubble with a phantom header). Effective
-              target ≈ 12pt label + 16 padding + 16 slop ≈ 44+ tall, and far
-              wider than 44 across the word "Report" (WCAG 2.5.8).
+              target ≈ 12pt label + 16 padding + 16 slop ≈ 44+ tall, and wider
+              than 44 across either word (WCAG 2.5.8). The group's `gap` is what
+              keeps the two slop regions from overlapping — see footerActions.
             */}
-            <Pressable
-              onPress={onReport}
-              hitSlop={8}
-              style={({ pressed }) => [styles.reportBtn, pressed && styles.reportBtnPressed]}
-              accessibilityRole="button"
-              accessibilityLabel={reportCommentA11yLabel(author)}
-            >
-              <AppText variant="label" style={[styles.reportBtnText, { color: color.textMuted }]}>
-                {REPORT_CONTROL_LABEL}
-              </AppText>
-            </Pressable>
+            <View style={styles.footerActions}>
+              {showReport && (
+                <Pressable
+                  onPress={onReport}
+                  hitSlop={8}
+                  style={({ pressed }) => [styles.footerBtn, pressed && styles.footerBtnPressed]}
+                  accessibilityRole="button"
+                  accessibilityLabel={reportCommentA11yLabel(author)}
+                >
+                  <AppText
+                    variant="label"
+                    style={[styles.footerBtnText, { color: color.textMuted }]}
+                  >
+                    {REPORT_CONTROL_LABEL}
+                  </AppText>
+                </Pressable>
+              )}
+              {/*
+                THE APPLE 1.2(c) HIDE CONTROL. Treated as Report's exact peer —
+                same ink, same size, same target recipe — because they ARE peers
+                on this row and inventing a visual difference between them would
+                be tuning by eye, which this programme forbids. What separates
+                them is the word, which is Sky's (§SKY-3c: the controls are
+                distinct and must not be collapsed), not the styling.
+              */}
+              {showHide && (
+                <Pressable
+                  onPress={onHide}
+                  hitSlop={8}
+                  style={({ pressed }) => [styles.footerBtn, pressed && styles.footerBtnPressed]}
+                  accessibilityRole="button"
+                  accessibilityLabel={hideCommentA11yLabel(author)}
+                >
+                  <AppText
+                    variant="label"
+                    style={[styles.footerBtnText, { color: color.textMuted }]}
+                  >
+                    {HIDE_CONTROL_LABEL}
+                  </AppText>
+                </Pressable>
+              )}
+            </View>
             {timeNode}
           </View>
         ) : (
@@ -247,22 +308,38 @@ const styles = StyleSheet.create({
     fontSize: font.size.caption,
     alignSelf: 'flex-end',
   },
-  // The Report footer. Report sits at the bubble's left edge and the timestamp
-  // keeps the right edge it has always had, so adding the control moves no
-  // existing pixel sideways — the bubble only grows downward by the control's
-  // own height. `flexWrap` is the large-dynamic-type escape: at 3x the two
-  // items stack instead of crushing the 44pt target.
+  // The moderation footer. The actions sit at the bubble's left edge and the
+  // timestamp keeps the right edge it has always had, so adding controls moves
+  // no existing pixel sideways — the bubble only grows downward by the row's
+  // own height. `flexWrap` is the large-dynamic-type escape: at 3x the items
+  // stack instead of crushing the 44pt target.
   //
-  // TREATMENT AWAITS SKY (mockup gate). Whether a per-comment report should be
-  // a quiet text button in a footer, an icon, or something else is a taste
-  // call, and so is which side it sits on. This is the recessive, most
-  // conventional reading of it — not a final answer.
+  // TREATMENT AWAITS SKY (mockup gate). Whether per-comment moderation should
+  // be quiet text buttons in a footer, icons, or something else is a taste
+  // call, and so is which side they sit on and in which order. This is the
+  // recessive, most conventional reading of it — not a final answer.
   footerRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     flexWrap: 'wrap',
     gap: spacing.sm,
+  },
+  // The action group, so the row's space-between separates ACTIONS from the
+  // timestamp rather than spreading Report, Hide and the timestamp evenly
+  // across the bubble.
+  //
+  // `gap: spacing.lg` (16) is a correctness constraint, not a taste one. Each
+  // button carries hitSlop 8 on every side, so any gap below 16 makes the two
+  // slop regions OVERLAP and the boundary between "report this" and "hide
+  // this" becomes ambiguous to a shaky or imprecise tap. 16 is the exact width
+  // at which they meet and stop. (WCAG 2.5.8 would be satisfied by less; the
+  // consequence of a mis-tap here is what sets the floor.)
+  footerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: spacing.lg,
   },
   // `styles.time` pins itself to the bubble's right edge with alignSelf
   // 'flex-end'. Inside a ROW that same property means "bottom", which would
@@ -271,16 +348,23 @@ const styles = StyleSheet.create({
   timeInFooter: {
     alignSelf: 'center',
   },
+  // ONE dialect for BOTH footer controls — shared rather than duplicated, so
+  // Report and Hide cannot drift into two treatments through a later edit to
+  // only one of them.
+  //
   // Copies deleteBtn's target recipe exactly (padding 6/8 + hitSlop 8, no
-  // minHeight). No fill and no border: this is a text button, and the pressed
-  // state is the same opacity dim its sibling uses rather than a new fill.
-  reportBtn: {
+  // minHeight). No fill and no border: these are text buttons, and the pressed
+  // state is the same opacity dim their deleteBtn sibling uses rather than a
+  // new fill. (BP11's fill-swap conversion enumerated four FlagDetailModal
+  // styles and did not reach this file; matching the sibling three lines below
+  // keeps one dialect per file, and diverging here would create two.)
+  footerBtn: {
     paddingHorizontal: 6,
     paddingVertical: 8,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  reportBtnPressed: {
+  footerBtnPressed: {
     opacity: 0.5,
   },
   // color.textMuted on color.surfaceNeutral — 5.07:1 light / 5.49:1 dark,
@@ -290,7 +374,10 @@ const styles = StyleSheet.create({
   // neutral fill, and textMuted is the token that already means "secondary ink
   // on a solid surface". Sized with the byline (xs) so it reads as bubble
   // chrome rather than as a second voice competing with the comment.
-  reportBtnText: {
+  //
+  // Hide introduces NO new ink/fill pair — it reuses this already-banked one,
+  // which is why 1.2(c) needed no second arbiter run.
+  footerBtnText: {
     fontSize: font.size.xs,
     fontWeight: font.weight.semibold,
   },

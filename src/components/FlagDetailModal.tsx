@@ -45,6 +45,7 @@ import {
   type FlagContentPatch,
 } from '@/lib/flags';
 import { hasRequestedReopen, recordReopenRequest } from '@/lib/reopenRequests';
+import { filterHidden, hideContent, loadHidden } from '@/lib/hiddenContent';
 import { severityA11y, statusA11y } from '@/lib/a11yText';
 import { isDisabilityTag, isSeasonalTag, isValidTag, tagLabel } from '@/lib/contextTags';
 import { addFlagPhoto, listFlagPhotos } from '@/lib/photos';
@@ -56,7 +57,7 @@ import PhotoGallery, { type GalleryPhoto } from './PhotoGallery';
 import StatusHistoryModal from './StatusHistoryModal';
 import ReportContentModal from './ReportContentModal';
 import type { ReportTarget } from '@/lib/reports';
-import { REPORT_CONTROL_LABEL } from '@/lib/copy';
+import { COMMENT_HIDDEN_ANNOUNCEMENT, HIDE_FAILED_TITLE, REPORT_CONTROL_LABEL } from '@/lib/copy';
 import { StatusBadge } from './StatusBadge';
 import { CommentBubble } from './CommentBubble';
 import { a11yToggle, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
@@ -119,6 +120,17 @@ export default function FlagDetailModal({
   // Cleared on close and on flag swap by the same two effects the history modal
   // uses, for the same reason.
   const [reportTarget, setReportTarget] = useState<ReportTarget | null>(null);
+
+  // Apple 1.2(c) — the device-local hide list, scoped to COMMENTS this phase
+  // (§SKY-3h), so only the comment bucket is ever read here.
+  //
+  // NOT cleared when the modal closes or the flag swaps, unlike the two sheets
+  // above. Those hold per-flag state; this list is DEVICE-wide, so the value
+  // from the last read is already the right answer for the next flag. Clearing
+  // it would blank the filter for the frames before the async read lands and
+  // FLASH a comment the reader has already told us they never want to see —
+  // which is the exact promise `hiddenContent.ts` refuses to break.
+  const [hiddenComments, setHiddenComments] = useState<string[]>([]);
 
   // Reopen request flow — F10 (Riley). Only shown when status === 'resolved'
   // and the current user is NOT the reporter. Tapping opens an inline form;
@@ -251,6 +263,58 @@ export default function FlagDetailModal({
       cancelled = true;
     };
   }, [visible, shownFlag, user]);
+
+  // Read the hide list once per flag open. Not per render and not per comment:
+  // `filterHidden` is pure and synchronous precisely so the ids are loaded once
+  // and the filtering costs nothing on the render path.
+  //
+  // No catch and no user-visible failure state: `loadHidden` never rejects — it
+  // warns and answers "nothing hidden", which is its documented policy of
+  // failing toward showing MORE rather than silently swallowing content nobody
+  // asked to lose. Signed-out readers get the list too; a personal filter has
+  // nothing to do with having an account.
+  // The id is lifted to a local so the dependency array can be EXHAUSTIVE. The
+  // photos effect above spells the same idea as `[visible, shownFlag?.id]` and
+  // pays for it with a react-hooks/exhaustive-deps warning; copying that would
+  // have added an 80th warning to a repo whose gate is exactly 79. Same
+  // once-per-flag behaviour, no suppression, no new lint debt.
+  const shownFlagId = shownFlag?.id;
+  useEffect(() => {
+    if (!visible || !shownFlagId) return;
+    let cancelled = false;
+    (async () => {
+      const hidden = await loadHidden();
+      if (!cancelled) setHiddenComments(hidden.comment);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [visible, shownFlagId]);
+
+  /**
+   * Apple 1.2(c) — hide one comment, for this reader, on this device.
+   *
+   * `hideContent` THROWS on a write failure, deliberately: a hide that fails
+   * silently has quietly ignored somebody who just said "never show me this
+   * again", which is the worst outcome this feature has. So the failure is
+   * surfaced with `notify` (Alert.alert is a silent no-op on web and this is a
+   * message the user MUST see), and the local list only advances after the
+   * write actually lands — the same ordering `handleToggleWatch` uses above,
+   * which is what makes a rollback unnecessary rather than forgotten.
+   */
+  const handleHideComment = async (commentId: string) => {
+    try {
+      await hideContent('comment', commentId);
+    } catch (e) {
+      notify(HIDE_FAILED_TITLE, errorMessage(e));
+      return;
+    }
+    setHiddenComments((prev) => (prev.includes(commentId) ? prev : [...prev, commentId]));
+    // WCAG 4.1.3 — the bubble vanishes silently otherwise. The delete path in
+    // this same thread announces its removal for exactly this reason; hide
+    // makes a bubble disappear the same way and owes the same announcement.
+    AccessibilityInfo.announceForAccessibility(COMMENT_HIDDEN_ANNOUNCEMENT);
+  };
 
   const handleToggleWatch = async () => {
     if (!user || !shownFlag || watched === null || watchSaving) return;
@@ -1399,8 +1463,22 @@ export default function FlagDetailModal({
                         </Pressable>
                       </View>
                     ) : null}
+                    {/*
+                      Apple 1.2(c): the hide list is applied HERE and nowhere
+                      else. Every branch above still tests the unfiltered
+                      `comments` on purpose —
+                        · the loading and error branches are about the FETCH, and
+                          a personal filter is not a fetch result;
+                        · the "No comments yet — share what you know." empty state
+                          would be a LIE if the reader had simply hidden them all.
+                          There ARE comments; they chose not to see them. Falling
+                          through to an empty list says nothing false, and saying
+                          something true about it ("you've hidden 3") is new copy
+                          plus an unhide affordance, which is Sky's call and a
+                          separate work item.
+                    */}
                     <View style={styles.commentsList} accessibilityRole="list">
-                      {comments.map((c) => (
+                      {filterHidden(comments, hiddenComments, (c) => c.id).map((c) => (
                         <CommentBubble
                           key={c.id}
                           author={c.display_name ?? 'Anonymous'}
@@ -1466,6 +1544,27 @@ export default function FlagDetailModal({
                                     // comment is gone before Sky reads it.
                                     flagId: shownFlag.id,
                                   });
+                                }
+                          }
+                          // Apple 1.2(c) — Hide, on the SAME rows as Report and
+                          // gated by the SAME strict predicate, for the same
+                          // two reasons: hiding your own comment is pointless
+                          // when Delete is right there, and 1.2(c) exists so a
+                          // reader can stop seeing somebody ELSE's content.
+                          //
+                          // An orphaned comment (SR-117: `user_id` is nullable
+                          // live) is hideable for the same reason it stays
+                          // reportable — `===` keeps null from reading as
+                          // ownership, so a guest gets the reader's affordances
+                          // rather than the author's.
+                          //
+                          // Guest-visible: the list is device-local
+                          // AsyncStorage, so there is no account to need.
+                          onHide={
+                            c.user_id === user?.id
+                              ? undefined
+                              : () => {
+                                  void handleHideComment(c.id);
                                 }
                           }
                         />

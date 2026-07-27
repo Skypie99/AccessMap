@@ -176,3 +176,28 @@ export function reportCommentA11yLabel(author: string): string {
 export function hideCommentA11yLabel(author: string): string {
   return `${HIDE_CONTROL_LABEL} comment by ${author}`;
 }
+
+/**
+ * WCAG 4.1.3 status message, announced when a comment disappears because the
+ * reader hid it. The delete path in the same thread already announces its
+ * removal — the bubble vanishes silently otherwise — and Hide makes a bubble
+ * vanish in exactly the same way, so staying silent here would be a knowingly
+ * introduced regression against a rule that thread already states out loud.
+ *
+ * "on this device" is load-bearing, not padding: 1.2(c) is a PERSONAL filter
+ * and `hiddenContent.ts` stores it in AsyncStorage. A bare "Comment hidden"
+ * could be heard as a takedown, which is the one thing this control must never
+ * imply. AGENT-PROPOSED wording.
+ * PROPOSED (B-1/1.2(c), S-8) — Sky's final wording lands in DECISIONS §A / BP16.
+ */
+export const COMMENT_HIDDEN_ANNOUNCEMENT = 'Comment hidden on this device';
+
+/**
+ * Title shown when a hide could not be saved. `hideContent` THROWS on a write
+ * failure by design — a hide that fails silently has quietly ignored somebody
+ * who just said "never show me this again" — so the caller has to say so out
+ * loud. Shaped after `REPORT_FAILED_TITLE`, and it promises nothing about what
+ * happens next because nothing happened at all. AGENT-PROPOSED wording.
+ * PROPOSED (B-1/1.2(c), S-8) — Sky's final wording lands in DECISIONS §A / BP16.
+ */
+export const HIDE_FAILED_TITLE = "Couldn't hide comment";

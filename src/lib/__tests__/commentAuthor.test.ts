@@ -107,9 +107,13 @@ describe('SR-117 — the call sites compare strictly', () => {
   it('FlagDetailModal decides comment ownership with === and never ==', () => {
     const src = read('components/FlagDetailModal.tsx');
 
-    // Both call sites (isOwn, and the delete gate) spelled strictly.
+    // Every call site spelled strictly. It started as two (isOwn + the delete
+    // gate); the B-1 moderation work added Report and then Hide, and each new
+    // affordance re-decides ownership at its own prop. The floor rises with
+    // them on purpose — a refactor that hoists three of the four into one
+    // loose comparison should fail here rather than pass on a stale minimum.
     const strict = src.match(/c\.user_id === user\?\.id/g) ?? [];
-    expect(strict.length).toBeGreaterThanOrEqual(2);
+    expect(strict.length).toBeGreaterThanOrEqual(4);
 
     // No loose comparison, and no default that would collapse null and
     // undefined into the same value before comparing.
