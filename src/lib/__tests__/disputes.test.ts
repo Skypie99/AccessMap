@@ -54,14 +54,24 @@ describe('requestFlagDispute', () => {
   });
 });
 
-describe('fork discipline — the feature stays off until Sky applies the migration', () => {
-  it('DISPUTE_ENABLED is false', () => {
-    // Verified read-only against the live DB on 2026-07-26: no
-    // dispute_requests column, no increment_dispute_request function. Flipping
-    // this without applying
-    // supabase/migrations/2026-07-16_fork5_dispute_counter_PROPOSED.sql ships
-    // an affordance that throws on every press.
-    expect(DISPUTE_ENABLED).toBe(false);
+describe('fork discipline — the flag must match live migration state', () => {
+  it('DISPUTE_ENABLED is true', () => {
+    // WHAT THIS GUARD IS FOR: DISPUTE_ENABLED must match the live migration
+    // state, and this test is the tripwire if either side moves without the
+    // other. It is not a preference about whether the feature should be on.
+    //
+    // Applied 2026-07-27 in the supervised Phase-3 prep slate, ledger
+    // `fork5_w1_dispute_counter_20260727`. Verified live at apply time:
+    // flags.dispute_requests + flags.dispute_requests_reset_at exist,
+    // increment_dispute_request(uuid) exists granted to `authenticated` only,
+    // on_flag_dispute_reset trigger present.
+    //
+    // If the migration is ever rolled back (rollback block is at the foot of
+    // supabase/migrations/2026-07-16_fork5_dispute_counter_PROPOSED.sql), flip
+    // the constant back in the SAME commit — otherwise the client ships an
+    // affordance that throws on every press, which is what the OFF-state
+    // version of this guard existed to prevent.
+    expect(DISPUTE_ENABLED).toBe(true);
   });
 
   it('the threshold matches the migration comment (additive signal at 2)', () => {

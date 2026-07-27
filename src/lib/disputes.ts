@@ -11,15 +11,16 @@
  * authenticated users may call the RPC.
  *
  * ─────────────────────────────────────────────────────────────────────────
- * THIS FEATURE IS OFF. The migration is banked but NOT applied — verified
- * read-only against the live database on 2026-07-26: `public.flags` has no
- * `dispute_requests` column and no `increment_dispute_request` function.
- * Fork discipline: an agent writes the artifact, Sky applies it.
+ * THIS FEATURE IS ON as of 2026-07-27. Sky applied the migration in the
+ * supervised Phase-3 prep slate — ledger `fork5_w1_dispute_counter_20260727`
+ * — and triggered the flip below in the same session. Verified live at apply
+ * time: `public.flags` carries `dispute_requests` + `dispute_requests_reset_at`,
+ * `increment_dispute_request(uuid)` exists and is granted to `authenticated`
+ * only, and the `on_flag_dispute_reset` trigger is in place.
  *
- * To turn it on: apply
- * `supabase/migrations/2026-07-16_fork5_dispute_counter_PROPOSED.sql`, then
- * flip DISPUTE_ENABLED below. A guard test asserts it is `false`, so that flip
- * is a deliberate two-line change that cannot happen by accident.
+ * The guard test now asserts DISPUTE_ENABLED is `true`. It is a tripwire, not
+ * a preference: this constant must match live migration state, and the test
+ * fires if either side moves without the other.
  * ─────────────────────────────────────────────────────────────────────────
  */
 import { supabase } from './supabase';
@@ -27,12 +28,13 @@ import { supabase } from './supabase';
 /**
  * Master gate for the dispute affordance.
  *
- * A capability probe would be the more elegant shape, but it is the wrong one
- * here: `dispute_requests` does not exist, so adding it to the flag select
- * would make PostgREST 42703 the WHOLE flag fetch and take the map down with
- * it. An explicit constant fails safe and costs one line to retire.
+ * A capability probe would be the more elegant shape, but it was the wrong one
+ * while the column was absent: adding `dispute_requests` to the flag select
+ * would have made PostgREST 42703 the WHOLE flag fetch and taken the map down
+ * with it. The explicit constant failed safe through the fork window; the
+ * column now exists, so the hazard that motivated it is gone.
  */
-export const DISPUTE_ENABLED = false;
+export const DISPUTE_ENABLED = true;
 
 /** The threshold at which a flag wears the additive `Disputed` treatment. */
 export const DISPUTE_THRESHOLD = 2;
