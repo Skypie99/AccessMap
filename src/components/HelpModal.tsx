@@ -215,6 +215,9 @@ const makeStyles = (color: ColorTheme) =>
       paddingTop: spacing.lg,
       paddingBottom: spacing.sm,
       maxHeight: '90%',
+      // G6/SR-099: shrink into the wrapper's cap. Without this the card sizes
+      // to content and pushes its own header off-screen (see cardWrap).
+      flexShrink: 1,
       // The bulk variant owns the surface; overflow:hidden clips it to the
       // rounded top (the up-shadow moves to cardWrap — GlassSurface contract).
       overflow: 'hidden',
@@ -222,6 +225,17 @@ const makeStyles = (color: ColorTheme) =>
     // Bulk-glass up-shadow on the outer wrapper (an overflow:hidden view clips
     // its own shadow). Mode tint identical to FeedbackModal/AboutScreen.
     cardWrap: {
+      // G6/SR-099 — THE CAP LIVES HERE, not on the card. A percentage
+      // maxHeight resolves against the parent's *definite* height; this
+      // wrapper is content-sized, so the card's own `maxHeight:'90%'` never
+      // resolved and the card grew unbounded. With `justifyContent:'flex-end'`
+      // on the backdrop that pins the bottom and lifts the 44pt close X clean
+      // off the top of the viewport (measured: Help y=-53, About y=-65) — and
+      // since the backdrop is a plain View with no scrim-tap, touch web was
+      // left with NO pointer path to dismiss at all. The backdrop is `flex:1`,
+      // so the cap resolves correctly here.
+      maxHeight: '90%',
+      flexShrink: 1,
       borderTopLeftRadius: radius.xl,
       borderTopRightRadius: radius.xl,
       ...(color.scheme === 'dark'

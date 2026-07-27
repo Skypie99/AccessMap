@@ -284,6 +284,8 @@ const makeStyles = (color: ColorTheme) =>
       paddingTop: spacing.lg,
       paddingBottom: spacing.sm,
       maxHeight: '90%',
+      // G6/SR-099: shrink into cardWrap's cap (see that block).
+      flexShrink: 1,
       // The bulk variant owns the surface; overflow:hidden clips it to the
       // rounded top (the up-shadow moves to cardWrap — GlassSurface contract).
       overflow: 'hidden',
@@ -291,6 +293,14 @@ const makeStyles = (color: ColorTheme) =>
     // Bulk-glass up-shadow on the outer wrapper (an overflow:hidden view clips
     // its own shadow). Mode tint identical to FeedbackModal/AboutScreen.
     cardWrap: {
+      // G6/SR-099 — THE CAP LIVES HERE, not on the card. Latent twin of the
+      // live About/Help overflow: a percentage maxHeight resolves against the
+      // parent's *definite* height, and this wrapper is content-sized, so the
+      // card's own cap never resolved. The backdrop is `flex:1`, so it does
+      // resolve here. This surface is the most exposed of the latent pair —
+      // its list is a FlatList whose length is user data, not fixed copy.
+      maxHeight: '90%',
+      flexShrink: 1,
       borderTopLeftRadius: radius.xl,
       borderTopRightRadius: radius.xl,
       ...(color.scheme === 'dark'

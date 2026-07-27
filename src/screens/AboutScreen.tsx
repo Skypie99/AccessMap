@@ -163,12 +163,22 @@ const makeStyles = (color: ColorTheme) =>
       paddingBottom: spacing.xl,
       gap: spacing.md,
       maxHeight: '90%',
+      // G6/SR-099: shrink into cardShadow's cap (see that block).
+      flexShrink: 1,
     },
     // Bottom-sheet up-shadow on the OUTER wrapper (the one sanctioned do/don't #2
     // deviation — the card's overflow:'hidden' would clip it). Negative height
     // casts the shadow UP off the sheet's top edge. Dark keeps the single
     // sanctioned Deep Field dark shadow (#000@0.35); light uses shadowTint@0.12.
     cardShadow: {
+      // G6/SR-099 — THE CAP LIVES HERE, not on the card. A percentage
+      // maxHeight resolves against the parent's *definite* height; this
+      // wrapper is content-sized, so the card's own `maxHeight:'90%'` never
+      // resolved. The card grew unbounded, `justifyContent:'flex-end'` pinned
+      // its bottom, and the 44pt close X ended up above the viewport
+      // (measured: About y=-65). The backdrop is `flex:1`, so it resolves here.
+      maxHeight: '90%',
+      flexShrink: 1,
       borderTopLeftRadius: radius.xl,
       borderTopRightRadius: radius.xl,
       ...(color.scheme === 'dark'

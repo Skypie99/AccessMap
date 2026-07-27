@@ -177,7 +177,7 @@ export default function FeedbackModal({ visible, onClose }: Props) {
             as AddressSearchModal (G9). */}
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          style={{ width: '100%' }}
+          style={styles.kav}
         >
           <View style={styles.cardWrap}>
           <GlassSurface variant="bulk" borderRadius={0} style={styles.card}>
@@ -365,12 +365,29 @@ const makeStyles = (color: ColorTheme) =>
       paddingBottom: spacing.xl,
       gap: spacing.sm,
       maxHeight: '90%',
+      // G6/SR-099: shrink into cardWrap's cap (see that block).
+      flexShrink: 1,
     },
     // Bottom-sheet up-shadow on the OUTER wrapper — identical to AboutScreen
     // (the two sheets are siblings). Negative height casts it UP off the top
     // edge. Dark keeps the one sanctioned Deep Field dark shadow (#000@0.35);
     // light uses shadowTint@0.12. (do/don't #2 deviation — card overflow clips it.)
+    // G6/SR-099 — THE CAP LIVES HERE. This surface has one more layer than its
+    // siblings: backdrop → KAV → cardWrap → card. A percentage maxHeight only
+    // resolves against a parent with a *definite* height, and both the KAV and
+    // cardWrap are content-sized — so the card's own `maxHeight:'90%'` never
+    // resolved and the card could grow unbounded, exactly as About/Help do
+    // live (X measured at y=-65 / y=-53). Only the KAV's parent (the `flex:1`
+    // backdrop) is definite, so the cap must sit on the KAV; cardWrap and card
+    // just need permission to shrink into it. Latent rather than live here
+    // only because the feedback form is short.
+    kav: {
+      width: '100%',
+      maxHeight: '90%',
+      flexShrink: 1,
+    },
     cardWrap: {
+      flexShrink: 1,
       borderTopLeftRadius: radius.xl,
       borderTopRightRadius: radius.xl,
       ...(color.scheme === 'dark'

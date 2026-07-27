@@ -160,13 +160,25 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: radius.xl,
     borderTopRightRadius: radius.xl,
     paddingBottom: spacing.sm,
+    // Resolves on the NON-glass path (the card is a direct child of the
+    // `flex:1` backdrop there). On the glass path the real cap is cardShadow's
+    // — see G6/SR-099 below — and flexShrink is what lets the card obey it.
     maxHeight: '90%',
+    flexShrink: 1,
   },
   // Glass path only: clip the bulk material to the rounded top.
   cardGlass: { overflow: 'hidden' },
   // Glass path only: the up-shadow the clipped card can't cast itself. Mode
   // tint + opacity applied inline (see the render). Matches FeedbackModal.
   cardShadow: {
+    // G6/SR-099 — THE CAP LIVES HERE on the glass path. The primitive carries
+    // the same recipe as the four hand-rolled sheets (its own comment above
+    // says so), so it carried the same latent bug: a percentage maxHeight
+    // resolves only against a parent with a *definite* height, and this
+    // wrapper is content-sized, so the card's cap never resolved. Fixing the
+    // primitive covers both consumers and every future adopter.
+    maxHeight: '90%',
+    flexShrink: 1,
     borderTopLeftRadius: radius.xl,
     borderTopRightRadius: radius.xl,
     shadowRadius: 14,
