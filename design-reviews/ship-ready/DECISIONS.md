@@ -288,3 +288,58 @@ at AX5 is a device-only condition.*
    claiming "eslint green" from an agent session is claiming something it did not observe.
 6. **`prettier --check` fails on `disputes.test.ts`** for two pre-existing lines (the 42883 / 42501 mock
    calls exceed printWidth 100). Untouched deliberately — out of scope for a Sky-triggered slate.
+
+---
+
+## §SKY-3f B-1 abuse leg (Apple 1.2(b)) — Phase 3 GREEN-LIT (2026-07-27)
+
+**Sky's decision, recorded verbatim:**
+
+> B-1 abuse leg (1.2(b)): Phase 3 is green-lit to design + build the MINIMAL
+> abuse-report path — a visible "Report" action on flags and comments that
+> captures a reason and routes through the existing feedback pipeline
+> (verify-first; prefer zero new schema; any data half surfaced as a
+> Sky-applied artifact, never auto-applied). Distinct from "Flag as wrong"
+> (accuracy/W1) and from Hide (1.2(c)). Mockup-gate any visual judgment;
+> Fable-optional per the routing clause.
+
+**The three controls are distinct and must not be collapsed. This is now the
+governing statement for all three:**
+
+| Control | Requirement | Mechanism | State |
+|---|---|---|---|
+| **"Flag as wrong"** | — (product accuracy) | W1 `increment_dispute_request` — doubt counter on flags, no reason, no identity | DB applied 2026-07-27; `DISPUTE_ENABLED` true; **no UI consumer** |
+| **"Report"** | **Apple 1.2(b)** | reason-capturing abuse report on flags **and comments**, routed to the feedback pipeline | **GREEN-LIT for Phase 3 — unbuilt** |
+| **Hide** | Apple 1.2(c) | `hiddenContent.ts` client-side hide list, keyed on content id | mechanism built + tested (`bf2b36d`); visible affordance pending |
+
+**Notes for whoever picks this up in Phase 3 — verify each before relying on it:**
+
+- **The feedback pipeline Sky names already exists and already accepts anonymous
+  writes.** `public.feedback` + `feedbackStore.submitFeedback` + `FeedbackModal`
+  (global header, every screen). Its INSERT policy has no `TO` clause ⇒ role
+  `public`, so guests can submit. As of today it also carries the C-7 anon
+  throttle (`enforce_feedback_rate_limit`, 30/h global, applied this session) —
+  factor that cap into any design that routes reports through it at volume.
+- **"Prefer zero new schema" looks achievable.** `feedback` already has a
+  `category` column typed by the `feedback_category` enum
+  (`bug | idea | love | other`, confirmed live 2026-07-27) plus `body`,
+  `contact_email`, `platform`, `user_id`. A report could ride existing columns.
+  ⚠ But adding a `report` value to `feedback_category` **is** a schema change
+  (`ALTER TYPE … ADD VALUE`) and therefore a Sky-applied artifact — do not
+  auto-apply it. Encoding the report inside `body` avoids the migration
+  entirely; that trade (queryability vs. zero-schema) is a Phase-3 fork worth
+  putting to Sky explicitly rather than deciding silently.
+- **Comments are the harder half and the reason this is blocking.** `feedback`
+  has no `flag_id`/`comment_id` foreign key, so "which comment is being
+  reported" has nowhere structured to live without schema. C-8 (applied today)
+  gives an admin the *power* to delete an abusive comment; it does not give
+  anyone a way to *tell* the admin which one.
+- **Apple 1.2(b) requires acting on reports "in a timely manner", not merely
+  collecting them.** A control that writes a row nobody reads does not close
+  the requirement. Whatever ships needs a stated triage path — even a manual
+  one (Sky reads the feedback table) — recorded here.
+- **One new visible string minimum** ("Report"), so BP16 registration applies,
+  per the `RETRY_VERB` / privacy-link precedent (`J2-11`).
+- **B-1 stays BLOCKING-OPEN until this ships.** Applying W1 did not move
+  1.2(b), and `07_PHASE2_REPORT.md §4`'s statement stands: *"Any report that
+  closes B-1 on the strength of W1 is wrong."*
