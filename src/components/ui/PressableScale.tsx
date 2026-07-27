@@ -33,6 +33,7 @@ import {
   type GestureResponderEvent,
   type PressableProps,
   type StyleProp,
+  type View,
   type ViewStyle,
 } from 'react-native';
 import { motion } from '@/theme';
@@ -63,7 +64,22 @@ interface PressableScaleProps extends Omit<PressableProps, 'style'> {
   pressedTint?: string;
 }
 
-export function PressableScale({
+/**
+ * G5 — the ref is forwarded so a PressableScale can be a focus-RETURN target:
+ * `useSurfaceTrigger` needs a node handle for the control that opened a surface,
+ * so it can hand the screen-reader cursor back there on dismissal (WCAG 2.4.3).
+ *
+ * Why forward a ref instead of wrapping each trigger in a <View ref>: Android's
+ * NativeViewHierarchyOptimizer DELETES layout-only Views, so a tag taken from a
+ * wrapper could resolve to a view that no longer exists — a silent failure
+ * visible only on a device. And PressableScale IS the button (there is no
+ * wrapper View by construction, see above), so the ref must point at the real
+ * accessibility element. House precedent: ui/AppText is already a forwardRef.
+ *
+ * The inner function is NAMED on purpose — an anonymous one trips
+ * react/display-name, and this repo's lint warning count is a gate.
+ */
+export const PressableScale = React.forwardRef<View, PressableScaleProps>(function PressableScale({
   children,
   style,
   scaleTo = 0.97,
@@ -76,7 +92,7 @@ export function PressableScale({
   onHoverIn,
   onHoverOut,
   ...rest
-}: PressableScaleProps) {
+}, ref) {
   const color = useColor();
   const reducedMotion = useReducedMotion();
   const scale = useRef(new Animated.Value(1)).current;
@@ -86,6 +102,7 @@ export function PressableScale({
 
   return (
     <AnimatedPressable
+      ref={ref}
       style={[
         style,
         // Static fill-swap — no Animated node, so it survives Reduce Motion.
@@ -133,4 +150,4 @@ export function PressableScale({
       {children}
     </AnimatedPressable>
   );
-}
+});
