@@ -207,7 +207,7 @@ export default function AddressSearchModal({ visible, onClose, onSelect }: Props
         {/* WCAG 2.4.3: contain VoiceOver focus inside the sheet so it can't
             wander onto the map behind it (every other modal sets this). */}
         <View style={styles.cardWrap}>
-        <GlassSurface variant="bulk" borderRadius={0} style={styles.card} accessibilityViewIsModal>
+        <GlassSurface variant="bulk" borderRadius={0} style={styles.card} accessibilityViewIsModal onAccessibilityEscape={onClose}>
           <View style={styles.headerRow}>
             <AppText variant="heading" style={styles.title} accessibilityRole="header">
               Search by address

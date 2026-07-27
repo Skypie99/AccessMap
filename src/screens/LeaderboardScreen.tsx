@@ -280,6 +280,7 @@ export default function LeaderboardScreen({ visible, onClose }: Props) {
           forceEngineered
           style={styles.card}
           accessibilityViewIsModal
+          onAccessibilityEscape={onClose}
         >
           <View style={styles.headerRow}>
             <AppText

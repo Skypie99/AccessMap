@@ -158,6 +158,7 @@ export default function NotificationPrefsModal({
           forceEngineered
           style={[styles.card, { paddingBottom: Math.max(spacing.xxl, insets.bottom) }]}
           accessibilityViewIsModal
+          onAccessibilityEscape={onClose}
         >
           <View style={styles.headerRow}>
             <View style={styles.titleWrap}>

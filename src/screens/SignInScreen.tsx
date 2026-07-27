@@ -95,6 +95,11 @@ export default function SignInScreen({
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       accessibilityViewIsModal
+      // G1: `onClose` is undefined when this screen IS the root auth wall, so
+      // the gesture correctly does nothing there — a wall is not a dismissible
+      // surface. It only becomes escapable when presented as a modal, which is
+      // exactly when the visible "← Back" renders too.
+      onAccessibilityEscape={onClose}
     >
       <LinearGradient
         colors={['#070b18', '#0a1428', '#0c1d3a']}

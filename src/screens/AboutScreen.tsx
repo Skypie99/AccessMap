@@ -51,7 +51,7 @@ export default function AboutScreen({ visible, onClose }: Props) {
             sheet is open. Belt-and-suspenders with the Modal itself, which
             on iOS sometimes leaks focus to the parent. */}
         <View style={styles.cardShadow}>
-        <GlassSurface variant="bulk" borderRadius={0} style={styles.card} accessibilityViewIsModal>
+        <GlassSurface variant="bulk" borderRadius={0} style={styles.card} accessibilityViewIsModal onAccessibilityEscape={onClose}>
           <View style={styles.headerRow}>
             {/* T19 (F6-08): a small brand mark beside the title. Hidden from
                 screen readers — LogoMark bakes an "AccessMap" label and the

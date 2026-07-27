@@ -53,6 +53,7 @@ export default function LegendModal({ visible, onClose }: Props) {
           //  the bulk-glass material is the child so the guard is preserved.)
           onPress={() => {}}
           accessibilityViewIsModal
+          onAccessibilityEscape={onClose}
         >
         <GlassSurface variant="bulk" borderRadius={0} style={styles.card}>
           <View ref={titleRef} style={styles.headerRow} accessible accessibilityRole="header">

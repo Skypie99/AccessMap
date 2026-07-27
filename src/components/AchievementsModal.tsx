@@ -209,6 +209,7 @@ export default function AchievementsModal({ visible, onClose, achievements }: Pr
           forceEngineered
           style={[styles.card, { paddingBottom: Math.max(spacing.xl, insets.bottom) }]}
           accessibilityViewIsModal
+          onAccessibilityEscape={onClose}
         >
           <View style={styles.headerRow}>
             <View style={styles.titleWrap}>

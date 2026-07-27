@@ -289,6 +289,7 @@ export default function MyWatchedModal({ visible, onClose, onSelectFlag, onViewO
           forceEngineered
           style={[styles.sheet, { paddingBottom: Math.max(spacing.xxl + 4, insets.bottom) }]}
           accessibilityViewIsModal
+          onAccessibilityEscape={onClose}
         >
           <View style={styles.header}>
             <AppText variant="heading" style={styles.title} accessibilityRole="header">Watched Flags</AppText>

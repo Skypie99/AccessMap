@@ -89,7 +89,11 @@ export default function HowToHelpScreen({ visible, onClose }: Props) {
       onRequestClose={onClose}
       aria-label="How To Help"
     >
-      <SafeAreaView style={styles.root}>
+      <SafeAreaView
+        style={styles.root}
+        // G1: pageSheet scene — no AVM by design (see ResourcesScreen).
+        onAccessibilityEscape={onClose}
+      >
         <ScreenStage />
         {/* Header -> ONE absolute i=24 chrome pane; content scrolls beneath it.
             SafeAreaView owns the device top inset, so the pane sits at top:0

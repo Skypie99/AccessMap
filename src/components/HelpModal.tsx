@@ -110,7 +110,7 @@ export default function HelpModal({ visible, onClose }: Props) {
           backdrop itself — "no-hide-descendants" would hide the modal's
           own contents from TalkBack. Android relies on RN Modal's own
           focus trap and the elevation/z-index of the backdrop.) */}
-      <View style={styles.backdrop} accessibilityViewIsModal testID="helpModal-backdrop">
+      <View style={styles.backdrop} accessibilityViewIsModal onAccessibilityEscape={onClose} testID="helpModal-backdrop">
         <View style={styles.cardWrap}>
         <GlassSurface variant="bulk" borderRadius={0} style={styles.card}>
           <View style={styles.headerRow}>

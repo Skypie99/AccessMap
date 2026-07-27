@@ -46,7 +46,7 @@ export default function PhotoLightboxModal({ visible, photoUrl, caption, onClose
       statusBarTranslucent
     >
       <StatusBar barStyle="light-content" backgroundColor={color.backdropStrong} />
-      <View style={styles.backdrop} accessibilityViewIsModal>
+      <View style={styles.backdrop} accessibilityViewIsModal onAccessibilityEscape={onClose}>
         {/* Tap-anywhere-to-dismiss pressable layer. Hidden from the a11y
             tree so screen-reader users land on the photo first (the actual
             content) instead of a generic "Dismiss photo" hit-target. The

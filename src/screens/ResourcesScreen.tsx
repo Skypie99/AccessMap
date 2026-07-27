@@ -120,7 +120,14 @@ export default function ResourcesScreen({ visible, onClose }: Props) {
       onRequestClose={onClose}
       aria-label="Resources"
     >
-      <SafeAreaView style={styles.root}>
+      <SafeAreaView
+        style={styles.root}
+        // G1: a pageSheet is its own UIKit scene, so it correctly carries NO
+        // accessibilityViewIsModal — the scene boundary already provides
+        // containment. The escape gesture still needs a real View to land on,
+        // and this root is it.
+        onAccessibilityEscape={onClose}
+      >
         <ScreenStage />
         {/* The header is now ONE absolute i=24 chrome pane; content scrolls
             beneath it (onLayout feeds the top reserve). SafeAreaView already

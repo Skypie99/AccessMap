@@ -149,6 +149,7 @@ export default function NotificationPreferencesScreen({ visible, onClose }: Prop
           forceEngineered
           style={styles.card}
           accessibilityViewIsModal
+          onAccessibilityEscape={onClose}
         >
           {/* Header row */}
           <View style={styles.headerRow}>

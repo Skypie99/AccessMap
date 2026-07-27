@@ -166,7 +166,7 @@ function PhotoGalleryInner({ photos, onAddPhoto, maxPhotos = 5, onRemovePhoto }:
         statusBarTranslucent
       >
         <StatusBar barStyle="light-content" />
-        <View style={styles.lightboxBackdrop} accessibilityViewIsModal>
+        <View style={styles.lightboxBackdrop} accessibilityViewIsModal onAccessibilityEscape={() => setLightboxOpen(false)}>
           {/* Tap-anywhere dismiss. Hidden from a11y — the labeled close button
               below is the screen-reader dismiss path (same convention as
               PhotoLightboxModal QA Pass-2 #1). */}

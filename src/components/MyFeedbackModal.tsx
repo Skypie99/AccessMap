@@ -121,7 +121,7 @@ export default function MyFeedbackModal({ visible, onClose, refreshKey = 0 }: Pr
       {/* accessibilityViewIsModal — VoiceOver treats everything behind
           this view as inert while the modal is up. Same pattern as
           HelpModal; see that file for the longer comment. Alex P5. */}
-      <View style={styles.backdrop} accessibilityViewIsModal testID="myFeedbackModal-backdrop">
+      <View style={styles.backdrop} accessibilityViewIsModal onAccessibilityEscape={onClose} testID="myFeedbackModal-backdrop">
         <View style={styles.cardWrap}>
         <GlassSurface
           variant="bulk"

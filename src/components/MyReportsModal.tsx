@@ -272,6 +272,7 @@ export default function MyReportsModal({
           forceEngineered
           style={[styles.card, { paddingBottom: Math.max(spacing.xl, insets.bottom) }]}
           accessibilityViewIsModal
+          onAccessibilityEscape={onClose}
         >
           <View style={styles.headerRow}>
             <AppText variant="heading" style={styles.title} accessibilityRole="header">

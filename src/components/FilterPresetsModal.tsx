@@ -356,6 +356,7 @@ export default function FilterPresetsModal({ visible, onClose, onApply }: Props)
           borderRadius={0}
           style={[styles.card, { paddingBottom: Math.max(spacing.xxl, insets.bottom) }]}
           accessibilityViewIsModal
+          onAccessibilityEscape={onClose}
         >
           <View style={styles.headerRow}>
             <AppText variant="heading" style={styles.title} accessibilityRole="header">

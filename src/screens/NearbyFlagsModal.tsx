@@ -199,7 +199,7 @@ export default function NearbyFlagsModal({
           — one-breath SR labels, tab chips, 44pt controls, reset-on-close — is
           byte-identical. Material only. */}
       <GlassSurface variant="bulk" borderRadius={0} style={styles.glassFill}>
-      <SafeAreaView style={styles.screen} accessibilityViewIsModal>
+      <SafeAreaView style={styles.screen} accessibilityViewIsModal onAccessibilityEscape={onClose}>
         <View style={styles.header}>
           <AppText variant="heading" style={styles.title} accessibilityRole="header">Nearby flags</AppText>
           <Pressable
