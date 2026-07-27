@@ -201,3 +201,65 @@ export const COMMENT_HIDDEN_ANNOUNCEMENT = 'Comment hidden on this device';
  * PROPOSED (B-1/1.2(c), S-8) — Sky's final wording lands in DECISIONS §A / BP16.
  */
 export const HIDE_FAILED_TITLE = "Couldn't hide comment";
+
+/* ───────────────────────────────────────────────────────────────────────────
+ * W1 — the answers the "Flag as wrong" control gives back.
+ *
+ * `DISPUTE_CONTROL_LABEL` above is the control's word; these four are what the
+ * sheet says AFTER it is pressed. They are separated from the B-1 block on
+ * purpose: W1 is an ACCURACY signal, not moderation (§SKY-3c), and the register
+ * that follows from that is different — nothing here reviews, removes, or
+ * judges anything, it only reports whether an anonymous counter moved.
+ *
+ * THE ONE FENCE THAT BINDS THIS SET. `increment_dispute_request` returns the
+ * new count and `DISPUTE_THRESHOLD` is 2, so it is tempting to say "1 more
+ * needed" the way the reopen flow does. Nothing may say that. The threshold's
+ * documented consequence is an additive `Disputed` treatment on the flag, and
+ * that treatment IS NOT SHIPPED — `dispute_requests` is absent from `FlagRow`
+ * and from every select() in flags.ts, so no surface can read it. A countdown
+ * to a badge that does not exist is an invented promise, and it is the specific
+ * one this feature is positioned to make by accident. The count is therefore
+ * used only to tell "counted" from "discarded", and never rendered.
+ * ─────────────────────────────────────────────────────────────────────────── */
+
+/**
+ * Shown in place of the pill once the doubt is on the server. AGENT-PROPOSED
+ * wording: it states what was recorded and stops — no cadence, no threshold, no
+ * claim that anything happens to the flag, because on today's surfaces nothing
+ * visibly does. Uses Sky's own "is wrong" so the answer echoes the control.
+ * PROPOSED (W1, S-8) — Sky's final wording lands in DECISIONS §A / BP16.
+ */
+export const DISPUTE_RECORDED_MESSAGE = "Thanks — we've recorded that you think this flag is wrong.";
+
+/**
+ * Shown when this device has already spent its one vote on this flag
+ * (`disputeRequests.ts`). AGENT-PROPOSED wording, shaped after the shipped
+ * reopen equivalent ("You've already requested a reopen for this flag."). It
+ * does not mention the device: the dedup is per-device, and naming that would
+ * read as an invitation to go and vote again from another one.
+ * PROPOSED (W1, S-8) — Sky's final wording lands in DECISIONS §A / BP16.
+ */
+export const DISPUTE_ALREADY_RECORDED_MESSAGE = "You've already flagged this as wrong.";
+
+/**
+ * Shown when the RPC answers 0 — the UPDATE matched no row because the flag
+ * left `open`/`verified` while this sheet held a stale snapshot, so the vote was
+ * DISCARDED. Saying "recorded" here would be the F38 lie in a new place, which
+ * is why this branch exists at all. AGENT-PROPOSED wording, carried over from
+ * the shipped F37 reopen sentence so the two stale-snapshot paths speak one
+ * dialect.
+ * PROPOSED (W1, S-8) — Sky's final wording lands in DECISIONS §A / BP16.
+ */
+export const DISPUTE_STALE_MESSAGE =
+  'This flag changed while you had it open, so flagging it as wrong is no longer needed. Close and reopen it to see the latest.';
+
+/**
+ * Title for the alert shown when the vote did not reach the server at all —
+ * a throw, or the RPC missing from the schema cache. Shaped after
+ * `REPORT_FAILED_TITLE` / `HIDE_FAILED_TITLE`: it admits the failure and
+ * invents no next step. The BODY is not a new string — it is whatever
+ * `errorMessage` already says for that failure, so this path speaks the same
+ * words as the other ~98 catch sites in the app. AGENT-PROPOSED wording.
+ * PROPOSED (W1, S-8) — Sky's final wording lands in DECISIONS §A / BP16.
+ */
+export const DISPUTE_FAILED_TITLE = "Couldn't record that";

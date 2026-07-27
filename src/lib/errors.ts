@@ -18,7 +18,13 @@
 
 // User-facing copy for the failure shapes we can recognize. Centralized here
 // so all ~98 errorMessage() call sites pick up the friendly wording for free.
-const FEATURE_UNAVAILABLE = "That feature isn't available yet.";
+//
+// FEATURE_UNAVAILABLE is EXPORTED (W1): a few RPC wrappers translate exactly the
+// MISSING_FEATURE_CODES below into a `null` RETURN rather than a throw, so their
+// callers have a recognized failure with no error object to hand `errorMessage`.
+// Reading the shipped string from here is byte-identical reuse — the alternative
+// was authoring a second sentence for a condition this file already words.
+export const FEATURE_UNAVAILABLE = "That feature isn't available yet.";
 const ITEM_NOT_FOUND = "That item couldn't be found. It may have been deleted.";
 const NO_PERMISSION = "You don't have permission to do that.";
 const NETWORK_TROUBLE = 'Check your internet connection and try again.';

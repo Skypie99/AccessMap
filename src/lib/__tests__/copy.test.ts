@@ -25,6 +25,10 @@ import {
   hideCommentA11yLabel,
   COMMENT_HIDDEN_ANNOUNCEMENT,
   HIDE_FAILED_TITLE,
+  DISPUTE_RECORDED_MESSAGE,
+  DISPUTE_ALREADY_RECORDED_MESSAGE,
+  DISPUTE_STALE_MESSAGE,
+  DISPUTE_FAILED_TITLE,
 } from '../copy';
 
 /** An ISO string `seconds` in the past relative to real now. */
@@ -150,6 +154,39 @@ describe('B-1 moderation copy', () => {
     expect(HIDE_FAILED_TITLE).not.toMatch(/try again|retry|we will|we'll/i);
   });
 
+  it('no W1 answer counts down to a badge that is not shipped', () => {
+    // `DISPUTE_THRESHOLD` is 2 and the RPC hands back the running total, so
+    // "1 more needed" is one line away at all times. It must never be written:
+    // the threshold's documented consequence is an additive `Disputed`
+    // treatment, and NO surface renders one (`dispute_requests` is absent from
+    // FlagRow and from every select() in flags.ts). A countdown would promise
+    // an outcome the user cannot ever be shown.
+    for (const s of [
+      DISPUTE_RECORDED_MESSAGE,
+      DISPUTE_ALREADY_RECORDED_MESSAGE,
+      DISPUTE_STALE_MESSAGE,
+      DISPUTE_FAILED_TITLE,
+    ]) {
+      expect(s.length).toBeGreaterThan(0);
+      // No running tally and no countdown ("1 more", "2 people", "3 others").
+      expect(s).not.toMatch(/\d+\s*(more|other|people|person|vote|report)/i);
+      // No claim the flag now wears a mark, or that anything will happen to it.
+      expect(s).not.toMatch(/disputed|marked|under review|will be/i);
+      // No invented interval, same fence the report strings sit behind.
+      expect(s).not.toMatch(/\d+\s*(hour|day|business|week)/i);
+    }
+  });
+
+  it('the W1 answers stay distinct from the B-1 report answers (§SKY-3c)', () => {
+    // Two different controls with two different meanings must not converge on
+    // one sentence — that convergence is exactly what Sky corrected.
+    const w1 = [DISPUTE_RECORDED_MESSAGE, DISPUTE_STALE_MESSAGE, DISPUTE_FAILED_TITLE];
+    const b1 = [REPORT_SENT_BODY, REPORT_SENT_TITLE, REPORT_FAILED_TITLE];
+    for (const a of w1) expect(b1).not.toContain(a);
+    // And no W1 answer borrows the abuse register.
+    for (const s of w1) expect(s).not.toMatch(/moderat|abuse|maintainer reviews/i);
+  });
+
   it('carries no report-category taxonomy — that list is Sky\'s copy (05 §3 ⑯)', () => {
     const src = fs.readFileSync(path.join(__dirname, '..', 'copy.ts'), 'utf8');
     // Named in the fence, so named here. The words may appear in prose about
@@ -177,6 +214,10 @@ describe('B-1 copy carries the PROPOSED marker (the honesty fence, mechanised)',
     'hideCommentA11yLabel',
     'COMMENT_HIDDEN_ANNOUNCEMENT',
     'HIDE_FAILED_TITLE',
+    'DISPUTE_RECORDED_MESSAGE',
+    'DISPUTE_ALREADY_RECORDED_MESSAGE',
+    'DISPUTE_STALE_MESSAGE',
+    'DISPUTE_FAILED_TITLE',
   ];
 
   /**

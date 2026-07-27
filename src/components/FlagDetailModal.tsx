@@ -26,7 +26,7 @@ import { font, radius, severity, shadow, spacing } from '@/theme';
 import { useAuth } from '@/lib/auth';
 import { confirm, notify } from '@/lib/confirm';
 import { getDirectionsUrl } from '@/lib/directionsLink';
-import { errorMessage } from '@/lib/errors';
+import { errorMessage, FEATURE_UNAVAILABLE } from '@/lib/errors';
 import { formatFlagShareText } from '@/lib/shareFlag';
 import { webShare } from '@/lib/webShare';
 import { addWatched, loadWatched, removeWatched } from '@/lib/watchedFlags';
@@ -45,6 +45,8 @@ import {
   type FlagContentPatch,
 } from '@/lib/flags';
 import { hasRequestedReopen, recordReopenRequest } from '@/lib/reopenRequests';
+import { hasRequestedDispute, recordDisputeRequest } from '@/lib/disputeRequests';
+import { DISPUTE_ENABLED, requestFlagDispute } from '@/lib/disputes';
 import { filterHidden, hideContent, loadHidden } from '@/lib/hiddenContent';
 import { severityA11y, statusA11y } from '@/lib/a11yText';
 import { isDisabilityTag, isSeasonalTag, isValidTag, tagLabel } from '@/lib/contextTags';
@@ -57,7 +59,16 @@ import PhotoGallery, { type GalleryPhoto } from './PhotoGallery';
 import StatusHistoryModal from './StatusHistoryModal';
 import ReportContentModal from './ReportContentModal';
 import type { ReportTarget } from '@/lib/reports';
-import { COMMENT_HIDDEN_ANNOUNCEMENT, HIDE_FAILED_TITLE, REPORT_CONTROL_LABEL } from '@/lib/copy';
+import {
+  COMMENT_HIDDEN_ANNOUNCEMENT,
+  DISPUTE_ALREADY_RECORDED_MESSAGE,
+  DISPUTE_CONTROL_LABEL,
+  DISPUTE_FAILED_TITLE,
+  DISPUTE_RECORDED_MESSAGE,
+  DISPUTE_STALE_MESSAGE,
+  HIDE_FAILED_TITLE,
+  REPORT_CONTROL_LABEL,
+} from '@/lib/copy';
 import { StatusBadge } from './StatusBadge';
 import { CommentBubble } from './CommentBubble';
 import { a11yToggle, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
@@ -142,6 +153,23 @@ export default function FlagDetailModal({
   // Inline feedback message after a reopen submit (non-status-change path).
   const [reopenMessage, setReopenMessage] = useState<string | null>(null);
 
+  // W1 — the "flag as wrong" doubt signal. It sits HERE, beside reopen, and its
+  // pill sits in the TRIAGE row beside Verify / Resolved / Reject, because it is
+  // an ACCURACY judgement about the report. It is not the abuse path and must
+  // never be presented as a peer of Report (§SKY-3c — Sky corrected an agent for
+  // collapsing the two, and the correction is on the record).
+  const [disputeBusy, setDisputeBusy] = useState(false);
+  // The inline answer that REPLACES the pill once the user has spoken — same
+  // shape as the reopen flow above, with one addition: the message is TAGGED
+  // with the flag it is about. A dispute in flight when the user swaps flags
+  // would otherwise resolve and print its answer over the NEXT flag's sheet,
+  // asserting something about a report the user never touched. Tagging makes
+  // that impossible by construction rather than by a race the reset effect
+  // usually wins.
+  const [disputeMessage, setDisputeMessage] = useState<{ flagId: string; text: string } | null>(
+    null,
+  );
+
   // Cache the last flag so the slide-out animation still has content to render
   // after the parent clears `flag` on close. Without this the card briefly
   // turns blank as it animates away.
@@ -207,6 +235,7 @@ export default function FlagDetailModal({
       setReopenMessage(null);
       setCommentText('');
       setCommentSubmitting(false);
+      setDisputeMessage(null);
     }
   }, [visible]);
   useEffect(() => {
@@ -215,6 +244,7 @@ export default function FlagDetailModal({
     setReopenMessage(null);
     setCommentText('');
     setCommentSubmitting(false);
+    setDisputeMessage(null);
   }, [flag?.id]);
 
   // Record a "view" the first time this modal becomes visible with a flag
@@ -451,6 +481,24 @@ export default function FlagDetailModal({
   const canVerify = status === 'open';
   const canResolve = status === 'open' || status === 'verified';
   const canReject = status === 'open' || status === 'verified';
+  // W1 — every clause is load-bearing, and three of them are dead-control
+  // prevention (SR-093), not preference:
+  //   DISPUTE_ENABLED  the constant tracks live migration state; a UI that
+  //                    ignored it would throw on every press if it rolled back.
+  //   user             `increment_dispute_request` is granted to `authenticated`
+  //                    ONLY (the W2 anon grant is explicitly gated in the
+  //                    migration header), so a guest pill is a guaranteed 42501.
+  //   open | verified  the RPC's UPDATE is scoped to those two statuses and
+  //                    returns 0 otherwise — a resolved/rejected flag offers a
+  //                    button whose every press is discarded.
+  // `!isOwn` is the only judgement call: doubting your own report is what the
+  // owner's Delete / edit affordances are already for.
+  const canDispute =
+    DISPUTE_ENABLED && !!user && !isOwn && (status === 'open' || status === 'verified');
+  // The pill's answer, but only if it belongs to the flag on screen (see the
+  // tagging note on `disputeMessage`). Null means "the pill is still the thing
+  // to show" — for a fresh flag as much as for one never disputed.
+  const disputeNotice = disputeMessage?.flagId === shownFlag.id ? disputeMessage.text : null;
   const formattedDate = new Date(shownFlag.created_at).toLocaleString(undefined, {
     dateStyle: 'medium',
     timeStyle: 'short',
@@ -814,6 +862,88 @@ export default function FlagDetailModal({
       }
     } finally {
       setReopenBusy(false);
+    }
+  };
+
+  // W1 — record that this user thinks the flag is wrong.
+  //
+  // ⚠ LINE COMMENTS, NOT A DOC BLOCK, AND NOT BY PREFERENCE. Line 377 of this
+  // file sets the web file picker's MIME filter, and that string's last two
+  // characters are a slash followed by a star. Several source-scanning guards
+  // (the dismissal standard among them) strip comments with a regex that does
+  // not know about string literals, so that pair opens a comment they never
+  // close — harmless ONLY while no closing star-slash follows it anywhere in
+  // this file. A doc block here supplies one and silently blanks ~500 lines
+  // from those scans, taking the `<Modal visible={false}>` null-stub with it.
+  // Verified twice, not theorised: the first draft of this handler used a doc
+  // block and the dismissal guard's allow-list assertion dropped to 0 hits;
+  // the second draft fixed that but quoted the closing pair in this very note
+  // and broke it again. So: below line 377, comments stay in double-slash form
+  // AND avoid writing either two-character sequence, until the scanners learn
+  // to skip strings.
+  //
+  // A doubt counter, not a verdict: nothing here changes the flag's status, so
+  // unlike the triage buttons beside it this handler never calls
+  // `updateFlagStatus` and never closes the sheet.
+  //
+  // THE COUNT IS READ, NEVER SHOWN. `increment_dispute_request` returns the new
+  // total and it is used for exactly one thing: telling a vote that LANDED from
+  // one the server DISCARDED. It is not rendered and no message counts down to
+  // the dispute threshold, because that threshold's documented consequence —
+  // the additive `Disputed` treatment — is not shipped on any surface, so a
+  // countdown would be a promise of something the user will never see.
+  //
+  // THREE OUTCOMES ARE NOT SUCCESS, and each is spelled separately on purpose:
+  //   null  the RPC is missing from this backend's schema cache. Nothing was
+  //         counted. The reopen flow's equivalent branch answers "your request
+  //         was sent for review" — it is the one thing here NOT copied from it,
+  //         because that sentence is untrue on a vote that never left the phone.
+  //   0     the UPDATE matched no row: the flag left open/verified while this
+  //         sheet held a stale snapshot, so the server threw the vote away.
+  //   throw anything else — RLS, network, an expired JWT.
+  // Only the first path past all three records the per-device dedup. Recording
+  // it earlier would burn this device's single vote on a no-op.
+  const handleDispute = async () => {
+    if (!user || !shownFlag || disputeBusy) return;
+    // Captured, not re-read after the awaits: every answer below is a claim
+    // about THIS flag, and `shownFlag` can have moved on by the time one lands.
+    const flagId = shownFlag.id;
+    // The visible message and the WCAG 4.1.3 announcement are set together so
+    // the sheet and the screen reader can never end up saying different things.
+    // The announcement is not flag-tagged the way the message is — a spoken
+    // sentence cannot be recalled once the swap has happened, and a stale
+    // announcement is a far smaller harm than a stale visible claim.
+    const say = (text: string) => {
+      setDisputeMessage({ flagId, text });
+      AccessibilityInfo.announceForAccessibility(text);
+    };
+    setDisputeBusy(true);
+    try {
+      // Dedup FIRST — the server stores no user_id (Jordan gate), so with
+      // DISPUTE_THRESHOLD at 2 this check is the only thing stopping one person
+      // reaching the threshold alone by reopening the sheet and pressing again.
+      if (await hasRequestedDispute(user.id, flagId)) {
+        say(DISPUTE_ALREADY_RECORDED_MESSAGE);
+        return;
+      }
+      const newCount = await requestFlagDispute(flagId);
+      if (newCount === null) {
+        // `requestFlagDispute` returns null for exactly the codes `errorMessage`
+        // words as FEATURE_UNAVAILABLE, so this reuses that shipped sentence
+        // rather than authoring a second one for the same condition.
+        notify(DISPUTE_FAILED_TITLE, FEATURE_UNAVAILABLE);
+        return;
+      }
+      if (newCount === 0) {
+        say(DISPUTE_STALE_MESSAGE);
+        return;
+      }
+      await recordDisputeRequest(user.id, flagId);
+      say(DISPUTE_RECORDED_MESSAGE);
+    } catch (e) {
+      notify(DISPUTE_FAILED_TITLE, errorMessage(e));
+    } finally {
+      setDisputeBusy(false);
     }
   };
 
@@ -1615,9 +1745,22 @@ export default function FlagDetailModal({
               </View>
             </ScrollView>
 
+            {/* W1 — the doubt signal's answer. It sits ABOVE the triage row
+                rather than inside it because a sentence stretched by
+                `actionBtn`'s flexGrow into a row of 44pt pills would read as a
+                fourth, un-pressable button. Same treatment as the reopen
+                message it mirrors. */}
+            {disputeNotice !== null && (
+              <AppText variant="body" style={styles.disputeMessage}>{disputeNotice}</AppText>
+            )}
+
             {/* Render only when at least one action exists — an empty row left
-                a ~16pt dead band on resolved non-own flags (sweep minor). */}
-            {(canVerify || canResolve || canReject || isOwn) && (
+                a ~16pt dead band on resolved non-own flags (sweep minor).
+                `canDispute` is redundant TODAY (it implies canReject exactly),
+                and is listed anyway: if a later edit narrows the triage gates,
+                the pill must not vanish silently inside a row that stopped
+                rendering. */}
+            {(canVerify || canResolve || canReject || isOwn || canDispute) && (
             <View style={styles.actionRow}>
               {canVerify && (
                 <Pressable
@@ -1667,6 +1810,34 @@ export default function FlagDetailModal({
                     <ActivityIndicator color={color.text} />
                   ) : (
                     <AppText variant="label" style={styles.rejectText}>Reject</AppText>
+                  )}
+                </Pressable>
+              )}
+              {/* W1 — "Flag as wrong". THIS ROW, deliberately: a dispute is an
+                  accuracy judgement, so it belongs with Verify / Resolved /
+                  Reject and NOT beside Report in the secondary row. Putting the
+                  two together is the collapse §SKY-3c corrects.
+                  Its own `disabled` flag as well as `busy`: a status change and
+                  a doubt vote are separate in-flight operations, and neither
+                  should let the other be pressed twice.
+                  DELIBERATELY NO accessibilityHint, for the same reason Report
+                  carries none — the useful hint here ("this marks the flag as
+                  disputed") describes a visible outcome that is NOT shipped, so
+                  writing it would invent the promise. The accessible NAME is
+                  Sky's own phrase and is unique on this surface. */}
+              {canDispute && disputeNotice === null && (
+                <Pressable
+                  onPress={() => void handleDispute()}
+                  disabled={busy || disputeBusy}
+                  style={({ pressed }) => [styles.actionBtn, styles.disputeBtn, pressed && { backgroundColor: color.borderPressed }]}
+                  accessibilityRole="button"
+                  accessibilityLabel={DISPUTE_CONTROL_LABEL}
+                  {...a11yToggle({ disabled: busy || disputeBusy, busy: disputeBusy })}
+                >
+                  {disputeBusy ? (
+                    <ActivityIndicator size="small" color={color.brandText} />
+                  ) : (
+                    <AppText variant="label" style={styles.disputeBtnText}>{DISPUTE_CONTROL_LABEL}</AppText>
                   )}
                 </Pressable>
               )}
@@ -2270,5 +2441,43 @@ const makeStyles = (color: ColorTheme) =>
       color: color.textOnBrand,
       fontWeight: font.weight.bold,
       fontSize: font.size.sm,
+    },
+    // ── W1 "Flag as wrong" ───────────────────────────────────────────────────
+    // TREATMENT AWAITS SKY (mockup gate). Outlined among four filled pills is a
+    // taste call, not an engineering one: it is here because the triage row's
+    // fills read as verdicts (Verify / Resolved / Reject / Delete) and a doubt
+    // signal is not a verdict — but where exactly it should sit on that scale
+    // is Sky's to ratify.
+    //
+    // NO NEW INK/FILL PAIR, SO NO ARBITER RUN. Every value below is copied
+    // token-for-token from `reopenBtn` / `reopenMessage` a few lines up, which
+    // is the shipped precedent for the OTHER community signal on this same bulk
+    // sheet — deliberate, not laziness: two accuracy signals speaking one
+    // dialect is the point.
+    //   label + hairline  `brandText` on detailSheet   4.95:1 light / 5.42:1 dark
+    //   pressed           `brandText` on borderPressed — the same fill-swap the
+    //                     reopen pill and the outlined secondary-row trio have
+    //                     shipped with since BP11.
+    //   message ink       `inkGlassMuted` on detailSheet 6.24:1 light / 6.51:1 dark
+    // They are separate style keys rather than reuse so a future divergence
+    // (or Sky's ratification) can move one without silently moving the other.
+    disputeBtn: {
+      backgroundColor: 'transparent',
+      borderWidth: 1,
+      borderColor: color.brandText,
+    },
+    // semibold, not bold: the three verdict pills are bold, and the step down is
+    // what makes this read as subordinate to them without a second colour.
+    disputeBtnText: {
+      color: color.brandText,
+      fontWeight: font.weight.semibold,
+      fontSize: font.size.base,
+    },
+    disputeMessage: {
+      fontSize: font.size.sm,
+      color: color.inkGlassMuted,
+      lineHeight: 18,
+      fontStyle: 'italic',
+      marginTop: spacing.xs,
     },
   });
