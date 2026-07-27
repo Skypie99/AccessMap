@@ -305,6 +305,13 @@ export default function HamburgerDrawer({ open, onClose, onSignIn, onNavigate }:
         <Animated.View
           style={[styles.drawer, { transform: [{ translateX: slideAnim }] }]}
           accessibilityViewIsModal
+          // G1/SR-063 — the ONLY change this phase makes to the drawer. It
+          // rides the panel (the containment node), not <Modal>, because RN
+          // drops the prop on the modal host. `closeDrawer` is the same
+          // handler onRequestClose uses, so the exit latch, the RM same-tick
+          // snap, the sub-screen hand-off and the focus return all run exactly
+          // as they do for the X and the scrim.
+          onAccessibilityEscape={closeDrawer}
         >
           {/* Inner specular lip just inside the chrome edge (glassChromeLip).
               The panel fill IS the chrome-Lite tone (styles.drawer bg) rather
