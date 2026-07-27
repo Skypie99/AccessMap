@@ -54,6 +54,9 @@ import { getTier } from '@/lib/reputationTier';
 import type { FlagCategory, FlagRow, FlagSeverity, FlagStatus } from '@/types/database';
 import PhotoGallery, { type GalleryPhoto } from './PhotoGallery';
 import StatusHistoryModal from './StatusHistoryModal';
+import ReportContentModal from './ReportContentModal';
+import type { ReportTarget } from '@/lib/reports';
+import { REPORT_CONTROL_LABEL } from '@/lib/copy';
 import { StatusBadge } from './StatusBadge';
 import { CommentBubble } from './CommentBubble';
 import { a11yToggle, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
@@ -108,6 +111,15 @@ export default function FlagDetailModal({
   // closes or the shown flag swaps, so it never lingers over the wrong flag.
   const [historyOpen, setHistoryOpen] = useState(false);
 
+  // B-1 / Apple 1.2(b) — the abuse-report sheet, mounted as a sibling beside
+  // StatusHistoryModal (see the mount at the bottom of the render for why it is
+  // NOT in SharedModalsHost). One piece of state carries BOTH "is it open" and
+  // "about what": null = closed. That is deliberate — a separate boolean could
+  // drift out of step with the target and present the sheet over a stale id.
+  // Cleared on close and on flag swap by the same two effects the history modal
+  // uses, for the same reason.
+  const [reportTarget, setReportTarget] = useState<ReportTarget | null>(null);
+
   // Reopen request flow — F10 (Riley). Only shown when status === 'resolved'
   // and the current user is NOT the reporter. Tapping opens an inline form;
   // submitting either reopens the flag (threshold met) or shows a "N more
@@ -151,14 +163,25 @@ export default function FlagDetailModal({
     }
   }, [flag]);
 
-  // Close-on-parent-close / close-on-flag-swap protection for the history
-  // modal. Prevents it from showing entries for the previous flag after the
+  // Close-on-parent-close / close-on-flag-swap protection for the sibling
+  // sheets. Prevents them from showing entries for the previous flag after the
   // user navigates to another one.
+  //
+  // The report sheet rides the SAME two effects, and for it the stake is higher
+  // than a stale list: `reportTarget` carries the uuid the report is filed
+  // against, so a sheet left open across a flag swap would send a report about
+  // flag A while the card behind it shows flag B. Clearing the target also
+  // unpresents the sheet (visible is derived from it), which fires its own
+  // reset of the half-typed reason.
   useEffect(() => {
-    if (!visible) setHistoryOpen(false);
+    if (!visible) {
+      setHistoryOpen(false);
+      setReportTarget(null);
+    }
   }, [visible]);
   useEffect(() => {
     setHistoryOpen(false);
+    setReportTarget(null);
   }, [flag?.id]);
 
   // Reset reopen form state + the comment draft whenever the modal closes or a
@@ -1282,6 +1305,40 @@ export default function FlagDetailModal({
                 >
                   <AppText variant="label" style={styles.historyBtnText}>History</AppText>
                 </Pressable>
+                {/* B-1 / Apple 1.2(b) — the abuse-report control.
+                    GUEST-VISIBLE ON PURPOSE. The feedback INSERT policy carries
+                    no TO clause, so its role is `public` and an anonymous
+                    submit really lands; the App Review reviewer also walks this
+                    app signed out, and a report path they cannot reach is a
+                    path they will read as absent.
+                    NOT a peer of the navigation trio: View on Map / Directions
+                    / Share / History are things you DO with a flag, and this is
+                    a safety valve — so it takes the recessive muted treatment
+                    rather than their outlined blue. See the style note below.
+                    DELIBERATELY NO accessibilityHint. Every hint that would
+                    actually help here ("we'll review this", "the flag will be
+                    removed") is a moderation promise, and authoring one is
+                    outside what any agent may write. A missing hint is not a
+                    WCAG failure — the accessible NAME carries the meaning, and
+                    there is exactly one Report control on this surface, so the
+                    bare label is unambiguous within it. */}
+                <Pressable
+                  onPress={() => {
+                    // The comment composer sits further down this same sheet
+                    // and may hold focus. The report sheet slides up OVER this
+                    // one, so a keyboard left standing would cover its reason
+                    // field on first paint.
+                    Keyboard.dismiss();
+                    setReportTarget({ kind: 'flag', id: shownFlag.id });
+                  }}
+                  disabled={busy}
+                  style={({ pressed }) => [styles.actionBtn, styles.reportBtn, pressed && { backgroundColor: color.borderPressed }]}
+                  accessibilityRole="button"
+                  accessibilityLabel={REPORT_CONTROL_LABEL}
+                  {...a11yToggle({ disabled: busy })}
+                >
+                  <AppText variant="label" style={styles.reportBtnText}>{REPORT_CONTROL_LABEL}</AppText>
+                </Pressable>
               </View>
 
               {/* ── Comments ─────────────────────────────────────────── */}
@@ -1502,6 +1559,19 @@ export default function FlagDetailModal({
         flagId={shownFlag?.id ?? null}
         onClose={() => setHistoryOpen(false)}
       />
+      {/* Sibling, not SharedModalsHost. `SharedModalKey` is a payload-free
+          union — it can say "open the report sheet" but not "…about flag 9f3c"
+          — and its own JSDoc excludes per-screen-state modals by name.
+          StatusHistoryModal above is the shipped precedent for a
+          payload-carrying sheet stacked over this one, so this copies it.
+          `visible` is DERIVED from the target rather than tracked separately,
+          which is what makes "cleared target" and "closed sheet" the same
+          fact. */}
+      <ReportContentModal
+        visible={reportTarget !== null}
+        target={reportTarget}
+        onClose={() => setReportTarget(null)}
+      />
     </>
   );
 }
@@ -1719,8 +1789,11 @@ const makeStyles = (color: ColorTheme) =>
     viewMapBtnText: { color: color.brandText, fontWeight: font.weight.bold, fontSize: font.size.base },
     secondaryRow: {
       flexDirection: 'row',
-      // 4 buttons now (View on Map, Directions, Share, History) — wrap so
-      // the row stays usable on narrow screens / large text sizes.
+      // 5 buttons now (View on Map, Directions, Share, History, Report) — wrap
+      // so the row stays usable on narrow screens / large text sizes. The wrap
+      // is what lets the 5th land without squeezing the other four: actionBtn's
+      // minWidth 100 + flexGrow 1 means the row reflows to 2 lines rather than
+      // shrinking any pill below its 44pt target (WCAG 2.5.8).
       flexWrap: 'wrap',
       gap: 8,
       marginTop: 8,
@@ -1741,6 +1814,33 @@ const makeStyles = (color: ColorTheme) =>
       borderColor: color.brand,
     },
     historyBtnText: { color: color.brandText, fontWeight: font.weight.bold, fontSize: font.size.base },
+    // B-1 Report — the recessive member of the row. TREATMENT AWAITS SKY
+    // (mockup gate): a safety valve should be findable without competing with
+    // the navigation trio, and where exactly it should sit on that scale is a
+    // taste call, not an engineering one.
+    //
+    // NO NEW INK/FILL PAIR — every pair this pill uses is already banked, and
+    // both manifests were re-run to confirm (exit 0, ALL PASS):
+    //   at rest  `inkGlassMuted` on detailSheet     6.24:1 light / 6.51:1 dark
+    //   pressed  `inkGlassMuted` on borderPressed   6.84:1 light / 6.09:1 dark
+    // The first is the pair BP8/MP4 banked when this file re-inked ten sites to
+    // inkGlassMuted; the second is one of the four completeness pairs BP11
+    // added. Reused here for the label (text threshold 4.5:1) and the hairline
+    // (non-text threshold 3:1) alike. No fill at rest: the bulk sheet IS the
+    // background those numbers were measured against. The pressed dim is the
+    // BP11 fill-swap, so it stays in the one press dialect.
+    reportBtn: {
+      backgroundColor: 'transparent',
+      borderWidth: 1,
+      borderColor: color.inkGlassMuted,
+    },
+    // semibold, not bold: the trio is bold, so a step down is what makes this
+    // read as subordinate without a second colour.
+    reportBtnText: {
+      color: color.inkGlassMuted,
+      fontWeight: font.weight.semibold,
+      fontSize: font.size.base,
+    },
     // Directions sits between View on Map and Share in the secondary row.
     // Filled brand-blue (not outlined) so it reads as the primary action of
     // the trio — getting somewhere is usually what the user wants more than
