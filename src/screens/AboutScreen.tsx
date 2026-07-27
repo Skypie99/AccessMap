@@ -10,6 +10,8 @@ import LogoMark from '@/components/LogoMark';
 import { Map as MapIcon, X } from 'lucide-react-native';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { useReducedMotion } from '@/lib/accessibility';
+import { OPENS_IN_BROWSER_HINT, PRIVACY_POLICY_LINK_LABEL } from '@/lib/copy';
+import { PRIVACY_POLICY_URL, openExternalUrl } from '@/lib/links';
 
 interface Props {
   visible: boolean;
@@ -134,6 +136,22 @@ export default function AboutScreen({ visible, onClose }: Props) {
               Map tile images are cached locally on your device for up to 7 days to improve
               performance. This data is not shared with anyone and is cleared when you sign out.
             </AppText>
+
+            {/* B-2 (SR-002): the section above is a summary, not the policy.
+                5.1.1(i) wants the published policy reachable in-app. Appended
+                after the prose so none of it moves (PROTECT-11: the
+                privacy-forward trust voice is insertion-only here). */}
+            <Pressable
+              onPress={() => { void openExternalUrl(PRIVACY_POLICY_URL); }}
+              style={({ pressed }) => (pressed ? styles.linkPressed : null)}
+              accessibilityRole="link"
+              accessibilityLabel={PRIVACY_POLICY_LINK_LABEL}
+              accessibilityHint={OPENS_IN_BROWSER_HINT}
+            >
+              <AppText variant="bodyMedium" style={styles.link}>
+                {PRIVACY_POLICY_LINK_LABEL}
+              </AppText>
+            </Pressable>
           </ScrollView>
         </GlassSurface>
         </View>
@@ -235,6 +253,19 @@ const makeStyles = (color: ColorTheme) =>
       fontSize: font.size.md,
       color: color.text,
       fontWeight: font.weight.semibold,
+    },
+    // B-2: the in-app policy link. `brand` is the app's shipped link ink on a
+    // bulk sheet (same token the Home/Report CTAs use); minHeight keeps the
+    // 44pt floor without a numeric `height` (which dynamicTypeGuard bans on
+    // text-bearing styles).
+    link: {
+      color: color.brand,
+      minHeight: 44,
+      paddingTop: spacing.md,
+      textDecorationLine: 'underline',
+    },
+    linkPressed: {
+      opacity: 0.7,
     },
     sectionHeader: {
       fontSize: font.size.xs,

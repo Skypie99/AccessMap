@@ -33,6 +33,23 @@ export function offlineBannerText(cachedAt?: string | null): string {
 export const RETRY_VERB = 'Tap to retry.';
 
 /**
+ * B-2 (SR-002): the in-app privacy-policy link. Apple 5.1.1(i) requires the
+ * policy to be reachable from inside the app, not only from App Store Connect
+ * metadata — so this label ships on three surfaces (Settings, About, and
+ * beside sign-up) and they all read it from here, which makes Sky's final
+ * wording a one-line change. PROPOSED (B-2, S-8) — Sky's final wording lands
+ * in DECISIONS §A / BP16.
+ */
+export const PRIVACY_POLICY_LINK_LABEL = 'Privacy Policy';
+
+/**
+ * Hint for every external link row. Byte-identical reuse of the string already
+ * shipped on ResourcesScreen's link cards — not new copy (device-tune S-1
+ * permits byte-identical reuse of shipped strings on the fenced surfaces).
+ */
+export const OPENS_IN_BROWSER_HINT = 'Opens in your browser';
+
+/**
  * BP13 (T9, F5-05/09): single-source the read-failure banner text (provider
  * message + retry verb). Home / Map / Tasks route the SAME presentation contract
  * through this — NOT a shared component; each screen keeps its own container.

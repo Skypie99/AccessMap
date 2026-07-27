@@ -18,6 +18,8 @@ import { AppText } from '@/components/ui';
 import { signInWithEmail, signUpWithEmail } from '@/lib/supabase';
 import { a11yToggle } from '@/lib/accessibility';
 import { notify } from '@/lib/confirm';
+import { OPENS_IN_BROWSER_HINT, PRIVACY_POLICY_LINK_LABEL } from '@/lib/copy';
+import { PRIVACY_POLICY_URL, openExternalUrl } from '@/lib/links';
 import { track } from '@/lib/analytics';
 import LogoMark from '@/components/LogoMark';
 
@@ -249,6 +251,25 @@ export default function SignInScreen({
         <AppText variant="body" style={styles.footnote}>
           Your location is only used when you place a flag.{'\n'}Your email is never shown publicly.
         </AppText>
+
+        {/* B-2 (SR-002): 5.1.1(i) wants the policy reachable near account
+            creation, not only in ASC metadata. Appended BELOW the footnote so
+            both trust lines above keep their position in reading order
+            (PROTECT-11). Ink is the footnote's own arbitrated
+            rgba(255,255,255,0.55) (≈5.5:1 on #070b18) — no new ink on this
+            hardcoded-dark cover — and the underline carries the affordance so
+            it never rests on colour alone (WCAG 1.4.1). */}
+        <Pressable
+          onPress={() => { void openExternalUrl(PRIVACY_POLICY_URL); }}
+          style={({ pressed }) => [styles.policyLinkWrap, pressed && styles.policyLinkPressed]}
+          accessibilityRole="link"
+          accessibilityLabel={PRIVACY_POLICY_LINK_LABEL}
+          accessibilityHint={OPENS_IN_BROWSER_HINT}
+        >
+          <AppText variant="body" style={styles.policyLink}>
+            {PRIVACY_POLICY_LINK_LABEL}
+          </AppText>
+        </Pressable>
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -443,6 +464,20 @@ const makeStyles = (_color: ColorTheme) =>
       // WCAG 1.4.3: was 0.3 (~2.8:1). 0.55 blends to ≈#8F9197 on #070b18 → 5.5:1, AA pass.
       color: 'rgba(255,255,255,0.55)',
       textAlign: 'center',
+    },
+    policyLinkWrap: {
+      minHeight: 44,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    policyLinkPressed: { opacity: 0.7 },
+    policyLink: {
+      fontSize: font.size.xs,
+      // Same arbitrated ink as `footnote` below — reused verbatim, not a new
+      // value on this hardcoded-dark cover.
+      color: 'rgba(255,255,255,0.55)',
+      textAlign: 'center',
+      textDecorationLine: 'underline',
     },
     footnote: {
       fontSize: font.size.xs,

@@ -32,6 +32,8 @@ import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { CATEGORY_LABELS, listFlagsByUser } from '@/lib/flags';
 import { listFeedbackByUser } from '@/lib/feedbackStore';
 import { formatDataExport } from '@/lib/dataExport';
+import { OPENS_IN_BROWSER_HINT, PRIVACY_POLICY_LINK_LABEL } from '@/lib/copy';
+import { PRIVACY_POLICY_URL, openExternalUrl } from '@/lib/links';
 import type { UserRow } from '@/types/database';
 import {
   deletePushToken,
@@ -64,12 +66,19 @@ function SettingsRow({
   disabled,
   busy,
   glassLite,
+  role = 'button',
 }: {
   title: string;
-  subtitle: string;
+  // Optional so a row can ship without inventing a second line of copy — the
+  // privacy-policy link is title-only pending Sky's wording (honesty fence).
+  subtitle?: string;
   onPress: () => void;
   accessibilityHint: string;
   destructive?: boolean;
+  // Rows that leave the app announce as links, not buttons — the shipped
+  // convention on ResourcesScreen's link cards. Defaults to 'button' so every
+  // existing row is byte-unchanged.
+  role?: 'button' | 'link';
   // C-lite runtime flag threaded from the parent (rows only) — drops the row
   // BlurView for the engineered *Lite gradient when the store is in 'lite'.
   glassLite: boolean;
@@ -101,7 +110,7 @@ function SettingsRow({
       ]}
       onPress={onPress}
       disabled={disabled}
-      accessibilityRole="button"
+      accessibilityRole={role}
       accessibilityLabel={title}
       accessibilityHint={accessibilityHint}
       {...a11yToggle({ disabled: !!disabled, busy: !!busy })}
@@ -122,7 +131,9 @@ function SettingsRow({
           </AppText>
           {/* bodyMedium (>=500): secondary row text keeps textMuted but must
               carry >=500 weight on glass (the 400 face hazes). */}
-          <AppText variant="bodyMedium" style={styles.rowSubtitle}>{subtitle}</AppText>
+          {subtitle ? (
+            <AppText variant="bodyMedium" style={styles.rowSubtitle}>{subtitle}</AppText>
+          ) : null}
         </View>
         {/* Trailing affordance: a spinner while the row's handler runs, a
             decorative chevron otherwise. Both are hidden from AT (the row's
@@ -573,6 +584,18 @@ export default function SettingsScreen() {
           subtitle="Version, credits, and a short privacy summary."
           accessibilityHint="Opens the about page with version and privacy info"
           onPress={() => setAboutOpen(true)}
+        />
+
+        {/* B-2 (SR-002): Apple 5.1.1(i) requires the privacy policy to be
+            reachable from INSIDE the app, not only from App Store Connect
+            metadata. Title-only — no subtitle is invented here; the wording
+            is Sky's (PROPOSED, routed to BP16). */}
+        <SettingsRow
+          glassLite={glassLite}
+          role="link"
+          title={PRIVACY_POLICY_LINK_LABEL}
+          accessibilityHint={OPENS_IN_BROWSER_HINT}
+          onPress={() => { void openExternalUrl(PRIVACY_POLICY_URL); }}
         />
 
         <SettingsRow
