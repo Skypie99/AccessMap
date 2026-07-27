@@ -561,9 +561,19 @@ export default function MapScreen() {
   useEffect(() => {
     if (screenReaderOn && !hasAutoOpenedListRef.current) {
       hasAutoOpenedListRef.current = true;
+      // G5: arm the focus return for the ONE Nearby session every screen-reader
+      // user is guaranteed to get. This open has no press behind it, so without
+      // an explicit register() the session is never armed, restore() early-returns
+      // and dismissing the auto-opened list strands the cursor at the top of the
+      // revealed map — the exact bug G5 exists to fix, on the exact cohort it
+      // exists for. The List FAB is already mounted and is the control that
+      // reopens this sheet, so it is the correct return target.
+      nearbyTrigger.register();
       setNearbyOpen(true);
     }
-  }, [screenReaderOn]);
+    // Safe to depend on the whole trigger: useSurfaceTrigger memoizes its return
+    // object, so this does not re-run every render.
+  }, [screenReaderOn, nearbyTrigger]);
   const [filtersOpen, setFiltersOpen] = useState(false);
   // Whether the filter panel (when open) shows just its header row or all
   // sections. Persists across launches via filterPanelPrefs. Hydrated

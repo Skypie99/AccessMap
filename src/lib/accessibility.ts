@@ -1,4 +1,4 @@
-import { type Component, useCallback, useEffect, useRef, useState } from 'react';
+import { type Component, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AccessibilityInfo, type AccessibilityState, findNodeHandle, Platform } from 'react-native';
 
 /**
@@ -371,7 +371,16 @@ export function useSurfaceTrigger<T extends Component>() {
     [],
   );
 
-  return { ref, register, markHandoff, restore, release };
+  // Memoized so the returned object has a STABLE identity. Every member is
+  // already useCallback([])-stable, but a fresh object literal each render makes
+  // `[…, trigger]` re-run a consumer's effect on every render — and
+  // react-hooks/exhaustive-deps rejects depending on `trigger.register` instead.
+  // The auto-open arming in MapScreen needs exactly that dependency, so the
+  // stability belongs here rather than as a workaround at each call site.
+  return useMemo(
+    () => ({ ref, register, markHandoff, restore, release }),
+    [register, markHandoff, restore, release],
+  );
 }
 
 /**
