@@ -1429,6 +1429,45 @@ export default function FlagDetailModal({
                                 }
                               : undefined
                           }
+                          // B-1 / Apple 1.2(b) — Report, on OTHER people's
+                          // comments only. The SAME strict predicate decides
+                          // both affordances, so a row can never offer both
+                          // (see src/lib/__tests__/commentAuthor.test.ts).
+                          //
+                          // `===`, never `==`, and never with a `?? ''`
+                          // default: SR-117 made `user_id` nullable, so for a
+                          // SIGNED-OUT reader looking at a comment whose author
+                          // deleted their account, loose equality would compare
+                          // null to undefined, claim ownership, and hand out
+                          // Delete instead of Report on every orphaned row.
+                          // Strictly compared, an orphan is not yours — you get
+                          // Report, which is the correct outcome: a comment
+                          // outliving its author is still reportable.
+                          //
+                          // GUEST-VISIBLE, like the flag Report control above:
+                          // the feedback INSERT policy carries no TO clause, so
+                          // an anonymous submit really lands, and the App Review
+                          // reviewer walks this app signed out.
+                          onReport={
+                            c.user_id === user?.id
+                              ? undefined
+                              : () => {
+                                  // The composer sits just below this thread and
+                                  // may hold focus; the report sheet slides up
+                                  // over it, so a standing keyboard would cover
+                                  // its reason field on first paint.
+                                  Keyboard.dismiss();
+                                  setReportTarget({
+                                    kind: 'comment',
+                                    id: c.id,
+                                    // Load-bearing: C-8 deletes by comment id,
+                                    // but triage needs the parent flag for
+                                    // context — and the flag id survives if the
+                                    // comment is gone before Sky reads it.
+                                    flagId: shownFlag.id,
+                                  });
+                                }
+                          }
                         />
                       ))}
                     </View>

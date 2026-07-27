@@ -1,0 +1,34 @@
+# exit code: 1 (EXPECTED — DIAGNOSTIC set. The only FAILing rows are two SHIPPED pairs: the
+#   comment-bubble timestamp (color.textSubtle on color.surfaceNeutral, 4.37:1 light / 3.69:1
+#   dark). That pair predates this work item and is NOT touched by it — the non-zero exit IS
+#   the finding, banked in the same shape as g3-grabber-run.txt. Both CANDIDATE rows PASS;
+#   color.textMuted is the one that shipped on the new per-comment Report control.
+# command: node /Users/skypie/AccessMap-material-lab/2026-07-02/shared/contrast-check.mjs /Users/skypie/AccessMap/design-reviews/ship-ready/tools/shipready-comment-report-stacks.json
+# date: 2026-07-27 · SHIP-READY Phase 3 (B-1 comment row) · Opus 5 ultracode max effort
+#
+## Contrast report — SHIP-READY Phase 3 — B-1 per-comment Report ink (CommentBubble, other-person surface)
+
+Composite order: `stack[0]` painted first (nearest base) → last element topmost.
+Worst case = the base backdrop that yields the LOWEST ratio for the pair.
+
+### light
+
+| pair | surface | worst base | resulting bg | ratio | min | verdict |
+|---|---|---|---|---|---|---|
+| SHIPPED body — color.text on surfaceNeutral (`#333`) | commentBubbleOther | `#eef1f5` | `#EEF1F5` | 11.15:1 | 4.5:1 | PASS |
+| SHIPPED timestamp — color.textSubtle on surfaceNeutral (THE FINDING) (`#707070`) | commentBubbleOther | `#eef1f5` | `#EEF1F5` | 4.37:1 | 4.5:1 | **FAIL** |
+| SHIPPED byline — color.brandText on surfaceNeutral (`#0F53BE`) | commentBubbleOther | `#eef1f5` | `#EEF1F5` | 6.18:1 | 4.5:1 | PASS |
+| CANDIDATE — color.textMuted on surfaceNeutral (SHIPPED CHOICE: the Report label) (`#666`) | commentBubbleOther | `#eef1f5` | `#EEF1F5` | 5.07:1 | 4.5:1 | PASS |
+| CANDIDATE — color.inkGlassMuted on surfaceNeutral (rejected: chrome-glass ink on a solid fill) (`#414B5A`) | commentBubbleOther | `#eef1f5` | `#EEF1F5` | 7.79:1 | 4.5:1 | PASS |
+
+### dark
+
+| pair | surface | worst base | resulting bg | ratio | min | verdict |
+|---|---|---|---|---|---|---|
+| SHIPPED body — color.text on surfaceNeutral (`#ddd`) | commentBubbleOther | `#323237` | `#323237` | 9.39:1 | 4.5:1 | PASS |
+| SHIPPED timestamp — color.textSubtle on surfaceNeutral (THE FINDING) (`#8a8a8a`) | commentBubbleOther | `#323237` | `#323237` | 3.69:1 | 4.5:1 | **FAIL** |
+| SHIPPED byline — color.brandText on surfaceNeutral (`#84AEF6`) | commentBubbleOther | `#323237` | `#323237` | 5.69:1 | 4.5:1 | PASS |
+| CANDIDATE — color.textMuted on surfaceNeutral (SHIPPED CHOICE: the Report label) (`#aaa`) | commentBubbleOther | `#323237` | `#323237` | 5.49:1 | 4.5:1 | PASS |
+| CANDIDATE — color.inkGlassMuted on surfaceNeutral (rejected: chrome-glass ink on a solid fill) (`#B8BEC9`) | commentBubbleOther | `#323237` | `#323237` | 6.83:1 | 4.5:1 | PASS |
+
+**RESULT: FAIL — at least one pair below its floor.**

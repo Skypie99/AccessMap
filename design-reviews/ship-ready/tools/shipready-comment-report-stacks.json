@@ -1,0 +1,48 @@
+{
+  "name": "SHIP-READY Phase 3 — B-1 per-comment Report ink (CommentBubble, other-person surface)",
+  "_doc": [
+    "PURPOSE: choose the ink for the new per-comment Report control with the contrast script, not",
+    "  the eye (PROTECT-5). The flag Report pill reused an already-banked pair (inkGlassMuted on the",
+    "  bulk detail sheet) and needed no run; this control sits on a DIFFERENT surface, so its pair is",
+    "  new and must be arbitrated before it renders.",
+    "RUN: node /Users/skypie/AccessMap-material-lab/2026-07-02/shared/contrast-check.mjs design-reviews/ship-ready/tools/shipready-comment-report-stacks.json",
+    "SURFACE: the other-person comment bubble is color.surfaceNeutral — an OPAQUE fill (#eef1f5",
+    "  light / #323237 dark), not glass. So the stack is EMPTY and surfaceNeutral is itself the base.",
+    "  There is no worst-case backdrop to composite over: the fill is not translucent.",
+    "SHIPPED rows are the control group, declared so the chosen candidate is compared against what",
+    "  the bubble already puts on that fill — body text, timestamp, byline.",
+    "EXPECTED EXIT: 1. This is a DIAGNOSTIC set. The only FAILing rows are two SHIPPED pairs (the",
+    "  bubble timestamp, color.textSubtle on surfaceNeutral: 4.37:1 light / 3.69:1 dark). That",
+    "  failure predates this work item and is untouched by it — it is banked here as a FINDING, in",
+    "  the same shape 08_G3_GRABBER_ARBITER.md banked the shipped borderStrong rows. Both CANDIDATE",
+    "  rows pass; the one that shipped is textMuted.",
+    "MIN 4.5 THROUGHOUT: the control renders at font.size.xs (12) semibold, which is NOT WCAG large",
+    "  text (that needs 14pt bold / 18pt regular), so the normal-text floor is the honest one."
+  ],
+  "modes": {
+    "light": {
+      "surfaces": {
+        "commentBubbleOther": { "stack": [], "base": ["#eef1f5"] }
+      },
+      "pairs": [
+        { "text": "#333", "surface": "commentBubbleOther", "label": "SHIPPED body — color.text on surfaceNeutral", "min": 4.5 },
+        { "text": "#707070", "surface": "commentBubbleOther", "label": "SHIPPED timestamp — color.textSubtle on surfaceNeutral (THE FINDING)", "min": 4.5 },
+        { "text": "#0F53BE", "surface": "commentBubbleOther", "label": "SHIPPED byline — color.brandText on surfaceNeutral", "min": 4.5 },
+        { "text": "#666", "surface": "commentBubbleOther", "label": "CANDIDATE — color.textMuted on surfaceNeutral (SHIPPED CHOICE: the Report label)", "min": 4.5 },
+        { "text": "#414B5A", "surface": "commentBubbleOther", "label": "CANDIDATE — color.inkGlassMuted on surfaceNeutral (rejected: chrome-glass ink on a solid fill)", "min": 4.5 }
+      ]
+    },
+    "dark": {
+      "surfaces": {
+        "commentBubbleOther": { "stack": [], "base": ["#323237"] }
+      },
+      "pairs": [
+        { "text": "#ddd", "surface": "commentBubbleOther", "label": "SHIPPED body — color.text on surfaceNeutral", "min": 4.5 },
+        { "text": "#8a8a8a", "surface": "commentBubbleOther", "label": "SHIPPED timestamp — color.textSubtle on surfaceNeutral (THE FINDING)", "min": 4.5 },
+        { "text": "#84AEF6", "surface": "commentBubbleOther", "label": "SHIPPED byline — color.brandText on surfaceNeutral", "min": 4.5 },
+        { "text": "#aaa", "surface": "commentBubbleOther", "label": "CANDIDATE — color.textMuted on surfaceNeutral (SHIPPED CHOICE: the Report label)", "min": 4.5 },
+        { "text": "#B8BEC9", "surface": "commentBubbleOther", "label": "CANDIDATE — color.inkGlassMuted on surfaceNeutral (rejected: chrome-glass ink on a solid fill)", "min": 4.5 }
+      ]
+    }
+  }
+}
