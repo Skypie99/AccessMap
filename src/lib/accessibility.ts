@@ -1,5 +1,5 @@
-import { type Component, useEffect, useRef, useState } from 'react';
-import { AccessibilityInfo, type AccessibilityState, findNodeHandle } from 'react-native';
+import { type Component, useCallback, useEffect, useRef, useState } from 'react';
+import { AccessibilityInfo, type AccessibilityState, findNodeHandle, Platform } from 'react-native';
 
 /**
  * Spread onto a purely decorative View/Text that screen readers should
@@ -196,6 +196,121 @@ export function useReducedMotion(): boolean {
   }, []);
 
   return reduced;
+}
+
+/**
+ * G5 — the focus-return contract for a LOCAL trigger/surface pair.
+ *
+ * A screen-reader user presses "List", the nearby-flags sheet opens, they close
+ * it — and the cursor is stranded wherever the sheet used to be. This hook is
+ * the other half of `useFocusOnOpen`: that one moves the cursor INTO a surface,
+ * this one hands it BACK to the control that opened it (WCAG 2.4.3 Focus Order).
+ *
+ * Usage — the whole contract is four lines at the call site:
+ *
+ *   const nearbyTrigger = useSurfaceTrigger<View>();
+ *   <PressableScale ref={nearbyTrigger.ref}
+ *     onPress={() => { nearbyTrigger.register(); setNearbyOpen(true); }} />
+ *   <NearbyFlagsModal onDismiss={nearbyTrigger.restore}
+ *     onClose={() => { setNearbyOpen(false); nearbyTrigger.release(); }} />
+ *
+ * WHY NO CONTEXT. The hamburger needs `DrawerContext` because its trigger lives
+ * in N different headers while <HamburgerDrawer> is mounted once at the
+ * navigator — trigger and surface sit in different subtrees, so the handle has
+ * to travel through a provider. The surfaces here are LOCAL pairs: MapScreen
+ * owns both the button and the <Modal>, in the same component, so the whole
+ * contract fits in one hook with no provider. THE DRAWER DOES NOT ADOPT THIS
+ * HOOK — its Modal prop set is frozen by assertion H of
+ * src/__tests__/dismissalStandard.guard.test.ts, and its focus return already
+ * ships (see HamburgerDrawer's `presentPendingSubScreen` / `releaseDrawer`).
+ *
+ * WHY `restore` HANGS OFF onDismiss AND NOT onClose. Until the surface has
+ * actually left the screen there is nothing to hand focus back to — moving the
+ * cursor while the sheet is still presented aims it at an occluded control.
+ * onDismiss is the dismissal-COMPLETE event; onClose is only the close INTENT.
+ * RN core fires onDismiss on iOS only, so `release()` stands in for it
+ * everywhere else — the same split as the drawer's `releaseDrawer`.
+ *
+ * ON PROOF: react-native-web stubs `AccessibilityInfo.setAccessibilityFocus` to
+ * an EMPTY BODY, so this hook has no web-observable effect whatsoever. Jest can
+ * prove the call was made with the right handle and nothing more; only a device
+ * pass with VoiceOver / TalkBack can prove the cursor actually moved.
+ */
+export function useSurfaceTrigger<T extends Component>() {
+  /** Attach to the trigger control (a PressableScale, a Pressable, a Button). */
+  const ref = useRef<T>(null);
+  /** The trigger's native node handle, captured at press time. */
+  const handle = useRef<number | null>(null);
+  /** Did THIS session start with a `register()`? Gates every restore. */
+  const armed = useRef(false);
+  /** Does this close hand focus to another surface instead of back here? */
+  const handedOff = useRef(false);
+
+  /**
+   * Call inside the trigger's `onPress`, immediately before the setState that
+   * opens the surface.
+   */
+  const register = useCallback(() => {
+    // Every open starts as a plain session; a handoff opts out of it below.
+    handedOff.current = false;
+    armed.current = true;
+    // `register()` runs INSIDE the trigger's onPress, immediately before the
+    // setState that opens the surface — so anything that throws here stops the
+    // surface from opening at all. That is exactly what shipped on the drawer:
+    // rn-web's findNodeHandle THROWS ("findNodeHandle is not supported on
+    // web"), the press handler aborted, and the hamburger went INERT. Jest
+    // could not see it — react-test-renderer implements findNodeHandle just
+    // fine — a browser capture caught it.
+    //
+    // Web is skipped by design, not merely defended: the handle exists only to
+    // feed AccessibilityInfo.setAccessibilityFocus, which rn-web stubs to an
+    // empty body, so there is nothing to record. The try/catch is the standing
+    // rule behind that guard — an accessibility enhancement must never be able
+    // to break the primary action, on any platform, ever.
+    if (Platform.OS === 'web') return;
+    try {
+      handle.current = ref.current ? findNodeHandle(ref.current) : null;
+    } catch {
+      handle.current = null;
+    }
+  }, []);
+
+  /**
+   * "This close hands focus to another surface — do not yank it back." Call it
+   * on the branch that navigates onward (a map callout, a confirmation
+   * announcement) rather than returning the user to the trigger.
+   */
+  const markHandoff = useCallback(() => {
+    handedOff.current = true;
+  }, []);
+
+  /** Wire to the surface's `onDismiss` — the dismissal-complete event. */
+  const restore = useCallback(() => {
+    // The armed latch does three jobs at once. rn-web's Modal DOES fire
+    // onDismiss while RN core's is iOS-only, so on some platforms BOTH
+    // release() and onDismiss land and the second must no-op. A surface opened
+    // WITHOUT register() — a deep link, an opener that never adopted the hook —
+    // must never let a STALE handle steal focus. And a double dismissal is
+    // therefore idempotent.
+    if (!armed.current) return;
+    armed.current = false;
+    if (handedOff.current) {
+      handedOff.current = false;
+      return;
+    }
+    const node = handle.current;
+    if (node != null) AccessibilityInfo.setAccessibilityFocus(node);
+  }, []);
+
+  /** Call in the opener's `onClose`, beside the setState that closes it. */
+  const release = useCallback(() => {
+    // RN core fires a Modal's onDismiss on iOS ONLY (the inline route is gated
+    // `if (Platform.OS === 'ios')`), so everywhere else the close intent is the
+    // last event available and has to stand in for the dismissal.
+    if (Platform.OS !== 'ios') restore();
+  }, [restore]);
+
+  return { ref, register, markHandoff, restore, release };
 }
 
 /**
