@@ -30,6 +30,13 @@ interface Props {
   flags: FlagRow[];
   onClose: () => void;
   onSelectFlag: (flag: FlagRow) => void;
+  /**
+   * G5: fired when the surface has ACTUALLY left the screen (iOS onDismiss;
+   * elsewhere the opener's `release()` stands in). The opener uses it to hand
+   * the screen-reader cursor back to the control that opened this surface.
+   * Optional — an opener with no trigger to return to passes nothing.
+   */
+  onDismiss?: () => void;
 }
 
 export default function NearbyFlagsModal({
@@ -38,6 +45,7 @@ export default function NearbyFlagsModal({
   flags,
   onClose,
   onSelectFlag,
+  onDismiss,
 }: Props) {
   const color = useColor();
   const styles = makeStyles(color);
@@ -191,6 +199,7 @@ export default function NearbyFlagsModal({
       visible={visible}
       animationType={reducedMotion ? 'none' : 'slide'}
       onRequestClose={onClose}
+      onDismiss={onDismiss}
       presentationStyle="pageSheet"
       aria-label="Nearby flags"
     >

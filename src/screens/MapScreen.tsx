@@ -109,7 +109,7 @@ import {
 } from '@/hooks/useHorizontalOverflowFade';
 import { useDrawer } from '@/lib/drawerContext';
 import { useSharedModals } from '@/lib/sharedModalsContext';
-import { useScreenReader, useReducedMotion, a11yToggle } from '@/lib/accessibility';
+import { useScreenReader, useReducedMotion, a11yToggle, useSurfaceTrigger } from '@/lib/accessibility';
 import LegendModal from './LegendModal';
 import HeatmapLegend from '@/components/HeatmapLegend';
 import NearbyFlagsModal from './NearbyFlagsModal';
@@ -407,6 +407,12 @@ export default function MapScreen() {
   const [nearbyOpen, setNearbyOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [placesOpen, setPlacesOpen] = useState(false);
+  // G5 focus-return triggers. Each one owns the handle of the control that
+  // opened its surface, so closing the surface hands the screen-reader cursor
+  // back to that control instead of stranding it (WCAG 2.4.3). Local pairs
+  // only — the button and the <Modal> both live in this component, so no
+  // provider is needed (see useSurfaceTrigger's docblock).
+  const nearbyTrigger = useSurfaceTrigger<View>();
   // Saved Places list for the quick-jump chip row above the action bar.
   // Loaded when the user is known and refreshed every time the modal
   // closes (so newly-added / removed places appear without a screen
@@ -2537,11 +2543,17 @@ export default function MapScreen() {
               </PressableScale>
             </View>
             <PressableScale
+              ref={nearbyTrigger.ref}
               style={[styles.fab, styles.fabSecondary]}
               // List label is color.brand (15px bold → 4.5 floor); a neutral grey
               // dim drops it to ~4.2:1. Keep spring + haptic, skip the fill dim.
               dimOnPress={false}
-              onPress={() => setNearbyOpen(true)}
+              onPress={() => {
+                // register() captures this button's native handle BEFORE the
+                // sheet opens, so closing it can return the cursor here.
+                nearbyTrigger.register();
+                setNearbyOpen(true);
+              }}
               accessibilityRole="button"
               accessibilityLabel="Open nearby flags list"
               accessibilityHint={
@@ -2701,7 +2713,15 @@ export default function MapScreen() {
         visible={nearbyOpen}
         location={location}
         flags={flags}
-        onClose={() => setNearbyOpen(false)}
+        onClose={() => {
+          setNearbyOpen(false);
+          // RN core fires a Modal's onDismiss on iOS ONLY, so everywhere else
+          // the close INTENT is the last event available; release() stands in.
+          nearbyTrigger.release();
+        }}
+        // The dismissal-COMPLETE event — only now is the List button back on
+        // screen and safe to aim the screen-reader cursor at.
+        onDismiss={nearbyTrigger.restore}
         onSelectFlag={(flag) => {
           // S3 (L6-05): a screen-reader user gets the focus-managed detail sheet
           // — a real heading with useFocusOnOpen — instead of a silent map
@@ -2717,6 +2737,8 @@ export default function MapScreen() {
           // Sighted path — unchanged behaviour, upgraded to the shared
           // last-tap-wins scheduler (vs the old single fixed 350ms timeout):
           // rapid A→B selects can never answer with A's callout (T1/F3-04).
+          // Hands off to the map callout — do not yank the cursor back.
+          nearbyTrigger.markHandoff();
           setNearbyOpen(false);
           setFocusedFlagId(flag.id);
           // T1: calloutClear — the Nearby row select lands on an open callout.

@@ -57,7 +57,11 @@ describe('S3 source invariants — MapScreen integration hub', () => {
   });
 
   it('the Nearby onSelectFlag branches on the screen reader: SR → detail sheet, sighted → map recenter', () => {
-    const sel = around(map, 'onSelectFlag={(flag) => {', 1400);
+    // Window widened 1400→1500 for G5's markHandoff on the sighted branch (the
+    // close hands off to the map callout, so the cursor is NOT returned to the
+    // List button) — the asserted invariants themselves are unchanged, and 1500
+    // still stops at the next sibling's tag, so each string below matches once.
+    const sel = around(map, 'onSelectFlag={(flag) => {', 1500);
     expect(sel).toContain('if (screenReaderOn) {');
     expect(sel).toContain('setSelectedFlag(flag);');
     // Sighted path preserved, upgraded to the shared last-tap-wins scheduler
