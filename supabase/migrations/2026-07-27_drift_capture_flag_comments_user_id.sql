@@ -1,0 +1,108 @@
+-- ============================================================================
+-- FILE:    2026-07-27_drift_capture_flag_comments_user_id.sql
+-- BANKED BY: SHIP-READY Phase 3 (2026-07-27), closing SR-117.
+--
+-- WHAT: Captures the LIVE definition of public.flag_comments.user_id --
+--   nullability and foreign-key delete rule -- read via information_schema
+--   and pg_constraint on 2026-07-27. Running the "AS LIVE" block below
+--   reproduces exactly what is already live; it is a no-op, not a change.
+--
+-- WHY: TWO drifts, not one. The repo migration
+--   (2026-05-30_flag_comments.sql:8) declares:
+--
+--     user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE
+--
+--   Live is neither half of that:
+--
+--     user_id uuid NULL
+--     CONSTRAINT flag_comments_user_id_fkey
+--       FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+--
+--   SR-117 (raised in Phase 2, `07_PHASE2_REPORT.md §5`) reported the
+--   nullability half as repo-inferred. This session verified it against live
+--   read-only and found the DELETE RULE had drifted too -- CASCADE became
+--   SET NULL, by persons unknown, with no ledger row. That is the same
+--   un-versioned-live-change class that stopped C-5 during the Phase-3 prep
+--   window, so it is banked here the same way (J3-2).
+--
+--   The two drifts are coupled and the live pairing is SELF-CONSISTENT:
+--   ON DELETE SET NULL *requires* a nullable column, so whoever changed the
+--   delete rule had to drop NOT NULL to do it. Neither half is a bug on its
+--   own; together they mean a deleted account leaves its comments standing
+--   with a NULL author instead of deleting them. That is a product decision
+--   (keep the conversation, lose the attribution) that was never written down.
+--
+-- STATUS: Documentation / provenance artifact. NOT run through the apply
+--   pipeline. NOTHING in this file was applied by an agent.
+--
+-- READ-ONLY VERIFICATION, 2026-07-27 (this is the whole probe):
+--   select column_name, is_nullable, data_type
+--     from information_schema.columns
+--    where table_schema='public' and table_name='flag_comments';
+--   select c.conname, c.confdeltype, pg_get_constraintdef(c.oid)
+--     from pg_constraint c
+--    where c.conrelid='public.flag_comments'::regclass and c.contype='f';
+--
+--   Result: user_id | YES | uuid
+--           flag_comments_user_id_fkey | n | FOREIGN KEY (user_id)
+--             REFERENCES users(id) ON DELETE SET NULL
+--           flag_comments_flag_id_fkey | c | FOREIGN KEY (flag_id)
+--             REFERENCES flags(id) ON DELETE CASCADE   <-- matches repo
+--
+--   Project identity confirmed in the same read (public.flags carries all of
+--   lat/lng/severity/status/dispute_requests, i.e. AccessMap post-slate).
+-- ============================================================================
+
+-- ---------------------------------------------------------------------------
+-- AS LIVE (2026-07-27) -- reproduces the current state. Safe no-op.
+-- ---------------------------------------------------------------------------
+-- ALTER TABLE public.flag_comments ALTER COLUMN user_id DROP NOT NULL;
+-- ALTER TABLE public.flag_comments DROP CONSTRAINT flag_comments_user_id_fkey;
+-- ALTER TABLE public.flag_comments
+--   ADD CONSTRAINT flag_comments_user_id_fkey
+--   FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE SET NULL;
+
+-- ============================================================================
+-- THE FORK -- SKY DECIDES. STATUS: PROPOSED -- SKY-APPLIES, NEVER AUTO-RUN.
+--
+-- The code half of SR-117 ships either way: src/types/database.ts and
+-- src/lib/comments.ts now type user_id as `string | null` on the Row shapes,
+-- because that is what live returns TODAY and a type that says otherwise is a
+-- lie regardless of which option Sky picks. Insert stays `string` -- the app
+-- always supplies an author.
+--
+-- OPTION A -- RATIFY LIVE (recommended). Correct the REPO to match live and
+--   write the product decision down. Zero risk: nothing changes at runtime.
+--   Edit 2026-05-30_flag_comments.sql:8 to read
+--     user_id UUID REFERENCES public.users(id) ON DELETE SET NULL,
+--   and add a comment saying deleted accounts leave their comments in place
+--   with the author anonymised. NOTE this is ALREADY how the app behaves and
+--   is consistent with SR-010 account-deletion anonymisation -- the app
+--   anonymises rather than erases elsewhere too, so live is arguably the
+--   intended design and the repo text is what's stale.
+--   Statement: none. Repo-text change only.
+--
+-- OPTION B -- RESTORE THE REPO'S CONTRACT. Make live match the migration:
+--   deleting an account CASCADE-deletes that account's comments.
+--     ALTER TABLE public.flag_comments
+--       DROP CONSTRAINT flag_comments_user_id_fkey;
+--     ALTER TABLE public.flag_comments
+--       ADD CONSTRAINT flag_comments_user_id_fkey
+--       FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+--     -- NOT NULL can only be restored once no NULL rows exist:
+--     --   select count(*) from public.flag_comments where user_id is null;
+--     -- must return 0 first, else this statement fails.
+--     ALTER TABLE public.flag_comments ALTER COLUMN user_id SET NOT NULL;
+--
+--   ⚠ OPTION B IS DESTRUCTIVE AND JORDAN-RELEVANT. It deletes other people's
+--     conversation context when one participant leaves, and it silently
+--     changes what the delete-account dialog actually does. It also collides
+--     with the Apple 1.2 moderation work: C-8 lets an admin delete an abusive
+--     comment, and a CASCADE means a user can erase reports of their own
+--     abuse by deleting their account. Do not pick B without Jordan review.
+--     ROLLBACK for B = the "AS LIVE" block at the top of this file.
+--
+-- RECOMMENDATION: OPTION A. Live is self-consistent, matches the app's
+--   anonymise-don't-erase posture elsewhere, and B trades a real moderation
+--   guarantee for a contract nobody is relying on.
+-- ============================================================================
