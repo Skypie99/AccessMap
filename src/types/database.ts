@@ -1,3 +1,26 @@
+// ============================================================================
+// HAND-MAINTAINED. *** DO NOT OVERWRITE WITH A TYPE GENERATOR. ***
+//
+// This file imitates the shape of `supabase gen types typescript` output, but
+// it is written and maintained BY HAND. Regenerating over it is a regression,
+// not a refresh. Verified against real generator output on 2026-07-27:
+//
+//   * The generator emits `category: string`, `severity: number`,
+//     `status: string`. This file declares FlagCategory, FlagSeverity
+//     (1 | 2 | 3 | 4 | 5) and FlagStatus unions. Overwriting WIDENS three
+//     domain types to primitives and silently removes real type safety.
+//   * The generator emits no `FlagRow` / `FlagStatus` / `FlagCategory` /
+//     `FlagSeverity` top-level exports at all — and the app imports those
+//     everywhere, so a wholesale replace fails `tsc` across the codebase.
+//   * Every entry below carries hand-authored provenance (which migration
+//     introduced it, whether it is applied live, Jordan privacy conditions).
+//     A generator drops all of it.
+//
+// To reflect a schema change: hand-edit the affected entry, additively, in the
+// existing house style. If you want generator output for comparison, write it
+// to a scratch path and diff — never onto this file.
+// ============================================================================
+
 export type FlagStatus = 'open' | 'verified' | 'resolved' | 'rejected';
 
 export type FlagCategory =
@@ -302,6 +325,31 @@ export type Database = {
       // flag and returns the new count (0 if the flag isn't resolved). Stores
       // NO user_id (Jordan privacy gate). Authenticated callers only.
       increment_reopen_request: {
+        Args: {
+          p_flag_id: string;
+        };
+        Returns: number;
+      };
+      // Fork 5 / W1: Dispute ("flag as wrong") counter RPC (migration
+      // 2026-07-16_fork5_dispute_counter_PROPOSED.sql, APPLIED 2026-07-27 —
+      // ledger `fork5_w1_dispute_counter_20260727`). SECURITY DEFINER;
+      // atomically increments flags.dispute_requests for a flag whose status
+      // is 'open' or 'verified' and returns the new count (0 if the flag is
+      // not live). Stores NO user_id (Jordan privacy gate — mirrors F10).
+      // Authenticated callers only; anon EXECUTE is deliberately revoked (W2
+      // is gated — see the migration header).
+      //
+      // ACCURACY ONLY. This is a doubt signal about whether a report is
+      // correct. It is NOT the Apple 1.2(b) abuse/objectionable-content
+      // report path: no reason, no category, no reporter identity, no admin
+      // queue, and it cannot target comments. That path is still unbuilt —
+      // see 07_PHASE2_REPORT.md §4.
+      //
+      // Signature confirmed against live generator output 2026-07-27.
+      // NOTE: src/lib/disputes.ts still calls this through an `any` cast; the
+      // cast's removal is tracked separately and is what makes this entry
+      // load-bearing rather than documentary.
+      increment_dispute_request: {
         Args: {
           p_flag_id: string;
         };
