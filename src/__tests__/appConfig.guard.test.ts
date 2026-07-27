@@ -16,6 +16,78 @@ import path from 'path';
 const REPO = path.join(__dirname, '..', '..');
 const app = JSON.parse(fs.readFileSync(path.join(REPO, 'app.json'), 'utf8')).expo;
 
+describe('R-8 (SR-003/004) — a durable privacy manifest that survives prebuild', () => {
+  // `ios/` is gitignored, so the hand-written ios/AccessMap/PrivacyInfo.xcprivacy
+  // never shipped — and its NSPrivacyCollectedDataTypes was empty anyway, which
+  // contradicts what the app actually collects. Declaring the manifest in
+  // app.json is what makes it survive every EAS prebuild.
+  const pm = app.ios.privacyManifests;
+
+  it('declares no tracking', () => {
+    expect(pm.NSPrivacyTracking).toBe(false);
+    expect(pm.NSPrivacyTrackingDomains).toEqual([]);
+  });
+
+  it('declares exactly the 7 data types the app really collects', () => {
+    expect(pm.NSPrivacyCollectedDataTypes).toHaveLength(7);
+    expect(pm.NSPrivacyCollectedDataTypes.map((d: { NSPrivacyCollectedDataType: string }) => d.NSPrivacyCollectedDataType).sort())
+      .toEqual([
+        'NSPrivacyCollectedDataTypeDeviceID',
+        'NSPrivacyCollectedDataTypeEmailAddress',
+        'NSPrivacyCollectedDataTypeName',
+        'NSPrivacyCollectedDataTypeOtherUserContent',
+        'NSPrivacyCollectedDataTypePhotosorVideos',
+        'NSPrivacyCollectedDataTypePreciseLocation',
+        'NSPrivacyCollectedDataTypeUserID',
+      ]);
+  });
+
+  it('every declared type is untracked and app-functionality only', () => {
+    for (const d of pm.NSPrivacyCollectedDataTypes) {
+      expect(d.NSPrivacyCollectedDataTypeTracking).toBe(false);
+      expect(d.NSPrivacyCollectedDataTypePurposes).toEqual(['NSPrivacyCollectedDataTypePurposeAppFunctionality']);
+    }
+  });
+
+  it('declares NO Diagnostics or Usage data (nothing ships that collects it)', () => {
+    // This must stay absent until a crash reporter actually ships (R-11). The
+    // manifest and the App Store Connect nutrition labels are cross-read by
+    // reviewers, so an aspirational row here becomes an inconsistency there.
+    const names = pm.NSPrivacyCollectedDataTypes.map((d: { NSPrivacyCollectedDataType: string }) => d.NSPrivacyCollectedDataType);
+    expect(names.some((n: string) => /Diagnostic|Crash|ProductInteraction|Usage/.test(n))).toBe(false);
+  });
+});
+
+describe('R-8 (SR-005) — no boilerplate purpose strings regenerate on prebuild', () => {
+  // Expo autolinks dependency plugins even when they are not listed in
+  // `plugins[]`, so their DEFAULT purpose strings regenerate into Info.plist
+  // on every prebuild — including a microphone string for a feature this app
+  // does not have. `false` removes the key entirely (Expo plugin convention).
+  const plugins = app.plugins as unknown[];
+  const propsFor = (name: string) =>
+    (plugins.find((p) => Array.isArray(p) && p[0] === name) as [string, Record<string, unknown>])[1];
+
+  it('kills both Always-location strings', () => {
+    const loc = propsFor('expo-location');
+    expect(loc.locationAlwaysPermission).toBe(false);
+    expect(loc.locationAlwaysAndWhenInUsePermission).toBe(false);
+  });
+
+  it('kills the microphone string (there is no audio feature)', () => {
+    expect(propsFor('expo-image-picker').microphonePermission).toBe(false);
+  });
+
+  it('the kept purpose strings are byte-identical to ios.infoPlist (no new copy)', () => {
+    // The honesty fence: this commit authors no wording. Every string the
+    // overrides keep is the one already shipped.
+    const loc = propsFor('expo-location');
+    const pick = propsFor('expo-image-picker');
+    expect(loc.locationWhenInUsePermission).toBe(app.ios.infoPlist.NSLocationWhenInUseUsageDescription);
+    expect(pick.photosPermission).toBe(app.ios.infoPlist.NSPhotoLibraryUsageDescription);
+    expect(pick.cameraPermission).toBe(app.ios.infoPlist.NSCameraUsageDescription);
+  });
+});
+
 describe('B-4 (SR-011) — the app icon carries no alpha channel', () => {
   // ITMS-90717: App Store Connect rejects an icon with an alpha channel. The
   // icon shipped as PNG color type 6 (RGBA) with genuinely transparent corners
