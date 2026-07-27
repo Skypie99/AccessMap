@@ -414,6 +414,7 @@ export default function MapScreen() {
   // provider is needed (see useSurfaceTrigger's docblock).
   const nearbyTrigger = useSurfaceTrigger<View>();
   const reportTrigger = useSurfaceTrigger<View>();
+  const legendTrigger = useSurfaceTrigger<View>();
   // Saved Places list for the quick-jump chip row above the action bar.
   // Loaded when the user is known and refreshed every time the modal
   // closes (so newly-added / removed places appear without a screen
@@ -1728,7 +1729,12 @@ export default function MapScreen() {
             </PressableScale>
             <View style={styles.actionDivider} accessibilityElementsHidden />
             <PressableScale
-              onPress={() => setLegendOpen(true)}
+              ref={legendTrigger.ref}
+              onPress={() => {
+                // Captures this button's handle before the legend opens.
+                legendTrigger.register();
+                setLegendOpen(true);
+              }}
               style={styles.actionBtn}
               accessibilityRole="button"
               accessibilityLabel="Map legend"
@@ -2678,7 +2684,18 @@ export default function MapScreen() {
         />
       </Suspense>
 
-      <LegendModal visible={legendOpen} onClose={() => setLegendOpen(false)} />
+      <LegendModal
+        visible={legendOpen}
+        onClose={() => {
+          setLegendOpen(false);
+          // RN core fires a Modal's onDismiss on iOS ONLY, so everywhere else
+          // the close INTENT is the last event available; release() stands in.
+          legendTrigger.release();
+        }}
+        // The dismissal-COMPLETE event — only now is the legend button back on
+        // screen and safe to aim the screen-reader cursor at.
+        onDismiss={legendTrigger.restore}
+      />
 
       <AddressSearchModal
         visible={searchOpen}

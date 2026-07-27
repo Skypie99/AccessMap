@@ -22,16 +22,23 @@ import { Check } from 'lucide-react-native';
 interface Props {
   visible: boolean;
   onClose: () => void;
+  /**
+   * G5: fired when the surface has ACTUALLY left the screen (iOS onDismiss;
+   * elsewhere the opener's `release()` stands in). The opener uses it to hand
+   * the screen-reader cursor back to the control that opened this surface.
+   * Optional — an opener with no trigger to return to passes nothing.
+   */
+  onDismiss?: () => void;
 }
 
-export default function LegendModal({ visible, onClose }: Props) {
+export default function LegendModal({ visible, onClose, onDismiss }: Props) {
   const color = useColor();
   const reducedMotion = useReducedMotion();
   const styles = makeStyles(color);
   // WCAG 2.4.3: move the screen-reader cursor onto the header when the modal opens.
   const titleRef = useFocusOnOpen<View>(visible);
   return (
-    <Modal visible={visible} animationType={reducedMotion ? 'none' : 'slide'} transparent onRequestClose={onClose} aria-label="Map legend">
+    <Modal visible={visible} animationType={reducedMotion ? 'none' : 'slide'} transparent onRequestClose={onClose} onDismiss={onDismiss} aria-label="Map legend">
       <View style={styles.backdrop}>
         {/* S9 (L6-21): the scrim is an absolute SIBLING of the card, not its
             ancestor — a screen reader never lands on a giant "Close" button that
