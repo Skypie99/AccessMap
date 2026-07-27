@@ -55,6 +55,19 @@ this train's file, deliberately untouched.**
 | Commit | Item |
 |---|---|
 | `58cd047` | **Step 0 · the FIRST ACTION** — `DECISIONS.md §SKY-3g` (Sky's B-1 Option-B design, verbatim) + `§SKY-3h` (her Phase-3 scope picks) |
+| `58bea81` | **Step 0 · the lint gap CLOSED** — 0 errors / exactly 79 warnings, run locally |
+| `b288ffc` | **SR-117a** drift-capture — and a **second** drift nobody had found (`ON DELETE SET NULL`); DDL half = a Sky fork, Option B flagged destructive |
+| `5904657` | **SR-117b** type honesty (`string \| null` on Row shapes only) + 10 tests pinning the `==` ownership trap |
+| `1d8237c` | **G5 · C1** `useSurfaceTrigger` + 10 unit tests |
+| `cf0aff9` | **G5 · C2** `PressableScale` forwards a ref |
+| `47a4810` `4e8e229` `4e653cc` | **G5 · C3/C4/C5** Nearby · Report · Legend |
+| `0e27df2` | **G5 · C6** guard assertion **J** |
+| `f406d1b` | **A0-2 · G3** the arbiter ran first and **decided the ink**; 4 shipped proof sets re-run exit 0; fork tabled, no code |
+| `2129fbe` | **G5 fix** `release()` returned focus at close INTENT — 3/3 adversarial lenses converged; now Android-only and deferred |
+| `65dd85e` | **G5 fix** guard J's mirror hole — counts the hook's call sites repo-wide |
+| `dfebc65` | **G5 fix** the screen-reader auto-open had no focus return + the hook memoizes its return |
+| `b9a74a8` | **fix** two tests that were not testing — a vacuous assert and an intermittent load flake |
+| `79c1b86` | **docs** stale ref-count corrected + a `newArchEnabled` warning |
 
 ## Current
 
@@ -64,10 +77,10 @@ Nothing in flight.
 
 | # | Item | State |
 |---|---|---|
-| **A0-1** | **G5 focus-return** — `useSurfaceTrigger()` + `PressableScale` forwardRef + Nearby → Report → Legend + guard **J** | not started |
-| **SR-117** | comment author type lie — **must land before A0-3's comment control** | not started |
-| **A0-3** | **B-1** — Report (1.2(b)) · Hide on comments (1.2(c), PARTIAL) · "Flag as wrong" (W1 accuracy) + dedup | not started |
-| **A0-2** | **G3** — arbiter first, then ONE consolidated mockup board, then **STOP for Sky's pick** (no code) | not started |
+| **A0-1** | **G5 focus-return** | ✅ **DONE** — 3 adoptions + guard J, adversarially verified, 5 real defects fixed. Record: `09_G5_FOCUS_RETURN.md`. One item **SURFACED not fixed** (the Report submit handoff → PROTECT-18/BP12 seam + device row D-B15) |
+| **SR-117** | comment author type lie | ✅ **DONE** — code half shipped; the DDL fork awaits Sky |
+| **A0-2** | **G3** grabbers | ⏸ **STOPPED FOR SKY** — arbiter done, ink decided (`inkGlassMuted`, the only candidate clearing 3.0 everywhere), 4 options tabled in `08_G3_GRABBER_ARBITER.md`. No code by design |
+| **A0-3** | **B-1** — Report (1.2(b)) · Hide on comments (1.2(c), PARTIAL) · "Flag as wrong" (W1) + dedup | **NEXT** |
 | **A0-4** | the **D-B6 conditional**, carried verbatim into the verdict | close-out |
 | **Class A** | R-2 guest honesty ×4 · R-13 web-cohort pair · R-1 artifact-only | not started |
 | **Class B** | submission collateral | not started |
