@@ -78,6 +78,21 @@ describe('D2/C3 — the trigger opens the drawer even when focus registration ca
 
   it('native: a working handle IS recorded, so the enhancement still does its job', () => {
     // The guard must not be so defensive that it quietly disables the feature.
+    //
+    // This assertion used to read `.not.toBeNull()` and passed VACUOUSLY: under
+    // react-test-renderer there is no native view tree, so the REAL
+    // findNodeHandle returns `undefined` for a perfectly attached ref — and
+    // `expect(undefined).not.toBeNull()` is green. The test named "a working
+    // handle IS recorded" was therefore proving nothing at all, and the drawer's
+    // handle capture had no coverage (its focus RETURN is covered elsewhere, by
+    // HamburgerDrawer.focus.test.tsx, which injects a sentinel through a mocked
+    // context and never exercises findNodeHandle). Stub a sentinel and assert
+    // THAT, which is the house idiom for the same constraint.
+    const HANDLE = 4242;
+    jest
+      .spyOn(jest.requireMock('react-native/Libraries/ReactNative/RendererProxy'), 'findNodeHandle')
+      .mockReturnValue(HANDLE);
+
     let api: ReturnType<typeof useDrawer> | null = null;
     function Grab() {
       api = useDrawer();
@@ -90,6 +105,6 @@ describe('D2/C3 — the trigger opens the drawer even when focus registration ca
       </DrawerProvider>,
     );
     fireEvent.press(u.getByLabelText('Open navigation menu'));
-    expect(api!.triggerRef.current).not.toBeNull();
+    expect(api!.triggerRef.current).toBe(HANDLE);
   });
 });

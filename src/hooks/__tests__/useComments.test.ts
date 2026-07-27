@@ -18,11 +18,23 @@
  * module so `instanceof` checks inside the hook line up with what we throw.
  */
 
-import { act, renderHook, waitFor } from '@testing-library/react-native';
+import { act, configure, renderHook, waitFor } from '@testing-library/react-native';
 import type { CommentRow } from '@/types/database';
 
 import { CommentsTableNotReadyError } from '@/lib/comments';
 import { useComments } from '../useComments';
+
+// LOAD-TIMING FLAKE (observed 2026-07-27, SHIP-READY Phase 3). Every assertion
+// here is `await waitFor(...)` on a mocked promise that resolves immediately, so
+// each test needs ~50ms in isolation — but waitFor's default budget is 1000ms of
+// WALL CLOCK, and under a full 170-suite parallel run this file has been measured
+// at 9.3s, long enough for a resolved microtask to miss that window. The suite
+// then fails on a promise that did settle, which reads as a broken assertion and
+// is really CPU contention. Raising the budget removes the false red without
+// weakening anything: a genuinely broken hook never settles, so it still fails,
+// just later. (This is the repo's second known load-timing flake, alongside the
+// /ago$/ fixture one.)
+configure({ asyncUtilTimeout: 10_000 });
 
 // --- comments lib mock ------------------------------------------------------
 const mockListComments = jest.fn();
