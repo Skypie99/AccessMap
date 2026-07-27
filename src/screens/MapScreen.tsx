@@ -413,6 +413,7 @@ export default function MapScreen() {
   // only — the button and the <Modal> both live in this component, so no
   // provider is needed (see useSurfaceTrigger's docblock).
   const nearbyTrigger = useSurfaceTrigger<View>();
+  const reportTrigger = useSurfaceTrigger<View>();
   // Saved Places list for the quick-jump chip row above the action bar.
   // Loaded when the user is known and refreshed every time the modal
   // closes (so newly-added / removed places appear without a screen
@@ -2574,10 +2575,13 @@ export default function MapScreen() {
                 Jordan flagged in the privacy gate report. */}
             {authUser && (
               <PressableScale
+                ref={reportTrigger.ref}
                 style={[styles.fab, reportDisabled && styles.fabDisabled]}
                 pressedTint={color.ctaFillPressed}
                 haptic="medium"
                 onPress={() => {
+                  // Captures this FAB's handle before the sheet opens.
+                  reportTrigger.register();
                   // FIX C (Decision 6, Option A): the `location` state can be
                   // minutes old by the time the user taps Report. Kick off a
                   // fresh GPS read fire-and-forget — ReportFlagModal reads its
@@ -2627,8 +2631,21 @@ export default function MapScreen() {
             // to GPS. Without this, a long-press once would stick as the
             // implicit location forever.
             setDropLocation(null);
+            // RN core fires a Modal's onDismiss on iOS ONLY, so everywhere else
+            // the close INTENT is the last event available; release() stands in.
+            reportTrigger.release();
           }}
+          // The dismissal-COMPLETE event — only now is the Report FAB back on
+          // screen and safe to aim the screen-reader cursor at.
+          onDismiss={reportTrigger.restore}
           onCreated={(flag) => {
+            // A SUBMIT hands off to the confirmation, not back to the FAB. Both
+            // success paths run onCreated → onClose → setLiveStatus, and that
+            // live region announces "Report filed…" — moving the cursor to the
+            // FAB as the sheet slides out would cut that confirmation off
+            // mid-utterance. Cancel / hardware back / the escape scrub are plain
+            // closes and DO return focus.
+            reportTrigger.markHandoff();
             refreshFlags().catch(() => {});
             // S10: recenter on the brand-new pin so the user SEES their
             // contribution land. Reduced-motion gated (PROTECT-7) — skipped

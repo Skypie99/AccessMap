@@ -85,9 +85,16 @@ interface Props {
    *  can omit it — the retry control only renders when both this and a null
    *  location are present. */
   onRequestLocation?: () => void;
+  /**
+   * G5: fired when the surface has ACTUALLY left the screen (iOS onDismiss;
+   * elsewhere the opener's `release()` stands in). The opener uses it to hand
+   * the screen-reader cursor back to the control that opened this surface.
+   * Optional — an opener with no trigger to return to passes nothing.
+   */
+  onDismiss?: () => void;
 }
 
-export default function ReportFlagModal({ visible, location, onClose, onCreated, onRequestLocation }: Props) {
+export default function ReportFlagModal({ visible, location, onClose, onCreated, onRequestLocation, onDismiss }: Props) {
   const color = useColor();
   const styles = makeStyles(color);
   // T14 (F2-07): the templates + category chip rails earn the overflow scent.
@@ -499,7 +506,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
     // the same thing was correctly inert. S11 escalates-never-aborts, so the
     // insert continues after the close and a re-filled resubmit duplicates it.
     // This removes the asymmetry; it does not invent a new trap.
-    <Modal visible={visible} animationType={reducedMotion ? 'none' : 'slide'} transparent onRequestClose={() => { if (!submitting) onClose(); }} accessibilityViewIsModal aria-label={isAnon ? 'Report anonymously' : 'Report a flag'}>
+    <Modal visible={visible} animationType={reducedMotion ? 'none' : 'slide'} transparent onRequestClose={() => { if (!submitting) onClose(); }} onDismiss={onDismiss} accessibilityViewIsModal aria-label={isAnon ? 'Report anonymously' : 'Report a flag'}>
       <View style={styles.backdrop}>
         {/* KAV wraps the WHOLE card from the backdrop (the FeedbackModal /
             AddressSearchModal recipe): rooted here its keyboard-overlap math
