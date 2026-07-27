@@ -1,0 +1,54 @@
+# exit code: 1 (EXPECTED — this is a DIAGNOSTIC set: the shipped borderStrong rows are
+#   declared precisely so their failure is on the record. A non-zero exit here is the finding,
+#   not a regression. The four SHIPPED proof sets must still exit 0 — see shipped-sets-rerun.txt.
+# command: node /Users/skypie/AccessMap-material-lab/2026-07-02/shared/contrast-check.mjs /Users/skypie/AccessMap/design-reviews/ship-ready/tools/shipready-grabber-stacks.json
+# date: 2026-07-27 · SHIP-READY Phase 3 (A0-2 / G3) · Opus 5 ultracode max effort
+#
+## Contrast report — SHIP-READY Phase 3 — G3 pageSheet grabber ink (the arbiter runs BEFORE any render)
+
+Composite order: `stack[0]` painted first (nearest base) → last element topmost.
+Worst case = the base backdrop that yields the LOWEST ratio for the pair.
+
+### light
+
+| pair | surface | worst base | resulting bg | ratio | min | verdict |
+|---|---|---|---|---|---|---|
+| SHIPPED ink (color.borderStrong) on chrome glass — Resources/HowToHelp (`#d0d4dc`) | chrome | `#D92D20` | `#F6CBC7` | 1.01:1 | 3:1 | **FAIL** |
+| SHIPPED ink (color.borderStrong) on chrome glass, reduce-transparency (`#d0d4dc`) | chromeLite | `#000` | `#E0E0E0` | 1.13:1 | 3:1 | **FAIL** |
+| SHIPPED ink (color.borderStrong) on bulk glass — Nearby, grabber ABOVE the header (`#d0d4dc`) | bulkSheet | `#000` | `#D9D9D9` | 1.05:1 | 3:1 | **FAIL** |
+| SHIPPED ink (color.borderStrong) on bulk glass, reduce-transparency (`#d0d4dc`) | bulkLite | `#000` | `#E6E6E6` | 1.19:1 | 3:1 | **FAIL** |
+| SHIPPED ink (color.borderStrong) on Nearby's OPAQUE header — the solid-chrome option (`#d0d4dc`) | nearbySolidHeader | `#fff` | `#FFFFFF` | 1.49:1 | 3:1 | **FAIL** |
+| CANDIDATE A (color.textSubtle) on chrome glass — the lighter middle option (`#707070`) | chrome | `#000` | `#BFBFBF` | 2.70:1 | 3:1 | **FAIL** |
+| CANDIDATE A (color.textSubtle) on chrome glass, reduce-transparency (`#707070`) | chromeLite | `#000` | `#E0E0E0` | 3.77:1 | 3:1 | PASS |
+| CANDIDATE A (color.textSubtle) on bulk glass (`#707070`) | bulkSheet | `#000` | `#D9D9D9` | 3.50:1 | 3:1 | PASS |
+| CANDIDATE A (color.textSubtle) on bulk glass, reduce-transparency (`#707070`) | bulkLite | `#000` | `#E6E6E6` | 3.95:1 | 3:1 | PASS |
+| CANDIDATE A (color.textSubtle) on Nearby's opaque header (`#707070`) | nearbySolidHeader | `#fff` | `#FFFFFF` | 4.95:1 | 3:1 | PASS |
+| CANDIDATE B (color.inkGlassMuted) on chrome glass — the already-arbitrated chrome ink (`#414B5A`) | chrome | `#000` | `#BFBFBF` | 4.81:1 | 3:1 | PASS |
+| CANDIDATE B (color.inkGlassMuted) on chrome glass, reduce-transparency (`#414B5A`) | chromeLite | `#000` | `#E0E0E0` | 6.71:1 | 3:1 | PASS |
+| CANDIDATE B (color.inkGlassMuted) on bulk glass (`#414B5A`) | bulkSheet | `#000` | `#D9D9D9` | 6.24:1 | 3:1 | PASS |
+| CANDIDATE B (color.inkGlassMuted) on bulk glass, reduce-transparency (`#414B5A`) | bulkLite | `#000` | `#E6E6E6` | 7.04:1 | 3:1 | PASS |
+| CANDIDATE B (color.inkGlassMuted) on Nearby's opaque header (`#414B5A`) | nearbySolidHeader | `#fff` | `#FFFFFF` | 8.83:1 | 3:1 | PASS |
+| REFERENCE — the shipped sibling close-X (color.text) on the same sheet, min 3 (`#333`) | bulkSheet | `#000` | `#D9D9D9` | 8.93:1 | 3:1 | PASS |
+
+### dark
+
+| pair | surface | worst base | resulting bg | ratio | min | verdict |
+|---|---|---|---|---|---|---|
+| SHIPPED ink (color.borderStrong) on chrome glass — Resources/HowToHelp (`#444`) | chrome | `#fff` | `#3D414D` | 1.04:1 | 3:1 | **FAIL** |
+| SHIPPED ink (color.borderStrong) on chrome glass, reduce-transparency (`#444`) | chromeLite | `#fff` | `#252A36` | 1.48:1 | 3:1 | **FAIL** |
+| SHIPPED ink (color.borderStrong) on bulk glass — Nearby, grabber ABOVE the header (`#444`) | bulkSheet | `#fff` | `#313641` | 1.25:1 | 3:1 | **FAIL** |
+| SHIPPED ink (color.borderStrong) on bulk glass, reduce-transparency (`#444`) | bulkLite | `#fff` | `#202532` | 1.57:1 | 3:1 | **FAIL** |
+| SHIPPED ink (color.borderStrong) on Nearby's OPAQUE header — the solid-chrome option (`#444`) | nearbySolidHeader | `#1E1E22` | `#1E1E22` | 1.71:1 | 3:1 | **FAIL** |
+| CANDIDATE A (color.textSubtle) on chrome glass — the lighter middle option (`#8a8a8a`) | chrome | `#fff` | `#3D414D` | 2.94:1 | 3:1 | **FAIL** |
+| CANDIDATE A (color.textSubtle) on chrome glass, reduce-transparency (`#8a8a8a`) | chromeLite | `#fff` | `#252A36` | 4.17:1 | 3:1 | PASS |
+| CANDIDATE A (color.textSubtle) on bulk glass (`#8a8a8a`) | bulkSheet | `#fff` | `#313641` | 3.52:1 | 3:1 | PASS |
+| CANDIDATE A (color.textSubtle) on bulk glass, reduce-transparency (`#8a8a8a`) | bulkLite | `#fff` | `#202532` | 4.43:1 | 3:1 | PASS |
+| CANDIDATE A (color.textSubtle) on Nearby's opaque header (`#8a8a8a`) | nearbySolidHeader | `#1E1E22` | `#1E1E22` | 4.81:1 | 3:1 | PASS |
+| CANDIDATE B (color.inkGlassMuted) on chrome glass — the already-arbitrated chrome ink (`#B8BEC9`) | chrome | `#fff` | `#3D414D` | 5.43:1 | 3:1 | PASS |
+| CANDIDATE B (color.inkGlassMuted) on chrome glass, reduce-transparency (`#B8BEC9`) | chromeLite | `#fff` | `#252A36` | 7.70:1 | 3:1 | PASS |
+| CANDIDATE B (color.inkGlassMuted) on bulk glass (`#B8BEC9`) | bulkSheet | `#fff` | `#313641` | 6.51:1 | 3:1 | PASS |
+| CANDIDATE B (color.inkGlassMuted) on bulk glass, reduce-transparency (`#B8BEC9`) | bulkLite | `#fff` | `#202532` | 8.19:1 | 3:1 | PASS |
+| CANDIDATE B (color.inkGlassMuted) on Nearby's opaque header (`#B8BEC9`) | nearbySolidHeader | `#1E1E22` | `#1E1E22` | 8.90:1 | 3:1 | PASS |
+| REFERENCE — the shipped sibling close-X (color.text) on the same sheet, min 3 (`#ddd`) | bulkSheet | `#fff` | `#313641` | 8.94:1 | 3:1 | PASS |
+
+**RESULT: FAIL — at least one pair below its floor.**

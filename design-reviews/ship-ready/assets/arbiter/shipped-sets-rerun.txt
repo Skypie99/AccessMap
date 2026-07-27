@@ -1,0 +1,21 @@
+# SHIP-READY Phase 3 (A0-2 / G3) — the four SHIPPED proof sets, re-run one at a time.
+# date: 2026-07-27 · arbiter: /Users/skypie/AccessMap-material-lab/2026-07-02/shared/contrast-check.mjs
+# Purpose: declared == shipped. G3 proposes no token change, so every ratified set must be
+#   byte-for-byte unaffected. All four exit 0.
+#
+## qa-reports/assets/2026-07-03_glass_w1/wave1-stacks.json
+   exit code: 0
+   RESULT: ALL PASS
+
+## qa-reports/assets/2026-07-03_glass_w2/wave2-stacks.json
+   exit code: 0
+   RESULT: ALL PASS
+
+## qa-reports/assets/2026-07-03_tasks_glass/shipped-stacks.json
+   exit code: 0
+   RESULT: ALL PASS
+
+## qa-reports/assets/2026-07-04_glass_map/map-stacks.json
+   exit code: 0
+   RESULT: ALL PASS
+

@@ -1,0 +1,280 @@
+{
+  "name": "SHIP-READY Phase 3 — G3 pageSheet grabber ink (the arbiter runs BEFORE any render)",
+  "_doc": [
+    "PURPOSE: decide the grabber-pill ink for the three pageSheet surfaces (03 §3 G3) with the",
+    "  contrast script, not the eye (PROTECT-5). 03 said 'reuse ui/Sheet's pill verbatim'; Phase 2",
+    "  refused (J2-12) because that pill is color.borderStrong, which is declared in ZERO of the 19",
+    "  existing proof sets and lands ~1.0-1.2 over glass. This set puts the shipped ink and two",
+    "  candidates on the record together so Sky's mockup gate chooses among options that PASSED.",
+    "RUN: node /Users/skypie/AccessMap-material-lab/2026-07-02/shared/contrast-check.mjs design-reviews/ship-ready/tools/shipready-grabber-stacks.json",
+    "SURFACES: the three grabber surfaces are ResourcesScreen + HowToHelpScreen (both",
+    "  GlassSurface variant=chrome, borderRadius 0, with a headerRow that has NO background of its",
+    "  own -- the chrome material supplies it) and NearbyFlagsModal (variant=bulk). Nearby is the",
+    "  correction Phase 2 made to 03 §7.1: its styles.header paints OPAQUE color.surface over the",
+    "  bulk fill, so a grabber placed INSIDE that header lands on solid chrome and only one placed",
+    "  ABOVE it lands on glass. That is the genuine per-surface fork, hence nearbySolidHeader below.",
+    "  *Lite surfaces are the reduce-transparency variants -- both must clear the floor, since the",
+    "  user can flip that switch at any time.",
+    "BACKDROP REALISM: bases are copied verbatim from the ratified wave1 proof set",
+    "  (qa-reports/assets/2026-07-03_glass_w1/wave1-stacks.json) -- worst-case real backdrops, not",
+    "  invented ones: #000 (dark map tiles / photo), #D92D20 (a sev-5 pin under the sheet), #0B3D8F",
+    "  (deep brand field). Light and dark keep their own base sets.",
+    "FLOOR: min 3.0, matching the sibling close-X in the same component",
+    "  (wave1-stacks.json:311-316 declares the close-X icon at min 3). HONEST NOTE: the grabber is",
+    "  accessibilityElementsHidden and every one of these sheets also has a visible Close button, so",
+    "  1.4.11 is arguable rather than certain here. 3.0 is the floor the HOUSE applies to sibling",
+    "  chrome affordances; consistency is the argument, not a WCAG citation. Declared so no reviewer",
+    "  has to guess which it is.",
+    "RESULT EXPECTED: the three borderStrong rows FAIL (that is the point -- it puts J2-12's number",
+    "  on the record instead of in a report). inkGlassMuted is expected to pass everywhere with",
+    "  margin; textSubtle is the lighter middle candidate and is the one genuinely in question.",
+    "  closeXReference must reproduce the known-good shipped result -- if it does not, the manifest",
+    "  is wrong, not the app."
+  ],
+  "modes": {
+    "light": {
+      "surfaces": {
+        "chrome": {
+          "stack": ["rgba(255,255,255,0.75)"],
+          "base": ["#000", "#D92D20", "#0B3D8F"]
+        },
+        "chromeLite": {
+          "stack": ["rgba(255,255,255,0.88)"],
+          "base": ["#000", "#D92D20", "#0B3D8F"]
+        },
+        "bulkSheet": {
+          "stack": ["rgba(255,255,255,0.85)"],
+          "base": ["#000", "#D92D20", "#0B3D8F"]
+        },
+        "bulkLite": {
+          "stack": ["rgba(255,255,255,0.90)"],
+          "base": ["#000", "#D92D20", "#0B3D8F"]
+        },
+        "nearbySolidHeader": {
+          "stack": [],
+          "base": ["#fff"]
+        }
+      },
+      "pairs": [
+        {
+          "text": "#d0d4dc",
+          "surface": "chrome",
+          "label": "SHIPPED ink (color.borderStrong) on chrome glass — Resources/HowToHelp",
+          "min": 3
+        },
+        {
+          "text": "#d0d4dc",
+          "surface": "chromeLite",
+          "label": "SHIPPED ink (color.borderStrong) on chrome glass, reduce-transparency",
+          "min": 3
+        },
+        {
+          "text": "#d0d4dc",
+          "surface": "bulkSheet",
+          "label": "SHIPPED ink (color.borderStrong) on bulk glass — Nearby, grabber ABOVE the header",
+          "min": 3
+        },
+        {
+          "text": "#d0d4dc",
+          "surface": "bulkLite",
+          "label": "SHIPPED ink (color.borderStrong) on bulk glass, reduce-transparency",
+          "min": 3
+        },
+        {
+          "text": "#d0d4dc",
+          "surface": "nearbySolidHeader",
+          "label": "SHIPPED ink (color.borderStrong) on Nearby's OPAQUE header — the solid-chrome option",
+          "min": 3
+        },
+        {
+          "text": "#707070",
+          "surface": "chrome",
+          "label": "CANDIDATE A (color.textSubtle) on chrome glass — the lighter middle option",
+          "min": 3
+        },
+        {
+          "text": "#707070",
+          "surface": "chromeLite",
+          "label": "CANDIDATE A (color.textSubtle) on chrome glass, reduce-transparency",
+          "min": 3
+        },
+        {
+          "text": "#707070",
+          "surface": "bulkSheet",
+          "label": "CANDIDATE A (color.textSubtle) on bulk glass",
+          "min": 3
+        },
+        {
+          "text": "#707070",
+          "surface": "bulkLite",
+          "label": "CANDIDATE A (color.textSubtle) on bulk glass, reduce-transparency",
+          "min": 3
+        },
+        {
+          "text": "#707070",
+          "surface": "nearbySolidHeader",
+          "label": "CANDIDATE A (color.textSubtle) on Nearby's opaque header",
+          "min": 3
+        },
+        {
+          "text": "#414B5A",
+          "surface": "chrome",
+          "label": "CANDIDATE B (color.inkGlassMuted) on chrome glass — the already-arbitrated chrome ink",
+          "min": 3
+        },
+        {
+          "text": "#414B5A",
+          "surface": "chromeLite",
+          "label": "CANDIDATE B (color.inkGlassMuted) on chrome glass, reduce-transparency",
+          "min": 3
+        },
+        {
+          "text": "#414B5A",
+          "surface": "bulkSheet",
+          "label": "CANDIDATE B (color.inkGlassMuted) on bulk glass",
+          "min": 3
+        },
+        {
+          "text": "#414B5A",
+          "surface": "bulkLite",
+          "label": "CANDIDATE B (color.inkGlassMuted) on bulk glass, reduce-transparency",
+          "min": 3
+        },
+        {
+          "text": "#414B5A",
+          "surface": "nearbySolidHeader",
+          "label": "CANDIDATE B (color.inkGlassMuted) on Nearby's opaque header",
+          "min": 3
+        },
+        {
+          "text": "#333",
+          "surface": "bulkSheet",
+          "label": "REFERENCE — the shipped sibling close-X (color.text) on the same sheet, min 3",
+          "min": 3
+        }
+      ]
+    },
+    "dark": {
+      "surfaces": {
+        "chrome": {
+          "stack": ["rgba(13,18,32,0.80)"],
+          "base": ["#fff", "#D92D20", "#0B3D8F"]
+        },
+        "chromeLite": {
+          "stack": ["rgba(13,18,32,0.90)"],
+          "base": ["#fff", "#D92D20", "#0B3D8F"]
+        },
+        "bulkSheet": {
+          "stack": ["rgba(13,18,32,0.85)"],
+          "base": ["#fff", "#D92D20", "#0B3D8F"]
+        },
+        "bulkLite": {
+          "stack": ["rgba(13,18,32,0.92)"],
+          "base": ["#fff", "#D92D20", "#0B3D8F"]
+        },
+        "nearbySolidHeader": {
+          "stack": [],
+          "base": ["#1E1E22"]
+        }
+      },
+      "pairs": [
+        {
+          "text": "#444",
+          "surface": "chrome",
+          "label": "SHIPPED ink (color.borderStrong) on chrome glass — Resources/HowToHelp",
+          "min": 3
+        },
+        {
+          "text": "#444",
+          "surface": "chromeLite",
+          "label": "SHIPPED ink (color.borderStrong) on chrome glass, reduce-transparency",
+          "min": 3
+        },
+        {
+          "text": "#444",
+          "surface": "bulkSheet",
+          "label": "SHIPPED ink (color.borderStrong) on bulk glass — Nearby, grabber ABOVE the header",
+          "min": 3
+        },
+        {
+          "text": "#444",
+          "surface": "bulkLite",
+          "label": "SHIPPED ink (color.borderStrong) on bulk glass, reduce-transparency",
+          "min": 3
+        },
+        {
+          "text": "#444",
+          "surface": "nearbySolidHeader",
+          "label": "SHIPPED ink (color.borderStrong) on Nearby's OPAQUE header — the solid-chrome option",
+          "min": 3
+        },
+        {
+          "text": "#8a8a8a",
+          "surface": "chrome",
+          "label": "CANDIDATE A (color.textSubtle) on chrome glass — the lighter middle option",
+          "min": 3
+        },
+        {
+          "text": "#8a8a8a",
+          "surface": "chromeLite",
+          "label": "CANDIDATE A (color.textSubtle) on chrome glass, reduce-transparency",
+          "min": 3
+        },
+        {
+          "text": "#8a8a8a",
+          "surface": "bulkSheet",
+          "label": "CANDIDATE A (color.textSubtle) on bulk glass",
+          "min": 3
+        },
+        {
+          "text": "#8a8a8a",
+          "surface": "bulkLite",
+          "label": "CANDIDATE A (color.textSubtle) on bulk glass, reduce-transparency",
+          "min": 3
+        },
+        {
+          "text": "#8a8a8a",
+          "surface": "nearbySolidHeader",
+          "label": "CANDIDATE A (color.textSubtle) on Nearby's opaque header",
+          "min": 3
+        },
+        {
+          "text": "#B8BEC9",
+          "surface": "chrome",
+          "label": "CANDIDATE B (color.inkGlassMuted) on chrome glass — the already-arbitrated chrome ink",
+          "min": 3
+        },
+        {
+          "text": "#B8BEC9",
+          "surface": "chromeLite",
+          "label": "CANDIDATE B (color.inkGlassMuted) on chrome glass, reduce-transparency",
+          "min": 3
+        },
+        {
+          "text": "#B8BEC9",
+          "surface": "bulkSheet",
+          "label": "CANDIDATE B (color.inkGlassMuted) on bulk glass",
+          "min": 3
+        },
+        {
+          "text": "#B8BEC9",
+          "surface": "bulkLite",
+          "label": "CANDIDATE B (color.inkGlassMuted) on bulk glass, reduce-transparency",
+          "min": 3
+        },
+        {
+          "text": "#B8BEC9",
+          "surface": "nearbySolidHeader",
+          "label": "CANDIDATE B (color.inkGlassMuted) on Nearby's opaque header",
+          "min": 3
+        },
+        {
+          "text": "#ddd",
+          "surface": "bulkSheet",
+          "label": "REFERENCE — the shipped sibling close-X (color.text) on the same sheet, min 3",
+          "min": 3
+        }
+      ]
+    }
+  }
+}
