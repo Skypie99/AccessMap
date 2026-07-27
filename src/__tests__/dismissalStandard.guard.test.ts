@@ -413,9 +413,14 @@ describe('the dismissal standard', () => {
 
     // (a) FORWARD — every declared surface is wired end to end. Five separate
     // strings in the opener, because five is what the contract actually costs:
-    // the hook, the ref, the capture, the restore, and the non-iOS stand-in.
-    // Miss the last one and the feature works on Sky's iPhone and is silently
-    // dead on every Android device — the exact failure jest exists to catch.
+    // the hook, the ref, the capture, the restore, and the Android stand-in.
+    // Miss `onDismiss` and the return is dead on iOS and web; miss `release()`
+    // and it is dead on Android. Both halves are asymmetric and both are
+    // invisible to a device-blind gate, which is why presence is checked here
+    // rather than trusted. Presence is NOT placement, though: this cannot see
+    // that `nearbyTrigger.release()` sits in Nearby's onClose rather than
+    // somewhere else in a 3000-line file. A cross-wire is the residual hole,
+    // and it is a device row (D-B11), not a claim this file makes.
     for (const d of FOCUS_RETURN) {
       const hits = live.filter((s) => s.rel === d.rel);
       if (hits.length !== 1) {
@@ -466,6 +471,42 @@ describe('the dismissal standard', () => {
       if (!prop(s.tag, 'onDismiss')) continue;
       if (declared.has(s.rel) || exempt.has(s.rel)) continue;
       offenders.push(`${s.rel}:${s.line} → carries onDismiss but is not declared in FOCUS_RETURN`);
+    }
+
+    // (c) REVERSE, THE OTHER HALF — every `useSurfaceTrigger` call site in the
+    // repo belongs to a declared opener, and there are exactly as many as there
+    // are declared surfaces.
+    //
+    // (b) alone is not enough, and the hole is the exact mirror of the one it
+    // catches: it keys on `onDismiss`, so an adoption wired with the hook, the
+    // ref, register() and release() but NO onDismiss is skipped at the `continue`
+    // above — green here, dead on iOS and web, alive only on Android. (b) also
+    // only ever reads the openers NAMED in FOCUS_RETURN, so a trigger declared
+    // in TasksScreen or ProfileScreen is invisible to it entirely.
+    //
+    // Counting the hook's call sites closes both: a new one fails until it is
+    // declared, and declaring it forces it through (a), which requires all five
+    // strings including onDismiss. The `.tsx` walk plus App.tsx is the same
+    // census this file already builds, so nothing new has to be trusted.
+    const HOOK = 'useSurfaceTrigger';
+    const openers = new Set<string>(FOCUS_RETURN.map((d) => d.opener));
+    let callSites = 0;
+    for (const f of [...walkTsx(SRC), APP_TSX]) {
+      const rel = path.relative(SRC, f);
+      const src = stripComments(fs.readFileSync(f, 'utf8'));
+      // `= useSurfaceTrigger` is the declaration form; the import alone is not a
+      // call site, and neither is a mention inside a docblock (comments stripped).
+      const hits = src.split(`= ${HOOK}`).length - 1;
+      if (hits === 0) continue;
+      callSites += hits;
+      if (!openers.has(rel)) {
+        offenders.push(`${rel} → declares ${HOOK} but is not an opener in FOCUS_RETURN`);
+      }
+    }
+    if (callSites !== FOCUS_RETURN.length) {
+      offenders.push(
+        `${HOOK} → ${callSites} call site(s) for ${FOCUS_RETURN.length} declared surface(s); every adoption must be declared`,
+      );
     }
 
     // The exemption drains rather than accumulates, same rule as ALLOWED.
