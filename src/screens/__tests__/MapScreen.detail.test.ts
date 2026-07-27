@@ -34,6 +34,26 @@ function around(haystack: string, anchor: string, len = 320): string {
   return haystack.slice(i, i + len);
 }
 
+/**
+ * A window from `anchor` to `end` — the scope's own closing boundary rather than
+ * a character count.
+ *
+ * Char-count windows are tripwires: this file has already had to widen two of
+ * them (320→560, 1400→1500) for edits that changed no asserted invariant, and
+ * the second widening landed with SEVEN bytes of slack before the next sibling's
+ * tag. The next line anyone adds inside the scope either fails the test for an
+ * unrelated reason or silently pulls a sibling's source into the assertion —
+ * both of which read as a broken invariant when nothing broke. Anchoring on the
+ * closing boundary ends that: the window grows with the scope it names.
+ */
+function between(haystack: string, anchor: string, end: string): string {
+  const i = haystack.indexOf(anchor);
+  if (i < 0) throw new Error(`anchor not found: ${anchor}`);
+  const j = haystack.indexOf(end, i + anchor.length);
+  if (j < 0) throw new Error(`window end not found after anchor: ${end}`);
+  return haystack.slice(i, j);
+}
+
 describe('S3 source invariants — MapScreen integration hub', () => {
   const map = readScreen('MapScreen.tsx');
 
@@ -57,11 +77,13 @@ describe('S3 source invariants — MapScreen integration hub', () => {
   });
 
   it('the Nearby onSelectFlag branches on the screen reader: SR → detail sheet, sighted → map recenter', () => {
-    // Window widened 1400→1500 for G5's markHandoff on the sighted branch (the
-    // close hands off to the map callout, so the cursor is NOT returned to the
-    // List button) — the asserted invariants themselves are unchanged, and 1500
-    // still stops at the next sibling's tag, so each string below matches once.
-    const sel = around(map, 'onSelectFlag={(flag) => {', 1500);
+    // Scoped to the handler's own closing boundary, not a char count. G5 added
+    // two lines to the sighted branch (markHandoff + release, because that branch
+    // closes the list without going through onClose) and overflowed the old
+    // 1400-char window; widening it to 1500 bought seven bytes of slack before
+    // <FilterPresetsModal. The asserted invariants never changed — only the
+    // window's arithmetic did, twice. It no longer has any.
+    const sel = between(map, 'onSelectFlag={(flag) => {', '<FilterPresetsModal');
     expect(sel).toContain('if (screenReaderOn) {');
     expect(sel).toContain('setSelectedFlag(flag);');
     // Sighted path preserved, upgraded to the shared last-tap-wins scheduler

@@ -223,19 +223,63 @@ describe('G5 — a handoff opts out, and only for that one close', () => {
   });
 });
 
-describe('G5 — release() stands in for onDismiss everywhere RN does not fire it', () => {
-  it('android: the close intent IS the dismissal, so release() returns focus', () => {
+describe('G5 — release() is the ANDROID-ONLY stand-in, and it waits', () => {
+  // The close intent is NOT the dismissal on Android: RN renders a native
+  // Dialog whose window animation JS cannot observe, so release() has to wait
+  // the exit out. Firing at close intent aims the cursor at a view in a
+  // non-active window, Android drops the request, and the cursor is stranded —
+  // with this very spy green, because a spy only proves the call happened.
+  it('android: release() does NOT return focus at close intent', () => {
+    jest.useFakeTimers();
     jest.replaceProperty(Platform, 'OS', 'android');
     const u = render(<Pair />);
     openIt(u);
 
     act(() => api!.release());
+    expect(focusSpy).not.toHaveBeenCalled(); // still occluded
+
+    act(() => void jest.advanceTimersByTime(319));
+    expect(focusSpy).not.toHaveBeenCalled(); // the wait is real, not cosmetic
+
+    act(() => void jest.advanceTimersByTime(1));
     expect(focusSpy).toHaveBeenCalledWith(TRIGGER_HANDLE);
+    jest.useRealTimers();
   });
 
-  it('ios: release() no-ops and the real onDismiss does the work', () => {
-    // UIKit is still presenting the sheet at close time — returning focus there
-    // would aim the cursor at an occluded control.
+  it('android: a second close-intent supersedes the first rather than stacking', () => {
+    jest.useFakeTimers();
+    jest.replaceProperty(Platform, 'OS', 'android');
+    const u = render(<Pair />);
+    openIt(u);
+
+    act(() => api!.release());
+    act(() => void jest.advanceTimersByTime(200));
+    act(() => api!.release());
+    act(() => void jest.runAllTimers());
+
+    // One wait, one focus call — the armed latch and the timer reset agree.
+    expect(focusSpy).toHaveBeenCalledTimes(1);
+    jest.useRealTimers();
+  });
+
+  it('android: a pending wait never fires into an unmounted tree', () => {
+    jest.useFakeTimers();
+    jest.replaceProperty(Platform, 'OS', 'android');
+    const u = render(<Pair />);
+    openIt(u);
+
+    act(() => api!.release());
+    u.unmount();
+    act(() => void jest.runAllTimers());
+
+    expect(focusSpy).not.toHaveBeenCalled();
+    jest.useRealTimers();
+  });
+
+  it('ios: release() no-ops — the real onDismiss does the work', () => {
+    // UIKit is still presenting the sheet at close time, and it fires a real
+    // dismissal-complete event, so release() must not consume the armed latch
+    // with the earlier, wrong one.
     jest.replaceProperty(Platform, 'OS', 'ios');
     const u = render(<Pair />);
     openIt(u);
@@ -245,5 +289,17 @@ describe('G5 — release() stands in for onDismiss everywhere RN does not fire i
 
     dismiss();
     expect(focusSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('web: release() no-ops — rn-web fires its own post-animation onDismiss', () => {
+    // rn-web's Modal DOES fire onDismiss, after its exit animation, so web has
+    // a correctly-timed real event too. (setAccessibilityFocus is a web stub, so
+    // none of this is observable there — this pins the CONTRACT, not an effect.)
+    jest.replaceProperty(Platform, 'OS', 'web');
+    const u = render(<Pair />);
+    openIt(u);
+
+    act(() => api!.release());
+    expect(focusSpy).not.toHaveBeenCalled();
   });
 });

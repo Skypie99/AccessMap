@@ -228,14 +228,56 @@ export function useReducedMotion(): boolean {
  * actually left the screen there is nothing to hand focus back to — moving the
  * cursor while the sheet is still presented aims it at an occluded control.
  * onDismiss is the dismissal-COMPLETE event; onClose is only the close INTENT.
- * RN core fires onDismiss on iOS only, so `release()` stands in for it
- * everywhere else — the same split as the drawer's `releaseDrawer`.
+ *
+ * WHICH PLATFORMS HAVE A REAL DISMISSAL EVENT, and what Android gets instead:
+ *   · iOS — RN fires onDismiss from the dismissal completion block. Real event.
+ *   · web — rn-web fires its own onDismiss after the exit animation
+ *     (exports/Modal/ModalAnimation.js). Also a real event.
+ *   · Android — NOTHING. RN's Modal renders a native Dialog whose window
+ *     animation JS never hears about, and RN's inline onDismiss route is gated
+ *     `if (Platform.OS === 'ios')`.
+ * So `release()` is an ANDROID-ONLY stand-in, and it must not fire on the two
+ * platforms that already have the real thing: calling it there would consume the
+ * armed latch with the EARLIER, wrong event and make the correctly-timed one a
+ * no-op.
+ *
+ * AND IT HAS TO WAIT. An earlier version of this hook called `restore()`
+ * synchronously from `release()`, which broke the law stated two paragraphs up:
+ * onClose runs beside the `setState` that closes the surface, so the focus call
+ * was dispatched before React had even committed `visible=false`, let alone
+ * before the Dialog was torn down. Android drops an accessibility-focus request
+ * aimed at a view in a non-active window, so the cursor was left stranded
+ * exactly where this hook exists to stop it being stranded — with every jest
+ * gate green, because jest only proves the call happened. Both in-repo
+ * precedents wait, and neither was doing what that version claimed:
+ *   · `useFocusOnOpen` (this file) defers 150ms so the surface presents first.
+ *   · `releaseDrawer` (HamburgerDrawer) is invoked from the exit-animation
+ *     COMPLETION callback — never from close intent.
+ * There is no completion callback to hang off here (that absence is the whole
+ * reason onDismiss is iOS-only), so the wait is a timer, bounded by
+ * ANDROID_DIALOG_EXIT_MS. Reduced motion does NOT shorten it: with
+ * animationType='none' the Dialog still tears its window down asynchronously,
+ * and landing the cursor a beat late is invisible where landing it early is the
+ * bug. The timer is cleared on unmount so it can never fire into a dead tree.
  *
  * ON PROOF: react-native-web stubs `AccessibilityInfo.setAccessibilityFocus` to
  * an EMPTY BODY, so this hook has no web-observable effect whatsoever. Jest can
  * prove the call was made with the right handle and nothing more; only a device
  * pass with VoiceOver / TalkBack can prove the cursor actually moved.
  */
+/**
+ * How long to wait after an Android close-intent before handing the cursor back.
+ *
+ * Deliberately NOT one of `motion.duration.*`: those tokens describe animations
+ * WE author, and this is the Android Dialog's own window animation, which the
+ * platform owns and JS cannot observe. It is an upper bound on someone else's
+ * timing, not a value we picked for a look — so it lives here as a named
+ * constant rather than borrowing a token that would imply we control it.
+ * 320ms clears the platform slide comfortably; being late is invisible, being
+ * early is the stranded-cursor bug this whole mechanism exists to prevent.
+ */
+const ANDROID_DIALOG_EXIT_MS = 320;
+
 export function useSurfaceTrigger<T extends Component>() {
   /** Attach to the trigger control (a PressableScale, a Pressable, a Button). */
   const ref = useRef<T>(null);
@@ -245,6 +287,8 @@ export function useSurfaceTrigger<T extends Component>() {
   const armed = useRef(false);
   /** Does this close hand focus to another surface instead of back here? */
   const handedOff = useRef(false);
+  /** The pending Android exit wait, so it can be superseded and cleaned up. */
+  const exitTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   /**
    * Call inside the trigger's `onPress`, immediately before the setState that
@@ -302,13 +346,30 @@ export function useSurfaceTrigger<T extends Component>() {
     if (node != null) AccessibilityInfo.setAccessibilityFocus(node);
   }, []);
 
-  /** Call in the opener's `onClose`, beside the setState that closes it. */
+  /**
+   * Call in the opener's `onClose`, beside the setState that closes it.
+   *
+   * Android-only, and deferred — see the ANDROID_DIALOG_EXIT_MS note in the
+   * hook's docblock. On iOS and web this is deliberately a no-op, because both
+   * fire a real onDismiss and `restore()` is already wired to it.
+   */
   const release = useCallback(() => {
-    // RN core fires a Modal's onDismiss on iOS ONLY (the inline route is gated
-    // `if (Platform.OS === 'ios')`), so everywhere else the close intent is the
-    // last event available and has to stand in for the dismissal.
-    if (Platform.OS !== 'ios') restore();
+    if (Platform.OS !== 'android') return;
+    // Never stack two waits: a second close-intent supersedes the first.
+    if (exitTimer.current != null) clearTimeout(exitTimer.current);
+    exitTimer.current = setTimeout(() => {
+      exitTimer.current = null;
+      restore();
+    }, ANDROID_DIALOG_EXIT_MS);
   }, [restore]);
+
+  // A pending wait must never fire into an unmounted tree.
+  useEffect(
+    () => () => {
+      if (exitTimer.current != null) clearTimeout(exitTimer.current);
+    },
+    [],
+  );
 
   return { ref, register, markHandoff, restore, release };
 }

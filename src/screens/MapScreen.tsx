@@ -2772,7 +2772,13 @@ export default function MapScreen() {
           // last-tap-wins scheduler (vs the old single fixed 350ms timeout):
           // rapid A→B selects can never answer with A's callout (T1/F3-04).
           // Hands off to the map callout — do not yank the cursor back.
+          // `release()` still has to run: this branch closes the list WITHOUT
+          // going through the parent onClose, and Android fires no onDismiss,
+          // so without it `armed`/`handedOff` would stay latched with a stale
+          // handle until the next register(). restore() is idempotent, so on the
+          // platforms that DO fire onDismiss this costs nothing.
           nearbyTrigger.markHandoff();
+          nearbyTrigger.release();
           setNearbyOpen(false);
           setFocusedFlagId(flag.id);
           // T1: calloutClear — the Nearby row select lands on an open callout.
