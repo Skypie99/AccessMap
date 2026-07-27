@@ -99,10 +99,24 @@ export type FeedbackRow = {
 // One comment on a flag. `display_name` is populated by a PostgREST join
 // from public.users; it is NOT a real column on the flag_comments table.
 // Optional until supabase/migrations/2026-05-30_flag_comments.sql is applied.
+//
+// SR-117: `user_id` is nullable because LIVE is nullable. The repo migration
+// declares NOT NULL / ON DELETE CASCADE; live carries NULL / ON DELETE SET
+// NULL, verified read-only 2026-07-27 and banked in
+// supabase/migrations/2026-07-27_drift_capture_flag_comments_user_id.sql
+// (which also holds the Sky-decides fork). So a comment whose author deleted
+// their account comes back with user_id = null, and typing it `string` was a
+// lie for exactly those rows.
+//
+// ⚠ A NULL author is NOT ownership. Compare with `===` against `user?.id` and
+// never with `==` or a nullish default: for a guest `user?.id` is undefined,
+// and `null == undefined` is TRUE, which would hand an orphaned comment's
+// Delete affordance to every signed-out reader. Asserted in
+// src/lib/__tests__/commentAuthor.test.ts.
 export type CommentRow = {
   id: string;
   flag_id: string;
-  user_id: string;
+  user_id: string | null;
   content: string;
   created_at: string;
   display_name: string | null;
@@ -187,12 +201,16 @@ export type Database = {
         Row: {
           id: string;
           flag_id: string;
-          user_id: string;
+          // SR-117: nullable live (ON DELETE SET NULL) -- see CommentRow above.
+          user_id: string | null;
           content: string;
           created_at: string;
         };
         Insert: {
           flag_id: string;
+          // Stays NOT-nullable on Insert: the app always supplies an author,
+          // and the RLS policy requires user_id = auth.uid(). Only reads can
+          // observe the NULL that ON DELETE SET NULL leaves behind.
           user_id: string;
           content: string;
           id?: string;

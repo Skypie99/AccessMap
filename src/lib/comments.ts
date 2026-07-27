@@ -29,10 +29,15 @@ export const COMMENT_SELECT =
   'id, flag_id, user_id, content, created_at, users!flag_comments_user_id_fkey(display_name)';
 
 // Raw shape returned by the PostgREST join before we flatten display_name.
+// SR-117: `user_id` is nullable because live is (ON DELETE SET NULL, verified
+// 2026-07-27) -- a comment outlives its author's account with the attribution
+// dropped. `users` was already nullable for the same reason: the embed has
+// nothing to join to once user_id is NULL, so display_name falls through to
+// the `?? null` below and the bubble shows its anonymous author fallback.
 type RawCommentRow = {
   id: string;
   flag_id: string;
-  user_id: string;
+  user_id: string | null;
   content: string;
   created_at: string;
   users: { display_name: string | null } | null;
