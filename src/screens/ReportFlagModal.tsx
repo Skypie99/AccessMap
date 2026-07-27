@@ -492,7 +492,14 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
   return (
     // WCAG 2.3.3 (Animation from Interactions): skip the slide animation
     // when the user has requested reduced motion.
-    <Modal visible={visible} animationType={reducedMotion ? 'none' : 'slide'} transparent onRequestClose={onClose} accessibilityViewIsModal aria-label={isAnon ? 'Report anonymously' : 'Report a flag'}>
+    // G9/SR-068: `onRequestClose` was the ONLY dismissal path on this surface
+    // without a mid-flight guard. The visible Cancel at :1073 is already
+    // `disabled={submitting}`, so Android back / web Escape could close the
+    // sheet out from under an in-flight createFlag while the button that does
+    // the same thing was correctly inert. S11 escalates-never-aborts, so the
+    // insert continues after the close and a re-filled resubmit duplicates it.
+    // This removes the asymmetry; it does not invent a new trap.
+    <Modal visible={visible} animationType={reducedMotion ? 'none' : 'slide'} transparent onRequestClose={() => { if (!submitting) onClose(); }} accessibilityViewIsModal aria-label={isAnon ? 'Report anonymously' : 'Report a flag'}>
       <View style={styles.backdrop}>
         {/* KAV wraps the WHOLE card from the backdrop (the FeedbackModal /
             AddressSearchModal recipe): rooted here its keyboard-overlap math
