@@ -61,3 +61,118 @@ export function failureBannerText(providerMessage: string): string {
     ? providerMessage
     : `${providerMessage}. ${RETRY_VERB}`;
 }
+
+/* ───────────────────────────────────────────────────────────────────────────
+ * B-1 — the moderation controls: Report (Apple 1.2(b)), Hide (1.2(c)), and
+ * W1's "Flag as wrong" (product accuracy).
+ *
+ * SKY'S GOVERNING STATEMENT (DECISIONS.md §SKY-3c): THE THREE ARE DISTINCT AND
+ * MUST NOT BE COLLAPSED. She caught an agent offering "Hide" as a wording for
+ * the report control and put the correction on the record. The distinctness
+ * assertion in copy.test.ts is that correction made machine-checkable, not
+ * decoration — do not weaken it.
+ *
+ * DELIBERATELY ABSENT — no accessibilityHint const for any of these. Every hint
+ * that would actually be useful on a moderation control ("we'll review this",
+ * "this removes the comment") is a moderation promise, and authoring one is a
+ * breach of the honesty fence. A missing hint is NOT a WCAG failure: the
+ * accessible NAME carries the meaning, which is what the per-row label helpers
+ * at the bottom of this block are for.
+ *
+ * ALSO DELIBERATELY ABSENT — a report-category taxonomy. Spam / Harassment /
+ * Hate speech / … is Sky's copy, assigned to her at 05 §3 ⑯. The reason field
+ * is free text so that no agent authors that list by implication.
+ * ─────────────────────────────────────────────────────────────────────────── */
+
+/**
+ * The Apple 1.2(b) abuse-report control, on flags and on other people's
+ * comments. Sky's word, verbatim (DECISIONS.md §SKY-3c/§SKY-3g). The report
+ * sheet reuses this as its own title so there is ONE string to arbitrate rather
+ * than a control label and a near-synonym heading that can drift apart.
+ * PROPOSED (B-1, S-8) — Sky's final wording lands in DECISIONS §A / BP16.
+ */
+export const REPORT_CONTROL_LABEL = 'Report';
+
+/**
+ * W1's accuracy control — `requestFlagDispute`, a doubt counter that does NOT
+ * change a flag's status. Sky's word, verbatim (§SKY-3c). It is NOT the abuse
+ * path: it takes no reason, carries no identity, and cannot target a comment at
+ * all, which is exactly why it lives in the triage row beside Verify / Resolved
+ * / Reject rather than next to Report.
+ * PROPOSED (W1, S-8) — Sky's final wording lands in DECISIONS §A / BP16.
+ */
+export const DISPUTE_CONTROL_LABEL = 'Flag as wrong';
+
+/**
+ * The Apple 1.2(c) personal hide control (`hiddenContent.ts`), scoped to
+ * COMMENTS this phase per §SKY-3h. Sky's word, verbatim. It is a personal
+ * filter, not a moderation verdict — nothing here may imply the content was
+ * removed for anyone else.
+ * PROPOSED (B-1/1.2(c), S-8) — Sky's final wording lands in DECISIONS §A / BP16.
+ */
+export const HIDE_CONTROL_LABEL = 'Hide';
+
+/**
+ * Label for the report sheet's free-text reason field. AGENT-PROPOSED wording:
+ * a question, so it asks without promising anything about what follows. It is
+ * deliberately not a category prompt — see the taxonomy note above.
+ * PROPOSED (B-1, S-8) — Sky's final wording lands in DECISIONS §A / BP16.
+ */
+export const REPORT_REASON_LABEL = 'Why are you reporting this?';
+
+/**
+ * Title of the acknowledgement after a report reaches the server.
+ * AGENT-PROPOSED wording: states what happened, nothing about what happens next.
+ * PROPOSED (B-1, S-8) — Sky's final wording lands in DECISIONS §A / BP16.
+ */
+export const REPORT_SENT_TITLE = 'Report sent';
+
+/**
+ * Body of that acknowledgement — the visible triage statement §SKY-3g asks for
+ * ("Triage path (state it visibly)"). AGENT-PROPOSED wording, and the single
+ * riskiest string in this block: it deliberately carries NO cadence, NO
+ * response time, and NO outcome, because Sky's recorded triage sentence is a
+ * cadence she owns and any number an agent picked would be an invented promise.
+ * PROPOSED (B-1, S-8) — Sky's final wording lands in DECISIONS §A / BP16.
+ */
+export const REPORT_SENT_BODY = 'Thanks. Reports are reviewed by the AccessMap maintainer.';
+
+/**
+ * Title shown when the report could not be sent. AGENT-PROPOSED wording.
+ * PROPOSED (B-1, S-8) — Sky's final wording lands in DECISIONS §A / BP16.
+ */
+export const REPORT_FAILED_TITLE = "Couldn't send report";
+
+/**
+ * The last rung of the submit ladder: name the address so a failed report is
+ * still deliverable by hand. A helper rather than a const so the address comes
+ * from `FEEDBACK_EMAIL` at the call site and the two can never drift.
+ * AGENT-PROPOSED wording, modelled on the shipped `openFeedbackComposer`
+ * fallback ("Send your feedback to: …").
+ * PROPOSED (B-1, S-8) — Sky's final wording lands in DECISIONS §A / BP16.
+ */
+export function reportFailedBody(email: string): string {
+  return `We couldn't send your report. You can email it to ${email} instead.`;
+}
+
+/**
+ * Accessible NAME for a per-comment Report control. A row of buttons all named
+ * "Report" is ambiguous to a screen reader — which comment? — so the name
+ * carries the author, the same way a11yText.ts pairs a severity number with its
+ * word. Pass the SAME author string the bubble renders (including its anonymous
+ * fallback for a comment whose author account is gone), so the label never
+ * claims a name the row does not show. AGENT-PROPOSED wording.
+ * PROPOSED (B-1, S-8) — Sky's final wording lands in DECISIONS §A / BP16.
+ */
+export function reportCommentA11yLabel(author: string): string {
+  return `${REPORT_CONTROL_LABEL} comment by ${author}`;
+}
+
+/**
+ * Accessible NAME for a per-comment Hide control. Same reasoning, same caller
+ * contract as `reportCommentA11yLabel`. AGENT-PROPOSED wording.
+ * PROPOSED (B-1/1.2(c), S-8) — Sky's final wording lands in DECISIONS §A / BP16.
+ */
+export function hideCommentA11yLabel(author: string): string {
+  return `${HIDE_CONTROL_LABEL} comment by ${author}`;
+}
