@@ -126,7 +126,20 @@ export function Sheet({
       animationType={reducedMotion ? 'none' : 'slide'}
       onRequestClose={onClose}
     >
-      <View style={[styles.backdrop, { backgroundColor: color.scrim }]} accessibilityViewIsModal testID={testID}>
+      {/* G1/SR-063 — the VoiceOver escape gesture (two-finger Z) lands HERE,
+          on the containment node, NOT on <Modal>. RN's Modal.render() forwards
+          an explicit prop allowlist to RCTModalHostView and
+          onAccessibilityEscape is not in it (react-native 0.81.5,
+          Libraries/Modal/Modal.js:326-347), so a prop on the Modal tag would
+          typecheck, satisfy any naive guard, and do absolutely nothing. On a
+          View it is real: RCTView.m:447 accessibilityPerformEscape.
+          One edit here covers both Sheet consumers. */}
+      <View
+        style={[styles.backdrop, { backgroundColor: color.scrim }]}
+        accessibilityViewIsModal
+        onAccessibilityEscape={onClose}
+        testID={testID}
+      >
         {glass ? (
           // Bulk-glass card: the variant owns the surface, and overflow:hidden
           // clips it to the rounded top — so (per GlassSurface's contract) the
