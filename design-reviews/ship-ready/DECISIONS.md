@@ -343,3 +343,53 @@ governing statement for all three:**
 - **B-1 stays BLOCKING-OPEN until this ships.** Applying W1 did not move
   1.2(b), and `07_PHASE2_REPORT.md §4`'s statement stands: *"Any report that
   closes B-1 on the strength of W1 is wrong."*
+
+---
+
+## §SKY-3g B-1 abuse-leg DESIGN — Sky's decision (2026-07-27), recorded verbatim
+
+> B-1 abuse-leg design (Sky, 2026-07-27):
+> Schema fork: OPTION B — encode-in-body via the existing feedback pipeline
+> ("[REPORT]" prefix + structured first line: target type/id + reason field in
+> the UI). NO enum ALTER, NO comment_id column now (enum additions are
+> effectively irreversible — post-launch migration to structured columns is
+> the recorded cleanup path).
+> Triage path (state it visibly): Sky reviews [REPORT] feedback on a regular
+> cadence; comment takedowns via the C-8 admin delete policy, flag takedowns
+> via the existing hide/reject levers. Report → review → action, all live.
+
+This resolves the Phase-3 fork §SKY-3f left explicitly open ("that trade —
+queryability vs. zero-schema — is a Phase-3 fork worth putting to Sky
+explicitly rather than deciding silently"). **Option B is chosen: zero schema.**
+The `feedback_category` enum is NOT altered and no `comment_id` column is added.
+
+## §SKY-3h Phase-3 scope decisions — Sky's picks (2026-07-27)
+
+Given in-window at Phase-3 plan time (AskUserQuestion). Sky is the sole author
+of answers; recorded here per the ledger-authorship rule.
+
+- **G5 focus-return — SHIP 3, RE-DEFER THE 4th.** Adopt NearbyFlagsModal →
+  ReportFlagModal → LegendModal (her Phase-2 picked order, minus the one that
+  cannot be proven). **FlagDetailModal is re-deferred WITH its reason** as a
+  counted residue in the census — never a false green. Evidence put to her:
+  every one of its four openers is already focus-managed or unmounts its own
+  trigger (pin callout closes on present · the Nearby row path deliberately
+  leaves the list mounted so the platform already restores · TasksScreen's card
+  is a `React.memo` row in a virtualized `SectionList`, where one shared ref is
+  won by the last-mounted card · ProfileScreen's `handleDetailClose` **reopens**
+  the list modal, which runs its own `useFocusOnOpen`, so a restore would fight
+  it). Same precedent as **J2-1**: a spec superseded by a verified fact, recorded.
+- **1.2(c) Hide affordance — COMMENTS ONLY.** Honest consequence she accepted:
+  **1.2(c) is reported PARTIAL, not closed.** Flag-level hide (threading
+  `filterHidden` through `flagsStore` → Map pins → Tasks → Home counts → the
+  offline cache, plus an unhide surface in Settings) is a named follow-up, not
+  this phase.
+- **RECOMMENDED tier (05 §2) — BUILD: R-2, R-13, R-1 (artifact only), SR-117.**
+  - **R-2** the guest reviewer-path honesty cluster ×4.
+  - **R-13** the web-cohort pair (SR-104 + SR-105).
+  - **R-1** deletion Storage residue — **author the edge function + rollback as a
+    PROPOSED Sky-deployed artifact ONLY.** Deploying it is a production side
+    effect an agent must never take.
+  - **SR-117** the `flag_comments.user_id` type lie (live nullable /
+    ON DELETE SET NULL vs the repo's NOT NULL / ON DELETE CASCADE).
+  - **R-7 password reset was NOT picked** — deferred with reason, not dropped.
