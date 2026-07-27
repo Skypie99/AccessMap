@@ -1,5 +1,5 @@
 /**
- * G5 — PressableScale forwards a ref, and forwarding costs the other 17 sites
+ * G5 — PressableScale forwards a ref, and forwarding costs the ref-less sites
  * nothing.
  *
  * `useSurfaceTrigger` hands the screen-reader cursor back to the control that
@@ -12,9 +12,14 @@
  *   2. Wrapping each trigger in a <View ref> would not work anyway: Android's
  *      NativeViewHierarchyOptimizer DELETES layout-only Views, so the tag could
  *      resolve to a view that no longer exists. Device-only, silent.
- *   3. 17 existing call sites pass no ref, and this repo has ZERO snapshot
- *      tests, so nothing else would notice if forwarding broke their behaviour.
- *      Hence the second half of this file.
+ *   3. Most call sites pass no ref, and this repo has ZERO snapshot tests, so
+ *      nothing else would notice if forwarding broke their behaviour. Hence the
+ *      second half of this file.
+ *      Counted 2026-07-27: 17 <PressableScale> sites in app source (MapScreen 11,
+ *      HomeScreen 5, TasksScreen 1), of which the 3 G5 triggers in MapScreen now
+ *      carry `ref={…Trigger.ref}` — so 14 are ref-less. Stated as a count with a
+ *      date because the earlier "17 ref-less" phrasing was true only before the
+ *      adoption commits landed and then travelled as fact.
  *
  * WHAT JEST CAN AND CANNOT SEE. react-test-renderer builds no native view tree,
  * so the REAL `findNodeHandle` returns `undefined` for a perfectly attached ref
@@ -134,7 +139,7 @@ describe('G5 — a forwarded ref reaches the real accessibility element', () => 
   });
 });
 
-describe('G5 — the 17 ref-less call sites are unchanged', () => {
+describe('G5 — the 14 ref-less call sites are unchanged', () => {
   it('a ref-less PressableScale still presses, springs and dims', () => {
     // Spy the driver so we count "did an animation start?" without running a
     // native-driver animation under jest (the reduceMotion.primitives idiom).

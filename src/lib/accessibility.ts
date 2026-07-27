@@ -264,6 +264,19 @@ export function useReducedMotion(): boolean {
  * an EMPTY BODY, so this hook has no web-observable effect whatsoever. Jest can
  * prove the call was made with the right handle and nothing more; only a device
  * pass with VoiceOver / TalkBack can prove the cursor actually moved.
+ *
+ * ⚠ READ THIS BEFORE FLIPPING `newArchEnabled`. On the NEW architecture, RN's
+ * Fabric modal already does this job itself: RCTModalHostViewComponentView saves
+ * the focused accessibility element before presenting and posts a screen-changed
+ * notification at it in the dismissal completion — which runs right after it
+ * emits onDismiss to JS, i.e. the platform's own restore lands just AFTER this
+ * hook's. app.json currently sets `"newArchEnabled": false`, so the old-arch
+ * RCTModalHostView has no save/restore and this hook is the only mechanism. If
+ * that flag flips, every dismissal issues two competing focus commands
+ * milliseconds apart, and `markHandoff` stops being a handoff at all — the
+ * platform would move the cursor back to the trigger regardless, clobbering the
+ * announcement the suppression exists to protect. Re-verify this hook against
+ * Fabric before assuming it still helps; it may need to become a no-op on iOS.
  */
 /**
  * How long to wait after an Android close-intent before handing the cursor back.
