@@ -22,6 +22,12 @@ export class CommentsTableNotReadyError extends Error {
   }
 }
 
+// The one select string both read paths use. Shared deliberately: the list
+// query and the insert's returning-clause carry the same embed, and fixing
+// only one of them leaves the other broken (SR-092 was live on both).
+export const COMMENT_SELECT =
+  'id, flag_id, user_id, content, created_at, users!flag_comments_user_id_fkey(display_name)';
+
 // Raw shape returned by the PostgREST join before we flatten display_name.
 type RawCommentRow = {
   id: string;
@@ -43,6 +49,18 @@ function flattenComment(row: RawCommentRow): CommentRow {
   };
 }
 
+// PostgREST embed/relationship failures. These are NOT a missing table, and
+// their message bodies can legitimately contain the phrase "does not exist"
+// (a bad column inside an embed hint reads `column ... does not exist`).
+// Without this early-out the loose message match below would show the user
+// "Comments coming soon" for a broken join — a worse lie than an honest error,
+// and exactly how SR-092 could have hidden itself.
+const EMBED_ERROR_CODES = new Set([
+  'PGRST200', // no relationship found between the two tables
+  'PGRST201', // more than one relationship found (the SR-092 shape)
+  'PGRST202', // function not found in the schema cache
+]);
+
 // PostgreSQL error code 42P01 = undefined_table. Inspect the raw error
 // fields directly (same pattern as photos.ts) — errorMessage() now rewrites
 // recognized failures into friendly copy, so its output can no longer be
@@ -51,6 +69,7 @@ function flattenComment(row: RawCommentRow): CommentRow {
 function isTableMissingError(e: unknown): boolean {
   const msg = String((e as { message?: string })?.message ?? e ?? '');
   const code = String((e as { code?: string })?.code ?? '');
+  if (EMBED_ERROR_CODES.has(code)) return false;
   return code === '42P01' || msg.includes('42P01') || msg.includes('does not exist');
 }
 
@@ -61,11 +80,20 @@ export async function listComments(flagId: string): Promise<CommentRow[]> {
   // Cast through `any` for the join query: the flag_comments table has no
   // Relationships defined in database.ts (they can't be expressed without
   // regenerating the Supabase types), so the typed client rejects the
-  // `users(display_name)` select clause at compile time.
+  // `users(...)` select clause at compile time.
+  //
+  // The `!flag_comments_user_id_fkey` hint is load-bearing, not decoration.
+  // A bare `users(display_name)` is AMBIGUOUS: comment_votes has FKs to both
+  // flag_comments and users, so PostgREST sees a second, many-to-many
+  // flag_comments<->users relationship through it and answers PGRST201 /
+  // HTTP 300 — which is how comments died in production the day
+  // 2026-05-30_trust_score_system.sql landed. The hint names the direct FK.
+  // (If that constraint is ever renamed, the column form `users!user_id(...)`
+  // disambiguates without pinning a generated identifier.)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data, error } = await (supabase as any)
     .from('flag_comments')
-    .select('id, flag_id, user_id, content, created_at, users(display_name)')
+    .select(COMMENT_SELECT)
     .eq('flag_id', flagId)
     .order('created_at', { ascending: false })
     .limit(MAX_COMMENTS);
@@ -91,7 +119,7 @@ export async function addComment(flagId: string, content: string): Promise<Comme
   const { data, error } = await (supabase as any)
     .from('flag_comments')
     .insert({ flag_id: flagId, content: trimmed })
-    .select('id, flag_id, user_id, content, created_at, users(display_name)')
+    .select(COMMENT_SELECT)
     .single();
 
   if (error) {

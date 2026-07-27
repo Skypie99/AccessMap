@@ -1,6 +1,7 @@
 // Supabase mock — must be declared before jest.mock() hoisting.
 import {
   addComment,
+  COMMENT_SELECT,
   CommentsTableNotReadyError,
   deleteComment,
   listComments,
@@ -294,5 +295,92 @@ describe('deleteComment', () => {
     mockFrom.mockReturnValue(chain);
 
     await expect(deleteComment('bad-id')).rejects.toThrow('not found');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// B-7 / SR-092 — the disambiguated users embed
+//
+// Comments were dead in production for every cohort: a bare `users(...)` embed
+// is ambiguous because comment_votes carries FKs to BOTH flag_comments and
+// users, so PostgREST derives a second many-to-many relationship and answers
+// PGRST201 / HTTP 300. Verified against prod on 2026-07-26: the bare form
+// returns 300, the hinted form returns 200, and PostgREST's own hint names
+// 'users!flag_comments_user_id_fkey'.
+//
+// jest could never have caught this — supabase is mocked, so the select string
+// was never asserted anywhere. These are those assertions.
+// ---------------------------------------------------------------------------
+
+describe('B-7 — PGRST201 embed guard', () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  it('COMMENT_SELECT names the direct FK, never a bare users( embed', () => {
+    expect(COMMENT_SELECT).toContain('users!flag_comments_user_id_fkey(display_name)');
+    // A bare `users(` anywhere in the string is the bug returning.
+    expect(/(^|[\s,])users\(/.test(COMMENT_SELECT)).toBe(false);
+  });
+
+  it('listComments sends the disambiguated embed', async () => {
+    const chain = selectChain([]);
+    mockFrom.mockReturnValue(chain);
+
+    await listComments('flag-42');
+
+    expect(chain.select).toHaveBeenCalledWith(COMMENT_SELECT);
+  });
+
+  it("addComment's returning-clause sends the same embed (both paths were broken)", async () => {
+    const chain = {
+      insert: jest.fn().mockReturnThis(),
+      select: jest.fn().mockReturnThis(),
+      single: jest.fn().mockResolvedValue({
+        data: {
+          id: 'c9',
+          flag_id: 'flag-1',
+          user_id: 'u1',
+          content: 'hi',
+          created_at: '2026-07-26T00:00:00Z',
+          users: { display_name: 'Sky' },
+        },
+        error: null,
+      }),
+    };
+    mockFrom.mockReturnValue(chain);
+
+    await addComment('flag-1', 'hi');
+
+    expect(chain.select).toHaveBeenCalledWith(COMMENT_SELECT);
+  });
+
+  it('a PGRST201 embed failure is NOT misread as a missing table', async () => {
+    // The failure mode this guards: isTableMissingError() matches the loose
+    // phrase "does not exist", which a relationship error body can carry. If
+    // it swallowed one, the UI would say "Comments coming soon" for a broken
+    // join — a worse lie than an honest error.
+    const chain = selectChain([], {
+      code: 'PGRST201',
+      message: "Could not embed because more than one relationship was found for 'flag_comments' and 'users'",
+    });
+    mockFrom.mockReturnValue(chain);
+
+    await expect(listComments('flag-1')).rejects.not.toBeInstanceOf(CommentsTableNotReadyError);
+  });
+
+  it('a PGRST200 body containing "does not exist" is still not a missing table', async () => {
+    const chain = selectChain([], {
+      code: 'PGRST200',
+      message: "Could not find a relationship ... column users.nope does not exist",
+    });
+    mockFrom.mockReturnValue(chain);
+
+    await expect(listComments('flag-1')).rejects.not.toBeInstanceOf(CommentsTableNotReadyError);
+  });
+
+  it('a genuine 42P01 is still reported as a missing table', async () => {
+    const chain = selectChain([], { code: '42P01', message: 'relation "flag_comments" does not exist' });
+    mockFrom.mockReturnValue(chain);
+
+    await expect(listComments('flag-1')).rejects.toBeInstanceOf(CommentsTableNotReadyError);
   });
 });
