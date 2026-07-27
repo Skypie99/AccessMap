@@ -512,7 +512,19 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           style={styles.kav}
         >
-        <GlassSurface variant="bulk" borderRadius={0} style={styles.card} accessibilityViewIsModal>
+        <GlassSurface
+          variant="bulk"
+          borderRadius={0}
+          style={styles.card}
+          accessibilityViewIsModal
+          // G1 + G9: the same `!submitting` guard the visible Cancel and
+          // onRequestClose use. NOTE the AVM on the <Modal> tag at :495 is
+          // dead (RN drops it); this child is the live containment node, and
+          // therefore the escape target too. SR-116.
+          onAccessibilityEscape={() => {
+            if (!submitting) onClose();
+          }}
+        >
           {/* WCAG 1.4.4: content scrolls under the 88% cap; Cancel/Report
               buttons stay pinned as sticky footer. */}
           <ScrollView

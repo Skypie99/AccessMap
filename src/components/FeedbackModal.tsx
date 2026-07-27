@@ -170,7 +170,16 @@ export default function FeedbackModal({ visible, onClose }: Props) {
       {/* accessibilityViewIsModal — VoiceOver treats everything behind
           this view as inert while the modal is up. Same pattern as
           HelpModal; see that file for the longer comment. Alex P5. */}
-      <View style={styles.backdrop} accessibilityViewIsModal testID="feedbackModal-backdrop">
+      <View
+        style={styles.backdrop}
+        accessibilityViewIsModal
+        // G1: same `!sending` guard as onRequestClose — a scrub mid-send must
+        // no-op exactly like the disabled X does.
+        onAccessibilityEscape={() => {
+          if (!sending) onClose();
+        }}
+        testID="feedbackModal-backdrop"
+      >
         {/* KAV nests INSIDE the backdrop — the backdrop keeps
             accessibilityViewIsModal + testID (pinned by the sharedModalsContext
             test) and the KAV lifts the card above the iOS keyboard. Same recipe

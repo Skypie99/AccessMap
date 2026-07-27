@@ -1766,7 +1766,15 @@ export default function ProfileScreen() {
         }}
       >
         <View style={styles.deleteBackdrop}>
-          <View style={styles.deleteSheet} accessibilityViewIsModal>
+          <View
+            style={styles.deleteSheet}
+            accessibilityViewIsModal
+            // G1: same `!deletingAccount` guard as onRequestClose. Escape
+            // reads as Cancel here, never as confirm.
+            onAccessibilityEscape={() => {
+              if (!deletingAccount) setDeleteAccountOpen(false);
+            }}
+          >
             {/* Copy scrolls at large type; the destructive Cancel/Delete pair
                 stays OUTSIDE the scroll so it can never slide off (sweep M7). */}
             <ScrollView contentContainerStyle={styles.deleteScrollContent}>
@@ -1906,7 +1914,11 @@ export default function ProfileScreen() {
         onRequestClose={() => setTierExplainerOpen(false)}
       >
         <View style={styles.tierBackdrop}>
-          <View style={styles.tierSheet} accessibilityViewIsModal>
+          <View
+            style={styles.tierSheet}
+            accessibilityViewIsModal
+            onAccessibilityEscape={() => setTierExplainerOpen(false)}
+          >
             <View style={styles.tierHeaderRow}>
               <AppText variant="heading" style={styles.tierHeaderTitle} accessibilityRole="header">
                 Reputation tiers
