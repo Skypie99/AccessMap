@@ -174,6 +174,83 @@ const CROSS_FILE = [
   },
 ] as const;
 
+/**
+ * G5 FOCUS RETURN — the surfaces that hand the screen-reader cursor back to the
+ * control that opened them, via `useSurfaceTrigger` (src/lib/accessibility.ts).
+ *
+ * Declared, not inferred, and asserted in BOTH directions: a declared surface
+ * must be wired end to end, and a surface that carries `onDismiss` without
+ * being declared here FAILS. That second half is the one that matters — the
+ * contract is five separate edits across two files, and four of them landing is
+ * indistinguishable from five at a glance.
+ *
+ * ON PROOF: react-native-web stubs `AccessibilityInfo.setAccessibilityFocus` to
+ * an EMPTY BODY and drops `accessibilityViewIsModal`, so this whole feature has
+ * ZERO web-observable delta. jest can prove the wiring exists and that the hook
+ * calls setAccessibilityFocus with the right handle; only a device pass with
+ * VoiceOver / TalkBack can prove the cursor moved. This assertion is a wiring
+ * guard, and calling it anything more would be dressing green as shipped.
+ */
+const FOCUS_RETURN = [
+  {
+    rel: 'screens/NearbyFlagsModal.tsx',
+    opener: 'screens/MapScreen.tsx',
+    trigger: 'nearbyTrigger',
+    handoff: true,
+    why:
+      'The List FAB opens it; closing it returns the cursor to that FAB. Needs ' +
+      'a handoff because picking a row goes ONWARD — to the detail sheet under ' +
+      'a screen reader, to the map callout when sighted.',
+  },
+  {
+    rel: 'screens/ReportFlagModal.tsx',
+    opener: 'screens/MapScreen.tsx',
+    trigger: 'reportTrigger',
+    handoff: true,
+    why:
+      'The Report FAB opens it; cancel / hardware back / the escape scrub return ' +
+      'the cursor there. Needs a handoff because a SUBMIT belongs to the ' +
+      '"Report filed…" live region — yanking focus would cut it off mid-utterance.',
+  },
+  {
+    rel: 'screens/LegendModal.tsx',
+    opener: 'screens/MapScreen.tsx',
+    trigger: 'legendTrigger',
+    handoff: false,
+    why:
+      'The header help button opens it; closing it returns the cursor there. No ' +
+      'handoff by design — the legend is read-only, so every exit is a plain ' +
+      'close and there is no onward surface to hand focus to.',
+  },
+] as const;
+
+/**
+ * The one surface that returns focus WITHOUT this contract, and must not be
+ * read as a gap.
+ *
+ * The drawer's focus return predates G5 and rides `DrawerContext`, because its
+ * trigger lives in N different screen headers while <HamburgerDrawer> mounts
+ * once at the navigator — trigger and surface sit in different subtrees, so the
+ * handle has to travel through a provider. `useSurfaceTrigger` deliberately has
+ * no provider and serves LOCAL pairs only.
+ *
+ * It is also frozen shut: assertion H pins the drawer's exact Modal prop-name
+ * SET and the literal `onDismiss={presentPendingSubScreen}` — a handler name J
+ * could never match, and one J must not force to be renamed. A stale entry here
+ * cannot rot either: J requires it to still resolve to exactly one live surface
+ * carrying `onDismiss`, and H fails independently if the drawer's tag drifts.
+ *
+ * Its own contract is covered by HamburgerDrawer.focus.test.tsx and
+ * drawerTrigger.test.tsx. This is a BOUNDARY between two focus-return
+ * mechanisms, not a coverage hole.
+ */
+const FOCUS_RETURN_EXEMPT = [
+  {
+    rel: 'components/HamburgerDrawer.tsx',
+    handler: 'onDismiss={presentPendingSubScreen}',
+  },
+] as const;
+
 // ---------------------------------------------------------------------------
 // Assertions
 // ---------------------------------------------------------------------------
@@ -318,6 +395,88 @@ describe('the dismissal standard', () => {
     // The panel — not the Modal — is where the drawer's escape lives.
     const panel = (drawer as Surface).body;
     expect(panel).toContain('onAccessibilityEscape={closeDrawer}');
+  });
+
+  it('J · focus return is wired end to end, and nothing else claims onDismiss', () => {
+    // Sky's picked scope, minus the fourth. FlagDetailModal is RE-DEFERRED with
+    // its reason rather than counted green: every one of its four openers is
+    // already focus-managed or unmounts its own trigger (the pin callout closes
+    // on present · the Nearby row path deliberately leaves the list mounted so
+    // the platform already restores · TasksScreen's card is a React.memo row in
+    // a virtualized SectionList, where one shared ref is won by the last-mounted
+    // card · ProfileScreen's handleDetailClose REOPENS the list modal, which
+    // runs its own useFocusOnOpen, so a restore would fight it). Raising this to
+    // 4 without answering all four of those is the failure this number blocks.
+    expect(FOCUS_RETURN).toHaveLength(3);
+
+    const offenders: string[] = [];
+
+    // (a) FORWARD — every declared surface is wired end to end. Five separate
+    // strings in the opener, because five is what the contract actually costs:
+    // the hook, the ref, the capture, the restore, and the non-iOS stand-in.
+    // Miss the last one and the feature works on Sky's iPhone and is silently
+    // dead on every Android device — the exact failure jest exists to catch.
+    for (const d of FOCUS_RETURN) {
+      const hits = live.filter((s) => s.rel === d.rel);
+      if (hits.length !== 1) {
+        offenders.push(`${d.rel} → resolves to ${hits.length} live surfaces, expected 1`);
+        continue;
+      }
+      const s = hits[0];
+
+      // Parity, in the spirit of assertion B: the Modal must FORWARD the prop.
+      // An ad-hoc arrow here would typecheck, render, and quietly break the
+      // opener's contract, since only `onDismiss` is what the opener passes.
+      const od = norm(prop(s.tag, 'onDismiss'));
+      if (od !== 'onDismiss') {
+        offenders.push(
+          `${d.rel}:${s.line} → Modal onDismiss=${od || '(absent)'}, expected the forwarded prop`,
+        );
+      }
+      const surfaceSrc = stripComments(fs.readFileSync(s.file, 'utf8'));
+      if (!surfaceSrc.includes('onDismiss?: () => void;')) {
+        offenders.push(`${d.rel} → Props do not declare 'onDismiss?: () => void;'`);
+      }
+
+      // Comments STRIPPED, so a commented-out line can never satisfy the check.
+      const opener = stripComments(fs.readFileSync(path.join(SRC, d.opener), 'utf8'));
+      const required = [
+        `const ${d.trigger} = useSurfaceTrigger`,
+        `ref={${d.trigger}.ref}`,
+        `${d.trigger}.register();`,
+        `onDismiss={${d.trigger}.restore}`,
+        `${d.trigger}.release();`,
+        // Only the surfaces that hand focus ONWARD; requiring it of the legend
+        // would demand dead code, and dead code is how a guard loses its teeth.
+        ...(d.handoff ? [`${d.trigger}.markHandoff();`] : []),
+      ];
+      for (const need of required) {
+        if (!opener.includes(need)) {
+          offenders.push(`${d.opener} → missing \`${need}\` for ${d.rel}`);
+        }
+      }
+    }
+
+    // (b) REVERSE — nothing else claims onDismiss. A fourth adoption cannot
+    // land half-wired: it fails here until it is declared above, and declaring
+    // it above puts it through (a).
+    const declared = new Set<string>(FOCUS_RETURN.map((d) => d.rel));
+    const exempt = new Set<string>(FOCUS_RETURN_EXEMPT.map((e) => e.rel));
+    for (const s of live) {
+      if (!prop(s.tag, 'onDismiss')) continue;
+      if (declared.has(s.rel) || exempt.has(s.rel)) continue;
+      offenders.push(`${s.rel}:${s.line} → carries onDismiss but is not declared in FOCUS_RETURN`);
+    }
+
+    // The exemption drains rather than accumulates, same rule as ALLOWED.
+    for (const e of FOCUS_RETURN_EXEMPT) {
+      const hits = live.filter((s) => s.rel === e.rel && s.tag.includes(e.handler));
+      if (hits.length !== 1) {
+        offenders.push(`${e.rel} → exemption resolves to ${hits.length} live surfaces, expected 1`);
+      }
+    }
+
+    expect(offenders).toEqual([]);
   });
 
   it('I · every allow-list entry still resolves to exactly one live surface', () => {
