@@ -2,6 +2,8 @@ import { Platform } from 'react-native';
 import { supabase } from './supabase';
 import { errorMessage } from './errors';
 import { trackEvent, commentLengthBucket } from './analytics';
+import { containsBlockedTerm } from '@/moderation/blockedTerms';
+import { CONTENT_BLOCKED_MESSAGE } from './copy';
 import type { CommentRow } from '@/types/database';
 
 export { CommentRow };
@@ -118,6 +120,13 @@ export async function addComment(flagId: string, content: string): Promise<Comme
   if (trimmed.length === 0) throw new Error('Comment cannot be empty.');
   if (trimmed.length > MAX_COMMENT_LENGTH) {
     throw new Error(`Comments must be ${MAX_COMMENT_LENGTH} characters or fewer.`);
+  }
+  // Apple 1.2(a): the submit-time filter, at the same trust boundary as the
+  // length guard and before any network call. Client-side only and bypassable —
+  // see the header of `@/moderation/blockedTerms` for what that does and does
+  // not buy.
+  if (containsBlockedTerm(trimmed)) {
+    throw new Error(CONTENT_BLOCKED_MESSAGE);
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

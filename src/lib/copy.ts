@@ -177,6 +177,23 @@ export function reportFailedBody(email: string): string {
 }
 
 /**
+ * Shown when the submit-time filter (Apple 1.2(a)) rejects a flag description
+ * or a comment. Sky's wording, verbatim from `14_MODERATION_TEXTS_v1.md` §2.
+ *
+ * ⚠ IT DOES NOT NAME THE MATCHED TERM, deliberately, and `findBlockedTerm` is
+ * marked diagnostic-only for the same reason. Echoing the word back does two
+ * bad things at once: it hands someone a hint sheet for evading the filter,
+ * and it repeats a slur at whoever just read it.
+ *
+ * "may contain" is doing real work too — the filter is a word list, so it is
+ * sometimes wrong, and a sentence that accused the user outright would be
+ * unkind exactly when it was mistaken.
+ * RATIFIED by Sky 2026-07-27 — DECISIONS §SKY-4, 14_MODERATION_TEXTS_v1.md §2.
+ */
+export const CONTENT_BLOCKED_MESSAGE =
+  "This can't be submitted yet. It may contain language that breaks the community guidelines. Please edit it and try again.";
+
+/**
  * Accessible NAME for a per-comment Report control. A row of buttons all named
  * "Report" is ambiguous to a screen reader — which comment? — so the name
  * carries the author, the same way a11yText.ts pairs a severity number with its

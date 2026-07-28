@@ -302,24 +302,35 @@ describe('B-1 copy carries the PROPOSED marker (the honesty fence, mechanised)',
    * recorded. Ratified copy is held exactly as strictly as proposed copy; only
    * the claim being asserted changes.
    */
-  const RATIFIED_MARKER =
-    "RATIFIED by Sky 2026-07-27 — DECISIONS §SKY-4, 14_MODERATION_TEXTS_v1.md §5.";
+  /**
+   * The marker cites the SECTION of the ratified text a string came from, so a
+   * reader can check the const against Sky's words without hunting. Same shape
+   * for every ratified string; only the section varies.
+   */
+  const ratifiedMarker = (section: string) =>
+    `RATIFIED by Sky 2026-07-27 — DECISIONS §SKY-4, 14_MODERATION_TEXTS_v1.md ${section}.`;
 
-  const RATIFIED_EXPORTS = ['REPORT_SENT_BODY'];
+  const RATIFIED_EXPORTS: ReadonlyArray<[name: string, section: string]> = [
+    ['REPORT_SENT_BODY', '§5'],
+    ['CONTENT_BLOCKED_MESSAGE', '§2'],
+  ];
 
-  it.each(RATIFIED_EXPORTS)('%s is marked RATIFIED, not PROPOSED', (name) => {
+  it.each(RATIFIED_EXPORTS)('%s is marked RATIFIED, not PROPOSED', (name, section) => {
     const doc = prose(name);
-    expect(doc).toContain(RATIFIED_MARKER);
+    expect(doc).toContain(ratifiedMarker(section));
     // The two markers are mutually exclusive. A const claiming both is a
     // half-finished ratification, and that ambiguity is what this catches.
     expect(doc).not.toContain(MARKER);
   });
 
-  it.each(RATIFIED_EXPORTS)('%s ends its JSDoc with the ratified marker, exactly', (name) => {
-    expect(prose(name).endsWith(RATIFIED_MARKER)).toBe(true);
-  });
+  it.each(RATIFIED_EXPORTS)(
+    '%s ends its JSDoc with the ratified marker, exactly',
+    (name, section) => {
+      expect(prose(name).endsWith(ratifiedMarker(section))).toBe(true);
+    },
+  );
 
   it('no export is in both lists', () => {
-    for (const name of RATIFIED_EXPORTS) expect(PROPOSED_EXPORTS).not.toContain(name);
+    for (const [name] of RATIFIED_EXPORTS) expect(PROPOSED_EXPORTS).not.toContain(name);
   });
 });

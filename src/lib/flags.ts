@@ -3,6 +3,8 @@ import { color as themeColor, severity as severityRamp } from '@/theme';
 import { Platform } from 'react-native';
 import * as ImageManipulator from 'expo-image-manipulator';
 import { trackEvent } from './analytics';
+import { containsBlockedTerm } from '@/moderation/blockedTerms';
+import { CONTENT_BLOCKED_MESSAGE } from './copy';
 import type { FlagCategory, FlagRow, FlagSeverity, FlagStatus } from '@/types/database';
 
 export const FLAG_PHOTOS_BUCKET = 'flag-photos';
@@ -1108,6 +1110,14 @@ export async function createFlag(
     throw new Error('Invalid coordinates: lng must be between -180 and 180.');
   }
   assertValidCategoryAndSeverity(input.category, input.severity);
+  // Apple 1.2(a): the submit-time filter, at the same trust boundary as the
+  // coordinate and category guards above and before any network call. Checks
+  // the DESCRIPTION only — category and severity are closed enum sets that
+  // cannot carry free text. Client-side only and bypassable; see the header of
+  // `@/moderation/blockedTerms`.
+  if (input.description && containsBlockedTerm(input.description)) {
+    throw new Error(CONTENT_BLOCKED_MESSAGE);
+  }
 
   const basePayload = {
     user_id: userId,
