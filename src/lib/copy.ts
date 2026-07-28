@@ -128,14 +128,28 @@ export const REPORT_REASON_LABEL = 'Why are you reporting this?';
 export const REPORT_SENT_TITLE = 'Report sent';
 
 /**
- * Body of that acknowledgement — the visible triage statement §SKY-3g asks for
- * ("Triage path (state it visibly)"). AGENT-PROPOSED wording, and the single
- * riskiest string in this block: it deliberately carries NO cadence, NO
- * response time, and NO outcome, because Sky's recorded triage sentence is a
- * cadence she owns and any number an agent picked would be an invented promise.
+ * Body of that acknowledgement.
+ *
+ * ⚠ THIS DELIBERATELY MAKES NO PROMISE, and the earlier attempt is worth
+ * recording because it looked safe. It read "Thanks. Reports are reviewed by
+ * the AccessMap maintainer." — no cadence, no response time, no outcome, and
+ * defensible as a transcription of §SKY-3g's "Triage path (state it visibly)".
+ * Two independent reviewers still called it a fence breach, and they were
+ * right: THE PROMISE IS THE VERB. "are reviewed" asserts, present tense and
+ * unconditionally, that a human reviews reports and names who. That is a
+ * commitment about a person's behaviour, and 05 §3 ⑯ assigns it to Sky.
+ *
+ * It was doubly dangerous because the fence guard could not see it — the test
+ * banned "will be removed" and a present-tense passive walked straight past, so
+ * a green suite would have read as evidence of no promise. The guard now checks
+ * the verb, not just the tense (copy.test.ts).
+ *
+ * So this says only what is true at the moment it appears: the report left the
+ * device. If Sky wants a review commitment here — and an App Review reviewer
+ * would likely welcome one — she writes it.
  * PROPOSED (B-1, S-8) — Sky's final wording lands in DECISIONS §A / BP16.
  */
-export const REPORT_SENT_BODY = 'Thanks. Reports are reviewed by the AccessMap maintainer.';
+export const REPORT_SENT_BODY = 'Thanks — your report has been sent.';
 
 /**
  * Title shown when the report could not be sent. AGENT-PROPOSED wording.

@@ -132,6 +132,19 @@ describe('B-1 moderation copy', () => {
       expect(s).not.toMatch(/\d+\s*(hour|day|business|week)/i);
       // No promised outcome ("will be removed", "will be banned").
       expect(s).not.toMatch(/will be (removed|deleted|banned|taken down)/i);
+      // THE PROMISE IS THE VERB, not the tense. This rule exists because the
+      // two above did not catch the real breach: "Reports are reviewed by the
+      // AccessMap maintainer" shipped past them, since a present-tense passive
+      // contains neither an interval nor "will be". A green fence test then
+      // reads as evidence there is no promise, which is worse than no test.
+      // Any claim that a review/moderation process happens is Sky's to make
+      // (05 §3 ⑯), in any tense and any voice.
+      expect(s).not.toMatch(
+        /\b(are|is|was|were|get|gets|being|be)\s+(reviewed|moderated|investigated|actioned|assessed|triaged)\b/i,
+      );
+      expect(s).not.toMatch(/\bwe (review|moderate|investigate|check|read|action)\b/i);
+      // No naming a human or team as the responsible reviewer.
+      expect(s).not.toMatch(/\b(maintainer|moderator|our team|the team|support team)\b/i);
     }
   });
 
