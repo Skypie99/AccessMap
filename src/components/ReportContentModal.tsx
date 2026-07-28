@@ -146,6 +146,22 @@ export default function ReportContentModal({ visible, target, onClose }: Props) 
       if (!mountedRef.current) return;
       setSubmitting(false);
       setSent(true);
+      // The acknowledgement below renders inside an `accessibilityLiveRegion`,
+      // which React Native implements on ANDROID ONLY. On iOS VoiceOver the
+      // swap was therefore silent: the sheet visually confirmed the send and
+      // said nothing to the user who most needs to hear it. Named HIGH in
+      // `13_B1_VERIFY_LEDGER.md`; the house pattern is to pair the region with
+      // an explicit announce (ProfileScreen, SignInScreen, NearbyFlagsModal).
+      //
+      // iOS-only on purpose — on Android the live region already announces, and
+      // firing both is the double-announce ReportFlagModal retired at S10.
+      //
+      // Announces Sky's RATIFIED string rather than a new one: an announcement
+      // is user-facing copy, and inventing a second "sent" sentence here would
+      // be exactly the agent-authored policy text the B-1 fence exists to stop.
+      if (Platform.OS === 'ios') {
+        AccessibilityInfo.announceForAccessibility(REPORT_SENT_BODY);
+      }
       return;
     }
 

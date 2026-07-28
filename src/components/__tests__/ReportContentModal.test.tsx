@@ -20,6 +20,7 @@
  * envelope rather than against a fixture that could drift from it.
  */
 import React from 'react';
+import { AccessibilityInfo, Platform } from 'react-native';
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
 
 import ReportContentModal from '../ReportContentModal';
@@ -162,6 +163,48 @@ describe('ReportContentModal — the submit ladder', () => {
     // The mailto rung is a FALLBACK, not a dual-write: a landed insert must not
     // also open the user's mail composer.
     expect(mockSendFeedback).not.toHaveBeenCalled();
+  });
+
+  /**
+   * The acknowledgement renders inside `accessibilityLiveRegion="polite"`,
+   * which React Native implements on ANDROID ONLY. On iOS VoiceOver the send
+   * confirmation was therefore SILENT — flagged HIGH in 13_B1_VERIFY_LEDGER.
+   *
+   * Platform is pinned explicitly rather than trusted from the preset: the whole
+   * point of the bug is that it only existed on one platform, so a suite that
+   * silently ran on the other would have proven nothing.
+   */
+  describe('rung 1 · the acknowledgement reaches a screen reader', () => {
+    let announce: jest.SpyInstance;
+
+    beforeEach(() => {
+      announce = jest.spyOn(AccessibilityInfo, 'announceForAccessibility').mockImplementation();
+      mockSubmitContentReport.mockResolvedValue({ status: 'submitted' });
+    });
+
+    afterEach(() => announce.mockRestore());
+
+    async function submit() {
+      const { getByTestId, getByText } = renderSheet();
+      fireEvent.changeText(getByTestId('reportContentModal-reason'), REASON);
+      fireEvent.press(getByTestId('reportContentModal-send'));
+      await waitFor(() => expect(getByText(REPORT_SENT_TITLE)).toBeTruthy());
+    }
+
+    it('iOS: announces, because the live region does nothing there', async () => {
+      jest.replaceProperty(Platform, 'OS', 'ios');
+      await submit();
+      // Sky's RATIFIED string, not a second sentence invented for the announce —
+      // an announcement is user-facing copy and the B-1 fence covers it too.
+      expect(announce).toHaveBeenCalledWith(REPORT_SENT_BODY);
+    });
+
+    it('Android: stays silent, because the live region already speaks', async () => {
+      jest.replaceProperty(Platform, 'OS', 'android');
+      await submit();
+      // Firing both is the double-announce ReportFlagModal retired at S10.
+      expect(announce).not.toHaveBeenCalled();
+    });
   });
 
   it('rung 2: a failed insert falls through to the mailto half with the SAME envelope', async () => {

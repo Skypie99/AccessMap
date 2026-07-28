@@ -118,11 +118,30 @@ describe('B-1 moderation copy', () => {
     expect(body).not.toMatch(/\d+\s*(hour|day|business)/i);
   });
 
-  it('no report string invents a response time, a review window, or an outcome', () => {
+  it('REPORT_SENT_BODY carries Sky\'s ratified 24h commitment, verbatim', () => {
+    // ⚑ FENCE CONVERTED 2026-07-27 (DECISIONS §SKY-4). This string used to be
+    // in the "invents a response time" list below, and the guard was right to
+    // hold it there: an AGENT must never promise a review window. Sky then made
+    // the promise herself, in the ratified Terms, so the guard flips from
+    // "must not promise" to "must promise EXACTLY what she wrote".
+    //
+    // The fence was never anti-promise. It was anti-agent-invented-promise.
+    expect(REPORT_SENT_BODY).toBe(
+      'Thanks, your report was sent. Reports are reviewed within 24 hours.',
+    );
+    // The interval is the commitment. It appears here, in Terms §1 "Reports and
+    // moderation", and in §4 — a copy tweak that drops it silently un-promises
+    // something users were told, so pin it independently of the whole string.
+    expect(REPORT_SENT_BODY).toMatch(/within 24 hours/);
+  });
+
+  it('no OTHER report string invents a response time, a review window, or an outcome', () => {
+    // REPORT_SENT_BODY is deliberately absent — see the ratified-commitment test
+    // above. Every string that Sky has NOT personally ratified still lives under
+    // the original fence, unweakened.
     const strings = [
       REPORT_REASON_LABEL,
       REPORT_SENT_TITLE,
-      REPORT_SENT_BODY,
       REPORT_FAILED_TITLE,
       reportFailedBody('a@b.co'),
     ];
@@ -220,7 +239,7 @@ describe('B-1 copy carries the PROPOSED marker (the honesty fence, mechanised)',
     'HIDE_CONTROL_LABEL',
     'REPORT_REASON_LABEL',
     'REPORT_SENT_TITLE',
-    'REPORT_SENT_BODY',
+    // REPORT_SENT_BODY moved to RATIFIED_EXPORTS on 2026-07-27 — see below.
     'REPORT_FAILED_TITLE',
     'reportFailedBody',
     'reportCommentA11yLabel',
@@ -272,5 +291,35 @@ describe('B-1 copy carries the PROPOSED marker (the honesty fence, mechanised)',
     // RETRY_VERB and PRIVACY_POLICY_LINK_LABEL are the style this block copies.
     expect(prose('RETRY_VERB')).toContain(MARKER);
     expect(prose('PRIVACY_POLICY_LINK_LABEL')).toContain(MARKER);
+  });
+
+  /**
+   * ⚑ THE OTHER HALF OF THE FENCE, added 2026-07-27 (DECISIONS §SKY-4).
+   *
+   * A string leaving PROPOSED must not simply lose its marker — that is
+   * indistinguishable from an agent quietly deleting the fence. It has to land
+   * somewhere equally guarded, carrying WHO ratified it and WHERE that is
+   * recorded. Ratified copy is held exactly as strictly as proposed copy; only
+   * the claim being asserted changes.
+   */
+  const RATIFIED_MARKER =
+    "RATIFIED by Sky 2026-07-27 — DECISIONS §SKY-4, 14_MODERATION_TEXTS_v1.md §5.";
+
+  const RATIFIED_EXPORTS = ['REPORT_SENT_BODY'];
+
+  it.each(RATIFIED_EXPORTS)('%s is marked RATIFIED, not PROPOSED', (name) => {
+    const doc = prose(name);
+    expect(doc).toContain(RATIFIED_MARKER);
+    // The two markers are mutually exclusive. A const claiming both is a
+    // half-finished ratification, and that ambiguity is what this catches.
+    expect(doc).not.toContain(MARKER);
+  });
+
+  it.each(RATIFIED_EXPORTS)('%s ends its JSDoc with the ratified marker, exactly', (name) => {
+    expect(prose(name).endsWith(RATIFIED_MARKER)).toBe(true);
+  });
+
+  it('no export is in both lists', () => {
+    for (const name of RATIFIED_EXPORTS) expect(PROPOSED_EXPORTS).not.toContain(name);
   });
 });

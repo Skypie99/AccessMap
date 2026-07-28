@@ -130,26 +130,33 @@ export const REPORT_SENT_TITLE = 'Report sent';
 /**
  * Body of that acknowledgement.
  *
- * ⚠ THIS DELIBERATELY MAKES NO PROMISE, and the earlier attempt is worth
- * recording because it looked safe. It read "Thanks. Reports are reviewed by
- * the AccessMap maintainer." — no cadence, no response time, no outcome, and
+ * ⚠ THIS STRING MAKES A PROMISE, and it is the ONLY place in the running app
+ * that states the 24-hour commitment. It must stay word-identical to the
+ * Terms — `14_MODERATION_TEXTS_v1.md` §1 "Reports and moderation" and §4 — or
+ * the app and the published policy drift apart on a commitment. `copy.test.ts`
+ * guards the interval; change all three together or none.
+ *
+ * HOW IT GOT HERE, because the history is the reason the guard exists. An
+ * earlier agent-written attempt read "Thanks. Reports are reviewed by the
+ * AccessMap maintainer." — no cadence, no response time, no outcome, and
  * defensible as a transcription of §SKY-3g's "Triage path (state it visibly)".
- * Two independent reviewers still called it a fence breach, and they were
- * right: THE PROMISE IS THE VERB. "are reviewed" asserts, present tense and
- * unconditionally, that a human reviews reports and names who. That is a
- * commitment about a person's behaviour, and 05 §3 ⑯ assigns it to Sky.
+ * Two independent reviewers called it a fence breach, and they were right:
+ * THE PROMISE IS THE VERB. "are reviewed" asserts, present tense and
+ * unconditionally, that a human reviews reports. That is a commitment about a
+ * person's behaviour, and 05 §3 ⑯ assigns it to Sky — not to an agent.
  *
- * It was doubly dangerous because the fence guard could not see it — the test
+ * It was doubly dangerous because the fence guard could not see it: the test
  * banned "will be removed" and a present-tense passive walked straight past, so
- * a green suite would have read as evidence of no promise. The guard now checks
- * the verb, not just the tense (copy.test.ts).
+ * a green suite would have read as evidence of no promise. The guard was then
+ * taught to check the verb, not just the tense.
  *
- * So this says only what is true at the moment it appears: the report left the
- * device. If Sky wants a review commitment here — and an App Review reviewer
- * would likely welcome one — she writes it.
- * PROPOSED (B-1, S-8) — Sky's final wording lands in DECISIONS §A / BP16.
+ * The fence did its job. It held the string at "no promise" until Sky made the
+ * promise herself — which she did on 2026-07-27, in her own words, in the
+ * ratified Terms. The verb is back, and now it is hers.
+ * RATIFIED by Sky 2026-07-27 — DECISIONS §SKY-4, 14_MODERATION_TEXTS_v1.md §5.
  */
-export const REPORT_SENT_BODY = 'Thanks — your report has been sent.';
+export const REPORT_SENT_BODY =
+  'Thanks, your report was sent. Reports are reviewed within 24 hours.';
 
 /**
  * Title shown when the report could not be sent. AGENT-PROPOSED wording.
