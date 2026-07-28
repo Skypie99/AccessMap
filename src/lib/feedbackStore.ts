@@ -30,7 +30,11 @@ interface SubmitInput {
 }
 
 export type SubmitFeedbackResult =
-  | { status: 'inserted'; row: FeedbackRow }
+  /**
+   * The row was written. `row` is null for an ANONYMOUS insert, which is not a
+   * degraded result — see the RLS note in submitFeedback. No caller reads it.
+   */
+  | { status: 'inserted'; row: FeedbackRow | null }
   | { status: 'skipped'; reason: string };
 
 /**
@@ -46,17 +50,43 @@ export type SubmitFeedbackResult =
  */
 export async function submitFeedback(input: SubmitInput): Promise<SubmitFeedbackResult> {
   try {
-    const { data, error } = await supabase
-      .from('feedback')
-      .insert({
-        user_id: input.userId ?? null,
-        category: input.category,
-        body: input.body.trim().slice(0, 5000),
-        contact_email: input.contactEmail?.trim() || null,
-        platform: Platform.OS,
-      })
-      .select('*')
-      .single();
+    const row = {
+      user_id: input.userId ?? null,
+      category: input.category,
+      body: input.body.trim().slice(0, 5000),
+      contact_email: input.contactEmail?.trim() || null,
+      platform: Platform.OS,
+    };
+
+    // ⚠ AN ANONYMOUS INSERT MUST NOT ASK FOR THE ROW BACK.
+    //
+    // `feedback_insert_self_or_anon` permits `user_id IS NULL`, so a guest's
+    // write LANDS. But BOTH select policies exclude that row —
+    // `feedback_select_own` requires `user_id IS NOT NULL AND user_id =
+    // auth.uid()`, and the maintainer policy requires her email — and PostgREST
+    // applies SELECT RLS to the RETURNING clause. So `.select('*').single()`
+    // reads back nothing and reports FAILURE for a write that succeeded. The
+    // migration says as much in its own comment: "Anonymous inserts are not
+    // retrievable by anyone but the maintainer."
+    //
+    // This was invisible while FeedbackModal was the only caller: it ignores
+    // the result and has a mailto carrying the same text, so a wrong `skipped`
+    // cost nothing. The B-1 report path made it user-visible and serious —
+    // `submitContentReport` maps skipped → failed by design (a report's insert
+    // IS the channel), so EVERY GUEST REPORT told the reporter it had failed
+    // while sitting correctly in the table. Guests are the App Review
+    // reviewer's cohort, and the report control is guest-visible on purpose.
+    //
+    // No caller reads `row`, so declining to fetch it costs nothing.
+    if (!input.userId) {
+      const { error: anonError } = await supabase.from('feedback').insert(row);
+      if (anonError) {
+        return { status: 'skipped', reason: anonError.message };
+      }
+      return { status: 'inserted', row: null };
+    }
+
+    const { data, error } = await supabase.from('feedback').insert(row).select('*').single();
 
     if (error) {
       return { status: 'skipped', reason: error.message };

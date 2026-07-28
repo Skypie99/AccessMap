@@ -211,3 +211,56 @@ describe('listFeedbackByUser', () => {
     expect(await listFeedbackByUser('u1')).toEqual([]);
   });
 });
+
+describe('an ANONYMOUS insert must never ask for the row back', () => {
+  // THE BUG THIS PINS SHIPPED, and it was invisible for a reason worth keeping
+  // in mind: it only became wrong when a second caller arrived.
+  //
+  // `feedback_insert_self_or_anon` permits user_id IS NULL, so a guest's write
+  // lands. But BOTH select policies exclude that row, and PostgREST applies
+  // SELECT RLS to the RETURNING clause — so `.select('*').single()` read back
+  // nothing and submitFeedback reported `skipped` for a write that SUCCEEDED.
+  // FeedbackModal never noticed (it ignores the result and has a mailto with
+  // the same text). The B-1 report path maps skipped → failed on purpose,
+  // because a report's insert IS the channel — so every GUEST report told the
+  // reporter it had failed while sitting correctly in the table. Guests are the
+  // App Review reviewer's cohort.
+  //
+  // The mock's insert() returns a chain object, so a regression here would NOT
+  // surface as a thrown error — it would silently take the signed-in branch.
+  // These assert the CHAIN SHAPE, which is the only thing that distinguishes them.
+
+  it('inserts without a select() when there is no userId', async () => {
+    mockInsert.mockReturnValue(Promise.resolve({ error: null }));
+
+    const result = await submitFeedback({ body: 'anon report', category: 'other' });
+
+    expect(result.status).toBe('inserted');
+    expect(result).toEqual({ status: 'inserted', row: null });
+    // The whole point: no read-back was attempted.
+    expect(mockSelectAfterInsert).not.toHaveBeenCalled();
+    expect(mockSingle).not.toHaveBeenCalled();
+  });
+
+  it('still reports a genuinely failed anonymous insert as skipped', async () => {
+    mockInsert.mockReturnValue(Promise.resolve({ error: { message: 'rate limited' } }));
+
+    const result = await submitFeedback({ body: 'anon report', category: 'other' });
+
+    expect(result).toEqual({ status: 'skipped', reason: 'rate limited' });
+  });
+
+  it('a signed-in insert DOES read the row back — the branch is really conditional', async () => {
+    // Asserts the CHAIN, not the row: the suite above already covers what a
+    // signed-in insert returns, and asserting the row here would depend on
+    // which mockResolvedValueOnce is still queued from an earlier test.
+    // Paired with the first test's `not.toHaveBeenCalled()`, this is what proves
+    // the userId check actually forks rather than always taking one path.
+    mockSingle.mockResolvedValue({ data: null, error: { message: 'whatever' } });
+
+    await submitFeedback({ body: 'mine', category: 'other', userId: 'u9' });
+
+    expect(mockSelectAfterInsert).toHaveBeenCalledWith('*');
+    expect(mockSingle).toHaveBeenCalled();
+  });
+});
