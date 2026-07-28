@@ -393,3 +393,61 @@ of answers; recorded here per the ledger-authorship rule.
   - **SR-117** the `flag_comments.user_id` type lie (live nullable /
     ON DELETE SET NULL vs the repo's NOT NULL / ON DELETE CASCADE).
   - **R-7 password reset was NOT picked** — deferred with reason, not dropped.
+
+---
+
+## §SKY-4 Moderation texts v1 — RATIFIED (2026-07-27)
+
+Sky authored and ratified the moderation text set that B-1 / Apple 1.2 has been waiting on since Phase 3.
+Banked verbatim at **`design-reviews/ship-ready/14_MODERATION_TEXTS_v1.md`** (numbered `14_` because `13_`
+was already taken by `13_B1_VERIFY_LEDGER.md`). Two resolutions were applied to the source draft on Sky's
+instruction — the 24-hour commitment ratified and its 48-hour alternative struck, and the contact
+placeholder resolved. Nothing else was altered; no app code, no SQL, no migration.
+
+```
+§SKY: Moderation texts ratified (2026-07-27)
+Mission statement RATIFIED (v1, Sky's words): "The goal of AccessMap is to
+  make the community and environment better for everyone, through those who
+  have the capacity to help. Progress happens in the background for
+  everyone's benefit, because accessibility benefits everyone."
+  Lives in: About page, App Store description, README. Voice: Sky's, always.
+ToS & Community Guidelines v1.0: RATIFIED per accessmap_moderation_texts_v1.md
+  (contact = skylerhalisky@gmail.com; account-deletion wording
+  matches live SET NULL behavior per SR-117)
+Filter (1.2a): seed = LDNOOBW English + Sky-editable additions file;
+  rejection copy ratified as drafted
+Report categories: the five as listed
+Response commitment: 24 hours, Sky's genuine commitment
+REPORT_SENT_BODY: "Thanks, your report was sent. Reports are reviewed
+  within 24 hours."
+```
+
+**Contact address resolved to `skylerhalisky@gmail.com`** — Sky-confirmed after being shown it is her
+personal Gmail and that a published ToS is a more durable surface than an in-app alert. It is the same
+address the report failure ladder surfaces, so doc and app agree: `FEEDBACK_EMAIL` in `src/lib/feedback.ts`
+→ `reportFailedBody()` in `src/lib/copy.ts` → `ReportContentModal`. Leg 1.2(d) stays internally consistent.
+
+**Exact text struck from §4 of the source draft** (recorded here so nothing is lost to the resolution):
+
+> ⚠ SKY DECIDES: 24 hours is the standard commitment app reviewers expect for objectionable-content
+> reports. Ratify it only if it's genuinely sustainable. The honest alternative is 48 hours. If you choose
+> 48, update the Reports line in §1, the string in §5, and the DECISIONS entry to match.
+
+Also struck from the ratification block: `[or: 48 hours. Strike whichever does not apply]` and
+`[align to the chosen commitment]`. §1's "within 24 hours" and §5's string were already 24h and are
+byte-identical to Sky's draft.
+
+### This is banked text, not shipped behaviour — four follow-ups it opens
+
+| # | Item | Why it is not closed by this commit |
+|---|---|---|
+| **M-1** | **`REPORT_SENT_BODY` still ships the old string.** Live code is `'Thanks — your report has been sent.'` (`src/lib/copy.ts:152`); §5 ratifies `'Thanks, your report was sent. Reports are reviewed within 24 hours.'` | App-code change, out of scope for a docs-only run. This is the §4-item-2 string Sky was asked to ratify personally — now ratified, awaiting a build |
+| **M-2** | **Leg 1.2(a) filter is policy-only.** §2 specs `src/moderation/blockedTerms.ts` + LDNOOBW seed; no such file exists | Needs the gap-closer build run. 1.2(a) stays 🔴 until then |
+| **M-3** | **Report categories are specced but the sheet ships free-text.** §3 lists five; the shipped sheet captures free-text by Sky's own §SKY-3h scoping | Needs a build; decide whether the five replace or supplement free-text |
+| **M-4** | **The ToS account-deletion promise holds against the LIVE schema only.** "Anything you've contributed may stay in the app, with your name removed" matches live `ON DELETE SET NULL`, but the repo's `schema.sql` declares `NOT NULL` / `ON DELETE CASCADE` (SR-117). Applying repo schema as-written would delete contributions and make the published ToS false | SR-117 was already picked for build; this commit raises its stakes from a type-lie to a **published-promise** dependency |
+
+⚠ **The banked file still carries its own `DRAFT for Sky's ratification` title line and the sentence "Every
+word below requires Sky's explicit ratification before it ships."** Left byte-intact because the instruction
+was verbatim-plus-two-resolutions, and retitling would have been a third unrequested edit. Sky's call whether
+to flip that header to RATIFIED in a follow-up — this §SKY-4 entry is the authoritative ratification record
+either way.
