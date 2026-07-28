@@ -63,7 +63,35 @@
 --   FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE SET NULL;
 
 -- ============================================================================
--- THE FORK -- SKY DECIDES. STATUS: PROPOSED -- SKY-APPLIES, NEVER AUTO-RUN.
+-- ⚑ FORK CLOSED 2026-07-27 -- OPTION A RATIFIED, OPTION B FORECLOSED.
+--
+--   Sky did not answer this fork directly. She closed it by ratifying the
+--   Terms & Community Guidelines (`14_MODERATION_TEXTS_v1.md`, banked in
+--   df80f1c). §1 "Your account" reads:
+--
+--     "Anything you've contributed may stay in the app, with your name
+--      removed, so the community's record of barriers stays whole."
+--
+--   That sentence IS Option A -- anonymise, don't erase -- in her own
+--   published words. It also FORECLOSES Option B: Option B is ON DELETE
+--   CASCADE, which deletes contributions when an account is deleted, and
+--   would therefore make the published Terms false. Option B is off the
+--   table on those grounds, independently of the destructiveness and
+--   Jordan-review objections already recorded below.
+--
+--   ACTIONED: the repo text was corrected to match live on 2026-07-27 --
+--   `2026-05-30_flag_comments.sql:8` now reads
+--   `user_id UUID REFERENCES public.users(id) ON DELETE SET NULL`, with the
+--   Terms dependency recorded in that file's header. Repo-text change only.
+--   NO STATEMENT WAS RUN. Live was already correct; the repo stopped lying.
+--   Recorded in DECISIONS.md §SKY-5.
+--
+--   Both option texts below are KEPT VERBATIM, neither struck, so the
+--   reasoning stays auditable.
+-- ============================================================================
+--
+-- THE FORK (as written 2026-07-27, before the ToS closed it)
+--   ORIGINAL STATUS: PROPOSED -- SKY-APPLIES, NEVER AUTO-RUN.
 --
 -- The code half of SR-117 ships either way: src/types/database.ts and
 -- src/lib/comments.ts now type user_id as `string | null` on the Row shapes,
@@ -71,7 +99,8 @@
 -- lie regardless of which option Sky picks. Insert stays `string` -- the app
 -- always supplies an author.
 --
--- OPTION A -- RATIFY LIVE (recommended). Correct the REPO to match live and
+-- ✅ OPTION A -- RATIFY LIVE (recommended). ← RATIFIED + ACTIONED 2026-07-27.
+--   Correct the REPO to match live and
 --   write the product decision down. Zero risk: nothing changes at runtime.
 --   Edit 2026-05-30_flag_comments.sql:8 to read
 --     user_id UUID REFERENCES public.users(id) ON DELETE SET NULL,
@@ -82,7 +111,9 @@
 --   intended design and the repo text is what's stale.
 --   Statement: none. Repo-text change only.
 --
--- OPTION B -- RESTORE THE REPO'S CONTRACT. Make live match the migration:
+-- ⛔ OPTION B -- FORECLOSED 2026-07-27: would falsify the published Terms
+--   (§1 "Your account"). DO NOT RUN. Kept for the record only.
+--   RESTORE THE REPO'S CONTRACT. Make live match the migration:
 --   deleting an account CASCADE-deletes that account's comments.
 --     ALTER TABLE public.flag_comments
 --       DROP CONSTRAINT flag_comments_user_id_fkey;
