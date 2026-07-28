@@ -17,6 +17,7 @@ import {
   DISPUTE_CONTROL_LABEL,
   HIDE_CONTROL_LABEL,
   REPORT_REASON_LABEL,
+  REPORT_CATEGORIES,
   REPORT_SENT_TITLE,
   REPORT_SENT_BODY,
   REPORT_FAILED_TITLE,
@@ -219,11 +220,51 @@ describe('B-1 moderation copy', () => {
     for (const s of w1) expect(s).not.toMatch(/moderat|abuse|maintainer reviews/i);
   });
 
-  it('carries no report-category taxonomy — that list is Sky\'s copy (05 §3 ⑯)', () => {
+  /**
+   * ⚑ FENCE INVERTED 2026-07-27 (DECISIONS §SKY-4).
+   *
+   * This test used to assert the OPPOSITE: that no report-category taxonomy
+   * appeared in copy.ts at all, because a taxonomy is moderation policy wearing
+   * UI clothes and 05 §3 ⑯ assigned it to Sky. It was right to hold that line —
+   * right up until she wrote the list herself, in §3 of the ratified texts.
+   *
+   * So the guard flips rather than dies. It no longer asks "is this absent?"
+   * but "is this EXACTLY hers?" — which is the same fence, pointed the other
+   * way. An agent quietly adding a sixth category, softening a label, or
+   * reordering them still goes red.
+   */
+  it("carries Sky's five report categories, verbatim and in her order (§3)", () => {
+    expect(REPORT_CATEGORIES.map((c) => c.label)).toEqual([
+      'Spam or fake report',
+      'Harassment or hate',
+      'Explicit or inappropriate content',
+      'Privacy violation (shows a person, plate, or address)',
+      'Something else',
+    ]);
+  });
+
+  it('the category ids are stable wire tokens — changing one orphans stored rows', () => {
+    // These are written into feedback bodies by the v2 envelope and parsed back
+    // out. A rename is a data migration, not a refactor.
+    expect(REPORT_CATEGORIES.map((c) => c.id)).toEqual([
+      'spam',
+      'harassment',
+      'explicit',
+      'privacy',
+      'other',
+    ]);
+  });
+
+  it('the catch-all is last, so it does not suppress the specific answers', () => {
+    const ids = REPORT_CATEGORIES.map((c) => c.id);
+    expect(ids[ids.length - 1]).toBe('other');
+  });
+
+  it('no category label is agent-editorialised beyond Sky\'s text', () => {
     const src = fs.readFileSync(path.join(__dirname, '..', 'copy.ts'), 'utf8');
-    // Named in the fence, so named here. The words may appear in prose about
-    // the taxonomy, but never as an exported string constant.
-    for (const word of ['Harassment', 'Hate speech', 'Spam', 'Nudity', 'Violence']) {
+    // The old fence named these words. They may now appear — but ONLY inside
+    // the ratified REPORT_CATEGORIES block, never as some other loose export.
+    for (const word of ['Hate speech', 'Nudity', 'Violence']) {
       expect(src).not.toMatch(new RegExp(`=\\s*['"\`]${word}`, 'i'));
     }
   });

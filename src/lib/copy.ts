@@ -194,6 +194,41 @@ export const CONTENT_BLOCKED_MESSAGE =
   "This can't be submitted yet. It may contain language that breaks the community guidelines. Please edit it and try again.";
 
 /**
+ * The report-category taxonomy — Apple 1.2(b). Sky's five, verbatim and in her
+ * order from `14_MODERATION_TEXTS_v1.md` §3.
+ *
+ * ⚠ THIS FILE USED TO BE FENCED AGAINST EXACTLY THIS LIST. `copy.test.ts`
+ * asserted no report-category taxonomy could appear here, because a taxonomy is
+ * a moderation policy wearing UI clothes — the categories you offer decide what
+ * users can tell you, and 05 §3 ⑯ assigned that to Sky. She wrote them on
+ * 2026-07-27, so the fence inverted: the test now demands these exact five
+ * rather than banning any. Adding a sixth is still hers, not ours.
+ *
+ * `id` is the stable wire token used by the v2 report envelope. **The ids are
+ * structural and must never change** — they are written into stored feedback
+ * rows and parsed back out. The labels are display copy and can only change
+ * with Sky's say-so. Order is hers too: "Something else" is last because a
+ * catch-all offered first suppresses the specific answers above it.
+ * RATIFIED by Sky 2026-07-27 — DECISIONS §SKY-4, 14_MODERATION_TEXTS_v1.md §3.
+ */
+export const REPORT_CATEGORIES = [
+  { id: 'spam', label: 'Spam or fake report' },
+  { id: 'harassment', label: 'Harassment or hate' },
+  { id: 'explicit', label: 'Explicit or inappropriate content' },
+  { id: 'privacy', label: 'Privacy violation (shows a person, plate, or address)' },
+  { id: 'other', label: 'Something else' },
+] as const;
+
+export type ReportCategoryId = (typeof REPORT_CATEGORIES)[number]['id'];
+
+/**
+ * Heading above the picker. AGENT-PROPOSED wording — it is chrome, not
+ * taxonomy, and it makes no claim about what happens to a report.
+ * PROPOSED (B-1, S-8) — Sky's final wording lands in DECISIONS §A / BP16.
+ */
+export const REPORT_CATEGORY_LABEL = "What's wrong?";
+
+/**
  * Accessible NAME for a per-comment Report control. A row of buttons all named
  * "Report" is ambiguous to a screen reader — which comment? — so the name
  * carries the author, the same way a11yText.ts pairs a severity number with its

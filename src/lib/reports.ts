@@ -49,6 +49,7 @@
  *   where body like '[REPORT]%';
  */
 import { submitFeedback } from './feedbackStore';
+import { REPORT_CATEGORIES, type ReportCategoryId } from './copy';
 import type { FeedbackCategory } from './feedback';
 
 /**
@@ -66,8 +67,15 @@ export type ReportTarget = {
 /** Line-1 sentinel. Anchored at index 0 of the body, never indented. */
 export const REPORT_BODY_PREFIX = '[REPORT]';
 
-/** Envelope generation. Bump only alongside a parser that reads BOTH shapes. */
-export const REPORT_ENVELOPE_VERSION = 1;
+/**
+ * Envelope generation. Bump only alongside a parser that reads BOTH shapes.
+ *
+ * v2 (2026-07-27) adds an optional ` cat=<id>` token carrying Sky's ratified
+ * report category (§3). Optional, not required: D-1 chose SUPPLEMENT, so a
+ * reporter may send a reason with no category, exactly as in v1. The parser
+ * still accepts v1 rows unchanged — old rows do not rewrite themselves.
+ */
+export const REPORT_ENVELOPE_VERSION = 2;
 
 /**
  * Cap on the user's reason text, matching `MAX_COMMENT_LENGTH` — the nearest
@@ -95,6 +103,8 @@ export type ParsedReport = {
   version: number;
   target: ReportTarget;
   reason: string;
+  /** v2+ only, and optional even there — see REPORT_ENVELOPE_VERSION. */
+  category?: ReportCategoryId;
 };
 
 /** Outcome of a report submission. See the error-discipline note below. */
@@ -111,7 +121,16 @@ export type SubmitReportResult =
 // shape and is refused by the explicit emptiness check in the parser, which is
 // both reachable in tests and what narrows the capture to `string` for the
 // compiler. A `\S+` group would be unfalsifiable and force a dead guard.
-const HEADER_RE = /^\[REPORT\] v(\d+) target=(flag|comment) id=(\S*)(?: flag=(\S+))?$/;
+//
+// v2 appends an optional ` cat=(\S+)` AFTER the optional ` flag=` token. Order
+// is fixed, not free: a floating token set would make the greedy id capture
+// ambiguous, and a v1 body — which has neither token — still matches because
+// both groups are optional. That is what keeps the v1 reader alive for free.
+const HEADER_RE =
+  /^\[REPORT\] v(\d+) target=(flag|comment) id=(\S*)(?: flag=(\S+))?(?: cat=(\S+))?$/;
+
+/** Category ids the parser will accept. Unknown ids are dropped, not fatal. */
+const KNOWN_CATEGORY_IDS = new Set<string>(REPORT_CATEGORIES.map((c) => c.id));
 
 /**
  * Encode a report as a feedback body: header line, blank line, reason.
@@ -125,7 +144,11 @@ const HEADER_RE = /^\[REPORT\] v(\d+) target=(flag|comment) id=(\S*)(?: flag=(\S
  * body anyway, so trimming here makes the round trip deterministic instead of
  * dependent on which side of the pipeline you read it from.
  */
-export function buildReportBody(target: ReportTarget, reason: string): string {
+export function buildReportBody(
+  target: ReportTarget,
+  reason: string,
+  category?: ReportCategoryId | null,
+): string {
   const header = [
     REPORT_BODY_PREFIX,
     `v${REPORT_ENVELOPE_VERSION}`,
@@ -134,6 +157,11 @@ export function buildReportBody(target: ReportTarget, reason: string): string {
   ];
   if (target.kind === 'comment' && target.flagId) {
     header.push(`flag=${target.flagId.trim()}`);
+  }
+  // Omitted entirely when absent rather than written as `cat=` — an empty token
+  // would be indistinguishable from a truncated one to the parser.
+  if (category) {
+    header.push(`cat=${category}`);
   }
   return `${header.join(' ')}\n\n${reason.trim()}`;
 }
@@ -164,9 +192,19 @@ export function parseReportBody(body: string): ParsedReport | null {
   const kind = match[2] as ReportTarget['kind'];
   const id = match[3];
   const flagId = match[4];
+  const rawCategory = match[5];
 
   // A target with no id is untriageable, so it is not a report.
   if (!id) return null;
+
+  // An unrecognised category is DROPPED, not fatal. A report whose category
+  // this build does not know is still a report with a target and a reason, and
+  // refusing the whole row over a label would lose real abuse reports if the
+  // taxonomy ever gains a member. Same fail-open reasoning as the reason field.
+  const category =
+    rawCategory && KNOWN_CATEGORY_IDS.has(rawCategory)
+      ? (rawCategory as ReportCategoryId)
+      : undefined;
 
   // Drop the blank separator line when it survived the cut; a body sliced
   // exactly at the header boundary yields an empty reason, not a lost id.
@@ -177,6 +215,7 @@ export function parseReportBody(body: string): ParsedReport | null {
     version,
     target: kind === 'comment' && flagId ? { kind, id, flagId } : { kind, id },
     reason,
+    ...(category ? { category } : {}),
   };
 }
 
@@ -202,21 +241,31 @@ export function parseReportBody(body: string): ParsedReport | null {
 export async function submitContentReport(input: {
   target: ReportTarget;
   reason: string;
+  category?: ReportCategoryId | null;
   userId?: string;
 }): Promise<SubmitReportResult> {
   const id = input.target.id.trim();
   // Defence in depth against a caller that forgot the input's maxLength. Only
   // ever cuts the reason's tail — the header is composed after this.
   const reason = input.reason.trim().slice(0, MAX_REPORT_REASON_CHARS);
+  const category = input.category ?? null;
 
   // Short-circuit before touching the network: an insert with no target is
-  // untriageable, and an empty reason is a mis-tap, not a report.
+  // untriageable, and a report carrying NEITHER a category nor a reason is a
+  // mis-tap rather than a report.
+  //
+  // ⚠ It used to be `if (!reason)`, and D-1 (SUPPLEMENT) made that wrong: a
+  // reporter may now tap one category and send without typing, so an
+  // empty-reason check alone would have failed exactly the fastest, most
+  // accessible path through the sheet — and failed it AFTER the UI had already
+  // enabled Send. The gate here and `canSend` in ReportContentModal must agree;
+  // if you change one, change both.
   if (!id) return { status: 'failed', reason: 'Missing target id.' };
-  if (!reason) return { status: 'failed', reason: 'Empty reason.' };
+  if (!reason && !category) return { status: 'failed', reason: 'Empty report.' };
 
   try {
     const result = await submitFeedback({
-      body: buildReportBody({ ...input.target, id }, reason),
+      body: buildReportBody({ ...input.target, id }, reason, category),
       category: REPORT_FEEDBACK_CATEGORY,
       userId: input.userId,
     });

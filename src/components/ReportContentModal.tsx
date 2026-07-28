@@ -23,11 +23,18 @@
  * the same day.
  *
  * THE HONESTY FENCE. Every visible string here comes from `src/lib/copy.ts`
- * marked PROPOSED, or is a byte-identical reuse of an already-shipped literal
- * (Cancel / Send / Close). Nothing in this file states a policy, a review
- * cadence, a response time, or an outcome, and there is deliberately NO
+ * marked PROPOSED or RATIFIED, or is a byte-identical reuse of an
+ * already-shipped literal (Cancel / Send / Close). Nothing in this file states
+ * a policy, a review cadence, a response time, or an outcome ON ITS OWN
+ * AUTHORITY — where it now states one, the words are Sky's, ratified.
+ *
+ * ⚑ UPDATED 2026-07-27. This note used to end: "there is deliberately NO
  * report-category picker — that taxonomy is Sky's copy (05 §3 ⑯), so the reason
- * is free text.
+ * is free text." That was correct until she wrote the taxonomy herself in
+ * `14_MODERATION_TEXTS_v1.md` §3. The picker below renders HER five, and D-1
+ * (§SKY-5) chose SUPPLEMENT — it sits alongside the free-text reason rather
+ * than replacing it, and either alone is enough to send. The fence did not
+ * lapse; it was satisfied.
  *
  * NO accessibilityHint ON THE MODERATION CONTROLS. Every hint that would
  * actually help on a report control ("we'll review this", "the comment will be
@@ -77,11 +84,14 @@ import {
   type ReportTarget,
 } from '@/lib/reports';
 import {
+  REPORT_CATEGORIES,
+  REPORT_CATEGORY_LABEL,
   REPORT_CONTROL_LABEL,
   REPORT_FAILED_TITLE,
   REPORT_REASON_LABEL,
   REPORT_SENT_BODY,
   REPORT_SENT_TITLE,
+  type ReportCategoryId,
   reportFailedBody,
 } from '@/lib/copy';
 
@@ -99,6 +109,7 @@ export default function ReportContentModal({ visible, target, onClose }: Props) 
   const { user } = useAuth();
 
   const [reason, setReason] = useState('');
+  const [category, setCategory] = useState<ReportCategoryId | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [sent, setSent] = useState(false);
 
@@ -114,6 +125,9 @@ export default function ReportContentModal({ visible, target, onClose }: Props) 
   useEffect(() => {
     if (!visible) {
       setReason('');
+      // Same reasoning as the reason field: a category picked about comment A
+      // must never arrive pre-selected on comment B.
+      setCategory(null);
       setSubmitting(false);
       setSent(false);
     }
@@ -130,7 +144,16 @@ export default function ReportContentModal({ visible, target, onClose }: Props) 
     };
   }, []);
 
-  const canSend = reason.trim().length > 0 && !submitting;
+  // D-1 (§SKY-5): SUPPLEMENT. A category alone is a complete report — one tap
+  // is the fastest and most accessible path through this sheet — and a typed
+  // reason alone still works exactly as it did before the picker existed.
+  // Requiring BOTH would add friction to an abuse-reporting flow, which is
+  // where friction does the most harm.
+  //
+  // ⚠ This must stay in step with the same gate in `submitContentReport`
+  // (reports.ts). A UI that enables Send for a state the submitter rejects
+  // fails AFTER the user commits, which reads as the app losing their report.
+  const canSend = (category !== null || reason.trim().length > 0) && !submitting;
 
   const handleSend = async () => {
     if (!canSend || !target) return;
@@ -140,7 +163,7 @@ export default function ReportContentModal({ visible, target, onClose }: Props) 
     // cannot fire-and-forget it: `submitContentReport` maps feedbackStore's
     // 'skipped' to `failed` precisely so a rate-limited or unmigrated insert
     // falls through to the next rung instead of reading as success.
-    const result = await submitContentReport({ target, reason, userId: user?.id });
+    const result = await submitContentReport({ target, reason, category, userId: user?.id });
 
     if (result.status === 'submitted') {
       if (!mountedRef.current) return;
@@ -188,7 +211,11 @@ export default function ReportContentModal({ visible, target, onClose }: Props) 
     // "AccessMap feedback" rather than "…: Other". Naming it "Report" in the
     // subject would be new copy, which is Sky's.
     const mail = await sendFeedback({
-      body: buildReportBody(target, reason),
+      // The SAME envelope as rung 1, category included — a report that arrives
+      // by email must parse with the very same `parseReportBody` as one that
+      // arrived by insert. Dropping `category` here would make the two halves
+      // disagree exactly on the triage axis the picker exists to provide.
+      body: buildReportBody(target, reason, category),
     });
 
     if (!mountedRef.current) return;
@@ -299,13 +326,58 @@ export default function ReportContentModal({ visible, target, onClose }: Props) 
                   contentContainerStyle={styles.bodyContent}
                   keyboardShouldPersistTaps="handled"
                 >
+                  {/* Sky's five, §3. Radio semantics rather than buttons: a
+                      screen reader must hear "2 of 5, selected", and a row of
+                      plain buttons announces neither the set nor the state.
+                      Vertical rows, not chips — label 4 is a full sentence and
+                      would truncate or reflow badly in a chip at large type. */}
+                  <AppText variant="label" style={styles.label} nativeID="reportCategoryLabel">
+                    {REPORT_CATEGORY_LABEL}
+                  </AppText>
+                  <View
+                    accessibilityRole="radiogroup"
+                    accessibilityLabelledBy="reportCategoryLabel"
+                    accessibilityLabel={REPORT_CATEGORY_LABEL}
+                    style={styles.categoryGroup}
+                  >
+                    {REPORT_CATEGORIES.map((c) => {
+                      const selected = category === c.id;
+                      return (
+                        <Pressable
+                          key={c.id}
+                          onPress={() => setCategory(selected ? null : c.id)}
+                          disabled={submitting}
+                          accessibilityRole="radio"
+                          accessibilityState={{ checked: selected, disabled: submitting }}
+                          accessibilityLabel={c.label}
+                          style={[styles.categoryRow, selected && styles.categoryRowSelected]}
+                          testID={`reportContentModal-category-${c.id}`}
+                        >
+                          {/* Selection is carried by more than colour (WCAG
+                              1.4.1): the dot fills AND the row's border and
+                              background change. */}
+                          <View style={[styles.radio, selected && styles.radioSelected]}>
+                            {selected ? <View style={styles.radioDot} /> : null}
+                          </View>
+                          <AppText variant="body" style={styles.categoryText}>
+                            {c.label}
+                          </AppText>
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+
                   <AppText variant="label" style={styles.label}>
                     {REPORT_REASON_LABEL}
                   </AppText>
-                  {/* Free text, deliberately: a fixed category list would be
-                      authored moderation policy. maxLength is the module's
-                      constant, not a local number, so the field cannot accept
-                      text `submitContentReport` would silently clamp. */}
+                  {/* D-1 (§SKY-5) chose SUPPLEMENT: the picker above does NOT
+                      replace this field. The earlier note here said a fixed
+                      category list would be authored moderation policy — true
+                      when written, and the fence held until Sky authored the
+                      list herself in §3. Both now ship; either alone can send.
+                      maxLength is the module's constant, not a local number, so
+                      the field cannot accept text `submitContentReport` would
+                      silently clamp. */}
                   <TextInput
                     value={reason}
                     onChangeText={setReason}
@@ -449,6 +521,53 @@ const makeStyles = (color: ColorTheme) =>
       letterSpacing: 0.5,
       fontWeight: font.weight.semibold,
       marginTop: spacing.sm,
+    },
+    categoryGroup: {
+      marginTop: spacing.xs,
+      gap: spacing.xs,
+    },
+    categoryRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+      // 44pt is the WCAG 2.5.8 / HIG floor. paddingVertical alone would shrink
+      // below it at the smallest dynamic type, so the minHeight is the guard.
+      minHeight: 44,
+      paddingVertical: spacing.xs,
+      paddingHorizontal: spacing.sm,
+      borderRadius: radius.md,
+      borderWidth: 1,
+      borderColor: color.borderSubtle,
+      backgroundColor: 'transparent',
+    },
+    categoryRowSelected: {
+      borderColor: color.brand,
+      backgroundColor: color.brandSoft,
+    },
+    radio: {
+      width: 20,
+      height: 20,
+      borderRadius: 10,
+      borderWidth: 2,
+      borderColor: color.inkGlassMuted,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    radioSelected: {
+      borderColor: color.brand,
+    },
+    radioDot: {
+      width: 10,
+      height: 10,
+      borderRadius: 5,
+      backgroundColor: color.brand,
+    },
+    categoryText: {
+      // flex so a long label (category 4 is a full sentence) wraps inside the
+      // row instead of pushing the row wider than the sheet.
+      flex: 1,
+      fontSize: font.size.sm,
+      color: color.text,
     },
     reasonInput: {
       borderWidth: 1,

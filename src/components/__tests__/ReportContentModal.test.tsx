@@ -19,6 +19,8 @@
  * strings stay REAL, so the rung-2 assertion compares against the production
  * envelope rather than against a fixture that could drift from it.
  */
+import fs from 'fs';
+import path from 'path';
 import React from 'react';
 import { AccessibilityInfo, Platform } from 'react-native';
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
@@ -27,6 +29,7 @@ import ReportContentModal from '../ReportContentModal';
 import { buildReportBody, type ReportTarget, type SubmitReportResult } from '@/lib/reports';
 import type { SendFeedbackResult } from '@/lib/feedback';
 import {
+  REPORT_CATEGORIES,
   REPORT_FAILED_TITLE,
   REPORT_SENT_BODY,
   REPORT_SENT_TITLE,
@@ -123,11 +126,50 @@ describe('ReportContentModal — presentation', () => {
     expect(getByTestId('reportContentModal-backdrop')).toBeTruthy();
   });
 
-  it('offers no report-category picker — the taxonomy is not ours to author', () => {
-    const { queryByText } = renderSheet();
-    for (const word of ['Spam', 'Harassment', 'Hate speech', 'Nudity', 'Violence']) {
+  /**
+   * ⚑ FENCE INVERTED 2026-07-27 (DECISIONS §SKY-4 / §SKY-5).
+   *
+   * This asserted the sheet offered NO category picker, because the taxonomy
+   * was not ours to author. It held until Sky authored it (§3). The guard now
+   * demands her exact five, rendered in her order — so an agent adding a sixth,
+   * dropping one, or rewording a label still goes red.
+   */
+  it("renders Sky's five categories, in her order, and no others", () => {
+    const { getByText, queryByText, getAllByRole } = renderSheet();
+    for (const c of REPORT_CATEGORIES) expect(getByText(c.label)).toBeTruthy();
+    // Exactly five radios — no invented sixth.
+    expect(getAllByRole('radio')).toHaveLength(5);
+    // The old fence's words, which are NOT in her list, must not appear.
+    for (const word of ['Hate speech', 'Nudity', 'Violence']) {
       expect(queryByText(word)).toBeNull();
     }
+  });
+
+  it('the picker is a radio group and starts with nothing selected', () => {
+    const { getAllByRole } = renderSheet();
+    for (const radio of getAllByRole('radio')) {
+      expect(radio.props.accessibilityState.checked).toBe(false);
+    }
+  });
+
+  it('selecting a category checks exactly one, and tapping it again clears it', () => {
+    const { getByTestId } = renderSheet();
+    const spam = getByTestId('reportContentModal-category-spam');
+    const harassment = getByTestId('reportContentModal-category-harassment');
+
+    fireEvent.press(spam);
+    expect(spam.props.accessibilityState.checked).toBe(true);
+    expect(harassment.props.accessibilityState.checked).toBe(false);
+
+    // Single-select: picking another moves the selection rather than adding.
+    fireEvent.press(harassment);
+    expect(spam.props.accessibilityState.checked).toBe(false);
+    expect(harassment.props.accessibilityState.checked).toBe(true);
+
+    // Deselectable — a mis-tap on an abuse-report sheet must be undoable
+    // without closing and losing the typed reason.
+    fireEvent.press(harassment);
+    expect(harassment.props.accessibilityState.checked).toBe(false);
   });
 });
 
@@ -142,6 +184,44 @@ describe('ReportContentModal — canSend', () => {
 
     fireEvent.changeText(getByTestId('reportContentModal-reason'), REASON);
     expect(send.props.accessibilityState.disabled).toBe(false);
+  });
+
+  /**
+   * D-1 (§SKY-5) chose SUPPLEMENT, so the gate is category OR reason. The
+   * one-tap path is the fastest and most accessible route through this sheet,
+   * and it is the one a distressed user is most likely to take.
+   */
+  it('a category alone enables send — no typing required', () => {
+    const { getByTestId } = renderSheet();
+    const send = getByTestId('reportContentModal-send');
+    expect(send.props.accessibilityState.disabled).toBe(true);
+
+    fireEvent.press(getByTestId('reportContentModal-category-spam'));
+    expect(send.props.accessibilityState.disabled).toBe(false);
+  });
+
+  it('clearing the category with an empty reason disables send again', () => {
+    const { getByTestId } = renderSheet();
+    const spam = getByTestId('reportContentModal-category-spam');
+    fireEvent.press(spam);
+    fireEvent.press(spam);
+    expect(getByTestId('reportContentModal-send').props.accessibilityState.disabled).toBe(true);
+  });
+
+  /**
+   * ⚠ THE COUPLING THAT WOULD FAIL SILENTLY. `submitContentReport` has its own
+   * empty-report gate, and before D-1 it rejected ANY empty reason. If the two
+   * gates disagree, the UI enables Send for a state the submitter refuses, and
+   * the failure lands AFTER the user commits — which reads as the app losing
+   * their report. This pins them together at the source level.
+   */
+  it('the UI gate and the submitter gate agree on category-only', () => {
+    const src = fs.readFileSync(
+      path.join(__dirname, '..', '..', 'lib', 'reports.ts'),
+      'utf8',
+    );
+    expect(src).toContain('if (!reason && !category)');
+    expect(src).not.toMatch(/if \(!reason\) return \{ status: 'failed'/);
   });
 });
 
@@ -158,11 +238,30 @@ describe('ReportContentModal — the submit ladder', () => {
     expect(mockSubmitContentReport).toHaveBeenCalledWith({
       target: COMMENT_TARGET,
       reason: REASON,
+      // Explicitly null, not absent: the reporter typed a reason and picked no
+      // category, which D-1 (SUPPLEMENT) permits.
+      category: null,
       userId: 'user-1',
     });
     // The mailto rung is a FALLBACK, not a dual-write: a landed insert must not
     // also open the user's mail composer.
     expect(mockSendFeedback).not.toHaveBeenCalled();
+  });
+
+  it('rung 1: a category-only report sends with no typed reason', async () => {
+    mockSubmitContentReport.mockResolvedValue({ status: 'submitted' });
+    const { getByTestId, getByText } = renderSheet();
+
+    fireEvent.press(getByTestId('reportContentModal-category-privacy'));
+    fireEvent.press(getByTestId('reportContentModal-send'));
+
+    await waitFor(() => expect(getByText(REPORT_SENT_TITLE)).toBeTruthy());
+    expect(mockSubmitContentReport).toHaveBeenCalledWith({
+      target: COMMENT_TARGET,
+      reason: '',
+      category: 'privacy',
+      userId: 'user-1',
+    });
   });
 
   /**

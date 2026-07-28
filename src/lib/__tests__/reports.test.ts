@@ -29,6 +29,7 @@ import {
   submitContentReport,
   type ReportTarget,
 } from '../reports';
+import { REPORT_CATEGORIES } from '../copy';
 import { FEEDBACK_CATEGORIES, MAX_BODY_CHARS, buildMailtoUrl } from '../feedback';
 import { submitFeedback } from '../feedbackStore';
 
@@ -72,7 +73,7 @@ describe('the envelope round-trips', () => {
 
     const body = buildReportBody(target, reason);
     expect(body.split('\n')[0]).toBe(
-      `[REPORT] v1 target=comment id=${COMMENT_ID} flag=${FLAG_ID}`,
+      `[REPORT] v2 target=comment id=${COMMENT_ID} flag=${FLAG_ID}`,
     );
 
     const parsed = parseReportBody(body);
@@ -88,7 +89,7 @@ describe('the envelope round-trips', () => {
     const reason = 'The photo on this flag shows a stranger, not the entrance.';
 
     const body = buildReportBody(target, reason);
-    expect(body.split('\n')[0]).toBe(`[REPORT] v1 target=flag id=${FLAG_ID}`);
+    expect(body.split('\n')[0]).toBe(`[REPORT] v2 target=flag id=${FLAG_ID}`);
     expect(body).not.toContain('flag=');
 
     expect(parseReportBody(body)).toEqual({
@@ -101,13 +102,70 @@ describe('the envelope round-trips', () => {
   it('never repeats the uuid: a flag target ignores a stray flagId', () => {
     // The type permits it (one shape for both kinds); the encoder must not.
     const body = buildReportBody({ kind: 'flag', id: FLAG_ID, flagId: FLAG_ID }, 'why');
-    expect(body.split('\n')[0]).toBe(`[REPORT] v1 target=flag id=${FLAG_ID}`);
+    expect(body.split('\n')[0]).toBe(`[REPORT] v2 target=flag id=${FLAG_ID}`);
   });
 
   it('a comment report without a known parent flag still encodes and parses', () => {
     const body = buildReportBody({ kind: 'comment', id: COMMENT_ID }, 'why');
-    expect(body.split('\n')[0]).toBe(`[REPORT] v1 target=comment id=${COMMENT_ID}`);
+    expect(body.split('\n')[0]).toBe(`[REPORT] v2 target=comment id=${COMMENT_ID}`);
     expect(parseReportBody(body)?.target).toEqual({ kind: 'comment', id: COMMENT_ID });
+  });
+
+  describe('v2 · the category token (§3, D-1 SUPPLEMENT)', () => {
+    it('appends cat= after flag=, and round-trips', () => {
+      const body = buildReportBody({ kind: 'comment', id: COMMENT_ID, flagId: FLAG_ID }, 'why', 'harassment');
+      expect(body.split('\n')[0]).toBe(
+        `[REPORT] v2 target=comment id=${COMMENT_ID} flag=${FLAG_ID} cat=harassment`,
+      );
+      expect(parseReportBody(body)?.category).toBe('harassment');
+    });
+
+    it('OMITS the token entirely when no category was picked', () => {
+      // Not `cat=` — an empty token is indistinguishable from a truncated one.
+      const body = buildReportBody({ kind: 'flag', id: FLAG_ID }, 'why');
+      expect(body).not.toContain('cat=');
+      expect(parseReportBody(body)?.category).toBeUndefined();
+    });
+
+    it('encodes a category with an EMPTY reason — the one-tap report D-1 allows', () => {
+      const body = buildReportBody({ kind: 'flag', id: FLAG_ID }, '', 'spam');
+      const parsed = parseReportBody(body);
+      expect(parsed?.category).toBe('spam');
+      expect(parsed?.reason).toBe('');
+    });
+
+    it.each(REPORT_CATEGORIES.map((c) => c.id))('round-trips category %s', (id) => {
+      const body = buildReportBody({ kind: 'flag', id: FLAG_ID }, 'why', id);
+      expect(parseReportBody(body)?.category).toBe(id);
+    });
+
+    it('DROPS an unknown category rather than rejecting the whole report', () => {
+      // Fail-open: a row whose label this build does not know is still a real
+      // report with a target and a reason. Losing it would be the worse error.
+      const parsed = parseReportBody(`[REPORT] v2 target=flag id=${FLAG_ID} cat=wat\n\nwhy`);
+      expect(parsed).not.toBeNull();
+      expect(parsed?.category).toBeUndefined();
+      expect(parsed?.reason).toBe('why');
+    });
+  });
+
+  describe('v1 rows still parse — old rows do not rewrite themselves', () => {
+    it('reads a stored v1 comment report', () => {
+      const parsed = parseReportBody(
+        `[REPORT] v1 target=comment id=${COMMENT_ID} flag=${FLAG_ID}\n\nold reason`,
+      );
+      expect(parsed).toEqual({
+        version: 1,
+        target: { kind: 'comment', id: COMMENT_ID, flagId: FLAG_ID },
+        reason: 'old reason',
+      });
+      // No category key at all on a v1 row, rather than an explicit undefined.
+      expect(parsed && 'category' in parsed).toBe(false);
+    });
+
+    it('reads a stored v1 flag report', () => {
+      expect(parseReportBody(`[REPORT] v1 target=flag id=${FLAG_ID}\n\nold`)?.version).toBe(1);
+    });
   });
 
   it('survives a multi-line reason verbatim (only the ends are trimmed)', () => {
@@ -205,7 +263,10 @@ describe('parseReportBody refuses anything that is not an envelope', () => {
   });
 
   it('a version this build cannot understand', () => {
-    expect(parseReportBody(`[REPORT] v2 target=flag id=${FLAG_ID}\n\nwhy`)).toBeNull();
+    // One ABOVE the current generation, whatever that is — hard-coding a number
+    // here would go stale silently the next time the envelope is bumped.
+    const future = `v${REPORT_ENVELOPE_VERSION + 1}`;
+    expect(parseReportBody(`[REPORT] ${future} target=flag id=${FLAG_ID}\n\nwhy`)).toBeNull();
     expect(parseReportBody(`[REPORT] v0 target=flag id=${FLAG_ID}\n\nwhy`)).toBeNull();
   });
 
@@ -369,8 +430,23 @@ describe('the mailto rung keeps [REPORT] on byte 0', () => {
       path.join(__dirname, '..', '..', 'components', 'ReportContentModal.tsx'),
       'utf8',
     );
-    const call = src.slice(src.indexOf('await sendFeedback('), src.indexOf('await sendFeedback(') + 220);
-    expect(call).not.toContain('category');
-    expect(call).not.toContain('contactEmail');
+    const start = src.indexOf('await sendFeedback(');
+    // Comments are stripped before matching. The v2 category work put the WORD
+    // "category" into an explanatory comment inside this call — legitimately,
+    // since the category now travels INSIDE the envelope as `cat=` — and a raw
+    // substring scan read that prose as the forbidden argument. The fence is
+    // about the ARGUMENT, so match the argument, not the paragraph next to it.
+    const call = src
+      .slice(start, start + 600)
+      .replace(/\/\/.*$/gm, '')
+      .replace(/\/\*[\s\S]*?\*\//g, '');
+
+    // `category:` as an object property is what would make buildMailtoUrl
+    // prepend "Category: <Label>\n\n" and knock [REPORT] off byte 0.
+    expect(call).not.toMatch(/\bcategory\s*:/);
+    expect(call).not.toMatch(/\bcontactEmail\s*:/);
+    // …but the category MUST still reach the envelope builder, or the mailto
+    // half would disagree with the insert half on the triage axis.
+    expect(call).toMatch(/buildReportBody\([^)]*category/);
   });
 });
