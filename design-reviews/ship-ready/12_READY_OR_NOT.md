@@ -42,6 +42,22 @@ stated response commitment · the SR-050 takedown fork.
 | **B-6** | Reviewer demo account is dead credentials | 2.1(a) needs working creds. Provisioned in the Auth dashboard — no agent handles credentials |
 | **SR-021** | **No binary-launch evidence exists. None.** | The simulator tier was down all train and no store build exists. **The first proof this app launches on iOS is your next EAS build.** Everything below is web-verified, code-inferred, or NEEDS-DEVICE |
 
+### ⚠ Three more, added by the B-1 adversarial pass — `13_B1_VERIFY_LEDGER.md`
+
+Not blockers in the Apple sense, but all HIGH and all needing a decision before this ships:
+
+- **The report envelope is shown back to the reporter as raw markup.** A signed-in report appears in Settings
+  → My feedback as `[REPORT] v1 target=comment id=9f3c… flag=22a1…`, as the row's accessible name, and in the
+  PIPEDA data export. Recommend hiding `[REPORT]%` rows from that surface — one predicate, no new copy.
+- **Hide is immediate, irreversible, and has no unhide anywhere in the app** — while drawn as the
+  pixel-identical twin of Report, 16pt away. A mis-tap silently removes a comment from that device forever.
+- **"Report sent" is silent on iOS VoiceOver** — `accessibilityLiveRegion` is Android-only in RN, and the
+  house pattern pairs it with `announceForAccessibility`.
+
+Three were **fixed** in the same pass, one of them serious enough to have broken the blocker: every **guest**
+report was told it had failed while landing correctly in the table (`6abe5fe`). Guests are the App Review
+reviewer's cohort.
+
 ### ⚠ A fifth, conditional: **D-B6 → R-6**
 
 `§SKY-3d` is a **blocking gate**: Phase 3 may not be marked complete and this branch may not merge until you

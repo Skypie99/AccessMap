@@ -69,6 +69,16 @@ this train's file, deliberately untouched.**
 | `b9a74a8` | **fix** two tests that were not testing — a vacuous assert and an intermittent load flake |
 | `79c1b86` | **docs** stale ref-count corrected + a `newArchEnabled` warning |
 
+## ⛔ THE VERDICT — read `12_READY_OR_NOT.md` first
+
+**NOT READY TO SUBMIT.** Four blockers, every one of them Sky's: B-1 (Apple 1.2 — see the leg-by-leg score),
+B-3 (privacy policy content), B-6 (reviewer credentials), and SR-021 (**no binary-launch evidence exists at
+all** — the first proof this app launches on iOS is Sky's next EAS build). Plus the conditional D-B6 gate,
+which forbids marking Phase 3 complete or merging until she checks Help/About on a device at AX5.
+
+**Final gate: typecheck 0 · lint 0 errors / exactly 79 warnings · jest 177 suites / 2543 passed / 0 failed /
+84 todo · `GlassSurface.tsx` 0 changed lines · box-none 6 sites · migrations applied by an agent: 0.**
+
 ## Current
 
 Nothing in flight.
@@ -80,11 +90,11 @@ Nothing in flight.
 | **A0-1** | **G5 focus-return** | ✅ **DONE** — 3 adoptions + guard J, adversarially verified, 5 real defects fixed. Record: `09_G5_FOCUS_RETURN.md`. One item **SURFACED not fixed** (the Report submit handoff → PROTECT-18/BP12 seam + device row D-B15) |
 | **SR-117** | comment author type lie | ✅ **DONE** — code half shipped; the DDL fork awaits Sky |
 | **A0-2** | **G3** grabbers | ⏸ **STOPPED FOR SKY** — arbiter done, ink decided (`inkGlassMuted`, the only candidate clearing 3.0 everywhere), 4 options tabled in `08_G3_GRABBER_ARBITER.md`. No code by design |
-| **A0-3** | **B-1** — Report (1.2(b)) · Hide on comments (1.2(c), PARTIAL) · "Flag as wrong" (W1) + dedup | **NEXT** |
-| **A0-4** | the **D-B6 conditional**, carried verbatim into the verdict | close-out |
-| **Class A** | R-2 guest honesty ×4 · R-13 web-cohort pair · R-1 artifact-only | not started |
-| **Class B** | submission collateral | not started |
-| **Class C** | conservation table · ready/not-ready verdict · Sky's ordered list · consolidated device list | not started |
+| **A0-3** | **B-1** — Report (1.2(b)) · Hide on comments (1.2(c), PARTIAL) · "Flag as wrong" (W1) + dedup | ✅ **BUILT** (8 commits, zero schema change as specified). Adversarially verified: **4 defects fixed**, incl. guest reports falsely reporting failure; **3 HIGH open** → `13_B1_VERIFY_LEDGER.md`. **B-1 does NOT close** — see the leg-by-leg score |
+| **A0-4** | the **D-B6 conditional** | ✅ carried verbatim into `12_READY_OR_NOT.md` |
+| **Class B** | submission collateral | ✅ **DONE** (`c33dcd4`) — export compliance, the 4 accessed-API reason codes, and the manifest's truth against the new report path now pinned by tests; all were true and asserted by nothing |
+| **Class C** | conservation · verdict · Sky's list · device list | ✅ **DONE** — `10_CONSERVATION_TABLE.md` (all 117, and the 12 nobody disposed), `11_SR050_TAKEDOWN_GAP.md`, `12_READY_OR_NOT.md`, `13_B1_VERIFY_LEDGER.md` |
+| **Class A** | R-2 guest honesty ×4 · R-13 web-cohort pair · R-1 artifact-only | ❌ **NOT BUILT — the phase's one unmet commitment.** Sky picked all three; the runway went to the B-1 blocker and the defects the adversarial passes surfaced. Reported as a counted residue, never a false green — the same honesty Phase 2 applied to G5. All three remain fully specced in the plan and in `05 §2`; SR-117, the fourth pick, IS done |
 
 **Sequencing law:** SR-117 before A0-3's comment work (a nullable author column changes how ownership is
 decided on the very rows Report is added to); A0-1 before A0-3's new `<Modal>` (so guard J and the dismissal
