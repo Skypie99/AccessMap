@@ -142,3 +142,74 @@ describe('B-5 (SR-012) — iPhone-only, so ITMS-90474 cannot fire', () => {
     expect(app.ios.requireFullScreen).toBeUndefined();
   });
 });
+
+describe('Phase 3 — the submission collateral nothing was pinning', () => {
+  // Everything below was already TRUE in app.json and asserted by NOTHING, so a
+  // silent edit (or a merge that dropped a key) would have surfaced only as a
+  // rejected upload or an App Store Connect questionnaire that contradicts the
+  // binary. These are cheap; the feedback they replace is expensive.
+
+  it('declares export compliance, so the upload is not held for the encryption question', () => {
+    // ITSAppUsesNonExemptEncryption:false is the honest answer, not a shortcut:
+    // the app's only cryptography is HTTPS/TLS to Supabase, which is exempt
+    // under the standard-encryption exemption. Declaring it in Info.plist stops
+    // App Store Connect asking per-build and stops a build sitting in
+    // "Missing Compliance" until someone notices.
+    //
+    // If the app ever ships its own crypto — bundled E2EE, a custom cipher, or
+    // a non-exempt library — this must flip to true AND acquire the export
+    // paperwork. Failing here is the intended way to be reminded.
+    expect(app.ios.infoPlist.ITSAppUsesNonExemptEncryption).toBe(false);
+  });
+
+  it('gives every accessed-API category a reason code', () => {
+    // A missing or invented reason code is an upload rejection (ITMS-91053).
+    // Pinned as an exact map rather than a count so that adding an API category
+    // without its reason fails, and so that a reason code cannot silently drift
+    // to one Apple does not publish for that category.
+    const reasons = Object.fromEntries(
+      app.ios.privacyManifests.NSPrivacyAccessedAPITypes.map(
+        (a: { NSPrivacyAccessedAPIType: string; NSPrivacyAccessedAPITypeReasons: string[] }) => [
+          a.NSPrivacyAccessedAPIType,
+          a.NSPrivacyAccessedAPITypeReasons,
+        ],
+      ),
+    );
+    expect(reasons).toEqual({
+      NSPrivacyAccessedAPICategoryUserDefaults: ['CA92.1'],
+      NSPrivacyAccessedAPICategoryFileTimestamp: ['C617.1'],
+      NSPrivacyAccessedAPICategoryDiskSpace: ['E174.1'],
+      NSPrivacyAccessedAPICategorySystemBootTime: ['35F9.1'],
+    });
+  });
+
+  it('still covers what the B-1 moderation path writes — no new data type owed', () => {
+    // Checked rather than assumed when the abuse-report path landed. A report
+    // writes exactly two things: the user's free-text reason (already covered by
+    // OtherUserContent, which the flag description and comments also ride) and,
+    // for a signed-in reporter, their user_id (already UserID). The report rides
+    // the EXISTING feedback table by Sky's Option-B design, so it introduces no
+    // new column and no new category of collected data.
+    //
+    // The 1.2(c) hide list is deliberately NOT here: it is AsyncStorage, on the
+    // device, never transmitted — so it is not "collected" in Apple's sense and
+    // declaring it would overstate what leaves the phone.
+    const names: string[] = app.ios.privacyManifests.NSPrivacyCollectedDataTypes.map(
+      (t: { NSPrivacyCollectedDataType: string }) => t.NSPrivacyCollectedDataType,
+    );
+    expect(names).toContain('NSPrivacyCollectedDataTypeOtherUserContent');
+    expect(names).toContain('NSPrivacyCollectedDataTypeUserID');
+  });
+
+  it('keeps the app-level version metadata coherent', () => {
+    // NOT a claim that ios.buildNumber is what ships. eas.json sets
+    // appVersionSource:"remote" with autoIncrement:true on both store profiles,
+    // so EAS owns the build number and the value in app.json is INERT for
+    // testflight/production uploads. It is pinned as a well-formed string only
+    // so it cannot rot into a number or a template and confuse a local prebuild.
+    expect(typeof app.version).toBe('string');
+    expect(app.version).toMatch(/^\d+\.\d+\.\d+$/);
+    expect(typeof app.ios.buildNumber).toBe('string');
+    expect(app.ios.bundleIdentifier).toBe('com.accessmap.app');
+  });
+});
