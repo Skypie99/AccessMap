@@ -451,3 +451,87 @@ word below requires Sky's explicit ratification before it ships."** Left byte-in
 was verbatim-plus-two-resolutions, and retitling would have been a third unrequested edit. Sky's call whether
 to flip that header to RATIFIED in a follow-up — this §SKY-4 entry is the authoritative ratification record
 either way.
+
+---
+
+## §SKY-5 Moderation gap-close M-1…M-4 — BUILT (2026-07-27)
+
+The four follow-ups §SKY-4 opened, built in one session off `df80f1c`. Branch
+`shipready/3-polish-submission`, **stopped on the branch — nothing merged, nothing pushed.**
+Prompt: `build-plan/01_moderation-gapclose.md`. Full result: `build-plan/RESULT_01_moderation-gapclose.md`.
+
+| Commit | Car | What |
+|---|---|---|
+| `7835c3b` | **M-4** | SR-117 repo text → Option A. No SQL ran |
+| `fabf13b` | **M-1** | Ratified `REPORT_SENT_BODY` + the iOS VoiceOver HIGH |
+| `7158131` | **M-2** | The 1.2(a) submit-time filter |
+| `fd75a86` | **M-3** | Sky's five categories, envelope v2 |
+
+Tests **2545 → 2610 passing, 0 failing**, 178 suites. Typecheck clean, lint 0 errors.
+
+### Sky's two decisions, recorded
+
+- **D-1 — SUPPLEMENT.** The five categories sit *alongside* the free-text reason; either alone can send.
+  Supersedes the free-text-only scoping in **§SKY-3h**; the superseded comments in
+  `ReportContentModal.tsx` were updated rather than left contradicting shipped behaviour (precedent: J2-1).
+- **D-2 — CURATED.** Slurs / hate / explicit / harassment block; ordinary profanity does not. The dropped
+  class is kept visible in `DROPPED_MILD_PROFANITY` so the decision stays reversible.
+
+### §SKY-4's M-4 fork was closed by the ToS, not by a separate decision
+
+Sky's §1 *"Your account"* clause — *"Anything you've contributed may stay in the app, with your name
+removed"* — **is** SR-117 Option A in her own published words, and **forecloses Option B**: Option B is
+`ON DELETE CASCADE`, which would delete those contributions and make the published Terms false. Both option
+texts are kept verbatim in the drift-capture file; neither was struck.
+
+### ⚑ FIVE mechanised honesty fences converted — none deleted
+
+The audit train wrote its fence into the test suite. Ratification made five of those tests wrong, and every
+one was **converted to guard the new truth** rather than removed. Deleting a fence is indistinguishable from
+an agent quietly removing the thing that stops it authoring policy.
+
+| # | Fence | Was | Now |
+|---|---|---|---|
+| 1 | `copy.test.ts` response-time ban | no report string may state an interval | `REPORT_SENT_BODY` must state **exactly** Sky's "within 24 hours" |
+| 2 | `copy.test.ts` PROPOSED marker | every B-1 string carries the PROPOSED marker | ratified strings move to `RATIFIED_EXPORTS` with a provenance marker, held equally strictly; **no export may be in both lists** |
+| 3 | `copy.test.ts` anti-taxonomy | no report-category list may exist in `copy.ts` | it must be **exactly her five**, in her order, with stable wire ids |
+| 4 | `ReportContentModal.test.tsx` anti-picker | the sheet offers no picker | it renders her five, exactly five, no invented sixth |
+| 5 | `reports.test.ts` mailto category guard | substring scan for "category" near `sendFeedback` | matches the **argument** (`category:`), not prose — the v2 comment tripped the old form |
+
+### 🔴 Three findings raised during the build
+
+1. **`submitContentReport` would have failed every one-tap report.** Its gate was `if (!reason)`, written
+   when free-text was the only input. D-1 makes a category-only report valid, so the UI would have enabled
+   Send for a state the submitter refused — failing *after* the user committed, which reads as the app losing
+   their report. Fixed to `if (!reason && !category)`; a source-level test now pins the two gates together.
+2. **The Sky-editable `ADDITIONS` array did not work.** `BLOCKED_TERMS` was `[...SEED, ...ADDITIONS]`
+   evaluated once at module load, so anything added later was silently ignored while the export still looked
+   authoritative. Now `allBlockedTerms()`, read live. Caught by the test §2 asked for.
+3. **The report *reason* is deliberately NOT filtered, and now has a fence saying so.** Reporting abuse
+   means quoting it — filtering that field would block the abuse reports the filter exists to serve.
+
+### Leg 1.2(a): 🔴 → 🟠, **not 🟢**
+
+Scored honestly per `12_READY_OR_NOT.md` §1's never-average rule. A filter now exists on the posting path,
+which is what 1.2(a) asks for. It is **not** closed, for three stated reasons: it is client-side and
+bypassable by anything that is not the app; the term list is a curated seed, **not** a verbatim LDNOOBW
+vendoring (no network fetch happened — the module header says so plainly); and it has had no adversarial
+review. A server-side mirror would be the real fence and is a migration-file proposal for Sky, never an
+agent change.
+
+**B-1 remains BLOCKING-OPEN.** This train closed the filter and the copy. It did not close the blocker:
+**1.2(b)** still has the SR-050 photo-takedown hole, **1.2(c)** is still comments-only, and the ToS itself
+is banked but not yet surfaced anywhere in the app.
+
+### DECISIONS FOR SKY
+
+- **The ToS is banked but unreachable.** `14_MODERATION_TEXTS_v1.md` §1 is a document in the repo; no
+  in-app screen renders it. Apple expects the terms to be readable *in the app*. Unbuilt, and out of scope
+  here because it needs a screen and a nav entry, not a string.
+- **`REPORT_CATEGORY_LABEL` ("What's wrong?") is AGENT-PROPOSED**, marked as such. It is picker chrome, not
+  taxonomy, but it is the one new user-visible string this run introduced. Ratify or replace it.
+- **The curated term list wants your eyes, and Jordan's.** Both options are fine: vendor the real LDNOOBW
+  file and re-apply the D-2 rule, or keep this seed and grow it. Neither changes the matcher or the tests.
+- **The 24-hour commitment now ships in the app.** `REPORT_SENT_BODY` is the only place in the running
+  binary that states it. If it ever stops being sustainable, three things change together: the string, ToS
+  §1, and §4.
