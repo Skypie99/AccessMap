@@ -173,9 +173,17 @@ describe('ReportContentModal — the submit ladder', () => {
     fireEvent.press(getByTestId('reportContentModal-send'));
 
     await waitFor(() => expect(mockSendFeedback).toHaveBeenCalled());
+    // EXACTLY the body, and NOTHING else. This assertion used to include
+    // `category: 'other'` and was pinning a defect: buildMailtoUrl prepends
+    // `Category: <Label>\n\n` whenever a category is passed, so the email began
+    // `Category: Other\n\n[REPORT] v1 …` and the sentinel Sky triages on was no
+    // longer the first thing in the message. This rung only ever runs when the
+    // insert already failed — most plausibly the C-7 anon throttle, 30/h global
+    // and shared with ordinary feedback — so it is the path where a report is
+    // most likely to be missed and the marker has to lead. The DB half still
+    // carries category 'other'; only the mail drops it.
     expect(mockSendFeedback).toHaveBeenCalledWith({
       body: buildReportBody(COMMENT_TARGET, REASON),
-      category: 'other',
     });
     // The composer opened; the user still has to press send in their mail app,
     // so this rung must NOT claim the report was sent.

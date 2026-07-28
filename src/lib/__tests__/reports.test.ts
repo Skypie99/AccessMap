@@ -1,3 +1,5 @@
+import fs from 'fs';
+import path from 'path';
 /**
  * Tests for src/lib/reports.ts — the Apple 1.2(b) report envelope (§SKY-3g,
  * Option B: encode-in-body, zero schema).
@@ -27,7 +29,7 @@ import {
   submitContentReport,
   type ReportTarget,
 } from '../reports';
-import { FEEDBACK_CATEGORIES, MAX_BODY_CHARS } from '../feedback';
+import { FEEDBACK_CATEGORIES, MAX_BODY_CHARS, buildMailtoUrl } from '../feedback';
 import { submitFeedback } from '../feedbackStore';
 
 jest.mock('../feedbackStore', () => ({ submitFeedback: jest.fn() }));
@@ -329,5 +331,46 @@ describe('submitContentReport', () => {
     // The id is still whole — the clamp cut the tail, not the header.
     expect(parsed?.target.id).toBe(COMMENT_ID);
     expect(sentPayload().body.length).toBeLessThanOrEqual(MAX_BODY_CHARS);
+  });
+});
+
+describe('the mailto rung keeps [REPORT] on byte 0', () => {
+  // REGRESSION GUARD, and it caught a real defect rather than anticipating one:
+  // ReportContentModal originally passed `category` to sendFeedback, and
+  // buildMailtoUrl prepends `Category: <Label>\n\n` whenever one is present —
+  // so the email Sky triages began `Category: Other\n\n[REPORT] v1 …` and the
+  // sentinel was no longer the first thing in the message.
+  //
+  // This rung fires ONLY when the database insert has already failed, and the
+  // most likely cause of that is the C-7 anon throttle (30/h, global, shared
+  // with ordinary feedback). So it is precisely the path where a report is most
+  // at risk of being missed — the marker has to lead.
+  //
+  // The DB half is unaffected either way (feedbackStore inserts the body
+  // verbatim, so `body LIKE '[REPORT]%'` still matches) and still carries
+  // category 'other', which is what the recorded structured-columns backfill
+  // keys on.
+  const mailBody = (url: string) => decodeURIComponent(url.split('body=')[1] ?? '');
+
+  it('a category prefix would displace the sentinel — which is why none is passed', () => {
+    const body = buildReportBody({ kind: 'flag', id: 'abc' }, 'a reason');
+
+    // What the app does now.
+    expect(mailBody(buildMailtoUrl({ body })).startsWith(REPORT_BODY_PREFIX)).toBe(true);
+
+    // What it must never go back to. Asserted so the failure names the cause.
+    expect(mailBody(buildMailtoUrl({ body, category: 'other' })).startsWith(REPORT_BODY_PREFIX)).toBe(
+      false,
+    );
+  });
+
+  it('the report sheet passes no category (and no contact email) to the mailto half', () => {
+    const src = fs.readFileSync(
+      path.join(__dirname, '..', '..', 'components', 'ReportContentModal.tsx'),
+      'utf8',
+    );
+    const call = src.slice(src.indexOf('await sendFeedback('), src.indexOf('await sendFeedback(') + 220);
+    expect(call).not.toContain('category');
+    expect(call).not.toContain('contactEmail');
   });
 });

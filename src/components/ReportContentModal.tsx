@@ -72,7 +72,6 @@ import { notify } from '@/lib/confirm';
 import { FEEDBACK_EMAIL, sendFeedback } from '@/lib/feedback';
 import {
   MAX_REPORT_REASON_CHARS,
-  REPORT_FEEDBACK_CATEGORY,
   buildReportBody,
   submitContentReport,
   type ReportTarget,
@@ -157,9 +156,23 @@ export default function ReportContentModal({ visible, target, onClose }: Props) 
     // RUNG 2 — the mailto half of the SAME pipeline, carrying the SAME
     // envelope, so a report that arrives by email parses with the very same
     // `parseReportBody` as one that arrived by insert.
+    //
+    // ⚠ NO `category` HERE, deliberately, and it is not an oversight to "fix":
+    // buildMailtoUrl prepends `Category: <Label>\n\n` whenever one is passed
+    // (feedback.ts), which would push the body to
+    // `Category: Other\n\n[REPORT] v1 …` and take the sentinel off byte 0 of the
+    // mail Sky triages. This rung fires exactly when the DB insert FAILED — the
+    // C-7 anon throttle is 30/h global and shared with ordinary feedback — so it
+    // is the path where a report is most at risk of being missed, and the one
+    // where the marker has to be the first thing in the message.
+    // The DB half still carries category 'other' (submitContentReport passes
+    // it), so the recorded backfill —
+    // `UPDATE feedback SET category='report' WHERE body LIKE '[REPORT]%'` —
+    // is unaffected. Cost, accepted: the mail subject is the plain
+    // "AccessMap feedback" rather than "…: Other". Naming it "Report" in the
+    // subject would be new copy, which is Sky's.
     const mail = await sendFeedback({
       body: buildReportBody(target, reason),
-      category: REPORT_FEEDBACK_CATEGORY,
     });
 
     if (!mountedRef.current) return;
