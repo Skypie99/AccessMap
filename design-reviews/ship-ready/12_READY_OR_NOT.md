@@ -260,9 +260,10 @@ Sky-physical action and is counted below.
    survive account deletion **and become permanently un-deletable**.
 10. **`storage_path` column** — the day the photo-URL shape changes, the SR-050 derivation becomes the wrong
     bet. Backlogged, not forgotten.
-11. **Six `color.brand`-as-text sites** flagged by the Car-4 arbiter run and **not swept** — each needs its
-    own surface arbitration. `ProfileScreen:2418` · `MapScreen:3458` · `PhotoGallery:303` · `HelpModal:315` ·
-    `ChangelogModal:197,207`.
+11. ~~**Six `color.brand`-as-text sites** flagged by the Car-4 arbiter run and **not swept**~~ ✅ **CLOSED
+    2026-07-29 — measured, all six pass, nothing restyled.** `17_BRAND_INK_MEASUREMENTS.md`. Note the line
+    numbers cited here had drifted (`MapScreen:3458` is now `zoomBtn`); the real site is
+    `MapScreen:3480`. One of the six is dead style, two have inert colours wrapping lucide SVGs.
 12. **The residual guidelines citation:** `CONTENT_BLOCKED_MESSAGE` still cites the community guidelines from
     inside an `Alert`, which cannot hold a link. You ruled it out of scope for Run 2 (§SKY-6a); a user told
     they broke the guidelines still has no route to read them.
@@ -306,3 +307,116 @@ the seed*. LDNOOBW contains **no disability slurs at all** — the class most li
 users — and no self-harm phrases. A wholesale replace would have removed them and turned two tests red.
 
 **Nothing was merged, submitted, or applied to the database. The branch stops here.**
+
+---
+---
+
+# ⏱ RUN-3 RE-SCORE — 2026-07-29 · THE FINAL BUILD RUN
+
+**Everything above stands as the record.** This section supersedes §1′ and §2′. Branch
+`shipready/3-polish-submission`, stacked on `c70eb65`, **stopped on the branch**. `main` untouched.
+Decisions: `DECISIONS.md §SKY-7` + `§SKY-8` + `§SKY-9`.
+
+**Gate at the tip:** typecheck **0** · lint **0 errors / 80 warnings** · jest **186 suites / 2826 passed /
+0 failed** / 84 todo · `GlassSurface.tsx` **0 changed lines** · **migrations applied by an agent: 0.**
+
+> ⚠ **A pre-existing flake, observed and named.** Several timing-heavy suites — `ReportFlagModal`,
+> `MyReportsModal`, `flagsStoreSwr` — intermittently exceed jest's 5s per-test timeout under full-suite
+> parallel load. `ReportFlagModal` passed at 48s and failed at 88s and 163s **in the same tree**. It is not
+> this run's doing: `flagsStoreSwr` and `MyReportsModal` contain zero references to anything Run 3 touched,
+> and `ReportFlagModal` first flaked before it was edited. All three use fake timers / `waitFor`, and the
+> run also reports "a worker process has failed to exit gracefully". The green figure above is a real full
+> pass; it is quoted alongside this note rather than instead of it.
+
+> ⚠ **Do not pass `--silent` to jest here.** `npx jest --ci --silent` reports 2 false suite failures through
+> an RNTL `afterEach` interaction. Plain `npx jest --ci` is the gate.
+
+---
+
+## §1″ Apple Guideline 1.2, re-scored leg by leg — **never averaged**
+
+| Leg | Was (Run 2) | Now | Why |
+|---|---|---|---|
+| **ToS / community guidelines** | 🟢 CLOSED | 🟢 **CLOSED, and now cited from where it is needed** | Unchanged text. It gained two entry points: the blocked-content alert on both submit paths now carries **"View guidelines"** |
+| **(a) filter objectionable material** | 🟠 amber | 🟠 **still amber — and one leg WORSE than recorded** | The coherence fix closes the "cited a document with no route to it" residual. But the run found that **`createAnonFlag` never calls `containsBlockedTerm` at all**: the anonymous submit path is unfiltered. See the box below — this is new, it is real, and anonymous is the reviewer's own cohort |
+| **(b) report mechanism + timely response** | 🟠 mechanism complete, §C-12 awaiting Sky | 🟢 **CLOSED** | §SKY-7 records **§C-12 applied and verified by Sky on 2026-07-29**, with the pre-state read live, the post-apply verify read-only, and the rollback on file. Admin takedown can now remove the reported photo. Owner takedown already shipped (SR-050). The 24-hour commitment is visible in-app and word-identical in the ToS |
+| **(c) block abusive users** | 🟠 comments-only, **Unhide at the gate** | 🟠 **comments-only by scope — but no longer irreversible** | The gate is answered and built. Hide now has an undo: Settings → Feedback → **Hidden comments**, per-item and bulk, with the "no longer available" state honest about what it does and does not know. **Flag-level hide remains unbuilt and is still a named follow-up** — the scope is Sky's (§SKY-3h), so (c) stays amber. Do not report (c) as closed |
+| **(d) published contact info** | 🟢 met | 🟢 **met** | Unchanged |
+
+### 🔴 New this run, and it moves leg (a) the wrong way
+
+**`createAnonFlag` (`src/lib/flags.ts`) never calls `containsBlockedTerm`.** `createFlag` filters the
+description at `flags.ts:1207`; the anonymous path has no filter of any kind. So the submit-time filter —
+the whole of leg (a) — **is bypassed entirely by submitting anonymously**, which the app advertises as a
+headline feature and which is exactly how an App Review reviewer will test it.
+
+It was found while wiring Car B and deliberately **not** patched: adding a filter to a submit path is a
+moderation-policy change, and 05 §3 ⑯ assigns those to Sky. It is a one-line change once she says so.
+**Until then leg (a) is amber for a reason nobody had written down.**
+
+---
+
+## §2″ What BLOCKS submission — **now 2, and both are physical**
+
+| # | Blocker | Why no agent can close it |
+|---|---|---|
+| **B-6** | Reviewer demo account is dead credentials | 2.1(a) needs working creds. Provisioned in the Auth dashboard — no agent handles credentials |
+| **SR-021** | **No binary-launch evidence exists. None.** | The first proof this app launches on iOS is the next EAS build. Everything is web-verified, code-inferred, or NEEDS-DEVICE |
+
+**B-3 is CLOSED.** The policy is rendered verbatim in-app from Sky's ratified document, all three B-2 links
+repoint to it, and a drift tripwire fails in both directions if the app and her text ever disagree. Its
+eleven `[V]` claims were checked against the codebase before a word was rendered — **two failed and were
+corrected by Sky before the render** (§SKY-9). Evidence: `16_V_VERIFICATION_TABLE.md`.
+
+**B-1 is off the blocker list.** Leg (b) closed with §C-12; legs (a) and (c) are amber by *scope decisions
+that are Sky's*, not by unfinished agent work.
+
+---
+
+## §3″ SKY'S LIST — what is actually left
+
+### 🔴 Physical. Nothing else can proceed without them
+
+1. **Merge this branch.** `shipready/3-polish-submission` → `main`. Nothing else in the repo is waiting on
+   an agent.
+2. **B-6 — provision the reviewer account**, verify the login, and put the credentials plus a
+   "Browse without an account" line in the review notes.
+3. **The first EAS build** — the first evidence the app launches at all (SR-021).
+4. **The device pass** (§5″ below), including the **D-B6 blocking gate** (Help/About ✕ at AX5).
+5. **App Store Connect**: privacy nutrition labels (`04 §A-Sheet-A`, now safe to lock — policy and labels
+   agree), age rating (expect 13+), Accessibility Nutrition Labels (device-verified rows only), EU DSA
+   trader declaration, metadata, screenshots at 6.9″ and 6.5″.
+6. **Host the policy text at `PRIVACY_POLICY_URL`** so the App Store listing and the app say the same thing
+   (§SKY-8 P-3). The constant and `app.json` already agree with each other; what is missing is the page.
+
+### 🟠 Decisions, any time
+
+7. **Leg (a): the anonymous filter gap above** — one line, but it is a moderation-policy call.
+8. **Leg (a) green or amber?** A server-side filter mirror is still the only path to green.
+9. **Flag-level hide**, to move leg (c) — named follow-up, scope is yours.
+10. **R-1's edge function** — `R1_ACCOUNT_DELETION_SWEEP.md`, written, undeployed. Face photos currently
+    survive account deletion and become permanently un-deletable.
+11. **`storage_path` column** — the day the photo-URL shape changes, the SR-050 derivation becomes the
+    wrong bet.
+12. ~~**Six `color.brand`-as-text sites**~~ ✅ **CLOSED — measured, all pass.** `17_BRAND_INK_MEASUREMENTS.md`.
+    One of the six (`ProfileScreen`'s `nearestBtnChevron`) is **dead style, never rendered**; two more
+    (`HelpModal`, `ChangelogModal` chevrons) have **inert colours** wrapping lucide SVGs. Nothing restyled.
+13. ~~**The residual guidelines citation**~~ ✅ **CLOSED** by Car B — with web knowingly excepted (a
+    buttoned `Alert` is a no-op on react-native-web; the guidelines stay reachable there from Settings and
+    About).
+14. **Dead code, recorded not removed:** `lib/links.ts`'s `openExternalUrl` has no production caller now
+    that the privacy links open in-app. `ProfileScreen`'s `nearestBtnChevron` style likewise.
+15. **The 12 undisposed findings** in `10_CONSERVATION_TABLE.md §6` — two HIGH — remain open.
+
+---
+
+## §5″ DEVICE ROWS GAINED THIS RUN
+
+Add to the consolidated list in §5. **D-B6 remains the blocking gate.**
+
+| row | what to check |
+|---|---|
+| **the Unhide flow** | Settings → Feedback → **Hidden comments**. Hide two comments on a flag, open the list, confirm each row shows the real author, time and text. **Unhide one** — confirm VoiceOver announces "Comment unhidden on this device" and the comment reappears in the thread. **Unhide all** — confirm the confirm dialog names the count and the announcement states it. Empty state reads as a designed moment, not an error. Both themes. The pill at AX5 |
+| **the "no longer available" row** | Hide a comment, delete it from another account (or as its author), reopen the list. It must still render **and still unhide** — a stuck row is a device-local entry the user can never clear. Then put the phone in **airplane mode** and reopen: the rows must say "Couldn't load this comment right now", **not** "no longer available" |
+| **the View-guidelines path** | Submit a comment containing a blocked term. Confirm the alert offers **"View guidelines"**, that it opens the ToS sheet **over** the flag sheet, and that closing returns to the flag sheet beneath. Repeat on the report sheet's description field (signed in). Confirm the rejection never names the matched term |
+| **the Privacy screen walk** | Open it from **all three** entries — Settings, About, and the **sign-in cover** (signed out; that one is a separate local mount). Confirm it presents over About and over the sign-in cover, that closing returns beneath, VoiceOver two-finger-Z escape on the pageSheet, heading-by-heading navigation, and the prose at AX5. **Read it against the app** — that is the last human check on B-3 |
