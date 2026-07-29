@@ -15,7 +15,7 @@ Effective 2026-07-29 · v1.0
 
 **What you can do without an account.** You can browse the map and submit barrier reports anonymously. Anonymous reports are not linked to you. [V: anonymous flag insert path] If you hide a comment, that choice is stored only on your own phone and never leaves it. [V: hiddenContent uses device-local storage only]
 
-**What I store if you make an account.** An email address and password, handled by my hosting provider (Supabase). Your display name and avatar if you add one. The reports, comments, and feedback you submit. Your points total. Your notification settings and, if you turn notifications on, a push token so the app can reach your device. [V: users, flags, flag_comments, feedback, push_tokens, notification_preferences]
+**What I store if you make an account.** An email address and password, handled by my hosting provider (Supabase). Your display name and avatar if you add one. The reports, comments, and feedback you submit. Your points total. If you turn notifications on, a push token so the app can reach your device. [V: users, flags, flag_comments, feedback, push_tokens]
 
 **What's in a barrier report.** The location of the barrier, its category and severity, your description, any photos you add, and the time you submitted it. Reports are public in the app, because that is what the map is for. Photos are stored on a public link, so please keep faces, licence plates, and anything that identifies a person out of frame. [V: flag-photos bucket is public-read]
 
@@ -27,7 +27,7 @@ Effective 2026-07-29 · v1.0
 
 **Getting a copy of your data.** You can export your data from inside the app, in Settings. [V: dataExport path]
 
-**Deleting your account.** You can delete your account any time in Settings. Your account and personal details go. Reports and comments you contributed may stay in the app with your name removed, so the community's record of barriers stays whole. [V: users FK is ON DELETE SET NULL, per SR-117] Photos attached to your reports may remain unless you delete the report itself first. [V: SR-050 owner cleanup ships on the owner delete path]
+**Deleting your account.** You can delete your account any time from your Profile. Your account and personal details go. Reports and comments you contributed may stay in the app with your name removed, so the community's record of barriers stays whole. [V: users FK is ON DELETE SET NULL, per SR-117] Photos attached to your reports may remain unless you delete the report itself first. [V: SR-050 owner cleanup ships on the owner delete path]
 
 **Children.** AccessMap isn't designed for children and I don't knowingly collect information from anyone under 13.
 

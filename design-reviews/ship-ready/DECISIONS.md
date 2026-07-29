@@ -668,3 +668,57 @@ Harmless if it ships on or after the 29th; if it ships earlier, the date is wron
 | **P-2** | **B-2's existing privacy links still point at their old target.** §SKY-8 requires they repoint to the in-app screen | App-code change; needs the same build run |
 | **P-3** | **No public URL hosts this text.** App Store Connect requires a reachable privacy-policy URL, and §SKY-8 requires it to be this same text | Sky-physical: hosting + the App Store Connect field. Not an agent action |
 | **P-4** | **The eleven `[V]` claims are unverified.** Per §SKY-8's own rule, any mismatch STOPS the run rather than shipping a policy describing an app that does not exist | The verification pass is the first half of the build run, before a single line is rendered |
+
+---
+
+## §SKY-9 Privacy policy — the [V] gate fired, and Sky closed it (2026-07-29)
+
+§SKY-8 committed to rendering `15_PRIVACY_POLICY_v1.md` verbatim **only after** every `[V]` claim was
+checked against the codebase, with any mismatch STOPPING the run. The check ran at the top of Run 3's
+Car C. **Eleven claims, nine verified, two mismatched.** Full evidence with file and line for all eleven:
+`16_V_VERIFICATION_TABLE.md`.
+
+Both mismatches were reported to Sky before a single word was rendered. She ratified the corrections in the
+same session, which is what let B-3 close on this run instead of waiting for another.
+
+### The two corrections, in Sky's words
+
+**1 · Deleting your account — the policy sent readers to the wrong screen.**
+The control is on **Profile** (`ProfileScreen.tsx:1743`); Settings §Account holds only "Sign out".
+`04 §A-2` had already described it as "the in-app Profile → Delete Account flow", so the policy contradicted
+the readiness doc as well as the binary.
+
+> was: You can delete your account any time in Settings.
+> now: **You can delete your account any time from your Profile.**
+
+**2 · Notification settings were claimed as stored, and are not.**
+They persist to AsyncStorage on the device (`NotificationPrefsModal.tsx:7`). The
+`notification_preferences` table is a PROPOSE-ONLY migration with **zero** references in `src/` — SR-020 and
+`04 §B-12` already recorded that "nothing reads saved prefs". The policy over-claimed collection.
+
+> was: Your points total. Your notification settings and, if you turn notifications on, a push token…
+> now: **Your points total. If you turn notifications on, a push token so the app can reach your device.**
+
+### One consequential edit, flagged rather than folded in silently
+
+The `[V]` marker on the second sentence listed six tables including `notification_preferences`. Since the
+claim no longer names notification settings, the marker was reduced to the five tables that remain claimed
+(`users, flags, flag_comments, feedback, push_tokens`). This is metadata, not policy prose — `[V]` markers
+are stripped before render and never reach a user — but it is an edit to a ratified file and is recorded
+here rather than made quietly.
+
+**Nothing else in `15_` was touched.** Not one other word added, removed, or reordered.
+
+### What did NOT change, and why
+
+- **V8 stands as written**, with two caveats recorded in `16 §1` rather than edited into the policy: the
+  marker's "no third-party SDKs beyond Expo/Supabase" is literally false (maps, leaflet, lucide, supercluster
+  are third-party, none is a tracker), and the **web** build fetches tiles from CARTO. The reader-facing
+  sentence — "no third-party trackers in the app" — is true of the iOS binary, which is what ships.
+- **V10's marker cites `ON DELETE SET NULL`**, which is right for comments and wrong for flags: flags carry
+  `ON DELETE CASCADE` and survive because `delete-account/index.ts:79-83` anonymises them first. The
+  outcome the policy describes is correct; only the mechanism in the marker was half right. Recorded in
+  `16 §2`, not corrected in the policy, because no reader-facing sentence is wrong.
+- **The effective date stays 2026-07-29** and the file keeps its own `DRAFT for Sky's ratification` title
+  line (the §SKY-8 note-2 caveat). The transcription starts below it at `## The policy text`, so it never
+  reaches the app.
