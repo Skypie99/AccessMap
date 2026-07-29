@@ -139,8 +139,8 @@ Decisions: `DECISIONS.md §SKY-6` (Sky's, verbatim) and `§SKY-6a` (the two she 
 | **2** | HIGH-1 — the report envelope in My Feedback | ✅ `391186e` |
 | **3** | The term list — vendor + D-2 re-curation | ✅ (see below) |
 | **4** | G3 — ship the grabber | ✅ (see below) |
-| **5** | HIGH-2 — Hidden comments (⛔ mockup gate) | ⏳ next |
-| **6** | SR-050 owner half + admin artifact, then Class A | ⏳ |
+| **5** | HIGH-2 — Hidden comments | ⛔ **STOPPED AT THE MOCKUP GATE — Sky's pick** |
+| **6** | SR-050 owner half + admin artifact, then Class A | ⏳ next |
 
 ## Car 1 — the ToS screen ✅ `9c1b322`
 
@@ -332,3 +332,38 @@ rejected PER-SURFACE option. Noted in the primitive and asserted by test.
 
 **Device rows gained:** the grabber on real glass at 1.0×/1.3×/AX5 · that it still reads as a drag
 affordance despite being darker than the platform's · the Tasks filter sheet's pill.
+
+## Car 5 — HIGH-2, Hidden comments ⛔ **STOPPED AT THE GATE, as instructed**
+
+§SKY-6: *"Mockup gate for visuals only; the pattern is decided."* Car 5's instruction was **render
+candidates, STOP for Sky's pick, then build the winner.** The candidates are rendered; the winner is not
+built. Board: `HIGH2_hidden_comments_mockup_gate.html`.
+
+**Three letters unblock the build:** Row `A`/`B`/`C` · Unhide-all `H`/`F` · Settings section `S1`/`S2`.
+Agent's read, offered not assumed: **B · F · S2**.
+
+### The constraint that shaped every candidate
+
+`hiddenContent.ts` stores **bare ids** — no text, no author, no flag id — and `comments.ts` has no
+fetch-by-ids. Sky's *"on the existing `unhideContent`/`loadHidden` primitives"* rules out widening the
+storage shape, so the list text must come from a **live re-fetch** (`fetchCommentsByIds`, `.in('id', ids)`),
+not a stored snapshot.
+
+That has a consequence every candidate must handle: **a comment deleted server-side since you hid it cannot
+be shown.** Its row still has to unhide, or the entry is permanently stuck in the list. Drawn in all three.
+
+### Fixed regardless of the pick
+
+| Thing | Why it is not a choice |
+|---|---|
+| Per-item Unhide + Unhide All | §SKY-6 decided the pattern |
+| `hiddenContent.ts` untouched | "on the existing primitives" — no storage migration |
+| Unhide All is **comment-scoped**, not `clearHidden()` | `clearHidden` wipes the whole map including `flag`. A button labelled about comments must not silently do more than it says |
+| `confirm()` before Unhide All | house rule for any bulk destructive-ish action |
+| Announce on unhide | WCAG 4.1.3, mirroring the shipped `COMMENT_HIDDEN_ANNOUNCEMENT` |
+| Optimistic + rollback-at-original-index | the `MyWatchedModal` contract |
+| Ink = `brandOnSoft` | Car 4 measured `brand` as an AA fail on this material |
+
+**Why this was not built ahead of the pick:** the row treatment decides whether a re-fetch is needed at all
+(candidate C needs none), so building first would have meant building the wrong data path and calling the
+gate decorative.

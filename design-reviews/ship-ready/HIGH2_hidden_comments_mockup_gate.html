@@ -1,0 +1,256 @@
+<meta charset="utf-8">
+<title>HIGH-2 — Hidden comments · mockup gate</title>
+<style>
+  :root{
+    --brand:#1466E0; --brandOnSoft:#0F53BE; --brandSofter:#EEF4FE;
+    --text:#333; --textStrong:#222; --textMuted:#666; --inkGlassMuted:#414B5A;
+    --surface:#fff; --surfaceSoft:#f7f8fa; --surfaceNeutral:#eef1f5;
+    --border:#e5e5e5; --borderSubtle:#dde2ea; --stage1:#F6F9FE;
+    --page:#eef1f6; --ink:#1a1d24; --muted:#5b6472;
+  }
+  .dark{
+    --brandOnSoft:#B4CFFA; --brandSofter:#0F2D5E;
+    --text:#ddd; --textStrong:#f5f5f5; --textMuted:#aaa; --inkGlassMuted:#B8BEC9;
+    --surface:#1E1E22; --surfaceSoft:#28282C; --surfaceNeutral:#323237;
+    --border:#333; --borderSubtle:#2d2d2d; --stage1:#14151A;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--page);color:var(--ink);
+       font:15px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;padding:28px}
+  h1{font-size:23px;margin:0 0 4px}
+  h2{font-size:17px;margin:34px 0 6px;padding-top:18px;border-top:1px solid #d6dbe4}
+  .lede{color:var(--muted);max-width:74ch;margin:0 0 6px}
+  .note{background:#fff8e6;border:1px solid #f0dca8;border-radius:8px;padding:11px 13px;
+        max-width:82ch;margin:14px 0;font-size:13.5px}
+  .decided{background:#eaf6ee;border-color:#b7dfc4}
+  code{background:#e7ebf1;padding:1px 5px;border-radius:4px;font-size:12.5px}
+  .row{display:flex;gap:22px;flex-wrap:wrap;margin-top:14px}
+  .col{flex:0 0 auto}
+  .cap{font-size:12.5px;color:var(--muted);margin:8px 2px 0;max-width:340px}
+  .cap b{color:var(--ink)}
+  /* phone */
+  .phone{width:340px;border-radius:22px;overflow:hidden;border:1px solid #c9d0da;
+         background:var(--stage1);box-shadow:0 8px 26px rgba(20,30,50,.13)}
+  .phone.dark{border-color:#31353d}
+  .grab{width:36px;height:4px;border-radius:999px;background:var(--inkGlassMuted);margin:8px auto 4px}
+  .hdr{display:flex;align-items:center;gap:10px;padding:10px 16px 12px;
+       border-bottom:1px solid var(--borderSubtle);background:var(--surface)}
+  .hdr h3{margin:0;flex:1;font-size:17px;color:var(--textStrong);font-weight:700}
+  .x{width:30px;height:30px;border-radius:999px;background:var(--surfaceNeutral);
+     display:grid;place-items:center;color:var(--text);font-size:14px}
+  .body{padding:10px 0 14px;background:var(--stage1);min-height:250px}
+  .item{padding:12px 16px;border-bottom:1px solid var(--borderSubtle);display:flex;gap:12px;align-items:flex-start}
+  .item:last-child{border-bottom:0}
+  .meta{font-size:12px;color:var(--textMuted);margin-bottom:3px}
+  .txt{font-size:14px;color:var(--text);flex:1}
+  .gone{font-style:italic;color:var(--textMuted)}
+  .btn{flex:0 0 auto;min-height:32px;padding:6px 12px;border-radius:999px;font-size:13.5px;
+       font-weight:600;background:var(--brandSofter);color:var(--brandOnSoft);white-space:nowrap}
+  .lnk{flex:0 0 auto;color:var(--brandOnSoft);font-weight:600;font-size:13.5px;text-decoration:underline}
+  .allBar{display:flex;justify-content:flex-end;padding:8px 16px}
+  .allHdr{font-size:13.5px;font-weight:600;color:var(--brandOnSoft)}
+  .footBar{padding:14px 16px;border-top:1px solid var(--borderSubtle);background:var(--surface)}
+  .footBtn{display:block;text-align:center;padding:11px;border-radius:12px;
+           background:var(--surfaceNeutral);color:var(--brandOnSoft);font-weight:600;font-size:14.5px}
+  .srow{padding:13px 16px;border-bottom:1px solid var(--borderSubtle);background:var(--surface);
+        display:flex;align-items:center;gap:8px}
+  .srow .t{flex:1;color:var(--textStrong);font-size:15px}
+  .srow .s{display:block;color:var(--textMuted);font-size:12.5px;margin-top:2px}
+  .chev{color:var(--textMuted)}
+  .sect{padding:16px 16px 6px;font-size:11.5px;letter-spacing:.5px;text-transform:uppercase;
+        color:var(--textMuted);font-weight:700;background:var(--stage1)}
+  table{border-collapse:collapse;margin-top:10px;font-size:13.5px}
+  th,td{border:1px solid #d3d9e2;padding:6px 10px;text-align:left;vertical-align:top}
+  th{background:#e3e8ef}
+  .pick{background:#fff;border:2px dashed #9aa6b8;border-radius:10px;padding:12px 14px;
+        max-width:82ch;margin-top:12px}
+</style>
+
+<h1>HIGH-2 · Hidden comments — mockup gate</h1>
+<p class="lede">Run 2, Car 5. <b>Visuals only.</b> §SKY-6 already decided the pattern: a Settings
+“Hidden comments” list with <b>per-item Unhide</b> and <b>Unhide All</b>, built on the existing
+<code>unhideContent</code> / <code>loadHidden</code> primitives. Nothing below changes that — these are
+three row treatments and two placements for the bulk action. Pick one of each.</p>
+
+<div class="note decided"><b>Already decided, not up for a pick.</b> Storage stays untouched
+(<code>hiddenContent.ts</code> keeps storing bare ids, per your “on the existing primitives”). The list text
+therefore comes from a new <code>fetchCommentsByIds()</code> — a live re-fetch, not a stored snapshot. That
+choice is what makes row candidate&nbsp;C viable at all, and it is why every candidate needs a
+“no longer available” state.</div>
+
+<div class="note"><b>The constraint driving all three.</b> The hide list holds <em>ids only</em> — no text,
+no author, no flag. So a row can show real comment text only by re-fetching it, and a comment that was
+deleted server-side since you hid it <em>cannot</em> be shown. Every candidate must still let you unhide
+that row, or the entry becomes permanently stuck. That state is drawn in each mock.</div>
+
+<h2>Decision 1 · Row treatment</h2>
+<div class="row">
+
+  <div class="col">
+    <div class="phone">
+      <div class="grab"></div>
+      <div class="hdr"><h3>Hidden comments</h3><div class="x">✕</div></div>
+      <div class="body">
+        <div class="item">
+          <div class="txt"><div class="meta">Anon · 12 Jun</div>
+            you people are always complaining about nothing</div>
+          <div class="btn">Unhide</div>
+        </div>
+        <div class="item">
+          <div class="txt"><div class="meta">Jordan M · 3 Jun</div>
+            this ramp is fine, stop whining</div>
+          <div class="btn">Unhide</div>
+        </div>
+        <div class="item">
+          <div class="txt"><div class="meta">— · date unknown</div>
+            <span class="gone">This comment is no longer available.</span></div>
+          <div class="btn">Unhide</div>
+        </div>
+      </div>
+    </div>
+    <p class="cap"><b>A · Pill button</b> — the shipped <code>MyWatchedModal</code> shape, so it needs no
+      new treatment. Heaviest visually; the action competes with the text for attention on a screen where
+      the text is the thing you are judging.</p>
+  </div>
+
+  <div class="col">
+    <div class="phone">
+      <div class="grab"></div>
+      <div class="hdr"><h3>Hidden comments</h3><div class="x">✕</div></div>
+      <div class="body">
+        <div class="item">
+          <div class="txt"><div class="meta">Anon · 12 Jun</div>
+            you people are always complaining about nothing</div>
+          <div class="lnk">Unhide</div>
+        </div>
+        <div class="item">
+          <div class="txt"><div class="meta">Jordan M · 3 Jun</div>
+            this ramp is fine, stop whining</div>
+          <div class="lnk">Unhide</div>
+        </div>
+        <div class="item">
+          <div class="txt"><div class="meta">— · date unknown</div>
+            <span class="gone">This comment is no longer available.</span></div>
+          <div class="lnk">Unhide</div>
+        </div>
+      </div>
+    </div>
+    <p class="cap"><b>B · Text link</b> — quietest. Lets the comment text lead, which suits a screen whose
+      job is “read this again and decide”. Still a 44pt target via padding even though it reads as text.</p>
+  </div>
+
+  <div class="col">
+    <div class="phone">
+      <div class="grab"></div>
+      <div class="hdr"><h3>Hidden comments</h3><div class="x">✕</div></div>
+      <div class="body">
+        <div class="item"><div class="txt"><div class="meta">Anon · 12 Jun</div>
+          <b style="color:var(--textStrong)">Hidden comment</b></div><div class="btn">Unhide</div></div>
+        <div class="item"><div class="txt"><div class="meta">Jordan M · 3 Jun</div>
+          <b style="color:var(--textStrong)">Hidden comment</b></div><div class="btn">Unhide</div></div>
+        <div class="item"><div class="txt"><div class="meta">— · date unknown</div>
+          <b style="color:var(--textStrong)">Hidden comment</b></div><div class="btn">Unhide</div></div>
+      </div>
+    </div>
+    <p class="cap"><b>C · Never re-show the text</b> — you hid it; the list does not put it back in front of
+      you. Honest to the feature’s purpose, and needs no re-fetch at all. <b>The cost is real:</b> with
+      nothing but a date you cannot tell which one you are unhiding, so it is only usable one row at a time.</p>
+  </div>
+</div>
+
+<h2>Decision 2 · Where “Unhide all” sits</h2>
+<div class="row">
+  <div class="col">
+    <div class="phone">
+      <div class="grab"></div>
+      <div class="hdr"><h3>Hidden comments</h3><div class="allHdr">Unhide all</div><div class="x">✕</div></div>
+      <div class="body">
+        <div class="item"><div class="txt"><div class="meta">Anon · 12 Jun</div>
+          you people are always complaining about nothing</div><div class="btn">Unhide</div></div>
+        <div class="item"><div class="txt"><div class="meta">Jordan M · 3 Jun</div>
+          this ramp is fine, stop whining</div><div class="btn">Unhide</div></div>
+      </div>
+    </div>
+    <p class="cap"><b>H · In the header</b> — the shipped <code>MyWatchedModal</code> placement (“Clear all”).
+      Consistent with what already exists. Sits one mis-tap from Close.</p>
+  </div>
+  <div class="col">
+    <div class="phone">
+      <div class="grab"></div>
+      <div class="hdr"><h3>Hidden comments</h3><div class="x">✕</div></div>
+      <div class="body" style="min-height:196px">
+        <div class="item"><div class="txt"><div class="meta">Anon · 12 Jun</div>
+          you people are always complaining about nothing</div><div class="btn">Unhide</div></div>
+        <div class="item"><div class="txt"><div class="meta">Jordan M · 3 Jun</div>
+          this ramp is fine, stop whining</div><div class="btn">Unhide</div></div>
+      </div>
+      <div class="footBar"><div class="footBtn">Unhide all 2 comments</div></div>
+    </div>
+    <p class="cap"><b>F · Pinned footer</b> — far from Close, and it can name the count, which makes the
+      confirm dialog redundant-but-consistent rather than the only warning. Costs vertical space.</p>
+  </div>
+</div>
+
+<h2>Decision 3 · Which Settings section</h2>
+<div class="row">
+  <div class="col">
+    <div class="phone">
+      <div class="sect">Feedback</div>
+      <div class="srow"><div class="t">Send feedback</div><div class="chev">›</div></div>
+      <div class="srow"><div class="t">My feedback history<span class="s">View the feedback messages you've sent.</span></div><div class="chev">›</div></div>
+      <div class="srow" style="background:var(--brandSofter)"><div class="t">Hidden comments<span class="s">Comments you've hidden on this device.</span></div><div class="chev">›</div></div>
+    </div>
+    <p class="cap"><b>S1 · “Feedback”</b> — beside <em>My feedback history</em>. Both are “things you did”,
+      so they read as a pair.</p>
+  </div>
+  <div class="col">
+    <div class="phone">
+      <div class="sect">Your data</div>
+      <div class="srow" style="background:var(--brandSofter)"><div class="t">Hidden comments<span class="s">Comments you've hidden on this device.</span></div><div class="chev">›</div></div>
+      <div class="srow"><div class="t">Export my data<span class="s">Download everything AccessMap stores about you.</span></div><div class="chev">›</div></div>
+    </div>
+    <p class="cap"><b>S2 · “Your data”</b> — the hide list <em>is</em> device-local data about you, and it
+      sits next to the export that does not contain it. Arguably the more honest home.</p>
+  </div>
+</div>
+
+<h2>Dark mode — the picked row shape in both themes</h2>
+<div class="row">
+  <div class="col"><div class="phone">
+    <div class="grab"></div>
+    <div class="hdr"><h3>Hidden comments</h3><div class="allHdr">Unhide all</div><div class="x">✕</div></div>
+    <div class="body" style="min-height:150px">
+      <div class="item"><div class="txt"><div class="meta">Anon · 12 Jun</div>
+        you people are always complaining about nothing</div><div class="btn">Unhide</div></div>
+    </div></div><p class="cap">light</p></div>
+  <div class="col"><div class="phone dark">
+    <div class="grab"></div>
+    <div class="hdr"><h3>Hidden comments</h3><div class="allHdr">Unhide all</div><div class="x">✕</div></div>
+    <div class="body" style="min-height:150px">
+      <div class="item"><div class="txt"><div class="meta">Anon · 12 Jun</div>
+        you people are always complaining about nothing</div><div class="btn">Unhide</div></div>
+    </div></div><p class="cap">dark</p></div>
+</div>
+
+<h2>What is fixed regardless of your picks</h2>
+<table>
+  <tr><th>Thing</th><th>Why it is not a choice</th></tr>
+  <tr><td>Per-item Unhide + Unhide All</td><td>§SKY-6 decided the pattern.</td></tr>
+  <tr><td><code>hiddenContent.ts</code> untouched</td><td>“on the existing primitives” — no storage migration.</td></tr>
+  <tr><td>Unhide All is comment-scoped, not <code>clearHidden()</code></td>
+      <td><code>clearHidden</code> wipes the whole map including <code>flag</code>. A button labelled about
+          comments must not silently do more than it says.</td></tr>
+  <tr><td>Confirm before Unhide All</td><td>House rule for any bulk destructive-ish action (<code>confirm()</code>).</td></tr>
+  <tr><td>Announce on unhide</td><td>WCAG 4.1.3, mirroring the shipped <code>COMMENT_HIDDEN_ANNOUNCEMENT</code>.</td></tr>
+  <tr><td>Optimistic update + rollback on failure</td><td>The <code>MyWatchedModal</code> contract — restore the row at its original index and say so.</td></tr>
+  <tr><td>Ink</td><td><code>brandOnSoft</code>, not <code>brand</code> — Car 4 measured <code>brand</code> as an AA fail on this material.</td></tr>
+</table>
+
+<div class="pick">
+  <b>To unblock the build, three letters:</b><br>
+  Row = <b>A</b> / <b>B</b> / <b>C</b> &nbsp;·&nbsp; Unhide-all = <b>H</b> / <b>F</b> &nbsp;·&nbsp;
+  Settings section = <b>S1</b> / <b>S2</b><br>
+  <span style="color:var(--muted);font-size:13px">Agent's read, offered not assumed: <b>B · F · S2</b> —
+  B lets the text lead on a screen built for re-reading, F keeps a bulk action away from Close and can name
+  the count, S2 puts a device-local record of your own data beside the export that omits it.</span>
+</div>
