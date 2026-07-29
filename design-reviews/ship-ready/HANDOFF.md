@@ -135,14 +135,14 @@ Decisions: `DECISIONS.md §SKY-6` (Sky's, verbatim) and `§SKY-6a` (the two she 
 | Car | Item | State |
 |---|---|---|
 | **0** | §SKY-6 + §SKY-6a banked | ✅ `0ec167f` |
-| **1** | **The ToS screen** | ✅ `7db14aa` |
-| **2** | HIGH-1 — the report envelope in My Feedback | ✅ `729c41f` |
+| **1** | **The ToS screen** | ✅ `9c1b322` |
+| **2** | HIGH-1 — the report envelope in My Feedback | ✅ `391186e` |
 | **3** | The term list — vendor + D-2 re-curation | ⏳ next |
 | **4** | G3 — ship the grabber | ⏳ |
 | **5** | HIGH-2 — Hidden comments (⛔ mockup gate) | ⏳ |
 | **6** | SR-050 owner half + admin artifact, then Class A | ⏳ |
 
-## Car 1 — the ToS screen ✅ `7db14aa`
+## Car 1 — the ToS screen ✅ `9c1b322`
 
 Gate: tsc 0 · lint 0/80 · jest **179 suites, 2641 passed, 0 failed** · `GlassSurface.tsx` **0 changed
 lines** · migrations applied by an agent: **0**.
@@ -181,7 +181,7 @@ on the pageSheet; the prose at AX5.
 
 **Rollback:** `git reset --hard 7349346`.
 
-## Car 2 — HIGH-1, the report envelope ✅ `729c41f`
+## Car 2 — HIGH-1, the report envelope ✅ `391186e`
 
 Gate: tsc 0 · lint 0/80 · jest **179 suites, 2648 passed, 0 failed** · `GlassSurface.tsx` 0 changed lines.
 
