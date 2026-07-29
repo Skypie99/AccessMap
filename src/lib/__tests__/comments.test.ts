@@ -4,6 +4,7 @@ import {
   COMMENT_SELECT,
   CommentsTableNotReadyError,
   deleteComment,
+  fetchCommentsByIds,
   listComments,
   MAX_COMMENT_LENGTH,
   MAX_COMMENTS,
@@ -382,5 +383,123 @@ describe('B-7 — PGRST201 embed guard', () => {
     mockFrom.mockReturnValue(chain);
 
     await expect(listComments('flag-1')).rejects.toBeInstanceOf(CommentsTableNotReadyError);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// HIGH-2 — fetchCommentsByIds, the Unhide surface's re-read.
+//
+// The hide list stores bare ids, so this is the only thing standing between a
+// reader and a list of unlabelled UUIDs. Two properties matter more than the
+// happy path: it must ask about EVERY id (a silently capped fetch would report
+// unasked-about comments as deleted), and a missing row must simply be absent
+// rather than an error.
+// ---------------------------------------------------------------------------
+describe('fetchCommentsByIds', () => {
+  // `.in(...)` is the terminal call here — no .order, no .limit.
+  function inChain(data: unknown[], error: unknown = null) {
+    return {
+      select: jest.fn().mockReturnThis(),
+      in: jest.fn().mockResolvedValue({ data, error }),
+    };
+  }
+
+  beforeEach(() => {
+    mockFrom.mockReset();
+  });
+
+  it('returns [] and never touches the network for an empty id list', async () => {
+    await expect(fetchCommentsByIds([])).resolves.toEqual([]);
+    expect(mockFrom).not.toHaveBeenCalled();
+  });
+
+  it('flattens display_name out of the joined users row', async () => {
+    const chain = inChain([
+      {
+        id: 'c1',
+        flag_id: 'f1',
+        user_id: 'u1',
+        content: 'hello',
+        created_at: '2026-01-01T00:00:00Z',
+        users: { display_name: 'Jordan M' },
+      },
+    ]);
+    mockFrom.mockReturnValue(chain);
+
+    const rows = await fetchCommentsByIds(['c1']);
+    expect(rows).toHaveLength(1);
+    expect(rows[0].display_name).toBe('Jordan M');
+    expect(chain.select).toHaveBeenCalledWith(COMMENT_SELECT);
+    expect(chain.in).toHaveBeenCalledWith('id', ['c1']);
+  });
+
+  it('a comment whose author account is gone flattens to a null display_name', async () => {
+    // SR-117: user_id is nullable and the embed has nothing to join to, so the
+    // row still comes back — with no author. The caller renders 'Anonymous'.
+    mockFrom.mockReturnValue(
+      inChain([
+        {
+          id: 'c1',
+          flag_id: 'f1',
+          user_id: null,
+          content: 'hello',
+          created_at: '2026-01-01T00:00:00Z',
+          users: null,
+        },
+      ]),
+    );
+    const rows = await fetchCommentsByIds(['c1']);
+    expect(rows[0].display_name).toBeNull();
+  });
+
+  it('ids with no surviving row are simply absent — not an error', async () => {
+    mockFrom.mockReturnValue(inChain([]));
+    await expect(fetchCommentsByIds(['gone-1', 'gone-2'])).resolves.toEqual([]);
+  });
+
+  it('asks about EVERY id when the list exceeds one chunk', async () => {
+    // The anti-regression for a silently capped fetch: 250 ids must produce 3
+    // requests covering all 250, not one request covering the first 100.
+    const ids = Array.from({ length: 250 }, (_, i) => `c${i}`);
+    const chains = [inChain([]), inChain([]), inChain([])];
+    let call = 0;
+    mockFrom.mockImplementation(() => chains[call++]);
+
+    await fetchCommentsByIds(ids);
+
+    expect(call).toBe(3);
+    const asked = chains.flatMap((c) => c.in.mock.calls[0][1] as string[]);
+    expect(asked).toHaveLength(250);
+    expect(new Set(asked)).toEqual(new Set(ids));
+  });
+
+  it('concatenates rows across chunks', async () => {
+    const ids = Array.from({ length: 150 }, (_, i) => `c${i}`);
+    const row = (id: string) => ({
+      id,
+      flag_id: 'f1',
+      user_id: 'u1',
+      content: id,
+      created_at: '2026-01-01T00:00:00Z',
+      users: { display_name: 'A' },
+    });
+    const chains = [inChain([row('c0')]), inChain([row('c100')])];
+    let call = 0;
+    mockFrom.mockImplementation(() => chains[call++]);
+
+    const rows = await fetchCommentsByIds(ids);
+    expect(rows.map((r) => r.id)).toEqual(['c0', 'c100']);
+  });
+
+  it('surfaces a missing table as CommentsTableNotReadyError', async () => {
+    mockFrom.mockReturnValue(
+      inChain([], { code: '42P01', message: 'relation "flag_comments" does not exist' }),
+    );
+    await expect(fetchCommentsByIds(['c1'])).rejects.toBeInstanceOf(CommentsTableNotReadyError);
+  });
+
+  it('surfaces any other error as a thrown Error', async () => {
+    mockFrom.mockReturnValue(inChain([], { message: 'network down' }));
+    await expect(fetchCommentsByIds(['c1'])).rejects.toThrow();
   });
 });

@@ -286,6 +286,182 @@ export const COMMENT_HIDDEN_ANNOUNCEMENT = 'Comment hidden on this device';
 export const HIDE_FAILED_TITLE = "Couldn't hide comment";
 
 /* ───────────────────────────────────────────────────────────────────────────
+ * HIGH-2 — the other end of Hide.
+ *
+ * Until now Hide was immediate, irreversible, and had no undo anywhere in the
+ * app, while being drawn as the pixel-identical twin of Report 16pt away. A
+ * mis-tap removed a comment from that device forever. These strings are the
+ * surface that fixes it (Settings → Feedback → Hidden comments), per the
+ * mockup gate Sky answered A · H · S1 in DECISIONS §SKY-7.
+ *
+ * THE FENCE THAT BINDS THIS SET, inherited from `COMMENT_HIDDEN_ANNOUNCEMENT`:
+ * hiding is a PERSONAL, device-local filter, never a takedown. So nothing here
+ * may imply the comment was removed for anyone else, and nothing here may imply
+ * unhiding restores it for anyone else either. "on this device" carries that in
+ * both directions and is load-bearing in both.
+ * ─────────────────────────────────────────────────────────────────────────── */
+
+/**
+ * Title of the Unhide surface, and the Settings row that opens it. Reads as a
+ * plain description of what the list holds rather than an action, because the
+ * row is a destination and the screen is a list — the actions are on the rows.
+ * AGENT-PROPOSED wording.
+ * PROPOSED (HIGH-2/1.2(c), S-8) — Sky's final wording lands in DECISIONS §A / BP16.
+ */
+export const HIDDEN_COMMENTS_TITLE = 'Hidden comments';
+
+/**
+ * Subtitle on the Settings row. States the scope (comments, not flags — hide is
+ * comments-only per §SKY-3h) and the storage boundary in the same breath, so a
+ * reader learns the list is device-local before they open it and find their
+ * hides missing on another phone. AGENT-PROPOSED wording.
+ * PROPOSED (HIGH-2/1.2(c), S-8) — Sky's final wording lands in DECISIONS §A / BP16.
+ */
+export const HIDDEN_COMMENTS_ROW_SUBTITLE = "Comments you've hidden on this device.";
+
+/** Accessible hint for the Settings row. AGENT-PROPOSED wording.
+ * PROPOSED (HIGH-2/1.2(c), S-8) — Sky's final wording lands in DECISIONS §A / BP16.
+ */
+export const HIDDEN_COMMENTS_LINK_HINT = 'Opens the comments you have hidden on this device';
+
+/**
+ * The per-row control. The exact inverse of `HIDE_CONTROL_LABEL`, and
+ * deliberately one word for the same reason: it is a personal filter toggle,
+ * not a moderation verdict being reversed. AGENT-PROPOSED wording.
+ * PROPOSED (HIGH-2/1.2(c), S-8) — Sky's final wording lands in DECISIONS §A / BP16.
+ */
+export const UNHIDE_CONTROL_LABEL = 'Unhide';
+
+/**
+ * The bulk control, in the sheet header (placement H, Sky's pick). Named for
+ * COMMENTS only — and the handler is comment-scoped to match, looping
+ * `unhideContent('comment', id)` rather than calling `clearHidden()`, which
+ * would also wipe the `flag` bucket this label says nothing about.
+ * AGENT-PROPOSED wording.
+ * PROPOSED (HIGH-2/1.2(c), S-8) — Sky's final wording lands in DECISIONS §A / BP16.
+ */
+export const UNHIDE_ALL_CONTROL_LABEL = 'Unhide all';
+
+/**
+ * Accessible NAME for a per-row Unhide control. Same contract as
+ * `hideCommentA11yLabel`: a column of buttons all named "Unhide" is ambiguous
+ * to a screen reader, so the name carries the author, and the caller passes the
+ * SAME author string the row renders — including the 'Anonymous' fallback for a
+ * comment whose author account is gone. AGENT-PROPOSED wording.
+ * PROPOSED (HIGH-2/1.2(c), S-8) — Sky's final wording lands in DECISIONS §A / BP16.
+ */
+export function unhideCommentA11yLabel(author: string): string {
+  return `${UNHIDE_CONTROL_LABEL} comment by ${author}`;
+}
+
+/**
+ * Accessible NAME for the Unhide control on a row whose comment could not be
+ * re-read. It cannot cite an author because there is no longer a row to take
+ * one from, so it names the state instead of inventing a name.
+ * AGENT-PROPOSED wording.
+ * PROPOSED (HIGH-2/1.2(c), S-8) — Sky's final wording lands in DECISIONS §A / BP16.
+ */
+export const UNHIDE_UNAVAILABLE_A11Y_LABEL = 'Unhide comment that is no longer available';
+
+/**
+ * Shown in place of the text of a hidden comment that no longer exists on the
+ * server — deleted by its author, or removed by a moderator, since it was
+ * hidden. The row still renders and is still unhideable: the hide list is
+ * device-local and would otherwise keep an entry the user can never clear.
+ *
+ * It says "no longer available", not "deleted", because from the client all we
+ * know is that the id did not come back. AGENT-PROPOSED wording.
+ * PROPOSED (HIGH-2/1.2(c), S-8) — Sky's final wording lands in DECISIONS §A / BP16.
+ */
+export const HIDDEN_COMMENT_UNAVAILABLE = 'This comment is no longer available.';
+
+/**
+ * Shown in place of a hidden comment's text when the re-read did not happen at
+ * all — offline, or the request failed. It is deliberately NOT
+ * `HIDDEN_COMMENT_UNAVAILABLE`: "no longer available" is a claim that the
+ * comment is gone, and reporting a dropped connection as a deletion would be
+ * inventing content in the one direction this screen must never invent it.
+ *
+ * The row stays unhideable either way — unhiding is a local AsyncStorage write
+ * and needs no network, so the screen's actual job still works offline; only
+ * the preview does not. AGENT-PROPOSED wording.
+ * PROPOSED (HIGH-2/1.2(c), S-8) — Sky's final wording lands in DECISIONS §A / BP16.
+ */
+export const HIDDEN_COMMENT_NOT_LOADED = "Couldn't load this comment right now.";
+
+/**
+ * WCAG 4.1.3 status message for a single unhide. The exact mirror of
+ * `COMMENT_HIDDEN_ANNOUNCEMENT`, including "on this device" — a bare "Comment
+ * unhidden" could be heard as restoring it for everyone, which is the inverse
+ * of the misreading the hide announcement guards against and just as wrong.
+ * AGENT-PROPOSED wording.
+ * PROPOSED (HIGH-2/1.2(c), S-8) — Sky's final wording lands in DECISIONS §A / BP16.
+ */
+export const COMMENT_UNHIDDEN_ANNOUNCEMENT = 'Comment unhidden on this device';
+
+/**
+ * WCAG 4.1.3 status message for the bulk unhide. Counts, because the row that
+ * would have shown the result has just gone — announcing "Comment unhidden"
+ * once for an action that cleared eleven of them would under-report what
+ * happened. AGENT-PROPOSED wording.
+ * PROPOSED (HIGH-2/1.2(c), S-8) — Sky's final wording lands in DECISIONS §A / BP16.
+ */
+export function commentsUnhiddenAnnouncement(count: number): string {
+  return `${count} ${count === 1 ? 'comment' : 'comments'} unhidden on this device`;
+}
+
+/**
+ * Title of the confirm shown before the bulk unhide. House rule: any bulk
+ * action goes through `confirm()` first. AGENT-PROPOSED wording.
+ * PROPOSED (HIGH-2/1.2(c), S-8) — Sky's final wording lands in DECISIONS §A / BP16.
+ */
+export const UNHIDE_ALL_CONFIRM_TITLE = 'Unhide all comments?';
+
+/**
+ * Body of that confirm. Names the count — the gate board's argument for it was
+ * that a bulk control which can say how much it affects should — and states the
+ * consequence in the reader's own terms: these become visible again to them,
+ * here. AGENT-PROPOSED wording.
+ * PROPOSED (HIGH-2/1.2(c), S-8) — Sky's final wording lands in DECISIONS §A / BP16.
+ */
+export function unhideAllConfirmBody(count: number): string {
+  return `${count} ${count === 1 ? 'comment' : 'comments'} will be visible again on this device.`;
+}
+
+/**
+ * Title when a single unhide could not be saved. `unhideContent` throws on a
+ * write failure for the same reason `hideContent` does, so the caller has to
+ * say so out loud rather than leave a row that silently sprang back.
+ * AGENT-PROPOSED wording.
+ * PROPOSED (HIGH-2/1.2(c), S-8) — Sky's final wording lands in DECISIONS §A / BP16.
+ */
+export const UNHIDE_FAILED_TITLE = "Couldn't unhide comment";
+
+/** Title when the bulk unhide could not be saved. AGENT-PROPOSED wording.
+ * PROPOSED (HIGH-2/1.2(c), S-8) — Sky's final wording lands in DECISIONS §A / BP16.
+ */
+export const UNHIDE_ALL_FAILED_TITLE = "Couldn't unhide comments";
+
+/**
+ * Empty state, title. A designed moment, not an error: an empty hide list is
+ * the ordinary case for almost every user, and the overwhelming majority who
+ * open this screen will never have hidden anything. It must not read as though
+ * something went wrong. AGENT-PROPOSED wording.
+ * PROPOSED (HIGH-2/1.2(c), S-8) — Sky's final wording lands in DECISIONS §A / BP16.
+ */
+export const HIDDEN_COMMENTS_EMPTY_TITLE = 'Nothing hidden';
+
+/**
+ * Empty state, body. Shaped like the watched-flags empty state — say where the
+ * control lives so the screen teaches instead of just reporting a zero — and
+ * ends on the promise this whole surface exists to make: the choice is
+ * reversible. AGENT-PROPOSED wording.
+ * PROPOSED (HIGH-2/1.2(c), S-8) — Sky's final wording lands in DECISIONS §A / BP16.
+ */
+export const HIDDEN_COMMENTS_EMPTY_BODY =
+  'Hide a comment from its Hide button and it lands here, so you can always change your mind.';
+
+/* ───────────────────────────────────────────────────────────────────────────
  * W1 — the answers the "Flag as wrong" control gives back.
  *
  * `DISPUTE_CONTROL_LABEL` above is the control's word; these four are what the

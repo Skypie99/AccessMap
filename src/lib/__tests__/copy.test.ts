@@ -294,6 +294,27 @@ describe('B-1 copy carries the PROPOSED marker (the honesty fence, mechanised)',
     // Run 2 (§SKY-6): navigational chrome for the terms entry points. The LABEL
     // is Sky's (see RATIFIED_IN_DECISIONS below); only the hint is ours.
     'TERMS_LINK_HINT',
+    // Run 3 (HIGH-2, §SKY-7): the Unhide surface. Sky answered the mockup
+    // gate — A · H · S1 — which settled LAYOUT, not wording; the strings the
+    // board happened to render were illustrative. So the whole set enters
+    // PROPOSED, exactly like the Hide strings it mirrors.
+    'HIDDEN_COMMENTS_TITLE',
+    'HIDDEN_COMMENTS_ROW_SUBTITLE',
+    'HIDDEN_COMMENTS_LINK_HINT',
+    'UNHIDE_CONTROL_LABEL',
+    'UNHIDE_ALL_CONTROL_LABEL',
+    'unhideCommentA11yLabel',
+    'UNHIDE_UNAVAILABLE_A11Y_LABEL',
+    'HIDDEN_COMMENT_UNAVAILABLE',
+    'HIDDEN_COMMENT_NOT_LOADED',
+    'COMMENT_UNHIDDEN_ANNOUNCEMENT',
+    'commentsUnhiddenAnnouncement',
+    'UNHIDE_ALL_CONFIRM_TITLE',
+    'unhideAllConfirmBody',
+    'UNHIDE_FAILED_TITLE',
+    'UNHIDE_ALL_FAILED_TITLE',
+    'HIDDEN_COMMENTS_EMPTY_TITLE',
+    'HIDDEN_COMMENTS_EMPTY_BODY',
   ];
 
   /**

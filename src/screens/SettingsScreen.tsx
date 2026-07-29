@@ -33,6 +33,9 @@ import { CATEGORY_LABELS, listFlagsByUser } from '@/lib/flags';
 import { listFeedbackByUser } from '@/lib/feedbackStore';
 import { formatDataExport } from '@/lib/dataExport';
 import {
+  HIDDEN_COMMENTS_LINK_HINT,
+  HIDDEN_COMMENTS_ROW_SUBTITLE,
+  HIDDEN_COMMENTS_TITLE,
   OPENS_IN_BROWSER_HINT,
   PRIVACY_POLICY_LINK_LABEL,
   TERMS_LINK_HINT,
@@ -54,6 +57,7 @@ import {
 // through the context. See src/lib/sharedModalsContext.tsx for the full
 // rationale.
 import NotificationPrefsModal from '@/components/NotificationPrefsModal';
+import HiddenCommentsModal from '@/components/HiddenCommentsModal';
 import AboutScreen from '@/screens/AboutScreen';
 import OnboardingModal from '@/screens/OnboardingModal';
 import NotificationPreferencesScreen from '@/screens/NotificationPreferencesScreen';
@@ -261,6 +265,10 @@ export default function SettingsScreen() {
   // immediate-replay version most users expect from a "Replay" control.
   const [tutorialOpen, setTutorialOpen] = useState(false);
   const [notifPrefsOpen, setNotifPrefsOpen] = useState(false);
+  // HIGH-2 — the Unhide surface. Local visible-state modal, like the two above:
+  // it is reachable only from here, so it needs no shared-modal key and no
+  // navigator change.
+  const [hiddenOpen, setHiddenOpen] = useState(false);
   // Sky Decision 2 (Option B): the push-notification-types screen saves prefs
   // nothing reads yet, so the row + screen stay hidden until the flag flips.
   const pushNotifTypesEnabled = useFeatureFlag('PUSH_NOTIF_TYPES_ENABLED');
@@ -655,6 +663,17 @@ export default function SettingsScreen() {
           onPress={() => setOpen('myFeedback')}
         />
 
+        {/* HIGH-2 (§SKY-7, section pick S1). Sits in Feedback rather than Your
+            data because both neighbours are records of things you did, so the
+            three read as a set. */}
+        <SettingsRow
+          glassLite={glassLite}
+          title={HIDDEN_COMMENTS_TITLE}
+          subtitle={HIDDEN_COMMENTS_ROW_SUBTITLE}
+          accessibilityHint={HIDDEN_COMMENTS_LINK_HINT}
+          onPress={() => setHiddenOpen(true)}
+        />
+
         <AppText variant="label" style={styles.sectionLabel} accessibilityRole="header">
           Your data
         </AppText>
@@ -692,6 +711,7 @@ export default function SettingsScreen() {
           <SharedModalsHost /> mount inside RootNavigator. */}
       <NotificationPrefsModal visible={notifOpen} onClose={() => setNotifOpen(false)} />
       <AboutScreen visible={aboutOpen} onClose={() => setAboutOpen(false)} />
+      <HiddenCommentsModal visible={hiddenOpen} onClose={() => setHiddenOpen(false)} />
       {/* Replay tutorial — same OnboardingModal App.tsx mounts on first
           launch. Reusing it (rather than a sibling "tutorial-light"
           surface) means the content stays in lockstep with the original
