@@ -508,7 +508,8 @@ npx jest --ci     →  182 suites / 2701 passed / 0 failed / 84 todo
 | 0 · bank §SKY-7 | `028f66e` | ✅ docs only |
 | A · HIGH-2 the Unhide surface | `dea01de` | ✅ |
 | B · CONTENT_BLOCKED coherence | `b200eb0` | ✅ |
-| C · B-3 the privacy policy | — | pending |
+| C · B-3 the privacy policy | `ecf946f` + `99faada` | ✅ |
+| D · brand-ink measurements (optional) | `a48389c` | ✅ measured, nothing restyled |
 
 ## Car A — what shipped
 
@@ -569,8 +570,105 @@ submission target; the guidelines stay reachable on web from Settings and About.
 entirely**, and anonymous is the App Review reviewer's own cohort. It is a moderation-policy change, not a
 coherence fix, so it is surfaced rather than quietly patched. See the close-out.
 
+## Car C — what shipped
+
+**B-3 is closed.** The ratified policy renders verbatim in-app, and the app it describes is the app that
+exists.
+
+**The gate fired.** All eleven `[V]` claims were checked against the codebase *before* a word was rendered.
+Nine verified, **two mismatched** — both user-facing, neither catchable by a render test, a typecheck or a
+lint pass:
+
+- *"delete your account any time in Settings"* — it is on **Profile**. Settings §Account holds only Sign
+  out. A reader following the policy to exercise a legal right would not find the control.
+- *"your notification settings"* listed as stored — they are **device-local AsyncStorage**;
+  `notification_preferences` is a PROPOSE-ONLY migration with zero references in `src/`.
+
+Both were reported to Sky before the render and corrected by her in-session (**§SKY-9**), which is why B-3
+closed on this run instead of the next. Evidence, file and line, for all eleven:
+**`16_V_VERIFICATION_TABLE.md`**.
+
+- **The strip rule is the subtle part.** The document carries eleven inline `[V: …]` markers — build-run
+  instructions, not prose. It is defined once in `privacy.guard.test.ts`, applied to *both sides* of the
+  comparison, and asserted: no rendered string contains a marker, stripping leaves no double spaces or
+  space-before-punctuation, and the surrounding sentence survives.
+- **The guard is not a copy of the terms guard.** `15_` differs structurally in three ways that would each
+  have made a copied assertion pass vacuously — title on its own bold line with the date on the next,
+  different slice anchors, and the markers existing at all.
+- **B-2 repointed.** Settings, About and sign-up open the in-app screen. The old assertions were *replaced,
+  not loosened* — the replacements BAN the external call. Two PROTECT-11 ordering anchors keyed on
+  `OPENS_IN_BROWSER_HINT` were re-anchored: left alone, `indexOf` returns −1, and −1 < everything, so they
+  would have passed forever while checking nothing.
+- **SignInScreen mounts its own instance.** `App.tsx` renders it as a *sibling* of `RootNavigator`, so it is
+  outside `SharedModalsProvider`: `setOpen` would throw and the host's instance is not mounted while signed
+  out. The two can never be alive at once — the auth gate makes them exclusive.
+- The hosted URL stays and still matches `app.json`: App Store Connect needs a reachable URL, and hosting
+  the text is Sky-physical (§SKY-8 P-3).
+
+**Gate at `99faada`:** tsc 0 · lint 0 errors / 80 warnings · jest **186 suites / 2826 passed / 0 failed**.
+
+## Car D — measured, nothing restyled
+
+The six `color.brand`-as-text sites the Car-4 arbiter flagged but did not sweep. **All six pass.**
+`17_BRAND_INK_MEASUREMENTS.md`.
+
+The measurements matter less than what re-locating them found: **one of the six is dead style, never
+rendered** (`ProfileScreen`'s `nearestBtnChevron`), and **two more have inert colours** — `HelpModal`'s and
+`ChangelogModal`'s chevron styles wrap lucide SVGs, which paint from their own `color` prop. Only three
+sites actually paint brand ink as text. The cited line numbers had also drifted; `12 §3′.11` is corrected
+in the same commit so the next audit does not re-derive this.
+
+Tightest margin: `addIcon` in dark at **3.95:1** against a **3.0** floor — correct twice over, since 24px
+semibold is large text *and* the glyph is hidden from assistive technology.
+
+---
+
+# ⚑ THE HONEST SHAPE OF RUN 3
+
+**The [V] gate is the whole story.** It was written as a formality — check eleven claims, then render — and
+it caught two real defects in a legal document, one of which sent readers to the wrong screen to exercise a
+legal right. Neither would have been caught by any gate this repo already ran. *A document that describes
+software is code that no test covers unless you write the test.*
+
+**Two guards failed for the right reason and were widened, not weakened.** Both the Car-A and Car-D bans
+tripped on the module's own comments explaining why it does not do the banned thing. The fix was
+`stripComments`, not deleting the explanation — a guard that punishes accurate comments teaches the next
+author to remove them.
+
+**Car B's plan said one thing and the code said another.** The plan was to register the two new terms
+entry points in `terms.guard.test.ts`'s `SURFACES` table. On contact, `SURFACES` enforces a navigational
+*link-label* contract that an alert button deliberately does not follow — adding them would have meant
+weakening the existing assertions to admit them. They got their own describe instead.
+
+**A flake was diagnosed rather than retried.** `ReportFlagModal` failed two full runs and passed a third;
+the temptation was to call it flaky and move on. Running it down found a *class*: three timing-heavy suites,
+none related to this run, `ReportFlagModal` passing at 48s and failing at 88s and 163s in the same tree.
+Named in `12 §1″` rather than hidden behind a green number.
+
+**What Run 3 did NOT do, and said so:** `createAnonFlag` never calls `containsBlockedTerm` — the anonymous
+submit path bypasses Apple 1.2(a)'s filter entirely, and anonymous is the reviewer's own cohort. Found while
+wiring Car B, deliberately not patched: a submit-time filter is a moderation-policy change and 05 §3 ⑯
+assigns those to Sky. One line, once she says so.
+
+---
+
+## Where this leaves the app
+
+**Two blockers, both physical: B-6 (reviewer credentials) and SR-021 (no binary-launch evidence).**
+Everything else on Sky's list is a decision she can take at any time. **The repo is out of agent-shaped
+work.**
+
+Apple 1.2, leg by leg, never averaged: **ToS 🟢 · (a) 🟠 · (b) 🟢 (§C-12 applied by Sky) · (c) 🟠
+comments-only by scope · (d) 🟢.** Full table: `12_READY_OR_NOT.md §1″`.
+
 ## Rollback for Run 3
 
 ```
 git reset --hard c70eb65
 ```
+
+That is the tip this run stacked on — `028f66e` (§SKY-7), `dea01de` (Car A), `b200eb0` (Car B),
+`ecf946f` + `99faada` (Car C), `a48389c` (Car D) and the HANDOFF commits all unwind together.
+
+**Nothing was merged, submitted, built, or applied to the database. `main` is untouched. The branch stops
+here.**
