@@ -137,8 +137,8 @@ Decisions: `DECISIONS.md §SKY-6` (Sky's, verbatim) and `§SKY-6a` (the two she 
 | **0** | §SKY-6 + §SKY-6a banked | ✅ `0ec167f` |
 | **1** | **The ToS screen** | ✅ `9c1b322` |
 | **2** | HIGH-1 — the report envelope in My Feedback | ✅ `391186e` |
-| **3** | The term list — vendor + D-2 re-curation | ⏳ next |
-| **4** | G3 — ship the grabber | ⏳ |
+| **3** | The term list — vendor + D-2 re-curation | ✅ (see below) |
+| **4** | G3 — ship the grabber | ⏳ next |
 | **5** | HIGH-2 — Hidden comments (⛔ mockup gate) | ⏳ |
 | **6** | SR-050 owner half + admin artifact, then Class A | ⏳ |
 
@@ -217,3 +217,59 @@ report row built by the REAL `buildReportBody` survives into the export in full.
 
 **Device row gained:** file a report as a signed-in user, then confirm it is absent from My Feedback and
 present in Export my data.
+
+## Car 3 — the term list, vendored and re-curated ✅
+
+Gate: tsc 0 · lint 0/80 · jest **179 suites, 2654 passed, 0 failed**. All **41** original
+`blockedTerms` tests untouched and green; the matcher is unchanged.
+
+**Provenance, checkable rather than claimed.** LDNOOBW `en`, CC BY 4.0, retrieved 2026-07-28, 403 raw
+entries, `sha256 af851ece…e8bd`. The old header's "no network fetch happened, this is NOT a vendoring"
+paragraph was a **fence**, and Sky discharged it in §SKY-6 — so it is **converted** into that provenance
+block, not deleted.
+
+### ⚠ The finding that changed the design
+
+**LDNOOBW contains no disability slurs whatsoever** — not `retard`, `retarded`, `cripple`, `mongoloid` — and
+**no self-harm or harassment phrases** — not `kill yourself`, `kys`, `go die`, `neck yourself`. It is
+overwhelmingly a list of sexual terms. Verified by set difference against upstream, not assumed.
+
+"Vendor the real list" sounds like *replace the seed*. Doing that would have **deleted the class most likely
+to be aimed at this app's users** and turned two MUST-FAIL tests red. Hence three tiers:
+
+| Tier | Count | Note |
+|---|---|---|
+| `LDNOOBW_CURATED` | 354 | the vendored 403 after curation |
+| `CURATED_EXTRA` | 15 | terms upstream does not have. **A re-vendoring must not touch this array** |
+| `ADDITIONS` | 0 | Sky's, live-read via `allBlockedTerms()` — the fix stands |
+
+### Two curation passes
+
+**D-2, as ratified — 31 dropped.** Ordinary profanity. "The damn ramp is still broken" is a real report from
+a frustrated disabled user.
+
+**Neutral-in-this-domain — 16 dropped. This class is new, and it is the one worth reading.** The raw list is
+built for general-purpose moderation, where `sex`, `escort` and `rectum` are safe to block. Here they are
+not. Every one of these would have been rejected by the raw list:
+
+- *"the single-sex accessible washroom is locked"* → `sex`, `sexual`
+- *"staff would not escort me to the lift"* → `escort`
+- a Changing Places report describing catheter or stoma care → `anus`, `rectum`, `vulva`, `penis`, `vagina`, `semen`, `nipple`, `pubes`
+- *"I had to grope along the wall to find the door"* — **how a blind user describes a barrier** → `grope`
+- *"the ramp sucks"* — frustration, which D-2 already protects → `suck`, `sucks`
+- *"the threshold butts up against the mat"* → `butt` · *"someone snatched my bag"* → `snatch`
+
+Sexual **compounds** survive: dropping `sex` does not drop `sexo`, `sexcam`, `sexy`. The ambiguity was in the
+bare word. Pinned by test.
+
+**Counts:** 403 raw − 31 profanity − 16 neutral − 2 under three characters (`xx`, and a bare emoji the
+word-boundary matcher could never have matched) = **354 vendored + 15 extra = 369 live.**
+
+**Six tests added**, all about the LIST rather than the matcher — the thing a future re-vendoring breaks
+silently while every behavioural test stays green. The load-bearing one asserts the disability slurs and
+self-harm phrases are still present, because that is what a naive "just re-vendor it" would delete without
+touching a line of matcher code.
+
+**1.2(a) stays 🟠, not 🟢** — client-side and bypassable; no l33tspeak or homoglyph defence (buying that
+costs false positives on ordinary words, the wrong trade here). A server-side mirror remains a migration
+proposal for Sky.

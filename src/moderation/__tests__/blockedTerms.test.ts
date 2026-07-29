@@ -192,3 +192,78 @@ describe('the fences around where this filter may be applied', () => {
     }
   });
 });
+
+/**
+ * ─── THE VENDORING (§SKY-6, 2026-07-28) ───────────────────────────────────
+ *
+ * These do not test the matcher. They test that the LIST is still the list the
+ * header claims it is — which is the thing a future re-vendoring is most likely
+ * to break, silently, while every behavioural test above stays green.
+ *
+ * The existing "has no duplicates" test already proves the three tiers are
+ * disjoint (a term in two tiers would surface as a duplicate in the union), so
+ * that is not restated here.
+ */
+describe('the vendored list is still what the header says it is', () => {
+  const all = () => allBlockedTerms();
+
+  it('carries the vendored bulk — this is not a hand-written seed any more', () => {
+    // 354 vendored + 15 curated extra. A wholesale replace that dropped the
+    // extras would land near 354; a revert to the old seed would land near 38.
+    expect(all().length).toBe(369);
+  });
+
+  /**
+   * ⚠ THE MOST IMPORTANT TEST IN THIS FILE.
+   *
+   * LDNOOBW contains NO disability slurs and NO self-harm phrases — verified by
+   * set difference against upstream. They live only in CURATED_EXTRA. A future
+   * "just re-vendor the list" would delete exactly the class most likely to be
+   * aimed at this app's users, and would do it without touching a single line
+   * of matcher code. This is what notices.
+   */
+  it('still blocks the classes LDNOOBW does not contain at all', () => {
+    for (const term of ['retard', 'retarded', 'cripple', 'mongoloid']) {
+      expect(all()).toContain(term);
+    }
+    for (const phrase of ['kill yourself', 'kys', 'go die', 'neck yourself']) {
+      expect(all()).toContain(phrase);
+    }
+  });
+
+  it('does not block ordinary profanity, however the list is re-vendored', () => {
+    // The D-2 decision, asserted against the union rather than against the
+    // dropped-list comment — a comment cannot go red.
+    for (const term of ['shit', 'fuck', 'bitch', 'ass', 'damn', 'bullshit']) {
+      expect(all()).not.toContain(term);
+    }
+  });
+
+  /**
+   * The class the vendoring itself introduced. LDNOOBW is written for
+   * general-purpose moderation; this app's users write these words in genuine
+   * barrier reports, and the raw list would have rejected every one.
+   */
+  it('does not block words that are neutral vocabulary in an accessibility app', () => {
+    for (const term of ['sex', 'sexual', 'escort', 'rectum', 'anus', 'grope', 'butt', 'suck']) {
+      expect(all()).not.toContain(term);
+    }
+  });
+
+  it('the neutral drops did not take their sexual compounds with them', () => {
+    // Dropping the bare word `sex` must not disarm `sexo`/`sexcam`/`sexy` — the
+    // ambiguity was in the standalone word, not the compounds.
+    expect(containsBlockedTerm('want some sexcam action')).toBe(true);
+    expect(containsBlockedTerm('the single-sex washroom is locked')).toBe(false);
+    expect(containsBlockedTerm('staff would not escort me to the lift')).toBe(false);
+    expect(containsBlockedTerm('I had to grope along the wall to find the door')).toBe(false);
+  });
+
+  it('every term is still lowercase and boundary-safe after vendoring', () => {
+    for (const term of all()) {
+      expect(term).toBe(term.toLowerCase());
+      expect(term.trim()).toBe(term);
+      expect(term.length).toBeGreaterThanOrEqual(3);
+    }
+  });
+});
