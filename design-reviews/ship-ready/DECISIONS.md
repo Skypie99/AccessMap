@@ -535,3 +535,70 @@ is banked but not yet surfaced anywhere in the app.
 - **The 24-hour commitment now ships in the app.** `REPORT_SENT_BODY` is the only place in the running
   binary that states it. If it ever stops being sustainable, three things change together: the string, ToS
   §1, and §4.
+
+---
+
+## §SKY-6: Run-2 decisions (2026-07-28)
+
+ToS placement: a Terms & Community Guidelines screen, entries in BOTH Settings and About (the B-2
+privacy-link grammar); the Report sheet's guidelines citation becomes a tappable link to it. Words rendered
+VERBATIM from 14_MODERATION_TEXTS_v1.md §1; render, never rewrite.
+
+REPORT_CATEGORY_LABEL: "What's wrong?" RATIFIED as-is.
+
+Term list: vendor the real LDNOOBW English list (network fetch; source URL + license in header), then
+re-apply the D-2 curation rule over it; keep the Sky-editable ADDITIONS path working (the live-read fix
+stands). If network genuinely unavailable, STOP that car and report; never pretend a vendoring.
+
+G3: SHIP the grabber, inkGlassMuted, ALL THREE sheets, standard placement including Nearby. Declared ==
+shipped: stacks manifests updated, all proof sets exit 0.
+
+HIGH-1: hide [REPORT]% rows from My Feedback via the predicate. The PIPEDA export KEEPS the rows
+(deliberate: exports must be complete; raw data in a data export is honest) — record this stance in the
+export's code comment.
+
+HIGH-2: Settings "Hidden comments" list — per-item Unhide + Unhide All, on the existing
+unhideContent/loadHidden primitives. Mockup gate for visuals only; the pattern is decided.
+
+SR-050: BUILD the owner client half now (deleteFlag clears the flag's photos on the owner path, honoring
+flags.ts:665's no-URL-parsing law, multi-photo tested). AUTHOR the admin storage-delete migration artifact
+mirroring C-8 (fenced, rollback, verify query) — Sky-applied, NEVER run by an agent.
+
+Class A residue: BUILD R-2 and R-13 per their specs; R-1 artifact-only.
+
+### §SKY-6a: the two rulings Run-2 needed before it could start (2026-07-28)
+
+Two §SKY-6 instructions collided with the repo. Both were put to Sky before any code was written; both were
+ruled on. Recorded here because the reasoning is the load-bearing part.
+
+**1 · SR-050 has no path source — RULED: fail-safe derivation, with three amendments.**
+
+The collision: `§SKY-6` says build the owner half *"honoring flags.ts:665's no-URL-parsing law"*, but that law
+is exactly what makes it unbuildable. Verified — **no `storage_path` column exists anywhere in `src/` or
+`supabase/`**. `uploadFlagPhoto` returns `{url, path}` (`flags.ts:828`); `ReportFlagModal.tsx:412` uses `path`
+ephemerally for failed-submit cleanup; **`photos.ts:63` discards it**. `flags.photo_url` and `flag_photos.url`
+are both public URLs. There is no SELECT policy on `storage.objects`, so `storage.list()` returns nothing.
+
+Sky's reasoning, verbatim in substance: *"The real question underneath 665 is why you wrote it. If it exists
+because ad-hoc URL parsing was fragile and scattered, one tested helper against a known constant solves that.
+If it exists because the URL shape itself might change — a private bucket, signed URLs, a CDN or custom
+domain — then derivation is the wrong bet and the column is right. My read is the former."* The disqualifier
+for the column option: it ships dark until she runs SQL, and everything already uploaded stays orphaned
+regardless.
+
+Three amendments, all binding:
+- **Write the exception INTO 665 as a narrow carve-out** — one named helper, one bucket constant, and an
+  explicit "no other URL parsing anywhere" restatement. *"Otherwise the law erodes by precedent."*
+- **A null return must be LOUD.** *"Silent null means the photo never gets deleted and the takedown hole comes
+  back invisibly."* A log/telemetry event, never a swallowed no-op.
+- **`storage_path` goes on the backlog, not this run.** Derivation now, column later, derivation becomes
+  legacy-only — the destination without paying for both today.
+
+**2 · The Report sheet has no guidelines citation — RULED: add one.**
+
+`§SKY-6` says *"the Report sheet's guidelines citation becomes a tappable link."* There is no such citation.
+The only string citing the guidelines is `CONTENT_BLOCKED_MESSAGE` (`copy.ts:194`) — the **submit-time filter
+rejection**, a different surface, surfaced through an Alert that cannot hold a link. Sky's ruling: a **new**
+guidelines line with a tappable link is **added** to the Report sheet; the blocked-content Alert is **not**
+rewritten. The filter-rejection Alert is therefore carried as a **named residual** — a user told they broke
+the community guidelines still has no route to read them.
