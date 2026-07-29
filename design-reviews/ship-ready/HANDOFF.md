@@ -136,8 +136,8 @@ Decisions: `DECISIONS.md §SKY-6` (Sky's, verbatim) and `§SKY-6a` (the two she 
 |---|---|---|
 | **0** | §SKY-6 + §SKY-6a banked | ✅ `0ec167f` |
 | **1** | **The ToS screen** | ✅ `7db14aa` |
-| **2** | HIGH-1 — the report envelope in My Feedback | ⏳ next |
-| **3** | The term list — vendor + D-2 re-curation | ⏳ |
+| **2** | HIGH-1 — the report envelope in My Feedback | ✅ `729c41f` |
+| **3** | The term list — vendor + D-2 re-curation | ⏳ next |
 | **4** | G3 — ship the grabber | ⏳ |
 | **5** | HIGH-2 — Hidden comments (⛔ mockup gate) | ⏳ |
 | **6** | SR-050 owner half + admin artifact, then Class A | ⏳ |
@@ -180,3 +180,40 @@ and *over* the report sheet, and that closing returns to the surface beneath; Vo
 on the pageSheet; the prose at AX5.
 
 **Rollback:** `git reset --hard 7349346`.
+
+## Car 2 — HIGH-1, the report envelope ✅ `729c41f`
+
+Gate: tsc 0 · lint 0/80 · jest **179 suites, 2648 passed, 0 failed** · `GlassSurface.tsx` 0 changed lines.
+
+`13_B1_VERIFY_LEDGER §A`: a signed-in report is inserted with `user_id`, so it landed in **Settings → My
+feedback**, where the reporter was shown `[REPORT] v2 target=comment id=9f3c… flag=22a1…` — internal
+encoding plus the reported comment's uuid — rendered as prose *and* used as the row's accessible NAME.
+
+**The shape of the fix is the whole finding.** `listFeedbackByUser` has exactly two production callers and
+they want different rows:
+
+| Caller | Kind of surface | Passes |
+|---|---|---|
+| `MyFeedbackModal` | a **reading** surface | `{ excludeBodyPrefix: REPORT_BODY_PREFIX }` → `.not('body','like','[REPORT]%')` |
+| the **PIPEDA export** (`SettingsScreen`) | a **completeness** surface | nothing, deliberately |
+
+A predicate baked into the query would have stripped a user's own reports out of their own subject-access
+request — the opposite of Sky's stance in §SKY-6 (*exports must be complete; raw data in a data export is
+honest*). So filtering is **per-call and opt-in**, and the stance is recorded at all three places a future
+reader could land: the function's docblock, the export call site, and the formatter's FEEDBACK section.
+
+**Two implementation notes worth keeping:**
+- The option is a **string, not a boolean**. `reports.ts` already imports `feedbackStore`, so importing
+  `REPORT_BODY_PREFIX` back would have closed a circular dependency. Passing it in keeps the store ignorant
+  of report envelopes and keeps the sentinel declared exactly once, where `reportControl.guard` wants it.
+- `[` is not a LIKE metacharacter in Postgres, and `feedback.body` is `not null` — verified against
+  `2026-05-23_feedback_table.sql:64` — so the predicate is a plain literal prefix match with no
+  three-valued-logic hole that could drop rows.
+
+**Tests are paired on purpose.** "excludes when asked" and "does NOT exclude by default" only mean something
+together; either alone reads as complete while covering half the contract. Plus call-site guards (a correct
+function called wrongly looks identical to a broken one from outside) and an end-to-end assertion that a
+report row built by the REAL `buildReportBody` survives into the export in full.
+
+**Device row gained:** file a report as a signed-in user, then confirm it is absent from My Feedback and
+present in Export my data.

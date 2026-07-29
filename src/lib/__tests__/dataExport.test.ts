@@ -14,7 +14,11 @@
  *  - Date rendering drifting with timezone — UTC is the contract.
  */
 
+import fs from 'fs';
+import path from 'path';
+
 import { formatDataExport } from '../dataExport';
+import { REPORT_BODY_PREFIX, buildReportBody } from '@/lib/reports';
 import type { FlagRow } from '@/types/database';
 import type { FeedbackRow } from '../dataExport';
 
@@ -448,5 +452,58 @@ describe('formatDataExport', () => {
       generatedAt: FIXED_DATE,
     });
     expect(out).toContain('first line\nsecond line');
+  });
+});
+
+/**
+ * HIGH-1 — the two surfaces diverge, and the divergence is the feature.
+ *
+ * `MyFeedbackModal` hides `[REPORT]%` rows; this export keeps them. Sky ruled
+ * that deliberately in §SKY-6: exports must be complete, and raw data in a data
+ * export is honest. The risk this guards is a future tidy-up that "makes the
+ * export consistent with My Feedback" and, in doing so, quietly narrows what a
+ * person is told about themselves in response to a subject-access request.
+ *
+ * The envelope is built by the REAL `buildReportBody`, not a fixture string, so
+ * this cannot drift from what actually lands in the table.
+ */
+describe('the PIPEDA export keeps report rows (§SKY-6)', () => {
+  const REPORT_ROW = makeFeedback({
+    id: 'rep',
+    category: 'other',
+    body: buildReportBody(
+      { kind: 'comment', id: '11111111-1111-4111-8111-111111111111', flagId: '22222222-2222-4222-8222-222222222222' },
+      'This comment is abusive.',
+      'harassment',
+    ),
+    created_at: '2026-07-28T00:00:00.000Z',
+  });
+
+  it('renders the report row in full, envelope included', () => {
+    const out = formatDataExport({
+      user: { email: 'a@b.c' },
+      flags: [],
+      feedback: [REPORT_ROW],
+      categoryLabel: label,
+      generatedAt: FIXED_DATE,
+    });
+
+    expect(out).toContain('FEEDBACK (1 items):');
+    expect(out).toContain(REPORT_BODY_PREFIX);
+    expect(out).toContain('This comment is abusive.');
+  });
+
+  it('does not filter by body prefix at any point in the formatter', () => {
+    // The formatter is pure and takes whatever it is handed — the filtering
+    // decision lives at the CALL SITE, which is what keeps the two surfaces
+    // able to differ at all. A prefix test appearing in here would silently
+    // override the call-site choice for every caller at once.
+    const src = fs.readFileSync(path.join(__dirname, '..', 'dataExport.ts'), 'utf8');
+    const code = src
+      .split('\n')
+      .filter((l) => !l.trim().startsWith('*') && !l.trim().startsWith('//'))
+      .join('\n');
+    expect(code).not.toMatch(/startsWith\s*\(/);
+    expect(code).not.toMatch(/excludeBodyPrefix/);
   });
 });

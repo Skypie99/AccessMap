@@ -103,6 +103,21 @@ export async function submitFeedback(input: SubmitInput): Promise<SubmitFeedback
   }
 }
 
+/** Options for {@link listFeedbackByUser}. */
+export type ListFeedbackOptions = {
+  /**
+   * Drop rows whose body starts with this literal. Used to keep the `[REPORT]`
+   * envelope out of My Feedback (`REPORT_BODY_PREFIX`, passed by the caller).
+   *
+   * ⚑ A STRING, NOT A BOOLEAN, AND THAT IS DELIBERATE. `reports.ts` already
+   * imports this module, so importing the sentinel back here would close a
+   * circular dependency. Passing it in keeps this store ignorant of report
+   * envelopes — which it should be — and keeps `REPORT_BODY_PREFIX` declared
+   * exactly once, in `reports.ts`, where `reportControl.guard.test.ts` wants it.
+   */
+  excludeBodyPrefix?: string;
+};
+
 /**
  * List the user's past feedback, newest first. Capped at 100 — beyond
  * that we'd want cursor pagination, but a single user is very unlikely
@@ -111,13 +126,38 @@ export async function submitFeedback(input: SubmitInput): Promise<SubmitFeedback
  * Returns an empty array if the table doesn't exist or the user is
  * signed out — the caller renders an "empty state" card either way, so
  * the distinction doesn't matter for UX.
+ *
+ * ⚠ THIS FUNCTION SERVES TWO MASTERS, and they want different rows.
+ *   1. `MyFeedbackModal` — a reading surface. A report shown back to its author
+ *      as `[REPORT] v2 target=comment id=9f3c… flag=22a1…` is internal encoding
+ *      plus another person's comment uuid, rendered as prose and read aloud as
+ *      the row's accessible name. It passes `excludeBodyPrefix`.
+ *   2. The **PIPEDA data export** (`SettingsScreen`) — a completeness surface.
+ *      It passes nothing, on purpose. Sky's stance, §SKY-6: exports must be
+ *      complete, and raw data in a data export is honest. Hiding a user's own
+ *      rows from their own subject-access request to make the output prettier
+ *      would be the wrong trade in the one place completeness is the product.
+ *
+ * That divergence is why filtering is a per-call option and NOT baked into the
+ * query. Bake it in and the export silently loses rows — which is the opposite
+ * of what the filter is for.
  */
-export async function listFeedbackByUser(userId: string): Promise<FeedbackRow[]> {
+export async function listFeedbackByUser(
+  userId: string,
+  opts?: ListFeedbackOptions,
+): Promise<FeedbackRow[]> {
   try {
-    const { data, error } = await supabase
-      .from('feedback')
-      .select('*')
-      .eq('user_id', userId)
+    const base = supabase.from('feedback').select('*').eq('user_id', userId);
+
+    // `[` is not a LIKE metacharacter in Postgres (only `%` and `_` are), so
+    // this is a plain literal prefix match — no ESCAPE clause needed. And
+    // `feedback.body` is `not null`, so `NOT (body LIKE …)` has no
+    // three-valued-logic hole that would drop rows with an absent body.
+    const filtered = opts?.excludeBodyPrefix
+      ? base.not('body', 'like', `${opts.excludeBodyPrefix}%`)
+      : base;
+
+    const { data, error } = await filtered
       .order('created_at', { ascending: false })
       .limit(100);
 

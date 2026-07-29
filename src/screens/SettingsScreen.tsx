@@ -383,6 +383,16 @@ export default function SettingsScreen() {
       // statement from the client's point of view. A future probe could
       // distinguish "missing table" vs "empty table"; not worth the round
       // trip today.
+      //
+      // ⚑ NO `excludeBodyPrefix` HERE, AND IT IS NOT AN OVERSIGHT TO "FIX".
+      // My Feedback hides `[REPORT]` rows because it is a reading surface and
+      // the envelope is unreadable internal encoding. This is a PIPEDA
+      // subject-access export, where completeness is the entire product. Sky's
+      // stance, §SKY-6: exports must be complete; raw data in a data export is
+      // honest. A user asking for everything you hold about them is owed the
+      // rows they wrote, envelope and all — tidying the output by dropping them
+      // would make the export prettier and untrue. If you are here to "make the
+      // export match My Feedback", the two are supposed to differ.
       const feedbackRows = await listFeedbackByUser(user.id);
 
       const text = formatDataExport({

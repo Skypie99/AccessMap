@@ -20,6 +20,7 @@ import { MessageCircle, Search, X } from 'lucide-react-native';
 import { FEEDBACK_CATEGORY_LABELS } from '@/lib/feedback';
 import { FEEDBACK_CATEGORY_ICONS } from '@/components/feedbackCategoryIcons';
 import { listFeedbackByUser } from '@/lib/feedbackStore';
+import { REPORT_BODY_PREFIX } from '@/lib/reports';
 import {
   FEEDBACK_CATEGORY_FILTERS,
   FEEDBACK_CATEGORY_FILTER_LABELS,
@@ -79,7 +80,13 @@ export default function MyFeedbackModal({ visible, onClose, refreshKey = 0 }: Pr
   const load = useCallback(async () => {
     if (!user) return;
     if (mountedRef.current) setLoading(true);
-    const data = await listFeedbackByUser(user.id);
+    // HIGH-1 (13_B1_VERIFY_LEDGER §A, ruled in §SKY-6). A signed-in report is
+    // inserted with `user_id`, so without this it lands here and the reporter is
+    // shown `[REPORT] v2 target=comment id=9f3c… flag=22a1…` — internal encoding
+    // plus the reported comment's uuid — as prose, and as the row's accessible
+    // NAME. The PIPEDA export deliberately does NOT pass this; see
+    // `listFeedbackByUser`'s docblock for why the two surfaces diverge.
+    const data = await listFeedbackByUser(user.id, { excludeBodyPrefix: REPORT_BODY_PREFIX });
     if (!mountedRef.current) return;
     setRows(data);
     setLoading(false);

@@ -13,7 +13,14 @@
  *    must serialize as null on the insert.
  */
 
+import fs from 'fs';
+import path from 'path';
+
 import { submitFeedback, listFeedbackByUser } from '../feedbackStore';
+// The sentinel comes from reports.ts, never a literal — reportControl.guard
+// bans a second declaration, and a hand-typed '[REPORT]' here would be a copy
+// of the contract rather than a check of it.
+import { REPORT_BODY_PREFIX } from '@/lib/reports';
 
 jest.mock('react-native', () => ({
   Platform: { OS: 'ios' },
@@ -28,6 +35,7 @@ const mockSelectAfterInsert = jest.fn();
 const mockSingle = jest.fn();
 const mockSelect = jest.fn();
 const mockEq = jest.fn();
+const mockNot = jest.fn();
 const mockOrder = jest.fn();
 const mockLimit = jest.fn();
 
@@ -46,7 +54,12 @@ beforeEach(() => {
   mockInsert.mockReturnValue({ select: mockSelectAfterInsert });
   mockSelectAfterInsert.mockReturnValue({ single: mockSingle });
   mockSelect.mockReturnValue({ eq: mockEq });
-  mockEq.mockReturnValue({ order: mockOrder });
+  // HIGH-1: `.not` is an OPTIONAL link in the chain — it appears only when the
+  // caller asks to exclude a body prefix. eq() therefore has to offer BOTH the
+  // filtered and unfiltered continuations, which is exactly the shape the real
+  // PostgREST builder has.
+  mockEq.mockReturnValue({ order: mockOrder, not: mockNot });
+  mockNot.mockReturnValue({ order: mockOrder });
   mockOrder.mockReturnValue({ limit: mockLimit });
 });
 
@@ -197,6 +210,34 @@ describe('listFeedbackByUser', () => {
     expect(mockEq).toHaveBeenCalledWith('user_id', 'u1');
   });
 
+  /**
+   * HIGH-1 (13_B1_VERIFY_LEDGER §A), ruled in §SKY-6.
+   *
+   * These two are a PAIR and only mean something together. The first proves the
+   * envelope can be hidden; the second proves hiding it is opt-in, which is the
+   * assertion protecting the PIPEDA export from inheriting the filter. Delete
+   * either and the remaining one reads as a complete test while covering half
+   * the contract.
+   */
+  it('excludes the report envelope when the caller asks — the My Feedback path', async () => {
+    mockLimit.mockResolvedValueOnce({ data: [], error: null });
+
+    await listFeedbackByUser('u1', { excludeBodyPrefix: REPORT_BODY_PREFIX });
+
+    expect(mockNot).toHaveBeenCalledWith('body', 'like', `${REPORT_BODY_PREFIX}%`);
+  });
+
+  it('does NOT exclude anything by default — the data-export path', async () => {
+    mockLimit.mockResolvedValueOnce({ data: [], error: null });
+
+    await listFeedbackByUser('u1');
+
+    // The export must stay complete. A predicate baked into the query rather
+    // than passed per call would silently strip a user's own reports out of
+    // their own subject-access request.
+    expect(mockNot).not.toHaveBeenCalled();
+  });
+
   it('returns [] when supabase returns an error (missing table)', async () => {
     mockLimit.mockResolvedValueOnce({
       data: null,
@@ -262,5 +303,38 @@ describe('an ANONYMOUS insert must never ask for the row back', () => {
 
     expect(mockSelectAfterInsert).toHaveBeenCalledWith('*');
     expect(mockSingle).toHaveBeenCalled();
+  });
+});
+
+/**
+ * HIGH-1 — the CALL SITES, not the query.
+ *
+ * `listFeedbackByUser` has exactly two production callers and they must ask for
+ * different things. The tests above prove the option works; these prove the two
+ * callers actually use it correctly, which is where the bug would really live —
+ * a correct function called wrongly looks identical to a broken one from the
+ * outside, and the failure mode here is silent: reports reappear in My Feedback,
+ * or vanish from a subject-access export, with every other test still green.
+ */
+describe('the two callers ask for different rows, on purpose (§SKY-6)', () => {
+  const REPO = path.join(__dirname, '..', '..');
+  const read = (rel: string) => fs.readFileSync(path.join(REPO, rel), 'utf8');
+
+  it('there are still exactly two production callers', () => {
+    // A third caller is not forbidden — but it has to make this choice
+    // deliberately, and this failing is how it gets asked to.
+    const files = ['components/MyFeedbackModal.tsx', 'screens/SettingsScreen.tsx'];
+    for (const f of files) expect(read(f)).toContain('listFeedbackByUser(');
+  });
+
+  it('My Feedback excludes the report envelope', () => {
+    const src = read('components/MyFeedbackModal.tsx');
+    expect(src).toMatch(/listFeedbackByUser\(\s*user\.id,\s*\{\s*excludeBodyPrefix:\s*REPORT_BODY_PREFIX\s*\}\s*\)/);
+  });
+
+  it('the PIPEDA export does NOT — it takes every row the user wrote', () => {
+    const src = read('screens/SettingsScreen.tsx');
+    expect(src).toContain('listFeedbackByUser(user.id)');
+    expect(src).not.toContain('listFeedbackByUser(user.id, {');
   });
 });

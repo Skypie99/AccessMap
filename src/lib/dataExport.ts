@@ -132,6 +132,22 @@ export function formatDataExport(input: ExportInput): string {
   lines.push('');
 
   // ---- FEEDBACK section ------------------------------------------------
+  //
+  // ⚑ IF YOU CAME HERE ASKING "why does my export contain
+  // `[REPORT] v2 target=comment id=…`?" — because it should. Abuse reports are
+  // written into `feedback` with the reporter's `user_id`, which makes them the
+  // user's own data, which makes them part of a PIPEDA subject-access request.
+  //
+  // `MyFeedbackModal` hides those rows (HIGH-1) because it is a READING
+  // surface and the envelope is internal encoding rendered as prose. This is a
+  // COMPLETENESS surface, and the two are deliberately different. Sky's stance,
+  // §SKY-6: exports must be complete; raw data in a data export is honest.
+  // Filtering here to make the output tidier would quietly narrow what a person
+  // is told about themselves, in the one place the whole point is not to.
+  //
+  // The divergence is enforced upstream: `listFeedbackByUser`'s
+  // `excludeBodyPrefix` is opt-in, and `SettingsScreen`'s export call does not
+  // pass it.
 
   if (input.feedback === undefined) {
     // Table not enabled (migration not applied) — be explicit so the
