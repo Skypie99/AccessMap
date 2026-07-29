@@ -605,6 +605,20 @@ the community guidelines still has no route to read them.
 
 ---
 
+## §SKY-7: SHIP-READY four decisions (2026-07-29)
+
+**HIGH-2 Unhide surface: option B · F · S2, per the Car-5 gate board.** (Row = B, text link · Unhide-all = F, pinned footer · Settings section = S2, "Your data".) Sky reviewed the rendered gate board and the per-decision descriptions, then asked the agent to decide on her behalf ("whatever you recommend"); this is exactly the gate board's own "agent's read, offered not assumed" (B · F · S2), adopted as the pick under that delegation.
+
+CONTENT_BLOCKED coherence fix: APPROVED. The blocked-content alert gains a 'View guidelines' button that opens the Terms & Community Guidelines sheet after the alert dismisses. Native Alert buttons only; no new copy beyond the button label; the guidelines text stays the ratified §1 verbatim. Build it alongside the HIGH-2 Unhide surface in the next run.
+
+Crash reporting present in the binary as of 2026-07-29: NO. `src/lib/sentry.ts` is a 4-line hand-written no-op stub (`initSentry`/`captureException`/`captureMessage` all `() => {}`, header comment "Sentry removed — re-add in Phase 6 with proper org/project config"); `App.tsx:2-3` calls the no-op `initSentry()`; `App.tsx:208-212` states in-code "no crash reporter ships today"; no Sentry/Bugsnag/Crashlytics/Amplitude/PostHog dependency in `package.json` or Expo config plugin in `app.json`; the `@sentry*` folders present in `node_modules` are unpruned leftovers — absent from `package-lock.json` and unresolved by `npm ls @sentry/react-native`; `.env` carries no `EXPO_PUBLIC_SENTRY_DSN` (only `.env.example`'s empty placeholder). Evidence for the B-3 privacy-policy rewrite.
+
+**2026-07-29 — §C-12 applied and verified, rollback in hand.** Sky-confirmed explicitly (separately from the other three, per the run's rails) after being shown the statement, the rollback, and the live pre-state match. Ledger `sr050_admin_delete_flag_photo_20260729`. Pre-state (read live before applying): exactly one DELETE policy on `storage.objects` scoped to `flag-photos` — `flag-photos owner delete` — matching the artifact's assumption. Post-apply verify (read-only): exactly two DELETE policies now exist, both role `{authenticated}` — `flag-photos owner delete` (unchanged: `(storage.foldername(name))[1] = auth.uid()::text`) and the new `flag-photos admin delete` (`bucket_id = 'flag-photos' AND (select users.is_admin from users where users.id = auth.uid())`), i.e. scoped to admins only. Rollback on file: `drop policy if exists "flag-photos admin delete" on storage.objects;`. Jordan review was flagged as a recommendation, not taken before this apply — Sky's call, noted for visibility.
+
+**Correction, on the record (2026-07-29):** The HIGH-2 entry above recorded the agent's delegated guess (B · F · S2) after Sky said "whatever you recommend." Sky then went on to answer the three gate decisions specifically and explicitly: **Row = A (pill button) · Unhide-all = H (header) · Settings section = S1 ("Feedback")**. **A · H · S1 is Sky's actual, specific pick and is what governs the build** — it supersedes the delegated B · F · S2 recorded above, which stands only as a record of what was guessed in the interim. §C-12's answer was reconfirmed unchanged at the same time (yes, apply now) — already applied and verified above; no change there.
+
+---
+
 ## §SKY-8 Privacy policy v1.0 — RATIFIED (2026-07-29)
 
 Sky ratified the privacy policy the App Store listing has been waiting on. Banked verbatim at
