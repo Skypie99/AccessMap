@@ -36,12 +36,11 @@ import {
   HIDDEN_COMMENTS_LINK_HINT,
   HIDDEN_COMMENTS_ROW_SUBTITLE,
   HIDDEN_COMMENTS_TITLE,
-  OPENS_IN_BROWSER_HINT,
+  PRIVACY_POLICY_LINK_HINT,
   PRIVACY_POLICY_LINK_LABEL,
   TERMS_LINK_HINT,
   TERMS_LINK_LABEL,
 } from '@/lib/copy';
-import { PRIVACY_POLICY_URL, openExternalUrl } from '@/lib/links';
 import type { UserRow } from '@/types/database';
 import {
   deletePushToken,
@@ -612,13 +611,16 @@ export default function SettingsScreen() {
         {/* B-2 (SR-002): Apple 5.1.1(i) requires the privacy policy to be
             reachable from INSIDE the app, not only from App Store Connect
             metadata. Title-only — no subtitle is invented here; the wording
-            is Sky's (PROPOSED, routed to BP16). */}
+            is Sky's (PROPOSED, routed to BP16).
+            B-3 (§SKY-8): it now opens the ratified policy IN the app rather
+            than a browser, so role is "button" and the hint no longer says
+            browser. The hosted URL still exists for App Store Connect — see
+            PRIVACY_POLICY_URL — it is just no longer what this row opens. */}
         <SettingsRow
           glassLite={glassLite}
-          role="link"
           title={PRIVACY_POLICY_LINK_LABEL}
-          accessibilityHint={OPENS_IN_BROWSER_HINT}
-          onPress={() => { void openExternalUrl(PRIVACY_POLICY_URL); }}
+          accessibilityHint={PRIVACY_POLICY_LINK_HINT}
+          onPress={() => setOpen('privacy')}
         />
 
         {/* §SKY-6: the terms take the B-2 privacy-link grammar — same section,

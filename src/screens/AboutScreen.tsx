@@ -11,13 +11,12 @@ import { Map as MapIcon, X } from 'lucide-react-native';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { useReducedMotion } from '@/lib/accessibility';
 import {
-  OPENS_IN_BROWSER_HINT,
+  PRIVACY_POLICY_LINK_HINT,
   PRIVACY_POLICY_LINK_LABEL,
   TERMS_LINK_HINT,
   TERMS_LINK_LABEL,
 } from '@/lib/copy';
 import { useSharedModals } from '@/lib/sharedModalsContext';
-import { PRIVACY_POLICY_URL, openExternalUrl } from '@/lib/links';
 
 interface Props {
   visible: boolean;
@@ -152,11 +151,11 @@ export default function AboutScreen({ visible, onClose }: Props) {
                 after the prose so none of it moves (PROTECT-11: the
                 privacy-forward trust voice is insertion-only here). */}
             <Pressable
-              onPress={() => { void openExternalUrl(PRIVACY_POLICY_URL); }}
+              onPress={() => setOpen('privacy')}
               style={({ pressed }) => (pressed ? styles.linkPressed : null)}
-              accessibilityRole="link"
+              accessibilityRole="button"
               accessibilityLabel={PRIVACY_POLICY_LINK_LABEL}
-              accessibilityHint={OPENS_IN_BROWSER_HINT}
+              accessibilityHint={PRIVACY_POLICY_LINK_HINT}
             >
               <AppText variant="bodyMedium" style={styles.link}>
                 {PRIVACY_POLICY_LINK_LABEL}
@@ -165,9 +164,10 @@ export default function AboutScreen({ visible, onClose }: Props) {
 
             {/* §SKY-6: the terms take the same B-2 grammar, appended after the
                 privacy link so PROTECT-11 still holds — nothing above moves.
-                accessibilityRole is "button", not "link": the privacy row leaves
-                for a browser and this one opens a sheet, and the two should not
-                announce identically when they do different things. */}
+                Both rows announce as "button" since B-3: they now do the same
+                thing (open a sheet), so they should announce identically. Until
+                then the privacy row left for a browser and was a "link" — the
+                distinction was real and is simply gone. */}
             <Pressable
               onPress={() => setOpen('terms')}
               style={({ pressed }) => (pressed ? styles.linkPressed : null)}

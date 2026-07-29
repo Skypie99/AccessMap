@@ -318,6 +318,9 @@ describe('B-1 copy carries the PROPOSED marker (the honesty fence, mechanised)',
     // Run 3 (§SKY-7): the ONE new string the CONTENT_BLOCKED coherence fix is
     // allowed. The alert's title and body are unchanged.
     'VIEW_GUIDELINES_LABEL',
+    // Run 3 (B-3): the policy rows' hint. The LABEL was already PROPOSED above;
+    // only the hint is new, and it is ours, not Sky's.
+    'PRIVACY_POLICY_LINK_HINT',
   ];
 
   /**
@@ -439,13 +442,54 @@ describe('B-1 copy carries the PROPOSED marker (the honesty fence, mechanised)',
     },
   );
 
+  /**
+   * ⚑ THE FOURTH GRAMMAR, added 2026-07-29 (B-3, §SKY-8 + §SKY-9).
+   *
+   * The privacy policy is a SECOND ratified document, so `ratifiedMarker` —
+   * which hardcodes 2026-07-27 and `14_MODERATION_TEXTS_v1.md` — cannot carry
+   * it without lying about both the date and the source.
+   *
+   * The citation names BOTH decisions on purpose. §SKY-8 ratified the policy;
+   * §SKY-9 corrected two claims the build run's verification caught before the
+   * render (account deletion is on Profile, not Settings; notification settings
+   * are device-local, not stored). A marker citing only §SKY-8 would point at a
+   * version of the text that is not what shipped.
+   *
+   * These three consts are ALSO compared character-for-character against the
+   * markdown by `src/__tests__/privacy.guard.test.ts`. This list only holds the
+   * provenance claim; that file holds the text.
+   */
+  const privacyMarker =
+    'RATIFIED by Sky 2026-07-29 — DECISIONS §SKY-8 + §SKY-9, 15_PRIVACY_POLICY_v1.md §The policy text.';
+
+  const RATIFIED_PRIVACY: readonly string[] = [
+    'PRIVACY_TITLE',
+    'PRIVACY_EFFECTIVE',
+    'PRIVACY_SECTIONS',
+  ];
+
+  it.each(RATIFIED_PRIVACY)('%s is marked RATIFIED, not PROPOSED', (name) => {
+    const doc = prose(name);
+    expect(doc).toContain(privacyMarker);
+    expect(doc).not.toContain(MARKER);
+  });
+
+  it.each(RATIFIED_PRIVACY)('%s ends its JSDoc with the ratified marker, exactly', (name) => {
+    expect(prose(name).endsWith(privacyMarker)).toBe(true);
+  });
+
   it('no export is in both lists', () => {
     for (const [name] of RATIFIED_EXPORTS) expect(PROPOSED_EXPORTS).not.toContain(name);
     for (const [name] of RATIFIED_IN_DECISIONS) expect(PROPOSED_EXPORTS).not.toContain(name);
-    // The two ratified lists are also mutually exclusive: a string cites either
-    // Sky's document or her decision record, never both.
+    for (const name of RATIFIED_PRIVACY) expect(PROPOSED_EXPORTS).not.toContain(name);
+    // The ratified lists are also mutually exclusive: a string cites exactly one
+    // provenance — her moderation document, her decision record, or her policy.
     for (const [name] of RATIFIED_IN_DECISIONS) {
       expect(RATIFIED_EXPORTS.map(([n]) => n)).not.toContain(name);
+    }
+    for (const name of RATIFIED_PRIVACY) {
+      expect(RATIFIED_EXPORTS.map(([n]) => n)).not.toContain(name);
+      expect(RATIFIED_IN_DECISIONS.map(([n]) => n)).not.toContain(name);
     }
   });
 });

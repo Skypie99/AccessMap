@@ -50,6 +50,16 @@ export const PRIVACY_POLICY_LINK_LABEL = 'Privacy Policy';
 export const OPENS_IN_BROWSER_HINT = 'Opens in your browser';
 
 /**
+ * Hint for the three privacy-policy entry points, which as of B-3 open an
+ * in-app sheet rather than a browser. It replaces `OPENS_IN_BROWSER_HINT` on
+ * those rows for the same reason `TERMS_LINK_HINT` exists: the policy never
+ * leaves the app now, and telling screen-reader users it opens a browser would
+ * be a lie told only to them. AGENT-PROPOSED wording.
+ * PROPOSED (B-3, S-8) — Sky's final wording lands in DECISIONS §A / BP16.
+ */
+export const PRIVACY_POLICY_LINK_HINT = 'Opens the privacy policy';
+
+/**
  * BP13 (T9, F5-05/09): single-source the read-failure banner text (provider
  * message + retry verb). Home / Map / Tasks route the SAME presentation contract
  * through this — NOT a shared component; each screen keeps its own container.
@@ -641,3 +651,110 @@ export const TERMS_LINK_LABEL = 'Terms & Community Guidelines';
  * PROPOSED (B-1, S-8) — Sky's final wording lands in DECISIONS §A / BP16.
  */
 export const TERMS_LINK_HINT = 'Opens the terms and community guidelines';
+
+/* ───────────────────────────────────────────────────────────────────────────
+ * B-3 — THE PRIVACY POLICY, TRANSCRIBED.
+ *
+ * ⚑ THESE ARE TRANSCRIPTIONS, NOT COPY. Same law as the TERMS_* block above.
+ * Every string below is Sky's `15_PRIVACY_POLICY_v1.md` §"The policy text",
+ * character for character, and `src/__tests__/privacy.guard.test.ts` compares
+ * them against that markdown in BOTH directions on every run. If a word here
+ * looks wrong it is wrong in Sky's document, and only she may change it.
+ *
+ * ⚑ ONE TRANSFORMATION IS APPLIED, AND ONLY ONE: the inline `[V: …]` and `[V]`
+ * verification markers are stripped. They are instructions to the build run
+ * ("confirm this against the codebase before rendering"), not policy prose —
+ * rendering them verbatim would put `[V: dataExport path]` in front of a user.
+ * The guard strips them the same way and asserts the result matches, so the
+ * strip rule cannot drift between the document and the app either.
+ *
+ * WHAT MAKES THESE TRUSTWORTHY. All eleven `[V]` claims were checked against
+ * the codebase before one word was rendered — `16_V_VERIFICATION_TABLE.md`
+ * carries the file-and-line evidence for each. Two failed. Both were reported
+ * to Sky before the render and both were corrected by her (DECISIONS §SKY-9):
+ * account deletion lives on Profile, not Settings, and notification settings
+ * are device-local rather than stored. B-3 exists because the LIVE policy
+ * drifted six ways from the shipped app; shipping a second policy that drifted
+ * differently would have been the same defect in a new costume.
+ *
+ * The title and the effective date are separate consts because the markdown
+ * puts them on separate lines — unlike the terms, where they share one.
+ * ─────────────────────────────────────────────────────────────────────────── */
+
+/**
+ * Document title, as the policy itself states it.
+ * RATIFIED by Sky 2026-07-29 — DECISIONS §SKY-8 + §SKY-9, 15_PRIVACY_POLICY_v1.md §The policy text.
+ */
+export const PRIVACY_TITLE = 'AccessMap Privacy Policy';
+
+/**
+ * Effective date and version, the policy's own second line.
+ * RATIFIED by Sky 2026-07-29 — DECISIONS §SKY-8 + §SKY-9, 15_PRIVACY_POLICY_v1.md §The policy text.
+ */
+export const PRIVACY_EFFECTIVE = 'Effective 2026-07-29 · v1.0';
+
+/**
+ * The fourteen policy paragraphs, in document order. `heading` is the bolded
+ * lead-in INCLUDING its trailing period; `body` is the rest of the paragraph.
+ * Rendered as separate elements so a screen reader can jump the document by
+ * heading — the only practical way to navigate a policy non-visually.
+ * RATIFIED by Sky 2026-07-29 — DECISIONS §SKY-8 + §SKY-9, 15_PRIVACY_POLICY_v1.md §The policy text.
+ */
+export const PRIVACY_SECTIONS = [
+  {
+    heading: 'Who runs this.',
+    body: 'AccessMap is built and run by one person, Sky, in British Columbia, Canada. If you have a question about your data, email skylerhalisky@gmail.com and it comes straight to me.',
+  },
+  {
+    heading: 'The short version.',
+    body: 'AccessMap collects as little as it can. You can report a barrier without making an account at all. There is no advertising, no analytics, no crash reporting, and nothing is sold or shared with anyone.',
+  },
+  {
+    heading: 'What you can do without an account.',
+    body: 'You can browse the map and submit barrier reports anonymously. Anonymous reports are not linked to you. If you hide a comment, that choice is stored only on your own phone and never leaves it.',
+  },
+  {
+    heading: 'What I store if you make an account.',
+    body: 'An email address and password, handled by my hosting provider (Supabase). Your display name and avatar if you add one. The reports, comments, and feedback you submit. Your points total. If you turn notifications on, a push token so the app can reach your device.',
+  },
+  {
+    heading: "What's in a barrier report.",
+    body: 'The location of the barrier, its category and severity, your description, any photos you add, and the time you submitted it. Reports are public in the app, because that is what the map is for. Photos are stored on a public link, so please keep faces, licence plates, and anything that identifies a person out of frame.',
+  },
+  {
+    heading: 'Your location.',
+    body: 'If you allow location access, the app uses your location on your device to centre the map and work out how far away barriers are. Your own location is not stored on my servers and is not sent anywhere. The only location saved is the location of a barrier you choose to report.',
+  },
+  {
+    heading: 'Notifications.',
+    body: 'If you turn them on, I store a push token so the app can notify you about your reports. Turn them off and it stops.',
+  },
+  {
+    heading: 'Who else sees your data.',
+    body: "My hosting provider (Supabase) stores it so the app can work. Apple sees whatever Apple normally sees when you download an app from the App Store. That's it. I don't sell your data, I don't share it for advertising, and there are no third-party trackers in the app.",
+  },
+  {
+    heading: 'Getting a copy of your data.',
+    body: 'You can export your data from inside the app, in Settings.',
+  },
+  {
+    heading: 'Deleting your account.',
+    body: "You can delete your account any time from your Profile. Your account and personal details go. Reports and comments you contributed may stay in the app with your name removed, so the community's record of barriers stays whole. Photos attached to your reports may remain unless you delete the report itself first.",
+  },
+  {
+    heading: 'Children.',
+    body: "AccessMap isn't designed for children and I don't knowingly collect information from anyone under 13.",
+  },
+  {
+    heading: 'Where your data lives.',
+    body: 'On servers run by my hosting provider. Data may be stored or processed outside Canada.',
+  },
+  {
+    heading: 'Your rights.',
+    body: "Under Canadian privacy law (PIPEDA) you can ask what I hold about you, ask for a copy, and ask me to correct or delete it. Email skylerhalisky@gmail.com and I'll sort it out.",
+  },
+  {
+    heading: 'Changes.',
+    body: 'If this policy changes, the new version appears here with a new date.',
+  },
+] as const;

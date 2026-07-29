@@ -25,6 +25,7 @@ import HelpModal from '@/components/HelpModal';
 import ChangelogModal from '@/components/ChangelogModal';
 import MyFeedbackModal from '@/components/MyFeedbackModal';
 import TermsScreen from '@/screens/TermsScreen';
+import PrivacyScreen from '@/screens/PrivacyScreen';
 import { useIsAdmin } from '@/lib/admin';
 import HomeScreen from '@/screens/HomeScreen';
 import MapScreen from '@/screens/MapScreen';
@@ -433,6 +434,11 @@ function SharedModalsHost() {
           that opened it. The same modal-over-modal shape the report sheet
           already uses over the flag sheet (device row D-B18). */}
       <TermsScreen visible={open === 'terms'} onClose={close} />
+      {/* B-3 / §SKY-8: the privacy policy joins the pool for the same reason
+          the terms did, and one more. Two of ITS three entry points are also
+          surfaces it must present over — About, and the sign-in cover, which
+          is not even inside the tab navigator. Mounted here it clears both. */}
+      <PrivacyScreen visible={open === 'privacy'} onClose={close} />
     </>
   );
 }

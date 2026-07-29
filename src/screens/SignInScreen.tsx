@@ -18,8 +18,8 @@ import { AppText } from '@/components/ui';
 import { signInWithEmail, signUpWithEmail } from '@/lib/supabase';
 import { a11yToggle } from '@/lib/accessibility';
 import { notify } from '@/lib/confirm';
-import { OPENS_IN_BROWSER_HINT, PRIVACY_POLICY_LINK_LABEL } from '@/lib/copy';
-import { PRIVACY_POLICY_URL, openExternalUrl } from '@/lib/links';
+import { PRIVACY_POLICY_LINK_HINT, PRIVACY_POLICY_LINK_LABEL } from '@/lib/copy';
+import PrivacyScreen from '@/screens/PrivacyScreen';
 import { track } from '@/lib/analytics';
 import LogoMark from '@/components/LogoMark';
 
@@ -36,6 +36,9 @@ export default function SignInScreen({
   const [validationError, setValidationError] = useState<string | null>(null);
   const [emailFocused, setEmailFocused] = useState(false);
   const [passwordFocused, setPasswordFocused] = useState(false);
+  // B-3: local, because this screen sits outside SharedModalsProvider. See the
+  // mount at the bottom of the render for why that is forced, not chosen.
+  const [privacyOpen, setPrivacyOpen] = useState(false);
 
   const submit = async (mode: 'in' | 'up') => {
     const cleanEmail = email.trim().toLowerCase();
@@ -265,17 +268,27 @@ export default function SignInScreen({
             hardcoded-dark cover — and the underline carries the affordance so
             it never rests on colour alone (WCAG 1.4.1). */}
         <Pressable
-          onPress={() => { void openExternalUrl(PRIVACY_POLICY_URL); }}
+          onPress={() => setPrivacyOpen(true)}
           style={({ pressed }) => [styles.policyLinkWrap, pressed && styles.policyLinkPressed]}
-          accessibilityRole="link"
+          accessibilityRole="button"
           accessibilityLabel={PRIVACY_POLICY_LINK_LABEL}
-          accessibilityHint={OPENS_IN_BROWSER_HINT}
+          accessibilityHint={PRIVACY_POLICY_LINK_HINT}
         >
           <AppText variant="body" style={styles.policyLink}>
             {PRIVACY_POLICY_LINK_LABEL}
           </AppText>
         </Pressable>
       </ScrollView>
+
+      {/* B-3: mounted LOCALLY, not in SharedModalsHost, and that is forced
+          rather than chosen. App.tsx renders SignInScreen as a SIBLING of
+          RootNavigator (the auth gate returns one or the other), so this screen
+          is outside SharedModalsProvider entirely — `setOpen` would throw, and
+          the host's PrivacyScreen is not even mounted while signed out.
+          PrivacyScreen takes plain visible/onClose props, so a local instance
+          costs nothing. The two mounts can never be alive at once: the auth
+          gate makes them mutually exclusive. */}
+      <PrivacyScreen visible={privacyOpen} onClose={() => setPrivacyOpen(false)} />
     </KeyboardAvoidingView>
   );
 }
