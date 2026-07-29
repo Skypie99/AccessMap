@@ -175,3 +175,134 @@ false**: it covered SR-001…039 and cited a grep that does not exist. The remed
 is enumeration, because a range is a promise and a list is a check.
 
 **Nothing was merged, built, submitted, or applied to the database. The branch stops here.**
+
+
+---
+---
+
+# ⏱ RUN-2 RE-SCORE — 2026-07-28
+
+**Everything above is the 2026-07-27 verdict and is left standing as the record.** This section supersedes
+its §1 and §2. Branch `shipready/3-polish-submission`, stacked on `7349346`, **stopped on the branch**.
+`main` untouched. Decisions: `DECISIONS.md §SKY-6` + `§SKY-6a`.
+
+**Gate at the tip:** typecheck 0 · lint 0 errors / **80 warnings** · jest **182 suites / 2701 passed / 0
+failed** / 84 todo · `GlassSurface.tsx` **0 changed lines** · **migrations applied by an agent: 0.**
+
+> ⚠ The rails say "exactly 79 warnings". The true baseline at `7349346`, measured with zero `src/` changes in
+> the tree, is **80**. The drift predates this run. Recorded rather than quietly matched.
+
+---
+
+## §1′ Apple Guideline 1.2, re-scored leg by leg — **never averaged**
+
+| Leg | Was | Now | Why |
+|---|---|---|---|
+| **ToS / community guidelines** | 🔴 OPEN — 100% Sky | 🟢 **CLOSED** | Sky's §1 text ships **verbatim** in a real in-app screen, reachable from Settings, About, **and the report sheet**. A markdown-reading guard fails if the app and her document ever drift, in either direction |
+| **(a) filter objectionable material** | 🟠 (curated seed) | 🟠 **still amber, and better** | The real LDNOOBW list is now vendored — CC BY 4.0, retrieved 2026-07-28, sha256 recorded — re-curated under D-2, **369 terms live**. Still client-side and bypassable; still no homoglyph/l33tspeak defence (buying that costs false positives on ordinary words, the wrong trade here). **A server-side mirror is the only thing that makes this green, and it is a migration proposal for you** |
+| **(b) report mechanism + timely response** | 🟠 PARTIAL | 🟠 **mechanism complete; one half awaits your SQL** | Report path unchanged and working. **Owner takedown now deletes the photos** (SR-050 (a) built). **Admin takedown still cannot** — that needs a Storage policy, written and waiting as **§C-12**, applied by nobody. The 24-hour commitment is visible in-app *and* readable in the ToS, word-identical, guarded |
+| **(c) block abusive users** | 🟠 comments-only | 🟠 **comments-only, and Unhide is at your gate** | Scope is unchanged by design (§SKY-3h). The Unhide surface is **rendered as candidates and stopped for your pick** — Car 5 was instructed to stop, and did. Flag-level hide remains a named follow-up |
+| **(d) published contact info** | 🟢 plausibly met | 🟢 **met** | Unchanged, plus the ToS now carries the address in Sky's own words |
+
+### What still blocks B-1
+
+Two things, both yours:
+1. **§C-12** — the admin Storage-delete policy. Until applied, an admin takedown leaves the reported photo
+   publicly fetchable, and (b) cannot be called closed.
+2. **Leg (a) is amber by honest choice, not by omission.** If you want it green, that is a server-side filter
+   and a migration.
+
+Everything else B-1 was waiting on — your ToS text, a decision on (a), a stated response commitment — **is
+done and shipping.**
+
+---
+
+## §2′ What BLOCKS submission — **now 3, and every one is physical**
+
+| # | Blocker | Why no agent can close it |
+|---|---|---|
+| **B-3** | Privacy policy content drifted 6 ways vs the shipped app | You word it. Reviewers cross-read the policy against the nutrition labels, so it must be true *before* the labels lock. Checklist: `04 §A-14` |
+| **B-6** | Reviewer demo account is dead credentials | 2.1(a) needs working creds. Provisioned in the Auth dashboard — no agent handles credentials |
+| **SR-021** | **No binary-launch evidence exists. None.** | The first proof this app launches on iOS is your next EAS build. Everything is web-verified, code-inferred, or NEEDS-DEVICE |
+
+**B-1 moved off this list as a blocker in its own right** — what remains of it is the §C-12 apply, which is a
+Sky-physical action and is counted below.
+
+### The three HIGHs from the B-1 adversarial pass
+
+| | Was | Now |
+|---|---|---|
+| Report envelope shown back as raw markup | HIGH, open | ✅ **Fixed.** Hidden from My Feedback; **deliberately kept in the PIPEDA export**, stance recorded in three places |
+| Hide is irreversible with no unhide anywhere | HIGH, open | ⛔ **At your mockup gate** — three letters unblock the build |
+| "Report sent" silent on iOS VoiceOver | fixed in the M-run | unchanged |
+
+---
+
+## §3′ SKY'S LIST — what is actually left
+
+### 🔴 Physical, and nothing else can proceed without them
+
+1. **Apply §C-12** (admin Storage delete on `flag-photos`). Fenced, with rollback, a read-only verify, and a
+   pre-state probe. Jordan review first — it widens delete authority over user-uploaded content.
+2. **Answer the HIGH-2 mockup gate** — Row `A`/`B`/`C` · Unhide-all `H`/`F` · Section `S1`/`S2`.
+   `HIGH2_hidden_comments_mockup_gate.html`.
+3. **B-3 — rewrite the privacy policy** against `04 §A-14`, *before* the nutrition labels.
+4. **B-6 — provision the reviewer account**, verify the login, put the creds + "Browse without an account" in
+   the review notes.
+5. **The device pass** (§5′ below), including the **D-B6 blocking gate**.
+6. **Merge this branch**, then the first EAS build — the first evidence the app launches at all.
+
+### 🟠 Decisions you can take at any time
+
+7. **Leg (a) green or amber?** A server-side filter mirror is the only path to green.
+8. **SR-117's DDL half** — Option A ratifies live (recommended); Option B is destructive.
+9. **R-1's edge function** — `R1_ACCOUNT_DELETION_SWEEP.md`, written, undeployed. Face photos currently
+   survive account deletion **and become permanently un-deletable**.
+10. **`storage_path` column** — the day the photo-URL shape changes, the SR-050 derivation becomes the wrong
+    bet. Backlogged, not forgotten.
+11. **Six `color.brand`-as-text sites** flagged by the Car-4 arbiter run and **not swept** — each needs its
+    own surface arbitration. `ProfileScreen:2418` · `MapScreen:3458` · `PhotoGallery:303` · `HelpModal:315` ·
+    `ChangelogModal:197,207`.
+12. **The residual guidelines citation:** `CONTENT_BLOCKED_MESSAGE` still cites the community guidelines from
+    inside an `Alert`, which cannot hold a link. You ruled it out of scope for Run 2 (§SKY-6a); a user told
+    they broke the guidelines still has no route to read them.
+
+---
+
+## §5′ DEVICE ROWS GAINED THIS RUN
+
+Add to the consolidated list in §5. **D-B6 remains the blocking gate.**
+
+| row | what to check |
+|---|---|
+| **the ToS walk** | Open from all three entries (Settings, About, report sheet). Confirm it presents **over** About and **over** the report sheet, and that closing returns to the surface beneath. VoiceOver two-finger-Z escape on the pageSheet. The prose at AX5 |
+| **the Unhide flow** | After the gate is answered and built |
+| **the grabber on real glass** | 1.0× / 1.3× / AX5. It is **deliberately darker than the platform's** — confirm it still reads as a drag affordance rather than a rule. Includes the Tasks filter sheet (the SEAM) |
+| **filter rejection with VoiceOver** | Submit a blocked description; confirm the rejection is announced, and that it never names the matched term |
+| **owner photo takedown** | Delete an owned flag with **2+ photos**; confirm every photo URL 404s afterwards |
+| **admin takedown** | Confirm the row goes and the photo **survives** — until §C-12 is applied. This is the gap, observed |
+| **guest cold walk** | Triage, bulk-triage, and reopen each say "Sign in required" instead of "This flag changed" or silence. "Use my location" works on a **second** tap after a denial |
+| **web (if user-facing)** | Nearby no longer auto-opens for every visitor; a no-location guest is fitted to the flags rather than stranded on San Francisco |
+
+---
+
+## §6′ The honest shape of Run 2
+
+**The arbiter caught this run's own defect.** Car 1's terms link reused a shipped link treatment and argued
+it needed no measurement. Car 4 measured it: **3.70:1 light / 3.56:1 dark against a 4.5 floor** — and the
+*shipped* privacy link had the same defect, inherited and never checked. "Already shipped elsewhere" is an
+argument, not a measurement.
+
+**A real render caught what jest could not.** The whole suite was green while the terms sheet rendered
+*underneath* the About card on web — rn-web gives every modal the same z-index, so DOM order decided. Native
+was never affected, which is exactly why only building and driving the app could find it.
+
+**Writing a guard found a third instance of the bug it was guarding.** The SR-093 gate was specced for two
+callers. Scoping the test properly surfaced `runBulkAction`, where a guest could fire one refused write per
+selected flag.
+
+**And the vendoring nearly deleted the thing that matters most.** "Vendor the real list" sounds like *replace
+the seed*. LDNOOBW contains **no disability slurs at all** — the class most likely to be aimed at this app's
+users — and no self-harm phrases. A wholesale replace would have removed them and turned two tests red.
+
+**Nothing was merged, submitted, or applied to the database. The branch stops here.**

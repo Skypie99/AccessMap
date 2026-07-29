@@ -424,3 +424,58 @@ bad window cannot pass silently.
 **Device rows gained:** delete an owned flag with 2+ photos and confirm the URLs 404 · admin takedown still
 removes the row while the photo survives (until §C-12) · guest triage/reopen/bulk each say "Sign in required"
 · "Use my location" retried after a denial.
+
+---
+
+# RUN 2 — CLOSE-OUT
+
+**Six cars fired. Five built and banked. One stopped at the gate it was told to stop at.**
+
+**Final gate:** typecheck **0** · lint **0 errors / 80 warnings** (the true baseline, unchanged) · jest
+**182 suites / 2701 passed / 0 failed** / 84 todo · `GlassSurface.tsx` **0 changed lines** ·
+**migrations applied by an agent: 0** · all ratified arbiter proof sets **exit 0**.
+
+| Car | Commit | State |
+|---|---|---|
+| 0 · §SKY-6 + §SKY-6a | `0ec167f` | ✅ |
+| 1 · The ToS screen | `9c1b322` | ✅ |
+| 2 · HIGH-1 report envelope | `391186e` | ✅ |
+| ledger SHA fix | `f6628d8` | ✅ |
+| 3 · Term list vendored + re-curated | `52d2445` | ✅ |
+| 4 · G3 grabber | `5923348` | ✅ |
+| 5 · HIGH-2 Hidden comments | `cdac3dd` | ⛔ **at the mockup gate** |
+| 6 · SR-050 + Class A | `f3dd0e2` | ✅ |
+
+## Apple 1.2, re-scored leg by leg — never averaged
+
+**ToS → 🟢 CLOSED** · **(a) → 🟠** with the vendored list noted · **(b) → mechanism complete, admin artifact
+awaiting Sky, commitment visible in-app AND readable in the ToS** · **(c) → comments-only by scope, Unhide at
+the gate** · **(d) → 🟢 met**. Full table: `12_READY_OR_NOT.md §1′`.
+
+## The remainder is Sky-physical, as intended
+
+Her SQL applies (**§C-12**) · the **mockup-gate pick** (three letters) · the **B-3** privacy-policy rewrite ·
+the **B-6** demo account · the **merge** · the **first store build** · the **device list including D-B6 at
+AX5**. Everything else on the list is a decision she can take at any time, not a blocker.
+
+## What this run learned, and the record should keep
+
+1. **The arbiter caught this run's own defect.** Car 1 argued a link ink needed no measurement because it was
+   already shipped. Car 4 measured it: an AA fail, and the shipped twin had the same defect.
+   *"Already shipped elsewhere" is an argument, not a measurement.*
+2. **A real render caught what jest could not.** The suite was fully green while the terms sheet rendered
+   underneath About on web. Native was never affected — only building and driving the app could find it.
+3. **Writing a guard found a third instance of the bug being guarded.** SR-093 was specced for two callers;
+   scoping the test surfaced `runBulkAction`.
+4. **The vendoring nearly deleted the class that matters most.** LDNOOBW contains no disability slurs and no
+   self-harm phrases; a wholesale replace would have removed them silently.
+5. **Two guards were widened, never weakened** — a fixed-character slice is not a scope, and a marker in a
+   comment is not the same as the text it claims to describe.
+
+## Rollback
+
+```
+git reset --hard 7349346
+```
+
+Nothing was merged, submitted, or applied to the database. `main` is untouched. **The branch stops here.**
