@@ -602,3 +602,55 @@ rejection**, a different surface, surfaced through an Alert that cannot hold a l
 guidelines line with a tappable link is **added** to the Report sheet; the blocked-content Alert is **not**
 rewritten. The filter-rejection Alert is therefore carried as a **named residual** — a user told they broke
 the community guidelines still has no route to read them.
+
+---
+
+## §SKY-8 Privacy policy v1.0 — RATIFIED (2026-07-29)
+
+Sky ratified the privacy policy the App Store listing has been waiting on. Banked verbatim at
+**`design-reviews/ship-ready/15_PRIVACY_POLICY_v1.md`** (numbered `15_` because `14_` was already taken by
+`14_MODERATION_TEXTS_v1.md`). Docs-only: no app code, no SQL, no migration, nothing rendered.
+
+```
+§SKY-8: Privacy policy ratified (2026-07-29)
+Privacy Policy v1.0 RATIFIED per accessmap_privacy_policy_v1.md.
+Ships two ways: (1) rendered VERBATIM into an in-app Privacy Policy screen
+  using the ToS screen's pattern, with a drift tripwire test reading the
+  markdown; (2) the same text hosted at the public URL used in App Store
+  Connect, so the listing and the app agree.
+Every [V] claim must be verified against the codebase before render. Any
+  mismatch STOPS the run and is reported; the policy is never shipped
+  describing an app that does not exist.
+The existing B-2 privacy links repoint to the in-app screen.
+```
+
+### Four things recorded about the banked file
+
+**1 · Formatting-only markdown reconstruction, Sky-approved.** The source arrived markdown-stripped — bold
+lead-ins (`**Who runs this.**`) and headings had lost their markers, leaving one flowed block of text unlike
+its sibling `14_`. Sky was shown both options and chose to restore the structure. **Not one word was added,
+removed, or altered**; only heading and bold markers were re-applied, and the title/effective-date line was
+split in two. This is load-bearing, not cosmetic: §SKY-8 above commits to rendering this file *verbatim* into
+the app **and** to a drift tripwire test that *reads the markdown*. Both need a structured source.
+
+**2 · ⚠ The banked file still carries its own `DRAFT for Sky's ratification` title line** and the sentence
+"Requires Sky's ratification before it ships." Left byte-intact because the instruction was verbatim, and
+retitling would have been an unrequested edit. **This §SKY-8 entry is the authoritative ratification record.**
+Exact repeat of the §SKY-4 caveat — one follow-up would close both.
+
+**3 · All eleven `[V]` claims are UNVERIFIED as of this commit.** None were checked against the codebase in
+this run — it banks text, it does not verify it. The one exception is the crash-reporting claim, which §SKY-7
+already evidenced independently (`src/lib/sentry.ts` is a no-op stub; no Sentry/Bugsnag/Crashlytics/Amplitude/
+PostHog dependency). **This is banked text, not shipped behaviour.**
+
+**4 · Effective date is 2026-07-29; this commit is 2026-07-28.** The policy is forward-dated by one day.
+Harmless if it ships on or after the 29th; if it ships earlier, the date is wrong on its face.
+
+### What this does NOT close
+
+| # | Item | Why it is not closed by this commit |
+|---|---|---|
+| **P-1** | **No in-app Privacy Policy screen exists.** §SKY-8 specs one built on the ToS screen's pattern, plus a drift tripwire test reading this markdown | Needs a build run. Out of scope for a docs-only bank |
+| **P-2** | **B-2's existing privacy links still point at their old target.** §SKY-8 requires they repoint to the in-app screen | App-code change; needs the same build run |
+| **P-3** | **No public URL hosts this text.** App Store Connect requires a reachable privacy-policy URL, and §SKY-8 requires it to be this same text | Sky-physical: hosting + the App Store Connect field. Not an agent action |
+| **P-4** | **The eleven `[V]` claims are unverified.** Per §SKY-8's own rule, any mismatch STOPS the run rather than shipping a policy describing an app that does not exist | The verification pass is the first half of the build run, before a single line is rendered |
