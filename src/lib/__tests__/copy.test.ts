@@ -315,6 +315,9 @@ describe('B-1 copy carries the PROPOSED marker (the honesty fence, mechanised)',
     'UNHIDE_ALL_FAILED_TITLE',
     'HIDDEN_COMMENTS_EMPTY_TITLE',
     'HIDDEN_COMMENTS_EMPTY_BODY',
+    // Run 3 (§SKY-7): the ONE new string the CONTENT_BLOCKED coherence fix is
+    // allowed. The alert's title and body are unchanged.
+    'VIEW_GUIDELINES_LABEL',
   ];
 
   /**

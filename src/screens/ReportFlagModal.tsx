@@ -25,6 +25,8 @@ import { useAuth } from '@/lib/auth';
 import { track } from '@/lib/analytics';
 import { errorMessage } from '@/lib/errors';
 import { notify } from '@/lib/confirm';
+import { isContentBlockedError, showBlockedContentAlert } from '@/lib/blockedContent';
+import { useSharedModals } from '@/lib/sharedModalsContext';
 import {
   CATEGORY_LABELS,
   CATEGORY_ORDER,
@@ -103,6 +105,10 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
   const { user } = useAuth();
   const isAnon = !user;
   const reducedMotion = useReducedMotion();
+  // §SKY-7 — the blocked-content alert's route to the guidelines. This modal
+  // mounts from MapScreen, inside <SharedModalsProvider>; TermsScreen's single
+  // mount in SharedModalsHost is what lets it present over this sheet.
+  const { setOpen } = useSharedModals();
   // WCAG 2.4.3: move the screen-reader cursor onto the title when the modal opens.
   const titleRef = useFocusOnOpen<Text>(visible);
   const [category, setCategory] = useState<FlagCategory>('no_ramp');
@@ -488,7 +494,15 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
       // surfaces to the user below. Empty after createFlag succeeds — photos
       // referenced by a created flag are never deleted.
       if (uploadedPaths.length > 0) void removeUploadedFlagPhotos(uploadedPaths);
-      notify("Couldn't submit your report", errorMessage(e));
+      // §SKY-7: same coherence fix as the comment path — a description
+      // rejected by the filter now offers the guidelines it was judged
+      // against. Every other failure keeps notify() unchanged, so the three
+      // two-argument assertions in ReportFlagModal.test.tsx still hold.
+      if (isContentBlockedError(e)) {
+        showBlockedContentAlert("Couldn't submit your report", () => setOpen('terms'));
+      } else {
+        notify("Couldn't submit your report", errorMessage(e));
+      }
     } finally {
       submittingRef.current = false;
       setSubmitting(false);

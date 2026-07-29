@@ -25,6 +25,8 @@ import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { font, radius, severity, shadow, spacing } from '@/theme';
 import { useAuth } from '@/lib/auth';
 import { confirm, notify } from '@/lib/confirm';
+import { isContentBlockedError, showBlockedContentAlert } from '@/lib/blockedContent';
+import { useSharedModals } from '@/lib/sharedModalsContext';
 import { getDirectionsUrl } from '@/lib/directionsLink';
 import { errorMessage, FEATURE_UNAVAILABLE } from '@/lib/errors';
 import { formatFlagShareText } from '@/lib/shareFlag';
@@ -108,6 +110,11 @@ export default function FlagDetailModal({
   const insets = React.useContext(SafeAreaInsetsContext) ?? { top: 0, bottom: 0, left: 0, right: 0 };
   const { user } = useAuth();
   const reducedMotion = useReducedMotion();
+  // §SKY-7 — the blocked-content alert's route to the guidelines. Safe here:
+  // this modal always mounts inside <SharedModalsProvider> (Map, Tasks and
+  // Profile each host it), and TermsScreen's single mount lives in
+  // SharedModalsHost precisely so it can present OVER a sheet like this one.
+  const { setOpen } = useSharedModals();
   const [busy, setBusy] = useState(false);
   const [flagPhotos, setFlagPhotos] = useState<GalleryPhoto[]>([]);
   const [isEditing, setIsEditing] = useState(false);
@@ -746,7 +753,13 @@ export default function FlagDetailModal({
       // users — announce so they know the post landed.
       AccessibilityInfo.announceForAccessibility('Comment posted');
     } catch (e) {
-      Alert.alert('Could not post comment', errorMessage(e));
+      // §SKY-7: a rejection that cites the community guidelines now carries a
+      // route to them. Every other failure keeps the generic alert unchanged.
+      if (isContentBlockedError(e)) {
+        showBlockedContentAlert('Could not post comment', () => setOpen('terms'));
+      } else {
+        Alert.alert('Could not post comment', errorMessage(e));
+      }
     } finally {
       setCommentSubmitting(false);
     }

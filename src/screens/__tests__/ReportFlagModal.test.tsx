@@ -15,6 +15,7 @@
  */
 
 import React from 'react';
+import { SharedModalsProvider } from '@/lib/sharedModalsContext';
 import { Alert } from 'react-native';
 import { render, fireEvent, waitFor, act } from '@testing-library/react-native';
 // Mocked below — jest.mock calls are hoisted above all imports, so this
@@ -283,6 +284,18 @@ jest.mock('@/lib/haptics', () => ({
   hapticNotify: jest.fn(),
 }));
 
+/**
+ * §SKY-7: the submit path now routes a filter rejection to the community
+ * guidelines, and the terms are a SHARED modal — so the sheet reads
+ * `useSharedModals()`, which throws outside a provider by design (a missing
+ * provider should surface immediately, not silently no-op). In the app
+ * RootNavigator supplies it; here it has to be supplied explicitly. Same
+ * helper, same reasoning, as `ReportContentModal.test.tsx`.
+ */
+function withProvider(node: React.ReactElement) {
+  return <SharedModalsProvider>{node}</SharedModalsProvider>;
+}
+
 // ---------------------------------------------------------------------------
 // Fixtures
 // ---------------------------------------------------------------------------
@@ -293,24 +306,28 @@ type User = { id: string };
 function renderAnon(props: Partial<{ visible: boolean; location: typeof LOCATION | null }> = {}) {
   mockUseAuth.mockReturnValue({ user: null } as ReturnType<typeof useAuth>);
   return render(
-    <ReportFlagModal
-      visible={props.visible ?? true}
-      location={props.location ?? LOCATION}
-      onClose={jest.fn()}
-      onCreated={jest.fn()}
-    />,
+    withProvider(
+      <ReportFlagModal
+        visible={props.visible ?? true}
+        location={props.location ?? LOCATION}
+        onClose={jest.fn()}
+        onCreated={jest.fn()}
+      />,
+    ),
   );
 }
 
 function renderAuth(user: User = { id: 'user-abc' }, props: Partial<{ visible: boolean }> = {}) {
   mockUseAuth.mockReturnValue({ user } as ReturnType<typeof useAuth>);
   return render(
-    <ReportFlagModal
-      visible={props.visible ?? true}
-      location={LOCATION}
-      onClose={jest.fn()}
-      onCreated={jest.fn()}
-    />,
+    withProvider(
+      <ReportFlagModal
+        visible={props.visible ?? true}
+        location={LOCATION}
+        onClose={jest.fn()}
+        onCreated={jest.fn()}
+      />,
+    ),
   );
 }
 
@@ -688,13 +705,13 @@ describe('live location prop (FIX C — fresh GPS read lands mid-form)', () => {
     const onClose = jest.fn();
     const onCreated = jest.fn();
     const utils = render(
-      <ReportFlagModal visible location={STALE} onClose={onClose} onCreated={onCreated} />,
+      withProvider(<ReportFlagModal visible location={STALE} onClose={onClose} onCreated={onCreated} />),
     );
 
     // The fresh GPS fix resolves while the form is open — MapScreen calls
     // setLocation, which re-renders the modal with the new prop.
     utils.rerender(
-      <ReportFlagModal visible location={FRESH} onClose={onClose} onCreated={onCreated} />,
+      withProvider(<ReportFlagModal visible location={FRESH} onClose={onClose} onCreated={onCreated} />),
     );
 
     fireEvent.press(utils.getByLabelText('Submit report'));
@@ -712,11 +729,11 @@ describe('live location prop (FIX C — fresh GPS read lands mid-form)', () => {
     const onClose = jest.fn();
     const onCreated = jest.fn();
     const utils = render(
-      <ReportFlagModal visible location={STALE} onClose={onClose} onCreated={onCreated} />,
+      withProvider(<ReportFlagModal visible location={STALE} onClose={onClose} onCreated={onCreated} />),
     );
 
     utils.rerender(
-      <ReportFlagModal visible location={FRESH} onClose={onClose} onCreated={onCreated} />,
+      withProvider(<ReportFlagModal visible location={FRESH} onClose={onClose} onCreated={onCreated} />),
     );
 
     fireEvent.press(utils.getByLabelText('Submit report anonymously'));
@@ -1019,7 +1036,7 @@ describe('S11 — slow write escalates, never aborts (no double-insert)', () => 
     mockUseAuth.mockReturnValue({ user: null } as ReturnType<typeof useAuth>);
     const onCreated = jest.fn();
     const utils = render(
-      <ReportFlagModal visible location={LOCATION} onClose={jest.fn()} onCreated={onCreated} />,
+      withProvider(<ReportFlagModal visible location={LOCATION} onClose={jest.fn()} onCreated={onCreated} />),
     );
 
     fireEvent.press(utils.getByLabelText('Submit report anonymously'));
@@ -1048,7 +1065,7 @@ describe('S11 — slow write escalates, never aborts (no double-insert)', () => 
       mockUseAuth.mockReturnValue({ user: null } as ReturnType<typeof useAuth>);
       const onCreated = jest.fn();
       const utils = render(
-        <ReportFlagModal visible location={LOCATION} onClose={jest.fn()} onCreated={onCreated} />,
+        withProvider(<ReportFlagModal visible location={LOCATION} onClose={jest.fn()} onCreated={onCreated} />),
       );
 
       fireEvent.press(utils.getByLabelText('Submit report anonymously'));
@@ -1096,7 +1113,7 @@ describe('S10 — confirm the submit', () => {
     mockUseAuth.mockReturnValue({ user: null } as ReturnType<typeof useAuth>);
     const onCreated = jest.fn();
     const utils = render(
-      <ReportFlagModal visible location={LOCATION} onClose={jest.fn()} onCreated={onCreated} />,
+      withProvider(<ReportFlagModal visible location={LOCATION} onClose={jest.fn()} onCreated={onCreated} />),
     );
 
     fireEvent.press(utils.getByLabelText('Submit report anonymously'));
@@ -1117,7 +1134,7 @@ describe('S10 — confirm the submit', () => {
     mockUseAuth.mockReturnValue({ user: { id: 'user-abc' } } as ReturnType<typeof useAuth>);
     const onCreated = jest.fn();
     const utils = render(
-      <ReportFlagModal visible location={LOCATION} onClose={jest.fn()} onCreated={onCreated} />,
+      withProvider(<ReportFlagModal visible location={LOCATION} onClose={jest.fn()} onCreated={onCreated} />),
     );
 
     fireEvent.press(utils.getByLabelText('Submit report'));
@@ -1135,7 +1152,7 @@ describe('S10 — confirm the submit', () => {
     const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
     mockUseAuth.mockReturnValue({ user: null } as ReturnType<typeof useAuth>);
     const utils = render(
-      <ReportFlagModal visible location={LOCATION} onClose={jest.fn()} onCreated={jest.fn()} />,
+      withProvider(<ReportFlagModal visible location={LOCATION} onClose={jest.fn()} onCreated={jest.fn()} />),
     );
 
     fireEvent.press(utils.getByLabelText('Submit report anonymously'));

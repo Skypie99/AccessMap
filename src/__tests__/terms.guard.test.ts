@@ -152,3 +152,48 @@ describe('the terms are reachable from all three surfaces (§SKY-6)', () => {
     expect(TERMS_LINK_LABEL.length).toBeGreaterThan(0);
   });
 });
+
+/**
+ * §SKY-7 added two MORE ways into the terms, and they are a different species
+ * from the three above.
+ *
+ * The SURFACES table guards NAVIGATIONAL entry points: a control labelled
+ * `TERMS_LINK_LABEL` that a user chooses to press. These two are alert BUTTONS
+ * on a rejection the user did not ask for, labelled `VIEW_GUIDELINES_LABEL`
+ * ("View guidelines") because in that moment the reader wants the rules they
+ * apparently broke, not a document title.
+ *
+ * They are deliberately NOT rows in SURFACES — they would fail its
+ * label-and-hint contract, and weakening that contract to admit them would cost
+ * more than it bought. They are pinned here instead so the next reader learns
+ * from this file that there are five doors, not three. Their behaviour is
+ * covered in `src/lib/__tests__/blockedContent.test.ts`.
+ */
+describe('the terms are also reachable from the blocked-content alert (§SKY-7)', () => {
+  const ALERT_SURFACES: readonly [label: string, rel: string][] = [
+    ['comment submit', 'components/FlagDetailModal.tsx'],
+    ['flag description submit', 'screens/ReportFlagModal.tsx'],
+  ];
+
+  it.each(ALERT_SURFACES)('%s opens the shared terms modal', (_label, rel) => {
+    const src = readSrc(rel);
+    expect(src).toContain("setOpen('terms')");
+    expect(src).toContain('showBlockedContentAlert(');
+  });
+
+  it('the button label lives in copy.ts, never as a literal at the call site', () => {
+    // Same fence as the SURFACES table, applied to the string these actually
+    // render. The literal must appear in exactly one place: its own const.
+    for (const [, rel] of ALERT_SURFACES) {
+      expect(readSrc(rel)).not.toMatch(/['"`]View guidelines['"`]/);
+    }
+    expect(readSrc('lib/blockedContent.ts')).toContain('VIEW_GUIDELINES_LABEL');
+  });
+
+  it('the alert body is the ratified rejection, not new prose', () => {
+    // §SKY-7 permits exactly one new user-visible string — the button label.
+    const helper = readSrc('lib/blockedContent.ts');
+    expect(helper).toContain('CONTENT_BLOCKED_MESSAGE');
+    expect(helper).not.toMatch(/Alert\.alert\(\s*['"`]/);
+  });
+});

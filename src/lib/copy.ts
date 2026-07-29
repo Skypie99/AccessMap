@@ -285,6 +285,23 @@ export const COMMENT_HIDDEN_ANNOUNCEMENT = 'Comment hidden on this device';
  */
 export const HIDE_FAILED_TITLE = "Couldn't hide comment";
 
+/**
+ * Button that takes a user whose content was just rejected to the guidelines
+ * it was rejected against (§SKY-7).
+ *
+ * WHY IT EXISTS. `CONTENT_BLOCKED_MESSAGE` says the text "may contain language
+ * that breaks the community guidelines" — and until now the app cited a
+ * document the reader had no route to from inside that alert. `12_READY_OR_NOT
+ * §3′.12` carried it as a named residual for exactly that reason.
+ *
+ * It is the ONLY new user-visible string in this fix: the alert's title and
+ * body are unchanged, and the second button reuses the shipped 'OK' from the
+ * rate-limit alert's identical error-plus-a-way-out shape.
+ * AGENT-PROPOSED wording.
+ * PROPOSED (B-1/1.2(a), S-8) — Sky's final wording lands in DECISIONS §A / BP16.
+ */
+export const VIEW_GUIDELINES_LABEL = 'View guidelines';
+
 /* ───────────────────────────────────────────────────────────────────────────
  * HIGH-2 — the other end of Hide.
  *
