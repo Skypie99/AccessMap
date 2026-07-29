@@ -618,11 +618,14 @@ const makeStyles = (color: ColorTheme) =>
       color: color.text,
       minHeight: 120,
     },
-    // §SKY-6 terms link. Byte-identical reuse of the link treatment AboutScreen
-    // already ships on this same BULK material (color.brand + underline), so no
-    // new ink pairing enters the app — the pair is carried into the G3 proof set
-    // rather than asserted here. minHeight (not height) keeps the 44pt target
-    // while letting the label grow at large dynamic type.
+    // §SKY-6 terms link. This began as a byte-identical reuse of AboutScreen's
+    // shipped link treatment (color.brand + underline) on the same BULK
+    // material — and the G3 proof set then measured it at 3.70:1 light /
+    // 3.56:1 dark against a 4.5 body-text floor. "Already shipped elsewhere" is
+    // an argument, not a measurement, and this is what the arbiter is for.
+    // brandOnSoft is the arbitrated brand-on-glass ink: 4.95/5.58 light,
+    // 7.66/9.65 dark. minHeight (not height) keeps the 44pt target while
+    // letting the label grow at large dynamic type.
     termsLinkRow: {
       minHeight: 44,
       justifyContent: 'center',
@@ -630,7 +633,7 @@ const makeStyles = (color: ColorTheme) =>
     },
     termsLinkText: {
       fontSize: font.size.base,
-      color: color.brand,
+      color: color.brandOnSoft,
       textDecorationLine: 'underline',
       lineHeight: 22,
     },

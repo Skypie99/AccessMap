@@ -17,6 +17,7 @@ import { CheckCircle2, Flag, Heart, Star, Users, X } from 'lucide-react-native';
 import { AppText } from '@/components/ui/AppText';
 import { GlassSurface } from '@/components/ui/GlassSurface';
 import { ScreenStage } from '@/components/ui/ScreenStage';
+import { SheetGrabber } from '@/components/ui/Sheet';
 import { hydrateGlassMode, useGlassMode } from '@/lib/glassMode';
 import { font, radius, shadow, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
@@ -57,7 +58,10 @@ const STEPS = [
 // Seeds the top reserve for the single hidden pre-measure pass, before the
 // chrome pane's real height lands via onLayout. SafeAreaView owns the device
 // inset, so nothing device-specific is baked in (just the title-row height).
-const HOWTOHELP_CHROME_FALLBACK = 72;
+// G3: +12 for the grabber block (SheetGrabber's spacing.sm top + 4pt pill +
+// spacing.tight bottom). The real height still arrives via onLayout — this only
+// has to keep the ONE hidden pre-measure frame from reserving too little.
+const HOWTOHELP_CHROME_FALLBACK = 84;
 
 // Accent colors for each step icon — derived from theme tokens so they
 // respond to dark mode. Semantics: report=error, verify=success, spread=brand, earn=amber.
@@ -106,6 +110,11 @@ export default function HowToHelpScreen({ visible, onClose }: Props) {
           style={styles.chromePane}
           onLayout={(e) => setChromeHeight(e.nativeEvent.layout.height)}
         >
+          {/* G3 (§SKY-6): grabber above the title row, at the sheet's true top
+              edge. Byte-identical placement to ResourcesScreen — the two share
+              this chrome recipe and must not drift. Inside the measured pane,
+              so chromeTopPad absorbs it on the first onLayout. */}
+          <SheetGrabber />
           <View style={styles.headerRow}>
             <AppText variant="heading" style={styles.title} accessibilityRole="header">How To Help</AppText>
             <Pressable

@@ -24,6 +24,7 @@ import { X } from 'lucide-react-native';
 import { AppText } from '@/components/ui/AppText';
 import { GlassSurface } from '@/components/ui/GlassSurface';
 import { ScreenStage } from '@/components/ui/ScreenStage';
+import { SheetGrabber } from '@/components/ui/Sheet';
 import { TERMS_EFFECTIVE, TERMS_LINK_LABEL, TERMS_SECTIONS, TERMS_TITLE } from '@/lib/copy';
 import { useReducedMotion } from '@/lib/accessibility';
 import { font, spacing } from '@/theme';
@@ -36,8 +37,8 @@ interface Props {
 
 // Seeds the top reserve for the single hidden pre-measure pass, before the
 // chrome pane's real height lands via onLayout. Sized like ResourcesScreen's —
-// one header row + padding; SafeAreaView owns the device inset, not this.
-const TERMS_CHROME_FALLBACK = 72;
+// grabber block + one header row + padding; SafeAreaView owns the device inset.
+const TERMS_CHROME_FALLBACK = 84;
 
 export default function TermsScreen({ visible, onClose }: Props) {
   const color = useColor();
@@ -73,6 +74,13 @@ export default function TermsScreen({ visible, onClose }: Props) {
           style={styles.chromePane}
           onLayout={(e) => setChromeHeight(e.nativeEvent.layout.height)}
         >
+          {/* G3 (§SKY-6). This screen did not exist when the arbiter ran — it is
+              a FOURTH pageSheet, created one car earlier — so it was not in G3's
+              list of three. It wears the same chrome recipe as Resources and
+              How to help, and a sheet without the grabber beside two that have
+              one is the inconsistency G3 set out to remove. Same shared
+              component, same arbitrated ink, same placement above the header. */}
+          <SheetGrabber />
           <View style={styles.headerRow}>
             {/* The chrome says where you are; the document below says what it
                 is. Splitting them keeps the header short enough to stay one or

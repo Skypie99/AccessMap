@@ -33,6 +33,7 @@ import {
 import { AppText } from '@/components/ui/AppText';
 import { GlassSurface } from '@/components/ui/GlassSurface';
 import { ScreenStage } from '@/components/ui/ScreenStage';
+import { SheetGrabber } from '@/components/ui/Sheet';
 import { hydrateGlassMode, useGlassMode } from '@/lib/glassMode';
 import { useReducedMotion } from '@/lib/accessibility';
 import { font, radius, shadow, spacing } from '@/theme';
@@ -95,7 +96,10 @@ const RESOURCES: Resource[] = [
 // Seeds the top reserve for the single hidden pre-measure pass, before the
 // chrome pane's real height lands via onLayout (single header row + padding).
 // SafeAreaView owns the device inset, so no insets are baked in here.
-const RESOURCES_CHROME_FALLBACK = 72;
+// G3: +12 for the grabber block (SheetGrabber's spacing.sm top + 4pt pill +
+// spacing.tight bottom). The real height still arrives via onLayout — this only
+// has to keep the ONE hidden pre-measure frame from reserving too little.
+const RESOURCES_CHROME_FALLBACK = 84;
 
 export default function ResourcesScreen({ visible, onClose }: Props) {
   const color = useColor();
@@ -140,6 +144,12 @@ export default function ResourcesScreen({ visible, onClose }: Props) {
           style={styles.chromePane}
           onLayout={(e) => setChromeHeight(e.nativeEvent.layout.height)}
         >
+          {/* G3 (§SKY-6): the grabber sits ABOVE the title row, at the sheet's
+              actual top edge, which is where the platform puts it — and where
+              the other two pageSheets now put it too. It rides INSIDE the
+              measured chrome pane, so chromeTopPad absorbs its height on the
+              first onLayout with no extra bookkeeping. */}
+          <SheetGrabber />
           <View style={styles.headerRow}>
             <AppText variant="heading" style={styles.title} accessibilityRole="header">Resources</AppText>
             <Pressable

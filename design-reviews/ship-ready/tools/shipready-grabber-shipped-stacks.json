@@ -1,0 +1,212 @@
+{
+  "name": "SHIP-READY Run 2 \u2014 G3 grabber AS SHIPPED (declared == shipped)",
+  "_doc": [
+    "PURPOSE: this set declares what Run 2 actually SHIPPED, so it must exit 0.",
+    "It is the counterpart to shipready-grabber-stacks.json, which is the ARBITRATION",
+    "record and exits 1 BY DESIGN because it deliberately declares the failing",
+    "borderStrong rows. That file is evidence and is NOT edited to go green \u2014 deleting",
+    "the failing rows would erase the reason the decision was made.",
+    "",
+    "RUN: node ~/AccessMap-material-lab/2026-07-02/shared/contrast-check.mjs design-reviews/ship-ready/tools/shipready-grabber-shipped-stacks.json",
+    "",
+    "WHAT SHIPPED (Sky, \u00a7SKY-6): the grabber on all three pageSheets, ink =",
+    "color.inkGlassMuted, placement ABOVE the header including on Nearby.",
+    "  - Resources + HowToHelp: inside the absolute chrome pane -> 'chrome'",
+    "  - Nearby: above styles.header, on the bulk fill -> 'bulkSheet'",
+    "  - Tasks filter sheet: ui/Sheet's shared pill, same ink -> 'bulkSheet' (the SEAM)",
+    "Both transparency states are declared because the user can flip Reduce",
+    "Transparency at any time; both must clear the 3.0 floor.",
+    "",
+    "ALSO CARRIED HERE: the Car 1 terms-link ink (color.brandOnSoft on the bulk report",
+    "sheet). It is a byte-identical reuse of the treatment AboutScreen already ships",
+    "on the same material, but 'already shipped elsewhere' is an argument, not a",
+    "measurement, so it is measured. Text ink at 4.5 (it is body text, not chrome).",
+    "",
+    "SELF-CHECK: the last row reproduces the shipped close-X, a known-good pairing.",
+    "FINDING, 2026-07-28: this row was FIRST declared as color.brand, byte-identical to the",
+    "link AboutScreen already shipped on this material \u2014 and it FAILED at 3.70:1 light /",
+    "3.56:1 dark against the 4.5 body-text floor. The shipped privacy link had the same",
+    "defect and had never been measured. Both moved to brandOnSoft. This is the arbiter",
+    "catching a real AA failure in code that had already passed every other gate.",
+    "If it ever fails, the manifest is broken rather than the app.",
+    "GATE: exit 0 is required at every Run-2 commit."
+  ],
+  "modes": {
+    "light": {
+      "surfaces": {
+        "chrome": {
+          "stack": [
+            "rgba(255,255,255,0.75)"
+          ],
+          "base": [
+            "#000",
+            "#D92D20",
+            "#0B3D8F"
+          ]
+        },
+        "chromeLite": {
+          "stack": [
+            "rgba(255,255,255,0.88)"
+          ],
+          "base": [
+            "#000",
+            "#D92D20",
+            "#0B3D8F"
+          ]
+        },
+        "bulkSheet": {
+          "stack": [
+            "rgba(255,255,255,0.85)"
+          ],
+          "base": [
+            "#000",
+            "#D92D20",
+            "#0B3D8F"
+          ]
+        },
+        "bulkLite": {
+          "stack": [
+            "rgba(255,255,255,0.90)"
+          ],
+          "base": [
+            "#000",
+            "#D92D20",
+            "#0B3D8F"
+          ]
+        }
+      },
+      "pairs": [
+        {
+          "text": "#414B5A",
+          "surface": "chrome",
+          "label": "SHIPPED grabber (inkGlassMuted) \u2014 Resources/HowToHelp chrome pane",
+          "min": 3
+        },
+        {
+          "text": "#414B5A",
+          "surface": "chromeLite",
+          "label": "SHIPPED grabber (inkGlassMuted) \u2014 chrome pane, reduce-transparency",
+          "min": 3
+        },
+        {
+          "text": "#414B5A",
+          "surface": "bulkSheet",
+          "label": "SHIPPED grabber (inkGlassMuted) \u2014 Nearby above header + Tasks filter sheet (SEAM)",
+          "min": 3
+        },
+        {
+          "text": "#414B5A",
+          "surface": "bulkLite",
+          "label": "SHIPPED grabber (inkGlassMuted) \u2014 bulk, reduce-transparency",
+          "min": 3
+        },
+        {
+          "text": "#0F53BE",
+          "surface": "bulkSheet",
+          "label": "SHIPPED terms link (color.brandOnSoft) on the bulk report sheet \u2014 Car 1",
+          "min": 4.5
+        },
+        {
+          "text": "#0F53BE",
+          "surface": "bulkLite",
+          "label": "SHIPPED terms link (color.brandOnSoft) on bulk, reduce-transparency \u2014 Car 1",
+          "min": 4.5
+        },
+        {
+          "text": "#333",
+          "surface": "bulkSheet",
+          "label": "SELF-CHECK \u2014 the shipped sibling close-X on the same sheet",
+          "min": 3
+        }
+      ]
+    },
+    "dark": {
+      "surfaces": {
+        "chrome": {
+          "stack": [
+            "rgba(13,18,32,0.80)"
+          ],
+          "base": [
+            "#fff",
+            "#D92D20",
+            "#0B3D8F"
+          ]
+        },
+        "chromeLite": {
+          "stack": [
+            "rgba(13,18,32,0.90)"
+          ],
+          "base": [
+            "#fff",
+            "#D92D20",
+            "#0B3D8F"
+          ]
+        },
+        "bulkSheet": {
+          "stack": [
+            "rgba(13,18,32,0.85)"
+          ],
+          "base": [
+            "#fff",
+            "#D92D20",
+            "#0B3D8F"
+          ]
+        },
+        "bulkLite": {
+          "stack": [
+            "rgba(13,18,32,0.92)"
+          ],
+          "base": [
+            "#fff",
+            "#D92D20",
+            "#0B3D8F"
+          ]
+        }
+      },
+      "pairs": [
+        {
+          "text": "#B8BEC9",
+          "surface": "chrome",
+          "label": "SHIPPED grabber (inkGlassMuted) \u2014 Resources/HowToHelp chrome pane",
+          "min": 3
+        },
+        {
+          "text": "#B8BEC9",
+          "surface": "chromeLite",
+          "label": "SHIPPED grabber (inkGlassMuted) \u2014 chrome pane, reduce-transparency",
+          "min": 3
+        },
+        {
+          "text": "#B8BEC9",
+          "surface": "bulkSheet",
+          "label": "SHIPPED grabber (inkGlassMuted) \u2014 Nearby above header + Tasks filter sheet (SEAM)",
+          "min": 3
+        },
+        {
+          "text": "#B8BEC9",
+          "surface": "bulkLite",
+          "label": "SHIPPED grabber (inkGlassMuted) \u2014 bulk, reduce-transparency",
+          "min": 3
+        },
+        {
+          "text": "#B4CFFA",
+          "surface": "bulkSheet",
+          "label": "SHIPPED terms link (color.brandOnSoft) on the bulk report sheet \u2014 Car 1",
+          "min": 4.5
+        },
+        {
+          "text": "#B4CFFA",
+          "surface": "bulkLite",
+          "label": "SHIPPED terms link (color.brandOnSoft) on bulk, reduce-transparency \u2014 Car 1",
+          "min": 4.5
+        },
+        {
+          "text": "#ddd",
+          "surface": "bulkSheet",
+          "label": "SELF-CHECK \u2014 the shipped sibling close-X on the same sheet",
+          "min": 3
+        }
+      ]
+    }
+  }
+}

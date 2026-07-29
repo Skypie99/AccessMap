@@ -1,0 +1,30 @@
+## Contrast report — SHIP-READY Run 2 — G3 grabber AS SHIPPED (declared == shipped)
+
+Composite order: `stack[0]` painted first (nearest base) → last element topmost.
+Worst case = the base backdrop that yields the LOWEST ratio for the pair.
+
+### light
+
+| pair | surface | worst base | resulting bg | ratio | min | verdict |
+|---|---|---|---|---|---|---|
+| SHIPPED grabber (inkGlassMuted) — Resources/HowToHelp chrome pane (`#414B5A`) | chrome | `#000` | `#BFBFBF` | 4.81:1 | 3:1 | PASS |
+| SHIPPED grabber (inkGlassMuted) — chrome pane, reduce-transparency (`#414B5A`) | chromeLite | `#000` | `#E0E0E0` | 6.71:1 | 3:1 | PASS |
+| SHIPPED grabber (inkGlassMuted) — Nearby above header + Tasks filter sheet (SEAM) (`#414B5A`) | bulkSheet | `#000` | `#D9D9D9` | 6.24:1 | 3:1 | PASS |
+| SHIPPED grabber (inkGlassMuted) — bulk, reduce-transparency (`#414B5A`) | bulkLite | `#000` | `#E6E6E6` | 7.04:1 | 3:1 | PASS |
+| SHIPPED terms link (color.brandOnSoft) on the bulk report sheet — Car 1 (`#0F53BE`) | bulkSheet | `#000` | `#D9D9D9` | 4.95:1 | 4.5:1 | PASS |
+| SHIPPED terms link (color.brandOnSoft) on bulk, reduce-transparency — Car 1 (`#0F53BE`) | bulkLite | `#000` | `#E6E6E6` | 5.58:1 | 4.5:1 | PASS |
+| SELF-CHECK — the shipped sibling close-X on the same sheet (`#333`) | bulkSheet | `#000` | `#D9D9D9` | 8.93:1 | 3:1 | PASS |
+
+### dark
+
+| pair | surface | worst base | resulting bg | ratio | min | verdict |
+|---|---|---|---|---|---|---|
+| SHIPPED grabber (inkGlassMuted) — Resources/HowToHelp chrome pane (`#B8BEC9`) | chrome | `#fff` | `#3D414D` | 5.43:1 | 3:1 | PASS |
+| SHIPPED grabber (inkGlassMuted) — chrome pane, reduce-transparency (`#B8BEC9`) | chromeLite | `#fff` | `#252A36` | 7.70:1 | 3:1 | PASS |
+| SHIPPED grabber (inkGlassMuted) — Nearby above header + Tasks filter sheet (SEAM) (`#B8BEC9`) | bulkSheet | `#fff` | `#313641` | 6.51:1 | 3:1 | PASS |
+| SHIPPED grabber (inkGlassMuted) — bulk, reduce-transparency (`#B8BEC9`) | bulkLite | `#fff` | `#202532` | 8.19:1 | 3:1 | PASS |
+| SHIPPED terms link (color.brandOnSoft) on the bulk report sheet — Car 1 (`#B4CFFA`) | bulkSheet | `#fff` | `#313641` | 7.66:1 | 4.5:1 | PASS |
+| SHIPPED terms link (color.brandOnSoft) on bulk, reduce-transparency — Car 1 (`#B4CFFA`) | bulkLite | `#fff` | `#202532` | 9.65:1 | 4.5:1 | PASS |
+| SELF-CHECK — the shipped sibling close-X on the same sheet (`#ddd`) | bulkSheet | `#fff` | `#313641` | 8.94:1 | 3:1 | PASS |
+
+RESULT: ALL PASS

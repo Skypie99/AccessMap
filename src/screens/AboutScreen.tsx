@@ -286,7 +286,13 @@ const makeStyles = (color: ColorTheme) =>
     // 44pt floor without a numeric `height` (which dynamicTypeGuard bans on
     // text-bearing styles).
     link: {
-      color: color.brand,
+      // G3 arbiter, Run 2: color.brand measures 3.70:1 light / 3.56:1 dark as
+      // body text on this BULK sheet — an AA FAIL, and it was shipped. It was
+      // never measured, only inherited. brandOnSoft is the arbitrated brand ink
+      // for glass (4.95/5.58 light, 7.66/9.65 dark) and stays recognisably a
+      // link colour, so linkness survives the fix.
+      // Declared in tools/shipready-grabber-shipped-stacks.json.
+      color: color.brandOnSoft,
       minHeight: 44,
       paddingTop: spacing.md,
       textDecorationLine: 'underline',

@@ -1,0 +1,15 @@
+# Run 2 (2026-07-28) — the four RATIFIED proof sets, re-run after the G3 grabber ship.
+# Purpose: declared == shipped. Run 2 changed NO token, so every ratified set must be
+# byte-for-byte unaffected. All four must exit 0.
+#
+# exit 0 — qa-reports/assets/2026-07-03_glass_w1/wave1-stacks.json
+# exit 0 — qa-reports/assets/2026-07-03_glass_w2/wave2-stacks.json
+# exit 0 — qa-reports/assets/2026-07-03_tasks_glass/shipped-stacks.json
+# exit 0 — qa-reports/assets/2026-07-04_glass_map/map-stacks.json
+#
+# G3 SHIPPED set (new this run): tools/shipready-grabber-shipped-stacks.json
+# exit 0 — the grabber + terms-link inks AS SHIPPED
+#
+# G3 ARBITRATION set (unchanged, exit 1 BY DESIGN — it declares the failing
+# borderStrong rows so the reason for the decision stays on the record):
+# exit 1 — tools/shipready-grabber-stacks.json (diagnostic, expected 1)

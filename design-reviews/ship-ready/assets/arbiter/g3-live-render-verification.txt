@@ -1,0 +1,50 @@
+# G3 GRABBER — LIVE RENDER VERIFICATION (Run 2, 2026-07-28)
+#
+# WHAT THIS IS, AND WHAT IT IS NOT.
+# This is NOT a device-tune capture. The device-tune harness
+# (design-reviews/device-tune/tools/capture.mjs) needs Playwright, which is not
+# installed in this environment, and installing it is a dependency change no
+# agent should make unasked. So no PNG board was produced, and none is claimed.
+#
+# What WAS done instead is stronger for an ink change, and is the house law
+# anyway ("the contrast script decides, not the eye"): the branch was built as a
+# real static web export (npx expo export -p web), served, driven as a guest,
+# and every grabber's COMPUTED style was read out of the live DOM.
+#
+# BUILD:  npx expo export -p web   (branch shipready/3-polish-submission, Run 2)
+# SERVE:  python3 -m http.server 8086
+# VIEWPORT: 375x812 (mobile), guest session, tutorial skipped
+#
+# ─── MEASURED, ALL FOUR pageSheets ────────────────────────────────────────
+#
+#   surface      backgroundColor    w x h    radius    top   centred  above header
+#   ---------    ----------------   ------   -------   ---   -------  ------------
+#   Resources    rgb(65, 75, 90)    36 x 4   999px     8     yes      yes
+#   How to help  rgb(65, 75, 90)    36 x 4   999px     8     yes      yes
+#   Nearby       rgb(65, 75, 90)    36 x 4   999px     8     yes      YES  <- Decision 2
+#   Terms        rgb(65, 75, 90)    36 x 4   999px     8     yes      yes
+#
+#   rgb(65, 75, 90) == #414B5A == color.inkGlassMuted, exactly.
+#   Nearby's "above header" was asserted geometrically (pill.bottom <= header.top),
+#   which is Sky's Decision 2 proven at RUNTIME rather than only in source.
+#   Exactly one pill was found per sheet — no duplicate/hand-rolled second pill.
+#
+# ─── BEFORE, stated rather than staged ────────────────────────────────────
+# The "before" is one property: backgroundColor color.borderStrong
+# (#d0d4dc light / #444 dark), which the arbiter measured at 1.01-1.71:1 across
+# all five surface variants. It is not re-photographed here because a screenshot
+# of a 4pt bar cannot show a contrast ratio, and the numbers already exist in
+# 08_G3_GRABBER_ARBITER.md. The shipped ink's numbers are in
+# assets/arbiter/g3-shipped-run.txt (exit 0).
+#
+# ─── ALSO VERIFIED LIVE IN THE SAME SESSION ───────────────────────────────
+# * Car 1: the Terms sheet renders Sky's §1 text and presents OVER About; both
+#   its entry points announce correctly. The terms link's computed colour is
+#   rgb(15, 83, 190) == #0F53BE == color.brandOnSoft (the Car-4 AA fix).
+# * A WEB-ONLY DEFECT WAS FOUND AND FIXED HERE, not in review: react-native-web
+#   gives every <Modal> the same z-index (9999), so the LATER DOM SIBLING wins.
+#   DrawerHost mounted after SharedModalsHost, so the drawer's About sat on top
+#   of the terms sheet opened from it and the terms rendered underneath. Hosts
+#   were reordered (DrawerHost first) and the fix re-verified: topmost layer is
+#   now the terms sheet. Native was never affected - a pageSheet is its own
+#   UIKit scene - which is exactly why only a real render could catch it.

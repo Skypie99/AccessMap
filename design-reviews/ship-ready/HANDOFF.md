@@ -138,8 +138,8 @@ Decisions: `DECISIONS.md §SKY-6` (Sky's, verbatim) and `§SKY-6a` (the two she 
 | **1** | **The ToS screen** | ✅ `9c1b322` |
 | **2** | HIGH-1 — the report envelope in My Feedback | ✅ `391186e` |
 | **3** | The term list — vendor + D-2 re-curation | ✅ (see below) |
-| **4** | G3 — ship the grabber | ⏳ next |
-| **5** | HIGH-2 — Hidden comments (⛔ mockup gate) | ⏳ |
+| **4** | G3 — ship the grabber | ✅ (see below) |
+| **5** | HIGH-2 — Hidden comments (⛔ mockup gate) | ⏳ next |
 | **6** | SR-050 owner half + admin artifact, then Class A | ⏳ |
 
 ## Car 1 — the ToS screen ✅ `9c1b322`
@@ -273,3 +273,62 @@ touching a line of matcher code.
 **1.2(a) stays 🟠, not 🟢** — client-side and bypassable; no l33tspeak or homoglyph defence (buying that
 costs false positives on ordinary words, the wrong trade here). A server-side mirror remains a migration
 proposal for Sky.
+
+## Car 4 — G3, the grabber ships ✅
+
+Gate: tsc 0 · lint 0/80 · jest **180 suites, 2668 passed, 0 failed** · `GlassSurface.tsx` 0 changed lines.
+
+Sky's §SKY-6 pick: **B-INK + ABOVE the header, including Nearby.** One shared `SheetGrabber` in
+`ui/Sheet.tsx` rather than four hand-rolled pills; `color.borderStrong` (1.01–1.71:1) → `color.inkGlassMuted`.
+
+**Four sheets, not three.** `TermsScreen` was built one car earlier — after the arbitration — so it was not
+on G3's list. It wears the same chrome recipe, and a sheet without the pill beside two that have one is the
+inconsistency G3 existed to remove. Enrolled.
+
+**Proof sets — declared == shipped**
+- The four **ratified** sets re-run: **all exit 0**. Run 2 changed no token, so they had to be untouched.
+- New `tools/shipready-grabber-shipped-stacks.json` declares what ships → **exit 0**.
+- The original `shipready-grabber-stacks.json` is **left exiting 1 on purpose**. It is the *arbitration*
+  record and deliberately declares the failing `borderStrong` rows; editing it green would erase the reason
+  the decision was made. Both states are banked in `assets/arbiter/run2-shipped-sets-rerun.txt`.
+
+### ⚠ The arbiter caught a real AA failure — in this run's own Car 1
+
+Car 1's terms link reused AboutScreen's shipped link treatment (`color.brand` + underline) on bulk glass and
+justified it as "byte-identical reuse of a shipped pairing". Carried into the proof set, it measured
+**3.70:1 light / 3.56:1 dark against a 4.5 body-text floor — FAIL.**
+
+**"Already shipped elsewhere" is an argument, not a measurement.** And the shipped privacy link had the same
+defect: `styles.link` had never been measured on that material, only inherited. Both moved to
+`color.brandOnSoft` (4.95/5.58 light, 7.66/9.65 dark), which keeps the link recognisably a link.
+
+🔎 **Open finding for Sky:** six other `color.brand`-as-text sites remain (`ProfileScreen:2418`,
+`MapScreen:3458`, `PhotoGallery:303`, `HelpModal:315`, `ChangelogModal:197,207`). They sit on different
+surfaces and each needs its own arbitration — **not swept here**, deliberately, but they should be measured.
+
+### Verified on a real render, not inferred
+
+The device-tune capture harness needs Playwright, which is not installed, and installing it is a dependency
+change no agent should make unasked — so **no PNG board is claimed**. Instead the branch was built as a real
+static web export, served, driven as a guest, and every grabber's **computed style read from the live DOM**:
+all four measured `rgb(65, 75, 90)` = `#414B5A` = `inkGlassMuted`, 36×4, `radius.full`, centred — and
+Nearby's placement asserted geometrically (`pill.bottom <= header.top`), so **Decision 2 is proven at
+runtime**, not just in source. Record: `assets/arbiter/g3-live-render-verification.txt`.
+
+### 🐛 A web-only defect found by that render, and fixed
+
+react-native-web gives every `<Modal>` the same `z-index: 9999`, so **the later DOM sibling wins**.
+`DrawerHost` mounted after `SharedModalsHost`, so the drawer's About sat on top of the terms sheet opened
+*from* it — the terms rendered underneath, readable only as text bleeding past the card's bottom edge.
+Hosts reordered (`DrawerHost` first) and re-verified: the terms sheet is now topmost.
+
+**Native was never affected** — a pageSheet is its own UIKit scene — which is precisely why only a real
+render could catch it, and why the jest suite was green through the entire defect.
+
+**SEAM, recorded not silent:** `ui/Sheet`'s pill is shared, so the **Tasks filter sheet** moved too. That
+surface belongs to the device-tune train. It is a contrast *improvement* there (1.05–1.25:1 → 6.24/6.51 on
+the same bulk material), nothing about its layout changed, and a per-surface exception would have been G3's
+rejected PER-SURFACE option. Noted in the primitive and asserted by test.
+
+**Device rows gained:** the grabber on real glass at 1.0×/1.3×/AX5 · that it still reads as a drag
+affordance despite being darker than the platform's · the Tasks filter sheet's pill.

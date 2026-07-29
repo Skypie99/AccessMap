@@ -12,6 +12,7 @@ import { RemoteImage } from '@/components/ui/RemoteImage';
 import { AppText } from '@/components/ui/AppText';
 import { GlassSurface } from '@/components/ui/GlassSurface';
 import { OverflowFade } from '@/components/ui/OverflowFade';
+import { SheetGrabber } from '@/components/ui/Sheet';
 import { useHorizontalOverflowFade } from '@/hooks/useHorizontalOverflowFade';
 import { a11yToggle, useReducedMotion } from '@/lib/accessibility';
 import { CATEGORY_LABELS, CATEGORY_ORDER, SEVERITY_LABELS, STATUS_LABELS } from '@/lib/flags';
@@ -209,6 +210,14 @@ export default function NearbyFlagsModal({
           byte-identical. Material only. */}
       <GlassSurface variant="bulk" borderRadius={0} style={styles.glassFill}>
       <SafeAreaView style={styles.screen} accessibilityViewIsModal onAccessibilityEscape={onClose}>
+        {/* G3 (§SKY-6): ABOVE styles.header, not inside it — Sky's Decision 2.
+            `styles.header` paints opaque `color.surface`, which the arbiter
+            measured at 8.83/8.90 and is the crisper of the two placements; this
+            spot lands on BULK glass at 6.24/6.51 instead. Consistency won: this
+            is the sheet's true top edge, where the platform puts a grabber and
+            where Resources and HowToHelp now put theirs. 6.24 is not close to
+            the 3.0 floor, so the cost of consistency here is nil. */}
+        <SheetGrabber />
         <View style={styles.header}>
           <AppText variant="heading" style={styles.title} accessibilityRole="header">Nearby flags</AppText>
           <Pressable

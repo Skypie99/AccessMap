@@ -36,19 +36,63 @@ export interface SheetHeaderProps {
   titleRef?: React.Ref<Text>;
 }
 
+/**
+ * The drag-handle pill — ONE definition for every sheet in the app.
+ *
+ * ─── G3, and why the colour is not a taste call ───────────────────────────
+ * `08_G3_GRABBER_ARBITER.md` measured five candidate inks across five surface
+ * variants in both themes and both transparency states. The shipped
+ * `color.borderStrong` scored **1.01–1.71:1** — it fails everywhere, including
+ * on Nearby's opaque header, which Phase 2 had hoped would rescue it.
+ * `color.inkGlassMuted` is the ONLY candidate clearing 3.0 on all ten
+ * measurements (worst case 4.81 light / 5.43 dark), and it is already the
+ * arbitrated ink for the close-X on two of the three pageSheets — so this is
+ * consistency, not a new invention. Sky picked it in §SKY-6.
+ *
+ * ⚠ IT IS DELIBERATELY DARKER THAN THE PLATFORM. iOS's own grabber sits around
+ * 1.3–1.6:1; Apple treats it as decorative. Sky chose the visible bar over the
+ * conventional one. Do not "fix" this back toward the system look without a
+ * fresh arbiter run and her say-so.
+ *
+ * Hidden from assistive tech on both platforms — the pill is a visual affordance
+ * for a gesture, and every sheet carrying one also carries a labelled Close, so
+ * announcing it would add a second nameless element to the tab order for no
+ * gain. Both props are needed: one covers VoiceOver, the other TalkBack.
+ *
+ * ─── ⚠ SEAM: this primitive is shared ─────────────────────────────────────
+ * G3 named three pageSheets (Resources, How to help, Nearby). They hand-roll
+ * their own chrome and now import `SheetGrabber` directly. But `SheetHeader`
+ * renders the same component, so **the Tasks filter sheet moved too** — and that
+ * surface belongs to the **device-tune** train, not this one.
+ *
+ * That is a deliberate, recorded ride-along, not an accident:
+ *   - the ink is arbitrated on the SAME bulk material the Tasks sheet uses
+ *     (6.24:1 light / 6.51:1 dark — declared in the shipped proof set), so it is
+ *     a contrast IMPROVEMENT there, from a measured 1.05–1.25:1;
+ *   - a per-surface exception would have meant two inks for one affordance,
+ *     which G3 evaluated as option PER-SURFACE and rejected as "not recommended";
+ *   - device-tune owns that sheet's LAYOUT, and nothing about its layout changed.
+ * If device-tune wants the old pill back, that is a conversation with Sky and a
+ * fresh arbiter run — not a local override here.
+ */
+export function SheetGrabber() {
+  const color = useColor();
+  return (
+    <View
+      style={styles.handleWrap}
+      accessibilityElementsHidden
+      importantForAccessibility="no-hide-descendants"
+    >
+      <View style={[styles.handle, { backgroundColor: color.inkGlassMuted }]} />
+    </View>
+  );
+}
+
 export function SheetHeader({ title, onClose, showHandle = true, closeLabel, right, titleRef }: SheetHeaderProps) {
   const color = useColor();
   return (
     <>
-      {showHandle ? (
-        <View
-          style={styles.handleWrap}
-          accessibilityElementsHidden
-          importantForAccessibility="no-hide-descendants"
-        >
-          <View style={[styles.handle, { backgroundColor: color.borderStrong }]} />
-        </View>
-      ) : null}
+      {showHandle ? <SheetGrabber /> : null}
       <View style={styles.headerRow}>
         <AppText
           ref={titleRef}

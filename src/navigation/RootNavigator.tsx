@@ -185,8 +185,24 @@ function FlagsProviderWithAuth({ initialRouteName }: { initialRouteName: keyof R
             in <DrawerHost />, mirroring <SharedModalsHost />. */}
         <DrawerProvider>
           <NavInner initialRouteName={initialRouteName} />
-          <SharedModalsHost />
+          {/* ⚠ ORDER IS LOAD-BEARING ON WEB, and only on web.
+              react-native-web renders every <Modal> as a fixed div with the
+              SAME z-index (9999), so when two are open at once the LATER
+              SIBLING WINS. Native does not care: a pageSheet is its own UIKit
+              scene and the last-presented modal is on top regardless of tree
+              position.
+
+              Found live in the web export, Run 2: the drawer's About sat over
+              the terms sheet opened FROM it, and the terms rendered underneath
+              — readable only as text bleeding past the card's bottom edge.
+              DrawerHost now mounts FIRST so SharedModalsHost is last and its
+              modals always win, which is also the right relationship on its own
+              terms: a shared modal opened from the drawer belongs above it.
+
+              If you add a third host, it goes ABOVE this line unless you mean
+              it to outrank the shared modals. */}
           <DrawerHost />
+          <SharedModalsHost />
         </DrawerProvider>
       </SharedModalsProvider>
     </FlagsProvider>
