@@ -486,6 +486,15 @@ export default function TasksScreen() {
       // F4: bail on a rapid second tap. The dialog (await confirm) opens a
       // window where the state-based button `disabled` hasn't flipped yet.
       if (bulkBusyRef.current) return;
+      // R-2 / SR-093, the THIRD caller — found while writing the guard for the
+      // other two. Selection mode is reachable as a guest, so a bulk verify
+      // fired one RLS-denied write PER SELECTED FLAG and then reported them as
+      // a list of raw failure strings. Same gate, ahead of the confirm: there
+      // is no point asking a guest to confirm N actions they cannot take.
+      if (!user) {
+        notify('Sign in required', 'Please sign in to verify or resolve flags.');
+        return;
+      }
       const targetStatus: FlagStatus = action === 'verify' ? 'verified' : 'resolved';
       const ids = selection.selectedIds.slice();
       // For 'verify' we skip anything not in 'open' (already-verified
@@ -560,7 +569,7 @@ export default function TasksScreen() {
         bulkBusyRef.current = false;
       }
     },
-    [selection, flagsMap, patchFlag, removeFlag, refresh, exitSelection, showFlash],
+    [selection, flagsMap, patchFlag, removeFlag, refresh, exitSelection, showFlash, user],
   );
 
   // Bulk-watch — adds every currently-selected id to the user's Watched
@@ -688,6 +697,16 @@ export default function TasksScreen() {
 
   const setStatus = useCallback(
     async (id: string, status: FlagStatus, isOwn: boolean) => {
+      // R-2 / SR-093, the second caller. Same defect as FlagDetailModal's: a
+      // guest tap fired a real, RLS-refused write to production and came back
+      // with the FALSE "This flag changed" notify below, because zero rows is
+      // indistinguishable from a concurrent edit. Stop before the write and say
+      // the true thing. Confirm gates are below this on purpose — there is no
+      // point asking a guest to confirm an action they cannot take.
+      if (!user) {
+        notify('Sign in required', 'Please sign in to verify or resolve flags.');
+        return;
+      }
       // Reject removes a report from the queue — confirm first, matching the
       // destructive-confirm tier (bulk actions, FlagDetailModal Delete/Reject).
       // confirm() is web-safe: window.confirm on web, Alert.alert on native.
@@ -723,7 +742,7 @@ export default function TasksScreen() {
         setBusyId(null);
       }
     },
-    [applyStatusChange, flagsMap, refresh],
+    [applyStatusChange, flagsMap, refresh, user],
   );
 
   const handleViewOnMap = useCallback(

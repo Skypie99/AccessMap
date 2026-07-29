@@ -60,14 +60,27 @@ describe('T4 — TasksScreen triage speaks the commit vocabulary (source contrac
     tasksScreen.indexOf('const applyStatusChange'),
     tasksScreen.indexOf('const setStatus'),
   );
-  const setStatus = tasksScreen.slice(
-    tasksScreen.indexOf('const setStatus'),
-    tasksScreen.indexOf('const setStatus') + 1600,
-  );
+  // Sliced to the NEXT declaration rather than a fixed +1600 characters.
+  // R-2/SR-093 added a guest gate at the top of setStatus and pushed the catch
+  // block past the old window, so the guard went red for a function whose
+  // behaviour had not changed — a character count is not a scope. Anchoring on
+  // the real boundary means the assertion keeps meaning the same thing however
+  // the body grows.
+  const setStatusStart = tasksScreen.indexOf('const setStatus');
+  const setStatusEnd = tasksScreen.indexOf('const handleViewOnMap', setStatusStart);
+  const setStatus = tasksScreen.slice(setStatusStart, setStatusEnd);
 
   it('the commit point fires impact(medium) + notify(success) inside applyStatusChange', () => {
     expect(applyStatusChange).toMatch(/hapticImpact\('medium'\)/);
     expect(applyStatusChange).toMatch(/hapticNotify\('success'\)/);
+  });
+
+  it('the slice really is setStatus — a bad window would pass vacuously', () => {
+    // Both boundaries must have been found, or `slice` silently yields
+    // something that still satisfies a positive match by accident.
+    expect(setStatusStart).toBeGreaterThan(-1);
+    expect(setStatusEnd).toBeGreaterThan(setStatusStart);
+    expect(setStatus).toMatch(/updateFlagStatus\(/);
   });
 
   it('the failure path fires notify(error) in the setStatus catch', () => {

@@ -667,6 +667,72 @@ select polrelid::regclass as tbl, polname from pg_policy
 
 ---
 
+### C-12 · SR-050 (Storage half) — admin delete on flag photos
+
+**Written 2026-07-28, Run 2 (§SKY-6). The CLIENT half shipped in the same run; this is the other half.**
+`deleteFlag` now derives each photo's Storage path and calls `removeUploadedFlagPhotos` before deleting the
+row — which works for the flag's OWNER, because `flag-photos owner delete` permits it. It does **not** work
+for an ADMIN taking down someone else's flag: the same policy denies it, the row goes, and the photo stays
+publicly fetchable. **A takedown that leaves the reported photo up is not a takedown**, so Apple 1.2(b)
+cannot be reported closed until this is applied.
+
+This is Option A from `11_SR050_TAKEDOWN_GAP.md` — the narrow, synchronous one. Option B (a server-side
+sweep shareable with R-1) remains the alternative and is NOT written here; picking A does not foreclose it.
+
+⚠ **Jordan review before applying.** This widens delete authority over user-uploaded content — the same
+class of change as the admin comment-delete in C-8, and it should get the same look.
+
+```sql
+-- ============================================================================
+-- FILE:   2026-07-28_sr050_admin_delete_flag_photo_PROPOSED.sql
+-- STATUS: PROPOSED — *** SKY APPLIES. NEVER AUTO-RUN. ***
+-- WHAT:   storage.objects on the flag-photos bucket has ONE delete policy and
+--         it is owner-only ((storage.foldername(name))[1] = auth.uid()::text),
+--         so an admin can delete the flags ROW but never the photo it points
+--         at. The blob stays publicly fetchable forever at a URL any prior
+--         viewer still holds. This adds the admin counterpart, mirroring
+--         "admin delete any flag" and C-8's "admin delete any comment" exactly
+--         (same is_admin subselect shape, same additive-policy pattern).
+-- NOTE:   ADDITIVE. Postgres ORs permissive policies, so the owner policy is
+--         untouched and owners keep deleting their own photos exactly as
+--         before. Scoped to bucket_id = 'flag-photos' — avatars are a
+--         different bucket and a different decision (R-1). The CLIENT half is
+--         already shipped and needs no change: the same deleteFlag call starts
+--         succeeding for admins the moment this lands.
+-- ============================================================================
+drop policy if exists "flag-photos admin delete" on storage.objects;
+create policy "flag-photos admin delete"
+  on storage.objects for delete
+  to authenticated
+  using (
+    bucket_id = 'flag-photos'
+    and (select is_admin from public.users where id = (select auth.uid()))
+  );
+```
+```sql
+-- ROLLBACK
+drop policy if exists "flag-photos admin delete" on storage.objects;
+```
+```sql
+-- VERIFY (read-only): expect 2 DELETE policies on storage.objects for this
+-- bucket — the existing owner one, plus this. Neither should be missing.
+select polname from pg_policy
+ where polrelid = 'storage.objects'::regclass
+   and polcmd = 'd'
+   and polname in ('flag-photos owner delete', 'flag-photos admin delete')
+ order by polname;
+```
+```sql
+-- PRE-STATE PROBE (read-only, run BEFORE applying so the delta is on the
+-- record rather than assumed): expect exactly one row, the owner policy.
+select polname, pg_get_expr(polqual, polrelid) as using_expr
+  from pg_policy
+ where polrelid = 'storage.objects'::regclass
+   and polcmd = 'd'
+   and pg_get_expr(polqual, polrelid) like '%flag-photos%';
+```
+
+
 ## §D CHECKS-PASSED
 
 - **DEFINER `search_path` pinning — 16/16 repo-defined DEFINER functions pin `search_path`.** VERIFIED (`handle_new_user`, `handle_flag_status_change` ×3, `handle_flag_reopen_reset` ×2, `handle_flag_insert_history`, `handle_flag_submitted`, `handle_flag_photo_added`, `handle_comment_added`, `handle_comment_vote_added`, `handle_point_event_streak`, `log_realtime_event`, `check_flag_rate_limit`, `increment_reopen_request` ×2, `verify_webhook_secret` ×2, `notify_flag_status_webhook`, + the 2 PROPOSED). **live-verified**: the live advisor reports **zero** `0011_function_search_path_mutable` warnings across all 6 WARNs ⇒ the 2 INVOKER trigger functions and the 2 repo-less live functions are pinned too — i.e. `2026-05-29_function_search_path_hardening.sql` and `2026-06-01_function_exec_…` **were applied** despite their PROPOSE-ONLY headers (a second header-lies instance, cf. A7-2).

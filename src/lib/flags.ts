@@ -667,6 +667,32 @@ export function detectMimeFromBytes(buffer: ArrayBuffer): string | null {
  * clean up the now-orphaned object via removeUploadedFlagPhotos — tracking
  * the path directly avoids fragile URL parsing later.
  *
+ * ─── ⚑ THE NO-URL-PARSING LAW, AND ITS ONE CARVE-OUT (§SKY-6a) ────────────
+ * THE LAW: never derive a Storage path by taking a public URL apart. Carry the
+ * path forward as data. Everything above this line exists to make that possible.
+ *
+ * THE CARVE-OUT, ratified by Sky on 2026-07-28 and deliberately narrow:
+ * **exactly one named helper — `storagePathFromPublicUrl` — anchored on exactly
+ * one constant, `FLAG_PHOTOS_BUCKET`. NO OTHER URL PARSING ANYWHERE.**
+ *
+ * Why it had to exist: SR-050. A takedown that leaves the reported photo
+ * publicly fetchable is not a takedown, and there is nowhere to read a path
+ * FROM. `flags.photo_url` and `flag_photos.url` both store public URLs; the
+ * `path` half of the upload tuple is used for failed-submit cleanup and then
+ * discarded (`photos.ts`). There is no SELECT policy on `storage.objects`, so
+ * `storage.list()` returns nothing either. Honoring this law to the letter is
+ * precisely what made the owner half unbuildable.
+ *
+ * Sky's reasoning for choosing derivation over a `storage_path` column: this law
+ * was written against ad-hoc parsing scattered through the codebase, not against
+ * the URL shape changing. One tested helper against a known constant answers the
+ * first concern. If the shape ever DOES change — a private bucket, signed URLs,
+ * a CDN or custom domain — derivation becomes the wrong bet and the column is
+ * right. `storage_path` is on the backlog for that day, at which point this
+ * helper becomes legacy-only, for rows uploaded before the column existed.
+ *
+ * If you are adding a second URL parser: don't. Add the column instead.
+ *
  * EXIF stripping: Before upload, strips GPS, timestamps, camera info,
  * thumbnails, IPTC, and XMP metadata to protect user location privacy.
  * Uses platform-specific approaches:
@@ -860,6 +886,69 @@ export async function uploadFlagPhoto(
  * failed cleanup just console.warns (orphans are invisible to users; a
  * server-side sweep can collect any that slip through).
  */
+/**
+ * The ONE carve-out to the no-URL-parsing law (see `uploadStrippedImage`'s
+ * docblock, and DECISIONS §SKY-6a). Recovers a Storage object path from a
+ * public flag-photo URL so SR-050's owner-side takedown can actually delete
+ * the photo.
+ *
+ * ─── IT FAILS CLOSED, AND THAT IS THE WHOLE DESIGN ────────────────────────
+ * It anchors on the KNOWN constant `/storage/v1/object/public/<bucket>/` rather
+ * than guessing at path segments, strips any query or fragment, decodes percent
+ * escapes, and returns `null` the moment anything does not line up. A `null`
+ * means "I could not be sure", and the caller deletes NOTHING. Never delete on
+ * a guess: the failure mode of a wrong guess is destroying somebody else's
+ * photo, which is far worse than the orphan a null leaves behind.
+ *
+ * It also requires the recovered path to start with `<uid>/`. Storage RLS
+ * enforces that server-side anyway, so this is belt-and-braces — but it turns a
+ * silently-refused delete into a locally-visible one.
+ *
+ * ⚑ A NULL IS LOUD (Sky's amendment, §SKY-6a): *"Silent null means the photo
+ * never gets deleted and the takedown hole comes back invisibly."* So it warns
+ * AND emits an analytics event. The event carries no URL and no ids — the URL
+ * embeds the owner's uid, and `analytics.stripPII` would drop those keys
+ * regardless; what is worth knowing is only that a derivation failed and why.
+ */
+export function storagePathFromPublicUrl(url: string, uid: string): string | null {
+  const marker = `/storage/v1/object/public/${FLAG_PHOTOS_BUCKET}/`;
+  const at = url.indexOf(marker);
+  if (at === -1) {
+    console.warn('[flags] SR-050: photo URL did not match the expected public-object shape');
+    trackEvent('storage_path_derivation_failed', { reason: 'marker_absent' });
+    return null;
+  }
+
+  // Everything after the marker, minus a query string or fragment. Both are
+  // plausible on a CDN or a transform URL and neither is part of the object key.
+  let path = url.slice(at + marker.length).split(/[?#]/)[0];
+  if (!path) {
+    console.warn('[flags] SR-050: photo URL had the marker but no object path after it');
+    trackEvent('storage_path_derivation_failed', { reason: 'empty_path' });
+    return null;
+  }
+
+  try {
+    path = decodeURIComponent(path);
+  } catch {
+    // A malformed escape means we do not actually know the key. Refuse.
+    console.warn('[flags] SR-050: photo URL path could not be decoded');
+    trackEvent('storage_path_derivation_failed', { reason: 'undecodable' });
+    return null;
+  }
+
+  // The scheme is `<uid>/<timestamp>.<ext>` — see uploadFlagPhoto. A path that
+  // does not begin with this user's folder is either another user's object or a
+  // shape we no longer understand; either way, not ours to delete.
+  if (!path.startsWith(`${uid}/`)) {
+    console.warn('[flags] SR-050: derived path is not in the caller\'s own folder — refusing');
+    trackEvent('storage_path_derivation_failed', { reason: 'foreign_folder' });
+    return null;
+  }
+
+  return path;
+}
+
 export async function removeUploadedFlagPhotos(paths: string[]): Promise<void> {
   if (paths.length === 0) return;
   try {
@@ -1288,11 +1377,87 @@ export async function requestFlagReopen(flagId: string): Promise<number | null> 
   return typeof data === 'number' ? data : null;
 }
 
-// RLS allows delete only when user_id = auth.uid(), so the caller does not
-// need to re-check ownership — Supabase will reject any other user's row.
+/**
+ * Delete a flag, and — SR-050 — the photos that belong to it.
+ *
+ * RLS allows the row delete only when `user_id = auth.uid()`, so the caller does
+ * not need to re-check ownership; Supabase rejects any other user's row.
+ *
+ * ─── WHY THE PHOTOS ARE PART OF THIS (11_SR050_TAKEDOWN_GAP.md) ───────────
+ * Deleting the row used to leave every photo publicly fetchable forever, at a
+ * URL anyone who had seen it still held. **A takedown that leaves the reported
+ * photo up is not a takedown** — which is why this is a leg of Apple 1.2(b) and
+ * not merely tidiness.
+ *
+ * ─── ORDER IS LOAD-BEARING ────────────────────────────────────────────────
+ * The URLs live ON the rows being deleted. Gather first, delete second, or the
+ * only record of what to clean up is gone by the time we look for it. The row
+ * delete is what the user is owed, so it happens even if the photo sweep
+ * cannot: `removeUploadedFlagPhotos` never throws, by design.
+ *
+ * ─── TWO CALLERS, ONE OF THEM CANNOT FINISH THE JOB ───────────────────────
+ * `FlagDetailModal` calls this as the flag's OWNER, and the `flag-photos owner
+ * delete` Storage policy permits it — that path now works end to end.
+ * `AdminScreen` calls it as an ADMIN taking down someone else's flag, and that
+ * same policy DENIES the Storage delete: the row goes, the photo stays. The
+ * client half cannot fix that; it needs a Storage policy, which is a Sky-applied
+ * migration. The artifact is written and waiting in
+ * `04b_sql_sweep_lens4b_RECOVERED.md` §C-12. **Until she applies it, admin
+ * takedown remains incomplete, and 1.2(b) says so rather than claiming closed.**
+ */
 export async function deleteFlag(flagId: string) {
+  // Gather BEFORE the delete — see the order note above.
+  const paths = await collectFlagPhotoPaths(flagId);
+
   const { error } = await supabase.from('flags').delete().eq('id', flagId);
   if (error) throw error;
+
+  // Best-effort, never throws. On the admin path RLS refuses this and it warns;
+  // the row is still gone, which is the contract the caller surfaces.
+  await removeUploadedFlagPhotos(paths);
+}
+
+/**
+ * Every Storage path belonging to a flag: the legacy single `photo_url` plus
+ * every row in the `flag_photos` junction. Deduped, because a flag's first
+ * photo can legitimately appear in both.
+ *
+ * Returns `[]` rather than throwing on any failure. This runs on the delete
+ * path, and a flag the user asked to remove must not survive because a photo
+ * lookup had a bad day — that would be the feature failing at the only moment
+ * it matters. Undeleted blobs are invisible to users and are what R-1's
+ * server-side sweep is for.
+ */
+async function collectFlagPhotoPaths(flagId: string): Promise<string[]> {
+  try {
+    const { data: auth } = await supabase.auth.getUser();
+    const uid = auth?.user?.id;
+    // No uid means no owner-folder to validate against, and every derivation
+    // would refuse anyway. Skip the round trips.
+    if (!uid) return [];
+
+    const [rowRes, photosRes] = await Promise.all([
+      supabase.from('flags').select('photo_url').eq('id', flagId).maybeSingle(),
+      supabase.from('flag_photos').select('url').eq('flag_id', flagId),
+    ]);
+
+    const urls: string[] = [];
+    const legacy = (rowRes.data as { photo_url?: string | null } | null)?.photo_url;
+    if (legacy) urls.push(legacy);
+    for (const p of (photosRes.data ?? []) as { url?: string | null }[]) {
+      if (p.url) urls.push(p.url);
+    }
+
+    const paths = new Set<string>();
+    for (const url of urls) {
+      const path = storagePathFromPublicUrl(url, uid);
+      if (path) paths.add(path);
+    }
+    return [...paths];
+  } catch (e) {
+    console.warn('[flags] SR-050: could not collect photo paths before delete:', e);
+    return [];
+  }
 }
 
 /**

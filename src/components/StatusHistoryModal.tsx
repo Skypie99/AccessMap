@@ -169,16 +169,20 @@ export default function StatusHistoryModal({ visible, flagId, onClose }: Props) 
                 <AppText variant="body" style={styles.loadingText}>Loading history…</AppText>
               </View>
             ) : formatted.length === 0 ? (
-              // Empty / not-yet-enabled state. Same copy regardless of
-              // whether the table is missing OR the flag genuinely has no
-              // history — the user only cares that there's nothing to show.
-              // The "not yet enabled" framing is honest about the most
-              // likely cause (migration pending) without scaring users.
+              // R-2 / SR-095. This said "History not yet enabled — when this
+              // feature is fully set up…", which told every reviewer walking a
+              // brand-new flag that the app was half-built. In production the
+              // migration IS applied, so the overwhelmingly likely cause is the
+              // ordinary one: nothing has happened to this flag yet. The old
+              // copy explained the RARE cause and let the COMMON one read as a
+              // defect — the reverse of what an empty state is for.
+              //
+              // It says less now, and everything it says is true in both cases.
+              // AGENT-PROPOSED wording; final phrasing is Sky's, via BP16.
               <View style={styles.emptyWrap}>
                 <AppText variant="heading" style={styles.emptyTitle}>No history yet</AppText>
                 <AppText variant="body" style={styles.emptyBody}>
-                  History not yet enabled — when this feature is fully set up, you{'’'}ll see who
-                  changed the status of this flag here.
+                  Status changes will appear here once this flag has been verified or resolved.
                 </AppText>
               </View>
             ) : (

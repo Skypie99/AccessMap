@@ -133,12 +133,37 @@ export function useScreenReader(): boolean {
   useEffect(() => {
     let cancelled = false;
 
+    // R-13 / SR-104. ⚠ THE COMMENT BELOW USED TO SAY "web rejects — treat as
+    // not on". IT DOES NOT REJECT. react-native-web's isScreenReaderEnabled
+    // RESOLVES TRUE, unconditionally and for everyone:
+    //
+    //   function isScreenReaderEnabled() {
+    //     return new Promise((resolve, reject) => { resolve(true); });
+    //   }
+    //   (react-native-web/dist/exports/AccessibilityInfo/index.js)
+    //
+    // So the catch() never ran and EVERY web visitor was treated as a
+    // screen-reader user: Nearby auto-opened over the map, and selecting a
+    // flag from the list stopped recentring. The fallback was never reached,
+    // which is why nothing looked wrong in the code.
+    //
+    // There is no reliable browser API for "is a screen reader running" — the
+    // deliberate answer to that question is that you cannot ask it, and should
+    // build so it does not matter. So web returns false and the sighted default
+    // stands; every web surface remains keyboard- and AT-navigable regardless,
+    // which is what actually serves an AT user here.
+    if (Platform.OS === 'web') {
+      return () => {
+        cancelled = true;
+      };
+    }
+
     AccessibilityInfo.isScreenReaderEnabled()
       .then((value) => {
         if (!cancelled) setEnabled(value);
       })
       .catch(() => {
-        // Web / unsupported platforms reject — treat as "not on" so the
+        // A native platform that cannot answer — treat as "not on" so the
         // sighted-user experience stays the default fallback.
       });
 

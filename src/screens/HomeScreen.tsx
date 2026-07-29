@@ -138,6 +138,15 @@ export default function HomeScreen() {
   // false until the user taps "Use my location" — gates the OS prompt to a
   // user-initiated action (fence: never prompt on mount/focus).
   const [askedForLocation, setAskedForLocation] = useState(false);
+  // R-2 / SR-041: `askedForLocation` alone made this control a ONE-SHOT. After
+  // a denial it stays true, so a second tap sets the same value, React bails
+  // out of the re-render, the probe never remounts — and the button sits there
+  // looking live while doing nothing, forever. A user who denied by reflex (or
+  // who has since granted permission in Settings) had no way back.
+  //
+  // The nonce is what makes the tap mean "try again": it changes on every
+  // press, so `key` below forces a fresh LocationProbe and a real new attempt.
+  const [locateNonce, setLocateNonce] = useState(0);
   // D4/C2: which of the three honest states the probe is in. Stays 'default'
   // while the probe isn't mounted at all, which is the truth then.
   const [probeState, setProbeState] = useState<PeekLocationState>('default');
@@ -284,6 +293,8 @@ export default function HomeScreen() {
       <ScreenStage />
       {probeEnabled && (
         <LocationProbe
+          // R-2 / SR-041: remount per tap so a retry is a real retry.
+          key={locateNonce}
           requireExistingPermission={!askedForLocation}
           onResult={setUserLocation}
           onState={setProbeState}
@@ -381,7 +392,10 @@ export default function HomeScreen() {
         {/* "Use my location" — only when we have no center; opt-in (prompts). */}
         {!hasCenter && (
           <PressableScale
-            onPress={() => setAskedForLocation(true)}
+            onPress={() => {
+              setAskedForLocation(true);
+              setLocateNonce((n) => n + 1);
+            }}
             style={styles.locateBtn}
             accessibilityRole="button"
             accessibilityLabel="Use my location"

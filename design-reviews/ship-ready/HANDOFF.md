@@ -140,7 +140,7 @@ Decisions: `DECISIONS.md §SKY-6` (Sky's, verbatim) and `§SKY-6a` (the two she 
 | **3** | The term list — vendor + D-2 re-curation | ✅ (see below) |
 | **4** | G3 — ship the grabber | ✅ (see below) |
 | **5** | HIGH-2 — Hidden comments | ⛔ **STOPPED AT THE MOCKUP GATE — Sky's pick** |
-| **6** | SR-050 owner half + admin artifact, then Class A | ⏳ next |
+| **6** | SR-050 owner half + admin artifact, then Class A | ✅ (see below) |
 
 ## Car 1 — the ToS screen ✅ `9c1b322`
 
@@ -367,3 +367,60 @@ be shown.** Its row still has to unhide, or the entry is permanently stuck in th
 **Why this was not built ahead of the pick:** the row treatment decides whether a re-fetch is needed at all
 (candidate C needs none), so building first would have meant building the wrong data path and calling the
 gate decorative.
+
+## Car 6 — SR-050 owner half, the admin artifact, and Class A ✅
+
+Gate: tsc 0 · lint 0/80 · jest **182 suites, 2701 passed, 0 failed** · `GlassSurface.tsx` 0 changed lines ·
+**migrations applied by an agent: 0.**
+
+### SR-050 (a) — the owner half is BUILT
+
+`deleteFlag` now gathers every photo URL on the flag (legacy `flags.photo_url` **and** every `flag_photos`
+row), derives each Storage path, deletes the row, then sweeps the objects. **Order is load-bearing:** the
+URLs live on the rows being deleted.
+
+**`11_SR050_TAKEDOWN_GAP.md` §(a) was wrong about the way out.** It said the honest fix could use "the
+`flag_photos` junction rows (which carry paths)". They carry **URLs**; `photos.ts:63` destructures `{ url }`
+and discards the `path`. Verified: **no `storage_path` column exists anywhere**, and with no SELECT policy on
+`storage.objects`, `storage.list()` returns nothing either. There was no path to read, anywhere — which is
+why honoring `flags.ts:665` to the letter is exactly what made this unbuildable.
+
+Sky ruled (§SKY-6a) for **derivation with the carve-out written INTO the law**, plus three amendments, all
+implemented:
+1. **The carve-out is in the law itself** — one named helper, one bucket constant, an explicit *"no other URL
+   parsing anywhere"* restatement, and a guard proving the marker literal appears in **exactly one file**.
+2. **A null is LOUD** — `console.warn` **and** an analytics event, carrying neither URL nor ids (the URL
+   embeds the owner's uid). *"Silent null means the photo never gets deleted and the takedown hole comes back
+   invisibly."*
+3. **`storage_path` is on the backlog**, not built — derivation now, column later, derivation legacy-only.
+
+It **fails closed**: `null` on any mismatch, and `null` deletes nothing. The failure mode of a wrong guess is
+destroying someone else's photo, which is far worse than the orphan a refusal leaves.
+
+### SR-050 (b) — the admin half is an ARTIFACT
+
+**§C-12** in `04b_sql_sweep_lens4b_RECOVERED.md`, mirroring C-8 exactly: fenced DDL, `-- ROLLBACK`, read-only
+`-- VERIFY`, plus a read-only **pre-state probe** so the delta is recorded rather than assumed. Additive —
+Postgres ORs permissive policies, so owners keep deleting their own photos unchanged. **Applied by nobody.**
+When Sky applies it the client needs no change; the same `deleteFlag` call simply starts succeeding.
+
+### Class A — all three, finally
+
+| item | what shipped |
+|---|---|
+| **SR-093** | The guest triage gate — **in THREE places, not two.** Writing the guard for the two known callers is what surfaced `runBulkAction`: selection mode is guest-reachable, so a bulk verify fired one RLS-denied write **per selected flag** and returned a list of raw error strings. All three now stop before the write |
+| **SR-094** | The reopen form answers a guest instead of swallowing the submit. `!user` used to fall into the same bare `return` as the real guards — indistinguishable from a broken button |
+| **SR-095** | *"History not yet enabled — when this feature is fully set up…"* explained the RARE cause (migration pending) and let the COMMON one (a new flag with no history) read as a half-built app. Now says less, and everything it says is true in both cases |
+| **SR-041** | "Use my location" was a **one-shot**: after a denial, `setAskedForLocation(true)` set an already-true value, React bailed out, nothing remounted, and the control was dead for the session. A nonce makes a second tap a real second attempt |
+| **SR-104** | ⚠ **rn-web's `isScreenReaderEnabled()` resolves `true` unconditionally** — read at the source, not inferred. The old code caught a rejection *that never came*, so **every web visitor** was treated as a screen-reader user: Nearby auto-opened, list-select stopped recentring. The stale "web rejects" comment is why nobody looked. Web now short-circuits to `false` |
+| **SR-105** | `mapRef.current?.snapToRegion(region)` — **the `?.` was the bug.** The ref is not populated on the frame the flags land (react-leaflet attaches asynchronously), so the snap was dropped while the one-time flag had *already* been set, retiring the fit forever. A no-location guest sat on seeded San Francisco with their own city's flags off-screen. Now retries on the next frame, bounded, and only marks done once the fit really happened |
+| **R-1** | **Artifact only**, per Sky's scoping: `R1_ACCOUNT_DELETION_SWEEP.md`. Deploying an edge function is a production side effect an agent must never take |
+
+**A guard was widened, not weakened:** `bp3TrustEngineGuards` sliced `setStatus` by a fixed +1600 characters,
+so the guest gate pushed the `catch` past the window and it went red against unchanged behaviour. **A
+character count is not a scope** — it now slices to the next declaration, with a non-vacuity assertion so a
+bad window cannot pass silently.
+
+**Device rows gained:** delete an owned flag with 2+ photos and confirm the URLs 404 · admin takedown still
+removes the row while the photo survives (until §C-12) · guest triage/reopen/bulk each say "Sign in required"
+· "Use my location" retried after a denial.

@@ -554,6 +554,21 @@ export default function FlagDetailModal({
 
   const runStatusChange = async (next: FlagStatus, action: DetailAction) => {
     if (busy) return;
+    // R-2 / SR-093. A GUEST could tap Verify/Resolve/Reject. The write left,
+    // RLS refused it, PostgREST returned ZERO ROWS — and `updateFlagStatus`
+    // cannot tell "refused" from "the status moved", so it threw
+    // FlagStatusConflictError and the guest was told **"This flag changed"**.
+    // Nothing had changed. The app invented a concurrent edit to explain a
+    // permission it had never mentioned, and did it after a pointless write to
+    // production. The App Review reviewer walks this path cold, as a guest.
+    //
+    // Gating here rather than teaching updateFlagStatus to distinguish the two:
+    // that would cost an auth round trip on every triage to answer a question
+    // the caller already knows the answer to.
+    if (!user) {
+      notify('Sign in required', 'Please sign in to verify or resolve flags.');
+      return;
+    }
     setBusy(true);
     try {
       // F53: compare-and-set against the status THIS modal is showing — a
@@ -772,7 +787,16 @@ export default function FlagDetailModal({
   //       pattern below with the typed column. The `any` cast is intentional
   //       scaffolding until the migration lands. (F10 scaffolding — Wave C)
   const handleReopenSubmit = async () => {
-    if (!user || !shownFlag || reopenBusy) return;
+    // R-2 / SR-094. `!user` used to fall into the same bare `return` as the
+    // real guards below, so a guest filled in the form, pressed Send, and got
+    // NOTHING — no error, no message, no closed form. Indistinguishable from a
+    // broken button, and the dedup below is keyed on user.id so a guest could
+    // never have voted anyway. Say so instead.
+    if (!user) {
+      notify('Sign in required', 'Please sign in to request a reopen.');
+      return;
+    }
+    if (!shownFlag || reopenBusy) return;
     const text = reopenText.trim();
     if (!text) {
       Alert.alert('Description required', 'Please describe what is still wrong (up to 280 characters).');

@@ -98,3 +98,56 @@ reported **photo** cannot. That belongs in the verdict as a named gap with an ow
 asserted conservation for SR-001…039 only, while claiming a "close-out grep in HANDOFF" that does not exist.
 Twelve findings fell through that seam. The fix is the table in `10_CONSERVATION_TABLE.md`, which enumerates
 all 117 rather than asserting a range.
+
+---
+
+# ADDENDUM — Run 2 (2026-07-28): the owner half is BUILT; the admin half is an artifact
+
+**§SKY-6 / §SKY-6a.** What changed, and the one thing that did not.
+
+## (a) Owner half — ✅ BUILT
+
+`deleteFlag` now gathers every photo URL belonging to the flag (the legacy
+`flags.photo_url` **and** every `flag_photos` row), derives each Storage path,
+deletes the row, then sweeps the objects. Order is load-bearing: the URLs live
+on the rows being deleted, so gathering has to happen first.
+
+**The blocker this document did not know about.** §(a) above says the honest fix
+could use "the `flag_photos` junction rows (which carry paths)". **They do not.**
+`flag_photos.url` is a public URL, not a path — `photos.ts:63` destructures only
+`{ url }` from the upload tuple and discards the `path`. Verified: **no
+`storage_path` column exists anywhere in `src/` or `supabase/`**, and there is no
+SELECT policy on `storage.objects`, so `storage.list()` returns nothing either.
+There was no path to read, anywhere.
+
+So the menu reduced to the second option this document named — "a deliberate,
+tested URL→path derivation" — which collides with `flags.ts:665`. Sky ruled
+(§SKY-6a): **derivation, with the carve-out written INTO the law.** One named
+helper, one bucket constant, an explicit "no other URL parsing anywhere"
+restatement, and a guard test proving the marker literal appears in exactly one
+file. It fails closed — `null` on any mismatch, and `null` deletes nothing,
+because the failure mode of a wrong guess is destroying someone else's photo.
+Her second amendment: **a null is LOUD** (warn + analytics event), since a silent
+null would let the takedown hole return invisibly.
+
+`storage_path` is on the backlog, not dropped. The day the URL shape changes — a
+private bucket, signed URLs, a CDN — derivation becomes the wrong bet, the column
+lands, and this helper becomes legacy-only.
+
+## (b) Admin half — 📄 ARTIFACT WRITTEN, awaiting Sky
+
+Option **A**, as recommended: `04b_sql_sweep_lens4b_RECOVERED.md` **§C-12**.
+Fenced DDL + `-- ROLLBACK` + a read-only `-- VERIFY` + a read-only pre-state
+probe, mirroring C-8 exactly. **Applied by nobody.**
+
+Until it is applied, an admin takedown deletes the row and leaves the photo
+publicly fetchable. The client half needs no change when it lands — the same
+`deleteFlag` call simply starts succeeding for admins. **1.2(b) therefore reports
+"mechanism complete, admin takedown incomplete", not closed.**
+
+## R-1 — the sibling, still artifact-only by Sky's scoping
+
+Account-deletion Storage residue (avatars + flag photos surviving account
+deletion) remains **artifact-only**. See `R1_ACCOUNT_DELETION_SWEEP.md`, written
+this run. Deploying an edge function is a production side effect an agent must
+never take.

@@ -1516,10 +1516,32 @@ export default function MapScreen() {
     // that irrelevant default frame with the real flags; an INTENT camera is retired above.)
     if (currentRegionRef.current !== DEFAULT_REGION) return;
 
-    didInitialFitRef.current = true;
-    const region = regionForFlags(flags);
-    currentRegionRef.current = region; // keep the viewport gate honest post-fit
-    mapRef.current?.snapToRegion(region);
+    // R-13 / SR-105. This used to set the one-time flag and then call
+    // `mapRef.current?.snapToRegion(region)`. The `?.` is the bug: the map ref
+    // is not populated on the frame the flags first land (react-leaflet's
+    // MapContainer attaches its imperative handle asynchronously), so on web
+    // the snap was silently DROPPED — while the one-time flag had already been
+    // set, retiring the fit forever. A guest with no location was left staring
+    // at the seeded San Francisco default with their own city's flags loaded
+    // and off-screen. Optional chaining turned a race into a no-op.
+    //
+    // Retry on the next frame instead of committing, bounded so it can never
+    // spin if the map never mounts. Same shape as navigateWhenReady in
+    // RootNavigator, which solves the identical "the thing is not ready yet"
+    // problem for navigation.
+    const commitFit = (attempts: number) => {
+      if (!mapRef.current) {
+        if (attempts <= 0) return; // give up quietly; the default frame stands
+        requestAnimationFrame(() => commitFit(attempts - 1));
+        return;
+      }
+      // Only NOW is the fit real, so only now does it count as done.
+      didInitialFitRef.current = true;
+      const region = regionForFlags(flags);
+      currentRegionRef.current = region; // keep the viewport gate honest post-fit
+      mapRef.current.snapToRegion(region);
+    };
+    commitFit(10);
   }, [flags, loadingFlags, location, route.params?.focusFlag, route.params?.flagId]);
 
   // Long-press anywhere on the map → confirm prompt → open the report
