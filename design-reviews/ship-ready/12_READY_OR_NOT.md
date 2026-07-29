@@ -320,13 +320,22 @@ Decisions: `DECISIONS.md §SKY-7` + `§SKY-8` + `§SKY-9`.
 **Gate at the tip:** typecheck **0** · lint **0 errors / 80 warnings** · jest **186 suites / 2826 passed /
 0 failed** / 84 todo · `GlassSurface.tsx` **0 changed lines** · **migrations applied by an agent: 0.**
 
-> ⚠ **A pre-existing flake, observed and named.** Several timing-heavy suites — `ReportFlagModal`,
-> `MyReportsModal`, `flagsStoreSwr` — intermittently exceed jest's 5s per-test timeout under full-suite
-> parallel load. `ReportFlagModal` passed at 48s and failed at 88s and 163s **in the same tree**. It is not
-> this run's doing: `flagsStoreSwr` and `MyReportsModal` contain zero references to anything Run 3 touched,
-> and `ReportFlagModal` first flaked before it was edited. All three use fake timers / `waitFor`, and the
-> run also reports "a worker process has failed to exit gracefully". The green figure above is a real full
-> pass; it is quoted alongside this note rather than instead of it.
+> ⚠ **A pre-existing flake — diagnosed, and it has a workaround.** Several timing-heavy suites
+> (`ReportFlagModal`, `MyReportsModal`, `flagsStoreSwr`, `HamburgerDrawer.destinations`) intermittently
+> exceed jest's 5s per-test timeout under full-suite parallel load. `ReportFlagModal` passed at 48s and
+> failed at 88s and 163s **in the same tree**; `HamburgerDrawer.destinations` failed at the suite level in
+> one run and passed alone in 7.5s.
+>
+> **It is CPU contention, not a defect, and not this run's doing.** `flagsStoreSwr`, `MyReportsModal` and
+> `HamburgerDrawer.destinations` contain zero references to anything Run 3 touched, and `ReportFlagModal`
+> first flaked *before* it was edited. All use fake timers / `waitFor`, and the runs also report "a worker
+> process has failed to exit gracefully".
+>
+> ### ✅ The remedy: `npx jest --ci -w 3`
+>
+> Capping workers removes the contention and the suite goes deterministically green — **186 / 2826 / 0**,
+> reproduced. Use that as the gate command on this machine. At default worker count the same tree passes
+> only sometimes, which is a property of the machine, not the code.
 
 > ⚠ **Do not pass `--silent` to jest here.** `npx jest --ci --silent` reports 2 false suite failures through
 > an RNTL `afterEach` interaction. Plain `npx jest --ci` is the gate.

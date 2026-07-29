@@ -496,6 +496,10 @@ npm run lint      →  0 errors / 80 warnings      (80 is true; "79" in older do
 npx jest --ci     →  182 suites / 2701 passed / 0 failed / 84 todo
 ```
 
+> ✅ **Gate command on this machine: `npx jest --ci -w 3`.** At the default worker count several
+> timing-heavy suites intermittently time out under contention (see `12 §1″`); capping workers makes the
+> run deterministic — 186 suites / 2826 passed / 0 failed, reproduced.
+
 > ⚠ **Do not pass `--silent` to jest in this repo.** `npx jest --ci --silent` reports 2 false suite failures
 > (`AppText.dynamicType.test.tsx` + one other) through an RNTL `afterEach` cleanup interaction. Plain
 > `npx jest --ci` is green. This cost a diagnostic cycle at the top of the run; it is recorded so it costs
@@ -641,9 +645,11 @@ entry points in `terms.guard.test.ts`'s `SURFACES` table. On contact, `SURFACES`
 weakening the existing assertions to admit them. They got their own describe instead.
 
 **A flake was diagnosed rather than retried.** `ReportFlagModal` failed two full runs and passed a third;
-the temptation was to call it flaky and move on. Running it down found a *class*: three timing-heavy suites,
-none related to this run, `ReportFlagModal` passing at 48s and failing at 88s and 163s in the same tree.
-Named in `12 §1″` rather than hidden behind a green number.
+the temptation was to call it flaky and move on. Running it down found a *class* — four timing-heavy suites,
+none related to this run, `ReportFlagModal` passing at 48s and failing at 88s and 163s in the same tree —
+and then a **remedy**: `npx jest --ci -w 3` caps worker contention and the suite goes deterministically
+green at 186 / 2826 / 0. A retry would have bought a green number; the diagnosis bought a gate command that
+works every time. Named in `12 §1″` rather than hidden.
 
 **What Run 3 did NOT do, and said so:** `createAnonFlag` never calls `containsBlockedTerm` — the anonymous
 submit path bypasses Apple 1.2(a)'s filter entirely, and anonymous is the reviewer's own cohort. Found while
