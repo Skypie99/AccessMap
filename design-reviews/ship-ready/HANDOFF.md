@@ -479,3 +479,65 @@ git reset --hard 7349346
 ```
 
 Nothing was merged, submitted, or applied to the database. `main` is untouched. **The branch stops here.**
+
+---
+---
+
+# ⏱ RUN 3 — THE FINAL BUILD RUN (2026-07-28, live)
+
+**Everything above is the Run-2 record and stands.** Branch `shipready/3-polish-submission`, stacked on
+`c70eb65`. `main` untouched. Provenance: **Opus 5, max effort.**
+
+**Baseline pinned at the start of this run, measured — not inherited from docs:**
+
+```
+npx tsc --noEmit  →  0 errors
+npm run lint      →  0 errors / 80 warnings      (80 is true; "79" in older docs is stale)
+npx jest --ci     →  182 suites / 2701 passed / 0 failed / 84 todo
+```
+
+> ⚠ **Do not pass `--silent` to jest in this repo.** `npx jest --ci --silent` reports 2 false suite failures
+> (`AppText.dynamicType.test.tsx` + one other) through an RNTL `afterEach` cleanup interaction. Plain
+> `npx jest --ci` is green. This cost a diagnostic cycle at the top of the run; it is recorded so it costs
+> the next reader nothing.
+
+## Car ledger
+
+| Car | SHA | Status |
+|---|---|---|
+| 0 · bank §SKY-7 | `028f66e` | ✅ docs only |
+| A · HIGH-2 the Unhide surface | `dea01de` | ✅ |
+| B · CONTENT_BLOCKED coherence | — | pending |
+| C · B-3 the privacy policy | — | pending |
+
+## Car A — what shipped
+
+Settings → **Feedback** → **Hidden comments** (Sky's gate answer **A · H · S1**, DECISIONS §SKY-7; the
+correction block governs, not the earlier delegated `B · F · S2`).
+
+- `hiddenContent.ts` **untouched** — bare ids, no migration, no storage change.
+- New `fetchCommentsByIds` (chunked at 100, **not capped**): a capped fetch would render unasked-about
+  comments as "no longer available", telling a user their comment was deleted when nobody ever asked.
+- **Three row states, deliberately:** `loaded` · `missing` (fetch succeeded, id absent) · `unloaded` (fetch
+  failed). Collapsing the third into the second reports a dropped connection as a deletion. Unhide works in
+  all three — it is a local write, so the screen's real job works offline.
+- **"Unhide all" never calls `clearHidden()`** — that would also empty the `flag` bucket. Comment-scoped
+  loop, sequential (concurrent writes race on one AsyncStorage key and lose ids).
+- Pill ink **`brandOnSoft` on `brandSofter` — measured 6.33:1 light / 8.51:1 dark.** Every other ink is
+  inherited unchanged from `MyWatchedModal`.
+- 17 new strings, all **PROPOSED**: the gate answered layout, not wording.
+- Guards: `hiddenComments.guard.test.ts` (with a non-vacuity block) + `hiddenComments.test.ts` (the three
+  states proved directly) + 8 new `fetchCommentsByIds` cases.
+
+**Gate at `dea01de`:** tsc 0 · lint 0 errors / 80 warnings · jest **184 suites / 2779 passed / 0 failed**.
+`GlassSurface.tsx` 0 changed lines · migrations applied by an agent: **0**.
+
+⚠ **Observed once, not fixed:** `ReportFlagModal.test.tsx` timed out under full-suite parallel load (147s
+against 9s standalone) and passed on re-run and in isolation. Pre-existing flake class; this car does not
+touch that file.
+
+## Rollback for Run 3
+
+```
+git reset --hard c70eb65
+```
