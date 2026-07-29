@@ -507,7 +507,7 @@ npx jest --ci     →  182 suites / 2701 passed / 0 failed / 84 todo
 |---|---|---|
 | 0 · bank §SKY-7 | `028f66e` | ✅ docs only |
 | A · HIGH-2 the Unhide surface | `dea01de` | ✅ |
-| B · CONTENT_BLOCKED coherence | — | pending |
+| B · CONTENT_BLOCKED coherence | `b200eb0` | ✅ |
 | C · B-3 the privacy policy | — | pending |
 
 ## Car A — what shipped
@@ -535,6 +535,39 @@ correction block governs, not the earlier delegated `B · F · S2`).
 ⚠ **Observed once, not fixed:** `ReportFlagModal.test.tsx` timed out under full-suite parallel load (147s
 against 9s standalone) and passed on re-run and in isolation. Pre-existing flake class; this car does not
 touch that file.
+
+## Car B — what shipped
+
+The blocked-content alert gains **"View guidelines"**, opening the ratified ToS sheet. Both throw sites
+(`comments.ts` → FlagDetailModal, `flags.ts` → ReportFlagModal's authenticated path) route through one
+helper, `lib/blockedContent.ts`, so they cannot drift apart.
+
+- **Detection is message identity, not a new error code.** A code would mean editing the two throw sites,
+  and `blockedTerms.test.ts:185-193` asserts on their exact source text so nobody quietly changes what they
+  throw. `errorMessage(e)` is the same normalisation the alert renders, so the check cannot disagree with
+  what is displayed. **The negative is tested**: a network failure must not offer the community guidelines
+  to someone whose wifi dropped.
+- **Not `confirm()`**, though it is the house two-button primitive and works on web — it hardcodes
+  `'Cancel'`, which is new visible copy (§SKY-7 permits exactly one new string) and the wrong word: nothing
+  is being cancelled, the submit already failed.
+- **One new string only:** `VIEW_GUIDELINES_LABEL`. Title and body unchanged, ratified §2 verbatim.
+- **`ReportFlagModal.test.tsx` now wraps renders in `<SharedModalsProvider>`** — same helper, same reasoning
+  as `ReportContentModal.test.tsx`. The hook throws outside a provider *by design*; the tests supply one
+  rather than the component degrading silently.
+- The two new doors are pinned in `terms.guard.test.ts` as **their own describe, not SURFACES rows** —
+  SURFACES enforces a navigational link-label contract these deliberately do not follow.
+
+**Gate at `b200eb0`:** tsc 0 · lint 0 errors / 80 warnings · jest **185 suites / 2799 passed / 0 failed**.
+
+⚠ **Web keeps the residual, knowingly.** `Alert`-with-buttons is a silent no-op on react-native-web (F46),
+so web gets the message without the button. The alternative reintroduces the `'Cancel'` wording. iOS is the
+submission target; the guidelines stay reachable on web from Settings and About.
+
+🔴 **Found while wiring this, NOT fixed — `createAnonFlag` never calls `containsBlockedTerm`.**
+`flags.ts:1207` filters the authenticated path only; the anonymous submit path
+(`flags.ts` `createAnonFlag`) has no filter at all. **Anonymous submission bypasses Apple 1.2(a)
+entirely**, and anonymous is the App Review reviewer's own cohort. It is a moderation-policy change, not a
+coherence fix, so it is surfaced rather than quietly patched. See the close-out.
 
 ## Rollback for Run 3
 
