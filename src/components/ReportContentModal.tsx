@@ -91,9 +91,12 @@ import {
   REPORT_REASON_LABEL,
   REPORT_SENT_BODY,
   REPORT_SENT_TITLE,
+  TERMS_LINK_HINT,
+  TERMS_LINK_LABEL,
   type ReportCategoryId,
   reportFailedBody,
 } from '@/lib/copy';
+import { useSharedModals } from '@/lib/sharedModalsContext';
 
 interface Props {
   visible: boolean;
@@ -107,6 +110,10 @@ export default function ReportContentModal({ visible, target, onClose }: Props) 
   const styles = makeStyles(color);
   const reducedMotion = useReducedMotion();
   const { user } = useAuth();
+  // The terms sheet is mounted at the navigator, not here — this sheet is
+  // itself inside the flag sheet, and a third modal nested in the second would
+  // be trapped beneath it. Raising the shared flag lets it present on top.
+  const { setOpen } = useSharedModals();
 
   const [reason, setReason] = useState('');
   const [category, setCategory] = useState<ReportCategoryId | null>(null);
@@ -390,6 +397,37 @@ export default function ReportContentModal({ visible, target, onClose }: Props) 
                     accessibilityLabel={REPORT_REASON_LABEL}
                     testID="reportContentModal-reason"
                   />
+
+                  {/* §SKY-6 / §SKY-6a. This sheet asks someone to judge content
+                      against community guidelines that, until now, existed
+                      nowhere they could read them. The link is the whole fix —
+                      no explanatory sentence above it, deliberately: any
+                      sentence introducing it would be an agent authoring
+                      moderation copy, which is the one thing the B-1 fence
+                      forbids. A labelled route to Sky's own words says more
+                      than a paragraph about them would.
+
+                      ⚠ RESIDUAL, recorded in §SKY-6a: the OTHER surface that
+                      cites the guidelines — CONTENT_BLOCKED_MESSAGE, the
+                      submit-time filter rejection — is an Alert and still
+                      carries no route. Sky ruled that out of scope for Run 2. */}
+                  <Pressable
+                    onPress={() => setOpen('terms')}
+                    disabled={submitting}
+                    style={({ pressed }) => [
+                      styles.termsLinkRow,
+                      pressed && { opacity: 0.7 },
+                    ]}
+                    accessibilityRole="button"
+                    accessibilityLabel={TERMS_LINK_LABEL}
+                    accessibilityHint={TERMS_LINK_HINT}
+                    {...a11yToggle({ disabled: submitting })}
+                    testID="reportContentModal-terms"
+                  >
+                    <AppText variant="bodyMedium" style={styles.termsLinkText}>
+                      {TERMS_LINK_LABEL}
+                    </AppText>
+                  </Pressable>
                 </ScrollView>
               )}
 
@@ -579,6 +617,22 @@ const makeStyles = (color: ColorTheme) =>
       fontSize: font.size.md,
       color: color.text,
       minHeight: 120,
+    },
+    // §SKY-6 terms link. Byte-identical reuse of the link treatment AboutScreen
+    // already ships on this same BULK material (color.brand + underline), so no
+    // new ink pairing enters the app — the pair is carried into the G3 proof set
+    // rather than asserted here. minHeight (not height) keeps the 44pt target
+    // while letting the label grow at large dynamic type.
+    termsLinkRow: {
+      minHeight: 44,
+      justifyContent: 'center',
+      marginTop: spacing.md,
+    },
+    termsLinkText: {
+      fontSize: font.size.base,
+      color: color.brand,
+      textDecorationLine: 'underline',
+      lineHeight: 22,
     },
     sentWrap: {
       gap: spacing.sm,

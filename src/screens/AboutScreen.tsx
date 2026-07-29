@@ -10,7 +10,13 @@ import LogoMark from '@/components/LogoMark';
 import { Map as MapIcon, X } from 'lucide-react-native';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { useReducedMotion } from '@/lib/accessibility';
-import { OPENS_IN_BROWSER_HINT, PRIVACY_POLICY_LINK_LABEL } from '@/lib/copy';
+import {
+  OPENS_IN_BROWSER_HINT,
+  PRIVACY_POLICY_LINK_LABEL,
+  TERMS_LINK_HINT,
+  TERMS_LINK_LABEL,
+} from '@/lib/copy';
+import { useSharedModals } from '@/lib/sharedModalsContext';
 import { PRIVACY_POLICY_URL, openExternalUrl } from '@/lib/links';
 
 interface Props {
@@ -43,6 +49,10 @@ export default function AboutScreen({ visible, onClose }: Props) {
   const color = useColor();
   const reducedMotion = useReducedMotion();
   const styles = makeStyles(color);
+  // §SKY-6: the terms are a SHARED modal, so About only raises the flag — the
+  // sheet itself is mounted at the navigator and presents over this card rather
+  // than under it. About stays open beneath, so closing the terms returns here.
+  const { setOpen } = useSharedModals();
   return (
     <Modal visible={visible} animationType={reducedMotion ? 'none' : 'slide'} transparent onRequestClose={onClose} aria-label="About AccessMap">
       <View style={styles.backdrop}>
@@ -150,6 +160,23 @@ export default function AboutScreen({ visible, onClose }: Props) {
             >
               <AppText variant="bodyMedium" style={styles.link}>
                 {PRIVACY_POLICY_LINK_LABEL}
+              </AppText>
+            </Pressable>
+
+            {/* §SKY-6: the terms take the same B-2 grammar, appended after the
+                privacy link so PROTECT-11 still holds — nothing above moves.
+                accessibilityRole is "button", not "link": the privacy row leaves
+                for a browser and this one opens a sheet, and the two should not
+                announce identically when they do different things. */}
+            <Pressable
+              onPress={() => setOpen('terms')}
+              style={({ pressed }) => (pressed ? styles.linkPressed : null)}
+              accessibilityRole="button"
+              accessibilityLabel={TERMS_LINK_LABEL}
+              accessibilityHint={TERMS_LINK_HINT}
+            >
+              <AppText variant="bodyMedium" style={styles.link}>
+                {TERMS_LINK_LABEL}
               </AppText>
             </Pressable>
           </ScrollView>

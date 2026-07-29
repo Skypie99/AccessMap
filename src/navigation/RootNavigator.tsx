@@ -24,6 +24,7 @@ import FeedbackModal from '@/components/FeedbackModal';
 import HelpModal from '@/components/HelpModal';
 import ChangelogModal from '@/components/ChangelogModal';
 import MyFeedbackModal from '@/components/MyFeedbackModal';
+import TermsScreen from '@/screens/TermsScreen';
 import { useIsAdmin } from '@/lib/admin';
 import HomeScreen from '@/screens/HomeScreen';
 import MapScreen from '@/screens/MapScreen';
@@ -409,6 +410,13 @@ function SharedModalsHost() {
       <ChangelogModal visible={open === 'changelog'} onClose={close} />
       <FeedbackModal visible={open === 'feedback'} onClose={close} />
       <MyFeedbackModal visible={open === 'myFeedback'} onClose={close} />
+      {/* §SKY-6: the terms live in the shared pool rather than per-screen
+          precisely BECAUSE two of its three entry points are themselves
+          modals — About and the report sheet. Mounted here, it presents over
+          them; mounted inside either, it would be trapped under the surface
+          that opened it. The same modal-over-modal shape the report sheet
+          already uses over the flag sheet (device row D-B18). */}
+      <TermsScreen visible={open === 'terms'} onClose={close} />
     </>
   );
 }

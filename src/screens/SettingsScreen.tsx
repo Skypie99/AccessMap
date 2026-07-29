@@ -32,7 +32,12 @@ import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { CATEGORY_LABELS, listFlagsByUser } from '@/lib/flags';
 import { listFeedbackByUser } from '@/lib/feedbackStore';
 import { formatDataExport } from '@/lib/dataExport';
-import { OPENS_IN_BROWSER_HINT, PRIVACY_POLICY_LINK_LABEL } from '@/lib/copy';
+import {
+  OPENS_IN_BROWSER_HINT,
+  PRIVACY_POLICY_LINK_LABEL,
+  TERMS_LINK_HINT,
+  TERMS_LINK_LABEL,
+} from '@/lib/copy';
 import { PRIVACY_POLICY_URL, openExternalUrl } from '@/lib/links';
 import type { UserRow } from '@/types/database';
 import {
@@ -596,6 +601,19 @@ export default function SettingsScreen() {
           title={PRIVACY_POLICY_LINK_LABEL}
           accessibilityHint={OPENS_IN_BROWSER_HINT}
           onPress={() => { void openExternalUrl(PRIVACY_POLICY_URL); }}
+        />
+
+        {/* §SKY-6: the terms take the B-2 privacy-link grammar — same section,
+            same title-only shape, beside its sibling. TWO deliberate departures:
+            role stays the default "button" and the hint is NOT
+            OPENS_IN_BROWSER_HINT, because this destination is in-app. Announcing
+            "link … opens in your browser" for a sheet that never leaves the app
+            would be a small lie told to screen-reader users only. */}
+        <SettingsRow
+          glassLite={glassLite}
+          title={TERMS_LINK_LABEL}
+          accessibilityHint={TERMS_LINK_HINT}
+          onPress={() => setOpen('terms')}
         />
 
         <SettingsRow

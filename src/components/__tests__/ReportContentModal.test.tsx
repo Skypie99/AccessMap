@@ -26,6 +26,7 @@ import { AccessibilityInfo, Platform } from 'react-native';
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
 
 import ReportContentModal from '../ReportContentModal';
+import { SharedModalsProvider } from '@/lib/sharedModalsContext';
 import { buildReportBody, type ReportTarget, type SubmitReportResult } from '@/lib/reports';
 import type { SendFeedbackResult } from '@/lib/feedback';
 import {
@@ -33,6 +34,8 @@ import {
   REPORT_FAILED_TITLE,
   REPORT_SENT_BODY,
   REPORT_SENT_TITLE,
+  TERMS_LINK_HINT,
+  TERMS_LINK_LABEL,
   reportFailedBody,
 } from '@/lib/copy';
 
@@ -94,10 +97,23 @@ const REASON = 'This comment is abusive.';
 /** Raw provider text — diagnostic only, must never reach the screen. */
 const DIAGNOSTIC = 'PGRST301: rate limit exceeded';
 
+/**
+ * §SKY-6: the sheet now carries a link to the terms, and the terms are a SHARED
+ * modal — so the sheet reads `useSharedModals()`, which throws outside a
+ * provider by design (missing-provider bugs should surface immediately, not
+ * silently no-op). In the app the provider is always there: RootNavigator wraps
+ * everything. Here it has to be supplied.
+ */
+function withProvider(node: React.ReactElement) {
+  return <SharedModalsProvider>{node}</SharedModalsProvider>;
+}
+
 function renderSheet(overrides: Partial<React.ComponentProps<typeof ReportContentModal>> = {}) {
   const onClose = jest.fn();
   const utils = render(
-    <ReportContentModal visible target={COMMENT_TARGET} onClose={onClose} {...overrides} />,
+    withProvider(
+      <ReportContentModal visible target={COMMENT_TARGET} onClose={onClose} {...overrides} />,
+    ),
   );
   return { ...utils, onClose };
 }
@@ -371,19 +387,57 @@ describe('ReportContentModal — reset', () => {
     mockSubmitContentReport.mockResolvedValue({ status: 'submitted' });
     const onClose = jest.fn();
     const { getByTestId, getByText, queryByText, rerender } = render(
-      <ReportContentModal visible target={COMMENT_TARGET} onClose={onClose} />,
+      withProvider(<ReportContentModal visible target={COMMENT_TARGET} onClose={onClose} />),
     );
 
     fireEvent.changeText(getByTestId('reportContentModal-reason'), REASON);
     fireEvent.press(getByTestId('reportContentModal-send'));
     await waitFor(() => expect(getByText(REPORT_SENT_TITLE)).toBeTruthy());
 
-    rerender(<ReportContentModal visible={false} target={COMMENT_TARGET} onClose={onClose} />);
-    rerender(<ReportContentModal visible target={COMMENT_TARGET} onClose={onClose} />);
+    rerender(
+      withProvider(<ReportContentModal visible={false} target={COMMENT_TARGET} onClose={onClose} />),
+    );
+    rerender(withProvider(<ReportContentModal visible target={COMMENT_TARGET} onClose={onClose} />));
 
     // A blank form, not the last report's leftovers.
     expect(queryByText(REPORT_SENT_TITLE)).toBeNull();
     expect(getByTestId('reportContentModal-reason').props.value).toBe('');
     expect(getByTestId('reportContentModal-send').props.accessibilityState.disabled).toBe(true);
+  });
+});
+
+describe('the terms link (§SKY-6)', () => {
+  it('renders a route to the community guidelines the sheet asks you to judge against', () => {
+    const { getByTestId } = renderSheet();
+    const link = getByTestId('reportContentModal-terms');
+    expect(link.props.accessibilityLabel).toBe(TERMS_LINK_LABEL);
+    expect(link.props.accessibilityRole).toBe('button');
+  });
+
+  it('does not promise a browser it never opens', () => {
+    // The terms are an in-app sheet. Borrowing OPENS_IN_BROWSER_HINT here would
+    // mislead screen-reader users and nobody else, which is why it is asserted.
+    const { getByTestId } = renderSheet();
+    expect(getByTestId('reportContentModal-terms').props.accessibilityHint).toBe(TERMS_LINK_HINT);
+  });
+
+  it('is reachable and inert while a report is in flight', async () => {
+    // Mid-submit the whole form disables; the link must follow the same rule as
+    // Cancel rather than staying live and navigating out of an in-flight send.
+    let resolve: (v: SubmitReportResult) => void = () => {};
+    mockSubmitContentReport.mockReturnValue(new Promise<SubmitReportResult>((r) => { resolve = r; }));
+    const { getByTestId } = renderSheet();
+    fireEvent.changeText(getByTestId('reportContentModal-reason'), REASON);
+    fireEvent.press(getByTestId('reportContentModal-send'));
+
+    await waitFor(() =>
+      expect(getByTestId('reportContentModal-terms').props.accessibilityState.disabled).toBe(true),
+    );
+    resolve({ status: 'submitted' });
+  });
+
+  it('press does not throw — the shared slot is what carries the navigation', () => {
+    const { getByTestId } = renderSheet();
+    expect(() => fireEvent.press(getByTestId('reportContentModal-terms'))).not.toThrow();
   });
 });

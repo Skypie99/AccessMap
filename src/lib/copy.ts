@@ -222,9 +222,19 @@ export const REPORT_CATEGORIES = [
 export type ReportCategoryId = (typeof REPORT_CATEGORIES)[number]['id'];
 
 /**
- * Heading above the picker. AGENT-PROPOSED wording — it is chrome, not
- * taxonomy, and it makes no claim about what happens to a report.
- * PROPOSED (B-1, S-8) — Sky's final wording lands in DECISIONS §A / BP16.
+ * Heading above the picker. Chrome, not taxonomy — it makes no claim about what
+ * happens to a report.
+ *
+ * It shipped agent-proposed, and the M-run's own record asked Sky to "ratify or
+ * replace it" because it was the single new user-visible string that phase
+ * introduced. She kept it as written. That is a ratification, not an absence of
+ * one, so the marker changes even though the string does not — the fence tracks
+ * WHO owns the words, and these are now hers.
+ *
+ * ⚠ It was never in `copy.test.ts`'s PROPOSED_EXPORTS, so nothing was actually
+ * holding it. Enrolling it on the way out closes that hole rather than
+ * inheriting it.
+ * RATIFIED by Sky 2026-07-28 — DECISIONS §SKY-6.
  */
 export const REPORT_CATEGORY_LABEL = "What's wrong?";
 
@@ -336,3 +346,105 @@ export const DISPUTE_STALE_MESSAGE =
  * PROPOSED (W1, S-8) — Sky's final wording lands in DECISIONS §A / BP16.
  */
 export const DISPUTE_FAILED_TITLE = "Couldn't record that";
+
+/* ───────────────────────────────────────────────────────────────────────────
+ * THE TERMS & COMMUNITY GUIDELINES (Apple 1.2, §SKY-6)
+ *
+ * Sky ratified this text on 2026-07-27. It sat in the repo as a document for a
+ * day and could not be read from inside the app — which is the gap `§SKY-6`
+ * closes: "Words rendered VERBATIM from 14_MODERATION_TEXTS_v1.md §1; render,
+ * never rewrite."
+ *
+ * ⚑ THESE ARE TRANSCRIPTIONS, NOT COPY. No agent may edit a character of the
+ * strings below — not for tone, not for length, not to fix what looks like a
+ * typo ("licence" is deliberate). `terms.guard.test.ts` reads §1 out of the
+ * markdown on every run and fails if a single paragraph drifts, in either
+ * direction. That test is the reason this block can be trusted; do not weaken
+ * it into a snapshot.
+ * ─────────────────────────────────────────────────────────────────────────── */
+
+/**
+ * The document's own title, verbatim from §1's first line.
+ * RATIFIED by Sky 2026-07-27 — DECISIONS §SKY-4, 14_MODERATION_TEXTS_v1.md §1.
+ */
+export const TERMS_TITLE = 'AccessMap Terms & Community Guidelines';
+
+/**
+ * The effective-date line, verbatim from §1's first line. Carries the version
+ * because §1's own "Changes" paragraph promises a new date at the top when the
+ * terms change — so this string IS the promise being kept.
+ * RATIFIED by Sky 2026-07-27 — DECISIONS §SKY-4, 14_MODERATION_TEXTS_v1.md §1.
+ */
+export const TERMS_EFFECTIVE = 'Effective 2026-07-27 · v1.0';
+
+/**
+ * The nine titled paragraphs, verbatim and in Sky's order. `heading` is the
+ * bolded lead of each markdown paragraph (its trailing period included, because
+ * it is part of the sentence she wrote); `body` is the remainder.
+ *
+ * The email in "Contact" is a literal rather than an interpolation of
+ * `FEEDBACK_EMAIL`, because this block's contract is verbatim transcription and
+ * an interpolation would not be. The guard test asserts the two are equal
+ * instead, so they cannot drift without going red.
+ * RATIFIED by Sky 2026-07-27 — DECISIONS §SKY-4, 14_MODERATION_TEXTS_v1.md §1.
+ */
+export const TERMS_SECTIONS = [
+  {
+    heading: 'What AccessMap is.',
+    body: "AccessMap is a community map of accessibility barriers. I'm Sky, and I built it and run it on my own so that disabled people get better information about the places they move through. By using the app, you're agreeing to these terms.",
+  },
+  {
+    heading: 'Community-provided information.',
+    body: "Barrier reports come from people like you. I do my best to keep them honest through verification and moderation, but I can't promise every report is accurate or up to date. Please don't make AccessMap your only source when your safety is on the line.",
+  },
+  {
+    heading: 'What you can post.',
+    body: 'Real barriers, honestly described. Photos should show the barrier, not people. Please keep faces, licence plates, and anything that identifies a person out of frame.',
+  },
+  {
+    heading: "What's not allowed.",
+    body: "Anything hateful, harassing, sexually explicit, violent, spammy, deliberately false, or that exposes someone's private information. I remove content that breaks these rules, and I may restrict accounts that post it.",
+  },
+  {
+    heading: 'Reports and moderation.',
+    body: 'Every flag and comment can be reported right in the app. I review reports within 24 hours and take down anything that breaks these guidelines. You can also hide comments on your own device whenever you like.',
+  },
+  {
+    heading: 'Your content.',
+    body: "What you post stays yours. By posting it, you're letting AccessMap show it in the app so the community can use it.",
+  },
+  {
+    heading: 'Your account.',
+    body: "You can delete your account any time in Settings. Anything you've contributed may stay in the app, with your name removed, so the community's record of barriers stays whole.",
+  },
+  {
+    heading: 'Changes.',
+    body: 'If these terms ever change, the new version will live right here with a new date at the top.',
+  },
+  {
+    heading: 'Contact.',
+    body: 'Questions or concerns? Reach me at skylerhalisky@gmail.com. AccessMap is made in Canada and operates under the laws of British Columbia.',
+  },
+] as const;
+
+/**
+ * The label on all three entry points into the terms screen — Settings, About,
+ * and the report sheet. Sky's own phrase for the surface, transcribed from
+ * §SKY-6 ("a Terms & Community Guidelines screen"), which is why it is not
+ * PROPOSED: no agent chose these words.
+ *
+ * One const for three surfaces, deliberately — the same reasoning as
+ * `PRIVACY_POLICY_LINK_LABEL`, whose B-2 grammar this mirrors.
+ * RATIFIED by Sky 2026-07-28 — DECISIONS §SKY-6.
+ */
+export const TERMS_LINK_LABEL = 'Terms & Community Guidelines';
+
+/**
+ * Hint for those three rows. It is navigational chrome and makes no moderation
+ * claim — it says where the tap goes and stops, which is the only kind of hint
+ * the B-1 fence permits on a surface like this. Shaped after the shipped
+ * `OPENS_IN_BROWSER_HINT`, but this destination is in-app, so it must not
+ * borrow that string and promise a browser that never opens.
+ * PROPOSED (B-1, S-8) — Sky's final wording lands in DECISIONS §A / BP16.
+ */
+export const TERMS_LINK_HINT = 'Opens the terms and community guidelines';

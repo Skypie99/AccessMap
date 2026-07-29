@@ -43,7 +43,7 @@ import React, { createContext, useContext, useMemo, useState } from 'react';
  * none is. Add a new key here when you lift another modal into the pool;
  * the union doubles as an exhaustiveness check at every callsite.
  */
-export type SharedModalKey = 'help' | 'changelog' | 'feedback' | 'myFeedback' | null;
+export type SharedModalKey = 'help' | 'changelog' | 'feedback' | 'myFeedback' | 'terms' | null;
 
 interface SharedModalsContextValue {
   /** The currently-open modal key, or null when nothing is open. */

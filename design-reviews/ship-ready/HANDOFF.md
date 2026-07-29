@@ -115,3 +115,68 @@ census enrol in that order).
 Read this file → `07_PHASE2_REPORT.md` → `DECISIONS.md §SKY-3g/§SKY-3h` → the plan. Verify
 `git log --oneline f6ac258..HEAD` matches the Completed table, re-run the gate, then start at the first
 not-started row in the ledger.
+
+---
+
+# RUN 2 — the gap-closer (2026-07-28)
+
+**Branch** `shipready/3-polish-submission`, stacked on `7349346` (the M-1…M-4 tip). **Main untouched.**
+Decisions: `DECISIONS.md §SKY-6` (Sky's, verbatim) and `§SKY-6a` (the two she had to rule on mid-run).
+
+**Baseline pinned at `7349346` before a line was written:** tsc 0 · lint 0 errors / **80 warnings** · jest
+178 suites, 2610 passed, 0 failed.
+
+> ⚠ **The rails say "exactly 79 warnings". The true baseline is 80.** Verified with zero `src/` changes in
+> the tree, so the drift is pre-existing and predates this run. Every Run-2 gate below is measured against
+> **80**, and no car may add one. Recording it rather than quietly matching the number the docs expect.
+
+## Ledger
+
+| Car | Item | State |
+|---|---|---|
+| **0** | §SKY-6 + §SKY-6a banked | ✅ `0ec167f` |
+| **1** | **The ToS screen** | ✅ `7db14aa` |
+| **2** | HIGH-1 — the report envelope in My Feedback | ⏳ next |
+| **3** | The term list — vendor + D-2 re-curation | ⏳ |
+| **4** | G3 — ship the grabber | ⏳ |
+| **5** | HIGH-2 — Hidden comments (⛔ mockup gate) | ⏳ |
+| **6** | SR-050 owner half + admin artifact, then Class A | ⏳ |
+
+## Car 1 — the ToS screen ✅ `7db14aa`
+
+Gate: tsc 0 · lint 0/80 · jest **179 suites, 2641 passed, 0 failed** · `GlassSurface.tsx` **0 changed
+lines** · migrations applied by an agent: **0**.
+
+- `src/screens/TermsScreen.tsx` — pageSheet on the ResourcesScreen grammar. Escape rides the `SafeAreaView`
+  root, no AVM (own UIKit scene), RM-gated `animationType`, chrome-pane `onLayout` measure dance,
+  `inkGlassMuted` on chrome / `inkOnStage` for prose.
+- Text is a **verbatim transcription** of `14_MODERATION_TEXTS_v1.md` §1 into `TERMS_*` in `copy.ts`. No
+  agent authored a character. `licence` is Sky's spelling and stays.
+- Mounted **once**, in `SharedModalsHost`. Two of its three entry points are themselves modals (About, the
+  report sheet); mounted inside either it would be trapped beneath the surface that opened it. Same
+  modal-over-modal shape the report sheet already uses over the flag sheet (device row D-B18).
+- Three entries on the B-2 grammar, with **two deliberate departures**: `role` stays `"button"` and the hint
+  is **not** `OPENS_IN_BROWSER_HINT` — the destination is in-app, and announcing a browser that never opens
+  would be a lie told to screen-reader users only.
+
+**`terms.guard.test.ts` is the first test in this repo that reads a markdown file**, and that is the point.
+Every other copy fence checks a JSDoc *marker* — a claim, in a comment, that a string was ratified. A marker
+cannot catch the failure that actually matters: someone edits the string and leaves the marker in place, and
+the const goes on asserting a ratification it no longer has. This one skips the claim and compares the text,
+**failing in both directions** (app edited, or document edited — the second is not a false positive; if Sky
+revises the terms the app must follow, and red is how that gets noticed).
+
+**Hole closed on the way:** `REPORT_CATEGORY_LABEL` claimed `PROPOSED` in its JSDoc but was never in
+`copy.test.ts`'s `PROPOSED_EXPORTS` — nothing was holding it. Sky ratified it in §SKY-6, so it is enrolled
+under a **third marker grammar** (`RATIFIED … DECISIONS §SKY-6.`) rather than forced to cite a document
+section it does not come from. A false provenance claim is the exact failure that block exists to prevent.
+
+**Residual, named not hidden:** `CONTENT_BLOCKED_MESSAGE` — the submit-time filter rejection — still cites
+the community guidelines from inside an `Alert`, which cannot hold a link. A user told they broke the
+guidelines still has no route to read them. Sky ruled this out of scope for Run 2 (§SKY-6a).
+
+**Device rows gained:** the ToS walk — open from all three entries; confirm the terms present *over* About
+and *over* the report sheet, and that closing returns to the surface beneath; VoiceOver escape (two-finger Z)
+on the pageSheet; the prose at AX5.
+
+**Rollback:** `git reset --hard 7349346`.

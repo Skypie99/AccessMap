@@ -291,6 +291,9 @@ describe('B-1 copy carries the PROPOSED marker (the honesty fence, mechanised)',
     'DISPUTE_ALREADY_RECORDED_MESSAGE',
     'DISPUTE_STALE_MESSAGE',
     'DISPUTE_FAILED_TITLE',
+    // Run 2 (§SKY-6): navigational chrome for the terms entry points. The LABEL
+    // is Sky's (see RATIFIED_IN_DECISIONS below); only the hint is ours.
+    'TERMS_LINK_HINT',
   ];
 
   /**
@@ -354,6 +357,13 @@ describe('B-1 copy carries the PROPOSED marker (the honesty fence, mechanised)',
   const RATIFIED_EXPORTS: ReadonlyArray<[name: string, section: string]> = [
     ['REPORT_SENT_BODY', '§5'],
     ['CONTENT_BLOCKED_MESSAGE', '§2'],
+    // Run 2 (§SKY-6): the terms screen's text, transcribed from §1. The words
+    // themselves are additionally compared against the markdown, character for
+    // character, by `src/__tests__/terms.guard.test.ts` — this list only holds
+    // the provenance claim.
+    ['TERMS_TITLE', '§1'],
+    ['TERMS_EFFECTIVE', '§1'],
+    ['TERMS_SECTIONS', '§1'],
   ];
 
   it.each(RATIFIED_EXPORTS)('%s is marked RATIFIED, not PROPOSED', (name, section) => {
@@ -371,7 +381,47 @@ describe('B-1 copy carries the PROPOSED marker (the honesty fence, mechanised)',
     },
   );
 
+  /**
+   * ⚑ THE THIRD GRAMMAR, added 2026-07-28 (§SKY-6).
+   *
+   * `ratifiedMarker` cites a SECTION of the moderation-texts document, which
+   * only works for strings transcribed FROM it. Run 2 ratified two strings that
+   * have no such section: `TERMS_LINK_LABEL` (Sky's phrase for the surface,
+   * taken from §SKY-6 itself) and `REPORT_CATEGORY_LABEL` (agent-drafted chrome
+   * she read and kept).
+   *
+   * They get their own citation rather than being forced into a doc section
+   * that does not exist — a marker pointing at §1 for a string that is not in
+   * §1 would be a false provenance claim, which is the specific failure this
+   * whole block exists to prevent.
+   */
+  const decisionsMarker = (section: string) => `RATIFIED by Sky 2026-07-28 — DECISIONS ${section}.`;
+
+  const RATIFIED_IN_DECISIONS: readonly [name: string, section: string][] = [
+    ['TERMS_LINK_LABEL', '§SKY-6'],
+    ['REPORT_CATEGORY_LABEL', '§SKY-6'],
+  ];
+
+  it.each(RATIFIED_IN_DECISIONS)('%s is marked RATIFIED, not PROPOSED', (name, section) => {
+    const doc = prose(name);
+    expect(doc).toContain(decisionsMarker(section));
+    expect(doc).not.toContain(MARKER);
+  });
+
+  it.each(RATIFIED_IN_DECISIONS)(
+    '%s ends its JSDoc with the ratified marker, exactly',
+    (name, section) => {
+      expect(prose(name).endsWith(decisionsMarker(section))).toBe(true);
+    },
+  );
+
   it('no export is in both lists', () => {
     for (const [name] of RATIFIED_EXPORTS) expect(PROPOSED_EXPORTS).not.toContain(name);
+    for (const [name] of RATIFIED_IN_DECISIONS) expect(PROPOSED_EXPORTS).not.toContain(name);
+    // The two ratified lists are also mutually exclusive: a string cites either
+    // Sky's document or her decision record, never both.
+    for (const [name] of RATIFIED_IN_DECISIONS) {
+      expect(RATIFIED_EXPORTS.map(([n]) => n)).not.toContain(name);
+    }
   });
 });
