@@ -15,7 +15,7 @@ import { GlassSurface } from '@/components/ui/GlassSurface';
 import { OverflowFade } from '@/components/ui/OverflowFade';
 import { SheetGrabber } from '@/components/ui/Sheet';
 import { useHorizontalOverflowFade } from '@/hooks/useHorizontalOverflowFade';
-import { a11yToggle, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
+import { a11yToggle, decorativeProps, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
 import { CATEGORY_LABELS, CATEGORY_ORDER, SEVERITY_LABELS, STATUS_LABELS } from '@/lib/flags';
 import { relativeTime } from '@/lib/relativeTime';
 import { formatDistance, haversineKm, speakDistance, type LatLng } from '@/lib/distance';
@@ -178,9 +178,7 @@ export default function NearbyFlagsModal({
             {item.photo_url ? (
               <RemoteImage
                 uri={item.photo_url}
-                style={styles.thumb}
-                accessibilityElementsHidden
-                importantForAccessibility="no"
+                style={styles.thumb} {...decorativeProps}
               />
             ) : null}
             <View style={styles.cardBodyText}>

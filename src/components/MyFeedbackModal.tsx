@@ -15,7 +15,7 @@ import { useAuth } from '@/lib/auth';
 import { AppText } from '@/components/ui/AppText';
 import { GlassSurface } from '@/components/ui/GlassSurface';
 import { font, radius, shadow, spacing } from '@/theme';
-import { a11yToggle, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
+import { a11yToggle, decorativeProps, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { MessageCircle, Search, X } from 'lucide-react-native';
 import { FEEDBACK_CATEGORY_LABELS } from '@/lib/feedback';
@@ -220,7 +220,7 @@ export default function MyFeedbackModal({ visible, onClose, refreshKey = 0 }: Pr
                 ) : rows.length > 0 ? (
                   // Have feedback, but the active filter hides all of it.
                   <>
-                    <Search size={32} color={color.textSubtle} strokeWidth={2} accessibilityElementsHidden />
+                    <Search size={32} color={color.textSubtle} strokeWidth={2} {...decorativeProps} />
                     <AppText variant="heading" style={styles.emptyTitle}>
                       No {FEEDBACK_CATEGORY_FILTER_LABELS[filter].toLowerCase()} feedback
                     </AppText>
@@ -230,7 +230,7 @@ export default function MyFeedbackModal({ visible, onClose, refreshKey = 0 }: Pr
                   </>
                 ) : (
                   <>
-                    <MessageCircle size={32} color={color.textSubtle} strokeWidth={2} accessibilityElementsHidden />
+                    <MessageCircle size={32} color={color.textSubtle} strokeWidth={2} {...decorativeProps} />
                     <AppText variant="heading" style={styles.emptyTitle}>No feedback yet</AppText>
                     <AppText variant="body" style={styles.emptyBody}>
                       Tap the &quot;Feedback&quot; button at the top of any screen to send your first message.
@@ -271,7 +271,7 @@ function FeedbackRowCard({ row }: { row: FeedbackRow }) {
     >
       <View style={styles.rowHeader}>
         <View style={styles.categoryPill}>
-          <Icon size={16} color={color.brandOnSoft} strokeWidth={2.2} accessibilityElementsHidden />
+          <Icon size={16} color={color.brandOnSoft} strokeWidth={2.2} {...decorativeProps} />
           <AppText variant="label" style={styles.categoryText}>{categoryLabel}</AppText>
         </View>
         <AppText variant="body" style={styles.dateText} numberOfLines={1}>{formattedDate}</AppText>

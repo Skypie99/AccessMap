@@ -413,7 +413,7 @@ export default function MyWatchedModal({ visible, onClose, onSelectFlag, onViewO
             </View>
           ) : flags.length === 0 ? (
             <View style={styles.center}>
-              <Star size={32} color={color.inkGlassMuted} strokeWidth={2.2} accessibilityElementsHidden />
+              <Star size={32} color={color.inkGlassMuted} strokeWidth={2.2} {...decorativeProps} />
 
               <AppText variant="heading" style={styles.emptyTitle}>No watched flags yet</AppText>
               <AppText variant="body" style={styles.emptySubtitle}>

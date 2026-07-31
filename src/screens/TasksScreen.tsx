@@ -1261,9 +1261,7 @@ export default function TasksScreen() {
                 <MapPin
                   size={18}
                   color={color.brandOnSoft}
-                  strokeWidth={2.2}
-                  accessibilityElementsHidden
-                  importantForAccessibility="no"
+                  strokeWidth={2.2} {...decorativeProps}
                 />
                 <AppText variant="label" style={styles.suggestedText}>
                   {`Nearest open barrier · ${CATEGORY_LABELS[nearestOpenHit.flag.category]} · Severity ${nearestOpenHit.flag.severity} · ${formatDistance(
@@ -1273,9 +1271,7 @@ export default function TasksScreen() {
                 <ChevronRight
                   size={18}
                   color={color.brandOnSoft}
-                  strokeWidth={2.2}
-                  accessibilityElementsHidden
-                  importantForAccessibility="no"
+                  strokeWidth={2.2} {...decorativeProps}
                 />
               </GlassSurface>
             </Pressable>

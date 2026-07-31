@@ -1202,9 +1202,7 @@ export default function FlagDetailModal({
                 >
                   <AppText
                     variant="label"
-                    style={styles.anonBadgeText}
-                    importantForAccessibility="no"
-                    accessibilityElementsHidden
+                    style={styles.anonBadgeText} {...decorativeProps}
                   >
                     Anonymous
                   </AppText>
@@ -1276,8 +1274,7 @@ export default function FlagDetailModal({
                     size={16}
                     color={color.accentOrange}
                     fill={watched ? color.accentOrange : 'none'}
-                    strokeWidth={2.2}
-                    accessibilityElementsHidden
+                    strokeWidth={2.2} {...decorativeProps}
                   />
                   <AppText variant="label" style={[styles.watchBtnText, watched && styles.watchBtnTextActive]}>
                     {watched ? 'Watching' : 'Watch'}

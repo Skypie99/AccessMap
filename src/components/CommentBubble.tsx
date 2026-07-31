@@ -168,6 +168,12 @@ export function CommentBubble({
             // Own bubbles never reach this branch — they render no byline.
             accessibilityElementsHidden={!useCompositeLabel}
             importantForAccessibility={useCompositeLabel ? 'auto' : 'no-hide-descendants'}
+            // A11Y-234: the two props above are NO-OPS on react-native-web, so
+            // the byline was hidden on native and read twice on web — exactly
+            // the double the comment above exists to prevent. This is a
+            // CONDITIONAL hide, so decorativeProps (a static spread) cannot
+            // express it; the aria mirror is written out instead.
+            aria-hidden={!useCompositeLabel}
           >
             {author}
           </AppText>

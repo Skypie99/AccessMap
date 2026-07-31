@@ -196,6 +196,11 @@ function PhotoGalleryInner({ photos, onAddPhoto, maxPhotos = 5, onRemovePhoto }:
           <Pressable
             style={StyleSheet.absoluteFill}
             onPress={() => setLightboxOpen(false)}
+            // A11Y-234: the two native props below are NO-OPS on
+            // react-native-web, so this tap-anywhere layer leaked into the web
+            // tree as an UNLABELED interactive element. decorativeProps is barred
+            // on Pressables by its own docblock, so aria-hidden is added directly.
+            aria-hidden
             accessibilityElementsHidden
             importantForAccessibility="no-hide-descendants"
           />

@@ -134,7 +134,7 @@ export default function ChangelogModal({ visible, onClose }: Props) {
                   {isOpen &&
                     release.items.map((item, j) => (
                       <View key={j} style={styles.bulletRow}>
-                        <AppText variant="body" style={styles.bulletGlyph} accessibilityElementsHidden>
+                        <AppText variant="body" style={styles.bulletGlyph} {...decorativeProps}>
                           •
                         </AppText>
                         <AppText variant="body" style={styles.bulletText}>{item}</AppText>

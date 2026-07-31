@@ -14,7 +14,7 @@ import {
   View,
 } from 'react-native';
 import { font, radius, spacing } from '@/theme';
-import { a11yToggle, useFocusOnOpen, useReducedMotion, useReduceTransparency } from '@/lib/accessibility';
+import { a11yToggle, decorativeProps, useFocusOnOpen, useReducedMotion, useReduceTransparency } from '@/lib/accessibility';
 import { AppText } from '@/components/ui/AppText';
 import { GlassSurface } from '@/components/ui/GlassSurface';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
@@ -252,8 +252,7 @@ export default function FeedbackModal({ visible, onClose }: Props) {
                       <Icon
                         size={18}
                         color={selected ? color.textOnBrand : color.glassChipInk}
-                        strokeWidth={2.2}
-                        accessibilityElementsHidden
+                        strokeWidth={2.2} {...decorativeProps}
                       />
                       <AppText
                         variant="label"

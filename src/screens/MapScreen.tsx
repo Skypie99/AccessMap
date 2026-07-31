@@ -2037,9 +2037,9 @@ export default function MapScreen() {
               >
                 <AppText variant="heading" style={styles.filterTitle}>Filter flags</AppText>
                 {panelCollapsed ? (
-                  <ChevronRight size={16} color={color.inkSelect} strokeWidth={2.4} accessibilityElementsHidden />
+                  <ChevronRight size={16} color={color.inkSelect} strokeWidth={2.4} {...decorativeProps} />
                 ) : (
-                  <ChevronDown size={16} color={color.inkSelect} strokeWidth={2.4} accessibilityElementsHidden />
+                  <ChevronDown size={16} color={color.inkSelect} strokeWidth={2.4} {...decorativeProps} />
                 )}
               </Pressable>
               {filtersActive && (

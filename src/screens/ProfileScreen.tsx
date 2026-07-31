@@ -1364,8 +1364,7 @@ export default function ProfileScreen() {
           <ChevronRight
             size={18}
             color={color.textSubtle}
-            strokeWidth={2.2}
-            accessibilityElementsHidden
+            strokeWidth={2.2} {...decorativeProps}
           />
           </GlassSurface>
         </Pressable>
@@ -1387,8 +1386,7 @@ export default function ProfileScreen() {
           <ChevronRight
             size={18}
             color={color.textSubtle}
-            strokeWidth={2.2}
-            accessibilityElementsHidden
+            strokeWidth={2.2} {...decorativeProps}
           />
           </GlassSurface>
         </Pressable>
@@ -1410,8 +1408,7 @@ export default function ProfileScreen() {
           <ChevronRight
             size={18}
             color={color.textSubtle}
-            strokeWidth={2.2}
-            accessibilityElementsHidden
+            strokeWidth={2.2} {...decorativeProps}
           />
           </GlassSurface>
         </Pressable>
@@ -1442,8 +1439,7 @@ export default function ProfileScreen() {
           <ChevronRight
             size={18}
             color={color.textSubtle}
-            strokeWidth={2.2}
-            accessibilityElementsHidden
+            strokeWidth={2.2} {...decorativeProps}
           />
           </GlassSurface>
         </Pressable>
@@ -1465,8 +1461,7 @@ export default function ProfileScreen() {
           <ChevronRight
             size={18}
             color={color.textSubtle}
-            strokeWidth={2.2}
-            accessibilityElementsHidden
+            strokeWidth={2.2} {...decorativeProps}
           />
           </GlassSurface>
         </Pressable>
@@ -1488,8 +1483,7 @@ export default function ProfileScreen() {
           <ChevronRight
             size={18}
             color={color.textSubtle}
-            strokeWidth={2.2}
-            accessibilityElementsHidden
+            strokeWidth={2.2} {...decorativeProps}
           />
           </GlassSurface>
         </Pressable>
@@ -1509,8 +1503,7 @@ export default function ProfileScreen() {
           <ChevronRight
             size={18}
             color={color.textSubtle}
-            strokeWidth={2.2}
-            accessibilityElementsHidden
+            strokeWidth={2.2} {...decorativeProps}
           />
           </GlassSurface>
         </Pressable>
@@ -1654,8 +1647,7 @@ export default function ProfileScreen() {
           <ChevronRight
             size={18}
             color={color.textSubtle}
-            strokeWidth={2.2}
-            accessibilityElementsHidden
+            strokeWidth={2.2} {...decorativeProps}
           />
           </GlassSurface>
         </Pressable>
@@ -1675,8 +1667,7 @@ export default function ProfileScreen() {
           <ChevronRight
             size={18}
             color={color.textSubtle}
-            strokeWidth={2.2}
-            accessibilityElementsHidden
+            strokeWidth={2.2} {...decorativeProps}
           />
           </GlassSurface>
         </Pressable>
@@ -1698,8 +1689,7 @@ export default function ProfileScreen() {
           <ChevronRight
             size={18}
             color={color.textSubtle}
-            strokeWidth={2.2}
-            accessibilityElementsHidden
+            strokeWidth={2.2} {...decorativeProps}
           />
           </GlassSurface>
         </Pressable>

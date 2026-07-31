@@ -73,9 +73,8 @@ function AvatarCircle({
       <RemoteImage
         uri={uri}
         style={styles.img}
-        accessibilityElementsHidden
         fallback={
-          <AppText variant="label" style={styles.initials} accessibilityElementsHidden>
+          <AppText variant="label" style={styles.initials} {...decorativeProps}>
             {initials}
           </AppText>
         }
@@ -169,8 +168,7 @@ const LeaderboardRow = React.memo(function LeaderboardRow({
     >
       <AppText
         variant="mono"
-        style={[styles.rank, rank <= 3 && styles.rankTop]}
-        accessibilityElementsHidden
+        style={[styles.rank, rank <= 3 && styles.rankTop]} {...decorativeProps}
       >
         {ordinalLabel(rank)}
       </AppText>
@@ -183,12 +181,12 @@ const LeaderboardRow = React.memo(function LeaderboardRow({
           {name}
         </AppText>
         {isCurrentUser ? (
-          <AppText variant="label" style={styles.youBadge} accessibilityElementsHidden>
+          <AppText variant="label" style={styles.youBadge} {...decorativeProps}>
             you
           </AppText>
         ) : null}
         {verifiedCount > 0 ? (
-          <AppText variant="label" style={styles.verifiedBadge} accessibilityElementsHidden>
+          <AppText variant="label" style={styles.verifiedBadge} {...decorativeProps}>
             {verifiedCount} verified
           </AppText>
         ) : null}
@@ -418,7 +416,7 @@ export default function LeaderboardScreen({ visible, onClose }: Props) {
               accessible
               accessibilityLabel={`Your rank: ${ordinalLabel(userFooter.rank)}, ${userFooter.points.toLocaleString()} points`}
             >
-              <AppText variant="mono" style={styles.footerText} accessibilityElementsHidden>
+              <AppText variant="mono" style={styles.footerText} {...decorativeProps}>
                 Your rank:{' '}
                 <AppText variant="monoBold" style={styles.footerRank}>{ordinalLabel(userFooter.rank)}</AppText>
                 {'  ·  '}

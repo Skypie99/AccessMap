@@ -65,6 +65,12 @@ export function RemoteImage({
         style={[styles.fallback, { backgroundColor: color.surfaceNeutral }, style as StyleProp<ViewStyle>]}
         accessibilityElementsHidden={accessibilityElementsHidden}
         importantForAccessibility={importantForAccessibility ?? 'no-hide-descendants'}
+        // A11Y-234: mirror the caller's hide intent onto aria-hidden. Both
+        // props above are NO-OPS in react-native-web, so a caller that passes
+        // only the native prop got a fallback that still reached web screen
+        // readers. (`{...rest}` already forwards an explicit aria-hidden, e.g.
+        // from a decorativeProps spread; this covers everyone else.)
+        aria-hidden={accessibilityElementsHidden}
       >
         <ImageOff size={fallbackIconSize} color={color.textSubtle} />
       </View>
@@ -78,6 +84,9 @@ export function RemoteImage({
       onError={() => setFailed(true)}
       accessibilityElementsHidden={accessibilityElementsHidden}
       importantForAccessibility={importantForAccessibility}
+      // A11Y-234: see the fallback branch above — same mirror, same reason.
+      // `{...rest}` stays LAST so an explicit caller aria-hidden still wins.
+      aria-hidden={accessibilityElementsHidden}
       {...rest}
     />
   );

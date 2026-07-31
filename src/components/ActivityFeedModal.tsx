@@ -31,7 +31,7 @@ import { AppText } from '@/components/ui/AppText';
 import { GlassSurface } from '@/components/ui/GlassSurface';
 import { SeverityDisc } from '@/components/SeverityDisc';
 import { useAuth } from '@/lib/auth';
-import { a11yToggle, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
+import { a11yToggle, decorativeProps, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
 import { errorMessage } from '@/lib/errors';
 import {
   CATEGORY_LABELS,
@@ -193,9 +193,7 @@ export default function ActivityFeedModal({ visible, onClose, onSelectFlag, onVi
               {item.photo_url ? (
                 <RemoteImage
                   uri={item.photo_url}
-                  style={styles.thumb}
-                  accessibilityElementsHidden
-                  importantForAccessibility="no"
+                  style={styles.thumb} {...decorativeProps}
                 />
               ) : null}
               <View style={styles.rowBodyText}>

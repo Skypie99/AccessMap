@@ -19,6 +19,7 @@ import { GlassSurface } from '@/components/ui/GlassSurface';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { font, radius, spacing } from '@/theme';
 import { Bell, X } from 'lucide-react-native';
+import { decorativeProps } from '@/lib/accessibility';
 
 interface Props {
   count: number;
@@ -68,9 +69,7 @@ export default function UpdateBanner({ count, onView, onDismiss }: Props) {
       <Bell
         size={18}
         color={color.brandOnSoft}
-        strokeWidth={2.2}
-        accessibilityElementsHidden
-        importantForAccessibility="no"
+        strokeWidth={2.2} {...decorativeProps}
       />
       <AppText variant="label" style={styles.text}>{label}</AppText>
       <Pressable

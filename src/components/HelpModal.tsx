@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, type Text, View } from 'react-native';
 import { font, radius, shadow, spacing } from '@/theme';
-import { a11yToggle, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
+import { a11yToggle, decorativeProps, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
 import { AppText } from '@/components/ui/AppText';
 import { GlassSurface } from '@/components/ui/GlassSurface';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
@@ -167,7 +167,7 @@ export default function HelpModal({ visible, onClose }: Props) {
                     }
                   >
                     <AppText variant="label" style={styles.faqQuestion}>{item.q}</AppText>
-                    <AppText variant="label" style={styles.faqChevron} accessibilityElementsHidden>
+                    <AppText variant="label" style={styles.faqChevron} {...decorativeProps}>
                       {expanded ? (
                         <ChevronDown size={16} color={color.brand} strokeWidth={2.2} />
                       ) : (

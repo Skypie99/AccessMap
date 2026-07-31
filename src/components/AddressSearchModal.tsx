@@ -276,15 +276,14 @@ export default function AddressSearchModal({ visible, onClose, onSelect }: Props
                   accessibilityLabel={`Recent search: ${entry.displayName}`}
                   accessibilityHint="Centers the map on this location and closes search"
                 >
-                  <Clock size={18} color={color.textSubtle} strokeWidth={2.2} accessibilityElementsHidden />
+                  <Clock size={18} color={color.textSubtle} strokeWidth={2.2} {...decorativeProps} />
                   <AppText variant="label" style={styles.recentText} numberOfLines={2}>
                     {entry.displayName}
                   </AppText>
                   <ChevronRight
                     size={18}
                     color={color.textSubtle}
-                    strokeWidth={2.2}
-                    accessibilityElementsHidden
+                    strokeWidth={2.2} {...decorativeProps}
                   />
                 </Pressable>
               ))}
@@ -338,7 +337,7 @@ export default function AddressSearchModal({ visible, onClose, onSelect }: Props
               accessibilityLabel="No matches"
               accessibilityLiveRegion="polite"
             >
-              <Search size={28} color={color.textSubtle} strokeWidth={2} accessibilityElementsHidden />
+              <Search size={28} color={color.textSubtle} strokeWidth={2} {...decorativeProps} />
               <AppText variant="heading" style={styles.emptyTitle}>No matches</AppText>
               <AppText variant="body" style={styles.emptyBody}>
                 Try a different spelling, add a city, or drop the street number to widen the search.
@@ -373,8 +372,7 @@ export default function AddressSearchModal({ visible, onClose, onSelect }: Props
                   <ChevronRight
                     size={18}
                     color={color.textSubtle}
-                    strokeWidth={2.2}
-                    accessibilityElementsHidden
+                    strokeWidth={2.2} {...decorativeProps}
                   />
                 </Pressable>
               )}
