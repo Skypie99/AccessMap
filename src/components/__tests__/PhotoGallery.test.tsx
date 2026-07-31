@@ -17,7 +17,7 @@
  */
 
 import React from 'react';
-import { Modal } from 'react-native';
+import { AccessibilityInfo, Modal } from 'react-native';
 import { fireEvent, render } from '@testing-library/react-native';
 
 import PhotoGallery, { type GalleryPhoto } from '../PhotoGallery';
@@ -165,5 +165,69 @@ describe('PhotoGallery — interaction', () => {
 
     // Tapping a thumbnail flips the Modal to visible.
     expect(UNSAFE_getByType(Modal).props.visible).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 6. A11Y-221 — the lightbox has a single-pointer, non-drag paging alternative
+//    (WCAG 2.5.7). The swipe pager stays; Previous/Next buttons are the
+//    guaranteed path, announced per page so SR users hear where they landed.
+// ---------------------------------------------------------------------------
+
+describe('PhotoGallery — A11Y-221 lightbox paging alternative', () => {
+  let announceSpy: jest.SpyInstance;
+
+  beforeEach(() => {
+    announceSpy = jest
+      .spyOn(AccessibilityInfo, 'announceForAccessibility')
+      .mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    announceSpy.mockRestore();
+  });
+
+  function openLightbox(utils: ReturnType<typeof render>, label = 'Photo 1 of 3') {
+    fireEvent.press(utils.getAllByLabelText(label)[0]);
+  }
+
+  it('renders Previous/Next buttons in a multi-photo lightbox', () => {
+    const utils = render(<PhotoGallery photos={photos(3)} />);
+    openLightbox(utils);
+    expect(utils.getByLabelText('Previous photo')).toBeTruthy();
+    expect(utils.getByLabelText('Next photo')).toBeTruthy();
+  });
+
+  it('Next advances the page, updates the counter, and announces the position', () => {
+    const utils = render(<PhotoGallery photos={photos(3)} />);
+    openLightbox(utils);
+
+    fireEvent.press(utils.getByLabelText('Next photo'));
+
+    expect(utils.getByText('2 / 3', { includeHiddenElements: true })).toBeTruthy();
+    expect(announceSpy).toHaveBeenCalledWith('Photo 2 of 3');
+  });
+
+  it('Previous is disabled on the first photo; Next is disabled on the last', () => {
+    const utils = render(<PhotoGallery photos={photos(2)} />);
+    openLightbox(utils, 'Photo 1 of 2');
+
+    expect(utils.getByLabelText('Previous photo').props.accessibilityState?.disabled).toBe(true);
+
+    fireEvent.press(utils.getByLabelText('Next photo'));
+    expect(utils.getByText('2 / 2', { includeHiddenElements: true })).toBeTruthy();
+    expect(utils.getByLabelText('Next photo').props.accessibilityState?.disabled).toBe(true);
+    // A disabled Next must not page past the end or announce.
+    announceSpy.mockClear();
+    fireEvent.press(utils.getByLabelText('Next photo'));
+    expect(utils.getByText('2 / 2', { includeHiddenElements: true })).toBeTruthy();
+    expect(announceSpy).not.toHaveBeenCalled();
+  });
+
+  it('single-photo lightbox renders no paging buttons (nothing to page)', () => {
+    const utils = render(<PhotoGallery photos={photos(1)} />);
+    openLightbox(utils, 'Photo 1 of 1');
+    expect(utils.queryByLabelText('Previous photo')).toBeNull();
+    expect(utils.queryByLabelText('Next photo')).toBeNull();
   });
 });

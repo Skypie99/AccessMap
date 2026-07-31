@@ -1,5 +1,6 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import {
+  AccessibilityInfo,
   FlatList,  Modal,
   Pressable,
   ScrollView,
@@ -10,10 +11,10 @@ import {
 } from 'react-native';
 import { RemoteImage } from '@/components/ui/RemoteImage';
 import { AppText } from '@/components/ui/AppText';
-import { useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
+import { a11yToggle, decorativeProps, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { font, radius, shadow, spacing } from '@/theme';
-import { Camera, X } from 'lucide-react-native';
+import { Camera, ChevronLeft, ChevronRight, X } from 'lucide-react-native';
 
 export type GalleryPhoto = { url: string; position: number };
 
@@ -60,6 +61,22 @@ function PhotoGalleryInner({ photos, onAddPhoto, maxPhotos = 5, onRemovePhoto }:
   // (the labeled page View — "land on the photo first" is this file's own
   // convention, QA Pass-2 #1).
   const lightboxPhotoRef = useFocusOnOpen<View>(lightboxOpen);
+  const lightboxScrollRef = useRef<ScrollView | null>(null);
+
+  // A11Y-221 (2.5.7): the single-pointer, non-drag paging path. The swipe
+  // pager stays; these buttons are the guaranteed alternative. Announced per
+  // page (the counter pill is decorative), RM-gated scroll animation. If the
+  // animated scroll's momentum-end also fires, it sets the same page — a
+  // no-op, so the two paths never fight.
+  const goToLightboxPage = useCallback(
+    (next: number, total: number) => {
+      if (next < 0 || next > total - 1) return;
+      setLightboxPage(next);
+      lightboxScrollRef.current?.scrollTo({ x: next * screenWidth, animated: !reducedMotion });
+      AccessibilityInfo.announceForAccessibility(`Photo ${next + 1} of ${total}`);
+    },
+    [screenWidth, reducedMotion],
+  );
 
   const data: ListItem[] = useMemo(
     () => [...photos, ...(canAdd ? [{ _type: 'add' } as AddSentinel] : [])],
@@ -190,6 +207,7 @@ function PhotoGalleryInner({ photos, onAddPhoto, maxPhotos = 5, onRemovePhoto }:
             // changes (rotation) so contentOffset re-applies at the new size,
             // keeping the user on the photo they were viewing.
             key={`${lightboxStartPage}-${screenWidth}`}
+            ref={lightboxScrollRef}
             horizontal
             pagingEnabled
             showsHorizontalScrollIndicator={false}
@@ -219,6 +237,44 @@ function PhotoGalleryInner({ photos, onAddPhoto, maxPhotos = 5, onRemovePhoto }:
               </View>
             ))}
           </ScrollView>
+
+          {/* A11Y-221 (2.5.7): Previous/Next — the non-drag paging path.
+              Disabled (not hidden) at the ends so the pair stays spatially
+              stable; mirrors the close button's overlay-chip recipe. */}
+          {photos.length > 1 && (
+            <>
+              <Pressable
+                onPress={() => goToLightboxPage(lightboxPage - 1, photos.length)}
+                disabled={lightboxPage === 0}
+                style={({ pressed }) => [
+                  styles.lightboxNav,
+                  styles.lightboxNavLeft,
+                  pressed && styles.lightboxNavPressed,
+                  lightboxPage === 0 && styles.lightboxNavDisabled,
+                ]}
+                accessibilityRole="button"
+                accessibilityLabel="Previous photo"
+                {...a11yToggle({ disabled: lightboxPage === 0 })}
+              >
+                <ChevronLeft size={28} color={color.textOnBrand} strokeWidth={2.2} {...decorativeProps} />
+              </Pressable>
+              <Pressable
+                onPress={() => goToLightboxPage(lightboxPage + 1, photos.length)}
+                disabled={lightboxPage === photos.length - 1}
+                style={({ pressed }) => [
+                  styles.lightboxNav,
+                  styles.lightboxNavRight,
+                  pressed && styles.lightboxNavPressed,
+                  lightboxPage === photos.length - 1 && styles.lightboxNavDisabled,
+                ]}
+                accessibilityRole="button"
+                accessibilityLabel="Next photo"
+                {...a11yToggle({ disabled: lightboxPage === photos.length - 1 })}
+              >
+                <ChevronRight size={28} color={color.textOnBrand} strokeWidth={2.2} {...decorativeProps} />
+              </Pressable>
+            </>
+          )}
 
           {/* Page counter */}
           {photos.length > 1 && (
@@ -355,6 +411,25 @@ const makeStyles = (color: ColorTheme) =>
       paddingVertical: 6,
       borderRadius: radius.circle,
     },
+    // A11Y-221: the paging pair — the close button's 44pt overlay-chip recipe,
+    // vertically centered on the photo's edges.
+    lightboxNav: {
+      position: 'absolute',
+      top: '50%',
+      marginTop: -22,
+      width: 44,
+      height: 44,
+      borderRadius: radius.circle,
+      backgroundColor: color.overlayBtn,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    lightboxNavLeft: { left: spacing.lg },
+    lightboxNavRight: { right: spacing.lg },
+    lightboxNavPressed: { opacity: 0.7 },
+    // Disabled ends stay visible for spatial stability; 1.4.11 exempts
+    // disabled controls from the 3:1 floor, so the dim is legal by spec.
+    lightboxNavDisabled: { opacity: 0.35 },
     lightboxCounterText: {
       color: color.textOnBrand,
       fontSize: font.size.sm,
