@@ -1029,6 +1029,11 @@ export default function FlagDetailModal({
               style={styles.body}
               contentContainerStyle={styles.bodyContent}
               showsVerticalScrollIndicator={false}
+              // A11Y-228: the comment box sits at the very bottom of this
+              // ScrollView — without inset adjustment the iOS keyboard rises
+              // over the exact input being typed into. (iOS-only prop; a KAV
+              // wrap would fight the pageSheet's own layout.)
+              automaticallyAdjustKeyboardInsets
             >
               {/* UX #5 — Before/after framing. Only when the flag is resolved
                   AND has both an original report photo and ≥1 extra photo. The

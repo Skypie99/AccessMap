@@ -19,7 +19,9 @@ import {
   ActivityIndicator,
   Alert,
   FlatList,
+  KeyboardAvoidingView,
   Modal,
+  Platform,
   Pressable,
   StyleSheet,
   type Text,
@@ -256,6 +258,14 @@ export default function SavedPlacesModal({
   return (
     <Modal aria-label="Saved Places" visible={visible} animationType={reducedMotion ? 'none' : 'slide'} transparent onRequestClose={onClose}>
       <View style={styles.backdrop}>
+        {/* A11Y-228: KAV lifts the sheet above the keyboard the autoFocus
+            place-name input opens — the AddressSearchModal recipe. iOS
+            'padding'; Android resizes (adjustResize default). width:100%
+            (not flex:1) preserves the backdrop's flex-end anchor. */}
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={{ width: '100%' }}
+        >
         <GlassSurface
           variant="bulk"
           borderRadius={0}
@@ -422,6 +432,7 @@ export default function SavedPlacesModal({
             />
           )}
         </GlassSurface>
+        </KeyboardAvoidingView>
       </View>
     </Modal>
   );
