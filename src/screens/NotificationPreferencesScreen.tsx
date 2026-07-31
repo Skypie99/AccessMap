@@ -14,10 +14,13 @@
  * AboutScreen) so navigation stays tab-only. The hook handles all
  * AsyncStorage reads/writes; the screen is pure presentation.
  *
- * Accessibility: each toggle row uses accessibilityRole="switch" +
- * accessibilityState on the wrapping View (trapping the full semantic unit),
- * and the Switch is hidden from AT to avoid double-announcement — the same
- * pattern already in SettingsScreen's push-notifications row (QA-validated).
+ * Accessibility: in each toggle row the Switch itself carries the accessible
+ * identity (role + label + state) and stays in the a11y tree, so VoiceOver /
+ * TalkBack can actually operate it — the corrected pattern from
+ * SettingsScreen's push-notifications row and ProfileScreen's real-time row.
+ * (An earlier version put role="switch" on the wrapper View — which has no
+ * press handler — and hid the Switch, so the rows announced as switches but
+ * double-tap did nothing: A11Y-212, the Alex-1 defect class.)
  */
 import React from 'react';
 import {
@@ -80,9 +83,11 @@ const TOGGLE_ROW_HEIGHT = 64;
 
 /**
  * A single preference toggle row — label, subtitle, and a Switch.
- * The outer View carries the switch role so VoiceOver/TalkBack reads the full
- * label+state as a single unit; the Switch itself is hidden from AT so the
- * control isn't announced twice (same rationale as SettingsScreen pushRow).
+ * The Switch carries the accessible identity (role + label + hint + state) and
+ * stays in the a11y tree so the control screen readers announce is the control
+ * they can operate (WCAG 4.1.2 / 2.1.1). The label/subtitle render as plain
+ * text alongside it — same shape as SettingsScreen's pushRow and
+ * ProfileScreen's real-time toggle, the QA-validated Alex-1 fix pattern.
  */
 function ToggleRow({
   label,
@@ -99,14 +104,7 @@ function ToggleRow({
 }) {
   const styles = makeStyles(color);
   return (
-    <View
-      style={styles.toggleRow}
-      accessible
-      accessibilityRole="switch"
-      accessibilityLabel={label}
-      accessibilityHint={subtitle}
-      {...a11yToggle({ checked: value })}
-    >
+    <View style={styles.toggleRow}>
       <View style={styles.toggleTextWrap}>
         <AppText variant="label" style={styles.toggleLabel}>{label}</AppText>
         <AppText variant="body" style={styles.toggleSubtitle}>{subtitle}</AppText>
@@ -114,8 +112,10 @@ function ToggleRow({
       <Switch
         value={value}
         onValueChange={onToggle}
-        accessibilityElementsHidden
-        importantForAccessibility="no-hide-descendants"
+        accessibilityRole="switch"
+        accessibilityLabel={label}
+        accessibilityHint={subtitle}
+        {...a11yToggle({ checked: value })}
       />
     </View>
   );

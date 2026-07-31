@@ -18,7 +18,6 @@
  */
 
 import React from 'react';
-import { Switch } from 'react-native';
 import { render, fireEvent } from '@testing-library/react-native';
 
 // Pull the mock reference for per-test reconfiguration.
@@ -164,42 +163,70 @@ describe('default state', () => {
 });
 
 // ===========================================================================
-// 4. Toggle interaction — tapping a row calls setPreference with correct args
+// 4. Toggle interaction — operating the ACCESSIBLE element works (A11Y-212)
 //
-// The accessible outer View has role="switch" but carries NO onValueChange
-// handler — that lives on the inner Switch (which is hidden from AT).
-// We find the Switch components via UNSAFE_getAllByType and fire the event
-// directly on the correct Switch index (order matches TOGGLE_ROWS: 0=flagStatus,
-// 1=nearbyFlags, 2=watchedFlagUpdates, 3=bulkWatchAlerts).
+// The element a screen reader lands on (found by its accessible label) must be
+// the element that actually toggles the preference. The old version of this
+// block found the hidden inner Switch by type-index and fired valueChange on it
+// directly — which passed even though the accessible wrapper had no handler at
+// all, entrenching the "announces as a switch, double-tap does nothing" defect.
+// These tests now operate the control exactly the way AT reaches it: by label.
 // ===========================================================================
 
-describe('toggle interaction', () => {
-  it('tapping "Flag status updates" Switch calls setPreference with correct key + new value', () => {
-    const { UNSAFE_getAllByType } = renderScreen();
-    const switches = UNSAFE_getAllByType(Switch);
-    fireEvent(switches[0], 'valueChange', false);
-    expect(mockSetPreference).toHaveBeenCalledWith('flagStatusUpdates', false);
-  });
+describe('toggle interaction (via the accessible element)', () => {
+  const cases: [string, string][] = [
+    ['Flag status updates', 'flagStatusUpdates'],
+    ['Nearby flags', 'nearbyFlags'],
+    ['Watched flag updates', 'watchedFlagUpdates'],
+    ['Bulk watch alerts', 'bulkWatchAlerts'],
+  ];
 
-  it('tapping "Nearby flags" Switch calls setPreference("nearbyFlags", false)', () => {
-    const { UNSAFE_getAllByType } = renderScreen();
-    const switches = UNSAFE_getAllByType(Switch);
-    fireEvent(switches[1], 'valueChange', false);
-    expect(mockSetPreference).toHaveBeenCalledWith('nearbyFlags', false);
+  it.each(cases)('operating "%s" by its accessible label calls setPreference("%s", false)', (label, key) => {
+    const { getByLabelText } = renderScreen();
+    fireEvent(getByLabelText(label), 'valueChange', false);
+    expect(mockSetPreference).toHaveBeenCalledWith(key, false);
   });
+});
 
-  it('tapping "Watched flag updates" Switch calls setPreference("watchedFlagUpdates", false)', () => {
-    const { UNSAFE_getAllByType } = renderScreen();
-    const switches = UNSAFE_getAllByType(Switch);
-    fireEvent(switches[2], 'valueChange', false);
-    expect(mockSetPreference).toHaveBeenCalledWith('watchedFlagUpdates', false);
-  });
+// ===========================================================================
+// 4b. A11Y-212 guard — accessible identity and operability live on the SAME
+// element, and that element is not hidden from assistive tech.
+//
+// The defect this pins: role="switch" + label + state sat on a wrapper View
+// with no press handler, while the real Switch was AT-hidden
+// (accessibilityElementsHidden + no-hide-descendants). VoiceOver/TalkBack
+// announced a switch and double-tap did nothing, on all four rows. A guard is
+// only as true as its assertions — so this one asserts the coupling itself.
+// ===========================================================================
 
-  it('tapping "Bulk watch alerts" Switch calls setPreference("bulkWatchAlerts", false)', () => {
-    const { UNSAFE_getAllByType } = renderScreen();
-    const switches = UNSAFE_getAllByType(Switch);
-    fireEvent(switches[3], 'valueChange', false);
-    expect(mockSetPreference).toHaveBeenCalledWith('bulkWatchAlerts', false);
+describe('A11Y-212 guard — the announced element is the operable element', () => {
+  const labels = [
+    'Flag status updates',
+    'Nearby flags',
+    'Watched flag updates',
+    'Bulk watch alerts',
+  ];
+
+  it.each(labels)('"%s": switch role, operability, and AT visibility are co-located', (label) => {
+    const { getByLabelText } = renderScreen();
+    const el = getByLabelText(label);
+
+    // Identity: the labelled element announces as a switch with state.
+    expect(el.props.accessibilityRole).toBe('switch');
+    expect(el.props.accessibilityState).toEqual({ checked: true });
+
+    // Operability: dispatching the toggle gesture AT the labelled element
+    // reaches a live handler. (RN's Switch consumes onValueChange at the JS
+    // layer, so the prop is not inspectable on the labelled host element —
+    // but under the old defect the labelled wrapper View had no handler
+    // anywhere in its chain, so this dispatch called nothing. Behavioral
+    // dispatch is the assertion that actually pins the defect.)
+    fireEvent(el, 'valueChange', false);
+    expect(mockSetPreference).toHaveBeenCalledTimes(1);
+
+    // AT visibility: the operable control must not be hidden from AT.
+    expect(el.props.accessibilityElementsHidden).toBeFalsy();
+    expect(el.props.importantForAccessibility).not.toBe('no-hide-descendants');
   });
 });
 
@@ -309,11 +336,10 @@ describe('loading state', () => {
 
 describe('toggle independence', () => {
   it('only the toggled preference key is passed to setPreference, not sibling keys', () => {
-    const { UNSAFE_getAllByType } = renderScreen();
-    const switches = UNSAFE_getAllByType(Switch);
+    const { getByLabelText } = renderScreen();
 
-    // Fire only the "Watched flag updates" Switch (index 2).
-    fireEvent(switches[2], 'valueChange', false);
+    // Operate only the "Watched flag updates" row, by its accessible label.
+    fireEvent(getByLabelText('Watched flag updates'), 'valueChange', false);
 
     // setPreference is called exactly once, for the right key only.
     expect(mockSetPreference).toHaveBeenCalledTimes(1);
