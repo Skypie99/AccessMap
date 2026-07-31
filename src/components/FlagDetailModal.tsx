@@ -357,12 +357,19 @@ export default function FlagDetailModal({
     if (!user || !shownFlag || watched === null || watchSaving) return;
     setWatchSaving(true);
     try {
+      // A11Y-206 (WCAG 4.1.3): announce the outcome. The only other signal is
+      // the button's own label flipping — and VoiceOver does not re-read a
+      // focused button when its label changes, so to a screen-reader user the
+      // press did nothing. The BULK watch path has announced all along; the
+      // single-flag one was silent.
       if (watched) {
         await removeWatched(user.id, shownFlag.id);
         setWatched(false);
+        AccessibilityInfo.announceForAccessibility('Stopped watching this flag');
       } else {
         await addWatched(user.id, shownFlag.id);
         setWatched(true);
+        AccessibilityInfo.announceForAccessibility('Watching this flag');
       }
     } catch (e) {
       // F43: a failed save means the Watch/Unwatch did NOT stick — say so

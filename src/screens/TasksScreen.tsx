@@ -441,12 +441,28 @@ export default function TasksScreen() {
   // when a new flash arrives — otherwise leaving the tab mid-flash triggers
   // a "setState on unmounted component" warning.
   const flashTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const showFlash = useCallback((msg: string, tone: 'success' | 'muted' = 'success') => {
-    if (flashTimer.current) clearTimeout(flashTimer.current);
-    setFlash(msg);
-    setFlashTone(tone);
-    flashTimer.current = setTimeout(() => setFlash(null), 2200);
-  }, []);
+  /**
+   * A11Y-205 (WCAG 4.1.3): the flash pill is a STATUS MESSAGE, so every flash
+   * announces by default — it is not enough for the sighted eye to catch it.
+   * This used to be opt-in per call site, and the branches nobody remembered
+   * to wire were silent to screen readers: bulk-watch when everything was
+   * already watched, and both post-action refresh-reconcile failures (the
+   * user acts, and the failure notice never reaches them).
+   *
+   * Announcing HERE rather than at each call site means a future flash cannot
+   * be silent by omission. Pass `{ announce: false }` only when the caller
+   * speaks a richer sentence of its own.
+   */
+  const showFlash = useCallback(
+    (msg: string, tone: 'success' | 'muted' = 'success', opts?: { announce?: boolean }) => {
+      if (flashTimer.current) clearTimeout(flashTimer.current);
+      setFlash(msg);
+      setFlashTone(tone);
+      flashTimer.current = setTimeout(() => setFlash(null), 2200);
+      if (opts?.announce !== false) AccessibilityInfo.announceForAccessibility(msg);
+    },
+    [],
+  );
 
   // The C-lite switch (GLASS.md): long-press the header title zone. Hidden
   // but RELEASE-reachable — Sky's one TestFlight build carries both material
@@ -554,9 +570,6 @@ export default function TasksScreen() {
         const past = action === 'verify' ? 'Verified' : 'Resolved';
         if (succeeded > 0) {
           showFlash(`${past} ${succeeded} flag${succeeded === 1 ? '' : 's'}`);
-          AccessibilityInfo.announceForAccessibility(
-            `${past} ${succeeded} flag${succeeded === 1 ? '' : 's'}.`,
-          );
         }
         if (failures.length > 0) {
           Alert.alert(
@@ -612,7 +625,6 @@ export default function TasksScreen() {
         if (dropped > 0) parts.push(`${dropped} oldest dropped`);
         const msg = parts.join(', ');
         showFlash(msg);
-        AccessibilityInfo.announceForAccessibility(msg);
       }
     } catch (e) {
       notify("Couldn't update your watched list", errorMessage(e)); // F64: must render on web
@@ -673,17 +685,14 @@ export default function TasksScreen() {
         const msg = isOwn
           ? `Verified! +${POINTS.reporter.verify} points`
           : `Verified! +${POINTS.actor.verify} points`;
+        // WCAG 4.1.3: showFlash announces (see its docblock) — single-card
+        // triage through this path was once silent to SR.
         showFlash(msg);
-        // WCAG 4.1.3: announce single-card status changes to screen readers.
-        // Bulk actions in runBulkAction already call announceForAccessibility;
-        // single-card triage through this path was previously silent to SR.
-        AccessibilityInfo.announceForAccessibility(msg);
       } else if (action === 'resolve') {
         const msg = isOwn
           ? `Resolved! +${POINTS.reporter.resolve} points`
           : `Resolved! +${POINTS.actor.resolve} points`;
         showFlash(msg);
-        AccessibilityInfo.announceForAccessibility(msg);
       }
       // Re-fetch via the shared store to reconcile with what the server
       // actually committed. The optimistic update already gave instant
@@ -758,9 +767,8 @@ export default function TasksScreen() {
   const handleDeleted = useCallback(
     (deletedId: string) => {
       removeFlag(deletedId);
+      // WCAG 4.1.3: showFlash announces (see its docblock).
       showFlash('Flag deleted');
-      // WCAG 4.1.3: announce deletion to screen readers (same pattern as bulk actions).
-      AccessibilityInfo.announceForAccessibility('Flag deleted');
     },
     [removeFlag, showFlash],
   );

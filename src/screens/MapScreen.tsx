@@ -1171,6 +1171,29 @@ export default function MapScreen() {
   // (Android picks it up via the alert's accessibilityLiveRegion). Only
   // fires on transitions into "0 results" — not on every re-render while
   // empty — so a user who's already heard it doesn't get re-spoken.
+  // A11Y-204 (WCAG 4.1.3): announce the RESULT COUNT when an active filter
+  // changes it. The status pill carries accessibilityLiveRegion="polite",
+  // which RN implements on ANDROID ONLY — so iOS VoiceOver users heard the
+  // zero case (announced just below) and nothing else: apply a filter, get
+  // silence, no idea whether it matched 3 flags or 300. Announce only while
+  // filters are active and settled, and only when the count actually moved,
+  // so panning or a background revalidation never chatters.
+  const lastAnnouncedCountRef = useRef<number | null>(null);
+  useEffect(() => {
+    if (!filtersActive || loadingFlags || loadError) {
+      lastAnnouncedCountRef.current = null;
+      return;
+    }
+    // The zero case has its own richer recovery sentence below — don't
+    // announce a bare "0 of N" ahead of it.
+    if (filteredFlags.length === 0) return;
+    if (lastAnnouncedCountRef.current === filteredFlags.length) return;
+    lastAnnouncedCountRef.current = filteredFlags.length;
+    AccessibilityInfo.announceForAccessibility(
+      `${filteredFlags.length} of ${flags.length} flags shown`,
+    );
+  }, [filtersActive, loadingFlags, loadError, filteredFlags.length, flags.length]);
+
   const showEmptyCard = filtersActive && !loadingFlags && !loadError && filteredFlags.length === 0;
   const previouslyEmptyRef = useRef(false);
   useEffect(() => {
@@ -1698,9 +1721,11 @@ export default function MapScreen() {
             map — the un-guarded wrapper was pointer-dead, killing zoom/pan even
             on visible tile between the pill and the action tray. */}
         <View style={styles.topRow} pointerEvents="box-none" onLayout={onTopRowLayout}>
-          {/* WCAG 4.1.3: live region ensures AT announces when the count
-              changes after a filter toggle (e.g. "12 of 45 shown"). Using
-              'polite' so it doesn't interrupt mid-sentence. */}
+          {/* WCAG 4.1.3: accessibilityLiveRegion covers ANDROID TalkBack only
+              (RN implements it there and nowhere else — the comment here used
+              to claim it covered "AT", which would have waved a future
+              reviewer straight past the gap). iOS VoiceOver is served by the
+              explicit count announce in the A11Y-204 effect above. */}
           <GlassSurface
             style={styles.statusPill}
             variant="row"

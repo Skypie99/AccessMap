@@ -16,8 +16,8 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 import {
+  AccessibilityInfo,
   ActivityIndicator,
-  Alert,
   FlatList,
   KeyboardAvoidingView,
   Modal,
@@ -32,7 +32,7 @@ import { useAuth } from '@/lib/auth';
 import { a11yToggle, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
 import { AppText } from '@/components/ui/AppText';
 import { GlassSurface } from '@/components/ui/GlassSurface';
-import { confirm } from '@/lib/confirm';
+import { confirm, notify } from '@/lib/confirm';
 import { errorMessage } from '@/lib/errors';
 import {
   addPlace,
@@ -142,12 +142,21 @@ export default function SavedPlacesModal({
       setNameInput('');
       setAdding(false);
       onListChanged?.();
+      // A11Y-207 (WCAG 4.1.3): this surface had no announce path at all — the
+      // form just closed and a row appeared, which says nothing to a screen
+      // reader.
+      AccessibilityInfo.announceForAccessibility(`Saved ${trimmed}`);
     } catch (e) {
       // Show friendly copy keyed on the error code, falling back to the
       // generic errorMessage formatter otherwise.
       const msg =
         e instanceof SavedPlacesError ? e.message : errorMessage(e, 'Could not save place.');
-      Alert.alert('Could not save place', msg);
+      // A11Y-207: `notify`, not Alert.alert — Alert is a NO-OP on web, so a
+      // failed save of the user's own data was both silent AND invisible
+      // there. CLAUDE.md's error tiers put a failed user-data write in the
+      // must-surface tier.
+      notify('Could not save place', msg);
+      AccessibilityInfo.announceForAccessibility(`Could not save place. ${msg}`);
     } finally {
       if (mountedRef.current) setSaving(false);
     }
@@ -181,7 +190,11 @@ export default function SavedPlacesModal({
         // error policy). Don't swallow it — restore the entry (otherwise it
         // reappears on next open as a "ghost") and tell the user.
         if (mountedRef.current && restore) setPlaces(restore);
-        Alert.alert('Could not remove place', errorMessage(e, 'Please try again.'));
+        // A11Y-207 (same class as the save failure): Alert.alert is a web
+        // no-op, and a failed removal of the user's own data must surface.
+        const msg = errorMessage(e, 'Please try again.');
+        notify('Could not remove place', msg);
+        AccessibilityInfo.announceForAccessibility(`Could not remove place. ${msg}`);
       }
     },
     [user, onListChanged],
@@ -321,12 +334,12 @@ export default function SavedPlacesModal({
               onPress={() => {
                 if (!canShowAddForm) {
                   if (limitReached) {
-                    Alert.alert(
-                      `Limit reached`,
+                    notify(
+                      'Limit reached',
                       `You can save up to ${MAX_PLACES} places. Remove one to add another.`,
                     );
                   } else if (!currentLocation) {
-                    Alert.alert(
+                    notify(
                       'Waiting for location',
                       'Allow location access from the Map screen so we know where to save.',
                     );
