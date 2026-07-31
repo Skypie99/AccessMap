@@ -483,7 +483,11 @@ const makeStyles = (color: ColorTheme) =>
       alignItems: 'center',
       justifyContent: 'center',
     },
-    chipActive: { backgroundColor: color.brand },
+    // A11Y-229 (M-52 grammar): ctaFill = mode-independent Wayfinder Blue.
+    // color.brand is 3.42:1 with white in dark — legal only for large text;
+    // these chip labels are small. ctaFill is 5.24 both themes (light is
+    // byte-identical: light brand == ctaFill).
+    chipActive: { backgroundColor: color.ctaFill },
     chipText: {
       fontSize: font.size.sm,
       fontWeight: font.weight.semibold,

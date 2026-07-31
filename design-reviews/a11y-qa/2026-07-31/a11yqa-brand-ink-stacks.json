@@ -1,0 +1,38 @@
+{
+  "name": "A11Y-229 / SR-112 — white-on-brand dark repair (M-52 grammar: brand→ctaFill fill swaps), a11y-qa 2026-07-31 Phase B. New file; no prior stacks touched.",
+  "_doc": [
+    "PURPOSE: prove every swapped small-text site now clears WCAG AA 4.5 in BOTH themes, and record the two DELIBERATELY-KEPT brand fills as large-text passes at the 3.0 floor (ReportFlagModal submit CTA 14pt bold, HomeScreen report pill 15pt bold — Sky's mockup gate owns any change to those).",
+    "RUN: node ~/AccessMap-material-lab/2026-07-02/shared/contrast-check.mjs design-reviews/a11y-qa/2026-07-31/a11yqa-brand-ink-stacks.json — exit 0 required.",
+    "TOKENS: light brand == ctaFill == #1466E0 (the swap is byte-invisible in light). Dark brand #4E89EF (the 3.42 pair, now reserved for large text + non-text UI); ctaFill MODE-INDEPENDENT #1466E0.",
+    "SWAPPED SITES (all opaque fills, white ink): NearbyFlagsModal chipActive · ReportFlagModal pillActive (category pills) · MyReportsModal sortChipActive + statusFilterChipAllActive · HomeScreen mapPeekHint + retryBtn · CommentBubble own-bubble fill (body 14pt regular + mono timestamp ride the same pair).",
+    "ALSO RECORDED: dark ctaFillPressed #0F53BE (the pressed companion several of these sites use) and the 1.4.11 3.0 rows for the icon-only brand fills Phase A verified as passing (Profile avatar disc, Tasks selectCheckOn) so the whole SR-112 question is closed in one file."
+  ],
+  "modes": {
+    "light": {
+      "surfaces": {
+        "ctaFill": { "stack": [], "base": ["#1466E0"] },
+        "ctaFillPressed": { "stack": [], "base": ["#0F53BE"] },
+        "brandLarge": { "stack": [], "base": ["#1466E0"] }
+      },
+      "pairs": [
+        { "text": "#fff", "surface": "ctaFill", "label": "white small text on ctaFill — all 7 swapped sites (light: byte-identical to old brand)", "min": 4.5 },
+        { "text": "#fff", "surface": "ctaFillPressed", "label": "white small text on pressed fill", "min": 4.5 },
+        { "text": "#fff", "surface": "brandLarge", "label": "submit CTA 14pt bold + Home report pill 15pt bold — KEPT brand, large-text floor", "min": 3.0 }
+      ]
+    },
+    "dark": {
+      "surfaces": {
+        "ctaFill": { "stack": [], "base": ["#1466E0"] },
+        "ctaFillPressed": { "stack": [], "base": ["#0F53BE"] },
+        "brandLarge": { "stack": [], "base": ["#4E89EF"] },
+        "brandIcon": { "stack": [], "base": ["#4E89EF"] }
+      },
+      "pairs": [
+        { "text": "#fff", "surface": "ctaFill", "label": "white small text on ctaFill — all 7 swapped sites (THE FIX: was 3.42 on dark brand)", "min": 4.5 },
+        { "text": "#fff", "surface": "ctaFillPressed", "label": "white small text on pressed fill", "min": 4.5 },
+        { "text": "#fff", "surface": "brandLarge", "label": "submit CTA 14pt bold + Home report pill 15pt bold — KEPT brand, large-text floor (judgment rows, device N-13)", "min": 3.0 },
+        { "text": "#fff", "surface": "brandIcon", "label": "icon-only brand fills (Profile 22px disc, Tasks selectCheckOn) — 1.4.11 non-text floor", "min": 3.0 }
+      ]
+    }
+  }
+}

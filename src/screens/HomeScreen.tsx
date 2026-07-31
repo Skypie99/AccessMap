@@ -732,7 +732,9 @@ const makeStyles = (color: ColorTheme) =>
       flexDirection: 'row',
       alignItems: 'center',
       gap: spacing.tight,
-      backgroundColor: color.brand,
+      // A11Y-229 (M-52 grammar): small white hint text — ctaFill, 5.24 both
+      // themes (dark brand is 3.42, large-text-only). Light is byte-identical.
+      backgroundColor: color.ctaFill,
       paddingHorizontal: spacing.md,
       paddingVertical: spacing.xs,
       borderRadius: radius.full,
@@ -780,7 +782,8 @@ const makeStyles = (color: ColorTheme) =>
       flexDirection: 'row',
       alignItems: 'center',
       gap: spacing.xs,
-      backgroundColor: color.brand,
+      // A11Y-229 (M-52 grammar): 13pt bold retry label is small text — ctaFill.
+      backgroundColor: color.ctaFill,
       paddingHorizontal: spacing.lg,
       paddingVertical: spacing.sm,
       borderRadius: radius.full,

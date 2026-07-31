@@ -1304,7 +1304,9 @@ const makeStyles = (color: ColorTheme) =>
       minHeight: 44,
       justifyContent: 'center',
     },
-    pillActive: { backgroundColor: color.brand },
+    // A11Y-229 (M-52 grammar): small white pill labels — ctaFill, 5.24 both
+    // themes (dark brand is 3.42, large-text-only). Light is byte-identical.
+    pillActive: { backgroundColor: color.ctaFill },
     pillText: { color: color.text, fontSize: font.size.sm },
     pillTextActive: { color: color.textOnBrand, fontWeight: font.weight.semibold },
     sevBtn: {

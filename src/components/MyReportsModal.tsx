@@ -633,7 +633,9 @@ const makeStyles = (color: ColorTheme) =>
       alignItems: 'center',
       justifyContent: 'center',
     },
-    sortChipActive: { backgroundColor: color.brand },
+    // A11Y-229 (M-52 grammar): small white chip labels — ctaFill, 5.24 both
+    // themes (dark brand is 3.42, large-text-only). Light is byte-identical.
+    sortChipActive: { backgroundColor: color.ctaFill },
     sortChipText: {
       fontSize: font.size.sm,
       fontWeight: font.weight.semibold,
@@ -655,7 +657,7 @@ const makeStyles = (color: ColorTheme) =>
       alignItems: 'center',
       justifyContent: 'center',
     },
-    statusFilterChipAllActive: { backgroundColor: color.brand },
+    statusFilterChipAllActive: { backgroundColor: color.ctaFill },
     statusFilterText: {
       fontSize: font.size.xs,
       fontWeight: font.weight.bold,

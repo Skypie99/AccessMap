@@ -54,7 +54,11 @@ export function CommentBubble({
 
   const bubbleStyle = isOwn
     ? {
-        backgroundColor: color.brand,
+        // A11Y-229 (M-52 grammar): the bubble's body text AND timestamp are
+        // small white type on this fill — dark brand measures 3.42:1 (large-
+        // text-only). ctaFill is the mode-independent Wayfinder Blue, 5.24
+        // both themes; light mode is byte-identical (light brand == ctaFill).
+        backgroundColor: color.ctaFill,
         borderBottomRightRadius: radius.xs,
       }
     : {
