@@ -6,6 +6,7 @@ import {
   SafeAreaView,
   ScrollView,
   StyleSheet,
+  type Text,
   View,
 } from 'react-native';
 import { RemoteImage } from '@/components/ui/RemoteImage';
@@ -14,7 +15,7 @@ import { GlassSurface } from '@/components/ui/GlassSurface';
 import { OverflowFade } from '@/components/ui/OverflowFade';
 import { SheetGrabber } from '@/components/ui/Sheet';
 import { useHorizontalOverflowFade } from '@/hooks/useHorizontalOverflowFade';
-import { a11yToggle, useReducedMotion } from '@/lib/accessibility';
+import { a11yToggle, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
 import { CATEGORY_LABELS, CATEGORY_ORDER, SEVERITY_LABELS, STATUS_LABELS } from '@/lib/flags';
 import { relativeTime } from '@/lib/relativeTime';
 import { formatDistance, haversineKm, speakDistance, type LatLng } from '@/lib/distance';
@@ -53,6 +54,13 @@ export default function NearbyFlagsModal({
   // T14 (F2-07): the category tablist chips earn the overflow scent.
   const categoryFade = useHorizontalOverflowFade();
   const reducedMotion = useReducedMotion();
+  // A11Y-202 (2.4.3): move the SR cursor onto the title when the sheet
+  // presents. This surface EXISTS for screen-reader users — it even auto-opens
+  // for them with no press (MapScreen's screenReaderOn effect) — yet only the
+  // RETURN half of the focus contract (G5 onDismiss) was wired; on open the
+  // cursor stayed stranded on the occluded control behind the sheet. The hook
+  // covers both the manual open and the auto-open: both flip `visible`.
+  const titleRef = useFocusOnOpen<Text>(visible);
   // null = show all categories; set to a FlagCategory to narrow the list.
   const [filterCat, setFilterCat] = useState<FlagCategory | null>(null);
   // Free-text search across description / category label / status label.
@@ -219,7 +227,7 @@ export default function NearbyFlagsModal({
             the 3.0 floor, so the cost of consistency here is nil. */}
         <SheetGrabber />
         <View style={styles.header}>
-          <AppText variant="heading" style={styles.title} accessibilityRole="header">Nearby flags</AppText>
+          <AppText ref={titleRef} variant="heading" style={styles.title} accessibilityRole="header">Nearby flags</AppText>
           <Pressable
             onPress={onClose}
             style={({ pressed }) => [styles.closeBtn, pressed && { backgroundColor: color.borderPressed }]}
