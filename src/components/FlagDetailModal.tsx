@@ -1075,11 +1075,11 @@ export default function FlagDetailModal({
                   upload path. Shown only when resolved AND the user could add a
                   photo (mirrors the gallery's onAddPhoto gating). */}
               {isResolved && canAddPhoto && (
-                <View
-                  style={styles.afterTip}
-                  accessible
-                  accessibilityLabel="Show the fix — add an after photo so others can see this barrier was resolved"
-                >
+                <View style={styles.afterTip}>
+                  {/* A11Y-213: no accessible/label on this container — on iOS
+                      that flattened the tip into one VoiceOver element and made
+                      "Add after photo" unreachable. The text speaks for itself;
+                      the button stays an independent element. */}
                   <AppText variant="body" style={styles.afterTipText}>
                     Show the fix — add an &ldquo;after&rdquo; photo so others can see this barrier was resolved.
                   </AppText>

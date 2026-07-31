@@ -16,7 +16,7 @@ import { AppText } from '@/components/ui/AppText';
 import { GlassSurface } from '@/components/ui/GlassSurface';
 import { AlertTriangle, ChevronRight, Clock, MapPin, Search, X } from 'lucide-react-native';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
-import { useReducedMotion } from '@/lib/accessibility';
+import { decorativeProps, useReducedMotion } from '@/lib/accessibility';
 import { searchAddressStrict, type GeocodeResult } from '@/lib/geocode';
 import {
   addRecent,
@@ -302,18 +302,19 @@ export default function AddressSearchModal({ visible, onClose, onSelect }: Props
           {/* Search FAILED (network/timeout/HTTP) — distinct from "No matches"
               so the user knows it's worth retrying, not rephrasing. */}
           {!loading && searchError && (
-            <View
-              style={styles.errorCard}
-              accessible
-              accessibilityRole="text"
-              accessibilityLabel="Couldn't search. Check your connection and try again."
-              accessibilityLiveRegion="polite"
-            >
-              <AlertTriangle size={28} color={color.error} strokeWidth={2} accessibilityElementsHidden />
-              <AppText variant="heading" style={styles.errorTitle}>Couldn&apos;t search</AppText>
-              <AppText variant="body" style={styles.errorBody}>
-                Something went wrong reaching the address service. Check your connection and try again.
-              </AppText>
+            <View style={styles.errorCard}>
+              {/* A11Y-213: the card container must NOT be an accessible leaf —
+                  on iOS that flattened it into one VoiceOver element and made
+                  the "Try again" button unreachable (and role="text" on a
+                  container holding a button compounded it). The summary node
+                  below announces; the button stays independent. */}
+              <AlertTriangle size={28} color={color.error} strokeWidth={2} {...decorativeProps} />
+              <View style={styles.errorSummary} accessible accessibilityLiveRegion="polite">
+                <AppText variant="heading" style={styles.errorTitle}>Couldn&apos;t search</AppText>
+                <AppText variant="body" style={styles.errorBody}>
+                  Something went wrong reaching the address service. Check your connection and try again.
+                </AppText>
+              </View>
               <Pressable
                 onPress={() => {
                   setSearchError(false);
@@ -492,6 +493,12 @@ function makeStyles(color: ColorTheme) {
       alignItems: 'center',
       gap: spacing.xs,
       ...shadow.e1,
+    },
+    // A11Y-213: summary node inherits the card's internal rhythm so the
+    // de-flattened structure renders identically to the old flat one.
+    errorSummary: {
+      alignItems: 'center',
+      gap: spacing.xs,
     },
     errorTitle: {
       fontSize: font.size.lg,

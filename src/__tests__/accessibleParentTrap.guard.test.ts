@@ -1,0 +1,93 @@
+/**
+ * ACCESSIBLE-PARENT TRAP guard (A11Y-213, the S13/L6-04 defect class).
+ *
+ * On iOS, a container with `accessible` (+ label/role) becomes ONE VoiceOver
+ * leaf: every interactive child inside it is unreachable — announced never,
+ * operated never. The house counter-pattern (S13, pinned for Tasks cards in
+ * TasksScreenFlagCard.test.tsx) is: container NOT accessible; a summary node
+ * carries the text semantics; each action stays an independent element.
+ *
+ * This guard pins the three sites the 2026-07-31 a11y train de-flattened —
+ * each anchored by its style name, asserted on the PARSED OPEN TAG (comment-
+ * stripped, brace-balanced), so prose can't match and a re-flatten fails:
+ *
+ *   1. MapScreen empty-filters recovery card (PROTECT-2 — the only zero-results
+ *      recovery path; flattening it defeated the protection for VO users).
+ *   2. AddressSearchModal search-failed card (swallowed "Try again").
+ *   3. FlagDetailModal after-photo tip (swallowed "Add after photo").
+ *
+ * BLIND SPOT, stated: site-pinned, not class-wide — a NEW flattened container
+ * elsewhere is not caught here (that standing net is the a11y-lint gap, L1-1,
+ * parked). Reachability on hardware = device rows N-2..N-5.
+ */
+import fs from 'fs';
+import path from 'path';
+
+const SRC = path.join(__dirname, '..');
+
+function stripComments(src: string): string {
+  const blank = (m: string) => m.replace(/[^\n]/g, ' ');
+  return src
+    .replace(/\{\/\*[\s\S]*?\*\/\}/g, blank)
+    .replace(/\/\*[\s\S]*?\*\//g, blank)
+    .replace(/\/\/[^\n]*/g, blank);
+}
+
+/** The first open tag in `src` after `anchor`, brace-balanced to its '>'. */
+function openTagAt(src: string, anchor: string, file: string): string {
+  const at = src.indexOf(anchor);
+  if (at === -1) throw new Error(`${file}: anchor not found: ${anchor}`);
+  // Walk BACK to the '<' that opens the tag containing the anchor.
+  const start = src.lastIndexOf('<', at);
+  if (start === -1) throw new Error(`${file}: no tag open before anchor ${anchor}`);
+  let depth = 0;
+  let j = start;
+  while (j < src.length) {
+    const c = src[j];
+    if (c === '{') depth++;
+    else if (c === '}') depth--;
+    else if (c === '>' && depth === 0) break;
+    j++;
+  }
+  return src.slice(start, j + 1);
+}
+
+const read = (rel: string) => stripComments(fs.readFileSync(path.join(SRC, rel), 'utf8'));
+
+/** Bare `accessible` prop (not accessible={false}, not accessibilityXxx). */
+const hasBareAccessible = (tag: string) => /\baccessible\b(?!\s*=\s*\{)(?!\w)/.test(tag) || /\baccessible\s*=\s*\{\s*true\s*\}/.test(tag);
+
+describe('A11Y-213 guard — labeled containers must not swallow their interactive children', () => {
+  it('MapScreen empty-filters recovery card: material container is not an accessible leaf; summary node carries the alert', () => {
+    const src = read('screens/MapScreen.tsx');
+    const cardTag = openTagAt(src, 'styles.emptyCard}', 'MapScreen');
+    expect(hasBareAccessible(cardTag)).toBe(false);
+    expect(cardTag).not.toMatch(/accessibilityLabel/);
+    // The summary node (title+body) still announces the zero-results state.
+    const summaryTag = openTagAt(src, 'styles.emptyCardSummary}', 'MapScreen');
+    expect(hasBareAccessible(summaryTag)).toBe(true);
+    expect(summaryTag).toContain('accessibilityRole="alert"');
+    expect(summaryTag).toContain('accessibilityLiveRegion="polite"');
+    // Both recovery actions still exist as labeled buttons.
+    expect(src).toContain('accessibilityLabel="Reset all filters"');
+  });
+
+  it('AddressSearchModal search-failed card: container plain; summary node announces; Try again reachable', () => {
+    const src = read('components/AddressSearchModal.tsx');
+    const cardTag = openTagAt(src, 'styles.errorCard}', 'AddressSearchModal');
+    expect(hasBareAccessible(cardTag)).toBe(false);
+    expect(cardTag).not.toMatch(/accessibilityLabel/);
+    const summaryTag = openTagAt(src, 'styles.errorSummary}', 'AddressSearchModal');
+    expect(hasBareAccessible(summaryTag)).toBe(true);
+    expect(summaryTag).toContain('accessibilityLiveRegion="polite"');
+    expect(src).toContain('accessibilityLabel="Try searching again"');
+  });
+
+  it('FlagDetailModal after-photo tip: container plain; Add-after-photo reachable', () => {
+    const src = read('components/FlagDetailModal.tsx');
+    const tipTag = openTagAt(src, 'styles.afterTip}', 'FlagDetailModal');
+    expect(hasBareAccessible(tipTag)).toBe(false);
+    expect(tipTag).not.toMatch(/accessibilityLabel/);
+    expect(src).toContain('accessibilityLabel="Add an after photo"');
+  });
+});

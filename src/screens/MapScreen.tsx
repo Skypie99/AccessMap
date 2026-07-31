@@ -109,7 +109,7 @@ import {
 } from '@/hooks/useHorizontalOverflowFade';
 import { useDrawer } from '@/lib/drawerContext';
 import { useSharedModals } from '@/lib/sharedModalsContext';
-import { useScreenReader, useReducedMotion, a11yToggle, useSurfaceTrigger } from '@/lib/accessibility';
+import { useScreenReader, useReducedMotion, a11yToggle, decorativeProps, useSurfaceTrigger } from '@/lib/accessibility';
 import LegendModal from './LegendModal';
 import HeatmapLegend from '@/components/HeatmapLegend';
 import NearbyFlagsModal from './NearbyFlagsModal';
@@ -2417,16 +2417,25 @@ export default function MapScreen() {
             forceEngineered
             overlayTint={color.glassMapWash}
             borderRadius={radius.lg}
-            accessible
-            accessibilityRole="alert"
-            accessibilityLabel="No flags match your active filters. Try clearing one, or reset them all."
-            accessibilityLiveRegion="polite"
+            // A11Y-213 (S13/L6-04 class): the material container must NOT be an
+            // accessible leaf — on iOS that flattened the whole card into one
+            // VoiceOver element and made the per-filter chips and "Reset all
+            // filters" (the only zero-results recovery path, PROTECT-2)
+            // unreachable. The summary node below carries the alert semantics;
+            // every action stays an independent element.
           >
-            <Search size={26} color={color.inkGlassMuted} strokeWidth={2} />
-            <AppText variant="heading" style={styles.emptyCardTitle}>Nothing here right now</AppText>
-            <AppText variant="body" style={styles.emptyCardBody}>
-              Your filters are hiding everything. Clear just the one in the way, or reset them all.
-            </AppText>
+            <Search size={26} color={color.inkGlassMuted} strokeWidth={2} {...decorativeProps} />
+            <View
+              style={styles.emptyCardSummary}
+              accessible
+              accessibilityRole="alert"
+              accessibilityLiveRegion="polite"
+            >
+              <AppText variant="heading" style={styles.emptyCardTitle}>Nothing here right now</AppText>
+              <AppText variant="body" style={styles.emptyCardBody}>
+                Your filters are hiding everything. Clear just the one in the way, or reset them all.
+              </AppText>
+            </View>
             {emptyResetChips.length > 0 && (
               <View style={styles.emptyQuickRow}>
                 {emptyResetChips.map((c) => (
@@ -3360,6 +3369,12 @@ const makeStyles = (color: ColorTheme) =>
       gap: 8,
       alignItems: 'center',
       ...shadow.e2,
+    },
+    // A11Y-213: the summary node inherits the card's internal rhythm so the
+    // de-flattened structure is pixel-identical to the old flat one.
+    emptyCardSummary: {
+      gap: 8,
+      alignItems: 'center',
     },
     emptyCardTitle: {
       fontSize: font.size.md,
