@@ -157,4 +157,13 @@ describe('A11Y-214 guard — accessible-by-default Pressables must not swallow n
     expect(summaryTag).toContain('accessibilityRole="button"');
     expect(src).toContain('accessibilityLabel="Clear search"');
   });
+
+  it('HomeScreen Clear-search meets the 44pt house floor (A11Y-223: 16pt glyph + 14 slop = 44 effective)', () => {
+    const src = read('screens/HomeScreen.tsx');
+    const clearTag = openTagAt(src, 'accessibilityLabel="Clear search"', 'HomeScreen');
+    // Slop math, deliberately: a real 44 box would consume 28px of the glass
+    // bar's text width; hitSlop extends the target without layout change, and
+    // the only slop-neighbours are non-interactive (text / bar edge).
+    expect(clearTag).toContain('hitSlop={14}');
+  });
 });

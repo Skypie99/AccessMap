@@ -385,7 +385,11 @@ export default function HomeScreen() {
               {searchLabel && (
                 <Pressable
                   onPress={clearSearch}
-                  hitSlop={10}
+                  // A11Y-223: 16pt glyph + 14pt slop = 44×44 effective — the
+                  // house floor, via slop math (a real 44 box would eat 28px of
+                  // the bar's text width; the slop's only neighbours here are
+                  // non-interactive, so nothing collides). Was hitSlop 10 = 36.
+                  hitSlop={14}
                   style={({ pressed }) => pressed && { backgroundColor: color.borderPressed, borderRadius: radius.sm }}
                   accessibilityRole="button"
                   accessibilityLabel="Clear search"
