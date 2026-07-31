@@ -10,6 +10,7 @@ import {
   ScrollView,
   StyleSheet,
   Switch,
+  type Text,
   View,
 } from 'react-native';
 import { RemoteImage } from '@/components/ui/RemoteImage';
@@ -90,7 +91,7 @@ import { ArrowDown, ArrowUp, ChevronRight, Flame, MapPin, Pencil, X } from 'luci
 import TierIcon from '@/components/TierIcon';
 import { getTier, pointsToNextTier, REPUTATION_TIERS } from '@/lib/reputationTier';
 import { setLastSeenPoints } from '@/lib/points';
-import { a11yToggle, useReducedMotion } from '@/lib/accessibility';
+import { a11yToggle, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
 import {
   getPointEventHistory,
   pointEventLabel,
@@ -297,6 +298,10 @@ export default function ProfileScreen() {
   // since it's <40 LOC of JSX and reads cleanly here next to the pill.
   const [tierExplainerOpen, setTierExplainerOpen] = useState(false);
   const [deleteAccountOpen, setDeleteAccountOpen] = useState(false);
+  // A11Y-201 (2.4.3): move the SR cursor onto each dialog's title on open.
+  // (The sign-in wrapper Modal is exempt: SignInScreen self-focuses on mount.)
+  const deleteTitleRef = useFocusOnOpen<Text>(deleteAccountOpen);
+  const tierTitleRef = useFocusOnOpen<Text>(tierExplainerOpen);
   const [deletingAccount, setDeletingAccount] = useState(false);
 
   // Edit-name state. nameDraft is what the user is typing; profile?.display_name
@@ -1778,7 +1783,7 @@ export default function ProfileScreen() {
             {/* Copy scrolls at large type; the destructive Cancel/Delete pair
                 stays OUTSIDE the scroll so it can never slide off (sweep M7). */}
             <ScrollView contentContainerStyle={styles.deleteScrollContent}>
-              <AppText variant="heading" style={styles.deleteTitle} accessibilityRole="header">
+              <AppText ref={deleteTitleRef} variant="heading" style={styles.deleteTitle} accessibilityRole="header">
                 Delete your account?
               </AppText>
               <AppText variant="body" style={styles.deleteBody}>
@@ -1920,7 +1925,7 @@ export default function ProfileScreen() {
             onAccessibilityEscape={() => setTierExplainerOpen(false)}
           >
             <View style={styles.tierHeaderRow}>
-              <AppText variant="heading" style={styles.tierHeaderTitle} accessibilityRole="header">
+              <AppText ref={tierTitleRef} variant="heading" style={styles.tierHeaderTitle} accessibilityRole="header">
                 Reputation tiers
               </AppText>
               <Pressable

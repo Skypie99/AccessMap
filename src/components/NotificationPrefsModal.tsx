@@ -9,7 +9,7 @@
  * refreshUpdateCount with the now-saved prefs).
  */
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Switch, View } from 'react-native';
+import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Switch, type Text, View } from 'react-native';
 import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 import { useAuth } from '@/lib/auth';
 import { AppText } from '@/components/ui/AppText';
@@ -25,7 +25,7 @@ import {
 import type { FlagStatus } from '@/types/database';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { font, radius, spacing } from '@/theme';
-import { a11yToggle, useReducedMotion } from '@/lib/accessibility';
+import { a11yToggle, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
 import { X } from 'lucide-react-native';
 
 interface Props {
@@ -139,6 +139,8 @@ export default function NotificationPrefsModal({
 
   // WCAG 2.3.3: snap (no slide) when the user prefers reduced motion.
   const reducedMotion = useReducedMotion();
+  // A11Y-201 (2.4.3): move the SR cursor onto the title when this surface opens.
+  const titleRef = useFocusOnOpen<Text>(visible);
   // Bottom-anchored sheet clears the home indicator (M15 family recipe).
   // Non-throwing context read — render tests mount without a provider.
   const insets = React.useContext(SafeAreaInsetsContext) ?? { top: 0, bottom: 0, left: 0, right: 0 };
@@ -162,7 +164,7 @@ export default function NotificationPrefsModal({
         >
           <View style={styles.headerRow}>
             <View style={styles.titleWrap}>
-              <AppText variant="heading" style={styles.title} accessibilityRole="header">
+              <AppText ref={titleRef} variant="heading" style={styles.title} accessibilityRole="header">
                 Notifications
               </AppText>
               <AppText variant="body" style={styles.subtitle}>

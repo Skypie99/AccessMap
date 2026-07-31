@@ -1,5 +1,5 @@
 import React from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Modal, Pressable, ScrollView, StyleSheet, type Text, View } from 'react-native';
 // Expo Constants gives us the bundled app.json version at runtime so we
 // don't have to hard-code (and forget to bump) a string here.
 import Constants from 'expo-constants';
@@ -9,7 +9,7 @@ import { GlassSurface } from '@/components/ui/GlassSurface';
 import LogoMark from '@/components/LogoMark';
 import { Map as MapIcon, X } from 'lucide-react-native';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
-import { useReducedMotion } from '@/lib/accessibility';
+import { useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
 import {
   PRIVACY_POLICY_LINK_HINT,
   PRIVACY_POLICY_LINK_LABEL,
@@ -47,6 +47,8 @@ const APP_VERSION =
 export default function AboutScreen({ visible, onClose }: Props) {
   const color = useColor();
   const reducedMotion = useReducedMotion();
+  // A11Y-201 (2.4.3): move the SR cursor onto the title when this surface opens.
+  const titleRef = useFocusOnOpen<Text>(visible);
   const styles = makeStyles(color);
   // §SKY-6: the terms are a SHARED modal, so About only raises the flag — the
   // sheet itself is mounted at the navigator and presents over this card rather
@@ -70,7 +72,7 @@ export default function AboutScreen({ visible, onClose }: Props) {
             <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
               <LogoMark size={22} variant={color.scheme === 'dark' ? 'white' : 'color'} />
             </View>
-            <AppText variant="heading" style={styles.title} accessibilityRole="header">
+            <AppText ref={titleRef} variant="heading" style={styles.title} accessibilityRole="header">
               About AccessMap
             </AppText>
             <Pressable

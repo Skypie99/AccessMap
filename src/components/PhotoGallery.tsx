@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { RemoteImage } from '@/components/ui/RemoteImage';
 import { AppText } from '@/components/ui/AppText';
-import { useReducedMotion } from '@/lib/accessibility';
+import { useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { font, radius, shadow, spacing } from '@/theme';
 import { Camera, X } from 'lucide-react-native';
@@ -56,6 +56,10 @@ function PhotoGalleryInner({ photos, onAddPhoto, maxPhotos = 5, onRemovePhoto }:
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxStartPage, setLightboxStartPage] = useState(0);
   const [lightboxPage, setLightboxPage] = useState(0);
+  // A11Y-201 (2.4.3): move the SR cursor onto the photo the lightbox opened on
+  // (the labeled page View — "land on the photo first" is this file's own
+  // convention, QA Pass-2 #1).
+  const lightboxPhotoRef = useFocusOnOpen<View>(lightboxOpen);
 
   const data: ListItem[] = useMemo(
     () => [...photos, ...(canAdd ? [{ _type: 'add' } as AddSentinel] : [])],
@@ -196,6 +200,7 @@ function PhotoGalleryInner({ photos, onAddPhoto, maxPhotos = 5, onRemovePhoto }:
             {photos.map((photo, i) => (
               <View
                 key={photo.position}
+                ref={i === lightboxPage ? lightboxPhotoRef : undefined}
                 style={[styles.lightboxPage, { width: screenWidth, height: screenHeight }]}
                 accessible
                 accessibilityLabel={`Photo ${i + 1} of ${photos.length}`}

@@ -7,6 +7,7 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
+  type Text,
   useWindowDimensions,
   View,
 } from 'react-native';
@@ -20,7 +21,7 @@ import {
   getNotificationPermission,
   requestNotificationPermission,
 } from '@/lib/pushNotifications';
-import { a11yToggle } from '@/lib/accessibility';
+import { a11yToggle, useFocusOnOpen } from '@/lib/accessibility';
 import { SEVERITY_LABELS, SEVERITY_ORDER } from '@/lib/flags';
 import { font, radius, spacing, gradient } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
@@ -138,6 +139,9 @@ const CARDS: Card[] = [
 export default function OnboardingCards({ onDone }: Props) {
   const color = useColor();
   const styles = makeStyles(color);
+  // A11Y-201 (2.4.3): this surface presents the moment it mounts (bare
+  // `visible`), so focus card 1's heading on mount.
+  const titleRef = useFocusOnOpen<Text>(true);
   const { width } = useWindowDimensions();
   const scrollRef = useRef<ScrollView | null>(null);
   const [index, setIndex] = useState(0);
@@ -396,7 +400,7 @@ export default function OnboardingCards({ onDone }: Props) {
 
                   {/* Text content — glass card */}
                   <View style={styles.cardContent}>
-                    <AppText variant="heading" style={styles.title} accessibilityRole="header">
+                    <AppText ref={i === 0 ? titleRef : undefined} variant="heading" style={styles.title} accessibilityRole="header">
                       {c.title}
                     </AppText>
                     <AppText variant="body" style={styles.body}>{effectiveBody}</AppText>

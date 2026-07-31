@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Modal, Pressable, ScrollView, StyleSheet, type Text, View } from 'react-native';
 import { font, radius, shadow, spacing } from '@/theme';
-import { a11yToggle, useReducedMotion } from '@/lib/accessibility';
+import { a11yToggle, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
 import { AppText } from '@/components/ui/AppText';
 import { GlassSurface } from '@/components/ui/GlassSurface';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
@@ -94,6 +94,8 @@ export default function HelpModal({ visible, onClose }: Props) {
   const showEmpty = query.trim().length > 0 && filteredFaqs.length === 0;
   // WCAG 2.3.3: snap (no slide) when the user prefers reduced motion.
   const reducedMotion = useReducedMotion();
+  // A11Y-201 (2.4.3): move the SR cursor onto the title when this surface opens.
+  const titleRef = useFocusOnOpen<Text>(visible);
 
   return (
     <Modal
@@ -114,7 +116,7 @@ export default function HelpModal({ visible, onClose }: Props) {
         <View style={styles.cardWrap}>
         <GlassSurface variant="bulk" borderRadius={0} style={styles.card}>
           <View style={styles.headerRow}>
-            <AppText variant="heading" style={styles.title} accessibilityRole="header">
+            <AppText ref={titleRef} variant="heading" style={styles.title} accessibilityRole="header">
               Help & FAQ
             </AppText>
             <Pressable

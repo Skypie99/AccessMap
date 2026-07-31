@@ -5,6 +5,7 @@ import {
   Pressable,
   RefreshControl,
   StyleSheet,
+  type Text,
   View,
 } from 'react-native';
 import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
@@ -12,7 +13,7 @@ import { RemoteImage } from '@/components/ui/RemoteImage';
 import { AppText } from '@/components/ui/AppText';
 import { GlassSurface } from '@/components/ui/GlassSurface';
 import SearchInputRow from '@/components/SearchInputRow';
-import { a11yToggle, useReducedMotion } from '@/lib/accessibility';
+import { a11yToggle, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
 import { useAuth } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
 import {
@@ -65,6 +66,8 @@ export default function MyReportsModal({
   // modal render-tests mount these sheets without one. Same value in the app.
   const insets = React.useContext(SafeAreaInsetsContext) ?? { top: 0, bottom: 0, left: 0, right: 0 };
   const reducedMotion = useReducedMotion();
+  // A11Y-201 (2.4.3): move the SR cursor onto the title when this surface opens.
+  const titleRef = useFocusOnOpen<Text>(visible);
   const { user } = useAuth();
   const [flags, setFlags] = useState<FlagRow[]>([]);
   const [loading, setLoading] = useState(false);
@@ -275,7 +278,7 @@ export default function MyReportsModal({
           onAccessibilityEscape={onClose}
         >
           <View style={styles.headerRow}>
-            <AppText variant="heading" style={styles.title} accessibilityRole="header">
+            <AppText ref={titleRef} variant="heading" style={styles.title} accessibilityRole="header">
               My Reports
             </AppText>
             <Pressable

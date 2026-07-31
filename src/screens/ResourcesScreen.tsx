@@ -17,6 +17,7 @@ import {
   SafeAreaView,
   ScrollView,
   StyleSheet,
+  type Text,
   View,
 } from 'react-native';
 import {
@@ -35,7 +36,7 @@ import { GlassSurface } from '@/components/ui/GlassSurface';
 import { ScreenStage } from '@/components/ui/ScreenStage';
 import { SheetGrabber } from '@/components/ui/Sheet';
 import { hydrateGlassMode, useGlassMode } from '@/lib/glassMode';
-import { useReducedMotion } from '@/lib/accessibility';
+import { useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
 import { font, radius, shadow, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 
@@ -105,6 +106,8 @@ export default function ResourcesScreen({ visible, onClose }: Props) {
   const color = useColor();
   const styles = makeStyles(color);
   const reducedMotion = useReducedMotion();
+  // A11Y-201 (2.4.3): move the SR cursor onto the title when this surface opens.
+  const titleRef = useFocusOnOpen<Text>(visible);
   // C-lite runtime mode (GLASS.md §4): read-only here — the long-press toggle
   // lives on the Tasks header; this modal just respects a flip via the store.
   const glassLite = useGlassMode() === 'lite';
@@ -151,7 +154,7 @@ export default function ResourcesScreen({ visible, onClose }: Props) {
               first onLayout with no extra bookkeeping. */}
           <SheetGrabber />
           <View style={styles.headerRow}>
-            <AppText variant="heading" style={styles.title} accessibilityRole="header">Resources</AppText>
+            <AppText ref={titleRef} variant="heading" style={styles.title} accessibilityRole="header">Resources</AppText>
             <Pressable
               onPress={onClose}
               hitSlop={12}

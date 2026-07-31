@@ -36,13 +36,14 @@ import {
   Modal,
   Pressable,
   StyleSheet,
+  type Text,
   TextInput,
   View,
 } from 'react-native';
 import { useAuth } from '@/lib/auth';
 import { AppText } from '@/components/ui/AppText';
 import { GlassSurface } from '@/components/ui/GlassSurface';
-import { a11yToggle, useReducedMotion } from '@/lib/accessibility';
+import { a11yToggle, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
 import { confirm } from '@/lib/confirm';
 import { errorMessage } from '@/lib/errors';
 import {
@@ -94,6 +95,8 @@ export default function FilterPresetsModal({ visible, onClose, onApply }: Props)
   const color = useColor();
   const styles = makeStyles(color);
   const reducedMotion = useReducedMotion();
+  // A11Y-201 (2.4.3): move the SR cursor onto the title when this surface opens.
+  const titleRef = useFocusOnOpen<Text>(visible);
   const { user } = useAuth();
 
   const [presets, setPresets] = useState<FilterPreset[]>([]);
@@ -359,7 +362,7 @@ export default function FilterPresetsModal({ visible, onClose, onApply }: Props)
           onAccessibilityEscape={onClose}
         >
           <View style={styles.headerRow}>
-            <AppText variant="heading" style={styles.title} accessibilityRole="header">
+            <AppText ref={titleRef} variant="heading" style={styles.title} accessibilityRole="header">
               Filter Presets
             </AppText>
             <Pressable

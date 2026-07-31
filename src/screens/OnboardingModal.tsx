@@ -12,7 +12,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { font, radius, shadow, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
-import { useReducedMotion } from '@/lib/accessibility';
+import { useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
 import { hapticSelection } from '@/lib/haptics';
 import { trackEvent } from '@/lib/analytics';
 import { AppText } from '@/components/ui/AppText';
@@ -66,6 +66,9 @@ export default function OnboardingModal({ visible, onDone }: Props) {
   const scrollRef = useRef<ScrollView | null>(null);
   const [index, setIndex] = useState(0);
   const reducedMotion = useReducedMotion();
+  // A11Y-201 (2.4.3): move the SR cursor onto the announced card content when
+  // this surface opens (the pager is AT-hidden; this View is the SR surface).
+  const srCardRef = useFocusOnOpen<View>(visible);
   // Track visibility across commits so the position announce fires only on the
   // true open edge (false→true) — never on the initial closed mount, nor on an
   // incidental re-render while already open. `prevIndex` (open-resets folded to
@@ -175,6 +178,7 @@ export default function OnboardingModal({ visible, onDone }: Props) {
             reader users hear the card title and body. Updated reactively via
             the `index` state that Back/Next already drive. WCAG 2.5.7. */}
         <View
+          ref={srCardRef}
           accessible
           accessibilityRole="text"
           accessibilityLabel={`${CARDS[index]?.title}. ${CARDS[index]?.body}`}

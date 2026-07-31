@@ -3,13 +3,14 @@ import {
   FlatList,  Modal,
   Pressable,
   StyleSheet,
+  type Text,
   View,
 } from 'react-native';
 import { RemoteImage } from '@/components/ui/RemoteImage';
 import { AppText } from '@/components/ui/AppText';
 import { GlassSurface } from '@/components/ui/GlassSurface';
 import { Skeleton } from '@/components/ui/Skeleton';
-import { a11yToggle, useReducedMotion } from '@/lib/accessibility';
+import { a11yToggle, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
 import { useAuth } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
 import {
@@ -203,6 +204,8 @@ export default function LeaderboardScreen({ visible, onClose }: Props) {
   const color = useColor();
   const styles = useMemo(() => makeStyles(color), [color]);
   const reducedMotion = useReducedMotion();
+  // A11Y-201 (2.4.3): move the SR cursor onto the title when this surface opens.
+  const titleRef = useFocusOnOpen<Text>(visible);
   const { user } = useAuth();
 
   const [tab, setTab] = useState<LeaderboardTab>('all');
@@ -284,6 +287,7 @@ export default function LeaderboardScreen({ visible, onClose }: Props) {
         >
           <View style={styles.headerRow}>
             <AppText
+              ref={titleRef}
               variant="heading"
               style={styles.title}
               accessibilityRole="header"

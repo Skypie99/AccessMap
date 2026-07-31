@@ -11,6 +11,7 @@ import {
   SafeAreaView,
   ScrollView,
   StyleSheet,
+  type Text,
   View,
 } from 'react-native';
 import { CheckCircle2, Flag, Heart, Star, Users, X } from 'lucide-react-native';
@@ -21,7 +22,7 @@ import { SheetGrabber } from '@/components/ui/Sheet';
 import { hydrateGlassMode, useGlassMode } from '@/lib/glassMode';
 import { font, radius, shadow, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
-import { useReducedMotion } from '@/lib/accessibility';
+import { useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
 
 interface Props {
   visible: boolean;
@@ -74,6 +75,8 @@ export default function HowToHelpScreen({ visible, onClose }: Props) {
   const color = useColor();
   const stepColors = useStepColors();
   const reducedMotion = useReducedMotion();
+  // A11Y-201 (2.4.3): move the SR cursor onto the title when this surface opens.
+  const titleRef = useFocusOnOpen<Text>(visible);
   const styles = makeStyles(color);
   // C-lite runtime mode (GLASS.md §4): read-only — the flip lives on the Tasks
   // header; this modal just respects it via the shared store.
@@ -116,7 +119,7 @@ export default function HowToHelpScreen({ visible, onClose }: Props) {
               so chromeTopPad absorbs it on the first onLayout. */}
           <SheetGrabber />
           <View style={styles.headerRow}>
-            <AppText variant="heading" style={styles.title} accessibilityRole="header">How To Help</AppText>
+            <AppText ref={titleRef} variant="heading" style={styles.title} accessibilityRole="header">How To Help</AppText>
             <Pressable
               onPress={onClose}
               hitSlop={12}

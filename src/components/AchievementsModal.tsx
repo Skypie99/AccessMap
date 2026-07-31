@@ -9,11 +9,11 @@
  * already has the data.
  */
 import React, { useMemo } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Modal, Pressable, ScrollView, StyleSheet, type Text, View } from 'react-native';
 import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 import { AppText } from '@/components/ui/AppText';
 import { GlassSurface } from '@/components/ui/GlassSurface';
-import { useReducedMotion } from '@/lib/accessibility';
+import { useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
 import type { Achievement, AchievementCategory } from '@/lib/achievements';
 import { font, radius, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
@@ -184,6 +184,8 @@ export default function AchievementsModal({ visible, onClose, achievements }: Pr
   // modal render-tests mount these sheets without one. Same value in the app.
   const insets = React.useContext(SafeAreaInsetsContext) ?? { top: 0, bottom: 0, left: 0, right: 0 };
   const reducedMotion = useReducedMotion();
+  // A11Y-201 (2.4.3): move the SR cursor onto the title when this surface opens.
+  const titleRef = useFocusOnOpen<Text>(visible);
   // Group by category preserving catalog order within each group.
   const grouped = useMemo(() => {
     const map = new Map<AchievementCategory, Achievement[]>();
@@ -213,7 +215,7 @@ export default function AchievementsModal({ visible, onClose, achievements }: Pr
         >
           <View style={styles.headerRow}>
             <View style={styles.titleWrap}>
-              <AppText variant="heading" style={styles.title} accessibilityRole="header">
+              <AppText ref={titleRef} variant="heading" style={styles.title} accessibilityRole="header">
                 Achievements
               </AppText>
               <AppText

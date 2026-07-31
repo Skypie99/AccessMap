@@ -75,7 +75,11 @@ jest.mock('@/components/SeverityDisc', () => ({ SeverityDisc: () => null }));
 jest.mock('../StatusBadge', () => ({ StatusBadge: () => null }));
 jest.mock('../SearchInputRow', () => () => null);
 jest.mock('lucide-react-native', () => ({ MapPin: () => null, Star: () => null, X: () => null }));
-jest.mock('@/lib/accessibility', () => ({ useReducedMotion: () => false, a11yToggle: () => ({}) }));
+jest.mock('@/lib/accessibility', () => ({
+  ...jest.requireActual('@/lib/accessibility'),
+  useReducedMotion: () => false,
+  a11yToggle: () => ({}),
+}));
 jest.mock('@/lib/a11yText', () => ({ severityA11y: () => '', statusA11y: () => '' }));
 
 const noop = () => {};

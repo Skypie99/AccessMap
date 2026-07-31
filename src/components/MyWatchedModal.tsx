@@ -13,6 +13,7 @@ import {
   RefreshControl,
   ScrollView,
   StyleSheet,
+  type Text,
   View,
 } from 'react-native';
 import { useAuth } from '@/lib/auth';
@@ -38,7 +39,7 @@ import {
 } from '@/lib/watchedFlagsFilter';
 import { font, radius, spacing } from '@/theme';
 import { MapPin, Star, X } from 'lucide-react-native';
-import { a11yToggle, useReducedMotion } from '@/lib/accessibility';
+import { a11yToggle, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
 import { severityA11y, statusA11y } from '@/lib/a11yText';
 import type { FlagRow } from '@/types/database';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
@@ -90,6 +91,8 @@ export default function MyWatchedModal({ visible, onClose, onSelectFlag, onViewO
   const color = useColor();
   const styles = makeStyles(color);
   const reducedMotion = useReducedMotion();
+  // A11Y-201 (2.4.3): move the SR cursor onto the title when this surface opens.
+  const titleRef = useFocusOnOpen<Text>(visible);
   const { user } = useAuth();
   const [flags, setFlags] = useState<FlagRow[]>([]);
   const [watchedIds, setWatchedIds] = useState<string[]>([]);
@@ -292,7 +295,7 @@ export default function MyWatchedModal({ visible, onClose, onSelectFlag, onViewO
           onAccessibilityEscape={onClose}
         >
           <View style={styles.header}>
-            <AppText variant="heading" style={styles.title} accessibilityRole="header">Watched Flags</AppText>
+            <AppText ref={titleRef} variant="heading" style={styles.title} accessibilityRole="header">Watched Flags</AppText>
             {flags.length > 0 && (
               <Pressable onPress={handleClearAll} hitSlop={10} style={styles.clearBtn}
                 accessibilityRole="button"

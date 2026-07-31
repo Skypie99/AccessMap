@@ -27,7 +27,7 @@
  * that the three in-app entry points now open THIS instead of a browser.
  */
 import React, { useState } from 'react';
-import { Modal, Pressable, SafeAreaView, ScrollView, StyleSheet, View } from 'react-native';
+import { Modal, Pressable, SafeAreaView, ScrollView, StyleSheet, type Text, View } from 'react-native';
 import { X } from 'lucide-react-native';
 import { AppText } from '@/components/ui/AppText';
 import { GlassSurface } from '@/components/ui/GlassSurface';
@@ -39,7 +39,7 @@ import {
   PRIVACY_SECTIONS,
   PRIVACY_TITLE,
 } from '@/lib/copy';
-import { useReducedMotion } from '@/lib/accessibility';
+import { useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
 import { font, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 
@@ -57,6 +57,8 @@ export default function PrivacyScreen({ visible, onClose }: Props) {
   const color = useColor();
   const styles = makeStyles(color);
   const reducedMotion = useReducedMotion();
+  // A11Y-201 (2.4.3): move the SR cursor onto the title when this surface opens.
+  const titleRef = useFocusOnOpen<Text>(visible);
   // No C-lite wiring, as in TermsScreen: `forceEngineered` threads lite mode to
   // ROW-tier panes only, and this screen's single pane is chrome.
   const [chromeHeight, setChromeHeight] = useState<number | null>(null);
@@ -91,7 +93,7 @@ export default function PrivacyScreen({ visible, onClose }: Props) {
             {/* The chrome says where you are; the document below says what it
                 is. Splitting them keeps the header short enough to stay one or
                 two lines at AX5, where the full title would eat the sheet. */}
-            <AppText variant="heading" style={styles.title} accessibilityRole="header">
+            <AppText ref={titleRef} variant="heading" style={styles.title} accessibilityRole="header">
               {PRIVACY_POLICY_LINK_LABEL}
             </AppText>
             <Pressable

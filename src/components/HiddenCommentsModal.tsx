@@ -38,6 +38,7 @@ import {
   Modal,
   Pressable,
   StyleSheet,
+  type Text,
   View,
 } from 'react-native';
 import { EyeOff, X } from 'lucide-react-native';
@@ -48,7 +49,7 @@ import { errorMessage } from '@/lib/errors';
 import { fetchCommentsByIds } from '@/lib/comments';
 import { loadHidden, unhideContent } from '@/lib/hiddenContent';
 import { relativeTime } from '@/lib/relativeTime';
-import { useReducedMotion } from '@/lib/accessibility';
+import { useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
 import {
   COMMENT_UNHIDDEN_ANNOUNCEMENT,
   HIDDEN_COMMENTS_EMPTY_BODY,
@@ -121,6 +122,8 @@ export default function HiddenCommentsModal({ visible, onClose }: Props) {
   const color = useColor();
   const styles = makeStyles(color);
   const reducedMotion = useReducedMotion();
+  // A11Y-201 (2.4.3): move the SR cursor onto the title when this surface opens.
+  const titleRef = useFocusOnOpen<Text>(visible);
 
   const [ids, setIds] = useState<string[]>([]);
   const [rows, setRows] = useState<CommentRow[]>([]);
@@ -323,7 +326,7 @@ export default function HiddenCommentsModal({ visible, onClose }: Props) {
             onAccessibilityEscape={onClose}
           >
             <View style={styles.header}>
-              <AppText variant="heading" style={styles.title} accessibilityRole="header">
+              <AppText ref={titleRef} variant="heading" style={styles.title} accessibilityRole="header">
                 {HIDDEN_COMMENTS_TITLE}
               </AppText>
               {/* Placement H (Sky's pick). Only when there is something to act

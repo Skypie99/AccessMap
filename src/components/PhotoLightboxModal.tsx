@@ -15,7 +15,7 @@ import React from 'react';
 import { Modal, Pressable, StatusBar, StyleSheet, View } from 'react-native';
 import { RemoteImage } from '@/components/ui/RemoteImage';
 import { AppText } from '@/components/ui/AppText';
-import { useReducedMotion } from '@/lib/accessibility';
+import { useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
 import { font, radius, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { X } from 'lucide-react-native';
@@ -32,6 +32,9 @@ export default function PhotoLightboxModal({ visible, photoUrl, caption, onClose
   const color = useColor();
   const styles = makeStyles(color);
   const reducedMotion = useReducedMotion();
+  // A11Y-201 (2.4.3): land the SR cursor on the labeled close button on open
+  // (RemoteImage takes no ref; the photo stays one swipe away, first in order).
+  const closeRef = useFocusOnOpen<View>(visible);
   // Defensive: still render the modal frame if photoUrl is null so the
   // close button is reachable, but show a friendly fallback.
   return (
@@ -91,6 +94,7 @@ export default function PhotoLightboxModal({ visible, photoUrl, caption, onClose
         ) : null}
 
         <Pressable
+          ref={closeRef}
           onPress={onClose}
           hitSlop={spacing.lg}
           style={({ pressed }) => [styles.closeBtn, pressed && styles.closeBtnPressed]}

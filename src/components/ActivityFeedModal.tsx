@@ -22,6 +22,7 @@ import {
   RefreshControl,
   SectionList,
   StyleSheet,
+  type Text,
   View,
 } from 'react-native';
 import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
@@ -30,7 +31,7 @@ import { AppText } from '@/components/ui/AppText';
 import { GlassSurface } from '@/components/ui/GlassSurface';
 import { SeverityDisc } from '@/components/SeverityDisc';
 import { useAuth } from '@/lib/auth';
-import { a11yToggle, useReducedMotion } from '@/lib/accessibility';
+import { a11yToggle, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
 import { errorMessage } from '@/lib/errors';
 import {
   CATEGORY_LABELS,
@@ -63,6 +64,8 @@ export default function ActivityFeedModal({ visible, onClose, onSelectFlag, onVi
   // modal render-tests mount these sheets without one. Same value in the app.
   const insets = React.useContext(SafeAreaInsetsContext) ?? { top: 0, bottom: 0, left: 0, right: 0 };
   const reducedMotion = useReducedMotion();
+  // A11Y-201 (2.4.3): move the SR cursor onto the title when this surface opens.
+  const titleRef = useFocusOnOpen<Text>(visible);
   const { user } = useAuth();
   const [flags, setFlags] = useState<FlagRow[]>([]);
   const [watchedIds, setWatchedIds] = useState<Set<string>>(new Set());
@@ -218,7 +221,7 @@ export default function ActivityFeedModal({ visible, onClose, onSelectFlag, onVi
           onAccessibilityEscape={onClose}
         >
           <View style={styles.headerRow}>
-            <AppText variant="heading" style={styles.title} accessibilityRole="header">
+            <AppText ref={titleRef} variant="heading" style={styles.title} accessibilityRole="header">
               Recent Activity
             </AppText>
             <Pressable

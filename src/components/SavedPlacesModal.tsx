@@ -22,11 +22,12 @@ import {
   Modal,
   Pressable,
   StyleSheet,
+  type Text,
   TextInput,
   View,
 } from 'react-native';
 import { useAuth } from '@/lib/auth';
-import { a11yToggle, useReducedMotion } from '@/lib/accessibility';
+import { a11yToggle, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
 import { AppText } from '@/components/ui/AppText';
 import { GlassSurface } from '@/components/ui/GlassSurface';
 import { confirm } from '@/lib/confirm';
@@ -70,6 +71,8 @@ export default function SavedPlacesModal({
   const color = useColor();
   const styles = makeStyles(color);
   const reducedMotion = useReducedMotion();
+  // A11Y-201 (2.4.3): move the SR cursor onto the title when this surface opens.
+  const titleRef = useFocusOnOpen<Text>(visible);
   const { user } = useAuth();
   const [places, setPlaces] = useState<SavedPlace[]>([]);
   const [loading, setLoading] = useState(false);
@@ -261,7 +264,7 @@ export default function SavedPlacesModal({
           onAccessibilityEscape={onClose}
         >
           <View style={styles.headerRow}>
-            <AppText variant="heading" style={styles.title} accessibilityRole="header">
+            <AppText ref={titleRef} variant="heading" style={styles.title} accessibilityRole="header">
               Saved Places
             </AppText>
             <Pressable

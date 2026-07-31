@@ -7,6 +7,7 @@ import {
   RefreshControl,
   ScrollView,
   StyleSheet,
+  type Text,
   View,
 } from 'react-native';
 import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
@@ -14,7 +15,7 @@ import { useAuth } from '@/lib/auth';
 import { AppText } from '@/components/ui/AppText';
 import { GlassSurface } from '@/components/ui/GlassSurface';
 import { font, radius, shadow, spacing } from '@/theme';
-import { a11yToggle, useReducedMotion } from '@/lib/accessibility';
+import { a11yToggle, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { MessageCircle, Search, X } from 'lucide-react-native';
 import { FEEDBACK_CATEGORY_LABELS } from '@/lib/feedback';
@@ -116,6 +117,8 @@ export default function MyFeedbackModal({ visible, onClose, refreshKey = 0 }: Pr
   );
   // WCAG 2.3.3: snap (no slide) when the user prefers reduced motion.
   const reducedMotion = useReducedMotion();
+  // A11Y-201 (2.4.3): move the SR cursor onto the title when this surface opens.
+  const titleRef = useFocusOnOpen<Text>(visible);
 
   return (
     <Modal
@@ -136,7 +139,7 @@ export default function MyFeedbackModal({ visible, onClose, refreshKey = 0 }: Pr
           style={[styles.card, { paddingBottom: Math.max(spacing.sm, insets.bottom) }]}
         >
           <View style={styles.headerRow}>
-            <AppText variant="heading" style={styles.title} accessibilityRole="header">
+            <AppText ref={titleRef} variant="heading" style={styles.title} accessibilityRole="header">
               My Feedback
             </AppText>
             <Pressable

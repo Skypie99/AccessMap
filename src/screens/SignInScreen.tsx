@@ -8,6 +8,7 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
+  type Text,
   TextInput,
   View,
 } from 'react-native';
@@ -16,7 +17,7 @@ import { font, radius, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { AppText } from '@/components/ui';
 import { signInWithEmail, signUpWithEmail } from '@/lib/supabase';
-import { a11yToggle } from '@/lib/accessibility';
+import { a11yToggle, useFocusOnOpen } from '@/lib/accessibility';
 import { notify } from '@/lib/confirm';
 import { PRIVACY_POLICY_LINK_HINT, PRIVACY_POLICY_LINK_LABEL } from '@/lib/copy';
 import PrivacyScreen from '@/screens/PrivacyScreen';
@@ -30,6 +31,10 @@ export default function SignInScreen({
   // color kept for error tokens
   const color = useColor();
   const styles = makeStyles(color);
+  // A11Y-201 (2.4.3): this screen presents when it mounts — as the root auth
+  // wall AND as ProfileScreen's sign-in Modal (which is exempted in the
+  // focus-in guard because this hook covers it). Land the cursor on the title.
+  const titleRef = useFocusOnOpen<Text>(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
@@ -144,6 +149,7 @@ export default function SignInScreen({
         <View style={styles.brandBlock}>
           <LogoMark variant="white" size={84} />
           <AppText
+            ref={titleRef}
             variant="display"
             size={font.size.h1}
             color="#f0f6ff"
