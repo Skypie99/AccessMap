@@ -2,6 +2,7 @@ import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import { AppText } from '@/components/ui/AppText';
 import { GlassSurface } from '@/components/ui/GlassSurface';
+import { decorativeProps } from '@/lib/accessibility';
 import { SEVERITY_ORDER, SEVERITY_LABELS } from '@/lib/flags';
 import type { FlagSeverity } from '@/types/database';
 import { color, font, radius, shadow, heatmapSeverity } from '@/theme';
@@ -29,16 +30,12 @@ export default function HeatmapLegend() {
     >
       <AppText
         variant="label"
-        style={styles.title}
-        accessibilityElementsHidden
-        importantForAccessibility="no-hide-descendants"
+        style={styles.title} {...decorativeProps}
       >
         Heat map
       </AppText>
       <View
-        style={styles.row}
-        accessibilityElementsHidden
-        importantForAccessibility="no-hide-descendants"
+        style={styles.row} {...decorativeProps}
       >
         {SEVERITY_ORDER.map((s: FlagSeverity) => (
           <View key={s} style={styles.item}>

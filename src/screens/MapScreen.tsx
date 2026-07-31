@@ -1988,9 +1988,7 @@ export default function MapScreen() {
               <Star
                 size={16}
                 color="#1466E0"
-                strokeWidth={2.2}
-                accessibilityElementsHidden
-                importantForAccessibility="no-hide-descendants"
+                strokeWidth={2.2} {...decorativeProps}
               />
               <AppText variant="label" style={styles.placeChipText}>
                 {savedPlaces.length === 0 ? 'Save a place' : 'Manage'}
@@ -2123,9 +2121,7 @@ export default function MapScreen() {
                               <Star
                                 size={14}
                                 color={color.inkSelect}
-                                strokeWidth={2.2}
-                                accessibilityElementsHidden
-                                importantForAccessibility="no-hide-descendants"
+                                strokeWidth={2.2} {...decorativeProps}
                               />
                             )}
                             {isDefault ? ' ' : null}
@@ -2382,7 +2378,7 @@ export default function MapScreen() {
                           pressed && styles.presetBtnPressed,
                         ]}
                         accessibilityRole="button"
-                        accessibilityLabel="Save current filters as a preset"
+                        accessibilityLabel="Save as preset"
                         accessibilityHint={`Names and saves your current category, severity, and status filters. Stored per account, up to ${FILTER_PRESETS_MAX} presets.`}
                       >
                         <View style={styles.iconLabelRow}>
@@ -2398,7 +2394,7 @@ export default function MapScreen() {
                           pressed && styles.presetBtnSecondaryPressed,
                         ]}
                         accessibilityRole="button"
-                        accessibilityLabel="Load a saved preset"
+                        accessibilityLabel="Load preset"
                         accessibilityHint="Opens your saved filter presets so you can apply one"
                       >
                         <AppText variant="label" style={styles.presetBtnSecondaryText}>Load preset…</AppText>
@@ -2523,9 +2519,7 @@ export default function MapScreen() {
             accessibilityLiveRegion="polite"
           >
             <ActivityIndicator
-              color="#414B5A"
-              accessibilityElementsHidden
-              importantForAccessibility="no-hide-descendants"
+              color="#414B5A" {...decorativeProps}
             />
             <AppText variant="body" style={styles.bannerLocatingText}>Finding your location…</AppText>
           </GlassSurface>

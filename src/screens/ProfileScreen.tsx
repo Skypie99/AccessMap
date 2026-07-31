@@ -91,7 +91,7 @@ import { ArrowDown, ArrowUp, ChevronRight, Flame, MapPin, Pencil, X } from 'luci
 import TierIcon from '@/components/TierIcon';
 import { getTier, pointsToNextTier, REPUTATION_TIERS } from '@/lib/reputationTier';
 import { setLastSeenPoints } from '@/lib/points';
-import { a11yToggle, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
+import { a11yToggle, decorativeProps, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
 import {
   getPointEventHistory,
   pointEventLabel,
@@ -936,7 +936,7 @@ export default function ProfileScreen() {
               onPress={() => void load()}
               style={({ pressed }) => [styles.errorRetryBtn, pressed && styles.errorRetryBtnPressed]}
               accessibilityRole="button"
-              accessibilityLabel="Try loading your profile again"
+              accessibilityLabel="Try again, load your profile"
             >
               <AppText variant="label" style={styles.errorRetryText}>Try again</AppText>
             </Pressable>
@@ -970,15 +970,11 @@ export default function ProfileScreen() {
             <RemoteImage
               uri={profile?.avatar_url}
               style={styles.avatarImg}
-              accessibilityElementsHidden
-              importantForAccessibility="no-hide-descendants"
               fallback={
                 <View style={styles.avatarPlaceholder}>
                   <AppText
                     variant="label"
-                    style={styles.avatarInitials}
-                    accessibilityElementsHidden
-                    importantForAccessibility="no-hide-descendants"
+                    style={styles.avatarInitials} {...decorativeProps}
                   >
                     {getInitials(profile?.display_name ?? user.email ?? '')}
                   </AppText>
@@ -991,9 +987,7 @@ export default function ProfileScreen() {
               </View>
             ) : (
               <View
-                style={styles.avatarEditBadge}
-                accessibilityElementsHidden
-                importantForAccessibility="no-hide-descendants"
+                style={styles.avatarEditBadge} {...decorativeProps}
               >
                 <Pencil size={14} color={color.textOnBrand} strokeWidth={2.2} />
               </View>
@@ -1051,16 +1045,12 @@ export default function ProfileScreen() {
                         outputRange: ['0%', '100%'],
                       }),
                     },
-                  ]}
-                  accessibilityElementsHidden
-                  importantForAccessibility="no-hide-descendants"
+                  ]} {...decorativeProps}
                 />
               </View>
               <AppText
                 variant="label"
-                style={styles.tierProgressLabel}
-                accessibilityElementsHidden
-                importantForAccessibility="no-hide-descendants"
+                style={styles.tierProgressLabel} {...decorativeProps}
               >
                 {tierGap} pts to {nextTier?.label ?? 'next tier'}
               </AppText>
@@ -1075,16 +1065,12 @@ export default function ProfileScreen() {
                 accessibilityValue={{ min: 0, max: nextMilestone, now: points }}
               >
                 <View
-                  style={[styles.progressFill, { width: progressBarWidth }]}
-                  accessibilityElementsHidden
-                  importantForAccessibility="no-hide-descendants"
+                  style={[styles.progressFill, { width: progressBarWidth }]} {...decorativeProps}
                 />
               </View>
               <AppText
                 variant="label"
-                style={styles.heroSubtitle}
-                accessibilityElementsHidden
-                importantForAccessibility="no-hide-descendants"
+                style={styles.heroSubtitle} {...decorativeProps}
               >
                 {nextMilestone - points} points to {milestoneLabel}
               </AppText>
@@ -1130,9 +1116,7 @@ export default function ProfileScreen() {
                   >
                     <AppText
                       variant="label"
-                      style={[styles.pointHistoryIcon, !isGain && styles.pointHistoryIconNeg]}
-                      accessibilityElementsHidden
-                      importantForAccessibility="no-hide-descendants"
+                      style={[styles.pointHistoryIcon, !isGain && styles.pointHistoryIconNeg]} {...decorativeProps}
                     >
                       {isGain ? (
                         <ArrowUp
@@ -1254,9 +1238,7 @@ export default function ProfileScreen() {
               <ChevronRight
                 size={18}
                 color={color.brandOnSoft}
-                strokeWidth={2.2}
-                accessibilityElementsHidden
-                importantForAccessibility="no-hide-descendants"
+                strokeWidth={2.2} {...decorativeProps}
               />
             </GlassSurface>
           </Pressable>
@@ -1284,19 +1266,15 @@ export default function ProfileScreen() {
                 <>
                   <AppText
                     variant="monoBold"
-                    style={[styles.statusPillCount, { color: palette.fg }]}
-                    accessibilityElementsHidden
-                    importantForAccessibility="no-hide-descendants"
+                    style={[styles.statusPillCount, { color: palette.fg }]} {...decorativeProps}
                   >
                     {count}
                   </AppText>
                   <AppText
                     variant="label"
                     style={[styles.statusPillLabel, { color: palette.fg }]}
-                    accessibilityElementsHidden
-                    importantForAccessibility="no-hide-descendants"
                     adjustsFontSizeToFit
-                    numberOfLines={1}
+                    numberOfLines={1} {...decorativeProps}
                   >
                     {STATUS_LABELS[status]}
                   </AppText>
@@ -1497,7 +1475,7 @@ export default function ProfileScreen() {
           style={({ pressed }) => pressed && styles.myReportsBtnPressed}
           onPress={() => setNotifPrefsOpen(true)}
           accessibilityRole="button"
-          accessibilityLabel="Notification settings"
+          accessibilityLabel="Notifications"
           accessibilityHint="Opens settings for which flag status updates surface in your update banner"
         >
           <GlassSurface variant="row" forceEngineered style={styles.myReportsBtn}>
@@ -1590,7 +1568,11 @@ export default function ProfileScreen() {
                   accessibilityRole="button"
                   accessibilityLabel={`Set default tab to ${tab}`}
                   {...a11yToggle({
-                    selected,
+                    // A11Y-216: `pressed`, not `selected` — Chromium drops
+                    // aria-selected on role=button, so web SR users heard no
+                    // state. a11yToggle mirrors pressed into the native
+                    // `selected` trait, so VoiceOver is unchanged.
+                    pressed: selected,
                     disabled: savingTab || defaultTab === null,
                   })}
                 >
@@ -1659,7 +1641,7 @@ export default function ProfileScreen() {
           style={({ pressed }) => pressed && styles.aboutRowPressed}
           onPress={() => setSharedModal('help')}
           accessibilityRole="button"
-          accessibilityLabel="Help and frequently asked questions"
+          accessibilityLabel="Help & FAQ"
           accessibilityHint="Opens collapsible answers to common questions about the app"
         >
           <GlassSurface variant="row" forceEngineered style={styles.aboutRow}>
@@ -1748,7 +1730,7 @@ export default function ProfileScreen() {
           style={styles.deleteAccountBtn}
           onPress={() => setDeleteAccountOpen(true)}
           accessibilityRole="button"
-          accessibilityLabel="Delete your account"
+          accessibilityLabel="Delete Account"
           accessibilityHint="Opens a confirmation dialog before permanently deleting your account and data"
         >
           <AppText variant="label" style={styles.deleteAccountText}>Delete Account</AppText>
@@ -1817,7 +1799,7 @@ export default function ProfileScreen() {
                 onPress={handleDeleteAccount}
                 disabled={deletingAccount}
                 accessibilityRole="button"
-                accessibilityLabel="Confirm account deletion"
+                accessibilityLabel="Delete Account, confirm"
                 {...a11yToggle({ busy: deletingAccount, disabled: deletingAccount })}
               >
                 {deletingAccount ? (

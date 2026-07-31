@@ -25,7 +25,7 @@ import {
 import type { FlagStatus } from '@/types/database';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { font, radius, spacing } from '@/theme';
-import { a11yToggle, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
+import { a11yToggle, decorativeProps, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
 import { X } from 'lucide-react-native';
 
 interface Props {
@@ -182,9 +182,7 @@ export default function NotificationPrefsModal({
               <X
                 size={18}
                 color={color.text}
-                strokeWidth={2.2}
-                accessibilityElementsHidden
-                importantForAccessibility="no-hide-descendants"
+                strokeWidth={2.2} {...decorativeProps}
               />
             </Pressable>
           </View>
@@ -223,9 +221,7 @@ export default function NotificationPrefsModal({
                     {/* Badge is decorative here — the Switch already carries
                         the full accessible label+state. Hidden from the a11y
                         tree to avoid redundant "Flag status: X" announcements. */}
-                    <View
-                      accessibilityElementsHidden
-                      importantForAccessibility="no-hide-descendants"
+                    <View {...decorativeProps}
                     >
                       <StatusBadge status={status} style={styles.statusBadge} />
                     </View>

@@ -137,8 +137,12 @@ describe('D4/C5 — placement B: the chip on the peek (Sky\u2019s A-5 pick)', ()
     // The peek's own accessibilityLabel already composes this exact sentence.
     // Exposing the chip as well would announce it twice. Visual channel here,
     // spoken channel on the button, one voice each.
-    expect(chipBlock).toMatch(/accessibilityElementsHidden/);
-    expect(chipBlock).toMatch(/importantForAccessibility="no-hide-descendants"/);
+    // A11Y-234: `decorativeProps` is now the single spelling of "decorative,
+    // hidden everywhere" — it carries accessibilityElementsHidden AND
+    // importantForAccessibility AND aria-hidden, the last of which is the only
+    // one react-native-web honours. Accept either the spread or the raw prop.
+    expect(chipBlock).toMatch(/decorativeProps|accessibilityElementsHidden/);
+    expect(chipBlock).toMatch(/decorativeProps|importantForAccessibility="no-hide-descendants"/);
     expect(home).toMatch(/`Open the full map\. \$\{EMPTY_LOCAL_INVITE\}`/);
   });
 

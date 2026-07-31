@@ -12,6 +12,7 @@
  * absolute sibling inside a `position: relative` wrapper over the right edge.
  */
 import { StyleSheet } from 'react-native';
+import { decorativeProps } from '@/lib/accessibility';
 import { LinearGradient } from 'expo-linear-gradient';
 import { radius } from '@/theme';
 import { useColor } from '@/theme/ThemeContext';
@@ -47,9 +48,7 @@ export function OverflowFade({ visible, edge = 'square', width = 28 }: OverflowF
         styles.fade,
         { width, borderTopRightRadius: cornerRadius, borderBottomRightRadius: cornerRadius },
       ]}
-      pointerEvents="none"
-      accessibilityElementsHidden
-      importantForAccessibility="no-hide-descendants"
+      pointerEvents="none" {...decorativeProps}
     />
   );
 }

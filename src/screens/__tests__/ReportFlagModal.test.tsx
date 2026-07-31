@@ -264,6 +264,11 @@ jest.mock('@/theme', () => jest.requireActual('@/theme'));
 // Mock: @/lib/accessibility
 // ---------------------------------------------------------------------------
 jest.mock('@/lib/accessibility', () => ({
+  // A11Y-234: spread FIRST so every real export (notably `decorativeProps`,
+  // which this sheet now spreads onto its decorative icons) exists — a partial
+  // mock silently made `{...decorativeProps}` spread nothing, and the tick's
+  // hidden-from-AT assertion below then measured the mock, not the component.
+  ...jest.requireActual('@/lib/accessibility'),
   useReducedMotion: jest.fn(() => false),
   // The card now wears GlassSurface (bulk glass, B4); it reads this hook to pick
   // blur vs the opaque Reduce-Transparency state. Default false → the blur path,

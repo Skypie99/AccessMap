@@ -132,11 +132,16 @@ describe('D3/C3 — the rows were moved, not rewritten', () => {
   });
 
   it('keeps every filter label and its selected-state announcement', () => {
-    for (const label of ['Show all flags', 'Show only my flags', 'Show all categories', 'Filter by category', 'Sort order']) {
+    // A11Y-215 (SC 2.5.3): the "Mine" chip's name now CONTAINS its visible
+    // text, so a voice-control user can speak what they see.
+    for (const label of ['Show all flags', 'Mine, show only my flags', 'Show all categories', 'Filter by category', 'Sort order']) {
       expect(`${label}: ${tasks.includes(label)}`).toBe(`${label}: true`);
     }
-    expect(tasks).toMatch(/a11yToggle\(\{ selected: !mineOnly, disabled: !mineOnlyHydrated \}\)/);
-    expect(tasks).toMatch(/a11yToggle\(\{ selected: categoryFilter === null \}\)/);
+    // A11Y-216: `pressed`, not `selected` — Chromium drops aria-selected on
+    // role=button, so web screen readers heard no state at all. a11yToggle
+    // mirrors pressed into the native trait, so VoiceOver is unchanged.
+    expect(tasks).toMatch(/a11yToggle\(\{ pressed: !mineOnly, disabled: !mineOnlyHydrated \}\)/);
+    expect(tasks).toMatch(/a11yToggle\(\{ pressed: categoryFilter === null \}\)/);
   });
 
   it('every control in the new row clears 44pt', () => {

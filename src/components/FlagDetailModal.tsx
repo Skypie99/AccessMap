@@ -73,7 +73,7 @@ import {
 } from '@/lib/copy';
 import { StatusBadge } from './StatusBadge';
 import { CommentBubble } from './CommentBubble';
-import { a11yToggle, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
+import { a11yToggle, decorativeProps, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
 
 export type DetailAction = 'verify' | 'resolve' | 'reject';
 
@@ -1062,9 +1062,7 @@ export default function FlagDetailModal({
                     />
                   </View>
                   <View
-                    style={styles.beforeAfterArrow}
-                    accessibilityElementsHidden
-                    importantForAccessibility="no-hide-descendants"
+                    style={styles.beforeAfterArrow} {...decorativeProps}
                   >
                     <AppText variant="label" style={styles.beforeAfterArrowGlyph}>→</AppText>
                   </View>
@@ -1099,7 +1097,7 @@ export default function FlagDetailModal({
                     onPress={handleAddPhoto}
                     style={({ pressed }) => [styles.afterTipBtn, pressed && styles.afterTipBtnPressed]}
                     accessibilityRole="button"
-                    accessibilityLabel="Add an after photo"
+                    accessibilityLabel="Add after photo"
                     accessibilityHint="Opens the camera or photo library to attach a photo of the fix"
                   >
                     <AppText variant="label" style={styles.afterTipBtnText}>Add after photo</AppText>
@@ -1177,9 +1175,7 @@ export default function FlagDetailModal({
                           style={[
                             styles.contextChip,
                             key === 'disability' && styles.disabilityChip,
-                          ]}
-                          accessibilityElementsHidden
-                          importantForAccessibility="no-hide-descendants"
+                          ]} {...decorativeProps}
                         >
                           <AppText
                             variant="label"
@@ -1271,7 +1267,7 @@ export default function FlagDetailModal({
                       : 'Adds this flag to your Watched list in Profile so you can track its status'
                   }
                   {...a11yToggle({
-                    selected: watched,
+                    pressed: watched,
                     busy: watchSaving,
                     disabled: busy || watchSaving,
                   })}
@@ -1422,7 +1418,7 @@ export default function FlagDetailModal({
                       disabled={busy}
                       style={({ pressed }) => [styles.actionBtn, styles.reopenBtn, pressed && { backgroundColor: color.borderPressed }]}
                       accessibilityRole="button"
-                      accessibilityLabel="Request flag reopen"
+                      accessibilityLabel="Still broken? Request reopen"
                       accessibilityHint="Opens a form to explain why this barrier is still present"
                       {...a11yToggle({ disabled: busy })}
                     >
@@ -1495,7 +1491,7 @@ export default function FlagDetailModal({
                   disabled={busy}
                   style={({ pressed }) => [styles.actionBtn, styles.viewMapBtn, pressed && { backgroundColor: color.borderPressed }]}
                   accessibilityRole="button"
-                  accessibilityLabel="View this flag on the map"
+                  accessibilityLabel="View on Map"
                   accessibilityHint="Switches to the Map tab and centers on this flag"
                   {...a11yToggle({ disabled: busy })}
                 >
@@ -1616,9 +1612,7 @@ export default function FlagDetailModal({
                     <MessageCircle
                       size={24}
                       color={color.inkGlassMuted}
-                      strokeWidth={2}
-                      accessibilityElementsHidden
-                      importantForAccessibility="no-hide-descendants"
+                      strokeWidth={2} {...decorativeProps}
                     />
                     <AppText variant="body" style={styles.commentsEmptyLabel}>
                       No comments yet — share what you know.

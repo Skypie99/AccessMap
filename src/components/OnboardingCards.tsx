@@ -21,7 +21,7 @@ import {
   getNotificationPermission,
   requestNotificationPermission,
 } from '@/lib/pushNotifications';
-import { a11yToggle, useFocusOnOpen } from '@/lib/accessibility';
+import { a11yToggle, decorativeProps, useFocusOnOpen } from '@/lib/accessibility';
 import { SEVERITY_LABELS, SEVERITY_ORDER } from '@/lib/flags';
 import { font, radius, spacing, gradient } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
@@ -381,9 +381,7 @@ export default function OnboardingCards({ onDone }: Props) {
                       style={[
                         styles.iconCircle,
                         { borderColor: effectiveColor + '40', shadowColor: effectiveColor },
-                      ]}
-                      accessibilityElementsHidden
-                      importantForAccessibility="no-hide-descendants"
+                      ]} {...decorativeProps}
                     >
                       {c.brandMark ? (
                         <LogoMark size={60} variant="mono" tint={effectiveColor} />
@@ -413,9 +411,7 @@ export default function OnboardingCards({ onDone }: Props) {
 
         {/* Dots — decorative, hidden from assistive tech */}
         <View
-          style={styles.dotsRow}
-          importantForAccessibility="no-hide-descendants"
-          accessibilityElementsHidden
+          style={styles.dotsRow} {...decorativeProps}
         >
           {CARDS.map((c, i) => {
             const dotColor = currentGranted === true ? '#34d399' : card.iconColor;

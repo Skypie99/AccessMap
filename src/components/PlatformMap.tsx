@@ -447,9 +447,7 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(function Pla
             <View style={styles.callout}>
               <View
                 style={[styles.calloutSevBar, { backgroundColor: severityColor(f.severity) }]}
-                // Decorative color bar — severity info is in the text below
-                accessibilityElementsHidden
-                importantForAccessibility="no-hide-descendants"
+                // Decorative color bar — severity info is in the text below {...decorativeProps}
               />
               <View style={styles.calloutBody}>
                 <AppText
@@ -474,9 +472,7 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(function Pla
                   <RemoteImage
                     uri={f.photo_url}
                     style={styles.calloutPhoto}
-                    // Decorative thumbnail inside an already-labeled callout.
-                    accessibilityElementsHidden
-                    importantForAccessibility="no-hide-descendants"
+                    // Decorative thumbnail inside an already-labeled callout. {...decorativeProps}
                   />
                 ) : null}
                 {f.description ? (

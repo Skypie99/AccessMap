@@ -12,7 +12,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { font, radius, shadow, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
-import { useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
+import { decorativeProps, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
 import { hapticSelection } from '@/lib/haptics';
 import { trackEvent } from '@/lib/analytics';
 import { AppText } from '@/components/ui/AppText';
@@ -192,9 +192,7 @@ export default function OnboardingModal({ visible, onDone }: Props) {
           pagingEnabled
           showsHorizontalScrollIndicator={false}
           onMomentumScrollEnd={handleScroll}
-          style={styles.scroll}
-          accessibilityElementsHidden
-          importantForAccessibility="no-hide-descendants"
+          style={styles.scroll} {...decorativeProps}
         >
           {CARDS.map((card) => {
             const CardIcon = card.Icon;
@@ -240,9 +238,7 @@ export default function OnboardingModal({ visible, onDone }: Props) {
             + button labels. WCAG 1.4.1 (Use of Color): position is not conveyed
             by color alone (labels + counter carry the meaning). */}
         <View
-          style={styles.dotsRow}
-          accessibilityElementsHidden
-          importantForAccessibility="no-hide-descendants"
+          style={styles.dotsRow} {...decorativeProps}
         >
           {CARDS.map((card, i) => (
             <View key={card.title} style={[styles.dot, i === index && styles.dotActive]} />

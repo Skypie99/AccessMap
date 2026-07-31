@@ -112,7 +112,10 @@ describe('T8 — one spoken voice (source contract)', () => {
   });
 
   it('Home keeps the status word when distance renders (F4-10)', () => {
-    expect(homeScreen).toMatch(/statusA11y\(item\.f\.status\)\}, \$\{formatDistance\(item\.km\)\} away/);
+    // SR-042: the SPOKEN label now uses speakDistance ("297 meters away"),
+    // not the visible abbreviation ("297 m") — the point of this assertion is
+    // that the status word survives alongside the distance, which it does.
+    expect(homeScreen).toMatch(/statusA11y\(item\.f\.status\)\}, \$\{speakDistance\(item\.km\)\}/);
   });
 
   it('the Legend severity digit is decorative — now via the SeverityDisc primitive (F4-01)', () => {

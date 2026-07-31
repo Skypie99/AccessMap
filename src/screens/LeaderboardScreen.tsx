@@ -10,7 +10,7 @@ import { RemoteImage } from '@/components/ui/RemoteImage';
 import { AppText } from '@/components/ui/AppText';
 import { GlassSurface } from '@/components/ui/GlassSurface';
 import { Skeleton } from '@/components/ui/Skeleton';
-import { a11yToggle, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
+import { a11yToggle, decorativeProps, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
 import { useAuth } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
 import {
@@ -98,9 +98,7 @@ function SkeletonRow() {
         paddingVertical: spacing.sm + 2,
         gap: spacing.md,
         minHeight: 54,
-      }}
-      accessibilityElementsHidden
-      importantForAccessibility="no-hide-descendants"
+      }} {...decorativeProps}
     >
       <Skeleton width={40} height={font.size.sm} />
       <Skeleton width={AVATAR_SIZE} height={AVATAR_SIZE} borderRadius={AVATAR_SIZE / 2} />
@@ -313,15 +311,19 @@ export default function LeaderboardScreen({ visible, onClose }: Props) {
               : 'Top 20 contributors by points'}
           </AppText>
 
-          {/* UX #8: All-time / This Month segmented toggle. WCAG: each button is
-              a button with selected state announced; the selected label carries
-              weight + an underline so colour is never the sole signal. */}
-          <View style={styles.segment} accessibilityRole="tablist">
+          {/* UX #8: All-time / This Month segmented toggle. WCAG: each button
+              announces its state through a11yToggle ONLY — A11Y-220: the labels
+              used to bake ", selected" in as well, so native VoiceOver spoke the
+              state twice. The active label still carries weight + an underline,
+              so colour is never the sole visual signal. */}
+          {/* A11Y-218: the tablist had a role and no name — an unlabeled
+              group is a landmark a screen reader announces as nothing. */}
+          <View style={styles.segment} accessibilityRole="tablist" accessibilityLabel="Ranking period">
             <Pressable
               onPress={() => setTab('all')}
               accessibilityRole="button"
-              {...a11yToggle({ selected: tab === 'all' })}
-              accessibilityLabel={`All-time ranking${tab === 'all' ? ', selected' : ''}`}
+              {...a11yToggle({ pressed: tab === 'all' })}
+              accessibilityLabel="All-time ranking"
               style={({ pressed }) => [
                 styles.segBtn,
                 tab === 'all' && styles.segBtnActive,
@@ -338,8 +340,8 @@ export default function LeaderboardScreen({ visible, onClose }: Props) {
             <Pressable
               onPress={() => setTab('month')}
               accessibilityRole="button"
-              {...a11yToggle({ selected: tab === 'month' })}
-              accessibilityLabel={`This month's ranking${tab === 'month' ? ', selected' : ''}`}
+              {...a11yToggle({ pressed: tab === 'month' })}
+              accessibilityLabel="This month's ranking"
               style={({ pressed }) => [
                 styles.segBtn,
                 tab === 'month' && styles.segBtnActive,
@@ -374,7 +376,7 @@ export default function LeaderboardScreen({ visible, onClose }: Props) {
                 onPress={() => void load()}
                 style={({ pressed }) => [styles.retryBtn, pressed && styles.retryBtnPressed]}
                 accessibilityRole="button"
-                accessibilityLabel="Retry loading leaderboard"
+                accessibilityLabel="Try again, load the leaderboard"
               >
                 <AppText variant="label" style={styles.retryText}>Try again</AppText>
               </Pressable>

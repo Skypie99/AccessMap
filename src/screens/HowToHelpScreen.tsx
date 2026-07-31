@@ -22,7 +22,7 @@ import { SheetGrabber } from '@/components/ui/Sheet';
 import { hydrateGlassMode, useGlassMode } from '@/lib/glassMode';
 import { font, radius, shadow, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
-import { useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
+import { decorativeProps, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
 
 interface Props {
   visible: boolean;
@@ -161,9 +161,7 @@ export default function HowToHelpScreen({ visible, onClose }: Props) {
                   semantic palette (light success/amber would fail 3.0 on row
                   glass if forced to declare). */}
               <View
-                style={[styles.stepIcon, { backgroundColor: stepColors[i] + '18' }]}
-                accessibilityElementsHidden
-                importantForAccessibility="no-hide-descendants"
+                style={[styles.stepIcon, { backgroundColor: stepColors[i] + '18' }]} {...decorativeProps}
               >
                 <step.icon size={28} color={stepColors[i]} strokeWidth={2} />
               </View>
@@ -185,9 +183,7 @@ export default function HowToHelpScreen({ visible, onClose }: Props) {
             <Heart
               size={18}
               color={color.brand}
-              strokeWidth={2}
-              accessibilityElementsHidden
-              importantForAccessibility="no-hide-descendants"
+              strokeWidth={2} {...decorativeProps}
             />
             <AppText variant="bodyMedium" style={styles.calloutText}>
               Every contribution — big or small — makes the world more accessible

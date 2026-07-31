@@ -9,7 +9,7 @@ import { GlassSurface } from '@/components/ui/GlassSurface';
 import LogoMark from '@/components/LogoMark';
 import { Map as MapIcon, X } from 'lucide-react-native';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
-import { useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
+import { decorativeProps, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
 import {
   PRIVACY_POLICY_LINK_HINT,
   PRIVACY_POLICY_LINK_LABEL,
@@ -69,7 +69,7 @@ export default function AboutScreen({ visible, onClose }: Props) {
                 title already says "About AccessMap", so exposing it would
                 double-speak. Theme-aware so it holds contrast on the bulk sheet
                 in both modes. */}
-            <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+            <View {...decorativeProps}>
               <LogoMark size={22} variant={color.scheme === 'dark' ? 'white' : 'color'} />
             </View>
             <AppText ref={titleRef} variant="heading" style={styles.title} accessibilityRole="header">

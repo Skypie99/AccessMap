@@ -68,7 +68,7 @@ import type { FlagCategory, FlagRow, FlagSeverity } from '@/types/database';
 import { setLiveStatus } from '@/lib/liveStatus';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { font, gradient, radius, severity as severityRamp, shadow, spacing } from '@/theme';
-import { a11yToggle, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
+import { a11yToggle, decorativeProps, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
 
 /** Lucide icon for each disability tag — adds visual distinction (no emoji, per
  *  the brand icon rule). Describes the BARRIER type, not any person's identity. */
@@ -585,7 +585,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
             {isAnon ? 'Report anonymously' : 'Report a flag'}
           </AppText>
           <View style={styles.locationRow}>
-            <MapPin size={13} color={color.textMuted} strokeWidth={2} accessibilityElementsHidden importantForAccessibility="no-hide-descendants" />
+            <MapPin size={13} color={color.textMuted} strokeWidth={2} {...decorativeProps} />
             <AppText variant="mono" style={styles.location}>
               {location
                 ? `at ${location.lat.toFixed(5)}, ${location.lng.toFixed(5)}`
@@ -605,7 +605,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
               accessibilityLabel="Use my location"
               accessibilityHint="Finds your current location so you can submit this report"
             >
-              <MapPin size={14} color={color.brandOnSoft} strokeWidth={2.4} accessibilityElementsHidden importantForAccessibility="no-hide-descendants" />
+              <MapPin size={14} color={color.brandOnSoft} strokeWidth={2.4} {...decorativeProps} />
               <AppText variant="label" style={styles.useLocationText}>Use my location</AppText>
             </Pressable>
           )}
@@ -625,7 +625,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
                 accessibilityLabel="Reporting anonymously. Your identity is not stored."
                 style={styles.anonBannerInfo}
               >
-                <Lock size={15} color={color.brandOnSoft} strokeWidth={2.2} accessibilityElementsHidden importantForAccessibility="no-hide-descendants" />
+                <Lock size={15} color={color.brandOnSoft} strokeWidth={2.2} {...decorativeProps} />
                 <View style={styles.anonBannerBody}>
                   <AppText variant="label" style={styles.anonBannerTitle}>Reporting anonymously — your identity is not stored.</AppText>
                 </View>
@@ -789,9 +789,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
                       size={11}
                       color={severityRamp[s].textOnColor}
                       strokeWidth={3}
-                      style={styles.sevCheck}
-                      accessibilityElementsHidden
-                      importantForAccessibility="no-hide-descendants"
+                      style={styles.sevCheck} {...decorativeProps}
                     />
                   )}
                   {/* Cap the single digit's scaling so the number + the active

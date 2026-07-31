@@ -29,7 +29,7 @@ import {
   View,
 } from 'react-native';
 import { useAuth } from '@/lib/auth';
-import { a11yToggle, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
+import { a11yToggle, decorativeProps, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
 import { AppText } from '@/components/ui/AppText';
 import { GlassSurface } from '@/components/ui/GlassSurface';
 import { confirm, notify } from '@/lib/confirm';
@@ -235,9 +235,7 @@ export default function SavedPlacesModal({
               // QA A5: the Pressable's a11yLabel already covers
               // "Jump map to {name}"; the raw decimals would be
               // read as "47 point 6 0 6 2 negative 122 point…"
-              // which adds no value for SR users.
-              accessibilityElementsHidden
-              importantForAccessibility="no-hide-descendants"
+              // which adds no value for SR users. {...decorativeProps}
             >
               {place.lat.toFixed(4)}, {place.lng.toFixed(4)}
             </AppText>
@@ -254,9 +252,7 @@ export default function SavedPlacesModal({
           <X
             size={18}
             color={color.error}
-            strokeWidth={2.2}
-            accessibilityElementsHidden
-            importantForAccessibility="no-hide-descendants"
+            strokeWidth={2.2} {...decorativeProps}
           />
         </Pressable>
       </View>
@@ -300,9 +296,7 @@ export default function SavedPlacesModal({
               <X
                 size={18}
                 color={color.text}
-                strokeWidth={2.2}
-                accessibilityElementsHidden
-                importantForAccessibility="no-hide-descendants"
+                strokeWidth={2.2} {...decorativeProps}
               />
             </Pressable>
           </View>

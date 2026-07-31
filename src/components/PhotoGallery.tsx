@@ -96,13 +96,13 @@ function PhotoGalleryInner({ photos, onAddPhoto, maxPhotos = 5, onRemovePhoto }:
           onPress={onAddPhoto}
           style={({ pressed }) => [styles.thumb, styles.addThumb, pressed && styles.thumbPressed]}
           accessibilityRole="button"
-          accessibilityLabel="Add another photo"
+          accessibilityLabel="Add photo"
           accessibilityHint={`${photos.length} of ${maxPhotos} photos added. Tap to add more.`}
         >
-          <AppText variant="label" style={styles.addIcon} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+          <AppText variant="label" style={styles.addIcon} {...decorativeProps}>
             +
           </AppText>
-          <AppText variant="label" style={styles.addLabel} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+          <AppText variant="label" style={styles.addLabel} {...decorativeProps}>
             Add photo
           </AppText>
         </Pressable>
@@ -141,9 +141,7 @@ function PhotoGalleryInner({ photos, onAddPhoto, maxPhotos = 5, onRemovePhoto }:
             <X
               size={18}
               color={color.textOnBrand}
-              strokeWidth={2.2}
-              accessibilityElementsHidden
-              importantForAccessibility="no-hide-descendants"
+              strokeWidth={2.2} {...decorativeProps}
             />
           </Pressable>
         )}
@@ -230,9 +228,7 @@ function PhotoGalleryInner({ photos, onAddPhoto, maxPhotos = 5, onRemovePhoto }:
                 <RemoteImage
                   uri={photo.url}
                   style={{ width: screenWidth, height: screenHeight }}
-                  resizeMode="contain"
-                  accessibilityElementsHidden
-                  importantForAccessibility="no-hide-descendants"
+                  resizeMode="contain" {...decorativeProps}
                 />
               </View>
             ))}
@@ -280,9 +276,7 @@ function PhotoGalleryInner({ photos, onAddPhoto, maxPhotos = 5, onRemovePhoto }:
           {photos.length > 1 && (
             <View
               style={styles.lightboxCounter}
-              pointerEvents="none"
-              accessibilityElementsHidden
-              importantForAccessibility="no-hide-descendants"
+              pointerEvents="none" {...decorativeProps}
             >
               <AppText variant="label" style={styles.lightboxCounterText}>
                 {lightboxPage + 1} / {photos.length}
@@ -300,9 +294,7 @@ function PhotoGalleryInner({ photos, onAddPhoto, maxPhotos = 5, onRemovePhoto }:
             <X
               size={18}
               color={color.textOnBrand}
-              strokeWidth={2.2}
-              accessibilityElementsHidden
-              importantForAccessibility="no-hide-descendants"
+              strokeWidth={2.2} {...decorativeProps}
             />
           </Pressable>
         </View>

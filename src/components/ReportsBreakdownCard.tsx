@@ -46,6 +46,7 @@ import {
 import { font, radius, shadow, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import type { FlagCategory, FlagSeverity } from '@/types/database';
+import { decorativeProps } from '@/lib/accessibility';
 
 interface Props {
   userId: string | null;
@@ -91,9 +92,7 @@ function BarRow({
       <View style={styles.barTrack}>
         <View
           // The fill is decorative; count is read out by the row label.
-          accessibilityElementsHidden
-          importantForAccessibility="no-hide-descendants"
-          style={[styles.barFill, { width: `${widthPct}%`, backgroundColor: barColor }]}
+          style={[styles.barFill, { width: `${widthPct}%`, backgroundColor: barColor }]} {...decorativeProps}
         />
       </View>
       <AppText variant="label" style={styles.barCount}>{count}</AppText>
@@ -184,9 +183,7 @@ export default function ReportsBreakdownCard({ userId, refreshKey }: Props) {
           </AppText>
         </View>
         <ActivityIndicator
-          // The accessible label on the card already announces "loading".
-          accessibilityElementsHidden
-          importantForAccessibility="no-hide-descendants"
+          // The accessible label on the card already announces "loading". {...decorativeProps}
         />
       </GlassSurface>
     );

@@ -49,7 +49,7 @@ import { errorMessage } from '@/lib/errors';
 import { fetchCommentsByIds } from '@/lib/comments';
 import { loadHidden, unhideContent } from '@/lib/hiddenContent';
 import { relativeTime } from '@/lib/relativeTime';
-import { useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
+import { decorativeProps, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
 import {
   COMMENT_UNHIDDEN_ANNOUNCEMENT,
   HIDDEN_COMMENTS_EMPTY_BODY,
@@ -375,9 +375,7 @@ export default function HiddenCommentsModal({ visible, onClose }: Props) {
                 <EyeOff
                   size={32}
                   color={color.inkGlassMuted}
-                  strokeWidth={2.2}
-                  accessibilityElementsHidden
-                  importantForAccessibility="no-hide-descendants"
+                  strokeWidth={2.2} {...decorativeProps}
                 />
                 <AppText variant="heading" style={styles.emptyTitle}>
                   {HIDDEN_COMMENTS_EMPTY_TITLE}

@@ -262,7 +262,11 @@ describe('W1 is PARTIAL — the count is recorded, never displayed', () => {
   });
 
   it('the reopen control is untouched by this work', () => {
-    expect(modal).toContain('accessibilityLabel="Request flag reopen"');
+    // A11Y-215 (SC 2.5.3) renamed this to CONTAIN its visible text — a
+    // voice-control user says what they see ("Still broken? Request reopen").
+    // The control itself is still untouched by the dispute work, which is what
+    // this assertion is actually here to prove.
+    expect(modal).toContain('accessibilityLabel="Still broken? Request reopen"');
     expect(modal).toContain('const handleReopenSubmit = async');
     expect(modal).toContain("import { hasRequestedReopen, recordReopenRequest } from '@/lib/reopenRequests';");
   });

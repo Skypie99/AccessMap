@@ -477,15 +477,14 @@ export default function HomeScreen() {
                       style={styles.peekChipText}
                       maxFontSizeMultiplier={1.4}
                       // `aria-hidden` is the one that works EVERYWHERE. RN-web
-                      // ignores the two legacy props below — proved by the
-                      // shipped "Sort:" label, which carries both and still
-                      // shows up in the web ARIA tree (DECISIONS §F F-22). RN
-                      // 0.81 maps `aria-hidden` onto the native equivalents, so
-                      // this one prop covers iOS, Android and web; the legacy
-                      // pair stays for readability and belt-and-braces.
-                      aria-hidden
-                      accessibilityElementsHidden
-                      importantForAccessibility="no-hide-descendants"
+                      // ignores the two legacy props — proved by the shipped
+                      // "Sort:" label, which carried both and still showed up
+                      // in the web ARIA tree (DECISIONS §F F-22). A11Y-234:
+                      // `decorativeProps` is now the single spelling of this
+                      // whole idea (accessible:false + both legacy props +
+                      // aria-hidden), so the standalone aria-hidden that used
+                      // to sit here would just duplicate what the spread sets.
+                      {...decorativeProps}
                     >
                       {EMPTY_LOCAL_INVITE}
                     </AppText>

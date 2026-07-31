@@ -15,7 +15,7 @@ import React from 'react';
 import { Modal, Pressable, StatusBar, StyleSheet, View } from 'react-native';
 import { RemoteImage } from '@/components/ui/RemoteImage';
 import { AppText } from '@/components/ui/AppText';
-import { useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
+import { decorativeProps, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
 import { font, radius, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { X } from 'lucide-react-native';
@@ -83,9 +83,7 @@ export default function PhotoLightboxModal({ visible, photoUrl, caption, onClose
           // sighted users who don't get the SR label. QA Pass-2 #6.
           <View
             style={styles.captionBar}
-            pointerEvents="none"
-            accessibilityElementsHidden
-            importantForAccessibility="no-hide-descendants"
+            pointerEvents="none" {...decorativeProps}
           >
             <AppText variant="label" style={styles.captionText} numberOfLines={3}>
               {caption}
@@ -104,9 +102,7 @@ export default function PhotoLightboxModal({ visible, photoUrl, caption, onClose
           <X
             size={18}
             color={color.textOnBrand}
-            strokeWidth={2.2}
-            accessibilityElementsHidden
-            importantForAccessibility="no-hide-descendants"
+            strokeWidth={2.2} {...decorativeProps}
           />
         </Pressable>
       </View>

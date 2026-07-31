@@ -45,7 +45,7 @@ import {
 import { useAuth } from '@/lib/auth';
 import { AppText } from '@/components/ui/AppText';
 import { GlassSurface } from '@/components/ui/GlassSurface';
-import { a11yToggle, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
+import { a11yToggle, decorativeProps, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
 import { confirm } from '@/lib/confirm';
 import { errorMessage } from '@/lib/errors';
 import {
@@ -410,9 +410,7 @@ export default function FilterPresetsModal({ visible, onClose, onApply }: Props)
               <X
                 size={18}
                 color={color.text}
-                strokeWidth={2.2}
-                accessibilityElementsHidden
-                importantForAccessibility="no-hide-descendants"
+                strokeWidth={2.2} {...decorativeProps}
               />
             </Pressable>
           </View>

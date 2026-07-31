@@ -36,7 +36,7 @@ import { GlassSurface } from '@/components/ui/GlassSurface';
 import { ScreenStage } from '@/components/ui/ScreenStage';
 import { SheetGrabber } from '@/components/ui/Sheet';
 import { hydrateGlassMode, useGlassMode } from '@/lib/glassMode';
-import { useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
+import { decorativeProps, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
 import { font, radius, shadow, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 
@@ -186,9 +186,7 @@ export default function ResourcesScreen({ visible, onClose }: Props) {
             const inner = (
               <>
                 <View
-                  style={styles.cardIcon}
-                  accessibilityElementsHidden
-                  importantForAccessibility="no-hide-descendants"
+                  style={styles.cardIcon} {...decorativeProps}
                 >
                   <Icon size={24} color={color.brand} strokeWidth={2} />
                 </View>

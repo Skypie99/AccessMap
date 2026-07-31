@@ -39,7 +39,7 @@ import {
 } from '@/lib/watchedFlagsFilter';
 import { font, radius, spacing } from '@/theme';
 import { MapPin, Star, X } from 'lucide-react-native';
-import { a11yToggle, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
+import { a11yToggle, decorativeProps, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
 import { severityA11y, statusA11y } from '@/lib/a11yText';
 import type { FlagRow } from '@/types/database';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
@@ -232,7 +232,7 @@ export default function MyWatchedModal({ visible, onClose, onSelectFlag, onViewO
           accessible={false}
         >
           {isResolved && (
-            <View style={styles.resolvedAccent} accessibilityElementsHidden importantForAccessibility="no-hide-descendants" />
+            <View style={styles.resolvedAccent} {...decorativeProps} />
           )}
           {/* The labeled SUMMARY node (disc + category + date). Status is NOT
               in its label — the StatusBadge to the right is its own stop and
@@ -349,7 +349,7 @@ export default function MyWatchedModal({ visible, onClose, onSelectFlag, onViewO
                   style={[styles.statusChip, { backgroundColor: chipBg }]}
                   accessibilityRole="button"
                   accessibilityLabel={value === 'all' ? 'Show all statuses' : `Filter to ${label} flags`}
-                  {...a11yToggle({ selected: active })}
+                  {...a11yToggle({ pressed: active })}
                 >
                   <AppText variant="label" style={[styles.statusChipText, { color: chipFg }]}>{label}</AppText>
                 </Pressable>
@@ -367,7 +367,7 @@ export default function MyWatchedModal({ visible, onClose, onSelectFlag, onViewO
                 <Pressable key={value} onPress={() => setSortMode(value)}
                   style={[styles.sortChip, active && styles.sortChipActive]}
                   accessibilityRole="button" accessibilityLabel={a11yLabel}
-                  {...a11yToggle({ selected: active })}
+                  {...a11yToggle({ pressed: active })}
                 >
                   <AppText variant="label" style={[styles.sortChipText, active && styles.sortChipTextActive]}>{label}</AppText>
                 </Pressable>
@@ -422,7 +422,7 @@ export default function MyWatchedModal({ visible, onClose, onSelectFlag, onViewO
             </View>
           ) : displayFlags.length === 0 ? (
             <View style={styles.center}>
-              <AppText variant="body" style={styles.emptyIcon} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">🔎</AppText>
+              <AppText variant="body" style={styles.emptyIcon} {...decorativeProps}>🔎</AppText>
               <AppText variant="heading" style={styles.emptyTitle}>No matches</AppText>
               <AppText variant="body" style={styles.emptySubtitle}>Try a different search term or status filter.</AppText>
             </View>

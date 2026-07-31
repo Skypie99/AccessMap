@@ -17,7 +17,7 @@ import React from 'react';
 import { Modal, Pressable, StyleSheet, View, type Text, type ViewStyle } from 'react-native';
 import { X } from 'lucide-react-native';
 import { useColor } from '@/theme/ThemeContext';
-import { useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
+import { decorativeProps, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
 import { font, radius, shadow, spacing } from '@/theme';
 import { AppText } from './AppText';
 import { GlassSurface } from './GlassSurface';
@@ -79,9 +79,7 @@ export function SheetGrabber() {
   const color = useColor();
   return (
     <View
-      style={styles.handleWrap}
-      accessibilityElementsHidden
-      importantForAccessibility="no-hide-descendants"
+      style={styles.handleWrap} {...decorativeProps}
     >
       <View style={[styles.handle, { backgroundColor: color.inkGlassMuted }]} />
     </View>

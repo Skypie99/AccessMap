@@ -82,7 +82,7 @@ describe('PhotoGallery — empty state', () => {
       <PhotoGallery photos={[]} onAddPhoto={() => {}} />,
     );
     expect(queryByText('No photos')).toBeNull();
-    expect(getByLabelText('Add another photo')).toBeTruthy();
+    expect(getByLabelText('Add photo')).toBeTruthy();
   });
 });
 
@@ -95,12 +95,12 @@ describe('PhotoGallery — add button', () => {
     const { getByLabelText } = render(
       <PhotoGallery photos={photos(2)} onAddPhoto={() => {}} />,
     );
-    expect(getByLabelText('Add another photo')).toBeTruthy();
+    expect(getByLabelText('Add photo')).toBeTruthy();
   });
 
   it('hides the add tile when onAddPhoto is omitted (read-only mode)', () => {
     const { queryByLabelText } = render(<PhotoGallery photos={photos(2)} />);
-    expect(queryByLabelText('Add another photo')).toBeNull();
+    expect(queryByLabelText('Add photo')).toBeNull();
   });
 
   it('hides the add tile once the default max (5) is reached', () => {
@@ -108,14 +108,14 @@ describe('PhotoGallery — add button', () => {
       <PhotoGallery photos={photos(5)} onAddPhoto={() => {}} />,
     );
     expect(getAllByRole('imagebutton')).toHaveLength(5);
-    expect(queryByLabelText('Add another photo')).toBeNull();
+    expect(queryByLabelText('Add photo')).toBeNull();
   });
 
   it('exposes "N of max" progress in the add tile hint', () => {
     const { getByLabelText } = render(
       <PhotoGallery photos={photos(2)} onAddPhoto={() => {}} />,
     );
-    const addTile = getByLabelText('Add another photo');
+    const addTile = getByLabelText('Add photo');
     expect(addTile.props.accessibilityHint).toContain('2 of 5');
   });
 });
@@ -129,14 +129,14 @@ describe('PhotoGallery — custom maxPhotos', () => {
     const { getByLabelText } = render(
       <PhotoGallery photos={photos(1)} onAddPhoto={() => {}} maxPhotos={2} />,
     );
-    expect(getByLabelText('Add another photo')).toBeTruthy();
+    expect(getByLabelText('Add photo')).toBeTruthy();
   });
 
   it('hides the add tile at a custom max', () => {
     const { queryByLabelText } = render(
       <PhotoGallery photos={photos(2)} onAddPhoto={() => {}} maxPhotos={2} />,
     );
-    expect(queryByLabelText('Add another photo')).toBeNull();
+    expect(queryByLabelText('Add photo')).toBeNull();
   });
 });
 
@@ -150,7 +150,7 @@ describe('PhotoGallery — interaction', () => {
     const { getByLabelText } = render(
       <PhotoGallery photos={photos(1)} onAddPhoto={onAddPhoto} />,
     );
-    fireEvent.press(getByLabelText('Add another photo'));
+    fireEvent.press(getByLabelText('Add photo'));
     expect(onAddPhoto).toHaveBeenCalledTimes(1);
   });
 

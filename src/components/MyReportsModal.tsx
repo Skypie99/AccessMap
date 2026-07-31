@@ -335,7 +335,7 @@ export default function MyReportsModal({
                     style={[styles.sortChip, active && styles.sortChipActive]}
                     accessibilityRole="button"
                     accessibilityLabel={`Sort by ${labels[opt]}`}
-                    {...a11yToggle({ selected: active })}
+                    {...a11yToggle({ pressed: active })}
                   >
                     <AppText variant="label" style={[styles.sortChipText, active && styles.sortChipTextActive]}>
                       {labels[opt]}
@@ -359,7 +359,7 @@ export default function MyReportsModal({
                 ]}
                 accessibilityRole="button"
                 accessibilityLabel="Show all statuses"
-                {...a11yToggle({ selected: statusFilter === 'all' })}
+                {...a11yToggle({ pressed: statusFilter === 'all' })}
               >
                 <AppText
                   variant="label"
@@ -381,7 +381,7 @@ export default function MyReportsModal({
                     style={[styles.statusFilterChip, active && { backgroundColor: palette.fg }]}
                     accessibilityRole="button"
                     accessibilityLabel={`Show only ${STATUS_LABELS[status]} reports, ${statusCounts[status]} ${statusCounts[status] === 1 ? 'item' : 'items'}`}
-                    {...a11yToggle({ selected: active })}
+                    {...a11yToggle({ pressed: active })}
                   >
                     <AppText
                       variant="label"

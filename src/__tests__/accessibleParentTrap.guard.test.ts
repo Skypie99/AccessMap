@@ -83,7 +83,7 @@ describe('A11Y-213 guard — labeled containers must not swallow their interacti
     const summaryTag = openTagAt(src, 'styles.errorSummary}', 'AddressSearchModal');
     expect(hasBareAccessible(summaryTag)).toBe(true);
     expect(summaryTag).toContain('accessibilityLiveRegion="polite"');
-    expect(src).toContain('accessibilityLabel="Try searching again"');
+    expect(src).toContain('accessibilityLabel="Try again, search this address"');
   });
 
   it('FlagDetailModal after-photo tip: container plain; Add-after-photo reachable', () => {
@@ -91,7 +91,7 @@ describe('A11Y-213 guard — labeled containers must not swallow their interacti
     const tipTag = openTagAt(src, 'styles.afterTip}', 'FlagDetailModal');
     expect(hasBareAccessible(tipTag)).toBe(false);
     expect(tipTag).not.toMatch(/accessibilityLabel/);
-    expect(src).toContain('accessibilityLabel="Add an after photo"');
+    expect(src).toContain('accessibilityLabel="Add after photo"');
   });
 });
 

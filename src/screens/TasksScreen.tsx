@@ -71,7 +71,7 @@ import { SeverityBadge } from '@/components/SeverityBadge';
 import { hapticImpact, hapticNotify, hapticSelection } from '@/lib/haptics';
 import { AlertTriangle, Check, ChevronRight, MapPin, Menu, MessageSquare, Search, Sparkles, WifiOff, X } from 'lucide-react-native';
 import { font, motion, radius, shadow, size, spacing } from '@/theme';
-import { a11yToggle, useReducedMotion, useReduceTransparency } from '@/lib/accessibility';
+import { a11yToggle, decorativeProps, useReducedMotion, useReduceTransparency } from '@/lib/accessibility';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { ScreenStage } from '@/components/ui/ScreenStage';
@@ -1096,7 +1096,7 @@ export default function TasksScreen() {
             style={({ pressed }) => [styles.sheetChip, !mineOnly && styles.sheetChipActive, mineOnly && pressed && styles.chipPressed]}
             accessibilityRole="button"
             accessibilityLabel="Show all flags"
-            {...a11yToggle({ selected: !mineOnly, disabled: !mineOnlyHydrated })}
+            {...a11yToggle({ pressed: !mineOnly, disabled: !mineOnlyHydrated })}
           >
             <AppText variant="label" style={[styles.sheetChipText, !mineOnly && styles.sheetChipTextActive]}>All</AppText>
           </Pressable>
@@ -1105,8 +1105,8 @@ export default function TasksScreen() {
             disabled={!mineOnlyHydrated}
             style={({ pressed }) => [styles.sheetChip, mineOnly && styles.sheetChipActive, !mineOnly && pressed && styles.chipPressed]}
             accessibilityRole="button"
-            accessibilityLabel="Show only my flags"
-            {...a11yToggle({ selected: mineOnly, disabled: !mineOnlyHydrated })}
+            accessibilityLabel="Mine, show only my flags"
+            {...a11yToggle({ pressed: mineOnly, disabled: !mineOnlyHydrated })}
           >
             <AppText variant="label" style={[styles.sheetChipText, mineOnly && styles.sheetChipTextActive]}>Mine</AppText>
           </Pressable>
@@ -1123,7 +1123,7 @@ export default function TasksScreen() {
             style={({ pressed }) => [styles.sheetChip, categoryFilter === null && styles.sheetChipActive, categoryFilter !== null && pressed && styles.chipPressed]}
             accessibilityRole="button"
             accessibilityLabel="Show all categories"
-            {...a11yToggle({ selected: categoryFilter === null })}
+            {...a11yToggle({ pressed: categoryFilter === null })}
           >
             <AppText variant="label" style={[styles.sheetChipText, categoryFilter === null && styles.sheetChipTextActive]}>
               All
@@ -1138,7 +1138,7 @@ export default function TasksScreen() {
                 style={({ pressed }) => [styles.sheetChip, active && styles.sheetChipActive, !active && pressed && styles.chipPressed]}
                 accessibilityRole="button"
                 accessibilityLabel={`${CATEGORY_LABELS[cat]}${active ? ', selected, tap to deselect' : ''}`}
-                {...a11yToggle({ selected: active })}
+                {...a11yToggle({ pressed: active })}
               >
                 <AppText variant="label" style={[styles.sheetChipText, active && styles.sheetChipTextActive]}>
                   {CATEGORY_LABELS[cat]}
@@ -1156,9 +1156,7 @@ export default function TasksScreen() {
         <View style={styles.sortRow} accessibilityRole="tablist" accessibilityLabel="Sort order">
           <AppText
             variant="body"
-            style={styles.sortLabel}
-            accessibilityElementsHidden
-            importantForAccessibility="no-hide-descendants"
+            style={styles.sortLabel} {...decorativeProps}
           >
             Sort:
           </AppText>
@@ -1832,9 +1830,7 @@ const FlagCard = memo(function FlagCard({
             "checked" twice. */}
         {selectionActive && (
           <View
-            style={[styles.selectCheck, selected && styles.selectCheckOn]}
-            accessibilityElementsHidden
-            importantForAccessibility="no-hide-descendants"
+            style={[styles.selectCheck, selected && styles.selectCheckOn]} {...decorativeProps}
           >
             {selected ? <Check size={16} color={color.textOnBrand} strokeWidth={2.2} /> : null}
           </View>

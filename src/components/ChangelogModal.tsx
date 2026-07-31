@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { initialExpanded } from '@/lib/changelogExpanded';
-import { a11yToggle } from '@/lib/accessibility';
+import { a11yToggle, decorativeProps } from '@/lib/accessibility';
 import { font, radius, shadow, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { AppText, Sheet } from '@/components/ui';
@@ -122,9 +122,7 @@ export default function ChangelogModal({ visible, onClose }: Props) {
                     </View>
                     <AppText
                       variant="label"
-                      style={styles.chevron}
-                      accessibilityElementsHidden
-                      importantForAccessibility="no-hide-descendants"
+                      style={styles.chevron} {...decorativeProps}
                     >
                       {isOpen ? (
                         <ChevronDown size={16} color={color.brand} strokeWidth={2.2} />

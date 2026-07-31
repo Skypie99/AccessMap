@@ -384,6 +384,27 @@ describe('the dismissal standard', () => {
   it('H · the drawer takes exactly one new prop and nothing else', () => {
     // The drawer is device-tune-shipped and PRESERVE VERBATIM. Set equality on
     // the prop NAMES means any addition or removal fails by name.
+    //
+    // A11Y-217 / SR-115 — READ THIS BEFORE TRUSTING `aria-label` BELOW. That
+    // prop is REAL ON WEB and DEAD ON NATIVE: RN's Modal forwards an explicit
+    // allowlist to RCTModalHostView (Modal.js:326-347) and neither
+    // `aria-label` nor `accessibilityLabel` is in it — the same seam that makes
+    // `onAccessibilityEscape` a silent no-op here (assertion B2). So this line
+    // pins a prop that names the dialog in a browser and nowhere else.
+    //
+    // It STAYS, and the scope is now ratified rather than accidental: on iOS
+    // and Android a dialog is not named by a container attribute at all — it is
+    // named by what VoiceOver/TalkBack lands on when the surface presents. As
+    // of A11Y-201 that is guaranteed for every dismissable in the estate: each
+    // one adopts useFocusOnOpen and lands the cursor on its own
+    // accessibilityRole="header" title (focusOnOpen.guard.test.ts enforces it,
+    // class-wide). Moving these names onto the containment View instead would
+    // have ADDED dead props, not removed them: an accessibilityLabel on a View
+    // that is not `accessible` is inert (that is A11Y-218's whole finding).
+    //
+    // In short: web reads the attribute, native reads the focused header, and
+    // both paths are now guarded. What is NOT proven here is the utterance —
+    // device rows N-6/N-7.
     const drawer = live.find((s) => s.rel === 'components/HamburgerDrawer.tsx');
     expect(drawer).toBeDefined();
     const tag = (drawer as Surface).tag;

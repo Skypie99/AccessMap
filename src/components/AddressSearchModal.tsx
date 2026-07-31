@@ -323,7 +323,7 @@ export default function AddressSearchModal({ visible, onClose, onSelect }: Props
                 }}
                 style={({ pressed }) => [styles.retryBtn, pressed && styles.retryBtnPressed]}
                 accessibilityRole="button"
-                accessibilityLabel="Try searching again"
+                accessibilityLabel="Try again, search this address"
               >
                 <AppText variant="label" style={styles.retryText}>Try again</AppText>
               </Pressable>

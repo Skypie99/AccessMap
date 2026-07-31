@@ -190,7 +190,7 @@ export default function HelpModal({ visible, onClose }: Props) {
                 onPress={() => openFeedbackComposer()}
                 style={({ pressed }) => [styles.feedbackBtn, pressed && styles.feedbackBtnPressed]}
                 accessibilityRole="button"
-                accessibilityLabel="Email the maintainer"
+                accessibilityLabel="Email us"
                 accessibilityHint="Opens your email app with the maintainer's address"
               >
                 <AppText variant="label" style={styles.feedbackBtnText}>Email us</AppText>

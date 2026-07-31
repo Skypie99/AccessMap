@@ -262,7 +262,7 @@ export default function ActivityFeedModal({ visible, onClose, onSelectFlag, onVi
                     style={[styles.filterChip, active && styles.filterChipActive]}
                     accessibilityRole="button"
                     accessibilityLabel={`Show ${label.toLowerCase()} activity`}
-                    {...a11yToggle({ selected: active })}
+                    {...a11yToggle({ pressed: active })}
                   >
                     <AppText variant="label" style={[styles.filterChipText, active && styles.filterChipTextActive]}>
                       {label}

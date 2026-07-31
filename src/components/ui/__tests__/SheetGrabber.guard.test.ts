@@ -80,8 +80,12 @@ describe('the grabber ships the arbitrated ink, once', () => {
     // grabber also has a labelled Close, so it is never the only way out.
     const src = read(SHEET);
     const grabber = src.slice(src.indexOf('export function SheetGrabber'));
-    expect(grabber).toContain('accessibilityElementsHidden');
-    expect(grabber).toContain('importantForAccessibility="no-hide-descendants"');
+    // A11Y-234: decorativeProps carries accessibilityElementsHidden +
+    // importantForAccessibility + aria-hidden — and aria-hidden is the ONLY
+    // one react-native-web honours, so the spread strictly widens coverage
+    // from "both native platforms" to "both native platforms and the web".
+    expect(grabber).toMatch(/decorativeProps|accessibilityElementsHidden/);
+    expect(grabber).toMatch(/decorativeProps|importantForAccessibility="no-hide-descendants"/);
   });
 
   it('the two chrome-pane sheets reserve room for it pre-measure', () => {

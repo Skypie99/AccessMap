@@ -11,6 +11,7 @@ import {
   REPORT_CONTROL_LABEL,
   reportCommentA11yLabel,
 } from '@/lib/copy';
+import { decorativeProps } from '@/lib/accessibility';
 
 interface CommentBubbleProps {
   author: string;
@@ -122,9 +123,7 @@ export function CommentBubble({
         // a11yqa-timestamp-ink-stacks.json). Visual-only 1.4.3 — the
         // timestamp is AT-hidden; the composite label speaks it.
         { color: isOwn ? color.textOnBrand : color.textMuted },
-      ]}
-      accessibilityElementsHidden
-      importantForAccessibility="no-hide-descendants"
+      ]} {...decorativeProps}
     >
       {timeLabel}
     </AppText>
@@ -152,9 +151,7 @@ export function CommentBubble({
             <X
               size={18}
               color="rgba(255,255,255,0.75)"
-              strokeWidth={2.2}
-              accessibilityElementsHidden
-              importantForAccessibility="no-hide-descendants"
+              strokeWidth={2.2} {...decorativeProps}
             />
           </Pressable>
         )}

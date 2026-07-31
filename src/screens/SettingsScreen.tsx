@@ -24,7 +24,7 @@ import { hydrateGlassMode, useGlassMode } from '@/lib/glassMode';
 import { hapticSelection } from '@/lib/haptics';
 import { signOut, supabase } from '@/lib/supabase';
 import { confirm, notify } from '@/lib/confirm';
-import { a11yToggle } from '@/lib/accessibility';
+import { a11yToggle, decorativeProps } from '@/lib/accessibility';
 import { useAuth } from '@/lib/auth';
 import { useFeatureFlag } from '@/lib/featureFlags';
 import { useSharedModals } from '@/lib/sharedModalsContext';
@@ -126,9 +126,7 @@ function SettingsRow({
       <GlassSurface variant="row" forceEngineered={glassLite} style={styles.row}>
         {icon ? (
           <View
-            style={styles.rowIcon}
-            accessibilityElementsHidden
-            importantForAccessibility="no-hide-descendants"
+            style={styles.rowIcon} {...decorativeProps}
           >
             {icon}
           </View>
@@ -148,21 +146,17 @@ function SettingsRow({
             accessibilityLabel + busy state carry the meaning). */}
         {busy ? (
           <ActivityIndicator
-            // accessibilityElementsHidden + importantForAccessibility hide the
+            // + importantForAccessibility hide the
             // spinner from VoiceOver/TalkBack — the busy state on the parent
             // Pressable already announces "in progress".
-            accessibilityElementsHidden
-            importantForAccessibility="no-hide-descendants"
             style={styles.rowSpinner}
-            color={color.textSubtle}
+            color={color.textSubtle} {...decorativeProps}
           />
         ) : (
           <ChevronRight
             size={18}
             color={color.textSubtle}
-            strokeWidth={2.2}
-            accessibilityElementsHidden
-            importantForAccessibility="no-hide-descendants"
+            strokeWidth={2.2} {...decorativeProps}
           />
         )}
       </GlassSurface>
@@ -557,9 +551,7 @@ export default function SettingsScreen() {
           </View>
           {pushBusy ? (
             <ActivityIndicator
-              accessibilityElementsHidden
-              importantForAccessibility="no-hide-descendants"
-              color={pushSpinnerColor}
+              color={pushSpinnerColor} {...decorativeProps}
             />
           ) : (
             <Switch

@@ -22,7 +22,7 @@ import {
   type ViewStyle,
 } from 'react-native';
 import { useColor } from '@/theme/ThemeContext';
-import { useReducedMotion } from '@/lib/accessibility';
+import { decorativeProps, useReducedMotion } from '@/lib/accessibility';
 import { font, motion, radius, spacing } from '@/theme';
 
 export interface SkeletonProps {
@@ -68,9 +68,7 @@ export function Skeleton({ width, height, borderRadius = radius.xs, style }: Ske
 export function SkeletonRow() {
   return (
     <View
-      style={styles.row}
-      accessibilityElementsHidden
-      importantForAccessibility="no-hide-descendants"
+      style={styles.row} {...decorativeProps}
     >
       <Skeleton width={36} height={36} borderRadius={radius.circle} />
       <View style={styles.lines}>
@@ -85,9 +83,7 @@ export function SkeletonRow() {
 export function SkeletonCard() {
   return (
     <View
-      style={styles.card}
-      accessibilityElementsHidden
-      importantForAccessibility="no-hide-descendants"
+      style={styles.card} {...decorativeProps}
     >
       <Skeleton width={56} height={56} borderRadius={radius.md} />
       <View style={styles.lines}>
