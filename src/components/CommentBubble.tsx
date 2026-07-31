@@ -115,7 +115,13 @@ export function CommentBubble({
       style={[
         styles.time,
         showFooter && styles.timeInFooter,
-        { color: isOwn ? color.textOnBrand : color.textSubtle },
+        // A11Y-230: textSubtle on the other-bubble's surfaceNeutral fill
+        // measured 4.37:1 light / 3.69:1 dark — the ship-ready proof set's
+        // "SHIPPED timestamp (THE FINDING)" rows, finally disposed. textMuted
+        // clears 4.5 in both themes (arbitrated:
+        // a11yqa-timestamp-ink-stacks.json). Visual-only 1.4.3 — the
+        // timestamp is AT-hidden; the composite label speaks it.
+        { color: isOwn ? color.textOnBrand : color.textMuted },
       ]}
       accessibilityElementsHidden
       importantForAccessibility="no-hide-descendants"

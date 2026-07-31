@@ -57,4 +57,10 @@ describe('A11Y-229 guard — small white text never sits on dark-failing brand f
   it('CommentBubble own-bubble fill is ctaFill (body + timestamp ride the same pair)', () => {
     expect(read('components/CommentBubble.tsx')).toContain('backgroundColor: color.ctaFill');
   });
+
+  it('A11Y-230: the other-bubble timestamp inks with textMuted, never textSubtle (failed 4.37/3.69 on surfaceNeutral)', () => {
+    const src = read('components/CommentBubble.tsx');
+    expect(src).toContain('isOwn ? color.textOnBrand : color.textMuted');
+    expect(src).not.toContain('color.textSubtle');
+  });
 });

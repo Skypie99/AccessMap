@@ -1,0 +1,27 @@
+{
+  "name": "A11Y-230 — CommentBubble other-timestamp ink repair (textSubtle→textMuted on surfaceNeutral), a11y-qa 2026-07-31 Phase B. Disposes the ship-ready comment-report proof set's 'SHIPPED timestamp (THE FINDING)' rows.",
+  "_doc": [
+    "PURPOSE: prove the replacement ink clears WCAG AA 4.5 (normal text) on the other-person bubble fill in BOTH themes. The old pair — textSubtle #707070 on #eef1f5 (light) / #8a8a8a on #323237 (dark) — measured 4.37 / 3.69 and was recorded-but-never-disposed by shipready-comment-report-stacks.json.",
+    "RUN: node ~/AccessMap-material-lab/2026-07-02/shared/contrast-check.mjs design-reviews/a11y-qa/2026-07-31/a11yqa-timestamp-ink-stacks.json — exit 0 required.",
+    "SCOPE: the pairing is CommentBubble-only (Phase A lens-4 blast-radius + Phase B sibling grep: chips on surfaceNeutral ink with color.text, not textSubtle). The OWN-bubble timestamp is textOnBrand on ctaFill — covered by a11yqa-brand-ink-stacks.json.",
+    "Timestamp is AT-hidden (composite label speaks it) — this is visual-only 1.4.3."
+  ],
+  "modes": {
+    "light": {
+      "surfaces": {
+        "otherBubble": { "stack": [], "base": ["#eef1f5"] }
+      },
+      "pairs": [
+        { "text": "#666", "surface": "otherBubble", "label": "textMuted timestamp on surfaceNeutral bubble (was textSubtle 4.37)", "min": 4.5 }
+      ]
+    },
+    "dark": {
+      "surfaces": {
+        "otherBubble": { "stack": [], "base": ["#323237"] }
+      },
+      "pairs": [
+        { "text": "#aaa", "surface": "otherBubble", "label": "textMuted timestamp on surfaceNeutral bubble (was textSubtle 3.69 — the clear fail)", "min": 4.5 }
+      ]
+    }
+  }
+}
