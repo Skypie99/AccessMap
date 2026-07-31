@@ -58,6 +58,12 @@ import {
   type DisabilityTag,
 } from '@/lib/contextTags';
 import { validReportTemplates, type ReportTemplate } from '@/lib/reportTemplates';
+import { stashReportDraft, takeReportDraft } from '@/lib/reportDraft';
+import {
+  REPORT_DRAFT_KEPT_ANNOUNCEMENT,
+  REPORT_DRAFT_RESTORED_ANNOUNCEMENT,
+  REPORT_SIGN_IN_HINT,
+} from '@/lib/copy';
 import type { FlagCategory, FlagRow, FlagSeverity } from '@/types/database';
 import { setLiveStatus } from '@/lib/liveStatus';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
@@ -141,6 +147,24 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
   // hint instead of letting the user pick tags that get silently dropped.
   const [tagsCapability, setTagsCapability] = useState<ContextTagsCapability>('unknown');
   useEffect(() => subscribeContextTagsCapability(setTagsCapability), []);
+
+  // A11Y-226 (WCAG 3.3.7): rehydrate a stashed guest draft when the form
+  // opens. The stash is written by the anon banner's "Sign in" press below —
+  // signing in unmounts the whole guest tree (App.tsx Gate swap), which is
+  // why the draft has to live outside this component. Consume-once, so a
+  // stale draft can't resurrect into a later unrelated session.
+  useEffect(() => {
+    if (!visible) return;
+    const draft = takeReportDraft();
+    if (!draft) return;
+    setCategory(draft.category);
+    setSeverity(draft.severity);
+    setDescription(draft.description);
+    setPhotoUris(draft.photoUris);
+    setContextTags(draft.contextTags);
+    photoDimsRef.current = { ...draft.photoDims };
+    AccessibilityInfo.announceForAccessibility(REPORT_DRAFT_RESTORED_ANNOUNCEMENT);
+  }, [visible]);
   const tagsDisabled = tagsCapability === 'unavailable';
 
   // When severity crosses into "high" territory (≥4) and the user hasn't
@@ -607,11 +631,25 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
                 </View>
               </View>
               <Pressable
-                onPress={onClose}
+                onPress={() => {
+                  // A11Y-226 (3.3.7): signing in unmounts the guest tree —
+                  // stash the draft (in-memory, consume-once) so the form's
+                  // next open restores it instead of re-asking everything.
+                  stashReportDraft({
+                    category,
+                    severity,
+                    description,
+                    photoUris,
+                    contextTags,
+                    photoDims: { ...photoDimsRef.current },
+                  });
+                  AccessibilityInfo.announceForAccessibility(REPORT_DRAFT_KEPT_ANNOUNCEMENT);
+                  onClose();
+                }}
                 style={({ pressed }) => [styles.anonBannerLink, pressed && styles.chipPressed]}
                 accessibilityRole="link"
                 accessibilityLabel="Sign in"
-                accessibilityHint="Closes this form so you can sign in"
+                accessibilityHint={REPORT_SIGN_IN_HINT}
               >
                 <AppText variant="label" style={styles.anonBannerLinkText}>Sign in</AppText>
               </Pressable>

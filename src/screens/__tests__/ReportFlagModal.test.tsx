@@ -16,7 +16,7 @@
 
 import React from 'react';
 import { SharedModalsProvider } from '@/lib/sharedModalsContext';
-import { Alert } from 'react-native';
+import { AccessibilityInfo, Alert } from 'react-native';
 import { render, fireEvent, waitFor, act } from '@testing-library/react-native';
 // Mocked below — jest.mock calls are hoisted above all imports, so this
 // resolves to the mock module. Imported here (not mid-file) to keep
@@ -1162,5 +1162,68 @@ describe('S10 — confirm the submit', () => {
     });
     expect(mockSetLiveStatus).not.toHaveBeenCalled();
     alertSpy.mockRestore();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// A11Y-226 — the guest→sign-in handoff keeps the draft (WCAG 3.3.7)
+//
+// Signing in swaps the guest tree for SignedInArea (App.tsx Gate), unmounting
+// this modal and destroying its component-state draft. The anon banner's
+// "Sign in" press stashes the draft in the in-memory consume-once module
+// (src/lib/reportDraft.ts); the next mount of the form takes and restores it.
+// The unmount+remount below is exactly the tree-swap seam.
+// ---------------------------------------------------------------------------
+
+describe('A11Y-226 — guest draft survives the sign-in handoff', () => {
+  it('press "Sign in" → draft stashed + announced + closed; a fresh mount restores and announces', () => {
+    const announceSpy = jest
+      .spyOn(AccessibilityInfo, 'announceForAccessibility')
+      .mockImplementation(() => {});
+
+    const first = renderAnon();
+    fireEvent.changeText(
+      first.getByLabelText('Description of the accessibility issue'),
+      'Broken curb cut at 5th and Main',
+    );
+    fireEvent.press(first.getByLabelText('Sign in'));
+
+    expect(announceSpy).toHaveBeenCalledWith(
+      expect.stringContaining('Draft saved'),
+    );
+
+    // The tree-swap seam: guest tree unmounts…
+    first.unmount();
+    announceSpy.mockClear();
+
+    // …and the form's next mount (signed-in world) restores the draft.
+    const second = renderAuth();
+    expect(
+      second.getByDisplayValue('Broken curb cut at 5th and Main'),
+    ).toBeTruthy();
+    expect(announceSpy).toHaveBeenCalledWith(
+      expect.stringContaining('draft was restored'),
+    );
+
+    second.unmount();
+    announceSpy.mockRestore();
+  });
+
+  it('restore is consume-once: the mount after a restore starts clean', () => {
+    const first = renderAnon();
+    fireEvent.changeText(
+      first.getByLabelText('Description of the accessibility issue'),
+      'One-shot draft',
+    );
+    fireEvent.press(first.getByLabelText('Sign in'));
+    first.unmount();
+
+    const second = renderAuth();
+    expect(second.getByDisplayValue('One-shot draft')).toBeTruthy();
+    second.unmount();
+
+    const third = renderAuth();
+    expect(third.queryByDisplayValue('One-shot draft')).toBeNull();
+    third.unmount();
   });
 });

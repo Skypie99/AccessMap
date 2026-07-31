@@ -758,3 +758,17 @@ export const PRIVACY_SECTIONS = [
     body: 'If this policy changes, the new version appears here with a new date.',
   },
 ] as const;
+
+/**
+ * A11Y-226 (WCAG 3.3.7) — the guest→sign-in draft handoff strings.
+ *
+ * Spoken (announce) + hint copy for the report-draft stash: signing in from
+ * the anon banner used to silently destroy the filled form. AGENT-PROPOSED
+ * wording. PROPOSED (A11Y-226, S-8) — Sky's final wording lands in
+ * DECISIONS §A / the next copy gate.
+ */
+export const REPORT_SIGN_IN_HINT =
+  'Closes this form so you can sign in. Your draft is kept and restored when you open Report again.';
+export const REPORT_DRAFT_KEPT_ANNOUNCEMENT =
+  'Draft saved. After you sign in, open Report again to continue where you left off.';
+export const REPORT_DRAFT_RESTORED_ANNOUNCEMENT = 'Your report draft was restored.';
