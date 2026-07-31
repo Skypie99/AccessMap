@@ -141,26 +141,38 @@ export default function ActivityFeedModal({ visible, onClose, onSelectFlag, onVi
 
   const renderItem = useCallback(
     ({ item }: { item: FlagRow }) => {
+      // A11Y-214: the summary node's label. Description and time are NOT here —
+      // the body text below is its own AT stop now that the row is
+      // de-flattened, so nothing is said twice.
       const a11yLabel =
         `${CATEGORY_LABELS[item.category]}, severity ${item.severity} of 5, ` +
-        `${STATUS_LABELS[item.status]}, ${relativeTime(item.created_at)}` +
-        (item.description ? `. ${item.description}` : '');
+        `${STATUS_LABELS[item.status]}`;
 
       return (
         <View role="listitem">
           <Pressable
             onPress={() => onSelectFlag(item)}
             style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
-            accessibilityRole="button"
-            accessibilityLabel={a11yLabel}
-            accessibilityHint="Opens the full report"
+            // A11Y-214 (S13 pattern): not one accessible leaf — that swallowed
+            // the "Show on map" button on iOS. The summary below announces the
+            // row; activation falls through to this Pressable.
+            accessible={false}
           >
             <View style={styles.rowHeader}>
+              {/* Labeled SUMMARY node: disc + category + status badge. */}
+              <View
+                style={styles.rowSummary}
+                accessible
+                accessibilityRole="button"
+                accessibilityLabel={a11yLabel}
+                accessibilityHint="Opens the full report"
+              >
               <SeverityDisc severity={item.severity} size={28} digitSize={font.size.xs} />
               <AppText variant="label" style={styles.rowTitle}>
                 {CATEGORY_LABELS[item.category]}
               </AppText>
               <StatusBadge status={item.status} />
+              </View>
               {onViewOnMap && (
                 <Pressable
                   onPress={() => onViewOnMap(item)}
@@ -469,6 +481,9 @@ const makeStyles = (color: ColorTheme) =>
     },
     rowPressed: { opacity: 0.9, backgroundColor: color.surfaceMuted },
     rowHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+    // A11Y-214: summary wrapper mirrors the header's internal rhythm so the
+    // de-flattened structure renders identically.
+    rowSummary: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, flex: 1, minWidth: 0 },
     rowTitle: {
       fontSize: font.size.md,
       fontWeight: font.weight.semibold,

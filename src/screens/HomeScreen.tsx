@@ -33,6 +33,7 @@ import {
   WifiOff,
   X,
 } from 'lucide-react-native';
+import { decorativeProps } from '@/lib/accessibility';
 import { AppText } from '@/components/ui/AppText';
 import { GlassSurface } from '@/components/ui/GlassSurface';
 import { ScreenHeader, EYEBROW_TRACKING } from '@/components/ui/ScreenHeader';
@@ -356,9 +357,12 @@ export default function HomeScreen() {
         {/* Frosted-glass search — a real control that opens the address search. */}
         <Pressable
           onPress={() => setSearchOpen(true)}
-          accessibilityRole="button"
-          accessibilityLabel={searchLabel ? `Search: ${searchLabel}` : 'Search a place'}
-          accessibilityHint="Find an address to recenter the map and list"
+          // A11Y-214 / SR-040 (S13 pattern): the bar is NOT one accessible
+          // leaf — that swallowed the Clear-search ✕ on iOS, so VoiceOver
+          // users could never clear an active search. The text below is the
+          // labeled summary; activation falls through to this Pressable;
+          // Clear stays an independent element.
+          accessible={false}
           style={({ pressed }) => [
             styles.searchPressable,
             pressed && { backgroundColor: color.borderPressed, borderRadius: radius.md },
@@ -366,11 +370,15 @@ export default function HomeScreen() {
         >
           <GlassSurface style={styles.search} borderRadius={radius.md} variant="row" forceEngineered>
             <View style={styles.searchInner}>
-              <Search size={18} color={color.inkGlassMuted} strokeWidth={2} />
+              <Search size={18} color={color.inkGlassMuted} strokeWidth={2} {...decorativeProps} />
               <AppText
                 variant="body"
                 style={[styles.searchText, searchLabel ? styles.searchTextActive : null]}
                 numberOfLines={1}
+                accessible
+                accessibilityRole="button"
+                accessibilityLabel={searchLabel ? `Search: ${searchLabel}` : 'Search a place'}
+                accessibilityHint="Find an address to recenter the map and list"
               >
                 {searchLabel ?? 'Search a place'}
               </AppText>

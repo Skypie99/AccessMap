@@ -59,6 +59,12 @@ export default function LegendModal({ visible, onClose, onDismiss }: Props) {
           // (The tap-swallow + accessibilityViewIsModal stay on this Pressable;
           //  the bulk-glass material is the child so the guard is preserved.)
           onPress={() => {}}
+          // A11Y-214 / SR-072: a Pressable is accessible-by-default, so this
+          // shell was one giant UNNAMED VoiceOver element spanning the whole
+          // card — swallowing every row and the in-card "Close legend" button
+          // (the designated SR dismiss path). Opting out keeps its three jobs
+          // (tap-swallow, VO containment, escape) and frees the children.
+          accessible={false}
           accessibilityViewIsModal
           onAccessibilityEscape={onClose}
         >

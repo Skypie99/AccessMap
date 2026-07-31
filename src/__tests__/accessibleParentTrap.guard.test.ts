@@ -57,6 +57,9 @@ const read = (rel: string) => stripComments(fs.readFileSync(path.join(SRC, rel),
 /** Bare `accessible` prop (not accessible={false}, not accessibilityXxx). */
 const hasBareAccessible = (tag: string) => /\baccessible\b(?!\s*=\s*\{)(?!\w)/.test(tag) || /\baccessible\s*=\s*\{\s*true\s*\}/.test(tag);
 
+/** Explicit accessible={false} — the S13 opt-out that un-flattens a Pressable. */
+const hasAccessibleFalse = (tag: string) => /\baccessible\s*=\s*\{\s*false\s*\}/.test(tag);
+
 describe('A11Y-213 guard — labeled containers must not swallow their interactive children', () => {
   it('MapScreen empty-filters recovery card: material container is not an accessible leaf; summary node carries the alert', () => {
     const src = read('screens/MapScreen.tsx');
@@ -89,5 +92,69 @@ describe('A11Y-213 guard — labeled containers must not swallow their interacti
     expect(hasBareAccessible(tipTag)).toBe(false);
     expect(tipTag).not.toMatch(/accessibilityLabel/);
     expect(src).toContain('accessibilityLabel="Add an after photo"');
+  });
+});
+
+describe('A11Y-214 guard — accessible-by-default Pressables must not swallow nested actions (row form)', () => {
+  it('MyWatchedModal row: Pressable opted out; summary node labeled; both row actions reachable', () => {
+    const src = read('components/MyWatchedModal.tsx');
+    const rowTag = openTagAt(src, 'styles.rowResolved', 'MyWatchedModal');
+    expect(hasAccessibleFalse(rowTag)).toBe(true);
+    expect(rowTag).not.toMatch(/accessibilityLabel/);
+    const summaryTag = openTagAt(src, 'styles.rowSummary}', 'MyWatchedModal');
+    expect(hasBareAccessible(summaryTag)).toBe(true);
+    expect(summaryTag).toContain('accessibilityRole="button"');
+    expect(src).toContain('accessibilityLabel="Stop watching this flag"');
+  });
+
+  it('MyReportsModal row: Pressable opted out; summary node labeled', () => {
+    const src = read('components/MyReportsModal.tsx');
+    const rowTag = openTagAt(src, '[styles.row, pressed && styles.rowPressed]', 'MyReportsModal');
+    expect(hasAccessibleFalse(rowTag)).toBe(true);
+    expect(rowTag).not.toMatch(/accessibilityLabel/);
+    const summaryTag = openTagAt(src, 'styles.rowSummary}', 'MyReportsModal');
+    expect(hasBareAccessible(summaryTag)).toBe(true);
+    expect(summaryTag).toContain('accessibilityRole="button"');
+  });
+
+  it('ActivityFeedModal row: Pressable opted out; summary node labeled', () => {
+    const src = read('components/ActivityFeedModal.tsx');
+    const rowTag = openTagAt(src, '[styles.row, pressed && styles.rowPressed]', 'ActivityFeedModal');
+    expect(hasAccessibleFalse(rowTag)).toBe(true);
+    expect(rowTag).not.toMatch(/accessibilityLabel/);
+    const summaryTag = openTagAt(src, 'styles.rowSummary}', 'ActivityFeedModal');
+    expect(hasBareAccessible(summaryTag)).toBe(true);
+    expect(summaryTag).toContain('accessibilityRole="button"');
+  });
+
+  it('PhotoGallery thumb: Pressable opted out; the image carries the imagebutton identity; Remove reachable', () => {
+    const src = read('components/PhotoGallery.tsx');
+    const thumbTag = openTagAt(src, 'styles.thumb, pressed', 'PhotoGallery');
+    expect(hasAccessibleFalse(thumbTag)).toBe(true);
+    expect(thumbTag).not.toMatch(/accessibilityRole="imagebutton"/);
+    const imgTag = openTagAt(src, 'styles.thumbImage}', 'PhotoGallery');
+    expect(hasBareAccessible(imgTag)).toBe(true);
+    expect(imgTag).toContain('accessibilityRole="imagebutton"');
+    expect(src).toMatch(/accessibilityLabel=\{`Remove photo \$\{index \+ 1\}`\}/);
+  });
+
+  it('LegendModal card shell (SR-072): the tap-swallow Pressable is not an AT element', () => {
+    const src = read('screens/LegendModal.tsx');
+    const shellTag = openTagAt(src, 'styles.cardShell}', 'LegendModal');
+    expect(hasAccessibleFalse(shellTag)).toBe(true);
+    // Its jobs stay: swallow taps, contain VO, handle escape.
+    expect(shellTag).toContain('accessibilityViewIsModal');
+    expect(shellTag).toContain('onAccessibilityEscape');
+  });
+
+  it('HomeScreen search (SR-040): outer Pressable opted out; summary labeled; Clear reachable', () => {
+    const src = read('screens/HomeScreen.tsx');
+    const searchTag = openTagAt(src, 'styles.searchPressable', 'HomeScreen');
+    expect(hasAccessibleFalse(searchTag)).toBe(true);
+    expect(searchTag).not.toMatch(/accessibilityLabel/);
+    const summaryTag = openTagAt(src, 'styles.searchText,', 'HomeScreen');
+    expect(hasBareAccessible(summaryTag)).toBe(true);
+    expect(summaryTag).toContain('accessibilityRole="button"');
+    expect(src).toContain('accessibilityLabel="Clear search"');
   });
 });

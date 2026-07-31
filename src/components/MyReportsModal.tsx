@@ -193,21 +193,34 @@ export default function MyReportsModal({
       month: 'short',
       day: 'numeric',
     });
+    // A11Y-214: the summary node's label. Description and date are NOT here —
+    // the body text below is its own AT stop now that the row is de-flattened,
+    // so nothing is said twice.
     const a11yLabel =
       `${CATEGORY_LABELS[item.category]}, ${severityA11y(item.severity)}, ` +
-      `status ${STATUS_LABELS[item.status]}, reported ${dateLabel}` +
-      (item.description ? `. Note: ${item.description}` : '');
+      `status ${STATUS_LABELS[item.status]}`;
 
     return (
       <View role="listitem">
         <Pressable
           onPress={() => onSelectFlag(item)}
           style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
-          accessibilityRole="button"
-          accessibilityLabel={a11yLabel}
-          accessibilityHint="Opens the full report with options to verify, resolve, reject, or delete"
+          // A11Y-214 (S13 pattern): not one accessible leaf — that swallowed
+          // the "Show on map" button on iOS. The summary below announces the
+          // row; activation falls through to this Pressable.
+          accessible={false}
         >
           <View style={styles.rowHeader}>
+            {/* Labeled SUMMARY node: dot + category + status badge. Children of
+                an accessible container are not separate stops, so the badge
+                does not re-announce what the label already says. */}
+            <View
+              style={styles.rowSummary}
+              accessible
+              accessibilityRole="button"
+              accessibilityLabel={a11yLabel}
+              accessibilityHint="Opens the full report with options to verify, resolve, reject, or delete"
+            >
             <View
               style={[styles.sevDot, { backgroundColor: severityColor(item.severity) }]}
               // Severity is also surfaced as a number + text in the badges
@@ -219,6 +232,7 @@ export default function MyReportsModal({
               {CATEGORY_LABELS[item.category]}
             </AppText>
             <StatusBadge status={item.status} />
+            </View>
             {/* Pin shortcut — bypasses the detail modal and jumps straight
               to the Map tab with the pin focused. Only shown when the
               parent passes onViewOnMap. */}
@@ -559,6 +573,9 @@ const makeStyles = (color: ColorTheme) =>
     },
     rowPressed: { opacity: 0.9, backgroundColor: color.surfaceMuted },
     rowHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+    // A11Y-214: summary wrapper mirrors the header's internal rhythm so the
+    // de-flattened structure renders identically.
+    rowSummary: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, flex: 1, minWidth: 0 },
     sevDot: { width: 12, height: 12, borderRadius: radius.circle },
     rowTitle: {
       fontSize: font.size.lg,

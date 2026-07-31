@@ -225,22 +225,35 @@ export default function MyWatchedModal({ visible, onClose, onSelectFlag, onViewO
         <Pressable
           style={({ pressed }) => [styles.row, isResolved && styles.rowResolved, pressed && styles.rowPressed]}
           onPress={() => onSelectFlag(item)}
-          accessibilityRole="button"
-          accessibilityLabel={`${CATEGORY_LABELS[item.category]}, ${severityA11y(item.severity)}, ${statusA11y(item.status)}, reported ${date}`}
-          accessibilityHint="Opens the full details for this flag"
+          // A11Y-214 (S13 pattern): the row is NOT one accessible leaf — that
+          // swallowed "Show on map" and "Stop watching" on iOS. The summary
+          // node below announces the row; activating it falls through to this
+          // Pressable; the actions stay independent elements.
+          accessible={false}
         >
           {isResolved && (
             <View style={styles.resolvedAccent} accessibilityElementsHidden importantForAccessibility="no-hide-descendants" />
           )}
-          {/* T5: the watched row gains the severity NUMBER (a colour-only dot
-              spoke none) — the RecentlyViewedRow mini-disc recipe. Decorative;
-              the row's a11y label already speaks severityA11y. */}
-          <SeverityDisc severity={item.severity} size={24} digitSize={font.size.xs} maxFontSizeMultiplier={1.3} />
-          <View style={styles.rowMid}>
-            <AppText variant="label" style={[styles.rowCategory, isResolved && styles.rowCategoryResolved]}>
-              {CATEGORY_LABELS[item.category]}
-            </AppText>
-            <AppText variant="body" style={styles.rowDate}>{date}</AppText>
+          {/* The labeled SUMMARY node (disc + category + date). Status is NOT
+              in its label — the StatusBadge to the right is its own stop and
+              speaks statusA11y, so nothing is said twice. */}
+          <View
+            style={styles.rowSummary}
+            accessible
+            accessibilityRole="button"
+            accessibilityLabel={`${CATEGORY_LABELS[item.category]}, ${severityA11y(item.severity)}, reported ${date}`}
+            accessibilityHint="Opens the full details for this flag"
+          >
+            {/* T5: the watched row gains the severity NUMBER (a colour-only dot
+                spoke none) — the RecentlyViewedRow mini-disc recipe. Decorative;
+                the summary's a11y label already speaks severityA11y. */}
+            <SeverityDisc severity={item.severity} size={24} digitSize={font.size.xs} maxFontSizeMultiplier={1.3} />
+            <View style={styles.rowMid}>
+              <AppText variant="label" style={[styles.rowCategory, isResolved && styles.rowCategoryResolved]}>
+                {CATEGORY_LABELS[item.category]}
+              </AppText>
+              <AppText variant="body" style={styles.rowDate}>{date}</AppText>
+            </View>
           </View>
           <View style={styles.rowRight}>
             <StatusBadge status={item.status} accessibilityLabel={statusA11y(item.status)} size="sm" />
@@ -493,6 +506,10 @@ const makeStyles = (color: ColorTheme) =>
     separator: { height: 1, backgroundColor: color.borderSubtle },
     row: { flexDirection: 'row', alignItems: 'center', paddingVertical: spacing.md + 2, gap: spacing.md },
     rowPressed: { backgroundColor: color.surfaceMuted },
+    // A11Y-214: summary wrapper mirrors the row's internal rhythm (same gap,
+    // same centering, takes the middle space) so the de-flattened structure
+    // renders identically.
+    rowSummary: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, flex: 1, minWidth: 0 },
     rowMid: { flex: 1, gap: 2 },
     rowCategory: { fontSize: font.size.md, fontWeight: font.weight.semibold, color: color.textStrong },
     rowCategoryResolved: { color: color.statusResolvedFg },

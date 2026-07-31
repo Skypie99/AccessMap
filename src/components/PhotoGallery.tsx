@@ -97,16 +97,20 @@ function PhotoGalleryInner({ photos, onAddPhoto, maxPhotos = 5, onRemovePhoto }:
       <Pressable
         onPress={() => openLightbox(index)}
         style={({ pressed }) => [styles.thumb, pressed && styles.thumbPressed]}
-        accessibilityRole="imagebutton"
-        accessibilityLabel={`Photo ${index + 1} of ${total}`}
-        accessibilityHint="Tap to view full screen"
+        // A11Y-214 (S13 pattern): the thumb is NOT one accessible leaf — that
+        // swallowed the "Remove photo" button on iOS. The image below carries
+        // the imagebutton identity; activation falls through to this Pressable;
+        // Remove stays an independent element.
+        accessible={false}
       >
         <RemoteImage
           uri={item.url}
           style={styles.thumbImage}
           resizeMode="cover"
-          accessibilityElementsHidden
-          importantForAccessibility="no-hide-descendants"
+          accessible
+          accessibilityRole="imagebutton"
+          accessibilityLabel={`Photo ${index + 1} of ${total}`}
+          accessibilityHint="Tap to view full screen"
         />
         {onRemovePhoto && (
           <Pressable
