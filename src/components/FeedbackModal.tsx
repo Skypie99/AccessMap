@@ -293,6 +293,11 @@ export default function FeedbackModal({ visible, onClose }: Props) {
                 autoCapitalize="none"
                 autoCorrect={false}
                 keyboardType="email-address"
+                // A11Y-233 (1.3.5 Identify Input Purpose): the keyboard hint
+                // alone does not tell the OS what this field IS, so password
+                // managers and autofill could not offer the user's own address.
+                autoComplete="email"
+                textContentType="emailAddress"
                 accessibilityLabel="Reply email"
                 accessibilityHint={
                   contactInvalid

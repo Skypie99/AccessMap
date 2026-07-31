@@ -544,7 +544,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
     // the same thing was correctly inert. S11 escalates-never-aborts, so the
     // insert continues after the close and a re-filled resubmit duplicates it.
     // This removes the asymmetry; it does not invent a new trap.
-    <Modal visible={visible} animationType={reducedMotion ? 'none' : 'slide'} transparent onRequestClose={() => { if (!submitting) onClose(); }} onDismiss={onDismiss} accessibilityViewIsModal aria-label={isAnon ? 'Report anonymously' : 'Report a flag'}>
+    <Modal visible={visible} animationType={reducedMotion ? 'none' : 'slide'} transparent onRequestClose={() => { if (!submitting) onClose(); }} onDismiss={onDismiss} aria-label={isAnon ? 'Report anonymously' : 'Report a flag'}>
       <View style={styles.backdrop}>
         {/* KAV wraps the WHOLE card from the backdrop (the FeedbackModal /
             AddressSearchModal recipe): rooted here its keyboard-overlap math
@@ -563,9 +563,12 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
           style={styles.card}
           accessibilityViewIsModal
           // G1 + G9: the same `!submitting` guard the visible Cancel and
-          // onRequestClose use. NOTE the AVM on the <Modal> tag at :495 is
-          // dead (RN drops it); this child is the live containment node, and
-          // therefore the escape target too. SR-116.
+          // onRequestClose use. This is the LIVE containment node — RN's Modal
+          // forwards an explicit prop allowlist and accessibilityViewIsModal
+          // is not in it, so an AVM on the <Modal> tag does nothing. There
+          // used to be one there anyway (SR-116 / A11Y-209), with this comment
+          // pointing at a line number that had since drifted; the dead prop is
+          // now gone rather than annotated.
           onAccessibilityEscape={() => {
             if (!submitting) onClose();
           }}

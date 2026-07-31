@@ -249,7 +249,8 @@ export const color = {
   // #1466E0 + white = 5.24:1 both modes. Verify / active chips / bulk Verify.
   ctaFill: '#1466E0',
   // Pressed companion to ctaFill — a MODE-INDEPENDENT deepen (#0F53BE = the
-  // brand deep-end). white + #0F53BE = 7.5:1 in BOTH modes, so a brand-filled
+  // brand deep-end). white + #0F53BE = 7.00:1 in BOTH modes (measured; the
+  // docs used to say 7.5 at both sites — SR-077), so a brand-filled
   // control darkens on press without breaking its white label in dark mode
   // (where brandText is a LIGHTER blue). Mirrors borderPressed (neutral) +
   // successStrong (resolve) — the AA-safe pressed fill for its family.

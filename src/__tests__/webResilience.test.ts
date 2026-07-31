@@ -133,3 +133,28 @@ describe('L7 — ProfileScreen avatar picker revokes its object URL on settle', 
     expect(pick).toContain('void doUploadAvatar(url).finally(() => URL.revokeObjectURL(url))');
   });
 });
+
+// ---------------------------------------------------------------------------
+// A11Y-232 (SR-073) + L3-1 — the two web-shell accessibility affordances the
+// 2026-07-31 a11y train added. Both live in public/index.html because they must
+// exist BEFORE the JS bundle parses: a Reduce-Transparency user should never
+// see a frame of blur, and a keyboard user's first Tab should already work.
+// ---------------------------------------------------------------------------
+describe('a11y web shell', () => {
+  const shell = fs.readFileSync(path.join(__dirname, '..', '..', 'public', 'index.html'), 'utf8');
+
+  it('A11Y-232: reduce-transparency has a media query twin, like reduce-motion', () => {
+    expect(shell).toContain('@media (prefers-reduced-transparency: reduce)');
+    expect(shell).toContain('backdrop-filter: none !important');
+    // Its pair — proof the two accommodations are handled the same way.
+    expect(shell).toContain('@media (prefers-reduced-motion: reduce)');
+  });
+
+  it('L3-1: a skip link exists, targets the app root, and is keyboard-only', () => {
+    expect(shell).toContain('class="am-skip-link" href="#root"');
+    expect(shell).toContain('Skip to content');
+    // Off-screen until focused — never visible to pointer users.
+    expect(shell).toMatch(/\.am-skip-link\s*\{[^}]*left:\s*-9999px/);
+    expect(shell).toMatch(/\.am-skip-link:focus\s*\{[^}]*left:\s*0/);
+  });
+});

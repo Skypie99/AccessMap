@@ -1777,6 +1777,9 @@ export default function ProfileScreen() {
                 disabled={deletingAccount}
                 accessibilityRole="button"
                 accessibilityLabel="Cancel account deletion"
+                // A11Y-219: matches the sibling Delete button, which has
+                // announced its disabled state all along.
+                {...a11yToggle({ disabled: deletingAccount })}
               >
                 <AppText variant="label" style={styles.deleteCancelText}>Cancel</AppText>
               </Pressable>

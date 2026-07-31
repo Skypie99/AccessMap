@@ -2417,7 +2417,10 @@ export default function MapScreen() {
               pressed && styles.errorBannerPressed,
             ]}
             accessibilityRole="button"
-            accessibilityLabel={loadError}
+            // A11Y-211: the visible banner ends "Tap to retry." and this is a
+            // BUTTON, so the accessible name must carry the verb too — Tasks
+            // composes it already and the two screens disagreed. 2.5.3-adjacent.
+            accessibilityLabel={`${loadError} Tap to retry.`}
             accessibilityHint="Tries to load flags again"
             {...a11yToggle({ busy: loadingFlags })}
             // Announces re-renders of this region on Android too; iOS uses
@@ -3027,6 +3030,9 @@ export default function MapScreen() {
                 style={[styles.nameBtn, styles.nameBtnCancel]}
                 accessibilityRole="button"
                 accessibilityLabel="Cancel"
+                // A11Y-219: its sibling Confirm announces disabled; this one
+                // went dark visually and stayed "available" to AT.
+                {...a11yToggle({ disabled: savingSet })}
               >
                 <AppText variant="label" style={styles.nameBtnCancelText}>Cancel</AppText>
               </Pressable>

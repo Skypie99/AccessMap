@@ -62,6 +62,27 @@
         outline-offset: 2px;
         border-radius: 3px;
       }
+
+      /* L3-1 — "Skip to content". SC 2.4.1 is already satisfied by technique
+         (each screen opens with a heading, and the repeated chrome is only a
+         menu + Feedback button), so this is hardening rather than a fix: it
+         costs one hidden anchor and stops mattering only until the header
+         family grows. Visible ONLY on keyboard focus, so it never intrudes. */
+      .am-skip-link {
+        position: absolute;
+        left: -9999px;
+        top: 0;
+        z-index: 1000;
+        padding: 10px 16px;
+        background: #1466E0;
+        color: #fff;
+        font: 600 15px/1.2 system-ui, -apple-system, sans-serif;
+        border-radius: 0 0 6px 0;
+        text-decoration: none;
+      }
+      .am-skip-link:focus {
+        left: 0;
+      }
     </style>
     <style id="am-splash-style">
       /* Instant-paint brand splash shown before the JS bundle mounts. React
@@ -139,6 +160,26 @@
         #am-splash .am-dots span { animation: none; opacity: 0.6; transform: none; }
       }
     </style>
+    <style id="am-a11y-reduce-transparency">
+      /* A11Y-232 (SR-073) — the Reduce Transparency twin of the query above.
+         On iOS the app honours Reduce Transparency centrally: GlassSurface
+         drops its blur for the arbitrated opaque fill. On WEB it could not —
+         RN's reduce-transparency signal is structurally false in a browser,
+         so the four raw CSS backdrop-filter surfaces (tab bar, sign-in card,
+         onboarding cards, drawer panel) stayed frosted no matter what the
+         user had asked their OS for.
+
+         backdrop-filter is DECORATION here: every one of those surfaces
+         already carries an arbitrated opaque-enough floor underneath, so
+         removing the blur removes an effect, never a contrast guarantee. */
+      @media (prefers-reduced-transparency: reduce) {
+        [style*="backdrop-filter"],
+        [style*="backdropFilter"] {
+          backdrop-filter: none !important;
+          -webkit-backdrop-filter: none !important;
+        }
+      }
+    </style>
   </head>
 
   <body>
@@ -149,6 +190,9 @@
     <!-- The root element for your Expo app. The brand splash inside it paints
          instantly and is replaced by the app on mount (so the first beat reads
          as AccessMap, not a blank/broken screen). -->
+    <!-- L3-1: first focusable thing on the page, so one Tab from page load
+         jumps a keyboard user past the chrome. #root is where the app mounts. -->
+    <a class="am-skip-link" href="#root">Skip to content</a>
     <div id="root">
       <div id="am-splash">
         <!-- AccessMap brand mark: a Wayfinder-Blue map pin carrying a white

@@ -42,7 +42,10 @@ function collectStrings(node: unknown, out: string[] = []): string[] {
 describe('UpdateBanner — emoji census (BP16 / T17)', () => {
   let announceSpy: jest.SpyInstance;
   beforeEach(() => {
-    // The banner announces its count on mount; keep it a quiet no-op.
+    // The banner announces its count on mount. Silenced here so the emoji
+    // census below stays quiet — and ASSERTED in its own block at the bottom
+    // of this file (A11Y-210: a spy that is silenced but never asserted looks
+    // exactly like coverage and provides none).
     announceSpy = jest
       .spyOn(AccessibilityInfo, 'announceForAccessibility')
       .mockImplementation(() => {});
@@ -72,5 +75,45 @@ describe('UpdateBanner — emoji census (BP16 / T17)', () => {
       <UpdateBanner count={3} onView={jest.fn()} onDismiss={jest.fn()} />,
     );
     expect(getByText('3 updates since your last visit')).toBeTruthy();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// A11Y-210 — the announce is WIRED, not merely silenced.
+//
+// The train's law is "verified wired, not assumed". This file used to spy on
+// announceForAccessibility purely to keep it quiet, which is the one shape of
+// test that cannot fail: the call could disappear entirely and every assertion
+// here would still pass. These assert the utterance itself.
+// ---------------------------------------------------------------------------
+describe('UpdateBanner — the status announcement fires (A11Y-210)', () => {
+  let announceSpy: jest.SpyInstance;
+  beforeEach(() => {
+    announceSpy = jest
+      .spyOn(AccessibilityInfo, 'announceForAccessibility')
+      .mockImplementation(() => {});
+  });
+  afterEach(() => {
+    announceSpy.mockRestore();
+    jest.clearAllMocks();
+  });
+
+  it('announces the singular count on mount', () => {
+    render(<UpdateBanner count={1} onView={jest.fn()} onDismiss={jest.fn()} />);
+    expect(announceSpy).toHaveBeenCalledWith(
+      '1 of your flags has a status update since your last visit.',
+    );
+  });
+
+  it('announces the plural count on mount', () => {
+    render(<UpdateBanner count={4} onView={jest.fn()} onDismiss={jest.fn()} />);
+    expect(announceSpy).toHaveBeenCalledWith(
+      '4 of your flags have status updates since your last visit.',
+    );
+  });
+
+  it('says nothing when there is nothing to report', () => {
+    render(<UpdateBanner count={0} onView={jest.fn()} onDismiss={jest.fn()} />);
+    expect(announceSpy).not.toHaveBeenCalled();
   });
 });
