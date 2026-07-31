@@ -99,3 +99,31 @@ describe('A11Y-207 — SavedPlaces surfaces its writes on every platform', () =>
     expect(src).not.toContain('Alert.alert(');
   });
 });
+
+describe('SR-042 — spoken distances are spoken, not abbreviated', () => {
+  const src = read('screens/HomeScreen.tsx');
+
+  it('the Home row accessible label uses speakDistance, never formatDistance', () => {
+    expect(src).toContain('${speakDistance(item.km)}');
+    // formatDistance still drives the VISIBLE chip — that is correct, and this
+    // assertion would be wrong to make absolute. Pin only that the a11y label
+    // no longer carries the abbreviation.
+    expect(src).not.toContain('${formatDistance(item.km)} away`');
+  });
+});
+
+describe('A11Y-208 — every ReportFlagModal opener arms the focus-return latch', () => {
+  const src = read('screens/MapScreen.tsx');
+
+  it('the map long-press path registers before opening (both web and native branches)', () => {
+    const fn = src.slice(
+      src.indexOf('const handleMapLongPress'),
+      src.indexOf('const handleMapLongPress') + 2200,
+    );
+    // register() sits ABOVE the platform split, so it covers both branches.
+    const registerAt = fn.indexOf('reportTrigger.register()');
+    const webBranchAt = fn.indexOf("Platform.OS === 'web'");
+    expect(registerAt).toBeGreaterThan(-1);
+    expect(registerAt).toBeLessThan(webBranchAt);
+  });
+});

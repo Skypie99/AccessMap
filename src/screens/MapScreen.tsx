@@ -1584,6 +1584,19 @@ export default function MapScreen() {
   const handleMapLongPress = useCallback((coord: { lat: number; lng: number }) => {
     // Jordan Condition 2: guests cannot create reports.
     if (!authUser) return;
+    // A11Y-208 (G5 focus-return contract): arm the latch on BOTH map-gesture
+    // paths. Without register() the session is never armed, restore() early-
+    // returns, and dismissing a report opened this way strands the cursor —
+    // the exact failure G5 exists to prevent.
+    //
+    // THE SEMANTICS CALL this finding left to Phase B: what should the cursor
+    // return to, when the "trigger" was a long-press on the map itself and no
+    // control was ever focused? The Report FAB — it is already mounted
+    // (guests can't reach this path, and the FAB renders for every signed-in
+    // user), it is labelled, and it is the control that opens this same
+    // sheet. That is the identical reasoning this screen already recorded for
+    // the screen-reader auto-open of the Nearby sheet.
+    reportTrigger.register();
     if (Platform.OS === 'web') {
       setDropLocation(coord);
       setReportOpen(true);
@@ -1601,7 +1614,9 @@ export default function MapScreen() {
         },
       },
     ]);
-  }, [authUser]);
+    // reportTrigger is memoized by useSurfaceTrigger, so depending on it does
+    // not re-create this callback every render.
+  }, [authUser, reportTrigger]);
 
   // S3 detail-sheet handlers. FlagDetailModal does the server mutation itself and
   // gates its own actions by auth/ownership (no new writes here — FORK 5 read

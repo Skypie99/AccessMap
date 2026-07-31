@@ -47,7 +47,13 @@ import { useFlags } from '@/lib/flagsStore';
 import { useGlassMode } from '@/lib/glassMode';
 import { peekLocationState, useUserLocation, type PeekLocationState } from '@/lib/location';
 import { offlineBannerText } from '@/lib/copy';
-import { formatDistance, haversineKm, regionContainsPoint, type LatLng } from '@/lib/distance';
+import {
+  formatDistance,
+  haversineKm,
+  regionContainsPoint,
+  speakDistance,
+  type LatLng,
+} from '@/lib/distance';
 import { CATEGORY_LABELS, SEVERITY_LABELS, STATUS_LABELS } from '@/lib/flags';
 import { severityA11y, statusA11y } from '@/lib/a11yText';
 import type { GeocodeResult } from '@/lib/geocode';
@@ -597,7 +603,13 @@ export default function HomeScreen() {
                       ? // T8 (F4-10): keep the status word when distance renders — the
                         // visible meta already shows it in both branches; the SR label
                         // shouldn't drop it just because a distance is present.
-                        `${CATEGORY_LABELS[item.f.category]}, ${severityA11y(item.f.severity)}, ${statusA11y(item.f.status)}, ${formatDistance(item.km)} away`
+                        // SR-042: speakDistance, NOT formatDistance. The visible
+                        // chip abbreviates ("297 m", "1.2 km") because space is
+                        // tight; a screen reader reading the abbreviation aloud
+                        // says "two hundred ninety seven em" — or whatever that
+                        // locale's TTS makes of a bare unit letter. speakDistance
+                        // spells the unit out, and is why it exists.
+                        `${CATEGORY_LABELS[item.f.category]}, ${severityA11y(item.f.severity)}, ${statusA11y(item.f.status)}, ${speakDistance(item.km)}`
                       : `${CATEGORY_LABELS[item.f.category]}, ${severityA11y(item.f.severity)}, ${statusA11y(item.f.status)}`
                   }
                 >
