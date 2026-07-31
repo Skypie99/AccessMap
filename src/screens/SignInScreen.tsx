@@ -40,14 +40,26 @@ export default function SignInScreen({
   // mount at the bottom of the render for why that is forced, not chosen.
   const [privacyOpen, setPrivacyOpen] = useState(false);
 
+  // A11Y-203: every error shown in the inline row must ALSO be announced.
+  // The row's accessibilityLiveRegion="assertive" is Android-only in RN, and
+  // on web the row node-inserts (browser SRs don't reliably speak inserts) —
+  // so setting state alone leaves iOS VoiceOver and web SR users in silence.
+  // F65 established the explicit-announce rule for the server branch; this
+  // helper extends it to the client validation branches, which used to be the
+  // only silent ones (3.3.1 + 4.1.3).
+  const showError = (msg: string) => {
+    setValidationError(msg);
+    AccessibilityInfo.announceForAccessibility(msg);
+  };
+
   const submit = async (mode: 'in' | 'up') => {
     const cleanEmail = email.trim().toLowerCase();
     if (!cleanEmail.includes('@')) {
-      setValidationError('Please enter a valid email address.');
+      showError('Please enter a valid email address.');
       return;
     }
     if (password.length < 6) {
-      setValidationError('Password must be at least 6 characters.');
+      showError('Password must be at least 6 characters.');
       return;
     }
     setValidationError(null);
@@ -60,13 +72,10 @@ export default function SignInScreen({
     if (error) {
       // F48 (re-sweep): Alert.alert is a no-op on react-native-web, so a
       // failed sign-in/sign-up showed NOTHING there. The inline error row
-      // (same one used for validation) works on every platform.
-      const msg = `${mode === 'in' ? "Couldn't sign you in" : "Couldn't create your account"}: ${error.message}`;
-      setValidationError(msg);
-      // F65 (second sweep): iOS VoiceOver doesn't reliably auto-announce RN
-      // live regions (the old system Alert announced itself) — announce
-      // explicitly so SR users still hear the failure.
-      AccessibilityInfo.announceForAccessibility(msg);
+      // (same one used for validation) works on every platform. Announced
+      // via showError per F65 — iOS VoiceOver doesn't reliably auto-announce
+      // RN live regions (the old system Alert announced itself).
+      showError(`${mode === 'in' ? "Couldn't sign you in" : "Couldn't create your account"}: ${error.message}`);
       return;
     }
     if (mode === 'in') {
