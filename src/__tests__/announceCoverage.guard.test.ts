@@ -127,3 +127,23 @@ describe('A11Y-208 — every ReportFlagModal opener arms the focus-return latch'
     expect(registerAt).toBeLessThan(webBranchAt);
   });
 });
+
+describe('A11Y-222 — every list sheet has a NON-DRAG refresh path (2.5.7)', () => {
+  const SHEETS: [string, string][] = [
+    ['components/MyReportsModal.tsx', 'Reloads your reports'],
+    ['components/MyWatchedModal.tsx', 'Reloads your watched flags'],
+    ['components/ActivityFeedModal.tsx', 'Reloads recent activity'],
+    ['components/MyFeedbackModal.tsx', 'Reloads your feedback'],
+  ];
+
+  it.each(SHEETS)('%s offers a labelled Refresh button beside Close', (rel, hint) => {
+    const src = read(rel);
+    // Pull-to-refresh is a DRAGGING movement. The alternatives that already
+    // existed (close+reopen, tab-focus refetch) are real but undiscoverable
+    // as refresh — which is what made this a finding rather than a pass.
+    expect(src).toContain('accessibilityLabel="Refresh"');
+    expect(src).toContain(hint);
+    // Still a pull-refresh surface — the button is an ADDITION, not a swap.
+    expect(src).toContain('RefreshControl');
+  });
+});

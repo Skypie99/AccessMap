@@ -17,7 +17,7 @@ import { GlassSurface } from '@/components/ui/GlassSurface';
 import { font, radius, shadow, spacing } from '@/theme';
 import { a11yToggle, decorativeProps, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
-import { MessageCircle, Search, X } from 'lucide-react-native';
+import { MessageCircle, RefreshCw, Search, X } from 'lucide-react-native';
 import { FEEDBACK_CATEGORY_LABELS } from '@/lib/feedback';
 import { FEEDBACK_CATEGORY_ICONS } from '@/components/feedbackCategoryIcons';
 import { listFeedbackByUser } from '@/lib/feedbackStore';
@@ -142,6 +142,21 @@ export default function MyFeedbackModal({ visible, onClose, refreshKey = 0 }: Pr
             <AppText ref={titleRef} variant="heading" style={styles.title} accessibilityRole="header">
               My Feedback
             </AppText>
+            {/* A11Y-222 (2.5.7): pull-to-refresh is a DRAG. This is the
+              single-pointer alternative, in the same 44pt circle recipe as
+              Close beside it — and it is discoverable, which close+reopen
+              was not. */}
+            <Pressable
+              onPress={() => void load()}
+              hitSlop={12}
+              style={styles.closeBtn}
+              accessibilityRole="button"
+              accessibilityLabel="Refresh"
+              accessibilityHint="Reloads your feedback without pulling down the list"
+              {...a11yToggle({ busy: loading })}
+            >
+              <RefreshCw size={18} color={color.text} strokeWidth={2.2} {...decorativeProps} />
+            </Pressable>
             <Pressable
               onPress={onClose}
               hitSlop={12}

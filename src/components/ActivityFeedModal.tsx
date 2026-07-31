@@ -44,7 +44,7 @@ import { loadWatched } from '@/lib/watchedFlags';
 import type { FlagRow } from '@/types/database';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { font, radius, shadow, spacing } from '@/theme';
-import { MapPin, X } from 'lucide-react-native';
+import { MapPin, RefreshCw, X } from 'lucide-react-native';
 import { StatusBadge } from '@/components/StatusBadge';
 
 type FeedFilter = 'all' | 'mine' | 'watched';
@@ -234,6 +234,21 @@ export default function ActivityFeedModal({ visible, onClose, onSelectFlag, onVi
             <AppText ref={titleRef} variant="heading" style={styles.title} accessibilityRole="header">
               Recent Activity
             </AppText>
+            {/* A11Y-222 (2.5.7): pull-to-refresh is a DRAG. This is the
+              single-pointer alternative, in the same 44pt circle recipe as
+              Close beside it — and it is discoverable, which close+reopen
+              was not. */}
+            <Pressable
+              onPress={() => void load()}
+              hitSlop={12}
+              style={styles.closeBtn}
+              accessibilityRole="button"
+              accessibilityLabel="Refresh"
+              accessibilityHint="Reloads recent activity without pulling down the list"
+              {...a11yToggle({ busy: loading })}
+            >
+              <RefreshCw size={18} color={color.text} strokeWidth={2.2} {...decorativeProps} />
+            </Pressable>
             <Pressable
               onPress={onClose}
               hitSlop={12}

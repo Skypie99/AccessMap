@@ -38,7 +38,7 @@ import {
   type WatchedStatusFilter,
 } from '@/lib/watchedFlagsFilter';
 import { font, radius, spacing } from '@/theme';
-import { MapPin, Star, X } from 'lucide-react-native';
+import { MapPin, RefreshCw, Star, X } from 'lucide-react-native';
 import { a11yToggle, decorativeProps, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
 import { severityA11y, statusA11y } from '@/lib/a11yText';
 import type { FlagRow } from '@/types/database';
@@ -318,6 +318,19 @@ export default function MyWatchedModal({ visible, onClose, onSelectFlag, onViewO
                 <AppText variant="label" style={styles.clearBtnText}>Clear all</AppText>
               </Pressable>
             )}
+            {/* A11Y-222 (2.5.7): the single-pointer alternative to the
+                pull-to-refresh drag, same recipe as Close. */}
+            <Pressable
+              onPress={handleRefresh}
+              hitSlop={12}
+              style={styles.closeBtn}
+              accessibilityRole="button"
+              accessibilityLabel="Refresh"
+              accessibilityHint="Reloads your watched flags without pulling down the list"
+              {...a11yToggle({ busy: refreshing })}
+            >
+              <RefreshCw size={18} color={color.text} strokeWidth={2.2} {...decorativeProps} />
+            </Pressable>
             <Pressable onPress={onClose} hitSlop={12} style={styles.closeBtn}
               accessibilityRole="button" accessibilityLabel="Close watched flags"
             >
