@@ -38,7 +38,7 @@ import {
   type WatchedStatusFilter,
 } from '@/lib/watchedFlagsFilter';
 import { font, radius, spacing } from '@/theme';
-import { MapPin, RefreshCw, Star, X } from 'lucide-react-native';
+import { MapPin, RefreshCw, Search, Star, X } from 'lucide-react-native';
 import { a11yToggle, decorativeProps, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
 import { severityA11y, statusA11y } from '@/lib/a11yText';
 import type { FlagRow } from '@/types/database';
@@ -441,7 +441,9 @@ export default function MyWatchedModal({ visible, onClose, onSelectFlag, onViewO
             </View>
           ) : displayFlags.length === 0 ? (
             <View style={styles.center}>
-              <AppText variant="body" style={styles.emptyIcon} {...decorativeProps}>🔎</AppText>
+              {/* BP-7: the app's last emoji glyph → the Lucide Search its
+                  sibling empty states already use (AddressSearch/MyFeedback). */}
+              <Search size={32} color={color.inkGlassMuted} strokeWidth={2.2} {...decorativeProps} />
               <AppText variant="heading" style={styles.emptyTitle}>No matches</AppText>
               <AppText variant="body" style={styles.emptySubtitle}>Try a different search term or status filter.</AppText>
             </View>
@@ -517,7 +519,6 @@ const makeStyles = (color: ColorTheme) =>
     errorText: { color: color.errorFg, flex: 1, fontSize: font.size.sm, lineHeight: 18 },
     retryBtn: { paddingHorizontal: spacing.md + 2, paddingVertical: spacing.sm + 2, borderRadius: radius.md, backgroundColor: color.error, minHeight: 44, justifyContent: 'center' },
     retryText: { color: color.textOnBrand, fontWeight: font.weight.bold, fontSize: font.size.sm },
-    emptyIcon: { fontSize: 40, color: color.textSubtle },
     emptyTitle: { fontSize: font.size.xl, fontWeight: font.weight.bold, color: color.textStrong },
     emptySubtitle: { fontSize: font.size.base, color: color.inkGlassMuted, fontFamily: font.family.bodyMedium, textAlign: 'center', lineHeight: 20 },
     emptyBold: { fontWeight: font.weight.bold, color: color.textStrong },

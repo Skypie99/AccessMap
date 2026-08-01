@@ -45,7 +45,7 @@ import { loadWatched } from '@/lib/watchedFlags';
 import type { FlagRow } from '@/types/database';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { font, radius, shadow, spacing } from '@/theme';
-import { MapPin, RefreshCw, X } from 'lucide-react-native';
+import { Clock, MapPin, RefreshCw, X } from 'lucide-react-native';
 import { StatusBadge } from '@/components/StatusBadge';
 
 type FeedFilter = 'all' | 'mine' | 'watched';
@@ -332,7 +332,8 @@ export default function ActivityFeedModal({ visible, onClose, onSelectFlag, onVi
               ListEmptyComponent={
                 loadError ? null : (
                   <View style={styles.emptyWrap}>
-                    <AppText variant="label" style={styles.emptyTitle}>
+                    <Clock size={32} color={color.inkGlassMuted} strokeWidth={2.2} {...decorativeProps} />
+                    <AppText variant="heading" style={styles.emptyTitle}>
                       {filter === 'mine'
                         ? 'You have no recent reports'
                         : filter === 'watched'

@@ -29,7 +29,7 @@ import { filterMyReports } from '@/lib/myReportsFilter';
 import type { FlagRow, FlagStatus } from '@/types/database';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { font, radius, shadow, spacing } from '@/theme';
-import { MapPin, RefreshCw, X } from 'lucide-react-native';
+import { Inbox, MapPin, RefreshCw, Search, X } from 'lucide-react-native';
 import { StatusBadge } from '@/components/StatusBadge';
 
 const STATUS_FILTER_ORDER: FlagStatus[] = ['open', 'verified', 'resolved', 'rejected'];
@@ -461,12 +461,14 @@ export default function MyReportsModal({
                   // (iOS VoiceOver doesn't honor the prop but loses nothing
                   // — it's a no-op there.)
                   <View style={styles.emptyWrap} accessibilityLiveRegion="polite">
-                    <AppText variant="label" style={styles.emptyTitle}>No matches</AppText>
+                    <Search size={32} color={color.inkGlassMuted} strokeWidth={2.2} {...decorativeProps} />
+                    <AppText variant="heading" style={styles.emptyTitle}>No matches</AppText>
                     <AppText variant="body" style={styles.emptyBody}>No reports match that search.</AppText>
                   </View>
                 ) : flags.length > 0 && statusFilter !== 'all' ? (
                   <View style={styles.emptyWrap}>
-                    <AppText variant="label" style={styles.emptyTitle}>
+                    <Inbox size={32} color={color.inkGlassMuted} strokeWidth={2.2} {...decorativeProps} />
+                    <AppText variant="heading" style={styles.emptyTitle}>
                       No {STATUS_LABELS[statusFilter as FlagStatus].toLowerCase()} reports
                     </AppText>
                     <AppText variant="body" style={styles.emptyBody}>
@@ -475,7 +477,8 @@ export default function MyReportsModal({
                   </View>
                 ) : (
                   <View style={styles.emptyWrap}>
-                    <AppText variant="label" style={styles.emptyTitle}>No reports yet</AppText>
+                    <MapPin size={32} color={color.inkGlassMuted} strokeWidth={2.2} {...decorativeProps} />
+                    <AppText variant="heading" style={styles.emptyTitle}>No reports yet</AppText>
                     <AppText variant="body" style={styles.emptyBody}>
                       You haven&apos;t reported any accessibility flags. Tap the Map tab and use the
                       Report button to drop your first pin.

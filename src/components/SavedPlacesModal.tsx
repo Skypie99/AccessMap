@@ -424,7 +424,8 @@ export default function SavedPlacesModal({
             </View>
           ) : places.length === 0 && user ? (
             <View style={styles.emptyWrap}>
-              <AppText variant="label" style={styles.emptyTitle}>No saved places yet</AppText>
+              <MapPin size={32} color={color.inkGlassMuted} strokeWidth={2.2} {...decorativeProps} />
+              <AppText variant="heading" style={styles.emptyTitle}>No saved places yet</AppText>
               <AppText variant="body" style={styles.emptyBody}>
                 Save spots you check often — your home, work, or anywhere you want to jump back to
                 in one tap.

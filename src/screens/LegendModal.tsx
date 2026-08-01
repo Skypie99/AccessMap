@@ -1,5 +1,6 @@
 import React from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 import {
   CATEGORY_DESCRIPTIONS,
   CATEGORY_LABELS,
@@ -35,6 +36,10 @@ export default function LegendModal({ visible, onClose, onDismiss }: Props) {
   const color = useColor();
   const reducedMotion = useReducedMotion();
   const styles = makeStyles(color);
+  // Read the inset context directly (zero fallback) instead of
+  // useSafeAreaInsets(), which throws when there's no SafeAreaProvider — the
+  // modal render-tests mount these sheets without one. Same value in the app.
+  const insets = React.useContext(SafeAreaInsetsContext) ?? { top: 0, bottom: 0, left: 0, right: 0 };
   // WCAG 2.4.3: move the screen-reader cursor onto the header when the modal opens.
   const titleRef = useFocusOnOpen<View>(visible);
   return (
@@ -74,7 +79,10 @@ export default function LegendModal({ visible, onClose, onDismiss }: Props) {
           </View>
           <AppText variant="body" style={styles.subtitle}>What the colors and categories on the map mean.</AppText>
 
-          <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
+          <ScrollView
+            style={styles.scroll}
+            contentContainerStyle={[styles.scrollContent, { paddingBottom: Math.max(spacing.sm, insets.bottom) }]}
+          >
             <AppText variant="heading" style={styles.sectionLabel} accessibilityRole="header">
               Severity
             </AppText>

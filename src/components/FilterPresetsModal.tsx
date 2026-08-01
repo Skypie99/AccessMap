@@ -61,7 +61,7 @@ import {
 } from '@/lib/filterPresets';
 import { font, radius, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
-import { Plus, X } from 'lucide-react-native';
+import { Plus, SlidersHorizontal, X } from 'lucide-react-native';
 
 interface Props {
   visible: boolean;
@@ -506,7 +506,8 @@ export default function FilterPresetsModal({ visible, onClose, onApply }: Props)
             </View>
           ) : presets.length === 0 && user ? (
             <View style={styles.emptyWrap}>
-              <AppText variant="label" style={styles.emptyTitle}>No presets yet</AppText>
+              <SlidersHorizontal size={32} color={color.inkGlassMuted} strokeWidth={2.2} {...decorativeProps} />
+              <AppText variant="heading" style={styles.emptyTitle}>No presets yet</AppText>
               <AppText variant="body" style={styles.emptyBody}>
                 {onApply
                   ? 'Save your current map filters as a named preset from the Map screen, then come back here to apply it in one tap.'
