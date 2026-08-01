@@ -24,3 +24,11 @@ export { GlassSurface } from './GlassSurface';
 
 export { OverflowFade } from './OverflowFade';
 export type { OverflowFadeProps } from './OverflowFade';
+
+// Added to the barrel in the pre-ship polish (2026-08-01) — these were
+// direct-path-only. Existing direct imports keep working.
+export { ScreenStage } from './ScreenStage';
+export { ScreenHeader, EYEBROW_TRACKING } from './ScreenHeader';
+export { HeaderActions } from './HeaderActions';
+export { PressableScale } from './PressableScale';
+export { RemoteImage } from './RemoteImage';
