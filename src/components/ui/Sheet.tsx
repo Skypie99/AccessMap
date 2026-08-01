@@ -19,7 +19,7 @@ import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 import { X } from 'lucide-react-native';
 import { useColor } from '@/theme/ThemeContext';
 import { decorativeProps, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
-import { font, radius, shadow, spacing } from '@/theme';
+import { bulkGlassShadow, font, radius, shadow, spacing } from '@/theme';
 import { AppText } from './AppText';
 import { GlassSurface } from './GlassSurface';
 
@@ -192,14 +192,7 @@ export function Sheet({
           // clips it to the rounded top — so (per GlassSurface's contract) the
           // up-shadow lives on the outer wrapper, since an overflow:hidden view
           // clips its own shadow. Recipe identical to FeedbackModal/AboutScreen.
-          <View
-            style={[
-              styles.cardShadow,
-              color.scheme === 'dark'
-                ? { shadowColor: '#000', shadowOpacity: 0.35 }
-                : { shadowColor: color.shadowTint, shadowOpacity: 0.12 },
-            ]}
-          >
+          <View style={[styles.cardShadow, bulkGlassShadow(color)]}>
             <GlassSurface
               variant="bulk"
               borderRadius={0}
@@ -253,9 +246,6 @@ const styles = StyleSheet.create({
     flexShrink: 1,
     borderTopLeftRadius: radius.xl,
     borderTopRightRadius: radius.xl,
-    shadowRadius: 14,
-    shadowOffset: { width: 0, height: -4 },
-    elevation: 5,
   },
   handleWrap: { alignItems: 'center', paddingTop: spacing.sm, paddingBottom: spacing.tight },
   handle: { width: 36, height: 4, borderRadius: radius.full },
