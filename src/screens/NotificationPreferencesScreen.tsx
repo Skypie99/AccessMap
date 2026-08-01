@@ -177,7 +177,7 @@ export default function NotificationPreferencesScreen({ visible, onClose }: Prop
           {/* Body */}
           {!user ? (
             <View style={styles.notice}>
-              <AppText variant="body" style={styles.noticeText}>Sign in to save notification preferences.</AppText>
+              <AppText variant="body" style={styles.noticeText}>Sign in to change notification preferences.</AppText>
             </View>
           ) : loading ? (
             <View style={styles.center}>
@@ -205,7 +205,7 @@ export default function NotificationPreferencesScreen({ visible, onClose }: Prop
                 />
               ))}
               <AppText variant="body" style={styles.footer}>
-                Changes take effect immediately. All notifications are on by default.
+                Changes take effect immediately on this device. All notifications are on by default.
               </AppText>
             </ScrollView>
           )}

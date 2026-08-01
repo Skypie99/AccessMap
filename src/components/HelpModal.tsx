@@ -43,7 +43,7 @@ const FAQS: FaqItem[] = [
   },
   {
     q: 'Are my photos and location private?',
-    a: "Photos and the flag location are public — they're visible to everyone using the app, which is the whole point of a community map. Your email and display name are never attached to a flag's public view. Avoid including faces or identifying info in your photos.",
+    a: "Photos and the flag location are public — they're visible to everyone using the app, which is the whole point of a community map. Your email is never attached to a flag's public view. Your display name can be \u2014 it appears on the leaderboard and alongside comments, and other signed-in people can tell which reports are yours. Avoid including faces or identifying info in your photos.",
   },
   {
     q: 'I use a screen reader — what should I know?',

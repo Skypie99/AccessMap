@@ -272,7 +272,7 @@ export default function SignInScreen({
         ) : null}
 
         <AppText variant="body" style={styles.footnote}>
-          Your location is only used when you place a flag.{'\n'}Your email is never shown publicly.
+          Your location is used to centre the map, work out how far away barriers are, and place a flag.{'\n'}Your email is never shown publicly.
         </AppText>
 
         {/* B-2 (SR-002): 5.1.1(i) wants the policy reachable near account

@@ -1525,7 +1525,13 @@ export async function fetchFlagsByIds(flagIds: string[]): Promise<FlagRow[]> {
  * precise disability-barrier location they personally reported.
  *
  * Safeguards already in place:
- *   - RLS on `flags` requires auth.uid() to be non-null (authenticated read).
+ *   - NOTE (corrected 2026-07-31, TB-10): the line that used to sit here said
+ *     "RLS on `flags` requires auth.uid() to be non-null". That has been FALSE
+ *     since 2026-05-29, when `flags readable by anon` was added — the table is
+ *     readable with the public anon key. It was load-bearing misinformation:
+ *     it is the safeguard a reader would rely on when reasoning about this
+ *     query, and the prior privacy review reasoned only about the `anon` role
+ *     while `display_name` stays joinable by any signed-in user (TB-9/AB-7).
  *   - The Activity Feed renderer MUST NOT display raw user_id; it should show
  *     only display_name (resolved separately) or no identity at all.
  *   - This query does NOT filter out rejected flags — the Activity Feed is

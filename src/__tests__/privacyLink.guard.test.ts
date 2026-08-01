@@ -92,8 +92,21 @@ describe('B-2 (SR-002) — the policy is reachable in-app on all three surfaces'
 describe('PROTECT-11 — the privacy-forward trust voice is unmoved', () => {
   it('SignIn still carries both footnote promises', () => {
     const src = read('screens/SignInScreen.tsx');
-    expect(src).toContain('Your location is only used when you place a flag.');
+    // PC-8 (security audit 2026-07-31): the location line used to read "Your
+    // location is only used when you place a flag." That was inaccurate —
+    // location is also read to centre the map and compute distances, on grant,
+    // independent of any report. The protected property here is that BOTH trust
+    // promises are still present (and, below, in the right reading order), not
+    // that the wording is frozen; so this asserts the promise, not the literal.
+    // ⚠️ This edits ratified copy — Sky may veto the exact phrasing.
+    expect(src).toMatch(/Your location is used to[^']*place a flag\./);
     expect(src).toContain('Your email is never shown publicly.');
+  });
+
+  it('the location promise does not overclaim', () => {
+    // Non-vacuity for the above: the old, false phrasing must not come back.
+    const src = read('screens/SignInScreen.tsx');
+    expect(src).not.toContain('Your location is only used when you place a flag.');
   });
 
   it('the sign-up link is appended BELOW the footnote, not above it', () => {
