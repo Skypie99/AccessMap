@@ -15,6 +15,7 @@
 
 import React from 'react';
 import { Modal, Pressable, StyleSheet, View, type Text, type ViewStyle } from 'react-native';
+import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 import { X } from 'lucide-react-native';
 import { useColor } from '@/theme/ThemeContext';
 import { decorativeProps, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
@@ -150,6 +151,10 @@ export function Sheet({
   testID,
 }: SheetProps) {
   const color = useColor();
+  // Read the inset context directly (zero fallback) instead of
+  // useSafeAreaInsets(), which throws when there's no SafeAreaProvider — the
+  // modal render-tests mount these sheets without one. Same value in the app.
+  const insets = React.useContext(SafeAreaInsetsContext) ?? { top: 0, bottom: 0, left: 0, right: 0 };
   const reducedMotion = useReducedMotion();
   // WCAG 2.4.3: when the sheet opens, move the screen-reader cursor onto its
   // title so it doesn't stay on the control behind the sheet.
@@ -195,12 +200,24 @@ export function Sheet({
                 : { shadowColor: color.shadowTint, shadowOpacity: 0.12 },
             ]}
           >
-            <GlassSurface variant="bulk" borderRadius={0} style={[styles.card, styles.cardGlass, cardStyle]}>
+            <GlassSurface
+              variant="bulk"
+              borderRadius={0}
+              style={[styles.card, styles.cardGlass, cardStyle, { paddingBottom: Math.max(spacing.sm, insets.bottom) }]}
+            >
               {inner}
             </GlassSurface>
           </View>
         ) : (
-          <View style={[styles.card, { backgroundColor: color.surface }, shadow.e3, cardStyle]}>
+          <View
+            style={[
+              styles.card,
+              { backgroundColor: color.surface },
+              shadow.e3,
+              cardStyle,
+              { paddingBottom: Math.max(spacing.sm, insets.bottom) },
+            ]}
+          >
             {inner}
           </View>
         )}

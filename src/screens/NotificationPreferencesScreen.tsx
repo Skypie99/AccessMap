@@ -34,6 +34,7 @@ import {
   type Text,
   View,
 } from 'react-native';
+import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 import { font, radius, shadow, spacing } from '@/theme';
 import { X } from 'lucide-react-native';
 import { AppText } from '@/components/ui/AppText';
@@ -128,6 +129,10 @@ function ToggleRow({
 export default function NotificationPreferencesScreen({ visible, onClose }: Props) {
   const color = useColor();
   const styles = makeStyles(color);
+  // Read the inset context directly (zero fallback) instead of
+  // useSafeAreaInsets(), which throws when there's no SafeAreaProvider — the
+  // modal render-tests mount these sheets without one. Same value in the app.
+  const insets = React.useContext(SafeAreaInsetsContext) ?? { top: 0, bottom: 0, left: 0, right: 0 };
   const { user } = useAuth();
   const { preferences, setPreference, loading } = useNotificationPreferences(user?.id);
   // WCAG 2.3.3: snap (no slide) when the user prefers reduced motion.
@@ -151,7 +156,7 @@ export default function NotificationPreferencesScreen({ visible, onClose }: Prop
           variant="bulk"
           borderRadius={0}
           forceEngineered
-          style={styles.card}
+          style={[styles.card, { paddingBottom: Math.max(spacing.xl, insets.bottom) }]}
           accessibilityViewIsModal
           onAccessibilityEscape={onClose}
         >

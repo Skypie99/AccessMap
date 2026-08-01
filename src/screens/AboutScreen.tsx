@@ -51,6 +51,10 @@ export default function AboutScreen({ visible, onClose }: Props) {
   // A11Y-201 (2.4.3): move the SR cursor onto the title when this surface opens.
   const titleRef = useFocusOnOpen<Text>(visible);
   const styles = makeStyles(color);
+  // Read the inset context directly (zero fallback) instead of
+  // useSafeAreaInsets(), which throws when there's no SafeAreaProvider — the
+  // modal render-tests mount these sheets without one. Same value in the app.
+  const insets = React.useContext(SafeAreaInsetsContext) ?? { top: 0, bottom: 0, left: 0, right: 0 };
   // §SKY-6: the terms are a SHARED modal, so About only raises the flag — the
   // sheet itself is mounted at the navigator and presents over this card rather
   // than under it. About stays open beneath, so closing the terms returns here.
@@ -63,7 +67,7 @@ export default function AboutScreen({ visible, onClose }: Props) {
             sheet is open. Belt-and-suspenders with the Modal itself, which
             on iOS sometimes leaks focus to the parent. */}
         <View style={styles.cardShadow}>
-        <GlassSurface variant="bulk" borderRadius={0} style={styles.card} accessibilityViewIsModal onAccessibilityEscape={onClose}>
+        <GlassSurface variant="bulk" borderRadius={0} style={[styles.card, { paddingBottom: Math.max(spacing.xl, insets.bottom) }]} accessibilityViewIsModal onAccessibilityEscape={onClose}>
           <View style={styles.headerRow}>
             {/* T19 (F6-08): a small brand mark beside the title. Hidden from
                 screen readers — LogoMark bakes an "AccessMap" label and the

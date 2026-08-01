@@ -68,6 +68,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 import { X } from 'lucide-react-native';
 import { AppText } from '@/components/ui/AppText';
 import { GlassSurface } from '@/components/ui/GlassSurface';
@@ -108,6 +109,10 @@ interface Props {
 export default function ReportContentModal({ visible, target, onClose }: Props) {
   const color = useColor();
   const styles = makeStyles(color);
+  // Read the inset context directly (zero fallback) instead of
+  // useSafeAreaInsets(), which throws when there's no SafeAreaProvider — the
+  // modal render-tests mount these sheets without one. Same value in the app.
+  const insets = React.useContext(SafeAreaInsetsContext) ?? { top: 0, bottom: 0, left: 0, right: 0 };
   const reducedMotion = useReducedMotion();
   const { user } = useAuth();
   // The terms sheet is mounted at the navigator, not here — this sheet is
@@ -279,7 +284,7 @@ export default function ReportContentModal({ visible, target, onClose }: Props) 
           style={styles.kav}
         >
           <View style={styles.cardWrap}>
-            <GlassSurface variant="bulk" borderRadius={0} style={styles.card}>
+            <GlassSurface variant="bulk" borderRadius={0} style={[styles.card, { paddingBottom: Math.max(spacing.xl, insets.bottom) }]}>
               <View style={styles.headerRow}>
                 <AppText
                   ref={titleRef}

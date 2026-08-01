@@ -13,6 +13,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 import { font, radius, spacing } from '@/theme';
 import { a11yToggle, decorativeProps, useFocusOnOpen, useReducedMotion, useReduceTransparency } from '@/lib/accessibility';
 import { AppText } from '@/components/ui/AppText';
@@ -55,6 +56,10 @@ interface Props {
 export default function FeedbackModal({ visible, onClose }: Props) {
   const color = useColor();
   const styles = makeStyles(color);
+  // Read the inset context directly (zero fallback) instead of
+  // useSafeAreaInsets(), which throws when there's no SafeAreaProvider — the
+  // modal render-tests mount these sheets without one. Same value in the app.
+  const insets = React.useContext(SafeAreaInsetsContext) ?? { top: 0, bottom: 0, left: 0, right: 0 };
   // Engineered chip tint (mirrors TasksScreen): the sheet blurs, the chip tints.
   // Under Reduce Transparency the chips fall back to the solid neutral pair; the
   // selected chip keeps the mode-independent CTA fill (categoryChipSelected).
@@ -196,7 +201,7 @@ export default function FeedbackModal({ visible, onClose }: Props) {
           style={styles.kav}
         >
           <View style={styles.cardWrap}>
-          <GlassSurface variant="bulk" borderRadius={0} style={styles.card}>
+          <GlassSurface variant="bulk" borderRadius={0} style={[styles.card, { paddingBottom: Math.max(spacing.xl, insets.bottom) }]}>
             <View style={styles.headerRow}>
               <AppText ref={titleRef} variant="heading" style={styles.title} accessibilityRole="header">
                 Send feedback
