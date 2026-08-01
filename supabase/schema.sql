@@ -229,6 +229,15 @@ as $$
   );
 $$;
 
+-- SR-018 / S-6 (2026-07-31): this function had NO grant statement here at all —
+-- the only function in this file so treated. `create or replace` preserves
+-- existing grants, so it was inert against current prod, but a fresh database
+-- bootstrapped from this file would get PostgreSQL's default EXECUTE TO PUBLIC,
+-- i.e. BROADER than the state that was flagged as a finding. Matches the live
+-- posture applied 2026-07-27. Only service_role (the Edge Function's key) needs
+-- to call this.
+revoke execute on function public.verify_webhook_secret(text) from public, anon, authenticated;
+
 create or replace function public.notify_flag_status_webhook()
 returns trigger
 language plpgsql

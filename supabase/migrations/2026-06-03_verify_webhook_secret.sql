@@ -22,4 +22,11 @@ AS $$
 $$;
 
 REVOKE ALL ON FUNCTION public.verify_webhook_secret(text) FROM PUBLIC;
+-- ⚠️ SUPERSEDED 2026-07-27 — DO NOT RE-RUN THIS GRANT IN ISOLATION.
+--    This grant turned the function into a secret-testing oracle for any
+--    anon caller. It was REVOKED on production 2026-07-27 (SR-018); the
+--    revoke is recorded in 2026-07-27_sr018_verify_webhook_secret_revoke.sql,
+--    which must be applied after this file on any fresh bootstrap.
+--    Left in place rather than deleted because this file is the historical
+--    record of what was applied on 2026-06-03. Findings S-6 / IO-4.
 GRANT EXECUTE ON FUNCTION public.verify_webhook_secret(text) TO anon, authenticated;

@@ -1,0 +1,41 @@
+-- ============================================================================
+-- FILE:   2026-07-27_sr018_verify_webhook_secret_revoke.sql
+-- STATUS: ALREADY APPLIED TO PRODUCTION 2026-07-27 (ledger
+--         `sr018_verify_webhook_secret_revoke_20260727`, recorded in
+--         design-reviews/ship-ready/DECISIONS.md:104-105 and re-verified live
+--         2026-07-31 by the security audit train, Phase A lens 3).
+--
+--         This file is a BACK-FILL. It records an applied change that had no
+--         migration file, so that the repo reproduces production. Running it
+--         against current prod is a no-op; it exists for fresh bootstraps.
+--
+-- WHY IT EXISTS (findings S-6 / IO-4 / X-2, 2026-07-31):
+--   `verify_webhook_secret(text)` is a SECURITY DEFINER boolean oracle over
+--   vault.decrypted_secrets. Granting EXECUTE to anon+authenticated let anyone
+--   test candidate secrets against the Vault one guess at a time. That grant
+--   was revoked on production on 2026-07-27 — but NO file recorded it, while
+--   `2026-06-03_verify_webhook_secret.sql:25` still contained the original
+--   GRANT. So the repo's committed truth was the INSECURE state.
+--
+--   The consequence was concrete: a fresh bootstrap — new staging project, new
+--   machine, disaster recovery — would have rebuilt a database LESS SECURE
+--   than production, with the oracle re-opened. `schema.sql` was worse still,
+--   recreating the function with no REVOKE at all, which on a brand-new
+--   database means PostgreSQL's default EXECUTE TO PUBLIC — broader than the
+--   state that was flagged as a finding in the first place.
+--
+-- BLAST RADIUS: NONE. The only caller is the notify-flag-status Edge Function,
+--   which posts with SUPABASE_SERVICE_ROLE_KEY (see its isAuthorized()).
+--   service_role is unaffected by this revoke.
+-- ============================================================================
+
+revoke execute on function public.verify_webhook_secret(text) from anon, authenticated, public;
+
+-- ============================================================================
+-- ROLLBACK (run to undo):
+--   grant execute on function public.verify_webhook_secret(text) to anon, authenticated;
+--
+-- VERIFY (read-only): expect NO 'anon=X' and NO 'authenticated=X' in proacl
+--   select proname, proacl from pg_proc
+--    where proname = 'verify_webhook_secret' and pronamespace = 'public'::regnamespace;
+-- ============================================================================
