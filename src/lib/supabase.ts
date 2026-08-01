@@ -29,6 +29,35 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
     persistSession: true,
     // On web, detect OAuth redirects embedded in the URL hash/query.
     detectSessionInUrl: Platform.OS === 'web',
+    // IO-2 (security audit 2026-07-31) — WEB SESSION INJECTION.
+    //
+    // auth-js defaults `flowType` to 'implicit'. With `detectSessionInUrl` on,
+    // the web build accepts an access token straight out of the URL hash: it
+    // verifies the token is valid for THIS project, but not that this browser
+    // ever asked for it. So a crafted link silently signs the victim into the
+    // ATTACKER'S account, and every report the victim then files — with their
+    // GPS location — lands in the attacker's account.
+    //
+    // PKCE closes it: the link carries `?code=…` and redemption needs a
+    // `code_verifier` that only the browser which started sign-up holds, so an
+    // attacker-supplied link is unredeemable.
+    //
+    // ★ WEB ONLY, deliberately. This client is shared with native, and native
+    // has no path to complete a PKCE flow: the verifier would sit in the app's
+    // AsyncStorage while the confirmation email opens in the phone's system
+    // browser, and there is no auth deep-link route to hand the code back
+    // (the linking config declares only `FullMap: 'flag/:flagId?'`). Setting
+    // this globally would leave native sign-up confirmation unredeemable
+    // anywhere. Web is also the only surface where the hole is reachable at
+    // all — there is no URL hash to inject on native.
+    //
+    // The cost on web is real and is Sky's to accept: the confirmation email
+    // must be opened in the same browser that started sign-up.
+    //
+    // Not `detectSessionInUrl: false` — that would close the hole by breaking
+    // "click the link → land signed in", which the sign-up flow depends on
+    // (SignInScreen tells the user to go open that link).
+    flowType: Platform.OS === 'web' ? 'pkce' : 'implicit',
   },
 });
 
