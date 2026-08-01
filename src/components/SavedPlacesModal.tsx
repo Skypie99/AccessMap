@@ -290,7 +290,7 @@ export default function SavedPlacesModal({
             <Pressable
               onPress={onClose}
               hitSlop={12}
-              style={styles.closeBtn}
+              style={({ pressed }) => [styles.closeBtn, pressed && { backgroundColor: color.borderPressed }]}
               accessibilityRole="button"
               accessibilityLabel="Close saved places"
             >
@@ -315,7 +315,7 @@ export default function SavedPlacesModal({
               <AppText variant="body" style={styles.errorText}>{loadError}</AppText>
               <Pressable
                 onPress={load}
-                style={styles.retryBtn}
+                style={({ pressed }) => [styles.retryBtn, pressed && { opacity: 0.8 }]}
                 accessibilityRole="button"
                 accessibilityLabel="Retry loading saved places"
               >
@@ -382,7 +382,7 @@ export default function SavedPlacesModal({
                     setNameInput('');
                   }}
                   disabled={saving}
-                  style={[styles.formBtn, styles.cancelBtn]}
+                  style={({ pressed }) => [styles.formBtn, styles.cancelBtn, pressed && { backgroundColor: color.borderPressed }]}
                   accessibilityRole="button"
                   accessibilityLabel="Cancel adding place"
                   {...a11yToggle({ disabled: saving })}
@@ -392,10 +392,11 @@ export default function SavedPlacesModal({
                 <Pressable
                   onPress={handleAddSubmit}
                   disabled={saving || nameInput.trim().length === 0}
-                  style={[
+                  style={({ pressed }) => [
                     styles.formBtn,
                     styles.saveBtn,
                     (saving || nameInput.trim().length === 0) && styles.saveBtnDisabled,
+                    pressed && { backgroundColor: color.ctaFillPressed },
                   ]}
                   accessibilityRole="button"
                   accessibilityLabel="Save place"

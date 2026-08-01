@@ -198,6 +198,9 @@ export default function FlagDetailModal({
     refetch: refetchComments,
   } = useComments(shownFlag?.id);
   const [commentText, setCommentText] = useState('');
+  // BP-6 focus cue: border swaps to brand while focused (width unchanged — no
+  // layout shift). The Input primitive's treatment, applied to this raw field.
+  const [commentFocused, setCommentFocused] = useState(false);
   const [commentSubmitting, setCommentSubmitting] = useState(false);
   const commentInputRef = useRef<TextInput>(null);
   useEffect(() => {
@@ -1304,7 +1307,7 @@ export default function FlagDetailModal({
                     value={editDesc}
                     onChangeText={setEditDesc}
                     placeholder="Describe the accessibility issue"
-                    placeholderTextColor={color.textMuted}
+                    placeholderTextColor={color.placeholderText}
                     multiline
                     // Mirror ReportFlagModal + the DB
                     // flags_description_length_chk constraint (2000).
@@ -1429,7 +1432,7 @@ export default function FlagDetailModal({
                         value={reopenText}
                         onChangeText={setReopenText}
                         placeholder="Describe why this barrier is still present…"
-                        placeholderTextColor={color.textMuted}
+                        placeholderTextColor={color.placeholderText}
                         multiline
                         maxLength={280}
                         style={styles.reopenInput}
@@ -1747,11 +1750,13 @@ export default function FlagDetailModal({
                   <View style={styles.commentInputRow}>
                     <TextInput
                       ref={commentInputRef}
-                      style={styles.commentInput}
+                      style={[styles.commentInput, commentFocused && { borderColor: color.brand }]}
                       value={commentText}
                       onChangeText={setCommentText}
+                      onFocus={() => setCommentFocused(true)}
+                      onBlur={() => setCommentFocused(false)}
                       placeholder="Add a comment…"
-                      placeholderTextColor={color.textMuted}
+                      placeholderTextColor={color.placeholderText}
                       maxLength={MAX_COMMENT_LENGTH}
                       returnKeyType="send"
                       onSubmitEditing={() => void handleSubmitComment()}
@@ -2245,7 +2250,9 @@ const makeStyles = (color: ColorTheme) =>
     },
     editInput: {
       borderWidth: 1,
-      borderColor: color.border,
+      // borderStrong — the compose-field standard; this file had a 3-way
+      // border split across its own inputs (BP-6).
+      borderColor: color.borderStrong,
       borderRadius: radius.lg,
       padding: spacing.md,
       fontSize: font.size.base,
@@ -2367,7 +2374,9 @@ const makeStyles = (color: ColorTheme) =>
       fontSize: font.size.base,
       color: color.text,
       backgroundColor: color.surfaceSoft,
-      minHeight: 40,
+      // WCAG 2.5.5/2.5.8: was 40pt — the app's one remaining sub-44 input
+      // (the same class TasksScreen's searchInput fixed; SR-034's gap).
+      minHeight: 44,
       maxHeight: 100,
     },
     commentSendBtn: {
@@ -2451,7 +2460,7 @@ const makeStyles = (color: ColorTheme) =>
     },
     reopenInput: {
       borderWidth: 1,
-      borderColor: color.border,
+      borderColor: color.borderStrong, // compose-field standard (BP-6)
       borderRadius: radius.lg,
       padding: spacing.sm,
       fontSize: font.size.base,

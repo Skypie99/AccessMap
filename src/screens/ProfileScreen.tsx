@@ -1533,7 +1533,11 @@ export default function ProfileScreen() {
             <Pressable
               onPress={handleSaveName}
               disabled={!nameChanged}
-              style={[styles.saveBtn, !nameChanged && styles.saveBtnDisabled]}
+              style={({ pressed }) => [
+                styles.saveBtn,
+                !nameChanged && styles.saveBtnDisabled,
+                pressed && nameChanged && { backgroundColor: color.ctaFillPressed },
+              ]}
               accessibilityRole="button"
               accessibilityLabel="Save display name"
               {...a11yToggle({ disabled: !nameChanged, busy: savingName })}
@@ -1612,7 +1616,7 @@ export default function ProfileScreen() {
               accessibilityLabel="Show new flags in real-time"
               accessibilityHint="When on, the map updates automatically as new flags are reported or triaged — no need to refresh manually"
               {...a11yToggle({ checked: realtimeEnabled, busy: savingRealtime, disabled: savingRealtime })}
-              trackColor={{ false: '#ccc', true: color.brand }}
+              trackColor={{ false: color.borderStrong, true: color.brand }}
               thumbColor={
                 Platform.OS === 'android' ? (realtimeEnabled ? color.brand : '#f4f3f4') : undefined
               }
@@ -1700,7 +1704,7 @@ export default function ProfileScreen() {
         </Pressable>
 
         <Pressable
-          style={styles.signOutBtn}
+          style={({ pressed }) => [styles.signOutBtn, pressed && { backgroundColor: color.borderPressed }]}
           onPress={async () => {
             const ok = await confirm(
               'Sign out',
@@ -1722,7 +1726,7 @@ export default function ProfileScreen() {
         </Pressable>
 
         <Pressable
-          style={styles.deleteAccountBtn}
+          style={({ pressed }) => [styles.deleteAccountBtn, pressed && { opacity: 0.7 }]}
           onPress={() => setDeleteAccountOpen(true)}
           accessibilityRole="button"
           accessibilityLabel="Delete Account"
@@ -1911,7 +1915,7 @@ export default function ProfileScreen() {
               <Pressable
                 onPress={() => setTierExplainerOpen(false)}
                 hitSlop={12}
-                style={styles.tierCloseBtn}
+                style={({ pressed }) => [styles.tierCloseBtn, pressed && { backgroundColor: color.borderPressed }]}
                 accessibilityRole="button"
                 accessibilityLabel="Close reputation tiers"
               >

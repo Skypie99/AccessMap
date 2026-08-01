@@ -269,10 +269,11 @@ export default function FilterPresetsModal({ visible, onClose, onApply }: Props)
                 <Pressable
                   onPress={() => handleRenameSubmit(item.id)}
                   disabled={renameValue.trim().length === 0}
-                  style={[
+                  style={({ pressed }) => [
                     styles.smallBtn,
                     styles.saveBtn,
                     renameValue.trim().length === 0 && styles.saveBtnDisabled,
+                    pressed && renameValue.trim().length > 0 && { backgroundColor: color.ctaFillPressed },
                   ]}
                   accessibilityRole="button"
                   accessibilityLabel="Save new name"
@@ -404,7 +405,7 @@ export default function FilterPresetsModal({ visible, onClose, onApply }: Props)
             <Pressable
               onPress={onClose}
               hitSlop={12}
-              style={styles.closeBtn}
+              style={({ pressed }) => [styles.closeBtn, pressed && { backgroundColor: color.borderPressed }]}
               accessibilityRole="button"
               accessibilityLabel="Close filter presets"
             >
@@ -427,7 +428,7 @@ export default function FilterPresetsModal({ visible, onClose, onApply }: Props)
               <AppText variant="body" style={styles.errorText}>{loadError}</AppText>
               <Pressable
                 onPress={load}
-                style={styles.retryBtn}
+                style={({ pressed }) => [styles.retryBtn, pressed && { opacity: 0.8 }]}
                 accessibilityRole="button"
                 accessibilityLabel="Retry loading filter presets"
               >
@@ -473,10 +474,11 @@ export default function FilterPresetsModal({ visible, onClose, onApply }: Props)
                 <Pressable
                   onPress={handleCreate}
                   disabled={saving || newName.trim().length === 0}
-                  style={[
+                  style={({ pressed }) => [
                     styles.formBtn,
                     styles.saveBtn,
                     (saving || newName.trim().length === 0) && styles.saveBtnDisabled,
+                    pressed && { backgroundColor: color.ctaFillPressed },
                   ]}
                   accessibilityRole="button"
                   accessibilityLabel="Save preset"

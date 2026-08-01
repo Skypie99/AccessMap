@@ -44,6 +44,7 @@ import { confirm } from '@/lib/confirm';
 import { signOut } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth';
 import { useIsAdmin } from '@/lib/admin';
+import { hapticSelection } from '@/lib/haptics';
 import ResourcesScreen from '@/screens/ResourcesScreen';
 import HowToHelpScreen from '@/screens/HowToHelpScreen';
 import AboutScreen from '@/screens/AboutScreen';
@@ -432,7 +433,12 @@ function DrawerItem({ icon: Icon, label, onPress, muted = false, accessibilityHi
   const styles = useMemo(() => makeItemStyles(color), [color]);
   return (
     <Pressable
-      onPress={onPress}
+      onPress={() => {
+        // The tab bar ticks on every press (TabBarButton); the drawer was the
+        // one silent nav layer (BP-4). Same light selection haptic.
+        hapticSelection();
+        onPress();
+      }}
       style={({ pressed }) => [styles.item, pressed && styles.itemPressed]}
       accessibilityRole="button"
       accessibilityLabel={label}

@@ -242,7 +242,7 @@ export default function ActivityFeedModal({ visible, onClose, onSelectFlag, onVi
             <Pressable
               onPress={() => void load()}
               hitSlop={12}
-              style={styles.closeBtn}
+              style={({ pressed }) => [styles.closeBtn, pressed && { backgroundColor: color.borderPressed }]}
               accessibilityRole="button"
               accessibilityLabel="Refresh"
               accessibilityHint="Reloads recent activity without pulling down the list"
@@ -253,7 +253,7 @@ export default function ActivityFeedModal({ visible, onClose, onSelectFlag, onVi
             <Pressable
               onPress={onClose}
               hitSlop={12}
-              style={styles.closeBtn}
+              style={({ pressed }) => [styles.closeBtn, pressed && { backgroundColor: color.borderPressed }]}
               accessibilityRole="button"
               accessibilityLabel="Close recent activity"
               accessibilityHint="Returns to your Profile"
@@ -291,7 +291,7 @@ export default function ActivityFeedModal({ visible, onClose, onSelectFlag, onVi
               <AppText variant="body" style={styles.errorText}>{loadError}</AppText>
               <Pressable
                 onPress={load}
-                style={styles.retryBtn}
+                style={({ pressed }) => [styles.retryBtn, pressed && { opacity: 0.8 }]}
                 accessibilityRole="button"
                 accessibilityLabel="Retry loading activity"
               >

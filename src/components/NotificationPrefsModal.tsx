@@ -9,7 +9,7 @@
  * refreshUpdateCount with the now-saved prefs).
  */
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Switch, type Text, View } from 'react-native';
+import { ActivityIndicator, Modal, Platform, Pressable, ScrollView, StyleSheet, Switch, type Text, View } from 'react-native';
 import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 import { useAuth } from '@/lib/auth';
 import { AppText } from '@/components/ui/AppText';
@@ -239,6 +239,9 @@ export default function NotificationPrefsModal({
                       // own value, but pairing it with accessibilityState
                       // is the documented contract (QA Pass-2 #5).
                       {...a11yToggle({ checked: value })}
+                      // BP-6: the estate Switch recipe — brand track, themed false-track.
+                      trackColor={{ false: color.borderStrong, true: color.brand }}
+                      thumbColor={Platform.OS === 'android' ? (value ? color.brand : '#f4f3f4') : undefined}
                     />
                   </View>
                 );

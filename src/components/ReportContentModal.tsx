@@ -435,7 +435,7 @@ export default function ReportContentModal({ visible, target, onClose }: Props) 
                 {sent ? (
                   <Pressable
                     onPress={onClose}
-                    style={[styles.btn, styles.btnPrimary]}
+                    style={({ pressed }) => [styles.btn, styles.btnPrimary, pressed && { backgroundColor: color.ctaFillPressed }]}
                     accessibilityRole="button"
                     accessibilityLabel="Close"
                   >
@@ -448,7 +448,7 @@ export default function ReportContentModal({ visible, target, onClose }: Props) 
                     <Pressable
                       onPress={onClose}
                       disabled={submitting}
-                      style={[styles.btn, styles.btnCancel]}
+                      style={({ pressed }) => [styles.btn, styles.btnCancel, pressed && { backgroundColor: color.borderPressed }]}
                       accessibilityRole="button"
                       accessibilityLabel="Cancel"
                       {...a11yToggle({ disabled: submitting })}
@@ -460,7 +460,7 @@ export default function ReportContentModal({ visible, target, onClose }: Props) 
                     <Pressable
                       onPress={handleSend}
                       disabled={!canSend}
-                      style={[styles.btn, styles.btnPrimary, !canSend && styles.btnPrimaryDisabled]}
+                      style={({ pressed }) => [styles.btn, styles.btnPrimary, !canSend && styles.btnPrimaryDisabled, pressed && { backgroundColor: color.ctaFillPressed }]}
                       accessibilityRole="button"
                       accessibilityLabel="Send"
                       testID="reportContentModal-send"

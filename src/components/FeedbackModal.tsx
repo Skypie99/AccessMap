@@ -64,6 +64,10 @@ export default function FeedbackModal({ visible, onClose }: Props) {
   const { user } = useAuth();
   const [body, setBody] = useState('');
   const [contact, setContact] = useState('');
+  // BP-6 focus cue: border swaps to brand while focused (width unchanged —
+  // no layout shift). The Input primitive's treatment on these raw fields.
+  const [bodyFocused, setBodyFocused] = useState(false);
+  const [contactFocused, setContactFocused] = useState(false);
   // 'idea' is the lowest-friction default — most users have an idea
   // before they've isolated a bug, and "Idea" doesn't suggest the message
   // is going into a tracker.
@@ -274,7 +278,9 @@ export default function FeedbackModal({ visible, onClose }: Props) {
                 maxLength={MAX_FEEDBACK_LEN}
                 placeholder="What's on your mind?"
                 placeholderTextColor={color.placeholderText}
-                style={styles.bodyInput}
+                onFocus={() => setBodyFocused(true)}
+                onBlur={() => setBodyFocused(false)}
+                style={[styles.bodyInput, bodyFocused && { borderColor: color.brand }]}
                 editable={!sending}
                 textAlignVertical="top"
                 accessibilityLabel="Feedback message"
@@ -288,7 +294,9 @@ export default function FeedbackModal({ visible, onClose }: Props) {
                 maxLength={MAX_EMAIL_LEN}
                 placeholder="you@example.com"
                 placeholderTextColor={color.placeholderText}
-                style={styles.contactInput}
+                onFocus={() => setContactFocused(true)}
+                onBlur={() => setContactFocused(false)}
+                style={[styles.contactInput, contactFocused && { borderColor: color.brand }]}
                 editable={!sending}
                 autoCapitalize="none"
                 autoCorrect={false}
@@ -326,7 +334,7 @@ export default function FeedbackModal({ visible, onClose }: Props) {
               <Pressable
                 onPress={onClose}
                 disabled={sending}
-                style={[styles.btn, styles.btnCancel]}
+                style={({ pressed }) => [styles.btn, styles.btnCancel, pressed && { backgroundColor: color.borderPressed }]}
                 accessibilityRole="button"
                 accessibilityLabel="Cancel"
                 {...a11yToggle({ disabled: sending })}
@@ -336,7 +344,7 @@ export default function FeedbackModal({ visible, onClose }: Props) {
               <Pressable
                 onPress={handleSend}
                 disabled={!canSend}
-                style={[styles.btn, styles.btnSend, !canSend && styles.btnSendDisabled]}
+                style={({ pressed }) => [styles.btn, styles.btnSend, !canSend && styles.btnSendDisabled, pressed && { backgroundColor: color.ctaFillPressed }]}
                 accessibilityRole="button"
                 accessibilityLabel="Send feedback"
                 accessibilityHint="Opens your email app with the message prefilled."

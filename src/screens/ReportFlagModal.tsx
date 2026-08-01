@@ -69,6 +69,7 @@ import { setLiveStatus } from '@/lib/liveStatus';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { font, gradient, radius, severity as severityRamp, shadow, spacing } from '@/theme';
 import { a11yToggle, decorativeProps, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
+import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 
 /** Lucide icon for each disability tag — adds visual distinction (no emoji, per
  *  the brand icon rule). Describes the BARRIER type, not any person's identity. */
@@ -111,6 +112,9 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
   const { user } = useAuth();
   const isAnon = !user;
   const reducedMotion = useReducedMotion();
+  // Non-throwing context read — render tests mount without a provider (the
+  // M15 family recipe; see MyWatchedModal).
+  const insets = React.useContext(SafeAreaInsetsContext) ?? { top: 0, bottom: 0, left: 0, right: 0 };
   // §SKY-7 — the blocked-content alert's route to the guidelines. This modal
   // mounts from MapScreen, inside <SharedModalsProvider>; TermsScreen's single
   // mount in SharedModalsHost is what lets it present over this sheet.
@@ -1148,7 +1152,9 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
             </View>
           ) : null}
 
-          <View style={styles.actions}>
+          {/* BP-5: the house sheet-bottom pattern — spacing floor, inset-aware
+              so Cancel/Submit clear the home indicator on notched devices. */}
+          <View style={[styles.actions, { paddingBottom: Math.max(spacing.xxl, insets.bottom) }]}>
             <Pressable
               onPress={onClose}
               disabled={submitting}

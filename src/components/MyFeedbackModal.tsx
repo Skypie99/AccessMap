@@ -149,7 +149,7 @@ export default function MyFeedbackModal({ visible, onClose, refreshKey = 0 }: Pr
             <Pressable
               onPress={() => void load()}
               hitSlop={12}
-              style={styles.closeBtn}
+              style={({ pressed }) => [styles.closeBtn, pressed && { backgroundColor: color.borderPressed }]}
               accessibilityRole="button"
               accessibilityLabel="Refresh"
               accessibilityHint="Reloads your feedback without pulling down the list"

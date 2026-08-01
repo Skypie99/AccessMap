@@ -323,7 +323,7 @@ export default function MyWatchedModal({ visible, onClose, onSelectFlag, onViewO
             <Pressable
               onPress={handleRefresh}
               hitSlop={12}
-              style={styles.closeBtn}
+              style={({ pressed }) => [styles.closeBtn, pressed && { backgroundColor: color.borderPressed }]}
               accessibilityRole="button"
               accessibilityLabel="Refresh"
               accessibilityHint="Reloads your watched flags without pulling down the list"
@@ -331,7 +331,7 @@ export default function MyWatchedModal({ visible, onClose, onSelectFlag, onViewO
             >
               <RefreshCw size={18} color={color.text} strokeWidth={2.2} {...decorativeProps} />
             </Pressable>
-            <Pressable onPress={onClose} hitSlop={12} style={styles.closeBtn}
+            <Pressable onPress={onClose} hitSlop={12} style={({ pressed }) => [styles.closeBtn, pressed && { backgroundColor: color.borderPressed }]}
               accessibilityRole="button" accessibilityLabel="Close watched flags"
             >
               <X size={18} color={color.text} strokeWidth={2.2} />
@@ -425,7 +425,7 @@ export default function MyWatchedModal({ visible, onClose, onSelectFlag, onViewO
                   ship the same), never error-on-glass. */}
               <View style={styles.errorBanner}>
                 <AppText variant="body" style={styles.errorText}>{loadError}</AppText>
-                <Pressable onPress={() => void load()} style={styles.retryBtn} accessibilityRole="button" accessibilityLabel="Retry loading watched flags">
+                <Pressable onPress={() => void load()} style={({ pressed }) => [styles.retryBtn, pressed && { opacity: 0.8 }]} accessibilityRole="button" accessibilityLabel="Retry loading watched flags">
                   <AppText variant="label" style={styles.retryText}>Retry</AppText>
                 </Pressable>
               </View>

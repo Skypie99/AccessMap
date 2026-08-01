@@ -29,6 +29,7 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
+  Platform,
   Switch,
   type Text,
   View,
@@ -116,6 +117,9 @@ function ToggleRow({
         accessibilityLabel={label}
         accessibilityHint={subtitle}
         {...a11yToggle({ checked: value })}
+        // BP-6: the estate Switch recipe — brand track, themed false-track.
+        trackColor={{ false: color.borderStrong, true: color.brand }}
+        thumbColor={Platform.OS === 'android' ? (value ? color.brand : '#f4f3f4') : undefined}
       />
     </View>
   );
@@ -162,7 +166,7 @@ export default function NotificationPreferencesScreen({ visible, onClose }: Prop
             <Pressable
               onPress={onClose}
               hitSlop={12}
-              style={styles.closeBtn}
+              style={({ pressed }) => [styles.closeBtn, pressed && { backgroundColor: color.borderPressed }]}
               accessibilityRole="button"
               accessibilityLabel="Close notification preferences"
             >

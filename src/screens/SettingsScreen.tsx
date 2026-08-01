@@ -562,6 +562,12 @@ export default function SettingsScreen() {
               accessibilityLabel="Push notifications"
               accessibilityHint="Receive a push notification when your flag is verified or resolved"
               {...a11yToggle({ checked: pushEnabled, disabled: pushBusy || !user })}
+              // BP-6: brand track (was the OS default green) — the estate
+              // Switch recipe; false-track is themed so dark mode stays dark.
+              trackColor={{ false: color.borderStrong, true: color.brand }}
+              thumbColor={
+                Platform.OS === 'android' ? (pushEnabled ? color.brand : '#f4f3f4') : undefined
+              }
             />
           )}
         </GlassSurface>

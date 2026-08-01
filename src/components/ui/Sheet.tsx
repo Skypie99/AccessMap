@@ -252,8 +252,12 @@ const styles = StyleSheet.create({
   },
   title: { flex: 1 },
   closeBtn: {
-    width: 40,
-    height: 40,
+    // 44 — the app's circle-button visual standard (HeaderActions,
+    // SearchInputRow, UpdateBanner are all 44). This was the one shared
+    // primitive below it (BP-6); hitSlop already made the TARGET compliant,
+    // this aligns the visible box.
+    width: 44,
+    height: 44,
     borderRadius: radius.full,
     alignItems: 'center',
     justifyContent: 'center',
