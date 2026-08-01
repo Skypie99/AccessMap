@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  ActivityIndicator,
   FlatList,  Modal,
   Pressable,
   RefreshControl,
@@ -24,6 +23,7 @@ import {
   STATUS_LABELS,
 } from '@/lib/flags';
 import { statusPalette } from '@/components/StatusBadge';
+import { SkeletonCard } from '@/components/ui/Skeleton';
 import { severityA11y } from '@/lib/a11yText';
 import { filterMyReports } from '@/lib/myReportsFilter';
 import type { FlagRow, FlagStatus } from '@/types/database';
@@ -430,9 +430,13 @@ export default function MyReportsModal({
           ) : null}
 
           {loading && flags.length === 0 && !loadError ? (
-            <View style={styles.center}>
-              <ActivityIndicator />
-              <AppText variant="body" style={styles.subtitle}>Loading your reports…</AppText>
+            // Content-shaped loading (BP-3): card-shaped placeholders instead
+            // of a bare spinner; the label + polite region keep the same SR
+            // story the old visible caption told.
+            <View accessibilityLabel="Loading your reports" accessibilityLiveRegion="polite">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <SkeletonCard key={i} />
+              ))}
             </View>
           ) : (
             <FlatList
@@ -441,7 +445,7 @@ export default function MyReportsModal({
               renderItem={renderItem}
               accessibilityRole="list"
               contentContainerStyle={displayFlags.length === 0 ? styles.center : styles.list}
-              refreshControl={<RefreshControl refreshing={loading} onRefresh={load} />}
+              refreshControl={<RefreshControl refreshing={loading} onRefresh={load} tintColor={color.brand} colors={[color.brand]} />}
               accessibilityLabel={
                 displayFlags.length === 0
                   ? 'Your reports list, empty'

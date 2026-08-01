@@ -32,6 +32,7 @@ import { useAuth } from '@/lib/auth';
 import { a11yToggle, decorativeProps, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
 import { AppText } from '@/components/ui/AppText';
 import { GlassSurface } from '@/components/ui/GlassSurface';
+import { SkeletonRow } from '@/components/ui/Skeleton';
 import { confirm, notify } from '@/lib/confirm';
 import { errorMessage } from '@/lib/errors';
 import {
@@ -414,9 +415,11 @@ export default function SavedPlacesModal({
           )}
 
           {loading && places.length === 0 ? (
-            <View style={styles.center}>
-              <ActivityIndicator />
-              <AppText variant="body" style={styles.subtitle}>Loading saved places…</AppText>
+            // Content-shaped loading (BP-3) — see MyReportsModal; same recipe.
+            <View accessibilityLabel="Loading saved places" accessibilityLiveRegion="polite">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <SkeletonRow key={i} />
+              ))}
             </View>
           ) : places.length === 0 && user ? (
             <View style={styles.emptyWrap}>

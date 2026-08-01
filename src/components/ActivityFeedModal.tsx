@@ -17,7 +17,7 @@
  */
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  ActivityIndicator,  Modal,
+  Modal,
   Pressable,
   RefreshControl,
   SectionList,
@@ -29,6 +29,7 @@ import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 import { RemoteImage } from '@/components/ui/RemoteImage';
 import { AppText } from '@/components/ui/AppText';
 import { GlassSurface } from '@/components/ui/GlassSurface';
+import { SkeletonCard } from '@/components/ui/Skeleton';
 import { SeverityDisc } from '@/components/SeverityDisc';
 import { useAuth } from '@/lib/auth';
 import { a11yToggle, decorativeProps, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
@@ -300,9 +301,11 @@ export default function ActivityFeedModal({ visible, onClose, onSelectFlag, onVi
           ) : null}
 
           {loading && flags.length === 0 && !loadError ? (
-            <View style={styles.center}>
-              <ActivityIndicator />
-              <AppText variant="body" style={styles.subtitle}>Loading recent activity…</AppText>
+            // Content-shaped loading (BP-3) — see MyReportsModal; same recipe.
+            <View accessibilityLabel="Loading recent activity" accessibilityLiveRegion="polite">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <SkeletonCard key={i} />
+              ))}
             </View>
           ) : (
             <SectionList
@@ -320,7 +323,7 @@ export default function ActivityFeedModal({ visible, onClose, onSelectFlag, onVi
                   </AppText>
                 </View>
               )}
-              refreshControl={<RefreshControl refreshing={loading} onRefresh={load} />}
+              refreshControl={<RefreshControl refreshing={loading} onRefresh={load} tintColor={color.brand} colors={[color.brand]} />}
               accessibilityLabel={
                 filteredFlags.length === 0
                   ? 'Recent activity, empty'

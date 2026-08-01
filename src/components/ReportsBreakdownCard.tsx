@@ -183,6 +183,7 @@ export default function ReportsBreakdownCard({ userId, refreshKey }: Props) {
           </AppText>
         </View>
         <ActivityIndicator
+          color={color.brandText}
           // The accessible label on the card already announces "loading". {...decorativeProps}
         />
       </GlassSurface>

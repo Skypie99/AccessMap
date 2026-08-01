@@ -279,7 +279,7 @@ export default function AdminScreen() {
           { paddingTop: insets.top, paddingBottom: tabBarHeight + 16 },
         ]}
         refreshControl={
-          <RefreshControl refreshing={loading} onRefresh={load} tintColor={color.brand} />
+          <RefreshControl refreshing={loading} onRefresh={load} tintColor={color.brand} colors={[color.brand]} />
         }
         ListHeaderComponent={
           <>

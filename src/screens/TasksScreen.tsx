@@ -1293,6 +1293,8 @@ export default function TasksScreen() {
         refreshControl={
           <RefreshControl
             refreshing={loading}
+            tintColor={color.brand}
+            colors={[color.brand]}
             // Spawn the spinner below the absolute chrome pane, not under it.
             progressViewOffset={chromeHeight ?? CHROME_FALLBACK_HEIGHT + insets.top}
             onRefresh={() => {

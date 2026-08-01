@@ -45,6 +45,7 @@ import {
 import { useAuth } from '@/lib/auth';
 import { AppText } from '@/components/ui/AppText';
 import { GlassSurface } from '@/components/ui/GlassSurface';
+import { SkeletonRow } from '@/components/ui/Skeleton';
 import { a11yToggle, decorativeProps, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
 import { confirm } from '@/lib/confirm';
 import { errorMessage } from '@/lib/errors';
@@ -495,9 +496,11 @@ export default function FilterPresetsModal({ visible, onClose, onApply }: Props)
           )}
 
           {loading && presets.length === 0 ? (
-            <View style={styles.center}>
-              <ActivityIndicator />
-              <AppText variant="body" style={styles.subtitle}>Loading presets…</AppText>
+            // Content-shaped loading (BP-3) — see MyReportsModal; same recipe.
+            <View accessibilityLabel="Loading presets" accessibilityLiveRegion="polite">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <SkeletonRow key={i} />
+              ))}
             </View>
           ) : presets.length === 0 && user ? (
             <View style={styles.emptyWrap}>

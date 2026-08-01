@@ -820,7 +820,10 @@ export default function ProfileScreen() {
       <View style={styles.stageRoot}>
         <ScreenStage />
         <View style={styles.center}>
-          <ActivityIndicator />
+          {/* brandText, not brand: spinner strokes want ≥4.5:1 on the stage
+              (the NotificationPreferences M-24 reasoning; StatusHistory is the
+              brand-flavored precedent). */}
+          <ActivityIndicator color={color.brandText} />
         </View>
       </View>
     );
@@ -892,7 +895,7 @@ export default function ProfileScreen() {
           // (mirrors the headerless Home/Tasks). Overrides the container's top pad.
           { paddingTop: insets.top + spacing.lg, paddingBottom: tabBarHeight + 16 },
         ]}
-        refreshControl={<RefreshControl refreshing={loading} onRefresh={load} />}
+        refreshControl={<RefreshControl refreshing={loading} onRefresh={load} tintColor={color.brand} colors={[color.brand]} />}
       >
         <ScreenHeader
           eyebrow="PROFILE"
@@ -1798,7 +1801,7 @@ export default function ProfileScreen() {
                 {...a11yToggle({ busy: deletingAccount, disabled: deletingAccount })}
               >
                 {deletingAccount ? (
-                  <ActivityIndicator color="#fff" size="small" />
+                  <ActivityIndicator color={color.textOnBrand} size="small" />
                 ) : (
                   <AppText variant="label" style={styles.deleteConfirmText}>Delete Account</AppText>
                 )}

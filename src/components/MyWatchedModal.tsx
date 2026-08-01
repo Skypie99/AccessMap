@@ -6,7 +6,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 import {
-  ActivityIndicator,
   FlatList,
   Modal,
   Pressable,
@@ -19,6 +18,7 @@ import {
 import { useAuth } from '@/lib/auth';
 import { AppText } from '@/components/ui/AppText';
 import { GlassSurface } from '@/components/ui/GlassSurface';
+import { SkeletonRow } from '@/components/ui/Skeleton';
 import { SeverityDisc } from '@/components/SeverityDisc';
 import { confirm, notify } from '@/lib/confirm';
 import { errorMessage } from '@/lib/errors';
@@ -410,7 +410,13 @@ export default function MyWatchedModal({ visible, onClose, onSelectFlag, onViewO
           )}
 
           {loading ? (
-            <View style={styles.center}><ActivityIndicator /></View>
+            // Content-shaped loading (BP-3): row placeholders; the bare
+            // unthemed spinner told SR users nothing — the label does now.
+            <View accessibilityLabel="Loading watched flags" accessibilityLiveRegion="polite">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <SkeletonRow key={i} />
+              ))}
+            </View>
           ) : loadError && flags.length === 0 ? (
             <View style={styles.center}>
               {/* M-40 error repair: was bare color.error text directly on the
@@ -448,7 +454,7 @@ export default function MyWatchedModal({ visible, onClose, onSelectFlag, onViewO
               accessibilityRole="list"
               accessibilityLabel={`Watched flags list, ${displayFlags.length} ${displayFlags.length === 1 ? 'item' : 'items'}`}
               refreshControl={
-                <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} accessibilityLabel="Pull down to refresh watched flags" />
+                <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={color.brand} colors={[color.brand]} accessibilityLabel="Pull down to refresh watched flags" />
               }
             />
           )}

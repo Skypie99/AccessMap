@@ -223,7 +223,7 @@ export default function MyFeedbackModal({ visible, onClose, refreshKey = 0 }: Pr
             data={filteredRows}
             keyExtractor={(r) => r.id}
             accessibilityRole="list"
-            refreshControl={<RefreshControl refreshing={loading} onRefresh={load} />}
+            refreshControl={<RefreshControl refreshing={loading} onRefresh={load} tintColor={color.brand} colors={[color.brand]} />}
             contentContainerStyle={
               filteredRows.length === 0 ? styles.emptyContainer : styles.listContainer
             }
@@ -231,7 +231,7 @@ export default function MyFeedbackModal({ visible, onClose, refreshKey = 0 }: Pr
             ListEmptyComponent={
               <View style={styles.emptyCard} accessible accessibilityRole="text">
                 {loading ? (
-                  <ActivityIndicator />
+                  <ActivityIndicator color={color.brandText} />
                 ) : rows.length > 0 ? (
                   // Have feedback, but the active filter hides all of it.
                   <>
