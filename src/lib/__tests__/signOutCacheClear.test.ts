@@ -6,11 +6,6 @@
  * so removing the fix fails the test rather than silently passing.
  */
 
-import { Platform } from 'react-native';
-import fs from 'fs';
-import path from 'path';
-
-const SRC = fs.readFileSync(path.join(__dirname, '..', 'supabase.ts'), 'utf8');
 
 describe('PL-2/IO-5 — Cache Storage is purged on sign-out', () => {
   const ORIGINAL = (globalThis as { caches?: unknown }).caches;
