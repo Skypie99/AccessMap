@@ -21,9 +21,9 @@ import {
   listFlagsByUser,
   SEVERITY_LABELS,
   severityColor,
-  STATUS_COLORS,
   STATUS_LABELS,
 } from '@/lib/flags';
+import { statusPalette } from '@/components/StatusBadge';
 import { severityA11y } from '@/lib/a11yText';
 import { filterMyReports } from '@/lib/myReportsFilter';
 import type { FlagRow, FlagStatus } from '@/types/database';
@@ -360,7 +360,7 @@ export default function MyReportsModal({
           )}
 
           {/* Status filter chips — only shown when the list contains more
-              than one distinct status. The chips use STATUS_COLORS for the
+              than one distinct status. The chips use statusPalette for the
               active state, so each status tints with its palette color. */}
           {presentStatuses.length > 1 && (
             <View style={styles.statusFilterRow} accessibilityLabel="Filter by status">
@@ -386,7 +386,14 @@ export default function MyReportsModal({
               </Pressable>
               {presentStatuses.map((status) => {
                 const active = statusFilter === status;
-                const palette = STATUS_COLORS[status];
+                // Themed (light + dark) — was the light-only STATUS_COLORS map,
+                // which froze active chips in light colors on dark surfaces
+                // (BP-2 fix). In dark mode the fg tokens are LIGHT fills, so the
+                // active label flips to ink — the severity-ramp rule (light
+                // fills carry dark ink; theme.ts severity textOnColor).
+                const palette = statusPalette(color, status);
+                const activeInk =
+                  color.scheme === 'dark' ? color.textOnAccent : color.textOnBrand;
                 return (
                   <Pressable
                     key={status}
@@ -398,7 +405,7 @@ export default function MyReportsModal({
                   >
                     <AppText
                       variant="label"
-                      style={[styles.statusFilterText, active && styles.statusFilterTextActive]}
+                      style={[styles.statusFilterText, active && { color: activeInk }]}
                     >
                       {STATUS_LABELS[status]} ({statusCounts[status]})
                     </AppText>

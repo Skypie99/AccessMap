@@ -1643,10 +1643,12 @@ export const STATUS_LABELS: Record<FlagStatus, string> = {
   rejected: 'Rejected',
 };
 
-// Tinted-background + darker-foreground palette for the status badges.
-// Updated to design system 2026-05-31. Mirrors color.statusOpen/Verified/Resolved/RejectedBg/Fg
-// in src/theme.ts. Each pair clears WCAG AA 4.5:1 between `fg` and `bg`.
-// Keep these in sync with ThemeContext.tsx dark-mode equivalents.
+// ⚠ LIGHT-ONLY LEGACY. These are the LIGHT-palette status pairs frozen as
+// literals — they cannot follow dark mode. Do NOT consume in themed UI: use
+// statusPalette() from components/StatusBadge (reads the light+dark tokens).
+// Kept exported for non-themed/reference use and existing test mocks.
+// (Pre-ship polish 2026-08-01 — the last two themed consumers, ProfileScreen
+// and MyReportsModal, were migrated off this map.)
 export const STATUS_COLORS: Record<FlagStatus, { bg: string; fg: string }> = {
   open:     { bg: '#E7F0FD', fg: '#1A5FB4' },
   verified: { bg: '#DCF6EC', fg: '#067A56' },

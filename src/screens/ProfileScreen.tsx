@@ -38,9 +38,9 @@ import {
   fetchFlagsByIds,
   listFlagsByUser,
   SEVERITY_LABELS,
-  STATUS_COLORS,
   STATUS_LABELS,
 } from '@/lib/flags';
+import { statusPalette } from '@/components/StatusBadge';
 import { severityA11y } from '@/lib/a11yText';
 import { useFlags } from '@/lib/flagsStore';
 import { useUserLocation } from '@/lib/location';
@@ -1259,7 +1259,9 @@ export default function ProfileScreen() {
         {stats.reported > 0 && (
           <View style={styles.statusBreakdownRow} accessibilityLabel="Your reports by status">
             {(['open', 'verified', 'resolved', 'rejected'] as FlagStatus[]).map((status) => {
-              const palette = STATUS_COLORS[status];
+              // Themed (light + dark) — the light-only STATUS_COLORS map froze
+              // these pills in light colors on dark surfaces (BP-2 fix).
+              const palette = statusPalette(color, status);
               const count = stats.byStatus[status];
               const statusWord = STATUS_LABELS[status].toLowerCase();
               const pillInner = (
@@ -2425,7 +2427,8 @@ const makeStyles = (color: ColorTheme) =>
       fontWeight: '600',
     },
     // Per-status pill row (open / verified / resolved / rejected). Uses
-    // STATUS_COLORS for visual continuity with the badges in detail modals.
+    // statusPalette (themed) for visual continuity with the badges in detail
+    // modals — dark-mode-correct since BP-2 of the 2026-08-01 polish.
     statusBreakdownRow: {
       flexDirection: 'row',
       gap: 8,
