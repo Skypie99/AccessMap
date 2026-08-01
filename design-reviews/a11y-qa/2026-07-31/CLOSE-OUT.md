@@ -103,7 +103,7 @@ SR-074 · SR-075/076/081/091/045 · SR-078 · SR-079 · SR-058 · SR-034 · SR-0
 
 | Gate | Baseline | Final |
 |---|---|---|
-| `npx jest --ci -w 3` | 186 suites / 2826 passed / 0 failed | **see §6** |
+| `npx jest --ci -w 3` | 186 suites / 2826 passed / 0 failed | **196 suites / 2891 passed / 0 failed** (4/4 clean runs) |
 | `npm run typecheck` | 0 errors | **0 errors** |
 | `npm run lint` | 0 errors / 80 warnings | **0 errors / 80 warnings — exact** |
 | Arbiter proof sets | 13/13 ratified exit 0 | **13/13 + 2 NEW exit 0** |
@@ -147,6 +147,16 @@ Two honest options, both Sky's words:
 
 ---
 
-## §6 GATE RUN — see `PHASE-B-LOG.md` for the per-fix ledger
+## §6 THE GATE SCARE — investigated, not labelled
 
-Final full-gate results are recorded in `PHASE-B-LOG.md` §Final Gate.
+Two mid-session full runs failed (`ReportFlagModal` ×2, `HamburgerDrawer.destinations` ×1 — the last a **suite-level abort with zero failed tests**). The repo's gate quirks name `ReportFlagModal` as a known flake class, but that is a claim, so it was tested:
+
+- the suite alone passes 43/43 at both `-w 1` and `-w 3`;
+- a **git worktree at the pre-train tip `5ab3f0c`** runs the full suite **3/3 clean** (186/186);
+- this branch runs the full suite **4/4 clean** (196/196) on a quiet machine.
+
+Every failure occurred while this session had its own concurrent jest runs and a worktree checkout competing — load average 18–28, swap 6.8 GB of 8 GB. Varying suites plus a zero-assertion abort is resource pressure, not logic.
+
+**Recorded honestly:** this branch does add mount-time work the baseline lacked — ~30 more surfaces schedule `useFocusOnOpen`'s 150 ms timer, and jest runs as `ios`, so they are live in tests. That is required product behaviour, not test cost, but it consumes timing headroom. First place to look if this suite flakes again under load.
+
+Full per-fix ledger: `PHASE-B-LOG.md`.

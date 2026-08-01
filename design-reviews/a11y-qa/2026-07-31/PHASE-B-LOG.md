@@ -44,23 +44,30 @@
 
 | Gate | Result |
 |---|---|
-| `npx jest --ci -w 3` | **195 suites / 2879 passed / 0 failed / 84 todo** (clean run) |
+| `npx jest --ci -w 3` | **196 suites / 2891 passed / 0 failed / 84 todo** |
 | `npm run typecheck` | **0 errors** |
 | `npm run lint` | **0 errors / 80 warnings** — the exact baseline |
 | Arbiter proof sets | 13/13 ratified + **2 new** (brand-ink, timestamp-ink) all exit 0 |
 | `GlassSurface.tsx` PROTECT | 0 changed lines |
 | Agent-applied migrations | 0 |
 
-**Flake note, recorded honestly:** one later gate run showed `ReportFlagModal.test.tsx` failing a rate-limit assertion. It passes **3/3 in isolation** and passed in the clean full run; the failing run happened at load average 18–28 with swap at 6.8 GB of 8 GB — i.e. under contention from this session's own background jobs. That is the repo's documented `ReportFlagModal` flake class (gate quirks: "passes in isolation"), not a regression. Re-verify on a quiet machine before treating it as anything else.
+### The one gate scare, investigated rather than labelled
+
+Two mid-session full runs failed — `ReportFlagModal.test.tsx` twice, `HamburgerDrawer.destinations.test.tsx` once, one of them a **suite-level abort with zero failed tests**. The repo's gate quirks call `ReportFlagModal` a known flake class, but "known flake" is a claim, so it was tested rather than accepted:
+
+| Experiment | Result |
+|---|---|
+| The suite alone, `-w 1` ×3 | 43/43 pass |
+| The suite alone, `-w 3` | 43/43 pass |
+| **Pre-train baseline `5ab3f0c`, full suite, `-w 3` ×3** (git worktree) | **186/186 pass, 3/3 clean** |
+| This branch, full suite, `-w 3` ×4, quiet machine | **196/196 pass, 4/4 clean** |
+
+The failing runs all happened while this session had **its own concurrent jest runs and a worktree checkout competing** — load average 18–28 with swap at 6.8 GB of 8 GB. Once the machine was quiet, both the baseline and this branch ran clean repeatedly. Varying suites, plus an abort with zero failed assertions, is the signature of resource pressure rather than logic.
+
+**Honest residue:** this branch does add real mount-time work the baseline did not have — ~30 more surfaces now schedule `useFocusOnOpen`'s 150 ms timer, and jest runs as `ios`, so those timers are live in tests. That is the product behaviour the fix requires, not test-only cost, but it does consume timing headroom. If this suite ever flakes again on a loaded machine, that is the first place to look.
 
 ## Not done, and why (all recorded in CLOSE-OUT §2)
 
 **GATED-AWAITING-SKY:** C-1 (README wording) · C-2 (republish the hosted privacy policy) · A11Y-222 for Tasks/Profile/Admin (primary chrome → mockup gate).
 **PARKED-with-reason:** A11Y-218 (7 inert labels, per-site judgement) · A11Y-225 (latent, nav-config risk) · A11Y-227 (one dual-purpose password field) · L1-1 (a11y lint plugin = dependency change; materially mitigated by 8 new source-scanning guards).
 **DEVICE-PENDING:** A11Y-224 + every row in `DEVICE-SCRIPT.md`.
-
-## Remaining queue
-
-High: A11Y-203, 202, 201, 213, 214, 221, 226, 228, 229.
-Med: A11Y-204, 205, 206, 207, 208, 215, 216, 217, 222, 223, 230, 234, SR-042.
-Then: full-gate run · device script final · close-out conservation table · claims verdict handoff (C-1/C-2 → Sky).
