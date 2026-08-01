@@ -1630,7 +1630,7 @@ export default function ProfileScreen() {
           </AppText>
           <Pressable
             onPress={handleShowIntroAgain}
-            style={styles.linkBtn}
+            style={({ pressed }) => [styles.linkBtn, pressed && { backgroundColor: color.borderPressed }]}
             accessibilityRole="button"
             accessibilityLabel="Show me the intro again"
             accessibilityHint="Resets the first-run cards so they appear at the next sign in"

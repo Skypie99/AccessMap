@@ -6,7 +6,7 @@ import { a11yToggle, decorativeProps, useFocusOnOpen, useReducedMotion } from '@
 import { AppText } from '@/components/ui/AppText';
 import { GlassSurface } from '@/components/ui/GlassSurface';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
-import { ChevronDown, ChevronRight, X } from 'lucide-react-native';
+import { ChevronDown, ChevronRight, Search, X } from 'lucide-react-native';
 import { openFeedbackComposer } from '@/lib/feedback';
 import { filterFaqs } from '@/lib/helpSearch';
 import { POINTS } from '@/lib/points';
@@ -127,7 +127,7 @@ export default function HelpModal({ visible, onClose }: Props) {
             <Pressable
               onPress={onClose}
               hitSlop={12}
-              style={styles.closeBtn}
+              style={({ pressed }) => [styles.closeBtn, pressed && { backgroundColor: color.borderPressed }]}
               accessibilityRole="button"
               accessibilityLabel="Close help"
             >
@@ -152,9 +152,14 @@ export default function HelpModal({ visible, onClose }: Props) {
             showsVerticalScrollIndicator={false}
           >
             {showEmpty && (
-              <AppText variant="body" style={styles.emptyResults} accessibilityLiveRegion="polite">
-                No FAQ matches that search. Try a different term.
-              </AppText>
+              // BP-sweep: the empty-state grammar (icon above the line). The
+              // live region stays on the text node exactly as before.
+              <View style={{ alignItems: 'center', gap: spacing.sm }}>
+                <Search size={32} color={color.inkGlassMuted} strokeWidth={2.2} {...decorativeProps} />
+                <AppText variant="body" style={styles.emptyResults} accessibilityLiveRegion="polite">
+                  No FAQ matches that search. Try a different term.
+                </AppText>
+              </View>
             )}
 
             {filteredFaqs.map((item) => {

@@ -610,7 +610,7 @@ function makeStyles(color: ColorTheme) {
       alignItems: 'center',
       justifyContent: 'center',
     },
-    retryBtnPressed: { opacity: 0.8 },
+    retryBtnPressed: { backgroundColor: color.errorPressed },
     retryText: {
       fontSize: font.size.sm,
       fontWeight: font.weight.semibold,

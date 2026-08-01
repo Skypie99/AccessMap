@@ -196,7 +196,9 @@ export function Sheet({
             <GlassSurface
               variant="bulk"
               borderRadius={0}
-              style={[styles.card, styles.cardGlass, cardStyle, { paddingBottom: Math.max(spacing.sm, insets.bottom) }]}
+              // Inset pad sits BEFORE cardStyle so a caller's documented
+              // paddingBottom override still wins (sweep finding #4).
+              style={[styles.card, styles.cardGlass, { paddingBottom: Math.max(spacing.sm, insets.bottom) }, cardStyle]}
             >
               {inner}
             </GlassSurface>
@@ -207,8 +209,8 @@ export function Sheet({
               styles.card,
               { backgroundColor: color.surface },
               shadow.e3,
-              cardStyle,
               { paddingBottom: Math.max(spacing.sm, insets.bottom) },
+              cardStyle,
             ]}
           >
             {inner}

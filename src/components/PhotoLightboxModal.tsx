@@ -13,6 +13,7 @@
  */
 import React from 'react';
 import { Modal, Pressable, StatusBar, StyleSheet, View } from 'react-native';
+import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 import { RemoteImage } from '@/components/ui/RemoteImage';
 import { AppText } from '@/components/ui/AppText';
 import { decorativeProps, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
@@ -32,6 +33,9 @@ export default function PhotoLightboxModal({ visible, photoUrl, caption, onClose
   const color = useColor();
   const styles = makeStyles(color);
   const reducedMotion = useReducedMotion();
+  // Non-throwing context read — render tests mount without a provider (the
+  // M15 family recipe; see MyWatchedModal).
+  const insets = React.useContext(SafeAreaInsetsContext) ?? { top: 0, bottom: 0, left: 0, right: 0 };
   // A11Y-201 (2.4.3): land the SR cursor on the labeled close button on open
   // (RemoteImage takes no ref; the photo stays one swipe away, first in order).
   const closeRef = useFocusOnOpen<View>(visible);
@@ -87,7 +91,9 @@ export default function PhotoLightboxModal({ visible, photoUrl, caption, onClose
           // would otherwise read it twice. The visual caption is for
           // sighted users who don't get the SR label. QA Pass-2 #6.
           <View
-            style={styles.captionBar}
+            // BP-sweep: derive from the real inset instead of the 34pt guess
+            // (comment on the style); 34 stays the floor on square screens.
+            style={[styles.captionBar, { paddingBottom: Math.max(34, insets.bottom + spacing.sm) }]}
             pointerEvents="none" {...decorativeProps}
           >
             <AppText variant="label" style={styles.captionText} numberOfLines={3}>

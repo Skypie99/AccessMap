@@ -330,7 +330,7 @@ const makeStyles = (color: ColorTheme) =>
       fontSize: font.size.xs,
       color: color.inkGlassMuted, // arbitrated muted ink on the row glass
       textTransform: 'uppercase',
-      letterSpacing: 0.5,
+      letterSpacing: font.tracking.section,
       fontWeight: font.weight.bold,
       marginTop: spacing.sm,
     },

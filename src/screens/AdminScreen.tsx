@@ -296,7 +296,7 @@ export default function AdminScreen() {
                 <AppText variant="body" style={styles.errorText}>{loadError}</AppText>
                 <Pressable
                   onPress={() => void load()}
-                  style={({ pressed }) => [styles.retryBtn, pressed && { opacity: 0.8 }]}
+                  style={({ pressed }) => [styles.retryBtn, pressed && { backgroundColor: color.errorPressed }]}
                   accessibilityRole="button"
                   accessibilityLabel="Retry loading the moderation queue"
                 >

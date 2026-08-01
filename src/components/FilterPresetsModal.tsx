@@ -245,7 +245,7 @@ export default function FilterPresetsModal({ visible, onClose, onApply }: Props)
                 value={renameValue}
                 onChangeText={setRenameValue}
                 placeholder="New name"
-                placeholderTextColor={color.textMuted}
+                placeholderTextColor={color.placeholderText}
                 maxLength={MAX_NAME_LENGTH}
                 style={styles.input}
                 autoFocus
@@ -260,7 +260,11 @@ export default function FilterPresetsModal({ visible, onClose, onApply }: Props)
                     setRenamingId(null);
                     setRenameValue('');
                   }}
-                  style={[styles.smallBtn, styles.cancelBtn]}
+                  style={({ pressed }) => [
+                    styles.smallBtn,
+                    styles.cancelBtn,
+                    pressed && { backgroundColor: color.borderPressed },
+                  ]}
                   accessibilityRole="button"
                   accessibilityLabel="Cancel rename"
                 >
@@ -428,7 +432,7 @@ export default function FilterPresetsModal({ visible, onClose, onApply }: Props)
               <AppText variant="body" style={styles.errorText}>{loadError}</AppText>
               <Pressable
                 onPress={load}
-                style={({ pressed }) => [styles.retryBtn, pressed && { opacity: 0.8 }]}
+                style={({ pressed }) => [styles.retryBtn, pressed && { backgroundColor: color.errorPressed }]}
                 accessibilityRole="button"
                 accessibilityLabel="Retry loading filter presets"
               >
@@ -444,7 +448,7 @@ export default function FilterPresetsModal({ visible, onClose, onApply }: Props)
                 value={newName}
                 onChangeText={setNewName}
                 placeholder="e.g. Downtown commute"
-                placeholderTextColor={color.textMuted}
+                placeholderTextColor={color.placeholderText}
                 maxLength={MAX_NAME_LENGTH}
                 style={styles.input}
                 autoFocus
@@ -464,7 +468,11 @@ export default function FilterPresetsModal({ visible, onClose, onApply }: Props)
                     setNewName('');
                   }}
                   disabled={saving}
-                  style={[styles.formBtn, styles.cancelBtn]}
+                  style={({ pressed }) => [
+                    styles.formBtn,
+                    styles.cancelBtn,
+                    pressed && { backgroundColor: color.borderPressed },
+                  ]}
                   accessibilityRole="button"
                   accessibilityLabel="Cancel adding preset"
                   {...a11yToggle({ disabled: saving })}

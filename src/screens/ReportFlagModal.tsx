@@ -838,7 +838,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
               if (appliedTemplateId) setAppliedTemplateId(null);
             }}
             placeholder="Describe the barrier — e.g. broken curb cut on Main St"
-            placeholderTextColor={color.textMuted}
+            placeholderTextColor={color.placeholderText}
             multiline
             // Mirror the DB check constraint
             // (flags_description_length_chk in

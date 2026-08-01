@@ -466,7 +466,7 @@ const makeStyles = (color: ColorTheme) =>
       // already >=500, so only the color re-arbitrates.
       color: color.inkGlassMuted,
       textTransform: 'uppercase',
-      letterSpacing: 0.5,
+      letterSpacing: font.tracking.section,
       fontWeight: font.weight.semibold,
       marginTop: spacing.sm,
     },

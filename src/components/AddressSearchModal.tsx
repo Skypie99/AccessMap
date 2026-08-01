@@ -255,7 +255,7 @@ export default function AddressSearchModal({ visible, onClose, onSelect }: Props
                 <Pressable
                   onPress={handleClearRecents}
                   hitSlop={12}
-                  style={styles.clearRecentBtn}
+                  style={({ pressed }) => [styles.clearRecentBtn, pressed && { opacity: 0.7 }]}
                   accessibilityRole="button"
                   accessibilityLabel="Clear recent searches"
                 >
@@ -581,7 +581,7 @@ function makeStyles(color: ColorTheme) {
       fontWeight: font.weight.semibold,
       color: color.inkGlassMuted,
       textTransform: 'uppercase',
-      letterSpacing: 0.5,
+      letterSpacing: font.tracking.section,
     },
     clearRecentBtn: {
       // Tap target ≥ 44pt — hitSlop on the Pressable bumps the

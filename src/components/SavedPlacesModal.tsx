@@ -315,7 +315,7 @@ export default function SavedPlacesModal({
               <AppText variant="body" style={styles.errorText}>{loadError}</AppText>
               <Pressable
                 onPress={load}
-                style={({ pressed }) => [styles.retryBtn, pressed && { opacity: 0.8 }]}
+                style={({ pressed }) => [styles.retryBtn, pressed && { backgroundColor: color.errorPressed }]}
                 accessibilityRole="button"
                 accessibilityLabel="Retry loading saved places"
               >
@@ -343,7 +343,11 @@ export default function SavedPlacesModal({
                 }
                 setAdding(true);
               }}
-              style={[styles.addBtn, !canShowAddForm && styles.addBtnDisabled]}
+              style={({ pressed }) => [
+                styles.addBtn,
+                !canShowAddForm && styles.addBtnDisabled,
+                pressed && canShowAddForm && { opacity: 0.85 },
+              ]}
               accessibilityRole="button"
               accessibilityLabel={
                 canShowAddForm
@@ -366,7 +370,7 @@ export default function SavedPlacesModal({
                 value={nameInput}
                 onChangeText={setNameInput}
                 placeholder="e.g. Home, Work, Mom's"
-                placeholderTextColor={color.textMuted}
+                placeholderTextColor={color.placeholderText}
                 maxLength={MAX_NAME_LENGTH}
                 style={styles.input}
                 autoFocus

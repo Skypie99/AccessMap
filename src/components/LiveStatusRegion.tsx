@@ -145,7 +145,7 @@ export default function LiveStatusRegion() {
             {display.action ? (
               <Pressable
                 onPress={display.action.onPress}
-                style={styles.action}
+                style={({ pressed }) => [styles.action, pressed && { opacity: 0.7 }]}
                 accessibilityRole="button"
                 accessibilityLabel={display.action.label}
                 hitSlop={8}

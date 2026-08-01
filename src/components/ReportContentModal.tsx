@@ -556,7 +556,7 @@ const makeStyles = (color: ColorTheme) =>
       // (FAIL). Same arbitrated pair FeedbackModal uses on this material.
       color: color.inkGlassMuted,
       textTransform: 'uppercase',
-      letterSpacing: 0.5,
+      letterSpacing: font.tracking.section,
       fontWeight: font.weight.semibold,
       marginTop: spacing.sm,
     },

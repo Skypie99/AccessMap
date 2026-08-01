@@ -310,7 +310,7 @@ export default function MyWatchedModal({ visible, onClose, onSelectFlag, onViewO
           <View style={styles.header}>
             <AppText ref={titleRef} variant="heading" style={styles.title} accessibilityRole="header">Watched Flags</AppText>
             {flags.length > 0 && (
-              <Pressable onPress={handleClearAll} hitSlop={10} style={styles.clearBtn}
+              <Pressable onPress={handleClearAll} hitSlop={10} style={({ pressed }) => [styles.clearBtn, pressed && { opacity: 0.7 }]}
                 accessibilityRole="button"
                 accessibilityLabel={`Clear all ${flags.length} watched flags`}
                 accessibilityHint="Asks you to confirm before removing all watched flags"
@@ -425,7 +425,7 @@ export default function MyWatchedModal({ visible, onClose, onSelectFlag, onViewO
                   ship the same), never error-on-glass. */}
               <View style={styles.errorBanner}>
                 <AppText variant="body" style={styles.errorText}>{loadError}</AppText>
-                <Pressable onPress={() => void load()} style={({ pressed }) => [styles.retryBtn, pressed && { opacity: 0.8 }]} accessibilityRole="button" accessibilityLabel="Retry loading watched flags">
+                <Pressable onPress={() => void load()} style={({ pressed }) => [styles.retryBtn, pressed && { backgroundColor: color.errorPressed }]} accessibilityRole="button" accessibilityLabel="Retry loading watched flags">
                   <AppText variant="label" style={styles.retryText}>Retry</AppText>
                 </Pressable>
               </View>

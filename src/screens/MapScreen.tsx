@@ -2973,7 +2973,11 @@ export default function MapScreen() {
                   setPresetNameModalOpen(false);
                 }}
                 disabled={savingPreset}
-                style={[styles.nameBtn, styles.nameBtnCancel]}
+                style={({ pressed }) => [
+                  styles.nameBtn,
+                  styles.nameBtnCancel,
+                  pressed && { backgroundColor: color.borderPressed },
+                ]}
                 accessibilityRole="button"
                 accessibilityLabel="Cancel"
                 {...a11yToggle({ disabled: savingPreset })}
@@ -2983,11 +2987,15 @@ export default function MapScreen() {
               <Pressable
                 onPress={submitSavePreset}
                 disabled={savingPreset || presetNameDraft.trim().length === 0}
-                style={[
+                style={({ pressed }) => [
                   styles.nameBtn,
                   styles.nameBtnSave,
                   (savingPreset || presetNameDraft.trim().length === 0) &&
                     styles.nameBtnSaveDisabled,
+                  pressed &&
+                    !(savingPreset || presetNameDraft.trim().length === 0) && {
+                      backgroundColor: color.ctaFillPressed,
+                    },
                 ]}
                 accessibilityRole="button"
                 accessibilityLabel="Save preset"
@@ -3061,7 +3069,11 @@ export default function MapScreen() {
                   setNameModalOpen(false);
                 }}
                 disabled={savingSet}
-                style={[styles.nameBtn, styles.nameBtnCancel]}
+                style={({ pressed }) => [
+                  styles.nameBtn,
+                  styles.nameBtnCancel,
+                  pressed && { backgroundColor: color.borderPressed },
+                ]}
                 accessibilityRole="button"
                 accessibilityLabel="Cancel"
                 // A11Y-219: its sibling Confirm announces disabled; this one
@@ -3073,10 +3085,14 @@ export default function MapScreen() {
               <Pressable
                 onPress={submitSaveSet}
                 disabled={savingSet || nameDraft.trim().length === 0}
-                style={[
+                style={({ pressed }) => [
                   styles.nameBtn,
                   styles.nameBtnSave,
                   (savingSet || nameDraft.trim().length === 0) && styles.nameBtnSaveDisabled,
+                  pressed &&
+                    !(savingSet || nameDraft.trim().length === 0) && {
+                      backgroundColor: color.ctaFillPressed,
+                    },
                 ]}
                 accessibilityRole="button"
                 accessibilityLabel="Save filter set"

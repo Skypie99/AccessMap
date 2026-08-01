@@ -119,7 +119,7 @@ const makeStyles = (color: ColorTheme) =>
       fontWeight: font.weight.bold,
       color: color.textStrong,
       textTransform: 'uppercase',
-      letterSpacing: 0.6,
+      letterSpacing: font.tracking.section,
     },
     list: { gap: spacing.sm },
     row: {

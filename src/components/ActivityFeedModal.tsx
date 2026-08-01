@@ -291,7 +291,7 @@ export default function ActivityFeedModal({ visible, onClose, onSelectFlag, onVi
               <AppText variant="body" style={styles.errorText}>{loadError}</AppText>
               <Pressable
                 onPress={load}
-                style={({ pressed }) => [styles.retryBtn, pressed && { opacity: 0.8 }]}
+                style={({ pressed }) => [styles.retryBtn, pressed && { backgroundColor: color.errorPressed }]}
                 accessibilityRole="button"
                 accessibilityLabel="Retry loading activity"
               >
@@ -479,7 +479,7 @@ const makeStyles = (color: ColorTheme) =>
       fontWeight: font.weight.bold,
       color: color.textStrong,
       textTransform: 'uppercase',
-      letterSpacing: 0.6,
+      letterSpacing: font.tracking.section,
     },
     sectionHeaderCount: { fontSize: font.size.xs, color: color.inkGlassMuted },
     row: {

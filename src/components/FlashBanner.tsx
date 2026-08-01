@@ -137,7 +137,11 @@ export default function FlashBanner({
       <Animated.View style={{ opacity: progress, transform: [{ translateY }] }}>
         <Pressable
           onPress={onDismiss}
-          style={[styles.pill, tone === 'info' ? styles.pillInfo : styles.pillSuccess]}
+          style={({ pressed }) => [
+            styles.pill,
+            tone === 'info' ? styles.pillInfo : styles.pillSuccess,
+            pressed && { opacity: 0.85 },
+          ]}
           accessibilityRole="button"
           accessibilityLabel={display}
           accessibilityHint="Tap to dismiss"

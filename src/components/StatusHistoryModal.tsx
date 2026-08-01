@@ -35,7 +35,7 @@ import { STATUS_LABELS } from '@/lib/flags';
 import { relativeTime } from '@/lib/relativeTime';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { font, radius, spacing } from '@/theme';
-import { X } from 'lucide-react-native';
+import { History, X } from 'lucide-react-native';
 import { decorativeProps, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
 import {
   formatHistoryEntry,
@@ -183,6 +183,7 @@ export default function StatusHistoryModal({ visible, flagId, onClose }: Props) 
               // It says less now, and everything it says is true in both cases.
               // AGENT-PROPOSED wording; final phrasing is Sky's, via BP16.
               <View style={styles.emptyWrap}>
+                <History size={32} color={color.inkGlassMuted} strokeWidth={2.2} {...decorativeProps} />
                 <AppText variant="heading" style={styles.emptyTitle}>No history yet</AppText>
                 <AppText variant="body" style={styles.emptyBody}>
                   Status changes will appear here once this flag has been verified or resolved.

@@ -1003,7 +1003,7 @@ export default function TasksScreen() {
           {searchText.length > 0 && (
             <Pressable
               onPress={() => setSearchText('')}
-              style={styles.searchClearBtn}
+              style={({ pressed }) => [styles.searchClearBtn, pressed && { opacity: 0.7 }]}
               accessibilityRole="button"
               accessibilityLabel="Clear search"
               hitSlop={8}
@@ -1387,6 +1387,9 @@ export default function TasksScreen() {
                 >
                   {loadingMore ? (
                     <ActivityIndicator
+                      // inkSelect — the arbitrated load-more ink on glass
+                      // (GLASS.md §2 inks table). Was platform-grey.
+                      color={color.inkSelect}
                       accessibilityLabel="Loading more flags"
                       {...a11yToggle({ busy: true })}
                     />
@@ -2233,7 +2236,7 @@ const makeStyles = (color: ColorTheme, reduceTransparency: boolean) => {
       // stop (textMuted #666 measured 4.10:1 there — forked deeper).
       color: color.inkOnStage,
       textTransform: 'uppercase',
-      letterSpacing: 0.8,
+      letterSpacing: font.tracking.section,
     },
     sectionCountPill: {
       backgroundColor: color.brandSoft,

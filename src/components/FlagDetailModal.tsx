@@ -1461,10 +1461,11 @@ export default function FlagDetailModal({
                         <Pressable
                           onPress={() => void handleReopenSubmit()}
                           disabled={reopenBusy || !reopenText.trim()}
-                          style={[
+                          style={({ pressed }) => [
                             styles.actionBtn,
                             styles.reopenSubmitBtn,
                             (reopenBusy || !reopenText.trim()) && styles.reopenSubmitBtnDisabled,
+                            pressed && !(reopenBusy || !reopenText.trim()) && { backgroundColor: color.ctaFillPressed },
                           ]}
                           accessibilityRole="button"
                           accessibilityLabel="Submit reopen request"
@@ -1610,7 +1611,7 @@ export default function FlagDetailModal({
                 ) : comments.length === 0 ? (
                   <View style={styles.commentsEmptyContainer}>
                     <MessageCircle
-                      size={24}
+                      size={32}
                       color={color.inkGlassMuted}
                       strokeWidth={2} {...decorativeProps}
                     />

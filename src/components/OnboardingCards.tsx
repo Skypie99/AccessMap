@@ -439,7 +439,15 @@ export default function OnboardingCards({ onDone }: Props) {
         </View>
 
         {/* Actions */}
-        <View style={[styles.actions, showDecline && styles.actionsTight]}>
+        <View
+          // BP-sweep: the top bar already derives from insets; the CTA row's
+          // 36/sm pads were still hardcoded guesses. Floor preserved.
+          style={[
+            styles.actions,
+            showDecline && styles.actionsTight,
+            { paddingBottom: Math.max(showDecline ? spacing.sm : 36, insets.bottom + spacing.sm) },
+          ]}
+        >
           <Pressable
             onPress={() => goTo(index - 1)}
             disabled={isFirst}
