@@ -98,6 +98,37 @@ export async function signOut(userId?: string) {
       console.warn('[signOut] push token clear failed (silent):', e);
     }
   }
+  // PL-2 / IO-5 (security audit 2026-07-31) — CACHE STORAGE SURVIVES SIGN-OUT.
+  //
+  // On web the service worker caches every successful GET to Supabase, which
+  // includes PostgREST rows: the flags this user reported, with lat/lng and
+  // description. `signOut` cleared AsyncStorage, the tile cache and the push
+  // token — a deliberate teardown that simply never learned about Cache
+  // Storage, because nothing in src/ has ever touched it. So a signed-out
+  // browser still holds the previous user's reported locations, and the
+  // offline fallback can serve them to whoever signs in next (the Cache API
+  // keys on URL; the Authorization header is not part of the key).
+  //
+  // ★ Outside the `if (userId)` block on purpose. Cache Storage is
+  // origin-scoped, not user-scoped, so there is nothing to key on — and every
+  // caller that does `void signOut()` with no argument would otherwise skip
+  // the purge entirely, which is most of them.
+  //
+  // ★ Swept by prefix, not by name. The names are computed
+  // (`'accessmap-' + CACHE_VERSION`), so a hardcoded delete would silently
+  // stop working the next time anyone bumps the version — the failure mode
+  // being a purge that looks like it ran and did nothing.
+  if (typeof caches !== 'undefined') {
+    try {
+      const keys = await caches.keys();
+      await Promise.all(
+        keys.filter((k) => k.startsWith('accessmap-')).map((k) => caches.delete(k)),
+      );
+    } catch (e) {
+      console.warn('[signOut] cache storage clear failed (silent):', e);
+    }
+  }
+
   // F50 (re-sweep): supabase.auth.signOut() errors were ignored by every
   // caller (`void signOut(...)`) — an offline tap on Sign out cleared the
   // caches above, then SILENTLY left the session alive. Surface the failure.
