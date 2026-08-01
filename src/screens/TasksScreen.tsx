@@ -82,6 +82,7 @@ import { hydrateGlassMode, toggleGlassMode, useGlassMode } from '@/lib/glassMode
 import { useDrawer, useDrawerTrigger } from '@/lib/drawerContext';
 import { useSharedModals } from '@/lib/sharedModalsContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { safeImageUrl } from '@/lib/remoteImageUrl';
 
 // Code-split: the flag-detail sheet only opens when a card is tapped. React.lazy
 // moves its (large) code into a shared async web chunk — the SAME chunk is reused
@@ -1621,6 +1622,12 @@ const FlagCard = memo(function FlagCard({
   // Tracks the remote image's load so a shimmer covers the blank gap until the
   // photo actually paints (not just until it's scrolled into view).
   const [photoLoaded, setPhotoLoaded] = useState(false);
+  // TB-3 (security audit 2026-07-31): these two thumbnails and the lightbox are
+  // raw <Image>s, so they bypass RemoteImage's allow-list. `photo_url` is an
+  // unconstrained column a hostile row can point at any server, which would
+  // beacon this viewer's IP. Reject anything outside our Storage origin; a
+  // rejected URL reads as "no photo", which the gates below already handle.
+  const safePhotoUrl = useMemo(() => safeImageUrl(flag.photo_url), [flag.photo_url]);
   // Compute distance + ETA once per card per location change. Without the
   // memo this would recompute on every parent state flip (busyId, flash).
   const distanceInfo = useMemo(() => {
@@ -1833,7 +1840,7 @@ const FlagCard = memo(function FlagCard({
         )}
       </View>
       <View style={styles.cardBody}>
-        {flag.photo_url && !photoError ? (
+        {safePhotoUrl && !photoError ? (
           selectionActive ? (
             // F17: in bulk-select mode the whole card is the selection toggle.
             // Render the thumbnail as a NON-interactive View so a tap on the
@@ -1848,7 +1855,7 @@ const FlagCard = memo(function FlagCard({
             >
               {photoInView && (
                 <Image
-                  source={{ uri: flag.photo_url }}
+                  source={{ uri: safePhotoUrl }}
                   style={styles.cardThumb}
                   onLoad={() => setPhotoLoaded(true)}
                   onError={() => setPhotoError(true)}
@@ -1878,7 +1885,7 @@ const FlagCard = memo(function FlagCard({
             >
               {photoInView && (
                 <Image
-                  source={{ uri: flag.photo_url }}
+                  source={{ uri: safePhotoUrl }}
                   style={styles.cardThumb}
                   onLoad={() => setPhotoLoaded(true)}
                   onError={() => setPhotoError(true)}
@@ -1942,10 +1949,10 @@ const FlagCard = memo(function FlagCard({
       {/* Full-screen photo lightbox — only mounts when the thumbnail exists
           and has loaded successfully. Tapping the thumbnail (or the close
           button inside the modal) dismisses it. */}
-      {flag.photo_url && !photoError ? (
+      {safePhotoUrl && !photoError ? (
         <PhotoLightboxModal
           visible={lightboxOpen}
-          photoUrl={flag.photo_url}
+          photoUrl={safePhotoUrl}
           caption={`${CATEGORY_LABELS[flag.category]} accessibility issue`}
           onClose={() => setLightboxOpen(false)}
         />

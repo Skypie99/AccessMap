@@ -259,10 +259,16 @@ describe('the carve-out stayed narrow (§SKY-6a)', () => {
       });
 
     // The marker literal is what a second parser would have to contain.
+    //
+    // Security audit 2026-07-31: the canonical definition moved from `flags.ts`
+    // to `remoteImageUrl.ts` so the render-side allow-list (TB-3/IO-3) and the
+    // SR-050 path derivation share ONE source of truth instead of two copies
+    // that could drift. `flags.ts` now imports `STORAGE_PUBLIC_PREFIX`. The
+    // invariant this test protects is unchanged and just as strict: exactly one
+    // file in `src/` may contain the literal, and it is the one named here.
+    const OWNER = `${path.sep}remoteImageUrl.ts`;
     const offenders = walk(SRC).filter(
-      (f) =>
-        !f.endsWith(`${path.sep}flags.ts`) &&
-        fs.readFileSync(f, 'utf8').includes('/storage/v1/object/public/'),
+      (f) => !f.endsWith(OWNER) && fs.readFileSync(f, 'utf8').includes('/storage/v1/object/public/'),
     );
     expect(offenders).toEqual([]);
   });

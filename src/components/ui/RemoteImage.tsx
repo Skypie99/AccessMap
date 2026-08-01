@@ -26,6 +26,7 @@ import {
 } from 'react-native';
 import { ImageOff } from 'lucide-react-native';
 import { useColor } from '@/theme/ThemeContext';
+import { isAllowedImageUrl } from '@/lib/remoteImageUrl';
 
 export interface RemoteImageProps extends Omit<ImageProps, 'source' | 'style'> {
   /** Remote image URL. Null/undefined renders the fallback. */
@@ -58,7 +59,13 @@ export function RemoteImage({
     setFailed(false);
   }
 
-  if (!uri || failed) {
+  // TB-3/IO-3/IO-1 (security audit 2026-07-31): `photo_url` and `avatar_url`
+  // are unconstrained text columns, so a hostile row can point this <Image> at
+  // any server and harvest the viewer's IP. Reject anything that is not this
+  // project's Storage origin or a local just-picked file; a rejected URL is
+  // treated exactly like a dead one and lands in the fallback below. See
+  // `@/lib/remoteImageUrl` for why the client check is only half the fix.
+  if (!uri || failed || !isAllowedImageUrl(uri)) {
     if (fallback !== undefined) return <>{fallback}</>;
     return (
       <View

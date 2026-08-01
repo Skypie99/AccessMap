@@ -35,9 +35,18 @@ jest.mock('@/theme/ThemeContext', () => {
 // Fixtures
 // ---------------------------------------------------------------------------
 
+// Security audit 2026-07-31 (TB-3): RemoteImage now renders its fallback for
+// any URL outside our Storage origin, so `https://cdn/...` — which in
+// production would be exactly the attacker-controlled shape the allow-list
+// exists to reject — no longer renders as an image. These fixtures use the
+// real public-object shape the app actually produces, so these tests keep
+// exercising the gallery rather than the allow-list. Coverage of the reject
+// path lives in `src/lib/__tests__/remoteImageUrl.test.ts`.
+const STORAGE_ORIGIN = new URL(process.env.EXPO_PUBLIC_SUPABASE_URL as string).origin;
+
 function photos(n: number): GalleryPhoto[] {
   return Array.from({ length: n }, (_, i) => ({
-    url: `https://cdn/photo-${i}.jpg`,
+    url: `${STORAGE_ORIGIN}/storage/v1/object/public/flag-photos/uid/photo-${i}.jpg`,
     position: i,
   }));
 }

@@ -6,6 +6,7 @@ import { trackEvent } from './analytics';
 import { containsBlockedTerm } from '@/moderation/blockedTerms';
 import { CONTENT_BLOCKED_MESSAGE } from './copy';
 import type { FlagCategory, FlagRow, FlagSeverity, FlagStatus } from '@/types/database';
+import { STORAGE_PUBLIC_PREFIX } from '@/lib/remoteImageUrl';
 
 export const FLAG_PHOTOS_BUCKET = 'flag-photos';
 
@@ -893,7 +894,7 @@ export async function uploadFlagPhoto(
  * the photo.
  *
  * ─── IT FAILS CLOSED, AND THAT IS THE WHOLE DESIGN ────────────────────────
- * It anchors on the KNOWN constant `/storage/v1/object/public/<bucket>/` rather
+ * It anchors on the KNOWN constant `STORAGE_PUBLIC_PREFIX` + `<bucket>/` rather
  * than guessing at path segments, strips any query or fragment, decodes percent
  * escapes, and returns `null` the moment anything does not line up. A `null`
  * means "I could not be sure", and the caller deletes NOTHING. Never delete on
@@ -911,7 +912,7 @@ export async function uploadFlagPhoto(
  * regardless; what is worth knowing is only that a derivation failed and why.
  */
 export function storagePathFromPublicUrl(url: string, uid: string): string | null {
-  const marker = `/storage/v1/object/public/${FLAG_PHOTOS_BUCKET}/`;
+  const marker = `${STORAGE_PUBLIC_PREFIX}${FLAG_PHOTOS_BUCKET}/`;
   const at = url.indexOf(marker);
   if (at === -1) {
     console.warn('[flags] SR-050: photo URL did not match the expected public-object shape');

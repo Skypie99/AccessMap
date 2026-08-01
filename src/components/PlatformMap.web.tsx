@@ -21,6 +21,7 @@ import { useAuth } from '@/lib/auth';
 import { getCachedTile, setCachedTile } from '@/lib/tileCache';
 import { track } from '@/lib/analytics';
 import { colorForCell, HEATMAP_FILL_OPACITY, type HeatCell, type HeatmapMode } from '@/lib/heatmap';
+import { safeImageUrl } from '@/lib/remoteImageUrl';
 
 export interface PlatformMapRegion {
   latitude: number;
@@ -532,9 +533,9 @@ function ClusteredMarkers({
                 <div style={{ fontSize: 11, color: '#666', marginTop: 2, fontWeight: 600 }}>
                   Reported {relativeTime(flag.created_at)}
                 </div>
-                {flag.photo_url ? (
+                {safeImageUrl(flag.photo_url) ? (
                   <PopupPhoto
-                    src={flag.photo_url}
+                    src={safeImageUrl(flag.photo_url) as string}
                     alt={`Photo of ${CATEGORY_LABELS[flag.category]} accessibility issue`}
                     mutedColor="#666"
                   />
