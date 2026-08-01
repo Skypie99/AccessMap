@@ -580,7 +580,7 @@ const makeItemStyles = (color: ColorTheme) =>
     item: {
       flexDirection: 'row',
       alignItems: 'center',
-      paddingVertical: 15,
+      paddingVertical: spacing.lg,
       paddingHorizontal: spacing.lg,
       gap: spacing.md,
       minHeight: 56,

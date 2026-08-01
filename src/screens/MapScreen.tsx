@@ -1195,6 +1195,12 @@ export default function MapScreen() {
   }, [filtersActive, loadingFlags, loadError, filteredFlags.length, flags.length]);
 
   const showEmptyCard = filtersActive && !loadingFlags && !loadError && filteredFlags.length === 0;
+  // BP-10/E2: the sibling case the filtered card never covered — NO filters,
+  // genuinely zero flags in the area. Previously the user got a bare
+  // "Showing 0 flags" pill over an empty map and nothing else. Same material,
+  // no reset chips (there is nothing to reset) — just the invitation.
+  const showTrueEmptyCard =
+    !filtersActive && !loadingFlags && !loadError && flags.length === 0;
   const previouslyEmptyRef = useRef(false);
   useEffect(() => {
     if (showEmptyCard && !previouslyEmptyRef.current) {
@@ -2500,6 +2506,34 @@ export default function MapScreen() {
             >
               <AppText variant="label" style={styles.emptyCardBtnText}>Reset all filters</AppText>
             </Pressable>
+          </GlassSurface>
+        )}
+
+        {/* BP-10/E2 — the true-zero card (unfiltered, empty area). Same
+            A11Y-213 structure as its filtered sibling above: material
+            container stays a non-accessible leaf, the summary node carries
+            the semantics. NEW COPY (2 strings) — flagged in DECISIONS FOR
+            SKY; the "Report" it names is the FAB's own visible label. */}
+        {showTrueEmptyCard && (
+          <GlassSurface
+            style={styles.emptyCard}
+            variant="row"
+            forceEngineered
+            overlayTint={color.glassMapWash}
+            borderRadius={radius.lg}
+          >
+            <MapPin size={26} color={color.inkGlassMuted} strokeWidth={2} {...decorativeProps} />
+            <View
+              style={styles.emptyCardSummary}
+              accessible
+              accessibilityRole="alert"
+              accessibilityLiveRegion="polite"
+            >
+              <AppText variant="heading" style={styles.emptyCardTitle}>No barriers reported here yet</AppText>
+              <AppText variant="body" style={styles.emptyCardBody}>
+                Be the first — tap Report to drop a pin on an accessibility barrier you know about.
+              </AppText>
+            </View>
           </GlassSurface>
         )}
 

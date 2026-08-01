@@ -382,6 +382,10 @@ export const font = {
     heading: -0.3, // font.size.lg (16pt) default — heading variant at base size
     none: 0, // body / mono — no tracking
     loose: 0.4, // all-caps labels / uppercase pill text (badge/pill scale)
+    // Uppercase SECTION labels (xs/caption size, inkGlassMuted) — the app's
+    // dominant practice was 0.8 across Legend/Profile; About (0.6) and
+    // FlagDetail (0.5) drifted. Named + converged in the pre-ship polish.
+    section: 0.8,
     // Wide editorial eyebrow — the ScreenHeader all-caps micro-label practice,
     // tokenized (pre-ship polish 2026-08-01). Eyebrows are ROOMY (1.2);
     // dense pill caps stay on `loose`. ScreenHeader.EYEBROW_TRACKING derives

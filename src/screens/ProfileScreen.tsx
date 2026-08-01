@@ -2304,7 +2304,7 @@ const makeStyles = (color: ColorTheme) =>
       fontWeight: font.weight.bold,
       color: color.inkGlassMuted, // arbitrated muted ink on the row glass
       textTransform: 'uppercase',
-      letterSpacing: 0.8,
+      letterSpacing: font.tracking.section,
     },
     pointHistoryRow: {
       flexDirection: 'row',
@@ -2430,7 +2430,7 @@ const makeStyles = (color: ColorTheme) =>
       fontSize: 11,
       color: color.inkGlassMuted, // arbitrated muted ink on the row glass
       textTransform: 'uppercase',
-      letterSpacing: 0.8,
+      letterSpacing: font.tracking.section,
       fontWeight: '600',
     },
     // Per-status pill row (open / verified / resolved / rejected). Uses
@@ -2464,7 +2464,7 @@ const makeStyles = (color: ColorTheme) =>
     // Zero-count pills fade so the eye lands on what's actually there.
     statusPillDimmed: { opacity: 0.55 },
     statusPillCount: { fontSize: 18, fontWeight: '700' },
-    statusPillLabel: { fontSize: 10, fontWeight: '700', textTransform: 'uppercase' },
+    statusPillLabel: { fontSize: 10, fontWeight: '700', textTransform: 'uppercase', letterSpacing: font.tracking.loose },
     myReportsBtn: {
       // Material via <GlassSurface variant="row" forceEngineered> (engineered —
       // outside the blur cluster, budget-free). No bg here; layout + shadow stay.
@@ -2495,7 +2495,7 @@ const makeStyles = (color: ColorTheme) =>
       // Section headers sit on the raw stage — inkOnStage (textMuted is below AA there).
       color: color.inkOnStage,
       textTransform: 'uppercase',
-      letterSpacing: 0.8,
+      letterSpacing: font.tracking.section,
       fontWeight: '700',
     },
     nameRow: { flexDirection: 'row', gap: 8 },

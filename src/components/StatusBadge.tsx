@@ -95,7 +95,7 @@ const styles = StyleSheet.create({
   badge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
+    gap: spacing.tight,
     borderRadius: radius.circle,
   },
   badgeMd: {

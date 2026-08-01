@@ -271,7 +271,7 @@ const makeStyles = (color: ColorTheme) =>
     fontSize: font.size.caption,
     color: color.inkGlassMuted,
     textTransform: 'uppercase',
-    letterSpacing: 0.8,
+    letterSpacing: font.tracking.section,
     marginTop: spacing.tight,
     marginBottom: 2,
     fontWeight: font.weight.bold,

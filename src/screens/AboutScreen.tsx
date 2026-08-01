@@ -313,7 +313,7 @@ const makeStyles = (color: ColorTheme) =>
       // sheet's worst-case backdrop; inkGlassMuted = 6.24:1 light / 6.51:1 dark.
       color: color.inkGlassMuted,
       textTransform: 'uppercase',
-      letterSpacing: 0.6,
+      letterSpacing: font.tracking.section,
       fontWeight: font.weight.bold,
       marginTop: spacing.sm,
     },

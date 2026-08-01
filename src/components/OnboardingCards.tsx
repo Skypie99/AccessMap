@@ -23,7 +23,7 @@ import {
 } from '@/lib/pushNotifications';
 import { a11yToggle, decorativeProps, useFocusOnOpen } from '@/lib/accessibility';
 import { SEVERITY_LABELS, SEVERITY_ORDER } from '@/lib/flags';
-import { font, radius, spacing, gradient } from '@/theme';
+import { color as staticColor, font, radius, spacing, gradient, shadow } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 
@@ -129,7 +129,9 @@ const CARDS: Card[] = [
   },
   {
     icon: Sparkles,
-    iconColor: '#FBB024',
+    // goldAccent is mode-independent, so the static import is correct here
+    // (the card defs are module-level, outside useColor's reach). BP-8.
+    iconColor: staticColor.goldAccent,
     title: "You're all set",
     body: 'Go explore your neighbourhood. Every barrier you flag helps someone navigate the world a little easier.',
     isFinal: true,
@@ -768,11 +770,9 @@ const makeStyles = (color: ColorTheme) =>
       alignItems: 'center',
       minHeight: 44,
       justifyContent: 'center',
-      shadowColor: '#1466E0',
-      shadowOpacity: 0.45,
-      shadowRadius: 12,
-      shadowOffset: { width: 0, height: 4 },
-      elevation: 6,
+      // The tokenized brand glow — was a hand-rolled 0.45 sibling of the
+      // SignIn 0.55; every CTA glow now rides shadow.glowBrand (BP-8).
+      ...shadow.glowBrand,
     },
     primaryBtnText: {
       // Weight comes from the label variant's family (PublicSans SemiBold);

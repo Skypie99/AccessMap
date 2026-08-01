@@ -544,14 +544,24 @@ const makeStyles = (color: ColorTheme) =>
       fontWeight: font.weight.semibold,
     },
     // S3: "Open details ›" affordance — the callout's next step into the ledger.
+    // BP-10/E1 — callout parity: the web popup ships a FILLED 44pt CTA while
+    // native was a bare text link; the payoff moment now matches. ctaFill is
+    // the mode-independent white-safe fill (5.24:1 both themes). The whole
+    // callout stays one tap target (Callout.onPress) — this is visual weight,
+    // not a second control.
     calloutCta: {
-      marginTop: spacing.xs,
+      marginTop: spacing.sm,
+      minHeight: 44,
+      borderRadius: radius.md,
+      backgroundColor: color.ctaFill,
+      paddingHorizontal: spacing.md,
       flexDirection: 'row',
       alignItems: 'center',
+      justifyContent: 'center',
     },
     calloutCtaText: {
       fontSize: font.size.sm,
-      color: color.brandText,
+      color: color.textOnBrand,
       fontWeight: font.weight.bold,
       letterSpacing: 0.2,
     },

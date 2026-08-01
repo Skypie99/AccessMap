@@ -1987,7 +1987,7 @@ const makeStyles = (color: ColorTheme) =>
       fontWeight: font.weight.semibold,
       color: color.inkGlassMuted,
       textTransform: 'uppercase',
-      letterSpacing: 0.5,
+      letterSpacing: font.tracking.section,
     },
     beforeAfterImage: {
       width: '100%',
@@ -2058,7 +2058,7 @@ const makeStyles = (color: ColorTheme) =>
       fontWeight: font.weight.semibold,
       color: color.inkGlassMuted,
       textTransform: 'uppercase',
-      letterSpacing: 0.5,
+      letterSpacing: font.tracking.section,
       marginTop: spacing.sm,
     },
     description: { fontSize: font.size.md, color: color.textStrong, lineHeight: 21 },
@@ -2246,7 +2246,7 @@ const makeStyles = (color: ColorTheme) =>
       fontWeight: font.weight.bold,
       color: color.inkGlassMuted,
       textTransform: 'uppercase',
-      letterSpacing: 0.5,
+      letterSpacing: font.tracking.section,
     },
     editInput: {
       borderWidth: 1,
@@ -2456,7 +2456,7 @@ const makeStyles = (color: ColorTheme) =>
       fontWeight: font.weight.bold,
       color: color.inkGlassMuted,
       textTransform: 'uppercase',
-      letterSpacing: 0.5,
+      letterSpacing: font.tracking.section,
     },
     reopenInput: {
       borderWidth: 1,
