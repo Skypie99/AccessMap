@@ -12,7 +12,9 @@
 
 | # | Surface | Setting | What to check | PASS | FAIL |
 |---|---|---|---|---|---|
-| **D-B6** | Help, then About | 1.0× / 1.3× / AX5 | The close ✕ stays fully on-screen and tappable at all three sizes. **A clip upgrades SR-099 to BLOCKING and merge stays forbidden (§SKY-3h).** | ☐ | ☐ |
+| **D-B6** | Help, then About | 1.0× / 1.3× / AX5 | The close ✕ stays fully on-screen and tappable at all three sizes. | ☐ | ☐ |
+
+> **DEFERRED BY SKY, 2026-07-31.** She merged without this row, which is her call to make on her own gate. Kept at the top because it is still the highest-value two minutes in this document, not because it blocks anything now. The underlying defect (SR-064/099) was fixed in an earlier train — this row verifies that fix at AX5. If it did regress, a sighted user at the largest text size could not close Help or About by the ✕, though the back/escape gesture still dismisses both. **Recommended before App Store submission**, where an AX5 reviewer walk is plausible.
 
 ---
 

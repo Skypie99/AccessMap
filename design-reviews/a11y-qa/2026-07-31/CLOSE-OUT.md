@@ -137,13 +137,28 @@ Two honest options, both Sky's words:
 
 ---
 
+## §4b D-B6 — DEFERRED BY SKY (2026-07-31), recorded not dropped
+
+Sky elected to **defer D-B6** and merge without it. That is hers to decide — it is her gate (§SKY-3h). Recorded here so the deferral is visible rather than silently absorbed.
+
+**What D-B6 checks:** the close ✕ on Help and About, at 1.0× / 1.3× / AX5 text.
+
+**What is and isn't known:**
+- The underlying defect (SR-064/099, the ✕ scrolling off-viewport) was **FIXED and shipped** in an earlier train. D-B6 is the *verification*, not the fix.
+- So the risk is not "a known bug ships" — it is "a fix ships unconfirmed at the largest text size".
+- **Blast radius if it did regress:** a user at AX5 could not close Help or About by the ✕. Both are `<Modal>`s with `onRequestClose`, so the Android back gesture and the iOS escape gesture still dismiss them — a screen-reader user retains a path out. A sighted AX5 user tapping only the ✕ would be stuck until they backgrounded the app.
+- **Cost to close it later:** ~2 minutes, any time, no rebuild.
+
+**Standing recommendation:** run it before the App Store submission, where an AX5 reviewer walk is plausible. It does not need to gate a local merge.
+
 ## §5 WHAT ONLY SKY CAN DO
 
 1. **Republish the privacy policy** (C-2) — Blocker.
 2. **Word C-1** — one sentence.
-3. **Run the device script** — `DEVICE-SCRIPT.md`. **D-B6 gates the merge** (§SKY-3h).
+3. **Run the device script** — `DEVICE-SCRIPT.md`. **D-B6 deferred by Sky 2026-07-31** (see §4b); recommended before App Store submission rather than before merge.
 4. **Decide the 3 remaining refresh affordances** (A11Y-222) — primary chrome, mockup gate.
-5. **Merge.** ⚠️ This branch is **105 commits ahead of main, only 18 of them mine** — the other 87 are the pre-existing ship-ready/R2 train. Merging this merges *that* too.
+5. **Merge.** ✅ **DONE 2026-07-31** — Sky fast-forwarded local `main` to this train (105 commits, only 18 of them this train's; the other 87 are the pre-existing ship-ready/R2 stack). **Not pushed** — `origin/main` remains at `512494a`.
+6. **Push**, when ready: `git -C ~/AccessMap push origin main`. This is what actually republishes the privacy page — GitHub Pages serves `/docs` from `main`.
 
 ---
 
