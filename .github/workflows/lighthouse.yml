@@ -4,6 +4,13 @@ on:
   pull_request:
     branches: [main]
 
+# S-4 (security audit 2026-07-31): this workflow had no `permissions:` block, so
+# it silently inherited the repo/org default GITHUB_TOKEN scope — which is not
+# declared anywhere in this repo and can be org-wide read-write. It only reads
+# the code and posts Lighthouse results, so pin it to the minimum.
+permissions:
+  contents: read
+
 jobs:
   lighthouse:
     name: Lighthouse Audit
