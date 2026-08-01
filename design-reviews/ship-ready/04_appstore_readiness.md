@@ -91,7 +91,7 @@ Exact per-question ASC questionnaire wording (visible only inside ASC); 13+-soci
 | B-11 | Crash reporting | **GAP-RECOMMENDED** [SR-006] | `src/lib/sentry.ts` = no-op stub; `App.tsx:207-208` comment still claims "App is wrapped by Sentry.wrap" (verified verbatim); `SENTRY_DISABLE_AUTO_UPLOAD` vestigial in eas.json preview+testflight | Re-add a crash reporter in Phase 2 (or accept release blindness knowingly — SKY DECISION); fix the stale comment either way. Post-submit you are blind to reviewer crashes without it. |
 | B-12 | Push wiring | **PRESENT + 2 rows** [SR-018/020] | Entitlements file (local-only): `aps-environment: development` — EAS regenerates per profile+credentials (store builds get production APNs) → SKY-VERIFY on the store build; `PUSH_NOTIF_TYPES_ENABLED:false` keeps the categories screen dead because nothing reads saved prefs (SR-020) | APNs key state = SKY-SIDE (EAS credentials). Dead surface = Phase-2 decision row (wire or remove). |
 | B-13 | Export compliance | **PRESENT** [SR-023] | `ITSAppUsesNonExemptEncryption: false` in app.json infoPlist (+ mirrored in local Info.plist); §A-10 confirms sufficiency | Keep true while no custom-crypto pod ships. |
-| B-14 | Reviewer demo account | **GAP-BLOCKING (SKY-SIDE)** [SR-017] | `2026-05-31_reviewer_test_account.sql` header: PROPOSE-ONLY, manual Auth-dashboard step, password never committed (good hygiene) | SKY-SIDE per §A-9: provision, apply, verify login, credentials into review notes. |
+| B-14 | Reviewer demo account | **GAP-BLOCKING (SKY-SIDE)** [SR-017] | `2026-05-31_reviewer_test_account.sql` header: PROPOSE-ONLY, manual Auth-dashboard step, password **WAS** committed — see CORRECTION 2026-07-31 below; this clause was false when written [S-2] | SKY-SIDE per §A-9: provision, apply, verify login, credentials into review notes. |
 | B-15 | `verify_jwt` for delete-account | **GAP-RECOMMENDED** [SR-010] | No root `supabase/config.toml` (verified); only `functions/notify-flag-status/config.toml` (`verify_jwt=false`) exists | Artifact B-γ below (config.toml, Sky-applied at deploy time — function config). |
 | B-16 | Stale doc/docblock claims | **GAP-LOW** [SR-019] | `docs/TESTFLIGHT_ACTION_ITEMS.md:127` "requires users to sign in before using any features" (verbatim, stale — guest exists); `src/lib/flags.ts:898` "table ensures only authenticated users can read rows" (stale since 2026-05-29 anon SELECT; note: fork-briefs cited :600-604 — the docblock MOVED to ~:892-900 after the photo-privacy fix added lines) | Phase-2 doc fixes; keep truth-of-record clean before review notes are written from these docs. |
 | B-17 | In-app privacy-policy link | **GAP-BLOCKING** [SR-002] | app.json:5 `privacyPolicyUrl` present; AboutScreen has prose only (no Linking.openURL of the policy anywhere in src — re-verified via grep) | Phase-2: visible link rows (Settings + About + near sign-up). §A-2. |
@@ -265,3 +265,23 @@ Grades: **PRESENT** (verified satisfied) · **GAP-BLOCKING** (submit fails or re
 | EU DSA trader status | **SKY-SIDE** | — | §A-13 | Declare non-trader or deselect EU for v1. |
 | Dead tables / dead config disposition | **SKY-DECISION ×4** | SR-020/025, SR-098, SR-009/084 | 04b §F-4 | `flag_verifications`, `comment_votes` (already broke comments once), `flag_edit_history`, `notification_preferences`: keep-and-fix or drop before review. |
 | Supabase dashboard hardening | **SKY-SIDE (cheap)** | SR-018 | §C-0, 04b C-4 | Leaked-password protection toggle; webhook-secret rotation + dashboard-webhook deletion; `verify_webhook_secret` revoke artifact ready. |
+
+
+> ### ⚠️ CORRECTION — 2026-07-31 (security audit train, Phase B, finding S-2)
+>
+> Row **B-14** above previously read *"password never committed (good hygiene)"*.
+> That was false, and it was the most recent authoritative statement in the whole
+> ledger — which is what made it dangerous. A false negative in an audit trail
+> suppresses re-detection more durably than the bug it hides; this audit found the
+> leak only by ignoring the ledger's conclusion and grepping HEAD directly.
+>
+> Actual state: the credential was committed by `9fd1cd9` (2026-05-31) in two
+> places, the 2026-06-02 cleanup fixed one, and the string is live in
+> `origin/main` of a **public** repo with six in-tree copies. **Rotate first** —
+> that is what ends the exposure; purging the files is hygiene, and a git-history
+> rewrite is cosmetic once rotation is done.
+>
+> B-14's own status (`GAP-BLOCKING (SKY-SIDE)`) was and remains correct.
+>
+> Detail: `security-audit/2026-07-31/LENS1_secrets_exposure.md` and the Phase B
+> artifact `security-audit/2026-07-31/phase-b/FORK_S1_credential_rotation.md`.

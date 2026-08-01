@@ -161,6 +161,27 @@ The linter flags this as `rls_policy_always_true` because the USING clause is `t
 
 **4f. Reviewer test account migration (`2026-05-31_reviewer_test_account.sql`):**
 
+> ### ⚠️ CORRECTION — 2026-07-31 (security audit train, Phase B, finding S-2)
+>
+> **The conclusion below is wrong and was wrong when written.** The credential
+> was committed, in TWO places, by `9fd1cd9` (2026-05-31). The 2026-06-02
+> cleanup (`c51c46a`) redacted the `.sql` migration comment only and missed the
+> credential table added in the same commit — so the string has been live in
+> `origin/main` of a **public** repo ever since. Six in-tree copies survive.
+>
+> The finding was closed by re-reading the one file it cited. **A secret finding
+> is closed by re-grepping the string across HEAD and history — never by
+> re-reading the one file the original finding named.**
+>
+> Re-rated **HIGH**. The exposure is real; live verification shows the exact
+> published address does not resolve to an account, but the password string is
+> public and a reviewer account exists at a one-character-different domain.
+> **Rotation is the fix and it is Sky's to perform.** Purging these files is
+> hygiene that belongs *after* rotation, so the historical text below is left
+> intact rather than quietly rewritten.
+>
+> Detail: `security-audit/2026-07-31/LENS1_secrets_exposure.md` (S-1, S-2).
+
 The file header says "PROPOSE-ONLY" and requires manual Step 1 (create auth user via dashboard). Critically, the file does NOT hardcode a password — it only populates profile + sample flags after the user exists. The Steve 2026-06-01 security report's finding ("password `AccessMap2026!` committed") appears to refer to an earlier draft or a different version of this file. The current file on disk has no hardcoded password. No action needed on this item — Dana's instruction to provision the account manually via the dashboard is the correct path.
 
 ---

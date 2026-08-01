@@ -83,7 +83,29 @@ introspection also **corrected the finding**:
    Policies → "Leaked password protection"). Currently **disabled** (advisor
    `auth_leaked_password_protection`). One toggle; no code.
 
-5. **[LOW] Reviewer test-account password is committed in git.**
+> ### ⚠️ CORRECTION — 2026-07-31 (security audit train, Phase B, finding S-2)
+>
+> **This finding was right, but under-rated and mis-scoped — and the ledger then
+> closed it as a false positive.** The credential was committed in TWO places by
+> `9fd1cd9` (2026-05-31); this entry cites only the `.sql` migration and misses
+> the credential table added in the same commit. The 2026-06-02 cleanup
+> (`c51c46a`) redacted the file this entry named and left the other, so the
+> string has been live in `origin/main` of a **public** repo ever since. Six
+> in-tree copies survive.
+>
+> **A secret finding is closed by re-grepping the string across HEAD and history
+> — never by re-reading the one file the original finding named.**
+>
+> Re-rated **HIGH**. Live verification shows the exact published address does not
+> resolve to an account, but the password string is public and a reviewer account
+> exists at a one-character-different domain. **Rotation is the fix and it is
+> Sky's to perform.** Purging these files is hygiene that belongs *after*
+> rotation, so the historical text below is left intact rather than quietly
+> rewritten.
+>
+> Detail: `security-audit/2026-07-31/LENS1_secrets_exposure.md` (S-1, S-2).
+
+5. **[HIGH — re-rated 2026-07-31; was [LOW]] Reviewer test-account password is committed in git.**
    `supabase/migrations/2026-05-31_reviewer_test_account.sql:10` hardcodes
    `AccessMap2026!`. It is **not applied live yet** (good). Before App Store
    submission: set the password in the dashboard only (not in a tracked file),
