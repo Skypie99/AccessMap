@@ -1156,16 +1156,21 @@ export interface CreateFlagResult {
 const MAX_FLAG_DESCRIPTION_LENGTH = 2000;
 
 /**
- * Defense-in-depth validation shared by createFlag + createAnonFlag. The DB
- * CHECK constraints (severity 1-5, category whitelist) and the Report form's
- * maxLength are the primary guards; validating here too gives a clean
- * client-side error and protects any future or untyped caller.
+ * Defense-in-depth validation shared by createFlag, createAnonFlag, and
+ * updateFlagContent. The DB CHECK constraints (severity 1-5, category
+ * whitelist) and the forms' maxLength are the primary guards; validating here
+ * too gives a clean client-side error and protects any future or untyped
+ * caller. Edit patches are partial, so each field validates only when present
+ * (an absent field is never sent to the DB at all).
  */
-function assertValidCategoryAndSeverity(category: FlagCategory, severity: FlagSeverity): void {
-  if (!Object.prototype.hasOwnProperty.call(CATEGORY_LABELS, category)) {
+function assertValidCategoryAndSeverity(
+  category: FlagCategory | undefined,
+  severity: FlagSeverity | undefined,
+): void {
+  if (category !== undefined && !Object.prototype.hasOwnProperty.call(CATEGORY_LABELS, category)) {
     throw new Error('Please choose a valid category.');
   }
-  if (!Number.isInteger(severity) || severity < 1 || severity > 5) {
+  if (severity !== undefined && (!Number.isInteger(severity) || severity < 1 || severity > 5)) {
     throw new Error('Severity must be a whole number from 1 to 5.');
   }
 }
@@ -1294,9 +1299,18 @@ export type FlagContentPatch = {
 };
 
 export async function updateFlagContent(flagId: string, patch: FlagContentPatch) {
+  // COR-1 (code-qa 2026-08-06): an owner edit runs the same trust-boundary
+  // guards as createFlag — otherwise edit lands what create refuses. The
+  // blocked-term half of that parity is Sky-gated (code-qa Q-1) and
+  // intentionally absent until she rules.
+  assertValidCategoryAndSeverity(patch.category, patch.severity);
+  const guarded: FlagContentPatch = { ...patch };
+  if (patch.description !== undefined) {
+    guarded.description = normalizeFlagDescription(patch.description);
+  }
   const { data, error } = await supabase
     .from('flags')
-    .update(patch)
+    .update(guarded)
     .eq('id', flagId)
     .select()
     .single();
