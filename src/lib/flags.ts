@@ -5,6 +5,7 @@ import * as ImageManipulator from 'expo-image-manipulator';
 import { trackEvent } from './analytics';
 import { containsBlockedTerm } from '@/moderation/blockedTerms';
 import { CONTENT_BLOCKED_MESSAGE } from './copy';
+import { isColumnMissing, isFunctionMissing } from './postgrestErrors';
 import type { FlagCategory, FlagRow, FlagSeverity, FlagStatus } from '@/types/database';
 import { STORAGE_PUBLIC_PREFIX } from '@/lib/remoteImageUrl';
 
@@ -1079,24 +1080,6 @@ export async function listFlagsByUser(userId: string) {
   return (data ?? []) as FlagRow[];
 }
 
-// Heuristic: did this PostgREST error come from sending a column the schema
-// cache doesn't know about? PostgREST returns code 'PGRST204' for
-// "column 'X' of relation 'Y' does not exist" (schema-cache miss). On older
-// Supabase deployments the message-only path is the fallback. Used by
-// createFlag to gracefully degrade when the context_tags migration hasn't
-// been applied yet.
-function isUnknownColumnError(err: unknown, columnName: string): boolean {
-  if (!err || typeof err !== 'object') return false;
-  const code = (err as { code?: string }).code;
-  const message = (err as { message?: string }).message;
-  if (code === 'PGRST204') return true;
-  if (typeof message === 'string' && message.includes(columnName)) {
-    // "could not find the 'context_tags' column" or "column ... does not exist".
-    return /not (find|exist)/i.test(message);
-  }
-  return false;
-}
-
 // Capability gate for the `flags.context_tags` column. Starts 'unknown' on
 // app launch. Each successful insert WITH tags flips it to 'available'.
 // Each PGRST204-style failure flips it to 'unavailable' — the UI watches
@@ -1249,7 +1232,7 @@ export async function createFlag(
       setContextTagsCapability('available');
       return { row: data as FlagRow, tagsAccepted: true };
     }
-    if (!isUnknownColumnError(error, 'context_tags')) throw error;
+    if (!isColumnMissing(error, 'context_tags')) throw error;
     // Mark capability unavailable so future submits skip the doomed
     // tagged path AND so the UI can disable the picker.
     setContextTagsCapability('unavailable');
@@ -1373,14 +1356,13 @@ export async function requestFlagReopen(flagId: string): Promise<number | null> 
     p_flag_id: flagId,
   });
   if (error) {
-    // Migration-absent fallback ONLY (F38 re-sweep): PostgREST PGRST202 =
-    // function not found in the schema cache; Postgres 42883 = undefined
-    // function. Anything else — network failure, RLS, timeout — must THROW so
-    // the caller shows an honest error. Collapsing every error to null made
-    // the modal display the success-sounding "sent for review" message for a
-    // vote that never reached the server.
-    const code = (error as { code?: string }).code;
-    if (code === 'PGRST202' || code === '42883') {
+    // Migration-absent fallback ONLY (F38 re-sweep): anything that isn't
+    // "the function does not exist" — network failure, RLS, timeout — must
+    // THROW so the caller shows an honest error. Collapsing every error to
+    // null made the modal display the success-sounding "sent for review"
+    // message for a vote that never reached the server. isFunctionMissing
+    // classifies exactly the migration-absent shapes (postgrestErrors.ts).
+    if (isFunctionMissing(error)) {
       console.warn(
         '[reopen] increment_reopen_request RPC missing (migration not applied):',
         error.message,

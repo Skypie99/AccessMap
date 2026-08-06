@@ -1,6 +1,7 @@
 import { Platform } from 'react-native';
 import { supabase } from './supabase';
 import { errorMessage } from './errors';
+import { isRelationMissing } from './postgrestErrors';
 import { trackEvent, commentLengthBucket } from './analytics';
 import { containsBlockedTerm } from '@/moderation/blockedTerms';
 import { CONTENT_BLOCKED_MESSAGE } from './copy';
@@ -56,29 +57,10 @@ function flattenComment(row: RawCommentRow): CommentRow {
   };
 }
 
-// PostgREST embed/relationship failures. These are NOT a missing table, and
-// their message bodies can legitimately contain the phrase "does not exist"
-// (a bad column inside an embed hint reads `column ... does not exist`).
-// Without this early-out the loose message match below would show the user
-// "Comments coming soon" for a broken join — a worse lie than an honest error,
-// and exactly how SR-092 could have hidden itself.
-const EMBED_ERROR_CODES = new Set([
-  'PGRST200', // no relationship found between the two tables
-  'PGRST201', // more than one relationship found (the SR-092 shape)
-  'PGRST202', // function not found in the schema cache
-]);
-
-// PostgreSQL error code 42P01 = undefined_table. Inspect the raw error
-// fields directly (same pattern as photos.ts) — errorMessage() now rewrites
-// recognized failures into friendly copy, so its output can no longer be
-// used for code/phrase sniffing. Supabase sometimes embeds the code in the
-// message when it comes back as a PostgREST 404 body, so check both.
-function isTableMissingError(e: unknown): boolean {
-  const msg = String((e as { message?: string })?.message ?? e ?? '');
-  const code = String((e as { code?: string })?.code ?? '');
-  if (EMBED_ERROR_CODES.has(code)) return false;
-  return code === '42P01' || msg.includes('42P01') || msg.includes('does not exist');
-}
+// This file's isTableMissingError was the house-canonical variant — the only
+// one hardened by a production incident (its SR-092 embed early-out). It moved
+// verbatim to postgrestErrors.ts as isRelationMissing (code-qa 2026-08-06
+// SLOP-3) so photos.ts and friends inherit the hardening.
 
 // Fetch comments for a flag, newest-first (capped at MAX_COMMENTS), with
 // author display_name joined.
@@ -106,7 +88,7 @@ export async function listComments(flagId: string): Promise<CommentRow[]> {
     .limit(MAX_COMMENTS);
 
   if (error) {
-    if (isTableMissingError(error)) throw new CommentsTableNotReadyError();
+    if (isRelationMissing(error)) throw new CommentsTableNotReadyError();
     throw new Error(errorMessage(error));
   }
 
@@ -157,7 +139,7 @@ export async function fetchCommentsByIds(commentIds: string[]): Promise<CommentR
       .in('id', chunk);
 
     if (error) {
-      if (isTableMissingError(error)) throw new CommentsTableNotReadyError();
+      if (isRelationMissing(error)) throw new CommentsTableNotReadyError();
       throw new Error(errorMessage(error));
     }
     out.push(...((data ?? []) as RawCommentRow[]).map(flattenComment));
@@ -189,7 +171,7 @@ export async function addComment(flagId: string, content: string): Promise<Comme
     .single();
 
   if (error) {
-    if (isTableMissingError(error)) throw new CommentsTableNotReadyError();
+    if (isRelationMissing(error)) throw new CommentsTableNotReadyError();
     throw new Error(errorMessage(error));
   }
 
@@ -212,7 +194,7 @@ export async function deleteComment(commentId: string): Promise<void> {
     .eq('id', commentId);
 
   if (error) {
-    if (isTableMissingError(error)) throw new CommentsTableNotReadyError();
+    if (isRelationMissing(error)) throw new CommentsTableNotReadyError();
     throw new Error(errorMessage(error));
   }
 }

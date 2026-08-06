@@ -24,6 +24,7 @@
  * ─────────────────────────────────────────────────────────────────────────
  */
 import { supabase } from './supabase';
+import { isFunctionMissing } from './postgrestErrors';
 
 /**
  * Master gate for the dispute affordance.
@@ -62,9 +63,7 @@ export async function requestFlagDispute(flagId: string): Promise<number | null>
     p_flag_id: flagId,
   });
   if (error) {
-    const code = (error as { code?: string }).code;
-    // PGRST202 = function not in the schema cache; 42883 = undefined function.
-    if (code === 'PGRST202' || code === '42883') {
+    if (isFunctionMissing(error)) {
       console.warn(
         '[dispute] increment_dispute_request RPC missing (migration not applied):',
         error.message,
