@@ -1,5 +1,6 @@
 import { Platform } from 'react-native';
 import { supabase } from './supabase';
+import { errorMessage } from './errors';
 import type { FeedbackCategory } from './feedback';
 import type { FeedbackRow } from '@/types/database';
 
@@ -96,10 +97,7 @@ export async function submitFeedback(input: SubmitInput): Promise<SubmitFeedback
     }
     return { status: 'inserted', row: data as FeedbackRow };
   } catch (e) {
-    return {
-      status: 'skipped',
-      reason: e instanceof Error ? e.message : 'Unknown error.',
-    };
+    return { status: 'skipped', reason: errorMessage(e) };
   }
 }
 
