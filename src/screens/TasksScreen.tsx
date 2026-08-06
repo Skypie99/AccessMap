@@ -545,8 +545,12 @@ export default function TasksScreen() {
         for (const id of targetIds) {
           try {
             // F53: CAS on the status the list showed for this row.
-            const updated = await updateFlagStatus(id, targetStatus, flagsMap.get(id)?.status);
-            track('flag_status_changed', { flagId: id, from: updated.status === targetStatus ? 'open' : updated.status, to: targetStatus });
+            const fromStatus = flagsMap.get(id)?.status;
+            const updated = await updateFlagStatus(id, targetStatus, fromStatus);
+            // COR-4: log the PRE-CAS status — after a successful CAS,
+            // updated.status === targetStatus is always true, so the old
+            // ternary tautologically reported 'open' for every bulk action.
+            track('flag_status_changed', { flagId: id, from: fromStatus ?? 'open', to: targetStatus });
             if (action === 'verify') {
               // Verify keeps the flag visible (status becomes 'verified'),
               // so patch the store with the new row.
