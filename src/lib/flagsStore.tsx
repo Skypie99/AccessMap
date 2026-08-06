@@ -285,6 +285,7 @@ export function FlagsProvider({
               setLoading(false);
               hasHydratedRef.current = true;
               if (__DEV__) {
+                // eslint-disable-next-line no-console
                 console.log(
                   `[flagsStore] SWR cache paint: ${cached.rows.length} rows in ${Date.now() - startedAt}ms (cache hit)`,
                 );
@@ -338,6 +339,7 @@ export function FlagsProvider({
         lastFetchAtRef.current = Date.now();
         hasHydratedRef.current = true;
         if (__DEV__) {
+          // eslint-disable-next-line no-console
           console.log(
             `[flagsStore] network refresh: ${fetchedRows.length} rows in ${Date.now() - startedAt}ms (cache miss / revalidate)`,
           );
@@ -402,6 +404,7 @@ export function FlagsProvider({
       const age = Date.now() - lastFetchAtRef.current;
       if (lastFetchAtRef.current !== 0 && age < maxAgeMs) {
         if (__DEV__) {
+          // eslint-disable-next-line no-console
           console.log(`[flagsStore] refreshIfStale: skipped — data ${age}ms old (< ${maxAgeMs}ms)`);
         }
         return;
