@@ -1,6 +1,8 @@
 # PROJECT_STATE — accessmap
 _Last compiled: 2026-06-20 by /new-window_
 
+> ⚠️ **ARCHIVED SNAPSHOT (banner added 2026-08-06, code-qa DEBT-3/Q-8).** Everything below pins main `45bca1a` — five trains ago. The living state is **`APP_STORE_TODO.md`** (the ship chain) + each train's `design-reviews/<train>/` close-out. Regenerate with `/new-window` when Sky wants this file current; nothing below was edited.
+
 ## Current Status
 **The full editorial visual transformation (Phases 7a→13) is COMPLETE + LIVE on `origin/main` `45bca1a`** (all batches Sky-authorized, merged via Rory `--no-ff`, pushed; local == origin). AccessMap's identity flipped from the old dark-navy-chrome to **fully light editorial in light mode** (light headers + light frosted tab bar + light content + glass) / **cohesively dark in dark mode**. Every phase passed: typecheck 0 · lint 0 errors · **1722 tests** · **fence intact** (zero data/auth/EXIF/RLS/RPC/points-trigger changes — presentation/nav/theme only). Now in **change-cycle mode**: Sky reviews the live demo on her phone and requests specific per-screen overhauls; agent builds on `overhaul/phase<N>-*` branches, Rory safe-merges, Sky says "push".
 
