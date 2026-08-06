@@ -222,8 +222,8 @@ export type Database = {
         Relationships: EmptyRelationships;
       };
       // Optional until supabase/migrations/2026-05-30_flag_photos_junction.sql
-      // is applied. listFlagPhotos/addFlagPhoto/deleteFlagPhoto gracefully
-      // degrade (return [] / no-op) if the table doesn't exist yet.
+      // is applied. listFlagPhotos/batchInsertFlagPhotos gracefully degrade
+      // (return [] / no-op) if the table doesn't exist yet.
       flag_photos: {
         Row: {
           id: string;

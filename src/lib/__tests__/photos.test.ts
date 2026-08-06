@@ -1,10 +1,9 @@
 /**
  * Tests for src/lib/photos.ts — the multi-photo junction-table layer.
  *
- * photos.ts wraps four Supabase calls:
+ * photos.ts wraps three Supabase calls:
  *   - listFlagPhotos       SELECT ordered by position (graceful [] on missing table)
  *   - addFlagPhoto         upload blob → INSERT junction row at next position
- *   - deleteFlagPhoto      DELETE junction row by id
  *   - batchInsertFlagPhotos bulk INSERT pre-uploaded URLs (graceful no-op on missing table)
  *
  * Mock strategy mirrors comments.test.ts: a hand-built fluent chain per call,
@@ -14,12 +13,7 @@
  */
 
 // Supabase mock — declared before jest.mock() hoisting.
-import {
-  addFlagPhoto,
-  batchInsertFlagPhotos,
-  deleteFlagPhoto,
-  listFlagPhotos,
-} from '../photos';
+import { addFlagPhoto, batchInsertFlagPhotos, listFlagPhotos } from '../photos';
 
 const mockFrom = jest.fn();
 const mockGetUser = jest.fn();
@@ -74,14 +68,6 @@ function insertChain(error: unknown = null) {
   return chain;
 }
 
-/** DELETE ... .eq() chain — `eq` is the terminal that resolves. */
-function deleteChain(error: unknown = null) {
-  const chain = {
-    delete: jest.fn().mockReturnThis(),
-    eq: jest.fn().mockResolvedValue({ data: null, error }),
-  };
-  return chain;
-}
 
 const TABLE_MISSING_CODE = { code: '42P01', message: 'relation "flag_photos" does not exist' };
 
@@ -262,27 +248,6 @@ describe('addFlagPhoto', () => {
     await expect(addFlagPhoto('flag-1', 'file:///local.jpg')).rejects.toMatchObject({
       message: 'RLS violation',
     });
-  });
-});
-
-// ---------------------------------------------------------------------------
-// deleteFlagPhoto
-// ---------------------------------------------------------------------------
-
-describe('deleteFlagPhoto', () => {
-  it('deletes the junction row by id and resolves', async () => {
-    const chain = deleteChain();
-    mockFrom.mockReturnValue(chain);
-
-    await expect(deleteFlagPhoto('p7')).resolves.toBeUndefined();
-    expect(mockFrom).toHaveBeenCalledWith('flag_photos');
-    expect(chain.delete).toHaveBeenCalled();
-    expect(chain.eq).toHaveBeenCalledWith('id', 'p7');
-  });
-
-  it('throws on a Supabase error', async () => {
-    mockFrom.mockReturnValue(deleteChain({ message: 'not found' }));
-    await expect(deleteFlagPhoto('missing')).rejects.toMatchObject({ message: 'not found' });
   });
 });
 

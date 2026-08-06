@@ -77,18 +77,6 @@ export async function addFlagPhoto(
 }
 
 /**
- * Delete a junction row by ID.
- * Storage blob cleanup is deferred to an Edge Function.
- */
-export async function deleteFlagPhoto(photoId: string): Promise<void> {
-  const { error } = await supabase
-    .from('flag_photos')
-    .delete()
-    .eq('id', photoId);
-  if (error) throw error;
-}
-
-/**
  * Batch-insert pre-uploaded URLs as junction rows for a newly created flag.
  * Used by ReportFlagModal after createFlag() — avoids re-uploading.
  * Silent no-op if the table doesn't exist yet.
