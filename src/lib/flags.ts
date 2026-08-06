@@ -1218,14 +1218,10 @@ export async function createFlag(
   // backend. This avoids the wasted round-trip + the silent drop.
   const shouldTryTagged = tagsToSend !== undefined && contextTagsCapability !== 'unavailable';
   if (shouldTryTagged) {
-    // The Database type in src/types/database.ts doesn't list context_tags
-    // yet (we're keeping the migration propose-only), so cast the payload
-    // to escape the typed Insert shape. Once the migration lands and the
-    // type is updated, this cast can come off.
-    const withTags = { ...basePayload, context_tags: tagsToSend } as Record<string, unknown>;
+    const withTags = { ...basePayload, context_tags: tagsToSend };
     const { data, error } = await supabase
       .from('flags')
-      .insert(withTags as never)
+      .insert(withTags)
       .select()
       .single();
     if (!error) {
