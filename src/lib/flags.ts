@@ -1729,13 +1729,13 @@ export async function createAnonFlag(input: AnonFlagInput): Promise<FlagRow> {
   const { lat, lng, category, severity, description } = input;
 
   if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
-    throw new Error('lat and lng must be finite numbers');
+    throw new Error('Invalid coordinates: lat and lng must be finite numbers.');
   }
   if (lat < -90 || lat > 90) {
-    throw new Error(`lat ${lat} is out of range [-90, 90]`);
+    throw new Error('Invalid coordinates: lat must be between -90 and 90.');
   }
   if (lng < -180 || lng > 180) {
-    throw new Error(`lng ${lng} is out of range [-180, 180]`);
+    throw new Error('Invalid coordinates: lng must be between -180 and 180.');
   }
   assertValidCategoryAndSeverity(category, severity);
 
