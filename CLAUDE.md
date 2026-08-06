@@ -64,9 +64,9 @@ Two tables:
   `user_id`, `created_at`.
 
 **Points trigger** (`handle_flag_status_change`, security definer):
-- Reporter: +5 on `open → verified`, +10 on `open/verified → resolved`.
-- Actor (the verifier/resolver, if NOT the reporter): +2 verified, +5 resolved.
-- Forward-only — reverting or rejecting awards nothing.
+- Reporter: +10 on `open → verified`, +15 on `open/verified → resolved`.
+- Actor (the verifier/resolver, if NOT the reporter): +3 verified, +7 resolved.
+- Forward-only — reverting or rejecting awards nothing (admin reject: −20 spam penalty).
 
 **Storage bucket** `flag-photos`:
 - Public read.

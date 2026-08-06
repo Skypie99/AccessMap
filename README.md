@@ -11,7 +11,7 @@ Expo + React Native + TypeScript app for crowdsourced accessibility flags, backe
 - **Realtime flag updates** — Supabase Realtime keeps all users in sync
 - **Push notifications** — iOS push support for flag status changes
 - **Web tile caching** — offline-capable map tiles via react-leaflet
-- **Points + achievements** — gamified reporting: +5 verified, +10 resolved
+- **Points + achievements** — gamified reporting: +10 verified, +15 resolved
 - **Edit profile** — avatar upload, custom display name
 - **Context tags** — categorize flags by type (no ramp, broken sidewalk, etc.)
 - **Dark mode** — consistent throughout the app
