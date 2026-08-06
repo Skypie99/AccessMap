@@ -219,7 +219,22 @@ export type Database = {
         Update: Partial<{
           content: string;
         }>;
-        Relationships: EmptyRelationships;
+        // The one hand-authored Relationships entry (code-qa 2026-08-06
+        // TYPE-3): names the live FK (verified in the 2026-07-27 drift
+        // capture) so the `users!flag_comments_user_id_fkey(...)` embed in
+        // comments.ts typechecks without casting the whole client to any.
+        // Tuple of LITERAL types on purpose — postgrest-js resolves embed
+        // hints by matching foreignKeyName literals; the general
+        // EmptyRelationships shape can never match.
+        Relationships: [
+          {
+            foreignKeyName: 'flag_comments_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
       };
       // Optional until supabase/migrations/2026-05-30_flag_photos_junction.sql
       // is applied. listFlagPhotos/batchInsertFlagPhotos gracefully degrade

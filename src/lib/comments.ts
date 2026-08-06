@@ -66,11 +66,6 @@ function flattenComment(row: RawCommentRow): CommentRow {
 // author display_name joined.
 // Throws CommentsTableNotReadyError if the migration hasn't been applied yet.
 export async function listComments(flagId: string): Promise<CommentRow[]> {
-  // Cast through `any` for the join query: the flag_comments table has no
-  // Relationships defined in database.ts (they can't be expressed without
-  // regenerating the Supabase types), so the typed client rejects the
-  // `users(...)` select clause at compile time.
-  //
   // The `!flag_comments_user_id_fkey` hint is load-bearing, not decoration.
   // A bare `users(display_name)` is AMBIGUOUS: comment_votes has FKs to both
   // flag_comments and users, so PostgREST sees a second, many-to-many
@@ -78,9 +73,10 @@ export async function listComments(flagId: string): Promise<CommentRow[]> {
   // HTTP 300 — which is how comments died in production the day
   // 2026-05-30_trust_score_system.sql landed. The hint names the direct FK.
   // (If that constraint is ever renamed, the column form `users!user_id(...)`
-  // disambiguates without pinning a generated identifier.)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data, error } = await (supabase as any)
+  // disambiguates without pinning a generated identifier.) The typed client
+  // resolves the hint via the hand-authored Relationships entry in
+  // database.ts (TYPE-3).
+  const { data, error } = await supabase
     .from('flag_comments')
     .select(COMMENT_SELECT)
     .eq('flag_id', flagId)
@@ -130,10 +126,9 @@ export async function fetchCommentsByIds(commentIds: string[]): Promise<CommentR
 
   const out: CommentRow[] = [];
   for (const chunk of chunks) {
-    // Same `as any` cast and same `!flag_comments_user_id_fkey` disambiguation
-    // as listComments — see the long note there for why the hint is required.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase as any)
+    // Same `!flag_comments_user_id_fkey` disambiguation as listComments —
+    // see the note there for why the hint is required.
+    const { data, error } = await supabase
       .from('flag_comments')
       .select(COMMENT_SELECT)
       .in('id', chunk);
@@ -163,6 +158,12 @@ export async function addComment(flagId: string, content: string): Promise<Comme
     throw new Error(CONTENT_BLOCKED_MESSAGE);
   }
 
+  // The ONE cast TYPE-3 could not retire (2026-08-06): this insert sends no
+  // user_id, yet inserts pass live RLS (WITH CHECK user_id = auth.uid()) —
+  // so live must fill it via a default/trigger the 2026-07-27 drift capture
+  // did not record, and the typed Insert (user_id required) cannot be
+  // honestly loosened until Sky reads the live column default. Typing this
+  // call would encode a guess about un-captured live schema.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data, error } = await (supabase as any)
     .from('flag_comments')
