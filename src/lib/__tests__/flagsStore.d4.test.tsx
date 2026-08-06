@@ -295,7 +295,12 @@ describe('D4 Realtime Flags', () => {
     );
 
     // The new channel must NOT be created while the old one is still leaving.
-    await new Promise((r) => setTimeout(r, 50));
+    // Deterministic flush instead of a load-sensitive 50ms sleep (TEST-2): a
+    // wrongly-unserialized re-subscribe lands within the rerender's microtask
+    // chain, so two zero-delay macrotask turns are strictly later than it
+    // without betting on wall-clock load.
+    await new Promise((r) => setTimeout(r, 0));
+    await new Promise((r) => setTimeout(r, 0));
     expect(supabase.channel).toHaveBeenCalledTimes(1);
 
     // Once the teardown completes, the new subscription goes through.
