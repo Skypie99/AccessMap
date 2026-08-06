@@ -584,6 +584,11 @@ export const icon = {
   stroke: 2.2, // strokeWidth, not a px size — the house Lucide line weight
 };
 
+// Android Switch OFF-state thumb — RN/Material's default gray, made explicit
+// so all Switches match. Mode-independent on purpose: the thumb sits on the
+// OS-drawn track, not on our themed surfaces.
+export const androidSwitchThumbOff = '#f4f3f4';
+
 // -------------------------------------------------------------------------
 // Severity — single source of truth for the 1→5 color ramp.
 // Keep this aligned with severityColor() in src/lib/flags.ts.

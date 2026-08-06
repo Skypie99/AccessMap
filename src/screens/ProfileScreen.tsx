@@ -81,7 +81,7 @@ import RecentlyViewedRow from '@/components/RecentlyViewedRow';
 import ReportsBreakdownCard from '@/components/ReportsBreakdownCard';
 import LeaderboardScreen from '@/screens/LeaderboardScreen';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
-import { font, radius, shadow, spacing } from '@/theme';
+import { androidSwitchThumbOff, font, radius, shadow, spacing } from '@/theme';
 import { AppText } from '@/components/ui/AppText';
 import { Input } from '@/components/ui/Input';
 import { GlassSurface } from '@/components/ui/GlassSurface';
@@ -1618,7 +1618,7 @@ export default function ProfileScreen() {
               {...a11yToggle({ checked: realtimeEnabled, busy: savingRealtime, disabled: savingRealtime })}
               trackColor={{ false: color.borderStrong, true: color.brand }}
               thumbColor={
-                Platform.OS === 'android' ? (realtimeEnabled ? color.brand : '#f4f3f4') : undefined
+                Platform.OS === 'android' ? (realtimeEnabled ? color.brand : androidSwitchThumbOff) : undefined
               }
             />
           </View>

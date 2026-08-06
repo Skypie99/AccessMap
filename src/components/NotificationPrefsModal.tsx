@@ -24,7 +24,7 @@ import {
 } from '@/lib/notificationPrefs';
 import type { FlagStatus } from '@/types/database';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
-import { bulkGlassShadow, font, radius, spacing } from '@/theme';
+import { androidSwitchThumbOff, bulkGlassShadow, font, radius, spacing } from '@/theme';
 import { a11yToggle, decorativeProps, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
 import { X } from 'lucide-react-native';
 
@@ -241,7 +241,7 @@ export default function NotificationPrefsModal({
                       {...a11yToggle({ checked: value })}
                       // BP-6: the estate Switch recipe — brand track, themed false-track.
                       trackColor={{ false: color.borderStrong, true: color.brand }}
-                      thumbColor={Platform.OS === 'android' ? (value ? color.brand : '#f4f3f4') : undefined}
+                      thumbColor={Platform.OS === 'android' ? (value ? color.brand : androidSwitchThumbOff) : undefined}
                     />
                   </View>
                 );

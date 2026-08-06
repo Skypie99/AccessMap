@@ -11,7 +11,7 @@ import {
   View,
 } from 'react-native';
 import { ChevronRight, ClipboardCopy, Moon, PlayCircle, Smartphone, Sun } from 'lucide-react-native';
-import { font, radius, shadow, spacing } from '@/theme';
+import { androidSwitchThumbOff, font, radius, shadow, spacing } from '@/theme';
 import { type ColorTheme, type ThemeMode, useColor, useThemeMode } from '@/theme/ThemeContext';
 import { AppText } from '@/components/ui/AppText';
 import { GlassSurface } from '@/components/ui/GlassSurface';
@@ -566,7 +566,7 @@ export default function SettingsScreen() {
               // Switch recipe; false-track is themed so dark mode stays dark.
               trackColor={{ false: color.borderStrong, true: color.brand }}
               thumbColor={
-                Platform.OS === 'android' ? (pushEnabled ? color.brand : '#f4f3f4') : undefined
+                Platform.OS === 'android' ? (pushEnabled ? color.brand : androidSwitchThumbOff) : undefined
               }
             />
           )}

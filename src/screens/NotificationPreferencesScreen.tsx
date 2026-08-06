@@ -35,7 +35,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
-import { bulkGlassShadow, font, radius, shadow, spacing } from '@/theme';
+import { androidSwitchThumbOff, bulkGlassShadow, font, radius, shadow, spacing } from '@/theme';
 import { X } from 'lucide-react-native';
 import { AppText } from '@/components/ui/AppText';
 import { GlassSurface } from '@/components/ui/GlassSurface';
@@ -120,7 +120,7 @@ function ToggleRow({
         {...a11yToggle({ checked: value })}
         // BP-6: the estate Switch recipe — brand track, themed false-track.
         trackColor={{ false: color.borderStrong, true: color.brand }}
-        thumbColor={Platform.OS === 'android' ? (value ? color.brand : '#f4f3f4') : undefined}
+        thumbColor={Platform.OS === 'android' ? (value ? color.brand : androidSwitchThumbOff) : undefined}
       />
     </View>
   );
