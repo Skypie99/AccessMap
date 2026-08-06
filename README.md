@@ -16,7 +16,7 @@ Expo + React Native + TypeScript app for crowdsourced accessibility flags, backe
 - **Context tags** — categorize flags by type (no ramp, broken sidewalk, etc.)
 - **Dark mode** — consistent throughout the app
 - **WCAG 2.1 AA** — fully accessible from signup to reporting
-- **GitHub Actions CI** — 1,120 automated tests on every push
+- **GitHub Actions CI** — 2,900+ automated tests on every push
 - **EAS build profiles** — App Store ready, signed release builds
 
 ## Setup
