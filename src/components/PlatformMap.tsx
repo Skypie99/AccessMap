@@ -253,12 +253,17 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(function Pla
         if (!map) return;
         // Read the current camera, step its zoom, and animate at the RM-gated
         // duration (instant under Reduce Motion, WCAG 2.3.3).
-        void map.getCamera().then((cam) => {
-          map.animateCamera(
-            { ...cam, zoom: (cam.zoom ?? 12) + delta },
-            { duration: reducedMotion ? 0 : 300 },
-          );
-        });
+        void map
+          .getCamera()
+          .then((cam) => {
+            map.animateCamera(
+              { ...cam, zoom: (cam.zoom ?? 12) + delta },
+              { duration: reducedMotion ? 0 : 300 },
+            );
+          })
+          // Same guard as handlePinPress: a detached/unmounted native map
+          // rejects, and a zoom tap must not surface an unhandled rejection.
+          .catch(() => {});
       },
       snapToRegion: (r) => {
         mapRef.current?.animateToRegion(
