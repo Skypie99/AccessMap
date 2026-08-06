@@ -1254,23 +1254,6 @@ export function isAnon(flag: { user_id: string | null }): boolean {
   return flag.user_id === null;
 }
 
-// ---------------------------------------------------------------------------
-// Anonymous flag submission (no auth required)
-// ---------------------------------------------------------------------------
-
-export interface CreateAnonFlagInput {
-  lat: number;
-  lng: number;
-  category: FlagCategory;
-  severity: FlagSeverity;
-  description?: string | null;
-  // Photos are not supported for anon submissions — Storage RLS requires
-  // auth.uid() in the upload path. See docs/ANON_REPORTING_SPEC.md §6.
-  // Context tags are also disabled: the capability probe requires an auth
-  // session and silently dropping tags would confuse anon users.
-}
-
-
 export type FlagContentPatch = {
   description?: string | null;
   category?: FlagCategory;
@@ -1725,6 +1708,10 @@ export interface AnonFlagInput {
   category: FlagCategory;
   severity: FlagSeverity;
   description?: string;
+  // Photos are not supported for anon submissions — Storage RLS requires
+  // auth.uid() in the upload path. See docs/ANON_REPORTING_SPEC.md §6.
+  // Context tags are also disabled: the capability probe requires an auth
+  // session and silently dropping tags would confuse anon users.
 }
 
 /**
