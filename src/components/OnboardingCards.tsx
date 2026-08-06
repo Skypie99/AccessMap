@@ -266,11 +266,20 @@ export default function OnboardingCards({ onDone }: Props) {
       goTo(index + 1);
       return;
     }
-    if (permission === 'location') {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      setLocationGranted(status === 'granted');
-    } else if (permission === 'notifications') {
-      setNotifGranted(await requestNotificationPermission());
+    try {
+      if (permission === 'location') {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        setLocationGranted(status === 'granted');
+      } else if (permission === 'notifications') {
+        setNotifGranted(await requestNotificationPermission());
+      }
+    } catch {
+      // COR-6: a REJECTED permission request (rare OS/entitlement states)
+      // counts as not-granted — the contract above stands: denying (or
+      // failing) never blocks progress, and the primary button must never
+      // read as dead.
+      if (permission === 'location') setLocationGranted(false);
+      else setNotifGranted(false);
     }
     goTo(index + 1);
   };
