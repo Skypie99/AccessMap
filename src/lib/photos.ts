@@ -18,7 +18,10 @@ export type FlagPhoto = {
 
 /**
  * Fetch all photos for a flag ordered by position.
- * Returns [] silently if the flag_photos table doesn't exist yet (migration pending).
+ * Returns [] ONLY when the flag_photos table doesn't exist yet (migration
+ * pending). Any other failure throws — COR-3 (code-qa 2026-08-06): the old
+ * swallow-all [] made a transient failure render as "this flag has no photos"
+ * and let addFlagPhoto compute position 0 from a failed read.
  */
 export async function listFlagPhotos(flagId: string): Promise<{ url: string; position: number }[]> {
   try {
@@ -36,8 +39,7 @@ export async function listFlagPhotos(flagId: string): Promise<{ url: string; pos
     return (data ?? []) as { url: string; position: number }[];
   } catch (e) {
     if (isRelationMissing(e)) return [];
-    console.warn('[photos] listFlagPhotos failed:', e);
-    return [];
+    throw e;
   }
 }
 

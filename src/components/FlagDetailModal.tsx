@@ -268,7 +268,11 @@ export default function FlagDetailModal({
   }, [visible, shownFlag, user]);
 
   // Load the gallery photos whenever the modal opens or the flag changes.
-  // listFlagPhotos silently returns [] if the migration hasn't run yet.
+  // listFlagPhotos returns [] only when the migration hasn't run yet; real
+  // failures throw (COR-3). The gallery has no error-state UI (banked for
+  // Sky), so the VIEW path degrades to warn + keep the current list — the
+  // throw matters on the write path, where addFlagPhoto's position math must
+  // not run against a failed read.
   useEffect(() => {
     if (!visible || !shownFlag) {
       setFlagPhotos([]);
@@ -276,8 +280,12 @@ export default function FlagDetailModal({
     }
     let cancelled = false;
     (async () => {
-      const photos = await listFlagPhotos(shownFlag.id);
-      if (!cancelled) setFlagPhotos(photos);
+      try {
+        const photos = await listFlagPhotos(shownFlag.id);
+        if (!cancelled) setFlagPhotos(photos);
+      } catch (e) {
+        console.warn('[FlagDetailModal] photo gallery load failed:', e);
+      }
     })();
     return () => {
       cancelled = true;
