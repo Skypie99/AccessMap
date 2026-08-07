@@ -1195,6 +1195,12 @@ export default function MapScreen() {
   }, [filtersActive, loadingFlags, loadError, filteredFlags.length, flags.length]);
 
   const showEmptyCard = filtersActive && !loadingFlags && !loadError && filteredFlags.length === 0;
+  // BP-10/E2: the sibling case the filtered card never covered — NO filters,
+  // genuinely zero flags in the area. Previously the user got a bare
+  // "Showing 0 flags" pill over an empty map and nothing else. Same material,
+  // no reset chips (there is nothing to reset) — just the invitation.
+  const showTrueEmptyCard =
+    !filtersActive && !loadingFlags && !loadError && flags.length === 0;
   const previouslyEmptyRef = useRef(false);
   useEffect(() => {
     if (showEmptyCard && !previouslyEmptyRef.current) {
@@ -2503,6 +2509,34 @@ export default function MapScreen() {
           </GlassSurface>
         )}
 
+        {/* BP-10/E2 — the true-zero card (unfiltered, empty area). Same
+            A11Y-213 structure as its filtered sibling above: material
+            container stays a non-accessible leaf, the summary node carries
+            the semantics. NEW COPY (2 strings) — flagged in DECISIONS FOR
+            SKY; the "Report" it names is the FAB's own visible label. */}
+        {showTrueEmptyCard && (
+          <GlassSurface
+            style={styles.emptyCard}
+            variant="row"
+            forceEngineered
+            overlayTint={color.glassMapWash}
+            borderRadius={radius.lg}
+          >
+            <MapPin size={26} color={color.inkGlassMuted} strokeWidth={2} {...decorativeProps} />
+            <View
+              style={styles.emptyCardSummary}
+              accessible
+              accessibilityRole="alert"
+              accessibilityLiveRegion="polite"
+            >
+              <AppText variant="heading" style={styles.emptyCardTitle}>No barriers reported here yet</AppText>
+              <AppText variant="body" style={styles.emptyCardBody}>
+                Be the first — tap Report to drop a pin on an accessibility barrier you know about.
+              </AppText>
+            </View>
+          </GlassSurface>
+        )}
+
         {/* WCAG 4.1.3: accessibilityLiveRegion covers Android TalkBack.
             iOS VoiceOver is already handled by the
             announceForAccessibility call in requestLocation(). */}
@@ -2922,7 +2956,7 @@ export default function MapScreen() {
               value={presetNameDraft}
               onChangeText={setPresetNameDraft}
               placeholder="e.g. Morning commute"
-              placeholderTextColor={color.textMuted}
+              placeholderTextColor={color.placeholderText}
               autoFocus
               autoCapitalize="sentences"
               maxLength={60}
@@ -2939,7 +2973,11 @@ export default function MapScreen() {
                   setPresetNameModalOpen(false);
                 }}
                 disabled={savingPreset}
-                style={[styles.nameBtn, styles.nameBtnCancel]}
+                style={({ pressed }) => [
+                  styles.nameBtn,
+                  styles.nameBtnCancel,
+                  pressed && { backgroundColor: color.borderPressed },
+                ]}
                 accessibilityRole="button"
                 accessibilityLabel="Cancel"
                 {...a11yToggle({ disabled: savingPreset })}
@@ -2949,11 +2987,15 @@ export default function MapScreen() {
               <Pressable
                 onPress={submitSavePreset}
                 disabled={savingPreset || presetNameDraft.trim().length === 0}
-                style={[
+                style={({ pressed }) => [
                   styles.nameBtn,
                   styles.nameBtnSave,
                   (savingPreset || presetNameDraft.trim().length === 0) &&
                     styles.nameBtnSaveDisabled,
+                  pressed &&
+                    !(savingPreset || presetNameDraft.trim().length === 0) && {
+                      backgroundColor: color.ctaFillPressed,
+                    },
                 ]}
                 accessibilityRole="button"
                 accessibilityLabel="Save preset"
@@ -3011,7 +3053,7 @@ export default function MapScreen() {
               value={nameDraft}
               onChangeText={setNameDraft}
               placeholder="e.g. Downtown commute"
-              placeholderTextColor={color.textMuted}
+              placeholderTextColor={color.placeholderText}
               autoFocus
               autoCapitalize="sentences"
               maxLength={40}
@@ -3027,7 +3069,11 @@ export default function MapScreen() {
                   setNameModalOpen(false);
                 }}
                 disabled={savingSet}
-                style={[styles.nameBtn, styles.nameBtnCancel]}
+                style={({ pressed }) => [
+                  styles.nameBtn,
+                  styles.nameBtnCancel,
+                  pressed && { backgroundColor: color.borderPressed },
+                ]}
                 accessibilityRole="button"
                 accessibilityLabel="Cancel"
                 // A11Y-219: its sibling Confirm announces disabled; this one
@@ -3039,10 +3085,14 @@ export default function MapScreen() {
               <Pressable
                 onPress={submitSaveSet}
                 disabled={savingSet || nameDraft.trim().length === 0}
-                style={[
+                style={({ pressed }) => [
                   styles.nameBtn,
                   styles.nameBtnSave,
                   (savingSet || nameDraft.trim().length === 0) && styles.nameBtnSaveDisabled,
+                  pressed &&
+                    !(savingSet || nameDraft.trim().length === 0) && {
+                      backgroundColor: color.ctaFillPressed,
+                    },
                 ]}
                 accessibilityRole="button"
                 accessibilityLabel="Save filter set"

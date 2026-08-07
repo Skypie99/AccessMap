@@ -15,7 +15,7 @@ import { AppText } from '@/components/ui/AppText';
 import { GlassSurface } from '@/components/ui/GlassSurface';
 import { decorativeProps, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
 import type { Achievement, AchievementCategory } from '@/lib/achievements';
-import { font, radius, spacing } from '@/theme';
+import { bulkGlassShadow, font, radius, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import {
   Award,
@@ -90,12 +90,7 @@ const makeStyles = (color: ColorTheme) =>
     cardWrap: {
       borderTopLeftRadius: radius.xl,
       borderTopRightRadius: radius.xl,
-      ...(color.scheme === 'dark'
-        ? { shadowColor: '#000', shadowOpacity: 0.35 }
-        : { shadowColor: color.shadowTint, shadowOpacity: 0.12 }),
-      shadowRadius: 14,
-      shadowOffset: { width: 0, height: -4 },
-      elevation: 5,
+      ...bulkGlassShadow(color),
     },
     headerRow: {
       flexDirection: 'row',
@@ -124,7 +119,7 @@ const makeStyles = (color: ColorTheme) =>
       fontWeight: font.weight.bold,
       color: color.textStrong,
       textTransform: 'uppercase',
-      letterSpacing: 0.6,
+      letterSpacing: font.tracking.section,
     },
     list: { gap: spacing.sm },
     row: {

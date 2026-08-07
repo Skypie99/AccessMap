@@ -1,10 +1,9 @@
 /**
  * Tests for src/lib/photos.ts — the multi-photo junction-table layer.
  *
- * photos.ts wraps four Supabase calls:
+ * photos.ts wraps three Supabase calls:
  *   - listFlagPhotos       SELECT ordered by position (graceful [] on missing table)
  *   - addFlagPhoto         upload blob → INSERT junction row at next position
- *   - deleteFlagPhoto      DELETE junction row by id
  *   - batchInsertFlagPhotos bulk INSERT pre-uploaded URLs (graceful no-op on missing table)
  *
  * Mock strategy mirrors comments.test.ts: a hand-built fluent chain per call,
@@ -14,12 +13,7 @@
  */
 
 // Supabase mock — declared before jest.mock() hoisting.
-import {
-  addFlagPhoto,
-  batchInsertFlagPhotos,
-  deleteFlagPhoto,
-  listFlagPhotos,
-} from '../photos';
+import { addFlagPhoto, batchInsertFlagPhotos, listFlagPhotos } from '../photos';
 
 const mockFrom = jest.fn();
 const mockGetUser = jest.fn();
@@ -74,14 +68,6 @@ function insertChain(error: unknown = null) {
   return chain;
 }
 
-/** DELETE ... .eq() chain — `eq` is the terminal that resolves. */
-function deleteChain(error: unknown = null) {
-  const chain = {
-    delete: jest.fn().mockReturnThis(),
-    eq: jest.fn().mockResolvedValue({ data: null, error }),
-  };
-  return chain;
-}
 
 const TABLE_MISSING_CODE = { code: '42P01', message: 'relation "flag_photos" does not exist' };
 
@@ -137,26 +123,41 @@ describe('listFlagPhotos', () => {
     expect(await listFlagPhotos('flag-1')).toEqual([]);
   });
 
-  it('returns [] and warns on an unexpected (non-table-missing) error', async () => {
-    const warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
-    mockFrom.mockReturnValue(selectChain(null, { message: 'permission denied' }));
+  // COR-3 (code-qa 2026-08-06): the next three pins DELIBERATELY flip the old
+  // swallow-all contract. [] is reserved for "migration pending"; a real
+  // failure must throw so callers can tell "no photos" from "couldn't load"
+  // (and so addFlagPhoto can't compute position 0 from a failed read).
+  it('rethrows an unexpected (non-table-missing) error instead of masking it as "no photos"', async () => {
+    mockFrom.mockReturnValue(selectChain(null, { message: 'permission denied', code: '42501' }));
 
-    const result = await listFlagPhotos('flag-1');
-
-    expect(result).toEqual([]);
-    expect(warn).toHaveBeenCalled();
-    warn.mockRestore();
+    await expect(listFlagPhotos('flag-1')).rejects.toMatchObject({ code: '42501' });
   });
 
-  it('returns [] when the query throws synchronously (defensive catch)', async () => {
-    const warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
+  it('rethrows an embed-shaped error (SR-092 class) even though its message says "does not exist"', async () => {
+    mockFrom.mockReturnValue(
+      selectChain(null, {
+        code: 'PGRST201',
+        message: 'more than one relationship... column users.nope does not exist',
+      }),
+    );
+
+    await expect(listFlagPhotos('flag-1')).rejects.toMatchObject({ code: 'PGRST201' });
+  });
+
+  it('rethrows a synchronous non-table-missing throw (no defensive swallow)', async () => {
     mockFrom.mockImplementation(() => {
       throw new Error('network down');
     });
 
+    await expect(listFlagPhotos('flag-1')).rejects.toThrow('network down');
+  });
+
+  it('still returns [] for a synchronously-thrown table-missing error (defensive catch kept)', async () => {
+    mockFrom.mockImplementation(() => {
+      throw { code: '42P01', message: 'relation "flag_photos" does not exist' };
+    });
+
     expect(await listFlagPhotos('flag-1')).toEqual([]);
-    expect(warn).toHaveBeenCalled();
-    warn.mockRestore();
   });
 });
 
@@ -247,27 +248,6 @@ describe('addFlagPhoto', () => {
     await expect(addFlagPhoto('flag-1', 'file:///local.jpg')).rejects.toMatchObject({
       message: 'RLS violation',
     });
-  });
-});
-
-// ---------------------------------------------------------------------------
-// deleteFlagPhoto
-// ---------------------------------------------------------------------------
-
-describe('deleteFlagPhoto', () => {
-  it('deletes the junction row by id and resolves', async () => {
-    const chain = deleteChain();
-    mockFrom.mockReturnValue(chain);
-
-    await expect(deleteFlagPhoto('p7')).resolves.toBeUndefined();
-    expect(mockFrom).toHaveBeenCalledWith('flag_photos');
-    expect(chain.delete).toHaveBeenCalled();
-    expect(chain.eq).toHaveBeenCalledWith('id', 'p7');
-  });
-
-  it('throws on a Supabase error', async () => {
-    mockFrom.mockReturnValue(deleteChain({ message: 'not found' }));
-    await expect(deleteFlagPhoto('missing')).rejects.toMatchObject({ message: 'not found' });
   });
 });
 

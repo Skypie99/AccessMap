@@ -488,3 +488,30 @@ describe('CommentBubble — SR-117: a comment can outlive its author', () => {
     expect(tree.queryByLabelText(HIDE_NAME)).toBeNull();
   });
 });
+
+describe('CommentBubble — content robustness (the two still-true wave6 rows, implemented)', () => {
+  it('a very long comment from a very long author name survives into the composite label untruncated', () => {
+    const longAuthor = 'Anastasia-Wilhelmina Featherstonehaugh-Cholmondeley the Third of Llanfairpwllgwyngyll';
+    const longText = 'The accessible entrance on the north side is blocked again. '.repeat(40).trim();
+
+    const tree = render(
+      <CommentBubble author={longAuthor} text={longText} createdAt={CREATED_AT} isOwn={false} />,
+    );
+
+    // Composite row (no actions wired) — the one VoiceOver node must carry the
+    // FULL text: silent truncation here would clip what a screen reader hears.
+    const label = String(rootProps(tree).accessibilityLabel);
+    expect(label).toContain(longAuthor);
+    expect(label).toContain(longText);
+  });
+
+  it('a comment from the far past still renders with a composite label (relativeTime does not choke)', () => {
+    const ancient = new Date('2020-01-01T00:00:00Z');
+
+    const tree = render(
+      <CommentBubble author={AUTHOR} text={TEXT} createdAt={ancient} isOwn={false} />,
+    );
+
+    expect(String(rootProps(tree).accessibilityLabel)).toMatch(new RegExp(`^Comment by ${AUTHOR}: `));
+  });
+});

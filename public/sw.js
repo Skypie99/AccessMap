@@ -62,9 +62,21 @@ self.addEventListener('fetch', (event) => {
   // ── Map tiles: CacheFirst ─────────────────────────────────────────────────
   // Tiles rarely change; serve from cache immediately when available.
   // Falls back to network on a cache miss, then stores the response.
-  const isTile =
-    url.hostname.includes('tile.openstreetmap.org') ||
-    url.pathname.includes('/tiles/');
+  //
+  // PL-5 (security audit 2026-07-31): this rule used to match
+  // `tile.openstreetmap.org`, which the app stopped using when it moved to
+  // CARTO basemaps. The consequences were not cosmetic: TILE_CACHE was dead
+  // code, and every map tile instead fell through to the app-shell
+  // StaleWhileRevalidate branch below — landing in the SAME cache as Supabase
+  // API responses, with no size bound. Panning the map grew that cache without
+  // limit, which is most of why the cache PL-2 now purges on sign-out was
+  // large in the first place.
+  //
+  // Host tests are exact/suffix matches, not substring: `.includes('supabase.co')`
+  // also matches `https://evil-supabase.co.attacker.test/`. Same reason the
+  // `/tiles/` path test is gone — it gave cache-first, never-revalidate
+  // treatment to any URL containing that segment, on any origin.
+  const isTile = url.hostname.endsWith('.basemaps.cartocdn.com');
 
   if (isTile) {
     event.respondWith(
@@ -90,9 +102,10 @@ self.addEventListener('fetch', (event) => {
   // ── Supabase API: NetworkFirst ────────────────────────────────────────────
   // Always try the network first so users get fresh data.
   // Falls back to a previously cached response when offline.
+  // Suffix match, not substring — see the note on the tile rule above.
   const isSupabase =
-    url.hostname.includes('supabase.co') ||
-    url.hostname.includes('supabase.io');
+    url.hostname.endsWith('.supabase.co') ||
+    url.hostname.endsWith('.supabase.io');
 
   if (isSupabase) {
     event.respondWith(

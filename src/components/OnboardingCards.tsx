@@ -23,7 +23,7 @@ import {
 } from '@/lib/pushNotifications';
 import { a11yToggle, decorativeProps, useFocusOnOpen } from '@/lib/accessibility';
 import { SEVERITY_LABELS, SEVERITY_ORDER } from '@/lib/flags';
-import { font, radius, spacing, gradient } from '@/theme';
+import { color as staticColor, font, radius, spacing, gradient, shadow } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 
@@ -129,7 +129,9 @@ const CARDS: Card[] = [
   },
   {
     icon: Sparkles,
-    iconColor: '#FBB024',
+    // goldAccent is mode-independent, so the static import is correct here
+    // (the card defs are module-level, outside useColor's reach). BP-8.
+    iconColor: staticColor.goldAccent,
     title: "You're all set",
     body: 'Go explore your neighbourhood. Every barrier you flag helps someone navigate the world a little easier.',
     isFinal: true,
@@ -264,11 +266,20 @@ export default function OnboardingCards({ onDone }: Props) {
       goTo(index + 1);
       return;
     }
-    if (permission === 'location') {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      setLocationGranted(status === 'granted');
-    } else if (permission === 'notifications') {
-      setNotifGranted(await requestNotificationPermission());
+    try {
+      if (permission === 'location') {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        setLocationGranted(status === 'granted');
+      } else if (permission === 'notifications') {
+        setNotifGranted(await requestNotificationPermission());
+      }
+    } catch {
+      // COR-6: a REJECTED permission request (rare OS/entitlement states)
+      // counts as not-granted — the contract above stands: denying (or
+      // failing) never blocks progress, and the primary button must never
+      // read as dead.
+      if (permission === 'location') setLocationGranted(false);
+      else setNotifGranted(false);
     }
     goTo(index + 1);
   };
@@ -437,7 +448,15 @@ export default function OnboardingCards({ onDone }: Props) {
         </View>
 
         {/* Actions */}
-        <View style={[styles.actions, showDecline && styles.actionsTight]}>
+        <View
+          // BP-sweep: the top bar already derives from insets; the CTA row's
+          // 36/sm pads were still hardcoded guesses. Floor preserved.
+          style={[
+            styles.actions,
+            showDecline && styles.actionsTight,
+            { paddingBottom: Math.max(showDecline ? spacing.sm : 36, insets.bottom + spacing.sm) },
+          ]}
+        >
           <Pressable
             onPress={() => goTo(index - 1)}
             disabled={isFirst}
@@ -768,11 +787,9 @@ const makeStyles = (color: ColorTheme) =>
       alignItems: 'center',
       minHeight: 44,
       justifyContent: 'center',
-      shadowColor: '#1466E0',
-      shadowOpacity: 0.45,
-      shadowRadius: 12,
-      shadowOffset: { width: 0, height: 4 },
-      elevation: 6,
+      // The tokenized brand glow — was a hand-rolled 0.45 sibling of the
+      // SignIn 0.55; every CTA glow now rides shadow.glowBrand (BP-8).
+      ...shadow.glowBrand,
     },
     primaryBtnText: {
       // Weight comes from the label variant's family (PublicSans SemiBold);

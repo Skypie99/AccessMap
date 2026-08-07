@@ -33,7 +33,6 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 import {
   AccessibilityInfo,
-  ActivityIndicator,
   FlatList,
   Modal,
   Pressable,
@@ -44,6 +43,7 @@ import {
 import { EyeOff, X } from 'lucide-react-native';
 import { AppText } from '@/components/ui/AppText';
 import { GlassSurface } from '@/components/ui/GlassSurface';
+import { SkeletonRow } from '@/components/ui/Skeleton';
 import { confirm, notify } from '@/lib/confirm';
 import { errorMessage } from '@/lib/errors';
 import { fetchCommentsByIds } from '@/lib/comments';
@@ -67,7 +67,7 @@ import {
   unhideAllConfirmBody,
   unhideCommentA11yLabel,
 } from '@/lib/copy';
-import { font, radius, spacing } from '@/theme';
+import { bulkGlassShadow, font, radius, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import type { CommentRow } from '@/types/database';
 
@@ -348,7 +348,7 @@ export default function HiddenCommentsModal({ visible, onClose }: Props) {
               <Pressable
                 onPress={onClose}
                 hitSlop={12}
-                style={styles.closeBtn}
+                style={({ pressed }) => [styles.closeBtn, pressed && { backgroundColor: color.borderPressed }]}
                 accessibilityRole="button"
                 accessibilityLabel="Close hidden comments"
               >
@@ -367,8 +367,12 @@ export default function HiddenCommentsModal({ visible, onClose }: Props) {
             )}
 
             {loading ? (
-              <View style={styles.center}>
-                <ActivityIndicator />
+              // Content-shaped loading (BP-3): row placeholders; the bare
+              // unthemed spinner told SR users nothing — the label does now.
+              <View accessibilityLabel="Loading hidden comments" accessibilityLiveRegion="polite">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <SkeletonRow key={i} />
+                ))}
               </View>
             ) : items.length === 0 ? (
               <View style={styles.center}>
@@ -420,12 +424,7 @@ const makeStyles = (color: ColorTheme) =>
     cardWrap: {
       borderTopLeftRadius: radius.xl,
       borderTopRightRadius: radius.xl,
-      ...(color.scheme === 'dark'
-        ? { shadowColor: '#000', shadowOpacity: 0.35 }
-        : { shadowColor: color.shadowTint, shadowOpacity: 0.12 }),
-      shadowRadius: 14,
-      shadowOffset: { width: 0, height: -4 },
-      elevation: 5,
+      ...bulkGlassShadow(color),
     },
     header: { flexDirection: 'row', alignItems: 'center', marginBottom: spacing.sm },
     title: {

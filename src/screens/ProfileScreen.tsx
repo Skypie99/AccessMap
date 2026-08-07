@@ -38,9 +38,9 @@ import {
   fetchFlagsByIds,
   listFlagsByUser,
   SEVERITY_LABELS,
-  STATUS_COLORS,
   STATUS_LABELS,
 } from '@/lib/flags';
+import { statusPalette } from '@/components/StatusBadge';
 import { severityA11y } from '@/lib/a11yText';
 import { useFlags } from '@/lib/flagsStore';
 import { useUserLocation } from '@/lib/location';
@@ -81,7 +81,7 @@ import RecentlyViewedRow from '@/components/RecentlyViewedRow';
 import ReportsBreakdownCard from '@/components/ReportsBreakdownCard';
 import LeaderboardScreen from '@/screens/LeaderboardScreen';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
-import { font, radius, shadow, spacing } from '@/theme';
+import { androidSwitchThumbOff, font, radius, shadow, spacing } from '@/theme';
 import { AppText } from '@/components/ui/AppText';
 import { Input } from '@/components/ui/Input';
 import { GlassSurface } from '@/components/ui/GlassSurface';
@@ -820,7 +820,10 @@ export default function ProfileScreen() {
       <View style={styles.stageRoot}>
         <ScreenStage />
         <View style={styles.center}>
-          <ActivityIndicator />
+          {/* brandText, not brand: spinner strokes want ≥4.5:1 on the stage
+              (the NotificationPreferences M-24 reasoning; StatusHistory is the
+              brand-flavored precedent). */}
+          <ActivityIndicator color={color.brandText} />
         </View>
       </View>
     );
@@ -892,7 +895,7 @@ export default function ProfileScreen() {
           // (mirrors the headerless Home/Tasks). Overrides the container's top pad.
           { paddingTop: insets.top + spacing.lg, paddingBottom: tabBarHeight + 16 },
         ]}
-        refreshControl={<RefreshControl refreshing={loading} onRefresh={load} />}
+        refreshControl={<RefreshControl refreshing={loading} onRefresh={load} tintColor={color.brand} colors={[color.brand]} />}
       >
         <ScreenHeader
           eyebrow="PROFILE"
@@ -1259,7 +1262,9 @@ export default function ProfileScreen() {
         {stats.reported > 0 && (
           <View style={styles.statusBreakdownRow} accessibilityLabel="Your reports by status">
             {(['open', 'verified', 'resolved', 'rejected'] as FlagStatus[]).map((status) => {
-              const palette = STATUS_COLORS[status];
+              // Themed (light + dark) — the light-only STATUS_COLORS map froze
+              // these pills in light colors on dark surfaces (BP-2 fix).
+              const palette = statusPalette(color, status);
               const count = stats.byStatus[status];
               const statusWord = STATUS_LABELS[status].toLowerCase();
               const pillInner = (
@@ -1528,7 +1533,11 @@ export default function ProfileScreen() {
             <Pressable
               onPress={handleSaveName}
               disabled={!nameChanged}
-              style={[styles.saveBtn, !nameChanged && styles.saveBtnDisabled]}
+              style={({ pressed }) => [
+                styles.saveBtn,
+                !nameChanged && styles.saveBtnDisabled,
+                pressed && nameChanged && { backgroundColor: color.ctaFillPressed },
+              ]}
               accessibilityRole="button"
               accessibilityLabel="Save display name"
               {...a11yToggle({ disabled: !nameChanged, busy: savingName })}
@@ -1607,9 +1616,9 @@ export default function ProfileScreen() {
               accessibilityLabel="Show new flags in real-time"
               accessibilityHint="When on, the map updates automatically as new flags are reported or triaged — no need to refresh manually"
               {...a11yToggle({ checked: realtimeEnabled, busy: savingRealtime, disabled: savingRealtime })}
-              trackColor={{ false: '#ccc', true: color.brand }}
+              trackColor={{ false: color.borderStrong, true: color.brand }}
               thumbColor={
-                Platform.OS === 'android' ? (realtimeEnabled ? color.brand : '#f4f3f4') : undefined
+                Platform.OS === 'android' ? (realtimeEnabled ? color.brand : androidSwitchThumbOff) : undefined
               }
             />
           </View>
@@ -1621,7 +1630,7 @@ export default function ProfileScreen() {
           </AppText>
           <Pressable
             onPress={handleShowIntroAgain}
-            style={styles.linkBtn}
+            style={({ pressed }) => [styles.linkBtn, pressed && { backgroundColor: color.borderPressed }]}
             accessibilityRole="button"
             accessibilityLabel="Show me the intro again"
             accessibilityHint="Resets the first-run cards so they appear at the next sign in"
@@ -1695,7 +1704,7 @@ export default function ProfileScreen() {
         </Pressable>
 
         <Pressable
-          style={styles.signOutBtn}
+          style={({ pressed }) => [styles.signOutBtn, pressed && { backgroundColor: color.borderPressed }]}
           onPress={async () => {
             const ok = await confirm(
               'Sign out',
@@ -1717,7 +1726,7 @@ export default function ProfileScreen() {
         </Pressable>
 
         <Pressable
-          style={styles.deleteAccountBtn}
+          style={({ pressed }) => [styles.deleteAccountBtn, pressed && { opacity: 0.7 }]}
           onPress={() => setDeleteAccountOpen(true)}
           accessibilityRole="button"
           accessibilityLabel="Delete Account"
@@ -1796,7 +1805,7 @@ export default function ProfileScreen() {
                 {...a11yToggle({ busy: deletingAccount, disabled: deletingAccount })}
               >
                 {deletingAccount ? (
-                  <ActivityIndicator color="#fff" size="small" />
+                  <ActivityIndicator color={color.textOnBrand} size="small" />
                 ) : (
                   <AppText variant="label" style={styles.deleteConfirmText}>Delete Account</AppText>
                 )}
@@ -1906,7 +1915,7 @@ export default function ProfileScreen() {
               <Pressable
                 onPress={() => setTierExplainerOpen(false)}
                 hitSlop={12}
-                style={styles.tierCloseBtn}
+                style={({ pressed }) => [styles.tierCloseBtn, pressed && { backgroundColor: color.borderPressed }]}
                 accessibilityRole="button"
                 accessibilityLabel="Close reputation tiers"
               >
@@ -2295,7 +2304,7 @@ const makeStyles = (color: ColorTheme) =>
       fontWeight: font.weight.bold,
       color: color.inkGlassMuted, // arbitrated muted ink on the row glass
       textTransform: 'uppercase',
-      letterSpacing: 0.8,
+      letterSpacing: font.tracking.section,
     },
     pointHistoryRow: {
       flexDirection: 'row',
@@ -2421,11 +2430,12 @@ const makeStyles = (color: ColorTheme) =>
       fontSize: 11,
       color: color.inkGlassMuted, // arbitrated muted ink on the row glass
       textTransform: 'uppercase',
-      letterSpacing: 0.8,
+      letterSpacing: font.tracking.section,
       fontWeight: '600',
     },
     // Per-status pill row (open / verified / resolved / rejected). Uses
-    // STATUS_COLORS for visual continuity with the badges in detail modals.
+    // statusPalette (themed) for visual continuity with the badges in detail
+    // modals — dark-mode-correct since BP-2 of the 2026-08-01 polish.
     statusBreakdownRow: {
       flexDirection: 'row',
       gap: 8,
@@ -2454,7 +2464,7 @@ const makeStyles = (color: ColorTheme) =>
     // Zero-count pills fade so the eye lands on what's actually there.
     statusPillDimmed: { opacity: 0.55 },
     statusPillCount: { fontSize: 18, fontWeight: '700' },
-    statusPillLabel: { fontSize: 10, fontWeight: '700', textTransform: 'uppercase' },
+    statusPillLabel: { fontSize: 10, fontWeight: '700', textTransform: 'uppercase', letterSpacing: font.tracking.loose },
     myReportsBtn: {
       // Material via <GlassSurface variant="row" forceEngineered> (engineered —
       // outside the blur cluster, budget-free). No bg here; layout + shadow stay.
@@ -2485,7 +2495,7 @@ const makeStyles = (color: ColorTheme) =>
       // Section headers sit on the raw stage — inkOnStage (textMuted is below AA there).
       color: color.inkOnStage,
       textTransform: 'uppercase',
-      letterSpacing: 0.8,
+      letterSpacing: font.tracking.section,
       fontWeight: '700',
     },
     nameRow: { flexDirection: 'row', gap: 8 },

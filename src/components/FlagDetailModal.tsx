@@ -198,6 +198,9 @@ export default function FlagDetailModal({
     refetch: refetchComments,
   } = useComments(shownFlag?.id);
   const [commentText, setCommentText] = useState('');
+  // BP-6 focus cue: border swaps to brand while focused (width unchanged — no
+  // layout shift). The Input primitive's treatment, applied to this raw field.
+  const [commentFocused, setCommentFocused] = useState(false);
   const [commentSubmitting, setCommentSubmitting] = useState(false);
   const commentInputRef = useRef<TextInput>(null);
   useEffect(() => {
@@ -265,7 +268,11 @@ export default function FlagDetailModal({
   }, [visible, shownFlag, user]);
 
   // Load the gallery photos whenever the modal opens or the flag changes.
-  // listFlagPhotos silently returns [] if the migration hasn't run yet.
+  // listFlagPhotos returns [] only when the migration hasn't run yet; real
+  // failures throw (COR-3). The gallery has no error-state UI (banked for
+  // Sky), so the VIEW path degrades to warn + keep the current list — the
+  // throw matters on the write path, where addFlagPhoto's position math must
+  // not run against a failed read.
   useEffect(() => {
     if (!visible || !shownFlag) {
       setFlagPhotos([]);
@@ -273,8 +280,12 @@ export default function FlagDetailModal({
     }
     let cancelled = false;
     (async () => {
-      const photos = await listFlagPhotos(shownFlag.id);
-      if (!cancelled) setFlagPhotos(photos);
+      try {
+        const photos = await listFlagPhotos(shownFlag.id);
+        if (!cancelled) setFlagPhotos(photos);
+      } catch (e) {
+        console.warn('[FlagDetailModal] photo gallery load failed:', e);
+      }
     })();
     return () => {
       cancelled = true;
@@ -560,7 +571,14 @@ export default function FlagDetailModal({
       onEdited?.(updated); // F58: propagate to the shared store/list
       setIsEditing(false);
     } catch (e) {
-      notify('Could not save changes', errorMessage(e));
+      // §SKY-7 coherence, same as the comment path above: text rejected by the
+      // 1.2(a) filter offers the guidelines it was judged against, instead of
+      // a bare failure the author can't act on.
+      if (isContentBlockedError(e)) {
+        showBlockedContentAlert('Could not save changes', () => setOpen('terms'));
+      } else {
+        notify('Could not save changes', errorMessage(e));
+      }
     } finally {
       setBusy(false);
     }
@@ -1304,7 +1322,7 @@ export default function FlagDetailModal({
                     value={editDesc}
                     onChangeText={setEditDesc}
                     placeholder="Describe the accessibility issue"
-                    placeholderTextColor={color.textMuted}
+                    placeholderTextColor={color.placeholderText}
                     multiline
                     // Mirror ReportFlagModal + the DB
                     // flags_description_length_chk constraint (2000).
@@ -1429,7 +1447,7 @@ export default function FlagDetailModal({
                         value={reopenText}
                         onChangeText={setReopenText}
                         placeholder="Describe why this barrier is still present…"
-                        placeholderTextColor={color.textMuted}
+                        placeholderTextColor={color.placeholderText}
                         multiline
                         maxLength={280}
                         style={styles.reopenInput}
@@ -1458,10 +1476,11 @@ export default function FlagDetailModal({
                         <Pressable
                           onPress={() => void handleReopenSubmit()}
                           disabled={reopenBusy || !reopenText.trim()}
-                          style={[
+                          style={({ pressed }) => [
                             styles.actionBtn,
                             styles.reopenSubmitBtn,
                             (reopenBusy || !reopenText.trim()) && styles.reopenSubmitBtnDisabled,
+                            pressed && !(reopenBusy || !reopenText.trim()) && { backgroundColor: color.ctaFillPressed },
                           ]}
                           accessibilityRole="button"
                           accessibilityLabel="Submit reopen request"
@@ -1607,7 +1626,7 @@ export default function FlagDetailModal({
                 ) : comments.length === 0 ? (
                   <View style={styles.commentsEmptyContainer}>
                     <MessageCircle
-                      size={24}
+                      size={32}
                       color={color.inkGlassMuted}
                       strokeWidth={2} {...decorativeProps}
                     />
@@ -1747,11 +1766,13 @@ export default function FlagDetailModal({
                   <View style={styles.commentInputRow}>
                     <TextInput
                       ref={commentInputRef}
-                      style={styles.commentInput}
+                      style={[styles.commentInput, commentFocused && { borderColor: color.brand }]}
                       value={commentText}
                       onChangeText={setCommentText}
+                      onFocus={() => setCommentFocused(true)}
+                      onBlur={() => setCommentFocused(false)}
                       placeholder="Add a comment…"
-                      placeholderTextColor={color.textMuted}
+                      placeholderTextColor={color.placeholderText}
                       maxLength={MAX_COMMENT_LENGTH}
                       returnKeyType="send"
                       onSubmitEditing={() => void handleSubmitComment()}
@@ -1982,7 +2003,7 @@ const makeStyles = (color: ColorTheme) =>
       fontWeight: font.weight.semibold,
       color: color.inkGlassMuted,
       textTransform: 'uppercase',
-      letterSpacing: 0.5,
+      letterSpacing: font.tracking.section,
     },
     beforeAfterImage: {
       width: '100%',
@@ -2053,7 +2074,7 @@ const makeStyles = (color: ColorTheme) =>
       fontWeight: font.weight.semibold,
       color: color.inkGlassMuted,
       textTransform: 'uppercase',
-      letterSpacing: 0.5,
+      letterSpacing: font.tracking.section,
       marginTop: spacing.sm,
     },
     description: { fontSize: font.size.md, color: color.textStrong, lineHeight: 21 },
@@ -2241,11 +2262,13 @@ const makeStyles = (color: ColorTheme) =>
       fontWeight: font.weight.bold,
       color: color.inkGlassMuted,
       textTransform: 'uppercase',
-      letterSpacing: 0.5,
+      letterSpacing: font.tracking.section,
     },
     editInput: {
       borderWidth: 1,
-      borderColor: color.border,
+      // borderStrong — the compose-field standard; this file had a 3-way
+      // border split across its own inputs (BP-6).
+      borderColor: color.borderStrong,
       borderRadius: radius.lg,
       padding: spacing.md,
       fontSize: font.size.base,
@@ -2367,7 +2390,9 @@ const makeStyles = (color: ColorTheme) =>
       fontSize: font.size.base,
       color: color.text,
       backgroundColor: color.surfaceSoft,
-      minHeight: 40,
+      // WCAG 2.5.5/2.5.8: was 40pt — the app's one remaining sub-44 input
+      // (the same class TasksScreen's searchInput fixed; SR-034's gap).
+      minHeight: 44,
       maxHeight: 100,
     },
     commentSendBtn: {
@@ -2447,11 +2472,11 @@ const makeStyles = (color: ColorTheme) =>
       fontWeight: font.weight.bold,
       color: color.inkGlassMuted,
       textTransform: 'uppercase',
-      letterSpacing: 0.5,
+      letterSpacing: font.tracking.section,
     },
     reopenInput: {
       borderWidth: 1,
-      borderColor: color.border,
+      borderColor: color.borderStrong, // compose-field standard (BP-6)
       borderRadius: radius.lg,
       padding: spacing.sm,
       fontSize: font.size.base,

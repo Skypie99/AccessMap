@@ -82,6 +82,7 @@ import { hydrateGlassMode, toggleGlassMode, useGlassMode } from '@/lib/glassMode
 import { useDrawer, useDrawerTrigger } from '@/lib/drawerContext';
 import { useSharedModals } from '@/lib/sharedModalsContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { safeImageUrl } from '@/lib/remoteImageUrl';
 
 // Code-split: the flag-detail sheet only opens when a card is tapped. React.lazy
 // moves its (large) code into a shared async web chunk — the SAME chunk is reused
@@ -544,8 +545,12 @@ export default function TasksScreen() {
         for (const id of targetIds) {
           try {
             // F53: CAS on the status the list showed for this row.
-            const updated = await updateFlagStatus(id, targetStatus, flagsMap.get(id)?.status);
-            track('flag_status_changed', { flagId: id, from: updated.status === targetStatus ? 'open' : updated.status, to: targetStatus });
+            const fromStatus = flagsMap.get(id)?.status;
+            const updated = await updateFlagStatus(id, targetStatus, fromStatus);
+            // COR-4: log the PRE-CAS status — after a successful CAS,
+            // updated.status === targetStatus is always true, so the old
+            // ternary tautologically reported 'open' for every bulk action.
+            track('flag_status_changed', { flagId: id, from: fromStatus ?? 'open', to: targetStatus });
             if (action === 'verify') {
               // Verify keeps the flag visible (status becomes 'verified'),
               // so patch the store with the new row.
@@ -1002,7 +1007,7 @@ export default function TasksScreen() {
           {searchText.length > 0 && (
             <Pressable
               onPress={() => setSearchText('')}
-              style={styles.searchClearBtn}
+              style={({ pressed }) => [styles.searchClearBtn, pressed && { opacity: 0.7 }]}
               accessibilityRole="button"
               accessibilityLabel="Clear search"
               hitSlop={8}
@@ -1292,6 +1297,8 @@ export default function TasksScreen() {
         refreshControl={
           <RefreshControl
             refreshing={loading}
+            tintColor={color.brand}
+            colors={[color.brand]}
             // Spawn the spinner below the absolute chrome pane, not under it.
             progressViewOffset={chromeHeight ?? CHROME_FALLBACK_HEIGHT + insets.top}
             onRefresh={() => {
@@ -1384,6 +1391,9 @@ export default function TasksScreen() {
                 >
                   {loadingMore ? (
                     <ActivityIndicator
+                      // inkSelect — the arbitrated load-more ink on glass
+                      // (GLASS.md §2 inks table). Was platform-grey.
+                      color={color.inkSelect}
                       accessibilityLabel="Loading more flags"
                       {...a11yToggle({ busy: true })}
                     />
@@ -1621,6 +1631,12 @@ const FlagCard = memo(function FlagCard({
   // Tracks the remote image's load so a shimmer covers the blank gap until the
   // photo actually paints (not just until it's scrolled into view).
   const [photoLoaded, setPhotoLoaded] = useState(false);
+  // TB-3 (security audit 2026-07-31): these two thumbnails and the lightbox are
+  // raw <Image>s, so they bypass RemoteImage's allow-list. `photo_url` is an
+  // unconstrained column a hostile row can point at any server, which would
+  // beacon this viewer's IP. Reject anything outside our Storage origin; a
+  // rejected URL reads as "no photo", which the gates below already handle.
+  const safePhotoUrl = useMemo(() => safeImageUrl(flag.photo_url), [flag.photo_url]);
   // Compute distance + ETA once per card per location change. Without the
   // memo this would recompute on every parent state flip (busyId, flash).
   const distanceInfo = useMemo(() => {
@@ -1833,7 +1849,7 @@ const FlagCard = memo(function FlagCard({
         )}
       </View>
       <View style={styles.cardBody}>
-        {flag.photo_url && !photoError ? (
+        {safePhotoUrl && !photoError ? (
           selectionActive ? (
             // F17: in bulk-select mode the whole card is the selection toggle.
             // Render the thumbnail as a NON-interactive View so a tap on the
@@ -1848,7 +1864,7 @@ const FlagCard = memo(function FlagCard({
             >
               {photoInView && (
                 <Image
-                  source={{ uri: flag.photo_url }}
+                  source={{ uri: safePhotoUrl }}
                   style={styles.cardThumb}
                   onLoad={() => setPhotoLoaded(true)}
                   onError={() => setPhotoError(true)}
@@ -1878,7 +1894,7 @@ const FlagCard = memo(function FlagCard({
             >
               {photoInView && (
                 <Image
-                  source={{ uri: flag.photo_url }}
+                  source={{ uri: safePhotoUrl }}
                   style={styles.cardThumb}
                   onLoad={() => setPhotoLoaded(true)}
                   onError={() => setPhotoError(true)}
@@ -1942,10 +1958,10 @@ const FlagCard = memo(function FlagCard({
       {/* Full-screen photo lightbox — only mounts when the thumbnail exists
           and has loaded successfully. Tapping the thumbnail (or the close
           button inside the modal) dismisses it. */}
-      {flag.photo_url && !photoError ? (
+      {safePhotoUrl && !photoError ? (
         <PhotoLightboxModal
           visible={lightboxOpen}
-          photoUrl={flag.photo_url}
+          photoUrl={safePhotoUrl}
           caption={`${CATEGORY_LABELS[flag.category]} accessibility issue`}
           onClose={() => setLightboxOpen(false)}
         />
@@ -2224,7 +2240,7 @@ const makeStyles = (color: ColorTheme, reduceTransparency: boolean) => {
       // stop (textMuted #666 measured 4.10:1 there — forked deeper).
       color: color.inkOnStage,
       textTransform: 'uppercase',
-      letterSpacing: 0.8,
+      letterSpacing: font.tracking.section,
     },
     sectionCountPill: {
       backgroundColor: color.brandSoft,

@@ -9,7 +9,7 @@
  * refreshUpdateCount with the now-saved prefs).
  */
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Switch, type Text, View } from 'react-native';
+import { ActivityIndicator, Modal, Platform, Pressable, ScrollView, StyleSheet, Switch, type Text, View } from 'react-native';
 import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 import { useAuth } from '@/lib/auth';
 import { AppText } from '@/components/ui/AppText';
@@ -24,7 +24,7 @@ import {
 } from '@/lib/notificationPrefs';
 import type { FlagStatus } from '@/types/database';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
-import { font, radius, spacing } from '@/theme';
+import { androidSwitchThumbOff, bulkGlassShadow, font, radius, spacing } from '@/theme';
 import { a11yToggle, decorativeProps, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
 import { X } from 'lucide-react-native';
 
@@ -239,6 +239,9 @@ export default function NotificationPrefsModal({
                       // own value, but pairing it with accessibilityState
                       // is the documented contract (QA Pass-2 #5).
                       {...a11yToggle({ checked: value })}
+                      // BP-6: the estate Switch recipe — brand track, themed false-track.
+                      trackColor={{ false: color.borderStrong, true: color.brand }}
+                      thumbColor={Platform.OS === 'android' ? (value ? color.brand : androidSwitchThumbOff) : undefined}
                     />
                   </View>
                 );
@@ -279,12 +282,7 @@ const makeStyles = (color: ColorTheme) =>
     cardWrap: {
       borderTopLeftRadius: radius.lg,
       borderTopRightRadius: radius.lg,
-      ...(color.scheme === 'dark'
-        ? { shadowColor: '#000', shadowOpacity: 0.35 }
-        : { shadowColor: color.shadowTint, shadowOpacity: 0.12 }),
-      shadowRadius: 14,
-      shadowOffset: { width: 0, height: -4 },
-      elevation: 5,
+      ...bulkGlassShadow(color),
     },
     headerRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
     titleWrap: { flex: 1, gap: 2 },

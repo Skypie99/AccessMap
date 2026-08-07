@@ -14,7 +14,7 @@ import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 import { useAuth } from '@/lib/auth';
 import { AppText } from '@/components/ui/AppText';
 import { GlassSurface } from '@/components/ui/GlassSurface';
-import { font, radius, shadow, spacing } from '@/theme';
+import { bulkGlassShadow, font, radius, shadow, spacing } from '@/theme';
 import { a11yToggle, decorativeProps, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { MessageCircle, RefreshCw, Search, X } from 'lucide-react-native';
@@ -149,7 +149,7 @@ export default function MyFeedbackModal({ visible, onClose, refreshKey = 0 }: Pr
             <Pressable
               onPress={() => void load()}
               hitSlop={12}
-              style={styles.closeBtn}
+              style={({ pressed }) => [styles.closeBtn, pressed && { backgroundColor: color.borderPressed }]}
               accessibilityRole="button"
               accessibilityLabel="Refresh"
               accessibilityHint="Reloads your feedback without pulling down the list"
@@ -223,7 +223,7 @@ export default function MyFeedbackModal({ visible, onClose, refreshKey = 0 }: Pr
             data={filteredRows}
             keyExtractor={(r) => r.id}
             accessibilityRole="list"
-            refreshControl={<RefreshControl refreshing={loading} onRefresh={load} />}
+            refreshControl={<RefreshControl refreshing={loading} onRefresh={load} tintColor={color.brand} colors={[color.brand]} />}
             contentContainerStyle={
               filteredRows.length === 0 ? styles.emptyContainer : styles.listContainer
             }
@@ -231,7 +231,7 @@ export default function MyFeedbackModal({ visible, onClose, refreshKey = 0 }: Pr
             ListEmptyComponent={
               <View style={styles.emptyCard} accessible accessibilityRole="text">
                 {loading ? (
-                  <ActivityIndicator />
+                  <ActivityIndicator color={color.brandText} />
                 ) : rows.length > 0 ? (
                   // Have feedback, but the active filter hides all of it.
                   <>
@@ -328,12 +328,7 @@ const makeStyles = (color: ColorTheme) =>
       flexShrink: 1,
       borderTopLeftRadius: radius.xl,
       borderTopRightRadius: radius.xl,
-      ...(color.scheme === 'dark'
-        ? { shadowColor: '#000', shadowOpacity: 0.35 }
-        : { shadowColor: color.shadowTint, shadowOpacity: 0.12 }),
-      shadowRadius: 14,
-      shadowOffset: { width: 0, height: -4 },
-      elevation: 5,
+      ...bulkGlassShadow(color),
     },
     headerRow: {
       flexDirection: 'row',

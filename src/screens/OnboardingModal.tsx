@@ -162,7 +162,7 @@ export default function OnboardingModal({ visible, onDone }: Props) {
         <View style={[styles.topBar, { paddingTop: Math.max(insets.top, spacing.lg) }]}>
           <Pressable
             onPress={handleSkip}
-            style={styles.skipBtn}
+            style={({ pressed }) => [styles.skipBtn, pressed && { opacity: 0.7 }]}
             accessibilityRole="button"
             accessibilityLabel="Skip the introduction"
             hitSlop={12}

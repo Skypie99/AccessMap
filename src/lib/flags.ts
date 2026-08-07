@@ -5,7 +5,9 @@ import * as ImageManipulator from 'expo-image-manipulator';
 import { trackEvent } from './analytics';
 import { containsBlockedTerm } from '@/moderation/blockedTerms';
 import { CONTENT_BLOCKED_MESSAGE } from './copy';
+import { isColumnMissing, isFunctionMissing } from './postgrestErrors';
 import type { FlagCategory, FlagRow, FlagSeverity, FlagStatus } from '@/types/database';
+import { STORAGE_PUBLIC_PREFIX } from '@/lib/remoteImageUrl';
 
 export const FLAG_PHOTOS_BUCKET = 'flag-photos';
 
@@ -893,7 +895,7 @@ export async function uploadFlagPhoto(
  * the photo.
  *
  * ─── IT FAILS CLOSED, AND THAT IS THE WHOLE DESIGN ────────────────────────
- * It anchors on the KNOWN constant `/storage/v1/object/public/<bucket>/` rather
+ * It anchors on the KNOWN constant `STORAGE_PUBLIC_PREFIX` + `<bucket>/` rather
  * than guessing at path segments, strips any query or fragment, decodes percent
  * escapes, and returns `null` the moment anything does not line up. A `null`
  * means "I could not be sure", and the caller deletes NOTHING. Never delete on
@@ -911,7 +913,7 @@ export async function uploadFlagPhoto(
  * regardless; what is worth knowing is only that a derivation failed and why.
  */
 export function storagePathFromPublicUrl(url: string, uid: string): string | null {
-  const marker = `/storage/v1/object/public/${FLAG_PHOTOS_BUCKET}/`;
+  const marker = `${STORAGE_PUBLIC_PREFIX}${FLAG_PHOTOS_BUCKET}/`;
   const at = url.indexOf(marker);
   if (at === -1) {
     console.warn('[flags] SR-050: photo URL did not match the expected public-object shape');
@@ -1078,24 +1080,6 @@ export async function listFlagsByUser(userId: string) {
   return (data ?? []) as FlagRow[];
 }
 
-// Heuristic: did this PostgREST error come from sending a column the schema
-// cache doesn't know about? PostgREST returns code 'PGRST204' for
-// "column 'X' of relation 'Y' does not exist" (schema-cache miss). On older
-// Supabase deployments the message-only path is the fallback. Used by
-// createFlag to gracefully degrade when the context_tags migration hasn't
-// been applied yet.
-function isUnknownColumnError(err: unknown, columnName: string): boolean {
-  if (!err || typeof err !== 'object') return false;
-  const code = (err as { code?: string }).code;
-  const message = (err as { message?: string }).message;
-  if (code === 'PGRST204') return true;
-  if (typeof message === 'string' && message.includes(columnName)) {
-    // "could not find the 'context_tags' column" or "column ... does not exist".
-    return /not (find|exist)/i.test(message);
-  }
-  return false;
-}
-
 // Capability gate for the `flags.context_tags` column. Starts 'unknown' on
 // app launch. Each successful insert WITH tags flips it to 'available'.
 // Each PGRST204-style failure flips it to 'unavailable' — the UI watches
@@ -1155,16 +1139,21 @@ export interface CreateFlagResult {
 const MAX_FLAG_DESCRIPTION_LENGTH = 2000;
 
 /**
- * Defense-in-depth validation shared by createFlag + createAnonFlag. The DB
- * CHECK constraints (severity 1-5, category whitelist) and the Report form's
- * maxLength are the primary guards; validating here too gives a clean
- * client-side error and protects any future or untyped caller.
+ * Defense-in-depth validation shared by createFlag, createAnonFlag, and
+ * updateFlagContent. The DB CHECK constraints (severity 1-5, category
+ * whitelist) and the forms' maxLength are the primary guards; validating here
+ * too gives a clean client-side error and protects any future or untyped
+ * caller. Edit patches are partial, so each field validates only when present
+ * (an absent field is never sent to the DB at all).
  */
-function assertValidCategoryAndSeverity(category: FlagCategory, severity: FlagSeverity): void {
-  if (!Object.prototype.hasOwnProperty.call(CATEGORY_LABELS, category)) {
+function assertValidCategoryAndSeverity(
+  category: FlagCategory | undefined,
+  severity: FlagSeverity | undefined,
+): void {
+  if (category !== undefined && !Object.prototype.hasOwnProperty.call(CATEGORY_LABELS, category)) {
     throw new Error('Please choose a valid category.');
   }
-  if (!Number.isInteger(severity) || severity < 1 || severity > 5) {
+  if (severity !== undefined && (!Number.isInteger(severity) || severity < 1 || severity > 5)) {
     throw new Error('Severity must be a whole number from 1 to 5.');
   }
 }
@@ -1229,21 +1218,17 @@ export async function createFlag(
   // backend. This avoids the wasted round-trip + the silent drop.
   const shouldTryTagged = tagsToSend !== undefined && contextTagsCapability !== 'unavailable';
   if (shouldTryTagged) {
-    // The Database type in src/types/database.ts doesn't list context_tags
-    // yet (we're keeping the migration propose-only), so cast the payload
-    // to escape the typed Insert shape. Once the migration lands and the
-    // type is updated, this cast can come off.
-    const withTags = { ...basePayload, context_tags: tagsToSend } as Record<string, unknown>;
+    const withTags = { ...basePayload, context_tags: tagsToSend };
     const { data, error } = await supabase
       .from('flags')
-      .insert(withTags as never)
+      .insert(withTags)
       .select()
       .single();
     if (!error) {
       setContextTagsCapability('available');
       return { row: data as FlagRow, tagsAccepted: true };
     }
-    if (!isUnknownColumnError(error, 'context_tags')) throw error;
+    if (!isColumnMissing(error, 'context_tags')) throw error;
     // Mark capability unavailable so future submits skip the doomed
     // tagged path AND so the UI can disable the picker.
     setContextTagsCapability('unavailable');
@@ -1269,23 +1254,6 @@ export function isAnon(flag: { user_id: string | null }): boolean {
   return flag.user_id === null;
 }
 
-// ---------------------------------------------------------------------------
-// Anonymous flag submission (no auth required)
-// ---------------------------------------------------------------------------
-
-export interface CreateAnonFlagInput {
-  lat: number;
-  lng: number;
-  category: FlagCategory;
-  severity: FlagSeverity;
-  description?: string | null;
-  // Photos are not supported for anon submissions — Storage RLS requires
-  // auth.uid() in the upload path. See docs/ANON_REPORTING_SPEC.md §6.
-  // Context tags are also disabled: the capability probe requires an auth
-  // session and silently dropping tags would confuse anon users.
-}
-
-
 export type FlagContentPatch = {
   description?: string | null;
   category?: FlagCategory;
@@ -1293,9 +1261,22 @@ export type FlagContentPatch = {
 };
 
 export async function updateFlagContent(flagId: string, patch: FlagContentPatch) {
+  // COR-1 (code-qa 2026-08-06): an owner edit runs the same trust-boundary
+  // guards as createFlag — otherwise edit lands what create refuses. Full
+  // parity including the Apple 1.2(a) filter: Sky ruled YES on Q-1
+  // (2026-08-06) — a clean flag edited into blocked content was the side
+  // door left open by filtering only the create path.
+  assertValidCategoryAndSeverity(patch.category, patch.severity);
+  if (patch.description && containsBlockedTerm(patch.description)) {
+    throw new Error(CONTENT_BLOCKED_MESSAGE);
+  }
+  const guarded: FlagContentPatch = { ...patch };
+  if (patch.description !== undefined) {
+    guarded.description = normalizeFlagDescription(patch.description);
+  }
   const { data, error } = await supabase
     .from('flags')
-    .update(patch)
+    .update(guarded)
     .eq('id', flagId)
     .select()
     .single();
@@ -1358,14 +1339,13 @@ export async function requestFlagReopen(flagId: string): Promise<number | null> 
     p_flag_id: flagId,
   });
   if (error) {
-    // Migration-absent fallback ONLY (F38 re-sweep): PostgREST PGRST202 =
-    // function not found in the schema cache; Postgres 42883 = undefined
-    // function. Anything else — network failure, RLS, timeout — must THROW so
-    // the caller shows an honest error. Collapsing every error to null made
-    // the modal display the success-sounding "sent for review" message for a
-    // vote that never reached the server.
-    const code = (error as { code?: string }).code;
-    if (code === 'PGRST202' || code === '42883') {
+    // Migration-absent fallback ONLY (F38 re-sweep): anything that isn't
+    // "the function does not exist" — network failure, RLS, timeout — must
+    // THROW so the caller shows an honest error. Collapsing every error to
+    // null made the modal display the success-sounding "sent for review"
+    // message for a vote that never reached the server. isFunctionMissing
+    // classifies exactly the migration-absent shapes (postgrestErrors.ts).
+    if (isFunctionMissing(error)) {
       console.warn(
         '[reopen] increment_reopen_request RPC missing (migration not applied):',
         error.message,
@@ -1524,7 +1504,13 @@ export async function fetchFlagsByIds(flagIds: string[]): Promise<FlagRow[]> {
  * precise disability-barrier location they personally reported.
  *
  * Safeguards already in place:
- *   - RLS on `flags` requires auth.uid() to be non-null (authenticated read).
+ *   - NOTE (corrected 2026-07-31, TB-10): the line that used to sit here said
+ *     "RLS on `flags` requires auth.uid() to be non-null". That has been FALSE
+ *     since 2026-05-29, when `flags readable by anon` was added — the table is
+ *     readable with the public anon key. It was load-bearing misinformation:
+ *     it is the safeguard a reader would rely on when reasoning about this
+ *     query, and the prior privacy review reasoned only about the `anon` role
+ *     while `display_name` stays joinable by any signed-in user (TB-9/AB-7).
  *   - The Activity Feed renderer MUST NOT display raw user_id; it should show
  *     only display_name (resolved separately) or no identity at all.
  *   - This query does NOT filter out rejected flags — the Activity Feed is
@@ -1636,10 +1622,12 @@ export const STATUS_LABELS: Record<FlagStatus, string> = {
   rejected: 'Rejected',
 };
 
-// Tinted-background + darker-foreground palette for the status badges.
-// Updated to design system 2026-05-31. Mirrors color.statusOpen/Verified/Resolved/RejectedBg/Fg
-// in src/theme.ts. Each pair clears WCAG AA 4.5:1 between `fg` and `bg`.
-// Keep these in sync with ThemeContext.tsx dark-mode equivalents.
+// ⚠ LIGHT-ONLY LEGACY. These are the LIGHT-palette status pairs frozen as
+// literals — they cannot follow dark mode. Do NOT consume in themed UI: use
+// statusPalette() from components/StatusBadge (reads the light+dark tokens).
+// Kept exported for non-themed/reference use and existing test mocks.
+// (Pre-ship polish 2026-08-01 — the last two themed consumers, ProfileScreen
+// and MyReportsModal, were migrated off this map.)
 export const STATUS_COLORS: Record<FlagStatus, { bg: string; fg: string }> = {
   open:     { bg: '#E7F0FD', fg: '#1A5FB4' },
   verified: { bg: '#DCF6EC', fg: '#067A56' },
@@ -1724,6 +1712,10 @@ export interface AnonFlagInput {
   category: FlagCategory;
   severity: FlagSeverity;
   description?: string;
+  // Photos are not supported for anon submissions — Storage RLS requires
+  // auth.uid() in the upload path. See docs/ANON_REPORTING_SPEC.md §6.
+  // Context tags are also disabled: the capability probe requires an auth
+  // session and silently dropping tags would confuse anon users.
 }
 
 /**
@@ -1741,13 +1733,13 @@ export async function createAnonFlag(input: AnonFlagInput): Promise<FlagRow> {
   const { lat, lng, category, severity, description } = input;
 
   if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
-    throw new Error('lat and lng must be finite numbers');
+    throw new Error('Invalid coordinates: lat and lng must be finite numbers.');
   }
   if (lat < -90 || lat > 90) {
-    throw new Error(`lat ${lat} is out of range [-90, 90]`);
+    throw new Error('Invalid coordinates: lat must be between -90 and 90.');
   }
   if (lng < -180 || lng > 180) {
-    throw new Error(`lng ${lng} is out of range [-180, 180]`);
+    throw new Error('Invalid coordinates: lng must be between -180 and 180.');
   }
   assertValidCategoryAndSeverity(category, severity);
 

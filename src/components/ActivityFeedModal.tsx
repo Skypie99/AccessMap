@@ -17,7 +17,7 @@
  */
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  ActivityIndicator,  Modal,
+  Modal,
   Pressable,
   RefreshControl,
   SectionList,
@@ -29,6 +29,7 @@ import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 import { RemoteImage } from '@/components/ui/RemoteImage';
 import { AppText } from '@/components/ui/AppText';
 import { GlassSurface } from '@/components/ui/GlassSurface';
+import { SkeletonCard } from '@/components/ui/Skeleton';
 import { SeverityDisc } from '@/components/SeverityDisc';
 import { useAuth } from '@/lib/auth';
 import { a11yToggle, decorativeProps, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
@@ -43,8 +44,8 @@ import { relativeTime } from '@/lib/relativeTime';
 import { loadWatched } from '@/lib/watchedFlags';
 import type { FlagRow } from '@/types/database';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
-import { font, radius, shadow, spacing } from '@/theme';
-import { MapPin, RefreshCw, X } from 'lucide-react-native';
+import { bulkGlassShadow, font, radius, shadow, spacing } from '@/theme';
+import { Clock, MapPin, RefreshCw, X } from 'lucide-react-native';
 import { StatusBadge } from '@/components/StatusBadge';
 
 type FeedFilter = 'all' | 'mine' | 'watched';
@@ -241,7 +242,7 @@ export default function ActivityFeedModal({ visible, onClose, onSelectFlag, onVi
             <Pressable
               onPress={() => void load()}
               hitSlop={12}
-              style={styles.closeBtn}
+              style={({ pressed }) => [styles.closeBtn, pressed && { backgroundColor: color.borderPressed }]}
               accessibilityRole="button"
               accessibilityLabel="Refresh"
               accessibilityHint="Reloads recent activity without pulling down the list"
@@ -252,7 +253,7 @@ export default function ActivityFeedModal({ visible, onClose, onSelectFlag, onVi
             <Pressable
               onPress={onClose}
               hitSlop={12}
-              style={styles.closeBtn}
+              style={({ pressed }) => [styles.closeBtn, pressed && { backgroundColor: color.borderPressed }]}
               accessibilityRole="button"
               accessibilityLabel="Close recent activity"
               accessibilityHint="Returns to your Profile"
@@ -290,7 +291,7 @@ export default function ActivityFeedModal({ visible, onClose, onSelectFlag, onVi
               <AppText variant="body" style={styles.errorText}>{loadError}</AppText>
               <Pressable
                 onPress={load}
-                style={styles.retryBtn}
+                style={({ pressed }) => [styles.retryBtn, pressed && { backgroundColor: color.errorPressed }]}
                 accessibilityRole="button"
                 accessibilityLabel="Retry loading activity"
               >
@@ -300,9 +301,11 @@ export default function ActivityFeedModal({ visible, onClose, onSelectFlag, onVi
           ) : null}
 
           {loading && flags.length === 0 && !loadError ? (
-            <View style={styles.center}>
-              <ActivityIndicator />
-              <AppText variant="body" style={styles.subtitle}>Loading recent activity…</AppText>
+            // Content-shaped loading (BP-3) — see MyReportsModal; same recipe.
+            <View accessibilityLabel="Loading recent activity" accessibilityLiveRegion="polite">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <SkeletonCard key={i} />
+              ))}
             </View>
           ) : (
             <SectionList
@@ -320,7 +323,7 @@ export default function ActivityFeedModal({ visible, onClose, onSelectFlag, onVi
                   </AppText>
                 </View>
               )}
-              refreshControl={<RefreshControl refreshing={loading} onRefresh={load} />}
+              refreshControl={<RefreshControl refreshing={loading} onRefresh={load} tintColor={color.brand} colors={[color.brand]} />}
               accessibilityLabel={
                 filteredFlags.length === 0
                   ? 'Recent activity, empty'
@@ -329,7 +332,8 @@ export default function ActivityFeedModal({ visible, onClose, onSelectFlag, onVi
               ListEmptyComponent={
                 loadError ? null : (
                   <View style={styles.emptyWrap}>
-                    <AppText variant="label" style={styles.emptyTitle}>
+                    <Clock size={32} color={color.inkGlassMuted} strokeWidth={2.2} {...decorativeProps} />
+                    <AppText variant="heading" style={styles.emptyTitle}>
                       {filter === 'mine'
                         ? 'You have no recent reports'
                         : filter === 'watched'
@@ -380,12 +384,7 @@ const makeStyles = (color: ColorTheme) =>
     cardWrap: {
       borderTopLeftRadius: radius.xl,
       borderTopRightRadius: radius.xl,
-      ...(color.scheme === 'dark'
-        ? { shadowColor: '#000', shadowOpacity: 0.35 }
-        : { shadowColor: color.shadowTint, shadowOpacity: 0.12 }),
-      shadowRadius: 14,
-      shadowOffset: { width: 0, height: -4 },
-      elevation: 5,
+      ...bulkGlassShadow(color),
     },
     headerRow: {
       flexDirection: 'row',
@@ -480,7 +479,7 @@ const makeStyles = (color: ColorTheme) =>
       fontWeight: font.weight.bold,
       color: color.textStrong,
       textTransform: 'uppercase',
-      letterSpacing: 0.6,
+      letterSpacing: font.tracking.section,
     },
     sectionHeaderCount: { fontSize: font.size.xs, color: color.inkGlassMuted },
     row: {

@@ -4,8 +4,9 @@
  * Renders the tinted-background + darker-foreground pill used on every screen
  * that shows a flag's status (open / verified / resolved / rejected).
  *
- * Color source: STATUS_COLORS from @/lib/flags, which is now synced with
- * the design-system status tokens in src/theme.ts.
+ * Color source: the THEMED status tokens via statusPalette() below — light AND
+ * dark. (The static STATUS_COLORS map in @/lib/flags is light-only legacy;
+ * consumers needing status colors import statusPalette from here instead.)
  * Dot indicator added per design system 2026-05-31.
  *
  * Props:
@@ -26,7 +27,10 @@ import type { FlagStatus } from '../types/database';
 
 // Status pill colors come from the themed status tokens (light + dark) rather
 // than the static STATUS_COLORS map, so badges adapt on dark surfaces.
-function statusPalette(c: ColorTheme, status: FlagStatus): { bg: string; fg: string } {
+// Exported (pre-ship polish 2026-08-01) so every status-colored surface shares
+// one dark-mode-correct source — ProfileScreen's breakdown pills and
+// MyReportsModal's filter chips consumed the light-only map before this.
+export function statusPalette(c: ColorTheme, status: FlagStatus): { bg: string; fg: string } {
   switch (status) {
     case 'open':
       return { bg: c.statusOpenBg, fg: c.statusOpenFg };
@@ -91,7 +95,7 @@ const styles = StyleSheet.create({
   badge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
+    gap: spacing.tight,
     borderRadius: radius.circle,
   },
   badgeMd: {

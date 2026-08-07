@@ -21,6 +21,7 @@ import { useAuth } from '@/lib/auth';
 import { getCachedTile, setCachedTile } from '@/lib/tileCache';
 import { track } from '@/lib/analytics';
 import { colorForCell, HEATMAP_FILL_OPACITY, type HeatCell, type HeatmapMode } from '@/lib/heatmap';
+import { safeImageUrl } from '@/lib/remoteImageUrl';
 
 export interface PlatformMapRegion {
   latitude: number;
@@ -506,7 +507,21 @@ function ClusteredMarkers({
                 popupInsetTop > 0 ? [POPUP_AUTOPAN_PAD_X, popupInsetTop] : undefined
               }
             >
-              <div style={{ minWidth: 200 }}>
+              {/* BP-10/E1 — callout parity: native ships a 6px severity accent
+                  bar down the card edge; the web popup now matches. Decorative
+                  (severity is spoken in the meta line below). */}
+              <div style={{ minWidth: 200, display: 'flex', gap: 8 }}>
+                <div
+                  aria-hidden="true"
+                  style={{
+                    width: 6,
+                    borderRadius: 3,
+                    alignSelf: 'stretch',
+                    flexShrink: 0,
+                    background: severityColor(flag.severity),
+                  }}
+                />
+                <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontWeight: 700, fontSize: 14 }}>
                   {CATEGORY_LABELS[flag.category]}
                 </div>
@@ -532,9 +547,9 @@ function ClusteredMarkers({
                 <div style={{ fontSize: 11, color: '#666', marginTop: 2, fontWeight: 600 }}>
                   Reported {relativeTime(flag.created_at)}
                 </div>
-                {flag.photo_url ? (
+                {safeImageUrl(flag.photo_url) ? (
                   <PopupPhoto
-                    src={flag.photo_url}
+                    src={safeImageUrl(flag.photo_url) as string}
                     alt={`Photo of ${CATEGORY_LABELS[flag.category]} accessibility issue`}
                     mutedColor="#666"
                   />
@@ -564,7 +579,7 @@ function ClusteredMarkers({
                       // background lives in .am-callout-btn so :hover/:active win.
                       color: '#fff',
                       border: 'none',
-                      borderRadius: 8,
+                      borderRadius: 12, // radius.md — the documented button radius (parity with native, BP-10/E1)
                       fontWeight: 700,
                       fontSize: 13,
                       cursor: 'pointer',
@@ -573,6 +588,7 @@ function ClusteredMarkers({
                     Open details
                   </button>
                 ) : null}
+                </div>
               </div>
             </Popup>
           </Marker>

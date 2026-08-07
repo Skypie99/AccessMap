@@ -6,6 +6,7 @@ import {
   type Text,
   View,
 } from 'react-native';
+import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 import { RemoteImage } from '@/components/ui/RemoteImage';
 import { AppText } from '@/components/ui/AppText';
 import { GlassSurface } from '@/components/ui/GlassSurface';
@@ -19,7 +20,7 @@ import {
   type LeaderboardEntry,
 } from '@/lib/flags';
 import { listMonthlyLeaderboard } from '@/lib/users';
-import { font, radius, shadow, spacing } from '@/theme';
+import { bulkGlassShadow, font, radius, shadow, spacing } from '@/theme';
 import { Trophy, X } from 'lucide-react-native';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 
@@ -199,6 +200,10 @@ const LeaderboardRow = React.memo(function LeaderboardRow({
 export default function LeaderboardScreen({ visible, onClose }: Props) {
   const color = useColor();
   const styles = useMemo(() => makeStyles(color), [color]);
+  // Read the inset context directly (zero fallback) instead of
+  // useSafeAreaInsets(), which throws when there's no SafeAreaProvider — the
+  // modal render-tests mount these sheets without one. Same value in the app.
+  const insets = React.useContext(SafeAreaInsetsContext) ?? { top: 0, bottom: 0, left: 0, right: 0 };
   const reducedMotion = useReducedMotion();
   // A11Y-201 (2.4.3): move the SR cursor onto the title when this surface opens.
   const titleRef = useFocusOnOpen<Text>(visible);
@@ -277,7 +282,7 @@ export default function LeaderboardScreen({ visible, onClose }: Props) {
           variant="bulk"
           borderRadius={0}
           forceEngineered
-          style={styles.card}
+          style={[styles.card, { paddingBottom: Math.max(spacing.xxl, insets.bottom) }]}
           accessibilityViewIsModal
           onAccessibilityEscape={onClose}
         >
@@ -452,12 +457,7 @@ function makeStyles(color: ColorTheme) {
     cardWrap: {
       borderTopLeftRadius: radius.xl,
       borderTopRightRadius: radius.xl,
-      ...(color.scheme === 'dark'
-        ? { shadowColor: '#000', shadowOpacity: 0.35 }
-        : { shadowColor: color.shadowTint, shadowOpacity: 0.12 }),
-      shadowRadius: 14,
-      shadowOffset: { width: 0, height: -4 },
-      elevation: 5,
+      ...bulkGlassShadow(color),
     },
     headerRow: {
       flexDirection: 'row',
@@ -610,7 +610,7 @@ function makeStyles(color: ColorTheme) {
       alignItems: 'center',
       justifyContent: 'center',
     },
-    retryBtnPressed: { opacity: 0.8 },
+    retryBtnPressed: { backgroundColor: color.errorPressed },
     retryText: {
       fontSize: font.size.sm,
       fontWeight: font.weight.semibold,

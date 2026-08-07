@@ -17,11 +17,26 @@ fi
 
 FOUND=0
 
+# Lines that are explicitly redacted or obviously illustrative are not secrets.
+# Without this, the (deliberately loud) password rule below fires on our own
+# security reports, which must be able to say the word "Password:" next to a
+# redaction marker. Kept deliberately narrow: it matches the marker, never a
+# real-looking value.
+REDACTION_MARKERS='REDACTED|<value>|<your-|example\.com|xxxxx|\*\*\*\*|placeholder|CHANGEME|\$\{|\$\(|process\.env|Deno\.env|secrets\.'
+
 check_pattern() {
   LABEL="$1"
   PATTERN="$2"
   # --line-number so we can show exactly where
-  MATCHES=$(git diff --cached -U0 | grep -n "^+" | grep -iE "$PATTERN" 2>/dev/null || true)
+  # This file is excluded from its own scan. It necessarily CONTAINS the
+  # detector patterns, so without this every edit to the scanner matches itself
+  # and can only be committed with --no-verify — which trains people to bypass
+  # the gate in exactly the situation where it is being improved. The exclusion
+  # is one path, it holds patterns rather than values, and any change to it is
+  # reviewed on its own merits.
+  MATCHES=$(git diff --cached -U0 -- . ':(exclude).husky/pre-commit' \
+    | grep -n "^+" | grep -iE "$PATTERN" 2>/dev/null \
+    | grep -ivE "$REDACTION_MARKERS" || true)
   if [ -n "$MATCHES" ]; then
     echo ""
     echo "  [SECRET SCAN] $LABEL"
@@ -36,6 +51,13 @@ echo "Running secret scan on staged changes..."
 # Variable names / env var reads like Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') are safe.
 check_pattern "Supabase service_role key" "service_role.*['\"]eyJ|['\"]eyJ.*service_role"
 
+# S-3 (security audit 2026-07-31): the rule above only knows the LEGACY JWT key
+# format. This project already moved to the new Supabase key format — .env holds
+# an `sb_publishable_` key, not an `eyJ…` JWT. The dangerous sibling of that key
+# is `sb_secret_…`, and it had no pattern at all, so a future paste of one would
+# have sailed straight through the gate that exists specifically to stop it.
+check_pattern "Supabase secret key (new format)" "sb_secret_[A-Za-z0-9_-]{20,}"
+
 # AWS
 check_pattern "AWS Access Key ID" "(AKIA|ASIA|AROA)[A-Z0-9]{16}"
 check_pattern "AWS Secret Access Key" "aws_secret_access_key\s*=\s*['\"][A-Za-z0-9/+=]{40}"
@@ -46,8 +68,20 @@ check_pattern "Generic API key/token assignment" "(api_key|apikey|auth_token|acc
 # PEM private key blocks
 check_pattern "Private key PEM block" "-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY-----"
 
-# Hard-coded password assignments (password = "something-that-is-not-empty")
-check_pattern "Hard-coded password" "(password|passwd|pwd)\s*[=:]\s*['\"][^'\"]{8,}"
+# Hard-coded password assignments.
+#
+# S-3 (security audit 2026-07-31): the old pattern required BOTH a `=`/`:`
+# delimiter AND a quote character. The credential this repo actually leaked had
+# neither shape — it was a markdown TABLE ROW in the App Store reviewer notes
+# (`| Password | … |`) and a SQL comment (`--  Password: …`). This gate was
+# added two days before that leak, was live, and did not fire. The pattern was
+# the problem, not the coverage.
+#
+# Quotes are now optional and the markdown `|` cell delimiter counts. That is a
+# louder rule with more false positives, which is the correct trade for a
+# credential gate — REDACTION_MARKERS above keeps it from firing on our own
+# security write-ups, and `--no-verify` remains the documented escape hatch.
+check_pattern "Hard-coded password" "(password|passwd|pwd)\s*[=:|]\s*['\"]?[^'\"|[:space:]]{8,}"
 
 if [ "$FOUND" -ne 0 ]; then
   echo ""

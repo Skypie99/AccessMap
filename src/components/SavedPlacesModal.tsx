@@ -32,6 +32,7 @@ import { useAuth } from '@/lib/auth';
 import { a11yToggle, decorativeProps, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
 import { AppText } from '@/components/ui/AppText';
 import { GlassSurface } from '@/components/ui/GlassSurface';
+import { SkeletonRow } from '@/components/ui/Skeleton';
 import { confirm, notify } from '@/lib/confirm';
 import { errorMessage } from '@/lib/errors';
 import {
@@ -289,7 +290,7 @@ export default function SavedPlacesModal({
             <Pressable
               onPress={onClose}
               hitSlop={12}
-              style={styles.closeBtn}
+              style={({ pressed }) => [styles.closeBtn, pressed && { backgroundColor: color.borderPressed }]}
               accessibilityRole="button"
               accessibilityLabel="Close saved places"
             >
@@ -314,7 +315,7 @@ export default function SavedPlacesModal({
               <AppText variant="body" style={styles.errorText}>{loadError}</AppText>
               <Pressable
                 onPress={load}
-                style={styles.retryBtn}
+                style={({ pressed }) => [styles.retryBtn, pressed && { backgroundColor: color.errorPressed }]}
                 accessibilityRole="button"
                 accessibilityLabel="Retry loading saved places"
               >
@@ -342,7 +343,11 @@ export default function SavedPlacesModal({
                 }
                 setAdding(true);
               }}
-              style={[styles.addBtn, !canShowAddForm && styles.addBtnDisabled]}
+              style={({ pressed }) => [
+                styles.addBtn,
+                !canShowAddForm && styles.addBtnDisabled,
+                pressed && canShowAddForm && { opacity: 0.85 },
+              ]}
               accessibilityRole="button"
               accessibilityLabel={
                 canShowAddForm
@@ -365,7 +370,7 @@ export default function SavedPlacesModal({
                 value={nameInput}
                 onChangeText={setNameInput}
                 placeholder="e.g. Home, Work, Mom's"
-                placeholderTextColor={color.textMuted}
+                placeholderTextColor={color.placeholderText}
                 maxLength={MAX_NAME_LENGTH}
                 style={styles.input}
                 autoFocus
@@ -381,7 +386,7 @@ export default function SavedPlacesModal({
                     setNameInput('');
                   }}
                   disabled={saving}
-                  style={[styles.formBtn, styles.cancelBtn]}
+                  style={({ pressed }) => [styles.formBtn, styles.cancelBtn, pressed && { backgroundColor: color.borderPressed }]}
                   accessibilityRole="button"
                   accessibilityLabel="Cancel adding place"
                   {...a11yToggle({ disabled: saving })}
@@ -391,10 +396,11 @@ export default function SavedPlacesModal({
                 <Pressable
                   onPress={handleAddSubmit}
                   disabled={saving || nameInput.trim().length === 0}
-                  style={[
+                  style={({ pressed }) => [
                     styles.formBtn,
                     styles.saveBtn,
                     (saving || nameInput.trim().length === 0) && styles.saveBtnDisabled,
+                    pressed && { backgroundColor: color.ctaFillPressed },
                   ]}
                   accessibilityRole="button"
                   accessibilityLabel="Save place"
@@ -414,13 +420,16 @@ export default function SavedPlacesModal({
           )}
 
           {loading && places.length === 0 ? (
-            <View style={styles.center}>
-              <ActivityIndicator />
-              <AppText variant="body" style={styles.subtitle}>Loading saved places…</AppText>
+            // Content-shaped loading (BP-3) — see MyReportsModal; same recipe.
+            <View accessibilityLabel="Loading saved places" accessibilityLiveRegion="polite">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <SkeletonRow key={i} />
+              ))}
             </View>
           ) : places.length === 0 && user ? (
             <View style={styles.emptyWrap}>
-              <AppText variant="label" style={styles.emptyTitle}>No saved places yet</AppText>
+              <MapPin size={32} color={color.inkGlassMuted} strokeWidth={2.2} {...decorativeProps} />
+              <AppText variant="heading" style={styles.emptyTitle}>No saved places yet</AppText>
               <AppText variant="body" style={styles.emptyBody}>
                 Save spots you check often — your home, work, or anywhere you want to jump back to
                 in one tap.

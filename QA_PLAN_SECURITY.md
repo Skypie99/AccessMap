@@ -106,7 +106,28 @@ as the anon `photo_url` fix, never closed for the multi-photo path). Fix: anchor
 check is off (`get_advisors` security). One dashboard toggle; worth enabling
 before testers. → DECISION FOR SKY (Auth config, not a migration).
 
-**F5 — `reviewer_test_account` migration commits a plaintext password. [LOW]**
+> ### ⚠️ CORRECTION — 2026-07-31 (security audit train, Phase B, finding S-2)
+>
+> **The conclusion below is wrong and was wrong when written.** The credential
+> was committed, in TWO places, by `9fd1cd9` (2026-05-31). The 2026-06-02
+> cleanup (`c51c46a`) redacted the `.sql` migration comment only and missed the
+> credential table added in the same commit — so the string has been live in
+> `origin/main` of a **public** repo ever since. Six in-tree copies survive.
+>
+> The finding was closed by re-reading the one file it cited. **A secret finding
+> is closed by re-grepping the string across HEAD and history — never by
+> re-reading the one file the original finding named.**
+>
+> Re-rated **HIGH**. The exposure is real; live verification shows the exact
+> published address does not resolve to an account, but the password string is
+> public and a reviewer account exists at a one-character-different domain.
+> **Rotation is the fix and it is Sky's to perform.** Purging these files is
+> hygiene that belongs *after* rotation, so the historical text below is left
+> intact rather than quietly rewritten.
+>
+> Detail: `security-audit/2026-07-31/LENS1_secrets_exposure.md` (S-1, S-2).
+
+**F5 — `reviewer_test_account` migration commits a plaintext password. [HIGH — re-rated 2026-07-31; was [LOW]]**
 `supabase/migrations/2026-05-31_reviewer_test_account.sql:10` hardcodes
 `[REDACTED]`. Not yet applied live (good). Fix: don't commit the password —
 set it in the dashboard, rotate, restrict the account. → DECISION FOR SKY.

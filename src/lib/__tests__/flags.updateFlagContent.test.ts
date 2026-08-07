@@ -4,7 +4,11 @@
  * updateFlagContent(flagId, patch) is the function that lets flag owners edit
  * the editable fields of their own open flags — description, category, and
  * severity. It MUST NOT send id, user_id, lat, lng, status, photo_url, or
- * created_at to Supabase.
+ * created_at to Supabase. Since code-qa 2026-08-06 (COR-1) it also runs the
+ * same description/category/severity trust-boundary guards as createFlag
+ * BEFORE any network call — an edit must not land what a create would refuse.
+ * (The blocked-term half of that parity is Sky-gated — Q-1 — and deliberately
+ * not pinned here either way.)
  *
  * The Supabase client is fully mocked (no network). The builder chain is:
  *   from(table).update(patch).eq('id', flagId).select().single()
@@ -16,6 +20,7 @@
 // Chain: from → update → eq → select → single
 // ---------------------------------------------------------------------------
 import { updateFlagContent } from '../flags';
+import { CONTENT_BLOCKED_MESSAGE } from '../copy';
 import type { FlagRow } from '@/types/database';
 
 const mockSingle = jest.fn();
@@ -91,7 +96,10 @@ describe('updateFlagContent — happy path', () => {
     expect(mockFrom).toHaveBeenCalledWith('flags');
   });
 
-  it('passes the patch object directly to .update()', async () => {
+  // Deliberate flip of the old "passes the patch object directly" pin
+  // (code-qa 2026-08-06 TEST-3): the patch now goes through the createFlag
+  // guards first. Already-normalized input must come out value-identical.
+  it('passes an already-normalized patch through to .update() unchanged', async () => {
     mockSingle.mockResolvedValueOnce({ data: fakeRow, error: null });
 
     const patch = { description: 'New description', severity: 5 as const };
@@ -264,5 +272,95 @@ describe('updateFlagContent — return value', () => {
     // Protected fields preserved from DB row
     expect(result.user_id).toBe('user-1');
     expect(result.status).toBe('open');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 5. Trust-boundary guards (code-qa 2026-08-06 COR-1) — the edit path must
+//    enforce the same create-path guards, and must refuse BEFORE any network
+//    call (mockUpdate never fires on a rejected patch).
+// ---------------------------------------------------------------------------
+describe('updateFlagContent — trust-boundary guards (COR-1)', () => {
+  it('rejects a description over 2000 characters without calling Supabase', async () => {
+    await expect(
+      updateFlagContent(FLAG_ID, { description: 'a'.repeat(2001) }),
+    ).rejects.toThrow('Description must be 2000 characters or fewer.');
+
+    expect(mockUpdate).not.toHaveBeenCalled();
+  });
+
+  it('accepts a description of exactly 2000 characters', async () => {
+    mockSingle.mockResolvedValueOnce({ data: fakeRow, error: null });
+    const max = 'a'.repeat(2000);
+
+    await updateFlagContent(FLAG_ID, { description: max });
+
+    expect(updateArg(0).description).toBe(max);
+  });
+
+  it('trims the description before sending it', async () => {
+    mockSingle.mockResolvedValueOnce({ data: fakeRow, error: null });
+
+    await updateFlagContent(FLAG_ID, { description: '  padded edit  ' });
+
+    expect(updateArg(0).description).toBe('padded edit');
+  });
+
+  it('normalizes a whitespace-only description to null (create-path contract)', async () => {
+    mockSingle.mockResolvedValueOnce({ data: fakeRow, error: null });
+
+    await updateFlagContent(FLAG_ID, { description: '   ' });
+
+    expect(updateArg(0).description).toBeNull();
+  });
+
+  it('rejects an invalid category without calling Supabase', async () => {
+    // Runtime guard test: the cast smuggles past compile-time checking on
+    // purpose — this is exactly the "future or untyped caller" the guard
+    // exists for.
+    await expect(
+      updateFlagContent(FLAG_ID, { category: 'not_a_category' as never }),
+    ).rejects.toThrow('Please choose a valid category.');
+
+    expect(mockUpdate).not.toHaveBeenCalled();
+  });
+
+  it.each([0, 6, 2.5])('rejects out-of-range severity %p without calling Supabase', async (bad) => {
+    await expect(updateFlagContent(FLAG_ID, { severity: bad as never })).rejects.toThrow(
+      'Severity must be a whole number from 1 to 5.',
+    );
+
+    expect(mockUpdate).not.toHaveBeenCalled();
+  });
+
+  it('rejects a blocked term in an edited description without calling Supabase', async () => {
+    // Same fixture the moderation MUST-FAIL pins use (a disability slur — the
+    // class LDNOOBW lacks entirely and CURATED_EXTRA exists for).
+    await expect(
+      updateFlagContent(FLAG_ID, { description: 'the staff are retarded' }),
+    ).rejects.toThrow(CONTENT_BLOCKED_MESSAGE);
+
+    expect(mockUpdate).not.toHaveBeenCalled();
+  });
+
+  it('lets ordinary frustration through — the D-2 rule survives on the edit path too', async () => {
+    mockSingle.mockResolvedValueOnce({ data: fakeRow, error: null });
+
+    // D-2: ordinary profanity is DELIBERATELY not blocked — "the damn ramp is
+    // still broken" is a real barrier report from a frustrated disabled user.
+    await updateFlagContent(FLAG_ID, { description: 'The damn ramp is still broken.' });
+
+    expect(updateArg(0).description).toBe('The damn ramp is still broken.');
+  });
+
+  it('still omits absent fields from the guarded patch (partial update intact)', async () => {
+    mockSingle.mockResolvedValueOnce({ data: fakeRow, error: null });
+
+    await updateFlagContent(FLAG_ID, { severity: 2 });
+
+    const sentPatch = updateArg(0);
+    expect(sentPatch.severity).toBe(2);
+    expect(sentPatch.description).toBeUndefined();
+    expect(sentPatch.category).toBeUndefined();
   });
 });

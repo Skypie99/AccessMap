@@ -30,6 +30,18 @@ on:
         default: 'no'
         type: string
 
+# S-4 (security audit 2026-07-31): this workflow had NO `permissions:` block
+# while handling the most powerful secrets in the repo — EAS_TOKEN and an Apple
+# Developer account password — so it inherited an undeclared, possibly org-wide
+# read-write GITHUB_TOKEN scope. That inversion (the least-privileged workflow
+# declared a ceiling; the most-privileged one did not) is the finding.
+#
+# `contents: write` is genuinely required: the release step below publishes a
+# GitHub Release via softprops/action-gh-release. Declared explicitly rather
+# than inherited, and nothing broader is granted.
+permissions:
+  contents: write
+
 jobs:
   build-and-submit:
     runs-on: ubuntu-latest

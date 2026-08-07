@@ -74,8 +74,8 @@ text / UI components). Don't introduce a new fg/bg pair without checking it.
 ### Severity ramp
 
 Defined once in `src/theme.ts` as `severity[1..5]`. Mirrored by the runtime
-helper `severityColor()` in `src/screens/ReportFlagModal.tsx` for legacy call
-sites. **Always render the severity color with the number AND a word**
+helper `severityColor()` in `src/lib/flags.ts` (moved there from
+ReportFlagModal) for legacy call sites. **Always render the severity color with the number AND a word**
 ("Severe (5)") — colorblind users and screen-reader users both need the
 redundant signal.
 
@@ -331,6 +331,23 @@ what it is. Append-only.
   reference primitives that no longer exist; the current `src/components/ui/` set
   is AppText / Button / Input / Card / GlassSurface / Skeleton / Sheet. On branch
   `overhaul/phase2-design-system` (Sky's gate).
+- **2026-08-01 — Pre-ship consistency polish (ui-polish/accessmap-preship-2026-08-01).**
+  The system was mature; the pass killed the places that never adopted it. Tokens
+  gained `bulkGlassShadow()` (the 16-file hand-copied modal up-shadow, hoisted),
+  the completed `font.lineHeight` family, `font.tracking.eyebrow` (1.2) +
+  `font.tracking.section` (0.8) naming the two established uppercase practices,
+  and `icon.inline`/`icon.stroke` (18/2.2) naming the de-facto icon standard.
+  Estate convergence: content-shaped Skeleton loading in the 6 list modals
+  (SkeletonCard's first adopters) + inked spinners + tinted RefreshControls both
+  platforms; the press vocabulary completed (~30 static Pressables gained pressed
+  states from the existing pressed tokens; HeaderActions + drawer gained the tab
+  bar's hapticSelection); inset-aware bottom padding on 11 sheets + SignIn +
+  the lightbox counter (non-throwing SafeAreaInsetsContext, the M15 recipe);
+  the estate Switch recipe (brand track, themed false-track); empty states on one
+  grammar (icon + heading + body; the last emoji glyph retired); STATUS_COLORS'
+  light-only consumers moved to themed statusPalette (real dark-mode bug); map
+  callout parity (severity bar + filled CTA on both platforms) + the true-zero
+  empty card. Full ledger: `design-reviews/ui-polish/2026-08-01/`.
 - **2026-07-03 — "Deep Field" liquid glass ships on Tasks (the benchmark).** Sky chose
   Candidate C from the Material Lab's three live candidates (Pass 1,
   `qa-reports/2026-07-02_Tasks_MaterialLab_Direction.md`) for its identity in motion;

@@ -16,6 +16,7 @@ import { OverflowFade } from '@/components/ui/OverflowFade';
 import { SheetGrabber } from '@/components/ui/Sheet';
 import { useHorizontalOverflowFade } from '@/hooks/useHorizontalOverflowFade';
 import { a11yToggle, decorativeProps, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
+import { MapPin, Search } from 'lucide-react-native';
 import { CATEGORY_LABELS, CATEGORY_ORDER, SEVERITY_LABELS, STATUS_LABELS } from '@/lib/flags';
 import { relativeTime } from '@/lib/relativeTime';
 import { formatDistance, haversineKm, speakDistance, type LatLng } from '@/lib/distance';
@@ -315,6 +316,11 @@ export default function NearbyFlagsModal({
           contentContainerStyle={displayFlags.length === 0 ? styles.emptyWrap : styles.list}
           ListEmptyComponent={
             <View style={styles.emptyInner}>
+              {searchQuery.trim().length > 0 ? (
+                <Search size={32} color={color.inkGlassMuted} strokeWidth={2.2} {...decorativeProps} />
+              ) : (
+                <MapPin size={32} color={color.inkGlassMuted} strokeWidth={2.2} {...decorativeProps} />
+              )}
               <AppText variant="heading" style={styles.emptyTitle}>
                 {searchQuery.trim().length > 0
                   ? 'No matches'

@@ -15,10 +15,11 @@
 
 import React from 'react';
 import { Modal, Pressable, StyleSheet, View, type Text, type ViewStyle } from 'react-native';
+import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 import { X } from 'lucide-react-native';
 import { useColor } from '@/theme/ThemeContext';
 import { decorativeProps, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
-import { font, radius, shadow, spacing } from '@/theme';
+import { bulkGlassShadow, font, radius, shadow, spacing } from '@/theme';
 import { AppText } from './AppText';
 import { GlassSurface } from './GlassSurface';
 
@@ -150,6 +151,10 @@ export function Sheet({
   testID,
 }: SheetProps) {
   const color = useColor();
+  // Read the inset context directly (zero fallback) instead of
+  // useSafeAreaInsets(), which throws when there's no SafeAreaProvider — the
+  // modal render-tests mount these sheets without one. Same value in the app.
+  const insets = React.useContext(SafeAreaInsetsContext) ?? { top: 0, bottom: 0, left: 0, right: 0 };
   const reducedMotion = useReducedMotion();
   // WCAG 2.4.3: when the sheet opens, move the screen-reader cursor onto its
   // title so it doesn't stay on the control behind the sheet.
@@ -187,20 +192,27 @@ export function Sheet({
           // clips it to the rounded top — so (per GlassSurface's contract) the
           // up-shadow lives on the outer wrapper, since an overflow:hidden view
           // clips its own shadow. Recipe identical to FeedbackModal/AboutScreen.
-          <View
-            style={[
-              styles.cardShadow,
-              color.scheme === 'dark'
-                ? { shadowColor: '#000', shadowOpacity: 0.35 }
-                : { shadowColor: color.shadowTint, shadowOpacity: 0.12 },
-            ]}
-          >
-            <GlassSurface variant="bulk" borderRadius={0} style={[styles.card, styles.cardGlass, cardStyle]}>
+          <View style={[styles.cardShadow, bulkGlassShadow(color)]}>
+            <GlassSurface
+              variant="bulk"
+              borderRadius={0}
+              // Inset pad sits BEFORE cardStyle so a caller's documented
+              // paddingBottom override still wins (sweep finding #4).
+              style={[styles.card, styles.cardGlass, { paddingBottom: Math.max(spacing.sm, insets.bottom) }, cardStyle]}
+            >
               {inner}
             </GlassSurface>
           </View>
         ) : (
-          <View style={[styles.card, { backgroundColor: color.surface }, shadow.e3, cardStyle]}>
+          <View
+            style={[
+              styles.card,
+              { backgroundColor: color.surface },
+              shadow.e3,
+              { paddingBottom: Math.max(spacing.sm, insets.bottom) },
+              cardStyle,
+            ]}
+          >
             {inner}
           </View>
         )}
@@ -236,9 +248,6 @@ const styles = StyleSheet.create({
     flexShrink: 1,
     borderTopLeftRadius: radius.xl,
     borderTopRightRadius: radius.xl,
-    shadowRadius: 14,
-    shadowOffset: { width: 0, height: -4 },
-    elevation: 5,
   },
   handleWrap: { alignItems: 'center', paddingTop: spacing.sm, paddingBottom: spacing.tight },
   handle: { width: 36, height: 4, borderRadius: radius.full },
@@ -252,8 +261,12 @@ const styles = StyleSheet.create({
   },
   title: { flex: 1 },
   closeBtn: {
-    width: 40,
-    height: 40,
+    // 44 — the app's circle-button visual standard (HeaderActions,
+    // SearchInputRow, UpdateBanner are all 44). This was the one shared
+    // primitive below it (BP-6); hitSlop already made the TARGET compliant,
+    // this aligns the visible box.
+    width: 44,
+    height: 44,
     borderRadius: radius.full,
     alignItems: 'center',
     justifyContent: 'center',

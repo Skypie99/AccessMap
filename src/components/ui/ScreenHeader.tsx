@@ -25,7 +25,9 @@ import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { clearHeaderHeight, publishHeaderHeight } from '@/lib/statusLedge';
 
 // All-caps micro-label tracking for the eyebrow + section labels.
-export const EYEBROW_TRACKING = 1.2;
+// Sourced from the token (pre-ship polish 2026-08-01) — same 1.2 value the
+// header always used; the export stays so existing consumers keep working.
+export const EYEBROW_TRACKING = font.tracking.eyebrow;
 
 // --- Title auto-fit (M18) ---------------------------------------------------
 // react-native-web does NOT implement `adjustsFontSizeToFit`, so we can't lean

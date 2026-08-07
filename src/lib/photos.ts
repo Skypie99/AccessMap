@@ -2,6 +2,11 @@ import { Platform } from 'react-native';
 import { supabase } from './supabase';
 import { uploadFlagPhoto } from './flags';
 import { trackEvent } from './analytics';
+// SLOP-3 (code-qa 2026-08-06): this file's local isTableMissingError lacked
+// the SR-092 embed early-out — a broken join whose message says "does not
+// exist" was misread as "table missing". The canonical embed-aware check
+// lives in postgrestErrors.ts now.
+import { isRelationMissing } from './postgrestErrors';
 
 export type FlagPhoto = {
   id: string;
@@ -11,17 +16,12 @@ export type FlagPhoto = {
   created_at: string;
 };
 
-// 42P01 = "relation does not exist" (PostgreSQL). Returned when the
-// flag_photos migration hasn't been applied yet on this backend.
-function isTableMissingError(e: unknown): boolean {
-  const msg = String((e as { message?: string })?.message ?? e ?? '');
-  const code = String((e as { code?: string })?.code ?? '');
-  return code === '42P01' || msg.includes('does not exist');
-}
-
 /**
  * Fetch all photos for a flag ordered by position.
- * Returns [] silently if the flag_photos table doesn't exist yet (migration pending).
+ * Returns [] ONLY when the flag_photos table doesn't exist yet (migration
+ * pending). Any other failure throws — COR-3 (code-qa 2026-08-06): the old
+ * swallow-all [] made a transient failure render as "this flag has no photos"
+ * and let addFlagPhoto compute position 0 from a failed read.
  */
 export async function listFlagPhotos(flagId: string): Promise<{ url: string; position: number }[]> {
   try {
@@ -32,15 +32,14 @@ export async function listFlagPhotos(flagId: string): Promise<{ url: string; pos
       .order('position', { ascending: true });
 
     if (error) {
-      if (isTableMissingError(error)) return [];
+      if (isRelationMissing(error)) return [];
       throw error;
     }
 
     return (data ?? []) as { url: string; position: number }[];
   } catch (e) {
-    if (isTableMissingError(e)) return [];
-    console.warn('[photos] listFlagPhotos failed:', e);
-    return [];
+    if (isRelationMissing(e)) return [];
+    throw e;
   }
 }
 
@@ -78,18 +77,6 @@ export async function addFlagPhoto(
 }
 
 /**
- * Delete a junction row by ID.
- * Storage blob cleanup is deferred to an Edge Function.
- */
-export async function deleteFlagPhoto(photoId: string): Promise<void> {
-  const { error } = await supabase
-    .from('flag_photos')
-    .delete()
-    .eq('id', photoId);
-  if (error) throw error;
-}
-
-/**
  * Batch-insert pre-uploaded URLs as junction rows for a newly created flag.
  * Used by ReportFlagModal after createFlag() — avoids re-uploading.
  * Silent no-op if the table doesn't exist yet.
@@ -100,11 +87,11 @@ export async function batchInsertFlagPhotos(flagId: string, urls: string[]): Pro
   try {
     const { error } = await supabase.from('flag_photos').insert(rows);
     if (error) {
-      if (isTableMissingError(error)) return;
+      if (isRelationMissing(error)) return;
       throw error;
     }
   } catch (e) {
-    if (isTableMissingError(e)) return;
+    if (isRelationMissing(e)) return;
     throw e;
   }
 }

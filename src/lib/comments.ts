@@ -1,6 +1,7 @@
 import { Platform } from 'react-native';
 import { supabase } from './supabase';
 import { errorMessage } from './errors';
+import { isRelationMissing } from './postgrestErrors';
 import { trackEvent, commentLengthBucket } from './analytics';
 import { containsBlockedTerm } from '@/moderation/blockedTerms';
 import { CONTENT_BLOCKED_MESSAGE } from './copy';
@@ -56,39 +57,15 @@ function flattenComment(row: RawCommentRow): CommentRow {
   };
 }
 
-// PostgREST embed/relationship failures. These are NOT a missing table, and
-// their message bodies can legitimately contain the phrase "does not exist"
-// (a bad column inside an embed hint reads `column ... does not exist`).
-// Without this early-out the loose message match below would show the user
-// "Comments coming soon" for a broken join — a worse lie than an honest error,
-// and exactly how SR-092 could have hidden itself.
-const EMBED_ERROR_CODES = new Set([
-  'PGRST200', // no relationship found between the two tables
-  'PGRST201', // more than one relationship found (the SR-092 shape)
-  'PGRST202', // function not found in the schema cache
-]);
-
-// PostgreSQL error code 42P01 = undefined_table. Inspect the raw error
-// fields directly (same pattern as photos.ts) — errorMessage() now rewrites
-// recognized failures into friendly copy, so its output can no longer be
-// used for code/phrase sniffing. Supabase sometimes embeds the code in the
-// message when it comes back as a PostgREST 404 body, so check both.
-function isTableMissingError(e: unknown): boolean {
-  const msg = String((e as { message?: string })?.message ?? e ?? '');
-  const code = String((e as { code?: string })?.code ?? '');
-  if (EMBED_ERROR_CODES.has(code)) return false;
-  return code === '42P01' || msg.includes('42P01') || msg.includes('does not exist');
-}
+// This file's isTableMissingError was the house-canonical variant — the only
+// one hardened by a production incident (its SR-092 embed early-out). It moved
+// verbatim to postgrestErrors.ts as isRelationMissing (code-qa 2026-08-06
+// SLOP-3) so photos.ts and friends inherit the hardening.
 
 // Fetch comments for a flag, newest-first (capped at MAX_COMMENTS), with
 // author display_name joined.
 // Throws CommentsTableNotReadyError if the migration hasn't been applied yet.
 export async function listComments(flagId: string): Promise<CommentRow[]> {
-  // Cast through `any` for the join query: the flag_comments table has no
-  // Relationships defined in database.ts (they can't be expressed without
-  // regenerating the Supabase types), so the typed client rejects the
-  // `users(...)` select clause at compile time.
-  //
   // The `!flag_comments_user_id_fkey` hint is load-bearing, not decoration.
   // A bare `users(display_name)` is AMBIGUOUS: comment_votes has FKs to both
   // flag_comments and users, so PostgREST sees a second, many-to-many
@@ -96,9 +73,10 @@ export async function listComments(flagId: string): Promise<CommentRow[]> {
   // HTTP 300 — which is how comments died in production the day
   // 2026-05-30_trust_score_system.sql landed. The hint names the direct FK.
   // (If that constraint is ever renamed, the column form `users!user_id(...)`
-  // disambiguates without pinning a generated identifier.)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data, error } = await (supabase as any)
+  // disambiguates without pinning a generated identifier.) The typed client
+  // resolves the hint via the hand-authored Relationships entry in
+  // database.ts (TYPE-3).
+  const { data, error } = await supabase
     .from('flag_comments')
     .select(COMMENT_SELECT)
     .eq('flag_id', flagId)
@@ -106,7 +84,7 @@ export async function listComments(flagId: string): Promise<CommentRow[]> {
     .limit(MAX_COMMENTS);
 
   if (error) {
-    if (isTableMissingError(error)) throw new CommentsTableNotReadyError();
+    if (isRelationMissing(error)) throw new CommentsTableNotReadyError();
     throw new Error(errorMessage(error));
   }
 
@@ -148,16 +126,15 @@ export async function fetchCommentsByIds(commentIds: string[]): Promise<CommentR
 
   const out: CommentRow[] = [];
   for (const chunk of chunks) {
-    // Same `as any` cast and same `!flag_comments_user_id_fkey` disambiguation
-    // as listComments — see the long note there for why the hint is required.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase as any)
+    // Same `!flag_comments_user_id_fkey` disambiguation as listComments —
+    // see the note there for why the hint is required.
+    const { data, error } = await supabase
       .from('flag_comments')
       .select(COMMENT_SELECT)
       .in('id', chunk);
 
     if (error) {
-      if (isTableMissingError(error)) throw new CommentsTableNotReadyError();
+      if (isRelationMissing(error)) throw new CommentsTableNotReadyError();
       throw new Error(errorMessage(error));
     }
     out.push(...((data ?? []) as RawCommentRow[]).map(flattenComment));
@@ -181,6 +158,12 @@ export async function addComment(flagId: string, content: string): Promise<Comme
     throw new Error(CONTENT_BLOCKED_MESSAGE);
   }
 
+  // The ONE cast TYPE-3 could not retire (2026-08-06): this insert sends no
+  // user_id, yet inserts pass live RLS (WITH CHECK user_id = auth.uid()) —
+  // so live must fill it via a default/trigger the 2026-07-27 drift capture
+  // did not record, and the typed Insert (user_id required) cannot be
+  // honestly loosened until Sky reads the live column default. Typing this
+  // call would encode a guess about un-captured live schema.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data, error } = await (supabase as any)
     .from('flag_comments')
@@ -189,7 +172,7 @@ export async function addComment(flagId: string, content: string): Promise<Comme
     .single();
 
   if (error) {
-    if (isTableMissingError(error)) throw new CommentsTableNotReadyError();
+    if (isRelationMissing(error)) throw new CommentsTableNotReadyError();
     throw new Error(errorMessage(error));
   }
 
@@ -212,7 +195,7 @@ export async function deleteComment(commentId: string): Promise<void> {
     .eq('id', commentId);
 
   if (error) {
-    if (isTableMissingError(error)) throw new CommentsTableNotReadyError();
+    if (isRelationMissing(error)) throw new CommentsTableNotReadyError();
     throw new Error(errorMessage(error));
   }
 }

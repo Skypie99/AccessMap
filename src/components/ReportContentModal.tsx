@@ -68,10 +68,11 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 import { X } from 'lucide-react-native';
 import { AppText } from '@/components/ui/AppText';
 import { GlassSurface } from '@/components/ui/GlassSurface';
-import { font, radius, spacing } from '@/theme';
+import { bulkGlassShadow, font, radius, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { a11yToggle, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
 import { useAuth } from '@/lib/auth';
@@ -108,6 +109,10 @@ interface Props {
 export default function ReportContentModal({ visible, target, onClose }: Props) {
   const color = useColor();
   const styles = makeStyles(color);
+  // Read the inset context directly (zero fallback) instead of
+  // useSafeAreaInsets(), which throws when there's no SafeAreaProvider — the
+  // modal render-tests mount these sheets without one. Same value in the app.
+  const insets = React.useContext(SafeAreaInsetsContext) ?? { top: 0, bottom: 0, left: 0, right: 0 };
   const reducedMotion = useReducedMotion();
   const { user } = useAuth();
   // The terms sheet is mounted at the navigator, not here — this sheet is
@@ -279,7 +284,7 @@ export default function ReportContentModal({ visible, target, onClose }: Props) 
           style={styles.kav}
         >
           <View style={styles.cardWrap}>
-            <GlassSurface variant="bulk" borderRadius={0} style={styles.card}>
+            <GlassSurface variant="bulk" borderRadius={0} style={[styles.card, { paddingBottom: Math.max(spacing.xl, insets.bottom) }]}>
               <View style={styles.headerRow}>
                 <AppText
                   ref={titleRef}
@@ -435,7 +440,7 @@ export default function ReportContentModal({ visible, target, onClose }: Props) 
                 {sent ? (
                   <Pressable
                     onPress={onClose}
-                    style={[styles.btn, styles.btnPrimary]}
+                    style={({ pressed }) => [styles.btn, styles.btnPrimary, pressed && { backgroundColor: color.ctaFillPressed }]}
                     accessibilityRole="button"
                     accessibilityLabel="Close"
                   >
@@ -448,7 +453,7 @@ export default function ReportContentModal({ visible, target, onClose }: Props) 
                     <Pressable
                       onPress={onClose}
                       disabled={submitting}
-                      style={[styles.btn, styles.btnCancel]}
+                      style={({ pressed }) => [styles.btn, styles.btnCancel, pressed && { backgroundColor: color.borderPressed }]}
                       accessibilityRole="button"
                       accessibilityLabel="Cancel"
                       {...a11yToggle({ disabled: submitting })}
@@ -460,7 +465,7 @@ export default function ReportContentModal({ visible, target, onClose }: Props) 
                     <Pressable
                       onPress={handleSend}
                       disabled={!canSend}
-                      style={[styles.btn, styles.btnPrimary, !canSend && styles.btnPrimaryDisabled]}
+                      style={({ pressed }) => [styles.btn, styles.btnPrimary, !canSend && styles.btnPrimaryDisabled, pressed && { backgroundColor: color.ctaFillPressed }]}
                       accessibilityRole="button"
                       accessibilityLabel="Send"
                       testID="reportContentModal-send"
@@ -504,12 +509,7 @@ const makeStyles = (color: ColorTheme) =>
       flexShrink: 1,
       borderTopLeftRadius: radius.xl,
       borderTopRightRadius: radius.xl,
-      ...(color.scheme === 'dark'
-        ? { shadowColor: '#000', shadowOpacity: 0.35 }
-        : { shadowColor: color.shadowTint, shadowOpacity: 0.12 }),
-      shadowRadius: 14,
-      shadowOffset: { width: 0, height: -4 },
-      elevation: 5,
+      ...bulkGlassShadow(color),
     },
     // Bulk-glass sheet material lives on the GlassSurface variant; no
     // backgroundColor here. Same recipe as FeedbackModal.
@@ -556,7 +556,7 @@ const makeStyles = (color: ColorTheme) =>
       // (FAIL). Same arbitrated pair FeedbackModal uses on this material.
       color: color.inkGlassMuted,
       textTransform: 'uppercase',
-      letterSpacing: 0.5,
+      letterSpacing: font.tracking.section,
       fontWeight: font.weight.semibold,
       marginTop: spacing.sm,
     },

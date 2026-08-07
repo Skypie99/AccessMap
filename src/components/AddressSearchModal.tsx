@@ -11,7 +11,8 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { font, radius, shadow, spacing } from '@/theme';
+import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
+import { bulkGlassShadow, font, radius, shadow, spacing } from '@/theme';
 import { AppText } from '@/components/ui/AppText';
 import { GlassSurface } from '@/components/ui/GlassSurface';
 import { AlertTriangle, ChevronRight, Clock, MapPin, Search, X } from 'lucide-react-native';
@@ -53,6 +54,10 @@ const DEBOUNCE_MS = 350;
 export default function AddressSearchModal({ visible, onClose, onSelect }: Props) {
   const color = useColor();
   const styles = makeStyles(color);
+  // Read the inset context directly (zero fallback) instead of
+  // useSafeAreaInsets(), which throws when there's no SafeAreaProvider — the
+  // modal render-tests mount these sheets without one. Same value in the app.
+  const insets = React.useContext(SafeAreaInsetsContext) ?? { top: 0, bottom: 0, left: 0, right: 0 };
   const reducedMotion = useReducedMotion();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<GeocodeResult[]>([]);
@@ -207,7 +212,7 @@ export default function AddressSearchModal({ visible, onClose, onSelect }: Props
         {/* WCAG 2.4.3: contain VoiceOver focus inside the sheet so it can't
             wander onto the map behind it (every other modal sets this). */}
         <View style={styles.cardWrap}>
-        <GlassSurface variant="bulk" borderRadius={0} style={styles.card} accessibilityViewIsModal onAccessibilityEscape={onClose}>
+        <GlassSurface variant="bulk" borderRadius={0} style={[styles.card, { paddingBottom: Math.max(spacing.xl, insets.bottom) }]} accessibilityViewIsModal onAccessibilityEscape={onClose}>
           <View style={styles.headerRow}>
             <AppText variant="heading" style={styles.title} accessibilityRole="header">
               Search by address
@@ -215,7 +220,7 @@ export default function AddressSearchModal({ visible, onClose, onSelect }: Props
             <Pressable
               onPress={onClose}
               hitSlop={12}
-              style={styles.closeBtn}
+              style={({ pressed }) => [styles.closeBtn, pressed && { backgroundColor: color.borderPressed }]}
               accessibilityRole="button"
               accessibilityLabel="Close address search"
             >
@@ -250,7 +255,7 @@ export default function AddressSearchModal({ visible, onClose, onSelect }: Props
                 <Pressable
                   onPress={handleClearRecents}
                   hitSlop={12}
-                  style={styles.clearRecentBtn}
+                  style={({ pressed }) => [styles.clearRecentBtn, pressed && { opacity: 0.7 }]}
                   accessibilityRole="button"
                   accessibilityLabel="Clear recent searches"
                 >
@@ -410,12 +415,7 @@ function makeStyles(color: ColorTheme) {
     cardWrap: {
       borderTopLeftRadius: radius.xl,
       borderTopRightRadius: radius.xl,
-      ...(color.scheme === 'dark'
-        ? { shadowColor: '#000', shadowOpacity: 0.35 }
-        : { shadowColor: color.shadowTint, shadowOpacity: 0.12 }),
-      shadowRadius: 14,
-      shadowOffset: { width: 0, height: -4 },
-      elevation: 5,
+      ...bulkGlassShadow(color),
     },
     headerRow: {
       flexDirection: 'row',
@@ -581,7 +581,7 @@ function makeStyles(color: ColorTheme) {
       fontWeight: font.weight.semibold,
       color: color.inkGlassMuted,
       textTransform: 'uppercase',
-      letterSpacing: 0.5,
+      letterSpacing: font.tracking.section,
     },
     clearRecentBtn: {
       // Tap target ≥ 44pt — hitSlop on the Pressable bumps the

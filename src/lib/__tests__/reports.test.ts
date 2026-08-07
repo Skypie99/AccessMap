@@ -361,7 +361,10 @@ describe('submitContentReport', () => {
       target: { kind: 'flag', id: FLAG_ID },
       reason: 'why',
     });
-    expect(result).toEqual({ status: 'failed', reason: 'Unknown error.' });
+    // Deliberate flip (code-qa 2026-08-06 SLOP-5): errorMessage() treats a
+    // thrown string AS the message — the house canon — where the old inline
+    // collapsed every non-Error to 'Unknown error.'. Still no throw.
+    expect(result).toEqual({ status: 'failed', reason: 'a string, not an Error' });
   });
 
   it('short-circuits an empty reason WITHOUT calling the primitive', async () => {

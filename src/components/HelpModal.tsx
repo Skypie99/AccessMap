@@ -1,11 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, type Text, View } from 'react-native';
-import { font, radius, shadow, spacing } from '@/theme';
+import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
+import { bulkGlassShadow, font, radius, shadow, spacing } from '@/theme';
 import { a11yToggle, decorativeProps, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
 import { AppText } from '@/components/ui/AppText';
 import { GlassSurface } from '@/components/ui/GlassSurface';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
-import { ChevronDown, ChevronRight, X } from 'lucide-react-native';
+import { ChevronDown, ChevronRight, Search, X } from 'lucide-react-native';
 import { openFeedbackComposer } from '@/lib/feedback';
 import { filterFaqs } from '@/lib/helpSearch';
 import { POINTS } from '@/lib/points';
@@ -43,7 +44,7 @@ const FAQS: FaqItem[] = [
   },
   {
     q: 'Are my photos and location private?',
-    a: "Photos and the flag location are public — they're visible to everyone using the app, which is the whole point of a community map. Your email and display name are never attached to a flag's public view. Avoid including faces or identifying info in your photos.",
+    a: "Photos and the flag location are public — they're visible to everyone using the app, which is the whole point of a community map. Your email is never attached to a flag's public view. Your display name can be \u2014 it appears on the leaderboard and alongside comments, and other signed-in people can tell which reports are yours. Avoid including faces or identifying info in your photos.",
   },
   {
     q: 'I use a screen reader — what should I know?',
@@ -70,6 +71,10 @@ const FAQS: FaqItem[] = [
 export default function HelpModal({ visible, onClose }: Props) {
   const color = useColor();
   const styles = makeStyles(color);
+  // Read the inset context directly (zero fallback) instead of
+  // useSafeAreaInsets(), which throws when there's no SafeAreaProvider — the
+  // modal render-tests mount these sheets without one. Same value in the app.
+  const insets = React.useContext(SafeAreaInsetsContext) ?? { top: 0, bottom: 0, left: 0, right: 0 };
   // Tracks which FAQ is expanded by question text (not index) — using
   // text means the "expanded" state survives filtering. If we keyed on
   // array index instead, filtering the list down would shift items and
@@ -122,7 +127,7 @@ export default function HelpModal({ visible, onClose }: Props) {
             <Pressable
               onPress={onClose}
               hitSlop={12}
-              style={styles.closeBtn}
+              style={({ pressed }) => [styles.closeBtn, pressed && { backgroundColor: color.borderPressed }]}
               accessibilityRole="button"
               accessibilityLabel="Close help"
             >
@@ -143,13 +148,18 @@ export default function HelpModal({ visible, onClose }: Props) {
 
           <ScrollView
             style={styles.body}
-            contentContainerStyle={styles.bodyContent}
+            contentContainerStyle={[styles.bodyContent, { paddingBottom: Math.max(spacing.lg, insets.bottom) }]}
             showsVerticalScrollIndicator={false}
           >
             {showEmpty && (
-              <AppText variant="body" style={styles.emptyResults} accessibilityLiveRegion="polite">
-                No FAQ matches that search. Try a different term.
-              </AppText>
+              // BP-sweep: the empty-state grammar (icon above the line). The
+              // live region stays on the text node exactly as before.
+              <View style={{ alignItems: 'center', gap: spacing.sm }}>
+                <Search size={32} color={color.inkGlassMuted} strokeWidth={2.2} {...decorativeProps} />
+                <AppText variant="body" style={styles.emptyResults} accessibilityLiveRegion="polite">
+                  No FAQ matches that search. Try a different term.
+                </AppText>
+              </View>
             )}
 
             {filteredFaqs.map((item) => {
@@ -240,12 +250,7 @@ const makeStyles = (color: ColorTheme) =>
       flexShrink: 1,
       borderTopLeftRadius: radius.xl,
       borderTopRightRadius: radius.xl,
-      ...(color.scheme === 'dark'
-        ? { shadowColor: '#000', shadowOpacity: 0.35 }
-        : { shadowColor: color.shadowTint, shadowOpacity: 0.12 }),
-      shadowRadius: 14,
-      shadowOffset: { width: 0, height: -4 },
-      elevation: 5,
+      ...bulkGlassShadow(color),
     },
     headerRow: {
       flexDirection: 'row',

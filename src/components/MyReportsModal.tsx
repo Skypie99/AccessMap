@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  ActivityIndicator,
   FlatList,  Modal,
   Pressable,
   RefreshControl,
@@ -21,16 +20,16 @@ import {
   listFlagsByUser,
   SEVERITY_LABELS,
   severityColor,
-  STATUS_COLORS,
   STATUS_LABELS,
 } from '@/lib/flags';
+import { StatusBadge, statusPalette } from '@/components/StatusBadge';
+import { SkeletonCard } from '@/components/ui/Skeleton';
 import { severityA11y } from '@/lib/a11yText';
 import { filterMyReports } from '@/lib/myReportsFilter';
 import type { FlagRow, FlagStatus } from '@/types/database';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
-import { font, radius, shadow, spacing } from '@/theme';
-import { MapPin, RefreshCw, X } from 'lucide-react-native';
-import { StatusBadge } from '@/components/StatusBadge';
+import { bulkGlassShadow, font, radius, shadow, spacing } from '@/theme';
+import { Inbox, MapPin, RefreshCw, Search, X } from 'lucide-react-native';
 
 const STATUS_FILTER_ORDER: FlagStatus[] = ['open', 'verified', 'resolved', 'rejected'];
 
@@ -300,7 +299,7 @@ export default function MyReportsModal({
             <Pressable
               onPress={() => void load()}
               hitSlop={12}
-              style={styles.closeBtn}
+              style={({ pressed }) => [styles.closeBtn, pressed && { backgroundColor: color.borderPressed }]}
               accessibilityRole="button"
               accessibilityLabel="Refresh"
               accessibilityHint="Reloads your reports without pulling down the list"
@@ -311,7 +310,7 @@ export default function MyReportsModal({
             <Pressable
               onPress={onClose}
               hitSlop={12}
-              style={styles.closeBtn}
+              style={({ pressed }) => [styles.closeBtn, pressed && { backgroundColor: color.borderPressed }]}
               accessibilityRole="button"
               accessibilityLabel="Close My Reports"
               accessibilityHint="Returns to your Profile"
@@ -360,7 +359,7 @@ export default function MyReportsModal({
           )}
 
           {/* Status filter chips — only shown when the list contains more
-              than one distinct status. The chips use STATUS_COLORS for the
+              than one distinct status. The chips use statusPalette for the
               active state, so each status tints with its palette color. */}
           {presentStatuses.length > 1 && (
             <View style={styles.statusFilterRow} accessibilityLabel="Filter by status">
@@ -386,7 +385,14 @@ export default function MyReportsModal({
               </Pressable>
               {presentStatuses.map((status) => {
                 const active = statusFilter === status;
-                const palette = STATUS_COLORS[status];
+                // Themed (light + dark) — was the light-only STATUS_COLORS map,
+                // which froze active chips in light colors on dark surfaces
+                // (BP-2 fix). In dark mode the fg tokens are LIGHT fills, so the
+                // active label flips to ink — the severity-ramp rule (light
+                // fills carry dark ink; theme.ts severity textOnColor).
+                const palette = statusPalette(color, status);
+                const activeInk =
+                  color.scheme === 'dark' ? color.textOnAccent : color.textOnBrand;
                 return (
                   <Pressable
                     key={status}
@@ -398,7 +404,7 @@ export default function MyReportsModal({
                   >
                     <AppText
                       variant="label"
-                      style={[styles.statusFilterText, active && styles.statusFilterTextActive]}
+                      style={[styles.statusFilterText, active && { color: activeInk }]}
                     >
                       {STATUS_LABELS[status]} ({statusCounts[status]})
                     </AppText>
@@ -413,7 +419,7 @@ export default function MyReportsModal({
               <AppText variant="body" style={styles.errorText}>{loadError}</AppText>
               <Pressable
                 onPress={load}
-                style={styles.retryBtn}
+                style={({ pressed }) => [styles.retryBtn, pressed && { backgroundColor: color.errorPressed }]}
                 accessibilityRole="button"
                 accessibilityLabel="Retry loading your reports"
               >
@@ -423,9 +429,13 @@ export default function MyReportsModal({
           ) : null}
 
           {loading && flags.length === 0 && !loadError ? (
-            <View style={styles.center}>
-              <ActivityIndicator />
-              <AppText variant="body" style={styles.subtitle}>Loading your reports…</AppText>
+            // Content-shaped loading (BP-3): card-shaped placeholders instead
+            // of a bare spinner; the label + polite region keep the same SR
+            // story the old visible caption told.
+            <View accessibilityLabel="Loading your reports" accessibilityLiveRegion="polite">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <SkeletonCard key={i} />
+              ))}
             </View>
           ) : (
             <FlatList
@@ -434,7 +444,7 @@ export default function MyReportsModal({
               renderItem={renderItem}
               accessibilityRole="list"
               contentContainerStyle={displayFlags.length === 0 ? styles.center : styles.list}
-              refreshControl={<RefreshControl refreshing={loading} onRefresh={load} />}
+              refreshControl={<RefreshControl refreshing={loading} onRefresh={load} tintColor={color.brand} colors={[color.brand]} />}
               accessibilityLabel={
                 displayFlags.length === 0
                   ? 'Your reports list, empty'
@@ -450,12 +460,14 @@ export default function MyReportsModal({
                   // (iOS VoiceOver doesn't honor the prop but loses nothing
                   // — it's a no-op there.)
                   <View style={styles.emptyWrap} accessibilityLiveRegion="polite">
-                    <AppText variant="label" style={styles.emptyTitle}>No matches</AppText>
+                    <Search size={32} color={color.inkGlassMuted} strokeWidth={2.2} {...decorativeProps} />
+                    <AppText variant="heading" style={styles.emptyTitle}>No matches</AppText>
                     <AppText variant="body" style={styles.emptyBody}>No reports match that search.</AppText>
                   </View>
                 ) : flags.length > 0 && statusFilter !== 'all' ? (
                   <View style={styles.emptyWrap}>
-                    <AppText variant="label" style={styles.emptyTitle}>
+                    <Inbox size={32} color={color.inkGlassMuted} strokeWidth={2.2} {...decorativeProps} />
+                    <AppText variant="heading" style={styles.emptyTitle}>
                       No {STATUS_LABELS[statusFilter as FlagStatus].toLowerCase()} reports
                     </AppText>
                     <AppText variant="body" style={styles.emptyBody}>
@@ -464,7 +476,8 @@ export default function MyReportsModal({
                   </View>
                 ) : (
                   <View style={styles.emptyWrap}>
-                    <AppText variant="label" style={styles.emptyTitle}>No reports yet</AppText>
+                    <MapPin size={32} color={color.inkGlassMuted} strokeWidth={2.2} {...decorativeProps} />
+                    <AppText variant="heading" style={styles.emptyTitle}>No reports yet</AppText>
                     <AppText variant="body" style={styles.emptyBody}>
                       You haven&apos;t reported any accessibility flags. Tap the Map tab and use the
                       Report button to drop your first pin.
@@ -506,12 +519,7 @@ const makeStyles = (color: ColorTheme) =>
     cardWrap: {
       borderTopLeftRadius: radius.xl,
       borderTopRightRadius: radius.xl,
-      ...(color.scheme === 'dark'
-        ? { shadowColor: '#000', shadowOpacity: 0.35 }
-        : { shadowColor: color.shadowTint, shadowOpacity: 0.12 }),
-      shadowRadius: 14,
-      shadowOffset: { width: 0, height: -4 },
-      elevation: 5,
+      ...bulkGlassShadow(color),
     },
     headerRow: {
       flexDirection: 'row',

@@ -45,6 +45,7 @@ import {
 import { useAuth } from '@/lib/auth';
 import { AppText } from '@/components/ui/AppText';
 import { GlassSurface } from '@/components/ui/GlassSurface';
+import { SkeletonRow } from '@/components/ui/Skeleton';
 import { a11yToggle, decorativeProps, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
 import { confirm } from '@/lib/confirm';
 import { errorMessage } from '@/lib/errors';
@@ -60,7 +61,7 @@ import {
 } from '@/lib/filterPresets';
 import { font, radius, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
-import { Plus, X } from 'lucide-react-native';
+import { Plus, SlidersHorizontal, X } from 'lucide-react-native';
 
 interface Props {
   visible: boolean;
@@ -244,7 +245,7 @@ export default function FilterPresetsModal({ visible, onClose, onApply }: Props)
                 value={renameValue}
                 onChangeText={setRenameValue}
                 placeholder="New name"
-                placeholderTextColor={color.textMuted}
+                placeholderTextColor={color.placeholderText}
                 maxLength={MAX_NAME_LENGTH}
                 style={styles.input}
                 autoFocus
@@ -259,7 +260,11 @@ export default function FilterPresetsModal({ visible, onClose, onApply }: Props)
                     setRenamingId(null);
                     setRenameValue('');
                   }}
-                  style={[styles.smallBtn, styles.cancelBtn]}
+                  style={({ pressed }) => [
+                    styles.smallBtn,
+                    styles.cancelBtn,
+                    pressed && { backgroundColor: color.borderPressed },
+                  ]}
                   accessibilityRole="button"
                   accessibilityLabel="Cancel rename"
                 >
@@ -268,10 +273,11 @@ export default function FilterPresetsModal({ visible, onClose, onApply }: Props)
                 <Pressable
                   onPress={() => handleRenameSubmit(item.id)}
                   disabled={renameValue.trim().length === 0}
-                  style={[
+                  style={({ pressed }) => [
                     styles.smallBtn,
                     styles.saveBtn,
                     renameValue.trim().length === 0 && styles.saveBtnDisabled,
+                    pressed && renameValue.trim().length > 0 && { backgroundColor: color.ctaFillPressed },
                   ]}
                   accessibilityRole="button"
                   accessibilityLabel="Save new name"
@@ -403,7 +409,7 @@ export default function FilterPresetsModal({ visible, onClose, onApply }: Props)
             <Pressable
               onPress={onClose}
               hitSlop={12}
-              style={styles.closeBtn}
+              style={({ pressed }) => [styles.closeBtn, pressed && { backgroundColor: color.borderPressed }]}
               accessibilityRole="button"
               accessibilityLabel="Close filter presets"
             >
@@ -426,7 +432,7 @@ export default function FilterPresetsModal({ visible, onClose, onApply }: Props)
               <AppText variant="body" style={styles.errorText}>{loadError}</AppText>
               <Pressable
                 onPress={load}
-                style={styles.retryBtn}
+                style={({ pressed }) => [styles.retryBtn, pressed && { backgroundColor: color.errorPressed }]}
                 accessibilityRole="button"
                 accessibilityLabel="Retry loading filter presets"
               >
@@ -442,7 +448,7 @@ export default function FilterPresetsModal({ visible, onClose, onApply }: Props)
                 value={newName}
                 onChangeText={setNewName}
                 placeholder="e.g. Downtown commute"
-                placeholderTextColor={color.textMuted}
+                placeholderTextColor={color.placeholderText}
                 maxLength={MAX_NAME_LENGTH}
                 style={styles.input}
                 autoFocus
@@ -462,7 +468,11 @@ export default function FilterPresetsModal({ visible, onClose, onApply }: Props)
                     setNewName('');
                   }}
                   disabled={saving}
-                  style={[styles.formBtn, styles.cancelBtn]}
+                  style={({ pressed }) => [
+                    styles.formBtn,
+                    styles.cancelBtn,
+                    pressed && { backgroundColor: color.borderPressed },
+                  ]}
                   accessibilityRole="button"
                   accessibilityLabel="Cancel adding preset"
                   {...a11yToggle({ disabled: saving })}
@@ -472,10 +482,11 @@ export default function FilterPresetsModal({ visible, onClose, onApply }: Props)
                 <Pressable
                   onPress={handleCreate}
                   disabled={saving || newName.trim().length === 0}
-                  style={[
+                  style={({ pressed }) => [
                     styles.formBtn,
                     styles.saveBtn,
                     (saving || newName.trim().length === 0) && styles.saveBtnDisabled,
+                    pressed && { backgroundColor: color.ctaFillPressed },
                   ]}
                   accessibilityRole="button"
                   accessibilityLabel="Save preset"
@@ -495,13 +506,16 @@ export default function FilterPresetsModal({ visible, onClose, onApply }: Props)
           )}
 
           {loading && presets.length === 0 ? (
-            <View style={styles.center}>
-              <ActivityIndicator />
-              <AppText variant="body" style={styles.subtitle}>Loading presets…</AppText>
+            // Content-shaped loading (BP-3) — see MyReportsModal; same recipe.
+            <View accessibilityLabel="Loading presets" accessibilityLiveRegion="polite">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <SkeletonRow key={i} />
+              ))}
             </View>
           ) : presets.length === 0 && user ? (
             <View style={styles.emptyWrap}>
-              <AppText variant="label" style={styles.emptyTitle}>No presets yet</AppText>
+              <SlidersHorizontal size={32} color={color.inkGlassMuted} strokeWidth={2.2} {...decorativeProps} />
+              <AppText variant="heading" style={styles.emptyTitle}>No presets yet</AppText>
               <AppText variant="body" style={styles.emptyBody}>
                 {onApply
                   ? 'Save your current map filters as a named preset from the Map screen, then come back here to apply it in one tap.'

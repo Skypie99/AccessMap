@@ -50,6 +50,7 @@
  */
 import { submitFeedback } from './feedbackStore';
 import { REPORT_CATEGORIES, type ReportCategoryId } from './copy';
+import { errorMessage } from './errors';
 import type { FeedbackCategory } from './feedback';
 
 /**
@@ -275,6 +276,6 @@ export async function submitContentReport(input: {
   } catch (e) {
     // submitFeedback's contract says it never rejects. Belt and braces: a
     // report surface must not crash on a broken promise upstream.
-    return { status: 'failed', reason: e instanceof Error ? e.message : 'Unknown error.' };
+    return { status: 'failed', reason: errorMessage(e) };
   }
 }

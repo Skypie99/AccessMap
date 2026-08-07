@@ -17,6 +17,7 @@ import { Menu, MessageSquare } from 'lucide-react-native';
 import { radius } from '@/theme';
 import { useColor } from '@/theme/ThemeContext';
 import { useDrawerTrigger } from '@/lib/drawerContext';
+import { hapticSelection } from '@/lib/haptics';
 
 interface Props {
   onMenu: () => void;
@@ -40,6 +41,9 @@ export function HeaderActions({ onMenu, onFeedback, iconColor, fillColor }: Prop
       <Pressable
         ref={menuTrigger.ref}
         onPress={() => {
+          // Same light tick the tab bar gives every press (TabBarButton) — the
+          // header cluster was the one silent nav control (BP-4).
+          hapticSelection();
           menuTrigger.register();
           onMenu();
         }}
@@ -51,7 +55,10 @@ export function HeaderActions({ onMenu, onFeedback, iconColor, fillColor }: Prop
         <Menu size={22} color={iconColor} strokeWidth={2.2} />
       </Pressable>
       <Pressable
-        onPress={onFeedback}
+        onPress={() => {
+          hapticSelection();
+          onFeedback();
+        }}
         style={({ pressed }) => [styles.btn, { backgroundColor: pressed ? color.surfaceNeutral : bg }]}
         accessibilityRole="button"
         accessibilityLabel="Send feedback"

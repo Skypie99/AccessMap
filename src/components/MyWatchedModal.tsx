@@ -6,7 +6,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 import {
-  ActivityIndicator,
   FlatList,
   Modal,
   Pressable,
@@ -19,6 +18,7 @@ import {
 import { useAuth } from '@/lib/auth';
 import { AppText } from '@/components/ui/AppText';
 import { GlassSurface } from '@/components/ui/GlassSurface';
+import { SkeletonRow } from '@/components/ui/Skeleton';
 import { SeverityDisc } from '@/components/SeverityDisc';
 import { confirm, notify } from '@/lib/confirm';
 import { errorMessage } from '@/lib/errors';
@@ -37,8 +37,8 @@ import {
   filterWatchedFlagsByStatus,
   type WatchedStatusFilter,
 } from '@/lib/watchedFlagsFilter';
-import { font, radius, spacing } from '@/theme';
-import { MapPin, RefreshCw, Star, X } from 'lucide-react-native';
+import { bulkGlassShadow, font, radius, spacing } from '@/theme';
+import { MapPin, RefreshCw, Search, Star, X } from 'lucide-react-native';
 import { a11yToggle, decorativeProps, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
 import { severityA11y, statusA11y } from '@/lib/a11yText';
 import type { FlagRow } from '@/types/database';
@@ -310,7 +310,7 @@ export default function MyWatchedModal({ visible, onClose, onSelectFlag, onViewO
           <View style={styles.header}>
             <AppText ref={titleRef} variant="heading" style={styles.title} accessibilityRole="header">Watched Flags</AppText>
             {flags.length > 0 && (
-              <Pressable onPress={handleClearAll} hitSlop={10} style={styles.clearBtn}
+              <Pressable onPress={handleClearAll} hitSlop={10} style={({ pressed }) => [styles.clearBtn, pressed && { opacity: 0.7 }]}
                 accessibilityRole="button"
                 accessibilityLabel={`Clear all ${flags.length} watched flags`}
                 accessibilityHint="Asks you to confirm before removing all watched flags"
@@ -323,7 +323,7 @@ export default function MyWatchedModal({ visible, onClose, onSelectFlag, onViewO
             <Pressable
               onPress={handleRefresh}
               hitSlop={12}
-              style={styles.closeBtn}
+              style={({ pressed }) => [styles.closeBtn, pressed && { backgroundColor: color.borderPressed }]}
               accessibilityRole="button"
               accessibilityLabel="Refresh"
               accessibilityHint="Reloads your watched flags without pulling down the list"
@@ -331,7 +331,7 @@ export default function MyWatchedModal({ visible, onClose, onSelectFlag, onViewO
             >
               <RefreshCw size={18} color={color.text} strokeWidth={2.2} {...decorativeProps} />
             </Pressable>
-            <Pressable onPress={onClose} hitSlop={12} style={styles.closeBtn}
+            <Pressable onPress={onClose} hitSlop={12} style={({ pressed }) => [styles.closeBtn, pressed && { backgroundColor: color.borderPressed }]}
               accessibilityRole="button" accessibilityLabel="Close watched flags"
             >
               <X size={18} color={color.text} strokeWidth={2.2} />
@@ -410,7 +410,13 @@ export default function MyWatchedModal({ visible, onClose, onSelectFlag, onViewO
           )}
 
           {loading ? (
-            <View style={styles.center}><ActivityIndicator /></View>
+            // Content-shaped loading (BP-3): row placeholders; the bare
+            // unthemed spinner told SR users nothing — the label does now.
+            <View accessibilityLabel="Loading watched flags" accessibilityLiveRegion="polite">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <SkeletonRow key={i} />
+              ))}
+            </View>
           ) : loadError && flags.length === 0 ? (
             <View style={styles.center}>
               {/* M-40 error repair: was bare color.error text directly on the
@@ -419,7 +425,7 @@ export default function MyWatchedModal({ visible, onClose, onSelectFlag, onViewO
                   ship the same), never error-on-glass. */}
               <View style={styles.errorBanner}>
                 <AppText variant="body" style={styles.errorText}>{loadError}</AppText>
-                <Pressable onPress={() => void load()} style={styles.retryBtn} accessibilityRole="button" accessibilityLabel="Retry loading watched flags">
+                <Pressable onPress={() => void load()} style={({ pressed }) => [styles.retryBtn, pressed && { backgroundColor: color.errorPressed }]} accessibilityRole="button" accessibilityLabel="Retry loading watched flags">
                   <AppText variant="label" style={styles.retryText}>Retry</AppText>
                 </Pressable>
               </View>
@@ -435,7 +441,9 @@ export default function MyWatchedModal({ visible, onClose, onSelectFlag, onViewO
             </View>
           ) : displayFlags.length === 0 ? (
             <View style={styles.center}>
-              <AppText variant="body" style={styles.emptyIcon} {...decorativeProps}>🔎</AppText>
+              {/* BP-7: the app's last emoji glyph → the Lucide Search its
+                  sibling empty states already use (AddressSearch/MyFeedback). */}
+              <Search size={32} color={color.inkGlassMuted} strokeWidth={2.2} {...decorativeProps} />
               <AppText variant="heading" style={styles.emptyTitle}>No matches</AppText>
               <AppText variant="body" style={styles.emptySubtitle}>Try a different search term or status filter.</AppText>
             </View>
@@ -448,7 +456,7 @@ export default function MyWatchedModal({ visible, onClose, onSelectFlag, onViewO
               accessibilityRole="list"
               accessibilityLabel={`Watched flags list, ${displayFlags.length} ${displayFlags.length === 1 ? 'item' : 'items'}`}
               refreshControl={
-                <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} accessibilityLabel="Pull down to refresh watched flags" />
+                <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={color.brand} colors={[color.brand]} accessibilityLabel="Pull down to refresh watched flags" />
               }
             />
           )}
@@ -491,12 +499,7 @@ const makeStyles = (color: ColorTheme) =>
     cardWrap: {
       borderTopLeftRadius: radius.xl,
       borderTopRightRadius: radius.xl,
-      ...(color.scheme === 'dark'
-        ? { shadowColor: '#000', shadowOpacity: 0.35 }
-        : { shadowColor: color.shadowTint, shadowOpacity: 0.12 }),
-      shadowRadius: 14,
-      shadowOffset: { width: 0, height: -4 },
-      elevation: 5,
+      ...bulkGlassShadow(color),
     },
     header: { flexDirection: 'row', alignItems: 'center', marginBottom: spacing.sm },
     title: { fontSize: font.size.xxl, fontWeight: font.weight.bold, flex: 1, color: color.textStrong, letterSpacing: -0.3 },
@@ -511,7 +514,6 @@ const makeStyles = (color: ColorTheme) =>
     errorText: { color: color.errorFg, flex: 1, fontSize: font.size.sm, lineHeight: 18 },
     retryBtn: { paddingHorizontal: spacing.md + 2, paddingVertical: spacing.sm + 2, borderRadius: radius.md, backgroundColor: color.error, minHeight: 44, justifyContent: 'center' },
     retryText: { color: color.textOnBrand, fontWeight: font.weight.bold, fontSize: font.size.sm },
-    emptyIcon: { fontSize: 40, color: color.textSubtle },
     emptyTitle: { fontSize: font.size.xl, fontWeight: font.weight.bold, color: color.textStrong },
     emptySubtitle: { fontSize: font.size.base, color: color.inkGlassMuted, fontFamily: font.family.bodyMedium, textAlign: 'center', lineHeight: 20 },
     emptyBold: { fontWeight: font.weight.bold, color: color.textStrong },

@@ -29,11 +29,13 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
+  Platform,
   Switch,
   type Text,
   View,
 } from 'react-native';
-import { font, radius, shadow, spacing } from '@/theme';
+import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
+import { androidSwitchThumbOff, bulkGlassShadow, font, radius, shadow, spacing } from '@/theme';
 import { X } from 'lucide-react-native';
 import { AppText } from '@/components/ui/AppText';
 import { GlassSurface } from '@/components/ui/GlassSurface';
@@ -116,6 +118,9 @@ function ToggleRow({
         accessibilityLabel={label}
         accessibilityHint={subtitle}
         {...a11yToggle({ checked: value })}
+        // BP-6: the estate Switch recipe — brand track, themed false-track.
+        trackColor={{ false: color.borderStrong, true: color.brand }}
+        thumbColor={Platform.OS === 'android' ? (value ? color.brand : androidSwitchThumbOff) : undefined}
       />
     </View>
   );
@@ -124,6 +129,10 @@ function ToggleRow({
 export default function NotificationPreferencesScreen({ visible, onClose }: Props) {
   const color = useColor();
   const styles = makeStyles(color);
+  // Read the inset context directly (zero fallback) instead of
+  // useSafeAreaInsets(), which throws when there's no SafeAreaProvider — the
+  // modal render-tests mount these sheets without one. Same value in the app.
+  const insets = React.useContext(SafeAreaInsetsContext) ?? { top: 0, bottom: 0, left: 0, right: 0 };
   const { user } = useAuth();
   const { preferences, setPreference, loading } = useNotificationPreferences(user?.id);
   // WCAG 2.3.3: snap (no slide) when the user prefers reduced motion.
@@ -147,7 +156,7 @@ export default function NotificationPreferencesScreen({ visible, onClose }: Prop
           variant="bulk"
           borderRadius={0}
           forceEngineered
-          style={styles.card}
+          style={[styles.card, { paddingBottom: Math.max(spacing.xl, insets.bottom) }]}
           accessibilityViewIsModal
           onAccessibilityEscape={onClose}
         >
@@ -162,7 +171,7 @@ export default function NotificationPreferencesScreen({ visible, onClose }: Prop
             <Pressable
               onPress={onClose}
               hitSlop={12}
-              style={styles.closeBtn}
+              style={({ pressed }) => [styles.closeBtn, pressed && { backgroundColor: color.borderPressed }]}
               accessibilityRole="button"
               accessibilityLabel="Close notification preferences"
             >
@@ -177,7 +186,7 @@ export default function NotificationPreferencesScreen({ visible, onClose }: Prop
           {/* Body */}
           {!user ? (
             <View style={styles.notice}>
-              <AppText variant="body" style={styles.noticeText}>Sign in to save notification preferences.</AppText>
+              <AppText variant="body" style={styles.noticeText}>Sign in to change notification preferences.</AppText>
             </View>
           ) : loading ? (
             <View style={styles.center}>
@@ -205,7 +214,7 @@ export default function NotificationPreferencesScreen({ visible, onClose }: Prop
                 />
               ))}
               <AppText variant="body" style={styles.footer}>
-                Changes take effect immediately. All notifications are on by default.
+                Changes take effect immediately on this device. All notifications are on by default.
               </AppText>
             </ScrollView>
           )}
@@ -240,12 +249,7 @@ const makeStyles = (color: ColorTheme) =>
     cardWrap: {
       borderTopLeftRadius: radius.xl,
       borderTopRightRadius: radius.xl,
-      ...(color.scheme === 'dark'
-        ? { shadowColor: '#000', shadowOpacity: 0.35 }
-        : { shadowColor: color.shadowTint, shadowOpacity: 0.12 }),
-      shadowRadius: 14,
-      shadowOffset: { width: 0, height: -4 },
-      elevation: 5,
+      ...bulkGlassShadow(color),
     },
     headerRow: {
       flexDirection: 'row',

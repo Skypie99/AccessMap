@@ -13,7 +13,8 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { font, radius, spacing } from '@/theme';
+import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
+import { bulkGlassShadow, font, radius, spacing } from '@/theme';
 import { a11yToggle, decorativeProps, useFocusOnOpen, useReducedMotion, useReduceTransparency } from '@/lib/accessibility';
 import { AppText } from '@/components/ui/AppText';
 import { GlassSurface } from '@/components/ui/GlassSurface';
@@ -55,6 +56,10 @@ interface Props {
 export default function FeedbackModal({ visible, onClose }: Props) {
   const color = useColor();
   const styles = makeStyles(color);
+  // Read the inset context directly (zero fallback) instead of
+  // useSafeAreaInsets(), which throws when there's no SafeAreaProvider — the
+  // modal render-tests mount these sheets without one. Same value in the app.
+  const insets = React.useContext(SafeAreaInsetsContext) ?? { top: 0, bottom: 0, left: 0, right: 0 };
   // Engineered chip tint (mirrors TasksScreen): the sheet blurs, the chip tints.
   // Under Reduce Transparency the chips fall back to the solid neutral pair; the
   // selected chip keeps the mode-independent CTA fill (categoryChipSelected).
@@ -64,6 +69,10 @@ export default function FeedbackModal({ visible, onClose }: Props) {
   const { user } = useAuth();
   const [body, setBody] = useState('');
   const [contact, setContact] = useState('');
+  // BP-6 focus cue: border swaps to brand while focused (width unchanged —
+  // no layout shift). The Input primitive's treatment on these raw fields.
+  const [bodyFocused, setBodyFocused] = useState(false);
+  const [contactFocused, setContactFocused] = useState(false);
   // 'idea' is the lowest-friction default — most users have an idea
   // before they've isolated a bug, and "Idea" doesn't suggest the message
   // is going into a tracker.
@@ -192,7 +201,7 @@ export default function FeedbackModal({ visible, onClose }: Props) {
           style={styles.kav}
         >
           <View style={styles.cardWrap}>
-          <GlassSurface variant="bulk" borderRadius={0} style={styles.card}>
+          <GlassSurface variant="bulk" borderRadius={0} style={[styles.card, { paddingBottom: Math.max(spacing.xl, insets.bottom) }]}>
             <View style={styles.headerRow}>
               <AppText ref={titleRef} variant="heading" style={styles.title} accessibilityRole="header">
                 Send feedback
@@ -274,7 +283,9 @@ export default function FeedbackModal({ visible, onClose }: Props) {
                 maxLength={MAX_FEEDBACK_LEN}
                 placeholder="What's on your mind?"
                 placeholderTextColor={color.placeholderText}
-                style={styles.bodyInput}
+                onFocus={() => setBodyFocused(true)}
+                onBlur={() => setBodyFocused(false)}
+                style={[styles.bodyInput, bodyFocused && { borderColor: color.brand }]}
                 editable={!sending}
                 textAlignVertical="top"
                 accessibilityLabel="Feedback message"
@@ -288,7 +299,9 @@ export default function FeedbackModal({ visible, onClose }: Props) {
                 maxLength={MAX_EMAIL_LEN}
                 placeholder="you@example.com"
                 placeholderTextColor={color.placeholderText}
-                style={styles.contactInput}
+                onFocus={() => setContactFocused(true)}
+                onBlur={() => setContactFocused(false)}
+                style={[styles.contactInput, contactFocused && { borderColor: color.brand }]}
                 editable={!sending}
                 autoCapitalize="none"
                 autoCorrect={false}
@@ -326,7 +339,7 @@ export default function FeedbackModal({ visible, onClose }: Props) {
               <Pressable
                 onPress={onClose}
                 disabled={sending}
-                style={[styles.btn, styles.btnCancel]}
+                style={({ pressed }) => [styles.btn, styles.btnCancel, pressed && { backgroundColor: color.borderPressed }]}
                 accessibilityRole="button"
                 accessibilityLabel="Cancel"
                 {...a11yToggle({ disabled: sending })}
@@ -336,7 +349,7 @@ export default function FeedbackModal({ visible, onClose }: Props) {
               <Pressable
                 onPress={handleSend}
                 disabled={!canSend}
-                style={[styles.btn, styles.btnSend, !canSend && styles.btnSendDisabled]}
+                style={({ pressed }) => [styles.btn, styles.btnSend, !canSend && styles.btnSendDisabled, pressed && { backgroundColor: color.ctaFillPressed }]}
                 accessibilityRole="button"
                 accessibilityLabel="Send feedback"
                 accessibilityHint="Opens your email app with the message prefilled."
@@ -406,12 +419,7 @@ const makeStyles = (color: ColorTheme) =>
       flexShrink: 1,
       borderTopLeftRadius: radius.xl,
       borderTopRightRadius: radius.xl,
-      ...(color.scheme === 'dark'
-        ? { shadowColor: '#000', shadowOpacity: 0.35 }
-        : { shadowColor: color.shadowTint, shadowOpacity: 0.12 }),
-      shadowRadius: 14,
-      shadowOffset: { width: 0, height: -4 },
-      elevation: 5,
+      ...bulkGlassShadow(color),
     },
     // Scrollable body between the pinned header and actions. flexShrink lets it
     // give up height so the card honors maxHeight and the body scrolls (G9).
@@ -458,7 +466,7 @@ const makeStyles = (color: ColorTheme) =>
       // already >=500, so only the color re-arbitrates.
       color: color.inkGlassMuted,
       textTransform: 'uppercase',
-      letterSpacing: 0.5,
+      letterSpacing: font.tracking.section,
       fontWeight: font.weight.semibold,
       marginTop: spacing.sm,
     },

@@ -88,7 +88,12 @@ jest.mock('@/theme', () => jest.requireActual('@/theme'));
 // ---------------------------------------------------------------------------
 jest.mock('@/components/ui/RemoteImage', () => ({ RemoteImage: () => null }));
 jest.mock('@/components/SearchInputRow', () => () => null);
-jest.mock('@/components/StatusBadge', () => ({ StatusBadge: () => null }));
+// Stub the badge component, but keep the REAL statusPalette export — the modal
+// imports it for the themed status-filter chips (BP-2, 2026-08-01).
+jest.mock('@/components/StatusBadge', () => ({
+  ...jest.requireActual('@/components/StatusBadge'),
+  StatusBadge: () => null,
+}));
 jest.mock('lucide-react-native', () => ({ MapPin: () => null, X: () => null }));
 
 // ---------------------------------------------------------------------------

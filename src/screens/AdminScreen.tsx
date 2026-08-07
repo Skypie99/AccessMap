@@ -47,6 +47,10 @@ export default function AdminScreen() {
   const insets = useSafeAreaInsets();
   const [flags, setFlags] = useState<FlagRow[]>([]);
   const [loading, setLoading] = useState(true);
+  // BP-9: persistent, retryable load-failure state. The old Alert vanished on
+  // dismiss leaving no signal — every sibling list surface shows an inline
+  // banner + Retry (MyWatched is the exemplar).
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [actioningId, setActioningId] = useState<string | null>(null);
   // F18: synchronous per-flag guard. The action buttons use only
   // accessibilityState.disabled (a screen-reader hint that does NOT block
@@ -65,9 +69,12 @@ export default function AdminScreen() {
       const rows = await listRecentFlags(200);
       if (seq !== loadSeqRef.current) return; // superseded by a newer load
       setFlags(rows);
+      setLoadError(null);
     } catch (e) {
       if (seq !== loadSeqRef.current) return;
-      Alert.alert('Error', errorMessage(e));
+      // Inline banner instead of a dismiss-and-gone Alert (BP-9) — also fixes
+      // the web, where Alert.alert is a silent no-op.
+      setLoadError(errorMessage(e));
     } finally {
       if (seq === loadSeqRef.current) setLoading(false);
     }
@@ -279,11 +286,24 @@ export default function AdminScreen() {
           { paddingTop: insets.top, paddingBottom: tabBarHeight + 16 },
         ]}
         refreshControl={
-          <RefreshControl refreshing={loading} onRefresh={load} tintColor={color.brand} />
+          <RefreshControl refreshing={loading} onRefresh={load} tintColor={color.brand} colors={[color.brand]} />
         }
         ListHeaderComponent={
           <>
             {header}
+            {loadError ? (
+              <View style={styles.errorBanner} accessibilityLiveRegion="polite">
+                <AppText variant="body" style={styles.errorText}>{loadError}</AppText>
+                <Pressable
+                  onPress={() => void load()}
+                  style={({ pressed }) => [styles.retryBtn, pressed && { backgroundColor: color.errorPressed }]}
+                  accessibilityRole="button"
+                  accessibilityLabel="Retry loading the moderation queue"
+                >
+                  <AppText variant="label" style={styles.retryText}>Retry</AppText>
+                </Pressable>
+              </View>
+            ) : null}
             {flags.length > 0 ? (
               <AppText variant="label" size={font.size.xs} color={color.inkOnStage} style={styles.listHeader}>
                 {flags.length} recent {flags.length === 1 ? 'flag' : 'flags'} · pull to refresh
@@ -335,6 +355,28 @@ function makeStyles(color: ColorTheme) {
       paddingBottom: spacing.xs,
       paddingHorizontal: spacing.xl,
     },
+    // BP-9 — the sibling error-banner recipe (MyWatched/MyReports), solid
+    // errorBg so the red family never sits on glass.
+    errorBanner: {
+      backgroundColor: color.errorBg,
+      borderRadius: radius.md,
+      padding: spacing.md,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.md,
+      marginHorizontal: spacing.xl,
+      marginBottom: spacing.sm,
+    },
+    errorText: { color: color.errorFg, flex: 1, fontSize: font.size.sm, lineHeight: font.lineHeight.sm },
+    retryBtn: {
+      paddingHorizontal: spacing.md + 2,
+      paddingVertical: spacing.sm + 2,
+      borderRadius: radius.md,
+      backgroundColor: color.error,
+      minHeight: 44,
+      justifyContent: 'center',
+    },
+    retryText: { color: color.textOnBrand, fontWeight: font.weight.bold, fontSize: font.size.sm },
     emptyContainer: {
       flexGrow: 1,
     },

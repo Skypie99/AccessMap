@@ -21,8 +21,7 @@
 //     copy-pasted verbatim into every report.
 //   - No tests yet — the data is static and the consumer (ReportFlagModal)
 //     handles validation. A future test can assert "every template's
-//     category is in CATEGORY_ORDER" once flagsRealtime.test-style mocks
-//     are extracted.
+//     category is in CATEGORY_ORDER".
 
 import { CATEGORY_ORDER, SEVERITY_ORDER } from './flags';
 import type { FlagCategory, FlagSeverity } from '@/types/database';

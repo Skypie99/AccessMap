@@ -183,6 +183,7 @@ export default function ReportsBreakdownCard({ userId, refreshKey }: Props) {
           </AppText>
         </View>
         <ActivityIndicator
+          color={color.brandText}
           // The accessible label on the card already announces "loading". {...decorativeProps}
         />
       </GlassSurface>
@@ -329,7 +330,7 @@ const makeStyles = (color: ColorTheme) =>
       fontSize: font.size.xs,
       color: color.inkGlassMuted, // arbitrated muted ink on the row glass
       textTransform: 'uppercase',
-      letterSpacing: 0.5,
+      letterSpacing: font.tracking.section,
       fontWeight: font.weight.bold,
       marginTop: spacing.sm,
     },

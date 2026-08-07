@@ -13,7 +13,8 @@ import {
   View,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { font, radius, spacing } from '@/theme';
+import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
+import { font, gradient, radius, shadow, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { AppText } from '@/components/ui';
 import { signInWithEmail, signUpWithEmail } from '@/lib/supabase';
@@ -35,6 +36,11 @@ export default function SignInScreen({
   // wall AND as ProfileScreen's sign-in Modal (which is exempted in the
   // focus-in guard because this hook covers it). Land the cursor on the title.
   const titleRef = useFocusOnOpen<Text>(true);
+  // BP-5: the only full-screen surface with zero safe-area handling — the
+  // ← Back button could sit under the status bar and the policy link under
+  // the home indicator on notched devices. Non-throwing context read (the
+  // M15 family recipe; render tests mount without a provider).
+  const insets = React.useContext(SafeAreaInsetsContext) ?? { top: 0, bottom: 0, left: 0, right: 0 };
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
@@ -128,7 +134,13 @@ export default function SignInScreen({
       <View style={styles.glowOrb} pointerEvents="none" />
 
       <ScrollView
-        contentContainerStyle={styles.scroll}
+        contentContainerStyle={[
+          styles.scroll,
+          {
+            paddingTop: Math.max(spacing.xxxl, insets.top + spacing.md),
+            paddingBottom: Math.max(spacing.xxxl, insets.bottom + spacing.md),
+          },
+        ]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
@@ -220,13 +232,16 @@ export default function SignInScreen({
               {...a11yToggle({ disabled: busy })}
             >
               <LinearGradient
-                colors={['#4E89EF', '#1466E0', '#0F53BE']}
+                // The token, not a third bespoke ramp — same primary-CTA
+                // gradient as the FAB and Report submit (BP-8/C5). White label
+                // is 16pt bold, the AA-large posture the token documents.
+                colors={gradient.brand}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={styles.primaryBtn}
               >
                 {busy ? (
-                  <ActivityIndicator color="#fff" size="small" />
+                  <ActivityIndicator color={color.textOnBrand} size="small" />
                 ) : (
                   <AppText variant="label" style={styles.primaryBtnText}>Sign in</AppText>
                 )}
@@ -272,7 +287,7 @@ export default function SignInScreen({
         ) : null}
 
         <AppText variant="body" style={styles.footnote}>
-          Your location is only used when you place a flag.{'\n'}Your email is never shown publicly.
+          Your location is used to centre the map, work out how far away barriers are, and place a flag.{'\n'}Your email is never shown publicly.
         </AppText>
 
         {/* B-2 (SR-002): 5.1.1(i) wants the policy reachable near account
@@ -404,23 +419,20 @@ const makeStyles = (_color: ColorTheme) =>
     },
     primaryBtn: {
       borderRadius: radius.lg,
-      paddingVertical: 15,
+      paddingVertical: spacing.lg,
       paddingHorizontal: spacing.lg,
       alignItems: 'center',
       justifyContent: 'center',
       minHeight: 56,
-      // Wayfinder Blue glow under sign-in button
-      shadowColor: '#1466E0',
-      shadowOpacity: 0.55,
-      shadowRadius: 16,
-      shadowOffset: { width: 0, height: 6 },
-      elevation: 8,
+      // The tokenized brand glow (0.30) — this was a hand-rolled 0.55, the
+      // heaviest shadow in the app; every other CTA glow rides the token.
+      ...shadow.glowBrand,
     },
     primaryBtnText: {
       color: _color.textOnBrand,
       fontSize: font.size.lg,
       fontWeight: font.weight.bold,
-      letterSpacing: 0.4,
+      letterSpacing: font.tracking.loose,
     },
     dividerRow: {
       flexDirection: 'row',
@@ -436,7 +448,7 @@ const makeStyles = (_color: ColorTheme) =>
       fontSize: font.size.xs,
       color: 'rgba(255,255,255,0.35)',
       fontWeight: font.weight.medium,
-      letterSpacing: 0.5,
+      letterSpacing: font.tracking.loose,
     },
     secondaryBtn: {
       borderRadius: radius.lg,

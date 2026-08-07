@@ -57,9 +57,30 @@ with them, and the sweep has nothing to iterate.
  * refuses to delete is a broken promise now. Failures are logged for exactly
  * that follow-up.
  *
- * Both buckets use a `<uid>/…` path prefix, so `list(uid)` enumerates an
+ * Objects use a `<uid>/…` path prefix, so listing by that prefix enumerates an
  * account's objects without parsing a single URL. The service role is not
  * subject to the owner-only DELETE policy.
+ *
+ * ⚠️ CORRECTED 2026-07-31 — security audit train, finding PC-3. As originally
+ * written this function would have swept the flag photos, reported success, and
+ * LEFT THE AVATAR — the single object this artifact's own header calls the
+ * worst case ("a face photo with no remaining owner and no remaining
+ * mechanism"). Two independent defects, both fixed below:
+ *
+ *   1. It iterated `['flag-photos', 'avatars']`. There is no `avatars` bucket.
+ *      `uploadAvatar` delegates to `uploadStrippedImage`, which uploads to
+ *      FLAG_PHOTOS_BUCKET; `flag-photos` is the only bucket schema.sql creates.
+ *      The second iteration was dead code against a bucket that does not exist.
+ *
+ *   2. Supabase Storage `list(prefix)` returns IMMEDIATE CHILDREN ONLY, and the
+ *      avatar is one level deeper: `flag-photos/<uid>/avatar/<ts>.<ext>`. So
+ *      `list(uid)` yielded a FOLDER entry named `avatar`, the loop pushed the
+ *      path `<uid>/avatar`, and `.remove()` on a prefix that is not an object
+ *      deletes nothing AND reports no error. Silent, clean-looking failure.
+ *
+ * The fix recurses one level into folder entries. Caught while this artifact is
+ * still parked, which is the right time to catch it — the deferral was resting
+ * on a sweep that would not have worked.
  */
 async function sweepUserStorage(
   admin: SupabaseClient,
@@ -67,24 +88,38 @@ async function sweepUserStorage(
 ): Promise<{ bucket: string; removed: number; error?: string }[]> {
   const results: { bucket: string; removed: number; error?: string }[] = [];
 
-  for (const bucket of ['flag-photos', 'avatars'] as const) {
+  // PC-3: `flag-photos` only. There is no `avatars` bucket — avatars live in
+  // this same bucket under `<uid>/avatar/`.
+  for (const bucket of ['flag-photos'] as const) {
     try {
       // Paginated: an account with more than a page of photos must not have the
       // tail silently left behind — the exact shape of bug this closes.
-      let offset = 0;
       const pageSize = 100;
       const paths: string[] = [];
 
-      for (;;) {
-        const { data, error } = await admin.storage
-          .from(bucket)
-          .list(userId, { limit: pageSize, offset });
-        if (error) throw error;
-        const page = data ?? [];
-        for (const obj of page) paths.push(`${userId}/${obj.name}`);
-        if (page.length < pageSize) break;
-        offset += pageSize;
-      }
+      // PC-3: `list()` is NOT recursive. An entry with no `id` is a folder, not
+      // an object; removing its path is a silent no-op. Flag photos sit at
+      // `<uid>/<ts>.jpg` and the avatar at `<uid>/avatar/<ts>.jpg`, so we list
+      // the user's prefix and then descend into any folder we find.
+      const listPrefix = async (prefix: string): Promise<void> => {
+        let offset = 0;
+        for (;;) {
+          const { data, error } = await admin.storage
+            .from(bucket)
+            .list(prefix, { limit: pageSize, offset });
+          if (error) throw error;
+          const page = data ?? [];
+          for (const obj of page) {
+            const full = `${prefix}/${obj.name}`;
+            // Supabase returns `id: null` for synthetic folder rows.
+            if (obj.id === null || obj.id === undefined) await listPrefix(full);
+            else paths.push(full);
+          }
+          if (page.length < pageSize) break;
+          offset += pageSize;
+        }
+      };
+      await listPrefix(userId);
 
       if (paths.length === 0) {
         results.push({ bucket, removed: 0 });

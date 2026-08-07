@@ -1,6 +1,7 @@
 import { supabase } from './supabase';
 import type { UserRow } from '@/types/database';
 import { uploadStrippedImage } from './flags';
+import { isFunctionMissing } from './postgrestErrors';
 
 export interface UserProfilePatch {
   display_name?: string | null;
@@ -102,9 +103,10 @@ export interface MonthlyLeaderboardEntry {
  * first, via the `list_monthly_leaderboard` RPC.
  *
  * GRACEFUL FALLBACK: the RPC migration is a FILE that may not be applied to the
- * live backend yet. When the function is absent, PostgREST returns 42883 /
- * PGRST202 ("could not find the function" / "does not exist"); we warn once and
- * return [] so the UI shows the friendly empty state instead of an error.
+ * live backend yet. When the function is absent (isFunctionMissing in
+ * postgrestErrors.ts — 42883 / PGRST202 / the "could not find the function"
+ * phrasing), we warn once and return [] so the UI shows the friendly empty
+ * state instead of an error.
  * Mirrors the degrade-gracefully pattern in src/lib/photos.ts listFlagPhotos.
  * Any OTHER error is a real failure and is re-thrown for the caller to surface.
  */
@@ -112,11 +114,7 @@ export async function listMonthlyLeaderboard(limit = 20): Promise<MonthlyLeaderb
   const { data, error } = await supabase.rpc('list_monthly_leaderboard', { p_limit: limit });
 
   if (error) {
-    const isMissingFn =
-      error.code === '42883' ||
-      error.code === 'PGRST202' ||
-      /does not exist|Could not find the function/i.test(error.message ?? '');
-    if (isMissingFn) {
+    if (isFunctionMissing(error)) {
       console.warn('[leaderboard] monthly RPC not applied yet:', error.message);
       return [];
     }

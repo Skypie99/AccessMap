@@ -359,6 +359,16 @@ export const font = {
     tight: Math.round(12 * 1.4), // 16 → font.size.xs
     base: Math.round(14 * 1.4), // 20 → font.size.base (most common)
     relaxed: Math.round(16 * 1.4), // 24 → font.size.lg
+    // Family completed (pre-ship polish 2026-08-01) so every size has a token.
+    // Body sizes keep the ×1.4 formula; display sizes use ×1.25 — headline
+    // leading at 1.4 reads gappy past 20pt.
+    sm: Math.round(13 * 1.4), // 18 → font.size.sm
+    md: Math.round(15 * 1.4), // 21 → font.size.md
+    xl: Math.round(18 * 1.4), // 25 → font.size.xl
+    xxl: Math.round(20 * 1.4), // 28 → font.size.xxl
+    h2: Math.round(24 * 1.25), // 30 → font.size.h2
+    h1: Math.round(28 * 1.25), // 35 → font.size.h1
+    display: Math.round(48 * 1.25), // 60 → font.size.display
   },
   // Letter-spacing (tracking) for display/heading variants — tight, premium feel.
   // Values are absolute pt (RN letterSpacing is pt, not em). Rule of thumb:
@@ -371,7 +381,16 @@ export const font = {
     xl: -0.35, // font.size.xl (18pt) — section headings
     heading: -0.3, // font.size.lg (16pt) default — heading variant at base size
     none: 0, // body / mono — no tracking
-    loose: 0.4, // all-caps labels / uppercase pill text
+    loose: 0.4, // all-caps labels / uppercase pill text (badge/pill scale)
+    // Uppercase SECTION labels (xs/caption size, inkGlassMuted) — the app's
+    // dominant practice was 0.8 across Legend/Profile; About (0.6) and
+    // FlagDetail (0.5) drifted. Named + converged in the pre-ship polish.
+    section: 0.8,
+    // Wide editorial eyebrow — the ScreenHeader all-caps micro-label practice,
+    // tokenized (pre-ship polish 2026-08-01). Eyebrows are ROOMY (1.2);
+    // dense pill caps stay on `loose`. ScreenHeader.EYEBROW_TRACKING derives
+    // from this token.
+    eyebrow: 1.2,
   },
 };
 
@@ -430,6 +449,27 @@ export const shadow = {
     elevation: 8,
   },
 };
+
+// -------------------------------------------------------------------------
+// Bulk-glass card up-shadow — the canonical bottom-sheet / modal-card shadow
+// (pre-ship polish 2026-08-01: hoisted from 16 byte-identical hand-copies).
+// Dark mode keeps the ONE deliberate dark drop-shadow (GLASS.md §2 — the bulk
+// exception); light rides shadowTint. Spread on the OUTER wrapper — an
+// overflow:hidden card clips its own shadow:
+//   ...bulkGlassShadow(color)
+// TasksScreen's 8/{0,-2}/8 variant is a deliberate different recipe — not this.
+// -------------------------------------------------------------------------
+
+export function bulkGlassShadow(c: { scheme: 'light' | 'dark'; shadowTint: string }) {
+  return {
+    ...(c.scheme === 'dark'
+      ? { shadowColor: '#000', shadowOpacity: 0.35 }
+      : { shadowColor: c.shadowTint, shadowOpacity: 0.12 }),
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: -4 },
+    elevation: 5,
+  };
+}
 
 // -------------------------------------------------------------------------
 // Gradient — the more-expressive pass (2026-06-03). Bold, *mode-independent*
@@ -536,7 +576,18 @@ export const icon = {
   md: 20, // navigation, section headers, list-row leading icons
   lg: 24, // category icons, map-chrome buttons, drawer items
   hero: 48, // empty-state + hero illustrations
+  // The estate's de-facto standard, named (pre-ship polish 2026-08-01): the
+  // dominant Lucide pairing app-wide is size 18 / strokeWidth 2.2 (~108 call
+  // sites). New inline icons use these two; the sm/md/lg/hero scale remains
+  // for deliberately scaled contexts.
+  inline: 18,
+  stroke: 2.2, // strokeWidth, not a px size — the house Lucide line weight
 };
+
+// Android Switch OFF-state thumb — RN/Material's default gray, made explicit
+// so all Switches match. Mode-independent on purpose: the thumb sits on the
+// OS-drawn track, not on our themed surfaces.
+export const androidSwitchThumbOff = '#f4f3f4';
 
 // -------------------------------------------------------------------------
 // Severity — single source of truth for the 1→5 color ramp.

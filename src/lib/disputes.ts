@@ -24,6 +24,7 @@
  * ─────────────────────────────────────────────────────────────────────────
  */
 import { supabase } from './supabase';
+import { isFunctionMissing } from './postgrestErrors';
 
 /**
  * Master gate for the dispute affordance.
@@ -51,20 +52,11 @@ export const DISPUTE_THRESHOLD = 2;
  * an honest failure.
  */
 export async function requestFlagDispute(flagId: string): Promise<number | null> {
-  // Cast through `any` (the comments.ts idiom): `increment_dispute_request` is
-  // absent from the generated Functions union in database.ts because it is
-  // absent from the database. That compile error is the type system correctly
-  // reporting the fork state — the cast is how the client half ships ahead of
-  // the migration, and it retires when the types are regenerated after Sky
-  // applies it.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data, error } = await (supabase as any).rpc('increment_dispute_request', {
+  const { data, error } = await supabase.rpc('increment_dispute_request', {
     p_flag_id: flagId,
   });
   if (error) {
-    const code = (error as { code?: string }).code;
-    // PGRST202 = function not in the schema cache; 42883 = undefined function.
-    if (code === 'PGRST202' || code === '42883') {
+    if (isFunctionMissing(error)) {
       console.warn(
         '[dispute] increment_dispute_request RPC missing (migration not applied):',
         error.message,

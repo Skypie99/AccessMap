@@ -3,55 +3,6 @@
  *
  * Spec: `design-reviews/ship-ready/14_MODERATION_TEXTS_v1.md` §2, ratified by
  * Sky 2026-07-27. Decision D-2 (DECISIONS §SKY-5): **CURATED, not raw.**
- *
- * ─── WHAT THIS LIST IS, HONESTLY ──────────────────────────────────────────
- * §2 names LDNOOBW as the seed. This file is **NOT a verbatim vendoring of
- * that list** — no network fetch happened in the run that wrote it, and a
- * header claiming otherwise would be a lie in exactly the place someone would
- * later trust it. What this is: a curated seed covering the four classes §2
- * actually names — slurs and hate terms, explicit sexual terms, harassment
- * language — written to be correct-but-small rather than large-but-unreviewed.
- *
- * ⚠ SKY / JORDAN REVIEW WANTED before this is called complete. Two options,
- *   both fine, neither urgent enough to block the leg:
- *     (a) vendor the real LDNOOBW English file and re-apply the D-2 curation
- *         rule to it, replacing SEED below;
- *     (b) keep this seed and extend it in ADDITIONS as real reports come in.
- *   Either way the matcher, the call sites and the tests do not change.
- *
- * ─── THE CURATION RULE (D-2) ──────────────────────────────────────────────
- * KEPT: slurs targeting protected characteristics · explicit sexual terms ·
- *       harassment and self-harm-encouragement phrases.
- * DROPPED: ordinary profanity. Sky's reasoning, recorded because it is the
- *       whole point of this app — "the damn ramp is still broken" is a real
- *       barrier report from a frustrated disabled user, and silently rejecting
- *       it teaches that person their report is unwelcome. A filter that fires
- *       on frustration is worse than no filter here.
- * See DROPPED_MILD_PROFANITY at the bottom: the dropped class is kept visible
- * so the decision stays reversible and auditable rather than vanishing.
- *
- * ─── LIMITS, STATED PLAINLY ───────────────────────────────────────────────
- * This is a CLIENT-SIDE check that runs before insert. It is bypassable by
- * anything that is not this app — a direct PostgREST call sails past it. That
- * is acceptable for 1.2(a), which asks for a filter on the posting path, and
- * it is paired with the reactive report → review → takedown half. **Do not
- * describe this anywhere as making the platform safe.** A server-side mirror
- * (a Postgres CHECK or a trigger) would be the real fence; if that is ever
- * wanted it is a MIGRATION FILE proposal for Sky to apply, never an agent
- * change.
- *
- * Word-boundary matching kills the classic Scunthorpe substring bug. It does
- * not stop deliberate evasion — l33tspeak, homoglyphs, spaced-out letters.
- * That is a knowing trade: aggressive normalisation buys a little evasion
- * resistance at the cost of many more false positives, and in an accessibility
- * reporting tool the false positive is the more expensive error.
- */
-
-/**
- * Submit-time content filter — Apple Guideline 1.2(a).
- *
- * Spec: `design-reviews/ship-ready/14_MODERATION_TEXTS_v1.md` §2, ratified by
- * Sky 2026-07-27. Decision D-2 (DECISIONS §SKY-5): **CURATED, not raw.**
  * Vendored per §SKY-6 (2026-07-28).
  *
  * ─── PROVENANCE ───────────────────────────────────────────────────────────

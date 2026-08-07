@@ -86,9 +86,13 @@ describe('L3 — PlatformMap.web popup photo has an onError fallback', () => {
   });
 
   it('the marker popup renders the photo through PopupPhoto, not a bare <img>', () => {
-    const popup = around(map, 'flag.photo_url ? (', 400);
+    // Security audit 2026-07-31 (TB-3): the popup photo is now gated by
+    // `safeImageUrl`, so `photo_url` is no longer passed through raw. The
+    // original intent — goes through PopupPhoto, never a bare <img> — still
+    // holds and is still asserted; the allow-list is asserted alongside it.
+    const popup = around(map, 'safeImageUrl(flag.photo_url) ? (', 400);
     expect(popup).toContain('<PopupPhoto');
-    expect(popup).toContain('src={flag.photo_url}');
+    expect(popup).toContain('src={safeImageUrl(flag.photo_url)');
     expect(popup).not.toContain('<img');
   });
 });

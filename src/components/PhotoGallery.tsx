@@ -12,6 +12,7 @@ import {
 import { RemoteImage } from '@/components/ui/RemoteImage';
 import { AppText } from '@/components/ui/AppText';
 import { a11yToggle, decorativeProps, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
+import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { font, radius, shadow, spacing } from '@/theme';
 import { Camera, ChevronLeft, ChevronRight, X } from 'lucide-react-native';
@@ -45,6 +46,9 @@ function PhotoGalleryInner({ photos, onAddPhoto, maxPhotos = 5, onRemovePhoto }:
   const color = useColor();
   const styles = useMemo(() => makeStyles(color), [color]);
   const reducedMotion = useReducedMotion();
+  // Non-throwing context read — render tests mount without a provider (the
+  // M15 family recipe; see MyWatchedModal).
+  const insets = React.useContext(SafeAreaInsetsContext) ?? { top: 0, bottom: 0, left: 0, right: 0 };
   // Live window size — read inside the component (not once at module load) so
   // the lightbox paging width, contentOffset, and page math follow device
   // rotation instead of freezing at the launch orientation.
@@ -280,7 +284,9 @@ function PhotoGalleryInner({ photos, onAddPhoto, maxPhotos = 5, onRemovePhoto }:
           {/* Page counter */}
           {photos.length > 1 && (
             <View
-              style={styles.lightboxCounter}
+              // Clears the home indicator on notched devices (BP-5); 48 stays
+              // the floor on square screens so nothing moves there.
+              style={[styles.lightboxCounter, { bottom: Math.max(48, insets.bottom + spacing.xxl) }]}
               pointerEvents="none" {...decorativeProps}
             >
               <AppText variant="label" style={styles.lightboxCounterText}>
@@ -401,7 +407,7 @@ const makeStyles = (color: ColorTheme) =>
     },
     lightboxCounter: {
       position: 'absolute',
-      bottom: 48,
+      // bottom is applied inline — Math.max(48, insets.bottom + spacing.xxl).
       alignSelf: 'center',
       backgroundColor: color.backdropCaption,
       paddingHorizontal: 14,

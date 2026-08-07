@@ -1,9 +1,10 @@
 import React from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, type Text, View } from 'react-native';
+import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 // Expo Constants gives us the bundled app.json version at runtime so we
 // don't have to hard-code (and forget to bump) a string here.
 import Constants from 'expo-constants';
-import { font, radius, spacing } from '@/theme';
+import { bulkGlassShadow, font, radius, spacing } from '@/theme';
 import { AppText } from '@/components/ui/AppText';
 import { GlassSurface } from '@/components/ui/GlassSurface';
 import LogoMark from '@/components/LogoMark';
@@ -50,6 +51,10 @@ export default function AboutScreen({ visible, onClose }: Props) {
   // A11Y-201 (2.4.3): move the SR cursor onto the title when this surface opens.
   const titleRef = useFocusOnOpen<Text>(visible);
   const styles = makeStyles(color);
+  // Read the inset context directly (zero fallback) instead of
+  // useSafeAreaInsets(), which throws when there's no SafeAreaProvider — the
+  // modal render-tests mount these sheets without one. Same value in the app.
+  const insets = React.useContext(SafeAreaInsetsContext) ?? { top: 0, bottom: 0, left: 0, right: 0 };
   // §SKY-6: the terms are a SHARED modal, so About only raises the flag — the
   // sheet itself is mounted at the navigator and presents over this card rather
   // than under it. About stays open beneath, so closing the terms returns here.
@@ -62,7 +67,7 @@ export default function AboutScreen({ visible, onClose }: Props) {
             sheet is open. Belt-and-suspenders with the Modal itself, which
             on iOS sometimes leaks focus to the parent. */}
         <View style={styles.cardShadow}>
-        <GlassSurface variant="bulk" borderRadius={0} style={styles.card} accessibilityViewIsModal onAccessibilityEscape={onClose}>
+        <GlassSurface variant="bulk" borderRadius={0} style={[styles.card, { paddingBottom: Math.max(spacing.xl, insets.bottom) }]} accessibilityViewIsModal onAccessibilityEscape={onClose}>
           <View style={styles.headerRow}>
             {/* T19 (F6-08): a small brand mark beside the title. Hidden from
                 screen readers — LogoMark bakes an "AccessMap" label and the
@@ -78,7 +83,7 @@ export default function AboutScreen({ visible, onClose }: Props) {
             <Pressable
               onPress={onClose}
               hitSlop={12}
-              style={styles.closeBtn}
+              style={({ pressed }) => [styles.closeBtn, pressed && { backgroundColor: color.borderPressed }]}
               accessibilityRole="button"
               accessibilityLabel="Close about"
             >
@@ -228,12 +233,7 @@ const makeStyles = (color: ColorTheme) =>
       flexShrink: 1,
       borderTopLeftRadius: radius.xl,
       borderTopRightRadius: radius.xl,
-      ...(color.scheme === 'dark'
-        ? { shadowColor: '#000', shadowOpacity: 0.35 }
-        : { shadowColor: color.shadowTint, shadowOpacity: 0.12 }),
-      shadowRadius: 14,
-      shadowOffset: { width: 0, height: -4 },
-      elevation: 5,
+      ...bulkGlassShadow(color),
     },
     headerRow: {
       flexDirection: 'row',
@@ -308,7 +308,7 @@ const makeStyles = (color: ColorTheme) =>
       // sheet's worst-case backdrop; inkGlassMuted = 6.24:1 light / 6.51:1 dark.
       color: color.inkGlassMuted,
       textTransform: 'uppercase',
-      letterSpacing: 0.6,
+      letterSpacing: font.tracking.section,
       fontWeight: font.weight.bold,
       marginTop: spacing.sm,
     },
