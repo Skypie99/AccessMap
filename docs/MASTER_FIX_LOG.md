@@ -255,10 +255,10 @@ ALTER TABLE flag_comments
 
 **Problem:** Apple requires demo credentials for apps with mandatory sign-in. Without them, Apple Review rejects with "Guideline 4.0 - Sign-in required without demo account."
 
-**Fix:** `supabase/migrations/2026-05-31_reviewer_test_account.sql` seeds `reviewer@accessmap.app` with 5 sample flags in downtown Vancouver. The migration is **propose-only** — Sky must run it in the Supabase SQL editor before App Store submission (not before TestFlight, which uses Sky's own account).
+**Fix:** `supabase/migrations/2026-05-31_reviewer_test_account.sql` seeds `reviewer@accessmap.com` with 5 sample flags in downtown Vancouver. The migration is **propose-only** — Sky must run it in the Supabase SQL editor before App Store submission (not before TestFlight, which uses Sky's own account).
 
 **Reviewer credentials for App Store Connect review notes:**
-- Email: `reviewer@accessmap.app`
+- Email: `reviewer@accessmap.com`
 - Password: set by Sky at migration time (see `docs/APP_STORE_REVIEWER_NOTES.md`)
 
 **Commit:** `9fd1cd9` — "feat: add App Store reviewer test account migration + notes"

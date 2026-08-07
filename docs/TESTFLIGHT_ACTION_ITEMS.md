@@ -127,10 +127,10 @@ Plan is documented in `docs/APP_STORE_LISTING.md` — 6 screenshots planned:
 AccessMap requires users to sign in before using any features. Apple's App Review team cannot test apps they can't log in to. Without a test account in the submission notes, Apple will reject with "Guideline 4.0 - Design: Sign-in required without demo account."
 
 **Fix:**
-1. Create a test account in your Supabase dashboard: email `reviewer@accessmap-demo.com`, password something memorable (not a real password)
+1. Create a test account in your Supabase dashboard: email `reviewer@accessmap.com`, password something memorable (not a real password)
 2. Pre-populate the account with 2–3 test flags so the map isn't empty
 3. Include these credentials in the App Store Connect review notes field:
-   > "Test account: reviewer@accessmap-demo.com / [password]. App requires location permission to show nearby flags — grant when prompted. This app uses location to display accessibility barrier reports."
+   > "Test account: reviewer@accessmap.com / [password]. App requires location permission to show nearby flags — grant when prompted. This app uses location to display accessibility barrier reports."
 
 ---
 

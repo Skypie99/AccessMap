@@ -89,7 +89,7 @@ You are doing a **fix-run** on AccessMap (Expo SDK 54 / RN 0.81 / React 19.1 / T
 ## DO **NOT** ATTEMPT — surface these for Sky in the result file (data layer / device / judgment)
 - **N1 — confirm the live points-trigger values** (10/15/3/7) against the actual Supabase trigger before trusting #2.
 - **N2 — confirm the `context_tags` migration is applied live** (else the Report form shows "coming soon"). Dashboard check.
-- **N3 — rotate the `reviewer@accessmap.app` test password in Supabase** (instantly neutralizes the value committed at `docs/APP_STORE_REVIEWER_NOTES.md:8` + git history) and decide whether to scrub history (force-push — Sky's call).
+- **N3 — rotate the `reviewer@accessmap.com` test password in Supabase** (instantly neutralizes the value committed at `docs/APP_STORE_REVIEWER_NOTES.md:8` + git history) and decide whether to scrub history (force-push — Sky's call).
 - **N4 — confirm applied-vs-proposed migrations**; decide whether to apply the DB-level `status_transition_guard` (defense-in-depth; the shipped app is already protected by the client compare-and-set).
 - **N5 — TestFlight VoiceOver/TalkBack pass** (every screen × state × theme at max Dynamic Type) to certify the a11y fixes, light-mode drawer, glass-chrome contrast, and GPS-stall behavior on a real device.
 - **N7 — low-end-Android frame profiling** to quantify the perf wins.

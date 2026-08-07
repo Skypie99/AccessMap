@@ -118,7 +118,7 @@ No orphaned screens / no dead controls (LegendModal `onPress={()=>{}}` is a corr
 - **Secrets / email-PII / analytics — INTACT.** Only `EXPO_PUBLIC_*` client-side; email excluded from selects; analytics `console.log`s `__DEV__`-gated; a `.husky/pre-commit` hook scans for hardcoded passwords. Secret sweep across `src/`+`supabase/`+`docs/` clean.
 
 **Real gaps (2):**
-1. **Reviewer plaintext password committed — MEDIUM, NEEDS-SKY.** At HEAD in `docs/APP_STORE_REVIEWER_NOTES.md:8` + git history (`9fd1cd9`); the migration's own claim that it's "never committed" is contradicted by that file. **Sharpest fix: rotate the `reviewer@accessmap.app` password in Supabase** (instantly neutralizes the leaked value), then optionally scrub history. *(Literal not reproduced here.)*
+1. **Reviewer plaintext password committed — MEDIUM, NEEDS-SKY.** At HEAD in `docs/APP_STORE_REVIEWER_NOTES.md:8` + git history (`9fd1cd9`); the migration's own claim that it's "never committed" is contradicted by that file. **Sharpest fix: rotate the `reviewer@accessmap.com` password in Supabase** (instantly neutralizes the leaked value), then optionally scrub history. *(Literal not reproduced here.)*
 2. **DB-level `status_transition_guard` is NOT live — LOW/defense-in-depth, NEEDS-SKY.** `2026-06-09_status_transition_guard_PROPOSED.sql` isn't applied, so a hand-rolled REST client could write an illegal transition (e.g. `resolved→verified`). The **shipped app is protected** by the F53 client compare-and-set, so not exploitable through the app — but the server-side guard is absent. Same NEEDS-SKY note for confirming the several hardening migrations whose stale `PROPOSE-ONLY` headers belie that they're live per the reconciled `schema.sql`.
 
 ---

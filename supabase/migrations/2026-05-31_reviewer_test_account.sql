@@ -6,7 +6,7 @@
 --
 -- STEP 1 (manual — Supabase Auth dashboard):
 --   Authentication → Users → "Add user" → "Create new user"
---     Email:    reviewer@accessmap.app
+--     Email:    reviewer@accessmap.com
 --     Password: set in Supabase dashboard at provisioning; never committed (enter in App Store Connect review notes)
 --   (The handle_new_user trigger auto-creates the public.users row.)
 --
@@ -16,8 +16,8 @@
 --   near downtown Vancouver so the reviewer sees a realistic map.
 --
 -- ROLLBACK:
---   DELETE FROM public.flags  WHERE user_id = (SELECT id FROM public.users WHERE email = 'reviewer@accessmap.app');
---   UPDATE public.users SET display_name = NULL, points = 0 WHERE email = 'reviewer@accessmap.app';
+--   DELETE FROM public.flags  WHERE user_id = (SELECT id FROM public.users WHERE email = 'reviewer@accessmap.com');
+--   UPDATE public.users SET display_name = NULL, points = 0 WHERE email = 'reviewer@accessmap.com';
 --   (To fully remove: delete the auth user from Authentication → Users.)
 -- ============================================================
 
@@ -27,7 +27,7 @@ DECLARE
 BEGIN
   SELECT id INTO reviewer_id
     FROM public.users
-   WHERE email = 'reviewer@accessmap.app';
+   WHERE email = 'reviewer@accessmap.com';
 
   IF reviewer_id IS NULL THEN
     RAISE EXCEPTION 'Reviewer auth user not found. Complete Step 1 first.';
