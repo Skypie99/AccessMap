@@ -137,6 +137,10 @@ describe('both throw sites route their rejection through the helper', () => {
   // the kind of cleverness that makes a guard fail for the wrong reason.
   it.each([
     ['comment submit', () => comment, "showBlockedContentAlert('Could not post comment'"],
+    // The owner-EDIT path (code-qa 2026-08-06, Sky's Q-1 YES): editing text
+    // into blocked content is the same 1.2(a) surface as posting it, so it
+    // owes the same guidelines affordance.
+    ['flag edit save', () => comment, "showBlockedContentAlert('Could not save changes'"],
     ['flag description submit', () => flag, 'showBlockedContentAlert("Couldn\'t submit your report"'],
   ])('%s is gated on isContentBlockedError and keeps its existing title', (_n, src, call) => {
     const s = src();
@@ -149,16 +153,28 @@ describe('both throw sites route their rejection through the helper', () => {
     // The three two-argument assertions in ReportFlagModal.test.tsx and the
     // generic comment alert both depend on this staying as it was.
     expect(comment).toContain("Alert.alert('Could not post comment', errorMessage(e));");
+    expect(comment).toContain("notify('Could not save changes', errorMessage(e));");
     expect(flag).toContain('notify("Couldn\'t submit your report", errorMessage(e));');
   });
 
-  it('neither site reaches for the terms without going through the helper', () => {
-    // setOpen('terms') in these two files may only ever be the alert button's
-    // callback — never a bare call that opens the guidelines unprompted.
+  it('no site reaches for the terms without going through the helper', () => {
+    // THE INVARIANT (unchanged since this guard was written): setOpen('terms')
+    // in these files may only ever be the alert button's callback — never a
+    // bare call that opens the guidelines unprompted.
+    //
+    // This used to be spelled "exactly one occurrence per file", which was the
+    // same thing while each file had exactly one throw site. The edit path made
+    // FlagDetailModal a two-site file, so the invariant is now checked
+    // DIRECTLY: every occurrence must be paired with the helper. That detects
+    // a bare call the count never could — a bare one added alongside a removed
+    // guarded one would have kept the old count at 1 and passed.
+    const PAIRED =
+      /showBlockedContentAlert\(\s*(?:"[^"]*"|'[^']*')\s*,\s*\(\)\s*=>\s*setOpen\('terms'\)\s*\)/g;
     for (const s of [comment, flag]) {
-      const opens = s.match(/setOpen\('terms'\)/g) ?? [];
-      expect(opens).toHaveLength(1);
-      expect(s).toContain("showBlockedContentAlert(");
+      const opens = (s.match(/setOpen\('terms'\)/g) ?? []).length;
+      const paired = (s.match(PAIRED) ?? []).length;
+      expect(opens).toBeGreaterThan(0);
+      expect(paired).toBe(opens);
     }
   });
 });

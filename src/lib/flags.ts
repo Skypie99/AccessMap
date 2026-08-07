@@ -1262,10 +1262,14 @@ export type FlagContentPatch = {
 
 export async function updateFlagContent(flagId: string, patch: FlagContentPatch) {
   // COR-1 (code-qa 2026-08-06): an owner edit runs the same trust-boundary
-  // guards as createFlag — otherwise edit lands what create refuses. The
-  // blocked-term half of that parity is Sky-gated (code-qa Q-1) and
-  // intentionally absent until she rules.
+  // guards as createFlag — otherwise edit lands what create refuses. Full
+  // parity including the Apple 1.2(a) filter: Sky ruled YES on Q-1
+  // (2026-08-06) — a clean flag edited into blocked content was the side
+  // door left open by filtering only the create path.
   assertValidCategoryAndSeverity(patch.category, patch.severity);
+  if (patch.description && containsBlockedTerm(patch.description)) {
+    throw new Error(CONTENT_BLOCKED_MESSAGE);
+  }
   const guarded: FlagContentPatch = { ...patch };
   if (patch.description !== undefined) {
     guarded.description = normalizeFlagDescription(patch.description);

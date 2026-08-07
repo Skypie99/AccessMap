@@ -20,6 +20,7 @@
 // Chain: from → update → eq → select → single
 // ---------------------------------------------------------------------------
 import { updateFlagContent } from '../flags';
+import { CONTENT_BLOCKED_MESSAGE } from '../copy';
 import type { FlagRow } from '@/types/database';
 
 const mockSingle = jest.fn();
@@ -330,6 +331,26 @@ describe('updateFlagContent — trust-boundary guards (COR-1)', () => {
     );
 
     expect(mockUpdate).not.toHaveBeenCalled();
+  });
+
+  it('rejects a blocked term in an edited description without calling Supabase', async () => {
+    // Same fixture the moderation MUST-FAIL pins use (a disability slur — the
+    // class LDNOOBW lacks entirely and CURATED_EXTRA exists for).
+    await expect(
+      updateFlagContent(FLAG_ID, { description: 'the staff are retarded' }),
+    ).rejects.toThrow(CONTENT_BLOCKED_MESSAGE);
+
+    expect(mockUpdate).not.toHaveBeenCalled();
+  });
+
+  it('lets ordinary frustration through — the D-2 rule survives on the edit path too', async () => {
+    mockSingle.mockResolvedValueOnce({ data: fakeRow, error: null });
+
+    // D-2: ordinary profanity is DELIBERATELY not blocked — "the damn ramp is
+    // still broken" is a real barrier report from a frustrated disabled user.
+    await updateFlagContent(FLAG_ID, { description: 'The damn ramp is still broken.' });
+
+    expect(updateArg(0).description).toBe('The damn ramp is still broken.');
   });
 
   it('still omits absent fields from the guarded patch (partial update intact)', async () => {

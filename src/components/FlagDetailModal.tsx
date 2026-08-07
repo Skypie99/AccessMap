@@ -571,7 +571,14 @@ export default function FlagDetailModal({
       onEdited?.(updated); // F58: propagate to the shared store/list
       setIsEditing(false);
     } catch (e) {
-      notify('Could not save changes', errorMessage(e));
+      // §SKY-7 coherence, same as the comment path above: text rejected by the
+      // 1.2(a) filter offers the guidelines it was judged against, instead of
+      // a bare failure the author can't act on.
+      if (isContentBlockedError(e)) {
+        showBlockedContentAlert('Could not save changes', () => setOpen('terms'));
+      } else {
+        notify('Could not save changes', errorMessage(e));
+      }
     } finally {
       setBusy(false);
     }
