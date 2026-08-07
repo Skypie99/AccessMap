@@ -14,7 +14,7 @@ drift_risk: low
 ## DECISIONS FOR SKY (lead)
 
 1. **Push local `main` → GitHub?** — **HELD. The repo is PUBLIC (`Skypie99/AccessMap`)
-   and the push would publish the hardcoded reviewer test password (`AccessMap2026!`,
+   and the push would publish the hardcoded reviewer test password (`[REDACTED]`,
    `supabase/migrations/2026-05-31_reviewer_test_account.sql`).** Build automation is safe
    (`eas-build.yml` + `eas-testflight-submit.yml` are `workflow_dispatch`-only; TestFlight
    gated behind `release-approval` env w/ Sky as required reviewer; push triggers only

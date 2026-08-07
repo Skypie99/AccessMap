@@ -109,7 +109,7 @@ cleanly). **All three domains' work survives intact** — confirmed by grep + 11
 3. **Apply F2 then F3** (propose-only migrations — see ordered list below; dry-run on a preview branch first).
 
 **P1 — before App Store submission:**
-4. **Rotate the reviewer test-account password** (`AccessMap2026!` is hardcoded in `2026-05-31_reviewer_test_account.sql`).
+4. **Rotate the reviewer test-account password** (`[REDACTED]` is hardcoded in `2026-05-31_reviewer_test_account.sql`).
 5. **Sky sign-off on anon precise lat/lng** exposure on the public map (Jordan pre-approved but is not legal counsel).
 6. **Enable leaked-password protection** (Supabase dashboard, 1 click).
 

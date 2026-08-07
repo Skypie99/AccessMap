@@ -108,7 +108,7 @@ before testers. → DECISION FOR SKY (Auth config, not a migration).
 
 **F5 — `reviewer_test_account` migration commits a plaintext password. [LOW]**
 `supabase/migrations/2026-05-31_reviewer_test_account.sql:10` hardcodes
-`AccessMap2026!`. Not yet applied live (good). Fix: don't commit the password —
+`[REDACTED]`. Not yet applied live (good). Fix: don't commit the password —
 set it in the dashboard, rotate, restrict the account. → DECISION FOR SKY.
 
 **F6 — Residual privacy posture: anon read of precise lat/lng + category +

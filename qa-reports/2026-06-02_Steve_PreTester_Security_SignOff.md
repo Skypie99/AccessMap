@@ -161,7 +161,7 @@ The linter flags this as `rls_policy_always_true` because the USING clause is `t
 
 **4f. Reviewer test account migration (`2026-05-31_reviewer_test_account.sql`):**
 
-The file header says "PROPOSE-ONLY" and requires manual Step 1 (create auth user via dashboard). Critically, the file does NOT hardcode a password — it only populates profile + sample flags after the user exists. The Steve 2026-06-01 security report's finding ("password `AccessMap2026!` committed") appears to refer to an earlier draft or a different version of this file. The current file on disk has no hardcoded password. No action needed on this item — Dana's instruction to provision the account manually via the dashboard is the correct path.
+The file header says "PROPOSE-ONLY" and requires manual Step 1 (create auth user via dashboard). Critically, the file does NOT hardcode a password — it only populates profile + sample flags after the user exists. The Steve 2026-06-01 security report's finding ("password `[REDACTED]` committed") appears to refer to an earlier draft or a different version of this file. The current file on disk has no hardcoded password. No action needed on this item — Dana's instruction to provision the account manually via the dashboard is the correct path.
 
 ---
 

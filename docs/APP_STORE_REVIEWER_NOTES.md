@@ -4,8 +4,8 @@
 
 | Field    | Value                    |
 |----------|--------------------------|
-| Email    | reviewer@accessmap.app   |
-| Password | AccessMap2026!           |
+| Email    | [PROVIDED IN APP STORE CONNECT REVIEW NOTES] |
+| Password | [PROVIDED IN APP STORE CONNECT REVIEW NOTES] |
 
 The account has a contributor profile with 25 points and 5 pre-seeded accessibility flags in downtown Vancouver so the map is populated on first launch.
 

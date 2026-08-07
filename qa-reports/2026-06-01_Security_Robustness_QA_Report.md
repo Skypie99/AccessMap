@@ -85,7 +85,7 @@ introspection also **corrected the finding**:
 
 5. **[LOW] Reviewer test-account password is committed in git.**
    `supabase/migrations/2026-05-31_reviewer_test_account.sql:10` hardcodes
-   `AccessMap2026!`. It is **not applied live yet** (good). Before App Store
+   `[REDACTED]`. It is **not applied live yet** (good). Before App Store
    submission: set the password in the dashboard only (not in a tracked file),
    use a strong unique value, and remove/rotate the committed one.
 
