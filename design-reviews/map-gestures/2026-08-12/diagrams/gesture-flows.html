@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Map Gestures — interaction diagrams (SPEC §2)</title>
+<style>
+  :root{
+    --bg:#F7F8FA; --card:#FFFFFF; --ink:#0F1B2D; --muted:#5A6577; --edge:#D6DBE3;
+    --accent:#0E4499; --accentSoft:#E8EEFB; --ok:#116B3C; --okSoft:#E3F3EA;
+    --warn:#8A4B08; --warnSoft:#FBEFE0; --stop:#8F1D2C; --stopSoft:#FBE7EA;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#12151C; --card:#1B2029; --ink:#F0F3F8; --muted:#9AA5B5; --edge:#333B48;
+      --accent:#B4CFFA; --accentSoft:#22304A; --ok:#8FD8AE; --okSoft:#173425;
+      --warn:#F1B979; --warnSoft:#3A2A14; --stop:#F2A0AC; --stopSoft:#3D1B21;
+    }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;padding:32px 20px 60px}
+  .wrap{max-width:1040px;margin:0 auto}
+  h1{font-size:21px;margin:0 0 4px}
+  .sub{color:var(--muted);margin:0 0 28px;font-size:13.5px}
+  .panel{background:var(--card);border:1px solid var(--edge);border-radius:14px;padding:20px 22px;margin:0 0 26px;overflow-x:auto}
+  .panel h2{font-size:15px;margin:0 0 2px}
+  .panel p{color:var(--muted);font-size:13px;margin:0 0 14px}
+  svg{display:block;min-width:880px}
+  text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+  .box{fill:var(--card);stroke:var(--edge);stroke-width:1.4;rx:10}
+  .boxAccent{fill:var(--accentSoft);stroke:var(--accent)}
+  .boxOk{fill:var(--okSoft);stroke:var(--ok)}
+  .boxWarn{fill:var(--warnSoft);stroke:var(--warn)}
+  .boxStop{fill:var(--stopSoft);stroke:var(--stop)}
+  .t{fill:var(--ink);font-size:13.5px;font-weight:650}
+  .ts{fill:var(--muted);font-size:11px;font-weight:500}
+  .lab{fill:var(--muted);font-size:11px;font-weight:600}
+  .labOk{fill:var(--ok)} .labStop{fill:var(--stop)} .labAcc{fill:var(--accent)}
+  .edgeLine{stroke:var(--muted);stroke-width:1.6;fill:none;marker-end:url(#arr)}
+  .edgeOk{stroke:var(--ok)} .edgeStop{stroke:var(--stop)} .edgeAcc{stroke:var(--accent)}
+  .note{fill:var(--muted);font-size:11px;font-style:italic}
+  footer{color:var(--muted);font-size:12px}
+  code{background:var(--accentSoft);border-radius:4px;padding:0 4px;font-size:12px}
+</style>
+</head>
+<body><div class="wrap">
+<h1>Map + Sheet Gestures — interaction diagrams</h1>
+<p class="sub">Companion to <code>SPEC.md</code> §2.4–§2.5 (2026-08-12). Two flows: the pull-to-dismiss state machine, and the touch-arbitration rule that keeps a scrolling form usable.</p>
+
+<div class="panel">
+<h2>1 · Pull-to-dismiss state machine (Tier 2 half-sheets — Report first)</h2>
+<p>Tracking is direct manipulation (survives Reduce Motion); only the two settle animations branch to instant.</p>
+<svg viewBox="0 0 980 330" role="img" aria-label="State machine: idle, tracking, then dismiss or spring back">
+  <defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--muted)"/></marker></defs>
+
+  <rect class="box" x="20" y="128" width="130" height="62" rx="10"/>
+  <text class="t" x="85" y="154" text-anchor="middle">IDLE</text>
+  <text class="ts" x="85" y="172" text-anchor="middle">sheet at rest, y = 0</text>
+
+  <path class="edgeLine" d="M150 159 H 302"/>
+  <text class="lab" x="226" y="118" text-anchor="middle">ARM — all three:</text>
+  <text class="lab" x="226" y="133" text-anchor="middle">≥16pt downward travel</text>
+  <text class="lab" x="226" y="148" text-anchor="middle">content at top (offset ≤ 0)</text>
+  <text class="lab" x="226" y="205" text-anchor="middle">enabled (e.g. !submitting,</text>
+  <text class="lab" x="226" y="219" text-anchor="middle">!keyboardVisible)</text>
+
+  <rect class="box boxAccent" x="304" y="120" width="180" height="78" rx="10"/>
+  <text class="t" x="394" y="146" text-anchor="middle">TRACKING</text>
+  <text class="ts" x="394" y="163" text-anchor="middle">card follows finger 1 : 1</text>
+  <text class="ts" x="394" y="178" text-anchor="middle">clamped ≥ 0 · scrim fades</text>
+  <text class="note" x="394" y="222" text-anchor="middle">haptic tick when the commit</text>
+  <text class="note" x="394" y="236" text-anchor="middle">zone is first crossed (Q4)</text>
+
+  <path class="edgeLine edgeOk" d="M484 138 C 540 110, 560 78, 606 66"/>
+  <text class="lab labOk" x="530" y="32" text-anchor="middle">release past threshold:</text>
+  <text class="lab labOk" x="530" y="47" text-anchor="middle">y &gt; max(120pt, 30% card)</text>
+  <text class="lab labOk" x="530" y="62" text-anchor="middle">or vy &gt; 700 (y &gt; 24)</text>
+
+  <rect class="box boxOk" x="608" y="30" width="170" height="70" rx="10"/>
+  <text class="t" x="693" y="56" text-anchor="middle">DISMISSING</text>
+  <text class="ts" x="693" y="73" text-anchor="middle">180ms accelerate-out</text>
+  <text class="ts" x="693" y="88" text-anchor="middle">Reduce Motion: instant</text>
+
+  <path class="edgeLine edgeOk" d="M778 65 H 826"/>
+  <rect class="box" x="828" y="30" width="136" height="70" rx="10"/>
+  <text class="t" x="896" y="60" text-anchor="middle">onClose()</text>
+  <text class="ts" x="896" y="78" text-anchor="middle">the SAME handler as</text>
+  <text class="ts" x="896" y="91" text-anchor="middle">X · escape · back</text>
+
+  <path class="edgeLine edgeStop" d="M484 182 C 540 210, 560 236, 606 248"/>
+  <text class="lab labStop" x="520" y="292" text-anchor="middle">release below threshold</text>
+  <text class="lab labStop" x="520" y="307" text-anchor="middle">(the accidental drag)</text>
+
+  <rect class="box boxStop" x="608" y="216" width="170" height="70" rx="10"/>
+  <text class="t" x="693" y="242" text-anchor="middle">SPRING-BACK</text>
+  <text class="ts" x="693" y="259" text-anchor="middle">motion.spring.sheet</text>
+  <text class="ts" x="693" y="274" text-anchor="middle">Reduce Motion: snap</text>
+
+  <path class="edgeLine" d="M608 262 C 400 316, 140 300, 85 194"/>
+  <text class="lab" x="330" y="318" text-anchor="middle">harmless — nothing dismissed</text>
+</svg>
+</div>
+
+<div class="panel">
+<h2>2 · Dismiss vs scroll — the arbitration that never traps the form (SPEC §2.4)</h2>
+<p>Evaluated at gesture start on any Tier-2 sheet. The map has no row here on purpose.</p>
+<svg viewBox="0 0 980 300" role="img" aria-label="Decision flow: horizontal goes to rails, upward and mid-content go to scroll, top-of-scroll downward arms the pan">
+  <rect class="box" x="20" y="112" width="150" height="62" rx="10"/>
+  <text class="t" x="95" y="138" text-anchor="middle">finger drag</text>
+  <text class="ts" x="95" y="156" text-anchor="middle">on an open sheet</text>
+
+  <path class="edgeLine" d="M170 143 H 214"/>
+  <rect class="box" x="216" y="112" width="164" height="62" rx="10"/>
+  <text class="t" x="298" y="138" text-anchor="middle">sideways ≥14pt?</text>
+  <text class="ts" x="298" y="156" text-anchor="middle">failOffsetX ±14</text>
+  <path class="edgeLine" d="M298 112 V 74"/>
+  <text class="lab" x="312" y="96">yes</text>
+  <rect class="box boxWarn" x="216" y="20" width="164" height="52" rx="10"/>
+  <text class="t" x="298" y="42" text-anchor="middle">rails own it</text>
+  <text class="ts" x="298" y="59" text-anchor="middle">chip rows scroll sideways</text>
+
+  <path class="edgeLine" d="M380 143 H 424"/>
+  <text class="lab" x="400" y="133" text-anchor="middle">no</text>
+  <rect class="box" x="426" y="112" width="150" height="62" rx="10"/>
+  <text class="t" x="501" y="138" text-anchor="middle">upward?</text>
+  <text class="ts" x="501" y="156" text-anchor="middle">failOffsetY −1</text>
+  <path class="edgeLine" d="M501 112 V 74"/>
+  <text class="lab" x="515" y="96">yes</text>
+  <rect class="box boxWarn" x="426" y="20" width="150" height="52" rx="10"/>
+  <text class="t" x="501" y="42" text-anchor="middle">content scrolls</text>
+  <text class="ts" x="501" y="59" text-anchor="middle">normal reading</text>
+
+  <path class="edgeLine" d="M576 143 H 620"/>
+  <text class="lab" x="597" y="133" text-anchor="middle">no</text>
+  <rect class="box" x="622" y="112" width="160" height="62" rx="10"/>
+  <text class="t" x="702" y="138" text-anchor="middle">scrolled to top?</text>
+  <text class="ts" x="702" y="156" text-anchor="middle">offset ≤ 0 at arm time</text>
+  <path class="edgeLine" d="M702 112 V 74"/>
+  <text class="lab" x="716" y="96">no</text>
+  <rect class="box boxWarn" x="622" y="16" width="160" height="60" rx="10"/>
+  <text class="t" x="702" y="38" text-anchor="middle">content scrolls</text>
+  <text class="ts" x="702" y="55" text-anchor="middle">the form stays usable —</text>
+  <text class="ts" x="702" y="68" text-anchor="middle">the make-or-break rule</text>
+
+  <path class="edgeLine edgeAcc" d="M782 143 H 826"/>
+  <text class="lab labAcc" x="804" y="133" text-anchor="middle">yes</text>
+  <rect class="box boxAccent" x="828" y="104" width="140" height="78" rx="10"/>
+  <text class="t" x="898" y="130" text-anchor="middle">≥16pt down</text>
+  <text class="t" x="898" y="148" text-anchor="middle">→ PAN ARMS</text>
+  <text class="ts" x="898" y="166" text-anchor="middle">enter TRACKING (fig. 1)</text>
+
+  <rect class="box boxStop" x="20" y="226" width="948" height="52" rx="10"/>
+  <text class="t" x="494" y="248" text-anchor="middle">THE MAP SURFACE NEVER DISMISSES — a downward drag on the map is a PAN, full stop.</text>
+  <text class="ts" x="494" y="266" text-anchor="middle">No dismiss gesture may mount over map tiles (guard law F residual scope, SPEC §3.4-5). Pinch = native SDK zoom, already live.</text>
+</svg>
+</div>
+
+<footer>map-gestures spec run · 2026-08-12 · pairs with 00_INVENTORY.md §5 (per-surface census) and SPEC.md §2 (thresholds)</footer>
+</div></body>
+</html>
