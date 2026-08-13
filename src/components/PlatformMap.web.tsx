@@ -1034,6 +1034,11 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(function Pla
         zoom={deltaToZoom(initialRegion.latitudeDelta)}
         style={{ height: '100%', width: '100%' }}
         ref={setMapRef}
+        // Parity with the native twin's floor (map-gestures SPEC §1.2): stop the
+        // zoom-out that collapses every pin into one dot over a grey world.
+        // Leaflet's touchZoom / dragging / doubleClickZoom defaults stay ON —
+        // pinch here is the library's, same as pinch on native is Apple's.
+        minZoom={3}
         // S6: drop Leaflet's default top-left zoom control — it was occluded by
         // the count pill AND pointer-dead. The app-styled 44pt buttons in the
         // overlay's bottom zone drive zoom via the imperative handle instead.

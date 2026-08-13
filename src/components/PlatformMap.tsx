@@ -296,6 +296,20 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(function Pla
       clusterColor={color.ctaFill}
       clusterTextColor={color.textOnBrand}
       radius={40}
+      // PINCH-ZOOM IS THE PLATFORM'S, NOT OURS (map-gestures SPEC §1). Apple
+      // Maps already gives spread-to-zoom-in / pinch-to-zoom-out focused under
+      // the fingers, simultaneous with one-finger pan, and this map is
+      // deliberately UNCONTROLLED (initialRegion + imperative animateToRegion,
+      // never a `region` prop) so nothing fights the gesture mid-pinch. Do not
+      // add a gesture handler here — guard law F2 forbids it, precisely because
+      // a handler over the box-none overlay would break what already works.
+      //
+      // The one knob worth having: a floor. Without it the map zooms out past
+      // the point where every pin collapses into a single cluster dot over a
+      // grey world, which reads as "the app lost my data". No ceiling — Apple
+      // Maps' own is sane, and Supercluster's maxZoom:16 governs cluster math,
+      // not the camera.
+      minZoomLevel={3}
       // B7-B (L4-03): gate the iOS marker-cluster spring under reduce-motion.
       // react-native-map-clustering fires a global LayoutAnimation.spring on
       // every pan-settle guarded only by `animationEnabled && Platform.OS ===
