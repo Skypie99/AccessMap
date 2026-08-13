@@ -190,6 +190,11 @@ const darkColor = {
   // C-lite engineered equivalents.
   glassRowLite0: 'rgba(30,34,46,0.94)',
   glassRowLite1: 'rgba(30,34,46,0.88)',
+  // Map command-bar CRYSTAL tier (dark) — see the light palette note. Bottom
+  // stop doubles as blur-mode floorColor. Bar text = textStrong #F5F5F5, tool
+  // icons = inkSelect #B4CFFA (both arbiter-proved on the 0.70 dark floor).
+  glassMapCrystal0: 'rgba(30,34,46,0.80)',
+  glassMapCrystal1: 'rgba(30,34,46,0.70)',
   glassBannerLite0: 'rgba(14,68,153,0.92)',
   glassBannerLite1: 'rgba(14,68,153,0.84)',
   glassChromeLite0: 'rgba(13,18,32,0.94)',

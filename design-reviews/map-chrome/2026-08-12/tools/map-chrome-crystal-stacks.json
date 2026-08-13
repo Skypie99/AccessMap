@@ -1,0 +1,45 @@
+{
+  "name": "map-chrome crystal tier — Direction B-refined (2026-08-12 Opus build)",
+  "_doc": [
+    "Self-contained AA declaration for the map-chrome compaction crystal tier. Every color is the SHIPPED build value: glassMapCrystal0/1 from src/theme.ts (light) + src/theme/ThemeContext.tsx (dark), the always-light 0.65 pin literal in MapScreen.tsx / HeatmapLegend.tsx, and the inline inks.",
+    "BASES: the map backdrop is unbounded (tiles independent of the JS theme). Every themed surface is declared over #000 AND #FFF in BOTH modes, plus the 5 heat saturants. Bases MUST be opaque; all translucency lives in `stack`.",
+    "crystalBar: declared at the MOST TRANSPARENT stop of the engineered gradient (0.60 light / 0.70 dark) — the conservative worst case; it also equals the blur-mode floorColor (a single flat floor is the conservative bound for blur, which only averages toward lighter mixes). So this one declaration covers BOTH material arms of the on-device A/B.",
+    "countChip: the count pill fill glassMapCrystal0 (0.70/0.80) painted OVER the bar's own crystal floor — stack[0] nearest base. glassChipInk (#333/#F5F5F5) is the shipped chip ink.",
+    "pin065: the disclosure family (HeatmapLegend, heat-notice explainer, locating banner) at the always-light 0.65 white pin, dark ink literals SAME as light (reads identically in every theme). #222 = darkened legend/explainer inks; #414B5A = the close-X glyph (1.4.11 UI, min 3); #333 = the locating banner text.",
+    "INK PRICE (Sky's crystal, documented): bar text falls to #222/#F5F5F5 and tool icons to #0E4499/#B4CFFA — the muted grays (inkGlassMuted) and plain brand (inkSelect #0F53BE light) mathematically fail at this transparency; that is why the crystal costs a darker ink."
+  ],
+  "modes": {
+    "light": {
+      "surfaces": {
+        "crystalBar":  { "stack": ["rgba(255,255,255,0.60)"], "base": ["#000000","#FFFFFF","#fde047","#fb923c","#f97316","#ef4444","#dc2626"] },
+        "countChip":   { "stack": ["rgba(255,255,255,0.60)","rgba(255,255,255,0.70)"], "base": ["#000000","#FFFFFF","#fde047","#fb923c","#f97316","#ef4444","#dc2626"] },
+        "pin065":      { "stack": ["rgba(255,255,255,0.65)"], "base": ["#000000","#FFFFFF","#fde047","#fb923c","#f97316","#ef4444","#dc2626"] }
+      },
+      "pairs": [
+        { "text": "#222", "surface": "crystalBar", "label": "bar title 'Explore' + count fallback textStrong", "min": 4.5 },
+        { "text": "#0E4499", "surface": "crystalBar", "label": "bar tool icons + zoom/recenter/List icon brandTextAlt (1.4.11)", "min": 3 },
+        { "text": "#222", "surface": "crystalBar", "label": "List FAB word 'List' textStrong (15px bold = NOT WCAG-large, needs 4.5)", "min": 4.5 },
+        { "text": "#333", "surface": "countChip", "label": "count pill '8 flags' glassChipInk over glassMapCrystal0 fill", "min": 4.5 },
+        { "text": "#222", "surface": "pin065", "label": "HeatmapLegend title+labels + heat-notice body #222 (darkened)", "min": 4.5 },
+        { "text": "#414B5A", "surface": "pin065", "label": "legend + heat-notice close-X glyph #414B5A (1.4.11)", "min": 3 },
+        { "text": "#333", "surface": "pin065", "label": "locating banner text #333 (pinned light)", "min": 4.5 }
+      ]
+    },
+    "dark": {
+      "surfaces": {
+        "crystalBar":  { "stack": ["rgba(30,34,46,0.70)"], "base": ["#000000","#FFFFFF","#fde047","#fb923c","#f97316","#ef4444","#dc2626"] },
+        "countChip":   { "stack": ["rgba(30,34,46,0.70)","rgba(30,34,46,0.80)"], "base": ["#000000","#FFFFFF","#fde047","#fb923c","#f97316","#ef4444","#dc2626"] },
+        "pin065":      { "stack": ["rgba(255,255,255,0.65)"], "base": ["#000000","#FFFFFF","#fde047","#fb923c","#f97316","#ef4444","#dc2626"] }
+      },
+      "pairs": [
+        { "text": "#F5F5F5", "surface": "crystalBar", "label": "bar title 'Explore' + count fallback textStrong", "min": 4.5 },
+        { "text": "#B4CFFA", "surface": "crystalBar", "label": "bar tool icons + zoom/recenter/List icon inkSelect (1.4.11)", "min": 3 },
+        { "text": "#F5F5F5", "surface": "crystalBar", "label": "List FAB word 'List' textStrong", "min": 4.5 },
+        { "text": "#F5F5F5", "surface": "countChip", "label": "count pill '8 flags' glassChipInk over glassMapCrystal0 fill", "min": 4.5 },
+        { "text": "#222", "surface": "pin065", "label": "HeatmapLegend title+labels + heat-notice body #222 (pinned light, same in dark)", "min": 4.5 },
+        { "text": "#414B5A", "surface": "pin065", "label": "legend + heat-notice close-X glyph #414B5A (1.4.11, pinned light)", "min": 3 },
+        { "text": "#333", "surface": "pin065", "label": "locating banner text #333 (pinned light, same in dark)", "min": 4.5 }
+      ]
+    }
+  }
+}

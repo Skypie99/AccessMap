@@ -1,11 +1,16 @@
-import React from 'react';
-import { StyleSheet, View } from 'react-native';
+import React, { useState } from 'react';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { X } from 'lucide-react-native';
 import { AppText } from '@/components/ui/AppText';
 import { GlassSurface } from '@/components/ui/GlassSurface';
+import { PressableScale } from '@/components/ui/PressableScale';
 import { decorativeProps } from '@/lib/accessibility';
 import { SEVERITY_ORDER, SEVERITY_LABELS } from '@/lib/flags';
 import type { FlagSeverity } from '@/types/database';
-import { color, font, radius, shadow, heatmapSeverity } from '@/theme';
+import { font, radius, shadow, heatmapSeverity } from '@/theme';
+
+const LEGEND_LABEL =
+  'Heat map legend: 1 Minor yellow, 2 Mild orange, 3 Moderate orange-red, 4 Significant red, 5 Severe deep red';
 
 /**
  * HeatmapLegend — compact severity key shown whenever the heat layer is
@@ -15,35 +20,88 @@ import { color, font, radius, shadow, heatmapSeverity } from '@/theme';
  *
  * Swatch colors mirror the heatmapSeverity tokens (Dani D5 COMMIT) so
  * the legend always matches what the map layer actually renders.
+ *
+ * Map-chrome compaction (Sky-locked B-refined, 2026-08-12):
+ *  - The always-light pin floor drops 0.82 → 0.65 (very transparent) and inks
+ *    darken to #222 (arbiter 6.52:1 worst-case over the 0.65 pin).
+ *  - A close X collapses the legend to a min-44pt "Legend" chip; tapping the
+ *    chip re-expands. The severity-scale disclosure stays ONE tap away in the
+ *    collapsed state, so the Jordan condition it exists to satisfy still holds.
+ *  - AUTO RE-EXPAND: MapScreen renders <HeatmapLegend/> only while the heat
+ *    layer is on, so toggling heat off→on unmounts+remounts this component and
+ *    `collapsed` resets to false — the spec's "resets to expanded on heat
+ *    re-enable" behaviour falls out of the render condition for free.
+ *  - A11Y-213 restructure: the GlassSurface container is NOT an accessible leaf
+ *    (that would swallow the X). A summary node carries the image semantics +
+ *    label; the close X is its own reachable button; the collapsed chip is a
+ *    separate render branch.
  */
 export default function HeatmapLegend() {
+  const [collapsed, setCollapsed] = useState(false);
+
+  if (collapsed) {
+    // Collapsed "Legend" chip — keeps the disclosure one tap away.
+    return (
+      <PressableScale
+        style={styles.chip}
+        onPress={() => setCollapsed(false)}
+        accessibilityRole="button"
+        accessibilityLabel="Show heat map legend"
+      >
+        <GlassSurface
+          style={StyleSheet.absoluteFill}
+          borderRadius={radius.circle}
+          tint="light"
+          tintColor="rgba(255,255,255,0.65)"
+          solidColor="rgba(255,255,255,0.95)"
+          pointerEvents="none"
+        />
+        <View style={[styles.chipSwatch, { backgroundColor: heatmapSeverity[3].color }]} {...decorativeProps} />
+        <AppText variant="label" style={styles.chipText}>Legend</AppText>
+      </PressableScale>
+    );
+  }
+
   return (
     <GlassSurface
       style={styles.container}
       borderRadius={radius.md}
       tint="light"
-      tintColor="rgba(255,255,255,0.82)"
+      tintColor="rgba(255,255,255,0.65)"
       solidColor="rgba(255,255,255,0.95)"
-      accessible
-      accessibilityRole="image"
-      accessibilityLabel="Heat map legend: 1 Minor yellow, 2 Mild orange, 3 Moderate orange-red, 4 Significant red, 5 Severe deep red"
     >
-      <AppText
-        variant="label"
-        style={styles.title} {...decorativeProps}
-      >
-        Heat map
-      </AppText>
+      {/* Summary node — carries the whole legend as ONE image element with its
+          descriptive label (A11Y-213: the container stays a plain View so the
+          close X below is reachable). */}
       <View
-        style={styles.row} {...decorativeProps}
+        style={styles.summary}
+        accessible
+        accessibilityRole="image"
+        accessibilityLabel={LEGEND_LABEL}
       >
-        {SEVERITY_ORDER.map((s: FlagSeverity) => (
-          <View key={s} style={styles.item}>
-            <View style={[styles.swatch, { backgroundColor: heatmapSeverity[s].color }]} />
-            <AppText variant="label" style={styles.label}>{`${s} ${SEVERITY_LABELS[s]}`}</AppText>
-          </View>
-        ))}
+        <AppText variant="label" style={styles.title} {...decorativeProps}>
+          Heat map
+        </AppText>
+        <View style={styles.row} {...decorativeProps}>
+          {SEVERITY_ORDER.map((s: FlagSeverity) => (
+            <View key={s} style={styles.item}>
+              <View style={[styles.swatch, { backgroundColor: heatmapSeverity[s].color }]} />
+              <AppText variant="label" style={styles.label}>{`${s} ${SEVERITY_LABELS[s]}`}</AppText>
+            </View>
+          ))}
+        </View>
       </View>
+      {/* Close X — its own reachable button; collapses to the chip. 24pt glyph
+          box + 12 hitSlop = 48 effective (the house small-target idiom). */}
+      <Pressable
+        style={styles.close}
+        onPress={() => setCollapsed(true)}
+        hitSlop={12}
+        accessibilityRole="button"
+        accessibilityLabel="Collapse heat map legend"
+      >
+        <X size={14} color="#414B5A" strokeWidth={2.6} />
+      </Pressable>
     </GlassSurface>
   );
 }
@@ -53,21 +111,32 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
     // Frosted-glass surface via <GlassSurface>, pinned ALWAYS-LIGHT (literal
     // floors + static light inks) regardless of device theme. AA-by-
-    // construction: a light floor + dark ink clears contrast over ANY tile —
-    // including the web CartoDB dark_all basemap, which the old "basemap is
-    // always light" note wrongly assumed (DESIGN.md fixed exception).
+    // construction: a light 0.65 floor + #222 ink clears contrast over ANY tile
+    // (arbiter 6.52:1 worst-case). paddingRight leaves room for the close X.
     borderRadius: radius.md,
     paddingHorizontal: 10,
+    paddingRight: 30,
     paddingVertical: 8,
     gap: 4,
     ...shadow.e1,
   },
+  summary: { gap: 4 },
+  // Absolute top-right so it doesn't push the swatches; the paddingRight above
+  // reserves its lane.
+  close: {
+    position: 'absolute',
+    top: 2,
+    right: 2,
+    width: 24,
+    height: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   title: {
     fontSize: font.size.caption,
     fontWeight: font.weight.bold,
-    // Literal #414B5A (not color.textMuted #666, which was 3.76:1 over dark
-    // tiles seen through the 0.82 legend) — 5.79:1, pinned-light like the rest.
-    color: '#414B5A',
+    // Darkened #414B5A → #222 for the 0.65 crystal pin (6.52:1). Pinned-light.
+    color: '#222',
     textTransform: 'uppercase',
     letterSpacing: 0.4,
   },
@@ -88,7 +157,29 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: font.size.caption,
-    color: color.text,
+    // Darkened to #222 for the 0.65 pin (was color.text on the 0.82 floor).
+    color: '#222',
     fontWeight: font.weight.semibold,
+  },
+  // Collapsed chip — min 44pt pill (swatch + "Legend"), the same 0.65 pin.
+  chip: {
+    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    minHeight: 44,
+    borderRadius: radius.circle,
+    ...shadow.e1,
+  },
+  chipSwatch: {
+    width: 10,
+    height: 10,
+    borderRadius: radius.xs,
+  },
+  chipText: {
+    fontSize: font.size.caption,
+    fontWeight: font.weight.bold,
+    color: '#222',
   },
 });

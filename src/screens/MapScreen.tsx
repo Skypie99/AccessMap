@@ -13,7 +13,7 @@ import {
   useWindowDimensions,
   View,
 } from 'react-native';
-import type { LayoutChangeEvent, NativeScrollEvent, NativeSyntheticEvent } from 'react-native';
+import type { LayoutChangeEvent } from 'react-native';
 import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 import * as Location from 'expo-location';
 import { arrivalPermissionDenied, getCurrentPositionWithTimeout, initialLocationAction } from '@/lib/location';
@@ -23,12 +23,12 @@ import { useNavigation, useRoute, type RouteProp } from '@react-navigation/nativ
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
-import { hydrateGlassMode, useGlassMode } from '@/lib/glassMode';
+import { hydrateGlassMode, toggleGlassMode, useGlassMode } from '@/lib/glassMode';
+import { hapticSelection } from '@/lib/haptics';
 import { font, radius, severity, shadow, spacing } from '@/theme';
 import { errorMessage } from '@/lib/errors';
 import { clearLiveStatusMessage, setLiveStatus } from '@/lib/liveStatus';
 import { confirm, notify } from '@/lib/confirm';
-import CategoryIcon from '@/components/CategoryIcon';
 import {
   AlertTriangle,
   ChevronDown,
@@ -37,21 +37,23 @@ import {
   List,
   LocateFixed,
   MapPin,
+  Menu,
+  MessageSquare,
   Minus,
+  MoreHorizontal,
   Plus,
   RotateCw,
   Search,
-  Shapes,
   SlidersHorizontal,
   Star,
   WifiOff,
+  X,
 } from 'lucide-react-native';
 import {
   CATEGORY_LABELS,
   CATEGORY_ORDER,
   DEFAULT_STATUSES,
   fetchFlagById,
-  SEVERITY_LABELS,
   severityColor,
   SEVERITY_ORDER,
   STATUS_LABELS,
@@ -101,13 +103,9 @@ import type { DetailAction } from '@/components/FlagDetailModal';
 import { AppText } from '@/components/ui/AppText';
 import { GlassSurface } from '@/components/ui/GlassSurface';
 import { PressableScale } from '@/components/ui/PressableScale';
-import { HeaderActions } from '@/components/ui/HeaderActions';
 import { OverflowFade } from '@/components/ui/OverflowFade';
-import {
-  computeOverflowHasMore,
-  useHorizontalOverflowFade,
-} from '@/hooks/useHorizontalOverflowFade';
-import { useDrawer } from '@/lib/drawerContext';
+import { useHorizontalOverflowFade } from '@/hooks/useHorizontalOverflowFade';
+import { useDrawer, useDrawerTrigger } from '@/lib/drawerContext';
 import { useSharedModals } from '@/lib/sharedModalsContext';
 import { useScreenReader, useReducedMotion, a11yToggle, decorativeProps, useSurfaceTrigger } from '@/lib/accessibility';
 import LegendModal from './LegendModal';
@@ -197,11 +195,16 @@ function regionForFlags(rows: readonly { lat: number; lng: number }[]): Platform
 const OVERLAY_PADDING = 16;
 const PANEL_BRACKET_ALLOWANCE = 160;
 
+// Sky's refinement ① (map-chrome B-refined, 2026-08-12): the command bar hugs
+// the status bar — the overlay's top pad drops from safe-area+16 to safe-area+8,
+// so the bar's top edge sits at insets.top + 8 (asserted by mapChromeBudget).
+const OVERLAY_TOP_PAD = 8;
+
 // T1 (F2-01): the persistent top-chrome band that a pin callout must clear.
-// MAP_HEADER_ROW_MARGIN_BOTTOM mirrors styles.mapHeaderRow.marginBottom (the
-// gap between the two measured rows); CALLOUT_CHROME_MARGIN is the breathing
-// room between the chrome's bottom edge and the callout's top edge.
-const MAP_HEADER_ROW_MARGIN_BOTTOM = 10;
+// Direction B collapses the old two-row header (title row + pill/tray row) into
+// ONE command bar, so the band is just the bar's measured height.
+// CALLOUT_CHROME_MARGIN is the breathing room between the chrome's bottom edge
+// and the callout's top edge.
 const CALLOUT_CHROME_MARGIN = 8;
 
 // Pop a flag's callout: one immediate same-tick attempt, then retries ~150ms
@@ -253,11 +256,6 @@ export function createCalloutScheduler(getMap: () => PlatformMapHandle | null): 
     },
   };
 }
-
-// Cycle sequence for the category quick-cycle button: null = "All categories"
-// (empty Set), followed by each category in display order. Defined here
-// (module-level) so the useCallback below can reference it without a dep.
-const CATEGORY_CYCLE: (FlagCategory | null)[] = [null, ...CATEGORY_ORDER];
 
 // ----------------------------------------------------------------------------
 // Heat-map render mode — single config constant for Sky's D5 follow-up.
@@ -338,6 +336,12 @@ export async function webSetMenuChoice(
 export default function MapScreen() {
   const color = useColor();
   const styles = useMemo(() => makeStyles(color), [color]);
+  // Direction B crystal-tier ink (map-chrome compaction): on the thinned map
+  // glass the plain brand blue (inkSelect #0F53BE light) fails the arbiter, so
+  // command-bar + crystal-FAB icons take the extra-dark brandTextAlt #0E4499 in
+  // light / inkSelect #B4CFFA in dark (map-chrome-crystal-stacks.json — worst
+  // 3.20 light / 3.71 dark). Same fork idiom as the panel's clearLink ink.
+  const barIconColor = color.scheme === 'light' ? color.brandTextAlt : color.inkSelect;
   // C-lite drives the filter panel's material: full = true blur (F3, the one
   // frost moment on Map), lite = engineered gradient. Hydrate on mount so a
   // C-lite user who cold-starts onto Map doesn't get a blur panel for one frame
@@ -345,6 +349,20 @@ export default function MapScreen() {
   const glassLite = useGlassMode() === 'lite';
   useEffect(() => {
     void hydrateGlassMode();
+  }, []);
+  // Sky's on-device material A/B (SPEC §0): the command bar is itself a 600ms
+  // long-press flip target — full = true blur i=12 + crystal floor, lite =
+  // engineered crystal gradient — so the material changes under her eyes while
+  // she judges it. Copies the TasksScreen.tsx:472-476 gesture (hapticSelection →
+  // toggleGlassMode); the store already announces the flip for screen readers,
+  // and the visible confirmation is the bar re-materialising under the press
+  // (MapScreen has no flash pill — see the build report's DECISIONS FOR SKY).
+  // The switch is GLOBAL: flipping here also re-materialises Tasks + the filter
+  // panel, and persists across launches (@accessmap/glass_mode_v1). Two doors,
+  // one switch.
+  const handleGlassToggle = useCallback(() => {
+    hapticSelection();
+    toggleGlassMode();
   }, []);
   const mapRef = useRef<PlatformMapHandle | null>(null);
   // T1 (F3-04): one scheduler for all four callout flows — last-tap-wins.
@@ -407,6 +425,10 @@ export default function MapScreen() {
   const [nearbyOpen, setNearbyOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [placesOpen, setPlacesOpen] = useState(false);
+  // Direction B: the command bar's ⋯ overflow reveals an inline tool sheet
+  // (Send feedback / Map legend / Refresh flags / Save a place) — a panel-class
+  // surface like the filter panel, not a Modal.
+  const [toolsOpen, setToolsOpen] = useState(false);
   // G5 focus-return triggers. Each one owns the handle of the control that
   // opened its surface, so closing the surface hands the screen-reader cursor
   // back to that control instead of stranding it (WCAG 2.4.3). Local pairs
@@ -415,6 +437,10 @@ export default function MapScreen() {
   const nearbyTrigger = useSurfaceTrigger<View>();
   const reportTrigger = useSurfaceTrigger<View>();
   const legendTrigger = useSurfaceTrigger<View>();
+  // Drawer focus-return for the command bar's menu button (same contract the
+  // shared HeaderActions cluster uses on Home/Profile — Direction B inlines the
+  // menu into the bar, so MapScreen owns the trigger now).
+  const menuTrigger = useDrawerTrigger<View>();
   // Saved Places list for the quick-jump chip row above the action bar.
   // Loaded when the user is known and refreshed every time the modal
   // closes (so newly-added / removed places appear without a screen
@@ -482,80 +508,31 @@ export default function MapScreen() {
   // reduced motion. Used at every animateTo / showCallout call site below.
   const reducedMotion = useReducedMotion();
 
-  // S16 (L5-05): the 7-tool action bar scrolls its last tools (Refresh,
-  // Recenter — the documented CONTRIBUTE entry for locationless users) out of
-  // reach at <=320pt / large Dynamic Type with zero affordance. Track whether
-  // it overflows AND isn't scrolled to the end, and show a fade edge when so.
-  const actionBarViewW = useRef(0);
-  const actionBarContentW = useRef(0);
-  const actionBarOffsetX = useRef(0);
-  const [actionBarHasMore, setActionBarHasMore] = useState(false);
-  const recomputeActionBarFade = useCallback(() => {
-    setActionBarHasMore(
-      computeOverflowHasMore(
-        actionBarContentW.current,
-        actionBarViewW.current,
-        actionBarOffsetX.current,
-      ),
-    );
-  }, []);
-  const onActionBarScroll = useCallback(
-    (e: NativeSyntheticEvent<NativeScrollEvent>) => {
-      actionBarOffsetX.current = e.nativeEvent.contentOffset.x;
-      recomputeActionBarFade();
-    },
-    [recomputeActionBarFade],
-  );
-  const onActionBarLayout = useCallback(
-    (e: LayoutChangeEvent) => {
-      actionBarViewW.current = e.nativeEvent.layout.width;
-      recomputeActionBarFade();
-    },
-    [recomputeActionBarFade],
-  );
-  const onActionBarContentSize = useCallback(
-    (w: number) => {
-      actionBarContentW.current = w;
-      recomputeActionBarFade();
-    },
-    [recomputeActionBarFade],
-  );
+  // (Direction B) The 7-tool scrolling action bar is gone — Search + Filters
+  // live in the command bar, the ⋯ sheet holds Feedback/Legend/Refresh/Save,
+  // Recenter moved to the FAB column, and the severity/category cycles retired to
+  // the filter panel — so the tray's overflow-fade measure chain retires with it.
 
   // T14 (F2-07): the two silent filter-panel chip rails earn the same overflow
   // scent as the action bar, from the one shared contract (never a fork).
   const savedSetsFade = useHorizontalOverflowFade();
   const categoriesFade = useHorizontalOverflowFade();
 
-  // T1 (F2-01): measure the PERSISTENT top-chrome band — mapHeaderRow + topRow
-  // ONLY, never overlayTopGroup (it also nests the conditional filterPanel /
-  // banners / places row, which would inflate the callout inset toward half
-  // the screen). The sum feeds PlatformMap's chromeInsetTop so an opening pin
-  // callout autoPans (or Reduce-Motion-cuts) fully below the chrome instead of
-  // compositing under it. State, not just refs: topRow flexWraps, so its
-  // height changes at runtime and the inset must re-render through to the map.
+  // T1 (F2-01): measure the PERSISTENT top-chrome band — the ONE command bar
+  // (Direction B collapsed the old title row + pill/tray row into it), never
+  // overlayTopGroup (it also nests the conditional filterPanel / tool sheet /
+  // banners, which would inflate the callout inset toward half the screen). The
+  // bar height feeds PlatformMap's chromeInsetTop so an opening pin callout
+  // autoPans (or Reduce-Motion-cuts) fully below the chrome instead of
+  // compositing under it. State, not just refs: the bar height can change at
+  // runtime (Dynamic Type wrap) and the inset must re-render through to the map.
   // onLayout is a passive read — the box-none overlay law is untouched.
-  const mapHeaderRowH = useRef(0);
-  const topRowH = useRef(0);
+  const commandBarH = useRef(0);
   const [chromeBandPx, setChromeBandPx] = useState(0);
-  const recomputeChromeBand = useCallback(() => {
-    setChromeBandPx(
-      Math.round(mapHeaderRowH.current + MAP_HEADER_ROW_MARGIN_BOTTOM + topRowH.current),
-    );
+  const onCommandBarLayout = useCallback((e: LayoutChangeEvent) => {
+    commandBarH.current = e.nativeEvent.layout.height;
+    setChromeBandPx(Math.round(commandBarH.current));
   }, []);
-  const onMapHeaderRowLayout = useCallback(
-    (e: LayoutChangeEvent) => {
-      mapHeaderRowH.current = e.nativeEvent.layout.height;
-      recomputeChromeBand();
-    },
-    [recomputeChromeBand],
-  );
-  const onTopRowLayout = useCallback(
-    (e: LayoutChangeEvent) => {
-      topRowH.current = e.nativeEvent.layout.height;
-      recomputeChromeBand();
-    },
-    [recomputeChromeBand],
-  );
 
   const hasAutoOpenedListRef = useRef(false);
   useEffect(() => {
@@ -587,6 +564,9 @@ export default function MapScreen() {
   // gates the save-effect so we don't clobber the stored value during the
   // brief mount→load window.
   const [heatmapEnabled, setHeatmapEnabled] = useState(false);
+  // Q1 (Sky): the Art. 7 heat notice gains a session-dismiss X, re-shown on
+  // every heat re-enable (the reset effect lives just after the persist effect).
+  const [heatNoticeDismissed, setHeatNoticeDismissed] = useState(false);
   const [heatmapHydrated, setHeatmapHydrated] = useState(false);
   const [activeCategories, setActiveCategories] = useState<Set<FlagCategory>>(new Set());
   const [minSeverity, setMinSeverity] = useState<FlagSeverity>(1);
@@ -718,56 +698,11 @@ export default function MapScreen() {
     setActiveDisabilityTags(new Set());
   }, []);
 
-  // Quick-toggle severity from the top icon row without opening the full
-  // filter panel. Cycles 1 → 2 → 3 → 4 → 5 → 1; 1 is the "no severity
-  // filter" state (every flag is severity >= 1). Announces the new state
-  // on each tap so screen-reader users hear the change.
-  const cycleSeverity = useCallback(() => {
-    setMinSeverity((prev) => {
-      const next = (prev === 5 ? 1 : prev + 1) as FlagSeverity;
-      AccessibilityInfo.announceForAccessibility(
-        next === 1
-          ? 'Minimum severity: all'
-          : `Minimum severity: ${SEVERITY_LABELS[next]} and above`,
-      );
-      return next;
-    });
-  }, []);
-
-  // Category quick-cycle — cycles the category filter through a fixed
-  // sequence: All → no_ramp → broken_sidewalk → blocked_path →
-  // missing_signal → steep_grade → other → All. Each press scopes the
-  // map to exactly one category, making it easy to scan for a specific
-  // barrier type without opening the full filter panel.
-  //
-  // Behaviour when multiple categories are active (user set them via the
-  // full panel): pressing this button treats the state as "All" so the
-  // next tap moves to no_ramp (the first single-category view).
-  const cycleCategory = useCallback(() => {
-    setActiveCategories((prev) => {
-      // Determine the current position in the cycle sequence.
-      // Default: 0 = "All categories" (empty Set).
-      let currentIdx = 0;
-      if (prev.size === 1) {
-        // prev.size === 1 guarantees the spread has exactly one element.
-        const singleCat = ([...prev] as FlagCategory[])[0];
-        const pos = CATEGORY_CYCLE.indexOf(singleCat ?? null);
-        if (pos !== -1) currentIdx = pos;
-      }
-      // Advance one step, wrapping from the last category back to All.
-      const nextIdx = (currentIdx + 1) % CATEGORY_CYCLE.length;
-      // CATEGORY_CYCLE.length is always 7 (1 null + 6 categories) so
-      // nextIdx is always in range — cast away the `| undefined`.
-      const nextCat = (CATEGORY_CYCLE[nextIdx] ?? null) as FlagCategory | null;
-      const nextSet = nextCat === null ? new Set<FlagCategory>() : new Set<FlagCategory>([nextCat]);
-      AccessibilityInfo.announceForAccessibility(
-        nextCat === null
-          ? 'Category filter: all categories'
-          : `Category filter: ${CATEGORY_LABELS[nextCat]} only`,
-      );
-      return nextSet;
-    });
-  }, []); // CATEGORY_CYCLE + CATEGORY_LABELS are module-level constants; no closure deps
+  // (Direction B, 2026-08-12) The severity + category QUICK-CYCLE buttons that
+  // used to live in the persistent top tray are removed. Their surviving home is
+  // the filter panel's severity discs + category chips (SPEC §11 B) — the
+  // persistent chrome no longer carries a one-tap cycle. `minSeverity` /
+  // `activeCategories` state and every panel control that reads them are intact.
 
   // Whether the status filter differs from the default — used to glow the
   // filter button and show the Clear link.
@@ -850,6 +785,12 @@ export default function MapScreen() {
     if (!heatmapHydrated) return;
     saveHeatmapEnabled(heatmapEnabled);
   }, [heatmapEnabled, heatmapHydrated]);
+
+  // Q1: re-show the heat notice whenever the heat layer is (re-)enabled. Keyed
+  // on the toggle only, so a dismiss sticks until the user turns heat off and on.
+  useEffect(() => {
+    if (heatmapEnabled) setHeatNoticeDismissed(false);
+  }, [heatmapEnabled]);
 
   // Apply a saved set: copy its filter triple over the active filters.
   // The existing save-effect below pushes the new values through to
@@ -1073,12 +1014,6 @@ export default function MapScreen() {
     statusFilterActive ||
     distanceFilterEffective ||
     activeDisabilityTags.size > 0;
-
-  // Category quick-cycle button derived state — computed once per render
-  // so the JSX stays readable. catCycleActive drives the filled-blue style;
-  const catCycleActiveCat: FlagCategory | null =
-    activeCategories.size === 1 ? (([...activeCategories] as FlagCategory[])[0] ?? null) : null;
-  const catCycleActive = catCycleActiveCat !== null;
 
   // Which saved set, if any, exactly matches the live filter triple.
   // Used to mark the matching chip `selected` so the user can see at a
@@ -1697,14 +1632,14 @@ export default function MapScreen() {
         // T1 (F2-01): the full vertical band a callout must clear — safe area +
         // overlay padding + the measured persistent chrome rows + margin. The
         // map clamps it (≤45% of its own height) before use.
-        chromeInsetTop={insets.top + OVERLAY_PADDING + chromeBandPx + CALLOUT_CHROME_MARGIN}
+        chromeInsetTop={insets.top + OVERLAY_TOP_PAD + chromeBandPx + CALLOUT_CHROME_MARGIN}
       />
 
       <View
         pointerEvents="box-none"
         // S8: headerShown:false on FullMap now, so the overlay clears the notch
         // itself (was below the dark nav bar).
-        style={[styles.overlay, { paddingTop: insets.top + 16, paddingBottom: tabBarHeight + 16 }]}
+        style={[styles.overlay, { paddingTop: insets.top + OVERLAY_TOP_PAD, paddingBottom: tabBarHeight + 16 }]}
       >
         {/* Top cluster in ONE group so the overlay's space-between only ever
             distributes [topGroup, bottomBar] — with nine direct children, the
@@ -1712,118 +1647,127 @@ export default function MapScreen() {
             box-none is mandatory: an opaque-to-touch wrapper would swallow
             map pan/zoom; flexShrink lets the G5 filterPanel keep yielding. */}
         <View style={styles.overlayTopGroup} pointerEvents="box-none">
-        {/* S8 (treatment ii): a compact editorial title inside the box-none
-            overlay — the map joins the header family without a nav bar. The row
-            wrapper is box-none; only the content-hugging glass title chip and the
-            menu/Feedback circles take touches (NO full-width opaque strip), so the
-            map stays pannable/zoomable underneath (the box-none gesture law). */}
-        <View style={styles.mapHeaderRow} pointerEvents="box-none" onLayout={onMapHeaderRowLayout}>
-          <GlassSurface style={styles.mapHeaderChip} variant="row" forceEngineered borderRadius={radius.lg}>
-            <AppText variant="label" style={styles.mapHeaderEyebrow}>MAP</AppText>
-            <AppText
-              variant="display"
-              size={22}
-              numberOfLines={1}
-              accessibilityRole="header"
-              style={styles.mapHeaderTitle}
+        {/* Direction B (Sky-locked B-refined, 2026-08-12): the old two-row header
+            — editorial title chip + menu/Feedback circles, then the count pill +
+            7-tool tray — collapses into ONE crystal command bar hugging the
+            status bar. The GlassSurface is box-none (its material layer is
+            pointer-inert; only the buttons + count take touches) so the map still
+            pans/zooms through the title and the trailing spacer — the box-none
+            gesture law holds (no full-width touch-opaque strip). forceEngineered
+            threads the glass switch in Phase 5 (blur=full / crystal=lite). */}
+        <GlassSurface
+          style={styles.commandBar}
+          variant="row"
+          forceEngineered={glassLite}
+          liteColors={[color.glassMapCrystal0, color.glassMapCrystal1]}
+          floorColor={color.glassMapCrystal1}
+          borderRadius={radius.circle}
+          onLayout={onCommandBarLayout}
+          pointerEvents="box-none"
+        >
+          <View style={styles.commandBarInner} pointerEvents="box-none">
+            {/* Menu (hamburger) — drawer trigger + focus-return, inlined from the
+                shared HeaderActions cluster (the Home/Profile idiom). */}
+            <PressableScale
+              ref={menuTrigger.ref}
+              onPress={() => {
+                menuTrigger.register();
+                drawer.setOpen(true);
+              }}
+              style={styles.barBtn}
+              accessibilityRole="button"
+              accessibilityLabel="Open navigation menu"
+              hitSlop={8}
             >
-              Explore
-            </AppText>
-          </GlassSurface>
-          <View style={styles.mapHeaderActions} pointerEvents="box-none">
-            <HeaderActions
-              onMenu={() => drawer.setOpen(true)}
-              onFeedback={() => setSharedModal('feedback')}
-              iconColor={color.textStrong}
-            />
-          </View>
-        </View>
-        {/* S6 (WCAG 2.5.7): box-none so taps fall THROUGH the row's gaps to the
-            map — the un-guarded wrapper was pointer-dead, killing zoom/pan even
-            on visible tile between the pill and the action tray. */}
-        <View style={styles.topRow} pointerEvents="box-none" onLayout={onTopRowLayout}>
-          {/* WCAG 4.1.3: accessibilityLiveRegion covers ANDROID TalkBack only
-              (RN implements it there and nowhere else — the comment here used
-              to claim it covered "AT", which would have waved a future
-              reviewer straight past the gap). iOS VoiceOver is served by the
-              explicit count announce in the A11Y-204 effect above. */}
-          <GlassSurface
-            style={styles.statusPill}
-            variant="row"
-            forceEngineered
-            borderRadius={radius.circle}
-            accessibilityLiveRegion="polite"
-          >
-            <AppText variant="label" maxFontSizeMultiplier={1.3} style={styles.statusText}>
-              {loadingFlags
-                ? // S11: a cold load (nothing on screen yet) reads differently
-                  // from a revalidation over data already shown.
-                  flags.length === 0
-                  ? 'Loading flags…'
-                  : 'Updating…'
-                : // T9 (F5-02): a settled failure with nothing cached gets the honest
-                  // fourth arm — never "Showing 0 flags". The co-present error banner
-                  // below carries the retry. Gated on `&& flags.length === 0` so the
-                  // SWR stale path keeps showing its cached count.
-                  loadError && flags.length === 0
-                  ? "Couldn't load flags"
-                  : filtersActive
-                    ? `${filteredFlags.length} of ${flags.length} shown`
-                    : `Showing ${flags.length} flag${flags.length === 1 ? '' : 's'}`}
-            </AppText>
-          </GlassSurface>
-          {/*
-            actionBar groups the icon buttons into one connected surface so
-            they feel like a single tool tray instead of four free-floating
-            circles. The container carries the shadow + background; each
-            inner button drops its own shadow so the row reads as one
-            object with internal segments.
-          */}
-          <GlassSurface style={styles.actionBar} variant="row" forceEngineered borderRadius={radius.circle}>
-            {/* The 7 buttons scroll horizontally when the tray outgrows the
-                screen (~322pt of targets vs 288pt usable at 320pt — sweep
-                M11). Identical at normal widths: the row is content-sized and
-                only scrolls on overflow. flexShrink on actionBar lets the
-                GlassSurface bound the viewport; the R4 pins live on the
-                scroller so the buttons can never be vertically crushed. */}
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              style={styles.actionBarScroll}
-              contentContainerStyle={styles.actionBarScrollContent}
-              scrollEventThrottle={16}
-              onScroll={onActionBarScroll}
-              onLayout={onActionBarLayout}
-              onContentSizeChange={onActionBarContentSize}
-            >
+              <Menu size={22} color={barIconColor} strokeWidth={2.2} />
+            </PressableScale>
+            {/* Title + count — box-none so the map pans through the gaps here. */}
+            <View style={styles.barCenter} pointerEvents="box-none">
+              {/* Long-press glass-flip target (Sky's on-device A/B). accessible=
+                  {false} keeps the SR tree + tap targets unchanged; it does NOT
+                  swallow the bar's button taps (they're siblings outside this
+                  wrapper), and a short tap is a no-op (the title has no onPress).
+                  The header role rides the AppText inside, so the rotor landmark
+                  survives. */}
+              <Pressable
+                onLongPress={handleGlassToggle}
+                delayLongPress={600}
+                accessible={false}
+                style={styles.barTitleWrap}
+              >
+                <AppText
+                  variant="display"
+                  size={22}
+                  numberOfLines={1}
+                  accessibilityRole="header"
+                  style={styles.barTitle}
+                >
+                  Explore
+                </AppText>
+              </Pressable>
+              {/* Count pill (Q2, Sky). The pill is compact so the title reads in
+                  full: the VISIBLE text is the SHORT 4-arm form ("8 flags") and
+                  the FULL honesty sentence rides accessibilityLabel — the
+                  accessible name a screen reader speaks + re-announces via the
+                  live region. The full 4-arm ternary (bp13 law) stays ONE
+                  contiguous block, verbatim, as that label — never split. The
+                  "—" error count is HomeScreen's established honest-zero idiom. */}
+              <View
+                style={styles.countChip}
+                accessibilityLiveRegion="polite"
+                accessibilityLabel={
+                  loadingFlags
+                    ? // S11: a cold load (nothing on screen yet) reads differently
+                      // from a revalidation over data already shown.
+                      flags.length === 0
+                      ? 'Loading flags…'
+                      : 'Updating…'
+                    : // T9 (F5-02): a settled failure with nothing cached gets the honest
+                      // fourth arm — never "Showing 0 flags". The co-present error banner
+                      // below carries the retry. Gated on `&& flags.length === 0` so the
+                      // SWR stale path keeps showing its cached count.
+                      loadError && flags.length === 0
+                      ? "Couldn't load flags"
+                      : filtersActive
+                        ? `${filteredFlags.length} of ${flags.length} shown`
+                        : `Showing ${flags.length} flag${flags.length === 1 ? '' : 's'}`
+                }
+              >
+                <AppText
+                  variant="label"
+                  maxFontSizeMultiplier={1.3}
+                  style={styles.countChipText}
+                  {...decorativeProps}
+                >
+                  {loadingFlags
+                    ? flags.length === 0
+                      ? 'Loading…'
+                      : 'Updating…'
+                    : loadError && flags.length === 0
+                      ? '—'
+                      : filtersActive
+                        ? `${filteredFlags.length} of ${flags.length}`
+                        : `${flags.length} flag${flags.length === 1 ? '' : 's'}`}
+                </AppText>
+              </View>
+            </View>
+            {/* Pannable gap — box-none, so the bar is never a full-width
+                touch-opaque strip (the map shows through here). */}
+            <View style={styles.barSpacer} pointerEvents="box-none" />
+            {/* Search */}
             <PressableScale
               onPress={() => setSearchOpen(true)}
-              style={styles.actionBtn}
+              style={styles.barBtn}
               accessibilityRole="button"
               accessibilityLabel="Search by address"
               accessibilityHint="Opens a search box to jump the map to an address or place"
             >
-              <Search size={19} color={color.inkSelect} strokeWidth={2.2} />
+              <Search size={19} color={barIconColor} strokeWidth={2.2} />
             </PressableScale>
-            <View style={styles.actionDivider} accessibilityElementsHidden />
+            {/* Filters — glows ctaFill when the panel is open or a filter is active */}
             <PressableScale
-              ref={legendTrigger.ref}
-              onPress={() => {
-                // Captures this button's handle before the legend opens.
-                legendTrigger.register();
-                setLegendOpen(true);
-              }}
-              style={styles.actionBtn}
-              accessibilityRole="button"
-              accessibilityLabel="Map legend"
-              accessibilityHint="Opens a guide explaining flag categories and severity"
-            >
-              <HelpCircle size={19} color={color.inkSelect} strokeWidth={2.2} />
-            </PressableScale>
-            <View style={styles.actionDivider} accessibilityElementsHidden />
-            <PressableScale
-              onPress={() => setFiltersOpen((v) => !v)}
-              style={[styles.actionBtn, (filtersOpen || filtersActive) && styles.actionBtnActive]}
+              onPress={() => { setToolsOpen(false); setFiltersOpen((v) => !v); }}
+              style={[styles.barBtn, (filtersOpen || filtersActive) && styles.barBtnActive]}
               pressedTint={filtersOpen || filtersActive ? color.ctaFillPressed : color.borderPressed}
               accessibilityRole="button"
               accessibilityLabel="Toggle filters"
@@ -1831,100 +1775,31 @@ export default function MapScreen() {
             >
               <SlidersHorizontal
                 size={19}
-                color={filtersOpen || filtersActive ? color.textOnBrand : color.inkSelect}
+                color={filtersOpen || filtersActive ? color.textOnBrand : barIconColor}
                 strokeWidth={2.2}
               />
             </PressableScale>
-            <View style={styles.actionDivider} accessibilityElementsHidden />
+            {/* ⋯ overflow — reveals the inline tool sheet. Holds legendTrigger's
+                focus-return ref: closing the Map legend returns the SR cursor
+                here, the control that surfaced it. */}
             <PressableScale
-              onPress={cycleSeverity}
-              style={[
-                styles.actionBtn,
-                styles.sevQuickBtn,
-                minSeverity > 1 && { backgroundColor: severityColor(minSeverity) },
-              ]}
-              // Active severity fill is AA-tuned per level and not tokenized —
-              // greying it would break the {n}+ ink; dim only in the inactive (all) state.
-              dimOnPress={minSeverity === 1}
+              ref={legendTrigger.ref}
+              onPress={() => { setFiltersOpen(false); setToolsOpen((v) => !v); }}
+              style={[styles.barBtn, toolsOpen && styles.barBtnActive]}
+              pressedTint={toolsOpen ? color.ctaFillPressed : color.borderPressed}
               accessibilityRole="button"
-              accessibilityLabel={
-                minSeverity === 1
-                  ? 'Minimum severity: all'
-                  : `Minimum severity: ${SEVERITY_LABELS[minSeverity]} and above`
-              }
-              accessibilityHint="Tap to cycle through minimum severity filters"
+              accessibilityLabel="More map tools"
+              accessibilityHint="Send feedback, open the map legend, refresh flags, or save a place"
+              {...a11yToggle({ expanded: toolsOpen })}
             >
-              <AppText
-                variant="label"
-                maxFontSizeMultiplier={1.3}
-                style={[
-                  styles.iconText,
-                  styles.sevQuickText,
-                  // {n}+ is TEXT (4.5 floor): textStrong at rest; on the active
-                  // severity fill use the severity's own AA-audited ink (sev1-4
-                  // #0F1B2D, sev5 #fff) — plain white here failed 2.2–3.6:1.
-                  minSeverity > 1
-                    ? { color: severity[minSeverity].textOnColor }
-                    : { color: color.textStrong },
-                ]}
-              >
-                {minSeverity}+
-              </AppText>
+              <MoreHorizontal
+                size={22}
+                color={toolsOpen ? color.textOnBrand : barIconColor}
+                strokeWidth={2.2}
+              />
             </PressableScale>
-            <View style={styles.actionDivider} accessibilityElementsHidden />
-            <PressableScale
-              onPress={cycleCategory}
-              style={[
-                styles.actionBtn,
-                styles.catQuickBtn,
-                catCycleActive && styles.actionBtnActive,
-              ]}
-              pressedTint={catCycleActive ? color.ctaFillPressed : color.borderPressed}
-              accessibilityRole="button"
-              accessibilityLabel={
-                catCycleActive && catCycleActiveCat !== null
-                  ? `Category filter: ${CATEGORY_LABELS[catCycleActiveCat]} only`
-                  : 'Category filter: all categories'
-              }
-              accessibilityHint="Tap to cycle through category filters"
-            >
-              {catCycleActive && catCycleActiveCat !== null ? (
-                <CategoryIcon
-                  category={catCycleActiveCat}
-                  size={19}
-                  color={color.textOnBrand}
-                  decorative
-                />
-              ) : (
-                <Shapes size={19} color={color.inkSelect} strokeWidth={2.2} />
-              )}
-            </PressableScale>
-            <View style={styles.actionDivider} accessibilityElementsHidden />
-            <PressableScale
-              onPress={() => { refreshFlags().catch(() => {}); }}
-              style={styles.actionBtn}
-              accessibilityRole="button"
-              accessibilityLabel="Refresh flags"
-            >
-              <RotateCw size={19} color={color.inkSelect} strokeWidth={2.2} />
-            </PressableScale>
-            <View style={styles.actionDivider} accessibilityElementsHidden />
-            <PressableScale
-              onPress={requestLocation}
-              style={styles.actionBtn}
-              accessibilityRole="button"
-              accessibilityLabel="Recenter on me"
-            >
-              <LocateFixed size={19} color={color.inkSelect} strokeWidth={2.2} />
-            </PressableScale>
-            </ScrollView>
-            {/* S16 (L5-05): fade edge cueing that tools continue past the tray
-                edge when it overflows. Decorative + pointer-inert, so the map
-                gesture law (the box-none overlay) is untouched, and the 44x44
-                buttons are unchanged (the fade wraps AROUND the ScrollView). */}
-            <OverflowFade visible={actionBarHasMore} edge="pill" />
-          </GlassSurface>
-        </View>
+          </View>
+        </GlassSurface>
 
         {/* Offline notice — parity with TasksScreen. The map still shows the
             last cached flags; this tells the user why they may be stale. */}
@@ -1942,65 +1817,68 @@ export default function MapScreen() {
           </View>
         )}
 
-        {/* Saved Places chip row — shown only when signed in. Renders
-            quick-jump chips for each saved place plus a trailing "★ +"
-            chip that opens the manage modal (and acts as the first-add
-            affordance for users with no places yet). */}
-        {authUser && (
-          // QA A4: dropped the wrapping accessibilityLabel — without
-          // accessible={true} it was being ignored anyway, and each
-          // chip's own a11yLabel already describes what tapping does.
-          // Single-line scroller: up to 50 wrapping chips used to stack rows
-          // over the map (sweep minor). No cap — a cap silently hides places.
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={styles.placesRowScroll}
-            contentContainerStyle={styles.placesRowContent}
-            keyboardShouldPersistTaps="handled"
+        {/* ⋯ tool sheet (Direction B) — an inline panel-class surface (mirrors
+            the filter panel), NOT a Modal, so it never joins the dismissal-
+            standard Modal census. It carries the four tools demoted from the old
+            tray. The saved-places quick-jump chip row is retired (Q4): place
+            jumps live in SavedPlacesModal (reached via "Save a place"). */}
+        {toolsOpen && (
+          <GlassSurface
+            style={styles.toolSheet}
+            variant="row"
+            forceEngineered={glassLite}
+            overlayTint={color.glassMapWash}
+            borderRadius={radius.lg}
           >
-            {savedPlaces.map((place) => (
-              <Pressable
-                key={place.id}
-                onPress={() => {
-                  mapRef.current?.animateTo({
-                    latitude: place.lat,
-                    longitude: place.lng,
-                    latitudeDelta: 0.01,
-                    longitudeDelta: 0.01,
-                  });
-                }}
-                style={({ pressed }) => [styles.placeChip, pressed && styles.placeChipPressed]}
-                accessibilityRole="button"
-                accessibilityLabel={`Jump map to ${place.name}`}
-              >
-                <MapPin size={14} color="#1466E0" strokeWidth={2.2} />
-                <AppText variant="label" style={styles.placeChipText} numberOfLines={1}>
-                  {place.name}
-                </AppText>
-              </Pressable>
-            ))}
-            <Pressable
-              onPress={() => setPlacesOpen(true)}
-              style={({ pressed }) => [
-                styles.placeChip,
-                styles.placeChipManage,
-                pressed && styles.placeChipPressed,
-              ]}
+            <PressableScale
+              onPress={() => { setToolsOpen(false); setSharedModal('feedback'); }}
+              style={styles.toolRow}
+              accessibilityRole="button"
+              accessibilityLabel="Send feedback"
+              accessibilityHint="Opens a form to email feedback to the AccessMap owner"
+            >
+              <MessageSquare size={20} color={barIconColor} strokeWidth={2.2} {...decorativeProps} />
+              <AppText variant="label" style={styles.toolRowText}>Send feedback</AppText>
+            </PressableScale>
+            <PressableScale
+              onPress={() => {
+                // Focus-return is armed on the ⋯ button (legendTrigger.ref); the
+                // legend returns the SR cursor there on close. Close the sheet
+                // first so it isn't stranded behind the modal.
+                setToolsOpen(false);
+                legendTrigger.register();
+                setLegendOpen(true);
+              }}
+              style={styles.toolRow}
+              accessibilityRole="button"
+              accessibilityLabel="Map legend"
+              accessibilityHint="Opens a guide explaining flag categories and severity"
+            >
+              <HelpCircle size={20} color={barIconColor} strokeWidth={2.2} {...decorativeProps} />
+              <AppText variant="label" style={styles.toolRowText}>Map legend</AppText>
+            </PressableScale>
+            <PressableScale
+              onPress={() => { setToolsOpen(false); refreshFlags().catch(() => {}); }}
+              style={styles.toolRow}
+              accessibilityRole="button"
+              accessibilityLabel="Refresh flags"
+            >
+              <RotateCw size={20} color={barIconColor} strokeWidth={2.2} {...decorativeProps} />
+              <AppText variant="label" style={styles.toolRowText}>Refresh flags</AppText>
+            </PressableScale>
+            <PressableScale
+              onPress={() => { setToolsOpen(false); setPlacesOpen(true); }}
+              style={styles.toolRow}
               accessibilityRole="button"
               accessibilityLabel={savedPlaces.length === 0 ? 'Save a place' : 'Manage saved places'}
-              accessibilityHint="Opens the saved places list to add, rename, or remove"
+              accessibilityHint="Opens the saved places list to add, rename, remove, or jump the map"
             >
-              <Star
-                size={16}
-                color="#1466E0"
-                strokeWidth={2.2} {...decorativeProps}
-              />
-              <AppText variant="label" style={styles.placeChipText}>
-                {savedPlaces.length === 0 ? 'Save a place' : 'Manage'}
+              <Star size={20} color={barIconColor} strokeWidth={2.2} {...decorativeProps} />
+              <AppText variant="label" style={styles.toolRowText}>
+                {savedPlaces.length === 0 ? 'Save a place' : 'Saved places'}
               </AppText>
-            </Pressable>
-          </ScrollView>
+            </PressableScale>
+          </GlassSurface>
         )}
 
         {filtersOpen && (
@@ -2549,8 +2427,10 @@ export default function MapScreen() {
             // DARK in dark mode (only the blur tint was pinned before). Now the
             // neutral "finding your location" banner reads identically in any
             // palette, over any tile. (Semantic alert banners stay solid.)
+            // Map-chrome compaction: joins the 0.65 pin family with the legend +
+            // heat notice (#333 = 5.17:1 on the 0.65 floor — arbiter-proved).
             tint="light"
-            tintColor="rgba(255,255,255,0.82)"
+            tintColor="rgba(255,255,255,0.65)"
             solidColor="rgba(255,255,255,0.95)"
             accessibilityRole="text"
             accessibilityLiveRegion="polite"
@@ -2593,20 +2473,42 @@ export default function MapScreen() {
 
         {/* Jordan Art. 7 disclaimer — shown whenever the heat layer is active.
             Must be visible (not buried in the filter panel) per the conditional
-            pass: "Heat zones only appear where at least 3 flags have been
-            reported. Based on community reports — coverage varies by area." */}
-        {heatmapEnabled && (
-          <View
-            style={styles.heatmapDisclaimer}
-            accessible
-            accessibilityRole="text"
-            accessibilityLiveRegion="polite"
+            pass. The black #1a1a1a slab becomes a translucent always-light 0.65
+            pin (8.28→6.52:1 on #222, the map glows through it). Q1 (Sky): a
+            session-dismiss X, re-shown on every heat re-enable. Copy is
+            BYTE-FROZEN (Jordan-verified — LENS6 C2). A11Y-213: the GlassSurface
+            is not an accessible leaf; the text node carries the role + live
+            region, the X is its own reachable button. */}
+        {heatmapEnabled && !heatNoticeDismissed && (
+          <GlassSurface
+            style={styles.heatNotice}
+            borderRadius={radius.md}
+            tint="light"
+            tintColor="rgba(255,255,255,0.65)"
+            solidColor="rgba(255,255,255,0.95)"
           >
-            <AppText variant="body" style={styles.heatmapDisclaimerText}>
-              Heat zones only appear where at least {DEFAULT_K_FLOOR} flags have been reported.
-              Based on community reports — coverage varies by area.
-            </AppText>
-          </View>
+            <View style={styles.heatNoticeRow}>
+              <AppText
+                variant="body"
+                style={[styles.heatNoticeText, styles.heatNoticeTextGrow]}
+                accessible
+                accessibilityRole="text"
+                accessibilityLiveRegion="polite"
+              >
+                Heat zones only appear where at least {DEFAULT_K_FLOOR} flags have been reported.
+                Based on community reports — coverage varies by area.
+              </AppText>
+              <Pressable
+                style={styles.heatNoticeClose}
+                onPress={() => setHeatNoticeDismissed(true)}
+                hitSlop={10}
+                accessibilityRole="button"
+                accessibilityLabel="Dismiss heat map notice"
+              >
+                <X size={16} color="#414B5A" strokeWidth={2.4} />
+              </Pressable>
+            </View>
+          </GlassSurface>
         )}
 
         {/* B7-A (L7-11): the disclaimer above states the k-threshold RULE but is
@@ -2616,16 +2518,23 @@ export default function MapScreen() {
             "on + empty" ≠ "broken". (heatCells is the global loaded set, not a
             viewport query, so the copy stays honest about coverage, not "view".) */}
         {heatmapEnabled && heatCells.length === 0 && filteredFlags.length > 0 && (
-          <View
-            style={styles.heatmapDisclaimer}
-            accessible
-            accessibilityRole="text"
-            accessibilityLiveRegion="polite"
+          <GlassSurface
+            style={styles.heatNotice}
+            borderRadius={radius.md}
+            tint="light"
+            tintColor="rgba(255,255,255,0.65)"
+            solidColor="rgba(255,255,255,0.95)"
           >
-            <AppText variant="body" style={styles.heatmapDisclaimerText}>
+            <AppText
+              variant="body"
+              style={styles.heatNoticeText}
+              accessible
+              accessibilityRole="text"
+              accessibilityLiveRegion="polite"
+            >
               No heat zones qualify yet — coverage grows as more reports come in.
             </AppText>
-          </View>
+          </GlassSurface>
         )}
         </View>
 
@@ -2636,36 +2545,82 @@ export default function MapScreen() {
               of overlapping the FABs at narrow widths (G6). */}
           <View style={styles.legendSlot}>{heatmapEnabled ? <HeatmapLegend /> : null}</View>
           <View style={styles.fabColumn}>
+            {/* Recenter — demoted from the old top tray into the FAB column, at the
+                top of the stack (Direction B, matches the governing mockup). A
+                crystal circle: the engineered crystal material sits behind a
+                brandTextAlt/inkSelect glyph so the map reads through it.
+                forceEngineered (never blur) → costs no blur-budget pane. */}
+            <PressableScale
+              style={styles.fabCrystal}
+              dimOnPress={false}
+              onPress={requestLocation}
+              accessibilityRole="button"
+              accessibilityLabel="Recenter on me"
+            >
+              <GlassSurface
+                variant="row"
+                forceEngineered
+                liteColors={[color.glassMapCrystal0, color.glassMapCrystal1]}
+                borderRadius={radius.circle}
+                style={StyleSheet.absoluteFill}
+                pointerEvents="none"
+              />
+              <LocateFixed size={22} color={barIconColor} strokeWidth={2.2} />
+            </PressableScale>
             {/* S6: app-styled 44pt+ zoom buttons — the reachable, pointer-live
                 zoom affordance replacing Leaflet's occluded default control (web)
                 and iOS's missing single-pointer zoom-out (WCAG 2.5.5 / 2.5.7).
-                Opaque ctaFill + white glyph (map tiles unreachable beneath them);
-                box-none group so only the buttons themselves take touches. */}
+                Crystal circles in Phase 3 (Sky's Q3: zoom/recenter/List crystal,
+                Report stays the one solid anchor); box-none group so only the
+                buttons themselves take touches. */}
             <View style={styles.zoomGroup} pointerEvents="box-none">
+              {/* Crystal zoom circles (Sky Q3). The old "opaque ctaFill so map
+                  tiles are unreachable beneath them" rationale gives way to her
+                  crystal call; glyphs darken to brandTextAlt/inkSelect (arbiter
+                  3.20/3.71). dimOnPress={false} — the glass hides a bg dim, so
+                  feedback is the scale spring + haptic (List-FAB precedent). */}
               <PressableScale
-                style={[styles.fab, styles.zoomBtn]}
-                pressedTint={color.ctaFillPressed}
+                style={styles.fabCrystal}
+                dimOnPress={false}
                 onPress={() => mapRef.current?.zoomBy(1)}
                 accessibilityRole="button"
                 accessibilityLabel="Zoom in"
               >
-                <Plus size={22} color={color.textOnBrand} strokeWidth={2.6} />
+                <GlassSurface
+                  variant="row"
+                  forceEngineered
+                  liteColors={[color.glassMapCrystal0, color.glassMapCrystal1]}
+                  borderRadius={radius.circle}
+                  style={StyleSheet.absoluteFill}
+                  pointerEvents="none"
+                />
+                <Plus size={22} color={barIconColor} strokeWidth={2.6} />
               </PressableScale>
               <PressableScale
-                style={[styles.fab, styles.zoomBtn]}
-                pressedTint={color.ctaFillPressed}
+                style={styles.fabCrystal}
+                dimOnPress={false}
                 onPress={() => mapRef.current?.zoomBy(-1)}
                 accessibilityRole="button"
                 accessibilityLabel="Zoom out"
               >
-                <Minus size={22} color={color.textOnBrand} strokeWidth={2.6} />
+                <GlassSurface
+                  variant="row"
+                  forceEngineered
+                  liteColors={[color.glassMapCrystal0, color.glassMapCrystal1]}
+                  borderRadius={radius.circle}
+                  style={StyleSheet.absoluteFill}
+                  pointerEvents="none"
+                />
+                <Minus size={22} color={barIconColor} strokeWidth={2.6} />
               </PressableScale>
             </View>
             <PressableScale
               ref={nearbyTrigger.ref}
-              style={[styles.fab, styles.fabSecondary]}
-              // List label is color.brand (15px bold → 4.5 floor); a neutral grey
-              // dim drops it to ~4.2:1. Keep spring + haptic, skip the fill dim.
+              style={styles.fabCrystalPill}
+              // Crystal List pill (Sky Q3). The word "List" (15px bold = NOT
+              // WCAG-large) needs 4.5, so it darkens from color.brand to
+              // textStrong on the thin crystal (arbiter 5.58/5.40); the icon
+              // takes the crystal ink. dimOnPress={false} — glass hides a dim.
               dimOnPress={false}
               onPress={() => {
                 // register() captures this button's native handle BEFORE the
@@ -2681,9 +2636,17 @@ export default function MapScreen() {
                   : 'Opens an accessible list of the most recent flags'
               }
             >
+              <GlassSurface
+                variant="row"
+                forceEngineered
+                liteColors={[color.glassMapCrystal0, color.glassMapCrystal1]}
+                borderRadius={radius.circle}
+                style={StyleSheet.absoluteFill}
+                pointerEvents="none"
+              />
               <View style={styles.fabSecondaryRow}>
-                <List size={16} color={color.brand} strokeWidth={2.2} />
-                <AppText variant="label" style={styles.fabSecondaryText}>List</AppText>
+                <List size={16} color={barIconColor} strokeWidth={2.2} />
+                <AppText variant="label" style={styles.fabCrystalText}>List</AppText>
               </View>
             </PressableScale>
             {/* Jordan Condition 2: hide Report FAB for guest users.
@@ -3150,136 +3113,91 @@ const makeStyles = (color: ColorTheme) =>
     // filterPanel's own flexShrink/maxHeight bound still engages against the
     // absolute-fill overlay. Never give this flex:1 or a fixed height.
     overlayTopGroup: { flexShrink: 1 },
-    // S8 map editorial header (treatment ii). The row is box-none; only the
-    // content-hugging chip + the action circles are opaque. Inks reuse the map
-    // overlay's proven always-light glass tokens (map-stacks.json) — no arbiter.
-    mapHeaderRow: {
-      flexDirection: 'row',
-      alignItems: 'flex-start',
-      justifyContent: 'space-between',
-      // T1: mirrored by MAP_HEADER_ROW_MARGIN_BOTTOM in the chrome-band measure.
-      marginBottom: MAP_HEADER_ROW_MARGIN_BOTTOM,
-    },
-    mapHeaderChip: {
-      // T13/F2-12: snap the last off-scale stray in this touched style to a token.
-      // Horizontal only (width) — it does not feed T1's chrome-band HEIGHT measure.
-      paddingHorizontal: spacing.md,
-      paddingVertical: 8,
-      alignItems: 'flex-start',
-    },
-    // T13 (F2-05): the menu + Feedback circles as ONE right-pinned pair, so the
-    // space-between row can no longer strand the menu circle mid-air. box-none
-    // keeps the map pannable through the gap between the two discrete 44pt targets.
-    mapHeaderActions: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
-    mapHeaderEyebrow: {
-      fontSize: font.size.xs,
-      letterSpacing: 1.2,
-      color: color.inkGlassMuted,
-      fontWeight: font.weight.semibold,
-    },
-    mapHeaderTitle: { color: color.textStrong, marginTop: 0 },
-    topRow: { flexDirection: 'row', gap: 8, alignItems: 'flex-start', flexWrap: 'wrap' },
-    // Saved Places chip row — slim secondary single-line scroller beneath the
-    // action bar. Pattern-B pins (guard Rule 4) on the scroller; layout lives
-    // on the content container.
-    placesRowScroll: { flexGrow: 0, flexShrink: 0, marginTop: 8 },
-    placesRowContent: { flexDirection: 'row', gap: 6 },
-    placeChip: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 6,
-      paddingHorizontal: 12,
-      paddingVertical: 10,
-      backgroundColor: 'rgba(255,255,255,0.95)',
+    // Direction B command bar (Sky-locked B-refined). ONE crystal pill replaces
+    // the old title row + pill/tray row. GlassSurface variant="row" owns the
+    // material (liteColors = the crystal tokens); this outer style carries only
+    // radius / padding / margin / shadow. Shadow light-only (over dark chrome the
+    // dark e-drop reads as muddy fringing, not lift — statusPill precedent).
+    commandBar: {
       borderRadius: radius.circle,
-      // 44pt is the AccessMap baseline touch target (Apple HIG + Android
-      // a11y minimum + WCAG 2.5.5). Bumped from 36 per QA A1.
-      minHeight: 44,
-      maxWidth: 180,
-      ...shadow.e1,
-    },
-    // Place chips are PINNED ALWAYS-LIGHT (white 0.95 fill in both themes, like
-    // the heatmap legend) — so every ink/tint here is a light-mode literal, not
-    // a themed token. Themed inks broke over the white fill in dark mode:
-    // brandTextAlt → #84AEF6 = 2.0:1, and surfaceNeutral flashed near-black on
-    // press. The trailing manage chip keeps its tinted background.
-    // Fill-swap dim (the pinned-light literal, per the note above); the group
-    // opacity that used to ride here dimmed the label too (dropped in BP11).
-    placeChipPressed: { backgroundColor: '#EEF1F5' },
-    placeChipManage: { backgroundColor: '#EEF4FE' },
-    placeChipGlyph: { fontSize: 14, color: '#1466E0' },
-    placeChipText: { fontSize: 13, fontWeight: '600', color: '#0E4499' },
-    statusPill: {
-      // Deep Field row-tier via <GlassSurface variant="row" forceEngineered>
-      // (Map pass) — no backgroundColor here, the surface owns the translucent
-      // fill + AA floor. Shadow only in light: over the engineered dark chrome
-      // the e1 drop (dark #0F1B2D) reads as muddy fringing, not lift.
-      alignSelf: 'flex-start',
-      paddingHorizontal: 12,
-      paddingVertical: 8,
-      borderRadius: radius.circle,
-      ...(color.scheme === 'light' ? shadow.e1 : {}),
-    },
-    statusText: { fontSize: 13, color: color.textStrong, fontWeight: '600' },
-    iconBtn: {
-      width: 36,
-      height: 36,
-      borderRadius: radius.circle,
-      backgroundColor: color.overlaySoft,
-      alignItems: 'center',
-      justifyContent: 'center',
-      ...shadow.e1,
-    },
-    iconText: { fontSize: 18, fontWeight: '700' },
-    iconBtnActive: { backgroundColor: color.brand },
-    iconTextActive: { color: color.textOnBrand },
-    // Quick-cycle severity button — slightly wider than the round icon buttons
-    // to fit the "{n}+" label without crowding the glyph against the edges.
-    sevQuickBtn: { width: 44 },
-    sevQuickText: { fontSize: 14 },
-    // Quick-cycle category button — same sizing/treatment as the severity
-    // button; shows the category icon glyph or "⊕" for "all categories."
-    catQuickBtn: { width: 44 },
-    catQuickText: { fontSize: 15 },
-    // Grouped action bar — wraps the icon buttons in one elevated white
-    // surface with thin internal dividers so they read as a single
-    // connected tool tray instead of four free-floating circles. Replaces
-    // the cheap "scattered buttons" look the user called out.
-    actionBar: {
-      // Deep Field row-tier via <GlassSurface variant="row" forceEngineered>
-      // (Map pass). No border here — the row variant paints its own hairline
-      // edge, so a second borderWidth would double it. Shadow light-only (see
-      // statusPill note).
-      flexDirection: 'row',
-      borderRadius: radius.circle,
-      paddingHorizontal: 4,
-      paddingVertical: 2,
-      alignItems: 'center',
-      // Yields inside topRow so the inner tray ScrollView gets a bounded
-      // viewport at narrow widths (M11) instead of bleeding off-screen.
-      flexShrink: 1,
+      paddingHorizontal: 6,
+      paddingVertical: 4,
+      marginBottom: spacing.sm,
       ...(color.scheme === 'light' ? shadow.e2 : {}),
     },
-    // Pattern-B pins (guard Rule 4): a horizontal scroller inside a bounded
-    // flex parent must never grow/shrink on its cross axis.
-    actionBarScroll: { flexGrow: 0, flexShrink: 0 },
-    actionBarScrollContent: { flexDirection: 'row', alignItems: 'center' },
-    // T14 (F2-07): the position:relative wrapper each silent chip rail gets so its
-    // absolute OverflowFade edge pins to that rail's right edge (not the panel).
-    // Redundant on native (Views default relative) but required on the web export.
-    overflowFadeWrap: { position: 'relative' },
-    actionBtn: {
-      minWidth: 44, // WCAG 2.5.5: was 36pt (below 44pt project standard)
+    commandBarInner: { flexDirection: 'row', alignItems: 'center', gap: 2 },
+    // Bar icon buttons (menu / search / filters / ⋯) — transparent on the crystal
+    // pane; the active state fills ctaFill with a white glyph (filters + ⋯).
+    barBtn: {
+      minWidth: 44,
       minHeight: 44,
       alignItems: 'center',
       justifyContent: 'center',
       borderRadius: radius.circle,
     },
-    actionBtnActive: { backgroundColor: color.ctaFill },
-    actionDivider: {
-      width: 1,
-      height: 18,
-      backgroundColor: color.border,
+    barBtnActive: { backgroundColor: color.ctaFill },
+    // Title + count cluster. box-none in the JSX so the map pans through it; the
+    // Phase-5 long-press glass-flip lands on this region.
+    barCenter: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, flexShrink: 1 },
+    // Long-press glass-flip wrapper (accessible={false}); flexShrink so a long
+    // title yields before the trailing buttons.
+    barTitleWrap: { flexShrink: 1 },
+    barTitle: { color: color.textStrong, marginTop: 0, flexShrink: 1 },
+    // Count pill — its OWN crystal fill (glassMapCrystal0) over the bar floor so
+    // glassChipInk clears AA (arbiter countChip 9.61 / 12.21). Non-interactive.
+    countChip: {
+      backgroundColor: color.glassMapCrystal0,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: color.glassChipEdge,
+      borderRadius: radius.circle,
+      paddingHorizontal: 10,
+      paddingVertical: 3,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    countChipText: { fontSize: 13, color: color.glassChipInk, fontWeight: '700' },
+    // The pannable gap — box-none in the JSX so the bar is never a full-width
+    // touch-opaque strip (the map shows through here).
+    barSpacer: { flex: 1, minWidth: spacing.sm },
+    // T14 (F2-07): the position:relative wrapper each silent filter-panel chip
+    // rail gets so its absolute OverflowFade edge pins to that rail's right edge
+    // (not the panel). Redundant on native, required on the web export.
+    overflowFadeWrap: { position: 'relative' },
+    // ⋯ tool sheet — a right-aligned inline panel (mirrors the filter panel's
+    // washed row material). Holds the four demoted tools as labelled rows.
+    toolSheet: {
+      alignSelf: 'flex-end',
+      marginBottom: spacing.sm,
+      minWidth: 210,
+      maxWidth: 320,
+      borderRadius: radius.lg,
+      padding: spacing.xs,
+      gap: spacing.tight,
+      ...(color.scheme === 'light' ? shadow.e2 : {}),
+    },
+    toolRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+      minHeight: 44,
+      borderRadius: radius.md,
+    },
+    // On-glass body ink (color.text = 7.67 L / 6.67 D over the wash) — the muted
+    // face is banned on glass (GLASS §7.4).
+    toolRowText: { fontSize: font.size.sm, color: color.text, fontWeight: font.weight.semibold },
+    // Crystal FAB circle (recenter here; zoom + List join in Phase 3). The glass
+    // is an absolute-fill child; this style carries size + the light-only shadow
+    // (no overflow:hidden — the GlassSurface self-clips, and hidden would eat the
+    // shadow on iOS).
+    fabCrystal: {
+      width: 48,
+      height: 48,
+      borderRadius: radius.circle,
+      alignItems: 'center',
+      justifyContent: 'center',
+      ...(color.scheme === 'light' ? shadow.e1 : {}),
     },
     filterPanel: {
       marginTop: spacing.sm,
@@ -3521,22 +3439,33 @@ const makeStyles = (color: ColorTheme) =>
     // of whether the filter panel is open. Semi-transparent so it doesn't
     // fully obscure the map edge, muted font so it reads as informational
     // (not an error) and doesn't compete with the HeatmapLegend swatches.
-    heatmapDisclaimer: {
+    // Heat notice (both the Art. 7 rule + the "no zones qualify" outcome). The
+    // #1a1a1a black slab is retired for a translucent always-light 0.65 pin (the
+    // GlassSurface owns the surface — no backgroundColor here). #222 ink at ≥500
+    // weight clears the glass type law + the arbiter (6.52:1 worst-case).
+    heatNotice: {
       alignSelf: 'stretch',
-      // WCAG 1.4.3: solid colours guarantee contrast on any map tile background.
-      // rgba(0,0,0,0.55) + rgba(255,255,255,0.85) fell to ~2.5:1 on light OSM tiles.
-      backgroundColor: '#1a1a1a',
       borderRadius: radius.md,
       paddingHorizontal: 12,
       paddingVertical: 7,
       marginBottom: 8,
     },
-    heatmapDisclaimerText: {
+    heatNoticeRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 6 },
+    heatNoticeText: {
       fontSize: font.size.caption,
-      // textOnBrand (#fff) on forced dark surface (#1a1a1a) = 18.1:1 — WCAG AA pass.
-      color: color.textOnBrand,
+      color: '#222', // pinned-light literal, ≥500 weight (glass type law)
+      fontWeight: '500',
       lineHeight: 15,
-      textAlign: 'center',
+    },
+    // In the dismissible (row) form the text grows so the X pins to the right.
+    heatNoticeTextGrow: { flex: 1 },
+    // 24pt glyph box + hitSlop 10 = 44 effective (the house small-target idiom).
+    heatNoticeClose: {
+      width: 24,
+      height: 24,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginTop: -1,
     },
     bottomBar: {
       flexDirection: 'row',
@@ -3560,18 +3489,10 @@ const makeStyles = (color: ColorTheme) =>
       alignItems: 'flex-end',
       gap: 10,
     },
-    zoomBtn: {
-      width: 48,
-      height: 48,
-      paddingHorizontal: 0,
-      paddingVertical: 0,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
     fab: {
-      // ctaFill (mode-independent) — the Report FAB rides this base; plain
-      // color.brand dropped its white text to 3.4:1 in dark. The List FAB
-      // overrides bg to color.overlay (fabSecondary) and keeps color.brand ink (F4).
+      // ctaFill (mode-independent) — the SOLID Report FAB rides this base (Sky's
+      // one anchor, Q3); plain color.brand dropped its white text to 3.4:1 in
+      // dark. Zoom + List are now crystal (fabCrystal/fabCrystalPill).
       backgroundColor: color.ctaFill,
       paddingHorizontal: 20,
       paddingVertical: 14,
@@ -3580,9 +3501,21 @@ const makeStyles = (color: ColorTheme) =>
       minHeight: 48,
       justifyContent: 'center',
     },
-    fabSecondary: { backgroundColor: color.overlay },
+    // Crystal List pill (Sky Q3) — like `fab` but no solid fill (the GlassSurface
+    // absolute-fill child paints the crystal material). Shadow light-only.
+    fabCrystalPill: {
+      paddingHorizontal: 20,
+      paddingVertical: 14,
+      borderRadius: radius.circle,
+      minHeight: 48,
+      alignItems: 'center',
+      justifyContent: 'center',
+      ...(color.scheme === 'light' ? shadow.e2 : {}),
+    },
     fabSecondaryRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-    fabSecondaryText: { color: color.brand, fontWeight: '700', fontSize: 15 },
+    // List word on crystal: textStrong (5.58 L / 5.40 D) — color.brand would fail
+    // 4.5 on the thin crystal (a 15px-bold label is NOT WCAG-large).
+    fabCrystalText: { color: color.textStrong, fontWeight: '700', fontSize: 15 },
     // Shared icon+label row. Replaces two identical inline
     // `{ flexDirection:'row', alignItems:'center', gap:6 }` objects (Save-preset
     // button + Report FAB) that were re-allocated on every MapScreen render.
