@@ -46,6 +46,7 @@ import {
   SlidersHorizontal,
   Star,
   WifiOff,
+  X,
 } from 'lucide-react-native';
 import {
   CATEGORY_LABELS,
@@ -548,6 +549,9 @@ export default function MapScreen() {
   // gates the save-effect so we don't clobber the stored value during the
   // brief mount→load window.
   const [heatmapEnabled, setHeatmapEnabled] = useState(false);
+  // Q1 (Sky): the Art. 7 heat notice gains a session-dismiss X, re-shown on
+  // every heat re-enable (the reset effect lives just after the persist effect).
+  const [heatNoticeDismissed, setHeatNoticeDismissed] = useState(false);
   const [heatmapHydrated, setHeatmapHydrated] = useState(false);
   const [activeCategories, setActiveCategories] = useState<Set<FlagCategory>>(new Set());
   const [minSeverity, setMinSeverity] = useState<FlagSeverity>(1);
@@ -766,6 +770,12 @@ export default function MapScreen() {
     if (!heatmapHydrated) return;
     saveHeatmapEnabled(heatmapEnabled);
   }, [heatmapEnabled, heatmapHydrated]);
+
+  // Q1: re-show the heat notice whenever the heat layer is (re-)enabled. Keyed
+  // on the toggle only, so a dismiss sticks until the user turns heat off and on.
+  useEffect(() => {
+    if (heatmapEnabled) setHeatNoticeDismissed(false);
+  }, [heatmapEnabled]);
 
   // Apply a saved set: copy its filter triple over the active filters.
   // The existing save-effect below pushes the new values through to
@@ -2368,8 +2378,10 @@ export default function MapScreen() {
             // DARK in dark mode (only the blur tint was pinned before). Now the
             // neutral "finding your location" banner reads identically in any
             // palette, over any tile. (Semantic alert banners stay solid.)
+            // Map-chrome compaction: joins the 0.65 pin family with the legend +
+            // heat notice (#333 = 5.17:1 on the 0.65 floor — arbiter-proved).
             tint="light"
-            tintColor="rgba(255,255,255,0.82)"
+            tintColor="rgba(255,255,255,0.65)"
             solidColor="rgba(255,255,255,0.95)"
             accessibilityRole="text"
             accessibilityLiveRegion="polite"
@@ -2412,20 +2424,42 @@ export default function MapScreen() {
 
         {/* Jordan Art. 7 disclaimer — shown whenever the heat layer is active.
             Must be visible (not buried in the filter panel) per the conditional
-            pass: "Heat zones only appear where at least 3 flags have been
-            reported. Based on community reports — coverage varies by area." */}
-        {heatmapEnabled && (
-          <View
-            style={styles.heatmapDisclaimer}
-            accessible
-            accessibilityRole="text"
-            accessibilityLiveRegion="polite"
+            pass. The black #1a1a1a slab becomes a translucent always-light 0.65
+            pin (8.28→6.52:1 on #222, the map glows through it). Q1 (Sky): a
+            session-dismiss X, re-shown on every heat re-enable. Copy is
+            BYTE-FROZEN (Jordan-verified — LENS6 C2). A11Y-213: the GlassSurface
+            is not an accessible leaf; the text node carries the role + live
+            region, the X is its own reachable button. */}
+        {heatmapEnabled && !heatNoticeDismissed && (
+          <GlassSurface
+            style={styles.heatNotice}
+            borderRadius={radius.md}
+            tint="light"
+            tintColor="rgba(255,255,255,0.65)"
+            solidColor="rgba(255,255,255,0.95)"
           >
-            <AppText variant="body" style={styles.heatmapDisclaimerText}>
-              Heat zones only appear where at least {DEFAULT_K_FLOOR} flags have been reported.
-              Based on community reports — coverage varies by area.
-            </AppText>
-          </View>
+            <View style={styles.heatNoticeRow}>
+              <AppText
+                variant="body"
+                style={[styles.heatNoticeText, styles.heatNoticeTextGrow]}
+                accessible
+                accessibilityRole="text"
+                accessibilityLiveRegion="polite"
+              >
+                Heat zones only appear where at least {DEFAULT_K_FLOOR} flags have been reported.
+                Based on community reports — coverage varies by area.
+              </AppText>
+              <Pressable
+                style={styles.heatNoticeClose}
+                onPress={() => setHeatNoticeDismissed(true)}
+                hitSlop={10}
+                accessibilityRole="button"
+                accessibilityLabel="Dismiss heat map notice"
+              >
+                <X size={16} color="#414B5A" strokeWidth={2.4} />
+              </Pressable>
+            </View>
+          </GlassSurface>
         )}
 
         {/* B7-A (L7-11): the disclaimer above states the k-threshold RULE but is
@@ -2435,16 +2469,23 @@ export default function MapScreen() {
             "on + empty" ≠ "broken". (heatCells is the global loaded set, not a
             viewport query, so the copy stays honest about coverage, not "view".) */}
         {heatmapEnabled && heatCells.length === 0 && filteredFlags.length > 0 && (
-          <View
-            style={styles.heatmapDisclaimer}
-            accessible
-            accessibilityRole="text"
-            accessibilityLiveRegion="polite"
+          <GlassSurface
+            style={styles.heatNotice}
+            borderRadius={radius.md}
+            tint="light"
+            tintColor="rgba(255,255,255,0.65)"
+            solidColor="rgba(255,255,255,0.95)"
           >
-            <AppText variant="body" style={styles.heatmapDisclaimerText}>
+            <AppText
+              variant="body"
+              style={styles.heatNoticeText}
+              accessible
+              accessibilityRole="text"
+              accessibilityLiveRegion="polite"
+            >
               No heat zones qualify yet — coverage grows as more reports come in.
             </AppText>
-          </View>
+          </GlassSurface>
         )}
         </View>
 
@@ -3346,22 +3387,33 @@ const makeStyles = (color: ColorTheme) =>
     // of whether the filter panel is open. Semi-transparent so it doesn't
     // fully obscure the map edge, muted font so it reads as informational
     // (not an error) and doesn't compete with the HeatmapLegend swatches.
-    heatmapDisclaimer: {
+    // Heat notice (both the Art. 7 rule + the "no zones qualify" outcome). The
+    // #1a1a1a black slab is retired for a translucent always-light 0.65 pin (the
+    // GlassSurface owns the surface — no backgroundColor here). #222 ink at ≥500
+    // weight clears the glass type law + the arbiter (6.52:1 worst-case).
+    heatNotice: {
       alignSelf: 'stretch',
-      // WCAG 1.4.3: solid colours guarantee contrast on any map tile background.
-      // rgba(0,0,0,0.55) + rgba(255,255,255,0.85) fell to ~2.5:1 on light OSM tiles.
-      backgroundColor: '#1a1a1a',
       borderRadius: radius.md,
       paddingHorizontal: 12,
       paddingVertical: 7,
       marginBottom: 8,
     },
-    heatmapDisclaimerText: {
+    heatNoticeRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 6 },
+    heatNoticeText: {
       fontSize: font.size.caption,
-      // textOnBrand (#fff) on forced dark surface (#1a1a1a) = 18.1:1 — WCAG AA pass.
-      color: color.textOnBrand,
+      color: '#222', // pinned-light literal, ≥500 weight (glass type law)
+      fontWeight: '500',
       lineHeight: 15,
-      textAlign: 'center',
+    },
+    // In the dismissible (row) form the text grows so the X pins to the right.
+    heatNoticeTextGrow: { flex: 1 },
+    // 24pt glyph box + hitSlop 10 = 44 effective (the house small-target idiom).
+    heatNoticeClose: {
+      width: 24,
+      height: 24,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginTop: -1,
     },
     bottomBar: {
       flexDirection: 'row',

@@ -58,4 +58,16 @@
 **Gate results:** `typecheck` 0 · arbiter **ALL PASS** (unchanged pairs) · `jest` **2942 passed, 0 fail** · `lint` 0 err / 74 warn (== baseline).
 
 ---
-*(Phases 4–6 appended as they bank.)*
+
+## Phase 4 — Disclosure surfaces (heat notice → glass + X · legend → 0.65 + close-X → chip) ✅ (commit 4)
+**What changed**
+- **Heat notice** (`MapScreen.tsx`): the black `#1a1a1a` slab (both the Art. 7 rule notice + the "no zones qualify" outcome line) becomes a **translucent always-light 0.65 pin** legacy `GlassSurface` (the map glows through). Ink `#222` at **weight 500** (glass type law). **Copy byte-frozen** (Jordan LENS6 C2 — unchanged). Q1: the main notice gains a **session-dismiss X** (`heatNoticeDismissed`, reset by an effect keyed on `heatmapEnabled` → **re-shows on every heat re-enable**). A11Y-213: GlassSurface is not an accessible leaf — the text node carries role + live region, the X is its own reachable button. The heat-empty companion keeps its condition + copy + live region (MapScreenHeatEmpty green).
+- **HeatmapLegend** rebuilt: floor **0.82 → 0.65**, inks **→ #222** (arbiter 6.52), **close-X** (own reachable button, "Collapse heat map legend") **→ collapses to a min-44pt "Legend" chip** ("Show heat map legend"). **Auto re-expand on heat re-toggle falls out for free** — MapScreen only mounts `<HeatmapLegend/>` while heat is on, so an off→on cycle remounts it and the local `collapsed` state resets. A11Y-213 restructure: non-accessible container, accessible summary node (image role + label), separate collapsed branch.
+- **Locating banner** joins the 0.65 pin family (§0.5③); ink `#333` = 5.17 on the thinner floor (arbiter).
+
+**Guard rewritten (authorized):** `HeatmapLegend.test.tsx` — repinned to the new structure (6 text nodes expanded · summary carries image role/accessible/label · close-X its own button · separate collapse-to-chip branch that re-expands). 7/7 pass.
+
+**Gate results:** `typecheck` 0 · arbiter **ALL PASS** (pin065: #222 6.52, #414B5A 3.62, #333 5.17) · `jest` **199 suites, 2939 passed, 0 fail** (MapScreenHeatEmpty untouched-green) · `lint` 0 err / 74 warn (== baseline).
+
+---
+*(Phases 5–6 appended as they bank.)*
