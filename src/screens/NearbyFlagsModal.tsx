@@ -209,6 +209,22 @@ export default function NearbyFlagsModal({
       onRequestClose={onClose}
       onDismiss={onDismiss}
       presentationStyle="pageSheet"
+      // THE ONE PROP THAT MAKES THE GRABBER HONEST (map-gestures SPEC §2.2).
+      // RN 0.81.5 sets modalInPresentation = YES on every Modal
+      // (RCTModalHostView.m:38), which BLOCKS iOS's interactive sheet dismissal.
+      // The blocked drag still reached us — presentationControllerDidAttemptTo-
+      // Dismiss fires onRequestClose (RCTModalHostView.m:75-80) — so the sheet
+      // rubber-banded, refused to follow the finger, and THEN closed. State-safe,
+      // but it read as broken, under a grabber pill advertising a drag.
+      //
+      // This flips modalInPresentation to NO (RCTModalHostView.m:54-59), handing
+      // the gesture to UIKit: real finger tracking, real threshold, real
+      // spring-back on cancel. On completion RN calls onRequestClose (:82-87),
+      // so `onClose` runs exactly as it does for the X — same handler, so the
+      // focus-return contract (release/restore) is inherited untouched.
+      // RN dev-asserts onRequestClose is present with this prop (Modal.js:204).
+      // iOS-only; Android pageSheet is ~fullscreen and keeps hardware back.
+      allowSwipeDismissal
       aria-label="Nearby flags"
     >
       {/* Bulk-glass fills the whole pageSheet edge-to-edge (Sky device pick D10);

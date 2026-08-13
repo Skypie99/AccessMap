@@ -94,6 +94,9 @@ export default function HowToHelpScreen({ visible, onClose }: Props) {
       animationType={reducedMotion ? 'none' : 'slide'}
       presentationStyle="pageSheet"
       onRequestClose={onClose}
+      // Native iOS sheet swipe — see NearbyFlagsModal for the full why. One
+      // gesture grammar across the pageSheet class; the Close button stays.
+      allowSwipeDismissal
       aria-label="How To Help"
     >
       <SafeAreaView
