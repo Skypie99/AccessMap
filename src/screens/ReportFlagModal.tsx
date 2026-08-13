@@ -16,7 +16,10 @@ import {
 import { AppText } from '@/components/ui/AppText';
 import { GlassSurface } from '@/components/ui/GlassSurface';
 import { OverflowFade } from '@/components/ui/OverflowFade';
+import { SheetGrabber } from '@/components/ui/Sheet';
+import { SheetPull, useAtTop } from '@/components/ui/SheetPull';
 import { useHorizontalOverflowFade } from '@/hooks/useHorizontalOverflowFade';
+import { useKeyboardVisible } from '@/hooks/useKeyboardVisible';
 import { hapticNotify, hapticSelection } from '@/lib/haptics';
 import { Accessibility, Brain, Camera, Check, Construction, Ear, Eye, Lock, MapPin } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -112,6 +115,15 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
   const { user } = useAuth();
   const isAnon = !user;
   const reducedMotion = useReducedMotion();
+  // Pull-to-dismiss gating (map-gestures SPEC §2.6). `atTop` is the half of the
+  // rule that keeps this form usable: mid-scroll, a downward drag belongs to the
+  // ScrollView, never to the dismissal. `keyboardVisible` is the other gate —
+  // while typing, a drag means "put the keyboard away", not "throw my report
+  // away". A dismissed draft is not lost either way: the sheet only reset()s
+  // after a SUCCESSFUL submit, so reopening restores everything.
+  const { atTop, onScroll, scrollEventThrottle } = useAtTop();
+  const keyboardVisible = useKeyboardVisible();
+  const scrollRef = useRef(null);
   // Non-throwing context read — render tests mount without a provider (the
   // M15 family recipe; see MyWatchedModal).
   const insets = React.useContext(SafeAreaInsetsContext) ?? { top: 0, bottom: 0, left: 0, right: 0 };
@@ -561,6 +573,19 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           style={styles.kav}
         >
+        {/* Pull-down-to-dismiss. The card is the drag target; the containment
+            node, the escape handler and the 88%-cap chain below are untouched —
+            SheetPull only adds a transform wrapper. `onDismiss={onClose}` is the
+            same handler the Cancel button and onRequestClose use, so the swipe
+            inherits the focus-return contract instead of forking a second
+            dismissal path. Guarded by !submitting exactly like Cancel: the
+            gesture must never be the one door that closes a submitting sheet. */}
+        <SheetPull
+          onDismiss={onClose}
+          enabled={!submitting && !keyboardVisible}
+          atTop={atTop}
+          simultaneousHandlers={scrollRef}
+        >
         <GlassSurface
           variant="bulk"
           borderRadius={0}
@@ -577,12 +602,23 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
             if (!submitting) onClose();
           }}
         >
+          {/* The drag affordance. Every other sheet wearing this pill now backs
+              it with a real gesture; this one had no pill at all. AT-hidden by
+              the primitive — the labelled Cancel is the screen-reader door. */}
+          <SheetGrabber />
           {/* WCAG 1.4.4: content scrolls under the 88% cap; Cancel/Report
               buttons stay pinned as sticky footer. */}
           <ScrollView
+            ref={scrollRef}
             style={styles.scrollContent}
             contentContainerStyle={styles.scrollContentContainer}
             keyboardShouldPersistTaps="handled"
+            // Drag #1 puts the keyboard away (the pull is gated off while it is
+            // up); drag #2, from the top, dismisses the sheet. Without this the
+            // first drag with a keyboard open would feel dead.
+            keyboardDismissMode="on-drag"
+            onScroll={onScroll}
+            scrollEventThrottle={scrollEventThrottle}
             showsVerticalScrollIndicator={false}
             // iOS: inset the scroll content so the focused description input
             // isn't hidden behind the keyboard. iOS-only prop; false elsewhere.
@@ -1211,6 +1247,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
             </Pressable>
           </View>
         </GlassSurface>
+        </SheetPull>
         </KeyboardAvoidingView>
       </View>
     </Modal>

@@ -60,7 +60,9 @@ function walkTsx(dir: string): string[] {
  * rule that gestures AUGMENT, never replace, expressed as a string this file
  * can actually look for.
  */
-const ADOPTERS: readonly { rel: string; closeLabel: string }[] = [];
+const ADOPTERS: readonly { rel: string; closeLabel: string }[] = [
+  { rel: path.join('screens', 'ReportFlagModal.tsx'), closeLabel: 'Cancel and close' },
+];
 
 describe('SheetPull · the rails', () => {
   const primitiveSrc = stripComments(fs.readFileSync(PRIMITIVE, 'utf8'));
