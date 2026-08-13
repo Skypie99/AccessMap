@@ -19,6 +19,9 @@ import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 import { AppText } from '@/components/ui/AppText';
 import { GlassSurface } from '@/components/ui/GlassSurface';
 import { RemoteImage } from '@/components/ui/RemoteImage';
+import { SheetGrabber } from '@/components/ui/Sheet';
+import { SheetPull, useAtTop } from '@/components/ui/SheetPull';
+import { useKeyboardVisible } from '@/hooks/useKeyboardVisible';
 import { MessageCircle, Star, X } from 'lucide-react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
@@ -116,6 +119,12 @@ export default function FlagDetailModal({
   // SharedModalsHost precisely so it can present OVER a sheet like this one.
   const { setOpen } = useSharedModals();
   const [busy, setBusy] = useState(false);
+  // Pull-to-dismiss gates (map-gestures SPEC §2.6). `busy` mirrors the close
+  // button's own disabled state; `keyboardVisible` covers the comment box at the
+  // bottom of the body scroll. `atTop` is the dismiss-vs-scroll rule.
+  const { atTop, onScroll, scrollEventThrottle } = useAtTop();
+  const keyboardVisible = useKeyboardVisible();
+  const bodyScrollRef = useRef(null);
   const [flagPhotos, setFlagPhotos] = useState<GalleryPhoto[]>([]);
   const [isEditing, setIsEditing] = useState(false);
   const [editDesc, setEditDesc] = useState('');
@@ -1018,6 +1027,19 @@ export default function FlagDetailModal({
             render the lightbox as a sibling Modal (Android-stable pattern),
             and without this prop the focus could leak to Verify/Resolve
             buttons that are visually obscured. QA Pass-2 #2. */}
+          {/* Pull-down-to-dismiss. Same handler as the X and onRequestClose, so
+              the swipe is a shortcut to the existing close, never a second path.
+              Gated on !busy to match the X's own disabled state — a swipe must
+              not tear the sheet down mid-verify/resolve. The nested modals
+              (status history, report content, the photo lightbox) present ABOVE
+              this card and swallow touches themselves, so the pan cannot fire
+              underneath them. */}
+          <SheetPull
+            onDismiss={onClose}
+            enabled={!busy && !keyboardVisible}
+            atTop={atTop}
+            simultaneousHandlers={bodyScrollRef}
+          >
           <GlassSurface
             variant="bulk"
             borderRadius={0}
@@ -1026,6 +1048,7 @@ export default function FlagDetailModal({
             accessibilityViewIsModal
             onAccessibilityEscape={onClose}
           >
+            <SheetGrabber />
             <View style={styles.headerRow}>
               <AppText
                 ref={titleRef}
@@ -1051,8 +1074,12 @@ export default function FlagDetailModal({
             </View>
 
             <ScrollView
+              ref={bodyScrollRef}
               style={styles.body}
               contentContainerStyle={styles.bodyContent}
+              onScroll={onScroll}
+              scrollEventThrottle={scrollEventThrottle}
+              keyboardDismissMode="on-drag"
               showsVerticalScrollIndicator={false}
               // A11Y-228: the comment box sits at the very bottom of this
               // ScrollView — without inset adjustment the iOS keyboard rises
@@ -1922,6 +1949,7 @@ export default function FlagDetailModal({
             </View>
             )}
           </GlassSurface>
+          </SheetPull>
         </View>
       </Modal>
       <StatusHistoryModal
