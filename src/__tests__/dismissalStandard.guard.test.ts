@@ -356,17 +356,74 @@ describe('the dismissal standard', () => {
     expect(offenders).toEqual([]);
   });
 
-  it('F · swipe stays UIKit-only — no custom gesture code anywhere', () => {
-    // 03 §2.6 reasoned this out rather than assuming it: adding a gesture
-    // responder over the map's box-none overlay reopens a settled law.
+  it('F · swipe is UIKit-native, or the ONE ratified pull primitive — nothing else', () => {
+    // ─── AMENDED 2026-08-12, with Sky's sign-off ─────────────────────────────
+    // design-reviews/map-gestures/2026-08-12/SPEC.md §3.2; she ruled option A on
+    // that run's QUESTIONS.md Q3. This is the deliberate amendment that ruling
+    // required — the law was never to be worked around silently.
+    //
+    // The original text read "no custom gesture code anywhere", because 03 §2.6
+    // reasoned that a gesture responder over the map's box-none overlay reopens
+    // a settled law. THAT REASONING IS INTACT and is now asserted directly and
+    // more strictly, in F2 below: the map estate admits no handler of any kind.
+    //
+    // What narrowed: the pageSheet class (Nearby, Resources, How-to-help) gets
+    // its swipe from UIKit via `allowSwipeDismissal` — still zero custom code.
+    // But the transparent half-sheets (Report and friends) are JS-drawn cards
+    // with no UIKit dismissal to unlock, so pull-to-dismiss there needs a real
+    // handler. It gets exactly ONE file, allowlisted by path below; a second
+    // importer fails this sweep, which is the whole point of allowlisting a path
+    // instead of relaxing the ban.
+    //
+    // PanResponder / GestureDetector / Swipeable stay banned EVERYWHERE — the
+    // allowlisted file included. Both of the first two do their per-frame work
+    // on the JS thread (this app has no Reanimated), and the primitive is
+    // deliberately core-Animated-with-native-driver only.
+    //
     // Identifiers assembled at runtime so this file never matches itself.
-    const banned = ['Pan' + 'Responder', 'Gesture' + 'Detector', 'Swipe' + 'able'];
+    const ALWAYS = ['Pan' + 'Responder', 'Gesture' + 'Detector', 'Swipe' + 'able'];
+    const PULL_HANDLER = 'Pan' + 'Gesture' + 'Handler';
+    /** Drain discipline, same rule as ALLOWED: one path, and it must be real. */
+    const PULL_PRIMITIVE = path.join('components', 'ui', 'SheetPull.tsx');
+
     const offenders: string[] = [];
     for (const file of [...walkTsx(SRC), APP_TSX]) {
       if (path.resolve(file) === SELF) continue;
-      const src = fs.readFileSync(file, 'utf8');
-      for (const b of banned) {
-        if (new RegExp(`\\b${b}\\b`).test(stripComments(src))) {
+      const rel = path.relative(SRC, file);
+      const src = stripComments(fs.readFileSync(file, 'utf8'));
+      for (const b of ALWAYS) {
+        if (new RegExp(`\\b${b}\\b`).test(src)) offenders.push(`${rel} → ${b}`);
+      }
+      if (rel !== PULL_PRIMITIVE && new RegExp(`\\b${PULL_HANDLER}\\b`).test(src)) {
+        offenders.push(`${rel} → ${PULL_HANDLER} outside the one allowlisted primitive`);
+      }
+    }
+    expect(offenders).toEqual([]);
+  });
+
+  it('F2 · the map estate admits NO gesture handler of any kind', () => {
+    // The load-bearing half of the old law F, now stated on its own terms so it
+    // cannot be diluted by a future amendment to the sheet rule above. The map's
+    // pinch/pan belongs to the platform SDK and its overlay is box-none; a
+    // handler mounted anywhere in this estate would fight one or both.
+    const ESTATE = [
+      path.join(SRC, 'screens', 'MapScreen.tsx'),
+      path.join(SRC, 'components', 'PlatformMap.tsx'),
+      path.join(SRC, 'components', 'PlatformMap.web.tsx'),
+    ];
+    // Substring, not word-boundary: this catches PanGestureHandler,
+    // GestureHandlerRootView, and anything else handler-shaped in one rule.
+    const HANDLER_SHAPED = 'Gesture' + 'Handler';
+    const ALWAYS = ['Pan' + 'Responder', 'Gesture' + 'Detector', 'Swipe' + 'able'];
+    const offenders: string[] = [];
+    for (const file of ESTATE) {
+      expect(fs.existsSync(file)).toBe(true); // non-vacuous: the estate is real
+      const src = stripComments(fs.readFileSync(file, 'utf8'));
+      if (src.includes(HANDLER_SHAPED)) {
+        offenders.push(`${path.relative(SRC, file)} → ${HANDLER_SHAPED}`);
+      }
+      for (const b of ALWAYS) {
+        if (new RegExp(`\\b${b}\\b`).test(src)) {
           offenders.push(`${path.relative(SRC, file)} → ${b}`);
         }
       }

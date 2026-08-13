@@ -8,7 +8,11 @@
 // See qa-reports/proposal-jest-setup-2026-05-23.md for the why behind each line.
 module.exports = {
   preset: 'jest-expo',
-  setupFiles: ['./jest.setup.js'],
+  // RNGH's own setup stubs the native gesture module so suites that render a
+  // PanGestureHandler (the SheetPull primitive and its adopters) mount instead
+  // of throwing on the missing native side. Order matters: RNGH first, then our
+  // own setup, so ours can still override anything it defines.
+  setupFiles: ['react-native-gesture-handler/jestSetup', './jest.setup.js'],
   // Headroom for async/rejection-heavy suites (useComments refetch, ReportFlagModal
   // anon-rate-limit) under parallel-worker load. The default 5s occasionally tripped
   // these as intermittent timeout flakes once the suite grew past ~1,700 tests

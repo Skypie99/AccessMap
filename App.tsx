@@ -2,7 +2,8 @@ import 'react-native-gesture-handler';
 import { initSentry } from '@/lib/sentry';
 initSentry();
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Linking, Platform, View } from 'react-native';
+import { Linking, Platform, StyleSheet, View } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ThemeProvider, useColor } from '@/theme/ThemeContext';
@@ -220,6 +221,13 @@ function App() {
 
   return (
     <ErrorBoundary>
+      {/* RNGH's root view. Every react-native-gesture-handler gesture in the app
+          silently NO-OPS without it (v2 requirement) — the side-effect import at
+          the top of this file is not enough. Added for the sheet pull-to-dismiss
+          primitive (src/components/ui/SheetPull.tsx); it is inert for every
+          screen that uses no gesture handler, so nothing else changes. Inside
+          ErrorBoundary so the boundary still catches everything below it. */}
+      <GestureHandlerRootView style={styles.root}>
       <SafeAreaProvider>
         <ThemeProvider>
           <AuthProvider>
@@ -237,8 +245,13 @@ function App() {
           </AuthProvider>
         </ThemeProvider>
       </SafeAreaProvider>
+      </GestureHandlerRootView>
     </ErrorBoundary>
   );
 }
+
+const styles = StyleSheet.create({
+  root: { flex: 1 },
+});
 
 export default App;
