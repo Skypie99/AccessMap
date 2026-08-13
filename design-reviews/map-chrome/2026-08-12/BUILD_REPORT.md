@@ -46,4 +46,16 @@
 - `npm run typecheck` → 0. Full `jest --ci -w 3` → **199 suites, 2942 passed, 32 todo, 0 fail** (only the authorized headerActions guard changed; bp13/arrival/announceCoverage/dismissalStandard/qaMerge/calloutRhythm/MapScreen.detail all green untouched). `npm run lint` → 0 errors, 74 warnings (== baseline, no new).
 
 ---
-*(Phases 3–6 appended as they bank.)*
+
+## Phase 3 — Crystal floating controls + ink swaps ✅ (commit 3)
+**What changed** (`src/screens/MapScreen.tsx`)
+- **Zoom + / −** and the **List** FAB go crystal (Sky Q3): each gets a `GlassSurface variant="row" forceEngineered` absolute-fill child (crystal tokens) behind the glyph, replacing the solid `ctaFill`/`overlay` fills. Glyphs → `barIconColor` (#0E4499/#B4CFFA); the **List word** darkens `color.brand → textStrong` because a 15px-bold label is NOT WCAG-large, so it needs the 4.5 floor (arbiter 5.58/5.40). `dimOnPress={false}` — the glass hides a bg dim, so feedback is the scale spring + haptic (existing List-FAB precedent).
+- **Report FAB stays SOLID `ctaFill`** — Sky's one anchor. Recenter already crystal (Phase 2).
+- Orphaned styles removed (`zoomBtn`, `fabSecondary`, `fabSecondaryText`); `fabCrystalPill` + `fabCrystalText` added. `forceEngineered` (literal) on all FAB glass → **zero blur-budget panes**.
+
+**Superseded rationale (noted):** the zoom buttons' old "opaque so map tiles are unreachable beneath them" reasoning yields to Sky's explicit crystal Q3 call. Flagged for her device eyes.
+
+**Gate results:** `typecheck` 0 · arbiter **ALL PASS** (unchanged pairs) · `jest` **2942 passed, 0 fail** · `lint` 0 err / 74 warn (== baseline).
+
+---
+*(Phases 4–6 appended as they bank.)*

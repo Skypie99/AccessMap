@@ -2484,30 +2484,53 @@ export default function MapScreen() {
                 Report stays the one solid anchor); box-none group so only the
                 buttons themselves take touches. */}
             <View style={styles.zoomGroup} pointerEvents="box-none">
+              {/* Crystal zoom circles (Sky Q3). The old "opaque ctaFill so map
+                  tiles are unreachable beneath them" rationale gives way to her
+                  crystal call; glyphs darken to brandTextAlt/inkSelect (arbiter
+                  3.20/3.71). dimOnPress={false} — the glass hides a bg dim, so
+                  feedback is the scale spring + haptic (List-FAB precedent). */}
               <PressableScale
-                style={[styles.fab, styles.zoomBtn]}
-                pressedTint={color.ctaFillPressed}
+                style={styles.fabCrystal}
+                dimOnPress={false}
                 onPress={() => mapRef.current?.zoomBy(1)}
                 accessibilityRole="button"
                 accessibilityLabel="Zoom in"
               >
-                <Plus size={22} color={color.textOnBrand} strokeWidth={2.6} />
+                <GlassSurface
+                  variant="row"
+                  forceEngineered
+                  liteColors={[color.glassMapCrystal0, color.glassMapCrystal1]}
+                  borderRadius={radius.circle}
+                  style={StyleSheet.absoluteFill}
+                  pointerEvents="none"
+                />
+                <Plus size={22} color={barIconColor} strokeWidth={2.6} />
               </PressableScale>
               <PressableScale
-                style={[styles.fab, styles.zoomBtn]}
-                pressedTint={color.ctaFillPressed}
+                style={styles.fabCrystal}
+                dimOnPress={false}
                 onPress={() => mapRef.current?.zoomBy(-1)}
                 accessibilityRole="button"
                 accessibilityLabel="Zoom out"
               >
-                <Minus size={22} color={color.textOnBrand} strokeWidth={2.6} />
+                <GlassSurface
+                  variant="row"
+                  forceEngineered
+                  liteColors={[color.glassMapCrystal0, color.glassMapCrystal1]}
+                  borderRadius={radius.circle}
+                  style={StyleSheet.absoluteFill}
+                  pointerEvents="none"
+                />
+                <Minus size={22} color={barIconColor} strokeWidth={2.6} />
               </PressableScale>
             </View>
             <PressableScale
               ref={nearbyTrigger.ref}
-              style={[styles.fab, styles.fabSecondary]}
-              // List label is color.brand (15px bold → 4.5 floor); a neutral grey
-              // dim drops it to ~4.2:1. Keep spring + haptic, skip the fill dim.
+              style={styles.fabCrystalPill}
+              // Crystal List pill (Sky Q3). The word "List" (15px bold = NOT
+              // WCAG-large) needs 4.5, so it darkens from color.brand to
+              // textStrong on the thin crystal (arbiter 5.58/5.40); the icon
+              // takes the crystal ink. dimOnPress={false} — glass hides a dim.
               dimOnPress={false}
               onPress={() => {
                 // register() captures this button's native handle BEFORE the
@@ -2523,9 +2546,17 @@ export default function MapScreen() {
                   : 'Opens an accessible list of the most recent flags'
               }
             >
+              <GlassSurface
+                variant="row"
+                forceEngineered
+                liteColors={[color.glassMapCrystal0, color.glassMapCrystal1]}
+                borderRadius={radius.circle}
+                style={StyleSheet.absoluteFill}
+                pointerEvents="none"
+              />
               <View style={styles.fabSecondaryRow}>
-                <List size={16} color={color.brand} strokeWidth={2.2} />
-                <AppText variant="label" style={styles.fabSecondaryText}>List</AppText>
+                <List size={16} color={barIconColor} strokeWidth={2.2} />
+                <AppText variant="label" style={styles.fabCrystalText}>List</AppText>
               </View>
             </PressableScale>
             {/* Jordan Condition 2: hide Report FAB for guest users.
@@ -3354,18 +3385,10 @@ const makeStyles = (color: ColorTheme) =>
       alignItems: 'flex-end',
       gap: 10,
     },
-    zoomBtn: {
-      width: 48,
-      height: 48,
-      paddingHorizontal: 0,
-      paddingVertical: 0,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
     fab: {
-      // ctaFill (mode-independent) — the Report FAB rides this base; plain
-      // color.brand dropped its white text to 3.4:1 in dark. The List FAB
-      // overrides bg to color.overlay (fabSecondary) and keeps color.brand ink (F4).
+      // ctaFill (mode-independent) — the SOLID Report FAB rides this base (Sky's
+      // one anchor, Q3); plain color.brand dropped its white text to 3.4:1 in
+      // dark. Zoom + List are now crystal (fabCrystal/fabCrystalPill).
       backgroundColor: color.ctaFill,
       paddingHorizontal: 20,
       paddingVertical: 14,
@@ -3374,9 +3397,21 @@ const makeStyles = (color: ColorTheme) =>
       minHeight: 48,
       justifyContent: 'center',
     },
-    fabSecondary: { backgroundColor: color.overlay },
+    // Crystal List pill (Sky Q3) — like `fab` but no solid fill (the GlassSurface
+    // absolute-fill child paints the crystal material). Shadow light-only.
+    fabCrystalPill: {
+      paddingHorizontal: 20,
+      paddingVertical: 14,
+      borderRadius: radius.circle,
+      minHeight: 48,
+      alignItems: 'center',
+      justifyContent: 'center',
+      ...(color.scheme === 'light' ? shadow.e2 : {}),
+    },
     fabSecondaryRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-    fabSecondaryText: { color: color.brand, fontWeight: '700', fontSize: 15 },
+    // List word on crystal: textStrong (5.58 L / 5.40 D) — color.brand would fail
+    // 4.5 on the thin crystal (a 15px-bold label is NOT WCAG-large).
+    fabCrystalText: { color: color.textStrong, fontWeight: '700', fontSize: 15 },
     // Shared icon+label row. Replaces two identical inline
     // `{ flexDirection:'row', alignItems:'center', gap:6 }` objects (Save-preset
     // button + Report FAB) that were re-allocated on every MapScreen render.
