@@ -176,6 +176,14 @@ interface GlassSurfaceProps extends Omit<ViewProps, 'style'> {
   overlayTint?: string;
   /** Render the engineered (no-blur) material — the C-lite runtime mode. */
   forceEngineered?: boolean;
+  /** Override the variant's engineered micro-gradient stops (the *Lite pair).
+   *  Additive: absent → the recipe's own stops. Used by the map command bar's
+   *  crystal tier (map-chrome compaction) without minting a new variant. */
+  liteColors?: readonly [string, string];
+  /** Override the variant's blur-mode contrast floor (default recipe.floor).
+   *  Additive: absent → the recipe's own floor. Lets the crystal bar keep the
+   *  SAME worst-stop floor under true blur as its engineered bottom stop. */
+  floorColor?: string;
 }
 
 export function GlassSurface({
@@ -191,6 +199,8 @@ export function GlassSurface({
   edgeWidth,
   overlayTint,
   forceEngineered,
+  liteColors,
+  floorColor,
   ...rest
 }: GlassSurfaceProps) {
   const color = useColor();
@@ -284,14 +294,17 @@ export function GlassSurface({
               tint={color.scheme}
               style={StyleSheet.absoluteFill}
             />
-            {/* Contrast floor — the AA guarantee. Over the blur, under content. */}
-            <View style={[StyleSheet.absoluteFill, { backgroundColor: recipe.floor }]} />
+            {/* Contrast floor — the AA guarantee. Over the blur, under content.
+                floorColor override keeps the crystal bar's blur floor identical
+                to its engineered bottom stop (mode-independent floor math). */}
+            <View style={[StyleSheet.absoluteFill, { backgroundColor: floorColor ?? recipe.floor }]} />
           </>
         ) : (
           // Engineered: the *Lite vertical micro-gradient replaces blur+floor
           // (B's opaline architecture wearing this tier's tint — GLASS.md).
+          // liteColors override swaps the stops (crystal tier) with no new variant.
           <LinearGradient
-            colors={[recipe.lite[0], recipe.lite[1]]}
+            colors={[...(liteColors ?? recipe.lite)]}
             start={{ x: 0.5, y: 0 }}
             end={{ x: 0.5, y: 1 }}
             style={StyleSheet.absoluteFill}

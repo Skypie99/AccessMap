@@ -261,6 +261,15 @@ export const color = {
   // (Android always; C-lite runtime mode; per-surface opt-out).
   glassRowLite0: 'rgba(255,255,255,0.92)',
   glassRowLite1: 'rgba(255,255,255,0.84)',
+  // Map command-bar CRYSTAL tier (map-chrome compaction, Sky-locked B-refined
+  // 2026-08-12). The thinnest engineered floors the arbiter allows for the ONE
+  // persistent map pane — ~40% more map luminance through the worst edge than
+  // glassRowLite. The bottom stop (glassMapCrystal1) doubles as the blur-mode
+  // floorColor (mode-independent floor math). Inks pay the transparency price:
+  // bar text = textStrong #222, tool icons = brandTextAlt #0E4499 (muted grays
+  // + plain inkSelect fail here — arbiter map-chrome-crystal-stacks.json).
+  glassMapCrystal0: 'rgba(255,255,255,0.70)',
+  glassMapCrystal1: 'rgba(255,255,255,0.60)',
   glassBannerLite0: 'rgba(217,231,253,0.92)',
   glassBannerLite1: 'rgba(217,231,253,0.84)',
   glassChromeLite0: 'rgba(255,255,255,0.93)',
