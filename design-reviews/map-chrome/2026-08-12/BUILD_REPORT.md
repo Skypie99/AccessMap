@@ -28,4 +28,22 @@
 - `npm run typecheck` → 0. Full `jest --ci -w 3` → **2939 passed, 32 todo, 0 fail**. `npm run lint` → 0 errors, no new warnings.
 
 ---
-*(Phases 2–6 appended as they bank.)*
+
+## Phase 2 — The command bar (four top layers → one) ✅ (commit 2)
+**What changed** (`src/screens/MapScreen.tsx`)
+- The old two chrome rows — editorial title chip + menu/Feedback circles, then the count pill + 7-tool scrolling tray — collapse into **ONE crystal command bar**: `☰ · Explore · [count pill] · «pannable gap» · Search · Filters · ⋯`. It's a `GlassSurface variant="row"` with `liteColors`/`floorColor` = the crystal tokens, `pointerEvents="box-none"` (map still pans through the title + spacer; only buttons + count take touches).
+- **Overlay raised** to `insets.top + OVERLAY_TOP_PAD (8)` (was +16) — Sky's refinement ①; `chromeInsetTop` uses the same pad so callout clearance tracks the raised bar.
+- **Menu** inlined with its own `useDrawerTrigger` (Home/Profile idiom) — feedback left the bar. **Count pill** carries the 4-arm honesty ternary **verbatim + contiguous** (bp13/arrival green) + `accessibilityLiveRegion="polite"`; title keeps `accessibilityRole="header"`.
+- **⋯ tool sheet**: an **inline** panel (`variant="row" forceEngineered={glassLite}` + `glassMapWash`), NOT a Modal — so it never enters the dismissal-standard Modal census and adds no `useSurfaceTrigger`. Rows: Send feedback · Map legend · Refresh flags · Save a place. Filters ⇄ ⋯ are mutually exclusive.
+- **Recenter** demoted to the top of the FAB column as a crystal circle. **Severity/category quick-cycles deleted** (`cycleSeverity`/`cycleCategory`/`catCycleActive*` + orphaned `CATEGORY_CYCLE`/`CategoryIcon`/`Shapes`/`SEVERITY_LABELS`) — their home is the filter panel discs/chips. **Saved-places chip row deleted** (Q4 → SavedPlacesModal via the sheet).
+- **chromeBandPx** measure = the ONE bar height (`onCommandBarLayout`); the old two-row measure (`mapHeaderRowH`/`topRowH`/`MAP_HEADER_ROW_MARGIN_BOTTOM`) + the tray overflow-fade chain retired.
+- Legend focus-return preserved: `legendTrigger.ref` now on the ⋯ button; all 5 dismissal-standard strings intact.
+
+**Guard rewritten (authorized):** `MapScreen.headerActions.test.ts` — repointed from the old two-row regroup to the command-bar structure in the same spirit (bar is box-none / never a full-width opaque strip · menu keeps the drawer trigger · title header role · count live region). 6/6 pass.
+
+**Gate results (pasted)**
+- `pointerEvents="box-none"` count in MapScreen = **7** (dismissalStandard G needs ≥6 ✓).
+- `npm run typecheck` → 0. Full `jest --ci -w 3` → **199 suites, 2942 passed, 32 todo, 0 fail** (only the authorized headerActions guard changed; bp13/arrival/announceCoverage/dismissalStandard/qaMerge/calloutRhythm/MapScreen.detail all green untouched). `npm run lint` → 0 errors, 74 warnings (== baseline, no new).
+
+---
+*(Phases 3–6 appended as they bank.)*
