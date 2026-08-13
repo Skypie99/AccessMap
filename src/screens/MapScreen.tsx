@@ -1705,13 +1705,18 @@ export default function MapScreen() {
                   Explore
                 </AppText>
               </Pressable>
-              {/* Count pill — the 4-arm honesty ternary (bp13 law) moves here as
-                  ONE contiguous block, unsplit. accessibilityLiveRegion covers
-                  Android TalkBack; iOS VoiceOver is served by the A11Y-204
-                  announce effect above. */}
-              <View style={styles.countChip} accessibilityLiveRegion="polite">
-                <AppText variant="label" maxFontSizeMultiplier={1.3} style={styles.countChipText}>
-                  {loadingFlags
+              {/* Count pill (Q2, Sky). The pill is compact so the title reads in
+                  full: the VISIBLE text is the SHORT 4-arm form ("8 flags") and
+                  the FULL honesty sentence rides accessibilityLabel — the
+                  accessible name a screen reader speaks + re-announces via the
+                  live region. The full 4-arm ternary (bp13 law) stays ONE
+                  contiguous block, verbatim, as that label — never split. The
+                  "—" error count is HomeScreen's established honest-zero idiom. */}
+              <View
+                style={styles.countChip}
+                accessibilityLiveRegion="polite"
+                accessibilityLabel={
+                  loadingFlags
                     ? // S11: a cold load (nothing on screen yet) reads differently
                       // from a revalidation over data already shown.
                       flags.length === 0
@@ -1725,7 +1730,24 @@ export default function MapScreen() {
                       ? "Couldn't load flags"
                       : filtersActive
                         ? `${filteredFlags.length} of ${flags.length} shown`
-                        : `Showing ${flags.length} flag${flags.length === 1 ? '' : 's'}`}
+                        : `Showing ${flags.length} flag${flags.length === 1 ? '' : 's'}`
+                }
+              >
+                <AppText
+                  variant="label"
+                  maxFontSizeMultiplier={1.3}
+                  style={styles.countChipText}
+                  {...decorativeProps}
+                >
+                  {loadingFlags
+                    ? flags.length === 0
+                      ? 'Loading…'
+                      : 'Updating…'
+                    : loadError && flags.length === 0
+                      ? '—'
+                      : filtersActive
+                        ? `${filteredFlags.length} of ${flags.length}`
+                        : `${flags.length} flag${flags.length === 1 ? '' : 's'}`}
                 </AppText>
               </View>
             </View>

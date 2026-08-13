@@ -60,8 +60,14 @@ describe('MapScreen command bar — the menu button keeps the drawer contract', 
     expect(center).toContain('Explore');
   });
 
-  it('the count pill keeps the Android live region for the honest count', () => {
-    expect(SRC).toMatch(/<View style=\{styles\.countChip\} accessibilityLiveRegion="polite"/);
+  it('the count pill keeps the Android live region + full-sentence label (Q2: short visible, full spoken)', () => {
+    // The count chip carries the live region AND the full honesty sentence as its
+    // accessibilityLabel — the visible text is the short form ("8 flags").
+    expect(SRC).toMatch(/style=\{styles\.countChip\}\s+accessibilityLiveRegion="polite"\s+accessibilityLabel=\{/);
+    // The full 4-arm sentence still lives in source (as the label) — bp13/arrival
+    // read it there; the visible AppText is the short derivative.
+    expect(SRC).toContain('`Showing ${flags.length} flag${flags.length === 1 ? \'\' : \'s\'}`');
+    expect(SRC).toContain('`${flags.length} flag${flags.length === 1 ? \'\' : \'s\'}`');
   });
 });
 

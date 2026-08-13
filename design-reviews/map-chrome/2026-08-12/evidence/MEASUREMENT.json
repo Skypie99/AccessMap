@@ -1,0 +1,44 @@
+{
+  "run": "map-chrome compaction (Direction B-refined) — Opus build, quarter-budget verification",
+  "method": "Live Expo web build (expo start --web) driven in-session via the Claude Browser pane; the command bar measured with getBoundingClientRect. Web safe-area = 0, so device y = web y + SAFE_AREA_TOP (59). HONESTY TAG: Chromium proxy — blur feel + pan smoothness are iPhone truths (NEEDS-SKY-DEVICE).",
+  "date": "2026-08-12",
+  "quarter_budget": "persistent band ≤ 25% of viewport height; bar top edge = safe-area + 8 (Sky ①)",
+  "results": [
+    {
+      "device": "430x932 (iPhone 14/15 Pro Max class)",
+      "web": { "barTop": 8, "barBottom": 60, "barHeight": 52, "barWidth": 398 },
+      "device_adjusted": {
+        "safeAreaTop": 59,
+        "barTop": 67,
+        "expectedBarTop": 67,
+        "barTopOK": true,
+        "persistentBandBottom": 119,
+        "persistentBandPct": 12.8,
+        "quarterBudgetPct": 25,
+        "withinQuarterBudget": true
+      }
+    },
+    {
+      "device": "393x852 (iPhone 14/15 Pro class)",
+      "web": { "barTop": 8, "barBottom": 60, "barHeight": 52 },
+      "device_adjusted": {
+        "safeAreaTop": 59,
+        "barTop": 67,
+        "expectedBarTop": 67,
+        "barTopOK": true,
+        "persistentBandBottom": 119,
+        "persistentBandPct": 14.0,
+        "quarterBudgetPct": 25,
+        "withinQuarterBudget": true
+      }
+    }
+  ],
+  "matches_mockup": "The rendered build equals the governing mockup B2_command-bar-refined.html exactly: persistent 119pt · 12.8% (430×932) and bar top 67pt (safe-area + 8). Today's persistent band was 231pt · 24.8%.",
+  "count_pill_Q2": "Visible = short '8 flags' (title 'Explore' now renders in full); accessibilityLabel = full 'Showing 8 flags'. Confirmed live in the DOM: barVisibleText='Explore 8 flags', countA11yLabel='Showing 8 flags'.",
+  "render_compare_observed": [
+    "Light theme × light tiles (430×932): one crystal command bar (☰ · Explore · 8 flags · search · filters · ⋯); zoom/recenter/List crystal circles read through the map; solid location banner (semantic, stays solid).",
+    "Dark theme × light tiles (430×932) — the cross state / 'mud test': dark crystal bar (white 'Explore', #B4CFFA icons) + dark crystal FAB circles legible over light tiles.",
+    "The other two theme×tile combos (light/dark-tiles, dark/dark-tiles) are arbiter-proved (bases #000+#FFF+5 heat colors in both modes, exit 0) + shown in the mockup frames; true on-device tile behaviour is NEEDS-SKY-DEVICE (web couples tiles to the app scheme, iOS Apple tiles follow the OS independently)."
+  ],
+  "reproduce": "node design-reviews/map-chrome/2026-08-12/tools/measure-mapchrome.mjs http://localhost:8081  (needs `npx playwright install` for the headless browser; the in-session run used the Claude Browser pane against the same live build)."
+}

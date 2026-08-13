@@ -86,4 +86,60 @@
 **DECISION FOR SKY (flash):** SPEC §0 says copy `TasksScreen.tsx:472-476` *verbatim*, incl. its `showFlash("Glass effects: …")`. **MapScreen has no flash pill** (that's a TasksScreen primitive), so the verbatim copy isn't possible. I kept the load-bearing halves — `hapticSelection` + `toggleGlassMode` — and the store's SR announce; the **visible confirmation is the bar re-materialising under the press** (the stated purpose of the gesture). Adding a flash toast to MapScreen would be new scope — flag if you want it.
 
 ---
-*(Phase 6 appended when it banks.)*
+
+## Phase 6 — Guards + verification + report ✅ (commit 6)
+**Count pill Q2 (verification-driven).** The live render showed the full "Showing 8 flags" pill squeezing the title to "Expl…" at 430px. Sky's Q2 (§0) is *visible "8 flags", full "Showing 8 flags" as the a11y label*, so I implemented it: the count chip's **visible** text is the SHORT 4-arm form ("8 flags" / "8 of 20" / "Loading…" / "—"), and the **accessibilityLabel** carries the FULL honesty sentence verbatim (the "—" error count is HomeScreen's established honest-zero idiom). The full 4-arm ternary stays one contiguous block **as the label** — so bp13 + arrival read every pinned string there and pass **unchanged**. The visible AppText is `{...decorativeProps}` (A11Y-234: web-safe hiding, decorativeHiding guard green). Confirmed live: `barVisibleText='Explore 8 flags'`, `countA11yLabel='Showing 8 flags'`, and **"Explore" now renders in full**.
+
+**New guard — `mapChromeBudget.guard.test.ts`** (SPEC §6c, adapted for the one-bar B layout): (a) exactly one measured chrome row feeds `chromeBandPx` (the command bar), the old two-row chain never resurrected; (a) the bar sits in `overlayTopGroup` ahead of the conditional layers; (b) the **four crystal floor literals** pinned (light + dark); (c) `chromeBandPx = Math.round(commandBarH.current)` and the bar hugs safe-area + 8; (c) the glass switch + crystal `floorColor` override are threaded. 5/5 pass.
+
+**Quarter-budget measure (SPEC §7.3)** — live Expo web build driven in-session via the Claude Browser pane (numbers in `evidence/MEASUREMENT.json`; tool `tools/measure-mapchrome.mjs` for Sky to re-run):
+
+| Device | Bar top (device) | Persistent band | % of viewport | ≤ 25%? |
+|---|---|---|---|---|
+| 430×932 | **67pt** (= safe-area 59 + 8 ✓) | 119pt | **12.8%** | ✓ |
+| 393×852 | **67pt** ✓ | 119pt | **14.0%** | ✓ |
+
+The rendered build **equals the governing mockup exactly** (119pt · 12.8%). Today's band was 231pt · 24.8%.
+
+**Render-compare (honesty-tagged Chromium proxy)** — captured in-session:
+- **Light × light tiles:** one crystal command bar (`☰ · Explore · 8 flags · search · filters · ⋯`); zoom/recenter/List crystal circles read through the map; the ⋯ sheet (Send feedback / Map legend / Refresh flags / Save a place) drops from the active ⋯ button.
+- **Dark × light tiles (the cross / "mud test"):** the dark crystal bar (white "Explore", `#B4CFFA` icons) + dark crystal FAB circles are legible over light tiles.
+- The remaining combos (light/dark-tiles, dark/dark-tiles) are arbiter-proved (all bases, both modes, exit 0) + shown in the mockup frames.
+
+**Final gate run (all green):**
+- Full `npx jest --ci -w 3` → **200 suites, 2946 passed, 32 todo, 0 fail** (baseline was 199/2939; +1 suite = mapChromeBudget, net test delta from the three authorized guard rewrites).
+- `npm run typecheck` → **0 errors**. `npm run lint` → **0 errors, 74 warnings** (== baseline, no new).
+- Arbiter `contrast-check.mjs …/map-chrome-crystal-stacks.json` → **exit 0, ALL PASS**.
+- `pointerEvents="box-none"` in MapScreen = **7** (≥6 ✓).
+
+---
+
+## CLOSING TODO (for the cleanup commit, once Sky names the material winner)
+Sky lives in one glass mode on-device (long-press the map title or the Tasks header), then names the winner. The **one cleanup commit** then:
+1. Removes the losing mode's tokens/branches (the C-lite pattern) — if **lite** wins, drop the blur arm; the bar becomes literal `forceEngineered` and `floorColor` is unused. If **full** wins, the crystal gradient `liteColors` stays for Android + RT but the switch stops toggling it.
+2. Removes **the map-bar long-press flip trigger** (`handleGlassToggle` + the title `Pressable` wrapper + the `barTitleWrap` style) — the switch is scaffolding, not a feature (GLASS §4). The Tasks long-press decision is Sky's separately.
+3. Reverts the GLASS.md §12.5 exception to a plain statement of the winning material if the switch is fully retired.
+
+## DECISIONS FOR SKY
+1. **Glass-flip flash (§0 "copy TasksScreen verbatim").** MapScreen has **no `showFlash` primitive** (it's a TasksScreen pill), so the verbatim copy is impossible. I kept the load-bearing halves — `hapticSelection` + `toggleGlassMode` — plus the store's SR announce; the **visible confirmation is the bar re-materialising under the press** (the stated purpose). Want a flash toast added to MapScreen (new scope), or is the material flip enough?
+2. **Count pill short wording (Q2 = SKY-WORDS).** Implemented placeholders: default `"8 flags"` (matches the mockup), filtered `"8 of 20"`, loading `"Loading…"` / `"Updating…"`, settled-error `"—"` (HomeScreen's honest-zero idiom). Full sentences live in the a11y label. Confirm or reword.
+3. **⋯ tool-sheet labels (§9 SKY-WORDS).** Reused today's exact labels: "Send feedback", "Map legend", "Refresh flags", and **"Save a place" / "Saved places"** (empty vs has-places). Confirm.
+4. **Legend focus-return lands on ⋯.** Opening the legend from the sheet arms `legendTrigger.ref` on the persistent ⋯ button (the sheet row unmounts on close), so VoiceOver returns to ⋯ ("More map tools") after the legend closes — the tool that surfaced it. Acceptable, or would you rather the legend keep a persistent trigger elsewhere?
+5. **Count-chip dark fill = a dark veil, not the mockup's white-0.10.** The mockup's `rgba(255,255,255,.10)` dark count fails 4.5 on the thin crystal bar (arbiter), so the count reuses `glassMapCrystal0` (a faint darker pill in dark mode). This is exactly the "ink price" the mockup warns about — arbiter-forced, not eye-tuned.
+
+## NEEDS-SKY-DEVICE (iPhone truths a Chromium proxy cannot prove)
+- **Blur feel of the `full` glass mode** (i=12 BlurView over the moving map) + **pan smoothness** — the whole point of the on-device A/B. Long-press the map title to flip; live in each mode for a bit.
+- **Reduce Transparency** → the designed opaque states (bar, count, FABs, sheet, legend, heat notice) — verify once visually.
+- **Reduce Motion** → the bar has no new animation; confirm the long-press flip + crystal circle scale-spring behave (haptic is the RM-safe ack).
+- **Large Dynamic Type** → the bar re-measures taller (chromeBandPx re-renders); confirm no clip and the title truncates gracefully.
+- **VoiceOver / TalkBack** → the header-role rotor landmark on the long-press-wrapped title; the count live region re-announcing "Showing N flags"; the ⋯-anchored legend focus-return; the legend/heat-notice close-X reachability.
+- The two theme×tile combos not capturable on web (web couples tiles to the app scheme; iOS Apple tiles follow the OS independently).
+- **T1 callout clearance:** open a pin callout from Tasks→Map focus and confirm it clears the (now shorter, 119pt) chrome band.
+
+## SIBLING-RUN WARNING (map-gestures)
+Chrome landed FIRST, on `design/map-chrome-b`. The map-gestures run **stacks on THIS branch's tip**, never a parallel MapScreen fix-branch. **Hard blocker for that run:** `dismissalStandard.guard.test.ts` **law F bans `PanResponder` / `GestureDetector` / `Swipeable` anywhere in `src/`** — the gestures work must confront that law with **Sky's explicit sign-off** (amend the law deliberately), never silently. Also inherited-untouched by this run and pinned: the box-none overlay law (now 7 in MapScreen), `calloutScheduler.schedule(` = 4, `iconLabelRow` = 3, the FlagCard locked direction. The command bar's own long-press uses a plain `Pressable onLongPress` (allowed — not a banned gesture mechanism).
+
+## THE STATE — STOPPED ON THE BRANCH
+`design/map-chrome-b` @ 6 phase commits on base `242c3d6`. **`main` never touched. No merge, no push, no EAS build, no deploy, no external send.** Sky merges; Sky builds the app.
+
+*Built 2026-08-12 by the Opus map-chrome build run, from the locked SPEC. This run built to the spec + the code; discrepancies (the flash primitive, the count-chip dark fill, the §6c formula adapting from A's two rows to B's one bar) are logged above as DECISIONS FOR SKY.*
