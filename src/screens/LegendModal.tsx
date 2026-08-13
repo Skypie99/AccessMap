@@ -18,6 +18,8 @@ import CategoryIcon from '@/components/CategoryIcon';
 import { SeverityDisc } from '@/components/SeverityDisc';
 import { AppText } from '@/components/ui/AppText';
 import { GlassSurface } from '@/components/ui/GlassSurface';
+import { SheetGrabber } from '@/components/ui/Sheet';
+import { SheetPull, useAtTop } from '@/components/ui/SheetPull';
 import { Check } from 'lucide-react-native';
 
 interface Props {
@@ -42,6 +44,10 @@ export default function LegendModal({ visible, onClose, onDismiss }: Props) {
   const insets = React.useContext(SafeAreaInsetsContext) ?? { top: 0, bottom: 0, left: 0, right: 0 };
   // WCAG 2.4.3: move the screen-reader cursor onto the header when the modal opens.
   const titleRef = useFocusOnOpen<View>(visible);
+  // Pull-to-dismiss (map-gestures SPEC §2.6). Read-only sheet, so no busy gate —
+  // just the dismiss-vs-scroll rule over the severity/category list.
+  const { atTop, onScroll, scrollEventThrottle } = useAtTop();
+  const scrollRef = React.useRef(null);
   return (
     <Modal visible={visible} animationType={reducedMotion ? 'none' : 'slide'} transparent onRequestClose={onClose} onDismiss={onDismiss} aria-label="Map legend">
       <View style={styles.backdrop}>
@@ -58,6 +64,10 @@ export default function LegendModal({ visible, onClose, onDismiss }: Props) {
           accessibilityRole="button"
           aria-hidden={true}
         />
+        {/* Pull-down-to-dismiss — the same onClose the scrim tap, the in-card
+            Close button and onRequestClose all use. The legend is read-only and
+            never busy, so the gesture has no state to guard against. */}
+        <SheetPull onDismiss={onClose} atTop={atTop} simultaneousHandlers={scrollRef}>
         <Pressable
           style={styles.cardShell}
           // Swallow taps on the card so they don't dismiss via the backdrop.
@@ -74,14 +84,18 @@ export default function LegendModal({ visible, onClose, onDismiss }: Props) {
           onAccessibilityEscape={onClose}
         >
         <GlassSurface variant="bulk" borderRadius={0} style={styles.card}>
+          <SheetGrabber />
           <View ref={titleRef} style={styles.headerRow} accessible accessibilityRole="header">
             <AppText variant="heading" style={styles.title}>Map legend</AppText>
           </View>
           <AppText variant="body" style={styles.subtitle}>What the colors and categories on the map mean.</AppText>
 
           <ScrollView
+            ref={scrollRef}
             style={styles.scroll}
             contentContainerStyle={[styles.scrollContent, { paddingBottom: Math.max(spacing.sm, insets.bottom) }]}
+            onScroll={onScroll}
+            scrollEventThrottle={scrollEventThrottle}
           >
             <AppText variant="heading" style={styles.sectionLabel} accessibilityRole="header">
               Severity
@@ -224,6 +238,7 @@ export default function LegendModal({ visible, onClose, onDismiss }: Props) {
           </Pressable>
         </GlassSurface>
         </Pressable>
+        </SheetPull>
       </View>
     </Modal>
   );

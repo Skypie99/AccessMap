@@ -63,6 +63,7 @@ function walkTsx(dir: string): string[] {
 const ADOPTERS: readonly { rel: string; closeLabel: string }[] = [
   { rel: path.join('screens', 'ReportFlagModal.tsx'), closeLabel: 'Cancel and close' },
   { rel: path.join('components', 'FlagDetailModal.tsx'), closeLabel: 'Close flag details' },
+  { rel: path.join('screens', 'LegendModal.tsx'), closeLabel: 'Close legend' },
 ];
 
 describe('SheetPull · the rails', () => {
