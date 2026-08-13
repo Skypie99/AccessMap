@@ -70,4 +70,20 @@
 **Gate results:** `typecheck` 0 · arbiter **ALL PASS** (pin065: #222 6.52, #414B5A 3.62, #333 5.17) · `jest` **199 suites, 2939 passed, 0 fail** (MapScreenHeatEmpty untouched-green) · `lint` 0 err / 74 warn (== baseline).
 
 ---
-*(Phases 5–6 appended as they bank.)*
+
+## Phase 5 — Glass switch threading + bar long-press + GLASS.md §12.5 amendment ✅ (commit 5)
+**What changed**
+- The command bar already threads the switch (Phase 2): `forceEngineered={glassLite}` (full → true blur i=12; lite → engineered crystal) + `floorColor={color.glassMapCrystal1}` so the **blur floor == the engineered bottom stop** (mode-independent floor math). This commit adds the **trigger**.
+- **Bar long-press flip** (`MapScreen.tsx`): the title is wrapped in a `<Pressable onLongPress={handleGlassToggle} delayLongPress={600} accessible={false}>`. `handleGlassToggle` = `hapticSelection()` → `toggleGlassMode()` (the TasksScreen gesture). `accessible={false}` keeps the SR tree + tap targets unchanged; the wrapper holds **only the title** (the menu/search/filter/⋯ buttons are its siblings, so their taps aren't swallowed), and the header role rides the AppText inside. The switch is **GLOBAL** (flipping on Map re-materialises Tasks + the filter panel) and persists (`@accessmap/glass_mode_v1`) — two doors, one switch.
+- **GLASS.md §12.5 amended** with Sky's exception clause **verbatim** ("a SINGLE-pane persistent chrome may thread the glass-mode switch for an on-device A/B; the losing mode is removed in a later cleanup commit") + the map-bar long-press trigger note + the global/iOS-only/cleanup facts.
+
+**Blur budget (worst simultaneous, mode=full):** bar (1) + filter-panel-OR-tool-sheet (1, mutually exclusive) + locating (1) + legend (1) + heat notice(s) (1–2 legacy) + tab bar (1) = **≤7 ≤ 12 ✓**. The crystal FABs (recenter/zoom×2/List) are `forceEngineered` literal → **0 panes**.
+
+**Guard:** added long-press + threading assertions to `MapScreen.headerActions.test.ts` (widened the header-role window for the new wrapper). 9/9 pass.
+
+**Gate results:** `typecheck` 0 · `jest` **199 suites, 2941 passed, 0 fail** · `lint` 0 err / 74 warn (== baseline).
+
+**DECISION FOR SKY (flash):** SPEC §0 says copy `TasksScreen.tsx:472-476` *verbatim*, incl. its `showFlash("Glass effects: …")`. **MapScreen has no flash pill** (that's a TasksScreen primitive), so the verbatim copy isn't possible. I kept the load-bearing halves — `hapticSelection` + `toggleGlassMode` — and the store's SR announce; the **visible confirmation is the bar re-materialising under the press** (the stated purpose of the gesture). Adding a flash toast to MapScreen would be new scope — flag if you want it.
+
+---
+*(Phase 6 appended when it banks.)*

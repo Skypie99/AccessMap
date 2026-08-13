@@ -54,13 +54,31 @@ describe('MapScreen command bar — the menu button keeps the drawer contract', 
     expect(SRC).not.toContain("from '@/components/ui/HeaderActions'");
   });
 
-  it('the screen title keeps its header landmark role', () => {
-    const center = SRC.slice(SRC.indexOf('styles.barCenter'), SRC.indexOf('styles.barCenter') + 600);
+  it('the screen title keeps its header landmark role (rides the AppText inside the long-press wrapper)', () => {
+    const center = SRC.slice(SRC.indexOf('styles.barCenter'), SRC.indexOf('styles.barCenter') + 1000);
     expect(center).toContain('accessibilityRole="header"');
     expect(center).toContain('Explore');
   });
 
   it('the count pill keeps the Android live region for the honest count', () => {
     expect(SRC).toMatch(/<View style=\{styles\.countChip\} accessibilityLiveRegion="polite"/);
+  });
+});
+
+describe('MapScreen command bar — the glass-mode long-press flip (Sky on-device A/B)', () => {
+  it('threads the glass switch into the bar material (blur=full / crystal=lite)', () => {
+    // forceEngineered={glassLite} = engineered crystal in lite, true blur in
+    // full; floorColor keeps the blur floor == the engineered bottom stop.
+    expect(SRC).toMatch(/style=\{styles\.commandBar\}[\s\S]*?forceEngineered=\{glassLite\}/);
+    expect(SRC).toMatch(/floorColor=\{color\.glassMapCrystal1\}/);
+  });
+
+  it('the title is a 600ms long-press flip target that does NOT swallow button taps', () => {
+    // accessible={false} keeps the SR tree unchanged; the wrapper holds only the
+    // title (the menu/search/filter/⋯ buttons are its siblings, not its children).
+    expect(SRC).toMatch(
+      /<Pressable\s+onLongPress=\{handleGlassToggle\}\s+delayLongPress=\{600\}\s+accessible=\{false\}/,
+    );
+    expect(SRC).toMatch(/const handleGlassToggle = useCallback\(\(\) => \{\s*hapticSelection\(\);\s*toggleGlassMode\(\);/);
   });
 });

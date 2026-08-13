@@ -23,7 +23,8 @@ import { useNavigation, useRoute, type RouteProp } from '@react-navigation/nativ
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
-import { hydrateGlassMode, useGlassMode } from '@/lib/glassMode';
+import { hydrateGlassMode, toggleGlassMode, useGlassMode } from '@/lib/glassMode';
+import { hapticSelection } from '@/lib/haptics';
 import { font, radius, severity, shadow, spacing } from '@/theme';
 import { errorMessage } from '@/lib/errors';
 import { clearLiveStatusMessage, setLiveStatus } from '@/lib/liveStatus';
@@ -348,6 +349,20 @@ export default function MapScreen() {
   const glassLite = useGlassMode() === 'lite';
   useEffect(() => {
     void hydrateGlassMode();
+  }, []);
+  // Sky's on-device material A/B (SPEC §0): the command bar is itself a 600ms
+  // long-press flip target — full = true blur i=12 + crystal floor, lite =
+  // engineered crystal gradient — so the material changes under her eyes while
+  // she judges it. Copies the TasksScreen.tsx:472-476 gesture (hapticSelection →
+  // toggleGlassMode); the store already announces the flip for screen readers,
+  // and the visible confirmation is the bar re-materialising under the press
+  // (MapScreen has no flash pill — see the build report's DECISIONS FOR SKY).
+  // The switch is GLOBAL: flipping here also re-materialises Tasks + the filter
+  // panel, and persists across launches (@accessmap/glass_mode_v1). Two doors,
+  // one switch.
+  const handleGlassToggle = useCallback(() => {
+    hapticSelection();
+    toggleGlassMode();
   }, []);
   const mapRef = useRef<PlatformMapHandle | null>(null);
   // T1 (F3-04): one scheduler for all four callout flows — last-tap-wins.
@@ -1666,18 +1681,30 @@ export default function MapScreen() {
             >
               <Menu size={22} color={barIconColor} strokeWidth={2.2} />
             </PressableScale>
-            {/* Title + count — box-none so a tap here pans the map. The long-press
-                glass-flip (Phase 5) lands on this non-interactive region. */}
+            {/* Title + count — box-none so the map pans through the gaps here. */}
             <View style={styles.barCenter} pointerEvents="box-none">
-              <AppText
-                variant="display"
-                size={22}
-                numberOfLines={1}
-                accessibilityRole="header"
-                style={styles.barTitle}
+              {/* Long-press glass-flip target (Sky's on-device A/B). accessible=
+                  {false} keeps the SR tree + tap targets unchanged; it does NOT
+                  swallow the bar's button taps (they're siblings outside this
+                  wrapper), and a short tap is a no-op (the title has no onPress).
+                  The header role rides the AppText inside, so the rotor landmark
+                  survives. */}
+              <Pressable
+                onLongPress={handleGlassToggle}
+                delayLongPress={600}
+                accessible={false}
+                style={styles.barTitleWrap}
               >
-                Explore
-              </AppText>
+                <AppText
+                  variant="display"
+                  size={22}
+                  numberOfLines={1}
+                  accessibilityRole="header"
+                  style={styles.barTitle}
+                >
+                  Explore
+                </AppText>
+              </Pressable>
               {/* Count pill — the 4-arm honesty ternary (bp13 law) moves here as
                   ONE contiguous block, unsplit. accessibilityLiveRegion covers
                   Android TalkBack; iOS VoiceOver is served by the A11Y-204
@@ -3090,6 +3117,9 @@ const makeStyles = (color: ColorTheme) =>
     // Title + count cluster. box-none in the JSX so the map pans through it; the
     // Phase-5 long-press glass-flip lands on this region.
     barCenter: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, flexShrink: 1 },
+    // Long-press glass-flip wrapper (accessible={false}); flexShrink so a long
+    // title yields before the trailing buttons.
+    barTitleWrap: { flexShrink: 1 },
     barTitle: { color: color.textStrong, marginTop: 0, flexShrink: 1 },
     // Count pill — its OWN crystal fill (glassMapCrystal0) over the bar floor so
     // glassChipInk clears AA (arbiter countChip 9.61 / 12.21). Non-interactive.
