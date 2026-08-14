@@ -2337,7 +2337,7 @@ export default function MapScreen() {
           <GlassSurface
             style={styles.emptyCard}
             variant="row"
-            forceEngineered
+            forceEngineered={glassLite}
             overlayTint={color.glassMapWash}
             borderRadius={radius.lg}
             // A11Y-213 (S13/L6-04 class): the material container must NOT be an
@@ -2394,11 +2394,18 @@ export default function MapScreen() {
             SKY; the "Report" it names is the FAB's own visible label. */}
         {showTrueEmptyCard && (
           <GlassSurface
-            style={styles.emptyCard}
+            style={[styles.emptyCard, styles.emptyCardCompact]}
             variant="row"
-            forceEngineered
+            forceEngineered={glassLite}
             overlayTint={color.glassMapWash}
             borderRadius={radius.lg}
+            // Bug-2 (2026-08-13): render the app's REAL liquid glass — in the
+            // default 'full' mode forceEngineered={glassLite} is false, so the
+            // primitive mounts a true BlurView (like the filter panel) and the
+            // map reads THROUGH the card instead of a flat white slab. It has no
+            // interactive children, so pointerEvents="none" lets the map pan
+            // beneath it; emptyCardCompact trims the footprint (Sky's directive).
+            pointerEvents="none"
           >
             <MapPin size={26} color={color.inkGlassMuted} strokeWidth={2} {...decorativeProps} />
             <View
@@ -3377,6 +3384,13 @@ const makeStyles = (color: ColorTheme) =>
       gap: 8,
       alignItems: 'center',
       ...shadow.e2,
+    },
+    // Bug-2 (2026-08-13): the true-zero card trims its footprint so more map
+    // shows through — Sky's directive. Only the true-zero card takes this; the
+    // filtered sibling keeps the full width for its reset chips + button.
+    emptyCardCompact: {
+      maxWidth: 260,
+      paddingVertical: 14,
     },
     // A11Y-213: the summary node inherits the card's internal rhythm so the
     // de-flattened structure is pixel-identical to the old flat one.
