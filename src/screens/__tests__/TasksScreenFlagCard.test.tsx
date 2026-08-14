@@ -106,7 +106,6 @@ function renderCard(overrides: Partial<React.ComponentProps<typeof FlagCard>> = 
       selectionActive={false}
       selected={false}
       compactActions={false}
-      glassLite={false}
       {...handlers}
       {...overrides}
     />,
@@ -260,14 +259,14 @@ describe('FlagCard — T8: each action names its flag', () => {
   });
 });
 
-describe('FlagCard — material modes (the C-lite runtime switch)', () => {
-  it('full glass mounts the row BlurView; glassLite swaps to the engineered gradient', () => {
-    const full = renderCard();
-    expect(full.queryByTestId('glass-blurview')).toBeTruthy();
-    full.unmount();
-    const lite = renderCard({ glassLite: true });
-    expect(lite.queryByTestId('glass-blurview')).toBeNull();
-    expect(lite.queryByTestId('glass-lite-gradient')).toBeTruthy();
+describe('FlagCard — full glass (C-lite switch retired 2026-08-12)', () => {
+  it('mounts the row BlurView (real liquid glass) by default on iOS', () => {
+    // Sky picked `full` app-wide, so the card blurs by default — there is no
+    // glassLite prop and no runtime switch to force the engineered path.
+    // (glass-lite-gradient is NOT asserted absent: the press-sheen is itself a
+    // LinearGradient, now always live since it no longer gates on glassLite.)
+    const card = renderCard();
+    expect(card.queryByTestId('glass-blurview')).toBeTruthy();
   });
 });
 

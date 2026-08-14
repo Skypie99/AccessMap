@@ -71,20 +71,19 @@ describe('MapScreen command bar — the menu button keeps the drawer contract', 
   });
 });
 
-describe('MapScreen command bar — the glass-mode long-press flip (Sky on-device A/B)', () => {
-  it('threads the glass switch into the bar material (blur=full / crystal=lite)', () => {
-    // forceEngineered={glassLite} = engineered crystal in lite, true blur in
-    // full; floorColor keeps the blur floor == the engineered bottom stop.
-    expect(SRC).toMatch(/style=\{styles\.commandBar\}[\s\S]*?forceEngineered=\{glassLite\}/);
-    expect(SRC).toMatch(/floorColor=\{color\.glassMapCrystal1\}/);
+describe('MapScreen command bar — full glass, no runtime switch (C-lite retired 2026-08-12)', () => {
+  it('keeps the crystal material: liteColors (Android engineered) + floorColor (iOS blur floor)', () => {
+    // Sky picked `full` app-wide, so the bar mounts live blur on iOS + the
+    // crystal floor; liteColors is Android's engineered gradient. Both stay.
+    expect(SRC).toContain('liteColors={[color.glassMapCrystal0, color.glassMapCrystal1]}');
+    expect(SRC).toContain('floorColor={color.glassMapCrystal1}');
   });
 
-  it('the title is a 600ms long-press flip target that does NOT swallow button taps', () => {
-    // accessible={false} keeps the SR tree unchanged; the wrapper holds only the
-    // title (the menu/search/filter/⋯ buttons are its siblings, not its children).
-    expect(SRC).toMatch(
-      /<Pressable\s+onLongPress=\{handleGlassToggle\}\s+delayLongPress=\{600\}\s+accessible=\{false\}/,
-    );
-    expect(SRC).toMatch(/const handleGlassToggle = useCallback\(\(\) => \{\s*hapticSelection\(\);\s*toggleGlassMode\(\);/);
+  it('the glass-mode switch + the bar long-press flip are gone (the C-lite scaffolding is deleted)', () => {
+    // The whole runtime toggle retired: no glassLite thread, no flip callback,
+    // and the title is a bare header AppText — not a long-press wrapper.
+    expect(SRC).not.toContain('glassLite');
+    expect(SRC).not.toContain('handleGlassToggle');
+    expect(SRC).not.toContain('barTitleWrap');
   });
 });

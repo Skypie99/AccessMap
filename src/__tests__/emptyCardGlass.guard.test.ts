@@ -3,12 +3,14 @@
  *
  * The two map empty-state cards — the filtered "Nothing here right now" card and
  * the true-zero "No barriers reported here yet" card (IMG_7768) — must render the
- * app's REAL liquid glass: `forceEngineered={glassLite}` so the default 'full'
- * mode mounts a true BlurView (mirroring the filter panel) and the map reads
- * THROUGH the card. The regression this guards against is the shipped defect:
- * **literal** `forceEngineered` forces the engineered no-blur path in every mode,
- * which over light tiles composites to a near-opaque white slab (GlassSurface.tsx
- * material === 'engineered' → LinearGradient, no BlurView; GLASS.md §12.5).
+ * app's REAL liquid glass: with the C-lite switch retired (2026-08-12, full wins
+ * app-wide) they carry NO `forceEngineered` at all, so the primitive mounts a
+ * true BlurView on iOS by default (mirroring the filter panel) and the map reads
+ * THROUGH the card. The regression this guards against is ANY `forceEngineered`
+ * (the old literal-true defect, or a re-threaded switch): it forces the
+ * engineered no-blur path, which over light tiles composites to a near-opaque
+ * white slab (GlassSurface.tsx material === 'engineered' → LinearGradient, no
+ * BlurView; GLASS.md §12.5).
  *
  * It also pins that the true-zero card is `pointerEvents="none"` (it has no
  * interactive children, so it must not block map pan under its footprint) while
@@ -58,15 +60,14 @@ const read = (rel: string) => stripComments(fs.readFileSync(path.join(SRC, rel),
 describe('BUG-2 — map empty cards render the real liquid-glass primitive, not the opaque slab', () => {
   const src = read('screens/MapScreen.tsx');
 
-  // The engineered/no-blur regression is `forceEngineered` with no value (literal
-  // true). Threaded, it is `forceEngineered={glassLite}` — blur in 'full' mode.
-  const isThreaded = (tag: string) => tag.includes('forceEngineered={glassLite}');
-  const hasLiteralForceEngineered = (tag: string) => /forceEngineered(?!\s*=\s*\{glassLite\})/.test(tag);
+  // Any `forceEngineered` (bare literal OR a re-threaded switch) forces the
+  // no-blur path → the opaque slab. Real glass = NO forceEngineered (blur by
+  // default on iOS, engineered on Android automatically).
+  const hasAnyForceEngineered = (tag: string) => /forceEngineered/.test(tag);
 
-  it('true-zero card ("No barriers reported here yet") uses forceEngineered={glassLite}, not the opaque literal', () => {
+  it('true-zero card ("No barriers reported here yet") carries NO forceEngineered — it blurs by default', () => {
     const tag = glassTagBeforeCopy(src, 'No barriers reported here yet', 'MapScreen');
-    expect(isThreaded(tag)).toBe(true);
-    expect(hasLiteralForceEngineered(tag)).toBe(false);
+    expect(hasAnyForceEngineered(tag)).toBe(false);
     expect(tag).toContain('variant="row"');
     expect(tag).toContain('overlayTint={color.glassMapWash}');
   });
@@ -76,10 +77,9 @@ describe('BUG-2 — map empty cards render the real liquid-glass primitive, not 
     expect(tag).toContain('pointerEvents="none"');
   });
 
-  it('filtered card ("Nothing here right now") also uses the real glass AND keeps its taps (PROTECT-2 reset path)', () => {
+  it('filtered card ("Nothing here right now") also renders real glass AND keeps its taps (PROTECT-2 reset path)', () => {
     const tag = glassTagBeforeCopy(src, 'Nothing here right now', 'MapScreen');
-    expect(isThreaded(tag)).toBe(true);
-    expect(hasLiteralForceEngineered(tag)).toBe(false);
+    expect(hasAnyForceEngineered(tag)).toBe(false);
     // It holds the reset chips + "Reset all filters" — it must remain tappable.
     expect(tag).not.toContain('pointerEvents="none"');
     expect(src).toContain('accessibilityLabel="Reset all filters"');

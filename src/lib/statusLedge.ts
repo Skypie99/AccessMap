@@ -8,8 +8,8 @@
  * tab screens the pill sat ON TOP of the editorial header, and when both were
  * live at once they exactly superimposed.
  *
- * This is a tiny module-level pub-sub (same shape as `liveStatus.ts` /
- * `glassMode.ts`) that carries two facts, PUBLISHED from inside the navigator
+ * This is a tiny module-level pub-sub (same shape as `liveStatus.ts`) that
+ * carries two facts, PUBLISHED from inside the navigator
  * (`ScreenHeader`) and READ by the App-root overlays that live OUTSIDE it:
  *
  *   1. headerHeight — the focused header's measured HEIGHT (never a live

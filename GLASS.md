@@ -278,19 +278,18 @@ future map-class screen:
 5. **Blur only where the backdrop is quasi-static while the surface is up** (sheet/panel-
    class — the filter panel). Persistent pan-time chrome = **literal `forceEngineered`**
    (budget-free by mechanism — no BlurView ever mounts).
-   - **Exception (Sky, 2026-08-12): a SINGLE-pane persistent chrome may thread the
-     glass-mode switch for an on-device A/B; the losing mode is removed in a later cleanup
-     commit (the C-lite pattern).** Applied by the map-chrome compaction: the Explore
-     command bar is the one persistent pane, so it threads `forceEngineered={glassLite}`
-     (full = true blur i=12 + the crystal worst-stop floor via the additive `floorColor`
-     override; lite = engineered crystal gradient). The bar is also a **600ms long-press
-     flip target** (the TasksScreen.tsx:472-476 gesture — `hapticSelection` →
-     `toggleGlassMode`, on an `accessible={false}` wrapper around the title that must NOT
-     swallow the bar's own button taps) so the material changes under the reviewer's eyes.
-     The switch stays GLOBAL (flipping on Map re-materialises Tasks + the filter panel) and
-     the blur arm is iOS-only (Android renders engineered either way, §5 unchanged). Once
-     Sky names the winner, ONE cleanup commit removes the losing mode's tokens/branches AND
-     this bar trigger — the switch is scaffolding, not a feature.
+   - **Ratified exception (Sky, 2026-08-12): the SINGLE-pane Explore command bar mounts
+     live blur.** The on-device A/B is over — Sky picked `full`, so **the C-lite runtime
+     switch is retired app-wide** (`glassMode.ts` + both long-press triggers + every
+     `forceEngineered={glassLite}` thread deleted) and `full` is the shipped material. The
+     command bar (the one persistent pane) mounts live blur (i=12) + the crystal worst-stop
+     floor via the additive `floorColor` override on iOS, and the engineered crystal
+     gradient (`liteColors`) on Android (§5 — Android never blurs). No `forceEngineered`
+     thread, no long-press toggle: those were the A/B scaffolding, now gone. Every OTHER
+     persistent map control stays engineered — the crystal FAB circles (recenter/zoom/List)
+     are **literal `forceEngineered`**, 0 blur panes. Count the bar as **1 permanent blur
+     pane** (rule 7). Reduce Transparency still drops the whole estate to the designed
+     opaque state; the retired `lite` mode was the only lower-GPU middle option.
 6. **Map-internal world** (markers, cluster children, callouts, heat badges) = tokens/inks
    only, never a BlurView. Snapshot flags (`tracksViewChanges={false}`) require a
    content-derived key (`cluster-${id}-${count}`) and a fully mode-independent bubble, or

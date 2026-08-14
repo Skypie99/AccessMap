@@ -86,7 +86,6 @@ import { AppText } from '@/components/ui/AppText';
 import { Input } from '@/components/ui/Input';
 import { GlassSurface } from '@/components/ui/GlassSurface';
 import { ScreenStage } from '@/components/ui/ScreenStage';
-import { hydrateGlassMode, useGlassMode } from '@/lib/glassMode';
 import { ArrowDown, ArrowUp, ChevronRight, Flame, MapPin, Pencil, X } from 'lucide-react-native';
 import TierIcon from '@/components/TierIcon';
 import { getTier, pointsToNextTier, REPUTATION_TIERS } from '@/lib/reputationTier';
@@ -165,15 +164,6 @@ export default function ProfileScreen() {
   const color = useColor();
   const styles = useMemo(() => makeStyles(color), [color]);
   const reduceMotion = useReducedMotion();
-  // C-lite runtime mode (GLASS.md §4): read-only here — the long-press flip
-  // lives on the Tasks header; Profile just respects the store. Full → the
-  // hero + stat + point-history cards and the nearest banner carry true blur;
-  // 'lite' → those same surfaces render the engineered *Lite gradient. Every
-  // other row is always engineered (budget-free), so it takes no flag.
-  const glassLite = useGlassMode() === 'lite';
-  useEffect(() => {
-    void hydrateGlassMode();
-  }, []);
   const navigation = useNavigation<BottomTabNavigationProp<RootTabParamList, 'Profile'>>();
   const tabBarHeight = useBottomTabBarHeight();
   const { user, loading: authLoading } = useAuth();
@@ -948,7 +938,6 @@ export default function ProfileScreen() {
 
         <GlassSurface
           variant="row"
-          forceEngineered={glassLite}
           style={styles.heroCard}
           borderRadius={radius.sheet}
         >
@@ -1090,7 +1079,6 @@ export default function ProfileScreen() {
             NOT shown — see TRUST_SCORE_SPEC §3.2 Jordan constraint. */}
         <GlassSurface
           variant="row"
-          forceEngineered={glassLite}
           style={styles.pointHistoryCard}
           borderRadius={radius.lg}
         >
@@ -1166,9 +1154,9 @@ export default function ProfileScreen() {
             `${stats.resolved} resolved`
           }
         >
-          <Stat label="Reported" value={stats.reported} glassLite={glassLite} />
-          <Stat label="Verified" value={stats.byStatus.verified} glassLite={glassLite} />
-          <Stat label="Resolved" value={stats.resolved} glassLite={glassLite} />
+          <Stat label="Reported" value={stats.reported} />
+          <Stat label="Verified" value={stats.byStatus.verified} />
+          <Stat label="Resolved" value={stats.resolved} />
         </View>
 
         {/* Streak card — only renders once we have a real value (≥1)
@@ -1224,7 +1212,6 @@ export default function ProfileScreen() {
           >
             <GlassSurface
               variant="banner"
-              forceEngineered={glassLite}
               style={styles.nearestBtn}
               borderRadius={12}
             >
@@ -1980,13 +1967,12 @@ export default function ProfileScreen() {
   );
 }
 
-function Stat({ label, value, glassLite }: { label: string; value: number; glassLite: boolean }) {
+function Stat({ label, value }: { label: string; value: number }) {
   const color = useColor();
   const styles = makeStyles(color);
   return (
     <GlassSurface
       variant="row"
-      forceEngineered={glassLite}
       style={styles.statCard}
       borderRadius={radius.lg}
     >

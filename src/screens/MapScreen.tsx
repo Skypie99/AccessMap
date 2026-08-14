@@ -23,8 +23,6 @@ import { useNavigation, useRoute, type RouteProp } from '@react-navigation/nativ
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
-import { hydrateGlassMode, toggleGlassMode, useGlassMode } from '@/lib/glassMode';
-import { hapticSelection } from '@/lib/haptics';
 import { font, radius, severity, shadow, spacing } from '@/theme';
 import { errorMessage } from '@/lib/errors';
 import { clearLiveStatusMessage, setLiveStatus } from '@/lib/liveStatus';
@@ -342,28 +340,6 @@ export default function MapScreen() {
   // light / inkSelect #B4CFFA in dark (map-chrome-crystal-stacks.json — worst
   // 3.20 light / 3.71 dark). Same fork idiom as the panel's clearLink ink.
   const barIconColor = color.scheme === 'light' ? color.brandTextAlt : color.inkSelect;
-  // C-lite drives the filter panel's material: full = true blur (F3, the one
-  // frost moment on Map), lite = engineered gradient. Hydrate on mount so a
-  // C-lite user who cold-starts onto Map doesn't get a blur panel for one frame
-  // before another glass screen mounts (bonus fix 3).
-  const glassLite = useGlassMode() === 'lite';
-  useEffect(() => {
-    void hydrateGlassMode();
-  }, []);
-  // Sky's on-device material A/B (SPEC §0): the command bar is itself a 600ms
-  // long-press flip target — full = true blur i=12 + crystal floor, lite =
-  // engineered crystal gradient — so the material changes under her eyes while
-  // she judges it. Copies the TasksScreen.tsx:472-476 gesture (hapticSelection →
-  // toggleGlassMode); the store already announces the flip for screen readers,
-  // and the visible confirmation is the bar re-materialising under the press
-  // (MapScreen has no flash pill — see the build report's DECISIONS FOR SKY).
-  // The switch is GLOBAL: flipping here also re-materialises Tasks + the filter
-  // panel, and persists across launches (@accessmap/glass_mode_v1). Two doors,
-  // one switch.
-  const handleGlassToggle = useCallback(() => {
-    hapticSelection();
-    toggleGlassMode();
-  }, []);
   const mapRef = useRef<PlatformMapHandle | null>(null);
   // T1 (F3-04): one scheduler for all four callout flows — last-tap-wins.
   const calloutScheduler = useMemo(() => createCalloutScheduler(() => mapRef.current), []);
@@ -1653,12 +1629,13 @@ export default function MapScreen() {
             status bar. The GlassSurface is box-none (its material layer is
             pointer-inert; only the buttons + count take touches) so the map still
             pans/zooms through the title and the trailing spacer — the box-none
-            gesture law holds (no full-width touch-opaque strip). forceEngineered
-            threads the glass switch in Phase 5 (blur=full / crystal=lite). */}
+            gesture law holds (no full-width touch-opaque strip). The single-pane
+            bar is the ratified §12.5 exception: it mounts live blur (i=12) +
+            the crystal floor on iOS, engineered crystal (liteColors) on Android
+            — floorColor keeps the blur floor == the engineered bottom stop. */}
         <GlassSurface
           style={styles.commandBar}
           variant="row"
-          forceEngineered={glassLite}
           liteColors={[color.glassMapCrystal0, color.glassMapCrystal1]}
           floorColor={color.glassMapCrystal1}
           borderRadius={radius.circle}
@@ -1683,28 +1660,15 @@ export default function MapScreen() {
             </PressableScale>
             {/* Title + count — box-none so the map pans through the gaps here. */}
             <View style={styles.barCenter} pointerEvents="box-none">
-              {/* Long-press glass-flip target (Sky's on-device A/B). accessible=
-                  {false} keeps the SR tree + tap targets unchanged; it does NOT
-                  swallow the bar's button taps (they're siblings outside this
-                  wrapper), and a short tap is a no-op (the title has no onPress).
-                  The header role rides the AppText inside, so the rotor landmark
-                  survives. */}
-              <Pressable
-                onLongPress={handleGlassToggle}
-                delayLongPress={600}
-                accessible={false}
-                style={styles.barTitleWrap}
+              <AppText
+                variant="display"
+                size={22}
+                numberOfLines={1}
+                accessibilityRole="header"
+                style={styles.barTitle}
               >
-                <AppText
-                  variant="display"
-                  size={22}
-                  numberOfLines={1}
-                  accessibilityRole="header"
-                  style={styles.barTitle}
-                >
-                  Explore
-                </AppText>
-              </Pressable>
+                Explore
+              </AppText>
               {/* Count pill (Q2, Sky). The pill is compact so the title reads in
                   full: the VISIBLE text is the SHORT 4-arm form ("8 flags") and
                   the FULL honesty sentence rides accessibilityLabel — the
@@ -1826,7 +1790,6 @@ export default function MapScreen() {
           <GlassSurface
             style={styles.toolSheet}
             variant="row"
-            forceEngineered={glassLite}
             overlayTint={color.glassMapWash}
             borderRadius={radius.lg}
           >
@@ -1899,7 +1862,6 @@ export default function MapScreen() {
               },
             ]}
             variant="row"
-            forceEngineered={glassLite}
             overlayTint={color.glassMapWash}
             borderRadius={radius.lg}
           >
@@ -2337,7 +2299,6 @@ export default function MapScreen() {
           <GlassSurface
             style={styles.emptyCard}
             variant="row"
-            forceEngineered={glassLite}
             overlayTint={color.glassMapWash}
             borderRadius={radius.lg}
             // A11Y-213 (S13/L6-04 class): the material container must NOT be an
@@ -2396,15 +2357,14 @@ export default function MapScreen() {
           <GlassSurface
             style={[styles.emptyCard, styles.emptyCardCompact]}
             variant="row"
-            forceEngineered={glassLite}
             overlayTint={color.glassMapWash}
             borderRadius={radius.lg}
-            // Bug-2 (2026-08-13): render the app's REAL liquid glass — in the
-            // default 'full' mode forceEngineered={glassLite} is false, so the
-            // primitive mounts a true BlurView (like the filter panel) and the
-            // map reads THROUGH the card instead of a flat white slab. It has no
-            // interactive children, so pointerEvents="none" lets the map pan
-            // beneath it; emptyCardCompact trims the footprint (Sky's directive).
+            // Bug-2 (2026-08-13): render the app's REAL liquid glass — with the
+            // C-lite switch retired the primitive mounts a true BlurView on iOS
+            // (like the filter panel), so the map reads THROUGH the card instead
+            // of a flat white slab. It has no interactive children, so
+            // pointerEvents="none" lets the map pan beneath it; emptyCardCompact
+            // trims the footprint (Sky's directive).
             pointerEvents="none"
           >
             <MapPin size={26} color={color.inkGlassMuted} strokeWidth={2} {...decorativeProps} />
@@ -3146,9 +3106,6 @@ const makeStyles = (color: ColorTheme) =>
     // Title + count cluster. box-none in the JSX so the map pans through it; the
     // Phase-5 long-press glass-flip lands on this region.
     barCenter: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, flexShrink: 1 },
-    // Long-press glass-flip wrapper (accessible={false}); flexShrink so a long
-    // title yields before the trailing buttons.
-    barTitleWrap: { flexShrink: 1 },
     barTitle: { color: color.textStrong, marginTop: 0, flexShrink: 1 },
     // Count pill — its OWN crystal fill (glassMapCrystal0) over the bar floor so
     // glassChipInk clears AA (arbiter countChip 9.61 / 12.21). Non-interactive.

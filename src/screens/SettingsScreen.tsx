@@ -20,7 +20,6 @@ import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { HeaderActions } from '@/components/ui/HeaderActions';
 import { useDrawer } from '@/lib/drawerContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { hydrateGlassMode, useGlassMode } from '@/lib/glassMode';
 import { hapticSelection } from '@/lib/haptics';
 import { signOut, supabase } from '@/lib/supabase';
 import { confirm, notify } from '@/lib/confirm';
@@ -73,7 +72,6 @@ function SettingsRow({
   icon,
   disabled,
   busy,
-  glassLite,
   role = 'button',
 }: {
   title: string;
@@ -87,9 +85,6 @@ function SettingsRow({
   // convention on ResourcesScreen's link cards. Defaults to 'button' so every
   // existing row is byte-unchanged.
   role?: 'button' | 'link';
-  // C-lite runtime flag threaded from the parent (rows only) — drops the row
-  // BlurView for the engineered *Lite gradient when the store is in 'lite'.
-  glassLite: boolean;
   // Optional text glyph rendered at the leading edge of the row. Pure
   // decoration — hidden from AT so a screen reader doesn't read out
   // "clipboard emoji, Export my data". The row's accessibilityLabel
@@ -123,7 +118,7 @@ function SettingsRow({
       accessibilityHint={accessibilityHint}
       {...a11yToggle({ disabled: !!disabled, busy: !!busy })}
     >
-      <GlassSurface variant="row" forceEngineered={glassLite} style={styles.row}>
+      <GlassSurface variant="row" style={styles.row}>
         {icon ? (
           <View
             style={styles.rowIcon} {...decorativeProps}
@@ -231,12 +226,6 @@ export default function SettingsScreen() {
   // contrast on spinner strokes. color.textSubtle (#999 light, #777 dark) is
   // only for non-essential text or 18pt+, which thin spinners are not.
   const pushSpinnerColor = color.text;
-  // C-lite runtime mode (GLASS.md §4): read-only here — the long-press flip
-  // lives on the Tasks header; this screen just respects it via the store.
-  const glassLite = useGlassMode() === 'lite';
-  useEffect(() => {
-    void hydrateGlassMode();
-  }, []);
   // Help, Changelog, Feedback, and MyFeedback are all mounted ONCE at
   // the navigator level via <SharedModalsHost /> (see RootNavigator.tsx +
   // src/lib/sharedModalsContext.tsx). Settings just sets the shared
@@ -509,7 +498,6 @@ export default function SettingsScreen() {
         </AppText>
 
         <SettingsRow
-          glassLite={glassLite}
           title="Update banner preferences"
           subtitle="Choose which flag status changes surface in the in-app updates banner."
           accessibilityHint="Opens in-app update banner preferences"
@@ -525,8 +513,7 @@ export default function SettingsScreen() {
             yet, so the row hides until the wiring lands. */}
         {pushNotifTypesEnabled && (
           <SettingsRow
-            glassLite={glassLite}
-            title="Push notification types"
+              title="Push notification types"
             subtitle="Pick which push alerts you get: status changes, nearby flags, watched flags, and digests."
             accessibilityHint="Opens push notification category preferences"
             onPress={() => setNotifPrefsOpen(true)}
@@ -542,7 +529,7 @@ export default function SettingsScreen() {
             reader. Previously role="switch" sat on the wrapper View (no press
             handler) with the Switch hidden, so VoiceOver/TalkBack could read
             but not flip it. Mirrors NotificationPrefsModal. */}
-        <GlassSurface variant="row" forceEngineered={glassLite} style={styles.pushRow}>
+        <GlassSurface variant="row" style={styles.pushRow}>
           <View style={styles.pushTextWrap}>
             <AppText variant="label" style={styles.rowTitle}>Push notifications</AppText>
             <AppText variant="bodyMedium" style={styles.rowSubtitle}>
@@ -583,7 +570,6 @@ export default function SettingsScreen() {
         </AppText>
 
         <SettingsRow
-          glassLite={glassLite}
           title="Help & FAQ"
           subtitle="Common questions about reports, points, and accessibility."
           accessibilityHint="Opens collapsible answers to common questions"
@@ -591,7 +577,6 @@ export default function SettingsScreen() {
         />
 
         <SettingsRow
-          glassLite={glassLite}
           title="What's New"
           subtitle="Recent features added to AccessMap."
           accessibilityHint="Opens a dated list of recent shipped features"
@@ -599,7 +584,6 @@ export default function SettingsScreen() {
         />
 
         <SettingsRow
-          glassLite={glassLite}
           title="About AccessMap"
           subtitle="Version, credits, and a short privacy summary."
           accessibilityHint="Opens the about page with version and privacy info"
@@ -615,7 +599,6 @@ export default function SettingsScreen() {
             browser. The hosted URL still exists for App Store Connect — see
             PRIVACY_POLICY_URL — it is just no longer what this row opens. */}
         <SettingsRow
-          glassLite={glassLite}
           title={PRIVACY_POLICY_LINK_LABEL}
           accessibilityHint={PRIVACY_POLICY_LINK_HINT}
           onPress={() => setOpen('privacy')}
@@ -628,14 +611,12 @@ export default function SettingsScreen() {
             "link … opens in your browser" for a sheet that never leaves the app
             would be a small lie told to screen-reader users only. */}
         <SettingsRow
-          glassLite={glassLite}
           title={TERMS_LINK_LABEL}
           accessibilityHint={TERMS_LINK_HINT}
           onPress={() => setOpen('terms')}
         />
 
         <SettingsRow
-          glassLite={glassLite}
           title="Replay tutorial"
           subtitle="Re-show the 3-card welcome intro."
           icon={<PlayCircle size={18} color={color.textMuted} strokeWidth={2.2} />}
@@ -648,7 +629,6 @@ export default function SettingsScreen() {
         </AppText>
 
         <SettingsRow
-          glassLite={glassLite}
           title="Send feedback"
           subtitle="Tell the maintainer what's working or what's broken."
           accessibilityHint="Opens the feedback form"
@@ -656,7 +636,6 @@ export default function SettingsScreen() {
         />
 
         <SettingsRow
-          glassLite={glassLite}
           title="My feedback history"
           subtitle="View the feedback messages you've sent."
           accessibilityHint="Opens the list of feedback you've sent"
@@ -667,7 +646,6 @@ export default function SettingsScreen() {
             data because both neighbours are records of things you did, so the
             three read as a set. */}
         <SettingsRow
-          glassLite={glassLite}
           title={HIDDEN_COMMENTS_TITLE}
           subtitle={HIDDEN_COMMENTS_ROW_SUBTITLE}
           accessibilityHint={HIDDEN_COMMENTS_LINK_HINT}
@@ -679,7 +657,6 @@ export default function SettingsScreen() {
         </AppText>
 
         <SettingsRow
-          glassLite={glassLite}
           title="Export my data"
           subtitle="Copy your flags and feedback to your clipboard as plain text."
           icon={<ClipboardCopy size={18} color={color.textMuted} strokeWidth={2.2} />}
@@ -694,7 +671,6 @@ export default function SettingsScreen() {
         </AppText>
 
         <SettingsRow
-          glassLite={glassLite}
           title="Sign out"
           subtitle="End your session on this device."
           // Signal destructive intent via the hint as well as the red color —

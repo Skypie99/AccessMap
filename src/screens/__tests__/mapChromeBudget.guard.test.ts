@@ -71,9 +71,10 @@ describe('map-chrome budget — the ONE persistent command bar', () => {
     );
   });
 
-  it('(c) the bar threads the glass switch with the crystal floor override', () => {
-    // The single-pane on-device A/B: engineered crystal (lite) / true blur (full)
-    // with the SAME worst-stop floor (glassMapCrystal1) under blur.
+  it('(c) the bar keeps its crystal material — liteColors (Android) + floorColor (iOS blur floor)', () => {
+    // The C-lite switch is retired (full wins app-wide): the bar mounts live
+    // blur on iOS with glassMapCrystal1 as the floor, and the engineered crystal
+    // gradient (liteColors) on Android. Both survive the switch removal.
     expect(MAP).toContain('liteColors={[color.glassMapCrystal0, color.glassMapCrystal1]}');
     expect(MAP).toContain('floorColor={color.glassMapCrystal1}');
   });

@@ -9,7 +9,7 @@
  * is supplied (TODO(Sky): drop in the specific links you want to point at — the
  * cards render as plain info cards until then, so nothing ever shows a dead link).
  */
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import {
   Linking,
   Modal,
@@ -35,7 +35,6 @@ import { AppText } from '@/components/ui/AppText';
 import { GlassSurface } from '@/components/ui/GlassSurface';
 import { ScreenStage } from '@/components/ui/ScreenStage';
 import { SheetGrabber } from '@/components/ui/Sheet';
-import { hydrateGlassMode, useGlassMode } from '@/lib/glassMode';
 import { decorativeProps, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
 import { font, radius, shadow, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
@@ -108,12 +107,6 @@ export default function ResourcesScreen({ visible, onClose }: Props) {
   const reducedMotion = useReducedMotion();
   // A11Y-201 (2.4.3): move the SR cursor onto the title when this surface opens.
   const titleRef = useFocusOnOpen<Text>(visible);
-  // C-lite runtime mode (GLASS.md §4): read-only here — the long-press toggle
-  // lives on the Tasks header; this modal just respects a flip via the store.
-  const glassLite = useGlassMode() === 'lite';
-  useEffect(() => {
-    void hydrateGlassMode();
-  }, []);
   // Measured height of the absolute chrome glass pane; null until the first
   // onLayout — the body hides for that one pass so its top pad never jumps.
   const [chromeHeight, setChromeHeight] = useState<number | null>(null);
@@ -220,7 +213,7 @@ export default function ResourcesScreen({ visible, onClose }: Props) {
                 accessibilityLabel={`${r.title}. ${r.blurb}`}
                 accessibilityHint="Opens in your browser"
               >
-                <GlassSurface variant="row" forceEngineered={glassLite} style={styles.card}>
+                <GlassSurface variant="row" style={styles.card}>
                   {inner}
                 </GlassSurface>
               </Pressable>
@@ -228,7 +221,6 @@ export default function ResourcesScreen({ visible, onClose }: Props) {
               <GlassSurface
                 key={r.title}
                 variant="row"
-                forceEngineered={glassLite}
                 style={styles.card}
                 accessible
                 accessibilityLabel={`${r.title}. ${r.blurb}`}

@@ -12,6 +12,13 @@ import { font, radius, shadow, heatmapSeverity } from '@/theme';
 const LEGEND_LABEL =
   'Heat map legend: 1 Minor yellow, 2 Mild orange, 3 Moderate orange-red, 4 Significant red, 5 Severe deep red';
 
+// The always-light pin shared by BOTH the expanded legend and the collapsed
+// "Legend" chip — SINGLE-SOURCED so their transparency can never drift apart
+// (Sky's parity requirement: closed and open read at the exact same
+// transparency). 0.65 floor + #222 ink = 6.52:1 over any tile (arbiter).
+const PIN_TINT = 'rgba(255,255,255,0.65)';
+const PIN_SOLID = 'rgba(255,255,255,0.95)';
+
 /**
  * HeatmapLegend — compact severity key shown whenever the heat layer is
  * visible. Satisfies Jordan's pre-approval condition: "the severity scale
@@ -52,8 +59,8 @@ export default function HeatmapLegend() {
           style={StyleSheet.absoluteFill}
           borderRadius={radius.circle}
           tint="light"
-          tintColor="rgba(255,255,255,0.65)"
-          solidColor="rgba(255,255,255,0.95)"
+          tintColor={PIN_TINT}
+          solidColor={PIN_SOLID}
           pointerEvents="none"
         />
         <View style={[styles.chipSwatch, { backgroundColor: heatmapSeverity[3].color }]} {...decorativeProps} />
@@ -67,8 +74,8 @@ export default function HeatmapLegend() {
       style={styles.container}
       borderRadius={radius.md}
       tint="light"
-      tintColor="rgba(255,255,255,0.65)"
-      solidColor="rgba(255,255,255,0.95)"
+      tintColor={PIN_TINT}
+      solidColor={PIN_SOLID}
     >
       {/* Summary node — carries the whole legend as ONE image element with its
           descriptive label (A11Y-213: the container stays a plain View so the

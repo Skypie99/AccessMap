@@ -44,7 +44,6 @@ import PlatformMap from '@/components/PlatformMap';
 import AddressSearchModal from '@/components/AddressSearchModal';
 import { SeverityDisc } from '@/components/SeverityDisc';
 import { useFlags } from '@/lib/flagsStore';
-import { useGlassMode } from '@/lib/glassMode';
 import { peekLocationState, useUserLocation, type PeekLocationState } from '@/lib/location';
 import { offlineBannerText } from '@/lib/copy';
 import {
@@ -123,7 +122,6 @@ function LocationProbe({
 
 export default function HomeScreen() {
   const color = useColor();
-  const glassLite = useGlassMode() === 'lite';
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<HomeNav>();
   const tabBarHeight = useBottomTabBarHeight();
@@ -560,7 +558,7 @@ export default function HomeScreen() {
         <AppText variant="label" style={styles.sectionLabel}>{sectionLabel}</AppText>
 
         {error && flags.length === 0 ? (
-          <GlassSurface variant="row" forceEngineered={glassLite} style={styles.listCard}>
+          <GlassSurface variant="row" style={styles.listCard}>
             <View style={styles.stateInner} accessibilityLiveRegion="polite">
               <AppText variant="body" style={styles.errorText}>Couldn’t load barriers.</AppText>
               <PressableScale
@@ -576,7 +574,7 @@ export default function HomeScreen() {
             </View>
           </GlassSurface>
         ) : showFirstLoad ? (
-          <GlassSurface variant="row" forceEngineered={glassLite} style={styles.listCard}>
+          <GlassSurface variant="row" style={styles.listCard}>
             {[0, 1, 2, 3].map((i) => (
               <View key={i}>
                 {i > 0 && <View style={styles.sep} />}
@@ -585,11 +583,11 @@ export default function HomeScreen() {
             ))}
           </GlassSurface>
         ) : items.length === 0 ? (
-          <GlassSurface variant="row" forceEngineered={glassLite} style={styles.listCard}>
+          <GlassSurface variant="row" style={styles.listCard}>
             <AppText variant="body" style={styles.emptyText}>No barriers reported yet.</AppText>
           </GlassSurface>
         ) : (
-          <GlassSurface variant="row" forceEngineered={glassLite} style={styles.listCard}>
+          <GlassSurface variant="row" style={styles.listCard}>
             {items.map((item, i) => (
               <View key={item.f.id}>
                 {i > 0 && <View style={styles.sep} />}

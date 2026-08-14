@@ -4,7 +4,7 @@
  * A step-by-step guide to contributing to AccessMap:
  * report flags, verify flags, and spread the word.
  */
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import {
   Modal,
   Pressable,
@@ -19,7 +19,6 @@ import { AppText } from '@/components/ui/AppText';
 import { GlassSurface } from '@/components/ui/GlassSurface';
 import { ScreenStage } from '@/components/ui/ScreenStage';
 import { SheetGrabber } from '@/components/ui/Sheet';
-import { hydrateGlassMode, useGlassMode } from '@/lib/glassMode';
 import { font, radius, shadow, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { decorativeProps, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
@@ -78,12 +77,6 @@ export default function HowToHelpScreen({ visible, onClose }: Props) {
   // A11Y-201 (2.4.3): move the SR cursor onto the title when this surface opens.
   const titleRef = useFocusOnOpen<Text>(visible);
   const styles = makeStyles(color);
-  // C-lite runtime mode (GLASS.md §4): read-only — the flip lives on the Tasks
-  // header; this modal just respects it via the shared store.
-  const glassLite = useGlassMode() === 'lite';
-  useEffect(() => {
-    void hydrateGlassMode();
-  }, []);
   // Chrome-pane height; null until the first onLayout — scroll hides that pass.
   const [chromeHeight, setChromeHeight] = useState<number | null>(null);
   const chromeTopPad = (chromeHeight ?? HOWTOHELP_CHROME_FALLBACK) + 10;
@@ -153,7 +146,6 @@ export default function HowToHelpScreen({ visible, onClose }: Props) {
             <GlassSurface
               key={step.number}
               variant="row"
-              forceEngineered={glassLite}
               style={styles.stepCard}
               accessible
               accessibilityLabel={`Step ${step.number}: ${step.title}. ${step.body}`}
@@ -177,7 +169,6 @@ export default function HowToHelpScreen({ visible, onClose }: Props) {
 
           <GlassSurface
             variant="banner"
-            forceEngineered={glassLite}
             style={styles.callout}
             accessible
             accessibilityLabel="Every contribution — big or small — makes the world more accessible for people with mobility disabilities. Thank you."
