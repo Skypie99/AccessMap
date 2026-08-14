@@ -3,6 +3,7 @@ import {
   AccessibilityInfo,
   ActivityIndicator,
   Alert,
+  Keyboard,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -93,6 +94,23 @@ export default function FeedbackModal({ visible, onClose }: Props) {
     mountedRef.current = true;
     return () => {
       mountedRef.current = false;
+    };
+  }, []);
+
+  // Bug-3 (2026-08-13, build 27): the sheet DOES lift above the keyboard, but at
+  // its full height the lower content (the reply-email field) was squeezed out of
+  // view. Reclaim the space the keyboard now covers — the bottom safe-area inset
+  // and a shorter writing box — but ONLY while the keyboard is up, so the card
+  // gets SHORTER, never taller. That means it can never push the close-X off the
+  // top (the G6/SR-099 / 9235e3b cap this must not fight) — the fix is purely
+  // additive to the keyboard-open case. keyboardDidShow/Hide covers both platforms.
+  const [kbVisible, setKbVisible] = useState(false);
+  useEffect(() => {
+    const show = Keyboard.addListener('keyboardDidShow', () => setKbVisible(true));
+    const hide = Keyboard.addListener('keyboardDidHide', () => setKbVisible(false));
+    return () => {
+      show.remove();
+      hide.remove();
     };
   }, []);
 
@@ -201,7 +219,7 @@ export default function FeedbackModal({ visible, onClose }: Props) {
           style={styles.kav}
         >
           <View style={styles.cardWrap}>
-          <GlassSurface variant="bulk" borderRadius={0} style={[styles.card, { paddingBottom: Math.max(spacing.xl, insets.bottom) }]}>
+          <GlassSurface variant="bulk" borderRadius={0} style={[styles.card, { paddingBottom: kbVisible ? spacing.md : Math.max(spacing.xl, insets.bottom) }]}>
             <View style={styles.headerRow}>
               <AppText ref={titleRef} variant="heading" style={styles.title} accessibilityRole="header">
                 Send feedback
@@ -285,7 +303,7 @@ export default function FeedbackModal({ visible, onClose }: Props) {
                 placeholderTextColor={color.placeholderText}
                 onFocus={() => setBodyFocused(true)}
                 onBlur={() => setBodyFocused(false)}
-                style={[styles.bodyInput, bodyFocused && { borderColor: color.brand }]}
+                style={[styles.bodyInput, bodyFocused && { borderColor: color.brand }, kbVisible && styles.bodyInputKbUp]}
                 editable={!sending}
                 textAlignVertical="top"
                 accessibilityLabel="Feedback message"
@@ -511,6 +529,10 @@ const makeStyles = (color: ColorTheme) =>
       color: color.text,
       minHeight: 120,
     },
+    // Bug-3: shrink the writing box only while the keyboard is up so the reply-
+    // email field + Cancel/Send stay visible above the keyboard on small phones.
+    // Still ~4 lines, and the field is a scroll container so long text isn't lost.
+    bodyInputKbUp: { minHeight: 88 },
     contactInput: {
       borderWidth: 1,
       borderColor: color.borderSubtle,
