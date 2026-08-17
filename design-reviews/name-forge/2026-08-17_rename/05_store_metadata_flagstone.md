@@ -73,7 +73,11 @@ First public release: the barrier map, severity ratings, anonymous reporting, an
 | Field | Value | Status |
 |---|---|---|
 | Privacy Policy URL | `https://skypie99.github.io/AccessMap/privacy/` | live and verified today; the page's visible text now says Flagstone on this branch, the URL deliberately does not move |
-| Support URL | `https://skypie99.github.io/AccessMap/support` | **verify before pasting.** `docs/support.html` is the page and its brand text is renamed on this branch, but `docs/github-pages-setup.md` documents a different host and path than the one the app actually uses. See BQ-5. |
+| Support URL | `https://skypie99.github.io/AccessMap/support.html` | **verified live 2026-08-17** (HTTP 200, all four candidates fetched; see `06_finish_app_side.md` leg 5) |
+
+⚑ **Do not use the Support URL printed in `docs/github-pages-setup.md`.** That file documents `https://skypie911.github.io/accessmap/support`, which is **dead**: the username is `skypie99`, not `skypie911`, and the repo path is `AccessMap`, not `accessmap`. Both wrong-host variants were fetched and returned nothing. Use the row above.
+
+Both pages currently still *serve* the AccessMap wording, because GitHub Pages serves `main` and the rename branch is not merged yet. The URLs and paths are correct and stable; merging the rename makes the same URLs serve the Flagstone text.
 
 Both URLs keep `AccessMap` in the path on purpose. A user sees the page title, not the path, and moving the privacy URL would break the pin between `app.json` and `src/lib/links.ts` that `privacyLink.guard.test.ts` enforces.
 
