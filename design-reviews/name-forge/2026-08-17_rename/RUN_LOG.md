@@ -1,5 +1,5 @@
 # THE FLAGSTONE RENAME · RUN LOG
-**Date:** 2026-08-17 · **Repo:** `~/AccessMap` · **Branch:** `rename/flagstone` (off `main` = `origin/main` = `d2a0991`)
+**Date:** 2026-08-17 · **Repo:** `~/AccessMap` · **Branch:** `rename/flagstone` @ **`abf4e73`**, one commit ahead of `main` = `origin/main` = `d2a0991` (verified still identical after the run)
 **Model:** top available Opus, max effort · **Mode:** execution, branch-only, Sky merges.
 
 **The decision this run executes:** AccessMap ships as **Flagstone** (Sky's call, 2026-08-17, from the Name Forge run of 2026-08-16). Evidence: `../2026-08-16/03_VETTING.md` — zero Flagstone apps on the CA and US storefronts as of 2026-08-16; nearest neighbours are Flagstone Group (UK cash-savings fintech) and small B2B IT shops, none on the App Store.
