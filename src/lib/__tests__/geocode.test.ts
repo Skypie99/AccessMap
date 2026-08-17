@@ -168,6 +168,6 @@ describe('searchAddress', () => {
     await searchAddress('cupertino');
     const init = fetchMock.mock.calls[0]?.[1] as RequestInit | undefined;
     const headers = init?.headers as Record<string, string> | undefined;
-    expect(headers?.['User-Agent']).toMatch(/^AccessMap\//);
+    expect(headers?.['User-Agent']).toMatch(/^Flagstone\//);
   });
 });
