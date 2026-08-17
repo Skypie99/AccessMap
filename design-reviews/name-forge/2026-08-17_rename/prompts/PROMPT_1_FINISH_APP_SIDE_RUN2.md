@@ -34,11 +34,15 @@ Still verify rather than trust this block, since time has passed. `git log --one
 ### ⚠ One environment gotcha run 1 hit, so you do not lose time on it
 `npm run lint` may crash immediately with `Cannot find native binding` from `unrs-resolver` (the native resolver behind `eslint-import-resolver-typescript`). That is **not a code problem**. `node_modules` was installed on macOS (`darwin-arm64`) and Cowork executes in a Linux `arm64` sandbox, so the platform-specific `.node` binary will not load.
 
-Run 1's fix worked and is the one to repeat: install the matching binding **without touching any manifest**:
+**⚠ Do NOT use `--no-package-lock` for this.** Run 1 did, and it caused real collateral damage: ignoring the lockfile let npm upgrade `lucide-react-native` from the pinned 1.17.0 to 1.31.0, which moved the per-icon CJS files that `jest.config.js:38` maps to, and `StatusHistoryModal.test.tsx` then failed to run at all (`Could not locate module lucide-react-native/icons/history`). The tracked manifests stayed clean, so it was invisible until the next full suite on a different machine.
+
+Install the binding **with the lockfile respected**:
 ```
-npm i @unrs/resolver-binding-linux-arm64-gnu --no-save --no-package-lock
+npm i @unrs/resolver-binding-linux-arm64-gnu --no-save
 ```
-`--no-save --no-package-lock` writes only into untracked `node_modules` and leaves `package.json` and the tracked `package-lock.json` byte-unchanged. Confirm both are still clean in `git status` afterwards, and say so in the report. If the sandbox architecture differs, install the binding that matches it, same flags. **Never commit a dependency-manifest change to work around this.**
+`--no-save` keeps `package.json` unchanged. Then confirm `git status` shows `package.json` and `package-lock.json` still clean, and say so in the report. If the sandbox architecture differs, install the binding that matches it, same single flag. **Never commit a dependency-manifest change to work around this, and never let a workaround silently move a pinned dependency.**
+
+If the suite reports anything other than 204/204, check for this drift before blaming the code: `node -p "require('./node_modules/lucide-react-native/package.json').version"` must read `1.17.0`. If it does not, `npm ci` restores the tree, and note it in the report.
 
 **This run writes `07_finish_app_side_run2.md`,** with a leg table showing for each leg: done by run 1 / done by this run / skipped and why. Carry run 1's Support URL verdict forward into it, cited as run 1's.
 
