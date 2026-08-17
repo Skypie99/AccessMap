@@ -49,7 +49,7 @@ const RELEASES: ReleaseNote[] = [
       'Branded header on every tab with a Feedback button always at the top',
       'Profile got a hero card with points + a progress bar to the next milestone',
       'Map top-row buttons are now one grouped action bar (cleaner than four floating circles)',
-      'New "About AccessMap" page in Profile with version + maker note',
+      'New "About Flagstone" page in Profile with version + maker note',
       'New "Help & FAQ" page in Profile — 7 collapsible answers to common questions',
       'New "My Feedback" page in Profile to see messages you\'ve sent',
       'Feedback supports categories (Bug / Idea / Love / Other) so it triages itself',
