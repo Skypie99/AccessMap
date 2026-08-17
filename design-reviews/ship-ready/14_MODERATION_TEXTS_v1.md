@@ -10,9 +10,9 @@ Where it lives: the About page, the App Store description (lead with it), the re
 
 ## 1 · Terms & Community Guidelines (in-app page)
 
-AccessMap Terms & Community Guidelines Effective 2026-07-27 · v1.0
+Flagstone Terms & Community Guidelines Effective 2026-07-27 · v1.0
 
-**What AccessMap is.** AccessMap is a community map of accessibility barriers. I'm Sky, and I built it and run it on my own so that disabled people get better information about the places they move through. By using the app, you're agreeing to these terms.
+**What Flagstone is.** Flagstone is a community map of accessibility barriers. I'm Sky, and I built it and run it on my own so that disabled people get better information about the places they move through. By using the app, you're agreeing to these terms.
 
 **Community-provided information.** Barrier reports come from people like you. I do my best to keep them honest through verification and moderation, but I can't promise every report is accurate or up to date. Please don't make AccessMap your only source when your safety is on the line.
 
@@ -22,13 +22,13 @@ AccessMap Terms & Community Guidelines Effective 2026-07-27 · v1.0
 
 **Reports and moderation.** Every flag and comment can be reported right in the app. I review reports within 24 hours and take down anything that breaks these guidelines. You can also hide comments on your own device whenever you like.
 
-**Your content.** What you post stays yours. By posting it, you're letting AccessMap show it in the app so the community can use it.
+**Your content.** What you post stays yours. By posting it, you're letting Flagstone show it in the app so the community can use it.
 
 **Your account.** You can delete your account any time in Settings. Anything you've contributed may stay in the app, with your name removed, so the community's record of barriers stays whole.
 
 **Changes.** If these terms ever change, the new version will live right here with a new date at the top.
 
-**Contact.** Questions or concerns? Reach me at skylerhalisky@gmail.com. AccessMap is made in Canada and operates under the laws of British Columbia.
+**Contact.** Questions or concerns? Reach me at skylerhalisky@gmail.com. Flagstone is made in Canada and operates under the laws of British Columbia.
 
 ## 2 · Content filter: policy + copy (leg 1.2(a))
 

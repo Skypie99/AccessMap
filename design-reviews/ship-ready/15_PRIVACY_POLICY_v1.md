@@ -6,12 +6,12 @@ Drafted by Claude with Sky. Requires Sky's ratification before it ships. Plain-l
 
 ## The policy text
 
-**AccessMap Privacy Policy**
+**Flagstone Privacy Policy**
 Effective 2026-07-29 · v1.0
 
-**Who runs this.** AccessMap is built and run by one person, Sky, in British Columbia, Canada. If you have a question about your data, email skylerhalisky@gmail.com and it comes straight to me.
+**Who runs this.** Flagstone is built and run by one person, Sky, in British Columbia, Canada. If you have a question about your data, email skylerhalisky@gmail.com and it comes straight to me.
 
-**The short version.** AccessMap collects as little as it can. You can report a barrier without making an account at all. There is no advertising, no analytics, no crash reporting, and nothing is sold or shared with anyone. [V: no analytics/crash SDK active, confirmed 2026-07-29]
+**The short version.** Flagstone collects as little as it can. You can report a barrier without making an account at all. There is no advertising, no analytics, no crash reporting, and nothing is sold or shared with anyone. [V: no analytics/crash SDK active, confirmed 2026-07-29]
 
 **What you can do without an account.** You can browse the map and submit barrier reports anonymously. Anonymous reports are not linked to you. [V: anonymous flag insert path] If you hide a comment, that choice is stored only on your own phone and never leaves it. [V: hiddenContent uses device-local storage only]
 
@@ -29,7 +29,7 @@ Effective 2026-07-29 · v1.0
 
 **Deleting your account.** You can delete your account any time from your Profile. Your account and personal details go. Reports and comments you contributed may stay in the app with your name removed, so the community's record of barriers stays whole. [V: users FK is ON DELETE SET NULL, per SR-117] Photos attached to your reports may remain unless you delete the report itself first. [V: SR-050 owner cleanup ships on the owner delete path]
 
-**Children.** AccessMap isn't designed for children and I don't knowingly collect information from anyone under 13.
+**Children.** Flagstone isn't designed for children and I don't knowingly collect information from anyone under 13.
 
 **Where your data lives.** On servers run by my hosting provider. Data may be stored or processed outside Canada.
 

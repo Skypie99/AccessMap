@@ -1,4 +1,4 @@
-# AccessMap Privacy Policy
+# Flagstone Privacy Policy
 
 **Last updated:** 2026-05-29 (Jordan privacy-gap draft)
 **Effective:** On public launch  
@@ -10,7 +10,7 @@
 
 ## Overview
 
-AccessMap is a community tool for mapping accessibility barriers. This policy explains what we collect, why, and how to control your information.
+Flagstone is a community tool for mapping accessibility barriers. This policy explains what we collect, why, and how to control your information.
 
 **Short version:** We collect only what's needed to make the map work. We never sell your data. You can delete your account and all your data anytime.
 
@@ -35,7 +35,7 @@ AccessMap is a community tool for mapping accessibility barriers. This policy ex
   - **Camera metadata, timestamps, and other EXIF data are stripped** before upload
   - We keep only the image itself, not the metadata
 
-> **Important — disability and accessibility information:** When you submit a flag, the combination of your account identity, the flag's location, and the accessibility category (for example, "no wheelchair ramp" or "inaccessible parking") may allow others — or AccessMap itself — to infer information about your disability status or mobility needs. This type of information is considered **sensitive personal information** under Canadian privacy law (PIPEDA and BC PIPA) and is treated as a **special category** of data under GDPR. You submit this information **voluntarily and publicly** — flags are visible to all users of the app. Before submitting a flag, please consider that doing so may disclose, or allow the inference of, information about a disability or accessibility requirement. If you do not wish this inference to be possible, you may use the app to view flags without submitting your own.
+> **Important — disability and accessibility information:** When you submit a flag, the combination of your account identity, the flag's location, and the accessibility category (for example, "no wheelchair ramp" or "inaccessible parking") may allow others — or Flagstone itself — to infer information about your disability status or mobility needs. This type of information is considered **sensitive personal information** under Canadian privacy law (PIPEDA and BC PIPA) and is treated as a **special category** of data under GDPR. You submit this information **voluntarily and publicly** — flags are visible to all users of the app. Before submitting a flag, please consider that doing so may disclose, or allow the inference of, information about a disability or accessibility requirement. If you do not wish this inference to be possible, you may use the app to view flags without submitting your own.
 
 ### Automatically collected
 - **App usage** — which screens you visit (not what you type)
@@ -73,7 +73,7 @@ AccessMap is a community tool for mapping accessibility barriers. This policy ex
 
 > **DRAFT SECTION — Not legal advice. Requires review by a qualified privacy attorney before publication.**
 
-AccessMap is an accessibility-mapping app. By design, the data you submit describes accessibility barriers, which may reveal — or allow others to infer — information about your disability status or mobility needs.
+Flagstone is an accessibility-mapping app. By design, the data you submit describes accessibility barriers, which may reveal — or allow others to infer — information about your disability status or mobility needs.
 
 ### What this means for you
 
@@ -87,7 +87,7 @@ Together, these data points can allow the inference that you or someone you assi
 
 ### How we protect this information
 
-| Protection | What AccessMap Does |
+| Protection | What Flagstone Does |
 |---|---|
 | EXIF metadata stripping | All GPS coordinates are removed from photos before upload (see Photo Privacy section) |
 | Email not shown on flags | Your email address is never displayed on public flags — only your display name |
@@ -98,14 +98,14 @@ Together, these data points can allow the inference that you or someone you assi
 
 ### What we cannot protect against
 
-Flags are **publicly visible to all app users**. When you submit a flag, anyone using AccessMap can see:
+Flags are **publicly visible to all app users**. When you submit a flag, anyone using Flagstone can see:
 - The flag's location on the map
 - The accessibility category and description
 - Your display name as the submitter
 
 If someone knows your display name and sees your submitted flags, they could infer information about where you go and what accessibility needs you or someone you support may have.
 
-**If you do not want this inference to be possible, you should not submit flags.** You can use AccessMap to view flags submitted by others without ever creating an account or submitting data yourself.
+**If you do not want this inference to be possible, you should not submit flags.** You can use Flagstone to view flags submitted by others without ever creating an account or submitting data yourself.
 
 ### Legal classification of this data
 
@@ -116,7 +116,7 @@ Under Canadian law:
 Under GDPR (if applicable):
 - Information from which disability status can be inferred is a **"special category" of personal data** under Article 9 and requires either explicit consent or another specific legal basis to process.
 
-AccessMap collects this information based on your voluntary, informed submission of flag data. By submitting a flag describing an accessibility barrier at a specific location, you consent to that information being stored and publicly displayed as described in this policy.
+Flagstone collects this information based on your voluntary, informed submission of flag data. By submitting a flag describing an accessibility barrier at a specific location, you consent to that information being stored and publicly displayed as described in this policy.
 
 [SKY TO CONFIRM: Does the app currently present any consent screen or modal before the first flag submission that explains this sensitivity? If not, consider adding one before App Store submission. This is not legally required under PIPEDA for voluntary user submissions, but is considered best practice and would reduce privacy risk. Consult legal counsel.]
 
@@ -169,7 +169,7 @@ If you're in Canada:
 - Servers are located in **[SKY TO CONFIRM: Supabase project region, e.g. `ca-central-1` (Canada), `us-east-1` (United States), or `eu-west-1` (Ireland/EU). Check your Supabase project dashboard under Settings → General → Region.]**
 - Data is **encrypted at rest** (AES-256) and **in transit** (TLS 1.2+)
 
-> **Cross-border data transfer notice (PIPEDA / BC PIPA):** If servers are located outside Canada (for example, in the United States), your personal information — including flag locations, descriptions, and account details — is transferred to and stored in that country. Foreign governments, courts, or law enforcement may be entitled to access your data under the laws of that country, which may differ from Canadian law. By using AccessMap, you consent to this transfer. [SKY TO CONFIRM: if servers are in Canada (`ca-central-1`), this cross-border notice may not be required — confirm with legal counsel.] If servers are in the US, Supabase is subject to US law including potential CLOUD Act requests. Given that AccessMap stores disability-adjacent data (flag categories indicating accessibility barriers), users should be aware that this sensitivity is not automatically recognized under US law in the same way it is under PIPEDA or BC PIPA.
+> **Cross-border data transfer notice (PIPEDA / BC PIPA):** If servers are located outside Canada (for example, in the United States), your personal information — including flag locations, descriptions, and account details — is transferred to and stored in that country. Foreign governments, courts, or law enforcement may be entitled to access your data under the laws of that country, which may differ from Canadian law. By using Flagstone, you consent to this transfer. [SKY TO CONFIRM: if servers are in Canada (`ca-central-1`), this cross-border notice may not be required — confirm with legal counsel.] If servers are in the US, Supabase is subject to US law including potential CLOUD Act requests. Given that Flagstone stores disability-adjacent data (flag categories indicating accessibility barriers), users should be aware that this sensitivity is not automatically recognized under US law in the same way it is under PIPEDA or BC PIPA.
 
 ### Data Retention
 | Type of Data | How Long We Keep It |
@@ -202,9 +202,9 @@ If you're in Canada:
 **Data Processing Agreement (DPA) with Supabase:**
 [SKY TO CONFIRM: Has a Data Processing Agreement been signed with Supabase? Enter one of the following:]
 - **If YES:** "We have executed a Data Processing Agreement (DPA) with Supabase, Inc. dated [SKY TO CONFIRM: DPA execution date], which governs how Supabase processes personal data on our behalf and ensures compliance with GDPR, PIPEDA, and applicable Canadian privacy law."
-- **If NO (DPA not yet signed):** "We are in the process of executing a Data Processing Agreement (DPA) with Supabase, Inc. Until this agreement is in place, we rely on Supabase's standard privacy policy and terms of service. A DPA is required before public launch if AccessMap targets EU users or if required by applicable law."
+- **If NO (DPA not yet signed):** "We are in the process of executing a Data Processing Agreement (DPA) with Supabase, Inc. Until this agreement is in place, we rely on Supabase's standard privacy policy and terms of service. A DPA is required before public launch if Flagstone targets EU users or if required by applicable law."
 
-> **Jordan note (advisory only):** Supabase offers a standard DPA for GDPR compliance. For Canadian law (PIPEDA / BC PIPA), a DPA is not strictly required by statute, but is strongly advisable when a third party processes personal data on your behalf. If AccessMap is Canada-only with no EU targeting, the DPA is a best-practice safeguard rather than a strict legal requirement — but still recommended. This requires confirmation by a qualified privacy attorney before launch.
+> **Jordan note (advisory only):** Supabase offers a standard DPA for GDPR compliance. For Canadian law (PIPEDA / BC PIPA), a DPA is not strictly required by statute, but is strongly advisable when a third party processes personal data on your behalf. If Flagstone is Canada-only with no EU targeting, the DPA is a best-practice safeguard rather than a strict legal requirement — but still recommended. This requires confirmation by a qualified privacy attorney before launch.
 
 ### No Other Sharing
 - We do not share data with advertisers, analytics companies, or data brokers
@@ -214,7 +214,7 @@ If you're in Canada:
 
 ## Children & Minors
 
-AccessMap is not directed at children under 13. We do not knowingly collect personal information from children under 13. If we learn that we've collected data from a child under 13, we'll delete it immediately. If you believe a child under 13 has created an account, email us at [support email].
+Flagstone is not directed at children under 13. We do not knowingly collect personal information from children under 13. If we learn that we've collected data from a child under 13, we'll delete it immediately. If you believe a child under 13 has created an account, email us at [support email].
 
 ---
 
@@ -279,7 +279,7 @@ This Privacy Policy is designed to comply with:
 - **CCPA** (California Consumer Privacy Act)
 - **PIPEDA** (Personal Information Protection and Electronic Documents Act, Canada)
 - **BC PIPA** (British Columbia Personal Information Protection Act)
-- **AccessMap Constitution Art. 7** (Privacy & data protection)
+- **Flagstone Constitution Art. 7** (Privacy & data protection)
 
 **Disclaimer:** This policy is a draft. Before public launch, it should be reviewed by a qualified privacy attorney to ensure legal compliance in your jurisdiction.
 
@@ -306,7 +306,7 @@ This Privacy Policy is designed to comply with:
 
 ## Summary
 
-AccessMap respects your privacy. We collect the minimum data needed to help communities identify and fix accessibility barriers. You own your account and can delete it anytime. Your email stays private. Your photos are processed to remove tracking metadata. We don't sell your data.
+Flagstone respects your privacy. We collect the minimum data needed to help communities identify and fix accessibility barriers. You own your account and can delete it anytime. Your email stays private. Your photos are processed to remove tracking metadata. We don't sell your data.
 
 If you have questions, we're here to help.
 

@@ -570,7 +570,7 @@ export const DISPUTE_FAILED_TITLE = "Couldn't record that";
  * The document's own title, verbatim from §1's first line.
  * RATIFIED by Sky 2026-07-27 — DECISIONS §SKY-4, 14_MODERATION_TEXTS_v1.md §1.
  */
-export const TERMS_TITLE = 'AccessMap Terms & Community Guidelines';
+export const TERMS_TITLE = 'Flagstone Terms & Community Guidelines';
 
 /**
  * The effective-date line, verbatim from §1's first line. Carries the version
@@ -593,8 +593,8 @@ export const TERMS_EFFECTIVE = 'Effective 2026-07-27 · v1.0';
  */
 export const TERMS_SECTIONS = [
   {
-    heading: 'What AccessMap is.',
-    body: "AccessMap is a community map of accessibility barriers. I'm Sky, and I built it and run it on my own so that disabled people get better information about the places they move through. By using the app, you're agreeing to these terms.",
+    heading: 'What Flagstone is.',
+    body: "Flagstone is a community map of accessibility barriers. I'm Sky, and I built it and run it on my own so that disabled people get better information about the places they move through. By using the app, you're agreeing to these terms.",
   },
   {
     heading: 'Community-provided information.',
@@ -614,7 +614,7 @@ export const TERMS_SECTIONS = [
   },
   {
     heading: 'Your content.',
-    body: "What you post stays yours. By posting it, you're letting AccessMap show it in the app so the community can use it.",
+    body: "What you post stays yours. By posting it, you're letting Flagstone show it in the app so the community can use it.",
   },
   {
     heading: 'Your account.',
@@ -626,7 +626,7 @@ export const TERMS_SECTIONS = [
   },
   {
     heading: 'Contact.',
-    body: 'Questions or concerns? Reach me at skylerhalisky@gmail.com. AccessMap is made in Canada and operates under the laws of British Columbia.',
+    body: 'Questions or concerns? Reach me at skylerhalisky@gmail.com. Flagstone is made in Canada and operates under the laws of British Columbia.',
   },
 ] as const;
 
@@ -685,7 +685,7 @@ export const TERMS_LINK_HINT = 'Opens the terms and community guidelines';
  * Document title, as the policy itself states it.
  * RATIFIED by Sky 2026-07-29 — DECISIONS §SKY-8 + §SKY-9, 15_PRIVACY_POLICY_v1.md §The policy text.
  */
-export const PRIVACY_TITLE = 'AccessMap Privacy Policy';
+export const PRIVACY_TITLE = 'Flagstone Privacy Policy';
 
 /**
  * Effective date and version, the policy's own second line.
@@ -703,11 +703,11 @@ export const PRIVACY_EFFECTIVE = 'Effective 2026-07-29 · v1.0';
 export const PRIVACY_SECTIONS = [
   {
     heading: 'Who runs this.',
-    body: 'AccessMap is built and run by one person, Sky, in British Columbia, Canada. If you have a question about your data, email skylerhalisky@gmail.com and it comes straight to me.',
+    body: 'Flagstone is built and run by one person, Sky, in British Columbia, Canada. If you have a question about your data, email skylerhalisky@gmail.com and it comes straight to me.',
   },
   {
     heading: 'The short version.',
-    body: 'AccessMap collects as little as it can. You can report a barrier without making an account at all. There is no advertising, no analytics, no crash reporting, and nothing is sold or shared with anyone.',
+    body: 'Flagstone collects as little as it can. You can report a barrier without making an account at all. There is no advertising, no analytics, no crash reporting, and nothing is sold or shared with anyone.',
   },
   {
     heading: 'What you can do without an account.',
@@ -743,7 +743,7 @@ export const PRIVACY_SECTIONS = [
   },
   {
     heading: 'Children.',
-    body: "AccessMap isn't designed for children and I don't knowingly collect information from anyone under 13.",
+    body: "Flagstone isn't designed for children and I don't knowingly collect information from anyone under 13.",
   },
   {
     heading: 'Where your data lives.',

@@ -71,7 +71,7 @@ describe('the terms screen renders Sky\'s document, verbatim', () => {
     const firstLine = sectionOne()
       .split('\n')
       .map((l) => l.trim())
-      .find((l) => l.startsWith('AccessMap Terms'));
+      .find((l) => l.startsWith('Flagstone Terms'));
     expect(firstLine).toBe(`${TERMS_TITLE} ${TERMS_EFFECTIVE}`);
   });
 
