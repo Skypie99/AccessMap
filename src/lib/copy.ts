@@ -598,7 +598,7 @@ export const TERMS_SECTIONS = [
   },
   {
     heading: 'Community-provided information.',
-    body: "Barrier reports come from people like you. I do my best to keep them honest through verification and moderation, but I can't promise every report is accurate or up to date. Please don't make AccessMap your only source when your safety is on the line.",
+    body: "Barrier reports come from people like you. I do my best to keep them honest through verification and moderation, but I can't promise every report is accurate or up to date. Please don't make Flagstone your only source when your safety is on the line.",
   },
   {
     heading: 'What you can post.',

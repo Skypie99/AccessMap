@@ -14,7 +14,7 @@ Flagstone Terms & Community Guidelines Effective 2026-07-27 · v1.0
 
 **What Flagstone is.** Flagstone is a community map of accessibility barriers. I'm Sky, and I built it and run it on my own so that disabled people get better information about the places they move through. By using the app, you're agreeing to these terms.
 
-**Community-provided information.** Barrier reports come from people like you. I do my best to keep them honest through verification and moderation, but I can't promise every report is accurate or up to date. Please don't make AccessMap your only source when your safety is on the line.
+**Community-provided information.** Barrier reports come from people like you. I do my best to keep them honest through verification and moderation, but I can't promise every report is accurate or up to date. Please don't make Flagstone your only source when your safety is on the line.
 
 **What you can post.** Real barriers, honestly described. Photos should show the barrier, not people. Please keep faces, licence plates, and anything that identifies a person out of frame.
 
