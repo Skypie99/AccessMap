@@ -1798,7 +1798,7 @@ export default function MapScreen() {
               style={styles.toolRow}
               accessibilityRole="button"
               accessibilityLabel="Send feedback"
-              accessibilityHint="Opens a form to email feedback to the AccessMap owner"
+              accessibilityHint="Opens a form to email feedback to the Flagstone owner"
             >
               <MessageSquare size={20} color={barIconColor} strokeWidth={2.2} {...decorativeProps} />
               <AppText variant="label" style={styles.toolRowText}>Send feedback</AppText>

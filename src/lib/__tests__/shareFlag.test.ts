@@ -53,8 +53,8 @@ describe('formatFlagShareText', () => {
         'At 37.33174, -122.03033',
         'Status: open',
         '',
-        'Open in AccessMap: accessmap://flag/flag-abc-123',
-        'Reported via AccessMap.',
+        'Open in Flagstone: accessmap://flag/flag-abc-123',
+        'Reported via Flagstone.',
       ].join('\n'),
     );
   });
@@ -73,8 +73,8 @@ describe('formatFlagShareText', () => {
         '',
         'Curb is crumbling on the south corner.',
         '',
-        'Open in AccessMap: accessmap://flag/flag-abc-123',
-        'Reported via AccessMap.',
+        'Open in Flagstone: accessmap://flag/flag-abc-123',
+        'Reported via Flagstone.',
       ].join('\n'),
     );
   });
@@ -91,8 +91,8 @@ describe('formatFlagShareText', () => {
         'At 37.33174, -122.03033',
         'Status: open',
         '',
-        'Open in AccessMap: accessmap://flag/flag-abc-123',
-        'Reported via AccessMap.',
+        'Open in Flagstone: accessmap://flag/flag-abc-123',
+        'Reported via Flagstone.',
       ].join('\n'),
     );
   });
@@ -161,18 +161,18 @@ describe('formatFlagShareText', () => {
     // (RootNavigator registers the accessmap://flag/{id} route). The id must
     // be the shared flag's own id — a wrong id strands them on a 404 callout.
     const out = formatFlagShareText(makeFlag({ id: 'deep-link-id-42' }), labelOf);
-    expect(out).toContain('Open in AccessMap: accessmap://flag/deep-link-id-42');
+    expect(out).toContain('Open in Flagstone: accessmap://flag/deep-link-id-42');
     // The link sits on its own line, directly above the credit line.
     const lines = out.split('\n');
-    expect(lines[lines.length - 2]).toBe('Open in AccessMap: accessmap://flag/deep-link-id-42');
-    expect(lines[lines.length - 1]).toBe('Reported via AccessMap.');
+    expect(lines[lines.length - 2]).toBe('Open in Flagstone: accessmap://flag/deep-link-id-42');
+    expect(lines[lines.length - 1]).toBe('Reported via Flagstone.');
   });
 
-  it('ends with "Reported via AccessMap." — no trailing newline', () => {
+  it('ends with "Reported via Flagstone." — no trailing newline', () => {
     // Some share sheets render a trailing newline as an awkward blank
     // line. Pin the ending to keep the message tight.
     const out = formatFlagShareText(makeFlag({ description: 'Anything.' }), labelOf);
-    expect(out.endsWith('Reported via AccessMap.')).toBe(true);
+    expect(out.endsWith('Reported via Flagstone.')).toBe(true);
     expect(out.endsWith('\n')).toBe(false);
   });
 
@@ -181,7 +181,7 @@ describe('formatFlagShareText', () => {
     // doesn't choke on the null case.
     const out = formatFlagShareText(makeFlag({ description: null }), labelOf);
     expect(out).not.toContain('null');
-    expect(out).toContain('Reported via AccessMap.');
+    expect(out).toContain('Reported via Flagstone.');
   });
 
   it('honors the injected categoryLabel function (decoupled from CATEGORY_LABELS)', () => {

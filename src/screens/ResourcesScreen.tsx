@@ -231,7 +231,7 @@ export default function ResourcesScreen({ visible, onClose }: Props) {
           })}
 
           <AppText variant="body" style={styles.footnote}>
-            AccessMap is community-powered — these are starting points, not endorsements.
+            Flagstone is community-powered — these are starting points, not endorsements.
           </AppText>
         </ScrollView>
       </SafeAreaView>

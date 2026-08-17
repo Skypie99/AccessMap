@@ -95,7 +95,7 @@ export function formatDataExport(input: ExportInput): string {
   const points = Number.isFinite(input.user.points) ? input.user.points : 0;
 
   const lines: string[] = [];
-  lines.push(`AccessMap data export for ${emailLine}`);
+  lines.push(`Flagstone data export for ${emailLine}`);
   lines.push(`Generated ${generatedDate}`);
   lines.push('');
   lines.push(`Display name: ${displayName}`);

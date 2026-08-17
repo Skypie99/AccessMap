@@ -349,7 +349,7 @@ export default function HomeScreen() {
                 style={({ pressed }) => [styles.headerBtn, pressed && styles.headerBtnPressed]}
                 accessibilityRole="button"
                 accessibilityLabel="Send feedback"
-                accessibilityHint="Opens a form to email feedback to the AccessMap owner"
+                accessibilityHint="Opens a form to email feedback to the Flagstone owner"
                 hitSlop={8}
               >
                 <MessageSquare size={20} color={color.textStrong} strokeWidth={2.2} />

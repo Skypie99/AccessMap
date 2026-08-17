@@ -1,5 +1,7 @@
 # AccessMap — App Store + Play Store Listing Copy
 
+> ⚠️ **SUPERSEDED 2026-08-17. The app ships as Flagstone, and every name below is the old one.** Do not paste from this file into App Store Connect. The current sheet is `design-reviews/name-forge/2026-08-17_rename/05_store_metadata_flagstone.md`. This file is left unedited as the v0.2.0 record.
+
 **Version:** v0.2.0  
 **Status:** Ready for submission  
 **Last updated:** 2026-05-30

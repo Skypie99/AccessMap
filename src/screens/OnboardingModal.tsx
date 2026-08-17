@@ -41,7 +41,7 @@ const CARDS: Card[] = [
   {
     brandMark: true,
     tone: 'brand',
-    title: 'Welcome to AccessMap',
+    title: 'Welcome to Flagstone',
     body: 'Drop a pin where you find an accessibility issue — a missing ramp, a broken sidewalk, a blocked path — so others can plan around it, or help fix it.',
   },
   {
@@ -146,7 +146,7 @@ export default function OnboardingModal({ visible, onDone }: Props) {
       animationType={reducedMotion ? 'none' : 'slide'}
       onRequestClose={handleSkip}
       presentationStyle="fullScreen"
-      aria-label="Welcome to AccessMap"
+      aria-label="Welcome to Flagstone"
     >
       {/* accessibilityViewIsModal prevents VoiceOver from focusing elements
           behind this full-screen modal. WCAG 2.4.3 (Focus Order). */}

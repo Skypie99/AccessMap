@@ -35,7 +35,7 @@ const APP_VERSION =
   '1.0.0';
 
 /**
- * About AccessMap — meta page for the Settings tab. Shows version, the
+ * About Flagstone — meta page for the Settings tab. Shows version, the
  * "what is this thing" intro, credits, a stack note, and a plain-English
  * privacy summary so people can verify what data the app touches without
  * digging through a privacy policy.
@@ -60,7 +60,7 @@ export default function AboutScreen({ visible, onClose }: Props) {
   // than under it. About stays open beneath, so closing the terms returns here.
   const { setOpen } = useSharedModals();
   return (
-    <Modal visible={visible} animationType={reducedMotion ? 'none' : 'slide'} transparent onRequestClose={onClose} aria-label="About AccessMap">
+    <Modal visible={visible} animationType={reducedMotion ? 'none' : 'slide'} transparent onRequestClose={onClose} aria-label="About Flagstone">
       <View style={styles.backdrop}>
         {/* accessibilityViewIsModal traps VoiceOver focus inside this card so
             it can't escape back to the underlying Settings screen while the
@@ -70,15 +70,15 @@ export default function AboutScreen({ visible, onClose }: Props) {
         <GlassSurface variant="bulk" borderRadius={0} style={[styles.card, { paddingBottom: Math.max(spacing.xl, insets.bottom) }]} accessibilityViewIsModal onAccessibilityEscape={onClose}>
           <View style={styles.headerRow}>
             {/* T19 (F6-08): a small brand mark beside the title. Hidden from
-                screen readers — LogoMark bakes an "AccessMap" label and the
-                title already says "About AccessMap", so exposing it would
+                screen readers — LogoMark bakes a "Flagstone" label and the
+                title already says "About Flagstone", so exposing it would
                 double-speak. Theme-aware so it holds contrast on the bulk sheet
                 in both modes. */}
             <View {...decorativeProps}>
               <LogoMark size={22} variant={color.scheme === 'dark' ? 'white' : 'color'} />
             </View>
             <AppText ref={titleRef} variant="heading" style={styles.title} accessibilityRole="header">
-              About AccessMap
+              About Flagstone
             </AppText>
             <Pressable
               onPress={onClose}
@@ -131,7 +131,7 @@ export default function AboutScreen({ visible, onClose }: Props) {
               Source code
             </AppText>
             <AppText variant="body" style={styles.bodyText}>
-              AccessMap is built with Expo and React Native on the front end, and Supabase (Postgres
+              Flagstone is built with Expo and React Native on the front end, and Supabase (Postgres
               + Auth + Storage) on the back end. The web build uses react-leaflet over OpenStreetMap
               tiles.
             </AppText>

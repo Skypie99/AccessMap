@@ -1,5 +1,5 @@
 /**
- * LogoMark — the AccessMap brand mark: a Wayfinder-Blue map pin carrying a
+ * LogoMark — the Flagstone brand mark: a Wayfinder-Blue map pin carrying a
  * white "striding figure" (accessibility + wayfinding). It doubles as the
  * you-are-here / accessibility pin across the app and map. Rendered from the
  * design SVG via react-native-svg.
@@ -35,7 +35,7 @@ export default function LogoMark({ size = 96, variant = 'color', tint }: Props) 
 
   if (variant === 'white') {
     return (
-      <Svg width={width} height={size} viewBox="0 0 96 120" accessibilityLabel="AccessMap">
+      <Svg width={width} height={size} viewBox="0 0 96 120" accessibilityLabel="Flagstone">
         <Mask id="amLogoCut">
           <Rect width={96} height={120} fill="#fff" />
           <Circle cx={HEAD.cx} cy={HEAD.cy} r={HEAD.r} fill="#000" />
@@ -49,7 +49,7 @@ export default function LogoMark({ size = 96, variant = 'color', tint }: Props) 
 
   const pinFill = variant === 'mono' ? tint ?? staticColor.textStrong : staticColor.brand;
   return (
-    <Svg width={width} height={size} viewBox="0 0 96 120" accessibilityLabel="AccessMap">
+    <Svg width={width} height={size} viewBox="0 0 96 120" accessibilityLabel="Flagstone">
       <Path d={PIN} fill={pinFill} />
       <Circle cx={HEAD.cx} cy={HEAD.cy} r={HEAD.r} fill="#fff" />
       <Path d={SPINE} stroke="#fff" strokeWidth={9} strokeLinecap="round" />

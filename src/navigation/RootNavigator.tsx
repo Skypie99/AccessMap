@@ -260,7 +260,7 @@ function NavInner({ initialRouteName }: { initialRouteName: keyof RootTabParamLi
       style={({ pressed }) => [styles.feedbackBtn, pressed && styles.feedbackBtnPressed]}
       accessibilityRole="button"
       accessibilityLabel="Send feedback"
-      accessibilityHint="Opens a form to email feedback to the AccessMap owner"
+      accessibilityHint="Opens a form to email feedback to the Flagstone owner"
       hitSlop={8}
     >
       <AppText variant="label" style={styles.feedbackBtnText}>Feedback</AppText>

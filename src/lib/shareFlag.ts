@@ -13,8 +13,8 @@
  *
  *   <description (only if non-empty after trim)>
  *
- *   Open in AccessMap: accessmap://flag/<id>
- *   Reported via AccessMap.
+ *   Open in Flagstone: accessmap://flag/<id>
+ *   Reported via Flagstone.
  *
  * The 5-decimal rounding is intentional — that's roughly ~1m of precision,
  * same as the directions URL builder (`buildDirectionsUrl`). Anything more
@@ -63,7 +63,7 @@ export function formatFlagShareText(
   // Footer — deep link first (recipients with the app installed jump straight
   // to this flag — same accessmap://flag/{id} URL RootNavigator registers),
   // then the credit line so a forwarded message has context.
-  const footer = `Open in AccessMap: accessmap://flag/${flag.id}\nReported via AccessMap.`;
+  const footer = `Open in Flagstone: accessmap://flag/${flag.id}\nReported via Flagstone.`;
 
   return `${headerLines.join('\n')}\n${middle}\n${footer}`;
 }

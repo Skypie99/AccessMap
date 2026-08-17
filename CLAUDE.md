@@ -1,4 +1,6 @@
-# AccessMap — project context
+# Flagstone — project context
+
+**Renamed 2026-08-17: this app was called AccessMap through 2026-08 and now ships as Flagstone.** The user-visible name is Flagstone everywhere; the identifiers deliberately still say accessmap: bundle ID `com.accessmap.app`, EAS slug `accessmap`, URL scheme `accessmap://`, the repo folder `~/AccessMap`, and the privacy-policy URL. Do not "fix" those: changing the slug orphans the EAS project and changing the scheme breaks every deep link. Anything under `design-reviews/`, `qa-reports/`, or `security-audit/` says AccessMap because that is the history, so leave it.
 
 A crowdsourced accessibility-flagging mobile app. Users drop pins at locations where there's an accessibility issue (no ramp, broken sidewalk, etc.), and other users verify, resolve, or reject those reports. Built so I (a beginner coder) could learn by doing — keep explanations friendly and avoid over-engineering.
 

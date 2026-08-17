@@ -332,7 +332,7 @@ export default function HamburgerDrawer({ open, onClose, onSignIn, onNavigate }:
             {/* Focus target on open. `variant="heading"` already resolves
                 accessibilityRole="header", so this reads as the panel's
                 heading without adding a prop. */}
-            <AppText ref={titleRef} variant="heading" style={styles.drawerBrand}>AccessMap</AppText>
+            <AppText ref={titleRef} variant="heading" style={styles.drawerBrand}>Flagstone</AppText>
             <Pressable
               onPress={closeDrawer}
               hitSlop={12}

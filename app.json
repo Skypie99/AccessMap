@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "AccessMap",
+    "name": "Flagstone",
     "slug": "accessmap",
     "privacyPolicyUrl": "https://skypie99.github.io/AccessMap/privacy/",
     "icon": "./assets/brand/app-icon.png",
@@ -20,9 +20,9 @@
       "appleTeamId": "S78F8ZA8QU",
       "buildNumber": "15",
       "infoPlist": {
-        "NSLocationWhenInUseUsageDescription": "AccessMap uses your location to show nearby accessibility flags and to attach your location when you report a new flag.",
-        "NSCameraUsageDescription": "AccessMap uses the camera to capture photos of accessibility barriers.",
-        "NSPhotoLibraryUsageDescription": "AccessMap needs photo access to attach images to accessibility reports.",
+        "NSLocationWhenInUseUsageDescription": "Flagstone uses your location to show nearby accessibility flags and to attach your location when you report a new flag.",
+        "NSCameraUsageDescription": "Flagstone uses the camera to capture photos of accessibility barriers.",
+        "NSPhotoLibraryUsageDescription": "Flagstone needs photo access to attach images to accessibility reports.",
         "ITSAppUsesNonExemptEncryption": false
       },
       "privacyManifests": {
@@ -108,8 +108,8 @@
     "web": {
       "bundler": "metro",
       "favicon": "./assets/favicon.png",
-      "name": "AccessMap",
-      "shortName": "AccessMap",
+      "name": "Flagstone",
+      "shortName": "Flagstone",
       "description": "Community-powered accessibility map",
       "backgroundColor": "#ffffff",
       "themeColor": "#1466E0",
@@ -127,7 +127,7 @@
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "AccessMap uses your location to show nearby accessibility flags and to attach your location when you report a new flag.",
+          "locationWhenInUsePermission": "Flagstone uses your location to show nearby accessibility flags and to attach your location when you report a new flag.",
           "locationAlwaysPermission": false,
           "locationAlwaysAndWhenInUsePermission": false
         }
@@ -135,8 +135,8 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "AccessMap needs photo access to attach images to accessibility reports.",
-          "cameraPermission": "AccessMap uses the camera to capture photos of accessibility barriers.",
+          "photosPermission": "Flagstone needs photo access to attach images to accessibility reports.",
+          "cameraPermission": "Flagstone uses the camera to capture photos of accessibility barriers.",
           "microphonePermission": false
         }
       ],

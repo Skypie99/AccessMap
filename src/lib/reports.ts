@@ -93,7 +93,7 @@ export const MAX_REPORT_REASON_CHARS = 500;
  * The feedback category a report ships as.
  *
  * 'other' is the only existing enum member a report does not lie as: 'bug'
- * would title the mailto "AccessMap feedback: Bug" and file an abuse report as
+ * would title the mailto "Flagstone feedback: Bug" and file an abuse report as
  * an engineering defect. There is deliberately NO `alter type ... add value` —
  * per §SKY-3g, enum additions are effectively irreversible.
  */

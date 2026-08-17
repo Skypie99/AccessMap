@@ -10,7 +10,7 @@ export const FEEDBACK_EMAIL = 'skylerhalisky@gmail.com';
 /**
  * Feedback categories. The user picks one in the modal; we tag the
  * subject line with it so the maintainer's inbox can triage at a glance
- * ("AccessMap feedback: Bug" vs ". Idea" vs ". Love"). Default is
+ * ("Flagstone feedback: Bug" vs ". Idea" vs ". Love"). Default is
  * 'idea' — the lowest-friction starting point.
  */
 export const FEEDBACK_CATEGORIES = ['bug', 'idea', 'love', 'other'] as const;
@@ -23,7 +23,7 @@ export const FEEDBACK_CATEGORY_LABELS: Record<FeedbackCategory, string> = {
   other: 'Other',
 };
 
-const SUBJECT_BASE = 'AccessMap feedback';
+const SUBJECT_BASE = 'Flagstone feedback';
 
 // Mailto URLs have practical length limits (~2000 chars in many clients,
 // older Outlook chokes around 1000). Trim early so we never hand the OS
@@ -68,7 +68,7 @@ export function buildMailtoUrl({ body, contactEmail, category }: ComposeOptions)
   const replyPrefix = contactEmail ? `Reply to: ${contactEmail}\n` : '';
   const categoryPrefix = categoryLabel ? `Category: ${categoryLabel}\n` : '';
   const prefix = replyPrefix || categoryPrefix ? `${replyPrefix}${categoryPrefix}\n` : '';
-  const footer = `\n\n---\nSent from AccessMap on ${Platform.OS}`;
+  const footer = `\n\n---\nSent from Flagstone on ${Platform.OS}`;
   const fullBody = `${prefix}${trimmed}${footer}`;
   // encodeURIComponent escapes everything mailto cares about; the OS / mail
   // client will decode it back. Use %20 for spaces in subject — some
@@ -123,7 +123,7 @@ export async function openFeedbackComposer(): Promise<void> {
   const result = await sendFeedback({ body: '' });
   if (result.status === 'opened') return;
   Alert.alert(
-    'Email AccessMap',
+    'Email Flagstone',
     `Couldn't open your email app. Send your feedback to:\n\n${FEEDBACK_EMAIL}`,
   );
 }

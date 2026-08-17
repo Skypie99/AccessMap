@@ -220,7 +220,7 @@ export default function ReportContentModal({ visible, target, onClose }: Props) 
     // it), so the recorded backfill —
     // `UPDATE feedback SET category='report' WHERE body LIKE '[REPORT]%'` —
     // is unaffected. Cost, accepted: the mail subject is the plain
-    // "AccessMap feedback" rather than "…: Other". Naming it "Report" in the
+    // "Flagstone feedback" rather than "…: Other". Naming it "Report" in the
     // subject would be new copy, which is Sky's.
     const mail = await sendFeedback({
       // The SAME envelope as rung 1, category included — a report that arrives

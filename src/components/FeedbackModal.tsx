@@ -246,7 +246,7 @@ export default function FeedbackModal({ visible, onClose }: Props) {
               keyboardShouldPersistTaps="handled"
             >
               <AppText variant="bodyMedium" style={styles.subtitle}>
-                Tell us what&apos;s working, what isn&apos;t, or what you wish AccessMap did. Tapping Send opens
+                Tell us what&apos;s working, what isn&apos;t, or what you wish Flagstone did. Tapping Send opens
                 your email app with the message prefilled.
               </AppText>
 

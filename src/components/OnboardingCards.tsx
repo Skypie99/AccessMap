@@ -104,7 +104,7 @@ const CARDS: Card[] = [
   {
     brandMark: true,
     iconColor: '#60a5fa',
-    title: 'Welcome to AccessMap',
+    title: 'Welcome to Flagstone',
     body: 'See an accessibility barrier — a missing ramp, a broken sidewalk, a blocked path? Put it on the map so others know, and so it gets fixed.',
   },
   {
@@ -290,7 +290,7 @@ export default function OnboardingCards({ onDone }: Props) {
   const insets = React.useContext(SafeAreaInsetsContext) ?? { top: 0, bottom: 0, left: 0, right: 0 };
 
   return (
-    <Modal aria-label="Welcome to AccessMap" visible animationType={reduceMotion ? 'none' : 'fade'} onRequestClose={onDone} presentationStyle="fullScreen">
+    <Modal aria-label="Welcome to Flagstone" visible animationType={reduceMotion ? 'none' : 'fade'} onRequestClose={onDone} presentationStyle="fullScreen">
       <View
         style={styles.screen}
         accessibilityViewIsModal
@@ -480,7 +480,7 @@ export default function OnboardingCards({ onDone }: Props) {
               style={({ pressed }) => [pressed && { opacity: 0.88 }]}
               accessibilityRole="button"
               accessibilityLabel="Open the map"
-              accessibilityHint="Closes the introduction and opens AccessMap"
+              accessibilityHint="Closes the introduction and opens Flagstone"
             >
               <LinearGradient
                 colors={gradient.brandHero}

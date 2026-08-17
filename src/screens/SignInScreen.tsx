@@ -168,7 +168,7 @@ export default function SignInScreen({
             style={styles.title}
             accessibilityRole="header"
           >
-            AccessMap
+            Flagstone
           </AppText>
           <AppText variant="body" style={styles.tagline}>
             Spot barriers. Share them.{'\n'}Make your community more accessible.

@@ -1,6 +1,8 @@
-# AccessMap
+# Flagstone
 
 Expo + React Native + TypeScript app for crowdsourced accessibility flags, backed by Supabase.
+
+> **On the name:** working title AccessMap through 2026-08; ships as Flagstone. Every flag report is a stone; laid down one by one they pave a path everyone walks. The repo folder, bundle ID (`com.accessmap.app`), EAS slug (`accessmap`), and URL scheme (`accessmap://`) deliberately keep the old identifier. Those are plumbing, not brand.
 
 ## What's in v0.2.0
 

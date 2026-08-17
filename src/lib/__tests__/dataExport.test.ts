@@ -79,7 +79,7 @@ describe('formatDataExport', () => {
       categoryLabel: label,
       generatedAt: FIXED_DATE,
     });
-    expect(out).toContain('AccessMap data export for alice@example.com');
+    expect(out).toContain('Flagstone data export for alice@example.com');
     expect(out).toContain('Generated 2026-05-24');
     expect(out).toContain('Display name: Alice');
     expect(out).toContain('Points: 12');
@@ -92,7 +92,7 @@ describe('formatDataExport', () => {
       categoryLabel: label,
       generatedAt: FIXED_DATE,
     });
-    expect(out).toContain('AccessMap data export for (no email on file)');
+    expect(out).toContain('Flagstone data export for (no email on file)');
     expect(out).toContain('Display name: (not set)');
     expect(out).toContain('Points: 0');
   });

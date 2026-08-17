@@ -45,12 +45,12 @@ describe('buildMailtoUrl', () => {
   it('addresses the maintainer with the canonical subject', () => {
     const url = buildMailtoUrl({ body: 'hello' });
     expect(url.startsWith(`mailto:${FEEDBACK_EMAIL}?`)).toBe(true);
-    expect(url).toContain(`subject=${encodeURIComponent('AccessMap feedback')}`);
+    expect(url).toContain(`subject=${encodeURIComponent('Flagstone feedback')}`);
   });
 
   it('appends the category label to the subject when one is given', () => {
     const url = buildMailtoUrl({ body: 'x', category: 'bug' });
-    expect(url).toContain(`subject=${encodeURIComponent('AccessMap feedback: Bug')}`);
+    expect(url).toContain(`subject=${encodeURIComponent('Flagstone feedback: Bug')}`);
   });
 
   it('prefixes the body with a Category line when one is given', () => {
@@ -117,7 +117,7 @@ describe('buildMailtoUrl', () => {
     const url = buildMailtoUrl({ body: 'x' });
     const bodyParam = url.split('&body=')[1] ?? '';
     const decoded = decodeURIComponent(bodyParam);
-    expect(decoded).toContain('Sent from AccessMap on ios');
+    expect(decoded).toContain('Sent from Flagstone on ios');
   });
 
   it('caps an oversized body to keep the URL under mail-client limits', () => {

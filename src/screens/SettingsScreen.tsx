@@ -578,13 +578,13 @@ export default function SettingsScreen() {
 
         <SettingsRow
           title="What's New"
-          subtitle="Recent features added to AccessMap."
+          subtitle="Recent features added to Flagstone."
           accessibilityHint="Opens a dated list of recent shipped features"
           onPress={() => setOpen('changelog')}
         />
 
         <SettingsRow
-          title="About AccessMap"
+          title="About Flagstone"
           subtitle="Version, credits, and a short privacy summary."
           accessibilityHint="Opens the about page with version and privacy info"
           onPress={() => setAboutOpen(true)}

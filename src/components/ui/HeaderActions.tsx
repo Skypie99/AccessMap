@@ -62,7 +62,7 @@ export function HeaderActions({ onMenu, onFeedback, iconColor, fillColor }: Prop
         style={({ pressed }) => [styles.btn, { backgroundColor: pressed ? color.surfaceNeutral : bg }]}
         accessibilityRole="button"
         accessibilityLabel="Send feedback"
-        accessibilityHint="Opens a form to email feedback to the AccessMap owner"
+        accessibilityHint="Opens a form to email feedback to the Flagstone owner"
         hitSlop={8}
       >
         <MessageSquare size={20} color={iconColor} strokeWidth={2.2} />

@@ -260,7 +260,7 @@ export default function ProfileScreen() {
   >(null);
   const [selectedFlag, setSelectedFlag] = useState<FlagRow | null>(null);
 
-  // About modal — opened from the "About AccessMap" row near the bottom.
+  // About modal — opened from the "About Flagstone" row near the bottom.
   // Self-contained: it links straight to the mail composer for the
   // "Send feedback" CTA so we don't have to coordinate two open modals.
   const [aboutOpen, setAboutOpen] = useState(false);
@@ -1572,7 +1572,7 @@ export default function ProfileScreen() {
               );
             })}
           </View>
-          <AppText variant="body" style={styles.hint}>AccessMap will open to this tab each time you launch the app.</AppText>
+          <AppText variant="body" style={styles.hint}>Flagstone will open to this tab each time you launch the app.</AppText>
         </View>
 
         {/* D4: Realtime opt-in toggle (Safeguard #2).
@@ -1672,14 +1672,14 @@ export default function ProfileScreen() {
           style={({ pressed }) => pressed && styles.aboutRowPressed}
           onPress={() => setAboutOpen(true)}
           accessibilityRole="button"
-          accessibilityLabel="About AccessMap"
+          accessibilityLabel="About Flagstone"
           accessibilityHint="Opens information about the app, version, and how to send feedback"
         >
           <GlassSurface variant="row" forceEngineered style={styles.aboutRow}>
           <View style={styles.aboutTextWrap}>
-            <AppText variant="label" style={styles.aboutTitle}>About AccessMap</AppText>
+            <AppText variant="label" style={styles.aboutTitle}>About Flagstone</AppText>
             <AppText variant="bodyMedium" style={styles.aboutSubtitle}>
-              The story behind AccessMap and how to reach us.
+              The story behind Flagstone and how to reach us.
             </AppText>
           </View>
           <ChevronRight

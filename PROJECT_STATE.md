@@ -1,5 +1,7 @@
-# PROJECT_STATE — accessmap
+# PROJECT_STATE — Flagstone
 _Last compiled: 2026-06-20 by /new-window_
+
+> **Renamed 2026-08-17:** the app ships as **Flagstone** (working title AccessMap through 2026-08). Everything below predates the rename and still says AccessMap. That is correct history, left as-is per the snapshot banner.
 
 > ⚠️ **ARCHIVED SNAPSHOT (banner added 2026-08-06, code-qa DEBT-3/Q-8).** Everything below pins main `45bca1a` — five trains ago. The living state is **`APP_STORE_TODO.md`** (the ship chain) + each train's `design-reviews/<train>/` close-out. Regenerate with `/new-window` when Sky wants this file current; nothing below was edited.
 

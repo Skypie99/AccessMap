@@ -1173,7 +1173,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
               the city non-relationship. The finish-line success banner is
               S10 (P5); this is the pre-click sentence. */}
           <AppText variant="body" style={styles.submitMoment}>
-            Your report appears on the map right away for everyone; neighbours can verify it. AccessMap doesn&apos;t notify the city — see Resources.
+            Your report appears on the map right away for everyone; neighbours can verify it. Flagstone doesn&apos;t notify the city — see Resources.
           </AppText>
           </ScrollView>
 

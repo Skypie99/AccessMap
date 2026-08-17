@@ -42,7 +42,7 @@ export function GuestProfile({ onSignInPress }: { onSignInPress: () => void }) {
       {/* T19 (F6-08): the brand mark at the account doorway — the signed-out
           Profile's one furnished brand moment. Theme-aware: the colour pin holds
           >=3:1 on the light stage; the white knockout is used on the dark stage
-          (the colour pin dips to ~2.7:1 there). Keeps LogoMark's own "AccessMap"
+          (the colour pin dips to ~2.7:1 there). Keeps LogoMark's own "Flagstone"
           label — meaningful here (the header reads "Your profile"), unlike the
           About mark which hides it to avoid double-speak. */}
       <LogoMark size={56} variant={color.scheme === 'dark' ? 'white' : 'color'} />

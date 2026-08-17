@@ -899,7 +899,7 @@ export default function TasksScreen() {
               style={({ pressed }) => [styles.headerBtn, pressed && styles.headerBtnPressed]}
               accessibilityRole="button"
               accessibilityLabel="Send feedback"
-              accessibilityHint="Opens a form to email feedback to the AccessMap owner"
+              accessibilityHint="Opens a form to email feedback to the Flagstone owner"
               hitSlop={8}
             >
               <MessageSquare size={20} color={color.headerFg} strokeWidth={2.2} />

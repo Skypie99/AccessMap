@@ -45,7 +45,7 @@ const STEPS = [
     icon: Users,
     number: '3',
     title: 'Spread the word',
-    body: 'Share AccessMap with neighbours, local disability organisations, city councillors, and anyone who wants a more navigable community. The map only works if the community keeps it current.',
+    body: 'Share Flagstone with neighbours, local disability organisations, city councillors, and anyone who wants a more navigable community. The map only works if the community keeps it current.',
   },
   {
     icon: Star,
@@ -138,7 +138,7 @@ export default function HowToHelpScreen({ visible, onClose }: Props) {
         >
           {/* Intro sits directly on the stage — inkOnStage + >=500 weight. */}
           <AppText variant="bodyMedium" style={styles.intro}>
-            AccessMap is built by people like you, one flag at a time. Here&apos;s how
+            Flagstone is built by people like you, one flag at a time. Here&apos;s how
             to make the biggest impact.
           </AppText>
 
