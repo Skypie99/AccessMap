@@ -2,7 +2,9 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   ActivityIndicator,
   FlatList,
+  KeyboardAvoidingView,
   Modal,
+  Platform,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -30,6 +32,7 @@ import {
   type FeedbackCategoryFilter,
 } from '@/lib/feedbackFilter';
 import SearchInputRow from '@/components/SearchInputRow';
+import { useKeyboardVisible } from '@/hooks/useKeyboardVisible';
 import type { FeedbackRow } from '@/types/database';
 
 interface Props {
@@ -117,6 +120,8 @@ export default function MyFeedbackModal({ visible, onClose, refreshKey = 0 }: Pr
   );
   // WCAG 2.3.3: snap (no slide) when the user prefers reduced motion.
   const reducedMotion = useReducedMotion();
+  // Keyboard-up bottom-inset reclaim (Recipe F step 3).
+  const keyboardVisible = useKeyboardVisible();
   // A11Y-201 (2.4.3): move the SR cursor onto the title when this surface opens.
   const titleRef = useFocusOnOpen<Text>(visible);
 
@@ -132,11 +137,15 @@ export default function MyFeedbackModal({ visible, onClose, refreshKey = 0 }: Pr
           this view as inert while the modal is up. Same pattern as
           HelpModal; see that file for the longer comment. Alex P5. */}
       <View style={styles.backdrop} accessibilityViewIsModal onAccessibilityEscape={onClose} testID="myFeedbackModal-backdrop">
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={styles.kav}
+        >
         <View style={styles.cardWrap}>
         <GlassSurface
           variant="bulk"
           borderRadius={0}
-          style={[styles.card, { paddingBottom: Math.max(spacing.sm, insets.bottom) }]}
+          style={[styles.card, { paddingBottom: keyboardVisible ? spacing.md : Math.max(spacing.sm, insets.bottom) }]}
         >
           <View style={styles.headerRow}>
             <AppText ref={titleRef} variant="heading" style={styles.title} accessibilityRole="header">
@@ -220,6 +229,7 @@ export default function MyFeedbackModal({ visible, onClose, refreshKey = 0 }: Pr
           )}
 
           <FlatList
+            keyboardShouldPersistTaps="handled"
             data={filteredRows}
             keyExtractor={(r) => r.id}
             accessibilityRole="list"
@@ -258,6 +268,7 @@ export default function MyFeedbackModal({ visible, onClose, refreshKey = 0 }: Pr
           />
         </GlassSurface>
         </View>
+        </KeyboardAvoidingView>
       </View>
     </Modal>
   );
@@ -317,14 +328,21 @@ const makeStyles = (color: ColorTheme) =>
     },
     // Bulk-glass up-shadow on the outer wrapper (an overflow:hidden view clips
     // its own shadow). Mode tint identical to FeedbackModal/AboutScreen.
-    cardWrap: {
-      // G6/SR-099 — THE CAP LIVES HERE, not on the card. Latent twin of the
-      // live About/Help overflow: a percentage maxHeight resolves against the
-      // parent's *definite* height, and this wrapper is content-sized, so the
-      // card's own cap never resolved. The backdrop is `flex:1`, so it does
-      // resolve here. This surface is the most exposed of the latent pair —
-      // its list is a FlatList whose length is user data, not fixed copy.
+    // G6/SR-099 — THE CAP MOVED HERE from cardWrap when the KAV was added.
+    // A percentage maxHeight resolves only against a parent with a *definite*
+    // height. cardWrap used to be the backdrop's direct child, so its cap
+    // resolved; the KAV now sits between them and is itself content-sized, so
+    // leaving the cap on cardWrap would have silently made it inert. The KAV is
+    // the backdrop's direct child now, so the cap belongs here. Same net
+    // geometry as before, plus keyboard avoidance.
+    kav: {
+      width: '100%',
       maxHeight: '90%',
+      flexShrink: 1,
+    },
+    cardWrap: {
+      // Cap relocated to `kav` above; this just shrinks into it. Its list is a
+      // FlatList whose length is user data, not fixed copy — so the cap matters.
       flexShrink: 1,
       borderTopLeftRadius: radius.xl,
       borderTopRightRadius: radius.xl,

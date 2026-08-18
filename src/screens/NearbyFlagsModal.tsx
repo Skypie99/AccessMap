@@ -324,6 +324,12 @@ export default function NearbyFlagsModal({
         )}
 
         <FlatList
+          // Recipe S (the FlagDetailModal A11Y-228 precedent): let the list
+          // inset itself for the keyboard rather than wrapping in a KAV, which
+          // would fight this surface's own layout. iOS-only prop; a no-op on
+          // Android, which already resizes.
+          automaticallyAdjustKeyboardInsets
+          keyboardShouldPersistTaps="handled"
           data={displayFlags}
           keyExtractor={(f) => f.id}
           renderItem={renderItem}

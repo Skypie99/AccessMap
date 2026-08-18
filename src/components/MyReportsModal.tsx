@@ -1,6 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  FlatList,  Modal,
+  FlatList,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
   Pressable,
   RefreshControl,
   StyleSheet,
@@ -12,6 +15,7 @@ import { RemoteImage } from '@/components/ui/RemoteImage';
 import { AppText } from '@/components/ui/AppText';
 import { GlassSurface } from '@/components/ui/GlassSurface';
 import SearchInputRow from '@/components/SearchInputRow';
+import { useKeyboardVisible } from '@/hooks/useKeyboardVisible';
 import { a11yToggle, decorativeProps, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
 import { useAuth } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
@@ -65,6 +69,8 @@ export default function MyReportsModal({
   // modal render-tests mount these sheets without one. Same value in the app.
   const insets = React.useContext(SafeAreaInsetsContext) ?? { top: 0, bottom: 0, left: 0, right: 0 };
   const reducedMotion = useReducedMotion();
+  // Keyboard-up bottom-inset reclaim (Recipe F step 3).
+  const keyboardVisible = useKeyboardVisible();
   // A11Y-201 (2.4.3): move the SR cursor onto the title when this surface opens.
   const titleRef = useFocusOnOpen<Text>(visible);
   const { user } = useAuth();
@@ -279,12 +285,16 @@ export default function MyReportsModal({
   return (
     <Modal aria-label="My Reports" visible={visible} animationType={reducedMotion ? 'none' : 'slide'} transparent onRequestClose={onClose}>
       <View style={styles.backdrop}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={styles.kav}
+        >
         <View style={styles.cardWrap}>
         <GlassSurface
           variant="bulk"
           borderRadius={0}
           forceEngineered
-          style={[styles.card, { paddingBottom: Math.max(spacing.xl, insets.bottom) }]}
+          style={[styles.card, { paddingBottom: keyboardVisible ? spacing.md : Math.max(spacing.xl, insets.bottom) }]}
           accessibilityViewIsModal
           onAccessibilityEscape={onClose}
         >
@@ -439,6 +449,7 @@ export default function MyReportsModal({
             </View>
           ) : (
             <FlatList
+              keyboardShouldPersistTaps="handled"
               data={displayFlags}
               keyExtractor={(f) => f.id}
               renderItem={renderItem}
@@ -489,6 +500,7 @@ export default function MyReportsModal({
           )}
         </GlassSurface>
         </View>
+        </KeyboardAvoidingView>
       </View>
     </Modal>
   );
@@ -516,7 +528,16 @@ const makeStyles = (color: ColorTheme) =>
       maxHeight: '85%',
       overflow: 'hidden',
     },
+    // G6/SR-099 — THE CAP LIVES HERE. The card's own '85%' resolves against a content-sized
+    // cardWrap and is inert; only the flex:1 backdrop is definite, so the cap
+    // sits on the KAV and cardWrap/card shrink into it.
+    kav: {
+      width: '100%',
+      maxHeight: '85%',
+      flexShrink: 1,
+    },
     cardWrap: {
+      flexShrink: 1,
       borderTopLeftRadius: radius.xl,
       borderTopRightRadius: radius.xl,
       ...bulkGlassShadow(color),

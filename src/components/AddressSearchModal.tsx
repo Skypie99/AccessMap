@@ -18,6 +18,7 @@ import { GlassSurface } from '@/components/ui/GlassSurface';
 import { AlertTriangle, ChevronRight, Clock, MapPin, Search, X } from 'lucide-react-native';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { decorativeProps, useReducedMotion } from '@/lib/accessibility';
+import { useKeyboardVisible } from '@/hooks/useKeyboardVisible';
 import { searchAddressStrict, type GeocodeResult } from '@/lib/geocode';
 import {
   addRecent,
@@ -59,6 +60,9 @@ export default function AddressSearchModal({ visible, onClose, onSelect }: Props
   // modal render-tests mount these sheets without one. Same value in the app.
   const insets = React.useContext(SafeAreaInsetsContext) ?? { top: 0, bottom: 0, left: 0, right: 0 };
   const reducedMotion = useReducedMotion();
+  // Keyboard-up bottom-inset reclaim (Recipe F step 3): with the keyboard up the
+  // home-indicator inset is covered, so paying for it twice just steals rows.
+  const keyboardVisible = useKeyboardVisible();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<GeocodeResult[]>([]);
   const [loading, setLoading] = useState(false);
@@ -207,12 +211,12 @@ export default function AddressSearchModal({ visible, onClose, onSelect }: Props
             width:100% (not flex:1) preserves the backdrop's flex-end anchor. */}
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          style={{ width: '100%' }}
+          style={styles.kav}
         >
         {/* WCAG 2.4.3: contain VoiceOver focus inside the sheet so it can't
             wander onto the map behind it (every other modal sets this). */}
         <View style={styles.cardWrap}>
-        <GlassSurface variant="bulk" borderRadius={0} style={[styles.card, { paddingBottom: Math.max(spacing.xl, insets.bottom) }]} accessibilityViewIsModal onAccessibilityEscape={onClose}>
+        <GlassSurface variant="bulk" borderRadius={0} style={[styles.card, { paddingBottom: keyboardVisible ? spacing.md : Math.max(spacing.xl, insets.bottom) }]} accessibilityViewIsModal onAccessibilityEscape={onClose}>
           <View style={styles.headerRow}>
             <AppText variant="heading" style={styles.title} accessibilityRole="header">
               Search by address
@@ -398,6 +402,19 @@ function makeStyles(color: ColorTheme) {
       backgroundColor: color.scrim,
       justifyContent: 'flex-end',
     },
+    // G6/SR-099 — THE CAP LIVES HERE, not on the card. A percentage maxHeight
+    // only resolves against a parent with a *definite* height; backdrop → KAV →
+    // cardWrap → card means the card's own '85%' resolves against a
+    // content-sized cardWrap and is therefore inert. Only the KAV's parent (the
+    // flex:1 backdrop) is definite, so the cap sits on the KAV and cardWrap/card
+    // just need permission to shrink into it. This is the defect Sky hit on
+    // device: the sheet grew past the screen and the input sat under the
+    // keyboard. Same stack as FeedbackModal (the reference).
+    kav: {
+      width: '100%',
+      maxHeight: '85%',
+      flexShrink: 1,
+    },
     card: {
       borderTopLeftRadius: radius.xl,
       borderTopRightRadius: radius.xl,
@@ -406,6 +423,8 @@ function makeStyles(color: ColorTheme) {
       paddingBottom: spacing.xl,
       gap: spacing.sm,
       maxHeight: '85%',
+      // G6/SR-099: shrink into the KAV's cap (see the kav block).
+      flexShrink: 1,
       // The bulk variant owns the surface; overflow:hidden clips it to the
       // rounded top (the up-shadow moves to cardWrap — GlassSurface contract).
       overflow: 'hidden',
@@ -413,6 +432,7 @@ function makeStyles(color: ColorTheme) {
     // Bulk-glass up-shadow on the outer wrapper (an overflow:hidden view clips
     // its own shadow). Mode tint identical to FeedbackModal/AboutScreen.
     cardWrap: {
+      flexShrink: 1,
       borderTopLeftRadius: radius.xl,
       borderTopRightRadius: radius.xl,
       ...bulkGlassShadow(color),

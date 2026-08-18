@@ -878,6 +878,11 @@ export default function ProfileScreen() {
       <View style={styles.stageRoot}>
         <ScreenStage />
       <ScrollView
+        // Recipe S (the FlagDetailModal A11Y-228 precedent): the display-name
+        // field sits low on this scroll, so on small phones the keyboard used
+        // to cover the field being typed into. iOS-only prop; no-op on Android.
+        automaticallyAdjustKeyboardInsets
+        keyboardShouldPersistTaps="handled"
         style={styles.screen}
         contentContainerStyle={[
           styles.container,
