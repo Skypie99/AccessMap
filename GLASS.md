@@ -1,4 +1,4 @@
-# GLASS.md — "Deep Field": AccessMap's liquid-glass material system
+# GLASS.md — "Deep Field": Flagstone's liquid-glass material system
 
 **Status: LAW** (referenced from DESIGN.md §13). Shipped on the Tasks screen 2026-07-03
 (branch `overhaul/tasks-glass`), chosen by Sky's eye from the Material Lab's three live

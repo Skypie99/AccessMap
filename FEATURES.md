@@ -1,4 +1,4 @@
-# AccessMap — feature backlog
+# Flagstone — feature backlog
 
 The next things to build, ordered roughly by value vs. cost. One vertical
 slice per item. Keep each spec to a single sentence — flesh it out only
@@ -220,7 +220,7 @@ All items below merged to `main` on 2026-05-25.
 
 - **Branded tab headers + global Feedback flow.** Brand-blue header bar +
   Feedback pill on every tab.
-- **About AccessMap modal.** Mission, accessibility statement, community guidelines.
+- **About Flagstone modal.** Mission, accessibility statement, community guidelines.
 - **Profile hero card + screen wash.** 56pt points, progress bar to next milestone.
 - **Map top-row grouped action bar.** Four buttons unified in one elevated tray.
 

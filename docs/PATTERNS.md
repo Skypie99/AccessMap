@@ -1,6 +1,6 @@
-# AccessMap Code Patterns
+# Flagstone Code Patterns
 
-Reference guide for common patterns in AccessMap. Use these when adding features.
+Reference guide for common patterns in Flagstone. Use these when adding features.
 
 ---
 

@@ -3,7 +3,7 @@
  *
  * ⚠ THE MUST-PASS CORPUS IS THE MORE IMPORTANT HALF OF THIS SUITE, and it is
  * first on purpose. A content filter is trivially "correct" if it blocks
- * everything; what makes this one safe to ship in AccessMap is that a
+ * everything; what makes this one safe to ship in Flagstone is that a
  * frustrated disabled person describing a real barrier gets through. Those
  * cases are the regression guard on Sky's D-2 curation decision, so if this
  * block ever goes red, the filter got greedier and someone's report is being

@@ -1,4 +1,4 @@
-# AccessMap — Security, Safety & Robustness Audit Plan + Findings Register
+# Flagstone — Security, Safety & Robustness Audit Plan + Findings Register
 
 **Auditor:** Steve (Safety Engineer) · **Date:** 2026-06-01 · **Branch:**
 `qa-steve/accessmap-2026-06-01` (off `main`) · **Live project:** `Accessable

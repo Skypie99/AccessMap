@@ -1,4 +1,4 @@
-# AccessMap Onboarding Content Spec
+# Flagstone Onboarding Content Spec
 
 **Audience:** First-time users, just signed up  
 **Goal:** Teach the 3 core actions in under 2 minutes  
@@ -10,7 +10,7 @@
 
 ### Step 1: Welcome screen (shown once on first launch)
 
-**Headline:** "Welcome to AccessMap"  
+**Headline:** "Welcome to Flagstone"  
 **Body:** "Your community is mapping accessibility barriers. Add yours. Verify others. Make change happen."  
 **Button:** "Get Started"  
 **Skip link:** "Skip intro"

@@ -1,5 +1,5 @@
 /**
- * AccessMap design tokens — the single source of truth for color, spacing,
+ * Flagstone design tokens — the single source of truth for color, spacing,
  * radius, type, shadow, and severity. See ../DESIGN.md for usage rules and
  * the why behind each value.
  *

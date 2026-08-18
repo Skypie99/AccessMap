@@ -178,7 +178,7 @@ describe('Dynamic-Type guard — Cluster B: fixed-height text rows', () => {
 describe('Dynamic-Type guard — self-tests (the scanners actually scan)', () => {
   it('walks a non-trivial slice of the source tree', () => {
     // Sanity floor: if the walker silently returns nothing, the guard above is
-    // vacuously green. AccessMap has dozens of source files.
+    // vacuously green. Flagstone has dozens of source files.
     expect(SOURCE_FILES.length).toBeGreaterThan(20);
   });
 

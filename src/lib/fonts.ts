@@ -1,5 +1,5 @@
 /**
- * fonts.ts — custom font loader for the AccessMap design system.
+ * fonts.ts — custom font loader for the Flagstone design system.
  *
  * Usage in App.tsx:
  *   const [fontsLoaded, fontError] = useAppFonts();

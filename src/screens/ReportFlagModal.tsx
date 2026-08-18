@@ -1344,7 +1344,7 @@ const makeStyles = (color: ColorTheme) =>
       paddingVertical: spacing.sm,
       borderRadius: radius.circle,
       backgroundColor: color.surfaceNeutral,
-      // 44pt is the AccessMap baseline touch target (Apple HIG + WCAG 2.5.5).
+      // 44pt is the Flagstone baseline touch target (Apple HIG + WCAG 2.5.5).
       minHeight: 44,
       justifyContent: 'center',
     },

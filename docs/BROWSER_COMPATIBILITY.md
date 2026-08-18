@@ -1,4 +1,4 @@
-# AccessMap Web — Browser Compatibility
+# Flagstone Web — Browser Compatibility
 
 ## Supported Browsers
 

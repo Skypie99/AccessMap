@@ -158,7 +158,7 @@ describe('searchAddress', () => {
     expect(url).toContain('q=a%20b%20%26%20c');
   });
 
-  it('sends the AccessMap User-Agent per Nominatim policy', async () => {
+  it('sends the Flagstone User-Agent per Nominatim policy', async () => {
     const fetchMock = jest.fn().mockResolvedValue({
       ok: true,
       json: jest.fn().mockResolvedValue([]),

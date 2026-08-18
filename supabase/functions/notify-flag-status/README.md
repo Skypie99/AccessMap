@@ -40,7 +40,7 @@ Add both in the **Supabase Dashboard** → your project → **Edge Functions** �
 
 ## 2. Deploy the function
 
-Run from the **AccessMap project root** (the directory containing `supabase/`):
+Run from the **Flagstone project root** (the directory containing `supabase/`):
 
 ```bash
 supabase functions deploy notify-flag-status
@@ -132,9 +132,9 @@ This is intentional — a distinct body would be a push-token oracle.
 
 | Transition | Title | Body |
 |-----------|-------|------|
-| open → verified | AccessMap | Your sidewalk flag status changed to verified. |
-| open → resolved | AccessMap | Your ramp flag status changed to resolved. |
-| verified → resolved | AccessMap | Your crossing flag status changed to resolved. |
+| open → verified | Flagstone | Your sidewalk flag status changed to verified. |
+| open → resolved | Flagstone | Your ramp flag status changed to resolved. |
+| verified → resolved | Flagstone | Your crossing flag status changed to resolved. |
 
 If `category` is empty in the DB record, the message degrades to:
 `"Your flag status changed to verified."`

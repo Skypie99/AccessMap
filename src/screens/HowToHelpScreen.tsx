@@ -1,7 +1,7 @@
 /**
  * HowToHelpScreen — modal overlay.
  *
- * A step-by-step guide to contributing to AccessMap:
+ * A step-by-step guide to contributing to Flagstone:
  * report flags, verify flags, and spread the word.
  */
 import React, { useState } from 'react';

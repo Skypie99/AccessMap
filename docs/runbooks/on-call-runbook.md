@@ -1,4 +1,4 @@
-# AccessMap On-Call Runbook
+# Flagstone On-Call Runbook
 
 **Owner:** SRE team (Devon + Riley)  
 **Last updated:** 2026-05-29  
@@ -21,7 +21,7 @@
 
 | Resource | URL / command |
 |----------|---------------|
-| Supabase dashboard | https://supabase.com/dashboard — select the AccessMap project |
+| Supabase dashboard | https://supabase.com/dashboard — select the Flagstone project |
 | Supabase logs (real-time) | Dashboard → Logs → API / Auth / PostgREST |
 | Sentry error feed | https://sentry.io — project: `accessmap` (configure after Sky adds real DSN) |
 | EAS Build status | https://expo.dev — Builds tab |

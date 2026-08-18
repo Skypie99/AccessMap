@@ -7,7 +7,7 @@ Expo push token from the `push_tokens` table, and fires it to the Expo Push API.
 
 ## 1. Deploy the function
 
-Run this from the **AccessMap project root** (where `supabase/` lives):
+Run this from the **Flagstone project root** (where `supabase/` lives):
 
 ```bash
 supabase functions deploy send-push-notification
@@ -75,7 +75,7 @@ const res = await fetch(
     },
     body: JSON.stringify({
       user_id: 'the-target-users-uuid',
-      title:   'Hello from AccessMap',
+      title:   'Hello from Flagstone',
       body:    'Your flag was updated.',
       data:    { flagId: '123', screen: 'FlagDetail' }, // optional deep-link data
     }),

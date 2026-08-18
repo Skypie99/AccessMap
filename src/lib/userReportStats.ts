@@ -50,7 +50,7 @@ export const EMPTY_USER_REPORT_STATS: UserReportStats = {
 /**
  * Fetch only the columns we need (`category`, `severity`) — server-side
  * GROUP BY isn't worth the round-trip complexity at the small per-user
- * row counts AccessMap deals with. Aggregating client-side keeps this
+ * row counts Flagstone deals with. Aggregating client-side keeps this
  * compatible with the existing RLS read policy too.
  *
  * Rows whose category or severity drifted outside the live enum are

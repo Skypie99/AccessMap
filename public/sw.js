@@ -1,4 +1,4 @@
-// AccessMap Service Worker — offline support
+// Flagstone Service Worker — offline support
 // Strategies: CacheFirst for tiles, NetworkFirst for Supabase API + navigations, StaleWhileRevalidate for hashed app shell
 
 const CACHE_VERSION = 'v2';

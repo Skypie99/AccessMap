@@ -1,8 +1,8 @@
-# AccessMap Architecture
+# Flagstone Architecture
 
-## What Is AccessMap?
+## What Is Flagstone?
 
-AccessMap is a crowdsourced accessibility-flagging mobile app where users drop pins at locations with accessibility issues (no ramp, broken sidewalk, etc.), and other users verify, resolve, or reject those reports. It teaches you TypeScript + React Native + Supabase by building a real app that learns by doing.
+Flagstone is a crowdsourced accessibility-flagging mobile app where users drop pins at locations with accessibility issues (no ramp, broken sidewalk, etc.), and other users verify, resolve, or reject those reports. It teaches you TypeScript + React Native + Supabase by building a real app that learns by doing.
 
 **Live platforms:** iOS, Android (via Expo), Web (via react-leaflet).
 
@@ -112,7 +112,7 @@ ProfileScreen shows points, reported/verified/resolved counts
 ## Folder Structure
 
 ```
-AccessMap/
+Flagstone/
 ├── App.tsx                          Entry point. Auth gate → RootNavigator or SignInScreen
 ├── src/
 │   ├── screens/                     Tab content + dialogs
@@ -308,7 +308,7 @@ The flags Realtime subscription only sends updated `id` and `status` to reduce b
 
 ## Next Steps for Contributors
 
-1. **Clone & install:** `git clone ... && cd AccessMap && npm install`.
+1. **Clone & install:** `git clone ... && cd Flagstone && npm install`.
 2. **Env setup:** Copy `.env.example` to `.env` and fill in Supabase keys.
 3. **Run locally:** `npm start` (iOS simulator), `npm run android`, or `npm run web`.
 4. **Read CONTRIBUTING.md** for the full developer workflow (branching, testing, PR process).

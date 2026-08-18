@@ -46,7 +46,7 @@ export interface MapFilters {
  * are the radii surfaced to the user. We constrain to a small enum rather
  * than a slider because:
  *  - The five-step set covers the urban-walking → driving-radius range
- *    AccessMap cares about (within a block → across a city) without UI
+ *    Flagstone cares about (within a block → across a city) without UI
  *    overload.
  *  - Discrete values are screen-reader-friendly (each chip has a clean
  *    label) and trivial to validate on load.

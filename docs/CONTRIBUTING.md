@@ -1,6 +1,6 @@
-# AccessMap Contributing Guide
+# Flagstone Contributing Guide
 
-Welcome! This guide covers the development workflow, local setup, testing, and shipping process for AccessMap.
+Welcome! This guide covers the development workflow, local setup, testing, and shipping process for Flagstone.
 
 ---
 
@@ -10,7 +10,7 @@ Welcome! This guide covers the development workflow, local setup, testing, and s
 
 ```bash
 git clone https://github.com/skypie99/AccessMap.git
-cd AccessMap
+cd Flagstone
 npm install
 ```
 
@@ -484,4 +484,4 @@ If the app feels slow:
 4. Run `npm run typecheck` before committing.
 5. Open a PR.
 
-Welcome to the AccessMap team! 🗺️
+Welcome to the Flagstone team! 🗺️

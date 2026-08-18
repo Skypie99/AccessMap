@@ -1,7 +1,7 @@
 import { Platform } from 'react-native';
 
 /**
- * Travel mode for the directions handoff. AccessMap is pedestrian-first
+ * Travel mode for the directions handoff. Flagstone is pedestrian-first
  * (wheelchairs, walkers, sidewalks) so `'walking'` is the default — callers
  * can override per-call if a future feature ever needs driving / transit.
  */
@@ -32,7 +32,7 @@ export type TravelMode = 'walking' | 'driving' | 'transit';
  * `platformOverride` is for tests only — production callers omit it and
  * the function reads `Platform.OS`.
  *
- * Walking mode by default — AccessMap is fundamentally a pedestrian
+ * Walking mode by default — Flagstone is fundamentally a pedestrian
  * accessibility tool, so driving directions would be the wrong default.
  * Pass `{ mode: 'driving' }` or `{ mode: 'transit' }` to override.
  */

@@ -1,4 +1,4 @@
-# AccessMap Release Readiness — 2026-05-28
+# Flagstone Release Readiness — 2026-05-28
 
 **Status:** Infrastructure built. Awaiting Sky credential setup to go live.
 
@@ -36,7 +36,7 @@
 
 4. **Create App Store Connect app record** (10 min)
    - Go to https://appstoreconnect.apple.com
-   - Create **New app** → name: AccessMap, bundle ID: com.accessmap.app
+   - Create **New app** → name: Flagstone, bundle ID: com.accessmap.app
    - Note the App Store Connect Apple ID
 
 5. **Update eas.json** with App Store Connect ID (2 min)

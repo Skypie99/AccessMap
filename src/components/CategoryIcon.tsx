@@ -1,5 +1,5 @@
 /**
- * CategoryIcon — bespoke line icon for each AccessMap barrier category.
+ * CategoryIcon — bespoke line icon for each Flagstone barrier category.
  *
  * Renders the design system's 24px / 2px / round-cap SVG glyphs (drawn on the
  * same grid as Lucide) via react-native-svg, tinted by `color` (stroke). Maps

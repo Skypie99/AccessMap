@@ -9,7 +9,7 @@
  * accepted practice: "block/hide-author that works for anonymous authors too
  * (client-side hide list keyed on report id is accepted practice)".
  *
- * WHY KEYED ON CONTENT ID, NOT AUTHOR ID. Most AccessMap content has no author
+ * WHY KEYED ON CONTENT ID, NOT AUTHOR ID. Most Flagstone content has no author
  * to block: anonymous flags are `user_id IS NULL` rows, and blocking "null"
  * would hide every anonymous report in the app. Hiding the specific item is
  * both the achievable thing and the proportionate one — it is a personal

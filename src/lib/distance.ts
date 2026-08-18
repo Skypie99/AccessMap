@@ -21,7 +21,7 @@ const WALKING_KMH = 5;
 /**
  * Great-circle distance between two lat/lng points, in kilometers
  * (haversine). Accurate to well within a meter at street-level scale,
- * which is all AccessMap needs.
+ * which is all Flagstone needs.
  */
 export function haversineKm(a: LatLng, b: LatLng): number {
   const R = 6371; // Earth radius in km

@@ -1,11 +1,11 @@
-# AccessMap — Design System
+# Flagstone — Design System
 
-The single source of truth for how AccessMap looks and feels.
+The single source of truth for how Flagstone looks and feels.
 Tokens live in [`src/theme.ts`](src/theme.ts); this file explains how to use
 them and the reasoning behind each decision. If you change either file, change
 both.
 
-> **Design philosophy.** AccessMap exists to help people who navigate the
+> **Design philosophy.** Flagstone exists to help people who navigate the
 > physical world differently. The visual language has to be *born accessible*:
 > high contrast, generous targets, clear typography, color that's never the
 > only signal. Beauty that excludes people is a defect — especially here.

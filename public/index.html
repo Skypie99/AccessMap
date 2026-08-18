@@ -219,11 +219,11 @@
           navigator.serviceWorker
             .register('/sw.js')
             .then(function (reg) {
-              console.log('[AccessMap SW] Registered, scope:', reg.scope);
+              console.log('[Flagstone SW] Registered, scope:', reg.scope);
             })
             .catch(function (err) {
               // Non-fatal — app works fine without SW, just no offline support.
-              console.warn('[AccessMap SW] Registration failed:', err);
+              console.warn('[Flagstone SW] Registration failed:', err);
             });
         });
       }

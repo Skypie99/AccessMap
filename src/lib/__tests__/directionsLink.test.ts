@@ -11,7 +11,7 @@
  *    (~1m); any rounding here would push the user onto the wrong block.
  *  - Encoded URL validity — no spaces, no characters that would break
  *    parsing in either the `maps:`, `google.navigation:`, or `https:` schemes.
- *  - Walking-mode default — AccessMap is pedestrian-first (wheelchairs,
+ *  - Walking-mode default — Flagstone is pedestrian-first (wheelchairs,
  *    walkers, sidewalks). If this default ever silently flips to driving,
  *    we want a test failure, not a user out on a freeway shoulder.
  *
@@ -94,7 +94,7 @@ describe('getDirectionsUrl', () => {
       );
     });
 
-    it('omitted mode defaults to walking (AccessMap is pedestrian-first)', () => {
+    it('omitted mode defaults to walking (Flagstone is pedestrian-first)', () => {
       // No mode key on any platform → all three should yield walking URLs.
       expect(getDirectionsUrl(1, 2, { platformOverride: 'ios' })).toContain('dirflg=w');
       expect(getDirectionsUrl(1, 2, { platformOverride: 'android' })).toContain('mode=w');

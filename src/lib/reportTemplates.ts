@@ -1,6 +1,6 @@
 // Quick-fill report templates for ReportFlagModal.
 //
-// AccessMap users are often reporting *while in the field* — kneeling next
+// Flagstone users are often reporting *while in the field* — kneeling next
 // to a broken curb cut, or crossing a wide intersection looking for a
 // missing audible signal. The default modal asks the reporter to set a
 // category, pick a severity, type a description, and (optionally) attach a

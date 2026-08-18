@@ -1,7 +1,7 @@
-# AccessMap — TestFlight Release Playbook
+# Flagstone — TestFlight Release Playbook
 
 **Last updated:** 2026-05-31
-**Purpose:** The single authoritative guide for building and submitting AccessMap to TestFlight. Follow this every time. Do not consult `EAS_SETUP.md` or the old `RELEASE_RUNBOOK.md` for build/submit steps — they predate several critical fixes and are partially incorrect.
+**Purpose:** The single authoritative guide for building and submitting Flagstone to TestFlight. Follow this every time. Do not consult `EAS_SETUP.md` or the old `RELEASE_RUNBOOK.md` for build/submit steps — they predate several critical fixes and are partially incorrect.
 
 For a full history of every build failure and how it was resolved, see `docs/MASTER_FIX_LOG.md`.
 
@@ -68,7 +68,7 @@ The submit block must have real values (not placeholders):
 
 All three are set and permanent:
 - **`appleId`** — Sky's Apple ID
-- **`ascAppId`** — App Store Connect Apple ID for AccessMap (`6774709116`). Never changes unless the app is deleted and recreated from scratch.
+- **`ascAppId`** — App Store Connect Apple ID for Flagstone (`6774709116`). Never changes unless the app is deleted and recreated from scratch.
 - **`appleTeamId`** — Apple Developer Team ID (`S78F8ZA8QU`)
 
 ### 1c. `app.json` — iOS section

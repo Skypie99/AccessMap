@@ -1,4 +1,4 @@
-# QA_PLAN_PERF — AccessMap performance audit plan (2026-06-01)
+# QA_PLAN_PERF — Flagstone performance audit plan (2026-06-01)
 
 Peter (Performance Engineer). Final pre-tester performance pass. Branch
 `qa-peter/accessmap-2026-06-01` off `main` (`5fb80ce`), in an isolated worktree.
@@ -55,7 +55,7 @@ Measure-first; fix only what's safely fixable in conflict-free files; propose th
 
 ## Headline
 
-AccessMap is **already well-optimized** (limit + pagination + shared SWR store + marker
+Flagstone is **already well-optimized** (limit + pagination + shared SWR store + marker
 clustering + virtualized memoized lists + native-driver motion all shipped). This pass is
 verification + a few tiny clean-file wins + a measured scale roadmap — deliberately not a
 churn-heavy "fix" pass.

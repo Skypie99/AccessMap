@@ -4,7 +4,7 @@
 **Branch:** `qa-alex/accessmap-2026-06-01` off `main` (`5fb80ce` — the merged polish build)
 **Standard:** WCAG 2.2 AA (+ iOS HIG 44pt / VoiceOver, Material 48dp / TalkBack)
 
-> AccessMap exists for disabled users. Accessibility is the product working, not a lint
+> Flagstone exists for disabled users. Accessibility is the product working, not a lint
 > score. This is one of the last rounds before human testers — production bar: every screen
 > reachable and escapable, fully operable with VoiceOver/TalkBack, legible at large type, no
 > dead ends, no meaning by color or motion alone.

@@ -148,7 +148,7 @@ export const REPORT_SENT_TITLE = 'Report sent';
  *
  * HOW IT GOT HERE, because the history is the reason the guard exists. An
  * earlier agent-written attempt read "Thanks. Reports are reviewed by the
- * AccessMap maintainer." — no cadence, no response time, no outcome, and
+ * Flagstone maintainer." — no cadence, no response time, no outcome, and
  * defensible as a transcription of §SKY-3g's "Triage path (state it visibly)".
  * Two independent reviewers called it a fence breach, and they were right:
  * THE PROMISE IS THE VERB. "are reviewed" asserts, present tense and

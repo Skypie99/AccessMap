@@ -16,7 +16,7 @@ Pre-flight checklist and exact commands to ship the first TestFlight build.
 
 ### 2. Set the App Store Connect App ID in eas.json
 
-1. Go to [appstoreconnect.apple.com](https://appstoreconnect.apple.com) → Apps → AccessMap
+1. Go to [appstoreconnect.apple.com](https://appstoreconnect.apple.com) → Apps → Flagstone
    (If the app record doesn't exist yet, create it — Bundle ID: `com.accessmap.app`)
 2. Copy the **Apple ID** from the app's App Information page (a 10-digit number)
 3. Open `eas.json` → `submit.production.ios.ascAppId` → replace `TODO_ASC_APP_ID` with that number

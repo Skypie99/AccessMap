@@ -1,4 +1,4 @@
-# AccessMap Design System — Implementation Status
+# Flagstone Design System — Implementation Status
 
 **Last updated:** 2026-05-31  
 **Status:** All 6 phases shipped to `main`. No pending phases.
@@ -119,7 +119,7 @@ font.family.monoBold     → 'JetBrainsMono_600SemiBold'
 **Wired in:**
 - `App.tsx` — `useAppFonts()` called at root; render held until fonts ready (or errored)
 - `ProfileScreen` — hero points number → `AppText variant="monoBold"`
-- `SignInScreen` — "AccessMap" title → `AppText variant="display"`
+- `SignInScreen` — "Flagstone" title → `AppText variant="display"`
 - `PointsChip` — values use `AppText mono/monoBold`
 
 ---

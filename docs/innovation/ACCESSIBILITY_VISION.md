@@ -1,10 +1,10 @@
-# AccessMap Accessibility Innovation Vision
+# Flagstone Accessibility Innovation Vision
 
 > **Status:** Proposal — not yet implemented. Each section ends with a
 > "Minimum viable" slice that could ship in a single sprint.
 
 An accessibility app that is itself inaccessible is a contradiction. This
-document goes beyond compliance checklists to ask: *how could AccessMap become
+document goes beyond compliance checklists to ask: *how could Flagstone become
 an indispensable daily tool for people with disabilities?*
 
 ---
@@ -13,7 +13,7 @@ an indispensable daily tool for people with disabilities?*
 
 ### The idea
 
-AccessMap already knows where barriers are. The next step is using that data
+Flagstone already knows where barriers are. The next step is using that data
 to answer the question every wheelchair user asks before leaving home: *"Is
 this path safe for me today?"*
 
@@ -27,7 +27,7 @@ A "verified accessible route" is a walking path between two points that:
 | Requirement | Detail |
 |---|---|
 | **Flag density** | A grid cell needs at least one flag within ~50 m of every 100 m segment to be trustworthy. Sparse areas must be marked "unverified" rather than "clear." |
-| **Graph routing** | We need a pedestrian routing graph (OpenStreetMap's walking network via OSRM or OpenRouteService). AccessMap flags are overlaid as edge weights: a verified barrier on a segment raises its cost to near-infinity; a resolved flag reduces cost. |
+| **Graph routing** | We need a pedestrian routing graph (OpenStreetMap's walking network via OSRM or OpenRouteService). Flagstone flags are overlaid as edge weights: a verified barrier on a segment raises its cost to near-infinity; a resolved flag reduces cost. |
 | **Routing API** | A Supabase Edge Function (or Vercel serverless function) accepts `{origin, destination, profile}` and returns a weighted route. Client renders the polyline on the map. |
 | **Staleness model** | A flag older than 90 days and unverified should decay in weight — sidewalks get repaired. The confidence score must show the user when data is stale. |
 | **Clear-flag density floor** | Segments with no flags at all are *unknown*, not *clear*. The UI must distinguish "no barrier reported" from "confirmed accessible." |
@@ -48,7 +48,7 @@ user taps two points and the app highlights the heatmap gradient between them.
 
 A wheelchair user and a low-vision user have almost no overlap in the barriers
 they need to know about. Showing every flag category to everyone creates noise
-that erodes trust. A first-class *accessibility profile* turns AccessMap from
+that erodes trust. A first-class *accessibility profile* turns Flagstone from
 a generic map into a personalised guide.
 
 ### How flag categories map to disability profiles

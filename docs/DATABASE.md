@@ -1,6 +1,6 @@
-# AccessMap Database Schema & Data Flow
+# Flagstone Database Schema & Data Flow
 
-This document describes the Supabase Postgres database, Row-Level Security policies, and Realtime subscriptions that power AccessMap.
+This document describes the Supabase Postgres database, Row-Level Security policies, and Realtime subscriptions that power Flagstone.
 
 ---
 

@@ -1,6 +1,6 @@
 # Architecture Decision Records (ADRs)
 
-This directory records significant architectural decisions made for AccessMap.
+This directory records significant architectural decisions made for Flagstone.
 
 ## What is an ADR?
 

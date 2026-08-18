@@ -78,7 +78,7 @@ const FALLBACK_PEEK_REGION = {
 // future change stays a one-line swap in one place.
 //
 // The register rule every option obeys: claim REPORT-absence, never
-// barrier-absence. AccessMap cannot know that a place has no barriers — only
+// barrier-absence. Flagstone cannot know that a place has no barriers — only
 // that nobody has reported one. "No barriers here" would be a promise the data
 // can't keep, and the people who rely on this app are exactly the people such a
 // promise would strand.

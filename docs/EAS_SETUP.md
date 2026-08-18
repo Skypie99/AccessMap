@@ -1,6 +1,6 @@
 # EAS Build + TestFlight Setup Guide
 
-This guide walks through setting up automated builds for AccessMap on your iOS device via EAS Build and TestFlight.
+This guide walks through setting up automated builds for Flagstone on your iOS device via EAS Build and TestFlight.
 
 **Timeline:** ~30 min setup, then builds happen automatically.
 
@@ -20,7 +20,7 @@ This guide walks through setting up automated builds for AccessMap on your iOS d
 ✅ You have:
 - An Apple Developer account ($99/year)
 - An iOS device with TestFlight installed
-- GitHub admin access to the AccessMap repo
+- GitHub admin access to the Flagstone repo
 
 ❌ You do NOT yet have:
 - EAS Token (we'll create)
@@ -33,7 +33,7 @@ This guide walks through setting up automated builds for AccessMap on your iOS d
 
 1. Go to **[expo.dev](https://expo.dev)** and sign in (or create account).
 2. Click **Create project** (or use an existing one if you have Expo projects).
-3. Select **AccessMap** as the project name.
+3. Select **Flagstone** as the project name.
 4. Copy your **EAS Token** (you'll need it in Step 5).
    - Go to **Account → Settings → Tokens**.
    - Click **Create Token** (or copy an existing one).
@@ -88,7 +88,7 @@ TestFlight needs an app record in Apple's portal.
 2. Click **Apps** → **New app**.
 3. Fill in:
    - **Platform:** iOS
-   - **Name:** AccessMap
+   - **Name:** Flagstone
    - **Bundle ID:** com.accessmap.app (must match app.json)
    - **SKU:** accessmap (just a unique identifier for you)
    - **User Access:** Your Apple ID
@@ -182,10 +182,10 @@ The workflow automatically builds (production profile) and submits to TestFlight
 Once a build is submitted to TestFlight:
 
 1. **On your iOS device,** open the **TestFlight** app.
-2. **Go to the "Apps" tab** and find **AccessMap**.
+2. **Go to the "Apps" tab** and find **Flagstone**.
 3. **Tap "Install"** or **"Update"** (it will say "Update" if you already have a previous build).
 4. **TestFlight will download and install** the build.
-5. **Open AccessMap** and test.
+5. **Open Flagstone** and test.
 
 ---
 
@@ -225,7 +225,7 @@ Once a build is submitted to TestFlight:
 ## Next Steps
 
 1. **Invite team to TestFlight** (optional):
-   - App Store Connect → **AccessMap** → **TestFlight** → **Testers**.
+   - App Store Connect → **Flagstone** → **TestFlight** → **Testers**.
    - Add team members by email. They'll see builds and can install directly.
 
 2. **Set up notifications** (optional):

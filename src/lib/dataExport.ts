@@ -1,7 +1,7 @@
 /**
  * Pure formatter for the "Export my data" Settings action.
  *
- * Renders a human-readable plain-text view of everything AccessMap has on
+ * Renders a human-readable plain-text view of everything Flagstone has on
  * the signed-in user: their profile (display name, points), every flag
  * they've submitted, and (when the feedback table is enabled) every
  * feedback message they've sent.

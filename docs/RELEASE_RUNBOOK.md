@@ -1,6 +1,6 @@
-# AccessMap Release Runbook
+# Flagstone Release Runbook
 
-**How to ship a new version of AccessMap**
+**How to ship a new version of Flagstone**
 
 This is your step-by-step guide for releasing a new version. Follow it in order, every time. You're learning by doing — if something isn't clear, the linked docs go deeper.
 
@@ -168,7 +168,7 @@ This automatically uploads your build to App Store Connect and submits it for re
 **Option B: Manual (if you need to change anything)**
 
 1. Go to https://appstoreconnect.apple.com and sign in
-2. Navigate to **My Apps** → **AccessMap**
+2. Navigate to **My Apps** → **Flagstone**
 3. Click the **+** button to create a new version
 4. Upload the `.ipa` from Phase 4
 5. Copy the user-facing release notes from `RELEASE_NOTES.md` into the "What's New" field
@@ -187,7 +187,7 @@ Google typically approves within a few hours (much faster than Apple).
 **Option B: Manual**
 
 1. Go to Google Play Console: https://play.google.com/console
-2. Navigate to **AccessMap** → **Releases** → **Create new release**
+2. Navigate to **Flagstone** → **Releases** → **Create new release**
 3. Upload the `.aab` from Phase 4
 4. Fill in release notes and version details
 5. Click **Review and rollout**
@@ -230,7 +230,7 @@ If something goes very wrong after release (crash on startup, data loss, securit
 
 ### iOS App Store
 
-1. Go to https://appstoreconnect.apple.com → **My Apps** → **AccessMap**
+1. Go to https://appstoreconnect.apple.com → **My Apps** → **Flagstone**
 2. Find the version that's causing problems
 3. Click **Remove from Sale** (temporary, reversible)
 
@@ -238,7 +238,7 @@ The app disappears from the App Store for new users but stays on devices that al
 
 ### Android Google Play
 
-1. Go to Google Play Console → **AccessMap** → **Releases**
+1. Go to Google Play Console → **Flagstone** → **Releases**
 2. Find the problematic release
 3. Click **Halt rollout** (stops pushing to new users)
 
@@ -253,7 +253,7 @@ Once you've removed the broken version:
 
 ## Version Numbering
 
-AccessMap uses **semantic versioning** (MAJOR.MINOR.PATCH):
+Flagstone uses **semantic versioning** (MAJOR.MINOR.PATCH):
 
 - **0.2.x** (patch) — Bug fixes, small tweaks (e.g., `0.2.1`, `0.2.2`)
 - **0.x.0** (minor) — New features, sprint completion (e.g., `0.3.0`, `0.4.0`)

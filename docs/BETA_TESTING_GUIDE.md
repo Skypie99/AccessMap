@@ -1,4 +1,4 @@
-# AccessMap Beta Testing Guide
+# Flagstone Beta Testing Guide
 
 How to invite testers and collect feedback before public launch.
 
@@ -13,10 +13,10 @@ How to invite testers and collect feedback before public launch.
    - Sign in with your Apple ID
    - Accept the developer agreements
 
-2. **Create the AccessMap app record**
+2. **Create the Flagstone app record**
    - My Apps → + button → New App
    - Platform: iOS
-   - Name: AccessMap
+   - Name: Flagstone
    - Bundle ID: `com.accessmap.app` (matches app.json)
    - SKU: accessmap-v1
    - Click Create
@@ -57,9 +57,9 @@ TestFlight has a built-in screenshot + feedback tool — testers just tap the de
    - Pay one-time $25 developer fee
    - Fill in developer profile
 
-2. **Create AccessMap app**
+2. **Create Flagstone app**
    - All apps → Create app
-   - App name: AccessMap
+   - App name: Flagstone
    - Default language: English
    - Free app
    - Complete the store listing using basic app info (name, description, screenshots)
@@ -90,7 +90,7 @@ TestFlight has a built-in screenshot + feedback tool — testers just tap the de
 Send this to testers to structure their feedback:
 
 ```
-AccessMap Beta Feedback
+Flagstone Beta Feedback
 
 1. Device: [iPhone 15 / Pixel 8 / etc.]
 2. OS version: [iOS 18 / Android 14]

@@ -1,4 +1,4 @@
-# AccessMap Product Roadmap
+# Flagstone Product Roadmap
 
 **Last Updated:** 2026-05-29  
 **Current Release:** v0.2.0 (Sprint 1 — Shipped)  

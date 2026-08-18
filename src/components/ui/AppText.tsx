@@ -23,7 +23,7 @@
  * (font.tracking.*) rather than a flat magic number.
  *
  * Usage:
- *   <AppText variant="display" size={28} color={color.textStrong}>AccessMap</AppText>
+ *   <AppText variant="display" size={28} color={color.textStrong}>Flagstone</AppText>
  *   <AppText variant="mono" size={20}>+25 pts</AppText>
  *
  * Design system 2026-05-31; Dynamic Type + tracking added 2026-06-01.

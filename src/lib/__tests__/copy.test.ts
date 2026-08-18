@@ -154,7 +154,7 @@ describe('B-1 moderation copy', () => {
       expect(s).not.toMatch(/will be (removed|deleted|banned|taken down)/i);
       // THE PROMISE IS THE VERB, not the tense. This rule exists because the
       // two above did not catch the real breach: "Reports are reviewed by the
-      // AccessMap maintainer" shipped past them, since a present-tense passive
+      // Flagstone maintainer" shipped past them, since a present-tense passive
       // contains neither an interval nor "will be". A green fence test then
       // reads as evidence there is no promise, which is worse than no test.
       // Any claim that a review/moderation process happens is Sky's to make

@@ -1,4 +1,4 @@
-# AccessMap — Governance & Maintenance Process
+# Flagstone — Governance & Maintenance Process
 
 **Version:** 1.0 (2026-05-26)  
 **Authority:** Sky + Team consensus

@@ -1,4 +1,4 @@
-# AccessMap Push Notification Strategy
+# Flagstone Push Notification Strategy
 
 **Last Updated:** 2026-06-01
 **Status:** Draft — iOS only (Expo Notifications, APNs). Android push planned for Sprint 4.
@@ -24,7 +24,7 @@ Each notification fires once per tier — crossing back down and up again does n
 |---|---|---|
 | Bronze → Silver | **You've levelled up!** | You're a trusted contributor now 🥈 Keep mapping barriers for your community. |
 | Silver → Gold | **Gold status unlocked!** | Gold status unlocked 🥇 Your reports carry extra weight now. |
-| Gold → Platinum | **You've reached Platinum!** | You've reached Platinum 💎 You're one of AccessMap's most trusted voices. |
+| Gold → Platinum | **You've reached Platinum!** | You've reached Platinum 💎 You're one of Flagstone's most trusted voices. |
 
 ### Full payloads (APNs format)
 
@@ -52,7 +52,7 @@ Each notification fires once per tier — crossing back down and up again does n
 ```json
 {
   "title": "You've reached Platinum!",
-  "body": "You've reached Platinum 💎 You're one of AccessMap's most trusted voices.",
+  "body": "You've reached Platinum 💎 You're one of Flagstone's most trusted voices.",
   "sound": "default",
   "data": { "type": "tier_milestone", "tier": "platinum" }
 }

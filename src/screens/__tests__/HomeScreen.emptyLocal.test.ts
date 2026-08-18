@@ -10,7 +10,7 @@
  * pinned separately below.
  *
  * The register rule is the important one and is deliberately asserted on the
- * literal string: AccessMap can only ever know that nobody has REPORTED a
+ * literal string: Flagstone can only ever know that nobody has REPORTED a
  * barrier, never that none exists. The people who depend on this app are
  * exactly the people a "no barriers here" promise would strand.
  *

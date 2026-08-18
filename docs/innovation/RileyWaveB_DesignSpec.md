@@ -232,7 +232,7 @@ pick), without suggesting any shame or failure.
 Design rationale for wording: "Skip photo" implies an obligation being bypassed.
 "No photo" (used in some other apps) reads as a negative ("I have no photo").
 "No photo needed" is declarative and removes the guilt framing — the user is
-asserting that the report stands on its own. It also matches AccessMap's tone:
+asserting that the report stands on its own. It also matches Flagstone's tone:
 plain, non-judgmental.
 
 **Behavior:** tapping "No photo needed" does nothing — `photoUri` stays null and
@@ -431,7 +431,7 @@ No new tokens needed.
 |---|---|---|---|
 | Q1 | Should NearbyFlagsModal's status filter default to "all statuses shown" (this spec) or mirror MapScreen's default of "open + verified only"? | If modal defaults to "all," screen reader users may see resolved/rejected flags that the sighted filter hides — creates a different view of reality. If modal defaults to "open + verified," users may not know they're filtered, and cannot see resolved flags to confirm a fix. | This spec recommends "all shown" — the list is explicitly a discovery surface, not a task queue. But this is a product call. |
 | Q2 | Should a future wave add saved filter presets to NearbyFlagsModal (synced with MapScreen presets), or keep the modal filter as always-reset-on-close? | Syncing would give screen reader users the same named-filter power that sighted users have. But it adds a data model dependency and UX complexity. | Out of scope for this wave; flag for Wave C. |
-| Q3 | "No photo needed" — is the wording right for AccessMap's voice? Alternatives considered: "Skip photo," "No photo," "Continue without photo." | Wording shapes how the photo step is perceived — a burden vs. an invitation. | "No photo needed" is the design recommendation. Sky has final call on copy. |
+| Q3 | "No photo needed" — is the wording right for Flagstone's voice? Alternatives considered: "Skip photo," "No photo," "Continue without photo." | Wording shapes how the photo step is perceived — a burden vs. an invitation. | "No photo needed" is the design recommendation. Sky has final call on copy. |
 | Q4 | Zoom buttons — should they be visible at all times (even for users who never need them) or hidden behind an accessibility setting? | Always-visible is simpler and doesn't stigmatize disability; an opt-in setting adds complexity. Web map shows them always. | Always-visible. Keeps parity with the web map and benefits any user who prefers buttons to pinch (elderly, cold weather, gloves). |
 
 ---
