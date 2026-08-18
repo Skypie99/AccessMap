@@ -35,7 +35,7 @@ photo/context-tags/anon), comments, profile (display_name/avatar), feedback,
 address search, filter presets, saved places.
 
 **External calls.** Supabase REST/Storage/Realtime; OSM tiles (web); `mailto:`
-(feedback); maps `directionsLink`; Expo push; (Sentry/analytics = stubs).
+(feedback); maps `directionsLink`; Expo push; (analytics = stubs, nothing leaves the device; no crash reporter).
 
 **Permissions.** expo-location (foreground), expo-image-picker (camera +
 library), notifications.

@@ -62,7 +62,6 @@ module.exports = {
     '!src/theme/**',
     '!src/types/**',
     '!src/lib/supabase.ts',
-    '!src/lib/sentry.ts',
     '!src/lib/analytics.ts',
     '!src/lib/pushNotifications.ts',
     '!src/lib/realtimePrefs.ts',

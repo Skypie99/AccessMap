@@ -4,7 +4,6 @@
 
 - `eas.json` has Apple credentials hardcoded (`appleId`, `appleTeamId`, `ascAppId`)
 - `ios/` and `android/` are gitignored (CNG mode — Expo generates them at build time)
-- Sentry DSN is set as an EAS secret (`SENTRY_DSN`)
 - Supabase env vars are set as EAS secrets (`EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_ANON_KEY`)
 - Apple Developer account enrolled (Team ID: S78F8ZA8QU)
 

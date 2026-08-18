@@ -1,4 +1,4 @@
-// Tests for the analytics wrapper (Sentry removed — stubs in place until Phase 6).
+// Tests for the analytics wrapper (backend removed — stubs in place; nothing leaves the device).
 
 import {
   trackEvent,

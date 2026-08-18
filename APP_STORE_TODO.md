@@ -195,11 +195,7 @@ It **fails closed**, so nothing is exposed. But if a reviewer asks *"show me how
 the answer today is a screen that renders for nobody. One read-only grant check settles whether this is
 still true; an agent can fix it cheaply once you decide.
 
-**The Sentry mismatch.** Your live privacy policy says *"We use Sentry to capture crash logs"* and
-*"30 days (via Sentry)."* But `src/lib/sentry.ts` is a **4-line no-op stub** — `// Sentry removed — re-add in Phase 6`.
-Over-disclosure is the legally safe direction, but reviewers cross-read the policy against the nutrition
-labels. Also worth knowing: **no crash reporting ships**, so a reviewer-side crash is invisible to you
-post-submit. Knowingly accepted is fine. Unknowingly is not.
+**The Sentry mismatch — RESOLVED 2026-08-17.** The live privacy policy used to claim crash reporting via Sentry while `src/lib/sentry.ts` was a 4-line no-op. Sky's call: she does not use Sentry, so the claim went, not the code. The published policy no longer mentions crash reporting, which now matches the in-app policy's "no crash reporting" and matches reality. The dead stub, its setup doc, and its env-var placeholder are deleted. Crashes remain invisible until a reporter is deliberately added; `docs/ROADMAP.md` carries that as an open item, and `docs/RELEASE_PLAYBOOK.md` keeps the do-not-re-add warning about the iOS 26 launch crash.
 
 ---
 
