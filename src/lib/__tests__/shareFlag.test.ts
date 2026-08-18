@@ -18,7 +18,7 @@
  *    wrong flag (recipients with the app installed tap it to jump there).
  */
 
-import { formatFlagShareText } from '../shareFlag';
+import { WEB_ORIGIN, formatFlagShareText, webFlagUrl } from '../shareFlag';
 import { CATEGORY_LABELS } from '../flags';
 import type { FlagCategory, FlagRow, FlagSeverity, FlagStatus } from '@/types/database';
 
@@ -53,7 +53,8 @@ describe('formatFlagShareText', () => {
         'At 37.33174, -122.03033',
         'Status: open',
         '',
-        'Open in Flagstone: accessmap://flag/flag-abc-123',
+        'See it on the map: https://accessmap.skypistudio.com/flag/flag-abc-123',
+        'Open in the app: accessmap://flag/flag-abc-123',
         'Reported via Flagstone.',
       ].join('\n'),
     );
@@ -73,7 +74,8 @@ describe('formatFlagShareText', () => {
         '',
         'Curb is crumbling on the south corner.',
         '',
-        'Open in Flagstone: accessmap://flag/flag-abc-123',
+        'See it on the map: https://accessmap.skypistudio.com/flag/flag-abc-123',
+        'Open in the app: accessmap://flag/flag-abc-123',
         'Reported via Flagstone.',
       ].join('\n'),
     );
@@ -91,7 +93,8 @@ describe('formatFlagShareText', () => {
         'At 37.33174, -122.03033',
         'Status: open',
         '',
-        'Open in Flagstone: accessmap://flag/flag-abc-123',
+        'See it on the map: https://accessmap.skypistudio.com/flag/flag-abc-123',
+        'Open in the app: accessmap://flag/flag-abc-123',
         'Reported via Flagstone.',
       ].join('\n'),
     );
@@ -156,16 +159,29 @@ describe('formatFlagShareText', () => {
     expect(out).toContain('At -33.86880, 151.20930');
   });
 
-  it('includes the accessmap://flag/{id} deep link for the shared flag', () => {
-    // Recipients with the app installed tap this to land on the exact flag
-    // (RootNavigator registers the accessmap://flag/{id} route). The id must
-    // be the shared flag's own id — a wrong id strands them on a 404 callout.
+  it('leads with an https link so the flag opens for recipients without the app', () => {
+    // The web link is the one that works for EVERYBODY: `accessmap://` is a
+    // custom scheme, inert on desktop and on any phone without the app, which
+    // made every shared flag a dead link for most recipients. The same id
+    // resolves on the web build, so this URL must carry the shared flag's own
+    // id — a wrong id strands them on a 404 callout.
     const out = formatFlagShareText(makeFlag({ id: 'deep-link-id-42' }), labelOf);
-    expect(out).toContain('Open in Flagstone: accessmap://flag/deep-link-id-42');
-    // The link sits on its own line, directly above the credit line.
+    expect(out).toContain('See it on the map: https://accessmap.skypistudio.com/flag/deep-link-id-42');
+    // The scheme link stays for people who DO have the app installed.
+    expect(out).toContain('Open in the app: accessmap://flag/deep-link-id-42');
+    // Order and placement: web link, then app link, then the credit line last.
     const lines = out.split('\n');
-    expect(lines[lines.length - 2]).toBe('Open in Flagstone: accessmap://flag/deep-link-id-42');
+    expect(lines[lines.length - 3]).toBe(
+      'See it on the map: https://accessmap.skypistudio.com/flag/deep-link-id-42',
+    );
+    expect(lines[lines.length - 2]).toBe('Open in the app: accessmap://flag/deep-link-id-42');
     expect(lines[lines.length - 1]).toBe('Reported via Flagstone.');
+  });
+
+  it('builds the web URL from the single WEB_ORIGIN constant', () => {
+    // One string to change when the demo moves to its Flagstone-branded host.
+    expect(webFlagUrl('abc')).toBe(`${WEB_ORIGIN}/flag/abc`);
+    expect(formatFlagShareText(makeFlag({ id: 'abc' }), labelOf)).toContain(webFlagUrl('abc'));
   });
 
   it('ends with "Reported via Flagstone." — no trailing newline', () => {

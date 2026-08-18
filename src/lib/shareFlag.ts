@@ -13,7 +13,8 @@
  *
  *   <description (only if non-empty after trim)>
  *
- *   Open in Flagstone: accessmap://flag/<id>
+ *   See it on the map: https://accessmap.skypistudio.com/flag/<id>
+ *   Open in the app: accessmap://flag/<id>
  *   Reported via Flagstone.
  *
  * The 5-decimal rounding is intentional — that's roughly ~1m of precision,
@@ -27,6 +28,21 @@
  */
 
 import type { FlagRow } from '@/types/database';
+
+/**
+ * Public origin of the web build. ONE place, because it is the string that has
+ * to change the day the demo moves to its Flagstone-branded host — the product
+ * was renamed but this domain deliberately was not, since the `accessmap://`
+ * scheme and the Supabase redirect URLs are pinned to it. Point this at the
+ * new origin only once that origin actually serves the app; a share link to a
+ * domain that does not resolve yet is worse than one that names the old brand.
+ */
+export const WEB_ORIGIN = 'https://accessmap.skypistudio.com';
+
+/** Shareable https URL for a single flag — the web twin of accessmap://flag/{id}. */
+export function webFlagUrl(flagId: string): string {
+  return `${WEB_ORIGIN}/flag/${flagId}`;
+}
 
 /**
  * Build the share-sheet text body for a flag.
@@ -60,10 +76,18 @@ export function formatFlagShareText(
   const desc = flag.description?.trim();
   const middle = desc ? `\n${desc}\n` : '';
 
-  // Footer — deep link first (recipients with the app installed jump straight
-  // to this flag — same accessmap://flag/{id} URL RootNavigator registers),
-  // then the credit line so a forwarded message has context.
-  const footer = `Open in Flagstone: accessmap://flag/${flag.id}\nReported via Flagstone.`;
+  // Footer — the WEB link leads, because it is the only one that works for
+  // everybody. `accessmap://` is a custom scheme: it opens the app when the
+  // app is installed and does nothing at all on a desktop, or on a phone
+  // without it, which made every shared flag a dead link for most recipients.
+  // The same id resolves on the web build (RootNavigator maps `flag/:flagId?`
+  // onto FullMap, which fetches it and opens its callout), so the https URL
+  // lands anyone on the actual flag. The scheme line stays underneath it so
+  // people who DO have the app keep the direct jump.
+  const footer =
+    `See it on the map: ${webFlagUrl(flag.id)}\n` +
+    `Open in the app: accessmap://flag/${flag.id}\n` +
+    `Reported via Flagstone.`;
 
   return `${headerLines.join('\n')}\n${middle}\n${footer}`;
 }
