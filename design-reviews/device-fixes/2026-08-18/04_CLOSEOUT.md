@@ -2,7 +2,7 @@
 
 **Branch:** `fix/device-keyboard-admin-2026-08-18` (off `main` @ `68fce6b`) — 3 commits, **not merged. Sky merges.**
 **One-writer:** confirmed clear by Sky before the first commit; no `src/` churn, no tracked edits, no git op in flight.
-**DB:** zero agent-applied migrations, zero live writes. Every live query was a read. The two statements Sky applies are in `03_SQL_ARTIFACTS.md`.
+**DB:** Phase B authored the artifacts and made no live writes on its own authority. Sky then approved applying them in-session, so **A1 and A2 are APPLIED LIVE as of 2026-08-18** — see "Applied" below.
 
 | Commit | What |
 |---|---|
@@ -172,8 +172,16 @@ treats zero rows as a refusal, throwing 42501 → existing copy, no new strings.
 
 ---
 
-## STOP
+## Applied / shipped (2026-08-18, on Sky's explicit approval)
 
-Three commits on `fix/device-keyboard-admin-2026-08-18`. Gates green. Nothing
-merged, nothing pushed, no DB touched. Sky applies `03_SQL_ARTIFACTS.md` (A1
-then A2, per-statement) and merges the branch.
+- **A1 applied** — `grant select (is_admin) on public.users to authenticated`. Verified: is_admin now in the grant list; `email` still ungranted so the 2026-05-27 privacy protection is intact; the subselect that errored 42501 now returns cleanly.
+- **A2 applied** — `skylerhalisky@gmail.com` is `is_admin = true`, and the only admin.
+- **Proven, in rolled-back transactions:** the owner deleting their own flag → 1 row; Sky as admin deleting someone else's flag → 1 row. Both previously errored 42501. The BUMBAKLOT flag was confirmed still present afterwards — nothing was actually deleted.
+- **Merged** `--no-ff` into `main` (`a7b816b`) and **pushed** to `origin/main`. Gates re-run green on merged main: 205 suites, 3000 pass, 3032 total; typecheck clean; lint 0 errors.
+- **Revert the whole train:** `git revert -m 1 a7b816b`. DB rollbacks are in `03_SQL_ARTIFACTS.md`.
+
+### One thing noticed in passing, NOT acted on
+`reviewer@accessmap.com` — the App-Review demo account, present in Phase A's read
+earlier the same day — no longer exists in `auth.users`. Untouched by this train
+(nothing here deletes accounts, and creating one is not mine to do). Flagged
+because App Review needs working demo credentials.
