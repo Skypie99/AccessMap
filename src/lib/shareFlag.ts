@@ -35,8 +35,14 @@ import type { FlagRow } from '@/types/database';
  * app: DNS resolves to the same Vercel target as the old host, the certificate
  * is issued, and https://flagstone.skypistudio.com returns the app with no
  * redirect. The OLD host stays live and is NOT retired — the `accessmap://`
- * scheme, the Supabase Site URL, and every link shared before today are pinned
- * to it, so both hosts serve the same build.
+ * scheme is pinned to it, and every link shared before today points at it, so
+ * both hosts serve the same build.
+ *
+ * NOT a reason, despite what the move runbook claimed: the Supabase Site URL.
+ * It never referenced the old host. It sat at the unconfigured default
+ * `http://localhost:3000` until 2026-08-18, when it was repointed at the
+ * Flagstone origin; both origins are now in the Supabase redirect allowlist.
+ * See design-reviews/demo-domain/2026-08-17/DOMAIN-MOVE.md § CORRECTION.
  */
 export const WEB_ORIGIN = 'https://flagstone.skypistudio.com';
 

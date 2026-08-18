@@ -32,3 +32,46 @@
 - **The `accessmap://` scheme stays.** Renaming it orphans every link already shared and every Supabase redirect. It is an identifier, not a name.
 - **The GitHub repo keeps its name**, so the case study's "GitHub" link keeps pointing at `Skypie99/AccessMap`.
 - **Universal Links** (an https link opening the *app* instead of the web build on a phone) are a separate job: they need an `apple-app-site-association` file and an `assetlinks.json` served from the domain, plus the associated-domains entitlement. Not configured today, which is why the share footer keeps the `accessmap://` line underneath the web link. Worth doing later; it does not block anything here.
+
+---
+
+## CORRECTION — 2026-08-17, during execution
+
+**The Supabase premise above was wrong.** Two places in this doc — the "Why the old host must
+keep working" paragraph and step 5 — assert that the Supabase **redirect URLs and Site URL** are
+tied to `accessmap.skypistudio.com`, and warn that replacing them breaks sign-in "for anyone
+mid-flow." That is not what was in the project. Checked live in the dashboard before making any
+change:
+
+| Setting | Value found |
+|---|---|
+| Site URL | `http://localhost:3000` (unconfigured default) |
+| Redirect URLs | **empty** |
+| Confirm email | **off** |
+
+Nothing in Supabase auth referenced `accessmap` at all. There were no entries to preserve, and
+with Confirm email off, no confirmation emails were being sent, so there was no "mid-flow" cohort
+to protect. A grep of `src/` also found no `resetPasswordForEmail`, `signInWithOtp`,
+`signInWithOAuth`, or `emailRedirectTo` — the app is email/password only, so **no flow in the app
+uses the redirect allowlist today**.
+
+**The real problem was the opposite of the one described:** a production project pointing its Site
+URL at `http://localhost:3000`. Latent right now, but the day password reset is added or Confirm
+email is switched on, every one of those emails would have sent users to a dead localhost link.
+
+**What was actually done** (approved by Sky, deliberately beyond this doc's original scope):
+
+- Site URL → `https://flagstone.skypistudio.com`
+- Redirect URLs → added `https://flagstone.skypistudio.com/**` *and*
+  `https://accessmap.skypistudio.com/**`, so the old host is explicitly allowed rather than
+  implicitly allowed by having been the Site URL
+
+**What did not change, and why:** `accessmap.skypistudio.com` still serves, still attached to the
+same Vercel project, no redirect. The Supabase justification for keeping it evaporated, but the
+other two reasons in this doc stand on their own — share links already sent carry the old
+`WEB_ORIGIN`, and the `accessmap://` scheme is pinned. Do not let the corrected premise talk you
+into retiring the old host.
+
+**Method note for next time:** read the live config before reasoning from a runbook. Both the doc
+and, initially, the assistant reasoned forward from the written premise and produced a careful
+plan for a risk that did not exist, while missing the one that did.
