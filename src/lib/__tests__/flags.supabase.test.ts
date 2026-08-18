@@ -292,7 +292,10 @@ describe('updateFlagStatus', () => {
 
 describe('deleteFlag', () => {
   it('resolves without throwing on success', async () => {
-    setupChain({ data: null, error: null });
+    // A successful delete reports the deleted row back: deleteFlag asks for
+    // `.select('id')` precisely so zero rows can be read as the refusal it is
+    // (RLS filters rather than raising). See sr050DeleteFlagPhotos.test.ts.
+    setupChain({ data: [{ id: 'f1' }], error: null });
     await expect(deleteFlag('f1')).resolves.toBeUndefined();
   });
 

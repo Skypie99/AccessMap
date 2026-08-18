@@ -30,6 +30,7 @@ import {
 } from 'react-native';
 import { useAuth } from '@/lib/auth';
 import { a11yToggle, decorativeProps, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
+import { useKeyboardVisible } from '@/hooks/useKeyboardVisible';
 import { AppText } from '@/components/ui/AppText';
 import { GlassSurface } from '@/components/ui/GlassSurface';
 import { SkeletonRow } from '@/components/ui/Skeleton';
@@ -74,6 +75,8 @@ export default function SavedPlacesModal({
   const color = useColor();
   const styles = makeStyles(color);
   const reducedMotion = useReducedMotion();
+  // Keyboard-up bottom-inset reclaim (Recipe F step 3).
+  const keyboardVisible = useKeyboardVisible();
   // A11Y-201 (2.4.3): move the SR cursor onto the title when this surface opens.
   const titleRef = useFocusOnOpen<Text>(visible);
   const { user } = useAuth();
@@ -274,12 +277,12 @@ export default function SavedPlacesModal({
             (not flex:1) preserves the backdrop's flex-end anchor. */}
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          style={{ width: '100%' }}
+          style={styles.kav}
         >
         <GlassSurface
           variant="bulk"
           borderRadius={0}
-          style={[styles.card, { paddingBottom: Math.max(spacing.xxl, insets.bottom) }]}
+          style={[styles.card, { paddingBottom: keyboardVisible ? spacing.md : Math.max(spacing.xxl, insets.bottom) }]}
           accessibilityViewIsModal
           onAccessibilityEscape={onClose}
         >
@@ -461,6 +464,16 @@ const makeStyles = (color: ColorTheme) =>
       backgroundColor: color.scrim,
       justifyContent: 'flex-end',
     },
+    // G6/SR-099 — THE CAP LIVES HERE, not on the card. A percentage maxHeight
+    // only resolves against a parent with a *definite* height; the card's own
+    // '85%' resolves against the content-sized KAV and is inert. Only the
+    // flex:1 backdrop is definite, so the cap sits on the KAV and the card
+    // shrinks into it. Same stack as FeedbackModal (the reference).
+    kav: {
+      width: '100%',
+      maxHeight: '85%',
+      flexShrink: 1,
+    },
     card: {
       borderTopLeftRadius: radius.xl,
       borderTopRightRadius: radius.xl,
@@ -469,6 +482,8 @@ const makeStyles = (color: ColorTheme) =>
       paddingBottom: spacing.xxl,
       gap: spacing.md,
       maxHeight: '85%',
+      // G6/SR-099: shrink into the KAV's cap (see the kav block).
+      flexShrink: 1,
       // The bulk variant owns the surface; clip it to the rounded top.
       overflow: 'hidden',
     },

@@ -1376,21 +1376,43 @@ export async function requestFlagReopen(flagId: string): Promise<number | null> 
  * cannot: `removeUploadedFlagPhotos` never throws, by design.
  *
  * ─── TWO CALLERS, ONE OF THEM CANNOT FINISH THE JOB ───────────────────────
- * `FlagDetailModal` calls this as the flag's OWNER, and the `flag-photos owner
- * delete` Storage policy permits it — that path now works end to end.
- * `AdminScreen` calls it as an ADMIN taking down someone else's flag, and that
- * same policy DENIES the Storage delete: the row goes, the photo stays. The
- * client half cannot fix that; it needs a Storage policy, which is a Sky-applied
- * migration. The artifact is written and waiting in
- * `04b_sql_sweep_lens4b_RECOVERED.md` §C-12. **Until she applies it, admin
- * takedown remains incomplete, and 1.2(b) says so rather than claiming closed.**
+ * `FlagDetailModal` calls this as the flag's OWNER; `AdminScreen` calls it as an
+ * ADMIN taking down someone else's flag. Both are now permitted at the policy
+ * level: the §C-12 `flag-photos admin delete` Storage policy this comment used
+ * to describe as "written and waiting" was applied live on 2026-07-29, and both
+ * it and `flags`' `admin delete any flag` were verified present in the live
+ * catalog on 2026-08-18.
+ *
+ * ─── WHAT ACTUALLY BLOCKS BOTH PATHS TODAY (2026-08-18) ───────────────────
+ * Neither path can complete, and it is not a missing policy. Both the flags
+ * admin policy and the Storage admin policy subselect `public.users.is_admin`,
+ * RLS quals evaluate with the CALLER's privileges, and `authenticated` has no
+ * SELECT grant on that column — so every authenticated delete against either
+ * table errors 42501 *before* rows are filtered, including an owner deleting
+ * their own flag. Postgres evaluates every applicable permissive policy; there
+ * is no short-circuit once `flags delete own` matches. One Sky-applied column
+ * grant fixes all four paths at once. Until it lands, delete is broken for
+ * every real user, not merely incomplete for admins.
  */
 export async function deleteFlag(flagId: string) {
   // Gather BEFORE the delete — see the order note above.
   const paths = await collectFlagPhotoPaths(flagId);
 
-  const { error } = await supabase.from('flags').delete().eq('id', flagId);
+  // `.select('id')` is what makes a refused delete distinguishable from a
+  // completed one. RLS does not error when it denies a DELETE — it filters the
+  // row out and reports success over zero rows. Without this, a caller with no
+  // right to the flag gets a clean resolve, `onDeleted()` fires, and the UI
+  // hides a flag that is still very much in the table: the user is told their
+  // takedown worked when nothing happened. Zero rows is therefore a refusal,
+  // and 42501 is the code the house error map already turns into the standard
+  // "You don't have permission to do that." copy.
+  const { data, error } = await supabase.from('flags').delete().eq('id', flagId).select('id');
   if (error) throw error;
+  if (!data || data.length === 0) {
+    const denied = new Error('Delete matched no rows — the row is missing or RLS refused it.');
+    (denied as Error & { code?: string }).code = '42501';
+    throw denied;
+  }
 
   // Best-effort, never throws. On the admin path RLS refuses this and it warns;
   // the row is still gone, which is the contract the caller surfaces.

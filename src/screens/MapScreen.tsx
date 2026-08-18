@@ -2862,7 +2862,7 @@ export default function MapScreen() {
               input opens. iOS 'padding'; width:100% preserves centering. */}
           <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-            style={{ width: '100%' }}
+            style={styles.nameKav}
           >
           <View
             style={styles.nameCard}
@@ -2966,7 +2966,7 @@ export default function MapScreen() {
               input opens. iOS 'padding'; width:100% preserves centering. */}
           <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-            style={{ width: '100%' }}
+            style={styles.nameKav}
           >
           <View
             style={styles.nameCard}
@@ -3561,11 +3561,23 @@ const makeStyles = (color: ColorTheme) =>
       justifyContent: 'center',
       padding: 20,
     },
+    // G6/SR-099 — the cap lives on the KAV, the backdrop's only definite-height
+    // child. nameCard carries no maxHeight of its own, so at large Dynamic Type
+    // on a small phone this centered dialog could grow past BOTH screen edges —
+    // and centered overflow pushes the title and input off the top with no
+    // scroll to reach them. Inert on normal type; load-bearing on accessible type.
+    nameKav: {
+      width: '100%',
+      maxHeight: '90%',
+      flexShrink: 1,
+    },
     nameCard: {
       backgroundColor: color.surface,
       borderRadius: radius.xl,
       padding: 20,
       gap: 12,
+      // G6/SR-099: shrink into the KAV's cap (see nameKav).
+      flexShrink: 1,
       // T20: shadow.e3 makes the four-dialog tier four-of-four for depth (the
       // ProfileScreen account dialogs already carry it). Unconditional — these
       // are solid-surface cards, so the Deep Field transparent-bg shadow

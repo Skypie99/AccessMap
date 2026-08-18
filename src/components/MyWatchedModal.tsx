@@ -7,7 +7,9 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 import {
   FlatList,
+  KeyboardAvoidingView,
   Modal,
+  Platform,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -45,6 +47,7 @@ import type { FlagRow } from '@/types/database';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { StatusBadge } from './StatusBadge';
 import SearchInputRow from './SearchInputRow';
+import { useKeyboardVisible } from '@/hooks/useKeyboardVisible';
 
 interface Props {
   visible: boolean;
@@ -91,6 +94,8 @@ export default function MyWatchedModal({ visible, onClose, onSelectFlag, onViewO
   const color = useColor();
   const styles = makeStyles(color);
   const reducedMotion = useReducedMotion();
+  // Keyboard-up bottom-inset reclaim (Recipe F step 3).
+  const keyboardVisible = useKeyboardVisible();
   // A11Y-201 (2.4.3): move the SR cursor onto the title when this surface opens.
   const titleRef = useFocusOnOpen<Text>(visible);
   const { user } = useAuth();
@@ -292,6 +297,16 @@ export default function MyWatchedModal({ visible, onClose, onSelectFlag, onViewO
   return (
     <Modal aria-label="Watched Flags" visible={visible} animationType={reducedMotion ? 'none' : 'slide'} transparent onRequestClose={onClose}>
       <View style={styles.backdrop}>
+        {/* Recipe F (the FeedbackModal d2a0991 stack): the KAV nests around the
+            existing containment node — accessibilityViewIsModal stays on the
+            GlassSurface, untouched — and THE CAP LIVES ON THE KAV (see the kav
+            style). This sheet previously carried no keyboard mechanism at all,
+            so the search field sat at the keyboard edge with the rows below it
+            cut off (Sky's device screenshot). */}
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={styles.kav}
+        >
         <View style={styles.cardWrap}>
         {/* MP2/M-40: bulk-glass sheet (forceEngineered = budget-free).
             accessibilityViewIsModal (BP17 / T20) traps VoiceOver focus inside
@@ -303,7 +318,7 @@ export default function MyWatchedModal({ visible, onClose, onSelectFlag, onViewO
           variant="bulk"
           borderRadius={0}
           forceEngineered
-          style={[styles.sheet, { paddingBottom: Math.max(spacing.xxl + 4, insets.bottom) }]}
+          style={[styles.sheet, { paddingBottom: keyboardVisible ? spacing.md : Math.max(spacing.xxl + 4, insets.bottom) }]}
           accessibilityViewIsModal
           onAccessibilityEscape={onClose}
         >
@@ -451,6 +466,7 @@ export default function MyWatchedModal({ visible, onClose, onSelectFlag, onViewO
             <FlatList
               data={displayFlags} keyExtractor={(item) => item.id} renderItem={renderItem}
               contentContainerStyle={styles.list}
+              keyboardShouldPersistTaps="handled"
               ItemSeparatorComponent={() => <View style={styles.separator} />}
               showsVerticalScrollIndicator={false}
               accessibilityRole="list"
@@ -462,6 +478,7 @@ export default function MyWatchedModal({ visible, onClose, onSelectFlag, onViewO
           )}
         </GlassSurface>
         </View>
+        </KeyboardAvoidingView>
       </View>
     </Modal>
   );
@@ -491,12 +508,23 @@ const makeStyles = (color: ColorTheme) =>
     // Bulk-glass sheet — the variant owns the surface (no backgroundColor);
     // overflow:hidden clips the square material to the rounded top; the up-shadow
     // moves to cardWrap (an overflow:hidden view clips its own shadow).
+    // G6/SR-099 — THE CAP LIVES HERE. The sheet's own '85%' resolves against a
+    // content-sized cardWrap and is inert; only the flex:1 backdrop is definite,
+    // so the cap sits on the KAV and cardWrap/sheet shrink into it.
+    kav: {
+      width: '100%',
+      maxHeight: '85%',
+      flexShrink: 1,
+    },
     sheet: {
       borderTopLeftRadius: radius.xl, borderTopRightRadius: radius.xl,
       paddingHorizontal: spacing.xl, paddingTop: spacing.lg, paddingBottom: spacing.xxl + 4,
       maxHeight: '85%', gap: spacing.tight, overflow: 'hidden',
+      // G6/SR-099: shrink into the KAV's cap.
+      flexShrink: 1,
     },
     cardWrap: {
+      flexShrink: 1,
       borderTopLeftRadius: radius.xl,
       borderTopRightRadius: radius.xl,
       ...bulkGlassShadow(color),

@@ -1204,6 +1204,11 @@ export default function TasksScreen() {
         </View>
       ) : (
       <SectionList
+        // Recipe S (the FlagDetailModal A11Y-228 precedent): the search field
+        // lives in this list's header, so without this the rows under the
+        // keyboard are unreachable. iOS-only prop; a no-op on Android.
+        automaticallyAdjustKeyboardInsets
+        keyboardShouldPersistTaps="handled"
         sections={sections}
         keyExtractor={(f) => f.id}
         // Fills the whole screen now the chrome is absolute; hidden for the

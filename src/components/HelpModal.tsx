@@ -1,5 +1,14 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, type Text, View } from 'react-native';
+import {
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  type Text,
+  View,
+} from 'react-native';
 import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 import { bulkGlassShadow, font, radius, shadow, spacing } from '@/theme';
 import { a11yToggle, decorativeProps, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
@@ -118,6 +127,10 @@ export default function HelpModal({ visible, onClose }: Props) {
           own contents from TalkBack. Android relies on RN Modal's own
           focus trap and the elevation/z-index of the backdrop.) */}
       <View style={styles.backdrop} accessibilityViewIsModal onAccessibilityEscape={onClose} testID="helpModal-backdrop">
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={styles.kav}
+        >
         <View style={styles.cardWrap}>
         <GlassSurface variant="bulk" borderRadius={0} style={styles.card}>
           <View style={styles.headerRow}>
@@ -147,6 +160,7 @@ export default function HelpModal({ visible, onClose }: Props) {
           />
 
           <ScrollView
+            keyboardShouldPersistTaps="handled"
             style={styles.body}
             contentContainerStyle={[styles.bodyContent, { paddingBottom: Math.max(spacing.lg, insets.bottom) }]}
             showsVerticalScrollIndicator={false}
@@ -209,6 +223,7 @@ export default function HelpModal({ visible, onClose }: Props) {
           </ScrollView>
         </GlassSurface>
         </View>
+        </KeyboardAvoidingView>
       </View>
     </Modal>
   );
@@ -236,17 +251,20 @@ const makeStyles = (color: ColorTheme) =>
     },
     // Bulk-glass up-shadow on the outer wrapper (an overflow:hidden view clips
     // its own shadow). Mode tint identical to FeedbackModal/AboutScreen.
-    cardWrap: {
-      // G6/SR-099 — THE CAP LIVES HERE, not on the card. A percentage
-      // maxHeight resolves against the parent's *definite* height; this
-      // wrapper is content-sized, so the card's own `maxHeight:'90%'` never
-      // resolved and the card grew unbounded. With `justifyContent:'flex-end'`
-      // on the backdrop that pins the bottom and lifts the 44pt close X clean
-      // off the top of the viewport (measured: Help y=-53, About y=-65) — and
-      // since the backdrop is a plain View with no scrim-tap, touch web was
-      // left with NO pointer path to dismiss at all. The backdrop is `flex:1`,
-      // so the cap resolves correctly here.
+    // G6/SR-099 — THE CAP MOVED HERE from cardWrap when the KAV was added.
+    // A percentage maxHeight resolves against the parent's *definite* height.
+    // cardWrap used to be the backdrop's direct child, so its cap resolved; the
+    // KAV now sits between them and is content-sized, so leaving the cap on
+    // cardWrap would have silently made it inert and regressed the unbounded
+    // card this cap was added to fix (measured then: close X at y=-53, no
+    // pointer path to dismiss on touch web). The KAV is the direct child now.
+    kav: {
+      width: '100%',
       maxHeight: '90%',
+      flexShrink: 1,
+    },
+    cardWrap: {
+      // Cap relocated to `kav` above; this just shrinks into it.
       flexShrink: 1,
       borderTopLeftRadius: radius.xl,
       borderTopRightRadius: radius.xl,
