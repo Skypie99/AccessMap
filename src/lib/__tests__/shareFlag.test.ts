@@ -53,7 +53,7 @@ describe('formatFlagShareText', () => {
         'At 37.33174, -122.03033',
         'Status: open',
         '',
-        'See it on the map: https://accessmap.skypistudio.com/flag/flag-abc-123',
+        `See it on the map: ${WEB_ORIGIN}/flag/flag-abc-123`,
         'Open in the app: accessmap://flag/flag-abc-123',
         'Reported via Flagstone.',
       ].join('\n'),
@@ -74,7 +74,7 @@ describe('formatFlagShareText', () => {
         '',
         'Curb is crumbling on the south corner.',
         '',
-        'See it on the map: https://accessmap.skypistudio.com/flag/flag-abc-123',
+        `See it on the map: ${WEB_ORIGIN}/flag/flag-abc-123`,
         'Open in the app: accessmap://flag/flag-abc-123',
         'Reported via Flagstone.',
       ].join('\n'),
@@ -93,7 +93,7 @@ describe('formatFlagShareText', () => {
         'At 37.33174, -122.03033',
         'Status: open',
         '',
-        'See it on the map: https://accessmap.skypistudio.com/flag/flag-abc-123',
+        `See it on the map: ${WEB_ORIGIN}/flag/flag-abc-123`,
         'Open in the app: accessmap://flag/flag-abc-123',
         'Reported via Flagstone.',
       ].join('\n'),
@@ -166,13 +166,13 @@ describe('formatFlagShareText', () => {
     // resolves on the web build, so this URL must carry the shared flag's own
     // id — a wrong id strands them on a 404 callout.
     const out = formatFlagShareText(makeFlag({ id: 'deep-link-id-42' }), labelOf);
-    expect(out).toContain('See it on the map: https://accessmap.skypistudio.com/flag/deep-link-id-42');
+    expect(out).toContain(`See it on the map: ${WEB_ORIGIN}/flag/deep-link-id-42`);
     // The scheme link stays for people who DO have the app installed.
     expect(out).toContain('Open in the app: accessmap://flag/deep-link-id-42');
     // Order and placement: web link, then app link, then the credit line last.
     const lines = out.split('\n');
     expect(lines[lines.length - 3]).toBe(
-      'See it on the map: https://accessmap.skypistudio.com/flag/deep-link-id-42',
+      `See it on the map: ${WEB_ORIGIN}/flag/deep-link-id-42`,
     );
     expect(lines[lines.length - 2]).toBe('Open in the app: accessmap://flag/deep-link-id-42');
     expect(lines[lines.length - 1]).toBe('Reported via Flagstone.');

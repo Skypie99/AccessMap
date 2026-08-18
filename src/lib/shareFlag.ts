@@ -30,14 +30,15 @@
 import type { FlagRow } from '@/types/database';
 
 /**
- * Public origin of the web build. ONE place, because it is the string that has
- * to change the day the demo moves to its Flagstone-branded host — the product
- * was renamed but this domain deliberately was not, since the `accessmap://`
- * scheme and the Supabase redirect URLs are pinned to it. Point this at the
- * new origin only once that origin actually serves the app; a share link to a
- * domain that does not resolve yet is worse than one that names the old brand.
+ * Public origin of the web build. ONE place, so the move to the Flagstone-branded
+ * host is a single edit. Flipped 2026-08-18, once the host actually served the
+ * app: DNS resolves to the same Vercel target as the old host, the certificate
+ * is issued, and https://flagstone.skypistudio.com returns the app with no
+ * redirect. The OLD host stays live and is NOT retired — the `accessmap://`
+ * scheme, the Supabase Site URL, and every link shared before today are pinned
+ * to it, so both hosts serve the same build.
  */
-export const WEB_ORIGIN = 'https://accessmap.skypistudio.com';
+export const WEB_ORIGIN = 'https://flagstone.skypistudio.com';
 
 /** Shareable https URL for a single flag — the web twin of accessmap://flag/{id}. */
 export function webFlagUrl(flagId: string): string {
