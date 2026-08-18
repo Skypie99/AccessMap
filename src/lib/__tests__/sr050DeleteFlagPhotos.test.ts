@@ -51,8 +51,15 @@ function wireTables(opts: {
   photoUrl?: string | null;
   junction?: { url: string | null }[];
   deleteError?: { message: string } | null;
+  /** Rows the delete reports back. [] means RLS refused it (see deleteFlag). */
+  deleteRows?: { id: string }[];
 }) {
-  const deleteEq = jest.fn().mockResolvedValue({ error: opts.deleteError ?? null });
+  const deleteEq = jest.fn().mockReturnValue({
+    select: async () => ({
+      data: opts.deleteRows ?? [{ id: 'flag-1' }],
+      error: opts.deleteError ?? null,
+    }),
+  });
   mockFrom.mockImplementation((table: string) => {
     if (table === 'flags') {
       return {
@@ -169,9 +176,11 @@ describe('deleteFlag removes the flag AND its photos', () => {
 
   it('gathers the URLs BEFORE deleting the row — afterwards they are gone', async () => {
     const order: string[] = [];
-    const deleteEq = jest.fn().mockImplementation(async () => {
-      order.push('row-delete');
-      return { error: null };
+    const deleteEq = jest.fn().mockReturnValue({
+      select: async () => {
+        order.push('row-delete');
+        return { data: [{ id: 'flag-1' }], error: null };
+      },
     });
     mockFrom.mockImplementation((table: string) => {
       if (table === 'flags') {
@@ -271,5 +280,34 @@ describe('the carve-out stayed narrow (§SKY-6a)', () => {
       (f) => !f.endsWith(OWNER) && fs.readFileSync(f, 'utf8').includes('/storage/v1/object/public/'),
     );
     expect(offenders).toEqual([]);
+  });
+});
+
+/**
+ * A REFUSED DELETE MUST NOT LOOK LIKE A COMPLETED ONE.
+ *
+ * Postgres RLS does not raise on a denied DELETE — it filters the row out and
+ * reports success over zero rows. So before `.select('id')`, a caller with no
+ * right to a flag got a clean resolve: `onDeleted()` fired, the UI dropped the
+ * row, and the user was told their takedown worked while the flag sat untouched
+ * in the table. These pin the distinction.
+ */
+describe('deleteFlag tells a refusal apart from a success', () => {
+  it('throws the house permission error when the delete matched no rows', async () => {
+    wireTables({ photoUrl: null, junction: [], deleteRows: [] });
+    await expect(deleteFlag('flag-1')).rejects.toMatchObject({ code: '42501' });
+  });
+
+  it('leaves the photos alone when the row delete was refused', async () => {
+    wireTables({ photoUrl: `${BASE}/${UID}/a.jpg`, deleteRows: [] });
+    await expect(deleteFlag('flag-1')).rejects.toMatchObject({ code: '42501' });
+    // Deleting the photo of a flag we failed to delete would be the worst of
+    // both outcomes: the report survives, its evidence does not.
+    expect(mockRemove).not.toHaveBeenCalled();
+  });
+
+  it('resolves normally when the delete reports the row back', async () => {
+    wireTables({ photoUrl: null, junction: [], deleteRows: [{ id: 'flag-1' }] });
+    await expect(deleteFlag('flag-1')).resolves.toBeUndefined();
   });
 });
