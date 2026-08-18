@@ -24,6 +24,7 @@
 // jest.config.js points to __mocks__/expo-image-manipulator.js automatically,
 // but jest.mock here is belt-and-suspenders so the factory path is explicit.
 import { createAnonFlag } from '../flags';
+import { CONTENT_BLOCKED_MESSAGE } from '../copy';
 import type { FlagRow } from '@/types/database';
 
 jest.mock('expo-image-manipulator', () => ({
@@ -223,5 +224,69 @@ describe('Supabase response', () => {
     await createAnonFlag(VALID_INPUT);
     expect(mockSelect).toHaveBeenCalledTimes(1);
     expect(mockSingle).toHaveBeenCalledTimes(1);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Submit-time content filter (Apple 1.2(a))
+// ---------------------------------------------------------------------------
+//
+// The anonymous path used to insert with no filter call at all, while
+// `createFlag` and the edit path both screened the description. That made the
+// least accountable route the least moderated one, and it is the route App
+// Review reaches for first. Sky's ratified policy (14_MODERATION_TEXTS_v1.md
+// §2) is unqualified by auth state, so these pin the deviation closed.
+//
+// The matcher itself (case folding, word boundaries, the tier split) is proven
+// in moderation/__tests__/blockedTerms.test.ts. These only prove it is WIRED,
+// that it fires before the network, and that D-2 survives here too.
+
+describe('submit-time content filter', () => {
+  it('rejects a blocked term without ever calling Supabase', async () => {
+    // Same fixture the moderation MUST-FAIL pins and the edit-path test use
+    // (a disability slur — the class LDNOOBW lacks and CURATED_EXTRA exists for).
+    await expect(
+      createAnonFlag({ ...VALID_INPUT, description: 'the staff are retarded' }),
+    ).rejects.toThrow(CONTENT_BLOCKED_MESSAGE);
+
+    expect(mockInsert).not.toHaveBeenCalled();
+  });
+
+  it('fires at the same trust boundary as the authenticated path, before insert', async () => {
+    // Not a duplicate of the above: this pins the ORDER. A filter that ran
+    // after the insert would still throw and still look green, while the row
+    // was already public.
+    await expect(
+      createAnonFlag({ ...VALID_INPUT, description: 'retarded' }),
+    ).rejects.toThrow(CONTENT_BLOCKED_MESSAGE);
+
+    expect(mockFrom).not.toHaveBeenCalled();
+    expect(mockInsert).not.toHaveBeenCalled();
+    expect(mockSingle).not.toHaveBeenCalled();
+  });
+
+  it('lets ordinary frustration through — D-2 holds on the anonymous path too', async () => {
+    // D-2 is deliberate: "the damn ramp is still broken" is a real barrier
+    // report from a frustrated disabled person, and blocking it would silence
+    // the exact user this app is for. Ordinary profanity is NOT screened.
+    const result = await createAnonFlag({
+      ...VALID_INPUT,
+      description: 'the damn ramp is still broken',
+    });
+    expect(result).toEqual(SAMPLE_ROW);
+    expect(mockInsert).toHaveBeenCalledTimes(1);
+  });
+
+  it('a clean description submits normally', async () => {
+    const result = await createAnonFlag({ ...VALID_INPUT, description: 'no ramp at the side door' });
+    expect(result).toEqual(SAMPLE_ROW);
+    expect(mockInsert).toHaveBeenCalledTimes(1);
+  });
+
+  it('an absent description is not treated as blocked content', async () => {
+    const { description: _omitted, ...noDescription } = VALID_INPUT;
+    const result = await createAnonFlag(noDescription);
+    expect(result).toEqual(SAMPLE_ROW);
+    expect(mockInsert).toHaveBeenCalledTimes(1);
   });
 });

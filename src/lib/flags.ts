@@ -1742,6 +1742,19 @@ export async function createAnonFlag(input: AnonFlagInput): Promise<FlagRow> {
     throw new Error('Invalid coordinates: lng must be between -180 and 180.');
   }
   assertValidCategoryAndSeverity(category, severity);
+  // Apple 1.2(a): the same submit-time filter the authenticated path runs at
+  // `createFlag`, at the same trust boundary and before any network call.
+  // It belongs here MORE than there, not less: an anonymous report carries no
+  // account to warn, suspend, or trace, and anonymous reporting is the feature
+  // App Review will reach for first. Sky's ratified policy
+  // (design-reviews/ship-ready/14_MODERATION_TEXTS_v1.md, §2) says "flag
+  // descriptions and comments are checked ... rejected client-side before
+  // insert", unqualified by auth state, so this closes a deviation rather than
+  // adding a rule. Client-side and bypassable, like its twin; see the header of
+  // `@/moderation/blockedTerms` for what that does and does not buy.
+  if (description && containsBlockedTerm(description)) {
+    throw new Error(CONTENT_BLOCKED_MESSAGE);
+  }
 
   const payload = {
     lat,
