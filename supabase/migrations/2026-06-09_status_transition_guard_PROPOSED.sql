@@ -1,4 +1,10 @@
 -- ============================================================================
+-- SUPERSEDED — applied 2026-08-19 (Sky-approved) with one amendment:
+-- resolved -> rejected is legal for ADMINS (AdminScreen dismiss acts on the
+-- recent-200 list, which includes resolved flags; the verbatim proposal would
+-- have broken that shipped flow). Source of truth is now
+-- 2026-08-19_flag_status_transition_guard_APPLIED.sql. Kept for history.
+-- ============================================================================
 -- PROPOSED — NOT APPLIED (re-sweep audit 2026-06-09, finding F53 hardening)
 -- Requires Sky's approval before running. Propose-only per Constitution Art. 5.
 -- ============================================================================

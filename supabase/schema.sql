@@ -1,6 +1,15 @@
 -- AccessMap database schema.
 -- Run in the Supabase SQL editor (or via `supabase db push`).
 --
+-- ⚠️  DO NOT RE-RUN THIS FILE WHOLESALE AGAINST THE LIVE PROJECT (QA 2026-08-19).
+--   Live has been hardened past this file by later migrations: re-running it
+--   would RESURRECT the broad `flags update own` policy (live uses the tighter
+--   owner-edit-while-open policy) and would bootstrap without the users.email
+--   column-grant privacy hardening. It remains useful as reference and for
+--   fresh-DB bootstrap FOLLOWED BY the migrations below — but "idempotent, safe
+--   to re-run" is no longer true in effect against live. For the full live
+--   schema, pg_dump is the source of truth.
+--
 -- RECONCILIATION STATUS (2026-06-07):
 --   This file covers the original tables (users, flags, push_tokens) + the
 --   2026-06-03 security gate functions + the F8 reopen RPC.  Ten additional
@@ -162,7 +171,10 @@ begin
 
   if actor_bonus > 0
      and auth.uid() is not null
-     and auth.uid() <> new.user_id then
+     -- IS DISTINCT FROM, not <>: on anonymous flags new.user_id is NULL and
+     -- `auth.uid() <> NULL` evaluates NULL, silently skipping the actor award.
+     -- Live has carried this fix since 2026-08 — keep them in sync.
+     and auth.uid() is distinct from new.user_id then
     update public.users
       set points = points + actor_bonus
       where id = auth.uid();
