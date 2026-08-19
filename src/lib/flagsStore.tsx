@@ -107,8 +107,12 @@ async function readFlagsCache(
     if (!entry || typeof entry.cachedAt !== 'string' || !Array.isArray(entry.rows)) {
       return null;
     }
-    // Jordan Condition 3 — reject stale entries.
-    if (Date.now() - Date.parse(entry.cachedAt) > MAX_CACHE_AGE_MS) {
+    // Jordan Condition 3 — reject stale entries. Guard the parse first: an
+    // unparseable cachedAt makes the subtraction NaN, every NaN comparison is
+    // false, and a corrupt entry would be served as *fresh* forever.
+    const cachedAtMs = Date.parse(entry.cachedAt);
+    if (!Number.isFinite(cachedAtMs)) return null;
+    if (Date.now() - cachedAtMs > MAX_CACHE_AGE_MS) {
       return null;
     }
     // B9 (L7-02): carry the timestamp so the "saved data" banner can state its
@@ -306,7 +310,10 @@ export function FlagsProvider({
       setLiveStatus({
         message: 'Still trying — check your signal',
         tone: 'info',
-        action: { label: 'Retry', onPress: () => void refreshRef.current() },
+        // .catch, not bare void: refresh() re-throws when there's no offline
+        // cache, and a bare `void promise` from a button press surfaces as an
+        // unhandled rejection. The failure already re-raises this same banner.
+        action: { label: 'Retry', onPress: () => refreshRef.current().catch(() => {}) },
       });
     }, READ_STILL_TRYING_MS);
     let ceilingTimer: ReturnType<typeof setTimeout> | undefined;

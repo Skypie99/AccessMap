@@ -13,7 +13,7 @@
  *
  *   <description (only if non-empty after trim)>
  *
- *   See it on the map: https://accessmap.skypistudio.com/flag/<id>
+ *   See it on the map: https://flagstone.skypistudio.com/flag/<id>
  *   Open in the app: accessmap://flag/<id>
  *   Reported via Flagstone.
  *

@@ -33,13 +33,14 @@ export function useIsAdmin(): boolean | null {
           .eq('id', user.id)
           .single();
         // Say something when the read fails. Dropping `error` on the floor is
-        // how this gate stayed broken and silent for months: the `authenticated`
-        // role has no SELECT grant on users.is_admin (the 2026-05-27 email-privacy
+        // how this gate stayed broken and silent for months: `authenticated`
+        // had no SELECT grant on users.is_admin (the 2026-05-27 email-privacy
         // migration listed columns three days before is_admin existed), so this
-        // returns 42501 "permission denied for table users" every time and the
-        // `?? false` below turns that into a clean-looking "not an admin".
-        // Degrading to false is still right — a gate that fails open is worse —
-        // but it should never again do so without leaving a trace.
+        // returned 42501 every time and the `?? false` below turned that into a
+        // clean-looking "not an admin". The grant went live 2026-08-18, so a
+        // 42501 here would now mean a real regression. Degrading to false is
+        // still right — a gate that fails open is worse — but it should never
+        // again do so without leaving a trace.
         if (error) {
           console.warn('[admin] is_admin read failed, treating as non-admin:', error.message);
         }

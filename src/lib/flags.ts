@@ -1383,16 +1383,16 @@ export async function requestFlagReopen(flagId: string): Promise<number | null> 
  * it and `flags`' `admin delete any flag` were verified present in the live
  * catalog on 2026-08-18.
  *
- * ─── WHAT ACTUALLY BLOCKS BOTH PATHS TODAY (2026-08-18) ───────────────────
- * Neither path can complete, and it is not a missing policy. Both the flags
- * admin policy and the Storage admin policy subselect `public.users.is_admin`,
- * RLS quals evaluate with the CALLER's privileges, and `authenticated` has no
- * SELECT grant on that column — so every authenticated delete against either
- * table errors 42501 *before* rows are filtered, including an owner deleting
- * their own flag. Postgres evaluates every applicable permissive policy; there
- * is no short-circuit once `flags delete own` matches. One Sky-applied column
- * grant fixes all four paths at once. Until it lands, delete is broken for
- * every real user, not merely incomplete for admins.
+ * ─── RESOLVED 2026-08-19 (was: WHAT BLOCKED BOTH PATHS) ───────────────────
+ * History: both the flags admin policy and the Storage admin policy subselect
+ * `public.users.is_admin`, RLS quals evaluate with the CALLER's privileges,
+ * and `authenticated` briefly had no SELECT grant on that column — every
+ * authenticated delete errored 42501 before rows were filtered. The column
+ * grant went live 2026-08-18 (verified against the live DB 2026-08-19:
+ * `authenticated` has SELECT on users.is_admin, and the `users update own
+ * row` WITH CHECK pins is_admin so the companion UPDATE grant can't be used
+ * for self-promotion). Delete works for owners and admins now; this note
+ * stays so nobody re-diagnoses the old 42501 from stale docs.
  */
 export async function deleteFlag(flagId: string) {
   // Gather BEFORE the delete — see the order note above.
