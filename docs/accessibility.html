@@ -6,153 +6,475 @@
   <title>Accessibility — Flagstone</title>
   <meta name="description" content="Flagstone's accessibility statement: which assistive technologies the app supports, what we're still working on, and how to tell us when we get it wrong." />
   <style>
+    /* ---------------------------------------------------------------
+       Theming via custom properties so the display controls below can
+       repaint the page without touching individual rules.
+       Sizing is in rem throughout so the text-size slider (which sets
+       the root font size) scales the WHOLE layout, not just copy.
+       --------------------------------------------------------------- */
+    :root {
+      --bg: #ffffff;
+      --fg: #1a1a1a;
+      --fg-muted: #475569;
+      --fg-faint: #64748b;
+      --brand: #1c6ef3;
+      --brand-ink: #ffffff;
+      --brand-deep: #1558cc;
+      --surface: #f8fafc;
+      --surface-tint: #f0f7ff;
+      --border: #e2e8f0;
+      --heading: #0f172a;
+      --ok: #15803d;
+      --focus: #b45309;
+      --radius: 0.5rem;
+      --line: 1.7;
+      --letter: normal;
+      --word: normal;
+    }
+
+    /* Dark theme — applied by the toggle, or automatically when the
+       visitor's OS prefers dark and they haven't chosen for themselves. */
+    :root[data-theme="dark"] {
+      --bg: #0f172a;
+      --fg: #e8edf5;
+      --fg-muted: #b6c2d4;
+      --fg-faint: #93a3b8;
+      --brand: #6ea3ff;
+      --brand-ink: #08111f;
+      --brand-deep: #8fb9ff;
+      --surface: #16233b;
+      --surface-tint: #14243f;
+      --border: #2b3b57;
+      --heading: #f2f6fc;
+      --ok: #67d38c;
+      --focus: #ffd479;
+    }
+
+    /* High contrast — pushes every pair past AAA and hardens borders. */
+    :root[data-contrast="high"] {
+      --bg: #ffffff;
+      --fg: #000000;
+      --fg-muted: #1a1a1a;
+      --fg-faint: #2b2b2b;
+      --brand: #0b46a8;
+      --brand-deep: #062f75;
+      --surface: #ffffff;
+      --surface-tint: #ffffff;
+      --border: #000000;
+      --heading: #000000;
+      --ok: #045c22;
+    }
+    :root[data-theme="dark"][data-contrast="high"] {
+      --bg: #000000;
+      --fg: #ffffff;
+      --fg-muted: #f0f0f0;
+      --fg-faint: #e0e0e0;
+      --brand: #9cc3ff;
+      --brand-ink: #000000;
+      --brand-deep: #c2dbff;
+      --surface: #000000;
+      --surface-tint: #000000;
+      --border: #ffffff;
+      --heading: #ffffff;
+      --ok: #7ef0a4;
+    }
+
+    /* Reading mode — loosens spacing, which helps a lot of dyslexic
+       readers. No webfont is loaded: an external font request would be a
+       tracking vector on a page about not tracking people. */
+    :root[data-reading="on"] {
+      --line: 2.05;
+      --letter: 0.055em;
+      --word: 0.19em;
+    }
+
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { font-size: 100%; }
+
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      background: #ffffff;
-      color: #1a1a1a;
-      line-height: 1.7;
-      font-size: 16px;
+      background: var(--bg);
+      color: var(--fg);
+      line-height: var(--line);
+      letter-spacing: var(--letter);
+      word-spacing: var(--word);
+      font-size: 1rem;
+      -webkit-text-size-adjust: 100%;
     }
-    header {
-      background: #1c6ef3;
-      color: #ffffff;
-      padding: 32px 24px 28px;
+    :root[data-reading="on"] body { max-width: none; }
+
+    /* Visible focus everywhere, never removed. */
+    a:focus-visible,
+    button:focus-visible,
+    input:focus-visible,
+    summary:focus-visible {
+      outline: 3px solid var(--focus);
+      outline-offset: 3px;
+      border-radius: 0.25rem;
+    }
+
+    .skip-link {
+      position: absolute;
+      left: -9999px;
+      top: 0;
+      background: var(--brand);
+      color: var(--brand-ink);
+      padding: 0.75rem 1.25rem;
+      z-index: 100;
+      font-weight: 700;
+      border-radius: 0 0 var(--radius) 0;
+    }
+    .skip-link:focus { left: 0; }
+    .skip-link:focus-visible { left: 0; }
+
+    header.page {
+      background: var(--brand);
+      color: var(--brand-ink);
+      padding: 2rem 1.5rem 1.75rem;
       text-align: center;
     }
-    header .logo {
-      font-size: 22px;
+    :root[data-contrast="high"] header.page { border-bottom: 3px solid var(--border); }
+    header.page .logo {
+      font-size: 1.375rem;
       font-weight: 700;
-      letter-spacing: -0.3px;
-      margin-bottom: 4px;
+      letter-spacing: -0.02em;
+      margin-bottom: 0.25rem;
     }
-    header h1 {
-      font-size: 28px;
+    header.page h1 {
+      font-size: 1.75rem;
       font-weight: 700;
-      margin-bottom: 6px;
+      margin-bottom: 0.375rem;
+      line-height: 1.25;
     }
-    header p.tagline {
-      font-size: 15px;
-      opacity: 0.9;
-      max-width: 520px;
+    header.page p.tagline {
+      font-size: 0.9375rem;
+      opacity: 0.92;
+      max-width: 34rem;
       margin: 0 auto;
     }
+    :root[data-contrast="high"] header.page p.tagline { opacity: 1; }
+
     .container {
-      max-width: 760px;
+      max-width: 47.5rem;
       margin: 0 auto;
-      padding: 40px 24px 80px;
+      padding: 2.5rem 1.5rem 5rem;
     }
-    .about {
-      background: #f0f7ff;
-      border-radius: 8px;
-      padding: 24px 28px;
-      margin-bottom: 48px;
-      border-left: 4px solid #1c6ef3;
+
+    /* ---------------- Display settings panel ---------------- */
+    .settings {
+      border: 2px solid var(--border);
+      border-radius: var(--radius);
+      margin-bottom: 2.5rem;
+      background: var(--surface);
+      overflow: hidden;
     }
-    .about h2 {
-      font-size: 17px;
+    .settings > summary {
+      cursor: pointer;
+      padding: 1rem 1.25rem;
       font-weight: 700;
-      color: #1c6ef3;
-      margin-bottom: 10px;
+      color: var(--heading);
+      font-size: 1rem;
+      min-height: 2.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      list-style: none;
+    }
+    .settings > summary::-webkit-details-marker { display: none; }
+    .settings > summary::after {
+      content: "▸";
+      margin-left: auto;
+      transition: transform 0.15s ease;
+    }
+    .settings[open] > summary::after { transform: rotate(90deg); }
+    .settings-body {
+      padding: 0 1.25rem 1.25rem;
+      border-top: 1px solid var(--border);
+      padding-top: 1.25rem;
+    }
+    .settings-note {
+      font-size: 0.875rem;
+      color: var(--fg-muted);
+      margin-bottom: 1.25rem;
+    }
+    .control {
+      margin-bottom: 1.5rem;
+    }
+    .control:last-child { margin-bottom: 0; }
+    .control > .control-label {
+      display: block;
+      font-weight: 600;
+      color: var(--heading);
+      margin-bottom: 0.5rem;
+      font-size: 0.9375rem;
+    }
+    .slider-row {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+    input[type="range"] {
+      flex: 1 1 12rem;
+      min-width: 10rem;
+      height: 2.75rem;
+      accent-color: var(--brand);
+      background: transparent;
+    }
+    .size-readout {
+      font-variant-numeric: tabular-nums;
+      font-weight: 700;
+      color: var(--brand);
+      min-width: 3.5rem;
+      text-align: right;
+    }
+    .btn-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    .toggle {
+      font: inherit;
+      font-size: 0.9375rem;
+      font-weight: 600;
+      min-height: 2.75rem;
+      padding: 0.5rem 1rem;
+      border-radius: var(--radius);
+      border: 2px solid var(--border);
+      background: var(--bg);
+      color: var(--fg);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .toggle:hover { border-color: var(--brand); }
+    /* State is carried by text + a check glyph + aria-pressed — never by
+       colour alone, which is the whole point of this page. */
+    .toggle[aria-pressed="true"] {
+      background: var(--brand);
+      color: var(--brand-ink);
+      border-color: var(--brand);
+    }
+    .toggle .tick { font-weight: 700; }
+    .toggle[aria-pressed="false"] .tick { visibility: hidden; }
+    .reset-btn {
+      font: inherit;
+      font-size: 0.875rem;
+      font-weight: 600;
+      min-height: 2.75rem;
+      padding: 0.5rem 1rem;
+      border-radius: var(--radius);
+      border: 2px solid var(--border);
+      background: transparent;
+      color: var(--fg-muted);
+      cursor: pointer;
+    }
+    .reset-btn:hover { color: var(--fg); border-color: var(--fg-muted); }
+
+    .visually-hidden {
+      position: absolute;
+      width: 1px; height: 1px;
+      margin: -1px; padding: 0;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    /* ---------------- Content ---------------- */
+    .about {
+      background: var(--surface-tint);
+      border-radius: var(--radius);
+      padding: 1.5rem 1.75rem;
+      margin-bottom: 3rem;
+      border-left: 4px solid var(--brand);
+    }
+    :root[data-contrast="high"] .about { border: 2px solid var(--border); border-left-width: 6px; }
+    .about h2 {
+      font-size: 1.0625rem;
+      font-weight: 700;
+      color: var(--brand);
+      margin-bottom: 0.625rem;
       border: none;
       padding: 0;
       margin-top: 0;
     }
     h2 {
-      font-size: 20px;
+      font-size: 1.25rem;
       font-weight: 700;
-      color: #0f172a;
-      margin-top: 48px;
-      margin-bottom: 16px;
-      padding-bottom: 8px;
-      border-bottom: 2px solid #e2e8f0;
+      color: var(--heading);
+      margin-top: 3rem;
+      margin-bottom: 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 2px solid var(--border);
+      line-height: 1.3;
     }
     h3 {
-      font-size: 16px;
+      font-size: 1rem;
       font-weight: 600;
-      color: #1c6ef3;
-      margin-top: 28px;
-      margin-bottom: 8px;
+      color: var(--brand);
+      margin-top: 1.75rem;
+      margin-bottom: 0.5rem;
     }
-    p { margin-bottom: 14px; }
-    ul, ol {
-      padding-left: 20px;
-      margin-bottom: 14px;
-    }
-    li { margin-bottom: 6px; }
-    a { color: #1c6ef3; text-decoration: none; }
-    a:hover { text-decoration: underline; }
+    p { margin-bottom: 0.875rem; }
+    ul, ol { padding-left: 1.25rem; margin-bottom: 0.875rem; }
+    li { margin-bottom: 0.375rem; }
+    a { color: var(--brand); text-decoration: underline; text-underline-offset: 0.15em; }
+    a:hover { color: var(--brand-deep); }
+
+    .table-wrap { overflow-x: auto; margin-bottom: 1.25rem; }
     table {
       width: 100%;
       border-collapse: collapse;
-      margin-bottom: 20px;
-      font-size: 15px;
+      font-size: 0.9375rem;
+      min-width: 30rem;
     }
     th, td {
       text-align: left;
-      padding: 10px 12px;
-      border-bottom: 1px solid #e2e8f0;
+      padding: 0.625rem 0.75rem;
+      border-bottom: 1px solid var(--border);
       vertical-align: top;
     }
+    :root[data-contrast="high"] th,
+    :root[data-contrast="high"] td { border: 2px solid var(--border); }
     th {
-      background: #f8fafc;
-      font-weight: 600;
-      color: #0f172a;
+      background: var(--surface);
+      font-weight: 700;
+      color: var(--heading);
     }
-    .yes { color: #15803d; font-weight: 600; white-space: nowrap; }
-    .na  { color: #64748b; white-space: nowrap; }
+    .yes { color: var(--ok); font-weight: 700; white-space: nowrap; }
+    .na  { color: var(--fg-faint); white-space: nowrap; }
+
     .contact-card {
-      background: #f8fafc;
-      border: 1px solid #e2e8f0;
-      border-radius: 8px;
-      padding: 24px 28px;
-      margin-top: 32px;
+      background: var(--surface);
+      border: 2px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.5rem 1.75rem;
+      margin-top: 2rem;
     }
-    .contact-card h2 {
-      margin-top: 0;
-      border: none;
-      padding: 0;
-    }
+    .contact-card h2 { margin-top: 0; border: none; padding: 0; }
     .contact-link {
       display: inline-block;
-      background: #1c6ef3;
-      color: #ffffff;
-      font-weight: 600;
-      padding: 10px 20px;
-      border-radius: 6px;
-      margin-top: 8px;
-      font-size: 15px;
-    }
-    .contact-link:hover {
-      background: #1558cc;
+      background: var(--brand);
+      color: var(--brand-ink);
+      font-weight: 700;
+      padding: 0.75rem 1.25rem;
+      border-radius: var(--radius);
+      margin-top: 0.5rem;
+      font-size: 0.9375rem;
+      min-height: 2.75rem;
       text-decoration: none;
     }
-    footer {
-      background: #f1f5f9;
-      border-top: 1px solid #e2e8f0;
+    .contact-link:hover { background: var(--brand-deep); color: var(--brand-ink); }
+
+    footer.page {
+      background: var(--surface);
+      border-top: 2px solid var(--border);
       text-align: center;
-      padding: 28px 24px;
-      font-size: 14px;
-      color: #64748b;
+      padding: 1.75rem 1.5rem;
+      font-size: 0.875rem;
+      color: var(--fg-faint);
     }
-    footer a { color: #1c6ef3; }
-    @media (max-width: 600px) {
-      header h1 { font-size: 22px; }
-      h2 { font-size: 18px; }
-      table { font-size: 14px; }
-      th, td { padding: 8px 10px; }
+    footer.page a { color: var(--brand); }
+
+    @media (max-width: 37.5rem) {
+      header.page h1 { font-size: 1.375rem; }
+      h2 { font-size: 1.125rem; }
+      .container { padding: 1.75rem 1.125rem 4rem; }
+    }
+
+    /* Honour the OS setting as well as our own toggle. */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.001ms !important;
+        transition-duration: 0.001ms !important;
+        scroll-behavior: auto !important;
+      }
+    }
+    :root[data-motion="reduced"] *,
+    :root[data-motion="reduced"] *::before,
+    :root[data-motion="reduced"] *::after {
+      animation-duration: 0.001ms !important;
+      transition-duration: 0.001ms !important;
+    }
+
+    @media print {
+      .settings, .skip-link { display: none; }
     }
   </style>
 </head>
 <body>
 
-<header>
+<a class="skip-link" href="#main">Skip to main content</a>
+
+<header class="page">
   <div class="logo">Flagstone</div>
   <h1>Accessibility</h1>
   <p class="tagline">An app about accessibility barriers has no business being one.</p>
 </header>
 
 <div class="container">
+
+  <!-- Display settings. Rendered inside <details> so it works with JS off:
+       the controls simply won't do anything, and nothing is broken or
+       misleading. With JS on, choices persist across visits. -->
+  <details class="settings" id="settings">
+    <summary aria-label="Display settings for this page">Display settings for this page</summary>
+    <div class="settings-body">
+      <p class="settings-note">
+        These change how this page looks, and are remembered on this device.
+        They don't affect the Flagstone app itself — the app follows your
+        iPhone's own accessibility settings.
+      </p>
+
+      <div class="control">
+        <label class="control-label" for="text-size">Text size</label>
+        <div class="slider-row">
+          <input
+            type="range"
+            id="text-size"
+            min="100" max="200" step="10" value="100"
+            aria-describedby="text-size-readout" />
+          <span class="size-readout" id="text-size-readout" aria-hidden="true">100%</span>
+        </div>
+      </div>
+
+      <div class="control">
+        <span class="control-label" id="theme-label">Theme</span>
+        <div class="btn-row" role="group" aria-labelledby="theme-label">
+          <button type="button" class="toggle" id="btn-dark" aria-pressed="false">
+            <span class="tick" aria-hidden="true">✓</span> Dark
+          </button>
+          <button type="button" class="toggle" id="btn-contrast" aria-pressed="false">
+            <span class="tick" aria-hidden="true">✓</span> High contrast
+          </button>
+        </div>
+      </div>
+
+      <div class="control">
+        <span class="control-label" id="reading-label">Reading</span>
+        <div class="btn-row" role="group" aria-labelledby="reading-label">
+          <button type="button" class="toggle" id="btn-reading" aria-pressed="false">
+            <span class="tick" aria-hidden="true">✓</span> Spaced text
+          </button>
+          <button type="button" class="toggle" id="btn-motion" aria-pressed="false">
+            <span class="tick" aria-hidden="true">✓</span> Reduce motion
+          </button>
+        </div>
+      </div>
+
+      <div class="control">
+        <button type="button" class="reset-btn" id="btn-reset">Reset to defaults</button>
+      </div>
+    </div>
+  </details>
+
+  <!-- Announcements for screen-reader users when a setting changes. -->
+  <p class="visually-hidden" role="status" aria-live="polite" id="live"></p>
+
+  <main id="main">
 
   <div class="about">
     <h2>Our commitment</h2>
@@ -168,53 +490,56 @@
 
   <h2>What the app supports</h2>
 
-  <table>
-    <thead>
-      <tr><th>Feature</th><th>Status</th><th>What that means here</th></tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td>VoiceOver</td>
-        <td class="yes">Supported</td>
-        <td>Every control has a spoken label, role, and where useful a hint. Status changes, filter results, and errors are announced. Photos carry descriptions written by the person who uploaded them.</td>
-      </tr>
-      <tr>
-        <td>Larger Text</td>
-        <td class="yes">Supported</td>
-        <td>Text scales with your Dynamic Type setting, including the accessibility sizes. Layouts reflow rather than clip.</td>
-      </tr>
-      <tr>
-        <td>Dark Interface</td>
-        <td class="yes">Supported</td>
-        <td>A full dark theme that follows your system setting, plus a manual toggle in Settings.</td>
-      </tr>
-      <tr>
-        <td>Sufficient Contrast</td>
-        <td class="yes">Supported</td>
-        <td>Text and controls meet WCAG AA contrast ratios in both light and dark themes. Automated tests block changes that would regress this.</td>
-      </tr>
-      <tr>
-        <td>Differentiate Without Colour Alone</td>
-        <td class="yes">Supported</td>
-        <td>Severity is shown as a number and a word, not just a colour. Status uses labelled badges. Links carry underlines.</td>
-      </tr>
-      <tr>
-        <td>Reduced Motion</td>
-        <td class="yes">Supported</td>
-        <td>When Reduce Motion is on, map and sheet animations are shortened or replaced with cross-fades.</td>
-      </tr>
-      <tr>
-        <td>Captions &amp; Audio Descriptions</td>
-        <td class="na">Not applicable</td>
-        <td>Flagstone contains no video or audio content, so there is nothing to caption or describe.</td>
-      </tr>
-      <tr>
-        <td>Voice Control</td>
-        <td class="na">Under evaluation</td>
-        <td>Controls are labelled in ways that should work with Voice Control, but we haven't finished testing it end to end, so we don't yet claim it.</td>
-      </tr>
-    </tbody>
-  </table>
+  <div class="table-wrap">
+    <table>
+      <caption class="visually-hidden">Accessibility features supported by the Flagstone iOS app</caption>
+      <thead>
+        <tr><th scope="col">Feature</th><th scope="col">Status</th><th scope="col">What that means here</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <th scope="row" style="font-weight:400;background:transparent;">VoiceOver</th>
+          <td class="yes">Supported</td>
+          <td>Every control has a spoken label, role, and where useful a hint. Status changes, filter results, and errors are announced. Photos carry descriptions written by the person who uploaded them.</td>
+        </tr>
+        <tr>
+          <th scope="row" style="font-weight:400;background:transparent;">Larger Text</th>
+          <td class="yes">Supported</td>
+          <td>Text scales with your Dynamic Type setting, including the accessibility sizes. Layouts reflow rather than clip.</td>
+        </tr>
+        <tr>
+          <th scope="row" style="font-weight:400;background:transparent;">Dark Interface</th>
+          <td class="yes">Supported</td>
+          <td>A full dark theme that follows your system setting, plus a manual toggle in Settings.</td>
+        </tr>
+        <tr>
+          <th scope="row" style="font-weight:400;background:transparent;">Sufficient Contrast</th>
+          <td class="yes">Supported</td>
+          <td>Text and controls meet WCAG AA contrast ratios in both light and dark themes. Automated tests block changes that would regress this.</td>
+        </tr>
+        <tr>
+          <th scope="row" style="font-weight:400;background:transparent;">Differentiate Without Colour Alone</th>
+          <td class="yes">Supported</td>
+          <td>Severity is shown as a number and a word, not just a colour. Status uses labelled badges. Links carry underlines.</td>
+        </tr>
+        <tr>
+          <th scope="row" style="font-weight:400;background:transparent;">Reduced Motion</th>
+          <td class="yes">Supported</td>
+          <td>When Reduce Motion is on, map and sheet animations are shortened or replaced with cross-fades.</td>
+        </tr>
+        <tr>
+          <th scope="row" style="font-weight:400;background:transparent;">Captions &amp; Audio Descriptions</th>
+          <td class="na">Not applicable</td>
+          <td>Flagstone contains no video or audio content, so there is nothing to caption or describe.</td>
+        </tr>
+        <tr>
+          <th scope="row" style="font-weight:400;background:transparent;">Voice Control</th>
+          <td class="na">Under evaluation</td>
+          <td>Controls are labelled in ways that should work with Voice Control, but we haven't finished testing it end to end, so we don't yet claim it.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
 
   <h2>Designed for the way people actually use it</h2>
   <ul>
@@ -226,9 +551,7 @@
   </ul>
 
   <h2>Known gaps</h2>
-  <p>
-    We would rather list these than pretend they don't exist:
-  </p>
+  <p>We would rather list these than pretend they don't exist:</p>
   <ul>
     <li>Voice Control has not been fully tested (see above).</li>
     <li>Photo descriptions are optional, so older reports and reports from people who skipped the field may have no description beyond the barrier's own text.</li>
@@ -252,28 +575,134 @@
       too, and no report is too small.
     </p>
     <a class="contact-link" href="mailto:skylerhalisky@gmail.com?subject=Flagstone%20accessibility%20feedback">Email us about accessibility</a>
-    <p style="margin-top:16px; font-size:14px; color:#64748b;">
+    <p style="margin-top:1rem; font-size:0.875rem; color:var(--fg-faint);">
       We aim to respond within 3–5 business days. You can also report issues on
       <a href="https://github.com/Skypie99/AccessMap/issues" target="_blank" rel="noopener">GitHub</a>,
       or use the Feedback option inside the app.
     </p>
   </div>
 
-  <p style="margin-top:32px; font-size:14px; color:#64748b;">
+  <p style="margin-top:2rem; font-size:0.875rem; color:var(--fg-faint);">
     Last reviewed: 19 August 2026. We review this statement with each significant release.
   </p>
 
+  </main>
 </div>
 
-<footer>
+<footer class="page">
   <p>
     <strong>Flagstone</strong> &nbsp;|&nbsp;
     <a href="support.html">Support</a> &nbsp;|&nbsp;
     <a href="privacy/">Privacy Policy</a> &nbsp;|&nbsp;
     Accessibility
   </p>
-  <p style="margin-top:8px;">© 2026 Flagstone. All rights reserved.</p>
+  <p style="margin-top:0.5rem;">© 2026 Flagstone. All rights reserved.</p>
 </footer>
+
+<script>
+(function () {
+  'use strict';
+  var root = document.documentElement;
+  var KEY = 'flagstone-a11y-prefs';
+  var live = document.getElementById('live');
+  var sizeInput = document.getElementById('text-size');
+  var sizeOut = document.getElementById('text-size-readout');
+
+  var defaults = { size: 100, dark: null, contrast: false, reading: false, motion: false };
+  var prefs = Object.assign({}, defaults);
+
+  function say(msg) { if (live) live.textContent = msg; }
+
+  function load() {
+    try {
+      var raw = localStorage.getItem(KEY);
+      if (raw) prefs = Object.assign({}, defaults, JSON.parse(raw));
+    } catch (e) { /* private mode / storage disabled — defaults are fine */ }
+  }
+  function save() {
+    try { localStorage.setItem(KEY, JSON.stringify(prefs)); } catch (e) {}
+  }
+
+  function prefersDark() {
+    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  }
+
+  function apply() {
+    root.style.fontSize = prefs.size + '%';
+    if (sizeInput) sizeInput.value = prefs.size;
+    if (sizeOut) sizeOut.textContent = prefs.size + '%';
+    if (sizeInput) sizeInput.setAttribute('aria-valuetext', prefs.size + ' percent');
+
+    // dark === null means "follow the system", which is the honest default.
+    var dark = prefs.dark === null ? prefersDark() : prefs.dark;
+    root.setAttribute('data-theme', dark ? 'dark' : 'light');
+    root.setAttribute('data-contrast', prefs.contrast ? 'high' : 'normal');
+    root.setAttribute('data-reading', prefs.reading ? 'on' : 'off');
+    root.setAttribute('data-motion', prefs.motion ? 'reduced' : 'normal');
+
+    press('btn-dark', dark);
+    press('btn-contrast', prefs.contrast);
+    press('btn-reading', prefs.reading);
+    press('btn-motion', prefs.motion);
+  }
+
+  function press(id, on) {
+    var el = document.getElementById(id);
+    if (el) el.setAttribute('aria-pressed', on ? 'true' : 'false');
+  }
+
+  function bindToggle(id, key, onLabel) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener('click', function () {
+      if (key === 'dark') {
+        var current = prefs.dark === null ? prefersDark() : prefs.dark;
+        prefs.dark = !current;
+      } else {
+        prefs[key] = !prefs[key];
+      }
+      apply(); save();
+      var isOn = el.getAttribute('aria-pressed') === 'true';
+      say(onLabel + (isOn ? ' on' : ' off'));
+    });
+  }
+
+  load();
+  apply();
+
+  if (sizeInput) {
+    sizeInput.addEventListener('input', function () {
+      prefs.size = parseInt(sizeInput.value, 10) || 100;
+      apply(); save();
+    });
+    sizeInput.addEventListener('change', function () {
+      say('Text size ' + prefs.size + ' percent');
+    });
+  }
+
+  bindToggle('btn-dark', 'dark', 'Dark theme');
+  bindToggle('btn-contrast', 'contrast', 'High contrast');
+  bindToggle('btn-reading', 'reading', 'Spaced text');
+  bindToggle('btn-motion', 'motion', 'Reduce motion');
+
+  var reset = document.getElementById('btn-reset');
+  if (reset) {
+    reset.addEventListener('click', function () {
+      prefs = Object.assign({}, defaults);
+      apply(); save();
+      say('Display settings reset to defaults');
+    });
+  }
+
+  // Follow the OS if the visitor hasn't overridden the theme themselves.
+  if (window.matchMedia) {
+    var mq = window.matchMedia('(prefers-color-scheme: dark)');
+    var onChange = function () { if (prefs.dark === null) apply(); };
+    if (mq.addEventListener) mq.addEventListener('change', onChange);
+    else if (mq.addListener) mq.addListener(onChange);
+  }
+})();
+</script>
 
 </body>
 </html>
