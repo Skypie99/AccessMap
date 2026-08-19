@@ -1,0 +1,15 @@
+[nav] loading app…
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+locator.click: Timeout 30000ms exceeded.
+Call log:
+  - waiting for getByText('Tasks', { exact: true }).last()
+
+    at /Users/skypie/AccessMap-material-lab/2026-07-02/tools/perf-scroll-app.mjs:62:55 {
+  log: [ "  - waiting for getByText('Tasks', { exact: true }).last()" ],
+  name: 'TimeoutError'
+}
+
+Node.js v24.15.0

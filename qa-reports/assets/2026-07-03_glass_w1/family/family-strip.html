@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Glass Rollout Wave 1 — Family Strip</title>
+<style>
+  :root { color-scheme: dark; }
+  body { margin: 0; background: #0E1220; color: #E7ECF5;
+    font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; }
+  header { padding: 28px 32px 8px; }
+  h1 { margin: 0 0 4px; font-size: 22px; letter-spacing: -0.3px; }
+  .sub { color: #9AA6BB; font-size: 13px; }
+  .legend { color: #9AA6BB; font-size: 12.5px; margin-top: 10px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+    gap: 22px; padding: 20px 32px 60px; }
+  figure { margin: 0; background: #161B29; border: 1px solid rgba(168,192,224,0.14);
+    border-radius: 14px; overflow: hidden; }
+  figure img { display: block; width: 100%; height: auto; background: #000; }
+  figcaption { padding: 9px 12px; font-size: 12.5px; color: #C7D0E0;
+    border-top: 1px solid rgba(168,192,224,0.10); display: flex; justify-content: space-between; }
+  figcaption .mode { color: #8FA3C4; }
+  .ref figure { border-color: rgba(78,137,239,0.5); }
+  h2 { padding: 24px 32px 0; margin: 0; font-size: 15px; color: #8FA3C4;
+    text-transform: uppercase; letter-spacing: 1px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>AccessMap — Glass Rollout Wave 1 · Family Strip</h1>
+  <div class="sub">Six low-risk surfaces on the "Deep Field" material system, next to the Tasks reference. Expo web · Chromium 375×812@2x · guest path.</div>
+  <div class="legend">Every shot is the shipped branch <code>overhaul/glass-rollout-w1</code>. Light + dark rendered via <code>prefers-color-scheme</code>. C-lite rows are the pre-seeded engineered fold. Arbiter: 56/56 pairings PASS.</div>
+</header>
+
+<h2>Reference — Tasks (shipped)</h2>
+<div class="grid ref">
+  <figure><img src="wave-light-375-tasks-ref.png" alt="Tasks light"><figcaption>Tasks <span class="mode">light</span></figcaption></figure>
+  <figure><img src="wave-dark-375-tasks-ref.png" alt="Tasks dark"><figcaption>Tasks <span class="mode">dark</span></figcaption></figure>
+</div>
+
+<h2>Wave 1 — the six surfaces</h2>
+<div class="grid">
+  <figure><img src="wave-light-375-about.png" alt="About light"><figcaption>About · bulk sheet <span class="mode">light</span></figcaption></figure>
+  <figure><img src="wave-dark-375-about.png" alt="About dark"><figcaption>About · bulk sheet <span class="mode">dark</span></figcaption></figure>
+  <figure><img src="wave-light-375-resources.png" alt="Resources light"><figcaption>Resources · stage+chrome+rows <span class="mode">light</span></figcaption></figure>
+  <figure><img src="wave-dark-375-resources.png" alt="Resources dark"><figcaption>Resources · stage+chrome+rows <span class="mode">dark</span></figcaption></figure>
+  <figure><img src="wave-light-375-howtohelp.png" alt="How To Help light"><figcaption>How to Help · +banner <span class="mode">light</span></figcaption></figure>
+  <figure><img src="wave-dark-375-howtohelp.png" alt="How To Help dark"><figcaption>How to Help · +banner <span class="mode">dark</span></figcaption></figure>
+  <figure><img src="wave-light-375-settings.png" alt="Settings light"><figcaption>Settings · stage+11 rows <span class="mode">light</span></figcaption></figure>
+  <figure><img src="wave-dark-375-settings.png" alt="Settings dark"><figcaption>Settings · stage+11 rows <span class="mode">dark</span></figcaption></figure>
+  <figure><img src="wave-light-375-drawer.png" alt="Drawer light"><figcaption>Drawer · dark overlay <span class="mode">light app</span></figcaption></figure>
+  <figure><img src="wave-dark-375-drawer.png" alt="Drawer dark"><figcaption>Drawer · dark overlay <span class="mode">dark app</span></figcaption></figure>
+  <figure><img src="wave-light-375-feedback.png" alt="Feedback light"><figcaption>Feedback · bulk sheet+chips <span class="mode">light</span></figcaption></figure>
+  <figure><img src="wave-dark-375-feedback.png" alt="Feedback dark"><figcaption>Feedback · bulk sheet+chips <span class="mode">dark</span></figcaption></figure>
+</div>
+
+<h2>C-lite spot-check — engineered rows (no blur)</h2>
+<div class="grid">
+  <figure><img src="wave-light-375-lite-settings.png" alt="Settings C-lite light"><figcaption>Settings · C-lite <span class="mode">light</span></figcaption></figure>
+  <figure><img src="wave-dark-375-lite-settings.png" alt="Settings C-lite dark"><figcaption>Settings · C-lite <span class="mode">dark</span></figcaption></figure>
+  <figure><img src="wave-light-375-lite-resources.png" alt="Resources C-lite light"><figcaption>Resources · C-lite <span class="mode">light</span></figcaption></figure>
+  <figure><img src="wave-dark-375-lite-resources.png" alt="Resources C-lite dark"><figcaption>Resources · C-lite <span class="mode">dark</span></figcaption></figure>
+</div>
+</body>
+</html>

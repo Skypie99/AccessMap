@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FlagCard action-row resilience — today's wrap vs the tiered fix</title>
+<style>
+body{margin:0;padding:24px;background:#fbfcfe;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;color:#222}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+h1{font-size:18px;font-weight:600;margin:0 0 4px}
+.intro{font-size:13px;color:#5b6470;margin:0 0 20px;max-width:600px;line-height:1.5}
+.rwrap{display:flex;flex-direction:column;gap:1.5rem}
+.rh{font-size:13px;color:#5b6470;margin:0 0 10px;display:flex;align-items:center;gap:8px}
+.rtag{font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px}
+.rgrid{display:flex;flex-wrap:wrap;gap:14px}
+.rcol{background:#f3f6fa;border-radius:14px;padding:12px}
+.rlab{font-size:11px;color:#707070;margin:0 0 8px;text-align:center;font-weight:600}
+.rb{min-height:34px;border-radius:999px;display:inline-flex;align-items:center;justify-content:center;font-weight:600;padding:0 11px;white-space:nowrap;font-size:12px}
+.rfill{background:#1466E0;color:#fff}.rok{background:#1e8449;color:#fff}
+.rneu{background:#eef1f5;color:#333}.rout{background:transparent;border:1px solid #1466E0;color:#0F53BE}
+.rgh{background:transparent;border:1px solid #dde2ea;color:#0F53BE}
+.rwarn{font-size:10.5px;color:#8a1f1f;margin:6px 0 0;text-align:center}
+.rgood{font-size:10.5px;color:#067A56;margin:6px 0 0;text-align:center}
+</style>
+</head>
+<body>
+<h2 class="sr-only">Action-row resilience comparison: today's four content-sized pills wrap raggedly at 360pt, 320pt, and large Dynamic Type, while the recommended tiered equal-share layout stays one tidy row at 375pt and reflows to a deliberate two-row stack at narrow widths and large type.</h2>
+<h1>FlagCard action row — the headline fix</h1>
+<p class="intro">Today's four content-sized pills can only wrap (no flex, no width floor). The locked fix uses the bulk bar's proven equal-share flex (flexGrow / flexBasis:0): Verify carries flexGrow:2, the three secondaries share the rest, and at narrow widths / large type it reflows to a deliberate 2-row stack — never a ragged wrap.</p>
+<div class="rwrap">
+
+  <div>
+    <p class="rh"><span class="rtag" style="background:#fdecea;color:#8a1f1f">Today</span> four content-sized pills, no flex — the row can only wrap</p>
+    <div class="rgrid">
+      <div class="rcol" style="width:200px">
+        <p class="rlab">375pt · default type</p>
+        <div style="display:flex;flex-wrap:wrap;gap:6px">
+          <span class="rb rfill">Verify</span><span class="rb rok">Resolved</span><span class="rb rneu">Reject</span><span class="rb rout">Details</span>
+        </div>
+        <p class="rwarn">fits — only 6px to spare</p>
+      </div>
+      <div class="rcol" style="width:150px">
+        <p class="rlab">320pt · default type</p>
+        <div style="display:flex;flex-wrap:wrap;gap:6px">
+          <span class="rb rfill">Verify</span><span class="rb rok">Resolved</span><span class="rb rneu">Reject</span><span class="rb rout">Details</span>
+        </div>
+        <p class="rwarn">wraps — ragged 2nd row</p>
+      </div>
+      <div class="rcol" style="width:200px">
+        <p class="rlab">375pt · large type ×1.6</p>
+        <div style="display:flex;flex-wrap:wrap;gap:6px">
+          <span class="rb rfill" style="font-size:16px">Verify</span><span class="rb rok" style="font-size:16px">Resolved</span><span class="rb rneu" style="font-size:16px">Reject</span><span class="rb rout" style="font-size:16px">Details</span>
+        </div>
+        <p class="rwarn">wraps — stranded pill</p>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <p class="rh"><span class="rtag" style="background:#E7F0FD;color:#0F53BE">Locked fix</span> tiered equal-share (flexGrow / flexBasis 0) — never ragged</p>
+    <div class="rgrid">
+      <div class="rcol" style="width:200px">
+        <p class="rlab">375pt · default type</p>
+        <div style="display:flex;gap:6px">
+          <span class="rb rfill" style="flex:2;min-width:0">Verify</span><span class="rb rneu" style="flex:1;min-width:0">Resolved</span><span class="rb rgh" style="flex:1;min-width:0">Reject</span><span class="rb rgh" style="flex:1;min-width:0">Details</span>
+        </div>
+        <p class="rgood">one tidy row, clear primary</p>
+      </div>
+      <div class="rcol" style="width:150px">
+        <p class="rlab">320pt · default type</p>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <span class="rb rfill" style="width:100%">Verify</span>
+          <div style="display:flex;gap:6px">
+            <span class="rb rneu" style="flex:1;min-width:0">Resolved</span><span class="rb rgh" style="flex:1;min-width:0">Reject</span><span class="rb rgh" style="flex:1;min-width:0">Details</span>
+          </div>
+        </div>
+        <p class="rgood">deliberate 2-row stack</p>
+      </div>
+      <div class="rcol" style="width:200px">
+        <p class="rlab">375pt · large type ×1.6</p>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <span class="rb rfill" style="width:100%;font-size:16px">Verify</span>
+          <div style="display:flex;gap:6px">
+            <span class="rb rneu" style="flex:1;min-width:0;font-size:16px">Resolved</span><span class="rb rgh" style="flex:1;min-width:0;font-size:16px">Reject</span><span class="rb rgh" style="flex:1;min-width:0;font-size:16px">Details</span>
+          </div>
+        </div>
+        <p class="rgood">same controlled stack, bigger</p>
+      </div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

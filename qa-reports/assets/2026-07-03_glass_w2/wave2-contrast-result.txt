@@ -1,0 +1,50 @@
+## Contrast report — Glass Rollout Wave 2 — Profile shipped pairings, 2026-07-03
+
+Composite order: `stack[0]` painted first (nearest base) → last element topmost.
+Worst case = the base backdrop that yields the LOWEST ratio for the pair.
+
+### light
+
+| pair | surface | worst base | resulting bg | ratio | min | verdict |
+|---|---|---|---|---|---|---|
+| hero points inkDetailsGhost (56pt data-display, large) (`#1466E0`) | row | `#CBDBF4` | `#EFF4FC` | 4.75:1 | 3:1 | PASS |
+| hero/stat/history/nav/about/error/sibling muted labels inkGlassMuted @>=500 (`#414B5A`) | row | `#CBDBF4` | `#EFF4FC` | 8.01:1 | 4.5:1 | PASS |
+| card titles + statValue textStrong (`#222`) | row | `#CBDBF4` | `#EFF4FC` | 14.43:1 | 4.5:1 | PASS |
+| point-history label color.text @>=500 (`#333`) | row | `#CBDBF4` | `#EFF4FC` | 11.46:1 | 4.5:1 | PASS |
+| point delta gain arrow successStrong (1.4.11; number is textStrong) (`#1e8449`) | row | `#CBDBF4` | `#EFF4FC` | 4.28:1 | 3:1 | PASS |
+| point delta loss arrow error (1.4.11; number is textStrong) (`#c0392b`) | row | `#CBDBF4` | `#EFF4FC` | 4.93:1 | 3:1 | PASS |
+| nav/about chevron textSubtle (1.4.11) (`#707070`) | row | `#CBDBF4` | `#EFF4FC` | 4.49:1 | 3:1 | PASS |
+| nearest banner title/subtitle brandOnSoft (`#0F53BE`) | banner | `#CBDBF4` | `#D5E3FA` | 5.41:1 | 4.5:1 | PASS |
+| header eyebrow/subtitle + section labels/hints inkOnStage (`#525C6B`) | stage | `#CBDBF4` | `#CBDBF4` | 4.83:1 | 4.5:1 | PASS |
+| signed-out prompt color.text (`#333`) | stage | `#CBDBF4` | `#CBDBF4` | 9.01:1 | 4.5:1 | PASS |
+| realtime toggle label textStrong (`#222`) | stage | `#CBDBF4` | `#CBDBF4` | 11.35:1 | 4.5:1 | PASS |
+| delete-account destructive errorFg (light) (`#8a1f1f`) | stage | `#CBDBF4` | `#CBDBF4` | 6.52:1 | 4.5:1 | PASS |
+| tab pill unselected glassChipInk (`#333`) | chipOnStage | `#CBDBF4` | `#EAF1FB` | 11.09:1 | 4.5:1 | PASS |
+| intro link inkSelect (`#0F53BE`) | chipOnStage | `#CBDBF4` | `#EAF1FB` | 6.14:1 | 4.5:1 | PASS |
+| breakdown total chip glassChipInk (`#333`) | chipOnRow | `#CBDBF4` | `#F9FBFE` | 12.16:1 | 4.5:1 | PASS |
+| recently-viewed chip label textStrong (`#222`) | chipOnRow | `#CBDBF4` | `#F9FBFE` | 15.31:1 | 4.5:1 | PASS |
+| save/sign-in/retry/selected-tab white textOnBrand (`#fff`) | ctaFill | `#1466E0` | `#1466E0` | 5.24:1 | 4.5:1 | PASS |
+
+### dark
+
+| pair | surface | worst base | resulting bg | ratio | min | verdict |
+|---|---|---|---|---|---|---|
+| hero points inkDetailsGhost (56pt data-display, large) (`#84AEF6`) | row | `#1B2940` | `#1D2433` | 6.93:1 | 3:1 | PASS |
+| hero/stat/history/nav/about/error/sibling muted labels inkGlassMuted @>=500 (`#B8BEC9`) | row | `#1B2940` | `#1D2433` | 8.32:1 | 4.5:1 | PASS |
+| card titles + statValue textStrong (`#f5f5f5`) | row | `#1B2940` | `#1D2433` | 14.24:1 | 4.5:1 | PASS |
+| point-history label color.text @>=500 (`#ddd`) | row | `#1B2940` | `#1D2433` | 11.43:1 | 4.5:1 | PASS |
+| point delta gain arrow success (1.4.11; number is textStrong) (`#27ae60`) | row | `#1B2940` | `#1D2433` | 5.40:1 | 3:1 | PASS |
+| point delta loss arrow errorFg (1.4.11; number is textStrong) (`#fca5a5`) | row | `#1B2940` | `#1D2433` | 8.18:1 | 3:1 | PASS |
+| nav/about chevron textSubtle (1.4.11) (`#8a8a8a`) | row | `#1B2940` | `#1D2433` | 4.50:1 | 3:1 | PASS |
+| nearest banner title/subtitle brandOnSoft (`#B4CFFA`) | banner | `#1B2940` | `#123C7E` | 6.72:1 | 4.5:1 | PASS |
+| header eyebrow/subtitle + section labels/hints inkOnStage (`#AAAAAA`) | stage | `#1B2940` | `#1B2940` | 6.29:1 | 4.5:1 | PASS |
+| signed-out prompt color.text (`#ddd`) | stage | `#1B2940` | `#1B2940` | 10.75:1 | 4.5:1 | PASS |
+| realtime toggle label textStrong (`#f5f5f5`) | stage | `#1B2940` | `#1B2940` | 13.40:1 | 4.5:1 | PASS |
+| delete-account destructive errorFg (dark fork) (`#fca5a5`) | stage | `#1B2940` | `#1B2940` | 7.70:1 | 4.5:1 | PASS |
+| tab pill unselected glassChipInk (`#F5F5F5`) | chipOnStage | `#1B2940` | `#323E53` | 9.84:1 | 4.5:1 | PASS |
+| intro link inkSelect (`#B4CFFA`) | chipOnStage | `#1B2940` | `#323E53` | 6.77:1 | 4.5:1 | PASS |
+| breakdown total chip glassChipInk (`#F5F5F5`) | chipOnRow | `#1B2940` | `#343A47` | 10.47:1 | 4.5:1 | PASS |
+| recently-viewed chip label textStrong (`#f5f5f5`) | chipOnRow | `#1B2940` | `#343A47` | 10.47:1 | 4.5:1 | PASS |
+| save/sign-in/retry/selected-tab white textOnBrand (`#fff`) | ctaFill | `#1466E0` | `#1466E0` | 5.24:1 | 4.5:1 | PASS |
+
+RESULT: ALL PASS

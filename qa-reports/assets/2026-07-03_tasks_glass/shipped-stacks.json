@@ -1,0 +1,1086 @@
+{
+ "name": "Tasks glass BUILD \u2014 shipped token values (= Candidate C spec) + C-lite engineered stacks (2026-07-03)",
+ "_doc": [
+  "C 'Deep Field' AA declaration. Deterministic-backdrop surfaces (rows/banner/empty/stage/selected) composite over the stage's darkest reachable point:",
+  "light darkest stop #E7F0FD + brand pool rgba(46,124,246,0.12) = #D1E2FC; + a conservative 3% grain dip = #CBDBF4 (declared as extra worst base).",
+  "dark lightest reachable point (worst for light text): #14151A + pool rgba(20,102,224,0.16) = #14223A; pool over #0E1220 = #0F1F3F; + 3% grain lift = #1B2940.",
+  "Chaotic-backdrop surfaces (chrome/bulk + chips ON them) composite over #000/#D92D20/#0B3D8F light and #fff/#D92D20/#0B3D8F dark (unblurred single-color = conservative correct bound).",
+  "INK FORKS forced by this script (passing values are the spec tokens):",
+  "  light glassMuted #414B5A (eyebrow/subtitle/sort label on chrome \u2014 textSubtle #707070 = 2.69:1 over #000-worst chrome);",
+  "  select-multiple ink brandText #0F53BE (app uses brand #1466E0 = 4.17:1 on chip-over-#000);",
+  "  dark glassMuted #B8BEC9 (dark textMuted #aaa = 4.39:1 over #fff-worst chrome);",
+  "  dark placeholder #C9CFD9; dark chip labels textStrong #F5F5F5;",
+  "  severity ramp inks sev2/3/4 -> #0F1B2D (white ink = 2.2/3.0/3.6:1 on the app ramp); sev5 keeps white; sev1 already dark;",
+  "  light ink.onStage #525C6B for section headers + footer (textMuted #666 = 4.10:1 over the pool-darkest stage point; the common-law ~#5E6B7C = 3.88:1 \u2014 C's stage is deeper, so C's fork is deeper);",
+  "  CTA fill mode-independent #1466E0 (dark brand #4E89EF + white = 3.4:1).",
+  "Empty stack = text sits directly on the opaque base."
+ ],
+ "modes": {
+  "light": {
+   "surfaces": {
+    "chrome": {
+     "stack": [
+      "rgba(255,255,255,0.75)"
+     ],
+     "base": [
+      "#000",
+      "#D92D20",
+      "#0B3D8F"
+     ]
+    },
+    "chipOnChrome": {
+     "stack": [
+      "rgba(255,255,255,0.75)",
+      "rgba(255,255,255,0.60)"
+     ],
+     "base": [
+      "#000",
+      "#D92D20",
+      "#0B3D8F"
+     ]
+    },
+    "ctaFill": {
+     "stack": [],
+     "base": [
+      "#1466E0"
+     ]
+    },
+    "row": {
+     "stack": [
+      "rgba(255,255,255,0.70)"
+     ],
+     "base": [
+      "#CBDBF4",
+      "#D1E2FC",
+      "#E7F0FD"
+     ]
+    },
+    "selectedRow": {
+     "stack": [
+      "rgba(255,255,255,0.70)",
+      "rgba(217,231,253,0.35)"
+     ],
+     "base": [
+      "#CBDBF4"
+     ]
+    },
+    "neutralBtnOnRow": {
+     "stack": [
+      "rgba(255,255,255,0.70)",
+      "rgba(22,33,58,0.06)"
+     ],
+     "base": [
+      "#CBDBF4"
+     ]
+    },
+    "banner": {
+     "stack": [
+      "rgba(217,231,253,0.70)"
+     ],
+     "base": [
+      "#CBDBF4"
+     ]
+    },
+    "stage": {
+     "stack": [],
+     "base": [
+      "#CBDBF4",
+      "#D1E2FC"
+     ]
+    },
+    "sectionPill": {
+     "stack": [],
+     "base": [
+      "#D9E7FD"
+     ]
+    },
+    "sev1": {
+     "stack": [],
+     "base": [
+      "#F7C948"
+     ]
+    },
+    "sev2": {
+     "stack": [],
+     "base": [
+      "#F0A030"
+     ]
+    },
+    "sev3": {
+     "stack": [],
+     "base": [
+      "#F2792B"
+     ]
+    },
+    "sev4": {
+     "stack": [],
+     "base": [
+      "#E85638"
+     ]
+    },
+    "sev5": {
+     "stack": [],
+     "base": [
+      "#D92D20"
+     ]
+    },
+    "statusOpen": {
+     "stack": [],
+     "base": [
+      "#E7F0FD"
+     ]
+    },
+    "statusVerified": {
+     "stack": [],
+     "base": [
+      "#DCF6EC"
+     ]
+    },
+    "bulk": {
+     "stack": [
+      "rgba(255,255,255,0.85)"
+     ],
+     "base": [
+      "#000",
+      "#D92D20",
+      "#0B3D8F"
+     ]
+    },
+    "cancelOnBulk": {
+     "stack": [
+      "rgba(255,255,255,0.85)",
+      "rgba(255,255,255,0.62)"
+     ],
+     "base": [
+      "#000",
+      "#D92D20",
+      "#0B3D8F"
+     ]
+    },
+    "resolveFill": {
+     "stack": [],
+     "base": [
+      "#1e8449"
+     ]
+    },
+    "watchFill": {
+     "stack": [],
+     "base": [
+      "#5b21b6"
+     ]
+    },
+    "empty": {
+     "stack": [
+      "rgba(255,255,255,0.70)"
+     ],
+     "base": [
+      "#CBDBF4"
+     ]
+    },
+    "rowLite": {
+     "stack": [
+      "rgba(255,255,255,0.84)"
+     ],
+     "base": [
+      "#CBDBF4",
+      "#D1E2FC",
+      "#E7F0FD"
+     ]
+    },
+    "selectedRowLite": {
+     "stack": [
+      "rgba(255,255,255,0.84)",
+      "rgba(217,231,253,0.35)"
+     ],
+     "base": [
+      "#CBDBF4"
+     ]
+    },
+    "neutralBtnOnRowLite": {
+     "stack": [
+      "rgba(255,255,255,0.84)",
+      "rgba(22,33,58,0.06)"
+     ],
+     "base": [
+      "#CBDBF4"
+     ]
+    },
+    "bannerLite": {
+     "stack": [
+      "rgba(217,231,253,0.84)"
+     ],
+     "base": [
+      "#CBDBF4"
+     ]
+    },
+    "chromeLite": {
+     "stack": [
+      "rgba(255,255,255,0.88)"
+     ],
+     "base": [
+      "#000",
+      "#D92D20",
+      "#0B3D8F"
+     ]
+    },
+    "chipOnChromeLite": {
+     "stack": [
+      "rgba(255,255,255,0.88)",
+      "rgba(255,255,255,0.60)"
+     ],
+     "base": [
+      "#000",
+      "#D92D20",
+      "#0B3D8F"
+     ]
+    },
+    "bulkLite": {
+     "stack": [
+      "rgba(255,255,255,0.90)"
+     ],
+     "base": [
+      "#000",
+      "#D92D20",
+      "#0B3D8F"
+     ]
+    }
+   },
+   "pairs": [
+    {
+     "text": "#414B5A",
+     "surface": "chrome",
+     "label": "eyebrow TASKS 12pt glassMuted (AA fork)",
+     "min": 4.5
+    },
+    {
+     "text": "#222222",
+     "surface": "chrome",
+     "label": "screen title 30pt textStrong (large)",
+     "min": 3.0
+    },
+    {
+     "text": "#414B5A",
+     "surface": "chrome",
+     "label": "subtitle 15pt glassMuted (AA fork)",
+     "min": 4.5
+    },
+    {
+     "text": "#414B5A",
+     "surface": "chrome",
+     "label": "Sort: label 12pt glassMuted",
+     "min": 4.5
+    },
+    {
+     "text": "#5B6470",
+     "surface": "chipOnChrome",
+     "label": "search placeholder 14pt (app token)",
+     "min": 4.5
+    },
+    {
+     "text": "#333333",
+     "surface": "chipOnChrome",
+     "label": "chip labels 13pt color.text",
+     "min": 4.5
+    },
+    {
+     "text": "#FFFFFF",
+     "surface": "ctaFill",
+     "label": "active chip / Verify white on CTA #1466E0",
+     "min": 4.5
+    },
+    {
+     "text": "#0F53BE",
+     "surface": "chipOnChrome",
+     "label": "Select multiple 14pt brandText (AA fork)",
+     "min": 4.5
+    },
+    {
+     "text": "#0F53BE",
+     "surface": "banner",
+     "label": "banner ink 13pt brandOnSoft",
+     "min": 4.5
+    },
+    {
+     "text": "#525C6B",
+     "surface": "stage",
+     "label": "section header 12pt ink.onStage (AA fork from textMuted #666 = 4.10:1 on pool-darkest stage)",
+     "min": 4.5
+    },
+    {
+     "text": "#0F53BE",
+     "surface": "sectionPill",
+     "label": "count pill 11pt monoBold brandOnSoft",
+     "min": 4.5
+    },
+    {
+     "text": "#222222",
+     "surface": "row",
+     "label": "card title 18pt textStrong on row glass",
+     "min": 4.5
+    },
+    {
+     "text": "#222222",
+     "surface": "row",
+     "label": "card desc 14pt textStrong on row glass",
+     "min": 4.5
+    },
+    {
+     "text": "#666666",
+     "surface": "row",
+     "label": "card meta 12pt textMuted on row glass",
+     "min": 4.5
+    },
+    {
+     "text": "#222222",
+     "surface": "selectedRow",
+     "label": "card desc on selected row",
+     "min": 4.5
+    },
+    {
+     "text": "#666666",
+     "surface": "selectedRow",
+     "label": "card meta on selected row",
+     "min": 4.5
+    },
+    {
+     "text": "#333333",
+     "surface": "neutralBtnOnRow",
+     "label": "Resolved label 13pt on neutral fill",
+     "min": 4.5
+    },
+    {
+     "text": "#333333",
+     "surface": "row",
+     "label": "Reject label 13pt (ghost on row)",
+     "min": 4.5
+    },
+    {
+     "text": "#1466E0",
+     "surface": "row",
+     "label": "Details label 13pt color.brand (ghost)",
+     "min": 4.5
+    },
+    {
+     "text": "#0F1B2D",
+     "surface": "sev1",
+     "label": "sev1 ink on #F7C948",
+     "min": 4.5
+    },
+    {
+     "text": "#0F1B2D",
+     "surface": "sev2",
+     "label": "sev2 ink on #F0A030 (AA fork from white)",
+     "min": 4.5
+    },
+    {
+     "text": "#0F1B2D",
+     "surface": "sev3",
+     "label": "sev3 ink on #F2792B (AA fork from white)",
+     "min": 4.5
+    },
+    {
+     "text": "#0F1B2D",
+     "surface": "sev4",
+     "label": "sev4 ink on #E85638 (AA fork from white)",
+     "min": 4.5
+    },
+    {
+     "text": "#FFFFFF",
+     "surface": "sev5",
+     "label": "sev5 white ink on #D92D20",
+     "min": 4.5
+    },
+    {
+     "text": "#1A5FB4",
+     "surface": "statusOpen",
+     "label": "StatusBadge Open ink",
+     "min": 4.5
+    },
+    {
+     "text": "#067A56",
+     "surface": "statusVerified",
+     "label": "StatusBadge Verified ink",
+     "min": 4.5
+    },
+    {
+     "text": "#222222",
+     "surface": "bulk",
+     "label": "bulk count 14pt bold on bulk glass",
+     "min": 4.5
+    },
+    {
+     "text": "#FFFFFF",
+     "surface": "resolveFill",
+     "label": "bulk Resolve white on successStrong",
+     "min": 4.5
+    },
+    {
+     "text": "#FFFFFF",
+     "surface": "watchFill",
+     "label": "bulk Watch white on accentPurple",
+     "min": 4.5
+    },
+    {
+     "text": "#222222",
+     "surface": "cancelOnBulk",
+     "label": "bulk Cancel textStrong",
+     "min": 4.5
+    },
+    {
+     "text": "#222222",
+     "surface": "empty",
+     "label": "empty title 18pt textStrong",
+     "min": 4.5
+    },
+    {
+     "text": "#666666",
+     "surface": "empty",
+     "label": "empty body 13pt textMuted",
+     "min": 4.5
+    },
+    {
+     "text": "#525C6B",
+     "surface": "stage",
+     "label": "end-of-list footer 13pt italic ink.onStage (AA fork)",
+     "min": 4.5
+    },
+    {
+     "text": "#414B5A",
+     "surface": "chromeLite",
+     "label": "eyebrow TASKS 12pt glassMuted (AA fork) [C-lite engineered]",
+     "min": 4.5
+    },
+    {
+     "text": "#222222",
+     "surface": "chromeLite",
+     "label": "screen title 30pt textStrong (large) [C-lite engineered]",
+     "min": 3.0
+    },
+    {
+     "text": "#414B5A",
+     "surface": "chromeLite",
+     "label": "subtitle 15pt glassMuted (AA fork) [C-lite engineered]",
+     "min": 4.5
+    },
+    {
+     "text": "#414B5A",
+     "surface": "chromeLite",
+     "label": "Sort: label 12pt glassMuted [C-lite engineered]",
+     "min": 4.5
+    },
+    {
+     "text": "#5B6470",
+     "surface": "chipOnChromeLite",
+     "label": "search placeholder 14pt (app token) [C-lite engineered]",
+     "min": 4.5
+    },
+    {
+     "text": "#333333",
+     "surface": "chipOnChromeLite",
+     "label": "chip labels 13pt color.text [C-lite engineered]",
+     "min": 4.5
+    },
+    {
+     "text": "#0F53BE",
+     "surface": "chipOnChromeLite",
+     "label": "Select multiple 14pt brandText (AA fork) [C-lite engineered]",
+     "min": 4.5
+    },
+    {
+     "text": "#0F53BE",
+     "surface": "bannerLite",
+     "label": "banner ink 13pt brandOnSoft [C-lite engineered]",
+     "min": 4.5
+    },
+    {
+     "text": "#222222",
+     "surface": "rowLite",
+     "label": "card title 18pt textStrong on row glass [C-lite engineered]",
+     "min": 4.5
+    },
+    {
+     "text": "#222222",
+     "surface": "rowLite",
+     "label": "card desc 14pt textStrong on row glass [C-lite engineered]",
+     "min": 4.5
+    },
+    {
+     "text": "#666666",
+     "surface": "rowLite",
+     "label": "card meta 12pt textMuted on row glass [C-lite engineered]",
+     "min": 4.5
+    },
+    {
+     "text": "#222222",
+     "surface": "selectedRowLite",
+     "label": "card desc on selected row [C-lite engineered]",
+     "min": 4.5
+    },
+    {
+     "text": "#666666",
+     "surface": "selectedRowLite",
+     "label": "card meta on selected row [C-lite engineered]",
+     "min": 4.5
+    },
+    {
+     "text": "#333333",
+     "surface": "neutralBtnOnRowLite",
+     "label": "Resolved label 13pt on neutral fill [C-lite engineered]",
+     "min": 4.5
+    },
+    {
+     "text": "#333333",
+     "surface": "rowLite",
+     "label": "Reject label 13pt (ghost on row) [C-lite engineered]",
+     "min": 4.5
+    },
+    {
+     "text": "#1466E0",
+     "surface": "rowLite",
+     "label": "Details label 13pt color.brand (ghost) [C-lite engineered]",
+     "min": 4.5
+    },
+    {
+     "text": "#222222",
+     "surface": "bulkLite",
+     "label": "bulk count 14pt bold on bulk glass [C-lite engineered]",
+     "min": 4.5
+    }
+   ]
+  },
+  "dark": {
+   "surfaces": {
+    "chrome": {
+     "stack": [
+      "rgba(13,18,32,0.80)"
+     ],
+     "base": [
+      "#fff",
+      "#D92D20",
+      "#0B3D8F"
+     ]
+    },
+    "chipOnChrome": {
+     "stack": [
+      "rgba(13,18,32,0.80)",
+      "rgba(255,255,255,0.10)"
+     ],
+     "base": [
+      "#fff",
+      "#D92D20",
+      "#0B3D8F"
+     ]
+    },
+    "ctaFill": {
+     "stack": [],
+     "base": [
+      "#1466E0"
+     ]
+    },
+    "row": {
+     "stack": [
+      "rgba(30,34,46,0.72)"
+     ],
+     "base": [
+      "#1B2940",
+      "#14223A",
+      "#0F1F3F",
+      "#14151A"
+     ]
+    },
+    "selectedRow": {
+     "stack": [
+      "rgba(30,34,46,0.72)",
+      "rgba(15,45,94,0.45)"
+     ],
+     "base": [
+      "#1B2940"
+     ]
+    },
+    "neutralBtnOnRow": {
+     "stack": [
+      "rgba(30,34,46,0.72)",
+      "rgba(255,255,255,0.10)"
+     ],
+     "base": [
+      "#1B2940"
+     ]
+    },
+    "banner": {
+     "stack": [
+      "rgba(14,68,153,0.70)"
+     ],
+     "base": [
+      "#1B2940"
+     ]
+    },
+    "stage": {
+     "stack": [],
+     "base": [
+      "#1B2940",
+      "#14223A"
+     ]
+    },
+    "sectionPill": {
+     "stack": [],
+     "base": [
+      "#0E4499"
+     ]
+    },
+    "sev1": {
+     "stack": [],
+     "base": [
+      "#F7C948"
+     ]
+    },
+    "sev2": {
+     "stack": [],
+     "base": [
+      "#F0A030"
+     ]
+    },
+    "sev3": {
+     "stack": [],
+     "base": [
+      "#F2792B"
+     ]
+    },
+    "sev4": {
+     "stack": [],
+     "base": [
+      "#E85638"
+     ]
+    },
+    "sev5": {
+     "stack": [],
+     "base": [
+      "#D92D20"
+     ]
+    },
+    "statusOpen": {
+     "stack": [],
+     "base": [
+      "#0E2A5C"
+     ]
+    },
+    "statusVerified": {
+     "stack": [],
+     "base": [
+      "#083928"
+     ]
+    },
+    "bulk": {
+     "stack": [
+      "rgba(13,18,32,0.85)"
+     ],
+     "base": [
+      "#fff",
+      "#D92D20",
+      "#0B3D8F"
+     ]
+    },
+    "cancelOnBulk": {
+     "stack": [
+      "rgba(13,18,32,0.85)",
+      "rgba(255,255,255,0.14)"
+     ],
+     "base": [
+      "#fff",
+      "#D92D20",
+      "#0B3D8F"
+     ]
+    },
+    "resolveFill": {
+     "stack": [],
+     "base": [
+      "#1e8449"
+     ]
+    },
+    "watchFill": {
+     "stack": [],
+     "base": [
+      "#7c3aed"
+     ]
+    },
+    "empty": {
+     "stack": [
+      "rgba(30,34,46,0.72)"
+     ],
+     "base": [
+      "#1B2940"
+     ]
+    },
+    "rowLite": {
+     "stack": [
+      "rgba(30,34,46,0.88)"
+     ],
+     "base": [
+      "#1B2940",
+      "#14223A",
+      "#0F1F3F",
+      "#14151A"
+     ]
+    },
+    "selectedRowLite": {
+     "stack": [
+      "rgba(30,34,46,0.88)",
+      "rgba(15,45,94,0.45)"
+     ],
+     "base": [
+      "#1B2940"
+     ]
+    },
+    "neutralBtnOnRowLite": {
+     "stack": [
+      "rgba(30,34,46,0.88)",
+      "rgba(255,255,255,0.10)"
+     ],
+     "base": [
+      "#1B2940"
+     ]
+    },
+    "bannerLite": {
+     "stack": [
+      "rgba(14,68,153,0.84)"
+     ],
+     "base": [
+      "#1B2940"
+     ]
+    },
+    "chromeLite": {
+     "stack": [
+      "rgba(13,18,32,0.90)"
+     ],
+     "base": [
+      "#fff",
+      "#D92D20",
+      "#0B3D8F"
+     ]
+    },
+    "chipOnChromeLite": {
+     "stack": [
+      "rgba(13,18,32,0.90)",
+      "rgba(255,255,255,0.10)"
+     ],
+     "base": [
+      "#fff",
+      "#D92D20",
+      "#0B3D8F"
+     ]
+    },
+    "bulkLite": {
+     "stack": [
+      "rgba(13,18,32,0.92)"
+     ],
+     "base": [
+      "#fff",
+      "#D92D20",
+      "#0B3D8F"
+     ]
+    }
+   },
+   "pairs": [
+    {
+     "text": "#B8BEC9",
+     "surface": "chrome",
+     "label": "eyebrow TASKS 12pt dark glassMuted (AA fork)",
+     "min": 4.5
+    },
+    {
+     "text": "#F5F5F5",
+     "surface": "chrome",
+     "label": "screen title 30pt dark textStrong (large)",
+     "min": 3.0
+    },
+    {
+     "text": "#B8BEC9",
+     "surface": "chrome",
+     "label": "subtitle 15pt dark glassMuted (AA fork)",
+     "min": 4.5
+    },
+    {
+     "text": "#B8BEC9",
+     "surface": "chrome",
+     "label": "Sort: label 12pt dark glassMuted",
+     "min": 4.5
+    },
+    {
+     "text": "#C9CFD9",
+     "surface": "chipOnChrome",
+     "label": "search placeholder dark (AA fork from #9ca3af)",
+     "min": 4.5
+    },
+    {
+     "text": "#F5F5F5",
+     "surface": "chipOnChrome",
+     "label": "chip labels dark textStrong (AA fork from #ddd)",
+     "min": 4.5
+    },
+    {
+     "text": "#FFFFFF",
+     "surface": "ctaFill",
+     "label": "active chip / Verify white on CTA #1466E0 (mode-independent AA fork)",
+     "min": 4.5
+    },
+    {
+     "text": "#B4CFFA",
+     "surface": "chipOnChrome",
+     "label": "Select multiple dark brandOnSoft",
+     "min": 4.5
+    },
+    {
+     "text": "#B4CFFA",
+     "surface": "banner",
+     "label": "banner ink dark brandOnSoft",
+     "min": 4.5
+    },
+    {
+     "text": "#AAAAAA",
+     "surface": "stage",
+     "label": "section header dark textMuted on stage",
+     "min": 4.5
+    },
+    {
+     "text": "#B4CFFA",
+     "surface": "sectionPill",
+     "label": "count pill dark brandOnSoft",
+     "min": 4.5
+    },
+    {
+     "text": "#F5F5F5",
+     "surface": "row",
+     "label": "card title dark textStrong on row glass (fixes before's unthemed-title bug)",
+     "min": 4.5
+    },
+    {
+     "text": "#F5F5F5",
+     "surface": "row",
+     "label": "card desc dark textStrong on row glass",
+     "min": 4.5
+    },
+    {
+     "text": "#AAAAAA",
+     "surface": "row",
+     "label": "card meta dark textMuted on row glass",
+     "min": 4.5
+    },
+    {
+     "text": "#F5F5F5",
+     "surface": "selectedRow",
+     "label": "card desc on selected row (dark)",
+     "min": 4.5
+    },
+    {
+     "text": "#AAAAAA",
+     "surface": "selectedRow",
+     "label": "card meta on selected row (dark)",
+     "min": 4.5
+    },
+    {
+     "text": "#DDDDDD",
+     "surface": "neutralBtnOnRow",
+     "label": "Resolved label dark color.text",
+     "min": 4.5
+    },
+    {
+     "text": "#DDDDDD",
+     "surface": "row",
+     "label": "Reject label dark color.text (ghost)",
+     "min": 4.5
+    },
+    {
+     "text": "#84AEF6",
+     "surface": "row",
+     "label": "Details label dark brandText (ghost)",
+     "min": 4.5
+    },
+    {
+     "text": "#0F1B2D",
+     "surface": "sev1",
+     "label": "sev1 ink (mode-independent ramp)",
+     "min": 4.5
+    },
+    {
+     "text": "#0F1B2D",
+     "surface": "sev2",
+     "label": "sev2 ink (AA fork)",
+     "min": 4.5
+    },
+    {
+     "text": "#0F1B2D",
+     "surface": "sev3",
+     "label": "sev3 ink (AA fork)",
+     "min": 4.5
+    },
+    {
+     "text": "#0F1B2D",
+     "surface": "sev4",
+     "label": "sev4 ink (AA fork)",
+     "min": 4.5
+    },
+    {
+     "text": "#FFFFFF",
+     "surface": "sev5",
+     "label": "sev5 white ink",
+     "min": 4.5
+    },
+    {
+     "text": "#84AEF6",
+     "surface": "statusOpen",
+     "label": "StatusBadge Open ink (dark)",
+     "min": 4.5
+    },
+    {
+     "text": "#6EE7B7",
+     "surface": "statusVerified",
+     "label": "StatusBadge Verified ink (dark)",
+     "min": 4.5
+    },
+    {
+     "text": "#F5F5F5",
+     "surface": "bulk",
+     "label": "bulk count dark textStrong on bulk glass",
+     "min": 4.5
+    },
+    {
+     "text": "#FFFFFF",
+     "surface": "resolveFill",
+     "label": "bulk Resolve white on successStrong",
+     "min": 4.5
+    },
+    {
+     "text": "#FFFFFF",
+     "surface": "watchFill",
+     "label": "bulk Watch white on dark accentPurple",
+     "min": 4.5
+    },
+    {
+     "text": "#F5F5F5",
+     "surface": "cancelOnBulk",
+     "label": "bulk Cancel dark textStrong",
+     "min": 4.5
+    },
+    {
+     "text": "#F5F5F5",
+     "surface": "empty",
+     "label": "empty title dark textStrong",
+     "min": 4.5
+    },
+    {
+     "text": "#AAAAAA",
+     "surface": "empty",
+     "label": "empty body dark textMuted",
+     "min": 4.5
+    },
+    {
+     "text": "#AAAAAA",
+     "surface": "stage",
+     "label": "end-of-list footer dark textMuted",
+     "min": 4.5
+    },
+    {
+     "text": "#B8BEC9",
+     "surface": "chromeLite",
+     "label": "eyebrow TASKS 12pt dark glassMuted (AA fork) [C-lite engineered]",
+     "min": 4.5
+    },
+    {
+     "text": "#F5F5F5",
+     "surface": "chromeLite",
+     "label": "screen title 30pt dark textStrong (large) [C-lite engineered]",
+     "min": 3.0
+    },
+    {
+     "text": "#B8BEC9",
+     "surface": "chromeLite",
+     "label": "subtitle 15pt dark glassMuted (AA fork) [C-lite engineered]",
+     "min": 4.5
+    },
+    {
+     "text": "#B8BEC9",
+     "surface": "chromeLite",
+     "label": "Sort: label 12pt dark glassMuted [C-lite engineered]",
+     "min": 4.5
+    },
+    {
+     "text": "#C9CFD9",
+     "surface": "chipOnChromeLite",
+     "label": "search placeholder dark (AA fork from #9ca3af) [C-lite engineered]",
+     "min": 4.5
+    },
+    {
+     "text": "#F5F5F5",
+     "surface": "chipOnChromeLite",
+     "label": "chip labels dark textStrong (AA fork from #ddd) [C-lite engineered]",
+     "min": 4.5
+    },
+    {
+     "text": "#B4CFFA",
+     "surface": "chipOnChromeLite",
+     "label": "Select multiple dark brandOnSoft [C-lite engineered]",
+     "min": 4.5
+    },
+    {
+     "text": "#B4CFFA",
+     "surface": "bannerLite",
+     "label": "banner ink dark brandOnSoft [C-lite engineered]",
+     "min": 4.5
+    },
+    {
+     "text": "#F5F5F5",
+     "surface": "rowLite",
+     "label": "card title dark textStrong on row glass (fixes before's unthemed-title bug) [C-lite engineered]",
+     "min": 4.5
+    },
+    {
+     "text": "#F5F5F5",
+     "surface": "rowLite",
+     "label": "card desc dark textStrong on row glass [C-lite engineered]",
+     "min": 4.5
+    },
+    {
+     "text": "#AAAAAA",
+     "surface": "rowLite",
+     "label": "card meta dark textMuted on row glass [C-lite engineered]",
+     "min": 4.5
+    },
+    {
+     "text": "#F5F5F5",
+     "surface": "selectedRowLite",
+     "label": "card desc on selected row (dark) [C-lite engineered]",
+     "min": 4.5
+    },
+    {
+     "text": "#AAAAAA",
+     "surface": "selectedRowLite",
+     "label": "card meta on selected row (dark) [C-lite engineered]",
+     "min": 4.5
+    },
+    {
+     "text": "#DDDDDD",
+     "surface": "neutralBtnOnRowLite",
+     "label": "Resolved label dark color.text [C-lite engineered]",
+     "min": 4.5
+    },
+    {
+     "text": "#DDDDDD",
+     "surface": "rowLite",
+     "label": "Reject label dark color.text (ghost) [C-lite engineered]",
+     "min": 4.5
+    },
+    {
+     "text": "#84AEF6",
+     "surface": "rowLite",
+     "label": "Details label dark brandText (ghost) [C-lite engineered]",
+     "min": 4.5
+    },
+    {
+     "text": "#F5F5F5",
+     "surface": "bulkLite",
+     "label": "bulk count dark textStrong on bulk glass [C-lite engineered]",
+     "min": 4.5
+    }
+   ]
+  }
+ }
+}

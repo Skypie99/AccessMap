@@ -1,0 +1,72 @@
+## Contrast report — Glass Rollout Wave 1 — shipped pairings (About/Resources/HowToHelp/Settings/Drawer/Feedback), 2026-07-03
+
+Composite order: `stack[0]` painted first (nearest base) → last element topmost.
+Worst case = the base backdrop that yields the LOWEST ratio for the pair.
+
+### light
+
+| pair | surface | worst base | resulting bg | ratio | min | verdict |
+|---|---|---|---|---|---|---|
+| sheet title textStrong (large) (`#222`) | bulkSheet | `#000` | `#D9D9D9` | 11.24:1 | 3:1 | PASS |
+| sheet subtitle/labels inkGlassMuted (`#414B5A`) | bulkSheet | `#000` | `#D9D9D9` | 6.24:1 | 4.5:1 | PASS |
+| About tagline color.text (`#333`) | bulkSheet | `#000` | `#D9D9D9` | 8.93:1 | 4.5:1 | PASS |
+| Feedback inline error errorFg (`#8a1f1f`) | bulkSheet | `#000` | `#D9D9D9` | 6.46:1 | 4.5:1 | PASS |
+| close-X icon color.text (1.4.11) (`#333`) | bulkSheet | `#000` | `#D9D9D9` | 8.93:1 | 3:1 | PASS |
+| Feedback chip label+glyph glassChipInk (`#333`) | chipOnBulkSheet | `#000` | `#F0F0F0` | 11.06:1 | 4.5:1 | PASS |
+| selected chip + Send label textOnBrand (`#fff`) | ctaFill | `#1466E0` | `#1466E0` | 5.24:1 | 4.5:1 | PASS |
+| appearance unselected label/icon glassChipInk (`#333`) | chipOnStage | `#CBDBF4` | `#EAF1FB` | 11.09:1 | 4.5:1 | PASS |
+| appearance selected label/icon brandText (opaque pill) (`#0F53BE`) | selectedSegment | `#fff` | `#FFFFFF` | 7.00:1 | 4.5:1 | PASS |
+| row title textStrong (`#222`) | row | `#CBDBF4` | `#EFF4FC` | 14.43:1 | 4.5:1 | PASS |
+| row subtitle/blurb textMuted @>=500 (`#666`) | row | `#CBDBF4` | `#EFF4FC` | 5.21:1 | 4.5:1 | PASS |
+| chevron/spinner icon textSubtle (1.4.11) (`#707070`) | row | `#CBDBF4` | `#EFF4FC` | 4.49:1 | 3:1 | PASS |
+| leading deco icon textMuted (1.4.11) (`#666`) | row | `#CBDBF4` | `#EFF4FC` | 5.21:1 | 3:1 | PASS |
+| Sign-out destructive (error) (`#c0392b`) | row | `#CBDBF4` | `#EFF4FC` | 4.93:1 | 4.5:1 | PASS |
+| intro/footnote/sectionLabel inkOnStage (`#525C6B`) | stage | `#CBDBF4` | `#CBDBF4` | 4.83:1 | 4.5:1 | PASS |
+| recipe header title textStrong (large) (`#222`) | chrome | `#000` | `#BFBFBF` | 8.68:1 | 3:1 | PASS |
+| recipe close-X icon inkGlassMuted (1.4.11) (`#414B5A`) | chrome | `#000` | `#BFBFBF` | 4.81:1 | 3:1 | PASS |
+| HowToHelp callout brandOnSoft (`#0F53BE`) | banner | `#CBDBF4` | `#D5E3FA` | 5.41:1 | 4.5:1 | PASS |
+| drawer brand + item labels (`#f5f5f5`) | drawerPanel | `#FFFFFF` | `#141926` | 16.15:1 | 4.5:1 | PASS |
+| drawer close-X/chevron/muted icon+label (`rgba(255,255,255,0.7)`) | drawerPanel | `#FFFFFF` | `#141926` | 9.06:1 | 4.5:1 | PASS |
+| drawer labelMuted (forked 0.45->0.48) (`rgba(255,255,255,0.48)`) | drawerPanel | `#FFFFFF` | `#141926` | 4.91:1 | 4.5:1 | PASS |
+| drawer footerText (forked 0.30->0.55) (`rgba(255,255,255,0.55)`) | drawerPanel | `#FFFFFF` | `#141926` | 6.05:1 | 4.5:1 | PASS |
+| drawer active nav icon (1.4.11) (`#4E89EF`) | drawerPanel | `#FFFFFF` | `#141926` | 5.16:1 | 3:1 | PASS |
+| [C-lite] row title textStrong (`#222`) | rowLite | `#CBDBF4` | `#F7F9FD` | 15.11:1 | 4.5:1 | PASS |
+| [C-lite] row subtitle textMuted (`#666`) | rowLite | `#CBDBF4` | `#F7F9FD` | 5.45:1 | 4.5:1 | PASS |
+| [C-lite] chevron textSubtle (1.4.11) (`#707070`) | rowLite | `#CBDBF4` | `#F7F9FD` | 4.70:1 | 3:1 | PASS |
+| [C-lite] Sign-out destructive (`#c0392b`) | rowLite | `#CBDBF4` | `#F7F9FD` | 5.17:1 | 4.5:1 | PASS |
+| [C-lite] callout brandOnSoft (`#0F53BE`) | bannerLite | `#CBDBF4` | `#D7E5FC` | 5.50:1 | 4.5:1 | PASS |
+
+### dark
+
+| pair | surface | worst base | resulting bg | ratio | min | verdict |
+|---|---|---|---|---|---|---|
+| sheet title textStrong (large) (`#f5f5f5`) | bulkSheet | `#fff` | `#313641` | 11.14:1 | 3:1 | PASS |
+| sheet subtitle/labels inkGlassMuted (`#B8BEC9`) | bulkSheet | `#fff` | `#313641` | 6.51:1 | 4.5:1 | PASS |
+| About tagline color.text (`#ddd`) | bulkSheet | `#fff` | `#313641` | 8.94:1 | 4.5:1 | PASS |
+| Feedback inline error errorFg (`#fca5a5`) | bulkSheet | `#fff` | `#313641` | 6.40:1 | 4.5:1 | PASS |
+| close-X icon color.text (1.4.11) (`#ddd`) | bulkSheet | `#fff` | `#313641` | 8.94:1 | 3:1 | PASS |
+| Feedback chip label+glyph glassChipInk (`#F5F5F5`) | chipOnBulkSheet | `#fff` | `#464A54` | 8.16:1 | 4.5:1 | PASS |
+| selected chip + Send label textOnBrand (`#fff`) | ctaFill | `#1466E0` | `#1466E0` | 5.24:1 | 4.5:1 | PASS |
+| appearance unselected label/icon glassChipInk (`#F5F5F5`) | chipOnStage | `#1B2940` | `#323E53` | 9.84:1 | 4.5:1 | PASS |
+| appearance selected label/icon brandText (opaque pill) (`#84AEF6`) | selectedSegment | `#1E1E22` | `#1E1E22` | 7.41:1 | 4.5:1 | PASS |
+| row title textStrong (`#f5f5f5`) | row | `#1B2940` | `#1D2433` | 14.24:1 | 4.5:1 | PASS |
+| row subtitle/blurb textMuted @>=500 (`#aaa`) | row | `#1B2940` | `#1D2433` | 6.68:1 | 4.5:1 | PASS |
+| chevron/spinner icon textSubtle (1.4.11) (`#8a8a8a`) | row | `#1B2940` | `#1D2433` | 4.50:1 | 3:1 | PASS |
+| leading deco icon textMuted (1.4.11) (`#aaa`) | row | `#1B2940` | `#1D2433` | 6.68:1 | 3:1 | PASS |
+| Sign-out destructive (errorFg) (`#fca5a5`) | row | `#1B2940` | `#1D2433` | 8.18:1 | 4.5:1 | PASS |
+| intro/footnote/sectionLabel inkOnStage (`#AAAAAA`) | stage | `#1B2940` | `#1B2940` | 6.29:1 | 4.5:1 | PASS |
+| recipe header title textStrong (large) (`#f5f5f5`) | chrome | `#fff` | `#3D414D` | 9.29:1 | 3:1 | PASS |
+| recipe close-X icon inkGlassMuted (1.4.11) (`#B8BEC9`) | chrome | `#fff` | `#3D414D` | 5.43:1 | 3:1 | PASS |
+| HowToHelp callout brandOnSoft (`#B4CFFA`) | banner | `#1B2940` | `#123C7E` | 6.72:1 | 4.5:1 | PASS |
+| drawer brand + item labels (`#f5f5f5`) | drawerPanel | `#FFFFFF` | `#141926` | 16.15:1 | 4.5:1 | PASS |
+| drawer close-X/chevron/muted icon+label (`rgba(255,255,255,0.7)`) | drawerPanel | `#FFFFFF` | `#141926` | 9.06:1 | 4.5:1 | PASS |
+| drawer labelMuted (forked 0.45->0.48) (`rgba(255,255,255,0.48)`) | drawerPanel | `#FFFFFF` | `#141926` | 4.91:1 | 4.5:1 | PASS |
+| drawer footerText (forked 0.30->0.55) (`rgba(255,255,255,0.55)`) | drawerPanel | `#FFFFFF` | `#141926` | 6.05:1 | 4.5:1 | PASS |
+| drawer active nav icon (1.4.11) (`#4E89EF`) | drawerPanel | `#FFFFFF` | `#141926` | 5.16:1 | 3:1 | PASS |
+| [C-lite] row title textStrong (`#f5f5f5`) | rowLite | `#1B2940` | `#1E2330` | 14.42:1 | 4.5:1 | PASS |
+| [C-lite] row subtitle textMuted (`#aaa`) | rowLite | `#1B2940` | `#1E2330` | 6.77:1 | 4.5:1 | PASS |
+| [C-lite] chevron textSubtle (1.4.11) (`#8a8a8a`) | rowLite | `#1B2940` | `#1E2330` | 4.55:1 | 3:1 | PASS |
+| [C-lite] Sign-out destructive (`#fca5a5`) | rowLite | `#1B2940` | `#1E2330` | 8.28:1 | 4.5:1 | PASS |
+| [C-lite] callout brandOnSoft (`#B4CFFA`) | bannerLite | `#1B2940` | `#10408B` | 6.25:1 | 4.5:1 | PASS |
+
+RESULT: ALL PASS

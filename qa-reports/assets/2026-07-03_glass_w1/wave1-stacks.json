@@ -1,0 +1,907 @@
+{
+ "name": "Glass Rollout Wave 1 — shipped pairings (About/Resources/HowToHelp/Settings/Drawer/Feedback), 2026-07-03",
+ "_doc": [
+  "Self-contained wave declaration: reuses the Tasks shipped surfaces (row/chrome/stage/banner/rowLite/bannerLite/ctaFill) and ADDS bulkSheet, chipOnBulkSheet, chipOnStage, selectedSegment, drawerPanel.",
+  "bulk sheet + chips-on-sheet composite over the chaotic single-color worst case (a modal floats over any content); the scrim below is NOT credited (it would only relax the floor).",
+  "drawerPanel is ALWAYS-DARK: dark literals declared under BOTH modes; worst case = near-opaque panel over scrim over #000/#FFF.",
+  "Forks forced/confirmed by this run: sheet muted -> inkGlassMuted; sheet/row error -> errorFg (light row Sign-out keeps color.error); drawer footerText 0.30->0.55, labelMuted 0.45->0.48; Send/selected-chip -> ctaFill/textOnBrand."
+ ],
+ "modes": {
+  "light": {
+   "surfaces": {
+    "chrome": {
+     "stack": [
+      "rgba(255,255,255,0.75)"
+     ],
+     "base": [
+      "#000",
+      "#D92D20",
+      "#0B3D8F"
+     ]
+    },
+    "chipOnChrome": {
+     "stack": [
+      "rgba(255,255,255,0.75)",
+      "rgba(255,255,255,0.60)"
+     ],
+     "base": [
+      "#000",
+      "#D92D20",
+      "#0B3D8F"
+     ]
+    },
+    "ctaFill": {
+     "stack": [],
+     "base": [
+      "#1466E0"
+     ]
+    },
+    "row": {
+     "stack": [
+      "rgba(255,255,255,0.70)"
+     ],
+     "base": [
+      "#CBDBF4",
+      "#D1E2FC",
+      "#E7F0FD"
+     ]
+    },
+    "selectedRow": {
+     "stack": [
+      "rgba(255,255,255,0.70)",
+      "rgba(217,231,253,0.35)"
+     ],
+     "base": [
+      "#CBDBF4"
+     ]
+    },
+    "neutralBtnOnRow": {
+     "stack": [
+      "rgba(255,255,255,0.70)",
+      "rgba(22,33,58,0.06)"
+     ],
+     "base": [
+      "#CBDBF4"
+     ]
+    },
+    "banner": {
+     "stack": [
+      "rgba(217,231,253,0.70)"
+     ],
+     "base": [
+      "#CBDBF4"
+     ]
+    },
+    "stage": {
+     "stack": [],
+     "base": [
+      "#CBDBF4",
+      "#D1E2FC"
+     ]
+    },
+    "sectionPill": {
+     "stack": [],
+     "base": [
+      "#D9E7FD"
+     ]
+    },
+    "sev1": {
+     "stack": [],
+     "base": [
+      "#F7C948"
+     ]
+    },
+    "sev2": {
+     "stack": [],
+     "base": [
+      "#F0A030"
+     ]
+    },
+    "sev3": {
+     "stack": [],
+     "base": [
+      "#F2792B"
+     ]
+    },
+    "sev4": {
+     "stack": [],
+     "base": [
+      "#E85638"
+     ]
+    },
+    "sev5": {
+     "stack": [],
+     "base": [
+      "#D92D20"
+     ]
+    },
+    "statusOpen": {
+     "stack": [],
+     "base": [
+      "#E7F0FD"
+     ]
+    },
+    "statusVerified": {
+     "stack": [],
+     "base": [
+      "#DCF6EC"
+     ]
+    },
+    "bulk": {
+     "stack": [
+      "rgba(255,255,255,0.85)"
+     ],
+     "base": [
+      "#000",
+      "#D92D20",
+      "#0B3D8F"
+     ]
+    },
+    "cancelOnBulk": {
+     "stack": [
+      "rgba(255,255,255,0.85)",
+      "rgba(255,255,255,0.62)"
+     ],
+     "base": [
+      "#000",
+      "#D92D20",
+      "#0B3D8F"
+     ]
+    },
+    "resolveFill": {
+     "stack": [],
+     "base": [
+      "#1e8449"
+     ]
+    },
+    "watchFill": {
+     "stack": [],
+     "base": [
+      "#5b21b6"
+     ]
+    },
+    "empty": {
+     "stack": [
+      "rgba(255,255,255,0.70)"
+     ],
+     "base": [
+      "#CBDBF4"
+     ]
+    },
+    "rowLite": {
+     "stack": [
+      "rgba(255,255,255,0.84)"
+     ],
+     "base": [
+      "#CBDBF4",
+      "#D1E2FC",
+      "#E7F0FD"
+     ]
+    },
+    "selectedRowLite": {
+     "stack": [
+      "rgba(255,255,255,0.84)",
+      "rgba(217,231,253,0.35)"
+     ],
+     "base": [
+      "#CBDBF4"
+     ]
+    },
+    "neutralBtnOnRowLite": {
+     "stack": [
+      "rgba(255,255,255,0.84)",
+      "rgba(22,33,58,0.06)"
+     ],
+     "base": [
+      "#CBDBF4"
+     ]
+    },
+    "bannerLite": {
+     "stack": [
+      "rgba(217,231,253,0.84)"
+     ],
+     "base": [
+      "#CBDBF4"
+     ]
+    },
+    "chromeLite": {
+     "stack": [
+      "rgba(255,255,255,0.88)"
+     ],
+     "base": [
+      "#000",
+      "#D92D20",
+      "#0B3D8F"
+     ]
+    },
+    "chipOnChromeLite": {
+     "stack": [
+      "rgba(255,255,255,0.88)",
+      "rgba(255,255,255,0.60)"
+     ],
+     "base": [
+      "#000",
+      "#D92D20",
+      "#0B3D8F"
+     ]
+    },
+    "bulkLite": {
+     "stack": [
+      "rgba(255,255,255,0.90)"
+     ],
+     "base": [
+      "#000",
+      "#D92D20",
+      "#0B3D8F"
+     ]
+    },
+    "bulkSheet": {
+     "stack": [
+      "rgba(255,255,255,0.85)"
+     ],
+     "base": [
+      "#000",
+      "#D92D20",
+      "#0B3D8F"
+     ]
+    },
+    "chipOnBulkSheet": {
+     "stack": [
+      "rgba(255,255,255,0.85)",
+      "rgba(255,255,255,0.60)"
+     ],
+     "base": [
+      "#000",
+      "#D92D20",
+      "#0B3D8F"
+     ]
+    },
+    "chipOnStage": {
+     "stack": [
+      "rgba(255,255,255,0.60)"
+     ],
+     "base": [
+      "#CBDBF4",
+      "#D1E2FC",
+      "#E7F0FD"
+     ]
+    },
+    "selectedSegment": {
+     "stack": [],
+     "base": [
+      "#fff"
+     ]
+    },
+    "drawerPanel": {
+     "stack": [
+      "rgba(0,0,0,0.5)",
+      "rgba(13,18,32,0.94)"
+     ],
+     "base": [
+      "#000",
+      "#FFFFFF"
+     ]
+    }
+   },
+   "pairs": [
+    {
+     "text": "#222",
+     "surface": "bulkSheet",
+     "label": "sheet title textStrong (large)",
+     "min": 3
+    },
+    {
+     "text": "#414B5A",
+     "surface": "bulkSheet",
+     "label": "sheet subtitle/labels inkGlassMuted",
+     "min": 4.5
+    },
+    {
+     "text": "#333",
+     "surface": "bulkSheet",
+     "label": "About tagline color.text",
+     "min": 4.5
+    },
+    {
+     "text": "#8a1f1f",
+     "surface": "bulkSheet",
+     "label": "Feedback inline error errorFg",
+     "min": 4.5
+    },
+    {
+     "text": "#333",
+     "surface": "bulkSheet",
+     "label": "close-X icon color.text (1.4.11)",
+     "min": 3
+    },
+    {
+     "text": "#333",
+     "surface": "chipOnBulkSheet",
+     "label": "Feedback chip label+glyph glassChipInk",
+     "min": 4.5
+    },
+    {
+     "text": "#fff",
+     "surface": "ctaFill",
+     "label": "selected chip + Send label textOnBrand",
+     "min": 4.5
+    },
+    {
+     "text": "#333",
+     "surface": "chipOnStage",
+     "label": "appearance unselected label/icon glassChipInk",
+     "min": 4.5
+    },
+    {
+     "text": "#0F53BE",
+     "surface": "selectedSegment",
+     "label": "appearance selected label/icon brandText (opaque pill)",
+     "min": 4.5
+    },
+    {
+     "text": "#222",
+     "surface": "row",
+     "label": "row title textStrong",
+     "min": 4.5
+    },
+    {
+     "text": "#666",
+     "surface": "row",
+     "label": "row subtitle/blurb textMuted @>=500",
+     "min": 4.5
+    },
+    {
+     "text": "#707070",
+     "surface": "row",
+     "label": "chevron/spinner icon textSubtle (1.4.11)",
+     "min": 3
+    },
+    {
+     "text": "#666",
+     "surface": "row",
+     "label": "leading deco icon textMuted (1.4.11)",
+     "min": 3
+    },
+    {
+     "text": "#c0392b",
+     "surface": "row",
+     "label": "Sign-out destructive (error)",
+     "min": 4.5
+    },
+    {
+     "text": "#525C6B",
+     "surface": "stage",
+     "label": "intro/footnote/sectionLabel inkOnStage",
+     "min": 4.5
+    },
+    {
+     "text": "#222",
+     "surface": "chrome",
+     "label": "recipe header title textStrong (large)",
+     "min": 3
+    },
+    {
+     "text": "#414B5A",
+     "surface": "chrome",
+     "label": "recipe close-X icon inkGlassMuted (1.4.11)",
+     "min": 3
+    },
+    {
+     "text": "#0F53BE",
+     "surface": "banner",
+     "label": "HowToHelp callout brandOnSoft",
+     "min": 4.5
+    },
+    {
+     "text": "#f5f5f5",
+     "surface": "drawerPanel",
+     "label": "drawer brand + item labels",
+     "min": 4.5
+    },
+    {
+     "text": "rgba(255,255,255,0.7)",
+     "surface": "drawerPanel",
+     "label": "drawer close-X/chevron/muted icon+label",
+     "min": 4.5
+    },
+    {
+     "text": "rgba(255,255,255,0.48)",
+     "surface": "drawerPanel",
+     "label": "drawer labelMuted (forked 0.45->0.48)",
+     "min": 4.5
+    },
+    {
+     "text": "rgba(255,255,255,0.55)",
+     "surface": "drawerPanel",
+     "label": "drawer footerText (forked 0.30->0.55)",
+     "min": 4.5
+    },
+    {
+     "text": "#4E89EF",
+     "surface": "drawerPanel",
+     "label": "drawer active nav icon (1.4.11)",
+     "min": 3
+    },
+    {
+     "text": "#222",
+     "surface": "rowLite",
+     "label": "[C-lite] row title textStrong",
+     "min": 4.5
+    },
+    {
+     "text": "#666",
+     "surface": "rowLite",
+     "label": "[C-lite] row subtitle textMuted",
+     "min": 4.5
+    },
+    {
+     "text": "#707070",
+     "surface": "rowLite",
+     "label": "[C-lite] chevron textSubtle (1.4.11)",
+     "min": 3
+    },
+    {
+     "text": "#c0392b",
+     "surface": "rowLite",
+     "label": "[C-lite] Sign-out destructive",
+     "min": 4.5
+    },
+    {
+     "text": "#0F53BE",
+     "surface": "bannerLite",
+     "label": "[C-lite] callout brandOnSoft",
+     "min": 4.5
+    }
+   ]
+  },
+  "dark": {
+   "surfaces": {
+    "chrome": {
+     "stack": [
+      "rgba(13,18,32,0.80)"
+     ],
+     "base": [
+      "#fff",
+      "#D92D20",
+      "#0B3D8F"
+     ]
+    },
+    "chipOnChrome": {
+     "stack": [
+      "rgba(13,18,32,0.80)",
+      "rgba(255,255,255,0.10)"
+     ],
+     "base": [
+      "#fff",
+      "#D92D20",
+      "#0B3D8F"
+     ]
+    },
+    "ctaFill": {
+     "stack": [],
+     "base": [
+      "#1466E0"
+     ]
+    },
+    "row": {
+     "stack": [
+      "rgba(30,34,46,0.72)"
+     ],
+     "base": [
+      "#1B2940",
+      "#14223A",
+      "#0F1F3F",
+      "#14151A"
+     ]
+    },
+    "selectedRow": {
+     "stack": [
+      "rgba(30,34,46,0.72)",
+      "rgba(15,45,94,0.45)"
+     ],
+     "base": [
+      "#1B2940"
+     ]
+    },
+    "neutralBtnOnRow": {
+     "stack": [
+      "rgba(30,34,46,0.72)",
+      "rgba(255,255,255,0.10)"
+     ],
+     "base": [
+      "#1B2940"
+     ]
+    },
+    "banner": {
+     "stack": [
+      "rgba(14,68,153,0.70)"
+     ],
+     "base": [
+      "#1B2940"
+     ]
+    },
+    "stage": {
+     "stack": [],
+     "base": [
+      "#1B2940",
+      "#14223A"
+     ]
+    },
+    "sectionPill": {
+     "stack": [],
+     "base": [
+      "#0E4499"
+     ]
+    },
+    "sev1": {
+     "stack": [],
+     "base": [
+      "#F7C948"
+     ]
+    },
+    "sev2": {
+     "stack": [],
+     "base": [
+      "#F0A030"
+     ]
+    },
+    "sev3": {
+     "stack": [],
+     "base": [
+      "#F2792B"
+     ]
+    },
+    "sev4": {
+     "stack": [],
+     "base": [
+      "#E85638"
+     ]
+    },
+    "sev5": {
+     "stack": [],
+     "base": [
+      "#D92D20"
+     ]
+    },
+    "statusOpen": {
+     "stack": [],
+     "base": [
+      "#0E2A5C"
+     ]
+    },
+    "statusVerified": {
+     "stack": [],
+     "base": [
+      "#083928"
+     ]
+    },
+    "bulk": {
+     "stack": [
+      "rgba(13,18,32,0.85)"
+     ],
+     "base": [
+      "#fff",
+      "#D92D20",
+      "#0B3D8F"
+     ]
+    },
+    "cancelOnBulk": {
+     "stack": [
+      "rgba(13,18,32,0.85)",
+      "rgba(255,255,255,0.14)"
+     ],
+     "base": [
+      "#fff",
+      "#D92D20",
+      "#0B3D8F"
+     ]
+    },
+    "resolveFill": {
+     "stack": [],
+     "base": [
+      "#1e8449"
+     ]
+    },
+    "watchFill": {
+     "stack": [],
+     "base": [
+      "#7c3aed"
+     ]
+    },
+    "empty": {
+     "stack": [
+      "rgba(30,34,46,0.72)"
+     ],
+     "base": [
+      "#1B2940"
+     ]
+    },
+    "rowLite": {
+     "stack": [
+      "rgba(30,34,46,0.88)"
+     ],
+     "base": [
+      "#1B2940",
+      "#14223A",
+      "#0F1F3F",
+      "#14151A"
+     ]
+    },
+    "selectedRowLite": {
+     "stack": [
+      "rgba(30,34,46,0.88)",
+      "rgba(15,45,94,0.45)"
+     ],
+     "base": [
+      "#1B2940"
+     ]
+    },
+    "neutralBtnOnRowLite": {
+     "stack": [
+      "rgba(30,34,46,0.88)",
+      "rgba(255,255,255,0.10)"
+     ],
+     "base": [
+      "#1B2940"
+     ]
+    },
+    "bannerLite": {
+     "stack": [
+      "rgba(14,68,153,0.84)"
+     ],
+     "base": [
+      "#1B2940"
+     ]
+    },
+    "chromeLite": {
+     "stack": [
+      "rgba(13,18,32,0.90)"
+     ],
+     "base": [
+      "#fff",
+      "#D92D20",
+      "#0B3D8F"
+     ]
+    },
+    "chipOnChromeLite": {
+     "stack": [
+      "rgba(13,18,32,0.90)",
+      "rgba(255,255,255,0.10)"
+     ],
+     "base": [
+      "#fff",
+      "#D92D20",
+      "#0B3D8F"
+     ]
+    },
+    "bulkLite": {
+     "stack": [
+      "rgba(13,18,32,0.92)"
+     ],
+     "base": [
+      "#fff",
+      "#D92D20",
+      "#0B3D8F"
+     ]
+    },
+    "bulkSheet": {
+     "stack": [
+      "rgba(13,18,32,0.85)"
+     ],
+     "base": [
+      "#fff",
+      "#D92D20",
+      "#0B3D8F"
+     ]
+    },
+    "chipOnBulkSheet": {
+     "stack": [
+      "rgba(13,18,32,0.85)",
+      "rgba(255,255,255,0.10)"
+     ],
+     "base": [
+      "#fff",
+      "#D92D20",
+      "#0B3D8F"
+     ]
+    },
+    "chipOnStage": {
+     "stack": [
+      "rgba(255,255,255,0.10)"
+     ],
+     "base": [
+      "#1B2940",
+      "#0F1F3F",
+      "#14223A"
+     ]
+    },
+    "selectedSegment": {
+     "stack": [],
+     "base": [
+      "#1E1E22"
+     ]
+    },
+    "drawerPanel": {
+     "stack": [
+      "rgba(0,0,0,0.5)",
+      "rgba(13,18,32,0.94)"
+     ],
+     "base": [
+      "#000",
+      "#FFFFFF"
+     ]
+    }
+   },
+   "pairs": [
+    {
+     "text": "#f5f5f5",
+     "surface": "bulkSheet",
+     "label": "sheet title textStrong (large)",
+     "min": 3
+    },
+    {
+     "text": "#B8BEC9",
+     "surface": "bulkSheet",
+     "label": "sheet subtitle/labels inkGlassMuted",
+     "min": 4.5
+    },
+    {
+     "text": "#ddd",
+     "surface": "bulkSheet",
+     "label": "About tagline color.text",
+     "min": 4.5
+    },
+    {
+     "text": "#fca5a5",
+     "surface": "bulkSheet",
+     "label": "Feedback inline error errorFg",
+     "min": 4.5
+    },
+    {
+     "text": "#ddd",
+     "surface": "bulkSheet",
+     "label": "close-X icon color.text (1.4.11)",
+     "min": 3
+    },
+    {
+     "text": "#F5F5F5",
+     "surface": "chipOnBulkSheet",
+     "label": "Feedback chip label+glyph glassChipInk",
+     "min": 4.5
+    },
+    {
+     "text": "#fff",
+     "surface": "ctaFill",
+     "label": "selected chip + Send label textOnBrand",
+     "min": 4.5
+    },
+    {
+     "text": "#F5F5F5",
+     "surface": "chipOnStage",
+     "label": "appearance unselected label/icon glassChipInk",
+     "min": 4.5
+    },
+    {
+     "text": "#84AEF6",
+     "surface": "selectedSegment",
+     "label": "appearance selected label/icon brandText (opaque pill)",
+     "min": 4.5
+    },
+    {
+     "text": "#f5f5f5",
+     "surface": "row",
+     "label": "row title textStrong",
+     "min": 4.5
+    },
+    {
+     "text": "#aaa",
+     "surface": "row",
+     "label": "row subtitle/blurb textMuted @>=500",
+     "min": 4.5
+    },
+    {
+     "text": "#8a8a8a",
+     "surface": "row",
+     "label": "chevron/spinner icon textSubtle (1.4.11)",
+     "min": 3
+    },
+    {
+     "text": "#aaa",
+     "surface": "row",
+     "label": "leading deco icon textMuted (1.4.11)",
+     "min": 3
+    },
+    {
+     "text": "#fca5a5",
+     "surface": "row",
+     "label": "Sign-out destructive (errorFg)",
+     "min": 4.5
+    },
+    {
+     "text": "#AAAAAA",
+     "surface": "stage",
+     "label": "intro/footnote/sectionLabel inkOnStage",
+     "min": 4.5
+    },
+    {
+     "text": "#f5f5f5",
+     "surface": "chrome",
+     "label": "recipe header title textStrong (large)",
+     "min": 3
+    },
+    {
+     "text": "#B8BEC9",
+     "surface": "chrome",
+     "label": "recipe close-X icon inkGlassMuted (1.4.11)",
+     "min": 3
+    },
+    {
+     "text": "#B4CFFA",
+     "surface": "banner",
+     "label": "HowToHelp callout brandOnSoft",
+     "min": 4.5
+    },
+    {
+     "text": "#f5f5f5",
+     "surface": "drawerPanel",
+     "label": "drawer brand + item labels",
+     "min": 4.5
+    },
+    {
+     "text": "rgba(255,255,255,0.7)",
+     "surface": "drawerPanel",
+     "label": "drawer close-X/chevron/muted icon+label",
+     "min": 4.5
+    },
+    {
+     "text": "rgba(255,255,255,0.48)",
+     "surface": "drawerPanel",
+     "label": "drawer labelMuted (forked 0.45->0.48)",
+     "min": 4.5
+    },
+    {
+     "text": "rgba(255,255,255,0.55)",
+     "surface": "drawerPanel",
+     "label": "drawer footerText (forked 0.30->0.55)",
+     "min": 4.5
+    },
+    {
+     "text": "#4E89EF",
+     "surface": "drawerPanel",
+     "label": "drawer active nav icon (1.4.11)",
+     "min": 3
+    },
+    {
+     "text": "#f5f5f5",
+     "surface": "rowLite",
+     "label": "[C-lite] row title textStrong",
+     "min": 4.5
+    },
+    {
+     "text": "#aaa",
+     "surface": "rowLite",
+     "label": "[C-lite] row subtitle textMuted",
+     "min": 4.5
+    },
+    {
+     "text": "#8a8a8a",
+     "surface": "rowLite",
+     "label": "[C-lite] chevron textSubtle (1.4.11)",
+     "min": 3
+    },
+    {
+     "text": "#fca5a5",
+     "surface": "rowLite",
+     "label": "[C-lite] Sign-out destructive",
+     "min": 4.5
+    },
+    {
+     "text": "#B4CFFA",
+     "surface": "bannerLite",
+     "label": "[C-lite] callout brandOnSoft",
+     "min": 4.5
+    }
+   ]
+  }
+ }
+}

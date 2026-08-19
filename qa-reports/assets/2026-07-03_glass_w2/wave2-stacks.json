@@ -1,0 +1,104 @@
+{
+ "name": "Glass Rollout Wave 2 — Profile shipped pairings, 2026-07-03",
+ "_doc": [
+  "Self-contained wave declaration for the Profile screen. Reuses the Tasks/Wave-1 shipped surfaces (row / banner / stage / ctaFill / chipOnStage) verbatim and ADDS chipOnRow (an engineered chip tint sitting on a row-glass card: the RecentlyViewed chips + the ReportsBreakdown total chip).",
+  "Profile cards are in normal flow over the ScreenStage (never overlapping app content), so a row card's worst-case backdrop is the stage's darkest stops — the same bases Wave-1/Tasks used for `row`, NOT #000. Engineered rows (nav/about/siblings) carry a MORE opaque floor (rowLite 0.84/0.88) than the true-blur floor declared here (0.70/0.72), so declaring against the true-blur `row` floor is the conservative bound that covers both.",
+  "New forks confirmed by this run: heroValue brand -> inkDetailsGhost (dark #84AEF6, raw brand fails on dark glass); point-delta gain successStrong(light)/success(dark) + loss error(light)/errorFg(dark) — the light-optimized deep green/red go dim on the dark floor; deleteAccountText error(light)/errorFg(dark) on the stage. Opaque semantic chips unchanged by this pass (tierPill brandSofter, status pills, streak amber, sign-out neutral, severity dots) are text-on-opaque, not text-on-glass, and are not re-declared."
+ ],
+ "modes": {
+  "light": {
+   "surfaces": {
+    "row": {
+     "stack": ["rgba(255,255,255,0.70)"],
+     "base": ["#CBDBF4", "#D1E2FC", "#E7F0FD"]
+    },
+    "banner": {
+     "stack": ["rgba(217,231,253,0.70)"],
+     "base": ["#CBDBF4"]
+    },
+    "stage": {
+     "stack": [],
+     "base": ["#CBDBF4", "#D1E2FC"]
+    },
+    "ctaFill": {
+     "stack": [],
+     "base": ["#1466E0"]
+    },
+    "chipOnStage": {
+     "stack": ["rgba(255,255,255,0.60)"],
+     "base": ["#CBDBF4", "#D1E2FC", "#E7F0FD"]
+    },
+    "chipOnRow": {
+     "stack": ["rgba(255,255,255,0.70)", "rgba(255,255,255,0.60)"],
+     "base": ["#CBDBF4", "#D1E2FC", "#E7F0FD"]
+    }
+   },
+   "pairs": [
+    { "text": "#1466E0", "surface": "row", "label": "hero points inkDetailsGhost (56pt data-display, large)", "min": 3 },
+    { "text": "#414B5A", "surface": "row", "label": "hero/stat/history/nav/about/error/sibling muted labels inkGlassMuted @>=500", "min": 4.5 },
+    { "text": "#222", "surface": "row", "label": "card titles + statValue textStrong", "min": 4.5 },
+    { "text": "#333", "surface": "row", "label": "point-history label color.text @>=500", "min": 4.5 },
+    { "text": "#1e8449", "surface": "row", "label": "point delta gain arrow successStrong (1.4.11; number is textStrong)", "min": 3 },
+    { "text": "#c0392b", "surface": "row", "label": "point delta loss arrow error (1.4.11; number is textStrong)", "min": 3 },
+    { "text": "#707070", "surface": "row", "label": "nav/about chevron textSubtle (1.4.11)", "min": 3 },
+    { "text": "#0F53BE", "surface": "banner", "label": "nearest banner title/subtitle brandOnSoft", "min": 4.5 },
+    { "text": "#525C6B", "surface": "stage", "label": "header eyebrow/subtitle + section labels/hints inkOnStage", "min": 4.5 },
+    { "text": "#333", "surface": "stage", "label": "signed-out prompt color.text", "min": 4.5 },
+    { "text": "#222", "surface": "stage", "label": "realtime toggle label textStrong", "min": 4.5 },
+    { "text": "#8a1f1f", "surface": "stage", "label": "delete-account destructive errorFg (light)", "min": 4.5 },
+    { "text": "#333", "surface": "chipOnStage", "label": "tab pill unselected glassChipInk", "min": 4.5 },
+    { "text": "#0F53BE", "surface": "chipOnStage", "label": "intro link inkSelect", "min": 4.5 },
+    { "text": "#333", "surface": "chipOnRow", "label": "breakdown total chip glassChipInk", "min": 4.5 },
+    { "text": "#222", "surface": "chipOnRow", "label": "recently-viewed chip label textStrong", "min": 4.5 },
+    { "text": "#fff", "surface": "ctaFill", "label": "save/sign-in/retry/selected-tab white textOnBrand", "min": 4.5 }
+   ]
+  },
+  "dark": {
+   "surfaces": {
+    "row": {
+     "stack": ["rgba(30,34,46,0.72)"],
+     "base": ["#1B2940", "#14223A", "#0F1F3F", "#14151A"]
+    },
+    "banner": {
+     "stack": ["rgba(14,68,153,0.70)"],
+     "base": ["#1B2940"]
+    },
+    "stage": {
+     "stack": [],
+     "base": ["#1B2940", "#14223A"]
+    },
+    "ctaFill": {
+     "stack": [],
+     "base": ["#1466E0"]
+    },
+    "chipOnStage": {
+     "stack": ["rgba(255,255,255,0.10)"],
+     "base": ["#1B2940", "#0F1F3F", "#14223A"]
+    },
+    "chipOnRow": {
+     "stack": ["rgba(30,34,46,0.72)", "rgba(255,255,255,0.10)"],
+     "base": ["#1B2940", "#14223A", "#0F1F3F", "#14151A"]
+    }
+   },
+   "pairs": [
+    { "text": "#84AEF6", "surface": "row", "label": "hero points inkDetailsGhost (56pt data-display, large)", "min": 3 },
+    { "text": "#B8BEC9", "surface": "row", "label": "hero/stat/history/nav/about/error/sibling muted labels inkGlassMuted @>=500", "min": 4.5 },
+    { "text": "#f5f5f5", "surface": "row", "label": "card titles + statValue textStrong", "min": 4.5 },
+    { "text": "#ddd", "surface": "row", "label": "point-history label color.text @>=500", "min": 4.5 },
+    { "text": "#27ae60", "surface": "row", "label": "point delta gain arrow success (1.4.11; number is textStrong)", "min": 3 },
+    { "text": "#fca5a5", "surface": "row", "label": "point delta loss arrow errorFg (1.4.11; number is textStrong)", "min": 3 },
+    { "text": "#8a8a8a", "surface": "row", "label": "nav/about chevron textSubtle (1.4.11)", "min": 3 },
+    { "text": "#B4CFFA", "surface": "banner", "label": "nearest banner title/subtitle brandOnSoft", "min": 4.5 },
+    { "text": "#AAAAAA", "surface": "stage", "label": "header eyebrow/subtitle + section labels/hints inkOnStage", "min": 4.5 },
+    { "text": "#ddd", "surface": "stage", "label": "signed-out prompt color.text", "min": 4.5 },
+    { "text": "#f5f5f5", "surface": "stage", "label": "realtime toggle label textStrong", "min": 4.5 },
+    { "text": "#fca5a5", "surface": "stage", "label": "delete-account destructive errorFg (dark fork)", "min": 4.5 },
+    { "text": "#F5F5F5", "surface": "chipOnStage", "label": "tab pill unselected glassChipInk", "min": 4.5 },
+    { "text": "#B4CFFA", "surface": "chipOnStage", "label": "intro link inkSelect", "min": 4.5 },
+    { "text": "#F5F5F5", "surface": "chipOnRow", "label": "breakdown total chip glassChipInk", "min": 4.5 },
+    { "text": "#f5f5f5", "surface": "chipOnRow", "label": "recently-viewed chip label textStrong", "min": 4.5 },
+    { "text": "#fff", "surface": "ctaFill", "label": "save/sign-in/retry/selected-tab white textOnBrand", "min": 4.5 }
+   ]
+  }
+ }
+}
