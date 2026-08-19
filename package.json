@@ -19,8 +19,8 @@
     "build:preview": "eas build --platform ios --profile preview --non-interactive",
     "build:testflight": "eas build --platform ios --profile testflight --non-interactive",
     "build:production": "eas build --platform ios --profile production --non-interactive",
-    "deploy:testflight": "npm run build:testflight && eas submit --platform ios --profile production --non-interactive",
-    "deploy:appstore": "npm run build:production && eas submit --platform ios --profile production --non-interactive",
+    "deploy:testflight": "npm run build:testflight && eas submit --platform ios --profile production --latest --non-interactive",
+    "deploy:appstore": "npm run build:production && eas submit --platform ios --profile production --latest --non-interactive",
     "prepare": "husky"
   },
   "dependencies": {
