@@ -1722,8 +1722,15 @@ export default function FlagDetailModal({
                       color={color.inkGlassMuted}
                       strokeWidth={2} {...decorativeProps}
                     />
+                    {/* Guests get zero rows from the authenticated-only SELECT
+                        policy, so "No comments yet" would be a guess presented
+                        as a fact (the thread may be full). Say the true thing:
+                        comments live behind sign-in. Signed-in users still get
+                        the real empty-state invite. */}
                     <AppText variant="body" style={styles.commentsEmptyLabel}>
-                      No comments yet — share what you know.
+                      {user
+                        ? 'No comments yet — share what you know.'
+                        : 'Sign in to see and add comments.'}
                     </AppText>
                   </View>
                 ) : (

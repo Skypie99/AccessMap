@@ -806,8 +806,9 @@ const makeStyles = (color: ColorTheme) =>
     retryText: { fontSize: font.size.sm, color: color.textOnBrand, fontWeight: font.weight.bold },
     row: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingHorizontal: spacing.md, paddingVertical: spacing.md, minHeight: 56 },
     // Indented to sit under the row text: paddingHorizontal(12) + disc(24) +
-    // gap(12) = 48 (was 40 for the old 11px dot; the mini-disc pushed the text right).
-    sep: { height: StyleSheet.hairlineWidth, backgroundColor: color.border, marginLeft: 52 },
+    // gap(12) = 48 (was 40 for the old 11px dot; the mini-disc pushed the text
+    // right). QA 2026-08-18: value was 52, a 4px drift from its own math.
+    sep: { height: StyleSheet.hairlineWidth, backgroundColor: color.border, marginLeft: 48 },
     rowText: { flex: 1, gap: 1 },
     rowTitle: { fontSize: font.size.lg, color: color.textStrong, fontWeight: font.weight.semibold },
     rowMeta: { fontSize: font.size.sm, fontFamily: font.family.bodyMedium, color: color.inkGlassMuted },

@@ -13,6 +13,7 @@ import {
   View,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Eye, EyeOff } from 'lucide-react-native';
 import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 import { font, gradient, radius, shadow, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
@@ -57,6 +58,7 @@ export default function SignInScreen({
   // mount at the bottom of the render for why that is forced, not chosen.
   const [privacyOpen, setPrivacyOpen] = useState(false);
   const [termsOpen, setTermsOpen] = useState(false);
+  const [passwordVisible, setPasswordVisible] = useState(false);
 
   // A11Y-203: every error shown in the inline row must ALSO be announced.
   // The row's accessibilityLiveRegion="assertive" is Android-only in RN, and
@@ -202,21 +204,39 @@ export default function SignInScreen({
           />
 
           <AppText variant="label" style={[styles.inputLabel, styles.inputLabelStacked]}>Password</AppText>
-          <TextInput
-            placeholder="At least 6 characters"
-            placeholderTextColor="rgba(255,255,255,0.5)"
-            secureTextEntry
-            autoComplete="password"
-            textContentType="password"
-            value={password}
-            onChangeText={setPassword}
-            onFocus={() => setPasswordFocused(true)}
-            onBlur={() => setPasswordFocused(false)}
-            style={[styles.input, passwordFocused && styles.inputFocused]}
-            maxFontSizeMultiplier={1.4}
-            accessibilityLabel="Password"
-            accessibilityHint="At least 6 characters"
-          />
+          {/* Show/hide toggle: typing a password blind is a real barrier for
+              motor- and cognition-impaired users (and everyone on a phone
+              keyboard). The eye sits inside the field on a 44pt target. */}
+          <View style={styles.passwordWrap}>
+            <TextInput
+              placeholder="At least 6 characters"
+              placeholderTextColor="rgba(255,255,255,0.5)"
+              secureTextEntry={!passwordVisible}
+              autoComplete="password"
+              textContentType="password"
+              value={password}
+              onChangeText={setPassword}
+              onFocus={() => setPasswordFocused(true)}
+              onBlur={() => setPasswordFocused(false)}
+              style={[styles.input, styles.inputWithTrailingIcon, passwordFocused && styles.inputFocused]}
+              maxFontSizeMultiplier={1.4}
+              accessibilityLabel="Password"
+              accessibilityHint="At least 6 characters"
+            />
+            <Pressable
+              onPress={() => setPasswordVisible((v) => !v)}
+              style={({ pressed }) => [styles.passwordToggle, pressed && { opacity: 0.7 }]}
+              accessibilityRole="button"
+              accessibilityLabel={passwordVisible ? 'Hide password' : 'Show password'}
+              accessibilityHint="Toggles whether your password is readable on screen"
+            >
+              {passwordVisible ? (
+                <EyeOff size={20} color="rgba(255,255,255,0.55)" strokeWidth={2} />
+              ) : (
+                <Eye size={20} color="rgba(255,255,255,0.55)" strokeWidth={2} />
+              )}
+            </Pressable>
+          </View>
 
           {validationError ? (
             <AppText
@@ -412,6 +432,19 @@ const makeStyles = (_color: ColorTheme) =>
       marginBottom: spacing.xs,
     },
     inputLabelStacked: { marginTop: spacing.md },
+    passwordWrap: { position: 'relative' },
+    // Room for the eye toggle so long passwords never run under it.
+    inputWithTrailingIcon: { paddingRight: 44 },
+    passwordToggle: {
+      position: 'absolute',
+      right: 0,
+      top: 0,
+      bottom: 0,
+      width: 44,
+      minHeight: 44,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
     input: {
       borderWidth: 1,
       borderColor: 'rgba(255,255,255,0.18)',
