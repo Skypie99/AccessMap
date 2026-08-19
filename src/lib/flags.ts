@@ -1765,6 +1765,15 @@ export async function createAnonFlag(input: AnonFlagInput): Promise<FlagRow> {
   }
   assertValidCategoryAndSeverity(category, severity);
 
+  // The SAME Apple 1.2(a) content filter the signed-in path runs (createFlag,
+  // and updateFlagContent for owner edits). It was missing here, which meant
+  // the entire filter could be stepped around by simply not signing in — and
+  // anonymous reporting is the headline feature, so that is the first route a
+  // reviewer exercises. A filter any submitter can opt out of is not a filter.
+  if (description && containsBlockedTerm(description)) {
+    throw new Error(CONTENT_BLOCKED_MESSAGE);
+  }
+
   const payload = {
     lat,
     lng,

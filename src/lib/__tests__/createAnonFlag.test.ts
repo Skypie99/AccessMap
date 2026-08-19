@@ -24,6 +24,8 @@
 // jest.config.js points to __mocks__/expo-image-manipulator.js automatically,
 // but jest.mock here is belt-and-suspenders so the factory path is explicit.
 import { createAnonFlag } from '../flags';
+import { CONTENT_BLOCKED_MESSAGE } from '../copy';
+import { allBlockedTerms } from '@/moderation/blockedTerms';
 import type { FlagRow } from '@/types/database';
 
 jest.mock('expo-image-manipulator', () => ({
@@ -82,6 +84,59 @@ function firstInsertPayload(): Record<string, unknown> {
 beforeEach(() => {
   jest.clearAllMocks();
   mockSingle.mockResolvedValue({ data: SAMPLE_ROW, error: null });
+});
+
+// ---------------------------------------------------------------------------
+// Content filter (Apple 1.2(a)) — the anonymous path owes the same filter as
+// the signed-in one.
+//
+// This is a REGRESSION guard with a real history: createAnonFlag shipped
+// without the blocked-term check that createFlag has always run, which meant
+// the entire filter could be stepped around by not signing in. Anonymous
+// reporting is the app's headline feature, so that was also the first route a
+// store reviewer would exercise.
+//
+// The term is drawn from allBlockedTerms() at runtime rather than written out
+// here: the point is that the real list is enforced, and hardcoding a slur into
+// a test file to prove it would be its own small harm.
+// ---------------------------------------------------------------------------
+
+describe('blocked-term filter', () => {
+  const sampleBlockedTerm = allBlockedTerms()[0];
+
+  it('the list under test is real, not empty (non-vacuity)', () => {
+    expect(allBlockedTerms().length).toBeGreaterThan(0);
+    expect(typeof sampleBlockedTerm).toBe('string');
+  });
+
+  it('rejects a blocked description and never reaches Supabase', async () => {
+    await expect(
+      createAnonFlag({ ...VALID_INPUT, description: `a barrier ${sampleBlockedTerm} here` }),
+    ).rejects.toThrow(CONTENT_BLOCKED_MESSAGE);
+    // The insert must not happen — a filter that rejects after writing is not a filter.
+    expect(mockInsert).not.toHaveBeenCalled();
+  });
+
+  it('throws the SAME message the signed-in path throws, so the UI alert fires', async () => {
+    // ReportFlagModal catches both paths in one place and keys the
+    // "View guidelines" alert on isContentBlockedError, which matches this
+    // message exactly. A different string here would silently lose that alert.
+    await expect(
+      createAnonFlag({ ...VALID_INPUT, description: sampleBlockedTerm }),
+    ).rejects.toThrow(CONTENT_BLOCKED_MESSAGE);
+  });
+
+  it('lets an ordinary description straight through', async () => {
+    await expect(
+      createAnonFlag({ ...VALID_INPUT, description: 'No ramp at the corner.' }),
+    ).resolves.toBeDefined();
+    expect(mockInsert).toHaveBeenCalled();
+  });
+
+  it('accepts a report with no description at all', async () => {
+    await expect(createAnonFlag({ ...VALID_INPUT })).resolves.toBeDefined();
+    expect(mockInsert).toHaveBeenCalled();
+  });
 });
 
 // ---------------------------------------------------------------------------
