@@ -23,7 +23,9 @@ Effective 2026-07-29 · v1.0
 
 **Notifications.** If you turn them on, I store a push token so the app can notify you about your reports. Turn them off and it stops. [V]
 
-**Who else sees your data.** My hosting provider (Supabase) stores it so the app can work. Apple sees whatever Apple normally sees when you download an app from the App Store. That's it. I don't sell your data, I don't share it for advertising, and there are no third-party trackers in the app. [V: no third-party SDKs beyond Expo/Supabase]
+**Who else sees your data.** My hosting provider (Supabase) stores it so the app can work. When you type into the address search, that text goes to OpenStreetMap's Nominatim service to look up the place — that's the only thing it receives. Apple sees whatever Apple normally sees when you download an app from the App Store. That's it. I don't sell your data, I don't share it for advertising, and there are no third-party trackers in the app. [V: no third-party SDKs beyond Expo/Supabase; geocode.ts sends only the typed query to nominatim.openstreetmap.org]
+
+<!-- AGENT-PROPOSED (QA 2026-08-18, closes S11): the Nominatim sentence above was added for 5.1.1(i) accuracy — the reviewer notes already disclosed it, the policy didn't. Sky: ratify or reword; the same sentence shipped to copy.ts and docs/privacy/index.html. -->
 
 **Getting a copy of your data.** You can export your data from inside the app, in Settings. [V: dataExport path]
 

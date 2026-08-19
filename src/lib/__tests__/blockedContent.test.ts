@@ -152,7 +152,11 @@ describe('both throw sites route their rejection through the helper', () => {
   it('the non-blocked branch of each catch is untouched', () => {
     // The three two-argument assertions in ReportFlagModal.test.tsx and the
     // generic comment alert both depend on this staying as it was.
-    expect(comment).toContain("Alert.alert('Could not post comment', errorMessage(e));");
+    // QA 2026-08-18: the comment branch moved from Alert.alert to notify() —
+    // web-safe, and now consistent with its two siblings below. The invariant
+    // this test protects (generic errors never route through
+    // showBlockedContentAlert) is unchanged.
+    expect(comment).toContain("notify('Could not post comment', errorMessage(e));");
     expect(comment).toContain("notify('Could not save changes', errorMessage(e));");
     expect(flag).toContain('notify("Couldn\'t submit your report", errorMessage(e));');
   });

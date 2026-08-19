@@ -819,9 +819,10 @@ const makeStyles = (color: ColorTheme) =>
       flexDirection: 'row',
       alignItems: 'center',
       gap: spacing.xs,
-      // brand → ctaFill: same dark-mode contrast fork as mapPeekHint/retryBtn
-      // above — white 15/700 on brand is 3.4:1 in dark mode; ctaFill passes.
-      backgroundColor: color.ctaFill,
+      // Stays color.brand ON PURPOSE — ratified judgment N-13 (brandInkAA
+      // guard): 15/700 is WCAG large text, so 3.4:1 on dark brand is a pass.
+      // Do not "fix" this to ctaFill; the guard test pins it.
+      backgroundColor: color.brand,
       paddingHorizontal: spacing.lg,
       paddingVertical: spacing.md,
       borderRadius: radius.full,
