@@ -78,7 +78,7 @@
 - [ ] **In-App Onboarding Coach Marks** — Modal carousel: "Tap a flag to see details", "Swipe to filter by severity", "Add to Watched Flags for alerts"
 - [ ] **TestFlight Beta (iOS)** — Submit build to App Store Connect, distribute to 100 beta testers
 - [ ] **Google Play Closed Testing** — Android beta program (2-4 weeks before public launch)
-- [ ] **Crash Reporting** — Sentry integration (error telemetry, user impact analysis)
+- [ ] **Crash Reporting** — pick a provider and integrate (error telemetry, user impact analysis). Whichever is chosen, both privacy policies must be updated in the same change.
 - [ ] **Analytics Setup** — Amplitude or Mixpanel instrumentation (flag submission funnel, map engagement, retention)
 
 ### Performance Optimization

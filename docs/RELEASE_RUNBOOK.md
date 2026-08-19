@@ -207,7 +207,7 @@ Your app is live. Now monitor for issues.
 
 ### First 24 hours
 
-- **Watch for crashes:** Check your crash reporting tool (if you have Sentry or Bugsnag set up)
+- **Watch for crashes:** No crash reporter ships, so watch App Store Connect crash logs and user feedback
 - **Read user feedback:** Monitor the app store reviews and ratings
 - **Be ready to rollback** (see emergency steps below)
 

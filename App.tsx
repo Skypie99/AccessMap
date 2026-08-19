@@ -1,6 +1,4 @@
 import 'react-native-gesture-handler';
-import { initSentry } from '@/lib/sentry';
-initSentry();
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Linking, Platform, StyleSheet, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -206,10 +204,11 @@ function App() {
   const [fontsLoaded, fontError] = useAppFonts();
 
   // Analytics: one event per app launch. platform only — no PII. Runs once
-  // on mount. NOTE: no crash reporter ships today — src/lib/sentry.ts is a
-  // no-op stub, and there is no Sentry.wrap anywhere. Sky has decided to add
-  // one (crashes only, no analytics), which needs a DSN and a native module;
-  // until then, release crashes are invisible. R-11/SR-006.
+  // on mount. NOTE: nothing leaves the device. trackEvent only console.logs in
+  // __DEV__, and no crash reporter ships at all, which is exactly what both the
+  // in-app and the published privacy policies say. Release crashes are
+  // therefore invisible; adding a reporter is a deliberate future decision that
+  // must update both policies in the same change. R-11/SR-006.
   useEffect(() => {
     trackEvent('app_session_started', { platform: Platform.OS });
   }, []);

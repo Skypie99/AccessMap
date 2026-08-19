@@ -107,15 +107,15 @@ footer a { color: #1c6ef3; }
 </ul>
 
 <h3>Automatically collected</h3>
+<p>Almost nothing. There is no usage analytics and no crash reporting in the app: nothing about how you use it is collected, transmitted, or stored.</p>
 <ul>
-  <li><strong>App usage</strong> — which screens you visit (not what you type)</li>
-  <li><strong>Device type</strong> — iOS, Android, or web (for bug fixing only)</li>
   <li><strong>Timestamps</strong> — when you created your account and when you take actions</li>
-  <li><strong>Crash reports</strong> — via Sentry, for debugging (device OS, app version, error stack trace; no personal data)</li>
-</ul>
+  </ul>
 
 <h3>What we never collect</h3>
 <ul>
+  <li>Analytics about how you use the app, or which screens you visit</li>
+  <li>Crash or error reports</li>
   <li>Your device's location in the background</li>
   <li>Contacts, camera roll, or other device data</li>
   <li>Payment information (we don't charge)</li>
@@ -213,7 +213,6 @@ footer a { color: #1c6ef3; }
     <tr><td>Account (email, display name, avatar)</td><td>Until you delete your account</td></tr>
     <tr><td>Flags you submit</td><td>Until resolved + 90 days (then archived)</td></tr>
     <tr><td>Flag photos</td><td>Until the flag is deleted</td></tr>
-    <tr><td>Crash and error reports</td><td>30 days (via Sentry)</td></tr>
     <tr><td>Audit logs (for security)</td><td>30 days</td></tr>
   </tbody>
 </table>
@@ -225,9 +224,6 @@ footer a { color: #1c6ef3; }
 
 <h3>Expo / EAS (App Distribution)</h3>
 <p>We use Expo Application Services to build and distribute the app. Expo may receive your device type and app version during updates. <a href="https://expo.dev/privacy" target="_blank" rel="noopener">Expo Privacy Policy</a></p>
-
-<h3>Sentry (Crash Reporting)</h3>
-<p>We use Sentry to capture crash logs and error reports so we can fix bugs. Sentry receives device OS, app version, and error stack traces — no personal or location data is included. <a href="https://sentry.io/privacy/" target="_blank" rel="noopener">Sentry Privacy Policy</a></p>
 
 <h3>No Other Sharing</h3>
 <p>We do not share data with advertisers, analytics companies, or data brokers. We will not sell your data under any circumstance.</p>

@@ -10,7 +10,7 @@ import { type ColorTheme, useColor } from '@/theme/ThemeContext';
  * Wrapped around the whole app in App.tsx so an uncaught render error
  * (a thrown exception, a bad ref, a stray undefined access) falls to a
  * "Something went wrong" screen with a Try-again button instead of a
- * blank white screen. The error is also logged so a future Sentry-style
+ * blank white screen. The error is also logged so a future crash-reporting
  * tool can pick it up without us touching call sites.
  *
  * Intentionally tiny: this is the safety net, not a feature surface.

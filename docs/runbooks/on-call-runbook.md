@@ -23,7 +23,6 @@
 |----------|---------------|
 | Supabase dashboard | https://supabase.com/dashboard — select the Flagstone project |
 | Supabase logs (real-time) | Dashboard → Logs → API / Auth / PostgREST |
-| Sentry error feed | https://sentry.io — project: `accessmap` (configure after Sky adds real DSN) |
 | EAS Build status | https://expo.dev — Builds tab |
 | GitHub Actions CI | https://github.com/skypie/AccessMap/actions |
 
@@ -32,8 +31,7 @@
 ## First-Responder Checklist (any P0/P1)
 
 1. **Acknowledge** the alert. Post in the incident Slack channel (or iMessage Sky directly for P0 after-hours).
-2. **Check Sentry** for a spike in new errors. Note error message, stack trace, first-seen timestamp.
-3. **Check Supabase** API logs for 4xx/5xx rates. Compare to baseline.
+2. **Check Supabase** API logs for 4xx/5xx rates. Compare to baseline. NOTE: there is no crash-telemetry tool. No crash reporter ships, by design and per both privacy policies, so app-side crashes surface only through user reports and App Store Connect crash logs.
 4. **Identify scope** — is it affecting all users or a subset (platform, auth state, region)?
 5. **Check recent deployments** — last EAS build? last merge to main? Rollback if correlated.
 6. **Mitigate first, root-cause second** — a rollback or feature-flag disable buys time.
@@ -45,7 +43,7 @@
 
 ### Supabase Completely Down
 
-**Symptoms:** All API calls fail with network/5xx. Sentry shows `AuthApiError` or `PostgrestError` flood.
+**Symptoms:** All API calls fail with network/5xx. Supabase logs show an `AuthApiError` or `PostgrestError` flood.
 
 **Steps:**
 1. Check https://status.supabase.com — if a platform incident, wait and subscribe to updates.
@@ -59,7 +57,7 @@
 
 ### Edge Function Errors Spiking
 
-**Symptoms:** Sentry shows errors from `supabase/functions/*`. Supabase Logs → Edge Functions shows failures.
+**Symptoms:** Supabase Logs → Edge Functions shows failures from `supabase/functions/*`.
 
 **Steps:**
 1. Check Edge Function logs in the Supabase Dashboard → Functions tab.
@@ -71,29 +69,29 @@
 4. If a secret/config issue: rotate or re-add the secret in the dashboard (no code deploy needed).
 5. If timeout: check for N+1 queries or slow external calls in the function.
 
-**Recovery:** Re-run a synthetic request after the fix. Verify Sentry error rate drops.
+**Recovery:** Re-run a synthetic request after the fix. Verify the Supabase log error rate drops.
 
 ---
 
 ### App Crash Spike (Mobile)
 
-**Symptoms:** Sentry shows a new crash type with rapidly growing event count. EAS Crashlytics (if configured) shows uptick.
+**Symptoms:** A new crash type is reported by users or appears in App Store Connect crash logs. There is no in-app crash reporter, so expect this signal to lag.
 
 **Steps:**
-1. Open Sentry → Issues → sort by "First seen" or "Events". Identify the crash.
+1. Open App Store Connect → your app → Analytics/Crashes, or collect the reporting user's device and OS version. Identify the crash.
 2. Check the stack trace. Is it in our code or a React Native / Expo runtime crash?
 3. Check git log: what merged to main in the last 24 hours?
 4. If correlated with a deploy: **use EAS to submit the previous build** to TestFlight/App Store as a rollback (Rory owns this step).
 5. If no deploy correlation: check if it's device-specific (iOS version, screen size) or universal.
 6. Disable the related feature flag (`HEATMAP_ENABLED`, etc.) if the crash is isolated to one feature.
 
-**Recovery:** Verified when Sentry crash rate returns to baseline (< 0.1% session crash rate). Monitor for 30 min after fix ships.
+**Recovery:** Verified when App Store Connect's crash rate returns to baseline (< 0.1% of sessions). That signal lags, so also confirm directly with the reporting users.
 
 ---
 
 ### Auth Broken (Users Cannot Sign In)
 
-**Symptoms:** `signInWithEmail` / `signUpWithEmail` return errors for all users. Sentry flood of `AuthApiError`.
+**Symptoms:** `signInWithEmail` / `signUpWithEmail` return errors for all users. Supabase Auth logs show an `AuthApiError` flood.
 
 **Steps:**
 1. Check Supabase Dashboard → Auth → Users. Can you see the user list (confirms DB is up)?

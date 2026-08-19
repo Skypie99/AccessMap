@@ -1,6 +1,8 @@
 // Analytics — no-PII event wrapper.
 //
-// Sentry was removed in Phase 5 (iOS 26 crash); re-wire to a real backend
+// The previous backend was removed in Phase 5 after an iOS 26 launch crash
+// (the full story and the do-not-re-add warning are in
+// docs/RELEASE_PLAYBOOK.md); re-wire to a real backend
 // (PostHog, Amplitude, etc.) in Phase 6. Until then all functions are stubs
 // that log to the Metro console in dev so callsites keep working unchanged.
 //
