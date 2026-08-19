@@ -26,7 +26,7 @@ Signing in is only needed to verify or resolve someone else's report, to comment
 2. **Map** — the map opens centered on your device location. Pan or search to **Kelowna, BC** to see reports; an empty map elsewhere is the correct empty state, not an error.
 3. **Flag detail** — tap any map pin to see the category, severity badge, description, and status.
 4. **Report a barrier** — signed in, tap the **+** button (bottom-right of the map). Browsing without an account, use the **Report** button on the **Home** tab instead — the **+** is shown only to signed-in users. Location, category, severity, and description are required; photo is optional.
-   - **Report objectionable content** — open any flag's detail sheet and scroll to **Report**; each comment has its own **Report** control. Both work without an account.
+   - **Report objectionable content** — open any flag's detail sheet and scroll to **Report**; reporting a flag works without an account. Comments (and their per-comment **Report** controls) are visible once signed in — use the test account above to review comment reporting and the block-user control.
 5. **Tasks tab** — shows open and verified flags as a list. Tap a card to jump back to that flag on the map.
 6. **Profile tab** — shows your display name, total points earned, and counts of flags reported/resolved.
 

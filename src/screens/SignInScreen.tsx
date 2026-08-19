@@ -20,8 +20,14 @@ import { AppText } from '@/components/ui';
 import { signInWithEmail, signUpWithEmail } from '@/lib/supabase';
 import { a11yToggle, useFocusOnOpen } from '@/lib/accessibility';
 import { notify } from '@/lib/confirm';
-import { PRIVACY_POLICY_LINK_HINT, PRIVACY_POLICY_LINK_LABEL } from '@/lib/copy';
+import {
+  PRIVACY_POLICY_LINK_HINT,
+  PRIVACY_POLICY_LINK_LABEL,
+  TERMS_LINK_HINT,
+  TERMS_LINK_LABEL,
+} from '@/lib/copy';
 import PrivacyScreen from '@/screens/PrivacyScreen';
+import TermsScreen from '@/screens/TermsScreen';
 import { track } from '@/lib/analytics';
 import LogoMark from '@/components/LogoMark';
 
@@ -50,6 +56,7 @@ export default function SignInScreen({
   // B-3: local, because this screen sits outside SharedModalsProvider. See the
   // mount at the bottom of the render for why that is forced, not chosen.
   const [privacyOpen, setPrivacyOpen] = useState(false);
+  const [termsOpen, setTermsOpen] = useState(false);
 
   // A11Y-203: every error shown in the inline row must ALSO be announced.
   // The row's accessibilityLiveRegion="assertive" is Android-only in RN, and
@@ -308,6 +315,26 @@ export default function SignInScreen({
             {PRIVACY_POLICY_LINK_LABEL}
           </AppText>
         </Pressable>
+
+        {/* Apple 1.2 (UGC): agreement to the terms must be visible where the
+            account is created, not only discoverable post-signup in Settings.
+            Same arbitrated ink + underline affordance as the privacy link
+            above; the whole 44pt row is the target. */}
+        <Pressable
+          onPress={() => setTermsOpen(true)}
+          style={({ pressed }) => [styles.policyLinkWrap, pressed && styles.policyLinkPressed]}
+          accessibilityRole="button"
+          accessibilityLabel={`By creating an account you agree to the ${TERMS_LINK_LABEL}.`}
+          accessibilityHint={TERMS_LINK_HINT}
+        >
+          <AppText variant="body" style={styles.footnote}>
+            By creating an account you agree to the{' '}
+            <AppText variant="body" style={styles.policyLink}>
+              {TERMS_LINK_LABEL}
+            </AppText>
+            .
+          </AppText>
+        </Pressable>
       </ScrollView>
 
       {/* B-3: mounted LOCALLY, not in SharedModalsHost, and that is forced
@@ -319,6 +346,9 @@ export default function SignInScreen({
           costs nothing. The two mounts can never be alive at once: the auth
           gate makes them mutually exclusive. */}
       <PrivacyScreen visible={privacyOpen} onClose={() => setPrivacyOpen(false)} />
+      {/* Same local-mount reasoning as PrivacyScreen above: SignInScreen sits
+          outside SharedModalsProvider, so setOpen('terms') is unreachable. */}
+      <TermsScreen visible={termsOpen} onClose={() => setTermsOpen(false)} />
     </KeyboardAvoidingView>
   );
 }
