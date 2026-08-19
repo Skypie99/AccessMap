@@ -2,6 +2,8 @@ import { supabase } from './supabase';
 import type { UserRow } from '@/types/database';
 import { uploadStrippedImage } from './flags';
 import { isFunctionMissing } from './postgrestErrors';
+import { containsBlockedTerm } from '@/moderation/blockedTerms';
+import { CONTENT_BLOCKED_MESSAGE } from './copy';
 
 export interface UserProfilePatch {
   display_name?: string | null;
@@ -26,6 +28,19 @@ export async function updateUserProfile(userId: string, patch: UserProfilePatch)
         clean.display_name = null;
       } else if (trimmed.length > MAX_DISPLAY_NAME_LEN) {
         throw new Error(`Display name must be ${MAX_DISPLAY_NAME_LEN} characters or fewer.`);
+      } else if (containsBlockedTerm(trimmed)) {
+        // Apple 1.2(a), the leg this field was missing. The filter already runs
+        // on flag descriptions (flags.ts createFlag / updateFlagContent /
+        // createAnonFlag) and on comments (comments.ts), but NOT here — and a
+        // display name is the one string in this app rendered under someone's
+        // own byline on another person's barrier report (comments.ts joins it
+        // onto every comment) and on the public leaderboard. A slur there is
+        // seen by more people than a slur in any single report.
+        //
+        // Throws CONTENT_BLOCKED_MESSAGE, the same signal comments.ts and
+        // flags.ts throw, so `isContentBlockedError` in blockedContent.ts
+        // recognises it and callers can route to the guidelines identically.
+        throw new Error(CONTENT_BLOCKED_MESSAGE);
       } else {
         clean.display_name = trimmed;
       }

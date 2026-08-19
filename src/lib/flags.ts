@@ -1715,9 +1715,16 @@ export async function getUserLeaderboardRank(
   if (me_err) throw me_err;
   const userPoints = (me as { points: number }).points;
 
+  // `select('id')`, NOT `select('*')`. This is a head-count — no row bytes come
+  // back either way — but PostgREST still resolves the column list against the
+  // caller's grants, and the 2026-05-27 email-privacy migration replaced the
+  // bare table grant on public.users with an explicit column list. `*` expands
+  // to columns `authenticated` cannot read, so the whole request failed with
+  // 42501 "permission denied for table users". Verified by executing it against
+  // production, not inferred. A head-count needs exactly one granted column.
   const { count: above, error: rank_err } = await supabase
     .from('users')
-    .select('*', { count: 'exact', head: true })
+    .select('id', { count: 'exact', head: true })
     .gt('points', userPoints);
   if (rank_err) throw rank_err;
 
