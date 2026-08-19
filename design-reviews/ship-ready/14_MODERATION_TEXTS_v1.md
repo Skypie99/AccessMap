@@ -24,7 +24,7 @@ Flagstone Terms & Community Guidelines Effective 2026-07-27 · v1.0
 
 **Your content.** What you post stays yours. By posting it, you're letting Flagstone show it in the app so the community can use it.
 
-**Your account.** You can delete your account any time in Settings. Anything you've contributed may stay in the app, with your name removed, so the community's record of barriers stays whole.
+**Your account.** You can delete your account any time from your Profile. Anything you've contributed may stay in the app, with your name removed, so the community's record of barriers stays whole.
 
 **Changes.** If these terms ever change, the new version will live right here with a new date at the top.
 

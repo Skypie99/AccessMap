@@ -618,7 +618,7 @@ export const TERMS_SECTIONS = [
   },
   {
     heading: 'Your account.',
-    body: "You can delete your account any time in Settings. Anything you've contributed may stay in the app, with your name removed, so the community's record of barriers stays whole.",
+    body: "You can delete your account any time from your Profile. Anything you've contributed may stay in the app, with your name removed, so the community's record of barriers stays whole.",
   },
   {
     heading: 'Changes.',
