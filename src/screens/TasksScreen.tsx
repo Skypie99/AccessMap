@@ -2,7 +2,6 @@ import React, { memo, Suspense, useCallback, useEffect, useMemo, useRef, useStat
 import {
   AccessibilityInfo,
   ActivityIndicator,
-  Alert,
   Animated,
   Image,
   Platform,
@@ -559,7 +558,7 @@ export default function TasksScreen() {
           showFlash(`${past} ${succeeded} flag${succeeded === 1 ? '' : 's'}`);
         }
         if (failures.length > 0) {
-          Alert.alert(
+          notify(
             `Could not ${action} ${failures.length} flag${failures.length === 1 ? '' : 's'}`,
             failures[0] ?? 'Unknown error',
           );
@@ -580,7 +579,7 @@ export default function TasksScreen() {
   const runBulkWatch = useCallback(async () => {
     if (bulkBusyRef.current) return; // F4: same re-entry guard as runBulkAction
     if (!user) {
-      Alert.alert('Sign in required', 'Please sign in to watch flags.');
+      notify('Sign in required', 'Please sign in to watch flags.');
       return;
     }
     // F64 (second sweep, revising F39): do NOT filter watch targets through
@@ -732,7 +731,7 @@ export default function TasksScreen() {
           notify('This flag changed', 'It was updated by someone else just now — refreshing the list.');
           refresh().catch(() => {});
         } else {
-          Alert.alert("Couldn't update this flag", errorMessage(e));
+          notify("Couldn't update this flag", errorMessage(e));
         }
       } finally {
         setBusyId(null);
@@ -831,7 +830,7 @@ export default function TasksScreen() {
   const handleLoadMore = useCallback(() => {
     if (!hasMore || loadingMore) return;
     loadMore().catch((e: unknown) => {
-      Alert.alert('Could not load more flags', errorMessage(e, 'Unknown error'));
+      notify('Could not load more flags', errorMessage(e, 'Unknown error'));
     });
   }, [hasMore, loadingMore, loadMore]);
 

@@ -871,7 +871,7 @@ export default function MapScreen() {
       setNameDraft('');
     } catch (e) {
       const msg = e instanceof FilterSetError ? e.message : errorMessage(e);
-      Alert.alert("Couldn't save filter", msg);
+      notify("Couldn't save filter", msg);
     } finally {
       if (mountedRef.current) setSavingSet(false);
     }
@@ -929,7 +929,7 @@ export default function MapScreen() {
         AccessibilityInfo.announceForAccessibility(`Saved preset: ${trimmed}`);
       }
     } catch (e) {
-      Alert.alert("Couldn't save preset", errorMessage(e));
+      notify("Couldn't save preset", errorMessage(e));
     } finally {
       if (mountedRef.current) setSavingPreset(false);
     }

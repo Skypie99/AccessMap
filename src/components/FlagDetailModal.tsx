@@ -852,7 +852,7 @@ export default function FlagDetailModal({
       if (isContentBlockedError(e)) {
         showBlockedContentAlert('Could not post comment', () => setOpen('terms'));
       } else {
-        Alert.alert('Could not post comment', errorMessage(e));
+        notify('Could not post comment', errorMessage(e));
       }
     } finally {
       setCommentSubmitting(false);
@@ -877,7 +877,7 @@ export default function FlagDetailModal({
       onDeleted(shownFlag.id);
       onClose();
     } catch (e) {
-      Alert.alert('Could not delete flag', errorMessage(e));
+      notify('Could not delete flag', errorMessage(e));
     } finally {
       setBusy(false);
     }
@@ -1613,7 +1613,7 @@ export default function FlagDetailModal({
                     try {
                       await Linking.openURL(url);
                     } catch {
-                      Alert.alert("Couldn't open maps", 'No maps app was found on your device.');
+                      notify("Couldn't open maps", 'No maps app was found on your device.');
                     }
                   }}
                   disabled={busy}
@@ -1788,7 +1788,7 @@ export default function FlagDetailModal({
                                         AccessibilityInfo.announceForAccessibility('Comment deleted'),
                                       )
                                       .catch((e: unknown) => {
-                                        Alert.alert('Could not delete comment', errorMessage(e));
+                                        notify('Could not delete comment', errorMessage(e));
                                       });
                                   });
                                 }

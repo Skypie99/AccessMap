@@ -2,7 +2,6 @@ import React, { Suspense, useCallback, useEffect, useMemo, useRef, useState } fr
 import {
   AccessibilityInfo,
   ActivityIndicator,
-  Alert,
   Animated,  Modal,
   Platform,
   Pressable,
@@ -622,7 +621,7 @@ export default function ProfileScreen() {
       } catch {
         if (mountedRef.current) {
           setDefaultTabValue(defaultTab);
-          Alert.alert("Couldn't save that preference");
+          notify("Couldn't save that preference", 'Your change was not saved — please try again.');
         }
       } finally {
         if (mountedRef.current) setSavingTab(false);
@@ -641,7 +640,7 @@ export default function ProfileScreen() {
           value ? 'Real-time flag updates enabled.' : 'Real-time flag updates disabled.',
         );
       } catch {
-        Alert.alert("Couldn't save preference");
+        notify("Couldn't save preference", 'Your change was not saved — please try again.');
       } finally {
         if (mountedRef.current) setSavingRealtime(false);
       }
