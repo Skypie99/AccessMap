@@ -46,7 +46,13 @@ describe('1.2(c) — the list is read once per flag, not per render', () => {
     expect(modal.match(/loadHidden\(\)/g)).toHaveLength(1);
     // The call sits between the effect's opening and its dependency array.
     const effect = between(modal, 'const hidden = await loadHidden();', '}, [');
-    expect(effect).toContain('if (!cancelled) setHiddenComments(hidden.comment);');
+    // The effect serves BOTH filters from one read now — blocking shares the
+    // storage key, the lifecycle and the failure policy — so the cancel-check
+    // is its own statement rather than fused to the assignment. The rule is
+    // unchanged: read once, per flag, in an effect, never commit after unmount.
+    expect(effect).toContain('if (cancelled) return;');
+    expect(effect).toContain('setHiddenComments(hidden.comment);');
+    expect(effect).toContain('setBlockedAuthors(hidden.author);');
   });
 
   it('the effect is keyed on the flag id and the modal being open', () => {
@@ -64,7 +70,12 @@ describe('1.2(c) — the list is read once per flag, not per render', () => {
 describe('1.2(c) — the filter is applied at the .map site and nowhere else', () => {
   it('filterHidden wraps the comment list exactly once', () => {
     expect(modal.match(/filterHidden\(/g)).toHaveLength(1);
-    expect(modal).toContain('filterHidden(comments, hiddenComments, (c) => c.id).map((c) => (');
+    // Block wraps the SAME list, so the call is nested: blocked authors drop
+    // out first, then per-item hides. The rule this pins is unchanged — ONE
+    // filtering site, at the .map, never a second copy somewhere else.
+    expect(modal).toContain('filterBlockedAuthors(comments, blockedAuthors, (c) => c.user_id)');
+    expect(modal.match(/filterHidden\(/g)).toHaveLength(1);
+    expect(modal.match(/filterBlockedAuthors\(/g)).toHaveLength(1);
   });
 
   it('the loading / error / empty branches still test the UNFILTERED list', () => {
@@ -136,12 +147,12 @@ describe('1.2(c) — the composite-label law covers all three actions', () => {
     expect(bubble).toContain('const showReport = !isOwn && !!onReport;');
     expect(bubble).toContain('const showHide = !isOwn && !!onHide;');
     expect(bubble).toContain(
-      'const useCompositeLabel = !showDelete && !showReport && !showHide;',
+      'const useCompositeLabel = !showDelete && !showReport && !showHide && !showBlock;',
     );
   });
 
   it('the footer layout is keyed on the FOOTER, not on one of its occupants', () => {
-    expect(bubble).toContain('const showFooter = showReport || showHide;');
+    expect(bubble).toContain('const showFooter = showReport || showHide || showBlock;');
     expect(bubble).toContain('showFooter && styles.timeInFooter');
     expect(bubble).toContain('{showFooter ? (');
   });
@@ -168,8 +179,11 @@ describe('1.2(c) — the composite-label law covers all three actions', () => {
     // Report and Hide are peers on this row. They reuse the same already-banked
     // ink/fill pair (color.textMuted on color.surfaceNeutral), which is why
     // 1.2(c) needed no second arbiter run.
-    expect(bubble.match(/styles\.footerBtn,/g)).toHaveLength(2);
-    expect(bubble.match(/styles\.footerBtnText, \{ color: color\.textMuted \}/g)).toHaveLength(2);
+    // THREE footer controls now (Report · Hide · Block). The rule is that they
+    // share ONE treatment — a new action must reuse the recipe, not invent a
+    // second dialect — so the count tracks the actions rather than being frozen.
+    expect(bubble.match(/styles\.footerBtn,/g)).toHaveLength(3);
+    expect(bubble.match(/styles\.footerBtnText, \{ color: color\.textMuted \}/g)).toHaveLength(3);
     // The pre-rename names are gone, so nothing can style one control alone.
     expect(bubble).not.toContain('reportBtn:');
     expect(bubble).not.toContain('reportBtnText:');
@@ -184,7 +198,16 @@ describe('1.2(c) — the composite-label law covers all three actions', () => {
   });
 });
 
-describe('1.2(c) is PARTIAL — flag-level hide is out of scope, and stays visibly so', () => {
+/**
+ * ⚑ RENAMED 2026-08-18. This block used to be titled "1.2(c) is PARTIAL" and
+ * that is no longer the state: the author-level BLOCK control shipped, which is
+ * the leg the guideline actually asks for. What survives — and is still worth
+ * pinning — is the narrower scope decision underneath it: blocking and hiding
+ * are COMMENT-scoped, and the `'flag'` bucket stays unwired on purpose (Sky's
+ * §SKY-3h for Hide; Jordan's 2026-08-18 Phase-0 gate, answer 5, for Block).
+ * Flags carry no visible author, so there is nothing to scope a block to.
+ */
+describe('1.2(c) is COMMENT-SCOPED — the flag bucket stays unwired on purpose', () => {
   it('nothing in the app writes to the flag bucket yet', () => {
     // hiddenContent.ts has always had a `flag` bucket; §SKY-3h scoped this
     // phase to comments, so the bucket is real, tested, and unwired. This
@@ -210,9 +233,14 @@ describe('1.2(c) is PARTIAL — flag-level hide is out of scope, and stays visib
     expect(writers).toEqual([]);
   });
 
-  it('the only hide the UI performs is on a comment', () => {
+  it('the modal writes exactly two kinds — a comment hide and an author block', () => {
     const calls = modal.match(/hideContent\([^)]*\)/g) ?? [];
-    expect(calls).toHaveLength(1);
+    expect(calls).toHaveLength(2);
+    // Order is the order they are declared, and it is also least-to-most
+    // drastic: hide one thing, then block a person.
     expect(calls[0]).toContain("'comment'");
+    expect(calls[1]).toContain("'author'");
+    // The scope fence: no flag-level hide leaks in through this surface.
+    expect(calls.some((c) => c.includes("'flag'"))).toBe(false);
   });
 });

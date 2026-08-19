@@ -18,12 +18,12 @@ beforeEach(async () => {
 
 describe('the hide list round-trips', () => {
   it('starts empty', async () => {
-    await expect(loadHidden()).resolves.toEqual({ flag: [], comment: [] });
+    await expect(loadHidden()).resolves.toEqual({ flag: [], comment: [], author: [] });
   });
 
   it('hides a flag and reads it back', async () => {
     await hideContent('flag', 'f1');
-    await expect(loadHidden()).resolves.toEqual({ flag: ['f1'], comment: [] });
+    await expect(loadHidden()).resolves.toEqual({ flag: ['f1'], comment: [], author: [] });
   });
 
   it('keeps flags and comments in separate buckets', async () => {
@@ -37,38 +37,38 @@ describe('the hide list round-trips', () => {
   it('is idempotent — hiding twice does not duplicate', async () => {
     await hideContent('flag', 'f1');
     await hideContent('flag', 'f1');
-    await expect(loadHidden()).resolves.toEqual({ flag: ['f1'], comment: [] });
+    await expect(loadHidden()).resolves.toEqual({ flag: ['f1'], comment: [], author: [] });
   });
 
   it('un-hides, so the choice is reversible', async () => {
     await hideContent('flag', 'f1');
     await hideContent('flag', 'f2');
     await unhideContent('flag', 'f1');
-    await expect(loadHidden()).resolves.toEqual({ flag: ['f2'], comment: [] });
+    await expect(loadHidden()).resolves.toEqual({ flag: ['f2'], comment: [], author: [] });
   });
 
   it('clears everything', async () => {
     await hideContent('flag', 'f1');
     await clearHidden();
-    await expect(loadHidden()).resolves.toEqual({ flag: [], comment: [] });
+    await expect(loadHidden()).resolves.toEqual({ flag: [], comment: [], author: [] });
   });
 });
 
 describe('reads fail toward showing MORE, never less', () => {
   it('a corrupt stored value reads as nothing hidden', async () => {
     await AsyncStorage.setItem('@accessmap/hidden_content_v1', 'not json{{');
-    await expect(loadHidden()).resolves.toEqual({ flag: [], comment: [] });
+    await expect(loadHidden()).resolves.toEqual({ flag: [], comment: [], author: [] });
   });
 
   it('a storage read failure reads as nothing hidden', async () => {
     jest.spyOn(console, 'warn').mockImplementation(() => {});
     jest.spyOn(AsyncStorage, 'getItem').mockRejectedValueOnce(new Error('boom'));
-    await expect(loadHidden()).resolves.toEqual({ flag: [], comment: [] });
+    await expect(loadHidden()).resolves.toEqual({ flag: [], comment: [], author: [] });
   });
 
   it('a non-string entry is dropped rather than trusted', async () => {
     await AsyncStorage.setItem('@accessmap/hidden_content_v1', JSON.stringify({ flag: ['ok', 7, null] }));
-    await expect(loadHidden()).resolves.toEqual({ flag: ['ok'], comment: [] });
+    await expect(loadHidden()).resolves.toEqual({ flag: ['ok'], comment: [], author: [] });
   });
 });
 

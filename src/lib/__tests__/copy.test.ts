@@ -16,6 +16,7 @@ import {
   REPORT_CONTROL_LABEL,
   DISPUTE_CONTROL_LABEL,
   HIDE_CONTROL_LABEL,
+  BLOCK_CONTROL_LABEL,
   REPORT_REASON_LABEL,
   REPORT_CATEGORIES,
   REPORT_SENT_TITLE,
@@ -76,22 +77,34 @@ describe('offlineBannerText (B9 / L7-02)', () => {
  * string that has silently promoted itself to final.
  */
 describe('B-1 moderation copy', () => {
+  // FOUR as of 2026-08-18. Block joined the set when the 1.2(c) work landed,
+  // and it is the member the distinctness rule most needs: Hide and Block are
+  // near-synonyms in ordinary English and mean materially different things
+  // here (one bubble already read, versus every bubble that account posts from
+  // here on). Collapsing them is the exact mistake §SKY-3c was written about,
+  // one word over. Jordan's 2026-08-18 Phase-0 gate, condition 4, requires this
+  // assertion cover Block. The const keeps its name so the §SKY-3c citations
+  // scattered through copy.ts still resolve to something findable.
   const THREE_CONTROLS = {
     REPORT_CONTROL_LABEL,
     DISPUTE_CONTROL_LABEL,
     HIDE_CONTROL_LABEL,
+    BLOCK_CONTROL_LABEL,
   };
 
-  it('the three controls are three DISTINCT strings, never collapsed (§SKY-3c)', () => {
+  it('the controls are DISTINCT strings, never collapsed (§SKY-3c)', () => {
     const labels = Object.values(THREE_CONTROLS);
-    expect(labels).toHaveLength(3);
-    expect(new Set(labels).size).toBe(3);
+    expect(labels).toHaveLength(4);
+    expect(new Set(labels).size).toBe(4);
   });
 
-  it('the three controls are Sky\'s words, verbatim', () => {
+  it('the controls are Sky\'s words, verbatim', () => {
     expect(REPORT_CONTROL_LABEL).toBe('Report');
     expect(DISPUTE_CONTROL_LABEL).toBe('Flag as wrong');
     expect(HIDE_CONTROL_LABEL).toBe('Hide');
+    // Block is AGENT-PROPOSED, not Sky's word yet — pinned so a copy edit is a
+    // deliberate act, and it moves to RATIFIED when Sky does the BP16 pass.
+    expect(BLOCK_CONTROL_LABEL).toBe('Block');
   });
 
   it('no control label is a prefix or substring of another (a UI can tell them apart)', () => {
@@ -321,6 +334,22 @@ describe('B-1 copy carries the PROPOSED marker (the honesty fence, mechanised)',
     // Run 3 (B-3): the policy rows' hint. The LABEL was already PROPOSED above;
     // only the hint is new, and it is ours, not Sky's.
     'PRIVACY_POLICY_LINK_HINT',
+    // 1.2(c) BLOCK (2026-08-18). The whole set enters PROPOSED, exactly like
+    // the Hide strings it mirrors. Jordan's Phase-0 gate specified the required
+    // CONTENT of BLOCK_CONFIRM_BODY (scope · asymmetry · persistence · "Report
+    // is the real lever"); the WORDING is still Sky's, and escalation 2 of that
+    // gate says so explicitly. Nothing here may promote itself.
+    'BLOCK_CONTROL_LABEL',
+    'BLOCK_CONFIRM_BODY',
+    'BLOCK_CONFIRM_ACTION',
+    'AUTHOR_BLOCKED_ANNOUNCEMENT',
+    'BLOCK_FAILED_TITLE',
+    'BLOCKED_PEOPLE_ROW_TITLE',
+    'BLOCKED_PEOPLE_ROW_SUBTITLE',
+    'BLOCKED_PEOPLE_EMPTY',
+    'UNBLOCK_ALL_LABEL',
+    'UNBLOCK_ALL_CONFIRM_BODY',
+    'blockAuthorA11yLabel',
   ];
 
   /**

@@ -34,7 +34,7 @@ import React from 'react';
 import { fireEvent, render } from '@testing-library/react-native';
 
 import { CommentBubble } from '../CommentBubble';
-import { hideCommentA11yLabel, reportCommentA11yLabel } from '@/lib/copy';
+import { blockAuthorA11yLabel, hideCommentA11yLabel, reportCommentA11yLabel } from '@/lib/copy';
 
 jest.mock('@/lib/supabase', () => ({
   supabase: {
@@ -60,6 +60,7 @@ const OWN_LABEL = `Your comment: ${TEXT}. ${TIME_LABEL}`;
 const REPORT_NAME = reportCommentA11yLabel(AUTHOR);
 const HIDE_NAME = hideCommentA11yLabel(AUTHOR);
 const DELETE_NAME = `Delete ${AUTHOR}'s comment`;
+const BLOCK_NAME = blockAuthorA11yLabel(AUTHOR);
 
 /**
  * The props of the node whose ONLY child is `needle`.
@@ -137,6 +138,11 @@ function gateAt(commentUserId: string | null, viewerId: string | undefined) {
     onDelete: isOwn ? jest.fn() : undefined,
     onReport: isOwn ? undefined : jest.fn(),
     onHide: isOwn ? undefined : jest.fn(),
+    // 1.2(c) Block, gated on TWO conditions rather than one — verbatim from
+    // FlagDetailModal. A null author is nobody to block, so the control is
+    // withheld rather than drawn inert. This is the only affordance on the row
+    // whose gate is not simply `isOwn`.
+    onBlock: !isOwn && commentUserId ? jest.fn() : undefined,
   };
 }
 
@@ -513,5 +519,123 @@ describe('CommentBubble — content robustness (the two still-true wave6 rows, i
     );
 
     expect(String(rootProps(tree).accessibilityLabel)).toMatch(new RegExp(`^Comment by ${AUTHOR}: `));
+  });
+});
+
+/**
+ * APPLE 1.2(c) — THE BLOCK CONTROL.
+ *
+ * The audit finding this closes was not "no block button": it was that the app
+ * had no way to stop seeing a PERSON, only individual items. So the assertions
+ * that matter are (a) the control is reachable — the composite-label law now
+ * has a fourth action to stay in sync with — and (b) it is withheld precisely
+ * where there is nobody to block.
+ */
+describe('CommentBubble — the Block control (Apple 1.2(c))', () => {
+  const ME = '11111111-1111-1111-1111-111111111111';
+
+  it('renders a Block button a screen reader can reach and press', () => {
+    const onBlock = jest.fn();
+    const tree = render(
+      <CommentBubble
+        author={AUTHOR}
+        text={TEXT}
+        createdAt={CREATED_AT}
+        isOwn={false}
+        onBlock={onBlock}
+      />,
+    );
+
+    const btn = tree.getByLabelText(BLOCK_NAME);
+    fireEvent.press(btn);
+    expect(onBlock).toHaveBeenCalledTimes(1);
+  });
+
+  /**
+   * THE COMPOSITE-LABEL LAW, fourth action. A row that renders a Pressable must
+   * NOT be composite, or VoiceOver collapses the whole bubble into one node and
+   * the Block button becomes unreachable while looking perfect on screen. This
+   * is the failure mode the suite header describes, one action later.
+   */
+  it('a Block-only bubble is NOT composite, so the button stays reachable', () => {
+    const tree = render(
+      <CommentBubble
+        author={AUTHOR}
+        text={TEXT}
+        createdAt={CREATED_AT}
+        isOwn={false}
+        onBlock={jest.fn()}
+      />,
+    );
+
+    expect(rootProps(tree).accessible).not.toBe(true);
+    // Non-composite does not mean the sentence is lost — it MOVES to the text
+    // node, exactly as the Report suite asserts at the same seam. What matters
+    // is that the row is no longer one collapsed node, so the button below is
+    // its own reachable element.
+    expect(tree.getByText(TEXT).props.accessibilityLabel).toBe(OTHER_LABEL);
+    expect(tree.getByLabelText(BLOCK_NAME)).toBeTruthy();
+  });
+
+  it('the accessible name says the PERSON, distinguishing it from Hide on the same row', () => {
+    const tree = render(
+      <CommentBubble
+        author={AUTHOR}
+        text={TEXT}
+        createdAt={CREATED_AT}
+        isOwn={false}
+        onHide={jest.fn()}
+        onBlock={jest.fn()}
+      />,
+    );
+
+    expect(tree.getByLabelText(HIDE_NAME)).toBeTruthy();
+    expect(tree.getByLabelText(BLOCK_NAME)).toBeTruthy();
+    expect(BLOCK_NAME).not.toBe(HIDE_NAME);
+  });
+
+  it('the timestamp still renders when Block is the only footer action', () => {
+    const tree = render(
+      <CommentBubble
+        author={AUTHOR}
+        text={TEXT}
+        createdAt={CREATED_AT}
+        isOwn={false}
+        onBlock={jest.fn()}
+      />,
+    );
+
+    // showFooter must include showBlock — spelling it `showReport || showHide`
+    // would drop the timestamp under a Block-only bubble.
+    expect(propsOfTextNode(tree.toJSON(), TIME_LABEL)).not.toBeNull();
+  });
+
+  it('never offers Block on your own comment', () => {
+    const gate = gateAt(ME, ME);
+    expect(gate.onBlock).toBeUndefined();
+
+    const tree = render(
+      <CommentBubble author={AUTHOR} text={TEXT} createdAt={CREATED_AT} {...gate} />,
+    );
+    expect(tree.queryByLabelText(BLOCK_NAME)).toBeNull();
+  });
+
+  /**
+   * SR-117: `flag_comments.user_id` is nullable live (ON DELETE SET NULL), so a
+   * comment whose author deleted their account has no owner. Report stays —
+   * the CONTENT is still reportable — but Block is withheld, because there is
+   * no account for it to act on. A drawn-but-inert Block button would be a
+   * promise the app cannot keep.
+   */
+  it('withholds Block on an ORPHANED comment, while Report survives', () => {
+    const gate = gateAt(null, undefined);
+    expect(gate.onBlock).toBeUndefined();
+    expect(gate.onReport).toBeDefined();
+
+    const tree = render(
+      <CommentBubble author={AUTHOR} text={TEXT} createdAt={CREATED_AT} {...gate} />,
+    );
+    expect(tree.queryByLabelText(BLOCK_NAME)).toBeNull();
+    expect(tree.getByLabelText(REPORT_NAME)).toBeTruthy();
   });
 });

@@ -23,6 +23,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { hapticSelection } from '@/lib/haptics';
 import { signOut, supabase } from '@/lib/supabase';
 import { confirm, notify } from '@/lib/confirm';
+import { errorMessage } from '@/lib/errors';
 import { a11yToggle, decorativeProps } from '@/lib/accessibility';
 import { useAuth } from '@/lib/auth';
 import { useFeatureFlag } from '@/lib/featureFlags';
@@ -32,6 +33,9 @@ import { CATEGORY_LABELS, listFlagsByUser } from '@/lib/flags';
 import { listFeedbackByUser } from '@/lib/feedbackStore';
 import { formatDataExport } from '@/lib/dataExport';
 import {
+  BLOCKED_PEOPLE_EMPTY,
+  BLOCKED_PEOPLE_ROW_SUBTITLE,
+  BLOCKED_PEOPLE_ROW_TITLE,
   HIDDEN_COMMENTS_LINK_HINT,
   HIDDEN_COMMENTS_ROW_SUBTITLE,
   HIDDEN_COMMENTS_TITLE,
@@ -39,7 +43,10 @@ import {
   PRIVACY_POLICY_LINK_LABEL,
   TERMS_LINK_HINT,
   TERMS_LINK_LABEL,
+  UNBLOCK_ALL_CONFIRM_BODY,
+  UNBLOCK_ALL_LABEL,
 } from '@/lib/copy';
+import { loadHidden, unhideContent } from '@/lib/hiddenContent';
 import type { UserRow } from '@/types/database';
 import {
   deletePushToken,
@@ -251,6 +258,10 @@ export default function SettingsScreen() {
   // it is reachable only from here, so it needs no shared-modal key and no
   // navigator change.
   const [hiddenOpen, setHiddenOpen] = useState(false);
+  // Apple 1.2(c). Count only — the list holds account ids and no names, so
+  // there is nothing else worth lifting into this screen. See the row below.
+  const [blockedIds, setBlockedIds] = useState<string[]>([]);
+  const blockedCount = blockedIds.length;
   // Sky Decision 2 (Option B): the push-notification-types screen saves prefs
   // nothing reads yet, so the row + screen stay hidden until the flag flips.
   const pushNotifTypesEnabled = useFeatureFlag('PUSH_NOTIF_TYPES_ENABLED');
@@ -263,6 +274,28 @@ export default function SettingsScreen() {
   // user's last choice without a round-trip to the DB.
   const [pushEnabled, setPushEnabled] = useState(false);
   const [pushBusy, setPushBusy] = useState(false);
+
+  // Apple 1.2(c) — read the block count for the row below.
+  //
+  // NOT gated on `user`: the block list is device-local AsyncStorage and a
+  // signed-out reader can both block and unblock, so gating this on an account
+  // would leave a guest with no way back out of a block they just made.
+  //
+  // `hiddenOpen` is in the deps so the count refreshes when the neighbouring
+  // Hidden-comments sheet closes — that sheet writes the same storage key, and
+  // a stale count under a sheet the user just used reads as a bug.
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      // loadHidden never rejects by contract — it warns and answers
+      // "nothing hidden" — so there is nothing to catch here.
+      const hidden = await loadHidden();
+      if (!cancelled) setBlockedIds(hidden.author);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [hiddenOpen]);
 
   useEffect(() => {
     if (!user) return;
@@ -443,6 +476,42 @@ export default function SettingsScreen() {
     } finally {
       setExporting(false);
     }
+  };
+
+  /**
+   * Apple 1.2(c) — the way back out. Clears every blocked author on this
+   * device.
+   *
+   * `unhideContent('author', id)` per id rather than `clearHidden()`, which is
+   * the same discipline HiddenCommentsModal records for its own bulk action:
+   * `clearHidden` wipes the WHOLE key, so it would silently un-hide every
+   * individually hidden COMMENT as a side effect of unblocking people. Two
+   * different decisions by the reader, and one must not undo the other.
+   *
+   * Sequential, not Promise.all: each call is a load-modify-save on one
+   * AsyncStorage key, and racing them would let a later write clobber an
+   * earlier one's result. The list is realistically single digits.
+   *
+   * Failure is surfaced, not swallowed — `unhideContent` throws on a failed
+   * write, and the state only advances for ids that actually landed, so a
+   * partial failure leaves an honest count rather than a lie.
+   */
+  const handleUnblockAllPress = async () => {
+    if (blockedIds.length === 0) return;
+    const ok = await confirm(UNBLOCK_ALL_LABEL, UNBLOCK_ALL_CONFIRM_BODY, UNBLOCK_ALL_LABEL, true);
+    if (!ok) return;
+    const cleared: string[] = [];
+    try {
+      for (const id of blockedIds) {
+        await unhideContent('author', id);
+        cleared.push(id);
+      }
+    } catch (e) {
+      setBlockedIds((prev) => prev.filter((id) => !cleared.includes(id)));
+      notify(UNBLOCK_ALL_LABEL, errorMessage(e));
+      return;
+    }
+    setBlockedIds([]);
   };
 
   const handleSignOutPress = async () => {
@@ -650,6 +719,33 @@ export default function SettingsScreen() {
           subtitle={HIDDEN_COMMENTS_ROW_SUBTITLE}
           accessibilityHint={HIDDEN_COMMENTS_LINK_HINT}
           onPress={() => setHiddenOpen(true)}
+        />
+
+        {/* APPLE 1.2(c) — the way back out of a block.
+            Sits directly under Hidden comments because the two are the same
+            kind of thing: a record of what this reader chose not to see, on
+            this device. The subtitle carries the device-local fence in the
+            same breath as the count, exactly as its neighbour does.
+
+            WHY A COUNT AND A BULK UNDO RATHER THAN A LIST. The block list
+            stores account ids and nothing else — deliberately, see
+            UNBLOCK_ALL_LABEL in copy.ts. Caching display names locally so a
+            per-person list could render them would persist a record of who
+            you blocked BY NAME on your device, which is more identifying than
+            the block itself and is not needed for the feature to work. With no
+            names, a per-row list is a column of bare uuids. A count plus one
+            honest undo is the version that does not trade privacy for polish.
+            A named list is Sky's call (Phase-0 gate, escalation 3). */}
+        <SettingsRow
+          title={BLOCKED_PEOPLE_ROW_TITLE}
+          subtitle={
+            blockedCount === 0
+              ? BLOCKED_PEOPLE_EMPTY
+              : `${BLOCKED_PEOPLE_ROW_SUBTITLE} ${blockedCount} blocked.`
+          }
+          accessibilityHint="Unblocks everyone you have blocked on this device"
+          onPress={handleUnblockAllPress}
+          disabled={blockedCount === 0}
         />
 
         <AppText variant="label" style={styles.sectionLabel} accessibilityRole="header">

@@ -6,6 +6,8 @@ import { useColor } from '@/theme/ThemeContext';
 import { radius, font, spacing } from '@/theme';
 import { relativeTime } from '@/lib/relativeTime';
 import {
+  BLOCK_CONTROL_LABEL,
+  blockAuthorA11yLabel,
   HIDE_CONTROL_LABEL,
   hideCommentA11yLabel,
   REPORT_CONTROL_LABEL,
@@ -39,6 +41,18 @@ interface CommentBubbleProps {
    * the comment went away for anyone else.
    */
   onHide?: () => void;
+  /**
+   * When provided, an Apple 1.2(c) BLOCK affordance is shown on OTHER people's
+   * bubbles. This is the control that actually closes 1.2(c); Hide alone never
+   * could, because the blocked person can simply post again.
+   *
+   * Withheld — undefined, not disabled — on a comment whose author is NULL
+   * (`flag_comments.user_id` is nullable live; an author who deleted their
+   * account leaves the comment standing with no owner). There is nobody to
+   * block on such a row, and a control that cannot act must not be drawn. The
+   * caller owns that decision because the caller holds `user_id`.
+   */
+  onBlock?: () => void;
 }
 
 export function CommentBubble({
@@ -49,6 +63,7 @@ export function CommentBubble({
   onDelete,
   onReport,
   onHide,
+  onBlock,
 }: CommentBubbleProps) {
   const color = useColor();
   const timeLabel = relativeTime(createdAt);
@@ -90,13 +105,19 @@ export function CommentBubble({
   const showDelete = isOwn && !!onDelete;
   const showReport = !isOwn && !!onReport;
   const showHide = !isOwn && !!onHide;
-  const useCompositeLabel = !showDelete && !showReport && !showHide;
+  // The FOURTH action (1.2(c) Block, 2026-08-18). Added by extending the
+  // derivation, exactly as the paragraph above says a new action must be — the
+  // flag IS the rule, so `useCompositeLabel` cannot drift out of sync with the
+  // buttons. Adding a gate here is the whole change; nothing else in the
+  // composite-label logic needed re-auditing.
+  const showBlock = !isOwn && !!onBlock;
+  const useCompositeLabel = !showDelete && !showReport && !showHide && !showBlock;
 
   // The footer exists for EITHER action, so the timestamp's layout branch is
   // keyed on the footer, never on one of its occupants. Spelling this
   // `showReport` (as it was when Report was alone down there) would drop the
   // timestamp below a Hide-only bubble.
-  const showFooter = showReport || showHide;
+  const showFooter = showReport || showHide || showBlock;
 
   // The non-composite text label. It must branch on `isOwn`, NOT on which
   // action is present: Report ships on OTHER people's comments, where "Your
@@ -276,6 +297,36 @@ export function CommentBubble({
                     style={[styles.footerBtnText, { color: color.textMuted }]}
                   >
                     {HIDE_CONTROL_LABEL}
+                  </AppText>
+                </Pressable>
+              )}
+              {/*
+                THE CONTROL THAT ACTUALLY CLOSES APPLE 1.2(c). Same recipe as
+                its two peers — same ink, same target, same slop — for the
+                reason already stated above: they are peers on this row, and
+                inventing a visual hierarchy between three moderation controls
+                would be tuning by eye. What separates them is the word.
+
+                LAST IN THE ROW, and that IS the ordering argument: the three
+                run least-drastic to most (Report a thing → Hide a thing →
+                Block a person), so the heaviest action is never the one a
+                thumb lands on first. It also puts Block furthest from the
+                bubble text, which is where an accidental press is least
+                likely to originate.
+              */}
+              {showBlock && (
+                <Pressable
+                  onPress={onBlock}
+                  hitSlop={8}
+                  style={({ pressed }) => [styles.footerBtn, pressed && styles.footerBtnPressed]}
+                  accessibilityRole="button"
+                  accessibilityLabel={blockAuthorA11yLabel(author)}
+                >
+                  <AppText
+                    variant="label"
+                    style={[styles.footerBtnText, { color: color.textMuted }]}
+                  >
+                    {BLOCK_CONTROL_LABEL}
                   </AppText>
                 </Pressable>
               )}
