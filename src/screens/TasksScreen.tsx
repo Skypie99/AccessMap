@@ -660,14 +660,19 @@ export default function TasksScreen() {
       hapticImpact('medium');
       hapticNotify('success');
       // Optimistic update via the shared store: replace the row in-place for
-      // verify (status changes but flag stays visible), remove it for
-      // resolve/reject (it leaves the triage queue).
-      if (action === 'verify') {
+      // verify (status changes but flag stays visible) and reopen (it
+      // re-enters the queue; the reconcile refresh below fills it in if the
+      // store didn't hold the resolved row), remove it for resolve/reject
+      // (it leaves the triage queue).
+      if (action === 'verify' || action === 'reopen') {
         patchFlag(updated.id, { ...updated });
       } else {
         removeFlag(updated.id);
       }
-      if (action === 'verify') {
+      if (action === 'reopen') {
+        // No points flash: the trigger awards nothing for resolved→open.
+        showFlash('Flag reopened');
+      } else if (action === 'verify') {
         const msg = isOwn
           ? `Verified! +${POINTS.reporter.verify} points`
           : `Verified! +${POINTS.actor.verify} points`;

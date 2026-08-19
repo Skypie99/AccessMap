@@ -88,7 +88,10 @@ import { StatusBadge } from './StatusBadge';
 import { CommentBubble } from './CommentBubble';
 import { a11yToggle, decorativeProps, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
 
-export type DetailAction = 'verify' | 'resolve' | 'reject';
+// 'reopen' = community threshold met, resolved→open. It is its own action
+// because the points trigger awards NOTHING for it — callers must not show
+// the "+N points" flash they show for verify/resolve.
+export type DetailAction = 'verify' | 'resolve' | 'reject' | 'reopen';
 
 interface Props {
   visible: boolean;
@@ -965,9 +968,11 @@ export default function FlagDetailModal({
       await recordReopenRequest(user.id, shownFlag.id);
 
       if (newCount >= threshold) {
-        // Threshold met — reopen the flag.
+        // Threshold met — reopen the flag. Report it as 'reopen', not
+        // 'verify': the trigger awards no points for resolved→open, and the
+        // Tasks flash used to claim "Verified! +3 points" for it.
         const updated = await updateFlagStatus(shownFlag.id, 'open', 'resolved');
-        onChanged(updated, 'verify', isOwn);
+        onChanged(updated, 'reopen', isOwn);
         onClose();
       } else {
         // Not yet — show inline message, keep modal open.
