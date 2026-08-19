@@ -16,7 +16,7 @@
  * interactive map is the hidden `FullMap` route, reached via "Open full map".
  */
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Platform, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
@@ -309,6 +309,10 @@ export default function HomeScreen() {
         style={styles.scroll}
         contentContainerStyle={{ paddingTop: insets.top + spacing.sm, paddingBottom: bottomInset + 108 }}
         showsVerticalScrollIndicator={false}
+        // Pull-to-refresh parity with Tasks/Profile. `refreshing` stays false:
+        // the SWR store renders its own inline banners for stale/failed
+        // reloads, so a pinned spinner would double-report.
+        refreshControl={<RefreshControl refreshing={false} onRefresh={() => void refresh()} />}
       >
         {/* Editorial header — menu + Feedback fold in (no dark nav bar here). */}
         <ScreenHeader

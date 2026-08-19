@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   FlatList,  Modal,
   Pressable,
+  RefreshControl,
   StyleSheet,
   type Text,
   View,
@@ -423,6 +424,13 @@ export default function LeaderboardScreen({ visible, onClose }: Props) {
               accessibilityRole="list"
               removeClippedSubviews
               initialNumToRender={20}
+              // Pull-to-refresh: standings previously only reloaded on
+              // close/reopen or a tab flip. `refreshing` stays false because
+              // load() drives the full-screen skeleton state instead; the
+              // spinner would double up with it.
+              refreshControl={
+                <RefreshControl refreshing={false} onRefresh={() => void load()} />
+              }
             />
           )}
 
