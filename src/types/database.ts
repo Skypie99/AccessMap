@@ -44,6 +44,11 @@ export type FlagRow = {
   description: string | null;
   severity: FlagSeverity;
   photo_url: string | null;
+  // Optional alt text for the primary photo, written by the reporter so
+  // VoiceOver users hear a real description instead of "Flag photo".
+  // Optional until supabase/migrations/2026-08-19_photo_alt_text_APPLIED.sql
+  // (applied to live 2026-08-19). ≤200 chars, enforced client + DB check.
+  photo_alt?: string | null;
   status: FlagStatus;
   created_at: string;
   // Optional until supabase/migrations/2026-05-23_data_layer_hardening.sql
@@ -246,6 +251,9 @@ export type Database = {
           url: string;
           position: number;
           created_at: string;
+          // Optional VoiceOver description, written by the uploader.
+          // Optional until 2026-08-19_photo_alt_text_APPLIED.sql (live).
+          alt_text?: string | null;
         };
         Insert: {
           flag_id: string;
@@ -253,10 +261,12 @@ export type Database = {
           position: number;
           id?: string;
           created_at?: string;
+          alt_text?: string | null;
         };
         Update: Partial<{
           url: string;
           position: number;
+          alt_text: string | null;
         }>;
         Relationships: EmptyRelationships;
       };

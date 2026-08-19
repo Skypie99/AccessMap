@@ -139,6 +139,18 @@ export default function FlagDetailModal({
   const keyboardVisible = useKeyboardVisible();
   const bodyScrollRef = useRef(null);
   const [flagPhotos, setFlagPhotos] = useState<GalleryPhoto[]>([]);
+  // photo_alt (2026-08-19): a picked photo parks here so the owner can add an
+  // optional screen-reader description BEFORE it uploads. All three pickers
+  // (web input, camera, library) feed this one attach row. isBlobUrl marks
+  // web object-URLs that must be revoked on attach/cancel (L7 discipline).
+  const [pendingPhoto, setPendingPhoto] = useState<{
+    uri: string;
+    width?: number;
+    height?: number;
+    isBlobUrl: boolean;
+  } | null>(null);
+  const [pendingPhotoAlt, setPendingPhotoAlt] = useState('');
+  const [pendingPhotoBusy, setPendingPhotoBusy] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editDesc, setEditDesc] = useState('');
   const [editCategory, setEditCategory] = useState<FlagCategory>('steep_grade');
@@ -486,18 +498,11 @@ export default function FlagDetailModal({
           return;
         }
         const localUri = URL.createObjectURL(file);
-        try {
-          await addFlagPhoto(shownFlag.id, localUri);
-          const updated = await listFlagPhotos(shownFlag.id);
-          setFlagPhotos(updated);
-        } catch (e) {
-          // F46: this is the WEB branch — Alert.alert is a no-op here, which
-          // made a failed (e.g. fail-closed HEIC) upload a silent dead-end.
-          notify('Could not upload photo', errorMessage(e));
-        } finally {
-          URL.revokeObjectURL(localUri);
-          cleanup();
-        }
+        // Park it for the describe-then-attach row instead of uploading
+        // immediately — the object URL is revoked on attach/cancel.
+        setPendingPhoto({ uri: localUri, isBlobUrl: true });
+        setPendingPhotoAlt('');
+        cleanup();
       };
       // Fired when the user dismisses the file picker without choosing — without
       // this the hidden input would linger in the DOM (modern browsers only;
@@ -522,18 +527,13 @@ export default function FlagDetailModal({
             quality: 0.7,
           });
           if (!result.canceled && result.assets[0]?.uri) {
-            try {
-              await addFlagPhoto(
-                shownFlag.id,
-                result.assets[0].uri,
-                result.assets[0].width,
-                result.assets[0].height,
-              );
-              const updated = await listFlagPhotos(shownFlag.id);
-              setFlagPhotos(updated);
-            } catch (e) {
-              Alert.alert('Could not upload photo', errorMessage(e));
-            }
+            setPendingPhoto({
+              uri: result.assets[0].uri,
+              width: result.assets[0].width,
+              height: result.assets[0].height,
+              isBlobUrl: false,
+            });
+            setPendingPhotoAlt('');
           }
         },
       },
@@ -550,23 +550,53 @@ export default function FlagDetailModal({
             quality: 0.7,
           });
           if (!result.canceled && result.assets[0]?.uri) {
-            try {
-              await addFlagPhoto(
-                shownFlag.id,
-                result.assets[0].uri,
-                result.assets[0].width,
-                result.assets[0].height,
-              );
-              const updated = await listFlagPhotos(shownFlag.id);
-              setFlagPhotos(updated);
-            } catch (e) {
-              Alert.alert('Could not upload photo', errorMessage(e));
-            }
+            setPendingPhoto({
+              uri: result.assets[0].uri,
+              width: result.assets[0].width,
+              height: result.assets[0].height,
+              isBlobUrl: false,
+            });
+            setPendingPhotoAlt('');
           }
         },
       },
       { text: 'Cancel', style: 'cancel' },
     ]);
+  };
+
+  // Upload the parked photo with its (optional) description. Kept OUT of the
+  // picker callbacks so all three sources share one code path. On failure the
+  // pending photo stays parked so the user can simply retry.
+  const attachPendingPhoto = async () => {
+    if (!pendingPhoto || pendingPhotoBusy || !shownFlag) return;
+    setPendingPhotoBusy(true);
+    try {
+      await addFlagPhoto(
+        shownFlag.id,
+        pendingPhoto.uri,
+        pendingPhoto.width,
+        pendingPhoto.height,
+        pendingPhotoAlt,
+      );
+      const updated = await listFlagPhotos(shownFlag.id);
+      setFlagPhotos(updated);
+      // WCAG 4.1.3: the row disappears on success — say why.
+      AccessibilityInfo.announceForAccessibility('Photo attached.');
+      if (pendingPhoto.isBlobUrl) URL.revokeObjectURL(pendingPhoto.uri);
+      setPendingPhoto(null);
+      setPendingPhotoAlt('');
+    } catch (e) {
+      notify('Could not upload photo', errorMessage(e));
+    } finally {
+      setPendingPhotoBusy(false);
+    }
+  };
+
+  const cancelPendingPhoto = () => {
+    if (!pendingPhoto || pendingPhotoBusy) return;
+    if (pendingPhoto.isBlobUrl) URL.revokeObjectURL(pendingPhoto.uri);
+    setPendingPhoto(null);
+    setPendingPhotoAlt('');
   };
 
   if (!shownFlag) {
@@ -1168,7 +1198,11 @@ export default function FlagDetailModal({
                       uri={originalPhotoUrl}
                       style={styles.beforeAfterImage}
                       resizeMode="cover"
-                      accessibilityLabel="Before: the originally reported barrier"
+                      accessibilityLabel={
+                        shownFlag.photo_alt
+                          ? `Before: ${shownFlag.photo_alt}`
+                          : 'Before: the originally reported barrier'
+                      }
                     />
                   </View>
                   <View
@@ -1215,9 +1249,69 @@ export default function FlagDetailModal({
                 </View>
               )}
 
+              {/* photo_alt: the describe-then-attach row. A picked photo parks
+                  here so the owner can add an optional screen-reader
+                  description before it uploads (Apple VoiceOver criteria —
+                  uploaded media needs a way to carry a description). */}
+              {pendingPhoto && (
+                <View style={styles.pendingPhotoCard}>
+                  <View style={styles.pendingPhotoRow}>
+                    <RemoteImage
+                      uri={pendingPhoto.uri}
+                      style={styles.pendingPhotoThumb}
+                      resizeMode="cover"
+                      accessible
+                      accessibilityLabel="Photo ready to attach"
+                    />
+                    <TextInput
+                      value={pendingPhotoAlt}
+                      onChangeText={setPendingPhotoAlt}
+                      placeholder="Describe the photo for screen reader users (optional)"
+                      placeholderTextColor={color.placeholderText}
+                      maxLength={200}
+                      multiline
+                      editable={!pendingPhotoBusy}
+                      style={[styles.commentInput, styles.pendingPhotoInput]}
+                      accessibilityLabel="Photo description for screen reader users"
+                      accessibilityHint="Optional. Spoken by screen readers instead of the image. Up to 200 characters."
+                    />
+                  </View>
+                  <View style={styles.pendingPhotoActions}>
+                    <Pressable
+                      onPress={cancelPendingPhoto}
+                      disabled={pendingPhotoBusy}
+                      style={({ pressed }) => [styles.pendingPhotoCancel, pressed && { opacity: 0.7 }]}
+                      accessibilityRole="button"
+                      accessibilityLabel="Cancel photo"
+                      accessibilityHint="Discards the picked photo without attaching it"
+                    >
+                      <AppText variant="label" style={styles.pendingPhotoCancelText}>Cancel</AppText>
+                    </Pressable>
+                    <Pressable
+                      onPress={() => void attachPendingPhoto()}
+                      disabled={pendingPhotoBusy}
+                      style={({ pressed }) => [
+                        styles.commentSendBtn,
+                        pendingPhotoBusy && styles.commentSendBtnDisabled,
+                        pressed && styles.commentSendBtnPressed,
+                      ]}
+                      accessibilityRole="button"
+                      accessibilityLabel="Attach photo"
+                      {...a11yToggle({ disabled: pendingPhotoBusy, busy: pendingPhotoBusy })}
+                    >
+                      {pendingPhotoBusy ? (
+                        <ActivityIndicator size="small" color={color.textOnBrand} />
+                      ) : (
+                        <AppText variant="label" style={styles.commentSendBtnText}>Attach</AppText>
+                      )}
+                    </Pressable>
+                  </View>
+                </View>
+              )}
+
               <PhotoGallery
                 photos={flagPhotos}
-                onAddPhoto={isOwn && !busy ? handleAddPhoto : undefined}
+                onAddPhoto={isOwn && !busy && !pendingPhoto ? handleAddPhoto : undefined}
                 maxPhotos={5}
               />
 
@@ -2549,6 +2643,47 @@ const makeStyles = (color: ColorTheme) =>
     commentSendBtnText: {
       color: color.textOnBrand,
       fontWeight: font.weight.bold,
+      fontSize: font.size.sm,
+    },
+    // photo_alt: describe-then-attach row for a picked-but-not-uploaded photo.
+    pendingPhotoCard: {
+      borderWidth: 1,
+      borderColor: color.borderSubtle,
+      borderRadius: radius.lg,
+      padding: spacing.md,
+      marginBottom: spacing.md,
+      backgroundColor: color.surfaceSoft,
+      gap: spacing.sm,
+    },
+    pendingPhotoRow: {
+      flexDirection: 'row',
+      gap: spacing.md,
+      alignItems: 'flex-start',
+    },
+    pendingPhotoThumb: {
+      width: 64,
+      height: 64,
+      borderRadius: radius.md,
+      backgroundColor: color.border,
+    },
+    pendingPhotoInput: {
+      // The shared commentInput style already flexes + meets 44pt.
+      maxHeight: 120,
+    },
+    pendingPhotoActions: {
+      flexDirection: 'row',
+      justifyContent: 'flex-end',
+      gap: spacing.sm,
+    },
+    pendingPhotoCancel: {
+      minHeight: 44,
+      paddingHorizontal: spacing.md,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    pendingPhotoCancelText: {
+      color: color.textMuted,
+      fontWeight: font.weight.semibold,
       fontSize: font.size.sm,
     },
     sectionLabelDisability: {

@@ -17,7 +17,9 @@ import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { font, radius, shadow, spacing } from '@/theme';
 import { Camera, ChevronLeft, ChevronRight, X } from 'lucide-react-native';
 
-export type GalleryPhoto = { url: string; position: number };
+// alt_text: uploader-written VoiceOver description (photo_alt feature,
+// 2026-08-19). When present it replaces the positional "Photo N of M" label.
+export type GalleryPhoto = { url: string; position: number; alt_text?: string | null };
 
 type AddSentinel = { _type: 'add' };
 type ListItem = GalleryPhoto | AddSentinel;
@@ -130,7 +132,11 @@ function PhotoGalleryInner({ photos, onAddPhoto, maxPhotos = 5, onRemovePhoto }:
           resizeMode="cover"
           accessible
           accessibilityRole="imagebutton"
-          accessibilityLabel={`Photo ${index + 1} of ${total}`}
+          accessibilityLabel={
+            item.alt_text
+              ? `Photo ${index + 1} of ${total}: ${item.alt_text}`
+              : `Photo ${index + 1} of ${total}`
+          }
           accessibilityHint="Tap to view full screen"
         />
         {onRemovePhoto && (
@@ -232,7 +238,11 @@ function PhotoGalleryInner({ photos, onAddPhoto, maxPhotos = 5, onRemovePhoto }:
                 ref={i === lightboxPage ? lightboxPhotoRef : undefined}
                 style={[styles.lightboxPage, { width: screenWidth, height: screenHeight }]}
                 accessible
-                accessibilityLabel={`Photo ${i + 1} of ${photos.length}`}
+                accessibilityLabel={
+                  photo.alt_text
+                    ? `Photo ${i + 1} of ${photos.length}: ${photo.alt_text}`
+                    : `Photo ${i + 1} of ${photos.length}`
+                }
               >
                 <RemoteImage
                   uri={photo.url}

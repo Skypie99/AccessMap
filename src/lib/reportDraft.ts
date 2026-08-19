@@ -34,6 +34,8 @@ export interface ReportDraft {
   /** Picker-reported dimensions per uri (B8) — rides along so the
    *  downscale-on-ingest math survives the handoff too. */
   photoDims: Record<string, { width: number; height: number }>;
+  /** Per-uri VoiceOver descriptions (photo_alt feature, 2026-08-19). */
+  photoAlts: Record<string, string>;
 }
 
 let stash: ReportDraft | null = null;

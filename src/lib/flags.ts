@@ -970,6 +970,9 @@ export interface CreateFlagInput {
   severity: FlagSeverity;
   description?: string | null;
   photo_url?: string | null;
+  // Optional VoiceOver description of the primary photo (≤200 chars).
+  // Stored in flags.photo_alt (2026-08-19_photo_alt_text_APPLIED.sql).
+  photo_alt?: string | null;
   // Optional context tags — see src/lib/contextTags.ts for the vocabulary.
   // Sent to the `context_tags` column added by
   // supabase/migrations/2026-05-24_flag_context_tags.sql. Until that
@@ -994,7 +997,7 @@ export interface CreateFlagInput {
 export async function listFlags(statuses: FlagStatus[] = ['open', 'verified']) {
   const { data, error } = await supabase
     .from('flags')
-    .select('id, user_id, lat, lng, category, description, severity, photo_url, status, created_at')
+    .select('id, user_id, lat, lng, category, description, severity, photo_url, photo_alt, status, created_at')
     .in('status', statuses)
     .order('created_at', { ascending: false })
     .limit(500);
@@ -1044,7 +1047,7 @@ export async function listFlagsPage(
   const limit = opts.limit ?? INITIAL_PAGE_SIZE;
   let query = supabase
     .from('flags')
-    .select('id, user_id, lat, lng, category, description, severity, photo_url, status, created_at')
+    .select('id, user_id, lat, lng, category, description, severity, photo_url, photo_alt, status, created_at')
     .in('status', statuses)
     .order('created_at', { ascending: false })
     .limit(limit);
@@ -1072,7 +1075,7 @@ export async function listFlagsPage(
 export async function listFlagsByUser(userId: string) {
   const { data, error } = await supabase
     .from('flags')
-    .select('id, user_id, lat, lng, category, description, severity, photo_url, status, created_at')
+    .select('id, user_id, lat, lng, category, description, severity, photo_url, photo_alt, status, created_at')
     .eq('user_id', userId)
     .order('created_at', { ascending: false })
     .limit(200);
@@ -1205,6 +1208,7 @@ export async function createFlag(
     severity: input.severity,
     description: normalizeFlagDescription(input.description),
     photo_url: input.photo_url ?? null,
+    photo_alt: input.photo_alt?.trim().slice(0, 200) || null,
   };
   // Try the insert WITH context_tags first. If the column isn't there yet
   // (migration 2026-05-24_flag_context_tags.sql hasn't been applied), retry
@@ -1479,7 +1483,7 @@ async function collectFlagPhotoPaths(flagId: string): Promise<string[]> {
 export async function fetchFlagById(flagId: string): Promise<FlagRow | null> {
   const { data, error } = await supabase
     .from('flags')
-    .select('id, user_id, lat, lng, category, description, severity, photo_url, status, created_at')
+    .select('id, user_id, lat, lng, category, description, severity, photo_url, photo_alt, status, created_at')
     .eq('id', flagId)
     .maybeSingle();
   if (error) throw error;
@@ -1505,7 +1509,7 @@ export async function fetchFlagsByIds(flagIds: string[]): Promise<FlagRow[]> {
   if (flagIds.length === 0) return [];
   const { data, error } = await supabase
     .from('flags')
-    .select('id, user_id, lat, lng, category, description, severity, photo_url, status, created_at')
+    .select('id, user_id, lat, lng, category, description, severity, photo_url, photo_alt, status, created_at')
     .in('id', flagIds);
   if (error) throw error;
   return (data ?? []) as FlagRow[];
@@ -1544,7 +1548,7 @@ export async function fetchFlagsByIds(flagIds: string[]): Promise<FlagRow[]> {
 export async function listRecentFlags(limit = 100): Promise<FlagRow[]> {
   const { data, error } = await supabase
     .from('flags')
-    .select('id, user_id, lat, lng, category, description, severity, photo_url, status, created_at')
+    .select('id, user_id, lat, lng, category, description, severity, photo_url, photo_alt, status, created_at')
     .order('created_at', { ascending: false })
     .limit(limit);
   if (error) throw error;

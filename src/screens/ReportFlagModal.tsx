@@ -137,6 +137,10 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
   const [severity, setSeverity] = useState<FlagSeverity>(3);
   const [description, setDescription] = useState('');
   const [photoUris, setPhotoUris] = useState<string[]>([]);
+  // Per-photo VoiceOver descriptions, keyed by local uri. Optional; trimmed
+  // and capped at 200 on submit. Keyed by uri (not index) so removals can't
+  // shift a description onto the wrong photo.
+  const [photoAlts, setPhotoAlts] = useState<Record<string, string>>({});
   const [contextTags, setContextTags] = useState<ContextTag[]>([]);
   const [submitting, setSubmitting] = useState(false);
   // S11: a WRITE that outruns this threshold surfaces an in-sheet "still
@@ -179,6 +183,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
     setPhotoUris(draft.photoUris);
     setContextTags(draft.contextTags);
     photoDimsRef.current = { ...draft.photoDims };
+    setPhotoAlts({ ...draft.photoAlts });
     AccessibilityInfo.announceForAccessibility(REPORT_DRAFT_RESTORED_ANNOUNCEMENT);
   }, [visible]);
   const tagsDisabled = tagsCapability === 'unavailable';
@@ -222,6 +227,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
     // after a successful submit) — release their blob URLs.
     photoUris.forEach(releaseUri);
     setPhotoUris([]);
+    setPhotoAlts({});
     setContextTags([]);
     setAppliedTemplateId(null);
   };
@@ -278,6 +284,14 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
     if (removed !== undefined) {
       releaseUri(removed);
       delete photoDimsRef.current[removed];
+      // Drop the removed photo's description too — keyed by uri, so this
+      // can't orphan or shift onto a different photo.
+      setPhotoAlts((curr) => {
+        if (!(removed in curr)) return curr;
+        const next = { ...curr };
+        delete next[removed];
+        return next;
+      });
     }
     setPhotoUris((curr) => curr.filter((_, i) => i !== index));
   };
@@ -467,6 +481,8 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
         severity,
         description: description.trim() ? description.trim() : null,
         photo_url: photoUrls[0] ?? null,
+        // Alt of the FIRST photo — it is the one photo_url points at.
+        photo_alt: photoUris[0] ? photoAlts[photoUris[0]] || null : null,
         // Only send the field when the user actually picked tags. Empty
         // array means "no context"; createFlag still tries the column path
         // so it stays exercised, but skipping it keeps the legacy insert
@@ -487,7 +503,13 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
       // created a DUPLICATE public flag. The report exists; say photos didn't
       // attach and finish the flow normally.
       try {
-        await batchInsertFlagPhotos(result.row.id, photoUrls);
+        await batchInsertFlagPhotos(
+          result.row.id,
+          photoUrls.map((url, i) => ({
+            url,
+            alt: photoUris[i] ? photoAlts[photoUris[i]] || null : null,
+          })),
+        );
       } catch (photoLinkErr) {
         console.warn('[report] photo link insert failed:', photoLinkErr);
         if (photoUrls.length > 0) {
@@ -685,6 +707,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
                     photoUris,
                     contextTags,
                     photoDims: { ...photoDimsRef.current },
+                    photoAlts: { ...photoAlts },
                   });
                   AccessibilityInfo.announceForAccessibility(REPORT_DRAFT_KEPT_ANNOUNCEMENT);
                   onClose();
@@ -1101,11 +1124,46 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
                   !!onAddPhoto) and the per-photo remove buttons, so the photo
                   set can't change under an in-progress upload loop. */}
               <PhotoGallery
-                photos={photoUris.map((url, i) => ({ url, position: i }))}
+                photos={photoUris.map((url, i) => ({
+                  url,
+                  position: i,
+                  alt_text: photoAlts[url] || null,
+                }))}
                 onAddPhoto={submitting ? undefined : pickPhotoForGallery}
                 onRemovePhoto={submitting ? undefined : removeUri}
                 maxPhotos={MAX_PHOTOS}
               />
+
+              {/* Photo descriptions (photo_alt, 2026-08-19): Apple's VoiceOver
+                  criteria require a way to describe uploaded media. One field
+                  per attached photo, keyed by uri; optional, 200 chars, stored
+                  in flags.photo_alt (first photo) + flag_photos.alt_text. */}
+              {photoUris.map((uri, i) => (
+                <View key={uri}>
+                  <AppText variant="label" style={styles.label} accessibilityRole="header">
+                    {photoUris.length === 1
+                      ? 'Describe the photo for screen reader users (optional)'
+                      : `Describe photo ${i + 1} for screen reader users (optional)`}
+                  </AppText>
+                  <TextInput
+                    value={photoAlts[uri] ?? ''}
+                    onChangeText={(text) =>
+                      setPhotoAlts((curr) => ({ ...curr, [uri]: text }))
+                    }
+                    placeholder="e.g. Curb with a broken concrete ramp, gap about 10cm"
+                    placeholderTextColor={color.placeholderText}
+                    maxLength={200}
+                    editable={!submitting}
+                    style={styles.input}
+                    accessibilityLabel={
+                      photoUris.length === 1
+                        ? 'Photo description for screen reader users'
+                        : `Description for photo ${i + 1}`
+                    }
+                    accessibilityHint="Optional. Spoken by screen readers instead of the image. Up to 200 characters."
+                  />
+                </View>
+              ))}
 
               {/* Context tags — multi-select chip picker. Optional metadata
                   about WHEN / UNDER WHAT CONDITIONS this flag is most relevant

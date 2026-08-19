@@ -90,7 +90,8 @@ describe('listFlagPhotos', () => {
     const result = await listFlagPhotos('flag-1');
 
     expect(mockFrom).toHaveBeenCalledWith('flag_photos');
-    expect(chain.select).toHaveBeenCalledWith('url, position');
+    // photo_alt (2026-08-19): alt_text rides along for VoiceOver labels.
+    expect(chain.select).toHaveBeenCalledWith('url, position, alt_text');
     expect(chain.eq).toHaveBeenCalledWith('flag_id', 'flag-1');
     expect(chain.order).toHaveBeenCalledWith('position', { ascending: true });
     expect(result).toEqual([
@@ -206,6 +207,8 @@ describe('addFlagPhoto', () => {
       flag_id: 'flag-1',
       url: 'https://cdn/user-1/123.jpg',
       position: 2,
+      // photo_alt: no description supplied → explicit null.
+      alt_text: null,
     });
     expect(result).toMatchObject({ id: 'p3', position: 2, url: 'https://cdn/user-1/123.jpg' });
   });
@@ -256,38 +259,44 @@ describe('addFlagPhoto', () => {
 // ---------------------------------------------------------------------------
 
 describe('batchInsertFlagPhotos', () => {
-  it('is a no-op (no query) when urls is empty', async () => {
+  it('is a no-op (no query) when the photo list is empty', async () => {
     await batchInsertFlagPhotos('flag-1', []);
     expect(mockFrom).not.toHaveBeenCalled();
   });
 
-  it('inserts every url as a junction row with ascending positions', async () => {
+  // photo_alt (2026-08-19): the signature takes {url, alt} pairs now so the
+  // per-photo VoiceOver descriptions from ReportFlagModal ride the same insert.
+  it('inserts every photo as a junction row with ascending positions and alt text', async () => {
     const chain = insertChain();
     mockFrom.mockReturnValue(chain);
 
-    await batchInsertFlagPhotos('flag-1', ['a.jpg', 'b.jpg', 'c.jpg']);
+    await batchInsertFlagPhotos('flag-1', [
+      { url: 'a.jpg', alt: 'Steps with no ramp at the main door' },
+      { url: 'b.jpg' },
+      { url: 'c.jpg', alt: '   ' }, // whitespace-only → null, not ''
+    ]);
 
     expect(mockFrom).toHaveBeenCalledWith('flag_photos');
     expect(chain.insert).toHaveBeenCalledWith([
-      { flag_id: 'flag-1', url: 'a.jpg', position: 0 },
-      { flag_id: 'flag-1', url: 'b.jpg', position: 1 },
-      { flag_id: 'flag-1', url: 'c.jpg', position: 2 },
+      { flag_id: 'flag-1', url: 'a.jpg', position: 0, alt_text: 'Steps with no ramp at the main door' },
+      { flag_id: 'flag-1', url: 'b.jpg', position: 1, alt_text: null },
+      { flag_id: 'flag-1', url: 'c.jpg', position: 2, alt_text: null },
     ]);
   });
 
   it('silently returns when the table is missing — 42P01 code', async () => {
     mockFrom.mockReturnValue(insertChain(TABLE_MISSING_CODE));
-    await expect(batchInsertFlagPhotos('flag-1', ['a.jpg'])).resolves.toBeUndefined();
+    await expect(batchInsertFlagPhotos('flag-1', [{ url: 'a.jpg' }])).resolves.toBeUndefined();
   });
 
   it('silently returns when the error message says "does not exist"', async () => {
     mockFrom.mockReturnValue(insertChain({ message: 'relation does not exist' }));
-    await expect(batchInsertFlagPhotos('flag-1', ['a.jpg'])).resolves.toBeUndefined();
+    await expect(batchInsertFlagPhotos('flag-1', [{ url: 'a.jpg' }])).resolves.toBeUndefined();
   });
 
   it('throws on any other Supabase error', async () => {
     mockFrom.mockReturnValue(insertChain({ message: 'permission denied' }));
-    await expect(batchInsertFlagPhotos('flag-1', ['a.jpg'])).rejects.toMatchObject({
+    await expect(batchInsertFlagPhotos('flag-1', [{ url: 'a.jpg' }])).rejects.toMatchObject({
       message: 'permission denied',
     });
   });
@@ -297,12 +306,12 @@ describe('batchInsertFlagPhotos', () => {
     mockFrom.mockImplementationOnce(() => {
       throw { code: '42P01', message: 'does not exist' };
     });
-    await expect(batchInsertFlagPhotos('flag-1', ['a.jpg'])).resolves.toBeUndefined();
+    await expect(batchInsertFlagPhotos('flag-1', [{ url: 'a.jpg' }])).resolves.toBeUndefined();
 
     // unrelated exception → rethrown
     mockFrom.mockImplementationOnce(() => {
       throw new Error('boom');
     });
-    await expect(batchInsertFlagPhotos('flag-1', ['a.jpg'])).rejects.toThrow('boom');
+    await expect(batchInsertFlagPhotos('flag-1', [{ url: 'a.jpg' }])).rejects.toThrow('boom');
   });
 });

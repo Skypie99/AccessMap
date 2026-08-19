@@ -500,7 +500,12 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(function Pla
                   <RemoteImage
                     uri={f.photo_url}
                     style={styles.calloutPhoto}
-                    // Decorative thumbnail inside an already-labeled callout. {...decorativeProps}
+                    // photo_alt (2026-08-19): speak the reporter's description
+                    // when there is one; otherwise stay decorative inside the
+                    // already-labeled callout as before.
+                    {...(f.photo_alt
+                      ? { accessible: true, accessibilityLabel: `Photo: ${f.photo_alt}` }
+                      : { /* Decorative thumbnail inside an already-labeled callout. */ ...decorativeProps })}
                   />
                 ) : null}
                 {f.description ? (

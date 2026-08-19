@@ -1866,7 +1866,13 @@ const FlagCard = memo(function FlagCard({
               hitSlop={spacing.sm}
               style={styles.cardThumbWrap}
               accessibilityRole="button"
-              accessibilityLabel={`Photo of ${CATEGORY_LABELS[flag.category]} accessibility issue. Tap to view full screen.`}
+              // photo_alt (2026-08-19): the reporter's own description wins;
+              // the category-based label stays as the fallback for old rows.
+              accessibilityLabel={
+                flag.photo_alt
+                  ? `Photo: ${flag.photo_alt}. Tap to view full screen.`
+                  : `Photo of ${CATEGORY_LABELS[flag.category]} accessibility issue. Tap to view full screen.`
+              }
               accessibilityHint="Opens a full-screen view of the photo"
             >
               {photoInView && (
@@ -1939,7 +1945,7 @@ const FlagCard = memo(function FlagCard({
         <PhotoLightboxModal
           visible={lightboxOpen}
           photoUrl={safePhotoUrl}
-          caption={`${CATEGORY_LABELS[flag.category]} accessibility issue`}
+          caption={flag.photo_alt || `${CATEGORY_LABELS[flag.category]} accessibility issue`}
           onClose={() => setLightboxOpen(false)}
         />
       ) : null}
