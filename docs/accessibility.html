@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Accessibility — Flagstone</title>
+  <meta name="description" content="Flagstone's accessibility statement: which assistive technologies the app supports, what we're still working on, and how to tell us when we get it wrong." />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: #ffffff;
+      color: #1a1a1a;
+      line-height: 1.7;
+      font-size: 16px;
+    }
+    header {
+      background: #1c6ef3;
+      color: #ffffff;
+      padding: 32px 24px 28px;
+      text-align: center;
+    }
+    header .logo {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+      margin-bottom: 4px;
+    }
+    header h1 {
+      font-size: 28px;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+    header p.tagline {
+      font-size: 15px;
+      opacity: 0.9;
+      max-width: 520px;
+      margin: 0 auto;
+    }
+    .container {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 40px 24px 80px;
+    }
+    .about {
+      background: #f0f7ff;
+      border-radius: 8px;
+      padding: 24px 28px;
+      margin-bottom: 48px;
+      border-left: 4px solid #1c6ef3;
+    }
+    .about h2 {
+      font-size: 17px;
+      font-weight: 700;
+      color: #1c6ef3;
+      margin-bottom: 10px;
+      border: none;
+      padding: 0;
+      margin-top: 0;
+    }
+    h2 {
+      font-size: 20px;
+      font-weight: 700;
+      color: #0f172a;
+      margin-top: 48px;
+      margin-bottom: 16px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid #e2e8f0;
+    }
+    h3 {
+      font-size: 16px;
+      font-weight: 600;
+      color: #1c6ef3;
+      margin-top: 28px;
+      margin-bottom: 8px;
+    }
+    p { margin-bottom: 14px; }
+    ul, ol {
+      padding-left: 20px;
+      margin-bottom: 14px;
+    }
+    li { margin-bottom: 6px; }
+    a { color: #1c6ef3; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+      font-size: 15px;
+    }
+    th, td {
+      text-align: left;
+      padding: 10px 12px;
+      border-bottom: 1px solid #e2e8f0;
+      vertical-align: top;
+    }
+    th {
+      background: #f8fafc;
+      font-weight: 600;
+      color: #0f172a;
+    }
+    .yes { color: #15803d; font-weight: 600; white-space: nowrap; }
+    .na  { color: #64748b; white-space: nowrap; }
+    .contact-card {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 24px 28px;
+      margin-top: 32px;
+    }
+    .contact-card h2 {
+      margin-top: 0;
+      border: none;
+      padding: 0;
+    }
+    .contact-link {
+      display: inline-block;
+      background: #1c6ef3;
+      color: #ffffff;
+      font-weight: 600;
+      padding: 10px 20px;
+      border-radius: 6px;
+      margin-top: 8px;
+      font-size: 15px;
+    }
+    .contact-link:hover {
+      background: #1558cc;
+      text-decoration: none;
+    }
+    footer {
+      background: #f1f5f9;
+      border-top: 1px solid #e2e8f0;
+      text-align: center;
+      padding: 28px 24px;
+      font-size: 14px;
+      color: #64748b;
+    }
+    footer a { color: #1c6ef3; }
+    @media (max-width: 600px) {
+      header h1 { font-size: 22px; }
+      h2 { font-size: 18px; }
+      table { font-size: 14px; }
+      th, td { padding: 8px 10px; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Flagstone</div>
+  <h1>Accessibility</h1>
+  <p class="tagline">An app about accessibility barriers has no business being one.</p>
+</header>
+
+<div class="container">
+
+  <div class="about">
+    <h2>Our commitment</h2>
+    <p style="margin-bottom:0;">
+      Flagstone exists so people can find out whether a place will work for them before
+      they travel to it. The people who most need that answer are disabled people — so
+      the app itself is built to be used with a screen reader, at large text sizes, with
+      reduced motion, and without relying on colour to carry meaning. We target
+      <strong>WCAG 2.2 Level AA</strong> and Apple's
+      <a href="https://developer.apple.com/accessibility/" target="_blank" rel="noopener">iOS accessibility guidelines</a>.
+    </p>
+  </div>
+
+  <h2>What the app supports</h2>
+
+  <table>
+    <thead>
+      <tr><th>Feature</th><th>Status</th><th>What that means here</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>VoiceOver</td>
+        <td class="yes">Supported</td>
+        <td>Every control has a spoken label, role, and where useful a hint. Status changes, filter results, and errors are announced. Photos carry descriptions written by the person who uploaded them.</td>
+      </tr>
+      <tr>
+        <td>Larger Text</td>
+        <td class="yes">Supported</td>
+        <td>Text scales with your Dynamic Type setting, including the accessibility sizes. Layouts reflow rather than clip.</td>
+      </tr>
+      <tr>
+        <td>Dark Interface</td>
+        <td class="yes">Supported</td>
+        <td>A full dark theme that follows your system setting, plus a manual toggle in Settings.</td>
+      </tr>
+      <tr>
+        <td>Sufficient Contrast</td>
+        <td class="yes">Supported</td>
+        <td>Text and controls meet WCAG AA contrast ratios in both light and dark themes. Automated tests block changes that would regress this.</td>
+      </tr>
+      <tr>
+        <td>Differentiate Without Colour Alone</td>
+        <td class="yes">Supported</td>
+        <td>Severity is shown as a number and a word, not just a colour. Status uses labelled badges. Links carry underlines.</td>
+      </tr>
+      <tr>
+        <td>Reduced Motion</td>
+        <td class="yes">Supported</td>
+        <td>When Reduce Motion is on, map and sheet animations are shortened or replaced with cross-fades.</td>
+      </tr>
+      <tr>
+        <td>Captions &amp; Audio Descriptions</td>
+        <td class="na">Not applicable</td>
+        <td>Flagstone contains no video or audio content, so there is nothing to caption or describe.</td>
+      </tr>
+      <tr>
+        <td>Voice Control</td>
+        <td class="na">Under evaluation</td>
+        <td>Controls are labelled in ways that should work with Voice Control, but we haven't finished testing it end to end, so we don't yet claim it.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>Designed for the way people actually use it</h2>
+  <ul>
+    <li><strong>You can browse without an account.</strong> Reading the map — the part most people need — never requires signing up.</li>
+    <li><strong>Touch targets are at least 44&nbsp;×&nbsp;44 points</strong>, the size Apple recommends for reliable tapping.</li>
+    <li><strong>Reports say what they mean.</strong> Severity carries a plain-language consequence, not just a number.</li>
+    <li><strong>We never claim a place has no barriers</strong> — only that nobody has reported one. An empty map means missing data, and the app says so.</li>
+    <li><strong>Photos are optional and described.</strong> A photo is never the only way information is conveyed.</li>
+  </ul>
+
+  <h2>Known gaps</h2>
+  <p>
+    We would rather list these than pretend they don't exist:
+  </p>
+  <ul>
+    <li>Voice Control has not been fully tested (see above).</li>
+    <li>Photo descriptions are optional, so older reports and reports from people who skipped the field may have no description beyond the barrier's own text.</li>
+    <li>The map itself is inherently visual. We pair it with a text list of nearby barriers, including distances, so the map is never the only route to the information — but a spatial view is still easier for sighted users.</li>
+    <li>Flagstone is available in English only at present.</li>
+  </ul>
+
+  <h2>Assistive technologies we test with</h2>
+  <p>
+    VoiceOver on iOS, Dynamic Type at accessibility sizes, Reduce Motion, Dark Mode,
+    and colour-vision simulation for the common forms of colour blindness. Testing is
+    done on physical hardware, not only the simulator.
+  </p>
+
+  <div class="contact-card">
+    <h2>Tell us where we got it wrong</h2>
+    <p>
+      If something in Flagstone is difficult or impossible for you to use, that's a bug
+      and we want to hear about it. Please include the device and which assistive
+      technology you were using if you can — but a plain description is completely fine
+      too, and no report is too small.
+    </p>
+    <a class="contact-link" href="mailto:skylerhalisky@gmail.com?subject=Flagstone%20accessibility%20feedback">Email us about accessibility</a>
+    <p style="margin-top:16px; font-size:14px; color:#64748b;">
+      We aim to respond within 3–5 business days. You can also report issues on
+      <a href="https://github.com/Skypie99/AccessMap/issues" target="_blank" rel="noopener">GitHub</a>,
+      or use the Feedback option inside the app.
+    </p>
+  </div>
+
+  <p style="margin-top:32px; font-size:14px; color:#64748b;">
+    Last reviewed: 19 August 2026. We review this statement with each significant release.
+  </p>
+
+</div>
+
+<footer>
+  <p>
+    <strong>Flagstone</strong> &nbsp;|&nbsp;
+    <a href="support.html">Support</a> &nbsp;|&nbsp;
+    <a href="privacy/">Privacy Policy</a> &nbsp;|&nbsp;
+    Accessibility
+  </p>
+  <p style="margin-top:8px;">© 2026 Flagstone. All rights reserved.</p>
+</footer>
+
+</body>
+</html>
