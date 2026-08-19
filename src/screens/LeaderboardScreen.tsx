@@ -30,10 +30,22 @@ interface Props {
 }
 
 function ordinalLabel(rank: number): string {
-  if (rank === 1) return '1st';
-  if (rank === 2) return '2nd';
-  if (rank === 3) return '3rd';
-  return `${rank}th`;
+  // English ordinals follow the last digit (21st, 22nd, 23rd) EXCEPT the
+  // teens, which are always -th (11th, 12th, 13th). The old early-returns
+  // produced "21th"/"22th"/"23th" for every rank past 20 — visible in the
+  // your-rank footer and spoken by its accessibilityLabel.
+  const lastTwo = rank % 100;
+  if (lastTwo >= 11 && lastTwo <= 13) return `${rank}th`;
+  switch (rank % 10) {
+    case 1:
+      return `${rank}st`;
+    case 2:
+      return `${rank}nd`;
+    case 3:
+      return `${rank}rd`;
+    default:
+      return `${rank}th`;
+  }
 }
 
 function AvatarCircle({
@@ -390,7 +402,7 @@ export default function LeaderboardScreen({ visible, onClose }: Props) {
             // activity AND when the migration is pending, so one friendly
             // message serves both.
             <View style={styles.stateWrap}>
-              <Trophy size={32} color={color.goldAccent} strokeWidth={2} />
+              <Trophy size={32} color={color.goldAccent} strokeWidth={2} {...decorativeProps} />
               {tab === 'month' ? (
                 <AppText variant="body" style={styles.stateText}>
                   No monthly ranking yet — points appear as people verify each other&apos;s reports.

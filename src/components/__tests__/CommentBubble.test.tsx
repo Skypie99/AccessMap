@@ -59,7 +59,10 @@ const OTHER_LABEL = `Comment by ${AUTHOR}: ${TEXT}, ${TIME_LABEL}`;
 const OWN_LABEL = `Your comment: ${TEXT}. ${TIME_LABEL}`;
 const REPORT_NAME = reportCommentA11yLabel(AUTHOR);
 const HIDE_NAME = hideCommentA11yLabel(AUTHOR);
-const DELETE_NAME = `Delete ${AUTHOR}'s comment`;
+// QA 2026-08-18: the delete button only renders on your OWN bubble, so the
+// label says "your", not the display name — `Delete ${author}'s comment` read
+// as "Delete Anonymous's comment" for unnamed users deleting their own comment.
+const DELETE_NAME = 'Delete your comment';
 const BLOCK_NAME = blockAuthorA11yLabel(AUTHOR);
 
 /**

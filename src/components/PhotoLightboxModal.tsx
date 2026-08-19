@@ -106,7 +106,14 @@ export default function PhotoLightboxModal({ visible, photoUrl, caption, onClose
           ref={closeRef}
           onPress={onClose}
           hitSlop={spacing.lg}
-          style={({ pressed }) => [styles.closeBtn, pressed && styles.closeBtnPressed]}
+          // Same inset treatment as the caption bar below: 48 is fine on
+          // notch-less devices, but statusBarTranslucent means Dynamic-Island
+          // insets (59pt) can crowd the button without this.
+          style={({ pressed }) => [
+            styles.closeBtn,
+            { top: Math.max(48, insets.top + spacing.sm) },
+            pressed && styles.closeBtnPressed,
+          ]}
           accessibilityRole="button"
           accessibilityLabel="Close photo"
         >

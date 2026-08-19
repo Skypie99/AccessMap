@@ -410,7 +410,16 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(function Pla
               accessibilityLabel={`Heat zone: ${cell.count} flags, mean severity ${cell.meanSeverity.toFixed(1)} out of 5.`}
             >
               <View style={[styles.heatBadge, { backgroundColor: fill }]}>
-                <Text style={[styles.heatBadgeText, { color: labelTone }]}>{meanRounded}</Text>
+                {/* Mirror the cluster count above: cap scaling so the digit
+                    can't overflow the badge at AX sizes, and hide it from the
+                    a11y tree — the Marker's own label already speaks it. */}
+                <Text
+                  style={[styles.heatBadgeText, { color: labelTone }]}
+                  maxFontSizeMultiplier={1.2}
+                  {...decorativeProps}
+                >
+                  {meanRounded}
+                </Text>
               </View>
             </Marker>
           </React.Fragment>

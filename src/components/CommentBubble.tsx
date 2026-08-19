@@ -166,7 +166,9 @@ export function CommentBubble({
             hitSlop={8}
             style={({ pressed }) => [styles.deleteBtn, pressed && styles.deleteBtnPressed]}
             accessibilityRole="button"
-            accessibilityLabel={`Delete ${author}'s comment`}
+            // This button only renders when isOwn — say "your", not the display
+            // name (which reads "Delete Anonymous's comment" for unnamed users).
+            accessibilityLabel="Delete your comment"
             accessibilityHint="Permanently removes your comment"
           >
             <X
