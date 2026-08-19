@@ -82,6 +82,16 @@ git log main..qa/auto-2026-08-18 --oneline
 
 After merging: push main so GitHub Pages picks up the privacy-page Nominatim clause.
 
+## Addendum — 2026-08-19, Sky-approved live changes
+
+Sky asked for the top proposals to be implemented the same night. Done, with findings:
+
+- **P1 (anon actor award): already live.** The production trigger already carries `auth.uid() IS DISTINCT FROM new.user_id` plus a null-actor guard — verified directly. schema.sql's copy still had the old `<>` form; now synced (commit `58e59bd`). No DB change needed.
+- **P2 (transition guard): APPLIED to production** — with one amendment the June proposal needed: `resolved → rejected` stays legal **for admins**, because AdminScreen's dismiss acts on the recent-200 list, which includes resolved flags. Applying the proposal verbatim would have broken that shipped flow. Self-tested against production: 3 legal transitions allowed, 2 illegal blocked (`resolved→verified`, non-admin `resolved→rejected`), test row + history fully cleaned up (0 leftovers, 0 point events). Migration recorded at `supabase/migrations/2026-08-19_flag_status_transition_guard_APPLIED.sql`; the PROPOSED file is marked superseded. **Residual risk documented in the migration header:** `increment_reopen_request` still has no per-user server dedup, so a scripted caller can cycle statuses via that RPC; the guard narrows the farming surface but rate-limiting the RPC remains open (P12).
+- **P3 (schema.sql drift): banner added** — loud do-not-rerun-against-live warning at the top of schema.sql, plus the trigger-body sync above.
+- **Sentry DSN: deleted from EAS** — all three `EXPO_PUBLIC_SENTRY_DSN` rows (development/preview/production) removed on expo.dev, so the privacy policy's "no crash reporting" is now structurally true, not just currently true. If Sentry is ever wanted, the DSN can be re-issued from the Sentry project settings — but the privacy policy, App Store privacy labels, and privacy manifest must all be updated first.
+- **Key rotation Q:** answered — Supabase anon keys don't expire and don't need routine rotation; safety rides on RLS, which is verified hardened.
+
 ## Notes / questions for you
 
 1. **Ratify or reword the Nominatim sentence** (it's in three places, kept verbatim-equal by the privacy guard; marked AGENT-PROPOSED in the ratified doc).
