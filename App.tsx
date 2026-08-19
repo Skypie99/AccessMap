@@ -128,6 +128,20 @@ function Gate() {
     return () => sub.remove();
   }, [capturePending]);
 
+  // Clear the guest latch the moment a real session appears, so signing out
+  // later returns to the sign-in wall rather than the guest map.
+  //
+  // Without this, `guestMode` is a one-way door: it is set true at the
+  // SignInScreen below and never set false anywhere. A user who entered as a
+  // guest, then signed in from the Profile modal (ProfileScreen's sign-in
+  // sheet, which does not touch this state), then signed out, fell through to
+  // the guest branch — the app behaved as though they had never had an account.
+  // Not a crash, but the first-run path and the after-sign-out path disagreed
+  // about what "signed out" means, and only one of them is right.
+  useEffect(() => {
+    if (session) setGuestMode(false);
+  }, [session]);
+
   // Consume-once getter: clearing on read keeps a stale link from re-firing
   // on a later sign-out → sign-in cycle. Stable identity so RootNavigator's
   // once-per-mount linking object never sees a dead closure.

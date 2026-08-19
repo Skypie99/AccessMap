@@ -170,15 +170,23 @@ describe('the fences around where this filter may be applied', () => {
     expect(src).not.toContain('containsBlockedTerm');
   });
 
-  it('the filter runs before the network call in both call sites', () => {
+  it('the filter runs before the network call in every call site', () => {
     for (const [file, guard] of [
       ['lib/comments.ts', 'containsBlockedTerm(trimmed)'],
       ['lib/flags.ts', 'containsBlockedTerm(input.description)'],
+      // Added 2026-08-18. display_name is rendered under its owner's byline on
+      // OTHER people's barrier reports (comments.ts joins it onto every
+      // comment) and on the public leaderboard, so it reaches more readers than
+      // any single report does. It was the one user-authored string with no
+      // filter. `.update(` rather than `.insert(` because a profile edit is an
+      // update — the assertion is the same one: guard before the network call.
+      ['lib/users.ts', 'containsBlockedTerm(trimmed)'],
     ] as const) {
       const src = read(file);
       expect(src).toContain(guard);
-      // The guard has to precede the insert it is guarding.
-      expect(src.indexOf(guard)).toBeLessThan(src.indexOf('.insert('));
+      // The guard has to precede the write it is guarding.
+      const write = file === 'lib/users.ts' ? '.update(' : '.insert(';
+      expect(src.indexOf(guard)).toBeLessThan(src.indexOf(write));
     }
   });
 
