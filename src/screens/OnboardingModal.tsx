@@ -404,7 +404,9 @@ const makeStyles = (color: ColorTheme) =>
       gap: spacing.sm,
     },
     primaryBtn: {
-      backgroundColor: color.brand,
+      // brand → ctaFill: white-on-brand is the recorded 3.4:1 dark-mode FAIL
+      // (see TasksScreen ctaFill note); ctaFill passes in both modes.
+      backgroundColor: color.ctaFill,
       paddingVertical: spacing.lg,
       borderRadius: radius.lg,
       alignItems: 'center',

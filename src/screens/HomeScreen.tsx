@@ -814,7 +814,9 @@ const makeStyles = (color: ColorTheme) =>
       flexDirection: 'row',
       alignItems: 'center',
       gap: spacing.xs,
-      backgroundColor: color.brand,
+      // brand → ctaFill: same dark-mode contrast fork as mapPeekHint/retryBtn
+      // above — white 15/700 on brand is 3.4:1 in dark mode; ctaFill passes.
+      backgroundColor: color.ctaFill,
       paddingHorizontal: spacing.lg,
       paddingVertical: spacing.md,
       borderRadius: radius.full,

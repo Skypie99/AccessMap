@@ -610,7 +610,10 @@ function makeStyles(color: ColorTheme) {
       alignItems: 'center',
       justifyContent: 'center',
     },
-    retryBtnPressed: { backgroundColor: color.errorPressed },
+    // ctaFillPressed, not errorPressed: the fill above is ctaFill (blue), so the
+    // press state must stay in the same color family (errorPressed was a leftover
+    // from the red-retry recipe used in the preset/saved-places modals).
+    retryBtnPressed: { backgroundColor: color.ctaFillPressed },
     retryText: {
       fontSize: font.size.sm,
       fontWeight: font.weight.semibold,
