@@ -123,6 +123,113 @@ export const DISPUTE_CONTROL_LABEL = 'Flag as wrong';
 export const HIDE_CONTROL_LABEL = 'Hide';
 
 /**
+ * The Apple 1.2(c) BLOCK control — the one that actually closes 1.2(c).
+ *
+ * NOT a synonym for Hide, and the distinctness assertion in copy.test.ts now
+ * covers all four words for that reason (§SKY-3c extended by Jordan's
+ * 2026-08-18 Phase-0 gate, condition 4). The difference is direction in time:
+ * Hide is one bubble the reader has already read; Block is every bubble that
+ * account posts from here on. Per-item hiding cannot satisfy 1.2(c) precisely
+ * because the abuser can post again.
+ *
+ * Scoped to COMMENTS this phase — flags carry no visible author — per the same
+ * gate, answer 5. See `hiddenContent.ts` for why that is a decision, not a gap.
+ *
+ * Everything here is one word, chosen because it is the word Apple's own
+ * guideline uses; the sentences carrying the honesty load are the four below,
+ * whose CONTENT Jordan specified and whose wording is still Sky's.
+ * PROPOSED (1.2(c) Block, S-8) — Sky's final wording lands in DECISIONS §A / BP16.
+ */
+export const BLOCK_CONTROL_LABEL = 'Block';
+
+/**
+ * The confirmation body. Jordan's gate (answer 4) requires four things be said
+ * before a block is taken, and this string exists to say all four in the order
+ * a worried person needs them:
+ *
+ *   1. WHAT CHANGES — their comments stop appearing for you.
+ *   2. ASYMMETRY — they are not told, and nothing stops them. This is the
+ *      clause Hide never needed: "Hide" implies nothing about the other party,
+ *      but "Block" carries a folk expectation of mutual severance that this
+ *      feature does NOT deliver, and letting someone in a real harassment
+ *      situation believe otherwise is the specific harm to avoid.
+ *   3. SCOPE + PERSISTENCE — this device only, and it will not survive a
+ *      reinstall. Same "on this device" fence as COMMENT_HIDDEN_ANNOUNCEMENT.
+ *   4. THE REAL LEVER — Report is what reaches a human. A personal filter is
+ *      not a moderation verdict, and this must never be read as one.
+ *
+ * PROPOSED (1.2(c) Block, S-8) — Sky's final wording lands in DECISIONS §A / BP16.
+ */
+export const BLOCK_CONFIRM_BODY =
+  "You won't see comments from this person again. They aren't told, and this doesn't stop them posting or seeing your reports. It applies on this device only and won't survive reinstalling the app. If something breaks the community guidelines, use Report instead — that's the one that reaches a person.";
+
+/**
+ * Confirm-button label on the block dialog. AGENT-PROPOSED wording.
+ * PROPOSED (1.2(c) Block, S-8) — Sky's final wording lands in DECISIONS §A / BP16.
+ */
+export const BLOCK_CONFIRM_ACTION = 'Block';
+
+/**
+ * WCAG 4.1.3 status message when a block takes effect. Inherits the "on this
+ * device" fence from `COMMENT_HIDDEN_ANNOUNCEMENT` for the same reason: a bare
+ * "Person blocked" could be heard as an account suspension, which is the one
+ * thing this control must never imply. AGENT-PROPOSED wording.
+ * PROPOSED (1.2(c) Block, S-8) — Sky's final wording lands in DECISIONS §A / BP16.
+ */
+export const AUTHOR_BLOCKED_ANNOUNCEMENT = 'Blocked on this device';
+
+/**
+ * Title when a block could not be saved. `hideContent` throws on a write
+ * failure by design, and a block that silently fails is the worst instance of
+ * that class — someone just said "never show me this person again". Shaped
+ * after `HIDE_FAILED_TITLE`. AGENT-PROPOSED wording.
+ * PROPOSED (1.2(c) Block, S-8) — Sky's final wording lands in DECISIONS §A / BP16.
+ */
+export const BLOCK_FAILED_TITLE = "Couldn't block";
+
+/**
+ * Settings row title for the unblock surface. AGENT-PROPOSED wording.
+ * PROPOSED (1.2(c) Block, S-8) — Sky's final wording lands in DECISIONS §A / BP16.
+ */
+export const BLOCKED_PEOPLE_ROW_TITLE = 'Blocked people';
+
+/**
+ * Settings row subtitle. Carries the scope fence in the same breath as the
+ * count, exactly as `HIDDEN_COMMENTS_ROW_SUBTITLE` does — a reader who never
+ * opens the row still learns that this list is device-local.
+ * AGENT-PROPOSED wording.
+ * PROPOSED (1.2(c) Block, S-8) — Sky's final wording lands in DECISIONS §A / BP16.
+ */
+export const BLOCKED_PEOPLE_ROW_SUBTITLE = "People you've blocked on this device.";
+
+/**
+ * Empty state for the unblock surface. AGENT-PROPOSED wording.
+ * PROPOSED (1.2(c) Block, S-8) — Sky's final wording lands in DECISIONS §A / BP16.
+ */
+export const BLOCKED_PEOPLE_EMPTY = "You haven't blocked anyone on this device.";
+
+/**
+ * The unblock action. Deliberately "Unblock everyone" rather than a per-person
+ * list: the block list stores ACCOUNT IDS ONLY — no display names — because
+ * caching someone's name on the blocker's device to render an unblock list
+ * would persist a local record of who they blocked BY NAME, which is more
+ * identifying than the block itself and is not needed to make the feature work.
+ * With no names to show, a per-row list would be a column of bare uuids, which
+ * is worse than useless. Sky may replace this with a named list if she decides
+ * the local name cache is an acceptable trade — that is escalation 3 from the
+ * Phase-0 gate. AGENT-PROPOSED wording.
+ * PROPOSED (1.2(c) Block, S-8) — Sky's final wording lands in DECISIONS §A / BP16.
+ */
+export const UNBLOCK_ALL_LABEL = 'Unblock everyone';
+
+/**
+ * Confirmation body for the bulk unblock. AGENT-PROPOSED wording.
+ * PROPOSED (1.2(c) Block, S-8) — Sky's final wording lands in DECISIONS §A / BP16.
+ */
+export const UNBLOCK_ALL_CONFIRM_BODY =
+  "Their comments will start appearing for you again. You can block them again at any time.";
+
+/**
  * Label for the report sheet's free-text reason field. AGENT-PROPOSED wording:
  * a question, so it asks without promising anything about what follows. It is
  * deliberately not a category prompt — see the taxonomy note above.
@@ -268,6 +375,22 @@ export function reportCommentA11yLabel(author: string): string {
  */
 export function hideCommentA11yLabel(author: string): string {
   return `${HIDE_CONTROL_LABEL} comment by ${author}`;
+}
+
+/**
+ * Accessible NAME for a per-comment Block control. Same caller contract as its
+ * two siblings — pass the SAME author string the bubble renders.
+ *
+ * The name says "block <author>", NOT "block comment by <author>", and the
+ * difference is deliberate: this control acts on the PERSON, and a screen
+ * reader user deciding whether to press it needs the scope from the name, since
+ * the honesty fence forbids an accessibilityHint here (see the B-1 header).
+ * That is also what keeps it distinct from `hideCommentA11yLabel` in a row
+ * where both buttons sit side by side. AGENT-PROPOSED wording.
+ * PROPOSED (1.2(c) Block, S-8) — Sky's final wording lands in DECISIONS §A / BP16.
+ */
+export function blockAuthorA11yLabel(author: string): string {
+  return `${BLOCK_CONTROL_LABEL} ${author}`;
 }
 
 /**

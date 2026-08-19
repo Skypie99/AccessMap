@@ -386,7 +386,10 @@ describe('5 — CommentBubble counts EVERY action in its composite label', () =>
   it('the interface still declares the actions this rule is about', () => {
     // Anti-vacuity: the it.each below runs zero cases if the parse silently
     // returns nothing, and a zero-case it.each is a green test that checks air.
-    expect(ACTION_PROPS).toEqual(['onDelete', 'onReport', 'onHide']);
+    // FOUR as of 2026-08-18 — Block (Apple 1.2(c)) joined the row. The census is
+    // ordered by declaration, and the rule this guard protects is that EVERY
+    // action prop is counted by `useCompositeLabel`; a fifth must land here too.
+    expect(ACTION_PROPS).toEqual(['onDelete', 'onReport', 'onHide', 'onBlock']);
   });
 
   it('the old single-action spelling is gone', () => {

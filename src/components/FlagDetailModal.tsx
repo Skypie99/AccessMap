@@ -52,7 +52,12 @@ import {
 import { hasRequestedReopen, recordReopenRequest } from '@/lib/reopenRequests';
 import { hasRequestedDispute, recordDisputeRequest } from '@/lib/disputeRequests';
 import { DISPUTE_ENABLED, requestFlagDispute } from '@/lib/disputes';
-import { filterHidden, hideContent, loadHidden } from '@/lib/hiddenContent';
+import {
+  filterBlockedAuthors,
+  filterHidden,
+  hideContent,
+  loadHidden,
+} from '@/lib/hiddenContent';
 import { severityA11y, statusA11y } from '@/lib/a11yText';
 import { isDisabilityTag, isSeasonalTag, isValidTag, tagLabel } from '@/lib/contextTags';
 import { addFlagPhoto, listFlagPhotos } from '@/lib/photos';
@@ -65,6 +70,11 @@ import StatusHistoryModal from './StatusHistoryModal';
 import ReportContentModal from './ReportContentModal';
 import type { ReportTarget } from '@/lib/reports';
 import {
+  AUTHOR_BLOCKED_ANNOUNCEMENT,
+  BLOCK_CONFIRM_ACTION,
+  BLOCK_CONFIRM_BODY,
+  BLOCK_CONTROL_LABEL,
+  BLOCK_FAILED_TITLE,
   COMMENT_HIDDEN_ANNOUNCEMENT,
   DISPUTE_ALREADY_RECORDED_MESSAGE,
   DISPUTE_CONTROL_LABEL,
@@ -158,6 +168,8 @@ export default function FlagDetailModal({
   // FLASH a comment the reader has already told us they never want to see —
   // which is the exact promise `hiddenContent.ts` refuses to break.
   const [hiddenComments, setHiddenComments] = useState<string[]>([]);
+  // Apple 1.2(c) block list, loaded from the SAME read as `hiddenComments`.
+  const [blockedAuthors, setBlockedAuthors] = useState<string[]>([]);
 
   // Reopen request flow — F10 (Riley). Only shown when status === 'resolved'
   // and the current user is NOT the reporter. Tapping opens an inline form;
@@ -341,7 +353,14 @@ export default function FlagDetailModal({
     let cancelled = false;
     (async () => {
       const hidden = await loadHidden();
-      if (!cancelled) setHiddenComments(hidden.comment);
+      if (cancelled) return;
+      setHiddenComments(hidden.comment);
+      // ONE read serves both filters. Blocking shares this effect rather than
+      // adding a second because it shares the storage key, the lifecycle and
+      // the failure policy — a separate effect would double the reads and could
+      // land the two lists a frame apart, which is visible as a comment that
+      // appears and then vanishes.
+      setBlockedAuthors(hidden.author);
     })();
     return () => {
       cancelled = true;
@@ -371,6 +390,47 @@ export default function FlagDetailModal({
     // this same thread announces its removal for exactly this reason; hide
     // makes a bubble disappear the same way and owes the same announcement.
     AccessibilityInfo.announceForAccessibility(COMMENT_HIDDEN_ANNOUNCEMENT);
+  };
+
+  /**
+   * Apple 1.2(c) — BLOCK an author, for this reader, on this device.
+   *
+   * This is the control that actually satisfies 1.2(c), and the difference from
+   * `handleHideComment` above is direction in time: hide removes one bubble the
+   * reader has already seen, block removes every bubble that account posts from
+   * here on. Per-item hiding cannot satisfy the guideline precisely because the
+   * blocked person can post again.
+   *
+   * CONFIRMED FIRST, unlike hide. Hide is trivially reversible per item and
+   * scoped to one bubble; block is a standing decision about a person, and
+   * `BLOCK_CONFIRM_BODY` is where the four things Jordan's Phase-0 gate
+   * requires get said before it takes effect — what changes, that the other
+   * person is neither told nor restricted, that it is this device only and
+   * won't survive reinstall, and that Report is the lever that reaches a human.
+   * `confirm()` rather than RN's alert primitive because this is a
+   * Cancel/Confirm pair, and that primitive's button form is a silent no-op on
+   * react-native-web (CLAUDE.md's error-handling tiers).
+   *
+   * Same write-then-advance ordering as hide: `hideContent` throws on a failed
+   * write, and a block that silently failed would be the worst instance of that
+   * class, so the local list only moves after the write lands.
+   */
+  const handleBlockAuthor = async (authorId: string) => {
+    const ok = await confirm(
+      `${BLOCK_CONTROL_LABEL}?`,
+      BLOCK_CONFIRM_BODY,
+      BLOCK_CONFIRM_ACTION,
+      true,
+    );
+    if (!ok) return;
+    try {
+      await hideContent('author', authorId);
+    } catch (e) {
+      notify(BLOCK_FAILED_TITLE, errorMessage(e));
+      return;
+    }
+    setBlockedAuthors((prev) => (prev.includes(authorId) ? prev : [...prev, authorId]));
+    AccessibilityInfo.announceForAccessibility(AUTHOR_BLOCKED_ANNOUNCEMENT);
   };
 
   const handleToggleWatch = async () => {
@@ -1694,7 +1754,18 @@ export default function FlagDetailModal({
                           separate work item.
                     */}
                     <View style={styles.commentsList} accessibilityRole="list">
-                      {filterHidden(comments, hiddenComments, (c) => c.id).map((c) => (
+                      {/* THE 1.2(c) READ SIDE. Blocked authors are dropped
+                          BEFORE per-item hides, so a blocked person's comments
+                          never reach the second filter — order is immaterial to
+                          the result but this way round reads as the stronger
+                          rule first. Both filters are pure and synchronous
+                          (their ids were loaded once, per flag open), so this
+                          costs nothing on the render path. */}
+                      {filterHidden(
+                        filterBlockedAuthors(comments, blockedAuthors, (c) => c.user_id),
+                        hiddenComments,
+                        (c) => c.id,
+                      ).map((c) => (
                         <CommentBubble
                           key={c.id}
                           author={c.display_name ?? 'Anonymous'}
@@ -1782,6 +1853,29 @@ export default function FlagDetailModal({
                               : () => {
                                   void handleHideComment(c.id);
                                 }
+                          }
+                          // Apple 1.2(c) — the person-level control.
+                          //
+                          // TWO gates, not one, and the second is the reason
+                          // this is not spelled like its siblings above: a
+                          // comment whose author deleted their account comes
+                          // back with `user_id: null` (the FK is ON DELETE SET
+                          // NULL live — see the SR-117 drift capture). There is
+                          // nobody to block on such a row, so the control is
+                          // WITHHELD rather than drawn-and-inert. `c.user_id &&`
+                          // also narrows the type, which is what lets the
+                          // closure pass a plain string.
+                          //
+                          // Guest-visible for the same reason Hide is: the list
+                          // is device-local AsyncStorage, so there is no account
+                          // to need. An App Review reviewer walking the app
+                          // signed out can exercise this.
+                          onBlock={
+                            c.user_id && c.user_id !== user?.id
+                              ? () => {
+                                  void handleBlockAuthor(c.user_id as string);
+                                }
+                              : undefined
                           }
                         />
                       ))}
