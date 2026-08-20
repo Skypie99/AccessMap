@@ -61,7 +61,11 @@ function walk(dir: string, acc: string[] = []): string[] {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
     const p = path.join(dir, entry.name);
     if (entry.isDirectory()) {
-      if (!/(__tests__|__mocks__|\.expo|\.claude|node_modules)/.test(p)) walk(p, acc);
+      // Match the directory's OWN name, never the joined absolute path: the repo
+      // is checked out under .claude/worktrees/<name>/ during agent runs, so a
+      // full-path test would exclude every directory in src/ and the scan below
+      // would go vacuously green.
+      if (!/^(__tests__|__mocks__|\.expo|\.claude|node_modules)$/.test(entry.name)) walk(p, acc);
     } else if (/\.tsx?$/.test(entry.name) && !/\.(test|spec)\.tsx?$/.test(entry.name)) {
       acc.push(p);
     }
