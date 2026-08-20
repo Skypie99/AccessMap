@@ -118,7 +118,22 @@ describe('the terms are reachable from all three surfaces (§SKY-6)', () => {
   it.each(SURFACES)('%s opens the terms', (_label, rel) => {
     const src = readSrc(rel);
     expect(src).toContain('TERMS_LINK_LABEL');
-    expect(src).toContain("setOpen('terms')");
+    // HOW it opens them depends on what the surface IS, and that is not a
+    // style choice — iOS refuses a second presentation from a view controller
+    // already presenting one. Settings is a tab screen, so the root VC is free
+    // and the shared host is right. About and the report sheet are themselves
+    // Modals; routed through the shared host their links did NOTHING on device
+    // (captured 2026-08-19 — see legalSheetPresentation.guard.test.ts), so they
+    // mount the sheet locally and present from their own VC.
+    expect(src).toMatch(/setOpen\('terms'\)|legal\.openTerms/);
+  });
+
+  it('Settings uses the shared host; the two modal surfaces mount locally', () => {
+    expect(readSrc('screens/SettingsScreen.tsx')).toContain("setOpen('terms')");
+    for (const rel of ['screens/AboutScreen.tsx', 'components/ReportContentModal.tsx']) {
+      expect(readSrc(rel)).toContain('useLegalSheets()');
+      expect(readSrc(rel)).toContain('legal.sheets');
+    }
   });
 
   it.each(SURFACES)('%s labels the entry from the shared const, never a literal', (_label, rel) => {
@@ -175,9 +190,13 @@ describe('the terms are also reachable from the blocked-content alert (§SKY-7)'
     ['flag description submit', 'screens/ReportFlagModal.tsx'],
   ];
 
-  it.each(ALERT_SURFACES)('%s opens the shared terms modal', (_label, rel) => {
+  it.each(ALERT_SURFACES)('%s opens the terms from its own modal', (_label, rel) => {
     const src = readSrc(rel);
-    expect(src).toContain("setOpen('terms')");
+    // Both of these hosts are Modals, so neither can reach the shared host —
+    // this is the Apple 1.2(a) affordance, and it was dead on device in
+    // exactly the place it was built for until it moved to a local mount.
+    expect(src).toContain('legal.openTerms');
+    expect(src).toContain('legal.sheets');
     expect(src).toContain('showBlockedContentAlert(');
   });
 

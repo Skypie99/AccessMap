@@ -29,7 +29,7 @@ import { track } from '@/lib/analytics';
 import { errorMessage } from '@/lib/errors';
 import { notify } from '@/lib/confirm';
 import { isContentBlockedError, showBlockedContentAlert } from '@/lib/blockedContent';
-import { useSharedModals } from '@/lib/sharedModalsContext';
+import { useLegalSheets } from '@/components/LegalSheets';
 import {
   CATEGORY_LABELS,
   CATEGORY_ORDER,
@@ -130,7 +130,11 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
   // §SKY-7 — the blocked-content alert's route to the guidelines. This modal
   // mounts from MapScreen, inside <SharedModalsProvider>; TermsScreen's single
   // mount in SharedModalsHost is what lets it present over this sheet.
-  const { setOpen } = useSharedModals();
+  // This surface is itself a Modal, so the shared navigator-level host
+  // cannot present over it — iOS refuses a second presentation from an
+  // already-presenting VC and the link silently does nothing. Mounted
+  // locally it presents from THIS modal's VC. See LegalSheets.tsx.
+  const legal = useLegalSheets();
   // WCAG 2.4.3: move the screen-reader cursor onto the title when the modal opens.
   const titleRef = useFocusOnOpen<Text>(visible);
   const [category, setCategory] = useState<FlagCategory>('no_ramp');
@@ -561,7 +565,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
       // against. Every other failure keeps notify() unchanged, so the three
       // two-argument assertions in ReportFlagModal.test.tsx still hold.
       if (isContentBlockedError(e)) {
-        showBlockedContentAlert("Couldn't submit your report", () => setOpen('terms'));
+        showBlockedContentAlert("Couldn't submit your report", legal.openTerms);
       } else {
         notify("Couldn't submit your report", errorMessage(e));
       }
@@ -1308,6 +1312,8 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
         </SheetPull>
         </KeyboardAvoidingView>
       </View>
+      {/* Inside this Modal on purpose — see LegalSheets.tsx. */}
+      {legal.sheets}
     </Modal>
   );
 }

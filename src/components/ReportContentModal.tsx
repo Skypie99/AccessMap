@@ -97,7 +97,7 @@ import {
   type ReportCategoryId,
   reportFailedBody,
 } from '@/lib/copy';
-import { useSharedModals } from '@/lib/sharedModalsContext';
+import { useLegalSheets } from '@/components/LegalSheets';
 
 interface Props {
   visible: boolean;
@@ -118,7 +118,11 @@ export default function ReportContentModal({ visible, target, onClose }: Props) 
   // The terms sheet is mounted at the navigator, not here — this sheet is
   // itself inside the flag sheet, and a third modal nested in the second would
   // be trapped beneath it. Raising the shared flag lets it present on top.
-  const { setOpen } = useSharedModals();
+  // This surface is itself a Modal, so the shared navigator-level host
+  // cannot present over it — iOS refuses a second presentation from an
+  // already-presenting VC and the link silently does nothing. Mounted
+  // locally it presents from THIS modal's VC. See LegalSheets.tsx.
+  const legal = useLegalSheets();
 
   const [reason, setReason] = useState('');
   const [category, setCategory] = useState<ReportCategoryId | null>(null);
@@ -417,7 +421,7 @@ export default function ReportContentModal({ visible, target, onClose }: Props) 
                       submit-time filter rejection — is an Alert and still
                       carries no route. Sky ruled that out of scope for Run 2. */}
                   <Pressable
-                    onPress={() => setOpen('terms')}
+                    onPress={legal.openTerms}
                     disabled={submitting}
                     style={({ pressed }) => [
                       styles.termsLinkRow,
@@ -486,6 +490,8 @@ export default function ReportContentModal({ visible, target, onClose }: Props) 
           </View>
         </KeyboardAvoidingView>
       </View>
+      {/* Inside this Modal on purpose — see LegalSheets.tsx. */}
+      {legal.sheets}
     </Modal>
   );
 }
