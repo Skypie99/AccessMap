@@ -100,6 +100,21 @@ export function a11yToggle(
  * present/animate in before focus moves. Safe everywhere: if the element isn't
  * mounted (or on platforms without a native handle) it's a no-op.
  *
+ * ⚠ WEB IS SKIPPED BY DESIGN, AND THEN DEFENDED ANYWAY — the same two-layer
+ * guard `useSurfaceTrigger` carries below, for the same reason. On
+ * react-native-web `findNodeHandle` THROWS ("findNodeHandle is not supported on
+ * web"), and `AccessibilityInfo.setAccessibilityFocus` is a stub with an empty
+ * body there, so there is nothing to move even if the handle existed. Without
+ * the skip this fired an uncaught error on EVERY open of EVERY dismissable
+ * surface in the web build — observed live, four opens, four throws. It escaped
+ * every gate because react-test-renderer implements `findNodeHandle` perfectly
+ * well, so all 3,061 jest tests stayed green through it.
+ *
+ * This hook runs inside a timer rather than a press handler, so the throw could
+ * not abort the tap the way the drawer regression did (ee8821d) — but the rule
+ * that fix established is the one that matters here too: an accessibility
+ * ENHANCEMENT must never be able to throw, on any platform, for any reason.
+ *
  * Usage:
  *   const titleRef = useFocusOnOpen<Text>(visible);
  *   <AppText ref={titleRef} variant="heading" accessibilityRole="header">Title</AppText>
@@ -109,9 +124,15 @@ export function useFocusOnOpen<T extends Component>(active: boolean) {
 
   useEffect(() => {
     if (!active) return;
+    if (Platform.OS === 'web') return;
     const id = setTimeout(() => {
-      const node = ref.current ? findNodeHandle(ref.current) : null;
-      if (node != null) AccessibilityInfo.setAccessibilityFocus(node);
+      try {
+        const node = ref.current ? findNodeHandle(ref.current) : null;
+        if (node != null) AccessibilityInfo.setAccessibilityFocus(node);
+      } catch {
+        // Focus is an enhancement; a platform that can't resolve a handle
+        // simply doesn't get the cursor move. It never becomes an app error.
+      }
     }, 150);
     return () => clearTimeout(id);
   }, [active]);
