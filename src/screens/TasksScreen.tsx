@@ -1291,7 +1291,14 @@ export default function TasksScreen() {
         }
         renderSectionHeader={({ section: { title, data } }) => (
           <View style={styles.sectionHeader} accessible accessibilityRole="header">
-            <AppText variant="heading" style={styles.sectionTitle}>{title}</AppText>
+            {/* accessibilityRole="none": the WRAPPER is the one header node —
+                it's `accessible`, so on iOS it is the single VoiceOver element
+                and only its role ever lands. Left alone, variant="heading"
+                would add a second header role here, which react-native-web
+                renders as an <h1> INSIDE the wrapper's <h1>: invalid HTML that
+                React errors on, and one title announced as two nested headings
+                to a browser screen reader. */}
+            <AppText variant="heading" style={styles.sectionTitle} accessibilityRole="none">{title}</AppText>
             <View style={styles.sectionCountPill}>
               <AppText variant="monoBold" style={styles.sectionCountText}>{data.length}</AppText>
             </View>

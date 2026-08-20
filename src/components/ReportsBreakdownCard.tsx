@@ -248,7 +248,13 @@ export default function ReportsBreakdownCard({ userId, refreshKey }: Props) {
         accessibilityRole="header"
         accessibilityLabel={summary}
       >
-        <AppText variant="heading" style={styles.title}>Your reports</AppText>
+        {/* accessibilityRole="none": the WRAPPER is the one header node — it's
+            `accessible` and carries the summary label, so on iOS it is the
+            single VoiceOver element and only its role ever lands. Left alone,
+            variant="heading" would add a second header role, which
+            react-native-web renders as an <h1> INSIDE the wrapper's <h1>:
+            invalid HTML, and one title heard as two nested headings. */}
+        <AppText variant="heading" style={styles.title} accessibilityRole="none">Your reports</AppText>
         <AppText variant="label" style={styles.totalChip}>{stats.total} total</AppText>
       </View>
 
