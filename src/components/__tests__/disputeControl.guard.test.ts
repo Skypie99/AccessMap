@@ -222,7 +222,9 @@ describe('W1 is PARTIAL — the count is recorded, never displayed', () => {
       for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
         const p = path.join(dir, e.name);
         if (e.isDirectory()) {
-          if (!/(__tests__|__mocks__|node_modules)/.test(p)) walk(p);
+          // Test the directory's own name, not the joined absolute path — a
+          // checkout under .claude/worktrees/ would otherwise skip all of src/.
+          if (!/^(__tests__|__mocks__|node_modules)$/.test(e.name)) walk(p);
         } else if (/\.tsx?$/.test(e.name) && !/\.(test|spec)\.tsx?$/.test(e.name)) {
           files.push(p);
         }
