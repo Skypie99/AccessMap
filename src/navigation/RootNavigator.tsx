@@ -189,9 +189,20 @@ function FlagsProviderWithAuth({ initialRouteName }: { initialRouteName: keyof R
           {/* ⚠ ORDER IS LOAD-BEARING ON WEB, and only on web.
               react-native-web renders every <Modal> as a fixed div with the
               SAME z-index (9999), so when two are open at once the LATER
-              SIBLING WINS. Native does not care: a pageSheet is its own UIKit
-              scene and the last-presented modal is on top regardless of tree
-              position.
+              SIBLING WINS.
+
+              ⚑ THIS COMMENT USED TO SAY "Native does not care: a pageSheet is
+              its own UIKit scene and the last-presented modal is on top
+              regardless of tree position." THAT WAS FALSE, and it cost a whole
+              investigation on 2026-08-19. Native cares enormously — just about
+              a different thing. iOS refuses to present a modal from a view
+              controller that is ALREADY presenting one, so these two sheets
+              (which present from the ROOT) can never open over a surface that
+              is itself a Modal. The tap does nothing, silently. Ordering does
+              not help; nothing here can. Any surface that is itself a Modal
+              mounts its own copy via useLegalSheets() — see
+              src/components/LegalSheets.tsx. What lives here serves the TAB
+              screens, where the root VC is free.
 
               Found live in the web export, Run 2: the drawer's About sat over
               the terms sheet opened FROM it, and the terms rendered underneath
