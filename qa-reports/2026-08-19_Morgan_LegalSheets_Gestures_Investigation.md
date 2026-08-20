@@ -110,6 +110,18 @@ that it quietly disables the feature).
 
 **Gates:** typecheck 0 · 3 new tests · 3064/3064 green.
 
+**Verified in a real browser, before and after, same sequence** (drawer → About → Privacy over
+About):
+
+| | `findNodeHandle` uncaught errors |
+|---|---|
+| before | **1 per modal open** — 4 opens, 4 throws |
+| after | **0** |
+
+Only pre-existing React DOM-prop warnings remain in the console (`accessible`,
+`importantForAccessibility`, `accessibilityElementsHidden` leaking to web DOM elements) — cosmetic
+noise, unrelated, and untouched by this change.
+
 ---
 
 ## 3 · Privacy / Terms not opening — NOT reproduced
@@ -190,8 +202,18 @@ triage pass, not this one.
 test on a simulator.** Without it, a local iOS build dies with 5 consteval errors in
 `fmt/format-inl.h` under Xcode 26.6 — I hit exactly that on my first attempt tonight.
 
-I cherry-picked it onto this branch and the build got past fmt immediately (the plugin flips
-exactly 2 of 210 build configurations to `gnu++17`, as its commit message predicted).
+I cherry-picked it onto this branch and **the local simulator build now succeeds end to end** —
+first time since July 25. Evidence:
+
+- the plugin flips exactly **2** build configurations to `gnu++17` (fmt Debug + Release), exactly
+  as its commit message predicted
+- `xcodebuild` compiled all 104 pods with **zero errors** — the 5 consteval failures in
+  `fmt/format-inl.h` are gone
+- `Flagstone.app` is installed and launching on the iPhone 17 Pro simulator
+  (`com.accessmap.app`, verified via `simctl listapps`)
+
+Note the prebuild regenerates `ios/` under the new brand — it is now `ios/Flagstone.xcworkspace`,
+not `ios/AccessMap.xcworkspace`. `ios/` is gitignored, so nothing tracked moved.
 
 **This is the reason a regression like Sky's reaches her phone before anyone sees it.** All 3,061
 tests pass, typecheck is 0, lint is clean — and the two bugs found tonight were both invisible to
@@ -219,13 +241,30 @@ Permanent fix — add to `~/.zshrc`:
 export LANG=en_US.UTF-8
 ```
 
-**2 · The simulator panel won't attach.** The tool reports Xcode "not selected" even though
-`xcode-select -p` already returns `/Applications/Xcode.app/Contents/Developer`. Its suggested fix
-needs sudo, so Sky has to run it:
+**2 · Xcode was never actually selected, and its first-launch was never accepted.**
+
+I first read this as a false alarm — `xcode-select -p` returns
+`/Applications/Xcode.app/Contents/Developer`, so the tooling's "Xcode is installed but not
+selected" looked wrong. It isn't. Two checks settle it:
+
+- `/var/db/xcode_select_link` — **does not exist.** That is the symlink `xcode-select -s`
+  writes. With no link, `xcode-select -p` is reporting a *default*, not a selection.
+- `xcodebuild -checkFirstLaunchStatus` — **exits 69.** The first-launch / license step has never
+  been completed.
+
+Both need sudo, so Sky has to run them:
 
 ```bash
 sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
 ```
+
+```bash
+sudo xcodebuild -runFirstLaunch
+```
+
+Until then the interactive simulator panel cannot attach, and there is **no tap injection
+available** — `simctl` has no tap/touch verb and `idb` is not installed. Screenshots and app
+launch work; navigating the UI does not.
 
 ---
 
