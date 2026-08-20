@@ -17,7 +17,7 @@ and I say so plainly rather than shipping a guess as a fix.
 |---|---|---|
 | 1 | Map gestures missing | **Explained — deliberate removal**, landed in the build Sky just installed |
 | 2 | "We fixed this previously" | **Real bug found + fixed** — the same defect, at a second call site that never got the guard |
-| 3 | Privacy / Terms won't open | **Not reproduced.** Web is clean; the code is byte-identical to the build where it worked |
+| 3 | Privacy / Terms won't open | **REPRODUCED AND FIXED** on the simulator — a UIKit presentation rule, not a JS bug. See §3 |
 
 ---
 
@@ -124,10 +124,78 @@ noise, unrelated, and untouched by this change.
 
 ---
 
-## 3 · Privacy / Terms not opening — NOT reproduced
+## 3 · Privacy / Terms not opening — REPRODUCED, root-caused, fixed
 
-I could not make this fail, and I want to be honest about that rather than attach the label to
-the fix above.
+⚠️ **This section replaces an earlier "not reproduced" verdict.** That verdict was correct about
+web and wrong about the app, and it stood only because local simulator builds had been blocked
+since July 25 (§4). The moment one ran, the bug appeared on the first try.
+
+### What actually happens
+
+Tapping **Terms & Community Guidelines** or **Privacy Policy** inside the About sheet does
+**nothing at all** — no error, no log in JS, no visual response. The cause is UIKit, not React:
+
+```
+[com.apple.UIKit:Presentation] Attempt to present <RCTModalHostViewController>
+on <UIViewController: 0x1130a9800> (from <UIViewController: 0x1130a9800>)
+which is already presenting <RCTModalHostViewController: 0x133c15e00>.
+```
+
+One line per dead tap, timestamps matching the taps exactly.
+
+`SharedModalsHost` mounts both sheets as siblings of the tab navigator, so they present from the
+**root** view controller. From Settings — a tab screen — that is correct, and it is exactly why
+Settings was the only entry point that ever worked. From a surface that is **itself a Modal** it
+cannot work, and it fails silently.
+
+### Five entry points shipped this way
+
+| Surface | Link | Status before |
+|---|---|---|
+| About | Privacy Policy | dead |
+| About | Terms & Community Guidelines | dead |
+| ReportContentModal | Terms & Community Guidelines | dead |
+| ReportFlagModal | "View guidelines" (blocked content) | dead |
+| FlagDetailModal | "View guidelines" ×2 (blocked content) | dead |
+
+The last three are the **Apple 1.2(a) affordance** that `b200eb0` built — dead in exactly the
+place it was built for.
+
+### The comment that sent this the wrong way
+
+`RootNavigator.tsx` asserted:
+
+> "Native does not care: a pageSheet is its own UIKit scene and the last-presented modal is on top
+> regardless of tree position."
+
+That is false. The mount-**order** fix it describes was real, but only ever fixed **web**, where
+two modals are same-z-index fixed divs and the later sibling wins. Web was fine throughout; native
+never was. Corrected in place (`fd6632e`).
+
+### The fix
+
+`useLegalSheets()` mounts the sheet **inside** the surface that opens it, so it presents from that
+modal's own view controller — legal — and About stays open beneath it, which is the
+over-not-under behaviour §SKY-6 asked for in the first place.
+
+Not a new pattern: **SignInScreen has mounted both sheets locally since B-3**, for an unrelated
+reason, and both open correctly there on device. That working surface is what identified the shape
+of the fix. Settings keeps the shared host.
+
+**Verified on device, before and after, same taps:** both About links dead → both open, About
+still visible beneath, closing returns to it. **Zero** "already presenting" errors afterward.
+
+New guard `legalSheetPresentation.guard.test.ts` fails if any file rendering its own `<Modal>`
+reaches for the shared host, or takes the hook without rendering `legal.sheets`. Its regexes were
+checked against the old buggy shape, the fixed shape, and a tab screen — a guard that cannot fail
+is worth nothing. Three existing guards asserted the broken arrangement and were **updated, not
+deleted**: their intent is intact, only the mechanism assertion changed.
+
+**Gates:** typecheck 0 · lint 0 errors · 209 suites / 3068 tests green.
+
+---
+
+### What I checked first, and why it misled me
 
 ### What I checked
 
@@ -167,13 +235,10 @@ iOS BlurView** with no lite fallback — the commit flagged this itself as
 `NEEDS-SKY-DEVICE`. Heavy stacked blur over a live map is the kind of thing that degrades on
 device and on nothing else.
 
-### What I need from Sky to close this
+### Nothing further needed from Sky here
 
-One detail turns this from open to solved:
-
-- **Where** — the app on the phone, or a page in Safari?
-- **If the app:** which row — Settings, or the About sheet? And does the sheet not appear at all,
-  or appear blank/white?
+The two questions this section used to end with — phone or Safari, which row — are answered: the
+app, the About sheet (and four more surfaces besides). Closed.
 
 ---
 
@@ -273,8 +338,7 @@ launch work; navigating the UI does not.
 1. **Merge `fix/fmt-xcode26-local-sim-2026-07-25`** (or this branch, which carries it). It
    unblocks local simulator testing — the only gate that would have caught either bug tonight.
 2. **Merge this branch** for the `findNodeHandle` fix — real, reproduced, 3 new tests.
-3. **Answer the two questions in §3** so the "won't open" report can be closed properly instead
-   of assumed fixed.
+3. ~~Answer the two questions in §3~~ — **answered by the device repro. §3 is closed.**
 4. **Do you want the glass long-press flip back?** It is gone on purpose. If you miss it, it
    should return as a visible Settings row, not a hidden gesture.
 5. **Triage the 46 stashes** — separate pass.
