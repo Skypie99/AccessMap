@@ -86,7 +86,13 @@ export default function LegendModal({ visible, onClose, onDismiss }: Props) {
         <GlassSurface variant="bulk" borderRadius={0} style={styles.card}>
           <SheetGrabber />
           <View ref={titleRef} style={styles.headerRow} accessible accessibilityRole="header">
-            <AppText variant="heading" style={styles.title}>Map legend</AppText>
+            {/* accessibilityRole="none": the WRAPPER is the one header node —
+                it's `accessible` (and the focus-in target), so on iOS it is the
+                single VoiceOver element and only its role ever lands. Left
+                alone, variant="heading" would add a second header role, which
+                react-native-web renders as an <h1> INSIDE the wrapper's <h1>:
+                invalid HTML, and one title heard as two nested headings. */}
+            <AppText variant="heading" style={styles.title} accessibilityRole="none">Map legend</AppText>
           </View>
           <AppText variant="body" style={styles.subtitle}>What the colors and categories on the map mean.</AppText>
 
