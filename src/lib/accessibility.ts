@@ -143,13 +143,23 @@ export function a11yToggle(
  * present/animate in before focus moves. Safe everywhere: if the element isn't
  * mounted (or on platforms without a native handle) it's a no-op.
  *
- * WEB IS SKIPPED BY DESIGN, exactly as in `useSurfaceTrigger.register()` below.
- * rn-web's `findNodeHandle` does not return null on web — it THROWS
- * ("findNodeHandle is not supported on web"), and here it throws from inside a
- * setTimeout, so nothing can catch it: every modal open on web logged an
- * uncaught error. There is nothing to skip on the other side of it either,
- * because rn-web stubs `AccessibilityInfo.setAccessibilityFocus` to an empty
- * body — so the whole effect is a no-op on web whether or not it throws.
+ * ⚠ WEB IS SKIPPED BY DESIGN, AND THEN DEFENDED ANYWAY — exactly as in
+ * `useSurfaceTrigger.register()` below. rn-web's `findNodeHandle` does not
+ * return null on web, it THROWS ("findNodeHandle is not supported on web"), and
+ * here it throws from inside a setTimeout where nothing can catch it: every
+ * modal open on web logged an uncaught error. There is nothing to skip on the
+ * other side of it either — rn-web stubs
+ * `AccessibilityInfo.setAccessibilityFocus` to an empty body — so the whole
+ * effect is a no-op on web whether or not it throws.
+ *
+ * It escaped every gate because react-test-renderer implements
+ * `findNodeHandle` perfectly well, so the full jest suite stayed green through
+ * it. Because this hook runs in a timer rather than a press handler, the throw
+ * could not abort the tap the way the drawer regression did (ee8821d) — but the
+ * rule that fix established is the one that matters here too: an accessibility
+ * ENHANCEMENT must never be able to throw, on any platform, for any reason.
+ * `focusOnOpen.test.tsx` forces the throw rather than waiting for a platform to
+ * produce it.
  *
  * Usage:
  *   const titleRef = useFocusOnOpen<Text>(visible);

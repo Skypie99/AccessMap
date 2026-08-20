@@ -17,7 +17,7 @@ import {
   TERMS_LINK_HINT,
   TERMS_LINK_LABEL,
 } from '@/lib/copy';
-import { useSharedModals } from '@/lib/sharedModalsContext';
+import { useLegalSheets } from '@/components/LegalSheets';
 
 interface Props {
   visible: boolean;
@@ -55,10 +55,16 @@ export default function AboutScreen({ visible, onClose }: Props) {
   // useSafeAreaInsets(), which throws when there's no SafeAreaProvider — the
   // modal render-tests mount these sheets without one. Same value in the app.
   const insets = React.useContext(SafeAreaInsetsContext) ?? { top: 0, bottom: 0, left: 0, right: 0 };
-  // §SKY-6: the terms are a SHARED modal, so About only raises the flag — the
-  // sheet itself is mounted at the navigator and presents over this card rather
-  // than under it. About stays open beneath, so closing the terms returns here.
-  const { setOpen } = useSharedModals();
+  // §SKY-6 wanted these to present OVER this card with About still open
+  // beneath, so closing one returns here. They were routed through the shared
+  // navigator-level host to get that — and on iOS it bought the opposite:
+  // nothing at all. About is itself a modal, so the root VC is already
+  // presenting, and UIKit refuses a second presentation from it ("Attempt to
+  // present … which is already presenting"). Both links were dead on device.
+  // Mounting them HERE presents from About's own VC, which is legal, and
+  // delivers the over-not-under behaviour §SKY-6 actually asked for.
+  // See src/components/LegalSheets.tsx for the capture and the full why.
+  const legal = useLegalSheets();
   return (
     <Modal visible={visible} animationType={reducedMotion ? 'none' : 'slide'} transparent onRequestClose={onClose} aria-label="About Flagstone">
       <View style={styles.backdrop}>
@@ -158,7 +164,7 @@ export default function AboutScreen({ visible, onClose }: Props) {
                 after the prose so none of it moves (PROTECT-11: the
                 privacy-forward trust voice is insertion-only here). */}
             <Pressable
-              onPress={() => setOpen('privacy')}
+              onPress={legal.openPrivacy}
               style={({ pressed }) => (pressed ? styles.linkPressed : null)}
               accessibilityRole="button"
               accessibilityLabel={PRIVACY_POLICY_LINK_LABEL}
@@ -176,7 +182,7 @@ export default function AboutScreen({ visible, onClose }: Props) {
                 then the privacy row left for a browser and was a "link" — the
                 distinction was real and is simply gone. */}
             <Pressable
-              onPress={() => setOpen('terms')}
+              onPress={legal.openTerms}
               style={({ pressed }) => (pressed ? styles.linkPressed : null)}
               accessibilityRole="button"
               accessibilityLabel={TERMS_LINK_LABEL}
@@ -190,6 +196,10 @@ export default function AboutScreen({ visible, onClose }: Props) {
         </GlassSurface>
         </View>
       </View>
+      {/* Last child, and INSIDE this Modal on purpose: that is what makes the
+          sheets present from About's view controller instead of the occupied
+          root. Moving this outside <Modal> reinstates the dead-link bug. */}
+      {legal.sheets}
     </Modal>
   );
 }

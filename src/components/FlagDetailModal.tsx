@@ -29,7 +29,7 @@ import { font, radius, severity, shadow, spacing } from '@/theme';
 import { useAuth } from '@/lib/auth';
 import { confirm, notify } from '@/lib/confirm';
 import { isContentBlockedError, showBlockedContentAlert } from '@/lib/blockedContent';
-import { useSharedModals } from '@/lib/sharedModalsContext';
+import { useLegalSheets } from '@/components/LegalSheets';
 import { getDirectionsUrl } from '@/lib/directionsLink';
 import { errorMessage, FEATURE_UNAVAILABLE } from '@/lib/errors';
 import { formatFlagShareText } from '@/lib/shareFlag';
@@ -130,7 +130,11 @@ export default function FlagDetailModal({
   // this modal always mounts inside <SharedModalsProvider> (Map, Tasks and
   // Profile each host it), and TermsScreen's single mount lives in
   // SharedModalsHost precisely so it can present OVER a sheet like this one.
-  const { setOpen } = useSharedModals();
+  // This surface is itself a Modal, so the shared navigator-level host
+  // cannot present over it — iOS refuses a second presentation from an
+  // already-presenting VC and the link silently does nothing. Mounted
+  // locally it presents from THIS modal's VC. See LegalSheets.tsx.
+  const legal = useLegalSheets();
   const [busy, setBusy] = useState(false);
   // Pull-to-dismiss gates (map-gestures SPEC §2.6). `busy` mirrors the close
   // button's own disabled state; `keyboardVisible` covers the comment box at the
@@ -677,7 +681,7 @@ export default function FlagDetailModal({
       // 1.2(a) filter offers the guidelines it was judged against, instead of
       // a bare failure the author can't act on.
       if (isContentBlockedError(e)) {
-        showBlockedContentAlert('Could not save changes', () => setOpen('terms'));
+        showBlockedContentAlert('Could not save changes', legal.openTerms);
       } else {
         notify('Could not save changes', errorMessage(e));
       }
@@ -883,7 +887,7 @@ export default function FlagDetailModal({
       // §SKY-7: a rejection that cites the community guidelines now carries a
       // route to them. Every other failure keeps the generic alert unchanged.
       if (isContentBlockedError(e)) {
-        showBlockedContentAlert('Could not post comment', () => setOpen('terms'));
+        showBlockedContentAlert('Could not post comment', legal.openTerms);
       } else {
         notify('Could not post comment', errorMessage(e));
       }
@@ -2151,7 +2155,9 @@ export default function FlagDetailModal({
           </GlassSurface>
           </SheetPull>
         </View>
-      </Modal>
+        {/* Inside this Modal on purpose — see LegalSheets.tsx. */}
+      {legal.sheets}
+    </Modal>
       <StatusHistoryModal
         visible={historyOpen}
         flagId={shownFlag?.id ?? null}

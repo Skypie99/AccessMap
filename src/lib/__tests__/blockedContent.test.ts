@@ -146,7 +146,15 @@ describe('both throw sites route their rejection through the helper', () => {
     const s = src();
     expect(s).toContain('if (isContentBlockedError(e)) {');
     expect(s).toContain(call);
-    expect(s).toContain("() => setOpen('terms')");
+    // The callback moved from `() => setOpen('terms')` to `legal.openTerms`
+    // on 2026-08-19. Not a refactor: both of these files are Modals, and iOS
+    // refuses to present a second modal from an already-presenting view
+    // controller — so the shared host could never open over them and this
+    // affordance, the Apple 1.2(a) one, was dead on device in exactly the
+    // place it was built for. `legal.openTerms` mounts the sheet locally and
+    // presents from this modal's own VC. `openTerms` is a stable useCallback,
+    // so it is passed directly rather than re-wrapped in an arrow.
+    expect(s).toContain('legal.openTerms');
   });
 
   it('the non-blocked branch of each catch is untouched', () => {
@@ -162,9 +170,11 @@ describe('both throw sites route their rejection through the helper', () => {
   });
 
   it('no site reaches for the terms without going through the helper', () => {
-    // THE INVARIANT (unchanged since this guard was written): setOpen('terms')
-    // in these files may only ever be the alert button's callback — never a
-    // bare call that opens the guidelines unprompted.
+    // THE INVARIANT (unchanged since this guard was written, and unchanged by
+    // the 2026-08-19 move to local mounts): opening the terms in these files
+    // may only ever be the alert button's callback — never a bare call that
+    // opens the guidelines unprompted. Only the expression being counted
+    // changed, from setOpen('terms') to legal.openTerms.
     //
     // This used to be spelled "exactly one occurrence per file", which was the
     // same thing while each file had exactly one throw site. The edit path made
@@ -173,9 +183,9 @@ describe('both throw sites route their rejection through the helper', () => {
     // a bare call the count never could — a bare one added alongside a removed
     // guarded one would have kept the old count at 1 and passed.
     const PAIRED =
-      /showBlockedContentAlert\(\s*(?:"[^"]*"|'[^']*')\s*,\s*\(\)\s*=>\s*setOpen\('terms'\)\s*\)/g;
+      /showBlockedContentAlert\(\s*(?:"[^"]*"|'[^']*')\s*,\s*legal\.openTerms\s*\)/g;
     for (const s of [comment, flag]) {
-      const opens = (s.match(/setOpen\('terms'\)/g) ?? []).length;
+      const opens = (s.match(/legal\.openTerms/g) ?? []).length;
       const paired = (s.match(PAIRED) ?? []).length;
       expect(opens).toBeGreaterThan(0);
       expect(paired).toBe(opens);

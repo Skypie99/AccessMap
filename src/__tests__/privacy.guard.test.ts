@@ -190,10 +190,21 @@ describe('the policy is reachable from all three surfaces (B-2 / §SKY-8 P-2)', 
     expect(src).toContain('PRIVACY_POLICY_LINK_HINT');
   });
 
-  it('Settings and About go through the shared modal pool', () => {
-    for (const rel of ['screens/SettingsScreen.tsx', 'screens/AboutScreen.tsx']) {
-      expect(readSrc(rel)).toContain("setOpen('privacy')");
-    }
+  it('Settings goes through the shared pool; About cannot, and mounts locally', () => {
+    // Settings is a tab screen: nothing is presenting over the root when its
+    // row fires, so the shared navigator-level host is correct there.
+    expect(readSrc('screens/SettingsScreen.tsx')).toContain("setOpen('privacy')");
+
+    // About is itself a Modal. iOS refuses to present a second modal from a
+    // view controller that is already presenting one, so the shared host could
+    // not reach over it and the link was DEAD on device — captured
+    // 2026-08-19, see legalSheetPresentation.guard.test.ts for the UIKit line.
+    // Mounted locally it presents from About's own VC, which is legal, and
+    // About stays open beneath it exactly as §SKY-8 wanted.
+    const about = readSrc('screens/AboutScreen.tsx');
+    expect(about).toContain('useLegalSheets()');
+    expect(about).toContain('legal.openPrivacy');
+    expect(about).toContain('legal.sheets');
   });
 
   it('sign-up mounts its own instance, because it lives outside the provider', () => {

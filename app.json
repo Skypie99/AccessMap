@@ -140,7 +140,8 @@
           "microphonePermission": false
         }
       ],
-      "expo-font"
+      "expo-font",
+      "./plugins/withFmtXcode26Fix"
     ],
     "extra": {
       "eas": {
