@@ -1,0 +1,9 @@
+<svg width="96" height="120" viewBox="0 0 96 120" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Flagstone">
+  <mask id="cut">
+    <rect width="96" height="120" fill="#fff"></rect>
+    <circle cx="48" cy="33" r="7.5" fill="#000"></circle>
+    <path d="M48 47 L48 74" stroke="#000" stroke-width="9" stroke-linecap="round"></path>
+    <path d="M31 66 L48 48 L65 66" stroke="#000" stroke-width="9" stroke-linecap="round" stroke-linejoin="round" fill="none"></path>
+  </mask>
+  <path d="M48 4 C24 4 8 22 8 46 C8 79 40 108 46.2 113.6 C47.2 114.5 48.8 114.5 49.8 113.6 C56 108 88 79 88 46 C88 22 72 4 48 4 Z" fill="#fff" mask="url(#cut)"></path>
+</svg>
