@@ -2,7 +2,18 @@ import { type Component, useCallback, useEffect, useMemo, useRef, useState } fro
 import { AccessibilityInfo, type AccessibilityState, findNodeHandle, Platform } from 'react-native';
 
 /**
- * Spread onto a purely decorative View/Text that screen readers should
+ * The shape of `decorativeProps`. The three native-only members are optional
+ * because web omits them — see the constant below for why.
+ */
+type DecorativeProps = {
+  readonly accessible?: false;
+  readonly importantForAccessibility?: 'no-hide-descendants';
+  readonly accessibilityElementsHidden?: true;
+  readonly 'aria-hidden': true;
+};
+
+/**
+ * Spread onto a purely decorative View/Text/icon that screen readers should
  * skip. Suppresses the element and its subtree from the accessibility tree.
  *
  * Usage:
@@ -10,17 +21,49 @@ import { AccessibilityInfo, type AccessibilityState, findNodeHandle, Platform } 
  *
  * Do NOT use on Pressable/TouchableOpacity buttons — those need their own
  * explicit accessible/role handling.
+ *
+ * WHY THIS FORKS ON PLATFORM. `accessible`, `importantForAccessibility` and
+ * `accessibilityElementsHidden` are native-only RN props, and on web they are
+ * not merely inert — they are NOISY. react-native-web picks props off an
+ * allowlist, so a plain <View>/<Text> quietly drops all three; but
+ * react-native-svg's web layer does the opposite and forwards every unknown
+ * prop straight onto the raw DOM node
+ * (react-native-svg/lib/module/web/utils/prepare.js spreads `...rest`). Every
+ * lucide icon in this app is a react-native-svg <Svg>, and this helper is
+ * spread onto ~180 of them, so each page load produced three React errors:
+ *
+ *   Received `false` for a non-boolean attribute `accessible`.
+ *   React does not recognize the `importantForAccessibility` prop on a DOM element.
+ *   React does not recognize the `accessibilityElementsHidden` prop on a DOM element.
+ *
+ * That flood is not cosmetic in practice — it buried a real uncaught error
+ * during a debugging session (2026-08-19). Since rn-web drops the three props
+ * anyway, omitting them on web loses NOTHING: `aria-hidden` is the only member
+ * a browser screen reader has ever honored here, and it stays. Native keeps all
+ * four exactly as before — VoiceOver/TalkBack still depend on them, so this
+ * must never become a blanket removal.
+ *
+ * Same "skip on web by design" pattern as `useSurfaceTrigger` / `useFocusOnOpen`
+ * below.
  */
-export const decorativeProps = {
-  accessible: false,
-  importantForAccessibility: 'no-hide-descendants' as const,
-  accessibilityElementsHidden: true,
-  // Web: react-native-web does not derive aria-hidden from accessible={false},
-  // so a decorative <Image> without alt still announces "image". This keeps the
-  // element and its subtree out of the browser accessibility tree. (Tasks used
-  // to open its screen reader traversal on a bare "image".)
-  'aria-hidden': true,
-} as const;
+export const decorativeProps: DecorativeProps =
+  Platform.OS === 'web'
+    ? {
+        // Web: react-native-web does not derive aria-hidden from
+        // accessible={false}, so a decorative <Image> without alt still
+        // announces "image". This keeps the element and its subtree out of the
+        // browser accessibility tree. (Tasks used to open its screen reader
+        // traversal on a bare "image".) It is also the ONLY member web needs.
+        'aria-hidden': true,
+      }
+    : {
+        accessible: false,
+        importantForAccessibility: 'no-hide-descendants',
+        accessibilityElementsHidden: true,
+        // Harmless on native (RN maps the aria-* aliases onto the same traits)
+        // and kept so the constant has one stable shape across platforms.
+        'aria-hidden': true,
+      };
 
 /** The flat ARIA aliases `a11yToggle` emits alongside `accessibilityState`. */
 type FlatAriaState = {
@@ -100,20 +143,23 @@ export function a11yToggle(
  * present/animate in before focus moves. Safe everywhere: if the element isn't
  * mounted (or on platforms without a native handle) it's a no-op.
  *
- * ⚠ WEB IS SKIPPED BY DESIGN, AND THEN DEFENDED ANYWAY — the same two-layer
- * guard `useSurfaceTrigger` carries below, for the same reason. On
- * react-native-web `findNodeHandle` THROWS ("findNodeHandle is not supported on
- * web"), and `AccessibilityInfo.setAccessibilityFocus` is a stub with an empty
- * body there, so there is nothing to move even if the handle existed. Without
- * the skip this fired an uncaught error on EVERY open of EVERY dismissable
- * surface in the web build — observed live, four opens, four throws. It escaped
- * every gate because react-test-renderer implements `findNodeHandle` perfectly
- * well, so all 3,061 jest tests stayed green through it.
+ * ⚠ WEB IS SKIPPED BY DESIGN, AND THEN DEFENDED ANYWAY — exactly as in
+ * `useSurfaceTrigger.register()` below. rn-web's `findNodeHandle` does not
+ * return null on web, it THROWS ("findNodeHandle is not supported on web"), and
+ * here it throws from inside a setTimeout where nothing can catch it: every
+ * modal open on web logged an uncaught error. There is nothing to skip on the
+ * other side of it either — rn-web stubs
+ * `AccessibilityInfo.setAccessibilityFocus` to an empty body — so the whole
+ * effect is a no-op on web whether or not it throws.
  *
- * This hook runs inside a timer rather than a press handler, so the throw could
- * not abort the tap the way the drawer regression did (ee8821d) — but the rule
- * that fix established is the one that matters here too: an accessibility
+ * It escaped every gate because react-test-renderer implements
+ * `findNodeHandle` perfectly well, so the full jest suite stayed green through
+ * it. Because this hook runs in a timer rather than a press handler, the throw
+ * could not abort the tap the way the drawer regression did (ee8821d) — but the
+ * rule that fix established is the one that matters here too: an accessibility
  * ENHANCEMENT must never be able to throw, on any platform, for any reason.
+ * `focusOnOpen.test.tsx` forces the throw rather than waiting for a platform to
+ * produce it.
  *
  * Usage:
  *   const titleRef = useFocusOnOpen<Text>(visible);
@@ -123,16 +169,18 @@ export function useFocusOnOpen<T extends Component>(active: boolean) {
   const ref = useRef<T>(null);
 
   useEffect(() => {
-    if (!active) return;
-    if (Platform.OS === 'web') return;
+    if (!active || Platform.OS === 'web') return;
     const id = setTimeout(() => {
+      // Belt-and-braces: an accessibility enhancement must never be able to
+      // throw out of a timer on any platform (the standing rule that
+      // `useSurfaceTrigger.register()` documents at length).
+      let node: number | null = null;
       try {
-        const node = ref.current ? findNodeHandle(ref.current) : null;
-        if (node != null) AccessibilityInfo.setAccessibilityFocus(node);
+        node = ref.current ? findNodeHandle(ref.current) : null;
       } catch {
-        // Focus is an enhancement; a platform that can't resolve a handle
-        // simply doesn't get the cursor move. It never becomes an app error.
+        node = null;
       }
+      if (node != null) AccessibilityInfo.setAccessibilityFocus(node);
     }, 150);
     return () => clearTimeout(id);
   }, [active]);

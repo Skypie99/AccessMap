@@ -56,6 +56,62 @@ describe('decorativeProps', () => {
 });
 
 /**
+ * decorativeProps on WEB.
+ *
+ * `accessible`, `importantForAccessibility` and `accessibilityElementsHidden`
+ * are native-only. react-native-web drops them off a <View>/<Text> allowlist,
+ * but react-native-svg's web layer forwards every unknown prop onto the raw DOM
+ * node — and this helper is spread onto ~180 lucide icons, which ARE
+ * react-native-svg. Emitting them on web produced three React errors on every
+ * page load ("Received `false` for a non-boolean attribute `accessible`" et al)
+ * that flooded the console and buried a real uncaught error.
+ *
+ * So web emits ONLY `aria-hidden` — the one member a browser screen reader has
+ * ever honored here. The suite above runs on the default (native) platform and
+ * pins that all four survive there; this block pins the web shape.
+ */
+describe('decorativeProps on web', () => {
+  /**
+   * Re-import the module with Platform.OS forced to 'web'.
+   *
+   * The mock has to carry a `default` key: react-native's index re-exports
+   * Platform as `require('./Libraries/Utilities/Platform').default`, so a bare
+   * `{ OS: 'web' }` leaves `Platform` undefined.
+   */
+  function loadOnWeb(): Record<string, unknown> {
+    let webProps: Record<string, unknown> = {};
+    jest.isolateModules(() => {
+      jest.doMock('react-native/Libraries/Utilities/Platform', () => ({
+        __esModule: true,
+        default: {
+          OS: 'web',
+          select: (obj: Record<string, unknown>) => obj.web ?? obj.default,
+        },
+      }));
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      webProps = require('../accessibility').decorativeProps as Record<string, unknown>;
+    });
+    return webProps;
+  }
+
+  afterEach(() => {
+    jest.dontMock('react-native/Libraries/Utilities/Platform');
+  });
+
+  it('still hides the element from browser screen readers', () => {
+    expect(loadOnWeb()['aria-hidden']).toBe(true);
+  });
+
+  it('emits none of the three native-only props (they only warn on web)', () => {
+    const webProps = loadOnWeb();
+    expect(webProps).not.toHaveProperty('accessible');
+    expect(webProps).not.toHaveProperty('importantForAccessibility');
+    expect(webProps).not.toHaveProperty('accessibilityElementsHidden');
+    expect(Object.keys(webProps)).toEqual(['aria-hidden']);
+  });
+});
+
+/**
  * a11yToggle — emits selection/toggle state so BOTH native and web screen
  * readers hear it. react-native-web@0.21.2 drops the nested accessibilityState
  * dialect, so the flat aria-* aliases are what a browser SR actually reads.

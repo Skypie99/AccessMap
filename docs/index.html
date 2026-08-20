@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Flagstone — community-powered accessibility map</title>
+  <meta name="description" content="Flagstone is a community map of accessibility barriers. Find out whether a place will work for you before you travel to it." />
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg" />
+  <link rel="stylesheet" href="assets/site.css" />
+  <script>
+    /* Paint the saved theme before first render so returning visitors never
+       see a flash of the default. Full logic lives in assets/a11y.js. */
+    (function(){try{var p=JSON.parse(localStorage.getItem('flagstone-a11y-prefs')||'{}');var d=document.documentElement;
+    if(p.size)d.style.fontSize=p.size+'%';
+    var dark=p.dark===null||p.dark===undefined?(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches):p.dark;
+    d.setAttribute('data-theme',dark?'dark':'light');
+    d.setAttribute('data-contrast',p.contrast?'high':'normal');
+    d.setAttribute('data-reading',p.reading?'on':'off');
+    d.setAttribute('data-motion',p.motion?'reduced':'normal');}catch(e){}})();
+  </script>
+</head>
+<body>
+
+<a class="skip-link" href="#main">Skip to main content</a>
+
+<header class="page">
+  <nav class="masthead" aria-label="Primary">
+    <a class="brand" href="./" aria-current="page">
+      <img src="assets/logo-mark-white.svg" alt="" width="32" height="40" />
+      <span>Flagstone</span>
+    </a>
+    <ul class="site-nav">
+      <li><a href="support.html">Support</a></li>
+      <li><a href="privacy/">Privacy</a></li>
+      <li><a href="accessibility.html">Accessibility</a></li>
+      <li><a href="terms.html">Terms &amp; Guidelines</a></li>
+    </ul>
+  </nav>
+  <div class="hero home-hero">
+    <img class="mark" src="assets/logo-mark-white.svg" alt="" width="64" height="80" />
+    <h1>Know before you go.</h1>
+    <p class="tagline">
+      Flagstone is a community map of accessibility barriers — missing ramps, broken
+      sidewalks, blocked paths — reported and verified by the people who face them.
+    </p>
+  </div>
+</header>
+
+<div class="container">
+
+  <div id="a11y-mount"></div>
+
+  <main id="main">
+
+    <p>
+      Every report on Flagstone is a real barrier, described by a real person, and
+      verified by the community. Browse the map without an account; sign in only when
+      you want to report, verify, or comment. No ads, no analytics, no trackers.
+    </p>
+
+    <div class="home-grid">
+      <a class="home-card" href="support.html">
+        <h2>Support</h2>
+        <p>How the app works, frequently asked questions, and how to reach us.</p>
+      </a>
+      <a class="home-card" href="privacy/">
+        <h2>Privacy Policy</h2>
+        <p>What we collect (very little), what we never collect, and your rights.</p>
+      </a>
+      <a class="home-card" href="accessibility.html">
+        <h2>Accessibility</h2>
+        <p>What the app supports, how we test, and where we still fall short.</p>
+      </a>
+      <a class="home-card" href="terms.html">
+        <h2>Terms &amp; Community Guidelines</h2>
+        <p>What you can post, what isn't allowed, and how moderation works.</p>
+      </a>
+    </div>
+
+    <p class="badge-row">
+      Flagstone for iPhone — coming to the App Store. Made in Canada.
+    </p>
+
+  </main>
+</div>
+
+<footer class="page">
+  <nav aria-label="Site">
+    <strong>Flagstone</strong> &nbsp;|&nbsp;
+    <a href="support.html">Support</a> &nbsp;|&nbsp;
+    <a href="privacy/">Privacy Policy</a> &nbsp;|&nbsp;
+    <a href="accessibility.html">Accessibility</a> &nbsp;|&nbsp;
+    <a href="terms.html">Terms &amp; Community Guidelines</a>
+  </nav>
+  <p style="margin-top:0.5rem;">© 2026 Flagstone. All rights reserved.</p>
+</footer>
+
+<script src="assets/a11y.js" defer></script>
+</body>
+</html>
