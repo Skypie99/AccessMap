@@ -1,0 +1,455 @@
+/* ===========================================================================
+   Flagstone site stylesheet — shared by every page on skypie99.github.io.
+   ---------------------------------------------------------------------------
+   Two rules make the accessibility controls (assets/a11y.js) work:
+
+   1. EVERY colour is a custom property. The theme + contrast toggles repaint
+      the site by swapping variables on <html>, so no rule may hardcode a hex.
+   2. EVERY size is in rem. The text-size slider sets the root font size, so
+      rem-based padding/headings/tables scale WITH the copy instead of leaving
+      it cramped inside a fixed box.
+
+   Add a page? Link this file, add <div id="a11y-mount"></div> after the header,
+   and include assets/a11y.js. Nothing else.
+   =========================================================================== */
+
+:root {
+  --bg: #ffffff;
+  --fg: #1a1a1a;
+  --fg-muted: #475569;
+  --fg-faint: #64748b;
+  --brand: #1c6ef3;
+  --brand-ink: #ffffff;
+  --brand-deep: #1558cc;
+  --surface: #f8fafc;
+  --surface-tint: #f0f7ff;
+  --border: #e2e8f0;
+  --heading: #0f172a;
+  --ok: #15803d;
+  --warn-bg: #fff7ed;
+  --warn-fg: #c2410c;
+  --focus: #b45309;
+  --radius: 0.5rem;
+  --line: 1.7;
+  --letter: normal;
+  --word: normal;
+}
+
+/* Dark — applied by the toggle, or automatically when the visitor's OS
+   prefers dark and they have not chosen for themselves. */
+:root[data-theme="dark"] {
+  --bg: #0f172a;
+  --fg: #e8edf5;
+  --fg-muted: #b6c2d4;
+  --fg-faint: #93a3b8;
+  --brand: #6ea3ff;
+  --brand-ink: #08111f;
+  --brand-deep: #8fb9ff;
+  --surface: #16233b;
+  --surface-tint: #14243f;
+  --border: #2b3b57;
+  --heading: #f2f6fc;
+  --ok: #67d38c;
+  --warn-bg: #3a2a12;
+  --warn-fg: #ffbe7a;
+  --focus: #ffd479;
+}
+
+/* High contrast — pushes pairs past AAA and hardens every border. */
+:root[data-contrast="high"] {
+  --bg: #ffffff;
+  --fg: #000000;
+  --fg-muted: #1a1a1a;
+  --fg-faint: #2b2b2b;
+  --brand: #0b46a8;
+  --brand-deep: #062f75;
+  --surface: #ffffff;
+  --surface-tint: #ffffff;
+  --border: #000000;
+  --heading: #000000;
+  --ok: #045c22;
+  --warn-bg: #ffffff;
+  --warn-fg: #8a2b00;
+}
+:root[data-theme="dark"][data-contrast="high"] {
+  --bg: #000000;
+  --fg: #ffffff;
+  --fg-muted: #f0f0f0;
+  --fg-faint: #e0e0e0;
+  --brand: #9cc3ff;
+  --brand-ink: #000000;
+  --brand-deep: #c2dbff;
+  --surface: #000000;
+  --surface-tint: #000000;
+  --border: #ffffff;
+  --heading: #ffffff;
+  --ok: #7ef0a4;
+  --warn-bg: #000000;
+  --warn-fg: #ffc98a;
+}
+
+/* Spaced text — helps many dyslexic readers. No webfont is loaded: an
+   external font request would be a tracking vector on a site whose whole
+   claim is that it does not track people. */
+:root[data-reading="on"] {
+  --line: 2.05;
+  --letter: 0.055em;
+  --word: 0.19em;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { font-size: 100%; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background: var(--bg);
+  color: var(--fg);
+  line-height: var(--line);
+  letter-spacing: var(--letter);
+  word-spacing: var(--word);
+  font-size: 1rem;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* Focus is always visible and is never removed. */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+summary:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 3px;
+  border-radius: 0.25rem;
+}
+
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  background: var(--brand);
+  color: var(--brand-ink);
+  padding: 0.75rem 1.25rem;
+  z-index: 100;
+  font-weight: 700;
+  border-radius: 0 0 var(--radius) 0;
+  text-decoration: none;
+}
+.skip-link:focus { left: 0; }
+.skip-link:focus-visible { left: 0; }
+
+.visually-hidden {
+  position: absolute;
+  width: 1px; height: 1px;
+  margin: -1px; padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ---------------- Page chrome ---------------- */
+
+header.page {
+  background: var(--brand);
+  color: var(--brand-ink);
+  padding: 2rem 1.5rem 1.75rem;
+  text-align: center;
+}
+:root[data-contrast="high"] header.page { border-bottom: 3px solid var(--border); }
+header.page .logo {
+  font-size: 1.375rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-bottom: 0.25rem;
+}
+header.page h1 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin-bottom: 0.375rem;
+  line-height: 1.25;
+}
+header.page p.tagline,
+header.page p.meta {
+  font-size: 0.9375rem;
+  opacity: 0.92;
+  max-width: 34rem;
+  margin: 0 auto;
+  /* .meta is grey in body copy; inside the blue header it must stay legible
+     on the brand fill, so the colour is inherited rather than muted. */
+  color: inherit;
+}
+:root[data-contrast="high"] header.page p.tagline,
+:root[data-contrast="high"] header.page p.meta { opacity: 1; }
+
+.container {
+  max-width: 47.5rem;
+  margin: 0 auto;
+  padding: 2.5rem 1.5rem 5rem;
+}
+
+footer.page {
+  background: var(--surface);
+  border-top: 2px solid var(--border);
+  text-align: center;
+  padding: 1.75rem 1.5rem;
+  font-size: 0.875rem;
+  color: var(--fg-faint);
+}
+footer.page a { color: var(--brand); }
+footer.page nav { line-height: 2.2; }
+
+/* ---------------- Typography ---------------- */
+
+h2 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--heading);
+  margin-top: 3rem;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid var(--border);
+  line-height: 1.3;
+}
+h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--brand);
+  margin-top: 1.75rem;
+  margin-bottom: 0.5rem;
+}
+p { margin-bottom: 0.875rem; }
+ul, ol { padding-left: 1.25rem; margin-bottom: 0.875rem; }
+li { margin-bottom: 0.375rem; }
+strong { font-weight: 700; }
+a { color: var(--brand); text-decoration: underline; text-underline-offset: 0.15em; }
+a:hover { color: var(--brand-deep); }
+
+.meta { color: var(--fg-faint); font-size: 0.875rem; margin-bottom: 1.5rem; }
+
+/* ---------------- Blocks ---------------- */
+
+.about, .callout {
+  background: var(--surface-tint);
+  border-radius: var(--radius);
+  padding: 1.5rem 1.75rem;
+  margin-bottom: 3rem;
+  border-left: 4px solid var(--brand);
+}
+:root[data-contrast="high"] .about,
+:root[data-contrast="high"] .callout { border: 2px solid var(--border); border-left-width: 6px; }
+.about h2, .callout h2 {
+  font-size: 1.0625rem;
+  font-weight: 700;
+  color: var(--brand);
+  margin: 0 0 0.625rem;
+  border: none;
+  padding: 0;
+}
+.callout { margin-bottom: 1.5rem; }
+
+.faq-item {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1rem;
+}
+:root[data-contrast="high"] .faq-item { border-width: 2px; }
+.faq-item h3 {
+  margin-top: 0;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--heading);
+}
+.faq-item p { margin-bottom: 0; color: var(--fg-muted); font-size: 0.9375rem; }
+
+.contact-card {
+  background: var(--surface);
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.5rem 1.75rem;
+  margin-top: 2rem;
+}
+.contact-card h2 { margin-top: 0; border: none; padding: 0; }
+.contact-link {
+  display: inline-block;
+  background: var(--brand);
+  color: var(--brand-ink);
+  font-weight: 700;
+  padding: 0.75rem 1.25rem;
+  border-radius: var(--radius);
+  margin-top: 0.5rem;
+  font-size: 0.9375rem;
+  min-height: 2.75rem;
+  text-decoration: none;
+}
+.contact-link:hover { background: var(--brand-deep); color: var(--brand-ink); }
+
+.tag, .placeholder {
+  background: var(--warn-bg);
+  color: var(--warn-fg);
+  padding: 0.125rem 0.375rem;
+  border-radius: 0.25rem;
+  font-style: italic;
+}
+:root[data-contrast="high"] .tag,
+:root[data-contrast="high"] .placeholder { border: 1px solid var(--warn-fg); font-style: normal; font-weight: 600; }
+
+/* ---------------- Tables ---------------- */
+
+.table-wrap { overflow-x: auto; margin-bottom: 1.25rem; }
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9375rem;
+  margin-bottom: 1.25rem;
+}
+th, td {
+  text-align: left;
+  padding: 0.625rem 0.75rem;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+:root[data-contrast="high"] th,
+:root[data-contrast="high"] td { border: 2px solid var(--border); }
+th { background: var(--surface); font-weight: 700; color: var(--heading); }
+.yes { color: var(--ok); font-weight: 700; white-space: nowrap; }
+.na  { color: var(--fg-faint); white-space: nowrap; }
+/* Row headers in the feature table read as normal body text. */
+th[scope="row"] { font-weight: 400; background: transparent; }
+
+/* ---------------- Accessibility controls panel ---------------- */
+
+.a11y-panel {
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 2.5rem;
+  background: var(--surface);
+  overflow: hidden;
+}
+.a11y-panel > summary {
+  cursor: pointer;
+  padding: 1rem 1.25rem;
+  font-weight: 700;
+  color: var(--heading);
+  font-size: 1rem;
+  min-height: 2.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  list-style: none;
+}
+.a11y-panel > summary::-webkit-details-marker { display: none; }
+.a11y-panel > summary::after {
+  content: "\25B8";
+  margin-left: auto;
+  transition: transform 0.15s ease;
+}
+.a11y-panel[open] > summary::after { transform: rotate(90deg); }
+.a11y-icon { font-size: 1.125rem; }
+
+.a11y-body {
+  padding: 1.25rem;
+  border-top: 1px solid var(--border);
+}
+.a11y-note {
+  font-size: 0.875rem;
+  color: var(--fg-muted);
+  margin-bottom: 1.25rem;
+}
+.a11y-control { margin-bottom: 1.5rem; }
+.a11y-control:last-child { margin-bottom: 0; }
+.a11y-control > .a11y-label {
+  display: block;
+  font-weight: 600;
+  color: var(--heading);
+  margin-bottom: 0.5rem;
+  font-size: 0.9375rem;
+}
+.a11y-slider-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+.a11y-panel input[type="range"] {
+  flex: 1 1 12rem;
+  min-width: 10rem;
+  height: 2.75rem;
+  accent-color: var(--brand);
+  background: transparent;
+}
+.a11y-readout {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  color: var(--brand);
+  min-width: 3.5rem;
+  text-align: right;
+}
+.a11y-btn-row { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.a11y-toggle {
+  font: inherit;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  min-height: 2.75rem;
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius);
+  border: 2px solid var(--border);
+  background: var(--bg);
+  color: var(--fg);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.a11y-toggle:hover { border-color: var(--brand); }
+/* State is carried by text + a check glyph + aria-pressed — never colour
+   alone, which is the point this whole site makes. */
+.a11y-toggle[aria-pressed="true"] {
+  background: var(--brand);
+  color: var(--brand-ink);
+  border-color: var(--brand);
+}
+.a11y-toggle .tick { font-weight: 700; }
+.a11y-toggle[aria-pressed="false"] .tick { visibility: hidden; }
+.a11y-reset {
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  min-height: 2.75rem;
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius);
+  border: 2px solid var(--border);
+  background: transparent;
+  color: var(--fg-muted);
+  cursor: pointer;
+}
+.a11y-reset:hover { color: var(--fg); border-color: var(--fg-muted); }
+
+/* ---------------- Responsive / motion / print ---------------- */
+
+@media (max-width: 37.5rem) {
+  header.page h1 { font-size: 1.375rem; }
+  h2 { font-size: 1.125rem; }
+  .container { padding: 1.75rem 1.125rem 4rem; }
+  table { font-size: 0.875rem; }
+  th, td { padding: 0.5rem 0.625rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+:root[data-motion="reduced"] *,
+:root[data-motion="reduced"] *::before,
+:root[data-motion="reduced"] *::after {
+  animation-duration: 0.001ms !important;
+  transition-duration: 0.001ms !important;
+}
+
+@media print {
+  .a11y-panel, .skip-link { display: none; }
+  body { background: #fff; color: #000; }
+}

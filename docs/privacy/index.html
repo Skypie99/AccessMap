@@ -4,74 +4,34 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Privacy Policy — Flagstone</title>
-<style>
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  background: #ffffff;
-  color: #1a1a1a;
-  line-height: 1.7;
-  font-size: 16px;
-}
-header {
-  background: #1c6ef3;
-  color: #ffffff;
-  padding: 32px 24px 28px;
-  text-align: center;
-}
-header .logo { font-size: 22px; font-weight: 700; letter-spacing: -0.3px; margin-bottom: 4px; }
-header h1 { font-size: 28px; font-weight: 700; margin-bottom: 6px; }
-header p.meta { font-size: 14px; opacity: 0.85; }
-.container { max-width: 760px; margin: 0 auto; padding: 40px 24px 80px; }
-.callout {
-  background: #f0f7ff;
-  border-left: 4px solid #1c6ef3;
-  border-radius: 4px;
-  padding: 16px 20px;
-  margin-bottom: 40px;
-}
-.callout strong { color: #1c6ef3; }
-h2 {
-  font-size: 20px; font-weight: 700; color: #0f172a;
-  margin-top: 48px; margin-bottom: 16px;
-  padding-bottom: 8px; border-bottom: 2px solid #e2e8f0;
-}
-h3 { font-size: 16px; font-weight: 600; color: #334155; margin-top: 24px; margin-bottom: 10px; }
-p { margin-bottom: 14px; }
-ul, ol { padding-left: 20px; margin-bottom: 14px; }
-li { margin-bottom: 6px; }
-a { color: #1c6ef3; text-decoration: none; }
-a:hover { text-decoration: underline; }
-table { width: 100%; border-collapse: collapse; font-size: 15px; margin-bottom: 20px; }
-th { background: #f1f5f9; font-weight: 600; text-align: left; padding: 10px 14px; border: 1px solid #e2e8f0; }
-td { padding: 10px 14px; border: 1px solid #e2e8f0; vertical-align: top; }
-tr:nth-child(even) td { background: #f8fafc; }
-.tag {
-  display: inline-block; background: #dbeafe; color: #1d4ed8;
-  font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 99px; margin-right: 4px;
-}
-footer {
-  background: #f1f5f9; border-top: 1px solid #e2e8f0;
-  text-align: center; padding: 28px 24px; font-size: 14px; color: #64748b;
-}
-footer a { color: #1c6ef3; }
-@media (max-width: 600px) {
-  header h1 { font-size: 22px; }
-  h2 { font-size: 18px; }
-  table { font-size: 13px; }
-  th, td { padding: 8px 10px; }
-}
-</style>
+<link rel="stylesheet" href="../assets/site.css" />
+<script>
+  /* Paint the saved theme before first render so returning visitors never
+     see a flash of the default. Full logic lives in ../assets/a11y.js. */
+  (function(){try{var p=JSON.parse(localStorage.getItem('flagstone-a11y-prefs')||'{}');var d=document.documentElement;
+  if(p.size)d.style.fontSize=p.size+'%';
+  var dark=p.dark===null||p.dark===undefined?(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches):p.dark;
+  d.setAttribute('data-theme',dark?'dark':'light');
+  d.setAttribute('data-contrast',p.contrast?'high':'normal');
+  d.setAttribute('data-reading',p.reading?'on':'off');
+  d.setAttribute('data-motion',p.motion?'reduced':'normal');}catch(e){}})();
+</script>
 </head>
 <body>
 
-<header>
+<a class="skip-link" href="#main">Skip to main content</a>
+
+<header class="page">
   <div class="logo">Flagstone</div>
   <h1>Privacy Policy</h1>
   <p class="meta">Last updated: July 31, 2026 &nbsp;|&nbsp; Version 1.1</p>
 </header>
 
 <div class="container">
+
+  <div id="a11y-mount"></div>
+
+  <main id="main">
 
 <div class="callout">
   <strong>Short version:</strong> We collect only what's needed to make the map work. We never sell your data. You can delete your account any time from your Profile — your personal details go, and anything you contributed stays only with your name removed.
@@ -259,17 +219,20 @@ footer a { color: #1c6ef3; }
   <li><em>Data Portability Request</em> — to export your data</li>
 </ul>
 
+  </main>
 </div>
 
-<footer>
-  <p>
+<footer class="page">
+  <nav aria-label="Site">
     <strong>Flagstone</strong> &nbsp;|&nbsp;
     <a href="../support.html">Support</a> &nbsp;|&nbsp;
     Privacy Policy &nbsp;|&nbsp;
-    <a href="../accessibility.html">Accessibility</a>
-  </p>
+    <a href="../accessibility.html">Accessibility</a> &nbsp;|&nbsp;
+    <a href="../terms.html">Terms &amp; Community Guidelines</a>
+  </nav>
   <p style="margin-top:8px;">&copy; 2026 Flagstone. All rights reserved.</p>
 </footer>
 
+<script src="../assets/a11y.js" defer></script>
 </body>
 </html>
