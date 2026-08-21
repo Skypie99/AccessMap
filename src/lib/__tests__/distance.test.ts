@@ -171,6 +171,41 @@ describe('formatWalkingEta', () => {
   it('formats a typical city distance', () => {
     expect(formatWalkingEta(1)).toBe('12 min walk');
   });
+
+  // ─── SW-27 ──────────────────────────────────────────────────────────────
+  // The sim walk found a Tasks card reading "279.2 km · 3351 min walk" — about
+  // 56 hours on foot, rendered as though it were a plan. The arithmetic was
+  // right and the presentation was absurd, so the suppression lives in the
+  // FORMATTER and `walkingMinutes` is deliberately left alone (pinned below).
+
+  it('suppresses the ETA past an hour on foot — the SW-27 case', () => {
+    // 279.2 km is the distance the walk actually censused.
+    expect(formatWalkingEta(279.2)).toBe('');
+  });
+
+  it('still shows exactly an hour', () => {
+    // The threshold is inclusive: 5 km is a long walk, not a nonsensical one,
+    // and it is the case walkingMinutes already pins as its reference.
+    expect(formatWalkingEta(5)).toBe('60 min walk');
+  });
+
+  it('suppresses just past the threshold', () => {
+    expect(formatWalkingEta(5.1)).toBe('');
+  });
+
+  it('suppression reuses the empty string, so the caller drops the segment', () => {
+    // TasksScreen joins [distance, eta, age] through .filter(Boolean), so ''
+    // removes the segment cleanly and the distance — the part carrying the
+    // information — still renders. Same value this function already returns
+    // for a nonsense input, which is why no new user-facing string was needed.
+    expect(formatWalkingEta(1000)).toBe(formatWalkingEta(NaN));
+  });
+
+  it('leaves the underlying arithmetic honest', () => {
+    // The minutes were never wrong — only the decision to show them. Anything
+    // that wants the real number still gets it.
+    expect(walkingMinutes(279.2)).toBe(3350);
+  });
 });
 
 describe('speakDistance', () => {
