@@ -70,7 +70,7 @@ import {
 import type { FlagCategory, FlagRow, FlagSeverity } from '@/types/database';
 import { setLiveStatus } from '@/lib/liveStatus';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
-import { font, gradient, radius, severity as severityRamp, shadow, spacing } from '@/theme';
+import { a11y, font, gradient, radius, severity as severityRamp, shadow, spacing } from '@/theme';
 import { a11yToggle, decorativeProps, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
 import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 
@@ -1043,15 +1043,48 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
             </AppText>
           )}
 
-          {/* Anon-only: sign-in nudge shown where the photo section would be. */}
+          {/* Anon-only: sign-in nudge shown where the photo section would be.
+              D11: the "Sign in" words used to be a nested <Text onPress> — a
+              13pt inline span, roughly 40x17, well under the 44pt floor, and
+              nested text cannot take hitSlop or padding without overlapping the
+              lines around it. So the CONTROL is now the whole nudge (the same
+              move the anon banner makes above: one padded Pressable, minHeight
+              44, the sentence as its accessible name). The words are unchanged
+              and "Sign in" keeps its brand ink, so it still reads as the link.
+
+              It also adopts the rest of that pattern, not just its geometry:
+              signing in unmounts the guest tree, so the draft is stashed and
+              announced first (A11Y-226 / 3.3.7). This path called onClose bare,
+              which threw away whatever the guest had typed — enlarging the
+              target without fixing that would only have made the data loss
+              easier to hit. */}
           {isAnon && (
-            <AppText variant="body" style={styles.anonPhotoNudge}>
-              {'Your anonymous report still counts. '}
-              <AppText variant="label" style={styles.anonPhotoNudgeLink} onPress={onClose} accessibilityRole="link">
-                Sign in
+            <Pressable
+              onPress={() => {
+                stashReportDraft({
+                  category,
+                  severity,
+                  description,
+                  photoUris,
+                  contextTags,
+                  photoDims: { ...photoDimsRef.current },
+                  photoAlts: { ...photoAlts },
+                });
+                AccessibilityInfo.announceForAccessibility(REPORT_DRAFT_KEPT_ANNOUNCEMENT);
+                onClose();
+              }}
+              style={({ pressed }) => [styles.anonPhotoNudge, pressed && styles.chipPressed]}
+              accessibilityRole="link"
+              accessibilityHint={REPORT_SIGN_IN_HINT}
+            >
+              <AppText variant="body" style={styles.anonPhotoNudgeText}>
+                {'Your anonymous report still counts. '}
+                <AppText variant="label" style={styles.anonPhotoNudgeLink}>
+                  Sign in
+                </AppText>
+                {' to add a photo and help verifiers act faster.'}
               </AppText>
-              {' to add a photo and help verifiers act faster.'}
-            </AppText>
+            </Pressable>
           )}
 
           {/* Auth-only sections: seasonal tags, disability tags, photo picker,
@@ -1722,11 +1755,18 @@ const makeStyles = (color: ColorTheme) =>
       minHeight: 44,
       justifyContent: 'center',
     },
+    // D11: the nudge IS the control now, so it carries the 44pt floor — the
+    // same padded, height-floored box the anonBannerLink uses above.
     anonPhotoNudge: {
+      marginTop: 4,
+      paddingVertical: 6,
+      minHeight: a11y.minTargetSize,
+      justifyContent: 'center',
+    },
+    anonPhotoNudgeText: {
       fontSize: 13,
       color: color.inkGlassMuted,
       fontFamily: font.family.bodyMedium,
-      marginTop: 4,
     },
     anonPhotoNudgeLink: {
       color: color.brandText,

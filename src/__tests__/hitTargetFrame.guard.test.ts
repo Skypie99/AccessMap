@@ -260,6 +260,48 @@ describe('SW-35 — the legend close spent 10pt of its slop outside the GlassSur
   });
 });
 
+describe('D11 — the report form\'s guest "Sign in" was an inline text span', () => {
+  const src = read('screens/ReportFlagModal.tsx');
+
+  // ADDED 2026-08-21 (art-direction Phase 0, item 0.4). This one is not the
+  // "small glyph + hitSlop" case the rest of this file forgives: it was a 13pt
+  // <Text onPress> nested INSIDE a sentence, roughly 40x17, and nested text can
+  // take neither hitSlop nor padding without overlapping the lines around it.
+  // The only fix with a real frame is to promote the whole nudge to the control
+  // — the same move the anon banner three sections above already makes.
+  it('the nudge is a Pressable with a height floor, not a nested Text onPress', () => {
+    const block = styleBlock(src, 'anonPhotoNudge');
+    // Non-vacuity: a renamed style would empty the block and pass forever.
+    expect(`anonPhotoNudge block found: ${block.length > 0}`).toBe(
+      'anonPhotoNudge block found: true',
+    );
+    expect(HAS_MIN_HEIGHT.test(block)).toBe(true);
+    expect(block).toContain("justifyContent: 'center'");
+  });
+
+  it('the "Sign in" words no longer carry their own onPress (an untappable-size control)', () => {
+    const start = src.indexOf('styles.anonPhotoNudgeLink');
+    expect(start).toBeGreaterThan(-1);
+    // The inner span is now presentation only; the Pressable around the whole
+    // sentence is the control.
+    expect(src.slice(start, start + 200)).not.toContain('onPress');
+  });
+
+  it('and it adopts the pattern it copied, not just the geometry — the draft survives sign-in', () => {
+    // Enlarging a target that silently discarded the guest's typed report would
+    // only have made the data loss easier to hit (A11Y-226 / 3.3.7).
+    const start = src.indexOf('styles.anonPhotoNudge,');
+    expect(start).toBeGreaterThan(-1);
+    const control = src.slice(Math.max(0, start - 900), start);
+    expect(control).toContain('stashReportDraft({');
+    expect(control).toContain('REPORT_DRAFT_KEPT_ANNOUNCEMENT');
+  });
+
+  it('the sibling pattern it copied is still intact (the banner link keeps its floor)', () => {
+    expect(HAS_MIN_HEIGHT.test(styleBlock(src, 'anonBannerLink'))).toBe(true);
+  });
+});
+
 describe('the sibling that stays on the house idiom — must NOT be "fixed" by reflex', () => {
   it('MapScreen heatNoticeClose keeps its 24pt box + hitSlop 10', () => {
     // In-bounds, so the idiom holds here. Sky ruled on 2026-08-20 that the

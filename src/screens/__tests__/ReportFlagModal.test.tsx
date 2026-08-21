@@ -16,7 +16,7 @@
 
 import React from 'react';
 import { SharedModalsProvider } from '@/lib/sharedModalsContext';
-import { AccessibilityInfo, Alert } from 'react-native';
+import { AccessibilityInfo, Alert, StyleSheet } from 'react-native';
 import { render, fireEvent, waitFor, act } from '@testing-library/react-native';
 // Mocked below — jest.mock calls are hoisted above all imports, so this
 // resolves to the mock module. Imported here (not mid-file) to keep
@@ -28,6 +28,7 @@ import { useAuth } from '@/lib/auth';
 // Import component (after all mocks are registered)
 // ---------------------------------------------------------------------------
 import ReportFlagModal from '../ReportFlagModal';
+import { takeReportDraft } from '@/lib/reportDraft';
 
 // ---------------------------------------------------------------------------
 // Supabase env stubs — required before any module that imports supabase.ts
@@ -308,14 +309,20 @@ const LOCATION = { lat: 49.28, lng: -123.12 };
 
 type User = { id: string };
 
-function renderAnon(props: Partial<{ visible: boolean; location: typeof LOCATION | null }> = {}) {
+function renderAnon(
+  props: Partial<{
+    visible: boolean;
+    location: typeof LOCATION | null;
+    onClose: () => void;
+  }> = {},
+) {
   mockUseAuth.mockReturnValue({ user: null } as ReturnType<typeof useAuth>);
   return render(
     withProvider(
       <ReportFlagModal
         visible={props.visible ?? true}
         location={props.location ?? LOCATION}
-        onClose={jest.fn()}
+        onClose={props.onClose ?? jest.fn()}
         onCreated={jest.fn()}
       />,
     ),
@@ -416,6 +423,38 @@ describe('anon form (user === null)', () => {
     // regex on the concatenated outer element.
     const { getByText } = renderAnon();
     expect(getByText(/to add a photo/i)).toBeTruthy();
+  });
+
+  // D11 (2026-08-21, art-direction Phase 0 item 0.4). "Sign in" was a nested
+  // <Text onPress> inside that sentence — a 13pt inline span far under the
+  // project's 44pt floor, and nested text can take neither hitSlop nor padding
+  // without overlapping the lines around it. The whole nudge is the control now.
+  it('the sign-in nudge is one link with a real 44pt frame (D11)', () => {
+    const { getByRole } = renderAnon();
+    const links = getByRole('link', { name: /to add a photo/i });
+    const box = StyleSheet.flatten(
+      typeof links.props.style === 'function' ? links.props.style({ pressed: false }) : links.props.style,
+    );
+    expect(box.minHeight).toBeGreaterThanOrEqual(44);
+    expect(box.justifyContent).toBe('center');
+  });
+
+  it('the nudge keeps the guest\'s typed report instead of throwing it away', () => {
+    // Signing in unmounts the guest tree. The banner link above already stashed
+    // the draft (A11Y-226); this path called onClose bare, so a guest who took
+    // the invitation lost everything they had typed.
+    const onClose = jest.fn();
+    const { getByRole, getByPlaceholderText } = renderAnon({ onClose });
+    fireEvent.changeText(
+      getByPlaceholderText(/Describe the barrier/i),
+      'Bollard spacing is too narrow for a mobility scooter.',
+    );
+    fireEvent.press(getByRole('link', { name: /to add a photo/i }));
+
+    expect(onClose).toHaveBeenCalled();
+    expect(takeReportDraft()?.description).toBe(
+      'Bollard spacing is too narrow for a mobility scooter.',
+    );
   });
 
   it('does NOT show "Report a flag" title header', () => {
