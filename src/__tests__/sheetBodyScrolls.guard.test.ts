@@ -108,6 +108,29 @@ describe('SW-42 — a shrinking sheet scrolls its body instead of clipping it', 
   });
 });
 
+describe('SW-42 follow-up — the two list sheets cannot collapse', () => {
+  // Sky's call, 2026-08-20. The clipping fix above stopped these sheets LOSING
+  // content; it did not stop them rendering at 52.3% and 36.8% while their
+  // KAV-free siblings sat at 72.4%, which left dead space above the tab bar and
+  // a 198pt list viewport showing ~1.5 of 6 report cards. The cause was never
+  // isolated and could not be measured (both sheets are behind auth), so the
+  // floor is deliberately mechanism-independent.
+  it.each(SHRINKING_SHEETS)('%s floors its height on the KAV, where percentages resolve', (_n, rel) => {
+    const src = stripComments(read(rel));
+    // Same rule as the cap it sits beside: only the flex:1 backdrop is definite,
+    // so a minHeight anywhere below the KAV would be inert (G6/SR-099).
+    expect(src).toMatch(/kav:\s*\{[^}]*minHeight:\s*'\d+%'/);
+    expect(src).toMatch(/kav:\s*\{[^}]*maxHeight:\s*'\d+%'/);
+  });
+
+  it.each(SHRINKING_SHEETS)('%s lets the card FILL that floor, not sit above it', (_n, rel) => {
+    // Without flexGrow the floor would raise the KAV and leave the card
+    // content-sized at its top — turning a height bug into a gap bug.
+    const src = stripComments(read(rel));
+    expect(src).toMatch(/cardWrap:\s*\{[^}]*flexGrow:\s*1/);
+  });
+});
+
 describe('SW-45 — every sheet in the family clears the tab bar', () => {
   it('the leaderboard sheet reserves the tab bar height', () => {
     // It ran flush to the screen bottom and painted list rows over a ghosted
