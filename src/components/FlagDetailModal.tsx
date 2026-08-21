@@ -2434,7 +2434,11 @@ const makeStyles = (color: ColorTheme) =>
       flexGrow: 1,
       minWidth: 100,
     },
-    verifyBtn: { backgroundColor: color.brand },
+    // C1 / D7: filled verbs wear ctaFill, never themed `brand`. Light `brand`
+    // IS #1466E0, so light mode is byte-unchanged; dark `brand` is #4E89EF at
+    // 3.42:1 with white, and the same verb on the Tasks card already filled
+    // ctaFill — one control, two blues, depending on where you tapped it.
+    verifyBtn: { backgroundColor: color.ctaFill },
     verifyText: { color: color.textOnBrand, fontWeight: font.weight.bold, fontSize: font.size.base },
     resolveBtn: { backgroundColor: color.success },
     resolveText: { color: color.textOnBrand, fontWeight: font.weight.bold, fontSize: font.size.base },
@@ -2511,7 +2515,7 @@ const makeStyles = (color: ColorTheme) =>
     // Filled brand-blue (not outlined) so it reads as the primary action of
     // the trio — getting somewhere is usually what the user wants more than
     // re-centering the map or sharing.
-    directionsBtn: { backgroundColor: color.brand },
+    directionsBtn: { backgroundColor: color.ctaFill },
     directionsBtnText: { color: color.textOnBrand, fontWeight: font.weight.bold, fontSize: font.size.base },
     // Watch button — star pill between the location section and secondaryRow.
     // Neutral outline when unset; filled amber when actively watching so the
@@ -2608,7 +2612,7 @@ const makeStyles = (color: ColorTheme) =>
       borderColor: color.border,
     },
     cancelBtnText: { color: color.text, fontWeight: font.weight.bold, fontSize: font.size.base },
-    saveBtn: { flex: 1, backgroundColor: color.brand },
+    saveBtn: { flex: 1, backgroundColor: color.ctaFill },
     saveBtnText: { color: color.textOnBrand, fontWeight: font.weight.bold, fontSize: font.size.base },
     // ── Comments ────────────────────────────────────────────────────────────
     commentsSection: {
