@@ -69,7 +69,7 @@ import { StatusBadge } from '@/components/StatusBadge';
 import { SeverityBadge } from '@/components/SeverityBadge';
 import { hapticImpact, hapticNotify, hapticSelection } from '@/lib/haptics';
 import { AlertTriangle, Check, ChevronRight, MapPin, Menu, MessageSquare, Search, Sparkles, WifiOff, X } from 'lucide-react-native';
-import { font, motion, radius, shadow, size, spacing } from '@/theme';
+import { a11y, font, motion, radius, shadow, size, spacing } from '@/theme';
 import { a11yToggle, decorativeProps, useReducedMotion, useReduceTransparency } from '@/lib/accessibility';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
@@ -2260,7 +2260,13 @@ const makeStyles = (color: ColorTheme, reduceTransparency: boolean) => {
     // Clips the press sheen to the card's rounded corners.
     sheenClip: { borderRadius: radius.lg, overflow: 'hidden' },
     cardPressed: { opacity: 0.85, transform: [{ scale: 0.99 }] },
-    cardHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+    // SW-22: this header IS the labelled, role="button" element that
+    // opens the flag (A11Y-214 de-flattened the row and put the label here).
+    // It measured 21-29pt tall on every list surface and both devices, while
+    // the "Show on the map" button beside it is a correct 44x44 — which is what
+    // makes the short one read as an oversight rather than a style. hitSlop is
+    // invisible to the accessibility frame, so the height has to be real.
+    cardHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, minHeight: a11y.minTargetSize },
     // textStrong ink — fixes the pre-glass dark-mode bug where the title had
     // no color and rendered near-black on the dark card (Material Lab before-
     // capture finding #1; the description themed correctly, the title didn't).
@@ -2466,7 +2472,15 @@ const makeStyles = (color: ColorTheme, reduceTransparency: boolean) => {
     },
     searchInput: {
       flex: 1,
-      minHeight: 44, // WCAG 2.5.5: was 40pt (4pt below 44pt project standard)
+      // WCAG 2.5.5: was 40pt (4pt below 44pt project standard).
+      // Measured on device 2026-08-20 (Wave 3): a BORDERED TextInput reports an
+      // accessibility frame INSIDE its own border, because iOS insets the native
+      // field within the RN view. minHeight 44 measured 43 here and 42 on
+      // FeedbackModal's reply field — so no 44 written on a bordered input can
+      // ever satisfy a 44 census. The + 2 is 2 x borderWidth below, not a fudge:
+      // remove the border and it should come off with it. (Plain Views are
+      // unaffected — the row titles fixed in this same wave land on 44 exactly.)
+      minHeight: a11y.minTargetSize + 2,
       paddingHorizontal: spacing.md,
       paddingVertical: spacing.sm,
       borderRadius: radius.circle,

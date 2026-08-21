@@ -44,7 +44,7 @@ import { relativeTime } from '@/lib/relativeTime';
 import { loadWatched } from '@/lib/watchedFlags';
 import type { FlagRow } from '@/types/database';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
-import { bulkGlassShadow, font, radius, shadow, spacing } from '@/theme';
+import { a11y, bulkGlassShadow, font, radius, shadow, spacing } from '@/theme';
 import { Clock, MapPin, RefreshCw, X } from 'lucide-react-native';
 import { StatusBadge } from '@/components/StatusBadge';
 
@@ -495,7 +495,13 @@ const makeStyles = (color: ColorTheme) =>
     rowHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
     // A11Y-214: summary wrapper mirrors the header's internal rhythm so the
     // de-flattened structure renders identically.
-    rowSummary: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, flex: 1, minWidth: 0 },
+    // SW-22/SW-43: this wrapper IS the labelled, role="button" element that
+    // opens the flag (A11Y-214 de-flattened the row and put the label here).
+    // It measured 21-29pt tall on every list surface and both devices, while
+    // the "Show on the map" button beside it is a correct 44x44 — which is what
+    // makes the short one read as an oversight rather than a style. hitSlop is
+    // invisible to the accessibility frame, so the height has to be real.
+    rowSummary: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, flex: 1, minWidth: 0, minHeight: a11y.minTargetSize },
     rowTitle: {
       fontSize: font.size.md,
       fontWeight: font.weight.semibold,

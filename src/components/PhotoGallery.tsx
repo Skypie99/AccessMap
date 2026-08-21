@@ -14,7 +14,7 @@ import { AppText } from '@/components/ui/AppText';
 import { a11yToggle, decorativeProps, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
 import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
-import { font, radius, shadow, spacing } from '@/theme';
+import { a11y, font, radius, shadow, spacing } from '@/theme';
 import { Camera, ChevronLeft, ChevronRight, X } from 'lucide-react-native';
 
 // alt_text: uploader-written VoiceOver description (photo_alt feature,
@@ -117,45 +117,55 @@ function PhotoGalleryInner({ photos, onAddPhoto, maxPhotos = 5, onRemovePhoto }:
 
     const total = photos.length;
     return (
-      <Pressable
-        onPress={() => openLightbox(index)}
-        style={({ pressed }) => [styles.thumb, pressed && styles.thumbPressed]}
-        // A11Y-214 (S13 pattern): the thumb is NOT one accessible leaf — that
-        // swallowed the "Remove photo" button on iOS. The image below carries
-        // the imagebutton identity; activation falls through to this Pressable;
-        // Remove stays an independent element.
-        accessible={false}
-      >
-        <RemoteImage
-          uri={item.url}
-          style={styles.thumbImage}
-          resizeMode="cover"
-          accessible
-          accessibilityRole="imagebutton"
-          accessibilityLabel={
-            item.alt_text
-              ? `Photo ${index + 1} of ${total}: ${item.alt_text}`
-              : `Photo ${index + 1} of ${total}`
-          }
-          accessibilityHint="Tap to view full screen"
-        />
+      // SW-50: Remove is a SIBLING of the thumbnail, not a child of it. As a
+      // child it sat inside the lightbox's own tap area, so a miss on the badge
+      // opened the photo full-screen instead of removing it — and `thumb` sets
+      // overflow:'hidden', which clips the badge's hitSlop on Android. This
+      // wrapper does not clip, and the badge now owns a real 44pt corner.
+      <View style={styles.thumbWrap}>
+        <Pressable
+          onPress={() => openLightbox(index)}
+          style={({ pressed }) => [styles.thumb, pressed && styles.thumbPressed]}
+          // A11Y-214 (S13 pattern): the thumb is NOT one accessible leaf — that
+          // swallowed the "Remove photo" button on iOS. The image below carries
+          // the imagebutton identity; activation falls through to this Pressable;
+          // Remove stays an independent element.
+          accessible={false}
+        >
+          <RemoteImage
+            uri={item.url}
+            style={styles.thumbImage}
+            resizeMode="cover"
+            accessible
+            accessibilityRole="imagebutton"
+            accessibilityLabel={
+              item.alt_text
+                ? `Photo ${index + 1} of ${total}: ${item.alt_text}`
+                : `Photo ${index + 1} of ${total}`
+            }
+            accessibilityHint="Tap to view full screen"
+          />
+        </Pressable>
         {onRemovePhoto && (
           <Pressable
             onPress={() => onRemovePhoto(index)}
-            hitSlop={8}
-            style={({ pressed }) => [styles.removeBtn, pressed && styles.removeBtnPressed]}
+            style={styles.removeBtn}
             accessibilityRole="button"
             accessibilityLabel={`Remove photo ${index + 1}`}
             accessibilityHint="Removes this photo before you submit"
           >
-            <X
-              size={18}
-              color={color.textOnBrand}
-              strokeWidth={2.2} {...decorativeProps}
-            />
+            {({ pressed }) => (
+              <View style={[styles.removeDisc, pressed && styles.removeDiscPressed]}>
+                <X
+                  size={18}
+                  color={color.textOnBrand}
+                  strokeWidth={2.2} {...decorativeProps}
+                />
+              </View>
+            )}
           </Pressable>
         )}
-      </Pressable>
+      </View>
     );
   }, [openLightbox, photos, onAddPhoto, maxPhotos, styles]);
 
@@ -336,6 +346,7 @@ const makeStyles = (color: ColorTheme) =>
       minWidth: '100%',
     },
     separator: { width: 8 },
+    thumbWrap: { width: THUMB, height: THUMB },
     thumb: {
       width: THUMB,
       height: THUMB,
@@ -347,12 +358,24 @@ const makeStyles = (color: ColorTheme) =>
     thumbPressed: { opacity: 0.75 },
     thumbImage: { width: '100%', height: '100%' },
     // ✕ remove badge — top-right corner of a pre-submission thumbnail.
-    // 28x28 visible + hitSlop 8 on each side → 44pt effective target (WCAG 2.5.8).
-    // Dark scrim badge keeps the white glyph legible over any photo.
+    // SW-50: measured 28x29 and OVERLAPPING its own 96x97 thumbnail, so a miss
+    // opened the lightbox instead of removing. The old "28 + hitSlop 8 = 44
+    // effective" math also lost its top/right edge to the thumbnail's
+    // overflow:'hidden'. The touch box is now a real 44 and lives outside that
+    // clip; the visible disc below is still 28 and still exactly where it was
+    // (flex-end/flex-start + 4pt pad reproduces the old top:4/right:4).
     removeBtn: {
       position: 'absolute',
-      top: 4,
-      right: 4,
+      top: 0,
+      right: 0,
+      width: a11y.minTargetSize,
+      height: a11y.minTargetSize,
+      alignItems: 'flex-end',
+      justifyContent: 'flex-start',
+      padding: 4,
+    },
+    // Dark scrim disc keeps the white glyph legible over any photo.
+    removeDisc: {
       width: 28,
       height: 28,
       borderRadius: 14,
@@ -360,7 +383,7 @@ const makeStyles = (color: ColorTheme) =>
       alignItems: 'center',
       justifyContent: 'center',
     },
-    removeBtnPressed: { backgroundColor: 'rgba(0,0,0,0.82)' },
+    removeDiscPressed: { backgroundColor: 'rgba(0,0,0,0.82)' },
     removeIcon: {
       color: color.textOnBrand,
       fontSize: font.size.sm,

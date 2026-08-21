@@ -7,7 +7,7 @@ import { PressableScale } from '@/components/ui/PressableScale';
 import { decorativeProps } from '@/lib/accessibility';
 import { SEVERITY_ORDER, SEVERITY_LABELS } from '@/lib/flags';
 import type { FlagSeverity } from '@/types/database';
-import { font, radius, shadow, heatmapSeverity } from '@/theme';
+import { a11y, font, radius, shadow, heatmapSeverity } from '@/theme';
 
 const LEGEND_LABEL =
   'Heat map legend: 1 Minor yellow, 2 Mild orange, 3 Moderate orange-red, 4 Significant red, 5 Severe deep red';
@@ -98,16 +98,21 @@ export default function HeatmapLegend() {
           ))}
         </View>
       </View>
-      {/* Close X — its own reachable button; collapses to the chip. 24pt glyph
-          box + 12 hitSlop = 48 effective (the house small-target idiom). */}
+      {/* Close X — its own reachable button; collapses to the chip. SW-35: this
+          used the house "24pt box + 12 slop" idiom, but the box is pinned to
+          top:2/right:2, so 10pt of that slop fell OUTSIDE the GlassSurface —
+          the one place the idiom does not hold. The touch box is a real 44 now,
+          reaching inward over non-interactive labels instead of outward over
+          nothing. The visible glyph has not moved. */}
       <Pressable
         style={styles.close}
         onPress={() => setCollapsed(true)}
-        hitSlop={12}
         accessibilityRole="button"
         accessibilityLabel="Collapse heat map legend"
       >
-        <X size={14} color="#414B5A" strokeWidth={2.6} />
+        <View style={styles.closeGlyph}>
+          <X size={14} color="#414B5A" strokeWidth={2.6} />
+        </View>
       </Pressable>
     </GlassSurface>
   );
@@ -132,8 +137,17 @@ const styles = StyleSheet.create({
   // reserves its lane.
   close: {
     position: 'absolute',
-    top: 2,
-    right: 2,
+    top: 0,
+    right: 0,
+    width: a11y.minTargetSize,
+    height: a11y.minTargetSize,
+    // flex-end/flex-start + 2pt pad lands the glyph box at exactly the old
+    // top:2 / right:2, so the legend looks identical.
+    alignItems: 'flex-end',
+    justifyContent: 'flex-start',
+    padding: 2,
+  },
+  closeGlyph: {
     width: 24,
     height: 24,
     alignItems: 'center',

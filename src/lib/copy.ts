@@ -209,6 +209,23 @@ export const BLOCKED_PEOPLE_ROW_SUBTITLE = "People you've blocked on this device
 export const BLOCKED_PEOPLE_EMPTY = "You haven't blocked anyone on this device.";
 
 /**
+ * Settings push-notification row, signed out.
+ *
+ * SW-20 / SW-49. The switch was correctly `disabled` for a guest, but the row
+ * carried no dim and no explanation, so it read as a working control that
+ * ignored taps — the walk tapped it twice and got nothing, no alert, not even a
+ * console line. Its two neighbours already do this properly: Export explains in
+ * an alert, Blocked people greys out and says why in its subtitle. This is the
+ * subtitle half of that second pattern.
+ *
+ * Says what push needs (an account) and why (it is tied to one), rather than
+ * just "sign in".
+ * AGENT-PROPOSED wording.
+ */
+export const PUSH_SIGNED_OUT_SUBTITLE =
+  'Sign in to turn on push notifications — they follow your account, not this device.';
+
+/**
  * The unblock action. Deliberately "Unblock everyone" rather than a per-person
  * list: the block list stores ACCOUNT IDS ONLY — no display names — because
  * caching someone's name on the blocker's device to render an unblock list

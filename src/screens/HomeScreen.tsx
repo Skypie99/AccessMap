@@ -50,6 +50,7 @@ import {
   formatDistance,
   haversineKm,
   regionContainsPoint,
+  regionFittingPoints,
   speakDistance,
   type LatLng,
 } from '@/lib/distance';
@@ -57,14 +58,22 @@ import { CATEGORY_LABELS, SEVERITY_LABELS, STATUS_LABELS } from '@/lib/flags';
 import { severityA11y, statusA11y } from '@/lib/a11yText';
 import type { GeocodeResult } from '@/lib/geocode';
 import type { RootTabParamList } from '@/navigation/RootNavigator';
-import { font, radius, shadow, spacing } from '@/theme';
+import { a11y, font, radius, shadow, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { useDrawer, useDrawerTrigger } from '@/lib/drawerContext';
 import { useSharedModals } from '@/lib/sharedModalsContext';
 
-// Visual fallback for the map peek ONLY (San Francisco) when we have no
-// location/search center yet. NEVER a distance origin — distances are shown
-// only when a real center exists, so they're never fabricated.
+// Last-resort visual fallback for the map peek ONLY, used when we have neither
+// a location/search center NOR a single report to point at.
+// NEVER a distance origin — distances are shown only when a real center
+// exists, so they're never fabricated.
+//
+// SW-08: this used to be the ONLY fallback, and it is San Francisco while the
+// data is in Kelowna — so an unlocated user got an empty map of a city with no
+// reports in it, under a caption about there being no reports. The caption was
+// telling the truth about a place the app had picked at random. `peekRegion`
+// below now fits the loaded flags first and only lands here when there is
+// nothing at all to fit, which is the one case where no viewport can be honest.
 const FALLBACK_PEEK_REGION = {
   latitude: 37.7749,
   longitude: -122.4194,
@@ -208,14 +217,21 @@ export default function HomeScreen() {
     () =>
       center
         ? { latitude: center.lat, longitude: center.lng, latitudeDelta: 0.05, longitudeDelta: 0.05 }
-        : FALLBACK_PEEK_REGION,
-    [center],
+        : // SW-08: no centre — show where the reports ARE rather than a
+          // hardcoded city. This claims nothing about the user's position, and
+          // `hasCenter` still gates every line that would.
+          (regionFittingPoints(flags.map((f) => ({ lat: f.lat, lng: f.lng }))) ??
+          FALLBACK_PEEK_REGION),
+    [center, flags],
   );
   // 5 decimal places ≈ 1 m — finer than the peek's 0.05° (~5 km) window can
   // show, so this cannot remount for a jitter the user could never see.
   const peekMapKey = center
     ? `peek:${center.lat.toFixed(5)},${center.lng.toFixed(5)}`
-    : 'peek:default';
+    : // SW-08: the no-centre view now depends on the data, so its key has to as
+      // well — otherwise the map keeps the first region it ever mounted with and
+      // the fit never appears. Rounded to the same ~1 m the centred key uses.
+      `peek:fit:${peekRegion.latitude.toFixed(5)},${peekRegion.longitude.toFixed(5)}`;
 
   // D4/C2: the peek's caption slot. `hasCenter` makes this mutually exclusive
   // with anything that describes a KNOWN place, so the slot only ever carries
@@ -683,10 +699,26 @@ const makeStyles = (color: ColorTheme) =>
       alignItems: 'center',
       gap: spacing.sm,
       paddingHorizontal: spacing.md,
-      paddingVertical: spacing.md,
+      // SW-10: the pad moved onto `searchText` below. The bar is unchanged at
+      // 48 (44 + 2 + 2); what changed is WHICH box is 44 tall — see there.
+      paddingVertical: 2,
       minHeight: 48,
     },
-    searchText: { flex: 1, fontSize: font.size.lg, fontFamily: font.family.bodyMedium, color: color.glassPlaceholder },
+    // SW-10: this Text — not the bar — is the labelled, role="button" element
+    // (A11Y-214/SR-040 put it here on purpose). It measured 358x20 inside a 48pt
+    // bar, so VoiceOver's focus rect was 20pt tall on the screen's main control.
+    // The height belongs on the element that carries the label.
+    searchText: {
+      flex: 1,
+      fontSize: font.size.lg,
+      fontFamily: font.family.bodyMedium,
+      color: color.glassPlaceholder,
+      // Padding rather than lineHeight so the glyphs stay optically centred,
+      // and a minHeight floor so the box still clears 44 at the smallest type.
+      // 44 + 2 + 2 of searchInner pad = the same 48pt bar as before.
+      paddingVertical: spacing.md,
+      minHeight: a11y.minTargetSize,
+    },
     searchTextActive: { color: color.textStrong },
     locateBtn: {
       flexDirection: 'row',
@@ -826,6 +858,11 @@ const makeStyles = (color: ColorTheme) =>
       paddingHorizontal: spacing.lg,
       paddingVertical: spacing.md,
       borderRadius: radius.full,
+      // SW-12: 12 + 12 + ~18pt of ink resolved to 42 — the primary CTA sat 2pt
+      // under the floor. minHeight is the only tool that moves the ACCESSIBILITY
+      // frame (hitSlop does not); MapScreen's own `fab` already carries 48.
+      minHeight: 48,
+      justifyContent: 'center',
       ...shadow.glowBrand,
     },
     reportPillText: { fontSize: font.size.md, color: color.textOnBrand, fontWeight: font.weight.bold },

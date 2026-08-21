@@ -91,6 +91,7 @@ import { getTier, pointsToNextTier, REPUTATION_TIERS } from '@/lib/reputationTie
 import { setLastSeenPoints } from '@/lib/points';
 import { a11yToggle, decorativeProps, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
 import {
+  getLifetimeReportOutcomes,
   getPointEventHistory,
   pointEventLabel,
   type PointEventRow,
@@ -125,6 +126,12 @@ interface Stats {
   // show "5 open · 3 verified · 2 resolved" so people can see what's still
   // pending vs. what's been triaged.
   byStatus: Record<FlagStatus, number>;
+  // SW-39: what the headline tiles show. LIFETIME counts — "has one of my
+  // reports ever been verified / resolved" — to match the "Reported" tile
+  // beside them and the point-activity feed above them. The current-status
+  // view lives in `byStatus` and is rendered by the pill row lower down, so
+  // both questions are answered, each in one place.
+  lifetime: { verified: number; resolved: number };
 }
 
 const EMPTY_BY_STATUS: Record<FlagStatus, number> = {
@@ -171,6 +178,7 @@ export default function ProfileScreen() {
     reported: 0,
     resolved: 0,
     byStatus: EMPTY_BY_STATUS,
+    lifetime: { verified: 0, resolved: 0 },
   });
   const [loading, setLoading] = useState(true);
   // Inline load error (web-safe + retryable). Alert.alert is a no-op on
@@ -343,6 +351,13 @@ export default function ProfileScreen() {
         getPointEventHistory(user.id).catch(() => [] as PointEventRow[]),
       ]);
 
+      // SW-39: counted separately from the history above, which caps at 50 rows
+      // and so cannot answer "how many, ever". Null means the ledger is not
+      // there; see the fallback where the tiles are built.
+      const lifetimeOutcomes = await getLifetimeReportOutcomes(user.id).catch(
+        () => null,
+      );
+
       if (profileErr) throw profileErr;
       if (statusRowsRes.error) throw statusRowsRes.error;
       if (!mountedRef.current) return;
@@ -372,6 +387,14 @@ export default function ProfileScreen() {
         reported: Math.max(statusRows.length, statusSum),
         resolved: byStatus.resolved,
         byStatus,
+        // If the point-event ledger is unavailable, fall back to the
+        // current-status snapshot — the behaviour this screen had before
+        // SW-39. A confident "0 verified" would be a worse answer than the
+        // imprecise one, and the pill row below is unaffected either way.
+        lifetime: lifetimeOutcomes ?? {
+          verified: byStatus.verified,
+          resolved: byStatus.resolved,
+        },
       });
     } catch (e) {
       // Inline error instead of Alert.alert (web no-op) so web users see it
@@ -1154,13 +1177,17 @@ export default function ProfileScreen() {
           accessibilityRole="summary"
           accessibilityLabel={
             `Your stats: ${stats.reported} reported, ` +
-            `${stats.byStatus.verified} verified, ` +
-            `${stats.resolved} resolved`
+            `${stats.lifetime.verified} verified, ` +
+            `${stats.lifetime.resolved} resolved`
           }
         >
+          {/* SW-39: all three are LIFETIME totals, so they reconcile with each
+              other and with the point-activity feed above. The current status
+              of each report — including rejected, which these tiles never
+              showed — is the pill row further down. */}
           <Stat label="Reported" value={stats.reported} />
-          <Stat label="Verified" value={stats.byStatus.verified} />
-          <Stat label="Resolved" value={stats.resolved} />
+          <Stat label="Verified" value={stats.lifetime.verified} />
+          <Stat label="Resolved" value={stats.lifetime.resolved} />
         </View>
 
         {/* Streak card — only renders once we have a real value (≥1)
@@ -1594,7 +1621,11 @@ export default function ProfileScreen() {
               role="switch" on the wrapper View (which has no press handler)
               and hid the Switch — so the control announced correctly but
               could not actually be toggled. Mirrors NotificationPrefsModal. */}
-          <View style={styles.toggleRow}>
+          {/* SW-49 class: `handleRealtimeToggle` opens with `if (savingRealtime)
+              return;` and the Switch is correctly `disabled` — but nothing
+              LOOKED different, so a second tap during the write was answered
+              with silence. Same dim the other rows in this family use. */}
+          <View style={[styles.toggleRow, savingRealtime && styles.toggleRowBusy]}>
             <View style={styles.toggleTextWrap}>
               <AppText variant="label" style={styles.toggleLabel}>Show new flags in real-time</AppText>
               <AppText variant="body" style={styles.toggleHint}>The map refreshes on its own as flags are added or triaged — no pulling to refresh.</AppText>
@@ -2181,9 +2212,12 @@ const makeStyles = (color: ColorTheme) =>
     },
     // T4: Tier pill. White background on the blue hero gives a high
     // contrast surface for the label (#1b4373 ≈ 10:1 on #fff, well
-    // above WCAG AA). 44pt min height keeps the tap target compliant
-    // even though the visual pill is shorter — the hitSlop on the
-    // Pressable closes the rest of the gap.
+    // above WCAG AA). The tap target is compliant by SLOP, not by height:
+    // minHeight is 32 and the Pressable's hitSlop={8} carries it to 49
+    // effective. (SW-40 measured the pill at 87x33 and read that as a miss —
+    // the census cannot see hitSlop. Left on the house small-target idiom by
+    // Sky's call; corrected here because the old comment claimed "44pt min
+    // height", which the style below has never said.)
     tierPill: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -2544,6 +2578,7 @@ const makeStyles = (color: ColorTheme) =>
       gap: 12,
       minHeight: 44,
     },
+    toggleRowBusy: { opacity: 0.6 },
     toggleTextWrap: { flex: 1, gap: 2 },
     toggleLabel: { fontSize: 14, fontWeight: '600', color: color.textStrong },
     toggleHint: { fontSize: 12, color: color.inkOnStage },

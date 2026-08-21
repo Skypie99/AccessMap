@@ -23,7 +23,7 @@ import { useNavigation, useRoute, type RouteProp } from '@react-navigation/nativ
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
-import { font, radius, severity, shadow, spacing } from '@/theme';
+import { a11y, font, radius, severity, shadow, spacing } from '@/theme';
 import { errorMessage } from '@/lib/errors';
 import { clearLiveStatusMessage, setLiveStatus } from '@/lib/liveStatus';
 import { confirm, notify } from '@/lib/confirm';
@@ -3826,7 +3826,11 @@ const makeStyles = (color: ColorTheme) =>
       paddingHorizontal: 12,
       paddingVertical: 10,
       fontSize: 15,
-      minHeight: 44,
+      // Measured 308x43 on device while verifying SW-32: a BORDERED TextInput
+      // reports its accessibility frame inside its own border, so a written 44
+      // lands as 42-43. Same + 2 x borderWidth as TasksScreen's search field and
+      // FeedbackModal's reply field. This style serves both name dialogs.
+      minHeight: a11y.minTargetSize + 2,
       color: color.text,
     },
     nameActions: { flexDirection: 'row', gap: 12, marginTop: 4 },
