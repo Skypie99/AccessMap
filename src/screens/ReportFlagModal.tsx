@@ -130,8 +130,11 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
   // rule that keeps this form usable: mid-scroll, a downward drag belongs to the
   // ScrollView, never to the dismissal. `keyboardVisible` is the other gate —
   // while typing, a drag means "put the keyboard away", not "throw my report
-  // away". A dismissed draft is not lost either way: the sheet only reset()s
-  // after a SUCCESSFUL submit, so reopening restores everything.
+  // away". SW-52 raised the stakes on both gates rather than lowering them: a
+  // dismissal now DOES clear the draft (it has to — a cancelled photo was being
+  // published with the next report), so an accidental one costs the user their
+  // work instead of nothing. The "Sign in" handoff and the SW-37 pin round trip
+  // are the two exits that still keep everything.
   const { atTop, onScroll, scrollEventThrottle } = useAtTop();
   const keyboardVisible = useKeyboardVisible();
   const scrollRef = useRef(null);
@@ -238,13 +241,46 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
     setCategory('no_ramp');
     setSeverity(3);
     setDescription('');
-    // L7: the drafts are gone for good once the form resets (reset only runs
-    // after a successful submit) — release their blob URLs.
+    // L7: the drafts are gone for good once the form resets — release their
+    // blob URLs. (SW-52: reset now also runs on an explicit CANCEL, not only
+    // after a successful submit. A FAILED submit still does not reset, so the
+    // no-revoke-on-failure rule above is untouched.)
     photoUris.forEach(releaseUri);
     setPhotoUris([]);
     setPhotoAlts({});
     setContextTags([]);
     setAppliedTemplateId(null);
+  };
+
+  /**
+   * SW-52 — an explicit cancel must not leave the draft loaded.
+   *
+   * This modal is a persistent `visible`-prop component: it never unmounts, so
+   * every field survives a close. `reset()` only ran after a SUCCESSFUL submit,
+   * which meant cancelling left the whole form populated for the next session —
+   * including the photos. Proven live on 2026-08-20: a library photo was
+   * attached, the report was cancelled, and a LATER, unrelated report submitted
+   * without the picker ever being opened carried that photo onto the public map.
+   * The points feed corroborated it independently, awarding "Earned 3 points:
+   * Added a photo" for a report in which no photo was ever chosen.
+   *
+   * A user can attach something personal, think better of it, cancel — and have
+   * it published anyway, attached to a report they filed somewhere else. EXIF is
+   * stripped on upload so coordinates do not leak, but the image does.
+   *
+   * Bound to the explicit cancel doors ONLY (the Cancel button, onRequestClose,
+   * and the pull-to-dismiss, which the comment above already calls the same
+   * door). Deliberately NOT bound to visibility or to onDismiss, because two
+   * other paths hide this sheet and both MUST keep the draft:
+   *   - the "Sign in" handoff, which saves the draft explicitly and announces
+   *     that it kept it, and
+   *   - the SW-37 "place the pin on the map" round trip, which hides the sheet
+   *     without closing it precisely so the user does not lose their typing on
+   *     the way to fixing their location.
+   */
+  const handleCancel = () => {
+    reset();
+    onClose();
   };
 
   // Templates list — computed once per render. validReportTemplates filters
@@ -597,7 +633,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
     // the same thing was correctly inert. S11 escalates-never-aborts, so the
     // insert continues after the close and a re-filled resubmit duplicates it.
     // This removes the asymmetry; it does not invent a new trap.
-    <Modal visible={visible} animationType={reducedMotion ? 'none' : 'slide'} transparent onRequestClose={() => { if (!submitting) onClose(); }} onDismiss={onDismiss} aria-label={isAnon ? 'Report anonymously' : 'Report a flag'}>
+    <Modal visible={visible} animationType={reducedMotion ? 'none' : 'slide'} transparent onRequestClose={() => { if (!submitting) handleCancel(); }} onDismiss={onDismiss} aria-label={isAnon ? 'Report anonymously' : 'Report a flag'}>
       <View style={styles.backdrop}>
         {/* KAV wraps the WHOLE card from the backdrop (the FeedbackModal /
             AddressSearchModal recipe): rooted here its keyboard-overlap math
@@ -618,7 +654,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
             dismissal path. Guarded by !submitting exactly like Cancel: the
             gesture must never be the one door that closes a submitting sheet. */}
         <SheetPull
-          onDismiss={onClose}
+          onDismiss={handleCancel}
           enabled={!submitting && !keyboardVisible}
           atTop={atTop}
           simultaneousHandlers={scrollRef}
@@ -636,7 +672,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
           // pointing at a line number that had since drifted; the dead prop is
           // now gone rather than annotated.
           onAccessibilityEscape={() => {
-            if (!submitting) onClose();
+            if (!submitting) handleCancel();
           }}
         >
           {/* The drag affordance. Every other sheet wearing this pill now backs
@@ -1291,7 +1327,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
               so Cancel/Submit clear the home indicator on notched devices. */}
           <View style={[styles.actions, { paddingBottom: Math.max(spacing.xxl, insets.bottom) }]}>
             <Pressable
-              onPress={onClose}
+              onPress={handleCancel}
               disabled={submitting}
               style={({ pressed }) => [styles.actionBtn, styles.cancelBtn, pressed && styles.chipPressed]}
               accessibilityRole="button"

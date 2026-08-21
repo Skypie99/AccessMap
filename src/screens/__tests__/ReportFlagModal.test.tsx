@@ -1360,3 +1360,86 @@ describe('SW-37 — there is a way out of the dead-end', () => {
     expect(submit.props.accessibilityHint).toContain(PLACE);
   });
 });
+
+/**
+ * SW-52 — a cancelled report's photo was published with the NEXT report.
+ *
+ * ─── THE BUG THESE PIN ────────────────────────────────────────────────────
+ * This modal is a persistent `visible`-prop component: it never unmounts, so
+ * every field survives a close. `reset()` only ran after a SUCCESSFUL submit —
+ * its own comment said so — which meant cancelling left the entire form loaded
+ * for the next session, photos included.
+ *
+ * Proven live on 2026-08-20: a library photo was attached, the report was
+ * cancelled, and a later, unrelated report submitted without the picker ever
+ * being opened carried that photo onto the public map. The points feed
+ * corroborated it independently, awarding "Earned 3 points: Added a photo" for
+ * a report in which no photo was ever chosen.
+ *
+ * A user can attach something personal, think better of it, cancel — and have
+ * it published anyway, attached to a report they filed somewhere else entirely.
+ * EXIF is stripped on upload so coordinates do not leak; the image does.
+ *
+ * Surfaced to Sky before any edit (Const. hard prohibition #5) and approved by
+ * her on 2026-08-20: full reset on cancel, not photos alone.
+ *
+ * ─── WHAT MUST NOT BREAK ──────────────────────────────────────────────────
+ * Two other paths hide this sheet and both MUST keep the draft — a FAILED
+ * submit (so the user can retry without re-picking) and the "Sign in" handoff
+ * (which saves the draft explicitly and announces that it kept it; covered by
+ * the restore tests above). The SW-37 pin round trip is the third, and it never
+ * calls onClose at all.
+ */
+describe('SW-52 — cancelling a report actually discards it', () => {
+  it('does NOT carry a cancelled photo into the next report', async () => {
+    // The live repro, in order.
+    const utils = renderAuth();
+    await addPhoto(utils, 'file:///abandoned.jpg');
+    expect(mockUploadFlagPhoto).not.toHaveBeenCalled(); // still only a draft
+
+    fireEvent.press(utils.getByLabelText('Cancel and close'));
+
+    // The sheet never unmounted — this is the same component, reopened.
+    fireEvent.press(utils.getByLabelText('Submit report'));
+    await waitFor(() => {
+      expect(mockCreateFlag).toHaveBeenCalledTimes(1);
+    });
+    // The whole finding in one assertion: nothing was uploaded, because there
+    // was nothing left to upload.
+    expect(mockUploadFlagPhoto).not.toHaveBeenCalled();
+  });
+
+  it('clears the typed description too', async () => {
+    // Sky chose the full reset over photos-only, so the rest of the draft goes
+    // with it — a cancel means cancel.
+    const utils = renderAuth();
+    fireEvent.changeText(
+      utils.getByLabelText('Description of the accessibility issue'),
+      'Abandoned draft',
+    );
+    expect(utils.getByDisplayValue('Abandoned draft')).toBeTruthy();
+
+    fireEvent.press(utils.getByLabelText('Cancel and close'));
+
+    expect(utils.queryByDisplayValue('Abandoned draft')).toBeNull();
+  });
+
+  it('a FAILED submit still keeps the draft (this must not regress)', async () => {
+    // The deliberate behaviour reset() was written around: a failure is not a
+    // cancel, and re-picking photos after a network blip would be its own bug.
+    mockCreateFlag.mockRejectedValueOnce(new Error('network'));
+    jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+
+    const utils = renderAuth();
+    fireEvent.changeText(
+      utils.getByLabelText('Description of the accessibility issue'),
+      'Survives a failure',
+    );
+    fireEvent.press(utils.getByLabelText('Submit report'));
+
+    await waitFor(() => {
+      expect(mockCreateFlag).toHaveBeenCalled();
+    });
+    expect(utils.getByDisplayValue('Survives a failure')).toBeTruthy();
+  });
+});
