@@ -180,7 +180,9 @@ describe('useComments — realtime subscription', () => {
 
     await waitFor(() => expect(result.current.loading).toBe(false));
 
-    expect(mockChannel).toHaveBeenCalledWith('flag_comments:flag-1');
+    // SW-47: the topic is now flag + a per-INSTANCE suffix. It used to be the
+    // flagId alone, which is what let two hosts collide on one channel object.
+    expect(mockChannel).toHaveBeenCalledWith(expect.stringMatching(/^flag_comments:flag-1:.+/));
     expect(mockOn).toHaveBeenCalled();
     expect(mockSubscribe).toHaveBeenCalled();
 
@@ -234,6 +236,122 @@ describe('useComments — realtime subscription', () => {
     // subscribe again (the effect bails on tableNotReady).
     expect(mockChannel).toHaveBeenCalledTimes(1);
     expect(mockRemoveChannel).toHaveBeenCalledWith(SUBSCRIBE_HANDLE);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// SW-47 — the realtime subscription must not be able to crash its host
+//
+// THE BUG. `RealtimeClient.channel(topic)` returns an EXISTING channel when the
+// topic matches. The topic was `flag_comments:${flagId}` — flagId alone — so
+// every host mounting this hook for one flag shared one channel object. A
+// closed FlagDetailModal stays mounted and, before this fix, stayed subscribed;
+// opening the same flag from a second screen then called `.on()` on an
+// already-subscribed channel, which throws:
+//
+//   Error: cannot add `postgres_changes` callbacks for
+//          realtime:flag_comments:<uuid> after `subscribe()`.
+//
+// Uncaught in render, so the whole hosting screen died into the ErrorBoundary.
+// Reproduced 4x across 2 flags and 3 different second-parents on 2026-08-20.
+//
+// Each test below removes one of the three doors that let that happen. They are
+// hook-level on purpose: what broke was two INSTANCES interacting, which no
+// single-instance render test and no source scan can see.
+// ---------------------------------------------------------------------------
+
+describe('useComments — SW-47 realtime isolation', () => {
+  it('two instances on the SAME flag get DIFFERENT channel topics', async () => {
+    const a = renderHook(() => useComments('flag-1'));
+    const b = renderHook(() => useComments('flag-1'));
+
+    await waitFor(() => expect(a.result.current.loading).toBe(false));
+    await waitFor(() => expect(b.result.current.loading).toBe(false));
+
+    const topics = mockChannel.mock.calls.map((c) => c[0] as string);
+    expect(topics).toHaveLength(2);
+    // Both still address the same flag...
+    topics.forEach((t) => expect(t).toMatch(/^flag_comments:flag-1:/));
+    // ...but never the same channel object, which is the whole fix.
+    expect(topics[0]).not.toBe(topics[1]);
+  });
+
+  it('the topic suffix carries no punctuation a websocket topic should not hold', async () => {
+    // React formats useId as `:r4:` on 18 and `«r4»` on 19. Neither belongs in
+    // a Phoenix topic, and the guillemets are not even ASCII.
+    const { result } = renderHook(() => useComments('flag-1'));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    const topic = mockChannel.mock.calls[0][0] as string;
+    expect(topic).toMatch(/^flag_comments:flag-1:[a-zA-Z0-9]+$/);
+  });
+
+  it('does not subscribe at all while the host is inactive', async () => {
+    const { result } = renderHook(() => useComments('flag-1', false));
+
+    // The thread still LOADS — only the live channel is gated. An invisible
+    // host holding a subscription is the condition that made the collision
+    // possible in the first place.
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(mockListComments).toHaveBeenCalledWith('flag-1');
+    expect(mockChannel).not.toHaveBeenCalled();
+  });
+
+  it('subscribes when the host becomes active and tears down when it stops', async () => {
+    const { result, rerender } = renderHook(
+      ({ active }: { active: boolean }) => useComments('flag-1', active),
+      { initialProps: { active: false } },
+    );
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(mockChannel).not.toHaveBeenCalled();
+
+    rerender({ active: true });
+    await waitFor(() => expect(mockChannel).toHaveBeenCalledTimes(1));
+
+    rerender({ active: false });
+    await waitFor(() => expect(mockRemoveChannel).toHaveBeenCalledWith(SUBSCRIBE_HANDLE));
+  });
+
+  it('a throwing subscribe degrades to "no live updates" instead of taking down the host', async () => {
+    // The exact production throw, from RealtimeChannel.on().
+    mockOn.mockImplementation(() => {
+      throw new Error(
+        'cannot add `postgres_changes` callbacks for realtime:flag_comments:flag-1 after `subscribe()`.',
+      );
+    });
+    const warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
+    mockListComments.mockResolvedValue([comment('c1')]);
+
+    // Before the fix this threw out of the effect and killed the screen.
+    const { result } = renderHook(() => useComments('flag-1'));
+
+    await waitFor(() => expect(result.current.comments).toHaveLength(1));
+    expect(result.current.error).toBeNull();
+    expect(warn).toHaveBeenCalledWith(
+      '[useComments] realtime subscribe failed:',
+      expect.stringContaining('after `subscribe()`'),
+    );
+
+    warn.mockRestore();
+  });
+
+  it('removes the half-registered channel when subscribe throws', async () => {
+    // channel() has ALREADY pushed the channel into the client's registry by
+    // the time on() throws. Leaving it there would poison the next attempt on
+    // that topic — the same failure mode, one layer down.
+    const HALF_REGISTERED = { on: mockOn };
+    mockChannel.mockReturnValue(HALF_REGISTERED);
+    mockOn.mockImplementation(() => {
+      throw new Error('cannot add `postgres_changes` callbacks after `subscribe()`.');
+    });
+    const warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
+
+    const { result } = renderHook(() => useComments('flag-1'));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    expect(mockRemoveChannel).toHaveBeenCalledWith(HALF_REGISTERED);
+    warn.mockRestore();
   });
 });
 
