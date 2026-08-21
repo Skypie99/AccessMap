@@ -7,7 +7,7 @@
 | Finding | Outcome |
 |---|---|
 | **SW-01** + **SW-02** (SignIn half) | ✅ **FIXED — measured on device** |
-| **SW-28** | ✅ **FIXED** — bug reproduced live pre-fix; post-fix device check **not completed** (see limits) |
+| **SW-28** | ✅ **FIXED — reproduced live pre-fix, verified live post-fix** |
 | **SW-37** + **SW-11** | ⚠️ **FIXED FOR SIGNED-IN USERS ONLY** — per Sky's decision; **not closed for guests** |
 | **SW-42** | ⚠️ **PARTIAL** — the content loss is fixed; the undersized-card height is **not explained** |
 | **SW-45** | ✅ **FIXED** — per Sky's "all sheets clear the tab bar" |
@@ -153,10 +153,26 @@ Both policy lines are **visible at rest, without scrolling**: "Privacy Policy" a
 
 Measured from the full-resolution screenshot: **the lowest text pixel sits at point 913.3, against the 922 safe-area boundary** — 8.7pt inside it. Before the fix the consent row ran y948–993 and the privacy link ended at y929.
 
+### ✅ SW-28 — verified, with a deliberately unambiguous before/after
+
+The first attempt was **not diagnostic and is not being counted**: I opened the sheet from a pin the map was already centred on, so a working camera move had nothing visible to do, and the callout that appeared afterwards may simply never have closed. Worth recording, because that null result would have read as a failure.
+
+So the map was pinched out to a city-wide view first, and the sheet opened from *that* state. A working focus then has to travel.
+
+| | evidence |
+|---|---|
+| **before** — city-wide: cluster badges "4" and "2", Kelowna General Hospital, Okanagan College, Capri Centre Mall | `shots/wave2-verify/SW28_before_wide_city_view.png` |
+| sheet open over that wide map | `…/SW28_detail_sheet_over_wide_map.png` |
+| **after** "View on Map" — street level: Martin Ave, Lawson Ave, Urban Massage Therapy, KSAN Kelowna, Knowles Heritage Park; the "Blocked path" pin centred **with its callout open** | `…/SW28_after_focused_with_callout.png` |
+
+That is exactly `animateTo({ latitudeDelta: 0.005 }, { calloutClear: true })` followed by `showCallout` — and exactly what did not happen before the fix, where every marker frame was byte-identical either side of the tap.
+
+**Also confirmed in passing:** Wave 1's SW-46 fix is live — the detail sheet renders History and Report, both reachable.
+
 ### ⚠️ Declared limits of this walk — read these before trusting the table above
 
-- **SW-28's fix is NOT device-verified.** The *bug* was reproduced live and unambiguously (marker frames byte-identical either side of the tap). The post-fix check needs the same tap sequence, and the machine became too loaded to drive the simulator reliably — a concurrent 17e build pushed load average past 500, and even trivial shell commands timed out. **The pre-fix reproduction is solid; the post-fix confirmation is owed.**
-- **The 17e was not re-verified.** Its build was still running when this was written. SW-01's *worst* case is the small screen (both elements entirely off-screen), so **this is the single most valuable outstanding check.**
+- **The 17e is not yet re-verified.** SW-01's *worst* case is the small screen (both elements entirely off-screen), so this is the most valuable check still outstanding. Its first build wedged the machine and was killed; a clean rebuild is running.
+- **The simulator subsystem wedged mid-walk and needed manual recovery** — worth recording for the next run. Two booted simulators plus a native build plus the sim MCP's video stream drove load average past 500 and left **267 CoreSimulator processes**, several at 60–144% CPU; `simctl` itself timed out at 240s while `git` stayed instant, which is how the fault was localised. Recovery was `killall Simulator` + `killall -9 com.apple.CoreSimulator.CoreSimulatorService` (267 → 5 processes, `simctl` back to 1.5s). **Build for one simulator at a time, and detach the video stream first.**
 - **Guest only.** The app was signed out and an agent may not enter a password. That leaves **SW-42, SW-45 and SW-52 unverifiable by me on device**: the profile sheets and the leaderboard are behind auth, and the photo picker is signed-in only ("Sign in to add a photo"). All three are covered by tests proven to fail against the pre-fix source, which is evidence about structure, not about pixels.
 - **SW-37's new control is signed-in only**, so it is also unreachable from a guest session — by design.
 - **SW-31 was not triggered on device.** Forcing a render crash in a release build is not something I can do without shipping code to do it.
@@ -170,7 +186,7 @@ Measured from the full-resolution screenshot: **the lowest text pixel sits at po
 2. **The "Jordan Condition 2" contradiction.** The long-press gate says *"guests cannot create reports"*; the app, its UI copy and its own Privacy Policy all say they can. One of the two is wrong and it is not a fix's call. **Until it is resolved, SW-37 remains open for anonymous users** — the finding's own headline case.
 3. **SW-42's card height** — do you want the sheets to claim their full 85% cap? It is one line, it makes every sheet in the family a constant height, and it should be re-measured on device first. I could not measure it (auth) or explain it (see Cluster 4).
 4. **`FlagDetailModal` has no focus-return contract on the Map tab.** A pre-existing gap; SW-28 did not create it and deliberately did not adopt it blind, because that sheet's VoiceOver behaviour is already queued for a device pass (Wave 1, N-1).
-5. **The two owed device checks** — SW-28's post-fix tap sequence, and the whole SignIn surface on the 17e.
+5. **The one owed device check** — the SignIn surface on the 17e (390×844), where the consent line and the privacy link were *both* entirely off-screen before this fix.
 
 ## DELIBERATELY NOT FIXED
 

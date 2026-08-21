@@ -1,0 +1,482 @@
+[
+ {
+  "type": "Other(accessible)",
+  "label": "My Location",
+  "name": "My Location",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   199,
+   470,
+   42,
+   44
+  ],
+  "depth": 20
+ },
+ {
+  "type": "Map",
+  "label": null,
+  "name": null,
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   0,
+   0,
+   440,
+   956
+  ],
+  "depth": 21
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Olympic Village",
+  "name": "VKPointFeature",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   138,
+   89,
+   31,
+   31
+  ],
+  "depth": 22
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Knee Knackering North Shore Trail Run",
+  "name": "VKPointFeature",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   396,
+   127,
+   31,
+   31
+  ],
+  "depth": 22
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Altea Active",
+  "name": "VKPointFeature",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   236,
+   132,
+   31,
+   31
+  ],
+  "depth": 22
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Canadian Tire, Store",
+  "name": "VKPointFeature",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   184,
+   192,
+   31,
+   31
+  ],
+  "depth": 22
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "The Home Depot, Store",
+  "name": "VKPointFeature",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   181,
+   238,
+   31,
+   31
+  ],
+  "depth": 22
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Whole Foods Market",
+  "name": "VKPointFeature",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   151,
+   288,
+   31,
+   31
+  ],
+  "depth": 22
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "La Taqueria Pinche Taco Shop, Restaurant",
+  "name": "VKPointFeature",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   256,
+   295,
+   31,
+   31
+  ],
+  "depth": 22
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Broadway - City Hall",
+  "name": "VKPointFeature",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   167,
+   347,
+   31,
+   31
+  ],
+  "depth": 22
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "BC Cancer",
+  "name": "VKPointFeature",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   -12,
+   404,
+   31,
+   31
+  ],
+  "depth": 22
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Community Gardens",
+  "name": "VKPointFeature",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   172,
+   407,
+   31,
+   31
+  ],
+  "depth": 22
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "City Square Shopping Centre, Store",
+  "name": "VKPointFeature",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   101,
+   478,
+   31,
+   31
+  ],
+  "depth": 22
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "June, Restaurant",
+  "name": "VKPointFeature",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   137,
+   820,
+   31,
+   31
+  ],
+  "depth": 22
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Rain or Shine, Restaurant",
+  "name": "VKPointFeature",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   159,
+   864,
+   31,
+   31
+  ],
+  "depth": 22
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Park Theatre",
+  "name": "VKPointFeature",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   155,
+   909,
+   31,
+   31
+  ],
+  "depth": 22
+ },
+ {
+  "type": "Other(accessible)",
+  "label": null,
+  "name": "AnnotationContainer",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   0,
+   0,
+   440,
+   956
+  ],
+  "depth": 21
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "My Location",
+  "name": "My Location",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   199,
+   470,
+   42,
+   44
+  ],
+  "depth": 22
+ },
+ {
+  "type": "Link",
+  "label": "Legal",
+  "name": "Legal",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   70,
+   901,
+   29,
+   11
+  ],
+  "depth": 20
+ },
+ {
+  "type": "Button",
+  "label": "Open navigation menu",
+  "name": "Open navigation menu",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   22,
+   74,
+   44,
+   44
+  ],
+  "depth": 23
+ },
+ {
+  "type": "Button",
+  "label": "Search by address",
+  "name": "Search by address",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   282,
+   74,
+   44,
+   44
+  ],
+  "depth": 23
+ },
+ {
+  "type": "Button",
+  "label": "Toggle filters",
+  "name": "Toggle filters",
+  "value": "collapsed",
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   328,
+   74,
+   44,
+   44
+  ],
+  "depth": 23
+ },
+ {
+  "type": "Button",
+  "label": "More map tools",
+  "name": "More map tools",
+  "value": "collapsed",
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   374,
+   74,
+   44,
+   44
+  ],
+  "depth": 23
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Explore",
+  "name": "Explore",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   68,
+   82,
+   81,
+   29
+  ],
+  "depth": 24
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Showing 13 flags",
+  "name": "Showing 13 flags",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   154,
+   85,
+   70,
+   22
+  ],
+  "depth": 24
+ },
+ {
+  "type": "Button",
+  "label": "Recenter on me",
+  "name": "Recenter on me",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   375,
+   616,
+   49,
+   48
+  ],
+  "depth": 22
+ },
+ {
+  "type": "Button",
+  "label": "Zoom in",
+  "name": "Zoom in",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   375,
+   674,
+   49,
+   48
+  ],
+  "depth": 23
+ },
+ {
+  "type": "Button",
+  "label": "Zoom out",
+  "name": "Zoom out",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   375,
+   732,
+   49,
+   48
+  ],
+  "depth": 23
+ },
+ {
+  "type": "Button",
+  "label": "Open nearby flags list",
+  "name": "Open nearby flags list",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   335,
+   790,
+   89,
+   48
+  ],
+  "depth": 22
+ },
+ {
+  "type": "Button",
+  "label": "Home, tab, 1 of 5",
+  "name": "Home, tab, 1 of 5",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   0,
+   861,
+   147,
+   53
+  ],
+  "depth": 13
+ },
+ {
+  "type": "Button",
+  "label": "Tasks, tab, 2 of 5",
+  "name": "Tasks, tab, 2 of 5",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   146,
+   861,
+   148,
+   53
+  ],
+  "depth": 13
+ },
+ {
+  "type": "Button",
+  "label": "Profile, tab, 3 of 5",
+  "name": "Profile, tab, 3 of 5",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   293,
+   861,
+   147,
+   53
+  ],
+  "depth": 13
+ }
+]

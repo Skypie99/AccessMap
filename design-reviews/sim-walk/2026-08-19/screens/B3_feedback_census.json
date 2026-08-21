@@ -1,0 +1,677 @@
+[
+ {
+  "type": "Image",
+  "label": null,
+  "name": "assets/assets/textures/noise-128.png",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   0,
+   0,
+   128,
+   128
+  ],
+  "depth": 21
+ },
+ {
+  "type": "ScrollView",
+  "label": null,
+  "name": null,
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   0,
+   0,
+   440,
+   956
+  ],
+  "depth": 20
+ },
+ {
+  "type": "StaticText",
+  "label": "NEARBY",
+  "name": "NEARBY",
+  "value": "NEARBY",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   20,
+   78,
+   400,
+   15
+  ],
+  "depth": 23
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "13 barriers",
+  "name": "13 barriers",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   20,
+   94,
+   306,
+   52
+  ],
+  "depth": 24
+ },
+ {
+  "type": "Button",
+  "label": "Open navigation menu",
+  "name": "Open navigation menu",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   326,
+   96,
+   44,
+   45
+  ],
+  "depth": 25
+ },
+ {
+  "type": "Button",
+  "label": "Send feedback",
+  "name": "Send feedback",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   376,
+   96,
+   44,
+   45
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "Sorted by distance",
+  "name": "Sorted by distance",
+  "value": "Sorted by distance",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   20,
+   148,
+   400,
+   18
+  ],
+  "depth": 23
+ },
+ {
+  "type": "Button",
+  "label": "Search a place",
+  "name": "Search a place",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   54,
+   198,
+   358,
+   20
+  ],
+  "depth": 25
+ },
+ {
+  "type": "Button",
+  "label": "Open the full map. No reports here yet. You could add the first.",
+  "name": "Open the full map. No reports here yet. You could add the first.",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   16,
+   247,
+   408,
+   169
+  ],
+  "depth": 22
+ },
+ {
+  "type": "StaticText",
+  "label": "CLOSEST",
+  "name": "CLOSEST",
+  "value": "CLOSEST",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   0,
+   415,
+   440,
+   44
+  ],
+  "depth": 22
+ },
+ {
+  "type": "Button",
+  "label": "No ramp, severity 2 of 5, Mild, status Open, 269.4 kilometers away",
+  "name": "No ramp, severity 2 of 5, Mild, status Open, 269.4 kilometers away",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   16,
+   458,
+   408,
+   60
+  ],
+  "depth": 24
+ },
+ {
+  "type": "Button",
+  "label": "Missing signal, severity 4 of 5, Significant, status Open, 269.4 kilometers away",
+  "name": "Missing signal, severity 4 of 5, Significant, status Open, 269.4 kilometers away",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   16,
+   517,
+   408,
+   60
+  ],
+  "depth": 24
+ },
+ {
+  "type": "Button",
+  "label": "Blocked path, severity 2 of 5, Mild, status Verified, 269.7 kilometers away",
+  "name": "Blocked path, severity 2 of 5, Mild, status Verified, 269.7 kilometers away",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   16,
+   577,
+   408,
+   60
+  ],
+  "depth": 24
+ },
+ {
+  "type": "Button",
+  "label": "Broken sidewalk, severity 3 of 5, Moderate, status Open, 269.8 kilometers away",
+  "name": "Broken sidewalk, severity 3 of 5, Moderate, status Open, 269.8 kilometers away",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   16,
+   637,
+   408,
+   60
+  ],
+  "depth": 24
+ },
+ {
+  "type": "Button",
+  "label": "Steep grade, severity 4 of 5, Significant, status Verified, 270.0 kilometers away",
+  "name": "Steep grade, severity 4 of 5, Significant, status Verified, 270.0 kilometers away",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   16,
+   696,
+   408,
+   60
+  ],
+  "depth": 24
+ },
+ {
+  "type": "Button",
+  "label": "No ramp, severity 4 of 5, Significant, status Open, 270.0 kilometers away",
+  "name": "No ramp, severity 4 of 5, Significant, status Open, 270.0 kilometers away",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   16,
+   756,
+   408,
+   60
+  ],
+  "depth": 24
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Horizontal scroll bar, 1 page",
+  "name": "Horizontal scroll bar, 1 page",
+  "value": "0%",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   62,
+   923,
+   316,
+   30
+  ],
+  "depth": 21
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Horizontal scroll bar, 1 page",
+  "name": "Horizontal scroll bar, 1 page",
+  "value": "0%",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   62,
+   923,
+   316,
+   30
+  ],
+  "depth": 21
+ },
+ {
+  "type": "Button",
+  "label": "Report a barrier",
+  "name": "Report a barrier",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   319,
+   800,
+   105,
+   42
+  ],
+  "depth": 19
+ },
+ {
+  "type": "Button",
+  "label": "Home, tab, 1 of 5",
+  "name": "Home, tab, 1 of 5",
+  "value": "1",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   0,
+   861,
+   147,
+   53
+  ],
+  "depth": 13
+ },
+ {
+  "type": "Button",
+  "label": "Tasks, tab, 2 of 5",
+  "name": "Tasks, tab, 2 of 5",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   146,
+   861,
+   148,
+   53
+  ],
+  "depth": 13
+ },
+ {
+  "type": "Button",
+  "label": "Profile, tab, 3 of 5",
+  "name": "Profile, tab, 3 of 5",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   293,
+   861,
+   147,
+   53
+  ],
+  "depth": 13
+ },
+ {
+  "type": "Other(accessible)",
+  "label": null,
+  "name": "feedbackModal-backdrop",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   0,
+   0,
+   440,
+   956
+  ],
+  "depth": 5
+ },
+ {
+  "type": "Button",
+  "label": "Close feedback",
+  "name": "Close feedback",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   376,
+   443,
+   44,
+   44
+  ],
+  "depth": 10
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Send feedback",
+  "name": "Send feedback",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   20,
+   453,
+   344,
+   24
+  ],
+  "depth": 10
+ },
+ {
+  "type": "ScrollView",
+  "label": null,
+  "name": null,
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   20,
+   495,
+   400,
+   263
+  ],
+  "depth": 10
+ },
+ {
+  "type": "StaticText",
+  "label": "Tell us what's working, what isn't, or what you wish Flagstone did. Tapping Send opens your email app with the message prefilled.",
+  "name": "Tell us what's working, what isn't, or what you wish Flagstone did. Tapping Send opens your email app with the message prefilled.",
+  "value": "Tell us what's working, what isn't, or what you wish Flagstone did. Tapping Send opens your email app with the message prefilled.",
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   20,
+   495,
+   400,
+   37
+  ],
+  "depth": 12
+ },
+ {
+  "type": "StaticText",
+  "label": "CATEGORY",
+  "name": "CATEGORY",
+  "value": "CATEGORY",
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   20,
+   547,
+   400,
+   15
+  ],
+  "depth": 12
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Feedback category",
+  "name": "Feedback category",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   20,
+   569,
+   400,
+   45
+  ],
+  "depth": 12
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Bug",
+  "name": "Bug",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   20,
+   569,
+   75,
+   45
+  ],
+  "depth": 13
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Idea",
+  "name": "Idea",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   102,
+   569,
+   77,
+   45
+  ],
+  "depth": 13
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Love",
+  "name": "Love",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   187,
+   569,
+   79,
+   45
+  ],
+  "depth": 13
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Other",
+  "name": "Other",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   273,
+   569,
+   87,
+   45
+  ],
+  "depth": 13
+ },
+ {
+  "type": "StaticText",
+  "label": "YOUR FEEDBACK",
+  "name": "YOUR FEEDBACK",
+  "value": "YOUR FEEDBACK",
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   20,
+   629,
+   400,
+   16
+  ],
+  "depth": 12
+ },
+ {
+  "type": "TextView",
+  "label": "Feedback message What's on your mind?",
+  "name": "Feedback message What's on your mind?",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   21,
+   652,
+   398,
+   119
+  ],
+  "depth": 13
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Vertical scroll bar, 1 page",
+  "name": "Vertical scroll bar, 1 page",
+  "value": "0%",
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   386,
+   652,
+   30,
+   119
+  ],
+  "depth": 14
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Horizontal scroll bar, 1 page",
+  "name": "Horizontal scroll bar, 1 page",
+  "value": "0%",
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   21,
+   737,
+   398,
+   31
+  ],
+  "depth": 14
+ },
+ {
+  "type": "StaticText",
+  "label": "REPLY EMAIL (OPTIONAL)",
+  "name": "REPLY EMAIL (OPTIONAL)",
+  "value": "REPLY EMAIL (OPTIONAL)",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   20,
+   787,
+   400,
+   16
+  ],
+  "depth": 12
+ },
+ {
+  "type": "TextField",
+  "label": "Reply email",
+  "name": "Reply email",
+  "value": "you@example.com",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   21,
+   811,
+   398,
+   42
+  ],
+  "depth": 13
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Vertical scroll bar, 2 pages",
+  "name": "Vertical scroll bar, 2 pages",
+  "value": "0%",
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   387,
+   495,
+   30,
+   263
+  ],
+  "depth": 11
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Horizontal scroll bar, 1 page",
+  "name": "Horizontal scroll bar, 1 page",
+  "value": "0%",
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   20,
+   724,
+   400,
+   31
+  ],
+  "depth": 11
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Vertical scroll bar, 2 pages",
+  "name": "Vertical scroll bar, 2 pages",
+  "value": "0%",
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   387,
+   495,
+   30,
+   263
+  ],
+  "depth": 11
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Horizontal scroll bar, 1 page",
+  "name": "Horizontal scroll bar, 1 page",
+  "value": "0%",
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   20,
+   724,
+   400,
+   31
+  ],
+  "depth": 11
+ },
+ {
+  "type": "Button",
+  "label": "Cancel",
+  "name": "Cancel",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   20,
+   777,
+   194,
+   45
+  ],
+  "depth": 10
+ },
+ {
+  "type": "Button",
+  "label": "Send feedback",
+  "name": "Send feedback",
+  "value": null,
+  "enabled": "0",
+  "visible": "1",
+  "rect": [
+   226,
+   777,
+   194,
+   45
+  ],
+  "depth": 10
+ }
+]

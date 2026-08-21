@@ -1,0 +1,944 @@
+getpwuid_r did not find a match for uid 501
+Filtering the log data using "process == "Flagstone""
+Timestamp               Ty Process[PID:TID]
+2026-08-20 05:05:04.822 Df Flagstone[35449:7affb] [com.apple.xpc:connection] [0x1060dc010] activating connection: mach=true listener=false peer=false name=com.apple.cfprefsd.daemon
+2026-08-20 05:05:04.828 Df Flagstone[35449:7affb] [com.apple.UserNotifications:Connections] [com.accessmap.app] Creating a user notification center
+2026-08-20 05:05:04.859 A  Flagstone[35449:7b024] (CoreFoundation) Loading Preferences From User Session CFPrefsD
+2026-08-20 05:05:04.861 Df Flagstone[35449:7affb] (libMobileGestalt.dylib) No persisted cache on this platform.
+2026-08-20 05:05:04.869 Df Flagstone[35449:7b022] [com.apple.BoardServices:XPCErrors] [C:1] Alloc com.apple.frontboard.systemappservices
+2026-08-20 05:05:04.870 Df Flagstone[35449:7b021] [com.apple.UIKit:BackgroundTask] Creating new assertion because there is no existing background assertion.
+2026-08-20 05:05:04.870 Df Flagstone[35449:7b021] [com.apple.UIKit:BackgroundTask] Creating new background assertion
+2026-08-20 05:05:04.870 Df Flagstone[35449:7b022] [com.apple.xpc:connection] [0x1071a8140] activating connection: mach=false listener=false peer=false name=(anonymous)
+2026-08-20 05:05:04.870 Df Flagstone[35449:7b021] [com.apple.UIKit:BackgroundTask] Created new background assertion <BKSProcessAssertion: 0x1060e10e0>
+2026-08-20 05:05:04.870 Df Flagstone[35449:7b021] [com.apple.runningboard:connection] Initializing connection
+2026-08-20 05:05:04.870 Df Flagstone[35449:7b021] [com.apple.runningboard:process] Removing all cached process handles
+2026-08-20 05:05:04.878 Df Flagstone[35449:7b021] [com.apple.runningboard:connection] Creating connection to com.apple.runningboard
+2026-08-20 05:05:04.878 Df Flagstone[35449:7b021] [com.apple.xpc:connection] [0x1071a8280] activating connection: mach=true listener=false peer=false name=com.apple.runningboard
+2026-08-20 05:05:04.878 Df Flagstone[35449:7b026] [com.apple.runningboard:connection] Sending handshake request attempt #1 to server
+2026-08-20 05:05:04.881 Df Flagstone[35449:7affb] [com.apple.UIKit:Application] Deactivation reason added: 10; deactivation reasons: 0 -> 1024; animating application lifecycle event: 0
+2026-08-20 05:05:04.881 Df Flagstone[35449:7b026] [com.apple.runningboard:connection] Handshake succeeded
+2026-08-20 05:05:04.882 Df Flagstone[35449:7b026] [com.apple.runningboard:connection] Identity resolved as app<com.accessmap.app((null))>
+2026-08-20 05:05:04.882 Df Flagstone[35449:7affb] [com.apple.BoardServices:Injection] activating monitor for service com.apple.frontboard.open
+2026-08-20 05:05:04.881 A  Flagstone[35449:7b024] (RunningBoardServices) didChangeInheritances
+2026-08-20 05:05:04.884 Df Flagstone[35449:7affb] [com.apple.BoardServices:Injection] activating monitor for service com.apple.frontboard.workspace-service
+2026-08-20 05:05:04.885 Df Flagstone[35449:7affb] [com.apple.FrontBoard:Common] FBSWorkspace registering source: com.apple.frontboard.systemappservices
+2026-08-20 05:05:04.887 Df Flagstone[35449:7b021] [com.apple.UIKit:BackgroundTask] Incrementing reference count for background assertion <BKSProcessAssertion: 0x1060e10e0>
+2026-08-20 05:05:04.887 Df Flagstone[35449:7b021] [com.apple.UIKit:BackgroundTask] Created background task <_UIBackgroundTaskInfo: 0x1070b0d00>: taskID = 1, taskName = Launch Background Task for Coalescing, creationTime = 23988 (elapsed = 0).
+2026-08-20 05:05:04.888 Df Flagstone[35449:7b021] [com.apple.FrontBoard:SceneExtension] Realizing settings extension _UIApplicationSceneKeyboardSettings on FBSSceneSettings
+2026-08-20 05:05:04.897 Df Flagstone[35449:7b021] [com.apple.FrontBoard:SceneExtension] Realizing settings extension <_UISceneOcclusionSettings> on FBSSceneSettings
+2026-08-20 05:05:04.898 Df Flagstone[35449:7affb] [com.apple.FrontBoard:Common] FBSWorkspace connected to endpoint : <BSServiceConnectionEndpoint: 0x107180860; target: com.apple.frontboard.systemappservices; service: com.apple.frontboard.workspace-service>
+2026-08-20 05:05:04.898 Df Flagstone[35449:7b021] [com.apple.FrontBoard:SceneExtension] Realizing settings extension <_UISceneInterfaceProtectionSettings> on FBSSceneSettings
+2026-08-20 05:05:04.898 Df Flagstone[35449:7affb] [com.apple.FrontBoard:Common] <FBSWorkspaceScenesClient:0x107104460 com.apple.frontboard.systemappservices> attempting immediate handshake from activate
+2026-08-20 05:05:04.899 Df Flagstone[35449:7affb] [com.apple.FrontBoard:Common] <FBSWorkspaceScenesClient:0x107104460 com.apple.frontboard.systemappservices> sent handshake
+2026-08-20 05:05:04.900 Df Flagstone[35449:7b021] [com.apple.FrontBoard:SceneExtension] Realizing settings extension _UISceneLayoutPreferencesHostSettingsExtension on FBSSceneSettings
+2026-08-20 05:05:04.899 Df Flagstone[35449:7affb] [com.apple.runningboard:general] Added observer for process assertions expiration warning: <_RBSExpirationWarningClient: 0x107180f40>
+2026-08-20 05:05:04.907 Df Flagstone[35449:7b021] [com.apple.FrontBoard:SceneExtension] Realizing settings extension _UISceneSafeAreaSettingsExtension on FBSSceneSettings
+2026-08-20 05:05:04.912 Df Flagstone[35449:7b021] [com.apple.FrontBoard:SceneExtension] Realizing settings extension _UISceneLayoutPreferenceClientSettingsExtension on FBSSceneClientSettings
+2026-08-20 05:05:04.913 Df Flagstone[35449:7b021] [com.apple.FrontBoard:SceneExtension] Realizing settings extension <_UIHomeAffordanceHostSceneSettings> on FBSSceneSettings
+2026-08-20 05:05:04.914 Df Flagstone[35449:7b021] [com.apple.FrontBoard:SceneExtension] Realizing settings extension _UISystemShellSceneHostingEnvironmentSettings on FBSSceneSettings
+2026-08-20 05:05:04.915 Df Flagstone[35449:7b021] [com.apple.FrontBoard:SceneExtension] Realizing settings extension _UISceneRenderingEnvironmentSettings on FBSSceneSettings
+2026-08-20 05:05:04.917 Df Flagstone[35449:7b021] [com.apple.FrontBoard:SceneExtension] Realizing settings extension <_UISceneRenderingEnvironmentClientSettings> on FBSSceneClientSettings
+2026-08-20 05:05:04.918 Df Flagstone[35449:7b021] [com.apple.FrontBoard:SceneExtension] Realizing settings extension <_UISceneTransitioningHostSettings> on FBSSceneSettings
+2026-08-20 05:05:04.918 Df Flagstone[35449:7b021] [com.apple.FrontBoard:SceneExtension] Realizing settings extension <_UISceneFocusSystemSettings> on FBSSceneSettings
+2026-08-20 05:05:04.919 Df Flagstone[35449:7b021] [com.apple.FrontBoard:SceneExtension] Realizing settings extension _UISceneOrientationSettingsExtension on FBSSceneSettings
+2026-08-20 05:05:04.919 Df Flagstone[35449:7b021] [com.apple.FrontBoard:SceneExtension] Realizing settings extension _UISceneOrientationClientSettingsExtension on FBSSceneClientSettings
+2026-08-20 05:05:04.919 Df Flagstone[35449:7b021] [com.apple.FrontBoard:SceneExtension] Realizing settings extension _UISceneWindowingControlClientSettings on FBSSceneClientSettings
+2026-08-20 05:05:04.920 Df Flagstone[35449:7b021] [com.apple.FrontBoard:SceneExtension] Realizing settings extension <_UISceneHostingContentSizePreferenceClientSettings> on FBSSceneClientSettings
+2026-08-20 05:05:04.921 Df Flagstone[35449:7b021] [com.apple.FrontBoard:SceneExtension] Realizing settings extension _UISceneHostingTraitCollectionPropagationSettings on FBSSceneSettings
+2026-08-20 05:05:04.924 Df Flagstone[35449:7b021] [com.apple.FrontBoard:SceneExtension] Realizing settings extension <_UISceneHostingSheetPresentationSettings> on FBSSceneSettings
+2026-08-20 05:05:04.925 Df Flagstone[35449:7affb] [com.apple.UIKit:UIScreen] Evaluated capturing state as 0 on <UIScreen: 0x1071a8500> for initial
+2026-08-20 05:05:04.925 Df Flagstone[35449:7affb] [com.apple.UIKit:UIScreen] Evaluated capturing state as 0 on <UIScreen: 0x1071a8500> for CADisplay KVO
+2026-08-20 05:05:04.926 Df Flagstone[35449:7b021] [com.apple.FrontBoard:SceneExtension] Realizing settings extension <_UISceneHostingSheetPresentationClientSettings> on FBSSceneClientSettings
+2026-08-20 05:05:04.927 Df Flagstone[35449:7b021] [com.apple.FrontBoard:SceneExtension] Realizing settings extension <_UISceneHostingEventDeferringSettings> on FBSSceneSettings
+2026-08-20 05:05:04.928 Df Flagstone[35449:7b021] [com.apple.FrontBoard:SceneExtension] Realizing settings extension <UIKit__UITypedKeyValueSceneSettings> on FBSSceneSettings
+2026-08-20 05:05:04.929 Df Flagstone[35449:7b021] [com.apple.FrontBoard:SceneExtension] Realizing settings extension <UIKit__UITypedKeyValueSceneSettings> on FBSSceneClientSettings
+2026-08-20 05:05:04.929 Df Flagstone[35449:7affb] [com.apple.Accessibility:AXSupportCommon] Read CategoryName: per-app = 1, category name = (null)
+2026-08-20 05:05:04.930 Df Flagstone[35449:7b021] [com.apple.FrontBoard:SceneExtension] Realizing settings extension <_UISceneHostingViewControllerPreferencePropagationClientSettings> on FBSSceneClientSettings
+2026-08-20 05:05:04.930 Df Flagstone[35449:7b021] [com.apple.FrontBoard:SceneExtension] Realizing settings extension <_UISceneZoomTransitionSettings> on FBSSceneSettings
+2026-08-20 05:05:04.930 Df Flagstone[35449:7affb] [com.apple.Accessibility:AXSupportCommon] Read CategoryName: per-app = 0, category name = (null)
+2026-08-20 05:05:04.931 Df Flagstone[35449:7b029] [com.apple.FrontBoard:SceneExtension] Realizing settings extension FBSSceneSettingsCore on FBSSceneSettings
+2026-08-20 05:05:04.940 Df Flagstone[35449:7b029] [com.apple.FrontBoard:SceneExtension] Realizing settings extension FBSSceneClientSettingsCore on FBSSceneClientSettings
+2026-08-20 05:05:04.982 Df Flagstone[35449:7affb] [com.apple.dt.xctest:Default] Registering for test daemon availability notify post.
+2026-08-20 05:05:04.982 Df Flagstone[35449:7affb] [com.apple.dt.xctest:Default] notify_get_state check indicated test daemon not ready.
+2026-08-20 05:05:04.982 Df Flagstone[35449:7affb] [com.apple.dt.xctest:Default] notify_get_state check indicated test daemon not ready.
+2026-08-20 05:05:04.983 Df Flagstone[35449:7affb] [com.apple.dt.xctest:Default] notify_get_state check indicated test daemon not ready.
+2026-08-20 05:05:04.985 Df Flagstone[35449:7affb] [com.apple.UIKit:UpdateScheduler] Selected display: name=LCD (PurpleMain), id=1
+2026-08-20 05:05:04.988 Df Flagstone[35449:7b029] [com.apple.FrontBoard:SceneExtension] UIMutableApplicationSceneSettings setting counterpart class: UIApplicationSceneSettings
+2026-08-20 05:05:04.989 Df Flagstone[35449:7b029] [com.apple.FrontBoard:SceneExtension] UIMutableApplicationSceneClientSettings setting counterpart class: UIApplicationSceneClientSettings
+2026-08-20 05:05:04.990 Df Flagstone[35449:7b029] [com.apple.FrontBoard:SceneExtension] Realizing settings extension FBSSceneTransitionContextCore on FBSSceneTransitionContext
+2026-08-20 05:05:05.000 Df Flagstone[35449:7affb] [com.apple.app_launch_measurement:ApplicationLaunch] alm_acquire_pageins_recording_assertion: acquired pageins recording assertion!
+2026-08-20 05:05:05.003 Df Flagstone[35449:7affb] [com.apple.UIKit:BackgroundTask] Will add backgroundTask with taskName: Persistent SceneSession Map Update, expirationHandler: <__NSGlobalBlock__: 0x1e78c84e8>
+2026-08-20 05:05:05.003 Df Flagstone[35449:7affb] [com.apple.UIKit:BackgroundTask] Reusing background assertion <BKSProcessAssertion: 0x1060e10e0>
+2026-08-20 05:05:05.004 Df Flagstone[35449:7affb] [com.apple.UIKit:BackgroundTask] Incrementing reference count for background assertion <BKSProcessAssertion: 0x1060e10e0>
+2026-08-20 05:05:05.004 Df Flagstone[35449:7affb] [com.apple.UIKit:BackgroundTask] Created background task <_UIBackgroundTaskInfo: 0x107250080>: taskID = 2, taskName = Persistent SceneSession Map Update, creationTime = 23988 (elapsed = 0).
+2026-08-20 05:05:05.005 Df Flagstone[35449:7affb] [com.apple.UIKit:Application] Deactivation reason added: 5; deactivation reasons: 1024 -> 1056; animating application lifecycle event: 1
+2026-08-20 05:05:05.006 Df Flagstone[35449:7affb] [com.apple.UIKit:InterfaceStyle] Not push traits update to screen for new style 1, <UIWindowScene: 0x1060e97d0> (AE1D67B8-6BBD-4698-9E3C-597A0C367329)
+2026-08-20 05:05:05.007 Df Flagstone[35449:7affb] [com.apple.UIKit:InterfaceStyle] Should send trait collection or coordinate space update, interface style 1 -> 1, <UIWindowScene: 0x1060e97d0> (AE1D67B8-6BBD-4698-9E3C-597A0C367329)
+2026-08-20 05:05:05.010 Df Flagstone[35449:7affb] [com.apple.UIKit:InterfaceStyle] Not push traits update to screen for new style 1, <UIWindowScene: 0x1060e97d0> (AE1D67B8-6BBD-4698-9E3C-597A0C367329)
+2026-08-20 05:05:05.011 Df Flagstone[35449:7affb] [com.apple.UIKit:HomeAffordanceObservation] Initializing: <_UIHomeAffordanceSceneNotifier: 0x107274bd0>; with scene: <UIWindowScene: 0x1060e97d0>
+2026-08-20 05:05:05.012 Df Flagstone[35449:7affb] [com.apple.BacklightServices:scenes] 0x107245050 setDelegate:<0x107245800 _UIBacklightEnvironment> hasDelegate:YES for environment:sceneID:com.accessmap.app-default
+2026-08-20 05:05:05.013 Df Flagstone[35449:7affb] [com.apple.UIKit:InterfaceStyle] Not push traits update to screen for new style 1, <UIWindowScene: 0x1060e97d0> (AE1D67B8-6BBD-4698-9E3C-597A0C367329)
+2026-08-20 05:05:05.013 Df Flagstone[35449:7affb] [com.apple.UIKit:EventDeferring] [0x107274d90] Initialized with scene: <UIWindowScene: 0x1060e97d0>; behavior: <_UIEventDeferringBehavior_iOS: 0x1071830c0>; availableForProcess: 1, systemShellManagesKeyboardFocus: 1
+2026-08-20 05:05:05.014 Df Flagstone[35449:7affb] [com.apple.BoardServices:XPCErrors] [C:2] Alloc com.apple.backboard.hid-services.xpc
+2026-08-20 05:05:05.014 Df Flagstone[35449:7affb] [com.apple.xpc:connection] [0x1071a8dc0] activating connection: mach=false listener=false peer=false name=(anonymous)
+2026-08-20 05:05:05.025 Df Flagstone[35449:7affb] [com.apple.BackBoard:EventDelivery] policyStatus:<BKSHIDEventDeliveryPolicyObserver: 0x10721c540; process scope; status: target> was:none
+2026-08-20 05:05:05.025 Df Flagstone[35449:7b024] [com.apple.BackBoard:EventDelivery] BKSHIDEventObserver - connection activation
+2026-08-20 05:05:05.025 Df Flagstone[35449:7affb] [com.apple.UIKit:KeyWindow] Setting default evaluation strategy for UIUserInterfaceIdiomPhone to LastOneWins
+2026-08-20 05:05:05.025 Df Flagstone[35449:7affb] [com.apple.UIKit:KeyWindow] Scene target of keyboard event deferring environment did change: 1; scene: UIWindowScene: 0x1060e97d0; scene identity: com.apple.frontboard.systemappservices/FBSceneManager:sceneID%3Acom.accessmap.app-default
+2026-08-20 05:05:05.026 Df Flagstone[35449:7affb] [com.apple.UIKit:EventDeferring] [0x107274d90] Scene target of event deferring environments did update: scene: 0x1060e97d0; current systemShellManagesKeyboardFocus: 1; systemShellManagesKeyboardFocusForScene: 1; eligibleForRecordRemoval: 1;
+2026-08-20 05:05:05.026 Df Flagstone[35449:7affb] [com.apple.UIKit:KeyWindow] Scene became target of keyboard event deferring environment: UIWindowScene: 0x1060e97d0; scene identity: com.apple.frontboard.systemappservices/FBSceneManager:sceneID%3Acom.accessmap.app-default
+2026-08-20 05:05:05.026 Df Flagstone[35449:7affb] [com.apple.UIKit:KeyWindow] Stack[KeyWindow] 0x107245bf0: Taking no further action for migration from LastOneWins -> SystemShellManaged as there are no scenes
+2026-08-20 05:05:05.026 Df Flagstone[35449:7affb] [com.apple.UIKit:KeyWindow] Setting default evaluation strategy for UIUserInterfaceIdiomPhone to SystemShellManaged
+2026-08-20 05:05:05.026 Df Flagstone[35449:7affb] [com.apple.UIKit:KeyWindow] Key window needs update: 0; currentKeyWindowScene: 0x0; evaluatedKeyWindowScene: 0x1060e97d0; currentApplicationKeyWindow: 0x0; evaluatedApplicationKeyWindow: 0x0; reason: UIWindowScene: 0x1060e97d0: Window scene became target of keyboard environment
+2026-08-20 05:05:05.027 Df Flagstone[35449:7affb] [com.apple.UIKit:InterfaceStyle] Not push traits update to screen for new style 1, <UIWindowScene: 0x1060e97d0> (AE1D67B8-6BBD-4698-9E3C-597A0C367329)
+2026-08-20 05:05:05.028 Df Flagstone[35449:7affb] [com.apple.UIKit:InterfaceStyle] Not push traits update to screen for new style 1, <UIWindowScene: 0x1060e97d0> (AE1D67B8-6BBD-4698-9E3C-597A0C367329)
+2026-08-20 05:05:05.031 Df Flagstone[35449:7affb] [com.apple.UIKit:InterfaceStyle] Not push traits update to screen for new style 1, <UIWindowScene: 0x1060e97d0> (AE1D67B8-6BBD-4698-9E3C-597A0C367329)
+2026-08-20 05:05:05.032 A  Flagstone[35449:7affb] (libsystem_trace.dylib) Activity for state dumps
+2026-08-20 05:05:05.032 F  Flagstone[35449:7affb] [com.apple.runtime-issues:UIKit App Config] `UIScene` lifecycle will soon be required. Failure to adopt will result in an assert in the future.
+2026-08-20 05:05:05.032 Df Flagstone[35449:7affb] [com.apple.UIKit:InterfaceStyle] Not push traits update to screen for new style 1, <UIWindowScene: 0x1060e97d0> (AE1D67B8-6BBD-4698-9E3C-597A0C367329)
+2026-08-20 05:05:05.034 Df Flagstone[35449:7affb] [com.apple.UIKit:AppLifecycle] sceneOfRecord: sceneID: sceneID:com.accessmap.app-default  persistentID: AE1D67B8-6BBD-4698-9E3C-597A0C367329
+2026-08-20 05:05:05.035 Df Flagstone[35449:7affb] [com.apple.UIKit:Application] Ignoring already applied deactivation reason: 5; deactivation reasons: 1056
+2026-08-20 05:05:05.035 Df Flagstone[35449:7affb] [com.apple.UIKit:Application] Deactivation reason added: 11; deactivation reasons: 1056 -> 3104; animating application lifecycle event: 1
+2026-08-20 05:05:05.036 Df Flagstone[35449:7affb] [com.apple.KeyboardArbiter:Client] startConnection
+2026-08-20 05:05:05.039 Df Flagstone[35449:7affb] [com.apple.xpc:connection] [0x1071a9680] activating connection: mach=true listener=false peer=false name=com.apple.UIKit.KeyboardManagement.hosted
+2026-08-20 05:05:05.041 Df Flagstone[35449:7affb] (UIKitCore) You've implemented -[<UIApplicationDelegate> application:performFetchWithCompletionHandler:], but you still need to add "fetch" to the list of your supported UIBackgroundModes in your Info.plist.
+2026-08-20 05:05:05.045 Df Flagstone[35449:7affb] (UIKitCore) You've implemented -[<UIApplicationDelegate> application:didReceiveRemoteNotification:fetchCompletionHandler:], but you still need to add "remote-notification" to the list of your supported UIBackgroundModes in your Info.plist.
+2026-08-20 05:05:05.048 Df Flagstone[35449:7affb] _setUpFeatureFlags called with release level 2
+2026-08-20 05:05:05.079 Df Flagstone[35449:7affb] [com.apple.network:] networkd_settings_read_from_file_locked initialized networkd settings by reading plist directly
+2026-08-20 05:05:05.080 Df Flagstone[35449:7affb] [com.apple.network:] networkd_settings_read_from_file_locked initialized networkd settings by reading plist directly
+2026-08-20 05:05:05.144 Df Flagstone[35449:7affb] [com.apple.UIKit:Orientation] <UIWindowScene: 0x1060e97d0> (AE1D67B8-6BBD-4698-9E3C-597A0C367329) Scene updated orientation preferences: none -> ( Pu )
+2026-08-20 05:05:05.161 Df Flagstone[35449:7affb] [com.apple.UIKit:KeyWindow] Key window API is scene-level: YES
+2026-08-20 05:05:05.161 Df Flagstone[35449:7affb] [com.apple.UIKit:KeyWindow] UIWindowScene: 0x1060e97d0: Window became key in scene: UIWindow: 0x1071d0000; contextId: 0x2A976188: reason: UIWindowScene: 0x1060e97d0: Window requested to become key in scene: 0x1071d0000
+2026-08-20 05:05:05.162 Df Flagstone[35449:7affb] [com.apple.UIKit:KeyWindow] Key window needs update: 1; currentKeyWindowScene: 0x0; evaluatedKeyWindowScene: 0x1060e97d0; currentApplicationKeyWindow: 0x0; evaluatedApplicationKeyWindow: 0x1071d0000; reason: UIWindowScene: 0x1060e97d0: Window requested to become key in scene: 0x1071d0000
+2026-08-20 05:05:05.162 Df Flagstone[35449:7affb] [com.apple.UIKit:KeyWindow] Window did become application key: UIWindow: 0x1071d0000; contextId: 0x2A976188; scene identity: com.apple.frontboard.systemappservices/FBSceneManager:sceneID%3Acom.accessmap.app-default
+2026-08-20 05:05:05.162 Df Flagstone[35449:7affb] [com.apple.UIKit:EventDeferring] [0x107274d90] Begin local event deferring requested for token: 0x1070858c0; environments: 1; reason: UIWindowScene: 0x1060e97d0: Begin event deferring in keyboardFocus for window: 0x1071d0000
+2026-08-20 05:05:05.165 Df Flagstone[35449:7b026] [com.apple.BackBoard:EventDelivery] BKSHIDEventDeliveryManager - connection activation
+2026-08-20 05:05:05.167 Df Flagstone[35449:7affb] [com.apple.UIKit:Application] Deactivation reason removed: 10; deactivation reasons: 3104 -> 2080; animating application lifecycle event: 1
+2026-08-20 05:05:05.173 Df Flagstone[35449:7affb] [com.apple.UIKit:Application] Deactivation reason added: 12; deactivation reasons: 2080 -> 6176; animating application lifecycle event: 1
+2026-08-20 05:05:05.172 Df Flagstone[35449:7b026] [com.apple.BackBoard:EventDelivery] policyStatus:<BKSHIDEventDeliveryPolicyObserver: 0x10721c540; token: com.apple.frontboard.systemappservices/FBSceneManager:sceneID%3Acom.accessmap.app-default; status: ancestor> was:target
+2026-08-20 05:05:05.173 Df Flagstone[35449:7affb] [com.apple.UIKit:Application] Deactivation reason removed: 11; deactivation reasons: 6176 -> 4128; animating application lifecycle event: 1
+2026-08-20 05:05:05.173 Df Flagstone[35449:7affb] [com.apple.FrontBoard:SceneExtension] Realizing settings extension <_UISceneIntelligenceSupportSettings> on FBSSceneSettings
+2026-08-20 05:05:05.176 Df Flagstone[35449:7b026] [com.apple.UIIntelligenceSupport:xpc] establishing connection to agent
+2026-08-20 05:05:05.177 Df Flagstone[35449:7b026] [com.apple.xpc:session] [0x1071e0af0] Session created.
+2026-08-20 05:05:05.178 Df Flagstone[35449:7affb] [com.apple.UIKit:InterfaceStyle] Not push traits update to screen for new style 1, <UIWindowScene: 0x1060e97d0> (AE1D67B8-6BBD-4698-9E3C-597A0C367329)
+2026-08-20 05:05:05.178 Df Flagstone[35449:7b026] [com.apple.xpc:session] [0x1071e0af0] Session created from connection [0x107372940]
+2026-08-20 05:05:05.178 Df Flagstone[35449:7b026] [com.apple.xpc:connection] [0x107372940] activating connection: mach=true listener=false peer=false name=com.apple.uiintelligencesupport.agent
+2026-08-20 05:05:05.178 Df Flagstone[35449:7b026] [com.apple.xpc:session] [0x1071e0af0] Session activated
+2026-08-20 05:05:05.206 Df Flagstone[35449:7affb] [com.apple.xpc:connection] [0x1073703c0] activating connection: mach=true listener=false peer=false name=com.apple.lsd.mapdb
+2026-08-20 05:05:05.268 Df Flagstone[35449:7affb] [com.apple.network:activity] Create activity from XPC object <nw_activity 50:1 [53929130-A215-4A42-9132-4AC230B3716F] (reporting strategy default)>
+2026-08-20 05:05:05.269 Df Flagstone[35449:7affb] [com.apple.network:activity] Create activity from XPC object <nw_activity 50:2 [C7D02B71-1A8D-4052-A08A-1B9FE08F12EC] (reporting strategy default)>
+2026-08-20 05:05:05.269 Df Flagstone[35449:7affb] [com.apple.network:activity] Set activity <nw_activity 50:1 [53929130-A215-4A42-9132-4AC230B3716F] (reporting strategy default)> as the global parent
+2026-08-20 05:05:05.269 Df Flagstone[35449:7affb] [com.apple.UIKit:BackgroundTask] Ending background task with UIBackgroundTaskIdentifier: 1
+2026-08-20 05:05:05.269 Df Flagstone[35449:7affb] [com.apple.UIKit:BackgroundTask] Ending task with identifier 1 and description: <_UIBackgroundTaskInfo: 0x1070b0d00>: taskID = 1, taskName = Launch Background Task for Coalescing, creationTime = 23988 (elapsed = 0), _expireHandler: (null)
+2026-08-20 05:05:05.269 Df Flagstone[35449:7affb] [com.apple.UIKit:BackgroundTask] Decrementing reference count for assertion <BKSProcessAssertion: 0x1060e10e0> (used by background task with identifier 1: <_UIBackgroundTaskInfo: 0x1070b0d00>: taskID = 1, taskName = Launch Background Task for Coalescing, creationTime = 23988 (elapsed = 0))
+2026-08-20 05:05:05.501 A  Flagstone[35449:7b029] (RunningBoardServices) didChangeInheritances
+2026-08-20 05:05:05.566 Df Flagstone[35449:7b029] [com.apple.UIKit:BackgroundTask] Ending background task with UIBackgroundTaskIdentifier: 2
+2026-08-20 05:05:05.567 Df Flagstone[35449:7b029] [com.apple.UIKit:BackgroundTask] Ending task with identifier 2 and description: <_UIBackgroundTaskInfo: 0x107250080>: taskID = 2, taskName = Persistent SceneSession Map Update, creationTime = 23988 (elapsed = 0), _expireHandler: <__NSGlobalBlock__: 0x1e78c84e8>
+2026-08-20 05:05:05.568 Df Flagstone[35449:7b029] [com.apple.UIKit:BackgroundTask] Decrementing reference count for assertion <BKSProcessAssertion: 0x1060e10e0> (used by background task with identifier 2: <_UIBackgroundTaskInfo: 0x107250080>: taskID = 2, taskName = Persistent SceneSession Map Update, creationTime = 23988 (elapsed = 0))
+2026-08-20 05:05:05.586 Df Flagstone[35449:7b029] [com.apple.UIKit:BackgroundTask] Will invalidate assertion: <BKSProcessAssertion: 0x1060e10e0> for task identifier: 2
+2026-08-20 05:05:06.465 Df Flagstone[35449:7b026] [com.apple.xpc:connection] [0x1073708c0] activating connection: mach=true listener=false peer=false name=com.apple.fontservicesd
+2026-08-20 05:05:06.515 Df Flagstone[35449:7affb] [com.apple.UIKit:EventDeferring] [0x107274d90] Scene target of event deferring environments did update: scene: 0x1060e97d0; current systemShellManagesKeyboardFocus: 1; systemShellManagesKeyboardFocusForScene: 1; eligibleForRecordRemoval: 1;
+2026-08-20 05:05:06.515 Df Flagstone[35449:7affb] [com.apple.UIKit:KeyWindow] Scene became target of keyboard event deferring environment: UIWindowScene: 0x1060e97d0; scene identity: com.apple.frontboard.systemappservices/FBSceneManager:sceneID%3Acom.accessmap.app-default
+2026-08-20 05:05:06.516 Df Flagstone[35449:7affb] [com.apple.UIKit:EventBus] Event Timing Profile for Touch: not found, path="/System/Library/EventTimingProfiles/Sim.Touch.plist"
+2026-08-20 05:05:06.516 Df Flagstone[35449:7affb] [com.apple.UIKit:EventBus] Event Timing Profile for Pencil: not found, path="/System/Library/EventTimingProfiles/Sim.Pencil.plist"
+2026-08-20 05:05:06.516 Df Flagstone[35449:7affb] [com.apple.UIKit:UpdateScheduler] Target list changed: <CADisplay:LCD PurpleMain>
+2026-08-20 05:05:06.517 Df Flagstone[35449:7affb] [com.apple.KeyboardArbiter:Client] startConnection
+2026-08-20 05:05:06.517 Df Flagstone[35449:7affb] [com.apple.Accessibility:AXCommon] Read Per-App on Init: Smart invert = (null)
+2026-08-20 05:05:06.518 Df Flagstone[35449:7affb] [com.apple.KeyboardArbiter:Client] handleKeyboardChange: set currentKeyboard:N (wasKeyboard:N)
+2026-08-20 05:05:06.536 Df Flagstone[35449:7affb] [com.apple.UIKit:KeyboardSceneDelegate] forceReloadInputViews
+2026-08-20 05:05:06.537 Df Flagstone[35449:7affb] [com.apple.UIKit:KeyboardSceneDelegate] Reloading input views for key-window scene responder: <(null): 0x0; > force:Y
+2026-08-20 05:05:06.539 Df Flagstone[35449:7affb] [com.apple.UIKit:KeyboardArbiterClientLog] isWritingToolsHandlingKeyboardTracking:Y (WT ready:Y, Arbiter ready:Y)
+2026-08-20 05:05:06.543 Df Flagstone[35449:7affb] [com.apple.UIKit:AppLifecycle] sceneOfRecord: sceneID: sceneID:com.accessmap.app-default  persistentID: AE1D67B8-6BBD-4698-9E3C-597A0C367329
+2026-08-20 05:05:06.544 Df Flagstone[35449:7affb] [com.apple.UIKit:InterfaceStyle] Not push traits update to screen for new style 1, <UIWindowScene: 0x1060e97d0> (AE1D67B8-6BBD-4698-9E3C-597A0C367329)
+2026-08-20 05:05:06.547 Df Flagstone[35449:7affb] [com.apple.UIKit:InterfaceStyle] Not push traits update to screen for new style 1, <UIWindowScene: 0x1060e97d0> (AE1D67B8-6BBD-4698-9E3C-597A0C367329)
+2026-08-20 05:05:06.547 Df Flagstone[35449:7affb] [com.apple.UIKit:AppLifecycle] sceneOfRecord: sceneID: sceneID:com.accessmap.app-default  persistentID: AE1D67B8-6BBD-4698-9E3C-597A0C367329
+2026-08-20 05:05:06.548 Df Flagstone[35449:7affb] [com.apple.UIKit:Application] Deactivation reason removed: 12; deactivation reasons: 4128 -> 32; animating application lifecycle event: 1
+2026-08-20 05:05:06.548 Df Flagstone[35449:7affb] [com.apple.KeyboardArbiter:Client] Send setDeactivating: N (-DeactivationReason:SuspendedEventsOnly)
+2026-08-20 05:05:06.549 Df Flagstone[35449:7affb] [com.apple.UIKit:Application] Deactivation reason removed: 5; deactivation reasons: 32 -> 0; animating application lifecycle event: 0
+2026-08-20 05:05:06.582 Df Flagstone[35449:7b02e] [com.apple.FileURL:default] kExcludedFromBackupXattrName set on path: /Users/skypie/Library/Developer/CoreSimulator/Devices/9C9D3ED6-E62F-4A5C-A0C2-D8294D6575AC/data/Containers/Data/Application/D0507AA7-D79E-4FD6-BDD2-F544EA2A4095/Library/Application Support/com.accessmap.app/RCTAsyncLocalStorage_V1
+2026-08-20 05:05:06.620 Df Flagstone[35449:7affb] [com.apple.network:activity] <nw_activity 50:1 [53929130-A215-4A42-9132-4AC230B3716F] (global parent) (reporting strategy default) complete (reason success)> complete with reason 2 (success), duration 3251ms
+2026-08-20 05:05:06.621 Df Flagstone[35449:7affb] [com.apple.network:activity] <nw_activity 50:2 [C7D02B71-1A8D-4052-A08A-1B9FE08F12EC] (reporting strategy default) complete (reason success)> complete with reason 2 (success), duration 3251ms
+2026-08-20 05:05:06.621 Df Flagstone[35449:7affb] [com.apple.network:activity] Unsetting the global parent activity <nw_activity 50:1 [53929130-A215-4A42-9132-4AC230B3716F] (global parent) (reporting strategy default) complete (reason success)>
+2026-08-20 05:05:06.621 Df Flagstone[35449:7affb] [com.apple.network:activity] Unset the global parent activity
+2026-08-20 05:05:06.622 Df Flagstone[35449:7affb] [com.apple.app_launch_measurement:ApplicationLaunch] alm_release_pageins_recording_assertion: releasing pageins recording assertion
+2026-08-20 05:05:14.008 A  Flagstone[35449:7b02c] (RunningBoardServices) didChangeInheritances
+2026-08-20 05:05:30.439 Df Flagstone[35449:7b02f] [com.apple.launchservices:db] NotifyToken::RegisterDispatch(com.apple.LaunchServices.database) fired for session key LSSessionKey(system: 0 uid: 501)
+2026-08-20 05:05:51.306 A  Flagstone[35449:7b5b9] (CoreFoundation) Updating Key-Value Observers Of Preferences
+2026-08-20 05:05:56.518 Df Flagstone[35449:7affb] [com.apple.BackBoard:Display] [FBSDisplaySource 1-1] silently connecting raw configuration: <FBSDisplayConfiguration: 0x107113800; Main; mode: "390x844@3x 60Hz p3 SDR">
+2026-08-20 05:06:23.806 Df Flagstone[35449:7b6de] [com.apple.dt.xctest:Default] Got availability notification from test daemon.
+2026-08-20 05:06:23.821 Df Flagstone[35449:7b6de] [com.apple.xpc:connection] [0x10b068000] activating connection: mach=true listener=false peer=false name=com.apple.dt.xctestd.target
+2026-08-20 05:06:23.825 Df Flagstone[35449:7b911] [com.apple.dt.xctest:Default] Received request for endpoint.
+2026-08-20 05:06:23.826 Df Flagstone[35449:7b911] [com.apple.dt.xctest:Default] Attempting to load /Library/Developer/CoreSimulator/Volumes/iOS_23F77/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 26.5.simruntime/Contents/Resources/RuntimeRoot/Developer/Library/PrivateFrameworks/XCTAutomationSupport.framework.
+2026-08-20 05:06:24.018 Df Flagstone[35449:7b911] [com.apple.dt.automationmode:Default] XAM shared observer connecting to com.apple.dt.automationmode.reader
+2026-08-20 05:06:24.018 Df Flagstone[35449:7b911] [com.apple.xpc:connection] [0x10b068140] activating connection: mach=true listener=false peer=false name=com.apple.dt.automationmode.reader
+2026-08-20 05:06:24.031 Df Flagstone[35449:7b911] [com.apple.xpc:connection] [0x10b068140] invalidated because the current process cancelled the connection by calling xpc_connection_cancel()
+2026-08-20 05:06:24.031 Df Flagstone[35449:7b911] [com.apple.dt.xctest:Default] Sending anonymous endpoint.
+2026-08-20 05:06:24.032 Df Flagstone[35449:7b911] [com.apple.dt.xctest:Default] Setting up target listener.
+2026-08-20 05:06:24.033 Df Flagstone[35449:7b911] [com.apple.xpc:connection] [0x10b068140] activating connection: mach=false listener=true peer=false name=(anonymous)
+2026-08-20 05:06:24.033 Df Flagstone[35449:7b911] [com.apple.xpc:connection] [0x10b068140] Connection returned listener port: 0x4223
+2026-08-20 05:06:24.037 Df Flagstone[35449:7b911] [com.apple.dt.xctest:Default] Received client to target connection.
+2026-08-20 05:06:24.037 Df Flagstone[35449:7b911] [com.apple.dt.automationmode:Default] Returning 1 for enabled state
+2026-08-20 05:06:24.038 Df Flagstone[35449:7b911] [com.apple.xpc:connection] [0x107256400] activating connection: mach=false listener=false peer=true name=com.apple.xpc.anonymous.0x10b068140.peer[35521].0x107256400
+2026-08-20 05:06:24.040 Df Flagstone[35449:7b914] [com.apple.dt.xctest:Default] Received request to exchange capabilities, remote interface capabilities are: <XCTCapabilities: 0x10722b920>: {
+    "query runtime issue reporting" = 1;
+    "query runtime issue reporting/automation type mismatch" = 1;
+}
+2026-08-20 05:06:24.196 Df Flagstone[35449:7affb] (libMobileGestalt.dylib) Property isp[camera-front] found {length = 4, bytes = 0x01000000}
+2026-08-20 05:06:24.197 A  Flagstone[35449:7affb] (CoreFoundation) Updating Key-Value Observers Of Preferences
+2026-08-20 05:06:24.218 A  Flagstone[35449:7affb] (libsystem_containermanager.dylib) container_system_group_path_for_identifier
+2026-08-20 05:06:24.219 Df Flagstone[35449:7affb] [com.apple.containermanager:xpc] Requesting container lookup; class = 13, identifier = (null), group_identifier = systemgroup.com.apple.configurationprofiles, create = 1, temp = 0, euid = 501, uid = 501
+2026-08-20 05:06:24.219 A  Flagstone[35449:7affb] (libsystem_containermanager.dylib) container_query_t
+2026-08-20 05:06:24.219 Df Flagstone[35449:7affb] [com.apple.containermanager:xpc] Query; euid = 501, uid = 501, class = 13, identifier = [(null)](0), flags = 900000003
+2026-08-20 05:06:24.235 Df Flagstone[35449:7affb] [com.apple.containermanager:unspecified] _container_query_get_result_at_index: success
+2026-08-20 05:06:24.235 A  Flagstone[35449:7affb] (libsystem_containermanager.dylib) container_copy_object
+2026-08-20 05:06:24.235 Df Flagstone[35449:7affb] [com.apple.containermanager:unspecified] container_system_group_path_for_identifier: success
+2026-08-20 05:06:24.235 Df Flagstone[35449:7affb] [com.apple.ManagedConfiguration:MC] Got system group container path from MCM for systemgroup.com.apple.configurationprofiles: /Users/skypie/Library/Developer/CoreSimulator/Devices/9C9D3ED6-E62F-4A5C-A0C2-D8294D6575AC/data/Containers/Shared/SystemGroup/systemgroup.com.apple.configurationprofiles
+2026-08-20 05:06:24.406 E  Flagstone[35449:7affb] [com.apple.Foundation:general] NSBundle (null) initWithPath failed because the resolved path is empty or nil
+2026-08-20 05:06:24.529 E  Flagstone[35449:7affb] [com.apple.Accessibility:AXRuntimeCommon] Unknown client: Flagstone
+2026-08-20 05:06:40.791 Df Flagstone[35449:7ba85] [com.apple.dt.xctest:Default] Received attributes request for element: AX element pid: 35449, elementOrHash.elementID: 4414804352.16. Attributes: (
+    "XC_kAXXCAttributeValue"
+)
+2026-08-20 05:06:40.791 Df Flagstone[35449:7b6de] [com.apple.dt.xctest:Default] XCTPerformOnMainRunLoop[not MT]: about to CFRunLoopPerform
+2026-08-20 05:06:40.791 Df Flagstone[35449:7b6de] [com.apple.dt.xctest:Default] XCTPerformOnMainRunLoop[not MT]: waiting with 30.00s responsiveness timeout
+2026-08-20 05:06:40.791 Df Flagstone[35449:7affb] [com.apple.dt.xctest:Default] XCTPerformOnMainRunLoop[MT]: inside CFRunLoopPerform
+2026-08-20 05:06:40.791 Df Flagstone[35449:7affb] [com.apple.dt.xctest:Default] XCTPerformOnMainRunLoop[MT]: MT responded in time (won the race to the busy flag)
+2026-08-20 05:06:40.791 Df Flagstone[35449:7b6de] [com.apple.dt.xctest:Default] XCTPerformOnMainRunLoop[not MT]: waiting 60.00s for work to complete
+2026-08-20 05:06:40.791 Df Flagstone[35449:7affb] [com.apple.dt.xctest:Default] Fetching AX attributes XC_kAXXCAttributeValue for AX element pid: 35449, elementOrHash.elementID: 4414804352.16
+2026-08-20 05:06:40.791 Df Flagstone[35449:7affb] [com.apple.dt.xctest:Default] Got attributes, transferring to dictionary for return.
+2026-08-20 05:06:40.791 Df Flagstone[35449:7b6de] [com.apple.dt.xctest:Default] Replying with attribute values: {
+}
+2026-08-20 05:06:40.797 Df Flagstone[35449:7b6de] [com.apple.dt.xctest:Default] Received attributes request for element: AX element pid: 35449, elementOrHash.elementID: 4414804352.16. Attributes: (
+    "XC_kAXXCAttributePlaceholderValue"
+)
+2026-08-20 05:06:40.797 Df Flagstone[35449:7ba85] [com.apple.dt.xctest:Default] XCTPerformOnMainRunLoop[not MT]: about to CFRunLoopPerform
+2026-08-20 05:06:40.797 Df Flagstone[35449:7affb] [com.apple.dt.xctest:Default] XCTPerformOnMainRunLoop[MT]: inside CFRunLoopPerform
+2026-08-20 05:06:40.797 Df Flagstone[35449:7ba85] [com.apple.dt.xctest:Default] XCTPerformOnMainRunLoop[not MT]: waiting with 30.00s responsiveness timeout
+2026-08-20 05:06:40.797 Df Flagstone[35449:7affb] [com.apple.dt.xctest:Default] XCTPerformOnMainRunLoop[MT]: MT responded in time (won the race to the busy flag)
+2026-08-20 05:06:40.797 Df Flagstone[35449:7ba85] [com.apple.dt.xctest:Default] XCTPerformOnMainRunLoop[not MT]: waiting 60.00s for work to complete
+2026-08-20 05:06:40.797 Df Flagstone[35449:7affb] [com.apple.dt.xctest:Default] Fetching AX attributes XC_kAXXCAttributePlaceholderValue for AX element pid: 35449, elementOrHash.elementID: 4414804352.16
+2026-08-20 05:06:40.797 Df Flagstone[35449:7affb] [com.apple.dt.xctest:Default] Got attributes, transferring to dictionary for return.
+2026-08-20 05:06:40.798 Df Flagstone[35449:7ba85] [com.apple.dt.xctest:Default] Replying with attribute values: {
+}
+2026-08-20 05:06:41.064 Df Flagstone[35449:7ba85] [com.apple.dt.xctest:Default] Received request to notify when the main run loop is idle
+2026-08-20 05:06:41.064 Df Flagstone[35449:7ba85] [com.apple.dt.xctest:Default] Idle notifier finished setting up run loop observer
+2026-08-20 05:06:41.064 Df Flagstone[35449:7affb] [com.apple.dt.xctest:Default] Idle notifier run loop observer fired
+2026-08-20 05:06:41.064 Df Flagstone[35449:7affb] [com.apple.dt.xctest:Default] Sending main run loop idle reply
+2026-08-20 05:06:41.064 Df Flagstone[35449:7ba85] [com.apple.dt.xctest:Default] Received request to notify when animations are idle
+2026-08-20 05:06:41.064 Df Flagstone[35449:7ba85] [com.apple.dt.xctest:Default] Sending animations idle reply with error: (null)
+2026-08-20 05:06:41.196 Df Flagstone[35449:7ba85] [com.apple.dt.xctest:Default] Received attributes request for element: AX element pid: 35449, elementOrHash.elementID: 4414804352.16. Attributes: (
+    "XC_kAXXCAttributeVisiblePoint"
+)
+2026-08-20 05:06:41.196 Df Flagstone[35449:7ba85] [com.apple.dt.xctest:Default] XCTPerformOnMainRunLoop[not MT]: about to CFRunLoopPerform
+2026-08-20 05:06:41.196 Df Flagstone[35449:7ba85] [com.apple.dt.xctest:Default] XCTPerformOnMainRunLoop[not MT]: waiting with 30.00s responsiveness timeout
+2026-08-20 05:06:41.196 Df Flagstone[35449:7affb] [com.apple.dt.xctest:Default] XCTPerformOnMainRunLoop[MT]: inside CFRunLoopPerform
+2026-08-20 05:06:41.196 Df Flagstone[35449:7affb] [com.apple.dt.xctest:Default] XCTPerformOnMainRunLoop[MT]: MT responded in time (won the race to the busy flag)
+2026-08-20 05:06:41.196 Df Flagstone[35449:7affb] [com.apple.dt.xctest:Default] Fetching AX attributes XC_kAXXCAttributeVisiblePoint for AX element pid: 35449, elementOrHash.elementID: 4414804352.16
+2026-08-20 05:06:41.196 Df Flagstone[35449:7ba85] [com.apple.dt.xctest:Default] XCTPerformOnMainRunLoop[not MT]: waiting 60.00s for work to complete
+2026-08-20 05:06:41.216 Df Flagstone[35449:7affb] [com.apple.dt.xctest:Default] Got attributes, transferring to dictionary for return.
+2026-08-20 05:06:41.217 Df Flagstone[35449:7ba85] [com.apple.dt.xctest:Default] Replying with attribute values: {
+    "XC_kAXXCAttributeVisiblePoint" =     {
+        X = "347.1666717529297";
+        Y = 70;
+    };
+}
+2026-08-20 05:06:41.474 Df Flagstone[35449:7affb] [com.apple.KeyboardArbiter:Client] TX focusApplication (peekAppEvent) stealKB:Y scene:com.accessmap.app-default
+2026-08-20 05:06:41.476 Df Flagstone[35449:7affb] [com.apple.UIKit:EventDispatch] Evaluating dispatch of UIEvent: 0x107113900; type: 0; subtype: 0; backing type: 11; shouldSend: 1; ignoreInteractionEvents: 0, systemGestureStateChange: 0
+2026-08-20 05:06:41.476 Df Flagstone[35449:7affb] [com.apple.UIKit:EventDispatch] Sending UIEvent type: 0; subtype: 0; to windows: 1
+2026-08-20 05:06:41.476 Df Flagstone[35449:7affb] [com.apple.UIKit:EventDispatch] Sending UIEvent type: 0; subtype: 0; to window: <UIWindow: 0x1071d0000>; contextId: 0x2A976188
+2026-08-20 05:06:41.625 Df Flagstone[35449:7affb] [com.apple.UIKit:EventDispatch] Evaluating dispatch of UIEvent: 0x107113900; type: 0; subtype: 0; backing type: 11; shouldSend: 0; ignoreInteractionEvents: 0, systemGestureStateChange: 0
+2026-08-20 05:06:41.625 Df Flagstone[35449:7affb] [com.apple.UIKit:EventDispatch] Evaluating dispatch of UIEvent: 0x107113900; type: 0; subtype: 0; backing type: 11; shouldSend: 1; ignoreInteractionEvents: 0, systemGestureStateChange: 0
+2026-08-20 05:06:41.626 Df Flagstone[35449:7affb] [com.apple.UIKit:EventDispatch] Sending UIEvent type: 0; subtype: 0; to windows: 1
+2026-08-20 05:06:41.626 Df Flagstone[35449:7affb] [com.apple.UIKit:EventDispatch] Sending UIEvent type: 0; subtype: 0; to window: <UIWindow: 0x1071d0000>; contextId: 0x2A976188
+2026-08-20 05:06:41.627 Df Flagstone[35449:7affb] [com.apple.UIKit:EventDispatch] Evaluating dispatch of UIEvent: 0x107113900; type: 0; subtype: 0; backing type: 11; shouldSend: 0; ignoreInteractionEvents: 0, systemGestureStateChange: 0
+2026-08-20 05:06:41.630 A  Flagstone[35449:7affb] (UIKitCore) send gesture actions
+2026-08-20 05:06:41.912 Df Flagstone[35449:7ba85] [com.apple.dt.xctest:Default] Received request to notify when the main run loop is idle
+2026-08-20 05:06:41.912 Df Flagstone[35449:7ba85] [com.apple.dt.xctest:Default] Idle notifier finished setting up run loop observer
+2026-08-20 05:06:41.913 Df Flagstone[35449:7affb] [com.apple.dt.xctest:Default] Idle notifier run loop observer fired
+2026-08-20 05:06:41.913 Df Flagstone[35449:7affb] [com.apple.dt.xctest:Default] Sending main run loop idle reply
+2026-08-20 05:06:41.918 Df Flagstone[35449:7ba85] [com.apple.dt.xctest:Default] Received request to notify when animations are idle
+2026-08-20 05:06:41.918 Df Flagstone[35449:7ba85] [com.apple.dt.xctest:Default] Sending animations idle reply with error: (null)
+2026-08-20 05:07:20.713 Df Flagstone[35449:7bdb1] [com.apple.dt.xctest:Default] Received attributes request for element: AX element pid: 35449, elementOrHash.elementID: 4711229056.106. Attributes: (
+    "XC_kAXXCAttributeValue"
+)
+2026-08-20 05:07:20.713 Df Flagstone[35449:7bf8a] [com.apple.dt.xctest:Default] XCTPerformOnMainRunLoop[not MT]: about to CFRunLoopPerform
+2026-08-20 05:07:20.713 Df Flagstone[35449:7bf8a] [com.apple.dt.xctest:Default] XCTPerformOnMainRunLoop[not MT]: waiting with 30.00s responsiveness timeout
+2026-08-20 05:07:20.713 Df Flagstone[35449:7affb] [com.apple.dt.xctest:Default] XCTPerformOnMainRunLoop[MT]: inside CFRunLoopPerform
+2026-08-20 05:07:20.713 Df Flagstone[35449:7bf8a] [com.apple.dt.xctest:Default] XCTPerformOnMainRunLoop[not MT]: waiting 60.00s for work to complete
+2026-08-20 05:07:20.713 Df Flagstone[35449:7affb] [com.apple.dt.xctest:Default] XCTPerformOnMainRunLoop[MT]: MT responded in time (won the race to the busy flag)
+2026-08-20 05:07:20.713 Df Flagstone[35449:7affb] [com.apple.dt.xctest:Default] Fetching AX attributes XC_kAXXCAttributeValue for AX element pid: 35449, elementOrHash.elementID: 4711229056.106
+2026-08-20 05:07:20.714 Df Flagstone[35449:7affb] [com.apple.dt.xctest:Default] Got attributes, transferring to dictionary for return.
+2026-08-20 05:07:20.714 Df Flagstone[35449:7bf8a] [com.apple.dt.xctest:Default] Replying with attribute values: {
+}
+2026-08-20 05:07:20.731 Df Flagstone[35449:7bf8a] [com.apple.dt.xctest:Default] Received attributes request for element: AX element pid: 35449, elementOrHash.elementID: 4711229056.106. Attributes: (
+    "XC_kAXXCAttributePlaceholderValue"
+)
+2026-08-20 05:07:20.732 Df Flagstone[35449:7bdb1] [com.apple.dt.xctest:Default] XCTPerformOnMainRunLoop[not MT]: about to CFRunLoopPerform
+2026-08-20 05:07:20.732 Df Flagstone[35449:7bdb1] [com.apple.dt.xctest:Default] XCTPerformOnMainRunLoop[not MT]: waiting with 30.00s responsiveness timeout
+2026-08-20 05:07:20.732 Df Flagstone[35449:7affb] [com.apple.dt.xctest:Default] XCTPerformOnMainRunLoop[MT]: inside CFRunLoopPerform
+2026-08-20 05:07:20.732 Df Flagstone[35449:7affb] [com.apple.dt.xctest:Default] XCTPerformOnMainRunLoop[MT]: MT responded in time (won the race to the busy flag)
+2026-08-20 05:07:20.732 Df Flagstone[35449:7bdb1] [com.apple.dt.xctest:Default] XCTPerformOnMainRunLoop[not MT]: waiting 60.00s for work to complete
+2026-08-20 05:07:20.732 Df Flagstone[35449:7affb] [com.apple.dt.xctest:Default] Fetching AX attributes XC_kAXXCAttributePlaceholderValue for AX element pid: 35449, elementOrHash.elementID: 4711229056.106
+2026-08-20 05:07:20.732 Df Flagstone[35449:7affb] [com.apple.dt.xctest:Default] Got attributes, transferring to dictionary for return.
+2026-08-20 05:07:20.732 Df Flagstone[35449:7bdb1] [com.apple.dt.xctest:Default] Replying with attribute values: {
+}
+2026-08-20 05:07:20.903 Df Flagstone[35449:7bdb1] [com.apple.dt.xctest:Default] Received request to notify when the main run loop is idle
+2026-08-20 05:07:20.903 Df Flagstone[35449:7bdb1] [com.apple.dt.xctest:Default] Idle notifier finished setting up run loop observer
+2026-08-20 05:07:20.903 Df Flagstone[35449:7affb] [com.apple.dt.xctest:Default] Idle notifier run loop observer fired
+2026-08-20 05:07:20.903 Df Flagstone[35449:7affb] [com.apple.dt.xctest:Default] Sending main run loop idle reply
+2026-08-20 05:07:20.904 Df Flagstone[35449:7bdb1] [com.apple.dt.xctest:Default] Received request to notify when animations are idle
+2026-08-20 05:07:20.904 Df Flagstone[35449:7bdb1] [com.apple.dt.xctest:Default] Sending animations idle reply with error: (null)
+2026-08-20 05:07:21.025 Df Flagstone[35449:7bdb1] [com.apple.dt.xctest:Default] Received attributes request for element: AX element pid: 35449, elementOrHash.elementID: 4711229056.106. Attributes: (
+    "XC_kAXXCAttributeVisiblePoint"
+)
+2026-08-20 05:07:21.025 Df Flagstone[35449:7bf8a] [com.apple.dt.xctest:Default] XCTPerformOnMainRunLoop[not MT]: about to CFRunLoopPerform
+2026-08-20 05:07:21.025 Df Flagstone[35449:7bf8a] [com.apple.dt.xctest:Default] XCTPerformOnMainRunLoop[not MT]: waiting with 30.00s responsiveness timeout
+2026-08-20 05:07:21.025 Df Flagstone[35449:7affb] [com.apple.dt.xctest:Default] XCTPerformOnMainRunLoop[MT]: inside CFRunLoopPerform
+2026-08-20 05:07:21.025 Df Flagstone[35449:7affb] [com.apple.dt.xctest:Default] XCTPerformOnMainRunLoop[MT]: MT responded in time (won the race to the busy flag)
+2026-08-20 05:07:21.025 Df Flagstone[35449:7bf8a] [com.apple.dt.xctest:Default] XCTPerformOnMainRunLoop[not MT]: waiting 60.00s for work to complete
+2026-08-20 05:07:21.025 Df Flagstone[35449:7affb] [com.apple.dt.xctest:Default] Fetching AX attributes XC_kAXXCAttributeVisiblePoint for AX element pid: 35449, elementOrHash.elementID: 4711229056.106
+2026-08-20 05:07:21.067 Df Flagstone[35449:7affb] [com.apple.dt.xctest:Default] Got attributes, transferring to dictionary for return.
+2026-08-20 05:07:21.070 Df Flagstone[35449:7bf8a] [com.apple.dt.xctest:Default] Replying with attribute values: {
+    "XC_kAXXCAttributeVisiblePoint" =     {
+        X = "195.0000114440918";
+        Y = "719.3333129882812";
+    };
+}
+2026-08-20 05:07:21.214 Df Flagstone[35449:7affb] [com.apple.KeyboardArbiter:Client] TX focusApplication (peekAppEvent) stealKB:Y scene:com.accessmap.app-default
+2026-08-20 05:07:21.218 Df Flagstone[35449:7affb] [com.apple.UIKit:EventDispatch] Evaluating dispatch of UIEvent: 0x107113900; type: 0; subtype: 0; backing type: 11; shouldSend: 1; ignoreInteractionEvents: 0, systemGestureStateChange: 0
+2026-08-20 05:07:21.218 Df Flagstone[35449:7affb] [com.apple.UIKit:EventDispatch] Sending UIEvent type: 0; subtype: 0; to windows: 1
+2026-08-20 05:07:21.219 Df Flagstone[35449:7affb] [com.apple.UIKit:EventDispatch] Sending UIEvent type: 0; subtype: 0; to window: <UIWindow: 0x1071d0000>; contextId: 0x2A976188
+2026-08-20 05:07:21.245 Df Flagstone[35449:7affb] [com.apple.UIKit:EventDispatch] Evaluating dispatch of UIEvent: 0x107113900; type: 0; subtype: 0; backing type: 11; shouldSend: 0; ignoreInteractionEvents: 0, systemGestureStateChange: 0
+2026-08-20 05:07:21.256 Df Flagstone[35449:7affb] [com.apple.UIKit:EventDispatch] Evaluating dispatch of UIEvent: 0x107113900; type: 0; subtype: 0; backing type: 11; shouldSend: 0; ignoreInteractionEvents: 0, systemGestureStateChange: 0
+2026-08-20 05:07:21.257 Df Flagstone[35449:7affb] [com.apple.UIKit:EventDispatch] Evaluating dispatch of UIEvent: 0x107113900; type: 0; subtype: 0; backing type: 11; shouldSend: 1; ignoreInteractionEvents: 0, systemGestureStateChange: 0
+2026-08-20 05:07:21.257 Df Flagstone[35449:7affb] [com.apple.UIKit:EventDispatch] Sending UIEvent type: 0; subtype: 0; to windows: 1
+2026-08-20 05:07:21.257 Df Flagstone[35449:7affb] [com.apple.UIKit:EventDispatch] Sending UIEvent type: 0; subtype: 0; to window: <UIWindow: 0x1071d0000>; contextId: 0x2A976188
+2026-08-20 05:07:21.409 A  Flagstone[35449:7affb] (CoreFoundation) Loading Preferences From User Session CFPrefsD
+2026-08-20 05:07:21.411 A  Flagstone[35449:7affb] (CoreFoundation) Loading Preferences From User Session CFPrefsD
+2026-08-20 05:07:21.603 Df Flagstone[35449:7bdb1] [com.apple.dt.xctest:Default] Received request to notify when the main run loop is idle
+2026-08-20 05:07:21.603 Df Flagstone[35449:7bdb1] [com.apple.dt.xctest:Default] Idle notifier finished setting up run loop observer
+2026-08-20 05:07:21.738 Df Flagstone[35449:7bdb1] [com.apple.dt.xctest:Default] Received request to notify when animations are idle
+2026-08-20 05:07:21.739 Df Flagstone[35449:7bdb1] [com.apple.dt.xctest:Default] Sending animations idle reply with error: (null)
+2026-08-20 05:07:21.829 Df Flagstone[35449:7affb] [com.apple.xpc:connection] [0x1071a88c0] activating connection: mach=true listener=false peer=false name=com.apple.geod
+2026-08-20 05:07:21.884 Df Flagstone[35449:7bf8a] [com.apple.xpc:connection] [0x1071aa580] activating connection: mach=true listener=false peer=false name=com.apple.geod
+2026-08-20 05:07:21.885 Df Flagstone[35449:7bf8a] [com.apple.xpc:connection] [0x1071aa940] activating connection: mach=true listener=false peer=false name=com.apple.geod
+2026-08-20 05:07:21.887 Df Flagstone[35449:7affb] [com.apple.xpc:connection] [0x1071aa440] activating connection: mach=true listener=false peer=false name=com.apple.geod
+2026-08-20 05:07:22.050 Df Flagstone[35449:7affb] [com.apple.xpc:connection] [0x1071aae40] activating connection: mach=true listener=false peer=false name=com.apple.metal.simulator
+2026-08-20 05:07:22.064 Df Flagstone[35449:7affb] [com.apple.xpc:connection] [0x1071aad00] activating connection: mach=true listener=false peer=false name=com.apple.metal.simulator
+2026-08-20 05:07:22.065 Df Flagstone[35449:7affb] [com.apple.xpc:connection] [0x1071ab340] activating connection: mach=true listener=false peer=false name=com.apple.metal.simulator
+2026-08-20 05:07:22.135 Df Flagstone[35449:7affb] [com.apple.GeoServices:ResourceManifest] Did not find downloaded resource "default.csv" at "(null)", trying fallback
+2026-08-20 05:07:22.154 E  Flagstone[35449:7affb] [com.apple.GeoServices:ResourceManifest] Failed to locate resource named "default.csv"
+2026-08-20 05:07:22.185 Df Flagstone[35449:7affb] [com.apple.GeoServices:ResourceManifest] Did not find downloaded resource "groundSettings.json" at "(null)", trying fallback
+2026-08-20 05:07:22.222 Df Flagstone[35449:7affb] [com.apple.xpc:connection] [0x1071a9900] activating connection: mach=true listener=false peer=false name=com.apple.geod
+2026-08-20 05:07:22.222 A  Flagstone[35449:7bfa2] (CoreLocation) CL: CLInternalGetAuthorizationStatus
+2026-08-20 05:07:22.224 Df Flagstone[35449:7affb] [com.apple.xpc:connection] [0x1071a8a00] activating connection: mach=true listener=false peer=false name=com.apple.geod
+2026-08-20 05:07:22.223 Df Flagstone[35449:7bfa2] [com.apple.locationd.Core:Client] {"msg":"CLInternalGetAuthorizationStatus", "event":activity}
+2026-08-20 05:07:22.235 Df Flagstone[35449:7affb] [com.apple.xpc:connection] [0x107372bc0] activating connection: mach=true listener=true peer=false name=com.apple.notifyd.matching
+2026-08-20 05:07:22.240 Df Flagstone[35449:7bfa2] [com.apple.xpc:connection] [0x1071a8b40] activating connection: mach=true listener=false peer=false name=com.apple.locationd.synchronous
+2026-08-20 05:07:22.272 Df Flagstone[35449:7affb] [com.apple.GeoServices:ResourceManifest] Did not find downloaded resource "CurrencyStyleAttributes.plist" at "(null)", trying fallback
+2026-08-20 05:07:22.295 Df Flagstone[35449:7affb] [com.apple.GeoServices:ResourceManifest] Did not find downloaded resource "NonTiledAssets.pb" at "(null)", trying fallback
+2026-08-20 05:07:22.308 Df Flagstone[35449:7bf8a] [com.apple.CFNetwork:Default] Initializing NSHTTPCookieStorage singleton
+2026-08-20 05:07:22.312 Df Flagstone[35449:7bf8a] [com.apple.CFNetwork:Default] Initializing CFHTTPCookieStorage singleton
+2026-08-20 05:07:22.313 Df Flagstone[35449:7bf8a] [com.apple.CFNetwork:Default] Creating default cookie storage with process/bundle identifier
+2026-08-20 05:07:22.320 A  Flagstone[35449:7bf8a] (libsystem_containermanager.dylib) container_system_group_path_for_identifier
+2026-08-20 05:07:22.322 Df Flagstone[35449:7bf8a] [com.apple.containermanager:xpc] Requesting container lookup; class = 13, identifier = com.apple.nsurlsessiond, group_identifier = systemgroup.com.apple.nsurlstoragedresources, create = 1, temp = 0, euid = 501, uid = 501
+2026-08-20 05:07:22.323 A  Flagstone[35449:7bf8a] (libsystem_containermanager.dylib) container_query_t
+2026-08-20 05:07:22.324 Df Flagstone[35449:7bf8a] [com.apple.containermanager:xpc] Query; euid = 501, uid = 501, class = 13, identifier = [com.apple.nsurlsessiond](1), flags = 900000003
+2026-08-20 05:07:22.342 E  Flagstone[35449:7affb] [com.apple.coreanimation:API] CAMetalLayer ignoring invalid setDrawableSize width=0.000000 height=0.000000
+2026-08-20 05:07:22.366 Df Flagstone[35449:7bf8a] [com.apple.containermanager:unspecified] _container_query_get_result_at_index: success
+2026-08-20 05:07:22.366 A  Flagstone[35449:7bf8a] (libsystem_containermanager.dylib) container_copy_object
+2026-08-20 05:07:22.367 Df Flagstone[35449:7bf8a] [com.apple.containermanager:unspecified] container_system_group_path_for_identifier: success
+2026-08-20 05:07:22.397 Df Flagstone[35449:7affb] (AggregateDictionary) AggregateDictionary is not supported on this platform
+2026-08-20 05:07:22.406 Df Flagstone[35449:7bf8a] [com.apple.CFNetwork:Default] Task <611008C7-711A-4612-B3F2-9744DBE9E623>.<1> resuming, timeouts(0.0, 604800.0) qos(0x19) voucher((null)) activity(00000000-0000-0000-0000-000000000000)
+2026-08-20 05:07:22.407 A  Flagstone[35449:7bf8a] (CoreFoundation) Loading Preferences From User Session CFPrefsD
+2026-08-20 05:07:22.487 Df Flagstone[35449:7affb] [com.apple.CoreAnalytics:client] No XPC connection in Simulator
+2026-08-20 05:07:22.506 Df Flagstone[35449:7affb] [com.apple.xpc:connection] [0x10b06b480] activating connection: mach=true listener=false peer=false name=com.apple.geoanalyticsd
+2026-08-20 05:07:22.523 Df Flagstone[35449:7affb] [com.apple.dt.xctest:Default] Idle notifier run loop observer fired
+2026-08-20 05:07:22.523 Df Flagstone[35449:7affb] [com.apple.dt.xctest:Default] Sending main run loop idle reply
+2026-08-20 05:07:22.524 Df Flagstone[35449:7affb] [com.apple.UIKit:EventDispatch] Evaluating dispatch of UIEvent: 0x107113900; type: 0; subtype: 0; backing type: 11; shouldSend: 0; ignoreInteractionEvents: 0, systemGestureStateChange: 0
+2026-08-20 05:07:22.524 Df Flagstone[35449:7bf8a] [com.apple.CFNetwork:Default] Initializing AlternativeServices Storage singleton
+2026-08-20 05:07:22.527 Df Flagstone[35449:7bf8a] [com.apple.FileURL:default] kExcludedFromBackupXattrName set on path: /Users/skypie/Library/Developer/CoreSimulator/Devices/9C9D3ED6-E62F-4A5C-A0C2-D8294D6575AC/data/Containers/Data/Application/D0507AA7-D79E-4FD6-BDD2-F544EA2A4095/Library/HTTPStorages/com.accessmap.app
+2026-08-20 05:07:22.578 Df Flagstone[35449:7bfb7] [com.apple.CFNetwork:Default] Garbage collection for alternative services
+2026-08-20 05:07:22.645 Df Flagstone[35449:7bf8a] [com.apple.CFNetwork:Default] Connection 0: creating secure tcp or quic connection
+2026-08-20 05:07:22.658 Df Flagstone[35449:7affb] [PrototypeTools:domain] Not observing PTDefaults on customer install.
+2026-08-20 05:07:22.687 Df Flagstone[35449:7affb] [com.apple.GeoServices:ResourceManifest] Did not find downloaded resource "groundSettings.json" at "(null)", trying fallback
+2026-08-20 05:07:22.708 Df Flagstone[35449:7affb] [com.apple.GeoServices:ResourceManifest] Did not find downloaded resource "NonTiledAssets.pb" at "(null)", trying fallback
+2026-08-20 05:07:22.716 E  Flagstone[35449:7affb] [com.apple.coreanimation:API] CAMetalLayer ignoring invalid setDrawableSize width=0.000000 height=0.000000
+2026-08-20 05:07:22.836 Df Flagstone[35449:7bf8a] [com.apple.CFNetwork:Default] Connection 1: enabling TLS
+2026-08-20 05:07:22.837 Df Flagstone[35449:7bf8a] [com.apple.CFNetwork:Default] Connection 1: starting, TC(0x0)
+2026-08-20 05:07:22.871 Df Flagstone[35449:7bf8a] [com.apple.network:connection] [C1 255126D1-E57A-499E-832C-2EF794E6F26F Hostname#5f90ff41:443 quic-connection, url: https://kldlwszpfkdmsjrjhjym.supabase.co/rest/v1/flags, definite, attribution: developer, context: com.apple.CFNetwork.NSURLSession.{A2092DE7-77AC-4A62-8B58-3DA898FEBDB6}{(null)}{Y}{2}{0x0} (private), proc: FFA4308F-AF5D-34BD-80D6-D1A50FA8BE47, delegated upid: 0] start
+2026-08-20 05:07:22.892 Df Flagstone[35449:7bf8a] [com.apple.network:connection] [C1 Hostname#5f90ff41:443 initial parent-flow ((null))] event: path:start @0.001s
+2026-08-20 05:07:22.897 E  Flagstone[35449:7affb] [com.apple.coreui:framework] CoreUI: CUIThemeStore: No theme registered with id=0
+2026-08-20 05:07:22.897 A  Flagstone[35449:7affb] (libsystem_trace.dylib) Activity for state dumps
+2026-08-20 05:07:22.897 F  Flagstone[35449:7affb] [com.apple.coreui:framework] CoreUI: CUIThemeStore: No theme registered with id=0
+2026-08-20 05:07:22.971 A  Flagstone[35449:7affb] (CoreLocation) CL: CLLocationManager
+2026-08-20 05:07:22.971 Df Flagstone[35449:7affb] [com.apple.locationd.Core:Client] {"msg":"CLLocationManager", "event":activity, "_cmd":initWithEffectiveBundleIdentifier:bundlePath:websiteIdentifier:delegate:silo:, "self":"0x10b1ed190", "identifier":(null), "bundlePath":(null)}
+2026-08-20 05:07:22.973 Df Flagstone[35449:7affb] [com.apple.locationd.Core:Client] {"msg":"client allocated", "client":"0x11c1c4fc0"}
+2026-08-20 05:07:22.973 A  Flagstone[35449:7affb] (CoreLocation) CL: _CLClientCreateConnection
+2026-08-20 05:07:22.973 Df Flagstone[35449:7affb] [com.apple.locationd.Core:Client] {"msg":"_CLClientCreateConnection", "event":activity, "client":"0x11c1c4fc0"}
+2026-08-20 05:07:22.974 A  Flagstone[35449:7bdb1] (LocationSupport) CL: Sending cached messages to daemon
+2026-08-20 05:07:22.974 Df Flagstone[35449:7bdb1] [com.apple.LocationSupport:Connection] {"msg":"Sending cached messages to daemon", "event":activity}
+2026-08-20 05:07:22.974 Df Flagstone[35449:7bdb1] [com.apple.xpc:connection] [0x10b024780] activating connection: mach=true listener=false peer=false name=com.apple.locationd.registration
+2026-08-20 05:07:22.975 A  Flagstone[35449:7affb] (LocationSupport) CL: CLConnectionClient::sendMessage(cache)
+2026-08-20 05:07:22.976 A  Flagstone[35449:7bdb1] (LocationSupport) CL: CLConnection::sendMessage
+2026-08-20 05:07:22.976 A  Flagstone[35449:7affb] (LocationSupport) CL: CLConnectionClient::sendMessage(cache)
+2026-08-20 05:07:22.977 A  Flagstone[35449:7bdb1] (LocationSupport) CL: CLConnection::sendMessage
+2026-08-20 05:07:22.977 A  Flagstone[35449:7affb] (CoreLocation) CL: CLLocationManager
+2026-08-20 05:07:22.977 Df Flagstone[35449:7affb] [com.apple.locationd.Core:Client] {"msg":"CLLocationManager", "event":activity, "_cmd":setDelegate:, "self":"0x10b1ed190", "delegate":"0x118d72340"}
+2026-08-20 05:07:22.977 A  Flagstone[35449:7affb] (CoreLocation) CL: CLLocationManager
+2026-08-20 05:07:22.978 Df Flagstone[35449:7affb] [com.apple.locationd.Core:Client] {"msg":"CLLocationManager", "event":activity, "_cmd":setDistanceFilter:, "self":"0x10b1ed190", "distance":"-1.000000"}
+2026-08-20 05:07:22.978 A  Flagstone[35449:7affb] (CoreLocation) CL: CLLocationManager
+2026-08-20 05:07:22.978 Df Flagstone[35449:7affb] [com.apple.locationd.Core:Client] {"msg":"CLLocationManager", "event":activity, "_cmd":setDesiredAccuracy:, "self":"0x10b1ed190", "accuracy":"-1.000000"}
+2026-08-20 05:07:22.978 A  Flagstone[35449:7affb] (CoreLocation) CL: CLLocationManager
+2026-08-20 05:07:22.978 Df Flagstone[35449:7affb] [com.apple.locationd.Core:Client] {"msg":"CLLocationManager", "event":activity, "_cmd":setActivityType:, "self":"0x10b1ed190", "activityType":0}
+2026-08-20 05:07:22.980 A  Flagstone[35449:7affb] (LocationSupport) CL: CLConnectionClient::sendMessage(cache)
+2026-08-20 05:07:22.980 A  Flagstone[35449:7affb] (CoreLocation) CL: CLLocationManager
+2026-08-20 05:07:22.980 A  Flagstone[35449:7bdb1] (LocationSupport) CL: CLConnection::sendMessage
+2026-08-20 05:07:22.980 Df Flagstone[35449:7affb] [com.apple.locationd.Core:Client] {"msg":"CLLocationManager", "event":activity, "_cmd":setAllowsAlteredAccessoryLocations:, "self":"0x10b1ed190", "enabled":1}
+2026-08-20 05:07:23.109 A  Flagstone[35449:7bdb1] (CoreLocation) CL: CLLocationManager
+2026-08-20 05:07:23.109 Df Flagstone[35449:7bdb1] [com.apple.locationd.Core:Client] {"msg":"CLLocationManager", "event":activity, "_cmd":onClientEventRegistration:, "self":"0x10b1ed190", "clientKey":icom.accessmap.app:}
+2026-08-20 05:07:23.109 Df Flagstone[35449:7bdb1] [com.apple.locationd.Core:Client] {"msg":"#CLLocationManager invoking #delegate", "self":"0x10b1ed190", "delegate":"0x118d72340", "selector":locationManagerDidChangeAuthorization:, "authorizationStatus":0, "limitsPrecision":0, "isAuthorizedForWidgetUpdates":0}
+2026-08-20 05:07:23.109 A  Flagstone[35449:7bdb1] (CoreLocation) CL: CLLocationManager
+2026-08-20 05:07:23.109 Df Flagstone[35449:7bdb1] [com.apple.locationd.Core:Client] {"msg":"CLLocationManager", "event":activity, "_cmd":desiredAccuracy, "self":"0x10b1ed190"}
+2026-08-20 05:07:23.109 A  Flagstone[35449:7bdb1] (CoreLocation) CL: CLLocationManager
+2026-08-20 05:07:23.124 Df Flagstone[35449:7affb] [com.apple.xpc:connection] [0x10b024f00] activating connection: mach=true listener=false peer=false name=com.apple.geod
+2026-08-20 05:07:23.125 Df Flagstone[35449:7bf8a] [com.apple.network:connection] [C1 Hostname#5f90ff41:443 waiting parent-flow (satisfied (Path is satisfied), interface: en0[802.11], uses wifi, LQM: unknown)] event: path:satisfied @0.236s, uuid: ECFED9DC-3107-4F08-BC90-ED3C0A0656E6
+2026-08-20 05:07:23.109 Df Flagstone[35449:7bdb1] [com.apple.locationd.Core:Client] {"msg":"CLLocationManager", "event":activity, "_cmd":desiredAccuracy, "self":"0x10b1ed190"}
+2026-08-20 05:07:23.234 Df Flagstone[35449:7affb] [com.apple.xpc:connection] [0x10b025900] activating connection: mach=true listener=false peer=false name=com.apple.geod
+2026-08-20 05:07:23.392 Df Flagstone[35449:7bf8a] [com.apple.network:connection] [C1 Hostname#5f90ff41:443 in_progress parent-flow (satisfied (Path is satisfied), interface: en0[802.11], uses wifi, LQM: unknown)] event: flow:start_connect @0.521s
+2026-08-20 05:07:23.393 Df Flagstone[35449:7bf8a] [com.apple.network:connection] nw_connection_report_state_with_handler_on_nw_queue [C1] reporting state preparing
+2026-08-20 05:07:23.530 A  Flagstone[35449:7affb] (CoreLocation) CL: CLLocationManager
+2026-08-20 05:07:23.530 Df Flagstone[35449:7affb] [com.apple.locationd.Core:Client] {"msg":"CLLocationManager", "event":activity, "_cmd":desiredAccuracy, "self":"0x10b1ed190"}
+2026-08-20 05:07:23.530 A  Flagstone[35449:7affb] (CoreLocation) CL: CLLocationManager
+2026-08-20 05:07:23.531 Df Flagstone[35449:7affb] [com.apple.locationd.Core:Client] {"msg":"CLLocationManager", "event":activity, "_cmd":desiredAccuracy, "self":"0x10b1ed190"}
+2026-08-20 05:07:23.531 A  Flagstone[35449:7affb] (CoreLocation) CL: CLLocationManager
+2026-08-20 05:07:23.532 Df Flagstone[35449:7affb] [com.apple.locationd.Core:Client] {"msg":"CLLocationManager", "event":activity, "_cmd":desiredAccuracy, "self":"0x10b1ed190"}
+2026-08-20 05:07:23.532 A  Flagstone[35449:7affb] (CoreLocation) CL: CLLocationManager
+2026-08-20 05:07:23.532 Df Flagstone[35449:7affb] [com.apple.locationd.Core:Client] {"msg":"CLLocationManager", "event":activity, "_cmd":desiredAccuracy, "self":"0x10b1ed190"}
+2026-08-20 05:07:23.538 A  Flagstone[35449:7affb] (UIKitCore) send gesture actions
+2026-08-20 05:07:23.596 Df Flagstone[35449:7bf8a] [com.apple.network:connection] [C1 Hostname#5f90ff41:443 in_progress parent-flow (satisfied (Path is satisfied), interface: en0[802.11], uses wifi, LQM: unknown)] event: flow:start_child @0.724s
+2026-08-20 05:07:23.596 Df Flagstone[35449:7bf8a] [com.apple.network:connection] [C1.1 Hostname#5f90ff41:443 initial path ((null))] event: path:start @0.725s
+2026-08-20 05:07:23.617 Df Flagstone[35449:7affb] [com.apple.xpc:connection] [0x10b069040] activating connection: mach=true listener=false peer=false name=com.apple.IOSurface.Remote
+2026-08-20 05:07:23.637 E  Flagstone[35449:7affb] (libCoreFSCache.dylib) fopen failed for data file: errno = 2 (No such file or directory)
+2026-08-20 05:07:23.638 Df Flagstone[35449:7affb] (libCoreFSCache.dylib) Invalidating cache
+2026-08-20 05:07:23.638 Df Flagstone[35449:7affb] [com.apple.xpc:connection] [0x10b069a40] activating connection: mach=false listener=false peer=false name=com.apple.MTLCompilerService
+2026-08-20 05:07:23.703 Df Flagstone[35449:7bf8a] [com.apple.network:connection] [C1.1 Hostname#5f90ff41:443 waiting path (satisfied (Path is satisfied), interface: en0[802.11], uses wifi, LQM: unknown)] event: path:satisfied @0.832s, uuid: ECFED9DC-3107-4F08-BC90-ED3C0A0656E6
+2026-08-20 05:07:23.716 Df Flagstone[35449:7bf8a] [com.apple.network:connection] [C1.1 Hostname#5f90ff41:443 in_progress transform (satisfied (Path is satisfied), interface: en0[802.11], uses wifi, LQM: unknown)] event: transform:start @0.844s
+2026-08-20 05:07:23.770 Df Flagstone[35449:7bdb1] [com.apple.network:path] nw_path_evaluator_start [81C3F22C-383A-4B94-A85E-4C48F804E83A Hostname#f7e5d876:443 generic, url: https://configuration.ls.apple.com/config/defaults, attribution: developer]
+	path: satisfied (Path is satisfied), interface: en0[802.11], uses wifi, LQM: unknown
+2026-08-20 05:07:23.807 Df Flagstone[35449:7bf8a] [com.apple.network:connection] [C1.1.1 Hostname#5f90ff41:443 initial path ((null))] event: path:start @0.935s
+2026-08-20 05:07:23.824 Df Flagstone[35449:7bf8a] [com.apple.network:connection] [C1.1.1 Hostname#5f90ff41:443 waiting path (satisfied (Path is satisfied), interface: en0[802.11], uses wifi, LQM: unknown)] event: path:satisfied @0.952s, uuid: E9A93630-C959-45EF-9774-5CC7A34378F1
+2026-08-20 05:07:23.866 Df Flagstone[35449:7bf8a] [com.apple.network:connection] [C1.1.1 Hostname#5f90ff41:443 in_progress resolver (satisfied (Path is satisfied), interface: en0[802.11], uses wifi, LQM: unknown)] event: resolver:start_dns @0.994s
+2026-08-20 05:07:24.014 Df Flagstone[35449:7bf8a] [com.apple.CFNetwork:Default] Task <611008C7-711A-4612-B3F2-9744DBE9E623>.<1> setting up Connection 1
+2026-08-20 05:07:24.081 Df Flagstone[35449:7bf8a] [com.apple.network:connection] nw_endpoint_resolver_update [C1.1.1 Hostname#5f90ff41:443 in_progress resolver (satisfied (Path is satisfied), interface: en0[802.11], uses wifi, LQM: unknown)] Adding endpoint handler for IPv4#5bd21be7:443
+2026-08-20 05:07:24.082 Df Flagstone[35449:7bf8a] [com.apple.network:connection] nw_endpoint_resolver_update [C1.1.1 Hostname#5f90ff41:443 in_progress resolver (satisfied (Path is satisfied), interface: en0[802.11], uses wifi, LQM: unknown)] Adding endpoint handler for IPv4#47c074a7:443
+2026-08-20 05:07:24.083 Df Flagstone[35449:7bf8a] [com.apple.network:connection] [C1.1.1 Hostname#5f90ff41:443 in_progress resolver (satisfied (Path is satisfied), interface: en0[802.11], uses wifi, LQM: unknown)] event: resolver:receive_dns @1.211s
+2026-08-20 05:07:24.083 Df Flagstone[35449:7bf8a] [com.apple.network:connection] [C1.1.1.1 IPv4#5bd21be7:443 initial path ((null))] event: path:start @1.211s
+2026-08-20 05:07:24.248 Df Flagstone[35449:7bf8a] [com.apple.network:connection] [C1.1.1.1 IPv4#5bd21be7:443 waiting path (satisfied (Path is satisfied), interface: en0[802.11], uses wifi, LQM: unknown)] event: path:satisfied @1.376s, uuid: F2A7B322-CE91-4300-A88B-36E204965806
+2026-08-20 05:07:24.372 Df Flagstone[35449:7bf8a] [com.apple.network:connection] [C1.1.1.1 IPv4#5bd21be7:443 in_progress socket-flow (satisfied (Path is satisfied), interface: en0[802.11], uses wifi, LQM: unknown)] event: flow:start_connect @1.500s
+2026-08-20 05:07:24.437 Df Flagstone[35449:7bf8a] [com.apple.network:connection] nw_socket_handle_socket_event [C1.1.1.1:3] Socket received CONNECTED event
+2026-08-20 05:07:24.454 Df Flagstone[35449:7bf8a] [com.apple.network:connection] nw_flow_connected [C1.1.1.1 IPv4#5bd21be7:443 in_progress socket-flow (satisfied (Path is satisfied), interface: en0[802.11], uses wifi, LQM: unknown)] Transport protocol connected (socket)
+2026-08-20 05:07:24.454 Df Flagstone[35449:7bf8a] [com.apple.network:connection] [C1.1.1.1 IPv4#5bd21be7:443 in_progress socket-flow (satisfied (Path is satisfied), interface: en0[802.11], uses wifi, LQM: unknown)] event: flow:finish_transport @1.582s
+2026-08-20 05:07:24.534 Df Flagstone[35449:7affb] [com.apple.xpc:connection] [0x10b0243c0] activating connection: mach=false listener=false peer=false name=com.apple.MTLCompilerService
+2026-08-20 05:07:24.534 A  Flagstone[35449:7bfb7] (Metal) Metal Compiling Shader
+2026-08-20 05:07:24.536 Df Flagstone[35449:7bf8a] [com.apple.network:boringssl] boringssl_session_apply_protocol_options_for_transport_block_invoke_2(2367) [C1.1.1.1:2][0x118e565e0] TLS configured [server(0) min_version(0x0303) max_version(0x0304) name(redacted) tickets(false) false_start(false) enforce_ev(false) enforce_ats(false) ats_non_pfs_ciphersuite_allowed(false) cc_mode_enforced(false) ech(false) pqtls(true), pake(false) skip_ats_trust(false)]
+2026-08-20 05:07:24.536 Df Flagstone[35449:7bf8a] [com.apple.network:boringssl] boringssl_context_info_handler(2806) [C1.1.1.1:2][0x118e565e0] Client handshake started
+2026-08-20 05:07:24.538 Df Flagstone[35449:7bf8a] [com.apple.network:boringssl] boringssl_context_info_handler(2823) [C1.1.1.1:2][0x118e565e0] Client handshake state: TLS client enter_early_data
+2026-08-20 05:07:24.540 Df Flagstone[35449:7bf8a] [com.apple.network:boringssl] boringssl_context_info_handler(2823) [C1.1.1.1:2][0x118e565e0] Client handshake state: TLS client read_server_hello
+2026-08-20 05:07:24.565 Df Flagstone[35449:7bf8a] [com.apple.network:boringssl] boringssl_context_info_handler(2823) [C1.1.1.1:2][0x118e565e0] Client handshake state: TLS 1.3 client read_hello_retry_request
+2026-08-20 05:07:24.565 Df Flagstone[35449:7bf8a] [com.apple.network:boringssl] boringssl_context_info_handler(2823) [C1.1.1.1:2][0x118e565e0] Client handshake state: TLS 1.3 client read_server_hello
+2026-08-20 05:07:24.566 Df Flagstone[35449:7bf8a] [com.apple.network:boringssl] boringssl_context_info_handler(2823) [C1.1.1.1:2][0x118e565e0] Client handshake state: TLS 1.3 client read_encrypted_extensions
+2026-08-20 05:07:24.566 Df Flagstone[35449:7bf8a] [com.apple.network:boringssl] boringssl_context_info_handler(2823) [C1.1.1.1:2][0x118e565e0] Client handshake state: TLS 1.3 client read_certificate_request
+2026-08-20 05:07:24.566 Df Flagstone[35449:7bf8a] [com.apple.network:boringssl] boringssl_context_info_handler(2823) [C1.1.1.1:2][0x118e565e0] Client handshake state: TLS 1.3 client read_server_certificate
+2026-08-20 05:07:24.566 Df Flagstone[35449:7bf8a] [com.apple.network:boringssl] boringssl_context_info_handler(2823) [C1.1.1.1:2][0x118e565e0] Client handshake state: TLS 1.3 client read_server_certificate_verify
+2026-08-20 05:07:24.572 Df Flagstone[35449:7bf8a] [com.apple.network:boringssl] boringssl_context_evaluate_trust_async(2249) [C1.1.1.1:2][0x118e565e0] Performing external trust evaluation
+2026-08-20 05:07:24.572 A  Flagstone[35449:7bf8a] (Security) SecKeyCopyPublicBytes
+2026-08-20 05:07:24.573 A  Flagstone[35449:7bf8a] (Security) SecKeyCopyAttributes
+2026-08-20 05:07:24.573 A  Flagstone[35449:7bf8a] (Security) SecKeyCopyPublicBytes
+2026-08-20 05:07:24.573 Df Flagstone[35449:7bf8a] [com.apple.network:boringssl] boringssl_context_evaluate_trust_async_external(2234) [C1.1.1.1:2][0x118e565e0] Asyncing for external verify block
+2026-08-20 05:07:24.573 Df Flagstone[35449:7bf8a] [com.apple.CFNetwork:Default] Connection 1: asked to evaluate TLS Trust
+2026-08-20 05:07:24.647 Df Flagstone[35449:7bfba] [com.apple.CFNetwork:Default] Task <611008C7-711A-4612-B3F2-9744DBE9E623>.<1> auth completion disp=1 cred=0x0
+2026-08-20 05:07:24.649 Df Flagstone[35449:7bf8a] [com.apple.securityd:trust] (Trust 0x11c39fb40) No pending evals, starting
+2026-08-20 05:07:24.649 A  Flagstone[35449:7bf8a] (Security) SecTrustEvaluateIfNecessaryFastAsync
+2026-08-20 05:07:24.654 Df Flagstone[35449:7bf8a] [com.apple.securityd:keychain] System Keychain Always Supported set via feature flag to disabled
+2026-08-20 05:07:24.655 Df Flagstone[35449:7bf8a] [com.apple.xpc:connection] [0x10b024640] activating connection: mach=true listener=false peer=false name=com.apple.trustd
+2026-08-20 05:07:24.658 Df Flagstone[35449:7bf8a] [com.apple.xpc:connection] [0x10b0248c0] activating connection: mach=true listener=false peer=false name=com.apple.trustd
+2026-08-20 05:07:24.658 Df Flagstone[35449:7bf8a] [com.apple.securityd:trust] (Trust 0x11c39fb40) Completed async eval kickoff
+2026-08-20 05:07:24.816 Df Flagstone[35449:7bfba] [com.apple.securityd:trust] (Trust 0x11c39fb40) trustd returned 4
+2026-08-20 05:07:24.816 Df Flagstone[35449:7bfba] [com.apple.CFNetwork:Default] System Trust Evaluation yielded status(0)
+2026-08-20 05:07:24.816 Df Flagstone[35449:7bfba] [com.apple.securityd:trust] (Trust 0x10b014b40) No pending evals, starting
+2026-08-20 05:07:24.816 A  Flagstone[35449:7bfba] (Security) SecTrustEvaluateIfNecessaryFastAsync
+2026-08-20 05:07:24.817 Df Flagstone[35449:7bfba] [com.apple.xpc:connection] [0x10b024a00] activating connection: mach=true listener=false peer=false name=com.apple.trustd
+2026-08-20 05:07:24.819 Df Flagstone[35449:7bfba] [com.apple.securityd:trust] (Trust 0x10b014b40) Completed async eval kickoff
+2026-08-20 05:07:24.819 Df Flagstone[35449:7bfba] [com.apple.xpc:connection] [0x10b0248c0] invalidated because the current process cancelled the connection by calling xpc_connection_cancel()
+2026-08-20 05:07:24.829 Df Flagstone[35449:7bf8a] [com.apple.securityd:trust] (Trust 0x10b014b40) trustd returned 4
+2026-08-20 05:07:24.829 Df Flagstone[35449:7bf8a] [com.apple.CFNetwork:Default] Connection 1: TLS Trust result 0
+2026-08-20 05:07:24.829 Df Flagstone[35449:7bf8a] [com.apple.network:boringssl] boringssl_context_evaluate_trust_async_external_block_invoke_3(2148) [C1.1.1.1:2][0x118e565e0] Returning from external verify block with result: true
+2026-08-20 05:07:24.829 Df Flagstone[35449:7bf8a] [com.apple.network:boringssl] boringssl_context_certificate_verify_callback(2430) [C1.1.1.1:2][0x118e565e0] Certificate verification result: OK
+2026-08-20 05:07:24.830 Df Flagstone[35449:7bf8a] [com.apple.network:boringssl] boringssl_context_info_handler(2823) [C1.1.1.1:2][0x118e565e0] Client handshake state: TLS 1.3 client read_server_finished
+2026-08-20 05:07:24.830 Df Flagstone[35449:7bf8a] [com.apple.network:boringssl] boringssl_context_info_handler(2823) [C1.1.1.1:2][0x118e565e0] Client handshake state: TLS 1.3 client send_end_of_early_data
+2026-08-20 05:07:24.830 Df Flagstone[35449:7bf8a] [com.apple.network:boringssl] boringssl_context_info_handler(2823) [C1.1.1.1:2][0x118e565e0] Client handshake state: TLS 1.3 client send_client_encrypted_extensions
+2026-08-20 05:07:24.830 Df Flagstone[35449:7bf8a] [com.apple.network:boringssl] boringssl_context_info_handler(2823) [C1.1.1.1:2][0x118e565e0] Client handshake state: TLS 1.3 client send_client_certificate
+2026-08-20 05:07:24.830 Df Flagstone[35449:7bf8a] [com.apple.network:boringssl] boringssl_context_info_handler(2823) [C1.1.1.1:2][0x118e565e0] Client handshake state: TLS 1.3 client complete_second_flight
+2026-08-20 05:07:24.830 Df Flagstone[35449:7bf8a] [com.apple.network:boringssl] boringssl_context_info_handler(2823) [C1.1.1.1:2][0x118e565e0] Client handshake state: TLS 1.3 client done
+2026-08-20 05:07:24.831 Df Flagstone[35449:7bf8a] [com.apple.network:boringssl] boringssl_context_info_handler(2823) [C1.1.1.1:2][0x118e565e0] Client handshake state: TLS client finish_client_handshake
+2026-08-20 05:07:24.837 Df Flagstone[35449:7bf8a] [com.apple.network:boringssl] boringssl_context_info_handler(2823) [C1.1.1.1:2][0x118e565e0] Client handshake state: TLS client done
+2026-08-20 05:07:24.838 Df Flagstone[35449:7bf8a] [com.apple.network:boringssl] boringssl_context_info_handler(2812) [C1.1.1.1:2][0x118e565e0] Client handshake done
+2026-08-20 05:07:24.838 A  Flagstone[35449:7bf8a] (Security) SecKeyCopyPublicBytes
+2026-08-20 05:07:24.839 A  Flagstone[35449:7bf8a] (Security) SecKeyCopyAttributes
+2026-08-20 05:07:24.839 A  Flagstone[35449:7bf8a] (Security) SecKeyCopyPublicBytes
+2026-08-20 05:07:24.839 Df Flagstone[35449:7bf8a] [com.apple.network:boringssl] nw_protocol_boringssl_signal_connected(895) [C1.1.1.1:2][0x118e565e0] TLS connected [server(0) version(0x0304) ciphersuite(TLS_AES_256_GCM_SHA384) group(0x11ec) signature_alg(0x0403) alpn(h2) resumed(0) offered_ticket(0) in_early_data(0) early_data_accepted(0) false_started(0) ocsp_received(0) sct_received(0) connect_time(302ms) flight_time(28ms) rtt(27ms) write_stalls(0) read_stalls(2) pake(0x0000)]
+2026-08-20 05:07:24.839 Df Flagstone[35449:7bf8a] [com.apple.network:connection] nw_flow_connected [C1.1.1.1 IPv4#5bd21be7:443 in_progress socket-flow (satisfied (Path is satisfied), interface: en0[802.11], uses wifi, LQM: unknown)] Output protocol connected (CFNetworkConnection-1296187187)
+2026-08-20 05:07:24.840 Df Flagstone[35449:7bf8a] [com.apple.network:connection] [C1.1.1.1 IPv4#5bd21be7:443 ready socket-flow (satisfied (Path is satisfied), interface: en0[802.11], uses wifi, LQM: unknown)] event: flow:child_finish_connect @1.968s
+2026-08-20 05:07:24.840 Df Flagstone[35449:7bf8a] [com.apple.network:connection] [C1.1.1 Hostname#5f90ff41:443 ready resolver (satisfied (Path is satisfied), interface: en0[802.11], uses wifi, LQM: unknown)] event: flow:child_finish_connect @1.968s
+2026-08-20 05:07:24.842 Df Flagstone[35449:7bf8a] [com.apple.network:connection] [C1.1 Hostname#5f90ff41:443 ready transform (satisfied (Path is satisfied), interface: en0[802.11], uses wifi, LQM: unknown)] event: flow:child_finish_connect @1.970s
+2026-08-20 05:07:24.842 Df Flagstone[35449:7bf8a] [com.apple.network:connection] nw_flow_connected [C1 IPv4#5bd21be7:443 in_progress parent-flow (satisfied (Path is satisfied), interface: en0[802.11], uses wifi, LQM: unknown)] Output protocol connected (endpoint_flow)
+2026-08-20 05:07:24.842 Df Flagstone[35449:7bf8a] [com.apple.network:connection] [C1 IPv4#5bd21be7:443 ready parent-flow (satisfied (Path is satisfied), interface: en0[802.11], uses wifi, LQM: unknown)] event: flow:finish_connect @1.970s
+2026-08-20 05:07:24.843 Df Flagstone[35449:7bf8a] [com.apple.network:connection] nw_connection_report_state_with_handler_on_nw_queue [C1] reporting state ready
+2026-08-20 05:07:24.843 Df Flagstone[35449:7bf8a] [com.apple.xpc:connection] [0x10b024a00] invalidated because the current process cancelled the connection by calling xpc_connection_cancel()
+2026-08-20 05:07:24.847 Df Flagstone[35449:7bf8a] [com.apple.CFNetwork:Default] Connection 1: connected successfully
+2026-08-20 05:07:24.849 Df Flagstone[35449:7bf8a] [com.apple.CFNetwork:Default] Connection 1: TLS handshake complete
+2026-08-20 05:07:24.850 Df Flagstone[35449:7bf8a] [com.apple.CFNetwork:Default] Connection 1: ready C(N) E(N)
+2026-08-20 05:07:24.854 Df Flagstone[35449:7bf8a] [com.apple.network:connection] [C1] event: client:connection_reused @1.982s
+2026-08-20 05:07:24.856 Df Flagstone[35449:7bf8a] [com.apple.network:connection] nw_protocol_socket_notify [C1.1.1.1:3] nw_protocol_notification_type_connection_idle is false
+2026-08-20 05:07:24.857 Df Flagstone[35449:7bf8a] [com.apple.CFNetwork:Default] Task <611008C7-711A-4612-B3F2-9744DBE9E623>.<1> now using Connection 1
+2026-08-20 05:07:24.858 Df Flagstone[35449:7bf8a] [com.apple.CFNetwork:Default] Task <611008C7-711A-4612-B3F2-9744DBE9E623>.<1> sent request, body N 0
+2026-08-20 05:07:24.858 A  Flagstone[35449:7bf8a] (Security) SecKeyCopyPublicBytes
+2026-08-20 05:07:24.858 A  Flagstone[35449:7bf8a] (Security) SecKeyCopyAttributes
+2026-08-20 05:07:24.858 A  Flagstone[35449:7bf8a] (Security) SecKeyCopyPublicBytes
+2026-08-20 05:07:24.859 A  Flagstone[35449:7bf8a] (Security) SecKeyCopyPublicBytes
+2026-08-20 05:07:24.859 A  Flagstone[35449:7bf8a] (Security) SecKeyCopyAttributes
+2026-08-20 05:07:24.859 A  Flagstone[35449:7bf8a] (Security) SecKeyCopyPublicBytes
+2026-08-20 05:07:25.250 A  Flagstone[35449:7bfb7] (Metal) Metal Compiling Shader
+2026-08-20 05:07:25.268 E  Flagstone[35449:7affb] (libCoreFSCache.dylib) fopen failed for data file: errno = 2 (No such file or directory)
+2026-08-20 05:07:25.268 Df Flagstone[35449:7affb] (libCoreFSCache.dylib) Invalidating cache
+2026-08-20 05:07:25.269 A  Flagstone[35449:7bfb7] (Metal) Metal Compiling Shader
+2026-08-20 05:07:25.277 A  Flagstone[35449:7bf8a] (Metal) Metal Compiling Shader
+2026-08-20 05:07:25.292 A  Flagstone[35449:7bf8a] (Metal) Metal Compiling Shader
+2026-08-20 05:07:25.568 Df Flagstone[35449:7bf8a] [com.apple.CFNetwork:Default] Task <611008C7-711A-4612-B3F2-9744DBE9E623>.<1> received response, status 200 content U
+2026-08-20 05:07:25.569 Df Flagstone[35449:7bf8a] [com.apple.CFNetwork:Default] Task <611008C7-711A-4612-B3F2-9744DBE9E623>.<1> done using Connection 1
+2026-08-20 05:07:25.569 Df Flagstone[35449:7bf8a] [com.apple.network:connection] [C1] event: client:connection_idle @2.697s
+2026-08-20 05:07:25.569 Df Flagstone[35449:7bf8a] [com.apple.network:connection] nw_protocol_socket_notify [C1.1.1.1:3] nw_protocol_notification_type_connection_idle is true
+2026-08-20 05:07:25.569 A  Flagstone[35449:7bf8a] (Security) SecTrustEvaluateIfNecessary
+2026-08-20 05:07:25.571 Df Flagstone[35449:7bf8a] [com.apple.xpc:connection] [0x10b026bc0] activating connection: mach=true listener=false peer=false name=com.apple.trustd
+2026-08-20 05:07:26.277 Df Flagstone[35449:7bf8a] [com.apple.xpc:connection] [0x10b026bc0] invalidated because the current process cancelled the connection by calling xpc_connection_cancel()
+2026-08-20 05:07:26.324 Df Flagstone[35449:7bf8a] [com.apple.CFNetwork:Default] Task <611008C7-711A-4612-B3F2-9744DBE9E623>.<1> response ended
+2026-08-20 05:07:26.332 Df Flagstone[35449:7bfb9] [com.apple.CFNetwork:Summary] Task <611008C7-711A-4612-B3F2-9744DBE9E623>.<1> summary for task success {transaction_duration_ms=3883, response_status=200, connection=1, protocol="h2", domain_lookup_duration_ms=217, connect_duration_ms=470, secure_connection_duration_ms=302, private_relay=false, request_start_ms=2409, request_duration_ms=0, response_start_ms=3120, response_duration_ms=756, request_bytes=410, request_throughput_kbps=4511, response_bytes=2259, response_throughput_kbps=23, cache_hit=false}
+2026-08-20 05:07:26.332 Df Flagstone[35449:7bfb9] [com.apple.CFNetwork:Default] Task <611008C7-711A-4612-B3F2-9744DBE9E623>.<1> finished successfully
+2026-08-20 05:07:28.234 A  Flagstone[35449:7bfb9] (Metal) Metal Compiling Shader
+2026-08-20 05:07:28.247 A  Flagstone[35449:7bfb7] (Metal) Metal Compiling Shader
+2026-08-20 05:07:28.260 A  Flagstone[35449:7bfb7] (Metal) Metal Compiling Shader
+2026-08-20 05:07:28.281 A  Flagstone[35449:7bfb7] (Metal) Metal Compiling Shader
+2026-08-20 05:07:28.515 A  Flagstone[35449:7bfb7] (Metal) Metal Compiling Shader
+2026-08-20 05:07:28.523 A  Flagstone[35449:7bfb9] (Metal) Metal Compiling Shader
+2026-08-20 05:07:28.527 A  Flagstone[35449:7bfb7] (Metal) Metal Compiling Shader
+2026-08-20 05:07:28.531 A  Flagstone[35449:7bfb7] (Metal) Metal Compiling Shader
+2026-08-20 05:07:28.627 E  Flagstone[35449:7bfb9] [com.apple.VectorKit.GeoResourceLib:IconManager] No packs of type config available for key: [SPR USA Bay Area Landmarks, 3.000000]
+2026-08-20 05:07:28.629 E  Flagstone[35449:7bfb9] [com.apple.VectorKit.GeoResourceLib:IconManager] Failed to resolve packName for packKey:SPR USA Bay Area Landmarks.3.000000 packType:config with resourceNames:[Guides_Icons_Default@3x.iconconfigpack, Guides_Icons_Default@3x.icondatapack, Expert_Partners_Icons@3x.iconconfigpack, Railroad_Crossing@3x.iconconfigpack, Default_Icons@3x.iconconfigpack, Expert_Partners_Icons@3x.icondatapack, Default_Icons@3x.icondatapack, Default_Shields@3x.iconconfigpack, Default@3x.iconmappack, Railroad_Crossing@3x.icondatapack, Default_Shields@3x.icondatapack]
+2026-08-20 05:07:28.630 E  Flagstone[35449:7bfb9] [com.apple.VectorKit.GeoResourceLib:IconManager] No config pack found for key SPR USA Bay Area Landmarks
+2026-08-20 05:07:28.630 E  Flagstone[35449:7bfb9] [com.apple.VectorKit.GeoResourceLib:IconManager] No packs of type config available for key: [San Francisco Icons, 3.000000]
+2026-08-20 05:07:28.630 E  Flagstone[35449:7bfb9] [com.apple.VectorKit.GeoResourceLib:IconManager] Failed to resolve packName for packKey:San Francisco Icons.3.000000 packType:config with resourceNames:[Guides_Icons_Default@3x.iconconfigpack, Guides_Icons_Default@3x.icondatapack, Expert_Partners_Icons@3x.iconconfigpack, Railroad_Crossing@3x.iconconfigpack, Default_Icons@3x.iconconfigpack, Expert_Partners_Icons@3x.icondatapack, Default_Icons@3x.icondatapack, Default_Shields@3x.iconconfigpack, Default@3x.iconmappack, Railroad_Crossing@3x.icondatapack, Default_Shields@3x.icondatapack]
+2026-08-20 05:07:28.630 E  Flagstone[35449:7bfb9] [com.apple.VectorKit.GeoResourceLib:IconManager] No config pack found for key San Francisco Icons
+2026-08-20 05:07:28.631 E  Flagstone[35449:7bfb9] [com.apple.VectorKit.GeoResourceLib:IconManager] No packs of type config available for key: [North America Northwest Southwest Shields, 3.000000]
+2026-08-20 05:07:28.631 E  Flagstone[35449:7bfb9] [com.apple.VectorKit.GeoResourceLib:IconManager] Failed to resolve packName for packKey:North America Northwest Southwest Shields.3.000000 packType:config with resourceNames:[Guides_Icons_Default@3x.iconconfigpack, Guides_Icons_Default@3x.icondatapack, Expert_Partners_Icons@3x.iconconfigpack, Railroad_Crossing@3x.iconconfigpack, Default_Icons@3x.iconconfigpack, Expert_Partners_Icons@3x.icondatapack, Default_Icons@3x.icondatapack, Default_Shields@3x.iconconfigpack, Default@3x.iconmappack, Railroad_Crossing@3x.icondatapack, Default_Shields@3x.icondatapack]
+2026-08-20 05:07:28.631 E  Flagstone[35449:7bfb9] [com.apple.VectorKit.GeoResourceLib:IconManager] No config pack found for key North America Northwest Southwest Shields
+2026-08-20 05:07:28.632 E  Flagstone[35449:7bfb9] [com.apple.VectorKit.GeoResourceLib:IconManager] No packs of type config available for key: [North America Shields, 3.000000]
+2026-08-20 05:07:28.632 E  Flagstone[35449:7bfb9] [com.apple.VectorKit.GeoResourceLib:IconManager] Failed to resolve packName for packKey:North America Shields.3.000000 packType:config with resourceNames:[Guides_Icons_Default@3x.iconconfigpack, Guides_Icons_Default@3x.icondatapack, Expert_Partners_Icons@3x.iconconfigpack, Railroad_Crossing@3x.iconconfigpack, Default_Icons@3x.iconconfigpack, Expert_Partners_Icons@3x.icondatapack, Default_Icons@3x.icondatapack, Default_Shields@3x.iconconfigpack, Default@3x.iconmappack, Railroad_Crossing@3x.icondatapack, Default_Shields@3x.icondatapack]
+2026-08-20 05:07:28.632 E  Flagstone[35449:7bfb9] [com.apple.VectorKit.GeoResourceLib:IconManager] No config pack found for key North America Shields
+2026-08-20 05:07:28.633 E  Flagstone[35449:7bfb9] [com.apple.VectorKit.GeoResourceLib:IconManager] No packs of type config available for key: [North America Northwest Southwest Shields, 3.000000]
+2026-08-20 05:07:28.633 E  Flagstone[35449:7bfb9] [com.apple.VectorKit.GeoResourceLib:IconManager] Failed to resolve packName for packKey:North America Northwest Southwest Shields.3.000000 packType:config with resourceNames:[Guides_Icons_Default@3x.iconconfigpack, Guides_Icons_Default@3x.icondatapack, Expert_Partners_Icons@3x.iconconfigpack, Railroad_Crossing@3x.iconconfigpack, Default_Icons@3x.iconconfigpack, Expert_Partners_Icons@3x.icondatapack, Default_Icons@3x.icondatapack, Default_Shields@3x.iconconfigpack, Default@3x.iconmappack, Railroad_Crossing@3x.icondatapack, Default_Shields@3x.icondatapack]
+2026-08-20 05:07:28.633 E  Flagstone[35449:7bfb9] [com.apple.VectorKit.GeoResourceLib:IconManager] No config pack found for key North America Northwest Southwest Shields
+2026-08-20 05:07:28.633 E  Flagstone[35449:7bfb9] [com.apple.VectorKit.GeoResourceLib:IconManager] No packs of type config available for key: [North America Northwest Southwest Shields, 3.000000]
+2026-08-20 05:07:28.634 E  Flagstone[35449:7bfb9] [com.apple.VectorKit.GeoResourceLib:IconManager] Failed to resolve packName for packKey:North America Northwest Southwest Shields.3.000000 packType:config with resourceNames:[Guides_Icons_Default@3x.iconconfigpack, Guides_Icons_Default@3x.icondatapack, Expert_Partners_Icons@3x.iconconfigpack, Railroad_Crossing@3x.iconconfigpack, Default_Icons@3x.iconconfigpack, Expert_Partners_Icons@3x.icondatapack, Default_Icons@3x.icondatapack, Default_Shields@3x.iconconfigpack, Default@3x.iconmappack, Railroad_Crossing@3x.icondatapack, Default_Shields@3x.icondatapack]
+2026-08-20 05:07:28.634 E  Flagstone[35449:7bfb9] [com.apple.VectorKit.GeoResourceLib:IconManager] No config pack found for key North America Northwest Southwest Shields
+2026-08-20 05:07:28.634 E  Flagstone[35449:7bfb9] [com.apple.VectorKit.GeoResourceLib:IconManager] No packs of type config available for key: [North America Shields, 3.000000]
+2026-08-20 05:07:28.634 E  Flagstone[35449:7bfb9] [com.apple.VectorKit.GeoResourceLib:IconManager] Failed to resolve packName for packKey:North America Shields.3.000000 packType:config with resourceNames:[Guides_Icons_Default@3x.iconconfigpack, Guides_Icons_Default@3x.icondatapack, Expert_Partners_Icons@3x.iconconfigpack, Railroad_Crossing@3x.iconconfigpack, Default_Icons@3x.iconconfigpack, Expert_Partners_Icons@3x.icondatapack, Default_Icons@3x.icondatapack, Default_Shields@3x.iconconfigpack, Default@3x.iconmappack, Railroad_Crossing@3x.icondatapack, Default_Shields@3x.icondatapack]
+2026-08-20 05:07:28.634 E  Flagstone[35449:7bfb9] [com.apple.VectorKit.GeoResourceLib:IconManager] No config pack found for key North America Shields
+2026-08-20 05:07:28.880 A  Flagstone[35449:7bfb7] (Metal) Metal Compiling Shader
+2026-08-20 05:07:28.888 A  Flagstone[35449:7c040] (Metal) Metal Compiling Shader
+2026-08-20 05:07:28.892 A  Flagstone[35449:7bfb7] (Metal) Metal Compiling Shader
+2026-08-20 05:07:28.897 A  Flagstone[35449:7bfb7] (Metal) Metal Compiling Shader
+2026-08-20 05:07:28.905 A  Flagstone[35449:7bfb7] (Metal) Metal Compiling Shader
+2026-08-20 05:07:28.910 A  Flagstone[35449:7c040] (Metal) Metal Compiling Shader
+2026-08-20 05:07:28.930 A  Flagstone[35449:7c040] (Metal) Metal Compiling Shader
+2026-08-20 05:07:28.942 A  Flagstone[35449:7bfb7] (Metal) Metal Compiling Shader
+2026-08-20 05:07:28.948 A  Flagstone[35449:7c040] (Metal) Metal Compiling Shader
+2026-08-20 05:07:29.004 A  Flagstone[35449:7c040] (Metal) Metal Compiling Shader
+2026-08-20 05:07:29.009 A  Flagstone[35449:7c040] (Metal) Metal Compiling Shader
+2026-08-20 05:07:29.014 A  Flagstone[35449:7bfb7] (Metal) Metal Compiling Shader
+2026-08-20 05:08:12.795 Df Flagstone[35449:7c593] [com.apple.dt.xctest:Default] Received attributes request for element: AX element pid: 35449, elementOrHash.elementID: 4711226368.153. Attributes: (
+    "XC_kAXXCAttributeValue"
+)
+2026-08-20 05:08:12.795 Df Flagstone[35449:7c593] [com.apple.dt.xctest:Default] XCTPerformOnMainRunLoop[not MT]: about to CFRunLoopPerform
+2026-08-20 05:08:12.795 Df Flagstone[35449:7c593] [com.apple.dt.xctest:Default] XCTPerformOnMainRunLoop[not MT]: waiting with 30.00s responsiveness timeout
+2026-08-20 05:08:12.795 Df Flagstone[35449:7affb] [com.apple.dt.xctest:Default] XCTPerformOnMainRunLoop[MT]: inside CFRunLoopPerform
+2026-08-20 05:08:12.795 Df Flagstone[35449:7affb] [com.apple.dt.xctest:Default] XCTPerformOnMainRunLoop[MT]: MT responded in time (won the race to the busy flag)
+2026-08-20 05:08:12.795 Df Flagstone[35449:7affb] [com.apple.dt.xctest:Default] Fetching AX attributes XC_kAXXCAttributeValue for AX element pid: 35449, elementOrHash.elementID: 4711226368.153
+2026-08-20 05:08:12.795 Df Flagstone[35449:7c593] [com.apple.dt.xctest:Default] XCTPerformOnMainRunLoop[not MT]: waiting 60.00s for work to complete
+2026-08-20 05:08:12.795 Df Flagstone[35449:7affb] [com.apple.dt.xctest:Default] Got attributes, transferring to dictionary for return.
+2026-08-20 05:08:12.795 Df Flagstone[35449:7c593] [com.apple.dt.xctest:Default] Replying with attribute values: {
+}
+2026-08-20 05:08:12.801 Df Flagstone[35449:7c593] [com.apple.dt.xctest:Default] Received attributes request for element: AX element pid: 35449, elementOrHash.elementID: 4711226368.153. Attributes: (
+    "XC_kAXXCAttributePlaceholderValue"
+)
+2026-08-20 05:08:12.801 Df Flagstone[35449:7c632] [com.apple.dt.xctest:Default] XCTPerformOnMainRunLoop[not MT]: about to CFRunLoopPerform
+2026-08-20 05:08:12.801 Df Flagstone[35449:7c632] [com.apple.dt.xctest:Default] XCTPerformOnMainRunLoop[not MT]: waiting with 30.00s responsiveness timeout
+2026-08-20 05:08:12.801 Df Flagstone[35449:7affb] [com.apple.dt.xctest:Default] XCTPerformOnMainRunLoop[MT]: inside CFRunLoopPerform
+2026-08-20 05:08:12.802 Df Flagstone[35449:7affb] [com.apple.dt.xctest:Default] XCTPerformOnMainRunLoop[MT]: MT responded in time (won the race to the busy flag)
+2026-08-20 05:08:12.802 Df Flagstone[35449:7c632] [com.apple.dt.xctest:Default] XCTPerformOnMainRunLoop[not MT]: waiting 60.00s for work to complete
+2026-08-20 05:08:12.802 Df Flagstone[35449:7affb] [com.apple.dt.xctest:Default] Fetching AX attributes XC_kAXXCAttributePlaceholderValue for AX element pid: 35449, elementOrHash.elementID: 4711226368.153
+2026-08-20 05:08:12.802 Df Flagstone[35449:7affb] [com.apple.dt.xctest:Default] Got attributes, transferring to dictionary for return.
+2026-08-20 05:08:12.802 Df Flagstone[35449:7c632] [com.apple.dt.xctest:Default] Replying with attribute values: {
+}
+2026-08-20 05:08:13.110 Df Flagstone[35449:7c632] [com.apple.dt.xctest:Default] Received request to notify when the main run loop is idle
+2026-08-20 05:08:13.110 Df Flagstone[35449:7c632] [com.apple.dt.xctest:Default] Idle notifier finished setting up run loop observer
+2026-08-20 05:08:13.110 Df Flagstone[35449:7affb] [com.apple.dt.xctest:Default] Idle notifier run loop observer fired
+2026-08-20 05:08:13.110 Df Flagstone[35449:7affb] [com.apple.dt.xctest:Default] Sending main run loop idle reply
+2026-08-20 05:08:13.114 Df Flagstone[35449:7c632] [com.apple.dt.xctest:Default] Received request to notify when animations are idle
+2026-08-20 05:08:23.405 Df Flagstone[35449:7c632] [com.apple.dt.xctest:Default] Received attributes request for element: AX element pid: 35449, elementOrHash.elementID: 4711226368.153. Attributes: (
+    "XC_kAXXCAttributeVisiblePoint"
+)
+2026-08-20 05:08:23.405 Df Flagstone[35449:7c728] [com.apple.dt.xctest:Default] XCTPerformOnMainRunLoop[not MT]: about to CFRunLoopPerform
+2026-08-20 05:08:23.405 Df Flagstone[35449:7c728] [com.apple.dt.xctest:Default] XCTPerformOnMainRunLoop[not MT]: waiting with 30.00s responsiveness timeout
+2026-08-20 05:08:23.405 Df Flagstone[35449:7affb] [com.apple.dt.xctest:Default] XCTPerformOnMainRunLoop[MT]: inside CFRunLoopPerform
+2026-08-20 05:08:23.405 Df Flagstone[35449:7affb] [com.apple.dt.xctest:Default] XCTPerformOnMainRunLoop[MT]: MT responded in time (won the race to the busy flag)
+2026-08-20 05:08:23.405 Df Flagstone[35449:7c728] [com.apple.dt.xctest:Default] XCTPerformOnMainRunLoop[not MT]: waiting 60.00s for work to complete
+2026-08-20 05:08:23.405 Df Flagstone[35449:7affb] [com.apple.dt.xctest:Default] Fetching AX attributes XC_kAXXCAttributeVisiblePoint for AX element pid: 35449, elementOrHash.elementID: 4711226368.153
+2026-08-20 05:08:23.462 Df Flagstone[35449:7affb] [com.apple.dt.xctest:Default] Got attributes, transferring to dictionary for return.
+2026-08-20 05:08:23.465 Df Flagstone[35449:7c728] [com.apple.dt.xctest:Default] Replying with attribute values: {
+    "XC_kAXXCAttributeVisiblePoint" =     {
+        X = "321.8333282470703";
+        Y = 709;
+    };
+}
+2026-08-20 05:08:23.640 Df Flagstone[35449:7affb] [com.apple.KeyboardArbiter:Client] TX focusApplication (peekAppEvent) stealKB:Y scene:com.accessmap.app-default
+2026-08-20 05:08:23.643 Df Flagstone[35449:7affb] [com.apple.UIKit:EventDispatch] Evaluating dispatch of UIEvent: 0x107113900; type: 0; subtype: 0; backing type: 11; shouldSend: 1; ignoreInteractionEvents: 0, systemGestureStateChange: 0
+2026-08-20 05:08:23.644 Df Flagstone[35449:7affb] [com.apple.UIKit:EventDispatch] Sending UIEvent type: 0; subtype: 0; to windows: 1
+2026-08-20 05:08:23.644 Df Flagstone[35449:7affb] [com.apple.UIKit:EventDispatch] Sending UIEvent type: 0; subtype: 0; to window: <UIWindow: 0x1071d0000>; contextId: 0x2A976188
+2026-08-20 05:08:23.867 Df Flagstone[35449:7c728] [com.apple.dt.xctest:Default] Received request to notify when the main run loop is idle
+2026-08-20 05:08:23.867 Df Flagstone[35449:7c728] [com.apple.dt.xctest:Default] Idle notifier finished setting up run loop observer
+2026-08-20 05:08:23.868 Df Flagstone[35449:7c728] [com.apple.dt.xctest:Default] Received request to notify when animations are idle
+2026-08-20 05:08:23.956 Df Flagstone[35449:7affb] [com.apple.UIKit:EventDispatch] Evaluating dispatch of UIEvent: 0x107113900; type: 0; subtype: 0; backing type: 11; shouldSend: 0; ignoreInteractionEvents: 0, systemGestureStateChange: 0
+2026-08-20 05:08:23.956 Df Flagstone[35449:7affb] [com.apple.UIKit:EventDispatch] Evaluating dispatch of UIEvent: 0x107113900; type: 0; subtype: 0; backing type: 11; shouldSend: 1; ignoreInteractionEvents: 0, systemGestureStateChange: 0
+2026-08-20 05:08:23.957 Df Flagstone[35449:7affb] [com.apple.UIKit:EventDispatch] Sending UIEvent type: 0; subtype: 0; to windows: 1
+2026-08-20 05:08:23.957 Df Flagstone[35449:7affb] [com.apple.UIKit:EventDispatch] Sending UIEvent type: 0; subtype: 0; to window: <UIWindow: 0x1071d0000>; contextId: 0x2A976188
+2026-08-20 05:08:23.959 Df Flagstone[35449:7affb] [com.apple.UIKit:EventDispatch] Evaluating dispatch of UIEvent: 0x107113900; type: 0; subtype: 0; backing type: 11; shouldSend: 0; ignoreInteractionEvents: 0, systemGestureStateChange: 0
+2026-08-20 05:08:23.966 A  Flagstone[35449:7affb] (UIKitCore) send gesture actions
+2026-08-20 05:08:23.967 Df Flagstone[35449:7affb] [com.apple.dt.xctest:Default] Idle notifier run loop observer fired
+2026-08-20 05:08:23.967 Df Flagstone[35449:7affb] [com.apple.dt.xctest:Default] Sending main run loop idle reply
+2026-08-20 05:08:24.019 A  Flagstone[35449:7affb] (CoreFoundation) Updating Key-Value Observers Of Preferences
+2026-08-20 05:08:24.088 A  Flagstone[35449:7c632] (CoreLocation) CL: CLInternalGetAuthorizationStatus
+2026-08-20 05:08:24.090 Df Flagstone[35449:7c632] [com.apple.locationd.Core:Client] {"msg":"CLInternalGetAuthorizationStatus", "event":activity}
+2026-08-20 05:08:24.327 A  Flagstone[35449:7c632] (CoreLocation) CL: CLInternalGetAuthorizationStatus
+2026-08-20 05:08:24.327 Df Flagstone[35449:7c632] [com.apple.locationd.Core:Client] {"msg":"CLInternalGetAuthorizationStatus", "event":activity}
+2026-08-20 05:08:24.339 A  Flagstone[35449:7c632] (CoreLocation) CL: CLInternalGetAuthorizationStatus
+2026-08-20 05:08:24.340 Df Flagstone[35449:7c632] [com.apple.locationd.Core:Client] {"msg":"CLInternalGetAuthorizationStatus", "event":activity}
+2026-08-20 05:08:24.357 Df Flagstone[35449:7affb] [com.apple.GeoServices:ResourceManifest] Did not find downloaded resource "groundSettings.json" at "(null)", trying fallback
+2026-08-20 05:08:24.468 Df Flagstone[35449:7affb] [com.apple.GeoServices:ResourceManifest] Did not find downloaded resource "NonTiledAssets.pb" at "(null)", trying fallback
+2026-08-20 05:08:24.473 Df Flagstone[35449:7c743] [com.apple.CFNetwork:Default] Task <3701BDB9-D64D-47EC-8359-EA6170130BB2>.<2> resuming, timeouts(0.0, 604800.0) qos(0x19) voucher((null)) activity(00000000-0000-0000-0000-000000000000)
+2026-08-20 05:08:24.492 E  Flagstone[35449:7affb] [com.apple.coreanimation:API] CAMetalLayer ignoring invalid setDrawableSize width=0.000000 height=0.000000
+2026-08-20 05:08:24.511 Df Flagstone[35449:7c743] [com.apple.network:connection] [C1] event: client:connection_reused @61.638s
+2026-08-20 05:08:24.521 Df Flagstone[35449:7c743] [com.apple.network:connection] nw_protocol_socket_notify [C1.1.1.1:3] nw_protocol_notification_type_connection_idle is false
+2026-08-20 05:08:24.527 Df Flagstone[35449:7c743] [com.apple.CFNetwork:Default] Task <3701BDB9-D64D-47EC-8359-EA6170130BB2>.<2> now using Connection 1
+2026-08-20 05:08:24.541 Df Flagstone[35449:7c743] [com.apple.CFNetwork:Default] Task <3701BDB9-D64D-47EC-8359-EA6170130BB2>.<2> sent request, body N 0
+2026-08-20 05:08:24.574 Df Flagstone[35449:7affb] [com.apple.UIKit:_UIVisualStyleRegistry] Note: no default visual style class registered as fallback for stylable class UIActivityIndicatorView
+2026-08-20 05:08:24.574 Df Flagstone[35449:7affb] [com.apple.UIKit:_UIVisualStyleRegistry] Note: no default visual style class registered as fallback for stylable class UIActivityIndicatorView
+2026-08-20 05:08:24.585 A  Flagstone[35449:7c743] (CoreLocation) CL: CLLocationManager
+2026-08-20 05:08:24.585 Df Flagstone[35449:7c743] [com.apple.locationd.Core:Client] {"msg":"CLLocationManager", "event":activity, "_cmd":startUpdatingLocation, "self":"0x10b1ed190"}
+2026-08-20 05:08:24.587 A  Flagstone[35449:7c743] (LocationSupport) CL: CLConnectionClient::sendMessage(cache)
+2026-08-20 05:08:24.587 A  Flagstone[35449:7c743] (LocationSupport) CL: CLConnection::sendMessage
+2026-08-20 05:08:24.628 Df Flagstone[35449:7c742] [com.apple.CFNetwork:Default] Task <3701BDB9-D64D-47EC-8359-EA6170130BB2>.<2> received response, status 200 content U
+2026-08-20 05:08:24.629 Df Flagstone[35449:7c742] [com.apple.CFNetwork:Default] Task <3701BDB9-D64D-47EC-8359-EA6170130BB2>.<2> done using Connection 1
+2026-08-20 05:08:24.629 Df Flagstone[35449:7c742] [com.apple.network:connection] [C1] event: client:connection_idle @61.757s
+2026-08-20 05:08:24.630 Df Flagstone[35449:7c742] [com.apple.network:connection] nw_protocol_socket_notify [C1.1.1.1:3] nw_protocol_notification_type_connection_idle is true
+2026-08-20 05:08:24.632 Df Flagstone[35449:7c742] [com.apple.CFNetwork:Default] Task <3701BDB9-D64D-47EC-8359-EA6170130BB2>.<2> response ended
+2026-08-20 05:08:24.633 Df Flagstone[35449:7c744] [com.apple.CFNetwork:Summary] Task <3701BDB9-D64D-47EC-8359-EA6170130BB2>.<2> summary for task success {transaction_duration_ms=149, response_status=200, connection=1, reused=1, reused_after_ms=58953, request_start_ms=46, request_duration_ms=11, response_start_ms=144, response_duration_ms=4, request_bytes=202, request_throughput_kbps=144, response_bytes=1858, response_throughput_kbps=3048, cache_hit=true}
+2026-08-20 05:08:24.634 Df Flagstone[35449:7c744] [com.apple.CFNetwork:Default] Task <3701BDB9-D64D-47EC-8359-EA6170130BB2>.<2> finished successfully
+2026-08-20 05:08:24.673 A  Flagstone[35449:7affb] (CoreLocation) CL: CLLocationManager
+2026-08-20 05:08:24.676 Df Flagstone[35449:7affb] [com.apple.locationd.Core:Client] {"msg":"CLLocationManager", "event":activity, "_cmd":desiredAccuracy, "self":"0x10b1ed190"}
+2026-08-20 05:08:24.676 A  Flagstone[35449:7affb] (CoreLocation) CL: CLLocationManager
+2026-08-20 05:08:24.676 Df Flagstone[35449:7affb] [com.apple.locationd.Core:Client] {"msg":"CLLocationManager", "event":activity, "_cmd":desiredAccuracy, "self":"0x10b1ed190"}
+2026-08-20 05:08:24.758 A  Flagstone[35449:7affb] (CoreLocation) CL: CLLocationManager
+2026-08-20 05:08:24.758 Df Flagstone[35449:7affb] [com.apple.locationd.Core:Client] {"msg":"CLLocationManager", "event":activity, "_cmd":initWithEffectiveBundleIdentifier:bundlePath:websiteIdentifier:delegate:silo:, "self":"0x10722a3c0", "identifier":(null), "bundlePath":(null)}
+2026-08-20 05:08:24.759 Df Flagstone[35449:7affb] [com.apple.locationd.Core:Client] {"msg":"client allocated", "client":"0x121791a40"}
+2026-08-20 05:08:24.759 A  Flagstone[35449:7affb] (CoreLocation) CL: _CLClientCreateConnection
+2026-08-20 05:08:24.759 Df Flagstone[35449:7affb] [com.apple.locationd.Core:Client] {"msg":"_CLClientCreateConnection", "event":activity, "client":"0x121791a40"}
+2026-08-20 05:08:24.759 A  Flagstone[35449:7c743] (LocationSupport) CL: Sending cached messages to daemon
+2026-08-20 05:08:24.760 Df Flagstone[35449:7c743] [com.apple.LocationSupport:Connection] {"msg":"Sending cached messages to daemon", "event":activity}
+2026-08-20 05:08:24.760 Df Flagstone[35449:7c743] [com.apple.xpc:connection] [0x121a0a580] activating connection: mach=true listener=false peer=false name=com.apple.locationd.registration
+2026-08-20 05:08:24.760 A  Flagstone[35449:7affb] (LocationSupport) CL: CLConnectionClient::sendMessage(cache)
+2026-08-20 05:08:24.760 A  Flagstone[35449:7affb] (LocationSupport) CL: CLConnectionClient::sendMessage(cache)
+2026-08-20 05:08:24.760 A  Flagstone[35449:7affb] (CoreLocation) CL: CLLocationManager
+2026-08-20 05:08:24.761 Df Flagstone[35449:7affb] [com.apple.locationd.Core:Client] {"msg":"CLLocationManager", "event":activity, "_cmd":setDelegate:, "self":"0x10722a3c0", "delegate":"0x10a000120"}
+2026-08-20 05:08:24.760 A  Flagstone[35449:7c743] (LocationSupport) CL: CLConnection::sendMessage
+2026-08-20 05:08:24.762 A  Flagstone[35449:7c743] (LocationSupport) CL: CLConnection::sendMessage
+2026-08-20 05:08:24.762 A  Flagstone[35449:7c632] (CoreLocation) CL: CLInternalGetAuthorizationStatus
+2026-08-20 05:08:24.762 Df Flagstone[35449:7c632] [com.apple.locationd.Core:Client] {"msg":"CLInternalGetAuthorizationStatus", "event":activity}
+2026-08-20 05:08:24.830 A  Flagstone[35449:7c632] (CoreLocation) CL: CLLocationManager
+2026-08-20 05:08:24.830 Df Flagstone[35449:7c632] [com.apple.locationd.Core:Client] {"msg":"CLLocationManager", "event":activity, "_cmd":requestWhenInUseAuthorization, "self":"0x10722a3c0"}
+2026-08-20 05:08:24.830 Df Flagstone[35449:7c632] [com.apple.locationd.Core:Core] {"msg":"Requesting when in use authorization"}
+2026-08-20 05:08:24.830 A  Flagstone[35449:7c632] (LocationSupport) CL: CLConnectionClient::sendMessage(cache)
+2026-08-20 05:08:24.830 A  Flagstone[35449:7c632] (LocationSupport) CL: CLConnection::sendMessage
+2026-08-20 05:08:24.858 A  Flagstone[35449:7affb] (CoreLocation) CL: CLLocationManager
+2026-08-20 05:08:24.858 Df Flagstone[35449:7affb] [com.apple.locationd.Core:Client] {"msg":"CLLocationManager", "event":activity, "_cmd":onClientEventRegistration:, "self":"0x10722a3c0", "clientKey":icom.accessmap.app:}
+2026-08-20 05:08:24.858 Df Flagstone[35449:7affb] [com.apple.locationd.Core:Client] {"msg":"#CLLocationManager invoking #delegate", "self":"0x10722a3c0", "delegate":"0x10a000120", "selector":locationManagerDidChangeAuthorization:, "authorizationStatus":0, "limitsPrecision":0, "isAuthorizedForWidgetUpdates":0}
+2026-08-20 05:08:24.996 A  Flagstone[35449:7affb] (CoreLocation) CL: CLLocationManager
+2026-08-20 05:08:24.997 Df Flagstone[35449:7affb] [com.apple.locationd.Core:Client] {"msg":"CLLocationManager", "event":activity, "_cmd":desiredAccuracy, "self":"0x10b1ed190"}
+2026-08-20 05:08:24.997 A  Flagstone[35449:7affb] (CoreLocation) CL: CLLocationManager
+2026-08-20 05:08:24.997 Df Flagstone[35449:7affb] [com.apple.locationd.Core:Client] {"msg":"CLLocationManager", "event":activity, "_cmd":desiredAccuracy, "self":"0x10b1ed190"}
+2026-08-20 05:08:24.997 A  Flagstone[35449:7affb] (CoreLocation) CL: CLLocationManager
+2026-08-20 05:08:24.997 Df Flagstone[35449:7affb] [com.apple.locationd.Core:Client] {"msg":"CLLocationManager", "event":activity, "_cmd":desiredAccuracy, "self":"0x10b1ed190"}
+2026-08-20 05:08:24.997 A  Flagstone[35449:7affb] (CoreLocation) CL: CLLocationManager
+2026-08-20 05:08:24.997 Df Flagstone[35449:7affb] [com.apple.locationd.Core:Client] {"msg":"CLLocationManager", "event":activity, "_cmd":desiredAccuracy, "self":"0x10b1ed190"}
+2026-08-20 05:08:24.998 A  Flagstone[35449:7affb] (CoreLocation) CL: CLLocationManager
+2026-08-20 05:08:24.998 Df Flagstone[35449:7affb] [com.apple.locationd.Core:Client] {"msg":"CLLocationManager", "event":activity, "_cmd":desiredAccuracy, "self":"0x10b1ed190"}
+2026-08-20 05:08:24.998 A  Flagstone[35449:7affb] (CoreLocation) CL: CLLocationManager
+2026-08-20 05:08:24.998 Df Flagstone[35449:7affb] [com.apple.locationd.Core:Client] {"msg":"CLLocationManager", "event":activity, "_cmd":desiredAccuracy, "self":"0x10b1ed190"}
+2026-08-20 05:08:24.998 A  Flagstone[35449:7affb] (CoreLocation) CL: CLLocationManager
+2026-08-20 05:08:24.998 Df Flagstone[35449:7affb] [com.apple.locationd.Core:Client] {"msg":"CLLocationManager", "event":activity, "_cmd":desiredAccuracy, "self":"0x10b1ed190"}
+2026-08-20 05:08:24.998 A  Flagstone[35449:7affb] (CoreLocation) CL: CLLocationManager
+2026-08-20 05:08:24.998 Df Flagstone[35449:7affb] [com.apple.locationd.Core:Client] {"msg":"CLLocationManager", "event":activity, "_cmd":desiredAccuracy, "self":"0x10b1ed190"}
+2026-08-20 05:08:26.302 Df Flagstone[35449:7c750] [com.apple.BackBoard:EventDelivery] policyStatus:<BKSHIDEventDeliveryPolicyObserver: 0x10721c540; token: com.apple.frontboard.systemappservices/FBSceneManager:sceneID%3Acom.accessmap.app-default; status: none> was:ancestor
+2026-08-20 05:08:26.302 Df Flagstone[35449:7affb] [com.apple.UIKit:KeyWindow] Scene target of keyboard event deferring environment did change: 0; scene: UIWindowScene: 0x1060e97d0; scene identity: com.apple.frontboard.systemappservices/FBSceneManager:sceneID%3Acom.accessmap.app-default
+2026-08-20 05:08:27.157 Df Flagstone[35449:7affb] [com.apple.runningboard:connection] Creating side-channel connection to com.apple.runningboard
+2026-08-20 05:08:27.158 Df Flagstone[35449:7affb] [com.apple.xpc:connection] [0x121a67980] activating connection: mach=true listener=false peer=false name=com.apple.runningboard
+2026-08-20 05:08:27.161 Df Flagstone[35449:7affb] [com.apple.runningboard:process] Hit the server for a process handle 19b33a1100008a79 that resolved to: [app<com.accessmap.app((null))>:35449]
+2026-08-20 05:08:27.162 Df Flagstone[35449:7affb] [com.apple.UIKit:AppLifecycle] sceneOfRecord: sceneID: sceneID:com.accessmap.app-default  persistentID: AE1D67B8-6BBD-4698-9E3C-597A0C367329
+2026-08-20 05:08:27.163 Df Flagstone[35449:7affb] [com.apple.UIKit:UIAlertControllerStackManager] canShowAlerts Updated: <FBSSceneSettingsDiff: 0x11d637e80; UIApplicationSceneSettings> {
+    subclassSettings = <BSSettingsDiff: 0x121b108d0> {
+        canShowAlerts = NO;
+    };
+}
+2026-08-20 05:08:27.166 Df Flagstone[35449:7affb] [com.apple.UIKit:InterfaceStyle] Not push traits update to screen for new style 1, <UIWindowScene: 0x1060e97d0> (AE1D67B8-6BBD-4698-9E3C-597A0C367329)
+2026-08-20 05:08:27.169 Df Flagstone[35449:7affb] [com.apple.UIKit:AppLifecycle] sceneOfRecord: sceneID: sceneID:com.accessmap.app-default  persistentID: AE1D67B8-6BBD-4698-9E3C-597A0C367329
+2026-08-20 05:08:27.169 Df Flagstone[35449:7affb] [com.apple.UIKit:Application] Deactivation reason added: 13; deactivation reasons: 0 -> 8192; animating application lifecycle event: 0
+2026-08-20 05:08:27.173 Df Flagstone[35449:7c74f] [com.apple.locationd.Core:Client] {"msg":"#CLLocationManager invoking #delegate", "self":"0x10b1ed190", "delegate":"0x118d72340", "selector":locationManager:didFailWithError:, "error":Error Domain=kCLErrorDomain Code=1 "(null)"}
+2026-08-20 05:08:27.173 E  Flagstone[35449:7c74f] [com.apple.MapKit:MKCoreLocationProvider] CLLocationManager(<CLLocationManager: 0x10b1ed190>) for <MKCoreLocationProvider: 0x118d72340> did fail with error: Error Domain=kCLErrorDomain Code=1 "(null)"
+2026-08-20 05:08:27.174 Df Flagstone[35449:7affb] [com.apple.UIKit:Application] Ignoring already applied deactivation reason: 13; deactivation reasons: 8192
+2026-08-20 05:08:27.174 Df Flagstone[35449:7affb] [com.apple.UIKit:Application] Deactivation reason added: 12; deactivation reasons: 8192 -> 12288; animating application lifecycle event: 0
+2026-08-20 05:08:27.174 A  Flagstone[35449:7c74f] (CoreLocation) CL: CLLocationManager
+2026-08-20 05:08:27.175 Df Flagstone[35449:7c74f] [com.apple.locationd.Core:Client] {"msg":"CLLocationManager", "event":activity, "_cmd":stopUpdatingLocation, "self":"0x10b1ed190"}
+2026-08-20 05:08:27.176 A  Flagstone[35449:7c74f] (LocationSupport) CL: CLConnectionClient::sendMessage(cache)
+2026-08-20 05:08:27.176 A  Flagstone[35449:7c74f] (LocationSupport) CL: CLConnection::sendMessage
+2026-08-20 05:08:27.270 Df Flagstone[35449:7affb] [com.apple.UIKit:AppLifecycle] sceneOfRecord: sceneID: sceneID:com.accessmap.app-default  persistentID: AE1D67B8-6BBD-4698-9E3C-597A0C367329
+2026-08-20 05:08:39.444 E  Flagstone[35449:7c74f] [com.apple.VectorKit:ResourceLoading] [0x106e74000][Dev] TiledGEOResourceFetcher received failed Resource: 171.348.10.255 t:15 kt:0, 7
+2026-08-20 05:08:39.444 E  Flagstone[35449:7c74f] [com.apple.VectorKit:ResourceLoading] Failed to load key: 171.348.10.255 t:15 kt:0 type: 15, -1001: NSURLErrorDomain
+2026-08-20 05:08:39.474 E  Flagstone[35449:7c74f] [com.apple.VectorKit:ResourceLoading] [0x106e74000][Dev] TiledGEOResourceFetcher received failed Resource: 172.347.10.255 t:47 kt:0, 42
+2026-08-20 05:08:39.474 E  Flagstone[35449:7c74f] [com.apple.VectorKit:ResourceLoading] Failed to load key: 172.347.10.255 t:47 kt:0 type: 47, -1001: NSURLErrorDomain
+2026-08-20 05:08:39.618 E  Flagstone[35449:7c750] [com.apple.VectorKit:ResourceLoading] [0x106e74000][Dev] TiledGEOResourceFetcher received failed Resource: 172.348.10.255 t:15 kt:0, 38
+2026-08-20 05:08:39.619 E  Flagstone[35449:7c750] [com.apple.VectorKit:ResourceLoading] Failed to load key: 172.348.10.255 t:15 kt:0 type: 15, -1001: NSURLErrorDomain
+2026-08-20 05:08:39.730 E  Flagstone[35449:7c750] [com.apple.VectorKit:ResourceLoading] [0x106e74000][Dev] TiledGEOResourceFetcher received failed Resource: 172.347.10.255 t:15 kt:0, 15
+2026-08-20 05:08:39.730 E  Flagstone[35449:7c750] [com.apple.VectorKit:ResourceLoading] Failed to load key: 172.347.10.255 t:15 kt:0 type: 15, -1001: NSURLErrorDomain
+2026-08-20 05:08:39.851 E  Flagstone[35449:7c728] [com.apple.VectorKit:ResourceLoading] [0x106e74000][Dev] TiledGEOResourceFetcher received failed Resource: 172.347.10.255 t:40 kt:0, 20
+2026-08-20 05:08:39.852 E  Flagstone[35449:7c728] [com.apple.VectorKit:ResourceLoading] Failed to load key: 172.347.10.255 t:40 kt:0 type: 40, -1001: NSURLErrorDomain
+2026-08-20 05:08:40.635 E  Flagstone[35449:7c743] [com.apple.VectorKit:ResourceLoading] [0x106e74000][Dev] TiledGEOResourceFetcher received failed Resource: 171.347.10.255 t:15 kt:0, 58
+2026-08-20 05:08:40.636 E  Flagstone[35449:7c743] [com.apple.VectorKit:ResourceLoading] Failed to load key: 171.347.10.255 t:15 kt:0 type: 15, -1001: NSURLErrorDomain
+2026-08-20 05:08:40.694 E  Flagstone[35449:7c728] [com.apple.VectorKit:ResourceLoading] [0x106e74000][Dev] TiledGEOResourceFetcher received failed Resource: 172.348.10.255 t:40 kt:0, 2
+2026-08-20 05:08:40.695 E  Flagstone[35449:7c728] [com.apple.VectorKit:ResourceLoading] Failed to load key: 172.348.10.255 t:40 kt:0 type: 40, -1001: NSURLErrorDomain
+2026-08-20 05:08:40.775 E  Flagstone[35449:7c743] [com.apple.VectorKit:ResourceLoading] [0x106e74000][Dev] TiledGEOResourceFetcher received failed Resource: 171.347.10.255 t:40 kt:0, 3
+2026-08-20 05:08:40.776 E  Flagstone[35449:7c743] [com.apple.VectorKit:ResourceLoading] Failed to load key: 171.347.10.255 t:40 kt:0 type: 40, -1001: NSURLErrorDomain
+2026-08-20 05:08:40.780 E  Flagstone[35449:7c728] [com.apple.VectorKit:ResourceLoading] [0x106e74000][Dev] TiledGEOResourceFetcher received failed Resource: 171.348.10.255 t:47 kt:0, 45
+2026-08-20 05:08:40.782 E  Flagstone[35449:7c728] [com.apple.VectorKit:ResourceLoading] Failed to load key: 171.348.10.255 t:47 kt:0 type: 47, -1001: NSURLErrorDomain
+2026-08-20 05:08:41.341 E  Flagstone[35449:7c750] [com.apple.VectorKit:ResourceLoading] [0x106e74000][Dev] TiledGEOResourceFetcher received failed Resource: 171.347.10.255 t:47 kt:0, 28
+2026-08-20 05:08:41.342 E  Flagstone[35449:7c750] [com.apple.VectorKit:ResourceLoading] Failed to load key: 171.347.10.255 t:47 kt:0 type: 47, -1001: NSURLErrorDomain
+2026-08-20 05:08:42.535 E  Flagstone[35449:7c728] [com.apple.VectorKit:ResourceLoading] [0x106e74000][Dev] TiledGEOResourceFetcher received failed Resource: 171.348.10.255 t:30 kt:0, 46
+2026-08-20 05:08:42.536 E  Flagstone[35449:7c728] [com.apple.VectorKit:ResourceLoading] Failed to load key: 171.348.10.255 t:30 kt:0 type: 30, -1001: NSURLErrorDomain
+2026-08-20 05:08:42.547 E  Flagstone[35449:7c728] [com.apple.VectorKit:ResourceLoading] [0x106e74000][Dev] TiledGEOResourceFetcher received failed Resource: 171.348.10.255 t:40 kt:0, 56
+2026-08-20 05:08:42.547 E  Flagstone[35449:7c728] [com.apple.VectorKit:ResourceLoading] Failed to load key: 171.348.10.255 t:40 kt:0 type: 40, -1001: NSURLErrorDomain
+2026-08-20 05:08:43.766 E  Flagstone[35449:7c728] [com.apple.VectorKit:ResourceLoading] [0x106e74000][Dev] TiledGEOResourceFetcher received failed Resource: 172.348.10.255 t:47 kt:0, 27
+2026-08-20 05:08:43.767 E  Flagstone[35449:7c728] [com.apple.VectorKit:ResourceLoading] Failed to load key: 172.348.10.255 t:47 kt:0 type: 47, -1001: NSURLErrorDomain
+2026-08-20 05:08:44.074 E  Flagstone[35449:7c750] [com.apple.VectorKit:ResourceLoading] [0x106e74000][Dev] TiledGEOResourceFetcher received failed Resource: 172.348.10.255 t:30 kt:0, 48
+2026-08-20 05:08:44.075 E  Flagstone[35449:7c750] [com.apple.VectorKit:ResourceLoading] Failed to load key: 172.348.10.255 t:30 kt:0 type: 30, -1001: NSURLErrorDomain
+2026-08-20 05:08:44.078 E  Flagstone[35449:7c750] [com.apple.VectorKit:ResourceLoading] [0x106e74000][Dev] TiledGEOResourceFetcher received failed Resource: 171.347.10.255 t:30 kt:0, 32
+2026-08-20 05:08:44.079 E  Flagstone[35449:7c750] [com.apple.VectorKit:ResourceLoading] Failed to load key: 171.347.10.255 t:30 kt:0 type: 30, -1001: NSURLErrorDomain
+2026-08-20 05:08:44.669 E  Flagstone[35449:7c728] [com.apple.VectorKit:ResourceLoading] [0x106e74000][Dev] TiledGEOResourceFetcher received failed Resource: 172.347.10.255 t:30 kt:0, 31
+2026-08-20 05:08:44.669 E  Flagstone[35449:7c728] [com.apple.VectorKit:ResourceLoading] Failed to load key: 172.347.10.255 t:30 kt:0 type: 30, -1001: NSURLErrorDomain
+2026-08-20 05:08:44.672 E  Flagstone[35449:7c743] [com.apple.VectorKit:ResourceLoading] [0x106e74000][Dev] TiledGEOResourceFetcher received failed Resource: 21.43.7.255 t:29 kt:0, 25
+2026-08-20 05:08:44.672 E  Flagstone[35449:7c743] [com.apple.VectorKit:ResourceLoading] Failed to load key: 21.43.7.255 t:29 kt:0 type: 29, -1001: NSURLErrorDomain
+2026-08-20 05:08:44.706 E  Flagstone[35449:7c74f] [com.apple.VectorKit:ResourceLoading] [0x106e74000][Dev] TiledGEOResourceFetcher received failed Resource: 172.348.10.255 t:32 kt:0, 61
+2026-08-20 05:08:44.707 E  Flagstone[35449:7c74f] [com.apple.VectorKit:ResourceLoading] Failed to load key: 172.348.10.255 t:32 kt:0 type: 32, -1001: NSURLErrorDomain
+2026-08-20 05:08:44.709 E  Flagstone[35449:7c743] [com.apple.VectorKit:ResourceLoading] [0x106e74000][Dev] TiledGEOResourceFetcher received failed Resource: 172.347.10.255 t:32 kt:0, 59
+2026-08-20 05:08:44.710 E  Flagstone[35449:7c743] [com.apple.VectorKit:ResourceLoading] Failed to load key: 172.347.10.255 t:32 kt:0 type: 32, -1001: NSURLErrorDomain
+2026-08-20 05:08:44.714 E  Flagstone[35449:7c743] [com.apple.VectorKit:ResourceLoading] [0x106e74000][Dev] TiledGEOResourceFetcher received failed Resource: 171.347.10.255 t:32 kt:0, 55
+2026-08-20 05:08:44.715 E  Flagstone[35449:7c743] [com.apple.VectorKit:ResourceLoading] Failed to load key: 171.347.10.255 t:32 kt:0 type: 32, -1001: NSURLErrorDomain
+2026-08-20 05:08:44.715 E  Flagstone[35449:7c74f] [com.apple.VectorKit:ResourceLoading] [0x106e74000][Dev] TiledGEOResourceFetcher received failed Resource: 171.347.10.255 t:27 kt:0, 12
+2026-08-20 05:08:44.716 E  Flagstone[35449:7c74f] [com.apple.VectorKit:ResourceLoading] Failed to load key: 171.347.10.255 t:27 kt:0 type: 27, -1001: NSURLErrorDomain
+2026-08-20 05:08:44.717 E  Flagstone[35449:7c743] [com.apple.VectorKit:ResourceLoading] [0x106e74000][Dev] TiledGEOResourceFetcher received failed Resource: 172.348.10.255 t:27 kt:0, 40
+2026-08-20 05:08:44.718 E  Flagstone[35449:7c743] [com.apple.VectorKit:ResourceLoading] Failed to load key: 172.348.10.255 t:27 kt:0 type: 27, -1001: NSURLErrorDomain
+2026-08-20 05:08:44.719 E  Flagstone[35449:7c750] [com.apple.VectorKit:ResourceLoading] [0x106e74000][Dev] TiledGEOResourceFetcher received failed Resource: 172.347.10.255 t:27 kt:0, 39
+2026-08-20 05:08:44.720 E  Flagstone[35449:7c750] [com.apple.VectorKit:ResourceLoading] Failed to load key: 172.347.10.255 t:27 kt:0 type: 27, -1001: NSURLErrorDomain
+2026-08-20 05:08:44.723 E  Flagstone[35449:7c750] [com.apple.VectorKit:ResourceLoading] [0x106e74000][Dev] TiledGEOResourceFetcher received failed Resource: 171.348.10.255 t:27 kt:0, 41
+2026-08-20 05:08:44.723 E  Flagstone[35449:7c750] [com.apple.VectorKit:ResourceLoading] Failed to load key: 171.348.10.255 t:27 kt:0 type: 27, -1001: NSURLErrorDomain
+2026-08-20 05:08:44.724 E  Flagstone[35449:7c74f] [com.apple.VectorKit:ResourceLoading] [0x106e74000][Dev] TiledGEOResourceFetcher received failed Resource: 171.348.10.255 t:32 kt:0, 35
+2026-08-20 05:08:44.724 E  Flagstone[35449:7c74f] [com.apple.VectorKit:ResourceLoading] Failed to load key: 171.348.10.255 t:32 kt:0 type: 32, -1001: NSURLErrorDomain
+2026-08-20 05:08:56.928 E  Flagstone[35449:7c632] [com.apple.VectorKit:ResourceLoading] [0x106e74000][Dev] TiledGEOResourceFetcher received failed Resource: 172.347.10.255 t:40 kt:0, 69
+2026-08-20 05:08:56.773 E  Flagstone[35449:7c74f] [com.apple.VectorKit:ResourceLoading] [0x106e74000][Dev] TiledGEOResourceFetcher received failed Resource: 171.347.10.255 t:15 kt:0, 87
+2026-08-20 05:08:58.039 E  Flagstone[35449:7c913] [com.apple.VectorKit:ResourceLoading] [0x106e74000][Dev] TiledGEOResourceFetcher received failed Resource: 172.347.10.255 t:47 kt:0, 63
+2026-08-20 05:08:57.929 E  Flagstone[35449:7c8fd] [com.apple.VectorKit:ResourceLoading] [0x106e74000][Dev] TiledGEOResourceFetcher received failed Resource: 171.347.10.255 t:47 kt:0, 65
+2026-08-20 05:08:56.721 E  Flagstone[35449:7c743] [com.apple.VectorKit:ResourceLoading] [0x106e74000][Dev] TiledGEOResourceFetcher received failed Resource: 172.347.10.255 t:15 kt:0, 85
+2026-08-20 05:09:01.000 E  Flagstone[35449:7c959] [com.apple.VectorKit:ResourceLoading] [0x106e74000][Dev] TiledGEOResourceFetcher received failed Resource: 172.347.10.255 t:27 kt:0, 105
+2026-08-20 05:09:05.754 E  Flagstone[35449:7c74f] [com.apple.VectorKit:ResourceLoading] Failed to load key: 171.347.10.255 t:15 kt:0 type: 15, -1001: NSURLErrorDomain
+2026-08-20 05:09:00.973 E  Flagstone[35449:7c955] [com.apple.VectorKit:ResourceLoading] [0x106e74000][Dev] TiledGEOResourceFetcher received failed Resource: 171.348.10.255 t:27 kt:0, 106
+2026-08-20 05:09:01.000 E  Flagstone[35449:7c958] [com.apple.VectorKit:ResourceLoading] [0x106e74000][Dev] TiledGEOResourceFetcher received failed Resource: 21.43.7.255 t:29 kt:0, 98
+2026-08-20 05:09:05.754 E  Flagstone[35449:7c913] [com.apple.VectorKit:ResourceLoading] Failed to load key: 172.347.10.255 t:47 kt:0 type: 47, -1001: NSURLErrorDomain
+2026-08-20 05:09:05.755 E  Flagstone[35449:7c8fd] [com.apple.VectorKit:ResourceLoading] Failed to load key: 171.347.10.255 t:47 kt:0 type: 47, -1001: NSURLErrorDomain
+2026-08-20 05:09:05.755 E  Flagstone[35449:7c959] [com.apple.VectorKit:ResourceLoading] Failed to load key: 172.347.10.255 t:27 kt:0 type: 27, -1001: NSURLErrorDomain
+2026-08-20 05:09:05.754 E  Flagstone[35449:7c632] [com.apple.VectorKit:ResourceLoading] Failed to load key: 172.347.10.255 t:40 kt:0 type: 40, -1001: NSURLErrorDomain
+2026-08-20 05:09:05.755 E  Flagstone[35449:7c743] [com.apple.VectorKit:ResourceLoading] Failed to load key: 172.347.10.255 t:15 kt:0 type: 15, -1001: NSURLErrorDomain
+2026-08-20 05:08:57.495 E  Flagstone[35449:7c8f6] [com.apple.VectorKit:ResourceLoading] [0x106e74000][Dev] TiledGEOResourceFetcher received failed Resource: 172.348.10.255 t:15 kt:0, 84
+2026-08-20 05:08:57.534 E  Flagstone[35449:7c750] [com.apple.VectorKit:ResourceLoading] [0x106e74000][Dev] TiledGEOResourceFetcher received failed Resource: 171.348.10.255 t:47 kt:0, 64
+2026-08-20 05:08:57.287 E  Flagstone[35449:7c8f4] [com.apple.VectorKit:ResourceLoading] [0x106e74000][Dev] TiledGEOResourceFetcher received failed Resource: 172.348.10.255 t:40 kt:0, 68
+2026-08-20 05:08:57.292 E  Flagstone[35449:7c8f5] [com.apple.VectorKit:ResourceLoading] [0x106e74000][Dev] TiledGEOResourceFetcher received failed Resource: 171.348.10.255 t:15 kt:0, 86
+2026-08-20 05:08:58.582 E  Flagstone[35449:7c925] [com.apple.VectorKit:ResourceLoading] [0x106e74000][Dev] TiledGEOResourceFetcher received failed Resource: 172.348.10.255 t:30 kt:0, 77
+2026-08-20 05:09:05.756 E  Flagstone[35449:7c955] [com.apple.VectorKit:ResourceLoading] Failed to load key: 171.348.10.255 t:27 kt:0 type: 27, -1001: NSURLErrorDomain
+2026-08-20 05:08:57.241 E  Flagstone[35449:7c8f0] [com.apple.VectorKit:ResourceLoading] [0x106e74000][Dev] TiledGEOResourceFetcher received failed Resource: 171.348.10.255 t:40 kt:0, 70
+2026-08-20 05:09:00.812 E  Flagstone[35449:7c916] [com.apple.VectorKit:ResourceLoading] [0x106e74000][Dev] TiledGEOResourceFetcher received failed Resource: 171.347.10.255 t:27 kt:0, 107
+2026-08-20 05:08:58.142 E  Flagstone[35449:7c917] [com.apple.VectorKit:ResourceLoading] [0x106e74000][Dev] TiledGEOResourceFetcher received failed Resource: 171.348.10.255 t:30 kt:0, 78
+2026-08-20 05:09:01.000 E  Flagstone[35449:7c95a] [com.apple.VectorKit:ResourceLoading] [0x106e74000][Dev] TiledGEOResourceFetcher received failed Resource: 172.347.10.255 t:30 kt:0, 96
+2026-08-20 05:09:05.756 E  Flagstone[35449:7c958] [com.apple.VectorKit:ResourceLoading] Failed to load key: 21.43.7.255 t:29 kt:0 type: 29, -1001: NSURLErrorDomain
+2026-08-20 05:09:00.843 E  Flagstone[35449:7c953] [com.apple.VectorKit:ResourceLoading] [0x106e74000][Dev] TiledGEOResourceFetcher received failed Resource: 171.348.10.255 t:32 kt:0, 94
+2026-08-20 05:09:01.016 E  Flagstone[35449:7c95c] [com.apple.VectorKit:ResourceLoading] [0x106e74000][Dev] TiledGEOResourceFetcher received failed Resource: 171.347.10.255 t:32 kt:0, 95
+2026-08-20 05:09:00.973 E  Flagstone[35449:7c926] [com.apple.VectorKit:ResourceLoading] [0x106e74000][Dev] TiledGEOResourceFetcher received failed Resource: 172.347.10.255 t:32 kt:0, 93
+2026-08-20 05:09:00.794 E  Flagstone[35449:7c952] [com.apple.VectorKit:ResourceLoading] [0x106e74000][Dev] TiledGEOResourceFetcher received failed Resource: 172.348.10.255 t:27 kt:0, 104
+2026-08-20 05:08:57.047 E  Flagstone[35449:7c8ee] [com.apple.VectorKit:ResourceLoading] [0x106e74000][Dev] TiledGEOResourceFetcher received failed Resource: 171.347.10.255 t:40 kt:0, 71
+2026-08-20 05:09:05.757 E  Flagstone[35449:7c916] [com.apple.VectorKit:ResourceLoading] Failed to load key: 171.347.10.255 t:27 kt:0 type: 27, -1001: NSURLErrorDomain
+2026-08-20 05:09:05.757 E  Flagstone[35449:7c95a] [com.apple.VectorKit:ResourceLoading] Failed to load key: 172.347.10.255 t:30 kt:0 type: 30, -1001: NSURLErrorDomain
+2026-08-20 05:09:05.757 E  Flagstone[35449:7c8f5] [com.apple.VectorKit:ResourceLoading] Failed to load key: 171.348.10.255 t:15 kt:0 type: 15, -1001: NSURLErrorDomain
+2026-08-20 05:09:05.757 E  Flagstone[35449:7c95c] [com.apple.VectorKit:ResourceLoading] Failed to load key: 171.347.10.255 t:32 kt:0 type: 32, -1001: NSURLErrorDomain
+2026-08-20 05:09:05.757 E  Flagstone[35449:7c953] [com.apple.VectorKit:ResourceLoading] Failed to load key: 171.348.10.255 t:32 kt:0 type: 32, -1001: NSURLErrorDomain
+2026-08-20 05:09:05.756 E  Flagstone[35449:7c8f4] [com.apple.VectorKit:ResourceLoading] Failed to load key: 172.348.10.255 t:40 kt:0 type: 40, -1001: NSURLErrorDomain
+2026-08-20 05:09:05.757 E  Flagstone[35449:7c8ee] [com.apple.VectorKit:ResourceLoading] Failed to load key: 171.347.10.255 t:40 kt:0 type: 40, -1001: NSURLErrorDomain
+2026-08-20 05:09:05.757 E  Flagstone[35449:7c952] [com.apple.VectorKit:ResourceLoading] Failed to load key: 172.348.10.255 t:27 kt:0 type: 27, -1001: NSURLErrorDomain
+2026-08-20 05:08:58.758 E  Flagstone[35449:7c929] [com.apple.VectorKit:ResourceLoading] [0x106e74000][Dev] TiledGEOResourceFetcher received failed Resource: 171.347.10.255 t:30 kt:0, 79
+2026-08-20 05:09:05.757 E  Flagstone[35449:7c926] [com.apple.VectorKit:ResourceLoading] Failed to load key: 172.347.10.255 t:32 kt:0 type: 32, -1001: NSURLErrorDomain
+2026-08-20 05:09:05.757 E  Flagstone[35449:7c925] [com.apple.VectorKit:ResourceLoading] Failed to load key: 172.348.10.255 t:30 kt:0 type: 30, -1001: NSURLErrorDomain
+2026-08-20 05:09:05.757 E  Flagstone[35449:7c917] [com.apple.VectorKit:ResourceLoading] Failed to load key: 171.348.10.255 t:30 kt:0 type: 30, -1001: NSURLErrorDomain
+2026-08-20 05:09:05.757 E  Flagstone[35449:7c8f0] [com.apple.VectorKit:ResourceLoading] Failed to load key: 171.348.10.255 t:40 kt:0 type: 40, -1001: NSURLErrorDomain
+2026-08-20 05:08:58.089 E  Flagstone[35449:7c918] [com.apple.VectorKit:ResourceLoading] [0x106e74000][Dev] TiledGEOResourceFetcher received failed Resource: 172.348.10.255 t:47 kt:0, 62
+2026-08-20 05:09:05.758 E  Flagstone[35449:7c929] [com.apple.VectorKit:ResourceLoading] Failed to load key: 171.347.10.255 t:30 kt:0 type: 30, -1001: NSURLErrorDomain
+2026-08-20 05:09:01.038 E  Flagstone[35449:7c95f] [com.apple.VectorKit:ResourceLoading] [0x106e74000][Dev] TiledGEOResourceFetcher received failed Resource: 172.348.10.255 t:32 kt:0, 92
+2026-08-20 05:09:05.756 E  Flagstone[35449:7c8f6] [com.apple.VectorKit:ResourceLoading] Failed to load key: 172.348.10.255 t:15 kt:0 type: 15, -1001: NSURLErrorDomain
+2026-08-20 05:09:05.756 E  Flagstone[35449:7c750] [com.apple.VectorKit:ResourceLoading] Failed to load key: 171.348.10.255 t:47 kt:0 type: 47, -1001: NSURLErrorDomain
+2026-08-20 05:09:05.759 E  Flagstone[35449:7c95f] [com.apple.VectorKit:ResourceLoading] Failed to load key: 172.348.10.255 t:32 kt:0 type: 32, -1001: NSURLErrorDomain
+2026-08-20 05:09:05.759 E  Flagstone[35449:7c918] [com.apple.VectorKit:ResourceLoading] Failed to load key: 172.348.10.255 t:47 kt:0 type: 47, -1001: NSURLErrorDomain
+2026-08-20 05:09:07.545 A  Flagstone[35449:7c8f0] (Metal) Metal Compiling Shader
+2026-08-20 05:09:07.711 A  Flagstone[35449:7c95b] (Metal) Metal Compiling Shader
+2026-08-20 05:09:07.720 A  Flagstone[35449:7c8f0] (Metal) Metal Compiling Shader
+2026-08-20 05:09:07.766 A  Flagstone[35449:7c8f0] (Metal) Metal Compiling Shader
+2026-08-20 05:09:40.985 Df Flagstone[35449:7cbe0] [com.apple.locationd.Core:Client] {"msg":"#CLLocationManager invoking #delegate", "self":"0x10b1ed190", "delegate":"0x118d72340", "selector":locationManagerDidChangeAuthorization:, "authorizationStatus":2, "limitsPrecision":1, "isAuthorizedForWidgetUpdates":0}
+2026-08-20 05:09:41.004 A  Flagstone[35449:7cbe0] (CoreLocation) CL: CLLocationManager
+2026-08-20 05:09:41.004 Df Flagstone[35449:7cbe0] [com.apple.locationd.Core:Client] {"msg":"CLLocationManager", "event":activity, "_cmd":desiredAccuracy, "self":"0x10b1ed190"}
+2026-08-20 05:09:41.004 A  Flagstone[35449:7cbe0] (CoreLocation) CL: CLLocationManager
+2026-08-20 05:09:41.004 Df Flagstone[35449:7cbe0] [com.apple.locationd.Core:Client] {"msg":"CLLocationManager", "event":activity, "_cmd":desiredAccuracy, "self":"0x10b1ed190"}
+2026-08-20 05:09:41.010 A  Flagstone[35449:7affb] (CoreLocation) CL: CLLocationManager
+2026-08-20 05:09:41.010 Df Flagstone[35449:7affb] [com.apple.locationd.Core:Client] {"msg":"CLLocationManager", "event":activity, "_cmd":desiredAccuracy, "self":"0x10b1ed190"}
+2026-08-20 05:09:41.010 A  Flagstone[35449:7affb] (CoreLocation) CL: CLLocationManager
+2026-08-20 05:09:41.010 Df Flagstone[35449:7affb] [com.apple.locationd.Core:Client] {"msg":"CLLocationManager", "event":activity, "_cmd":desiredAccuracy, "self":"0x10b1ed190"}
+2026-08-20 05:09:41.010 A  Flagstone[35449:7affb] (CoreLocation) CL: CLLocationManager
+2026-08-20 05:09:41.010 Df Flagstone[35449:7affb] [com.apple.locationd.Core:Client] {"msg":"CLLocationManager", "event":activity, "_cmd":desiredAccuracy, "self":"0x10b1ed190"}
+2026-08-20 05:09:41.010 A  Flagstone[35449:7affb] (CoreLocation) CL: CLLocationManager
+2026-08-20 05:09:41.010 Df Flagstone[35449:7affb] [com.apple.locationd.Core:Client] {"msg":"CLLocationManager", "event":activity, "_cmd":desiredAccuracy, "self":"0x10b1ed190"}
+2026-08-20 05:09:41.064 Df Flagstone[35449:7affb] [com.apple.locationd.Core:Client] {"msg":"#CLLocationManager invoking #delegate", "self":"0x10722a3c0", "delegate":"0x10a000120", "selector":locationManagerDidChangeAuthorization:, "authorizationStatus":2, "limitsPrecision":1, "isAuthorizedForWidgetUpdates":0}
+2026-08-20 05:09:41.066 A  Flagstone[35449:7affb] (CoreLocation) CL: CLInternalGetAuthorizationStatus
+2026-08-20 05:09:41.066 Df Flagstone[35449:7affb] [com.apple.locationd.Core:Client] {"msg":"CLInternalGetAuthorizationStatus", "event":activity}
+2026-08-20 05:09:41.149 Df Flagstone[35449:7affb] [com.apple.UIKit:AppLifecycle] sceneOfRecord: sceneID: sceneID:com.accessmap.app-default  persistentID: AE1D67B8-6BBD-4698-9E3C-597A0C367329
+2026-08-20 05:09:41.150 Df Flagstone[35449:7affb] [com.apple.UIKit:UIAlertControllerStackManager] canShowAlerts Updated: <FBSSceneSettingsDiff: 0x10b1720c0; UIApplicationSceneSettings> {
+    subclassSettings = <BSSettingsDiff: 0x121b10c00> {
+        canShowAlerts = YES;
+    };
+}
+2026-08-20 05:09:41.151 Df Flagstone[35449:7affb] [com.apple.UIKit:UIAlertControllerStackManager] _showHiddenStackedAlertControllers : Showing top alert : (nil)
+2026-08-20 05:09:41.151 Df Flagstone[35449:7affb] [com.apple.UIKit:UIAlertControllerStackManager] _willShowAlertController: (nil)
+2026-08-20 05:09:41.151 Df Flagstone[35449:7affb] [com.apple.UIKit:Application] Deactivation reason removed: 13; deactivation reasons: 12288 -> 4096; animating application lifecycle event: 0
+2026-08-20 05:09:41.158 Df Flagstone[35449:7affb] [com.apple.UIKit:InterfaceStyle] Not push traits update to screen for new style 1, <UIWindowScene: 0x1060e97d0> (AE1D67B8-6BBD-4698-9E3C-597A0C367329)
+2026-08-20 05:09:41.163 Df Flagstone[35449:7affb] [com.apple.UIKit:AppLifecycle] sceneOfRecord: sceneID: sceneID:com.accessmap.app-default  persistentID: AE1D67B8-6BBD-4698-9E3C-597A0C367329
+2026-08-20 05:09:41.164 Df Flagstone[35449:7affb] [com.apple.UIKit:Application] Deactivation reason removed: 12; deactivation reasons: 4096 -> 0; animating application lifecycle event: 0
+2026-08-20 05:09:41.164 Df Flagstone[35449:7affb] [com.apple.KeyboardArbiter:Client] Send setDeactivating: N (-DeactivationReason:SuspendedEventsOnly)
+2026-08-20 05:09:41.193 Df Flagstone[35449:7cbe0] [com.apple.BackBoard:EventDelivery] policyStatus:<BKSHIDEventDeliveryPolicyObserver: 0x10721c540; token: com.apple.frontboard.systemappservices/FBSceneManager:sceneID%3Acom.accessmap.app-default; status: ancestor> was:none
+2026-08-20 05:09:41.236 A  Flagstone[35449:7cbe0] (CoreLocation) CL: CLLocationManager
+2026-08-20 05:09:41.239 Df Flagstone[35449:7cbe0] [com.apple.locationd.Core:Client] {"msg":"CLLocationManager", "event":activity, "_cmd":startUpdatingLocation, "self":"0x10b1ed190"}
+2026-08-20 05:09:41.255 A  Flagstone[35449:7affb] (CoreLocation) CL: CLLocationManager
+2026-08-20 05:09:41.256 Df Flagstone[35449:7affb] [com.apple.locationd.Core:Client] {"msg":"CLLocationManager", "event":activity, "_cmd":onDidBecomeActive:, "self":"0x10b1ed190", "notification":NSConcreteNotification 0x11d571fc0 {name = UIApplicationDidBecomeActiveNotification; object = <UIApplication: 0x1060e0d60>}}
+2026-08-20 05:09:41.256 A  Flagstone[35449:7affb] (CoreLocation) CL: CLLocationManager
+2026-08-20 05:09:41.257 Df Flagstone[35449:7affb] [com.apple.locationd.Core:Client] {"msg":"CLLocationManager", "event":activity, "_cmd":onDidBecomeActive:, "self":"0x10722a3c0", "notification":NSConcreteNotification 0x11d571fc0 {name = UIApplicationDidBecomeActiveNotification; object = <UIApplication: 0x1060e0d60>}}
+2026-08-20 05:09:41.256 A  Flagstone[35449:7cbe0] (LocationSupport) CL: CLConnectionClient::sendMessage(cache)
+2026-08-20 05:09:41.258 A  Flagstone[35449:7cd6b] (LocationSupport) CL: CLConnection::sendMessage
+2026-08-20 05:09:41.398 Df Flagstone[35449:7affb] [com.apple.UIKit:KeyWindow] Scene target of keyboard event deferring environment did change: 1; scene: UIWindowScene: 0x1060e97d0; scene identity: com.apple.frontboard.systemappservices/FBSceneManager:sceneID%3Acom.accessmap.app-default
+2026-08-20 05:09:41.399 Df Flagstone[35449:7affb] [com.apple.UIKit:EventDeferring] [0x107274d90] Scene target of event deferring environments did update: scene: 0x1060e97d0; current systemShellManagesKeyboardFocus: 1; systemShellManagesKeyboardFocusForScene: 1; eligibleForRecordRemoval: 1;
+2026-08-20 05:09:41.399 Df Flagstone[35449:7affb] [com.apple.UIKit:KeyWindow] Scene became target of keyboard event deferring environment: UIWindowScene: 0x1060e97d0; scene identity: com.apple.frontboard.systemappservices/FBSceneManager:sceneID%3Acom.accessmap.app-default
+2026-08-20 05:09:41.400 Df Flagstone[35449:7cbe0] [com.apple.locationd.Core:Client] {"msg":"#CLLocationManager invoking #delegate", "self":"0x10b1ed190", "delegate":"0x118d72340", "selector":locationManager:didFailWithError:, "error":Error Domain=kCLErrorDomain Code=1 "(null)"}
+2026-08-20 05:09:41.400 E  Flagstone[35449:7cbe0] [com.apple.MapKit:MKCoreLocationProvider] CLLocationManager(<CLLocationManager: 0x10b1ed190>) for <MKCoreLocationProvider: 0x118d72340> did fail with error: Error Domain=kCLErrorDomain Code=1 "(null)"
+2026-08-20 05:09:41.545 Df Flagstone[35449:7affb] [com.apple.UIKit:AppLifecycle] sceneOfRecord: sceneID: sceneID:com.accessmap.app-default  persistentID: AE1D67B8-6BBD-4698-9E3C-597A0C367329
+2026-08-20 05:10:21.382 Df Flagstone[35449:7d127] [com.apple.dt.xctest:Default] Received attributes request for element: AX element pid: 35449, elementOrHash.elementID: 4859064576.230. Attributes: (
+    "XC_kAXXCAttributeValue"
+)
+2026-08-20 05:10:21.382 Df Flagstone[35449:7d39b] [com.apple.dt.xctest:Default] XCTPerformOnMainRunLoop[not MT]: about to CFRunLoopPerform
+2026-08-20 05:10:21.382 Df Flagstone[35449:7d39b] [com.apple.dt.xctest:Default] XCTPerformOnMainRunLoop[not MT]: waiting with 30.00s responsiveness timeout
+2026-08-20 05:10:21.382 Df Flagstone[35449:7affb] [com.apple.dt.xctest:Default] XCTPerformOnMainRunLoop[MT]: inside CFRunLoopPerform
+2026-08-20 05:10:21.382 Df Flagstone[35449:7affb] [com.apple.dt.xctest:Default] XCTPerformOnMainRunLoop[MT]: MT responded in time (won the race to the busy flag)
+2026-08-20 05:10:21.382 Df Flagstone[35449:7d39b] [com.apple.dt.xctest:Default] XCTPerformOnMainRunLoop[not MT]: waiting 60.00s for work to complete
+2026-08-20 05:10:21.382 Df Flagstone[35449:7affb] [com.apple.dt.xctest:Default] Fetching AX attributes XC_kAXXCAttributeValue for AX element pid: 35449, elementOrHash.elementID: 4859064576.230
+2026-08-20 05:10:21.383 Df Flagstone[35449:7affb] [com.apple.dt.xctest:Default] Got attributes, transferring to dictionary for return.
+2026-08-20 05:10:21.384 Df Flagstone[35449:7d39b] [com.apple.dt.xctest:Default] Replying with attribute values: {
+}
+2026-08-20 05:10:21.394 Df Flagstone[35449:7d39b] [com.apple.dt.xctest:Default] Received attributes request for element: AX element pid: 35449, elementOrHash.elementID: 4859064576.230. Attributes: (
+    "XC_kAXXCAttributePlaceholderValue"
+)
+2026-08-20 05:10:21.394 Df Flagstone[35449:7d127] [com.apple.dt.xctest:Default] XCTPerformOnMainRunLoop[not MT]: about to CFRunLoopPerform
+2026-08-20 05:10:21.395 Df Flagstone[35449:7d127] [com.apple.dt.xctest:Default] XCTPerformOnMainRunLoop[not MT]: waiting with 30.00s responsiveness timeout
+2026-08-20 05:10:21.395 Df Flagstone[35449:7affb] [com.apple.dt.xctest:Default] XCTPerformOnMainRunLoop[MT]: inside CFRunLoopPerform
+2026-08-20 05:10:21.395 Df Flagstone[35449:7affb] [com.apple.dt.xctest:Default] XCTPerformOnMainRunLoop[MT]: MT responded in time (won the race to the busy flag)
+2026-08-20 05:10:21.395 Df Flagstone[35449:7affb] [com.apple.dt.xctest:Default] Fetching AX attributes XC_kAXXCAttributePlaceholderValue for AX element pid: 35449, elementOrHash.elementID: 4859064576.230
+2026-08-20 05:10:21.395 Df Flagstone[35449:7d127] [com.apple.dt.xctest:Default] XCTPerformOnMainRunLoop[not MT]: waiting 60.00s for work to complete
+2026-08-20 05:10:21.395 Df Flagstone[35449:7affb] [com.apple.dt.xctest:Default] Got attributes, transferring to dictionary for return.
+2026-08-20 05:10:21.395 Df Flagstone[35449:7d127] [com.apple.dt.xctest:Default] Replying with attribute values: {
+}
+2026-08-20 05:10:21.774 Df Flagstone[35449:7d127] [com.apple.dt.xctest:Default] Received request to notify when the main run loop is idle
+2026-08-20 05:10:21.774 Df Flagstone[35449:7d127] [com.apple.dt.xctest:Default] Idle notifier finished setting up run loop observer
+2026-08-20 05:10:21.774 Df Flagstone[35449:7affb] [com.apple.dt.xctest:Default] Idle notifier run loop observer fired
+2026-08-20 05:10:21.774 Df Flagstone[35449:7affb] [com.apple.dt.xctest:Default] Sending main run loop idle reply
+2026-08-20 05:10:21.774 Df Flagstone[35449:7d127] [com.apple.dt.xctest:Default] Received request to notify when animations are idle
+2026-08-20 05:10:32.228 Df Flagstone[35449:7d39b] [com.apple.dt.xctest:Default] Received attributes request for element: AX element pid: 35449, elementOrHash.elementID: 4859064576.230. Attributes: (
+    "XC_kAXXCAttributeVisiblePoint"
+)
+2026-08-20 05:10:32.228 Df Flagstone[35449:7d39b] [com.apple.dt.xctest:Default] XCTPerformOnMainRunLoop[not MT]: about to CFRunLoopPerform
+2026-08-20 05:10:32.228 Df Flagstone[35449:7d39b] [com.apple.dt.xctest:Default] XCTPerformOnMainRunLoop[not MT]: waiting with 30.00s responsiveness timeout
+2026-08-20 05:10:32.228 Df Flagstone[35449:7affb] [com.apple.dt.xctest:Default] XCTPerformOnMainRunLoop[MT]: inside CFRunLoopPerform
+2026-08-20 05:10:32.228 Df Flagstone[35449:7affb] [com.apple.dt.xctest:Default] XCTPerformOnMainRunLoop[MT]: MT responded in time (won the race to the busy flag)
+2026-08-20 05:10:32.228 Df Flagstone[35449:7affb] [com.apple.dt.xctest:Default] Fetching AX attributes XC_kAXXCAttributeVisiblePoint for AX element pid: 35449, elementOrHash.elementID: 4859064576.230
+2026-08-20 05:10:32.229 Df Flagstone[35449:7d39b] [com.apple.dt.xctest:Default] XCTPerformOnMainRunLoop[not MT]: waiting 60.00s for work to complete
+2026-08-20 05:10:32.326 Df Flagstone[35449:7affb] [com.apple.dt.xctest:Default] Got attributes, transferring to dictionary for return.
+2026-08-20 05:10:32.333 Df Flagstone[35449:7d39b] [com.apple.dt.xctest:Default] Replying with attribute values: {
+    "XC_kAXXCAttributeVisiblePoint" =     {
+        X = "104.5";
+        Y = "787.999981880188";
+    };
+}
+2026-08-20 05:10:32.650 Df Flagstone[35449:7affb] [com.apple.KeyboardArbiter:Client] TX focusApplication (peekAppEvent) stealKB:Y scene:com.accessmap.app-default
+2026-08-20 05:10:32.654 Df Flagstone[35449:7affb] [com.apple.UIKit:EventDispatch] Evaluating dispatch of UIEvent: 0x107113900; type: 0; subtype: 0; backing type: 11; shouldSend: 1; ignoreInteractionEvents: 0, systemGestureStateChange: 0
+2026-08-20 05:10:32.656 Df Flagstone[35449:7affb] [com.apple.UIKit:EventDispatch] Sending UIEvent type: 0; subtype: 0; to windows: 1
+2026-08-20 05:10:32.657 Df Flagstone[35449:7affb] [com.apple.UIKit:EventDispatch] Sending UIEvent type: 0; subtype: 0; to window: <UIWindow: 0x1071d0000>; contextId: 0x2A976188
+2026-08-20 05:10:32.764 Df Flagstone[35449:7affb] [com.apple.UIKit:EventDispatch] Evaluating dispatch of UIEvent: 0x107113900; type: 0; subtype: 0; backing type: 11; shouldSend: 0; ignoreInteractionEvents: 0, systemGestureStateChange: 0
+2026-08-20 05:10:32.767 Df Flagstone[35449:7affb] [com.apple.UIKit:EventDispatch] Evaluating dispatch of UIEvent: 0x107113900; type: 0; subtype: 0; backing type: 11; shouldSend: 1; ignoreInteractionEvents: 0, systemGestureStateChange: 0
+2026-08-20 05:10:32.767 Df Flagstone[35449:7affb] [com.apple.UIKit:EventDispatch] Sending UIEvent type: 0; subtype: 0; to windows: 1
+2026-08-20 05:10:32.767 Df Flagstone[35449:7affb] [com.apple.UIKit:EventDispatch] Sending UIEvent type: 0; subtype: 0; to window: <UIWindow: 0x1071d0000>; contextId: 0x2A976188
+2026-08-20 05:10:32.769 Df Flagstone[35449:7affb] [com.apple.UIKit:EventDispatch] Evaluating dispatch of UIEvent: 0x107113900; type: 0; subtype: 0; backing type: 11; shouldSend: 0; ignoreInteractionEvents: 0, systemGestureStateChange: 0
+2026-08-20 05:10:32.769 A  Flagstone[35449:7affb] (UIKitCore) send gesture actions
+2026-08-20 05:10:32.808 Df Flagstone[35449:7d39b] [com.apple.dt.xctest:Default] Received request to notify when the main run loop is idle
+2026-08-20 05:10:32.809 Df Flagstone[35449:7d39b] [com.apple.dt.xctest:Default] Idle notifier finished setting up run loop observer
+2026-08-20 05:10:32.809 Df Flagstone[35449:7d39b] [com.apple.dt.xctest:Default] Received request to notify when animations are idle
+2026-08-20 05:10:32.812 Df Flagstone[35449:7affb] [com.apple.dt.xctest:Default] Idle notifier run loop observer fired
+2026-08-20 05:10:32.812 Df Flagstone[35449:7affb] [com.apple.dt.xctest:Default] Sending main run loop idle reply
+2026-08-20 05:11:25.685 Df Flagstone[35449:7d90e] [com.apple.CFNetwork:Default] Connection 1: cleaning up
+2026-08-20 05:11:25.686 Df Flagstone[35449:7d90e] [com.apple.network:connection] [C1 255126D1-E57A-499E-832C-2EF794E6F26F Hostname#5f90ff41:443 quic-connection, url: https://kldlwszpfkdmsjrjhjym.supabase.co/rest/v1/flags, definite, attribution: developer] cancel
+2026-08-20 05:11:25.689 Df Flagstone[35449:7d90e] [com.apple.network:connection] [C1 255126D1-E57A-499E-832C-2EF794E6F26F Hostname#5f90ff41:443 quic-connection, url: https://kldlwszpfkdmsjrjhjym.supabase.co/rest/v1/flags, definite, attribution: developer] cancelled
+	[C1.1.1.1 F2A7B322-CE91-4300-A88B-36E204965806 192.168.1.78:56203<->IPv4#5bd21be7:443]
+	Connected Path: satisfied (Path is satisfied), interface: en0[802.11], uses wifi, LQM: unknown
+	Privacy Stance: Not Eligible
+	Duration: 242.815s, DNS @0.994s took 0.217s, TCP @1.500s took 0.082s, TLS 1.3 took 0.302s
+	bytes in/out: 8747/2417, packets in/out: 5/7, rtt: 0.021s, retransmitted bytes: 0, out-of-order bytes: 0
+	ecn packets sent/acked/marked/lost: 0/0/0/0
+2026-08-20 05:11:25.692 Df Flagstone[35449:7d90e] [com.apple.network:connection] nw_connection_report_state_with_handler_on_nw_queue [C1] reporting state cancelled
+2026-08-20 05:11:25.692 Df Flagstone[35449:7d90e] [com.apple.CFNetwork:Default] Connection 1: done
+2026-08-20 05:11:48.743 Df Flagstone[35449:7d993] [com.apple.xpc:connection] [0x107256400] invalidated because the client process (pid 35521) either cancelled the connection or exited
+2026-08-20 05:11:48.774 Df Flagstone[35449:7d993] [com.apple.dt.xctest:Default] Connection from client with pid 35521 was invalidated.
+Child process terminated with signal 15: Terminated

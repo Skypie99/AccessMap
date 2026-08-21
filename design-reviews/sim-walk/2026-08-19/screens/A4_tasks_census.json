@@ -1,0 +1,1802 @@
+[
+ {
+  "type": "StaticText",
+  "label": "TASKS",
+  "name": "TASKS",
+  "value": "TASKS",
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   20,
+   78,
+   400,
+   15
+  ],
+  "depth": 21
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Review barriers",
+  "name": "Review barriers",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   20,
+   96,
+   306,
+   39
+  ],
+  "depth": 22
+ },
+ {
+  "type": "Button",
+  "label": "Open navigation menu",
+  "name": "Open navigation menu",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   326,
+   92,
+   44,
+   45
+  ],
+  "depth": 23
+ },
+ {
+  "type": "Button",
+  "label": "Send feedback",
+  "name": "Send feedback",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   376,
+   92,
+   44,
+   45
+  ],
+  "depth": 23
+ },
+ {
+  "type": "TextField",
+  "label": "Search flags",
+  "name": "Search flags",
+  "value": "Search by description or category\u2026",
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   17,
+   157,
+   274,
+   43
+  ],
+  "depth": 22
+ },
+ {
+  "type": "Button",
+  "label": "Select multiple",
+  "name": "Select multiple",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   297,
+   156,
+   127,
+   45
+  ],
+  "depth": 21
+ },
+ {
+  "type": "Button",
+  "label": "Filter and sort",
+  "name": "Filter and sort",
+  "value": "collapsed",
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   16,
+   216,
+   107,
+   45
+  ],
+  "depth": 21
+ },
+ {
+  "type": "Image",
+  "label": null,
+  "name": "assets/assets/textures/noise-128.png",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   0,
+   0,
+   128,
+   128
+  ],
+  "depth": 21
+ },
+ {
+  "type": "ScrollView",
+  "label": null,
+  "name": null,
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   0,
+   0,
+   440,
+   956
+  ],
+  "depth": 20
+ },
+ {
+  "type": "Button",
+  "label": "Review the nearest open barrier, No ramp, severity 2 of 5, Mild, 269.4 kilometers away",
+  "name": "Review the nearest open barrier, No ramp, severity 2 of 5, Mild, 269.4 kilometers away",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   16,
+   282,
+   408,
+   45
+  ],
+  "depth": 23
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "OPEN 9",
+  "name": "OPEN 9",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   16,
+   338,
+   408,
+   35
+  ],
+  "depth": 23
+ },
+ {
+  "type": "Button",
+  "label": "Steep grade, severity 2 of 5, Mild, status Open. Tap to view on map.",
+  "name": "Steep grade, severity 2 of 5, Mild, status Open. Tap to view on map.",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   32,
+   389,
+   376,
+   22
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "Very steep sidewalk",
+  "name": "Very steep sidewalk",
+  "value": "Very steep sidewalk",
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   32,
+   418,
+   376,
+   18
+  ],
+  "depth": 27
+ },
+ {
+  "type": "StaticText",
+  "label": "279.2\u00a0km \u00b7 3351 min walk \u00b7 11h ago",
+  "name": "279.2\u00a0km \u00b7 3351 min walk \u00b7 11h ago",
+  "value": "279.2\u00a0km \u00b7 3351 min walk \u00b7 11h ago",
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   32,
+   438,
+   376,
+   16
+  ],
+  "depth": 27
+ },
+ {
+  "type": "Other(accessible)",
+  "label": null,
+  "name": "card-actions-row",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   32,
+   461,
+   376,
+   45
+  ],
+  "depth": 25
+ },
+ {
+  "type": "Button",
+  "label": "Verify this flag \u2014 Steep grade, 279.2\u00a0km",
+  "name": "Verify this flag \u2014 Steep grade, 279.2\u00a0km",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   32,
+   461,
+   116,
+   45
+  ],
+  "depth": 26
+ },
+ {
+  "type": "Button",
+  "label": "Mark this flag resolved \u2014 Steep grade, 279.2\u00a0km",
+  "name": "Mark this flag resolved \u2014 Steep grade, 279.2\u00a0km",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   156,
+   461,
+   78,
+   45
+  ],
+  "depth": 26
+ },
+ {
+  "type": "Button",
+  "label": "Reject this flag \u2014 Steep grade, 279.2\u00a0km",
+  "name": "Reject this flag \u2014 Steep grade, 279.2\u00a0km",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   241,
+   461,
+   80,
+   45
+  ],
+  "depth": 26
+ },
+ {
+  "type": "Button",
+  "label": "View flag details \u2014 Steep grade, 279.2\u00a0km",
+  "name": "View flag details \u2014 Steep grade, 279.2\u00a0km",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   328,
+   461,
+   80,
+   45
+  ],
+  "depth": 26
+ },
+ {
+  "type": "Button",
+  "label": "Broken sidewalk, severity 3 of 5, Moderate, status Open. Tap to view on map.",
+  "name": "Broken sidewalk, severity 3 of 5, Moderate, status Open. Tap to view on map.",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   32,
+   549,
+   376,
+   22
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "Pavement is heaved by a tree root across the full width. A wheelchair has to drop into the traffic lane to get past.",
+  "name": "Pavement is heaved by a tree root across the full width. A wheelchair has to drop into the traffic lane to get past.",
+  "value": "Pavement is heaved by a tree root across the full width. A wheelchair has to drop into the traffic lane to get past.",
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   32,
+   578,
+   376,
+   35
+  ],
+  "depth": 27
+ },
+ {
+  "type": "StaticText",
+  "label": "269.8\u00a0km \u00b7 3237 min walk \u00b7 1d ago",
+  "name": "269.8\u00a0km \u00b7 3237 min walk \u00b7 1d ago",
+  "value": "269.8\u00a0km \u00b7 3237 min walk \u00b7 1d ago",
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   32,
+   615,
+   376,
+   16
+  ],
+  "depth": 27
+ },
+ {
+  "type": "Other(accessible)",
+  "label": null,
+  "name": "card-actions-row",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   32,
+   637,
+   376,
+   45
+  ],
+  "depth": 25
+ },
+ {
+  "type": "Button",
+  "label": "Verify this flag \u2014 Broken sidewalk, 269.8\u00a0km",
+  "name": "Verify this flag \u2014 Broken sidewalk, 269.8\u00a0km",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   32,
+   637,
+   116,
+   45
+  ],
+  "depth": 26
+ },
+ {
+  "type": "Button",
+  "label": "Mark this flag resolved \u2014 Broken sidewalk, 269.8\u00a0km",
+  "name": "Mark this flag resolved \u2014 Broken sidewalk, 269.8\u00a0km",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   156,
+   637,
+   78,
+   45
+  ],
+  "depth": 26
+ },
+ {
+  "type": "Button",
+  "label": "Reject this flag \u2014 Broken sidewalk, 269.8\u00a0km",
+  "name": "Reject this flag \u2014 Broken sidewalk, 269.8\u00a0km",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   241,
+   637,
+   80,
+   45
+  ],
+  "depth": 26
+ },
+ {
+  "type": "Button",
+  "label": "View flag details \u2014 Broken sidewalk, 269.8\u00a0km",
+  "name": "View flag details \u2014 Broken sidewalk, 269.8\u00a0km",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   328,
+   637,
+   80,
+   45
+  ],
+  "depth": 26
+ },
+ {
+  "type": "Button",
+  "label": "Blocked path, severity 5 of 5, Severe, status Open. Tap to view on map.",
+  "name": "Blocked path, severity 5 of 5, Severe, status Open. Tap to view on map.",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   32,
+   726,
+   376,
+   22
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "Construction hoarding blocks the entire sidewalk with no marked detour. You have to backtrack a full block.",
+  "name": "Construction hoarding blocks the entire sidewalk with no marked detour. You have to backtrack a full block.",
+  "value": "Construction hoarding blocks the entire sidewalk with no marked detour. You have to backtrack a full block.",
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   32,
+   755,
+   376,
+   34
+  ],
+  "depth": 27
+ },
+ {
+  "type": "StaticText",
+  "label": "270.8\u00a0km \u00b7 3250 min walk \u00b7 1d ago",
+  "name": "270.8\u00a0km \u00b7 3250 min walk \u00b7 1d ago",
+  "value": "270.8\u00a0km \u00b7 3250 min walk \u00b7 1d ago",
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   32,
+   792,
+   376,
+   16
+  ],
+  "depth": 27
+ },
+ {
+  "type": "Other(accessible)",
+  "label": null,
+  "name": "card-actions-row",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   32,
+   814,
+   376,
+   45
+  ],
+  "depth": 25
+ },
+ {
+  "type": "Button",
+  "label": "Verify this flag \u2014 Blocked path, 270.8\u00a0km",
+  "name": "Verify this flag \u2014 Blocked path, 270.8\u00a0km",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   32,
+   814,
+   116,
+   45
+  ],
+  "depth": 26
+ },
+ {
+  "type": "Button",
+  "label": "Mark this flag resolved \u2014 Blocked path, 270.8\u00a0km",
+  "name": "Mark this flag resolved \u2014 Blocked path, 270.8\u00a0km",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   156,
+   814,
+   78,
+   45
+  ],
+  "depth": 26
+ },
+ {
+  "type": "Button",
+  "label": "Reject this flag \u2014 Blocked path, 270.8\u00a0km",
+  "name": "Reject this flag \u2014 Blocked path, 270.8\u00a0km",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   241,
+   814,
+   80,
+   45
+  ],
+  "depth": 26
+ },
+ {
+  "type": "Button",
+  "label": "View flag details \u2014 Blocked path, 270.8\u00a0km",
+  "name": "View flag details \u2014 Blocked path, 270.8\u00a0km",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   328,
+   814,
+   80,
+   45
+  ],
+  "depth": 26
+ },
+ {
+  "type": "Button",
+  "label": "Missing signal, severity 4 of 5, Significant, status Open. Tap to view on map.",
+  "name": "Missing signal, severity 4 of 5, Significant, status Open. Tap to view on map.",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   32,
+   902,
+   376,
+   23
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "Crossing has no audible signal and the tactile plate is worn smooth. Hard to find the button without sighted help.",
+  "name": "Crossing has no audible signal and the tactile plate is worn smooth. Hard to find the button without sighted help.",
+  "value": "Crossing has no audible signal and the tactile plate is worn smooth. Hard to find the button without sighted help.",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   32,
+   932,
+   376,
+   34
+  ],
+  "depth": 27
+ },
+ {
+  "type": "StaticText",
+  "label": "269.4\u00a0km \u00b7 3232 min walk \u00b7 1d ago",
+  "name": "269.4\u00a0km \u00b7 3232 min walk \u00b7 1d ago",
+  "value": "269.4\u00a0km \u00b7 3232 min walk \u00b7 1d ago",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   32,
+   969,
+   376,
+   15
+  ],
+  "depth": 27
+ },
+ {
+  "type": "Other(accessible)",
+  "label": null,
+  "name": "card-actions-row",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   32,
+   991,
+   376,
+   45
+  ],
+  "depth": 25
+ },
+ {
+  "type": "Button",
+  "label": "Verify this flag \u2014 Missing signal, 269.4\u00a0km",
+  "name": "Verify this flag \u2014 Missing signal, 269.4\u00a0km",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   32,
+   991,
+   116,
+   45
+  ],
+  "depth": 26
+ },
+ {
+  "type": "Button",
+  "label": "Mark this flag resolved \u2014 Missing signal, 269.4\u00a0km",
+  "name": "Mark this flag resolved \u2014 Missing signal, 269.4\u00a0km",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   156,
+   991,
+   78,
+   45
+  ],
+  "depth": 26
+ },
+ {
+  "type": "Button",
+  "label": "Reject this flag \u2014 Missing signal, 269.4\u00a0km",
+  "name": "Reject this flag \u2014 Missing signal, 269.4\u00a0km",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   241,
+   991,
+   80,
+   45
+  ],
+  "depth": 26
+ },
+ {
+  "type": "Button",
+  "label": "View flag details \u2014 Missing signal, 269.4\u00a0km",
+  "name": "View flag details \u2014 Missing signal, 269.4\u00a0km",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   328,
+   991,
+   80,
+   45
+  ],
+  "depth": 26
+ },
+ {
+  "type": "Button",
+  "label": "Steep grade, severity 3 of 5, Moderate, status Open. Tap to view on map.",
+  "name": "Steep grade, severity 3 of 5, Moderate, status Open. Tap to view on map.",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   32,
+   1079,
+   376,
+   22
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "Ramp to the plaza is far steeper than it looks and has no handrail or level landing partway up.",
+  "name": "Ramp to the plaza is far steeper than it looks and has no handrail or level landing partway up.",
+  "value": "Ramp to the plaza is far steeper than it looks and has no handrail or level landing partway up.",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   32,
+   1108,
+   376,
+   34
+  ],
+  "depth": 27
+ },
+ {
+  "type": "StaticText",
+  "label": "271.3\u00a0km \u00b7 3255 min walk \u00b7 1d ago",
+  "name": "271.3\u00a0km \u00b7 3255 min walk \u00b7 1d ago",
+  "value": "271.3\u00a0km \u00b7 3255 min walk \u00b7 1d ago",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   32,
+   1145,
+   376,
+   16
+  ],
+  "depth": 27
+ },
+ {
+  "type": "Other(accessible)",
+  "label": null,
+  "name": "card-actions-row",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   32,
+   1168,
+   376,
+   45
+  ],
+  "depth": 25
+ },
+ {
+  "type": "Button",
+  "label": "Verify this flag \u2014 Steep grade, 271.3\u00a0km",
+  "name": "Verify this flag \u2014 Steep grade, 271.3\u00a0km",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   32,
+   1168,
+   116,
+   45
+  ],
+  "depth": 26
+ },
+ {
+  "type": "Button",
+  "label": "Mark this flag resolved \u2014 Steep grade, 271.3\u00a0km",
+  "name": "Mark this flag resolved \u2014 Steep grade, 271.3\u00a0km",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   156,
+   1168,
+   78,
+   45
+  ],
+  "depth": 26
+ },
+ {
+  "type": "Button",
+  "label": "Reject this flag \u2014 Steep grade, 271.3\u00a0km",
+  "name": "Reject this flag \u2014 Steep grade, 271.3\u00a0km",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   241,
+   1168,
+   80,
+   45
+  ],
+  "depth": 26
+ },
+ {
+  "type": "Button",
+  "label": "View flag details \u2014 Steep grade, 271.3\u00a0km",
+  "name": "View flag details \u2014 Steep grade, 271.3\u00a0km",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   328,
+   1168,
+   80,
+   45
+  ],
+  "depth": 26
+ },
+ {
+  "type": "Button",
+  "label": "No ramp, severity 2 of 5, Mild, status Open. Tap to view on map.",
+  "name": "No ramp, severity 2 of 5, Mild, status Open. Tap to view on map.",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   32,
+   1256,
+   376,
+   22
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "Single 10cm lip at the entrance. Manageable with help, impossible alone.",
+  "name": "Single 10cm lip at the entrance. Manageable with help, impossible alone.",
+  "value": "Single 10cm lip at the entrance. Manageable with help, impossible alone.",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   32,
+   1285,
+   376,
+   34
+  ],
+  "depth": 27
+ },
+ {
+  "type": "StaticText",
+  "label": "269.4\u00a0km \u00b7 3232 min walk \u00b7 1d ago",
+  "name": "269.4\u00a0km \u00b7 3232 min walk \u00b7 1d ago",
+  "value": "269.4\u00a0km \u00b7 3232 min walk \u00b7 1d ago",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   32,
+   1322,
+   376,
+   15
+  ],
+  "depth": 27
+ },
+ {
+  "type": "Other(accessible)",
+  "label": null,
+  "name": "card-actions-row",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   32,
+   1344,
+   376,
+   45
+  ],
+  "depth": 25
+ },
+ {
+  "type": "Button",
+  "label": "Verify this flag \u2014 No ramp, 269.4\u00a0km",
+  "name": "Verify this flag \u2014 No ramp, 269.4\u00a0km",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   32,
+   1344,
+   116,
+   45
+  ],
+  "depth": 26
+ },
+ {
+  "type": "Button",
+  "label": "Mark this flag resolved \u2014 No ramp, 269.4\u00a0km",
+  "name": "Mark this flag resolved \u2014 No ramp, 269.4\u00a0km",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   156,
+   1344,
+   78,
+   45
+  ],
+  "depth": 26
+ },
+ {
+  "type": "Button",
+  "label": "Reject this flag \u2014 No ramp, 269.4\u00a0km",
+  "name": "Reject this flag \u2014 No ramp, 269.4\u00a0km",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   241,
+   1344,
+   80,
+   45
+  ],
+  "depth": 26
+ },
+ {
+  "type": "Button",
+  "label": "View flag details \u2014 No ramp, 269.4\u00a0km",
+  "name": "View flag details \u2014 No ramp, 269.4\u00a0km",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   328,
+   1344,
+   80,
+   45
+  ],
+  "depth": 26
+ },
+ {
+  "type": "Button",
+  "label": "No ramp, severity 4 of 5, Significant, status Open. Tap to view on map.",
+  "name": "No ramp, severity 4 of 5, Significant, status Open. Tap to view on map.",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   32,
+   1432,
+   376,
+   22
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "Main entrance has three steps and no ramp. The side door is level but is kept locked outside business hours.",
+  "name": "Main entrance has three steps and no ramp. The side door is level but is kept locked outside business hours.",
+  "value": "Main entrance has three steps and no ramp. The side door is level but is kept locked outside business hours.",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   32,
+   1461,
+   376,
+   35
+  ],
+  "depth": 27
+ },
+ {
+  "type": "StaticText",
+  "label": "270.0\u00a0km \u00b7 3240 min walk \u00b7 1d ago",
+  "name": "270.0\u00a0km \u00b7 3240 min walk \u00b7 1d ago",
+  "value": "270.0\u00a0km \u00b7 3240 min walk \u00b7 1d ago",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   32,
+   1498,
+   376,
+   16
+  ],
+  "depth": 27
+ },
+ {
+  "type": "Other(accessible)",
+  "label": null,
+  "name": "card-actions-row",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   32,
+   1521,
+   376,
+   45
+  ],
+  "depth": 25
+ },
+ {
+  "type": "Button",
+  "label": "Verify this flag \u2014 No ramp, 270.0\u00a0km",
+  "name": "Verify this flag \u2014 No ramp, 270.0\u00a0km",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   32,
+   1521,
+   116,
+   45
+  ],
+  "depth": 26
+ },
+ {
+  "type": "Button",
+  "label": "Mark this flag resolved \u2014 No ramp, 270.0\u00a0km",
+  "name": "Mark this flag resolved \u2014 No ramp, 270.0\u00a0km",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   156,
+   1521,
+   78,
+   45
+  ],
+  "depth": 26
+ },
+ {
+  "type": "Button",
+  "label": "Reject this flag \u2014 No ramp, 270.0\u00a0km",
+  "name": "Reject this flag \u2014 No ramp, 270.0\u00a0km",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   241,
+   1521,
+   80,
+   45
+  ],
+  "depth": 26
+ },
+ {
+  "type": "Button",
+  "label": "View flag details \u2014 No ramp, 270.0\u00a0km",
+  "name": "View flag details \u2014 No ramp, 270.0\u00a0km",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   328,
+   1521,
+   80,
+   45
+  ],
+  "depth": 26
+ },
+ {
+  "type": "Button",
+  "label": "Broken sidewalk, severity 4 of 5, Significant, status Open. Tap to view on map.",
+  "name": "Broken sidewalk, severity 4 of 5, Significant, status Open. Tap to view on map.",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   32,
+   1609,
+   376,
+   22
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "Long stretch of cracked and sunken slabs. Standing water after rain hides how deep the dips are.",
+  "name": "Long stretch of cracked and sunken slabs. Standing water after rain hides how deep the dips are.",
+  "value": "Long stretch of cracked and sunken slabs. Standing water after rain hides how deep the dips are.",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   32,
+   1638,
+   376,
+   34
+  ],
+  "depth": 27
+ },
+ {
+  "type": "StaticText",
+  "label": "270.0\u00a0km \u00b7 3240 min walk \u00b7 1d ago",
+  "name": "270.0\u00a0km \u00b7 3240 min walk \u00b7 1d ago",
+  "value": "270.0\u00a0km \u00b7 3240 min walk \u00b7 1d ago",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   32,
+   1675,
+   376,
+   16
+  ],
+  "depth": 27
+ },
+ {
+  "type": "Other(accessible)",
+  "label": null,
+  "name": "card-actions-row",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   32,
+   1698,
+   376,
+   45
+  ],
+  "depth": 25
+ },
+ {
+  "type": "Button",
+  "label": "Verify this flag \u2014 Broken sidewalk, 270.0\u00a0km",
+  "name": "Verify this flag \u2014 Broken sidewalk, 270.0\u00a0km",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   32,
+   1698,
+   116,
+   45
+  ],
+  "depth": 26
+ },
+ {
+  "type": "Button",
+  "label": "Mark this flag resolved \u2014 Broken sidewalk, 270.0\u00a0km",
+  "name": "Mark this flag resolved \u2014 Broken sidewalk, 270.0\u00a0km",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   156,
+   1698,
+   78,
+   45
+  ],
+  "depth": 26
+ },
+ {
+  "type": "Button",
+  "label": "Reject this flag \u2014 Broken sidewalk, 270.0\u00a0km",
+  "name": "Reject this flag \u2014 Broken sidewalk, 270.0\u00a0km",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   241,
+   1698,
+   80,
+   45
+  ],
+  "depth": 26
+ },
+ {
+  "type": "Button",
+  "label": "View flag details \u2014 Broken sidewalk, 270.0\u00a0km",
+  "name": "View flag details \u2014 Broken sidewalk, 270.0\u00a0km",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   328,
+   1698,
+   80,
+   45
+  ],
+  "depth": 26
+ },
+ {
+  "type": "Button",
+  "label": "Blocked path, severity 3 of 5, Moderate, status Open. Tap to view on map.",
+  "name": "Blocked path, severity 3 of 5, Moderate, status Open. Tap to view on map.",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   32,
+   1786,
+   376,
+   22
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "Cafe seating and a sandwich board narrow the sidewalk to about half a metre at lunchtime.",
+  "name": "Cafe seating and a sandwich board narrow the sidewalk to about half a metre at lunchtime.",
+  "value": "Cafe seating and a sandwich board narrow the sidewalk to about half a metre at lunchtime.",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   32,
+   1815,
+   376,
+   34
+  ],
+  "depth": 27
+ },
+ {
+  "type": "StaticText",
+  "label": "270.8\u00a0km \u00b7 3250 min walk \u00b7 1d ago",
+  "name": "270.8\u00a0km \u00b7 3250 min walk \u00b7 1d ago",
+  "value": "270.8\u00a0km \u00b7 3250 min walk \u00b7 1d ago",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   32,
+   1852,
+   376,
+   15
+  ],
+  "depth": 27
+ },
+ {
+  "type": "Other(accessible)",
+  "label": null,
+  "name": "card-actions-row",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   32,
+   1874,
+   376,
+   45
+  ],
+  "depth": 25
+ },
+ {
+  "type": "Button",
+  "label": "Verify this flag \u2014 Blocked path, 270.8\u00a0km",
+  "name": "Verify this flag \u2014 Blocked path, 270.8\u00a0km",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   32,
+   1874,
+   116,
+   45
+  ],
+  "depth": 26
+ },
+ {
+  "type": "Button",
+  "label": "Mark this flag resolved \u2014 Blocked path, 270.8\u00a0km",
+  "name": "Mark this flag resolved \u2014 Blocked path, 270.8\u00a0km",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   156,
+   1874,
+   78,
+   45
+  ],
+  "depth": 26
+ },
+ {
+  "type": "Button",
+  "label": "Reject this flag \u2014 Blocked path, 270.8\u00a0km",
+  "name": "Reject this flag \u2014 Blocked path, 270.8\u00a0km",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   241,
+   1874,
+   80,
+   45
+  ],
+  "depth": 26
+ },
+ {
+  "type": "Button",
+  "label": "View flag details \u2014 Blocked path, 270.8\u00a0km",
+  "name": "View flag details \u2014 Blocked path, 270.8\u00a0km",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   328,
+   1874,
+   80,
+   45
+  ],
+  "depth": 26
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "VERIFIED 4",
+  "name": "VERIFIED 4",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   16,
+   1946,
+   408,
+   36
+  ],
+  "depth": 23
+ },
+ {
+  "type": "Button",
+  "label": "No ramp, severity 4 of 5, Significant, status Verified. Tap to view on map.",
+  "name": "No ramp, severity 4 of 5, Significant, status Verified. Tap to view on map.",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   32,
+   1997,
+   376,
+   22
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "Side entrance ramp ends at a step. Confirmed by a second visit \u2014 the ramp does not actually reach the door.",
+  "name": "Side entrance ramp ends at a step. Confirmed by a second visit \u2014 the ramp does not actually reach the door.",
+  "value": "Side entrance ramp ends at a step. Confirmed by a second visit \u2014 the ramp does not actually reach the door.",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   32,
+   2026,
+   376,
+   35
+  ],
+  "depth": 27
+ },
+ {
+  "type": "StaticText",
+  "label": "270.3\u00a0km \u00b7 3244 min walk \u00b7 1d ago",
+  "name": "270.3\u00a0km \u00b7 3244 min walk \u00b7 1d ago",
+  "value": "270.3\u00a0km \u00b7 3244 min walk \u00b7 1d ago",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   32,
+   2063,
+   376,
+   16
+  ],
+  "depth": 27
+ },
+ {
+  "type": "Other(accessible)",
+  "label": null,
+  "name": "card-actions-row",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   32,
+   2086,
+   376,
+   45
+  ],
+  "depth": 25
+ },
+ {
+  "type": "Button",
+  "label": "Mark this flag resolved \u2014 No ramp, 270.3\u00a0km",
+  "name": "Mark this flag resolved \u2014 No ramp, 270.3\u00a0km",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   32,
+   2086,
+   153,
+   45
+  ],
+  "depth": 26
+ },
+ {
+  "type": "Button",
+  "label": "Reject this flag \u2014 No ramp, 270.3\u00a0km",
+  "name": "Reject this flag \u2014 No ramp, 270.3\u00a0km",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   192,
+   2086,
+   105,
+   45
+  ],
+  "depth": 26
+ },
+ {
+  "type": "Button",
+  "label": "View flag details \u2014 No ramp, 270.3\u00a0km",
+  "name": "View flag details \u2014 No ramp, 270.3\u00a0km",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   304,
+   2086,
+   104,
+   45
+  ],
+  "depth": 26
+ },
+ {
+  "type": "Button",
+  "label": "Missing signal, severity 5 of 5, Severe, status Verified. Tap to view on map.",
+  "name": "Missing signal, severity 5 of 5, Severe, status Verified. Tap to view on map.",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   32,
+   2174,
+   376,
+   22
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "No pedestrian signal at all on a four-lane crossing. Confirmed: the pole is there but the head was never installed.",
+  "name": "No pedestrian signal at all on a four-lane crossing. Confirmed: the pole is there but the head was never installed.",
+  "value": "No pedestrian signal at all on a four-lane crossing. Confirmed: the pole is there but the head was never installed.",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   32,
+   2203,
+   376,
+   34
+  ],
+  "depth": 27
+ },
+ {
+  "type": "StaticText",
+  "label": "270.5\u00a0km \u00b7 3246 min walk \u00b7 1d ago",
+  "name": "270.5\u00a0km \u00b7 3246 min walk \u00b7 1d ago",
+  "value": "270.5\u00a0km \u00b7 3246 min walk \u00b7 1d ago",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   32,
+   2240,
+   376,
+   16
+  ],
+  "depth": 27
+ },
+ {
+  "type": "Other(accessible)",
+  "label": null,
+  "name": "card-actions-row",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   32,
+   2262,
+   376,
+   45
+  ],
+  "depth": 25
+ },
+ {
+  "type": "Button",
+  "label": "Mark this flag resolved \u2014 Missing signal, 270.5\u00a0km",
+  "name": "Mark this flag resolved \u2014 Missing signal, 270.5\u00a0km",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   32,
+   2262,
+   153,
+   45
+  ],
+  "depth": 26
+ },
+ {
+  "type": "Button",
+  "label": "Reject this flag \u2014 Missing signal, 270.5\u00a0km",
+  "name": "Reject this flag \u2014 Missing signal, 270.5\u00a0km",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   192,
+   2262,
+   105,
+   45
+  ],
+  "depth": 26
+ },
+ {
+  "type": "Button",
+  "label": "View flag details \u2014 Missing signal, 270.5\u00a0km",
+  "name": "View flag details \u2014 Missing signal, 270.5\u00a0km",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   304,
+   2262,
+   104,
+   45
+  ],
+  "depth": 26
+ },
+ {
+  "type": "Button",
+  "label": "Steep grade, severity 4 of 5, Significant, status Verified. Tap to view on map.",
+  "name": "Steep grade, severity 4 of 5, Significant, status Verified. Tap to view on map.",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   32,
+   2350,
+   376,
+   22
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "Approach grade to the underpass is severe enough that a manual chair needs assistance. Confirmed by two reporters.",
+  "name": "Approach grade to the underpass is severe enough that a manual chair needs assistance. Confirmed by two reporters.",
+  "value": "Approach grade to the underpass is severe enough that a manual chair needs assistance. Confirmed by two reporters.",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   32,
+   2380,
+   376,
+   34
+  ],
+  "depth": 27
+ },
+ {
+  "type": "StaticText",
+  "label": "270.0\u00a0km \u00b7 3240 min walk \u00b7 1d ago",
+  "name": "270.0\u00a0km \u00b7 3240 min walk \u00b7 1d ago",
+  "value": "270.0\u00a0km \u00b7 3240 min walk \u00b7 1d ago",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   32,
+   2417,
+   376,
+   15
+  ],
+  "depth": 27
+ },
+ {
+  "type": "Other(accessible)",
+  "label": null,
+  "name": "card-actions-row",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   32,
+   2439,
+   376,
+   45
+  ],
+  "depth": 25
+ },
+ {
+  "type": "Button",
+  "label": "Mark this flag resolved \u2014 Steep grade, 270.0\u00a0km",
+  "name": "Mark this flag resolved \u2014 Steep grade, 270.0\u00a0km",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   32,
+   2439,
+   153,
+   45
+  ],
+  "depth": 26
+ },
+ {
+  "type": "Button",
+  "label": "Reject this flag \u2014 Steep grade, 270.0\u00a0km",
+  "name": "Reject this flag \u2014 Steep grade, 270.0\u00a0km",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   192,
+   2439,
+   105,
+   45
+  ],
+  "depth": 26
+ },
+ {
+  "type": "Button",
+  "label": "View flag details \u2014 Steep grade, 270.0\u00a0km",
+  "name": "View flag details \u2014 Steep grade, 270.0\u00a0km",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   304,
+   2439,
+   104,
+   45
+  ],
+  "depth": 26
+ },
+ {
+  "type": "Button",
+  "label": "Blocked path, severity 2 of 5, Mild, status Verified. Tap to view on map.",
+  "name": "Blocked path, severity 2 of 5, Mild, status Verified. Tap to view on map.",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   32,
+   2527,
+   376,
+   22
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "Bollard spacing is too narrow for a wider wheelchair or a mobility scooter. Confirmed by measurement.",
+  "name": "Bollard spacing is too narrow for a wider wheelchair or a mobility scooter. Confirmed by measurement.",
+  "value": "Bollard spacing is too narrow for a wider wheelchair or a mobility scooter. Confirmed by measurement.",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   32,
+   2556,
+   376,
+   34
+  ],
+  "depth": 27
+ },
+ {
+  "type": "StaticText",
+  "label": "269.7\u00a0km \u00b7 3237 min walk \u00b7 1d ago",
+  "name": "269.7\u00a0km \u00b7 3237 min walk \u00b7 1d ago",
+  "value": "269.7\u00a0km \u00b7 3237 min walk \u00b7 1d ago",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   32,
+   2593,
+   376,
+   16
+  ],
+  "depth": 27
+ },
+ {
+  "type": "Other(accessible)",
+  "label": null,
+  "name": "card-actions-row",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   32,
+   2615,
+   376,
+   45
+  ],
+  "depth": 25
+ },
+ {
+  "type": "Button",
+  "label": "Mark this flag resolved \u2014 Blocked path, 269.7\u00a0km",
+  "name": "Mark this flag resolved \u2014 Blocked path, 269.7\u00a0km",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   32,
+   2615,
+   153,
+   45
+  ],
+  "depth": 26
+ },
+ {
+  "type": "Button",
+  "label": "Reject this flag \u2014 Blocked path, 269.7\u00a0km",
+  "name": "Reject this flag \u2014 Blocked path, 269.7\u00a0km",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   192,
+   2615,
+   105,
+   45
+  ],
+  "depth": 26
+ },
+ {
+  "type": "Button",
+  "label": "View flag details \u2014 Blocked path, 269.7\u00a0km",
+  "name": "View flag details \u2014 Blocked path, 269.7\u00a0km",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   304,
+   2615,
+   104,
+   45
+  ],
+  "depth": 26
+ },
+ {
+  "type": "StaticText",
+  "label": "You have seen all flags nearby",
+  "name": "You have seen all flags nearby",
+  "value": "You have seen all flags nearby",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   87,
+   2708,
+   266,
+   16
+  ],
+  "depth": 24
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Vertical scroll bar, 3 pages",
+  "name": "Vertical scroll bar, 3 pages",
+  "value": "0%",
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   407,
+   344,
+   30,
+   550
+  ],
+  "depth": 21
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Horizontal scroll bar, 1 page",
+  "name": "Horizontal scroll bar, 1 page",
+  "value": "0%",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   62,
+   889,
+   316,
+   30
+  ],
+  "depth": 21
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Vertical scroll bar, 3 pages",
+  "name": "Vertical scroll bar, 3 pages",
+  "value": "0%",
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   407,
+   344,
+   30,
+   550
+  ],
+  "depth": 21
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Horizontal scroll bar, 1 page",
+  "name": "Horizontal scroll bar, 1 page",
+  "value": "0%",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   62,
+   889,
+   316,
+   30
+  ],
+  "depth": 21
+ },
+ {
+  "type": "Button",
+  "label": "Home, tab, 1 of 5",
+  "name": "Home, tab, 1 of 5",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   0,
+   861,
+   147,
+   53
+  ],
+  "depth": 13
+ },
+ {
+  "type": "Button",
+  "label": "Tasks, tab, 2 of 5",
+  "name": "Tasks, tab, 2 of 5",
+  "value": "1",
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   146,
+   861,
+   148,
+   53
+  ],
+  "depth": 13
+ },
+ {
+  "type": "Button",
+  "label": "Profile, tab, 3 of 5",
+  "name": "Profile, tab, 3 of 5",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   293,
+   861,
+   147,
+   53
+  ],
+  "depth": 13
+ }
+]

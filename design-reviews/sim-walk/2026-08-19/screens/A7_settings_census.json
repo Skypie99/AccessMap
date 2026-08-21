@@ -1,0 +1,587 @@
+[
+ {
+  "type": "Image",
+  "label": null,
+  "name": "assets/assets/textures/noise-128.png",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   0,
+   0,
+   128,
+   128
+  ],
+  "depth": 21
+ },
+ {
+  "type": "ScrollView",
+  "label": null,
+  "name": null,
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   0,
+   0,
+   440,
+   956
+  ],
+  "depth": 20
+ },
+ {
+  "type": "StaticText",
+  "label": "SETTINGS",
+  "name": "SETTINGS",
+  "value": "SETTINGS",
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   24,
+   86,
+   392,
+   15
+  ],
+  "depth": 23
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Settings",
+  "name": "Settings",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   24,
+   102,
+   298,
+   52
+  ],
+  "depth": 24
+ },
+ {
+  "type": "Button",
+  "label": "Open navigation menu",
+  "name": "Open navigation menu",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   322,
+   104,
+   44,
+   45
+  ],
+  "depth": 25
+ },
+ {
+  "type": "Button",
+  "label": "Send feedback",
+  "name": "Send feedback",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   372,
+   104,
+   44,
+   45
+  ],
+  "depth": 25
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "NOTIFICATIONS",
+  "name": "NOTIFICATIONS",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   28,
+   189,
+   388,
+   15
+  ],
+  "depth": 22
+ },
+ {
+  "type": "Button",
+  "label": "Update banner preferences",
+  "name": "Update banner preferences",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   24,
+   219,
+   392,
+   84
+  ],
+  "depth": 22
+ },
+ {
+  "type": "StaticText",
+  "label": "Push notifications",
+  "name": "Push notifications",
+  "value": "Push notifications",
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   40,
+   331,
+   285,
+   20
+  ],
+  "depth": 24
+ },
+ {
+  "type": "StaticText",
+  "label": "Get notified when your flag is verified or resolved.",
+  "name": "Get notified when your flag is verified or resolved.",
+  "value": "Get notified when your flag is verified or resolved.",
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   40,
+   352,
+   285,
+   31
+  ],
+  "depth": 24
+ },
+ {
+  "type": "Switch",
+  "label": "Push notifications",
+  "name": "Push notifications",
+  "value": "0",
+  "enabled": "0",
+  "visible": "1",
+  "rect": [
+   337,
+   331,
+   63,
+   28
+  ],
+  "depth": 23
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "APPEARANCE",
+  "name": "APPEARANCE",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   28,
+   422,
+   388,
+   16
+  ],
+  "depth": 22
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Appearance",
+  "name": "Appearance",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   24,
+   453,
+   392,
+   54
+  ],
+  "depth": 22
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Light",
+  "name": "Light",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   29,
+   458,
+   125,
+   44
+  ],
+  "depth": 23
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Dark",
+  "name": "Dark",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   157,
+   458,
+   126,
+   44
+  ],
+  "depth": 23
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "System",
+  "name": "System",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   286,
+   458,
+   125,
+   44
+  ],
+  "depth": 23
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "HELP & INFO",
+  "name": "HELP & INFO",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   28,
+   531,
+   388,
+   15
+  ],
+  "depth": 22
+ },
+ {
+  "type": "Button",
+  "label": "Help & FAQ",
+  "name": "Help & FAQ",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   24,
+   561,
+   392,
+   84
+  ],
+  "depth": 22
+ },
+ {
+  "type": "Button",
+  "label": "What's New",
+  "name": "What's New",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   24,
+   657,
+   392,
+   69
+  ],
+  "depth": 22
+ },
+ {
+  "type": "Button",
+  "label": "About Flagstone",
+  "name": "About Flagstone",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   24,
+   737,
+   392,
+   69
+  ],
+  "depth": 22
+ },
+ {
+  "type": "Button",
+  "label": "Privacy Policy",
+  "name": "Privacy Policy",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   24,
+   817,
+   392,
+   65
+  ],
+  "depth": 22
+ },
+ {
+  "type": "Button",
+  "label": "Terms & Community Guidelines",
+  "name": "Terms & Community Guidelines",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   24,
+   893,
+   392,
+   65
+  ],
+  "depth": 22
+ },
+ {
+  "type": "Button",
+  "label": "Replay tutorial",
+  "name": "Replay tutorial",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   24,
+   969,
+   392,
+   69
+  ],
+  "depth": 22
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "FEEDBACK",
+  "name": "FEEDBACK",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   28,
+   1062,
+   388,
+   15
+  ],
+  "depth": 22
+ },
+ {
+  "type": "Button",
+  "label": "Send feedback",
+  "name": "Send feedback",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   24,
+   1092,
+   392,
+   69
+  ],
+  "depth": 22
+ },
+ {
+  "type": "Button",
+  "label": "My feedback history",
+  "name": "My feedback history",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   24,
+   1172,
+   392,
+   69
+  ],
+  "depth": 22
+ },
+ {
+  "type": "Button",
+  "label": "Hidden comments",
+  "name": "Hidden comments",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   24,
+   1253,
+   392,
+   69
+  ],
+  "depth": 22
+ },
+ {
+  "type": "Button",
+  "label": "Blocked people",
+  "name": "Blocked people",
+  "value": null,
+  "enabled": "0",
+  "visible": "0",
+  "rect": [
+   24,
+   1333,
+   392,
+   69
+  ],
+  "depth": 22
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "YOUR DATA",
+  "name": "YOUR DATA",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   28,
+   1425,
+   388,
+   16
+  ],
+  "depth": 22
+ },
+ {
+  "type": "Button",
+  "label": "Export my data",
+  "name": "Export my data",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   24,
+   1456,
+   392,
+   84
+  ],
+  "depth": 22
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "ACCOUNT",
+  "name": "ACCOUNT",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   28,
+   1563,
+   388,
+   16
+  ],
+  "depth": 22
+ },
+ {
+  "type": "Button",
+  "label": "Sign out",
+  "name": "Sign out",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   24,
+   1594,
+   392,
+   69
+  ],
+  "depth": 22
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Vertical scroll bar, 2 pages",
+  "name": "Vertical scroll bar, 2 pages",
+  "value": "0%",
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   407,
+   62,
+   30,
+   832
+  ],
+  "depth": 21
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Horizontal scroll bar, 1 page",
+  "name": "Horizontal scroll bar, 1 page",
+  "value": "0%",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   62,
+   923,
+   316,
+   30
+  ],
+  "depth": 21
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Vertical scroll bar, 2 pages",
+  "name": "Vertical scroll bar, 2 pages",
+  "value": "0%",
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   407,
+   62,
+   30,
+   832
+  ],
+  "depth": 21
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Horizontal scroll bar, 1 page",
+  "name": "Horizontal scroll bar, 1 page",
+  "value": "0%",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   62,
+   923,
+   316,
+   30
+  ],
+  "depth": 21
+ },
+ {
+  "type": "Button",
+  "label": "Home, tab, 1 of 5",
+  "name": "Home, tab, 1 of 5",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   0,
+   861,
+   147,
+   53
+  ],
+  "depth": 13
+ },
+ {
+  "type": "Button",
+  "label": "Tasks, tab, 2 of 5",
+  "name": "Tasks, tab, 2 of 5",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   146,
+   861,
+   148,
+   53
+  ],
+  "depth": 13
+ },
+ {
+  "type": "Button",
+  "label": "Profile, tab, 3 of 5",
+  "name": "Profile, tab, 3 of 5",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   293,
+   861,
+   147,
+   53
+  ],
+  "depth": 13
+ }
+]

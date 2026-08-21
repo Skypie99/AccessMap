@@ -1,0 +1,287 @@
+[
+ {
+  "type": "ScrollView",
+  "label": null,
+  "name": null,
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   0,
+   0,
+   440,
+   956
+  ],
+  "depth": 11
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Flagstone",
+  "name": "Flagstone",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   186,
+   74,
+   68,
+   84
+  ],
+  "depth": 14
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Flagstone",
+  "name": "Flagstone",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   154,
+   178,
+   132,
+   36
+  ],
+  "depth": 14
+ },
+ {
+  "type": "StaticText",
+  "label": "Spot barriers. Share them.\nMake your community more accessible.",
+  "name": "Spot barriers. Share them.\nMake your community more accessible.",
+  "value": "Spot barriers. Share them.\nMake your community more accessible.",
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   80,
+   225,
+   280,
+   45
+  ],
+  "depth": 14
+ },
+ {
+  "type": "StaticText",
+  "label": "Email address",
+  "name": "Email address",
+  "value": "Email address",
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   45,
+   318,
+   350,
+   16
+  ],
+  "depth": 14
+ },
+ {
+  "type": "TextField",
+  "label": "Email address",
+  "name": "Email address",
+  "value": "you@example.com",
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   46,
+   348,
+   348,
+   49
+  ],
+  "depth": 15
+ },
+ {
+  "type": "StaticText",
+  "label": "Password",
+  "name": "Password",
+  "value": "Password",
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   45,
+   417,
+   350,
+   17
+  ],
+  "depth": 14
+ },
+ {
+  "type": "SecureTextField",
+  "label": "Password",
+  "name": "Password",
+  "value": "At least 6 characters",
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   46,
+   448,
+   348,
+   49
+  ],
+  "depth": 16
+ },
+ {
+  "type": "Button",
+  "label": "Show password",
+  "name": "Show password",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   351,
+   447,
+   44,
+   51
+  ],
+  "depth": 15
+ },
+ {
+  "type": "Button",
+  "label": "Sign in",
+  "name": "Sign in",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   45,
+   521,
+   350,
+   57
+  ],
+  "depth": 15
+ },
+ {
+  "type": "StaticText",
+  "label": "or",
+  "name": "or",
+  "value": "or",
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   213,
+   589,
+   14,
+   15
+  ],
+  "depth": 16
+ },
+ {
+  "type": "Button",
+  "label": "Create account",
+  "name": "Create account",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   45,
+   615,
+   350,
+   57
+  ],
+  "depth": 15
+ },
+ {
+  "type": "Button",
+  "label": "Browse without an account",
+  "name": "Browse without an account",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   106,
+   712,
+   228,
+   45
+  ],
+  "depth": 14
+ },
+ {
+  "type": "StaticText",
+  "label": "You can browse and report barriers without an account. Verifying and resolving others' flags needs a free one.",
+  "name": "You can browse and report barriers without an account. Verifying and resolving others' flags needs a free one.",
+  "value": "You can browse and report barriers without an account. Verifying and resolving others' flags needs a free one.",
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   26,
+   762,
+   388,
+   29
+  ],
+  "depth": 14
+ },
+ {
+  "type": "StaticText",
+  "label": "Your location is used to centre the map, work out how far away barriers are, and place a flag.\nYour email is never shown publicly.",
+  "name": "Your location is used to centre the map, work out how far away barriers are, and place a flag.\nYour email is never shown publicly.",
+  "value": "Your location is used to centre the map, work out how far away barriers are, and place a flag.\nYour email is never shown publicly.",
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   24,
+   810,
+   392,
+   55
+  ],
+  "depth": 13
+ },
+ {
+  "type": "Button",
+  "label": "Privacy Policy",
+  "name": "Privacy Policy",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   24,
+   884,
+   392,
+   45
+  ],
+  "depth": 13
+ },
+ {
+  "type": "Button",
+  "label": "By creating an account you agree to the Terms & Community Guidelines.",
+  "name": "By creating an account you agree to the Terms & Community Guidelines.",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   24,
+   948,
+   392,
+   45
+  ],
+  "depth": 13
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Horizontal scroll bar, 1 page",
+  "name": "Horizontal scroll bar, 1 page",
+  "value": "0%",
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   62,
+   923,
+   316,
+   30
+  ],
+  "depth": 12
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Horizontal scroll bar, 1 page",
+  "name": "Horizontal scroll bar, 1 page",
+  "value": "0%",
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   62,
+   923,
+   316,
+   30
+  ],
+  "depth": 12
+ }
+]

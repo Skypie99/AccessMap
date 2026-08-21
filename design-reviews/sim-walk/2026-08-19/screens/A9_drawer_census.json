@@ -1,0 +1,452 @@
+[
+ {
+  "type": "Image",
+  "label": null,
+  "name": "assets/assets/textures/noise-128.png",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   0,
+   0,
+   128,
+   128
+  ],
+  "depth": 21
+ },
+ {
+  "type": "ScrollView",
+  "label": null,
+  "name": null,
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   0,
+   0,
+   440,
+   956
+  ],
+  "depth": 20
+ },
+ {
+  "type": "StaticText",
+  "label": "NEARBY",
+  "name": "NEARBY",
+  "value": "NEARBY",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   20,
+   78,
+   400,
+   15
+  ],
+  "depth": 23
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "13 barriers",
+  "name": "13 barriers",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   20,
+   94,
+   306,
+   52
+  ],
+  "depth": 24
+ },
+ {
+  "type": "Button",
+  "label": "Open navigation menu",
+  "name": "Open navigation menu",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   326,
+   96,
+   44,
+   45
+  ],
+  "depth": 25
+ },
+ {
+  "type": "Button",
+  "label": "Send feedback",
+  "name": "Send feedback",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   376,
+   96,
+   44,
+   45
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "Sorted by distance",
+  "name": "Sorted by distance",
+  "value": "Sorted by distance",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   20,
+   148,
+   400,
+   18
+  ],
+  "depth": 23
+ },
+ {
+  "type": "Button",
+  "label": "Search a place",
+  "name": "Search a place",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   54,
+   198,
+   358,
+   20
+  ],
+  "depth": 25
+ },
+ {
+  "type": "Button",
+  "label": "Open the full map. No reports here yet. You could add the first.",
+  "name": "Open the full map. No reports here yet. You could add the first.",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   16,
+   247,
+   408,
+   169
+  ],
+  "depth": 22
+ },
+ {
+  "type": "StaticText",
+  "label": "CLOSEST",
+  "name": "CLOSEST",
+  "value": "CLOSEST",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   0,
+   415,
+   440,
+   44
+  ],
+  "depth": 22
+ },
+ {
+  "type": "Button",
+  "label": "No ramp, severity 2 of 5, Mild, status Open, 269.4 kilometers away",
+  "name": "No ramp, severity 2 of 5, Mild, status Open, 269.4 kilometers away",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   16,
+   458,
+   408,
+   60
+  ],
+  "depth": 24
+ },
+ {
+  "type": "Button",
+  "label": "Missing signal, severity 4 of 5, Significant, status Open, 269.4 kilometers away",
+  "name": "Missing signal, severity 4 of 5, Significant, status Open, 269.4 kilometers away",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   16,
+   517,
+   408,
+   60
+  ],
+  "depth": 24
+ },
+ {
+  "type": "Button",
+  "label": "Blocked path, severity 2 of 5, Mild, status Verified, 269.7 kilometers away",
+  "name": "Blocked path, severity 2 of 5, Mild, status Verified, 269.7 kilometers away",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   16,
+   577,
+   408,
+   60
+  ],
+  "depth": 24
+ },
+ {
+  "type": "Button",
+  "label": "Broken sidewalk, severity 3 of 5, Moderate, status Open, 269.8 kilometers away",
+  "name": "Broken sidewalk, severity 3 of 5, Moderate, status Open, 269.8 kilometers away",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   16,
+   637,
+   408,
+   60
+  ],
+  "depth": 24
+ },
+ {
+  "type": "Button",
+  "label": "Steep grade, severity 4 of 5, Significant, status Verified, 270.0 kilometers away",
+  "name": "Steep grade, severity 4 of 5, Significant, status Verified, 270.0 kilometers away",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   16,
+   696,
+   408,
+   60
+  ],
+  "depth": 24
+ },
+ {
+  "type": "Button",
+  "label": "No ramp, severity 4 of 5, Significant, status Open, 270.0 kilometers away",
+  "name": "No ramp, severity 4 of 5, Significant, status Open, 270.0 kilometers away",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   16,
+   756,
+   408,
+   60
+  ],
+  "depth": 24
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Horizontal scroll bar, 1 page",
+  "name": "Horizontal scroll bar, 1 page",
+  "value": "0%",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   62,
+   923,
+   316,
+   30
+  ],
+  "depth": 21
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Horizontal scroll bar, 1 page",
+  "name": "Horizontal scroll bar, 1 page",
+  "value": "0%",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   62,
+   923,
+   316,
+   30
+  ],
+  "depth": 21
+ },
+ {
+  "type": "Button",
+  "label": "Report a barrier",
+  "name": "Report a barrier",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   319,
+   800,
+   105,
+   42
+  ],
+  "depth": 19
+ },
+ {
+  "type": "Button",
+  "label": "Home, tab, 1 of 5",
+  "name": "Home, tab, 1 of 5",
+  "value": "1",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   0,
+   861,
+   147,
+   53
+  ],
+  "depth": 13
+ },
+ {
+  "type": "Button",
+  "label": "Tasks, tab, 2 of 5",
+  "name": "Tasks, tab, 2 of 5",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   146,
+   861,
+   148,
+   53
+  ],
+  "depth": 13
+ },
+ {
+  "type": "Button",
+  "label": "Profile, tab, 3 of 5",
+  "name": "Profile, tab, 3 of 5",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   293,
+   861,
+   147,
+   53
+  ],
+  "depth": 13
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Flagstone",
+  "name": "Flagstone",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   24,
+   78,
+   20,
+   24
+  ],
+  "depth": 8
+ },
+ {
+  "type": "Button",
+  "label": "Close menu",
+  "name": "Close menu",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   227,
+   68,
+   44,
+   44
+  ],
+  "depth": 7
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Flagstone",
+  "name": "Flagstone",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   64,
+   79,
+   151,
+   22
+  ],
+  "depth": 7
+ },
+ {
+  "type": "Button",
+  "label": "Resources",
+  "name": "Resources",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   0,
+   135,
+   287,
+   56
+  ],
+  "depth": 7
+ },
+ {
+  "type": "Button",
+  "label": "How To Help",
+  "name": "How To Help",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   0,
+   191,
+   287,
+   56
+  ],
+  "depth": 7
+ },
+ {
+  "type": "Button",
+  "label": "About the App",
+  "name": "About the App",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   0,
+   247,
+   287,
+   56
+  ],
+  "depth": 7
+ },
+ {
+  "type": "Button",
+  "label": "Settings",
+  "name": "Settings",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   0,
+   303,
+   287,
+   56
+  ],
+  "depth": 7
+ },
+ {
+  "type": "Button",
+  "label": "Sign in",
+  "name": "Sign in",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   0,
+   388,
+   287,
+   56
+  ],
+  "depth": 7
+ }
+]
