@@ -107,6 +107,11 @@ interface Props {
   // showing pre-edit values and the owner believed the save was lost.
   onEdited?: (updated: FlagRow) => void;
   onViewOnMap: (flag: FlagRow) => void;
+  // SW-28: the dismissal-COMPLETE event, not the close INTENT. RN core fires a
+  // Modal's onDismiss on iOS ONLY — which is exactly the platform that needs it,
+  // because only there does presenting this sheet detach the presenter's view.
+  // Same idiom LegendModal / NearbyFlagsModal already use for focus restore.
+  onDismiss?: () => void;
 }
 
 export default function FlagDetailModal({
@@ -117,6 +122,7 @@ export default function FlagDetailModal({
   onDeleted,
   onEdited,
   onViewOnMap,
+  onDismiss,
 }: Props) {
   const color = useColor();
   const styles = makeStyles(color);
@@ -1119,7 +1125,7 @@ export default function FlagDetailModal({
 
   return (
     <>
-      <Modal aria-label={`Flag details: ${CATEGORY_LABELS[shownFlag.category]}`} visible={visible} animationType={reducedMotion ? 'none' : 'slide'} transparent onRequestClose={onClose}>
+      <Modal aria-label={`Flag details: ${CATEGORY_LABELS[shownFlag.category]}`} visible={visible} animationType={reducedMotion ? 'none' : 'slide'} transparent onRequestClose={onClose} onDismiss={onDismiss}>
         <View style={styles.backdrop}>
           {/* accessibilityViewIsModal: tells iOS VoiceOver that everything
             outside this card is non-interactive — important because we

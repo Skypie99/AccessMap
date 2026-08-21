@@ -105,9 +105,20 @@ describe('S3 source invariants — MapScreen integration hub', () => {
   it('"View on map" recenters locally (we are already on the Map tab) — no cross-tab navigate', () => {
     // Window widened 320→560 for T1's calloutClear-shaped animateTo call —
     // the asserted invariants themselves are unchanged.
+    //
+    // SW-28 moved the camera+callout pair out of this handler and into
+    // `centerOnFlag`, because on iOS the move has to wait for the detail sheet
+    // to finish dismissing (a presented Modal detaches the map's view and the
+    // move is dropped). The PROTECTED property here was never "the schedule
+    // call is textually inside this handler" — it is "this path recenters
+    // LOCALLY and never navigates cross-tab", which is why the negative
+    // assertion below is unchanged. So the positive one now looks where the
+    // pair actually lives; see MapScreen.detailFocus.test.tsx for the timing.
     const view = around(map, 'const handleDetailViewOnMap', 560);
-    expect(view).toContain('calloutScheduler.schedule(flag.id);');
     expect(view).not.toContain('navigation.navigate');
+    const center = around(map, 'const centerOnFlag', 560);
+    expect(center).toContain('calloutScheduler.schedule(flag.id);');
+    expect(center).not.toContain('navigation.navigate');
   });
 
   it('FORK 5 read-side only: no verifier COUNT display, no guest "flag as wrong" write', () => {

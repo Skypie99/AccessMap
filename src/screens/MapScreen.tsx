@@ -1566,12 +1566,10 @@ export default function MapScreen() {
     [removeFlag],
   );
 
-  // On the Map tab we're ALREADY on the map, so "View on map" recenters locally
-  // instead of re-navigating (Tasks/Profile navigate cross-tab). Reuses the same
-  // center-on-flag spine as the focusFlag / deep-link effects. The modal calls
-  // onClose() itself right after this, so we don't touch selectedFlag here.
-  const handleDetailViewOnMap = useCallback((flag: FlagRow) => {
-    setFocusedFlagId(flag.id);
+  // The camera half of "View on map": move, then pop the callout. Same spine the
+  // focusFlag / deep-link effects use — kept as one function so the two callers
+  // below cannot drift apart again (drifting apart is what SW-28 was).
+  const centerOnFlag = useCallback((flag: FlagRow) => {
     // T1: calloutClear — "View on map" exists to show the callout.
     mapRef.current?.animateTo(
       {
@@ -1584,6 +1582,43 @@ export default function MapScreen() {
     );
     calloutScheduler.schedule(flag.id);
   }, [calloutScheduler]);
+
+  // On the Map tab we're ALREADY on the map, so "View on map" recenters locally
+  // instead of re-navigating (Tasks/Profile navigate cross-tab). The modal calls
+  // onClose() itself right after this, so we don't touch selectedFlag here.
+  //
+  // SW-28: the camera move must NOT fire while the detail sheet is still up. On
+  // iOS a full-screen RN Modal detaches the presenting view controller's view,
+  // so MKMapView drops animateToRegion on the floor — silently, leaving the map
+  // exactly where it was. Reproduced live on the 17 Pro Max: every marker frame
+  // byte-identical before and after the tap ([201,472] [350,69] [482,652]), no
+  // pan and no zoom, while the SAME animateTo works perfectly from the Tasks
+  // card, from Profile, and from a deep link. Those three all work for one
+  // reason — their move runs from a route-param effect AFTER arrival, i.e. after
+  // the sheet is gone. So this path waits for the same moment: record the intent
+  // on tap, spend it on the dismissal-COMPLETE event. Everywhere but iOS the map
+  // is never detached and onDismiss never fires, so the move stays inline.
+  const pendingDetailFocus = useRef<FlagRow | null>(null);
+
+  const handleDetailViewOnMap = useCallback((flag: FlagRow) => {
+    // The marker highlight is plain state and survives the dismissal — only the
+    // CAMERA has to wait, so this stays eager either way.
+    setFocusedFlagId(flag.id);
+    if (Platform.OS === 'ios') {
+      pendingDetailFocus.current = flag;
+      return;
+    }
+    centerOnFlag(flag);
+  }, [centerOnFlag]);
+
+  const handleDetailDismissed = useCallback(() => {
+    const pending = pendingDetailFocus.current;
+    if (!pending) return;
+    // Spend it exactly once: a later dismissal that wasn't a "View on map" tap
+    // must not re-move the camera under the user.
+    pendingDetailFocus.current = null;
+    centerOnFlag(pending);
+  }, [centerOnFlag]);
 
   // The Report FAB is dimmed until we have a location on NATIVE (where the
   // recenter button is the way to turn location on). On WEB we keep it
@@ -2723,6 +2758,7 @@ export default function MapScreen() {
           onEdited={(updated) => patchFlag(updated.id, updated)}
           onDeleted={handleDetailDeleted}
           onViewOnMap={handleDetailViewOnMap}
+          onDismiss={handleDetailDismissed}
         />
       </Suspense>
 
