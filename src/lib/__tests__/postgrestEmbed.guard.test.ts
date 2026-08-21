@@ -21,6 +21,7 @@
  */
 import fs from 'fs';
 import path from 'path';
+import { stripComments } from '../../__tests__/support/stripComments';
 
 const SELF = path.resolve(__filename);
 const SRC = path.join(__dirname, '..', '..'); // -> src/
@@ -46,10 +47,6 @@ function walkSource(dir: string): string[] {
   return out;
 }
 
-/** Strip // and block comments so prose mentioning the old embed is not a hit. */
-function stripComments(src: string): string {
-  return src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^[ \t]*\/\/.*$/gm, '');
-}
 
 /** Every single- or double-quoted string literal in the (comment-free) source. */
 function stringLiterals(src: string): string[] {

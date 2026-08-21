@@ -46,18 +46,11 @@
  */
 import fs from 'fs';
 import path from 'path';
+import { stripComments } from './support/stripComments';
 
 const SRC = path.join(__dirname, '..');
 const read = (rel: string) => fs.readFileSync(path.join(SRC, rel), 'utf8');
 
-/** Blank out comments, preserving line numbers, so prose never matches. */
-function stripComments(src: string): string {
-  const blank = (m: string) => m.replace(/[^\n]/g, ' ');
-  return src
-    .replace(/\{\/\*[\s\S]*?\*\/\}/g, blank)
-    .replace(/\/\*[\s\S]*?\*\//g, blank)
-    .replace(/\/\/[^\n]*/g, blank);
-}
 
 const SHRINKING_SHEETS = [
   ['MyWatchedModal', 'components/MyWatchedModal.tsx'],

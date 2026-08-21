@@ -37,6 +37,7 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
+import { stripComments } from './support/stripComments';
 
 const SRC = path.resolve(__dirname, '..');
 
@@ -263,11 +264,6 @@ const JSX_FILES = SOURCE_FILES.filter((f) => /\.tsx$/.test(f));
 // body. Cluster A/B above are intentionally NOT switched to this — keeping the
 // old parser stable preserves its existing catch behavior.
 
-/** Strip // line and /* block *\/ comments so comment prose (e.g. a comment
- *  that literally says "flex: 1") can't trip the pattern matchers below. */
-function stripComments(s: string): string {
-  return s.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/\/\/[^\n]*/g, ' ');
-}
 
 /** From the index of an opening `{`, return the text inside its matching `}`. */
 function balancedBody(src: string, openIdx: number): string {

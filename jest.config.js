@@ -23,7 +23,10 @@ module.exports = {
   // tries to traverse those mirrors and crashes the worker with
   // "Invariant Violation: requireNativeModule" on a stale Platform.ios path.
   // See LEARNINGS.md → "Jest must ignore .claude/worktrees/".
-  testPathIgnorePatterns: ['/node_modules/', '/.expo/', '/.claude/'],
+  // `/__tests__/support/` holds shared helpers for the guard suites (see
+  // src/__tests__/support/stripComments.ts), not suites of their own — without
+  // this they fail as "your test suite must contain at least one test".
+  testPathIgnorePatterns: ['/node_modules/', '/.expo/', '/.claude/', '/__tests__/support/'],
   moduleNameMapper: {
     // Path alias from tsconfig.json — `@/foo` → `src/foo`. The preset's own
     // moduleNameMapper (for vector icons) is preserved via Jest config merging.
@@ -50,6 +53,8 @@ module.exports = {
   collectCoverageFrom: [
     'src/**/*.{ts,tsx}',
     '!src/**/*.d.ts',
+    // Test-only helpers, not product code.
+    '!src/__tests__/support/**',
     '!src/**/index.ts',
     '!src/screens/**',
     // All components (modals, drawers, banners) require a native runtime.

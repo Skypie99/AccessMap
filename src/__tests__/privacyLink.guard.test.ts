@@ -31,24 +31,11 @@ import path from 'path';
 
 import { PRIVACY_POLICY_LINK_HINT, PRIVACY_POLICY_LINK_LABEL } from '@/lib/copy';
 import { PRIVACY_POLICY_URL } from '@/lib/links';
+import { stripComments } from './support/stripComments';
 
 const REPO = path.join(__dirname, '..', '..');
 const read = (rel: string) => fs.readFileSync(path.join(REPO, 'src', rel), 'utf8');
 
-/**
- * Comments blanked, line structure preserved — the `dismissalStandard.guard`
- * helper. Used for the BAN below: SettingsScreen's own comment explains that
- * `PRIVACY_POLICY_URL` still exists and is simply no longer what the row opens,
- * and scanning raw source would fail the file for saying so. A guard that
- * punishes accurate comments teaches the next author to delete them.
- */
-function stripComments(src: string): string {
-  const blank = (m: string) => m.replace(/[^\n]/g, ' ');
-  return src
-    .replace(/\{\/\*[\s\S]*?\*\/\}/g, blank)
-    .replace(/\/\*[\s\S]*?\*\//g, blank)
-    .replace(/\/\/[^\n]*/g, blank);
-}
 
 const SURFACES: [string, string][] = [
   ['Settings', 'screens/SettingsScreen.tsx'],

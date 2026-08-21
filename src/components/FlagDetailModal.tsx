@@ -1043,26 +1043,21 @@ export default function FlagDetailModal({
 
   // W1 — record that this user thinks the flag is wrong.
   //
-  // ⚠ LINE COMMENTS, NOT A DOC BLOCK, AND NOT BY PREFERENCE. The `input.accept`
-  // assignment earlier in this file sets the web file picker's MIME filter, and
-  // that string's last two characters are a slash followed by a star. (This note
-  // used to cite "line 377"; the line has since moved, which is why it now names
-  // the assignment instead — the number was the one part of this warning that
-  // could rot.) Several source-scanning guards
-  // (the dismissal standard among them) strip comments with a regex that does
-  // not know about string literals, so that pair opens a comment they never
-  // close — harmless ONLY while no closing star-slash follows it anywhere in
-  // this file. A doc block here supplies one and silently blanks ~500 lines
-  // from those scans, taking the `<Modal visible={false}>` null-stub with it.
-  // Verified twice, not theorised: the first draft of this handler used a doc
-  // block and the dismissal guard's allow-list assertion dropped to 0 hits;
-  // the second draft fixed that but quoted the closing pair in this very note
-  // and broke it again. So: below that assignment, comments stay in
-  // double-slash form AND avoid writing either two-character sequence, until
-  // the scanners learn to skip strings. (Third time, 2026-08-20: SW-49's
-  // disabled-style note was written as a doc block and took four guards down
-  // with it — the dismissal standard, sheet-pull, the keyboard class and the
-  // accessible-parent trap. The rule holds; it is not superstition.)
+  // ⚠ HISTORY, and the reason this function has a warning at all. The
+  // `input.accept` assignment earlier in this file ends in a slash-star pair,
+  // and the guards' shared comment stripper used to read that as an unclosed
+  // comment — harmless only while no closing pair followed it in this file. A
+  // doc block below it supplied one and silently blanked hundreds of lines from
+  // every source-scanning guard, `<Modal>` tags included. It fired three times:
+  // twice while this handler was first being written, and again on 2026-08-20,
+  // when SW-49's disabled-style note took four unrelated guards red at once.
+  //
+  // FIXED 2026-08-21. `src/__tests__/support/stripComments.ts` is now one shared
+  // stripper that skips string literals, and all fifteen guards use it. The old
+  // rule — "below this line, double-slash comments only, and never spell either
+  // two-character sequence" — is RETIRED; doc blocks below here are fine again,
+  // and this file uses them. `stripComments.guard.test.ts` pins the behaviour,
+  // including a case that reads this very file.
   //
   // A doubt counter, not a verdict: nothing here changes the flag's status, so
   // unlike the triage buttons beside it this handler never calls
@@ -2402,24 +2397,24 @@ const makeStyles = (color: ColorTheme) =>
       minWidth: a11y.minTargetSize,
     },
     coordsCopyBtnPressed: { backgroundColor: color.borderPressed },
-    // SW-49 class: an enabled-LOOKING control must never no-op silently.
-    //
-    // LINE COMMENTS, NOT A DOC BLOCK — see the note above handleDispute. The
-    // web picker's MIME filter earlier in this file ends in a slash-star pair
-    // that the source-scanning guards read as an unclosed comment, so a doc
-    // block anywhere below it silently blanks hundreds of lines from their
-    // view. Learned here the hard way: the first version of this comment WAS a
-    // doc block, and four guards went red at once.
-    //
-    // `busy` is one flag shared by five handlers, and runStatusChange opens
-    // with an early return on it. The five triage buttons were honest about
-    // that — they swap in an ActivityIndicator. The other eleven controls on
-    // this sheet, Close included, were disabled on the same flag with NO visual
-    // change at all: pixel-identical to their live state and swallowing the
-    // press. Close is the sharp end — the sheet cannot be dismissed and nothing
-    // says why.
-    //
-    // Same opacity SettingsScreen's rowDisabled uses for the same job.
+    /**
+     * SW-49 class: an enabled-LOOKING control must never no-op silently.
+     *
+     * `busy` is one flag shared by five handlers, and `runStatusChange` opens
+     * with an early return on it. The five triage buttons were honest about
+     * that — they swap in an `ActivityIndicator`. The other eleven controls on
+     * this sheet, Close included, were `disabled={busy}` with NO visual change
+     * at all: pixel-identical to their live state and swallowing the press.
+     * Close is the sharp end — the sheet cannot be dismissed and nothing says
+     * why.
+     *
+     * Same opacity `SettingsScreen`'s `rowDisabled` uses for the same job.
+     *
+     * (This comment is a doc block again, deliberately. It was the line-comment
+     * form for one wave because a doc block here used to blank the file from
+     * the guards — see the note above `handleDispute`. That is fixed, and this
+     * is the proof: if it regresses, four guards go red on this file.)
+     */
     btnDisabled: { opacity: 0.5 },
     // Overlapping-squares glyph — universally understood as "copy"
     coordsCopyGlyph: { fontSize: 16, color: color.brand },
