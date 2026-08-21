@@ -21,9 +21,9 @@ import {
   listLeaderboard,
   type LeaderboardEntry,
 } from '@/lib/flags';
-import { listMonthlyLeaderboard } from '@/lib/users';
+import { getInitials, listMonthlyLeaderboard } from '@/lib/users';
 import { bulkGlassShadow, font, radius, shadow, spacing } from '@/theme';
-import { Trophy, X } from 'lucide-react-native';
+import { Trophy, User, X } from 'lucide-react-native';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 
 interface Props {
@@ -50,6 +50,11 @@ function ordinalLabel(rank: number): string {
   }
 }
 
+/**
+ * SW-44: `initials` is nullable ON PURPOSE. An anonymized contributor has no
+ * name to take initials from, and inventing some from the placeholder word is
+ * what produced a wall of "ME" badges. Null means "draw a person, not letters".
+ */
 function AvatarCircle({
   uri,
   initials,
@@ -57,7 +62,7 @@ function AvatarCircle({
   color,
 }: {
   uri: string | null;
-  initials: string;
+  initials: string | null;
   size: number;
   color: ColorTheme;
 }) {
@@ -89,9 +94,20 @@ function AvatarCircle({
         uri={uri}
         style={styles.img}
         fallback={
-          <AppText variant="label" style={styles.initials} {...decorativeProps}>
-            {initials}
-          </AppText>
+          initials ? (
+            <AppText variant="label" style={styles.initials} {...decorativeProps}>
+              {initials}
+            </AppText>
+          ) : (
+            // Matches RemoteImage's own icon fallback idiom: a lucide glyph
+            // sized against its container and tinted from the theme.
+            <User
+              size={size * 0.5}
+              color={color.brandOnSoft}
+              strokeWidth={2.2}
+              {...decorativeProps}
+            />
+          )
         }
       />
     </View>
@@ -157,7 +173,19 @@ const LeaderboardRow = React.memo(function LeaderboardRow({
   color,
 }: LeaderboardRowProps) {
   const name = displayName ?? 'Member';
-  const initials = name.slice(0, 2).toUpperCase();
+  // SW-44. This used to be `name.slice(0, 2).toUpperCase()` on the line above,
+  // which turns the privacy placeholder 'Member' into the monogram "ME" —
+  // so 1st, 3rd and 4th place all wore a badge reading "me" while the row that
+  // actually WAS the signed-in user wore "JA". The one monogram meaning "me"
+  // appeared everywhere the user wasn't.
+  //
+  // The 'Member' label itself is correct and privacy-preserving; only the
+  // derived letters were wrong. No name, no initials — draw a person instead.
+  //
+  // Named users go through getInitials(), which ProfileScreen already uses and
+  // which is tested: it handles multi-word names, emails, and (F59) emoji,
+  // where a raw two-code-unit slice cuts a surrogate pair in half.
+  const initials = displayName ? getInitials(displayName) : null;
   const a11yLabel = [
     ordinalLabel(rank),
     name,
