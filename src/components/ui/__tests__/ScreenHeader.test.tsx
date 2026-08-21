@@ -146,3 +146,39 @@ describe('ScreenHeader style override — zero the default inset (T13 / F2-06)',
     expect(StyleSheet.flatten(outer.props.style).paddingHorizontal).toBe(0);
   });
 });
+
+/**
+ * D3 / T4 — the subtitle wraps instead of truncating.
+ *
+ * Every editorial header in the app (Home, Tasks, Profile, Settings) renders
+ * its subtitle through this one node, and it was pinned to a single line. At
+ * accessibility-extra-large that ate the end of all of them — the guest
+ * Profile's entire invitation became "Sign in to see yo…"
+ * (design-reviews/art-direction/2026-08-21/captures/17e_light_axl_A5_profile_guest.png),
+ * and any "Near <long place name>" on Home clips the same way.
+ */
+describe('ScreenHeader subtitle (D3) — wraps to two lines, never clamped to one', () => {
+  const GUEST_INVITE = 'Sign in to see your stats, badges, and reports.';
+
+  it('carries a 2-line allowance and no forced ellipsis, with the full string in the tree', () => {
+    const { UNSAFE_getAllByType } = render(
+      <ScreenHeader title="Profile" subtitle={GUEST_INVITE} />,
+    );
+    const sub = UNSAFE_getAllByType(Text).find((n) => n.props.children === GUEST_INVITE);
+
+    // Non-vacuity: the subtitle has to be on screen for the rest to mean anything.
+    expect(`subtitle node found: ${Boolean(sub)}`).toBe('subtitle node found: true');
+    expect(sub?.props.numberOfLines).toBe(2);
+    expect(sub?.props.ellipsizeMode).toBeUndefined();
+  });
+
+  it('keeps its protected rhythm (md ink, 3pt lift off the title)', () => {
+    const { UNSAFE_getAllByType } = render(
+      <ScreenHeader title="Profile" subtitle={GUEST_INVITE} />,
+    );
+    const sub = UNSAFE_getAllByType(Text).find((n) => n.props.children === GUEST_INVITE);
+    const s = StyleSheet.flatten(sub?.props.style);
+    expect(s.fontSize).toBe(15); // font.size.md — unchanged by the 1 -> 2 change
+    expect(s.marginTop).toBe(3);
+  });
+});
