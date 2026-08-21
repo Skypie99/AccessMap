@@ -54,10 +54,38 @@ describe('MapScreen command bar — the menu button keeps the drawer contract', 
     expect(SRC).not.toContain("from '@/components/ui/HeaderActions'");
   });
 
-  it('the screen title keeps its header landmark role (rides the AppText inside the long-press wrapper)', () => {
-    const center = SRC.slice(SRC.indexOf('styles.barCenter'), SRC.indexOf('styles.barCenter') + 1000);
+  // RE-PINNED 2026-08-21 (art-direction Phase 0, item 0.1 / defect D1). The rule
+  // used to be "the bar renders one header AppText". At accessibility-extra-large
+  // that AppText rendered "Ex…" — a 1.4.4 content loss, and a contradiction of
+  // the map-chrome SPEC §3.7 ("never clips"). The rule is now: BELOW the
+  // recomposition point the bar is byte-identical; AT OR ABOVE it the word is
+  // dropped and the header landmark survives as a clipped, still-accessible node.
+  it('the title cluster carries the header landmark in BOTH Dynamic-Type branches', () => {
+    const center = SRC.slice(SRC.indexOf('styles.barCenter'), SRC.indexOf('styles.barCenter') + 1600);
+    // Non-vacuity: the slice has to actually contain the branch.
+    expect(center).toContain('barTitleHidden ?');
+    // The dropped-title branch keeps the landmark AND the accessible name.
+    expect(center).toMatch(
+      /accessible\s+accessibilityRole="header"\s+accessibilityLabel="Explore"/,
+    );
+    // The normal branch still renders the visible word as a header.
     expect(center).toContain('accessibilityRole="header"');
     expect(center).toContain('Explore');
+  });
+
+  it('the drop is driven by the shared recomposition threshold, not a local magic number', () => {
+    expect(SRC).toContain('isAxRecompose');
+    expect(SRC).toMatch(/const barTitleHidden = isAxRecompose\(fontScale\);/);
+    // fontScale comes off the hook the screen already calls, so a text-size
+    // change mid-session re-renders the bar instead of stranding "Ex…".
+    expect(SRC).toMatch(/const \{ height: windowHeight, fontScale \} = useWindowDimensions\(\);/);
+  });
+
+  it('the accessibility stand-in is clipped, never zero-sized or transparent (iOS drops those)', () => {
+    expect(SRC).toMatch(/barTitleClipped: \{ width: 1, height: 1, overflow: 'hidden' \}/);
+    const block = SRC.slice(SRC.indexOf('barTitleClipped:'), SRC.indexOf('barTitleClipped:') + 200);
+    expect(block).not.toContain('opacity: 0');
+    expect(block).not.toContain('display:');
   });
 
   it('the count pill keeps the Android live region + full-sentence label (Q2: short visible, full spoken)', () => {

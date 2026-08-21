@@ -13,7 +13,14 @@
 
 import { act, renderHook } from '@testing-library/react-native';
 import { AccessibilityInfo } from 'react-native';
-import { a11yToggle, decorativeProps, useReducedMotion, useReduceTransparency } from '../accessibility';
+import {
+  AX_RECOMPOSE_SCALE,
+  a11yToggle,
+  decorativeProps,
+  isAxRecompose,
+  useReducedMotion,
+  useReduceTransparency,
+} from '../accessibility';
 
 describe('decorativeProps', () => {
   it('exists as a constant object', () => {
@@ -419,5 +426,37 @@ describe('useReducedMotion', () => {
     });
 
     expect(result.current).toBe(false);
+  });
+});
+
+/**
+ * The Dynamic-Type recomposition point (design-system rule T3/F4, art-direction
+ * plan 2026-08-21). Phase 0 introduces it for the map command bar (D1: the bar
+ * rendered "Ex…" at accessibility-extra-large); Phase 1 reuses the same number
+ * for the Home row, the report picker and SignIn. jest cannot render at 3x
+ * system font, so the THRESHOLD is pinned here and the composition it drives is
+ * pinned by each screen's source guard plus the simulator walk.
+ */
+describe('AX_RECOMPOSE_SCALE / isAxRecompose', () => {
+  it('is the 1.5x iOS accessibilityMedium step', () => {
+    expect(AX_RECOMPOSE_SCALE).toBe(1.5);
+  });
+
+  it('is false through the normal text sizes (1.0 -> 1.35)', () => {
+    for (const scale of [1, 1.12, 1.23, 1.35]) {
+      expect(isAxRecompose(scale)).toBe(false);
+    }
+  });
+
+  it('is inclusive at the boundary and true above it (the AX sizes)', () => {
+    expect(isAxRecompose(1.5)).toBe(true);
+    // The five iOS accessibility sizes, medium -> XXXL.
+    for (const scale of [1.6, 1.9, 2.35, 2.75, 3.1]) {
+      expect(isAxRecompose(scale)).toBe(true);
+    }
+  });
+
+  it('never recomposes on a nonsense/zero scale (a missing native value reads as 1x)', () => {
+    expect(isAxRecompose(0)).toBe(false);
   });
 });

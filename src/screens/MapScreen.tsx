@@ -105,7 +105,7 @@ import { OverflowFade } from '@/components/ui/OverflowFade';
 import { useHorizontalOverflowFade } from '@/hooks/useHorizontalOverflowFade';
 import { useDrawer, useDrawerTrigger } from '@/lib/drawerContext';
 import { useSharedModals } from '@/lib/sharedModalsContext';
-import { useScreenReader, useReducedMotion, a11yToggle, decorativeProps, useSurfaceTrigger } from '@/lib/accessibility';
+import { useScreenReader, useReducedMotion, a11yToggle, decorativeProps, isAxRecompose, useSurfaceTrigger } from '@/lib/accessibility';
 import LegendModal from './LegendModal';
 import HeatmapLegend from '@/components/HeatmapLegend';
 import NearbyFlagsModal from './NearbyFlagsModal';
@@ -356,7 +356,13 @@ export default function MapScreen() {
   // Reactive viewport height (rotation-safe) + safe-area insets, used to bound
   // the filter panel's maxHeight so it can't cover the FABs (G5). Context form
   // (non-throwing) since a provider isn't guaranteed in every render path.
-  const { height: windowHeight } = useWindowDimensions();
+  const { height: windowHeight, fontScale } = useWindowDimensions();
+  // D1 / T4: the one-line command bar has no room for the word "Explore" at
+  // large Dynamic Type — it rendered "Ex…". At the recomposition point the bar
+  // drops the word and keeps ☰ · count · tools; the header landmark survives
+  // (see barCenter below). `fontScale` off useWindowDimensions is the reactive
+  // read of the same native value PixelRatio.getFontScale() returns.
+  const barTitleHidden = isAxRecompose(fontScale);
   const insets = React.useContext(SafeAreaInsetsContext) ?? { top: 0, bottom: 0, left: 0, right: 0 };
   // S8: the map wears its own editorial header inside the box-none overlay now
   // (the dark nav bar is gone), so it drives the drawer + Feedback itself.
@@ -1754,15 +1760,30 @@ export default function MapScreen() {
             </PressableScale>
             {/* Title + count — box-none so the map pans through the gaps here. */}
             <View style={styles.barCenter} pointerEvents="box-none">
-              <AppText
-                variant="display"
-                size={22}
-                numberOfLines={1}
-                accessibilityRole="header"
-                style={styles.barTitle}
-              >
-                Explore
-              </AppText>
+              {barTitleHidden ? (
+                /* D1: the word is gone, the LANDMARK is not. iOS drops
+                   zero-frame and alpha-0 views from the accessibility tree, so
+                   the header survives as a 1pt clipped node rather than a
+                   hidden one — VoiceOver still finds "Explore" in the rotor and
+                   the bar keeps its accessible name. Below the recomposition
+                   point this branch never mounts and the bar is unchanged. */
+                <View
+                  accessible
+                  accessibilityRole="header"
+                  accessibilityLabel="Explore"
+                  style={styles.barTitleClipped}
+                />
+              ) : (
+                <AppText
+                  variant="display"
+                  size={22}
+                  numberOfLines={1}
+                  accessibilityRole="header"
+                  style={styles.barTitle}
+                >
+                  Explore
+                </AppText>
+              )}
               {/* Count pill (Q2, Sky). The pill is compact so the title reads in
                   full: the VISIBLE text is the SHORT 4-arm form ("8 flags") and
                   the FULL honesty sentence rides accessibilityLabel — the
@@ -3335,6 +3356,10 @@ const makeStyles = (color: ColorTheme) =>
     // Phase-5 long-press glass-flip lands on this region.
     barCenter: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, flexShrink: 1 },
     barTitle: { color: color.textStrong, marginTop: 0, flexShrink: 1 },
+    // D1: the dropped title's accessibility stand-in at >=1.5x. 1x1 (not 0x0)
+    // and fully opaque so UIKit keeps it as an accessibility element; it costs
+    // one point of the barCenter gap and draws nothing.
+    barTitleClipped: { width: 1, height: 1, overflow: 'hidden' },
     // Count pill — its OWN crystal fill (glassMapCrystal0) over the bar floor so
     // glassChipInk clears AA (arbiter countChip 9.61 / 12.21). Non-interactive.
     countChip: {
