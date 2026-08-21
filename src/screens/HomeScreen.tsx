@@ -398,7 +398,9 @@ export default function HomeScreen() {
               <AppText
                 variant="body"
                 style={[styles.searchText, searchLabel ? styles.searchTextActive : null]}
-                numberOfLines={1}
+                // T4 / X8b: this carries the searched PLACE NAME once a search is
+                // active, so it is content, not a static placeholder. Was 1.
+                numberOfLines={2}
                 accessible
                 accessibilityRole="button"
                 accessibilityLabel={searchLabel ? `Search: ${searchLabel}` : 'Search a place'}

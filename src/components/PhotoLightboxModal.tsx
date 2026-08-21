@@ -96,7 +96,12 @@ export default function PhotoLightboxModal({ visible, photoUrl, caption, onClose
             style={[styles.captionBar, { paddingBottom: Math.max(34, insets.bottom + spacing.sm) }]}
             pointerEvents="none" {...decorativeProps}
           >
-            <AppText variant="label" style={styles.captionText} numberOfLines={3}>
+            {/* T4: the caption is the reporter's own alt text — content, so no
+                line cap. NOT made scrollable as the plan suggested: this bar is
+                pointerEvents="none" precisely so a tap anywhere dismisses the
+                lightbox, and a scroll view here would swallow that tap and break
+                the escape path (PROTECT). It wraps instead; the bar grows. */}
+            <AppText variant="label" style={styles.captionText}>
               {caption}
             </AppText>
           </View>

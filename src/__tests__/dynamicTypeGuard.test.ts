@@ -592,3 +592,70 @@ describe('Dynamic-Type guard — Rule self-tests (the net catches the original f
     expect(styleNamesOnTextTags('<AppText style={styles.badgeCount}>1</AppText>').has('badgeCount')).toBe(true);
   });
 });
+
+/**
+ * T4 INVENTORY (added 2026-08-21, art-direction Phase 1a item 1.2).
+ *
+ * Cluster A above only catches `numberOfLines={1}` paired with a `*Title` style
+ * ON THE SAME LINE. That is how the map bar's "Ex…" shipped: its cap and its
+ * style sat on different lines of a multi-line JSX element, so the scan never
+ * saw the pair. Rule T4 is stricter than Cluster A — a one-line clamp is legal
+ * only on an eyebrow or the allow-listed map-callout title — and the honest way
+ * to hold that line in a repo this size is an inventory: every surviving site is
+ * named here with the reason it is not content, so a NEW one fails until someone
+ * argues for it.
+ */
+describe('T4 — the one-line clamps that survive are enumerated, not assumed', () => {
+  const ALLOWED: Record<string, string> = {
+    // The map callout: horizontally bounded by the pin's bubble, and explicitly
+    // allow-listed by rule T4 itself.
+    'components/PlatformMap.tsx': 'the allow-listed map-callout title',
+    // Fixed-width chips and bulk-action buttons. Every one of these already
+    // shrinks to 0.8 before clamping, and each holds a single short control word
+    // ("Verify", "Watch", "Newest first") that has nowhere to wrap to.
+    'screens/TasksScreen.tsx': 'sort chip + the four bulk-action button labels (all shrink-to-fit first)',
+    'components/RecentlyViewedRow.tsx': 'category chip in a horizontal rail',
+    // Decorative or numeric furniture: the status pill and the stat-card label
+    // are sized by their box, and the pill is hidden from assistive tech.
+    'screens/ProfileScreen.tsx': 'status pill (decorative) + stat-card label, both shrink-to-fit',
+    // A formatted short date ("19 Aug 2026") in a two-column meta row.
+    'components/MyFeedbackModal.tsx': 'formatted date in a meta row',
+    // Phase 0 (D1): below 1.5x only. At or above it the word is not rendered at
+    // all, so there is nothing to clamp — see MapScreen.headerActions.test.ts.
+    'screens/MapScreen.tsx': 'the Explore title, which only renders below the recomposition point',
+  };
+
+  it('no file outside the inventory clamps text to one line', () => {
+    const offenders = new Set<string>();
+    for (const file of walk(SRC)) {
+      if (!/\.tsx$/.test(file)) continue;
+      const rel = path.relative(SRC, file);
+      if (rel.startsWith('__tests__')) continue;
+      const src = stripComments(fs.readFileSync(file, 'utf8'));
+      if (!/numberOfLines=\{1\}/.test(src)) continue;
+      if (!(rel in ALLOWED)) offenders.add(rel);
+    }
+    expect([...offenders]).toEqual([]);
+  });
+
+  it('every inventory entry still has a clamp (a stale allowance hides nothing)', () => {
+    // Without this, a file could be fixed and its entry would linger, quietly
+    // pre-authorising the next clamp someone adds to it.
+    const stale = Object.keys(ALLOWED).filter((rel) => {
+      const full = path.join(SRC, rel);
+      if (!fs.existsSync(full)) return true;
+      return !/numberOfLines=\{1\}/.test(stripComments(fs.readFileSync(full, 'utf8')));
+    });
+    expect(stale).toEqual([]);
+  });
+
+  it('the sites fixed in this pass stay fixed', () => {
+    const read = (rel: string) => fs.readFileSync(path.join(SRC, rel), 'utf8');
+    // Titles and names wrap; content loses no tail.
+    expect(read('screens/LeaderboardScreen.tsx')).not.toMatch(/numberOfLines=\{1\}/);
+    expect(read('components/CommentBubble.tsx')).not.toMatch(/numberOfLines=\{1\}/);
+    expect(read('screens/HomeScreen.tsx')).not.toMatch(/numberOfLines=\{1\}/);
+    expect(read('components/FilterPresetsModal.tsx')).not.toMatch(/numberOfLines=\{1\}/);
+    expect(read('components/PhotoLightboxModal.tsx')).not.toMatch(/numberOfLines=\{\d\}/);
+  });
+});
