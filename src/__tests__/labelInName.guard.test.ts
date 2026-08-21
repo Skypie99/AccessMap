@@ -30,16 +30,10 @@
  */
 import fs from 'fs';
 import path from 'path';
+import { stripComments } from './support/stripComments';
 
 const SRC = path.join(__dirname, '..');
 
-function stripComments(src: string): string {
-  const blank = (m: string) => m.replace(/[^\n]/g, ' ');
-  return src
-    .replace(/\{\/\*[\s\S]*?\*\/\}/g, blank)
-    .replace(/\/\*[\s\S]*?\*\//g, blank)
-    .replace(/\/\/[^\n]*/g, blank);
-}
 
 function walkTsx(dir: string): string[] {
   const out: string[] = [];

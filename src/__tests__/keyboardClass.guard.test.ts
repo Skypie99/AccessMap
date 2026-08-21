@@ -48,19 +48,12 @@
  */
 import fs from 'fs';
 import path from 'path';
+import { stripComments } from './support/stripComments';
 
 const SELF = path.resolve(__filename);
 const SRC = path.join(__dirname, '..'); // -> src/
 const APP_TSX = path.join(SRC, '..', 'App.tsx');
 
-/** Blank out comments while preserving line numbers, so prose never matches. */
-function stripComments(src: string): string {
-  const blank = (m: string) => m.replace(/[^\n]/g, ' ');
-  return src
-    .replace(/\{\/\*[\s\S]*?\*\/\}/g, blank)
-    .replace(/\/\*[\s\S]*?\*\//g, blank)
-    .replace(/\/\/[^\n]*/g, blank);
-}
 
 function walkTsx(dir: string): string[] {
   const out: string[] = [];

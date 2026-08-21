@@ -24,6 +24,7 @@
  */
 import fs from 'fs';
 import path from 'path';
+import { stripComments } from '../../__tests__/support/stripComments';
 
 const SRC = path.resolve(__dirname, '..', '..');
 const read = (rel: string) => fs.readFileSync(path.join(SRC, rel), 'utf8');
@@ -31,23 +32,6 @@ const read = (rel: string) => fs.readFileSync(path.join(SRC, rel), 'utf8');
 const modal = read('components/HiddenCommentsModal.tsx');
 const settings = read('screens/SettingsScreen.tsx');
 
-/**
- * Comments blanked, line structure preserved — the same helper shape
- * `dismissalStandard.guard.test.ts` uses.
- *
- * Needed because several assertions below are BANS, and this module documents
- * at length the very things it must not do ("never calls clearHidden",
- * "sequential rather than Promise.all"). Scanning raw source would fail the
- * file for explaining itself, which would teach the next author to delete the
- * explanation to go green — exactly backwards.
- */
-function stripComments(src: string): string {
-  const blank = (m: string) => m.replace(/[^\n]/g, ' ');
-  return src
-    .replace(/\{\/\*[\s\S]*?\*\/\}/g, blank)
-    .replace(/\/\*[\s\S]*?\*\//g, blank)
-    .replace(/\/\/[^\n]*/g, blank);
-}
 
 /** Code only. Use for every ban; use `modal` when asserting something IS said. */
 const modalCode = stripComments(modal);
