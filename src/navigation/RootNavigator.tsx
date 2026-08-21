@@ -104,6 +104,36 @@ export type RootTabParamList = {
 
 const Tab = createBottomTabNavigator<RootTabParamList>();
 
+/**
+ * SW-13 / SW-38 — the tabs that actually have a button in the bar.
+ *
+ * @react-navigation/bottom-tabs builds each tab's iOS accessibilityLabel itself,
+ * as `${label}, tab, ${index + 1} of ${routes.length}` (BottomTabBar), and
+ * `routes.length` counts EVERY registered screen. This navigator registers three
+ * hidden ones — FullMap, Settings, Admin — with `tabBarButton: () => null`, so a
+ * three-tab bar announced "Home, tab, 1 of 5".
+ *
+ * Worse, `Admin` is conditional on `useIsAdmin()`, which resolves async from
+ * `null`. So the count went 5 -> 6 mid-session for an admin and stayed 5 for
+ * everyone else: the number was a role oracle a listener could hear.
+ *
+ * Deriving the labels from this one list means the count cannot drift from the
+ * bar again — adding a visible tab means adding it here, and a hidden route
+ * cannot accidentally join the count.
+ */
+const VISIBLE_TABS = ['Home', 'Tasks', 'Profile'] as const;
+
+/**
+ * The library only generates that string on iOS (elsewhere it leaves the label
+ * undefined and the child text is announced), so we override on iOS only —
+ * matching existing behaviour on Android and web rather than inventing new
+ * announcements there.
+ */
+function tabLabel(name: (typeof VISIBLE_TABS)[number]): string | undefined {
+  if (Platform.OS !== 'ios') return undefined;
+  return `${name}, tab, ${VISIBLE_TABS.indexOf(name) + 1} of ${VISIBLE_TABS.length}`;
+}
+
 // Container-level nav ref so the hamburger drawer (rendered as the Map header's
 // headerLeft, above the navigator) can switch tabs — used by the guest/web
 // "Sign in" item to jump to the Profile tab, which hosts the sign-in modal.
@@ -363,14 +393,23 @@ function NavInner({ initialRouteName }: { initialRouteName: keyof RootTabParamLi
         component={HomeScreen}
         // Home owns its own editorial header (menu + Feedback folded in), so
         // the dark nav header is hidden here.
-        options={{ tabBarIcon: tabIcon(HomeIcon), headerShown: false }}
+        options={{
+          tabBarIcon: tabIcon(HomeIcon),
+          headerShown: false,
+          tabBarAccessibilityLabel: tabLabel('Home'),
+        }}
       />
       <Tab.Screen
         name="Tasks"
         component={TasksScreen}
         // Headerless — Tasks renders its own editorial header (menu + Feedback
         // folded in), matching Home.
-        options={{ tabBarIcon: tabIcon(TasksIcon), tabBarBadge: tasksBadge, headerShown: false }}
+        options={{
+          tabBarIcon: tabIcon(TasksIcon),
+          tabBarBadge: tasksBadge,
+          headerShown: false,
+          tabBarAccessibilityLabel: tabLabel('Tasks'),
+        }}
       />
       <Tab.Screen
         name="Profile"
@@ -378,7 +417,11 @@ function NavInner({ initialRouteName }: { initialRouteName: keyof RootTabParamLi
         // S8: Profile wears the editorial ScreenHeader (menu + Feedback folded
         // in), so the dark nav header is hidden — this kills the "Profile over
         // PROFILE" double title (L2-2) and removes the 200%-zoom header collision.
-        options={{ tabBarIcon: tabIcon(ProfileIcon), headerShown: false }}
+        options={{
+          tabBarIcon: tabIcon(ProfileIcon),
+          headerShown: false,
+          tabBarAccessibilityLabel: tabLabel('Profile'),
+        }}
       />
       {/* Hidden routes — registered + navigable, but no tab-bar button. The
           full map is reached from Home / focus-flag links / the deep link;
