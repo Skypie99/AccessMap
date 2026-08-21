@@ -714,6 +714,34 @@ corrected with them.
 source; the rest pin what must NOT move (push notifications keeping its name, the leaderboard
 keeping 'Member', flags keeping all three cases, the export keeping "(not set)").
 
+### Verified on device — because this wave already learned that a green gate is not enough
+
+Rebuilt and re-walked on the 17e after the copy pass. Every one of these strings is **shorter** than
+what it replaced, so truncation risk was nil by construction — but the SW-36 lesson was fresh, so it
+was checked rather than assumed.
+
+| Change | On device |
+|---|---|
+| card 5 CTA | **"Continue"** — reads naturally under "You're all set"; label and visible text match |
+| replay finisher | **"Done"** — and tapping it still returns to Settings, which is the point |
+| Settings row | **"Update preferences" / "Choose which flag changes appear in your updates."** — no wrap, no clipping |
+| the sheet | titled **"Updates"**, purpose line intact, notice reads "Sign in to save update preferences." |
+| sheet close button | announces **"Close updates settings"** |
+
+**SW-34 was NOT verified on device, and this is a real limit rather than an oversight.** The
+`'Member'` fallback only renders for a comment whose author has **no display name** — a data
+condition the live rows may simply not contain, and one I cannot create: an agent cannot sign in,
+and the Production Law forbids writing to the live backend to manufacture one. It rests on the new
+guard, the two source-pinning tests that changed with it, and the full gate. That is evidence about
+structure, not about pixels — stated at the same volume as the passes above.
+
+> **One residual, surfaced rather than silently fixed.** The Settings **section header** above the
+> renamed row still reads **"NOTIFICATIONS"** (`SettingsScreen.tsx:583`), so a user scanning top-down
+> sees "NOTIFICATIONS → Update preferences". Defensible as an umbrella — updates and push are both
+> "how the app tells you things" — but it partially re-creates the conflation SW-21 exists to remove.
+> Renaming a section header is a visible IA change Sky did not ratify, so it was **left alone and
+> flagged**. Visible in `shots/wave4-verify/SW21_settings_update_prefs_17e.png`.
+
 ## DELIBERATELY NOT FIXED
 
 - **SW-03, SW-16** — device-only; read in code, reported, not touched.
