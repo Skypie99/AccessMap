@@ -41,6 +41,7 @@ import {
   HIDDEN_COMMENTS_TITLE,
   PRIVACY_POLICY_LINK_HINT,
   PRIVACY_POLICY_LINK_LABEL,
+  PUSH_SIGNED_OUT_SUBTITLE,
   TERMS_LINK_HINT,
   TERMS_LINK_LABEL,
   UNBLOCK_ALL_CONFIRM_BODY,
@@ -266,7 +267,15 @@ export default function SettingsScreen() {
   // nothing reads yet, so the row + screen stay hidden until the flag flips.
   const pushNotifTypesEnabled = useFeatureFlag('PUSH_NOTIF_TYPES_ENABLED');
 
-  const { user } = useAuth();
+  // SW-49: `loading` matters here, not just `user`. AuthProvider starts at
+  // { user: null, loading: true } and resolves getSession() async, so a
+  // SIGNED-IN user's Settings screen renders for a frame or two in a state
+  // indistinguishable from a guest's. That is the window the walk tapped into:
+  // two taps on the push switch, no state change, no alert, and no
+  // `handlePushToggle error` anywhere in the console — because the handler's
+  // `if (!user || pushBusy) return;` took the silent branch while the Switch
+  // still rendered as a live control.
+  const { user, loading: authLoading } = useAuth();
   const [exporting, setExporting] = useState(false);
 
   // Push notifications toggle state.
@@ -274,6 +283,14 @@ export default function SettingsScreen() {
   // user's last choice without a round-trip to the DB.
   const [pushEnabled, setPushEnabled] = useState(false);
   const [pushBusy, setPushBusy] = useState(false);
+  // The push row cannot act yet — either auth has not resolved or there is no
+  // account to attach a token to. Distinct from `pushBusy`, which swaps the
+  // whole Switch for a spinner and is therefore already self-explaining.
+  const pushLocked = authLoading || !user;
+  // ...and this is the half we can EXPLAIN. While auth is still resolving we do
+  // not yet know whether there is an account, so the row dims and waits rather
+  // than telling a signed-in user to sign in.
+  const pushNeedsAccount = !authLoading && !user;
 
   // Apple 1.2(c) — read the block count for the row below.
   //
@@ -598,11 +615,20 @@ export default function SettingsScreen() {
             reader. Previously role="switch" sat on the wrapper View (no press
             handler) with the Switch hidden, so VoiceOver/TalkBack could read
             but not flip it. Mirrors NotificationPrefsModal. */}
-        <GlassSurface variant="row" style={styles.pushRow}>
+        {/* SW-20/SW-49: this is the one row in the file that does not go through
+            SettingsRow, which is exactly why it missed both halves of the house
+            treatment — `disabled && styles.rowDisabled` and a subtitle that
+            says why. Applied here by hand, same opacity, same idea. */}
+        <GlassSurface
+          variant="row"
+          style={[styles.pushRow, pushLocked && styles.rowDisabled]}
+        >
           <View style={styles.pushTextWrap}>
             <AppText variant="label" style={styles.rowTitle}>Push notifications</AppText>
             <AppText variant="bodyMedium" style={styles.rowSubtitle}>
-              Get notified when your flag is verified or resolved.
+              {pushNeedsAccount
+                ? PUSH_SIGNED_OUT_SUBTITLE
+                : 'Get notified when your flag is verified or resolved.'}
             </AppText>
           </View>
           {pushBusy ? (
@@ -613,11 +639,15 @@ export default function SettingsScreen() {
             <Switch
               value={pushEnabled}
               onValueChange={handlePushToggle}
-              disabled={pushBusy || !user}
+              disabled={pushBusy || pushLocked}
               accessibilityRole="switch"
               accessibilityLabel="Push notifications"
-              accessibilityHint="Receive a push notification when your flag is verified or resolved"
-              {...a11yToggle({ checked: pushEnabled, disabled: pushBusy || !user })}
+              accessibilityHint={
+                pushNeedsAccount
+                  ? PUSH_SIGNED_OUT_SUBTITLE
+                  : 'Receive a push notification when your flag is verified or resolved'
+              }
+              {...a11yToggle({ checked: pushEnabled, disabled: pushBusy || pushLocked })}
               // BP-6: brand track (was the OS default green) — the estate
               // Switch recipe; false-track is themed so dark mode stays dark.
               trackColor={{ false: color.borderStrong, true: color.brand }}

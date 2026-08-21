@@ -1043,9 +1043,12 @@ export default function FlagDetailModal({
 
   // W1 — record that this user thinks the flag is wrong.
   //
-  // ⚠ LINE COMMENTS, NOT A DOC BLOCK, AND NOT BY PREFERENCE. Line 377 of this
-  // file sets the web file picker's MIME filter, and that string's last two
-  // characters are a slash followed by a star. Several source-scanning guards
+  // ⚠ LINE COMMENTS, NOT A DOC BLOCK, AND NOT BY PREFERENCE. The `input.accept`
+  // assignment earlier in this file sets the web file picker's MIME filter, and
+  // that string's last two characters are a slash followed by a star. (This note
+  // used to cite "line 377"; the line has since moved, which is why it now names
+  // the assignment instead — the number was the one part of this warning that
+  // could rot.) Several source-scanning guards
   // (the dismissal standard among them) strip comments with a regex that does
   // not know about string literals, so that pair opens a comment they never
   // close — harmless ONLY while no closing star-slash follows it anywhere in
@@ -1054,9 +1057,12 @@ export default function FlagDetailModal({
   // Verified twice, not theorised: the first draft of this handler used a doc
   // block and the dismissal guard's allow-list assertion dropped to 0 hits;
   // the second draft fixed that but quoted the closing pair in this very note
-  // and broke it again. So: below line 377, comments stay in double-slash form
-  // AND avoid writing either two-character sequence, until the scanners learn
-  // to skip strings.
+  // and broke it again. So: below that assignment, comments stay in
+  // double-slash form AND avoid writing either two-character sequence, until
+  // the scanners learn to skip strings. (Third time, 2026-08-20: SW-49's
+  // disabled-style note was written as a doc block and took four guards down
+  // with it — the dismissal standard, sheet-pull, the keyboard class and the
+  // accessible-parent trap. The rule holds; it is not superstition.)
   //
   // A doubt counter, not a verdict: nothing here changes the flag's status, so
   // unlike the triage buttons beside it this handler never calls
@@ -1168,7 +1174,7 @@ export default function FlagDetailModal({
                 onPress={onClose}
                 disabled={busy}
                 hitSlop={12}
-                style={({ pressed }) => [styles.closeBtn, pressed && { backgroundColor: color.borderPressed }]}
+                style={({ pressed }) => [styles.closeBtn, pressed && { backgroundColor: color.borderPressed }, busy && styles.btnDisabled]}
                 accessibilityRole="button"
                 accessibilityLabel="Close flag details"
                 accessibilityHint="Returns to the flag list"
@@ -1470,6 +1476,7 @@ export default function FlagDetailModal({
                     styles.watchBtn,
                     watched && styles.watchBtnActive,
                     pressed && styles.watchBtnPressed,
+                    (busy || watchSaving) && styles.btnDisabled,
                   ]}
                   accessibilityRole="button"
                   accessibilityLabel={watched ? 'Stop watching this flag' : 'Watch this flag'}
@@ -1500,7 +1507,7 @@ export default function FlagDetailModal({
                 <Pressable
                   onPress={() => setIsEditing(true)}
                   disabled={busy}
-                  style={({ pressed }) => [styles.actionBtn, styles.editBtn, pressed && { backgroundColor: color.borderPressed }]}
+                  style={({ pressed }) => [styles.actionBtn, styles.editBtn, pressed && { backgroundColor: color.borderPressed }, busy && styles.btnDisabled]}
                   accessibilityRole="button"
                   accessibilityLabel="Edit this flag"
                   accessibilityHint="Opens an edit form for description, category, and severity"
@@ -1590,7 +1597,7 @@ export default function FlagDetailModal({
                     <Pressable
                       onPress={() => setIsEditing(false)}
                       disabled={busy}
-                      style={({ pressed }) => [styles.actionBtn, styles.cancelBtn, pressed && { backgroundColor: color.borderPressed }]}
+                      style={({ pressed }) => [styles.actionBtn, styles.cancelBtn, pressed && { backgroundColor: color.borderPressed }, busy && styles.btnDisabled]}
                       accessibilityRole="button"
                       accessibilityLabel="Cancel editing"
                       {...a11yToggle({ disabled: busy })}
@@ -1600,7 +1607,7 @@ export default function FlagDetailModal({
                     <Pressable
                       onPress={() => void handleSaveEdit()}
                       disabled={busy}
-                      style={({ pressed }) => [styles.actionBtn, styles.saveBtn, pressed && { backgroundColor: color.ctaFillPressed }]}
+                      style={({ pressed }) => [styles.actionBtn, styles.saveBtn, pressed && { backgroundColor: color.ctaFillPressed }, busy && styles.btnDisabled]}
                       accessibilityRole="button"
                       accessibilityLabel="Save changes"
                       {...a11yToggle({ busy, disabled: busy })}
@@ -1627,7 +1634,7 @@ export default function FlagDetailModal({
                     <Pressable
                       onPress={() => setShowReopenForm(true)}
                       disabled={busy}
-                      style={({ pressed }) => [styles.actionBtn, styles.reopenBtn, pressed && { backgroundColor: color.borderPressed }]}
+                      style={({ pressed }) => [styles.actionBtn, styles.reopenBtn, pressed && { backgroundColor: color.borderPressed }, busy && styles.btnDisabled]}
                       accessibilityRole="button"
                       accessibilityLabel="Still broken? Request reopen"
                       accessibilityHint="Opens a form to explain why this barrier is still present"
@@ -1662,7 +1669,7 @@ export default function FlagDetailModal({
                             setReopenText('');
                           }}
                           disabled={reopenBusy}
-                          style={({ pressed }) => [styles.actionBtn, styles.cancelBtn, pressed && { backgroundColor: color.borderPressed }]}
+                          style={({ pressed }) => [styles.actionBtn, styles.cancelBtn, pressed && { backgroundColor: color.borderPressed }, busy && styles.btnDisabled]}
                           accessibilityRole="button"
                           accessibilityLabel="Cancel reopen request"
                           {...a11yToggle({ disabled: reopenBusy })}
@@ -1701,7 +1708,7 @@ export default function FlagDetailModal({
                     onClose();
                   }}
                   disabled={busy}
-                  style={({ pressed }) => [styles.actionBtn, styles.viewMapBtn, pressed && { backgroundColor: color.borderPressed }]}
+                  style={({ pressed }) => [styles.actionBtn, styles.viewMapBtn, pressed && { backgroundColor: color.borderPressed }, busy && styles.btnDisabled]}
                   accessibilityRole="button"
                   accessibilityLabel="View on Map"
                   accessibilityHint="Switches to the Map tab and centers on this flag"
@@ -1726,7 +1733,7 @@ export default function FlagDetailModal({
                     }
                   }}
                   disabled={busy}
-                  style={({ pressed }) => [styles.actionBtn, styles.directionsBtn, pressed && { backgroundColor: color.ctaFillPressed }]}
+                  style={({ pressed }) => [styles.actionBtn, styles.directionsBtn, pressed && { backgroundColor: color.ctaFillPressed }, busy && styles.btnDisabled]}
                   accessibilityRole="button"
                   accessibilityLabel="Get directions to this flag"
                   accessibilityHint="Opens your maps app with directions"
@@ -1737,7 +1744,7 @@ export default function FlagDetailModal({
                 <Pressable
                   onPress={handleShare}
                   disabled={busy}
-                  style={({ pressed }) => [styles.actionBtn, styles.shareBtn, pressed && { backgroundColor: color.borderPressed }]}
+                  style={({ pressed }) => [styles.actionBtn, styles.shareBtn, pressed && { backgroundColor: color.borderPressed }, busy && styles.btnDisabled]}
                   accessibilityRole="button"
                   accessibilityLabel="Share this flag"
                   accessibilityHint="Opens the system share sheet"
@@ -1748,7 +1755,7 @@ export default function FlagDetailModal({
                 <Pressable
                   onPress={() => setHistoryOpen(true)}
                   disabled={busy}
-                  style={({ pressed }) => [styles.actionBtn, styles.historyBtn, pressed && { backgroundColor: color.borderPressed }]}
+                  style={({ pressed }) => [styles.actionBtn, styles.historyBtn, pressed && { backgroundColor: color.borderPressed }, busy && styles.btnDisabled]}
                   accessibilityRole="button"
                   accessibilityLabel="View status history"
                   accessibilityHint="Shows who changed the status of this flag and when"
@@ -1783,7 +1790,7 @@ export default function FlagDetailModal({
                     setReportTarget({ kind: 'flag', id: shownFlag.id });
                   }}
                   disabled={busy}
-                  style={({ pressed }) => [styles.actionBtn, styles.reportBtn, pressed && { backgroundColor: color.borderPressed }]}
+                  style={({ pressed }) => [styles.actionBtn, styles.reportBtn, pressed && { backgroundColor: color.borderPressed }, busy && styles.btnDisabled]}
                   accessibilityRole="button"
                   accessibilityLabel={REPORT_CONTROL_LABEL}
                   {...a11yToggle({ disabled: busy })}
@@ -2395,6 +2402,25 @@ const makeStyles = (color: ColorTheme) =>
       minWidth: a11y.minTargetSize,
     },
     coordsCopyBtnPressed: { backgroundColor: color.borderPressed },
+    // SW-49 class: an enabled-LOOKING control must never no-op silently.
+    //
+    // LINE COMMENTS, NOT A DOC BLOCK — see the note above handleDispute. The
+    // web picker's MIME filter earlier in this file ends in a slash-star pair
+    // that the source-scanning guards read as an unclosed comment, so a doc
+    // block anywhere below it silently blanks hundreds of lines from their
+    // view. Learned here the hard way: the first version of this comment WAS a
+    // doc block, and four guards went red at once.
+    //
+    // `busy` is one flag shared by five handlers, and runStatusChange opens
+    // with an early return on it. The five triage buttons were honest about
+    // that — they swap in an ActivityIndicator. The other eleven controls on
+    // this sheet, Close included, were disabled on the same flag with NO visual
+    // change at all: pixel-identical to their live state and swallowing the
+    // press. Close is the sharp end — the sheet cannot be dismissed and nothing
+    // says why.
+    //
+    // Same opacity SettingsScreen's rowDisabled uses for the same job.
+    btnDisabled: { opacity: 0.5 },
     // Overlapping-squares glyph — universally understood as "copy"
     coordsCopyGlyph: { fontSize: 16, color: color.brand },
     actionRow: {

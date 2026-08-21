@@ -858,7 +858,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
                       key={t.id}
                       onPress={() => applyTemplate(t)}
                       disabled={submitting}
-                      style={({ pressed }) => [styles.templateChip, active && styles.templateChipActive, !active && pressed && styles.chipPressed]}
+                      style={({ pressed }) => [styles.templateChip, active && styles.templateChipActive, !active && pressed && styles.chipPressed, submitting && styles.chipDisabled]}
                       accessibilityRole="button"
                       accessibilityLabel={
                         active
@@ -913,7 +913,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
                     setAppliedTemplateId(null);
                   }}
                   disabled={submitting}
-                  style={({ pressed }) => [styles.pill, active && styles.pillActive, !active && pressed && styles.chipPressed]}
+                  style={({ pressed }) => [styles.pill, active && styles.pillActive, !active && pressed && styles.chipPressed, submitting && styles.chipDisabled]}
                   accessibilityRole="button"
                   accessibilityLabel={`Category: ${CATEGORY_LABELS[c]}`}
                   {...a11yToggle({ pressed: active, disabled: submitting })}
@@ -951,6 +951,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
                     active && styles.sevBtnActive,
                     active && { backgroundColor: severityColor(s) },
                     !active && pressed && styles.chipPressed,
+                    submitting && styles.chipDisabled,
                   ]}
                   accessibilityRole="button"
                   accessibilityLabel={`Severity ${s}: ${SEVERITY_LABELS[s]} — ${SEVERITY_DESCRIPTIONS[s]}`}
@@ -1086,6 +1087,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
                         active && styles.tagChipActive,
                         tagsDisabled && styles.tagChipDisabled,
                         !active && !tagsDisabled && pressed && styles.chipPressed,
+                        submitting && styles.chipDisabled,
                       ]}
                       accessibilityRole="checkbox"
                       accessibilityLabel={label}
@@ -1145,6 +1147,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
                         active && styles.disabilityTagChipActive,
                         tagsDisabled && styles.tagChipDisabled,
                         !active && !tagsDisabled && pressed && styles.chipPressed,
+                        submitting && styles.chipDisabled,
                       ]}
                       accessibilityRole="checkbox"
                       accessibilityLabel={label}
@@ -1310,6 +1313,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
                         active && styles.tagChipActive,
                         tagsDisabled && styles.tagChipDisabled,
                         !active && !tagsDisabled && pressed && styles.chipPressed,
+                        submitting && styles.chipDisabled,
                       ]}
                       accessibilityRole="checkbox"
                       accessibilityLabel={label}
@@ -1743,6 +1747,23 @@ const makeStyles = (color: ColorTheme) =>
     // neutral/inactive state; an active brand-filled chip isn't dimmed (white
     // label on the light pressed grey would fail AA — the arbiter proves this).
     chipPressed: { backgroundColor: color.borderPressed },
+    // SW-49 class. Every control on this form is disabled while `submitting`
+    // and every one of them looked live while a report uploaded — the five
+    // severity discs stayed at full saturation, the category pills and template
+    // chips too. The walk hit this shape three times across the app; the rule it
+    // settles on is that an enabled-looking control must never answer with
+    // nothing.
+    //
+    // A dim rather than a spinner: these are a row of selections, not an action
+    // with a result, and the Submit button below them already carries the
+    // progress. `tagChipDisabled` stays separate — it means "not available
+    // yet", which is a different and permanent statement.
+    //
+    // Line comments, not a doc block: this file sets the web picker's MIME
+    // filter above, and that string's trailing slash-star pair opens a comment
+    // the source-scanning guards never close. A doc block below it supplies the
+    // closing pair and blanks the rest of the file from their scan.
+    chipDisabled: { opacity: 0.5 },
     // Submit carries a LinearGradient over its fill, so a backgroundColor swap
     // wouldn't show. Instead composite a translucent scrim ABOVE the gradient
     // and BELOW the label — the label stays full opacity over a darkened brand

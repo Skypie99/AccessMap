@@ -1621,7 +1621,11 @@ export default function ProfileScreen() {
               role="switch" on the wrapper View (which has no press handler)
               and hid the Switch — so the control announced correctly but
               could not actually be toggled. Mirrors NotificationPrefsModal. */}
-          <View style={styles.toggleRow}>
+          {/* SW-49 class: `handleRealtimeToggle` opens with `if (savingRealtime)
+              return;` and the Switch is correctly `disabled` — but nothing
+              LOOKED different, so a second tap during the write was answered
+              with silence. Same dim the other rows in this family use. */}
+          <View style={[styles.toggleRow, savingRealtime && styles.toggleRowBusy]}>
             <View style={styles.toggleTextWrap}>
               <AppText variant="label" style={styles.toggleLabel}>Show new flags in real-time</AppText>
               <AppText variant="body" style={styles.toggleHint}>The map refreshes on its own as flags are added or triaged — no pulling to refresh.</AppText>
@@ -2574,6 +2578,7 @@ const makeStyles = (color: ColorTheme) =>
       gap: 12,
       minHeight: 44,
     },
+    toggleRowBusy: { opacity: 0.6 },
     toggleTextWrap: { flex: 1, gap: 2 },
     toggleLabel: { fontSize: 14, fontWeight: '600', color: color.textStrong },
     toggleHint: { fontSize: 12, color: color.inkOnStage },
