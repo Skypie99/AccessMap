@@ -25,7 +25,7 @@ import { useKeyboardVisible } from '@/hooks/useKeyboardVisible';
 import { MessageCircle, Star, X } from 'lucide-react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
-import { font, radius, severity, shadow, spacing } from '@/theme';
+import { a11y, font, radius, severity, shadow, spacing } from '@/theme';
 import { useAuth } from '@/lib/auth';
 import { confirm, notify } from '@/lib/confirm';
 import { isContentBlockedError, showBlockedContentAlert } from '@/lib/blockedContent';
@@ -2388,6 +2388,11 @@ const makeStyles = (color: ColorTheme) =>
       padding: 4,
       alignItems: 'center',
       justifyContent: 'center',
+      // SW-25: measured 21x24. With hitSlop 10 the HEIGHT reaches exactly 44,
+      // but the width only reaches 41. More slop is not the answer — the left
+      // neighbour is the selectable coordinate text, and slop would overlap a
+      // real target. A width floor is, and `coordsText` has flex to give it up.
+      minWidth: a11y.minTargetSize,
     },
     coordsCopyBtnPressed: { backgroundColor: color.borderPressed },
     // Overlapping-squares glyph — universally understood as "copy"

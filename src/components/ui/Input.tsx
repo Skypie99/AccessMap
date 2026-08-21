@@ -156,6 +156,12 @@ const styles = StyleSheet.create({
     fontSize: font.size.lg,
     paddingVertical: spacing.sm + 2,
     fontFamily: font.family.body,
+    // SW-40. The 44 above is on the WRAPPER, but the accessibility element is
+    // this TextInput — so every Input in the app reported a ~39pt frame while
+    // looking 44 tall. Measured: display-name 286x39, Tasks "Search flags"
+    // 274x43, Feedback "Reply email" 398x42. The wrapper is already 44 and
+    // centres its child, so this floor changes the frame, not the layout.
+    minHeight: a11y.minTargetSize,
   },
   subtext: { marginTop: spacing.tight },
 });

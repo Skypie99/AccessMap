@@ -2181,9 +2181,12 @@ const makeStyles = (color: ColorTheme) =>
     },
     // T4: Tier pill. White background on the blue hero gives a high
     // contrast surface for the label (#1b4373 ≈ 10:1 on #fff, well
-    // above WCAG AA). 44pt min height keeps the tap target compliant
-    // even though the visual pill is shorter — the hitSlop on the
-    // Pressable closes the rest of the gap.
+    // above WCAG AA). The tap target is compliant by SLOP, not by height:
+    // minHeight is 32 and the Pressable's hitSlop={8} carries it to 49
+    // effective. (SW-40 measured the pill at 87x33 and read that as a miss —
+    // the census cannot see hitSlop. Left on the house small-target idiom by
+    // Sky's call; corrected here because the old comment claimed "44pt min
+    // height", which the style below has never said.)
     tierPill: {
       flexDirection: 'row',
       alignItems: 'center',

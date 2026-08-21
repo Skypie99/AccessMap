@@ -57,7 +57,7 @@ import { CATEGORY_LABELS, SEVERITY_LABELS, STATUS_LABELS } from '@/lib/flags';
 import { severityA11y, statusA11y } from '@/lib/a11yText';
 import type { GeocodeResult } from '@/lib/geocode';
 import type { RootTabParamList } from '@/navigation/RootNavigator';
-import { font, radius, shadow, spacing } from '@/theme';
+import { a11y, font, radius, shadow, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { useDrawer, useDrawerTrigger } from '@/lib/drawerContext';
 import { useSharedModals } from '@/lib/sharedModalsContext';
@@ -683,10 +683,26 @@ const makeStyles = (color: ColorTheme) =>
       alignItems: 'center',
       gap: spacing.sm,
       paddingHorizontal: spacing.md,
-      paddingVertical: spacing.md,
+      // SW-10: the pad moved onto `searchText` below. The bar is unchanged at
+      // 48 (44 + 2 + 2); what changed is WHICH box is 44 tall — see there.
+      paddingVertical: 2,
       minHeight: 48,
     },
-    searchText: { flex: 1, fontSize: font.size.lg, fontFamily: font.family.bodyMedium, color: color.glassPlaceholder },
+    // SW-10: this Text — not the bar — is the labelled, role="button" element
+    // (A11Y-214/SR-040 put it here on purpose). It measured 358x20 inside a 48pt
+    // bar, so VoiceOver's focus rect was 20pt tall on the screen's main control.
+    // The height belongs on the element that carries the label.
+    searchText: {
+      flex: 1,
+      fontSize: font.size.lg,
+      fontFamily: font.family.bodyMedium,
+      color: color.glassPlaceholder,
+      // Padding rather than lineHeight so the glyphs stay optically centred,
+      // and a minHeight floor so the box still clears 44 at the smallest type.
+      // 44 + 2 + 2 of searchInner pad = the same 48pt bar as before.
+      paddingVertical: spacing.md,
+      minHeight: a11y.minTargetSize,
+    },
     searchTextActive: { color: color.textStrong },
     locateBtn: {
       flexDirection: 'row',
@@ -826,6 +842,11 @@ const makeStyles = (color: ColorTheme) =>
       paddingHorizontal: spacing.lg,
       paddingVertical: spacing.md,
       borderRadius: radius.full,
+      // SW-12: 12 + 12 + ~18pt of ink resolved to 42 — the primary CTA sat 2pt
+      // under the floor. minHeight is the only tool that moves the ACCESSIBILITY
+      // frame (hitSlop does not); MapScreen's own `fab` already carries 48.
+      minHeight: 48,
+      justifyContent: 'center',
       ...shadow.glowBrand,
     },
     reportPillText: { fontSize: font.size.md, color: color.textOnBrand, fontWeight: font.weight.bold },

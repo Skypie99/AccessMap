@@ -39,7 +39,7 @@ import {
   filterWatchedFlagsByStatus,
   type WatchedStatusFilter,
 } from '@/lib/watchedFlagsFilter';
-import { bulkGlassShadow, font, radius, spacing } from '@/theme';
+import { a11y, bulkGlassShadow, font, radius, spacing } from '@/theme';
 import { MapPin, RefreshCw, Search, Star, X } from 'lucide-react-native';
 import { a11yToggle, decorativeProps, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
 import { severityA11y, statusA11y } from '@/lib/a11yText';
@@ -614,7 +614,13 @@ const makeStyles = (color: ColorTheme) =>
     // A11Y-214: summary wrapper mirrors the row's internal rhythm (same gap,
     // same centering, takes the middle space) so the de-flattened structure
     // renders identically.
-    rowSummary: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, flex: 1, minWidth: 0 },
+    // SW-22/SW-43: this wrapper IS the labelled, role="button" element that
+    // opens the flag (A11Y-214 de-flattened the row and put the label here).
+    // It measured 21-29pt tall on every list surface and both devices, while
+    // the "Show on the map" button beside it is a correct 44x44 — which is what
+    // makes the short one read as an oversight rather than a style. hitSlop is
+    // invisible to the accessibility frame, so the height has to be real.
+    rowSummary: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, flex: 1, minWidth: 0, minHeight: a11y.minTargetSize },
     rowMid: { flex: 1, gap: 2 },
     rowCategory: { fontSize: font.size.md, fontWeight: font.weight.semibold, color: color.textStrong },
     rowCategoryResolved: { color: color.statusResolvedFg },
@@ -631,7 +637,9 @@ const makeStyles = (color: ColorTheme) =>
     searchRow: { marginBottom: spacing.xs },
     statusScroll: { flexGrow: 0, flexShrink: 0, marginBottom: spacing.sm },
     statusScrollContent: { gap: spacing.xs, paddingRight: spacing.xs },
-    statusChip: { paddingHorizontal: spacing.md, paddingVertical: spacing.xs + 2, borderRadius: radius.full, minHeight: 44, alignItems: 'center', justifyContent: 'center' },
+    // Census sweep: minHeight was here but no width floor, so the short-labelled
+    // "All" chip measured 41x45 — 3pt under on the other axis.
+    statusChip: { paddingHorizontal: spacing.md, paddingVertical: spacing.xs + 2, borderRadius: radius.full, minHeight: a11y.minTargetSize, minWidth: a11y.minTargetSize, alignItems: 'center', justifyContent: 'center' },
     statusChipText: { fontSize: font.size.sm, fontWeight: font.weight.semibold },
     sortScroll: { flexGrow: 0, flexShrink: 0, marginBottom: spacing.sm },
     sortScrollContent: { gap: spacing.xs, paddingRight: spacing.xs },
