@@ -75,6 +75,19 @@ describe('BP2 structural guards (source contracts)', () => {
     expect(readSrc('screens/TasksScreen.tsx')).not.toMatch(/setOptions\([^)]*tabBarBadge/s);
   });
 
+  // ADDED 2026-08-21 (art-direction Phase 0, item 0.6 / rule C7). The badge
+  // counts what needs a look; it is not an OS alert, and the platform default
+  // red was the one saturated colour in the app that meant nothing here.
+  it('C7: the Tasks badge is painted ctaFill + textOnBrand, never the OS red default', () => {
+    const src = readSrc('navigation/RootNavigator.tsx');
+    expect(src).toMatch(
+      /tabBarBadgeStyle: \{ backgroundColor: color\.ctaFill, color: color\.textOnBrand \}/,
+    );
+    // Non-vacuity: the badge itself has to still be wired, or the style above
+    // is decoration on a control nobody renders.
+    expect(src).toMatch(/tabBarBadge: tasksBadge/);
+  });
+
   it('RootNavigator wires scene inert off focus (useIsFocused → applySceneInert)', () => {
     const src = readSrc('navigation/RootNavigator.tsx');
     expect(src).toMatch(/useIsFocused/);

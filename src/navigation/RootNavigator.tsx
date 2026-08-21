@@ -407,6 +407,12 @@ function NavInner({ initialRouteName }: { initialRouteName: keyof RootTabParamLi
         options={{
           tabBarIcon: tabIcon(TasksIcon),
           tabBarBadge: tasksBadge,
+          // C7: the badge is the product's own count of what needs a look, not
+          // an OS alert. It shipped on the platform default red, which is the
+          // one saturated colour in the app that means nothing here and reads
+          // as an error. ctaFill + textOnBrand is the same 5.24:1 white-on-blue
+          // pair every filled control wears, in both themes.
+          tabBarBadgeStyle: { backgroundColor: color.ctaFill, color: color.textOnBrand },
           headerShown: false,
           tabBarAccessibilityLabel: tabLabel('Tasks'),
         }}
