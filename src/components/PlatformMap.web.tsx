@@ -1008,6 +1008,14 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(function Pla
         // delivers the instant clear in the same frame (F3-06).
         markerRefs.current[id]?.openPopup();
       },
+      // SW-37: parity with the native handle. Leaflet answers synchronously;
+      // the Promise is the shared contract, not a cost.
+      getCenter: async () => {
+        const map = mapInstance.current;
+        if (!map) return null;
+        const c = map.getCenter();
+        return { lat: c.lat, lng: c.lng };
+      },
       zoomBy: (delta) => {
         const map = mapInstance.current;
         if (!map) return;

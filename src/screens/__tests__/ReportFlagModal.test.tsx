@@ -1232,3 +1232,131 @@ describe('A11Y-226 — guest draft survives the sign-in handoff', () => {
     third.unmount();
   });
 });
+
+/**
+ * SW-37 / SW-11 — the no-location dead-end.
+ *
+ * ─── THE BUG THESE PIN ────────────────────────────────────────────────────
+ * Deny location and the report flow simply ended. The header read "Waiting for
+ * location…" forever — a sentence that is true while the request is in flight
+ * and false the moment the user says no — and Submit stayed disabled no matter
+ * how completely the form was filled. The app's core action was closed to
+ * anyone who won't share their position, with no explanation and no way out.
+ * Confirmed auth-independent in the A-2 pass: signed in WITH location, the same
+ * form completes to the edge, so nothing about this was about accounts.
+ *
+ * Manual placement already existed — a long-press on the map drops a report pin
+ * — but nothing anywhere pointed at it, so from inside the sheet it may as well
+ * not have existed. The fix is an affordance for the path already there.
+ */
+describe('SW-11 — a denied permission stops claiming it is still waiting', () => {
+  // These render raw (not via renderAnon/renderAuth) because the props under
+  // test are the point, so the auth mock has to be set explicitly — the shared
+  // beforeEach clears calls but leaves whatever return value ran last.
+  beforeEach(() => {
+    mockUseAuth.mockReturnValue({ user: null } as ReturnType<typeof useAuth>);
+  });
+
+  it('says the location is off, not that it is coming', () => {
+    const { getByText, queryByText } = render(
+      withProvider(
+        <ReportFlagModal
+          visible
+          location={null}
+          locationDenied
+          onClose={jest.fn()}
+          onCreated={jest.fn()}
+        />,
+      ),
+    );
+    expect(getByText('Location is off for Flagstone')).toBeTruthy();
+    expect(queryByText('Waiting for location…')).toBeNull();
+  });
+
+  it('still says "waiting" while the answer is genuinely outstanding', () => {
+    // Non-vacuity: the honest in-flight state must survive. Replacing it
+    // unconditionally would trade one wrong sentence for another.
+    const { getByText } = render(
+      withProvider(
+        <ReportFlagModal visible location={null} onClose={jest.fn()} onCreated={jest.fn()} />,
+      ),
+    );
+    expect(getByText('Waiting for location…')).toBeTruthy();
+  });
+});
+
+describe('SW-37 — there is a way out of the dead-end', () => {
+  // These render raw (not via renderAnon/renderAuth) because the props under
+  // test are the point, so the auth mock has to be set explicitly — the shared
+  // beforeEach clears calls but leaves whatever return value ran last.
+  beforeEach(() => {
+    mockUseAuth.mockReturnValue({ user: null } as ReturnType<typeof useAuth>);
+  });
+
+  const PLACE = 'Place the pin on the map';
+
+  it('offers manual placement when there is no location and the host allows it', () => {
+    const onPlaceOnMap = jest.fn();
+    const { getByLabelText } = render(
+      withProvider(
+        <ReportFlagModal
+          visible
+          location={null}
+          onPlaceOnMap={onPlaceOnMap}
+          onClose={jest.fn()}
+          onCreated={jest.fn()}
+        />,
+      ),
+    );
+    fireEvent.press(getByLabelText(PLACE));
+    expect(onPlaceOnMap).toHaveBeenCalledTimes(1);
+  });
+
+  it('does NOT offer it once a location exists', () => {
+    // It is a recovery control, not a relocation control — the long-press path
+    // is still how you move a report you can already file.
+    const { queryByLabelText } = render(
+      withProvider(
+        <ReportFlagModal
+          visible
+          location={LOCATION}
+          onPlaceOnMap={jest.fn()}
+          onClose={jest.fn()}
+          onCreated={jest.fn()}
+        />,
+      ),
+    );
+    expect(queryByLabelText(PLACE)).toBeNull();
+  });
+
+  it('does NOT offer it when the host withholds it (the guest gate)', () => {
+    // MapScreen passes onPlaceOnMap only when signed in, mirroring
+    // handleMapLongPress' existing `if (!authUser) return`. The sheet must not
+    // invent the control for itself.
+    const { queryByLabelText } = render(
+      withProvider(
+        <ReportFlagModal visible location={null} onClose={jest.fn()} onCreated={jest.fn()} />,
+      ),
+    );
+    expect(queryByLabelText(PLACE)).toBeNull();
+  });
+
+  it('the blocked Submit points at a control that can actually help', () => {
+    const { getByLabelText } = render(
+      withProvider(
+        <ReportFlagModal
+          visible
+          location={null}
+          locationDenied
+          onPlaceOnMap={jest.fn()}
+          onClose={jest.fn()}
+          onCreated={jest.fn()}
+        />,
+      ),
+    );
+    // Under a denial, "Use my location" only re-asks a question the OS has
+    // already answered, so the hint must name the other way out too.
+    const submit = getByLabelText('Submit report anonymously');
+    expect(submit.props.accessibilityHint).toContain(PLACE);
+  });
+});

@@ -104,9 +104,20 @@ interface Props {
    * Optional — an opener with no trigger to return to passes nothing.
    */
   onDismiss?: () => void;
+  /** SW-11: the host knows whether the OS permission was actually DENIED, as
+   *  opposed to still resolving. Without it this sheet can only say "Waiting
+   *  for location…", which is a lie once the user has said no — and it said it
+   *  forever. */
+  locationDenied?: boolean;
+  /** SW-37: the way out of the no-location dead-end — hand the map back so the
+   *  user can place the pin themselves. Optional, and the host passes it only
+   *  where manual placement is permitted, so this sheet never has to know the
+   *  rule (it mirrors the long-press gate; see MapScreen). The control renders
+   *  only when this and a null location are both present. */
+  onPlaceOnMap?: () => void;
 }
 
-export default function ReportFlagModal({ visible, location, onClose, onCreated, onRequestLocation, onDismiss }: Props) {
+export default function ReportFlagModal({ visible, location, onClose, onCreated, onRequestLocation, onDismiss, locationDenied, onPlaceOnMap }: Props) {
   const color = useColor();
   const styles = makeStyles(color);
   // T14 (F2-07): the templates + category chip rails earn the overflow scent.
@@ -658,7 +669,13 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
             <AppText variant="mono" style={styles.location}>
               {location
                 ? `at ${location.lat.toFixed(5)}, ${location.lng.toFixed(5)}`
-                : 'Waiting for location…'}
+                // SW-11: "Waiting for location…" is true while the request is in
+                // flight and false the moment the user denies it — at which point
+                // it waited forever and never said why. A denial is a settled
+                // answer, so say so and let the controls below carry the recovery.
+                : locationDenied
+                  ? 'Location is off for Flagstone'
+                  : 'Waiting for location…'}
             </AppText>
           </View>
           {/* S5 (L3-1): when no location has resolved yet — the common
@@ -676,6 +693,26 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
             >
               <MapPin size={14} color={color.brandOnSoft} strokeWidth={2.4} {...decorativeProps} />
               <AppText variant="label" style={styles.useLocationText}>Use my location</AppText>
+            </Pressable>
+          )}
+
+          {/* SW-37: the fix for the dead-end. Deny location and every other route
+              to a coordinate was invisible — Submit stayed disabled no matter how
+              completely the form was filled, so the app's core action was closed
+              to anyone who won't share their position. Manual placement already
+              existed as a LONG-PRESS on the map, with no affordance anywhere
+              pointing at it; this is that same path, made findable from the one
+              screen where the user is actually stuck. */}
+          {!location && onPlaceOnMap && (
+            <Pressable
+              onPress={onPlaceOnMap}
+              style={({ pressed }) => [styles.useLocationBtn, pressed && styles.chipPressed]}
+              accessibilityRole="button"
+              accessibilityLabel="Place the pin on the map"
+              accessibilityHint="Hides this form so you can move the map to the barrier, then brings it back with that spot filled in. Nothing you have typed is lost."
+            >
+              <MapPin size={14} color={color.brandOnSoft} strokeWidth={2.4} {...decorativeProps} />
+              <AppText variant="label" style={styles.useLocationText}>Place the pin on the map</AppText>
             </Pressable>
           )}
 
@@ -1275,7 +1312,12 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
               accessibilityLabel={isAnon ? 'Submit report anonymously' : 'Submit report'}
               accessibilityHint={
                 !location
-                  ? "Waiting for your location. Tap 'Use my location' above to try again."
+                  ? onPlaceOnMap
+                    // SW-37: never point a blocked user at the ONE control that
+                    // cannot help them. Under a denial "Use my location" just
+                    // re-asks a question the OS has already answered.
+                    ? "This report needs a location. Tap 'Use my location' or 'Place the pin on the map' above."
+                    : "Waiting for your location. Tap 'Use my location' above to try again."
                   : undefined
               }
               {...a11yToggle({ disabled: submitting || !location, busy: submitting })}

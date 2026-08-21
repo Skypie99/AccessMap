@@ -1611,6 +1611,42 @@ export default function MapScreen() {
     centerOnFlag(flag);
   }, [centerOnFlag]);
 
+  // SW-37: "place the pin on the map" mode. The capability this drives is not
+  // new — a long-press has always been able to drop a report pin — but it had no
+  // affordance anywhere in the app, so a user whose location was denied simply
+  // had no route to a coordinate and watched Submit stay disabled on a fully
+  // completed form. This turns the invisible gesture into a findable one, from
+  // the exact screen where the user is stuck.
+  //
+  // Gated to signed-in users on purpose: it mirrors handleMapLongPress' existing
+  // `if (!authUser) return` rather than widening it. With GPS you can only report
+  // where you ARE; with manual placement you can report anywhere, and that is a
+  // different privacy question — Sky's and Jordan's, not this fix's.
+  const [placingPin, setPlacingPin] = useState(false);
+
+  const handlePlaceOnMap = useCallback(() => {
+    // Hide the sheet WITHOUT calling its onClose: this is a round trip, not a
+    // cancel. The sheet stays mounted, so every field the user has already
+    // filled is still there when it comes back (and the SW-52 reset, which is
+    // bound to an explicit cancel, deliberately does not fire on this path).
+    setReportOpen(false);
+    setPlacingPin(true);
+  }, []);
+
+  const handleConfirmPin = useCallback(async () => {
+    const centre = await mapRef.current?.getCenter();
+    setPlacingPin(false);
+    // A map that can't answer leaves the location exactly as it was rather than
+    // guessing a coordinate — a wrong pin is worse than no pin.
+    if (centre) setDropLocation(centre);
+    setReportOpen(true);
+  }, []);
+
+  const handleCancelPin = useCallback(() => {
+    setPlacingPin(false);
+    setReportOpen(true);
+  }, []);
+
   const handleDetailDismissed = useCallback(() => {
     const pending = pendingDetailFocus.current;
     if (!pending) return;
@@ -2698,6 +2734,59 @@ export default function MapScreen() {
         </View>
       </View>
 
+      {/* SW-37: placement mode. Deliberately NOT inside the box-none overlay —
+          that overlay is inset by the top chrome and the tab bar, so its centre
+          is not the MAP's centre, and a crosshair that lies about where the pin
+          lands is worse than no crosshair. This is a plain absoluteFill whose
+          centre is the map's centre, which is the point getCenter() reads. */}
+      {placingPin && (
+        <>
+          <View style={styles.pinPlacementCrosshair} pointerEvents="none">
+            <MapPin size={40} color={color.brand} strokeWidth={2.4} />
+          </View>
+          <View
+            style={[styles.pinPlacementBar, { paddingBottom: tabBarHeight + 16 }]}
+            pointerEvents="box-none"
+          >
+            <View style={styles.pinPlacementCard}>
+              <AppText
+                variant="label"
+                style={styles.pinPlacementTitle}
+                accessibilityRole="header"
+                // WCAG 4.1.3: entering this mode is a context change with no
+                // focusable control of its own to announce it.
+                accessibilityLiveRegion="polite"
+              >
+                Move the map to the barrier
+              </AppText>
+              <AppText variant="body" style={styles.pinPlacementHint}>
+                The pin lands in the middle of the map. Your report is kept.
+              </AppText>
+              <View style={styles.pinPlacementActions}>
+                <Pressable
+                  onPress={handleCancelPin}
+                  style={({ pressed }) => [styles.pinPlacementBtn, styles.pinPlacementCancel, pressed && { opacity: 0.7 }]}
+                  accessibilityRole="button"
+                  accessibilityLabel="Cancel placing the pin"
+                  accessibilityHint="Goes back to your report without changing its location"
+                >
+                  <AppText variant="label" style={styles.pinPlacementCancelText}>Cancel</AppText>
+                </Pressable>
+                <Pressable
+                  onPress={() => void handleConfirmPin()}
+                  style={({ pressed }) => [styles.pinPlacementBtn, styles.pinPlacementConfirm, pressed && { opacity: 0.85 }]}
+                  accessibilityRole="button"
+                  accessibilityLabel="Put the pin here"
+                  accessibilityHint="Uses the centre of the map as this report's location and returns to your report"
+                >
+                  <AppText variant="label" style={styles.pinPlacementConfirmText}>Put the pin here</AppText>
+                </Pressable>
+              </View>
+            </View>
+          </View>
+        </>
+      )}
+
       <Suspense fallback={null}>
         <ReportFlagModal
           visible={reportOpen}
@@ -2708,6 +2797,12 @@ export default function MapScreen() {
           // S5: lets the sheet re-run the same locating spine on demand (the
           // in-sheet "Use my location" retry) without leaving the flow.
           onRequestLocation={requestLocation}
+          // SW-11: let the sheet say "off" instead of "waiting" once the OS has
+          // actually answered — it waited forever and never explained why.
+          locationDenied={permissionDenied}
+          // SW-37: same gate as handleMapLongPress, expressed once. Guests keep
+          // the GPS-only path they have today; widening that is Sky's call.
+          onPlaceOnMap={authUser ? handlePlaceOnMap : undefined}
           onClose={() => {
             setReportOpen(false);
             // Clear the drop pin on close so the next FAB-tap defaults back
@@ -3125,6 +3220,61 @@ const makeStyles = (color: ColorTheme) =>
       flex: 1,
     },
     container: { flex: 1 },
+    // SW-37 placement mode.
+    pinPlacementCrosshair: {
+      ...StyleSheet.absoluteFillObject,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    pinPlacementBar: {
+      ...StyleSheet.absoluteFillObject,
+      justifyContent: 'flex-end',
+      paddingHorizontal: spacing.lg,
+    },
+    pinPlacementCard: {
+      backgroundColor: color.surface,
+      borderRadius: radius.lg,
+      padding: spacing.lg,
+      gap: spacing.sm,
+      ...shadow.e2,
+    },
+    pinPlacementTitle: {
+      fontSize: font.size.base,
+      fontWeight: font.weight.bold,
+      color: color.textStrong,
+    },
+    pinPlacementHint: {
+      fontSize: font.size.xs,
+      color: color.textMuted,
+      lineHeight: 17,
+    },
+    pinPlacementActions: {
+      flexDirection: 'row',
+      gap: spacing.md,
+      marginTop: spacing.tight,
+    },
+    pinPlacementBtn: {
+      flex: 1,
+      minHeight: 44,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderRadius: radius.md,
+      paddingHorizontal: spacing.md,
+    },
+    pinPlacementCancel: {
+      backgroundColor: color.surfaceNeutral,
+    },
+    pinPlacementCancelText: {
+      color: color.textStrong,
+      fontWeight: font.weight.semibold,
+    },
+    pinPlacementConfirm: {
+      backgroundColor: color.brand,
+    },
+    pinPlacementConfirmText: {
+      color: color.textOnBrand,
+      fontWeight: font.weight.bold,
+    },
     overlay: {
       ...StyleSheet.absoluteFillObject,
       padding: 16,
