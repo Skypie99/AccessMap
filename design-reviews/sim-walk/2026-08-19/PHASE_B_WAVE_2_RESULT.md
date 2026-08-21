@@ -8,8 +8,8 @@
 |---|---|
 | **SW-01** + **SW-02** (SignIn half) | ✅ **FIXED — measured on BOTH devices** |
 | **SW-28** | ✅ **FIXED — reproduced live pre-fix, verified live post-fix** |
-| **SW-37** + **SW-11** | ⚠️ **FIXED FOR SIGNED-IN USERS ONLY** — per Sky's decision; **not closed for guests** |
-| **SW-42** | ⚠️ **PARTIAL** — the content loss is fixed; the undersized-card height is **not explained** |
+| **SW-37** + **SW-11** | ⚠️ Signed-in: fixed · **Guests: block now STATED, verified on device** — gate stands (Sky) |
+| **SW-42** | ✅ content loss fixed · ⚠️ height **floored, not explained** — needs Sky's eyes once |
 | **SW-45** | ✅ **FIXED** — per Sky's "all sheets clear the tab bar" |
 | **SW-52** (privacy) | ✅ **FIXED** — Sky approved before any edit |
 | **SW-31** | ✅ **FIXED** — the false half only; SW-48's correction respected |
@@ -189,13 +189,60 @@ That is exactly `animateTo({ latitudeDelta: 0.005 }, { calloutClear: true })` fo
 
 ---
 
+---
+
+## FOLLOW-UP ROUND — Sky's three calls, 2026-08-20 (commits `5abc870`, `74c255e`)
+
+Sky took all three open items the same day. Gate after: **215 suites · 3127 passed · 0 failed** (+9 tests).
+
+### 1 · The guest gate — comment corrected, dead end explained, gate kept
+The comment cited a real rule and misread it. **Jordan Condition 2, as recorded**
+in `2026-05-29_anon_flags_select.sql` (smoke-test step c), is *"The '＋ Report'
+FAB should NOT appear"* for a guest — about not putting a report **affordance**
+on the map, not about capability — and it was written while the DB blocked anon
+writes outright. **Anonymous reporting shipped the next day, 2026-05-30.** Its
+letter is still honoured: the FAB is still `{authUser && …}`.
+
+Also worth knowing, and the actual cause of the confusion: **"Condition N" is
+numbered per brief.** A different Condition 2 — *"the edit UI must not expose
+photo_url"* — lives in the Shamus flag-editing brief.
+
+The gate stays for the reason that does hold: GPS reports only where you are;
+manual placement reports anywhere; the anon limit caps volume (5/24h), not
+location. What changed is that guests are no longer met by a silent wall — one
+`blockedReason()` now states the constraint on screen **and** in Submit's
+accessibilityHint, so the two cannot drift. **SW-37 is still not closed as the
+finding words it; it is now a stated product line instead of a dead end.**
+
+**Verified on device (17e, guest, location revoked via `simctl privacy … revoke location`)** — `shots/wave2-verify/SW37_guest_location_denied_explained_17e.png`. The sheet now reads, in order: **"Location is off for Flagstone"** (SW-11, replacing a "Waiting for location…" that never ended), the "Use my location" retry, then **"Anonymous reports can only be filed where you are. Turn on location above, or sign in to place the pin yourself."** — with the anon banner's **Sign in** link immediately beneath it, which is the second half of that sentence. Submit stays correctly disabled. The permission was reset afterwards, so the simulator is back to its normal state.
+
+### 2 · SW-42's height — floored, deliberately without knowing why
+Not a measurement artifact: `C11_myreports.png` shows real dead space above the
+tab bar and a report card sliced mid-row. Cause not isolated, and not measurable
+by me (auth). So the fix is **mechanism-independent** — a `minHeight: '55%'` on
+the KAV, where percentages actually resolve (same rule as the cap it sits beside),
+with `flexGrow` on cardWrap/card so the floor becomes height rather than a gap.
+Content-sized between 55% and 85%. 55% sits below the 72.4% the healthy siblings
+land on, so it raises the collapsed pair toward the family, not past it.
+
+> **This is the one change in the wave I could not see for myself.** Signed in →
+> Profile → My Reports, and → Watched Flags.
+
+### 3 · The 17e guest-link clipping — accepted, no change
+Reachable in one scroll, 44pt, labelled; partial visibility reads as a scroll
+cue. Both alternatives cost more than they buy — going under the 44pt floor on a
+policy row, or compressing the brand block / gap rhythm, which is a design
+change rather than a bug fix.
+
+---
+
 ## DECISIONS FOR SKY
 
 1. **Merge `fix/simwalk-w2-high-2026-08-20`** — seven commits, `c0d3e8f` → `694b903`. Gate green. Nobody else merges.
-2. **The "Jordan Condition 2" contradiction.** The long-press gate says *"guests cannot create reports"*; the app, its UI copy and its own Privacy Policy all say they can. One of the two is wrong and it is not a fix's call. **Until it is resolved, SW-37 remains open for anonymous users** — the finding's own headline case.
-3. **SW-42's card height** — do you want the sheets to claim their full 85% cap? It is one line, it makes every sheet in the family a constant height, and it should be re-measured on device first. I could not measure it (auth) or explain it (see Cluster 4).
+2. ~~The "Jordan Condition 2" contradiction~~ — **resolved above.** The comment was wrong, the gate was right, and the rule it cited is intact. Still worth Jordan's eye on the underlying question: *should* anonymous users ever place a pin by hand?
+3. ~~SW-42's card height~~ — **floored above.** Still needs your eyes once, since I cannot reach those sheets.
 4. **`FlagDetailModal` has no focus-return contract on the Map tab.** A pre-existing gap; SW-28 did not create it and deliberately did not adopt it blind, because that sheet's VoiceOver behaviour is already queued for a device pass (Wave 1, N-1).
-5. **Accept (or reject) the 17e side effect** — "Browse without an account →" is now half-clipped at rest on the 844pt screen, reachable with one scroll. See the re-walk section; the alternative costs a 44pt touch target.
+5. ~~The 17e side effect~~ — **accepted, 2026-08-20.**
 
 ## DELIBERATELY NOT FIXED
 
