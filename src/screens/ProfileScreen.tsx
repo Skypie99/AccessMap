@@ -2279,16 +2279,29 @@ const makeStyles = (color: ColorTheme) =>
     // Spacing for the scrollable middle (intro + list + footer) — mirrors the
     // sheet's own gap now that those children live inside the ScrollView.
     tierScrollContent: { gap: 12 },
+    // T5 / D23 — the SW-36/SW-51 shape. A title beside a non-shrinking 44pt
+    // close button, in a row that could not wrap, is the exact geometry that
+    // character-broke "Broken sidewal / k" on Tasks: the title's box was
+    // whatever the button left over and could end up narrower than the word
+    // inside it. Wrap + a floor on the title makes the break impossible.
     tierHeaderRow: {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
+      flexWrap: 'wrap',
+      rowGap: spacing.tight,
     },
     tierHeaderTitle: {
       fontSize: 18,
       fontWeight: '700',
       color: color.textStrong,
       letterSpacing: -0.2,
+      // flexBasis deliberately UNWRITTEN (RN default 'auto') so the box measures
+      // its own text; minWidth is the floor that makes the row's flexWrap fire.
+      // 140 = "Reputation" at 18pt on the heading cap (1.5) ~= 135pt.
+      flexGrow: 1,
+      flexShrink: 1,
+      minWidth: 140,
     },
     tierCloseBtn: {
       width: 44,
