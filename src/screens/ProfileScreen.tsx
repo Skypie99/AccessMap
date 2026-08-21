@@ -152,18 +152,23 @@ function milestoneProgress(points: number): {
   next: number | null;
   label: string;
   progress: number;
+  // SW-41: the start of the current segment, returned rather than kept local
+  // so the progressbar can ANNOUNCE the same range it DRAWS. The bar fills
+  // from prevAt, but accessibilityValue used to report min: 0 — at 300 points
+  // the bar was drawn half full and announced as 60%.
+  from: number;
 } {
   // Find the lowest milestone strictly above the user's current points.
   // Once they pass the top milestone we return null and let the hero
   // card show a "you've reached the top" line instead of a bar.
   const next = MILESTONES.find((m) => m.at > points);
-  if (!next) return { next: null, label: '', progress: 1 };
+  if (!next) return { next: null, label: '', progress: 1, from: 0 };
   // Previous milestone defines the start of the current bar segment so
   // a user at 60 sees the 50→100 bar half-full, not a tiny sliver.
   const prevAt = [...MILESTONES].reverse().find((m) => m.at <= points)?.at ?? 0;
   const span = next.at - prevAt;
   const progress = span === 0 ? 0 : (points - prevAt) / span;
-  return { next: next.at, label: next.label, progress };
+  return { next: next.at, label: next.label, progress, from: prevAt };
 }
 
 export default function ProfileScreen() {
@@ -678,7 +683,7 @@ export default function ProfileScreen() {
     // silently do nothing on web without the helper.
     const ok = await confirm(
       'Show intro again?',
-      'The 3-card introduction will appear the next time you open the app on this device.',
+      'The introduction will appear the next time you open the app on this device.',
       'Reset',
     );
     if (!ok) return;
@@ -865,7 +870,12 @@ export default function ProfileScreen() {
   }
 
   const points = profile?.points ?? 0;
-  const { next: nextMilestone, label: milestoneLabel, progress } = milestoneProgress(points);
+  const {
+    next: nextMilestone,
+    label: milestoneLabel,
+    progress,
+    from: milestoneFrom,
+  } = milestoneProgress(points);
   // T4: Reputation tier — pure derivation from `points`. Drives the
   // small pill beside the points number AND the explainer sheet.
   // `gap` is 0 at Platinum; UI uses that to swap the copy.
@@ -1081,7 +1091,13 @@ export default function ProfileScreen() {
                 style={styles.progressTrack}
                 accessibilityRole="progressbar"
                 accessibilityLabel={`Progress toward ${milestoneLabel}, ${points} of ${nextMilestone} points`}
-                accessibilityValue={{ min: 0, max: nextMilestone, now: points }}
+                // SW-41: min is the segment start, not 0 — the same range the
+                // fill above is computed from. Reporting min: 0 while filling
+                // from the previous milestone meant the bar a sighted user saw
+                // and the value a screen reader heard disagreed everywhere past
+                // the first milestone (WCAG 1.3.1). The tier bar beside this one
+                // always got this right; this is the one that did not.
+                accessibilityValue={{ min: milestoneFrom, max: nextMilestone, now: points }}
               >
                 <View
                   style={[styles.progressFill, { width: progressBarWidth }]} {...decorativeProps}
@@ -1493,12 +1509,12 @@ export default function ProfileScreen() {
           style={({ pressed }) => pressed && styles.myReportsBtnPressed}
           onPress={() => setNotifPrefsOpen(true)}
           accessibilityRole="button"
-          accessibilityLabel="Notifications"
-          accessibilityHint="Opens settings for which flag status updates surface in your update banner"
+          accessibilityLabel="Updates"
+          accessibilityHint="Opens settings for which flag changes appear in your updates"
         >
           <GlassSurface variant="row" forceEngineered style={styles.myReportsBtn}>
           <View style={styles.myReportsTextWrap}>
-            <AppText variant="label" style={styles.myReportsTitle}>Notifications</AppText>
+            <AppText variant="label" style={styles.myReportsTitle}>Updates</AppText>
             <AppText variant="bodyMedium" style={styles.myReportsSubtitle}>
               Pick which changes you want to hear about.
             </AppText>

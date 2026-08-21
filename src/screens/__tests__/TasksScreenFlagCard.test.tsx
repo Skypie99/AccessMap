@@ -25,6 +25,7 @@
  */
 
 import React from 'react';
+import { StyleSheet } from 'react-native';
 import { render, fireEvent } from '@testing-library/react-native';
 import type { FlagRow } from '@/types/database';
 // jest.mock calls below are hoisted above this import at runtime, so the
@@ -279,5 +280,40 @@ describe('isCompactLayout — the M16 reflow threshold (binding ×1.6 check)', (
     [430, 1.0, false],
   ])('width %d @ fontScale %s → compact=%s', (width, fontScale, expected) => {
     expect(isCompactLayout(width as number, fontScale as number)).toBe(expected);
+  });
+});
+
+describe('FlagCard — SW-36: the title box must fit its own word', () => {
+  // At accessibility-extra-large the sim walk found the category title broken
+  // MID-WORD next to the status badge: "Broken sidewal / k". The cause was
+  // `flex: 1` on cardTitle — shorthand for grow 1 / shrink 1 / BASIS 0% — which
+  // left the title's width purely residual, whatever the two non-shrinking
+  // badges beside it did not take, and contributing nothing to the wrap
+  // decision. iOS then character-breaks a word wider than its box.
+  //
+  // flexBasisUnderLargeType.guard.test.ts pins this in the source; this pins
+  // the style that actually reaches the rendered node, so a rename or a
+  // dropped style array also trips.
+
+  it('the title grows and shrinks but takes its basis from its text', () => {
+    const { getByText } = renderCard();
+    const style = StyleSheet.flatten(getByText('Blocked path').props.style);
+
+    // Pre-fix: flex === 1.
+    expect(style.flex).toBeUndefined();
+    expect(style.flexGrow).toBe(1);
+    expect(style.flexShrink).toBe(1);
+    // Unwritten, so RN's default 'auto' applies and the box measures the text.
+    expect(style.flexBasis).toBeUndefined();
+  });
+
+  it('the title is not truncated to buy the room instead', () => {
+    // The reflex fix for a crushed title is numberOfLines={1}, which
+    // dynamicTypeGuard forbids on a *Title style precisely because truncating
+    // a title at large type is the defect rather than the remedy. Passes both
+    // before and after — it exists to stop a later "simplification".
+    const title = renderCard().getByText('Blocked path');
+    expect(title.props.numberOfLines).toBeUndefined();
+    expect(title.props.ellipsizeMode).toBeUndefined();
   });
 });

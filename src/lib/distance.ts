@@ -154,12 +154,37 @@ export function formatDistance(km: number): string {
 }
 
 /**
+ * Past this many minutes, a walking ETA stops informing a decision and starts
+ * looking broken. The sim walk caught a Tasks card reading "279.2 km · 3351 min
+ * walk" — about 56 hours, rendered as if it were a plan (SW-27).
+ *
+ * 60 is not an arbitrary round number here: at WALKING_KMH it is exactly 5 km,
+ * which is both a real bucket in DISTANCE_OPTIONS (mapFilters.ts) and the case
+ * distance.test.ts already pins as the reference (`walkingMinutes(5) === 60`).
+ * Expressed in minutes rather than km so it keeps meaning "an hour on foot" if
+ * the pace constant is ever changed.
+ */
+const MAX_USEFUL_WALK_MINUTES = 60;
+
+/**
  * Human-readable walking ETA, e.g. "4 min walk". Pairs with formatDistance
  * on the same line.
+ *
+ * Returns '' beyond MAX_USEFUL_WALK_MINUTES — the same empty string this
+ * function already returns for a nonsense distance, so the one caller
+ * (TasksScreen's card meta line, which joins its parts through `.filter(Boolean)`)
+ * simply drops the segment. The distance itself still renders, which is the part
+ * that was carrying the information. Deliberately NOT a new string like "over an
+ * hour": suppressing reuses shipped behaviour, whereas new user-facing wording
+ * routes through copy.ts and Sky's §A pass.
+ *
+ * `walkingMinutes` is untouched — the arithmetic was never wrong, only the
+ * decision to show it.
  */
 export function formatWalkingEta(km: number): string {
   if (!Number.isFinite(km) || km < 0) return '';
   const m = walkingMinutes(km);
+  if (m > MAX_USEFUL_WALK_MINUTES) return '';
   return `${m} min walk`;
 }
 

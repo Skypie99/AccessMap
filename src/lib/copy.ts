@@ -513,8 +513,10 @@ export const UNHIDE_ALL_CONTROL_LABEL = 'Unhide all';
  * Accessible NAME for a per-row Unhide control. Same contract as
  * `hideCommentA11yLabel`: a column of buttons all named "Unhide" is ambiguous
  * to a screen reader, so the name carries the author, and the caller passes the
- * SAME author string the row renders — including the 'Anonymous' fallback for a
- * comment whose author account is gone. AGENT-PROPOSED wording.
+ * SAME author string the row renders — including the 'Member' fallback for a
+ * comment with no display name, or whose author account is gone (SW-34; was
+ * 'Anonymous', which is reserved for the deliberate choice a flag makes with
+ * user_id IS NULL). AGENT-PROPOSED wording.
  * PROPOSED (HIGH-2/1.2(c), S-8) — Sky's final wording lands in DECISIONS §A / BP16.
  */
 export function unhideCommentA11yLabel(author: string): string {

@@ -33,7 +33,7 @@ import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
  *  2. How it works (report → photo → severity)
  *  3. Location permission priming (explains BEFORE the OS prompt fires)
  *  4. Notifications permission priming (soft ask — skippable)
- *  5. You're ready (final "Open the Map" CTA)
+ *  5. You're ready (final "Continue" CTA)
  *
  * Shown ABOVE the rest of the app on the very first launch, gated by the
  * device-wide flag in src/lib/onboardingState.ts. After completion or
@@ -93,7 +93,9 @@ interface Card {
   severityScale?: boolean;
   // Slide primes this OS permission and fires the prompt on its primary tap.
   permission?: PermissionKind;
-  // The final slide — primary button is "Open the Map" and finishes onboarding.
+  // The final slide — primary button is "Continue" and finishes onboarding.
+  // SW-17: it was "Open the Map", which it never did — onDone runs the auth
+  // gate, so the next screen is SignIn. Sky ratified "Continue" 2026-08-21.
   isFinal?: boolean;
 }
 
@@ -479,8 +481,8 @@ export default function OnboardingCards({ onDone }: Props) {
               onPress={onDone}
               style={({ pressed }) => [pressed && { opacity: 0.88 }]}
               accessibilityRole="button"
-              accessibilityLabel="Open the map"
-              accessibilityHint="Closes the introduction and opens Flagstone"
+              accessibilityLabel="Continue"
+              accessibilityHint="Finishes the introduction"
             >
               <LinearGradient
                 colors={gradient.brandHero}
@@ -488,7 +490,7 @@ export default function OnboardingCards({ onDone }: Props) {
                 end={{ x: 1, y: 1 }}
                 style={styles.primaryBtn}
               >
-                <AppText variant="label" style={styles.primaryBtnText}>Open the Map</AppText>
+                <AppText variant="label" style={styles.primaryBtnText}>Continue</AppText>
               </LinearGradient>
             </Pressable>
           ) : permission && currentGranted !== true ? (

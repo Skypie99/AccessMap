@@ -2266,14 +2266,50 @@ const makeStyles = (color: ColorTheme, reduceTransparency: boolean) => {
     // the "Show on the map" button beside it is a correct 44x44 — which is what
     // makes the short one read as an oversight rather than a style. hitSlop is
     // invisible to the accessibility frame, so the height has to be real.
-    cardHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, minHeight: a11y.minTargetSize },
+    // SW-36: flexWrap lets the title drop to its own line at large Dynamic Type
+    // instead of being crushed between two non-shrinking badges. It only does
+    // anything BECAUSE cardTitle below stopped declaring `flex: 1` — Yoga's
+    // line-break test measures each child's flex BASE size, and a basis of 0%
+    // contributes nothing, so a wrap can never trigger no matter how large the
+    // glyphs get. flexWrap without that change ships a no-op. `gap` already
+    // supplies 8pt on both axes, so a wrapped line needs no extra row spacing.
+    cardHeader: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: spacing.sm, minHeight: a11y.minTargetSize },
     // textStrong ink — fixes the pre-glass dark-mode bug where the title had
     // no color and rendered near-black on the dark card (Material Lab before-
     // capture finding #1; the description themed correctly, the title didn't).
     cardTitle: {
       fontSize: font.size.xl,
       fontWeight: font.weight.semibold,
-      flex: 1,
+      // SW-36 — this is the fix, and the omission below is the load-bearing part.
+      // `flex: 1` is shorthand for grow 1 / shrink 1 / **basis 0%**, and a basis
+      // of 0 means the title contributes nothing to either the wrap decision or
+      // its own hypothetical width: its box was purely whatever the two badges
+      // left over, and could be narrower than the word inside it. iOS then
+      // character-breaks a word too wide for its box — "Broken sidewal / k".
+      // Spelling grow/shrink out and leaving flexBasis UNWRITTEN (RN default
+      // 'auto') makes the box measure the text, so it is never narrower than its
+      // own content and the break becomes structurally impossible. flexShrink
+      // stays 1 so a title alone on a line still wraps at a word boundary.
+      flexGrow: 1,
+      flexShrink: 1,
+      // SW-36, second pass — found on the device, not in the source. Freeing the
+      // basis was necessary and NOT sufficient: `flexShrink: 1` still let the
+      // title be squeezed below its own longest word by the two non-shrinking
+      // badges, and "Broken sidewalk" still rendered as "sidewal / k" at
+      // accessibility-extra-large. Measured on the 17e: a 326pt header, minus a
+      // ~125pt severity pill, a ~78pt status pill and their gaps, left the title
+      // ~107pt while "sidewalk" at the capped 28.8pt needs ~127.
+      //
+      // The floor is what makes flexWrap on cardHeader actually fire: with a
+      // bounded base size the badges move to their own line and the title gets
+      // the full row. 130 is the longest single word in CATEGORY_LABELS at the
+      // label variant's 1.6 cap — the same reasoning, and coincidentally the
+      // same number, as barLabel's floor in ReportsBreakdownCard.
+      //
+      // Below the cap this changes nothing: "Broken sidewalk" measures ~138pt at
+      // 1x against ~170pt available, so the floor is never the binding constraint
+      // at normal text sizes.
+      minWidth: 130,
       color: color.textStrong,
     },
     cardBody: { flexDirection: 'row', gap: spacing.md },

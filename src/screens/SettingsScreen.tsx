@@ -584,9 +584,9 @@ export default function SettingsScreen() {
         </AppText>
 
         <SettingsRow
-          title="Update banner preferences"
-          subtitle="Choose which flag status changes surface in the in-app updates banner."
-          accessibilityHint="Opens in-app update banner preferences"
+          title="Update preferences"
+          subtitle="Choose which flag changes appear in your updates."
+          accessibilityHint="Opens update preferences"
           onPress={() => setNotifOpen(true)}
         />
 
@@ -717,9 +717,9 @@ export default function SettingsScreen() {
 
         <SettingsRow
           title="Replay tutorial"
-          subtitle="Re-show the 3-card welcome intro."
+          subtitle="Re-show the welcome intro."
           icon={<PlayCircle size={18} color={color.textMuted} strokeWidth={2.2} />}
-          accessibilityHint="Opens the welcome intro you saw the first time you signed in"
+          accessibilityHint="Opens the welcome intro"
           onPress={() => setTutorialOpen(true)}
         />
 
@@ -814,10 +814,27 @@ export default function SettingsScreen() {
       <NotificationPrefsModal visible={notifOpen} onClose={() => setNotifOpen(false)} />
       <AboutScreen visible={aboutOpen} onClose={() => setAboutOpen(false)} />
       <HiddenCommentsModal visible={hiddenOpen} onClose={() => setHiddenOpen(false)} />
-      {/* Replay tutorial — same OnboardingModal App.tsx mounts on first
-          launch. Reusing it (rather than a sibling "tutorial-light"
-          surface) means the content stays in lockstep with the original
-          experience. The modal's onDone closes it; we deliberately do
+      {/* Replay tutorial — OnboardingModal, which this file is the ONLY mount
+          point for.
+
+          SW-19 — this comment used to say App.tsx mounted this very component
+          at first launch, and that reusing it therefore kept both surfaces
+          showing identical content. Neither was ever true: App.tsx mounts
+          OnboardingCards (App.tsx:208), a different component with FIVE cards,
+          while this one has THREE steps and says "Step N of 3". Two onboarding
+          surfaces have been drifting apart behind a comment asserting they
+          could not. (Phrased without quoting the old text: a guard asserts
+          those exact phrases are absent, and quoting them here would defeat it
+          — the same trap the string-aware stripComments helper exists for.)
+
+          Sky's call, 2026-08-21: keep both — they do different jobs, the
+          first-launch flow carries live permission priming that a replay
+          should not re-run — and make the copy honest instead. So the row's
+          subtitle no longer claims a card count that belonged to neither
+          surface, and this comment no longer claims a lockstep that does not
+          exist. If the two are ever converged, converge them deliberately.
+
+          The modal's onDone closes it; we deliberately do
           NOT call markOnboardingSeen here — the per-user "seen" flag is
           already set (otherwise the auto-show in App.tsx would've fired
           before the user could reach Settings), so there's nothing to

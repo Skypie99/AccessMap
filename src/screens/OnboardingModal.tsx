@@ -296,11 +296,11 @@ export default function OnboardingModal({ visible, onDone }: Props) {
                 pressed && styles.btnPressed,
               ]}
               accessibilityRole="button"
-              accessibilityLabel="Open the map"
-              accessibilityHint="Closes the introduction and opens the map"
+              accessibilityLabel="Done"
+              accessibilityHint="Closes the introduction"
             >
               <AppText variant="label" size={font.size.lg} color={color.textOnBrand}>
-                Open the Map
+                Done
               </AppText>
             </Pressable>
           )}
@@ -416,7 +416,10 @@ const makeStyles = (color: ColorTheme) =>
     },
     // Used when Back + Next/Get started share the same row.
     primaryBtnFlex: { flex: 1 },
-    // Final "Open the Map" CTA — stronger shadow signals completion.
+    // Final "Done" CTA — stronger shadow signals completion. SW-17: it read
+    // "Open the Map" and returned to Settings, which is the correct
+    // destination for a replay opened from there — so the label moved, not the
+    // behaviour. Sky ratified 2026-08-21.
     primaryBtnLast: {
       shadowOpacity: 0.28,
       shadowRadius: 10,

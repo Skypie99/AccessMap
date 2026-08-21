@@ -58,7 +58,22 @@ export function SeverityBadge({ level, showLabel = false, size = 'md', style }: 
         {level}
       </AppText>
       {showLabel && (
-        <AppText variant="bodyMedium" style={[styles.label, { fontSize: textSize, color: textColor }]}>
+        // SW-36: the digit above is `variant="label"` (capped at 1.6) and this
+        // word was `bodyMedium` (deliberately UNCAPPED in AppText, because body
+        // copy must always scale). One pill, two scaling rules — so at
+        // accessibility-extra-large the word rendered ~47% larger than its own
+        // digit and the pill grew without bound, eating the row width the card
+        // title needed. Capping per call site rather than switching to
+        // `variant="label"`: the label variant would force the 600SemiBold face
+        // while styles.label still declares weight 500, changing how the pill
+        // LOOKS to fix how it SCALES. SeverityDisc already takes a per-site cap
+        // for this same reason; this badge was the family member that never got
+        // one. This is the amplifier, not the root cause — see cardTitle.
+        <AppText
+          variant="bodyMedium"
+          maxFontSizeMultiplier={1.6}
+          style={[styles.label, { fontSize: textSize, color: textColor }]}
+        >
           {' · '}{sev.label}
         </AppText>
       )}

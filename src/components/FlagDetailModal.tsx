@@ -1886,7 +1886,7 @@ export default function FlagDetailModal({
                       ).map((c) => (
                         <CommentBubble
                           key={c.id}
-                          author={c.display_name ?? 'Anonymous'}
+                          author={c.display_name ?? 'Member'}
                           text={c.content}
                           createdAt={new Date(c.created_at)}
                           isOwn={c.user_id === user?.id}
