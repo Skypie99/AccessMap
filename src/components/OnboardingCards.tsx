@@ -479,7 +479,7 @@ export default function OnboardingCards({ onDone }: Props) {
               onPress={onDone}
               style={({ pressed }) => [pressed && { opacity: 0.88 }]}
               accessibilityRole="button"
-              accessibilityLabel="Open the map"
+              accessibilityLabel="Open the Map"
               accessibilityHint="Closes the introduction and opens Flagstone"
             >
               <LinearGradient

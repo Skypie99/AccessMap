@@ -296,7 +296,7 @@ export default function OnboardingModal({ visible, onDone }: Props) {
                 pressed && styles.btnPressed,
               ]}
               accessibilityRole="button"
-              accessibilityLabel="Open the map"
+              accessibilityLabel="Open the Map"
               accessibilityHint="Closes the introduction and opens the map"
             >
               <AppText variant="label" size={font.size.lg} color={color.textOnBrand}>

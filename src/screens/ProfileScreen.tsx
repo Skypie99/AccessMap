@@ -683,7 +683,7 @@ export default function ProfileScreen() {
     // silently do nothing on web without the helper.
     const ok = await confirm(
       'Show intro again?',
-      'The 3-card introduction will appear the next time you open the app on this device.',
+      'The introduction will appear the next time you open the app on this device.',
       'Reset',
     );
     if (!ok) return;
