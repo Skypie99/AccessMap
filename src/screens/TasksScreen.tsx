@@ -2292,6 +2292,24 @@ const makeStyles = (color: ColorTheme, reduceTransparency: boolean) => {
       // stays 1 so a title alone on a line still wraps at a word boundary.
       flexGrow: 1,
       flexShrink: 1,
+      // SW-36, second pass — found on the device, not in the source. Freeing the
+      // basis was necessary and NOT sufficient: `flexShrink: 1` still let the
+      // title be squeezed below its own longest word by the two non-shrinking
+      // badges, and "Broken sidewalk" still rendered as "sidewal / k" at
+      // accessibility-extra-large. Measured on the 17e: a 326pt header, minus a
+      // ~125pt severity pill, a ~78pt status pill and their gaps, left the title
+      // ~107pt while "sidewalk" at the capped 28.8pt needs ~127.
+      //
+      // The floor is what makes flexWrap on cardHeader actually fire: with a
+      // bounded base size the badges move to their own line and the title gets
+      // the full row. 130 is the longest single word in CATEGORY_LABELS at the
+      // label variant's 1.6 cap — the same reasoning, and coincidentally the
+      // same number, as barLabel's floor in ReportsBreakdownCard.
+      //
+      // Below the cap this changes nothing: "Broken sidewalk" measures ~138pt at
+      // 1x against ~170pt available, so the floor is never the binding constraint
+      // at normal text sizes.
+      minWidth: 130,
       color: color.textStrong,
     },
     cardBody: { flexDirection: 'row', gap: spacing.md },

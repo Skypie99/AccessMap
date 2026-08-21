@@ -33,6 +33,14 @@
  * guard pins BOTH halves on both surfaces, because either one alone ships a
  * change that looks like a fix and is not one.
  *
+ * ─── AND A THIRD HALF, FOUND ONLY ON THE DEVICE ───────────────────────────
+ * Freeing the basis was still not enough for the Tasks header. `flexShrink: 1`
+ * let the two non-shrinking badges squeeze the title below its own longest word
+ * anyway, so it wrapped to a second line and STILL rendered "sidewal / k". A
+ * `minWidth` floor is what finally makes the wrap fire and moves the badges to
+ * their own line. Source review did not catch this and a screenshot did — which
+ * is the argument for the device pass, not against it.
+ *
  * ─── WHY NOT numberOfLines ────────────────────────────────────────────────
  * `numberOfLines={1}` on a title is the reflex fix and it is forbidden here —
  * dynamicTypeGuard.test.ts fails any line pairing it with a *Title style,
@@ -142,6 +150,13 @@ describe('SW-36 — the Tasks card title was crushed between two badges', () => 
     // makes the box measure the text. Writing any number here reintroduces
     // the bug in its other form.
     expect(NUMERIC_FLEX_BASIS.test(block)).toBe(false);
+    // ...and a floor, WITHOUT WHICH THE REST IS NOT A FIX. Found on the device:
+    // freeing the basis let the title wrap to a second line, but flexShrink
+    // still allowed the two non-shrinking badges to squeeze it below its own
+    // longest word, and "Broken sidewalk" still rendered as "sidewal / k" at
+    // accessibility-extra-large. The floor is what makes cardHeader's flexWrap
+    // actually fire. Same reasoning, and the same number, as barLabel below.
+    expect(block).toContain('minWidth: 130');
   });
 
   it('cardHeader may wrap, so the title can take a line of its own', () => {
