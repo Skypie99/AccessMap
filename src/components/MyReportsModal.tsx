@@ -6,6 +6,7 @@ import {
   Platform,
   Pressable,
   RefreshControl,
+  ScrollView,
   StyleSheet,
   type Text,
   View,
@@ -442,11 +443,25 @@ export default function MyReportsModal({
             // Content-shaped loading (BP-3): card-shaped placeholders instead
             // of a bare spinner; the label + polite region keep the same SR
             // story the old visible caption told.
-            <View accessibilityLabel="Loading your reports" accessibilityLiveRegion="polite">
+            //
+            // SW-42: wrapped in a scroller for the same reason MyWatched's
+            // states are — this card shrinks into the KAV's cap and the sheet
+            // sets overflow:'hidden', so five card-shaped skeletons in a bare
+            // <View> are clipped rather than scrolled. The populated and empty
+            // states below were already safe: they live inside the FlatList
+            // (empty via ListEmptyComponent), which is why this sheet degraded
+            // to a cramped-but-scrollable list instead of losing content the
+            // way MyWatched's empty state did.
+            <ScrollView
+              style={styles.stateBody}
+              contentContainerStyle={styles.stateBodyContent}
+              accessibilityLabel="Loading your reports"
+              accessibilityLiveRegion="polite"
+            >
               {Array.from({ length: 5 }).map((_, i) => (
                 <SkeletonCard key={i} />
               ))}
-            </View>
+            </ScrollView>
           ) : (
             <FlatList
               keyboardShouldPersistTaps="handled"
@@ -588,6 +603,11 @@ const makeStyles = (color: ColorTheme) =>
       fontWeight: font.weight.bold,
       fontSize: font.size.sm,
     },
+    // SW-42: see MyWatchedModal — flexShrink:1 lets the body absorb the card's
+    // shrink by scrolling instead of by clipping (FeedbackModal `body` is the
+    // reference). flexGrow:1 keeps short content where it already sat.
+    stateBody: { flexShrink: 1 },
+    stateBodyContent: { flexGrow: 1 },
     center: {
       flexGrow: 1,
       alignItems: 'center',

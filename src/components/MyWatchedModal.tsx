@@ -424,45 +424,28 @@ export default function MyWatchedModal({ visible, onClose, onSelectFlag, onViewO
             </View>
           )}
 
-          {loading ? (
-            // Content-shaped loading (BP-3): row placeholders; the bare
-            // unthemed spinner told SR users nothing — the label does now.
-            <View accessibilityLabel="Loading watched flags" accessibilityLiveRegion="polite">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <SkeletonRow key={i} />
-              ))}
-            </View>
-          ) : loadError && flags.length === 0 ? (
-            <View style={styles.center}>
-              {/* M-40 error repair: was bare color.error text directly on the
-                  (now glass) sheet; adopts the sibling errorBanner pattern —
-                  a self-contained solid errorBg banner (MyReports/ActivityFeed
-                  ship the same), never error-on-glass. */}
-              <View style={styles.errorBanner}>
-                <AppText variant="body" style={styles.errorText}>{loadError}</AppText>
-                <Pressable onPress={() => void load()} style={({ pressed }) => [styles.retryBtn, pressed && { backgroundColor: color.errorPressed }]} accessibilityRole="button" accessibilityLabel="Retry loading watched flags">
-                  <AppText variant="label" style={styles.retryText}>Retry</AppText>
-                </Pressable>
-              </View>
-            </View>
-          ) : flags.length === 0 ? (
-            <View style={styles.center}>
-              <Star size={32} color={color.inkGlassMuted} strokeWidth={2.2} {...decorativeProps} />
+          {/* SW-42: the list has always been able to scroll, which is why a
+              POPULATED sheet only ever looked cramped. Every other state was a
+              bare <View> — and the card legitimately shrinks into the KAV's cap
+              (G6/SR-099) with overflow:'hidden' on the sheet, so those states
+              were CLIPPED rather than scrolled. On an empty watched list the one
+              line that explains how to watch a flag ("Open any flag… tap Watch")
+              sat at y836 while the card ended at y822: present in the
+              accessibility tree, 100% invisible, on the single screen whose only
+              job is to explain itself. Identical on the 17e.
 
-              <AppText variant="heading" style={styles.emptyTitle}>No watched flags yet</AppText>
-              <AppText variant="body" style={styles.emptySubtitle}>
-                Open any flag on the map or in Tasks and tap <AppText variant="label" style={styles.emptyBold}>Watch</AppText> to track it here.
-              </AppText>
-            </View>
-          ) : displayFlags.length === 0 ? (
-            <View style={styles.center}>
-              {/* BP-7: the app's last emoji glyph → the Lucide Search its
-                  sibling empty states already use (AddressSearch/MyFeedback). */}
-              <Search size={32} color={color.inkGlassMuted} strokeWidth={2.2} {...decorativeProps} />
-              <AppText variant="heading" style={styles.emptyTitle}>No matches</AppText>
-              <AppText variant="body" style={styles.emptySubtitle}>Try a different search term or status filter.</AppText>
-            </View>
-          ) : (
+              The fix is the house recipe, not a new one. FeedbackModal — the
+              reference Recipe F implementation, and the other sheet with this
+              exact backdrop → KAV → cardWrap → card shape — puts its body in a
+              ScrollView with flexShrink:1, so the shrink is absorbed by
+              SCROLLING instead of by clipping. These states now do the same.
+
+              The FlatList branch is deliberately NOT wrapped: nesting a
+              VirtualizedList inside a ScrollView is its own bug. Hoisting it
+              above the chain is equivalence-preserving — displayFlags is a
+              subset of flags, so `displayFlags.length > 0` already implies both
+              of the conditions that used to be tested before it. */}
+          {!loading && displayFlags.length > 0 ? (
             <FlatList
               data={displayFlags} keyExtractor={(item) => item.id} renderItem={renderItem}
               contentContainerStyle={styles.list}
@@ -475,6 +458,52 @@ export default function MyWatchedModal({ visible, onClose, onSelectFlag, onViewO
                 <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={color.brand} colors={[color.brand]} accessibilityLabel="Pull down to refresh watched flags" />
               }
             />
+          ) : (
+            <ScrollView
+              style={styles.stateBody}
+              contentContainerStyle={styles.stateBodyContent}
+              keyboardShouldPersistTaps="handled"
+            >
+            {loading ? (
+              // Content-shaped loading (BP-3): row placeholders; the bare
+              // unthemed spinner told SR users nothing — the label does now.
+              <View accessibilityLabel="Loading watched flags" accessibilityLiveRegion="polite">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <SkeletonRow key={i} />
+                ))}
+              </View>
+            ) : loadError && flags.length === 0 ? (
+              <View style={styles.center}>
+                {/* M-40 error repair: was bare color.error text directly on the
+                    (now glass) sheet; adopts the sibling errorBanner pattern —
+                    a self-contained solid errorBg banner (MyReports/ActivityFeed
+                    ship the same), never error-on-glass. */}
+                <View style={styles.errorBanner}>
+                  <AppText variant="body" style={styles.errorText}>{loadError}</AppText>
+                  <Pressable onPress={() => void load()} style={({ pressed }) => [styles.retryBtn, pressed && { backgroundColor: color.errorPressed }]} accessibilityRole="button" accessibilityLabel="Retry loading watched flags">
+                    <AppText variant="label" style={styles.retryText}>Retry</AppText>
+                  </Pressable>
+                </View>
+              </View>
+            ) : flags.length === 0 ? (
+              <View style={styles.center}>
+                <Star size={32} color={color.inkGlassMuted} strokeWidth={2.2} {...decorativeProps} />
+
+                <AppText variant="heading" style={styles.emptyTitle}>No watched flags yet</AppText>
+                <AppText variant="body" style={styles.emptySubtitle}>
+                  Open any flag on the map or in Tasks and tap <AppText variant="label" style={styles.emptyBold}>Watch</AppText> to track it here.
+                </AppText>
+              </View>
+            ) : displayFlags.length === 0 ? (
+              <View style={styles.center}>
+                {/* BP-7: the app's last emoji glyph → the Lucide Search its
+                    sibling empty states already use (AddressSearch/MyFeedback). */}
+                <Search size={32} color={color.inkGlassMuted} strokeWidth={2.2} {...decorativeProps} />
+                <AppText variant="heading" style={styles.emptyTitle}>No matches</AppText>
+                <AppText variant="body" style={styles.emptySubtitle}>Try a different search term or status filter.</AppText>
+              </View>
+              ) : null}
+            </ScrollView>
           )}
         </GlassSurface>
         </View>
@@ -535,6 +564,14 @@ const makeStyles = (color: ColorTheme) =>
     clearBtnText: { fontSize: font.size.sm, fontWeight: font.weight.bold, color: color.error },
     missingBanner: { backgroundColor: color.warningBg, borderRadius: radius.md, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, marginBottom: spacing.sm, borderLeftWidth: 3, borderLeftColor: color.accentOrange },
     missingText: { fontSize: font.size.sm, color: color.warningFg, lineHeight: 18 },
+    // SW-42: the non-list states' scroller. flexShrink:1 is the load-bearing
+    // half — it is what lets the body absorb the card's shrink by scrolling
+    // instead of letting overflow:'hidden' eat it (FeedbackModal `body`, the
+    // reference Recipe F implementation, carries exactly this). flexGrow:1 +
+    // centring on the CONTENT container keeps a short empty state optically
+    // centred when there is room, which is how it looked before.
+    stateBody: { flexShrink: 1 },
+    stateBodyContent: { flexGrow: 1, justifyContent: 'center' },
     center: { alignItems: 'center', justifyContent: 'center', paddingVertical: 48, gap: spacing.md },
     // M-40 error-banner (self-contained solid pin — errorBg + errorFg, the
     // MyReports/ActivityFeed sibling pattern; no new arbiter pair, stacks _doc).
