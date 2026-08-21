@@ -1499,7 +1499,30 @@ export default function MapScreen() {
   // accidental-trigger concern (panning) doesn't apply since web uses
   // right-click rather than a long-press gesture.
   const handleMapLongPress = useCallback((coord: { lat: number; lng: number }) => {
-    // Jordan Condition 2: guests cannot create reports.
+    // The gate stands. The COMMENT that used to be here did not: it read
+    // "Jordan Condition 2: guests cannot create reports", and the app has
+    // contradicted that since 2026-05-30.
+    //
+    // What Condition 2 actually says, from the migration that recorded it
+    // (supabase/migrations/2026-05-29_anon_flags_select.sql, smoke-test step c):
+    // "The '＋ Report' FAB should NOT appear" for a guest. It is about not
+    // putting a report AFFORDANCE on the map for guests — not about capability —
+    // and it was written when the database blocked anonymous writes outright
+    // ("verify that no anon INSERT/UPDATE/DELETE policies exist"). Anonymous
+    // reporting shipped the NEXT DAY. Its letter is still honoured: the Report
+    // FAB below is still `{authUser && …}`.
+    //
+    // (Beware: "Condition N" is numbered per brief. A different Condition 2 —
+    // "the edit UI must not expose photo_url" — lives in the Shamus flag-editing
+    // brief and is quoted in 2026-05-25_flag_edit_rls_replacement.sql. They are
+    // unrelated, which is how this one got misread.)
+    //
+    // So the real reason this gate stays, reaffirmed by Sky 2026-08-20: with GPS
+    // you can only report where you ARE, and long-press lets you report
+    // anywhere. The anon rate limit caps VOLUME (5 per 24h), not location, so
+    // opening this to guests is a genuine change to the anonymous abuse surface
+    // — Sky's and Jordan's call, not a passing fix's. A guest whose location is
+    // denied is told this plainly in ReportFlagModal rather than dead-ended.
     if (!authUser) return;
     // A11Y-208 (G5 focus-return contract): arm the latch on BOTH map-gesture
     // paths. Without register() the session is never armed, restore() early-

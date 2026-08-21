@@ -1443,3 +1443,103 @@ describe('SW-52 — cancelling a report actually discards it', () => {
     expect(utils.getByDisplayValue('Survives a failure')).toBeTruthy();
   });
 });
+
+/**
+ * SW-37, the guest half — a dead end you can at least understand.
+ *
+ * Manual placement is deliberately NOT open to guests (see handleMapLongPress:
+ * with GPS you can only report where you ARE, and the anon rate limit caps
+ * volume, not location). That is a defensible product line, but it left the
+ * users the finding was actually about — anonymous ones — staring at a disabled
+ * Submit with the sentence "Waiting for your location", which after a denial is
+ * false AND points at the one control that cannot help.
+ *
+ * So the constraint gets said out loud, in the same words, in two places: on
+ * screen for everyone, and in Submit's accessibilityHint for screen-reader
+ * users, who never see the note.
+ */
+describe('SW-37 (guest half) — the block is explained, not just enforced', () => {
+  beforeEach(() => {
+    mockUseAuth.mockReturnValue({ user: null } as ReturnType<typeof useAuth>);
+  });
+
+  const ANON_LINE =
+    'Anonymous reports can only be filed where you are. Turn on location above, or sign in to place the pin yourself.';
+
+  it('a guest denied location is told why, and where to go', () => {
+    const { getByText } = render(
+      withProvider(
+        <ReportFlagModal
+          visible
+          location={null}
+          locationDenied
+          onClose={jest.fn()}
+          onCreated={jest.fn()}
+        />,
+      ),
+    );
+    expect(getByText(ANON_LINE)).toBeTruthy();
+  });
+
+  it("Submit's hint stops pointing at the control that cannot help", () => {
+    const { getByLabelText } = render(
+      withProvider(
+        <ReportFlagModal
+          visible
+          location={null}
+          locationDenied
+          onClose={jest.fn()}
+          onCreated={jest.fn()}
+        />,
+      ),
+    );
+    const hint = getByLabelText('Submit report anonymously').props.accessibilityHint as string;
+    expect(hint).toContain('can only be filed where you are');
+    // The whole point: after a denial, "Use my location" re-asks a settled question.
+    expect(hint).not.toContain('Use my location');
+  });
+
+  it('says nothing extra while the answer is still outstanding', () => {
+    // Non-vacuity: the note is about a DENIAL, not about every no-location state.
+    const { queryByText } = render(
+      withProvider(
+        <ReportFlagModal visible location={null} onClose={jest.fn()} onCreated={jest.fn()} />,
+      ),
+    );
+    expect(queryByText(ANON_LINE)).toBeNull();
+  });
+
+  it('does not claim "anonymous" at a signed-in user who simply has location off', () => {
+    mockUseAuth.mockReturnValue({ user: { id: 'user-abc' } } as ReturnType<typeof useAuth>);
+    const { getByText, queryByText } = render(
+      withProvider(
+        <ReportFlagModal
+          visible
+          location={null}
+          locationDenied
+          onClose={jest.fn()}
+          onCreated={jest.fn()}
+        />,
+      ),
+    );
+    expect(queryByText(ANON_LINE)).toBeNull();
+    expect(getByText('Location is off for Flagstone. Turn it on above to file this report.')).toBeTruthy();
+  });
+
+  it('stays quiet for a host that CAN place manually (the signed-in map path)', () => {
+    // There the recovery is a button, not a sentence — see the SW-37 suite above.
+    const { queryByText } = render(
+      withProvider(
+        <ReportFlagModal
+          visible
+          location={null}
+          locationDenied
+          onPlaceOnMap={jest.fn()}
+          onClose={jest.fn()}
+          onCreated={jest.fn()}
+        />,
+      ),
+    );
+    expect(queryByText(ANON_LINE)).toBeNull();
+  });
+});

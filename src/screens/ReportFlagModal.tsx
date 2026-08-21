@@ -125,6 +125,29 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
   const categoriesFade = useHorizontalOverflowFade();
   const { user } = useAuth();
   const isAnon = !user;
+  /**
+   * SW-11 / SW-37 — why Submit is blocked, said out loud.
+   *
+   * Three different states used to share one sentence ("Waiting for your
+   * location…"), and for a guest who had DENIED location that sentence was both
+   * false and a dead end: it pointed at "Use my location", the one control that
+   * cannot help, because the OS has already answered. Guests are the case the
+   * finding was actually about, and manual placement is deliberately not open to
+   * them (see handleMapLongPress) — so the honest answer names the constraint
+   * and the way out of it, rather than leaving them to guess.
+   */
+  const blockedReason = (): string | undefined => {
+    if (location) return undefined;
+    if (onPlaceOnMap) {
+      return "This report needs a location. Tap 'Use my location' or 'Place the pin on the map' above.";
+    }
+    if (locationDenied) {
+      return isAnon
+        ? 'Anonymous reports can only be filed where you are. Turn on location, or sign in to place the pin yourself.'
+        : 'Location is off for Flagstone. Turn it on to file this report.';
+    }
+    return "Waiting for your location. Tap 'Use my location' above to try again.";
+  };
   const reducedMotion = useReducedMotion();
   // Pull-to-dismiss gating (map-gestures SPEC §2.6). `atTop` is the half of the
   // rule that keeps this form usable: mid-scroll, a downward drag belongs to the
@@ -752,6 +775,19 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
             </Pressable>
           )}
 
+          {/* SW-37 (guest half): the dead end, explained. A guest with location
+              denied has no manual-placement route by design, so leaving them
+              with a disabled Submit and no reason was the actual defect. The
+              "Sign in" link in the banner directly below is the second half of
+              this sentence. */}
+          {!location && !onPlaceOnMap && locationDenied && (
+            <AppText variant="body" style={styles.blockedNote}>
+              {isAnon
+                ? 'Anonymous reports can only be filed where you are. Turn on location above, or sign in to place the pin yourself.'
+                : 'Location is off for Flagstone. Turn it on above to file this report.'}
+            </AppText>
+          )}
+
           {/* Anonymous mode banner — shown when user is not signed in.
               accessibilityRole="alert" makes VoiceOver announce it on iOS;
               accessibilityLiveRegion="assertive" does the same on Android.
@@ -1346,16 +1382,10 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
               ]}
               accessibilityRole="button"
               accessibilityLabel={isAnon ? 'Submit report anonymously' : 'Submit report'}
-              accessibilityHint={
-                !location
-                  ? onPlaceOnMap
-                    // SW-37: never point a blocked user at the ONE control that
-                    // cannot help them. Under a denial "Use my location" just
-                    // re-asks a question the OS has already answered.
-                    ? "This report needs a location. Tap 'Use my location' or 'Place the pin on the map' above."
-                    : "Waiting for your location. Tap 'Use my location' above to try again."
-                  : undefined
-              }
+              // SW-37: never point a blocked user at the ONE control that cannot
+              // help them. Under a denial "Use my location" only re-asks a
+              // question the OS has already answered.
+              accessibilityHint={blockedReason()}
               {...a11yToggle({ disabled: submitting || !location, busy: submitting })}
             >
               {({ pressed }) => (
@@ -1437,6 +1467,14 @@ const makeStyles = (color: ColorTheme) =>
     location: { fontSize: font.size.xs, color: color.inkGlassMuted },
     // S5: in-sheet "Use my location" retry — 44pt, brand-soft tint mirroring the
     // anon banner; only rendered when no location has resolved.
+    // SW-37: the muted explain-the-block line. Same ink as the other quiet
+    // captions on this sheet; it informs, it is not an alert.
+    blockedNote: {
+      fontSize: font.size.xs,
+      color: color.inkGlassMuted,
+      lineHeight: 17,
+      marginBottom: spacing.sm,
+    },
     useLocationBtn: {
       flexDirection: 'row',
       alignItems: 'center',
