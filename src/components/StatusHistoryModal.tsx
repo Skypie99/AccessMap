@@ -11,10 +11,24 @@
  * yet), `listStatusHistory` returns []. We render a friendly placeholder
  * instead of an error — "History not yet enabled…".
  *
- * Sibling-Modal pattern, like PhotoLightboxModal: the parent
- * (FlagDetailModal) opens this on top of its own Modal. Both render with
- * `accessibilityViewIsModal` so VoiceOver doesn't leak focus between
- * them.
+ * MOUNTED INSIDE FlagDetailModal'S Modal, NOT AFTER IT. iOS will not present
+ * a second modal from a view controller that is already presenting one. This
+ * file shipped mounted as a SIBLING after the parent's `</Modal>`, which
+ * resolved to the SCREEN's view controller — the one FlagDetail itself
+ * occupies — so the History button was enabled, tappable, and did nothing at
+ * all, for every user, from the day it shipped until 2026-08-20 (SW-46).
+ *
+ * ⚑ The note that used to sit here called that "the Sibling-Modal pattern,
+ * like PhotoLightboxModal". Both halves were wrong. It was not a pattern, it
+ * was a bug; and PhotoLightboxModal is not a precedent for it — that one is
+ * mounted on TasksScreen, a tab screen, where the root VC is free and a
+ * sibling mount is correct. The rule is not "siblings work", it is "a sheet
+ * presents from its host's VC, so it must be mounted inside whatever is
+ * already presenting". See LegalSheets.tsx for the full write-up, and
+ * PhotoGallery's own lightbox for the in-modal arrangement that does work.
+ *
+ * Both still render with `accessibilityViewIsModal` so VoiceOver doesn't leak
+ * focus between them.
  */
 import React, { useEffect, useMemo, useState } from 'react';
 import {

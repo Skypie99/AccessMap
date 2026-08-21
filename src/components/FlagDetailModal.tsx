@@ -2157,25 +2157,55 @@ export default function FlagDetailModal({
         </View>
         {/* Inside this Modal on purpose — see LegalSheets.tsx. */}
       {legal.sheets}
-    </Modal>
+      {/* ── EVERY sheet opened FROM this one is mounted INSIDE it ───────────
+          Not a stylistic choice. iOS refuses to present a second modal from a
+          view controller that is already presenting one, and this Modal IS
+          that view controller while it is open. Mounted as SIBLINGS after
+          `</Modal>` these two resolved to the SCREEN's VC — the occupied one —
+          so History and Report were enabled, tappable, and did nothing at all,
+          app-wide, for every user. One line per dead tap (iPhone 17 Pro sim,
+          2026-08-20):
+
+            [com.apple.UIKit:Presentation] Attempt to present
+            <RCTModalHostViewController: 0x12f521900> on <UIViewController:
+            0x1051b8c00> (from <RNSScreen: 0x127374000>) which is already
+            presenting <RCTModalHostViewController: 0x1273b5e00>.
+
+          `0x1273b5e00` is this Modal. A PRESENTED view controller may itself
+          present, so mounting them here — inside — makes them present from
+          THIS modal's VC, which is free. Same fix, same reason, as
+          `{legal.sheets}` three lines up; see LegalSheets.tsx for the full
+          write-up. That the report sheet is the Apple 1.2(b) abuse control,
+          and that this file is its ONLY mount point app-wide, is what made the
+          sibling arrangement a store blocker rather than a papercut.
+
+          ⚑ The comment that used to sit here claimed StatusHistoryModal was
+          "the shipped precedent for a payload-carrying sheet stacked over this
+          one". It was a precedent for the ARRANGEMENT, not for it working —
+          StatusHistoryModal was dead by the same mechanism, and had been since
+          it shipped. Three other comments repeated the claim (MapScreen.tsx,
+          StatusHistoryModal.tsx, ReportContentModal.tsx); all four are
+          corrected as of 2026-08-20. Nothing about the JS is wrong, which is
+          why jest, tsc and lint all stayed green over it — only the UIKit
+          arrangement was, so only a simulator walk could see it.
+
+          STILL TRUE, and the reason neither of these lives on
+          SharedModalsHost: `SharedModalKey` is a payload-free union — it can
+          say "open the report sheet" but not "…about flag 9f3c" — and its own
+          JSDoc excludes per-screen-state modals by name. For the report sheet
+          `visible` is DERIVED from the target rather than tracked separately,
+          which is what makes "cleared target" and "closed sheet" one fact. */}
       <StatusHistoryModal
         visible={historyOpen}
         flagId={shownFlag?.id ?? null}
         onClose={() => setHistoryOpen(false)}
       />
-      {/* Sibling, not SharedModalsHost. `SharedModalKey` is a payload-free
-          union — it can say "open the report sheet" but not "…about flag 9f3c"
-          — and its own JSDoc excludes per-screen-state modals by name.
-          StatusHistoryModal above is the shipped precedent for a
-          payload-carrying sheet stacked over this one, so this copies it.
-          `visible` is DERIVED from the target rather than tracked separately,
-          which is what makes "cleared target" and "closed sheet" the same
-          fact. */}
       <ReportContentModal
         visible={reportTarget !== null}
         target={reportTarget}
         onClose={() => setReportTarget(null)}
       />
+    </Modal>
     </>
   );
 }

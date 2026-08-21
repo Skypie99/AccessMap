@@ -2804,8 +2804,27 @@ export default function MapScreen() {
           // recenter they can't perceive. We present the sheet ON TOP of the
           // still-open Nearby list (we do NOT close it): closing-then-presenting
           // races the iOS modal transition, and leaving the list mounted means
-          // VoiceOver focus returns to this row when the sheet closes. Nesting is
-          // already proven here (StatusHistoryModal stacks over FlagDetailModal).
+          // VoiceOver focus returns to this row when the sheet closes.
+          //
+          // ⚑ 2026-08-20 — THIS PATH IS UNVERIFIED, and the sentence that used
+          // to close this comment was false. It read: "Nesting is already
+          // proven here (StatusHistoryModal stacks over FlagDetailModal)."
+          // StatusHistoryModal did not stack over anything — it was mounted as
+          // a SIBLING after FlagDetailModal's `</Modal>`, iOS refused to
+          // present it from an occupied VC, and it had been silently dead since
+          // it shipped (SW-46, fixed in FlagDetailModal.tsx this commit). It was
+          // a precedent for the arrangement, never for the arrangement working.
+          //
+          // That matters HERE because this branch relies on the same
+          // arrangement: FlagDetailModal and NearbyFlagsModal are siblings on
+          // this screen (see their mounts above), both present from the SCREEN's
+          // view controller, and this branch deliberately leaves Nearby open —
+          // so the sheet is asked to present from a VC Nearby already occupies.
+          // That is the exact shape of SW-46. It was not reproduced in the
+          // 2026-08-20 walk (the walk did not run VoiceOver, and this branch is
+          // screen-reader-only), so it is recorded as suspect, not as fact.
+          // Confirm with real VoiceOver before trusting it; if it is broken the
+          // fix is NOT a comment change, and it is not in Wave 1's scope.
           if (screenReaderOn) {
             setSelectedFlag(flag);
             return;

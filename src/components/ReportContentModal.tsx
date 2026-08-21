@@ -10,11 +10,23 @@
  * the header line. Two components would be two copies of the same submit ladder
  * and two chances for them to drift; `ReportTarget` carries the difference.
  *
- * WHY IT MOUNTS AS A SIBLING INSIDE FlagDetailModal, NOT IN SharedModalsHost.
+ * WHY IT MOUNTS INSIDE FlagDetailModal'S Modal, NOT IN SharedModalsHost.
  * `SharedModalKey` is a payload-free union — it can say "open the report sheet"
  * but not "…about comment 9f3c". Its own JSDoc excludes per-screen-state modals
- * by name. StatusHistoryModal is the shipped precedent for a payload-carrying
- * sibling stacked over the detail sheet, and this copies it.
+ * by name. So it mounts locally — but INSIDE the parent's `</Modal>`, because
+ * iOS refuses to present a second modal from a view controller that is already
+ * presenting one, and the detail sheet is that view controller while it is open.
+ *
+ * ⚑ This shipped mounted as a SIBLING AFTER that `</Modal>`, on the strength of
+ * a note here that called StatusHistoryModal "the shipped precedent for a
+ * payload-carrying sibling stacked over the detail sheet". StatusHistoryModal
+ * was not a precedent — it was the same bug, dead by the same mechanism since
+ * it shipped. The consequence here was worse: this sheet is the Apple 1.2(b)
+ * abuse-report surface and FlagDetailModal is its ONLY mount point app-wide, so
+ * from the day the entry points were wired until 2026-08-20 the app had no
+ * working way to report objectionable content — for flags OR comments, guest or
+ * signed-in. Enabled, tappable, silent (SW-46). Nothing about the JS was wrong,
+ * which is why jest, tsc and lint were green over it the whole time.
  *
  * NOT WIRED YET, ON PURPOSE. This commit lands the surface with no entry point,
  * so the dismissal census (src/__tests__/dismissalStandard.guard.test.ts) enrols
