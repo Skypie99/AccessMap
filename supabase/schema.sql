@@ -120,6 +120,20 @@ revoke execute on function public.handle_new_user() from public, anon, authentic
 -- is_admin spam-penalty branch: admin-explicit reject deducts 20pts from reporter.
 -- DECISION PENDING (Sky): live awards 10/3/15/7; original schema.sql had 5/2/10/5.
 --   Trust the live catalog (this file now matches live as of 2026-06-07).
+--
+-- !! THIS IS NOT THE WHOLE POINTS ECONOMY (SW-53, 2026-08-20) !!
+--   Five more awarding triggers are live and are defined ONLY in
+--   supabase/migrations/2026-05-30_trust_score_system.sql -- they were never
+--   folded back into this file:
+--     handle_flag_submitted        +5  report filed (skipped when user_id IS NULL)
+--     handle_flag_photo_added      +3  flag owner, once per flag
+--     handle_comment_added         +1  no dedupe, no cap
+--     handle_comment_vote_added    +2  comment author, first 10 votes only
+--     handle_point_event_streak    +5  every completed 7-day multiple
+--   Anyone reading this file alone will conclude the app pays four awards. It
+--   pays nine. Measured end-to-end on a live account 2026-08-19: one flag took
+--   a user 90 -> 124 (+5 +3 +1 +10 +15), reconciling exactly.
+--   Mirrored for the UI in src/lib/points.ts; the full table is in CLAUDE.md.
 -- ---------------------------------------------------------------------------
 create or replace function public.handle_flag_status_change()
 returns trigger

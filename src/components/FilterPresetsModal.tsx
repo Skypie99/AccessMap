@@ -237,11 +237,20 @@ export default function FilterPresetsModal({ visible, onClose, onApply }: Props)
     ({ item }: { item: FilterPreset }) => {
       const isRenaming = renamingId === item.id;
       return (
-        <View
-          style={styles.row}
-          accessibilityRole="button"
-          accessibilityLabel={`Preset ${item.name}. ${presetSummary(item)}`}
-        >
+        // A11Y-213 (the accessible-parent trap), found while verifying SW-32.
+        // This row wrapper carried accessibilityRole="button" plus a label while
+        // containing FIVE real controls — Apply, Rename, Delete, and, once you
+        // start renaming, a TextInput with Cancel and Save. It is wrong under
+        // both readings and there is no third one: on web, role="button" makes
+        // every descendant presentational, so those controls leave the tree
+        // outright; on iOS the props are inert without `accessible`, so the row
+        // was claiming an identity that never applied. It also has no press
+        // handler, so the "button" it announced did nothing.
+        //
+        // Nothing is lost by making it plain. The preset name and
+        // `presetSummary` are both visible AppText and read on their own, and
+        // each control already carries its own full label ("Apply preset X").
+        <View style={styles.row}>
           {isRenaming ? (
             <View style={styles.renameRow}>
               <TextInput

@@ -158,6 +158,33 @@ describe('A11Y-214 guard — accessible-by-default Pressables must not swallow n
     expect(src).toContain('accessibilityLabel="Clear search"');
   });
 
+  it('FilterPresetsModal preset row: container plain; its five controls reachable', () => {
+    // Found 2026-08-20 while verifying SW-32, and it is the same class this
+    // file exists for — an unpinned instance the docblock above predicts.
+    //
+    // The row wrapper carried accessibilityRole="button" + a label around
+    // Apply, Rename, Delete and (mid-rename) a TextInput with Cancel and Save.
+    // On web, role="button" makes descendants presentational and they leave the
+    // tree; on iOS the props are inert without `accessible`, so it announced an
+    // identity it never had — over a View with no press handler.
+    const src = read('components/FilterPresetsModal.tsx');
+    const rowTag = openTagAt(src, 'styles.row}', 'FilterPresetsModal');
+    expect(rowTag).not.toMatch(/accessibilityRole/);
+    expect(rowTag).not.toMatch(/accessibilityLabel/);
+    expect(hasBareAccessible(rowTag)).toBe(false);
+
+    // Non-vacuity: the controls it used to swallow must still be there, each
+    // with its own identity.
+    for (const label of [
+      'accessibilityLabel="Save new name"',
+      'accessibilityLabel="Cancel rename"',
+      'accessibilityLabel="New preset name"',
+    ]) {
+      expect(src).toContain(label);
+    }
+    expect(src).toMatch(/accessibilityLabel=\{`Apply preset \$\{item\.name\}`\}/);
+  });
+
   it('HomeScreen Clear-search meets the 44pt house floor (A11Y-223: 16pt glyph + 14 slop = 44 effective)', () => {
     const src = read('screens/HomeScreen.tsx');
     const clearTag = openTagAt(src, 'accessibilityLabel="Clear search"', 'HomeScreen');

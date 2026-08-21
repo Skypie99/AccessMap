@@ -79,6 +79,54 @@ export function regionContainsPoint(region: Region, p: LatLng): boolean {
 }
 
 /**
+ * A viewport that shows the reports we actually have, for a user we cannot
+ * locate yet.
+ *
+ * SW-08. Home's map peek fell back to a hardcoded San Francisco region while
+ * the data it draws is in Kelowna, so a user with no location and no search got
+ * an empty ocean of a city the app has never had a report in. The caption
+ * beside it ("No reports here yet. You could add the first.") is correct and
+ * ratified — it cannot fire without a real centre — but the MAP under it was
+ * pointing somewhere arbitrary.
+ *
+ * Fitting the loaded flags is the honest fallback: it makes no claim about
+ * where the USER is (nothing here is ever a distance origin — that still
+ * requires a real centre), only about where the reports are.
+ *
+ * Returns null when there is nothing to fit, because an empty list cannot
+ * answer the question and inventing a centre for it would be the same mistake
+ * one step further along.
+ *
+ * The window is padded and floored so a single report, or a tight cluster, does
+ * not arrive zoomed to street level with no context around it.
+ */
+export function regionFittingPoints(
+  points: LatLng[],
+  { minDelta = 0.05, pad = 1.4 }: { minDelta?: number; pad?: number } = {},
+): Region | null {
+  const usable = points.filter((p) => Number.isFinite(p.lat) && Number.isFinite(p.lng));
+  if (usable.length === 0) return null;
+
+  let minLat = Infinity;
+  let maxLat = -Infinity;
+  let minLng = Infinity;
+  let maxLng = -Infinity;
+  for (const p of usable) {
+    if (p.lat < minLat) minLat = p.lat;
+    if (p.lat > maxLat) maxLat = p.lat;
+    if (p.lng < minLng) minLng = p.lng;
+    if (p.lng > maxLng) maxLng = p.lng;
+  }
+
+  return {
+    latitude: (minLat + maxLat) / 2,
+    longitude: (minLng + maxLng) / 2,
+    latitudeDelta: Math.max(minDelta, (maxLat - minLat) * pad),
+    longitudeDelta: Math.max(minDelta, (maxLng - minLng) * pad),
+  };
+}
+
+/**
  * Walking time in minutes for a given distance, rounded up to at least 1
  * minute. "Standing across the street" still reads as a 1-minute walk —
  * better than rounding to zero and looking broken.

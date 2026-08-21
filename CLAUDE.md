@@ -65,10 +65,31 @@ Two tables:
   `description`, `photo_url`, `status` (open / verified / resolved / rejected),
   `user_id`, `created_at`.
 
-**Points trigger** (`handle_flag_status_change`, security definer):
-- Reporter: +10 on `open → verified`, +15 on `open/verified → resolved`.
-- Actor (the verifier/resolver, if NOT the reporter): +3 verified, +7 resolved.
-- Forward-only — reverting or rejecting awards nothing (admin reject: −20 spam penalty).
+**Points economy** — SIX triggers, not one. All security definer, all writing to
+`public.point_events` as well as bumping `users.points`.
+
+| Award | Trigger | Value | Notes |
+|---|---|---|---|
+| Report filed | `handle_flag_submitted` | **+5** | reporter only; **anonymous reports earn nothing** (returns early when `user_id IS NULL`) |
+| Photo added | `handle_flag_photo_added` | **+3** | paid to the FLAG OWNER, and **once per flag** however many photos — deduped against `point_events` |
+| Comment added | `handle_comment_added` | **+1** | no dedupe, no cap, no self-check |
+| Comment upvoted | `handle_comment_vote_added` | **+2** | paid to the comment AUTHOR, first 10 votes only; self-vote raises `P0001` |
+| Report verified | `handle_flag_status_change` | **+10** reporter / **+3** actor | actor paid only when `auth.uid()` is not the reporter |
+| Report resolved | `handle_flag_status_change` | **+15** reporter / **+7** actor | same actor rule |
+| 7-day streak | `handle_point_event_streak` | **+5** | at every completed multiple of 7 |
+| Admin reject | `handle_flag_status_change` | **−20** | spam penalty, floored at 0 |
+
+Forward-only otherwise — reverting awards nothing.
+
+> ⚠️ **`supabase/schema.sql` only contains `handle_flag_status_change`.** The
+> other five live in `supabase/migrations/2026-05-30_trust_score_system.sql` and
+> were never folded back into schema.sql, which is how this section came to
+> document four awards out of nine. Reconciled 2026-08-20 (SW-53) against both
+> files; measured end-to-end on a real account the day before — one flag took a
+> user from 90 to 124 (+5 +3 +1 +10 +15 = +34), reconciling exactly.
+
+`src/lib/points.ts` mirrors every value above and is the single source of truth
+for UI copy. Change the SQL and that constant together.
 
 **Storage bucket** `flag-photos`:
 - Public read.
@@ -178,8 +199,13 @@ clustering, lint/CI setup, etc.) — in `qa-reports/qa-2026-05-22.md`.
 Flash-banner points in TasksScreen are coupled to the trigger in
 `supabase/schema.sql` (handle_flag_status_change). The live trigger awards the
 reporter +10 (verify) / +15 (resolve) and the actor +3 (verify) / +7 (resolve);
-the `applyStatusChange` flash strings in `TasksScreen.tsx` mirror these. If the
-trigger values ever change, update those strings to match.
+the `applyStatusChange` flash strings in `TasksScreen.tsx` mirror these via
+`POINTS` in `src/lib/points.ts`. If the trigger values ever change, update that
+constant and every screen follows.
+
+Note the coupling is wider than this paragraph used to say: the Help FAQ
+(`HelpModal.tsx`) states point values too, and five of the app's nine awards are
+defined outside schema.sql — see the Points economy table above.
 
 ---
 

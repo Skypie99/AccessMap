@@ -33,9 +33,16 @@ describe('D4/C1 — the peek remounts onto a post-mount center', () => {
     expect(home).toMatch(/<PlatformMap\s+key=\{peekMapKey\}/);
   });
 
-  it('derives that key from the center coordinates, with a default branch', () => {
+  it('derives that key from the center coordinates, with a data-derived fallback branch', () => {
     expect(home).toMatch(/const peekMapKey = center\s*\?\s*`peek:\$\{center\.lat\.toFixed\(5\)\},\$\{center\.lng\.toFixed\(5\)\}`/);
-    expect(home).toMatch(/:\s*'peek:default'/);
+    // SW-08 (Sky, 2026-08-20): the no-centre branch was the literal
+    // 'peek:default', which was correct while that branch was a CONSTANT. It is
+    // not one any more — it fits the loaded reports — and a constant key would
+    // freeze the map on whatever it mounted with before the data arrived, which
+    // is the same mount-only law this whole file works around. Same 5dp
+    // rounding as the centred branch, for the same anti-churn reason.
+    expect(home).toMatch(/`peek:fit:\$\{peekRegion\.latitude\.toFixed\(5\)\},\$\{peekRegion\.longitude\.toFixed\(5\)\}`/);
+    expect(home).toMatch(/toFixed\(5\)/);
   });
 
   it('changes that key only on a DISCRETE center change, never per frame', () => {
@@ -51,7 +58,13 @@ describe('D4/C1 — the peek remounts onto a post-mount center', () => {
     expect(home).toMatch(/const peekRegion = useMemo\(/);
     // The dependency array is the whole point: a fresh object literal every
     // render (what shipped before) silently defeated the memo on PlatformMap.
-    expect(home).toMatch(/: FALLBACK_PEEK_REGION,\s*\n\s*\[center\],\s*\n\s*\);/);
+    // SW-08 added `flags` to it, because the no-centre branch now fits the
+    // loaded reports and would otherwise be memoized against data it reads.
+    // Both deps are required and neither is per-frame: `center` is plain state,
+    // and `flags` comes from the store, so this still changes on a DISCRETE
+    // event (probe resolve, search pick/clear, or a flags refresh) rather than
+    // on every render.
+    expect(home).toMatch(/FALLBACK_PEEK_REGION\),\s*\n\s*\[center, flags\],\s*\n\s*\);/);
     expect(mapNative).toMatch(/export default memo\(PlatformMap\)/);
   });
 });
@@ -72,10 +85,26 @@ describe('D4/C1 — the mount-only law this works around still holds', () => {
 
 describe('D4/C1 — Fork 1 fence: the fallback constant does not move', () => {
   it('keeps the peek fallback at San Francisco, byte-for-byte', () => {
-    // The SF -> Kelowna swap is a PARKED fork (fork-brief BRIEF 1). Centering
-    // the peek correctly makes that fork MORE visible, not less — but taking it
-    // is Sky's call, not a side effect of this fix, so the constant is pinned.
+    // The SF -> Kelowna swap was a PARKED fork (fork-brief BRIEF 1). Centering
+    // the peek correctly made that fork MORE visible, not less — and taking it
+    // was Sky's call, not a side effect of a fix, so the constant was pinned.
+    //
+    // SKY TOOK THE FORK, 2026-08-20 (SW-08) — and the constant STILL does not
+    // move, which is why this assertion survives unchanged. The answer was not
+    // "swap SF for Kelowna": a second hardcoded city is the same mistake with
+    // better coordinates, and it would go stale the day the app has reports
+    // anywhere else. The peek now FITS THE LOADED REPORTS, and this constant
+    // stays exactly where it was as the last resort for the one case that
+    // cannot be fitted — no centre AND no data — where no viewport can be
+    // honest anyway. See the assertion below for the fence that still binds it.
     expect(home).toMatch(/const FALLBACK_PEEK_REGION = \{\s*\n\s*latitude: 37\.7749,\s*\n\s*longitude: -122\.4194,/);
+  });
+
+  it('is reached only after a data fit has been tried', () => {
+    // The fork's real content: an unlocated user should not be shown a city
+    // picked at random while the app holds reports it could point at.
+    expect(home).toMatch(/regionFittingPoints\(flags\.map\(/);
+    expect(home).toMatch(/\?\?\s*\n?\s*FALLBACK_PEEK_REGION/);
   });
 
   it('never lets the fallback become a distance origin', () => {

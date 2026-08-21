@@ -45,7 +45,12 @@ const FAQS: FaqItem[] = [
   },
   {
     q: 'How do points work?',
-    a: `You earn ${POINTS.reporter.verify} points when one of your reports gets verified by someone else, and another ${POINTS.reporter.resolve} when it's marked resolved. You also earn ${POINTS.actor.verify} points for verifying someone else's report and ${POINTS.actor.resolve} points for marking one resolved. Rejecting a report awards no points.`,
+    // SW-53: this answer used to describe only the verify/resolve awards, so it
+    // told a signed-in user they earn 10 and 15 while the live triggers were
+    // also paying 5 for the report, 3 for a photo and 1 for a comment. Measured
+    // on a real account: one flag took someone from 90 to 124. Every number
+    // below now comes from POINTS, which covers all of it.
+    a: `You earn ${POINTS.submitReport} points for filing a report (signed in — anonymous reports don't earn points), ${POINTS.addPhoto} for adding a photo to it, and ${POINTS.addComment} for leaving a comment. When one of your reports is verified by someone else you earn ${POINTS.reporter.verify}, and another ${POINTS.reporter.resolve} when it's marked resolved. Helping out earns too: ${POINTS.actor.verify} points for verifying someone else's report and ${POINTS.actor.resolve} for marking one resolved. Rejecting a report awards no points.`,
   },
   {
     q: 'What\'s the difference between "verified" and "resolved"?',
