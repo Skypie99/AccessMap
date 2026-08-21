@@ -1,0 +1,1037 @@
+[
+ {
+  "type": "Other(accessible)",
+  "label": "My Location",
+  "name": "My Location",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   199,
+   470,
+   42,
+   44
+  ],
+  "depth": 20
+ },
+ {
+  "type": "Map",
+  "label": null,
+  "name": null,
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   0,
+   0,
+   440,
+   956
+  ],
+  "depth": 21
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Olympic Village",
+  "name": "VKPointFeature",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   138,
+   89,
+   31,
+   31
+  ],
+  "depth": 22
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Knee Knackering North Shore Trail Run",
+  "name": "VKPointFeature",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   396,
+   127,
+   31,
+   31
+  ],
+  "depth": 22
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Altea Active",
+  "name": "VKPointFeature",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   236,
+   132,
+   31,
+   31
+  ],
+  "depth": 22
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Canadian Tire, Store",
+  "name": "VKPointFeature",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   184,
+   192,
+   31,
+   31
+  ],
+  "depth": 22
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "The Home Depot, Store",
+  "name": "VKPointFeature",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   181,
+   238,
+   31,
+   31
+  ],
+  "depth": 22
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Whole Foods Market",
+  "name": "VKPointFeature",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   151,
+   288,
+   31,
+   31
+  ],
+  "depth": 22
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "La Taqueria Pinche Taco Shop, Restaurant",
+  "name": "VKPointFeature",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   256,
+   295,
+   31,
+   31
+  ],
+  "depth": 22
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Broadway - City Hall",
+  "name": "VKPointFeature",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   167,
+   347,
+   31,
+   31
+  ],
+  "depth": 22
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "BC Cancer",
+  "name": "VKPointFeature",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   -12,
+   404,
+   31,
+   31
+  ],
+  "depth": 22
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Community Gardens",
+  "name": "VKPointFeature",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   172,
+   407,
+   31,
+   31
+  ],
+  "depth": 22
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "City Square Shopping Centre, Store",
+  "name": "VKPointFeature",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   101,
+   478,
+   31,
+   31
+  ],
+  "depth": 22
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "June, Restaurant",
+  "name": "VKPointFeature",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   137,
+   820,
+   31,
+   31
+  ],
+  "depth": 22
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Rain or Shine, Restaurant",
+  "name": "VKPointFeature",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   159,
+   864,
+   31,
+   31
+  ],
+  "depth": 22
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Park Theatre",
+  "name": "VKPointFeature",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   155,
+   909,
+   31,
+   31
+  ],
+  "depth": 22
+ },
+ {
+  "type": "Other(accessible)",
+  "label": null,
+  "name": "AnnotationContainer",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   0,
+   0,
+   440,
+   956
+  ],
+  "depth": 21
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "My Location",
+  "name": "My Location",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   199,
+   470,
+   42,
+   44
+  ],
+  "depth": 22
+ },
+ {
+  "type": "Link",
+  "label": "Legal",
+  "name": "Legal",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   70,
+   901,
+   29,
+   11
+  ],
+  "depth": 20
+ },
+ {
+  "type": "Button",
+  "label": "Open navigation menu",
+  "name": "Open navigation menu",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   22,
+   74,
+   44,
+   44
+  ],
+  "depth": 23
+ },
+ {
+  "type": "Button",
+  "label": "Search by address",
+  "name": "Search by address",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   282,
+   74,
+   44,
+   44
+  ],
+  "depth": 23
+ },
+ {
+  "type": "Button",
+  "label": "Toggle filters",
+  "name": "Toggle filters",
+  "value": "collapsed",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   328,
+   74,
+   44,
+   44
+  ],
+  "depth": 23
+ },
+ {
+  "type": "Button",
+  "label": "More map tools",
+  "name": "More map tools",
+  "value": "collapsed",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   374,
+   74,
+   44,
+   44
+  ],
+  "depth": 23
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Explore",
+  "name": "Explore",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   68,
+   82,
+   81,
+   29
+  ],
+  "depth": 24
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "13 of 13 shown",
+  "name": "13 of 13 shown",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   154,
+   85,
+   68,
+   22
+  ],
+  "depth": 24
+ },
+ {
+  "type": "StaticText",
+  "label": "Heat zones only appear where at least 3 flags have been reported. Based on community reports \u2014 coverage varies by area.",
+  "name": "Heat zones only appear where at least 3 flags have been reported. Based on community reports \u2014 coverage varies by area.",
+  "value": "Heat zones only appear where at least 3 flags have been reported. Based on community reports \u2014 coverage varies by area.",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   28,
+   137,
+   354,
+   31
+  ],
+  "depth": 23
+ },
+ {
+  "type": "Button",
+  "label": "Dismiss heat map notice",
+  "name": "Dismiss heat map notice",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   388,
+   136,
+   24,
+   24
+  ],
+  "depth": 23
+ },
+ {
+  "type": "StaticText",
+  "label": "No heat zones qualify yet \u2014 coverage grows as more reports come in.",
+  "name": "No heat zones qualify yet \u2014 coverage grows as more reports come in.",
+  "value": "No heat zones qualify yet \u2014 coverage grows as more reports come in.",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   28,
+   189,
+   384,
+   16
+  ],
+  "depth": 22
+ },
+ {
+  "type": "Button",
+  "label": "Recenter on me",
+  "name": "Recenter on me",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   375,
+   616,
+   49,
+   48
+  ],
+  "depth": 22
+ },
+ {
+  "type": "Button",
+  "label": "Zoom in",
+  "name": "Zoom in",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   375,
+   674,
+   49,
+   48
+  ],
+  "depth": 23
+ },
+ {
+  "type": "Button",
+  "label": "Zoom out",
+  "name": "Zoom out",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   375,
+   732,
+   49,
+   48
+  ],
+  "depth": 23
+ },
+ {
+  "type": "Button",
+  "label": "Open nearby flags list",
+  "name": "Open nearby flags list",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   335,
+   790,
+   89,
+   48
+  ],
+  "depth": 22
+ },
+ {
+  "type": "Image",
+  "label": "Heat map legend: 1 Minor yellow, 2 Mild orange, 3 Moderate orange-red, 4 Significant red, 5 Severe deep red",
+  "name": "Heat map legend: 1 Minor yellow, 2 Mild orange, 3 Moderate orange-red, 4 Significant red, 5 Severe deep red",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   26,
+   781,
+   272,
+   49
+  ],
+  "depth": 23
+ },
+ {
+  "type": "Button",
+  "label": "Collapse heat map legend",
+  "name": "Collapse heat map legend",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   301,
+   775,
+   25,
+   24
+  ],
+  "depth": 23
+ },
+ {
+  "type": "Button",
+  "label": "Home, tab, 1 of 5",
+  "name": "Home, tab, 1 of 5",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   0,
+   861,
+   147,
+   53
+  ],
+  "depth": 13
+ },
+ {
+  "type": "Button",
+  "label": "Tasks, tab, 2 of 5",
+  "name": "Tasks, tab, 2 of 5",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   146,
+   861,
+   148,
+   53
+  ],
+  "depth": 13
+ },
+ {
+  "type": "Button",
+  "label": "Profile, tab, 3 of 5",
+  "name": "Profile, tab, 3 of 5",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   293,
+   861,
+   147,
+   53
+  ],
+  "depth": 13
+ },
+ {
+  "type": "ScrollView",
+  "label": null,
+  "name": null,
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   20,
+   297,
+   400,
+   569
+  ],
+  "depth": 10
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Report anonymously",
+  "name": "Report anonymously",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   20,
+   297,
+   400,
+   27
+  ],
+  "depth": 12
+ },
+ {
+  "type": "StaticText",
+  "label": "at 49.26090, -123.11390",
+  "name": "at 49.26090, -123.11390",
+  "value": "at 49.26090, -123.11390",
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   37,
+   334,
+   166,
+   18
+  ],
+  "depth": 13
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Reporting anonymously. Your identity is not stored.",
+  "name": "Reporting anonymously. Your identity is not stored.",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   32,
+   385,
+   318,
+   32
+  ],
+  "depth": 13
+ },
+ {
+  "type": "Link",
+  "label": "Sign in",
+  "name": "Sign in",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   350,
+   378,
+   58,
+   45
+  ],
+  "depth": 13
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Category",
+  "name": "Category",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   20,
+   448,
+   400,
+   17
+  ],
+  "depth": 12
+ },
+ {
+  "type": "ScrollView",
+  "label": null,
+  "name": null,
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   20,
+   472,
+   400,
+   53
+  ],
+  "depth": 14
+ },
+ {
+  "type": "Button",
+  "label": "Category: No ramp",
+  "name": "Category: No ramp",
+  "value": "1",
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   20,
+   476,
+   76,
+   45
+  ],
+  "depth": 16
+ },
+ {
+  "type": "Button",
+  "label": "Category: Broken sidewalk",
+  "name": "Category: Broken sidewalk",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   104,
+   476,
+   125,
+   45
+  ],
+  "depth": 16
+ },
+ {
+  "type": "Button",
+  "label": "Category: Blocked path",
+  "name": "Category: Blocked path",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   236,
+   476,
+   105,
+   45
+  ],
+  "depth": 16
+ },
+ {
+  "type": "Button",
+  "label": "Category: Missing signal",
+  "name": "Category: Missing signal",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   349,
+   476,
+   112,
+   45
+  ],
+  "depth": 16
+ },
+ {
+  "type": "Button",
+  "label": "Category: Steep grade",
+  "name": "Category: Steep grade",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   469,
+   476,
+   100,
+   45
+  ],
+  "depth": 16
+ },
+ {
+  "type": "Button",
+  "label": "Category: Other",
+  "name": "Category: Other",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   576,
+   476,
+   60,
+   45
+  ],
+  "depth": 16
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Vertical scroll bar, 1 page",
+  "name": "Vertical scroll bar, 1 page",
+  "value": "0%",
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   387,
+   472,
+   30,
+   53
+  ],
+  "depth": 15
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Vertical scroll bar, 1 page",
+  "name": "Vertical scroll bar, 1 page",
+  "value": "0%",
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   387,
+   472,
+   30,
+   53
+  ],
+  "depth": 15
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Severity",
+  "name": "Severity",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   20,
+   536,
+   400,
+   17
+  ],
+  "depth": 12
+ },
+ {
+  "type": "Button",
+  "label": "Severity 1: Minor \u2014 Inconvenient but usable.",
+  "name": "Severity 1: Minor \u2014 Inconvenient but usable.",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   20,
+   563,
+   44,
+   45
+  ],
+  "depth": 13
+ },
+ {
+  "type": "Button",
+  "label": "Severity 2: Mild \u2014 Doable with effort or help.",
+  "name": "Severity 2: Mild \u2014 Doable with effort or help.",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   72,
+   563,
+   44,
+   45
+  ],
+  "depth": 13
+ },
+ {
+  "type": "Button",
+  "label": "Severity 3: Moderate \u2014 Hard for many users.",
+  "name": "Severity 3: Moderate \u2014 Hard for many users.",
+  "value": "1",
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   124,
+   563,
+   44,
+   45
+  ],
+  "depth": 13
+ },
+ {
+  "type": "Button",
+  "label": "Severity 4: Significant \u2014 Hard or unsafe for most users.",
+  "name": "Severity 4: Significant \u2014 Hard or unsafe for most users.",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   176,
+   563,
+   44,
+   45
+  ],
+  "depth": 13
+ },
+ {
+  "type": "Button",
+  "label": "Severity 5: Severe \u2014 Impassable. Needs a detour.",
+  "name": "Severity 5: Severe \u2014 Impassable. Needs a detour.",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   228,
+   563,
+   44,
+   45
+  ],
+  "depth": 13
+ },
+ {
+  "type": "StaticText",
+  "label": "Severity 3: Hard for many users.",
+  "name": "Severity 3: Hard for many users.",
+  "value": "Severity 3: Hard for many users.",
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   20,
+   615,
+   400,
+   20
+  ],
+  "depth": 12
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Description (optional)",
+  "name": "Description (optional)",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   20,
+   649,
+   400,
+   17
+  ],
+  "depth": 12
+ },
+ {
+  "type": "TextView",
+  "label": "Description of the accessibility issue Describe the barrier \u2014 e.g. broken curb cut on Main St",
+  "name": "Description of the accessibility issue Describe the barrier \u2014 e.g. broken curb cut on Main St",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   21,
+   678,
+   398,
+   78
+  ],
+  "depth": 13
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Vertical scroll bar, 1 page",
+  "name": "Vertical scroll bar, 1 page",
+  "value": "0%",
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   386,
+   678,
+   30,
+   78
+  ],
+  "depth": 14
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Horizontal scroll bar, 1 page",
+  "name": "Horizontal scroll bar, 1 page",
+  "value": "0%",
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   21,
+   723,
+   398,
+   30
+  ],
+  "depth": 14
+ },
+ {
+  "type": "StaticText",
+  "label": "Your anonymous report still counts. Sign in to add a photo and help verifiers act faster.",
+  "name": "Your anonymous report still counts. Sign in to add a photo and help verifiers act faster.",
+  "value": "Your anonymous report still counts. Sign in to add a photo and help verifiers act faster.",
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   20,
+   773,
+   400,
+   31
+  ],
+  "depth": 12
+ },
+ {
+  "type": "StaticText",
+  "label": "Your report appears on the map right away for everyone; neighbours can verify it. Flagstone doesn't notify the city \u2014 see Resources.",
+  "name": "Your report appears on the map right away for everyone; neighbours can verify it. Flagstone doesn't notify the city \u2014 see Resources.",
+  "value": "Your report appears on the map right away for everyone; neighbours can verify it. Flagstone doesn't notify the city \u2014 see Resources.",
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   20,
+   827,
+   400,
+   36
+  ],
+  "depth": 12
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Horizontal scroll bar, 1 page",
+  "name": "Horizontal scroll bar, 1 page",
+  "value": "0%",
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   20,
+   832,
+   400,
+   31
+  ],
+  "depth": 11
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Horizontal scroll bar, 1 page",
+  "name": "Horizontal scroll bar, 1 page",
+  "value": "0%",
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   20,
+   832,
+   400,
+   31
+  ],
+  "depth": 11
+ },
+ {
+  "type": "Button",
+  "label": "Cancel and close",
+  "name": "Cancel and close",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   20,
+   877,
+   194,
+   45
+  ],
+  "depth": 10
+ },
+ {
+  "type": "Button",
+  "label": "Submit report anonymously",
+  "name": "Submit report anonymously",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   226,
+   877,
+   194,
+   45
+  ],
+  "depth": 10
+ }
+]

@@ -1,0 +1,3467 @@
+[
+ {
+  "type": "Image",
+  "label": null,
+  "name": "assets/assets/textures/noise-128.png",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   0,
+   0,
+   128,
+   128
+  ],
+  "depth": 21
+ },
+ {
+  "type": "ScrollView",
+  "label": null,
+  "name": null,
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   0,
+   0,
+   440,
+   956
+  ],
+  "depth": 20
+ },
+ {
+  "type": "StaticText",
+  "label": "ADMIN",
+  "name": "ADMIN",
+  "value": "ADMIN",
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   20,
+   70,
+   400,
+   14
+  ],
+  "depth": 24
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Admin",
+  "name": "Admin",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   20,
+   85,
+   306,
+   49
+  ],
+  "depth": 25
+ },
+ {
+  "type": "Button",
+  "label": "Open navigation menu",
+  "name": "Open navigation menu",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   326,
+   86,
+   44,
+   44
+  ],
+  "depth": 26
+ },
+ {
+  "type": "Button",
+  "label": "Send feedback",
+  "name": "Send feedback",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   376,
+   86,
+   44,
+   44
+  ],
+  "depth": 26
+ },
+ {
+  "type": "StaticText",
+  "label": "32 recent flags \u00b7 pull to refresh",
+  "name": "32 recent flags \u00b7 pull to refresh",
+  "value": "32 recent flags \u00b7 pull to refresh",
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   0,
+   145,
+   440,
+   20
+  ],
+  "depth": 23
+ },
+ {
+  "type": "StaticText",
+  "label": "Steep grade",
+  "name": "Steep grade",
+  "value": "Steep grade",
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   64,
+   193,
+   282,
+   18
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "Flag status: Open",
+  "name": "Flag status: Open",
+  "value": "Flag status: Open",
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   354,
+   194,
+   50,
+   16
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "Mild \u00b7 2",
+  "name": "Mild \u00b7 2",
+  "value": "Mild \u00b7 2",
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   44,
+   222,
+   38,
+   14
+  ],
+  "depth": 26
+ },
+ {
+  "type": "StaticText",
+  "label": "49.87435, -119.35882",
+  "name": "49.87435, -119.35882",
+  "value": "49.87435, -119.35882",
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   97,
+   221,
+   307,
+   15
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "Very steep sidewalk",
+  "name": "Very steep sidewalk",
+  "value": "Very steep sidewalk",
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   36,
+   245,
+   368,
+   15
+  ],
+  "depth": 24
+ },
+ {
+  "type": "Button",
+  "label": "Remove Steep grade flag",
+  "name": "Remove Steep grade flag",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   36,
+   271,
+   179,
+   45
+  ],
+  "depth": 25
+ },
+ {
+  "type": "Button",
+  "label": "Dismiss Steep grade report",
+  "name": "Dismiss Steep grade report",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   223,
+   271,
+   181,
+   45
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "Broken sidewalk",
+  "name": "Broken sidewalk",
+  "value": "Broken sidewalk",
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   64,
+   360,
+   282,
+   18
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "Flag status: Open",
+  "name": "Flag status: Open",
+  "value": "Flag status: Open",
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   354,
+   361,
+   50,
+   17
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "Moderate \u00b7 3",
+  "name": "Moderate \u00b7 3",
+  "value": "Moderate \u00b7 3",
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   44,
+   389,
+   66,
+   14
+  ],
+  "depth": 26
+ },
+ {
+  "type": "StaticText",
+  "label": "49.88012, -119.49610",
+  "name": "49.88012, -119.49610",
+  "value": "49.88012, -119.49610",
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   125,
+   388,
+   279,
+   16
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "Pavement is heaved by a tree root across the full width. A wheelchair has to drop into the traffic lane to get past.",
+  "name": "Pavement is heaved by a tree root across the full width. A wheelchair has to drop into the traffic lane to get past.",
+  "value": "Pavement is heaved by a tree root across the full width. A wheelchair has to drop into the traffic lane to get past.",
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   36,
+   412,
+   368,
+   29
+  ],
+  "depth": 24
+ },
+ {
+  "type": "Button",
+  "label": "Remove Broken sidewalk flag",
+  "name": "Remove Broken sidewalk flag",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   36,
+   452,
+   179,
+   45
+  ],
+  "depth": 25
+ },
+ {
+  "type": "Button",
+  "label": "Dismiss Broken sidewalk report",
+  "name": "Dismiss Broken sidewalk report",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   223,
+   452,
+   181,
+   45
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "Blocked path",
+  "name": "Blocked path",
+  "value": "Blocked path",
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   64,
+   542,
+   282,
+   18
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "Flag status: Open",
+  "name": "Flag status: Open",
+  "value": "Flag status: Open",
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   354,
+   542,
+   50,
+   17
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "Severe \u00b7 5",
+  "name": "Severe \u00b7 5",
+  "value": "Severe \u00b7 5",
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   44,
+   570,
+   52,
+   14
+  ],
+  "depth": 26
+ },
+ {
+  "type": "StaticText",
+  "label": "49.88650, -119.48330",
+  "name": "49.88650, -119.48330",
+  "value": "49.88650, -119.48330",
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   111,
+   569,
+   293,
+   16
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "Construction hoarding blocks the entire sidewalk with no marked detour. You have to backtrack a full block.",
+  "name": "Construction hoarding blocks the entire sidewalk with no marked detour. You have to backtrack a full block.",
+  "value": "Construction hoarding blocks the entire sidewalk with no marked detour. You have to backtrack a full block.",
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   36,
+   593,
+   368,
+   30
+  ],
+  "depth": 24
+ },
+ {
+  "type": "Button",
+  "label": "Remove Blocked path flag",
+  "name": "Remove Blocked path flag",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   36,
+   634,
+   179,
+   45
+  ],
+  "depth": 25
+ },
+ {
+  "type": "Button",
+  "label": "Dismiss Blocked path report",
+  "name": "Dismiss Blocked path report",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   223,
+   634,
+   181,
+   45
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "Missing signal",
+  "name": "Missing signal",
+  "value": "Missing signal",
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   64,
+   723,
+   282,
+   18
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "Flag status: Open",
+  "name": "Flag status: Open",
+  "value": "Flag status: Open",
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   354,
+   724,
+   50,
+   16
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "Significant \u00b7 4",
+  "name": "Significant \u00b7 4",
+  "value": "Significant \u00b7 4",
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   44,
+   752,
+   72,
+   14
+  ],
+  "depth": 26
+ },
+ {
+  "type": "StaticText",
+  "label": "49.87740, -119.50120",
+  "name": "49.87740, -119.50120",
+  "value": "49.87740, -119.50120",
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   131,
+   751,
+   274,
+   15
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "Crossing has no audible signal and the tactile plate is worn smooth. Hard to find the button without sighted help.",
+  "name": "Crossing has no audible signal and the tactile plate is worn smooth. Hard to find the button without sighted help.",
+  "value": "Crossing has no audible signal and the tactile plate is worn smooth. Hard to find the button without sighted help.",
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   36,
+   775,
+   368,
+   29
+  ],
+  "depth": 24
+ },
+ {
+  "type": "Button",
+  "label": "Remove Missing signal flag",
+  "name": "Remove Missing signal flag",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   36,
+   815,
+   179,
+   45
+  ],
+  "depth": 25
+ },
+ {
+  "type": "Button",
+  "label": "Dismiss Missing signal report",
+  "name": "Dismiss Missing signal report",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   223,
+   815,
+   181,
+   45
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "Steep grade",
+  "name": "Steep grade",
+  "value": "Steep grade",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   64,
+   904,
+   282,
+   18
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "Flag status: Open",
+  "name": "Flag status: Open",
+  "value": "Flag status: Open",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   354,
+   905,
+   50,
+   17
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "Moderate \u00b7 3",
+  "name": "Moderate \u00b7 3",
+  "value": "Moderate \u00b7 3",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   44,
+   933,
+   66,
+   14
+  ],
+  "depth": 26
+ },
+ {
+  "type": "StaticText",
+  "label": "49.89020, -119.47880",
+  "name": "49.89020, -119.47880",
+  "value": "49.89020, -119.47880",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   125,
+   932,
+   279,
+   16
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "Ramp to the plaza is far steeper than it looks and has no handrail or level landing partway up.",
+  "name": "Ramp to the plaza is far steeper than it looks and has no handrail or level landing partway up.",
+  "value": "Ramp to the plaza is far steeper than it looks and has no handrail or level landing partway up.",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   36,
+   956,
+   368,
+   29
+  ],
+  "depth": 24
+ },
+ {
+  "type": "Button",
+  "label": "Remove Steep grade flag",
+  "name": "Remove Steep grade flag",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   36,
+   996,
+   179,
+   45
+  ],
+  "depth": 25
+ },
+ {
+  "type": "Button",
+  "label": "Dismiss Steep grade report",
+  "name": "Dismiss Steep grade report",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   223,
+   996,
+   181,
+   45
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "No ramp",
+  "name": "No ramp",
+  "value": "No ramp",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   64,
+   1085,
+   282,
+   18
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "Flag status: Open",
+  "name": "Flag status: Open",
+  "value": "Flag status: Open",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   354,
+   1086,
+   50,
+   17
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "Mild \u00b7 2",
+  "name": "Mild \u00b7 2",
+  "value": "Mild \u00b7 2",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   44,
+   1114,
+   38,
+   14
+  ],
+  "depth": 26
+ },
+ {
+  "type": "StaticText",
+  "label": "49.88440, -119.50390",
+  "name": "49.88440, -119.50390",
+  "value": "49.88440, -119.50390",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   97,
+   1113,
+   307,
+   16
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "Single 10cm lip at the entrance. Manageable with help, impossible alone.",
+  "name": "Single 10cm lip at the entrance. Manageable with help, impossible alone.",
+  "value": "Single 10cm lip at the entrance. Manageable with help, impossible alone.",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   36,
+   1137,
+   368,
+   30
+  ],
+  "depth": 24
+ },
+ {
+  "type": "Button",
+  "label": "Remove No ramp flag",
+  "name": "Remove No ramp flag",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   36,
+   1177,
+   179,
+   45
+  ],
+  "depth": 25
+ },
+ {
+  "type": "Button",
+  "label": "Dismiss No ramp report",
+  "name": "Dismiss No ramp report",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   223,
+   1177,
+   181,
+   45
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "No ramp",
+  "name": "No ramp",
+  "value": "No ramp",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   64,
+   1267,
+   282,
+   18
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "Flag status: Open",
+  "name": "Flag status: Open",
+  "value": "Flag status: Open",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   354,
+   1268,
+   50,
+   16
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "Significant \u00b7 4",
+  "name": "Significant \u00b7 4",
+  "value": "Significant \u00b7 4",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   44,
+   1296,
+   72,
+   14
+  ],
+  "depth": 26
+ },
+ {
+  "type": "StaticText",
+  "label": "49.88307, -119.49440",
+  "name": "49.88307, -119.49440",
+  "value": "49.88307, -119.49440",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   131,
+   1295,
+   274,
+   15
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "Main entrance has three steps and no ramp. The side door is level but is kept locked outside business hours.",
+  "name": "Main entrance has three steps and no ramp. The side door is level but is kept locked outside business hours.",
+  "value": "Main entrance has three steps and no ramp. The side door is level but is kept locked outside business hours.",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   36,
+   1319,
+   368,
+   29
+  ],
+  "depth": 24
+ },
+ {
+  "type": "Button",
+  "label": "Remove No ramp flag",
+  "name": "Remove No ramp flag",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   36,
+   1359,
+   179,
+   45
+  ],
+  "depth": 25
+ },
+ {
+  "type": "Button",
+  "label": "Dismiss No ramp report",
+  "name": "Dismiss No ramp report",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   223,
+   1359,
+   181,
+   45
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "Broken sidewalk",
+  "name": "Broken sidewalk",
+  "value": "Broken sidewalk",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   64,
+   1448,
+   282,
+   18
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "Flag status: Open",
+  "name": "Flag status: Open",
+  "value": "Flag status: Open",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   354,
+   1449,
+   50,
+   17
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "Significant \u00b7 4",
+  "name": "Significant \u00b7 4",
+  "value": "Significant \u00b7 4",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   44,
+   1477,
+   72,
+   14
+  ],
+  "depth": 26
+ },
+ {
+  "type": "StaticText",
+  "label": "49.89180, -119.49730",
+  "name": "49.89180, -119.49730",
+  "value": "49.89180, -119.49730",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   131,
+   1476,
+   274,
+   16
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "Long stretch of cracked and sunken slabs. Standing water after rain hides how deep the dips are.",
+  "name": "Long stretch of cracked and sunken slabs. Standing water after rain hides how deep the dips are.",
+  "value": "Long stretch of cracked and sunken slabs. Standing water after rain hides how deep the dips are.",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   36,
+   1500,
+   368,
+   29
+  ],
+  "depth": 24
+ },
+ {
+  "type": "Button",
+  "label": "Remove Broken sidewalk flag",
+  "name": "Remove Broken sidewalk flag",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   36,
+   1540,
+   179,
+   45
+  ],
+  "depth": 25
+ },
+ {
+  "type": "Button",
+  "label": "Dismiss Broken sidewalk report",
+  "name": "Dismiss Broken sidewalk report",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   223,
+   1540,
+   181,
+   45
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "No ramp",
+  "name": "No ramp",
+  "value": "No ramp",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   64,
+   1629,
+   270,
+   18
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "Flag status: Verified",
+  "name": "Flag status: Verified",
+  "value": "Flag status: Verified",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   341,
+   1630,
+   63,
+   17
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "Significant \u00b7 4",
+  "name": "Significant \u00b7 4",
+  "value": "Significant \u00b7 4",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   44,
+   1658,
+   72,
+   14
+  ],
+  "depth": 26
+ },
+ {
+  "type": "StaticText",
+  "label": "49.88530, -119.49020",
+  "name": "49.88530, -119.49020",
+  "value": "49.88530, -119.49020",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   131,
+   1657,
+   274,
+   16
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "Side entrance ramp ends at a step. Confirmed by a second visit \u2014 the ramp does not actually reach the door.",
+  "name": "Side entrance ramp ends at a step. Confirmed by a second visit \u2014 the ramp does not actually reach the door.",
+  "value": "Side entrance ramp ends at a step. Confirmed by a second visit \u2014 the ramp does not actually reach the door.",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   36,
+   1681,
+   368,
+   30
+  ],
+  "depth": 24
+ },
+ {
+  "type": "Button",
+  "label": "Remove No ramp flag",
+  "name": "Remove No ramp flag",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   36,
+   1721,
+   179,
+   45
+  ],
+  "depth": 25
+ },
+ {
+  "type": "Button",
+  "label": "Dismiss No ramp report",
+  "name": "Dismiss No ramp report",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   223,
+   1721,
+   181,
+   45
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "Missing signal",
+  "name": "Missing signal",
+  "value": "Missing signal",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   64,
+   1811,
+   270,
+   18
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "Flag status: Verified",
+  "name": "Flag status: Verified",
+  "value": "Flag status: Verified",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   341,
+   1812,
+   63,
+   16
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "Severe \u00b7 5",
+  "name": "Severe \u00b7 5",
+  "value": "Severe \u00b7 5",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   44,
+   1840,
+   52,
+   14
+  ],
+  "depth": 26
+ },
+ {
+  "type": "StaticText",
+  "label": "49.88120, -119.48600",
+  "name": "49.88120, -119.48600",
+  "value": "49.88120, -119.48600",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   111,
+   1839,
+   293,
+   15
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "No pedestrian signal at all on a four-lane crossing. Confirmed: the pole is there but the head was never installed.",
+  "name": "No pedestrian signal at all on a four-lane crossing. Confirmed: the pole is there but the head was never installed.",
+  "value": "No pedestrian signal at all on a four-lane crossing. Confirmed: the pole is there but the head was never installed.",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   36,
+   1863,
+   368,
+   29
+  ],
+  "depth": 24
+ },
+ {
+  "type": "Button",
+  "label": "Remove Missing signal flag",
+  "name": "Remove Missing signal flag",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   36,
+   1903,
+   179,
+   45
+  ],
+  "depth": 25
+ },
+ {
+  "type": "Button",
+  "label": "Dismiss Missing signal report",
+  "name": "Dismiss Missing signal report",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   223,
+   1903,
+   181,
+   45
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "Steep grade",
+  "name": "Steep grade",
+  "value": "Steep grade",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   64,
+   1992,
+   270,
+   18
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "Flag status: Verified",
+  "name": "Flag status: Verified",
+  "value": "Flag status: Verified",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   341,
+   1993,
+   63,
+   17
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "Significant \u00b7 4",
+  "name": "Significant \u00b7 4",
+  "value": "Significant \u00b7 4",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   44,
+   2021,
+   72,
+   14
+  ],
+  "depth": 26
+ },
+ {
+  "type": "StaticText",
+  "label": "49.87880, -119.49290",
+  "name": "49.87880, -119.49290",
+  "value": "49.87880, -119.49290",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   131,
+   2020,
+   274,
+   16
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "Approach grade to the underpass is severe enough that a manual chair needs assistance. Confirmed by two reporters.",
+  "name": "Approach grade to the underpass is severe enough that a manual chair needs assistance. Confirmed by two reporters.",
+  "value": "Approach grade to the underpass is severe enough that a manual chair needs assistance. Confirmed by two reporters.",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   36,
+   2044,
+   368,
+   29
+  ],
+  "depth": 24
+ },
+ {
+  "type": "Button",
+  "label": "Remove Steep grade flag",
+  "name": "Remove Steep grade flag",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   36,
+   2084,
+   179,
+   45
+  ],
+  "depth": 25
+ },
+ {
+  "type": "Button",
+  "label": "Dismiss Steep grade report",
+  "name": "Dismiss Steep grade report",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   223,
+   2084,
+   181,
+   45
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "Blocked path",
+  "name": "Blocked path",
+  "value": "Blocked path",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   64,
+   2174,
+   270,
+   18
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "Flag status: Verified",
+  "name": "Flag status: Verified",
+  "value": "Flag status: Verified",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   341,
+   2174,
+   63,
+   17
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "Mild \u00b7 2",
+  "name": "Mild \u00b7 2",
+  "value": "Mild \u00b7 2",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   44,
+   2202,
+   38,
+   14
+  ],
+  "depth": 26
+ },
+ {
+  "type": "StaticText",
+  "label": "49.88900, -119.50010",
+  "name": "49.88900, -119.50010",
+  "value": "49.88900, -119.50010",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   97,
+   2201,
+   307,
+   16
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "Bollard spacing is too narrow for a wider wheelchair or a mobility scooter. Confirmed by measurement.",
+  "name": "Bollard spacing is too narrow for a wider wheelchair or a mobility scooter. Confirmed by measurement.",
+  "value": "Bollard spacing is too narrow for a wider wheelchair or a mobility scooter. Confirmed by measurement.",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   36,
+   2225,
+   368,
+   30
+  ],
+  "depth": 24
+ },
+ {
+  "type": "Button",
+  "label": "Remove Blocked path flag",
+  "name": "Remove Blocked path flag",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   36,
+   2266,
+   179,
+   45
+  ],
+  "depth": 25
+ },
+ {
+  "type": "Button",
+  "label": "Dismiss Blocked path report",
+  "name": "Dismiss Blocked path report",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   223,
+   2266,
+   181,
+   45
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "Blocked path",
+  "name": "Blocked path",
+  "value": "Blocked path",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   64,
+   2355,
+   282,
+   18
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "Flag status: Open",
+  "name": "Flag status: Open",
+  "value": "Flag status: Open",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   354,
+   2356,
+   50,
+   16
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "Moderate \u00b7 3",
+  "name": "Moderate \u00b7 3",
+  "value": "Moderate \u00b7 3",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   44,
+   2384,
+   66,
+   14
+  ],
+  "depth": 26
+ },
+ {
+  "type": "StaticText",
+  "label": "49.87950, -119.48090",
+  "name": "49.87950, -119.48090",
+  "value": "49.87950, -119.48090",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   125,
+   2383,
+   279,
+   15
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "Cafe seating and a sandwich board narrow the sidewalk to about half a metre at lunchtime.",
+  "name": "Cafe seating and a sandwich board narrow the sidewalk to about half a metre at lunchtime.",
+  "value": "Cafe seating and a sandwich board narrow the sidewalk to about half a metre at lunchtime.",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   36,
+   2407,
+   368,
+   29
+  ],
+  "depth": 24
+ },
+ {
+  "type": "Button",
+  "label": "Remove Blocked path flag",
+  "name": "Remove Blocked path flag",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   36,
+   2447,
+   179,
+   45
+  ],
+  "depth": 25
+ },
+ {
+  "type": "Button",
+  "label": "Dismiss Blocked path report",
+  "name": "Dismiss Blocked path report",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   223,
+   2447,
+   181,
+   45
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "No ramp",
+  "name": "No ramp",
+  "value": "No ramp",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   64,
+   2536,
+   265,
+   18
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "Flag status: Rejected",
+  "name": "Flag status: Rejected",
+  "value": "Flag status: Rejected",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   337,
+   2537,
+   67,
+   17
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "Minor \u00b7 1",
+  "name": "Minor \u00b7 1",
+  "value": "Minor \u00b7 1",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   44,
+   2565,
+   43,
+   14
+  ],
+  "depth": 26
+ },
+ {
+  "type": "StaticText",
+  "label": "49.87947, -119.47281",
+  "name": "49.87947, -119.47281",
+  "value": "49.87947, -119.47281",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   102,
+   2564,
+   303,
+   16
+  ],
+  "depth": 25
+ },
+ {
+  "type": "Image",
+  "label": "Photo of No ramp accessibility issue",
+  "name": "Photo of No ramp accessibility issue",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   36,
+   2592,
+   368,
+   141
+  ],
+  "depth": 24
+ },
+ {
+  "type": "Image",
+  "label": null,
+  "name": null,
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   36,
+   2592,
+   368,
+   141
+  ],
+  "depth": 25
+ },
+ {
+  "type": "Button",
+  "label": "Remove No ramp flag",
+  "name": "Remove No ramp flag",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   36,
+   2744,
+   179,
+   45
+  ],
+  "depth": 25
+ },
+ {
+  "type": "Button",
+  "label": "Dismiss No ramp report",
+  "name": "Dismiss No ramp report",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   223,
+   2744,
+   181,
+   45
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "No ramp",
+  "name": "No ramp",
+  "value": "No ramp",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   64,
+   2833,
+   265,
+   18
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "Flag status: Rejected",
+  "name": "Flag status: Rejected",
+  "value": "Flag status: Rejected",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   337,
+   2834,
+   67,
+   17
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "Moderate \u00b7 3",
+  "name": "Moderate \u00b7 3",
+  "value": "Moderate \u00b7 3",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   44,
+   2862,
+   66,
+   14
+  ],
+  "depth": 26
+ },
+ {
+  "type": "StaticText",
+  "label": "49.88770, -119.48359",
+  "name": "49.88770, -119.48359",
+  "value": "49.88770, -119.48359",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   125,
+   2861,
+   279,
+   16
+  ],
+  "depth": 25
+ },
+ {
+  "type": "Button",
+  "label": "Remove No ramp flag",
+  "name": "Remove No ramp flag",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   36,
+   2889,
+   179,
+   45
+  ],
+  "depth": 25
+ },
+ {
+  "type": "Button",
+  "label": "Dismiss No ramp report",
+  "name": "Dismiss No ramp report",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   223,
+   2889,
+   181,
+   45
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "No ramp",
+  "name": "No ramp",
+  "value": "No ramp",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   64,
+   2978,
+   265,
+   18
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "Flag status: Rejected",
+  "name": "Flag status: Rejected",
+  "value": "Flag status: Rejected",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   337,
+   2979,
+   67,
+   17
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "Minor \u00b7 1",
+  "name": "Minor \u00b7 1",
+  "value": "Minor \u00b7 1",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   44,
+   3007,
+   43,
+   14
+  ],
+  "depth": 26
+ },
+ {
+  "type": "StaticText",
+  "label": "49.87873, -119.47662",
+  "name": "49.87873, -119.47662",
+  "value": "49.87873, -119.47662",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   102,
+   3006,
+   303,
+   16
+  ],
+  "depth": 25
+ },
+ {
+  "type": "Button",
+  "label": "Remove No ramp flag",
+  "name": "Remove No ramp flag",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   36,
+   3034,
+   179,
+   45
+  ],
+  "depth": 25
+ },
+ {
+  "type": "Button",
+  "label": "Dismiss No ramp report",
+  "name": "Dismiss No ramp report",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   223,
+   3034,
+   181,
+   45
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "No ramp",
+  "name": "No ramp",
+  "value": "No ramp",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   64,
+   3123,
+   265,
+   18
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "Flag status: Rejected",
+  "name": "Flag status: Rejected",
+  "value": "Flag status: Rejected",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   337,
+   3124,
+   67,
+   17
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "Moderate \u00b7 3",
+  "name": "Moderate \u00b7 3",
+  "value": "Moderate \u00b7 3",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   44,
+   3152,
+   66,
+   14
+  ],
+  "depth": 26
+ },
+ {
+  "type": "StaticText",
+  "label": "49.87873, -119.47662",
+  "name": "49.87873, -119.47662",
+  "value": "49.87873, -119.47662",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   125,
+   3151,
+   279,
+   16
+  ],
+  "depth": 25
+ },
+ {
+  "type": "Button",
+  "label": "Remove No ramp flag",
+  "name": "Remove No ramp flag",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   36,
+   3179,
+   179,
+   45
+  ],
+  "depth": 25
+ },
+ {
+  "type": "Button",
+  "label": "Dismiss No ramp report",
+  "name": "Dismiss No ramp report",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   223,
+   3179,
+   181,
+   45
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "Steep grade",
+  "name": "Steep grade",
+  "value": "Steep grade",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   64,
+   3268,
+   265,
+   18
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "Flag status: Rejected",
+  "name": "Flag status: Rejected",
+  "value": "Flag status: Rejected",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   337,
+   3269,
+   67,
+   17
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "Severe \u00b7 5",
+  "name": "Severe \u00b7 5",
+  "value": "Severe \u00b7 5",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   44,
+   3297,
+   52,
+   14
+  ],
+  "depth": 26
+ },
+ {
+  "type": "StaticText",
+  "label": "49.78242, -119.59089",
+  "name": "49.78242, -119.59089",
+  "value": "49.78242, -119.59089",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   111,
+   3296,
+   293,
+   16
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "Very steep grade",
+  "name": "Very steep grade",
+  "value": "Very steep grade",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   36,
+   3320,
+   368,
+   15
+  ],
+  "depth": 24
+ },
+ {
+  "type": "Button",
+  "label": "Remove Steep grade flag",
+  "name": "Remove Steep grade flag",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   36,
+   3346,
+   179,
+   45
+  ],
+  "depth": 25
+ },
+ {
+  "type": "Button",
+  "label": "Dismiss Steep grade report",
+  "name": "Dismiss Steep grade report",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   223,
+   3346,
+   181,
+   45
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "Other",
+  "name": "Other",
+  "value": "Other",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   64,
+   3436,
+   265,
+   18
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "Flag status: Rejected",
+  "name": "Flag status: Rejected",
+  "value": "Flag status: Rejected",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   337,
+   3436,
+   67,
+   17
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "Minor \u00b7 1",
+  "name": "Minor \u00b7 1",
+  "value": "Minor \u00b7 1",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   44,
+   3464,
+   43,
+   14
+  ],
+  "depth": 26
+ },
+ {
+  "type": "StaticText",
+  "label": "49.87842, -119.47508",
+  "name": "49.87842, -119.47508",
+  "value": "49.87842, -119.47508",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   102,
+   3463,
+   303,
+   16
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "Mean dog",
+  "name": "Mean dog",
+  "value": "Mean dog",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   36,
+   3487,
+   368,
+   16
+  ],
+  "depth": 24
+ },
+ {
+  "type": "Button",
+  "label": "Remove Other flag",
+  "name": "Remove Other flag",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   36,
+   3514,
+   179,
+   45
+  ],
+  "depth": 25
+ },
+ {
+  "type": "Button",
+  "label": "Dismiss Other report",
+  "name": "Dismiss Other report",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   223,
+   3514,
+   181,
+   45
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "No ramp",
+  "name": "No ramp",
+  "value": "No ramp",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   64,
+   3603,
+   265,
+   18
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "Flag status: Rejected",
+  "name": "Flag status: Rejected",
+  "value": "Flag status: Rejected",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   337,
+   3604,
+   67,
+   16
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "Minor \u00b7 1",
+  "name": "Minor \u00b7 1",
+  "value": "Minor \u00b7 1",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   44,
+   3632,
+   43,
+   14
+  ],
+  "depth": 26
+ },
+ {
+  "type": "StaticText",
+  "label": "49.87858, -119.47517",
+  "name": "49.87858, -119.47517",
+  "value": "49.87858, -119.47517",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   102,
+   3631,
+   303,
+   15
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "Curb",
+  "name": "Curb",
+  "value": "Curb",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   36,
+   3655,
+   368,
+   15
+  ],
+  "depth": 24
+ },
+ {
+  "type": "Button",
+  "label": "Remove No ramp flag",
+  "name": "Remove No ramp flag",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   36,
+   3681,
+   179,
+   45
+  ],
+  "depth": 25
+ },
+ {
+  "type": "Button",
+  "label": "Dismiss No ramp report",
+  "name": "Dismiss No ramp report",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   223,
+   3681,
+   181,
+   45
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "Blocked path",
+  "name": "Blocked path",
+  "value": "Blocked path",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   64,
+   3770,
+   264,
+   18
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "Flag status: Resolved",
+  "name": "Flag status: Resolved",
+  "value": "Flag status: Resolved",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   336,
+   3771,
+   68,
+   17
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "Significant \u00b7 4",
+  "name": "Significant \u00b7 4",
+  "value": "Significant \u00b7 4",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   44,
+   3799,
+   72,
+   14
+  ],
+  "depth": 26
+ },
+ {
+  "type": "StaticText",
+  "label": "49.89169, -119.49275",
+  "name": "49.89169, -119.49275",
+  "value": "49.89169, -119.49275",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   131,
+   3798,
+   274,
+   16
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "Construction barriers fully block the sidewalk.",
+  "name": "Construction barriers fully block the sidewalk.",
+  "value": "Construction barriers fully block the sidewalk.",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   36,
+   3822,
+   368,
+   15
+  ],
+  "depth": 24
+ },
+ {
+  "type": "Button",
+  "label": "Remove Blocked path flag",
+  "name": "Remove Blocked path flag",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   36,
+   3848,
+   179,
+   45
+  ],
+  "depth": 25
+ },
+ {
+  "type": "Button",
+  "label": "Dismiss Blocked path report",
+  "name": "Dismiss Blocked path report",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   223,
+   3848,
+   181,
+   45
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "No ramp",
+  "name": "No ramp",
+  "value": "No ramp",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   64,
+   3938,
+   265,
+   18
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "Flag status: Rejected",
+  "name": "Flag status: Rejected",
+  "value": "Flag status: Rejected",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   337,
+   3938,
+   67,
+   17
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "Significant \u00b7 4",
+  "name": "Significant \u00b7 4",
+  "value": "Significant \u00b7 4",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   44,
+   3966,
+   72,
+   14
+  ],
+  "depth": 26
+ },
+ {
+  "type": "StaticText",
+  "label": "49.88998, -119.49354",
+  "name": "49.88998, -119.49354",
+  "value": "49.88998, -119.49354",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   131,
+   3965,
+   274,
+   16
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "No ramp at the corner \u2014 wheelchair users have to detour.",
+  "name": "No ramp at the corner \u2014 wheelchair users have to detour.",
+  "value": "No ramp at the corner \u2014 wheelchair users have to detour.",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   36,
+   3989,
+   368,
+   16
+  ],
+  "depth": 24
+ },
+ {
+  "type": "Button",
+  "label": "Remove No ramp flag",
+  "name": "Remove No ramp flag",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   36,
+   4016,
+   179,
+   45
+  ],
+  "depth": 25
+ },
+ {
+  "type": "Button",
+  "label": "Dismiss No ramp report",
+  "name": "Dismiss No ramp report",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   223,
+   4016,
+   181,
+   45
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "Blocked path",
+  "name": "Blocked path",
+  "value": "Blocked path",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   64,
+   4105,
+   264,
+   18
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "Flag status: Resolved",
+  "name": "Flag status: Resolved",
+  "value": "Flag status: Resolved",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   336,
+   4106,
+   68,
+   16
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "Severe \u00b7 5",
+  "name": "Severe \u00b7 5",
+  "value": "Severe \u00b7 5",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   44,
+   4134,
+   52,
+   14
+  ],
+  "depth": 26
+ },
+ {
+  "type": "StaticText",
+  "label": "49.87881, -119.47659",
+  "name": "49.87881, -119.47659",
+  "value": "49.87881, -119.47659",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   111,
+   4133,
+   293,
+   15
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "Must use detour (long)",
+  "name": "Must use detour (long)",
+  "value": "Must use detour (long)",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   36,
+   4157,
+   368,
+   15
+  ],
+  "depth": 24
+ },
+ {
+  "type": "Button",
+  "label": "Remove Blocked path flag",
+  "name": "Remove Blocked path flag",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   36,
+   4183,
+   179,
+   45
+  ],
+  "depth": 25
+ },
+ {
+  "type": "Button",
+  "label": "Dismiss Blocked path report",
+  "name": "Dismiss Blocked path report",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   223,
+   4183,
+   181,
+   45
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "Other",
+  "name": "Other",
+  "value": "Other",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   64,
+   4272,
+   264,
+   18
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "Flag status: Resolved",
+  "name": "Flag status: Resolved",
+  "value": "Flag status: Resolved",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   336,
+   4273,
+   68,
+   17
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "Severe \u00b7 5",
+  "name": "Severe \u00b7 5",
+  "value": "Severe \u00b7 5",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   44,
+   4301,
+   52,
+   14
+  ],
+  "depth": 26
+ },
+ {
+  "type": "StaticText",
+  "label": "49.87881, -119.47659",
+  "name": "49.87881, -119.47659",
+  "value": "49.87881, -119.47659",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   111,
+   4300,
+   293,
+   16
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "BUMBAKLOT",
+  "name": "BUMBAKLOT",
+  "value": "BUMBAKLOT",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   36,
+   4324,
+   368,
+   15
+  ],
+  "depth": 24
+ },
+ {
+  "type": "Button",
+  "label": "Remove Other flag",
+  "name": "Remove Other flag",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   36,
+   4350,
+   179,
+   45
+  ],
+  "depth": 25
+ },
+ {
+  "type": "Button",
+  "label": "Dismiss Other report",
+  "name": "Dismiss Other report",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   223,
+   4350,
+   181,
+   45
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "Blocked path",
+  "name": "Blocked path",
+  "value": "Blocked path",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   64,
+   4439,
+   265,
+   18
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "Flag status: Rejected",
+  "name": "Flag status: Rejected",
+  "value": "Flag status: Rejected",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   337,
+   4440,
+   67,
+   17
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "Severe \u00b7 5",
+  "name": "Severe \u00b7 5",
+  "value": "Severe \u00b7 5",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   44,
+   4468,
+   52,
+   14
+  ],
+  "depth": 26
+ },
+ {
+  "type": "StaticText",
+  "label": "49.87980, -119.47254",
+  "name": "49.87980, -119.47254",
+  "value": "49.87980, -119.47254",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   111,
+   4467,
+   293,
+   16
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "Construction barriers fully block the sidewalk.blocked",
+  "name": "Construction barriers fully block the sidewalk.blocked",
+  "value": "Construction barriers fully block the sidewalk.blocked",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   36,
+   4491,
+   368,
+   16
+  ],
+  "depth": 24
+ },
+ {
+  "type": "Button",
+  "label": "Remove Blocked path flag",
+  "name": "Remove Blocked path flag",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   36,
+   4517,
+   179,
+   45
+  ],
+  "depth": 25
+ },
+ {
+  "type": "Button",
+  "label": "Dismiss Blocked path report",
+  "name": "Dismiss Blocked path report",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   223,
+   4517,
+   181,
+   45
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "No ramp",
+  "name": "No ramp",
+  "value": "No ramp",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   64,
+   4607,
+   265,
+   18
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "Flag status: Rejected",
+  "name": "Flag status: Rejected",
+  "value": "Flag status: Rejected",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   337,
+   4608,
+   67,
+   16
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "Significant \u00b7 4",
+  "name": "Significant \u00b7 4",
+  "value": "Significant \u00b7 4",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   44,
+   4636,
+   72,
+   14
+  ],
+  "depth": 26
+ },
+ {
+  "type": "StaticText",
+  "label": "49.87881, -119.47660",
+  "name": "49.87881, -119.47660",
+  "value": "49.87881, -119.47660",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   131,
+   4635,
+   274,
+   15
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "No ramp at the corner \u2014 wheelchair users have to detour.",
+  "name": "No ramp at the corner \u2014 wheelchair users have to detour.",
+  "value": "No ramp at the corner \u2014 wheelchair users have to detour.",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   36,
+   4659,
+   368,
+   15
+  ],
+  "depth": 24
+ },
+ {
+  "type": "Button",
+  "label": "Remove No ramp flag",
+  "name": "Remove No ramp flag",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   36,
+   4685,
+   179,
+   45
+  ],
+  "depth": 25
+ },
+ {
+  "type": "Button",
+  "label": "Dismiss No ramp report",
+  "name": "Dismiss No ramp report",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   223,
+   4685,
+   181,
+   45
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "No ramp",
+  "name": "No ramp",
+  "value": "No ramp",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   64,
+   4774,
+   265,
+   18
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "Flag status: Rejected",
+  "name": "Flag status: Rejected",
+  "value": "Flag status: Rejected",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   337,
+   4775,
+   67,
+   17
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "Moderate \u00b7 3",
+  "name": "Moderate \u00b7 3",
+  "value": "Moderate \u00b7 3",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   44,
+   4803,
+   66,
+   14
+  ],
+  "depth": 26
+ },
+ {
+  "type": "StaticText",
+  "label": "49.87756, -119.47595",
+  "name": "49.87756, -119.47595",
+  "value": "49.87756, -119.47595",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   125,
+   4802,
+   279,
+   16
+  ],
+  "depth": 25
+ },
+ {
+  "type": "Button",
+  "label": "Remove No ramp flag",
+  "name": "Remove No ramp flag",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   36,
+   4830,
+   179,
+   45
+  ],
+  "depth": 25
+ },
+ {
+  "type": "Button",
+  "label": "Dismiss No ramp report",
+  "name": "Dismiss No ramp report",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   223,
+   4830,
+   181,
+   45
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "No ramp",
+  "name": "No ramp",
+  "value": "No ramp",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   64,
+   4919,
+   264,
+   18
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "Flag status: Resolved",
+  "name": "Flag status: Resolved",
+  "value": "Flag status: Resolved",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   336,
+   4920,
+   68,
+   17
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "Moderate \u00b7 3",
+  "name": "Moderate \u00b7 3",
+  "value": "Moderate \u00b7 3",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   44,
+   4948,
+   66,
+   14
+  ],
+  "depth": 26
+ },
+ {
+  "type": "StaticText",
+  "label": "49.87879, -119.47660",
+  "name": "49.87879, -119.47660",
+  "value": "49.87879, -119.47660",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   125,
+   4947,
+   279,
+   16
+  ],
+  "depth": 25
+ },
+ {
+  "type": "Button",
+  "label": "Remove No ramp flag",
+  "name": "Remove No ramp flag",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   36,
+   4975,
+   179,
+   45
+  ],
+  "depth": 25
+ },
+ {
+  "type": "Button",
+  "label": "Dismiss No ramp report",
+  "name": "Dismiss No ramp report",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   223,
+   4975,
+   181,
+   45
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "No ramp",
+  "name": "No ramp",
+  "value": "No ramp",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   64,
+   5064,
+   264,
+   18
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "Flag status: Resolved",
+  "name": "Flag status: Resolved",
+  "value": "Flag status: Resolved",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   336,
+   5065,
+   68,
+   17
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "Moderate \u00b7 3",
+  "name": "Moderate \u00b7 3",
+  "value": "Moderate \u00b7 3",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   44,
+   5093,
+   66,
+   14
+  ],
+  "depth": 26
+ },
+ {
+  "type": "StaticText",
+  "label": "49.87879, -119.47660",
+  "name": "49.87879, -119.47660",
+  "value": "49.87879, -119.47660",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   125,
+   5092,
+   279,
+   16
+  ],
+  "depth": 25
+ },
+ {
+  "type": "Button",
+  "label": "Remove No ramp flag",
+  "name": "Remove No ramp flag",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   36,
+   5120,
+   179,
+   45
+  ],
+  "depth": 25
+ },
+ {
+  "type": "Button",
+  "label": "Dismiss No ramp report",
+  "name": "Dismiss No ramp report",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   223,
+   5120,
+   181,
+   45
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "No ramp",
+  "name": "No ramp",
+  "value": "No ramp",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   64,
+   5209,
+   264,
+   18
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "Flag status: Resolved",
+  "name": "Flag status: Resolved",
+  "value": "Flag status: Resolved",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   336,
+   5210,
+   68,
+   17
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "Moderate \u00b7 3",
+  "name": "Moderate \u00b7 3",
+  "value": "Moderate \u00b7 3",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   44,
+   5238,
+   66,
+   14
+  ],
+  "depth": 26
+ },
+ {
+  "type": "StaticText",
+  "label": "49.87879, -119.47660",
+  "name": "49.87879, -119.47660",
+  "value": "49.87879, -119.47660",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   125,
+   5237,
+   279,
+   16
+  ],
+  "depth": 25
+ },
+ {
+  "type": "Button",
+  "label": "Remove No ramp flag",
+  "name": "Remove No ramp flag",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   36,
+   5265,
+   179,
+   45
+  ],
+  "depth": 25
+ },
+ {
+  "type": "Button",
+  "label": "Dismiss No ramp report",
+  "name": "Dismiss No ramp report",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   223,
+   5265,
+   181,
+   45
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "No ramp",
+  "name": "No ramp",
+  "value": "No ramp",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   64,
+   5354,
+   265,
+   18
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "Flag status: Rejected",
+  "name": "Flag status: Rejected",
+  "value": "Flag status: Rejected",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   337,
+   5355,
+   67,
+   17
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "Moderate \u00b7 3",
+  "name": "Moderate \u00b7 3",
+  "value": "Moderate \u00b7 3",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   44,
+   5383,
+   66,
+   14
+  ],
+  "depth": 26
+ },
+ {
+  "type": "StaticText",
+  "label": "49.87879, -119.47660",
+  "name": "49.87879, -119.47660",
+  "value": "49.87879, -119.47660",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   125,
+   5382,
+   279,
+   16
+  ],
+  "depth": 25
+ },
+ {
+  "type": "Button",
+  "label": "Remove No ramp flag",
+  "name": "Remove No ramp flag",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   36,
+   5410,
+   179,
+   45
+  ],
+  "depth": 25
+ },
+ {
+  "type": "Button",
+  "label": "Dismiss No ramp report",
+  "name": "Dismiss No ramp report",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   223,
+   5410,
+   181,
+   45
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "No ramp",
+  "name": "No ramp",
+  "value": "No ramp",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   64,
+   5499,
+   265,
+   18
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "Flag status: Rejected",
+  "name": "Flag status: Rejected",
+  "value": "Flag status: Rejected",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   337,
+   5500,
+   67,
+   17
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "Severe \u00b7 5",
+  "name": "Severe \u00b7 5",
+  "value": "Severe \u00b7 5",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   44,
+   5528,
+   52,
+   14
+  ],
+  "depth": 26
+ },
+ {
+  "type": "StaticText",
+  "label": "49.87863, -119.47673",
+  "name": "49.87863, -119.47673",
+  "value": "49.87863, -119.47673",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   111,
+   5527,
+   293,
+   16
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "bad",
+  "name": "bad",
+  "value": "bad",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   36,
+   5551,
+   368,
+   15
+  ],
+  "depth": 24
+ },
+ {
+  "type": "Button",
+  "label": "Remove No ramp flag",
+  "name": "Remove No ramp flag",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   36,
+   5577,
+   179,
+   45
+  ],
+  "depth": 25
+ },
+ {
+  "type": "Button",
+  "label": "Dismiss No ramp report",
+  "name": "Dismiss No ramp report",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   223,
+   5577,
+   181,
+   45
+  ],
+  "depth": 25
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Vertical scroll bar, 7 pages",
+  "name": "Vertical scroll bar, 7 pages",
+  "value": "0%",
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   407,
+   62,
+   30,
+   832
+  ],
+  "depth": 21
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Horizontal scroll bar, 1 page",
+  "name": "Horizontal scroll bar, 1 page",
+  "value": "0%",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   62,
+   923,
+   316,
+   30
+  ],
+  "depth": 21
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Vertical scroll bar, 7 pages",
+  "name": "Vertical scroll bar, 7 pages",
+  "value": "0%",
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   407,
+   62,
+   30,
+   832
+  ],
+  "depth": 21
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Horizontal scroll bar, 1 page",
+  "name": "Horizontal scroll bar, 1 page",
+  "value": "0%",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   62,
+   923,
+   316,
+   30
+  ],
+  "depth": 21
+ },
+ {
+  "type": "Button",
+  "label": "Home, tab, 1 of 6",
+  "name": "Home, tab, 1 of 6",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   0,
+   861,
+   147,
+   53
+  ],
+  "depth": 13
+ },
+ {
+  "type": "Button",
+  "label": "Tasks, tab, 2 of 6",
+  "name": "Tasks, tab, 2 of 6",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   146,
+   861,
+   148,
+   53
+  ],
+  "depth": 13
+ },
+ {
+  "type": "Button",
+  "label": "Profile, tab, 3 of 6",
+  "name": "Profile, tab, 3 of 6",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   293,
+   861,
+   147,
+   53
+  ],
+  "depth": 13
+ }
+]

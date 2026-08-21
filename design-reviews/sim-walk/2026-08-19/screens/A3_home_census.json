@@ -1,0 +1,587 @@
+[
+ {
+  "type": "Image",
+  "label": null,
+  "name": "assets/assets/textures/noise-128.png",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   0,
+   0,
+   128,
+   128
+  ],
+  "depth": 21
+ },
+ {
+  "type": "ScrollView",
+  "label": null,
+  "name": null,
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   0,
+   0,
+   440,
+   956
+  ],
+  "depth": 20
+ },
+ {
+  "type": "StaticText",
+  "label": "LATEST",
+  "name": "LATEST",
+  "value": "LATEST",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   20,
+   78,
+   400,
+   15
+  ],
+  "depth": 23
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "13 barriers",
+  "name": "13 barriers",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   20,
+   94,
+   306,
+   52
+  ],
+  "depth": 24
+ },
+ {
+  "type": "Button",
+  "label": "Open navigation menu",
+  "name": "Open navigation menu",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   326,
+   96,
+   44,
+   45
+  ],
+  "depth": 25
+ },
+ {
+  "type": "Button",
+  "label": "Send feedback",
+  "name": "Send feedback",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   376,
+   96,
+   44,
+   45
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "Most recent barriers",
+  "name": "Most recent barriers",
+  "value": "Most recent barriers",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   20,
+   148,
+   400,
+   18
+  ],
+  "depth": 23
+ },
+ {
+  "type": "Button",
+  "label": "Search a place",
+  "name": "Search a place",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   54,
+   198,
+   358,
+   20
+  ],
+  "depth": 25
+ },
+ {
+  "type": "Button",
+  "label": "Use my location",
+  "name": "Use my location",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   16,
+   239,
+   143,
+   45
+  ],
+  "depth": 22
+ },
+ {
+  "type": "Button",
+  "label": "Open the full map",
+  "name": "Open the full map",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   16,
+   299,
+   408,
+   169
+  ],
+  "depth": 22
+ },
+ {
+  "type": "StaticText",
+  "label": "RECENT",
+  "name": "RECENT",
+  "value": "RECENT",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   0,
+   467,
+   440,
+   44
+  ],
+  "depth": 22
+ },
+ {
+  "type": "Button",
+  "label": "Steep grade, severity 2 of 5, Mild, status Open",
+  "name": "Steep grade, severity 2 of 5, Mild, status Open",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   16,
+   510,
+   408,
+   60
+  ],
+  "depth": 24
+ },
+ {
+  "type": "Button",
+  "label": "Broken sidewalk, severity 3 of 5, Moderate, status Open",
+  "name": "Broken sidewalk, severity 3 of 5, Moderate, status Open",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   16,
+   569,
+   408,
+   60
+  ],
+  "depth": 24
+ },
+ {
+  "type": "Button",
+  "label": "Blocked path, severity 5 of 5, Severe, status Open",
+  "name": "Blocked path, severity 5 of 5, Severe, status Open",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   16,
+   629,
+   408,
+   60
+  ],
+  "depth": 24
+ },
+ {
+  "type": "Button",
+  "label": "Missing signal, severity 4 of 5, Significant, status Open",
+  "name": "Missing signal, severity 4 of 5, Significant, status Open",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   16,
+   689,
+   408,
+   60
+  ],
+  "depth": 24
+ },
+ {
+  "type": "Button",
+  "label": "Steep grade, severity 3 of 5, Moderate, status Open",
+  "name": "Steep grade, severity 3 of 5, Moderate, status Open",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   16,
+   748,
+   408,
+   60
+  ],
+  "depth": 24
+ },
+ {
+  "type": "Button",
+  "label": "No ramp, severity 2 of 5, Mild, status Open",
+  "name": "No ramp, severity 2 of 5, Mild, status Open",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   16,
+   808,
+   408,
+   60
+  ],
+  "depth": 24
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Horizontal scroll bar, 1 page",
+  "name": "Horizontal scroll bar, 1 page",
+  "value": "0%",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   62,
+   923,
+   316,
+   30
+  ],
+  "depth": 21
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Horizontal scroll bar, 1 page",
+  "name": "Horizontal scroll bar, 1 page",
+  "value": "0%",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   62,
+   923,
+   316,
+   30
+  ],
+  "depth": 21
+ },
+ {
+  "type": "Button",
+  "label": "Report a barrier",
+  "name": "Report a barrier",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   319,
+   800,
+   105,
+   42
+  ],
+  "depth": 19
+ },
+ {
+  "type": "Button",
+  "label": "Home, tab, 1 of 5",
+  "name": "Home, tab, 1 of 5",
+  "value": "1",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   0,
+   861,
+   147,
+   53
+  ],
+  "depth": 13
+ },
+ {
+  "type": "Button",
+  "label": "Tasks, tab, 2 of 5",
+  "name": "Tasks, tab, 2 of 5",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   146,
+   861,
+   148,
+   53
+  ],
+  "depth": 13
+ },
+ {
+  "type": "Button",
+  "label": "Profile, tab, 3 of 5",
+  "name": "Profile, tab, 3 of 5",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   293,
+   861,
+   147,
+   53
+  ],
+  "depth": 13
+ },
+ {
+  "type": "Sheet",
+  "label": "Save Password?",
+  "name": "Save Password?",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   60,
+   356,
+   320,
+   272
+  ],
+  "depth": 10
+ },
+ {
+  "type": "ScrollView",
+  "label": null,
+  "name": null,
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   60,
+   356,
+   320,
+   192
+  ],
+  "depth": 14
+ },
+ {
+  "type": "Image",
+  "label": null,
+  "name": null,
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   76,
+   376,
+   80,
+   60
+  ],
+  "depth": 18
+ },
+ {
+  "type": "StaticText",
+  "label": "Save Password?",
+  "name": "Save Password?",
+  "value": "Save Password?",
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   90,
+   458,
+   260,
+   21
+  ],
+  "depth": 16
+ },
+ {
+  "type": "StaticText",
+  "label": "Securely store your password so it\u2019s filled automatically the next time you need it.",
+  "name": "Securely store your password so it\u2019s filled automatically the next time you need it.",
+  "value": "Securely store your password so it\u2019s filled automatically the next time you need it.",
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   90,
+   485,
+   260,
+   59
+  ],
+  "depth": 16
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Vertical scroll bar, 2 pages",
+  "name": "Vertical scroll bar, 2 pages",
+  "value": "0%",
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   347,
+   356,
+   30,
+   192
+  ],
+  "depth": 15
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Horizontal scroll bar, 1 page",
+  "name": "Horizontal scroll bar, 1 page",
+  "value": "0%",
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   60,
+   515,
+   320,
+   30
+  ],
+  "depth": 15
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Vertical scroll bar, 2 pages",
+  "name": "Vertical scroll bar, 2 pages",
+  "value": "0%",
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   347,
+   356,
+   30,
+   192
+  ],
+  "depth": 15
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Horizontal scroll bar, 1 page",
+  "name": "Horizontal scroll bar, 1 page",
+  "value": "0%",
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   60,
+   515,
+   320,
+   30
+  ],
+  "depth": 15
+ },
+ {
+  "type": "ScrollView",
+  "label": null,
+  "name": null,
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   60,
+   548,
+   320,
+   80
+  ],
+  "depth": 14
+ },
+ {
+  "type": "Button",
+  "label": "Not Now",
+  "name": "Not Now",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   76,
+   564,
+   140,
+   48
+  ],
+  "depth": 17
+ },
+ {
+  "type": "Button",
+  "label": "Save",
+  "name": "Save",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   224,
+   564,
+   140,
+   48
+  ],
+  "depth": 17
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Vertical scroll bar, 1 page",
+  "name": "Vertical scroll bar, 1 page",
+  "value": "0%",
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   347,
+   548,
+   30,
+   80
+  ],
+  "depth": 15
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Horizontal scroll bar, 1 page",
+  "name": "Horizontal scroll bar, 1 page",
+  "value": "0%",
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   60,
+   595,
+   320,
+   30
+  ],
+  "depth": 15
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Vertical scroll bar, 1 page",
+  "name": "Vertical scroll bar, 1 page",
+  "value": "0%",
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   347,
+   548,
+   30,
+   80
+  ],
+  "depth": 15
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Horizontal scroll bar, 1 page",
+  "name": "Horizontal scroll bar, 1 page",
+  "value": "0%",
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   60,
+   595,
+   320,
+   30
+  ],
+  "depth": 15
+ }
+]

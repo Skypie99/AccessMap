@@ -104,9 +104,20 @@ interface Props {
    * Optional — an opener with no trigger to return to passes nothing.
    */
   onDismiss?: () => void;
+  /** SW-11: the host knows whether the OS permission was actually DENIED, as
+   *  opposed to still resolving. Without it this sheet can only say "Waiting
+   *  for location…", which is a lie once the user has said no — and it said it
+   *  forever. */
+  locationDenied?: boolean;
+  /** SW-37: the way out of the no-location dead-end — hand the map back so the
+   *  user can place the pin themselves. Optional, and the host passes it only
+   *  where manual placement is permitted, so this sheet never has to know the
+   *  rule (it mirrors the long-press gate; see MapScreen). The control renders
+   *  only when this and a null location are both present. */
+  onPlaceOnMap?: () => void;
 }
 
-export default function ReportFlagModal({ visible, location, onClose, onCreated, onRequestLocation, onDismiss }: Props) {
+export default function ReportFlagModal({ visible, location, onClose, onCreated, onRequestLocation, onDismiss, locationDenied, onPlaceOnMap }: Props) {
   const color = useColor();
   const styles = makeStyles(color);
   // T14 (F2-07): the templates + category chip rails earn the overflow scent.
@@ -114,13 +125,39 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
   const categoriesFade = useHorizontalOverflowFade();
   const { user } = useAuth();
   const isAnon = !user;
+  /**
+   * SW-11 / SW-37 — why Submit is blocked, said out loud.
+   *
+   * Three different states used to share one sentence ("Waiting for your
+   * location…"), and for a guest who had DENIED location that sentence was both
+   * false and a dead end: it pointed at "Use my location", the one control that
+   * cannot help, because the OS has already answered. Guests are the case the
+   * finding was actually about, and manual placement is deliberately not open to
+   * them (see handleMapLongPress) — so the honest answer names the constraint
+   * and the way out of it, rather than leaving them to guess.
+   */
+  const blockedReason = (): string | undefined => {
+    if (location) return undefined;
+    if (onPlaceOnMap) {
+      return "This report needs a location. Tap 'Use my location' or 'Place the pin on the map' above.";
+    }
+    if (locationDenied) {
+      return isAnon
+        ? 'Anonymous reports can only be filed where you are. Turn on location, or sign in to place the pin yourself.'
+        : 'Location is off for Flagstone. Turn it on to file this report.';
+    }
+    return "Waiting for your location. Tap 'Use my location' above to try again.";
+  };
   const reducedMotion = useReducedMotion();
   // Pull-to-dismiss gating (map-gestures SPEC §2.6). `atTop` is the half of the
   // rule that keeps this form usable: mid-scroll, a downward drag belongs to the
   // ScrollView, never to the dismissal. `keyboardVisible` is the other gate —
   // while typing, a drag means "put the keyboard away", not "throw my report
-  // away". A dismissed draft is not lost either way: the sheet only reset()s
-  // after a SUCCESSFUL submit, so reopening restores everything.
+  // away". SW-52 raised the stakes on both gates rather than lowering them: a
+  // dismissal now DOES clear the draft (it has to — a cancelled photo was being
+  // published with the next report), so an accidental one costs the user their
+  // work instead of nothing. The "Sign in" handoff and the SW-37 pin round trip
+  // are the two exits that still keep everything.
   const { atTop, onScroll, scrollEventThrottle } = useAtTop();
   const keyboardVisible = useKeyboardVisible();
   const scrollRef = useRef(null);
@@ -227,13 +264,46 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
     setCategory('no_ramp');
     setSeverity(3);
     setDescription('');
-    // L7: the drafts are gone for good once the form resets (reset only runs
-    // after a successful submit) — release their blob URLs.
+    // L7: the drafts are gone for good once the form resets — release their
+    // blob URLs. (SW-52: reset now also runs on an explicit CANCEL, not only
+    // after a successful submit. A FAILED submit still does not reset, so the
+    // no-revoke-on-failure rule above is untouched.)
     photoUris.forEach(releaseUri);
     setPhotoUris([]);
     setPhotoAlts({});
     setContextTags([]);
     setAppliedTemplateId(null);
+  };
+
+  /**
+   * SW-52 — an explicit cancel must not leave the draft loaded.
+   *
+   * This modal is a persistent `visible`-prop component: it never unmounts, so
+   * every field survives a close. `reset()` only ran after a SUCCESSFUL submit,
+   * which meant cancelling left the whole form populated for the next session —
+   * including the photos. Proven live on 2026-08-20: a library photo was
+   * attached, the report was cancelled, and a LATER, unrelated report submitted
+   * without the picker ever being opened carried that photo onto the public map.
+   * The points feed corroborated it independently, awarding "Earned 3 points:
+   * Added a photo" for a report in which no photo was ever chosen.
+   *
+   * A user can attach something personal, think better of it, cancel — and have
+   * it published anyway, attached to a report they filed somewhere else. EXIF is
+   * stripped on upload so coordinates do not leak, but the image does.
+   *
+   * Bound to the explicit cancel doors ONLY (the Cancel button, onRequestClose,
+   * and the pull-to-dismiss, which the comment above already calls the same
+   * door). Deliberately NOT bound to visibility or to onDismiss, because two
+   * other paths hide this sheet and both MUST keep the draft:
+   *   - the "Sign in" handoff, which saves the draft explicitly and announces
+   *     that it kept it, and
+   *   - the SW-37 "place the pin on the map" round trip, which hides the sheet
+   *     without closing it precisely so the user does not lose their typing on
+   *     the way to fixing their location.
+   */
+  const handleCancel = () => {
+    reset();
+    onClose();
   };
 
   // Templates list — computed once per render. validReportTemplates filters
@@ -586,7 +656,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
     // the same thing was correctly inert. S11 escalates-never-aborts, so the
     // insert continues after the close and a re-filled resubmit duplicates it.
     // This removes the asymmetry; it does not invent a new trap.
-    <Modal visible={visible} animationType={reducedMotion ? 'none' : 'slide'} transparent onRequestClose={() => { if (!submitting) onClose(); }} onDismiss={onDismiss} aria-label={isAnon ? 'Report anonymously' : 'Report a flag'}>
+    <Modal visible={visible} animationType={reducedMotion ? 'none' : 'slide'} transparent onRequestClose={() => { if (!submitting) handleCancel(); }} onDismiss={onDismiss} aria-label={isAnon ? 'Report anonymously' : 'Report a flag'}>
       <View style={styles.backdrop}>
         {/* KAV wraps the WHOLE card from the backdrop (the FeedbackModal /
             AddressSearchModal recipe): rooted here its keyboard-overlap math
@@ -607,7 +677,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
             dismissal path. Guarded by !submitting exactly like Cancel: the
             gesture must never be the one door that closes a submitting sheet. */}
         <SheetPull
-          onDismiss={onClose}
+          onDismiss={handleCancel}
           enabled={!submitting && !keyboardVisible}
           atTop={atTop}
           simultaneousHandlers={scrollRef}
@@ -625,7 +695,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
           // pointing at a line number that had since drifted; the dead prop is
           // now gone rather than annotated.
           onAccessibilityEscape={() => {
-            if (!submitting) onClose();
+            if (!submitting) handleCancel();
           }}
         >
           {/* The drag affordance. Every other sheet wearing this pill now backs
@@ -658,7 +728,13 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
             <AppText variant="mono" style={styles.location}>
               {location
                 ? `at ${location.lat.toFixed(5)}, ${location.lng.toFixed(5)}`
-                : 'Waiting for location…'}
+                // SW-11: "Waiting for location…" is true while the request is in
+                // flight and false the moment the user denies it — at which point
+                // it waited forever and never said why. A denial is a settled
+                // answer, so say so and let the controls below carry the recovery.
+                : locationDenied
+                  ? 'Location is off for Flagstone'
+                  : 'Waiting for location…'}
             </AppText>
           </View>
           {/* S5 (L3-1): when no location has resolved yet — the common
@@ -677,6 +753,39 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
               <MapPin size={14} color={color.brandOnSoft} strokeWidth={2.4} {...decorativeProps} />
               <AppText variant="label" style={styles.useLocationText}>Use my location</AppText>
             </Pressable>
+          )}
+
+          {/* SW-37: the fix for the dead-end. Deny location and every other route
+              to a coordinate was invisible — Submit stayed disabled no matter how
+              completely the form was filled, so the app's core action was closed
+              to anyone who won't share their position. Manual placement already
+              existed as a LONG-PRESS on the map, with no affordance anywhere
+              pointing at it; this is that same path, made findable from the one
+              screen where the user is actually stuck. */}
+          {!location && onPlaceOnMap && (
+            <Pressable
+              onPress={onPlaceOnMap}
+              style={({ pressed }) => [styles.useLocationBtn, pressed && styles.chipPressed]}
+              accessibilityRole="button"
+              accessibilityLabel="Place the pin on the map"
+              accessibilityHint="Hides this form so you can move the map to the barrier, then brings it back with that spot filled in. Nothing you have typed is lost."
+            >
+              <MapPin size={14} color={color.brandOnSoft} strokeWidth={2.4} {...decorativeProps} />
+              <AppText variant="label" style={styles.useLocationText}>Place the pin on the map</AppText>
+            </Pressable>
+          )}
+
+          {/* SW-37 (guest half): the dead end, explained. A guest with location
+              denied has no manual-placement route by design, so leaving them
+              with a disabled Submit and no reason was the actual defect. The
+              "Sign in" link in the banner directly below is the second half of
+              this sentence. */}
+          {!location && !onPlaceOnMap && locationDenied && (
+            <AppText variant="body" style={styles.blockedNote}>
+              {isAnon
+                ? 'Anonymous reports can only be filed where you are. Turn on location above, or sign in to place the pin yourself.'
+                : 'Location is off for Flagstone. Turn it on above to file this report.'}
+            </AppText>
           )}
 
           {/* Anonymous mode banner — shown when user is not signed in.
@@ -1254,7 +1363,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
               so Cancel/Submit clear the home indicator on notched devices. */}
           <View style={[styles.actions, { paddingBottom: Math.max(spacing.xxl, insets.bottom) }]}>
             <Pressable
-              onPress={onClose}
+              onPress={handleCancel}
               disabled={submitting}
               style={({ pressed }) => [styles.actionBtn, styles.cancelBtn, pressed && styles.chipPressed]}
               accessibilityRole="button"
@@ -1273,11 +1382,10 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
               ]}
               accessibilityRole="button"
               accessibilityLabel={isAnon ? 'Submit report anonymously' : 'Submit report'}
-              accessibilityHint={
-                !location
-                  ? "Waiting for your location. Tap 'Use my location' above to try again."
-                  : undefined
-              }
+              // SW-37: never point a blocked user at the ONE control that cannot
+              // help them. Under a denial "Use my location" only re-asks a
+              // question the OS has already answered.
+              accessibilityHint={blockedReason()}
               {...a11yToggle({ disabled: submitting || !location, busy: submitting })}
             >
               {({ pressed }) => (
@@ -1359,6 +1467,14 @@ const makeStyles = (color: ColorTheme) =>
     location: { fontSize: font.size.xs, color: color.inkGlassMuted },
     // S5: in-sheet "Use my location" retry — 44pt, brand-soft tint mirroring the
     // anon banner; only rendered when no location has resolved.
+    // SW-37: the muted explain-the-block line. Same ink as the other quiet
+    // captions on this sheet; it informs, it is not an alert.
+    blockedNote: {
+      fontSize: font.size.xs,
+      color: color.inkGlassMuted,
+      lineHeight: 17,
+      marginBottom: spacing.sm,
+    },
     useLocationBtn: {
       flexDirection: 'row',
       alignItems: 'center',

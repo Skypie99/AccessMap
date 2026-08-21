@@ -1,0 +1,19 @@
+# A4 — TasksScreen (guest) + C3 FlagDetail + E-nests · BANKED (Pro Max, light)
+Build: sim-release @ bc91789 · LIVE rows (Kelowna cluster, seeded 2026-08-19) — READ-ONLY honored; zero writes
+
+## A4 elements exercised / found: 8/10
+Search flags field (274×43) present ✓ (filter typing deferred to 17e repeat) · Select multiple 127×45 (mode toggle deferred — selection mode leads to bulk AUTH actions; guest gate assumed same as single) · Filter and sort 107×45 → WALKED on map segment (same component family) — actually Tasks' own instance: NOT yet exercised → carried to remaining list · 'Review the nearest open barrier' quick action 408×45 ✓ present (navigates to map — used as A6 transition option) · Card title-buttons ("Tap to view on map") · Verify/Resolved/Reject/Details per card (45pt ✓, exemplary composite labels incl. distance) · Guest gate on Verify: alert "Sign in required — Please sign in to verify or resolve flags." ✓ (the guest EDGE; no write fired) · 'View flag details' → C3 ✓
+
+## C3 FlagDetail — exercised: title/X ✓ (44×44) · photos empty-state ("No photos") ✓ · severity+status chips + gloss ✓ · description ✓ · REPORTED BY anonymized ("Another community member") ✓ · date ✓ · raw coords + Copy coordinates (21×24!) · View on Map ✓ (transition pending) · Directions (present; not tapped — leaves app to Maps; DEVICE-ONLY note) · Share ✓ (share sheet presents; Copy → clipboard verified) · History ✗ DEAD · Report ✗ DEAD · guest comments gate ✓ ("Sign in to see and add comments.") · Verify/Resolved/Reject present (gate proven on A4)
+
+## NEW LEDGER ROWS
+- **SW-26 [HIGH — sim-CONFIRMED]: 'View status history' AND 'Report' buttons in FlagDetail do NOTHING.** Repro: Tasks → any card → Details → tap History (or Report) → no modal, no state change (verified 2 methods × 2 waits ≤5s; Close + Share on the same surface respond normally, so tap delivery is proven). E2 ReportContentModal + E3 StatusHistoryModal are UNREACHABLE-BY-DEFECT. Same silent-nested-present class as today's legal-sheets fix (bc91789) — these two mounts likely missed by that sweep. NOTE for Phase B: the iOS share sheet DOES present from this surface, so "VC already presenting" can't be the whole story — read FlagDetailModal's History/Report open-state wiring vs where those Modals mount. Evidence: E3_statushistory.png, E2_report_probe.png (sheet unchanged), probe_close.png (close works)
+- **SW-23 [HIGH, PLAUSIBLE — device-VO verify]: FlagDetail content INTERMITTENTLY absent from the accessibility tree.** Observed: 4 consecutive AX queries over ~3 min with ZERO sheet elements while screenshots show the sheet rendered (simultaneous pair banked: C3_simultaneous.png) and the background correctly AX-hidden → VoiceOver void state. Tree materialized later after an in-sheet tap. If reproducible on device, this is Blocker-tier (central surface unreadable); mechanism for Phase B (custom Sheet + RNGH projection timing; other Sheet users — Terms/Resources — projected instantly)
+- SW-25 [Med] 'Copy coordinates' hit target 21×24 (floor 44) — micro-target class (with SW-09)
+- SW-22 [Med] Task-card title IS the map-jump button at 376×22pt (under floor; the pills below are fine)
+- SW-27 [Low] Meta line renders "3351 min walk" (~56 h) at long distances — honest math, absurd presentation; cap/suppress walk-time beyond a threshold
+- Positives: guest gates exact and consistent on actions/comments · share payload PERFECT (flagstone.skypistudio.com/flag/<uuid> + accessmap:// deep link + "Reported via Flagstone.") · empty-photo state honest · anonymized reporter attribution
+
+## Data captured for later nodes
+Deep-link test UUID: 29718d8c-59c4-4fb6-997b-6937b71924fa (Steep grade, Kelowna 49.87435,-119.35882)
+Coordinates confirm the live cluster = Kelowna BC → Home's SF default card (SW-08) misrepresents; distances were always correct.

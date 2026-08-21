@@ -565,7 +565,11 @@ export default function OnboardingCards({ onDone }: Props) {
         {showDecline && (
           <Pressable
             onPress={() => goTo(index + 1)}
-            style={({ pressed }) => [styles.maybeLaterBtn, pressed && { opacity: 0.6 }]}
+            style={({ pressed }) => [
+              styles.maybeLaterBtn,
+              { marginBottom: Math.max(28, insets.bottom) },
+              pressed && { opacity: 0.6 },
+            ]}
             accessibilityRole="button"
             accessibilityLabel={permission === 'location' ? 'Not now' : 'Maybe later'}
             accessibilityHint={
@@ -748,6 +752,13 @@ const makeStyles = (color: ColorTheme) =>
       alignSelf: 'center',
       paddingHorizontal: spacing.lg,
       paddingVertical: spacing.md,
+      // SW-02: marginBottom was a hardcoded 28 while the home indicator wants
+      // 34, so the link's own box ended 6pt INSIDE the inset (measured y884-928
+      // against a 922 boundary on a 956pt screen). The sibling action row above
+      // already derives its pad from insets.bottom; this one was the last
+      // hardcoded guess in the family. Applied inline at the render site, where
+      // `insets` is in scope — the 28 stays as the no-inset floor.
+      // marginBottom applied inline: Math.max(28, insets.bottom).
       marginBottom: 28,
       minHeight: 44,
       minWidth: 44,

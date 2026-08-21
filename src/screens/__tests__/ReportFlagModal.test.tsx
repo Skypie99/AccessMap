@@ -1232,3 +1232,314 @@ describe('A11Y-226 — guest draft survives the sign-in handoff', () => {
     third.unmount();
   });
 });
+
+/**
+ * SW-37 / SW-11 — the no-location dead-end.
+ *
+ * ─── THE BUG THESE PIN ────────────────────────────────────────────────────
+ * Deny location and the report flow simply ended. The header read "Waiting for
+ * location…" forever — a sentence that is true while the request is in flight
+ * and false the moment the user says no — and Submit stayed disabled no matter
+ * how completely the form was filled. The app's core action was closed to
+ * anyone who won't share their position, with no explanation and no way out.
+ * Confirmed auth-independent in the A-2 pass: signed in WITH location, the same
+ * form completes to the edge, so nothing about this was about accounts.
+ *
+ * Manual placement already existed — a long-press on the map drops a report pin
+ * — but nothing anywhere pointed at it, so from inside the sheet it may as well
+ * not have existed. The fix is an affordance for the path already there.
+ */
+describe('SW-11 — a denied permission stops claiming it is still waiting', () => {
+  // These render raw (not via renderAnon/renderAuth) because the props under
+  // test are the point, so the auth mock has to be set explicitly — the shared
+  // beforeEach clears calls but leaves whatever return value ran last.
+  beforeEach(() => {
+    mockUseAuth.mockReturnValue({ user: null } as ReturnType<typeof useAuth>);
+  });
+
+  it('says the location is off, not that it is coming', () => {
+    const { getByText, queryByText } = render(
+      withProvider(
+        <ReportFlagModal
+          visible
+          location={null}
+          locationDenied
+          onClose={jest.fn()}
+          onCreated={jest.fn()}
+        />,
+      ),
+    );
+    expect(getByText('Location is off for Flagstone')).toBeTruthy();
+    expect(queryByText('Waiting for location…')).toBeNull();
+  });
+
+  it('still says "waiting" while the answer is genuinely outstanding', () => {
+    // Non-vacuity: the honest in-flight state must survive. Replacing it
+    // unconditionally would trade one wrong sentence for another.
+    const { getByText } = render(
+      withProvider(
+        <ReportFlagModal visible location={null} onClose={jest.fn()} onCreated={jest.fn()} />,
+      ),
+    );
+    expect(getByText('Waiting for location…')).toBeTruthy();
+  });
+});
+
+describe('SW-37 — there is a way out of the dead-end', () => {
+  // These render raw (not via renderAnon/renderAuth) because the props under
+  // test are the point, so the auth mock has to be set explicitly — the shared
+  // beforeEach clears calls but leaves whatever return value ran last.
+  beforeEach(() => {
+    mockUseAuth.mockReturnValue({ user: null } as ReturnType<typeof useAuth>);
+  });
+
+  const PLACE = 'Place the pin on the map';
+
+  it('offers manual placement when there is no location and the host allows it', () => {
+    const onPlaceOnMap = jest.fn();
+    const { getByLabelText } = render(
+      withProvider(
+        <ReportFlagModal
+          visible
+          location={null}
+          onPlaceOnMap={onPlaceOnMap}
+          onClose={jest.fn()}
+          onCreated={jest.fn()}
+        />,
+      ),
+    );
+    fireEvent.press(getByLabelText(PLACE));
+    expect(onPlaceOnMap).toHaveBeenCalledTimes(1);
+  });
+
+  it('does NOT offer it once a location exists', () => {
+    // It is a recovery control, not a relocation control — the long-press path
+    // is still how you move a report you can already file.
+    const { queryByLabelText } = render(
+      withProvider(
+        <ReportFlagModal
+          visible
+          location={LOCATION}
+          onPlaceOnMap={jest.fn()}
+          onClose={jest.fn()}
+          onCreated={jest.fn()}
+        />,
+      ),
+    );
+    expect(queryByLabelText(PLACE)).toBeNull();
+  });
+
+  it('does NOT offer it when the host withholds it (the guest gate)', () => {
+    // MapScreen passes onPlaceOnMap only when signed in, mirroring
+    // handleMapLongPress' existing `if (!authUser) return`. The sheet must not
+    // invent the control for itself.
+    const { queryByLabelText } = render(
+      withProvider(
+        <ReportFlagModal visible location={null} onClose={jest.fn()} onCreated={jest.fn()} />,
+      ),
+    );
+    expect(queryByLabelText(PLACE)).toBeNull();
+  });
+
+  it('the blocked Submit points at a control that can actually help', () => {
+    const { getByLabelText } = render(
+      withProvider(
+        <ReportFlagModal
+          visible
+          location={null}
+          locationDenied
+          onPlaceOnMap={jest.fn()}
+          onClose={jest.fn()}
+          onCreated={jest.fn()}
+        />,
+      ),
+    );
+    // Under a denial, "Use my location" only re-asks a question the OS has
+    // already answered, so the hint must name the other way out too.
+    const submit = getByLabelText('Submit report anonymously');
+    expect(submit.props.accessibilityHint).toContain(PLACE);
+  });
+});
+
+/**
+ * SW-52 — a cancelled report's photo was published with the NEXT report.
+ *
+ * ─── THE BUG THESE PIN ────────────────────────────────────────────────────
+ * This modal is a persistent `visible`-prop component: it never unmounts, so
+ * every field survives a close. `reset()` only ran after a SUCCESSFUL submit —
+ * its own comment said so — which meant cancelling left the entire form loaded
+ * for the next session, photos included.
+ *
+ * Proven live on 2026-08-20: a library photo was attached, the report was
+ * cancelled, and a later, unrelated report submitted without the picker ever
+ * being opened carried that photo onto the public map. The points feed
+ * corroborated it independently, awarding "Earned 3 points: Added a photo" for
+ * a report in which no photo was ever chosen.
+ *
+ * A user can attach something personal, think better of it, cancel — and have
+ * it published anyway, attached to a report they filed somewhere else entirely.
+ * EXIF is stripped on upload so coordinates do not leak; the image does.
+ *
+ * Surfaced to Sky before any edit (Const. hard prohibition #5) and approved by
+ * her on 2026-08-20: full reset on cancel, not photos alone.
+ *
+ * ─── WHAT MUST NOT BREAK ──────────────────────────────────────────────────
+ * Two other paths hide this sheet and both MUST keep the draft — a FAILED
+ * submit (so the user can retry without re-picking) and the "Sign in" handoff
+ * (which saves the draft explicitly and announces that it kept it; covered by
+ * the restore tests above). The SW-37 pin round trip is the third, and it never
+ * calls onClose at all.
+ */
+describe('SW-52 — cancelling a report actually discards it', () => {
+  it('does NOT carry a cancelled photo into the next report', async () => {
+    // The live repro, in order.
+    const utils = renderAuth();
+    await addPhoto(utils, 'file:///abandoned.jpg');
+    expect(mockUploadFlagPhoto).not.toHaveBeenCalled(); // still only a draft
+
+    fireEvent.press(utils.getByLabelText('Cancel and close'));
+
+    // The sheet never unmounted — this is the same component, reopened.
+    fireEvent.press(utils.getByLabelText('Submit report'));
+    await waitFor(() => {
+      expect(mockCreateFlag).toHaveBeenCalledTimes(1);
+    });
+    // The whole finding in one assertion: nothing was uploaded, because there
+    // was nothing left to upload.
+    expect(mockUploadFlagPhoto).not.toHaveBeenCalled();
+  });
+
+  it('clears the typed description too', async () => {
+    // Sky chose the full reset over photos-only, so the rest of the draft goes
+    // with it — a cancel means cancel.
+    const utils = renderAuth();
+    fireEvent.changeText(
+      utils.getByLabelText('Description of the accessibility issue'),
+      'Abandoned draft',
+    );
+    expect(utils.getByDisplayValue('Abandoned draft')).toBeTruthy();
+
+    fireEvent.press(utils.getByLabelText('Cancel and close'));
+
+    expect(utils.queryByDisplayValue('Abandoned draft')).toBeNull();
+  });
+
+  it('a FAILED submit still keeps the draft (this must not regress)', async () => {
+    // The deliberate behaviour reset() was written around: a failure is not a
+    // cancel, and re-picking photos after a network blip would be its own bug.
+    mockCreateFlag.mockRejectedValueOnce(new Error('network'));
+    jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+
+    const utils = renderAuth();
+    fireEvent.changeText(
+      utils.getByLabelText('Description of the accessibility issue'),
+      'Survives a failure',
+    );
+    fireEvent.press(utils.getByLabelText('Submit report'));
+
+    await waitFor(() => {
+      expect(mockCreateFlag).toHaveBeenCalled();
+    });
+    expect(utils.getByDisplayValue('Survives a failure')).toBeTruthy();
+  });
+});
+
+/**
+ * SW-37, the guest half — a dead end you can at least understand.
+ *
+ * Manual placement is deliberately NOT open to guests (see handleMapLongPress:
+ * with GPS you can only report where you ARE, and the anon rate limit caps
+ * volume, not location). That is a defensible product line, but it left the
+ * users the finding was actually about — anonymous ones — staring at a disabled
+ * Submit with the sentence "Waiting for your location", which after a denial is
+ * false AND points at the one control that cannot help.
+ *
+ * So the constraint gets said out loud, in the same words, in two places: on
+ * screen for everyone, and in Submit's accessibilityHint for screen-reader
+ * users, who never see the note.
+ */
+describe('SW-37 (guest half) — the block is explained, not just enforced', () => {
+  beforeEach(() => {
+    mockUseAuth.mockReturnValue({ user: null } as ReturnType<typeof useAuth>);
+  });
+
+  const ANON_LINE =
+    'Anonymous reports can only be filed where you are. Turn on location above, or sign in to place the pin yourself.';
+
+  it('a guest denied location is told why, and where to go', () => {
+    const { getByText } = render(
+      withProvider(
+        <ReportFlagModal
+          visible
+          location={null}
+          locationDenied
+          onClose={jest.fn()}
+          onCreated={jest.fn()}
+        />,
+      ),
+    );
+    expect(getByText(ANON_LINE)).toBeTruthy();
+  });
+
+  it("Submit's hint stops pointing at the control that cannot help", () => {
+    const { getByLabelText } = render(
+      withProvider(
+        <ReportFlagModal
+          visible
+          location={null}
+          locationDenied
+          onClose={jest.fn()}
+          onCreated={jest.fn()}
+        />,
+      ),
+    );
+    const hint = getByLabelText('Submit report anonymously').props.accessibilityHint as string;
+    expect(hint).toContain('can only be filed where you are');
+    // The whole point: after a denial, "Use my location" re-asks a settled question.
+    expect(hint).not.toContain('Use my location');
+  });
+
+  it('says nothing extra while the answer is still outstanding', () => {
+    // Non-vacuity: the note is about a DENIAL, not about every no-location state.
+    const { queryByText } = render(
+      withProvider(
+        <ReportFlagModal visible location={null} onClose={jest.fn()} onCreated={jest.fn()} />,
+      ),
+    );
+    expect(queryByText(ANON_LINE)).toBeNull();
+  });
+
+  it('does not claim "anonymous" at a signed-in user who simply has location off', () => {
+    mockUseAuth.mockReturnValue({ user: { id: 'user-abc' } } as ReturnType<typeof useAuth>);
+    const { getByText, queryByText } = render(
+      withProvider(
+        <ReportFlagModal
+          visible
+          location={null}
+          locationDenied
+          onClose={jest.fn()}
+          onCreated={jest.fn()}
+        />,
+      ),
+    );
+    expect(queryByText(ANON_LINE)).toBeNull();
+    expect(getByText('Location is off for Flagstone. Turn it on above to file this report.')).toBeTruthy();
+  });
+
+  it('stays quiet for a host that CAN place manually (the signed-in map path)', () => {
+    // There the recovery is a button, not a sentence — see the SW-37 suite above.
+    const { queryByText } = render(
+      withProvider(
+        <ReportFlagModal
+          visible
+          location={null}
+          locationDenied
+          onPlaceOnMap={jest.fn()}
+          onClose={jest.fn()}
+          onCreated={jest.fn()}
+        />,
+      ),
+    );
+    expect(queryByText(ANON_LINE)).toBeNull();
+  });
+});

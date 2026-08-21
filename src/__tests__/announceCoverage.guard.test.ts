@@ -116,10 +116,14 @@ describe('A11Y-208 — every ReportFlagModal opener arms the focus-return latch'
   const src = read('screens/MapScreen.tsx');
 
   it('the map long-press path registers before opening (both web and native branches)', () => {
-    const fn = src.slice(
-      src.indexOf('const handleMapLongPress'),
-      src.indexOf('const handleMapLongPress') + 2200,
-    );
+    // Slice the REAL callback body, not a fixed character window. The window
+    // used to be 2200 chars, which meant a long enough comment inside the
+    // handler pushed register() out of view and failed this for a reason that
+    // had nothing to do with focus return — exactly what happened when the
+    // stale "Jordan Condition 2" note was corrected in place (2026-08-20).
+    const start = src.indexOf('const handleMapLongPress');
+    expect(start).toBeGreaterThan(-1);
+    const fn = src.slice(start, src.indexOf('\n  }, [', start));
     // register() sits ABOVE the platform split, so it covers both branches.
     const registerAt = fn.indexOf('reportTrigger.register()');
     const webBranchAt = fn.indexOf("Platform.OS === 'web'");

@@ -1499,7 +1499,30 @@ export default function MapScreen() {
   // accidental-trigger concern (panning) doesn't apply since web uses
   // right-click rather than a long-press gesture.
   const handleMapLongPress = useCallback((coord: { lat: number; lng: number }) => {
-    // Jordan Condition 2: guests cannot create reports.
+    // The gate stands. The COMMENT that used to be here did not: it read
+    // "Jordan Condition 2: guests cannot create reports", and the app has
+    // contradicted that since 2026-05-30.
+    //
+    // What Condition 2 actually says, from the migration that recorded it
+    // (supabase/migrations/2026-05-29_anon_flags_select.sql, smoke-test step c):
+    // "The '＋ Report' FAB should NOT appear" for a guest. It is about not
+    // putting a report AFFORDANCE on the map for guests — not about capability —
+    // and it was written when the database blocked anonymous writes outright
+    // ("verify that no anon INSERT/UPDATE/DELETE policies exist"). Anonymous
+    // reporting shipped the NEXT DAY. Its letter is still honoured: the Report
+    // FAB below is still `{authUser && …}`.
+    //
+    // (Beware: "Condition N" is numbered per brief. A different Condition 2 —
+    // "the edit UI must not expose photo_url" — lives in the Shamus flag-editing
+    // brief and is quoted in 2026-05-25_flag_edit_rls_replacement.sql. They are
+    // unrelated, which is how this one got misread.)
+    //
+    // So the real reason this gate stays, reaffirmed by Sky 2026-08-20: with GPS
+    // you can only report where you ARE, and long-press lets you report
+    // anywhere. The anon rate limit caps VOLUME (5 per 24h), not location, so
+    // opening this to guests is a genuine change to the anonymous abuse surface
+    // — Sky's and Jordan's call, not a passing fix's. A guest whose location is
+    // denied is told this plainly in ReportFlagModal rather than dead-ended.
     if (!authUser) return;
     // A11Y-208 (G5 focus-return contract): arm the latch on BOTH map-gesture
     // paths. Without register() the session is never armed, restore() early-
@@ -1566,12 +1589,10 @@ export default function MapScreen() {
     [removeFlag],
   );
 
-  // On the Map tab we're ALREADY on the map, so "View on map" recenters locally
-  // instead of re-navigating (Tasks/Profile navigate cross-tab). Reuses the same
-  // center-on-flag spine as the focusFlag / deep-link effects. The modal calls
-  // onClose() itself right after this, so we don't touch selectedFlag here.
-  const handleDetailViewOnMap = useCallback((flag: FlagRow) => {
-    setFocusedFlagId(flag.id);
+  // The camera half of "View on map": move, then pop the callout. Same spine the
+  // focusFlag / deep-link effects use — kept as one function so the two callers
+  // below cannot drift apart again (drifting apart is what SW-28 was).
+  const centerOnFlag = useCallback((flag: FlagRow) => {
     // T1: calloutClear — "View on map" exists to show the callout.
     mapRef.current?.animateTo(
       {
@@ -1584,6 +1605,79 @@ export default function MapScreen() {
     );
     calloutScheduler.schedule(flag.id);
   }, [calloutScheduler]);
+
+  // On the Map tab we're ALREADY on the map, so "View on map" recenters locally
+  // instead of re-navigating (Tasks/Profile navigate cross-tab). The modal calls
+  // onClose() itself right after this, so we don't touch selectedFlag here.
+  //
+  // SW-28: the camera move must NOT fire while the detail sheet is still up. On
+  // iOS a full-screen RN Modal detaches the presenting view controller's view,
+  // so MKMapView drops animateToRegion on the floor — silently, leaving the map
+  // exactly where it was. Reproduced live on the 17 Pro Max: every marker frame
+  // byte-identical before and after the tap ([201,472] [350,69] [482,652]), no
+  // pan and no zoom, while the SAME animateTo works perfectly from the Tasks
+  // card, from Profile, and from a deep link. Those three all work for one
+  // reason — their move runs from a route-param effect AFTER arrival, i.e. after
+  // the sheet is gone. So this path waits for the same moment: record the intent
+  // on tap, spend it on the dismissal-COMPLETE event. Everywhere but iOS the map
+  // is never detached and onDismiss never fires, so the move stays inline.
+  const pendingDetailFocus = useRef<FlagRow | null>(null);
+
+  const handleDetailViewOnMap = useCallback((flag: FlagRow) => {
+    // The marker highlight is plain state and survives the dismissal — only the
+    // CAMERA has to wait, so this stays eager either way.
+    setFocusedFlagId(flag.id);
+    if (Platform.OS === 'ios') {
+      pendingDetailFocus.current = flag;
+      return;
+    }
+    centerOnFlag(flag);
+  }, [centerOnFlag]);
+
+  // SW-37: "place the pin on the map" mode. The capability this drives is not
+  // new — a long-press has always been able to drop a report pin — but it had no
+  // affordance anywhere in the app, so a user whose location was denied simply
+  // had no route to a coordinate and watched Submit stay disabled on a fully
+  // completed form. This turns the invisible gesture into a findable one, from
+  // the exact screen where the user is stuck.
+  //
+  // Gated to signed-in users on purpose: it mirrors handleMapLongPress' existing
+  // `if (!authUser) return` rather than widening it. With GPS you can only report
+  // where you ARE; with manual placement you can report anywhere, and that is a
+  // different privacy question — Sky's and Jordan's, not this fix's.
+  const [placingPin, setPlacingPin] = useState(false);
+
+  const handlePlaceOnMap = useCallback(() => {
+    // Hide the sheet WITHOUT calling its onClose: this is a round trip, not a
+    // cancel. The sheet stays mounted, so every field the user has already
+    // filled is still there when it comes back (and the SW-52 reset, which is
+    // bound to an explicit cancel, deliberately does not fire on this path).
+    setReportOpen(false);
+    setPlacingPin(true);
+  }, []);
+
+  const handleConfirmPin = useCallback(async () => {
+    const centre = await mapRef.current?.getCenter();
+    setPlacingPin(false);
+    // A map that can't answer leaves the location exactly as it was rather than
+    // guessing a coordinate — a wrong pin is worse than no pin.
+    if (centre) setDropLocation(centre);
+    setReportOpen(true);
+  }, []);
+
+  const handleCancelPin = useCallback(() => {
+    setPlacingPin(false);
+    setReportOpen(true);
+  }, []);
+
+  const handleDetailDismissed = useCallback(() => {
+    const pending = pendingDetailFocus.current;
+    if (!pending) return;
+    // Spend it exactly once: a later dismissal that wasn't a "View on map" tap
+    // must not re-move the camera under the user.
+    pendingDetailFocus.current = null;
+    centerOnFlag(pending);
+  }, [centerOnFlag]);
 
   // The Report FAB is dimmed until we have a location on NATIVE (where the
   // recenter button is the way to turn location on). On WEB we keep it
@@ -2663,6 +2757,59 @@ export default function MapScreen() {
         </View>
       </View>
 
+      {/* SW-37: placement mode. Deliberately NOT inside the box-none overlay —
+          that overlay is inset by the top chrome and the tab bar, so its centre
+          is not the MAP's centre, and a crosshair that lies about where the pin
+          lands is worse than no crosshair. This is a plain absoluteFill whose
+          centre is the map's centre, which is the point getCenter() reads. */}
+      {placingPin && (
+        <>
+          <View style={styles.pinPlacementCrosshair} pointerEvents="none">
+            <MapPin size={40} color={color.brand} strokeWidth={2.4} />
+          </View>
+          <View
+            style={[styles.pinPlacementBar, { paddingBottom: tabBarHeight + 16 }]}
+            pointerEvents="box-none"
+          >
+            <View style={styles.pinPlacementCard}>
+              <AppText
+                variant="label"
+                style={styles.pinPlacementTitle}
+                accessibilityRole="header"
+                // WCAG 4.1.3: entering this mode is a context change with no
+                // focusable control of its own to announce it.
+                accessibilityLiveRegion="polite"
+              >
+                Move the map to the barrier
+              </AppText>
+              <AppText variant="body" style={styles.pinPlacementHint}>
+                The pin lands in the middle of the map. Your report is kept.
+              </AppText>
+              <View style={styles.pinPlacementActions}>
+                <Pressable
+                  onPress={handleCancelPin}
+                  style={({ pressed }) => [styles.pinPlacementBtn, styles.pinPlacementCancel, pressed && { opacity: 0.7 }]}
+                  accessibilityRole="button"
+                  accessibilityLabel="Cancel placing the pin"
+                  accessibilityHint="Goes back to your report without changing its location"
+                >
+                  <AppText variant="label" style={styles.pinPlacementCancelText}>Cancel</AppText>
+                </Pressable>
+                <Pressable
+                  onPress={() => void handleConfirmPin()}
+                  style={({ pressed }) => [styles.pinPlacementBtn, styles.pinPlacementConfirm, pressed && { opacity: 0.85 }]}
+                  accessibilityRole="button"
+                  accessibilityLabel="Put the pin here"
+                  accessibilityHint="Uses the centre of the map as this report's location and returns to your report"
+                >
+                  <AppText variant="label" style={styles.pinPlacementConfirmText}>Put the pin here</AppText>
+                </Pressable>
+              </View>
+            </View>
+          </View>
+        </>
+      )}
+
       <Suspense fallback={null}>
         <ReportFlagModal
           visible={reportOpen}
@@ -2673,6 +2820,12 @@ export default function MapScreen() {
           // S5: lets the sheet re-run the same locating spine on demand (the
           // in-sheet "Use my location" retry) without leaving the flow.
           onRequestLocation={requestLocation}
+          // SW-11: let the sheet say "off" instead of "waiting" once the OS has
+          // actually answered — it waited forever and never explained why.
+          locationDenied={permissionDenied}
+          // SW-37: same gate as handleMapLongPress, expressed once. Guests keep
+          // the GPS-only path they have today; widening that is Sky's call.
+          onPlaceOnMap={authUser ? handlePlaceOnMap : undefined}
           onClose={() => {
             setReportOpen(false);
             // Clear the drop pin on close so the next FAB-tap defaults back
@@ -2723,6 +2876,7 @@ export default function MapScreen() {
           onEdited={(updated) => patchFlag(updated.id, updated)}
           onDeleted={handleDetailDeleted}
           onViewOnMap={handleDetailViewOnMap}
+          onDismiss={handleDetailDismissed}
         />
       </Suspense>
 
@@ -3089,6 +3243,61 @@ const makeStyles = (color: ColorTheme) =>
       flex: 1,
     },
     container: { flex: 1 },
+    // SW-37 placement mode.
+    pinPlacementCrosshair: {
+      ...StyleSheet.absoluteFillObject,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    pinPlacementBar: {
+      ...StyleSheet.absoluteFillObject,
+      justifyContent: 'flex-end',
+      paddingHorizontal: spacing.lg,
+    },
+    pinPlacementCard: {
+      backgroundColor: color.surface,
+      borderRadius: radius.lg,
+      padding: spacing.lg,
+      gap: spacing.sm,
+      ...shadow.e2,
+    },
+    pinPlacementTitle: {
+      fontSize: font.size.base,
+      fontWeight: font.weight.bold,
+      color: color.textStrong,
+    },
+    pinPlacementHint: {
+      fontSize: font.size.xs,
+      color: color.textMuted,
+      lineHeight: 17,
+    },
+    pinPlacementActions: {
+      flexDirection: 'row',
+      gap: spacing.md,
+      marginTop: spacing.tight,
+    },
+    pinPlacementBtn: {
+      flex: 1,
+      minHeight: 44,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderRadius: radius.md,
+      paddingHorizontal: spacing.md,
+    },
+    pinPlacementCancel: {
+      backgroundColor: color.surfaceNeutral,
+    },
+    pinPlacementCancelText: {
+      color: color.textStrong,
+      fontWeight: font.weight.semibold,
+    },
+    pinPlacementConfirm: {
+      backgroundColor: color.brand,
+    },
+    pinPlacementConfirmText: {
+      color: color.textOnBrand,
+      fontWeight: font.weight.bold,
+    },
     overlay: {
       ...StyleSheet.absoluteFillObject,
       padding: 16,

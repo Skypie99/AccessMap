@@ -92,6 +92,12 @@ export interface PlatformMapHandle {
     latitudeDelta?: number;
     longitudeDelta?: number;
   }) => void;
+  /** SW-37: where is the map looking RIGHT NOW? Read-only, resolved from the
+   *  visible bounds — the map itself stays deliberately UNCONTROLLED (no
+   *  `region` prop, no onRegionChange), so nothing here can fight a gesture
+   *  mid-pinch. Backs "place the pin on the map" for users whose location is
+   *  denied or unavailable. Resolves null if the map isn't ready to answer. */
+  getCenter: () => Promise<{ lat: number; lng: number } | null>;
 }
 
 export interface PlatformMapProps {
@@ -247,6 +253,22 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(function Pla
       },
       showCallout: (id) => {
         markerRefs.current[id]?.showCallout();
+      },
+      // SW-37: the midpoint of the visible bounds. getMapBoundaries is already
+      // the read this file trusts for viewport questions (see handlePinPress),
+      // so this adds no new dependency on map internals.
+      getCenter: async () => {
+        const map = mapRef.current;
+        if (!map || typeof map.getMapBoundaries !== 'function') return null;
+        try {
+          const b = await map.getMapBoundaries();
+          return {
+            lat: (b.northEast.latitude + b.southWest.latitude) / 2,
+            lng: (b.northEast.longitude + b.southWest.longitude) / 2,
+          };
+        } catch {
+          return null;
+        }
       },
       zoomBy: (delta) => {
         const map = mapRef.current;

@@ -225,8 +225,26 @@ const FOCUS_RETURN = [
 ] as const;
 
 /**
- * The one surface that returns focus WITHOUT this contract, and must not be
- * read as a gap.
+ * Surfaces that carry `onDismiss` for a reason OTHER than the G5 contract, and
+ * must not be read as gaps. Two of them, for two different reasons.
+ *
+ * 1. FlagDetailModal — SW-28. Its `onDismiss` is a CAMERA-TIMING hook, not focus
+ * return. "View on Map" on the Map tab used to move the map inline, in the same
+ * tick as onClose(); on iOS a full-screen Modal detaches the presenting view
+ * controller's view, so MKMapView dropped animateToRegion silently and the map
+ * never moved (reproduced live — every marker frame byte-identical either side
+ * of the tap). The move now waits for the dismissal-COMPLETE event, which is
+ * what `onDismiss` IS on iOS, which is why it is the right event and also why it
+ * collides with this rule's vocabulary. Renaming cannot dodge it and should not:
+ * this scan reads the real RN prop on the Modal tag, which is correct of it.
+ *
+ * This entry asserts NOTHING about focus return, and deliberately does not claim
+ * it. FlagDetailModal has no useSurfaceTrigger pairing on the Map tab; that is a
+ * pre-existing gap SW-28 did not create, and wiring an unverified focus-return
+ * contract onto a surface whose VoiceOver behaviour is already queued for a real
+ * device pass (Wave 1, N-1) would be worse than declaring the boundary here.
+ *
+ * 2. The drawer — the one surface that returns focus WITHOUT this contract.
  *
  * The drawer's focus return predates G5 and rides `DrawerContext`, because its
  * trigger lives in N different screen headers while <HamburgerDrawer> mounts
@@ -245,6 +263,10 @@ const FOCUS_RETURN = [
  * mechanisms, not a coverage hole.
  */
 const FOCUS_RETURN_EXEMPT = [
+  {
+    rel: 'components/FlagDetailModal.tsx',
+    handler: 'onDismiss={onDismiss}',
+  },
   {
     rel: 'components/HamburgerDrawer.tsx',
     handler: 'onDismiss={presentPendingSubScreen}',

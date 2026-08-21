@@ -54,8 +54,18 @@ function ErrorFallback({
       ? `${label} ran into a problem`
       : 'This section ran into a problem'
     : 'Something went wrong';
+  // SW-31: this used to end "…or switch to another tab and come back", which is
+  // advice to walk into the same wall. When the crashing state lives ABOVE this
+  // boundary — the SW-47 realtime re-subscribe was exactly that — the other tabs
+  // are already dead too, so the one workaround the copy named was the one thing
+  // guaranteed not to work.
+  //
+  // "Try again" itself stays, and stays first: SW-48 corrected the rest of this
+  // finding by showing it recovers cleanly (twice, under auth, straight back to
+  // Home with no re-crash in the console). So only the false half changes, and
+  // the honest fallback is the one the sibling string below already gives.
   const body = isScreen
-    ? 'You can try again, or switch to another tab and come back.'
+    ? 'You can try again. If it keeps happening, close and reopen the app.'
     : 'The app hit an unexpected problem and stopped. Try again, or close and reopen the app if it keeps happening.';
   return (
     <View style={styles.container} accessibilityRole="alert">

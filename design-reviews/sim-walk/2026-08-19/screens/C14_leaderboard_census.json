@@ -1,0 +1,1352 @@
+[
+ {
+  "type": "Image",
+  "label": null,
+  "name": "assets/assets/textures/noise-128.png",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   0,
+   0,
+   128,
+   128
+  ],
+  "depth": 21
+ },
+ {
+  "type": "ScrollView",
+  "label": null,
+  "name": null,
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   0,
+   0,
+   440,
+   957
+  ],
+  "depth": 20
+ },
+ {
+  "type": "StaticText",
+  "label": "PROFILE",
+  "name": "PROFILE",
+  "value": "PROFILE",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   24,
+   -1457,
+   392,
+   14
+  ],
+  "depth": 23
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Jarvis Mckneil",
+  "name": "Jarvis Mckneil",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   24,
+   -1442,
+   298,
+   49
+  ],
+  "depth": 24
+ },
+ {
+  "type": "Button",
+  "label": "Open navigation menu",
+  "name": "Open navigation menu",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   322,
+   -1441,
+   44,
+   45
+  ],
+  "depth": 25
+ },
+ {
+  "type": "Button",
+  "label": "Send feedback",
+  "name": "Send feedback",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   372,
+   -1441,
+   44,
+   45
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "Signed in as skylerhalisky@gmail.com",
+  "name": "Signed in as skylerhalisky@gmail.com",
+  "value": "Signed in as skylerhalisky@gmail.com",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   24,
+   -1391,
+   392,
+   18
+  ],
+  "depth": 23
+ },
+ {
+  "type": "Button",
+  "label": "Add profile photo",
+  "name": "Add profile photo",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   184,
+   -1336,
+   72,
+   72
+  ],
+  "depth": 23
+ },
+ {
+  "type": "StaticText",
+  "label": "POINTS",
+  "name": "POINTS",
+  "value": "POINTS",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   188,
+   -1250,
+   64,
+   16
+  ],
+  "depth": 23
+ },
+ {
+  "type": "StaticText",
+  "label": "90 points",
+  "name": "90 points",
+  "value": "90 points",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   139,
+   -1231,
+   64,
+   71
+  ],
+  "depth": 24
+ },
+ {
+  "type": "Button",
+  "label": "Bronze tier. Tap to see all tiers.",
+  "name": "Bronze tier. Tap to see all tiers.",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   214,
+   -1212,
+   87,
+   33
+  ],
+  "depth": 24
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Bronze tier, 90 of 100 points to Silver",
+  "name": "Bronze tier, 90 of 100 points to Silver",
+  "value": "progress bar, 90 percent",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   48,
+   -1149,
+   344,
+   9
+  ],
+  "depth": 23
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Progress toward Engaged badge, 90 of 100 points",
+  "name": "Progress toward Engaged badge, 90 of 100 points",
+  "value": "progress bar, 90 percent",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   48,
+   -1104,
+   344,
+   11
+  ],
+  "depth": 23
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "RECENT POINT ACTIVITY",
+  "name": "RECENT POINT ACTIVITY",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   40,
+   -1015,
+   360,
+   16
+  ],
+  "depth": 23
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Earned 15 points: Your report was resolved, Jun 2",
+  "name": "Earned 15 points: Your report was resolved, Jun 2",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   40,
+   -993,
+   360,
+   45
+  ],
+  "depth": 24
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Earned 15 points: Your report was resolved, Jun 2",
+  "name": "Earned 15 points: Your report was resolved, Jun 2",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   40,
+   -949,
+   360,
+   45
+  ],
+  "depth": 24
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Earned 15 points: Your report was resolved, Jun 2",
+  "name": "Earned 15 points: Your report was resolved, Jun 2",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   40,
+   -905,
+   360,
+   45
+  ],
+  "depth": 24
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Earned 10 points: Your report was verified, Jun 2",
+  "name": "Earned 10 points: Your report was verified, Jun 2",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   40,
+   -861,
+   360,
+   45
+  ],
+  "depth": 24
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Earned 10 points: Your report was verified, Jun 2",
+  "name": "Earned 10 points: Your report was verified, Jun 2",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   40,
+   -817,
+   360,
+   45
+  ],
+  "depth": 24
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Your stats: 6 reported, 0 verified, 3 resolved",
+  "name": "Your stats: 6 reported, 0 verified, 3 resolved",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   24,
+   -741,
+   392,
+   80
+  ],
+  "depth": 22
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "1 day streak \u2014 welcome",
+  "name": "1 day streak \u2014 welcome",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   24,
+   -646,
+   392,
+   56
+  ],
+  "depth": 22
+ },
+ {
+  "type": "Button",
+  "label": "Jump to the nearest unresolved flag: No ramp, severity 2 of 5, Mild, 269.4\u00a0km away.",
+  "name": "Jump to the nearest unresolved flag: No ramp, severity 2 of 5, Mild, 269.4\u00a0km away.",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   24,
+   -575,
+   392,
+   57
+  ],
+  "depth": 22
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Your reports by status",
+  "name": "Your reports by status",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   24,
+   -503,
+   392,
+   52
+  ],
+  "depth": 22
+ },
+ {
+  "type": "StaticText",
+  "label": "No open reports",
+  "name": "No open reports",
+  "value": "No open reports",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   24,
+   -503,
+   92,
+   52
+  ],
+  "depth": 23
+ },
+ {
+  "type": "StaticText",
+  "label": "No verified reports",
+  "name": "No verified reports",
+  "value": "No verified reports",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   124,
+   -503,
+   92,
+   52
+  ],
+  "depth": 23
+ },
+ {
+  "type": "Button",
+  "label": "View your 3 resolved reports",
+  "name": "View your 3 resolved reports",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   224,
+   -503,
+   92,
+   52
+  ],
+  "depth": 23
+ },
+ {
+  "type": "Button",
+  "label": "View your 3 rejected reports",
+  "name": "View your 3 rejected reports",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   324,
+   -503,
+   92,
+   52
+  ],
+  "depth": 23
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Your reports: 6 total. Top category: No ramp, 6. Most common severity: Moderate, 5.",
+  "name": "Your reports: 6 total. Top category: No ramp, 6. Most common severity: Moderate, 5.",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   40,
+   -420,
+   360,
+   20
+  ],
+  "depth": 23
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "BY CATEGORY",
+  "name": "BY CATEGORY",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   40,
+   -385,
+   360,
+   16
+  ],
+  "depth": 23
+ },
+ {
+  "type": "StaticText",
+  "label": "No ramp: 6 reports",
+  "name": "No ramp: 6 reports",
+  "value": "No ramp: 6 reports",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   40,
+   -363,
+   360,
+   29
+  ],
+  "depth": 23
+ },
+ {
+  "type": "StaticText",
+  "label": "Broken sidewalk: 0 reports",
+  "name": "Broken sidewalk: 0 reports",
+  "value": "Broken sidewalk: 0 reports",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   40,
+   -327,
+   360,
+   29
+  ],
+  "depth": 23
+ },
+ {
+  "type": "StaticText",
+  "label": "Blocked path: 0 reports",
+  "name": "Blocked path: 0 reports",
+  "value": "Blocked path: 0 reports",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   40,
+   -291,
+   360,
+   29
+  ],
+  "depth": 23
+ },
+ {
+  "type": "StaticText",
+  "label": "Missing signal: 0 reports",
+  "name": "Missing signal: 0 reports",
+  "value": "Missing signal: 0 reports",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   40,
+   -255,
+   360,
+   29
+  ],
+  "depth": 23
+ },
+ {
+  "type": "StaticText",
+  "label": "Steep grade: 0 reports",
+  "name": "Steep grade: 0 reports",
+  "value": "Steep grade: 0 reports",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   40,
+   -219,
+   360,
+   29
+  ],
+  "depth": 23
+ },
+ {
+  "type": "StaticText",
+  "label": "Other: 0 reports",
+  "name": "Other: 0 reports",
+  "value": "Other: 0 reports",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   40,
+   -183,
+   360,
+   29
+  ],
+  "depth": 23
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "BY SEVERITY",
+  "name": "BY SEVERITY",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   40,
+   -139,
+   360,
+   16
+  ],
+  "depth": 23
+ },
+ {
+  "type": "StaticText",
+  "label": "Severity 1 Minor: 0 reports",
+  "name": "Severity 1 Minor: 0 reports",
+  "value": "Severity 1 Minor: 0 reports",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   40,
+   -117,
+   360,
+   29
+  ],
+  "depth": 23
+ },
+ {
+  "type": "StaticText",
+  "label": "Severity 2 Mild: 0 reports",
+  "name": "Severity 2 Mild: 0 reports",
+  "value": "Severity 2 Mild: 0 reports",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   40,
+   -81,
+   360,
+   29
+  ],
+  "depth": 23
+ },
+ {
+  "type": "StaticText",
+  "label": "Severity 3 Moderate: 5 reports",
+  "name": "Severity 3 Moderate: 5 reports",
+  "value": "Severity 3 Moderate: 5 reports",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   40,
+   -45,
+   360,
+   29
+  ],
+  "depth": 23
+ },
+ {
+  "type": "StaticText",
+  "label": "Severity 4 Significant: 1 report",
+  "name": "Severity 4 Significant: 1 report",
+  "value": "Severity 4 Significant: 1 report",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   40,
+   -9,
+   360,
+   29
+  ],
+  "depth": 23
+ },
+ {
+  "type": "StaticText",
+  "label": "Severity 5 Severe: 0 reports",
+  "name": "Severity 5 Severe: 0 reports",
+  "value": "Severity 5 Severe: 0 reports",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   40,
+   27,
+   360,
+   29
+  ],
+  "depth": 23
+ },
+ {
+  "type": "Button",
+  "label": "My Reports, 6 reports",
+  "name": "My Reports, 6 reports",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   24,
+   87,
+   392,
+   67
+  ],
+  "depth": 22
+ },
+ {
+  "type": "Button",
+  "label": "Watched Flags",
+  "name": "Watched Flags",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   24,
+   169,
+   392,
+   81
+  ],
+  "depth": 22
+ },
+ {
+  "type": "Button",
+  "label": "Recent Activity",
+  "name": "Recent Activity",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   24,
+   265,
+   392,
+   67
+  ],
+  "depth": 22
+ },
+ {
+  "type": "Button",
+  "label": "Achievements, 3 of 13 earned",
+  "name": "Achievements, 3 of 13 earned",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   24,
+   347,
+   392,
+   67
+  ],
+  "depth": 22
+ },
+ {
+  "type": "Button",
+  "label": "See leaderboard",
+  "name": "See leaderboard",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   24,
+   429,
+   392,
+   67
+  ],
+  "depth": 22
+ },
+ {
+  "type": "Button",
+  "label": "Notifications",
+  "name": "Notifications",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   24,
+   511,
+   392,
+   68
+  ],
+  "depth": 22
+ },
+ {
+  "type": "Button",
+  "label": "My Feedback",
+  "name": "My Feedback",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   24,
+   594,
+   392,
+   67
+  ],
+  "depth": 22
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "DISPLAY NAME",
+  "name": "DISPLAY NAME",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   24,
+   684,
+   392,
+   15
+  ],
+  "depth": 23
+ },
+ {
+  "type": "TextField",
+  "label": "Display name",
+  "name": "Display name",
+  "value": "Jarvis Mckneil",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   37,
+   709,
+   286,
+   38
+  ],
+  "depth": 27
+ },
+ {
+  "type": "Button",
+  "label": "Save display name",
+  "name": "Save display name",
+  "value": null,
+  "enabled": "0",
+  "visible": "0",
+  "rect": [
+   344,
+   706,
+   72,
+   45
+  ],
+  "depth": 24
+ },
+ {
+  "type": "StaticText",
+  "label": "This shows next to your reports. Leave it blank and we'll use your email instead.",
+  "name": "This shows next to your reports. Leave it blank and we'll use your email instead.",
+  "value": "This shows next to your reports. Leave it blank and we'll use your email instead.",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   24,
+   758,
+   392,
+   31
+  ],
+  "depth": 23
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "DEFAULT LANDING TAB",
+  "name": "DEFAULT LANDING TAB",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   24,
+   812,
+   392,
+   15
+  ],
+  "depth": 23
+ },
+ {
+  "type": "Button",
+  "label": "Set default tab to Home",
+  "name": "Set default tab to Home",
+  "value": "1",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   24,
+   834,
+   126,
+   45
+  ],
+  "depth": 24
+ },
+ {
+  "type": "Button",
+  "label": "Set default tab to Tasks",
+  "name": "Set default tab to Tasks",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   157,
+   834,
+   126,
+   45
+  ],
+  "depth": 24
+ },
+ {
+  "type": "Button",
+  "label": "Set default tab to Profile",
+  "name": "Set default tab to Profile",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   290,
+   834,
+   126,
+   45
+  ],
+  "depth": 24
+ },
+ {
+  "type": "StaticText",
+  "label": "Flagstone will open to this tab each time you launch the app.",
+  "name": "Flagstone will open to this tab each time you launch the app.",
+  "value": "Flagstone will open to this tab each time you launch the app.",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   24,
+   886,
+   392,
+   16
+  ],
+  "depth": 23
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "REAL-TIME UPDATES",
+  "name": "REAL-TIME UPDATES",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   24,
+   925,
+   392,
+   15
+  ],
+  "depth": 23
+ },
+ {
+  "type": "StaticText",
+  "label": "Show new flags in real-time",
+  "name": "Show new flags in real-time",
+  "value": "Show new flags in real-time",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   24,
+   951,
+   317,
+   17
+  ],
+  "depth": 25
+ },
+ {
+  "type": "StaticText",
+  "label": "The map refreshes on its own as flags are added or triaged \u2014 no pulling to refresh.",
+  "name": "The map refreshes on its own as flags are added or triaged \u2014 no pulling to refresh.",
+  "value": "The map refreshes on its own as flags are added or triaged \u2014 no pulling to refresh.",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   24,
+   968,
+   317,
+   28
+  ],
+  "depth": 25
+ },
+ {
+  "type": "Switch",
+  "label": "Show new flags in real-time",
+  "name": "Show new flags in real-time",
+  "value": "0",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   353,
+   951,
+   63,
+   29
+  ],
+  "depth": 24
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "ONBOARDING",
+  "name": "ONBOARDING",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   24,
+   1023,
+   392,
+   15
+  ],
+  "depth": 23
+ },
+ {
+  "type": "Button",
+  "label": "Show me the intro again",
+  "name": "Show me the intro again",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   24,
+   1045,
+   392,
+   45
+  ],
+  "depth": 23
+ },
+ {
+  "type": "Button",
+  "label": "Help & FAQ",
+  "name": "Help & FAQ",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   24,
+   1105,
+   392,
+   83
+  ],
+  "depth": 22
+ },
+ {
+  "type": "Button",
+  "label": "What's New",
+  "name": "What's New",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   24,
+   1203,
+   392,
+   83
+  ],
+  "depth": 22
+ },
+ {
+  "type": "Button",
+  "label": "About Flagstone",
+  "name": "About Flagstone",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   24,
+   1301,
+   392,
+   83
+  ],
+  "depth": 22
+ },
+ {
+  "type": "Button",
+  "label": "Sign out of your account",
+  "name": "Sign out of your account",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   170,
+   1415,
+   100,
+   45
+  ],
+  "depth": 22
+ },
+ {
+  "type": "Button",
+  "label": "Delete Account",
+  "name": "Delete Account",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   145,
+   1483,
+   150,
+   45
+  ],
+  "depth": 22
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Vertical scroll bar, 4 pages",
+  "name": "Vertical scroll bar, 4 pages",
+  "value": "68%",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   407,
+   62,
+   30,
+   833
+  ],
+  "depth": 21
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Horizontal scroll bar, 1 page",
+  "name": "Horizontal scroll bar, 1 page",
+  "value": "0%",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   62,
+   923,
+   316,
+   31
+  ],
+  "depth": 21
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Vertical scroll bar, 4 pages",
+  "name": "Vertical scroll bar, 4 pages",
+  "value": "68%",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   407,
+   62,
+   30,
+   833
+  ],
+  "depth": 21
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Horizontal scroll bar, 1 page",
+  "name": "Horizontal scroll bar, 1 page",
+  "value": "0%",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   62,
+   923,
+   316,
+   31
+  ],
+  "depth": 21
+ },
+ {
+  "type": "Button",
+  "label": "Home, tab, 1 of 6",
+  "name": "Home, tab, 1 of 6",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   0,
+   861,
+   147,
+   53
+  ],
+  "depth": 13
+ },
+ {
+  "type": "Button",
+  "label": "Tasks, tab, 2 of 6",
+  "name": "Tasks, tab, 2 of 6",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   146,
+   861,
+   148,
+   53
+  ],
+  "depth": 13
+ },
+ {
+  "type": "Button",
+  "label": "Profile, tab, 3 of 6",
+  "name": "Profile, tab, 3 of 6",
+  "value": "1",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   293,
+   861,
+   147,
+   53
+  ],
+  "depth": 13
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Leaderboard",
+  "name": "Leaderboard",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   20,
+   573,
+   356,
+   34
+  ],
+  "depth": 9
+ },
+ {
+  "type": "Button",
+  "label": "Close leaderboard",
+  "name": "Close leaderboard",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   376,
+   568,
+   44,
+   45
+  ],
+  "depth": 9
+ },
+ {
+  "type": "StaticText",
+  "label": "Top 20 contributors by points",
+  "name": "Top 20 contributors by points",
+  "value": "Top 20 contributors by points",
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   0,
+   616,
+   440,
+   27
+  ],
+  "depth": 8
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Ranking period",
+  "name": "Ranking period",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   20,
+   642,
+   400,
+   51
+  ],
+  "depth": 8
+ },
+ {
+  "type": "Button",
+  "label": "All-time ranking",
+  "name": "All-time ranking",
+  "value": "1",
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   23,
+   645,
+   194,
+   45
+  ],
+  "depth": 9
+ },
+ {
+  "type": "Button",
+  "label": "This month's ranking",
+  "name": "This month's ranking",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   223,
+   645,
+   194,
+   45
+  ],
+  "depth": 9
+ },
+ {
+  "type": "ScrollView",
+  "label": null,
+  "name": null,
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   0,
+   704,
+   440,
+   178
+  ],
+  "depth": 9
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "1st, Member, 166 points",
+  "name": "1st, Member, 166 points",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   0,
+   704,
+   440,
+   55
+  ],
+  "depth": 12
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "2nd, Jarvis Mckneil, 90 points, you",
+  "name": "2nd, Jarvis Mckneil, 90 points, you",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   0,
+   758,
+   440,
+   56
+  ],
+  "depth": 12
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "3rd, Member, 21 points",
+  "name": "3rd, Member, 21 points",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   0,
+   813,
+   440,
+   55
+  ],
+  "depth": 12
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "4th, Member, 10 points",
+  "name": "4th, Member, 10 points",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   0,
+   867,
+   440,
+   55
+  ],
+  "depth": 12
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Vertical scroll bar, 2 pages",
+  "name": "Vertical scroll bar, 2 pages",
+  "value": "0%",
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   407,
+   704,
+   30,
+   178
+  ],
+  "depth": 10
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Horizontal scroll bar, 1 page",
+  "name": "Horizontal scroll bar, 1 page",
+  "value": "0%",
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   0,
+   848,
+   440,
+   31
+  ],
+  "depth": 10
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Vertical scroll bar, 2 pages",
+  "name": "Vertical scroll bar, 2 pages",
+  "value": "0%",
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   407,
+   704,
+   30,
+   178
+  ],
+  "depth": 10
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Horizontal scroll bar, 1 page",
+  "name": "Horizontal scroll bar, 1 page",
+  "value": "0%",
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   0,
+   848,
+   440,
+   31
+  ],
+  "depth": 10
+ }
+]

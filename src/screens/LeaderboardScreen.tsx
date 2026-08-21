@@ -8,6 +8,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
+import { BottomTabBarHeightContext } from '@react-navigation/bottom-tabs';
 import { RemoteImage } from '@/components/ui/RemoteImage';
 import { AppText } from '@/components/ui/AppText';
 import { GlassSurface } from '@/components/ui/GlassSurface';
@@ -217,6 +218,17 @@ export default function LeaderboardScreen({ visible, onClose }: Props) {
   // useSafeAreaInsets(), which throws when there's no SafeAreaProvider — the
   // modal render-tests mount these sheets without one. Same value in the app.
   const insets = React.useContext(SafeAreaInsetsContext) ?? { top: 0, bottom: 0, left: 0, right: 0 };
+  // SW-45: this sheet ran flush to the screen bottom while the tab bar sits at
+  // 861-914, so scrolled rows painted straight over a ghosted "Home / Tasks /
+  // Profile" — the red Tasks badge showed through behind the 4th-place row's
+  // text. Its four sibling sheets (Achievements, Activity, My Reports, Watched)
+  // all stop above the bar, so this was an inconsistency inside one family
+  // rather than a house style. Sky's call, 2026-08-20: every sheet CLEARS the
+  // tab bar. Read the height the same non-throwing way this file reads insets —
+  // useBottomTabBarHeight() throws with no navigator, and the render tests mount
+  // this sheet standalone. The value already includes the bottom safe-area
+  // inset, so it subsumes (rather than adds to) the home-indicator pad below.
+  const tabBarHeight = React.useContext(BottomTabBarHeightContext) ?? 0;
   const reducedMotion = useReducedMotion();
   // A11Y-201 (2.4.3): move the SR cursor onto the title when this surface opens.
   const titleRef = useFocusOnOpen<Text>(visible);
@@ -295,7 +307,7 @@ export default function LeaderboardScreen({ visible, onClose }: Props) {
           variant="bulk"
           borderRadius={0}
           forceEngineered
-          style={[styles.card, { paddingBottom: Math.max(spacing.xxl, insets.bottom) }]}
+          style={[styles.card, { paddingBottom: Math.max(spacing.xxl, insets.bottom, tabBarHeight) }]}
           accessibilityViewIsModal
           onAccessibilityEscape={onClose}
         >

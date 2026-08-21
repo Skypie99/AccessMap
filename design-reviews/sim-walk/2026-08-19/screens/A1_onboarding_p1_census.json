@@ -1,0 +1,557 @@
+[
+ {
+  "type": "Button",
+  "label": "Skip the tutorial",
+  "name": "Skip the tutorial",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   366,
+   62,
+   62,
+   44
+  ],
+  "depth": 7
+ },
+ {
+  "type": "ScrollView",
+  "label": null,
+  "name": null,
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   0,
+   114,
+   440,
+   709
+  ],
+  "depth": 7
+ },
+ {
+  "type": "ScrollView",
+  "label": null,
+  "name": null,
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   0,
+   114,
+   440,
+   709
+  ],
+  "depth": 11
+ },
+ {
+  "type": "StaticText",
+  "label": "1 / 5",
+  "name": "1 / 5",
+  "value": "1 / 5",
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   205,
+   436,
+   30,
+   16
+  ],
+  "depth": 14
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Welcome to Flagstone",
+  "name": "Welcome to Flagstone",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   72,
+   493,
+   297,
+   36
+  ],
+  "depth": 14
+ },
+ {
+  "type": "StaticText",
+  "label": "See an accessibility barrier \u2014 a missing ramp, a broken sidewalk, a blocked path? Put it on the map so others know, and so it gets fixed.",
+  "name": "See an accessibility barrier \u2014 a missing ramp, a broken sidewalk, a blocked path? Put it on the map so others know, and so it gets fixed.",
+  "value": "See an accessibility barrier \u2014 a missing ramp, a broken sidewalk, a blocked path? Put it on the map so others know, and so it gets fixed.",
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   53,
+   536,
+   335,
+   97
+  ],
+  "depth": 14
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Horizontal scroll bar, 1 page",
+  "name": "Horizontal scroll bar, 1 page",
+  "value": "0%",
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   0,
+   790,
+   440,
+   30
+  ],
+  "depth": 12
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Horizontal scroll bar, 1 page",
+  "name": "Horizontal scroll bar, 1 page",
+  "value": "0%",
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   0,
+   790,
+   440,
+   30
+  ],
+  "depth": 12
+ },
+ {
+  "type": "ScrollView",
+  "label": null,
+  "name": null,
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   440,
+   114,
+   440,
+   709
+  ],
+  "depth": 11
+ },
+ {
+  "type": "Image",
+  "label": "Severity scale \u2014 1 Minor to 5 Severe",
+  "name": "Severity scale \u2014 1 Minor to 5 Severe",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   556,
+   299,
+   208,
+   112
+  ],
+  "depth": 13
+ },
+ {
+  "type": "StaticText",
+  "label": "2 / 5",
+  "name": "2 / 5",
+  "value": "2 / 5",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   644,
+   436,
+   32,
+   16
+  ],
+  "depth": 14
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Here's how it works",
+  "name": "Here's how it works",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   532,
+   493,
+   256,
+   36
+  ],
+  "depth": 14
+ },
+ {
+  "type": "StaticText",
+  "label": "Find the spot on the map and add the barrier there, then rate how bad it is. Others verify it or mark it resolved once the issue is fixed. (Signed-in users can add a photo, too.)",
+  "name": "Find the spot on the map and add the barrier there, then rate how bad it is. Others verify it or mark it resolved once the issue is fixed. (Signed-in users can add a photo, too.)",
+  "value": "Find the spot on the map and add the barrier there, then rate how bad it is. Others verify it or mark it resolved once the issue is fixed. (Signed-in users can add a photo, too.)",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   494,
+   536,
+   332,
+   97
+  ],
+  "depth": 14
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Horizontal scroll bar, 1 page",
+  "name": "Horizontal scroll bar, 1 page",
+  "value": "0%",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   440,
+   790,
+   440,
+   30
+  ],
+  "depth": 12
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Horizontal scroll bar, 1 page",
+  "name": "Horizontal scroll bar, 1 page",
+  "value": "0%",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   440,
+   790,
+   440,
+   30
+  ],
+  "depth": 12
+ },
+ {
+  "type": "ScrollView",
+  "label": null,
+  "name": null,
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   880,
+   114,
+   440,
+   709
+  ],
+  "depth": 11
+ },
+ {
+  "type": "StaticText",
+  "label": "3 / 5",
+  "name": "3 / 5",
+  "value": "3 / 5",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   1084,
+   436,
+   33,
+   16
+  ],
+  "depth": 14
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Show flags near you",
+  "name": "Show flags near you",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   969,
+   493,
+   263,
+   36
+  ],
+  "depth": 14
+ },
+ {
+  "type": "StaticText",
+  "label": "We\u2019ll use your location to show nearby barriers and place your reports accurately. It\u2019s only used while the app is open \u2014 never tracked or stored on our servers.",
+  "name": "We\u2019ll use your location to show nearby barriers and place your reports accurately. It\u2019s only used while the app is open \u2014 never tracked or stored on our servers.",
+  "value": "We\u2019ll use your location to show nearby barriers and place your reports accurately. It\u2019s only used while the app is open \u2014 never tracked or stored on our servers.",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   939,
+   536,
+   322,
+   97
+  ],
+  "depth": 14
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Horizontal scroll bar, 1 page",
+  "name": "Horizontal scroll bar, 1 page",
+  "value": "0%",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   880,
+   790,
+   440,
+   30
+  ],
+  "depth": 12
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Horizontal scroll bar, 1 page",
+  "name": "Horizontal scroll bar, 1 page",
+  "value": "0%",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   880,
+   790,
+   440,
+   30
+  ],
+  "depth": 12
+ },
+ {
+  "type": "ScrollView",
+  "label": null,
+  "name": null,
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   1320,
+   114,
+   440,
+   709
+  ],
+  "depth": 11
+ },
+ {
+  "type": "StaticText",
+  "label": "4 / 5",
+  "name": "4 / 5",
+  "value": "4 / 5",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   1524,
+   448,
+   33,
+   16
+  ],
+  "depth": 14
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Stay in the loop",
+  "name": "Stay in the loop",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   1439,
+   505,
+   202,
+   36
+  ],
+  "depth": 14
+ },
+ {
+  "type": "StaticText",
+  "label": "Get a heads-up when flags near you are verified or resolved. Totally optional \u2014 you can turn this on later in Settings.",
+  "name": "Get a heads-up when flags near you are verified or resolved. Totally optional \u2014 you can turn this on later in Settings.",
+  "value": "Get a heads-up when flags near you are verified or resolved. Totally optional \u2014 you can turn this on later in Settings.",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   1383,
+   548,
+   314,
+   73
+  ],
+  "depth": 14
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Horizontal scroll bar, 1 page",
+  "name": "Horizontal scroll bar, 1 page",
+  "value": "0%",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   1320,
+   790,
+   440,
+   30
+  ],
+  "depth": 12
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Horizontal scroll bar, 1 page",
+  "name": "Horizontal scroll bar, 1 page",
+  "value": "0%",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   1320,
+   790,
+   440,
+   30
+  ],
+  "depth": 12
+ },
+ {
+  "type": "ScrollView",
+  "label": null,
+  "name": null,
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   1760,
+   114,
+   440,
+   709
+  ],
+  "depth": 11
+ },
+ {
+  "type": "StaticText",
+  "label": "5 / 5",
+  "name": "5 / 5",
+  "value": "5 / 5",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   1964,
+   448,
+   33,
+   16
+  ],
+  "depth": 14
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "You're all set",
+  "name": "You're all set",
+  "value": null,
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   1897,
+   505,
+   165,
+   36
+  ],
+  "depth": 14
+ },
+ {
+  "type": "StaticText",
+  "label": "Go explore your neighbourhood. Every barrier you flag helps someone navigate the world a little easier.",
+  "name": "Go explore your neighbourhood. Every barrier you flag helps someone navigate the world a little easier.",
+  "value": "Go explore your neighbourhood. Every barrier you flag helps someone navigate the world a little easier.",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   1815,
+   548,
+   330,
+   73
+  ],
+  "depth": 14
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Horizontal scroll bar, 1 page",
+  "name": "Horizontal scroll bar, 1 page",
+  "value": "0%",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   1760,
+   790,
+   440,
+   30
+  ],
+  "depth": 12
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Horizontal scroll bar, 1 page",
+  "name": "Horizontal scroll bar, 1 page",
+  "value": "0%",
+  "enabled": "1",
+  "visible": "0",
+  "rect": [
+   1760,
+   790,
+   440,
+   30
+  ],
+  "depth": 12
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Vertical scroll bar, 5 pages",
+  "name": "Vertical scroll bar, 5 pages",
+  "value": "0%",
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   407,
+   114,
+   30,
+   709
+  ],
+  "depth": 8
+ },
+ {
+  "type": "Other(accessible)",
+  "label": "Vertical scroll bar, 5 pages",
+  "name": "Vertical scroll bar, 5 pages",
+  "value": "0%",
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   407,
+   114,
+   30,
+   709
+  ],
+  "depth": 8
+ },
+ {
+  "type": "Button",
+  "label": "Back. Disabled on first card.",
+  "name": "Back. Disabled on first card.",
+  "value": null,
+  "enabled": "0",
+  "visible": "1",
+  "rect": [
+   24,
+   866,
+   65,
+   45
+  ],
+  "depth": 7
+ },
+ {
+  "type": "Button",
+  "label": "Next. Card 1 of 5.",
+  "name": "Next. Card 1 of 5.",
+  "value": null,
+  "enabled": "1",
+  "visible": "1",
+  "rect": [
+   331,
+   863,
+   85,
+   51
+  ],
+  "depth": 7
+ }
+]
