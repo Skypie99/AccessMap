@@ -169,6 +169,9 @@ describe('bordered TextInputs need headroom the census can see', () => {
   it.each([
     ['screens/TasksScreen.tsx', 'searchInput'],
     ['components/FeedbackModal.tsx', 'contactInput'],
+    // Measured 308x43 while verifying SW-32 — same class, same fix. Serves both
+    // of MapScreen's name dialogs ("Name this preset" and "Name this filter").
+    ['screens/MapScreen.tsx', 'nameInput'],
   ])('%s → %s clears 44 after the border inset', (file, key) => {
     const block = styleBlock(read(file), key);
     expect(block).toContain('borderWidth: 1');
