@@ -14,10 +14,18 @@
  *   monoMedium  — JetBrains Mono 500 Medium        — emphasized stats
  *   monoBold    — JetBrains Mono 600 SemiBold      — headline points
  *
- * Dynamic Type: each variant carries a `maxFontSizeMultiplier` cap so the app
- * supports large system fonts (accessibility) without runaway scaling breaking
- * layouts. `body`/`bodyMedium` are uncapped on purpose — body copy MUST scale
- * freely. Pass an explicit `maxFontSizeMultiplier` to override per call site.
+ * Dynamic Type (rule T3, 2026-08-21): a cap belongs to the CONTAINER, not the
+ * role. Resolution order is
+ *
+ *     explicit `maxFontSizeMultiplier` prop
+ *       > the nearest `<TypeBlock>` ancestor's cap
+ *         > the per-variant table below
+ *
+ * The variant table is therefore the default only for text OUTSIDE a block, so
+ * a screen that has not adopted one renders byte-identical to before. Inside a
+ * block every text shares one multiplier, which is what stops a capped heading
+ * from being drawn smaller than the uncapped body it labels — see TypeBlock.tsx
+ * for the inversion this removes. `body`/`bodyMedium` stay uncapped by default.
  *
  * Tracking: display/heading get tight letter-spacing derived from `size`
  * (font.tracking.*) rather than a flat magic number.
@@ -31,6 +39,7 @@
 
 import React from 'react';
 import { Text, type TextProps, type TextStyle } from 'react-native';
+import { useTypeBlock } from '@/components/ui/TypeBlock';
 import { font } from '@/theme';
 
 export type AppTextVariant =
@@ -55,11 +64,13 @@ const VARIANT_FAMILY: Record<AppTextVariant, string> = {
 };
 
 /**
- * Per-variant Dynamic Type cap. `undefined` = no cap (full scaling).
- * Display/label/mono cap tighter because their layouts break sooner; body
- * stays uncapped so essential reading text always honors the user's setting.
+ * Per-variant Dynamic Type cap — the FALLBACK, used only where no `TypeBlock`
+ * encloses the text. `undefined` = no cap (full scaling). Display/label/mono cap
+ * tighter because their layouts break sooner; body stays uncapped so essential
+ * reading text always honors the user's setting. Exported so the guard suite can
+ * pin that un-blocked text still resolves exactly these numbers.
  */
-const VARIANT_MAX_FONT_MULTIPLIER: Record<AppTextVariant, number | undefined> = {
+export const VARIANT_MAX_FONT_MULTIPLIER: Record<AppTextVariant, number | undefined> = {
   display:    1.3,
   heading:    1.5,
   body:       undefined,
@@ -110,7 +121,17 @@ export const AppText = React.forwardRef<Text, AppTextProps>(function AppText({
 }, ref) {
   const family = VARIANT_FAMILY[variant];
   const letterSpacing = resolveTracking(variant, size, tracking);
-  const cap = maxFontSizeMultiplier ?? VARIANT_MAX_FONT_MULTIPLIER[variant];
+  // T3: explicit prop > nearest TypeBlock > variant table. `block` is null when
+  // there is no enclosing block; a block whose `cap` is undefined caps nothing
+  // (that is the `content` container), which is why this cannot collapse into a
+  // single `??` chain — undefined is a meaningful value inside a block.
+  const block = useTypeBlock();
+  const cap =
+    maxFontSizeMultiplier !== undefined
+      ? maxFontSizeMultiplier
+      : block
+        ? block.cap
+        : VARIANT_MAX_FONT_MULTIPLIER[variant];
 
   // `heading` is a section/screen title — expose it as a header to screen
   // readers (WCAG 1.3.1) so VoiceOver/TalkBack rotor navigation works. An

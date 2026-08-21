@@ -38,7 +38,7 @@ type SeverityDiscProps = {
    *  an existing site byte-for-byte (Legend 14 · Nearby 13 · the rest 12). */
   digitSize?: number;
   /** Per-site Dynamic Type cap. RecentlyViewedRow pins 1.3 so the glyph box
-   *  stays inside a 24pt dot at large type; leave undefined for no cap. */
+   *  stays inside a 24pt dot at large type. Defaults to DISC_MAX_FONT_SCALE. */
   maxFontSizeMultiplier?: number;
   /** Hide from the a11y tree (default true — the host row speaks the severity). */
   decorative?: boolean;
@@ -49,11 +49,24 @@ type SeverityDiscProps = {
  * that ALWAYS accompany this digit in the full grammar. The disc is the number
  * channel only; a surface never shows a disc without also speaking the word.
  */
+/**
+ * T3 — a disc is a FIXED BOX: the digit is sized by the circle around it, not by
+ * the container it sits in. This used to be left undefined, which fell through
+ * to AppText's `label` cap (1.6) and happened to fit. Since T3 an enclosing
+ * `content` TypeBlock would override that table and leave the digit UNCAPPED,
+ * bursting a 24 or 32pt circle at accessibility sizes. Stating the cap here
+ * keeps today's render byte-identical AND makes the disc immune to whatever
+ * block encloses it, which is exactly what "fixed boxes cap by box" means.
+ * 1.6 is the box-derived number: 13pt in a 32pt disc reaches 20.8pt, 12pt in a
+ * 24pt disc reaches 19.2pt — both still inside their circle.
+ */
+export const DISC_MAX_FONT_SCALE = 1.6;
+
 export function SeverityDisc({
   severity: sev,
   size = 24,
   digitSize = font.size.xs,
-  maxFontSizeMultiplier,
+  maxFontSizeMultiplier = DISC_MAX_FONT_SCALE,
   decorative = true,
 }: SeverityDiscProps) {
   return (

@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { RemoteImage } from '@/components/ui/RemoteImage';
 import { AppText } from '@/components/ui/AppText';
+import { TypeBlock, TYPE_BLOCK } from '@/components/ui/TypeBlock';
 import { GlassSurface } from '@/components/ui/GlassSurface';
 import { OverflowFade } from '@/components/ui/OverflowFade';
 import { SheetGrabber } from '@/components/ui/Sheet';
@@ -168,6 +169,14 @@ export default function NearbyFlagsModal({
           // PROTECT-1 one-breath accessibilityLabel above untouched.
           accessibilityHint="Opens this flag's details"
         >
+          {/* T3 (X8): the 16pt category title on `label` capped at 1.6 while the
+              14pt description on `body` scaled uncapped straight past it — at
+              accessibility-extra-large the title was visibly SMALLER than the
+              sentence it labelled (captures/17e_light_axl_C6_nearby.png). One
+              content block over the whole card: title, distance, description and
+              census now share one multiplier and keep their order. The disc is a
+              fixed box and pins its own cap, so it is unaffected. */}
+          <TypeBlock cap={TYPE_BLOCK.content}>
           <View style={styles.cardHeader}>
             <SeverityDisc severity={item.severity} size={32} digitSize={font.size.sm} />
             <AppText variant="label" style={styles.cardTitle}>
@@ -197,11 +206,15 @@ export default function NearbyFlagsModal({
               {/* S1: the visible meta wears the full severity grammar (number +
                   word + human status), matching the row's SR label. The SR
                   accessibilityLabel/endpoints are PROTECT-1 and untouched. */}
-              <AppText variant="body" style={styles.cardMeta} maxFontSizeMultiplier={1.4}>
+              {/* T3: the explicit 1.4 cap is gone. Inside a content block one
+                  multiplier governs the card, and the census is the line that
+                  carries the severity grammar — it is content, not chrome. */}
+              <AppText variant="body" style={styles.cardMeta}>
                 Severity {item.severity} of 5 · {SEVERITY_LABELS[item.severity]} · {STATUS_LABELS[item.status]} · {relativeTime(item.created_at)}
               </AppText>
             </View>
           </View>
+          </TypeBlock>
         </Pressable>
       );
     },

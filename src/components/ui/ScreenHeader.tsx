@@ -20,6 +20,7 @@ import {
 } from 'react-native';
 import { NavigationContext } from '@react-navigation/native';
 import { AppText } from '@/components/ui/AppText';
+import { TypeBlock, TYPE_BLOCK } from '@/components/ui/TypeBlock';
 import { font, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { clearHeaderHeight, publishHeaderHeight } from '@/lib/statusLedge';
@@ -47,10 +48,14 @@ const CHAR_WIDTH_RATIO = 0.5;
 // line reads better than microscopic text. Also the native minimumFontScale floor.
 const MIN_TITLE_SCALE = 0.6;
 
-// The display variant's Dynamic Type cap (mirrors AppText). The title can't
-// scale past this, so we estimate with the CAPPED scale — using a hard 1.3
-// would falsely shrink titles that fit fine at today's default font size.
-const DISPLAY_MAX_FONT_SCALE = 1.3;
+// The cap the title ACTUALLY renders at. It used to mirror AppText's `display`
+// variant cap (1.3); since T3 this header supplies its own `header` TypeBlock
+// (1.6) and a block beats the variant table, so the title now scales half a step
+// further than it did. The auto-fit estimate below must use the same number it
+// renders at — left at 1.3 it would under-predict the width at large type and
+// skip a shrink the title needs, which is the sort of drift this guard-heavy
+// repo exists to prevent.
+const DISPLAY_MAX_FONT_SCALE = TYPE_BLOCK.header;
 
 interface ScreenHeaderProps {
   /** Big display title. */
@@ -179,6 +184,15 @@ export function ScreenHeader({
 
   return (
     <View style={[styles.header, style]} onLayout={handleContainerLayout}>
+      {/* T3: eyebrow, title and subtitle share ONE multiplier, so the title can
+          never be drawn smaller than the subtitle beneath it. Before this, the
+          display title capped at 1.3 while the body subtitle scaled uncapped —
+          past ~1.5x the subtitle overtook the title on Home, Tasks, Profile and
+          Settings (critic blocks X2/X10/X11). TypeBlock renders no view, so the
+          header's layout at default size is untouched. The `actions` slot rides
+          the same block: it is icon-only today, and 1.6 is looser than the 1.3
+          chrome cap it would otherwise take, so it can only ever grow. */}
+      <TypeBlock cap={TYPE_BLOCK.header}>
       {eyebrow ? (
         <AppText variant="label" style={[styles.eyebrow, eyebrowColor ? { color: eyebrowColor } : null]}>
           {eyebrow}
@@ -217,6 +231,7 @@ export function ScreenHeader({
           {subtitle}
         </AppText>
       ) : null}
+      </TypeBlock>
     </View>
   );
 }

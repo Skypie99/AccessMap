@@ -14,6 +14,7 @@ import { ChevronRight, ClipboardCopy, Moon, PlayCircle, Smartphone, Sun } from '
 import { androidSwitchThumbOff, font, radius, shadow, spacing } from '@/theme';
 import { type ColorTheme, type ThemeMode, useColor, useThemeMode } from '@/theme/ThemeContext';
 import { AppText } from '@/components/ui/AppText';
+import { TypeBlock, TYPE_BLOCK } from '@/components/ui/TypeBlock';
 import { GlassSurface } from '@/components/ui/GlassSurface';
 import { ScreenStage } from '@/components/ui/ScreenStage';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
@@ -134,6 +135,11 @@ function SettingsRow({
             {icon}
           </View>
         ) : null}
+        {/* T3 (X10): 16pt title on `label` capped at 1.6 -> 25.6pt, while the
+            13pt subtitle on `bodyMedium` scaled uncapped past it. Every Settings
+            row read title-under-subtitle above ~1.6x. One content block, one
+            multiplier, order preserved. */}
+        <TypeBlock cap={TYPE_BLOCK.content}>
         <View style={styles.rowTextWrap}>
           <AppText variant="label" style={[styles.rowTitle, destructive && styles.rowTitleDestructive]}>
             {title}
@@ -144,6 +150,7 @@ function SettingsRow({
             <AppText variant="bodyMedium" style={styles.rowSubtitle}>{subtitle}</AppText>
           ) : null}
         </View>
+        </TypeBlock>
         {/* Trailing affordance: a spinner while the row's handler runs, a
             decorative chevron otherwise. Both are hidden from AT (the row's
             accessibilityLabel + busy state carry the meaning). */}

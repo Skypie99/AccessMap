@@ -17,6 +17,7 @@ import { useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
 import CategoryIcon from '@/components/CategoryIcon';
 import { SeverityDisc } from '@/components/SeverityDisc';
 import { AppText } from '@/components/ui/AppText';
+import { TypeBlock, TYPE_BLOCK } from '@/components/ui/TypeBlock';
 import { GlassSurface } from '@/components/ui/GlassSurface';
 import { SheetGrabber } from '@/components/ui/Sheet';
 import { SheetPull, useAtTop } from '@/components/ui/SheetPull';
@@ -103,6 +104,20 @@ export default function LegendModal({ visible, onClose, onDismiss }: Props) {
             onScroll={onScroll}
             scrollEventThrottle={scrollEventThrottle}
           >
+            {/* T3 (X6): the Legend is the app's teaching surface and it taught
+                the wrong hierarchy at large type — every row TITLE ("2 — Mild")
+                capped at 1.6 on `label` while the meaning under it scaled
+                uncapped on `body` and overtook it, and the section headings
+                ("Severity", "Status", "Categories") capped tighter still at 1.5
+                on `heading`. One content block over the whole sheet: headings,
+                row titles and meanings share one multiplier, so the order the
+                Legend exists to teach survives every text size. Per-row blocks
+                would have fixed the rows and left the section headings inverted
+                one level up. TypeBlock renders no view, so the layout is
+                untouched at default size.
+                PROTECT: the row rhythm (32pt disc + "N — Word" + consequence) and
+                every string here are unchanged. */}
+            <TypeBlock cap={TYPE_BLOCK.content}>
             <AppText variant="heading" style={styles.sectionLabel} accessibilityRole="header">
               Severity
             </AppText>
@@ -232,6 +247,7 @@ export default function LegendModal({ visible, onClose, onDismiss }: Props) {
               Reporters earn points when their flag is verified or resolved. Verifiers and resolvers
               earn points too.
             </AppText>
+            </TypeBlock>
           </ScrollView>
 
           <Pressable
