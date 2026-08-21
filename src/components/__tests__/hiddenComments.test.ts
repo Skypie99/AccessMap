@@ -56,11 +56,15 @@ describe('buildHiddenCommentItems — the three row states', () => {
     expect(items.map((i) => i.state)).toEqual(['loaded', 'unloaded']);
   });
 
-  it('a comment whose author account is gone renders the Anonymous fallback', () => {
-    // Byte-identical to FlagDetailModal's `c.display_name ?? 'Anonymous'`, so
-    // the row and the bubble never disagree about who wrote something.
+  it('a comment whose author account is gone renders the Member fallback', () => {
+    // Byte-identical to FlagDetailModal's `c.display_name ?? 'Member'`, so the
+    // row and the bubble never disagree about who wrote something.
+    //
+    // SW-34 (Sky ratified 2026-08-21): was 'Anonymous', which collided with the
+    // word flags use for a DELIBERATE anonymity choice (user_id IS NULL). A
+    // missing display_name is not that choice.
     const [item] = buildHiddenCommentItems(['c1'], [row('c1', { display_name: null })], false);
-    expect(item).toMatchObject({ state: 'loaded', author: 'Anonymous' });
+    expect(item).toMatchObject({ state: 'loaded', author: 'Member' });
   });
 });
 

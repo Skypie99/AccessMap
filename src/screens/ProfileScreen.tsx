@@ -1509,12 +1509,12 @@ export default function ProfileScreen() {
           style={({ pressed }) => pressed && styles.myReportsBtnPressed}
           onPress={() => setNotifPrefsOpen(true)}
           accessibilityRole="button"
-          accessibilityLabel="Notifications"
-          accessibilityHint="Opens settings for which flag status updates surface in your update banner"
+          accessibilityLabel="Updates"
+          accessibilityHint="Opens settings for which flag changes appear in your updates"
         >
           <GlassSurface variant="row" forceEngineered style={styles.myReportsBtn}>
           <View style={styles.myReportsTextWrap}>
-            <AppText variant="label" style={styles.myReportsTitle}>Notifications</AppText>
+            <AppText variant="label" style={styles.myReportsTitle}>Updates</AppText>
             <AppText variant="bodyMedium" style={styles.myReportsSubtitle}>
               Pick which changes you want to hear about.
             </AppText>

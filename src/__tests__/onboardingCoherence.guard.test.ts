@@ -17,29 +17,36 @@
  * the first-launch flow carries live permission priming a replay should not
  * re-run — and make the copy honest.
  *
- * ─── WHY THE COPY WAS FIXED BY SUBTRACTION ────────────────────────────────
+ * ─── THE SW-19 COPY WAS FIXED BY SUBTRACTION ──────────────────────────────
  * New user-facing wording routes through copy.ts and Sky's section A pass, and
- * this wave ships none. Every false claim here was therefore REMOVED rather
- * than reworded: "the 3-card welcome intro" becomes "the welcome intro", and
- * "the welcome intro you saw the first time you signed in" becomes "Opens the
- * welcome intro". Deleting a false clause invents no vocabulary, and each
- * sentence is true afterwards. Richer wording that actually distinguishes the
- * two surfaces is drafted in the wave-4 result doc for ratification.
+ * the first pass of this wave shipped none. Every false claim here was
+ * therefore REMOVED rather than reworded: "the 3-card welcome intro" becomes
+ * "the welcome intro", and "the welcome intro you saw the first time you signed
+ * in" becomes "Opens the welcome intro". Deleting a false clause invents no
+ * vocabulary, and each sentence is true afterwards.
+ *
+ * The CTA labels below (SW-17) went the other way: they needed genuinely new
+ * words, so they waited for Sky and were ratified 2026-08-21.
  *
  * ─── SW-06 ────────────────────────────────────────────────────────────────
- * Both final CTAs render "Open the Map" and labelled themselves "Open the map".
- * Worth being accurate about: this is NOT a WCAG 2.5.3 failure. That criterion
- * exists for speech input, voice control is not case-sensitive, and this repo's
- * own labelInName.guard case-folds both sides for exactly that reason — it
- * passed before this fix and passes after. It is two strings for one button,
- * which will mislead the next editor. Fixed because it costs one character.
+ * Both final CTAs rendered "Open the Map" and labelled themselves "Open the
+ * map". Worth being accurate about: that was NOT a WCAG 2.5.3 failure. The
+ * criterion exists for speech input, voice control is not case-sensitive, and
+ * this repo's own labelInName.guard case-folds both sides for exactly that
+ * reason — it passed before the fix and passes after. It was two strings for
+ * one button, which would mislead the next editor.
  *
- * ─── DELIBERATELY NOT FIXED HERE ──────────────────────────────────────────
- * SW-17: the replay's finisher is labelled "Open the Map" and returns to
- * Settings, and the first-launch CTA of the same name lands on the auth gate,
- * not the map. Making either honest needs a NEW string, so both are drafted for
- * section A rather than shipped. The label/behaviour mismatch is still live and
- * is recorded as such in the wave-4 result.
+ * ─── SW-17 — and the deeper problem under SW-06 ───────────────────────────
+ * Neither button ever opened a map. Verified on device: the first-launch CTA
+ * runs the auth gate and lands on SignIn; the replay's finisher returns to
+ * Settings. Both destinations are CORRECT — a replay opened from Settings
+ * belongs back in Settings, and the auth gate cannot be skipped — so the labels
+ * moved and the behaviour did not.
+ *
+ *   first launch  ->  "Continue"   (honest about the next step, not a place)
+ *   replay        ->  "Done"       (the iOS convention for finishing a modal)
+ *
+ * Sky ratified both, 2026-08-21.
  */
 import fs from 'fs';
 import path from 'path';
@@ -49,17 +56,30 @@ const SRC = path.join(__dirname, '..');
 const raw = (rel: string) => fs.readFileSync(path.join(SRC, rel), 'utf8');
 const code = (rel: string) => stripComments(raw(rel));
 
-describe('SW-06 — one button, one name', () => {
+describe('SW-06 / SW-17 — one button, one name, and a name that is true', () => {
   it.each([
-    ['components/OnboardingCards.tsx', 'the 5-card first-launch flow'],
-    ['screens/OnboardingModal.tsx', 'the 3-step replay'],
-  ])('%s labels its CTA with the string it renders', (file) => {
+    ['components/OnboardingCards.tsx', 'Continue'],
+    ['screens/OnboardingModal.tsx', 'Done'],
+  ])('%s labels its CTA "%s", matching the string it renders', (file, label) => {
     const src = code(file);
     // Non-vacuity: the visible string must actually be there, or the label
     // assertion below is checking a button that no longer exists.
-    expect(src).toContain('Open the Map');
-    expect(src).toContain('accessibilityLabel="Open the Map"');
+    expect(src).toContain(label);
+    expect(src).toContain(`accessibilityLabel="${label}"`);
+  });
+
+  it.each([
+    ['components/OnboardingCards.tsx'],
+    ['screens/OnboardingModal.tsx'],
+  ])('%s no longer promises a map it does not open (SW-17)', (file) => {
+    const src = code(file);
+    // Neither CTA ever opened the map: the first-launch one runs the auth gate
+    // and lands on SignIn, the replay one returns to Settings. Both were
+    // verified on device. The labels moved; the destinations are correct and
+    // did not.
+    expect(src).not.toContain('Open the Map');
     expect(src).not.toContain('accessibilityLabel="Open the map"');
+    expect(src).not.toContain('opens the map');
   });
 });
 

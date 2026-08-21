@@ -146,7 +146,7 @@ export default function NotificationPrefsModal({
   const insets = React.useContext(SafeAreaInsetsContext) ?? { top: 0, bottom: 0, left: 0, right: 0 };
   return (
     <Modal
-      aria-label="Notifications"
+      aria-label="Updates"
       visible={visible}
       animationType={reducedMotion ? 'none' : 'slide'}
       transparent
@@ -165,7 +165,7 @@ export default function NotificationPrefsModal({
           <View style={styles.headerRow}>
             <View style={styles.titleWrap}>
               <AppText ref={titleRef} variant="heading" style={styles.title} accessibilityRole="header">
-                Notifications
+                Updates
               </AppText>
               <AppText variant="body" style={styles.subtitle}>
                 Choose which flag updates surface on your Profile.
@@ -176,8 +176,8 @@ export default function NotificationPrefsModal({
               hitSlop={12}
               style={({ pressed }) => [styles.closeBtn, pressed && { backgroundColor: color.borderPressed }]}
               accessibilityRole="button"
-              accessibilityLabel="Close notifications settings"
-              accessibilityHint="Closes the notification preferences panel"
+              accessibilityLabel="Close updates settings"
+              accessibilityHint="Closes the update preferences panel"
             >
               <X
                 size={18}
@@ -189,7 +189,7 @@ export default function NotificationPrefsModal({
 
           {!user ? (
             <View style={styles.notice}>
-              <AppText variant="body" style={styles.noticeText}>Sign in to save notification preferences.</AppText>
+              <AppText variant="body" style={styles.noticeText}>Sign in to save update preferences.</AppText>
             </View>
           ) : loading ? (
             <View style={styles.center}>

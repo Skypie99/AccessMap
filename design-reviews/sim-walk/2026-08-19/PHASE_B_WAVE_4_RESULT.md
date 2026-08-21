@@ -2,12 +2,12 @@
 
 **Brief:** `PHASE_B_WAVE_4_LOW.md` · **Plan:** `PHASE_B_MASTER_PLAN.md` (48 findings, 4 waves)
 **Date:** 2026-08-21 · **Branch:** `fix/simwalk-w4-low-2026-08-21`, branched off the Wave 3 tip `303b005`
-**`main` was not touched.** Five code commits (`9bb80a0` → `4b704de`), not merged, not pushed. **Sky merges.**
+**`main` was not touched.** Six code commits (`9bb80a0` → the copy pass), not merged, not pushed. **Sky merges.**
 
 | Cluster | Findings | Outcome |
 |---|---|---|
 | **1** safe area | SW-02 | ✅ **Already fixed in Wave 2** — verified, not re-edited. One residual reported. |
-| **2** copy / label-vs-behaviour | SW-06, SW-17, SW-21, SW-34 | ✅ SW-06 shipped · ⛔ SW-17 + SW-21 **proposed, not shipped** (copy gate) · ⛔ **SW-34's premise did not hold** |
+| **2** copy / label-vs-behaviour | SW-06, SW-17, SW-21, SW-34 | ✅ **ALL FOUR SHIPPED.** SW-06 in the first pass; SW-17 / SW-21 / SW-34 drafted, then **ratified by Sky 2026-08-21** and shipped in a sixth commit · **SW-34's premise did not hold** — the real defect underneath it was fixed instead |
 | **3** Dynamic Type | SW-36 + SW-51 | ✅ **FIXED — in two passes.** The first was green on the gate and still shredded the word on the device |
 | **4** onboarding coherence | SW-19 | ✅ **FIXED by subtraction** — per Sky's "keep both, make the copy honest" |
 | **5** misc singles | SW-27, SW-41, SW-29, SW-07, SW-14 | ✅ SW-27 + SW-41 fixed · SW-29/07/14 **closed as Sky's decisions** |
@@ -33,15 +33,16 @@ The follow-up commit `ba0ea90` landed *after* Wave 3's result table was written,
 | Gate | Wave 3's doc said | **Measured baseline @ `303b005`** | Final | Δ |
 |---|---|---|---|---|
 | `npm run typecheck` | 0 errors | **0 errors** | 0 errors | — |
-| `npx jest --ci -w 3` | 223 suites · 3232 passed | **224 suites · 3242 passed · 32 todo · 0 failed** | **229 suites · 3286 passed · 32 todo · 0 failed** | **+5 suites, +44 tests** |
+| `npx jest --ci -w 3` | 223 suites · 3232 passed | **224 suites · 3242 passed · 32 todo · 0 failed** | **230 suites · 3297 passed · 32 todo · 0 failed** | **+6 suites, +55 tests** |
 | `npm run lint` | 0 errors / **78** warnings | **0 errors / 82 warnings** | 0 errors / 82 warnings | — |
 
 **The lint baseline is 82, not 78** — the four extra all come from `ba0ea90`'s own new guard suite.
 Had this wave trusted the recorded number it would have reported a warning regression it did not cause.
 
 **No pre-existing test was lost and the warning count did not move.** `prettier --write src` was
-never run. The +44 reconciles exactly: 36 in five new suites, 6 appended to `distance.test.ts`,
-2 appended to `TasksScreenFlagCard.test.tsx`.
+never run. The +55 reconciles exactly: 45 in six new suites, 6 appended to `distance.test.ts`,
+2 appended to `TasksScreenFlagCard.test.tsx`, and 2 added to the two comment-author suites that had
+to change with SW-34.
 
 ### ⚠️ A flaky test, found by accident, worth knowing about
 
@@ -49,10 +50,13 @@ The first baseline run reported **1 failure** —
 `ReportFlagModal.test.tsx › re-enables the form when the anon rate limit rejects the submit` —
 and the suite took **150 seconds**. Re-run alone on the identical tree it passed in **4 seconds**.
 
-It was a load-induced flake, and **I caused it** by leaving an eslint run going alongside jest. The
-test is a timing-sensitive `waitFor` that starves under load. It passed cleanly in the final
-unloaded run. Recorded because a future gate run on a busy machine will see it again and should not
-mistake it for a regression — and because "run the gate alone" is now a rule with a reason.
+It is a timing-sensitive `waitFor` that starves under parallel load.
+
+> **Correction to my own first reading.** I initially attributed it to an eslint run I had left going
+> alongside jest, and said so. That was too confident. It recurred later on an otherwise-idle machine,
+> so the honest characterisation is **intermittent under `-w 3`, cause not isolated**: it failed on
+> 2 of 5 full runs this wave and passed in isolation every time (6s vs 55s). Recorded so a future
+> gate run does not mistake it for a regression — and so nobody inherits my wrong diagnosis.
 
 Every new suite was verified as a real regression detector by running it against the pre-fix source:
 
@@ -62,7 +66,8 @@ Every new suite was verified as a real regression detector by running it against
 | `ReportsBreakdownCard.barRow.test.tsx` | **3 of 5 fail** |
 | `TasksScreenFlagCard.test.tsx` (appended) | **1 of 2 fail** |
 | `profileProgressBars.guard.test.ts` | **2 of 6 fail** |
-| `onboardingCoherence.guard.test.ts` | **6 of 9 fail** |
+| `onboardingCoherence.guard.test.ts` | **6 of 9 fail** (9 of 11 after the SW-17 labels landed) |
+| `oneNameOneThing.guard.test.ts` (SW-21 + SW-34) | **5 of 9 fail** |
 | `distance.test.ts` (appended) | **3 of 6 fail** |
 
 The assertions that pass both ways are self-tests, non-vacuity sentinels and must-not-regress pins,
@@ -403,10 +408,10 @@ tokens appear, of which `SW-04` occurs only inside the two "never assigned" decl
 | SW-13 | W3 | ✅ Fixed with SW-38 — "1 of 3" |
 | SW-14 | W4 | 🔵 **Sky's decision** — accepted as a product choice |
 | SW-16 | W4 | ⛔ **Device-only** — deliberate SR pattern; the surface's only accessible content |
-| SW-17 | W4 | ⛔ **Proposed, not shipped** — an honest label needs a new string (copy gate). **Second site found** |
+| SW-17 | W4 | ✅ **FIXED, both sites** — labels changed, behaviour deliberately not. First launch → **"Continue"**, replay → **"Done"**. Sky ratified 2026-08-21. **A second site was found**: the first-launch CTA had the same defect |
 | SW-19 | W4 | ✅ Fixed by subtraction (Sky: keep both) + false comment corrected |
 | SW-20 | W3 | ✅ Fixed with SW-49 — one class |
-| SW-21 | W4 | ⛔ **Proposed, not shipped** — canonical name is new wording (copy gate) |
+| SW-21 | W4 | ✅ **FIXED** — and the reported mismatch was the symptom. The sheet was titled **"Notifications"** while a separate push feature exists; it is now **"Updates"** across all three surfaces |
 | SW-22 | W3 | ✅ Fixed — row titles to a real 44 |
 | SW-23 | W2 | ⛔ **Device-only** — needs real VoiceOver |
 | SW-25 | W3 | ✅ Fixed — 21×24 → 44×24 |
@@ -418,7 +423,7 @@ tokens appear, of which `SW-04` occurs only inside the two "never assigned" decl
 | SW-31 | W2 | ✅ Fixed — the false "switch tabs" copy only; recovery path untouched per SW-48 |
 | SW-32 | W3 | ⛔ **Not a fix — premise did not hold.** Ledger row corrected in `ba0ea90` |
 | SW-33 | W3 | ⛔ Deliberately unchanged — 32+16=48, documented (Sky) |
-| SW-34 | W4 | ⛔ **Not a fix — premise did not hold.** Real drift reported instead |
+| SW-34 | W4 | ✅ **Premise did not hold — and the real defect underneath it is FIXED.** Flags keep all three cases; comments' `?? 'Anonymous'` → **`?? 'Member'`**, so "Anonymous" now means only a deliberate choice |
 | SW-35 | W3 | ✅ Fixed (legend close); heat-notice half stays on the idiom |
 | SW-36 | W4 | ✅ **Fixed** — with SW-51, one treatment |
 | SW-37 | W2 | ⚠️ **Partial, by Sky's decision** — fixed signed-in; for guests the block is now *stated*, not silent. Not closed as the finding words it |
@@ -439,11 +444,11 @@ tokens appear, of which `SW-04` occurs only inside the two "never assigned" decl
 | SW-52 | W2 | ✅ Fixed — Sky approved before any edit |
 | SW-53 | W3 | ✅ Fixed — the economy pays nine awards, not four |
 
-**Tally: 48 accounted for.** 32 fixed · 2 partial (SW-37, SW-42) · 5 deliberately unchanged on a
-documented idiom or Sky's call · 4 not-a-fix because the premise did not hold (SW-32, SW-34, SW-48,
-and SW-26/SW-30 closed as duplicates) · 3 device-only (SW-03, SW-16, SW-23) · 3 Sky product
-decisions (SW-07, SW-14, SW-29) · 2 proposed-not-shipped behind the copy gate (SW-17, SW-21).
-Nothing dropped.
+**Tally: 48 accounted for.** **35 fixed** · 2 partial (SW-37, SW-42) · 5 deliberately unchanged on a
+documented idiom or Sky's call · 3 not-a-fix because the premise did not hold (SW-32, SW-48, and
+SW-26/SW-30 closed as duplicates) · 3 device-only (SW-03, SW-16, SW-23) · 3 Sky product decisions
+(SW-07, SW-14, SW-29). **Nothing dropped, and nothing left behind the copy gate** — SW-17, SW-21 and
+SW-34 were drafted, put to Sky, ratified 2026-08-21, and shipped.
 
 ### ⚠️ AND ONE THAT *WAS* DROPPED — N-2
 
@@ -635,23 +640,79 @@ second site is new — the brief scoped SW-17 to the replay only.
    as `update by push`. Three peer Claude sessions were live on this machine throughout, so this was
    not me — **I pushed nothing.** Recorded because the earlier state was reported as a decision for
    you and is no longer true: **Waves 1–3 are now on the remote.**
-3. **The copy this wave drafted rather than shipped** (below) needs your §A pass.
+3. ~~The copy this wave drafted rather than shipped~~ — **ratified by you 2026-08-21 and shipped.** See the copy pass below.
 4. **N-2 needs no fix** — its ledger entry should be corrected the way SW-48 corrected SW-31, so a
    later wave does not "fix" a link that works.
-5. **SW-17 is still live on two surfaces.** An honest label is new wording; see the drafts below.
+5. ~~SW-17 is still live on two surfaces~~ — **fixed on both**, labels only.
 6. **`OnboardingModal`'s bottom pad** has no floor and uses the throwing inset hook (Cluster 1).
    Small, real, outside SW-02's wording — your call whether it is worth a commit.
 
-## COPY DRAFTED FOR §A — shipped nothing user-visible
+## ★ THE COPY PASS — drafted, put to Sky, ratified 2026-08-21, shipped
 
-| Finding | Site | Draft |
+The first pass of this wave deliberately shipped no new wording. Sky reviewed the drafts and took
+all three. What landed, and why each is what it is:
+
+### SW-17 — labels moved, behaviour did not
+
+| Surface | Was | Now |
 |---|---|---|
-| **SW-17** | `OnboardingModal` finisher | "Done" · or "Back to Settings" · or make it actually open the Map tab |
-| **SW-17** (2nd site) | `OnboardingCards` card 5 | "Get started" · or "Continue" — it lands on the auth gate, not the map |
-| **SW-19** | Settings replay subtitle | "Re-show the three-step tour." (distinguishes it from the five-card first launch) |
-| **SW-19** | Settings replay hint | "Opens a short tour of how Flagstone works" |
-| **SW-21** | one canonical name | The sheet's "**updates**, on your Profile" is the accurate one — `UpdateBanner` renders only there. Settings' "in-app updates banner" is the vaguer of the two. |
-| **SW-34** | the no-display-name fallback | One word for one condition, across comments (`'Anonymous'`), leaderboard (`'Member'`) and export (`'(not set)'`). Note two source-pinning tests must change with it. |
+| first-launch card 5 → SignIn | "Open the Map" | **"Continue"** |
+| replay finisher → Settings | "Open the Map" | **"Done"** |
+
+**Neither destination is wrong** — a replay opened from Settings belongs back in Settings, and the
+auth gate cannot be skipped — so changing the behaviour would have created a real bug to fix a
+cosmetic one. "Continue" is honest about a *step* rather than promising a *place*, and it is already
+ratified vocabulary in that very file (`OnboardingCards.tsx:507` ships it as the web a11y label).
+"Done" is the iOS convention for finishing a modal. The two `accessibilityHint`s that claimed the
+button "opens the map" / "opens Flagstone" were corrected with them.
+
+### SW-21 — the reported mismatch was the symptom; the collision was the defect
+
+The finding was a subtitle disagreement. Underneath it, the sheet was titled **"Notifications"**
+while `SettingsScreen` separately offers **"Push notification types"** — two unrelated features, one
+word, and one of them really is notifications.
+
+Named after its own artifact instead. The banner says *"N updates since your last visit"*, and
+`UpdateBanner` renders **only** on Profile, so the sheet's existing purpose line was accurate all
+along and survives untouched.
+
+| Where | Was | Now |
+|---|---|---|
+| sheet title + `aria-label` | "Notifications" | **"Updates"** |
+| sheet close button / hint | "Close notifications settings" | "Close updates settings" |
+| sheet signed-out notice | "Sign in to save notification preferences." | "…save update preferences." |
+| Settings row | "Update banner preferences" | **"Update preferences"** |
+| Settings subtitle | "…in the in-app updates banner." | "Choose which flag changes appear in your updates." |
+| Profile row | "Notifications" | **"Updates"** |
+
+"Push notification types" is pinned as a must-not-regress: vacating the word is the whole point.
+
+### SW-34 — the premise did not hold, so the fix went where the defect actually was
+
+Flags keep **all three** cases — `user_id IS NULL` → "Anonymous", own flag → "You", another account
+→ "Another community member" — because they are three different facts and all three are correct.
+Collapsing them would have reverted a May 2026 fix.
+
+What changed is comments: `display_name ?? 'Anonymous'` → **`?? 'Member'`**, in `FlagDetailModal`
+and `HiddenCommentsModal`. A missing display name is not a privacy *choice* — the author never set
+a name, or their account is gone (`flag_comments.user_id` is `ON DELETE SET NULL`) — and "Anonymous"
+claimed a decision they never made. `'Member'` is the word the leaderboard already uses for exactly
+this case, and SW-44's own fix comment calls it "correct and privacy-preserving".
+
+**Two source-pinning tests changed deliberately**, not silently — `commentAuthor.test.ts:125` and
+`hiddenComments.test.ts:60` both pinned the old literal, and each now records why. `copy.ts`'s
+`unhideCommentA11yLabel` docblock and a `CommentBubble` note that quoted the old string were
+corrected with them.
+
+> **A correction I owe this document.** An earlier draft called this "three words, one condition",
+> counting `dataExport.ts`'s `display_name ?? '(not set)'` as a third offender. Re-read in context it
+> sits beside `email ?? '(no email on file)'` and describes **your own missing name in your own data
+> export** — "you haven't set one", not a privacy placeholder for a stranger. Different condition,
+> correct as it stands, **deliberately untouched**, and now pinned as such.
+
+**New guard:** `oneNameOneThing.guard.test.ts` — 5 of its 9 assertions fail against the pre-fix
+source; the rest pin what must NOT move (push notifications keeping its name, the leaderboard
+keeping 'Member', flags keeping all three cases, the export keeping "(not set)").
 
 ## DELIBERATELY NOT FIXED
 

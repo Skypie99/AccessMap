@@ -109,7 +109,7 @@ export function buildHiddenCommentItems(
       return {
         id,
         state: 'loaded',
-        author: row.display_name ?? 'Anonymous',
+        author: row.display_name ?? 'Member',
         createdAt: row.created_at,
         content: row.content,
       };

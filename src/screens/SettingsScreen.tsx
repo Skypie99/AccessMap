@@ -584,9 +584,9 @@ export default function SettingsScreen() {
         </AppText>
 
         <SettingsRow
-          title="Update banner preferences"
-          subtitle="Choose which flag status changes surface in the in-app updates banner."
-          accessibilityHint="Opens in-app update banner preferences"
+          title="Update preferences"
+          subtitle="Choose which flag changes appear in your updates."
+          accessibilityHint="Opens update preferences"
           onPress={() => setNotifOpen(true)}
         />
 

@@ -120,8 +120,17 @@ describe('SR-117 — the call sites compare strictly', () => {
     expect(src).not.toMatch(/c\.user_id\s*==[^=]/);
     expect(src).not.toMatch(/c\.user_id\s*\?\?/);
 
-    // A null author still renders with the anonymous fallback rather than an
-    // empty byline — the display half of the same drift.
-    expect(src).toContain("c.display_name ?? 'Anonymous'");
+    // A null author still renders a fallback rather than an empty byline —
+    // the display half of the same drift.
+    //
+    // SW-34 (Sky ratified 2026-08-21): the fallback is 'Member', not
+    // 'Anonymous'. 'Anonymous' is reserved for a DELIBERATE choice — a flag
+    // with user_id IS NULL, which FlagDetailModal renders as its own pill. A
+    // comment with no display_name is a different fact (no name set, or the
+    // author's account is gone under ON DELETE SET NULL), and labelling it
+    // 'Anonymous' claimed a privacy choice the person never made. 'Member' is
+    // the word the leaderboard already uses for exactly this case.
+    expect(src).toContain("c.display_name ?? 'Member'");
+    expect(src).not.toContain("c.display_name ?? 'Anonymous'");
   });
 });
