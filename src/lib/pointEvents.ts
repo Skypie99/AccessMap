@@ -63,3 +63,58 @@ export async function getPointEventHistory(userId: string): Promise<PointEventRo
 
   return (data ?? []) as PointEventRow[];
 }
+
+/**
+ * How many of this user's reports have EVER been verified / resolved.
+ *
+ * SW-39. The Profile headline tiles used to mix two different metrics: the
+ * "Reported" tile is a lifetime total, while "Verified" and "Resolved" read
+ * `flags.status` — a CURRENT-STATUS snapshot. A report that was verified and
+ * then resolved leaves the verified bucket, so the tiles could read
+ * "6 REPORTED · 0 VERIFIED · 3 RESOLVED" directly beneath an activity feed
+ * saying "Your report was verified · +10 pts" twice. Both numbers were true;
+ * together they read as a contradiction. (Confirmed live: the Verified tile
+ * went 1 -> 0 the instant a flag moved verified -> resolved.)
+ *
+ * The point-event ledger is the right source because it is append-only: an
+ * award is written when the transition happens and is never revoked, which is
+ * exactly the "has this ever happened" question the tiles are asking. The
+ * current-status view is not lost — the per-status pill row below the tiles
+ * still shows all four buckets, including rejected.
+ *
+ * Counted server-side (`head: true`) so no rows cross the wire — this is
+ * deliberately not derived from `getPointEventHistory`, which caps at 50.
+ *
+ * Returns `null` when the ledger is unavailable, so the caller can fall back to
+ * what it showed before rather than reporting a confident zero.
+ *
+ * KNOWN LIMIT: `point_events` begins at the 2026-05-30 trust-score migration
+ * and was not backfilled, so flags verified or resolved before that date do not
+ * count here.
+ */
+export async function getLifetimeReportOutcomes(
+  userId: string,
+): Promise<{ verified: number; resolved: number } | null> {
+  const countOf = async (eventType: PointEventType): Promise<number | null> => {
+    const { count, error } = await supabase
+      .from('point_events')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', userId)
+      .eq('event_type', eventType);
+
+    if (error) {
+      // 42P01 = undefined_table: migration not yet applied.
+      if ((error as { code?: string }).code === '42P01') return null;
+      throw error;
+    }
+    return count ?? 0;
+  };
+
+  const [verified, resolved] = await Promise.all([
+    countOf('flag_verified_reporter'),
+    countOf('flag_resolved_reporter'),
+  ]);
+
+  if (verified === null || resolved === null) return null;
+  return { verified, resolved };
+}

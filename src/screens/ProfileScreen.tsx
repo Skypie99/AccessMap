@@ -91,6 +91,7 @@ import { getTier, pointsToNextTier, REPUTATION_TIERS } from '@/lib/reputationTie
 import { setLastSeenPoints } from '@/lib/points';
 import { a11yToggle, decorativeProps, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
 import {
+  getLifetimeReportOutcomes,
   getPointEventHistory,
   pointEventLabel,
   type PointEventRow,
@@ -125,6 +126,12 @@ interface Stats {
   // show "5 open · 3 verified · 2 resolved" so people can see what's still
   // pending vs. what's been triaged.
   byStatus: Record<FlagStatus, number>;
+  // SW-39: what the headline tiles show. LIFETIME counts — "has one of my
+  // reports ever been verified / resolved" — to match the "Reported" tile
+  // beside them and the point-activity feed above them. The current-status
+  // view lives in `byStatus` and is rendered by the pill row lower down, so
+  // both questions are answered, each in one place.
+  lifetime: { verified: number; resolved: number };
 }
 
 const EMPTY_BY_STATUS: Record<FlagStatus, number> = {
@@ -171,6 +178,7 @@ export default function ProfileScreen() {
     reported: 0,
     resolved: 0,
     byStatus: EMPTY_BY_STATUS,
+    lifetime: { verified: 0, resolved: 0 },
   });
   const [loading, setLoading] = useState(true);
   // Inline load error (web-safe + retryable). Alert.alert is a no-op on
@@ -343,6 +351,13 @@ export default function ProfileScreen() {
         getPointEventHistory(user.id).catch(() => [] as PointEventRow[]),
       ]);
 
+      // SW-39: counted separately from the history above, which caps at 50 rows
+      // and so cannot answer "how many, ever". Null means the ledger is not
+      // there; see the fallback where the tiles are built.
+      const lifetimeOutcomes = await getLifetimeReportOutcomes(user.id).catch(
+        () => null,
+      );
+
       if (profileErr) throw profileErr;
       if (statusRowsRes.error) throw statusRowsRes.error;
       if (!mountedRef.current) return;
@@ -372,6 +387,14 @@ export default function ProfileScreen() {
         reported: Math.max(statusRows.length, statusSum),
         resolved: byStatus.resolved,
         byStatus,
+        // If the point-event ledger is unavailable, fall back to the
+        // current-status snapshot — the behaviour this screen had before
+        // SW-39. A confident "0 verified" would be a worse answer than the
+        // imprecise one, and the pill row below is unaffected either way.
+        lifetime: lifetimeOutcomes ?? {
+          verified: byStatus.verified,
+          resolved: byStatus.resolved,
+        },
       });
     } catch (e) {
       // Inline error instead of Alert.alert (web no-op) so web users see it
@@ -1154,13 +1177,17 @@ export default function ProfileScreen() {
           accessibilityRole="summary"
           accessibilityLabel={
             `Your stats: ${stats.reported} reported, ` +
-            `${stats.byStatus.verified} verified, ` +
-            `${stats.resolved} resolved`
+            `${stats.lifetime.verified} verified, ` +
+            `${stats.lifetime.resolved} resolved`
           }
         >
+          {/* SW-39: all three are LIFETIME totals, so they reconcile with each
+              other and with the point-activity feed above. The current status
+              of each report — including rejected, which these tiles never
+              showed — is the pill row further down. */}
           <Stat label="Reported" value={stats.reported} />
-          <Stat label="Verified" value={stats.byStatus.verified} />
-          <Stat label="Resolved" value={stats.resolved} />
+          <Stat label="Verified" value={stats.lifetime.verified} />
+          <Stat label="Resolved" value={stats.lifetime.resolved} />
         </View>
 
         {/* Streak card — only renders once we have a real value (≥1)
