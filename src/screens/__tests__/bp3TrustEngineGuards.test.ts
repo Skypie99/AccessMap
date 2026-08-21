@@ -35,10 +35,20 @@ describe('T4 — ReportFlagModal answers the finger (source contract)', () => {
     expect(reportModal).not.toMatch(/chipPressed:\s*\{[^}]*opacity/);
   });
 
-  it('all 10 Pressables carry a pressed treatment (9 chipPressed + the Submit scrim)', () => {
+  it('EVERY Pressable carries a pressed treatment (chipPressed, or the Submit scrim)', () => {
+    // Derived rather than hardcoded. The count used to be literal ("9 of 10"),
+    // which meant adding a control — SW-37's "Place the pin on the map" was the
+    // first to try — failed this even when the new control was correctly
+    // treated, and telling those two cases apart meant reading the diff. The
+    // protected property was never the number; it is that NO Pressable on this
+    // surface answers the finger with nothing.
+    const pressables = reportModal.match(/<Pressable/g) ?? [];
     const chipPressedUses = reportModal.match(/pressed && styles\.chipPressed/g) ?? [];
-    expect(chipPressedUses.length).toBe(9);
+    expect(pressables.length).toBeGreaterThanOrEqual(10); // the scan is not vacuous
+    // Submit is the one exception, by design: it keeps white label ink over the
+    // brand gradient, so it dims with a scrim above the fill instead.
     expect(reportModal).toMatch(/styles\.submitPressedScrim/);
+    expect(chipPressedUses.length + 1).toBe(pressables.length);
   });
 
   it('the selection tick fires on finger-DOWN — and ONLY from the two pickers', () => {
