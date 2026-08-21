@@ -2,11 +2,11 @@
 
 **Brief:** `PHASE_B_WAVE_2_HIGH.md` · **Plan:** `PHASE_B_MASTER_PLAN.md` (48 findings, 4 waves)
 **Date:** 2026-08-20 · **Branch:** `fix/simwalk-w2-high-2026-08-20`, branched off the Wave 1 tip `d2da5a5`
-**`main` was not touched.** Seven commits, not merged. **Sky merges.**
+**`main` was not touched.** Seven code commits (`c0d3e8f` → `694b903`) plus the close-out, not merged. **Sky merges.**
 
 | Finding | Outcome |
 |---|---|
-| **SW-01** + **SW-02** (SignIn half) | ✅ **FIXED — measured on device** |
+| **SW-01** + **SW-02** (SignIn half) | ✅ **FIXED — measured on BOTH devices** |
 | **SW-28** | ✅ **FIXED — reproduced live pre-fix, verified live post-fix** |
 | **SW-37** + **SW-11** | ⚠️ **FIXED FOR SIGNED-IN USERS ONLY** — per Sky's decision; **not closed for guests** |
 | **SW-42** | ⚠️ **PARTIAL** — the content loss is fixed; the undersized-card height is **not explained** |
@@ -145,13 +145,22 @@ Each fired on a **real** interaction, so each was reconciled by teaching the gua
 
 **Build:** `npx expo run:ios --configuration Release --no-bundler` on iPhone 17 Pro Max (`1AFA3DED…`), from the branch. **`Build Succeeded`**, same sim-release type as the walk.
 
-### ✅ SW-01 — verified and MEASURED
+### ✅ SW-01 — verified and MEASURED on BOTH devices
 
 Reinstalling cleared the session, so the app launched straight onto SignIn signed out — the exact surface and state App Review sees.
 
-Both policy lines are **visible at rest, without scrolling**: "Privacy Policy" and "By creating an account you agree to the Terms & Community Guidelines."
+On both phones, "Privacy Policy" and "By creating an account you agree to the Terms & Community Guidelines." are **visible at rest, without scrolling**. Measured from the full-resolution screenshots:
 
-Measured from the full-resolution screenshot: **the lowest text pixel sits at point 913.3, against the 922 safe-area boundary** — 8.7pt inside it. Before the fix the consent row ran y948–993 and the privacy link ended at y929.
+| Device | lowest text | safe-area boundary | clearance | before the fix |
+|---|---|---|---|---|
+| 17 Pro Max 440×956 | **point 913.3** | 922 | 8.7pt inside | consent y948–993 (below the fold), privacy ended y929 |
+| **17e 390×844** | **point 803.0** | 810 | 7.0pt inside | consent y933–978 and privacy y869–914 — **both entirely off-screen** |
+
+Evidence: `shots/wave2-verify/SW01_signin_consent_visible_promax.png`, `SW01_17e_signin_at_rest.png`.
+
+**PROTECT-11 verified on device, not just in source.** Scrolling the 17e reaches, in order: the guest link, the guest note, then *both* trust promises — "Your location is used to centre the map, work out how far away barriers are, and place a flag." and "Your email is never shown publicly." — with the pinned Privacy Policy and consent below them. (`SW01_17e_scrolled_trust_lines_intact.png`)
+
+> **One honest side effect, on the small screen only.** The pinned footer takes ~120pt out of the scroll viewport, so on the 17e "Browse without an account →" is now **half-clipped at rest** and needs one small scroll. Verified reachable, and everything below it scrolls in normally. This is a deliberate trade and I think the right one — the Apple 1.2 line is a store requirement and is now always visible, while the guest link stays reachable — but it IS a change for the worse for that one control on 844pt screens, so it should be Sky's to accept. Shrinking the footer instead would mean going under the 44pt touch-target floor on one of the two policy rows, which is not a trade worth making.
 
 ### ✅ SW-28 — verified, with a deliberately unambiguous before/after
 
@@ -171,7 +180,7 @@ That is exactly `animateTo({ latitudeDelta: 0.005 }, { calloutClear: true })` fo
 
 ### ⚠️ Declared limits of this walk — read these before trusting the table above
 
-- **The 17e is not yet re-verified.** SW-01's *worst* case is the small screen (both elements entirely off-screen), so this is the most valuable check still outstanding. Its first build wedged the machine and was killed; a clean rebuild is running.
+- **Guest only, on both devices.** The app was signed out and an agent may not enter a password.
 - **The simulator subsystem wedged mid-walk and needed manual recovery** — worth recording for the next run. Two booted simulators plus a native build plus the sim MCP's video stream drove load average past 500 and left **267 CoreSimulator processes**, several at 60–144% CPU; `simctl` itself timed out at 240s while `git` stayed instant, which is how the fault was localised. Recovery was `killall Simulator` + `killall -9 com.apple.CoreSimulator.CoreSimulatorService` (267 → 5 processes, `simctl` back to 1.5s). **Build for one simulator at a time, and detach the video stream first.**
 - **Guest only.** The app was signed out and an agent may not enter a password. That leaves **SW-42, SW-45 and SW-52 unverifiable by me on device**: the profile sheets and the leaderboard are behind auth, and the photo picker is signed-in only ("Sign in to add a photo"). All three are covered by tests proven to fail against the pre-fix source, which is evidence about structure, not about pixels.
 - **SW-37's new control is signed-in only**, so it is also unreachable from a guest session — by design.
@@ -186,7 +195,7 @@ That is exactly `animateTo({ latitudeDelta: 0.005 }, { calloutClear: true })` fo
 2. **The "Jordan Condition 2" contradiction.** The long-press gate says *"guests cannot create reports"*; the app, its UI copy and its own Privacy Policy all say they can. One of the two is wrong and it is not a fix's call. **Until it is resolved, SW-37 remains open for anonymous users** — the finding's own headline case.
 3. **SW-42's card height** — do you want the sheets to claim their full 85% cap? It is one line, it makes every sheet in the family a constant height, and it should be re-measured on device first. I could not measure it (auth) or explain it (see Cluster 4).
 4. **`FlagDetailModal` has no focus-return contract on the Map tab.** A pre-existing gap; SW-28 did not create it and deliberately did not adopt it blind, because that sheet's VoiceOver behaviour is already queued for a device pass (Wave 1, N-1).
-5. **The one owed device check** — the SignIn surface on the 17e (390×844), where the consent line and the privacy link were *both* entirely off-screen before this fix.
+5. **Accept (or reject) the 17e side effect** — "Browse without an account →" is now half-clipped at rest on the 844pt screen, reachable with one scroll. See the re-walk section; the alternative costs a 44pt touch target.
 
 ## DELIBERATELY NOT FIXED
 
