@@ -147,7 +147,9 @@ export default function SignInScreen({
           styles.scroll,
           {
             paddingTop: Math.max(spacing.xxxl, insets.top + spacing.md),
-            paddingBottom: Math.max(spacing.xxxl, insets.bottom + spacing.md),
+            // SW-01: the pinned policy footer below now carries the bottom
+            // inset; this is just breathing room above it.
+            paddingBottom: spacing.xl,
           },
         ]}
         keyboardShouldPersistTaps="handled"
@@ -317,6 +319,21 @@ export default function SignInScreen({
           Your location is used to centre the map, work out how far away barriers are, and place a flag.{'\n'}Your email is never shown publicly.
         </AppText>
 
+      </ScrollView>
+
+      {/* SW-01 (Apple 1.2) — PINNED, not scrolled. These two lines used to be
+          the last children of the ScrollView, so on a 956pt screen the consent
+          line rendered at y948-993 (below the fold) and on the 390x844 17e both
+          it AND the privacy link were entirely off-screen. The screen's own
+          intent, three lines down, is that consent "must be visible where the
+          account is created" — scrolling to reach it does not satisfy that, and
+          App Review walks this signed out on a small device. Pinning them below
+          the scroller makes them visible at rest on EVERY screen size and at any
+          Dynamic Type size, and the footer (not the scroll content) now carries
+          the home-indicator inset, which is the SW-02 half of the same defect.
+          Reading order is unchanged: still the last two elements on the screen,
+          still below the two trust lines (PROTECT-11). */}
+      <View style={[styles.policyFooter, { paddingBottom: Math.max(spacing.md, insets.bottom) }]}>
         {/* B-2 (SR-002): 5.1.1(i) wants the policy reachable near account
             creation, not only in ASC metadata. Appended BELOW the footnote so
             both trust lines above keep their position in reading order
@@ -355,7 +372,7 @@ export default function SignInScreen({
             .
           </AppText>
         </Pressable>
-      </ScrollView>
+      </View>
 
       {/* B-3: mounted LOCALLY, not in SharedModalsHost, and that is forced
           rather than chosen. App.tsx renders SignInScreen as a SIBLING of
@@ -572,6 +589,11 @@ const makeStyles = (_color: ColorTheme) =>
       // WCAG 1.4.3: was 0.3 (~2.8:1). 0.55 blends to ≈#8F9197 on #070b18 → 5.5:1, AA pass.
       color: 'rgba(255,255,255,0.55)',
       textAlign: 'center',
+    },
+    // SW-01: the pinned Apple-1.2 footer. Horizontal padding matches the
+    // scroll content so the links stay optically aligned with the form above.
+    policyFooter: {
+      paddingHorizontal: spacing.xxl,
     },
     policyLinkWrap: {
       minHeight: 44,
