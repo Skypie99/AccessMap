@@ -236,7 +236,7 @@ export default function FlagDetailModal({
     addComment,
     deleteComment: deleteCommentById,
     refetch: refetchComments,
-  } = useComments(shownFlag?.id);
+  } = useComments(shownFlag?.id, visible);
   const [commentText, setCommentText] = useState('');
   // BP-6 focus cue: border swaps to brand while focused (width unchanged — no
   // layout shift). The Input primitive's treatment, applied to this raw field.
