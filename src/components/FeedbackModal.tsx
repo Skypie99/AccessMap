@@ -15,7 +15,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
-import { bulkGlassShadow, font, radius, spacing } from '@/theme';
+import { a11y, bulkGlassShadow, font, radius, spacing } from '@/theme';
 import { a11yToggle, decorativeProps, useFocusOnOpen, useReducedMotion, useReduceTransparency } from '@/lib/accessibility';
 import { AppText } from '@/components/ui/AppText';
 import { GlassSurface } from '@/components/ui/GlassSurface';
@@ -542,7 +542,14 @@ const makeStyles = (color: ColorTheme) =>
       paddingVertical: spacing.md,
       fontSize: font.size.md,
       color: color.text,
-      minHeight: 44,
+      // Measured on device 2026-08-20 (Wave 3): a BORDERED TextInput reports an
+      // accessibility frame INSIDE its own border, because iOS insets the native
+      // field within the RN view. minHeight 44 measured 42 here and 43 on
+      // TasksScreen's search fieldthis field — so no 44 written on a bordered input can
+      // ever satisfy a 44 census. The + 2 is 2 x borderWidth below, not a fudge:
+      // remove the border and it should come off with it. (Plain Views are
+      // unaffected — the row titles fixed in this same wave land on 44 exactly.)
+      minHeight: a11y.minTargetSize + 2,
     },
     actionsRow: {
       flexDirection: 'row',

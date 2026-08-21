@@ -2472,7 +2472,15 @@ const makeStyles = (color: ColorTheme, reduceTransparency: boolean) => {
     },
     searchInput: {
       flex: 1,
-      minHeight: 44, // WCAG 2.5.5: was 40pt (4pt below 44pt project standard)
+      // WCAG 2.5.5: was 40pt (4pt below 44pt project standard).
+      // Measured on device 2026-08-20 (Wave 3): a BORDERED TextInput reports an
+      // accessibility frame INSIDE its own border, because iOS insets the native
+      // field within the RN view. minHeight 44 measured 43 here and 42 on
+      // FeedbackModal's reply field — so no 44 written on a bordered input can
+      // ever satisfy a 44 census. The + 2 is 2 x borderWidth below, not a fudge:
+      // remove the border and it should come off with it. (Plain Views are
+      // unaffected — the row titles fixed in this same wave land on 44 exactly.)
+      minHeight: a11y.minTargetSize + 2,
       paddingHorizontal: spacing.md,
       paddingVertical: spacing.sm,
       borderRadius: radius.circle,

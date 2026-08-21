@@ -150,6 +150,34 @@ describe('SW-40 — every Input reported ~39pt because the frame is the inner Te
   });
 });
 
+describe('bordered TextInputs need headroom the census can see', () => {
+  // Measured on device 2026-08-20, and the reason this is its own rule:
+  //
+  //   TasksScreen  "Search flags"  minHeight 44  ->  census 43
+  //   FeedbackModal "Reply email"  minHeight 44  ->  census 42
+  //
+  // Both already carried the project's 44 and both still missed, because iOS
+  // insets the native field INSIDE a bordered TextInput's own border. A plain
+  // View is unaffected — the row titles fixed in this same wave land on exactly
+  // 44 — so this applies only where a TextInput draws its own border.
+  //
+  // NOTE the `Input` primitive is NOT in this group: its border is on the
+  // wrapper `row`, and the TextInput inside it is borderless, so its 44 is a
+  // real 44. (Corrected here — an earlier commit message in this wave claimed
+  // the Input edit also covered these two fields. It did not: they are raw
+  // TextInputs, and `Input` has exactly one call site in the whole app.)
+  it.each([
+    ['screens/TasksScreen.tsx', 'searchInput'],
+    ['components/FeedbackModal.tsx', 'contactInput'],
+  ])('%s → %s clears 44 after the border inset', (file, key) => {
+    const block = styleBlock(read(file), key);
+    expect(block).toContain('borderWidth: 1');
+    expect(`${file}: ${/minHeight: a11y\.minTargetSize \+ 2/.test(block)}`).toBe(
+      `${file}: true`,
+    );
+  });
+});
+
 describe('SW-25 — copy-coordinates reached 44 tall by slop but only 41 wide', () => {
   it('has a width floor rather than more slop', () => {
     const src = read('components/FlagDetailModal.tsx');
