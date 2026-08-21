@@ -6,7 +6,7 @@ Paste this whole file into a fresh window. This is **fix work**. Model: Opus (Sk
 ---
 
 ## RAILS
-- **Never touch `main`.** Branch off the Wave 2 tip. **One commit per cluster, not per finding.** Sky merges — nobody else.
+- **Never touch `main`.** **Waves 1+2 were merged and pushed 2026-08-20 — branch off `main` (`c452884` or later), NOT off the old wave branches.** **One commit per cluster, not per finding.** Sky merges — nobody else.
 - **STEP 0 — you run this, before editing. Sky does nothing.** Pin the gate: `npm run typecheck` · `npx jest --ci -w 3` · `npm run lint`.
   **Expect the WAVE 2 numbers, not `bc91789`'s** — Wave 2 added 5 suites and 48 tests, so measuring against the old baseline will make a pre-existing state look like a regression you caused:
 
@@ -16,7 +16,7 @@ Paste this whole file into a fresh window. This is **fix work**. Model: Opus (Sk
   | `npx jest --ci -w 3` | **215 suites · 3127 passed · 32 todo · 0 failed** |
   | `npm run lint` | **0 errors / 78 warnings** (pre-existing) |
 
-  (For reference, `bc91789` was 210 suites / 3079 passed. If Sky has merged Waves 1+2, `main` carries the Wave 2 numbers and you branch off `main` instead.)
+  (For reference, `bc91789` was 210 suites / 3079 passed — that is the PRE-merge number and is no longer your baseline. Verified on `main` @ `c452884` after the merge.)
 - 🔴 **Never `prettier --write src`** — breaks 5 source-pinning guard tests (PROTECT-11 / §SKY-6).
 - PROTECTED identifiers: `com.accessmap.app`, slug/scheme `accessmap`.
 - **Rebuild → reinstall → re-walk** at the end. Cluster E is invisible to unit tests.
