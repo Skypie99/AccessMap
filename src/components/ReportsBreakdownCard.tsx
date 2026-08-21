@@ -345,14 +345,31 @@ const makeStyles = (color: ColorTheme) =>
       color: color.inkGlassMuted, // on the row glass
       lineHeight: 20,
     },
+    // SW-51: wrap, so that at the largest Dynamic Type sizes the label takes the
+    // row to itself and the track + count drop beneath it, instead of the label
+    // being squeezed until iOS character-breaks it.
     barRow: {
       flexDirection: 'row',
       alignItems: 'center',
+      flexWrap: 'wrap',
+      rowGap: spacing.tight,
       gap: spacing.sm,
       minHeight: 28,
     },
     barLabel: {
-      flexBasis: 130,
+      // SW-51: was `flexBasis: 130` — a box pinned at 130pt at EVERY text size
+      // while the glyphs inside it scaled past 2×, so "Broken sidewalk",
+      // "Moderate" and "Significant" were each wider than their container and
+      // got character-broken ("Broken sidewal / k", "Modera / te"). M19's
+      // flexShrink fixed narrow SCREENS; it never let the box grow with the
+      // FONT. As minWidth instead, the box is max(text, 130): still exactly 130
+      // at normal sizes, so the bars stay column-aligned — which is what the
+      // constant was protecting — and never narrower than its own word at large
+      // ones. Yoga bounds the flex base size by min/max width, so this also
+      // feeds the wrap decision on barRow above, which flexBasis alone would not.
+      minWidth: 130,
+      // Explicit: the label must not compete with the track for free space.
+      flexGrow: 0,
       // Shrinkable + wrappable so long labels stop truncating from ~1.25× and
       // the bar track keeps real width at 320pt (sweep M19).
       flexShrink: 1,
@@ -361,6 +378,11 @@ const makeStyles = (color: ColorTheme) =>
     },
     barTrack: {
       flex: 1,
+      // SW-51: a floor so the row wraps rather than leaving a stub bar too short
+      // to read. Sized against the smallest device: 130 + 56 + 36 + 16 = 238,
+      // under a ~240pt inner width at 320pt, so nothing wraps at normal sizes.
+      // Do not raise this much above 56 without redoing that arithmetic.
+      minWidth: 56,
       height: 10,
       borderRadius: radius.full,
       backgroundColor: color.surfaceMuted,
