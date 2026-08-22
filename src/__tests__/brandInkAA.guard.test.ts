@@ -8,8 +8,15 @@
  * white = 5.24:1 both themes; identical to light `brand`, so light mode is
  * byte-unchanged).
  *
+ * EXTENDED 2026-08-21 (art-direction Phase 0, item 0.5 / defect D7). The sweep
+ * of 2026-07-31 missed FlagDetailModal's three filled verbs — Verify,
+ * Directions and Save still filled themed `brand`, so in dark mode the SAME
+ * verb wore #1466E0 on a Tasks card and #4E89EF in the Details sheet, and the
+ * press state darkened across a palette boundary. Rule C1 of the approved plan
+ * makes it explicit: white text on blue is ctaFill, full stop.
+ *
  * This guard pins BOTH halves of the 2026-07-31 decision:
- *   · the seven small-text fill sites now use `color.ctaFill`;
+ *   · the small-text fill sites now use `color.ctaFill`;
  *   · the two LARGE-text sites (ReportFlagModal submit CTA 14pt bold, Home
  *     report pill 15pt bold) deliberately KEEP `color.brand` — they pass at
  *     the 3:1 large-text floor (3.42), and the submit CTA's look is signature:
@@ -56,6 +63,30 @@ describe('A11Y-229 guard — small white text never sits on dark-failing brand f
 
   it('CommentBubble own-bubble fill is ctaFill (body + timestamp ride the same pair)', () => {
     expect(read('components/CommentBubble.tsx')).toContain('backgroundColor: color.ctaFill');
+  });
+
+  it('D7 / C1: FlagDetailModal\'s three filled verbs fill with ctaFill, matching Tasks', () => {
+    const src = read('components/FlagDetailModal.tsx');
+    for (const key of ['verifyBtn', 'directionsBtn', 'saveBtn']) {
+      const idx = src.indexOf(`${key}: {`);
+      // Non-vacuity: a renamed style would make every assertion below vacuous.
+      expect(`${key} found: ${idx > -1}`).toBe(`${key} found: true`);
+      const block = src.slice(idx, idx + 120);
+      expect(`${key}: ${block.includes('backgroundColor: color.ctaFill')}`).toBe(`${key}: true`);
+      expect(`${key} on themed brand: ${block.includes('backgroundColor: color.brand')}`).toBe(
+        `${key} on themed brand: false`,
+      );
+    }
+    // The pressed companion was already correct at all three call sites, and
+    // has to stay on the same side of the palette boundary as the rest state.
+    expect(
+      src.split('pressed && { backgroundColor: color.ctaFillPressed }').length - 1,
+    ).toBeGreaterThanOrEqual(3);
+  });
+
+  it('the sibling that made this a drift rather than a one-off still fills ctaFill', () => {
+    // TasksScreen's Verify is the reference the sheet was inconsistent with.
+    expect(read('screens/TasksScreen.tsx')).toContain('backgroundColor: color.ctaFill');
   });
 
   it('A11Y-230: the other-bubble timestamp inks with textMuted, never textSubtle (failed 4.37/3.69 on surfaceNeutral)', () => {

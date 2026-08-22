@@ -57,7 +57,11 @@ interface ScreenHeaderProps {
   title: string;
   /** Small all-caps eyebrow above the title. */
   eyebrow?: string;
-  /** One-line subtitle below the title. */
+  /**
+   * Subtitle below the title. Wraps to two lines (T4 / defect D3) — at large
+   * Dynamic Type a one-line cap ate the end of every one of these
+   * ("Sign in to see yo…", "Near <long place name>").
+   */
   subtitle?: string;
   /** Right-aligned controls on the title row (e.g. menu / Feedback buttons). */
   actions?: React.ReactNode;
@@ -204,7 +208,11 @@ export function ScreenHeader({
         <AppText
           variant="body"
           style={[styles.subtitle, subtitleColor ? { color: subtitleColor } : null]}
-          numberOfLines={1}
+          /* D3 / T4: was 1. Every editorial header in the app shares this node,
+             so a one-line cap truncated the guest Profile's whole invitation and
+             any "Near <place>" Home subtitle at large type. Two lines is the
+             rule; the title above already wraps to two (M18). */
+          numberOfLines={2}
         >
           {subtitle}
         </AppText>

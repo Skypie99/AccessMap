@@ -2,6 +2,28 @@ import { type Component, useCallback, useEffect, useMemo, useRef, useState } fro
 import { AccessibilityInfo, type AccessibilityState, findNodeHandle, Platform } from 'react-native';
 
 /**
+ * The Dynamic-Type multiplier at which a FIXED composition has to recompose
+ * rather than keep scaling in place (design-system rule T3/F4, the 2026-08-21
+ * art-direction plan). Chrome with no room to grow — a one-line command bar, a
+ * two-column row — drops or restacks its optional parts here instead of
+ * truncating them, which is what WCAG 1.4.4 asks for.
+ *
+ * 1.5x is the iOS `accessibilityMedium` step: the first size at which the
+ * system itself stops treating the layout as a normal-text layout.
+ */
+export const AX_RECOMPOSE_SCALE = 1.5;
+
+/**
+ * True when the current text-size multiplier has reached the recomposition
+ * point. Read `fontScale` from `useWindowDimensions()` (reactive — it re-renders
+ * when the user changes text size mid-session) or `PixelRatio.getFontScale()`
+ * inside a one-shot layout calculation; both report the same native value.
+ */
+export function isAxRecompose(fontScale: number): boolean {
+  return fontScale >= AX_RECOMPOSE_SCALE;
+}
+
+/**
  * The shape of `decorativeProps`. The three native-only members are optional
  * because web omits them — see the constant below for why.
  */

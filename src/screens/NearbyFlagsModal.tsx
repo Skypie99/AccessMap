@@ -184,7 +184,13 @@ export default function NearbyFlagsModal({
             ) : null}
             <View style={styles.cardBodyText}>
               {item.description ? (
-                <AppText variant="body" style={styles.cardDesc} numberOfLines={2}>
+                /* T4 / D2: the accessible list is the map's equal, so a
+                   reporter's own sentence never truncates on it. This was
+                   numberOfLines={2} — at accessibility-extra-large that cut
+                   two-thirds of a description off the ONE screen a
+                   screen-reader or large-type user is steered to. Nothing caps
+                   it now: the card grows, the list scrolls. */
+                <AppText variant="body" style={styles.cardDesc}>
                   {item.description}
                 </AppText>
               ) : null}
