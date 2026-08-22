@@ -679,6 +679,16 @@ export const a11y = {
 export const size = {
   thumb: 80, // square photo thumbnail in FlagCard (TasksScreen)
   cardMin: 96, // minimum card height for no-photo FlagCards (density parity)
+  /**
+   * S6 ★ (art-direction 2026-08-21) — ONE list-row height.
+   *
+   * Settings pinned 64 in a local `SETTINGS_ROW_HEIGHT` const and the drawer
+   * pinned 56 inline: two surfaces one tap apart, wearing the same row recipe
+   * at two different heights. 64 is the survivor because it is the number that
+   * comfortably holds a two-line (title + subtitle) row above WCAG 2.5.5's 44pt
+   * floor, which is what both surfaces actually draw.
+   */
+  row: 64,
 };
 
 // -------------------------------------------------------------------------
