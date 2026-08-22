@@ -563,7 +563,7 @@ export default function SettingsScreen() {
       <View style={styles.stageRoot}>
         <ScreenStage />
         <LinearGradient
-          colors={[color.stage0, 'transparent']}
+          colors={[color.stage0, `${color.stage0}00`]}
           style={styles.statusLedge}
           pointerEvents="none"
           {...decorativeProps}
@@ -889,9 +889,16 @@ const makeStyles = (color: ColorTheme) =>
     settingsHeader: { paddingHorizontal: 0 },
     // F4: the status-bar ledge. Home and Settings scroll their content under a
     // transparent status bar, so a scrolled row could sit directly behind the
-    // clock. A 47pt stage0-to-transparent wash keeps the bar legible without
-    // painting an opaque header over the stage. Decorative and pointer-inert —
-    // it must never intercept a tap meant for the content beneath it.
+    // clock. A 47pt wash from stage0 down to the SAME COLOUR at zero alpha keeps
+    // the bar legible without painting an opaque header over the stage.
+    //
+    // The second stop is `${color.stage0}00`, never the string 'transparent'.
+    // 'transparent' is rgba(0,0,0,0), so the gradient interpolates through BLACK
+    // and lays a grey veil over the stage — measured on the 17e, the stage's
+    // #A6C8FB read #89A0C1 under the first draft of this ledge. Fading a colour
+    // to its own zero-alpha twin is the only version that is actually invisible.
+    // Decorative and pointer-inert — it must never intercept a tap meant for the
+    // content beneath it.
     statusLedge: {
       position: 'absolute',
       top: 0,

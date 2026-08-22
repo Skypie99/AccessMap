@@ -295,3 +295,36 @@ describe('T5 / D4 + D20 — onboarding gives width back instead of capping the t
     expect(block).toContain("flexWrap: 'wrap'");
   });
 });
+
+/**
+ * F4 — the status-bar ledge fades to its OWN colour, never to 'transparent'.
+ *
+ * Found on the device, not in review (2026-08-21). `'transparent'` in RN is
+ * rgba(0,0,0,0), so a gradient ending there interpolates through BLACK and lays
+ * a grey veil over whatever it covers: Home's stage measured #A6C8FB before the
+ * ledge and #89A0C1 under it. The fix is the eight-digit twin — same colour,
+ * zero alpha — and it is invisible only in that form.
+ */
+describe('F4 — the status ledge is invisible, not a grey veil', () => {
+  it.each(['screens/HomeScreen.tsx', 'screens/SettingsScreen.tsx'])(
+    '%s fades stage0 to its own zero-alpha twin',
+    (rel) => {
+      const src = read(rel);
+      // Non-vacuity: the ledge has to exist.
+      expect(src).toContain('styles.statusLedge');
+      expect(src).toContain('colors={[color.stage0, `${color.stage0}00`]}');
+      expect(src).not.toMatch(/colors=\{\[color\.stage0, 'transparent'\]\}/);
+    },
+  );
+
+  it.each(['screens/HomeScreen.tsx', 'screens/SettingsScreen.tsx'])(
+    '%s keeps the ledge pointer-inert and out of the a11y tree',
+    (rel) => {
+      const src = read(rel);
+      const at = src.indexOf('styles.statusLedge');
+      const block = src.slice(at, at + 200);
+      expect(block).toContain('pointerEvents="none"');
+      expect(block).toContain('decorativeProps');
+    },
+  );
+});
