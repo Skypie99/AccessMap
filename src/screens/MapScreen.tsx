@@ -65,7 +65,7 @@ import {
   type DisabilityTag,
 } from '@/lib/contextTags';
 import { DISTANCE_OPTIONS, loadMapFilters, saveMapFilters } from '@/lib/mapFilters';
-import { haversineKm } from '@/lib/distance';
+import { haversineKm, regionForNearestFlags } from '@/lib/distance';
 import { loadFilterPanelCollapsed, saveFilterPanelCollapsed } from '@/lib/filterPanelPrefs';
 import { loadHeatmapEnabled, saveHeatmapEnabled } from '@/lib/heatmapPrefs';
 import {
@@ -1435,12 +1435,20 @@ export default function MapScreen() {
   // location is still null — a plain, ungestured arrival — fit the viewport to the
   // loaded rows with ONE instant cut (snapToRegion reuses BP1's instant-camera path;
   // never RM-gated because it replaces the initial paint, it is not motion). Fires
-  // exactly once and never overrides an intent-driven camera: a resolved location, a
-  // focusFlag / deep-link / openReport arrival, or a user who already moved the map.
+  // exactly once and never overrides an intent-driven camera: a focusFlag / deep-link
+  // arrival, a searched place, or a user who already moved the map.
+  //
+  // M2 (2026-08-21): a resolved location NO LONGER retires this. It used to — the
+  // located arrival got `initialRegion`, a 0.01-deg box around the user, and in
+  // Kelowna that put the nearest report 314 m outside the frame: the full map opened
+  // on Apple's tiles with zero of the 13 flags its own chip was counting, one tap
+  // after the Home peek had shown the clusters. So a located arrival now fits the
+  // NEAREST FLAGS PLUS THE USER DOT instead (regionForNearestFlags, floor 0.02 deg),
+  // through the same one-time, ref-guarded, instant commitFit as the no-location
+  // path. Same mechanism, one more reason to use it.
   const didInitialFitRef = useRef(false);
   useEffect(() => {
     if (didInitialFitRef.current) return; // one-time
-    if (location) return; // a real location owns the camera via initialRegion
     // A CAMERA-MOVING intent arrival (Tasks focusFlag / deep-link flagId) owns the
     // camera — permanently RETIRE the auto-fit here. These params SELF-CLEAR shortly
     // after they fire (the deep-link clears flagId ~800ms after animating to its
@@ -1448,19 +1456,36 @@ export default function MapScreen() {
     // viewport off the deep-linked flag. Set the one-time flag BEFORE the flags-loaded
     // gate so it also covers a deep-link that arrives before the first flags-load.
     // NOTE: openReport is deliberately NOT here — it opens the report sheet + kicks
-    // requestLocation but moves NO map camera, so a null-location Report-pill arrival
-    // still earns the honest fit behind the sheet (T7's whole point). If location DOES
-    // resolve via that requestLocation, the `if (location) return` guard supersedes it.
+    // requestLocation but moves NO map camera, so a Report-pill arrival still earns
+    // the honest fit behind the sheet (T7's whole point). If location resolves via
+    // that requestLocation, the fit simply becomes the LOCATED one below.
     if (route.params?.focusFlag || route.params?.flagId) {
       didInitialFitRef.current = true;
       return;
     }
     if (loadingFlags || flags.length === 0) return; // wait for the first non-empty load
-    // No-gesture proxy: currentRegionRef only syncs to `location` on this screen, so
-    // `=== DEFAULT_REGION` means "still the seed" — no resolved location. (A user pan on
-    // the pre-fit SF DEFAULT isn't tracked — no onRegionChange — but the fit only replaces
-    // that irrelevant default frame with the real flags; an INTENT camera is retired above.)
-    if (currentRegionRef.current !== DEFAULT_REGION) return;
+
+    let region: PlatformMapRegion;
+    if (location) {
+      // M2, the LOCATED frame. No-gesture proxy by object identity: `initialRegion`
+      // is memoized on `location` alone and the sync effect above assigns that exact
+      // object, so `=== initialRegion` means "still the seed". Anything that has
+      // since claimed the camera — an address search, a saved-place jump — reassigns
+      // this ref at its own call site, and the fit stands down.
+      if (currentRegionRef.current !== initialRegion) return;
+      // The user dot is a MEMBER of the fit, not just its origin: a viewer standing
+      // just outside a tight cluster would otherwise lose their own dot off the edge.
+      const fitted = regionForNearestFlags(location, flags);
+      if (!fitted) return; // nothing fittable — the location box stands
+      region = fitted;
+    } else {
+      // No-gesture proxy: currentRegionRef only syncs to `location` on this screen, so
+      // `=== DEFAULT_REGION` means "still the seed" — no resolved location. (A user pan on
+      // the pre-fit SF DEFAULT isn't tracked — no onRegionChange — but the fit only replaces
+      // that irrelevant default frame with the real flags; an INTENT camera is retired above.)
+      if (currentRegionRef.current !== DEFAULT_REGION) return;
+      region = regionForFlags(flags);
+    }
 
     // R-13 / SR-105. This used to set the one-time flag and then call
     // `mapRef.current?.snapToRegion(region)`. The `?.` is the bug: the map ref
@@ -1483,12 +1508,18 @@ export default function MapScreen() {
       }
       // Only NOW is the fit real, so only now does it count as done.
       didInitialFitRef.current = true;
-      const region = regionForFlags(flags);
       currentRegionRef.current = region; // keep the viewport gate honest post-fit
       mapRef.current.snapToRegion(region);
     };
     commitFit(10);
-  }, [flags, loadingFlags, location, route.params?.focusFlag, route.params?.flagId]);
+  }, [
+    flags,
+    loadingFlags,
+    location,
+    initialRegion,
+    route.params?.focusFlag,
+    route.params?.flagId,
+  ]);
 
   // Long-press anywhere on the map → confirm prompt → open the report
   // modal with that coord pre-filled. The confirm step matters: a
@@ -2922,12 +2953,19 @@ export default function MapScreen() {
           // (delta 0.02) since geocoded results often point at a
           // neighborhood centroid, not a precise pin — too tight and
           // the user lands "next to" their target.
-          mapRef.current?.animateTo({
+          const searched = {
             latitude: result.lat,
             longitude: result.lng,
             latitudeDelta: 0.02,
             longitudeDelta: 0.02,
-          });
+          };
+          // M2: a searched centre OWNS the camera. Recording it here is what the
+          // one-time first-frame fit reads as "something already claimed this" —
+          // without it, a search that lands before the first flags-load would be
+          // yanked back to the fitted frame a moment later. It also keeps the D4
+          // viewport geofence pointed where the user is actually looking.
+          currentRegionRef.current = searched;
+          mapRef.current?.animateTo(searched);
         }}
       />
 
@@ -2951,12 +2989,15 @@ export default function MapScreen() {
         onJumpToPlace={(place) => {
           // Tighter zoom (delta 0.01) than search results because the
           // user pinned this exact spot — they want street-level detail.
-          mapRef.current?.animateTo({
+          const jumped = {
             latitude: place.lat,
             longitude: place.lng,
             latitudeDelta: 0.01,
             longitudeDelta: 0.01,
-          });
+          };
+          // M2: a saved-place jump OWNS the camera, same claim as a search.
+          currentRegionRef.current = jumped;
+          mapRef.current?.animateTo(jumped);
         }}
       />
 

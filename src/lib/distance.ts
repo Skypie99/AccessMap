@@ -127,6 +127,45 @@ export function regionFittingPoints(
 }
 
 /**
+ * M2 — the map's FIRST FRAME, for a viewer whose centre is known.
+ *
+ * The full map used to open on a street-level box around the user: 0.01 deg of
+ * latitude, which in Kelowna put the nearest report 314 m outside the viewport.
+ * A user tapped "Open full map" under a chip reading "13 flags" and saw Apple's
+ * map with none of them on it. The Home peek, one tap earlier, had shown the
+ * clusters — so the product's own markers were the thing the full map dropped.
+ *
+ * Fit the nearest `count` of them PLUS the centre itself, so the frame answers
+ * both questions at once: where am I, and what is around me. The centre is a
+ * member of the fit, not the origin of it — drop it and a user standing just
+ * outside a tight cluster loses their own dot off the edge.
+ *
+ * `minDelta` floors the zoom so a tight cluster does not arrive rammed into one
+ * street; `regionFittingPoints` pads the span so nothing sits flush to an edge.
+ * Returns null when there is nothing to fit, and the caller keeps its own frame.
+ */
+export function regionForNearestFlags(
+  centre: LatLng,
+  rows: readonly LatLng[],
+  { count = 5, minDelta = 0.02 }: { count?: number; minDelta?: number } = {},
+): Region | null {
+  if (!Number.isFinite(centre.lat) || !Number.isFinite(centre.lng)) return null;
+  const usable = rows.filter((p) => Number.isFinite(p.lat) && Number.isFinite(p.lng));
+  if (usable.length === 0) return null;
+
+  // Measure once per row, then sort on the number. Sorting on a comparator that
+  // recomputes haversine would run it O(n log n) times for an answer that does
+  // not change between comparisons.
+  const nearest = usable
+    .map((p) => ({ p, km: haversineKm(centre, p) }))
+    .sort((a, b) => a.km - b.km)
+    .slice(0, count)
+    .map((e) => e.p);
+
+  return regionFittingPoints([{ lat: centre.lat, lng: centre.lng }, ...nearest], { minDelta });
+}
+
+/**
  * Walking time in minutes for a given distance, rounded up to at least 1
  * minute. "Standing across the street" still reads as a 1-minute walk —
  * better than rounding to zero and looking broken.
