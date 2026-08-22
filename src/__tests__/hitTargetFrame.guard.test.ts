@@ -131,7 +131,14 @@ describe('SW-10 — the labelled search node was 20pt tall inside a 48pt bar', (
 
 describe('SW-22 + SW-43 — the tappable row title was 21-29pt on every list surface', () => {
   const cases: [string, string][] = [
-    ['screens/TasksScreen.tsx', 'cardHeader'],
+    // RE-PINNED 2026-08-21 (Phase 2a). The subject did not change: this is the
+    // same card header, carrying the same labelled role="button" summary node.
+    // It simply lives in the shared `FlagCard` now that Home, Nearby and Tasks
+    // all draw one object, so the 44pt frame has to be pinned where it is
+    // declared. Leaving the old path would have made the assertion vacuous —
+    // `styleBlock` returns '' for a key that no longer exists, and '' contains
+    // neither the wrong direction nor a missing height.
+    ['components/ui/FlagCard.tsx', 'cardHeader'],
     ['components/MyReportsModal.tsx', 'rowSummary'],
     ['components/ActivityFeedModal.tsx', 'rowSummary'],
     ['components/MyWatchedModal.tsx', 'rowSummary'],

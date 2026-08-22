@@ -9,6 +9,7 @@ import {
   RefreshControl,
   SectionList,
   StyleSheet,
+  type StyleProp,
   TextInput,
   type TextStyle,
   useWindowDimensions,
@@ -63,10 +64,9 @@ import type { RootTabParamList } from '@/navigation/RootNavigator';
 import type { DetailAction } from '@/components/FlagDetailModal';
 import PhotoLightboxModal from '@/components/PhotoLightboxModal';
 import { AppText } from '@/components/ui/AppText';
+import { FlagCard } from '@/components/ui/FlagCard';
 import { PressableScale } from '@/components/ui/PressableScale';
 import { Skeleton } from '@/components/ui/Skeleton';
-import { StatusBadge } from '@/components/StatusBadge';
-import { SeverityBadge } from '@/components/SeverityBadge';
 import { hapticImpact, hapticNotify, hapticSelection } from '@/lib/haptics';
 import { AlertTriangle, Check, ChevronRight, MapPin, Menu, MessageSquare, Search, Sparkles, WifiOff, X } from 'lucide-react-native';
 import { a11y, font, motion, radius, shadow, size, spacing } from '@/theme';
@@ -792,7 +792,7 @@ export default function TasksScreen() {
   // visible cards to re-check their props even when nothing changed.
   const renderFlagItem = useCallback(
     ({ item }: { item: FlagRow }) => (
-      <FlagCard
+      <TaskCard
         flag={item}
         isBusy={busyId === item.id}
         isOwn={item.user_id === userId}
@@ -1554,7 +1554,7 @@ export default function TasksScreen() {
   );
 }
 
-interface FlagCardProps {
+interface TaskCardProps {
   flag: FlagRow;
   isBusy: boolean;
   isOwn: boolean;
@@ -1578,7 +1578,7 @@ interface FlagCardProps {
 // At hundreds of rows this is the difference between snappy and laggy.
 // The userLocation prop is stable across renders (one-shot fetch), so it
 // doesn't disturb memoization in practice.
-const FlagCard = memo(function FlagCard({
+const TaskCard = memo(function TaskCard({
   flag,
   isBusy,
   isOwn,
@@ -1590,7 +1590,7 @@ const FlagCard = memo(function FlagCard({
   onLongPress,
   onSetStatus,
   onShowDetails,
-}: FlagCardProps) {
+}: TaskCardProps) {
   const color = useColor();
   const reduceTransparency = useReduceTransparency();
   const reducedMotion = useReducedMotion();
@@ -1638,7 +1638,11 @@ const FlagCard = memo(function FlagCard({
   const distanceInfo = useMemo(() => {
     if (!userLocation) return null;
     const km = haversineKm(userLocation, { lat: flag.lat, lng: flag.lng });
+    // `km` rides along now: the census renders the distance itself so it can put
+    // the numeral in mono (T1), and `label` survives only for the action labels,
+    // which name their flag in words a screen reader already knows.
     return {
+      km,
       label: formatDistance(km),
       eta: formatWalkingEta(km),
     };
@@ -1672,8 +1676,9 @@ const FlagCard = memo(function FlagCard({
     a11yLabel: string;
     a11yHint: string;
     onPress: () => void;
-    btnStyle: ViewStyle;
-    textStyle: TextStyle;
+    /** Assigned by POSITION, not declared here — see the lead/siblings split. */
+    btnStyle?: StyleProp<ViewStyle>;
+    textStyle?: StyleProp<TextStyle>;
     /** Deepen a brand-filled action on press instead of greying it (Verify);
      *  neutral/ghost actions omit it and inherit the house borderPressed dim. */
     pressedTint?: string;
@@ -1695,9 +1700,6 @@ const FlagCard = memo(function FlagCard({
           a11yLabel: `Verify this flag — ${actionSubject}`,
           a11yHint: 'Confirms this barrier report is real',
           onPress: () => onSetStatus(flag.id, 'verified', isOwn),
-          btnStyle: styles.verifyBtn,
-          textStyle: styles.verifyText,
-          pressedTint: color.ctaFillPressed,
           haptic: 'none',
         } satisfies CardAction]
       : []),
@@ -1707,8 +1709,6 @@ const FlagCard = memo(function FlagCard({
       a11yLabel: `Mark this flag resolved — ${actionSubject}`,
       a11yHint: 'Marks this barrier as fixed',
       onPress: () => onSetStatus(flag.id, 'resolved', isOwn),
-      btnStyle: styles.resolveBtn,
-      textStyle: styles.resolveText,
       haptic: 'none',
     },
     {
@@ -1717,8 +1717,6 @@ const FlagCard = memo(function FlagCard({
       a11yLabel: `Reject this flag — ${actionSubject}`,
       a11yHint: 'Dismisses this report; asks you to confirm first',
       onPress: () => onSetStatus(flag.id, 'rejected', isOwn),
-      btnStyle: styles.rejectBtn,
-      textStyle: styles.rejectText,
       haptic: 'none',
     },
     {
@@ -1727,19 +1725,57 @@ const FlagCard = memo(function FlagCard({
       a11yLabel: `View flag details — ${actionSubject}`,
       a11yHint: 'Opens a screen with the full report, photo, and more actions',
       onPress: () => onShowDetails(flag),
-      btnStyle: styles.detailsBtn,
+      btnStyle: styles.detailsLink,
       textStyle: styles.detailsText,
       dimOnPress: false,
       haptic: 'selection',
     },
   ];
-  // `actions` always has ≥3 entries (Resolved/Reject/Details always render,
-  // plus Verify while open), so actions[0] is never undefined.
-  const leadAction = actions[0]!;
-  const restActions = actions.slice(1);
+  // F3 — the row stops wearing three costumes for one decision. It used to run
+  // Verify (filled) · Resolved (neutral fill) · Reject (ghost) · Details
+  // (ghost), which is four controls in three styles and a verb, an adjective, a
+  // verb and a noun all dressed alike. Now:
+  //
+  //   lead      the ONE filled verb, whichever commit verb is next in the
+  //             lifecycle. Open -> Verify; already verified -> Resolved.
+  //   siblings  the remaining commit verbs, together inside ONE ghost
+  //             segmented control, so they read as alternatives to the lead
+  //             rather than as three peers.
+  //   details   navigation, and it is not a verb at all, so it stops wearing a
+  //             button and becomes a link.
+  //
+  // Nothing about what they DO changed: the same descriptors, the same
+  // handlers, the same confirm() gate upstream in setStatus, the same labels
+  // and hints. `details` is spliced out by key rather than by index so the
+  // split cannot silently follow a reordered list.
+  const commitActions = actions.filter((a) => a.key !== 'details');
+  const detailsAction = actions.find((a) => a.key === 'details')!;
+  // Always ≥2 (Resolved and Reject both always render), so [0] is never
+  // undefined and the segmented control is never empty.
+  //
+  // The paint is assigned HERE, by position, and deliberately not on the
+  // descriptors above. Declaring it per-verb is how the first cut of this got
+  // it wrong: `Verify` owned the fill, so a flag that was ALREADY verified
+  // rendered a lead verb with no fill at all and the card had zero filled
+  // controls instead of exactly one. "The lead is filled" is a fact about the
+  // POSITION, so the position is where it is stated.
+  //
+  // The pressed companion travels with the fill for the same reason: a filled
+  // control that greys on press drops its ink below AA (the rule
+  // brandInkAA.guard pins), and Resolved has to obey it on the day it becomes
+  // the lead just as Verify does today.
+  const leadAction: CardAction = {
+    ...commitActions[0]!,
+    btnStyle: styles.leadBtn,
+    textStyle: styles.leadText,
+    pressedTint: color.ctaFillPressed,
+  };
+  const siblingActions: CardAction[] = commitActions
+    .slice(1)
+    .map((a) => ({ ...a, btnStyle: styles.segCell, textStyle: styles.segText }));
   // hitSlop widens the tap area without changing layout — keeps adjacent
   // constructive/destructive buttons from mis-firing on the reflowed row.
-  const renderAction = (a: CardAction, widthStyle: ViewStyle) => (
+  const renderAction = (a: CardAction, widthStyle: StyleProp<ViewStyle>) => (
     <PressableScale
       key={a.key}
       disabled={isBusy}
@@ -1756,6 +1792,85 @@ const FlagCard = memo(function FlagCard({
     >
       <AppText variant="label" style={a.textStyle}>{a.label}</AppText>
     </PressableScale>
+  );
+
+  // The photo, lifted out of the old card body verbatim so it can be handed to
+  // the shared card as its leading media. Both branches are unchanged: in bulk
+  // -select mode it is a NON-interactive View so a tap falls through to the
+  // card's selection toggle instead of opening the lightbox (F17); otherwise it
+  // is the Pressable that opens it.
+  const photo = (
+safePhotoUrl && !photoError ? (
+    selectionActive ? (
+      // F17: in bulk-select mode the whole card is the selection toggle.
+      // Render the thumbnail as a NON-interactive View so a tap on the
+      // photo falls through to the outer card Pressable instead of opening
+      // the lightbox (a nested Pressable would otherwise swallow it,
+      // making the photo area a dead spot for selection).
+      <View
+        style={styles.cardThumbWrap}
+        onLayout={() => setPhotoInView(true)}
+        accessible={false}
+        importantForAccessibility="no-hide-descendants"
+      >
+        {photoInView && (
+          <Image
+            source={{ uri: safePhotoUrl }}
+            style={styles.cardThumb}
+            onLoad={() => setPhotoLoaded(true)}
+            onError={() => setPhotoError(true)}
+            accessible={false}
+            importantForAccessibility="no"
+            aria-hidden={true}
+          />
+        )}
+        {!photoLoaded && (
+          <Skeleton
+            width={size.thumb}
+            height={size.thumb}
+            borderRadius={radius.md}
+            style={styles.thumbSkeleton}
+          />
+        )}
+      </View>
+    ) : (
+      <Pressable
+        onPress={() => setLightboxOpen(true)}
+        onLayout={() => setPhotoInView(true)}
+        hitSlop={spacing.sm}
+        style={styles.cardThumbWrap}
+        accessibilityRole="button"
+        // photo_alt (2026-08-19): the reporter's own description wins;
+        // the category-based label stays as the fallback for old rows.
+        accessibilityLabel={
+          flag.photo_alt
+            ? `Photo: ${flag.photo_alt}. Tap to view full screen.`
+            : `Photo of ${CATEGORY_LABELS[flag.category]} accessibility issue. Tap to view full screen.`
+        }
+        accessibilityHint="Opens a full-screen view of the photo"
+      >
+        {photoInView && (
+          <Image
+            source={{ uri: safePhotoUrl }}
+            style={styles.cardThumb}
+            onLoad={() => setPhotoLoaded(true)}
+            onError={() => setPhotoError(true)}
+            accessible={false}
+            importantForAccessibility="no"
+            aria-hidden={true}
+          />
+        )}
+        {!photoLoaded && (
+          <Skeleton
+            width={size.thumb}
+            height={size.thumb}
+            borderRadius={radius.md}
+            style={styles.thumbSkeleton}
+          />
+        )}
+      </Pressable>
+    )
+  ) : null
   );
 
   return (
@@ -1806,156 +1921,85 @@ const FlagCard = memo(function FlagCard({
           />
         </Animated.View>
       )}
-      {/* S13: the header row is the card's labeled SUMMARY node — the single
-          focusable representative that announces the card (severity · category ·
-          status) and carries the button/checkbox role + state that used to live
-          on the whole card. It wraps only non-interactive badges, so it nests no
-          button. Activating it falls through to the outer Pressable (open/select). */}
-      <View
-        style={styles.cardHeader}
-        accessible
-        accessibilityRole={selectionActive ? 'checkbox' : 'button'}
-        {...a11yToggle(
-          selectionActive ? { checked: selected, disabled: isBusy } : { disabled: isBusy }
-        )}
-        accessibilityLabel={a11yLabel}
-        accessibilityHint={
-          selectionActive
-            ? 'Toggles this flag in the selection'
-            : 'Opens the Map tab focused on this flag. Long-press to select multiple.'
-        }
-      >
-        {/* Severity leads the header as a legible badge ("3 · Moderate") — number
-            + word + colour, never colour alone (WCAG 1.4.1). Replaces the old
-            left accent stripe + the buried "Severity N" in the meta line. */}
-        <SeverityBadge level={flag.severity} showLabel size="sm" />
-        <AppText variant="label" style={styles.cardTitle}>{CATEGORY_LABELS[flag.category]}</AppText>
-        <StatusBadge status={flag.status} size="sm" />
-        {/* Checkmark indicator in the top-right corner. Hidden from SR
-            because the accessibilityState above already conveys the
-            checked/unchecked state — duplicating it would just read
-            "checked" twice. */}
-        {selectionActive && (
-          <View
-            style={[styles.selectCheck, selected && styles.selectCheckOn]} {...decorativeProps}
-          >
-            {selected ? <Check size={16} color={color.textOnBrand} strokeWidth={2.2} /> : null}
-          </View>
-        )}
-      </View>
-      <View style={styles.cardBody}>
-        {safePhotoUrl && !photoError ? (
+      {/* F1: the card's insides are the shared drawing now. What used to be
+          here was an amber SeverityBadge, the title, a StatusBadge, then a
+          photo beside a 2-line description and a meta line — five species of
+          object announcing one flag, none of them shaped like Home's row or
+          Nearby's card. It is one component and one census line now:
+
+            Severity 3 · Moderate · Open · 876 m · 11 min walk · 2d ago
+
+          The status word moved INTO that sentence (C3: status is a word, not a
+          pill, inside a flag object) and the severity colour is drawn once, on
+          the disc (C2). The distance is the sentence's one numeral, so the
+          component renders it in mono from the raw km.
+
+          S13's structure is preserved exactly, because it is what lets a
+          screen-reader user reach the trust engine: the card stays
+          accessible={false}, the HEADER is the single labeled summary node
+          carrying the button/checkbox role fork, and every action below stays
+          independently reachable. FlagCard takes that as `headerA11y` rather
+          than assuming it, which is why Nearby can decline it. */}
+      <FlagCard
+        flag={flag}
+        density="card"
+        distanceKm={distanceInfo?.km ?? null}
+        censusExtra={[distanceInfo?.eta, relativeTime(flag.created_at)]}
+        showDescription
+        media={photo}
+        headerAccessory={
+          /* Checkmark indicator in the top-right corner. Hidden from SR because
+             the accessibilityState above already conveys the checked/unchecked
+             state — duplicating it would just read "checked" twice. */
           selectionActive ? (
-            // F17: in bulk-select mode the whole card is the selection toggle.
-            // Render the thumbnail as a NON-interactive View so a tap on the
-            // photo falls through to the outer card Pressable instead of opening
-            // the lightbox (a nested Pressable would otherwise swallow it,
-            // making the photo area a dead spot for selection).
             <View
-              style={styles.cardThumbWrap}
-              onLayout={() => setPhotoInView(true)}
-              accessible={false}
-              importantForAccessibility="no-hide-descendants"
+              style={[styles.selectCheck, selected && styles.selectCheckOn]} {...decorativeProps}
             >
-              {photoInView && (
-                <Image
-                  source={{ uri: safePhotoUrl }}
-                  style={styles.cardThumb}
-                  onLoad={() => setPhotoLoaded(true)}
-                  onError={() => setPhotoError(true)}
-                  accessible={false}
-                  importantForAccessibility="no"
-                  aria-hidden={true}
-                />
-              )}
-              {!photoLoaded && (
-                <Skeleton
-                  width={size.thumb}
-                  height={size.thumb}
-                  borderRadius={radius.md}
-                  style={styles.thumbSkeleton}
-                />
-              )}
+              {selected ? <Check size={16} color={color.textOnBrand} strokeWidth={2.2} /> : null}
             </View>
-          ) : (
-            <Pressable
-              onPress={() => setLightboxOpen(true)}
-              onLayout={() => setPhotoInView(true)}
-              hitSlop={spacing.sm}
-              style={styles.cardThumbWrap}
-              accessibilityRole="button"
-              // photo_alt (2026-08-19): the reporter's own description wins;
-              // the category-based label stays as the fallback for old rows.
-              accessibilityLabel={
-                flag.photo_alt
-                  ? `Photo: ${flag.photo_alt}. Tap to view full screen.`
-                  : `Photo of ${CATEGORY_LABELS[flag.category]} accessibility issue. Tap to view full screen.`
-              }
-              accessibilityHint="Opens a full-screen view of the photo"
+          ) : undefined
+        }
+        headerA11y={{
+          role: selectionActive ? 'checkbox' : 'button',
+          label: a11yLabel,
+          hint: selectionActive
+            ? 'Toggles this flag in the selection'
+            : 'Opens the Map tab focused on this flag. Long-press to select multiple.',
+          state: a11yToggle(
+            selectionActive ? { checked: selected, disabled: isBusy } : { disabled: isBusy }
+          ),
+        }}
+        actions={
+          /* Hidden during selection mode — the floating bar handles bulk
+             actions, and showing both would be confusing (a tap on Verify here
+             would still fire the single-item flow, not the bulk one). */
+          selectionActive ? undefined : (
+            <View
+              style={compactActions ? styles.cardActionsStack : styles.cardActionsRow}
+              testID={compactActions ? 'card-actions-stack' : 'card-actions-row'}
             >
-              {photoInView && (
-                <Image
-                  source={{ uri: safePhotoUrl }}
-                  style={styles.cardThumb}
-                  onLoad={() => setPhotoLoaded(true)}
-                  onError={() => setPhotoError(true)}
-                  accessible={false}
-                  importantForAccessibility="no"
-                  aria-hidden={true}
-                />
-              )}
-              {!photoLoaded && (
-                <Skeleton
-                  width={size.thumb}
-                  height={size.thumb}
-                  borderRadius={radius.md}
-                  style={styles.thumbSkeleton}
-                />
-              )}
-            </Pressable>
+              {renderAction(leadAction, compactActions ? styles.actionBtnFull : styles.actionBtnLead)}
+              {/* One ghost segmented control, not two ghost buttons: the pair
+                  reads as alternatives to the filled verb rather than as its
+                  peers. The container draws the single hairline and clips the
+                  ends; each cell keeps its own 44pt box and its own label,
+                  hint and handler, so nothing about reaching them changed. */}
+              <View
+                testID="card-actions-segmented"
+                style={[
+                  styles.segmented,
+                  compactActions ? styles.actionBtnFull : styles.actionBtnSiblings,
+                ]}
+              >
+                {siblingActions.map((a, i) =>
+                  renderAction(a, i > 0 ? styles.segCellDivided : null),
+                )}
+              </View>
+              {renderAction(detailsAction, compactActions ? styles.actionBtnFull : null)}
+            </View>
           )
-        ) : null}
-        <View style={styles.cardBodyText}>
-          {flag.description ? (
-            // Clamp to 2 lines — the full text lives in Details. Stops a long
-            // report from growing the card unbounded (a 2000-char note used to
-            // drive it to ~1612px tall).
-            <AppText variant="body" style={styles.cardDesc} numberOfLines={2}>{flag.description}</AppText>
-          ) : null}
-          {/* Quiet support line. Severity moved up to the header badge, so it's
-              no longer repeated here; filter(Boolean) keeps the separators tidy
-              whether or not distance is known. */}
-          <AppText variant="body" style={styles.cardMeta}>
-            {[distanceInfo?.label, distanceInfo?.eta, relativeTime(flag.created_at)]
-              .filter(Boolean)
-              .join(' · ')}
-          </AppText>
-        </View>
-      </View>
-      {/* Hide per-card action buttons during selection mode — the
-          floating bar handles bulk actions, and showing both would be
-          confusing (a tap on Verify here would still fire the single-
-          item flow, not the bulk one). */}
-      {!selectionActive &&
-        (compactActions ? (
-          // Deliberate 2-row stack (narrow width / large type): the lead action
-          // full-width on top, the rest in one equal-share sub-row below.
-          // Reject stays a row apart from the primary — no mis-tap. Never ragged.
-          <View style={styles.cardActionsStack} testID="card-actions-stack">
-            {renderAction(leadAction, styles.actionBtnFull)}
-            <View style={styles.cardActionsRow}>
-              {restActions.map((a) => renderAction(a, styles.actionBtnFlex))}
-            </View>
-          </View>
-        ) : (
-          // Tiered single row: one clear primary (lead, wider via flexGrow) plus
-          // quiet equal-share rest. flexGrow + flexBasis:0 distributes the width
-          // evenly so the row can never wrap raggedly the way content-sized pills did.
-          <View style={styles.cardActionsRow} testID="card-actions-row">
-            {renderAction(leadAction, styles.actionBtnLead)}
-            {restActions.map((a) => renderAction(a, styles.actionBtnFlex))}
-          </View>
-        ))}
+        }
+      />
       {/* Full-screen photo lightbox — only mounts when the thumbnail exists
           and has loaded successfully. Tapping the thumbnail (or the close
           button inside the modal) dismisses it. */}
@@ -1973,11 +2017,14 @@ const FlagCard = memo(function FlagCard({
 });
 
 /**
- * First-load skeleton on the ROW MATERIAL — mirrors the FlagCard anatomy
- * (badge · title · two description lines · lead action · 3-up action row),
- * matching the mockup's loading state. Bars use the arbitrated skeleton tint;
- * the pulse inside `Skeleton` is already reduced-motion gated. Takes the
- * parent's styles/bar so six instances don't re-create the StyleSheet.
+ * First-load skeleton on the ROW MATERIAL — mirrors the card's anatomy, which
+ * changed with it in Phase 2a: disc · title · census · two description lines ·
+ * one filled verb beside a segmented pair, with Details as a link rather than a
+ * fourth pill. A skeleton that still drew three equal pills would promise a row
+ * the real card no longer has, and the swap at load would read as a jump. Bars
+ * use the arbitrated skeleton tint; the pulse inside `Skeleton` is already
+ * reduced-motion gated. Takes the parent's styles/bar so six instances don't
+ * re-create the StyleSheet.
  */
 function GlassSkeletonCard({
   styles,
@@ -1992,23 +2039,23 @@ function GlassSkeletonCard({
       style={[styles.card, styles.cardOuter]}
       accessible={false}
     >
-      <View style={styles.cardHeader}>
-        <Skeleton width={96} height={24} borderRadius={radius.full} style={{ backgroundColor: bar }} />
-        <Skeleton width="45%" height={18} borderRadius={radius.sm} style={{ backgroundColor: bar }} />
+      <View style={styles.skeletonHeader}>
+        <Skeleton width={32} height={32} borderRadius={radius.circle} style={{ backgroundColor: bar }} />
+        <View style={styles.skeletonHeaderText}>
+          <Skeleton width="55%" height={18} borderRadius={radius.sm} style={{ backgroundColor: bar }} />
+          <Skeleton width="80%" height={13} borderRadius={radius.sm} style={{ backgroundColor: bar }} />
+        </View>
       </View>
       <Skeleton width="100%" height={13} borderRadius={radius.sm} style={{ backgroundColor: bar }} />
       <Skeleton width="62%" height={13} borderRadius={radius.sm} style={{ backgroundColor: bar }} />
-      <Skeleton width="100%" height={44} borderRadius={radius.full} style={{ backgroundColor: bar }} />
       <View style={styles.cardActionsRow}>
-        <View style={styles.actionBtnFlex}>
+        <View style={styles.actionBtnLead}>
           <Skeleton width="100%" height={44} borderRadius={radius.full} style={{ backgroundColor: bar }} />
         </View>
-        <View style={styles.actionBtnFlex}>
+        <View style={styles.actionBtnSiblings}>
           <Skeleton width="100%" height={44} borderRadius={radius.full} style={{ backgroundColor: bar }} />
         </View>
-        <View style={styles.actionBtnFlex}>
-          <Skeleton width="100%" height={44} borderRadius={radius.full} style={{ backgroundColor: bar }} />
-        </View>
+        <Skeleton width={56} height={44} borderRadius={radius.full} style={{ backgroundColor: bar }} />
       </View>
     </GlassSurface>
   );
@@ -2018,7 +2065,7 @@ function GlassSkeletonCard({
 // 6-element FlagCard + tiered action row) renders the card directly instead
 // of mocking the whole screen's data layer. Not for reuse — the card is
 // private to this screen by design.
-export { FlagCard };
+export { TaskCard };
 
 const makeStyles = (color: ColorTheme, reduceTransparency: boolean) => {
   // Engineered chip tint — pills/chips/search ON the chrome pane (they carry
@@ -2271,59 +2318,10 @@ const makeStyles = (color: ColorTheme, reduceTransparency: boolean) => {
     // Clips the press sheen to the card's rounded corners.
     sheenClip: { borderRadius: radius.lg, overflow: 'hidden' },
     cardPressed: { opacity: 0.85, transform: [{ scale: 0.99 }] },
-    // SW-22: this header IS the labelled, role="button" element that
-    // opens the flag (A11Y-214 de-flattened the row and put the label here).
-    // It measured 21-29pt tall on every list surface and both devices, while
-    // the "Show on the map" button beside it is a correct 44x44 — which is what
-    // makes the short one read as an oversight rather than a style. hitSlop is
-    // invisible to the accessibility frame, so the height has to be real.
-    // SW-36: flexWrap lets the title drop to its own line at large Dynamic Type
-    // instead of being crushed between two non-shrinking badges. It only does
-    // anything BECAUSE cardTitle below stopped declaring `flex: 1` — Yoga's
-    // line-break test measures each child's flex BASE size, and a basis of 0%
-    // contributes nothing, so a wrap can never trigger no matter how large the
-    // glyphs get. flexWrap without that change ships a no-op. `gap` already
-    // supplies 8pt on both axes, so a wrapped line needs no extra row spacing.
-    cardHeader: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: spacing.sm, minHeight: a11y.minTargetSize },
-    // textStrong ink — fixes the pre-glass dark-mode bug where the title had
-    // no color and rendered near-black on the dark card (Material Lab before-
-    // capture finding #1; the description themed correctly, the title didn't).
-    cardTitle: {
-      fontSize: font.size.xl,
-      fontWeight: font.weight.semibold,
-      // SW-36 — this is the fix, and the omission below is the load-bearing part.
-      // `flex: 1` is shorthand for grow 1 / shrink 1 / **basis 0%**, and a basis
-      // of 0 means the title contributes nothing to either the wrap decision or
-      // its own hypothetical width: its box was purely whatever the two badges
-      // left over, and could be narrower than the word inside it. iOS then
-      // character-breaks a word too wide for its box — "Broken sidewal / k".
-      // Spelling grow/shrink out and leaving flexBasis UNWRITTEN (RN default
-      // 'auto') makes the box measure the text, so it is never narrower than its
-      // own content and the break becomes structurally impossible. flexShrink
-      // stays 1 so a title alone on a line still wraps at a word boundary.
-      flexGrow: 1,
-      flexShrink: 1,
-      // SW-36, second pass — found on the device, not in the source. Freeing the
-      // basis was necessary and NOT sufficient: `flexShrink: 1` still let the
-      // title be squeezed below its own longest word by the two non-shrinking
-      // badges, and "Broken sidewalk" still rendered as "sidewal / k" at
-      // accessibility-extra-large. Measured on the 17e: a 326pt header, minus a
-      // ~125pt severity pill, a ~78pt status pill and their gaps, left the title
-      // ~107pt while "sidewalk" at the capped 28.8pt needs ~127.
-      //
-      // The floor is what makes flexWrap on cardHeader actually fire: with a
-      // bounded base size the badges move to their own line and the title gets
-      // the full row. 130 is the longest single word in CATEGORY_LABELS at the
-      // label variant's 1.6 cap — the same reasoning, and coincidentally the
-      // same number, as barLabel's floor in ReportsBreakdownCard.
-      //
-      // Below the cap this changes nothing: "Broken sidewalk" measures ~138pt at
-      // 1x against ~170pt available, so the floor is never the binding constraint
-      // at normal text sizes.
-      minWidth: 130,
-      color: color.textStrong,
-    },
-    cardBody: { flexDirection: 'row', gap: spacing.md },
+    // SW-22 / SW-36 moved out with the header they described: the 44pt frame,
+    // the wrap and the title's width floor now live in FlagCard, where the
+    // header is drawn, and are pinned there by
+    // flexBasisUnderLargeType.guard.test.ts and hitTargetFrame.guard.test.ts.
     // Container holds the image so overflow:hidden clips rounded corners on
     // Android (where borderRadius on Image alone is unreliable).
     cardThumbWrap: {
@@ -2339,23 +2337,12 @@ const makeStyles = (color: ColorTheme, reduceTransparency: boolean) => {
       height: '100%',
     },
     thumbSkeleton: { position: 'absolute', top: 0, left: 0 },
-    cardBodyText: { flex: 1, gap: spacing.tight },
-    // TYPE LAW on translucency (GLASS.md): body text on glass carries ≥500
-    // weight — the 400 face hazes against what moves beneath the pane.
-    cardDesc: {
-      fontSize: font.size.base,
-      color: color.textStrong,
-      fontFamily: font.family.bodyMedium,
-    },
-    cardMeta: {
-      fontSize: font.size.xs,
-      color: color.textMuted,
-      fontFamily: font.family.bodyMedium,
-    },
-    // Action row — equal-share flex (the proven bulkBtn pattern), never flexWrap.
-    // One tidy row at default; the component swaps to cardActionsStack (lead
-    // full-width + sub-row) when compactActions is true (narrow / large type).
-    cardActionsRow: { flexDirection: 'row', gap: spacing.sm },
+    // Action row (F3): one filled verb, one ghost segmented pair, one link.
+    // One tidy row at default; the card swaps to cardActionsStack, everything
+    // full-width, when compactActions is true (narrow width / large type).
+    // T5: three children of different natures share this row, so it wraps
+    // rather than squeezing the segmented pair below its own longest word.
+    cardActionsRow: { flexDirection: 'row', flexWrap: 'wrap', rowGap: spacing.sm, gap: spacing.sm },
     cardActionsStack: { gap: spacing.sm },
     actionBtn: {
       // Fully-rounded pills (Phase 13 editorial language). Width is owned by the
@@ -2368,38 +2355,58 @@ const makeStyles = (color: ColorTheme, reduceTransparency: boolean) => {
       alignItems: 'center',
       justifyContent: 'center',
     },
-    // The lead (primary) action: noticeably wider than its quiet siblings, so the
-    // hierarchy reads at a glance even though all share the row. 1.5 (not 2) is
-    // the RN translation of the mockup — leaves the longest secondary ("Resolved")
-    // room at 375pt without clipping.
-    actionBtnLead: { flexGrow: 1.5, flexBasis: 0, minWidth: 0 },
-    actionBtnFlex: { flexGrow: 1, flexBasis: 0, minWidth: 0 },
     actionBtnFull: { alignSelf: 'stretch' },
+    // The loading skeleton's header, which mirrors FlagCard's own but lives
+    // here: the shared component draws a real flag, and a skeleton has no flag.
+    skeletonHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, minHeight: a11y.minTargetSize },
+    skeletonHeaderText: { flexGrow: 1, flexShrink: 1, gap: spacing.tight },
+    actionBtnLead: { flexGrow: 1, flexBasis: 0, minWidth: 0 },
+    // The pair needs slightly more room than the lone lead verb: it is two
+    // words behind one hairline, and "Resolved" is the longest label in the row.
+    actionBtnSiblings: { flexGrow: 1.3, flexBasis: 0, minWidth: 0 },
+
+    // F3 — the ONE filled verb, whichever commit verb is next in the lifecycle.
     // ctaFill, not brand — the CTA fill is MODE-INDEPENDENT #1466E0 (dark
     // brand #4E89EF + white = 3.4:1 fails; script-arbitrated, GLASS.md).
-    verifyBtn: { backgroundColor: color.ctaFill },
-    verifyText: { color: color.textOnBrand, fontWeight: font.weight.semibold, fontSize: font.size.sm },
-    // Tiered down from a saturated green fill to a quiet neutral chip — only
-    // Verify stays a filled primary, the rest are calm equals. On glass the
-    // neutral is a translucent ink-tint (mockup --df-neutral-btn); under
-    // Reduce Transparency it returns to the solid neutral.
-    resolveBtn: {
-      backgroundColor: reduceTransparency ? color.surfaceNeutral : color.glassNeutralBtn,
-    },
-    resolveText: { color: color.text, fontWeight: font.weight.semibold, fontSize: font.size.sm },
-    // Reject — quiet ghost (hairline, no fill), neutral ink: present but never
-    // shouting, and visually distinct from the filled primary to avoid mis-tap.
-    // Ghost edges use the arbitrated on-glass hairline (borderSubtle vanishes
-    // over the row material).
-    rejectBtn: { backgroundColor: 'transparent', borderWidth: 1, borderColor: color.glassGhostEdge },
-    rejectText: { color: color.text, fontWeight: font.weight.semibold, fontSize: font.size.sm },
-    detailsBtn: {
-      backgroundColor: 'transparent',
+    leadBtn: { backgroundColor: color.ctaFill },
+    leadText: { color: color.textOnBrand, fontWeight: font.weight.semibold, fontSize: font.size.sm },
+
+    // The ghost segmented control. The CONTAINER draws the one hairline and
+    // clips the ends so the pair reads as a single object; the cells draw
+    // nothing but the divider between them. This replaces two separate
+    // treatments — Resolved was a neutral FILL and Reject a ghost — which made
+    // two alternatives look like two unrelated decisions. Ghost edges use the
+    // arbitrated on-glass hairline (borderSubtle vanishes over the row material).
+    segmented: {
+      flexDirection: 'row',
+      borderRadius: radius.full,
       borderWidth: 1,
       borderColor: color.glassGhostEdge,
+      overflow: 'hidden',
     },
-    // inkDetailsGhost — arbitrated on the row material (4.75:1 light worst-case).
-    detailsText: { color: color.inkDetailsGhost, fontWeight: font.weight.semibold, fontSize: font.size.sm },
+    // borderRadius: 0 overrides actionBtn's pill radius on purpose — inside the
+    // container a rounded cell would draw a second, smaller pill against the
+    // first. `overflow: 'hidden'` above is what gives the end cells their curve.
+    segCell: {
+      flexGrow: 1,
+      flexBasis: 0,
+      minWidth: 0,
+      borderRadius: 0,
+      backgroundColor: 'transparent',
+    },
+    segCellDivided: { borderLeftWidth: 1, borderLeftColor: color.glassGhostEdge },
+    segText: { color: color.text, fontWeight: font.weight.semibold, fontSize: font.size.sm },
+
+    // Details is navigation, not a verb, so it stops wearing a button. The 44pt
+    // box survives in `actionBtn`; only the border and the fill are gone.
+    detailsLink: { backgroundColor: 'transparent', paddingHorizontal: spacing.sm },
+    // inkSelect, not inkDetailsGhost — the same ink "Select multiple" and "Clear
+    // filters" already carry, so every text link on this screen is one colour.
+    // It is also the higher-contrast of the two in BOTH modes: #0F53BE is
+    // darker than #1466E0 against the light floor and #B4CFFA is lighter than
+    // #84AEF6 against the dark one, so the swap moves away from the mid-tone
+    // either way rather than trading one mode's contrast for the other's.
+    detailsText: { color: color.inkSelect, fontWeight: font.weight.semibold, fontSize: font.size.sm },
     // D3/C3 — the single trigger that replaced three header rows.
     // T5 / D24: content-sized chips in a row with no escape. At large type
     // "Filter & sort" + "Clear filters" exceed the row and the second chip was

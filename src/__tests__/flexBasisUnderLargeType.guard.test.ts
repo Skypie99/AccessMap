@@ -132,8 +132,27 @@ describe('the regexes actually discriminate (self-test)', () => {
   });
 });
 
-describe('SW-36 — the Tasks card title was crushed between two badges', () => {
-  const src = read('screens/TasksScreen.tsx');
+/**
+ * RE-PINNED 2026-08-21 (Phase 2a) — same rule, new address.
+ *
+ * The Tasks card's header is now drawn by the shared `FlagCard`, which Home,
+ * Nearby and Tasks all render. Two things follow, and the second is the reason
+ * this had to be re-pinned rather than left alone:
+ *
+ *   1. The two badges that did the crushing are retired (Q20). But the SHAPE
+ *      that produced SW-36 is not: a title beside a fixed disc, and in Nearby
+ *      beside a non-shrinking distance, is the same geometry with different
+ *      furniture. So the rule travels with the composition.
+ *   2. `styleBlock` returns '' for a key that no longer exists in a file, and
+ *      every assertion below passes vacuously against ''. Left pointed at
+ *      TasksScreen, this suite would have gone green while checking nothing —
+ *      which is the failure mode its own docblock warns about.
+ *
+ * The assertions themselves are unchanged, including the minWidth floor that
+ * only the device found.
+ */
+describe('SW-36 — the flag card title must fit its own word', () => {
+  const src = read('components/ui/FlagCard.tsx');
 
   it('cardTitle measures its own text instead of taking a basis of zero', () => {
     const block = styleBlock(src, 'cardTitle');
@@ -173,26 +192,20 @@ describe('SW-36 — the Tasks card title was crushed between two badges', () => 
   });
 });
 
-describe('SW-36 — the severity pill scaled on a different rule than its own digit', () => {
-  const src = read('components/SeverityBadge.tsx');
-
-  it('the severity word carries a per-site cap', () => {
-    // The digit is variant="label" (capped 1.6) and the word was "bodyMedium"
-    // (uncapped by contract in AppText, because body copy must always scale).
-    // One pill, two scaling rules — so the word outgrew its own digit and the
-    // pill ate the width the title needed.
-    expect(src).toContain('maxFontSizeMultiplier={1.6}');
-  });
-
-  it('the cap did NOT arrive as a variant swap', () => {
-    // variant="label" would have capped it too, and also forced the 600SemiBold
-    // face while styles.label still declares weight 500 — changing how the pill
-    // LOOKS in order to fix how it SCALES. This pins the pill's weight fork.
-    expect(src).toContain('variant="bodyMedium"');
-    expect(styleBlock(src, 'label')).toContain('font.weight.medium');
-    expect(styleBlock(src, 'number')).toContain('font.weight.bold');
-  });
-});
+/**
+ * SW-36's OTHER half — "the severity pill scaled on a different rule than its
+ * own digit" — is gone from this file because the pill is gone from the app
+ * (Q20, Phase 2a). It was the amplifier: a digit capped at 1.6 beside a word
+ * that was uncapped by contract, so the pill grew without bound and took the
+ * width from the title beside it.
+ *
+ * Severity is now a disc and a word inside one census sentence. A disc is a
+ * fixed box that caps by its box, and the sentence is one text node in one
+ * content block, so there is no longer a control whose two halves CAN scale
+ * apart — the defect class is designed out rather than guarded.
+ *
+ * What replaced the pill's suite: components/ui/__tests__/FlagCard.dynamicType.test.tsx.
+ */
 
 describe('SW-51 — the Profile breakdown label sat in a box pinned at 130pt', () => {
   const src = read('components/ReportsBreakdownCard.tsx');
