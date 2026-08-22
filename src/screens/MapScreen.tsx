@@ -108,6 +108,7 @@ import { useSharedModals } from '@/lib/sharedModalsContext';
 import { useScreenReader, useReducedMotion, a11yToggle, decorativeProps, isAxRecompose, useSurfaceTrigger } from '@/lib/accessibility';
 import LegendModal from './LegendModal';
 import HeatmapLegend from '@/components/HeatmapLegend';
+import { SeverityDisc } from '@/components/SeverityDisc';
 import NearbyFlagsModal from './NearbyFlagsModal';
 import AddressSearchModal from '@/components/AddressSearchModal';
 import SavedPlacesModal from '@/components/SavedPlacesModal';
@@ -1889,11 +1890,14 @@ export default function MapScreen() {
                 strokeWidth={2.2}
               />
             </PressableScale>
-            {/* ⋯ overflow — reveals the inline tool sheet. Holds legendTrigger's
-                focus-return ref: closing the Map legend returns the SR cursor
-                here, the control that surfaced it. */}
+            {/* ⋯ overflow — reveals the inline tool sheet. It NO LONGER holds
+                legendTrigger's focus-return ref: M4 gave the legend its own
+                persistent door in the bottom bar, and that pill is where the SR
+                cursor now lands on close, from either path. One trigger, one
+                landing place, both of them permanent map chrome — where a ⋯ row
+                is transient and the ⋯ button is only the legend's door by
+                accident of where the row used to live. */}
             <PressableScale
-              ref={legendTrigger.ref}
               onPress={() => { setFiltersOpen(false); setToolsOpen((v) => !v); }}
               style={[styles.barBtn, toolsOpen && styles.barBtnActive]}
               pressedTint={toolsOpen ? color.ctaFillPressed : color.borderPressed}
@@ -1951,9 +1955,11 @@ export default function MapScreen() {
             </PressableScale>
             <PressableScale
               onPress={() => {
-                // Focus-return is armed on the ⋯ button (legendTrigger.ref); the
-                // legend returns the SR cursor there on close. Close the sheet
-                // first so it isn't stranded behind the modal.
+                // Focus-return is armed on the persistent Legend pill in the
+                // bottom bar, which now holds legendTrigger.ref (M4): it is the
+                // legend's own door and it survives this sheet closing, where a
+                // ⋯ tool row does not. Close the sheet first so it isn't
+                // stranded behind the modal.
                 setToolsOpen(false);
                 legendTrigger.register();
                 setLegendOpen(true);
@@ -2656,7 +2662,58 @@ export default function MapScreen() {
           {/* Flex slot reserves the left half so HeatmapLegend wraps against the
               true remaining width beside the intrinsic-width fabColumn, instead
               of overlapping the FABs at narrow widths (G6). */}
-          <View style={styles.legendSlot}>{heatmapEnabled ? <HeatmapLegend /> : null}</View>
+          <View style={styles.legendSlot} pointerEvents="box-none">
+            {heatmapEnabled ? <HeatmapLegend /> : null}
+            {/* M4 (Q10): the Legend is ONE tap. It was two — ⋯ then a row filed
+                under a "?" icon — and the legend is the product's TEACHING
+                surface: five colours, five numbers, five human sentences. The
+                thing that explains the map should not be filed under help.
+                It wears the discs it explains: severity 1, 3 and 5, decorative,
+                because the button already says "Legend" and the sheet behind it
+                speaks the whole grammar.
+                Same crystal recipe as the List pill opposite (forceEngineered +
+                liteColors = engineered gradient, so this adds ZERO blur panes to
+                the budget — the command bar's single live pane is still the only
+                one on this screen). The ⋯ row stays where it is for muscle
+                memory; HeatmapLegend above is a different object and untouched. */}
+            <PressableScale
+              ref={legendTrigger.ref}
+              style={styles.fabCrystalPill}
+              // The glass hides a background dim, so feedback is the scale
+              // spring — the List-pill precedent, matched exactly.
+              dimOnPress={false}
+              onPress={() => {
+                // Close the tool sheet first so it isn't stranded behind the
+                // modal (the ⋯ row's own rule), then arm focus-return BEFORE
+                // the setState that opens the surface.
+                setToolsOpen(false);
+                legendTrigger.register();
+                setLegendOpen(true);
+              }}
+              accessibilityRole="button"
+              accessibilityLabel="Map legend"
+              accessibilityHint="Opens a guide explaining flag categories and severity"
+            >
+              <GlassSurface
+                variant="row"
+                forceEngineered
+                liteColors={[color.glassMapCrystal0, color.glassMapCrystal1]}
+                borderRadius={radius.circle}
+                style={StyleSheet.absoluteFill}
+                pointerEvents="none"
+              />
+              <View style={styles.fabSecondaryRow}>
+                <View style={styles.legendGlyph}>
+                  {/* Fixed boxes cap by box (T3): a 12pt disc has no room to
+                      grow, so the digit is frozen rather than capped high. */}
+                  <SeverityDisc severity={1} size={12} digitSize={8} maxFontSizeMultiplier={1} />
+                  <SeverityDisc severity={3} size={12} digitSize={8} maxFontSizeMultiplier={1} />
+                  <SeverityDisc severity={5} size={12} digitSize={8} maxFontSizeMultiplier={1} />
+                </View>
+                <AppText variant="label" style={styles.fabCrystalText}>Legend</AppText>
+              </View>
+            </PressableScale>
+          </View>
           <View style={styles.fabColumn}>
             {/* Recenter — demoted from the old top tray into the FAB column, at the
                 top of the stack (Direction B, matches the governing mockup). A
@@ -3744,7 +3801,14 @@ const makeStyles = (color: ColorTheme) =>
       flex: 1,
       marginRight: spacing.sm,
       alignItems: 'flex-start',
+      // The heat legend (when on) stacks ABOVE the persistent Legend pill, so
+      // the pill keeps the bottom line with the List pill opposite it. Same
+      // gap as fabColumn so the two sides of the bottom bar breathe alike.
+      gap: 10,
     },
+    // The three discs the button explains. Tight gap: they read as one glyph,
+    // not as three controls.
+    legendGlyph: { flexDirection: 'row', alignItems: 'center', gap: 2 },
     fabColumn: {
       alignItems: 'flex-end',
       gap: 10,

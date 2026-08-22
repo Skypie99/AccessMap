@@ -62,3 +62,42 @@ edits a user-facing word.**
   "Search a place", the severity meanings) is byte-identical; only which of them
   is VISIBLE at a given text size changed, and each hidden one keeps its words as
   the control's accessible name.
+
+---
+
+## Prompt 03 — Phase 1c (THE MAP)
+
+**No new strings. Every word on the new control already exists in the app**, reused
+byte for byte:
+
+| String | Where it comes from | Now also used by |
+|---|---|---|
+| `Legend` (visible label) | `HeatmapLegend.tsx` collapsed chip | the persistent Legend pill |
+| `Map legend` (accessible name) | the ⋯ tool-sheet row, `MapScreen.tsx` | the persistent Legend pill |
+| `Opens a guide explaining flag categories and severity` (hint) | the ⋯ tool-sheet row | the persistent Legend pill |
+
+### SKY-WORDS-REQUIRED — one collision, created by the reuse
+
+**W-12 · Two controls can now read "Legend" at the same time.**
+When the heat layer is ON *and* the user has collapsed the heat legend to its
+chip, the map's bottom-left slot stacks two pills both showing the word
+**Legend**: the heat chip (accessible name "Show heat map legend") above the new
+severity Legend pill (accessible name "Map legend"). They explain different
+things — one is the heat ramp, one is the severity grammar and the categories.
+
+Sighted users see one word twice; screen-reader users hear two distinct names, so
+the accessibility floor holds and this is a clarity defect, not a barrier. It is
+narrow: it needs heat on AND the heat legend collapsed.
+
+Not fixed here, because fixing it means writing a word, and this prompt writes
+none. Sky's call. The options, cheapest first:
+
+1. Rename the heat chip to `Heat` or `Heat map` (it is the newer, narrower
+   object, and its own accessible name already says "heat map"). One string.
+2. Rename the new pill to `Severity` or `What the colours mean`. Loses the
+   plain word for the product's teaching surface, which is the thing M4 was
+   trying to make findable.
+3. Leave it. Two "Legend" pills in one rare state.
+
+Recommendation: **option 1** — it is one word, on the object whose name is
+already qualified everywhere else it is spoken.
