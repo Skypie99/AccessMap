@@ -86,17 +86,40 @@ describe('SW-01 — the Apple 1.2 consent line cannot be scrolled out of sight',
 });
 
 describe('SW-02 — bottom-anchored controls derive their inset, never guess it', () => {
-  it("OnboardingCards' decline link no longer hardcodes its bottom margin", () => {
-    const src = read('components/OnboardingCards.tsx');
-    // The style block keeps 28 as the no-inset FLOOR; the render site must lift
-    // it to the real inset. Pinning the render site is what stops the 6pt miss.
-    expect(src).toMatch(/marginBottom:\s*Math\.max\(28,\s*insets\.bottom\)/);
-  });
-
-  it('the sibling action row still derives its pad too (non-vacuity)', () => {
-    // If this ever stops matching, the family moved and the assertion above is
-    // pinning a pattern that no longer represents the house rule.
+  /**
+   * RE-PINNED 2026-08-22 (Phase 2b, board 05). SW-02's finding was that the
+   * decline link's `marginBottom: 28` ended its box 6pt INSIDE the home
+   * indicator, because it was the last child on the screen and guessed the pad
+   * the row above it derived.
+   *
+   * On the new template it is no longer the last child: the decline sits ABOVE
+   * the CTA row, in a slot reserved on every card, and the CTA row is what
+   * touches the bottom of the screen. So the property to pin moved with it —
+   * whatever is bottom-anchored derives the inset. Keeping the old assertion
+   * would have demanded a margin on a control that is now nowhere near the
+   * indicator, which is a guard pinning a coordinate instead of a rule.
+   */
+  it('the bottom-most control derives its pad from the safe-area inset', () => {
     const src = read('components/OnboardingCards.tsx');
     expect(src).toMatch(/paddingBottom:\s*Math\.max\([^)]*insets\.bottom/);
+  });
+
+  it('the decline link sits above that row, so it needs no inset of its own', () => {
+    // Non-vacuity for the above: if the decline ever became the last child
+    // again it would need its own derived pad, and this ordering check is what
+    // notices. Source order IS screen order here — both are static siblings.
+    const src = read('components/OnboardingCards.tsx');
+    const decline = src.indexOf('styles.declineSlot');
+    const cta = src.indexOf('styles.ctaRow,');
+    expect(decline).toBeGreaterThan(-1);
+    expect(cta).toBeGreaterThan(-1);
+    expect(decline).toBeLessThan(cta);
+  });
+
+  it('the top bar still derives its own inset too (non-vacuity)', () => {
+    // The family the rule belongs to: every edge-anchored row on this surface
+    // reads the inset rather than guessing a number.
+    const src = read('components/OnboardingCards.tsx');
+    expect(src).toMatch(/paddingTop:\s*Math\.max\(insets\.top,\s*48\)/);
   });
 });

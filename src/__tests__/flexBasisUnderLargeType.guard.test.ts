@@ -292,26 +292,54 @@ describe('T5 / D24 — the two Tasks chrome rows had no escape', () => {
 describe('T5 / D4 + D20 — onboarding gives width back instead of capping the text', () => {
   const src = read('components/OnboardingCards.tsx');
 
-  it('the card column widens at the recomposition point rather than shrinking the body', () => {
+  /**
+   * RE-PINNED 2026-08-22 (Phase 2b, board 05). The rule did not change; the
+   * layout it lives in did. The three assertions below used to name
+   * `cardScrollContent` / `cardScrollContentWide` / `bodyWide` / the wrapping
+   * `actions` row — every one of those belonged to the centred glass card that
+   * this phase deleted. Left as they were they would have failed on a screen
+   * that satisfies T5 BETTER than the one they were written for, which is the
+   * one thing a guard must never do.
+   *
+   * What the same rule looks like on the new template:
+   *   widen first ....... `hero` -> `heroWide` gives the side padding back
+   *   then cap .......... ONBOARDING_BODY_MAX_FONT_SCALE, derived from the
+   *                       widened column, replaces the `maxWidth: 360` measure
+   *                       (the column IS the measure now — there is no card)
+   *   and recompose ..... the CTA row STACKS rather than wrapping, which is the
+   *                       stronger answer to the same overflow
+   */
+  it('the copy column widens at the recomposition point rather than shrinking the body', () => {
     // T5 prefers a wider column over a smaller multiplier. The default column is
-    // ~310pt on a 390pt screen, which is narrower than "accessibility" needs
+    // ~342pt on a 390pt screen, which is narrower than "accessibility" needs
     // above ~2x — that is the "accessibili / ty" break captured at 3XL.
-    expect(styleBlock(src, 'cardScrollContent')).toContain('paddingHorizontal: spacing.xxxl');
-    expect(styleBlock(src, 'cardScrollContentWide')).toContain('paddingHorizontal: spacing.lg');
-    expect(src).toContain('const wideColumn = isAxRecompose(fontScale);');
-    expect(src).toContain('wideColumn && styles.cardScrollContentWide');
+    expect(styleBlock(src, 'hero')).toContain('paddingHorizontal: spacing.xxl');
+    expect(styleBlock(src, 'heroWide')).toContain('paddingHorizontal: spacing.lg');
+    expect(src).toContain('const wide = isAxRecompose(fontScale);');
+    expect(src).toContain('wide && styles.heroWide');
   });
 
-  it("the body's own measure cap lifts with it, or the extra width is swallowed", () => {
-    expect(styleBlock(src, 'body')).toContain('maxWidth: 360');
-    expect(src).toContain('bodyWide: { maxWidth: undefined }');
-    expect(src).toContain('wideColumn && styles.bodyWide');
+  it('the body carries the width-derived cap, and it is the widened column that set it', () => {
+    // The second half of T5, and it must be a NAMED number: a raw multiplier at
+    // a call site is how the per-role caps drifted in the first place.
+    expect(src).toContain('export const ONBOARDING_BODY_MAX_FONT_SCALE = 2;');
+    expect(src).toContain('maxFontSizeMultiplier={ONBOARDING_BODY_MAX_FONT_SCALE}');
+    // …and the heading above it is capped HIGHER, or T3's inversion is back on
+    // the one screen where the title is the biggest thing in the app.
+    expect(src).toContain('export const ONBOARDING_TITLE_MAX_FONT_SCALE = TYPE_BLOCK.header;');
+    expect(src).toContain('maxFontSizeMultiplier={ONBOARDING_TITLE_MAX_FONT_SCALE}');
   });
 
-  it('the actions row may wrap (D20 — the sibling modal already did)', () => {
-    const block = styleBlock(src, 'actions');
+  it('the CTA row stacks at the recomposition point (D20 — it used to overflow)', () => {
+    const block = styleBlock(src, 'ctaRow');
     expect(block).toContain('paddingHorizontal: spacing.xxl'); // non-vacuity
-    expect(block).toContain("flexWrap: 'wrap'");
+    expect(block).toContain("flexDirection: 'row'");
+    // Back + a 200pt primary cannot both hold their line at AX sizes. Stacking
+    // is what wrapping was reaching for; the primary also has to give up its
+    // fixed width or it stacks and stays 200pt wide in a full-bleed column.
+    expect(styleBlock(src, 'ctaRowStacked')).toContain("flexDirection: 'column-reverse'");
+    expect(src).toContain('primaryBtnWide: { width: undefined');
+    expect(src).toContain('wide && styles.primaryBtnWide');
   });
 });
 

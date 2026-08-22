@@ -258,7 +258,14 @@ The app ships light + dark palettes (`ThemeContext`) and follows the OS by defau
 choice persists in AsyncStorage. Always consume colors via `useColor()` so both palettes
 work. Fixed-background exceptions (do NOT theme): the dark sign-in splash, the always-dark
 **tab bar**, and the always-light map overlays (heatmap legend, locating banner,
-saved-place chips). The hamburger **drawer is no longer an exception** — as of the
+saved-place chips). **First-launch onboarding is no longer one** — as of the 2026-08-22
+board-05 pass (Sky's ruling Q4) `OnboardingCards` mounts the real `ScreenStage` and follows
+the OS like the rest of the app. Worth recording honestly: this list never *named*
+onboarding, but the code had treated it as an exception for months (a bespoke gradient, a
+glow orb, ~15 hardcoded inks with their own inline WCAG comments), so the doc and the app
+disagreed in the direction that hides work. The app's own Settings replay had already been
+themed, which is what made the dark first launch read as a different product. The hamburger
+**drawer is no longer an exception** either — as of the
 2026-07-25 device-tune D2 pass it is scheme-bound chrome-Lite glass (GLASS.md §8), because
 a dark drawer over the light app read as two different apps on device. As of the 2026-07-04 Map pass (GLASS.md §8 + §12), Map's status pill / action bar /
 filter panel are THEMED Deep Field row-tier — dark chrome in dark mode; only the pinned
