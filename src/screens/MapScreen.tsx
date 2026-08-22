@@ -3088,6 +3088,12 @@ export default function MapScreen() {
         <FlagDetailModal
           visible={selectedFlag !== null}
           flag={selectedFlag}
+          // `primaryIntent` defaults to 'read' — from the map, Directions leads.
+          distanceKm={
+            location && selectedFlag
+              ? haversineKm(location, { lat: selectedFlag.lat, lng: selectedFlag.lng })
+              : null
+          }
           onClose={() => setSelectedFlag(null)}
           onChanged={handleDetailChanged}
           onEdited={(updated) => patchFlag(updated.id, updated)}

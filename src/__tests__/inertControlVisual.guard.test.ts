@@ -116,13 +116,19 @@ describe('SW-49 class — FlagDetailModal shares one `busy` across sixteen contr
     expect(src).toContain('(busy || watchSaving) && styles.btnDisabled');
   });
 
-  it('the five triage buttons keep their spinners rather than gaining a dim', () => {
+  it('the triage verbs keep their spinners rather than only gaining a dim', () => {
     // These were already honest. A dim INSTEAD of a spinner would be a
     // downgrade — the spinner says "working", the dim only says "not now".
-    for (const name of ['verifyBtn', 'resolveBtn', 'rejectBtn', 'deleteBtn']) {
+    //
+    // RE-PINNED 2026-08-21 (GSP-02 §2.1). Five pills in four fills became one
+    // filled primary (`primaryBtn`), one ghost segmented control whose cells
+    // are generated from a list (`segmentCell`), and a Delete that moved to the
+    // More row. The style NAMES moved; the rule did not, and all three of these
+    // still swap in an ActivityIndicator while `busy`.
+    for (const name of ['primaryBtn', 'segmentCell', 'deleteBtn']) {
       const idx = src.indexOf(`styles.${name},`);
-      expect(idx).toBeGreaterThan(-1);
-      expect(src.slice(idx, idx + 600)).toContain('ActivityIndicator');
+      expect(`${name} found: ${idx > -1}`).toBe(`${name} found: true`);
+      expect(src.slice(idx, idx + 900)).toContain('ActivityIndicator');
     }
   });
 });

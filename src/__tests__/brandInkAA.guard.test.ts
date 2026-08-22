@@ -65,9 +65,18 @@ describe('A11Y-229 guard — small white text never sits on dark-failing brand f
     expect(read('components/CommentBubble.tsx')).toContain('backgroundColor: color.ctaFill');
   });
 
-  it('D7 / C1: FlagDetailModal\'s three filled verbs fill with ctaFill, matching Tasks', () => {
+  it('D7 / C1: every filled verb on FlagDetailModal fills with ctaFill, matching Tasks', () => {
     const src = read('components/FlagDetailModal.tsx');
-    for (const key of ['verifyBtn', 'directionsBtn', 'saveBtn']) {
+    // RE-PINNED 2026-08-21 (GSP-02 §2.1). The RULE is unchanged — white on blue
+    // is ctaFill, never themed `brand` — but the CENSUS is: this sheet used to
+    // end in eight buttons of which two were filled (Verify AND Directions),
+    // and it now has exactly ONE filled verb, whose identity follows the entry
+    // point (Q2 = C). `verifyBtn` and `directionsBtn` are no longer fills:
+    // `primaryBtn` is the fill, `directionsBtn` is an unpainted marker on the
+    // More row. The second half of the test — that NOTHING here fills themed
+    // brand — is the part that actually caught D7, and it is strengthened below
+    // from three named sites to the whole file.
+    for (const key of ['primaryBtn', 'saveBtn']) {
       const idx = src.indexOf(`${key}: {`);
       // Non-vacuity: a renamed style would make every assertion below vacuous.
       expect(`${key} found: ${idx > -1}`).toBe(`${key} found: true`);
@@ -77,11 +86,16 @@ describe('A11Y-229 guard — small white text never sits on dark-failing brand f
         `${key} on themed brand: false`,
       );
     }
-    // The pressed companion was already correct at all three call sites, and
-    // has to stay on the same side of the palette boundary as the rest state.
+    // The pressed companion has to stay on the same side of the palette
+    // boundary as the rest state, at every site that fills.
     expect(
       src.split('pressed && { backgroundColor: color.ctaFillPressed }').length - 1,
-    ).toBeGreaterThanOrEqual(3);
+    ).toBeGreaterThanOrEqual(2);
+    // The class-wide half, which is what D7 actually was: NO style block in
+    // this file fills themed `brand`. Stronger than the three-site list it
+    // replaces — a fourth filled control cannot reintroduce the drift.
+    expect(src).not.toContain('backgroundColor: color.brand,');
+    expect(src).not.toContain('backgroundColor: color.brand }');
   });
 
   it('the sibling that made this a drift rather than a one-off still fills ctaFill', () => {

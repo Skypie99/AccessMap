@@ -131,7 +131,9 @@ export default function ResourcesScreen({ visible, onClose }: Props) {
         // and this root is it.
         onAccessibilityEscape={onClose}
       >
-        <ScreenStage />
+        {/* S3: a sheet plays the stage at 60%. Behind a document the two
+            brand pools stop being atmosphere and read as blotches. */}
+        <ScreenStage strength={0.6} />
         {/* The header is now ONE absolute i=24 chrome pane; content scrolls
             beneath it (onLayout feeds the top reserve). SafeAreaView already
             owns the device top inset, so the pane sits at top:0 below it — no
