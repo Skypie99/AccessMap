@@ -13,6 +13,7 @@ import {
   StyleSheet,
   type Text,
   TextInput,
+  useWindowDimensions,
   View,
 } from 'react-native';
 import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
@@ -21,16 +22,30 @@ import { GlassSurface } from '@/components/ui/GlassSurface';
 import { RemoteImage } from '@/components/ui/RemoteImage';
 import { SheetGrabber } from '@/components/ui/Sheet';
 import { SheetPull, useAtTop } from '@/components/ui/SheetPull';
+import { TYPE_BLOCK, TypeBlock } from '@/components/ui/TypeBlock';
 import { useKeyboardVisible } from '@/hooks/useKeyboardVisible';
-import { MessageCircle, Star, X } from 'lucide-react-native';
+import {
+  Copy,
+  History,
+  Map as MapIcon,
+  MessageCircle,
+  Navigation,
+  Pencil,
+  Share2,
+  Star,
+  Trash2,
+  X,
+} from 'lucide-react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
-import { a11y, font, radius, severity, shadow, spacing } from '@/theme';
+import { a11y, BULK_FLOOR_CANDIDATE, font, radius, severity, shadow, spacing } from '@/theme';
 import { useAuth } from '@/lib/auth';
 import { confirm, notify } from '@/lib/confirm';
 import { isContentBlockedError, showBlockedContentAlert } from '@/lib/blockedContent';
 import { useLegalSheets } from '@/components/LegalSheets';
 import { getDirectionsUrl } from '@/lib/directionsLink';
+import { formatDistance, formatWalkingEta, speakDistance } from '@/lib/distance';
+import { relativeTime } from '@/lib/relativeTime';
 import { errorMessage, FEATURE_UNAVAILABLE } from '@/lib/errors';
 import { formatFlagShareText } from '@/lib/shareFlag';
 import { webShare } from '@/lib/webShare';
@@ -45,6 +60,7 @@ import {
   SEVERITY_DESCRIPTIONS,
   SEVERITY_LABELS,
   severityColor,
+  STATUS_LABELS,
   updateFlagContent,
   updateFlagStatus,
   type FlagContentPatch,
@@ -84,9 +100,14 @@ import {
   HIDE_FAILED_TITLE,
   REPORT_CONTROL_LABEL,
 } from '@/lib/copy';
-import { StatusBadge } from './StatusBadge';
 import { CommentBubble } from './CommentBubble';
-import { a11yToggle, decorativeProps, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
+import {
+  a11yToggle,
+  decorativeProps,
+  isAxRecompose,
+  useFocusOnOpen,
+  useReducedMotion,
+} from '@/lib/accessibility';
 
 // 'reopen' = community threshold met, resolved→open. It is its own action
 // because the points trigger awards NOTHING for it — callers must not show
@@ -112,6 +133,26 @@ interface Props {
   // because only there does presenting this sheet detach the presenter's view.
   // Same idiom LegendModal / NearbyFlagsModal already use for focus restore.
   onDismiss?: () => void;
+  /**
+   * Which persona this sheet serves FIRST (Q2 = C, art-direction 2026-08-21).
+   *
+   *   'triage'  opened from the Tasks queue. The community verb leads, and the
+   *             sibling verbs pin to the sheet's foot so they stay in reach
+   *             however long the body runs (the behaviour X4 banked at AXL).
+   *   'read'    opened from the map or Home. Directions leads and the three
+   *             community verbs sit together, equal and quiet, under a label.
+   *
+   * Default 'read', because every entry point that is not the triage queue is
+   * somebody trying to get somewhere.
+   */
+  primaryIntent?: 'triage' | 'read';
+  /**
+   * How far the reader is from this flag, in km — or null/undefined when the
+   * caller does not know. PASSED IN, never measured here: this sheet holds no
+   * location permission of its own and must not acquire one to decorate a meta
+   * line. Absent, the line simply omits the distance.
+   */
+  distanceKm?: number | null;
 }
 
 export default function FlagDetailModal({
@@ -123,6 +164,8 @@ export default function FlagDetailModal({
   onEdited,
   onViewOnMap,
   onDismiss,
+  primaryIntent = 'read',
+  distanceKm,
 }: Props) {
   const color = useColor();
   const styles = makeStyles(color);
@@ -132,6 +175,12 @@ export default function FlagDetailModal({
   const insets = React.useContext(SafeAreaInsetsContext) ?? { top: 0, bottom: 0, left: 0, right: 0 };
   const { user } = useAuth();
   const reducedMotion = useReducedMotion();
+  // F4: at 1.5x and up a fixed composition recomposes instead of squeezing —
+  // here the segmented control's cells stop sharing a row and become
+  // full-width rows. `useWindowDimensions` is the reactive read, so changing
+  // the text size with the sheet open restacks it without a remount.
+  const { fontScale } = useWindowDimensions();
+  const axRecompose = isAxRecompose(fontScale);
   // §SKY-7 — the blocked-content alert's route to the guidelines. Safe here:
   // this modal always mounts inside <SharedModalsProvider> (Map, Tasks and
   // Profile each host it), and TermsScreen's single mount lives in
@@ -641,8 +690,67 @@ export default function FlagDetailModal({
     timeStyle: 'short',
   });
   const formattedCoords = `${shownFlag.lat.toFixed(5)}, ${shownFlag.lng.toFixed(5)}`;
-  const coordsA11y = `Coordinates ${shownFlag.lat.toFixed(5)} latitude, ${shownFlag.lng.toFixed(5)} longitude`;
   const canEdit = isOwn && status === 'open';
+
+  // ── Q2 = C · the primary verb follows the entry point ────────────────────
+  //
+  // `canVerify` is part of the test, not just the intent: a flag that cannot be
+  // verified has no community verb to lead with, whichever door you came
+  // through, so the sheet falls back to the reader's verb rather than showing a
+  // filled button that is not offered.
+  const primaryIsVerify = primaryIntent === 'triage' && canVerify;
+  // Pinned whenever the sheet was opened TO TRIAGE — including on a flag that
+  // is already verified, where the pair is Resolved / Reject. Coming from the
+  // queue, the verbs stay in reach however long the body runs.
+  const pinnedVerbs = primaryIntent === 'triage';
+
+  // ── The header's census line (F2) ────────────────────────────────────────
+  //
+  // One sentence in one order: severity word · status. The two pills this
+  // replaces each carried a composite spoken label (severityA11y / statusA11y);
+  // both are joined here so the SPOKEN sentence is unchanged even though two
+  // visual objects became one line. Never let the uppercase reach the screen
+  // reader — `textTransform` is presentation, and "OPEN" is read as shouting by
+  // some voices, which is why the label is composed from the helpers instead.
+  const censusLine = `Severity ${shownFlag.severity} of 5 · ${SEVERITY_LABELS[shownFlag.severity]} · ${STATUS_LABELS[status]}`;
+  const censusA11y = `${severityA11y(shownFlag.severity)}, ${statusA11y(status)}`;
+
+  // ── The meta sentence (who · when · where) ───────────────────────────────
+  //
+  // THREE attribution cases, all correct and none collapsible — SW-34 and
+  // `oneNameOneThing.guard` both pin this: `user_id IS NULL` is a CHOICE
+  // ("Anonymous"), a known account is either "You" or "Another community
+  // member". The strings are the shipped ones, verbatim.
+  const attribution =
+    shownFlag.user_id === null ? 'Anonymous' : `${isOwn ? 'You' : 'Another community member'}`;
+  // The spoken half says "Reported anonymously" rather than "Reported by
+  // Anonymous", which is what the badge this replaces said and is the truer
+  // sentence — the flag has no author, it was not written by somebody called
+  // Anonymous.
+  const attributionA11y =
+    shownFlag.user_id === null ? 'Reported anonymously' : `Reported by ${attribution}`;
+  const walkEta = distanceKm != null ? formatWalkingEta(distanceKm) : '';
+  // Visible: the compact grammar the Tasks and Nearby cards already speak.
+  // Spoken: the full timestamp and the unabbreviated distance, so nothing the
+  // eye gets is lost to the ear (`formatDistance` renders "m" / "km", which a
+  // screen reader reads as letters — `speakDistance` exists for that).
+  const metaLine = [
+    `Reported by ${attribution}`,
+    relativeTime(shownFlag.created_at),
+    distanceKm != null ? `${formatDistance(distanceKm)} away` : '',
+    walkEta,
+  ]
+    .filter(Boolean)
+    .join(' · ');
+  const metaA11y = [
+    attributionA11y,
+    `on ${formattedDate}`,
+    distanceKm != null ? `${speakDistance(distanceKm)} away` : '',
+    walkEta,
+  ]
+    .filter(Boolean)
+    .join(', ');
+  const coordsA11y = `Copy coordinates ${shownFlag.lat.toFixed(5)} latitude, ${shownFlag.lng.toFixed(5)} longitude`;
 
   // UX #5 — Before/after resolution photos (presentation only). Mirrors the
   // gallery's own add-photo gating (PhotoGallery shows its add sentinel only
@@ -831,6 +939,25 @@ export default function FlagDetailModal({
   // clipboard), with a last-ditch window.alert showing the coords so the
   // button always does SOMETHING. Native mirrors handleShare's try/catch
   // (user-cancel stays silent; real errors surface).
+  // Pure handoff to the user's preferred maps app via platform deep link — no
+  // on-platform routing. The URL shape is built by `getDirectionsUrl` (pure,
+  // unit-tested). openURL can reject only in the extremely rare case where the
+  // OS finds no app to handle the scheme; surface a brief alert so the user
+  // isn't left wondering why nothing happened.
+  //
+  // Lifted out of the JSX because the re-rank gives it TWO call sites: it is
+  // the sheet's one filled verb when the reader arrived from the map or Home,
+  // and a More-row button when they arrived from the triage queue. Two inline
+  // copies is how the two would drift.
+  const handleDirections = async () => {
+    const url = getDirectionsUrl(shownFlag.lat, shownFlag.lng);
+    try {
+      await Linking.openURL(url);
+    } catch {
+      notify("Couldn't open maps", 'No maps app was found on your device.');
+    }
+  };
+
   const handleCopyCoords = async () => {
     if (Platform.OS === 'web') {
       try {
@@ -1124,6 +1251,103 @@ export default function FlagDetailModal({
     }
   };
 
+  // ── (6) THE SIBLING VERBS (F3) ───────────────────────────────────────────
+  //
+  // ONE ghost segmented control, defined once and rendered in one of two
+  // places: pinned to the sheet's foot for a triage arrival, inline under a
+  // "Community check" label for a reader. Two copies of three gated cells is
+  // exactly how two placements drift apart.
+  //
+  // Verify appears here only when it is not already the sheet's filled primary,
+  // so the same verb can never be offered twice on one screen.
+  const segmentCells = [
+    {
+      key: 'verify',
+      label: 'Verify',
+      a11yLabel: 'Verify this flag',
+      hint: 'Marks this report as confirmed',
+      onPress: () => runStatusChange('verified', 'verify'),
+      show: canVerify && !primaryIsVerify,
+    },
+    {
+      key: 'resolve',
+      label: 'Resolved',
+      a11yLabel: 'Mark this flag resolved',
+      hint: 'Marks the accessibility issue as fixed',
+      onPress: () => runStatusChange('resolved', 'resolve'),
+      show: canResolve,
+    },
+    {
+      key: 'reject',
+      label: 'Reject',
+      a11yLabel: 'Reject this flag',
+      hint: 'Marks this report as invalid or spam',
+      onPress: handleReject,
+      show: canReject,
+    },
+  ].filter((cell) => cell.show);
+
+  // W1's doubt signal stays a SEPARATE control inside this cluster rather than
+  // a fourth cell. Every cell here is a verdict; a dispute is not one, and
+  // §SKY-3c is on the record correcting an agent for collapsing the two. It
+  // keeps its own outlined treatment for the same reason.
+  const showDispute = canDispute && disputeNotice === null;
+  const siblingVerbs =
+    segmentCells.length > 0 || showDispute ? (
+      <View style={styles.communityCheck}>
+        {/* The label belongs to the INLINE placement only. Pinned to the foot
+            the control is the last thing on the sheet and needs no heading;
+            inline, among a reader's other choices, it does. */}
+        {!pinnedVerbs ? (
+          <AppText variant="label" style={styles.sectionLabel}>Community check</AppText>
+        ) : null}
+        {segmentCells.length > 0 ? (
+          <View style={[styles.segment, axRecompose && styles.segmentStacked]}>
+            {segmentCells.map((cell, i) => (
+              <Pressable
+                key={cell.key}
+                onPress={cell.onPress}
+                disabled={busy}
+                style={({ pressed }) => [
+                  styles.segmentCell,
+                  axRecompose && styles.segmentCellStacked,
+                  i > 0 && (axRecompose ? styles.segmentCellStackedDivider : styles.segmentCellDivider),
+                  pressed && styles.segmentCellPressed,
+                  busy && styles.btnDisabled,
+                ]}
+                accessibilityRole="button"
+                accessibilityLabel={cell.a11yLabel}
+                accessibilityHint={cell.hint}
+                {...a11yToggle({ disabled: busy, busy })}
+              >
+                {busy ? (
+                  <ActivityIndicator size="small" color={color.inkSelect} />
+                ) : (
+                  <AppText variant="label" style={styles.segmentCellText}>{cell.label}</AppText>
+                )}
+              </Pressable>
+            ))}
+          </View>
+        ) : null}
+        {showDispute ? (
+          <Pressable
+            onPress={() => void handleDispute()}
+            disabled={busy || disputeBusy}
+            style={({ pressed }) => [styles.disputeBtn, pressed && { backgroundColor: color.borderPressed }, (busy || disputeBusy) && styles.btnDisabled]}
+            accessibilityRole="button"
+            accessibilityLabel={DISPUTE_CONTROL_LABEL}
+            {...a11yToggle({ disabled: busy || disputeBusy, busy: disputeBusy })}
+          >
+            {disputeBusy ? (
+              <ActivityIndicator size="small" color={color.brandText} />
+            ) : (
+              <AppText variant="label" style={styles.disputeBtnText}>{DISPUTE_CONTROL_LABEL}</AppText>
+            )}
+          </Pressable>
+        ) : null}
+      </View>
+    ) : null;
+
   return (
     <>
       <Modal aria-label={`Flag details: ${CATEGORY_LABELS[shownFlag.category]}`} visible={visible} animationType={reducedMotion ? 'none' : 'slide'} transparent onRequestClose={onClose} onDismiss={onDismiss}>
@@ -1149,40 +1373,79 @@ export default function FlagDetailModal({
           <GlassSurface
             variant="bulk"
             borderRadius={0}
-            forceEngineered
+            // GSP-02 §2.2. This sheet has always forced the engineered material
+            // (MP4/M-36), which is why the 0.85 blur FLOOR the defect row named
+            // (D8) was never what ghosted here — the *Lite stops were. Under the
+            // 'blur40' arm of the A/B the sheet drops to true blur so Sky can
+            // judge a stronger blur against a denser gradient on the phone; the
+            // other two arms keep the shipped engineered path exactly.
+            forceEngineered={BULK_FLOOR_CANDIDATE !== 'blur40'}
             style={[styles.card, { paddingBottom: Math.max(spacing.xl, insets.bottom) }]}
             accessibilityViewIsModal
             onAccessibilityEscape={onClose}
           >
             <SheetGrabber />
-            <View style={styles.headerRow}>
-              <AppText
-                ref={titleRef}
-                variant="heading"
-                style={styles.title}
-                accessibilityRole="header"
-                accessibilityLabel={`Flag details: ${CATEGORY_LABELS[shownFlag.category]}`}
-              >
-                {CATEGORY_LABELS[shownFlag.category]}
-              </AppText>
-              <Pressable
-                onPress={onClose}
-                disabled={busy}
-                hitSlop={12}
-                style={({ pressed }) => [styles.closeBtn, pressed && { backgroundColor: color.borderPressed }, busy && styles.btnDisabled]}
-                accessibilityRole="button"
-                accessibilityLabel="Close flag details"
-                accessibilityHint="Returns to the flag list"
-                {...a11yToggle({ disabled: busy })}
-              >
-                <X size={18} color={color.text} strokeWidth={2.2} />
-              </Pressable>
-            </View>
+            {/* THE HEADER BLOCK (F1 · the flag object at sheet density).
+                The map callout is the best-designed object in this app —
+                stripe · title · one census line · description · one action —
+                and this is that grammar grown up. One TypeBlock (header, 1.6)
+                so the title can never be capped below the census and the
+                meaning sentence beneath it — the T3 inversion, closed for this
+                block. The body below keeps the variant table, which is where
+                the More row's 12pt labels get the cap their fixed circles
+                need; a content block over the whole sheet would uncap them. */}
+            <TypeBlock cap={TYPE_BLOCK.header}>
+              <View style={styles.headerRow}>
+                {/* C2: the severity colour appears ONCE per object. It is here,
+                    as the stripe, which is why the amber pill is gone. */}
+                <View
+                  style={[styles.severityStripe, { backgroundColor: severityColor(shownFlag.severity) }]} {...decorativeProps}
+                />
+                <View style={styles.headerText}>
+                  <AppText
+                    ref={titleRef}
+                    variant="display"
+                    size={font.size.h1}
+                    style={styles.title}
+                    accessibilityRole="header"
+                    accessibilityLabel={`Flag details: ${CATEGORY_LABELS[shownFlag.category]}`}
+                  >
+                    {CATEGORY_LABELS[shownFlag.category]}
+                  </AppText>
+                  {/* The census line replaces the severity pill AND the status
+                      pill. `accessibilityLabel` carries both composites so the
+                      spoken sentence is exactly what the two pills said. */}
+                  <AppText variant="label" style={styles.census} accessibilityLabel={censusA11y}>
+                    {censusLine}
+                  </AppText>
+                  {/* The stake — what a severity of this magnitude MEANS for a
+                      user. Copy is SEVERITY_DESCRIPTIONS (flags.ts), the
+                      ramp-aligned stake sentences. One quiet line completes the
+                      grammar: number and word on the census, then the
+                      consequence. */}
+                  <AppText variant="bodyMedium" style={styles.severityStake}>
+                    {SEVERITY_DESCRIPTIONS[shownFlag.severity]}
+                  </AppText>
+                </View>
+                <Pressable
+                  onPress={onClose}
+                  disabled={busy}
+                  hitSlop={12}
+                  style={({ pressed }) => [styles.closeBtn, pressed && { backgroundColor: color.borderPressed }, busy && styles.btnDisabled]}
+                  accessibilityRole="button"
+                  accessibilityLabel="Close flag details"
+                  accessibilityHint="Returns to the flag list"
+                  {...a11yToggle({ disabled: busy })}
+                >
+                  <X size={18} color={color.text} strokeWidth={2.2} />
+                </Pressable>
+              </View>
+            </TypeBlock>
 
             <ScrollView
               ref={bodyScrollRef}
               style={styles.body}
-              contentContainerStyle={styles.bodyContent}
+              contentContainerStyle={[styles.bodyContent, pinnedVerbs && styles.bodyContentPinned]}
               onScroll={onScroll}
               scrollEventThrottle={scrollEventThrottle}
               keyboardDismissMode="on-drag"
@@ -1193,6 +1456,99 @@ export default function FlagDetailModal({
               // wrap would fight the pageSheet's own layout.)
               automaticallyAdjustKeyboardInsets
             >
+              {/* (2) THE HUMAN SENTENCE, SECOND. It used to be the fourth
+                  thing on this sheet and the smallest. It carries no section
+                  label any more: after a title, a census line and a meaning
+                  sentence, the paragraph in the reading position IS the
+                  description, and "DESCRIPTION" over it was a form field's
+                  habit, not a document's. */}
+              <AppText variant="bodyMedium" size={font.size.lg} style={styles.description}>
+                {shownFlag.description?.trim() ? shownFlag.description : 'No description provided.'}
+              </AppText>
+
+              {/* Context + seasonal tags — small chips below the description.
+                  Split into two labeled groups so the seasonal "when in the
+                  year" angle (W6-5) reads distinctly from general conditions.
+                  Each group renders only when it has tags. The chip strip is
+                  one accessibility node per group with a comma-joined label so
+                  a screen reader reads "Conditions: …" / "Seasonal: …" once
+                  rather than chip-by-chip. */}
+              {[
+                { key: 'conditions', heading: 'Conditions', tags: generalTags },
+                { key: 'seasonal', heading: 'Seasonal', tags: seasonalTags },
+                { key: 'disability', heading: 'Who this affects', tags: disabilityTags },
+              ].map(({ key, heading, tags }) =>
+                tags.length > 0 ? (
+                  <React.Fragment key={key}>
+                    <AppText
+                      variant="label"
+                      style={[
+                        styles.sectionLabel,
+                        key === 'disability' && styles.sectionLabelDisability,
+                      ]}
+                    >
+                      {heading}
+                    </AppText>
+                    <View
+                      style={styles.contextTagsRow}
+                      accessible
+                      accessibilityLabel={`${heading}: ${tags.map((t) => tagLabel(t)).join(', ')}`}
+                    >
+                      {tags.map((tag) => (
+                        <View
+                          key={tag}
+                          style={[
+                            styles.contextChip,
+                            key === 'disability' && styles.disabilityChip,
+                          ]} {...decorativeProps}
+                        >
+                          <AppText
+                            variant="label"
+                            style={[
+                              styles.contextChipText,
+                              key === 'disability' && styles.disabilityChipText,
+                            ]}
+                          >
+                            {tagLabel(tag)}
+                          </AppText>
+                        </View>
+                      ))}
+                    </View>
+                  </React.Fragment>
+                ) : null,
+              )}
+
+              {/* (3) ONE QUIET META PARAGRAPH — who, when, how far.
+                  Four tracked-caps labels and their values (REPORTED BY / DATE
+                  / LOCATION) became one sentence in `inkGlassMuted`. The
+                  spoken half is not the visible half: the eye gets the compact
+                  grammar the Tasks and Nearby cards already speak ("2d ago",
+                  "433 m"), the ear gets the full timestamp and the
+                  unabbreviated distance, because `formatDistance` renders "m"
+                  and "km", which a screen reader reads as letters. */}
+              <AppText variant="bodyMedium" style={styles.metaLine} accessibilityLabel={metaA11y}>
+                {metaLine}
+              </AppText>
+              {/* Q17: the raw coordinates are no longer printed. "49.87435,
+                  -119.35882" was the LOCATION value on a sheet that already
+                  says how far away the barrier is — an engineer's answer to a
+                  human question, and the widest line on the sheet at AX sizes.
+                  The copy path survives in full, as the labelled link it always
+                  should have been; the copy icon is now its accessory rather
+                  than a 21x24 target beside a block of monospace. */}
+              <Pressable
+                onPress={handleCopyCoords}
+                disabled={busy}
+                style={({ pressed }) => [styles.copyCoordsLink, pressed && styles.copyCoordsLinkPressed, busy && styles.btnDisabled]}
+                accessibilityRole="button"
+                accessibilityLabel={coordsA11y}
+                accessibilityHint="Opens share/copy options for these coordinates"
+                {...a11yToggle({ disabled: busy })}
+              >
+                <AppText variant="label" style={styles.copyCoordsText}>Copy coordinates</AppText>
+                <Copy size={15} color={color.inkSelect} strokeWidth={2.2} {...decorativeProps} />
+              </Pressable>
+
               {/* UX #5 — Before/after framing. Only when the flag is resolved
                   AND has both an original report photo and ≥1 extra photo. The
                   full PhotoGallery (all community photos) still renders below —
@@ -1227,7 +1583,15 @@ export default function FlagDetailModal({
                       uri={afterPhoto.url}
                       style={styles.beforeAfterImage}
                       resizeMode="cover"
-                      accessibilityLabel="After: the resolved fix"
+                      // D15: the uploader's own description was thrown away
+                      // here and replaced with a generic sentence, on the ONE
+                      // photo whose whole point is showing what changed. Same
+                      // shape as the "Before" label two elements up.
+                      accessibilityLabel={
+                        afterPhoto.alt_text
+                          ? `After: ${afterPhoto.alt_text}`
+                          : 'After: the resolved fix'
+                      }
                     />
                   </View>
                 </View>
@@ -1320,197 +1684,189 @@ export default function FlagDetailModal({
                 </View>
               )}
 
-              <PhotoGallery
-                photos={flagPhotos}
-                onAddPhoto={isOwn && !busy && !pendingPhoto ? handleAddPhoto : undefined}
-                maxPhotos={5}
-              />
-
-              <View style={styles.metaRow}>
-                <View
-                  style={[
-                    styles.severityChip,
-                    { backgroundColor: severityColor(shownFlag.severity) },
-                  ]}
-                  accessible
-                  accessibilityLabel={severityA11y(shownFlag.severity)}
-                >
-                  <AppText variant="label" style={[styles.severityChipText, { color: severity[shownFlag.severity].textOnColor }]}>Severity {shownFlag.severity} · {SEVERITY_LABELS[shownFlag.severity]}</AppText>
-                </View>
-                <StatusBadge status={status} accessibilityLabel={statusA11y(status)} />
-              </View>
-
-              {/* The stake — what a severity of this magnitude MEANS for a user.
-                  Copy is SEVERITY_DESCRIPTIONS (flags.ts), the ramp-aligned stake
-                  sentences (NOT derived from theme.ts). One quiet line completes
-                  the grammar: number · word on the chip, then the consequence.
-                  The chip's accessibilityLabel already speaks "of 5, {word}"
-                  (severityA11y); this line adds the stake for the eye and,
-                  as body text, is read after it by a screen reader. */}
-              <AppText variant="body" style={styles.severityStake}>
-                {SEVERITY_DESCRIPTIONS[shownFlag.severity]}
-              </AppText>
-
-              <AppText variant="label" style={styles.sectionLabel}>Description</AppText>
-              <AppText variant="body" style={styles.description}>
-                {shownFlag.description?.trim() ? shownFlag.description : 'No description provided.'}
-              </AppText>
-
-              {/* Context + seasonal tags — small chips below the description.
-                  Split into two labeled groups so the seasonal "when in the
-                  year" angle (W6-5) reads distinctly from general conditions.
-                  Each group renders only when it has tags. The chip strip is
-                  one accessibility node per group with a comma-joined label so
-                  a screen reader reads "Conditions: …" / "Seasonal: …" once
-                  rather than chip-by-chip. */}
-              {[
-                { key: 'conditions', heading: 'Conditions', tags: generalTags },
-                { key: 'seasonal', heading: 'Seasonal', tags: seasonalTags },
-                { key: 'disability', heading: 'Who this affects', tags: disabilityTags },
-              ].map(({ key, heading, tags }) =>
-                tags.length > 0 ? (
-                  <React.Fragment key={key}>
-                    <AppText
-                      variant="label"
-                      style={[
-                        styles.sectionLabel,
-                        key === 'disability' && styles.sectionLabelDisability,
-                      ]}
-                    >
-                      {heading}
-                    </AppText>
-                    <View
-                      style={styles.contextTagsRow}
-                      accessible
-                      accessibilityLabel={`${heading}: ${tags.map((t) => tagLabel(t)).join(', ')}`}
-                    >
-                      {tags.map((tag) => (
-                        <View
-                          key={tag}
-                          style={[
-                            styles.contextChip,
-                            key === 'disability' && styles.disabilityChip,
-                          ]} {...decorativeProps}
-                        >
-                          <AppText
-                            variant="label"
-                            style={[
-                              styles.contextChipText,
-                              key === 'disability' && styles.disabilityChipText,
-                            ]}
-                          >
-                            {tagLabel(tag)}
-                          </AppText>
-                        </View>
-                      ))}
-                    </View>
-                  </React.Fragment>
-                ) : null,
+              {/* (4) PHOTOS, AND ONLY WHEN THERE ARE PHOTOS.
+                  The strip used to open the sheet with a 96pt grey tile saying
+                  "No photos" — on most flags the first thing under the title
+                  was an absence, in the sheet's prime area. The placeholder is
+                  right in the REPORT form, where it is an invitation; here it
+                  is a report of nothing. Rendered when there is something to
+                  show, or when the owner can add something (the gallery's own
+                  add sentinel fills the list, so the placeholder still cannot
+                  appear). PhotoGallery itself is untouched. */}
+              {(flagPhotos.length > 0 || (isOwn && !busy && !pendingPhoto)) && (
+                <PhotoGallery
+                  photos={flagPhotos}
+                  onAddPhoto={isOwn && !busy && !pendingPhoto ? handleAddPhoto : undefined}
+                  maxPhotos={5}
+                />
               )}
 
-              <AppText variant="label" style={styles.sectionLabel}>Reported by</AppText>
-              {shownFlag.user_id === null ? (
-                <View
-                  accessible
-                  accessibilityLabel="Reported anonymously"
-                  style={styles.anonBadge}
-                >
-                  <AppText
-                    variant="label"
-                    style={styles.anonBadgeText} {...decorativeProps}
-                  >
-                    Anonymous
+
+              {/* (5) ONE FILLED VERB (F3). Eight buttons in five styles used to
+                  end this sheet, two of them filled, and the answer to "what is
+                  the ONE thing to do here" was "eight things, equally". This is
+                  the answer now, and which verb it is follows the door you came
+                  through (Q2 = C). */}
+              <Pressable
+                onPress={primaryIsVerify ? () => runStatusChange('verified', 'verify') : () => void handleDirections()}
+                disabled={busy}
+                style={({ pressed }) => [styles.primaryBtn, pressed && { backgroundColor: color.ctaFillPressed }, busy && styles.btnDisabled]}
+                accessibilityRole="button"
+                accessibilityLabel={primaryIsVerify ? 'Verify this flag' : 'Get directions to this flag'}
+                accessibilityHint={
+                  primaryIsVerify ? 'Marks this report as confirmed' : 'Opens your maps app with directions'
+                }
+                {...a11yToggle({ disabled: busy, busy: busy && primaryIsVerify })}
+              >
+                {busy && primaryIsVerify ? (
+                  <ActivityIndicator color={color.textOnBrand} />
+                ) : (
+                  <AppText variant="label" size={font.size.lg} style={styles.primaryBtnText}>
+                    {primaryIsVerify ? 'Verify' : 'Directions'}
                   </AppText>
-                </View>
-              ) : (
-                <AppText variant="body" style={styles.metaValue}>
-                  {isOwn ? 'You' : 'Another community member'}
-                </AppText>
-              )}
+                )}
+              </Pressable>
 
-              <AppText variant="label" style={styles.sectionLabel}>Date</AppText>
-              <AppText variant="body" style={styles.metaValue} accessibilityLabel={`Reported on ${formattedDate}`}>
-                {formattedDate}
-              </AppText>
+              {/* (6) inline for a reader. From the triage queue the same
+                  cluster renders in the pinned foot instead — see below. */}
+              {!pinnedVerbs ? siblingVerbs : null}
 
-              <AppText variant="label" style={styles.sectionLabel}>Location</AppText>
-              {/* Row: selectable coords + copy button. selectable lets users
-                long-press to get the native "Copy" context menu — the copy
-                button goes through handleCopyCoords: OS share sheet on
-                iOS/Android, webShare → clipboard → alert fallback on web (L2). */}
-              <View style={styles.coordsRow}>
-                <AppText
-                  variant="mono"
-                  style={[styles.metaValue, styles.coordsText]}
-                  accessibilityLabel={coordsA11y}
-                  accessibilityHint="Long press to select and copy these coordinates"
-                  selectable
-                >
-                  {formattedCoords}
-                </AppText>
+              {/* (7) THE MORE ROW — everything you can DO with a flag, drawn
+                  once, at one weight. Navigation, sharing and ownership were
+                  five outlined-blue and dark-outlined pills competing with the
+                  verbs; they are equal circles now. Directions is here only
+                  when it is not already the primary. */}
+              <View style={styles.moreRow}>
                 <Pressable
-                  onPress={handleCopyCoords}
-                  hitSlop={10}
-                  style={({ pressed }) => [
-                    styles.coordsCopyBtn,
-                    pressed && styles.coordsCopyBtnPressed,
-                  ]}
-                  accessibilityRole="button"
-                  accessibilityLabel="Copy coordinates"
-                  accessibilityHint="Opens share/copy options for these coordinates"
-                >
-                  <AppText variant="label" style={styles.coordsCopyGlyph}>⧉</AppText>
-                </Pressable>
-              </View>
-
-              {watched !== null && (
-                <Pressable
-                  onPress={handleToggleWatch}
-                  disabled={busy || watchSaving}
-                  style={({ pressed }) => [
-                    styles.watchBtn,
-                    watched && styles.watchBtnActive,
-                    pressed && styles.watchBtnPressed,
-                    (busy || watchSaving) && styles.btnDisabled,
-                  ]}
-                  accessibilityRole="button"
-                  accessibilityLabel={watched ? 'Stop watching this flag' : 'Watch this flag'}
-                  accessibilityHint={
-                    watched
-                      ? 'Removes this flag from your Watched list in Profile'
-                      : 'Adds this flag to your Watched list in Profile so you can track its status'
-                  }
-                  {...a11yToggle({
-                    pressed: watched,
-                    busy: watchSaving,
-                    disabled: busy || watchSaving,
-                  })}
-                >
-                  <Star
-                    size={16}
-                    color={color.accentOrange}
-                    fill={watched ? color.accentOrange : 'none'}
-                    strokeWidth={2.2} {...decorativeProps}
-                  />
-                  <AppText variant="label" style={[styles.watchBtnText, watched && styles.watchBtnTextActive]}>
-                    {watched ? 'Watching' : 'Watch'}
-                  </AppText>
-                </Pressable>
-              )}
-
-              {canEdit && !isEditing && (
-                <Pressable
-                  onPress={() => setIsEditing(true)}
+                  onPress={() => {
+                    onViewOnMap(shownFlag);
+                    onClose();
+                  }}
                   disabled={busy}
-                  style={({ pressed }) => [styles.actionBtn, styles.editBtn, pressed && { backgroundColor: color.borderPressed }, busy && styles.btnDisabled]}
+                  style={({ pressed }) => [styles.moreItem, styles.viewMapBtn, pressed && styles.moreItemPressed, busy && styles.btnDisabled]}
                   accessibilityRole="button"
-                  accessibilityLabel="Edit this flag"
-                  accessibilityHint="Opens an edit form for description, category, and severity"
+                  accessibilityLabel="View on Map"
+                  accessibilityHint="Switches to the Map tab and centers on this flag"
                   {...a11yToggle({ disabled: busy })}
                 >
-                  <AppText variant="label" style={styles.editBtnText}>Edit</AppText>
+                  <View style={styles.moreIcon} {...decorativeProps}>
+                    <MapIcon size={18} color={color.textStrong} strokeWidth={2.2} />
+                  </View>
+                  <AppText variant="label" style={styles.moreLabel}>Map</AppText>
                 </Pressable>
-              )}
+                {primaryIsVerify && (
+                  <Pressable
+                    onPress={() => void handleDirections()}
+                    disabled={busy}
+                    style={({ pressed }) => [styles.moreItem, styles.directionsBtn, pressed && styles.moreItemPressed, busy && styles.btnDisabled]}
+                    accessibilityRole="button"
+                    accessibilityLabel="Get directions to this flag"
+                    accessibilityHint="Opens your maps app with directions"
+                    {...a11yToggle({ disabled: busy })}
+                  >
+                    <View style={styles.moreIcon} {...decorativeProps}>
+                      <Navigation size={18} color={color.textStrong} strokeWidth={2.2} />
+                    </View>
+                    <AppText variant="label" style={styles.moreLabel}>Directions</AppText>
+                  </Pressable>
+                )}
+                <Pressable
+                  onPress={handleShare}
+                  disabled={busy}
+                  style={({ pressed }) => [styles.moreItem, styles.shareBtn, pressed && styles.moreItemPressed, busy && styles.btnDisabled]}
+                  accessibilityRole="button"
+                  accessibilityLabel="Share this flag"
+                  accessibilityHint="Opens the system share sheet"
+                  {...a11yToggle({ disabled: busy })}
+                >
+                  <View style={styles.moreIcon} {...decorativeProps}>
+                    <Share2 size={18} color={color.textStrong} strokeWidth={2.2} />
+                  </View>
+                  <AppText variant="label" style={styles.moreLabel}>Share</AppText>
+                </Pressable>
+                <Pressable
+                  onPress={() => setHistoryOpen(true)}
+                  disabled={busy}
+                  style={({ pressed }) => [styles.moreItem, styles.historyBtn, pressed && styles.moreItemPressed, busy && styles.btnDisabled]}
+                  accessibilityRole="button"
+                  accessibilityLabel="View status history"
+                  accessibilityHint="Shows who changed the status of this flag and when"
+                  {...a11yToggle({ disabled: busy })}
+                >
+                  <View style={styles.moreIcon} {...decorativeProps}>
+                    <History size={18} color={color.textStrong} strokeWidth={2.2} />
+                  </View>
+                  <AppText variant="label" style={styles.moreLabel}>History</AppText>
+                </Pressable>
+                {watched !== null && (
+                  <Pressable
+                    onPress={handleToggleWatch}
+                    disabled={busy || watchSaving}
+                    style={({ pressed }) => [styles.moreItem, styles.watchBtn, pressed && styles.moreItemPressed, (busy || watchSaving) && styles.btnDisabled]}
+                    accessibilityRole="button"
+                    accessibilityLabel={watched ? 'Stop watching this flag' : 'Watch this flag'}
+                    accessibilityHint={
+                      watched
+                        ? 'Removes this flag from your Watched list in Profile'
+                        : 'Adds this flag to your Watched list in Profile so you can track its status'
+                    }
+                    {...a11yToggle({
+                      pressed: watched,
+                      busy: watchSaving,
+                      disabled: busy || watchSaving,
+                    })}
+                  >
+                    <View style={[styles.moreIcon, watched && styles.moreIconActive]} {...decorativeProps}>
+                      <Star
+                        size={18}
+                        color={watched ? color.warningFg : color.textStrong}
+                        fill={watched ? color.accentOrange : 'none'}
+                        strokeWidth={2.2}
+                      />
+                    </View>
+                    <AppText variant="label" style={[styles.moreLabel, watched && styles.moreLabelActive]}>
+                      {watched ? 'Watching' : 'Watch'}
+                    </AppText>
+                  </Pressable>
+                )}
+                {canEdit && !isEditing && (
+                  <Pressable
+                    onPress={() => setIsEditing(true)}
+                    disabled={busy}
+                    style={({ pressed }) => [styles.moreItem, styles.editBtn, pressed && styles.moreItemPressed, busy && styles.btnDisabled]}
+                    accessibilityRole="button"
+                    accessibilityLabel="Edit this flag"
+                    accessibilityHint="Opens an edit form for description, category, and severity"
+                    {...a11yToggle({ disabled: busy })}
+                  >
+                    <View style={styles.moreIcon} {...decorativeProps}>
+                      <Pencil size={18} color={color.textStrong} strokeWidth={2.2} />
+                    </View>
+                    <AppText variant="label" style={styles.moreLabel}>Edit</AppText>
+                  </Pressable>
+                )}
+                {isOwn && (
+                  <Pressable
+                    onPress={handleDelete}
+                    disabled={busy}
+                    style={({ pressed }) => [styles.moreItem, styles.deleteBtn, pressed && styles.moreItemPressed, busy && styles.btnDisabled]}
+                    accessibilityRole="button"
+                    accessibilityLabel="Delete this flag"
+                    accessibilityHint="Permanently removes your report"
+                    {...a11yToggle({ disabled: busy, busy })}
+                  >
+                    <View style={styles.moreIcon} {...decorativeProps}>
+                      {busy ? (
+                        <ActivityIndicator size="small" color={color.errorStrong} />
+                      ) : (
+                        <Trash2 size={18} color={color.errorStrong} strokeWidth={2.2} />
+                      )}
+                    </View>
+                    <AppText variant="label" style={[styles.moreLabel, styles.moreLabelDestructive]}>Delete</AppText>
+                  </Pressable>
+                )}
+              </View>
+
 
               {isEditing && (
                 <View style={styles.editForm}>
@@ -1696,103 +2052,6 @@ export default function FlagDetailModal({
                 </>
               )}
 
-              <View style={styles.secondaryRow}>
-                <Pressable
-                  onPress={() => {
-                    onViewOnMap(shownFlag);
-                    onClose();
-                  }}
-                  disabled={busy}
-                  style={({ pressed }) => [styles.actionBtn, styles.viewMapBtn, pressed && { backgroundColor: color.borderPressed }, busy && styles.btnDisabled]}
-                  accessibilityRole="button"
-                  accessibilityLabel="View on Map"
-                  accessibilityHint="Switches to the Map tab and centers on this flag"
-                  {...a11yToggle({ disabled: busy })}
-                >
-                  <AppText variant="label" style={styles.viewMapBtnText}>View on Map</AppText>
-                </Pressable>
-                <Pressable
-                  onPress={async () => {
-                    // Pure handoff to the user's preferred maps app via
-                    // platform deep link — no on-platform routing. The URL
-                    // shape is built by `getDirectionsUrl` (pure, unit-
-                    // tested). openURL can reject only in the extremely
-                    // rare case where the OS finds no app to handle the
-                    // scheme; surface a brief alert so the user isn't
-                    // left wondering why nothing happened.
-                    const url = getDirectionsUrl(shownFlag.lat, shownFlag.lng);
-                    try {
-                      await Linking.openURL(url);
-                    } catch {
-                      notify("Couldn't open maps", 'No maps app was found on your device.');
-                    }
-                  }}
-                  disabled={busy}
-                  style={({ pressed }) => [styles.actionBtn, styles.directionsBtn, pressed && { backgroundColor: color.ctaFillPressed }, busy && styles.btnDisabled]}
-                  accessibilityRole="button"
-                  accessibilityLabel="Get directions to this flag"
-                  accessibilityHint="Opens your maps app with directions"
-                  {...a11yToggle({ disabled: busy })}
-                >
-                  <AppText variant="label" style={styles.directionsBtnText}>Directions</AppText>
-                </Pressable>
-                <Pressable
-                  onPress={handleShare}
-                  disabled={busy}
-                  style={({ pressed }) => [styles.actionBtn, styles.shareBtn, pressed && { backgroundColor: color.borderPressed }, busy && styles.btnDisabled]}
-                  accessibilityRole="button"
-                  accessibilityLabel="Share this flag"
-                  accessibilityHint="Opens the system share sheet"
-                  {...a11yToggle({ disabled: busy })}
-                >
-                  <AppText variant="label" style={styles.shareBtnText}>Share</AppText>
-                </Pressable>
-                <Pressable
-                  onPress={() => setHistoryOpen(true)}
-                  disabled={busy}
-                  style={({ pressed }) => [styles.actionBtn, styles.historyBtn, pressed && { backgroundColor: color.borderPressed }, busy && styles.btnDisabled]}
-                  accessibilityRole="button"
-                  accessibilityLabel="View status history"
-                  accessibilityHint="Shows who changed the status of this flag and when"
-                  {...a11yToggle({ disabled: busy })}
-                >
-                  <AppText variant="label" style={styles.historyBtnText}>History</AppText>
-                </Pressable>
-                {/* B-1 / Apple 1.2(b) — the abuse-report control.
-                    GUEST-VISIBLE ON PURPOSE. The feedback INSERT policy carries
-                    no TO clause, so its role is `public` and an anonymous
-                    submit really lands; the App Review reviewer also walks this
-                    app signed out, and a report path they cannot reach is a
-                    path they will read as absent.
-                    NOT a peer of the navigation trio: View on Map / Directions
-                    / Share / History are things you DO with a flag, and this is
-                    a safety valve — so it takes the recessive muted treatment
-                    rather than their outlined blue. See the style note below.
-                    DELIBERATELY NO accessibilityHint. Every hint that would
-                    actually help here ("we'll review this", "the flag will be
-                    removed") is a moderation promise, and authoring one is
-                    outside what any agent may write. A missing hint is not a
-                    WCAG failure — the accessible NAME carries the meaning, and
-                    there is exactly one Report control on this surface, so the
-                    bare label is unambiguous within it. */}
-                <Pressable
-                  onPress={() => {
-                    // The comment composer sits further down this same sheet
-                    // and may hold focus. The report sheet slides up OVER this
-                    // one, so a keyboard left standing would cover its reason
-                    // field on first paint.
-                    Keyboard.dismiss();
-                    setReportTarget({ kind: 'flag', id: shownFlag.id });
-                  }}
-                  disabled={busy}
-                  style={({ pressed }) => [styles.actionBtn, styles.reportBtn, pressed && { backgroundColor: color.borderPressed }, busy && styles.btnDisabled]}
-                  accessibilityRole="button"
-                  accessibilityLabel={REPORT_CONTROL_LABEL}
-                  {...a11yToggle({ disabled: busy })}
-                >
-                  <AppText variant="label" style={styles.reportBtnText}>{REPORT_CONTROL_LABEL}</AppText>
-                </Pressable>
-              </View>
 
               {/* ── Comments ─────────────────────────────────────────── */}
               <View style={styles.commentsSection}>
@@ -2043,6 +2302,40 @@ export default function FlagDetailModal({
                   </View>
                 )}
               </View>
+
+              {/* (9) THE ABUSE PATH, AS A SENTENCE.
+                  It was an outlined pill in the navigation row, wearing a
+                  darker outline than anything else on the sheet — the safety
+                  valve rendered LOUDER than Share. A safety valve should be
+                  findable without competing with the verbs, which is what a
+                  sentence at the end of the document is.
+                  STILL A LABELLED BUTTON, and still guest-visible (Apple
+                  1.2(b) — the feedback INSERT policy carries no TO clause, and
+                  App Review walks this app signed out). Only its drawing
+                  changed. DELIBERATELY NO accessibilityHint: every hint that
+                  would help here is a moderation promise, and the accessible
+                  NAME carries the meaning. */}
+              <View style={styles.reportSentence}>
+                <AppText variant="bodyMedium" style={styles.reportSentenceText}>
+                  Something wrong with this report?
+                </AppText>
+                <Pressable
+                  onPress={() => {
+                    // The comment composer sits just above and may hold focus.
+                    // The report sheet slides up OVER this one, so a keyboard
+                    // left standing would cover its reason field on first paint.
+                    Keyboard.dismiss();
+                    setReportTarget({ kind: 'flag', id: shownFlag.id });
+                  }}
+                  disabled={busy}
+                  style={({ pressed }) => [styles.reportBtn, pressed && styles.reportBtnPressed, busy && styles.btnDisabled]}
+                  accessibilityRole="button"
+                  accessibilityLabel={REPORT_CONTROL_LABEL}
+                  {...a11yToggle({ disabled: busy })}
+                >
+                  <AppText variant="label" style={styles.reportBtnText}>{REPORT_CONTROL_LABEL}</AppText>
+                </Pressable>
+              </View>
             </ScrollView>
 
             {/* W1 — the doubt signal's answer. It sits ABOVE the triage row
@@ -2054,112 +2347,15 @@ export default function FlagDetailModal({
               <AppText variant="body" style={styles.disputeMessage}>{disputeNotice}</AppText>
             )}
 
-            {/* Render only when at least one action exists — an empty row left
-                a ~16pt dead band on resolved non-own flags (sweep minor).
-                `canDispute` is redundant TODAY (it implies canReject exactly),
-                and is listed anyway: if a later edit narrows the triage gates,
-                the pill must not vanish silently inside a row that stopped
-                rendering. */}
-            {(canVerify || canResolve || canReject || isOwn || canDispute) && (
-            <View style={styles.actionRow}>
-              {canVerify && (
-                <Pressable
-                  onPress={() => runStatusChange('verified', 'verify')}
-                  disabled={busy}
-                  style={({ pressed }) => [styles.actionBtn, styles.verifyBtn, pressed && { backgroundColor: color.ctaFillPressed }]}
-                  accessibilityRole="button"
-                  accessibilityLabel="Verify this flag"
-                  accessibilityHint="Marks this report as confirmed"
-                  {...a11yToggle({ disabled: busy, busy })}
-                >
-                  {busy ? (
-                    <ActivityIndicator color={color.textOnBrand} />
-                  ) : (
-                    <AppText variant="label" style={styles.verifyText}>Verify</AppText>
-                  )}
-                </Pressable>
-              )}
-              {canResolve && (
-                <Pressable
-                  onPress={() => runStatusChange('resolved', 'resolve')}
-                  disabled={busy}
-                  style={({ pressed }) => [styles.actionBtn, styles.resolveBtn, pressed && { backgroundColor: color.successStrong }]}
-                  accessibilityRole="button"
-                  accessibilityLabel="Mark this flag resolved"
-                  accessibilityHint="Marks the accessibility issue as fixed"
-                  {...a11yToggle({ disabled: busy, busy })}
-                >
-                  {busy ? (
-                    <ActivityIndicator color={color.textOnBrand} />
-                  ) : (
-                    <AppText variant="label" style={styles.resolveText}>Resolved</AppText>
-                  )}
-                </Pressable>
-              )}
-              {canReject && (
-                <Pressable
-                  onPress={handleReject}
-                  disabled={busy}
-                  style={({ pressed }) => [styles.actionBtn, styles.rejectBtn, pressed && { backgroundColor: color.borderPressed }]}
-                  accessibilityRole="button"
-                  accessibilityLabel="Reject this flag"
-                  accessibilityHint="Marks this report as invalid or spam"
-                  {...a11yToggle({ disabled: busy, busy })}
-                >
-                  {busy ? (
-                    <ActivityIndicator color={color.text} />
-                  ) : (
-                    <AppText variant="label" style={styles.rejectText}>Reject</AppText>
-                  )}
-                </Pressable>
-              )}
-              {/* W1 — "Flag as wrong". THIS ROW, deliberately: a dispute is an
-                  accuracy judgement, so it belongs with Verify / Resolved /
-                  Reject and NOT beside Report in the secondary row. Putting the
-                  two together is the collapse §SKY-3c corrects.
-                  Its own `disabled` flag as well as `busy`: a status change and
-                  a doubt vote are separate in-flight operations, and neither
-                  should let the other be pressed twice.
-                  DELIBERATELY NO accessibilityHint, for the same reason Report
-                  carries none — the useful hint here ("this marks the flag as
-                  disputed") describes a visible outcome that is NOT shipped, so
-                  writing it would invent the promise. The accessible NAME is
-                  Sky's own phrase and is unique on this surface. */}
-              {canDispute && disputeNotice === null && (
-                <Pressable
-                  onPress={() => void handleDispute()}
-                  disabled={busy || disputeBusy}
-                  style={({ pressed }) => [styles.actionBtn, styles.disputeBtn, pressed && { backgroundColor: color.borderPressed }]}
-                  accessibilityRole="button"
-                  accessibilityLabel={DISPUTE_CONTROL_LABEL}
-                  {...a11yToggle({ disabled: busy || disputeBusy, busy: disputeBusy })}
-                >
-                  {disputeBusy ? (
-                    <ActivityIndicator size="small" color={color.brandText} />
-                  ) : (
-                    <AppText variant="label" style={styles.disputeBtnText}>{DISPUTE_CONTROL_LABEL}</AppText>
-                  )}
-                </Pressable>
-              )}
-              {isOwn && (
-                <Pressable
-                  onPress={handleDelete}
-                  disabled={busy}
-                  style={({ pressed }) => [styles.actionBtn, styles.deleteBtn, pressed && { backgroundColor: color.error }]}
-                  accessibilityRole="button"
-                  accessibilityLabel="Delete this flag"
-                  accessibilityHint="Permanently removes your report"
-                  {...a11yToggle({ disabled: busy, busy })}
-                >
-                  {busy ? (
-                    <ActivityIndicator color={color.textOnBrand} />
-                  ) : (
-                    <AppText variant="label" style={styles.deleteText}>Delete</AppText>
-                  )}
-                </Pressable>
-              )}
-            </View>
-            )}
+            {/* (6, pinned) THE SIBLING VERBS, for a triage arrival.
+                X4 banked this behaviour at accessibility-extra-large — the
+                verbs stay in reach however long the body runs — and it is kept.
+                What changed is what is pinned: five pills in four fills became
+                one ghost segmented control, because the filled verb is already
+                above and Delete is a More-row action, not a verdict. */}
+            {pinnedVerbs && siblingVerbs !== null ? (
+              <View style={styles.pinnedFoot}>{siblingVerbs}</View>
+            ) : null}
           </GlassSurface>
           </SheetPull>
         </View>
@@ -2241,10 +2437,40 @@ const makeStyles = (color: ColorTheme) =>
     },
     headerRow: {
       flexDirection: 'row',
-      alignItems: 'center',
+      // flex-start, not center: the block is three lines tall now, and the
+      // close button belongs beside the title, not beside the meaning sentence.
+      alignItems: 'flex-start',
       gap: spacing.md,
     },
-    title: { fontSize: font.size.xxl, fontWeight: font.weight.bold, flex: 1, color: color.textStrong },
+    // C2 — the severity colour, ONCE per object. `alignSelf: stretch` runs it
+    // the height of the text block, which is what makes it a stripe rather than
+    // a dash.
+    severityStripe: {
+      width: 6,
+      borderRadius: radius.full,
+      alignSelf: 'stretch',
+    },
+    headerText: { flex: 1, gap: 2 },
+    // No fontWeight: the `display` variant IS PlusJakartaSans_800ExtraBold, and
+    // the size arrives as the `size` PROP so tracking resolves from it (T2).
+    //
+    // ⚠ NO `flex: 1`. It carried one for as long as the title was a ROW child
+    // beside the close button; inside `headerText`, which is a COLUMN, flex
+    // sizes on the CROSS axis' opposite — the title took the column's available
+    // HEIGHT, which is content-driven, and resolved to zero. The sheet rendered
+    // its census line and its meaning sentence under a title nobody could see,
+    // and every gate stayed green over it. The simulator caught it.
+    title: { color: color.textStrong },
+    // F2 — the census line, in the callout's order: severity word, then status.
+    // Uppercase is presentation only; the spoken label is composed from
+    // severityA11y / statusA11y so a screen reader never gets the shouting.
+    census: {
+      fontSize: font.size.xs,
+      fontWeight: font.weight.semibold,
+      color: color.inkGlassMuted,
+      textTransform: 'uppercase',
+      letterSpacing: font.tracking.section,
+    },
     closeBtn: {
       width: 44,
       height: 44,
@@ -2256,6 +2482,12 @@ const makeStyles = (color: ColorTheme) =>
     closeBtnText: { fontSize: font.size.lg, color: color.text, fontWeight: font.weight.bold },
     body: { flexShrink: 1 },
     bodyContent: { gap: spacing.sm, paddingBottom: spacing.tight },
+    // The pinned foot floats over the body's last inch. X4 banked that as
+    // "scrollable, not clipped" and it still is — but a row cut in half at the
+    // moment you stop scrolling READS as clipped, so the body gets enough
+    // bottom padding to scroll clear of the foot instead. Only when the foot is
+    // there; a reader's sheet keeps the tight tail.
+    bodyContentPinned: { paddingBottom: 132 },
     // ── UX #5 Before/after resolution photos ─────────────────────────────────
     beforeAfterRow: {
       flexDirection: 'row',
@@ -2328,19 +2560,9 @@ const makeStyles = (color: ColorTheme) =>
       fontWeight: font.weight.bold,
       fontSize: font.size.base,
     },
-    metaRow: {
-      flexDirection: 'row',
-      flexWrap: 'wrap',
-      gap: spacing.sm,
-      marginTop: spacing.tight,
-    },
-    severityChip: {
-      paddingHorizontal: 10,
-      paddingVertical: 6,
-      borderRadius: radius.circle,
-    },
-    severityChipText: { color: color.textOnBrand, fontWeight: font.weight.bold, fontSize: font.size.xs },
-    severityStake: { fontSize: font.size.sm, color: color.inkGlassMuted, marginTop: spacing.tight },
+    // The meaning sentence, now inside the header block. bodyMedium (>=500) —
+    // body text on glass carries the medium face; the 400 one hazes.
+    severityStake: { fontSize: font.size.base, color: color.inkGlassMuted, lineHeight: 20 },
     sectionLabel: {
       fontSize: font.size.xs,
       fontWeight: font.weight.semibold,
@@ -2349,7 +2571,34 @@ const makeStyles = (color: ColorTheme) =>
       letterSpacing: font.tracking.section,
       marginTop: spacing.sm,
     },
-    description: { fontSize: font.size.md, color: color.textStrong, lineHeight: 21 },
+    // The size arrives as the `size` prop (T2). lineHeight is 1.4x lg.
+    description: { color: color.textStrong, lineHeight: 23, marginTop: spacing.sm },
+    // One quiet paragraph where four labelled rows used to be.
+    metaLine: {
+      fontSize: font.size.sm,
+      color: color.inkGlassMuted,
+      lineHeight: 19,
+      marginTop: spacing.sm,
+    },
+    // Q17 — the coordinates live behind this link now. A real 44pt box, not a
+    // 21x24 glyph propped up by slop (the SW-25 finding, answered by making the
+    // control bigger rather than the target vaguer).
+    copyCoordsLink: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      alignSelf: 'flex-start',
+      gap: 6,
+      minHeight: a11y.minTargetSize,
+      minWidth: a11y.minTargetSize,
+      paddingRight: spacing.sm,
+    },
+    copyCoordsLinkPressed: { backgroundColor: color.borderPressed },
+    copyCoordsText: {
+      color: color.inkSelect,
+      fontWeight: font.weight.semibold,
+      fontSize: font.size.sm,
+      textDecorationLine: 'underline',
+    },
     contextTagsRow: {
       flexDirection: 'row',
       flexWrap: 'wrap',
@@ -2367,36 +2616,6 @@ const makeStyles = (color: ColorTheme) =>
       color: color.textMuted,
       fontWeight: font.weight.medium,
     },
-    metaValue: { fontSize: font.size.base, color: color.text },
-    anonBadge: {
-      alignSelf: 'flex-start',
-      backgroundColor: color.textMuted,
-      borderRadius: 10,
-      paddingHorizontal: 8,
-      paddingVertical: 3,
-    },
-    anonBadgeText: {
-      fontSize: 12,
-      color: color.textOnBrand,
-      fontWeight: '600',
-    },
-    coordsRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 6,
-    },
-    coordsText: { flex: 1 },
-    coordsCopyBtn: {
-      padding: 4,
-      alignItems: 'center',
-      justifyContent: 'center',
-      // SW-25: measured 21x24. With hitSlop 10 the HEIGHT reaches exactly 44,
-      // but the width only reaches 41. More slop is not the answer — the left
-      // neighbour is the selectable coordinate text, and slop would overlap a
-      // real target. A width floor is, and `coordsText` has flex to give it up.
-      minWidth: a11y.minTargetSize,
-    },
-    coordsCopyBtnPressed: { backgroundColor: color.borderPressed },
     /**
      * SW-49 class: an enabled-LOOKING control must never no-op silently.
      *
@@ -2416,146 +2635,175 @@ const makeStyles = (color: ColorTheme) =>
      * is the proof: if it regresses, four guards go red on this file.)
      */
     btnDisabled: { opacity: 0.5 },
-    // Overlapping-squares glyph — universally understood as "copy"
-    coordsCopyGlyph: { fontSize: 16, color: color.brand },
-    actionRow: {
-      flexDirection: 'row',
-      flexWrap: 'wrap',
-      gap: 8,
-      marginTop: 4,
-    },
+    // The form-button base. It used to carry the eight-button action grid as
+    // well; after the re-rank its only consumers are the edit form's Cancel /
+    // Save and the reopen flow's three controls — form buttons, not verbs, and
+    // they keep the shape they shipped with.
     actionBtn: {
       paddingHorizontal: 14,
       paddingVertical: spacing.md,
       borderRadius: radius.lg,
-      minHeight: 44,
+      minHeight: a11y.minTargetSize,
       alignItems: 'center',
       justifyContent: 'center',
       flexGrow: 1,
       minWidth: 100,
     },
-    // C1 / D7: filled verbs wear ctaFill, never themed `brand`. Light `brand`
-    // IS #1466E0, so light mode is byte-unchanged; dark `brand` is #4E89EF at
-    // 3.42:1 with white, and the same verb on the Tasks card already filled
-    // ctaFill — one control, two blues, depending on where you tapped it.
-    verifyBtn: { backgroundColor: color.ctaFill },
-    verifyText: { color: color.textOnBrand, fontWeight: font.weight.bold, fontSize: font.size.base },
-    resolveBtn: { backgroundColor: color.success },
-    resolveText: { color: color.textOnBrand, fontWeight: font.weight.bold, fontSize: font.size.base },
-    // Reject uses a neutral surface so it reads clearly in dark mode.
-    // color.surfaceNeutral adapts to dark (#2a2a2a) automatically.
-    rejectBtn: { backgroundColor: color.surfaceNeutral },
-    rejectText: { color: color.text, fontWeight: font.weight.bold, fontSize: font.size.base },
-    deleteBtn: { backgroundColor: color.errorStrong },
-    deleteText: { color: color.textOnBrand, fontWeight: font.weight.bold, fontSize: font.size.base },
-    viewMapBtn: {
-      backgroundColor: 'transparent',
-      borderWidth: 1,
-      borderColor: color.brand,
+
+    // ── (5) THE ONE FILLED VERB ─────────────────────────────────────────────
+    // C1: white on blue is `ctaFill` (#1466E0, mode-independent), never themed
+    // `brand` — dark `brand` measures 3.4:1 with white. 52pt tall, 16pt/700
+    // label: the largest control on the sheet, because it is the only one
+    // asking for something.
+    primaryBtn: {
+      backgroundColor: color.ctaFill,
+      minHeight: 52,
+      borderRadius: radius.circle,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: spacing.lg,
+      marginTop: spacing.lg,
     },
-    // Outlined button: blue text on white card. Uses color.brandText
-    // (#1c4f99 ≈ 7.6:1) instead of color.brand (#1466E0 ≈ 3.3:1) so it
-    // stays AA-safe even if the font size drops below 14pt-bold.
-    viewMapBtnText: { color: color.brandText, fontWeight: font.weight.bold, fontSize: font.size.base },
-    secondaryRow: {
+    primaryBtnText: { color: color.textOnBrand, fontWeight: font.weight.bold },
+
+    // ── (6) THE SIBLING VERBS ───────────────────────────────────────────────
+    communityCheck: { gap: spacing.sm, marginTop: spacing.md },
+    // ONE ghost segmented control where three pills in three fills used to be.
+    // `glassGhostEdge` is the shipped ghost-pill hairline and `inkSelect` the
+    // arbitrated select ink — no new pair, so no new fork. Both were re-measured
+    // on the dense bulk floor anyway: a cell over the worst backdrop reads
+    // 5.22:1 light / 7.80:1 dark (build/02/gsp-bulk-arbiter.txt).
+    segment: {
       flexDirection: 'row',
-      // 5 buttons now (View on Map, Directions, Share, History, Report) — wrap
-      // so the row stays usable on narrow screens / large text sizes. The wrap
-      // is what lets the 5th land without squeezing the other four: actionBtn's
-      // minWidth 100 + flexGrow 1 means the row reflows to 2 lines rather than
-      // shrinking any pill below its 44pt target (WCAG 2.5.8).
-      flexWrap: 'wrap',
-      gap: 8,
-      marginTop: 8,
-    },
-    shareBtn: {
-      backgroundColor: 'transparent',
+      borderRadius: radius.lg,
       borderWidth: 1,
-      borderColor: color.brand,
+      borderColor: color.glassGhostEdge,
+      overflow: 'hidden',
     },
-    // Outlined Share button: blue text on white card. Uses color.brandText
-    // for AA-safe contrast at any size (see viewMapBtnText note above).
-    shareBtnText: { color: color.brandText, fontWeight: font.weight.bold, fontSize: font.size.base },
-    // History sits next to Share — same outlined-blue treatment for visual
-    // consistency. Uses color.brandText for AA-safe contrast.
-    historyBtn: {
-      backgroundColor: 'transparent',
-      borderWidth: 1,
-      borderColor: color.brand,
+    // F4 — at 1.5x the cells stop sharing a row rather than squeezing below
+    // their 44pt box.
+    segmentStacked: { flexDirection: 'column' },
+    segmentCell: {
+      flexGrow: 1,
+      flexBasis: 0,
+      minHeight: a11y.minTargetSize,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: spacing.sm,
+      paddingVertical: spacing.sm,
     },
-    historyBtnText: { color: color.brandText, fontWeight: font.weight.bold, fontSize: font.size.base },
-    // B-1 Report — the recessive member of the row. TREATMENT AWAITS SKY
-    // (mockup gate): a safety valve should be findable without competing with
-    // the navigation trio, and where exactly it should sit on that scale is a
-    // taste call, not an engineering one.
-    //
-    // NO NEW INK/FILL PAIR — every pair this pill uses is already banked, and
-    // both manifests were re-run to confirm (exit 0, ALL PASS):
-    //   at rest  `inkGlassMuted` on detailSheet     6.24:1 light / 6.51:1 dark
-    //   pressed  `inkGlassMuted` on borderPressed   6.84:1 light / 6.09:1 dark
-    // The first is the pair BP8/MP4 banked when this file re-inked ten sites to
-    // inkGlassMuted; the second is one of the four completeness pairs BP11
-    // added. Reused here for the label (text threshold 4.5:1) and the hairline
-    // (non-text threshold 3:1) alike. No fill at rest: the bulk sheet IS the
-    // background those numbers were measured against. The pressed dim is the
-    // BP11 fill-swap, so it stays in the one press dialect.
-    reportBtn: {
-      backgroundColor: 'transparent',
-      borderWidth: 1,
-      borderColor: color.inkGlassMuted,
-    },
-    // semibold, not bold: the trio is bold, so a step down is what makes this
-    // read as subordinate without a second colour.
-    reportBtnText: {
-      color: color.inkGlassMuted,
+    // Stacked, a cell is a full-width row: `flexBasis: 0` in a column would
+    // have three cells share whatever height the container happened to have.
+    segmentCellStacked: { flexBasis: 'auto', alignSelf: 'stretch' },
+    segmentCellDivider: { borderLeftWidth: 1, borderLeftColor: color.glassGhostEdge },
+    segmentCellStackedDivider: { borderTopWidth: 1, borderTopColor: color.glassGhostEdge },
+    segmentCellPressed: { backgroundColor: color.borderPressed },
+    segmentCellText: {
+      color: color.inkSelect,
       fontWeight: font.weight.semibold,
       fontSize: font.size.base,
+      textAlign: 'center',
     },
-    // Directions sits between View on Map and Share in the secondary row.
-    // Filled brand-blue (not outlined) so it reads as the primary action of
-    // the trio — getting somewhere is usually what the user wants more than
-    // re-centering the map or sharing.
-    directionsBtn: { backgroundColor: color.ctaFill },
-    directionsBtnText: { color: color.textOnBrand, fontWeight: font.weight.bold, fontSize: font.size.base },
-    // Watch button — star pill between the location section and secondaryRow.
-    // Neutral outline when unset; filled amber when actively watching so the
-    // state is unambiguous without relying on the star glyph alone.
-    watchBtn: {
+    // The pinned foot for a triage arrival. A hairline, not a second material —
+    // a bar inside a bulk sheet would be the third surface S2 forbids.
+    pinnedFoot: {
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: color.glassChromeEdge,
+      paddingTop: spacing.sm,
+      marginTop: spacing.tight,
+    },
+
+    // ── (7) THE MORE ROW ────────────────────────────────────────────────────
+    // Four (to seven) equal circles: everything you can DO with a flag, drawn
+    // once at one weight, instead of five pills in three outline treatments
+    // competing with the verbs.
+    moreRow: {
       flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: spacing.sm,
+      marginTop: spacing.lg,
+    },
+    moreItem: {
       alignItems: 'center',
-      alignSelf: 'flex-start',
-      gap: 6,
-      paddingHorizontal: 14,
-      paddingVertical: 9,
+      justifyContent: 'center',
+      gap: 4,
+      // Fixed basis, no grow: 4 x 76 + 3 x 8 = 328 inside the 342pt content
+      // column, so the row is 4-up and a fifth item wraps to the LEFT under the
+      // first. With flexGrow the lone fifth stretched to the full width and
+      // centred itself, which reads as a mistake rather than a row.
+      flexGrow: 0,
+      flexBasis: 76,
+      minWidth: 76,
+      minHeight: a11y.minTargetSize,
+      paddingVertical: spacing.tight,
+      borderRadius: radius.lg,
+    },
+    moreItemPressed: { backgroundColor: color.borderPressed },
+    moreIcon: {
+      width: a11y.minTargetSize,
+      height: a11y.minTargetSize,
       borderRadius: radius.circle,
-      borderWidth: 1.5,
-      borderColor: color.borderStrong,
-      marginTop: 10,
-      minHeight: 44,
-      minWidth: 80,
+      backgroundColor: color.glassNeutralBtn,
+      alignItems: 'center',
       justifyContent: 'center',
     },
-    watchBtnActive: {
-      borderColor: color.accentOrange,
-      backgroundColor: color.warningBg,
-    },
-    watchBtnPressed: {
-      backgroundColor: color.borderPressed,
-    },
-    watchBtnGlyph: {
-      fontSize: font.size.lg,
-      color: color.textSubtle,
-    },
-    watchBtnText: {
-      fontSize: font.size.base,
+    moreIconActive: { backgroundColor: color.warningBg },
+    moreLabel: {
+      fontSize: font.size.xs,
       fontWeight: font.weight.semibold,
-      color: color.text,
+      color: color.inkSelect,
+      textAlign: 'center',
     },
-    watchBtnTextActive: {
-      color: color.warningFg,
+    moreLabelActive: { color: color.warningFg },
+    moreLabelDestructive: { color: color.errorStrong },
+    // Per-control markers on the More row. They carry no paint — the row is one
+    // treatment on purpose — and exist so every control on this sheet is still
+    // NAMED at its call site, which is what `inertControlVisual.guard` reads to
+    // check each one shows itself going inert.
+    viewMapBtn: {},
+    directionsBtn: {},
+    shareBtn: {},
+    historyBtn: {},
+    watchBtn: {},
+    editBtn: {},
+    deleteBtn: {},
+
+    // ── (9) THE ABUSE PATH, AS A SENTENCE ───────────────────────────────────
+    // It was an outlined pill wearing a DARKER outline than the navigation trio
+    // beside it, which made the safety valve the loudest control in the row.
+    // Now it is the document's last sentence, and one of only two underlines on
+    // the sheet.
+    //
+    // NO NEW INK PAIR: `inkGlassMuted` for the sentence and `inkSelect` for the
+    // link are both banked, and both were re-measured on the dense bulk floor
+    // (7.38:1 light / 8.92:1 dark and 5.85:1 / 10.51:1).
+    reportSentence: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      alignItems: 'center',
+      gap: spacing.xs,
+      marginTop: spacing.lg,
+      marginBottom: spacing.sm,
     },
-    editBtn: { backgroundColor: color.surface, borderWidth: 1.5, borderColor: color.border },
-    editBtnText: { color: color.text, fontWeight: font.weight.bold, fontSize: font.size.base },
+    reportSentenceText: {
+      fontSize: font.size.sm,
+      color: color.inkGlassMuted,
+      lineHeight: 19,
+    },
+    // Still a real 44pt box in both axes — drawing it as a sentence link is not
+    // permission to shrink the target (A1).
+    reportBtn: {
+      minHeight: a11y.minTargetSize,
+      minWidth: a11y.minTargetSize,
+      justifyContent: 'center',
+    },
+    reportBtnPressed: { backgroundColor: color.borderPressed },
+    reportBtnText: {
+      color: color.inkSelect,
+      fontWeight: font.weight.semibold,
+      fontSize: font.size.sm,
+      textDecorationLine: 'underline',
+    },
     editForm: { gap: spacing.md, marginTop: spacing.tight, marginBottom: spacing.sm },
     editLabel: {
       fontSize: font.size.xs,
@@ -2581,14 +2829,27 @@ const makeStyles = (color: ColorTheme) =>
     categoryChip: {
       paddingHorizontal: spacing.md,
       paddingVertical: spacing.xs,
+      // D13: these measured ~28pt. 44 is the WCAG 2.5.8 / HIG floor, and
+      // paddingVertical alone drops below it at the smallest dynamic type — so
+      // the minHeight is the guard, not the padding. Same pattern as
+      // ReportContentModal's categoryRow, and `justifyContent` is what keeps
+      // the label centred once the box is taller than its text.
+      minHeight: a11y.minTargetSize,
+      justifyContent: 'center',
       borderRadius: radius.circle,
       borderWidth: 1.5,
       borderColor: color.border,
       marginRight: spacing.sm,
       backgroundColor: color.surface,
     },
-    // Active chip: filled-brand, matching the MapScreen filter panel pattern.
-    categoryChipActive: { borderColor: color.brand, backgroundColor: color.brand },
+    // Active chip: filled, and the fill is `ctaFill` — not themed `brand`.
+    // C1/D7, at a site the Phase 0 sweep did not enumerate because it worked
+    // from a three-name list. `categoryChipTextActive` is white at 13pt bold,
+    // which needs 4.5:1; dark `brand` #4E89EF measures 3.42:1 there. Light
+    // `brand` IS #1466E0, so light mode is byte-identical and only the failing
+    // mode moves. (MapScreen's filter panel wears the same pattern and is that
+    // train's to align — noted in build/02/BUILD_REPORT.md.)
+    categoryChipActive: { borderColor: color.ctaFill, backgroundColor: color.ctaFill },
     categoryChipText: { fontSize: font.size.sm, color: color.text },
     categoryChipTextActive: { color: color.textOnBrand, fontWeight: font.weight.bold },
     severityRow: { flexDirection: 'row', gap: spacing.sm },
@@ -2693,10 +2954,17 @@ const makeStyles = (color: ColorTheme) =>
       // WCAG 2.5.5/2.5.8: was 40pt — the app's one remaining sub-44 input
       // (the same class TasksScreen's searchInput fixed; SR-034's gap).
       minHeight: 44,
-      maxHeight: 100,
+      // D14: `maxHeight: 100` clipped a long comment at AX text sizes — about
+      // two lines at 2.35x — inside a sheet that already scrolls. A cap on a
+      // multiline field is only ever protecting a container that cannot grow,
+      // and this one can.
     },
     commentSendBtn: {
-      backgroundColor: color.brand,
+      // C1/D7 again: white "Send" at 13pt bold on themed `brand` is 3.42:1 in
+      // dark. Its PRESSED state was already `ctaFillPressed`, so the press was
+      // crossing the palette boundary — the exact tell D2b recorded for the
+      // three verbs. Light is byte-unchanged.
+      backgroundColor: color.ctaFill,
       borderRadius: radius.xl,
       paddingHorizontal: spacing.md,
       paddingVertical: spacing.sm,
@@ -2739,8 +3007,10 @@ const makeStyles = (color: ColorTheme) =>
       backgroundColor: color.border,
     },
     pendingPhotoInput: {
-      // The shared commentInput style already flexes + meets 44pt.
-      maxHeight: 120,
+      // The shared commentInput style already flexes + meets 44pt. D14: the
+      // `maxHeight: 120` that used to live here clipped the photo description
+      // at AX sizes — worst on the one field whose whole job is describing an
+      // image for somebody who cannot see it.
     },
     pendingPhotoActions: {
       flexDirection: 'row',
@@ -2871,6 +3141,14 @@ const makeStyles = (color: ColorTheme) =>
       backgroundColor: 'transparent',
       borderWidth: 1,
       borderColor: color.brandText,
+      // A pill, not a bar. Stretched to the cluster's full width it read as a
+      // fourth segment cell — the collapse §SKY-3c corrects, arrived at by
+      // layout instead of by wording.
+      alignSelf: 'flex-start',
+      borderRadius: radius.lg,
+      paddingHorizontal: 14,
+      minHeight: a11y.minTargetSize,
+      justifyContent: 'center',
     },
     // semibold, not bold: the three verdict pills are bold, and the step down is
     // what makes this read as subordinate to them without a second colour.

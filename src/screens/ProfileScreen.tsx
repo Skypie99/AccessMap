@@ -43,7 +43,7 @@ import { statusPalette } from '@/components/StatusBadge';
 import { severityA11y } from '@/lib/a11yText';
 import { useFlags } from '@/lib/flagsStore';
 import { useUserLocation } from '@/lib/location';
-import { formatDistance } from '@/lib/distance';
+import { formatDistance, haversineKm } from '@/lib/distance';
 import { findNearestUnresolved } from '@/lib/nearestFlag';
 import type { FlagRow, FlagStatus, UserRow } from '@/types/database';
 import type { RootTabParamList } from '@/navigation/RootNavigator';
@@ -1886,6 +1886,13 @@ export default function ProfileScreen() {
         <FlagDetailModal
           visible={selectedFlag !== null}
           flag={selectedFlag}
+          // `primaryIntent` defaults to 'read' — from a profile list, the
+          // reader's verb leads.
+          distanceKm={
+            userLocation && selectedFlag
+              ? haversineKm(userLocation, { lat: selectedFlag.lat, lng: selectedFlag.lng })
+              : null
+          }
           onClose={handleDetailClose}
           onChanged={handleDetailChanged}
           onDeleted={handleDetailDeleted}

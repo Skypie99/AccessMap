@@ -47,6 +47,44 @@ import type { FlagSeverity } from './types/database';
 // Color
 // -------------------------------------------------------------------------
 
+// -------------------------------------------------------------------------
+// Bulk-sheet material candidate (GSP-02, art-direction Phase 1b)
+// -------------------------------------------------------------------------
+//
+// THE DEFECT (D8 / critic §9b, §15, D2): saturated UI beneath a bulk-glass
+// sheet reads through it as UI. An amber severity pill ghosts behind the
+// FlagDetail coordinates; the callout's blue button ghosts behind the Legend;
+// in dark mode whole rows of the Tasks list are legible under the sheet.
+//
+// Two answers were proposed and only a device can pick between them, so both
+// ship behind one flag and the loser is deleted in a cleanup commit (the
+// C-lite precedent). Flip this constant, rebuild, compare on the phone:
+//
+//   'dense'    the floors below, arbitrated 2026-08-21 (DEFAULT).
+//   'blur40'   the SHIPPED floors with the bulk blur raised 24 -> 40, and
+//              FlagDetail dropping forceEngineered so it actually blurs.
+//   'shipped'  byte-identical to `main` — the control arm.
+//
+// ⚠ TWO CORRECTED PREMISES, both measured (build/02/BUILD_REPORT.md):
+//   1. Most bulk sheets in this app render the ENGINEERED *Lite gradient, not
+//      the blur-mode floor (FlagDetail passes forceEngineered; Android always
+//      does). So the dense candidate has to move BOTH pairs, not just the floor
+//      the defect row named.
+//   2. In dark, the plan's candidate floor 0.90 is LESS dense than the shipped
+//      engineered stop 0.92 — applying it there would have made the app's worst
+//      ghosting moment worse. The dark engineered stop lands at 0.95 instead.
+//      Light text under a dark floor bleeds more than dark text under a light
+//      one; the ghost table in the build report has the numbers.
+//
+// Arbiter: build/02/gsp-bulk-stacks.json -> exit 0, every ink PASS.
+export type BulkFloorCandidate = 'dense' | 'blur40' | 'shipped';
+// `as BulkFloorCandidate`, not a plain annotation: TypeScript narrows a const to
+// its initializer, and the narrowed type makes every comparison below "no
+// overlap" errors. The assertion keeps the union so flipping the word is the
+// only edit the A/B needs.
+export const BULK_FLOOR_CANDIDATE = 'dense' as BulkFloorCandidate;
+const DENSE = BULK_FLOOR_CANDIDATE === 'dense';
+
 export const color = {
   // Surfaces
   surface: '#fff', // primary background, button text on brand
@@ -220,8 +258,13 @@ export const color = {
   glassBannerFloor: 'rgba(217,231,253,0.70)',
   glassBannerEdge: 'rgba(20,102,224,0.35)',
   glassBannerSpecular: 'rgba(255,255,255,0.65)',
-  // Bulk-action bar — the second, conditional i=24 pane (select mode only).
-  glassBulkFloor: 'rgba(255,255,255,0.85)',
+  // Bulk-action bar — the second, conditional i=24 pane (select mode only) —
+  // and the blur-mode floor of every bulk SHEET that does not force the
+  // engineered path (Legend, Nearby, About, Help, Feedback, the Sheet primitive).
+  glassBulkFloor: DENSE ? 'rgba(255,255,255,0.97)' : 'rgba(255,255,255,0.85)',
+  // The dense candidate's floor as a named token, so it is readable even when
+  // the flag is off. GSP-02 §2.2; arbitrated in build/02/gsp-bulk-stacks.json.
+  glassBulkFloorDense: 'rgba(255,255,255,0.97)',
   glassBulkSpecular: 'rgba(255,255,255,0.80)',
   // Engineered chip tint — pills/chips/search ON the chrome pane carry no blur
   // of their own; the pane blurs, the chip tints.
@@ -274,8 +317,23 @@ export const color = {
   glassBannerLite1: 'rgba(217,231,253,0.84)',
   glassChromeLite0: 'rgba(255,255,255,0.93)',
   glassChromeLite1: 'rgba(255,255,255,0.88)',
-  glassBulkLite0: 'rgba(255,255,255,0.95)',
-  glassBulkLite1: 'rgba(255,255,255,0.90)',
+  // The stops FlagDetail actually renders (it passes forceEngineered). The
+  // bottom stop is the one directly under the sheet's foot, where the Tasks
+  // card ghosts through.
+  //
+  // ⚠ 0.97, NOT the plan's 0.92 — and the difference is the simulator, not an
+  // opinion. Built at 0.92 first, because that is the ratified target; the 17e
+  // then showed "Very steep sidewalk", "9.9 km · 2d ago" and a whole
+  // Verify/Resolved/Reject/Details row still legible under the sheet. Measured
+  // against the Tasks card's #222 text over the light stage:
+  //     0.90 = 1.199:1 · 0.92 = 1.155:1 · 0.95 = 1.093:1 · 0.97 = 1.054:1
+  // Rule S2 asks for the value that stops ANY saturated token beneath from
+  // reading through, and names 0.92 as a TARGET "whichever the arbiter and the
+  // device prefer". The device preferred 0.97. The cost is honest and is
+  // Sky's to weigh on the phone: at 0.97 this tier is nearly opaque, which is
+  // exactly what the 'blur40' arm of the A/B exists to argue against.
+  glassBulkLite0: DENSE ? 'rgba(255,255,255,0.99)' : 'rgba(255,255,255,0.95)',
+  glassBulkLite1: DENSE ? 'rgba(255,255,255,0.97)' : 'rgba(255,255,255,0.90)',
 
   // Misc
   shadow: '#000',
@@ -511,7 +569,10 @@ export const gradient = {
 
 export const glass = {
   maxLivePanes: 12,
-  intensity: { row: 12, chrome: 24, banner: 12, bulk: 24 },
+  // bulk rises to 40 ONLY under the 'blur40' candidate (GSP-02) — the other arm
+  // of the sheet-ghosting A/B. The budget is unchanged either way: blur STRENGTH
+  // costs nothing extra against maxLivePanes, which counts panes, not intensity.
+  intensity: { row: 12, chrome: 24, banner: 12, bulk: BULK_FLOOR_CANDIDATE === 'blur40' ? 40 : 24 },
 } as const;
 
 // -------------------------------------------------------------------------

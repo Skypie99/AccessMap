@@ -92,12 +92,23 @@ describe('BP11 / T3 — the estate speaks fill-swaps, not group opacity', () => 
 
   it('FlagDetailModal converted its 4 same-file opacity dims to fill-swaps', () => {
     expect(flagDetail).toMatch(/afterTipBtnPressed: \{ backgroundColor: color\.borderPressed \}/);
-    expect(flagDetail).toMatch(/coordsCopyBtnPressed: \{ backgroundColor: color\.borderPressed \}/);
-    expect(flagDetail).toMatch(/watchBtnPressed: \{\s*backgroundColor: color\.borderPressed/);
+    // RE-PINNED 2026-08-21 (GSP-02 §2.1). Same dialect, renamed carriers: the
+    // copy-coordinates glyph became the "Copy coordinates" LINK
+    // (`copyCoordsLinkPressed`) and the Watch pill became a More-row circle,
+    // which presses through the row's one press style (`moreItemPressed`). Two
+    // controls the re-rank introduced — the report-sentence link and the
+    // segmented cells — are added rather than left unguarded, so the file's
+    // press vocabulary stays whole.
+    expect(flagDetail).toMatch(/copyCoordsLinkPressed: \{ backgroundColor: color\.borderPressed \}/);
+    expect(flagDetail).toMatch(/moreItemPressed: \{ backgroundColor: color\.borderPressed \}/);
+    expect(flagDetail).toMatch(/reportBtnPressed: \{ backgroundColor: color\.borderPressed \}/);
+    expect(flagDetail).toMatch(/segmentCellPressed: \{ backgroundColor: color\.borderPressed \}/);
     expect(flagDetail).toMatch(/commentSendBtnPressed: \{\s*backgroundColor: color\.ctaFillPressed/);
-    // none of the four keep an opacity
+    // none of them keeps an opacity
     expect(flagDetail).not.toMatch(/afterTipBtnPressed:[^}]*opacity/);
-    expect(flagDetail).not.toMatch(/coordsCopyBtnPressed:[^}]*opacity/);
+    expect(flagDetail).not.toMatch(/copyCoordsLinkPressed:[^}]*opacity/);
+    expect(flagDetail).not.toMatch(/moreItemPressed:[^}]*opacity/);
+    expect(flagDetail).not.toMatch(/reportBtnPressed:[^}]*opacity/);
   });
 
   it('the completion pass converted the same-file neutral residuals + error CTAs', () => {

@@ -58,8 +58,32 @@ const WEB_NOISE_STYLE =
 const GRADIENT_START = { x: 0.371, y: 0.017 };
 const GRADIENT_END = { x: 0.629, y: 0.983 };
 
-export function ScreenStage() {
+interface ScreenStageProps {
+  /**
+   * Pool volume, 0–1. Default 1 — the tab screens' full Deep Field.
+   *
+   * Rule S3 ★ (art-direction 2026-08-21): the stage has a volume knob. Tabs
+   * play it at 100%; sheets at 60%, where two brand pools behind a document
+   * read as blotches rather than atmosphere; legal documents and long reads at
+   * 0, on a flat `color.surface` body.
+   *
+   * Multiplies the pools ONLY. The base wash and the grain are the field
+   * itself and never move — a sheet with no wash is a different surface, not a
+   * quieter one. Implemented as SVG `stopOpacity`, which multiplies each pool
+   * colour's own alpha, so `strength={1}` renders byte-identically to before
+   * this prop existed (stopOpacity's own default is 1).
+   *
+   * ⚠ The arbiter measured every ink on the stage against the pools' DARKEST
+   * stops. Lowering strength only lightens that worst case, so it can never
+   * invalidate a measured pair — raising it above 1 could, which is why the
+   * value is clamped.
+   */
+  strength?: number;
+}
+
+export function ScreenStage({ strength = 1 }: ScreenStageProps) {
   const color = useColor();
+  const poolOpacity = Math.min(1, Math.max(0, strength));
   // Instance-unique SVG gradient ids: tab screens stay mounted concurrently,
   // and duplicate ids break url(#…) refs on web once other screens adopt the
   // stage. useId's colons are stripped — they're invalid in url() references.
@@ -89,12 +113,12 @@ export function ScreenStage() {
               radial-gradient(90% 58% at …) originals. The end stop reuses the
               pool color at opacity 0 so the fade never shifts hue. */}
           <RadialGradient id={poolAId} cx="50%" cy="50%" r="50%">
-            <Stop offset="0" stopColor={color.stagePoolA} />
+            <Stop offset="0" stopColor={color.stagePoolA} stopOpacity={poolOpacity} />
             <Stop offset="0.64" stopColor={color.stagePoolA} stopOpacity="0" />
           </RadialGradient>
           {hasPoolB ? (
             <RadialGradient id={poolBId} cx="50%" cy="50%" r="50%">
-              <Stop offset="0" stopColor={color.stagePoolB} />
+              <Stop offset="0" stopColor={color.stagePoolB} stopOpacity={poolOpacity} />
               <Stop offset="0.62" stopColor={color.stagePoolB} stopOpacity="0" />
             </RadialGradient>
           ) : null}

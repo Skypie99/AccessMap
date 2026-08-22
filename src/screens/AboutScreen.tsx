@@ -12,6 +12,7 @@ import { Map as MapIcon, X } from 'lucide-react-native';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { decorativeProps, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
 import {
+  MISSION_STATEMENT,
   PRIVACY_POLICY_LINK_HINT,
   PRIVACY_POLICY_LINK_LABEL,
   TERMS_LINK_HINT,
@@ -113,6 +114,20 @@ export default function AboutScreen({ visible, onClose }: Props) {
             </View>
 
             <AppText variant="label" style={styles.tagline}>A crowdsourced map for accessibility issues.</AppText>
+
+            {/* Q11 — the mission statement, in the product.
+                It lived in the documents ABOUT this app and nowhere inside it.
+                First section on About, before the how, because it is the why.
+                One exported constant, read here and by the guest Profile
+                (Prompt 06), pinned character-for-character by
+                `mission.guard.test.ts`. Never paraphrased, never re-wrapped —
+                including the name inside it. */}
+            <AppText variant="heading" style={styles.sectionHeader} accessibilityRole="header">
+              Why Flagstone
+            </AppText>
+            <AppText variant="body" style={styles.bodyText}>
+              {MISSION_STATEMENT}
+            </AppText>
 
             <AppText variant="heading" style={styles.sectionHeader} accessibilityRole="header">
               Built for accessibility

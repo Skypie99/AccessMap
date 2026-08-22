@@ -63,31 +63,47 @@ function between(src: string, start: string, end: string): string {
   return src.slice(i, j);
 }
 
-describe('W1 — the pill sits in the TRIAGE row, not beside Report (§SKY-3c)', () => {
-  it('the control is inside the footer actionRow', () => {
-    // The triage row opens AFTER the body ScrollView closes, so the render half
-    // of it is everything from that tag to the end of the JSX.
-    const open = modal.indexOf('<View style={styles.actionRow}>');
-    expect(open).toBeGreaterThan(modal.indexOf('</ScrollView>'));
-    const triage = between(modal, '<View style={styles.actionRow}>', 'const makeStyles');
-    expect(triage).toContain('styles.disputeBtn');
-    // …and it keeps the company §SKY-3c assigns it.
-    expect(triage).toContain('styles.verifyBtn');
-    expect(triage).toContain('styles.resolveBtn');
-    expect(triage).toContain('styles.rejectBtn');
+describe('W1 — the pill sits with the TRIAGE verbs, not beside Report (§SKY-3c)', () => {
+  /*
+   * RE-PINNED 2026-08-21 (GSP-02 §2.1). The sheet was re-ranked: the footer
+   * `actionRow` of five pills in four fills became ONE ghost segmented control
+   * of verdict cells, and Report stopped being a pill in a navigation row and
+   * became the document's last sentence. §SKY-3c's rule is untouched and is what
+   * these assertions still check — the doubt signal keeps the company of the
+   * VERDICTS and stays away from the ABUSE path — but the containers it names
+   * are the new ones. The rule got stronger here, not weaker: the pill and the
+   * report control are now asserted to be in different containers explicitly,
+   * where before that was implied by two row names.
+   */
+  it('the control sits inside the community-check cluster, with the verdicts', () => {
+    const cluster = between(modal, 'const segmentCells = [', '  return (');
+    expect(cluster).toContain('styles.disputeBtn');
+    // …and it keeps the company §SKY-3c assigns it: the verdict cells.
+    expect(cluster).toContain('styles.segmentCell');
+    expect(cluster).toMatch(/label: 'Verify'/);
+    expect(cluster).toMatch(/label: 'Resolved'/);
+    expect(cluster).toMatch(/label: 'Reject'/);
+    // It is NOT one of those cells. Every cell is a verdict; a dispute is not.
+    const cells = between(cluster, '[', '].filter(');
+    expect(cells).not.toMatch(/dispute/i);
   });
 
-  it('the secondary row is untouched — Report stays the only moderation pill there', () => {
-    const secondary = between(modal, '<View style={styles.secondaryRow}>', 'styles.commentsSection');
-    expect(secondary).toContain('{REPORT_CONTROL_LABEL}');
-    expect(secondary).not.toMatch(/dispute/i);
-    expect(secondary).not.toContain('DISPUTE_CONTROL_LABEL');
+  it('the abuse sentence carries Report and nothing else', () => {
+    const sentence = between(modal, '<View style={styles.reportSentence}>', '</ScrollView>');
+    expect(sentence).toContain('{REPORT_CONTROL_LABEL}');
+    expect(sentence).not.toMatch(/dispute/i);
+    expect(sentence).not.toContain('DISPUTE_CONTROL_LABEL');
+  });
+
+  it('the two live in different containers — the collapse §SKY-3c corrects', () => {
+    const cluster = between(modal, 'const segmentCells = [', '  return (');
+    expect(cluster).not.toContain('REPORT_CONTROL_LABEL');
   });
 
   it('the three controls remain three separate treatments, in three places', () => {
-    // Report: recessive muted outline in the secondary row.
-    expect(modal).toContain('borderColor: color.inkGlassMuted');
-    // Flag as wrong: the reopen dialect, in the triage row.
+    // Report: an underlined sentence link, the recessive treatment now.
+    expect(modal).toMatch(/reportBtnText: \{[^}]*textDecorationLine: 'underline'/);
+    // Flag as wrong: the reopen dialect (outlined brandText), in the cluster.
     expect(modal).toContain('disputeBtn: {');
     // Hide is not on this surface at all — it is per comment row.
     expect(modal).not.toContain('HIDE_CONTROL_LABEL');
@@ -110,14 +126,17 @@ describe('W1 — the gate is dead-control prevention, not preference (SR-093)', 
     expect(gate).toContain('!!user');
   });
 
-  it('the row cannot render the pill out of existence', () => {
-    // canDispute implies canReject today; listing it anyway means a later edit
-    // to the triage gates cannot silently drop the pill's container.
-    expect(modal).toContain('{(canVerify || canResolve || canReject || isOwn || canDispute) && (');
+  it('the cluster cannot render the pill out of existence', () => {
+    // The container renders when there is a verdict cell OR a pill. The old
+    // spelling listed `canDispute` alongside the triage gates for the same
+    // reason: a later edit to those gates must not silently drop the pill's
+    // container. Here `showDispute` IS that clause, and it is one of the two
+    // disjuncts, so the pill can never be inside a container it cannot open.
+    expect(modal).toContain('segmentCells.length > 0 || showDispute');
   });
 
   it('the pill is replaced by the answer — the two are never on screen together', () => {
-    expect(modal).toContain('{canDispute && disputeNotice === null && (');
+    expect(modal).toContain('const showDispute = canDispute && disputeNotice === null;');
     expect(modal).toContain('{disputeNotice !== null && (');
   });
 
@@ -194,7 +213,12 @@ describe('W1 — a vote that did not land is never reported as one (the F38 less
 });
 
 describe('W1 — the honesty fence on the control itself', () => {
-  const pill = between(modal, '{canDispute && disputeNotice === null && (', '{isOwn && (');
+  // RE-PINNED 2026-08-21 (GSP-02 §2.1). The triage row became one ghost
+  // segmented control, and the doubt signal moved into that cluster as its own
+  // control rather than a fourth cell — every cell there is a verdict and a
+  // dispute is not one (§SKY-3c, restated in the component). The gate now reads
+  // through `showDispute`, and the slice ends at the cluster's close.
+  const pill = between(modal, '{showDispute ? (', '</View>\n    ) : null;');
 
   it('carries NO accessibilityHint — every useful hint here is a promise', () => {
     // "Marks this flag as disputed" describes a treatment that is not shipped.

@@ -196,11 +196,20 @@ describe('bordered TextInputs need headroom the census can see', () => {
 });
 
 describe('SW-25 — copy-coordinates reached 44 tall by slop but only 41 wide', () => {
-  it('has a width floor rather than more slop', () => {
+  it('is a real box on BOTH axes, not slop around a glyph', () => {
+    // RE-PINNED 2026-08-21 (GSP-02 §2.1, Q17). The 21x24 copy glyph beside a
+    // block of monospace coordinates is gone: the coordinates are no longer
+    // printed and the copy path is a labelled "Copy coordinates" link with the
+    // icon as its accessory. SW-25's answer was a width FLOOR on a small
+    // control; the answer now is that the control is not small. Both axes are
+    // pinned, which is strictly more than the original assertion checked.
     const src = read('components/FlagDetailModal.tsx');
-    const block = styleBlock(src, 'coordsCopyBtn');
-    expect(block).toContain('padding: 4');
+    const block = styleBlock(src, 'copyCoordsLink');
+    expect(`copyCoordsLink found: ${block.length > 0}`).toBe('copyCoordsLink found: true');
     expect(HAS_MIN_WIDTH.test(block)).toBe(true);
+    expect(HAS_MIN_HEIGHT.test(block)).toBe(true);
+    // The glyph-plus-slop shape must not come back.
+    expect(src).not.toContain('coordsCopyBtn');
   });
 });
 
