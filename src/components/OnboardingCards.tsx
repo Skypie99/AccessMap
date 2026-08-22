@@ -233,14 +233,19 @@ export default function OnboardingCards({ onDone }: Props) {
     CARDS.map((_, i) => new Animated.Value(i === 0 ? DOT_ACTIVE : DOT)),
   ).current;
 
+  // Board 05: the current stone stretches into a bar, and the bar grows with
+  // the text to the chrome ceiling (it is chrome — there is nowhere for it to
+  // go). Declared before the effect that springs toward it.
+  const dotActiveWidth = DOT_ACTIVE * Math.min(fontScale, TYPE_BLOCK.chrome);
+
   useEffect(() => {
     if (reduceMotion) {
-      dotWidths.forEach((anim, i) => anim.setValue(i === index ? DOT_ACTIVE : DOT));
+      dotWidths.forEach((anim, i) => anim.setValue(i === index ? dotActiveWidth : DOT));
     } else {
       Animated.parallel(
         dotWidths.map((anim, i) =>
           Animated.spring(anim, {
-            toValue: i === index ? DOT_ACTIVE : DOT,
+            toValue: i === index ? dotActiveWidth : DOT,
             speed: 18,
             bounciness: 3,
             useNativeDriver: false,
@@ -248,7 +253,7 @@ export default function OnboardingCards({ onDone }: Props) {
         ),
       ).start();
     }
-  }, [index, dotWidths, reduceMotion]);
+  }, [index, dotWidths, dotActiveWidth, reduceMotion]);
 
   // D21 — announce the new position when the card CHANGES, and stay silent on
   // the mount edge. The effect used to fire unconditionally, including on the
@@ -417,9 +422,6 @@ export default function OnboardingCards({ onDone }: Props) {
   );
   const discDigit = Math.round(discSize * DISC_DIGIT_RATIO);
 
-  // Board 05: the current stone stretches into a bar, and it grows with the
-  // text to the chrome ceiling (it is chrome — there is nowhere for it to go).
-  const dotActiveWidth = DOT_ACTIVE * Math.min(fontScale, TYPE_BLOCK.chrome);
   const heroDisc = wide ? HERO_DISC_WIDE : HERO_DISC;
   const heroMark = wide ? HERO_MARK_WIDE : HERO_MARK;
 
@@ -592,7 +594,9 @@ export default function OnboardingCards({ onDone }: Props) {
                 key={c.title}
                 style={[
                   styles.dot,
-                  { width: isActive ? dotActiveWidth : dotWidths[i] },
+                  // One driver for every stone, so the one arriving settles the
+                  // same way the one leaving does.
+                  { width: dotWidths[i] },
                   isActive && {
                     backgroundColor: c.isFinal
                       ? color.goldAccent
