@@ -253,3 +253,70 @@ visibly**, it is one template in `FlagCard.tsx` and every surface follows.
   search"**, **"Search flags"** and the search placeholder: byte-identical. Only
   the placeholder's VISIBILITY changes, and only at large type, where the
   control keeps the same words as its accessible name.
+
+---
+
+## Prompt 05 — Phase 2b (onboarding in the light + sign-in on the primitives)
+
+**Nothing in this phase shipped a new user-facing word.** Board 05's five cards
+are drawn with the copy that is on `main` today, verbatim, including its three
+em dashes. Everything the board rewrites is banked below.
+
+Two things WERE changed, and both were ruled in the prompt's DECISIONS block
+rather than invented by the builder:
+
+| Change | Where | Ruling |
+|---|---|---|
+| `Maybe later` -> `Not now` | onboarding card 4's decline link (visible label and accessible name) | Q12 — one decline word. The same gesture said two different words two cards apart. |
+| `Allow Location` -> `Allow location` · `Turn on Notifications` -> `Turn on notifications` | onboarding cards 3 and 4, visible CTA only | Q12 — sentence case on CTAs. The accessible names ("Allow location access" / "Turn on notifications") are unchanged and still CONTAIN the visible string, so WCAG 2.5.3 holds; `labelInName.guard` passes. |
+
+### SKY-WORDS-REQUIRED — board 05's onboarding rewrite (banked, nothing shipped)
+
+Every onboarding string the board draws is a placeholder. Where the board kept
+today's sentence it is listed as unchanged; where it rewrites, both are given.
+
+| # | Card | Shipped today | Board 05 proposes | What actually changes |
+|---|---|---|---|---|
+| W-05 | 1 body | `See an accessibility barrier — a missing ramp, a broken sidewalk, a blocked path? Put it on the map so others know, and so it gets fixed.` | `See an accessibility barrier? A missing ramp, a broken sidewalk, a blocked path. Put it on the map so others know, and so it gets fixed.` | the em dash becomes the question mark, and the question moves to the front. The first sentence a new user reads currently breaks the house zero-em-dash rule. |
+| W-06 | 2 title | `Here's how it works` | `Rate how hard it is to get past` | the title stops being a generic table-of-contents line and names the thing the five discs beneath it are teaching. |
+| W-07 | 2 body | `Find the spot on the map and add the barrier there, then rate how bad it is. Others verify it or mark it resolved once the issue is fixed. (Signed-in users can add a photo, too.)` | `Every barrier gets a number from 1, inconvenient, to 5, impassable. Others verify it or mark it resolved once it is fixed. Signed-in members can add a photo too.` | three ideas in four lines become the severity grammar plus the loop; the parenthetical becomes a sentence. Note `users` -> `members`, which is a house-vocabulary decision beyond this card. |
+| W-08 | 3 body | `We'll use your location to show nearby barriers and place your reports accurately. It's only used while the app is open — never tracked or stored on our servers.` | same sentence, `open, never tracked` | em dash -> comma only. |
+| W-09 | 4 title | `Stay in the loop` | `Hear when things change` | the chummiest line in the app becomes plain. This is the "third voice in four screens" the critic pass named. |
+| W-10 | 4 body | `Get a heads-up when flags near you are verified or resolved. Totally optional — you can turn this on later in Settings.` | `Get a heads-up when flags near you are verified or resolved. Optional. You can turn this on later in Settings.` | em dash -> stop; `Totally optional` -> `Optional`. |
+| W-11 | 5 body | `Go explore your neighbourhood. Every barrier you flag helps someone navigate the world a little easier.` | `Flagstone is built one flag at a time, by people like you. Every barrier you flag helps someone navigate the world a little easier.` | the first sentence borrows How To Help's "one flag at a time" so the finisher says what the NAME means. The second sentence is untouched and is the warmest line in the flow. |
+| W-12 | 3 and 4, granted state | `Location is on — you're all set.` / `Notifications are on — you're all set.` | not drawn on the board | two more em dashes, in copy only a returning user sees. Suggested: `Location is on. You're all set.` |
+
+### The two card-1 sentences that describe the same product differently
+
+Not a board proposal — a divergence found in the source and left alone
+deliberately, because reconciling it means choosing words.
+
+| Surface | Card 1 body |
+|---|---|
+| first launch (`OnboardingCards`) | `See an accessibility barrier — a missing ramp, a broken sidewalk, a blocked path? Put it on the map so others know, and so it gets fixed.` |
+| Settings replay (`OnboardingModal`) | `Drop a pin where you find an accessibility issue — a missing ramp, a broken sidewalk, a blocked path — so others can plan around it, or help fix it.` |
+
+Same title, same three examples, two different promises about what happens next
+("so it gets fixed" against "plan around it, or help fix it") and two different
+verbs for the same act ("put it on the map" against "drop a pin"). These two
+files already have a guard test dedicated to copy coherence (SW-06 / SW-19), and
+this is the one divergence that guard does not cover, because Sky's SW-19 ruling
+was that the two surfaces stay different and their copy be honest — which is a
+ruling about card COUNT, not about this pair of sentences. **Wanted: one promise
+and one verb, said twice, or a recorded decision that the replay speaks to
+returning users differently on purpose.**
+
+### Strings deliberately NOT changed in Phase 2b
+- **"Continue"** (first launch) and **"Done"** (replay) — guard-pinned, Sky
+  ratified 2026-08-21, untouched.
+- **"Skip"**, "Skip the tutorial" / "Skip the introduction", "Back", "Next", and
+  every permission hint — byte-identical. Skip's VISIBILITY changes (it leaves
+  the last card of both surfaces, where there is nothing left to skip); the word
+  does not.
+- **The Settings replay row**, the Profile reset-intro confirm, and every
+  string `onboardingCoherence.guard` pins — untouched.
+- **SignIn**: the tagline, both trust lines, the guest link and its hint, the
+  guest note, both validation messages, both server-error templates, the
+  sign-up confirmation, "Sign in", "Create account", "or", "← Back", and both
+  legal labels (which come from `copy.ts`) — every one byte-identical. The
+  footer's LAYOUT changed; not one word of it did.
