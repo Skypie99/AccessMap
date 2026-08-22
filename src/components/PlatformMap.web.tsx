@@ -45,6 +45,9 @@ export interface PlatformMapHandle {
     opts?: { calloutClear?: boolean },
   ) => void;
   showCallout: (flagId: string) => void;
+  /** S4 / D6 — parity with the native handle. Leaflet keeps one popup open per
+   *  map, so this is `closePopup()`, not a sweep. */
+  hideCallout: () => void;
   /** Step the zoom by `delta` levels (+1 in, -1 out). Additive to the handle so
    *  the overlay's app-styled 44pt buttons drive zoom — replacing Leaflet's
    *  occluded, pointer-dead default control (WCAG 2.5.7). */
@@ -1007,6 +1010,11 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(function Pla
         // Opening fires popupopen synchronously; under RM the listener above
         // delivers the instant clear in the same frame (F3-06).
         markerRefs.current[id]?.openPopup();
+      },
+      hideCallout: () => {
+        // Leaflet holds at most one open popup per map, so the map itself is the
+        // right handle — no marker sweep, and no dependency on which pin it was.
+        mapInstance.current?.closePopup();
       },
       // SW-37: parity with the native handle. Leaflet answers synchronously;
       // the Promise is the shared contract, not a cost.

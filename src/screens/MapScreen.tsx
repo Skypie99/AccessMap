@@ -19,7 +19,7 @@ import * as Location from 'expo-location';
 import { arrivalPermissionDenied, getCurrentPositionWithTimeout, initialLocationAction } from '@/lib/location';
 import { failureBannerText, offlineBannerText } from '@/lib/copy';
 import { announce } from '@/lib/announce';
-import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
+import { useFocusEffect, useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
@@ -412,6 +412,10 @@ export default function MapScreen() {
   // (Send feedback / Map legend / Refresh flags / Save a place) — a panel-class
   // surface like the filter panel, not a Modal.
   const [toolsOpen, setToolsOpen] = useState(false);
+  // Declared here, beside the tool sheet, rather than down with the rest of the
+  // filter state: S4 made these two the pair that one function closes, and
+  // `clearMapSurfaces` below has to be in scope for the effects that call it.
+  const [filtersOpen, setFiltersOpen] = useState(false);
   // G5 focus-return triggers. Each one owns the handle of the control that
   // opened its surface, so closing the surface hands the screen-reader cursor
   // back to that control instead of stranding it (WCAG 2.4.3). Local pairs
@@ -517,6 +521,28 @@ export default function MapScreen() {
     setChromeBandPx(Math.round(commandBarH.current));
   }, []);
 
+  // S4 / D6 — ONE SURFACE AT A TIME ABOVE THE MAP.
+  //
+  // The walk opened the filter panel, tapped a pin, went to Home, came back and
+  // tapped Report: the report sheet landed on a map that still had the filter
+  // panel AND the callout open under it, with "SEVERITY 4 OF 5" peeking above
+  // the sheet's top edge and the callout's blue button ghosting through the
+  // panel and the legend (§16, §18, D3, D5 — five sightings, worst in dark).
+  // Nothing ever put the map's own surfaces away, so they accumulated.
+  //
+  // This is the one place that does. It closes the two INLINE panel-class
+  // surfaces (the filter panel and the ⋯ tool sheet — neither is a Modal) and
+  // hides the callout, which is owned by the marker and therefore has to be
+  // dismissed imperatively. It does NOT close modals: the Nearby list stays up
+  // under the detail sheet on purpose (the screen-reader path returns focus to
+  // its row), and it does NOT touch the camera or `focusedFlagId` — where the
+  // map is looking, and which pin the user came for, both survive a sheet.
+  const clearMapSurfaces = useCallback(() => {
+    setFiltersOpen(false);
+    setToolsOpen(false);
+    mapRef.current?.hideCallout();
+  }, []);
+
   const hasAutoOpenedListRef = useRef(false);
   useEffect(() => {
     if (screenReaderOn && !hasAutoOpenedListRef.current) {
@@ -529,12 +555,13 @@ export default function MapScreen() {
       // exists for. The List FAB is already mounted and is the control that
       // reopens this sheet, so it is the correct return target.
       nearbyTrigger.register();
+      clearMapSurfaces();
       setNearbyOpen(true);
     }
     // Safe to depend on the whole trigger: useSurfaceTrigger memoizes its return
-    // object, so this does not re-run every render.
-  }, [screenReaderOn, nearbyTrigger]);
-  const [filtersOpen, setFiltersOpen] = useState(false);
+    // object, so this does not re-run every render — and the same is true of
+    // clearMapSurfaces, which closes over setters and a ref only.
+  }, [screenReaderOn, nearbyTrigger, clearMapSurfaces]);
   // Whether the filter panel (when open) shows just its header row or all
   // sections. Persists across launches via filterPanelPrefs. Hydrated
   // alongside the filter values; the save-effect below is gated on
@@ -1318,9 +1345,10 @@ export default function MapScreen() {
     // flight; without this the submit stays permanently disabled. Skip when a
     // drop pin is set (the sheet uses that coord, so no GPS is needed).
     if (!dropLocation) void requestLocation();
+    clearMapSurfaces();
     setReportOpen(true);
     navigation.setParams({ openReport: undefined });
-  }, [route.params?.openReport, navigation, dropLocation, requestLocation]);
+  }, [route.params?.openReport, navigation, dropLocation, requestLocation, clearMapSurfaces]);
 
   // Deep-link arrival: accessmap://flag/{id} → React Navigation parses the
   // id into route.params.flagId. Fetch the flag's lat/lng on the fly, then
@@ -1522,6 +1550,34 @@ export default function MapScreen() {
     route.params?.flagId,
   ]);
 
+
+  // The pin callout's "Open details" — the one path where the surface being
+  // put away is the very thing that opened the sheet. That is the point: the
+  // callout has said what it has to say, and leaving it up only means its red
+  // stripe and its blue button ghost through the sheet on top of it (§15).
+  const handleOpenDetails = useCallback(
+    (flag: FlagRow) => {
+      clearMapSurfaces();
+      setSelectedFlag(flag);
+    },
+    [clearMapSurfaces],
+  );
+
+  // Leaving the tab is the other half of the same rule. The map used to REMEMBER
+  // a half-finished filter session across tabs — the walk left the panel and a
+  // callout open, came back an hour later in dark mode, and both were still
+  // there (D3). The camera is deliberately kept: where you were looking is worth
+  // remembering; a panel you abandoned is not.
+  useFocusEffect(
+    useCallback(
+      () => () => {
+        setFiltersOpen(false);
+        setToolsOpen(false);
+      },
+      [],
+    ),
+  );
+
   // Long-press anywhere on the map → confirm prompt → open the report
   // modal with that coord pre-filled. The confirm step matters: a
   // long-press is easy to trigger accidentally while panning, and we
@@ -1575,6 +1631,7 @@ export default function MapScreen() {
     // sheet. That is the identical reasoning this screen already recorded for
     // the screen-reader auto-open of the Nearby sheet.
     reportTrigger.register();
+    clearMapSurfaces();
     if (Platform.OS === 'web') {
       setDropLocation(coord);
       setReportOpen(true);
@@ -1593,8 +1650,9 @@ export default function MapScreen() {
       },
     ]);
     // reportTrigger is memoized by useSurfaceTrigger, so depending on it does
-    // not re-create this callback every render.
-  }, [authUser, reportTrigger]);
+    // not re-create this callback every render; clearMapSurfaces is stable for
+    // the same reason (empty deps, setters and a ref only).
+  }, [authUser, reportTrigger, clearMapSurfaces]);
 
   // S3 detail-sheet handlers. FlagDetailModal does the server mutation itself and
   // gates its own actions by auth/ownership (no new writes here — FORK 5 read
@@ -1734,7 +1792,7 @@ export default function MapScreen() {
         showsUserLocation
         reducedMotion={reducedMotion}
         onLongPressMap={handleMapLongPress}
-        onOpenDetails={setSelectedFlag} // S3: pin callout "Open details" → detail sheet
+        onOpenDetails={handleOpenDetails} // S3: pin callout "Open details" → detail sheet
         heatCells={heatCells}
         heatmapMode={HEATMAP_MODE}
         // T1 (F2-01): the full vertical band a callout must clear — safe area +
@@ -1867,7 +1925,7 @@ export default function MapScreen() {
             <View style={styles.barSpacer} pointerEvents="box-none" />
             {/* Search */}
             <PressableScale
-              onPress={() => setSearchOpen(true)}
+              onPress={() => { clearMapSurfaces(); setSearchOpen(true); }}
               style={styles.barBtn}
               accessibilityRole="button"
               accessibilityLabel="Search by address"
@@ -1944,7 +2002,7 @@ export default function MapScreen() {
             borderRadius={radius.lg}
           >
             <PressableScale
-              onPress={() => { setToolsOpen(false); setSharedModal('feedback'); }}
+              onPress={() => { clearMapSurfaces(); setSharedModal('feedback'); }}
               style={styles.toolRow}
               accessibilityRole="button"
               accessibilityLabel="Send feedback"
@@ -1958,9 +2016,10 @@ export default function MapScreen() {
                 // Focus-return is armed on the persistent Legend pill in the
                 // bottom bar, which now holds legendTrigger.ref (M4): it is the
                 // legend's own door and it survives this sheet closing, where a
-                // ⋯ tool row does not. Close the sheet first so it isn't
+                // ⋯ tool row does not. clearMapSurfaces closes this sheet
+                // (and the filter panel, and the callout) so nothing is left
                 // stranded behind the modal.
-                setToolsOpen(false);
+                clearMapSurfaces();
                 legendTrigger.register();
                 setLegendOpen(true);
               }}
@@ -1982,7 +2041,7 @@ export default function MapScreen() {
               <AppText variant="label" style={styles.toolRowText}>Refresh flags</AppText>
             </PressableScale>
             <PressableScale
-              onPress={() => { setToolsOpen(false); setPlacesOpen(true); }}
+              onPress={() => { clearMapSurfaces(); setPlacesOpen(true); }}
               style={styles.toolRow}
               accessibilityRole="button"
               accessibilityLabel={savedPlaces.length === 0 ? 'Save a place' : 'Manage saved places'}
@@ -2385,7 +2444,7 @@ export default function MapScreen() {
                         </View>
                       </Pressable>
                       <Pressable
-                        onPress={() => setPresetsModalOpen(true)}
+                        onPress={() => { clearMapSurfaces(); setPresetsModalOpen(true); }}
                         style={({ pressed }) => [
                           styles.presetBtn,
                           styles.presetBtnSecondary,
@@ -2683,10 +2742,10 @@ export default function MapScreen() {
               // spring — the List-pill precedent, matched exactly.
               dimOnPress={false}
               onPress={() => {
-                // Close the tool sheet first so it isn't stranded behind the
-                // modal (the ⋯ row's own rule), then arm focus-return BEFORE
-                // the setState that opens the surface.
-                setToolsOpen(false);
+                // Put the map's own surfaces away first (S4) so nothing is
+                // stranded behind the modal, then arm focus-return BEFORE the
+                // setState that opens it.
+                clearMapSurfaces();
                 legendTrigger.register();
                 setLegendOpen(true);
               }}
@@ -2796,6 +2855,7 @@ export default function MapScreen() {
                 // register() captures this button's native handle BEFORE the
                 // sheet opens, so closing it can return the cursor here.
                 nearbyTrigger.register();
+                clearMapSurfaces();
                 setNearbyOpen(true);
               }}
               accessibilityRole="button"
@@ -2833,6 +2893,7 @@ export default function MapScreen() {
                 onPress={() => {
                   // Captures this FAB's handle before the sheet opens.
                   reportTrigger.register();
+                  clearMapSurfaces();
                   // FIX C (Decision 6, Option A): the `location` state can be
                   // minutes old by the time the user taps Report. Kick off a
                   // fresh GPS read fire-and-forget — ReportFlagModal reads its
@@ -3099,6 +3160,7 @@ export default function MapScreen() {
           // Confirm with real VoiceOver before trusting it; if it is broken the
           // fix is NOT a comment change, and it is not in Wave 1's scope.
           if (screenReaderOn) {
+            clearMapSurfaces();
             setSelectedFlag(flag);
             return;
           }

@@ -73,7 +73,20 @@ describe('S3 source invariants — MapScreen integration hub', () => {
   });
 
   it('the pin callout opens the sheet via the onOpenDetails prop on <PlatformMap>', () => {
-    expect(map).toContain('onOpenDetails={setSelectedFlag}');
+    // RE-PINNED 2026-08-21 (S4 / D6). This used to assert the raw setter,
+    // `onOpenDetails={setSelectedFlag}`. The prop is now a named handler for one
+    // reason: opening the sheet has to put the CALLOUT away first. Leaving it up
+    // is what produced the walk's stacked surfaces — the callout's red stripe and
+    // its blue "Open details" button ghosting through the sheet on top of it.
+    // The assertion still pins what it always meant (this prop is what opens the
+    // detail sheet), now including the surface it closes on the way.
+    expect(map).toContain('onOpenDetails={handleOpenDetails}');
+    const open = between(map, 'const handleOpenDetails = useCallback(', '// Leaving the tab');
+    expect(open).toContain('clearMapSurfaces();');
+    expect(open).toContain('setSelectedFlag(flag);');
+    // ...and in that order: hiding the callout AFTER presenting would fire into
+    // a map the modal has already covered.
+    expect(open.indexOf('clearMapSurfaces()')).toBeLessThan(open.indexOf('setSelectedFlag(flag)'));
   });
 
   it('the Nearby onSelectFlag branches on the screen reader: SR → detail sheet, sighted → map recenter', () => {

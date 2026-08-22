@@ -98,6 +98,14 @@ export interface PlatformMapHandle {
     opts?: { calloutClear?: boolean },
   ) => void;
   showCallout: (flagId: string) => void;
+  /** S4 / D6: put the callout away. Opening a sheet from the map used to leave
+   *  the callout up UNDER it — the walk found three surfaces stacked, with
+   *  "SEVERITY 4 OF 5" peeking above the report sheet's top edge and the
+   *  callout's blue button ghosting through the legend and the filter panel.
+   *  Clearing `focusedFlagId` does NOT do this: that prop only drives marker
+   *  opacity. The native callout is owned by the marker, so hiding it has to be
+   *  imperative, exactly like showing it. */
+  hideCallout: () => void;
   /** Step the zoom by `delta` levels (+1 in, -1 out). Additive to the handle so
    *  the overlay's app-styled 44pt buttons can drive zoom — the single-pointer
    *  zoom-out affordance iOS otherwise lacks (WCAG 2.5.7). */
@@ -273,6 +281,16 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(function Pla
       },
       showCallout: (id) => {
         markerRefs.current[id]?.showCallout();
+      },
+      hideCallout: () => {
+        // react-native-maps offers no "which callout is open" query, and calling
+        // hideCallout on a marker with nothing showing is a no-op — so sweep the
+        // dict. It is bounded by the markers currently mounted (the same set the
+        // prune effect above keeps honest), and it runs on a sheet OPEN, not on
+        // pan, so this is never on the frame path.
+        for (const marker of Object.values(markerRefs.current)) {
+          marker?.hideCallout();
+        }
       },
       // SW-37: the midpoint of the visible bounds. getMapBoundaries is already
       // the read this file trusts for viewport questions (see handlePinPress),
