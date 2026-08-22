@@ -8,6 +8,7 @@ import {
   Platform,
   Pressable,
   ScrollView,
+  Share,
   StyleSheet,
   Text,
   TextInput,
@@ -28,6 +29,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '@/lib/auth';
 import { track } from '@/lib/analytics';
 import { errorMessage } from '@/lib/errors';
+import { webShare } from '@/lib/webShare';
 import { notify } from '@/lib/confirm';
 import { isContentBlockedError, showBlockedContentAlert } from '@/lib/blockedContent';
 import { useLegalSheets } from '@/components/LegalSheets';
@@ -116,9 +118,16 @@ interface Props {
    *  rule (it mirrors the long-press gate; see MapScreen). The control renders
    *  only when this and a null location are both present. */
   onPlaceOnMap?: () => void;
+  /** Q17: which answer the coordinate is. The sheet cannot work this out for
+   *  itself — the host passes either the user's GPS fix or the pin they placed,
+   *  and both arrive as the same `location` object. Without it the location line
+   *  would have to say "at 49.88800, -119.49600" (the engineer's answer to a
+   *  human question) or guess. Defaults to 'gps', which is what the FAB path is
+   *  and what every existing caller means. */
+  locationSource?: 'gps' | 'pin';
 }
 
-export default function ReportFlagModal({ visible, location, onClose, onCreated, onRequestLocation, onDismiss, locationDenied, onPlaceOnMap }: Props) {
+export default function ReportFlagModal({ visible, location, onClose, onCreated, onRequestLocation, onDismiss, locationDenied, onPlaceOnMap, locationSource = 'gps' }: Props) {
   const color = useColor();
   const styles = makeStyles(color);
   // T14 (F2-07): the templates + category chip rails earn the overflow scent.
@@ -149,6 +158,40 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
     }
     return "Waiting for your location. Tap 'Use my location' above to try again.";
   };
+
+  /**
+   * Q17 — the coordinate, on demand.
+   *
+   * The visible line answers "where is this?" in words; this is the escape
+   * hatch for the user who wants the numbers (to check them, or to send them
+   * somewhere). Mirrors FlagDetailModal's "Copy coordinates" link: the OS
+   * share sheet on native, the Web Share API with a clipboard fallback on web.
+   * A user cancel is silent on both, because a cancel is not an error.
+   */
+  const formattedCoords = location
+    ? `${location.lat.toFixed(5)}, ${location.lng.toFixed(5)}`
+    : '';
+  const handleCopyCoords = async () => {
+    if (!location) return;
+    if (Platform.OS === 'web') {
+      try {
+        await webShare({ title: 'Report location', text: formattedCoords });
+      } catch (e) {
+        const msg = errorMessage(e);
+        if (/cancel|dismiss|abort/i.test(msg)) return;
+        notify("Couldn't copy coordinates", msg);
+      }
+      return;
+    }
+    try {
+      await Share.share({ message: formattedCoords, title: 'Report location' });
+    } catch (e) {
+      const msg = errorMessage(e);
+      if (/cancel|dismiss/i.test(msg)) return;
+      notify("Couldn't copy coordinates", msg);
+    }
+  };
+
   const reducedMotion = useReducedMotion();
   // Pull-to-dismiss gating (map-gestures SPEC §2.6). `atTop` is the half of the
   // rule that keeps this form usable: mid-scroll, a downward drag belongs to the
@@ -177,6 +220,11 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
   const titleRef = useFocusOnOpen<Text>(visible);
   const [category, setCategory] = useState<FlagCategory>('no_ramp');
   const [severity, setSeverity] = useState<FlagSeverity>(3);
+  // Q17: the coordinates are the answer to a question nobody asked on this
+  // form. They stay one tap away rather than being the second line of the
+  // sheet — the place where, at accessibility sizes, the screen's least useful
+  // information was rendered at its most legible (X7). Reset with the form.
+  const [coordsShown, setCoordsShown] = useState(false);
   const [description, setDescription] = useState('');
   const [photoUris, setPhotoUris] = useState<string[]>([]);
   // Per-photo VoiceOver descriptions, keyed by local uri. Optional; trimmed
@@ -265,6 +313,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
     setCategory('no_ramp');
     setSeverity(3);
     setDescription('');
+    setCoordsShown(false);
     // L7: the drafts are gone for good once the form resets — release their
     // blob URLs. (SW-52: reset now also runs on an explicit CANCEL, not only
     // after a successful submit. A FAILED submit still does not reset, so the
@@ -728,11 +777,25 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
           <AppText ref={titleRef} variant="heading" style={styles.title} accessibilityRole="header">
             {isAnon ? 'Report anonymously' : 'Report a flag'}
           </AppText>
+          {/* Q17: the location line says a human thing. It used to read "at
+              49.88800, -119.49600" — the coordinate as the SECOND LINE of the
+              form, on the one screen where the user most needs to feel "yes,
+              that is the place", and (X7) the least useful information on the
+              sheet rendered at its most legible size. The numbers are one tap
+              away instead, behind Show, with the copy path beside them.
+              PLACEHOLDER COPY: "At your current location" / "At the pin you
+              placed" / "Show" / "Hide" / "Copy" are logged in
+              build/COPY_LEDGER.md as SKY-WORDS-REQUIRED. */}
           <View style={styles.locationRow}>
             <MapPin size={13} color={color.textMuted} strokeWidth={2} {...decorativeProps} />
-            <AppText variant="mono" style={styles.location}>
+            {/* T1: mono is for numerals that are data. A sentence is not, so
+                the human line moved off the mono face; the coordinate below
+                keeps it. */}
+            <AppText variant={location ? 'bodyMedium' : 'mono'} style={styles.location}>
               {location
-                ? `at ${location.lat.toFixed(5)}, ${location.lng.toFixed(5)}`
+                ? locationSource === 'pin'
+                  ? 'At the pin you placed'
+                  : 'At your current location'
                 // SW-11: "Waiting for location…" is true while the request is in
                 // flight and false the moment the user denies it — at which point
                 // it waited forever and never said why. A denial is a settled
@@ -741,7 +804,42 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
                   ? 'Location is off for Flagstone'
                   : 'Waiting for location…'}
             </AppText>
+            {location && (
+              <Pressable
+                onPress={() => setCoordsShown((v) => !v)}
+                style={({ pressed }) => [styles.coordsToggle, pressed && styles.chipPressed]}
+                accessibilityRole="button"
+                // WCAG 2.5.3: the name leads with the visible word, so a
+                // voice-control user saying "tap Show" reaches it.
+                accessibilityLabel={coordsShown ? 'Hide coordinates' : 'Show coordinates'}
+                {...a11yToggle({ expanded: coordsShown })}
+              >
+                <AppText variant="label" style={styles.coordsToggleText}>
+                  {coordsShown ? 'Hide' : 'Show'}
+                </AppText>
+              </Pressable>
+            )}
           </View>
+          {location && coordsShown && (
+            <View style={styles.coordsRow}>
+              <AppText
+                variant="mono"
+                style={styles.coordsValue}
+                accessibilityLabel={`${location.lat.toFixed(5)} latitude, ${location.lng.toFixed(5)} longitude`}
+              >
+                {formattedCoords}
+              </AppText>
+              <Pressable
+                onPress={handleCopyCoords}
+                style={({ pressed }) => [styles.coordsToggle, pressed && styles.chipPressed]}
+                accessibilityRole="button"
+                accessibilityLabel={`Copy coordinates ${location.lat.toFixed(5)} latitude, ${location.lng.toFixed(5)} longitude`}
+                accessibilityHint="Opens share and copy options for these coordinates"
+              >
+                <AppText variant="label" style={styles.coordsToggleText}>Copy</AppText>
+              </Pressable>
+            </View>
+          )}
           </TypeBlock>
           {/* S5 (L3-1): when no location has resolved yet — the common
               first-time web-guest case, where nothing was ever in flight — give
@@ -1517,7 +1615,32 @@ const makeStyles = (color: ColorTheme) =>
       letterSpacing: -0.3,
     },
     locationRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.tight, marginBottom: spacing.xs },
-    location: { fontSize: font.size.xs, color: color.inkGlassMuted },
+    location: { fontSize: font.size.xs, color: color.inkGlassMuted, flexShrink: 1 },
+    // Q17: the Show/Hide disclosure and the Copy link beside the revealed
+    // coordinate. Same shape as FlagDetailModal's copyCoordsLink — an inkSelect
+    // text link carrying the 44pt box itself, never a bare glyph.
+    coordsToggle: {
+      minHeight: a11y.minTargetSize,
+      minWidth: a11y.minTargetSize,
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingHorizontal: spacing.xs,
+    },
+    coordsToggleText: {
+      fontSize: font.size.xs,
+      fontWeight: font.weight.semibold,
+      color: color.inkSelect,
+      textDecorationLine: 'underline',
+    },
+    coordsRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.tight,
+      marginTop: -spacing.xs,
+      marginBottom: spacing.xs,
+      flexWrap: 'wrap',
+    },
+    coordsValue: { fontSize: font.size.xs, color: color.inkGlassMuted },
     // S5: in-sheet "Use my location" retry — 44pt, brand-soft tint mirroring the
     // anon banner; only rendered when no location has resolved.
     // SW-37: the muted explain-the-block line. Same ink as the other quiet

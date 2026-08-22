@@ -3034,6 +3034,10 @@ export default function MapScreen() {
           // otherwise fall back to the user's current GPS location for the
           // FAB-triggered "report at my location" flow.
           location={dropLocation ?? location}
+          // Q17: which of the two answers this coordinate is, so the sheet can
+          // say it in words. Same expression as the line above — the drop pin
+          // wins when there is one, GPS otherwise.
+          locationSource={dropLocation ? 'pin' : 'gps'}
           // S5: lets the sheet re-run the same locating spine on demand (the
           // in-sheet "Use my location" retry) without leaving the flow.
           onRequestLocation={requestLocation}

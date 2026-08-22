@@ -1582,3 +1582,73 @@ describe('SW-37 (guest half) — the block is explained, not just enforced', () 
     expect(queryByText(ANON_LINE)).toBeNull();
   });
 });
+
+describe('Q17 — the location line says a human thing, the numbers are one tap away', () => {
+  // Raw renders: the location props are the thing under test, so the auth mock
+  // has to be set explicitly (the shared beforeEach clears calls, not returns).
+  beforeEach(() => {
+    mockUseAuth.mockReturnValue({ user: null } as ReturnType<typeof useAuth>);
+  });
+
+  const LOC = { lat: 49.888, lng: -119.496 };
+
+  it('names the place in words, and does not print the coordinate by default', () => {
+    const { getByText, queryByText } = render(
+      withProvider(
+        <ReportFlagModal visible location={LOC} onClose={jest.fn()} onCreated={jest.fn()} />,
+      ),
+    );
+    expect(getByText('At your current location')).toBeTruthy();
+    // The regression this closes: the coordinate WAS the second line of the sheet.
+    expect(queryByText('49.88800, -119.49600')).toBeNull();
+  });
+
+  it('says which answer it is when the user placed the pin themselves', () => {
+    const { getByText } = render(
+      withProvider(
+        <ReportFlagModal
+          visible
+          location={LOC}
+          locationSource="pin"
+          onClose={jest.fn()}
+          onCreated={jest.fn()}
+        />,
+      ),
+    );
+    expect(getByText('At the pin you placed')).toBeTruthy();
+  });
+
+  it('Show reveals the coordinate and a copy path; Hide puts it away', () => {
+    const { getByLabelText, getByText, queryByText } = render(
+      withProvider(
+        <ReportFlagModal visible location={LOC} onClose={jest.fn()} onCreated={jest.fn()} />,
+      ),
+    );
+    fireEvent.press(getByLabelText('Show coordinates'));
+    expect(getByText('49.88800, -119.49600')).toBeTruthy();
+    expect(
+      getByLabelText('Copy coordinates 49.88800 latitude, -119.49600 longitude'),
+    ).toBeTruthy();
+    fireEvent.press(getByLabelText('Hide coordinates'));
+    expect(queryByText('49.88800, -119.49600')).toBeNull();
+  });
+
+  it('WCAG 2.5.3: the toggle’s accessible name contains its visible word', () => {
+    const { getByLabelText, getByText } = render(
+      withProvider(
+        <ReportFlagModal visible location={LOC} onClose={jest.fn()} onCreated={jest.fn()} />,
+      ),
+    );
+    expect(getByText('Show')).toBeTruthy();
+    expect(getByLabelText('Show coordinates')).toBeTruthy();
+  });
+
+  it('offers no disclosure at all while there is no location to disclose', () => {
+    const { queryByLabelText } = render(
+      withProvider(
+        <ReportFlagModal visible location={null} onClose={jest.fn()} onCreated={jest.fn()} />,
+      ),
+    );
+    expect(queryByLabelText('Show coordinates')).toBeNull();
+  });
+});
