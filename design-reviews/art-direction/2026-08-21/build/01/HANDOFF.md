@@ -54,7 +54,14 @@ for the class — check that node in this phase's re-walk.
   sign out. The guest Profile and guest report form remain unreachable.
 - Home place-search does not resolve here (geocode returns nothing).
 
-## PHASE 1a IS COMPLETE — STOPPED FOR SKY
+## ✅ PHASE 1a MERGED INTO `main` 2026-08-21 as `7141a33` (Sky instructed the merge directly).
+Phase 0 merged first as `ceef880`. Gates re-run ON MERGED MAIN: typecheck 0 · jest 232 suites /
+3370 passed / 32 todo / 0 failed · lint 0 errors / 82 warnings. `main` is 17 ahead of
+`origin/main`; the push is Sky's.
+
+**Prompt 02 (wave 3) branches off the CURRENT main tip, not off either build branch.**
+
+## (before the merge) PHASE 1a IS COMPLETE — STOPPED FOR SKY
 
 Seven commits (`cdc166b`..`d55c78b`), gated and walked. `main` untouched.
 Read `BUILD_REPORT.md`.

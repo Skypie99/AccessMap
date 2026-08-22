@@ -55,7 +55,10 @@ without the stash would have made the data loss easier to hit. See BUILD_REPORT.
   nothing in this environment), so the "Near <place>" subtitle node is also
   unreachable.
 
-## PHASE 0 IS COMPLETE — STOPPED FOR SKY
+## ✅ PHASE 0 MERGED INTO `main` 2026-08-21 as `ceef880` (Sky instructed the merge directly).
+Nothing here is pending any more. `main` is 17 commits ahead of `origin/main` — the push is Sky's.
+
+## (before the merge) PHASE 0 IS COMPLETE — STOPPED FOR SKY
 
 All six items landed, gated and walked. `main` untouched. Read `BUILD_REPORT.md`.
 
