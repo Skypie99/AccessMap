@@ -1,5 +1,5 @@
 import React from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Modal, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 import {
   CATEGORY_DESCRIPTIONS,
@@ -13,7 +13,7 @@ import {
 } from '@/lib/flags';
 import { font, radius, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
-import { useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
+import { isAxRecompose, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
 import CategoryIcon from '@/components/CategoryIcon';
 import { SeverityDisc } from '@/components/SeverityDisc';
 import { AppText } from '@/components/ui/AppText';
@@ -38,6 +38,7 @@ interface Props {
 export default function LegendModal({ visible, onClose, onDismiss }: Props) {
   const color = useColor();
   const reducedMotion = useReducedMotion();
+  const { fontScale } = useWindowDimensions();
   const styles = makeStyles(color);
   // Read the inset context directly (zero fallback) instead of
   // useSafeAreaInsets(), which throws when there's no SafeAreaProvider — the
@@ -95,7 +96,15 @@ export default function LegendModal({ visible, onClose, onDismiss }: Props) {
                 invalid HTML, and one title heard as two nested headings. */}
             <AppText variant="heading" style={styles.title} accessibilityRole="none">Map legend</AppText>
           </View>
-          <AppText variant="body" style={styles.subtitle}>What the colors and categories on the map mean.</AppText>
+          {/* Board 06: the subtitle restates the title ("Map legend" / "What the
+              colors and categories on the map mean"), so at the recomposition
+              point it stands down and gives its two-or-three lines to the rows
+              that actually teach. Below the threshold it is unchanged, and it is
+              never removed from the DOM at a size where anyone reads it as the
+              screen's only explanation. */}
+          {!isAxRecompose(fontScale) && (
+            <AppText variant="body" style={styles.subtitle}>What the colors and categories on the map mean.</AppText>
+          )}
 
           <ScrollView
             ref={scrollRef}
