@@ -97,7 +97,9 @@ export default function HowToHelpScreen({ visible, onClose }: Props) {
         // G1: pageSheet scene — no AVM by design (see ResourcesScreen).
         onAccessibilityEscape={onClose}
       >
-        <ScreenStage />
+        {/* S3: a sheet plays the stage at 60%. Behind a document the two
+            brand pools stop being atmosphere and read as blotches. */}
+        <ScreenStage strength={0.6} />
         {/* Header -> ONE absolute i=24 chrome pane; content scrolls beneath it.
             SafeAreaView owns the device top inset, so the pane sits at top:0
             below it (no insets.top double-count). The pane's bottom edge/lip

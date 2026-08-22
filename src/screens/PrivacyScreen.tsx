@@ -84,7 +84,10 @@ export default function PrivacyScreen({ visible, onClose }: Props) {
         // what dismissalStandard.guard.test.ts assertion B checks.
         onAccessibilityEscape={onClose}
       >
-        <ScreenStage />
+        {/* S3: no pools behind a legal document — the body below renders on
+            flat `color.surface`. The stage stays mounted so the safe-area strip
+            and any pre-layout frame still match the field. */}
+        <ScreenStage strength={0} />
         <GlassSurface
           variant="chrome"
           borderRadius={0}
@@ -115,7 +118,7 @@ export default function PrivacyScreen({ visible, onClose }: Props) {
 
         <ScrollView
           contentContainerStyle={[styles.body, { paddingTop: chromeTopPad }]}
-          style={chromeHeight === null && styles.bodyHidden}
+          style={[styles.bodySurface, chromeHeight === null && styles.bodyHidden]}
           scrollIndicatorInsets={{ top: chromeTopPad }}
           showsVerticalScrollIndicator={false}
         >
@@ -169,6 +172,12 @@ const makeStyles = (color: ColorTheme) =>
       paddingHorizontal: spacing.lg,
       paddingVertical: spacing.md,
     },
+    // S3: a long read sits on flat surface, not on the stage. The pools are
+    // already off (strength 0); this is the other half of the rule — the body
+    // itself is an opaque page. The chrome pane still floats above it and
+    // blurs it, which only lightens the worst case its floor was measured
+    // against, so no ink here needs re-arbitrating.
+    bodySurface: { backgroundColor: color.surface },
     // Hides the body for the single pre-measure pass so its top pad never jumps.
     bodyHidden: { opacity: 0 },
     title: {
