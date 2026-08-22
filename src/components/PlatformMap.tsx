@@ -318,6 +318,23 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(function Pla
       clusterColor={color.ctaFill}
       clusterTextColor={color.textOnBrand}
       radius={40}
+      // M1: the product's markers are the only markers. Apple's own POI badges
+      // (restaurants, hotels, shops) rendered at full density under our pins and
+      // roughly DOUBLED at accessibility type sizes, because MapKit scales its
+      // labels with Dynamic Type too — the critic pass caught a dozen saturated
+      // badges owning the first frame and a severity pin losing to a pizza icon.
+      //
+      // Q8 asked for a CATEGORY filter first (keep transit/park/hospital/school,
+      // drop food/hotel/shops) and fall back to all-off. The filter is NOT
+      // available: react-native-maps 1.20.1 bridges this as a plain BOOL
+      // (ios/AirMaps/AIRMapManager.m:92) and exposes no pointOfInterestFilter at
+      // all, so MKPointOfInterestFilter (iOS 13+) never reaches the view. Hence
+      // fallback A. Revisit if the library ever bridges the filter.
+      //
+      // iOS-only by construction: the prop is an AIRMap (Apple) property, so the
+      // Google/Android arm and the web (Leaflet/CartoDB) arm are unaffected.
+      // PlatformMap is shared, so the Home peek inherits this in the same edit.
+      showsPointsOfInterest={false}
       // PINCH-ZOOM IS THE PLATFORM'S, NOT OURS (map-gestures SPEC §1). Apple
       // Maps already gives spread-to-zoom-in / pinch-to-zoom-out focused under
       // the fingers, simultaneous with one-finger pan, and this map is
