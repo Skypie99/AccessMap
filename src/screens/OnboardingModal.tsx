@@ -431,7 +431,11 @@ function CopyZone({
       >
         {children}
       </ScrollView>
-      <OverflowFade visible={fade.hasMore} orientation="vertical" />
+      {/* 44 rather than the 28 a chip rail takes: this edge cuts PROSE on a
+          pale stage, where the shared ink needs a longer ramp to read as a
+          fade instead of a smudge. A per-site thickness, not a new ink —
+          strengthening the colour would move every chip rail in the app. */}
+      <OverflowFade visible={fade.hasMore} orientation="vertical" width={44} />
     </View>
   );
 }
