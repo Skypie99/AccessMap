@@ -39,24 +39,20 @@ import { AppText } from '@/components/ui/AppText';
 import { GlassSurface } from '@/components/ui/GlassSurface';
 import { ScreenHeader, EYEBROW_TRACKING } from '@/components/ui/ScreenHeader';
 import { PressableScale } from '@/components/ui/PressableScale';
+import { FlagCard } from '@/components/ui/FlagCard';
 import { SkeletonRow } from '@/components/ui/Skeleton';
 import { ScreenStage } from '@/components/ui/ScreenStage';
 import PlatformMap from '@/components/PlatformMap';
 import AddressSearchModal from '@/components/AddressSearchModal';
-import { SeverityDisc } from '@/components/SeverityDisc';
 import { useFlags } from '@/lib/flagsStore';
 import { peekLocationState, useUserLocation, type PeekLocationState } from '@/lib/location';
 import { offlineBannerText } from '@/lib/copy';
 import {
-  formatDistance,
   haversineKm,
   regionContainsPoint,
   regionFittingPoints,
-  speakDistance,
   type LatLng,
 } from '@/lib/distance';
-import { CATEGORY_LABELS, SEVERITY_LABELS, STATUS_LABELS } from '@/lib/flags';
-import { severityA11y, statusA11y } from '@/lib/a11yText';
 import type { GeocodeResult } from '@/lib/geocode';
 import type { RootTabParamList } from '@/navigation/RootNavigator';
 import { a11y, font, radius, shadow, spacing } from '@/theme';
@@ -633,77 +629,17 @@ export default function HomeScreen() {
             {items.map((item, i) => (
               <View key={item.f.id}>
                 {i > 0 && <View style={styles.sep} />}
-                <PressableScale
-                  style={styles.row}
-                  onPress={() => handleRowPress(item.f)}
-                  accessibilityRole="button"
-                  accessibilityLabel={
-                    item.km != null
-                      ? // T8 (F4-10): keep the status word when distance renders — the
-                        // visible meta already shows it in both branches; the SR label
-                        // shouldn't drop it just because a distance is present.
-                        // SR-042: speakDistance, NOT formatDistance. The visible
-                        // chip abbreviates ("297 m", "1.2 km") because space is
-                        // tight; a screen reader reading the abbreviation aloud
-                        // says "two hundred ninety seven em" — or whatever that
-                        // locale's TTS makes of a bare unit letter. speakDistance
-                        // spells the unit out, and is why it exists.
-                        `${CATEGORY_LABELS[item.f.category]}, ${severityA11y(item.f.severity)}, ${statusA11y(item.f.status)}, ${speakDistance(item.km)}`
-                      : `${CATEGORY_LABELS[item.f.category]}, ${severityA11y(item.f.severity)}, ${statusA11y(item.f.status)}`
-                  }
-                >
-                  {/* S1 + T5: the Recent row's severity is now a numbered mini-disc
-                      (the RecentlyViewedRow recipe). Decorative — the row label and
-                      the visible meta below already speak number · word · status. */}
-                  {/* F4: below the recomposition point this is the shipped row —
-                      24pt disc, text, chevron, all on one line. At or above it the
-                      row wraps: the disc scales with the type and takes the line
-                      above a FULL-WIDTH text block, because a 24pt disc beside
-                      40pt text reads as a bullet rather than as the unit of the
-                      system (board 01). The chevron drops out at that size — the
-                      whole row is still the button, and its accessibilityLabel
-                      above is untouched, so nothing is lost to a screen reader. */}
-                  <SeverityDisc
-                    severity={item.f.severity}
-                    size={24}
-                    digitSize={font.size.xs}
-                    maxFontSizeMultiplier={1.3}
-                    scaleWithType={axRecompose}
-                  />
-                  <View style={[styles.rowText, axRecompose && styles.rowTextWide]}>
-                    <AppText variant="bodyMedium" style={styles.rowTitle}>
-                      {CATEGORY_LABELS[item.f.category]}
-                    </AppText>
-                    {/* S1: Home Recent rows gain the severity NUMBER and route the
-                        raw lowercase DB enum through STATUS_LABELS ("open" → "Open",
-                        which a screen reader/first-timer no longer hears as a verb).
-                        F4: at large type the census breaks at the "·" BEFORE the
-                        status word rather than wrapping wherever it lands. Two
-                        AppTexts, same strings, same order; the row's single
-                        accessibilityLabel still speaks it as one sentence. */}
-                    {axRecompose ? (
-                      <>
-                        <AppText variant="body" style={styles.rowMeta}>
-                          {`Severity ${item.f.severity} · ${SEVERITY_LABELS[item.f.severity]}`}
-                        </AppText>
-                        <AppText variant="body" style={styles.rowMeta}>
-                          {item.km != null
-                            ? `${STATUS_LABELS[item.f.status]} · ${formatDistance(item.km)}`
-                            : STATUS_LABELS[item.f.status]}
-                        </AppText>
-                      </>
-                    ) : (
-                      <AppText variant="body" style={styles.rowMeta}>
-                        {item.km != null
-                          ? `Severity ${item.f.severity} · ${SEVERITY_LABELS[item.f.severity]} · ${STATUS_LABELS[item.f.status]} · ${formatDistance(item.km)}`
-                          : `Severity ${item.f.severity} · ${SEVERITY_LABELS[item.f.severity]} · ${STATUS_LABELS[item.f.status]}`}
-                      </AppText>
-                    )}
-                  </View>
-                  {!axRecompose && (
-                    <ChevronRight size={18} color={color.inkGlassMuted} strokeWidth={2} />
-                  )}
-                </PressableScale>
+                {/* F1: the row is no longer drawn here. Home, the Nearby list
+                    and Tasks all render `FlagCard` now, so a flag looks the same
+                    object wherever it appears and the recomposition rule (F4),
+                    the census order (F2) and the mono distance (T1) are decided
+                    once instead of three times. What was in this block moved
+                    verbatim into the component: the same disc, the same two
+                    census branches, the same chevron, and the same composite
+                    label built from severityA11y / statusA11y / speakDistance —
+                    which is the label FlagCard now builds by default, so nothing
+                    is passed here to keep it. */}
+                <FlagCard flag={item.f} density="row" distanceKm={item.km} onPress={() => handleRowPress(item.f)} />
               </View>
             ))}
             {/* Board 01: the list ends in a way out. Without it the CLOSEST card
@@ -933,19 +869,10 @@ const makeStyles = (color: ColorTheme) =>
       justifyContent: 'center',
     },
     retryText: { fontSize: font.size.sm, color: color.textOnBrand, fontWeight: font.weight.bold },
-    // F4: flexWrap costs nothing below the recomposition point (the three
-    // children fit on one line) and is what lets the text block claim its own
-    // row above it.
-    row: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', rowGap: spacing.xs, gap: spacing.md, paddingHorizontal: spacing.md, paddingVertical: spacing.md, minHeight: 56 },
     // Indented to sit under the row text: paddingHorizontal(12) + disc(24) +
     // gap(12) = 48 (was 40 for the old 11px dot; the mini-disc pushed the text
     // right). QA 2026-08-18: value was 52, a 4px drift from its own math.
     sep: { height: StyleSheet.hairlineWidth, backgroundColor: color.border, marginLeft: 48 },
-    rowText: { flex: 1, gap: 1 },
-    // F4: basis 100% is what forces the wrap — the disc keeps the line above.
-    rowTextWide: { flexBasis: '100%', flexGrow: 1 },
-    rowTitle: { fontSize: font.size.lg, color: color.textStrong, fontWeight: font.weight.semibold },
-    rowMeta: { fontSize: font.size.sm, fontFamily: font.family.bodyMedium, color: color.inkGlassMuted },
     emptyText: { fontSize: font.size.base, color: color.inkGlassMuted, padding: spacing.lg, textAlign: 'center' },
     reportPill: {
       position: 'absolute',
