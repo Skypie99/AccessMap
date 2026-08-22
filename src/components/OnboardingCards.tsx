@@ -131,41 +131,57 @@ interface Card {
 }
 
 /**
- * Copy is UNCHANGED from a27864b, deliberately. Board 05 proposes a rewrite of
- * cards 2, 4 and 5 (and turns three em dashes into stops); those are new
- * user-facing words, so they are banked in build/COPY_LEDGER.md for Sky to
- * ratify rather than shipped by a builder. The two things the DECISIONS block
- * DID rule on — one decline word, sentence case on the permission CTAs — are
- * applied below.
+ * Board 05's copy, ratified by Sky 2026-08-22 (COPY_LEDGER W-05..W-12).
+ *
+ * What moved and why, in one place so the next editor does not have to guess:
+ *   - Three em dashes became a question mark, a comma and a stop. The house
+ *     rule is zero em dashes in user-facing copy, and card 1's was the first
+ *     sentence a new user reads.
+ *   - Card 2's title now names what the five discs above it teach. "Here's how
+ *     it works" was a table-of-contents line sitting on top of the one moment
+ *     that is genuinely this product's.
+ *   - Card 4 drops the chummy register ("Stay in the loop", "Totally optional")
+ *     that made it a third voice in four screens.
+ *   - Card 5 explains the NAME. "One flag at a time" is How To Help's own
+ *     ratified phrase, borrowed so the finisher says what Flagstone means.
+ *   - The granted-state lines lost their em dashes too.
+ *
+ * Sky DECLINED one part of the board: "Signed-in users" stays "users", not
+ * "members". That is a house-vocabulary change reaching well past this card and
+ * it gets its own decision if it is ever wanted.
+ *
+ * Still open (COPY_LEDGER): this card 1 and OnboardingModal's card 1 promise
+ * different things in different verbs. Not resolved here — that needs one
+ * ruling covering both surfaces, and only this one was ratified.
  */
 const CARDS: Card[] = [
   {
     hero: 'mark',
     title: 'Welcome to Flagstone',
-    body: 'See an accessibility barrier — a missing ramp, a broken sidewalk, a blocked path? Put it on the map so others know, and so it gets fixed.',
+    body: 'See an accessibility barrier? A missing ramp, a broken sidewalk, a blocked path. Put it on the map so others know, and so it gets fixed.',
   },
   {
     hero: 'discs',
-    title: "Here's how it works",
-    body: 'Find the spot on the map and add the barrier there, then rate how bad it is. Others verify it or mark it resolved once the issue is fixed. (Signed-in users can add a photo, too.)',
+    title: 'Rate how hard it is to get past',
+    body: 'Every barrier gets a number from 1, inconvenient, to 5, impassable. Others verify it or mark it resolved once it is fixed. Signed-in users can add a photo too.',
   },
   {
     hero: 'glyph',
     title: 'Show flags near you',
-    body: "We’ll use your location to show nearby barriers and place your reports accurately. It’s only used while the app is open — never tracked or stored on our servers.",
+    body: "We’ll use your location to show nearby barriers and place your reports accurately. It’s only used while the app is open, never tracked or stored on our servers.",
     permission: 'location',
   },
   {
     hero: 'glyph',
     icon: Bell,
-    title: 'Stay in the loop',
-    body: 'Get a heads-up when flags near you are verified or resolved. Totally optional — you can turn this on later in Settings.',
+    title: 'Hear when things change',
+    body: 'Get a heads-up when flags near you are verified or resolved. Optional. You can turn this on later in Settings.',
     permission: 'notifications',
   },
   {
     hero: 'mark',
     title: "You're all set",
-    body: 'Go explore your neighbourhood. Every barrier you flag helps someone navigate the world a little easier.',
+    body: 'Flagstone is built one flag at a time, by people like you. Every barrier you flag helps someone navigate the world a little easier.',
     isFinal: true,
   },
 ];
@@ -212,6 +228,37 @@ const HERO_MARK_WIDE = 39;
 /** Progress: a 10pt stone per card, the current one stretched into a bar. */
 const DOT = 10;
 const DOT_ACTIVE = 26;
+
+/**
+ * How big the five stones are, given the room they have.
+ *
+ * The row must be visible TOGETHER — that is the whole teaching moment — so the
+ * disc is width-bound, not scale-bound. It grows with the text (`SeverityDisc`'s
+ * scaleWithType contract: box and digit together, so the disc stays the same
+ * OBJECT at every size) up to the point where five of them plus their gaps still
+ * fit the column, and stops there. `scaleWithType` itself is not used because
+ * its ceiling is a fixed 2x and five discs across a 390pt screen cannot reach it
+ * (5 x 48 x 2 plus gaps is 512 into a 342pt column); the ceiling here is the row.
+ *
+ * Exported because the Settings replay teaches the same lesson with the same
+ * object and must not re-derive the arithmetic — one row, one size rule.
+ */
+export function severityRowMetrics(
+  width: number,
+  wide: boolean,
+  fontScale: number,
+): { size: number; digit: number } {
+  const columnWidth = width - 2 * (wide ? spacing.lg : spacing.xxl);
+  const fit = Math.floor((columnWidth - 4 * spacing.sm) / SEVERITY_ORDER.length);
+  const size = Math.max(
+    24,
+    Math.min(
+      Math.round((wide ? DISC_BASE_WIDE : DISC_BASE) * Math.min(fontScale, DISC_MAX_GROWTH)),
+      fit,
+    ),
+  );
+  return { size, digit: Math.round(size * DISC_DIGIT_RATIO) };
+}
 
 export default function OnboardingCards({ onDone }: Props) {
   const color = useColor();
@@ -408,23 +455,7 @@ export default function OnboardingCards({ onDone }: Props) {
   // scrolling the default composition, which is what the shipped card did.
   const wide = isAxRecompose(fontScale);
 
-  // The five stones must be visible TOGETHER — that is the whole teaching
-  // moment — so the disc is width-bound, not scale-bound. It grows with the
-  // text (`SeverityDisc`'s scaleWithType contract: box and digit together, so
-  // the disc stays the same OBJECT at every size) up to the point where five of
-  // them plus their gaps still fit the column, and stops there. scaleWithType
-  // itself is not used because its ceiling is a fixed 2x and five discs across
-  // a 390pt screen cannot reach it; the ceiling here is the row.
-  const columnWidth = width - 2 * (wide ? spacing.lg : spacing.xxl);
-  const discFit = Math.floor((columnWidth - 4 * spacing.sm) / SEVERITY_ORDER.length);
-  const discSize = Math.max(
-    24,
-    Math.min(
-      Math.round((wide ? DISC_BASE_WIDE : DISC_BASE) * Math.min(fontScale, DISC_MAX_GROWTH)),
-      discFit,
-    ),
-  );
-  const discDigit = Math.round(discSize * DISC_DIGIT_RATIO);
+  const { size: discSize, digit: discDigit } = severityRowMetrics(width, wide, fontScale);
 
   const heroDisc = wide ? HERO_DISC_WIDE : HERO_DISC;
   const heroMark = wide ? HERO_MARK_WIDE : HERO_MARK;
@@ -481,8 +512,8 @@ export default function OnboardingCards({ onDone }: Props) {
             const CardIcon = c.icon;
             const effectiveBody = cardGranted
               ? c.permission === 'location'
-                ? "Location is on — you're all set."
-                : "Notifications are on — you're all set."
+                ? "Location is on. You're all set."
+                : "Notifications are on. You're all set."
               : c.body;
             return (
               <View key={c.title} style={[styles.page, { width }]}>

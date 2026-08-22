@@ -270,7 +270,18 @@ rather than invented by the builder:
 | `Maybe later` -> `Not now` | onboarding card 4's decline link (visible label and accessible name) | Q12 — one decline word. The same gesture said two different words two cards apart. |
 | `Allow Location` -> `Allow location` · `Turn on Notifications` -> `Turn on notifications` | onboarding cards 3 and 4, visible CTA only | Q12 — sentence case on CTAs. The accessible names ("Allow location access" / "Turn on notifications") are unchanged and still CONTAIN the visible string, so WCAG 2.5.3 holds; `labelInName.guard` passes. |
 
-### SKY-WORDS-REQUIRED — board 05's onboarding rewrite (banked, nothing shipped)
+### ✅ RATIFIED BY SKY 2026-08-22 — all eight shipped, one part declined
+
+Sky took the board's onboarding rewrite on `design/gsp-05b-copy-2026-08-22`.
+**Declined:** W-07's `users` → `members`. That is a house-vocabulary change
+reaching well past this card, and "users" appears elsewhere; it gets its own
+decision if it is ever wanted. Everything else below is now the shipped copy.
+
+**Still open:** the two card-1 sentences at the bottom of this section. Only the
+first-launch surface was ratified, and reconciling those two needs one ruling
+covering both.
+
+### The eight, as ratified (was: SKY-WORDS-REQUIRED)
 
 Every onboarding string the board draws is a placeholder. Where the board kept
 today's sentence it is listed as unchanged; where it rewrites, both are given.
