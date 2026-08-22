@@ -15,7 +15,7 @@
  *
  * (Recorded for that conversation, not acted on here: the long-press comment
  * says "guests cannot create reports", and the shipped app contradicts it —
- * `isAnon = !user`, "Submit report anonymously", and the Privacy Policy screen
+ * `isAnon = !user`, "Submit anonymously", and the Privacy Policy screen
  * says guests may submit anonymously in as many words.)
  *
  * ─── AND THE ROUND TRIP ───────────────────────────────────────────────────

@@ -90,6 +90,21 @@ const DISABILITY_TAG_ICONS: Readonly<Record<DisabilityTag, DisabilityIconCmp>> =
   temporary_closure: Construction,
 };
 
+/**
+ * Q6 — the button says what it does, out loud and on the glass.
+ *
+ * The contract used to be restated to screen-reader users only: the visible
+ * word was "Submit report" while the accessibleLabel said "Submit report
+ * anonymously". The store dossier (2026-08-05) praised that restatement — it
+ * was praising a label sighted users never got. One string now serves both
+ * channels, which is also the only shape that satisfies WCAG 2.5.3 once the
+ * visible word changes at all.
+ *
+ * PLACEHOLDER COPY: logged in build/COPY_LEDGER.md as SKY-WORDS-REQUIRED.
+ */
+const SUBMIT_LABEL_ANON = 'Submit anonymously';
+const SUBMIT_LABEL = 'Submit report';
+
 interface Props {
   visible: boolean;
   location: { lat: number; lng: number } | null;
@@ -1658,7 +1673,9 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
                 submitting && styles.submitBtnDisabled,
               ]}
               accessibilityRole="button"
-              accessibilityLabel={isAnon ? 'Submit report anonymously' : 'Submit report'}
+              // Q6: one label, seen and spoken. The visible word and the
+              // accessible name are the SAME string now — see the label below.
+              accessibilityLabel={isAnon ? SUBMIT_LABEL_ANON : SUBMIT_LABEL}
               // SW-37: never point a blocked user at the ONE control that cannot
               // help them. Under a denial "Use my location" only re-asks a
               // question the OS has already answered.
@@ -1693,7 +1710,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
                       variant="label"
                       style={[styles.submitText, submitBlocked && styles.submitTextBlocked]}
                     >
-                      Submit report
+                      {isAnon ? SUBMIT_LABEL_ANON : SUBMIT_LABEL}
                     </AppText>
                   )}
                 </>

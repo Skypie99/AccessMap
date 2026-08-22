@@ -519,18 +519,33 @@ describe('anon form (user === null)', () => {
     expect(flagTitle).toBeUndefined();
   });
 
-  it('submit button accessibilityLabel is "Submit report anonymously" (S18: contains the visible "Submit report")', () => {
-    const { getByLabelText } = renderAnon();
-    expect(getByLabelText('Submit report anonymously')).toBeTruthy();
+  it('Q6: the visible word and the spoken name are one string (was two)', () => {
+    // S18 used to be satisfied the other way round — the visible label read
+    // "Submit report" while only the accessible name said "anonymously", so the
+    // contract was restated to screen-reader users and to nobody else. Q6 makes
+    // them the same string, which is the only shape that keeps WCAG 2.5.3 once
+    // the visible word changes at all.
+    const { getByLabelText, getByText, queryByLabelText } = renderAnon();
+    expect(getByLabelText('Submit anonymously')).toBeTruthy();
+    expect(getByText('Submit anonymously')).toBeTruthy();
+    expect(queryByLabelText('Submit report anonymously')).toBeNull();
   });
 
-  it('submit button says "Submit report" while the title still states anonymity', () => {
-    const { getByText, getAllByText } = renderAnon();
-    // S18 (L5-03 / WCAG 2.5.3): the action button is the verb-forward
-    // "Submit report" (was the 19-char "Report anonymously"), and its
-    // accessible name CONTAINS that visible text. Anonymity is still stated
-    // by the title and the anon banner — not the button.
-    expect(getByText('Submit report')).toBeTruthy();
+  it('does NOT show "Report a flag" title header', () => {
+    const { getAllByRole } = renderAnon();
+    const headers = getAllByRole('header');
+    const flagTitle = headers.find((el) => el.props.children === 'Report a flag');
+    expect(flagTitle).toBeUndefined();
+  });
+
+  it('the guest button restates the contract, and the title still does too', () => {
+    const { getByText, getAllByText, queryByText } = renderAnon();
+    // S18 (L5-03) kept the button verb-forward; Q6 keeps that and puts the
+    // contract back on it, where the store dossier thought it already was.
+    // The title and the anon banner still say it as well — the button is the
+    // third place, not the only one.
+    expect(getByText('Submit anonymously')).toBeTruthy();
+    expect(queryByText('Submit report')).toBeNull();
     expect(getAllByText('Report anonymously').length).toBeGreaterThanOrEqual(1);
   });
 });
@@ -576,7 +591,7 @@ describe('auth form (user !== null)', () => {
 describe('submit routing — anon path', () => {
   it('calls checkAnonRateLimit before createAnonFlag on anon submit', async () => {
     const { getByLabelText } = renderAnon();
-    fireEvent.press(getByLabelText('Submit report anonymously'));
+    fireEvent.press(getByLabelText('Submit anonymously'));
 
     await waitFor(() => {
       expect(mockCheckAnonRateLimit).toHaveBeenCalledTimes(1);
@@ -590,7 +605,7 @@ describe('submit routing — anon path', () => {
 
   it('calls recordAnonSubmit after a successful createAnonFlag', async () => {
     const { getByLabelText } = renderAnon();
-    fireEvent.press(getByLabelText('Submit report anonymously'));
+    fireEvent.press(getByLabelText('Submit anonymously'));
 
     await waitFor(() => {
       expect(mockRecordAnonSubmit).toHaveBeenCalledTimes(1);
@@ -599,7 +614,7 @@ describe('submit routing — anon path', () => {
 
   it('does NOT call createFlag on an anon submit', async () => {
     const { getByLabelText } = renderAnon();
-    fireEvent.press(getByLabelText('Submit report anonymously'));
+    fireEvent.press(getByLabelText('Submit anonymously'));
 
     await waitFor(() => {
       expect(mockCreateAnonFlag).toHaveBeenCalled();
@@ -609,7 +624,7 @@ describe('submit routing — anon path', () => {
 
   it('sends the correct lat/lng/category/severity to createAnonFlag', async () => {
     const { getByLabelText } = renderAnon();
-    fireEvent.press(getByLabelText('Submit report anonymously'));
+    fireEvent.press(getByLabelText('Submit anonymously'));
 
     await waitFor(() => {
       expect(mockCreateAnonFlag).toHaveBeenCalledWith(
@@ -629,7 +644,7 @@ describe('submit routing — anon path', () => {
     );
     const alertSpy = jest.spyOn(Alert, 'alert');
     const { getByLabelText } = renderAnon();
-    fireEvent.press(getByLabelText('Submit report anonymously'));
+    fireEvent.press(getByLabelText('Submit anonymously'));
 
     await waitFor(() => {
       expect(alertSpy).toHaveBeenCalledWith(
@@ -837,7 +852,7 @@ describe('live location prop (FIX C — fresh GPS read lands mid-form)', () => {
     );
 
     rate(utils, 3); // Q5 — a report is not filable until it is rated
-    fireEvent.press(utils.getByLabelText('Submit report anonymously'));
+    fireEvent.press(utils.getByLabelText('Submit anonymously'));
 
     await waitFor(() => {
       expect(mockCreateAnonFlag).toHaveBeenCalledWith(
@@ -1015,7 +1030,7 @@ describe('submitting state — L4 disable sweep', () => {
     const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
     const utils = renderAnon();
 
-    fireEvent.press(utils.getByLabelText('Submit report anonymously'));
+    fireEvent.press(utils.getByLabelText('Submit anonymously'));
 
     await waitFor(() => {
       expect(alertSpy).toHaveBeenCalledWith(
@@ -1027,7 +1042,7 @@ describe('submitting state — L4 disable sweep', () => {
 
     // The catch path must reset BOTH the F3 ref and the submitting state.
     expect(
-      utils.getByLabelText('Submit report anonymously').props.accessibilityState,
+      utils.getByLabelText('Submit anonymously').props.accessibilityState,
     ).toMatchObject({ disabled: false, busy: false });
     expect(
       utils.getByLabelText('Description of the accessibility issue').props.editable,
@@ -1035,7 +1050,7 @@ describe('submitting state — L4 disable sweep', () => {
 
     // Functional proof: a second tap goes through (rate limit passes now —
     // the rejection above was mockRejectedValueOnce).
-    fireEvent.press(utils.getByLabelText('Submit report anonymously'));
+    fireEvent.press(utils.getByLabelText('Submit anonymously'));
     await waitFor(() => {
       expect(mockCreateAnonFlag).toHaveBeenCalledTimes(1);
     });
@@ -1141,7 +1156,7 @@ describe('S11 — slow write escalates, never aborts (no double-insert)', () => 
     );
 
     rate(utils, 3); // Q5 — a report is not filable until it is rated
-    fireEvent.press(utils.getByLabelText('Submit report anonymously'));
+    fireEvent.press(utils.getByLabelText('Submit anonymously'));
 
     // The insert is in flight and awaited (not aborted) — exactly one call.
     await waitFor(() => expect(mockCreateAnonFlag).toHaveBeenCalledTimes(1));
@@ -1171,7 +1186,7 @@ describe('S11 — slow write escalates, never aborts (no double-insert)', () => 
       );
 
       rate(utils, 3); // Q5 — a report is not filable until it is rated
-      fireEvent.press(utils.getByLabelText('Submit report anonymously'));
+      fireEvent.press(utils.getByLabelText('Submit anonymously'));
       // Flush the resolved rate-limit check so the insert is in flight.
       await act(async () => {
         await Promise.resolve();
@@ -1220,7 +1235,7 @@ describe('S10 — confirm the submit', () => {
     );
 
     rate(utils, 3); // Q5 — a report is not filable until it is rated
-    fireEvent.press(utils.getByLabelText('Submit report anonymously'));
+    fireEvent.press(utils.getByLabelText('Submit anonymously'));
 
     await waitFor(() => {
       expect(mockSetLiveStatus).toHaveBeenCalledWith(
@@ -1261,7 +1276,7 @@ describe('S10 — confirm the submit', () => {
     );
 
     rate(utils, 3); // Q5 — a report is not filable until it is rated
-    fireEvent.press(utils.getByLabelText('Submit report anonymously'));
+    fireEvent.press(utils.getByLabelText('Submit anonymously'));
 
     await waitFor(() => {
       expect(alertSpy).toHaveBeenCalledWith("Couldn't submit your report", 'insert failed');
@@ -1457,7 +1472,7 @@ describe('SW-37 — there is a way out of the dead-end', () => {
     );
     // Under a denial, "Use my location" only re-asks a question the OS has
     // already answered, so the hint must name the other way out too.
-    const submit = getByLabelText('Submit report anonymously');
+    const submit = getByLabelText('Submit anonymously');
     expect(submit.props.accessibilityHint).toContain(PLACE);
   });
 });
@@ -1614,7 +1629,7 @@ describe('SW-37 (guest half) — the block is explained, not just enforced', () 
         />,
       ),
     );
-    const hint = getByLabelText('Submit report anonymously').props.accessibilityHint as string;
+    const hint = getByLabelText('Submit anonymously').props.accessibilityHint as string;
     expect(hint).toContain('can only be filed where you are');
     // The whole point: after a denial, "Use my location" re-asks a settled question.
     expect(hint).not.toContain('Use my location');
@@ -1757,7 +1772,7 @@ describe('Q5 — no default severity, so every report is a judgment', () => {
 
   it('Submit is inert until a disc is chosen, and says why', () => {
     const utils = renderAnon({ severity: null });
-    const submit = utils.getByLabelText('Submit report anonymously');
+    const submit = utils.getByLabelText('Submit anonymously');
     expect(submit.props.accessibilityState.disabled).toBe(true);
     expect(submit.props.accessibilityHint).toBe(
       'Choose a severity from 1 to 5 to submit this report.',
@@ -1766,7 +1781,7 @@ describe('Q5 — no default severity, so every report is a judgment', () => {
 
   it('pressing an unrated form’s Submit files nothing', async () => {
     const utils = renderAnon({ severity: null });
-    fireEvent.press(utils.getByLabelText('Submit report anonymously'));
+    fireEvent.press(utils.getByLabelText('Submit anonymously'));
     await act(async () => {
       await Promise.resolve();
     });
@@ -1776,7 +1791,7 @@ describe('Q5 — no default severity, so every report is a judgment', () => {
   it('choosing a disc lights Submit, drops the hint, and states the meaning', () => {
     const utils = renderAnon({ severity: null });
     rate(utils, 4);
-    const submit = utils.getByLabelText('Submit report anonymously');
+    const submit = utils.getByLabelText('Submit anonymously');
     expect(submit.props.accessibilityState.disabled).toBe(false);
     expect(submit.props.accessibilityHint).toBeUndefined();
     expect(utils.queryByText('Choose how hard this makes the path to use.')).toBeNull();
@@ -1792,7 +1807,7 @@ describe('Q5 — no default severity, so every report is a judgment', () => {
         <ReportFlagModal visible location={null} onClose={jest.fn()} onCreated={jest.fn()} />,
       ),
     );
-    expect(utils.getByLabelText('Submit report anonymously').props.accessibilityHint).toMatch(
+    expect(utils.getByLabelText('Submit anonymously').props.accessibilityHint).toMatch(
       /Waiting for your location/,
     );
   });
@@ -1872,7 +1887,7 @@ describe('F4 / X7 — the picker becomes the Legend at large type', () => {
       checked: true,
     });
     expect(
-      utils.getByLabelText('Submit report anonymously').props.accessibilityState.disabled,
+      utils.getByLabelText('Submit anonymously').props.accessibilityState.disabled,
     ).toBe(false);
   });
 
@@ -1880,7 +1895,7 @@ describe('F4 / X7 — the picker becomes the Legend at large type', () => {
     setFontScale(1.5);
     mockCreateAnonFlag.mockImplementationOnce(() => new Promise(() => {}));
     const utils = renderAnon({ severity: 3 });
-    fireEvent.press(utils.getByLabelText('Submit report anonymously'));
+    fireEvent.press(utils.getByLabelText('Submit anonymously'));
     await act(async () => {
       await Promise.resolve();
     });
