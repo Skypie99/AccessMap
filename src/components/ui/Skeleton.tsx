@@ -16,6 +16,7 @@
 import React, { useEffect, useRef } from 'react';
 import {
   Animated,
+  PixelRatio,
   StyleSheet,
   View,
   type DimensionValue,
@@ -64,6 +65,24 @@ export function Skeleton({ width, height, borderRadius = radius.xs, style }: Ske
   );
 }
 
+/**
+ * The placeholder's line box, at the reader's text size.
+ *
+ * The bars were pinned to the UNSCALED `font.size.base` / `.sm`, so at
+ * accessibility sizes the skeleton was drawn at the shape of a row nobody was
+ * about to get: three short bars, then a jump to rows two or three times taller
+ * when the data landed. A placeholder that lies about the size of what is
+ * coming is worse than no placeholder — the jump is the thing skeletons exist
+ * to avoid (banners-and-primitives §11.2).
+ *
+ * `PixelRatio.getFontScale()` is read at render (not subscribed) deliberately:
+ * a text-size change on iOS restarts the JS anyway, and a skeleton lives for a
+ * second or two.
+ */
+function scaledLine(size: number): number {
+  return Math.round(size * PixelRatio.getFontScale());
+}
+
 /** List-row placeholder: leading circle + two stacked text lines. */
 export function SkeletonRow() {
   return (
@@ -72,8 +91,8 @@ export function SkeletonRow() {
     >
       <Skeleton width={36} height={36} borderRadius={radius.circle} />
       <View style={styles.lines}>
-        <Skeleton width="60%" height={font.size.base} />
-        <Skeleton width="40%" height={font.size.sm} />
+        <Skeleton width="60%" height={scaledLine(font.size.base)} />
+        <Skeleton width="40%" height={scaledLine(font.size.sm)} />
       </View>
     </View>
   );
@@ -87,8 +106,8 @@ export function SkeletonCard() {
     >
       <Skeleton width={56} height={56} borderRadius={radius.md} />
       <View style={styles.lines}>
-        <Skeleton width="70%" height={font.size.base} />
-        <Skeleton width="45%" height={font.size.sm} />
+        <Skeleton width="70%" height={scaledLine(font.size.base)} />
+        <Skeleton width="45%" height={scaledLine(font.size.sm)} />
       </View>
     </View>
   );

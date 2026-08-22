@@ -14,6 +14,7 @@ import {
 import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 import { RemoteImage } from '@/components/ui/RemoteImage';
 import { AppText } from '@/components/ui/AppText';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { GlassSurface } from '@/components/ui/GlassSurface';
 import SearchInputRow from '@/components/SearchInputRow';
 import { useKeyboardVisible } from '@/hooks/useKeyboardVisible';
@@ -34,7 +35,7 @@ import { filterMyReports } from '@/lib/myReportsFilter';
 import type { FlagRow, FlagStatus } from '@/types/database';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { a11y, bulkGlassShadow, font, radius, shadow, spacing } from '@/theme';
-import { Inbox, MapPin, RefreshCw, Search, X } from 'lucide-react-native';
+import { MapPin, RefreshCw, X } from 'lucide-react-native';
 
 const STATUS_FILTER_ORDER: FlagStatus[] = ['open', 'verified', 'resolved', 'rejected'];
 
@@ -485,30 +486,27 @@ export default function MyReportsModal({
                   // silent and SR users have no feedback their query missed.
                   // (iOS VoiceOver doesn't honor the prop but loses nothing
                   // — it's a no-op there.)
-                  <View style={styles.emptyWrap} accessibilityLiveRegion="polite">
-                    <Search size={32} color={color.inkGlassMuted} strokeWidth={2.2} {...decorativeProps} />
-                    <AppText variant="heading" style={styles.emptyTitle}>No matches</AppText>
-                    <AppText variant="body" style={styles.emptyBody}>No reports match that search.</AppText>
-                  </View>
+                  // W5: three different Lucide glyphs (Search, Inbox, MapPin)
+                  // for three flavours of the same nothing become one mark.
+                  // Every word below is the shipped word.
+                  <EmptyState
+                    live
+                    title="No matches"
+                    body="No reports match that search."
+                  />
                 ) : flags.length > 0 && statusFilter !== 'all' ? (
-                  <View style={styles.emptyWrap}>
-                    <Inbox size={32} color={color.inkGlassMuted} strokeWidth={2.2} {...decorativeProps} />
-                    <AppText variant="heading" style={styles.emptyTitle}>
-                      No {STATUS_LABELS[statusFilter as FlagStatus].toLowerCase()} reports
-                    </AppText>
-                    <AppText variant="body" style={styles.emptyBody}>
-                      You don&apos;t have any reports in this status. Tap &quot;All&quot; to see everything.
-                    </AppText>
-                  </View>
+                  <EmptyState
+                    title={`No ${STATUS_LABELS[statusFilter as FlagStatus].toLowerCase()} reports`}
+                    body={'You don\'t have any reports in this status. Tap "All" to see everything.'}
+                  />
                 ) : (
-                  <View style={styles.emptyWrap}>
-                    <MapPin size={32} color={color.inkGlassMuted} strokeWidth={2.2} {...decorativeProps} />
-                    <AppText variant="heading" style={styles.emptyTitle}>No reports yet</AppText>
-                    <AppText variant="body" style={styles.emptyBody}>
-                      You haven&apos;t reported any accessibility flags. Tap the Map tab and use the
-                      Report button to drop your first pin.
-                    </AppText>
-                  </View>
+                  <EmptyState
+                    title="No reports yet"
+                    body={
+                      'You haven\'t reported any accessibility flags. Tap the Map tab and use the ' +
+                      'Report button to drop your first pin.'
+                    }
+                  />
                 )
               }
             />
@@ -692,23 +690,6 @@ const makeStyles = (color: ColorTheme) =>
       fontStyle: 'italic',
     },
     rowMeta: { fontSize: font.size.xs, color: color.textMuted, lineHeight: 16 },
-    emptyWrap: {
-      alignItems: 'center',
-      gap: spacing.sm,
-      paddingHorizontal: spacing.xxl,
-    },
-    emptyTitle: {
-      fontSize: font.size.xl,
-      fontWeight: font.weight.semibold,
-      color: color.textStrong,
-    },
-    emptyBody: {
-      fontSize: font.size.base,
-      color: color.inkGlassMuted,
-      fontFamily: font.family.bodyMedium,
-      textAlign: 'center',
-      lineHeight: 20,
-    },
     sortRow: {
       flexDirection: 'row',
       gap: spacing.sm,

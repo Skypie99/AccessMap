@@ -40,8 +40,9 @@ import {
   type Text,
   View,
 } from 'react-native';
-import { EyeOff, X } from 'lucide-react-native';
+import { X } from 'lucide-react-native';
 import { AppText } from '@/components/ui/AppText';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { GlassSurface } from '@/components/ui/GlassSurface';
 import { SkeletonRow } from '@/components/ui/Skeleton';
 import { confirm, notify } from '@/lib/confirm';
@@ -49,7 +50,7 @@ import { errorMessage } from '@/lib/errors';
 import { fetchCommentsByIds } from '@/lib/comments';
 import { loadHidden, unhideContent } from '@/lib/hiddenContent';
 import { relativeTime } from '@/lib/relativeTime';
-import { decorativeProps, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
+import { useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
 import {
   COMMENT_UNHIDDEN_ANNOUNCEMENT,
   HIDDEN_COMMENTS_EMPTY_BODY,
@@ -358,6 +359,10 @@ export default function HiddenCommentsModal({ visible, onClose }: Props) {
 
             {/* A failed re-read is a banner, never a replacement for the list:
                 the rows are still there and still unhideable without a network. */}
+            {/* C6: a failed re-read is a FAILURE, so it takes the failure
+                palette — matching MyReports, ActivityFeed and MyWatched. The
+                rows stay on screen either way; the colour says what happened,
+                not what remains. */}
             {loadError && items.length > 0 && !loading && (
               <View style={styles.noticeBanner}>
                 <AppText variant="body" style={styles.noticeText}>
@@ -375,19 +380,12 @@ export default function HiddenCommentsModal({ visible, onClose }: Props) {
                 ))}
               </View>
             ) : items.length === 0 ? (
-              <View style={styles.center}>
-                <EyeOff
-                  size={32}
-                  color={color.inkGlassMuted}
-                  strokeWidth={2.2} {...decorativeProps}
-                />
-                <AppText variant="heading" style={styles.emptyTitle}>
-                  {HIDDEN_COMMENTS_EMPTY_TITLE}
-                </AppText>
-                <AppText variant="body" style={styles.emptySubtitle}>
-                  {HIDDEN_COMMENTS_EMPTY_BODY}
-                </AppText>
-              </View>
+              // W5: the EyeOff glyph becomes the path. Both strings stay in
+              // copy.ts, untouched — these are moderation texts.
+              <EmptyState
+                title={HIDDEN_COMMENTS_EMPTY_TITLE}
+                body={HIDDEN_COMMENTS_EMPTY_BODY}
+              />
             ) : (
               <FlatList
                 data={items}
@@ -458,24 +456,16 @@ const makeStyles = (color: ColorTheme) =>
       color: color.brandOnSoft,
     },
     noticeBanner: {
-      backgroundColor: color.warningBg,
+      backgroundColor: color.errorBg,
       borderRadius: radius.md,
       paddingHorizontal: spacing.md,
       paddingVertical: spacing.sm,
       marginBottom: spacing.sm,
       borderLeftWidth: 3,
-      borderLeftColor: color.accentOrange,
+      borderLeftColor: color.error,
     },
-    noticeText: { fontSize: font.size.sm, color: color.warningFg, lineHeight: 18 },
+    noticeText: { fontSize: font.size.sm, color: color.errorFg, lineHeight: 18 },
     center: { alignItems: 'center', justifyContent: 'center', paddingVertical: 48, gap: spacing.md },
-    emptyTitle: { fontSize: font.size.xl, fontWeight: font.weight.bold, color: color.textStrong },
-    emptySubtitle: {
-      fontSize: font.size.base,
-      color: color.inkGlassMuted,
-      fontFamily: font.family.bodyMedium,
-      textAlign: 'center',
-      lineHeight: 20,
-    },
     list: { paddingBottom: spacing.sm },
     separator: { height: 1, backgroundColor: color.borderSubtle },
     row: {

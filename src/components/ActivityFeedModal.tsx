@@ -28,6 +28,7 @@ import {
 import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 import { RemoteImage } from '@/components/ui/RemoteImage';
 import { AppText } from '@/components/ui/AppText';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { GlassSurface } from '@/components/ui/GlassSurface';
 import { SkeletonCard } from '@/components/ui/Skeleton';
 import { SeverityDisc } from '@/components/SeverityDisc';
@@ -45,7 +46,7 @@ import { loadWatched } from '@/lib/watchedFlags';
 import type { FlagRow } from '@/types/database';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { a11y, bulkGlassShadow, font, radius, shadow, spacing } from '@/theme';
-import { Clock, MapPin, RefreshCw, X } from 'lucide-react-native';
+import { MapPin, RefreshCw, X } from 'lucide-react-native';
 import { StatusBadge } from '@/components/StatusBadge';
 
 type FeedFilter = 'all' | 'mine' | 'watched';
@@ -331,23 +332,24 @@ export default function ActivityFeedModal({ visible, onClose, onSelectFlag, onVi
               }
               ListEmptyComponent={
                 loadError ? null : (
-                  <View style={styles.emptyWrap}>
-                    <Clock size={32} color={color.inkGlassMuted} strokeWidth={2.2} {...decorativeProps} />
-                    <AppText variant="heading" style={styles.emptyTitle}>
-                      {filter === 'mine'
+                  // W5: the Clock glyph becomes the path. Both sentences are
+                  // the shipped sentences, all three branches.
+                  <EmptyState
+                    title={
+                      filter === 'mine'
                         ? 'You have no recent reports'
                         : filter === 'watched'
                           ? 'No recent activity on your watched flags'
-                          : 'No recent activity'}
-                    </AppText>
-                    <AppText variant="body" style={styles.emptyBody}>
-                      {filter === 'mine'
+                          : 'No recent activity'
+                    }
+                    body={
+                      filter === 'mine'
                         ? 'When you report a flag, it appears here right away.'
                         : filter === 'watched'
                           ? 'Watch a flag to follow its updates here.'
-                          : "When community members report or triage flags, they'll show up here in chronological order."}
-                    </AppText>
-                  </View>
+                          : "When community members report or triage flags, they'll show up here in chronological order."
+                    }
+                  />
                 )
               }
             />
@@ -529,21 +531,4 @@ const makeStyles = (color: ColorTheme) =>
     rowBodyText: { flex: 1, gap: spacing.tight, justifyContent: 'center' },
     rowDesc: { fontSize: font.size.base, color: color.text, lineHeight: 19 },
     rowMeta: { fontSize: font.size.xs, color: color.textMuted, lineHeight: 16 },
-    emptyWrap: {
-      alignItems: 'center',
-      gap: spacing.sm,
-      paddingHorizontal: spacing.xxl,
-    },
-    emptyTitle: {
-      fontSize: font.size.xl,
-      fontWeight: font.weight.semibold,
-      color: color.textStrong,
-    },
-    emptyBody: {
-      fontSize: font.size.base,
-      color: color.inkGlassMuted,
-      fontFamily: font.family.bodyMedium,
-      textAlign: 'center',
-      lineHeight: 20,
-    },
   });

@@ -12,6 +12,7 @@ import React, { useMemo } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, type Text, View } from 'react-native';
 import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 import { AppText } from '@/components/ui/AppText';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { GlassSurface } from '@/components/ui/GlassSurface';
 import { decorativeProps, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
 import type { Achievement, AchievementCategory } from '@/lib/achievements';
@@ -237,16 +238,29 @@ export default function AchievementsModal({ visible, onClose, achievements }: Pr
           </View>
 
           <ScrollView contentContainerStyle={styles.scroll}>
-            {grouped.map(({ cat, items }) => (
-              <View key={cat} style={styles.section}>
-                <AppText variant="heading" style={styles.sectionHeader}>{CATEGORY_LABEL[cat]}</AppText>
-                <View style={styles.list}>
-                  {items.map((a) => (
-                    <AchievementRow key={a.id} achievement={a} />
-                  ))}
+            {/* W5 — the empty state this sheet never had. `grouped` filters out
+                every empty category, so a catalog that arrives empty (or a
+                future build with achievements gated off) rendered a titled
+                sheet with nothing under it and no explanation. Every sibling
+                list in the estate answers that case; this one just went blank.
+                PLACEHOLDER COPY (SKY-WORDS-REQUIRED). */}
+            {grouped.length === 0 ? (
+              <EmptyState
+                title="No badges to show yet"
+                body="Report, verify and resolve barriers to start earning them."
+              />
+            ) : (
+              grouped.map(({ cat, items }) => (
+                <View key={cat} style={styles.section}>
+                  <AppText variant="heading" style={styles.sectionHeader}>{CATEGORY_LABEL[cat]}</AppText>
+                  <View style={styles.list}>
+                    {items.map((a) => (
+                      <AchievementRow key={a.id} achievement={a} />
+                    ))}
+                  </View>
                 </View>
-              </View>
-            ))}
+              ))
+            )}
           </ScrollView>
         </GlassSurface>
         </View>
