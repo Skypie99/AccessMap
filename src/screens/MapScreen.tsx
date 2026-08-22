@@ -102,7 +102,7 @@ import { AppText } from '@/components/ui/AppText';
 import { GlassSurface } from '@/components/ui/GlassSurface';
 import { PressableScale } from '@/components/ui/PressableScale';
 import { OverflowFade } from '@/components/ui/OverflowFade';
-import { useHorizontalOverflowFade } from '@/hooks/useHorizontalOverflowFade';
+import { useHorizontalOverflowFade } from '@/hooks/useOverflowFade';
 import { useDrawer, useDrawerTrigger } from '@/lib/drawerContext';
 import { useSharedModals } from '@/lib/sharedModalsContext';
 import { useScreenReader, useReducedMotion, a11yToggle, decorativeProps, isAxRecompose, useSurfaceTrigger } from '@/lib/accessibility';

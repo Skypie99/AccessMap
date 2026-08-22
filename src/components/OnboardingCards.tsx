@@ -7,23 +7,29 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
+  type StyleProp,
   type Text,
   useWindowDimensions,
   View,
+  type ViewStyle,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Bell, CheckCircle2, MapPin, Sparkles, type LucideIcon } from 'lucide-react-native';
+import { Bell, Check, type LucideIcon } from 'lucide-react-native';
 import { AppText } from '@/components/ui/AppText';
+import { OverflowFade } from '@/components/ui/OverflowFade';
+import { ScreenStage } from '@/components/ui/ScreenStage';
+import { TYPE_BLOCK } from '@/components/ui/TypeBlock';
+import { useVerticalOverflowFade } from '@/hooks/useOverflowFade';
 import LogoMark from '@/components/LogoMark';
-import { SeverityDisc } from '@/components/SeverityDisc';
+import { DISC_MAX_GROWTH, SeverityDisc } from '@/components/SeverityDisc';
 import * as Location from 'expo-location';
 import {
   getNotificationPermission,
   requestNotificationPermission,
 } from '@/lib/pushNotifications';
-import { a11yToggle, decorativeProps, isAxRecompose, useFocusOnOpen } from '@/lib/accessibility';
-import { SEVERITY_LABELS, SEVERITY_ORDER } from '@/lib/flags';
-import { color as staticColor, font, radius, spacing, gradient, shadow } from '@/theme';
+import { a11yToggle, decorativeProps, isAxRecompose, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
+import { trackEvent } from '@/lib/analytics';
+import { SEVERITY_LABELS, SEVERITY_ORDER, severityColor } from '@/lib/flags';
+import { font, radius, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 
@@ -50,23 +56,47 @@ import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
  * intro that runs AFTER sign-in. This one runs BEFORE the auth gate so
  * a user who hasn't even signed up yet still gets the pitch.
  *
+ * ─── 2026-08-22 · board 05, "onboarding in the light" ─────────────────────
+ * This screen used to be its OWN dark world: a bespoke gradient, a glow orb, a
+ * hand-rolled glass card, and a centred composition in which the card cut
+ * across the hero, the hero slid whenever the footer gained a row, and TWO
+ * indicators (a "N / 5" pill and a dot row) said the same thing. The app's own
+ * Settings replay already proved the light version reads as the product.
+ *
+ * Sky's ruling (Q4): onboarding joins the themed app. The real `ScreenStage`
+ * carries both palettes, so the intro and the app are one place. What replaced
+ * the template:
+ *   - ONE layout for all five cards. Hero + copy sit in a bottom-anchored
+ *     flexible zone; the progress row, the decline slot and the CTA row are
+ *     pinned chrome below it, and the decline slot is RESERVED on every card
+ *     so nothing above it can move card to card. That is the whole fix for the
+ *     sliding hero, and it also holds still when a permission flips to granted.
+ *   - The severity discs are the hero of card 2 at 48pt, drawn by the
+ *     production `SeverityDisc`, and the progress indicator is five stones with
+ *     the current one stretched into a bar. One indicator, not two.
+ *   - The brand's own pin does the identity work on cards 1, 3 and 5; the
+ *     four-point AI sparkle is gone from the finisher.
+ *   - At the recomposition point (>=1.5x, rule F4) the hero moves to the top at
+ *     0.7 scale, the copy column goes full bleed, the body caps at 2.0 (rule
+ *     T5's width rule — "accessibility" must not break mid-word) and the CTA
+ *     row stacks full-width. No card, so nothing left to collide with.
+ *
  * Accessibility notes:
  *  - The root surface sets accessibilityViewIsModal so VoiceOver focus
  *    stays contained inside the onboarding overlay and can't escape to
  *    the underlying auth screen.
  *  - The card heading uses accessibilityRole="header" as a STANDALONE
  *    element — the card container does NOT set `accessible`, so children
- *    (heading, body, position text) are individually focusable and the
- *    heading rotor works.
- *  - "Card N of 5" is announced two ways: (a) a small visible position
- *    label above the heading that screen readers pick up, and (b) an
- *    AccessibilityInfo.announceForAccessibility() when the active card
- *    changes via Back/Next/swipe.
+ *    (heading, body) are individually focusable and the heading rotor works.
+ *  - "Card N of 5" is announced when the active card CHANGES. It is
+ *    deliberately silent on mount: `useFocusOnOpen` already moves the
+ *    VoiceOver cursor onto card 1's heading, and announcing over that focus
+ *    jump is the D21 double-speak. Same guard shape as OnboardingModal's.
  *  - Respects the OS "Reduce Motion" setting: when on, the swipe paging
  *    animation is skipped (cards still navigable via Back/Next).
  *  - Decorative icons are hidden from assistive tech (text describes the
  *    same thing without them).
- *  - Skip / Back / Next / permission buttons are all ≥44pt high with
+ *  - Skip / Back / Next / permission buttons are all >=44pt high with
  *    explicit labels and hints; the Back button on card 1 is announced
  *    as disabled.
  */
@@ -80,17 +110,18 @@ interface Props {
 type PermissionKind = 'location' | 'notifications';
 
 interface Card {
-  // Stock Lucide icon for the slide. Omitted on the brand-mark slide.
+  /** Stock Lucide icon, drawn inside the brand disc. Omitted on mark slides. */
   icon?: LucideIcon;
-  iconColor: string;
   title: string;
   body: string;
-  // Slide 1 wears the ownable Wayfinder mark (LogoMark) instead of a stock
-  // Lucide glyph — PROTECT-16, the app owns a good mark, so wear it more.
-  brandMark?: boolean;
-  // Slide 2 shows the severity scale itself — five numbered discs (the Legend
-  // in miniature) instead of a stock glyph. Introduces the grammar on day zero.
-  severityScale?: boolean;
+  /**
+   * Board 05: the hero is one of three things, never a glyph-on-a-gradient.
+   *   mark  — the Flagstone pin at full size, unframed (cards 1 and 5)
+   *   discs — the five production severity discs (card 2, the one moment that
+   *           is genuinely this product's)
+   *   glyph — a Lucide icon inside a brandSoft disc (cards 3 and 4)
+   */
+  hero: 'mark' | 'discs' | 'glyph';
   // Slide primes this OS permission and fires the prompt on its primary tap.
   permission?: PermissionKind;
   // The final slide — primary button is "Continue" and finishes onboarding.
@@ -99,46 +130,88 @@ interface Card {
   isFinal?: boolean;
 }
 
-// Icon accents are brand-anchored (not a rainbow): brand blue on dark for the
-// informational/permission slides, with the gold reward accent saved for the
-// final "you're all set" celebration. The granted state stays semantic green.
+/**
+ * Copy is UNCHANGED from a27864b, deliberately. Board 05 proposes a rewrite of
+ * cards 2, 4 and 5 (and turns three em dashes into stops); those are new
+ * user-facing words, so they are banked in build/COPY_LEDGER.md for Sky to
+ * ratify rather than shipped by a builder. The two things the DECISIONS block
+ * DID rule on — one decline word, sentence case on the permission CTAs — are
+ * applied below.
+ */
 const CARDS: Card[] = [
   {
-    brandMark: true,
-    iconColor: '#60a5fa',
+    hero: 'mark',
     title: 'Welcome to Flagstone',
     body: 'See an accessibility barrier — a missing ramp, a broken sidewalk, a blocked path? Put it on the map so others know, and so it gets fixed.',
   },
   {
-    severityScale: true,
-    iconColor: '#60a5fa',
+    hero: 'discs',
     title: "Here's how it works",
     body: 'Find the spot on the map and add the barrier there, then rate how bad it is. Others verify it or mark it resolved once the issue is fixed. (Signed-in users can add a photo, too.)',
   },
   {
-    icon: MapPin,
-    iconColor: '#60a5fa',
+    hero: 'glyph',
     title: 'Show flags near you',
     body: "We’ll use your location to show nearby barriers and place your reports accurately. It’s only used while the app is open — never tracked or stored on our servers.",
     permission: 'location',
   },
   {
+    hero: 'glyph',
     icon: Bell,
-    iconColor: '#60a5fa',
     title: 'Stay in the loop',
     body: 'Get a heads-up when flags near you are verified or resolved. Totally optional — you can turn this on later in Settings.',
     permission: 'notifications',
   },
   {
-    icon: Sparkles,
-    // goldAccent is mode-independent, so the static import is correct here
-    // (the card defs are module-level, outside useColor's reach). BP-8.
-    iconColor: staticColor.goldAccent,
+    hero: 'mark',
     title: "You're all set",
     body: 'Go explore your neighbourhood. Every barrier you flag helps someone navigate the world a little easier.',
     isFinal: true,
   },
 ];
+
+/**
+ * Editorial type, from board 05. Both sizes sit BETWEEN scale steps
+ * (`font.size` has h1 28 / display 48, and lg 16 / xl 18), so they are named
+ * here rather than dropped in raw. They are the board's drawing of this one
+ * screen, not a proposal to grow the scale — if Sky would rather stay on the
+ * scale, 28 and 16 are the neighbours, and the body cap below is derived from
+ * 17 so it moves with it.
+ */
+const TITLE_SIZE = 34;
+const BODY_SIZE = 17;
+
+/**
+ * T3 — the title is header-class: it is the largest thing on the screen and
+ * must never end up capped below the body it labels.
+ */
+export const ONBOARDING_TITLE_MAX_FONT_SCALE = TYPE_BLOCK.header;
+
+/**
+ * T5, the width rule — a body multiplier stops at the size where the longest
+ * word in the column still fits. The word here is "accessibility" (13
+ * characters, card 1); the column at the recomposition point is the full-bleed
+ * ~358pt on a 390pt device. At 17pt this lands at 2.0. Above it, iOS
+ * character-breaks rather than overflowing, which is the "accessibili / ty"
+ * shred captured at 3XL (critic pass X13).
+ *
+ * The cap is the second half of the fix, not the first: T5 says widen the
+ * column BEFORE you shrink the text, and `heroWide` does that first.
+ */
+export const ONBOARDING_BODY_MAX_FONT_SCALE = 2;
+
+/** Board 05: the five stones, and the brand disc on the permission cards. */
+const DISC_BASE = 48;
+const DISC_BASE_WIDE = 40;
+const DISC_DIGIT_RATIO = 20 / DISC_BASE;
+const HERO_DISC = 56;
+const HERO_DISC_WIDE = 40;
+const HERO_MARK = 56;
+const HERO_MARK_WIDE = 39;
+
+/** Progress: a 10pt stone per card, the current one stretched into a bar. */
+const DOT = 10;
+const DOT_ACTIVE = 26;
 
 export default function OnboardingCards({ onDone }: Props) {
   const color = useColor();
@@ -149,41 +222,34 @@ export default function OnboardingCards({ onDone }: Props) {
   const { width, fontScale } = useWindowDimensions();
   const scrollRef = useRef<ScrollView | null>(null);
   const [index, setIndex] = useState(0);
-  const [reduceMotion, setReduceMotion] = useState(false);
+  // The shared hook, not a second hand-rolled listener. The local copy this
+  // replaces was byte-equivalent and would not have inherited a fix to it.
+  const reduceMotion = useReducedMotion();
   // Per-permission status. null = not checked yet / unavailable here (web or
   // expo-notifications absent); true/false = granted/denied.
   const [locationGranted, setLocationGranted] = useState<boolean | null>(null);
   const [notifGranted, setNotifGranted] = useState<boolean | null>(null);
 
-  // Track the OS "Reduce Motion" preference so the swipe animation can
-  // be skipped when the user has asked the system to minimize motion.
-  useEffect(() => {
-    let cancelled = false;
-    AccessibilityInfo.isReduceMotionEnabled().then((on) => {
-      if (!cancelled) setReduceMotion(on);
-    });
-    const sub = AccessibilityInfo.addEventListener('reduceMotionChanged', setReduceMotion);
-    return () => {
-      cancelled = true;
-      sub.remove();
-    };
-  }, []);
-
-  // Animated values driving each dot's width — 22pt pill when active, 8pt
-  // circle otherwise. useNativeDriver must be false because 'width' is a
+  // Animated values driving each stone's width — a DOT_ACTIVE bar when active,
+  // a DOT circle otherwise. useNativeDriver must be false because 'width' is a
   // layout property; spring gives a brief premium settle feel.
   const dotWidths = useRef(
-    CARDS.map((_, i) => new Animated.Value(i === 0 ? 22 : 8)),
+    CARDS.map((_, i) => new Animated.Value(i === 0 ? DOT_ACTIVE : DOT)),
   ).current;
+
+  // Board 05: the current stone stretches into a bar, and the bar grows with
+  // the text to the chrome ceiling (it is chrome — there is nowhere for it to
+  // go). Declared before the effect that springs toward it.
+  const dotActiveWidth = DOT_ACTIVE * Math.min(fontScale, TYPE_BLOCK.chrome);
 
   useEffect(() => {
     if (reduceMotion) {
-      dotWidths.forEach((anim, i) => anim.setValue(i === index ? 22 : 8));
+      dotWidths.forEach((anim, i) => anim.setValue(i === index ? dotActiveWidth : DOT));
     } else {
       Animated.parallel(
         dotWidths.map((anim, i) =>
           Animated.spring(anim, {
-            toValue: i === index ? 22 : 8,
+            toValue: i === index ? dotActiveWidth : DOT,
             speed: 18,
             bounciness: 3,
             useNativeDriver: false,
@@ -191,12 +257,24 @@ export default function OnboardingCards({ onDone }: Props) {
         ),
       ).start();
     }
-  }, [index, dotWidths, reduceMotion]);
+  }, [index, dotWidths, dotActiveWidth, reduceMotion]);
 
-  // When the active card changes (Back/Next/swipe), announce the new
-  // position so screen reader users get the "Card N of 4" context even
-  // though the card container is no longer a single accessible element.
+  // D21 — announce the new position when the card CHANGES, and stay silent on
+  // the mount edge. The effect used to fire unconditionally, including on the
+  // first commit, where it collided with the useFocusOnOpen cursor jump onto
+  // card 1's heading and VoiceOver spoke twice. Same `wasVisible`/`prevIndex`
+  // shape OnboardingModal uses, folded to a surface whose open edge IS its
+  // mount. WCAG 4.1.3.
+  const announced = useRef(false);
+  const prevIndex = useRef(0);
   useEffect(() => {
+    if (!announced.current) {
+      announced.current = true;
+      prevIndex.current = index;
+      return;
+    }
+    if (index === prevIndex.current) return;
+    prevIndex.current = index;
     AccessibilityInfo.announceForAccessibility(`Card ${index + 1} of ${CARDS.length}`);
   }, [index]);
 
@@ -212,6 +290,18 @@ export default function OnboardingCards({ onDone }: Props) {
   const handleScroll = (e: { nativeEvent: { contentOffset: { x: number } } }) => {
     const next = Math.round(e.nativeEvent.contentOffset.x / Math.max(1, width));
     if (next !== index) setIndex(next);
+  };
+
+  // Analytics parity with the replay, which has tracked skip/complete since it
+  // shipped while the CONSEQUENTIAL flow — the pre-auth one that primes two OS
+  // permissions — reported nothing at all. Platform only, no PII.
+  const handleSkip = () => {
+    trackEvent('onboarding_skipped', { platform: Platform.OS, card: index + 1 });
+    onDone();
+  };
+  const handleComplete = () => {
+    trackEvent('onboarding_completed', { platform: Platform.OS });
+    onDone();
   };
 
   const isFirst = index === 0;
@@ -231,10 +321,11 @@ export default function OnboardingCards({ onDone }: Props) {
   // label doesn't flip from "Continue" to "Allow…" under the user's finger.
   const permissionChecking =
     permission != null && Platform.OS !== 'web' && currentGranted === null;
-  // S19 (L1-3): both permission slides show a visible decline until granted —
-  // location gets "Not now", notifications "Maybe later". Native only: on web
-  // the primary CTA is already just "Continue" (no OS prompt fires there), so a
-  // second decline would be redundant.
+  // S19 (L1-3): both permission slides show a visible decline until granted.
+  // Q12 (2026-08-21): ONE decline word. "Not now" on both, where card 4 used to
+  // say "Maybe later" for the same gesture. Native only: on web the primary CTA
+  // is already just "Continue" (no OS prompt fires there), so a second decline
+  // would be redundant.
   const showDecline =
     permission != null && currentGranted !== true && Platform.OS !== 'web';
 
@@ -268,20 +359,42 @@ export default function OnboardingCards({ onDone }: Props) {
       goTo(index + 1);
       return;
     }
+    let granted = false;
     try {
       if (permission === 'location') {
         const { status } = await Location.requestForegroundPermissionsAsync();
-        setLocationGranted(status === 'granted');
+        granted = status === 'granted';
+        setLocationGranted(granted);
       } else if (permission === 'notifications') {
-        setNotifGranted(await requestNotificationPermission());
+        granted = await requestNotificationPermission();
+        setNotifGranted(granted);
       }
     } catch {
       // COR-6: a REJECTED permission request (rare OS/entitlement states)
       // counts as not-granted — the contract above stands: denying (or
       // failing) never blocks progress, and the primary button must never
       // read as dead.
+      granted = false;
       if (permission === 'location') setLocationGranted(false);
       else setNotifGranted(false);
+    }
+    if (permission) {
+      trackEvent('onboarding_permission', {
+        permission,
+        outcome: granted ? 'granted' : 'denied',
+        platform: Platform.OS,
+      });
+    }
+    goTo(index + 1);
+  };
+
+  const handleDecline = () => {
+    if (permission) {
+      trackEvent('onboarding_permission', {
+        permission,
+        outcome: 'declined',
+        platform: Platform.OS,
+      });
     }
     goTo(index + 1);
   };
@@ -290,53 +403,63 @@ export default function OnboardingCards({ onDone }: Props) {
   // unsafe zone on insets.top=59 devices (sweep M20). Non-throwing context
   // read (null → zeros) so a provider-less mount still renders; 0 on web.
   const insets = React.useContext(SafeAreaInsetsContext) ?? { top: 0, bottom: 0, left: 0, right: 0 };
-  // T5 (D4): at the recomposition point the card's generous side padding is what
-  // starves the body column, so it gives the width back rather than capping the
-  // text. "accessibility" is the word that shredded ("accessibili / ty").
-  const wideColumn = isAxRecompose(fontScale);
+  // F4 / T5: the recomposition point. Above it the whole screen recomposes —
+  // hero to the top and smaller, copy full bleed, CTA stacked — rather than
+  // scrolling the default composition, which is what the shipped card did.
+  const wide = isAxRecompose(fontScale);
+
+  // The five stones must be visible TOGETHER — that is the whole teaching
+  // moment — so the disc is width-bound, not scale-bound. It grows with the
+  // text (`SeverityDisc`'s scaleWithType contract: box and digit together, so
+  // the disc stays the same OBJECT at every size) up to the point where five of
+  // them plus their gaps still fit the column, and stops there. scaleWithType
+  // itself is not used because its ceiling is a fixed 2x and five discs across
+  // a 390pt screen cannot reach it; the ceiling here is the row.
+  const columnWidth = width - 2 * (wide ? spacing.lg : spacing.xxl);
+  const discFit = Math.floor((columnWidth - 4 * spacing.sm) / SEVERITY_ORDER.length);
+  const discSize = Math.max(
+    24,
+    Math.min(
+      Math.round((wide ? DISC_BASE_WIDE : DISC_BASE) * Math.min(fontScale, DISC_MAX_GROWTH)),
+      discFit,
+    ),
+  );
+  const discDigit = Math.round(discSize * DISC_DIGIT_RATIO);
+
+  const heroDisc = wide ? HERO_DISC_WIDE : HERO_DISC;
+  const heroMark = wide ? HERO_MARK_WIDE : HERO_MARK;
 
   return (
-    <Modal aria-label="Welcome to Flagstone" visible animationType={reduceMotion ? 'none' : 'fade'} onRequestClose={onDone} presentationStyle="fullScreen">
+    <Modal aria-label="Welcome to Flagstone" visible animationType={reduceMotion ? 'none' : 'fade'} onRequestClose={handleSkip} presentationStyle="fullScreen">
       <View
         style={styles.screen}
         accessibilityViewIsModal
         importantForAccessibility="yes"
-        // G1: onDone is correct here. Unlike OnboardingModal this file has no
-        // handleSkip and no analytics — its visible Skip calls onDone
-        // directly, so there is no side effect to preserve.
-        onAccessibilityEscape={onDone}
+        // G1: routes to handleSkip, NOT onDone. It used to be onDone, correctly,
+        // because this file had no analytics to preserve — it does now, and an
+        // escape that skipped the funnel event would under-count exactly the
+        // users who leave. Same call the visible Skip makes.
+        onAccessibilityEscape={handleSkip}
       >
-        {/* Full-screen gradient */}
-        <LinearGradient
-          colors={['#070b18', '#0c1628', '#0f2040']}
-          start={{ x: 0.3, y: 0 }}
-          end={{ x: 0.7, y: 1 }}
-          style={StyleSheet.absoluteFill}
-        />
-        {/* Ambient glow behind icon — color tracks the active card */}
-        <View
-          style={[
-            styles.glowOrb,
-            {
-              backgroundColor:
-                currentGranted === true ? '#34d39922' : card.iconColor + '22',
-            },
-          ]}
-          pointerEvents="none"
-        />
+        {/* The app's real stage, both palettes. Q4: onboarding stopped being a
+            fixed-dark world of its own and joined the themed app. */}
+        <ScreenStage />
 
-        {/* Skip — visible on every card including the permission card */}
+        {/* Skip — cards 1 to 4. There is nothing left to skip on the finisher,
+            and the row keeps its height there so nothing below it moves. */}
         <View style={[styles.topBar, { paddingTop: Math.max(insets.top, 48) }]}>
-          <Pressable
-            onPress={onDone}
-            style={({ pressed }) => [styles.skipBtn, pressed && { opacity: 0.6 }]}
-            accessibilityRole="button"
-            accessibilityLabel="Skip the tutorial"
-            accessibilityHint="Closes the tutorial and opens the app"
-            hitSlop={12}
-          >
-            <AppText variant="label" style={styles.skipText}>Skip</AppText>
-          </Pressable>
+          {!card.isFinal ? (
+            <Pressable
+              onPress={handleSkip}
+              style={({ pressed }) => [styles.skipBtn, pressed && { opacity: 0.6 }]}
+              accessibilityRole="button"
+              accessibilityLabel="Skip the tutorial"
+              accessibilityHint="Closes the tutorial and opens the app"
+              hitSlop={12}
+            >
+              <AppText variant="label" style={styles.skipText}>Skip</AppText>
+            </Pressable>
+          ) : null}
         </View>
 
         {/* Card carousel */}
@@ -349,103 +472,134 @@ export default function OnboardingCards({ onDone }: Props) {
           style={styles.scroll}
         >
           {CARDS.map((c, i) => {
-            // For a permission slide, the icon and body reflect live status:
-            // once granted, the icon becomes a green check and the body
+            // For a permission slide, the hero and body reflect live status:
+            // once granted, the disc becomes a success check and the body
             // confirms it, so the user gets clear feedback in-place.
             const cardGranted =
               (c.permission === 'location' && locationGranted === true) ||
               (c.permission === 'notifications' && notifGranted === true);
-            const EffectiveIcon = cardGranted ? CheckCircle2 : c.icon;
-            const effectiveColor = cardGranted ? '#34d399' : c.iconColor;
+            const CardIcon = c.icon;
             const effectiveBody = cardGranted
               ? c.permission === 'location'
                 ? "Location is on — you're all set."
                 : "Notifications are on — you're all set."
               : c.body;
             return (
-              <View key={c.title} style={[styles.cardOuter, { width }]}>
-                {/* Vertical scroll so a tall slide (large type / short screen)
-                    stays reachable; centered when it fits (G10). The inner
-                    vertical scroller reports only contentOffset.y and cannot
-                    corrupt the horizontal pager's .x paging math. */}
-                <ScrollView
-                  style={styles.cardScroll}
-                  contentContainerStyle={[styles.cardScrollContent, wideColumn && styles.cardScrollContentWide]}
-                  showsVerticalScrollIndicator={false}
-                  nestedScrollEnabled
-                >
-                  {c.severityScale ? (
-                    /* Slide 2: the Legend in miniature — the five numbered severity
-                       discs as one quiet static row on the Deep Field gradient
-                       (unframed; no glass circle). ONE accessible group names the
-                       scale (label derived from SEVERITY_LABELS); the discs are
-                       decorative. The same 32/14 disc the Legend wears, so a user
-                       meets 1–5 before the report form ever asks. No motion, no
-                       severity-coloured chrome — a static teaching image that is true. */
+              <View key={c.title} style={[styles.page, { width }]}>
+                {/* The copy scrolls INSIDE the hero zone when it has to; the
+                    progress row and the CTA below stay pinned. flexGrow keeps
+                    the block anchored to the bottom of the zone when it fits,
+                    which is what stops the hero sliding card to card (G10). */}
+                <CopyZone contentStyle={[styles.hero, wide && styles.heroWide]} styles={styles}>
+                  {c.hero === 'discs' ? (
+                    /* The Legend in miniature — the five numbered severity discs
+                       as one quiet static row on the stage. ONE accessible group
+                       names the scale (label derived from SEVERITY_LABELS); the
+                       discs are decorative. The same production disc the Legend
+                       and every flag row wear, so a user meets 1–5 before the
+                       report form ever asks. No motion, no severity-coloured
+                       chrome — a static teaching image that is true. */
                     <View
-                      style={styles.severityScaleRow}
+                      style={[styles.discRow, { gap: spacing.sm }]}
                       accessible
                       accessibilityRole="image"
                       accessibilityLabel={`Severity scale — 1 ${SEVERITY_LABELS[1]} to 5 ${SEVERITY_LABELS[5]}`}
                     >
                       {SEVERITY_ORDER.map((s) => (
-                        <SeverityDisc key={s} severity={s} size={32} digitSize={font.size.base} maxFontSizeMultiplier={1.3} />
+                        <SeverityDisc
+                          key={s}
+                          severity={s}
+                          size={discSize}
+                          digitSize={discDigit}
+                          // The box already carries the growth; capping the
+                          // glyph again would leave a small digit rattling
+                          // inside a big circle.
+                          maxFontSizeMultiplier={1}
+                        />
                       ))}
                     </View>
+                  ) : c.hero === 'mark' ? (
+                    /* The brand's own pin, unframed, at the size it deserves.
+                       `mono` tinted with the themed brand rather than `color`:
+                       identical in light mode (both #1466E0) and correctly
+                       lightened on the dark stage. */
+                    <View style={styles.heroRow} {...decorativeProps}>
+                      <LogoMark size={heroMark} variant="mono" tint={color.brand} />
+                    </View>
                   ) : (
-                    /* Icon circle — decorative; card heading conveys the same meaning */
                     <View
                       style={[
-                        styles.iconCircle,
-                        { borderColor: effectiveColor + '40', shadowColor: effectiveColor },
+                        styles.heroDisc,
+                        {
+                          width: heroDisc,
+                          height: heroDisc,
+                          backgroundColor: cardGranted ? color.success : color.brandSoft,
+                        },
                       ]} {...decorativeProps}
                     >
-                      {c.brandMark ? (
-                        <LogoMark size={60} variant="mono" tint={effectiveColor} />
-                      ) : EffectiveIcon ? (
-                        <EffectiveIcon size={52} color={effectiveColor} strokeWidth={2} />
-                      ) : null}
+                      {cardGranted ? (
+                        <Check size={Math.round(heroDisc * 0.5)} color={color.textOnBrand} strokeWidth={2.5} />
+                      ) : CardIcon ? (
+                        <CardIcon size={Math.round(heroDisc * 0.5)} color={color.brandOnSoft} strokeWidth={2} />
+                      ) : (
+                        /* Card 3 wears the house pin, not Lucide's MapPin —
+                           two pin drawings three screens apart was the drift.
+                           On the dark stage the knockout reads better than a
+                           light-blue pin holding a white figure. */
+                        <LogoMark
+                          size={Math.round(heroDisc * 0.62)}
+                          variant={color.scheme === 'dark' ? 'white' : 'mono'}
+                          tint={color.brandOnSoft}
+                        />
+                      )}
                     </View>
                   )}
 
-                  {/* Position pill */}
-                  <View style={styles.positionPill}>
-                    <AppText variant="label" style={styles.positionText}>{`${i + 1} / ${CARDS.length}`}</AppText>
-                  </View>
-
-                  {/* Text content — glass card */}
-                  <View style={styles.cardContent}>
-                    <AppText ref={i === 0 ? titleRef : undefined} variant="heading" style={styles.title} accessibilityRole="header">
-                      {c.title}
-                    </AppText>
-                    <AppText variant="body" style={[styles.body, wideColumn && styles.bodyWide]}>{effectiveBody}</AppText>
-                  </View>
-                </ScrollView>
+                  <AppText
+                    ref={i === 0 ? titleRef : undefined}
+                    variant="display"
+                    size={TITLE_SIZE}
+                    color={color.textStrong}
+                    maxFontSizeMultiplier={ONBOARDING_TITLE_MAX_FONT_SCALE}
+                    style={styles.title}
+                    accessibilityRole="header"
+                  >
+                    {c.title}
+                  </AppText>
+                  <AppText
+                    variant="bodyMedium"
+                    size={BODY_SIZE}
+                    color={color.text}
+                    maxFontSizeMultiplier={ONBOARDING_BODY_MAX_FONT_SCALE}
+                    style={styles.body}
+                  >
+                    {effectiveBody}
+                  </AppText>
+                </CopyZone>
               </View>
             );
           })}
         </ScrollView>
 
-        {/* Dots — decorative, hidden from assistive tech */}
-        <View
-          style={styles.dotsRow} {...decorativeProps}
-        >
+        {/* Progress — five stones, the current one stretched into a bar and
+            wearing its own severity colour; the finisher's turns Civic Gold.
+            Decorative: position is spoken by the announce and the CTA labels,
+            so it never rests on colour alone (WCAG 1.4.1). */}
+        <View style={styles.progress} {...decorativeProps}>
           {CARDS.map((c, i) => {
-            const dotColor = currentGranted === true ? '#34d399' : card.iconColor;
             const isActive = i === index;
             return (
               <Animated.View
                 key={c.title}
                 style={[
                   styles.dot,
+                  // One driver for every stone, so the one arriving settles the
+                  // same way the one leaving does.
                   { width: dotWidths[i] },
                   isActive && {
-                    backgroundColor: dotColor,
-                    shadowColor: dotColor,
-                    shadowOpacity: 0.55,
-                    shadowRadius: 6,
-                    shadowOffset: { width: 0, height: 0 },
-                    elevation: 3,
+                    backgroundColor: c.isFinal
+                      ? color.goldAccent
+                      : severityColor(SEVERITY_ORDER[i]!),
                   },
                 ]}
               />
@@ -453,14 +607,37 @@ export default function OnboardingCards({ onDone }: Props) {
           })}
         </View>
 
-        {/* Actions */}
+        {/* The decline slot is RESERVED on every card, not only the two that
+            use it. An appearing-and-disappearing row is what slid the whole
+            composition ~60pt between cards 2 and 3 on the shipped screen, and
+            it moved again the moment a permission flipped to granted. */}
+        <View style={styles.declineSlot}>
+          {showDecline ? (
+            <Pressable
+              onPress={handleDecline}
+              style={({ pressed }) => [styles.declineBtn, pressed && { opacity: 0.6 }]}
+              accessibilityRole="button"
+              accessibilityLabel="Not now"
+              accessibilityHint={
+                permission === 'location'
+                  ? 'Skips location access and continues to the next step'
+                  : 'Skips notifications and continues to the next step'
+              }
+              hitSlop={8}
+            >
+              <AppText variant="label" style={styles.declineText}>Not now</AppText>
+            </Pressable>
+          ) : null}
+        </View>
+
+        {/* Actions — a text Back and a FIXED 200pt primary, so the CTA's left
+            edge never walks card to card the way it did when the pill sized
+            itself to "Next" / "Allow Location" / "Turn on Notifications". */}
         <View
-          // BP-sweep: the top bar already derives from insets; the CTA row's
-          // 36/sm pads were still hardcoded guesses. Floor preserved.
           style={[
-            styles.actions,
-            showDecline && styles.actionsTight,
-            { paddingBottom: Math.max(showDecline ? spacing.sm : 36, insets.bottom + spacing.sm) },
+            styles.ctaRow,
+            wide && styles.ctaRowStacked,
+            { paddingBottom: Math.max(spacing.xxl, insets.bottom + spacing.sm) },
           ]}
         >
           <Pressable
@@ -476,26 +653,19 @@ export default function OnboardingCards({ onDone }: Props) {
             {...a11yToggle({ disabled: isFirst })}
             hitSlop={8}
           >
-            <AppText variant="label" style={[styles.backBtnText, isFirst && styles.backBtnTextDisabled]}>Back</AppText>
+            <AppText variant="label" style={styles.backBtnText}>Back</AppText>
           </Pressable>
 
           {card.isFinal ? (
-            // Final slide: finish onboarding and drop the user on the map.
+            // Final slide: finish onboarding and run the auth gate.
             <Pressable
-              onPress={onDone}
-              style={({ pressed }) => [pressed && { opacity: 0.88 }]}
+              onPress={handleComplete}
+              style={({ pressed }) => [styles.primaryBtn, wide && styles.primaryBtnWide, pressed && styles.primaryBtnPressed]}
               accessibilityRole="button"
               accessibilityLabel="Continue"
               accessibilityHint="Finishes the introduction"
             >
-              <LinearGradient
-                colors={gradient.brandHero}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.primaryBtn}
-              >
-                <AppText variant="label" style={styles.primaryBtnText}>Continue</AppText>
-              </LinearGradient>
+              <AppText variant="label" style={styles.primaryBtnText}>Continue</AppText>
             </Pressable>
           ) : permission && currentGranted !== true ? (
             // Permission slide, not yet granted: prime + fire the OS prompt.
@@ -504,7 +674,9 @@ export default function OnboardingCards({ onDone }: Props) {
               onPress={handlePermissionAction}
               disabled={permissionChecking}
               style={({ pressed }) => [
-                pressed && { opacity: 0.88 },
+                styles.primaryBtn,
+                wide && styles.primaryBtnWide,
+                pressed && styles.primaryBtnPressed,
                 permissionChecking && { opacity: 0.5 },
               ]}
               accessibilityRole="button"
@@ -526,72 +698,77 @@ export default function OnboardingCards({ onDone }: Props) {
               }
               {...a11yToggle({ disabled: permissionChecking })}
             >
-              <LinearGradient
-                colors={gradient.brandHero}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.primaryBtn}
-              >
-                <AppText variant="label" style={styles.primaryBtnText}>
-                  {Platform.OS === 'web'
-                    ? 'Continue'
-                    : permission === 'location'
-                      ? 'Allow Location'
-                      : 'Turn on Notifications'}
-                </AppText>
-              </LinearGradient>
+              <AppText variant="label" style={styles.primaryBtnText}>
+                {/* Q12: sentence case. The accessible names above still contain
+                    the visible string, which is what 2.5.3 asks. */}
+                {Platform.OS === 'web'
+                  ? 'Continue'
+                  : permission === 'location'
+                    ? 'Allow location'
+                    : 'Turn on notifications'}
+              </AppText>
             </Pressable>
           ) : (
             // Non-permission slide (Next), or a permission already granted
             // (Continue): advance to the next slide.
             <Pressable
               onPress={() => goTo(index + 1)}
-              style={({ pressed }) => [pressed && { opacity: 0.88 }]}
+              style={({ pressed }) => [styles.primaryBtn, wide && styles.primaryBtnWide, pressed && styles.primaryBtnPressed]}
               accessibilityRole="button"
               accessibilityLabel={
                 permission ? 'Continue' : `Next. Card ${index + 1} of ${CARDS.length}.`
               }
             >
-              <LinearGradient
-                colors={gradient.brandHero}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.primaryBtn}
-              >
-                <AppText variant="label" style={styles.primaryBtnText}>{permission ? 'Continue' : 'Next'}</AppText>
-              </LinearGradient>
+              <AppText variant="label" style={styles.primaryBtnText}>{permission ? 'Continue' : 'Next'}</AppText>
             </Pressable>
           )}
         </View>
-
-        {/* Soft-ask escape hatch on the permission slides (S19: location gets
-            "Not now", notifications "Maybe later"): skip the prompt and continue
-            without granting. The top-right "Skip" exits all of onboarding; this
-            only skips the current permission. */}
-        {showDecline && (
-          <Pressable
-            onPress={() => goTo(index + 1)}
-            style={({ pressed }) => [
-              styles.maybeLaterBtn,
-              { marginBottom: Math.max(28, insets.bottom) },
-              pressed && { opacity: 0.6 },
-            ]}
-            accessibilityRole="button"
-            accessibilityLabel={permission === 'location' ? 'Not now' : 'Maybe later'}
-            accessibilityHint={
-              permission === 'location'
-                ? 'Skips location access and continues to the next step'
-                : 'Skips notifications and continues to the next step'
-            }
-            hitSlop={8}
-          >
-            <AppText variant="label" style={styles.maybeLaterText}>
-              {permission === 'location' ? 'Not now' : 'Maybe later'}
-            </AppText>
-          </Pressable>
-        )}
       </View>
     </Modal>
+  );
+}
+
+/**
+ * The scrolling copy zone, with the scent its clipped edge needs.
+ *
+ * At accessibility sizes a 34pt body under a 54pt title cannot fit the zone, so
+ * it scrolls — which board 05 asks for, and which the shipped card also did. The
+ * defect the device caught (AXL, card 1) is that the cut is SILENT: the body
+ * ends mid-glyph hard against the progress row, on a page that gives no sign a
+ * swipe would reveal the rest. That is the S16 finding turned ninety degrees, so
+ * it takes the S16 answer from the same source: the shared fade, which hides
+ * itself once you reach the bottom so it never cues a "more" that is not there.
+ *
+ * A component rather than five hook calls in a loop, because the hook belongs to
+ * the page that owns the scroller.
+ */
+function CopyZone({
+  contentStyle,
+  styles,
+  children,
+}: {
+  contentStyle: StyleProp<ViewStyle>;
+  styles: ReturnType<typeof makeStyles>;
+  children: React.ReactNode;
+}) {
+  const fade = useVerticalOverflowFade();
+  return (
+    <View style={styles.copyZone}>
+      <ScrollView
+        style={styles.copyScroll}
+        contentContainerStyle={contentStyle}
+        showsVerticalScrollIndicator={false}
+        nestedScrollEnabled
+        {...fade.scrollHandlers}
+      >
+        {children}
+      </ScrollView>
+      {/* 44 rather than the 28 a chip rail takes: this edge cuts PROSE on a
+          pale stage, where the shared ink needs a longer ramp to read as a
+          fade instead of a smudge. A per-site thickness, not a new ink —
+          strengthening the colour would move every chip rail in the app. */}
+      <OverflowFade visible={fade.hasMore} orientation="vertical" width={44} />
+    </View>
   );
 }
 
@@ -599,7 +776,9 @@ const makeStyles = (color: ColorTheme) =>
   StyleSheet.create({
     screen: {
       flex: 1,
-      backgroundColor: color.surface,
+      // Paired with <ScreenStage/> per its own portability note, so any
+      // pre-mount frame matches the wash instead of flashing white.
+      backgroundColor: color.stage1,
     },
     topBar: {
       flexDirection: 'row',
@@ -607,6 +786,9 @@ const makeStyles = (color: ColorTheme) =>
       paddingHorizontal: spacing.md,
       // paddingTop applied inline: Math.max(insets.top, 48) — see render site.
       paddingBottom: spacing.sm,
+      // Held even on the finisher, where the button is gone: the row is part of
+      // the layout's spine, not decoration around a button.
+      minHeight: 44 + spacing.sm,
     },
     skipBtn: {
       paddingHorizontal: spacing.lg,
@@ -617,185 +799,113 @@ const makeStyles = (color: ColorTheme) =>
       alignItems: 'center',
       justifyContent: 'center',
     },
-    // textMuted (#666) is 5.7:1 on white — passes WCAG AA for body text.
-    // Always on a dark gradient — hardcoded semi-transparent white so the
-    // contrast holds regardless of system light/dark mode.
     skipText: {
-      color: 'rgba(255,255,255,0.65)',
+      color: color.inkGlassMuted,
       fontWeight: font.weight.semibold,
-      fontSize: font.size.base,
+      fontSize: font.size.md,
     },
     scroll: { flex: 1 },
-    glowOrb: {
-      position: 'absolute',
-      top: '20%',
-      alignSelf: 'center',
-      width: 280,
-      height: 280,
-      borderRadius: 140,
-      // backgroundColor injected inline — color varies per card
-    },
-    // New liquid-glass card outer wrapper
-    cardOuter: {
-      // Each slide fills the pager page; the inner ScrollView owns centering,
-      // padding and gap so a tall slide can scroll instead of clipping (G10).
+    page: {
+      // Each slide fills the pager page; the inner ScrollView owns the layout.
       flex: 1,
     },
-    cardScroll: {
+    // The positioned parent the bottom fade paints over.
+    copyZone: {
+      flex: 1,
+      position: 'relative',
+    },
+    copyScroll: {
       flex: 1,
     },
-    cardScrollContent: {
-      // flexGrow:1 keeps the content centered when it fits, and lets it grow +
-      // scroll when it doesn't (large type / short screen).
+    // Board 05: hero + copy in ONE bottom-anchored zone. flexGrow keeps it
+    // pinned to the bottom of the zone when the content fits and lets it grow
+    // and scroll when it does not (large type / short screen).
+    hero: {
       flexGrow: 1,
-      alignItems: 'center',
-      justifyContent: 'center',
-      paddingHorizontal: spacing.xxxl,
-      paddingTop: spacing.xxl,
-      paddingBottom: spacing.md,
-      gap: spacing.xl,
+      justifyContent: 'flex-end',
+      gap: spacing.lg,
+      paddingHorizontal: spacing.xxl,
+      paddingBottom: spacing.xl,
     },
-    // T5 (D4): the width rule says widen the column before you cap the text. On
-    // a 390pt screen the xxxl side pads leave the body about 310pt, and
-    // "accessibility" on the uncapped body face needs more than that above ~2x —
-    // iOS then character-breaks it ("accessibili / ty", captured at 3XL). Giving
-    // the padding back at the recomposition point is the cheap half of the fix;
-    // the card's own layout is Phase 2b's item.
-    cardScrollContentWide: {
+    // T5 — widen the column BEFORE capping the text. The generous side pads are
+    // what starve the body column; at the recomposition point they give the
+    // width back (~358pt on a 390pt screen) and the hero moves to the top so
+    // the copy owns the middle of the screen.
+    heroWide: {
+      justifyContent: 'flex-start',
       paddingHorizontal: spacing.lg,
+      paddingTop: spacing.xxxl,
     },
-    // Circular icon container with subtle glass border + glow
-    iconCircle: {
-      width: 112,
-      height: 112,
-      borderRadius: 56,
-      backgroundColor: 'rgba(255,255,255,0.06)',
-      borderWidth: 1.5,
-      // borderColor and shadowColor injected inline per card
-      alignItems: 'center',
-      justifyContent: 'center',
-      shadowOpacity: 0.35,
-      shadowRadius: 20,
-      shadowOffset: { width: 0, height: 8 },
-      elevation: 8,
+    heroRow: {
+      flexDirection: 'row',
     },
-    severityScaleRow: {
-      // The five discs occupy the same 112pt vertical footprint the icon circle
-      // did, so slide 2's rhythm matches the framed illustration of the others.
-      minHeight: 112,
+    discRow: {
       flexDirection: 'row',
       alignItems: 'center',
-      justifyContent: 'center',
-      gap: spacing.md,
     },
-    // "1 / 4" pill indicator
-    positionPill: {
-      paddingHorizontal: spacing.md,
-      paddingVertical: 4,
+    heroDisc: {
       borderRadius: radius.circle,
-      backgroundColor: 'rgba(255,255,255,0.1)',
-      borderWidth: 1,
-      borderColor: 'rgba(255,255,255,0.15)',
-    },
-    positionText: {
-      fontSize: font.size.sm,
-      color: 'rgba(255,255,255,0.55)',
-      fontWeight: font.weight.semibold,
-      letterSpacing: 0.8,
-    },
-    // Glass content card holding the title + body
-    cardContent: {
-      backgroundColor: 'rgba(255,255,255,0.07)',
-      borderRadius: radius.xl,
-      borderWidth: 1,
-      borderColor: 'rgba(255,255,255,0.12)',
-      paddingHorizontal: spacing.xl,
-      paddingVertical: spacing.lg,
-      gap: spacing.sm,
       alignItems: 'center',
-      ...(Platform.OS === 'web'
-        ? ({ backdropFilter: 'blur(20px) saturate(140%)' } as object)
-        : {}),
+      justifyContent: 'center',
     },
     title: {
-      fontSize: font.size.h1,
-      fontWeight: font.weight.bold,
-      letterSpacing: font.tracking.h1,
-      // WCAG 1.4.3: hardcoded white-blue (not theme token) because this screen
-      // forces a dark gradient background regardless of the OS light/dark mode.
-      // Using color.textStrong in light mode would render dark text on dark bg.
-      color: '#f0f6ff',
-      textAlign: 'center',
+      textAlign: 'left',
+      lineHeight: Math.round(TITLE_SIZE * 1.08),
     },
     body: {
-      fontSize: font.size.lg,
-      // WCAG 1.4.3: same reasoning as title — forced dark background needs
-      // hardcoded light text. rgba(220,235,255,0.9) on #070b18 ≈ 12:1, AA pass.
-      color: 'rgba(220,235,255,0.9)',
-      textAlign: 'center',
-      lineHeight: 24,
-      // T5: a measure cap for READING comfort at default size. It is below the
-      // widened column above, so it would have swallowed the extra width the
-      // moment we gave it back — hence the AX override beside it.
-      maxWidth: 360,
+      textAlign: 'left',
+      lineHeight: Math.round(BODY_SIZE * 1.4),
     },
-    bodyWide: { maxWidth: undefined },
-    dotsRow: {
-      flexDirection: 'row',
-      justifyContent: 'center',
-      gap: spacing.sm,
-      paddingVertical: spacing.md,
-    },
-    // Always on dark gradient — white with low opacity for inactive.
-    dot: {
-      width: 8,
-      height: 8,
-      borderRadius: radius.xs,
-      backgroundColor: 'rgba(255,255,255,0.25)',
-    },
-    // T5 / D20: Back + the primary CTA are both content-sized in a row that
-    // could not wrap, so at large type they overflowed the screen — the sibling
-    // OnboardingModal already wraps its equivalent row. The buttons measure
-    // their own labels, so wrap is the whole fix: they stack instead of running
-    // off the edge. justifyContent stays space-between for the one-line case.
-    actions: {
+    progress: {
       flexDirection: 'row',
       alignItems: 'center',
-      justifyContent: 'space-between',
-      flexWrap: 'wrap',
-      rowGap: spacing.sm,
+      gap: spacing.xs,
       paddingHorizontal: spacing.xxl,
-      paddingBottom: 36,
       paddingTop: spacing.sm,
-      gap: spacing.md,
+      paddingBottom: spacing.lg,
     },
-    // When the "Maybe later" link follows, the action row gives up its big
-    // bottom inset so the two sit together and the link carries it instead.
-    actionsTight: {
-      paddingBottom: spacing.sm,
+    dot: {
+      height: DOT,
+      borderRadius: radius.full,
+      backgroundColor: color.borderStrong,
     },
-    maybeLaterBtn: {
-      alignSelf: 'center',
+    // Reserved on every card — see the render site.
+    declineSlot: {
+      minHeight: 44,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: spacing.xxl,
+    },
+    declineBtn: {
       paddingHorizontal: spacing.lg,
-      paddingVertical: spacing.md,
-      // SW-02: marginBottom was a hardcoded 28 while the home indicator wants
-      // 34, so the link's own box ended 6pt INSIDE the inset (measured y884-928
-      // against a 922 boundary on a 956pt screen). The sibling action row above
-      // already derives its pad from insets.bottom; this one was the last
-      // hardcoded guess in the family. Applied inline at the render site, where
-      // `insets` is in scope — the 28 stays as the no-inset floor.
-      // marginBottom applied inline: Math.max(28, insets.bottom).
-      marginBottom: 28,
+      paddingVertical: spacing.sm,
       minHeight: 44,
       minWidth: 44,
       alignItems: 'center',
       justifyContent: 'center',
     },
-    // On the dark gradient — semi-transparent white, ~7:1 on #070b18, AA pass.
-    maybeLaterText: {
-      color: 'rgba(255,255,255,0.65)',
+    declineText: {
+      color: color.inkSelect,
       fontWeight: font.weight.semibold,
-      fontSize: font.size.base,
+      fontSize: font.size.md,
+    },
+    ctaRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: spacing.md,
+      paddingHorizontal: spacing.xxl,
+      paddingTop: spacing.sm,
+      // paddingBottom applied inline from insets — see the render site.
+    },
+    // F4 — at the recomposition point the row stacks and the primary goes full
+    // width. column-reverse keeps the primary FIRST on screen while leaving the
+    // source order (Back, then primary) alone, so the reading order a screen
+    // reader walks is unchanged.
+    ctaRowStacked: {
+      flexDirection: 'column-reverse',
+      alignItems: 'stretch',
+      gap: spacing.sm,
     },
     backBtn: {
       paddingHorizontal: spacing.lg,
@@ -807,31 +917,31 @@ const makeStyles = (color: ColorTheme) =>
       justifyContent: 'center',
     },
     backBtnDisabled: { opacity: 0.4 },
-    // Always on dark gradient — hardcoded semi-transparent white.
     backBtnText: {
-      color: 'rgba(255,255,255,0.65)',
+      color: color.inkGlassMuted,
       fontWeight: font.weight.semibold,
-      fontSize: font.size.base,
+      fontSize: font.size.md,
     },
-    backBtnTextDisabled: { color: 'rgba(255,255,255,0.25)' },
     primaryBtn: {
-      // NOTE: no `flex: 1` here. This gradient sits inside an auto-height
-      // Pressable; a grow child would collapse to flex-basis 0 and get pinned
-      // at minHeight:44 on native, clipping the label. Let it size to content.
-      paddingVertical: spacing.lg,
-      paddingHorizontal: spacing.xxl,
-      borderRadius: radius.lg,
+      // A FIXED width, not a content width — the whole point. The label wraps
+      // inside it if Dynamic Type asks for more than one line; the pill has a
+      // floor, not a ceiling, so it grows downward instead of clipping.
+      width: 200,
+      backgroundColor: color.ctaFill,
+      paddingVertical: spacing.md,
+      paddingHorizontal: spacing.md,
+      borderRadius: radius.full,
       alignItems: 'center',
-      minHeight: 44,
       justifyContent: 'center',
-      // The tokenized brand glow — was a hand-rolled 0.45 sibling of the
-      // SignIn 0.55; every CTA glow now rides shadow.glowBrand (BP-8).
-      ...shadow.glowBrand,
+      minHeight: 44,
     },
+    primaryBtnWide: { width: undefined, alignSelf: 'stretch' },
+    primaryBtnPressed: { backgroundColor: color.ctaFillPressed },
     primaryBtnText: {
       // Weight comes from the label variant's family (PublicSans SemiBold);
       // a `fontWeight` on a named font face is unreliable in expo-font.
       color: color.textOnBrand,
-      fontSize: font.size.lg,
+      fontSize: font.size.md,
+      textAlign: 'center',
     },
   });

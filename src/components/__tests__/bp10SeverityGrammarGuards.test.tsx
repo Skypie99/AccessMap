@@ -206,10 +206,21 @@ describe('the severity grammar speaks on every surface (source)', () => {
   });
 
   it('Onboarding slide 2: five-disc scale row, one spine-derived group label', () => {
+    // RE-PINNED 2026-08-22 (Phase 2b, board 05). Same five discs, same one
+    // group label, same production component — but the row stopped being a
+    // 32pt detail inside a glass card and became the HERO of the card at 48,
+    // which is the phase's whole thesis about this screen. `size={32}` is
+    // therefore no longer the property worth pinning; "the discs are drawn big
+    // and they all fit" is.
     const s = readFileSync('src/components/OnboardingCards.tsx', 'utf8');
-    expect(s).toMatch(/severityScale: true/); // slide 2 flagged
+    expect(s).toMatch(/hero: 'discs'/); // slide 2 flagged
     expect(s).toMatch(/SEVERITY_ORDER\.map/); // all five discs
-    expect(s).toMatch(/<SeverityDisc key=\{s\} severity=\{s\} size=\{32\}/);
+    expect(s).toMatch(/<SeverityDisc\s+key=\{s\}\s+severity=\{s\}\s+size=\{discSize\}/);
+    expect(s).toMatch(/const DISC_BASE = 48;/);
+    // The row is width-bound, not scale-bound: five discs must be visible
+    // TOGETHER, so the growth stops at the fit rather than at a multiplier.
+    expect(s).toMatch(/const discFit = Math\.floor\(/);
+    expect(s).toMatch(/Math\.min\(fontScale, DISC_MAX_GROWTH\)/);
     // one accessible group, label derived from SEVERITY_LABELS (Minor..Severe)
     expect(s).toMatch(
       /accessibilityLabel=\{`Severity scale — 1 \$\{SEVERITY_LABELS\[1\]\} to 5 \$\{SEVERITY_LABELS\[5\]\}`\}/,

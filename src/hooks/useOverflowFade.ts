@@ -41,35 +41,55 @@ export interface HorizontalOverflowFade {
 }
 
 export function useHorizontalOverflowFade(): HorizontalOverflowFade {
-  const viewW = useRef(0);
-  const contentW = useRef(0);
-  const offsetX = useRef(0);
+  return useOverflowFade('x');
+}
+
+/**
+ * The same contract on the other axis (2026-08-22, board 05).
+ *
+ * Onboarding's copy zone is a VERTICAL scroller that clips at accessibility text
+ * sizes — captured at AXL, where card 1's body ends mid-glyph against the
+ * progress row with nothing to say a swipe would reveal the rest. That is the
+ * S16 finding word for word, turned ninety degrees, so it gets the same answer
+ * from the same source rather than a second fade nobody would keep in sync.
+ *
+ * `computeOverflowHasMore` is already three numbers and no axis, which is why
+ * this costs a parameter instead of a file.
+ */
+export function useVerticalOverflowFade(): HorizontalOverflowFade {
+  return useOverflowFade('y');
+}
+
+function useOverflowFade(axis: 'x' | 'y'): HorizontalOverflowFade {
+  const viewSize = useRef(0);
+  const contentSize = useRef(0);
+  const offset = useRef(0);
   const [hasMore, setHasMore] = useState(false);
 
   const recompute = useCallback(() => {
-    setHasMore(computeOverflowHasMore(contentW.current, viewW.current, offsetX.current));
+    setHasMore(computeOverflowHasMore(contentSize.current, viewSize.current, offset.current));
   }, []);
 
   const onScroll = useCallback(
     (e: NativeSyntheticEvent<NativeScrollEvent>) => {
-      offsetX.current = e.nativeEvent.contentOffset.x;
+      offset.current = axis === 'x' ? e.nativeEvent.contentOffset.x : e.nativeEvent.contentOffset.y;
       recompute();
     },
-    [recompute],
+    [axis, recompute],
   );
   const onLayout = useCallback(
     (e: LayoutChangeEvent) => {
-      viewW.current = e.nativeEvent.layout.width;
+      viewSize.current = axis === 'x' ? e.nativeEvent.layout.width : e.nativeEvent.layout.height;
       recompute();
     },
-    [recompute],
+    [axis, recompute],
   );
   const onContentSizeChange = useCallback(
-    (w: number) => {
-      contentW.current = w;
+    (w: number, h: number) => {
+      contentSize.current = axis === 'x' ? w : h;
       recompute();
     },
-    [recompute],
+    [axis, recompute],
   );
 
   return {

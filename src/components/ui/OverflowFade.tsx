@@ -26,22 +26,47 @@ const OVERFLOW_FADE_INK = {
 };
 
 export interface OverflowFadeProps {
-  /** Show the fade — drive from useHorizontalOverflowFade().hasMore. */
+  /** Show the fade — drive from use{Horizontal,Vertical}OverflowFade().hasMore. */
   visible: boolean;
   /** 'pill' rounds the right corners to a circular tray (the Map action bar);
-   *  'square' (default) is the flat right edge of a chip strip. */
+   *  'square' (default) is the flat right edge of a chip strip. Horizontal only. */
   edge?: 'pill' | 'square';
-  /** Fade width in px (default 28). */
+  /** Fade thickness in px (default 28) — width horizontally, height vertically. */
   width?: number;
+  /**
+   * Which edge is clipping (2026-08-22). 'horizontal' (default) is the right
+   * edge of a chip rail and renders byte-identically to before this prop
+   * existed; 'vertical' is the BOTTOM edge of a column scroller — onboarding's
+   * copy zone at accessibility text sizes, where the body ends mid-glyph
+   * against the progress row. Same ink, same rule, one source.
+   */
+  orientation?: 'horizontal' | 'vertical';
 }
 
-export function OverflowFade({ visible, edge = 'square', width = 28 }: OverflowFadeProps) {
+export function OverflowFade({
+  visible,
+  edge = 'square',
+  width = 28,
+  orientation = 'horizontal',
+}: OverflowFadeProps) {
   const color = useColor();
   if (!visible) return null;
+  const ink = color.scheme === 'light' ? OVERFLOW_FADE_INK.light : OVERFLOW_FADE_INK.dark;
+  if (orientation === 'vertical') {
+    return (
+      <LinearGradient
+        colors={ink}
+        start={{ x: 0.5, y: 0 }}
+        end={{ x: 0.5, y: 1 }}
+        style={[styles.fadeBottom, { height: width }]}
+        pointerEvents="none" {...decorativeProps}
+      />
+    );
+  }
   const cornerRadius = edge === 'pill' ? radius.circle : 0;
   return (
     <LinearGradient
-      colors={color.scheme === 'light' ? OVERFLOW_FADE_INK.light : OVERFLOW_FADE_INK.dark}
+      colors={ink}
       start={{ x: 0, y: 0.5 }}
       end={{ x: 1, y: 0.5 }}
       style={[
@@ -55,4 +80,5 @@ export function OverflowFade({ visible, edge = 'square', width = 28 }: OverflowF
 
 const styles = StyleSheet.create({
   fade: { position: 'absolute', right: 0, top: 0, bottom: 0 },
+  fadeBottom: { position: 'absolute', left: 0, right: 0, bottom: 0 },
 });

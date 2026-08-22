@@ -85,6 +85,48 @@ export type BulkFloorCandidate = 'dense' | 'blur40' | 'shipped';
 export const BULK_FLOOR_CANDIDATE = 'dense' as BulkFloorCandidate;
 const DENSE = BULK_FLOOR_CANDIDATE === 'dense';
 
+/**
+ * FIXED-DARK SURFACES — the always-dark inks (DESIGN.md §1).
+ *
+ * A handful of surfaces are dark in BOTH palettes because they are covers, not
+ * screens: the sign-in wall paints its own gradient, so a themed light field
+ * would render a white box on a navy cover. Those surfaces used to hand-roll
+ * these values inline (SignInScreen had all ten, OnboardingCards a near-twin
+ * set that drifted), which is how "the error red" became a third, undocumented
+ * red family that no token pass would ever have found.
+ *
+ * Every value below is lifted VERBATIM from the arbitrated literals
+ * SignInScreen already shipped — this is a move, not a re-pick, so the render
+ * is byte-identical. The contrast paper trail those literals carried moves with
+ * them:
+ *   errorFg #fca5a5 on the error box over the form card over the cover
+ *     (composite ≈ #3B2A39) = 7.0:1  — AAA
+ *   fieldText #f0f6ff on the field fill over the cover ≈ 15:1
+ *   label rgba(220,235,255,0.85) on the cover ≈ 12:1
+ *
+ * Mode-independent by construction: the surface ignores the OS appearance, so
+ * there is nothing for a second palette to say. `color.errorOnDark*` re-exports
+ * the error trio through both palettes so a themed component (the `Input`
+ * primitive) can reach it from `useColor()` without importing this directly.
+ */
+export const fixedDark = {
+  /** Text-field fill / outline on a dark cover. */
+  fieldBg: 'rgba(255,255,255,0.06)',
+  fieldBorder: 'rgba(255,255,255,0.18)',
+  /** Focus ring: blue-300, the one blue legible against this cover. */
+  fieldFocusBorder: '#84AEF6',
+  fieldFocusBg: 'rgba(20,102,224,0.12)',
+  fieldText: '#f0f6ff',
+  fieldPlaceholder: 'rgba(255,255,255,0.5)',
+  /** Field label ink. */
+  label: 'rgba(220,235,255,0.85)',
+  /** The error family. Distinct from errorBg/errorFg, which are the LIGHT
+   *  palette's inline-error pair and would vanish on a navy cover. */
+  errorFg: '#fca5a5',
+  errorBg: 'rgba(239,68,68,0.15)',
+  errorBorder: 'rgba(239,68,68,0.3)',
+} as const;
+
 export const color = {
   // Surfaces
   surface: '#fff', // primary background, button text on brand
@@ -161,6 +203,11 @@ export const color = {
   errorPressed: '#9e2a1e',
   errorBg: '#fdecea',
   errorFg: '#8a1f1f', // 7.4:1 on errorBg
+  // Fixed-dark surfaces (the sign-in cover) — see `fixedDark` above. Same value
+  // in both palettes: the surface ignores the OS appearance.
+  errorOnDark: fixedDark.errorFg,
+  errorOnDarkBg: fixedDark.errorBg,
+  errorOnDarkBorder: fixedDark.errorBorder,
 
   // Borders / dividers
   border: '#e5e5e5',

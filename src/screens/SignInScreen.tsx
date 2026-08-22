@@ -9,7 +9,6 @@ import {
   ScrollView,
   StyleSheet,
   type Text,
-  TextInput,
   useWindowDimensions,
   View,
 } from 'react-native';
@@ -18,9 +17,9 @@ import { Eye, EyeOff } from 'lucide-react-native';
 import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 import { font, gradient, radius, shadow, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
-import { AppText, TypeBlock, TYPE_BLOCK } from '@/components/ui';
+import { AppText, Input, TypeBlock, TYPE_BLOCK } from '@/components/ui';
 import { signInWithEmail, signUpWithEmail } from '@/lib/supabase';
-import { a11yToggle, isAxRecompose, useFocusOnOpen } from '@/lib/accessibility';
+import { a11yToggle, decorativeProps, isAxRecompose, useFocusOnOpen } from '@/lib/accessibility';
 import { notify } from '@/lib/confirm';
 import {
   PRIVACY_POLICY_LINK_HINT,
@@ -59,9 +58,16 @@ export default function SignInScreen({
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
-  const [validationError, setValidationError] = useState<string | null>(null);
-  const [emailFocused, setEmailFocused] = useState(false);
-  const [passwordFocused, setPasswordFocused] = useState(false);
+  /**
+   * Errors now know which field they belong to. A mistyped email is the email
+   * field's problem — the `Input` primitive draws it there, on the field, with
+   * the message in the field's own accessibilityHint — while a server refusal
+   * belongs to the form and keeps the standalone row. Same message either way,
+   * shown once, in the place that can act on it.
+   */
+  const [validationError, setValidationError] = useState<
+    { field: 'email' | 'password' | null; message: string } | null
+  >(null);
   // B-3: local, because this screen sits outside SharedModalsProvider. See the
   // mount at the bottom of the render for why that is forced, not chosen.
   const [privacyOpen, setPrivacyOpen] = useState(false);
@@ -75,19 +81,19 @@ export default function SignInScreen({
   // F65 established the explicit-announce rule for the server branch; this
   // helper extends it to the client validation branches, which used to be the
   // only silent ones (3.3.1 + 4.1.3).
-  const showError = (msg: string) => {
-    setValidationError(msg);
+  const showError = (msg: string, field: 'email' | 'password' | null = null) => {
+    setValidationError({ field, message: msg });
     AccessibilityInfo.announceForAccessibility(msg);
   };
 
   const submit = async (mode: 'in' | 'up') => {
     const cleanEmail = email.trim().toLowerCase();
     if (!cleanEmail.includes('@')) {
-      showError('Please enter a valid email address.');
+      showError('Please enter a valid email address.', 'email');
       return;
     }
     if (password.length < 6) {
-      showError('Password must be at least 6 characters.');
+      showError('Password must be at least 6 characters.', 'password');
       return;
     }
     setValidationError(null);
@@ -202,67 +208,84 @@ export default function SignInScreen({
         </View>
 
         <View style={styles.formCard}>
-          <AppText variant="label" style={styles.inputLabel}>Email address</AppText>
-          <TextInput
+          {/* The design system's field, at last. This screen hand-rolled a twin
+              of `Input` — its own label, focus ring, 44pt floor and error row —
+              because the primitive is themed and would have drawn a white field
+              on this navy cover in light mode. `onDark` is what closed that
+              gap; the values it uses are this screen's own, lifted verbatim, so
+              the field looks the same and stops being a second implementation
+              to keep in sync on the one form that creates an account. */}
+          <Input
+            onDark
+            label="Email address"
             placeholder="you@example.com"
-            placeholderTextColor="rgba(255,255,255,0.5)"
             autoCapitalize="none"
             keyboardType="email-address"
             autoComplete="email"
             textContentType="emailAddress"
             value={email}
             onChangeText={setEmail}
-            onFocus={() => setEmailFocused(true)}
-            onBlur={() => setEmailFocused(false)}
-            style={[styles.input, emailFocused && styles.inputFocused]}
+            // 1.4, not the primitive's 1.5. A field's own text is chrome-class:
+            // it sits in a box with a fixed floor and the label above it carries
+            // the meaning, so the tighter of the two caps is the right one and
+            // it is what this screen already shipped.
             maxFontSizeMultiplier={1.4}
             accessibilityLabel="Email address"
             accessibilityHint="Enter the email you signed up with"
+            errorText={validationError?.field === 'email' ? validationError.message : undefined}
+            containerStyle={styles.field}
           />
 
-          <AppText variant="label" style={[styles.inputLabel, styles.inputLabelStacked]}>Password</AppText>
           {/* Show/hide toggle: typing a password blind is a real barrier for
               motor- and cognition-impaired users (and everyone on a phone
-              keyboard). The eye sits inside the field on a 44pt target. */}
-          <View style={styles.passwordWrap}>
-            <TextInput
-              placeholder="At least 6 characters"
-              placeholderTextColor="rgba(255,255,255,0.5)"
-              secureTextEntry={!passwordVisible}
-              autoComplete="password"
-              textContentType="password"
-              value={password}
-              onChangeText={setPassword}
-              onFocus={() => setPasswordFocused(true)}
-              onBlur={() => setPasswordFocused(false)}
-              style={[styles.input, styles.inputWithTrailingIcon, passwordFocused && styles.inputFocused]}
-              maxFontSizeMultiplier={1.4}
-              accessibilityLabel="Password"
-              accessibilityHint="At least 6 characters"
-            />
-            <Pressable
-              onPress={() => setPasswordVisible((v) => !v)}
-              style={({ pressed }) => [styles.passwordToggle, pressed && { opacity: 0.7 }]}
-              accessibilityRole="button"
-              accessibilityLabel={passwordVisible ? 'Hide password' : 'Show password'}
-              accessibilityHint="Toggles whether your password is readable on screen"
-            >
-              {passwordVisible ? (
-                <EyeOff size={20} color="rgba(255,255,255,0.55)" strokeWidth={2} />
-              ) : (
-                <Eye size={20} color="rgba(255,255,255,0.55)" strokeWidth={2} />
-              )}
-            </Pressable>
-          </View>
+              keyboard). The eye is the primitive's right slot now, so it is
+              inside the field's own row rather than absolutely positioned over
+              it — same 44pt target, one less overlap to maintain. */}
+          <Input
+            onDark
+            label="Password"
+            placeholder="At least 6 characters"
+            secureTextEntry={!passwordVisible}
+            autoComplete="password"
+            textContentType="password"
+            value={password}
+            onChangeText={setPassword}
+            maxFontSizeMultiplier={1.4}
+            accessibilityLabel="Password"
+            accessibilityHint="At least 6 characters"
+            errorText={validationError?.field === 'password' ? validationError.message : undefined}
+            containerStyle={styles.field}
+            rightSlot={
+              <Pressable
+                onPress={() => setPasswordVisible((v) => !v)}
+                style={({ pressed }) => [styles.passwordToggle, pressed && { opacity: 0.7 }]}
+                accessibilityRole="button"
+                accessibilityLabel={passwordVisible ? 'Hide password' : 'Show password'}
+                accessibilityHint="Toggles whether your password is readable on screen"
+              >
+                {passwordVisible ? (
+                  <EyeOff size={20} color="rgba(255,255,255,0.55)" strokeWidth={2} />
+                ) : (
+                  <Eye size={20} color="rgba(255,255,255,0.55)" strokeWidth={2} />
+                )}
+              </Pressable>
+            }
+          />
 
-          {validationError ? (
+          {/* A server refusal belongs to the FORM, not to a field — nothing the
+              user typed in either box is identifiably at fault — so it keeps the
+              standalone row. A11Y-203 stands: the row is assertive AND
+              showError() announces explicitly, because the live region alone is
+              Android-only-reliable in RN and web SRs do not speak node inserts.
+              The red is `errorOnDark` now rather than three inline literals. */}
+          {validationError && validationError.field === null ? (
             <AppText
               variant="body"
               style={styles.errorText}
               accessibilityRole="alert"
               accessibilityLiveRegion="assertive"
             >
-              {validationError}
+              {validationError.message}
             </AppText>
           ) : null}
 
@@ -352,6 +375,20 @@ export default function SignInScreen({
           point it takes is a point the scroll window above it loses. The chrome
           cap (1.3) is what keeps Apple 1.2's consent lines visible at rest on
           every text size, which is the whole reason SW-01 pinned them here. */}
+      {/* Board 11: ONE footer run rather than two stacked rows. The links sit
+          side by side with a dot between them and the row may WRAP, so at
+          default size the consent reads as a single sentence beside the policy
+          link (giving the scroll window above it back roughly 40pt, which is
+          board 11's whole argument), and at large type it falls back to the
+          two-line stack it always was. Both halves of T5: the consent may
+          shrink, and it carries a floor so it wraps to its own line instead of
+          being squeezed below its longest word.
+
+          NOT collapsed into one sentence with two inline links, which is what
+          the board draws. A nested <Text onPress> can carry neither padding nor
+          hitSlop (the W-01 finding from Phase 0), so that composition would put
+          both legal links on this screen under the 44pt floor. The floor wins;
+          each link is still its own padded target. */}
       <TypeBlock cap={TYPE_BLOCK.chrome}>
       <View style={[styles.policyFooter, { paddingBottom: Math.max(spacing.md, insets.bottom) }]}>
         {/* B-2 (SR-002): 5.1.1(i) wants the policy reachable near account
@@ -373,13 +410,17 @@ export default function SignInScreen({
           </AppText>
         </Pressable>
 
+        <AppText variant="body" style={styles.policySeparator} {...decorativeProps}>
+          ·
+        </AppText>
+
         {/* Apple 1.2 (UGC): agreement to the terms must be visible where the
             account is created, not only discoverable post-signup in Settings.
             Same arbitrated ink + underline affordance as the privacy link
             above; the whole 44pt row is the target. */}
         <Pressable
           onPress={() => setTermsOpen(true)}
-          style={({ pressed }) => [styles.policyLinkWrap, pressed && styles.policyLinkPressed]}
+          style={({ pressed }) => [styles.policyLinkWrap, styles.consentWrap, pressed && styles.policyLinkPressed]}
           accessibilityRole="button"
           accessibilityLabel={`By creating an account you agree to the ${TERMS_LINK_LABEL}.`}
           accessibilityHint={TERMS_LINK_HINT}
@@ -447,9 +488,12 @@ const makeStyles = (_color: ColorTheme) =>
       gap: spacing.sm,
     },
     title: {
-      // fontSize, fontFamily, color applied via AppText variant="display"
+      // fontSize, fontFamily, color applied via AppText variant="display".
+      // The raw `letterSpacing: -0.8` is gone: it matched neither tracking
+      // token (h1 -0.55, display -1.0) and overrode the size-derived value
+      // AppText computes from the `size` prop — a magic number sitting on top
+      // of the one mechanism whose whole job is to not need one.
       textAlign: 'center',
-      letterSpacing: -0.8,
       marginTop: spacing.sm,
     },
     tagline: {
@@ -470,49 +514,25 @@ const makeStyles = (_color: ColorTheme) =>
         ? { backdropFilter: 'blur(24px) saturate(160%)' } as object
         : {}),
     },
-    inputLabel: {
-      fontSize: font.size.sm,
-      fontWeight: font.weight.semibold,
-      color: 'rgba(220,235,255,0.85)',
-      marginBottom: spacing.xs,
-    },
-    inputLabelStacked: { marginTop: spacing.md },
-    passwordWrap: { position: 'relative' },
-    // Room for the eye toggle so long passwords never run under it.
-    inputWithTrailingIcon: { paddingRight: 44 },
+    // The label / fill / focus-ring / 44pt-floor styles that used to live here
+    // are the `Input` primitive's now, drawn from `fixedDark` in theme.ts —
+    // the same values, in one place, reachable by the next cover that needs a
+    // field. All that is left is this screen's spacing between the two.
+    field: { marginBottom: spacing.md },
     passwordToggle: {
-      position: 'absolute',
-      right: 0,
-      top: 0,
-      bottom: 0,
       width: 44,
       minHeight: 44,
       alignItems: 'center',
       justifyContent: 'center',
     },
-    input: {
-      borderWidth: 1,
-      borderColor: 'rgba(255,255,255,0.18)',
-      borderRadius: radius.md,
-      paddingHorizontal: spacing.md,
-      paddingVertical: spacing.md,
-      fontSize: font.size.lg,
-      color: '#f0f6ff',
-      backgroundColor: 'rgba(255,255,255,0.06)',
-      minHeight: 50,
-    },
-    inputFocused: {
-      borderColor: '#84AEF6', // blue-300 — Wayfinder Blue at legible opacity on dark bg
-      borderWidth: 2,
-      paddingHorizontal: spacing.md - 1,
-      paddingVertical: spacing.md - 1,
-      backgroundColor: 'rgba(20,102,224,0.12)',
-    },
     errorText: {
-      color: '#fca5a5',
-      backgroundColor: 'rgba(239,68,68,0.15)',
+      // Tokens, not a third undocumented red. `errorOnDark*` is the fixed-dark
+      // family (DESIGN.md §1) and carries the same values this screen picked by
+      // hand, with their contrast measured: 7.0:1 on the composite.
+      color: _color.errorOnDark,
+      backgroundColor: _color.errorOnDarkBg,
       borderWidth: 1,
-      borderColor: 'rgba(239,68,68,0.3)',
+      borderColor: _color.errorOnDarkBorder,
       fontSize: font.size.sm,
       fontWeight: font.weight.medium,
       textAlign: 'center',
@@ -621,12 +641,34 @@ const makeStyles = (_color: ColorTheme) =>
     // SW-01: the pinned Apple-1.2 footer. Horizontal padding matches the
     // scroll content so the links stay optically aligned with the form above.
     policyFooter: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      alignItems: 'center',
+      justifyContent: 'center',
+      columnGap: spacing.xs,
       paddingHorizontal: spacing.xxl,
     },
     policyLinkWrap: {
       minHeight: 44,
       justifyContent: 'center',
       alignItems: 'center',
+    },
+    // BOTH halves of the width rule, and the device is why. `flexShrink: 1`
+    // alone did not keep the two on one line: Yoga runs its line-break test on
+    // the flex BASE size, and the consent's intrinsic ~408pt plus the policy
+    // link overflowed the row, so it wrapped and left the separator dangling
+    // after the policy link — a worse footer than the two-row stack it
+    // replaced. `flexBasis: 0` takes the sentence out of that test; `minWidth`
+    // is what then stops it being squeezed below its own longest word, and is
+    // also what makes it wrap honestly if a future label ever eats the row.
+    consentWrap: {
+      flexBasis: 0,
+      flexGrow: 1,
+      minWidth: 200,
+    },
+    policySeparator: {
+      fontSize: font.size.xs,
+      color: 'rgba(255,255,255,0.55)',
     },
     policyLinkPressed: { opacity: 0.7 },
     policyLink: {

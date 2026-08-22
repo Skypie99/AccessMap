@@ -1,4 +1,4 @@
-import { computeOverflowHasMore } from '../useHorizontalOverflowFade';
+import { computeOverflowHasMore } from '../useOverflowFade';
 
 // The S16 / T14 fade-mount rule, pinned headlessly on three numbers (mirrors
 // isCompactLayout's pure-fn test idiom). Every chip rail AND the retrofitted Map

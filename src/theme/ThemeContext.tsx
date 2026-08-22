@@ -15,7 +15,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import { useColorScheme } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { BULK_FLOOR_CANDIDATE, color as lightColor } from '../theme';
+import { BULK_FLOOR_CANDIDATE, fixedDark, color as lightColor } from '../theme';
 
 // GSP-02: the dark mirror of the bulk-sheet material candidate. See theme.ts.
 const DENSE = BULK_FLOOR_CANDIDATE === 'dense';
@@ -88,6 +88,14 @@ const darkColor = {
   errorPressed: '#9e2a1e', // pressed deepen for error-red CTAs; mode-independent, white ~7:1
   errorBg: '#3b0f0f',
   errorFg: '#fca5a5',
+  // Fixed-dark surfaces (the sign-in cover) — the SAME values as the light
+  // palette. A cover that paints its own gradient has one appearance, so the
+  // trio is mode-independent by construction; see `fixedDark` in theme.ts.
+  // Note it is NOT the pair above: errorFg/errorBg here are the dark palette's
+  // inline-error pair, tuned for #1E1E22 cards, not for a #0a1428 cover.
+  errorOnDark: fixedDark.errorFg,
+  errorOnDarkBg: fixedDark.errorBg,
+  errorOnDarkBorder: fixedDark.errorBorder,
 
   // Borders / dividers
   border: '#333',
