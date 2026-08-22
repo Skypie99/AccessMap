@@ -914,3 +914,22 @@ export const REPORT_SIGN_IN_HINT =
 export const REPORT_DRAFT_KEPT_ANNOUNCEMENT =
   'Draft saved. After you sign in, open Report again to continue where you left off.';
 export const REPORT_DRAFT_RESTORED_ANNOUNCEMENT = 'Your report draft was restored.';
+
+/**
+ * THE MISSION STATEMENT — ratified by Sky, and the one string in this file that
+ * is not PROPOSED.
+ *
+ * Q11 (art-direction 2026-08-21): it belongs in the product, on About and on
+ * the guest Profile, not only in the documents about the product. It is
+ * exported ONCE and read by both surfaces so the two can never drift, and
+ * `mission.guard.test.ts` pins the exact characters.
+ *
+ * ⚠ VERBATIM. Never paraphrase it, never re-wrap it, never "fix" its wording —
+ * including the name inside it. It says "AccessMap" because that is what Sky
+ * ratified; the app is called Flagstone now, and whether this sentence follows
+ * the rename is HERS to decide, not a builder's. The decision is logged in
+ * `design-reviews/art-direction/2026-08-21/build/COPY_LEDGER.md`. Changing it
+ * is a one-line edit here, and every surface follows.
+ */
+export const MISSION_STATEMENT =
+  "The goal of AccessMap is to make the community and environment better for everyone, through those who have the capacity to help. Progress happens in the background for everyone's benefit, because accessibility benefits everyone.";
