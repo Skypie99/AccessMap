@@ -29,6 +29,7 @@ import { useAuth } from '@/lib/auth';
 // ---------------------------------------------------------------------------
 import ReportFlagModal from '../ReportFlagModal';
 import { takeReportDraft } from '@/lib/reportDraft';
+import { validReportTemplates } from '@/lib/reportTemplates';
 
 // ---------------------------------------------------------------------------
 // Supabase env stubs — required before any module that imports supabase.ts
@@ -309,15 +310,38 @@ const LOCATION = { lat: 49.28, lng: -123.12 };
 
 type User = { id: string };
 
+/**
+ * Q5 — the form no longer arrives pre-rated.
+ *
+ * `useState<FlagSeverity>(3)` became `useState<FlagSeverity | null>(null)`: a
+ * default on a judgment scale biased the data and skipped the moment the user
+ * is asked to rate. Every test below that walks the form to SUBMIT needs the
+ * report to be filable, which now takes a tap it used to get for free — so the
+ * render helpers do explicitly what the component used to do implicitly, and
+ * the assertions past this point are unchanged.
+ *
+ * Pass `severity: null` to stay unrated; that is what the Q5 block itself does.
+ */
+function rate(utils: ReturnType<typeof render>, level: number) {
+  // The live meaning line's own label also starts "Severity 3:" once a level is
+  // chosen, so match the DISC by its role rather than by prefix alone.
+  const disc = utils
+    .getAllByLabelText(new RegExp(`^Severity ${level}:`))
+    .find((el) => el.props.accessibilityRole === 'button');
+  if (!disc) throw new Error(`no severity ${level} disc`);
+  fireEvent.press(disc);
+}
+
 function renderAnon(
   props: Partial<{
     visible: boolean;
     location: typeof LOCATION | null;
     onClose: () => void;
+    severity: number | null;
   }> = {},
 ) {
   mockUseAuth.mockReturnValue({ user: null } as ReturnType<typeof useAuth>);
-  return render(
+  const utils = render(
     withProvider(
       <ReportFlagModal
         visible={props.visible ?? true}
@@ -327,11 +351,17 @@ function renderAnon(
       />,
     ),
   );
+  const level = props.severity === undefined ? 3 : props.severity;
+  if (level !== null) rate(utils, level);
+  return utils;
 }
 
-function renderAuth(user: User = { id: 'user-abc' }, props: Partial<{ visible: boolean }> = {}) {
+function renderAuth(
+  user: User = { id: 'user-abc' },
+  props: Partial<{ visible: boolean; severity: number | null }> = {},
+) {
   mockUseAuth.mockReturnValue({ user } as ReturnType<typeof useAuth>);
-  return render(
+  const utils = render(
     withProvider(
       <ReportFlagModal
         visible={props.visible ?? true}
@@ -341,6 +371,9 @@ function renderAuth(user: User = { id: 'user-abc' }, props: Partial<{ visible: b
       />,
     ),
   );
+  const level = props.severity === undefined ? 3 : props.severity;
+  if (level !== null) rate(utils, level);
+  return utils;
 }
 
 /**
@@ -758,6 +791,7 @@ describe('live location prop (FIX C — fresh GPS read lands mid-form)', () => {
       withProvider(<ReportFlagModal visible location={FRESH} onClose={onClose} onCreated={onCreated} />),
     );
 
+    rate(utils, 3); // Q5 — a report is not filable until it is rated
     fireEvent.press(utils.getByLabelText('Submit report'));
 
     await waitFor(() => {
@@ -780,6 +814,7 @@ describe('live location prop (FIX C — fresh GPS read lands mid-form)', () => {
       withProvider(<ReportFlagModal visible location={FRESH} onClose={onClose} onCreated={onCreated} />),
     );
 
+    rate(utils, 3); // Q5 — a report is not filable until it is rated
     fireEvent.press(utils.getByLabelText('Submit report anonymously'));
 
     await waitFor(() => {
@@ -1083,6 +1118,7 @@ describe('S11 — slow write escalates, never aborts (no double-insert)', () => 
       withProvider(<ReportFlagModal visible location={LOCATION} onClose={jest.fn()} onCreated={onCreated} />),
     );
 
+    rate(utils, 3); // Q5 — a report is not filable until it is rated
     fireEvent.press(utils.getByLabelText('Submit report anonymously'));
 
     // The insert is in flight and awaited (not aborted) — exactly one call.
@@ -1112,6 +1148,7 @@ describe('S11 — slow write escalates, never aborts (no double-insert)', () => 
         withProvider(<ReportFlagModal visible location={LOCATION} onClose={jest.fn()} onCreated={onCreated} />),
       );
 
+      rate(utils, 3); // Q5 — a report is not filable until it is rated
       fireEvent.press(utils.getByLabelText('Submit report anonymously'));
       // Flush the resolved rate-limit check so the insert is in flight.
       await act(async () => {
@@ -1160,6 +1197,7 @@ describe('S10 — confirm the submit', () => {
       withProvider(<ReportFlagModal visible location={LOCATION} onClose={jest.fn()} onCreated={onCreated} />),
     );
 
+    rate(utils, 3); // Q5 — a report is not filable until it is rated
     fireEvent.press(utils.getByLabelText('Submit report anonymously'));
 
     await waitFor(() => {
@@ -1181,6 +1219,7 @@ describe('S10 — confirm the submit', () => {
       withProvider(<ReportFlagModal visible location={LOCATION} onClose={jest.fn()} onCreated={onCreated} />),
     );
 
+    rate(utils, 3); // Q5 — a report is not filable until it is rated
     fireEvent.press(utils.getByLabelText('Submit report'));
 
     await waitFor(() => {
@@ -1199,6 +1238,7 @@ describe('S10 — confirm the submit', () => {
       withProvider(<ReportFlagModal visible location={LOCATION} onClose={jest.fn()} onCreated={jest.fn()} />),
     );
 
+    rate(utils, 3); // Q5 — a report is not filable until it is rated
     fireEvent.press(utils.getByLabelText('Submit report anonymously'));
 
     await waitFor(() => {
@@ -1438,7 +1478,10 @@ describe('SW-52 — cancelling a report actually discards it', () => {
 
     fireEvent.press(utils.getByLabelText('Cancel and close'));
 
-    // The sheet never unmounted — this is the same component, reopened.
+    // The sheet never unmounted — this is the same component, reopened. Q5: the
+    // reset clears the RATING too, so the next report has to be rated again
+    // before it is filable. That is the point of the reset, not a wrinkle in it.
+    rate(utils, 3);
     fireEvent.press(utils.getByLabelText('Submit report'));
     await waitFor(() => {
       expect(mockCreateFlag).toHaveBeenCalledTimes(1);
@@ -1446,6 +1489,23 @@ describe('SW-52 — cancelling a report actually discards it', () => {
     // The whole finding in one assertion: nothing was uploaded, because there
     // was nothing left to upload.
     expect(mockUploadFlagPhoto).not.toHaveBeenCalled();
+  });
+
+  it('clears the rating too, so the next report is re-judged (Q5)', () => {
+    const utils = renderAuth({ id: 'user-abc' }, { severity: 4 });
+    // Rated: the ask is gone and Submit is live.
+    expect(utils.queryByText('Choose how hard this makes the path to use.')).toBeNull();
+    expect(
+      utils.getByLabelText('Submit report').props.accessibilityState.disabled,
+    ).toBe(false);
+
+    fireEvent.press(utils.getByLabelText('Cancel and close'));
+
+    // Back to the ask, and Submit is inert again.
+    expect(utils.getByText('Choose how hard this makes the path to use.')).toBeTruthy();
+    expect(
+      utils.getByLabelText('Submit report').props.accessibilityState.disabled,
+    ).toBe(true);
   });
 
   it('clears the typed description too', async () => {
@@ -1650,5 +1710,80 @@ describe('Q17 — the location line says a human thing, the numbers are one tap 
       ),
     );
     expect(queryByLabelText('Show coordinates')).toBeNull();
+  });
+});
+
+describe('Q5 — no default severity, so every report is a judgment', () => {
+  beforeEach(() => {
+    mockUseAuth.mockReturnValue({ user: null } as ReturnType<typeof useAuth>);
+  });
+
+  it('arrives with nothing chosen — the five discs all read unselected', () => {
+    const utils = renderAnon({ severity: null });
+    for (const n of [1, 2, 3, 4, 5]) {
+      const disc = utils
+        .getAllByLabelText(new RegExp(`^Severity ${n}:`))
+        .find((el) => el.props.accessibilityRole === 'button');
+      expect(disc?.props.accessibilityState).toMatchObject({ selected: false });
+    }
+  });
+
+  it('the meaning line asks instead of stating a meaning nobody chose', () => {
+    const utils = renderAnon({ severity: null });
+    expect(utils.getByText('Choose how hard this makes the path to use.')).toBeTruthy();
+  });
+
+  it('Submit is inert until a disc is chosen, and says why', () => {
+    const utils = renderAnon({ severity: null });
+    const submit = utils.getByLabelText('Submit report anonymously');
+    expect(submit.props.accessibilityState.disabled).toBe(true);
+    expect(submit.props.accessibilityHint).toBe(
+      'Choose a severity from 1 to 5 to submit this report.',
+    );
+  });
+
+  it('pressing an unrated form’s Submit files nothing', async () => {
+    const utils = renderAnon({ severity: null });
+    fireEvent.press(utils.getByLabelText('Submit report anonymously'));
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(mockCreateAnonFlag).not.toHaveBeenCalled();
+  });
+
+  it('choosing a disc lights Submit, drops the hint, and states the meaning', () => {
+    const utils = renderAnon({ severity: null });
+    rate(utils, 4);
+    const submit = utils.getByLabelText('Submit report anonymously');
+    expect(submit.props.accessibilityState.disabled).toBe(false);
+    expect(submit.props.accessibilityHint).toBeUndefined();
+    expect(utils.queryByText('Choose how hard this makes the path to use.')).toBeNull();
+    // The live region now carries the chosen level, spoken the same way it reads.
+    expect(
+      utils.getAllByLabelText(/^Severity 4:/).some((el) => el.props.accessibilityRole !== 'button'),
+    ).toBe(true);
+  });
+
+  it('the location block still wins the hint when there is no location either', () => {
+    const utils = render(
+      withProvider(
+        <ReportFlagModal visible location={null} onClose={jest.fn()} onCreated={jest.fn()} />,
+      ),
+    );
+    expect(utils.getByLabelText('Submit report anonymously').props.accessibilityHint).toMatch(
+      /Waiting for your location/,
+    );
+  });
+
+  it('a template still fills the rating in one tap (the shortcut is unaffected)', () => {
+    // The suite mocks the template list to empty by default; give this one a
+    // real template so the shortcut path is actually exercised.
+    (validReportTemplates as jest.Mock).mockReturnValueOnce([
+      { id: 't1', label: 'Snow-blocked ramp', category: 'no_ramp', severity: 4 },
+    ]);
+    const utils = renderAuth({ id: 'user-abc' }, { severity: null });
+    expect(utils.getByLabelText('Submit report').props.accessibilityState.disabled).toBe(true);
+    fireEvent.press(utils.getByLabelText('Apply template: Snow-blocked ramp'));
+    expect(utils.getByLabelText('Submit report').props.accessibilityState.disabled).toBe(false);
   });
 });

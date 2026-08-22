@@ -135,29 +135,6 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
   const categoriesFade = useHorizontalOverflowFade();
   const { user } = useAuth();
   const isAnon = !user;
-  /**
-   * SW-11 / SW-37 — why Submit is blocked, said out loud.
-   *
-   * Three different states used to share one sentence ("Waiting for your
-   * location…"), and for a guest who had DENIED location that sentence was both
-   * false and a dead end: it pointed at "Use my location", the one control that
-   * cannot help, because the OS has already answered. Guests are the case the
-   * finding was actually about, and manual placement is deliberately not open to
-   * them (see handleMapLongPress) — so the honest answer names the constraint
-   * and the way out of it, rather than leaving them to guess.
-   */
-  const blockedReason = (): string | undefined => {
-    if (location) return undefined;
-    if (onPlaceOnMap) {
-      return "This report needs a location. Tap 'Use my location' or 'Place the pin on the map' above.";
-    }
-    if (locationDenied) {
-      return isAnon
-        ? 'Anonymous reports can only be filed where you are. Turn on location, or sign in to place the pin yourself.'
-        : 'Location is off for Flagstone. Turn it on to file this report.';
-    }
-    return "Waiting for your location. Tap 'Use my location' above to try again.";
-  };
 
   /**
    * Q17 — the coordinate, on demand.
@@ -219,12 +196,63 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
   // WCAG 2.4.3: move the screen-reader cursor onto the title when the modal opens.
   const titleRef = useFocusOnOpen<Text>(visible);
   const [category, setCategory] = useState<FlagCategory>('no_ramp');
-  const [severity, setSeverity] = useState<FlagSeverity>(3);
+  /**
+   * Q5 — no default severity.
+   *
+   * This was `useState<FlagSeverity>(3)`: three of five, pre-chosen, on a
+   * judgment scale. A default on a judgment scale biases the data (every hurried
+   * report becomes a 3) and quietly removes the moment where the user is asked
+   * to RATE — the one act that makes the severity ramp mean anything. Null until
+   * they choose; Submit does not light until they have.
+   */
+  const [severity, setSeverity] = useState<FlagSeverity | null>(null);
   // Q17: the coordinates are the answer to a question nobody asked on this
   // form. They stay one tap away rather than being the second line of the
   // sheet — the place where, at accessibility sizes, the screen's least useful
   // information was rendered at its most legible (X7). Reset with the form.
   const [coordsShown, setCoordsShown] = useState(false);
+
+  /**
+   * SW-11 / SW-37 — why Submit is blocked, said out loud.
+   *
+   * Three different states used to share one sentence ("Waiting for your
+   * location…"), and for a guest who had DENIED location that sentence was both
+   * false and a dead end: it pointed at "Use my location", the one control that
+   * cannot help, because the OS has already answered. Guests are the case the
+   * finding was actually about, and manual placement is deliberately not open to
+   * them (see handleMapLongPress) — so the honest answer names the constraint
+   * and the way out of it, rather than leaving them to guess.
+   */
+  const blockedReason = (): string | undefined => {
+    // Q5: a rated report is now a precondition, so the hint has to be able to
+    // say so. Location comes first because a report with no place cannot be
+    // filed at all, while an unrated one is one tap from being filable.
+    // PLACEHOLDER COPY (SKY-WORDS-REQUIRED).
+    if (location) {
+      return severity === null
+        ? 'Choose a severity from 1 to 5 to submit this report.'
+        : undefined;
+    }
+    if (onPlaceOnMap) {
+      return "This report needs a location. Tap 'Use my location' or 'Place the pin on the map' above.";
+    }
+    if (locationDenied) {
+      return isAnon
+        ? 'Anonymous reports can only be filed where you are. Turn on location, or sign in to place the pin yourself.'
+        : 'Location is off for Flagstone. Turn it on to file this report.';
+    }
+    return "Waiting for your location. Tap 'Use my location' above to try again.";
+  };
+
+  /**
+   * Q5 — Submit is not a live control until the report is filable.
+   *
+   * Two preconditions now, not one: a place (unchanged) and a rating. Kept
+   * separate from `submitting` because they are different states wearing
+   * different clothes — blocked is inert and soft-tinted, busy is working and
+   * still brand-filled.
+   */
+  const submitBlocked = !location || severity === null;
   const [description, setDescription] = useState('');
   const [photoUris, setPhotoUris] = useState<string[]>([]);
   // Per-photo VoiceOver descriptions, keyed by local uri. Optional; trimmed
@@ -285,8 +313,8 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
   // every render, and never fires if a photo is already attached.
   const prevHighRef = useRef(false);
   useEffect(() => {
-    const isHigh = severity >= 4 && photoUris.length === 0;
-    if (isHigh && !prevHighRef.current) {
+    const isHigh = severity !== null && severity >= 4 && photoUris.length === 0;
+    if (isHigh && severity !== null && !prevHighRef.current) {
       void AccessibilityInfo.announceForAccessibility(
         `Tip: adding a photo helps verify this ${SEVERITY_LABELS[severity].toLowerCase()} barrier without a site visit.`,
       );
@@ -311,7 +339,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
 
   const reset = () => {
     setCategory('no_ramp');
-    setSeverity(3);
+    setSeverity(null);
     setDescription('');
     setCoordsShown(false);
     // L7: the drafts are gone for good once the form resets — release their
@@ -502,6 +530,10 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
       notify('No location', 'We need your location to place the flag.');
       return;
     }
+    // Q5: the button is already disabled while nothing is chosen. This is the
+    // same belt-and-braces the location check above is — and it is what narrows
+    // `severity` to FlagSeverity for the two create calls below.
+    if (severity === null) return;
     submittingRef.current = true;
     // L4: flip the STATE here too (not after the awaits below) so the whole
     // form — chips, pills, text input, photo gallery — disables for the
@@ -1102,17 +1134,32 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
               banner, the photo nudge, the submission explainer): that is reading
               content and stays uncapped, because capping body copy at 1.6 would
               stop it short of the 200% that WCAG 1.4.4 asks for. */}
+          {/* Q5: with nothing chosen there is no meaning to state, so the line
+              carries the ASK instead of a meaning nobody selected. The live
+              region is the same one — a screen-reader user hears the instruction
+              become the answer the moment they rate.
+              PLACEHOLDER COPY (SKY-WORDS-REQUIRED): the instruction sentence. */}
           <TypeBlock cap={TYPE_BLOCK.header}>
-          <AppText
-            variant="body"
-            style={styles.sevHint}
-            accessibilityLabel={`Severity ${severity}: ${SEVERITY_DESCRIPTIONS[severity]}`}
-            accessibilityLiveRegion="polite"
-          >
-            <AppText variant="bodyMedium" style={styles.sevHintLabel}>{SEVERITY_LABELS[severity]}</AppText>
-            {'  '}
-            {SEVERITY_DESCRIPTIONS[severity]}
-          </AppText>
+          {severity === null ? (
+            <AppText
+              variant="body"
+              style={styles.sevHint}
+              accessibilityLiveRegion="polite"
+            >
+              Choose how hard this makes the path to use.
+            </AppText>
+          ) : (
+            <AppText
+              variant="body"
+              style={styles.sevHint}
+              accessibilityLabel={`Severity ${severity}: ${SEVERITY_DESCRIPTIONS[severity]}`}
+              accessibilityLiveRegion="polite"
+            >
+              <AppText variant="bodyMedium" style={styles.sevHintLabel}>{SEVERITY_LABELS[severity]}</AppText>
+              {'  '}
+              {SEVERITY_DESCRIPTIONS[severity]}
+            </AppText>
+          )}
           </TypeBlock>
 
           <AppText variant="label" style={styles.label} accessibilityRole="header">Description (optional)</AppText>
@@ -1364,7 +1411,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
                   node; the icon is decorative and screened out. The
                   accessibilityLiveRegion triggers the Android AT announcement;
                   iOS is handled by the useEffect above. */}
-              {severity >= 4 && photoUris.length === 0 && (
+              {severity !== null && severity >= 4 && photoUris.length === 0 && (
                 <View
                   style={styles.photoNudge}
                   accessible
@@ -1525,11 +1572,19 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
             </Pressable>
             <Pressable
               onPress={handleSubmit}
-              disabled={submitting || !location}
+              disabled={submitting || submitBlocked}
               style={[
                 styles.actionBtn,
                 styles.submitBtn,
-                (submitting || !location) && styles.submitBtnDisabled,
+                // C5: ONE disabled grammar. A blocked fill wears the soft-tint
+                // pair (brandSoft/brandOnSoft) — the same grammar the rest of
+                // the estate's inert fills use — instead of a glowing brand
+                // gradient held at 0.6 opacity, which reads as a live button
+                // somebody dimmed. The BUSY state is not this: it keeps the
+                // gradient and the white ink, because a button mid-flight is
+                // working, not inert.
+                submitBlocked && styles.submitBtnBlocked,
+                submitting && styles.submitBtnDisabled,
               ]}
               accessibilityRole="button"
               accessibilityLabel={isAnon ? 'Submit report anonymously' : 'Submit report'}
@@ -1537,10 +1592,11 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
               // help them. Under a denial "Use my location" only re-asks a
               // question the OS has already answered.
               accessibilityHint={blockedReason()}
-              {...a11yToggle({ disabled: submitting || !location, busy: submitting })}
+              {...a11yToggle({ disabled: submitting || submitBlocked, busy: submitting })}
             >
               {({ pressed }) => (
                 <>
+                  {!submitBlocked && (
                   <LinearGradient
                     colors={gradient.brand}
                     start={{ x: 0, y: 0 }}
@@ -1548,6 +1604,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
                     style={[StyleSheet.absoluteFill, { borderRadius: radius.md }]}
                     pointerEvents="none"
                   />
+                  )}
                   {/* T4: pressed scrim ABOVE the gradient, BELOW the label — the
                       brand CTA answers the finger without dimming its white text. */}
                   {pressed && (
@@ -1561,7 +1618,12 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
                       <AppText variant="label" style={styles.submitText}>Filing your report…</AppText>
                     </View>
                   ) : (
-                    <AppText variant="label" style={styles.submitText}>Submit report</AppText>
+                    <AppText
+                      variant="label"
+                      style={[styles.submitText, submitBlocked && styles.submitTextBlocked]}
+                    >
+                      Submit report
+                    </AppText>
                   )}
                 </>
               )}
@@ -1914,8 +1976,19 @@ const makeStyles = (color: ColorTheme) =>
     cancelBtn: { backgroundColor: color.surfaceNeutral },
     cancelText: { color: color.text, fontWeight: font.weight.semibold },
     submitBtn: { backgroundColor: color.brand, overflow: 'visible', ...shadow.glowBrand },
+    // Busy, not inert: the gradient and the white ink stay, the whole control
+    // just softens while the write is in flight.
     submitBtnDisabled: { opacity: 0.6 },
+    // C5: the one disabled-fill grammar. No gradient beneath it (the render
+    // skips it), no brand glow — a glowing inert button is a lie — and the ink
+    // is brandOnSoft, which is the measured pair for this tint.
+    submitBtnBlocked: {
+      backgroundColor: color.brandSoft,
+      shadowOpacity: 0,
+      elevation: 0,
+    },
     submitText: { color: color.textOnBrand, fontWeight: font.weight.bold },
+    submitTextBlocked: { color: color.brandOnSoft },
     // T9 (F5-09): spinner + "Filing your report…" sit side by side while pending.
     submitBusyRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.tight },
     // T4 (F1-01): static pressed dim so every control in the sheet answers the
