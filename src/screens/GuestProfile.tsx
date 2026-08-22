@@ -1,5 +1,6 @@
 import React from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { BottomTabBarHeightContext } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Camera, CheckCircle2, Star } from 'lucide-react-native';
 import { AppText } from '@/components/ui/AppText';
@@ -61,6 +62,16 @@ const ACCOUNT_BENEFITS: readonly AccountBenefit[] = [
 export function GuestProfile({ onSignInPress }: { onSignInPress: () => void }) {
   const color = useColor();
   const insets = useSafeAreaInsets();
+  // The device caught this: the column scrolls, and its last row was cut by the
+  // tab bar with nothing below it to scroll clear (worst at accessibility
+  // sizes, where "Earn points and badges" is three lines tall). The scroll owes
+  // the bar its own height.
+  //
+  // The CONTEXT, not the hook, with a `?? 0` fallback — LeaderboardScreen's
+  // idiom. `useBottomTabBarHeight()` throws outside a tab navigator, and this
+  // component was extracted precisely so its render test can mount it without
+  // ProfileScreen's whole provider stack.
+  const tabBarHeight = React.useContext(BottomTabBarHeightContext) ?? 0;
   const drawer = useDrawer();
   const { setOpen: setSharedModal } = useSharedModals();
   const styles = makeStyles(color);
@@ -69,7 +80,7 @@ export function GuestProfile({ onSignInPress }: { onSignInPress: () => void }) {
       style={styles.guestScroll}
       contentContainerStyle={[
         styles.guestBody,
-        { paddingTop: insets.top + spacing.lg, paddingBottom: spacing.xxxl },
+        { paddingTop: insets.top + spacing.lg, paddingBottom: tabBarHeight + spacing.xl },
       ]}
     >
       {/* T19 (F6-08) is retired here. The brand mark was the ONLY place the

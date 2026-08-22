@@ -839,6 +839,10 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
               PLACEHOLDER COPY: "At your current location" / "At the pin you
               placed" / "Show" / "Hide" / "Copy" are logged in
               build/COPY_LEDGER.md as SKY-WORDS-REQUIRED. */}
+          {/* One block, so the ScrollView's own row gap cannot open between the
+              sentence and the coordinate it reveals — on the device the pair
+              read as two unrelated lines. */}
+          <View style={styles.locationBlock}>
           <View style={styles.locationRow}>
             <MapPin size={13} color={color.textMuted} strokeWidth={2} {...decorativeProps} />
             {/* T1: mono is for numerals that are data. A sentence is not, so
@@ -893,6 +897,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
               </Pressable>
             </View>
           )}
+          </View>
           </TypeBlock>
           {/* S5 (L3-1): when no location has resolved yet — the common
               first-time web-guest case, where nothing was ever in flight — give
@@ -1127,6 +1132,14 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
                     {/* The Legend's atom, at the Legend's size. Decorative — the
                         row above carries the whole authored label. */}
                     <SeverityDisc severity={s} size={32} digitSize={font.size.base} />
+                    {/* T3, and the device caught this one. The word sat on
+                        `label` (cap 1.6) over a meaning on uncapped `body`, so
+                        at accessibility sizes "Minor" was drawn SMALLER than
+                        "Inconvenient but usable." — X6's inversion, reproduced
+                        inside the control built to fix X7. One content block
+                        over the pair, exactly as the Legend does it, so the
+                        word stays the word at every size. */}
+                    <TypeBlock cap={TYPE_BLOCK.content}>
                     <View style={styles.sevListText}>
                       <AppText variant="label" style={styles.sevListTitle}>
                         {SEVERITY_LABELS[s]}
@@ -1135,6 +1148,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
                         {SEVERITY_DESCRIPTIONS[s]}
                       </AppText>
                     </View>
+                    </TypeBlock>
                     {/* WCAG 1.4.1: the selected row is signalled by the tint AND
                         the ring AND this tick — the same three-signal selection
                         the compact discs carry, kept rather than traded away. */}
@@ -1764,7 +1778,8 @@ const makeStyles = (color: ColorTheme) =>
       color: color.textStrong,
       letterSpacing: -0.3,
     },
-    locationRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.tight, marginBottom: spacing.xs },
+    locationBlock: { marginTop: -spacing.xs },
+    locationRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.tight },
     location: { fontSize: font.size.xs, color: color.inkGlassMuted, flexShrink: 1 },
     // Q17: the Show/Hide disclosure and the Copy link beside the revealed
     // coordinate. Same shape as FlagDetailModal's copyCoordsLink — an inkSelect
@@ -1786,8 +1801,6 @@ const makeStyles = (color: ColorTheme) =>
       flexDirection: 'row',
       alignItems: 'center',
       gap: spacing.tight,
-      marginTop: -spacing.xs,
-      marginBottom: spacing.xs,
       flexWrap: 'wrap',
     },
     coordsValue: { fontSize: font.size.xs, color: color.inkGlassMuted },
@@ -2098,11 +2111,37 @@ const makeStyles = (color: ColorTheme) =>
     // Busy, not inert: the gradient and the white ink stay, the whole control
     // just softens while the write is in flight.
     submitBtnDisabled: { opacity: 0.6 },
-    // C5: the one disabled-fill grammar. No gradient beneath it (the render
-    // skips it), no brand glow — a glowing inert button is a lie — and the ink
-    // is brandOnSoft, which is the measured pair for this tint.
+    /**
+     * C5: the one disabled-fill grammar — the soft-tint pair, no gradient
+     * beneath it (the render skips it), and no brand glow, because a glowing
+     * inert button is a lie.
+     *
+     * THE OUTLINE IS NOT DECORATION, and the device is what found this.
+     * Measured off the 17e in both schemes:
+     *
+     *   light  inert #D9E7FD vs live #1F68DA  = 4.15:1   the fill carries it
+     *   dark   inert #0E4499 vs live #1F68DA  = 1.76:1   the fill does NOT
+     *
+     * A dark palette's "soft brand" is a dark blue, so it can never sit far in
+     * luminance from a mid brand blue: in dark the inert Submit read as an
+     * ordinary live button, which is the exact class SW-49 exists to stop ("an
+     * enabled-LOOKING control must never answer a tap with nothing"). Colour
+     * alone cannot carry the state there, so the state gets a second channel —
+     * the same 1.4.1 move the severity disc makes with its fill + tick + ring.
+     *
+     *   dark   outline #B4CFFA vs live fill  = 3.27:1   clears 1.4.11's floor
+     *   light  outline #0F53BE on the tint   = 5.60:1
+     *
+     * So in every scheme at least one channel is above 3:1, and the grammar is
+     * still one grammar. (The underlying finding — dark `brandSoft` sitting too
+     * close to `ctaFill` to signal a state — is logged for the design system in
+     * the build report; fixing the token itself would ripple across every chip,
+     * banner and avatar that reads it.)
+     */
     submitBtnBlocked: {
       backgroundColor: color.brandSoft,
+      borderWidth: 1.5,
+      borderColor: color.brandOnSoft,
       shadowOpacity: 0,
       elevation: 0,
     },
