@@ -32,9 +32,16 @@
  *
  * ─── DELIBERATELY NOT COVERED (Sky's call, 2026-08-20) ────────────────────
  * SW-09 clear-search (guard-pinned at hitSlop={14} by A11Y-223), SW-33 the
- * filter-panel collapse (32+16=48), the SW-40 tier pill (33+16=49), and SW-29's
- * 38x40 map markers all stay on the documented idiom. The 63x28 Switch elements
- * and the map's 29x11 "Legal" link are native iOS controls, not ours to size.
+ * filter-panel collapse (32+16=48) and the SW-40 tier pill (33+16=49) all stay
+ * on the documented idiom. The 63x28 Switch elements and the map's 29x11
+ * "Legal" link are native iOS controls, not ours to size.
+ *
+ * SW-29's 38x40 map markers WERE on that list. They are not any more: Sky's
+ * Q9 ruling (art-direction plan, 2026-08-21) is a 44pt wrapper with the drawing
+ * unchanged inside it. The idiom could never have covered them — hitSlop is a
+ * touch affordance and does not appear in the accessibility frame at all, and
+ * react-native-maps gives a Marker's inner View no slop prop to begin with, so
+ * the wrapper WAS the whole reachable area in both axes. Pinned below.
  *
  * House idiom: static source scan (cf. bottomInsetSafety.guard.test.ts,
  * tasksFilterSheet.test.ts) — geometry is invisible to jest, so this pins the
@@ -143,6 +150,58 @@ describe('SW-22 + SW-43 — the tappable row title was 21-29pt on every list sur
       const block = styleBlock(read(file), 'viewOnMapBtn');
       expect(`${file}: ${/width: 44/.test(block) && /height: 44/.test(block)}`).toBe(`${file}: true`);
     }
+  });
+});
+
+describe('SW-29 / Q9 — the map pin is a 44pt target around an unchanged drawing', () => {
+  const src = read('components/PlatformMap.tsx');
+
+  it('pinWrap is the 44pt box, and it REFERENCES the floor rather than typing it', () => {
+    // A1: "44pt on everything interactive, as a box not only slop
+    // (a11y.minTargetSize referenced, not typed)". A literal 44 here would pass
+    // the eye and drift the day the floor moves.
+    expect(styleBlock(src, 'pinWrap')).toContain('width: PIN_WRAP_SIZE');
+    expect(styleBlock(src, 'pinWrap')).toContain('height: PIN_WRAP_SIZE');
+    expect(src).toContain('const PIN_WRAP_SIZE = a11y.minTargetSize;');
+  });
+
+  it('the DRAWING inside it did not resize — the drop is still 26', () => {
+    // Q9 is a target change, not a redraw. If a later edit grows the drop to
+    // fill the new box, the pin stops being the thing Sky approved.
+    expect(src).toContain('const PIN_DROP_SIZE = 26;');
+    expect(styleBlock(src, 'pinDrop')).toContain('width: PIN_DROP_SIZE');
+    expect(styleBlock(src, 'pinDrop')).toContain('height: PIN_DROP_SIZE');
+  });
+
+  it('the anchor is DERIVED from that geometry, so the tip still lands on the coordinate', () => {
+    // The load-bearing half. A 44pt box with the old anchor={{x:0.5,y:1}} would
+    // hang every pin ~2.9pt north of the barrier it reports — a silent accuracy
+    // regression that no gate and no screenshot would catch.
+    expect(src).toContain('anchor={PIN_ANCHOR}');
+    expect(src).not.toContain('anchor={{ x: 0.5, y: 1 }}');
+
+    // Re-derive it here rather than pinning a magic number: the stack is a
+    // square rotated -45deg, so its sharp corner sits half a diagonal below
+    // centre. Keep this in step with the constants above and the pin is honest.
+    const dropSize = 26;
+    const hairline = 0.5;
+    const wrap = 44;
+    const tipBelowCenter = ((dropSize + 2 * hairline) * Math.SQRT2) / 2;
+    const expected = (wrap / 2 + tipBelowCenter) / wrap;
+    expect(expected).toBeCloseTo(0.9339, 4);
+    expect(expected).toBeLessThan(1); // the tip is INSIDE the box, or the anchor lies
+  });
+
+  it('the outline retune kept both regimes of the GLASS §12.4 union', () => {
+    // The white ring covers dark tiles, the navy hairline covers light ones.
+    // Thinning either is fine; dropping one is not (a white ring alone vanishes
+    // on white tiles). Arbiter run: build/03/pin-arbiter.txt, worst union 3.15:1.
+    expect(styleBlock(src, 'pinDrop')).toContain("borderColor: '#fff'");
+    expect(styleBlock(src, 'pinHairline')).toContain("borderColor: 'rgba(15, 27, 45, 0.6)'");
+    // Mode-independent literals (PROTECT-16) — never a themed token, which would
+    // render dark in dark mode and lose the light-tile regime entirely.
+    expect(styleBlock(src, 'pinHairline')).not.toContain('color.');
+    expect(styleBlock(src, 'pinDrop')).not.toContain('color.');
   });
 });
 

@@ -1,0 +1,26 @@
+## Contrast report — GSP-03 pin outline retune (M3 / board 02), 2026-08-21
+
+Union rule (GLASS §12.4): a pin is separated from its backdrop if EITHER regime
+clears the 3:1 boundary floor. Ring = #FFFFFF; hairline = #0F1B2D at its alpha.
+BEFORE = 2.5px ring + 1px opaque hairline. AFTER = 2px ring + 0.5px hairline at 0.6.
+
+| regime | base | white ring vs base | navy hairline vs base | union | verdict |
+|---|---|---|---|---|---|
+| before | `#000000 (black tile extreme)` | #FFFFFF 21.00:1 | #0F1B2D 1.21:1 | **21.00:1** | PASS |
+| before | `#FFFFFF (white tile extreme)` | #FFFFFF 1.00:1 | #0F1B2D 17.28:1 | **17.28:1** | PASS |
+| before | `#F7C948 (heat sev1)` | #FFFFFF 1.57:1 | #0F1B2D 11.03:1 | **11.03:1** | PASS |
+| before | `#F0A030 (heat sev2)` | #FFFFFF 2.15:1 | #0F1B2D 8.05:1 | **8.05:1** | PASS |
+| before | `#F2792B (heat sev3)` | #FFFFFF 2.78:1 | #0F1B2D 6.21:1 | **6.21:1** | PASS |
+| before | `#E85638 (heat sev4)` | #FFFFFF 3.61:1 | #0F1B2D 4.79:1 | **4.79:1** | PASS |
+| before | `#D92D20 (heat sev5)` | #FFFFFF 4.83:1 | #0F1B2D 3.58:1 | **4.83:1** | PASS |
+| after | `#000000 (black tile extreme)` | #FFFFFF 21.00:1 | #09101B 1.10:1 | **21.00:1** | PASS |
+| after | `#FFFFFF (white tile extreme)` | #FFFFFF 1.00:1 | #6F7681 4.57:1 | **4.57:1** | PASS |
+| after | `#F7C948 (heat sev1)` | #FFFFFF 1.57:1 | #6C6138 3.96:1 | **3.96:1** | PASS |
+| after | `#F0A030 (heat sev2)` | #FFFFFF 2.15:1 | #69502E 3.50:1 | **3.50:1** | PASS |
+| after | `#F2792B (heat sev3)` | #FFFFFF 2.78:1 | #6A412C 3.15:1 | **3.15:1** | PASS |
+| after | `#E85638 (heat sev4)` | #FFFFFF 3.61:1 | #663331 2.81:1 | **3.61:1** | PASS |
+| after | `#D92D20 (heat sev5)` | #FFFFFF 4.83:1 | #602228 2.47:1 | **4.83:1** | PASS |
+
+Worst union AFTER the retune: **3.15:1** (floor 3:1).
+
+EXIT 0 — every base is covered by one regime or the other.
