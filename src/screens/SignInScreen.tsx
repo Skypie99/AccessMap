@@ -10,6 +10,7 @@ import {
   StyleSheet,
   type Text,
   TextInput,
+  useWindowDimensions,
   View,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -17,9 +18,9 @@ import { Eye, EyeOff } from 'lucide-react-native';
 import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 import { font, gradient, radius, shadow, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
-import { AppText } from '@/components/ui';
+import { AppText, TypeBlock, TYPE_BLOCK } from '@/components/ui';
 import { signInWithEmail, signUpWithEmail } from '@/lib/supabase';
-import { a11yToggle, useFocusOnOpen } from '@/lib/accessibility';
+import { a11yToggle, isAxRecompose, useFocusOnOpen } from '@/lib/accessibility';
 import { notify } from '@/lib/confirm';
 import {
   PRIVACY_POLICY_LINK_HINT,
@@ -48,6 +49,13 @@ export default function SignInScreen({
   // the home indicator on notched devices. Non-throwing context read (the
   // M15 family recipe; render tests mount without a provider).
   const insets = React.useContext(SafeAreaInsetsContext) ?? { top: 0, bottom: 0, left: 0, right: 0 };
+  // X1 / board 11: at accessibility sizes the pinned footer plus a full-height
+  // hero left roughly 370pt of scroll window, so the FIRST viewport of the
+  // signed-out app had no field, no button and no guest link in it. At the
+  // recomposition point the hero compacts to one row and the tagline stands
+  // down (onboarding still carries it), which puts the form back above the fold.
+  const { fontScale } = useWindowDimensions();
+  const axRecompose = isAxRecompose(fontScale);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
@@ -169,8 +177,8 @@ export default function SignInScreen({
             <AppText variant="label" style={styles.backBtnText}>← Back</AppText>
           </Pressable>
         ) : null}
-        <View style={styles.brandBlock}>
-          <LogoMark variant="white" size={84} />
+        <View style={[styles.brandBlock, axRecompose && styles.brandBlockCompact]}>
+          <LogoMark variant="white" size={axRecompose ? 32 : 84} />
           <AppText
             ref={titleRef}
             variant="display"
@@ -181,9 +189,16 @@ export default function SignInScreen({
           >
             Flagstone
           </AppText>
-          <AppText variant="body" style={styles.tagline}>
-            Spot barriers. Share them.{'\n'}Make your community more accessible.
-          </AppText>
+          {/* The tagline stands down at the recomposition point. It is the one
+              element here that is pure atmosphere — onboarding says the same
+              thing at length, and it costs three lines of the first viewport
+              exactly where the email field needs to be. The mark, the name and
+              the header role all stay. */}
+          {!axRecompose && (
+            <AppText variant="body" style={styles.tagline}>
+              Spot barriers. Share them.{'\n'}Make your community more accessible.
+            </AppText>
+          )}
         </View>
 
         <View style={styles.formCard}>
@@ -333,6 +348,11 @@ export default function SignInScreen({
           the home-indicator inset, which is the SW-02 half of the same defect.
           Reading order is unchanged: still the last two elements on the screen,
           still below the two trust lines (PROTECT-11). */}
+      {/* T3: the pinned footer is chrome — it has nowhere to grow, and every
+          point it takes is a point the scroll window above it loses. The chrome
+          cap (1.3) is what keeps Apple 1.2's consent lines visible at rest on
+          every text size, which is the whole reason SW-01 pinned them here. */}
+      <TypeBlock cap={TYPE_BLOCK.chrome}>
       <View style={[styles.policyFooter, { paddingBottom: Math.max(spacing.md, insets.bottom) }]}>
         {/* B-2 (SR-002): 5.1.1(i) wants the policy reachable near account
             creation, not only in ASC metadata. Appended BELOW the footnote so
@@ -373,6 +393,7 @@ export default function SignInScreen({
           </AppText>
         </Pressable>
       </View>
+      </TypeBlock>
 
       {/* B-3: mounted LOCALLY, not in SharedModalsHost, and that is forced
           rather than chosen. App.tsx renders SignInScreen as a SIBLING of
@@ -417,6 +438,13 @@ const makeStyles = (_color: ColorTheme) =>
       alignItems: 'center',
       gap: spacing.md,
       marginBottom: spacing.sm,
+    },
+    // Board 11: mark + wordmark on ONE row at large type, so the hero costs a
+    // line instead of a screen.
+    brandBlockCompact: {
+      flexDirection: 'row',
+      justifyContent: 'center',
+      gap: spacing.sm,
     },
     title: {
       // fontSize, fontFamily, color applied via AppText variant="display"
