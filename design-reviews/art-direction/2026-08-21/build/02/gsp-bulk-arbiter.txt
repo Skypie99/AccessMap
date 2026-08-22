@@ -1,0 +1,138 @@
+## Contrast report — GSP-02 bulk floor re-arbitration — dense candidate (light 0.92 / dark 0.90 blur floor; engineered stops 0.97/0.92 light, 0.97/0.95 dark) over the saturated tokens that ghosted (2026-08-21)
+
+Composite order: `stack[0]` painted first (nearest base) → last element topmost.
+Worst case = the base backdrop that yields the LOWEST ratio for the pair.
+
+### light
+
+| pair | surface | worst base | resulting bg | ratio | min | verdict |
+|---|---|---|---|---|---|---|
+| eyebrow TASKS 12pt glassMuted (AA fork) (`#414B5A`) | chrome | `#000` | `#BFBFBF` | 4.81:1 | 4.5:1 | PASS |
+| screen title 30pt textStrong (large) (`#222222`) | chrome | `#000` | `#BFBFBF` | 8.68:1 | 3:1 | PASS |
+| subtitle 15pt glassMuted (AA fork) (`#414B5A`) | chrome | `#000` | `#BFBFBF` | 4.81:1 | 4.5:1 | PASS |
+| Sort: label 12pt glassMuted (`#414B5A`) | chrome | `#000` | `#BFBFBF` | 4.81:1 | 4.5:1 | PASS |
+| search placeholder 14pt (app token) (`#5B6470`) | chipOnChrome | `#000` | `#E6E6E6` | 4.78:1 | 4.5:1 | PASS |
+| chip labels 13pt color.text (`#333333`) | chipOnChrome | `#000` | `#E6E6E6` | 10.08:1 | 4.5:1 | PASS |
+| active chip / Verify white on CTA #1466E0 (`#FFFFFF`) | ctaFill | `#1466E0` | `#1466E0` | 5.24:1 | 4.5:1 | PASS |
+| Select multiple 14pt brandText (AA fork) (`#0F53BE`) | chipOnChrome | `#000` | `#E6E6E6` | 5.58:1 | 4.5:1 | PASS |
+| banner ink 13pt brandOnSoft (`#0F53BE`) | banner | `#CBDBF4` | `#D5E3FA` | 5.41:1 | 4.5:1 | PASS |
+| section header 12pt ink.onStage (AA fork from textMuted #666 = 4.10:1 on pool-darkest stage) (`#525C6B`) | stage | `#CBDBF4` | `#CBDBF4` | 4.83:1 | 4.5:1 | PASS |
+| count pill 11pt monoBold brandOnSoft (`#0F53BE`) | sectionPill | `#D9E7FD` | `#D9E7FD` | 5.60:1 | 4.5:1 | PASS |
+| card title 18pt textStrong on row glass (`#222222`) | row | `#CBDBF4` | `#EFF4FC` | 14.43:1 | 4.5:1 | PASS |
+| card desc 14pt textStrong on row glass (`#222222`) | row | `#CBDBF4` | `#EFF4FC` | 14.43:1 | 4.5:1 | PASS |
+| card meta 12pt textMuted on row glass (`#666666`) | row | `#CBDBF4` | `#EFF4FC` | 5.21:1 | 4.5:1 | PASS |
+| card desc on selected row (`#222222`) | selectedRow | `#CBDBF4` | `#E8F0FC` | 13.82:1 | 4.5:1 | PASS |
+| card meta on selected row (`#666666`) | selectedRow | `#CBDBF4` | `#E8F0FC` | 4.99:1 | 4.5:1 | PASS |
+| Resolved label 13pt on neutral fill (`#333333`) | neutralBtnOnRow | `#CBDBF4` | `#E2E8F0` | 10.22:1 | 4.5:1 | PASS |
+| Reject label 13pt (ghost on row) (`#333333`) | row | `#CBDBF4` | `#EFF4FC` | 11.46:1 | 4.5:1 | PASS |
+| Details label 13pt color.brand (ghost) (`#1466E0`) | row | `#CBDBF4` | `#EFF4FC` | 4.75:1 | 4.5:1 | PASS |
+| sev1 ink on #F7C948 (`#0F1B2D`) | sev1 | `#F7C948` | `#F7C948` | 11.03:1 | 4.5:1 | PASS |
+| sev2 ink on #F0A030 (AA fork from white) (`#0F1B2D`) | sev2 | `#F0A030` | `#F0A030` | 8.05:1 | 4.5:1 | PASS |
+| sev3 ink on #F2792B (AA fork from white) (`#0F1B2D`) | sev3 | `#F2792B` | `#F2792B` | 6.21:1 | 4.5:1 | PASS |
+| sev4 ink on #E85638 (AA fork from white) (`#0F1B2D`) | sev4 | `#E85638` | `#E85638` | 4.79:1 | 4.5:1 | PASS |
+| sev5 white ink on #D92D20 (`#FFFFFF`) | sev5 | `#D92D20` | `#D92D20` | 4.83:1 | 4.5:1 | PASS |
+| StatusBadge Open ink (`#1A5FB4`) | statusOpen | `#E7F0FD` | `#E7F0FD` | 5.47:1 | 4.5:1 | PASS |
+| StatusBadge Verified ink (`#067A56`) | statusVerified | `#DCF6EC` | `#DCF6EC` | 4.70:1 | 4.5:1 | PASS |
+| bulk count 14pt bold on bulk glass (`#222222`) | bulk | `#000` | `#D9D9D9` | 11.24:1 | 4.5:1 | PASS |
+| bulk Resolve white on successStrong (`#FFFFFF`) | resolveFill | `#1e8449` | `#1E8449` | 4.72:1 | 4.5:1 | PASS |
+| bulk Watch white on accentPurple (`#FFFFFF`) | watchFill | `#5b21b6` | `#5B21B6` | 8.98:1 | 4.5:1 | PASS |
+| bulk Cancel textStrong (`#222222`) | cancelOnBulk | `#000` | `#F0F0F0` | 14.02:1 | 4.5:1 | PASS |
+| empty title 18pt textStrong (`#222222`) | empty | `#CBDBF4` | `#EFF4FC` | 14.43:1 | 4.5:1 | PASS |
+| empty body 13pt textMuted (`#666666`) | empty | `#CBDBF4` | `#EFF4FC` | 5.21:1 | 4.5:1 | PASS |
+| end-of-list footer 13pt italic ink.onStage (AA fork) (`#525C6B`) | stage | `#CBDBF4` | `#CBDBF4` | 4.83:1 | 4.5:1 | PASS |
+| eyebrow TASKS 12pt glassMuted (AA fork) [C-lite engineered] (`#414B5A`) | chromeLite | `#000` | `#E0E0E0` | 6.71:1 | 4.5:1 | PASS |
+| screen title 30pt textStrong (large) [C-lite engineered] (`#222222`) | chromeLite | `#000` | `#E0E0E0` | 12.10:1 | 3:1 | PASS |
+| subtitle 15pt glassMuted (AA fork) [C-lite engineered] (`#414B5A`) | chromeLite | `#000` | `#E0E0E0` | 6.71:1 | 4.5:1 | PASS |
+| Sort: label 12pt glassMuted [C-lite engineered] (`#414B5A`) | chromeLite | `#000` | `#E0E0E0` | 6.71:1 | 4.5:1 | PASS |
+| search placeholder 14pt (app token) [C-lite engineered] (`#5B6470`) | chipOnChromeLite | `#000` | `#F3F3F3` | 5.39:1 | 4.5:1 | PASS |
+| chip labels 13pt color.text [C-lite engineered] (`#333333`) | chipOnChromeLite | `#000` | `#F3F3F3` | 11.36:1 | 4.5:1 | PASS |
+| Select multiple 14pt brandText (AA fork) [C-lite engineered] (`#0F53BE`) | chipOnChromeLite | `#000` | `#F3F3F3` | 6.29:1 | 4.5:1 | PASS |
+| banner ink 13pt brandOnSoft [C-lite engineered] (`#0F53BE`) | bannerLite | `#CBDBF4` | `#D7E5FC` | 5.50:1 | 4.5:1 | PASS |
+| card title 18pt textStrong on row glass [C-lite engineered] (`#222222`) | rowLite | `#CBDBF4` | `#F7F9FD` | 15.11:1 | 4.5:1 | PASS |
+| card desc 14pt textStrong on row glass [C-lite engineered] (`#222222`) | rowLite | `#CBDBF4` | `#F7F9FD` | 15.11:1 | 4.5:1 | PASS |
+| card meta 12pt textMuted on row glass [C-lite engineered] (`#666666`) | rowLite | `#CBDBF4` | `#F7F9FD` | 5.45:1 | 4.5:1 | PASS |
+| card desc on selected row [C-lite engineered] (`#222222`) | selectedRowLite | `#CBDBF4` | `#ECF3FD` | 14.24:1 | 4.5:1 | PASS |
+| card meta on selected row [C-lite engineered] (`#666666`) | selectedRowLite | `#CBDBF4` | `#ECF3FD` | 5.14:1 | 4.5:1 | PASS |
+| Resolved label 13pt on neutral fill [C-lite engineered] (`#333333`) | neutralBtnOnRowLite | `#CBDBF4` | `#E9ECF2` | 10.70:1 | 4.5:1 | PASS |
+| Reject label 13pt (ghost on row) [C-lite engineered] (`#333333`) | rowLite | `#CBDBF4` | `#F7F9FD` | 12.00:1 | 4.5:1 | PASS |
+| Details label 13pt color.brand (ghost) [C-lite engineered] (`#1466E0`) | rowLite | `#CBDBF4` | `#F7F9FD` | 4.98:1 | 4.5:1 | PASS |
+| bulk count 14pt bold on bulk glass [C-lite engineered] (`#222222`) | bulkLite | `#000` | `#E6E6E6` | 12.69:1 | 4.5:1 | PASS |
+| textStrong — sheet title + description [bulkDense] (`#222222`) | bulkDense | `#000` | `#EBEBEB` | 13.30:1 | 4.5:1 | PASS |
+| text — meta values [bulkDense] (`#333333`) | bulkDense | `#000` | `#EBEBEB` | 10.56:1 | 4.5:1 | PASS |
+| inkGlassMuted — census line, meta paragraph, report sentence [bulkDense] (`#414B5A`) | bulkDense | `#000` | `#EBEBEB` | 7.38:1 | 4.5:1 | PASS |
+| inkSelect — segmented-cell labels, Copy coordinates, More labels [bulkDense] (`#0F53BE`) | bulkDense | `#000` | `#EBEBEB` | 5.85:1 | 4.5:1 | PASS |
+| textStrong — sheet title + description [bulkLiteDense] (`#222222`) | bulkLiteDense | `#000` | `#EBEBEB` | 13.30:1 | 4.5:1 | PASS |
+| text — meta values [bulkLiteDense] (`#333333`) | bulkLiteDense | `#000` | `#EBEBEB` | 10.56:1 | 4.5:1 | PASS |
+| inkGlassMuted — census line, meta paragraph, report sentence [bulkLiteDense] (`#414B5A`) | bulkLiteDense | `#000` | `#EBEBEB` | 7.38:1 | 4.5:1 | PASS |
+| inkSelect — segmented-cell labels, Copy coordinates, More labels [bulkLiteDense] (`#0F53BE`) | bulkLiteDense | `#000` | `#EBEBEB` | 5.85:1 | 4.5:1 | PASS |
+| textStrong — sheet title + description [segment cell on dense bulk] (`#222222`) | segmentOnBulkDense | `#000` | `#DEDFE0` | 11.88:1 | 4.5:1 | PASS |
+| inkSelect — segmented-cell labels, Copy coordinates, More labels [segment cell on dense bulk] (`#0F53BE`) | segmentOnBulkDense | `#000` | `#DEDFE0` | 5.22:1 | 4.5:1 | PASS |
+| the one filled verb — white on ctaFill [GSP-02] (`#ffffff`) | ctaFill | `#1466E0` | `#1466E0` | 5.24:1 | 4.5:1 | PASS |
+
+### dark
+
+| pair | surface | worst base | resulting bg | ratio | min | verdict |
+|---|---|---|---|---|---|---|
+| eyebrow TASKS 12pt dark glassMuted (AA fork) (`#B8BEC9`) | chrome | `#fff` | `#3D414D` | 5.43:1 | 4.5:1 | PASS |
+| screen title 30pt dark textStrong (large) (`#F5F5F5`) | chrome | `#fff` | `#3D414D` | 9.29:1 | 3:1 | PASS |
+| subtitle 15pt dark glassMuted (AA fork) (`#B8BEC9`) | chrome | `#fff` | `#3D414D` | 5.43:1 | 4.5:1 | PASS |
+| Sort: label 12pt dark glassMuted (`#B8BEC9`) | chrome | `#fff` | `#3D414D` | 5.43:1 | 4.5:1 | PASS |
+| search placeholder dark (AA fork from #9ca3af) (`#C9CFD9`) | chipOnChrome | `#fff` | `#51545E` | 4.81:1 | 4.5:1 | PASS |
+| chip labels dark textStrong (AA fork from #ddd) (`#F5F5F5`) | chipOnChrome | `#fff` | `#51545E` | 6.90:1 | 4.5:1 | PASS |
+| active chip / Verify white on CTA #1466E0 (mode-independent AA fork) (`#FFFFFF`) | ctaFill | `#1466E0` | `#1466E0` | 5.24:1 | 4.5:1 | PASS |
+| Select multiple dark brandOnSoft (`#B4CFFA`) | chipOnChrome | `#fff` | `#51545E` | 4.75:1 | 4.5:1 | PASS |
+| banner ink dark brandOnSoft (`#B4CFFA`) | banner | `#1B2940` | `#123C7E` | 6.72:1 | 4.5:1 | PASS |
+| section header dark textMuted on stage (`#AAAAAA`) | stage | `#1B2940` | `#1B2940` | 6.29:1 | 4.5:1 | PASS |
+| count pill dark brandOnSoft (`#B4CFFA`) | sectionPill | `#0E4499` | `#0E4499` | 5.75:1 | 4.5:1 | PASS |
+| card title dark textStrong on row glass (fixes before's unthemed-title bug) (`#F5F5F5`) | row | `#1B2940` | `#1D2433` | 14.24:1 | 4.5:1 | PASS |
+| card desc dark textStrong on row glass (`#F5F5F5`) | row | `#1B2940` | `#1D2433` | 14.24:1 | 4.5:1 | PASS |
+| card meta dark textMuted on row glass (`#AAAAAA`) | row | `#1B2940` | `#1D2433` | 6.68:1 | 4.5:1 | PASS |
+| card desc on selected row (dark) (`#F5F5F5`) | selectedRow | `#1B2940` | `#172846` | 13.48:1 | 4.5:1 | PASS |
+| card meta on selected row (dark) (`#AAAAAA`) | selectedRow | `#1B2940` | `#172846` | 6.32:1 | 4.5:1 | PASS |
+| Resolved label dark color.text (`#DDDDDD`) | neutralBtnOnRow | `#1B2940` | `#343A47` | 8.41:1 | 4.5:1 | PASS |
+| Reject label dark color.text (ghost) (`#DDDDDD`) | row | `#1B2940` | `#1D2433` | 11.43:1 | 4.5:1 | PASS |
+| Details label dark brandText (ghost) (`#84AEF6`) | row | `#1B2940` | `#1D2433` | 6.93:1 | 4.5:1 | PASS |
+| sev1 ink (mode-independent ramp) (`#0F1B2D`) | sev1 | `#F7C948` | `#F7C948` | 11.03:1 | 4.5:1 | PASS |
+| sev2 ink (AA fork) (`#0F1B2D`) | sev2 | `#F0A030` | `#F0A030` | 8.05:1 | 4.5:1 | PASS |
+| sev3 ink (AA fork) (`#0F1B2D`) | sev3 | `#F2792B` | `#F2792B` | 6.21:1 | 4.5:1 | PASS |
+| sev4 ink (AA fork) (`#0F1B2D`) | sev4 | `#E85638` | `#E85638` | 4.79:1 | 4.5:1 | PASS |
+| sev5 white ink (`#FFFFFF`) | sev5 | `#D92D20` | `#D92D20` | 4.83:1 | 4.5:1 | PASS |
+| StatusBadge Open ink (dark) (`#84AEF6`) | statusOpen | `#0E2A5C` | `#0E2A5C` | 6.23:1 | 4.5:1 | PASS |
+| StatusBadge Verified ink (dark) (`#6EE7B7`) | statusVerified | `#083928` | `#083928` | 8.47:1 | 4.5:1 | PASS |
+| bulk count dark textStrong on bulk glass (`#F5F5F5`) | bulk | `#fff` | `#313641` | 11.14:1 | 4.5:1 | PASS |
+| bulk Resolve white on successStrong (`#FFFFFF`) | resolveFill | `#1e8449` | `#1E8449` | 4.72:1 | 4.5:1 | PASS |
+| bulk Watch white on dark accentPurple (`#FFFFFF`) | watchFill | `#7c3aed` | `#7C3AED` | 5.70:1 | 4.5:1 | PASS |
+| bulk Cancel dark textStrong (`#F5F5F5`) | cancelOnBulk | `#fff` | `#4E525C` | 7.19:1 | 4.5:1 | PASS |
+| empty title dark textStrong (`#F5F5F5`) | empty | `#1B2940` | `#1D2433` | 14.24:1 | 4.5:1 | PASS |
+| empty body dark textMuted (`#AAAAAA`) | empty | `#1B2940` | `#1D2433` | 6.68:1 | 4.5:1 | PASS |
+| end-of-list footer dark textMuted (`#AAAAAA`) | stage | `#1B2940` | `#1B2940` | 6.29:1 | 4.5:1 | PASS |
+| eyebrow TASKS 12pt dark glassMuted (AA fork) [C-lite engineered] (`#B8BEC9`) | chromeLite | `#fff` | `#252A36` | 7.70:1 | 4.5:1 | PASS |
+| screen title 30pt dark textStrong (large) [C-lite engineered] (`#F5F5F5`) | chromeLite | `#fff` | `#252A36` | 13.19:1 | 3:1 | PASS |
+| subtitle 15pt dark glassMuted (AA fork) [C-lite engineered] (`#B8BEC9`) | chromeLite | `#fff` | `#252A36` | 7.70:1 | 4.5:1 | PASS |
+| Sort: label 12pt dark glassMuted [C-lite engineered] (`#B8BEC9`) | chromeLite | `#fff` | `#252A36` | 7.70:1 | 4.5:1 | PASS |
+| search placeholder dark (AA fork from #9ca3af) [C-lite engineered] (`#C9CFD9`) | chipOnChromeLite | `#fff` | `#3B3F4A` | 6.71:1 | 4.5:1 | PASS |
+| chip labels dark textStrong (AA fork from #ddd) [C-lite engineered] (`#F5F5F5`) | chipOnChromeLite | `#fff` | `#3B3F4A` | 9.64:1 | 4.5:1 | PASS |
+| Select multiple dark brandOnSoft [C-lite engineered] (`#B4CFFA`) | chipOnChromeLite | `#fff` | `#3B3F4A` | 6.63:1 | 4.5:1 | PASS |
+| banner ink dark brandOnSoft [C-lite engineered] (`#B4CFFA`) | bannerLite | `#1B2940` | `#10408B` | 6.25:1 | 4.5:1 | PASS |
+| card title dark textStrong on row glass (fixes before's unthemed-title bug) [C-lite engineered] (`#F5F5F5`) | rowLite | `#1B2940` | `#1E2330` | 14.42:1 | 4.5:1 | PASS |
+| card desc dark textStrong on row glass [C-lite engineered] (`#F5F5F5`) | rowLite | `#1B2940` | `#1E2330` | 14.42:1 | 4.5:1 | PASS |
+| card meta dark textMuted on row glass [C-lite engineered] (`#AAAAAA`) | rowLite | `#1B2940` | `#1E2330` | 6.77:1 | 4.5:1 | PASS |
+| card desc on selected row (dark) [C-lite engineered] (`#F5F5F5`) | selectedRowLite | `#1B2940` | `#172745` | 13.59:1 | 4.5:1 | PASS |
+| card meta on selected row (dark) [C-lite engineered] (`#AAAAAA`) | selectedRowLite | `#1B2940` | `#172745` | 6.38:1 | 4.5:1 | PASS |
+| Resolved label dark color.text [C-lite engineered] (`#DDDDDD`) | neutralBtnOnRowLite | `#1B2940` | `#343945` | 8.52:1 | 4.5:1 | PASS |
+| Reject label dark color.text (ghost) [C-lite engineered] (`#DDDDDD`) | rowLite | `#1B2940` | `#1E2330` | 11.58:1 | 4.5:1 | PASS |
+| Details label dark brandText (ghost) [C-lite engineered] (`#84AEF6`) | rowLite | `#1B2940` | `#1E2330` | 7.01:1 | 4.5:1 | PASS |
+| bulk count dark textStrong on bulk glass [C-lite engineered] (`#F5F5F5`) | bulkLite | `#fff` | `#202532` | 14.03:1 | 4.5:1 | PASS |
+| textStrong — sheet title + description [bulkDense] (`#F5F5F5`) | bulkDense | `#fff` | `#252A36` | 13.19:1 | 4.5:1 | PASS |
+| text — meta values [bulkDense] (`#E8E8E8`) | bulkDense | `#fff` | `#252A36` | 11.74:1 | 4.5:1 | PASS |
+| inkGlassMuted — census line, meta paragraph, report sentence [bulkDense] (`#B8BEC9`) | bulkDense | `#fff` | `#252A36` | 7.70:1 | 4.5:1 | PASS |
+| inkSelect — segmented-cell labels, Copy coordinates, More labels [bulkDense] (`#B4CFFA`) | bulkDense | `#fff` | `#252A36` | 9.07:1 | 4.5:1 | PASS |
+| textStrong — sheet title + description [bulkLiteDense] (`#F5F5F5`) | bulkLiteDense | `#fff` | `#191E2B` | 15.28:1 | 4.5:1 | PASS |
+| text — meta values [bulkLiteDense] (`#E8E8E8`) | bulkLiteDense | `#fff` | `#191E2B` | 13.59:1 | 4.5:1 | PASS |
+| inkGlassMuted — census line, meta paragraph, report sentence [bulkLiteDense] (`#B8BEC9`) | bulkLiteDense | `#fff` | `#191E2B` | 8.92:1 | 4.5:1 | PASS |
+| inkSelect — segmented-cell labels, Copy coordinates, More labels [bulkLiteDense] (`#B4CFFA`) | bulkLiteDense | `#fff` | `#191E2B` | 10.51:1 | 4.5:1 | PASS |
+| textStrong — sheet title + description [segment cell on dense bulk] (`#F5F5F5`) | segmentOnBulkDense | `#fff` | `#303440` | 11.34:1 | 4.5:1 | PASS |
+| inkSelect — segmented-cell labels, Copy coordinates, More labels [segment cell on dense bulk] (`#B4CFFA`) | segmentOnBulkDense | `#fff` | `#303440` | 7.80:1 | 4.5:1 | PASS |
+| the one filled verb — white on ctaFill [GSP-02] (`#ffffff`) | ctaFill | `#1466E0` | `#1466E0` | 5.24:1 | 4.5:1 | PASS |
+
+RESULT: ALL PASS

@@ -15,7 +15,10 @@
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import { useColorScheme } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { color as lightColor } from '../theme';
+import { BULK_FLOOR_CANDIDATE, color as lightColor } from '../theme';
+
+// GSP-02: the dark mirror of the bulk-sheet material candidate. See theme.ts.
+const DENSE = BULK_FLOOR_CANDIDATE === 'dense';
 
 // -------------------------------------------------------------------------
 // Dark palette — same token names as lightColor, dark-mode values.
@@ -165,8 +168,11 @@ const darkColor = {
   glassBannerFloor: 'rgba(14,68,153,0.70)',
   glassBannerEdge: 'rgba(78,137,239,0.45)',
   glassBannerSpecular: 'rgba(168,192,224,0.22)',
-  // Bulk bar — conditional i=24.
-  glassBulkFloor: 'rgba(13,18,32,0.85)',
+  // Bulk bar — conditional i=24 — and the blur-mode floor of every bulk SHEET
+  // that does not force the engineered path.
+  glassBulkFloor: DENSE ? 'rgba(13,18,32,0.90)' : 'rgba(13,18,32,0.85)',
+  // The dense candidate's floor as a named token (GSP-02 §2.2).
+  glassBulkFloorDense: 'rgba(13,18,32,0.90)',
   glassBulkSpecular: 'rgba(168,192,224,0.18)',
   // Engineered chip tint — dark chips are a luminosity lift, not a shade.
   glassChipFill: 'rgba(255,255,255,0.10)',
@@ -199,8 +205,14 @@ const darkColor = {
   glassBannerLite1: 'rgba(14,68,153,0.84)',
   glassChromeLite0: 'rgba(13,18,32,0.94)',
   glassChromeLite1: 'rgba(13,18,32,0.90)',
-  glassBulkLite0: 'rgba(13,18,32,0.95)',
-  glassBulkLite1: 'rgba(13,18,32,0.92)',
+  // ⚠ The dark engineered stop does NOT take the plan's 0.90 candidate: 0.90
+  // measures a 1.279:1 ghost against the Tasks card's #f5f5f5 text, which is
+  // WORSE than the shipped 0.92 (1.206:1) — it would have deepened D2, the
+  // app's worst legibility moment, while the gates stayed green. 0.95 measures
+  // 1.114:1. The blur floor above still takes 0.90 as ratified, because there
+  // it replaces 0.85 (1.499:1) and is a real gain.
+  glassBulkLite0: DENSE ? 'rgba(13,18,32,0.97)' : 'rgba(13,18,32,0.95)',
+  glassBulkLite1: DENSE ? 'rgba(13,18,32,0.95)' : 'rgba(13,18,32,0.92)',
 
   // Misc
   shadow: '#fff', // inverted for dark mode

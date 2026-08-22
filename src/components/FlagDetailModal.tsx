@@ -25,7 +25,7 @@ import { useKeyboardVisible } from '@/hooks/useKeyboardVisible';
 import { MessageCircle, Star, X } from 'lucide-react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
-import { a11y, font, radius, severity, shadow, spacing } from '@/theme';
+import { a11y, BULK_FLOOR_CANDIDATE, font, radius, severity, shadow, spacing } from '@/theme';
 import { useAuth } from '@/lib/auth';
 import { confirm, notify } from '@/lib/confirm';
 import { isContentBlockedError, showBlockedContentAlert } from '@/lib/blockedContent';
@@ -1149,7 +1149,13 @@ export default function FlagDetailModal({
           <GlassSurface
             variant="bulk"
             borderRadius={0}
-            forceEngineered
+            // GSP-02 §2.2. This sheet has always forced the engineered material
+            // (MP4/M-36), which is why the 0.85 blur FLOOR the defect row named
+            // (D8) was never what ghosted here — the *Lite stops were. Under the
+            // 'blur40' arm of the A/B the sheet drops to true blur so Sky can
+            // judge a stronger blur against a denser gradient on the phone; the
+            // other two arms keep the shipped engineered path exactly.
+            forceEngineered={BULK_FLOOR_CANDIDATE !== 'blur40'}
             style={[styles.card, { paddingBottom: Math.max(spacing.xl, insets.bottom) }]}
             accessibilityViewIsModal
             onAccessibilityEscape={onClose}
