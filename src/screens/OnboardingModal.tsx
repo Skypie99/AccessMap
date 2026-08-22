@@ -21,12 +21,14 @@ import { AppText } from '@/components/ui/AppText';
 import { OverflowFade } from '@/components/ui/OverflowFade';
 import { ScreenStage } from '@/components/ui/ScreenStage';
 import { useVerticalOverflowFade } from '@/hooks/useOverflowFade';
-import { severityColor } from '@/lib/flags';
+import { SEVERITY_ORDER, severityColor } from '@/lib/flags';
 import {
   ONBOARDING_BODY_MAX_FONT_SCALE,
   ONBOARDING_TITLE_MAX_FONT_SCALE,
+  severityRowMetrics,
 } from '@/components/OnboardingCards';
-import { Star, Target } from 'lucide-react-native';
+import { SeverityDisc } from '@/components/SeverityDisc';
+import { Star } from 'lucide-react-native';
 import LogoMark from '@/components/LogoMark';
 
 /**
@@ -58,6 +60,12 @@ interface Card {
   // Slide 1 wears the ownable Wayfinder mark (LogoMark) instead of a stock
   // Lucide glyph — PROTECT-16, wear the house mark more.
   brandMark?: boolean;
+  // Step 2 teaches the severity grammar, so it teaches it WITH the grammar: the
+  // five production discs, the same object the first-launch flow and the Legend
+  // wear. Sky's call 2026-08-22 — it had a Lucide `Target` above a sentence
+  // reading "from 1 … to 5 … number and color", which is the generic costume
+  // the cold walk named.
+  severityScale?: boolean;
   title: string;
   body: string;
   // Hero-disc tone. 'gold' marks the gamification card (points) — Civic Gold is
@@ -73,7 +81,7 @@ const CARDS: Card[] = [
     body: 'Drop a pin where you find an accessibility issue — a missing ramp, a broken sidewalk, a blocked path — so others can plan around it, or help fix it.',
   },
   {
-    Icon: Target,
+    severityScale: true,
     tone: 'brand',
     title: 'Rate the barrier',
     body: 'Rate the issue from 1 (a minor inconvenience) to 5 (completely impassable). The map shows both number and color so the meaning is clear at a glance.',
@@ -112,6 +120,8 @@ export default function OnboardingModal({ visible, onDone }: Props) {
   const { width, fontScale } = useWindowDimensions();
   // F4 — the same recomposition point the first-launch flow uses.
   const wide = isAxRecompose(fontScale);
+  // One size rule for the five stones, shared with the first-launch flow.
+  const { size: discSize, digit: discDigit } = severityRowMetrics(width, wide, fontScale);
   const insets = useSafeAreaInsets();
   const scrollRef = useRef<ScrollView | null>(null);
   const [index, setIndex] = useState(0);
@@ -265,7 +275,25 @@ export default function OnboardingModal({ visible, onDone }: Props) {
                     (G10) — the shipped version centred it, which left ~300pt of
                     empty screen above the mark with Skip floating alone in it. */}
                 <CopyZone contentStyle={[styles.hero, wide && styles.heroWide]} styles={styles}>
-                  {card.brandMark ? (
+                  {card.severityScale ? (
+                    /* The Legend in miniature, exactly as first-launch card 2
+                       draws it. The pager around this is AT-hidden (swipe is
+                       sighted-only) and the live region above speaks the title
+                       and body, so the discs need no group label of their own —
+                       they are decorative by default and the sentence carries
+                       the lesson. */
+                    <View style={styles.discRow}>
+                      {SEVERITY_ORDER.map((sev) => (
+                        <SeverityDisc
+                          key={sev}
+                          severity={sev}
+                          size={discSize}
+                          digitSize={discDigit}
+                          maxFontSizeMultiplier={1}
+                        />
+                      ))}
+                    </View>
+                  ) : card.brandMark ? (
                     /* The house pin, unframed, at the size it deserves — the
                        same hero card 1 of the first-launch flow wears. */
                     <View style={styles.heroRow}>
@@ -503,6 +531,11 @@ const makeStyles = (color: ColorTheme) =>
     },
     heroRow: {
       flexDirection: 'row',
+    },
+    discRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
     },
     // Soft tinted circle behind the step's glyph. Decorative; the title says
     // the same thing.

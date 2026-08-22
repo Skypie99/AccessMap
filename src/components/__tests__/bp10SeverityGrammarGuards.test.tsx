@@ -219,12 +219,35 @@ describe('the severity grammar speaks on every surface (source)', () => {
     expect(s).toMatch(/const DISC_BASE = 48;/);
     // The row is width-bound, not scale-bound: five discs must be visible
     // TOGETHER, so the growth stops at the fit rather than at a multiplier.
-    expect(s).toMatch(/const discFit = Math\.floor\(/);
+    // RE-PINNED 2026-08-22: the arithmetic moved out of the component and into
+    // the exported `severityRowMetrics` when the replay adopted the same row,
+    // so the assertion follows the rule rather than the local it used to live
+    // in. Both halves are still pinned, just one scope up.
+    expect(s).toMatch(/const fit = Math\.floor\(/);
     expect(s).toMatch(/Math\.min\(fontScale, DISC_MAX_GROWTH\)/);
     // one accessible group, label derived from SEVERITY_LABELS (Minor..Severe)
     expect(s).toMatch(
       /accessibilityLabel=\{`Severity scale — 1 \$\{SEVERITY_LABELS\[1\]\} to 5 \$\{SEVERITY_LABELS\[5\]\}`\}/,
     );
     expect(s).not.toMatch(/icon: MapIcon/); // the stock glyph is gone from slide 2
+  });
+
+  it('the Settings replay teaches step 2 with the same object, at the same size', () => {
+    // 2026-08-22, Sky's call. The replay's step 2 is titled "Rate the barrier"
+    // and its body reads "from 1 … to 5 … number and color" — it had a Lucide
+    // Target above that sentence. Two surfaces teaching one grammar with two
+    // drawings is the drift this suite exists to stop, so the convergence is
+    // pinned rather than left to hold by discipline.
+    const s = readFileSync('src/screens/OnboardingModal.tsx', 'utf8');
+    expect(s).toMatch(/severityScale: true/);
+    expect(s).toMatch(/SEVERITY_ORDER\.map/);
+    expect(s).toMatch(/<SeverityDisc\s+key=\{sev\}\s+severity=\{sev\}\s+size=\{discSize\}/);
+    expect(s).not.toMatch(/Icon: Target/); // the stock glyph is gone
+    // …and the SIZE comes from the shared rule, not a second copy of the
+    // arithmetic. One row, one size rule.
+    expect(s).toMatch(/severityRowMetrics\(width, wide, fontScale\)/);
+    const cards = readFileSync('src/components/OnboardingCards.tsx', 'utf8');
+    expect(cards).toMatch(/export function severityRowMetrics\(/);
+    expect(cards).toMatch(/severityRowMetrics\(width, wide, fontScale\)/);
   });
 });
