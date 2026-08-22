@@ -189,3 +189,67 @@ none. Sky's call. The options, cheapest first:
 
 Recommendation: **option 1** — it is one word, on the object whose name is
 already qualified everywhere else it is spoken.
+
+---
+
+## Prompt 04 — Phase 2a (ONE FLAG FAMILY + the Tasks chrome)
+
+Most of this phase moves words rather than writing them. The severity pill and
+the status pill are retired, and the words they carried (`SEVERITY_LABELS`,
+`STATUS_LABELS`) move into the census sentence unchanged. Three strings are
+genuinely new, all of them on the ⋯ tool sheet, and all three are modelled on
+the map's already-shipped equivalents.
+
+### New user-facing strings — PLACEHOLDERS, awaiting Sky's ratification
+
+| # | String | Screen | Board / rule | Replaces |
+|---|---|---|---|---|
+| W-13 | `Task tools` | Tasks, ⋯ sheet title | Board 09 | nothing — new surface |
+| W-14 | `More task tools` (accessible name of the ⋯ circle) | Tasks control row | Board 09 | nothing — new control |
+| W-15 | `Select multiple flags, or clear the active filters` (hint on the ⋯ circle) | Tasks control row | Board 09 | nothing — new control |
+
+**W-13/14/15 detail.** All three mirror the map's shipped ⋯, which is
+`More map tools` with the hint `Send feedback, open the map legend, refresh
+flags, or save a place`. Keeping the same shape means a user who has met one ⋯
+meets the same object here, and rule W3 (one name per destination) holds
+because the two sheets are different destinations with different contents.
+The map's own tool sheet has no visible title (it is an inline panel); this one
+is a `Sheet`, and `Sheet` renders a title, so `Task tools` had to exist. If you
+would rather it read `Tools`, `More`, or `Task options`, it is one string in
+`TasksScreen.tsx`.
+
+### Format changes — same words, different arrangement
+
+| # | Was | Is | Where |
+|---|---|---|---|
+| F-01 | `OPEN` + a separate count pill reading `9` | `OPEN · 9` (count in mono) | Tasks section header |
+| F-02 | `Nearest open barrier · Broken sidewalk · Severity 4 · 433 m` on one wrapping line | two deliberate lines: `Nearest open barrier` / `Broken sidewalk · Severity 4 · 433 m` | Tasks banner |
+| F-03 | `Severity 4 of 5 · Significant · Verified · 2d ago` | `Severity 4 · Significant · Verified · 2d ago` | Nearby card census |
+| F-04 | an amber pill `4 · Significant`, a pale pill `Open`, and a meta line `876 m · 11 min walk · 2d ago` | one census sentence: `Severity 3 · Moderate · Open · 876 m · 11 min walk · 2d ago` | Tasks card |
+
+**F-01 detail.** One "9" per screen. The tab badge keeps its own, because it
+counts for a user who is looking at a different tab; two objects saying the same
+number a thumb's width apart was the pair worth collapsing.
+
+**F-03 detail — the one place a word actually disappears.** Nearby's visible
+census said "of 5" and Home's never did. The family now speaks one sentence, and
+Home's is the one Q7 ratified (variation A), so Nearby drops the two words. The
+SPOKEN label is untouched: `severityA11y` still says "severity 4 of 5,
+Significant" everywhere it is used, and Nearby's own PROTECT-1 label is pinned
+byte-for-byte by its test. **If you would rather the family kept "of 5"
+visibly**, it is one template in `FlagCard.tsx` and every surface follows.
+
+### Strings deliberately NOT changed in Phase 2a
+- **"Verify" / "Resolved" / "Reject" / "Details"** — unchanged, as instructed.
+  Board 09 draws the segmented cell as "Mark resolved"; the prompt says keep
+  "Resolved" unless you ratify the rename, so the shipped word stands. Its
+  accessible name is still "Mark this flag resolved". **To take the board's
+  wording**, it is the `label` on the `resolved` descriptor in `TasksScreen.tsx`
+  — but note the visible word must then also lead its accessible name (WCAG
+  2.5.3), so "Mark resolved" / "Mark resolved — {flag}" go together.
+- **"Filter & sort"** — the chip is gone but the word is not: it was already the
+  title of the sheet the chip opened, and that is now where it lives.
+- **"Select multiple"**, its hint, **"Clear filters"**, its hint, **"Clear
+  search"**, **"Search flags"** and the search placeholder: byte-identical. Only
+  the placeholder's VISIBILITY changes, and only at large type, where the
+  control keeps the same words as its accessible name.
