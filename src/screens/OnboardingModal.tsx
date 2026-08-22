@@ -10,15 +10,39 @@ import {
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { font, radius, shadow, spacing } from '@/theme';
+import { font, radius, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
-import { decorativeProps, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
+import { decorativeProps, isAxRecompose, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
 import { hapticSelection } from '@/lib/haptics';
 import { trackEvent } from '@/lib/analytics';
 import { AppText } from '@/components/ui/AppText';
+import { ScreenStage } from '@/components/ui/ScreenStage';
+import { severityColor } from '@/lib/flags';
+import {
+  ONBOARDING_BODY_MAX_FONT_SCALE,
+  ONBOARDING_TITLE_MAX_FONT_SCALE,
+} from '@/components/OnboardingCards';
 import { Star, Target } from 'lucide-react-native';
 import LogoMark from '@/components/LogoMark';
 
+/**
+ * The Settings "Replay tutorial" — three steps, and the surface that was RIGHT
+ * about the look before the first-launch flow was.
+ *
+ * 2026-08-22 (board 05): this screen already lived in the light and already
+ * read as the product, which is the observation the whole phase turned on. What
+ * it did not have was the composition — its hero sat dead-centre with ~300pt of
+ * white above it, centred-by-default in the other direction. It now wears the
+ * same template as `OnboardingCards`: the real ScreenStage, one bottom-anchored
+ * hero-and-copy zone, left-aligned editorial type, stones for progress, and a
+ * fixed CTA column that stacks at the recomposition point. Two surfaces, one
+ * drawing.
+ *
+ * What deliberately did NOT converge (see onboardingCoherence.guard.test.ts):
+ * the step count, the "Step N of 3" vocabulary, the "Done" finisher, and the
+ * card scripts. Those are the differences Sky ratified; only the drawing was
+ * ever accidental.
+ */
 interface Props {
   visible: boolean;
   onDone: () => void;
@@ -32,7 +56,7 @@ interface Card {
   brandMark?: boolean;
   title: string;
   body: string;
-  // Icon-halo tone. 'gold' marks the gamification card (points) — Civic Gold is
+  // Hero-disc tone. 'gold' marks the gamification card (points) — Civic Gold is
   // the design system's gamification accent; the other cards use the brand wash.
   tone: 'brand' | 'gold';
 }
@@ -58,10 +82,32 @@ const CARDS: Card[] = [
   },
 ];
 
+/**
+ * Board 05's editorial type, shared verbatim with the first-launch flow. Both
+ * sizes sit between scale steps and are named here for the same reason they are
+ * named there; see OnboardingCards for the note.
+ */
+const TITLE_SIZE = 34;
+const BODY_SIZE = 17;
+
+/** Progress: a 10pt stone per step, the current one stretched into a bar. */
+const DOT = 10;
+const DOT_ACTIVE = 26;
+
+/**
+ * Which stone each step lights. The path runs 1, 3, 5 across three steps rather
+ * than 1, 2, 3 — the same ramp the five-card flow walks, sampled — so the two
+ * surfaces read as one drawing at different lengths. The last is overridden to
+ * Civic Gold, matching the gold tone this step already wore.
+ */
+const SEVERITIES = [1, 3, 5] as const;
+
 export default function OnboardingModal({ visible, onDone }: Props) {
   const color = useColor();
   const styles = makeStyles(color);
-  const { width } = useWindowDimensions();
+  const { width, fontScale } = useWindowDimensions();
+  // F4 — the same recomposition point the first-launch flow uses.
+  const wide = isAxRecompose(fontScale);
   const insets = useSafeAreaInsets();
   const scrollRef = useRef<ScrollView | null>(null);
   const [index, setIndex] = useState(0);
@@ -159,18 +205,27 @@ export default function OnboardingModal({ visible, onDone }: Props) {
         // this pass where the obvious handler is the wrong one.
         onAccessibilityEscape={handleSkip}
       >
+        {/* The app's real stage, both palettes — the same one the first-launch
+            flow now mounts. This screen used to be a flat `color.surface`, which
+            was already the right WORLD but not the right ground. */}
+        <ScreenStage />
+
+        {/* Skip — steps 1 and 2. There is nothing left to skip on the finisher,
+            and the row keeps its height there so nothing below it moves. */}
         <View style={[styles.topBar, { paddingTop: Math.max(insets.top, spacing.lg) }]}>
-          <Pressable
-            onPress={handleSkip}
-            style={({ pressed }) => [styles.skipBtn, pressed && { opacity: 0.7 }]}
-            accessibilityRole="button"
-            accessibilityLabel="Skip the introduction"
-            hitSlop={12}
-          >
-            <AppText variant="label" size={font.size.base} color={color.textMuted}>
-              Skip
-            </AppText>
-          </Pressable>
+          {!isLast ? (
+            <Pressable
+              onPress={handleSkip}
+              style={({ pressed }) => [styles.skipBtn, pressed && { opacity: 0.7 }]}
+              accessibilityRole="button"
+              accessibilityLabel="Skip the introduction"
+              hitSlop={12}
+            >
+              <AppText variant="label" size={font.size.md} color={color.inkGlassMuted}>
+                Skip
+              </AppText>
+            </Pressable>
+          ) : null}
         </View>
 
         {/* SR-accessible card content — the ScrollView below is hidden from
@@ -196,36 +251,59 @@ export default function OnboardingModal({ visible, onDone }: Props) {
         >
           {CARDS.map((card) => {
             const CardIcon = card.Icon;
-            const haloBg = card.tone === 'gold' ? color.goldLight : color.brandSofter;
-            const iconColor = card.tone === 'gold' ? color.goldDark : color.brand;
+            const discBg = card.tone === 'gold' ? color.goldLight : color.brandSoft;
+            const iconColor = card.tone === 'gold' ? color.goldDark : color.brandOnSoft;
             return (
               <View key={card.title} style={[styles.card, { width }]}>
-                {/* Vertical scroll so a tall slide (large type / short screen)
-                    stays reachable; centered when it fits (G10). The inner
-                    vertical scroller reports only contentOffset.y and cannot
-                    corrupt the horizontal pager's .x paging math. */}
+                {/* The copy scrolls INSIDE the hero zone when it has to; the
+                    progress row and the CTA below stay pinned. flexGrow keeps
+                    the block anchored to the bottom of the zone when it fits
+                    (G10) — the shipped version centred it, which left ~300pt of
+                    empty screen above the mark with Skip floating alone in it. */}
                 <ScrollView
                   style={styles.cardScroll}
-                  contentContainerStyle={styles.cardScrollContent}
+                  contentContainerStyle={[styles.hero, wide && styles.heroWide]}
                   showsVerticalScrollIndicator={false}
                   nestedScrollEnabled
                 >
-                  <View style={[styles.iconHalo, { backgroundColor: haloBg }]}>
-                    {card.brandMark ? (
-                      <LogoMark size={60} variant="mono" tint={iconColor} />
-                    ) : CardIcon ? (
-                      <CardIcon size={56} color={iconColor} strokeWidth={2} />
-                    ) : null}
-                  </View>
+                  {card.brandMark ? (
+                    /* The house pin, unframed, at the size it deserves — the
+                       same hero card 1 of the first-launch flow wears. */
+                    <View style={styles.heroRow}>
+                      <LogoMark size={wide ? 39 : 56} variant="mono" tint={color.brand} />
+                    </View>
+                  ) : (
+                    <View
+                      style={[
+                        styles.heroDisc,
+                        {
+                          width: wide ? 40 : 56,
+                          height: wide ? 40 : 56,
+                          backgroundColor: discBg,
+                        },
+                      ]}
+                    >
+                      {CardIcon ? (
+                        <CardIcon size={wide ? 20 : 28} color={iconColor} strokeWidth={2} />
+                      ) : null}
+                    </View>
+                  )}
                   <AppText
-                    variant="heading"
-                    size={font.size.h2}
+                    variant="display"
+                    size={TITLE_SIZE}
                     color={color.textStrong}
+                    maxFontSizeMultiplier={ONBOARDING_TITLE_MAX_FONT_SCALE}
                     style={styles.title}
                   >
                     {card.title}
                   </AppText>
-                  <AppText variant="body" size={font.size.lg} color={color.text} style={styles.body}>
+                  <AppText
+                    variant="bodyMedium"
+                    size={BODY_SIZE}
+                    color={color.text}
+                    maxFontSizeMultiplier={ONBOARDING_BODY_MAX_FONT_SCALE}
+                    style={styles.body}
+                  >
                     {card.body}
                   </AppText>
                 </ScrollView>
@@ -234,15 +312,28 @@ export default function OnboardingModal({ visible, onDone }: Props) {
           })}
         </ScrollView>
 
-        {/* Dots are purely decorative — position announced by announceForAccessibility
-            + button labels. WCAG 1.4.1 (Use of Color): position is not conveyed
-            by color alone (labels + counter carry the meaning). */}
-        <View
-          style={styles.dotsRow} {...decorativeProps}
-        >
-          {CARDS.map((card, i) => (
-            <View key={card.title} style={[styles.dot, i === index && styles.dotActive]} />
-          ))}
+        {/* Stones, not dots — the same progress drawing the first-launch flow
+            uses: the current one stretches into a bar and wears its own severity
+            colour, and the finisher's turns Civic Gold. Purely decorative;
+            position is announced by announceForAccessibility and repeated in the
+            button labels, so it never rests on colour alone (WCAG 1.4.1). */}
+        <View style={styles.progress} {...decorativeProps}>
+          {CARDS.map((card, i) => {
+            const isActive = i === index;
+            const isLastStone = i === CARDS.length - 1;
+            return (
+              <View
+                key={card.title}
+                style={[
+                  styles.dot,
+                  isActive && { width: DOT_ACTIVE * Math.min(fontScale, 1.3) },
+                  isActive && {
+                    backgroundColor: isLastStone ? color.goldAccent : severityColor(SEVERITIES[i]!),
+                  },
+                ]}
+              />
+            );
+          })}
         </View>
 
         {/* WCAG 2.5.7 (Dragging Movements): swipe-to-go-back is the only
@@ -250,10 +341,16 @@ export default function OnboardingModal({ visible, onDone }: Props) {
             hidden from AT. When index > 0, render a Back button so VoiceOver,
             TalkBack, and Switch Access users can return to the previous card
             without having to abandon the entire flow via Skip. */}
+        {/* Actions — a text Back and a FIXED 200pt primary, the same column the
+            first-launch flow uses, so the CTA's left edge never walks step to
+            step. Back is CONDITIONALLY RENDERED rather than disabled here (it
+            always has been, and that is the better a11y answer on a surface a
+            user opened deliberately); the row's justification is what holds the
+            primary still on step 1. */}
         <View
           style={[
-            styles.actions,
-            index > 0 && styles.actionsRow,
+            styles.ctaRow,
+            wide && styles.ctaRowStacked,
             { paddingBottom: insets.bottom + spacing.md },
           ]}
         >
@@ -265,7 +362,7 @@ export default function OnboardingModal({ visible, onDone }: Props) {
               accessibilityLabel={`Back. Step ${index + 1} of ${CARDS.length}.`}
               accessibilityHint="Returns to the previous introduction card"
             >
-              <AppText variant="label" size={font.size.lg} color={color.text}>
+              <AppText variant="label" size={font.size.md} color={color.inkGlassMuted}>
                 Back
               </AppText>
             </Pressable>
@@ -275,14 +372,14 @@ export default function OnboardingModal({ visible, onDone }: Props) {
               onPress={() => goTo(index + 1)}
               style={({ pressed }) => [
                 styles.primaryBtn,
-                index > 0 && styles.primaryBtnFlex,
-                pressed && styles.btnPressed,
+                wide && styles.primaryBtnWide,
+                pressed && styles.primaryBtnPressed,
               ]}
               accessibilityRole="button"
               accessibilityLabel={`Next. Step ${index + 1} of ${CARDS.length}.`}
               accessibilityHint="Moves to the next introduction card"
             >
-              <AppText variant="label" size={font.size.lg} color={color.textOnBrand}>
+              <AppText variant="label" size={font.size.md} color={color.textOnBrand} style={styles.primaryBtnText}>
                 Next
               </AppText>
             </Pressable>
@@ -291,15 +388,14 @@ export default function OnboardingModal({ visible, onDone }: Props) {
               onPress={handleComplete}
               style={({ pressed }) => [
                 styles.primaryBtn,
-                styles.primaryBtnLast,
-                index > 0 && styles.primaryBtnFlex,
-                pressed && styles.btnPressed,
+                wide && styles.primaryBtnWide,
+                pressed && styles.primaryBtnPressed,
               ]}
               accessibilityRole="button"
               accessibilityLabel="Done"
               accessibilityHint="Closes the introduction"
             >
-              <AppText variant="label" size={font.size.lg} color={color.textOnBrand}>
+              <AppText variant="label" size={font.size.md} color={color.textOnBrand} style={styles.primaryBtnText}>
                 Done
               </AppText>
             </Pressable>
@@ -321,7 +417,9 @@ const makeStyles = (color: ColorTheme) =>
   StyleSheet.create({
     screen: {
       flex: 1,
-      backgroundColor: color.surface,
+      // Paired with <ScreenStage/> per its own portability note, so any
+      // pre-mount frame matches the wash instead of flashing a flat surface.
+      backgroundColor: color.stage1,
     },
     topBar: {
       flexDirection: 'row',
@@ -347,93 +445,107 @@ const makeStyles = (color: ColorTheme) =>
     cardScroll: {
       flex: 1,
     },
-    cardScrollContent: {
-      // flexGrow:1 keeps the content centered when it fits, and lets it grow +
-      // scroll when it doesn't (large type / short screen).
+    // Board 05: hero + copy in ONE bottom-anchored zone. flexGrow keeps it
+    // pinned to the bottom of the zone when the content fits and lets it grow
+    // and scroll when it does not (G10).
+    hero: {
       flexGrow: 1,
-      paddingHorizontal: spacing.xxxl,
-      paddingTop: spacing.xxl,
-      paddingBottom: spacing.md,
-      alignItems: 'center',
-      justifyContent: 'center',
-      gap: spacing.xl,
+      justifyContent: 'flex-end',
+      gap: spacing.lg,
+      paddingHorizontal: spacing.xxl,
+      paddingBottom: spacing.xl,
     },
-    // Soft tinted circle behind the card icon — lifts it off the surface and
-    // gives each card a focal point. Decorative (the icon is inside, hidden).
-    iconHalo: {
-      width: 112,
-      height: 112,
+    // T5 — widen the column BEFORE capping the text, and move the hero to the
+    // top so the copy owns the middle of the screen.
+    heroWide: {
+      justifyContent: 'flex-start',
+      paddingHorizontal: spacing.lg,
+      paddingTop: spacing.xxxl,
+    },
+    heroRow: {
+      flexDirection: 'row',
+    },
+    // Soft tinted circle behind the step's glyph. Decorative; the title says
+    // the same thing.
+    heroDisc: {
       borderRadius: radius.circle,
       alignItems: 'center',
       justifyContent: 'center',
     },
     title: {
-      textAlign: 'center',
+      textAlign: 'left',
+      lineHeight: Math.round(TITLE_SIZE * 1.08),
     },
     body: {
-      textAlign: 'center',
-      lineHeight: font.lineHeight.relaxed,
-      maxWidth: 360,
+      textAlign: 'left',
+      lineHeight: Math.round(BODY_SIZE * 1.4),
     },
-    dotsRow: {
+    progress: {
       flexDirection: 'row',
-      justifyContent: 'center',
-      gap: spacing.sm,
-      paddingVertical: spacing.md,
+      alignItems: 'center',
+      gap: spacing.xs,
+      paddingHorizontal: spacing.xxl,
+      paddingTop: spacing.sm,
+      paddingBottom: spacing.lg,
     },
     dot: {
-      width: 8,
-      height: 8,
-      borderRadius: radius.xs,
+      width: DOT,
+      height: DOT,
+      borderRadius: radius.full,
       backgroundColor: color.borderStrong,
     },
-    // brand is a UI surface color — dot is decorative (hidden from AT).
-    dotActive: { backgroundColor: color.brand, width: 22 },
     srCardContent: {
       position: 'absolute',
       width: 1,
       height: 1,
       overflow: 'hidden',
     },
-    actions: {
+    ctaRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      // flex-end on step 1 (no Back) keeps the primary in the same place it
+      // sits on steps 2 and 3, which is the whole point of a fixed column.
+      justifyContent: 'space-between',
+      gap: spacing.md,
       paddingHorizontal: spacing.xxl,
       paddingTop: spacing.sm,
     },
-    actionsRow: {
-      flexDirection: 'row',
+    // F4 — the row stacks and the primary goes full width at the recomposition
+    // point. column-reverse puts the primary first on screen while leaving the
+    // source order (Back, then primary) alone, so reading order is unchanged.
+    ctaRowStacked: {
+      flexDirection: 'column-reverse',
+      alignItems: 'stretch',
       gap: spacing.sm,
     },
     primaryBtn: {
+      // A FIXED width, not a content width. SW-17: this button read "Open the
+      // Map" and returned to Settings, which is the correct destination for a
+      // replay opened from there — so the label moved, not the behaviour. Sky
+      // ratified "Done" 2026-08-21.
       // brand → ctaFill: white-on-brand is the recorded 3.4:1 dark-mode FAIL
       // (see TasksScreen ctaFill note); ctaFill passes in both modes.
+      width: 200,
+      marginLeft: 'auto',
       backgroundColor: color.ctaFill,
-      paddingVertical: spacing.lg,
-      borderRadius: radius.lg,
+      paddingVertical: spacing.md,
+      paddingHorizontal: spacing.md,
+      borderRadius: radius.full,
       alignItems: 'center',
       minHeight: 44,
       justifyContent: 'center',
-      ...shadow.e2,
     },
-    // Used when Back + Next/Get started share the same row.
-    primaryBtnFlex: { flex: 1 },
-    // Final "Done" CTA — stronger shadow signals completion. SW-17: it read
-    // "Open the Map" and returned to Settings, which is the correct
-    // destination for a replay opened from there — so the label moved, not the
-    // behaviour. Sky ratified 2026-08-21.
-    primaryBtnLast: {
-      shadowOpacity: 0.28,
-      shadowRadius: 10,
-      shadowOffset: { width: 0, height: 4 },
-      elevation: 6,
-    },
+    primaryBtnWide: { width: undefined, marginLeft: 0, alignSelf: 'stretch' },
+    primaryBtnPressed: { backgroundColor: color.ctaFillPressed },
+    primaryBtnText: { textAlign: 'center' },
     btnPressed: { opacity: 0.85 },
     backBtn: {
-      flex: 1,
-      backgroundColor: color.surfaceNeutral,
-      paddingVertical: spacing.lg,
-      borderRadius: radius.lg,
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.md,
+      borderRadius: radius.md,
       alignItems: 'center',
       minHeight: 44,
+      minWidth: 44,
       justifyContent: 'center',
     },
   });
