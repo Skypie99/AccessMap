@@ -211,7 +211,12 @@ const FOCUS_RETURN = [
     trigger: 'legendTrigger',
     handoff: false,
     why:
-      'The header help button opens it; closing it returns the cursor there. No ' +
+      'RE-PINNED 2026-08-21 (M4/Q10): the legend now has its own persistent door ' +
+      '— the crystal Legend pill in the map bottom bar — and that pill holds the ' +
+      'trigger ref, so the cursor returns THERE from both doors (the pill and the ' +
+      'older tool-sheet row). It used to return to the ⋯ button, which was only ' +
+      "the legend's opener by accident of where the row lived; a ⋯ row itself " +
+      'could never hold it, because opening the legend closes that sheet. No ' +
       'handoff by design — the legend is read-only, so every exit is a plain ' +
       'close and there is no onward surface to hand focus to.',
   },

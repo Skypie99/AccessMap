@@ -670,7 +670,7 @@ export const severity = {
   // Design system 2026-05-30 — yellow→red ramp. The `label` here is the SINGLE
   // SOURCE OF TRUTH for the severity scale — a human, graduated set (Minor →
   // Severe) that matches DESIGN.md's "Severe (5)" example and the
-  // SEVERITY_DESCRIPTIONS in flags.ts. SeverityBadge reads these labels, and
+  // SEVERITY_DESCRIPTIONS in flags.ts. FlagCard's census reads these labels, and
   // both SEVERITY_LABELS (flags.ts) and heatmapSeverity (below) DERIVE from
   // them, so every surface names a given severity identically.
   //

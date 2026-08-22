@@ -11,20 +11,19 @@ import {
 } from 'react-native';
 import { RemoteImage } from '@/components/ui/RemoteImage';
 import { AppText } from '@/components/ui/AppText';
-import { TypeBlock, TYPE_BLOCK } from '@/components/ui/TypeBlock';
 import { GlassSurface } from '@/components/ui/GlassSurface';
 import { OverflowFade } from '@/components/ui/OverflowFade';
 import { SheetGrabber } from '@/components/ui/Sheet';
 import { useHorizontalOverflowFade } from '@/hooks/useHorizontalOverflowFade';
 import { a11yToggle, decorativeProps, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
 import { MapPin, Search } from 'lucide-react-native';
-import { CATEGORY_LABELS, CATEGORY_ORDER, SEVERITY_LABELS, STATUS_LABELS } from '@/lib/flags';
+import { CATEGORY_LABELS, CATEGORY_ORDER } from '@/lib/flags';
 import { relativeTime } from '@/lib/relativeTime';
 import { formatDistance, haversineKm, speakDistance, type LatLng } from '@/lib/distance';
 import { searchFlags } from '@/lib/flagSearch';
 import type { FlagCategory, FlagRow } from '@/types/database';
 import SearchInputRow from '@/components/SearchInputRow';
-import { SeverityDisc } from '@/components/SeverityDisc';
+import { FlagCard, MonoDistance } from '@/components/ui/FlagCard';
 import { font, radius, shadow, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 
@@ -169,52 +168,39 @@ export default function NearbyFlagsModal({
           // PROTECT-1 one-breath accessibilityLabel above untouched.
           accessibilityHint="Opens this flag's details"
         >
-          {/* T3 (X8): the 16pt category title on `label` capped at 1.6 while the
-              14pt description on `body` scaled uncapped straight past it — at
-              accessibility-extra-large the title was visibly SMALLER than the
-              sentence it labelled (captures/17e_light_axl_C6_nearby.png). One
-              content block over the whole card: title, distance, description and
-              census now share one multiplier and keep their order. The disc is a
-              fixed box and pins its own cap, so it is unaffected. */}
-          <TypeBlock cap={TYPE_BLOCK.content}>
-          <View style={styles.cardHeader}>
-            <SeverityDisc severity={item.severity} size={32} digitSize={font.size.sm} />
-            <AppText variant="label" style={styles.cardTitle}>
-              {CATEGORY_LABELS[item.category]}
-            </AppText>
-            {dist && <AppText variant="label" style={styles.distance}>{dist.text}</AppText>}
-          </View>
-          <View style={styles.cardBody}>
-            {item.photo_url ? (
-              <RemoteImage
-                uri={item.photo_url}
-                style={styles.thumb} {...decorativeProps}
-              />
-            ) : null}
-            <View style={styles.cardBodyText}>
-              {item.description ? (
-                /* T4 / D2: the accessible list is the map's equal, so a
-                   reporter's own sentence never truncates on it. This was
-                   numberOfLines={2} — at accessibility-extra-large that cut
-                   two-thirds of a description off the ONE screen a
-                   screen-reader or large-type user is steered to. Nothing caps
-                   it now: the card grows, the list scrolls. */
-                <AppText variant="body" style={styles.cardDesc}>
-                  {item.description}
+          {/* F1: the card is drawn by the shared component now, so this list,
+              Home's rows and the Tasks queue are one object at three sizes. The
+              order changes with it, and deliberately: the census used to sit
+              BELOW the description, under the thumbnail, which put the sentence
+              that says what the flag IS after the sentence a stranger wrote
+              about it. It now rides under the title where the family puts it.
+
+              Two things are held byte-for-byte across the move. The Pressable
+              above keeps PROTECT-1's one-breath label and its endpoints — this
+              card renders no accessible node of its own, so nothing fragments
+              it. And the description stays uncapped at every size
+              (`clampDescription={false}`): Phase 0 item 0.2 uncapped it because
+              the accessible list is the map's equal (T4/D2), and the card
+              density's own 3-line rule must not quietly put the clip back. */}
+          <FlagCard
+            flag={item}
+            density="card"
+            showDescription
+            clampDescription={false}
+            censusExtra={[relativeTime(item.created_at)]}
+            trailing={
+              dist ? (
+                <AppText variant="label" style={styles.distance}>
+                  <MonoDistance value={dist.text} />
                 </AppText>
-              ) : null}
-              {/* S1: the visible meta wears the full severity grammar (number +
-                  word + human status), matching the row's SR label. The SR
-                  accessibilityLabel/endpoints are PROTECT-1 and untouched. */}
-              {/* T3: the explicit 1.4 cap is gone. Inside a content block one
-                  multiplier governs the card, and the census is the line that
-                  carries the severity grammar — it is content, not chrome. */}
-              <AppText variant="body" style={styles.cardMeta}>
-                Severity {item.severity} of 5 · {SEVERITY_LABELS[item.severity]} · {STATUS_LABELS[item.status]} · {relativeTime(item.created_at)}
-              </AppText>
-            </View>
-          </View>
-          </TypeBlock>
+              ) : undefined
+            }
+            media={
+              item.photo_url ? (
+                <RemoteImage uri={item.photo_url} style={styles.thumb} {...decorativeProps} />
+              ) : undefined
+            }
+          />
         </Pressable>
       );
     },
@@ -469,36 +455,19 @@ const makeStyles = (color: ColorTheme) =>
       transform: [{ scale: 0.99 }],
       backgroundColor: color.surfaceSoft,
     },
-    cardHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
-    cardTitle: {
-      fontSize: font.size.lg,
-      fontWeight: font.weight.semibold,
-      color: color.textStrong,
-      flex: 1,
-      letterSpacing: -0.1,
-    },
+    // T1: the NUMERAL takes JetBrains Mono with tabular figures (MonoDistance
+    // owns that fork); the unit stays in this face, because a unit is a word.
+    // The size, colour and weight belong to the whole chip either way.
     distance: {
       fontSize: font.size.sm,
       color: color.brandText,
       fontWeight: font.weight.bold,
     },
-    cardBody: { flexDirection: 'row', gap: spacing.md },
     thumb: {
       width: 64,
       height: 64,
       borderRadius: radius.md,
       backgroundColor: color.surfaceNeutral,
-    },
-    cardBodyText: { flex: 1, gap: spacing.tight, justifyContent: 'center' },
-    cardDesc: {
-      fontSize: font.size.base,
-      color: color.text,
-      lineHeight: 19,
-    },
-    cardMeta: {
-      fontSize: font.size.xs,
-      color: color.textMuted,
-      lineHeight: 16,
     },
     // Pattern B: the outer `style` pins the bar's size AND paints the surface +
     // hairline so they span the full ScrollView width (not just the chips'

@@ -9,6 +9,7 @@ import {
   RefreshControl,
   SectionList,
   StyleSheet,
+  type StyleProp,
   TextInput,
   type TextStyle,
   useWindowDimensions,
@@ -63,14 +64,13 @@ import type { RootTabParamList } from '@/navigation/RootNavigator';
 import type { DetailAction } from '@/components/FlagDetailModal';
 import PhotoLightboxModal from '@/components/PhotoLightboxModal';
 import { AppText } from '@/components/ui/AppText';
+import { FlagCard, MonoDistance } from '@/components/ui/FlagCard';
 import { PressableScale } from '@/components/ui/PressableScale';
 import { Skeleton } from '@/components/ui/Skeleton';
-import { StatusBadge } from '@/components/StatusBadge';
-import { SeverityBadge } from '@/components/SeverityBadge';
 import { hapticImpact, hapticNotify, hapticSelection } from '@/lib/haptics';
-import { AlertTriangle, Check, ChevronRight, MapPin, Menu, MessageSquare, Search, Sparkles, WifiOff, X } from 'lucide-react-native';
+import { AlertTriangle, Check, ChevronRight, ListChecks, MapPin, Menu, MessageSquare, MoreHorizontal, Search, SlidersHorizontal, Sparkles, WifiOff, X } from 'lucide-react-native';
 import { a11y, font, motion, radius, shadow, size, spacing } from '@/theme';
-import { a11yToggle, decorativeProps, useReducedMotion, useReduceTransparency } from '@/lib/accessibility';
+import { a11yToggle, decorativeProps, isAxRecompose, useReducedMotion, useReduceTransparency } from '@/lib/accessibility';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { ScreenStage } from '@/components/ui/ScreenStage';
@@ -116,9 +116,24 @@ const BULK_BAR_FALLBACK_HEIGHT = 94;
 //   = 352 post-D3/C1  (it was 404 before C1 returned the select-entry row's 52pt)
 //
 // D3/C3 then moved mine/All, category and sort into the filter sheet and D3/C2
-// retired the subtitle, so the pane is now just:
+// retired the subtitle, taking the pane to:
 //   pane padding 8 + header 78 + search 60 + filter trigger 64 = 210
-const CHROME_FALLBACK_HEIGHT = 210;
+//
+// Phase 2a (board 09) folded the filter trigger row into the search row as a
+// pair of 44pt circles, so the trigger's 64 is gone and the pane is:
+//   pane padding 8 + header 78 + control row 60 = 146
+// The row that held "Clear filters" survives, but ONLY while a filter is
+// active, so it is not part of the seed: seeding the filtered height would
+// leave a 52pt gap under the chrome on every unfiltered first paint, which is
+// the visible jump this constant exists to prevent. The real height still
+// arrives via onLayout a frame later and takes over in both states.
+const CHROME_FALLBACK_HEIGHT = 146;
+
+// The banner is a pointer to the first card. Past this text size it is taller
+// than the thing it points at, so it stands down (board 09, AXL column). 2x is
+// one notch above the F4 recomposition point on purpose: at 1.5x the banner is
+// still a useful two-line signpost, and only at 2x does it become a paragraph.
+const BANNER_STAND_DOWN_SCALE = 2;
 
 /**
  * The FlagCard action-row reflow threshold (sweep M16): a narrow device OR
@@ -158,6 +173,15 @@ export default function TasksScreen() {
   // "Resolved" against the pill curvature (sweep M16).
   const { width: windowWidth, fontScale } = useWindowDimensions();
   const compactActions = isCompactLayout(windowWidth, fontScale);
+  // F4 — the one recomposition threshold, shared with Home, the map bar and
+  // FlagCard so the app changes shape all at once rather than screen by screen.
+  const axRecompose = isAxRecompose(fontScale);
+  // At double text size the banner is no longer a slim pointer at the top of
+  // the list: it is a paragraph, and it is a paragraph ABOUT the card directly
+  // beneath it, because the nearest open barrier sorts first. So it stands
+  // down and gives the screen back to the thing it was pointing at. Nothing is
+  // lost — the same flag, with the same distance, is the next thing on screen.
+  const bannerStandsDown = fontScale >= BANNER_STAND_DOWN_SCALE;
   // Top reserve for content scrolling BENEATH the absolute chrome glass pane
   // (mockup: padding-top = chrome height + 10). Fallback only seeds the first,
   // hidden layout pass — see chromeHeight above.
@@ -230,6 +254,9 @@ export default function TasksScreen() {
   const [searchText, setSearchText] = useState('');
   // D3/C3: the consolidated filter sheet's open state.
   const [filterSheetOpen, setFilterSheetOpen] = useState(false);
+  // The ⋯ tool sheet. Holds the controls that are neither the search nor the
+  // filters — today "Select multiple", and "Clear filters" while one is active.
+  const [toolSheetOpen, setToolSheetOpen] = useState(false);
   const [debouncedSearchText, setDebouncedSearchText] = useState('');
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearchText(searchText), 250);
@@ -792,7 +819,7 @@ export default function TasksScreen() {
   // visible cards to re-check their props even when nothing changed.
   const renderFlagItem = useCallback(
     ({ item }: { item: FlagRow }) => (
-      <FlagCard
+      <TaskCard
         flag={item}
         isBusy={busyId === item.id}
         isOwn={item.user_id === userId}
@@ -949,31 +976,41 @@ export default function TasksScreen() {
           <AppText variant="body" style={styles.offlineBannerText}>{offlineBannerText(offlineCachedAt)}</AppText>
         </View>
       )}
-      {/* Free-text search — substring match against description and
-          category label. Hidden if the list is empty (nothing to search).
-          The clear (×) button is part of the textbox row so it stays a
-          single, predictable a11y target.
+      {/* THE CONTROL PANE, COMPACTED (board 09). It used to be two rows: a
+          search row with "Select multiple" on its trailing edge, and a second
+          row holding a "Filter & sort" chip with nothing beside it (plus
+          "Clear filters" when one was active). That is 124pt of chrome spent on
+          three controls, on a screen whose header already ate more than half
+          the display and where the first card started 65% of the way down.
 
-          D3/C1 (S-5, Sky's pre-decided pick): "Select multiple" used to own a
-          whole row of its own, right-aligned with nothing beside it — 52pt of
-          chrome spent on one secondary control, on a screen whose header
-          already ate more than half the display. It now rides the search row's
-          trailing edge, and that 52pt goes back to the cards.
+          It is one row now — the map's pattern: a search pill that takes the
+          width, and two 44pt circles beside it. The words are not lost:
+          "Filter & sort" is the sheet's own title, and "Select multiple" keeps
+          its label, hint and handler byte-identical inside the ⋯ sheet.
 
-          The gates compose to exactly the old truth table: the row already
-          required `flags.length > 0`, the button already required that AND
-          `!selection.active`, so nesting the second inside the first changes
-          nothing about when it appears. It is still the first focusable control
-          after the banners, so VoiceOver order is unchanged; the label and hint
-          are byte-identical; the target is still >=44pt (selectEntryBtn's own
-          minHeight), and `flexShrink: 0` keeps it that wide when the input
-          competes for room. */}
+          The clear-search ✕ still belongs to the textbox row so it stays a
+          single predictable target, and the row still wraps (T5/D24) so the
+          circles drop to their own line rather than squeezing the field. */}
       {flags.length > 0 && (
         <View style={styles.searchRow}>
+          {/* The magnifier is what carries the field's meaning once the
+              placeholder is gone at large type. Decorative: the TextInput
+              beside it owns the accessible name in both states. */}
+          <Search
+            size={18}
+            color={color.glassPlaceholder}
+            strokeWidth={2.2}
+            style={styles.searchIcon} {...decorativeProps}
+          />
           <TextInput
             value={searchText}
             onChangeText={setSearchText}
-            placeholder="Search by description or category…"
+            // Icon-only at the recomposition point: at large type the
+            // placeholder is the longest string in the chrome and it truncated
+            // mid-word. The field keeps its width and its function; only the
+            // hint text goes, and `accessibilityLabel` still names it, so
+            // nothing is lost to a screen reader or to voice control.
+            placeholder={axRecompose ? '' : 'Search by description or category…'}
             placeholderTextColor={color.glassPlaceholder}
             autoCorrect={false}
             autoCapitalize="none"
@@ -993,32 +1030,11 @@ export default function TasksScreen() {
               <X size={18} color={color.textMuted} strokeWidth={2.2} />
             </Pressable>
           )}
-          {!selection.active && (
-            <Pressable
-              onPress={enterSelectionEmpty}
-              style={({ pressed }) => [
-                styles.selectEntryBtn,
-                pressed && styles.selectEntryBtnPressed,
-              ]}
-              accessibilityRole="button"
-              accessibilityLabel="Select multiple"
-              accessibilityHint="Enter selection mode to verify or resolve multiple flags at once"
-            >
-              <AppText variant="label" style={styles.selectEntryText}>Select multiple</AppText>
-            </Pressable>
-          )}
-        </View>
-      )}
-      {/* D3/C3 — one trigger replaces three rows.
-          The rows themselves are unchanged and live in the sheet below; what
-          changes is that they no longer occupy the header at rest. `Clear
-          filters` mounts only when something is genuinely filtering, so it is
-          never a dead control, and together with the trigger's active fill it
-          means an active filter can never hide behind a closed sheet. */}
-      {flags.length > 0 && (
-        <View style={styles.filterTriggerRow}>
+          {/* The filter circle. Same sheet, same handler, same expanded state
+              as the chip it replaces; the active fill moves from a chip's
+              background to the circle's, which is the map's grammar. */}
           <Pressable
-            onPress={() => setFilterSheetOpen(true)}
+            onPress={() => { setToolSheetOpen(false); setFilterSheetOpen(true); }}
             style={({ pressed }) => [
               styles.filterTriggerBtn,
               tasksFiltersActive && styles.filterTriggerBtnActive,
@@ -1029,24 +1045,50 @@ export default function TasksScreen() {
             accessibilityHint="Opens filter and sort options"
             {...a11yToggle({ expanded: filterSheetOpen })}
           >
-            <AppText
-              variant="label"
-              style={[styles.filterTriggerText, tasksFiltersActive && styles.filterTriggerTextActive]}
-            >
-              Filter &amp; sort
-            </AppText>
+            <SlidersHorizontal
+              size={19}
+              color={tasksFiltersActive ? color.textOnBrand : color.glassChipInk}
+              strokeWidth={2.2}
+            />
           </Pressable>
-          {tasksFiltersActive && (
+          {/* The ⋯ circle mounts only when its sheet would hold something. The
+              two rows inside it are gated — "Select multiple" on not already
+              selecting, "Clear filters" on something actually filtering — and
+              a ⋯ that opens an empty drawer is worse than no ⋯ at all. */}
+          {(!selection.active || tasksFiltersActive) && (
             <Pressable
-              onPress={handleClearFilters}
-              style={({ pressed }) => [styles.clearFiltersBtn, pressed && styles.chipPressed]}
+              onPress={() => { setFilterSheetOpen(false); setToolSheetOpen(true); }}
+              style={({ pressed }) => [styles.toolTriggerBtn, pressed && styles.chipPressed]}
               accessibilityRole="button"
-              accessibilityLabel="Clear filters"
-              accessibilityHint="Removes the search text, category and my-flags filters"
+              accessibilityLabel="More task tools"
+              accessibilityHint="Select multiple flags, or clear the active filters"
+              {...a11yToggle({ expanded: toolSheetOpen })}
             >
-              <AppText variant="label" style={styles.clearFiltersText}>Clear filters</AppText>
+              <MoreHorizontal size={22} color={color.glassChipInk} strokeWidth={2.2} />
             </Pressable>
           )}
+        </View>
+      )}
+      {/* An active filter must never be able to hide behind a closed sheet, so
+          it is still signalled two independent ways: the filter circle takes
+          the active fill, AND this chip mounts. It is the same control it
+          always was — same handler, same label, same hint — wearing the ✕ that
+          says what tapping it does, and it exists only while something is
+          genuinely filtering, so it is never a dead control. Clear is reachable
+          from the ⋯ sheet as well, for a user who went looking in the drawer
+          rather than at the chip. */}
+      {flags.length > 0 && tasksFiltersActive && (
+        <View style={styles.filterTriggerRow}>
+          <Pressable
+            onPress={handleClearFilters}
+            style={({ pressed }) => [styles.clearFiltersBtn, pressed && styles.chipPressed]}
+            accessibilityRole="button"
+            accessibilityLabel="Clear filters"
+            accessibilityHint="Removes the search text, category and my-flags filters"
+          >
+            <AppText variant="label" style={styles.clearFiltersText}>Clear filters</AppText>
+            <X size={14} color={color.inkSelect} strokeWidth={2.4} {...decorativeProps} />
+          </Pressable>
         </View>
       )}
       </GlassSurface>
@@ -1169,6 +1211,52 @@ export default function TasksScreen() {
         </View>
       )}
       </Sheet>
+      {/* The ⋯ tool sheet. The map's tool-sheet RECIPE — a short column of
+          icon + label rows, each its own 44pt control — inside this screen's
+          own `Sheet` primitive rather than the map's inline panel, because the
+          panel is an overlay in the map's absolute stack and a third shell on
+          this screen would break S5. `glass={false}` is the opaque house modal
+          grammar and costs nothing against the blur budget, so Tasks still
+          owns exactly one live pane.
+
+          "Clear filters" leads when a filter is active: this is the drawer a
+          user opens when they went looking for the control rather than
+          noticing the chip above. */}
+      <Sheet
+        visible={toolSheetOpen}
+        onClose={() => setToolSheetOpen(false)}
+        title="Task tools"
+        glass={false}
+      >
+        {tasksFiltersActive && (
+          <PressableScale
+            onPress={() => { setToolSheetOpen(false); handleClearFilters(); }}
+            style={styles.toolRow}
+            accessibilityRole="button"
+            accessibilityLabel="Clear filters"
+            accessibilityHint="Removes the search text, category and my-flags filters"
+          >
+            <X size={20} color={color.text} strokeWidth={2.2} {...decorativeProps} />
+            <AppText variant="label" style={styles.toolRowText}>Clear filters</AppText>
+          </PressableScale>
+        )}
+        {/* The gate is the one it always had: a non-empty list (the ⋯ circle
+            is inside that wrapper) AND not already selecting. Re-entering
+            selection mode from here would call enterSelectionEmpty and silently
+            drop the selection the user had already built. */}
+        {!selection.active && (
+          <PressableScale
+            onPress={() => { setToolSheetOpen(false); enterSelectionEmpty(); }}
+            style={styles.toolRow}
+            accessibilityRole="button"
+            accessibilityLabel="Select multiple"
+            accessibilityHint="Enter selection mode to verify or resolve multiple flags at once"
+          >
+            <ListChecks size={20} color={color.text} strokeWidth={2.2} {...decorativeProps} />
+            <AppText variant="label" style={styles.toolRowText}>Select multiple</AppText>
+          </PressableScale>
+        )}
+      </Sheet>
       {/* Points/notice flash — floats over the chrome (zIndex above the pane),
           same visual spot over the header as before the glass pass. */}
       {flash && (
@@ -1230,7 +1318,7 @@ export default function TasksScreen() {
         // Details action uses (onShowDetails). Navigation only: no status
         // change, no fetch, no new data path.
         ListHeaderComponent={
-          nearestOpenHit ? (
+          nearestOpenHit && !bannerStandsDown ? (
             <Pressable
               onPress={() => showDetails(nearestOpenHit.flag)}
               style={({ pressed }) => [
@@ -1251,11 +1339,27 @@ export default function TasksScreen() {
                   color={color.brandOnSoft}
                   strokeWidth={2.2} {...decorativeProps}
                 />
-                <AppText variant="label" style={styles.suggestedText}>
-                  {`Nearest open barrier · ${CATEGORY_LABELS[nearestOpenHit.flag.category]} · Severity ${nearestOpenHit.flag.severity} · ${formatDistance(
-                    nearestOpenHit.km,
-                  )}`}
-                </AppText>
+                {/* Two deliberate lines, same words, same order. As one line
+                    it wrapped wherever it ran out and orphaned "4 · 433 m" onto
+                    a line of its own; broken on purpose it reads as a label
+                    over its subject. The distance is the sentence's numeral, so
+                    it takes mono (T1). */}
+                <View style={styles.suggestedTextBlock}>
+                  <AppText variant="label" style={styles.suggestedLead}>
+                    Nearest open barrier
+                  </AppText>
+                  <AppText variant="label" style={styles.suggestedText}>
+                    {`${CATEGORY_LABELS[nearestOpenHit.flag.category]} · Severity ${nearestOpenHit.flag.severity} · `}
+                    {/* 1.6 = the `label` variant's own cap, which is what the
+                        words beside it use. The banner is chrome and sits in no
+                        content block, so without this the numeral would cap at
+                        the mono row's 1.4 and shrink away from its sentence. */}
+                    <MonoDistance
+                      value={formatDistance(nearestOpenHit.km)}
+                      maxFontSizeMultiplier={1.6}
+                    />
+                  </AppText>
+                </View>
                 <ChevronRight
                   size={18}
                   color={color.brandOnSoft}
@@ -1298,10 +1402,15 @@ export default function TasksScreen() {
                 renders as an <h1> INSIDE the wrapper's <h1>: invalid HTML that
                 React errors on, and one title announced as two nested headings
                 to a browser screen reader. */}
-            <AppText variant="heading" style={styles.sectionTitle} accessibilityRole="none">{title}</AppText>
-            <View style={styles.sectionCountPill}>
-              <AppText variant="monoBold" style={styles.sectionCountText}>{data.length}</AppText>
-            </View>
+            {/* The count joins the header instead of riding a pill beside it.
+                One "9" per screen: the tab badge keeps its own, because it
+                counts for a user who is looking at another tab. Two objects
+                saying the same number a thumb's width apart was the second. */}
+            <AppText variant="heading" style={styles.sectionTitle} accessibilityRole="none">
+              {title}
+              {' · '}
+              <AppText variant="monoBold" style={styles.sectionCount}>{data.length}</AppText>
+            </AppText>
           </View>
         )}
         ListEmptyComponent={
@@ -1554,7 +1663,7 @@ export default function TasksScreen() {
   );
 }
 
-interface FlagCardProps {
+interface TaskCardProps {
   flag: FlagRow;
   isBusy: boolean;
   isOwn: boolean;
@@ -1578,7 +1687,7 @@ interface FlagCardProps {
 // At hundreds of rows this is the difference between snappy and laggy.
 // The userLocation prop is stable across renders (one-shot fetch), so it
 // doesn't disturb memoization in practice.
-const FlagCard = memo(function FlagCard({
+const TaskCard = memo(function TaskCard({
   flag,
   isBusy,
   isOwn,
@@ -1590,7 +1699,7 @@ const FlagCard = memo(function FlagCard({
   onLongPress,
   onSetStatus,
   onShowDetails,
-}: FlagCardProps) {
+}: TaskCardProps) {
   const color = useColor();
   const reduceTransparency = useReduceTransparency();
   const reducedMotion = useReducedMotion();
@@ -1638,7 +1747,11 @@ const FlagCard = memo(function FlagCard({
   const distanceInfo = useMemo(() => {
     if (!userLocation) return null;
     const km = haversineKm(userLocation, { lat: flag.lat, lng: flag.lng });
+    // `km` rides along now: the census renders the distance itself so it can put
+    // the numeral in mono (T1), and `label` survives only for the action labels,
+    // which name their flag in words a screen reader already knows.
     return {
+      km,
       label: formatDistance(km),
       eta: formatWalkingEta(km),
     };
@@ -1672,8 +1785,9 @@ const FlagCard = memo(function FlagCard({
     a11yLabel: string;
     a11yHint: string;
     onPress: () => void;
-    btnStyle: ViewStyle;
-    textStyle: TextStyle;
+    /** Assigned by POSITION, not declared here — see the lead/siblings split. */
+    btnStyle?: StyleProp<ViewStyle>;
+    textStyle?: StyleProp<TextStyle>;
     /** Deepen a brand-filled action on press instead of greying it (Verify);
      *  neutral/ghost actions omit it and inherit the house borderPressed dim. */
     pressedTint?: string;
@@ -1695,9 +1809,6 @@ const FlagCard = memo(function FlagCard({
           a11yLabel: `Verify this flag — ${actionSubject}`,
           a11yHint: 'Confirms this barrier report is real',
           onPress: () => onSetStatus(flag.id, 'verified', isOwn),
-          btnStyle: styles.verifyBtn,
-          textStyle: styles.verifyText,
-          pressedTint: color.ctaFillPressed,
           haptic: 'none',
         } satisfies CardAction]
       : []),
@@ -1707,8 +1818,6 @@ const FlagCard = memo(function FlagCard({
       a11yLabel: `Mark this flag resolved — ${actionSubject}`,
       a11yHint: 'Marks this barrier as fixed',
       onPress: () => onSetStatus(flag.id, 'resolved', isOwn),
-      btnStyle: styles.resolveBtn,
-      textStyle: styles.resolveText,
       haptic: 'none',
     },
     {
@@ -1717,8 +1826,6 @@ const FlagCard = memo(function FlagCard({
       a11yLabel: `Reject this flag — ${actionSubject}`,
       a11yHint: 'Dismisses this report; asks you to confirm first',
       onPress: () => onSetStatus(flag.id, 'rejected', isOwn),
-      btnStyle: styles.rejectBtn,
-      textStyle: styles.rejectText,
       haptic: 'none',
     },
     {
@@ -1727,19 +1834,57 @@ const FlagCard = memo(function FlagCard({
       a11yLabel: `View flag details — ${actionSubject}`,
       a11yHint: 'Opens a screen with the full report, photo, and more actions',
       onPress: () => onShowDetails(flag),
-      btnStyle: styles.detailsBtn,
+      btnStyle: styles.detailsLink,
       textStyle: styles.detailsText,
       dimOnPress: false,
       haptic: 'selection',
     },
   ];
-  // `actions` always has ≥3 entries (Resolved/Reject/Details always render,
-  // plus Verify while open), so actions[0] is never undefined.
-  const leadAction = actions[0]!;
-  const restActions = actions.slice(1);
+  // F3 — the row stops wearing three costumes for one decision. It used to run
+  // Verify (filled) · Resolved (neutral fill) · Reject (ghost) · Details
+  // (ghost), which is four controls in three styles and a verb, an adjective, a
+  // verb and a noun all dressed alike. Now:
+  //
+  //   lead      the ONE filled verb, whichever commit verb is next in the
+  //             lifecycle. Open -> Verify; already verified -> Resolved.
+  //   siblings  the remaining commit verbs, together inside ONE ghost
+  //             segmented control, so they read as alternatives to the lead
+  //             rather than as three peers.
+  //   details   navigation, and it is not a verb at all, so it stops wearing a
+  //             button and becomes a link.
+  //
+  // Nothing about what they DO changed: the same descriptors, the same
+  // handlers, the same confirm() gate upstream in setStatus, the same labels
+  // and hints. `details` is spliced out by key rather than by index so the
+  // split cannot silently follow a reordered list.
+  const commitActions = actions.filter((a) => a.key !== 'details');
+  const detailsAction = actions.find((a) => a.key === 'details')!;
+  // Always ≥2 (Resolved and Reject both always render), so [0] is never
+  // undefined and the segmented control is never empty.
+  //
+  // The paint is assigned HERE, by position, and deliberately not on the
+  // descriptors above. Declaring it per-verb is how the first cut of this got
+  // it wrong: `Verify` owned the fill, so a flag that was ALREADY verified
+  // rendered a lead verb with no fill at all and the card had zero filled
+  // controls instead of exactly one. "The lead is filled" is a fact about the
+  // POSITION, so the position is where it is stated.
+  //
+  // The pressed companion travels with the fill for the same reason: a filled
+  // control that greys on press drops its ink below AA (the rule
+  // brandInkAA.guard pins), and Resolved has to obey it on the day it becomes
+  // the lead just as Verify does today.
+  const leadAction: CardAction = {
+    ...commitActions[0]!,
+    btnStyle: styles.leadBtn,
+    textStyle: styles.leadText,
+    pressedTint: color.ctaFillPressed,
+  };
+  const siblingActions: CardAction[] = commitActions
+    .slice(1)
+    .map((a) => ({ ...a, btnStyle: styles.segCell, textStyle: styles.segText }));
   // hitSlop widens the tap area without changing layout — keeps adjacent
   // constructive/destructive buttons from mis-firing on the reflowed row.
-  const renderAction = (a: CardAction, widthStyle: ViewStyle) => (
+  const renderAction = (a: CardAction, widthStyle: StyleProp<ViewStyle>) => (
     <PressableScale
       key={a.key}
       disabled={isBusy}
@@ -1756,6 +1901,85 @@ const FlagCard = memo(function FlagCard({
     >
       <AppText variant="label" style={a.textStyle}>{a.label}</AppText>
     </PressableScale>
+  );
+
+  // The photo, lifted out of the old card body verbatim so it can be handed to
+  // the shared card as its leading media. Both branches are unchanged: in bulk
+  // -select mode it is a NON-interactive View so a tap falls through to the
+  // card's selection toggle instead of opening the lightbox (F17); otherwise it
+  // is the Pressable that opens it.
+  const photo = (
+safePhotoUrl && !photoError ? (
+    selectionActive ? (
+      // F17: in bulk-select mode the whole card is the selection toggle.
+      // Render the thumbnail as a NON-interactive View so a tap on the
+      // photo falls through to the outer card Pressable instead of opening
+      // the lightbox (a nested Pressable would otherwise swallow it,
+      // making the photo area a dead spot for selection).
+      <View
+        style={styles.cardThumbWrap}
+        onLayout={() => setPhotoInView(true)}
+        accessible={false}
+        importantForAccessibility="no-hide-descendants"
+      >
+        {photoInView && (
+          <Image
+            source={{ uri: safePhotoUrl }}
+            style={styles.cardThumb}
+            onLoad={() => setPhotoLoaded(true)}
+            onError={() => setPhotoError(true)}
+            accessible={false}
+            importantForAccessibility="no"
+            aria-hidden={true}
+          />
+        )}
+        {!photoLoaded && (
+          <Skeleton
+            width={size.thumb}
+            height={size.thumb}
+            borderRadius={radius.md}
+            style={styles.thumbSkeleton}
+          />
+        )}
+      </View>
+    ) : (
+      <Pressable
+        onPress={() => setLightboxOpen(true)}
+        onLayout={() => setPhotoInView(true)}
+        hitSlop={spacing.sm}
+        style={styles.cardThumbWrap}
+        accessibilityRole="button"
+        // photo_alt (2026-08-19): the reporter's own description wins;
+        // the category-based label stays as the fallback for old rows.
+        accessibilityLabel={
+          flag.photo_alt
+            ? `Photo: ${flag.photo_alt}. Tap to view full screen.`
+            : `Photo of ${CATEGORY_LABELS[flag.category]} accessibility issue. Tap to view full screen.`
+        }
+        accessibilityHint="Opens a full-screen view of the photo"
+      >
+        {photoInView && (
+          <Image
+            source={{ uri: safePhotoUrl }}
+            style={styles.cardThumb}
+            onLoad={() => setPhotoLoaded(true)}
+            onError={() => setPhotoError(true)}
+            accessible={false}
+            importantForAccessibility="no"
+            aria-hidden={true}
+          />
+        )}
+        {!photoLoaded && (
+          <Skeleton
+            width={size.thumb}
+            height={size.thumb}
+            borderRadius={radius.md}
+            style={styles.thumbSkeleton}
+          />
+        )}
+      </Pressable>
+    )
+  ) : null
   );
 
   return (
@@ -1806,156 +2030,85 @@ const FlagCard = memo(function FlagCard({
           />
         </Animated.View>
       )}
-      {/* S13: the header row is the card's labeled SUMMARY node — the single
-          focusable representative that announces the card (severity · category ·
-          status) and carries the button/checkbox role + state that used to live
-          on the whole card. It wraps only non-interactive badges, so it nests no
-          button. Activating it falls through to the outer Pressable (open/select). */}
-      <View
-        style={styles.cardHeader}
-        accessible
-        accessibilityRole={selectionActive ? 'checkbox' : 'button'}
-        {...a11yToggle(
-          selectionActive ? { checked: selected, disabled: isBusy } : { disabled: isBusy }
-        )}
-        accessibilityLabel={a11yLabel}
-        accessibilityHint={
-          selectionActive
-            ? 'Toggles this flag in the selection'
-            : 'Opens the Map tab focused on this flag. Long-press to select multiple.'
-        }
-      >
-        {/* Severity leads the header as a legible badge ("3 · Moderate") — number
-            + word + colour, never colour alone (WCAG 1.4.1). Replaces the old
-            left accent stripe + the buried "Severity N" in the meta line. */}
-        <SeverityBadge level={flag.severity} showLabel size="sm" />
-        <AppText variant="label" style={styles.cardTitle}>{CATEGORY_LABELS[flag.category]}</AppText>
-        <StatusBadge status={flag.status} size="sm" />
-        {/* Checkmark indicator in the top-right corner. Hidden from SR
-            because the accessibilityState above already conveys the
-            checked/unchecked state — duplicating it would just read
-            "checked" twice. */}
-        {selectionActive && (
-          <View
-            style={[styles.selectCheck, selected && styles.selectCheckOn]} {...decorativeProps}
-          >
-            {selected ? <Check size={16} color={color.textOnBrand} strokeWidth={2.2} /> : null}
-          </View>
-        )}
-      </View>
-      <View style={styles.cardBody}>
-        {safePhotoUrl && !photoError ? (
+      {/* F1: the card's insides are the shared drawing now. What used to be
+          here was an amber severity pill, the title, a status pill, then a
+          photo beside a 2-line description and a meta line — five species of
+          object announcing one flag, none of them shaped like Home's row or
+          Nearby's card. It is one component and one census line now:
+
+            Severity 3 · Moderate · Open · 876 m · 11 min walk · 2d ago
+
+          The status word moved INTO that sentence (C3: status is a word, not a
+          pill, inside a flag object) and the severity colour is drawn once, on
+          the disc (C2). The distance is the sentence's one numeral, so the
+          component renders it in mono from the raw km.
+
+          S13's structure is preserved exactly, because it is what lets a
+          screen-reader user reach the trust engine: the card stays
+          accessible={false}, the HEADER is the single labeled summary node
+          carrying the button/checkbox role fork, and every action below stays
+          independently reachable. FlagCard takes that as `headerA11y` rather
+          than assuming it, which is why Nearby can decline it. */}
+      <FlagCard
+        flag={flag}
+        density="card"
+        distanceKm={distanceInfo?.km ?? null}
+        censusExtra={[distanceInfo?.eta, relativeTime(flag.created_at)]}
+        showDescription
+        media={photo}
+        headerAccessory={
+          /* Checkmark indicator in the top-right corner. Hidden from SR because
+             the accessibilityState above already conveys the checked/unchecked
+             state — duplicating it would just read "checked" twice. */
           selectionActive ? (
-            // F17: in bulk-select mode the whole card is the selection toggle.
-            // Render the thumbnail as a NON-interactive View so a tap on the
-            // photo falls through to the outer card Pressable instead of opening
-            // the lightbox (a nested Pressable would otherwise swallow it,
-            // making the photo area a dead spot for selection).
             <View
-              style={styles.cardThumbWrap}
-              onLayout={() => setPhotoInView(true)}
-              accessible={false}
-              importantForAccessibility="no-hide-descendants"
+              style={[styles.selectCheck, selected && styles.selectCheckOn]} {...decorativeProps}
             >
-              {photoInView && (
-                <Image
-                  source={{ uri: safePhotoUrl }}
-                  style={styles.cardThumb}
-                  onLoad={() => setPhotoLoaded(true)}
-                  onError={() => setPhotoError(true)}
-                  accessible={false}
-                  importantForAccessibility="no"
-                  aria-hidden={true}
-                />
-              )}
-              {!photoLoaded && (
-                <Skeleton
-                  width={size.thumb}
-                  height={size.thumb}
-                  borderRadius={radius.md}
-                  style={styles.thumbSkeleton}
-                />
-              )}
+              {selected ? <Check size={16} color={color.textOnBrand} strokeWidth={2.2} /> : null}
             </View>
-          ) : (
-            <Pressable
-              onPress={() => setLightboxOpen(true)}
-              onLayout={() => setPhotoInView(true)}
-              hitSlop={spacing.sm}
-              style={styles.cardThumbWrap}
-              accessibilityRole="button"
-              // photo_alt (2026-08-19): the reporter's own description wins;
-              // the category-based label stays as the fallback for old rows.
-              accessibilityLabel={
-                flag.photo_alt
-                  ? `Photo: ${flag.photo_alt}. Tap to view full screen.`
-                  : `Photo of ${CATEGORY_LABELS[flag.category]} accessibility issue. Tap to view full screen.`
-              }
-              accessibilityHint="Opens a full-screen view of the photo"
+          ) : undefined
+        }
+        headerA11y={{
+          role: selectionActive ? 'checkbox' : 'button',
+          label: a11yLabel,
+          hint: selectionActive
+            ? 'Toggles this flag in the selection'
+            : 'Opens the Map tab focused on this flag. Long-press to select multiple.',
+          state: a11yToggle(
+            selectionActive ? { checked: selected, disabled: isBusy } : { disabled: isBusy }
+          ),
+        }}
+        actions={
+          /* Hidden during selection mode — the floating bar handles bulk
+             actions, and showing both would be confusing (a tap on Verify here
+             would still fire the single-item flow, not the bulk one). */
+          selectionActive ? undefined : (
+            <View
+              style={compactActions ? styles.cardActionsStack : styles.cardActionsRow}
+              testID={compactActions ? 'card-actions-stack' : 'card-actions-row'}
             >
-              {photoInView && (
-                <Image
-                  source={{ uri: safePhotoUrl }}
-                  style={styles.cardThumb}
-                  onLoad={() => setPhotoLoaded(true)}
-                  onError={() => setPhotoError(true)}
-                  accessible={false}
-                  importantForAccessibility="no"
-                  aria-hidden={true}
-                />
-              )}
-              {!photoLoaded && (
-                <Skeleton
-                  width={size.thumb}
-                  height={size.thumb}
-                  borderRadius={radius.md}
-                  style={styles.thumbSkeleton}
-                />
-              )}
-            </Pressable>
+              {renderAction(leadAction, compactActions ? styles.actionBtnFull : styles.actionBtnLead)}
+              {/* One ghost segmented control, not two ghost buttons: the pair
+                  reads as alternatives to the filled verb rather than as its
+                  peers. The container draws the single hairline and clips the
+                  ends; each cell keeps its own 44pt box and its own label,
+                  hint and handler, so nothing about reaching them changed. */}
+              <View
+                testID="card-actions-segmented"
+                style={[
+                  styles.segmented,
+                  compactActions ? styles.actionBtnFull : styles.actionBtnSiblings,
+                ]}
+              >
+                {siblingActions.map((a, i) =>
+                  renderAction(a, i > 0 ? styles.segCellDivided : null),
+                )}
+              </View>
+              {renderAction(detailsAction, compactActions ? styles.actionBtnFull : null)}
+            </View>
           )
-        ) : null}
-        <View style={styles.cardBodyText}>
-          {flag.description ? (
-            // Clamp to 2 lines — the full text lives in Details. Stops a long
-            // report from growing the card unbounded (a 2000-char note used to
-            // drive it to ~1612px tall).
-            <AppText variant="body" style={styles.cardDesc} numberOfLines={2}>{flag.description}</AppText>
-          ) : null}
-          {/* Quiet support line. Severity moved up to the header badge, so it's
-              no longer repeated here; filter(Boolean) keeps the separators tidy
-              whether or not distance is known. */}
-          <AppText variant="body" style={styles.cardMeta}>
-            {[distanceInfo?.label, distanceInfo?.eta, relativeTime(flag.created_at)]
-              .filter(Boolean)
-              .join(' · ')}
-          </AppText>
-        </View>
-      </View>
-      {/* Hide per-card action buttons during selection mode — the
-          floating bar handles bulk actions, and showing both would be
-          confusing (a tap on Verify here would still fire the single-
-          item flow, not the bulk one). */}
-      {!selectionActive &&
-        (compactActions ? (
-          // Deliberate 2-row stack (narrow width / large type): the lead action
-          // full-width on top, the rest in one equal-share sub-row below.
-          // Reject stays a row apart from the primary — no mis-tap. Never ragged.
-          <View style={styles.cardActionsStack} testID="card-actions-stack">
-            {renderAction(leadAction, styles.actionBtnFull)}
-            <View style={styles.cardActionsRow}>
-              {restActions.map((a) => renderAction(a, styles.actionBtnFlex))}
-            </View>
-          </View>
-        ) : (
-          // Tiered single row: one clear primary (lead, wider via flexGrow) plus
-          // quiet equal-share rest. flexGrow + flexBasis:0 distributes the width
-          // evenly so the row can never wrap raggedly the way content-sized pills did.
-          <View style={styles.cardActionsRow} testID="card-actions-row">
-            {renderAction(leadAction, styles.actionBtnLead)}
-            {restActions.map((a) => renderAction(a, styles.actionBtnFlex))}
-          </View>
-        ))}
+        }
+      />
       {/* Full-screen photo lightbox — only mounts when the thumbnail exists
           and has loaded successfully. Tapping the thumbnail (or the close
           button inside the modal) dismisses it. */}
@@ -1973,11 +2126,14 @@ const FlagCard = memo(function FlagCard({
 });
 
 /**
- * First-load skeleton on the ROW MATERIAL — mirrors the FlagCard anatomy
- * (badge · title · two description lines · lead action · 3-up action row),
- * matching the mockup's loading state. Bars use the arbitrated skeleton tint;
- * the pulse inside `Skeleton` is already reduced-motion gated. Takes the
- * parent's styles/bar so six instances don't re-create the StyleSheet.
+ * First-load skeleton on the ROW MATERIAL — mirrors the card's anatomy, which
+ * changed with it in Phase 2a: disc · title · census · two description lines ·
+ * one filled verb beside a segmented pair, with Details as a link rather than a
+ * fourth pill. A skeleton that still drew three equal pills would promise a row
+ * the real card no longer has, and the swap at load would read as a jump. Bars
+ * use the arbitrated skeleton tint; the pulse inside `Skeleton` is already
+ * reduced-motion gated. Takes the parent's styles/bar so six instances don't
+ * re-create the StyleSheet.
  */
 function GlassSkeletonCard({
   styles,
@@ -1992,23 +2148,23 @@ function GlassSkeletonCard({
       style={[styles.card, styles.cardOuter]}
       accessible={false}
     >
-      <View style={styles.cardHeader}>
-        <Skeleton width={96} height={24} borderRadius={radius.full} style={{ backgroundColor: bar }} />
-        <Skeleton width="45%" height={18} borderRadius={radius.sm} style={{ backgroundColor: bar }} />
+      <View style={styles.skeletonHeader}>
+        <Skeleton width={32} height={32} borderRadius={radius.circle} style={{ backgroundColor: bar }} />
+        <View style={styles.skeletonHeaderText}>
+          <Skeleton width="55%" height={18} borderRadius={radius.sm} style={{ backgroundColor: bar }} />
+          <Skeleton width="80%" height={13} borderRadius={radius.sm} style={{ backgroundColor: bar }} />
+        </View>
       </View>
       <Skeleton width="100%" height={13} borderRadius={radius.sm} style={{ backgroundColor: bar }} />
       <Skeleton width="62%" height={13} borderRadius={radius.sm} style={{ backgroundColor: bar }} />
-      <Skeleton width="100%" height={44} borderRadius={radius.full} style={{ backgroundColor: bar }} />
       <View style={styles.cardActionsRow}>
-        <View style={styles.actionBtnFlex}>
+        <View style={styles.actionBtnLead}>
           <Skeleton width="100%" height={44} borderRadius={radius.full} style={{ backgroundColor: bar }} />
         </View>
-        <View style={styles.actionBtnFlex}>
+        <View style={styles.actionBtnSiblings}>
           <Skeleton width="100%" height={44} borderRadius={radius.full} style={{ backgroundColor: bar }} />
         </View>
-        <View style={styles.actionBtnFlex}>
-          <Skeleton width="100%" height={44} borderRadius={radius.full} style={{ backgroundColor: bar }} />
-        </View>
+        <Skeleton width={56} height={44} borderRadius={radius.full} style={{ backgroundColor: bar }} />
       </View>
     </GlassSurface>
   );
@@ -2018,7 +2174,7 @@ function GlassSkeletonCard({
 // 6-element FlagCard + tiered action row) renders the card directly instead
 // of mocking the whole screen's data layer. Not for reuse — the card is
 // private to this screen by design.
-export { FlagCard };
+export { TaskCard };
 
 const makeStyles = (color: ColorTheme, reduceTransparency: boolean) => {
   // Engineered chip tint — pills/chips/search ON the chrome pane (they carry
@@ -2145,10 +2301,15 @@ const makeStyles = (color: ColorTheme, reduceTransparency: boolean) => {
       ...(color.scheme === 'light' ? shadow.e1 : {}),
     },
     suggestedRowPressed: { backgroundColor: color.borderPressed },
-    suggestedText: {
-      flex: 1,
+    suggestedTextBlock: { flexGrow: 1, flexShrink: 1, minWidth: 130, gap: 1 },
+    suggestedLead: {
       color: color.brandOnSoft,
       fontWeight: font.weight.semibold,
+      fontSize: font.size.sm,
+    },
+    suggestedText: {
+      color: color.brandOnSoft,
+      fontWeight: font.weight.medium,
       fontSize: font.size.sm,
     },
     // Load-more footer — centered below the last SectionList card.
@@ -2240,19 +2401,10 @@ const makeStyles = (color: ColorTheme, reduceTransparency: boolean) => {
       textTransform: 'uppercase',
       letterSpacing: font.tracking.section,
     },
-    sectionCountPill: {
-      backgroundColor: color.brandSoft,
-      paddingHorizontal: spacing.sm,
-      paddingVertical: 2,
-      borderRadius: radius.circle,
-      minWidth: 22,
-      alignItems: 'center',
-    },
-    sectionCountText: {
-      color: color.brandOnSoft,
-      fontSize: font.size.caption,
-      fontWeight: font.weight.bold,
-    },
+    // T1: the count is a data numeral, so it takes mono with tabular figures.
+    // It inherits the header's size, tracking and ink — it is part of the same
+    // label, not a second object with its own voice.
+    sectionCount: { fontVariant: ['tabular-nums'] },
     title: { fontSize: font.size.xl, fontWeight: font.weight.semibold },
     // The card is a pane of ROW GLASS (variant="row": i=12 blur + 0.70 floor +
     // specular top hairline + edge — GlassSurface supplies all of it). The
@@ -2271,59 +2423,10 @@ const makeStyles = (color: ColorTheme, reduceTransparency: boolean) => {
     // Clips the press sheen to the card's rounded corners.
     sheenClip: { borderRadius: radius.lg, overflow: 'hidden' },
     cardPressed: { opacity: 0.85, transform: [{ scale: 0.99 }] },
-    // SW-22: this header IS the labelled, role="button" element that
-    // opens the flag (A11Y-214 de-flattened the row and put the label here).
-    // It measured 21-29pt tall on every list surface and both devices, while
-    // the "Show on the map" button beside it is a correct 44x44 — which is what
-    // makes the short one read as an oversight rather than a style. hitSlop is
-    // invisible to the accessibility frame, so the height has to be real.
-    // SW-36: flexWrap lets the title drop to its own line at large Dynamic Type
-    // instead of being crushed between two non-shrinking badges. It only does
-    // anything BECAUSE cardTitle below stopped declaring `flex: 1` — Yoga's
-    // line-break test measures each child's flex BASE size, and a basis of 0%
-    // contributes nothing, so a wrap can never trigger no matter how large the
-    // glyphs get. flexWrap without that change ships a no-op. `gap` already
-    // supplies 8pt on both axes, so a wrapped line needs no extra row spacing.
-    cardHeader: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: spacing.sm, minHeight: a11y.minTargetSize },
-    // textStrong ink — fixes the pre-glass dark-mode bug where the title had
-    // no color and rendered near-black on the dark card (Material Lab before-
-    // capture finding #1; the description themed correctly, the title didn't).
-    cardTitle: {
-      fontSize: font.size.xl,
-      fontWeight: font.weight.semibold,
-      // SW-36 — this is the fix, and the omission below is the load-bearing part.
-      // `flex: 1` is shorthand for grow 1 / shrink 1 / **basis 0%**, and a basis
-      // of 0 means the title contributes nothing to either the wrap decision or
-      // its own hypothetical width: its box was purely whatever the two badges
-      // left over, and could be narrower than the word inside it. iOS then
-      // character-breaks a word too wide for its box — "Broken sidewal / k".
-      // Spelling grow/shrink out and leaving flexBasis UNWRITTEN (RN default
-      // 'auto') makes the box measure the text, so it is never narrower than its
-      // own content and the break becomes structurally impossible. flexShrink
-      // stays 1 so a title alone on a line still wraps at a word boundary.
-      flexGrow: 1,
-      flexShrink: 1,
-      // SW-36, second pass — found on the device, not in the source. Freeing the
-      // basis was necessary and NOT sufficient: `flexShrink: 1` still let the
-      // title be squeezed below its own longest word by the two non-shrinking
-      // badges, and "Broken sidewalk" still rendered as "sidewal / k" at
-      // accessibility-extra-large. Measured on the 17e: a 326pt header, minus a
-      // ~125pt severity pill, a ~78pt status pill and their gaps, left the title
-      // ~107pt while "sidewalk" at the capped 28.8pt needs ~127.
-      //
-      // The floor is what makes flexWrap on cardHeader actually fire: with a
-      // bounded base size the badges move to their own line and the title gets
-      // the full row. 130 is the longest single word in CATEGORY_LABELS at the
-      // label variant's 1.6 cap — the same reasoning, and coincidentally the
-      // same number, as barLabel's floor in ReportsBreakdownCard.
-      //
-      // Below the cap this changes nothing: "Broken sidewalk" measures ~138pt at
-      // 1x against ~170pt available, so the floor is never the binding constraint
-      // at normal text sizes.
-      minWidth: 130,
-      color: color.textStrong,
-    },
-    cardBody: { flexDirection: 'row', gap: spacing.md },
+    // SW-22 / SW-36 moved out with the header they described: the 44pt frame,
+    // the wrap and the title's width floor now live in FlagCard, where the
+    // header is drawn, and are pinned there by
+    // flexBasisUnderLargeType.guard.test.ts and hitTargetFrame.guard.test.ts.
     // Container holds the image so overflow:hidden clips rounded corners on
     // Android (where borderRadius on Image alone is unreliable).
     cardThumbWrap: {
@@ -2339,23 +2442,12 @@ const makeStyles = (color: ColorTheme, reduceTransparency: boolean) => {
       height: '100%',
     },
     thumbSkeleton: { position: 'absolute', top: 0, left: 0 },
-    cardBodyText: { flex: 1, gap: spacing.tight },
-    // TYPE LAW on translucency (GLASS.md): body text on glass carries ≥500
-    // weight — the 400 face hazes against what moves beneath the pane.
-    cardDesc: {
-      fontSize: font.size.base,
-      color: color.textStrong,
-      fontFamily: font.family.bodyMedium,
-    },
-    cardMeta: {
-      fontSize: font.size.xs,
-      color: color.textMuted,
-      fontFamily: font.family.bodyMedium,
-    },
-    // Action row — equal-share flex (the proven bulkBtn pattern), never flexWrap.
-    // One tidy row at default; the component swaps to cardActionsStack (lead
-    // full-width + sub-row) when compactActions is true (narrow / large type).
-    cardActionsRow: { flexDirection: 'row', gap: spacing.sm },
+    // Action row (F3): one filled verb, one ghost segmented pair, one link.
+    // One tidy row at default; the card swaps to cardActionsStack, everything
+    // full-width, when compactActions is true (narrow width / large type).
+    // T5: three children of different natures share this row, so it wraps
+    // rather than squeezing the segmented pair below its own longest word.
+    cardActionsRow: { flexDirection: 'row', flexWrap: 'wrap', rowGap: spacing.sm, gap: spacing.sm },
     cardActionsStack: { gap: spacing.sm },
     actionBtn: {
       // Fully-rounded pills (Phase 13 editorial language). Width is owned by the
@@ -2368,38 +2460,58 @@ const makeStyles = (color: ColorTheme, reduceTransparency: boolean) => {
       alignItems: 'center',
       justifyContent: 'center',
     },
-    // The lead (primary) action: noticeably wider than its quiet siblings, so the
-    // hierarchy reads at a glance even though all share the row. 1.5 (not 2) is
-    // the RN translation of the mockup — leaves the longest secondary ("Resolved")
-    // room at 375pt without clipping.
-    actionBtnLead: { flexGrow: 1.5, flexBasis: 0, minWidth: 0 },
-    actionBtnFlex: { flexGrow: 1, flexBasis: 0, minWidth: 0 },
     actionBtnFull: { alignSelf: 'stretch' },
+    // The loading skeleton's header, which mirrors FlagCard's own but lives
+    // here: the shared component draws a real flag, and a skeleton has no flag.
+    skeletonHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, minHeight: a11y.minTargetSize },
+    skeletonHeaderText: { flexGrow: 1, flexShrink: 1, gap: spacing.tight },
+    actionBtnLead: { flexGrow: 1, flexBasis: 0, minWidth: 0 },
+    // The pair needs slightly more room than the lone lead verb: it is two
+    // words behind one hairline, and "Resolved" is the longest label in the row.
+    actionBtnSiblings: { flexGrow: 1.3, flexBasis: 0, minWidth: 0 },
+
+    // F3 — the ONE filled verb, whichever commit verb is next in the lifecycle.
     // ctaFill, not brand — the CTA fill is MODE-INDEPENDENT #1466E0 (dark
     // brand #4E89EF + white = 3.4:1 fails; script-arbitrated, GLASS.md).
-    verifyBtn: { backgroundColor: color.ctaFill },
-    verifyText: { color: color.textOnBrand, fontWeight: font.weight.semibold, fontSize: font.size.sm },
-    // Tiered down from a saturated green fill to a quiet neutral chip — only
-    // Verify stays a filled primary, the rest are calm equals. On glass the
-    // neutral is a translucent ink-tint (mockup --df-neutral-btn); under
-    // Reduce Transparency it returns to the solid neutral.
-    resolveBtn: {
-      backgroundColor: reduceTransparency ? color.surfaceNeutral : color.glassNeutralBtn,
-    },
-    resolveText: { color: color.text, fontWeight: font.weight.semibold, fontSize: font.size.sm },
-    // Reject — quiet ghost (hairline, no fill), neutral ink: present but never
-    // shouting, and visually distinct from the filled primary to avoid mis-tap.
-    // Ghost edges use the arbitrated on-glass hairline (borderSubtle vanishes
-    // over the row material).
-    rejectBtn: { backgroundColor: 'transparent', borderWidth: 1, borderColor: color.glassGhostEdge },
-    rejectText: { color: color.text, fontWeight: font.weight.semibold, fontSize: font.size.sm },
-    detailsBtn: {
-      backgroundColor: 'transparent',
+    leadBtn: { backgroundColor: color.ctaFill },
+    leadText: { color: color.textOnBrand, fontWeight: font.weight.semibold, fontSize: font.size.sm },
+
+    // The ghost segmented control. The CONTAINER draws the one hairline and
+    // clips the ends so the pair reads as a single object; the cells draw
+    // nothing but the divider between them. This replaces two separate
+    // treatments — Resolved was a neutral FILL and Reject a ghost — which made
+    // two alternatives look like two unrelated decisions. Ghost edges use the
+    // arbitrated on-glass hairline (borderSubtle vanishes over the row material).
+    segmented: {
+      flexDirection: 'row',
+      borderRadius: radius.full,
       borderWidth: 1,
       borderColor: color.glassGhostEdge,
+      overflow: 'hidden',
     },
-    // inkDetailsGhost — arbitrated on the row material (4.75:1 light worst-case).
-    detailsText: { color: color.inkDetailsGhost, fontWeight: font.weight.semibold, fontSize: font.size.sm },
+    // borderRadius: 0 overrides actionBtn's pill radius on purpose — inside the
+    // container a rounded cell would draw a second, smaller pill against the
+    // first. `overflow: 'hidden'` above is what gives the end cells their curve.
+    segCell: {
+      flexGrow: 1,
+      flexBasis: 0,
+      minWidth: 0,
+      borderRadius: 0,
+      backgroundColor: 'transparent',
+    },
+    segCellDivided: { borderLeftWidth: 1, borderLeftColor: color.glassGhostEdge },
+    segText: { color: color.text, fontWeight: font.weight.semibold, fontSize: font.size.sm },
+
+    // Details is navigation, not a verb, so it stops wearing a button. The 44pt
+    // box survives in `actionBtn`; only the border and the fill are gone.
+    detailsLink: { backgroundColor: 'transparent', paddingHorizontal: spacing.sm },
+    // inkSelect, not inkDetailsGhost — the same ink "Select multiple" and "Clear
+    // filters" already carry, so every text link on this screen is one colour.
+    // It is also the higher-contrast of the two in BOTH modes: #0F53BE is
+    // darker than #1466E0 against the light floor and #B4CFFA is lighter than
+    // #84AEF6 against the dark one, so the swap moves away from the mid-tone
+    // either way rather than trading one mode's contrast for the other's.
+    detailsText: { color: color.inkSelect, fontWeight: font.weight.semibold, fontSize: font.size.sm },
     // D3/C3 — the single trigger that replaced three header rows.
     // T5 / D24: content-sized chips in a row with no escape. At large type
     // "Filter & sort" + "Clear filters" exceed the row and the second chip was
@@ -2414,32 +2526,65 @@ const makeStyles = (color: ColorTheme, reduceTransparency: boolean) => {
       paddingBottom: spacing.md,
       gap: spacing.sm,
     },
-    filterTriggerBtn: {
+    // The ⋯ circle. Same box as the filter circle beside it; no active state,
+    // because the sheet it opens holds no persistent setting of its own.
+    toolTriggerBtn: {
       minHeight: 44,
-      paddingHorizontal: spacing.lg,
+      minWidth: 44,
       borderRadius: radius.circle,
       backgroundColor: chipFill,
       borderWidth: 1,
       borderColor: chipEdge,
       alignItems: 'center',
       justifyContent: 'center',
+      flexShrink: 0,
     },
+    // Now a 44pt circle rather than a text chip: the word it used to carry
+    // ("Filter & sort") is the title of the sheet it opens, so nothing had to
+    // be invented to drop it. minWidth replaces the horizontal padding that
+    // used to size it to its label.
+    filterTriggerBtn: {
+      minHeight: 44,
+      minWidth: 44,
+      borderRadius: radius.circle,
+      backgroundColor: chipFill,
+      borderWidth: 1,
+      borderColor: chipEdge,
+      alignItems: 'center',
+      justifyContent: 'center',
+      flexShrink: 0,
+    },
+    // The ⋯ sheet's rows — the map tool sheet's recipe: an icon, a label, one
+    // 44pt target each, nothing else.
+    toolRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.md,
+      minHeight: 44,
+      paddingVertical: spacing.sm,
+      // The device caught this one too: without it the row's icon sat flush
+      // against the screen edge while the sheet's own title sat at 16pt in.
+      // `Sheet` gutters its header and leaves its body to the content, which is
+      // why every sibling row in the filter sheet carries the same value.
+      paddingHorizontal: spacing.lg,
+    },
+    toolRowText: { fontSize: font.size.base, fontWeight: font.weight.semibold, color: color.text },
     // MapScreen's ratified active grammar — a filled brand chip with white ink.
     // This is what makes an active filter impossible to miss with the sheet shut.
     filterTriggerBtnActive: { backgroundColor: color.ctaFill, borderColor: 'transparent' },
-    filterTriggerText: { fontSize: font.size.sm, fontWeight: font.weight.semibold, color: color.glassChipInk },
-    filterTriggerTextActive: { color: color.textOnBrand },
     // Ships as a CHIP, not a bare link: that keeps it on the already-arbitrated
     // chipFill + inkSelect stack instead of introducing a new ink-on-chrome pair
     // (and therefore an arbiter run) for one secondary control.
     clearFiltersBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.xs,
       minHeight: 44,
       paddingHorizontal: spacing.md,
       borderRadius: radius.circle,
       backgroundColor: chipFill,
       borderWidth: 1,
       borderColor: chipEdge,
-      alignItems: 'center',
       justifyContent: 'center',
     },
     clearFiltersText: { fontSize: font.size.sm, fontWeight: font.weight.semibold, color: color.inkSelect },
@@ -2551,6 +2696,18 @@ const makeStyles = (color: ColorTheme, reduceTransparency: boolean) => {
       color: color.glassChipInk,
       fontSize: font.size.base,
     },
+    // The magnifier rides INSIDE the field's left padding rather than beside
+    // it, so the pill stays one object and the input keeps its own border —
+    // which is what hitTargetFrame's bordered-TextInput rule measures. It is
+    // laid out absolutely against the row and given the field's own height, so
+    // it stays centred on the input even when the row wraps and the row grows.
+    searchIcon: {
+      position: 'absolute',
+      left: spacing.lg + spacing.md,
+      top: spacing.sm,
+      height: a11y.minTargetSize + 2,
+      zIndex: 1,
+    },
     searchClearBtn: {
       minWidth: 44, // WCAG 2.5.8: was 32pt (below 44pt project standard)
       minHeight: 44, // WCAG 2.5.8: was 32pt (below 44pt project standard)
@@ -2619,22 +2776,8 @@ const makeStyles = (color: ColorTheme, reduceTransparency: boolean) => {
     // it rides the search row's trailing edge, returning 52pt to the list.
     // `flexShrink: 0` is what keeps it at its full >=44pt width while the
     // text input takes the remaining space.
-    selectEntryBtn: {
-      flexShrink: 0,
-      minHeight: 44,
-      paddingHorizontal: spacing.md,
-      paddingVertical: spacing.xs,
-      borderRadius: radius.circle,
-      backgroundColor: chipFill,
-      borderWidth: 1,
-      borderColor: chipEdge,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    selectEntryBtnPressed: { backgroundColor: color.borderPressed },
     // inkSelect — script-arbitrated on the chip-over-chrome stack (brand
     // #1466E0 measured 4.17:1 over the worst-case base — forked to brandText).
-    selectEntryText: { color: color.inkSelect, fontWeight: font.weight.bold, fontSize: font.size.base },
     // Card selection visuals — a subtle tinted background + a 2px accent
     // border so a selected card pops without needing to recolor the photo
     // thumbnail or muddle the severity dot. Pairs with the checkmark in

@@ -19,7 +19,7 @@ import * as Location from 'expo-location';
 import { arrivalPermissionDenied, getCurrentPositionWithTimeout, initialLocationAction } from '@/lib/location';
 import { failureBannerText, offlineBannerText } from '@/lib/copy';
 import { announce } from '@/lib/announce';
-import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
+import { useFocusEffect, useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
@@ -65,7 +65,7 @@ import {
   type DisabilityTag,
 } from '@/lib/contextTags';
 import { DISTANCE_OPTIONS, loadMapFilters, saveMapFilters } from '@/lib/mapFilters';
-import { haversineKm } from '@/lib/distance';
+import { haversineKm, regionForNearestFlags } from '@/lib/distance';
 import { loadFilterPanelCollapsed, saveFilterPanelCollapsed } from '@/lib/filterPanelPrefs';
 import { loadHeatmapEnabled, saveHeatmapEnabled } from '@/lib/heatmapPrefs';
 import {
@@ -108,6 +108,7 @@ import { useSharedModals } from '@/lib/sharedModalsContext';
 import { useScreenReader, useReducedMotion, a11yToggle, decorativeProps, isAxRecompose, useSurfaceTrigger } from '@/lib/accessibility';
 import LegendModal from './LegendModal';
 import HeatmapLegend from '@/components/HeatmapLegend';
+import { SeverityDisc } from '@/components/SeverityDisc';
 import NearbyFlagsModal from './NearbyFlagsModal';
 import AddressSearchModal from '@/components/AddressSearchModal';
 import SavedPlacesModal from '@/components/SavedPlacesModal';
@@ -411,6 +412,10 @@ export default function MapScreen() {
   // (Send feedback / Map legend / Refresh flags / Save a place) — a panel-class
   // surface like the filter panel, not a Modal.
   const [toolsOpen, setToolsOpen] = useState(false);
+  // Declared here, beside the tool sheet, rather than down with the rest of the
+  // filter state: S4 made these two the pair that one function closes, and
+  // `clearMapSurfaces` below has to be in scope for the effects that call it.
+  const [filtersOpen, setFiltersOpen] = useState(false);
   // G5 focus-return triggers. Each one owns the handle of the control that
   // opened its surface, so closing the surface hands the screen-reader cursor
   // back to that control instead of stranding it (WCAG 2.4.3). Local pairs
@@ -516,6 +521,28 @@ export default function MapScreen() {
     setChromeBandPx(Math.round(commandBarH.current));
   }, []);
 
+  // S4 / D6 — ONE SURFACE AT A TIME ABOVE THE MAP.
+  //
+  // The walk opened the filter panel, tapped a pin, went to Home, came back and
+  // tapped Report: the report sheet landed on a map that still had the filter
+  // panel AND the callout open under it, with "SEVERITY 4 OF 5" peeking above
+  // the sheet's top edge and the callout's blue button ghosting through the
+  // panel and the legend (§16, §18, D3, D5 — five sightings, worst in dark).
+  // Nothing ever put the map's own surfaces away, so they accumulated.
+  //
+  // This is the one place that does. It closes the two INLINE panel-class
+  // surfaces (the filter panel and the ⋯ tool sheet — neither is a Modal) and
+  // hides the callout, which is owned by the marker and therefore has to be
+  // dismissed imperatively. It does NOT close modals: the Nearby list stays up
+  // under the detail sheet on purpose (the screen-reader path returns focus to
+  // its row), and it does NOT touch the camera or `focusedFlagId` — where the
+  // map is looking, and which pin the user came for, both survive a sheet.
+  const clearMapSurfaces = useCallback(() => {
+    setFiltersOpen(false);
+    setToolsOpen(false);
+    mapRef.current?.hideCallout();
+  }, []);
+
   const hasAutoOpenedListRef = useRef(false);
   useEffect(() => {
     if (screenReaderOn && !hasAutoOpenedListRef.current) {
@@ -528,12 +555,13 @@ export default function MapScreen() {
       // exists for. The List FAB is already mounted and is the control that
       // reopens this sheet, so it is the correct return target.
       nearbyTrigger.register();
+      clearMapSurfaces();
       setNearbyOpen(true);
     }
     // Safe to depend on the whole trigger: useSurfaceTrigger memoizes its return
-    // object, so this does not re-run every render.
-  }, [screenReaderOn, nearbyTrigger]);
-  const [filtersOpen, setFiltersOpen] = useState(false);
+    // object, so this does not re-run every render — and the same is true of
+    // clearMapSurfaces, which closes over setters and a ref only.
+  }, [screenReaderOn, nearbyTrigger, clearMapSurfaces]);
   // Whether the filter panel (when open) shows just its header row or all
   // sections. Persists across launches via filterPanelPrefs. Hydrated
   // alongside the filter values; the save-effect below is gated on
@@ -1202,12 +1230,32 @@ export default function MapScreen() {
       };
       if (!mountedRef.current) return;
       setLocation(coords);
-      mapRef.current?.animateTo({
+      const userBox = {
         latitude: coords.lat,
         longitude: coords.lng,
         latitudeDelta: 0.01,
         longitudeDelta: 0.01,
-      });
+      };
+      // M2 — ARRIVAL vs RECENTRE, and the simulator is why this branch exists.
+      //
+      // The 17e caught it with every gate green: POIs off, Legend pill up, and
+      // the first frame STILL showing zero flags. The M2 fit had run correctly
+      // and been overwritten. This call is BOTH the automatic arrival read and
+      // the Recenter button, and it animated over 600ms either way — so on
+      // arrival the fit's instant snapToRegion landed first and the animation,
+      // finishing later, put the camera right back on a street-level box around
+      // the user. Last write wins, and the animation always writes last.
+      //
+      // Before the first frame is claimed this move IS the initial paint (T7's
+      // own words for why snapToRegion is not Reduce-Motion-gated): there is
+      // nothing to animate FROM but a seeded San Francisco default, so it cuts,
+      // and the fit corrects it the moment flags land. Afterwards this is the
+      // Recenter button with the user watching, and it still animates.
+      if (didInitialFitRef.current) {
+        mapRef.current?.animateTo(userBox);
+      } else {
+        mapRef.current?.snapToRegion(userBox);
+      }
     } catch (e) {
       if (mountedRef.current) {
         // B10 (L7-07): Alert.alert is a no-op on react-native-web, so a web
@@ -1317,9 +1365,10 @@ export default function MapScreen() {
     // flight; without this the submit stays permanently disabled. Skip when a
     // drop pin is set (the sheet uses that coord, so no GPS is needed).
     if (!dropLocation) void requestLocation();
+    clearMapSurfaces();
     setReportOpen(true);
     navigation.setParams({ openReport: undefined });
-  }, [route.params?.openReport, navigation, dropLocation, requestLocation]);
+  }, [route.params?.openReport, navigation, dropLocation, requestLocation, clearMapSurfaces]);
 
   // Deep-link arrival: accessmap://flag/{id} → React Navigation parses the
   // id into route.params.flagId. Fetch the flag's lat/lng on the fly, then
@@ -1435,12 +1484,32 @@ export default function MapScreen() {
   // location is still null — a plain, ungestured arrival — fit the viewport to the
   // loaded rows with ONE instant cut (snapToRegion reuses BP1's instant-camera path;
   // never RM-gated because it replaces the initial paint, it is not motion). Fires
-  // exactly once and never overrides an intent-driven camera: a resolved location, a
-  // focusFlag / deep-link / openReport arrival, or a user who already moved the map.
+  // exactly once and never overrides an intent-driven camera: a focusFlag / deep-link
+  // arrival, a searched place, or a user who already moved the map.
+  //
+  // M2 (2026-08-21): a resolved location NO LONGER retires this. It used to — the
+  // located arrival got `initialRegion`, a 0.01-deg box around the user, and in
+  // Kelowna that put the nearest report 314 m outside the frame: the full map opened
+  // on Apple's tiles with zero of the 13 flags its own chip was counting, one tap
+  // after the Home peek had shown the clusters. So a located arrival now fits the
+  // NEAREST FLAGS PLUS THE USER DOT instead (regionForNearestFlags, floor 0.02 deg),
+  // through the same one-time, ref-guarded, instant commitFit as the no-location
+  // path. Same mechanism, one more reason to use it.
   const didInitialFitRef = useRef(false);
+  // The no-location frame is PROVISIONAL, and this is its own latch.
+  //
+  // The 17e found out why it needs one, with every gate green. `flags` comes
+  // from the shared provider, so arriving from Home they are ALREADY loaded —
+  // while `location` is still ~200ms away. The no-location branch therefore won
+  // the race, fitted all 13 flags, and SPENT the one-time latch; the located fit
+  // never ran, and the frame ended on the user's street-level box with no pins
+  // in it — the exact defect M2 exists to fix, now arrived at by a different
+  // road. A resolved location is not a user gesture, so it is allowed to upgrade
+  // the frame exactly once: `didInitialFitRef` now means "the FINAL frame is
+  // claimed" and only the located fit (or an intent arrival) sets it.
+  const didFallbackFitRef = useRef(false);
   useEffect(() => {
     if (didInitialFitRef.current) return; // one-time
-    if (location) return; // a real location owns the camera via initialRegion
     // A CAMERA-MOVING intent arrival (Tasks focusFlag / deep-link flagId) owns the
     // camera — permanently RETIRE the auto-fit here. These params SELF-CLEAR shortly
     // after they fire (the deep-link clears flagId ~800ms after animating to its
@@ -1448,19 +1517,47 @@ export default function MapScreen() {
     // viewport off the deep-linked flag. Set the one-time flag BEFORE the flags-loaded
     // gate so it also covers a deep-link that arrives before the first flags-load.
     // NOTE: openReport is deliberately NOT here — it opens the report sheet + kicks
-    // requestLocation but moves NO map camera, so a null-location Report-pill arrival
-    // still earns the honest fit behind the sheet (T7's whole point). If location DOES
-    // resolve via that requestLocation, the `if (location) return` guard supersedes it.
+    // requestLocation but moves NO map camera, so a Report-pill arrival still earns
+    // the honest fit behind the sheet (T7's whole point). If location resolves via
+    // that requestLocation, the fit simply becomes the LOCATED one below.
     if (route.params?.focusFlag || route.params?.flagId) {
       didInitialFitRef.current = true;
       return;
     }
     if (loadingFlags || flags.length === 0) return; // wait for the first non-empty load
-    // No-gesture proxy: currentRegionRef only syncs to `location` on this screen, so
-    // `=== DEFAULT_REGION` means "still the seed" — no resolved location. (A user pan on
-    // the pre-fit SF DEFAULT isn't tracked — no onRegionChange — but the fit only replaces
-    // that irrelevant default frame with the real flags; an INTENT camera is retired above.)
-    if (currentRegionRef.current !== DEFAULT_REGION) return;
+
+    let region: PlatformMapRegion;
+    // Does this frame END the question, or is it the honest placeholder while
+    // the question is still being asked?
+    let isFinalFrame: boolean;
+    if (location) {
+      // M2, the LOCATED frame. No-gesture proxy by object identity: `initialRegion`
+      // is memoized on `location` alone and the sync effect above assigns that exact
+      // object, so `=== initialRegion` means "still the seed". Anything that has
+      // since claimed the camera — an address search, a saved-place jump — reassigns
+      // this ref at its own call site, and the fit stands down.
+      if (currentRegionRef.current !== initialRegion) return;
+      // The user dot is a MEMBER of the fit, not just its origin: a viewer standing
+      // just outside a tight cluster would otherwise lose their own dot off the edge.
+      const fitted = regionForNearestFlags(location, flags);
+      if (!fitted) return; // nothing fittable — the location box stands
+      region = fitted;
+      isFinalFrame = true;
+    } else {
+      // A read is in flight, so the answer is coming: painting the no-location
+      // frame now would only flash a third camera between the seed and the real
+      // first frame. `locating` always settles — requestLocation clears it in a
+      // finally, and the arrival effect clears it when permission is not granted.
+      if (locating) return;
+      if (didFallbackFitRef.current) return; // the placeholder paints once
+      // No-gesture proxy: currentRegionRef only syncs to `location` on this screen, so
+      // `=== DEFAULT_REGION` means "still the seed" — no resolved location. (A user pan on
+      // the pre-fit SF DEFAULT isn't tracked — no onRegionChange — but the fit only replaces
+      // that irrelevant default frame with the real flags; an INTENT camera is retired above.)
+      if (currentRegionRef.current !== DEFAULT_REGION) return;
+      region = regionForFlags(flags);
+      isFinalFrame = false;
+    }
 
     // R-13 / SR-105. This used to set the one-time flag and then call
     // `mapRef.current?.snapToRegion(region)`. The `?.` is the bug: the map ref
@@ -1481,14 +1578,52 @@ export default function MapScreen() {
         requestAnimationFrame(() => commitFit(attempts - 1));
         return;
       }
-      // Only NOW is the fit real, so only now does it count as done.
-      didInitialFitRef.current = true;
-      const region = regionForFlags(flags);
+      // Only NOW is the fit real, so only now does it count as done — and only a
+      // FINAL frame closes the question. A placeholder latches its own ref so it
+      // paints once without locking out the located fit behind it.
+      if (isFinalFrame) didInitialFitRef.current = true;
+      else didFallbackFitRef.current = true;
       currentRegionRef.current = region; // keep the viewport gate honest post-fit
       mapRef.current.snapToRegion(region);
     };
     commitFit(10);
-  }, [flags, loadingFlags, location, route.params?.focusFlag, route.params?.flagId]);
+  }, [
+    flags,
+    loadingFlags,
+    locating,
+    location,
+    initialRegion,
+    route.params?.focusFlag,
+    route.params?.flagId,
+  ]);
+
+
+  // The pin callout's "Open details" — the one path where the surface being
+  // put away is the very thing that opened the sheet. That is the point: the
+  // callout has said what it has to say, and leaving it up only means its red
+  // stripe and its blue button ghost through the sheet on top of it (§15).
+  const handleOpenDetails = useCallback(
+    (flag: FlagRow) => {
+      clearMapSurfaces();
+      setSelectedFlag(flag);
+    },
+    [clearMapSurfaces],
+  );
+
+  // Leaving the tab is the other half of the same rule. The map used to REMEMBER
+  // a half-finished filter session across tabs — the walk left the panel and a
+  // callout open, came back an hour later in dark mode, and both were still
+  // there (D3). The camera is deliberately kept: where you were looking is worth
+  // remembering; a panel you abandoned is not.
+  useFocusEffect(
+    useCallback(
+      () => () => {
+        setFiltersOpen(false);
+        setToolsOpen(false);
+      },
+      [],
+    ),
+  );
 
   // Long-press anywhere on the map → confirm prompt → open the report
   // modal with that coord pre-filled. The confirm step matters: a
@@ -1543,6 +1678,7 @@ export default function MapScreen() {
     // sheet. That is the identical reasoning this screen already recorded for
     // the screen-reader auto-open of the Nearby sheet.
     reportTrigger.register();
+    clearMapSurfaces();
     if (Platform.OS === 'web') {
       setDropLocation(coord);
       setReportOpen(true);
@@ -1561,8 +1697,9 @@ export default function MapScreen() {
       },
     ]);
     // reportTrigger is memoized by useSurfaceTrigger, so depending on it does
-    // not re-create this callback every render.
-  }, [authUser, reportTrigger]);
+    // not re-create this callback every render; clearMapSurfaces is stable for
+    // the same reason (empty deps, setters and a ref only).
+  }, [authUser, reportTrigger, clearMapSurfaces]);
 
   // S3 detail-sheet handlers. FlagDetailModal does the server mutation itself and
   // gates its own actions by auth/ownership (no new writes here — FORK 5 read
@@ -1702,7 +1839,7 @@ export default function MapScreen() {
         showsUserLocation
         reducedMotion={reducedMotion}
         onLongPressMap={handleMapLongPress}
-        onOpenDetails={setSelectedFlag} // S3: pin callout "Open details" → detail sheet
+        onOpenDetails={handleOpenDetails} // S3: pin callout "Open details" → detail sheet
         heatCells={heatCells}
         heatmapMode={HEATMAP_MODE}
         // T1 (F2-01): the full vertical band a callout must clear — safe area +
@@ -1835,7 +1972,7 @@ export default function MapScreen() {
             <View style={styles.barSpacer} pointerEvents="box-none" />
             {/* Search */}
             <PressableScale
-              onPress={() => setSearchOpen(true)}
+              onPress={() => { clearMapSurfaces(); setSearchOpen(true); }}
               style={styles.barBtn}
               accessibilityRole="button"
               accessibilityLabel="Search by address"
@@ -1858,11 +1995,14 @@ export default function MapScreen() {
                 strokeWidth={2.2}
               />
             </PressableScale>
-            {/* ⋯ overflow — reveals the inline tool sheet. Holds legendTrigger's
-                focus-return ref: closing the Map legend returns the SR cursor
-                here, the control that surfaced it. */}
+            {/* ⋯ overflow — reveals the inline tool sheet. It NO LONGER holds
+                legendTrigger's focus-return ref: M4 gave the legend its own
+                persistent door in the bottom bar, and that pill is where the SR
+                cursor now lands on close, from either path. One trigger, one
+                landing place, both of them permanent map chrome — where a ⋯ row
+                is transient and the ⋯ button is only the legend's door by
+                accident of where the row used to live. */}
             <PressableScale
-              ref={legendTrigger.ref}
               onPress={() => { setFiltersOpen(false); setToolsOpen((v) => !v); }}
               style={[styles.barBtn, toolsOpen && styles.barBtnActive]}
               pressedTint={toolsOpen ? color.ctaFillPressed : color.borderPressed}
@@ -1909,7 +2049,7 @@ export default function MapScreen() {
             borderRadius={radius.lg}
           >
             <PressableScale
-              onPress={() => { setToolsOpen(false); setSharedModal('feedback'); }}
+              onPress={() => { clearMapSurfaces(); setSharedModal('feedback'); }}
               style={styles.toolRow}
               accessibilityRole="button"
               accessibilityLabel="Send feedback"
@@ -1920,10 +2060,13 @@ export default function MapScreen() {
             </PressableScale>
             <PressableScale
               onPress={() => {
-                // Focus-return is armed on the ⋯ button (legendTrigger.ref); the
-                // legend returns the SR cursor there on close. Close the sheet
-                // first so it isn't stranded behind the modal.
-                setToolsOpen(false);
+                // Focus-return is armed on the persistent Legend pill in the
+                // bottom bar, which now holds legendTrigger.ref (M4): it is the
+                // legend's own door and it survives this sheet closing, where a
+                // ⋯ tool row does not. clearMapSurfaces closes this sheet
+                // (and the filter panel, and the callout) so nothing is left
+                // stranded behind the modal.
+                clearMapSurfaces();
                 legendTrigger.register();
                 setLegendOpen(true);
               }}
@@ -1945,7 +2088,7 @@ export default function MapScreen() {
               <AppText variant="label" style={styles.toolRowText}>Refresh flags</AppText>
             </PressableScale>
             <PressableScale
-              onPress={() => { setToolsOpen(false); setPlacesOpen(true); }}
+              onPress={() => { clearMapSurfaces(); setPlacesOpen(true); }}
               style={styles.toolRow}
               accessibilityRole="button"
               accessibilityLabel={savedPlaces.length === 0 ? 'Save a place' : 'Manage saved places'}
@@ -2348,7 +2491,7 @@ export default function MapScreen() {
                         </View>
                       </Pressable>
                       <Pressable
-                        onPress={() => setPresetsModalOpen(true)}
+                        onPress={() => { clearMapSurfaces(); setPresetsModalOpen(true); }}
                         style={({ pressed }) => [
                           styles.presetBtn,
                           styles.presetBtnSecondary,
@@ -2625,7 +2768,58 @@ export default function MapScreen() {
           {/* Flex slot reserves the left half so HeatmapLegend wraps against the
               true remaining width beside the intrinsic-width fabColumn, instead
               of overlapping the FABs at narrow widths (G6). */}
-          <View style={styles.legendSlot}>{heatmapEnabled ? <HeatmapLegend /> : null}</View>
+          <View style={styles.legendSlot} pointerEvents="box-none">
+            {heatmapEnabled ? <HeatmapLegend /> : null}
+            {/* M4 (Q10): the Legend is ONE tap. It was two — ⋯ then a row filed
+                under a "?" icon — and the legend is the product's TEACHING
+                surface: five colours, five numbers, five human sentences. The
+                thing that explains the map should not be filed under help.
+                It wears the discs it explains: severity 1, 3 and 5, decorative,
+                because the button already says "Legend" and the sheet behind it
+                speaks the whole grammar.
+                Same crystal recipe as the List pill opposite (forceEngineered +
+                liteColors = engineered gradient, so this adds ZERO blur panes to
+                the budget — the command bar's single live pane is still the only
+                one on this screen). The ⋯ row stays where it is for muscle
+                memory; HeatmapLegend above is a different object and untouched. */}
+            <PressableScale
+              ref={legendTrigger.ref}
+              style={styles.fabCrystalPill}
+              // The glass hides a background dim, so feedback is the scale
+              // spring — the List-pill precedent, matched exactly.
+              dimOnPress={false}
+              onPress={() => {
+                // Put the map's own surfaces away first (S4) so nothing is
+                // stranded behind the modal, then arm focus-return BEFORE the
+                // setState that opens it.
+                clearMapSurfaces();
+                legendTrigger.register();
+                setLegendOpen(true);
+              }}
+              accessibilityRole="button"
+              accessibilityLabel="Map legend"
+              accessibilityHint="Opens a guide explaining flag categories and severity"
+            >
+              <GlassSurface
+                variant="row"
+                forceEngineered
+                liteColors={[color.glassMapCrystal0, color.glassMapCrystal1]}
+                borderRadius={radius.circle}
+                style={StyleSheet.absoluteFill}
+                pointerEvents="none"
+              />
+              <View style={styles.fabSecondaryRow}>
+                <View style={styles.legendGlyph}>
+                  {/* Fixed boxes cap by box (T3): a 12pt disc has no room to
+                      grow, so the digit is frozen rather than capped high. */}
+                  <SeverityDisc severity={1} size={12} digitSize={8} maxFontSizeMultiplier={1} />
+                  <SeverityDisc severity={3} size={12} digitSize={8} maxFontSizeMultiplier={1} />
+                  <SeverityDisc severity={5} size={12} digitSize={8} maxFontSizeMultiplier={1} />
+                </View>
+                <AppText variant="label" style={styles.fabCrystalText}>Legend</AppText>
+              </View>
+            </PressableScale>
+          </View>
           <View style={styles.fabColumn}>
             {/* Recenter — demoted from the old top tray into the FAB column, at the
                 top of the stack (Direction B, matches the governing mockup). A
@@ -2708,6 +2902,7 @@ export default function MapScreen() {
                 // register() captures this button's native handle BEFORE the
                 // sheet opens, so closing it can return the cursor here.
                 nearbyTrigger.register();
+                clearMapSurfaces();
                 setNearbyOpen(true);
               }}
               accessibilityRole="button"
@@ -2745,6 +2940,7 @@ export default function MapScreen() {
                 onPress={() => {
                   // Captures this FAB's handle before the sheet opens.
                   reportTrigger.register();
+                  clearMapSurfaces();
                   // FIX C (Decision 6, Option A): the `location` state can be
                   // minutes old by the time the user taps Report. Kick off a
                   // fresh GPS read fire-and-forget — ReportFlagModal reads its
@@ -2928,12 +3124,19 @@ export default function MapScreen() {
           // (delta 0.02) since geocoded results often point at a
           // neighborhood centroid, not a precise pin — too tight and
           // the user lands "next to" their target.
-          mapRef.current?.animateTo({
+          const searched = {
             latitude: result.lat,
             longitude: result.lng,
             latitudeDelta: 0.02,
             longitudeDelta: 0.02,
-          });
+          };
+          // M2: a searched centre OWNS the camera. Recording it here is what the
+          // one-time first-frame fit reads as "something already claimed this" —
+          // without it, a search that lands before the first flags-load would be
+          // yanked back to the fitted frame a moment later. It also keeps the D4
+          // viewport geofence pointed where the user is actually looking.
+          currentRegionRef.current = searched;
+          mapRef.current?.animateTo(searched);
         }}
       />
 
@@ -2957,12 +3160,15 @@ export default function MapScreen() {
         onJumpToPlace={(place) => {
           // Tighter zoom (delta 0.01) than search results because the
           // user pinned this exact spot — they want street-level detail.
-          mapRef.current?.animateTo({
+          const jumped = {
             latitude: place.lat,
             longitude: place.lng,
             latitudeDelta: 0.01,
             longitudeDelta: 0.01,
-          });
+          };
+          // M2: a saved-place jump OWNS the camera, same claim as a search.
+          currentRegionRef.current = jumped;
+          mapRef.current?.animateTo(jumped);
         }}
       />
 
@@ -3007,6 +3213,7 @@ export default function MapScreen() {
           // Confirm with real VoiceOver before trusting it; if it is broken the
           // fix is NOT a comment change, and it is not in Wave 1's scope.
           if (screenReaderOn) {
+            clearMapSurfaces();
             setSelectedFlag(flag);
             return;
           }
@@ -3709,7 +3916,14 @@ const makeStyles = (color: ColorTheme) =>
       flex: 1,
       marginRight: spacing.sm,
       alignItems: 'flex-start',
+      // The heat legend (when on) stacks ABOVE the persistent Legend pill, so
+      // the pill keeps the bottom line with the List pill opposite it. Same
+      // gap as fabColumn so the two sides of the bottom bar breathe alike.
+      gap: 10,
     },
+    // The three discs the button explains. Tight gap: they read as one glyph,
+    // not as three controls.
+    legendGlyph: { flexDirection: 'row', alignItems: 'center', gap: 2 },
     fabColumn: {
       alignItems: 'flex-end',
       gap: 10,

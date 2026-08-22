@@ -7,7 +7,7 @@ import { Check } from 'lucide-react-native';
 import ClusteredMapView from 'react-native-map-clustering';
 import { Callout, Marker, Polygon, PROVIDER_DEFAULT } from 'react-native-maps';
 import type MapView from 'react-native-maps';
-import { font, heatmapSeverity as severityTokens, radius, shadow, spacing } from '@/theme';
+import { a11y, font, heatmapSeverity as severityTokens, radius, shadow, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { CATEGORY_LABELS, SEVERITY_LABELS, severityColor, STATUS_LABELS } from '@/lib/flags';
 import { relativeTime } from '@/lib/relativeTime';
@@ -27,6 +27,26 @@ export interface PlatformMapRegion {
 // T1 (F2-01): native callouts render roughly this tall above the pin (title +
 // severity sentence + reported line + "Open details" row). Code-inferred;
 // R2-D12 device-verifies the real box.
+// ── PIN GEOMETRY (M3 / Q9, 2026-08-21) ───────────────────────────────────────
+// The DRAWING is 26pt of severity drop inside a hairline; the TARGET is 44pt.
+// react-native-maps gives a Marker no hitSlop, so the wrapper IS the target and
+// the only way to reach the 44pt floor is to grow the box around an unchanged
+// drawing. Growing it moves the tip off the wrapper's bottom edge, so `anchor`
+// has to be re-derived rather than left at y=1 — otherwise every pin on the map
+// would sit 2.9pt north of the thing it is reporting.
+//
+// Derived, not typed: change a number below and the anchor follows. The stack is
+// a square rotated -45deg, so its lowest point is half a diagonal below centre,
+// and the sharp (radius-0) corner is the one that lands there.
+const PIN_DROP_SIZE = 26;
+const PIN_HAIRLINE_WIDTH = 0.5;
+const PIN_WRAP_SIZE = a11y.minTargetSize;
+const PIN_TIP_BELOW_CENTER = ((PIN_DROP_SIZE + 2 * PIN_HAIRLINE_WIDTH) * Math.SQRT2) / 2;
+const PIN_ANCHOR = {
+  x: 0.5,
+  y: (PIN_WRAP_SIZE / 2 + PIN_TIP_BELOW_CENTER) / PIN_WRAP_SIZE,
+};
+
 const CALLOUT_HEADROOM_PX = 220;
 
 // T1 (F2-01): bias a callout-bound camera target so the pin lands BELOW the
@@ -78,6 +98,14 @@ export interface PlatformMapHandle {
     opts?: { calloutClear?: boolean },
   ) => void;
   showCallout: (flagId: string) => void;
+  /** S4 / D6: put the callout away. Opening a sheet from the map used to leave
+   *  the callout up UNDER it — the walk found three surfaces stacked, with
+   *  "SEVERITY 4 OF 5" peeking above the report sheet's top edge and the
+   *  callout's blue button ghosting through the legend and the filter panel.
+   *  Clearing `focusedFlagId` does NOT do this: that prop only drives marker
+   *  opacity. The native callout is owned by the marker, so hiding it has to be
+   *  imperative, exactly like showing it. */
+  hideCallout: () => void;
   /** Step the zoom by `delta` levels (+1 in, -1 out). Additive to the handle so
    *  the overlay's app-styled 44pt buttons can drive zoom — the single-pointer
    *  zoom-out affordance iOS otherwise lacks (WCAG 2.5.7). */
@@ -254,6 +282,16 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(function Pla
       showCallout: (id) => {
         markerRefs.current[id]?.showCallout();
       },
+      hideCallout: () => {
+        // react-native-maps offers no "which callout is open" query, and calling
+        // hideCallout on a marker with nothing showing is a no-op — so sweep the
+        // dict. It is bounded by the markers currently mounted (the same set the
+        // prune effect above keeps honest), and it runs on a sheet OPEN, not on
+        // pan, so this is never on the frame path.
+        for (const marker of Object.values(markerRefs.current)) {
+          marker?.hideCallout();
+        }
+      },
       // SW-37: the midpoint of the visible bounds. getMapBoundaries is already
       // the read this file trusts for viewport questions (see handlePinPress),
       // so this adds no new dependency on map internals.
@@ -318,6 +356,23 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(function Pla
       clusterColor={color.ctaFill}
       clusterTextColor={color.textOnBrand}
       radius={40}
+      // M1: the product's markers are the only markers. Apple's own POI badges
+      // (restaurants, hotels, shops) rendered at full density under our pins and
+      // roughly DOUBLED at accessibility type sizes, because MapKit scales its
+      // labels with Dynamic Type too — the critic pass caught a dozen saturated
+      // badges owning the first frame and a severity pin losing to a pizza icon.
+      //
+      // Q8 asked for a CATEGORY filter first (keep transit/park/hospital/school,
+      // drop food/hotel/shops) and fall back to all-off. The filter is NOT
+      // available: react-native-maps 1.20.1 bridges this as a plain BOOL
+      // (ios/AirMaps/AIRMapManager.m:92) and exposes no pointOfInterestFilter at
+      // all, so MKPointOfInterestFilter (iOS 13+) never reaches the view. Hence
+      // fallback A. Revisit if the library ever bridges the filter.
+      //
+      // iOS-only by construction: the prop is an AIRMap (Apple) property, so the
+      // Google/Android arm and the web (Leaflet/CartoDB) arm are unaffected.
+      // PlatformMap is shared, so the Home peek inherits this in the same edit.
+      showsPointsOfInterest={false}
       // PINCH-ZOOM IS THE PLATFORM'S, NOT OURS (map-gestures SPEC §1). Apple
       // Maps already gives spread-to-zoom-in / pinch-to-zoom-out focused under
       // the fingers, simultaneous with one-finger pan, and this map is
@@ -454,7 +509,9 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(function Pla
             markerRefs.current[f.id] = r;
           }}
           coordinate={{ latitude: f.lat, longitude: f.lng }}
-          anchor={{ x: 0.5, y: 1 }}
+          // Q9: the 44pt target box is taller than the drawing, so the tip is no
+          // longer the wrapper's bottom edge. PIN_ANCHOR re-derives where it is.
+          anchor={PIN_ANCHOR}
           // Snapshot the custom teardrop once (PROTECT-15). Focus dimming rides the
           // native opacity prop, so it still updates without a re-snapshot.
           tracksViewChanges={false}
@@ -495,9 +552,13 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(function Pla
               tooltip. The visible "Open details ›" row is the affordance cue. */}
           <Callout tooltip onPress={onOpenDetails ? () => onOpenDetails(f) : undefined}>
             <View style={styles.callout}>
+              {/* D16: this spread used to sit INSIDE the comment on the line
+                  below, so the bar was never actually hidden — VoiceOver stopped
+                  on an unnamed element before the title. The severity it encodes
+                  is spoken by the census line two rows down. */}
               <View
                 style={[styles.calloutSevBar, { backgroundColor: severityColor(f.severity) }]}
-                // Decorative color bar — severity info is in the text below {...decorativeProps}
+                {...decorativeProps}
               />
               <View style={styles.calloutBody}>
                 <AppText
@@ -633,9 +694,23 @@ const makeStyles = (color: ColorTheme) =>
     // glyph counter-rotates upright. Anonymous pins add pinRotAnon — a second
     // #0F1B2D ring with a white gap (the "double ring"). All literals are
     // mode-independent (PROTECT-16).
+    //
+    // RETUNED 2026-08-21 (M3 / board 02). The pin was the heaviest-drawn object
+    // on the map — a cartoon-sticker outline (2.5px white ring + a full-strength
+    // 1px navy hairline) fighting the crystal chrome above it and out-shouting
+    // the calm numbered discs the rest of the product is built from. The ring
+    // goes to 2, the hairline to 0.5 at 0.6 alpha. Both still LITERAL and still
+    // mode-independent (PROTECT-16) — only the numbers moved — and the GLASS
+    // §12.4 two-regime union is intact: the white ring carries the pin over dark
+    // tiles, the navy hairline carries it over light ones (4.58:1 on #FFF at the
+    // new alpha, over the 3:1 boundary floor). The drop itself is still 26x26.
+    //
+    // pinWrap is the TARGET, not the drawing: react-native-maps gives a Marker no
+    // hitSlop, so 38x40 was the whole reachable area and it missed the 44pt floor
+    // in both axes. The box grows to a11y.minTargetSize; nothing inside it moves.
     pinWrap: {
-      width: 38,
-      height: 40,
+      width: PIN_WRAP_SIZE,
+      height: PIN_WRAP_SIZE,
       alignItems: 'center',
       justifyContent: 'center',
     },
@@ -657,17 +732,18 @@ const makeStyles = (color: ColorTheme) =>
       borderTopRightRadius: 14,
       borderBottomRightRadius: 14,
       borderBottomLeftRadius: 0,
-      borderWidth: 1,
-      borderColor: '#0F1B2D',
+      borderWidth: PIN_HAIRLINE_WIDTH,
+      // 0.6 alpha over the same #0F1B2D — a drawn edge, not an outline.
+      borderColor: 'rgba(15, 27, 45, 0.6)',
     },
     pinDrop: {
-      width: 26,
-      height: 26,
+      width: PIN_DROP_SIZE,
+      height: PIN_DROP_SIZE,
       borderTopLeftRadius: 13,
       borderTopRightRadius: 13,
       borderBottomRightRadius: 13,
       borderBottomLeftRadius: 0,
-      borderWidth: 2.5,
+      borderWidth: 2,
       borderColor: '#fff',
       alignItems: 'center',
       justifyContent: 'center',

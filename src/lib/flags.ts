@@ -1609,14 +1609,14 @@ export const SEVERITY_ORDER: FlagSeverity[] = [1, 2, 3, 4, 5];
 export function severityColor(s: FlagSeverity): string {
   // Single source of truth: the design-system severity ramp in theme.ts
   // (Claude Design yellow→red). Reading the token here keeps the map pins,
-  // Tasks dots, and LegendModal swatches in lockstep with SeverityBadge.
+  // Tasks dots, and LegendModal swatches in lockstep with SeverityDisc.
   return severityRamp[s]?.color ?? themeColor.textSubtle;
 }
 
 // Short human label and color name for each severity. The color name is read
 // aloud so meaning isn't carried by color alone. The labels DERIVE from the
 // design-system severity ramp (theme.ts) so the report form, legend, map
-// callouts, and SeverityBadge always name a severity identically — one source.
+// callouts, and FlagCard always name a severity identically — one source.
 export const SEVERITY_LABELS: Record<FlagSeverity, string> = {
   1: severityRamp[1].label,
   2: severityRamp[2].label,

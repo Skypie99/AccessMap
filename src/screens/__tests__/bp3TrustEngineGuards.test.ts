@@ -121,11 +121,22 @@ describe('T8 — one spoken voice (source contract)', () => {
     expect(tasksScreen).toMatch(/Verify this flag — \$\{actionSubject\}/);
   });
 
-  it('Home keeps the status word when distance renders (F4-10)', () => {
-    // SR-042: the SPOKEN label now uses speakDistance ("297 meters away"),
-    // not the visible abbreviation ("297 m") — the point of this assertion is
-    // that the status word survives alongside the distance, which it does.
-    expect(homeScreen).toMatch(/statusA11y\(item\.f\.status\)\}, \$\{speakDistance\(item\.km\)\}/);
+  it('list rows keep the status word when distance renders (F4-10)', () => {
+    // SR-042: the SPOKEN label uses speakDistance ("297 meters away"), not the
+    // visible abbreviation ("297 m") — the point of this assertion is that the
+    // status word survives alongside the distance, which it does.
+    //
+    // RE-PINNED 2026-08-21 (Phase 2a): Home's row is FlagCard's `row` density,
+    // and the sentence is built once in `flagCardA11yLabel`. Pinning the
+    // builder is stronger than pinning one screen's copy of it — the status
+    // word can no longer be dropped from one list and kept in another.
+    const flagCard = readSrc('components/ui/FlagCard.tsx');
+    expect(flagCard).toMatch(
+      /\$\{severityA11y\(flag\.severity\)\}, \$\{statusA11y\(flag\.status\)\}/,
+    );
+    expect(flagCard).toMatch(/\$\{head\}, \$\{speakDistance\(distanceKm\)\}/);
+    // and Home does not build a second, drifting one
+    expect(homeScreen).not.toMatch(/statusA11y\(/);
   });
 
   it('the Legend severity digit is decorative — now via the SeverityDisc primitive (F4-01)', () => {
