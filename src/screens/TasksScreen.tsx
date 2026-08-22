@@ -1532,6 +1532,17 @@ export default function TasksScreen() {
         <FlagDetailModal
           visible={selectedFlag !== null}
           flag={selectedFlag}
+          // Q2 = C. This is the triage queue, so the sheet leads with the
+          // community verb and pins the siblings to its foot. Every other entry
+          // point defaults to 'read'.
+          primaryIntent="triage"
+          // The card beside this sheet already knows the distance; the sheet
+          // holds no location permission of its own and must not take one.
+          distanceKm={
+            userLocation && selectedFlag
+              ? haversineKm(userLocation, { lat: selectedFlag.lat, lng: selectedFlag.lng })
+              : null
+          }
           onClose={() => setSelectedFlag(null)}
           onChanged={applyStatusChange}
           onEdited={(updated) => patchFlag(updated.id, updated)}

@@ -61,8 +61,13 @@ describe('S3 source invariants — MapScreen integration hub', () => {
     expect(map).toContain(
       "const FlagDetailModal = React.lazy(() => import('@/components/FlagDetailModal'));",
     );
-    const mount = around(map, 'visible={selectedFlag !== null}', 400);
+    // 700, not 400: GSP-02 §2.1 added `distanceKm` to the mount (the sheet's
+    // meta line says how far away the barrier is, and it takes the number from
+    // the caller rather than acquiring a location permission of its own). The
+    // five props this test is about are unchanged; only the window is.
+    const mount = around(map, 'visible={selectedFlag !== null}', 700);
     expect(mount).toContain('flag={selectedFlag}');
+    expect(mount).toContain('distanceKm={');
     expect(mount).toContain('onClose={() => setSelectedFlag(null)}');
     expect(mount).toContain('onChanged={handleDetailChanged}');
     expect(mount).toContain('onViewOnMap={handleDetailViewOnMap}');

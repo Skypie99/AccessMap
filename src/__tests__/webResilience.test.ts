@@ -48,8 +48,12 @@ describe('L2 — FlagDetailModal coords copy goes through handleCopyCoords', () 
   });
 
   it('the coords copy Pressable uses the handler, not an inline Share.share', () => {
-    const row = around(modal, 'styles.coordsRow', 900);
-    expect(row).toContain('onPress={handleCopyCoords}');
+    // RE-PINNED 2026-08-21 (GSP-02 §2.1, Q17): the coords ROW (selectable
+    // monospace + a copy glyph) became one "Copy coordinates" LINK. The rule is
+    // untouched — whatever draws it, the copy path goes through the tested
+    // handler and never an inline Share.share.
+    const row = around(modal, 'onPress={handleCopyCoords}', 900);
+    expect(row).toContain('styles.copyCoordsLink');
     expect(row).not.toContain('Share.share');
   });
 

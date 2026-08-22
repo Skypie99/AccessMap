@@ -122,7 +122,15 @@ describe('SW-34 — Anonymous means a choice, not a missing name', () => {
     // a person and every one of them is correct. Pinned so a later sweep does
     // not "finish" SW-34 by collapsing them.
     const detail = code('components/FlagDetailModal.tsx');
-    expect(detail).toContain('accessibilityLabel="Reported anonymously"');
+    // RE-PINNED 2026-08-21 (GSP-02 §2.1). Four labelled meta rows became one
+    // sentence, so "Reported anonymously" is no longer a badge's own
+    // accessibilityLabel — it is the attribution clause of the meta line's
+    // composed name. Same three cases, same three strings, same distinction:
+    // the SPOKEN half still says "Reported anonymously" rather than "Reported
+    // by Anonymous", because the flag has no author, it was not written by
+    // somebody called Anonymous.
+    expect(detail).toContain("shownFlag.user_id === null ? 'Anonymous'");
+    expect(detail).toContain("'Reported anonymously'");
     expect(detail).toContain("{isOwn ? 'You' : 'Another community member'}");
   });
 

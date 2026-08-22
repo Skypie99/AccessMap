@@ -129,12 +129,22 @@ describe('zero-delta adoption pinning (source)', () => {
 });
 
 describe('the severity grammar speaks on every surface (source)', () => {
-  it('FlagDetail: chip shows number · word, a11y keeps "of 5", stake line present', () => {
+  it('FlagDetail: census line shows number · word, a11y keeps "of 5", stake line present', () => {
     const s = readFileSync('src/components/FlagDetailModal.tsx', 'utf8');
-    // visible chip: "Severity {n} · {word}"
-    expect(s).toMatch(/Severity \{shownFlag\.severity\} · \{SEVERITY_LABELS\[shownFlag\.severity\]\}/);
-    // the "of 5" anchor cannot regress — a11y stays pinned to severityA11y
-    expect(s).toMatch(/accessibilityLabel=\{severityA11y\(shownFlag\.severity\)\}/);
+    // RE-PINNED 2026-08-21 (GSP-02 §2.1). The amber severity pill and the
+    // status pill are gone from this sheet: C2 says the severity colour appears
+    // ONCE per object and it is now the header stripe, and C3 says status is a
+    // word inside a flag object, not a pill. Both words survive, joined into
+    // ONE census line in the callout's order (F2) — which is why the visible
+    // pattern moved and the number/word pairing did not.
+    expect(s).toMatch(
+      /Severity \$\{shownFlag\.severity\} of 5 · \$\{SEVERITY_LABELS\[shownFlag\.severity\]\}/,
+    );
+    // The "of 5" anchor cannot regress. It is now spoken through the SAME
+    // helper joined with statusA11y, because one line replaced two elements
+    // that each carried a composite label — so the sentence a screen reader
+    // hears is unchanged even though the drawing is not.
+    expect(s).toMatch(/severityA11y\(shownFlag\.severity\)\}, \$\{statusA11y\(status\)\}/);
     // the quiet stake line (SEVERITY_DESCRIPTIONS, flags.ts — not theme.ts)
     expect(s).toMatch(/SEVERITY_DESCRIPTIONS\[shownFlag\.severity\]/);
   });
