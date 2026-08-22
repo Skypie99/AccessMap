@@ -76,9 +76,11 @@
  */
 import fs from 'fs';
 import path from 'path';
+import { font } from '@/theme';
 import { stripComments } from './support/stripComments';
 
 const SRC = path.join(__dirname, '..');
+const fontSizeXl = font.size.xl;
 
 /**
  * Comments are stripped before scanning, and that is not incidental here: the
@@ -263,7 +265,12 @@ describe('T5 / D23 — the Profile tier-explainer header had no escape', () => {
 
   it('the title floors its width instead of taking the button\'s leftovers', () => {
     const block = styleBlock(src, 'tierHeaderTitle');
-    expect(block).toContain('fontSize: 18'); // non-vacuity
+    // RE-PINNED (GSP-06 token pass): the literal 18 became `font.size.xl`,
+    // which IS 18. The non-vacuity check is the same one — that this block is
+    // really the title's style and not an empty match — expressed against the
+    // token now that the file states its sizes as tokens.
+    expect(block).toContain('fontSize: font.size.xl'); // non-vacuity
+    expect(fontSizeXl).toBe(18);
     expect(NUMERIC_FLEX_BASIS.test(block)).toBe(false);
     expect(block).toMatch(/minWidth:\s*\d+/);
     expect(block).toContain('flexShrink: 1');
