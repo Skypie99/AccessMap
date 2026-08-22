@@ -22,7 +22,7 @@
  * channels at capacity (PROTECT); a disc/digit would be a fifth. List, card,
  * legend, and onboarding glyphs only.
  */
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, useWindowDimensions, View } from 'react-native';
 import { AppText } from '@/components/ui/AppText';
 import { decorativeProps } from '@/lib/accessibility';
 import { severityColor } from '@/lib/flags';
@@ -42,6 +42,15 @@ type SeverityDiscProps = {
   maxFontSizeMultiplier?: number;
   /** Hide from the a11y tree (default true — the host row speaks the severity). */
   decorative?: boolean;
+  /**
+   * F4 — grow the whole disc with the system text size instead of holding a
+   * fixed circle around a capped digit. At large type a 24pt disc beside 40pt
+   * text reads as a bullet, not as the unit of the system; with this on, the
+   * circle and the digit scale together (to 2x) so the disc stays the same
+   * OBJECT at every size. Off by default: every existing call site keeps its
+   * fixed box byte-for-byte.
+   */
+  scaleWithType?: boolean;
 };
 
 /**
@@ -62,22 +71,34 @@ type SeverityDiscProps = {
  */
 export const DISC_MAX_FONT_SCALE = 1.6;
 
+/** F4: the disc grows with the text, but never past double. */
+export const DISC_MAX_GROWTH = 2;
+
 export function SeverityDisc({
   severity: sev,
   size = 24,
   digitSize = font.size.xs,
   maxFontSizeMultiplier = DISC_MAX_FONT_SCALE,
   decorative = true,
+  scaleWithType = false,
 }: SeverityDiscProps) {
+  const { fontScale } = useWindowDimensions();
+  const growth = scaleWithType ? Math.min(fontScale, DISC_MAX_GROWTH) : 1;
+  const boxSize = Math.round(size * growth);
+  const glyphSize = Math.round(digitSize * growth);
+
   return (
     <View
-      style={[styles.disc, { width: size, height: size, backgroundColor: severityColor(sev) }]}
+      style={[styles.disc, { width: boxSize, height: boxSize, backgroundColor: severityColor(sev) }]}
       {...(decorative ? decorativeProps : null)}
     >
       <AppText
         variant="label"
-        style={[styles.digit, { fontSize: digitSize, color: severity[sev].textOnColor }]}
-        maxFontSizeMultiplier={maxFontSizeMultiplier}
+        style={[styles.digit, { fontSize: glyphSize, color: severity[sev].textOnColor }]}
+        // When the BOX grows with the text there is nothing left to protect it
+        // from, and capping the glyph would leave a small digit rattling inside
+        // a big circle. When it does not, the cap is what keeps the digit in.
+        maxFontSizeMultiplier={scaleWithType ? 1 : maxFontSizeMultiplier}
       >
         {sev}
       </AppText>

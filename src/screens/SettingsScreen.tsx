@@ -13,6 +13,7 @@ import {
 import { ChevronRight, ClipboardCopy, Moon, PlayCircle, Smartphone, Sun } from 'lucide-react-native';
 import { androidSwitchThumbOff, font, radius, shadow, spacing } from '@/theme';
 import { type ColorTheme, type ThemeMode, useColor, useThemeMode } from '@/theme/ThemeContext';
+import { LinearGradient } from 'expo-linear-gradient';
 import { AppText } from '@/components/ui/AppText';
 import { TypeBlock, TYPE_BLOCK } from '@/components/ui/TypeBlock';
 import { GlassSurface } from '@/components/ui/GlassSurface';
@@ -561,6 +562,12 @@ export default function SettingsScreen() {
           is no chrome pane here.) */}
       <View style={styles.stageRoot}>
         <ScreenStage />
+        <LinearGradient
+          colors={[color.stage0, 'transparent']}
+          style={styles.statusLedge}
+          pointerEvents="none"
+          {...decorativeProps}
+        />
         <ScrollView
           style={styles.screen}
           contentContainerStyle={[
@@ -880,6 +887,19 @@ const makeStyles = (color: ColorTheme) =>
     // double-insetting (container xxl + ScreenHeader's default xl = 44). Mirrors
     // Profile's profileHeader convention. Horizontal only — vertical rhythm intact.
     settingsHeader: { paddingHorizontal: 0 },
+    // F4: the status-bar ledge. Home and Settings scroll their content under a
+    // transparent status bar, so a scrolled row could sit directly behind the
+    // clock. A 47pt stage0-to-transparent wash keeps the bar legible without
+    // painting an opaque header over the stage. Decorative and pointer-inert —
+    // it must never intercept a tap meant for the content beneath it.
+    statusLedge: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      height: 47,
+      zIndex: 2,
+    },
     sectionLabel: {
       fontSize: font.size.xs,
       // On the raw stage — inkOnStage, not textMuted (forbidden there, 4.10:1).

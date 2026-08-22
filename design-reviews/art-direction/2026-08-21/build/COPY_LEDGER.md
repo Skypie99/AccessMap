@@ -35,3 +35,30 @@ standalone sentence with a discrete padded "Sign in" link beside it — and that
 needs the sentence re-worded so it reads whole without the link inside it
 (today's sentence breaks in half around it). Wanted: one nudge sentence that
 stands alone. Not urgent; the floor is met either way.
+
+---
+
+## Prompt 01 — Phase 1a (Dynamic Type rules)
+
+### New user-facing strings — PLACEHOLDERS, awaiting Sky's ratification
+
+| # | String | Screen | Board / rule | Replaces |
+|---|---|---|---|---|
+| W-02 | `See all {n} on the map` | Home, at the end of the CLOSEST card | Board 01 | nothing — the list previously just stopped |
+
+**W-02 detail.** Rendered as both the visible label and the accessible name, with
+the live flag count interpolated ("See all 13 on the map"). It navigates to
+`FullMap`. Placeholder taken from board 01; alternatives Sky may prefer: "See all
+13 on the map" / "Open the full map" / "View all 13 barriers". Sentence case, no
+em dash, consistent with the house voice. **Nothing else in Phase 1a adds or
+edits a user-facing word.**
+
+### Strings deliberately NOT changed in Phase 1a
+- The Legend's status paragraph was left whole. Item 1.6 proposed splitting
+  "Open — reported, not yet checked. Verified — … Resolved — …" into three rows
+  at the em dashes; that rewrites ratified teaching copy, so it is banked for
+  Sky rather than done. See the Phase 1a build report.
+- Every string touched by the recomposition work (the Home census, "Report",
+  "Search a place", the severity meanings) is byte-identical; only which of them
+  is VISIBLE at a given text size changed, and each hidden one keeps its words as
+  the control's accessible name.
