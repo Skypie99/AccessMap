@@ -1,21 +1,32 @@
 /**
- * D3/C1 (S-5) — "Select multiple" joins the search row.
+ * "Select multiple" — where it lives, and what has never changed about it.
  *
+ * ─── THE HISTORY THIS PINS ────────────────────────────────────────────────
  * Sky's device report: the Tasks header eats half the screen. Measured at
- * 390x844 it is worse than "half" sounds — 451pt of chrome on an 844pt display,
- * with the first card starting 65% of the way down (DECISIONS §F F-17). One of
- * those rows was spent on a single right-aligned secondary control with nothing
- * beside it.
+ * 390x844 it was worse than "half" sounds — 451pt of chrome on an 844pt
+ * display, with the first card starting 65% of the way down (DECISIONS §F
+ * F-17). D3/C1 took the first bite: "Select multiple" had owned a whole row of
+ * its own, right-aligned with nothing beside it, and moved onto the search
+ * row's trailing edge.
  *
- * This guard exists because the move is easy to get subtly wrong in three ways,
- * and all three would pass a casual eyeball:
+ * ─── RE-PINNED 2026-08-21 (art-direction Phase 2a, board 09) ──────────────
+ * It has moved once more, for the same reason and one step further: the search
+ * row now ends in two 44pt circles (filter, and ⋯), and "Select multiple" is a
+ * row inside the ⋯ sheet. The pane is one row of controls instead of two.
+ *
+ * The three ways this move can be got wrong are the SAME three D3/C1 named, so
+ * the assertions below are re-aimed rather than relaxed:
  *
  *   1. the gates could stop composing to the old truth table, so the control
  *      appears (or vanishes) in a state it didn't before;
- *   2. the target could drop below 44pt once it has to share a row with a text
- *      input that wants to grow;
- *   3. the label could drift, breaking the muscle memory and the SR announcement
- *      of a control that has shipped for months.
+ *   2. the target could drop below 44pt in its new container;
+ *   3. the label could drift, breaking the muscle memory and the SR
+ *      announcement of a control that has shipped for months.
+ *
+ * The honest cost, stated rather than smoothed over: this control is now TWO
+ * taps from the chrome instead of one, and it is behind a ⋯ that does not name
+ * it. Its discoverable twin — long-press any card — is unchanged and is still
+ * how most users reach selection mode. The reclaimed points went to the cards.
  *
  * The reclaimed points are measured, not asserted here — a source test cannot
  * see layout. See design-reviews/device-tune/render-index.md and the phase
@@ -26,11 +37,17 @@ import { join } from 'path';
 
 const tasks = readFileSync(join(__dirname, '..', 'TasksScreen.tsx'), 'utf8');
 
-// Sliced by boundary rather than by regex: the row contains nested `)}`
-// terminators, so a non-greedy match stops at the clear button.
+// Sliced by boundary rather than by regex: these blocks contain nested `)}`
+// terminators, so a non-greedy match stops at the first inner close.
 const searchRowBlock = (() => {
   const start = tasks.indexOf('<View style={styles.searchRow}>');
-  const end = tasks.indexOf('Mine-only toggle', start);
+  const end = tasks.indexOf('An active filter must never', start);
+  return start > -1 && end > start ? tasks.slice(start, end) : '';
+})();
+
+const toolSheetBlock = (() => {
+  const start = tasks.indexOf('visible={toolSheetOpen}');
+  const end = tasks.indexOf('Points/notice flash', start);
   return start > -1 && end > start ? tasks.slice(start, end) : '';
 })();
 
@@ -44,95 +61,120 @@ describe('D3/C1 — the dedicated row is gone', () => {
   });
 });
 
-describe('D3/C1 — the control now rides the search row', () => {
-  it('is mounted inside the search row', () => {
+describe('the control now lives in the ⋯ tool sheet', () => {
+  it('found the two regions to reason about', () => {
+    // Non-vacuity: an empty slice would make every assertion below pass while
+    // checking nothing, which is the failure mode this whole file exists for.
     expect(searchRowBlock).not.toBe('');
-    expect(searchRowBlock).toMatch(/accessibilityLabel="Select multiple"/);
+    expect(toolSheetBlock).not.toBe('');
   });
 
-  it('sits after the clear button, so the input keeps the leading edge', () => {
+  it('is mounted inside the sheet, and no longer inside the search row', () => {
+    expect(toolSheetBlock).toMatch(/accessibilityLabel="Select multiple"/);
+    expect(searchRowBlock).not.toMatch(/accessibilityLabel="Select multiple"/);
+  });
+
+  it('the search row ends in the two circles that replaced it', () => {
+    const filterAt = searchRowBlock.indexOf('accessibilityLabel="Filter and sort"');
+    const toolsAt = searchRowBlock.indexOf('accessibilityLabel="More task tools"');
     const clearAt = searchRowBlock.indexOf('accessibilityLabel="Clear search"');
-    const selectAt = searchRowBlock.indexOf('accessibilityLabel="Select multiple"');
+    expect(clearAt).toBeGreaterThan(-1);
+    // The input keeps the leading edge; the clear ✕ still belongs to the
+    // textbox so it stays one predictable target; the circles come last.
+    expect(filterAt).toBeGreaterThan(clearAt);
+    expect(toolsAt).toBeGreaterThan(filterAt);
+  });
+
+  it('the ⋯ sheet leads with Clear filters when one is active', () => {
+    // Board 09: Clear stays reachable from the drawer for a user who went
+    // looking for the control rather than noticing the chip in the chrome.
+    const clearAt = toolSheetBlock.indexOf('accessibilityLabel="Clear filters"');
+    const selectAt = toolSheetBlock.indexOf('accessibilityLabel="Select multiple"');
     expect(clearAt).toBeGreaterThan(-1);
     expect(selectAt).toBeGreaterThan(clearAt);
   });
 
-  it('moves exactly one position later in VoiceOver order — and no further', () => {
-    // HONEST STATEMENT OF THE CHANGE (the banked ARIA trees show it):
-    //   before: … subtitle → button "Select multiple" → textbox "Search flags"
-    //   after:  … subtitle → textbox "Search flags"   → button "Select multiple"
-    // S-5 put it after the clear button, so trading places with the search
-    // field is the direct consequence, not a slip. It is still the 4th
-    // interactive control on the screen and still precedes every filter, so
-    // it remains trivially reachable — but "VoiceOver order is unchanged"
-    // would be false, and this guard must not let anyone claim it.
+  it('VoiceOver order: search, then the circles, then the sheet rows', () => {
+    // HONEST STATEMENT OF THE CHANGE. Before Phase 2a a VoiceOver user reached
+    // "Select multiple" as the 4th control on the screen. It is now behind the
+    // ⋯ button, which is the 6th — so it is one level deeper, not merely one
+    // position later, and "VoiceOver order is unchanged" would be false.
     const search = tasks.indexOf('accessibilityLabel="Search flags"');
+    const filter = tasks.indexOf('accessibilityLabel="Filter and sort"');
+    const tools = tasks.indexOf('accessibilityLabel="More task tools"');
     const select = tasks.indexOf('accessibilityLabel="Select multiple"');
     const mine = tasks.indexOf('accessibilityLabel="Show all flags"');
-    const category = tasks.indexOf('accessibilityLabel="Show all categories"');
     expect(search).toBeGreaterThan(-1);
-    expect(select).toBeGreaterThan(search);
-    expect(mine).toBeGreaterThan(select);
-    expect(category).toBeGreaterThan(mine);
+    expect(filter).toBeGreaterThan(search);
+    expect(tools).toBeGreaterThan(filter);
+    expect(mine).toBeGreaterThan(tools);
+    expect(select).toBeGreaterThan(mine);
   });
 
-  it('keeps the header rows themselves in their shipped order', () => {
-    // SUPERSEDED IN PART BY D3/C3. This originally asserted
-    // search < mine < category < sort as four sibling rows in the chrome pane.
-    // C3 moved the last three into the filter sheet, so the surviving contract
-    // is: the search row still leads the header, and the three filter rows keep
-    // their relative order wherever they now live. Their order is what a
-    // VoiceOver user traverses, and C3 was not licensed to shuffle it.
-    const search = tasks.indexOf('styles.searchRow');
-    const trigger = tasks.indexOf('styles.filterTriggerRow');
-    const mine = tasks.indexOf('styles.mineToggleRow');
-    const categoryRow = tasks.indexOf('styles.categoryWrapRow');
-    const sort = tasks.indexOf('styles.sortRow');
-    expect(search).toBeLessThan(trigger);
-    expect(trigger).toBeLessThan(mine);
-    expect(mine).toBeLessThan(categoryRow);
-    expect(categoryRow).toBeLessThan(sort);
+  it('drops the chip row it used to share, keeping only the conditional Clear', () => {
+    // filterTriggerRow survives as the container for the Clear chip, which
+    // mounts ONLY while something is genuinely filtering — so at rest the pane
+    // is one row, which is the whole point of the compaction.
+    expect(tasks).toMatch(/\{flags\.length > 0 && tasksFiltersActive && \(/);
+    // The chip that used to say "Filter & sort" is gone; its word survives as
+    // the title of the sheet it opened, so nothing had to be invented to drop it.
+    expect(tasks).not.toMatch(/styles\.filterTriggerText\b/);
+    expect(tasks).toMatch(/title="Filter &amp; sort"/);
   });
 });
 
-describe('D3/C1 — the truth table is unchanged', () => {
+describe('the truth table is unchanged', () => {
   it('still requires a non-empty list AND not-already-selecting', () => {
-    // Before: `{!selection.active && flags.length > 0 && (<View …>)}`
-    // After:  the row's own `flags.length > 0` wrapper, with `!selection.active`
-    //         nested inside it. Same conjunction, same states.
-    expect(searchRowBlock).toMatch(/\{!selection\.active && \(/);
+    // The two halves now sit in two places, and they still compose to the old
+    // conjunction: the ⋯ circle that opens the sheet is inside the search row's
+    // own `flags.length > 0` wrapper, and the row inside the sheet carries
+    // `!selection.active`. Re-entering selection mode from here would call
+    // enterSelectionEmpty and silently drop a selection the user had built.
     expect(tasks).toMatch(/\{flags\.length > 0 && \(\s*\n\s*<View style=\{styles\.searchRow\}>/);
+    expect(toolSheetBlock).toMatch(/\{!selection\.active && \(/);
+  });
+
+  it('never opens an empty drawer', () => {
+    // Both rows are gated, so the ⋯ itself has to be gated on their union or a
+    // user in selection mode with no filters taps it and gets nothing.
+    expect(searchRowBlock).toMatch(/\{\(!selection\.active \|\| tasksFiltersActive\) && \(/);
   });
 
   it('keeps the long-press path it was always the discoverable twin of', () => {
+    // It matters more now that the button is two taps deep.
     expect(tasks).toMatch(/enterSelectionEmpty/);
+    expect(tasks).toMatch(/onLongPress/);
   });
 });
 
-describe('D3/C1 — nothing a user can feel has changed about the control', () => {
+describe('nothing a user can HEAR has changed about the control', () => {
   it('keeps the label and hint byte-identical', () => {
     expect(tasks).toContain('accessibilityLabel="Select multiple"');
     expect(tasks).toContain(
       'accessibilityHint="Enter selection mode to verify or resolve multiple flags at once"',
     );
-    expect(tasks).toContain('<AppText variant="label" style={styles.selectEntryText}>Select multiple</AppText>');
+    expect(tasks).toContain('<AppText variant="label" style={styles.toolRowText}>Select multiple</AppText>');
   });
 
-  it('keeps a >=44pt target and refuses to be squeezed by the input', () => {
-    const btn = tasks.match(/selectEntryBtn: \{[\s\S]*?\n    \},/)?.[0] ?? '';
-    expect(btn).toMatch(/minHeight: 44/);
-    // Without this the flex row would shrink it as the TextInput grows.
-    expect(btn).toMatch(/flexShrink: 0/);
+  it('keeps a >=44pt target in its new container', () => {
+    const row = tasks.match(/toolRow: \{[\s\S]*?\n    \},/)?.[0] ?? '';
+    expect(row).toMatch(/minHeight: 44/);
   });
 
-  it('keeps the pressed-fill vocabulary bp11 pins', () => {
-    expect(tasks).toMatch(/selectEntryBtnPressed: \{ backgroundColor: color\.borderPressed \}/);
-    expect(tasks).toMatch(/pressed && styles\.selectEntryBtnPressed/);
+  it('the two circles that replaced it are real 44x44 boxes, not slop', () => {
+    for (const key of ['filterTriggerBtn', 'toolTriggerBtn']) {
+      const block = tasks.match(new RegExp(`${key}: \\{[\\s\\S]*?\\n    \\},`))?.[0] ?? '';
+      expect(`${key} height: ${/minHeight: 44/.test(block)}`).toBe(`${key} height: true`);
+      // A circle sized only by its padding collapses to its glyph once the
+      // label it used to hold is gone.
+      expect(`${key} width: ${/minWidth: 44/.test(block)}`).toBe(`${key} width: true`);
+      expect(`${key} shrink: ${/flexShrink: 0/.test(block)}`).toBe(`${key} shrink: true`);
+    }
   });
 });
 
-describe('D3/C1 — the fallback-height comment now matches measured reality', () => {
-  it('names the mine/All row the old comment silently omitted', () => {
+describe('the fallback-height comment still matches the pane it describes', () => {
+  it('keeps the measured history that the old comment silently omitted', () => {
     expect(tasks).toMatch(/mine\/All 60/);
     expect(tasks).toMatch(/it omitted the mine\/All row entirely/);
   });
@@ -141,14 +183,16 @@ describe('D3/C1 — the fallback-height comment now matches measured reality', (
     expect(tasks).toMatch(/only renders\s*\n\/\/ when SIGNED IN/);
   });
 
-  it('re-seeds the constant once C3 made 350 genuinely wrong', () => {
-    // SUPERSEDED BY D3/C3. At C1 the measured pane was 352 against a seed of
-    // 350, so churning the value bought nothing. C3 moved three rows out and
-    // the pane became 214 — a 136pt seed error is a visible first-paint jump,
-    // not a rounding difference. The live value is pinned by
-    // tasksFilterSheet.test.ts; this asserts only that C1's "leave it alone"
-    // reasoning did not silently outlive the condition it depended on.
-    expect(tasks).not.toMatch(/const CHROME_FALLBACK_HEIGHT = 350;/);
-    expect(tasks).toMatch(/const CHROME_FALLBACK_HEIGHT = \d+;/);
+  it('re-seeds the constant for the row Phase 2a removed', () => {
+    // C3 took the pane to 210. Folding the filter trigger's 64pt row into the
+    // search row as two circles takes it to 146. A 64pt seed error is a visible
+    // first-paint jump, not a rounding difference, which is the whole reason
+    // this constant is kept honest rather than left at a round number.
+    expect(tasks).toMatch(/const CHROME_FALLBACK_HEIGHT = 146;/);
+    expect(tasks).toMatch(/header 78 \+ control row 60 = 146/);
+  });
+
+  it('excludes the conditional Clear row from the seed, and says why', () => {
+    expect(tasks).toMatch(/ONLY while a filter is\s*\n\/\/ active, so it is not part of the seed/);
   });
 });

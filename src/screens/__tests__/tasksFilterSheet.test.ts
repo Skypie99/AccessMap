@@ -72,7 +72,14 @@ describe('D3/C3 — an active filter can never hide behind a closed sheet', () =
 
   it('uses the ratified active grammar for the trigger', () => {
     expect(tasks).toMatch(/filterTriggerBtnActive: \{ backgroundColor: color\.ctaFill, borderColor: 'transparent' \}/);
-    expect(tasks).toMatch(/filterTriggerTextActive: \{ color: color\.textOnBrand \}/);
+    // RE-PINNED 2026-08-21 (Phase 2a). The trigger is a 44pt circle now, not a
+    // text chip — its word became the title of the sheet it opens — so the
+    // active ink lands on the ICON rather than on a label. Same fork, same two
+    // tokens, on the only thing left inside the circle to paint. This is the
+    // map's own filter-button grammar, which is where the circle came from.
+    expect(tasks).toMatch(
+      /color=\{tasksFiltersActive \? color\.textOnBrand : color\.glassChipInk\}/,
+    );
   });
 
   it('counts a filter as active for every axis that actually filters', () => {
@@ -157,9 +164,14 @@ describe('D3/C3 — the rows were moved, not rewritten', () => {
   });
 });
 
-describe('D3/C3 — the seed constant matches the new pane', () => {
-  it('reflects the four rows that remain', () => {
-    expect(tasks).toMatch(/const CHROME_FALLBACK_HEIGHT = 210;/);
-    expect(tasks).toMatch(/header 78 \+ search 60 \+ filter trigger 64 = 210/);
+describe('the seed constant matches the pane', () => {
+  it('reflects the rows that remain after Phase 2a folded the trigger row in', () => {
+    // C3 took the pane to 210 by moving three rows into the filter sheet.
+    // Phase 2a folded the remaining trigger row into the search row as two
+    // 44pt circles, so its 64 is gone: 8 + 78 + 60 = 146. The C3 arithmetic is
+    // kept above it as history rather than overwritten, because the comment is
+    // a record of how the pane got here and each step was measured.
+    expect(tasks).toMatch(/const CHROME_FALLBACK_HEIGHT = 146;/);
+    expect(tasks).toMatch(/header 78 \+ control row 60 = 146/);
   });
 });

@@ -68,9 +68,9 @@ import { FlagCard } from '@/components/ui/FlagCard';
 import { PressableScale } from '@/components/ui/PressableScale';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { hapticImpact, hapticNotify, hapticSelection } from '@/lib/haptics';
-import { AlertTriangle, Check, ChevronRight, MapPin, Menu, MessageSquare, Search, Sparkles, WifiOff, X } from 'lucide-react-native';
+import { AlertTriangle, Check, ChevronRight, ListChecks, MapPin, Menu, MessageSquare, MoreHorizontal, Search, SlidersHorizontal, Sparkles, WifiOff, X } from 'lucide-react-native';
 import { a11y, font, motion, radius, shadow, size, spacing } from '@/theme';
-import { a11yToggle, decorativeProps, useReducedMotion, useReduceTransparency } from '@/lib/accessibility';
+import { a11yToggle, decorativeProps, isAxRecompose, useReducedMotion, useReduceTransparency } from '@/lib/accessibility';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { ScreenStage } from '@/components/ui/ScreenStage';
@@ -116,9 +116,24 @@ const BULK_BAR_FALLBACK_HEIGHT = 94;
 //   = 352 post-D3/C1  (it was 404 before C1 returned the select-entry row's 52pt)
 //
 // D3/C3 then moved mine/All, category and sort into the filter sheet and D3/C2
-// retired the subtitle, so the pane is now just:
+// retired the subtitle, taking the pane to:
 //   pane padding 8 + header 78 + search 60 + filter trigger 64 = 210
-const CHROME_FALLBACK_HEIGHT = 210;
+//
+// Phase 2a (board 09) folded the filter trigger row into the search row as a
+// pair of 44pt circles, so the trigger's 64 is gone and the pane is:
+//   pane padding 8 + header 78 + control row 60 = 146
+// The row that held "Clear filters" survives, but ONLY while a filter is
+// active, so it is not part of the seed: seeding the filtered height would
+// leave a 52pt gap under the chrome on every unfiltered first paint, which is
+// the visible jump this constant exists to prevent. The real height still
+// arrives via onLayout a frame later and takes over in both states.
+const CHROME_FALLBACK_HEIGHT = 146;
+
+// The banner is a pointer to the first card. Past this text size it is taller
+// than the thing it points at, so it stands down (board 09, AXL column). 2x is
+// one notch above the F4 recomposition point on purpose: at 1.5x the banner is
+// still a useful two-line signpost, and only at 2x does it become a paragraph.
+const BANNER_STAND_DOWN_SCALE = 2;
 
 /**
  * The FlagCard action-row reflow threshold (sweep M16): a narrow device OR
@@ -158,6 +173,15 @@ export default function TasksScreen() {
   // "Resolved" against the pill curvature (sweep M16).
   const { width: windowWidth, fontScale } = useWindowDimensions();
   const compactActions = isCompactLayout(windowWidth, fontScale);
+  // F4 — the one recomposition threshold, shared with Home, the map bar and
+  // FlagCard so the app changes shape all at once rather than screen by screen.
+  const axRecompose = isAxRecompose(fontScale);
+  // At double text size the banner is no longer a slim pointer at the top of
+  // the list: it is a paragraph, and it is a paragraph ABOUT the card directly
+  // beneath it, because the nearest open barrier sorts first. So it stands
+  // down and gives the screen back to the thing it was pointing at. Nothing is
+  // lost — the same flag, with the same distance, is the next thing on screen.
+  const bannerStandsDown = fontScale >= BANNER_STAND_DOWN_SCALE;
   // Top reserve for content scrolling BENEATH the absolute chrome glass pane
   // (mockup: padding-top = chrome height + 10). Fallback only seeds the first,
   // hidden layout pass — see chromeHeight above.
@@ -230,6 +254,9 @@ export default function TasksScreen() {
   const [searchText, setSearchText] = useState('');
   // D3/C3: the consolidated filter sheet's open state.
   const [filterSheetOpen, setFilterSheetOpen] = useState(false);
+  // The ⋯ tool sheet. Holds the controls that are neither the search nor the
+  // filters — today "Select multiple", and "Clear filters" while one is active.
+  const [toolSheetOpen, setToolSheetOpen] = useState(false);
   const [debouncedSearchText, setDebouncedSearchText] = useState('');
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearchText(searchText), 250);
@@ -949,31 +976,41 @@ export default function TasksScreen() {
           <AppText variant="body" style={styles.offlineBannerText}>{offlineBannerText(offlineCachedAt)}</AppText>
         </View>
       )}
-      {/* Free-text search — substring match against description and
-          category label. Hidden if the list is empty (nothing to search).
-          The clear (×) button is part of the textbox row so it stays a
-          single, predictable a11y target.
+      {/* THE CONTROL PANE, COMPACTED (board 09). It used to be two rows: a
+          search row with "Select multiple" on its trailing edge, and a second
+          row holding a "Filter & sort" chip with nothing beside it (plus
+          "Clear filters" when one was active). That is 124pt of chrome spent on
+          three controls, on a screen whose header already ate more than half
+          the display and where the first card started 65% of the way down.
 
-          D3/C1 (S-5, Sky's pre-decided pick): "Select multiple" used to own a
-          whole row of its own, right-aligned with nothing beside it — 52pt of
-          chrome spent on one secondary control, on a screen whose header
-          already ate more than half the display. It now rides the search row's
-          trailing edge, and that 52pt goes back to the cards.
+          It is one row now — the map's pattern: a search pill that takes the
+          width, and two 44pt circles beside it. The words are not lost:
+          "Filter & sort" is the sheet's own title, and "Select multiple" keeps
+          its label, hint and handler byte-identical inside the ⋯ sheet.
 
-          The gates compose to exactly the old truth table: the row already
-          required `flags.length > 0`, the button already required that AND
-          `!selection.active`, so nesting the second inside the first changes
-          nothing about when it appears. It is still the first focusable control
-          after the banners, so VoiceOver order is unchanged; the label and hint
-          are byte-identical; the target is still >=44pt (selectEntryBtn's own
-          minHeight), and `flexShrink: 0` keeps it that wide when the input
-          competes for room. */}
+          The clear-search ✕ still belongs to the textbox row so it stays a
+          single predictable target, and the row still wraps (T5/D24) so the
+          circles drop to their own line rather than squeezing the field. */}
       {flags.length > 0 && (
         <View style={styles.searchRow}>
+          {/* The magnifier is what carries the field's meaning once the
+              placeholder is gone at large type. Decorative: the TextInput
+              beside it owns the accessible name in both states. */}
+          <Search
+            size={18}
+            color={color.glassPlaceholder}
+            strokeWidth={2.2}
+            style={styles.searchIcon} {...decorativeProps}
+          />
           <TextInput
             value={searchText}
             onChangeText={setSearchText}
-            placeholder="Search by description or category…"
+            // Icon-only at the recomposition point: at large type the
+            // placeholder is the longest string in the chrome and it truncated
+            // mid-word. The field keeps its width and its function; only the
+            // hint text goes, and `accessibilityLabel` still names it, so
+            // nothing is lost to a screen reader or to voice control.
+            placeholder={axRecompose ? '' : 'Search by description or category…'}
             placeholderTextColor={color.glassPlaceholder}
             autoCorrect={false}
             autoCapitalize="none"
@@ -993,32 +1030,11 @@ export default function TasksScreen() {
               <X size={18} color={color.textMuted} strokeWidth={2.2} />
             </Pressable>
           )}
-          {!selection.active && (
-            <Pressable
-              onPress={enterSelectionEmpty}
-              style={({ pressed }) => [
-                styles.selectEntryBtn,
-                pressed && styles.selectEntryBtnPressed,
-              ]}
-              accessibilityRole="button"
-              accessibilityLabel="Select multiple"
-              accessibilityHint="Enter selection mode to verify or resolve multiple flags at once"
-            >
-              <AppText variant="label" style={styles.selectEntryText}>Select multiple</AppText>
-            </Pressable>
-          )}
-        </View>
-      )}
-      {/* D3/C3 — one trigger replaces three rows.
-          The rows themselves are unchanged and live in the sheet below; what
-          changes is that they no longer occupy the header at rest. `Clear
-          filters` mounts only when something is genuinely filtering, so it is
-          never a dead control, and together with the trigger's active fill it
-          means an active filter can never hide behind a closed sheet. */}
-      {flags.length > 0 && (
-        <View style={styles.filterTriggerRow}>
+          {/* The filter circle. Same sheet, same handler, same expanded state
+              as the chip it replaces; the active fill moves from a chip's
+              background to the circle's, which is the map's grammar. */}
           <Pressable
-            onPress={() => setFilterSheetOpen(true)}
+            onPress={() => { setToolSheetOpen(false); setFilterSheetOpen(true); }}
             style={({ pressed }) => [
               styles.filterTriggerBtn,
               tasksFiltersActive && styles.filterTriggerBtnActive,
@@ -1029,24 +1045,50 @@ export default function TasksScreen() {
             accessibilityHint="Opens filter and sort options"
             {...a11yToggle({ expanded: filterSheetOpen })}
           >
-            <AppText
-              variant="label"
-              style={[styles.filterTriggerText, tasksFiltersActive && styles.filterTriggerTextActive]}
-            >
-              Filter &amp; sort
-            </AppText>
+            <SlidersHorizontal
+              size={19}
+              color={tasksFiltersActive ? color.textOnBrand : color.glassChipInk}
+              strokeWidth={2.2}
+            />
           </Pressable>
-          {tasksFiltersActive && (
+          {/* The ⋯ circle mounts only when its sheet would hold something. The
+              two rows inside it are gated — "Select multiple" on not already
+              selecting, "Clear filters" on something actually filtering — and
+              a ⋯ that opens an empty drawer is worse than no ⋯ at all. */}
+          {(!selection.active || tasksFiltersActive) && (
             <Pressable
-              onPress={handleClearFilters}
-              style={({ pressed }) => [styles.clearFiltersBtn, pressed && styles.chipPressed]}
+              onPress={() => { setFilterSheetOpen(false); setToolSheetOpen(true); }}
+              style={({ pressed }) => [styles.toolTriggerBtn, pressed && styles.chipPressed]}
               accessibilityRole="button"
-              accessibilityLabel="Clear filters"
-              accessibilityHint="Removes the search text, category and my-flags filters"
+              accessibilityLabel="More task tools"
+              accessibilityHint="Select multiple flags, or clear the active filters"
+              {...a11yToggle({ expanded: toolSheetOpen })}
             >
-              <AppText variant="label" style={styles.clearFiltersText}>Clear filters</AppText>
+              <MoreHorizontal size={22} color={color.glassChipInk} strokeWidth={2.2} />
             </Pressable>
           )}
+        </View>
+      )}
+      {/* An active filter must never be able to hide behind a closed sheet, so
+          it is still signalled two independent ways: the filter circle takes
+          the active fill, AND this chip mounts. It is the same control it
+          always was — same handler, same label, same hint — wearing the ✕ that
+          says what tapping it does, and it exists only while something is
+          genuinely filtering, so it is never a dead control. Clear is reachable
+          from the ⋯ sheet as well, for a user who went looking in the drawer
+          rather than at the chip. */}
+      {flags.length > 0 && tasksFiltersActive && (
+        <View style={styles.filterTriggerRow}>
+          <Pressable
+            onPress={handleClearFilters}
+            style={({ pressed }) => [styles.clearFiltersBtn, pressed && styles.chipPressed]}
+            accessibilityRole="button"
+            accessibilityLabel="Clear filters"
+            accessibilityHint="Removes the search text, category and my-flags filters"
+          >
+            <AppText variant="label" style={styles.clearFiltersText}>Clear filters</AppText>
+            <X size={14} color={color.inkSelect} strokeWidth={2.4} {...decorativeProps} />
+          </Pressable>
         </View>
       )}
       </GlassSurface>
@@ -1169,6 +1211,52 @@ export default function TasksScreen() {
         </View>
       )}
       </Sheet>
+      {/* The ⋯ tool sheet. The map's tool-sheet RECIPE — a short column of
+          icon + label rows, each its own 44pt control — inside this screen's
+          own `Sheet` primitive rather than the map's inline panel, because the
+          panel is an overlay in the map's absolute stack and a third shell on
+          this screen would break S5. `glass={false}` is the opaque house modal
+          grammar and costs nothing against the blur budget, so Tasks still
+          owns exactly one live pane.
+
+          "Clear filters" leads when a filter is active: this is the drawer a
+          user opens when they went looking for the control rather than
+          noticing the chip above. */}
+      <Sheet
+        visible={toolSheetOpen}
+        onClose={() => setToolSheetOpen(false)}
+        title="Task tools"
+        glass={false}
+      >
+        {tasksFiltersActive && (
+          <PressableScale
+            onPress={() => { setToolSheetOpen(false); handleClearFilters(); }}
+            style={styles.toolRow}
+            accessibilityRole="button"
+            accessibilityLabel="Clear filters"
+            accessibilityHint="Removes the search text, category and my-flags filters"
+          >
+            <X size={20} color={color.text} strokeWidth={2.2} {...decorativeProps} />
+            <AppText variant="label" style={styles.toolRowText}>Clear filters</AppText>
+          </PressableScale>
+        )}
+        {/* The gate is the one it always had: a non-empty list (the ⋯ circle
+            is inside that wrapper) AND not already selecting. Re-entering
+            selection mode from here would call enterSelectionEmpty and silently
+            drop the selection the user had already built. */}
+        {!selection.active && (
+          <PressableScale
+            onPress={() => { setToolSheetOpen(false); enterSelectionEmpty(); }}
+            style={styles.toolRow}
+            accessibilityRole="button"
+            accessibilityLabel="Select multiple"
+            accessibilityHint="Enter selection mode to verify or resolve multiple flags at once"
+          >
+            <ListChecks size={20} color={color.text} strokeWidth={2.2} {...decorativeProps} />
+            <AppText variant="label" style={styles.toolRowText}>Select multiple</AppText>
+          </PressableScale>
+        )}
+      </Sheet>
       {/* Points/notice flash — floats over the chrome (zIndex above the pane),
           same visual spot over the header as before the glass pass. */}
       {flash && (
@@ -1230,7 +1318,7 @@ export default function TasksScreen() {
         // Details action uses (onShowDetails). Navigation only: no status
         // change, no fetch, no new data path.
         ListHeaderComponent={
-          nearestOpenHit ? (
+          nearestOpenHit && !bannerStandsDown ? (
             <Pressable
               onPress={() => showDetails(nearestOpenHit.flag)}
               style={({ pressed }) => [
@@ -1251,11 +1339,22 @@ export default function TasksScreen() {
                   color={color.brandOnSoft}
                   strokeWidth={2.2} {...decorativeProps}
                 />
-                <AppText variant="label" style={styles.suggestedText}>
-                  {`Nearest open barrier · ${CATEGORY_LABELS[nearestOpenHit.flag.category]} · Severity ${nearestOpenHit.flag.severity} · ${formatDistance(
-                    nearestOpenHit.km,
-                  )}`}
-                </AppText>
+                {/* Two deliberate lines, same words, same order. As one line
+                    it wrapped wherever it ran out and orphaned "4 · 433 m" onto
+                    a line of its own; broken on purpose it reads as a label
+                    over its subject. The distance is the sentence's numeral, so
+                    it takes mono (T1). */}
+                <View style={styles.suggestedTextBlock}>
+                  <AppText variant="label" style={styles.suggestedLead}>
+                    Nearest open barrier
+                  </AppText>
+                  <AppText variant="label" style={styles.suggestedText}>
+                    {`${CATEGORY_LABELS[nearestOpenHit.flag.category]} · Severity ${nearestOpenHit.flag.severity} · `}
+                    <AppText variant="mono" style={styles.suggestedDistance}>
+                      {formatDistance(nearestOpenHit.km)}
+                    </AppText>
+                  </AppText>
+                </View>
                 <ChevronRight
                   size={18}
                   color={color.brandOnSoft}
@@ -1298,10 +1397,15 @@ export default function TasksScreen() {
                 renders as an <h1> INSIDE the wrapper's <h1>: invalid HTML that
                 React errors on, and one title announced as two nested headings
                 to a browser screen reader. */}
-            <AppText variant="heading" style={styles.sectionTitle} accessibilityRole="none">{title}</AppText>
-            <View style={styles.sectionCountPill}>
-              <AppText variant="monoBold" style={styles.sectionCountText}>{data.length}</AppText>
-            </View>
+            {/* The count joins the header instead of riding a pill beside it.
+                One "9" per screen: the tab badge keeps its own, because it
+                counts for a user who is looking at another tab. Two objects
+                saying the same number a thumb's width apart was the second. */}
+            <AppText variant="heading" style={styles.sectionTitle} accessibilityRole="none">
+              {title}
+              {' · '}
+              <AppText variant="monoBold" style={styles.sectionCount}>{data.length}</AppText>
+            </AppText>
           </View>
         )}
         ListEmptyComponent={
@@ -2192,12 +2296,18 @@ const makeStyles = (color: ColorTheme, reduceTransparency: boolean) => {
       ...(color.scheme === 'light' ? shadow.e1 : {}),
     },
     suggestedRowPressed: { backgroundColor: color.borderPressed },
-    suggestedText: {
-      flex: 1,
+    suggestedTextBlock: { flexGrow: 1, flexShrink: 1, minWidth: 130, gap: 1 },
+    suggestedLead: {
       color: color.brandOnSoft,
       fontWeight: font.weight.semibold,
       fontSize: font.size.sm,
     },
+    suggestedText: {
+      color: color.brandOnSoft,
+      fontWeight: font.weight.medium,
+      fontSize: font.size.sm,
+    },
+    suggestedDistance: { fontVariant: ['tabular-nums'] },
     // Load-more footer — centered below the last SectionList card.
     // minHeight 44 on the button satisfies WCAG 2.5.5 (minimum touch target).
     footer: {
@@ -2287,19 +2397,10 @@ const makeStyles = (color: ColorTheme, reduceTransparency: boolean) => {
       textTransform: 'uppercase',
       letterSpacing: font.tracking.section,
     },
-    sectionCountPill: {
-      backgroundColor: color.brandSoft,
-      paddingHorizontal: spacing.sm,
-      paddingVertical: 2,
-      borderRadius: radius.circle,
-      minWidth: 22,
-      alignItems: 'center',
-    },
-    sectionCountText: {
-      color: color.brandOnSoft,
-      fontSize: font.size.caption,
-      fontWeight: font.weight.bold,
-    },
+    // T1: the count is a data numeral, so it takes mono with tabular figures.
+    // It inherits the header's size, tracking and ink — it is part of the same
+    // label, not a second object with its own voice.
+    sectionCount: { fontVariant: ['tabular-nums'] },
     title: { fontSize: font.size.xl, fontWeight: font.weight.semibold },
     // The card is a pane of ROW GLASS (variant="row": i=12 blur + 0.70 floor +
     // specular top hairline + edge — GlassSurface supplies all of it). The
@@ -2421,32 +2522,60 @@ const makeStyles = (color: ColorTheme, reduceTransparency: boolean) => {
       paddingBottom: spacing.md,
       gap: spacing.sm,
     },
-    filterTriggerBtn: {
+    // The ⋯ circle. Same box as the filter circle beside it; no active state,
+    // because the sheet it opens holds no persistent setting of its own.
+    toolTriggerBtn: {
       minHeight: 44,
-      paddingHorizontal: spacing.lg,
+      minWidth: 44,
       borderRadius: radius.circle,
       backgroundColor: chipFill,
       borderWidth: 1,
       borderColor: chipEdge,
       alignItems: 'center',
       justifyContent: 'center',
+      flexShrink: 0,
     },
+    // Now a 44pt circle rather than a text chip: the word it used to carry
+    // ("Filter & sort") is the title of the sheet it opens, so nothing had to
+    // be invented to drop it. minWidth replaces the horizontal padding that
+    // used to size it to its label.
+    filterTriggerBtn: {
+      minHeight: 44,
+      minWidth: 44,
+      borderRadius: radius.circle,
+      backgroundColor: chipFill,
+      borderWidth: 1,
+      borderColor: chipEdge,
+      alignItems: 'center',
+      justifyContent: 'center',
+      flexShrink: 0,
+    },
+    // The ⋯ sheet's rows — the map tool sheet's recipe: an icon, a label, one
+    // 44pt target each, nothing else.
+    toolRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.md,
+      minHeight: 44,
+      paddingVertical: spacing.sm,
+    },
+    toolRowText: { fontSize: font.size.base, fontWeight: font.weight.semibold, color: color.text },
     // MapScreen's ratified active grammar — a filled brand chip with white ink.
     // This is what makes an active filter impossible to miss with the sheet shut.
     filterTriggerBtnActive: { backgroundColor: color.ctaFill, borderColor: 'transparent' },
-    filterTriggerText: { fontSize: font.size.sm, fontWeight: font.weight.semibold, color: color.glassChipInk },
-    filterTriggerTextActive: { color: color.textOnBrand },
     // Ships as a CHIP, not a bare link: that keeps it on the already-arbitrated
     // chipFill + inkSelect stack instead of introducing a new ink-on-chrome pair
     // (and therefore an arbiter run) for one secondary control.
     clearFiltersBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.xs,
       minHeight: 44,
       paddingHorizontal: spacing.md,
       borderRadius: radius.circle,
       backgroundColor: chipFill,
       borderWidth: 1,
       borderColor: chipEdge,
-      alignItems: 'center',
       justifyContent: 'center',
     },
     clearFiltersText: { fontSize: font.size.sm, fontWeight: font.weight.semibold, color: color.inkSelect },
@@ -2558,6 +2687,18 @@ const makeStyles = (color: ColorTheme, reduceTransparency: boolean) => {
       color: color.glassChipInk,
       fontSize: font.size.base,
     },
+    // The magnifier rides INSIDE the field's left padding rather than beside
+    // it, so the pill stays one object and the input keeps its own border —
+    // which is what hitTargetFrame's bordered-TextInput rule measures. It is
+    // laid out absolutely against the row and given the field's own height, so
+    // it stays centred on the input even when the row wraps and the row grows.
+    searchIcon: {
+      position: 'absolute',
+      left: spacing.lg + spacing.md,
+      top: spacing.sm,
+      height: a11y.minTargetSize + 2,
+      zIndex: 1,
+    },
     searchClearBtn: {
       minWidth: 44, // WCAG 2.5.8: was 32pt (below 44pt project standard)
       minHeight: 44, // WCAG 2.5.8: was 32pt (below 44pt project standard)
@@ -2626,22 +2767,8 @@ const makeStyles = (color: ColorTheme, reduceTransparency: boolean) => {
     // it rides the search row's trailing edge, returning 52pt to the list.
     // `flexShrink: 0` is what keeps it at its full >=44pt width while the
     // text input takes the remaining space.
-    selectEntryBtn: {
-      flexShrink: 0,
-      minHeight: 44,
-      paddingHorizontal: spacing.md,
-      paddingVertical: spacing.xs,
-      borderRadius: radius.circle,
-      backgroundColor: chipFill,
-      borderWidth: 1,
-      borderColor: chipEdge,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    selectEntryBtnPressed: { backgroundColor: color.borderPressed },
     // inkSelect — script-arbitrated on the chip-over-chrome stack (brand
     // #1466E0 measured 4.17:1 over the worst-case base — forked to brandText).
-    selectEntryText: { color: color.inkSelect, fontWeight: font.weight.bold, fontSize: font.size.base },
     // Card selection visuals — a subtle tinted background + a 2px accent
     // border so a selected card pops without needing to recolor the photo
     // thumbnail or muddle the severity dot. Pairs with the checkmark in

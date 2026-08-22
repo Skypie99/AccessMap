@@ -115,7 +115,16 @@ describe('BP11 / T3 — the estate speaks fill-swaps, not group opacity', () => 
     // Tasks neutral residuals → borderPressed (no more group opacity)
     expect(tasksScreen).toMatch(/suggestedRowPressed: \{ backgroundColor: color\.borderPressed \}/);
     expect(tasksScreen).toMatch(/loadMoreBtnPressed: \{ backgroundColor: color\.borderPressed \}/);
-    expect(tasksScreen).toMatch(/selectEntryBtnPressed: \{ backgroundColor: color\.borderPressed \}/);
+    // RE-PINNED 2026-08-21 (Phase 2a). "Select multiple" left the chrome for
+    // the ⋯ tool sheet and stopped being a chip with a hand-declared pressed
+    // fill: it is a `PressableScale` row, and that primitive's own default
+    // pressed tint IS `color.borderPressed` (PressableScale.tsx — `pressedTint
+    // ?? color.borderPressed`). So the token is unchanged and now inherited
+    // rather than repeated, which is the direction this law wants. What still
+    // has to be true, and is what this asserts, is that it did not become a
+    // bare Pressable with an opacity dim on the way.
+    expect(tasksScreen).toMatch(/<PressableScale\s+onPress=\{\(\) => \{ setToolSheetOpen\(false\); enterSelectionEmpty\(\); \}\}/);
+    expect(tasksScreen).not.toMatch(/toolRowPressed/);
     // error-red CTAs (white label) deepen to errorPressed
     expect(mapScreen).toMatch(/errorBannerPressed: \{ backgroundColor: color\.errorPressed \}/);
     expect(tasksScreen).toMatch(/errorBannerPressed: \{ backgroundColor: color\.errorPressed \}/);
