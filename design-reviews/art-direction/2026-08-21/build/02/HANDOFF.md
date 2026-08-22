@@ -28,11 +28,15 @@
 - [x] **2.1 the FlagDetail re-rank** (+ D13, D14, D15, 2 extra C1 fills) — `0d6d2ce`
 - [x] **2.3 the mission statement** — `498d754`
 - [x] COPY_LEDGER entries (W-03..W-11)
-- [ ] Sim re-walk (light/dark x medium/AXL, triage + read)
-- [ ] BUILD_REPORT.md
+- [x] Sim re-walk (light/dark x medium/AXL, triage + read, Legend, Terms, About, Resources)
+- [x] **2.4 the four defects the device found** — `359179e`
+- [x] BUILD_REPORT.md
 
-## Gates after 2.3
+## COMPLETE — 2026-08-21. Sky merges.
+
+## Final gates
 typecheck 0 · jest **233 suites / 3376 passed / 32 todo / 0 failed** · lint 0 errors, 82 warnings.
+Arbiter exit 0, every pair PASS. `dismissalStandard` B/B2/J pass unchanged.
 
 ## Guards re-pinned (never deleted) — 9
 bp10SeverityGrammar · oneNameOneThing · disputeControl · brandInkAA ·
@@ -41,9 +45,16 @@ MapScreen.detail. Each carries its reason inline. One guard ADDED:
 `src/__tests__/mission.guard.test.ts`.
 
 ## Sim state
-Sim-release built and installing on iPhone 17e `9C9D3ED6-E62F-4A5C-A0C2-D8294D6575AC`.
+iPhone 17e `9C9D3ED6-E62F-4A5C-A0C2-D8294D6575AC`, sim-release, left on the
+**`dense`** arm (the shipped default), light + medium. Both A/B arms were built
+and captured; `blur40` was flipped back after its capture.
 
-## Next
-Walk the sheet from Tasks (triage) and from the map callout (read), light + dark,
-medium + accessibility-extra-large; bank captures into `build/02/after/`; then
-write BUILD_REPORT.md. STOP — Sky merges.
+## Guards
+9 re-pinned (bp10 · oneNameOneThing · disputeControl · brandInkAA ·
+inertControlVisual · bp11PressVocab · hitTargetFrame · webResilience ·
+MapScreen.detail), 1 added (`mission.guard`), none deleted.
+
+## Next — Sky
+1. Merge (or read `BUILD_REPORT.md` §10 first — seven decisions, two of them wording).
+2. The floor A/B on real hardware (§5 has the one-line flip).
+3. Ratify the COPY_LEDGER (W-03…W-11).
