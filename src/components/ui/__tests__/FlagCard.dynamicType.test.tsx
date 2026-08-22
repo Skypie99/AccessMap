@@ -23,7 +23,7 @@ import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { render } from '@testing-library/react-native';
 import useWindowDimensions from 'react-native/Libraries/Utilities/useWindowDimensions';
-import { FlagCard, flagCardA11yLabel } from '../FlagCard';
+import { FlagCard, MonoDistance, flagCardA11yLabel } from '../FlagCard';
 import { a11yToggle } from '@/lib/accessibility';
 import { font } from '@/theme';
 import type { FlagCardFlag } from '../FlagCard';
@@ -81,13 +81,38 @@ describe('F2 — the census is one sentence in one order', () => {
 });
 
 describe('T1 — the distance is the one numeral, and it is mono with tabular figures', () => {
-  it('renders the distance in JetBrains Mono, tabular', () => {
+  it('renders the VALUE in JetBrains Mono, tabular — and only the value', () => {
+    // WHAT THE DEVICE CAUGHT. Built first with the whole "433 m" in mono, which
+    // is what the board draws. On the 17e it rendered "433   m": formatDistance
+    // joins value and unit with U+00A0 so the unit can never orphan across a
+    // wrap, and in a monospace face that character takes a full advance —
+    // roughly twice the body face's. The gap read as a typo.
     const { getByText } = render(<FlagCard flag={flag} density="row" distanceKm={0.433} />);
-    const style = StyleSheet.flatten(getByText('433 m').props.style);
+    const style = StyleSheet.flatten(getByText('433').props.style);
     expect(style.fontFamily).toBe(font.family.mono);
     // The face alone would not hold a column of distances in line as the digits
     // change width — this is the part that does that work.
     expect(style.fontVariant).toEqual(['tabular-nums']);
+  });
+
+  it('leaves the separator and the unit in the surrounding face', () => {
+    // A unit is a word, and the joiner belongs to the sentence. Pinned because
+    // the tidy-looking "simplification" is to wrap the whole string again.
+    const { getByText, UNSAFE_getAllByType } = render(
+      <FlagCard flag={flag} density="row" distanceKm={0.433} />,
+    );
+    expect(getByText('433')).toBeTruthy();
+    const monoNodes = UNSAFE_getAllByType(Text).filter(
+      (n) => StyleSheet.flatten(n.props.style)?.fontFamily === font.family.mono,
+    );
+    // Exactly one mono node, and it holds no unit and no space.
+    expect(monoNodes).toHaveLength(1);
+    expect(String(monoNodes[0]!.props.children)).toBe('433');
+  });
+
+  it('falls back to whole-string mono if a distance ever arrives without the joiner', () => {
+    const { getByText } = render(<MonoDistance value="whatever" />);
+    expect(StyleSheet.flatten(getByText('whatever').props.style).fontFamily).toBe(font.family.mono);
   });
 
   it('leaves the rest of the census in the body face', () => {

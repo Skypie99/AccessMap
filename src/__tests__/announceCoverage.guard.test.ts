@@ -101,14 +101,23 @@ describe('A11Y-207 — SavedPlaces surfaces its writes on every platform', () =>
 });
 
 describe('SR-042 — spoken distances are spoken, not abbreviated', () => {
-  const src = read('screens/HomeScreen.tsx');
+  // RE-PINNED 2026-08-21 (Phase 2a). Home's row label is composed by the shared
+  // `FlagCard` now, so the rule is asserted where the sentence is built. This is
+  // a strengthening rather than a move: ONE builder serves Home and every future
+  // list row, so the abbreviation cannot creep back into one of them alone.
+  const src = read('components/ui/FlagCard.tsx');
 
-  it('the Home row accessible label uses speakDistance, never formatDistance', () => {
-    expect(src).toContain('${speakDistance(item.km)}');
-    // formatDistance still drives the VISIBLE chip — that is correct, and this
+  it('the row accessible label uses speakDistance, never formatDistance', () => {
+    expect(src).toContain('${speakDistance(distanceKm)}');
+    // formatDistance still drives the VISIBLE census — that is correct, and this
     // assertion would be wrong to make absolute. Pin only that the a11y label
     // no longer carries the abbreviation.
-    expect(src).not.toContain('${formatDistance(item.km)} away`');
+    expect(src).toContain('formatDistance(distanceKm)');
+    expect(src).not.toMatch(/\$\{formatDistance\([^)]*\)\}[^`]*`/);
+  });
+
+  it('and Home no longer composes a row label of its own to drift from it', () => {
+    expect(read('screens/HomeScreen.tsx')).not.toContain('speakDistance(');
   });
 });
 

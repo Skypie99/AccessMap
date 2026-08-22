@@ -16,7 +16,7 @@ export type { ButtonKind, ButtonSize } from './Button';
 export { Card } from './Card';
 
 // F1 — one drawing of a flag, at two densities (2026-08-21, art-direction Phase 2a).
-export { FlagCard, flagCardA11yLabel } from './FlagCard';
+export { FlagCard, MonoDistance, flagCardA11yLabel } from './FlagCard';
 export type { FlagCardDensity, FlagCardFlag, FlagCardHeaderA11y, FlagCardProps } from './FlagCard';
 
 export { Input } from './Input';

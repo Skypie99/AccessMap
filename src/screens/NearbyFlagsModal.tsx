@@ -23,7 +23,7 @@ import { formatDistance, haversineKm, speakDistance, type LatLng } from '@/lib/d
 import { searchFlags } from '@/lib/flagSearch';
 import type { FlagCategory, FlagRow } from '@/types/database';
 import SearchInputRow from '@/components/SearchInputRow';
-import { FlagCard } from '@/components/ui/FlagCard';
+import { FlagCard, MonoDistance } from '@/components/ui/FlagCard';
 import { font, radius, shadow, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 
@@ -190,7 +190,9 @@ export default function NearbyFlagsModal({
             censusExtra={[relativeTime(item.created_at)]}
             trailing={
               dist ? (
-                <AppText variant="monoBold" style={styles.distance}>{dist.text}</AppText>
+                <AppText variant="label" style={styles.distance}>
+                  <MonoDistance value={dist.text} />
+                </AppText>
               ) : undefined
             }
             media={
@@ -453,15 +455,13 @@ const makeStyles = (color: ColorTheme) =>
       transform: [{ scale: 0.99 }],
       backgroundColor: color.surfaceSoft,
     },
-    // T1: the distance is a data numeral, so it takes JetBrains Mono with
-    // TABULAR figures — a column of distances down the list stays a column
-    // instead of shuffling sideways as 1s and 8s trade places. The face comes
-    // from variant="monoBold" at the call site; asking for fontWeight on top of
-    // it would only make iOS synthesise a weight the family already ships.
+    // T1: the NUMERAL takes JetBrains Mono with tabular figures (MonoDistance
+    // owns that fork); the unit stays in this face, because a unit is a word.
+    // The size, colour and weight belong to the whole chip either way.
     distance: {
       fontSize: font.size.sm,
       color: color.brandText,
-      fontVariant: ['tabular-nums'],
+      fontWeight: font.weight.bold,
     },
     thumb: {
       width: 64,

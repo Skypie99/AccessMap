@@ -64,7 +64,7 @@ import type { RootTabParamList } from '@/navigation/RootNavigator';
 import type { DetailAction } from '@/components/FlagDetailModal';
 import PhotoLightboxModal from '@/components/PhotoLightboxModal';
 import { AppText } from '@/components/ui/AppText';
-import { FlagCard } from '@/components/ui/FlagCard';
+import { FlagCard, MonoDistance } from '@/components/ui/FlagCard';
 import { PressableScale } from '@/components/ui/PressableScale';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { hapticImpact, hapticNotify, hapticSelection } from '@/lib/haptics';
@@ -1350,9 +1350,7 @@ export default function TasksScreen() {
                   </AppText>
                   <AppText variant="label" style={styles.suggestedText}>
                     {`${CATEGORY_LABELS[nearestOpenHit.flag.category]} · Severity ${nearestOpenHit.flag.severity} · `}
-                    <AppText variant="mono" style={styles.suggestedDistance}>
-                      {formatDistance(nearestOpenHit.km)}
-                    </AppText>
+                    <MonoDistance value={formatDistance(nearestOpenHit.km)} />
                   </AppText>
                 </View>
                 <ChevronRight
@@ -2307,7 +2305,6 @@ const makeStyles = (color: ColorTheme, reduceTransparency: boolean) => {
       fontWeight: font.weight.medium,
       fontSize: font.size.sm,
     },
-    suggestedDistance: { fontVariant: ['tabular-nums'] },
     // Load-more footer — centered below the last SectionList card.
     // minHeight 44 on the button satisfies WCAG 2.5.5 (minimum touch target).
     footer: {

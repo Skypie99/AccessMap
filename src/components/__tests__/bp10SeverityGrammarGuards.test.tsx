@@ -111,7 +111,12 @@ describe('SeverityDisc — primitive contract (source)', () => {
 describe('zero-delta adoption pinning (source)', () => {
   const cases: [string, RegExp][] = [
     ['src/screens/LegendModal.tsx', /size=\{32\}\s+digitSize=\{font\.size\.base\}/],
-    ['src/screens/NearbyFlagsModal.tsx', /size=\{32\}\s+digitSize=\{font\.size\.sm\}/],
+    // RE-PINNED 2026-08-21 (Phase 2a). Nearby's disc did not change geometry;
+    // it changed address. The card is drawn by the shared FlagCard now, so the
+    // 32/sm pinning has to be asserted where the element is written or the
+    // regex matches nothing and this case passes on the `not.toMatch` half
+    // alone.
+    ['src/components/ui/FlagCard.tsx', /size=\{32\}\s+digitSize=\{font\.size\.sm\}/],
     ['src/components/ActivityFeedModal.tsx', /size=\{28\}\s+digitSize=\{font\.size\.xs\}/],
     [
       'src/components/RecentlyViewedRow.tsx',
@@ -149,13 +154,27 @@ describe('the severity grammar speaks on every surface (source)', () => {
     expect(s).toMatch(/SEVERITY_DESCRIPTIONS\[shownFlag\.severity\]/);
   });
 
-  it('Home Recent: numbered mini-disc; visible meta still speaks number · word', () => {
-    const s = readFileSync('src/screens/HomeScreen.tsx', 'utf8');
+  it('list rows: numbered mini-disc; visible census still speaks number · word', () => {
+    // RE-PINNED 2026-08-21 (Phase 2a). Home's row is FlagCard's `row` density
+    // now, so both halves of this assertion live in the component. The grammar
+    // is unchanged and is what is pinned; two details of the drawing did move
+    // and are pinned in their new form:
+    //   - the explicit maxFontSizeMultiplier={1.3} is gone. T3 says a fixed box
+    //     carries its cap with it, and SeverityDisc does (DISC_MAX_FONT_SCALE).
+    //     It was never load-bearing here: past 1.5x `scaleWithType` grows the
+    //     circle with the digit, so the cap only governed below that point.
+    //   - `scaleWithType` is what makes the disc the unit of the system at
+    //     large type instead of a bullet beside 40pt text (F4).
+    const s = readFileSync('src/components/ui/FlagCard.tsx', 'utf8');
+    expect(s).toMatch(/size=\{24\}\s+digitSize=\{font\.size\.xs\}\s+scaleWithType=/);
+    expect(s).not.toMatch(/size=\{24\}[\s\S]{0,120}maxFontSizeMultiplier/);
     expect(s).toMatch(
-      /<SeverityDisc\s+severity=\{item\.f\.severity\}\s+size=\{24\}[^>]*maxFontSizeMultiplier=\{1\.3\}/,
+      /`Severity \$\{flag\.severity\} · \$\{SEVERITY_LABELS\[flag\.severity\]\}`/,
     );
-    expect(s).toMatch(/Severity \$\{item\.f\.severity\} · \$\{SEVERITY_LABELS\[item\.f\.severity\]\}/);
-    expect(s).not.toMatch(/dot:\s*\{\s*width: 11/); // the 11px dot is gone
+    // and Home no longer hand-draws any of it
+    const home = readFileSync('src/screens/HomeScreen.tsx', 'utf8');
+    expect(home).not.toMatch(/<SeverityDisc\s/);
+    expect(home).not.toMatch(/dot:\s*\{\s*width: 11/); // the 11px dot is gone
   });
 
   it('Profile: pill shows Severity · word; a11y routed to severityA11y', () => {

@@ -55,7 +55,7 @@
  */
 
 import React from 'react';
-import { StyleSheet, View, useWindowDimensions, type StyleProp, type ViewStyle } from 'react-native';
+import { StyleSheet, View, useWindowDimensions, type StyleProp, type TextStyle, type ViewStyle } from 'react-native';
 import { ChevronRight } from 'lucide-react-native';
 import { AppText } from '@/components/ui/AppText';
 import { TypeBlock, TYPE_BLOCK } from '@/components/ui/TypeBlock';
@@ -151,6 +151,44 @@ export function flagCardA11yLabel(flag: FlagCardFlag, distanceKm?: number | null
   return distanceKm != null ? `${head}, ${speakDistance(distanceKm)}` : head;
 }
 
+/**
+ * A distance with its NUMERAL in mono and its UNIT in the surrounding face.
+ *
+ * ─── WHAT THE DEVICE CAUGHT ───────────────────────────────────────────────
+ * Built first with `formatDistance`'s whole output in JetBrains Mono, which is
+ * what the board draws. On the 17e it rendered "314   m": `formatDistance`
+ * joins value and unit with U+00A0 (a non-breaking space, so the unit can never
+ * orphan across a wrap), and in a MONOSPACE face that space takes a full
+ * character advance — roughly twice the body face's. The gap read as a typo.
+ *
+ * T1 asks for mono on "every numeral that is data". A unit is a word, and the
+ * separator belongs to the sentence, so both stay in the face around them. The
+ * split is on the last U+00A0 rather than on whitespace generally: that
+ * character is `formatDistance`'s own deliberate joiner, and "<50 m" has no
+ * other space to be confused with it.
+ *
+ * If the string ever arrives without one, the whole thing renders in mono —
+ * the old behaviour, not a crash and not an empty node.
+ */
+export function MonoDistance({ value, style }: { value: string; style?: StyleProp<TextStyle> }) {
+  const at = value.lastIndexOf('\u00A0');
+  if (at === -1) return <AppText variant="mono" style={[styles_mono.tabular, style]}>{value}</AppText>;
+  return (
+    <>
+      <AppText variant="mono" style={[styles_mono.tabular, style]}>{value.slice(0, at)}</AppText>
+      {value.slice(at)}
+    </>
+  );
+}
+
+// Declared apart from makeStyles: this pair is theme-independent, and
+// MonoDistance is used by screens that build their own StyleSheet.
+const styles_mono = StyleSheet.create({
+  // T1: TABULAR figures, so a column of distances stays a column instead of
+  // shuffling sideways as 1s and 8s trade places. The face alone would not.
+  tabular: { fontVariant: ['tabular-nums'] },
+});
+
 export function FlagCard({
   flag,
   density,
@@ -197,7 +235,7 @@ export function FlagCard({
       {distanceText ? (
         <>
           {' · '}
-          <AppText variant="mono" style={styles.censusNum}>{distanceText}</AppText>
+          <MonoDistance value={distanceText} />
         </>
       ) : null}
       {censusExtras.map((seg) => (
@@ -245,11 +283,18 @@ export function FlagCard({
             out at that size — the whole row is still the button, and the
             accessibilityLabel above is untouched, so a screen reader loses
             nothing. */}
+        {/* No per-site cap. T3 says a fixed box carries its cap WITH it, and
+            SeverityDisc does — DISC_MAX_FONT_SCALE, derived from the box: 12pt
+            in a 24pt circle reaches 19.2pt at 1.6 and still fits. Home used to
+            pass 1.3 here, which is exactly the per-call-site drift T3 was
+            written to end, and it was never load-bearing: above 1.5x
+            `scaleWithType` takes over and grows the circle with the digit, so
+            the cap only ever governs below that point, where the effective
+            multiplier tops out at 1.5 and the digit reaches 18pt. */}
         <SeverityDisc
           severity={flag.severity}
           size={24}
           digitSize={font.size.xs}
-          maxFontSizeMultiplier={1.3}
           scaleWithType={axRecompose}
         />
         <View style={[styles.rowText, axRecompose && styles.rowTextWide]}>
@@ -384,9 +429,4 @@ const makeStyles = (color: ColorTheme) =>
       fontFamily: font.family.bodyMedium,
       color: color.inkGlassMuted,
     },
-    // T1: data numerals are JetBrains Mono with TABULAR figures, so a column of
-    // distances stays a column instead of shuffling sideways as the digits
-    // change width. `fontVariant` is the part that does that work; the face
-    // alone would not.
-    censusNum: { fontVariant: ['tabular-nums'] },
   });
