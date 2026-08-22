@@ -331,3 +331,128 @@ returning users differently on purpose.**
   sign-up confirmation, "Sign in", "Create account", "or", "← Back", and both
   legal labels (which come from `copy.ts`) — every one byte-identical. The
   footer's LAYOUT changed; not one word of it did.
+
+---
+
+## Prompt 06 — Phase 2c (THE REPORT FORM · SETTINGS · PROFILE · EMPTY STATES)
+
+This phase writes the most placeholders in the series. Nothing below is
+shipped-as-final: every row is a builder's draft awaiting Sky's ratification,
+and each one names the single place it changes.
+
+Guarded copy that was NOT touched, verified: Terms · Privacy · every moderation
+text (`HIDDEN_COMMENTS_*`, `BLOCKED_PEOPLE_*`, `UNBLOCK_ALL_LABEL`) · the
+Replay-tutorial row (title, subtitle, hint — `onboardingCoherence.guard` passes
+unchanged) · the Legend row rhythm · `MISSION_STATEMENT` (rendered verbatim from
+the one exported constant, `mission.guard` passes unchanged) · the report form's
+two privacy paragraphs, the EXIF promise, the anon rate-limit strings and the
+per-photo alt field · `PUSH_SIGNED_OUT_SUBTITLE` · the §SKY-6 export row ·
+`REPORT_CONTROL_LABEL` and `DISPUTE_CONTROL_LABEL`. Zero em dashes written.
+
+### New user-facing strings — PLACEHOLDERS, awaiting Sky's ratification
+
+| # | String | Screen | Board / rule | Replaces |
+|---|---|---|---|---|
+| W-16 | `At your current location` | Report form, location line | Board 04, Q17 | `at 49.88800, -119.49600` (the raw coordinate, as the sheet's second line) |
+| W-17 | `At the pin you placed` | Report form, location line, members placing a pin | Board 04, Q17 | the same raw coordinate |
+| W-18 | `Show` / `Hide` (visible link; spoken `Show coordinates` / `Hide coordinates`) | Report form, location line | Board 04, Q17 | nothing — new control |
+| W-19 | `Copy` (visible; spoken `Copy coordinates {lat} latitude, {lng} longitude`) | Report form, revealed coordinate | Board 04, Q17 | nothing — new control |
+| W-20 | `Choose how hard this makes the path to use.` | Report form, severity meaning line, before a choice | Board 04, Q5 | nothing — the line previously stated severity 3's meaning, because 3 was pre-selected |
+| W-21 | `Choose a severity from 1 to 5 to submit this report.` | Report form, Submit's accessibility hint | Board 04, Q5 | nothing — Submit had no hint once a location existed |
+| W-22 | `Submit anonymously` | Report form, guest submit (visible AND spoken) | Board 04, Q6 | visible `Submit report` + spoken `Submit report anonymously` |
+| W-23 | `FLAGSTONE` | Settings eyebrow | Board 07 | `SETTINGS` (which repeated the title one line below it) |
+| W-24 | `Moderation` | Settings, new section heading | Board 07 | nothing — the two rows sat under `Feedback` |
+| W-25 | `Sign in` + `Report with a photo, verify other reports, and earn points.` | Settings ACCOUNT row, guests | Board 07, Q15 | `Sign out` / `End your session on this device.` — offered to guests |
+| W-26 | `Add photos to your reports` | Guest Profile, "With an account" | Board 08, Q11 | nothing — new card |
+| W-27 | `Verify and resolve barriers near you` | Guest Profile, "With an account" | Board 08, Q11 | nothing — new card |
+| W-28 | `Earn points and badges` | Guest Profile, "With an account" | Board 08, Q11 | nothing — new card |
+| W-29 | `With an account` | Guest Profile, section heading | Board 08, Q11 | nothing — new section |
+| W-30 | `Your reports` | Profile, first nav group heading | Board 08 | nothing — the seven rows had no headings |
+| W-31 | `Community & account` | Profile, second nav group heading | Board 08 | nothing — see W-30 |
+| W-32 | `No badges to show yet` + `Report, verify and resolve barriers to start earning them.` | Achievements sheet, empty catalog | Board 10, §W5 | nothing — the sheet rendered a title over an empty scroll |
+| W-33 | `Couldn't load your breakdown` + `Try again` | Profile, ReportsBreakdownCard error | Board 10 | nothing — the card returned `null` and vanished |
+| W-34 | `Open Settings` (visible and spoken) + hint `Opens this app's settings, where location access can be turned back on` | Map, denied banner + recenter button, LOCKED denial only | D26 | nothing — new control |
+| W-35 | `Location is off and this app can no longer ask. Opens this app's settings.` | Map, recenter button hint, LOCKED denial only | D26 | nothing — the button had no hint |
+| W-36 | `Dimmed until location is on. Turn it on in Settings, then report a flag here.` | Map, Report FAB hint, LOCKED denial only | D26 | `Dimmed until location is on. Use the recenter button to turn on location, then report a flag here.` — which survives for every user who CAN still be re-asked |
+
+**W-16/17 detail.** The sheet cannot tell which of the two answers the
+coordinate is — `MapScreen` hands it `dropLocation ?? location` and both arrive
+as the same object — so a `locationSource` prop now carries the distinction.
+Guests only ever see W-16: manual pin placement is a signed-in path by design.
+
+**W-22 detail.** The store dossier (2026-08-05) praised this button for
+restating the contract at the moment of commitment. It was praising the
+`accessibilityLabel`; sighted users only ever saw "Submit report". One constant
+now serves both channels, which is also the only shape that keeps WCAG 2.5.3
+once the visible word changes: "Submit report anonymously" does not contain
+"Submit anonymously". Members keep "Submit report" unchanged.
+
+**W-25 detail.** The words are the drawer's own ("Sign in"); the subtitle is new
+and is the only invented line in that row. If you would rather it ship
+title-only, like the privacy and terms rows, delete one prop.
+
+### Format changes — same words, different arrangement
+
+| # | Was | Is | Where |
+|---|---|---|---|
+| F-05 | `No barriers reported yet.` | `No reports here yet.` / `You could add the first.` (the RATIFIED A-5 sentence, split into the recipe's heading + body) | Home, list card, true zero |
+
+**F-05 detail — one screen was saying two different things about the same
+nothing.** The map peek two inches above the list card already spoke Sky's
+ratified sentence (`EMPTY_LOCAL_INVITE`) for this exact condition; the card
+underneath said something else. The ratified one wins, and the two halves are
+DERIVED from that same constant rather than retyped, so the A-5 note's promise
+that a rewording stays a one-line swap still holds. **If you would rather the
+card kept "No barriers reported yet."**, it is two props on one component.
+
+### Strings deliberately NOT changed in Phase 2c
+
+- **The anon lock banner** keeps its em dash: *"Reporting anonymously — your
+  identity is not stored."* The prompt allows removing it "only if Sky
+  ratifies", so it stands. The `flexBasis: 60%` reflow is untouched. **To take
+  the board's version**, it is one literal in `ReportFlagModal.tsx`:
+  `Reporting anonymously. Your identity is not stored.`
+- **"Update preferences"** — board 07 drafts "Which updates to show" for the
+  verb/noun ambiguity the critic named ("update your preferences" vs
+  "preferences for Updates"). Not built: it is a rename of a shipped row with no
+  defect behind it, and this phase already writes twenty-odd placeholders. Sky's
+  call; it is one string.
+- **Tasks' five empty-state branches, MyReports' three, MyWatched's two,
+  ActivityFeed's three, HiddenComments' pair** — every word verbatim through the
+  EmptyState adoption, including "That's everything nearby — you're up to date",
+  which is a list FOOTER and was never part of the empty state.
+- **"Your reports"** as the ReportsBreakdownCard's own title is unchanged and is
+  a different object from W-30, which is a section heading further down the same
+  screen. They do not collide on screen (the card carries its title inside its
+  own surface) but they are the same two words twice — flagged rather than
+  renamed, because renaming either is Sky's call.
+
+### ⚠ TWO DECISIONS THAT REVERSE AN EARLIER SKY RULING
+
+Both were instructed by the prompt. Both are one-line reverts.
+
+**1. §SKY-7 section pick S1 — Hidden comments moves out of Feedback.**
+Sky filed Hidden comments (and later Blocked people) under FEEDBACK on the
+reasoning that all four rows are "records of things you did". The critic's
+objection is about FINDING them: a user looking for "who did I block" does not
+look under Feedback, and these two are the only rows on the screen that control
+what other people's content can reach this device. Board 07 gives them their own
+section, and this build does. The rows' own copy is untouched; only the heading
+above them is new. **To revert:** move the two `<SettingsRow>`s back into the
+Feedback `<SettingsGroup>` and delete the heading.
+
+**2. §C6's wording vs. the two failed-refresh banners.**
+Rule §C6 as written says: *red when the failure left nothing to show; amber when
+stale-but-present data remains.* MyWatched and HiddenComments both show a failed
+REFRESH while their rows remain, so by the letter of the rule they were already
+correct in amber. The prompt names both files and instructs red. Built as
+instructed, because it resolves a real incoherence the rule does not address:
+MyWatched rendered its refresh FAILURE in the same amber banner as its
+informational notice ("N flags have been removed by their author"), so a failure
+and an FYI were the same object; and MyReports and ActivityFeed — the two modals
+§C6 cites as already right — render any load failure in `errorBg` regardless of
+what remains on screen. The change makes four modals agree.
+**The rule may want one more sentence:** amber is an informational notice ABOUT
+the data, red is an operation that FAILED. **To revert either banner:** one
+style swap (`refreshErrorBanner` -> `missingBanner` in MyWatchedModal;
+`errorBg`/`errorFg` -> `warningBg`/`warningFg` in HiddenCommentsModal).
