@@ -4,6 +4,7 @@ import {
   ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
+  Linking,
   Modal,
   Platform,
   Pressable,
@@ -372,6 +373,25 @@ export default function MapScreen() {
   const [location, setLocation] = useState<Coords | null>(null);
   const [locating, setLocating] = useState(true);
   const [permissionDenied, setPermissionDenied] = useState(false);
+  /**
+   * D26 — a denial the app cannot re-ask.
+   *
+   * iOS answers a second permission request with silence once the user has said
+   * no: `canAskAgain` goes false and `requestForegroundPermissionsAsync` returns
+   * denied without showing anything. Every control that says "turn on location"
+   * is then pointing at a door that no longer opens, and the app's own copy was
+   * still promising an in-app fix ("Use the recenter button to turn on
+   * location"). The only real route is the OS settings pane.
+   *
+   * Deliberately narrower than `permissionDenied`: a denial the user CAN be
+   * re-asked about keeps today's in-app wording, because for them the in-app
+   * route is the true one.
+   */
+  const [permissionLocked, setPermissionLocked] = useState(false);
+  // Only iOS actually has the one-shot rule; Android re-prompts until the user
+  // picks "don't ask again" (which surfaces the same flag), and the web has no
+  // settings pane to open.
+  const canOpenSettings = Platform.OS === 'ios' || Platform.OS === 'android';
   // T7 (F4-03): true only on the UNDETERMINED no-location arrival (never asked).
   // Mutually exclusive with permissionDenied — a real denial shows the assertive
   // banner, never this polite hint. Cleared the moment the FAB resolves either way.
@@ -1196,13 +1216,15 @@ export default function MapScreen() {
       AccessibilityInfo.announceForAccessibility('Finding your location…');
     }
     try {
-      const { status } = await Location.requestForegroundPermissionsAsync();
+      const { status, canAskAgain } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
         if (mountedRef.current) {
           // The FAB forced a real answer: this is now a denial, not the
           // never-asked hint — retire the polite line for the assertive banner.
           setNoLocationHint(false);
           setPermissionDenied(true);
+          // D26: and if the OS will not ask again, the in-app route is closed.
+          setPermissionLocked(canAskAgain === false);
           // WCAG 4.1.3: permission-denied is a status change not conveyed
           // by focus or role; announce it explicitly.
           AccessibilityInfo.announceForAccessibility(
@@ -1214,6 +1236,7 @@ export default function MapScreen() {
       if (mountedRef.current) {
         setNoLocationHint(false);
         setPermissionDenied(false);
+        setPermissionLocked(false);
       }
       // Battery: reuse a cached fix up to 30s old before powering the GPS for a
       // fresh lock on every recenter/initial-locate. 30s is recent enough to
@@ -1287,7 +1310,13 @@ export default function MapScreen() {
   // requestLocation() directly and will trigger the OS prompt if needed.
   useEffect(() => {
     Location.getForegroundPermissionsAsync()
-      .then(({ status }) => {
+      .then(({ status, canAskAgain }) => {
+        // D26: read the lock on ARRIVAL too, so a user who denied in an earlier
+        // session is offered the settings route without having to tap a control
+        // that can no longer do anything.
+        if (mountedRef.current && status === 'denied' && canAskAgain === false) {
+          setPermissionLocked(true);
+        }
         if (initialLocationAction(status) === 'fetch') {
           requestLocation();
         } else if (mountedRef.current) {
@@ -2693,6 +2722,23 @@ export default function MapScreen() {
               Location is off, so the map shows the most recent flags, not ones near you. Turn on
               location access to find flags nearby.
             </AppText>
+            {/* D26: when the OS will not ask again, the sentence above is true
+                but its instruction is not actionable from inside the app. The
+                link is the route that still works. Rendered only in the locked
+                state — a user who can still be re-asked keeps the plain banner
+                and the recenter button, which for them really do turn it on.
+                PLACEHOLDER COPY (SKY-WORDS-REQUIRED). */}
+            {permissionLocked && canOpenSettings && (
+              <Pressable
+                onPress={() => void Linking.openSettings()}
+                style={({ pressed }) => [styles.bannerLink, pressed && styles.bannerLinkPressed]}
+                accessibilityRole="button"
+                accessibilityLabel="Open Settings"
+                accessibilityHint="Opens this app's settings, where location access can be turned back on"
+              >
+                <AppText variant="label" style={styles.bannerLinkText}>Open Settings</AppText>
+              </Pressable>
+            )}
           </View>
         )}
 
@@ -2829,9 +2875,24 @@ export default function MapScreen() {
             <PressableScale
               style={styles.fabCrystal}
               dimOnPress={false}
-              onPress={requestLocation}
+              // D26: under a locked denial this button cannot recenter on
+              // anything — the OS answers its permission request with silence.
+              // It takes the user to the one place that can still change the
+              // answer, and says so, rather than looking live and doing nothing.
+              onPress={
+                permissionLocked && canOpenSettings
+                  ? () => void Linking.openSettings()
+                  : requestLocation
+              }
               accessibilityRole="button"
-              accessibilityLabel="Recenter on me"
+              accessibilityLabel={
+                permissionLocked && canOpenSettings ? 'Open Settings' : 'Recenter on me'
+              }
+              accessibilityHint={
+                permissionLocked && canOpenSettings
+                  ? "Location is off and this app can no longer ask. Opens this app's settings."
+                  : undefined
+              }
             >
               <GlassSurface
                 variant="row"
@@ -2960,7 +3021,13 @@ export default function MapScreen() {
                     ? 'Opens a form to report an accessibility issue at your current location'
                     : Platform.OS === 'web'
                       ? 'Opens the report form and finds your location. Allow location access when your browser asks.'
-                      : 'Dimmed until location is on. Use the recenter button to turn on location, then report a flag here.'
+                      : permissionLocked && canOpenSettings
+                        // D26: the old sentence promised a fix this app can no
+                        // longer perform — the recenter button cannot re-ask
+                        // once the OS has stopped asking.
+                        // PLACEHOLDER COPY (SKY-WORDS-REQUIRED).
+                        ? 'Dimmed until location is on. Turn it on in Settings, then report a flag here.'
+                        : 'Dimmed until location is on. Use the recenter button to turn on location, then report a flag here.'
                 }
                 {...a11yToggle({ disabled: reportDisabled })}
               >
@@ -3778,6 +3845,23 @@ const makeStyles = (color: ColorTheme) =>
       alignItems: 'center',
     },
     bannerText: { fontSize: font.size.sm, color: color.text },
+    // D26: the banner's route out. Sits under the sentence rather than beside
+    // it so it survives the reflow at large type, and carries the 44pt box
+    // itself.
+    bannerLink: {
+      alignSelf: 'flex-start',
+      marginTop: spacing.xs,
+      minHeight: a11y.minTargetSize,
+      justifyContent: 'center',
+      paddingRight: spacing.sm,
+    },
+    bannerLinkPressed: { opacity: 0.7 },
+    bannerLinkText: {
+      color: color.inkSelect,
+      fontWeight: font.weight.bold,
+      fontSize: font.size.sm,
+      textDecorationLine: 'underline',
+    },
     // Pinned-light literal — NOT the shared bannerText (the permission banner
     // renders that on a themed dark fill). #333 on the 0.82 white banner = 8.28:1.
     bannerLocatingText: { fontSize: font.size.sm, color: '#333' },
