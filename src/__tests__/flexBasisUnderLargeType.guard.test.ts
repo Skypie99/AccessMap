@@ -221,3 +221,110 @@ describe('SW-51 — the Profile breakdown label sat in a box pinned at 130pt', (
     expect(block).toMatch(/minWidth:\s*\d/);
   });
 });
+
+/**
+ * T5 — the width rule, applied to the four rows that had no escape.
+ * (Added 2026-08-21, art-direction Phase 1a item 1.3.)
+ *
+ * These are the same geometry as SW-36 and SW-51 above, found by the cold walk
+ * rather than by the device: a text box whose width is "whatever the sibling
+ * left over", inside a row that cannot wrap. When that leftover is narrower than
+ * the longest word, iOS character-breaks it. The fix is the same two-part shape
+ * both times — wrap on the row, and a floor on the text so the wrap actually
+ * fires — which is the part that was missed the first time SW-36 was "fixed".
+ */
+describe('T5 / D23 — the Profile tier-explainer header had no escape', () => {
+  const src = read('screens/ProfileScreen.tsx');
+
+  it('tierHeaderRow may wrap', () => {
+    const block = styleBlock(src, 'tierHeaderRow');
+    expect(block).toContain("justifyContent: 'space-between'"); // non-vacuity
+    expect(block).toContain("flexWrap: 'wrap'");
+  });
+
+  it('the title floors its width instead of taking the button\'s leftovers', () => {
+    const block = styleBlock(src, 'tierHeaderTitle');
+    expect(block).toContain('fontSize: 18'); // non-vacuity
+    expect(NUMERIC_FLEX_BASIS.test(block)).toBe(false);
+    expect(block).toMatch(/minWidth:\s*\d+/);
+    expect(block).toContain('flexShrink: 1');
+  });
+});
+
+describe('T5 / D24 — the two Tasks chrome rows had no escape', () => {
+  const src = read('screens/TasksScreen.tsx');
+
+  it('filterTriggerRow may wrap (its chips already measure their own text)', () => {
+    const block = styleBlock(src, 'filterTriggerRow');
+    expect(block).toContain('paddingHorizontal: spacing.lg'); // non-vacuity
+    expect(block).toContain("flexWrap: 'wrap'");
+  });
+
+  it('searchRow may wrap AND the field carries the floor that makes it fire', () => {
+    expect(styleBlock(src, 'searchRow')).toContain("flexWrap: 'wrap'");
+    const input = styleBlock(src, 'searchInput');
+    expect(input).toContain('minHeight: a11y.minTargetSize + 2'); // non-vacuity
+    // flex:1 is basis 0 — without a floor the non-shrinking sibling button can
+    // squeeze the field to a sliver instead of being pushed to its own line.
+    expect(input).toMatch(/minWidth:\s*\d+/);
+  });
+});
+
+describe('T5 / D4 + D20 — onboarding gives width back instead of capping the text', () => {
+  const src = read('components/OnboardingCards.tsx');
+
+  it('the card column widens at the recomposition point rather than shrinking the body', () => {
+    // T5 prefers a wider column over a smaller multiplier. The default column is
+    // ~310pt on a 390pt screen, which is narrower than "accessibility" needs
+    // above ~2x — that is the "accessibili / ty" break captured at 3XL.
+    expect(styleBlock(src, 'cardScrollContent')).toContain('paddingHorizontal: spacing.xxxl');
+    expect(styleBlock(src, 'cardScrollContentWide')).toContain('paddingHorizontal: spacing.lg');
+    expect(src).toContain('const wideColumn = isAxRecompose(fontScale);');
+    expect(src).toContain('wideColumn && styles.cardScrollContentWide');
+  });
+
+  it("the body's own measure cap lifts with it, or the extra width is swallowed", () => {
+    expect(styleBlock(src, 'body')).toContain('maxWidth: 360');
+    expect(src).toContain('bodyWide: { maxWidth: undefined }');
+    expect(src).toContain('wideColumn && styles.bodyWide');
+  });
+
+  it('the actions row may wrap (D20 — the sibling modal already did)', () => {
+    const block = styleBlock(src, 'actions');
+    expect(block).toContain('paddingHorizontal: spacing.xxl'); // non-vacuity
+    expect(block).toContain("flexWrap: 'wrap'");
+  });
+});
+
+/**
+ * F4 — the status-bar ledge fades to its OWN colour, never to 'transparent'.
+ *
+ * Found on the device, not in review (2026-08-21). `'transparent'` in RN is
+ * rgba(0,0,0,0), so a gradient ending there interpolates through BLACK and lays
+ * a grey veil over whatever it covers: Home's stage measured #A6C8FB before the
+ * ledge and #89A0C1 under it. The fix is the eight-digit twin — same colour,
+ * zero alpha — and it is invisible only in that form.
+ */
+describe('F4 — the status ledge is invisible, not a grey veil', () => {
+  it.each(['screens/HomeScreen.tsx', 'screens/SettingsScreen.tsx'])(
+    '%s fades stage0 to its own zero-alpha twin',
+    (rel) => {
+      const src = read(rel);
+      // Non-vacuity: the ledge has to exist.
+      expect(src).toContain('styles.statusLedge');
+      expect(src).toContain('colors={[color.stage0, `${color.stage0}00`]}');
+      expect(src).not.toMatch(/colors=\{\[color\.stage0, 'transparent'\]\}/);
+    },
+  );
+
+  it.each(['screens/HomeScreen.tsx', 'screens/SettingsScreen.tsx'])(
+    '%s keeps the ledge pointer-inert and out of the a11y tree',
+    (rel) => {
+      const src = read(rel);
+      const at = src.indexOf('styles.statusLedge');
+      const block = src.slice(at, at + 200);
+      expect(block).toContain('pointerEvents="none"');
+      expect(block).toContain('decorativeProps');
+    },
+  );
+});

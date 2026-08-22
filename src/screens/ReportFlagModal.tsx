@@ -14,6 +14,7 @@ import {
   View,
 } from 'react-native';
 import { AppText } from '@/components/ui/AppText';
+import { TypeBlock, TYPE_BLOCK } from '@/components/ui/TypeBlock';
 import { GlassSurface } from '@/components/ui/GlassSurface';
 import { OverflowFade } from '@/components/ui/OverflowFade';
 import { SheetGrabber } from '@/components/ui/Sheet';
@@ -720,6 +721,10 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
             // isn't hidden behind the keyboard. iOS-only prop; false elsewhere.
             automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}
           >
+          {/* T3: the sheet's own header cluster — title + the coordinates line
+              under it — on one multiplier. The mono line used to cap at 1.4 and
+              the heading at 1.5; neither matched the other or the labels below. */}
+          <TypeBlock cap={TYPE_BLOCK.header}>
           <AppText ref={titleRef} variant="heading" style={styles.title} accessibilityRole="header">
             {isAnon ? 'Report anonymously' : 'Report a flag'}
           </AppText>
@@ -737,6 +742,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
                   : 'Waiting for location…'}
             </AppText>
           </View>
+          </TypeBlock>
           {/* S5 (L3-1): when no location has resolved yet — the common
               first-time web-guest case, where nothing was ever in flight — give
               an in-sheet retry so recovery doesn't mean abandoning the flow.
@@ -989,7 +995,16 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
           </View>
 
           {/* Inline hint: updates as the user taps a severity level so
-              they know what each number means before submitting. */}
+              they know what each number means before submitting.
+              T3 (X7): uncapped `body` made this the LARGEST text on the sheet at
+              accessibility-extra-large — bigger than "Report anonymously" itself.
+              It labels the picker above it, so it belongs to the form's header
+              block, not to the reading copy. Capped with the title it sits under.
+              Deliberately NOT applied to the sheet's honest prose (the anon
+              banner, the photo nudge, the submission explainer): that is reading
+              content and stays uncapped, because capping body copy at 1.6 would
+              stop it short of the 200% that WCAG 1.4.4 asks for. */}
+          <TypeBlock cap={TYPE_BLOCK.header}>
           <AppText
             variant="body"
             style={styles.sevHint}
@@ -1000,6 +1015,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
             {'  '}
             {SEVERITY_DESCRIPTIONS[severity]}
           </AppText>
+          </TypeBlock>
 
           <AppText variant="label" style={styles.label} accessibilityRole="header">Description (optional)</AppText>
           <TextInput

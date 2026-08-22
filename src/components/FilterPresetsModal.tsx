@@ -307,7 +307,9 @@ export default function FilterPresetsModal({ visible, onClose, onApply }: Props)
                 <AppText variant="label" style={styles.rowName}>
                   {item.name}
                 </AppText>
-                <AppText variant="body" style={styles.rowSummary} numberOfLines={1}>
+                {/* T4: the summary IS the preset's definition ("No ramp, severity
+                    4+"), so it may not lose its tail. Was 1. */}
+                <AppText variant="body" style={styles.rowSummary} numberOfLines={2}>
                   {presetSummary(item)}
                 </AppText>
               </View>

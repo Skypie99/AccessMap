@@ -182,7 +182,11 @@ export function CommentBubble({
           <AppText
             variant="label"
             style={[styles.author, { color: color.brandText }]}
-            numberOfLines={1}
+            // T4: a display name is a person's name — it shrinks to 0.8 and then
+            // wraps rather than losing its tail. Was 1.
+            numberOfLines={2}
+            adjustsFontSizeToFit
+            minimumFontScale={0.8}
             // The byline is part of the sentence, never a node of its own. In
             // the composite path `accessible` on the row already absorbs it;
             // in the non-composite path it would otherwise be read as a bare

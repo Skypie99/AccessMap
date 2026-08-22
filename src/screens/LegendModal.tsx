@@ -1,5 +1,5 @@
 import React from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Modal, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 import {
   CATEGORY_DESCRIPTIONS,
@@ -13,10 +13,11 @@ import {
 } from '@/lib/flags';
 import { font, radius, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
-import { useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
+import { isAxRecompose, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
 import CategoryIcon from '@/components/CategoryIcon';
 import { SeverityDisc } from '@/components/SeverityDisc';
 import { AppText } from '@/components/ui/AppText';
+import { TypeBlock, TYPE_BLOCK } from '@/components/ui/TypeBlock';
 import { GlassSurface } from '@/components/ui/GlassSurface';
 import { SheetGrabber } from '@/components/ui/Sheet';
 import { SheetPull, useAtTop } from '@/components/ui/SheetPull';
@@ -37,6 +38,7 @@ interface Props {
 export default function LegendModal({ visible, onClose, onDismiss }: Props) {
   const color = useColor();
   const reducedMotion = useReducedMotion();
+  const { fontScale } = useWindowDimensions();
   const styles = makeStyles(color);
   // Read the inset context directly (zero fallback) instead of
   // useSafeAreaInsets(), which throws when there's no SafeAreaProvider — the
@@ -94,7 +96,15 @@ export default function LegendModal({ visible, onClose, onDismiss }: Props) {
                 invalid HTML, and one title heard as two nested headings. */}
             <AppText variant="heading" style={styles.title} accessibilityRole="none">Map legend</AppText>
           </View>
-          <AppText variant="body" style={styles.subtitle}>What the colors and categories on the map mean.</AppText>
+          {/* Board 06: the subtitle restates the title ("Map legend" / "What the
+              colors and categories on the map mean"), so at the recomposition
+              point it stands down and gives its two-or-three lines to the rows
+              that actually teach. Below the threshold it is unchanged, and it is
+              never removed from the DOM at a size where anyone reads it as the
+              screen's only explanation. */}
+          {!isAxRecompose(fontScale) && (
+            <AppText variant="body" style={styles.subtitle}>What the colors and categories on the map mean.</AppText>
+          )}
 
           <ScrollView
             ref={scrollRef}
@@ -103,6 +113,20 @@ export default function LegendModal({ visible, onClose, onDismiss }: Props) {
             onScroll={onScroll}
             scrollEventThrottle={scrollEventThrottle}
           >
+            {/* T3 (X6): the Legend is the app's teaching surface and it taught
+                the wrong hierarchy at large type — every row TITLE ("2 — Mild")
+                capped at 1.6 on `label` while the meaning under it scaled
+                uncapped on `body` and overtook it, and the section headings
+                ("Severity", "Status", "Categories") capped tighter still at 1.5
+                on `heading`. One content block over the whole sheet: headings,
+                row titles and meanings share one multiplier, so the order the
+                Legend exists to teach survives every text size. Per-row blocks
+                would have fixed the rows and left the section headings inverted
+                one level up. TypeBlock renders no view, so the layout is
+                untouched at default size.
+                PROTECT: the row rhythm (32pt disc + "N — Word" + consequence) and
+                every string here are unchanged. */}
+            <TypeBlock cap={TYPE_BLOCK.content}>
             <AppText variant="heading" style={styles.sectionLabel} accessibilityRole="header">
               Severity
             </AppText>
@@ -232,6 +256,7 @@ export default function LegendModal({ visible, onClose, onDismiss }: Props) {
               Reporters earn points when their flag is verified or resolved. Verifiers and resolvers
               earn points too.
             </AppText>
+            </TypeBlock>
           </ScrollView>
 
           <Pressable

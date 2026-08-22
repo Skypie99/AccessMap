@@ -16,7 +16,7 @@
  * interactive map is the hidden `FullMap` route, reached via "Open full map".
  */
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Platform, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import { Platform, Pressable, RefreshControl, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
@@ -33,7 +33,8 @@ import {
   WifiOff,
   X,
 } from 'lucide-react-native';
-import { decorativeProps } from '@/lib/accessibility';
+import { decorativeProps, isAxRecompose } from '@/lib/accessibility';
+import { LinearGradient } from 'expo-linear-gradient';
 import { AppText } from '@/components/ui/AppText';
 import { GlassSurface } from '@/components/ui/GlassSurface';
 import { ScreenHeader, EYEBROW_TRACKING } from '@/components/ui/ScreenHeader';
@@ -132,6 +133,11 @@ function LocationProbe({
 export default function HomeScreen() {
   const color = useColor();
   const insets = useSafeAreaInsets();
+  // F4 / board 01: at or above the recomposition point Home restacks rather than
+  // scrolling its default composition — the disc climbs, the census breaks, the
+  // search bar and the Report pill lose their labels to their icons.
+  const { fontScale } = useWindowDimensions();
+  const axRecompose = isAxRecompose(fontScale);
   const navigation = useNavigation<HomeNav>();
   const tabBarHeight = useBottomTabBarHeight();
   const drawer = useDrawer();
@@ -312,6 +318,12 @@ export default function HomeScreen() {
   return (
     <View style={styles.screen}>
       <ScreenStage />
+      <LinearGradient
+        colors={[color.stage0, `${color.stage0}00`]}
+        style={styles.statusLedge}
+        pointerEvents="none"
+        {...decorativeProps}
+      />
       {probeEnabled && (
         <LocationProbe
           // R-2 / SR-041: remount per tap so a retry is a real retry.
@@ -398,13 +410,23 @@ export default function HomeScreen() {
               <AppText
                 variant="body"
                 style={[styles.searchText, searchLabel ? styles.searchTextActive : null]}
-                numberOfLines={1}
+                // T4 / X8b: this carries the searched PLACE NAME once a search is
+                // active, so it is content, not a static placeholder. Was 1.
+                numberOfLines={2}
                 accessible
                 accessibilityRole="button"
                 accessibilityLabel={searchLabel ? `Search: ${searchLabel}` : 'Search a place'}
                 accessibilityHint="Find an address to recenter the map and list"
               >
-                {searchLabel ?? 'Search a place'}
+                {/* F4 / board 01: at the recomposition point the search label
+                    grows to ~40pt and eats the header row, so the control goes
+                    icon-only. The AppText itself stays MOUNTED and unchanged —
+                    it is the element that carries `accessible`, the button role,
+                    the 44pt frame and the accessible name (SW-10 / A11Y-214,
+                    pinned by hitTargetFrame.guard). Moving those onto the icon
+                    to save a node would trade a real a11y contract for tidiness.
+                    Only the visible characters go. */}
+                {axRecompose ? null : (searchLabel ?? 'Search a place')}
               </AppText>
               {searchLabel && (
                 <Pressable
@@ -633,39 +655,94 @@ export default function HomeScreen() {
                   {/* S1 + T5: the Recent row's severity is now a numbered mini-disc
                       (the RecentlyViewedRow recipe). Decorative — the row label and
                       the visible meta below already speak number · word · status. */}
-                  <SeverityDisc severity={item.f.severity} size={24} digitSize={font.size.xs} maxFontSizeMultiplier={1.3} />
-                  <View style={styles.rowText}>
+                  {/* F4: below the recomposition point this is the shipped row —
+                      24pt disc, text, chevron, all on one line. At or above it the
+                      row wraps: the disc scales with the type and takes the line
+                      above a FULL-WIDTH text block, because a 24pt disc beside
+                      40pt text reads as a bullet rather than as the unit of the
+                      system (board 01). The chevron drops out at that size — the
+                      whole row is still the button, and its accessibilityLabel
+                      above is untouched, so nothing is lost to a screen reader. */}
+                  <SeverityDisc
+                    severity={item.f.severity}
+                    size={24}
+                    digitSize={font.size.xs}
+                    maxFontSizeMultiplier={1.3}
+                    scaleWithType={axRecompose}
+                  />
+                  <View style={[styles.rowText, axRecompose && styles.rowTextWide]}>
                     <AppText variant="bodyMedium" style={styles.rowTitle}>
                       {CATEGORY_LABELS[item.f.category]}
                     </AppText>
                     {/* S1: Home Recent rows gain the severity NUMBER and route the
                         raw lowercase DB enum through STATUS_LABELS ("open" → "Open",
-                        which a screen reader/first-timer no longer hears as a verb). */}
-                    <AppText variant="body" style={styles.rowMeta}>
-                      {item.km != null
-                        ? `Severity ${item.f.severity} · ${SEVERITY_LABELS[item.f.severity]} · ${STATUS_LABELS[item.f.status]} · ${formatDistance(item.km)}`
-                        : `Severity ${item.f.severity} · ${SEVERITY_LABELS[item.f.severity]} · ${STATUS_LABELS[item.f.status]}`}
-                    </AppText>
+                        which a screen reader/first-timer no longer hears as a verb).
+                        F4: at large type the census breaks at the "·" BEFORE the
+                        status word rather than wrapping wherever it lands. Two
+                        AppTexts, same strings, same order; the row's single
+                        accessibilityLabel still speaks it as one sentence. */}
+                    {axRecompose ? (
+                      <>
+                        <AppText variant="body" style={styles.rowMeta}>
+                          {`Severity ${item.f.severity} · ${SEVERITY_LABELS[item.f.severity]}`}
+                        </AppText>
+                        <AppText variant="body" style={styles.rowMeta}>
+                          {item.km != null
+                            ? `${STATUS_LABELS[item.f.status]} · ${formatDistance(item.km)}`
+                            : STATUS_LABELS[item.f.status]}
+                        </AppText>
+                      </>
+                    ) : (
+                      <AppText variant="body" style={styles.rowMeta}>
+                        {item.km != null
+                          ? `Severity ${item.f.severity} · ${SEVERITY_LABELS[item.f.severity]} · ${STATUS_LABELS[item.f.status]} · ${formatDistance(item.km)}`
+                          : `Severity ${item.f.severity} · ${SEVERITY_LABELS[item.f.severity]} · ${STATUS_LABELS[item.f.status]}`}
+                      </AppText>
+                    )}
                   </View>
-                  <ChevronRight size={18} color={color.inkGlassMuted} strokeWidth={2} />
+                  {!axRecompose && (
+                    <ChevronRight size={18} color={color.inkGlassMuted} strokeWidth={2} />
+                  )}
                 </PressableScale>
               </View>
             ))}
+            {/* Board 01: the list ends in a way out. Without it the CLOSEST card
+                just stops, and the full map — the thing the count is counting —
+                is only reachable from the peek above or the tab bar.
+                PLACEHOLDER COPY: logged in build/COPY_LEDGER.md as
+                SKY-WORDS-REQUIRED (W-02). Sky ratifies the wording before merge. */}
+            <View style={styles.sep} />
+            <PressableScale
+              style={styles.seeAllRow}
+              onPress={() => navigation.navigate('FullMap', { ts: Date.now() })}
+              accessibilityRole="button"
+              accessibilityLabel={`See all ${flags.length} on the map`}
+              accessibilityHint="Opens the full map"
+            >
+              <AppText variant="label" style={styles.seeAllText}>
+                {`See all ${flags.length} on the map`}
+              </AppText>
+              <ChevronRight size={18} color={color.brandText} strokeWidth={2.4} {...decorativeProps} />
+            </PressableScale>
           </GlassSurface>
         )}
       </ScrollView>
 
       {/* Report pill — floats over the scroll. */}
       <PressableScale
-        style={[styles.reportPill, { bottom: bottomInset + spacing.md }]}
+        style={[styles.reportPill, axRecompose && styles.reportFab, { bottom: bottomInset + spacing.md }]}
         onPress={() => navigation.navigate('FullMap', { openReport: true, ts: Date.now() })}
         pressedTint={color.ctaFillPressed}
         haptic="medium"
         accessibilityRole="button"
         accessibilityLabel="Report a barrier"
       >
-        <Plus size={18} color={color.textOnBrand} strokeWidth={2.6} />
-        <AppText variant="label" style={styles.reportPillText}>Report</AppText>
+        <Plus size={axRecompose ? 24 : 18} color={color.textOnBrand} strokeWidth={2.6} />
+        {/* F4: the label rides the accessibilityLabel above at large type, where
+            a text pill would otherwise span most of the screen. The fill stays
+            color.brand — brandInkAA pins that as a deliberate large-text
+            exception, and an icon-only button has no small text at all. */}
+        {!axRecompose && <AppText variant="label" style={styles.reportPillText}>Report</AppText>}
       </PressableScale>
 
       <AddressSearchModal
@@ -807,6 +884,26 @@ const makeStyles = (color: ColorTheme) =>
       backgroundColor: color.warningBg,
     },
     offlineText: { flex: 1, fontSize: font.size.sm, color: color.warningFg },
+    // F4: the status-bar ledge. Home and Settings scroll their content under a
+    // transparent status bar, so a scrolled row could sit directly behind the
+    // clock. A 47pt wash from stage0 down to the SAME COLOUR at zero alpha keeps
+    // the bar legible without painting an opaque header over the stage.
+    //
+    // The second stop is `${color.stage0}00`, never the string 'transparent'.
+    // 'transparent' is rgba(0,0,0,0), so the gradient interpolates through BLACK
+    // and lays a grey veil over the stage — measured on the 17e, the stage's
+    // #A6C8FB read #89A0C1 under the first draft of this ledge. Fading a colour
+    // to its own zero-alpha twin is the only version that is actually invisible.
+    // Decorative and pointer-inert — it must never intercept a tap meant for the
+    // content beneath it.
+    statusLedge: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      height: 47,
+      zIndex: 2,
+    },
     sectionLabel: {
       fontSize: font.size.xs,
       letterSpacing: EYEBROW_TRACKING,
@@ -836,12 +933,17 @@ const makeStyles = (color: ColorTheme) =>
       justifyContent: 'center',
     },
     retryText: { fontSize: font.size.sm, color: color.textOnBrand, fontWeight: font.weight.bold },
-    row: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingHorizontal: spacing.md, paddingVertical: spacing.md, minHeight: 56 },
+    // F4: flexWrap costs nothing below the recomposition point (the three
+    // children fit on one line) and is what lets the text block claim its own
+    // row above it.
+    row: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', rowGap: spacing.xs, gap: spacing.md, paddingHorizontal: spacing.md, paddingVertical: spacing.md, minHeight: 56 },
     // Indented to sit under the row text: paddingHorizontal(12) + disc(24) +
     // gap(12) = 48 (was 40 for the old 11px dot; the mini-disc pushed the text
     // right). QA 2026-08-18: value was 52, a 4px drift from its own math.
     sep: { height: StyleSheet.hairlineWidth, backgroundColor: color.border, marginLeft: 48 },
     rowText: { flex: 1, gap: 1 },
+    // F4: basis 100% is what forces the wrap — the disc keeps the line above.
+    rowTextWide: { flexBasis: '100%', flexGrow: 1 },
     rowTitle: { fontSize: font.size.lg, color: color.textStrong, fontWeight: font.weight.semibold },
     rowMeta: { fontSize: font.size.sm, fontFamily: font.family.bodyMedium, color: color.inkGlassMuted },
     emptyText: { fontSize: font.size.base, color: color.inkGlassMuted, padding: spacing.lg, textAlign: 'center' },
@@ -865,5 +967,19 @@ const makeStyles = (color: ColorTheme) =>
       justifyContent: 'center',
       ...shadow.glowBrand,
     },
+    // Board 01: the CLOSEST card's way out. 44pt floor like every other row.
+    seeAllRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: spacing.xs,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.md,
+      minHeight: 44,
+    },
+    seeAllText: { fontSize: font.size.md, color: color.brandText, fontWeight: font.weight.semibold },
     reportPillText: { fontSize: font.size.md, color: color.textOnBrand, fontWeight: font.weight.bold },
+    // F4: the icon-only form. 56 is the house FAB size and clears the 44pt floor
+    // with room; paddingHorizontal is zeroed so the circle is a circle.
+    reportFab: { width: 56, height: 56, paddingHorizontal: 0, borderRadius: radius.circle, justifyContent: 'center' },
   });

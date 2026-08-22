@@ -346,7 +346,9 @@ export default function LeaderboardScreen({ visible, onClose }: Props) {
               style={styles.title}
               accessibilityRole="header"
               adjustsFontSizeToFit
-              numberOfLines={1}
+              // T4: a title shrinks to 0.8 and then WRAPS — it never clamps to
+              // one line. Was 1.
+              numberOfLines={2}
               minimumFontScale={0.8}
             >
               Leaderboard

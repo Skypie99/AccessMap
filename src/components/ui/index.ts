@@ -6,6 +6,10 @@
 export { AppText } from './AppText';
 export type { AppTextVariant } from './AppText';
 
+// T3 — Dynamic Type caps by container (2026-08-21).
+export { TypeBlock, TYPE_BLOCK, useTypeBlock } from './TypeBlock';
+export type { TypeBlockValue } from './TypeBlock';
+
 export { Button } from './Button';
 export type { ButtonKind, ButtonSize } from './Button';
 

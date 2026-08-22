@@ -2390,8 +2390,14 @@ const makeStyles = (color: ColorTheme, reduceTransparency: boolean) => {
     // inkDetailsGhost — arbitrated on the row material (4.75:1 light worst-case).
     detailsText: { color: color.inkDetailsGhost, fontWeight: font.weight.semibold, fontSize: font.size.sm },
     // D3/C3 — the single trigger that replaced three header rows.
+    // T5 / D24: content-sized chips in a row with no escape. At large type
+    // "Filter & sort" + "Clear filters" exceed the row and the second chip was
+    // pushed off the edge. The chips already measure their own text, so wrap is
+    // the whole fix — they stack instead of overflowing.
     filterTriggerRow: {
       flexDirection: 'row',
+      flexWrap: 'wrap',
+      rowGap: spacing.sm,
       paddingHorizontal: spacing.lg,
       paddingTop: spacing.sm,
       paddingBottom: spacing.md,
@@ -2498,9 +2504,15 @@ const makeStyles = (color: ColorTheme, reduceTransparency: boolean) => {
     // doesn't shift down when the user starts typing. Bordered field +
     // inline clear button so the affordance is obvious without a separate
     // label.
+    // T5 / D24: the input is flex:1 (basis 0), so the non-shrinking "Select
+    // multiple" button beside it could squeeze the field to a sliver at large
+    // type. A floor on the field plus wrap on the row sends the button to its
+    // own line instead.
     searchRow: {
       flexDirection: 'row',
       alignItems: 'center',
+      flexWrap: 'wrap',
+      rowGap: spacing.xs,
       paddingHorizontal: spacing.lg,
       paddingTop: spacing.sm,
       paddingBottom: spacing.sm,
@@ -2508,6 +2520,8 @@ const makeStyles = (color: ColorTheme, reduceTransparency: boolean) => {
     },
     searchInput: {
       flex: 1,
+      // T5: the floor that makes searchRow's flexWrap fire (see that style).
+      minWidth: 200,
       // WCAG 2.5.5: was 40pt (4pt below 44pt project standard).
       // Measured on device 2026-08-20 (Wave 3): a BORDERED TextInput reports an
       // accessibility frame INSIDE its own border, because iOS insets the native

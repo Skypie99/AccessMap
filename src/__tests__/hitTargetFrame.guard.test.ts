@@ -42,6 +42,7 @@
  */
 import fs from 'fs';
 import path from 'path';
+import { stripComments } from './support/stripComments';
 
 const SRC = path.join(__dirname, '..');
 const read = (rel: string) => fs.readFileSync(path.join(SRC, rel), 'utf8');
@@ -100,7 +101,20 @@ describe('SW-10 — the labelled search node was 20pt tall inside a 48pt bar', (
     // This is A11Y-214/SR-040's structure and the reason the frame was short.
     // If a later edit moves `accessible` back onto the bar, the height above
     // stops being the thing VoiceOver measures and this guard is a lie.
-    expect(src).toMatch(/style=\{\[styles\.searchText[\s\S]{0,200}accessibilityRole="button"/);
+    //
+    // RE-PINNED 2026-08-21 (Phase 1a item 1.2): the assertion ran against the RAW
+    // source with a 200-character window, so it measured the distance between two
+    // props in BYTES — comments and indentation included. Adding a three-line
+    // note above `numberOfLines` pushed the role out of the window and failed a
+    // guard whose subject had not moved at all.
+    //
+    // stripComments alone does not fix it: it BLANKS comments in place to keep
+    // offsets line-accurate, so the gap is the same width in spaces. Collapsing
+    // whitespace afterwards is what makes the window measure code rather than
+    // formatting — which is what this assertion always meant: these two props
+    // sit on the same element.
+    const code = stripComments(src).replace(/\s+/g, ' ');
+    expect(code).toMatch(/style=\{\[styles\.searchText[\s\S]{0,200}accessibilityRole="button"/);
   });
 
   it('the bar still resolves to 48, so nothing moved visually', () => {

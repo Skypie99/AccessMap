@@ -21,7 +21,7 @@ import {
   getNotificationPermission,
   requestNotificationPermission,
 } from '@/lib/pushNotifications';
-import { a11yToggle, decorativeProps, useFocusOnOpen } from '@/lib/accessibility';
+import { a11yToggle, decorativeProps, isAxRecompose, useFocusOnOpen } from '@/lib/accessibility';
 import { SEVERITY_LABELS, SEVERITY_ORDER } from '@/lib/flags';
 import { color as staticColor, font, radius, spacing, gradient, shadow } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
@@ -146,7 +146,7 @@ export default function OnboardingCards({ onDone }: Props) {
   // A11Y-201 (2.4.3): this surface presents the moment it mounts (bare
   // `visible`), so focus card 1's heading on mount.
   const titleRef = useFocusOnOpen<Text>(true);
-  const { width } = useWindowDimensions();
+  const { width, fontScale } = useWindowDimensions();
   const scrollRef = useRef<ScrollView | null>(null);
   const [index, setIndex] = useState(0);
   const [reduceMotion, setReduceMotion] = useState(false);
@@ -290,6 +290,10 @@ export default function OnboardingCards({ onDone }: Props) {
   // unsafe zone on insets.top=59 devices (sweep M20). Non-throwing context
   // read (null → zeros) so a provider-less mount still renders; 0 on web.
   const insets = React.useContext(SafeAreaInsetsContext) ?? { top: 0, bottom: 0, left: 0, right: 0 };
+  // T5 (D4): at the recomposition point the card's generous side padding is what
+  // starves the body column, so it gives the width back rather than capping the
+  // text. "accessibility" is the word that shredded ("accessibili / ty").
+  const wideColumn = isAxRecompose(fontScale);
 
   return (
     <Modal aria-label="Welcome to Flagstone" visible animationType={reduceMotion ? 'none' : 'fade'} onRequestClose={onDone} presentationStyle="fullScreen">
@@ -366,7 +370,7 @@ export default function OnboardingCards({ onDone }: Props) {
                     corrupt the horizontal pager's .x paging math. */}
                 <ScrollView
                   style={styles.cardScroll}
-                  contentContainerStyle={styles.cardScrollContent}
+                  contentContainerStyle={[styles.cardScrollContent, wideColumn && styles.cardScrollContentWide]}
                   showsVerticalScrollIndicator={false}
                   nestedScrollEnabled
                 >
@@ -414,7 +418,7 @@ export default function OnboardingCards({ onDone }: Props) {
                     <AppText ref={i === 0 ? titleRef : undefined} variant="heading" style={styles.title} accessibilityRole="header">
                       {c.title}
                     </AppText>
-                    <AppText variant="body" style={styles.body}>{effectiveBody}</AppText>
+                    <AppText variant="body" style={[styles.body, wideColumn && styles.bodyWide]}>{effectiveBody}</AppText>
                   </View>
                 </ScrollView>
               </View>
@@ -651,6 +655,15 @@ const makeStyles = (color: ColorTheme) =>
       paddingBottom: spacing.md,
       gap: spacing.xl,
     },
+    // T5 (D4): the width rule says widen the column before you cap the text. On
+    // a 390pt screen the xxxl side pads leave the body about 310pt, and
+    // "accessibility" on the uncapped body face needs more than that above ~2x —
+    // iOS then character-breaks it ("accessibili / ty", captured at 3XL). Giving
+    // the padding back at the recomposition point is the cheap half of the fix;
+    // the card's own layout is Phase 2b's item.
+    cardScrollContentWide: {
+      paddingHorizontal: spacing.lg,
+    },
     // Circular icon container with subtle glass border + glow
     iconCircle: {
       width: 112,
@@ -721,8 +734,12 @@ const makeStyles = (color: ColorTheme) =>
       color: 'rgba(220,235,255,0.9)',
       textAlign: 'center',
       lineHeight: 24,
+      // T5: a measure cap for READING comfort at default size. It is below the
+      // widened column above, so it would have swallowed the extra width the
+      // moment we gave it back — hence the AX override beside it.
       maxWidth: 360,
     },
+    bodyWide: { maxWidth: undefined },
     dotsRow: {
       flexDirection: 'row',
       justifyContent: 'center',
@@ -736,10 +753,17 @@ const makeStyles = (color: ColorTheme) =>
       borderRadius: radius.xs,
       backgroundColor: 'rgba(255,255,255,0.25)',
     },
+    // T5 / D20: Back + the primary CTA are both content-sized in a row that
+    // could not wrap, so at large type they overflowed the screen — the sibling
+    // OnboardingModal already wraps its equivalent row. The buttons measure
+    // their own labels, so wrap is the whole fix: they stack instead of running
+    // off the edge. justifyContent stays space-between for the one-line case.
     actions: {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
+      flexWrap: 'wrap',
+      rowGap: spacing.sm,
       paddingHorizontal: spacing.xxl,
       paddingBottom: 36,
       paddingTop: spacing.sm,
