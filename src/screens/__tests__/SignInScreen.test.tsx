@@ -12,7 +12,7 @@
  */
 
 import React from 'react';
-import { AccessibilityInfo } from 'react-native';
+import { AccessibilityInfo, StyleSheet } from 'react-native';
 import { render, fireEvent } from '@testing-library/react-native';
 // jest.mock calls are hoisted above imports, so the component-under-test can
 // be imported here with the rest (keeps import/first clean).
@@ -30,19 +30,14 @@ jest.mock('@/lib/confirm', () => ({ notify: jest.fn() }));
 jest.mock('@/screens/PrivacyScreen', () => () => null);
 jest.mock('@/components/LogoMark', () => () => null);
 
-jest.mock('@/theme/ThemeContext', () => ({
-  useColor: jest.fn(() => ({
-    scheme: 'light',
-    brand: '#1466E0',
-    text: '#333',
-    textStrong: '#222',
-    textMuted: '#666',
-    surface: '#fff',
-    surfaceMuted: '#f7f9fc',
-    dangerFg: '#b3261e',
-    dangerBg: '#fdecea',
-  })),
-}));
+// The REAL light palette, not a hand-written subset. The subset this replaces
+// predated the `Input` primitive adopting this screen and was missing every
+// token the primitive reaches for, so the fields rendered with undefined inks
+// and the suite quietly stopped testing what ships.
+jest.mock('@/theme/ThemeContext', () => {
+  const { color } = jest.requireActual('@/theme');
+  return { useColor: () => color };
+});
 
 describe('A11Y-203 guard — client validation errors are announced to AT', () => {
   let announceSpy: jest.SpyInstance;
@@ -89,5 +84,60 @@ describe('A11Y-203 guard — client validation errors are announced to AT', () =
 
     expect(getByText('Please enter a valid email address.')).toBeTruthy();
     expect(announceSpy).toHaveBeenCalledWith('Please enter a valid email address.');
+  });
+});
+
+/**
+ * 2026-08-22 — the form moved onto the `Input` primitive, and with it the
+ * question of WHERE an error is shown. A mistyped email is the email field's
+ * problem; a server refusal is the form's. Shown once, in the place that can
+ * act on it, and announced either way (A11Y-203 is untouched by the move).
+ */
+describe('the error lands on the field that caused it', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    jest.spyOn(AccessibilityInfo, 'announceForAccessibility').mockImplementation(() => {});
+  });
+
+  it('the invalid email is attached to the email field, not to the form', () => {
+    const u = render(<SignInScreen />);
+    fireEvent.changeText(u.getByLabelText('Email address'), 'not-an-email');
+    fireEvent.changeText(u.getByLabelText('Password'), 'longenough');
+    fireEvent.press(u.getByLabelText('Sign in'));
+
+    // The primitive puts the message in the FIELD's own hint, which is what a
+    // screen reader hears when the cursor lands back on the box to fix it.
+    expect(u.getByLabelText('Email address').props.accessibilityHint).toBe(
+      'Please enter a valid email address.',
+    );
+    // …and the password field is untouched: it did nothing wrong.
+    expect(u.getByLabelText('Password').props.accessibilityHint).toBe('At least 6 characters');
+    // Exactly one copy of the message on screen.
+    expect(u.getAllByText('Please enter a valid email address.')).toHaveLength(1);
+  });
+
+  it('the short password is attached to the password field', () => {
+    const u = render(<SignInScreen />);
+    fireEvent.changeText(u.getByLabelText('Email address'), 'sky@example.com');
+    fireEvent.changeText(u.getByLabelText('Password'), 'tiny');
+    fireEvent.press(u.getByLabelText('Sign in'));
+
+    expect(u.getByLabelText('Password').props.accessibilityHint).toBe(
+      'Password must be at least 6 characters.',
+    );
+    expect(u.getByLabelText('Email address').props.accessibilityHint).toBe(
+      'Enter the email you signed up with',
+    );
+  });
+});
+
+describe('the show/hide toggle survived the move into the field', () => {
+  it('is still a 44pt labelled control, now inside the field row', () => {
+    const u = render(<SignInScreen />);
+    const toggle = u.getByLabelText('Show password');
+    expect(StyleSheet.flatten(toggle.props.style).minHeight).toBe(44);
+    expect(StyleSheet.flatten(toggle.props.style).width).toBe(44);
+    fireEvent.press(toggle);
+    expect(u.getByLabelText('Hide password')).toBeTruthy();
   });
 });
