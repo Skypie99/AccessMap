@@ -43,6 +43,7 @@ implementation detail.
 | Error | `color.error` | `#c0392b` | primary error banner |
 | Error strong | `color.errorStrong` | `#e74c3c` | destructive button (Delete) |
 | Error bg/fg | `errorBg/Fg` | `#fdecea` / `#8a1f1f` | inline error message |
+| Fixed-dark surfaces | `fixedDark.*` + `errorOnDark/Bg/Border` | `#fca5a5` / `rgba(239,68,68,0.15)` / `rgba(239,68,68,0.3)` | covers that paint their own dark background (the sign-in wall) and therefore have ONE appearance in both palettes. `fixedDark` (theme.ts) holds the field fill/outline/focus/ink/label; the error trio is re-exported through both palettes as `color.errorOnDark*` so the themed `Input` primitive can reach it from `useColor()`. `errorFg`/`errorBg` above are the light palette's card pair and are illegible on a navy cover — do not substitute them. `errorOnDark` on the error box over the form card over the cover (composite ≈ `#3B2A39`) = 7.0:1, AAA. |
 | Border | `color.border` | `#e5e5e5` | default divider / outline |
 
 ### Color pairings — contrast checklist

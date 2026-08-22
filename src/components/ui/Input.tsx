@@ -10,6 +10,15 @@
  * (display name), and Tasks (search). Matches the Button/Card primitive pattern:
  * useColor() at render, inline StyleSheet at the bottom.
  *
+ * `onDark` (2026-08-22) — for the fixed-dark covers that paint their own
+ * background (the sign-in wall). The themed palette is wrong there by
+ * construction: in LIGHT mode `surfaceSoft` + `text` would draw a white field
+ * with dark ink on a navy gradient. The flag swaps the four colour choices for
+ * `fixedDark` (theme.ts), which holds the exact arbitrated literals SignIn
+ * shipped by hand, so an adopting screen renders byte-identically. Everything
+ * else — the 44pt floor, the focus ring, the polite error live region, the
+ * error-as-hint wiring — is the primitive's and stops being re-implemented.
+ *
  * Design system 2026-06-01.
  */
 
@@ -22,7 +31,7 @@ import {
   type ViewStyle,
 } from 'react-native';
 import { useColor } from '@/theme/ThemeContext';
-import { a11y, font, radius, spacing } from '@/theme';
+import { a11y, fixedDark, font, radius, spacing } from '@/theme';
 import { a11yToggle } from '@/lib/accessibility';
 import { AppText } from './AppText';
 
@@ -45,6 +54,12 @@ export interface InputProps extends Omit<TextInputProps, 'style'> {
   /** Arbitrary node on the right (e.g. a clear button or password toggle). */
   rightSlot?: React.ReactNode;
   disabled?: boolean;
+  /**
+   * Draw for a fixed-dark cover (the sign-in wall) instead of the themed
+   * palette. See the file header: this is not "dark mode", it is "this surface
+   * has one appearance in both modes".
+   */
+  onDark?: boolean;
   /** Outer wrapper style override. */
   containerStyle?: ViewStyle;
 }
@@ -56,6 +71,7 @@ export function Input({
   leftIcon: LeftIcon,
   rightSlot,
   disabled = false,
+  onDark = false,
   containerStyle,
   accessibilityLabel,
   accessibilityHint,
@@ -67,13 +83,42 @@ export function Input({
   const [focused, setFocused] = useState(false);
   const hasError = !!errorText;
 
+  // One place decides every ink, so the on-dark fork cannot drift field by
+  // field the way the hand-rolled twin did.
+  const ink = onDark
+    ? {
+        label: fixedDark.label,
+        text: fixedDark.fieldText,
+        placeholder: fixedDark.fieldPlaceholder,
+        // Disabled keeps the same fill on a cover: the wrapper's opacity 0.6
+        // already reads as inert there, and a second dark-on-dark neutral would
+        // be a new ink nobody arbitrated.
+        fill: fixedDark.fieldBg,
+        fillFocused: fixedDark.fieldFocusBg,
+        border: fixedDark.fieldBorder,
+        borderFocused: fixedDark.fieldFocusBorder,
+        borderError: color.errorOnDark,
+        error: color.errorOnDark,
+        helper: fixedDark.label,
+      }
+    : {
+        label: color.text,
+        text: disabled ? color.textMuted : color.text,
+        placeholder: color.placeholderText,
+        fill: disabled ? color.surfaceNeutral : color.surfaceSoft,
+        fillFocused: disabled ? color.surfaceNeutral : color.surfaceSoft,
+        border: disabled ? color.borderSubtle : color.border,
+        borderFocused: color.brand,
+        borderError: color.error,
+        error: color.error,
+        helper: color.textMuted,
+      };
+
   const borderColor = hasError
-    ? color.error
+    ? ink.borderError
     : focused
-      ? color.brand
-      : disabled
-        ? color.borderSubtle
-        : color.border;
+      ? ink.borderFocused
+      : ink.border;
   const borderWidth = focused || hasError ? 2 : 1;
   // Compensate horizontal padding for the 1→2px border so text doesn't shift.
   const compensate = borderWidth - 1;
@@ -81,7 +126,7 @@ export function Input({
   return (
     <View style={[styles.wrapper, containerStyle]}>
       {label ? (
-        <AppText variant="label" size={font.size.sm} color={color.text} style={styles.label}>
+        <AppText variant="label" size={font.size.sm} color={ink.label} style={styles.label}>
           {label}
         </AppText>
       ) : null}
@@ -93,19 +138,19 @@ export function Input({
             borderColor,
             borderWidth,
             paddingHorizontal: spacing.md - compensate,
-            backgroundColor: disabled ? color.surfaceNeutral : color.surfaceSoft,
+            backgroundColor: focused ? ink.fillFocused : ink.fill,
             opacity: disabled ? 0.6 : 1,
           },
         ]}
       >
         {LeftIcon ? (
-          <LeftIcon size={18} color={focused ? color.brand : color.textMuted} strokeWidth={2} />
+          <LeftIcon size={18} color={focused ? ink.borderFocused : ink.helper} strokeWidth={2} />
         ) : null}
 
         <TextInput
           editable={!disabled}
-          style={[styles.input, { color: disabled ? color.textMuted : color.text }]}
-          placeholderTextColor={color.placeholderText}
+          style={[styles.input, { color: ink.text }]}
+          placeholderTextColor={ink.placeholder}
           maxFontSizeMultiplier={1.5}
           accessible
           accessibilityLabel={accessibilityLabel ?? label}
@@ -127,12 +172,12 @@ export function Input({
 
       {hasError ? (
         <View accessibilityLiveRegion="polite">
-          <AppText variant="body" size={font.size.xs} color={color.error} style={styles.subtext}>
+          <AppText variant="body" size={font.size.xs} color={ink.error} style={styles.subtext}>
             {errorText}
           </AppText>
         </View>
       ) : helperText ? (
-        <AppText variant="body" size={font.size.xs} color={color.textMuted} style={styles.subtext}>
+        <AppText variant="body" size={font.size.xs} color={ink.helper} style={styles.subtext}>
           {helperText}
         </AppText>
       ) : null}
