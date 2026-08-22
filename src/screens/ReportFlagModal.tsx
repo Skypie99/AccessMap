@@ -12,6 +12,7 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  useWindowDimensions,
   View,
 } from 'react-native';
 import { AppText } from '@/components/ui/AppText';
@@ -21,6 +22,7 @@ import { OverflowFade } from '@/components/ui/OverflowFade';
 import { SheetGrabber } from '@/components/ui/Sheet';
 import { SheetPull, useAtTop } from '@/components/ui/SheetPull';
 import { useHorizontalOverflowFade } from '@/hooks/useOverflowFade';
+import { SeverityDisc } from '@/components/SeverityDisc';
 import { useKeyboardVisible } from '@/hooks/useKeyboardVisible';
 import { hapticNotify, hapticSelection } from '@/lib/haptics';
 import { Accessibility, Brain, Camera, Check, Construction, Ear, Eye, Lock, MapPin } from 'lucide-react-native';
@@ -74,7 +76,7 @@ import type { FlagCategory, FlagRow, FlagSeverity } from '@/types/database';
 import { setLiveStatus } from '@/lib/liveStatus';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { a11y, font, gradient, radius, severity as severityRamp, shadow, spacing } from '@/theme';
-import { a11yToggle, decorativeProps, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
+import { a11yToggle, decorativeProps, isAxRecompose, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
 import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 
 /** Lucide icon for each disability tag — adds visual distinction (no emoji, per
@@ -133,6 +135,10 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
   // T14 (F2-07): the templates + category chip rails earn the overflow scent.
   const templatesFade = useHorizontalOverflowFade();
   const categoriesFade = useHorizontalOverflowFade();
+  // F4: one threshold for the whole app's recomposition — the same one Home,
+  // Tasks, SignIn, FlagCard and the map bar change shape on.
+  const { fontScale } = useWindowDimensions();
+  const axRecompose = isAxRecompose(fontScale);
   const { user } = useAuth();
   const isAnon = !user;
 
@@ -1065,6 +1071,70 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
           </View>
 
           <AppText variant="label" style={styles.label} accessibilityRole="header">Severity</AppText>
+          {/* F4 / X7 — at >=1.5x the five-across picker becomes the Legend's rows.
+              Five 44pt circles beside 40pt type read as a row of bullets: the
+              targets are at the floor rather than at the fit, and the one
+              distinctive asset in the app shrinks RELATIVE to the text that
+              explains it, at exactly the size where it should be biggest. The
+              Legend already draws the severity scale as disc 32 + word + meaning,
+              and a user who has met that surface meets the same object here — so
+              this is the same rhythm, made selectable, not a second grammar.
+              Announced as a radio group, because that is what a one-of-five
+              choice is; the compact row keeps its shipped button/toggle wiring so
+              nothing changes at default size. */}
+          {axRecompose ? (
+            <View
+              style={styles.sevList}
+              accessibilityRole="radiogroup"
+              accessibilityLabel="Severity"
+            >
+              {SEVERITY_ORDER.map((s) => {
+                const active = s === severity;
+                return (
+                  <Pressable
+                    key={s}
+                    onPressIn={() => hapticSelection()}
+                    onPress={() => {
+                      setSeverity(s);
+                      setAppliedTemplateId(null);
+                    }}
+                    disabled={submitting}
+                    style={({ pressed }) => [
+                      styles.sevListRow,
+                      active && styles.sevListRowActive,
+                      !active && pressed && styles.chipPressed,
+                      submitting && styles.chipDisabled,
+                    ]}
+                    accessibilityRole="radio"
+                    accessibilityLabel={`Severity ${s}: ${SEVERITY_LABELS[s]} — ${SEVERITY_DESCRIPTIONS[s]}`}
+                    {...a11yToggle({ checked: active, disabled: submitting })}
+                  >
+                    {/* The Legend's atom, at the Legend's size. Decorative — the
+                        row above carries the whole authored label. */}
+                    <SeverityDisc severity={s} size={32} digitSize={font.size.base} />
+                    <View style={styles.sevListText}>
+                      <AppText variant="label" style={styles.sevListTitle}>
+                        {SEVERITY_LABELS[s]}
+                      </AppText>
+                      <AppText variant="body" style={styles.sevListDesc}>
+                        {SEVERITY_DESCRIPTIONS[s]}
+                      </AppText>
+                    </View>
+                    {/* WCAG 1.4.1: the selected row is signalled by the tint AND
+                        the ring AND this tick — the same three-signal selection
+                        the compact discs carry, kept rather than traded away. */}
+                    {active && (
+                      <Check
+                        size={18}
+                        color={color.inkSelect}
+                        strokeWidth={3} {...decorativeProps}
+                      />
+                    )}
+                  </Pressable>
+                );
+              })}
+            </View>
+          ) : (
           <View style={styles.row}>
             {SEVERITY_ORDER.map((s) => {
               const active = s === severity;
@@ -1123,6 +1193,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
               );
             })}
           </View>
+          )}
 
           {/* Inline hint: updates as the user taps a severity level so
               they know what each number means before submitting.
@@ -1789,6 +1860,37 @@ const makeStyles = (color: ColorTheme) =>
     // The redundant tick sits just above the number inside the 44pt circle.
     sevCheck: { marginBottom: -2 },
     sevText: { fontSize: font.size.lg, color: color.text, fontWeight: font.weight.semibold },
+    // F4 / X7 — the large-type picker: the Legend's row rhythm, made selectable.
+    sevList: { gap: spacing.tight },
+    sevListRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.md,
+      paddingVertical: spacing.sm,
+      paddingHorizontal: spacing.sm,
+      borderRadius: radius.md,
+      // The whole row is the target: 32pt disc + two lines of type clears 56pt
+      // at every size this branch renders at, and the floor is pinned anyway.
+      minHeight: a11y.minTargetSize,
+      borderWidth: 2,
+      borderColor: 'transparent',
+    },
+    sevListRowActive: {
+      backgroundColor: color.glassSelectedTint,
+      borderColor: color.textStrong,
+    },
+    sevListText: { flex: 1 },
+    sevListTitle: {
+      fontSize: font.size.base,
+      fontWeight: font.weight.semibold,
+      color: color.textStrong,
+    },
+    sevListDesc: {
+      fontSize: font.size.xs,
+      color: color.text,
+      fontFamily: font.family.bodyMedium,
+      marginTop: 1,
+    },
     // Bolder number when active — a second non-color weight cue on top of the
     // tick and ring (and legible white-on-fill, matching textOnBrand).
     sevTextActive: { color: color.textOnBrand, fontWeight: font.weight.bold },

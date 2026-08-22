@@ -30,6 +30,7 @@ import { useAuth } from '@/lib/auth';
 import ReportFlagModal from '../ReportFlagModal';
 import { takeReportDraft } from '@/lib/reportDraft';
 import { validReportTemplates } from '@/lib/reportTemplates';
+import useWindowDimensions from 'react-native/Libraries/Utilities/useWindowDimensions';
 
 // ---------------------------------------------------------------------------
 // Supabase env stubs — required before any module that imports supabase.ts
@@ -224,6 +225,20 @@ jest.mock('@/lib/contextTags', () => ({
 jest.mock('@/lib/reportTemplates', () => ({ validReportTemplates: jest.fn(() => []) }));
 
 // ---------------------------------------------------------------------------
+// Mock: useWindowDimensions — pin the DEFAULT text size for this suite.
+//
+// RN's jest environment reports fontScale 2, which is past the F4 recomposition
+// threshold, so without this every test below would silently be walking the
+// LARGE-TYPE composition while describing the compact one. Mocking the hook
+// module (not the whole of react-native) keeps every other RN export real.
+// The recomposition itself is tested in ReportFlagModal.dynamicType.test.tsx.
+// ---------------------------------------------------------------------------
+jest.mock('react-native/Libraries/Utilities/useWindowDimensions', () => ({
+  __esModule: true,
+  default: jest.fn(() => ({ width: 390, height: 844, scale: 3, fontScale: 1 })),
+}));
+
+// ---------------------------------------------------------------------------
 // Mock: @/theme/ThemeContext — minimal color stub
 // ---------------------------------------------------------------------------
 jest.mock('@/theme/ThemeContext', () => ({
@@ -322,13 +337,19 @@ type User = { id: string };
  *
  * Pass `severity: null` to stay unrated; that is what the Q5 block itself does.
  */
+/** Drive the F4 recomposition threshold (the suite is pinned to 1 — see the
+ *  useWindowDimensions mock above). */
+const mockWindow = useWindowDimensions as unknown as jest.Mock;
+const setFontScale = (fontScale: number) =>
+  mockWindow.mockReturnValue({ width: 390, height: 844, scale: 3, fontScale });
+
 function rate(utils: ReturnType<typeof render>, level: number) {
   // The live meaning line's own label also starts "Severity 3:" once a level is
   // chosen, so match the DISC by its role rather than by prefix alone.
   const disc = utils
     .getAllByLabelText(new RegExp(`^Severity ${level}:`))
-    .find((el) => el.props.accessibilityRole === 'button');
-  if (!disc) throw new Error(`no severity ${level} disc`);
+    .find((el) => ['button', 'radio'].includes(el.props.accessibilityRole));
+  if (!disc) throw new Error(`no severity ${level} control`);
   fireEvent.press(disc);
 }
 
@@ -403,6 +424,7 @@ async function addPhoto(utils: ReturnType<typeof render>, uri: string) {
 
 beforeEach(() => {
   jest.clearAllMocks();
+  setFontScale(1);
   mockCheckAnonRateLimit.mockResolvedValue(undefined);
   mockCreateAnonFlag.mockResolvedValue(SAMPLE_ANON_ROW);
   mockCreateFlag.mockResolvedValue({ row: SAMPLE_AUTH_ROW, tagsAccepted: true });
@@ -1785,5 +1807,83 @@ describe('Q5 — no default severity, so every report is a judgment', () => {
     expect(utils.getByLabelText('Submit report').props.accessibilityState.disabled).toBe(true);
     fireEvent.press(utils.getByLabelText('Apply template: Snow-blocked ramp'));
     expect(utils.getByLabelText('Submit report').props.accessibilityState.disabled).toBe(false);
+  });
+});
+
+// ===========================================================================
+// F4 / X7 — the picker recomposes at large type
+//
+// Five 44pt circles beside 40pt type read as a row of bullets: targets at the
+// floor rather than at the fit, and the app's one distinctive asset shrinking
+// RELATIVE to the text explaining it, at exactly the size where it should be
+// biggest. Past the shared threshold the picker becomes the Legend's rows —
+// the same object the user has already met, made selectable.
+// ===========================================================================
+
+describe('F4 / X7 — the picker becomes the Legend at large type', () => {
+  beforeEach(() => {
+    mockUseAuth.mockReturnValue({ user: null } as ReturnType<typeof useAuth>);
+  });
+
+  const bySeverity = (utils: ReturnType<typeof render>, n: number, role: string) =>
+    utils
+      .getAllByLabelText(new RegExp(`^Severity ${n}:`))
+      .find((el) => el.props.accessibilityRole === role);
+
+  it('at the default size the five-across discs are buttons, with no radio group', () => {
+    setFontScale(1);
+    const utils = renderAnon({ severity: null });
+    expect(bySeverity(utils, 3, 'button')).toBeTruthy();
+    expect(utils.queryByLabelText('Severity')).toBeNull();
+  });
+
+  it('at 1.5x the same five become a labelled radio group', () => {
+    setFontScale(1.5);
+    const utils = renderAnon({ severity: null });
+    const group = utils.getByLabelText('Severity');
+    expect(group.props.accessibilityRole).toBe('radiogroup');
+    for (const n of [1, 2, 3, 4, 5]) {
+      const row = bySeverity(utils, n, 'radio');
+      expect(row).toBeTruthy();
+      expect(row?.props.accessibilityState).toMatchObject({ checked: false });
+    }
+    // The compact discs are gone, not stacked underneath.
+    expect(bySeverity(utils, 3, 'button')).toBeUndefined();
+  });
+
+  it('a row says exactly what the disc said — the name survives the recomposition', () => {
+    setFontScale(1);
+    const compact = renderAnon({ severity: null });
+    const discName = bySeverity(compact, 1, 'button')?.props.accessibilityLabel;
+    compact.unmount();
+
+    setFontScale(1.5);
+    const large = renderAnon({ severity: null });
+    // Same authored name (number, word, meaning), different composition — so a
+    // screen-reader user hears the identical thing at both text sizes.
+    expect(bySeverity(large, 1, 'radio')?.props.accessibilityLabel).toBe(discName);
+  });
+
+  it('the rows rate the form exactly as the discs do, and announce checked', () => {
+    setFontScale(1.5);
+    const utils = renderAnon({ severity: null });
+    fireEvent.press(bySeverity(utils, 5, 'radio')!);
+    expect(bySeverity(utils, 5, 'radio')?.props.accessibilityState).toMatchObject({
+      checked: true,
+    });
+    expect(
+      utils.getByLabelText('Submit report anonymously').props.accessibilityState.disabled,
+    ).toBe(false);
+  });
+
+  it('the whole form still disables while a submit is in flight', async () => {
+    setFontScale(1.5);
+    mockCreateAnonFlag.mockImplementationOnce(() => new Promise(() => {}));
+    const utils = renderAnon({ severity: 3 });
+    fireEvent.press(utils.getByLabelText('Submit report anonymously'));
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(bySeverity(utils, 1, 'radio')?.props.accessibilityState.disabled).toBe(true);
   });
 });
