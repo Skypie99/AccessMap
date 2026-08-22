@@ -1,4 +1,4 @@
-## Contrast report — GSP-02 bulk floor re-arbitration — dense candidate (light 0.92 / dark 0.90 blur floor; engineered stops 0.97/0.92 light, 0.97/0.95 dark) over the saturated tokens that ghosted (2026-08-21)
+## Contrast report — GSP-02 bulk floor re-arbitration — DENSE candidate as shipped (light 0.97 / dark 0.975) after the 17e rejected the plan target 0.92/0.90 (2026-08-21)
 
 Composite order: `stack[0]` painted first (nearest base) → last element topmost.
 Worst case = the base backdrop that yields the LOWEST ratio for the pair.
@@ -57,16 +57,16 @@ Worst case = the base backdrop that yields the LOWEST ratio for the pair.
 | Reject label 13pt (ghost on row) [C-lite engineered] (`#333333`) | rowLite | `#CBDBF4` | `#F7F9FD` | 12.00:1 | 4.5:1 | PASS |
 | Details label 13pt color.brand (ghost) [C-lite engineered] (`#1466E0`) | rowLite | `#CBDBF4` | `#F7F9FD` | 4.98:1 | 4.5:1 | PASS |
 | bulk count 14pt bold on bulk glass [C-lite engineered] (`#222222`) | bulkLite | `#000` | `#E6E6E6` | 12.69:1 | 4.5:1 | PASS |
-| textStrong — sheet title + description [bulkDense] (`#222222`) | bulkDense | `#000` | `#EBEBEB` | 13.30:1 | 4.5:1 | PASS |
-| text — meta values [bulkDense] (`#333333`) | bulkDense | `#000` | `#EBEBEB` | 10.56:1 | 4.5:1 | PASS |
-| inkGlassMuted — census line, meta paragraph, report sentence [bulkDense] (`#414B5A`) | bulkDense | `#000` | `#EBEBEB` | 7.38:1 | 4.5:1 | PASS |
-| inkSelect — segmented-cell labels, Copy coordinates, More labels [bulkDense] (`#0F53BE`) | bulkDense | `#000` | `#EBEBEB` | 5.85:1 | 4.5:1 | PASS |
-| textStrong — sheet title + description [bulkLiteDense] (`#222222`) | bulkLiteDense | `#000` | `#EBEBEB` | 13.30:1 | 4.5:1 | PASS |
-| text — meta values [bulkLiteDense] (`#333333`) | bulkLiteDense | `#000` | `#EBEBEB` | 10.56:1 | 4.5:1 | PASS |
-| inkGlassMuted — census line, meta paragraph, report sentence [bulkLiteDense] (`#414B5A`) | bulkLiteDense | `#000` | `#EBEBEB` | 7.38:1 | 4.5:1 | PASS |
-| inkSelect — segmented-cell labels, Copy coordinates, More labels [bulkLiteDense] (`#0F53BE`) | bulkLiteDense | `#000` | `#EBEBEB` | 5.85:1 | 4.5:1 | PASS |
-| textStrong — sheet title + description [segment cell on dense bulk] (`#222222`) | segmentOnBulkDense | `#000` | `#DEDFE0` | 11.88:1 | 4.5:1 | PASS |
-| inkSelect — segmented-cell labels, Copy coordinates, More labels [segment cell on dense bulk] (`#0F53BE`) | segmentOnBulkDense | `#000` | `#DEDFE0` | 5.22:1 | 4.5:1 | PASS |
+| textStrong — sheet title + description [bulkDense] (`#222222`) | bulkDense | `#000` | `#F7F7F7` | 14.90:1 | 4.5:1 | PASS |
+| text — meta values [bulkDense] (`#333333`) | bulkDense | `#000` | `#F7F7F7` | 11.83:1 | 4.5:1 | PASS |
+| inkGlassMuted — census line, meta paragraph, report sentence [bulkDense] (`#414B5A`) | bulkDense | `#000` | `#F7F7F7` | 8.27:1 | 4.5:1 | PASS |
+| inkSelect — segmented-cell labels, Copy coordinates, More labels [bulkDense] (`#0F53BE`) | bulkDense | `#000` | `#F7F7F7` | 6.55:1 | 4.5:1 | PASS |
+| textStrong — sheet title + description [bulkLiteDense] (`#222222`) | bulkLiteDense | `#000` | `#F7F7F7` | 14.90:1 | 4.5:1 | PASS |
+| text — meta values [bulkLiteDense] (`#333333`) | bulkLiteDense | `#000` | `#F7F7F7` | 11.83:1 | 4.5:1 | PASS |
+| inkGlassMuted — census line, meta paragraph, report sentence [bulkLiteDense] (`#414B5A`) | bulkLiteDense | `#000` | `#F7F7F7` | 8.27:1 | 4.5:1 | PASS |
+| inkSelect — segmented-cell labels, Copy coordinates, More labels [bulkLiteDense] (`#0F53BE`) | bulkLiteDense | `#000` | `#F7F7F7` | 6.55:1 | 4.5:1 | PASS |
+| textStrong — sheet title + description [segment cell on dense bulk] (`#222222`) | segmentOnBulkDense | `#000` | `#EAEAEC` | 13.28:1 | 4.5:1 | PASS |
+| inkSelect — segmented-cell labels, Copy coordinates, More labels [segment cell on dense bulk] (`#0F53BE`) | segmentOnBulkDense | `#000` | `#EAEAEC` | 5.84:1 | 4.5:1 | PASS |
 | the one filled verb — white on ctaFill [GSP-02] (`#ffffff`) | ctaFill | `#1466E0` | `#1466E0` | 5.24:1 | 4.5:1 | PASS |
 
 ### dark
@@ -123,16 +123,16 @@ Worst case = the base backdrop that yields the LOWEST ratio for the pair.
 | Reject label dark color.text (ghost) [C-lite engineered] (`#DDDDDD`) | rowLite | `#1B2940` | `#1E2330` | 11.58:1 | 4.5:1 | PASS |
 | Details label dark brandText (ghost) [C-lite engineered] (`#84AEF6`) | rowLite | `#1B2940` | `#1E2330` | 7.01:1 | 4.5:1 | PASS |
 | bulk count dark textStrong on bulk glass [C-lite engineered] (`#F5F5F5`) | bulkLite | `#fff` | `#202532` | 14.03:1 | 4.5:1 | PASS |
-| textStrong — sheet title + description [bulkDense] (`#F5F5F5`) | bulkDense | `#fff` | `#252A36` | 13.19:1 | 4.5:1 | PASS |
-| text — meta values [bulkDense] (`#E8E8E8`) | bulkDense | `#fff` | `#252A36` | 11.74:1 | 4.5:1 | PASS |
-| inkGlassMuted — census line, meta paragraph, report sentence [bulkDense] (`#B8BEC9`) | bulkDense | `#fff` | `#252A36` | 7.70:1 | 4.5:1 | PASS |
-| inkSelect — segmented-cell labels, Copy coordinates, More labels [bulkDense] (`#B4CFFA`) | bulkDense | `#fff` | `#252A36` | 9.07:1 | 4.5:1 | PASS |
-| textStrong — sheet title + description [bulkLiteDense] (`#F5F5F5`) | bulkLiteDense | `#fff` | `#191E2B` | 15.28:1 | 4.5:1 | PASS |
-| text — meta values [bulkLiteDense] (`#E8E8E8`) | bulkLiteDense | `#fff` | `#191E2B` | 13.59:1 | 4.5:1 | PASS |
-| inkGlassMuted — census line, meta paragraph, report sentence [bulkLiteDense] (`#B8BEC9`) | bulkLiteDense | `#fff` | `#191E2B` | 8.92:1 | 4.5:1 | PASS |
-| inkSelect — segmented-cell labels, Copy coordinates, More labels [bulkLiteDense] (`#B4CFFA`) | bulkLiteDense | `#fff` | `#191E2B` | 10.51:1 | 4.5:1 | PASS |
-| textStrong — sheet title + description [segment cell on dense bulk] (`#F5F5F5`) | segmentOnBulkDense | `#fff` | `#303440` | 11.34:1 | 4.5:1 | PASS |
-| inkSelect — segmented-cell labels, Copy coordinates, More labels [segment cell on dense bulk] (`#B4CFFA`) | segmentOnBulkDense | `#fff` | `#303440` | 7.80:1 | 4.5:1 | PASS |
+| textStrong — sheet title + description [bulkDense] (`#F5F5F5`) | bulkDense | `#fff` | `#131826` | 16.25:1 | 4.5:1 | PASS |
+| text — meta values [bulkDense] (`#E8E8E8`) | bulkDense | `#fff` | `#131826` | 14.46:1 | 4.5:1 | PASS |
+| inkGlassMuted — census line, meta paragraph, report sentence [bulkDense] (`#B8BEC9`) | bulkDense | `#fff` | `#131826` | 9.49:1 | 4.5:1 | PASS |
+| inkSelect — segmented-cell labels, Copy coordinates, More labels [bulkDense] (`#B4CFFA`) | bulkDense | `#fff` | `#131826` | 11.18:1 | 4.5:1 | PASS |
+| textStrong — sheet title + description [bulkLiteDense] (`#F5F5F5`) | bulkLiteDense | `#fff` | `#131826` | 16.25:1 | 4.5:1 | PASS |
+| text — meta values [bulkLiteDense] (`#E8E8E8`) | bulkLiteDense | `#fff` | `#131826` | 14.46:1 | 4.5:1 | PASS |
+| inkGlassMuted — census line, meta paragraph, report sentence [bulkLiteDense] (`#B8BEC9`) | bulkLiteDense | `#fff` | `#131826` | 9.49:1 | 4.5:1 | PASS |
+| inkSelect — segmented-cell labels, Copy coordinates, More labels [bulkLiteDense] (`#B4CFFA`) | bulkLiteDense | `#fff` | `#131826` | 11.18:1 | 4.5:1 | PASS |
+| textStrong — sheet title + description [segment cell on dense bulk] (`#F5F5F5`) | segmentOnBulkDense | `#fff` | `#2B2F3B` | 12.25:1 | 4.5:1 | PASS |
+| inkSelect — segmented-cell labels, Copy coordinates, More labels [segment cell on dense bulk] (`#B4CFFA`) | segmentOnBulkDense | `#fff` | `#2B2F3B` | 8.43:1 | 4.5:1 | PASS |
 | the one filled verb — white on ctaFill [GSP-02] (`#ffffff`) | ctaFill | `#1466E0` | `#1466E0` | 5.24:1 | 4.5:1 | PASS |
 
 RESULT: ALL PASS

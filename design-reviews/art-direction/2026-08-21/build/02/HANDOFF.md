@@ -22,14 +22,28 @@
 - [x] Handshake (clean tree, 3 stale worktrees from Aug 19/20, no live session)
 - [x] Branch created
 - [x] Baselines measured
-- [ ] 2.1 FlagDetail re-rank
-- [ ] 2.2 Sheet floors + stage strength
-- [ ] 2.3 Mission statement
-- [ ] Sim re-walk
+- [x] Arbiter run — `build/02/gsp-bulk-stacks.json` -> exit 0, every ink PASS
+- [x] **2.2a dense bulk floors + `BULK_FLOOR_CANDIDATE`** — `22c88e3`
+- [x] **2.2b `ScreenStage strength` + Terms/Privacy on flat surface** — `087c8ae`
+- [x] **2.1 the FlagDetail re-rank** (+ D13, D14, D15, 2 extra C1 fills) — `0d6d2ce`
+- [x] **2.3 the mission statement** — `498d754`
+- [x] COPY_LEDGER entries (W-03..W-11)
+- [ ] Sim re-walk (light/dark x medium/AXL, triage + read)
 - [ ] BUILD_REPORT.md
 
+## Gates after 2.3
+typecheck 0 · jest **233 suites / 3376 passed / 32 todo / 0 failed** · lint 0 errors, 82 warnings.
+
+## Guards re-pinned (never deleted) — 9
+bp10SeverityGrammar · oneNameOneThing · disputeControl · brandInkAA ·
+inertControlVisual · bp11PressVocab · hitTargetFrame · webResilience ·
+MapScreen.detail. Each carries its reason inline. One guard ADDED:
+`src/__tests__/mission.guard.test.ts`.
+
 ## Sim state
-Not yet built. Target: iPhone 17e `9C9D3ED6-E62F-4A5C-A0C2-D8294D6575AC`.
+Sim-release built and installing on iPhone 17e `9C9D3ED6-E62F-4A5C-A0C2-D8294D6575AC`.
 
 ## Next
-Read theme/ScreenStage/GlassSurface/Sheet/AppText, run the arbiter on the dense floors, then commit 2.2's tokens before 2.1's re-rank (the re-rank is verified against the new floor).
+Walk the sheet from Tasks (triage) and from the map callout (read), light + dark,
+medium + accessibility-extra-large; bank captures into `build/02/after/`; then
+write BUILD_REPORT.md. STOP — Sky merges.

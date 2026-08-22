@@ -1,5 +1,5 @@
 {
- "name": "GSP-02 bulk floor re-arbitration \u2014 dense candidate (light 0.92 / dark 0.90 blur floor; engineered stops 0.97/0.92 light, 0.97/0.95 dark) over the saturated tokens that ghosted (2026-08-21)",
+ "name": "GSP-02 bulk floor re-arbitration \u2014 DENSE candidate as shipped (light 0.97 / dark 0.975) after the 17e rejected the plan target 0.92/0.90 (2026-08-21)",
  "_doc": [
   "C 'Deep Field' AA declaration. Deterministic-backdrop surfaces (rows/banner/empty/stage/selected) composite over the stage's darkest reachable point:",
   "light darkest stop #E7F0FD + brand pool rgba(46,124,246,0.12) = #D1E2FC; + a conservative 3% grain dip = #CBDBF4 (declared as extra worst base).",
@@ -15,9 +15,6 @@
   "  CTA fill mode-independent #1466E0 (dark brand #4E89EF + white = 3.4:1).",
   "Empty stack = text sits directly on the opaque base.",
   "GSP-02 ADDITION (2026-08-21, Flagstone art-direction Phase 1b). Two new pairings for the BULK tier:",
-  "  bulkDense      = the dense BLUR-mode floor: light rgba(255,255,255,0.92) / dark rgba(13,18,32,0.90).",
-  "  bulkLiteDense  = the dense ENGINEERED bottom stop (the stop directly under the text at the sheet's foot):",
-  "                   light rgba(255,255,255,0.92) / dark rgba(13,18,32,0.95).",
   "CORRECTED PREMISE: FlagDetailModal mounts variant=\"bulk\" with forceEngineered, so it renders the *Lite",
   "micro-gradient, NOT the blur-mode floor. The 0.85 floor the critic named (D8) is the LEGEND/Nearby/About",
   "path; FlagDetail's ghosting comes from glassBulkLite1 (0.90 light / 0.92 dark). Both are densified here.",
@@ -30,7 +27,19 @@
   "  button behind the Legend), plus the shipped chaotic-backdrop set (#000/#fff, #D92D20, #0B3D8F) and the",
   "  dark Tasks card text #F5F5F5 kept as a base in dark.",
   "EVERY INK THAT LANDS ON THE SHEET is paired here, not just the count label the 2026-07-03 set carried:",
-  "  textStrong, text, inkGlassMuted, inkSelect, and ctaFill+white (the one filled verb)."
+  "  textStrong, text, inkGlassMuted, inkSelect, and ctaFill+white (the one filled verb).",
+  "REVISED after the simulator walk (see BUILD_REPORT.md \u00a7The floor the device set):",
+  "  The plan's target floors (light 0.92 / dark 0.90) were BUILT FIRST and rejected on the iPhone 17e \u2014",
+  "  'Very steep sidewalk', '9.9 km \u00b7 2d ago' and a whole Verify/Resolved/Reject/Details row were still",
+  "  legible under the sheet. Measured ghost contrast (sheet over the object vs sheet over the plain stage):",
+  "    light, Tasks card text #222:   0.90 = 1.199 \u00b7 0.92 = 1.155 \u00b7 0.95 = 1.093 \u00b7 0.97 = 1.054",
+  "    dark,  Tasks card text #f5f5f5: 0.90 = 1.279 \u00b7 0.92 = 1.206 (SHIPPED) \u00b7 0.95 = 1.114 \u00b7 0.975 = 1.051",
+  "  Rule S2 asks for the value that stops ANY saturated token reading through and calls 0.92/0.90 a TARGET,",
+  "  'whichever the arbiter and the device prefer'. The device preferred 0.97 light / 0.975 dark.",
+  "  bulkDense      = the dense BLUR-mode floor: light rgba(255,255,255,0.97) / dark rgba(13,18,32,0.975).",
+  "  bulkLiteDense  = the dense ENGINEERED bottom stop, the one directly under the sheet's foot: same values.",
+  "  Denser floors can only RAISE every ink's contrast, so this revision cannot invalidate a pair that",
+  "  passed at 0.92/0.90 \u2014 the run below re-measures them all at the shipped values regardless."
  ],
  "modes": {
   "light": {
@@ -263,7 +272,7 @@
     },
     "bulkDense": {
      "stack": [
-      "rgba(255,255,255,0.92)"
+      "rgba(255,255,255,0.97)"
      ],
      "base": [
       "#000",
@@ -275,7 +284,7 @@
     },
     "bulkLiteDense": {
      "stack": [
-      "rgba(255,255,255,0.92)"
+      "rgba(255,255,255,0.97)"
      ],
      "base": [
       "#000",
@@ -287,7 +296,7 @@
     },
     "segmentOnBulkDense": {
      "stack": [
-      "rgba(255,255,255,0.92)",
+      "rgba(255,255,255,0.97)",
       "rgba(22,33,58,0.06)"
      ],
      "base": [
@@ -900,7 +909,7 @@
     },
     "bulkDense": {
      "stack": [
-      "rgba(13,18,32,0.90)"
+      "rgba(13,18,32,0.975)"
      ],
      "base": [
       "#fff",
@@ -913,7 +922,7 @@
     },
     "bulkLiteDense": {
      "stack": [
-      "rgba(13,18,32,0.95)"
+      "rgba(13,18,32,0.975)"
      ],
      "base": [
       "#fff",
@@ -926,7 +935,7 @@
     },
     "segmentOnBulkDense": {
      "stack": [
-      "rgba(13,18,32,0.95)",
+      "rgba(13,18,32,0.975)",
       "rgba(255,255,255,0.10)"
      ],
      "base": [

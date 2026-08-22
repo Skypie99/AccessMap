@@ -1445,7 +1445,7 @@ export default function FlagDetailModal({
             <ScrollView
               ref={bodyScrollRef}
               style={styles.body}
-              contentContainerStyle={styles.bodyContent}
+              contentContainerStyle={[styles.bodyContent, pinnedVerbs && styles.bodyContentPinned]}
               onScroll={onScroll}
               scrollEventThrottle={scrollEventThrottle}
               keyboardDismissMode="on-drag"
@@ -2453,8 +2453,14 @@ const makeStyles = (color: ColorTheme) =>
     headerText: { flex: 1, gap: 2 },
     // No fontWeight: the `display` variant IS PlusJakartaSans_800ExtraBold, and
     // the size arrives as the `size` PROP so tracking resolves from it (T2).
-    // Same convention as ScreenHeader's title.
-    title: { flex: 1, color: color.textStrong },
+    //
+    // ⚠ NO `flex: 1`. It carried one for as long as the title was a ROW child
+    // beside the close button; inside `headerText`, which is a COLUMN, flex
+    // sizes on the CROSS axis' opposite — the title took the column's available
+    // HEIGHT, which is content-driven, and resolved to zero. The sheet rendered
+    // its census line and its meaning sentence under a title nobody could see,
+    // and every gate stayed green over it. The simulator caught it.
+    title: { color: color.textStrong },
     // F2 — the census line, in the callout's order: severity word, then status.
     // Uppercase is presentation only; the spoken label is composed from
     // severityA11y / statusA11y so a screen reader never gets the shouting.
@@ -2476,6 +2482,12 @@ const makeStyles = (color: ColorTheme) =>
     closeBtnText: { fontSize: font.size.lg, color: color.text, fontWeight: font.weight.bold },
     body: { flexShrink: 1 },
     bodyContent: { gap: spacing.sm, paddingBottom: spacing.tight },
+    // The pinned foot floats over the body's last inch. X4 banked that as
+    // "scrollable, not clipped" and it still is — but a row cut in half at the
+    // moment you stop scrolling READS as clipped, so the body gets enough
+    // bottom padding to scroll clear of the foot instead. Only when the foot is
+    // there; a reader's sheet keeps the tight tail.
+    bodyContentPinned: { paddingBottom: 132 },
     // ── UX #5 Before/after resolution photos ─────────────────────────────────
     beforeAfterRow: {
       flexDirection: 'row',
@@ -2715,9 +2727,13 @@ const makeStyles = (color: ColorTheme) =>
       alignItems: 'center',
       justifyContent: 'center',
       gap: 4,
-      flexGrow: 1,
-      flexBasis: 64,
-      minWidth: 64,
+      // Fixed basis, no grow: 4 x 76 + 3 x 8 = 328 inside the 342pt content
+      // column, so the row is 4-up and a fifth item wraps to the LEFT under the
+      // first. With flexGrow the lone fifth stretched to the full width and
+      // centred itself, which reads as a mistake rather than a row.
+      flexGrow: 0,
+      flexBasis: 76,
+      minWidth: 76,
       minHeight: a11y.minTargetSize,
       paddingVertical: spacing.tight,
       borderRadius: radius.lg,
@@ -3125,6 +3141,14 @@ const makeStyles = (color: ColorTheme) =>
       backgroundColor: 'transparent',
       borderWidth: 1,
       borderColor: color.brandText,
+      // A pill, not a bar. Stretched to the cluster's full width it read as a
+      // fourth segment cell — the collapse §SKY-3c corrects, arrived at by
+      // layout instead of by wording.
+      alignSelf: 'flex-start',
+      borderRadius: radius.lg,
+      paddingHorizontal: 14,
+      minHeight: a11y.minTargetSize,
+      justifyContent: 'center',
     },
     // semibold, not bold: the three verdict pills are bold, and the step down is
     // what makes this read as subordinate to them without a second colour.

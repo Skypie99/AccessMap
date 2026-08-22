@@ -261,10 +261,10 @@ export const color = {
   // Bulk-action bar — the second, conditional i=24 pane (select mode only) —
   // and the blur-mode floor of every bulk SHEET that does not force the
   // engineered path (Legend, Nearby, About, Help, Feedback, the Sheet primitive).
-  glassBulkFloor: DENSE ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.85)',
+  glassBulkFloor: DENSE ? 'rgba(255,255,255,0.97)' : 'rgba(255,255,255,0.85)',
   // The dense candidate's floor as a named token, so it is readable even when
   // the flag is off. GSP-02 §2.2; arbitrated in build/02/gsp-bulk-stacks.json.
-  glassBulkFloorDense: 'rgba(255,255,255,0.92)',
+  glassBulkFloorDense: 'rgba(255,255,255,0.97)',
   glassBulkSpecular: 'rgba(255,255,255,0.80)',
   // Engineered chip tint — pills/chips/search ON the chrome pane carry no blur
   // of their own; the pane blurs, the chip tints.
@@ -319,10 +319,21 @@ export const color = {
   glassChromeLite1: 'rgba(255,255,255,0.88)',
   // The stops FlagDetail actually renders (it passes forceEngineered). The
   // bottom stop is the one directly under the sheet's foot, where the Tasks
-  // card ghosted through: 0.90 measured 1.135:1 against a ctaFill button
-  // beneath, 0.92 measures 1.106:1 (below the ~1.2 where letterforms resolve).
-  glassBulkLite0: DENSE ? 'rgba(255,255,255,0.97)' : 'rgba(255,255,255,0.95)',
-  glassBulkLite1: DENSE ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.90)',
+  // card ghosts through.
+  //
+  // ⚠ 0.97, NOT the plan's 0.92 — and the difference is the simulator, not an
+  // opinion. Built at 0.92 first, because that is the ratified target; the 17e
+  // then showed "Very steep sidewalk", "9.9 km · 2d ago" and a whole
+  // Verify/Resolved/Reject/Details row still legible under the sheet. Measured
+  // against the Tasks card's #222 text over the light stage:
+  //     0.90 = 1.199:1 · 0.92 = 1.155:1 · 0.95 = 1.093:1 · 0.97 = 1.054:1
+  // Rule S2 asks for the value that stops ANY saturated token beneath from
+  // reading through, and names 0.92 as a TARGET "whichever the arbiter and the
+  // device prefer". The device preferred 0.97. The cost is honest and is
+  // Sky's to weigh on the phone: at 0.97 this tier is nearly opaque, which is
+  // exactly what the 'blur40' arm of the A/B exists to argue against.
+  glassBulkLite0: DENSE ? 'rgba(255,255,255,0.99)' : 'rgba(255,255,255,0.95)',
+  glassBulkLite1: DENSE ? 'rgba(255,255,255,0.97)' : 'rgba(255,255,255,0.90)',
 
   // Misc
   shadow: '#000',
