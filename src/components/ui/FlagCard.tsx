@@ -170,12 +170,44 @@ export function flagCardA11yLabel(flag: FlagCardFlag, distanceKm?: number | null
  * If the string ever arrives without one, the whole thing renders in mono —
  * the old behaviour, not a crash and not an empty node.
  */
-export function MonoDistance({ value, style }: { value: string; style?: StyleProp<TextStyle> }) {
+export function MonoDistance({
+  value,
+  style,
+  maxFontSizeMultiplier,
+}: {
+  value: string;
+  style?: StyleProp<TextStyle>;
+  /**
+   * ─── THE SECOND THING THE DEVICE CAUGHT ──────────────────────────────────
+   * `variant="mono"` brings the mono row of AppText's variant table with it,
+   * and that row caps at 1.4 while `body` and `bodyMedium` are uncapped by
+   * contract. Inside a `content` TypeBlock that never surfaces — the block caps
+   * everything beneath it equally, which is exactly what T3 is for. OUTSIDE one
+   * it does: at accessibility-extra-large the Home row rendered
+   * "Verified · 314 m" with the 314 roughly 40% smaller than the words either
+   * side of it. That is SW-36's defect wearing different clothes — one line,
+   * two scaling rules — which is the class this whole component exists to end.
+   *
+   * The fix for the common case is a content block (both densities have one
+   * now). This prop is for a host that is NOT content: the Tasks banner is
+   * chrome, its text caps at 1.6, and its numeral has to cap there too.
+   */
+  maxFontSizeMultiplier?: number;
+}) {
   const at = value.lastIndexOf('\u00A0');
-  if (at === -1) return <AppText variant="mono" style={[styles_mono.tabular, style]}>{value}</AppText>;
+  const mono = (text: string) => (
+    <AppText
+      variant="mono"
+      maxFontSizeMultiplier={maxFontSizeMultiplier}
+      style={[styles_mono.tabular, style]}
+    >
+      {text}
+    </AppText>
+  );
+  if (at === -1) return mono(value);
   return (
     <>
-      <AppText variant="mono" style={[styles_mono.tabular, style]}>{value.slice(0, at)}</AppText>
+      {mono(value.slice(0, at))}
       {value.slice(at)}
     </>
   );
@@ -265,7 +297,14 @@ export function FlagCard({
 
   // ── row ────────────────────────────────────────────────────────────────
   if (isRow) {
+    // T3: a row is a card/row block — content, uncapped, bounded by the width
+    // rule instead. This was missing at first and the device found it: without
+    // the block the census fell through to the variant table, where `body` is
+    // uncapped and `mono` caps at 1.4, so at large type the distance shrank
+    // away from the sentence it sits in. TypeBlock renders no View and no
+    // style, so wrapping the row cannot move a pixel at default size.
     return (
+      <TypeBlock cap={TYPE_BLOCK.content}>
       <PressableScale
         style={[styles.row, style]}
         onPress={onPress}
@@ -306,6 +345,7 @@ export function FlagCard({
           <ChevronRight size={18} color={color.inkGlassMuted} strokeWidth={2} />
         )}
       </PressableScale>
+      </TypeBlock>
     );
   }
 
@@ -317,7 +357,7 @@ export function FlagCard({
     <TypeBlock cap={TYPE_BLOCK.content}>
       <View style={[styles.card, style]} testID={testID}>
         <View
-          style={[styles.cardHeader, axRecompose && styles.cardHeaderStacked]}
+          style={axRecompose ? styles.cardHeaderStacked : styles.cardHeader}
           {...(headerA11y
             ? {
                 accessible: true,
@@ -328,18 +368,51 @@ export function FlagCard({
               }
             : null)}
         >
-          <SeverityDisc
-            severity={flag.severity}
-            size={32}
-            digitSize={font.size.sm}
-            scaleWithType={axRecompose}
-          />
-          <View style={[styles.cardHeaderText, axRecompose && styles.cardHeaderTextWide]}>
-            {title}
-            {census}
-          </View>
-          {trailing}
-          {headerAccessory}
+          {/* F4, and it is a real BRANCH rather than a wrap. Below the
+              recomposition point the header is one row and the disc leads it.
+              At or above it the disc takes a line of its own, above a
+              full-width text block, because a 32pt disc beside 40pt text reads
+              as a bullet rather than as the unit of the system.
+
+              The row density does this with `flexWrap` plus a 100% flex basis,
+              and on the device that wraps exactly as intended. The same styles
+              in this header did NOT: the 17e rendered the disc and the title
+              side by side at accessibility-extra-large, with the styles
+              resolving correctly (asserted, so this is not a guess about which
+              rule applied). Rather than ship a composition that depends on a
+              line-break I cannot explain, the recomposition is stated: a column
+              of two rows, so "the disc is above the text" is structure and not
+              an outcome. The trailing slot and the header accessory ride WITH
+              the disc, which keeps Nearby's distance and Tasks' selection
+              checkmark at the top of the card where a thumb expects them. */}
+          {axRecompose ? (
+            <>
+              <View style={styles.cardHeaderTop}>
+                <SeverityDisc
+                  severity={flag.severity}
+                  size={32}
+                  digitSize={font.size.sm}
+                  scaleWithType
+                />
+                {trailing}
+                {headerAccessory}
+              </View>
+              <View style={styles.cardHeaderText}>
+                {title}
+                {census}
+              </View>
+            </>
+          ) : (
+            <>
+              <SeverityDisc severity={flag.severity} size={32} digitSize={font.size.sm} />
+              <View style={styles.cardHeaderText}>
+                {title}
+                {census}
+              </View>
+              {trailing}
+              {headerAccessory}
+            </>
+          )}
         </View>
         {(media || (showDescription && flag.description)) && (
           <View style={styles.cardBody}>
@@ -396,11 +469,13 @@ const makeStyles = (color: ColorTheme) =>
       gap: spacing.sm,
       minHeight: a11y.minTargetSize,
     },
-    // F4: at the recomposition point the disc climbs above a full-width text
-    // block, the same move the row makes.
-    cardHeaderStacked: { alignItems: 'flex-start' },
+    // F4: at the recomposition point the header becomes a column of two rows.
+    // minHeight stays — it is SW-22/SW-43's 44pt accessibility frame and the
+    // summary node is this View in both shapes.
+    cardHeaderStacked: { flexDirection: 'column', gap: spacing.sm, minHeight: a11y.minTargetSize },
+    // The disc's own line, with whatever trails it.
+    cardHeaderTop: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
     cardHeaderText: { flexGrow: 1, flexShrink: 1, minWidth: 130, gap: 1 },
-    cardHeaderTextWide: { flexBasis: '100%' },
     // SW-36, half two — AND NOT OPTIONAL. Freeing the basis is not enough on
     // its own: flexShrink lets a non-shrinking sibling squeeze the title below
     // its own longest word, and iOS then character-breaks it ("Broken sidewal /

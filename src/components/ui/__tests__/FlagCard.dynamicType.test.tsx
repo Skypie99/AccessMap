@@ -25,7 +25,7 @@ import { render } from '@testing-library/react-native';
 import useWindowDimensions from 'react-native/Libraries/Utilities/useWindowDimensions';
 import { FlagCard, MonoDistance, flagCardA11yLabel } from '../FlagCard';
 import { a11yToggle } from '@/lib/accessibility';
-import { font } from '@/theme';
+import { font, severity } from '@/theme';
 import type { FlagCardFlag } from '../FlagCard';
 
 // The component reads `fontScale` to decide whether to recompose, so the
@@ -110,6 +110,28 @@ describe('T1 — the distance is the one numeral, and it is mono with tabular fi
     expect(String(monoNodes[0]!.props.children)).toBe('433');
   });
 
+  it('the numeral scales with its own sentence, not on the mono variant cap', () => {
+    // THE SECOND THING THE DEVICE CAUGHT. `variant="mono"` caps at 1.4 while
+    // `body` is uncapped, so outside a content block the Home row rendered
+    // "Verified · 314 m" with the 314 roughly 40% smaller than the words either
+    // side of it at accessibility-extra-large — SW-36's defect in new clothes.
+    // Both densities now sit in a `content` TypeBlock, which caps everything
+    // beneath it equally (T3), so the resolved cap is `undefined` on both.
+    for (const density of ['row', 'card'] as const) {
+      const { getByText } = render(
+        <FlagCard flag={flag} density={density} distanceKm={0.433} />,
+      );
+      expect(getByText('433').props.maxFontSizeMultiplier).toBeUndefined();
+      expect(getByText(/Severity 4 · Significant/).props.maxFontSizeMultiplier).toBeUndefined();
+    }
+  });
+
+  it('a host outside a content block can state the cap its own words use', () => {
+    // The Tasks banner is chrome: its label caps at 1.6, so its numeral must.
+    const { getByText } = render(<MonoDistance value={'433\u00A0m'} maxFontSizeMultiplier={1.6} />);
+    expect(getByText('433').props.maxFontSizeMultiplier).toBe(1.6);
+  });
+
   it('falls back to whole-string mono if a distance ever arrives without the joiner', () => {
     const { getByText } = render(<MonoDistance value="whatever" />);
     expect(StyleSheet.flatten(getByText('whatever').props.style).fontFamily).toBe(font.family.mono);
@@ -157,6 +179,29 @@ describe('F4 — the card recomposes at 1.5x instead of scrolling its default', 
     // Negative control: below the point the row is one line and nothing claims
     // the full width, so the assertion above cannot pass for the wrong reason.
     expect(fullWidthBlocks(1)).toHaveLength(0);
+  });
+
+  it('card density: the disc takes a line of its own above the text', () => {
+    // Asserted as STRUCTURE, not as a wrap outcome. The row density reaches the
+    // same shape with flexWrap + a 100% basis and does so correctly on device;
+    // the card header did not, so it states the recomposition instead. This
+    // pins the difference between the two shapes rather than a style value, so
+    // a future "simplification" back to one wrapping row trips here.
+    const headerDirection = (scale: number) => {
+      setFontScale(scale);
+      const { getByText } = render(<FlagCard flag={flag} density="card" />);
+      // Walk up from the title to the node carrying the 44pt summary frame.
+      let node: { props?: { style?: unknown }; parent?: unknown } | null =
+        getByText('Broken sidewalk') as never;
+      for (let i = 0; i < 8 && node; i++) {
+        const flat = StyleSheet.flatten(node.props?.style as never) as Record<string, unknown>;
+        if (flat && flat.minHeight === 44) return flat.flexDirection;
+        node = node.parent as never;
+      }
+      throw new Error('no summary frame found above the title');
+    };
+    expect(headerDirection(1)).toBe('row');
+    expect(headerDirection(1.5)).toBe('column');
   });
 
   it('the spoken label is identical on both sides of the point', () => {
@@ -277,7 +322,7 @@ describe('C2 / C3 — the severity colour appears once, and status is a word', (
     const nodes = textsOf(<FlagCard flag={flag} density="card" />);
     const filled = nodes.filter((t) => {
       const s = StyleSheet.flatten(t.props.style) ?? {};
-      return s.color === require('@/theme').severity[4].textOnColor;
+      return s.color === severity[4].textOnColor;
     });
     expect(filled).toHaveLength(1);
   });

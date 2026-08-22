@@ -1350,7 +1350,14 @@ export default function TasksScreen() {
                   </AppText>
                   <AppText variant="label" style={styles.suggestedText}>
                     {`${CATEGORY_LABELS[nearestOpenHit.flag.category]} · Severity ${nearestOpenHit.flag.severity} · `}
-                    <MonoDistance value={formatDistance(nearestOpenHit.km)} />
+                    {/* 1.6 = the `label` variant's own cap, which is what the
+                        words beside it use. The banner is chrome and sits in no
+                        content block, so without this the numeral would cap at
+                        the mono row's 1.4 and shrink away from its sentence. */}
+                    <MonoDistance
+                      value={formatDistance(nearestOpenHit.km)}
+                      maxFontSizeMultiplier={1.6}
+                    />
                   </AppText>
                 </View>
                 <ChevronRight
@@ -2555,6 +2562,11 @@ const makeStyles = (color: ColorTheme, reduceTransparency: boolean) => {
       gap: spacing.md,
       minHeight: 44,
       paddingVertical: spacing.sm,
+      // The device caught this one too: without it the row's icon sat flush
+      // against the screen edge while the sheet's own title sat at 16pt in.
+      // `Sheet` gutters its header and leaves its body to the content, which is
+      // why every sibling row in the filter sheet carries the same value.
+      paddingHorizontal: spacing.lg,
     },
     toolRowText: { fontSize: font.size.base, fontWeight: font.weight.semibold, color: color.text },
     // MapScreen's ratified active grammar — a filled brand chip with white ink.
