@@ -52,12 +52,18 @@
  * NearbyFlagsModal `cardTitle`. They are NOT swept here, for two reasons that
  * are facts rather than caution:
  *
- *   1. None of them renders a SeverityBadge — that component has exactly one
- *      call site in the app (TasksScreen). They use fixed-size discs and dots,
- *      which do not balloon with fontScale, so the amplifier that produces
- *      SW-36 is structurally absent.
+ *   1. None of them renders the severity PILL that amplified SW-36 — a control
+ *      whose digit capped at 1.6 while its word scaled uncapped, so it grew
+ *      without bound and took the width from the title beside it. They use
+ *      fixed-size discs and dots, which do not balloon with fontScale.
+ *      (2026-08-21: the pill is now retired app-wide, so the amplifier is gone
+ *      from the whole app rather than merely absent from these four rows —
+ *      which makes this reason stronger, not weaker.)
  *   2. All three modal rows already carry `minWidth: 0` on the row itself,
  *      which the Tasks header did not.
+ *   3. NearbyFlagsModal `cardTitle` has since left this list by adoption
+ *      rather than by sweep: that card renders `FlagCard` now, so its title is
+ *      the very block the first describe below pins.
  *
  * None was reported defective by the walk, and all four are behind auth, so an
  * agent cannot render them on a device to check that a shrink-distribution

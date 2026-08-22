@@ -1922,7 +1922,7 @@ safePhotoUrl && !photoError ? (
         </Animated.View>
       )}
       {/* F1: the card's insides are the shared drawing now. What used to be
-          here was an amber SeverityBadge, the title, a StatusBadge, then a
+          here was an amber severity pill, the title, a status pill, then a
           photo beside a 2-line description and a meta line — five species of
           object announcing one flag, none of them shaped like Home's row or
           Nearby's card. It is one component and one census line now:
