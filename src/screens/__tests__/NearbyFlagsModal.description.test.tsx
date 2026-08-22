@@ -63,3 +63,35 @@ describe('D2 / T4 — the Nearby card description is never clamped', () => {
     expect(desc?.props.ellipsizeMode).toBeUndefined();
   });
 });
+
+/**
+ * PROTECT-1 — the one-breath row label, pinned across the FlagCard adoption.
+ *
+ * Phase 2a moved this card's insides into the shared `FlagCard`, and the whole
+ * point of the risk was that the OUTSIDE — what a screen-reader user hears —
+ * must not move with them. This card's label is not the family's default
+ * sentence: it is older, it says "severity 2" rather than "severity 2 of 5",
+ * and it carries the reporter's description at the end so the whole card
+ * arrives in one breath. That is a deliberate difference, so it is pinned as a
+ * literal here rather than composed from the same helpers it would be checked
+ * against.
+ */
+describe('PROTECT-1 — the card speaks in one breath, and the words did not move', () => {
+  it('is byte-identical to the sentence that shipped', () => {
+    const { getByLabelText } = render(<NearbyFlagsModal {...baseProps} />);
+    expect(
+      getByLabelText(`Blocked path, severity 2. Status verified. ${DESCRIPTION}`),
+    ).toBeTruthy();
+  });
+
+  it('the card renders no accessible node of its own to fragment it', () => {
+    // FlagCard's header summary node is opt-in precisely so this list can
+    // decline it. If it ever arrives here, iOS collapses to the outer node on
+    // some paths and to the inner one on others, and the one breath becomes two.
+    const { UNSAFE_root } = render(<NearbyFlagsModal {...baseProps} />);
+    const labelled = UNSAFE_root
+      .findAll((n) => typeof n.type === 'string' && Boolean(n.props.accessibilityLabel))
+      .map((n) => n.props.accessibilityLabel);
+    expect(labelled.filter((l: string) => l.includes('Blocked path'))).toHaveLength(1);
+  });
+});
