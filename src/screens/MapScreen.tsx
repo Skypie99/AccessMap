@@ -1230,12 +1230,32 @@ export default function MapScreen() {
       };
       if (!mountedRef.current) return;
       setLocation(coords);
-      mapRef.current?.animateTo({
+      const userBox = {
         latitude: coords.lat,
         longitude: coords.lng,
         latitudeDelta: 0.01,
         longitudeDelta: 0.01,
-      });
+      };
+      // M2 — ARRIVAL vs RECENTRE, and the simulator is why this branch exists.
+      //
+      // The 17e caught it with every gate green: POIs off, Legend pill up, and
+      // the first frame STILL showing zero flags. The M2 fit had run correctly
+      // and been overwritten. This call is BOTH the automatic arrival read and
+      // the Recenter button, and it animated over 600ms either way — so on
+      // arrival the fit's instant snapToRegion landed first and the animation,
+      // finishing later, put the camera right back on a street-level box around
+      // the user. Last write wins, and the animation always writes last.
+      //
+      // Before the first frame is claimed this move IS the initial paint (T7's
+      // own words for why snapToRegion is not Reduce-Motion-gated): there is
+      // nothing to animate FROM but a seeded San Francisco default, so it cuts,
+      // and the fit corrects it the moment flags land. Afterwards this is the
+      // Recenter button with the user watching, and it still animates.
+      if (didInitialFitRef.current) {
+        mapRef.current?.animateTo(userBox);
+      } else {
+        mapRef.current?.snapToRegion(userBox);
+      }
     } catch (e) {
       if (mountedRef.current) {
         // B10 (L7-07): Alert.alert is a no-op on react-native-web, so a web
@@ -1476,6 +1496,18 @@ export default function MapScreen() {
   // through the same one-time, ref-guarded, instant commitFit as the no-location
   // path. Same mechanism, one more reason to use it.
   const didInitialFitRef = useRef(false);
+  // The no-location frame is PROVISIONAL, and this is its own latch.
+  //
+  // The 17e found out why it needs one, with every gate green. `flags` comes
+  // from the shared provider, so arriving from Home they are ALREADY loaded —
+  // while `location` is still ~200ms away. The no-location branch therefore won
+  // the race, fitted all 13 flags, and SPENT the one-time latch; the located fit
+  // never ran, and the frame ended on the user's street-level box with no pins
+  // in it — the exact defect M2 exists to fix, now arrived at by a different
+  // road. A resolved location is not a user gesture, so it is allowed to upgrade
+  // the frame exactly once: `didInitialFitRef` now means "the FINAL frame is
+  // claimed" and only the located fit (or an intent arrival) sets it.
+  const didFallbackFitRef = useRef(false);
   useEffect(() => {
     if (didInitialFitRef.current) return; // one-time
     // A CAMERA-MOVING intent arrival (Tasks focusFlag / deep-link flagId) owns the
@@ -1495,6 +1527,9 @@ export default function MapScreen() {
     if (loadingFlags || flags.length === 0) return; // wait for the first non-empty load
 
     let region: PlatformMapRegion;
+    // Does this frame END the question, or is it the honest placeholder while
+    // the question is still being asked?
+    let isFinalFrame: boolean;
     if (location) {
       // M2, the LOCATED frame. No-gesture proxy by object identity: `initialRegion`
       // is memoized on `location` alone and the sync effect above assigns that exact
@@ -1507,13 +1542,21 @@ export default function MapScreen() {
       const fitted = regionForNearestFlags(location, flags);
       if (!fitted) return; // nothing fittable — the location box stands
       region = fitted;
+      isFinalFrame = true;
     } else {
+      // A read is in flight, so the answer is coming: painting the no-location
+      // frame now would only flash a third camera between the seed and the real
+      // first frame. `locating` always settles — requestLocation clears it in a
+      // finally, and the arrival effect clears it when permission is not granted.
+      if (locating) return;
+      if (didFallbackFitRef.current) return; // the placeholder paints once
       // No-gesture proxy: currentRegionRef only syncs to `location` on this screen, so
       // `=== DEFAULT_REGION` means "still the seed" — no resolved location. (A user pan on
       // the pre-fit SF DEFAULT isn't tracked — no onRegionChange — but the fit only replaces
       // that irrelevant default frame with the real flags; an INTENT camera is retired above.)
       if (currentRegionRef.current !== DEFAULT_REGION) return;
       region = regionForFlags(flags);
+      isFinalFrame = false;
     }
 
     // R-13 / SR-105. This used to set the one-time flag and then call
@@ -1535,8 +1578,11 @@ export default function MapScreen() {
         requestAnimationFrame(() => commitFit(attempts - 1));
         return;
       }
-      // Only NOW is the fit real, so only now does it count as done.
-      didInitialFitRef.current = true;
+      // Only NOW is the fit real, so only now does it count as done — and only a
+      // FINAL frame closes the question. A placeholder latches its own ref so it
+      // paints once without locking out the located fit behind it.
+      if (isFinalFrame) didInitialFitRef.current = true;
+      else didFallbackFitRef.current = true;
       currentRegionRef.current = region; // keep the viewport gate honest post-fit
       mapRef.current.snapToRegion(region);
     };
@@ -1544,6 +1590,7 @@ export default function MapScreen() {
   }, [
     flags,
     loadingFlags,
+    locating,
     location,
     initialRegion,
     route.params?.focusFlag,
