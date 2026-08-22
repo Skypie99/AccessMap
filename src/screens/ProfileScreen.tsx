@@ -855,7 +855,13 @@ export default function ProfileScreen() {
     // T19 stacks more into this !user block in BP17.
     return (
       <View style={styles.stageRoot}>
-        <ScreenStage />
+        {/* S3 — the stage has a volume knob. On a screen this sparse the two
+            brand pools stopped reading as atmosphere and became two blue
+            blotches (critic §10). Board 08 turns them down rather than off: the
+            base wash and the grain are the field itself and never move. The
+            arbiter measured every ink against the pools' DARKEST stops, so
+            lowering the volume can only lighten that worst case. */}
+        <ScreenStage strength={0.6} />
         <GuestProfile onSignInPress={() => setSignInOpen(true)} />
         <Modal
           visible={signInOpen}

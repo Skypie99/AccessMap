@@ -14,6 +14,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GuestProfile } from '@/screens/GuestProfile';
 import { useDrawer } from '@/lib/drawerContext';
 import { useSharedModals } from '@/lib/sharedModalsContext';
+import { MISSION_STATEMENT } from '@/lib/copy';
 
 // HeaderActions also reads useDrawerTrigger (D2/C3 focus return). This module
 // stub replaces the whole module, so it has to carry both — a bare
@@ -75,5 +76,42 @@ describe('GuestProfile — the signed-out editorial family (T10 / F2-04)', () =>
     const { getByLabelText } = renderGuest(onSignInPress);
     fireEvent.press(getByLabelText('Sign in to your account'));
     expect(onSignInPress).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('board 08 — the wall gets something to say (Q11)', () => {
+  it('carries the mission statement verbatim, from the one exported constant', () => {
+    const { getByText } = renderGuest();
+    expect(getByText(MISSION_STATEMENT)).toBeTruthy();
+    // Non-vacuity: this is the same text About renders and mission.guard pins.
+    expect(MISSION_STATEMENT.length).toBeGreaterThan(80);
+  });
+
+  it('says what an account adds, in three lines', () => {
+    const { getByLabelText } = renderGuest();
+    expect(getByLabelText('Add photos to your reports')).toBeTruthy();
+    expect(getByLabelText('Verify and resolve barriers near you')).toBeTruthy();
+    expect(getByLabelText('Earn points and badges')).toBeTruthy();
+  });
+
+  it('the three are statements, not controls — only Sign in is pressable', () => {
+    const { getByLabelText, queryAllByRole } = renderGuest();
+    expect(getByLabelText('Add photos to your reports').props.accessibilityRole).toBeUndefined();
+    // One button on the screen besides the two header actions.
+    const buttons = queryAllByRole('button').map((b) => b.props.accessibilityLabel);
+    expect(buttons).toContain('Sign in to your account');
+    expect(buttons).not.toContain('Earn points and badges');
+  });
+
+  it('the lone brand mark is gone — it led nowhere and lives on About', () => {
+    const { queryByLabelText } = renderGuest();
+    expect(queryByLabelText('Flagstone')).toBeNull();
+  });
+
+  it('the header family survives the rebuild', () => {
+    const { getByText } = renderGuest();
+    expect(getByText('PROFILE')).toBeTruthy();
+    expect(getByText('Your profile')).toBeTruthy();
+    expect(getByText('Sign in to see your stats, badges, and reports.')).toBeTruthy();
   });
 });
