@@ -653,11 +653,17 @@ const makeStyles = (_color: ColorTheme) =>
       justifyContent: 'center',
       alignItems: 'center',
     },
-    // The consent gives way first (it is the longer run) but never below its
-    // own longest word, so the row wraps rather than character-breaking
-    // "Guidelines." — the SW-36 shape, both halves.
+    // BOTH halves of the width rule, and the device is why. `flexShrink: 1`
+    // alone did not keep the two on one line: Yoga runs its line-break test on
+    // the flex BASE size, and the consent's intrinsic ~408pt plus the policy
+    // link overflowed the row, so it wrapped and left the separator dangling
+    // after the policy link — a worse footer than the two-row stack it
+    // replaced. `flexBasis: 0` takes the sentence out of that test; `minWidth`
+    // is what then stops it being squeezed below its own longest word, and is
+    // also what makes it wrap honestly if a future label ever eats the row.
     consentWrap: {
-      flexShrink: 1,
+      flexBasis: 0,
+      flexGrow: 1,
       minWidth: 200,
     },
     policySeparator: {

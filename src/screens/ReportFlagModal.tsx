@@ -19,7 +19,7 @@ import { GlassSurface } from '@/components/ui/GlassSurface';
 import { OverflowFade } from '@/components/ui/OverflowFade';
 import { SheetGrabber } from '@/components/ui/Sheet';
 import { SheetPull, useAtTop } from '@/components/ui/SheetPull';
-import { useHorizontalOverflowFade } from '@/hooks/useHorizontalOverflowFade';
+import { useHorizontalOverflowFade } from '@/hooks/useOverflowFade';
 import { useKeyboardVisible } from '@/hooks/useKeyboardVisible';
 import { hapticNotify, hapticSelection } from '@/lib/haptics';
 import { Accessibility, Brain, Camera, Check, Construction, Ear, Eye, Lock, MapPin } from 'lucide-react-native';

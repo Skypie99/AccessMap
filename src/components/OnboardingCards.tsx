@@ -7,14 +7,18 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
+  type StyleProp,
   type Text,
   useWindowDimensions,
   View,
+  type ViewStyle,
 } from 'react-native';
 import { Bell, Check, type LucideIcon } from 'lucide-react-native';
 import { AppText } from '@/components/ui/AppText';
+import { OverflowFade } from '@/components/ui/OverflowFade';
 import { ScreenStage } from '@/components/ui/ScreenStage';
 import { TYPE_BLOCK } from '@/components/ui/TypeBlock';
+import { useVerticalOverflowFade } from '@/hooks/useOverflowFade';
 import LogoMark from '@/components/LogoMark';
 import { DISC_MAX_GROWTH, SeverityDisc } from '@/components/SeverityDisc';
 import * as Location from 'expo-location';
@@ -486,12 +490,7 @@ export default function OnboardingCards({ onDone }: Props) {
                     progress row and the CTA below stay pinned. flexGrow keeps
                     the block anchored to the bottom of the zone when it fits,
                     which is what stops the hero sliding card to card (G10). */}
-                <ScrollView
-                  style={styles.copyScroll}
-                  contentContainerStyle={[styles.hero, wide && styles.heroWide]}
-                  showsVerticalScrollIndicator={false}
-                  nestedScrollEnabled
-                >
+                <CopyZone contentStyle={[styles.hero, wide && styles.heroWide]} styles={styles}>
                   {c.hero === 'discs' ? (
                     /* The Legend in miniature — the five numbered severity discs
                        as one quiet static row on the stage. ONE accessible group
@@ -576,7 +575,7 @@ export default function OnboardingCards({ onDone }: Props) {
                   >
                     {effectiveBody}
                   </AppText>
-                </ScrollView>
+                </CopyZone>
               </View>
             );
           })}
@@ -729,6 +728,46 @@ export default function OnboardingCards({ onDone }: Props) {
   );
 }
 
+/**
+ * The scrolling copy zone, with the scent its clipped edge needs.
+ *
+ * At accessibility sizes a 34pt body under a 54pt title cannot fit the zone, so
+ * it scrolls — which board 05 asks for, and which the shipped card also did. The
+ * defect the device caught (AXL, card 1) is that the cut is SILENT: the body
+ * ends mid-glyph hard against the progress row, on a page that gives no sign a
+ * swipe would reveal the rest. That is the S16 finding turned ninety degrees, so
+ * it takes the S16 answer from the same source: the shared fade, which hides
+ * itself once you reach the bottom so it never cues a "more" that is not there.
+ *
+ * A component rather than five hook calls in a loop, because the hook belongs to
+ * the page that owns the scroller.
+ */
+function CopyZone({
+  contentStyle,
+  styles,
+  children,
+}: {
+  contentStyle: StyleProp<ViewStyle>;
+  styles: ReturnType<typeof makeStyles>;
+  children: React.ReactNode;
+}) {
+  const fade = useVerticalOverflowFade();
+  return (
+    <View style={styles.copyZone}>
+      <ScrollView
+        style={styles.copyScroll}
+        contentContainerStyle={contentStyle}
+        showsVerticalScrollIndicator={false}
+        nestedScrollEnabled
+        {...fade.scrollHandlers}
+      >
+        {children}
+      </ScrollView>
+      <OverflowFade visible={fade.hasMore} orientation="vertical" />
+    </View>
+  );
+}
+
 const makeStyles = (color: ColorTheme) =>
   StyleSheet.create({
     screen: {
@@ -765,6 +804,11 @@ const makeStyles = (color: ColorTheme) =>
     page: {
       // Each slide fills the pager page; the inner ScrollView owns the layout.
       flex: 1,
+    },
+    // The positioned parent the bottom fade paints over.
+    copyZone: {
+      flex: 1,
+      position: 'relative',
     },
     copyScroll: {
       flex: 1,

@@ -6,8 +6,10 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
+  type StyleProp,
   useWindowDimensions,
   View,
+  type ViewStyle,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { font, radius, spacing } from '@/theme';
@@ -16,7 +18,9 @@ import { decorativeProps, isAxRecompose, useFocusOnOpen, useReducedMotion } from
 import { hapticSelection } from '@/lib/haptics';
 import { trackEvent } from '@/lib/analytics';
 import { AppText } from '@/components/ui/AppText';
+import { OverflowFade } from '@/components/ui/OverflowFade';
 import { ScreenStage } from '@/components/ui/ScreenStage';
+import { useVerticalOverflowFade } from '@/hooks/useOverflowFade';
 import { severityColor } from '@/lib/flags';
 import {
   ONBOARDING_BODY_MAX_FONT_SCALE,
@@ -260,12 +264,7 @@ export default function OnboardingModal({ visible, onDone }: Props) {
                     the block anchored to the bottom of the zone when it fits
                     (G10) — the shipped version centred it, which left ~300pt of
                     empty screen above the mark with Skip floating alone in it. */}
-                <ScrollView
-                  style={styles.cardScroll}
-                  contentContainerStyle={[styles.hero, wide && styles.heroWide]}
-                  showsVerticalScrollIndicator={false}
-                  nestedScrollEnabled
-                >
+                <CopyZone contentStyle={[styles.hero, wide && styles.heroWide]} styles={styles}>
                   {card.brandMark ? (
                     /* The house pin, unframed, at the size it deserves — the
                        same hero card 1 of the first-launch flow wears. */
@@ -306,7 +305,7 @@ export default function OnboardingModal({ visible, onDone }: Props) {
                   >
                     {card.body}
                   </AppText>
-                </ScrollView>
+                </CopyZone>
               </View>
             );
           })}
@@ -407,6 +406,37 @@ export default function OnboardingModal({ visible, onDone }: Props) {
 }
 
 /**
+ * The scrolling copy zone plus the scent its clipped edge needs — the same
+ * shape (and the same shared fade) the first-launch flow uses. See
+ * OnboardingCards for the finding this closes.
+ */
+function CopyZone({
+  contentStyle,
+  styles,
+  children,
+}: {
+  contentStyle: StyleProp<ViewStyle>;
+  styles: ReturnType<typeof makeStyles>;
+  children: React.ReactNode;
+}) {
+  const fade = useVerticalOverflowFade();
+  return (
+    <View style={styles.copyZone}>
+      <ScrollView
+        style={styles.cardScroll}
+        contentContainerStyle={contentStyle}
+        showsVerticalScrollIndicator={false}
+        nestedScrollEnabled
+        {...fade.scrollHandlers}
+      >
+        {children}
+      </ScrollView>
+      <OverflowFade visible={fade.hasMore} orientation="vertical" />
+    </View>
+  );
+}
+
+/**
  * Themed style factory — migrated from static StyleSheet (wave 6 a11y pass).
  * Using theme tokens ensures this modal adapts to dark mode correctly and
  * all color/spacing values stay in sync with the design system.
@@ -441,6 +471,11 @@ const makeStyles = (color: ColorTheme) =>
       // Each slide fills the pager page; the inner ScrollView owns centering,
       // padding and gap so a tall slide can scroll instead of clipping (G10).
       flex: 1,
+    },
+    // The positioned parent the bottom fade paints over.
+    copyZone: {
+      flex: 1,
+      position: 'relative',
     },
     cardScroll: {
       flex: 1,

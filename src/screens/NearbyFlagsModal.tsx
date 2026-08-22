@@ -14,7 +14,7 @@ import { AppText } from '@/components/ui/AppText';
 import { GlassSurface } from '@/components/ui/GlassSurface';
 import { OverflowFade } from '@/components/ui/OverflowFade';
 import { SheetGrabber } from '@/components/ui/Sheet';
-import { useHorizontalOverflowFade } from '@/hooks/useHorizontalOverflowFade';
+import { useHorizontalOverflowFade } from '@/hooks/useOverflowFade';
 import { a11yToggle, decorativeProps, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
 import { MapPin, Search } from 'lucide-react-native';
 import { CATEGORY_LABELS, CATEGORY_ORDER } from '@/lib/flags';
