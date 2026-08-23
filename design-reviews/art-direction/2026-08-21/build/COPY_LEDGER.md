@@ -336,6 +336,30 @@ returning users differently on purpose.**
 
 ## Prompt 06 — Phase 2c (THE REPORT FORM · SETTINGS · PROFILE · EMPTY STATES)
 
+### ✅ RATIFIED BY SKY 2026-08-22 — all 21 strings, and both reversals upheld
+
+Sky reviewed the full list plus the two ⚠ decisions and answered "looks good".
+So, recorded explicitly so a later reader does not have to infer it:
+
+- **W-16 through W-36 are the shipped copy.** No longer placeholders.
+- **F-05 stands** — Home's list card speaks the ratified A-5 sentence.
+- **§SKY-7 section pick S1 is superseded.** Hidden comments and Blocked people
+  stay in their own Moderation section. Findability beat the "records of things
+  you did" grouping.
+- **§C6: a failed refresh is RED**, in MyWatched and HiddenComments, even though
+  their rows remain on screen. The rule's own sentence still says amber for
+  stale-but-present data; the ruling here is that a failed OPERATION is red and
+  an informational notice is amber. **§C6 should gain that sentence** the next
+  time the design-system doc is edited.
+
+Still open from this phase, and NOT ratified by the above (they are questions,
+not strings): the lock banner's em dash, "Update preferences" -> "Which updates
+to show", and the "Your reports" heading colliding with ReportsBreakdownCard's
+own title.
+
+---
+
+
 This phase writes the most placeholders in the series. Nothing below is
 shipped-as-final: every row is a builder's draft awaiting Sky's ratification,
 and each one names the single place it changes.
