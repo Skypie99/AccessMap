@@ -260,6 +260,10 @@ export const color = {
   // paired with the numeric rank), so contrast is secondary to the metal feel.
   medalSilver: '#9AA7B5',
   medalBronze: '#C0884F',
+  // The fourth tier's gem tint, which lived only as a literal inside
+  // reputationTier.ts. Named here so the ladder reads from one place —
+  // gold is `goldAccent`, and these three are its siblings.
+  medalPlatinum: '#5AA9E6',
 
   // Anonymous-contributor chip background (FlagCard). Neutral mid-gray;
   // white label text on it is ~4.7:1 — AA at any size.

@@ -30,27 +30,29 @@
  * Both still render with `accessibilityViewIsModal` so VoiceOver doesn't leak
  * focus between them.
  */
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState , useRef} from 'react';
 import {
+  AccessibilityInfo,
   ActivityIndicator,
-  Modal,
   Platform,
-  Pressable,
   ScrollView,
   StyleSheet,
-  type Text,
   View,
   type AccessibilityRole,
 } from 'react-native';
-import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 import { AppText } from '@/components/ui/AppText';
-import { GlassSurface } from '@/components/ui/GlassSurface';
+import { Sheet } from '@/components/ui/Sheet';
+import { useAtTop } from '@/components/ui/SheetPull';
 import { STATUS_LABELS } from '@/lib/flags';
+import {
+  STATUS_HISTORY_LOADING_ANNOUNCEMENT,
+  statusHistoryLoadedAnnouncement,
+} from '@/lib/copy';
 import { relativeTime } from '@/lib/relativeTime';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
-import { font, radius, spacing } from '@/theme';
-import { History, X } from 'lucide-react-native';
-import { decorativeProps, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
+import { font, spacing } from '@/theme';
+import { History } from 'lucide-react-native';
+import { decorativeProps } from '@/lib/accessibility';
 import {
   formatHistoryEntry,
   listStatusHistory,
@@ -99,13 +101,11 @@ function statusDotColor(color: ColorTheme, s: string): string {
 export default function StatusHistoryModal({ visible, flagId, onClose }: Props) {
   const color = useColor();
   const styles = makeStyles(color);
-  // Read the inset context directly (zero fallback) instead of
-  // useSafeAreaInsets(), which throws when there's no SafeAreaProvider — the
-  // modal render-tests mount these sheets without one. Same value in the app.
-  const insets = React.useContext(SafeAreaInsetsContext) ?? { top: 0, bottom: 0, left: 0, right: 0 };
-  const reducedMotion = useReducedMotion();
-  // A11Y-201 (2.4.3): move the SR cursor onto the title when this surface opens.
-  const titleRef = useFocusOnOpen<Text>(visible);
+  // The pull gesture must not fight the body's own scroll: `useAtTop`
+  // disables it whenever the content is scrolled away from its top, so a
+  // downward drag scrolls back up instead of dismissing (SheetPull's `atTop`).
+  const { atTop, onScroll, scrollEventThrottle } = useAtTop();
+  const scrollRef = useRef(null);
   const [entries, setEntries] = useState<StatusHistoryEntry[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -116,11 +116,24 @@ export default function StatusHistoryModal({ visible, flagId, onClose }: Props) 
       return;
     }
     setLoading(true);
+    // A3/D18 — `accessibilityLiveRegion` is ANDROID-ONLY in React Native, so on
+    // iOS VoiceOver this sheet opened, fetched and filled itself in total
+    // silence. The house pattern is to pair the region with an explicit
+    // announce, iOS-only: on Android the region already speaks, and firing both
+    // is the double-announce ReportFlagModal retired at S10. Documented at
+    // ReportContentModal.tsx (the "RUNG 1" block).
+    if (Platform.OS === 'ios') {
+      AccessibilityInfo.announceForAccessibility(STATUS_HISTORY_LOADING_ANNOUNCEMENT);
+    }
     (async () => {
       const data = await listStatusHistory(flagId);
       if (cancelled) return;
       setEntries(data);
       setLoading(false);
+      // …and the arrival, which is the half a sighted user gets for free.
+      if (Platform.OS === 'ios') {
+        AccessibilityInfo.announceForAccessibility(statusHistoryLoadedAnnouncement(data.length));
+      }
     })();
     return () => {
       cancelled = true;
@@ -149,40 +162,36 @@ export default function StatusHistoryModal({ visible, flagId, onClose }: Props) 
   );
 
   return (
-    <Modal aria-label="Status history" visible={visible} animationType={reducedMotion ? 'none' : 'slide'} transparent onRequestClose={onClose}>
-      <View style={styles.backdrop}>
-        <GlassSurface
-          variant="bulk"
-          borderRadius={0}
-          forceEngineered
-          style={[styles.card, { paddingBottom: Math.max(spacing.xxl, insets.bottom) }]}
-          accessibilityViewIsModal
-          onAccessibilityEscape={onClose}
-        >
-          <View style={styles.headerRow}>
-            <AppText ref={titleRef} variant="heading" style={styles.title} accessibilityRole="header">
-              Status history
-            </AppText>
-            <Pressable
-              onPress={onClose}
-              hitSlop={12}
-              style={({ pressed }) => [styles.closeBtn, pressed && { backgroundColor: color.borderPressed }]}
-              accessibilityRole="button"
-              accessibilityLabel="Close status history"
-              accessibilityHint="Returns to the flag details"
-            >
-              <X size={18} color={color.text} strokeWidth={2.2} />
-            </Pressable>
-          </View>
-
+    <Sheet
+      visible={visible}
+      onClose={onClose}
+      title="Status history"
+      closeLabel="Close status history"
+      closeHint="Returns to the flag details"
+      glass
+      engineered
+      padded
+      shrinkStyle={styles.cap}
+      minBottomPad={spacing.xxl}
+      atTop={atTop}
+      scrollRef={scrollRef}
+      testID="statusHistoryModal-backdrop"
+    >
           <ScrollView
             style={styles.body}
+              ref={scrollRef}
+              onScroll={onScroll}
+              scrollEventThrottle={scrollEventThrottle}
             contentContainerStyle={styles.bodyContent}
             showsVerticalScrollIndicator={false}
           >
             {loading ? (
               <View style={styles.center} accessibilityLiveRegion="polite">
-                <ActivityIndicator color={color.brandText} />
+                {/* A4 — every spinner has a label. Without one this is a
+                    nameless animating element: VoiceOver reaches it and says
+                    nothing, which is worse than silence because the user knows
+                    something is there. */}
+                <ActivityIndicator color={color.brandText} accessibilityLabel="Loading history" />
                 <AppText variant="body" style={styles.loadingText}>Loading history…</AppText>
               </View>
             ) : formatted.length === 0 ? (
@@ -236,47 +245,15 @@ export default function StatusHistoryModal({ visible, flagId, onClose }: Props) 
               </View>
             )}
           </ScrollView>
-        </GlassSurface>
-      </View>
-    </Modal>
+    </Sheet>
   );
 }
 
 const makeStyles = (color: ColorTheme) =>
   StyleSheet.create({
-    backdrop: {
-      flex: 1,
-      backgroundColor: color.scrim,
-      justifyContent: 'flex-end',
-    },
-    card: {
-      // Bulk-glass sheet (MP4): <GlassSurface variant="bulk" forceEngineered> supplies
-      // the material fill; no backgroundColor here (the variant owns it). overflow:hidden
-      // clips the square material to the rounded top. No up-shadow at HEAD -> no cardWrap.
-      overflow: 'hidden',
-      borderTopLeftRadius: radius.lg,
-      borderTopRightRadius: radius.lg,
-      paddingHorizontal: spacing.xl,
-      paddingTop: spacing.lg,
-      paddingBottom: spacing.xxl,
-      gap: spacing.md,
-      maxHeight: '80%',
-    },
-    headerRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: spacing.md,
-    },
-    title: { fontSize: font.size.xl, fontWeight: '700', flex: 1, color: color.textStrong },
-    closeBtn: {
-      width: 44,
-      height: 44,
-      borderRadius: radius.circle,
-      backgroundColor: color.surfaceNeutral,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    closeBtnText: { fontSize: font.size.lg, color: color.text, fontWeight: '700' },
+    // The sheet's own cap. `Sheet` defaults to 90%; this surface shipped at
+    // 80% and it is a short audit trail, so the tighter cap is content.
+    cap: { maxHeight: '80%' },
     body: { flexShrink: 1 },
     bodyContent: { gap: spacing.md, paddingBottom: spacing.sm, paddingTop: spacing.tight },
     center: {
@@ -293,7 +270,7 @@ const makeStyles = (color: ColorTheme) =>
     },
     emptyTitle: {
       fontSize: font.size.md,
-      fontWeight: '700',
+      fontWeight: font.weight.bold,
       color: color.text,
     },
     emptyBody: {
@@ -340,7 +317,7 @@ const makeStyles = (color: ColorTheme) =>
     entryTextWrap: { flex: 1, gap: 2, paddingBottom: 14 },
     entryLine: {
       fontSize: font.size.md,
-      fontWeight: '600',
+      fontWeight: font.weight.semibold,
       color: color.textStrong,
     },
   });

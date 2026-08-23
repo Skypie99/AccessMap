@@ -68,6 +68,26 @@ const ADOPTERS: readonly { rel: string; closeLabel: string; closeHandler?: strin
   { rel: path.join('screens', 'ReportFlagModal.tsx'), closeLabel: 'Cancel and close', closeHandler: 'handleCancel' },
   { rel: path.join('components', 'FlagDetailModal.tsx'), closeLabel: 'Close flag details' },
   { rel: path.join('screens', 'LegendModal.tsx'), closeLabel: 'Close legend' },
+  /*
+   * THE SHARED SHEET (added 2026-08-22, art-direction Phase 3).
+   *
+   * The fourth adopter is not a surface, it is the PRIMITIVE — and that is the
+   * point. `SheetHeader` draws the grabber, whose entire job is to advertise a
+   * gesture (its own docblock says so), and the primitive wired nothing behind
+   * it. On every `Sheet` consumer the pill was a promise the surface did not
+   * keep: pull the bar the app just showed you and nothing happens.
+   *
+   * That was survivable while ChangelogModal and one Tasks sheet were the only
+   * consumers. Phase 3 moved TEN more sheets in, which would have multiplied a
+   * lying affordance elevenfold instead of fixing it.
+   *
+   * `closeLabel` is not a literal here for the same reason: the close button is
+   * the primitive's own, and its label is composed (`Close ${title}`) or passed
+   * by the consumer. The default expression is what this pins — deleting the
+   * button is what the rule is guarding against, and the button cannot be
+   * deleted from eleven surfaces at once without deleting this.
+   */
+  { rel: path.join('components', 'ui', 'Sheet.tsx'), closeLabel: 'closeLabel ?? `Close ${title}`' },
 ];
 
 describe('SheetPull · the rails', () => {
@@ -124,7 +144,12 @@ describe('SheetPull · the rails', () => {
       const rel = path.relative(SRC, file);
       if (rel === path.join('components', 'ui', 'SheetPull.tsx')) continue;
       const src = stripComments(fs.readFileSync(file, 'utf8'));
-      if (!/\bSheetPull\b/.test(src)) continue;
+      // RENDERS the handler, not merely imports from its module. Twelve files
+      // now import `useAtTop` from here — that hook mounts no gesture, it only
+      // tells one whether the body is scrolled to its top, and treating an
+      // import as an adoption would make this list a list of everything
+      // (2026-08-22).
+      if (!/<SheetPull[\s>/]/.test(src)) continue;
       if (!declared.has(rel)) {
         offenders.push(`${rel} → adopts SheetPull but is not declared in ADOPTERS`);
       }
@@ -135,7 +160,7 @@ describe('SheetPull · the rails', () => {
         offenders.push(`${a.rel} → declared but the file does not exist`);
         continue;
       }
-      if (!/\bSheetPull\b/.test(stripComments(fs.readFileSync(full, 'utf8')))) {
+      if (!/<SheetPull[\s>/]/.test(stripComments(fs.readFileSync(full, 'utf8')))) {
         offenders.push(`${a.rel} → declared but does not adopt SheetPull`);
       }
     }
@@ -184,5 +209,79 @@ describe('SheetPull · the rails', () => {
       }
     }
     expect(offenders).toEqual([]);
+  });
+});
+
+/**
+ * THE GRABBER MUST NOT LIE (art-direction Phase 3, 2026-08-22).
+ *
+ * `SheetHeader` draws a pill whose only job is to advertise a drag. Phase 3
+ * moved ten sheets onto the primitive, which handed ten more surfaces that
+ * advertisement — so the primitive now wires `SheetPull` behind it, once, for
+ * every adopter present and future.
+ *
+ * That fix has a hazard of its own, and it is the reason this suite grows
+ * rather than the fix simply landing: `SheetPull` activates on a DOWNWARD drag
+ * past its threshold. On a sheet whose body is scrolled away from its top, an
+ * unwired pull would dismiss the sheet when the user meant to scroll back up.
+ * `atTop` is what prevents it — the handler is `enabled={enabled && atTop}` —
+ * and a consumer that forgets it turns a scroll into a dismissal.
+ *
+ * So: any `Sheet` consumer with a vertical scroller MUST pass `atTop`. This is
+ * a wiring guard; whether the gesture FEELS right is a device row.
+ */
+describe('SheetPull · the shared Sheet keeps its grabber honest', () => {
+  const SHEET_PRIMITIVE = path.join('components', 'ui', 'Sheet.tsx');
+  /** Vertical scrollers. A horizontal one cannot fight this gesture — the pan
+   *  declares `failOffsetX`, so a sideways drag never claims it. */
+  const VERTICAL = /<(ScrollView|FlatList|SectionList|VirtualizedList)\b(?![^>]*\bhorizontal\b)/;
+
+  it('the primitive wires the gesture to its own onClose', () => {
+    const src = stripComments(fs.readFileSync(path.join(SRC, SHEET_PRIMITIVE), 'utf8'));
+    expect(src).toContain('<SheetPull');
+    expect(src).toContain('onDismiss={onClose}');
+    // …and it hands the consumer the two controls that make it safe.
+    expect(src).toContain('atTop={atTop}');
+    expect(src).toContain('simultaneousHandlers={scrollRef}');
+  });
+
+  it('every Sheet consumer with a vertical scroller passes atTop', () => {
+    // Scoped to the SHEET's own span, not the file's. TasksScreen renders two
+    // Sheets that hold no scroller of their own while the screen behind them
+    // is a SectionList — a file-wide scan reads that as a hazard and it is not
+    // one. `atTop` defaults to true, which is correct for a sheet whose body
+    // cannot scroll away from its top.
+    const offenders: string[] = [];
+    for (const file of walkTsx(SRC)) {
+      const rel = path.relative(SRC, file);
+      if (rel === SHEET_PRIMITIVE) continue;
+      const src = stripComments(fs.readFileSync(file, 'utf8'));
+      for (const m of src.matchAll(/<Sheet[\s>/]/g)) {
+        const open = m.index as number;
+        const close = src.indexOf('</Sheet>', open);
+        // A self-closing or unmatched Sheet has no body to scroll.
+        if (close === -1) continue;
+        const span = src.slice(open, close);
+        if (!VERTICAL.test(span)) continue;
+        if (!/\batTop=\{/.test(span)) {
+          offenders.push(
+            `${rel} → a <Sheet> with a vertical scroller in its body never ` +
+              `passes atTop. A downward drag partway down that content will ` +
+              `DISMISS the sheet instead of scrolling back up. Wire useAtTop().`,
+          );
+        }
+      }
+    }
+    expect(offenders).toEqual([]);
+  });
+
+  it('and the census is not vacuous — the estate really does adopt Sheet', () => {
+    let consumers = 0;
+    for (const file of walkTsx(SRC)) {
+      if (path.relative(SRC, file) === SHEET_PRIMITIVE) continue;
+      if (/<Sheet[\s>/]/.test(stripComments(fs.readFileSync(file, 'utf8')))) consumers++;
+    }
+    // 12 at the time of writing (10 adopted in Phase 3 + Changelog + Tasks).
+    expect(consumers).toBeGreaterThanOrEqual(10);
   });
 });

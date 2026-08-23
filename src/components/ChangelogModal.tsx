@@ -1,10 +1,11 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState , useRef} from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { initialExpanded } from '@/lib/changelogExpanded';
 import { a11yToggle, decorativeProps } from '@/lib/accessibility';
 import { font, radius, shadow, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { AppText, Sheet } from '@/components/ui';
+import { useAtTop } from '@/components/ui/SheetPull';
 import { ChevronDown, ChevronRight } from 'lucide-react-native';
 
 interface Props {
@@ -77,6 +78,11 @@ const RELEASES: ReleaseNote[] = [
 export default function ChangelogModal({ visible, onClose }: Props) {
   const color = useColor();
   const styles = makeStyles(color);
+  // The pull gesture must not fight the body's own scroll: `useAtTop`
+  // disables it whenever the content is scrolled away from its top, so a
+  // downward drag scrolls back up instead of dismissing (SheetPull's `atTop`).
+  const { atTop, onScroll, scrollEventThrottle } = useAtTop();
+  const scrollRef = useRef(null);
   // Local UI state — not persisted. Each time the modal opens we reset so
   // the newest release is expanded and the rest collapsed. That keeps the
   // modal scannable on every open without a storage layer.
@@ -93,10 +99,15 @@ export default function ChangelogModal({ visible, onClose }: Props) {
       onClose={onClose}
       title="What's New"
       glass
+      atTop={atTop}
+      scrollRef={scrollRef}
       testID="changelogModal-backdrop"
     >
       <ScrollView
         style={styles.body}
+              ref={scrollRef}
+              onScroll={onScroll}
+              scrollEventThrottle={scrollEventThrottle}
         contentContainerStyle={styles.bodyContent}
         showsVerticalScrollIndicator={false}
       >
@@ -111,7 +122,13 @@ export default function ChangelogModal({ visible, onClose }: Props) {
                     style={styles.releaseHeader}
                     accessibilityRole="button"
                     {...a11yToggle({ expanded: isOpen })}
-                    accessibilityLabel={`${release.title}, ${itemCount} item${
+                    // B2 — the date is rendered in a badge beside the title,
+                    // and the badge is inside this Pressable, so a screen
+                    // reader that collapses the row never speaks it. Every row
+                    // therefore sounded like "What's fixed, 4 items" with no
+                    // way to tell one release from the next. The visible row
+                    // and the spoken row now carry the same three facts.
+                    accessibilityLabel={`${release.title}, ${release.date}, ${itemCount} item${
                       itemCount === 1 ? '' : 's'
                     }`}
                     accessibilityHint={isOpen ? 'Tap to collapse' : 'Tap to expand'}

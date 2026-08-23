@@ -9,6 +9,62 @@ Zero em dashes in new copy.
 
 ---
 
+# ⚑ OUTSTANDING AT A GLANCE — 34 strings, one pass
+
+*Added 2026-08-22 at the end of Phase 3, so ratifying is one sitting instead of
+seven. Every row links back to its own prompt's block below, where the reasoning
+and the alternatives live. Nothing here has been changed or ratified by an
+agent — this is an index, not a decision.*
+
+**Status of the rest:** Prompt 00 wrote no strings · **Prompt 05b ✅ ratified
+2026-08-22** (8) · **Prompt 06 ✅ ratified 2026-08-22** (21).
+
+> ⚠ **W-05 through W-09 are each used TWICE** in this file — once in Prompt 02's
+> FlagDetail block and again in Prompt 05's onboarding block. That collision
+> predates Phase 3 and no agent has renumbered the earlier entries, because two
+> of them are ratified. **When you ratify those five, say which block you mean.**
+> The IDs below are Prompt 02's.
+
+### Visible strings — 11 pending from Prompts 01, 02, 04
+
+| # | Proposed string | Where | Prompt |
+|---|---|---|---|
+| W-02 | `See all {n} on the map` | Home, end of the CLOSEST card | 01 |
+| W-03 | `Severity {n} of 5 · {word} · {status}` | FlagDetail header | 02 |
+| W-04 | `Reported by {attribution} · {when} · {distance} away · {n} min walk` | FlagDetail meta | 02 |
+| W-05 | `Copy coordinates` | FlagDetail meta | 02 |
+| W-06 | `Community check` | FlagDetail, read mode | 02 |
+| W-07 | `Something wrong with this report?` | FlagDetail, end of body | 02 |
+| W-08 | `Map` · `Directions` · `Share` · `History` · `Watch`/`Watching` · `Edit` · `Delete` | FlagDetail More row | 02 |
+| W-09 | `Why Flagstone` | About, section heading | 02 |
+| W-13 | `Task tools` | Tasks ⋯ sheet title | 04 |
+| W-14 | `More task tools` | Tasks ⋯ circle, accessible name | 04 |
+| W-15 | `Select multiple flags, or clear the active filters` | Tasks ⋯ circle, hint | 04 |
+
+### Phase 3 — 22 a11y strings + 1 visible
+
+Spoken-only, but still copy: for a VoiceOver user an announcement is the ONLY
+version of the interface. Full table with the shape reasoning in §Prompt 07.
+
+| Group | # | Gist |
+|---|---|---|
+| Loading announcements | A-01 … A-08 | "Loading status history" / "…loaded. {n} changes." for StatusHistory, both prefs surfaces, MyFeedback |
+| Outcome announcements | A-09 … A-13 | push on/off, export started, "{n} people unblocked on this device", "Stopped watching {category}" |
+| Spinner labels | A-14 … A-17 | "Loading history" / "Loading your preferences" / "Loading your feedback" / "Loading {cell}" |
+| Labels + hints | A-18 … A-22 | Changelog row gains its DATE · Help search hint · two Close hints · MyFeedback radiogroup name |
+| Visible | W-37 | `Severity ↓` → `Severity` + a Lucide arrow (spoken label unchanged) |
+
+### The rule, and the precedent
+
+Prompt 08 step 25: *"Nothing merges to `main` with an unratified ledger."*
+
+Stated plainly so shipping again is a choice rather than an oversight:
+**`origin/main` (`e8e7610`) already shipped Prompts 00–04 with 01/02/04's
+placeholders pending.** The rule has been bent once. Bending it a second time is
+fine if it is deliberate; it is not fine if nobody noticed.
+
+---
+
 ## Prompt 00 — Phase 0 (PRE-SUBMISSION)
 
 **No entries. Phase 0 changed no user-facing string.**
@@ -482,3 +538,95 @@ what remains on screen. The change makes four modals agree.
 the data, red is an operation that FAILED. **To revert either banner:** one
 style swap (`refreshErrorBanner` -> `missingBanner` in MyWatchedModal;
 `errorBg`/`errorFg` -> `warningBg`/`warningFg` in HiddenCommentsModal).
+
+---
+
+## Prompt 07 — Phase 3 (the modal estate, announcement parity, SW-36, hygiene)
+
+### A11Y STRINGS — new, AGENT-PROPOSED, awaiting Sky's ratification
+
+These are strings a screen reader SPEAKS and nobody ever reads. That does not
+make them less user-facing: for a VoiceOver user an announcement is the ONLY
+version of the interface, and a label is the only name a control has. They are
+listed here for the same reason a visible string is — Sky decides the words.
+
+All live in `src/lib/copy.ts` (announcements) or at the control (labels/hints),
+never inline at a call site. Zero em dashes.
+
+#### Loading announcements (iOS-gated, paired with a live region)
+
+| # | String | Surface | Rule |
+|---|---|---|---|
+| A-01 | `Loading status history` | StatusHistory, on open | A3 / D18 |
+| A-02 | `Status history loaded. Nothing has happened to this flag yet.` | StatusHistory, empty result | A3 |
+| A-03 | `Status history loaded. {n} change(s).` | StatusHistory, on arrival | A3 |
+| A-04 | `Loading your preferences` | NotificationPrefs modal + screen | A3 / D18 |
+| A-05 | `Preferences loaded.` | both prefs surfaces | A3 |
+| A-06 | `Loading your feedback` | MyFeedback | A3 / D18 |
+| A-07 | `Feedback loaded. You have not sent any yet.` | MyFeedback, empty | A3 |
+| A-08 | `Feedback loaded. {n} item(s).` | MyFeedback, on arrival | A3 |
+
+**Shape rationale.** A loading announcement names WHAT is being fetched rather
+than saying "Loading" — a VoiceOver user may have several surfaces in play and
+a bare gerund names none of them. A completion announcement carries the COUNT,
+because that is the fact a sighted user gets from the screen for free and the
+one a spinner disappearing cannot convey.
+
+#### Outcome announcements (not iOS-gated; the HiddenComments pattern)
+
+| # | String | Surface | Replaces |
+|---|---|---|---|
+| A-09 | `Push notifications on.` | Settings push toggle | silence |
+| A-10 | `Push notifications off.` | Settings push toggle | silence |
+| A-11 | `Preparing your data export.` | Settings export | silence |
+| A-12 | `{n} person/people unblocked on this device.` | Settings unblock all | silence |
+| A-13 | `Stopped watching {category}.` | MyWatched unwatch | silence |
+
+**Why these are not iOS-gated and the loading pair is.** These answer the
+user's OWN action, there is no live region rendered beside them to double up
+with, and on both platforms the result is otherwise silent (a Switch flips, a
+row vanishes, a share sheet arrives after a pause). `HiddenCommentsModal`
+already announces exactly this way. A-12 keeps the "on this device" fence the
+unhide announcements carry, for the same reason: a bare "unblocked" overstates
+what the app did.
+
+#### Spinner labels (A4)
+
+| # | String | Surface |
+|---|---|---|
+| A-14 | `Loading history` | StatusHistory spinner |
+| A-15 | `Loading your preferences` | both prefs spinners |
+| A-16 | `Loading your feedback` | MyFeedback spinner |
+| A-17 | `Loading {cell label}` | SegmentedControl busy cell (composed) |
+
+#### Labels + hints that changed
+
+| # | Change | Surface | Why |
+|---|---|---|---|
+| A-18 | Changelog row label gains the DATE: `{title}, {date}, {n} items` | ChangelogModal | B2 — the date was in a badge inside the collapsed row, so every row sounded identical |
+| A-19 | Help search gains a hint: `Filters the questions and answers below to those containing your search words` | HelpModal | B1 — parity; every sibling search says what typing does |
+| A-20 | Notification preferences Close gains `Returns to Settings` | prefs SCREEN | D3 — parity with its siblings |
+| A-21 | MyWatched Close gains `Returns to your Profile` | MyWatched | parity |
+| A-22 | MyFeedback chips gain a named `radiogroup`: `Filter feedback by category` | MyFeedback | B4 — a radio with no group announces its state, never its membership |
+
+### VISIBLE COPY — one character removed
+
+| # | Change | Surface | Why |
+|---|---|---|---|
+| W-37 | `Severity ↓` -> `Severity` + a Lucide arrow icon | MyWatched sort chips | I1/I3. U+2193 rendered in whatever the body face had for it, did not scale or tint with the label, and sat in the VISIBLE string while the SPOKEN label said "Sort by highest severity first" — the two versions of one control disagreed. The spoken label is unchanged. |
+
+> ⚠ **A NUMBERING NOTE, because you ratify by ID.** This entry was first written
+> as `W-07` and is renumbered to **W-37** (the next free number globally). While
+> renumbering it I found that `W-05` through `W-09` are ALREADY used twice in
+> this ledger — once in Prompt 02's FlagDetail block and again in Prompt 05's
+> onboarding block. That collision predates Phase 3 and I have not touched the
+> earlier entries, because they are other prompts' records and two of them are
+> ratified. **When you ratify by ID, say which prompt's block you mean for
+> W-05..W-09.**
+
+### NOT CHANGED, and worth stating
+
+Every sheet title, every close-button label, every empty state and every body
+string in the ten adopted sheets is byte-identical. The shells moved; the words
+did not. `Achievements`' empty state stays the SKY-WORDS-REQUIRED placeholder
+Phase 2 logged (it was not re-authored on the way into the primitive).

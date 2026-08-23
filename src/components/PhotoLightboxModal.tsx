@@ -164,7 +164,7 @@ const makeStyles = (color: ColorTheme) =>
     paddingBottom: 34,
     backgroundColor: color.backdropCaption,
   },
-  captionText: { color: color.textOnBrand, fontSize: font.size.base, fontWeight: '600' },
+  captionText: { color: color.textOnBrand, fontSize: font.size.base, fontWeight: font.weight.semibold },
   closeBtn: {
     position: 'absolute',
     top: 48,
@@ -177,5 +177,4 @@ const makeStyles = (color: ColorTheme) =>
     justifyContent: 'center',
   },
   closeBtnPressed: { backgroundColor: color.overlayBtnPressed },
-  closeBtnText: { fontSize: font.size.xl, color: color.surface, fontWeight: '700' },
 });

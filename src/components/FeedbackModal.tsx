@@ -467,11 +467,6 @@ const makeStyles = (color: ColorTheme) =>
       alignItems: 'center',
       justifyContent: 'center',
     },
-    closeBtnText: {
-      fontSize: font.size.lg,
-      color: color.text,
-      fontWeight: font.weight.bold,
-    },
     subtitle: {
       fontSize: font.size.sm,
       // inkGlassMuted, not textMuted (#666 = 4.06:1 FAIL on the light bulk sheet).

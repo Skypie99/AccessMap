@@ -159,7 +159,7 @@ const styles = StyleSheet.create({
     // Darkened #414B5A → #222 for the 0.65 crystal pin (6.52:1). Pinned-light.
     color: '#222',
     textTransform: 'uppercase',
-    letterSpacing: 0.4,
+    letterSpacing: font.tracking.loose,
   },
   row: {
     flexDirection: 'row',

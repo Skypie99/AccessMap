@@ -454,8 +454,12 @@ function makeStyles(color: ColorTheme) {
     btnPressed: {
       opacity: 0.85,
     },
+    // A8 — `errorStrong` is the token for a DESTRUCTIVE ACTION's fill;
+    // `error` is the subtle one, for banner backgrounds and quiet destructive
+    // text. Remove is the most irreversible control on this screen and was
+    // wearing the quieter of the two.
     btnRemove: {
-      backgroundColor: color.error,
+      backgroundColor: color.errorStrong,
     },
     btnDismiss: {
       backgroundColor: color.surfaceNeutral,

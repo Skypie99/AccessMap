@@ -29,6 +29,8 @@ const themeDark = readSrc('theme/ThemeContext.tsx');
 const mapScreen = readSrc('screens/MapScreen.tsx');
 const tasksScreen = readSrc('screens/TasksScreen.tsx');
 const flagDetail = readSrc('components/FlagDetailModal.tsx');
+// GSP-07 §7.1 — where the segmented cells' drawing lives now.
+const segmented = readSrc('components/ui/SegmentedControl.tsx');
 const tabBarButton = readSrc('navigation/TabBarButton.tsx');
 
 describe('BP11 / T3 — PressableScale carries the press dialect (source contract)', () => {
@@ -102,7 +104,14 @@ describe('BP11 / T3 — the estate speaks fill-swaps, not group opacity', () => 
     expect(flagDetail).toMatch(/copyCoordsLinkPressed: \{ backgroundColor: color\.borderPressed \}/);
     expect(flagDetail).toMatch(/moreItemPressed: \{ backgroundColor: color\.borderPressed \}/);
     expect(flagDetail).toMatch(/reportBtnPressed: \{ backgroundColor: color\.borderPressed \}/);
-    expect(flagDetail).toMatch(/segmentCellPressed: \{ backgroundColor: color\.borderPressed \}/);
+    // RE-PINNED 2026-08-22 (GSP-07 §7.1): the segmented cells' drawing moved
+    // into components/ui/SegmentedControl.tsx, so their press style did too.
+    // The rule is the estate's press DIALECT, not a file boundary — a cell that
+    // dimmed by opacity would still be the defect this guard exists to stop, so
+    // it is checked where it now lives, and checked there for the absence of an
+    // opacity as well.
+    expect(segmented).toMatch(/cellPressed: \{ backgroundColor: color\.borderPressed \}/);
+    expect(segmented).not.toMatch(/cellPressed:[^}]*opacity/);
     expect(flagDetail).toMatch(/commentSendBtnPressed: \{\s*backgroundColor: color\.ctaFillPressed/);
     // none of them keeps an opacity
     expect(flagDetail).not.toMatch(/afterTipBtnPressed:[^}]*opacity/);

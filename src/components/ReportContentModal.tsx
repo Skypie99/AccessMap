@@ -70,23 +70,20 @@ import React, { useEffect, useRef, useState } from 'react';
 import {
   AccessibilityInfo,
   ActivityIndicator,
-  KeyboardAvoidingView,
-  Modal,
   Platform,
   Pressable,
   ScrollView,
   StyleSheet,
-  type Text,
   TextInput,
   View,
 } from 'react-native';
-import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
-import { X } from 'lucide-react-native';
 import { AppText } from '@/components/ui/AppText';
-import { GlassSurface } from '@/components/ui/GlassSurface';
-import { bulkGlassShadow, font, radius, spacing } from '@/theme';
+import { Sheet } from '@/components/ui/Sheet';
+import { useAtTop } from '@/components/ui/SheetPull';
+import { font, radius, spacing } from '@/theme';
+import { X } from 'lucide-react-native';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
-import { a11yToggle, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
+import { a11yToggle } from '@/lib/accessibility';
 import { useAuth } from '@/lib/auth';
 import { notify } from '@/lib/confirm';
 import { FEEDBACK_EMAIL, sendFeedback } from '@/lib/feedback';
@@ -121,11 +118,11 @@ interface Props {
 export default function ReportContentModal({ visible, target, onClose }: Props) {
   const color = useColor();
   const styles = makeStyles(color);
-  // Read the inset context directly (zero fallback) instead of
-  // useSafeAreaInsets(), which throws when there's no SafeAreaProvider — the
-  // modal render-tests mount these sheets without one. Same value in the app.
-  const insets = React.useContext(SafeAreaInsetsContext) ?? { top: 0, bottom: 0, left: 0, right: 0 };
-  const reducedMotion = useReducedMotion();
+  // The pull gesture must not fight the body's own scroll: `useAtTop`
+  // disables it whenever the content is scrolled away from its top, so a
+  // downward drag scrolls back up instead of dismissing (SheetPull's `atTop`).
+  const { atTop, onScroll, scrollEventThrottle } = useAtTop();
+  const scrollRef = useRef(null);
   const { user } = useAuth();
   // The terms sheet is mounted at the navigator, not here — this sheet is
   // itself inside the flag sheet, and a third modal nested in the second would
@@ -144,7 +141,6 @@ export default function ReportContentModal({ visible, target, onClose }: Props) 
   // This sheet opens OVER the flag-detail sheet, so without this the
   // screen-reader cursor stays on the control behind it and the user never
   // learns the report form appeared (WCAG 2.4.3).
-  const titleRef = useFocusOnOpen<Text>(visible && !!target);
 
   // The next open must be a blank form, not the last one's leftovers — a
   // half-typed reason about comment A must never be pre-loaded onto comment B.
@@ -269,70 +265,47 @@ export default function ReportContentModal({ visible, target, onClose }: Props) 
   };
 
   return (
-    <Modal
-      aria-label={REPORT_CONTROL_LABEL}
+    <Sheet
       visible={visible && !!target}
-      animationType={reducedMotion ? 'none' : 'slide'}
-      transparent
-      onRequestClose={() => {
+      onClose={() => {
         if (!submitting) onClose();
       }}
-    >
-      {/* The containment child. accessibilityViewIsModal makes the flag-detail
-          sheet underneath inert to VoiceOver, and the escape handler lives here
-          because RN drops it on the <Modal> tag. The `!submitting` guard is the
-          same one the visible Cancel carries, so a scrub mid-send no-ops the
-          way the disabled button does (G1). */}
-      <View
-        style={styles.backdrop}
-        accessibilityViewIsModal
-        onAccessibilityEscape={() => {
-          if (!submitting) onClose();
-        }}
-        testID="reportContentModal-backdrop"
-      >
-        {/* J2-5 / G6: the percentage cap lives on the KAV, whose parent (the
-            flex:1 backdrop) is the only node with a DEFINITE height. cardWrap
-            and card just need permission to shrink into it — a maxHeight on
-            them alone never resolves. FeedbackModal's stack, verbatim. */}
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          style={styles.kav}
+      title={REPORT_CONTROL_LABEL}
+      headerRight={
+        /* Close REPLACES the primitive's own, because this one is disabled
+           mid-send — the same `!submitting` guard the escape scrub and the
+           visible Cancel carry, so all three no-op together (G1).
+           The house pattern names the surface ("Close feedback", "Close status
+           history"). "Close report" would be a NEW user-facing string, and new
+           strings route through copy.ts and Sky's §A pass — this commit ships
+           none. So the bare shipped literal is reused; BP16 can promote it.
+           Sharing the name with the acknowledgement's Close button is correct
+           rather than ambiguous: same name, same action (WCAG 3.2.4). */
+        <Pressable
+          onPress={onClose}
+          disabled={submitting}
+          hitSlop={12}
+          style={({ pressed }) => [
+            styles.closeBtn,
+            pressed && { backgroundColor: color.borderPressed },
+          ]}
+          accessibilityRole="button"
+          accessibilityLabel="Close"
+          {...a11yToggle({ disabled: submitting })}
         >
-          <View style={styles.cardWrap}>
-            <GlassSurface variant="bulk" borderRadius={0} style={[styles.card, { paddingBottom: Math.max(spacing.xl, insets.bottom) }]}>
-              <View style={styles.headerRow}>
-                <AppText
-                  ref={titleRef}
-                  variant="heading"
-                  style={styles.title}
-                  accessibilityRole="header"
-                >
-                  {REPORT_CONTROL_LABEL}
-                </AppText>
-                {/* The house pattern names the surface ("Close feedback",
-                    "Close status history"). "Close report" would be a NEW
-                    user-facing string, and new strings route through copy.ts
-                    and Sky's §A pass — this commit ships none. So the bare
-                    shipped literal is reused; BP16 can promote it. Sharing the
-                    name with the acknowledgement's Close button is correct
-                    rather than ambiguous: same name, same action (WCAG 3.2.4). */}
-                <Pressable
-                  onPress={onClose}
-                  disabled={submitting}
-                  hitSlop={12}
-                  style={({ pressed }) => [
-                    styles.closeBtn,
-                    pressed && { backgroundColor: color.borderPressed },
-                  ]}
-                  accessibilityRole="button"
-                  accessibilityLabel="Close"
-                  {...a11yToggle({ disabled: submitting })}
-                >
-                  <X size={18} color={color.text} strokeWidth={2.2} />
-                </Pressable>
-              </View>
-
+          <X size={18} color={color.text} strokeWidth={2.2} />
+        </Pressable>
+      }
+      glass
+      padded
+      keyboardAvoiding
+      shrinkStyle={styles.kav}
+      cardStyle={styles.cardRhythm}
+      minBottomPad={spacing.xl}
+      atTop={atTop}
+      scrollRef={scrollRef}
+      testID="reportContentModal-backdrop"
+    >
               {sent ? (
                 // The live region is what tells a screen-reader user the send
                 // landed — the visual swap is invisible to them, and there is
@@ -351,6 +324,9 @@ export default function ReportContentModal({ visible, target, onClose }: Props) 
                 // and actions stay pinned.
                 <ScrollView
                   style={styles.body}
+              ref={scrollRef}
+              onScroll={onScroll}
+              scrollEventThrottle={scrollEventThrottle}
                   contentContainerStyle={styles.bodyContent}
                   keyboardShouldPersistTaps="handled"
                 >
@@ -376,7 +352,12 @@ export default function ReportContentModal({ visible, target, onClose }: Props) 
                           onPress={() => setCategory(selected ? null : c.id)}
                           disabled={submitting}
                           accessibilityRole="radio"
-                          accessibilityState={{ checked: selected, disabled: submitting }}
+                          // D19 — was a raw accessibilityState, which is the
+                          // native half only. `a11yToggle` adds the aria-*
+                          // aliases the web build needs, so the selection is
+                          // announced on every platform (the same slip every
+                          // other toggle in the estate already routes through).
+                          {...a11yToggle({ checked: selected, disabled: submitting })}
                           accessibilityLabel={c.label}
                           style={[styles.categoryRow, selected && styles.categoryRowSelected]}
                           testID={`reportContentModal-category-${c.id}`}
@@ -498,61 +479,23 @@ export default function ReportContentModal({ visible, target, onClose }: Props) 
                   </>
                 )}
               </View>
-            </GlassSurface>
-          </View>
-        </KeyboardAvoidingView>
-      </View>
-      {/* Inside this Modal on purpose — see LegalSheets.tsx. */}
+      {/* Inside this surface's own Modal on purpose — see LegalSheets.tsx. */}
       {legal.sheets}
-    </Modal>
+    </Sheet>
   );
 }
 
 const makeStyles = (color: ColorTheme) =>
   StyleSheet.create({
-    backdrop: {
-      flex: 1,
-      backgroundColor: color.scrim,
-      justifyContent: 'flex-end',
-    },
     // The cap that actually resolves — see the J2-5 note at the call site.
     kav: {
       width: '100%',
       maxHeight: '90%',
       flexShrink: 1,
     },
-    // The up-shadow rides the OUTER wrapper; the card's overflow:'hidden' would
-    // clip it. Dark keeps the one sanctioned Deep Field dark shadow.
-    cardWrap: {
-      flexShrink: 1,
-      borderTopLeftRadius: radius.xl,
-      borderTopRightRadius: radius.xl,
-      ...bulkGlassShadow(color),
-    },
-    // Bulk-glass sheet material lives on the GlassSurface variant; no
-    // backgroundColor here. Same recipe as FeedbackModal.
-    card: {
-      borderTopLeftRadius: radius.xl,
-      borderTopRightRadius: radius.xl,
-      overflow: 'hidden',
-      paddingHorizontal: spacing.xl,
-      paddingTop: spacing.lg,
-      paddingBottom: spacing.xl,
-      gap: spacing.sm,
-      maxHeight: '90%',
-      flexShrink: 1,
-    },
-    headerRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: spacing.md,
-    },
-    title: {
-      flex: 1,
-      fontSize: font.size.xl,
-      fontWeight: font.weight.bold,
-      color: color.textStrong,
-    },
+    // The sheet's inter-child rhythm. `padded` supplies `md`; this surface
+    // shipped tighter (its rows are radio lines, not cards).
+    cardRhythm: { gap: spacing.sm },
     closeBtn: {
       width: 44,
       height: 44,

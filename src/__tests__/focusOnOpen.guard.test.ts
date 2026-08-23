@@ -109,14 +109,63 @@ const ALLOWED: { rel: string; marker: string; why: string }[] = [
   },
 ];
 
+/**
+ * DELEGATED SURFACES (added 2026-08-22, art-direction Phase 3).
+ *
+ * Ten sheets moved their shell into `components/ui/Sheet.tsx`, which runs the
+ * focus-in hook ONCE for all of them. Two consequences, and they pull in
+ * opposite directions, so both are handled explicitly rather than by lowering a
+ * number:
+ *
+ *  1. Those files correctly no longer call `useFocusOnOpen`, and they correctly
+ *     no longer appear in the <Modal> census — the per-file rule below is
+ *     satisfied by their absence, which is right.
+ *  2. The TRIPWIRE is not. It counts surfaces to notice a parser break or a
+ *     mass deletion, and ten surfaces leaving at once is exactly what it should
+ *     shout about. So it counts `<Sheet>` consumers too, and the estate stays
+ *     the size it actually is.
+ *
+ * Plus one assertion the suite never had: that the primitive itself runs the
+ * hook. Ten surfaces' focus-in now hangs off that single call.
+ */
+const SHEET_PRIMITIVE = path.join('components', 'ui', 'Sheet.tsx');
+
+function delegatedCount(): number {
+  let n = 0;
+  for (const file of walkTsx(SRC)) {
+    if (path.resolve(file) === SELF) continue;
+    const rel = path.relative(SRC, file);
+    if (rel === SHEET_PRIMITIVE) continue;
+    const src = stripComments(fs.readFileSync(file, 'utf8'));
+    n += [...src.matchAll(/<Sheet[\s>/]/g)].length;
+  }
+  return n;
+}
+
 describe('focus-in standard — every dismissable moves the SR cursor in on open', () => {
   const byFile = liveSurfacesByFile();
 
   it('census parser found the estate (parser-rot tripwire)', () => {
-    const total = [...byFile.values()].reduce((n, v) => n + v.surfaces.length, 0);
+    const modals = [...byFile.values()].reduce((n, v) => n + v.surfaces.length, 0);
+    const total = modals + delegatedCount();
     // 36 live surfaces at adoption time (2026-07-31). Shrinkage below 30 means
     // the parser broke or a mass deletion happened — either way, look.
     expect(total).toBeGreaterThanOrEqual(30);
+    // Neither half may empty out unnoticed.
+    expect(modals).toBeGreaterThanOrEqual(20);
+    expect(delegatedCount()).toBeGreaterThanOrEqual(10);
+  });
+
+  it('the primitive every delegated surface leans on runs the hook itself', () => {
+    // Without this, `Sheet` could drop useFocusOnOpen and ten surfaces would
+    // lose focus-in while this suite stayed green — because they no longer
+    // appear in the census at all.
+    const src = stripComments(fs.readFileSync(path.join(SRC, SHEET_PRIMITIVE), 'utf8'));
+    expect(src).toMatch(/useFocusOnOpen\s*[<(]/);
+    // Presence is not placement, and placement is what makes it work: the ref
+    // has to reach the title AppText, which is where the cursor should land.
+    expect(src).toContain('titleRef={titleRef}');
+    expect(src).toContain('ref={titleRef}');
   });
 
   it('every ALLOWED entry still matches exactly one live surface', () => {

@@ -94,6 +94,49 @@ function surfaces(): Surface[] {
   return out;
 }
 
+/**
+ * THE DELEGATED HALF (added 2026-08-22, art-direction Phase 3).
+ *
+ * Ten sheets moved their shell into `components/ui/Sheet.tsx` (§S5, "no third
+ * shell"), so their `<Modal>` tags left this census with them. Assertion A —
+ * the not-vacuous tripwire — went red at 27, which is the tripwire doing
+ * exactly its job: from where it stood, ten surfaces had been deleted.
+ *
+ * They had not been deleted, they had been DELEGATED. So the census grows a
+ * second half: a `<Sheet>` consumer is a surface too, and it has an obligation
+ * of its own — it must hand the primitive a real `onClose`, because that is the
+ * single expression the primitive wires to BOTH `onRequestClose` and
+ * `onAccessibilityEscape`. Assertion B's parity law is satisfied structurally
+ * for every one of them, once, inside the primitive; what can still go wrong on
+ * this side is a consumer that never passes the handler.
+ *
+ * Net coverage is UP, not down: before the move, `Sheet` consumers were checked
+ * for nothing at all here.
+ */
+function sheetSurfaces(): { rel: string; line: number; tag: string }[] {
+  const out: { rel: string; line: number; tag: string }[] = [];
+  for (const file of [...walkTsx(SRC), APP_TSX]) {
+    if (path.resolve(file) === SELF) continue;
+    const src = stripComments(fs.readFileSync(file, 'utf8'));
+    const rel = path.relative(SRC, file);
+    if (rel === path.join('components', 'ui', 'Sheet.tsx')) continue; // the definition
+    for (const m of src.matchAll(/<Sheet[\s>/]/g)) {
+      const i = m.index as number;
+      let depth = 0;
+      let j = i;
+      while (j < src.length) {
+        const c = src[j];
+        if (c === '{') depth++;
+        else if (c === '}') depth--;
+        else if (c === '>' && depth === 0) break;
+        j++;
+      }
+      out.push({ rel, line: src.slice(0, i).split('\n').length, tag: src.slice(i, j + 1) });
+    }
+  }
+  return out;
+}
+
 /** Read a prop's expression out of a tag, balancing braces. */
 function prop(tag: string, name: string): string | null {
   // Quoted string attribute, e.g. animationType="none" — the drawer's designed
@@ -279,8 +322,50 @@ describe('the dismissal standard', () => {
   const all = surfaces();
   const live = all.filter((s) => !isAllowed(s));
 
+  const delegated = sheetSurfaces();
+
   it('A · finds the modal estate (sanity: the scan is not vacuous)', () => {
-    expect(all.length).toBeGreaterThanOrEqual(30);
+    // Both halves, because both are surfaces. The number is the same one this
+    // tripwire always defended (36 at adoption, floor 30); what changed in
+    // Phase 3 is only WHERE ten of them keep their chrome.
+    expect(all.length + delegated.length).toBeGreaterThanOrEqual(30);
+    // And neither half may empty out unnoticed.
+    expect(all.length).toBeGreaterThanOrEqual(20);
+    expect(delegated.length).toBeGreaterThanOrEqual(10);
+  });
+
+  it('A2 · every delegated surface hands the primitive a real onClose', () => {
+    // The one obligation that stays on THIS side of the seam. `onClose` is the
+    // single expression `Sheet` wires to both onRequestClose (Android back,
+    // assertion D) and onAccessibilityEscape (the scrub, assertion B) — so a
+    // consumer that omits it, or passes `undefined`, silently loses both doors
+    // while every other assertion here stays green.
+    const offenders: string[] = [];
+    for (const s2 of delegated) {
+      const oc = norm(prop(s2.tag, 'onClose'));
+      if (!oc || oc === 'undefined') {
+        offenders.push(`${s2.rel}:${s2.line} → onClose=${oc || '(absent)'}`);
+      }
+    }
+    expect(offenders).toEqual([]);
+  });
+
+  it('A3 · the primitive still wires that one handler to BOTH doors', () => {
+    // The other side of A2, and the reason A2 is sufficient. If this drifts,
+    // every delegated surface loses a door at once — which is precisely the
+    // risk a shared primitive trades for its consistency.
+    const src = stripComments(
+      fs.readFileSync(path.join(SRC, 'components', 'ui', 'Sheet.tsx'), 'utf8'),
+    );
+    expect(src).toContain('onRequestClose={onClose}');
+    expect(src).toContain('onAccessibilityEscape={onClose}');
+    // …on the containment View, never the <Modal> tag (assertion B2's law,
+    // restated here because the primitive is now where ten surfaces inherit it).
+    const modalAt = src.indexOf('<Modal');
+    const escAt = src.indexOf('onAccessibilityEscape');
+    const tagEnd = src.indexOf('>', src.indexOf('onRequestClose={onClose}'));
+    expect(escAt).toBeGreaterThan(tagEnd);
+    expect(modalAt).toBeGreaterThan(-1);
   });
 
   it('B · every surface dismisses on the escape gesture, with the SAME handler', () => {

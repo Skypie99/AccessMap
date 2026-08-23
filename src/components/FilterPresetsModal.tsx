@@ -28,25 +28,21 @@
  * shows when there's no user.
  */
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 import {
   ActivityIndicator,
   Alert,
   FlatList,
-  KeyboardAvoidingView,
-  Modal,
-  Platform,
   Pressable,
   StyleSheet,
-  type Text,
   TextInput,
   View,
 } from 'react-native';
 import { useAuth } from '@/lib/auth';
 import { AppText } from '@/components/ui/AppText';
-import { GlassSurface } from '@/components/ui/GlassSurface';
+import { Sheet } from '@/components/ui/Sheet';
+import { useAtTop } from '@/components/ui/SheetPull';
 import { SkeletonRow } from '@/components/ui/Skeleton';
-import { a11yToggle, decorativeProps, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
+import { a11yToggle, decorativeProps } from '@/lib/accessibility';
 import { useKeyboardVisible } from '@/hooks/useKeyboardVisible';
 import { confirm } from '@/lib/confirm';
 import { errorMessage } from '@/lib/errors';
@@ -62,7 +58,7 @@ import {
 } from '@/lib/filterPresets';
 import { font, radius, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
-import { Plus, SlidersHorizontal, X } from 'lucide-react-native';
+import { Plus, SlidersHorizontal } from 'lucide-react-native';
 
 interface Props {
   visible: boolean;
@@ -98,11 +94,13 @@ const PLACEHOLDER_DEFAULTS = {
 export default function FilterPresetsModal({ visible, onClose, onApply }: Props) {
   const color = useColor();
   const styles = makeStyles(color);
-  const reducedMotion = useReducedMotion();
+  // The pull gesture must not fight the body's own scroll: `useAtTop`
+  // disables it whenever the content is scrolled away from its top, so a
+  // downward drag scrolls back up instead of dismissing (SheetPull's `atTop`).
+  const { atTop, onScroll, scrollEventThrottle } = useAtTop();
+  const scrollRef = useRef(null);
   // Keyboard-up bottom-inset reclaim (Recipe F step 3).
   const keyboardVisible = useKeyboardVisible();
-  // A11Y-201 (2.4.3): move the SR cursor onto the title when this surface opens.
-  const titleRef = useFocusOnOpen<Text>(visible);
   const { user } = useAuth();
 
   const [presets, setPresets] = useState<FilterPreset[]>([]);
@@ -371,69 +369,50 @@ export default function FilterPresetsModal({ visible, onClose, onApply }: Props)
 
   // Bottom-anchored sheet clears the home indicator (M15 family recipe).
   // Non-throwing context read — render tests mount without a provider.
-  const insets = React.useContext(SafeAreaInsetsContext) ?? { top: 0, bottom: 0, left: 0, right: 0 };
 
   return (
-    <Modal aria-label="Filter Presets" visible={visible} animationType={reducedMotion ? 'none' : 'slide'} transparent onRequestClose={onClose}>
-      <View style={styles.backdrop}>
-        {/* A11Y-228: KAV lifts the sheet above the keyboard the autoFocus
-            create/rename inputs open — the AddressSearchModal recipe. iOS
-            'padding'; Android resizes (adjustResize default). width:100%
-            (not flex:1) preserves the backdrop's flex-end anchor. */}
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          style={styles.kav}
+    <Sheet
+      visible={visible}
+      onClose={onClose}
+      title="Filter Presets"
+      closeLabel="Close filter presets"
+      headerAccessory={
+        <Pressable
+          onPress={() => {
+            if (!adding || saving) {
+              setAdding(true);
+              setNewName('');
+            }
+          }}
+          disabled={!user || limitReached || adding}
+          hitSlop={6}
+          style={({ pressed }) => [
+            styles.newBtn,
+            (!user || limitReached || adding) && styles.newBtnDisabled,
+            pressed && styles.newBtnPressed,
+          ]}
+          accessibilityRole="button"
+          accessibilityLabel={limitReached ? 'Preset limit reached' : 'Add new filter preset'}
+          {...a11yToggle({
+            disabled: !user || limitReached || adding,
+          })}
         >
-        <GlassSurface
-          variant="bulk"
-          borderRadius={0}
-          style={[styles.card, { paddingBottom: keyboardVisible ? spacing.md : Math.max(spacing.xxl, insets.bottom) }]}
-          accessibilityViewIsModal
-          onAccessibilityEscape={onClose}
-        >
-          <View style={styles.headerRow}>
-            <AppText ref={titleRef} variant="heading" style={styles.title} accessibilityRole="header">
-              Filter Presets
-            </AppText>
-            <Pressable
-              onPress={() => {
-                if (!adding || saving) {
-                  setAdding(true);
-                  setNewName('');
-                }
-              }}
-              disabled={!user || limitReached || adding}
-              hitSlop={6}
-              style={({ pressed }) => [
-                styles.newBtn,
-                (!user || limitReached || adding) && styles.newBtnDisabled,
-                pressed && styles.newBtnPressed,
-              ]}
-              accessibilityRole="button"
-              accessibilityLabel={limitReached ? 'Preset limit reached' : 'Add new filter preset'}
-              {...a11yToggle({
-                disabled: !user || limitReached || adding,
-              })}
-            >
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                <Plus size={15} color={color.brandTextAlt} strokeWidth={2.6} />
-                <AppText variant="label" style={styles.newBtnText}>New</AppText>
-              </View>
-            </Pressable>
-            <Pressable
-              onPress={onClose}
-              hitSlop={12}
-              style={({ pressed }) => [styles.closeBtn, pressed && { backgroundColor: color.borderPressed }]}
-              accessibilityRole="button"
-              accessibilityLabel="Close filter presets"
-            >
-              <X
-                size={18}
-                color={color.text}
-                strokeWidth={2.2} {...decorativeProps}
-              />
-            </Pressable>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+            <Plus size={15} color={color.brandTextAlt} strokeWidth={2.6} />
+            <AppText variant="label" style={styles.newBtnText}>New</AppText>
           </View>
+        </Pressable>
+      }
+      glass
+      padded
+      keyboardAvoiding
+      shrinkStyle={styles.kav}
+      cardStyle={keyboardVisible ? styles.cardKeyboard : undefined}
+      minBottomPad={spacing.xxl}
+      atTop={atTop}
+      scrollRef={scrollRef}
+      testID="filterPresetsModal-backdrop"
+    >
 
           {!user ? (
             <View style={styles.notice}>
@@ -539,6 +518,9 @@ export default function FilterPresetsModal({ visible, onClose, onApply }: Props)
           ) : (
             <FlatList
               data={presets}
+              ref={scrollRef}
+              onScroll={onScroll}
+              scrollEventThrottle={scrollEventThrottle}
               keyExtractor={(item) => item.id}
               renderItem={renderItem}
               removeClippedSubviews
@@ -548,54 +530,19 @@ export default function FilterPresetsModal({ visible, onClose, onApply }: Props)
               keyboardShouldPersistTaps="handled"
             />
           )}
-        </GlassSurface>
-        </KeyboardAvoidingView>
-      </View>
-    </Modal>
+    </Sheet>
   );
 }
 
 const makeStyles = (color: ColorTheme) =>
   StyleSheet.create({
-    backdrop: {
-      flex: 1,
-      backgroundColor: color.scrim,
-      justifyContent: 'flex-end',
-    },
-    // G6/SR-099 — THE CAP LIVES HERE, not on the card. A percentage maxHeight
-    // only resolves against a parent with a *definite* height; the card's own
-    // '85%' resolves against the content-sized KAV and is inert. Only the
-    // flex:1 backdrop is definite, so the cap sits on the KAV and the card
-    // shrinks into it. Same stack as FeedbackModal (the reference).
+    // Keyboard up: the pad drops to `md` and does NOT take the safe-area inset,
+    // because the keyboard is covering it. Shipped behaviour, made explicit.
+    cardKeyboard: { paddingBottom: spacing.md },
     kav: {
       width: '100%',
       maxHeight: '85%',
       flexShrink: 1,
-    },
-    card: {
-      borderTopLeftRadius: radius.xl,
-      borderTopRightRadius: radius.xl,
-      paddingHorizontal: spacing.xl,
-      paddingTop: spacing.lg,
-      paddingBottom: spacing.xxl,
-      gap: spacing.md,
-      maxHeight: '85%',
-      // G6/SR-099: shrink into the KAV's cap (see the kav block).
-      flexShrink: 1,
-      // The bulk variant owns the surface; clip it to the rounded top.
-      overflow: 'hidden',
-    },
-    headerRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: spacing.md,
-    },
-    title: {
-      fontSize: font.size.xxl,
-      fontWeight: font.weight.bold,
-      flex: 1,
-      color: color.textStrong,
-      letterSpacing: -0.3,
     },
     newBtn: {
       paddingHorizontal: spacing.md,
@@ -614,14 +561,6 @@ const makeStyles = (color: ColorTheme) =>
       color: color.brandTextAlt,
       fontWeight: font.weight.bold,
       fontSize: font.size.base,
-    },
-    closeBtn: {
-      width: 44,
-      height: 44,
-      borderRadius: radius.circle,
-      backgroundColor: color.surfaceNeutral,
-      alignItems: 'center',
-      justifyContent: 'center',
     },
     notice: {
       backgroundColor: color.warningBg,
@@ -709,12 +648,6 @@ const makeStyles = (color: ColorTheme) =>
     saveBtnText: {
       color: color.textOnBrand,
       fontWeight: font.weight.bold,
-    },
-    center: { alignItems: 'center', padding: spacing.xxl, gap: spacing.sm },
-    subtitle: {
-      fontSize: font.size.sm,
-      color: color.inkGlassMuted,
-      fontFamily: font.family.bodyMedium,
     },
     emptyWrap: {
       alignItems: 'center',

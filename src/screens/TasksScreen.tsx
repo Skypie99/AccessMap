@@ -1542,7 +1542,16 @@ export default function TasksScreen() {
           <AppText variant="label" style={styles.bulkCountText} accessibilityLiveRegion="polite">
             {`${liveSelectedCount} selected`}
           </AppText>
-          <View style={styles.bulkButtonRow}>
+          {/* The SW-36 class, on the one row in the app that could not escape
+              it. Four verbs share a row with `flexBasis: 0`, so each is sized
+              by what is left over rather than by its own word — and at large
+              type "Resolve" hit its 0.8 shrink floor and still clipped. The
+              fallback is the same STACK the cards take, at the same threshold
+              (`isCompactLayout`), so the screen changes shape all at once
+              instead of the bar and the cards disagreeing about how wide the
+              device is. `adjustsFontSizeToFit` stays for the row path; stacked,
+              each button is full width and never needs it. */}
+          <View style={compactActions ? styles.bulkButtonStack : styles.bulkButtonRow}>
             <Pressable
               onPress={() => {
                 void runBulkAction('verify');
@@ -1550,6 +1559,7 @@ export default function TasksScreen() {
               disabled={bulkBusy || selectedOpenCount === 0}
               style={({ pressed }) => [
                 styles.bulkBtn,
+                compactActions && styles.bulkBtnFull,
                 styles.bulkVerifyBtn,
                 (bulkBusy || selectedOpenCount === 0) && styles.bulkBtnDisabled,
                 pressed && !bulkBusy && selectedOpenCount > 0 && styles.bulkBtnPressed,
@@ -1575,6 +1585,7 @@ export default function TasksScreen() {
               disabled={bulkBusy || liveSelectedCount === 0}
               style={({ pressed }) => [
                 styles.bulkBtn,
+                compactActions && styles.bulkBtnFull,
                 styles.bulkResolveBtn,
                 (bulkBusy || liveSelectedCount === 0) && styles.bulkBtnDisabled,
                 pressed && !bulkBusy && liveSelectedCount > 0 && styles.bulkBtnPressed,
@@ -1600,6 +1611,7 @@ export default function TasksScreen() {
               disabled={bulkBusy || liveSelectedCount === 0 || !user}
               style={({ pressed }) => [
                 styles.bulkBtn,
+                compactActions && styles.bulkBtnFull,
                 styles.bulkWatchBtn,
                 (bulkBusy || liveSelectedCount === 0 || !user) && styles.bulkBtnDisabled,
                 pressed &&
@@ -1629,6 +1641,7 @@ export default function TasksScreen() {
               disabled={bulkBusy}
               style={({ pressed }) => [
                 styles.bulkBtn,
+                compactActions && styles.bulkBtnFull,
                 styles.bulkCancelBtn,
                 bulkBusy && styles.bulkBtnDisabled,
                 pressed && !bulkBusy && styles.bulkBtnPressed,
@@ -2259,7 +2272,6 @@ const makeStyles = (color: ColorTheme, reduceTransparency: boolean) => {
     },
     errorBannerBusy: { opacity: 0.85 },
     errorBannerPressed: { backgroundColor: color.errorPressed },
-    errorBannerIcon: { color: color.textOnBrand, fontSize: font.size.xl, fontWeight: font.weight.bold },
     errorBannerText: { color: color.textOnBrand, fontSize: font.size.sm, fontWeight: font.weight.semibold, flex: 1 },
     // Offline data notice — uses warning tokens so it's visually distinct from
     // the red error banner but still draws the eye. Wraps `warningBg`/`warningFg`
@@ -2276,7 +2288,6 @@ const makeStyles = (color: ColorTheme, reduceTransparency: boolean) => {
       alignItems: 'center',
       minHeight: 44,
     },
-    offlineBannerIcon: { fontSize: font.size.lg },
     offlineBannerText: {
       color: color.warningFg,
       fontSize: font.size.sm,
@@ -2398,7 +2409,6 @@ const makeStyles = (color: ColorTheme, reduceTransparency: boolean) => {
     // It inherits the header's size, tracking and ink — it is part of the same
     // label, not a second object with its own voice.
     sectionCount: { fontVariant: ['tabular-nums'] },
-    title: { fontSize: font.size.xl, fontWeight: font.weight.semibold },
     // The card is a pane of ROW GLASS (variant="row": i=12 blur + 0.70 floor +
     // specular top hairline + edge — GlassSurface supplies all of it). The
     // Pressable outer owns margins + press feedback; this style is the pane's
@@ -2631,20 +2641,6 @@ const makeStyles = (color: ColorTheme, reduceTransparency: boolean) => {
       gap: spacing.sm,
       // No fill — the row sits on the chrome pane's glass.
     },
-    mineChip: {
-      paddingHorizontal: spacing.lg,
-      paddingVertical: spacing.sm - 1,
-      borderRadius: radius.circle,
-      backgroundColor: chipFill,
-      borderWidth: 1,
-      borderColor: chipEdge,
-      minHeight: 44, // WCAG 2.5.5: was 36pt (below 44pt project standard)
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    mineChipActive: { backgroundColor: color.ctaFill, borderColor: 'transparent' },
-    mineChipText: { fontSize: font.size.sm, fontWeight: font.weight.semibold, color: color.glassChipInk },
-    mineChipTextActive: { color: color.textOnBrand },
     // BP11 one press vocabulary: the neutral pressed fill shared by the mine /
     // category / sort chips. Inactive chips only (active chips keep their ctaFill);
     // glassChipInk stays full opacity and AA on borderPressed in both schemes.
@@ -2709,20 +2705,6 @@ const makeStyles = (color: ColorTheme, reduceTransparency: boolean) => {
       justifyContent: 'center',
       borderRadius: radius.circle,
     },
-    catChip: {
-      minHeight: 44, // WCAG 2.5.5: was 36pt (below 44pt project standard)
-      paddingHorizontal: spacing.md,
-      paddingVertical: spacing.sm,
-      borderRadius: radius.circle,
-      backgroundColor: chipFill,
-      borderWidth: 1,
-      borderColor: chipEdge,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    catChipActive: { backgroundColor: color.ctaFill, borderColor: 'transparent' },
-    catChipText: { fontSize: font.size.sm, fontWeight: font.weight.semibold, color: color.glassChipInk, flexShrink: 0 },
-    catChipTextActive: { color: color.textOnBrand },
     // Sort row — mirrors sevFilterRow's look, with an explicit "Sort:" label
     // before the chips so sighted users get a hint distinguishing it from
     // the severity row above. The label is a11y-hidden because the chip
@@ -2743,22 +2725,6 @@ const makeStyles = (color: ColorTheme, reduceTransparency: boolean) => {
       color: color.inkGlassMuted,
       marginRight: 2,
     },
-    sortChip: {
-      flexGrow: 1,
-      flexBasis: 0,
-      minHeight: 44,
-      paddingHorizontal: spacing.sm,
-      paddingVertical: spacing.sm,
-      borderRadius: radius.circle,
-      backgroundColor: chipFill,
-      borderWidth: 1,
-      borderColor: chipEdge,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    sortChipActive: { backgroundColor: color.ctaFill, borderColor: 'transparent' },
-    sortChipText: { fontSize: font.size.sm, fontWeight: font.weight.bold, color: color.glassChipInk },
-    sortChipTextActive: { color: color.textOnBrand },
     // Bulk-select entry — a discoverable button for SR users and anyone
     // unfamiliar with the long-press gesture. Tinted to match the sort chip's
     // accent.
@@ -2831,6 +2797,12 @@ const makeStyles = (color: ColorTheme, reduceTransparency: boolean) => {
       letterSpacing: 0.2,
     },
     bulkButtonRow: { flexDirection: 'row', gap: spacing.sm },
+    // The deliberate stack, matching cardActionsStack rather than inventing a
+    // second compact language. A column resets flexBasis' meaning (it becomes
+    // height), so `alignSelf: 'stretch'` on the button is what makes each one
+    // full width — exactly what actionBtnFull does for the cards.
+    bulkButtonStack: { gap: spacing.sm },
+    bulkBtnFull: { alignSelf: 'stretch' },
     bulkBtn: {
       flexGrow: 1,
       flexBasis: 0,

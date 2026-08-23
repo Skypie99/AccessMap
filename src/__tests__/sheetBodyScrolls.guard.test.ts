@@ -57,14 +57,37 @@ const SHRINKING_SHEETS = [
   ['MyReportsModal', 'components/MyReportsModal.tsx'],
 ] as const;
 
+/**
+ * ─── RE-PINNED 2026-08-22 (art-direction Phase 3) ─────────────────────────
+ * Both sheets moved their shell into `components/ui/Sheet.tsx` (§S5, "no third
+ * shell"). Three assertions below were reading, in the CONSUMER's source, for
+ * strings that now live in the primitive — `flexShrink`, `overflow:'hidden'`,
+ * `cardWrap: { flexGrow }`, the tab-bar paddingBottom. They went red, which is
+ * the guard working: from where it stood, the mechanism had vanished.
+ *
+ * Each is re-pinned to the SAME rule expressed across the new seam: the
+ * consumer must opt in, AND the primitive must implement. Neither half alone
+ * is the contract, and checking only the consumer (the shape the old
+ * assertions had) is what would let a no-op prop pass.
+ */
+const SHEET_PRIMITIVE = 'components/ui/Sheet.tsx';
+
 describe('SW-42 — a shrinking sheet scrolls its body instead of clipping it', () => {
   it.each(SHRINKING_SHEETS)('%s still has the shape that makes this necessary', (_n, rel) => {
     // Non-vacuity. If a sheet stops shrinking, or stops clipping its overflow,
     // the rule below is pinning a hazard that no longer exists and should be
     // re-derived rather than left passing for the wrong reason.
+    //
+    // The shape is now the PRIMITIVE's, so both halves are checked: the
+    // consumer really renders a glass Sheet, and that Sheet really shrinks and
+    // clips. A consumer that stopped passing `glass` would be on the opaque
+    // path with a different stack, and this catches that.
     const src = stripComments(read(rel));
-    expect(src).toMatch(/flexShrink:\s*1/);
-    expect(src).toMatch(/overflow:\s*'hidden'/);
+    expect(src).toMatch(/<Sheet\b/);
+    expect(src).toMatch(/\bglass\b/);
+    const primitive = stripComments(read(SHEET_PRIMITIVE));
+    expect(primitive).toMatch(/flexShrink:\s*1/);
+    expect(primitive).toMatch(/overflow:\s*'hidden'/);
   });
 
   it.each(SHRINKING_SHEETS)('%s gives its body a scroller that can shrink', (_n, rel) => {
@@ -119,8 +142,17 @@ describe('SW-42 follow-up — the two list sheets cannot collapse', () => {
   it.each(SHRINKING_SHEETS)('%s lets the card FILL that floor, not sit above it', (_n, rel) => {
     // Without flexGrow the floor would raise the KAV and leave the card
     // content-sized at its top — turning a height bug into a gap bug.
+    //
+    // The consumer asks for it by name (`fill`); the primitive is what has to
+    // spend it. `fill` being a silent no-op is the failure this pair blocks,
+    // and it is a failure the old single-file assertion could not have seen.
     const src = stripComments(read(rel));
-    expect(src).toMatch(/cardWrap:\s*\{[^}]*flexGrow:\s*1/);
+    expect(src).toMatch(/\bfill\b/);
+    const primitive = stripComments(read(SHEET_PRIMITIVE));
+    expect(primitive).toMatch(/cardFill:\s*\{[^}]*flexGrow:\s*1/);
+    // …and spends it on BOTH nodes that need it: the shadow wrapper, which is
+    // what the KAV actually sizes, and the card inside it.
+    expect((primitive.match(/fill && styles\.cardFill/g) ?? []).length).toBe(2);
   });
 });
 
@@ -129,8 +161,15 @@ describe('SW-45 — every sheet in the family clears the tab bar', () => {
     // It ran flush to the screen bottom and painted list rows over a ghosted
     // "Home / Tasks / Profile", red Tasks badge and all, while its four sibling
     // sheets stopped above the bar. Sky's call: all sheets clear it.
+    //
+    // The pad is now composed across the seam: the sheet declares the floor it
+    // needs, the primitive maxes that against the safe-area inset. Asserting
+    // both is what keeps the ORIGINAL guarantee — the tab bar is cleared AND
+    // the home indicator still is, on a device that has no tab bar above it.
     const src = stripComments(read('screens/LeaderboardScreen.tsx'));
-    expect(src).toMatch(/paddingBottom:\s*Math\.max\([^)]*tabBarHeight/);
+    expect(src).toMatch(/minBottomPad=\{Math\.max\([^)]*tabBarHeight/);
+    const primitive = stripComments(read(SHEET_PRIMITIVE));
+    expect(primitive).toMatch(/paddingBottom:\s*Math\.max\(minBottomPad,\s*insets\.bottom\)/);
   });
 
   it('it reads that height the non-throwing way', () => {

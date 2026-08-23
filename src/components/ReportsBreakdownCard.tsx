@@ -188,7 +188,11 @@ export default function ReportsBreakdownCard({ userId, refreshKey }: Props) {
         </View>
         <ActivityIndicator
           color={color.brandText}
-          // The accessible label on the card already announces "loading". {...decorativeProps}
+          // The accessible label on the card already announces "loading", so
+          // this spinner would be a second, nameless element saying the same
+          // thing. D16: the spread was written inside this comment, where it
+          // did nothing.
+          {...decorativeProps}
         />
       </GlassSurface>
     );

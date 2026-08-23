@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import {
+  AccessibilityInfo,
   ActivityIndicator,
   Alert,
   Platform,
@@ -15,6 +16,7 @@ import { androidSwitchThumbOff, font, radius, shadow, size, spacing } from '@/th
 import { type ColorTheme, type ThemeMode, useColor, useThemeMode } from '@/theme/ThemeContext';
 import { LinearGradient } from 'expo-linear-gradient';
 import { AppText } from '@/components/ui/AppText';
+import { SegmentedControl } from '@/components/ui/SegmentedControl';
 import { TypeBlock, TYPE_BLOCK } from '@/components/ui/TypeBlock';
 import { GlassSurface } from '@/components/ui/GlassSurface';
 import { ScreenStage } from '@/components/ui/ScreenStage';
@@ -37,14 +39,18 @@ import { CATEGORY_LABELS, listFlagsByUser } from '@/lib/flags';
 import { listFeedbackByUser } from '@/lib/feedbackStore';
 import { formatDataExport } from '@/lib/dataExport';
 import {
+  authorUnblockedAnnouncement,
   BLOCKED_PEOPLE_EMPTY,
   BLOCKED_PEOPLE_ROW_SUBTITLE,
   BLOCKED_PEOPLE_ROW_TITLE,
   HIDDEN_COMMENTS_LINK_HINT,
   HIDDEN_COMMENTS_ROW_SUBTITLE,
   HIDDEN_COMMENTS_TITLE,
+  EXPORT_STARTED_ANNOUNCEMENT,
   PRIVACY_POLICY_LINK_HINT,
   PRIVACY_POLICY_LINK_LABEL,
+  PUSH_DISABLED_ANNOUNCEMENT,
+  PUSH_ENABLED_ANNOUNCEMENT,
   PUSH_SIGNED_OUT_SUBTITLE,
   TERMS_LINK_HINT,
   TERMS_LINK_LABEL,
@@ -226,8 +232,6 @@ function SettingsRow({
 // Light / Dark / System appearance picker — a 3-segment control writing through
 // useThemeMode() (persisted in ThemeContext). 'System' follows the OS setting.
 function AppearanceControl() {
-  const color = useColor();
-  const styles = makeStyles(color);
   const { mode, setMode } = useThemeMode();
   const options: { key: ThemeMode; label: string; Icon: typeof Sun }[] = [
     { key: 'light', label: 'Light', Icon: Sun },
@@ -235,34 +239,30 @@ function AppearanceControl() {
     { key: 'system', label: 'System', Icon: Smartphone },
   ];
   return (
-    <View style={styles.segmentRow} accessibilityRole="radiogroup" accessibilityLabel="Appearance">
-      {options.map(({ key, label, Icon }) => {
-        const selected = mode === key;
-        // Selected pill is opaque (color.surface) -> brandText; unselected sits
-        // on the engineered chip-tint track -> glassChipInk (textMuted forbidden
-        // on the tint/stage).
-        const fg = selected ? color.brandText : color.glassChipInk;
-        return (
-          <Pressable
-            key={key}
-            onPress={() => {
-              setMode(key);
-              hapticSelection();
-            }}
-            style={[styles.segment, selected && styles.segmentActive]}
-            accessibilityRole="radio"
-            {...a11yToggle({ selected })}
-            accessibilityLabel={label}
-            accessibilityHint={`Use ${label.toLowerCase()} appearance`}
-          >
-            <Icon size={18} color={fg} strokeWidth={2.2} />
-            <AppText variant="label" size={font.size.sm} color={fg}>
-              {label}
-            </AppText>
-          </Pressable>
-        );
-      })}
-    </View>
+    // The control itself is the shared primitive (2026-08-22): this was one of
+    // four hand-rolled drawings of one widget. `surface="stage"` is the
+    // arbitrated stage palette this screen was built against in Phase 2c —
+    // glassChipFill/glassChipEdge track, opaque `surface` selected pill,
+    // brandText selected / glassChipInk unselected (textMuted is forbidden on
+    // the tint/stage). Nothing about the ink moved; it moved FILES.
+    <SegmentedControl
+      variant="track"
+      surface="stage"
+      groupRole="radiogroup"
+      groupLabel="Appearance"
+      cellRole="radio"
+      cells={options.map(({ key, label, Icon }) => ({
+        key,
+        label,
+        hint: `Use ${label.toLowerCase()} appearance`,
+        selected: mode === key,
+        onPress: () => {
+          setMode(key);
+          hapticSelection();
+        },
+        renderIcon: (fg: string) => <Icon size={18} color={fg} strokeWidth={2.2} />,
+      }))}
+    />
   );
 }
 
@@ -403,12 +403,16 @@ export default function SettingsScreen() {
         // Only update local state if the full flow succeeded (user confirmed +
         // token obtained). If they tapped "Not now" or permission was denied,
         // the toggle stays off.
-        if (success) setPushEnabled(true);
+        if (success) {
+          setPushEnabled(true);
+          AccessibilityInfo.announceForAccessibility(PUSH_ENABLED_ANNOUNCEMENT);
+        }
       } else {
         // F49: deletePushToken now throws when the server-side delete fails,
         // so the toggle only flips OFF when the opt-out actually stuck.
         await deletePushToken(user.id);
         setPushEnabled(false);
+        AccessibilityInfo.announceForAccessibility(PUSH_DISABLED_ANNOUNCEMENT);
       }
     } catch (e) {
       notify(
@@ -457,6 +461,12 @@ export default function SettingsScreen() {
       return;
     }
     setExporting(true);
+    // A3 — the HiddenCommentsModal pattern. The failure path already speaks
+    // (notify renders and announces); the SUCCESS path was a Switch flipping
+    // and a share sheet arriving after an unannounced pause. Not iOS-gated:
+    // this answers the user's own action rather than narrating a passive state
+    // change, and there is no live region here to double up with.
+    AccessibilityInfo.announceForAccessibility(EXPORT_STARTED_ANNOUNCEMENT);
     try {
       // Pull profile + flags in parallel. We avoid Promise.all([flags, fb])
       // because we want the feedback call's failure to be silent (it's
@@ -571,6 +581,7 @@ export default function SettingsScreen() {
     const ok = await confirm(UNBLOCK_ALL_LABEL, UNBLOCK_ALL_CONFIRM_BODY, UNBLOCK_ALL_LABEL, true);
     if (!ok) return;
     const cleared: string[] = [];
+    const total = blockedIds.length;
     try {
       for (const id of blockedIds) {
         await unhideContent('author', id);
@@ -582,6 +593,11 @@ export default function SettingsScreen() {
       return;
     }
     setBlockedIds([]);
+    // A3 — the row this was reached from disappears on success, and a row
+    // disappearing is exactly the outcome a screen reader cannot report. Same
+    // pattern, and the same "on this device" fence, as the unhide
+    // announcements this is back-ported from (HiddenCommentsModal).
+    AccessibilityInfo.announceForAccessibility(authorUnblockedAnnouncement(total));
   };
 
   const handleSignOutPress = async () => {
@@ -1071,33 +1087,5 @@ const makeStyles = (color: ColorTheme) =>
     // glyph width — keeps the layout calm.
     rowSpinner: {
       width: 28,
-    },
-    // Appearance segmented control (Light / Dark / System). Recessed track with
-    // a lifted white "selected pill" — the classic premium segmented look.
-    // Engineered chip-tint track (no BlurView — the track sits directly on the
-    // stage; chips/controls tint, they don't blur): glassChipFill + glassChipEdge.
-    // The selected pill (segmentActive) stays opaque surface — a real lifted pill.
-    segmentRow: {
-      flexDirection: 'row',
-      backgroundColor: color.glassChipFill,
-      borderWidth: 1,
-      borderColor: color.glassChipEdge,
-      borderRadius: radius.lg,
-      padding: spacing.tight,
-      gap: spacing.tight,
-    },
-    segment: {
-      flex: 1,
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'center',
-      gap: spacing.xs,
-      paddingVertical: spacing.sm + 2,
-      borderRadius: radius.md,
-      minHeight: 44,
-    },
-    segmentActive: {
-      backgroundColor: color.surface,
-      ...shadow.e1,
     },
   });

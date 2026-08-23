@@ -560,7 +560,6 @@ function makeStyles(color: ColorTheme) {
       ...shadow.e1,
     },
     resultRowPressed: { opacity: 0.85, backgroundColor: color.surfaceSoft },
-    resultGlyph: { fontSize: font.size.xl },
     resultTextWrap: { flex: 1, gap: 2 },
     resultText: {
       fontSize: font.size.sm,
@@ -571,11 +570,6 @@ function makeStyles(color: ColorTheme) {
     resultCoords: {
       fontSize: font.size.xs,
       color: color.textMuted,
-    },
-    resultChevron: {
-      fontSize: font.size.xl,
-      color: color.textSubtle,
-      fontWeight: font.weight.regular,
     },
     // Recent section — mirrors the live-results visual rhythm (same card
     // shadow, same row height/padding) so the modal feels of-a-piece. The
@@ -638,11 +632,6 @@ function makeStyles(color: ColorTheme) {
       color: color.textStrong,
       fontWeight: font.weight.semibold,
       lineHeight: 18,
-    },
-    recentChevron: {
-      fontSize: font.size.xl,
-      color: color.textSubtle,
-      fontWeight: font.weight.regular,
     },
   });
 }

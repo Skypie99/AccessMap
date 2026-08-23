@@ -81,7 +81,7 @@ import RecentlyViewedRow from '@/components/RecentlyViewedRow';
 import ReportsBreakdownCard from '@/components/ReportsBreakdownCard';
 import LeaderboardScreen from '@/screens/LeaderboardScreen';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
-import { androidSwitchThumbOff, font, radius, shadow, size, spacing } from '@/theme';
+import { a11y, androidSwitchThumbOff, font, radius, shadow, size, spacing } from '@/theme';
 import { AppText } from '@/components/ui/AppText';
 import { Input } from '@/components/ui/Input';
 import { GlassSurface } from '@/components/ui/GlassSurface';
@@ -2199,7 +2199,7 @@ const makeStyles = (color: ColorTheme) =>
       paddingVertical: 10,
       backgroundColor: color.ctaFill, // mode-independent brand fill
       borderRadius: radius.md,
-      minHeight: 44,
+      minHeight: a11y.minTargetSize,
       alignItems: 'center',
       justifyContent: 'center',
     },
@@ -2380,7 +2380,7 @@ const makeStyles = (color: ColorTheme) =>
       // below it are already goldAccent, so the hero now says one thing.
       backgroundColor: color.goldLight,
       minHeight: 32,
-      minWidth: 44,
+      minWidth: a11y.minTargetSize,
       justifyContent: 'center',
       ...shadow.e1,
     },
@@ -2439,8 +2439,8 @@ const makeStyles = (color: ColorTheme) =>
       minWidth: 140,
     },
     tierCloseBtn: {
-      width: 44,
-      height: 44,
+      width: a11y.minTargetSize,
+      height: a11y.minTargetSize,
       borderRadius: radius.circle,
       backgroundColor: color.surfaceNeutral,
       alignItems: 'center',
@@ -2497,7 +2497,7 @@ const makeStyles = (color: ColorTheme) =>
       flexDirection: 'row',
       alignItems: 'center',
       gap: spacing.sm,
-      minHeight: 44, // WCAG 2.5.5 — these are VoiceOver-focusable rows; meet the 44pt target
+      minHeight: a11y.minTargetSize, // WCAG 2.5.5 — these are VoiceOver-focusable rows; meet the 44pt target
     },
     // Hairline divider between point-history rows (all but the last) so the list
     // scans cleanly instead of running together. A neutral hairline (not text),
@@ -2587,12 +2587,6 @@ const makeStyles = (color: ColorTheme) =>
     // (No opacity on the subtitle — a translucent ink over glass hazes below AA.)
     nearestBtnTitle: { fontSize: font.size.md, fontWeight: font.weight.bold, color: color.brandOnSoft },
     nearestBtnSubtitle: { fontSize: font.size.xs, color: color.brandOnSoft },
-    nearestBtnChevron: {
-      fontSize: font.size.xxl,
-      color: color.brand,
-      paddingHorizontal: spacing.tight,
-      fontWeight: font.weight.bold,
-    },
     // ONE card, three cells. Material via <GlassSurface variant="row">; no bg
     // here. radius/padding/shadow stay on the outer style.
     statsRow: {
@@ -2637,7 +2631,7 @@ const makeStyles = (color: ColorTheme) =>
       maxWidth: '48%',
       // minHeight guarantees the now-tappable pills meet the 44pt target
       // even before content; the count + label already push past it.
-      minHeight: 44,
+      minHeight: a11y.minTargetSize,
       paddingVertical: spacing.sm,
       paddingHorizontal: spacing.sm,
       borderRadius: radius.md,
@@ -2717,7 +2711,7 @@ const makeStyles = (color: ColorTheme) =>
       alignItems: 'center',
       justifyContent: 'center',
       minWidth: 72,
-      minHeight: 44,
+      minHeight: a11y.minTargetSize,
     },
     saveBtnDisabled: { opacity: 0.4 },
     saveBtnText: { color: color.textOnBrand, fontWeight: font.weight.bold, fontSize: font.size.base },
@@ -2733,7 +2727,7 @@ const makeStyles = (color: ColorTheme) =>
       borderWidth: StyleSheet.hairlineWidth,
       borderColor: color.glassChipEdge,
       alignItems: 'center',
-      minHeight: 44,
+      minHeight: a11y.minTargetSize,
       justifyContent: 'center',
     },
     // Selected: mode-independent ctaFill + white — the one AA brand fill in both
@@ -2751,7 +2745,7 @@ const makeStyles = (color: ColorTheme) =>
       paddingVertical: spacing.md,
       borderRadius: radius.md,
       alignItems: 'center',
-      minHeight: 44,
+      minHeight: a11y.minTargetSize,
       justifyContent: 'center',
     },
     linkBtnText: { color: color.inkSelect, fontWeight: font.weight.semibold, fontSize: font.size.base },
@@ -2762,7 +2756,7 @@ const makeStyles = (color: ColorTheme) =>
       justifyContent: 'space-between',
       paddingVertical: 4,
       gap: 12,
-      minHeight: 44,
+      minHeight: a11y.minTargetSize,
     },
     toggleRowBusy: { opacity: 0.6 },
     toggleTextWrap: { flex: 1, gap: 2 },
@@ -2778,7 +2772,9 @@ const makeStyles = (color: ColorTheme) =>
       alignItems: 'center',
       gap: spacing.md,
       ...shadow.e1,
-      minHeight: 64,
+      // S6 — the app's ONE list-row height. This row was the number written
+      // out; the drawer and Settings already read the token.
+      minHeight: size.row,
     },
     aboutRowPressed: { opacity: 0.85 }, // opacity only — bg swap invisible on glass
     aboutTextWrap: { flex: 1, gap: 2 },
@@ -2796,7 +2792,7 @@ const makeStyles = (color: ColorTheme) =>
       paddingVertical: spacing.md,
       borderRadius: radius.circle,
       backgroundColor: color.surfaceNeutral,
-      minHeight: 44,
+      minHeight: a11y.minTargetSize,
       justifyContent: 'center',
     },
     signOutText: { color: color.text, fontWeight: font.weight.semibold },
@@ -2808,7 +2804,7 @@ const makeStyles = (color: ColorTheme) =>
       alignSelf: 'center',
       paddingHorizontal: 24,
       paddingVertical: 12,
-      minHeight: 44,
+      minHeight: a11y.minTargetSize,
       justifyContent: 'center',
     },
     // On the stage BOTH color.error tones fail (light #c0392b = 3.88:1 on the

@@ -95,9 +95,6 @@ function makeStyles(color: ColorTheme) {
       borderWidth: 1,
       borderColor: color.borderSubtle,
     },
-    searchGlyph: {
-      fontSize: font.size.lg,
-    },
     searchInput: {
       flex: 1,
       fontSize: font.size.md,
@@ -116,10 +113,5 @@ function makeStyles(color: ColorTheme) {
       justifyContent: 'center',
     },
     searchClearPressed: { opacity: 0.6 },
-    searchClearText: {
-      fontSize: font.size.sm,
-      color: color.textMuted,
-      fontWeight: font.weight.bold,
-    },
   });
 }

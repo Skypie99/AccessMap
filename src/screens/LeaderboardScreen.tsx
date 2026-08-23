@@ -1,19 +1,19 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState , useRef} from 'react';
 import {
-  FlatList,  Modal,
+  FlatList,
   Pressable,
   RefreshControl,
   StyleSheet,
-  type Text,
   View,
 } from 'react-native';
-import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 import { BottomTabBarHeightContext } from '@react-navigation/bottom-tabs';
 import { RemoteImage } from '@/components/ui/RemoteImage';
 import { AppText } from '@/components/ui/AppText';
-import { GlassSurface } from '@/components/ui/GlassSurface';
 import { Skeleton } from '@/components/ui/Skeleton';
-import { a11yToggle, decorativeProps, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
+import { SegmentedControl } from '@/components/ui/SegmentedControl';
+import { Sheet } from '@/components/ui/Sheet';
+import { useAtTop } from '@/components/ui/SheetPull';
+import { decorativeProps } from '@/lib/accessibility';
 import { useAuth } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
 import {
@@ -22,8 +22,8 @@ import {
   type LeaderboardEntry,
 } from '@/lib/flags';
 import { getInitials, listMonthlyLeaderboard } from '@/lib/users';
-import { bulkGlassShadow, font, radius, shadow, spacing } from '@/theme';
-import { Trophy, User, X } from 'lucide-react-native';
+import { font, radius, spacing } from '@/theme';
+import { Trophy, User } from 'lucide-react-native';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 
 interface Props {
@@ -81,7 +81,7 @@ function AvatarCircle({
         img: { width: size, height: size },
         initials: {
           fontSize: size * 0.38,
-          fontWeight: '700',
+          fontWeight: font.weight.bold,
           color: color.brandOnSoft,
         },
       }),
@@ -242,10 +242,11 @@ const LeaderboardRow = React.memo(function LeaderboardRow({
 export default function LeaderboardScreen({ visible, onClose }: Props) {
   const color = useColor();
   const styles = useMemo(() => makeStyles(color), [color]);
-  // Read the inset context directly (zero fallback) instead of
-  // useSafeAreaInsets(), which throws when there's no SafeAreaProvider — the
-  // modal render-tests mount these sheets without one. Same value in the app.
-  const insets = React.useContext(SafeAreaInsetsContext) ?? { top: 0, bottom: 0, left: 0, right: 0 };
+  // The pull gesture must not fight the body's own scroll: `useAtTop`
+  // disables it whenever the content is scrolled away from its top, so a
+  // downward drag scrolls back up instead of dismissing (SheetPull's `atTop`).
+  const { atTop, onScroll, scrollEventThrottle } = useAtTop();
+  const scrollRef = useRef(null);
   // SW-45: this sheet ran flush to the screen bottom while the tab bar sits at
   // 861-914, so scrolled rows painted straight over a ghosted "Home / Tasks /
   // Profile" — the red Tasks badge showed through behind the 4th-place row's
@@ -257,9 +258,6 @@ export default function LeaderboardScreen({ visible, onClose }: Props) {
   // this sheet standalone. The value already includes the bottom safe-area
   // inset, so it subsumes (rather than adds to) the home-indicator pad below.
   const tabBarHeight = React.useContext(BottomTabBarHeightContext) ?? 0;
-  const reducedMotion = useReducedMotion();
-  // A11Y-201 (2.4.3): move the SR cursor onto the title when this surface opens.
-  const titleRef = useFocusOnOpen<Text>(visible);
   const { user } = useAuth();
 
   const [tab, setTab] = useState<LeaderboardTab>('all');
@@ -328,92 +326,54 @@ export default function LeaderboardScreen({ visible, onClose }: Props) {
   );
 
   return (
-    <Modal visible={visible} animationType={reducedMotion ? 'none' : 'slide'} transparent onRequestClose={onClose} aria-label="Leaderboard">
-      <View style={styles.backdrop}>
-        <View style={styles.cardWrap}>
-        <GlassSurface
-          variant="bulk"
-          borderRadius={0}
-          forceEngineered
-          style={[styles.card, { paddingBottom: Math.max(spacing.xxl, insets.bottom, tabBarHeight) }]}
-          accessibilityViewIsModal
-          onAccessibilityEscape={onClose}
-        >
-          <View style={styles.headerRow}>
-            <AppText
-              ref={titleRef}
-              variant="heading"
-              style={styles.title}
-              accessibilityRole="header"
-              adjustsFontSizeToFit
-              // T4: a title shrinks to 0.8 and then WRAPS — it never clamps to
-              // one line. Was 1.
-              numberOfLines={2}
-              minimumFontScale={0.8}
-            >
-              Leaderboard
-            </AppText>
-            <Pressable
-              onPress={onClose}
-              accessibilityRole="button"
-              accessibilityLabel="Close leaderboard"
-              style={({ pressed }) => [styles.closeBtn, pressed && styles.closeBtnPressed]}
-              hitSlop={spacing.sm}
-            >
-              <X size={18} color={color.textMuted} strokeWidth={2.2} />
-            </Pressable>
-          </View>
-          <AppText variant="body" style={styles.subtitle}>
-            {tab === 'month'
-              ? "Top 20 contributors this month"
-              : 'Top 20 contributors by points'}
-          </AppText>
-
-          {/* UX #8: All-time / This Month segmented toggle. WCAG: each button
-              announces its state through a11yToggle ONLY — A11Y-220: the labels
-              used to bake ", selected" in as well, so native VoiceOver spoke the
-              state twice. The active label still carries weight + an underline,
-              so colour is never the sole visual signal. */}
-          {/* A11Y-218: the tablist had a role and no name — an unlabeled
-              group is a landmark a screen reader announces as nothing. */}
-          <View style={styles.segment} accessibilityRole="tablist" accessibilityLabel="Ranking period">
-            <Pressable
-              onPress={() => setTab('all')}
-              accessibilityRole="button"
-              {...a11yToggle({ pressed: tab === 'all' })}
-              accessibilityLabel="All-time ranking"
-              style={({ pressed }) => [
-                styles.segBtn,
-                tab === 'all' && styles.segBtnActive,
-                pressed && styles.segBtnPressed,
-              ]}
-            >
-              <AppText
-                variant="label"
-                style={[styles.segLabel, tab === 'all' && styles.segLabelActive]}
-              >
-                All-time
-              </AppText>
-            </Pressable>
-            <Pressable
-              onPress={() => setTab('month')}
-              accessibilityRole="button"
-              {...a11yToggle({ pressed: tab === 'month' })}
-              accessibilityLabel="This month's ranking"
-              style={({ pressed }) => [
-                styles.segBtn,
-                tab === 'month' && styles.segBtnActive,
-                pressed && styles.segBtnPressed,
-              ]}
-            >
-              <AppText
-                variant="label"
-                style={[styles.segLabel, tab === 'month' && styles.segLabelActive]}
-              >
-                This Month
-              </AppText>
-            </Pressable>
-          </View>
+    <Sheet
+      visible={visible}
+      onClose={onClose}
+      title="Leaderboard"
+      subtitle={tab === 'month' ? 'Top 20 contributors this month' : 'Top 20 contributors by points'}
+      closeLabel="Close leaderboard"
+      glass
+      engineered
+      shrinkStyle={styles.cap}
+      cardStyle={styles.card}
+      // SW-45: the sheet clears the tab bar. Folded into the primitive's
+      // `Math.max(floor, insets.bottom)` rather than replacing it, so the home
+      // indicator is still cleared on a device with no tab bar above it.
+      minBottomPad={Math.max(spacing.xxl, tabBarHeight)}
+      atTop={atTop}
+      scrollRef={scrollRef}
+      testID="leaderboardScreen-backdrop"
+    >
+      {/* UX #8: All-time / This Month. WCAG: each cell announces its state
+          through a11yToggle ONLY — A11Y-220: the labels used to bake
+          ", selected" in as well, so native VoiceOver spoke the state twice.
+          A11Y-218: the group carries a name, because an unlabeled group is a
+          landmark a screen reader announces as nothing.
+          The control itself is now the shared primitive — this sheet's was the
+          fourth hand-rolled drawing of one widget (C14). */}
+      <SegmentedControl
+        variant="track"
+        surface="sheet"
+        groupRole="tablist"
+        groupLabel="Ranking period"
+        style={styles.segment}
+        cells={[
+          {
+            key: 'all',
+            label: 'All-time',
+            a11yLabel: 'All-time ranking',
+            selected: tab === 'all',
+            onPress: () => setTab('all'),
+          },
+          {
+            key: 'month',
+            label: 'This Month',
+            a11yLabel: "This month's ranking",
+            selected: tab === 'month',
+            onPress: () => setTab('month'),
+          },
+        ]}
+      />
 
           {loading ? (
             <View accessibilityLabel="Loading leaderboard" accessibilityLiveRegion="polite">
@@ -460,6 +420,9 @@ export default function LeaderboardScreen({ visible, onClose }: Props) {
           ) : (
             <FlatList
               data={entries}
+              ref={scrollRef}
+              onScroll={onScroll}
+              scrollEventThrottle={scrollEventThrottle}
               keyExtractor={(e) => e.id}
               renderItem={renderItem}
               style={styles.list}
@@ -491,102 +454,24 @@ export default function LeaderboardScreen({ visible, onClose }: Props) {
               </AppText>
             </View>
           ) : null}
-        </GlassSurface>
-        </View>
-      </View>
-    </Modal>
+    </Sheet>
   );
 }
 
 function makeStyles(color: ColorTheme) {
   return StyleSheet.create({
-    backdrop: {
-      flex: 1,
-      backgroundColor: color.scrim,
-      justifyContent: 'flex-end',
-    },
-    card: {
-      // Bulk-glass sheet: GlassSurface variant="bulk" (forceEngineered) supplies
-      // the surface + top edge/specular + designed Reduce-Transparency state — no
-      // backgroundColor here (the variant owns it). overflow:hidden clips the square
-      // material to the rounded top; the up-shadow (was shadow.e2) moves to cardWrap.
-      borderTopLeftRadius: radius.xl,
-      borderTopRightRadius: radius.xl,
-      paddingBottom: spacing.xxl,
-      maxHeight: '90%' as unknown as number,
-      overflow: 'hidden',
-    },
-    cardWrap: {
-      borderTopLeftRadius: radius.xl,
-      borderTopRightRadius: radius.xl,
-      ...bulkGlassShadow(color),
-    },
-    headerRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      paddingHorizontal: spacing.xl,
-      paddingTop: spacing.xl,
-      paddingBottom: spacing.tight,
-    },
-    title: {
-      flex: 1,
-      // Editorial left-aligned big title (Phase 11 — was centered modal style).
-      fontSize: font.size.h1,
-      fontWeight: font.weight.bold,
-      color: color.textStrong,
-      letterSpacing: font.tracking.h1,
-    },
-    subtitle: {
-      fontSize: font.size.sm,
-      color: color.inkGlassMuted,
-      fontFamily: font.family.bodyMedium,
-      paddingHorizontal: spacing.xl,
-      paddingBottom: spacing.md,
-      textAlign: 'left',
-    },
-    closeBtn: {
-      width: 44,
-      height: 44,
-      borderRadius: radius.circle,
-      backgroundColor: color.surfaceNeutral,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    closeBtnPressed: { backgroundColor: color.borderPressed },
-    closeBtnText: { fontSize: font.size.base, color: color.textMuted },
-    closeBtnSpacer: { width: 44 },
-    // UX #8: segmented All-time / This Month toggle.
-    segment: {
-      flexDirection: 'row',
-      gap: spacing.xs,
-      marginHorizontal: spacing.xl,
-      marginBottom: spacing.md,
-      padding: 3, // hairline inset so active fill reads as a segment, not a button
-      backgroundColor: color.surfaceNeutral,
-      borderRadius: radius.md,
-    },
-    segBtn: {
-      flex: 1,
-      minHeight: 44,
-      alignItems: 'center',
-      justifyContent: 'center',
-      paddingHorizontal: spacing.md,
-      borderRadius: radius.sm,
-    },
-    segBtnActive: { backgroundColor: color.ctaFill, ...shadow.e1 },
-    segBtnPressed: { opacity: 0.85 },
-    segLabel: {
-      fontSize: font.size.sm,
-      fontWeight: font.weight.medium,
-      color: color.textMuted,
-    },
-    // Selected: brand fill + bolder weight + underline so the selection is
-    // legible without relying on colour alone (WCAG 1.4.1).
-    segLabelActive: {
-      color: color.textOnBrand,
-      fontWeight: font.weight.bold,
-      textDecorationLine: 'underline',
-    },
+    // `Sheet`'s own 90% cap is what this sheet always wanted; the difference
+    // is that the primitive's RESOLVES. D22: the '90%' here sat on a card
+    // whose parent was content-sized, so it never applied and a long list at
+    // large type ran off the screen (G6/SR-099, the same shape four sibling
+    // sheets had). Declared anyway, so the intent is legible where the sheet
+    // is configured rather than only in the primitive's default.
+    cap: { maxHeight: '90%' },
+    // Not `padded`: this sheet's children carry their own gutters (the list
+    // rows are full-bleed with inset content, and the footer spans the card).
+    card: { paddingTop: spacing.tight },
+    // Placement only — the control's own drawing lives in the primitive.
+    segment: { marginHorizontal: spacing.xl, marginBottom: spacing.md },
     list: { flexGrow: 0 },
     row: {
       flexDirection: 'row',
@@ -653,7 +538,6 @@ function makeStyles(color: ColorTheme) {
       textAlign: 'right',
     },
     stateWrap: { alignItems: 'center', paddingVertical: 40, paddingHorizontal: spacing.xl },
-    stateIcon: { fontSize: 40, marginBottom: spacing.sm },
     stateText: { fontSize: font.size.sm, color: color.inkGlassMuted, fontFamily: font.family.bodyMedium, textAlign: 'center' },
     stateHint: {
       fontSize: font.size.xs,

@@ -430,7 +430,7 @@ const makeStyles = (color: ColorTheme) =>
       fontWeight: font.weight.bold,
       flex: 1,
       color: color.textStrong,
-      letterSpacing: -0.3,
+      letterSpacing: font.tracking.heading,
     },
     closeBtn: {
       width: 44,
@@ -465,7 +465,6 @@ const makeStyles = (color: ColorTheme) =>
       borderLeftColor: color.error,
     },
     noticeText: { fontSize: font.size.sm, color: color.errorFg, lineHeight: 18 },
-    center: { alignItems: 'center', justifyContent: 'center', paddingVertical: 48, gap: spacing.md },
     list: { paddingBottom: spacing.sm },
     separator: { height: 1, backgroundColor: color.borderSubtle },
     row: {

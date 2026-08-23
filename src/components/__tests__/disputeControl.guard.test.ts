@@ -76,10 +76,20 @@ describe('W1 — the pill sits with the TRIAGE verbs, not beside Report (§SKY-3
    * where before that was implied by two row names.
    */
   it('the control sits inside the community-check cluster, with the verdicts', () => {
+    /*
+     * RE-PINNED AGAIN 2026-08-22 (GSP-07 §7.1). The verdict cells' DRAWING
+     * moved into `components/ui/SegmentedControl.tsx` — it was the fourth
+     * hand-rolled copy of one widget (C14). §SKY-3c's rule is again untouched:
+     * what it cares about is that the doubt signal shares a container with the
+     * verdicts and not with the abuse path. The container is the same one; the
+     * cells inside it are rendered by a primitive now, so the anchor is the
+     * control's tag rather than a style name it no longer owns.
+     */
     const cluster = between(modal, 'const segmentCells = [', '  return (');
     expect(cluster).toContain('styles.disputeBtn');
     // …and it keeps the company §SKY-3c assigns it: the verdict cells.
-    expect(cluster).toContain('styles.segmentCell');
+    expect(cluster).toContain('<SegmentedControl');
+    expect(cluster).toContain('cells={segmentCells.map(');
     expect(cluster).toMatch(/label: 'Verify'/);
     expect(cluster).toMatch(/label: 'Resolved'/);
     expect(cluster).toMatch(/label: 'Reject'/);

@@ -22,26 +22,31 @@
  * press handler — and hid the Switch, so the rows announced as switches but
  * double-tap did nothing: A11Y-212, the Alex-1 defect class.)
  */
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import {
+  AccessibilityInfo,
   ActivityIndicator,
   Modal,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
-  Platform,
-  Switch,
   type Text,
   View,
 } from 'react-native';
 import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
-import { androidSwitchThumbOff, bulkGlassShadow, font, radius, shadow, spacing } from '@/theme';
+import { bulkGlassShadow, font, radius, spacing } from '@/theme';
 import { X } from 'lucide-react-native';
 import { AppText } from '@/components/ui/AppText';
+import { PrefsRow } from '@/components/ui/PrefsRow';
 import { GlassSurface } from '@/components/ui/GlassSurface';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { useAuth } from '@/lib/auth';
-import { a11yToggle, decorativeProps, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
+import {
+  NOTIFICATION_PREFS_LOADED_ANNOUNCEMENT,
+  NOTIFICATION_PREFS_LOADING_ANNOUNCEMENT,
+} from '@/lib/copy';
+import { decorativeProps, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
 import {
   useNotificationPreferences,
   type NotificationPreferences,
@@ -81,7 +86,6 @@ const TOGGLE_ROWS: ToggleRowDef[] = [
   },
 ];
 
-const TOGGLE_ROW_HEIGHT = 64;
 
 /**
  * A single preference toggle row — label, subtitle, and a Switch.
@@ -91,41 +95,6 @@ const TOGGLE_ROW_HEIGHT = 64;
  * text alongside it — same shape as SettingsScreen's pushRow and
  * ProfileScreen's real-time toggle, the QA-validated Alex-1 fix pattern.
  */
-function ToggleRow({
-  label,
-  subtitle,
-  value,
-  onToggle,
-  color,
-}: {
-  label: string;
-  subtitle: string;
-  value: boolean;
-  onToggle: (v: boolean) => void;
-  color: ColorTheme;
-}) {
-  const styles = makeStyles(color);
-  return (
-    <View style={styles.toggleRow}>
-      <View style={styles.toggleTextWrap}>
-        <AppText variant="label" style={styles.toggleLabel}>{label}</AppText>
-        <AppText variant="body" style={styles.toggleSubtitle}>{subtitle}</AppText>
-      </View>
-      <Switch
-        value={value}
-        onValueChange={onToggle}
-        accessibilityRole="switch"
-        accessibilityLabel={label}
-        accessibilityHint={subtitle}
-        {...a11yToggle({ checked: value })}
-        // BP-6: the estate Switch recipe — brand track, themed false-track.
-        trackColor={{ false: color.borderStrong, true: color.brand }}
-        thumbColor={Platform.OS === 'android' ? (value ? color.brand : androidSwitchThumbOff) : undefined}
-      />
-    </View>
-  );
-}
-
 export default function NotificationPreferencesScreen({ visible, onClose }: Props) {
   const color = useColor();
   const styles = makeStyles(color);
@@ -139,6 +108,33 @@ export default function NotificationPreferencesScreen({ visible, onClose }: Prop
   const reducedMotion = useReducedMotion();
   // WCAG 2.4.3: move the screen-reader cursor onto the title when the modal opens.
   const titleRef = useFocusOnOpen<Text>(visible);
+
+  /*
+   * A3/D18 — the loading state announces on iOS.
+   *
+   * This sheet's `loading` comes from `useNotificationPreferences`, not from a
+   * local fetch, so unlike its twin there is no call site to announce inside.
+   * The transition is what gets watched instead: it fires once on the way in
+   * and once on the way out, per open, and never on a re-render.
+   *
+   * iOS-only, for the same reason as everywhere else in the estate:
+   * `accessibilityLiveRegion` is ANDROID-ONLY in React Native, so Android
+   * already speaks and firing both is the double-announce ReportFlagModal
+   * retired at S10.
+   */
+  const wasLoading = useRef(false);
+  useEffect(() => {
+    if (!visible || Platform.OS !== 'ios') {
+      wasLoading.current = loading;
+      return;
+    }
+    if (loading && !wasLoading.current) {
+      AccessibilityInfo.announceForAccessibility(NOTIFICATION_PREFS_LOADING_ANNOUNCEMENT);
+    } else if (!loading && wasLoading.current) {
+      AccessibilityInfo.announceForAccessibility(NOTIFICATION_PREFS_LOADED_ANNOUNCEMENT);
+    }
+    wasLoading.current = loading;
+  }, [visible, loading]);
 
   return (
     <Modal
@@ -174,6 +170,8 @@ export default function NotificationPreferencesScreen({ visible, onClose }: Prop
               style={({ pressed }) => [styles.closeBtn, pressed && { backgroundColor: color.borderPressed }]}
               accessibilityRole="button"
               accessibilityLabel="Close notification preferences"
+              // Parity: every sibling sheet's Close says where it returns you.
+              accessibilityHint="Returns to Settings"
             >
               <X
                 size={18}
@@ -189,12 +187,16 @@ export default function NotificationPreferencesScreen({ visible, onClose }: Prop
               <AppText variant="body" style={styles.noticeText}>Sign in to change notification preferences.</AppText>
             </View>
           ) : loading ? (
-            <View style={styles.center}>
+            <View style={styles.center} accessibilityLiveRegion="polite">
               <ActivityIndicator
                 color={color.text}
                 // Use color.text for ≥4.5:1 contrast on spinner strokes.
                 // color.brand (#1466E0) is only 3.3:1 on white — AA-safe for UI
                 // buttons but not ideal for thin animated spinner strokes.
+                //
+                // A4: the label is what stops this being a nameless animating
+                // element a screen reader lands on and says nothing about.
+                accessibilityLabel="Loading your preferences"
               />
             </View>
           ) : (
@@ -204,13 +206,12 @@ export default function NotificationPreferencesScreen({ visible, onClose }: Prop
               showsVerticalScrollIndicator={false}
             >
               {TOGGLE_ROWS.map((row) => (
-                <ToggleRow
+                <PrefsRow
                   key={row.key}
-                  label={row.label}
+                  title={row.label}
                   subtitle={row.subtitle}
                   value={preferences[row.key]}
-                  onToggle={(v) => setPreference(row.key, v)}
-                  color={color}
+                  onValueChange={(v) => setPreference(row.key, v)}
                 />
               ))}
               <AppText variant="body" style={styles.footer}>
@@ -275,11 +276,6 @@ const makeStyles = (color: ColorTheme) =>
       alignItems: 'center',
       justifyContent: 'center',
     },
-    closeBtnText: {
-      fontSize: font.size.lg,
-      color: color.text,
-      fontWeight: font.weight.bold,
-    },
     notice: {
       backgroundColor: color.warningBg,
       borderRadius: radius.md,
@@ -298,26 +294,6 @@ const makeStyles = (color: ColorTheme) =>
     },
     list: { flexShrink: 1 },
     listContent: { gap: spacing.sm },
-    toggleRow: {
-      backgroundColor: color.surfaceMuted,
-      borderRadius: radius.lg,
-      padding: spacing.lg,
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: spacing.md,
-      minHeight: TOGGLE_ROW_HEIGHT,
-      ...shadow.e1,
-    },
-    toggleTextWrap: { flex: 1, gap: 2 },
-    toggleLabel: {
-      fontSize: font.size.lg,
-      fontWeight: font.weight.bold,
-      color: color.textStrong,
-    },
-    toggleSubtitle: {
-      fontSize: font.size.sm,
-      color: color.textMuted,
-    },
     footer: {
       fontSize: font.size.xs,
       // On-glass footnote → inkGlassMuted (GLASS §7.4 bans textMutedAlt on glass);

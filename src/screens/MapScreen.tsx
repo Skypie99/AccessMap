@@ -70,11 +70,11 @@ import { haversineKm, regionForNearestFlags } from '@/lib/distance';
 import { loadFilterPanelCollapsed, saveFilterPanelCollapsed } from '@/lib/filterPanelPrefs';
 import { loadHeatmapEnabled, saveHeatmapEnabled } from '@/lib/heatmapPrefs';
 import {
-  bucketFlagsToCells,
   DEFAULT_HEATMAP_MODE,
   DEFAULT_K_FLOOR,
   type HeatmapMode,
 } from '@/lib/heatmap';
+import { useHeatCells } from '@/components/HeatmapLayer';
 import {
   deleteSet,
   FilterSetError,
@@ -1127,10 +1127,13 @@ export default function MapScreen() {
   // so a parent re-render that doesn't touch flags/toggle doesn't redo
   // the pass. Skipped entirely when the toggle is off so the layer has
   // zero cost on the default-off path.
-  const heatCells = useMemo(() => {
-    if (!heatmapEnabled) return [];
-    return bucketFlagsToCells(filteredFlags);
-  }, [heatmapEnabled, filteredFlags]);
+  // …and that IS `useHeatCells`, which is where this computation is supposed
+  // to live. MapScreen had an inline copy of it — same memo, same dependency
+  // pair, same call — while `HeatmapLayer.useHeatCells` sat unused with the
+  // only test coverage the pass has. Two copies of a computation that enforces
+  // a PRIVACY floor (Jordan Art. 7, k>=3) is one copy too many: the tested one
+  // is now the one that runs.
+  const heatCells = useHeatCells(filteredFlags, heatmapEnabled);
 
   // Announce the empty-results state to iOS screen readers when it appears
   // (Android picks it up via the alert's accessibilityLiveRegion). Only
@@ -3539,7 +3542,7 @@ const makeStyles = (color: ColorTheme) =>
       flexDirection: 'row',
       gap: spacing.sm,
       alignItems: 'center',
-      minHeight: 44,
+      minHeight: a11y.minTargetSize,
     },
     offlineBannerText: {
       color: color.warningFg,
@@ -3583,7 +3586,7 @@ const makeStyles = (color: ColorTheme) =>
     },
     pinPlacementBtn: {
       flex: 1,
-      minHeight: 44,
+      minHeight: a11y.minTargetSize,
       alignItems: 'center',
       justifyContent: 'center',
       borderRadius: radius.md,
@@ -3629,8 +3632,8 @@ const makeStyles = (color: ColorTheme) =>
     // Bar icon buttons (menu / search / filters / ⋯) — transparent on the crystal
     // pane; the active state fills ctaFill with a white glyph (filters + ⋯).
     barBtn: {
-      minWidth: 44,
-      minHeight: 44,
+      minWidth: a11y.minTargetSize,
+      minHeight: a11y.minTargetSize,
       alignItems: 'center',
       justifyContent: 'center',
       borderRadius: radius.circle,
@@ -3656,7 +3659,7 @@ const makeStyles = (color: ColorTheme) =>
       alignItems: 'center',
       justifyContent: 'center',
     },
-    countChipText: { fontSize: 13, color: color.glassChipInk, fontWeight: '700' },
+    countChipText: { fontSize: 13, color: color.glassChipInk, fontWeight: font.weight.bold },
     // The pannable gap — box-none in the JSX so the bar is never a full-width
     // touch-opaque strip (the map shows through here).
     barSpacer: { flex: 1, minWidth: spacing.sm },
@@ -3682,7 +3685,7 @@ const makeStyles = (color: ColorTheme) =>
       gap: spacing.sm,
       paddingHorizontal: spacing.md,
       paddingVertical: spacing.sm,
-      minHeight: 44,
+      minHeight: a11y.minTargetSize,
       borderRadius: radius.md,
     },
     // On-glass body ink (color.text = 7.67 L / 6.67 D over the wash) — the muted
@@ -3780,7 +3783,7 @@ const makeStyles = (color: ColorTheme) =>
     filterPill: {
       paddingHorizontal: 12,
       paddingVertical: 6,
-      minHeight: 44,
+      minHeight: a11y.minTargetSize,
       borderRadius: radius.circle,
       // Chip-on-pane (law): translucent chip tint + hairline edge over the
       // washed panel; ink is glassChipInk. Active + dashed-add variants
@@ -3806,8 +3809,8 @@ const makeStyles = (color: ColorTheme) =>
       fontWeight: font.weight.bold,
     },
     sevPill: {
-      width: 44,
-      height: 44,
+      width: a11y.minTargetSize,
+      height: a11y.minTargetSize,
       borderRadius: radius.circle,
       alignItems: 'center',
       justifyContent: 'center',
@@ -3818,7 +3821,6 @@ const makeStyles = (color: ColorTheme) =>
       borderColor: color.glassChipEdge,
     },
     sevPillText: { fontSize: font.size.sm, color: color.glassChipInk, fontWeight: font.weight.bold },
-    sevPillTextActive: { color: color.textOnBrand },
     statusHint: { fontSize: font.size.caption, color: color.warningFg, marginTop: spacing.tight },
     banner: {
       alignSelf: 'center',
@@ -3874,12 +3876,11 @@ const makeStyles = (color: ColorTheme) =>
       flexDirection: 'row',
       gap: 10,
       alignItems: 'center',
-      minHeight: 44,
+      minHeight: a11y.minTargetSize,
       ...shadow.e2,
     },
     errorBannerBusy: { opacity: 0.85 },
     errorBannerPressed: { backgroundColor: color.errorPressed },
-    errorBannerIcon: { color: color.textOnBrand, fontSize: font.size.xl, fontWeight: font.weight.bold },
     errorBannerText: { color: color.textOnBrand, fontSize: font.size.sm, fontWeight: font.weight.semibold, flex: 1 },
     emptyCard: {
       // Row-tier Deep Field material (GlassSurface variant="row" forceEngineered
@@ -3933,7 +3934,7 @@ const makeStyles = (color: ColorTheme) =>
       // color.brand + white is 3.42:1 in dark (passing only by 14pt-bold
       // large-text allowance); ctaFill removes that latent fragility.
       backgroundColor: color.ctaFill,
-      minHeight: 44,
+      minHeight: a11y.minTargetSize,
       justifyContent: 'center',
     },
     // emptyCardBtn is brand-filled (ctaFill + white) → deepen to ctaFillPressed;
@@ -3955,7 +3956,7 @@ const makeStyles = (color: ColorTheme) =>
       paddingVertical: spacing.sm,
       borderRadius: radius.full,
       backgroundColor: color.surfaceNeutral,
-      minHeight: 44,
+      minHeight: a11y.minTargetSize,
       justifyContent: 'center',
     },
     emptyQuickChipText: { color: color.brandText, fontSize: font.size.sm, fontWeight: font.weight.semibold },
@@ -3979,7 +3980,7 @@ const makeStyles = (color: ColorTheme) =>
     heatNoticeText: {
       fontSize: font.size.caption,
       color: '#222', // pinned-light literal, ≥500 weight (glass type law)
-      fontWeight: '500',
+      fontWeight: font.weight.medium,
       lineHeight: 15,
     },
     // In the dismissible (row) form the text grows so the X pins to the right.
@@ -4047,13 +4048,13 @@ const makeStyles = (color: ColorTheme) =>
     fabSecondaryRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
     // List word on crystal: textStrong (5.58 L / 5.40 D) — color.brand would fail
     // 4.5 on the thin crystal (a 15px-bold label is NOT WCAG-large).
-    fabCrystalText: { color: color.textStrong, fontWeight: '700', fontSize: 15 },
+    fabCrystalText: { color: color.textStrong, fontWeight: font.weight.bold, fontSize: 15 },
     // Shared icon+label row. Replaces two identical inline
     // `{ flexDirection:'row', alignItems:'center', gap:6 }` objects (Save-preset
     // button + Report FAB) that were re-allocated on every MapScreen render.
     iconLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
     fabDisabled: { opacity: 0.5 },
-    fabText: { color: color.textOnBrand, fontWeight: '700', fontSize: 15 },
+    fabText: { color: color.textOnBrand, fontWeight: font.weight.bold, fontSize: 15 },
     savedEmpty: { gap: 8, marginTop: 4 },
     savedEmptyText: { fontSize: 12, color: color.inkGlassMuted, lineHeight: 16 },
     savedSaveBtn: {
@@ -4062,10 +4063,10 @@ const makeStyles = (color: ColorTheme) =>
       paddingVertical: 8,
       borderRadius: radius.circle,
       backgroundColor: color.ctaFill,
-      minHeight: 44,
+      minHeight: a11y.minTargetSize,
       justifyContent: 'center',
     },
-    savedSaveBtnText: { color: color.textOnBrand, fontSize: 12, fontWeight: '700' },
+    savedSaveBtnText: { color: color.textOnBrand, fontSize: 12, fontWeight: font.weight.bold },
     savedAddPill: {
       backgroundColor: color.surface,
       borderWidth: 1,
@@ -4074,7 +4075,7 @@ const makeStyles = (color: ColorTheme) =>
     },
     // brandText (not brand) so it stays AA on the neutral pressed fill — matches
     // its sibling presetBtnSecondaryText, which uses brandText for the same reason.
-    savedAddPillText: { color: color.brandText, fontSize: 12, fontWeight: '700' },
+    savedAddPillText: { color: color.brandText, fontSize: 12, fontWeight: font.weight.bold },
     // Per-user preset buttons — side-by-side pair beneath the Status row.
     // Primary (Save) is filled blue; secondary (Load) is outlined to keep
     // the primary action visually distinct without two competing fills.
@@ -4086,7 +4087,7 @@ const makeStyles = (color: ColorTheme) =>
     },
     presetBtn: {
       flex: 1,
-      minHeight: 44,
+      minHeight: a11y.minTargetSize,
       paddingHorizontal: 12,
       paddingVertical: 10,
       borderRadius: 10,
@@ -4106,7 +4107,7 @@ const makeStyles = (color: ColorTheme) =>
     // 14pt bold qualifies as WCAG "large text" — 3:1 ratio applies, so
     // white-on-#1466E0 (~3.8:1) clears AA. At 13pt it failed the 4.5:1
     // small-text threshold.
-    presetBtnText: { color: color.textOnBrand, fontWeight: '700', fontSize: 14 },
+    presetBtnText: { color: color.textOnBrand, fontWeight: font.weight.bold, fontSize: 14 },
     presetBtnSecondary: {
       backgroundColor: color.surface,
       borderWidth: 1,
@@ -4115,7 +4116,7 @@ const makeStyles = (color: ColorTheme) =>
     // Inverted variant (blue on white). Uses color.brandText (#1c4f99 ≈ 7.6:1)
     // instead of color.brand (#1466E0 ≈ 3.3:1) so it stays AA-safe even if the
     // font size ever drops below the 14pt-bold large-text threshold.
-    presetBtnSecondaryText: { color: color.brandText, fontWeight: '700', fontSize: 14 },
+    presetBtnSecondaryText: { color: color.brandText, fontWeight: font.weight.bold, fontSize: 14 },
     nameBackdrop: {
       flex: 1,
       backgroundColor: color.scrim,
@@ -4147,7 +4148,7 @@ const makeStyles = (color: ColorTheme) =>
     },
     nameTitle: {
       fontSize: 18,
-      fontWeight: '700',
+      fontWeight: font.weight.bold,
       color: color.textStrong,
       letterSpacing: -0.2,
     },
@@ -4173,11 +4174,11 @@ const makeStyles = (color: ColorTheme) =>
       borderRadius: 10,
       alignItems: 'center',
       justifyContent: 'center',
-      minHeight: 44,
+      minHeight: a11y.minTargetSize,
     },
     nameBtnCancel: { backgroundColor: color.surfaceNeutral },
-    nameBtnCancelText: { color: color.text, fontWeight: '600', fontSize: 14 },
+    nameBtnCancelText: { color: color.text, fontWeight: font.weight.semibold, fontSize: 14 },
     nameBtnSave: { backgroundColor: color.ctaFill },
     nameBtnSaveDisabled: { opacity: 0.5 },
-    nameBtnSaveText: { color: color.textOnBrand, fontWeight: '700', fontSize: 14 },
+    nameBtnSaveText: { color: color.textOnBrand, fontWeight: font.weight.bold, fontSize: 14 },
   });

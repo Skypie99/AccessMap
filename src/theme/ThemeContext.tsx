@@ -136,6 +136,10 @@ const darkColor = {
   // Podium medal tints — lightened slightly for legibility on dark surfaces.
   medalSilver: '#B0BEC8',
   medalBronze: '#D4986A',
+  // Not lightened, unlike the two metals above: #5AA9E6 is already a light
+  // blue and reads on the dark surface as it is. Same value in both palettes,
+  // stated rather than inherited, so the fork is a decision on the record.
+  medalPlatinum: '#5AA9E6',
 
   // Anonymous-contributor chip — same neutral; white label text stays readable.
   anonNeutral: '#6b7280',

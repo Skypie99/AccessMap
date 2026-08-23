@@ -382,3 +382,80 @@ describe('F4 — the status ledge is invisible, not a grey veil', () => {
     },
   );
 });
+
+/**
+ * THE LAST TWO ROWS IN THE CLASS (art-direction Phase 3, 2026-08-22).
+ *
+ * The Phase 1a sweep took four rows (`tierHeaderRow`, `filterTriggerRow`,
+ * `searchRow`, onboarding's actions) and the Phase 2a card work took the fifth.
+ * Two were left, and they are the two shapes the earlier passes did not cover:
+ * a chip rail that had nowhere to overflow TO, and a button row whose escape
+ * hatch was shrinking type rather than changing shape.
+ *
+ * The docblock's central lesson applies to both, which is why each is pinned in
+ * BOTH halves: a wrap that cannot fire, and a stack nothing opts into, are
+ * changes that read as fixes and are not ones.
+ */
+describe('C10 — the activity filter rail can overflow onto a second line', () => {
+  const src = read('components/ActivityFeedModal.tsx');
+
+  it('the row may wrap', () => {
+    const block = styleBlock(src, 'filterRow');
+    // Non-vacuity: a renamed style empties the block and passes forever.
+    expect(block).toContain("flexDirection: 'row'");
+    expect(block).toContain("flexWrap: 'wrap'");
+  });
+
+  it('and the chip refuses to shrink, which is what MAKES it wrap', () => {
+    // The half that is easy to miss. A chip that can shrink satisfies the row
+    // by getting narrower than its own word — the character-breaking defect —
+    // instead of moving to the next line. Same lesson as SW-36's minWidth
+    // floor, in the shape a content-sized chip takes.
+    const block = styleBlock(src, 'filterChip');
+    expect(block).toContain('minHeight: 44');
+    expect(block).toContain('flexShrink: 0');
+    // …and it must stay content-sized. A numeric basis would pin it at one
+    // width while its glyphs scale past 2x.
+    expect(NUMERIC_FLEX_BASIS.test(block)).toBe(false);
+    expect(BARE_FLEX_ONE.test(block)).toBe(false);
+  });
+});
+
+describe('SW-36 class — the bulk-action bar stacks instead of shrinking its type', () => {
+  const src = read('screens/TasksScreen.tsx');
+
+  it('the four verbs are basis-zero in a row, which is why they need a fallback', () => {
+    // Non-vacuity, and the statement of the hazard: this row IS the shape the
+    // guard exists for. It is allowed to keep it, because it now has an exit.
+    const block = styleBlock(src, 'bulkBtn');
+    expect(block).toContain('minHeight: 44');
+    expect(NUMERIC_FLEX_BASIS.test(block)).toBe(true);
+  });
+
+  it('and takes a real stack at the threshold, not a narrower row', () => {
+    expect(styleBlock(src, 'bulkButtonRow')).toContain("flexDirection: 'row'");
+    // A column: no flexDirection at all is RN's default, and adding 'row' here
+    // would silently undo the whole fix, so assert the absence explicitly.
+    const stack = styleBlock(src, 'bulkButtonStack');
+    expect(stack).not.toContain("flexDirection: 'row'");
+    expect(stack).toContain('gap');
+    // In a column `flexBasis` means HEIGHT, so full width comes from
+    // alignSelf — exactly what the cards' actionBtnFull does.
+    expect(styleBlock(src, 'bulkBtnFull')).toContain("alignSelf: 'stretch'");
+  });
+
+  it('every one of the four buttons opts in, not just the two that clipped', () => {
+    // Three of four would leave a stack with one button still sized by a
+    // basis of zero in a column — a 0pt-tall control. Count, do not sample.
+    expect((src.match(/compactActions && styles\.bulkBtnFull/g) ?? []).length).toBe(4);
+    expect(src).toContain('compactActions ? styles.bulkButtonStack : styles.bulkButtonRow');
+  });
+
+  it('at the SAME threshold the cards use, so the screen changes shape at once', () => {
+    // The bar and the cards disagreeing about how wide the device is would be
+    // a worse bug than the one being fixed: a stacked bar under a tiered card
+    // row, or the reverse, at one specific text size.
+    expect(src).toContain('const compactActions = isCompactLayout(windowWidth, fontScale);');
+    expect(src).toContain('compactActions ? styles.cardActionsStack : styles.cardActionsRow');
+  });
+});

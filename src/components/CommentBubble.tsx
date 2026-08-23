@@ -465,14 +465,4 @@ const styles = StyleSheet.create({
   deleteBtnPressed: {
     opacity: 0.5,
   },
-  // The ✕ delete glyph is decorative (translucent white on the brand bubble) and
-  // sits below the 4.5:1 normal-text threshold ON PURPOSE — the Pressable's
-  // accessibilityLabel carries the full meaning for screen readers, so the glyph
-  // itself need not pass WCAG 1.4.3. (The visible *timestamp* above now uses solid
-  // textOnBrand = #fff on brand #1466E0 ≈ 5.2:1, which does pass.)
-  deleteBtnText: {
-    fontSize: font.size.caption,
-    color: 'rgba(255,255,255,0.75)',
-    fontWeight: font.weight.bold,
-  },
 });

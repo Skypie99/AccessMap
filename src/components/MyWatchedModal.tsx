@@ -4,23 +4,20 @@
  * the ID from AsyncStorage immediately.
  */
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 import {
+  AccessibilityInfo,
   FlatList,
-  KeyboardAvoidingView,
-  Modal,
-  Platform,
   Pressable,
   RefreshControl,
   ScrollView,
   StyleSheet,
-  type Text,
   View,
 } from 'react-native';
 import { useAuth } from '@/lib/auth';
 import { AppText } from '@/components/ui/AppText';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { GlassSurface } from '@/components/ui/GlassSurface';
+import { Sheet } from '@/components/ui/Sheet';
+import { useAtTop } from '@/components/ui/SheetPull';
 import { SkeletonRow } from '@/components/ui/Skeleton';
 import { SeverityDisc } from '@/components/SeverityDisc';
 import { confirm, notify } from '@/lib/confirm';
@@ -29,6 +26,7 @@ import {
   CATEGORY_LABELS,
   fetchFlagsByIds,
 } from '@/lib/flags';
+import { flagUnwatchedAnnouncement } from '@/lib/copy';
 import {
   clearWatched,
   loadWatched,
@@ -40,9 +38,9 @@ import {
   filterWatchedFlagsByStatus,
   type WatchedStatusFilter,
 } from '@/lib/watchedFlagsFilter';
-import { a11y, bulkGlassShadow, font, radius, spacing } from '@/theme';
-import { MapPin, RefreshCw, Star, X } from 'lucide-react-native';
-import { a11yToggle, decorativeProps, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
+import { a11y, font, radius, spacing } from '@/theme';
+import { ArrowDown, MapPin, RefreshCw, Star } from 'lucide-react-native';
+import { a11yToggle, decorativeProps } from '@/lib/accessibility';
 import { severityA11y, statusA11y } from '@/lib/a11yText';
 import type { FlagRow } from '@/types/database';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
@@ -63,11 +61,29 @@ const STATUS_SORT_ORDER: Record<string, number> = { open: 0, verified: 1, resolv
 /** Wave 3 — sort mode for the Watched Flags list. Exported for tests. */
 export type WatchedSort = 'status' | 'newest' | 'oldest' | 'severity';
 
-const SORT_OPTIONS: { value: WatchedSort; label: string; a11yLabel: string }[] = [
-  { value: 'status',   label: 'Status',     a11yLabel: 'Sort by status (open first)' },
-  { value: 'newest',   label: 'Newest',     a11yLabel: 'Sort newest first' },
-  { value: 'oldest',   label: 'Oldest',     a11yLabel: 'Sort oldest first' },
-  { value: 'severity', label: 'Severity ↓', a11yLabel: 'Sort by highest severity first' },
+/*
+ * I1 / I3 — the direction arrow is an ICON, not a character in the label.
+ *
+ * "Severity ↓" was the last text glyph left in a control label after the
+ * Lucide migration. Three things were wrong with it and only the first is
+ * cosmetic: U+2193 renders in whatever the body face has for it (or a fallback
+ * box), it does not scale or tint with the label beside it, and it was inside
+ * the VISIBLE string while the spoken label said "highest severity first" —
+ * so the two versions of the control disagreed about what it says.
+ *
+ * The spoken label is unchanged. The visible one loses one character and gains
+ * a decorative arrow that inherits the chip's own ink.
+ */
+const SORT_OPTIONS: {
+  value: WatchedSort;
+  label: string;
+  a11yLabel: string;
+  descending?: boolean;
+}[] = [
+  { value: 'status',   label: 'Status',   a11yLabel: 'Sort by status (open first)' },
+  { value: 'newest',   label: 'Newest',   a11yLabel: 'Sort newest first' },
+  { value: 'oldest',   label: 'Oldest',   a11yLabel: 'Sort oldest first' },
+  { value: 'severity', label: 'Severity', a11yLabel: 'Sort by highest severity first', descending: true },
 ];
 
 /** Pure sort — returns a new array. Exported for unit tests. */
@@ -94,11 +110,13 @@ export function sortWatchedFlags(items: FlagRow[], mode: WatchedSort): FlagRow[]
 export default function MyWatchedModal({ visible, onClose, onSelectFlag, onViewOnMap, refreshKey = 0 }: Props) {
   const color = useColor();
   const styles = makeStyles(color);
-  const reducedMotion = useReducedMotion();
+  // The pull gesture must not fight the body's own scroll: `useAtTop`
+  // disables it whenever the content is scrolled away from its top, so a
+  // downward drag scrolls back up instead of dismissing (SheetPull's `atTop`).
+  const { atTop, onScroll, scrollEventThrottle } = useAtTop();
+  const scrollRef = useRef(null);
   // Keyboard-up bottom-inset reclaim (Recipe F step 3).
   const keyboardVisible = useKeyboardVisible();
-  // A11Y-201 (2.4.3): move the SR cursor onto the title when this surface opens.
-  const titleRef = useFocusOnOpen<Text>(visible);
   const { user } = useAuth();
   const [flags, setFlags] = useState<FlagRow[]>([]);
   const [watchedIds, setWatchedIds] = useState<string[]>([]);
@@ -173,6 +191,16 @@ export default function MyWatchedModal({ visible, onClose, onSelectFlag, onViewO
     setWatchedIds((prev) => prev.filter((id) => id !== flagId));
     try {
       await removeWatched(user.id, flagId);
+      // A3 — back-ported from HiddenCommentsModal. The whole outcome of this
+      // action is a ROW DISAPPEARING, which is the one result a screen reader
+      // cannot observe: the cursor was on the row, the row is gone, and
+      // nothing says why. Names the flag by its category, which is what the
+      // row's own accessible label leads with.
+      if (removedFlag) {
+        AccessibilityInfo.announceForAccessibility(
+          flagUnwatchedAnnouncement(CATEGORY_LABELS[removedFlag.category]),
+        );
+      }
     } catch (e) {
       if (mountedRef.current && removedFlag) {
         const flag = removedFlag;
@@ -293,67 +321,52 @@ export default function MyWatchedModal({ visible, onClose, onSelectFlag, onViewO
 
   // Bottom-anchored sheet clears the home indicator (M15 family recipe).
   // Non-throwing context read — render tests mount without a provider.
-  const insets = React.useContext(SafeAreaInsetsContext) ?? { top: 0, bottom: 0, left: 0, right: 0 };
 
   return (
-    <Modal aria-label="Watched Flags" visible={visible} animationType={reducedMotion ? 'none' : 'slide'} transparent onRequestClose={onClose}>
-      <View style={styles.backdrop}>
-        {/* Recipe F (the FeedbackModal d2a0991 stack): the KAV nests around the
-            existing containment node — accessibilityViewIsModal stays on the
-            GlassSurface, untouched — and THE CAP LIVES ON THE KAV (see the kav
-            style). This sheet previously carried no keyboard mechanism at all,
-            so the search field sat at the keyboard edge with the rows below it
-            cut off (Sky's device screenshot). */}
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          style={styles.kav}
-        >
-        <View style={styles.cardWrap}>
-        {/* MP2/M-40: bulk-glass sheet (forceEngineered = budget-free).
-            accessibilityViewIsModal (BP17 / T20) traps VoiceOver focus inside
-            this sheet CONTENT view so it can't escape to the Profile screen
-            behind it — the last sheet missing the app-wide SR-containment
-            blanket. Goes on the GlassSurface, never the backdrop; mirrors
-            MyReportsModal. */}
-        <GlassSurface
-          variant="bulk"
-          borderRadius={0}
-          forceEngineered
-          style={[styles.sheet, { paddingBottom: keyboardVisible ? spacing.md : Math.max(spacing.xxl + 4, insets.bottom) }]}
-          accessibilityViewIsModal
-          onAccessibilityEscape={onClose}
-        >
-          <View style={styles.header}>
-            <AppText ref={titleRef} variant="heading" style={styles.title} accessibilityRole="header">Watched Flags</AppText>
-            {flags.length > 0 && (
-              <Pressable onPress={handleClearAll} hitSlop={10} style={({ pressed }) => [styles.clearBtn, pressed && { opacity: 0.7 }]}
-                accessibilityRole="button"
-                accessibilityLabel={`Clear all ${flags.length} watched flags`}
-                accessibilityHint="Asks you to confirm before removing all watched flags"
-              >
-                <AppText variant="label" style={styles.clearBtnText}>Clear all</AppText>
-              </Pressable>
-            )}
-            {/* A11Y-222 (2.5.7): the single-pointer alternative to the
-                pull-to-refresh drag, same recipe as Close. */}
-            <Pressable
-              onPress={handleRefresh}
-              hitSlop={12}
-              style={({ pressed }) => [styles.closeBtn, pressed && { backgroundColor: color.borderPressed }]}
+    <Sheet
+      visible={visible}
+      onClose={onClose}
+      title="Watched Flags"
+      closeLabel="Close watched flags"
+      closeHint="Returns to your Profile"
+      headerAccessory={
+        <>
+          {flags.length > 0 && (
+            <Pressable onPress={handleClearAll} hitSlop={10} style={({ pressed }) => [styles.clearBtn, pressed && { opacity: 0.7 }]}
               accessibilityRole="button"
-              accessibilityLabel="Refresh"
-              accessibilityHint="Reloads your watched flags without pulling down the list"
-              {...a11yToggle({ busy: refreshing })}
+              accessibilityLabel={`Clear all ${flags.length} watched flags`}
+              accessibilityHint="Asks you to confirm before removing all watched flags"
             >
-              <RefreshCw size={18} color={color.text} strokeWidth={2.2} {...decorativeProps} />
+              <AppText variant="label" style={styles.clearBtnText}>Clear all</AppText>
             </Pressable>
-            <Pressable onPress={onClose} hitSlop={12} style={({ pressed }) => [styles.closeBtn, pressed && { backgroundColor: color.borderPressed }]}
-              accessibilityRole="button" accessibilityLabel="Close watched flags"
-            >
-              <X size={18} color={color.text} strokeWidth={2.2} />
-            </Pressable>
-          </View>
-
+          )}
+          {/* A11Y-222 (2.5.7): the single-pointer alternative to the
+              pull-to-refresh drag, same recipe as Close. */}
+          <Pressable
+            onPress={handleRefresh}
+            hitSlop={12}
+            style={({ pressed }) => [styles.circleBtn, pressed && { backgroundColor: color.borderPressed }]}
+            accessibilityRole="button"
+            accessibilityLabel="Refresh"
+            accessibilityHint="Reloads your watched flags without pulling down the list"
+            {...a11yToggle({ busy: refreshing })}
+          >
+            <RefreshCw size={18} color={color.text} strokeWidth={2.2} {...decorativeProps} />
+          </Pressable>
+        </>
+      }
+      glass
+      engineered
+      padded
+      fill
+      keyboardAvoiding
+      shrinkStyle={styles.kav}
+      cardStyle={keyboardVisible ? styles.cardKeyboard : styles.cardRhythm}
+      minBottomPad={spacing.xxl + 4}
+      atTop={atTop}
+      scrollRef={scrollRef}
+      testID="myWatchedModal-backdrop"
+    >
           <SearchInputRow
             value={searchQuery} onChangeText={setSearchQuery} onClear={() => setSearchQuery('')}
             placeholder="Search watched flags…" accessibilityLabel="Search watched flags"
@@ -390,7 +403,7 @@ export default function MyWatchedModal({ visible, onClose, onSelectFlag, onViewO
             style={styles.sortScroll} contentContainerStyle={styles.sortScrollContent}
             accessibilityLabel="Sort order"
           >
-            {SORT_OPTIONS.map(({ value, label, a11yLabel }) => {
+            {SORT_OPTIONS.map(({ value, label, a11yLabel, descending }) => {
               const active = sortMode === value;
               return (
                 <Pressable key={value} onPress={() => setSortMode(value)}
@@ -399,6 +412,14 @@ export default function MyWatchedModal({ visible, onClose, onSelectFlag, onViewO
                   {...a11yToggle({ pressed: active })}
                 >
                   <AppText variant="label" style={[styles.sortChipText, active && styles.sortChipTextActive]}>{label}</AppText>
+                  {descending ? (
+                    <ArrowDown
+                      size={14}
+                      color={active ? color.brandText : color.textMuted}
+                      strokeWidth={2.2}
+                      {...decorativeProps}
+                    />
+                  ) : null}
                 </Pressable>
               );
             })}
@@ -456,6 +477,9 @@ export default function MyWatchedModal({ visible, onClose, onSelectFlag, onViewO
           {!loading && displayFlags.length > 0 ? (
             <FlatList
               data={displayFlags} keyExtractor={(item) => item.id} renderItem={renderItem}
+              ref={scrollRef}
+              onScroll={onScroll}
+              scrollEventThrottle={scrollEventThrottle}
               contentContainerStyle={styles.list}
               keyboardShouldPersistTaps="handled"
               ItemSeparatorComponent={() => <View style={styles.separator} />}
@@ -469,6 +493,8 @@ export default function MyWatchedModal({ visible, onClose, onSelectFlag, onViewO
           ) : (
             <ScrollView
               style={styles.stateBody}
+              onScroll={onScroll}
+              scrollEventThrottle={scrollEventThrottle}
               contentContainerStyle={styles.stateBodyContent}
               keyboardShouldPersistTaps="handled"
             >
@@ -514,11 +540,7 @@ export default function MyWatchedModal({ visible, onClose, onSelectFlag, onViewO
               ) : null}
             </ScrollView>
           )}
-        </GlassSurface>
-        </View>
-        </KeyboardAvoidingView>
-      </View>
-    </Modal>
+    </Sheet>
   );
 }
 
@@ -542,59 +564,21 @@ function chipActiveFg(status: WatchedStatusFilter, color: ColorTheme): string {
 
 const makeStyles = (color: ColorTheme) =>
   StyleSheet.create({
-    backdrop: { flex: 1, backgroundColor: color.scrim, justifyContent: 'flex-end' },
-    // Bulk-glass sheet — the variant owns the surface (no backgroundColor);
-    // overflow:hidden clips the square material to the rounded top; the up-shadow
-    // moves to cardWrap (an overflow:hidden view clips its own shadow).
-    // G6/SR-099 — THE CAP LIVES HERE. The sheet's own '85%' resolves against a
-    // content-sized cardWrap and is inert; only the flex:1 backdrop is definite,
-    // so the cap sits on the KAV and cardWrap/sheet shrink into it.
-    // SW-42 (follow-up, Sky 2026-08-20): the FLOOR, and it has to live here for
-    // the same reason the cap does. A percentage only resolves against a parent
-    // with a DEFINITE height, and in backdrop(flex:1) → KAV → cardWrap → card
-    // the backdrop is the only definite one — so 'minHeight' on the card would be
-    // as inert as its '85%' already is (G6/SR-099).
-    //
-    // Why a floor at all: these two sheets rendered at 52.3%% and 36.8%% while
-    // their KAV-free siblings sat at 72.4%%, leaving visible dead space above the
-    // tab bar and a list viewport of 198pt showing ~1.5 of 6 report cards. The
-    // cause was never isolated (and could not be measured — both sheets are
-    // behind auth), so this is deliberately mechanism-INDEPENDENT: whatever
-    // collapses the card, it can no longer collapse past the floor. A list
-    // browser at 36%% of the screen is wrong regardless of why.
-    //
-    // Between the two bounds the sheet is still content-sized: Yoga sizes an
-    // auto-height container to its content, clamps that by min/max, and only
-    // then hands the leftover to flexGrow — so a short sheet grows to the floor
-    // and a long one stops at the cap.
     kav: {
       width: '100%',
       minHeight: '55%',
       maxHeight: '85%',
       flexShrink: 1,
     },
-    sheet: {
-      borderTopLeftRadius: radius.xl, borderTopRightRadius: radius.xl,
-      paddingHorizontal: spacing.xl, paddingTop: spacing.lg, paddingBottom: spacing.xxl + 4,
-      maxHeight: '85%', gap: spacing.tight, overflow: 'hidden',
-      // G6/SR-099: shrink into the KAV's cap.
-      flexShrink: 1,
-      // SW-42 follow-up: fill whatever the KAV resolves to, so the floor
-      // becomes sheet HEIGHT rather than dead space above the tab bar.
-      flexGrow: 1,
-    },
-    cardWrap: {
-      flexShrink: 1,
-      // SW-42 follow-up: fill whatever the KAV resolves to, so the floor
-      // becomes sheet HEIGHT rather than dead space above the tab bar.
-      flexGrow: 1,
-      borderTopLeftRadius: radius.xl,
-      borderTopRightRadius: radius.xl,
-      ...bulkGlassShadow(color),
-    },
-    header: { flexDirection: 'row', alignItems: 'center', marginBottom: spacing.sm },
-    title: { fontSize: font.size.xxl, fontWeight: font.weight.bold, flex: 1, color: color.textStrong, letterSpacing: -0.3 },
-    closeBtn: { width: 44, height: 44, borderRadius: radius.circle, backgroundColor: color.surfaceNeutral, alignItems: 'center', justifyContent: 'center' },    clearBtn: { paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: radius.md, backgroundColor: color.errorBg, minHeight: 44, alignItems: 'center', justifyContent: 'center', marginRight: spacing.xs },
+    // The sheet's inter-child rhythm. `padded` supplies `md`; this surface
+    // shipped tighter and its rows carry their own spacing.
+    cardRhythm: { gap: spacing.tight },
+    // Keyboard up: the pad drops to `md` and does NOT take the safe-area inset,
+    // because the keyboard is covering it. Shipped behaviour, made explicit.
+    cardKeyboard: { gap: spacing.tight, paddingBottom: spacing.md },
+    // Refresh, in the same 44pt circle recipe as the primitive's Close.
+    circleBtn: { width: 44, height: 44, borderRadius: radius.circle, backgroundColor: color.surfaceNeutral, alignItems: 'center', justifyContent: 'center' },
+    clearBtn: { paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: radius.md, backgroundColor: color.errorBg, minHeight: 44, alignItems: 'center', justifyContent: 'center', marginRight: spacing.xs },
     clearBtnText: { fontSize: font.size.sm, fontWeight: font.weight.bold, color: color.error },
     missingBanner: { backgroundColor: color.warningBg, borderRadius: radius.md, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, marginBottom: spacing.sm, borderLeftWidth: 3, borderLeftColor: color.accentOrange },
     missingText: { fontSize: font.size.sm, color: color.warningFg, lineHeight: 18 },
@@ -639,10 +623,8 @@ const makeStyles = (color: ColorTheme) =>
     rowRight: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, flexShrink: 0 },
     unwatchBtn: { padding: spacing.tight, alignItems: 'center', justifyContent: 'center' },
     unwatchBtnPressed: { opacity: 0.5 },
-    unwatchGlyph: { fontSize: font.size.xl, color: color.accentOrange },
     viewOnMapBtn: { width: 44, height: 44, borderRadius: radius.circle, backgroundColor: color.surfaceNeutral, alignItems: 'center', justifyContent: 'center' },
     viewOnMapBtnPressed: { opacity: 0.6, backgroundColor: color.borderPressed },
-    viewOnMapGlyph: { fontSize: font.size.base },
     rowResolved: { backgroundColor: color.successSoft },
     resolvedAccent: { position: 'absolute', left: 0, top: 0, bottom: 0, width: 3, backgroundColor: color.success, borderTopLeftRadius: 2, borderBottomLeftRadius: 2 },
     searchRow: { marginBottom: spacing.xs },
@@ -654,7 +636,7 @@ const makeStyles = (color: ColorTheme) =>
     statusChipText: { fontSize: font.size.sm, fontWeight: font.weight.semibold },
     sortScroll: { flexGrow: 0, flexShrink: 0, marginBottom: spacing.sm },
     sortScrollContent: { gap: spacing.xs, paddingRight: spacing.xs },
-    sortChip: { paddingHorizontal: spacing.md, paddingVertical: spacing.xs + 2, borderRadius: radius.full, backgroundColor: color.surfaceNeutral, minHeight: 44, alignItems: 'center', justifyContent: 'center' },
+    sortChip: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.tight, paddingHorizontal: spacing.md, paddingVertical: spacing.xs + 2, borderRadius: radius.full, backgroundColor: color.surfaceNeutral, minHeight: a11y.minTargetSize },
     sortChipActive: { backgroundColor: color.brandSofter, borderWidth: 1, borderColor: color.brand },
     sortChipText: { fontSize: font.size.sm, fontWeight: font.weight.semibold, color: color.textMuted },
     sortChipTextActive: { color: color.brandText },
