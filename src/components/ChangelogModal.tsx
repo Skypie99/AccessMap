@@ -27,6 +27,28 @@ interface ReleaseNote {
 // CMS / no markdown parser to drag in for a 30-line feature.
 const RELEASES: ReleaseNote[] = [
   {
+    // v4.1.1 — drafted 2026-08-22 from what actually shipped in the Flagstone
+    // art-direction series (build phases 00-07) and the sim-walk waves.
+    // SKY-EDITABLE, and NOT YET RATIFIED: confirm every bullet and set `date`
+    // to the real public release date before this goes to the App Store. The
+    // version string itself is read from app.json, not from here — this entry
+    // only has to TELL THE TRUTH about what changed.
+    date: '2026-08-22',
+    title: 'v4.1.1 — One flag, read the same way everywhere',
+    items: [
+      'One consistent flag card across Home, Nearby and Tasks, so a barrier reads the same wherever you meet it',
+      'A rebuilt barrier detail sheet: severity, what it means, and the description come first, with one clear main action instead of a wall of buttons',
+      'Large text sizes are properly supported throughout — headings stay above body text, descriptions stop clipping, and the report form shows severity as a readable list instead of five small circles',
+      'Every sheet in the app now behaves the same way and can be pulled down to dismiss',
+      'A clearer report form, with the submit button staying disabled until you have picked a severity',
+      'Better VoiceOver support: screens announce when they finish loading, and actions announce their outcome',
+      'Reduce Motion and Reduce Transparency are respected across the app — sheets go solid and still look like the same app',
+      'A refreshed onboarding walkthrough that matches the rest of the app',
+      'Clearer empty states that tell you what to do next instead of just saying there is nothing here',
+      'Sheets that used to ghost with whatever was behind them are now legible in both light and dark mode',
+    ],
+  },
+  {
     // S20 (L8-13): the changelog had gone three visual eras stale (one 2026-05-23
     // entry). This v3 entry is drafted from what shipped; SKY-EDITABLE — confirm
     // the bullet list and adjust the date to the actual public release.
