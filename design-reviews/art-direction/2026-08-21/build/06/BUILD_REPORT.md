@@ -215,13 +215,35 @@ luminance from a mid brand blue. C5's soft-tint grammar is right in light and
 mute in dark; the result was an enabled-LOOKING control that answers a tap with
 nothing, which is the exact class SW-49 exists to stop.
 
-> ### ⚠ DESIGN-SYSTEM FINDING FOR SKY (not fixed here, deliberately)
+> ### ⚠ DESIGN-SYSTEM FINDING 1 FOR SKY (not fixed here, deliberately)
 > **Dark `brandSoft` (#0E4499) sits 1.76:1 from `ctaFill` (#1466E0) — too close
 > to signal a state.** Any dark control that expresses "disabled" as a
 > brand-soft fill has the same problem, not just this button. Fixing the token
 > itself would ripple across every chip, banner and avatar placeholder that
 > reads it, so it is your call. The outline is the local remedy; a palette
 > answer would retire the need for it.
+
+### The signed-in walk found a fifth (commit `6.8`)
+
+**`surfaceVariant` carried the same value in BOTH palettes** —
+`rgba(255,255,255,0.25)` — and its own comment justified that with "the hero
+surface is always brand blue", a premise that expired when the hero became the
+pale row glass. Measured on the 17e: the progress track read **1.03:1** against
+the card in light and 2.30:1 in dark. Light-mode users saw a lone gold pill with
+no lane around it; dark-mode users saw a proper bar. The Phase-0 capture of the
+same account shows it has been that way at least since this series began.
+
+Light now takes `borderStrong` (1.43:1 measured on the rebuilt binary); dark
+keeps the white wash. Two call sites in the tree, both the bars 6.3b reworked.
+
+> ### ⚠ DESIGN-SYSTEM FINDING 2 FOR SKY (deliberately left open)
+> **How deep should a progress LANE be?** `borderStrong` is the house's strong
+> hairline and is a named token rather than a number a builder picked, but 1.43:1
+> in light against 2.30:1 in dark means the two schemes still do not read alike.
+> Going darker is colour arbitration, which is not a builder's call — and there
+> is a real tension either way: a deeper track separates lane-from-card but
+> reduces gold-fill-against-lane (1.36:1 at the value I measured). Worth one
+> arbiter run.
 
 ---
 
@@ -244,10 +266,27 @@ newer than every edited source before each pass.
 | `17e_light_axl_A5_profile_guest.png` | the subtitle wraps (X11 holding); the mission runs at x2 and scrolls |
 | `17e_light_axl_A5_profile_guest_scrolled.png` | post-DP-2: the last row clears the tab bar |
 
-**Not captured on the device, and why — all three are covered by tests:**
+### ✅ NEEDS-SKY-SIGN-IN — CLOSED. Sky signed the simulator in on 2026-08-22.
 
-- **The signed-in Profile** — `NEEDS-SKY-SIGN-IN`. The agent cannot hold
-  credentials (RAILS 9). Covered by `profileHeroGrammar.guard.test.ts`.
+| File | State |
+|---|---|
+| `17e_light_m_A5_profile_signedin.png` | 124 points in mono at 48, the gold Silver pill, **one** progress bar, post-6.8 track |
+| `17e_light_m_A5_profile_signedin_stats.png` | the stat trio as ONE card, three mono cells (6 / 5 / 4) |
+| `17e_light_m_A5_profile_signedin_nav.png` | YOUR REPORTS (4 rows) and COMMUNITY & ACCOUNT (3), one card each, hairline seams |
+| `17e_dark_m_A5_profile_signedin.png` | the gold pair on dark (`goldLight #3D2A00` / `goldDark #FCC44D`); the track visible |
+
+**SW-41 confirmed against the real account, which is the whole point of the
+change.** At 124 points the next tier target and the next badge target are both
+500, so the two bars coincide and the milestone bar is correctly hidden — ONE
+bar. The Phase-0 capture of the same account shows TWO gold stubs in the same
+place, which is exactly the frame the walk originally photographed. Before and
+after, same account, same points: the divergence rule does what it claims.
+
+**And it surfaced a defect no capture in this series had caught** — see 6.8 and
+the second finding in §5.
+
+**Still not captured on the device, and why — covered by tests:**
+
 - **Home's true-zero and error cards** — the live backend has 13 flags in the
   walked region and there is no in-app route to either state. Covered by
   `EmptyState.test.tsx`'s adoption scan; forcing them on the device means
@@ -292,13 +331,23 @@ Two entries need reading before anything else:
 2. **Ratify the copy** — `build/COPY_LEDGER.md` §"Prompt 06", 21 strings.
    The two ⚠ decisions above want a yes or a no specifically.
 3. **The design-system finding in §5** — dark `brandSoft` vs `ctaFill`.
-4. **NEEDS-SKY-SIGN-IN** — walk the signed-in Profile once: the points figure at
-   48, the gold tier pill, one progress bar in the 25-499 band and two outside
-   it, the stat trio as one card, the two nav groups, and the four new haptics.
+4. ~~**NEEDS-SKY-SIGN-IN**~~ — **CLOSED 2026-08-22.** Sky signed the sim in and
+   the walk ran; captures and the SW-41 confirmation are in §6. Two things were
+   deliberately NOT pressed, because they write to the real account: Save
+   display name / the avatar picker (and the default-tab pills and realtime
+   toggle were left alone too). Those four are where the new haptics live, and
+   haptics cannot be felt in a simulator anyway — they stay on the NEEDS-DEVICE
+   list below.
+   **One naming observation from the walk:** `ReportsBreakdownCard`'s own title
+   is "Your reports" and W-30's new section heading is "YOUR REPORTS". They sit
+   on the same scroll, roughly a screen apart, so they do not collide visually —
+   but they are the same two words twice. Renaming either is your call.
 5. **NEEDS-DEVICE** — VoiceOver by ear on the new radio group and the
-   Show/Copy pair; Reduce Motion over both progress bars; a real iOS permission
-   denial walked to `canAskAgain === false` for D26 (the simulator grants and
-   revokes through `simctl`, which does not reproduce the OS's one-shot rule).
+   Show/Copy pair; Reduce Motion over both progress bars; the four Profile
+   haptics (Save display name, avatar, default-tab pills, realtime toggle — a
+   simulator cannot render them); a real iOS permission denial walked to
+   `canAskAgain === false` for D26 (the simulator grants and revokes through
+   `simctl`, which does not reproduce the OS's one-shot rule).
 6. **Two things this build deliberately did not do**, both one-liners, both in
    the ledger: the lock banner's em dash, and "Update preferences" ->
    "Which updates to show".

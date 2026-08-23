@@ -27,6 +27,8 @@ Copy for ratification: `../COPY_LEDGER.md` §"Prompt 06" (21 placeholders, 0 shi
 - `06ade27` 6.4 `EmptyState` + 8 adoptions; scaled skeletons; C6 banners
 - `9858f67` 6.5 D26 `Linking.openSettings()` on a locked denial
 - `41da985` 6.6 device pass — 4 defects the green suite could not see
+- `b36edb5` 6.7 evidence (report, handoff, ledger, captures)
+- `0aaa5a1` 6.8 `surfaceVariant` forked — the progress track was invisible in LIGHT (1.03:1), found on the signed-in walk
 
 ## Guards re-pinned (never deleted)
 `bp3TrustEngineGuards` · `inertControlVisual` · `flexBasisUnderLargeType` ·
@@ -54,8 +56,14 @@ signed out. One booted sim.
 can match the PREVIOUS run. Wait for the process, then verify `main.jsbundle`'s
 mtime against every edited source. Done before both capture passes here.
 
-⚠ A relaunch drops back to SignIn (the guest session is not persisted), so every
-walk starts with "Browse without an account".
+⚠ **The sim is signed in as Sky's real account again** (Sky typed the password
+2026-08-22 — an agent cannot). Do NOT sign out: no agent can sign back in, and
+that is what made the signed-in Profile uncapturable for the whole series until
+now. If a guest-state walk is needed, ask Sky rather than signing out.
+
+⚠ Signing in fires an in-app push-notification Alert on first Home. Answer **Not
+now** — "Enable" registers a push token on the real account. The MCP tap needs a
+second attempt on that alert; the first one lands but does not register.
 
 ⚠ Time-box every `simctl` call: `perl -e 'alarm 40; exec @ARGV' xcrun simctl …`.
 
@@ -67,8 +75,12 @@ walk starts with "Browse without an account".
 3. **A design-system finding** (report §5): dark `brandSoft` sits 1.76:1 from
    `ctaFill`, too close to signal a state. Fixed locally with an outline; the
    token itself is your call.
-4. **NEEDS-SKY-SIGN-IN** — one walk of the signed-in Profile (the agent cannot
-   hold credentials).
+4. ~~**NEEDS-SKY-SIGN-IN**~~ **CLOSED 2026-08-22** — Sky signed the sim in;
+   the walk ran, 4 captures banked, SW-41 confirmed on the real account (124
+   points → one bar; the Phase-0 shot of the same account shows two). It also
+   turned up the `surfaceVariant` defect fixed in 6.8, plus a second
+   design-system question (how deep should a progress lane be) left open in the
+   report §5.
 5. **NEEDS-DEVICE** — VoiceOver on the new radio group and the Show/Copy pair;
    Reduce Motion over both progress bars; a real iOS denial walked to
    `canAskAgain === false` (simctl cannot reproduce the OS's one-shot rule).
