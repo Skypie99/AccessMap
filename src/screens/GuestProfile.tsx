@@ -121,9 +121,12 @@ export function GuestProfile({ onSignInPress }: { onSignInPress: () => void }) {
 
           The sentence is `MISSION_STATEMENT` from copy.ts, the same exported
           constant About reads, pinned character-for-character by
-          `mission.guard.test.ts`. Never paraphrased, never re-wrapped —
-          including the name inside it, which still says AccessMap. That is
-          Sky's ratified text and Sky's call (COPY_LEDGER, W-11). */}
+          `mission.guard.test.ts`. Never paraphrased, never re-wrapped. The
+          name inside it said AccessMap until Sky ruled 2026-08-23 that it
+          should follow the rename; it now says Flagstone, which matters most
+          here — this is the guest surface, so a signed-out reader saw the old
+          name under a "Why Flagstone" heading. Still Sky's ratified text and
+          Sky's call (COPY_LEDGER, W-11). */}
       <AppText variant="label" style={styles.sectionLabel} accessibilityRole="header">
         Why Flagstone
       </AppText>

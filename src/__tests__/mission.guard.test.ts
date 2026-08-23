@@ -10,10 +10,13 @@
  *     of edit that looks like tidying and is actually rewriting somebody's
  *     ratified words;
  *   · two surfaces render it, so a second copy is how the two drift;
- *   · it says "AccessMap" in an app now called Flagstone. That is DELIBERATE
- *     and it is Sky's call, not a builder's — the rename sweep must not reach
- *     in here on autopilot. If she decides it should follow the rename, this
- *     test is the one line that changes with it.
+ *   · it used to say "AccessMap" in an app now called Flagstone. SKY RULED
+ *     2026-08-23 ("fix the mission statement") that it should follow the
+ *     rename, so it now says Flagstone. That was hers to decide and she
+ *     decided it; the guard below flipped rather than being deleted, so the
+ *     old name cannot creep back in and the new one cannot be quietly
+ *     re-edited. It rendered under a "Why Flagstone" heading on About AND on
+ *     the guest Profile, so the mismatch was visible to signed-out users.
  *
  * The expected value is written out in full below rather than imported and
  * compared to itself, which would assert nothing.
@@ -28,7 +31,7 @@ const read = (rel: string) => fs.readFileSync(path.join(SRC, rel), 'utf8');
 
 /** Sky's sentence, verbatim. Straight apostrophe, two sentences, no em dash. */
 const RATIFIED =
-  "The goal of AccessMap is to make the community and environment better for everyone, " +
+  "The goal of Flagstone is to make the community and environment better for everyone, " +
   "through those who have the capacity to help. Progress happens in the background for " +
   "everyone's benefit, because accessibility benefits everyone.";
 
@@ -44,9 +47,11 @@ describe('the mission statement is Sky\'s, verbatim', () => {
     expect(nonAscii).toEqual([]);
   });
 
-  it('still says AccessMap — the rename does not reach ratified copy', () => {
-    // Recorded, not accidental. See the docblock: this is Sky's to change.
-    expect(MISSION_STATEMENT).toContain('AccessMap');
+  it('says Flagstone, and the old name cannot come back', () => {
+    // Flipped 2026-08-23 on Sky's ruling. Asserting BOTH directions: a revert
+    // to the old name fails, and so does a half-done edit that leaves both.
+    expect(MISSION_STATEMENT).toContain('Flagstone');
+    expect(MISSION_STATEMENT).not.toContain('AccessMap');
   });
 });
 

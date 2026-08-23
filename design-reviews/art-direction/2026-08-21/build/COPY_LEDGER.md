@@ -181,18 +181,37 @@ own title all follow. `reportControl.guard` polices the NEW word automatically.
 (If the sheet title should stay "Report" while only the link says "Report it",
 that is a second constant and a slightly larger change — say so and it is done.)
 
-**W-11 · the mission statement says "AccessMap".** Shipped **verbatim**, as
-instructed, and pinned character for character by `mission.guard.test.ts`:
+**W-11 · the mission statement — ✅ RULED BY SKY 2026-08-23: it follows the
+rename.** It now says **Flagstone**. Everything else in the sentence is
+byte-unchanged; only the product name moved, and it stays pinned character for
+character by `mission.guard.test.ts`:
 
-> "The goal of AccessMap is to make the community and environment better for
+> "The goal of Flagstone is to make the community and environment better for
 > everyone, through those who have the capacity to help. Progress happens in the
 > background for everyone's benefit, because accessibility benefits everyone."
+
+**Why it mattered more than it looked:** the sentence renders under a **"Why
+Flagstone"** heading on *two* surfaces — `AboutScreen.tsx:175` and
+`GuestProfile.tsx:128` — so a **signed-out guest** read the old name in the app's
+own mission line. The guard was **flipped, not deleted**: it now asserts the
+sentence contains `Flagstone` and does **not** contain `AccessMap`, so neither a
+revert nor a half-done edit can pass.
+
+⚠ **This W-11 is Prompt 02's.** Prompt 05's onboarding block further down uses
+`W-11` for a different string — the same duplicate-ID problem already flagged for
+`W-05`–`W-09`. Say which block you mean when ratifying either.
+
+_(historical, for the record — the original entry read:)_
 
 The app is called Flagstone. About now reads "Why Flagstone" and then a sentence
 naming AccessMap, one line apart. **This is deliberate and it is your call** —
 the rename sweep must not reach into ratified copy on autopilot. If it should
 follow the rename, edit `MISSION_STATEMENT` in `src/lib/copy.ts` and the matching
 `RATIFIED` line in `src/__tests__/mission.guard.test.ts`; both surfaces follow.
+
+_(end of the historical entry. Sky ruled on 2026-08-23 and both files were
+edited exactly as that last sentence describes, plus the guard's assertion and
+a stale comment in `GuestProfile.tsx`.)_
 
 ### Strings deliberately NOT changed in Phase 1b
 - **"Resolved", not "Mark resolved".** Board 03 draws the segmented cell as "Mark

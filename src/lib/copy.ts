@@ -932,7 +932,7 @@ export const REPORT_DRAFT_RESTORED_ANNOUNCEMENT = 'Your report draft was restore
  * is a one-line edit here, and every surface follows.
  */
 export const MISSION_STATEMENT =
-  "The goal of AccessMap is to make the community and environment better for everyone, through those who have the capacity to help. Progress happens in the background for everyone's benefit, because accessibility benefits everyone.";
+  "The goal of Flagstone is to make the community and environment better for everyone, through those who have the capacity to help. Progress happens in the background for everyone's benefit, because accessibility benefits everyone.";
 
 /**
  * A3/A4 — THE ASYNC ANNOUNCEMENTS (art-direction Phase 3, D18).
