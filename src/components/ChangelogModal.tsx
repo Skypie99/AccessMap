@@ -111,7 +111,13 @@ export default function ChangelogModal({ visible, onClose }: Props) {
                     style={styles.releaseHeader}
                     accessibilityRole="button"
                     {...a11yToggle({ expanded: isOpen })}
-                    accessibilityLabel={`${release.title}, ${itemCount} item${
+                    // B2 — the date is rendered in a badge beside the title,
+                    // and the badge is inside this Pressable, so a screen
+                    // reader that collapses the row never speaks it. Every row
+                    // therefore sounded like "What's fixed, 4 items" with no
+                    // way to tell one release from the next. The visible row
+                    // and the spoken row now carry the same three facts.
+                    accessibilityLabel={`${release.title}, ${release.date}, ${itemCount} item${
                       itemCount === 1 ? '' : 's'
                     }`}
                     accessibilityHint={isOpen ? 'Tap to collapse' : 'Tap to expand'}

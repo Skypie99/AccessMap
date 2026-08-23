@@ -933,3 +933,55 @@ export const REPORT_DRAFT_RESTORED_ANNOUNCEMENT = 'Your report draft was restore
  */
 export const MISSION_STATEMENT =
   "The goal of AccessMap is to make the community and environment better for everyone, through those who have the capacity to help. Progress happens in the background for everyone's benefit, because accessibility benefits everyone.";
+
+/**
+ * A3/A4 — THE ASYNC ANNOUNCEMENTS (art-direction Phase 3, D18).
+ *
+ * These are strings a screen reader SPEAKS and nobody ever reads. That does not
+ * make them less user-facing, and it is the reason they live here rather than
+ * inline: an announcement is copy, it is the only version of the interface some
+ * users get, and it belongs where Sky can see and change it.
+ *
+ * ⚠ AGENT-PROPOSED WORDING. Listed in the Phase 3 section of
+ * `design-reviews/art-direction/2026-08-21/build/COPY_LEDGER.md` for Sky's
+ * ratification, same as any visible string.
+ *
+ * ─── WHY EACH ONE IS SHAPED THE WAY IT IS ─────────────────────────────────
+ * A loading announcement says what is being fetched, not "Loading" — a
+ * VoiceOver user may have several surfaces in play and a bare gerund names
+ * none of them. A completion announcement says what ARRIVED, with the count,
+ * because that is the fact a sighted user gets from the screen for free and
+ * the one a spinner disappearing cannot convey.
+ *
+ * No em dashes; sentence case; the same voice as the visible copy around them.
+ */
+export const STATUS_HISTORY_LOADING_ANNOUNCEMENT = 'Loading status history';
+export const statusHistoryLoadedAnnouncement = (n: number) =>
+  n === 0
+    ? 'Status history loaded. Nothing has happened to this flag yet.'
+    : `Status history loaded. ${n} ${n === 1 ? 'change' : 'changes'}.`;
+
+export const NOTIFICATION_PREFS_LOADING_ANNOUNCEMENT = 'Loading your preferences';
+export const NOTIFICATION_PREFS_LOADED_ANNOUNCEMENT = 'Preferences loaded.';
+
+export const MY_FEEDBACK_LOADING_ANNOUNCEMENT = 'Loading your feedback';
+export const myFeedbackLoadedAnnouncement = (n: number) =>
+  n === 0
+    ? 'Feedback loaded. You have not sent any yet.'
+    : `Feedback loaded. ${n} ${n === 1 ? 'item' : 'items'}.`;
+
+/**
+ * OUTCOME ANNOUNCEMENTS — the HiddenCommentsModal pattern, back-ported.
+ *
+ * Unlike the loading pair above these are NOT iOS-gated. They answer a user's
+ * own action rather than narrating a passive state change, there is no live
+ * region rendered alongside them to double up with, and on both platforms the
+ * result is otherwise silent: a Switch that flips, a row that vanishes, a file
+ * that saves. HiddenCommentsModal already announces exactly this way.
+ */
+export const PUSH_ENABLED_ANNOUNCEMENT = 'Push notifications on.';
+export const PUSH_DISABLED_ANNOUNCEMENT = 'Push notifications off.';
+export const EXPORT_STARTED_ANNOUNCEMENT = 'Preparing your data export.';
+export const authorUnblockedAnnouncement = (n: number) =>
+  `${n} ${n === 1 ? 'person' : 'people'} unblocked on this device.`;
+export const flagUnwatchedAnnouncement = (name: string) => `Stopped watching ${name}.`;

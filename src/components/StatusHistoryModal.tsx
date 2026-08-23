@@ -32,6 +32,7 @@
  */
 import React, { useEffect, useMemo, useState } from 'react';
 import {
+  AccessibilityInfo,
   ActivityIndicator,
   Platform,
   ScrollView,
@@ -42,6 +43,10 @@ import {
 import { AppText } from '@/components/ui/AppText';
 import { Sheet } from '@/components/ui/Sheet';
 import { STATUS_LABELS } from '@/lib/flags';
+import {
+  STATUS_HISTORY_LOADING_ANNOUNCEMENT,
+  statusHistoryLoadedAnnouncement,
+} from '@/lib/copy';
 import { relativeTime } from '@/lib/relativeTime';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { font, spacing } from '@/theme';
@@ -105,11 +110,24 @@ export default function StatusHistoryModal({ visible, flagId, onClose }: Props) 
       return;
     }
     setLoading(true);
+    // A3/D18 — `accessibilityLiveRegion` is ANDROID-ONLY in React Native, so on
+    // iOS VoiceOver this sheet opened, fetched and filled itself in total
+    // silence. The house pattern is to pair the region with an explicit
+    // announce, iOS-only: on Android the region already speaks, and firing both
+    // is the double-announce ReportFlagModal retired at S10. Documented at
+    // ReportContentModal.tsx (the "RUNG 1" block).
+    if (Platform.OS === 'ios') {
+      AccessibilityInfo.announceForAccessibility(STATUS_HISTORY_LOADING_ANNOUNCEMENT);
+    }
     (async () => {
       const data = await listStatusHistory(flagId);
       if (cancelled) return;
       setEntries(data);
       setLoading(false);
+      // …and the arrival, which is the half a sighted user gets for free.
+      if (Platform.OS === 'ios') {
+        AccessibilityInfo.announceForAccessibility(statusHistoryLoadedAnnouncement(data.length));
+      }
     })();
     return () => {
       cancelled = true;
@@ -158,7 +176,11 @@ export default function StatusHistoryModal({ visible, flagId, onClose }: Props) 
           >
             {loading ? (
               <View style={styles.center} accessibilityLiveRegion="polite">
-                <ActivityIndicator color={color.brandText} />
+                {/* A4 — every spinner has a label. Without one this is a
+                    nameless animating element: VoiceOver reaches it and says
+                    nothing, which is worse than silence because the user knows
+                    something is there. */}
+                <ActivityIndicator color={color.brandText} accessibilityLabel="Loading history" />
                 <AppText variant="body" style={styles.loadingText}>Loading history…</AppText>
               </View>
             ) : formatted.length === 0 ? (

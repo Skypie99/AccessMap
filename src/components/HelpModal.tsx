@@ -161,6 +161,11 @@ export default function HelpModal({ visible, onClose }: Props) {
             onClear={() => setQuery('')}
             placeholder="Search…"
             accessibilityLabel="Search FAQ"
+            // Parity with every other search in the estate (MyReports,
+            // MyWatched, MyFeedback all say what their search filters). A label
+            // names the field; the hint is what tells a screen-reader user what
+            // typing into it will DO.
+            accessibilityHint="Filters the questions and answers below to those containing your search words"
             wrapStyle={{ marginHorizontal: 20 }}
           />
 

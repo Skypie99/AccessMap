@@ -5,6 +5,7 @@
  */
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
+  AccessibilityInfo,
   FlatList,
   Pressable,
   RefreshControl,
@@ -24,6 +25,7 @@ import {
   CATEGORY_LABELS,
   fetchFlagsByIds,
 } from '@/lib/flags';
+import { flagUnwatchedAnnouncement } from '@/lib/copy';
 import {
   clearWatched,
   loadWatched,
@@ -165,6 +167,16 @@ export default function MyWatchedModal({ visible, onClose, onSelectFlag, onViewO
     setWatchedIds((prev) => prev.filter((id) => id !== flagId));
     try {
       await removeWatched(user.id, flagId);
+      // A3 — back-ported from HiddenCommentsModal. The whole outcome of this
+      // action is a ROW DISAPPEARING, which is the one result a screen reader
+      // cannot observe: the cursor was on the row, the row is gone, and
+      // nothing says why. Names the flag by its category, which is what the
+      // row's own accessible label leads with.
+      if (removedFlag) {
+        AccessibilityInfo.announceForAccessibility(
+          flagUnwatchedAnnouncement(CATEGORY_LABELS[removedFlag.category]),
+        );
+      }
     } catch (e) {
       if (mountedRef.current && removedFlag) {
         const flag = removedFlag;

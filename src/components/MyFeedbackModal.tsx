@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
+  AccessibilityInfo,
   ActivityIndicator,
   FlatList,
   KeyboardAvoidingView,
@@ -24,6 +25,10 @@ import { FEEDBACK_CATEGORY_LABELS } from '@/lib/feedback';
 import { FEEDBACK_CATEGORY_ICONS } from '@/components/feedbackCategoryIcons';
 import { listFeedbackByUser } from '@/lib/feedbackStore';
 import { REPORT_BODY_PREFIX } from '@/lib/reports';
+import {
+  MY_FEEDBACK_LOADING_ANNOUNCEMENT,
+  myFeedbackLoadedAnnouncement,
+} from '@/lib/copy';
 import {
   FEEDBACK_CATEGORY_FILTERS,
   FEEDBACK_CATEGORY_FILTER_LABELS,
@@ -84,6 +89,12 @@ export default function MyFeedbackModal({ visible, onClose, refreshKey = 0 }: Pr
   const load = useCallback(async () => {
     if (!user) return;
     if (mountedRef.current) setLoading(true);
+    // A3/D18 — `accessibilityLiveRegion` is ANDROID-ONLY in RN, so on iOS this
+    // list fetched and filled itself in silence. iOS-only announce; firing both
+    // where the region works is the double-announce S10 retired.
+    if (Platform.OS === 'ios') {
+      AccessibilityInfo.announceForAccessibility(MY_FEEDBACK_LOADING_ANNOUNCEMENT);
+    }
     // HIGH-1 (13_B1_VERIFY_LEDGER §A, ruled in §SKY-6). A signed-in report is
     // inserted with `user_id`, so without this it lands here and the reporter is
     // shown `[REPORT] v2 target=comment id=9f3c… flag=22a1…` — internal encoding
@@ -94,6 +105,9 @@ export default function MyFeedbackModal({ visible, onClose, refreshKey = 0 }: Pr
     if (!mountedRef.current) return;
     setRows(data);
     setLoading(false);
+    if (Platform.OS === 'ios') {
+      AccessibilityInfo.announceForAccessibility(myFeedbackLoadedAnnouncement(data.length));
+    }
   }, [user]);
 
   // Refetch on open and whenever the parent bumps refreshKey.
@@ -202,6 +216,13 @@ export default function MyFeedbackModal({ visible, onClose, refreshKey = 0 }: Pr
               showsHorizontalScrollIndicator={false}
               style={styles.chipBarScroll}
               contentContainerStyle={styles.chipBar}
+              // B4 — the chips already declare `accessibilityRole="radio"`, but
+              // a radio with no radiogroup around it is a widget with no set:
+              // a screen reader announces the state ("selected") and never the
+              // membership ("2 of 5"). The container is what supplies that, and
+              // it has to carry a NAME too — an unlabeled group is a landmark
+              // announced as nothing (A11Y-218).
+              accessibilityRole="radiogroup"
               accessibilityLabel="Filter feedback by category"
             >
               {FEEDBACK_CATEGORY_FILTERS.map((opt) => {
@@ -239,9 +260,20 @@ export default function MyFeedbackModal({ visible, onClose, refreshKey = 0 }: Pr
             }
             renderItem={({ item }) => <FeedbackRowCard row={item} />}
             ListEmptyComponent={
-              <View style={styles.emptyCard} accessible accessibilityRole="text">
+              // A3 — the Android half of the pair. This one node is the list's
+              // loading state, its empty state and its no-matches state, so a
+              // polite region here narrates every transition between them.
+              <View
+                style={styles.emptyCard}
+                accessible
+                accessibilityRole="text"
+                accessibilityLiveRegion="polite"
+              >
                 {loading ? (
-                  <ActivityIndicator color={color.brandText} />
+                  // A4 — a labelled spinner. Its live region is the emptyCard
+                  // wrapper above, which is `accessible` and Android-only, so
+                  // the iOS half is the explicit announce in `load()`.
+                  <ActivityIndicator color={color.brandText} accessibilityLabel="Loading your feedback" />
                 ) : rows.length > 0 ? (
                   // Have feedback, but the active filter hides all of it.
                   <>

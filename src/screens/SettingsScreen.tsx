@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import {
+  AccessibilityInfo,
   ActivityIndicator,
   Alert,
   Platform,
@@ -38,14 +39,18 @@ import { CATEGORY_LABELS, listFlagsByUser } from '@/lib/flags';
 import { listFeedbackByUser } from '@/lib/feedbackStore';
 import { formatDataExport } from '@/lib/dataExport';
 import {
+  authorUnblockedAnnouncement,
   BLOCKED_PEOPLE_EMPTY,
   BLOCKED_PEOPLE_ROW_SUBTITLE,
   BLOCKED_PEOPLE_ROW_TITLE,
   HIDDEN_COMMENTS_LINK_HINT,
   HIDDEN_COMMENTS_ROW_SUBTITLE,
   HIDDEN_COMMENTS_TITLE,
+  EXPORT_STARTED_ANNOUNCEMENT,
   PRIVACY_POLICY_LINK_HINT,
   PRIVACY_POLICY_LINK_LABEL,
+  PUSH_DISABLED_ANNOUNCEMENT,
+  PUSH_ENABLED_ANNOUNCEMENT,
   PUSH_SIGNED_OUT_SUBTITLE,
   TERMS_LINK_HINT,
   TERMS_LINK_LABEL,
@@ -398,12 +403,16 @@ export default function SettingsScreen() {
         // Only update local state if the full flow succeeded (user confirmed +
         // token obtained). If they tapped "Not now" or permission was denied,
         // the toggle stays off.
-        if (success) setPushEnabled(true);
+        if (success) {
+          setPushEnabled(true);
+          AccessibilityInfo.announceForAccessibility(PUSH_ENABLED_ANNOUNCEMENT);
+        }
       } else {
         // F49: deletePushToken now throws when the server-side delete fails,
         // so the toggle only flips OFF when the opt-out actually stuck.
         await deletePushToken(user.id);
         setPushEnabled(false);
+        AccessibilityInfo.announceForAccessibility(PUSH_DISABLED_ANNOUNCEMENT);
       }
     } catch (e) {
       notify(
@@ -452,6 +461,12 @@ export default function SettingsScreen() {
       return;
     }
     setExporting(true);
+    // A3 — the HiddenCommentsModal pattern. The failure path already speaks
+    // (notify renders and announces); the SUCCESS path was a Switch flipping
+    // and a share sheet arriving after an unannounced pause. Not iOS-gated:
+    // this answers the user's own action rather than narrating a passive state
+    // change, and there is no live region here to double up with.
+    AccessibilityInfo.announceForAccessibility(EXPORT_STARTED_ANNOUNCEMENT);
     try {
       // Pull profile + flags in parallel. We avoid Promise.all([flags, fb])
       // because we want the feedback call's failure to be silent (it's
@@ -566,6 +581,7 @@ export default function SettingsScreen() {
     const ok = await confirm(UNBLOCK_ALL_LABEL, UNBLOCK_ALL_CONFIRM_BODY, UNBLOCK_ALL_LABEL, true);
     if (!ok) return;
     const cleared: string[] = [];
+    const total = blockedIds.length;
     try {
       for (const id of blockedIds) {
         await unhideContent('author', id);
@@ -577,6 +593,11 @@ export default function SettingsScreen() {
       return;
     }
     setBlockedIds([]);
+    // A3 — the row this was reached from disappears on success, and a row
+    // disappearing is exactly the outcome a screen reader cannot report. Same
+    // pattern, and the same "on this device" fence, as the unhide
+    // announcements this is back-ported from (HiddenCommentsModal).
+    AccessibilityInfo.announceForAccessibility(authorUnblockedAnnouncement(total));
   };
 
   const handleSignOutPress = async () => {

@@ -22,10 +22,12 @@
  * press handler — and hid the Switch, so the rows announced as switches but
  * double-tap did nothing: A11Y-212, the Alex-1 defect class.)
  */
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import {
+  AccessibilityInfo,
   ActivityIndicator,
   Modal,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -40,6 +42,10 @@ import { PrefsRow } from '@/components/ui/PrefsRow';
 import { GlassSurface } from '@/components/ui/GlassSurface';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { useAuth } from '@/lib/auth';
+import {
+  NOTIFICATION_PREFS_LOADED_ANNOUNCEMENT,
+  NOTIFICATION_PREFS_LOADING_ANNOUNCEMENT,
+} from '@/lib/copy';
 import { decorativeProps, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
 import {
   useNotificationPreferences,
@@ -103,6 +109,33 @@ export default function NotificationPreferencesScreen({ visible, onClose }: Prop
   // WCAG 2.4.3: move the screen-reader cursor onto the title when the modal opens.
   const titleRef = useFocusOnOpen<Text>(visible);
 
+  /*
+   * A3/D18 — the loading state announces on iOS.
+   *
+   * This sheet's `loading` comes from `useNotificationPreferences`, not from a
+   * local fetch, so unlike its twin there is no call site to announce inside.
+   * The transition is what gets watched instead: it fires once on the way in
+   * and once on the way out, per open, and never on a re-render.
+   *
+   * iOS-only, for the same reason as everywhere else in the estate:
+   * `accessibilityLiveRegion` is ANDROID-ONLY in React Native, so Android
+   * already speaks and firing both is the double-announce ReportFlagModal
+   * retired at S10.
+   */
+  const wasLoading = useRef(false);
+  useEffect(() => {
+    if (!visible || Platform.OS !== 'ios') {
+      wasLoading.current = loading;
+      return;
+    }
+    if (loading && !wasLoading.current) {
+      AccessibilityInfo.announceForAccessibility(NOTIFICATION_PREFS_LOADING_ANNOUNCEMENT);
+    } else if (!loading && wasLoading.current) {
+      AccessibilityInfo.announceForAccessibility(NOTIFICATION_PREFS_LOADED_ANNOUNCEMENT);
+    }
+    wasLoading.current = loading;
+  }, [visible, loading]);
+
   return (
     <Modal
       visible={visible}
@@ -137,6 +170,8 @@ export default function NotificationPreferencesScreen({ visible, onClose }: Prop
               style={({ pressed }) => [styles.closeBtn, pressed && { backgroundColor: color.borderPressed }]}
               accessibilityRole="button"
               accessibilityLabel="Close notification preferences"
+              // Parity: every sibling sheet's Close says where it returns you.
+              accessibilityHint="Returns to Settings"
             >
               <X
                 size={18}
@@ -152,12 +187,16 @@ export default function NotificationPreferencesScreen({ visible, onClose }: Prop
               <AppText variant="body" style={styles.noticeText}>Sign in to change notification preferences.</AppText>
             </View>
           ) : loading ? (
-            <View style={styles.center}>
+            <View style={styles.center} accessibilityLiveRegion="polite">
               <ActivityIndicator
                 color={color.text}
                 // Use color.text for ≥4.5:1 contrast on spinner strokes.
                 // color.brand (#1466E0) is only 3.3:1 on white — AA-safe for UI
                 // buttons but not ideal for thin animated spinner strokes.
+                //
+                // A4: the label is what stops this being a nameless animating
+                // element a screen reader lands on and says nothing about.
+                accessibilityLabel="Loading your preferences"
               />
             </View>
           ) : (

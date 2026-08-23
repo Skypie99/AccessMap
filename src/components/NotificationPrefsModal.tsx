@@ -9,8 +9,12 @@
  * refreshUpdateCount with the now-saved prefs).
  */
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
+import { AccessibilityInfo, ActivityIndicator, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { useAuth } from '@/lib/auth';
+import {
+  NOTIFICATION_PREFS_LOADED_ANNOUNCEMENT,
+  NOTIFICATION_PREFS_LOADING_ANNOUNCEMENT,
+} from '@/lib/copy';
 import { AppText } from '@/components/ui/AppText';
 import { PrefsRow } from '@/components/ui/PrefsRow';
 import { Sheet } from '@/components/ui/Sheet';
@@ -101,9 +105,19 @@ export default function NotificationPrefsModal({
       return;
     }
     if (mountedRef.current) setLoading(true);
+    // A3/D18 — the spinner below sits in a live region, and RN implements that
+    // on ANDROID ONLY. On iOS VoiceOver this sheet fetched and filled itself in
+    // silence. iOS-only announce, because firing both where the region works is
+    // the double-announce ReportFlagModal retired at S10.
+    if (Platform.OS === 'ios') {
+      AccessibilityInfo.announceForAccessibility(NOTIFICATION_PREFS_LOADING_ANNOUNCEMENT);
+    }
     try {
       const loaded = await loadPrefs(user.id);
       if (mountedRef.current) setPrefs(loaded);
+      if (Platform.OS === 'ios') {
+        AccessibilityInfo.announceForAccessibility(NOTIFICATION_PREFS_LOADED_ANNOUNCEMENT);
+      }
     } finally {
       if (mountedRef.current) setLoading(false);
     }
@@ -159,10 +173,12 @@ export default function NotificationPrefsModal({
               <AppText variant="body" style={styles.noticeText}>Sign in to save update preferences.</AppText>
             </View>
           ) : loading ? (
-            <View style={styles.center}>
+            <View style={styles.center} accessibilityLiveRegion="polite">
               {/* color.text (not brand): brand #1466E0 is only 3.3:1 on the sheet;
-                  matches the inked spinner in NotificationPreferencesScreen (M-24). */}
-              <ActivityIndicator color={color.text} />
+                  matches the inked spinner in NotificationPreferencesScreen (M-24).
+                  A4: the label is what stops this being a nameless animating
+                  element a screen reader lands on and says nothing about. */}
+              <ActivityIndicator color={color.text} accessibilityLabel="Loading your preferences" />
             </View>
           ) : (
             // Toggles scroll inside the 85% card bound — at large type the
