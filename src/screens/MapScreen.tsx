@@ -70,11 +70,11 @@ import { haversineKm, regionForNearestFlags } from '@/lib/distance';
 import { loadFilterPanelCollapsed, saveFilterPanelCollapsed } from '@/lib/filterPanelPrefs';
 import { loadHeatmapEnabled, saveHeatmapEnabled } from '@/lib/heatmapPrefs';
 import {
-  bucketFlagsToCells,
   DEFAULT_HEATMAP_MODE,
   DEFAULT_K_FLOOR,
   type HeatmapMode,
 } from '@/lib/heatmap';
+import { useHeatCells } from '@/components/HeatmapLayer';
 import {
   deleteSet,
   FilterSetError,
@@ -1127,10 +1127,13 @@ export default function MapScreen() {
   // so a parent re-render that doesn't touch flags/toggle doesn't redo
   // the pass. Skipped entirely when the toggle is off so the layer has
   // zero cost on the default-off path.
-  const heatCells = useMemo(() => {
-    if (!heatmapEnabled) return [];
-    return bucketFlagsToCells(filteredFlags);
-  }, [heatmapEnabled, filteredFlags]);
+  // …and that IS `useHeatCells`, which is where this computation is supposed
+  // to live. MapScreen had an inline copy of it — same memo, same dependency
+  // pair, same call — while `HeatmapLayer.useHeatCells` sat unused with the
+  // only test coverage the pass has. Two copies of a computation that enforces
+  // a PRIVACY floor (Jordan Art. 7, k>=3) is one copy too many: the tested one
+  // is now the one that runs.
+  const heatCells = useHeatCells(filteredFlags, heatmapEnabled);
 
   // Announce the empty-results state to iOS screen readers when it appears
   // (Android picks it up via the alert's accessibilityLiveRegion). Only

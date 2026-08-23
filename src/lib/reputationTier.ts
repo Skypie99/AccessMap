@@ -19,6 +19,8 @@
  * a transient bad value from the DB never throws or returns a bogus tier.
  */
 
+import { color } from '@/theme';
+
 export type ReputationTierName = 'bronze' | 'silver' | 'gold' | 'platinum';
 
 export interface ReputationTier {
@@ -29,7 +31,19 @@ export interface ReputationTier {
   emoji: string;
   /** Lucide icon name for the tier badge (replaces the emoji for rendering). */
   icon: 'medal' | 'gem';
-  /** Badge tint for the tier icon (metal / gem color). */
+  /**
+   * Badge tint for the tier icon (metal / gem color).
+   *
+   * ⚠ THIS IS THE LIGHT PALETTE'S VALUE, IN BOTH MODES. The ladder is a static
+   * array in a plain module, so it cannot call `useColor()`; it reads the base
+   * palette, which is byte-identical to the four literals that used to sit
+   * here. The dark palette DOES fork `medalSilver`/`medalBronze` (lightened
+   * "for legibility on dark surfaces") and nothing reads that fork — the
+   * lightened tints have never rendered. Recorded, not silently fixed: making
+   * `TierIcon` resolve the themed token would change how two tier badges look
+   * in dark mode, which is a visible change and belongs where it can be
+   * captured. Banked in the Phase 3 report.
+   */
   color: string;
   /** Short description shown when a user taps their tier badge. */
   description: string;
@@ -55,7 +69,7 @@ export const REPUTATION_TIERS: readonly ReputationTier[] = [
     label: 'Bronze',
     emoji: '🥉',
     icon: 'medal',
-    color: '#C0884F',
+    color: color.medalBronze,
     description: 'New contributor — keep reporting barriers to build trust.',
     threshold: 0,
     nextThreshold: 100,
@@ -66,7 +80,7 @@ export const REPUTATION_TIERS: readonly ReputationTier[] = [
     label: 'Silver',
     emoji: '🥈',
     icon: 'medal',
-    color: '#9AA7B5',
+    color: color.medalSilver,
     description: 'Trusted contributor — your reports are verified more quickly.',
     threshold: 100,
     nextThreshold: 500,
@@ -77,7 +91,7 @@ export const REPUTATION_TIERS: readonly ReputationTier[] = [
     label: 'Gold',
     emoji: '🥇',
     icon: 'medal',
-    color: '#FBB024',
+    color: color.goldAccent,
     description: 'Community leader — your verifications carry extra weight.',
     threshold: 500,
     nextThreshold: 1500,
@@ -88,7 +102,7 @@ export const REPUTATION_TIERS: readonly ReputationTier[] = [
     label: 'Platinum',
     emoji: '💎',
     icon: 'gem',
-    color: '#5AA9E6',
+    color: color.medalPlatinum,
     description: "Anchor contributor — you're one of our most trusted voices.",
     threshold: 1500,
     nextThreshold: null,

@@ -125,3 +125,55 @@ describe('A11Y-234 — decorative content is hidden on the WEB too, not just on 
     expect(leafLeaks).toHaveLength(0);
   });
 });
+
+/**
+ * D16 — A SPREAD WRITTEN INSIDE A COMMENT IS NOT A SPREAD.
+ *
+ * Two files carried `{...decorativeProps}` as the last words of an explanatory
+ * comment (`PlatformMap` had one too, since fixed). Each comment correctly
+ * described what should happen — "the raw decimals add no value for SR users",
+ * "the card already announces loading" — and the code did none of it. The
+ * elements stayed in the accessibility tree, announced exactly as the comment
+ * said they should not be.
+ *
+ * This is the nastiest shape a defect can take in this codebase: it typechecks,
+ * it passes every other guard, it reads as DONE to a reviewer skimming for the
+ * helper's name, and `grep decorativeProps` finds it and reports success. The
+ * only thing that distinguishes a real spread from a described one is whether
+ * a comment marker sits to its left.
+ *
+ * So the rule is the simplest possible statement of that: comments are
+ * stripped, then the helper's spread is counted. Every occurrence that
+ * survives stripping is real; any that vanish were prose.
+ */
+describe('D16 — decorativeProps is applied, never merely described', () => {
+  const SPREAD = '{...decorativeProps}';
+
+  it('no file mentions the spread only inside a comment', () => {
+    const offenders: string[] = [];
+    for (const file of walkTsx(SRC)) {
+      const raw = fs.readFileSync(file, 'utf8');
+      if (!raw.includes(SPREAD)) continue;
+      const rel = path.relative(SRC, file);
+      const raws = raw.split(SPREAD).length - 1;
+      const live = stripComments(raw).split(SPREAD).length - 1;
+      if (live < raws) {
+        offenders.push(
+          `${rel} → ${raws - live} of ${raws} \`${SPREAD}\` occurrence(s) sit inside a ` +
+            `comment, where they do nothing. Apply them, or delete the words.`,
+        );
+      }
+    }
+    expect(offenders).toEqual([]);
+  });
+
+  it('and the scan is not vacuous — the helper really is spread across the estate', () => {
+    let live = 0;
+    for (const file of walkTsx(SRC)) {
+      live += stripComments(fs.readFileSync(file, 'utf8')).split(SPREAD).length - 1;
+    }
+    // 100+ at the time of writing. A collapse here means the helper was
+    // renamed and this rule quietly stopped covering anything.
+    expect(live).toBeGreaterThanOrEqual(60);
+  });
+});

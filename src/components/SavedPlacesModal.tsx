@@ -231,7 +231,13 @@ export default function SavedPlacesModal({
               // QA A5: the Pressable's a11yLabel already covers
               // "Jump map to {name}"; the raw decimals would be
               // read as "47 point 6 0 6 2 negative 122 point…"
-              // which adds no value for SR users. {...decorativeProps}
+              // which adds no value for SR users.
+              //
+              // D16 — the spread below used to be the LAST WORDS OF THIS
+              // COMMENT. It typechecked, it read as done, and it did nothing:
+              // the coordinates were in the a11y tree the whole time, spoken
+              // exactly as the comment says they should not be.
+              {...decorativeProps}
             >
               {place.lat.toFixed(4)}, {place.lng.toFixed(4)}
             </AppText>

@@ -38,7 +38,7 @@ import {
   type WatchedStatusFilter,
 } from '@/lib/watchedFlagsFilter';
 import { a11y, font, radius, spacing } from '@/theme';
-import { MapPin, RefreshCw, Star } from 'lucide-react-native';
+import { ArrowDown, MapPin, RefreshCw, Star } from 'lucide-react-native';
 import { a11yToggle, decorativeProps } from '@/lib/accessibility';
 import { severityA11y, statusA11y } from '@/lib/a11yText';
 import type { FlagRow } from '@/types/database';
@@ -60,11 +60,29 @@ const STATUS_SORT_ORDER: Record<string, number> = { open: 0, verified: 1, resolv
 /** Wave 3 — sort mode for the Watched Flags list. Exported for tests. */
 export type WatchedSort = 'status' | 'newest' | 'oldest' | 'severity';
 
-const SORT_OPTIONS: { value: WatchedSort; label: string; a11yLabel: string }[] = [
-  { value: 'status',   label: 'Status',     a11yLabel: 'Sort by status (open first)' },
-  { value: 'newest',   label: 'Newest',     a11yLabel: 'Sort newest first' },
-  { value: 'oldest',   label: 'Oldest',     a11yLabel: 'Sort oldest first' },
-  { value: 'severity', label: 'Severity ↓', a11yLabel: 'Sort by highest severity first' },
+/*
+ * I1 / I3 — the direction arrow is an ICON, not a character in the label.
+ *
+ * "Severity ↓" was the last text glyph left in a control label after the
+ * Lucide migration. Three things were wrong with it and only the first is
+ * cosmetic: U+2193 renders in whatever the body face has for it (or a fallback
+ * box), it does not scale or tint with the label beside it, and it was inside
+ * the VISIBLE string while the spoken label said "highest severity first" —
+ * so the two versions of the control disagreed about what it says.
+ *
+ * The spoken label is unchanged. The visible one loses one character and gains
+ * a decorative arrow that inherits the chip's own ink.
+ */
+const SORT_OPTIONS: {
+  value: WatchedSort;
+  label: string;
+  a11yLabel: string;
+  descending?: boolean;
+}[] = [
+  { value: 'status',   label: 'Status',   a11yLabel: 'Sort by status (open first)' },
+  { value: 'newest',   label: 'Newest',   a11yLabel: 'Sort newest first' },
+  { value: 'oldest',   label: 'Oldest',   a11yLabel: 'Sort oldest first' },
+  { value: 'severity', label: 'Severity', a11yLabel: 'Sort by highest severity first', descending: true },
 ];
 
 /** Pure sort — returns a new array. Exported for unit tests. */
@@ -377,7 +395,7 @@ export default function MyWatchedModal({ visible, onClose, onSelectFlag, onViewO
             style={styles.sortScroll} contentContainerStyle={styles.sortScrollContent}
             accessibilityLabel="Sort order"
           >
-            {SORT_OPTIONS.map(({ value, label, a11yLabel }) => {
+            {SORT_OPTIONS.map(({ value, label, a11yLabel, descending }) => {
               const active = sortMode === value;
               return (
                 <Pressable key={value} onPress={() => setSortMode(value)}
@@ -386,6 +404,14 @@ export default function MyWatchedModal({ visible, onClose, onSelectFlag, onViewO
                   {...a11yToggle({ pressed: active })}
                 >
                   <AppText variant="label" style={[styles.sortChipText, active && styles.sortChipTextActive]}>{label}</AppText>
+                  {descending ? (
+                    <ArrowDown
+                      size={14}
+                      color={active ? color.brandText : color.textMuted}
+                      strokeWidth={2.2}
+                      {...decorativeProps}
+                    />
+                  ) : null}
                 </Pressable>
               );
             })}
@@ -597,7 +623,7 @@ const makeStyles = (color: ColorTheme) =>
     statusChipText: { fontSize: font.size.sm, fontWeight: font.weight.semibold },
     sortScroll: { flexGrow: 0, flexShrink: 0, marginBottom: spacing.sm },
     sortScrollContent: { gap: spacing.xs, paddingRight: spacing.xs },
-    sortChip: { paddingHorizontal: spacing.md, paddingVertical: spacing.xs + 2, borderRadius: radius.full, backgroundColor: color.surfaceNeutral, minHeight: 44, alignItems: 'center', justifyContent: 'center' },
+    sortChip: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.tight, paddingHorizontal: spacing.md, paddingVertical: spacing.xs + 2, borderRadius: radius.full, backgroundColor: color.surfaceNeutral, minHeight: a11y.minTargetSize },
     sortChipActive: { backgroundColor: color.brandSofter, borderWidth: 1, borderColor: color.brand },
     sortChipText: { fontSize: font.size.sm, fontWeight: font.weight.semibold, color: color.textMuted },
     sortChipTextActive: { color: color.brandText },

@@ -8,9 +8,15 @@
  * to mark all tracked flags as "seen" so the banner doesn't re-appear
  * for the same changes.
  *
- * Accessibility: role=alert + live region polite so VoiceOver announces
- * the count when the banner first appears, without interrupting other
- * speech.
+ * Accessibility: a POLITE live region (Android) paired with an explicit
+ * announce (iOS), so the count is spoken when the banner first appears
+ * without interrupting other speech.
+ *
+ * ⚠ Deliberately NOT `accessibilityRole="alert"`, and this docblock used to
+ * say it was. An alert is semantically ASSERTIVE; pairing it with a polite
+ * region asked the platform for two contradictory urgencies at once, and QA #8
+ * dropped the role. The note at the call site recorded that; this one did not,
+ * and a docblock is what a reader trusts first.
  */
 import React from 'react';
 import { AccessibilityInfo, Pressable, StyleSheet } from 'react-native';

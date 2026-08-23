@@ -1955,11 +1955,18 @@ const makeStyles = (color: ColorTheme) =>
     },
     charCounterAmber: { color: color.warningHint, fontWeight: font.weight.semibold },
     charCounterRed: { color: color.error, fontWeight: font.weight.bold },
-    // High-severity photo nudge card — amber-tinted, appears between the
-    // "Photo" label and picker when severity ≥ 4 and no photo is attached.
-    // warningBg (#fff7e6) / warningFg (#714b00): 8.3:1 contrast, WCAG AA.
-    // Helpful tip, not a warning — info/tip palette so it reads as a friendly
-    // pointer rather than an alert (more-expressive pass 2026-06-03).
+    // High-severity photo nudge card — appears between the "Photo" label and
+    // picker when severity ≥ 4 and no photo is attached.
+    //
+    // Helpful tip, not a warning, so it takes the INFO palette rather than the
+    // amber one (more-expressive pass 2026-06-03) — infoBg/infoFg, measured
+    // 7.9:1 light and 6.2:1 dark, AA at any size either way.
+    //
+    // ⚠ This comment used to quote warningBg #fff7e6 / warningFg #714b00 at
+    // 8.3:1. Those were the colours BEFORE the palette moved, and the numbers
+    // were still here describing a card that had not used either token for
+    // months. A contrast figure that names the wrong pair is worse than none:
+    // it is the thing a reviewer checks instead of measuring.
     photoNudge: {
       flexDirection: 'row',
       alignItems: 'flex-start',
